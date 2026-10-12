@@ -2,7 +2,7 @@ import type { NextConfig } from "next";
 import path from "path";
 
 const nextConfig: NextConfig = {
-  transpilePackages: ["@fitness-battle/shared"],
+  transpilePackages: ["@fitness-battle/shared", "@fitness-battle/rankings"],
   outputFileTracingRoot: path.join(__dirname, "../.."),
 };
 

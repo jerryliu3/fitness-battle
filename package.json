@@ -15,7 +15,9 @@
     "supabase:start": "supabase start",
     "supabase:stop": "supabase stop",
     "supabase:status": "supabase status",
-    "supabase:reset": "supabase db reset"
+    "supabase:reset": "supabase db reset",
+    "rankings:db:start": "supabase start --workdir rankings-db",
+    "rankings:db:reset": "supabase db reset --workdir rankings-db"
   },
   "devDependencies": {
     "typescript": "^5.9.2"

@@ -17,3 +17,6 @@ apps/mobile/.expo
 apps/web/.next
 supabase/.branches
 supabase/.temp
+rankings-db/supabase/.branches
+rankings-db/supabase/.temp
+*.import.sql

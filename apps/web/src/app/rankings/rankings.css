@@ -1,0 +1,112 @@
+.rankings-shell {
+  min-height: 100vh;
+  background: #f3efe6;
+  color: #1c1915;
+  font-family: var(--font-body), "DM Sans", sans-serif;
+}
+
+.rankings-shell a {
+  color: inherit;
+}
+
+.rankings-wrap {
+  width: min(920px, calc(100% - 32px));
+  margin: 0 auto;
+  padding: 28px 0 64px;
+}
+
+.rankings-top {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: baseline;
+  margin-bottom: 28px;
+  font-size: 14px;
+}
+
+.rankings-kicker {
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  font-size: 12px;
+  color: #6d6458;
+}
+
+.rankings-shell h1 {
+  font-family: var(--font-display), "Bebas Neue", sans-serif;
+  font-size: clamp(56px, 8vw, 84px);
+  line-height: 0.9;
+  letter-spacing: 0.02em;
+  margin: 8px 0 12px;
+  font-weight: 400;
+}
+
+.rankings-lede {
+  max-width: 62ch;
+  font-size: 18px;
+  line-height: 1.45;
+  margin: 0 0 28px;
+}
+
+.rankings-boards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+  margin: 0 0 32px;
+  padding: 0;
+  list-style: none;
+}
+
+.rankings-boards a,
+.rankings-empty-card {
+  display: block;
+  background: #fffdf8;
+  border: 1px solid #e2d9cc;
+  border-radius: 12px;
+  padding: 16px;
+  text-decoration: none;
+}
+
+.rankings-boards strong {
+  display: block;
+  font-size: 22px;
+}
+
+.rankings-note,
+.rankings-source {
+  color: #5c5348;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.rankings-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: #fffdf8;
+  border: 1px solid #e2d9cc;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.rankings-table th,
+.rankings-table td {
+  text-align: left;
+  padding: 10px 12px;
+  border-bottom: 1px solid #efe7db;
+  font-variant-numeric: tabular-nums;
+}
+
+.rankings-table th {
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #6d6458;
+}
+
+.rankings-section {
+  margin-top: 28px;
+}
+
+.rankings-section h2 {
+  font-size: 22px;
+  margin: 0 0 10px;
+}

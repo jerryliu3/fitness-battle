@@ -81,6 +81,9 @@ importers:
 
   apps/web:
     dependencies:
+      '@fitness-battle/rankings':
+        specifier: workspace:*
+        version: link:../../packages/rankings
       '@fitness-battle/shared':
         specifier: workspace:*
         version: link:../../packages/shared
@@ -109,6 +112,15 @@ importers:
       '@types/react-dom':
         specifier: ^19
         version: 19.3.0(@types/react@19.1.17)
+      typescript:
+        specifier: ^5.9.2
+        version: 5.9.3
+      vitest:
+        specifier: ^3.2.4
+        version: 3.2.7(@types/node@20.19.43)(lightningcss@1.33.0)(terser@5.51.2)(yaml@2.9.1)
+
+  packages/rankings:
+    devDependencies:
       typescript:
         specifier: ^5.9.2
         version: 5.9.3
