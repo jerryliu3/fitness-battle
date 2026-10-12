@@ -45,6 +45,19 @@ The first migration is the source ledger: provider result ids when present, othe
 
 The public board is `/rankings`. The first loaded race is the 2025 Estonian 10 km road championship from OpenTrack, under the Open Database License. Age groups entirely under 18 are dropped before insert. Set `NEXT_PUBLIC_RANKINGS_SUPABASE_URL` and `NEXT_PUBLIC_RANKINGS_SUPABASE_ANON_KEY` in `apps/web/.env.local`.
 
+## Auth (web)
+
+Browsing Today / Board / Pace is open. **Join / compete / You / onboarding** require an account.
+
+- `/signup` → `/onboarding` (preferences → tracker link → one-time 90-day calibration)
+- `/login` with safe `?next=` return
+- Demo mode (`NEXT_PUBLIC_USE_DEMO_DATA=true` or placeholder Supabase keys) keeps a device-local session so flows work without a live project
+
+## Integrations & data
+
+- Tracker scope and stub-vs-live rules: [`docs/integrations.md`](./docs/integrations.md)
+- What is loaded (OpenTrack 10K, synthetic compete field, etc.): [`docs/data-status.md`](./docs/data-status.md)
+
 ## Docs
 
 Living standards live in the Project Agent Store (and are summarized in-repo):
@@ -53,5 +66,7 @@ Living standards live in the Project Agent Store (and are summarized in-repo):
 - `docs/coding-principles.md`
 - `docs/project-context.md`
 - `docs/setup-plan.md`
+- `docs/integrations.md`
+- `docs/data-status.md`
 
 See [`AGENTS.md`](./AGENTS.md) and [`CONTRIBUTING.md`](./CONTRIBUTING.md).

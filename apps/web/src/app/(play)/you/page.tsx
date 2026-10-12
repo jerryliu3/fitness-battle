@@ -1,24 +1,142 @@
 "use client";
 
+import { AuthGate } from "@/components/auth-gate";
+import { useAuth } from "@/components/auth-context";
 import { useCompete } from "@/components/compete-context";
 import {
+  activityFromSample,
+  BACKFILL_DAYS,
   currentPeriodBounds,
+  evidenceLabel,
   PROVIDERS,
   RANK_BANDS,
   rankForElo,
   SPORTS,
   STARTING_FREEZES,
+  type ActivitySample,
 } from "@fitness-battle/shared";
-import { useState } from "react";
+import Link from "next/link";
+import { useSearchParams } from "next/navigation";
+import { Suspense, useEffect, useRef, useState } from "react";
 
-export default function YouPage() {
+function YouContent() {
+  const { user, signOut, demoMode } = useAuth();
   const { state, dispatch } = useCompete();
   const [name, setName] = useState("");
   const [city, setCity] = useState("");
+  const [seeded, setSeeded] = useState(false);
+  const [syncNote, setSyncNote] = useState<string | null>(null);
+  const searchParams = useSearchParams();
+  const tracker = searchParams.get("tracker");
+  const appliedTracker = useRef<string | null>(null);
+
+  if (state && !seeded) {
+    setSeeded(true);
+    setName(state.name);
+    setCity(state.city);
+  }
+
+  useEffect(() => {
+    if (!state || !tracker || appliedTracker.current === tracker) return;
+    appliedTracker.current = tracker;
+    if (tracker === "connected") {
+      dispatch({
+        type: "apply-sync",
+        provider: "strava",
+        activities: [],
+        linkStatus: "connected",
+      });
+    } else if (tracker === "stub") {
+      dispatch({ type: "link", provider: "strava" });
+    } else if (tracker === "error") {
+      setSyncNote("Strava did not connect. Sign in and try the link again.");
+    }
+  }, [dispatch, state, tracker]);
+
   if (!state) return <p className="fb-copy">Loading…</p>;
 
   const period = currentPeriodBounds(state.clock.kind, new Date());
   const frozen = state.frozenPeriods.includes(period.startsAt.toISOString());
+
+  async function syncProvider(providerId: (typeof PROVIDERS)[number]["id"]) {
+    setSyncNote(null);
+    const link = state!.links.find((item) => item.provider === providerId);
+    if (providerId !== "strava") {
+      if (!link?.linked) {
+        dispatch({ type: "link", provider: providerId });
+        setSyncNote(`${providerId} is a demo link. It is not a live connection.`);
+        return;
+      }
+      dispatch({ type: "sync", provider: providerId });
+      setSyncNote("Demo sync applied on this device.");
+      return;
+    }
+
+    if (!link?.linked) {
+      try {
+        const response = await fetch("/api/fitness/connect", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ userId: user?.id }),
+        });
+        const body = (await response.json()) as {
+          authorizeUrl?: string;
+          status?: string;
+          message?: string;
+          error?: string;
+        };
+        if (!response.ok) {
+          setSyncNote(body.error ?? "Could not start Strava connect.");
+          return;
+        }
+        if (body.authorizeUrl) {
+          window.location.href = body.authorizeUrl;
+          return;
+        }
+        dispatch({ type: "link", provider: "strava" });
+        setSyncNote(body.message ?? "Demo tracker linked. This is not a live connection.");
+      } catch {
+        dispatch({ type: "link", provider: "strava" });
+        setSyncNote("Offline demo link only.");
+      }
+      return;
+    }
+
+    try {
+      const response = await fetch("/api/fitness/sync", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: user?.id }),
+      });
+      const body = (await response.json()) as {
+        usedMock?: boolean;
+        activities?: ActivitySample[];
+        error?: string;
+        windowKind?: string;
+      };
+      if (!response.ok) {
+        setSyncNote(body.error ?? "Sync failed");
+        return;
+      }
+      const activities = (body.activities ?? [])
+        .map((sample) => activityFromSample(sample))
+        .filter((activity) => activity != null);
+      dispatch({
+        type: "apply-sync",
+        provider: "strava",
+        activities,
+        linkStatus: body.usedMock ? "stub" : "connected",
+      });
+      setSyncNote(
+        body.usedMock
+          ? `Stub sync (${body.windowKind ?? "recent"}): ${activities.length} sample activities. Not a live connection.`
+          : `Synced ${activities.length} activities.`,
+      );
+    } catch {
+      dispatch({ type: "sync", provider: providerId });
+      setSyncNote("Offline demo sync applied locally.");
+    }
+  }
 
   return (
     <>
@@ -26,22 +144,36 @@ export default function YouPage() {
         <p className="fb-kicker">You</p>
         <h1 className="fb-title">{state.name}</h1>
         <p className="fb-copy">
-          {state.city}. Push the people near you, then stay with it next week.
+          {state.city}. {user?.email}
+          {demoMode ? " · demo account" : ""}.
         </p>
       </header>
+
+      {!state.onboardingCompleted ? (
+        <section className="fb-card">
+          <h2>Finish setup</h2>
+          <p className="fb-copy">
+            Preferences and the optional {BACKFILL_DAYS}-day calibration live in
+            onboarding.
+          </p>
+          <Link href="/onboarding" className="fb-btn">
+            Continue onboarding
+          </Link>
+        </section>
+      ) : null}
 
       <section className="fb-card">
         <label className="fb-field">
           Name
           <input
-            defaultValue={state.name}
+            value={name}
             onChange={(event) => setName(event.target.value)}
           />
         </label>
         <label className="fb-field">
           City
           <input
-            defaultValue={state.city}
+            value={city}
             onChange={(event) => setCity(event.target.value)}
           />
         </label>
@@ -103,51 +235,58 @@ export default function YouPage() {
       </section>
 
       <section className="fb-card">
-        <h2>90-day calibration</h2>
-        <p className="fb-copy">
-          {state.calibrated
-            ? "History is already in. Importing again replaces that sample and resets Elo from it."
-            : "Import a sample of the last 90 days to leave the 1000 baseline. Live files replace this once a provider syncs."}
-        </p>
-        <div className="fb-stack">
-          {(["light", "steady", "heavy"] as const).map((level) => (
-            <button
-              key={level}
-              type="button"
-              className="fb-btn-line"
-              onClick={() => dispatch({ type: "import-history", level })}
-            >
-              Import {level} history
-            </button>
-          ))}
-        </div>
+        <h2>{BACKFILL_DAYS}-day calibration</h2>
+        {state.calibrated ? (
+          <p className="fb-copy">
+            History is locked in. This one-time calibration cannot run again.
+          </p>
+        ) : (
+          <>
+            <p className="fb-copy">
+              Import a sample of the last {BACKFILL_DAYS} days once to leave the
+              1000 baseline. This can only be done once.
+            </p>
+            <div className="fb-stack">
+              {(["light", "steady", "heavy"] as const).map((level) => (
+                <button
+                  key={level}
+                  type="button"
+                  className="fb-btn-line"
+                  onClick={() => dispatch({ type: "import-history", level })}
+                >
+                  Import {level} history
+                </button>
+              ))}
+            </div>
+          </>
+        )}
       </section>
 
       <section className="fb-card">
         <h2>Connections</h2>
         <p className="fb-note">
-          Link a source, then sync. Activity apps add a workout. WHOOP and Oura
-          add a verified recovery mark. OAuth keys turn the stub into a live
-          pull later.
+          Link a source, then sync. Stub means demo data — never a live athlete
+          connection. WHOOP and Oura add readiness marks when linked in demo.
         </p>
         {PROVIDERS.map((provider) => {
           const link = state.links.find((item) => item.provider === provider.id);
+          const status = link?.status ?? "disconnected";
           return (
             <div key={provider.id} className="fb-row">
               <span className="fb-grow">
                 {provider.name}
                 <small>
                   {provider.blurb}
-                  {link?.linked ? " · linked" : ""}
+                  {link?.linked
+                    ? ` · ${evidenceLabel(status === "stub" ? "stub" : status === "connected" ? "receiving_data" : "disconnected")}`
+                    : ""}
                 </small>
               </span>
               {link?.linked ? (
                 <button
                   type="button"
                   className="fb-btn-ghost"
-                  onClick={() =>
-                    dispatch({ type: "sync", provider: provider.id })
-                  }
+                  onClick={() => void syncProvider(provider.id)}
                 >
                   Sync
                 </button>
@@ -155,9 +294,7 @@ export default function YouPage() {
                 <button
                   type="button"
                   className="fb-btn-ghost"
-                  onClick={() =>
-                    dispatch({ type: "link", provider: provider.id })
-                  }
+                  onClick={() => void syncProvider(provider.id)}
                 >
                   Link
                 </button>
@@ -165,10 +302,11 @@ export default function YouPage() {
             </div>
           );
         })}
+        {syncNote ? <p className="fb-note">{syncNote}</p> : null}
       </section>
 
       <section className="fb-card">
-        <h2>Ranks</h2>
+        <h2>Levels</h2>
         {RANK_BANDS.map((band) => (
           <div key={band.name} className="fb-row">
             <span className="fb-grow">
@@ -181,10 +319,26 @@ export default function YouPage() {
         ))}
         <p className="fb-note">
           Score is mostly distance, or time when there is no GPS. Heart rate
-          can add a little. Pace adds less. An empty week decays Elo slightly,
-          and it never falls below 500.
+          can add a little. Pace adds less. An empty week decays rating
+          slightly, and it never falls below 500.
         </p>
       </section>
+
+      <section className="fb-stack">
+        <button type="button" className="fb-btn-line" onClick={() => void signOut()}>
+          Sign out
+        </button>
+      </section>
     </>
+  );
+}
+
+export default function YouPage() {
+  return (
+    <AuthGate reason="You is your profile, connections, and freezes. Sign in to open it.">
+      <Suspense fallback={<p className="fb-copy">Loading…</p>}>
+        <YouContent />
+      </Suspense>
+    </AuthGate>
   );
 }

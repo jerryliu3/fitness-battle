@@ -23,7 +23,7 @@ function mockActivities(
       externalId: `mock-ext-1-${userId}`,
       categorySlug,
       startedAt: new Date(now - 2 * 24 * 60 * 60 * 1000).toISOString(),
-      metricValue: categorySlug === "strength" ? 120 : 5200,
+      metricValue: categorySlug === "strength" ? 2700 : 5200,
       rawName: `Mock ${categorySlug} session`,
     },
     {
@@ -32,7 +32,7 @@ function mockActivities(
       externalId: `mock-ext-2-${userId}`,
       categorySlug,
       startedAt: new Date(now - 5 * 60 * 60 * 1000).toISOString(),
-      metricValue: categorySlug === "strength" ? 90 : 3100,
+      metricValue: categorySlug === "strength" ? 1800 : 3100,
       rawName: `Mock ${categorySlug} follow-up`,
     },
   ];
@@ -42,17 +42,19 @@ export const mockFitnessProvider: FitnessProvider = {
   id: "mock",
   displayName: "Mock Tracker",
   async connect(userId) {
+    // Mock is always a stub — never report "connected" (that means live OAuth).
     const connection: FitnessConnection = {
       userId,
       provider: "mock",
       connectedAt: new Date().toISOString(),
-      status: "connected",
+      status: "stub",
     };
     connected.set(userId, connection);
     const result: FitnessAuthResult = {
       provider: "mock",
-      status: "connected",
-      message: "Connected to mock fitness tracker (no OAuth keys required).",
+      status: "stub",
+      message:
+        "Using mock fitness tracker (demo data only — not a live athlete connection).",
     };
     return result;
   },

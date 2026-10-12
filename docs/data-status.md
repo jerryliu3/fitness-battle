@@ -1,0 +1,49 @@
+# Data & benchmarking status
+
+What is loaded today versus what is still empty or synthetic.
+
+## Compete / training boards (Today, Board, Pace)
+
+| Data | Source | Status |
+| --- | --- | --- |
+| Weekly effort board | Local compete engine + synthetic field athletes | Works offline in the browser (localStorage) |
+| 1v1 rivals | Synthetic nearest-Elo field | Works offline |
+| Pace absolutes (5K–marathon, 20K/40K) | Your synced/history activities + synthetic field times from Elo | Works offline; empty for “you” until history/sync |
+| Lessons | Deterministic schedule in shared | Works offline |
+| 90-day calibration | Synthetic history generator (`import-history`) | One-time; not live tracker data |
+| Live activities | Strava sync API | Stub without keys or in demo mode. With keys, a signed-in sync is stored and applied to the local effort board |
+
+There is **no production athlete dataset** behind the weekly compete field yet — peers are generated for matching.
+
+## Race rankings (`/rankings`)
+
+Separate Supabase project from battles (`rankings-db/`, hosted `pzadctqmyekkydteivlf`).
+
+| Item | Status |
+| --- | --- |
+| Schema | Ledger with fingerprint uniqueness, youth filter, ODbL display gate |
+| Fixture | `packages/rankings/fixtures/emv-10k-2025.json` — 2025 Estonian 10 km (OpenTrack, ODbL) |
+| Parser tests | Expect 44 adult results, 5 under-18 skipped |
+| Distances with rows | **10K only** from this fixture |
+| 5K / half / marathon boards | UI exists; **no imported rows** yet |
+| Local seed | No `rankings-db/seed.sql`; local reset leaves boards empty unless you emit+apply import SQL |
+| Hosted | README points at the live project; UI needs `NEXT_PUBLIC_RANKINGS_*` env |
+| Athlete identity merge | Out of scope — same person can appear twice across events |
+
+## Battles Supabase (`supabase/`)
+
+| Item | Status |
+| --- | --- |
+| Profiles / battles / periods / standings / activities | Schema present |
+| Join RPC | `join_battle_by_code` |
+| Create battle + period seed | `create_battle` (additive migration) |
+| Period roll + late joiners | Fixed in additive migration |
+| Score recompute from activities | `recompute_battle_standings` |
+| Wired to play UI | **Not yet** — play UI still uses the local compete engine |
+
+## What to load next
+
+1. Emit OpenTrack import SQL (`packages/rankings/scripts/emit-import.mjs`) into `rankings-db` seed for local demos.
+2. Additional audited road races for 5K / half / marathon.
+3. Persist compete state (or battles standings) per authenticated user once Supabase env is live.
+4. Point `NEXT_PUBLIC_USE_DEMO_DATA=false` plus Strava keys and the service role at a real athlete backfill. Token storage and score recompute are already wired for that mode.

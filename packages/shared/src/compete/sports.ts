@@ -158,6 +158,15 @@ export interface Duel {
   source: "auto" | "invite";
 }
 
+export type LinkStatus = "disconnected" | "stub" | "connected";
+
+export interface ProviderLink {
+  provider: ProviderId;
+  linked: boolean;
+  /** Honest connection evidence. Stub means demo sync, not live OAuth. */
+  status: LinkStatus;
+}
+
 export interface CompeteState {
   version: 1;
   name: string;
@@ -167,13 +176,16 @@ export interface CompeteState {
   ratings: Rating[];
   activities: Activity[];
   readiness: ReadinessMark[];
-  links: { provider: ProviderId; linked: boolean }[];
+  links: ProviderLink[];
   freezesLeft: number;
   /** Period starts the player froze. Elo is held when that period closes. */
   frozenPeriods: string[];
   duels: Duel[];
   lessonDoneOn: string | null;
+  /** True after the one-time 90-day history calibration. Cannot be undone. */
   calibrated: boolean;
+  /** Onboarding preferences finished (name/city/sport + optional connect/backfill). */
+  onboardingCompleted: boolean;
 }
 
 export function hashString(value: string): number {

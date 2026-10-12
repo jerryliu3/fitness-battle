@@ -47,4 +47,30 @@ describe("OpenTrack import", () => {
     expect(winner?.sex).toBe("male");
     expect(winner?.categoryKey).toBe("10k:male");
   });
+
+  it("does not file non-binary athletes as female", () => {
+    const parsed = parseOpenTrackCompetition({
+      id: "nb-meet",
+      date: "2026-04-01",
+      events: [
+        {
+          eventId: "1",
+          eventCode: "5K",
+          genders: "X",
+          units: [{ results: [{ bib: "4", performance: "21:00" }] }],
+        },
+      ],
+      competitors: [
+        {
+          competitorId: "4",
+          gender: "NB",
+          fullName: "Alex Kim",
+          ageGroup: "SEN",
+        },
+      ],
+    });
+    expect(parsed.results).toHaveLength(1);
+    expect(parsed.results[0]?.sex).toBe("other");
+    expect(parsed.results[0]?.categoryKey).toBe("5k:other");
+  });
 });

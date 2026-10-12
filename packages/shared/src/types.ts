@@ -22,7 +22,7 @@ export interface Category {
   id: string;
   slug: CategorySlug;
   name: string;
-  unit: "meters" | "seconds" | "reps";
+  unit: "meters" | "seconds";
   description: string;
 }
 
@@ -70,6 +70,8 @@ export interface FitnessConnection {
   provider: FitnessProviderId;
   connectedAt: string | null;
   status: "connected" | "disconnected" | "stub";
+  lastSyncAt?: string | null;
+  lastActivityAt?: string | null;
 }
 
 export interface ActivitySample {
@@ -78,7 +80,10 @@ export interface ActivitySample {
   externalId: string;
   categorySlug: CategorySlug;
   startedAt: string;
-  /** Distance meters, duration seconds, or reps depending on category. */
+  /** Distance meters for GPS sports, session seconds for strength. */
   metricValue: number;
+  /** Moving time in seconds. Needed for pace; strength uses this as the metric. */
+  movingSec?: number;
+  avgHr?: number | null;
   rawName: string;
 }

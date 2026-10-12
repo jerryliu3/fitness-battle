@@ -1,5 +1,7 @@
 "use client";
 
+import { AuthPrompt } from "@/components/auth-gate";
+import { useAuth } from "@/components/auth-context";
 import { useCompete } from "@/components/compete-context";
 import {
   currentPeriodBounds,
@@ -18,9 +20,14 @@ import { useState } from "react";
 
 export default function BoardPage() {
   const { state, dispatch } = useCompete();
+  const { user } = useAuth();
   const [sport, setSport] = useState<SportId | null>(null);
   const [track, setTrack] = useState<ScoreTrack>("open");
   const [username, setUsername] = useState("");
+  const [authOpen, setAuthOpen] = useState(false);
+  const [authReason, setAuthReason] = useState(
+    "Sign in to join the weekly board or start a 1v1.",
+  );
   if (!state) return <p className="fb-copy">Loading the board…</p>;
 
   const active = sport ?? state.primary;
@@ -41,14 +48,27 @@ export default function BoardPage() {
   const duels = duelViews(state, now).filter((view) => view.duel.sport === active);
   const frozen = state.frozenPeriods.includes(period.startsAt.toISOString());
 
+  function requireParticipate(reason: string, action: () => void) {
+    if (!user) {
+      setAuthReason(reason);
+      setAuthOpen(true);
+      return;
+    }
+    if (!state!.onboardingCompleted) {
+      window.location.href = "/onboarding";
+      return;
+    }
+    action();
+  }
+
   return (
     <>
       <header>
         <p className="fb-kicker">Weekly board · {formatClock(period)}</p>
-        <h1 className="fb-title">Same week. Close Elo.</h1>
+        <h1 className="fb-title">Same week. Close levels.</h1>
         <p className="fb-copy">
           Groups are matched when you join and stay put until the week closes.
-          A later season can use a different clock without rewriting this.
+          Guests can browse; joining needs an account.
         </p>
       </header>
 
@@ -96,7 +116,11 @@ export default function BoardPage() {
           <button
             type="button"
             className="fb-btn"
-            onClick={() => dispatch({ type: "opt-in", sport: active })}
+            onClick={() =>
+              requireParticipate(`Sign in to join ${spec.name} this week.`, () =>
+                dispatch({ type: "opt-in", sport: active }),
+              )
+            }
           >
             Join {spec.name} this week
           </button>
@@ -112,7 +136,7 @@ export default function BoardPage() {
               <span className="fb-grow">
                 {row.name}
                 <small>
-                  Elo {row.elo}
+                  Rating {row.elo}
                   {row.you
                     ? ` · ${formatVolume(active, row.distanceM, row.movingSec)}`
                     : ""}
@@ -123,10 +147,10 @@ export default function BoardPage() {
           ))}
           <p className="fb-note">
             {frozen
-              ? "This week is frozen. Elo will not move when it closes."
+              ? "This week is frozen. Rating will not move when it closes."
               : you && nextElo != null && currentElo != null
-                ? `If the week ended now, ${shownTrack} Elo would be ${nextElo} (${nextElo - currentElo >= 0 ? "+" : ""}${nextElo - currentElo}).`
-                : "Elo updates when the week closes."}
+                ? `If the week ended now, ${shownTrack} rating would be ${nextElo} (${nextElo - currentElo >= 0 ? "+" : ""}${nextElo - currentElo}).`
+                : "Rating updates when the week closes."}
           </p>
           <button
             type="button"
@@ -141,7 +165,7 @@ export default function BoardPage() {
       <section className="fb-card" id="duel">
         <h2>1v1 this week</h2>
         <p className="fb-copy">
-          One opponent, same weekly window. Auto match picks the closest Elo.
+          One opponent, same weekly window. Auto match picks the closest rating.
         </p>
         {duels.map((view) => {
           const total = view.youEffort + view.rivalEffort || 1;
@@ -177,7 +201,9 @@ export default function BoardPage() {
               type="button"
               className="fb-btn"
               onClick={() =>
-                dispatch({ type: "duel", sport: active, mode: "auto" })
+                requireParticipate("Sign in to start a 1v1.", () =>
+                  dispatch({ type: "duel", sport: active, mode: "auto" }),
+                )
               }
             >
               Auto match
@@ -194,12 +220,14 @@ export default function BoardPage() {
               type="button"
               className="fb-btn-line"
               onClick={() =>
-                dispatch({
-                  type: "duel",
-                  sport: active,
-                  mode: "invite",
-                  username,
-                })
+                requireParticipate("Sign in to send a 1v1 invite.", () =>
+                  dispatch({
+                    type: "duel",
+                    sport: active,
+                    mode: "invite",
+                    username,
+                  }),
+                )
               }
             >
               Send invite
@@ -207,6 +235,12 @@ export default function BoardPage() {
           </div>
         ) : null}
       </section>
+
+      <AuthPrompt
+        open={authOpen}
+        reason={authReason}
+        onClose={() => setAuthOpen(false)}
+      />
     </>
   );
 }

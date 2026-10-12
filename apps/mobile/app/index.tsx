@@ -4,6 +4,7 @@ import {
   formatClock,
   freshState,
   lessonFor,
+  migrateCompeteState,
   rankForElo,
   reduceCompete,
   rollClock,
@@ -37,7 +38,7 @@ export default function HomeScreen() {
       if (raw) {
         try {
           const parsed = JSON.parse(raw) as CompeteState;
-          if (parsed.version === 1) next = rollClock(parsed);
+          if (parsed.version === 1) next = rollClock(migrateCompeteState(parsed));
         } catch {
           next = rollClock(freshState());
         }
