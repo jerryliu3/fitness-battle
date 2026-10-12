@@ -62,3 +62,17 @@ export {
   type PaceScope,
   type PaceRow,
 } from "./pace";
+export {
+  activityCheckpoints,
+  athleteWeekDistanceM,
+  athleteWeekMovingSec,
+  checkpointInstants,
+  distanceTrackMaxKm,
+  effortTrackMax,
+  initialsFromName,
+  interpolateSeries,
+  syntheticCheckpoints,
+  volumeThrough,
+  type CheckpointIndex,
+  type CheckpointSeries,
+} from "./track";

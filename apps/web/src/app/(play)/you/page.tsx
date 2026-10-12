@@ -4,6 +4,15 @@ import { AuthGate } from "@/components/auth-gate";
 import { useAuth } from "@/components/auth-context";
 import { useCompete } from "@/components/compete-context";
 import {
+  AthleteCard,
+  WeekRecords,
+} from "@/features/split/components/athlete-card";
+import {
+  ProductHeader,
+  sourceFromLinks,
+} from "@/features/split/components/product-header";
+import { buildSplitBoard } from "@/features/split/model";
+import {
   activityFromSample,
   BACKFILL_DAYS,
   currentPeriodBounds,
@@ -11,13 +20,14 @@ import {
   PROVIDERS,
   RANK_BANDS,
   rankForElo,
+  sportById,
   SPORTS,
   STARTING_FREEZES,
   type ActivitySample,
 } from "@fitness-battle/shared";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { Suspense, useEffect, useRef, useState } from "react";
+import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 
 function YouContent() {
   const { user, signOut, demoMode } = useAuth();
@@ -53,10 +63,15 @@ function YouContent() {
     }
   }, [dispatch, state, tracker]);
 
+  const now = useMemo(() => new Date(), []);
+
   if (!state) return <p className="fb-copy">Loading…</p>;
 
-  const period = currentPeriodBounds(state.clock.kind, new Date());
+  const period = currentPeriodBounds(state.clock.kind, now);
   const frozen = state.frozenPeriods.includes(period.startsAt.toISOString());
+  const board = buildSplitBoard(state, state.primary, "open", now);
+  const source = sourceFromLinks(state.links);
+  const spec = sportById(state.primary);
 
   async function syncProvider(providerId: (typeof PROVIDERS)[number]["id"]) {
     setSyncNote(null);
@@ -140,14 +155,25 @@ function YouContent() {
 
   return (
     <>
-      <header>
-        <p className="fb-kicker">You</p>
-        <h1 className="fb-title">{state.name}</h1>
-        <p className="fb-copy">
-          {state.city}. {user?.email}
-          {demoMode ? " · demo account" : ""}.
-        </p>
-      </header>
+      <ProductHeader sourceStatus={source.status} sourceLabel={source.label} />
+
+      <AthleteCard
+        name={state.name}
+        city={state.city}
+        sportLabel={spec.name}
+        you={board.you}
+        placeLabel={
+          board.you
+            ? `${board.you.place} / ${board.rows.length}`
+            : "Not on a field"
+        }
+      />
+      <WeekRecords sport={state.primary} you={board.you} />
+
+      <p className="fb-copy">
+        {user?.email}
+        {demoMode ? " · demo account" : ""}.
+      </p>
 
       {!state.onboardingCompleted ? (
         <section className="fb-card">
@@ -262,7 +288,7 @@ function YouContent() {
         )}
       </section>
 
-      <section className="fb-card">
+      <section className="fb-card" id="connections">
         <h2>Connections</h2>
         <p className="fb-note">
           Link a source, then sync. Stub means demo data — never a live athlete
@@ -325,6 +351,9 @@ function YouContent() {
       </section>
 
       <section className="fb-stack">
+        <Link href="/pace" className="fb-btn-line">
+          Pace board ↗
+        </Link>
         <button type="button" className="fb-btn-line" onClick={() => void signOut()}>
           Sign out
         </button>

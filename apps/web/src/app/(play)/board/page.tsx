@@ -3,22 +3,25 @@
 import { AuthPrompt } from "@/components/auth-gate";
 import { useAuth } from "@/components/auth-context";
 import { useCompete } from "@/components/compete-context";
+import { FieldStage } from "@/features/field/components/field-stage";
+import { buildFieldModel } from "@/features/field/model";
 import {
-  currentPeriodBounds,
-  duelViews,
+  ProductHeader,
+  sourceFromLinks,
+} from "@/features/split/components/product-header";
+import { buildSplitBoard } from "@/features/split/model";
+import {
   formatClock,
   formatEffort,
-  formatVolume,
   projectedElo,
   sportById,
   SPORTS,
-  weeklyBoard,
   type ScoreTrack,
   type SportId,
 } from "@fitness-battle/shared";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 
-export default function BoardPage() {
+export default function FieldPage() {
   const { state, dispatch } = useCompete();
   const { user } = useAuth();
   const [sport, setSport] = useState<SportId | null>(null);
@@ -26,27 +29,25 @@ export default function BoardPage() {
   const [username, setUsername] = useState("");
   const [authOpen, setAuthOpen] = useState(false);
   const [authReason, setAuthReason] = useState(
-    "Sign in to join the weekly board or start a 1v1.",
+    "Sign in to join the weekly field or start a 1v1.",
   );
-  if (!state) return <p className="fb-copy">Loading the board…</p>;
+  const now = useMemo(() => new Date(), []);
+
+  if (!state) return <p className="fb-copy">Loading the field…</p>;
 
   const active = sport ?? state.primary;
   const spec = sportById(active);
   const shownTrack: ScoreTrack = spec.gps ? track : "open";
-  const now = new Date();
-  const period = currentPeriodBounds(state.clock.kind, now);
+  const board = buildSplitBoard(state, active, shownTrack, now);
+  const field = buildFieldModel(state, active, shownTrack, now);
+  const source = sourceFromLinks(state.links);
   const rating = state.ratings.find((item) => item.sport === active);
-  const rows = rating?.optedIn
-    ? weeklyBoard(state, active, shownTrack, now)
-    : [];
-  const you = rows.find((row) => row.you);
   const nextElo = rating?.optedIn
     ? projectedElo(state, active, shownTrack, now)
     : null;
   const currentElo =
     shownTrack === "verified" ? rating?.verifiedElo : rating?.openElo;
-  const duels = duelViews(state, now).filter((view) => view.duel.sport === active);
-  const frozen = state.frozenPeriods.includes(period.startsAt.toISOString());
+  const frozen = state.frozenPeriods.includes(board.periodStart.toISOString());
 
   function requireParticipate(reason: string, action: () => void) {
     if (!user) {
@@ -63,14 +64,27 @@ export default function BoardPage() {
 
   return (
     <>
-      <header>
-        <p className="fb-kicker">Weekly board · {formatClock(period)}</p>
-        <h1 className="fb-title">Same week. Close levels.</h1>
-        <p className="fb-copy">
-          Groups are matched when you join and stay put until the week closes.
-          Guests can browse; joining needs an account.
+      <ProductHeader sourceStatus={source.status} sourceLabel={source.label} />
+
+      <div className="sp-title-block">
+        <p className="fb-kicker">
+          The field ·{" "}
+          {formatClock({
+            startsAt: board.periodStart,
+            endsAt: board.periodEnd,
+            kind: state.clock.kind,
+          })}
         </p>
-      </header>
+        <h1>
+          THE GAP
+          <br />
+          <span>FEELS REAL.</span>
+        </h1>
+        <p className="fb-copy">
+          POV pursuit and a bird’s-eye distance path. Positions use weekly{" "}
+          {spec.gps ? "distance" : "effort"} — not equally spaced ranks.
+        </p>
+      </div>
 
       <div className="fb-chips">
         {SPORTS.map((item) => (
@@ -105,13 +119,14 @@ export default function BoardPage() {
         </div>
       ) : (
         <p className="fb-note">
-          Strength uses the open score. Indoor work is not treated as GPS.
+          Strength uses open effort as the field axis. Indoor work is not treated
+          as GPS distance.
         </p>
       )}
 
-      {!rating?.optedIn ? (
-        <section className="fb-card">
-          <h2>You are not on this board</h2>
+      {!board.optedIn ? (
+        <section className="sp-empty">
+          <h2>You are not on this field</h2>
           <p className="fb-copy">{spec.blurb}</p>
           <button
             type="button"
@@ -126,29 +141,12 @@ export default function BoardPage() {
           </button>
         </section>
       ) : (
-        <section className="fb-card">
-          {rows.map((row) => (
-            <div
-              key={row.id}
-              className={row.you ? "fb-row fb-you" : "fb-row"}
-            >
-              <span className="fb-place">{row.place}</span>
-              <span className="fb-grow">
-                {row.name}
-                <small>
-                  Rating {row.elo}
-                  {row.you
-                    ? ` · ${formatVolume(active, row.distanceM, row.movingSec)}`
-                    : ""}
-                </small>
-              </span>
-              <b>{formatEffort(row.effort)}</b>
-            </div>
-          ))}
+        <>
+          <FieldStage model={field} checkpoint={2} boardRows={board.rows} />
           <p className="fb-note">
             {frozen
               ? "This week is frozen. Rating will not move when it closes."
-              : you && nextElo != null && currentElo != null
+              : board.you && nextElo != null && currentElo != null
                 ? `If the week ended now, ${shownTrack} rating would be ${nextElo} (${nextElo - currentElo >= 0 ? "+" : ""}${nextElo - currentElo}).`
                 : "Rating updates when the week closes."}
           </p>
@@ -157,9 +155,9 @@ export default function BoardPage() {
             className="fb-btn-ghost"
             onClick={() => dispatch({ type: "opt-out", sport: active })}
           >
-            Leave this board
+            Leave this field
           </button>
-        </section>
+        </>
       )}
 
       <section className="fb-card" id="duel">
@@ -167,7 +165,7 @@ export default function BoardPage() {
         <p className="fb-copy">
           One opponent, same weekly window. Auto match picks the closest rating.
         </p>
-        {duels.map((view) => {
+        {board.duels.map((view) => {
           const total = view.youEffort + view.rivalEffort || 1;
           return (
             <div key={view.duel.id}>
@@ -195,7 +193,7 @@ export default function BoardPage() {
             </div>
           );
         })}
-        {duels.length === 0 ? (
+        {board.duels.length === 0 ? (
           <div className="fb-stack">
             <button
               type="button"

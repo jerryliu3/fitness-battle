@@ -5,12 +5,14 @@ import { CompeteProvider } from "@/components/compete-context";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
+import "@/features/split/split.css";
+import "@/features/field/field.css";
 
 const TABS = [
-  { href: "/", label: "Today" },
-  { href: "/board", label: "Board" },
-  { href: "/pace", label: "Pace" },
-  { href: "/you", label: "You" },
+  { href: "/", label: "My track" },
+  { href: "/board", label: "The field" },
+  { href: "/splits", label: "Splits" },
+  { href: "/you", label: "Athlete" },
 ];
 
 function PlayChrome({ children }: { children: ReactNode }) {
@@ -25,13 +27,13 @@ function PlayChrome({ children }: { children: ReactNode }) {
           <p className="fb-guest-banner">
             Browsing as a guest.{" "}
             <Link href="/signup">Create an account</Link> to join a board or open
-            You.
+            Athlete.
           </p>
         ) : null}
-        {children}
+        <div className="sp-shell">{children}</div>
       </div>
       {hideTabs ? null : (
-        <nav className="fb-tabs">
+        <nav className="fb-tabs" aria-label="Primary">
           {TABS.map((tab) => {
             const on =
               tab.href === "/" ? path === "/" : path.startsWith(tab.href);

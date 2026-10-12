@@ -7,6 +7,10 @@ import {
   nearestAthletes,
 } from "./field";
 import {
+  athleteWeekDistanceM,
+  athleteWeekMovingSec,
+} from "./track";
+import {
   ELO_BASE,
   PROVIDERS,
   SPORT_IDS,
@@ -604,21 +608,33 @@ export function weeklyBoard(
     period.startsAt.toISOString(),
     period.endsAt,
   );
+  const periodStart = period.startsAt.toISOString();
   return rows.map((row, index) => {
-    const volume =
-      row.you
-        ? periodEffort(
-            live.activities,
-            sport,
-            period.startsAt,
-            period.endsAt,
-            track,
-          )
-        : { distanceM: 0, movingSec: 0, effort: row.effort };
+    if (row.you) {
+      const volume = periodEffort(
+        live.activities,
+        sport,
+        period.startsAt,
+        period.endsAt,
+        track,
+      );
+      return {
+        ...row,
+        distanceM: volume.distanceM,
+        movingSec: volume.movingSec,
+        place: index + 1,
+      };
+    }
+    const athlete = {
+      id: row.id,
+      name: row.name,
+      city: "",
+      elo: row.elo,
+    };
     return {
       ...row,
-      distanceM: row.you ? volume.distanceM : 0,
-      movingSec: row.you ? volume.movingSec : 0,
+      distanceM: athleteWeekDistanceM(athlete, periodStart, track, sport),
+      movingSec: athleteWeekMovingSec(athlete, periodStart, track, sport),
       place: index + 1,
     };
   });

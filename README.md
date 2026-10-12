@@ -47,7 +47,9 @@ The public board is `/rankings`. The first loaded race is the 2025 Estonian 10 k
 
 ## Auth (web)
 
-Browsing Today / Board / Pace is open. **Join / compete / You / onboarding** require an account.
+Browsing My track / The field / Splits / Pace is open. **Join / compete / Athlete / onboarding** require an account.
+
+Primary product IA follows the Split direction: effort track + previous-week ghost on **My track**, POV pursuit and bird’s-eye distance path on **The field**, counted sessions on **Splits**, and identity/connections on **Athlete**.
 
 - `/signup` → `/onboarding` (preferences → tracker link → one-time 90-day calibration)
 - `/login` with safe `?next=` return
@@ -62,7 +64,7 @@ Browsing Today / Board / Pace is open. **Join / compete / You / onboarding** req
 
 Run `pnpm dev`, then open `/design` to compare five individual-first app experiences: Split, Bounce, Folio, Vector, and After. Each direction has personal progress, comparison, activity, history, and optional group views, with local sample interactions. **Evaluate directions** explains the different interaction models and tradeoffs.
 
-See [design directions v2](docs/design-directions-v2.md) for the brand systems, research, evaluation tasks, and image provenance. The [first study](docs/design-exploration-v1.md) is retained as an archive. Existing app routes remain available.
+See [design directions v2](docs/design-directions-v2.md) for the brand systems, research, evaluation tasks, and image provenance. The [first study](docs/design-exploration-v1.md) is retained as an archive. The live product shell now uses the Split structure; `/design` remains the comparative lab.
 
 Open `/design/spatial` for five interactive mileage comparisons: **Pursuit**, **Distance path**, **Circuit**, **Switchback**, and **Week replay**. Direct links use `?scene=pursuit|path|circuit|switchback|replay`. These public presentation routes use synthetic data, with no account or tracker authorization required. Three of the concepts use real 3D cameras and selectable avatars; the others use calibrated distance axes and milestone replay. See [the spatial study](docs/spatial-design-study.md) for mechanisms, evaluation tasks, and limitations.
 
