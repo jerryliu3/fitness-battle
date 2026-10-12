@@ -605,6 +605,9 @@ export function SpatialLab() {
         </section>
       )}
       <footer className="spatial-footer">
+        <Link href="/design/evolution?brand=volt&view=field&mode=pursuit">
+          Third-person Pursuit and the nine-lane track ↗
+        </Link>
         Public presentation prototype · Synthetic distance and scenery · No live
         GPS, workout logging, or tracker writes
       </footer>

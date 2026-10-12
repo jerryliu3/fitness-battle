@@ -579,6 +579,7 @@ export function DesignLab() {
           </p>
         </details>
         <span>Presentation prototype · Local sample actions</span>
+        <Link href="/design/evolution">Beyond Bounce / next track ↗</Link>
         <Link href="/design/spatial">Explore five spatial leaderboards ↗</Link>
         <Link href="/rankings">Existing published race rankings ↗</Link>
       </footer>

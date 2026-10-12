@@ -1,0 +1,20 @@
+{
+  "environment": "Next.js production build",
+  "layouts": 48,
+  "errors": [],
+  "network": [],
+  "overflow": [],
+  "fontFamilies": {
+    "volt": "\"Bebas Neue\", \"Bebas Neue Fallback\", sans-serif",
+    "form": "\"Space Grotesk\", \"Space Grotesk Fallback\", sans-serif",
+    "even": "\"Nunito Sans\", \"Nunito Sans Fallback\", sans-serif",
+    "current": "Manrope, \"Manrope Fallback\", sans-serif"
+  },
+  "worldTravel": {
+    "startZ": 0,
+    "endZ": -172.79999999999998,
+    "startCamera": 9.999999999999943,
+    "endCamera": -162.80000000000004
+  },
+  "checks": "9 stable lanes, zero origin, dot pointer/keyboard selection, pass/reversal, >30km expansion, window/zoom/drag, native receipts, third-person runner and camera translation, articulated customizable avatar, cosmetics independent of distance, finite manual/reduced-motion replay, groups, four identity systems and font families, WebGL fallback."
+}
