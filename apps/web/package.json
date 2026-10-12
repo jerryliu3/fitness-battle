@@ -11,6 +11,7 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@fitness-battle/rankings": "workspace:*",
     "@fitness-battle/shared": "workspace:*",
     "@supabase/ssr": "^0.10.3",
     "@supabase/supabase-js": "^2.106.2",
