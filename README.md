@@ -34,7 +34,11 @@ Copy `apps/web/.env.example` to `apps/web/.env.local` and fill Supabase / Strava
 
 ## Docs
 
-Project context and setup plan live in the Project Agent Store:
+Living standards live in the Project Agent Store (and are summarized in-repo):
 
+- `docs/design-guide.md`
+- `docs/coding-principles.md`
 - `docs/project-context.md`
 - `docs/setup-plan.md`
+
+See [`AGENTS.md`](./AGENTS.md) and [`CONTRIBUTING.md`](./CONTRIBUTING.md).
