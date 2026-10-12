@@ -2,7 +2,7 @@
 
 What is loaded today versus what is still empty or synthetic.
 
-## Compete / training boards (Today, Board, Pace)
+## Compete / training boards (My track, The field, Splits, Pace, Athlete)
 
 | Data | Source | Status |
 | --- | --- | --- |
@@ -12,6 +12,9 @@ What is loaded today versus what is still empty or synthetic.
 | Lessons | Deterministic schedule in shared | Works offline |
 | 90-day calibration | Synthetic history generator (`import-history`) | One-time; not live tracker data |
 | Live activities | Strava sync API | Stub without keys or in demo mode. With keys, a signed-in sync is stored and applied to the local effort board |
+| Week close / Elo settle | `rollClock` on app load (UTC Mon boundary) | No server cron for the local engine; settles up to 12 missed weeks then jumps |
+| Week-complete reveal | `pendingRevealIds` + My track receipt | Place, Elo before→after, effort |
+| Season history | `periodResults` on Athlete | Cap 104 rows; open + verified tracks |
 
 There is **no production athlete dataset** behind the weekly compete field yet — peers are generated for matching.
 

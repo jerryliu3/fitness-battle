@@ -167,6 +167,25 @@ export interface ProviderLink {
   status: LinkStatus;
 }
 
+/** Locked snapshot written when a weekly period settles. */
+export interface PeriodResult {
+  id: string;
+  periodStart: string;
+  periodEnd: string;
+  sport: SportId;
+  track: ScoreTrack;
+  /** 1-based place in the matched field. */
+  place: number;
+  fieldSize: number;
+  effort: number;
+  distanceM: number;
+  movingSec: number;
+  eloBefore: number;
+  eloAfter: number;
+  frozen: boolean;
+  settledAt: string;
+}
+
 export interface CompeteState {
   version: 1;
   name: string;
@@ -186,6 +205,10 @@ export interface CompeteState {
   calibrated: boolean;
   /** Onboarding preferences finished (name/city/sport + optional connect/backfill). */
   onboardingCompleted: boolean;
+  /** Closed-week placements and Elo transitions (newest first, capped). */
+  periodResults: PeriodResult[];
+  /** Result ids waiting for the week-complete reveal UI. */
+  pendingRevealIds: string[];
 }
 
 export function hashString(value: string): number {

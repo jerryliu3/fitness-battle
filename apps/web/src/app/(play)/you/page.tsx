@@ -11,6 +11,7 @@ import {
   ProductHeader,
   sourceFromLinks,
 } from "@/features/split/components/product-header";
+import { SeasonHistory } from "@/features/split/components/season-history";
 import { buildSplitBoard } from "@/features/split/model";
 import {
   activityFromSample,
@@ -174,6 +175,26 @@ function YouContent() {
         {user?.email}
         {demoMode ? " · demo account" : ""}.
       </p>
+
+      <SeasonHistory results={state.periodResults} primary={state.primary} />
+
+      {demoMode ? (
+        <section className="fb-card">
+          <h2>Demo week close</h2>
+          <p className="fb-copy">
+            Settlement normally runs when you open the app after a UTC Monday
+            rollover. This advances the clock so you can preview the week-complete
+            reveal and season history.
+          </p>
+          <button
+            type="button"
+            className="fb-btn-line"
+            onClick={() => dispatch({ type: "debug-close-week" })}
+          >
+            Close this week now
+          </button>
+        </section>
+      ) : null}
 
       {!state.onboardingCompleted ? (
         <section className="fb-card">

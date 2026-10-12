@@ -26,7 +26,17 @@ export {
   type CompeteState,
   type LinkStatus,
   type ProviderLink,
+  type PeriodResult,
 } from "./sports";
+export {
+  MAX_PERIOD_RESULTS,
+  appendPeriodResults,
+  formatEloDelta,
+  formatPlace,
+  pendingPeriodResults,
+  periodResultId,
+  primaryRevealResults,
+} from "./history";
 export { RANK_BANDS, rankForElo, eloInBand, type RankBand } from "./ranks";
 export {
   activityEffort,

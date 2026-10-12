@@ -7,6 +7,10 @@ import {
   nearestAthletes,
 } from "./field";
 import {
+  appendPeriodResults,
+  periodResultId,
+} from "./history";
+import {
   athleteWeekDistanceM,
   athleteWeekMovingSec,
 } from "./track";
@@ -24,6 +28,7 @@ import {
   type Activity,
   type CompeteState,
   type Duel,
+  type PeriodResult,
   type ProviderId,
   type Rating,
   type ScoreTrack,
@@ -45,7 +50,10 @@ export interface Action {
     | "complete-lesson"
     | "complete-onboarding"
     | "freeze"
-    | "duel";
+    | "duel"
+    | "acknowledge-reveal"
+    /** Demo/dev: settle the open week as if Monday UTC already arrived. */
+    | "debug-close-week";
   name?: string;
   city?: string;
   sport?: SportId;
@@ -57,6 +65,8 @@ export interface Action {
   /** Tracker rows already mapped onto the compete activity shape. */
   activities?: Activity[];
   linkStatus?: "stub" | "connected";
+  /** Result ids to clear from the pending reveal queue. */
+  revealIds?: string[];
 }
 
 function boundsOf(state: CompeteState, now: Date): PeriodBounds {
@@ -94,6 +104,16 @@ export function migrateCompeteState(parsed: CompeteState): CompeteState {
           ? ("stub" as const)
           : ("disconnected" as const),
   }));
+  const periodResults = Array.isArray(
+    (parsed as CompeteState).periodResults,
+  )
+    ? (parsed as CompeteState).periodResults
+    : [];
+  const pendingRevealIds = Array.isArray(
+    (parsed as CompeteState).pendingRevealIds,
+  )
+    ? (parsed as CompeteState).pendingRevealIds
+    : [];
   return {
     ...parsed,
     links,
@@ -101,6 +121,8 @@ export function migrateCompeteState(parsed: CompeteState): CompeteState {
     onboardingCompleted: Boolean(
       (parsed as CompeteState).onboardingCompleted,
     ),
+    periodResults,
+    pendingRevealIds,
   };
 }
 
@@ -135,6 +157,8 @@ export function freshState(now: Date = new Date()): CompeteState {
     lessonDoneOn: null,
     calibrated: false,
     onboardingCompleted: false,
+    periodResults: [],
+    pendingRevealIds: [],
   };
 }
 
@@ -183,11 +207,53 @@ function groupFor(
   return rows;
 }
 
+function settleTrackResult(input: {
+  state: CompeteState;
+  sport: SportId;
+  track: ScoreTrack;
+  periodStart: string;
+  periodEnd: Date;
+  place: number;
+  fieldSize: number;
+  effort: number;
+  eloBefore: number;
+  eloAfter: number;
+  frozen: boolean;
+  settledAt: string;
+}): PeriodResult {
+  const volume = periodEffort(
+    input.state.activities,
+    input.sport,
+    new Date(input.periodStart),
+    input.periodEnd,
+    input.track,
+  );
+  return {
+    id: periodResultId(input.periodStart, input.sport, input.track),
+    periodStart: input.periodStart,
+    periodEnd: input.periodEnd.toISOString(),
+    sport: input.sport,
+    track: input.track,
+    place: input.place + 1,
+    fieldSize: input.fieldSize,
+    effort: input.effort,
+    distanceM: volume.distanceM,
+    movingSec: volume.movingSec,
+    eloBefore: input.eloBefore,
+    eloAfter: input.eloAfter,
+    frozen: input.frozen,
+    settledAt: input.settledAt,
+  };
+}
+
 function settlePeriod(state: CompeteState, periodStart: string): CompeteState {
   const start = new Date(periodStart);
   const end = currentPeriodBounds(state.clock.kind, start).endsAt;
   const frozen = state.frozenPeriods.includes(periodStart);
+  const settledAt = new Date().toISOString();
   let next = state;
+  const additions: PeriodResult[] = [];
+
   for (const sport of SPORT_IDS) {
     const current = rating(next, sport);
     if (!current.optedIn) continue;
@@ -198,28 +264,74 @@ function settlePeriod(state: CompeteState, periodStart: string): CompeteState {
     const verifiedEffort = verifiedRows[verifiedPlace]?.effort ?? 0;
     const openEffort = openRows[openPlace]?.effort ?? 0;
     const gps = sportById(sport).gps;
-    next = withRating(next, sport, {
-      verifiedElo: gps
-        ? settleElo(
-            current.verifiedElo,
-            verifiedRows.filter((row) => !row.you).map((row) => row.elo),
-            verifiedPlace,
-            verifiedRows.length,
-            verifiedEffort,
-            frozen,
-          )
-        : current.verifiedElo,
-      openElo: settleElo(
-        current.openElo,
-        openRows.filter((row) => !row.you).map((row) => row.elo),
-        openPlace,
-        openRows.length,
-        openEffort,
+    const nextVerified = gps
+      ? settleElo(
+          current.verifiedElo,
+          verifiedRows.filter((row) => !row.you).map((row) => row.elo),
+          verifiedPlace,
+          verifiedRows.length,
+          verifiedEffort,
+          frozen,
+        )
+      : current.verifiedElo;
+    const nextOpen = settleElo(
+      current.openElo,
+      openRows.filter((row) => !row.you).map((row) => row.elo),
+      openPlace,
+      openRows.length,
+      openEffort,
+      frozen,
+    );
+
+    additions.push(
+      settleTrackResult({
+        state: next,
+        sport,
+        track: "open",
+        periodStart,
+        periodEnd: end,
+        place: openPlace,
+        fieldSize: openRows.length,
+        effort: openEffort,
+        eloBefore: current.openElo,
+        eloAfter: nextOpen,
         frozen,
-      ),
+        settledAt,
+      }),
+    );
+    if (gps) {
+      additions.push(
+        settleTrackResult({
+          state: next,
+          sport,
+          track: "verified",
+          periodStart,
+          periodEnd: end,
+          place: verifiedPlace,
+          fieldSize: verifiedRows.length,
+          effort: verifiedEffort,
+          eloBefore: current.verifiedElo,
+          eloAfter: nextVerified,
+          frozen,
+          settledAt,
+        }),
+      );
+    }
+
+    next = withRating(next, sport, {
+      verifiedElo: nextVerified,
+      openElo: nextOpen,
     });
   }
-  return next;
+
+  if (additions.length === 0) return next;
+  return {
+    ...next,
+    periodResults: appendPeriodResults(next.periodResults, additions),
+    pendingRevealIds: [
+      ...new Set([...next.pendingRevealIds, ...additions.map((row) => row.id)]),
+    ],
+  };
 }
 
 /**
@@ -576,6 +688,23 @@ export function reduceCompete(
       };
       const opted = mine.optedIn ? rolled : lockSport(rolled, sport, now);
       return { ...opted, duels: [...opted.duels, duel] };
+    }
+    case "acknowledge-reveal": {
+      const clearAll = !action.revealIds || action.revealIds.length === 0;
+      if (clearAll) {
+        return { ...rolled, pendingRevealIds: [] };
+      }
+      const clear = new Set(action.revealIds);
+      return {
+        ...rolled,
+        pendingRevealIds: rolled.pendingRevealIds.filter((id) => !clear.has(id)),
+      };
+    }
+    case "debug-close-week": {
+      // Product settlement is load-time (rollClock). This action advances past
+      // the current week's exclusive end so QA can exercise the reveal + history.
+      const period = boundsOf(rolled, now);
+      return rollClock(rolled, new Date(period.endsAt.getTime() + 60_000));
     }
     default:
       return rolled;

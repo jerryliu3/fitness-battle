@@ -11,6 +11,7 @@ import {
 import { RaceTrack } from "@/features/split/components/race-track";
 import { TrackVerdict } from "@/features/split/components/track-verdict";
 import { FieldRoster } from "@/features/split/components/field-roster";
+import { WeekReveal } from "@/features/split/components/week-reveal";
 import {
   buildSplitBoard,
   formatPts,
@@ -73,6 +74,13 @@ export default function MyTrackPage() {
   return (
     <>
       <ProductHeader sourceStatus={source.status} sourceLabel={source.label} />
+
+      {state.pendingRevealIds.length > 0 ? (
+        <WeekReveal
+          state={state}
+          onDismiss={() => dispatch({ type: "acknowledge-reveal" })}
+        />
+      ) : null}
 
       <div className="sp-title-block">
         <p className="fb-kicker">

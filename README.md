@@ -51,6 +51,8 @@ Browsing My track / The field / Splits / Pace is open. **Join / compete / Athlet
 
 Primary product IA follows the Split direction: effort track + previous-week ghost on **My track**, POV pursuit and bird’s-eye distance path on **The field**, counted sessions on **Splits**, and identity/connections on **Athlete**.
 
+Weekly periods settle on app load via `rollClock` (UTC Monday boundary) — there is no server cron for the local compete engine. Closed weeks write place/Elo snapshots, show a one-shot week-complete reveal on My track, and accumulate a Strava-style season history on Athlete.
+
 - `/signup` → `/onboarding` (preferences → tracker link → one-time 90-day calibration)
 - `/login` with safe `?next=` return
 - Demo mode (`NEXT_PUBLIC_USE_DEMO_DATA=true` or placeholder Supabase keys) keeps a device-local session so flows work without a live project
