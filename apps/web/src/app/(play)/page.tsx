@@ -20,7 +20,6 @@ import {
 } from "@/features/split/model";
 import {
   competeNow,
-  currentPeriodBounds,
   daysLeft,
   lessonFor,
   sportById,
@@ -57,7 +56,14 @@ export default function MyTrackPage() {
   const youEffort = youLane ? laneAtCheckpoint(youLane, checkpoint) : 0;
   const lesson = lessonFor(sport, now);
   const done = state.lessonDoneOn === now.toISOString().slice(0, 10);
-  const periodDaysLeft = daysLeft(currentPeriodBounds(state.clock.kind, now), now);
+  const periodDaysLeft = daysLeft(
+    {
+      kind: state.clock.kind,
+      startsAt: board.periodStart,
+      endsAt: board.periodEnd,
+    },
+    now,
+  );
 
   function requireParticipate(reason: string, action: () => void) {
     if (!user) {
@@ -159,6 +165,11 @@ export default function MyTrackPage() {
         <section className="sp-empty">
           <h2>You are not on a track yet</h2>
           <p className="fb-copy">{spec.blurb}</p>
+          <p className="fb-note">
+            Joining opens today’s wave. Your board counts effort from now until
+            the Sunday UTC reset — rivals only contribute distance inside your
+            window.
+          </p>
           <button
             type="button"
             className="fb-btn"

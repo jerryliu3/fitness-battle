@@ -1,7 +1,6 @@
 import {
   activityCheckpoints,
   competeNow,
-  currentPeriodBounds,
   duelViews,
   effortTrackMax,
   formatEffort,
@@ -9,6 +8,7 @@ import {
   interpolateSeries,
   periodEffort,
   syntheticCheckpoints,
+  waveWindowAt,
   weeklyBoard,
   type BoardRow,
   type CheckpointIndex,
@@ -57,13 +57,25 @@ function previousPeriod(start: Date): { start: Date; end: Date } {
   return { start: prev, end };
 }
 
+function waveBoundsForSport(state: CompeteState, sport: SportId, now: Date) {
+  const enrollment = state.enrollments.find((item) => item.sport === sport);
+  if (enrollment) {
+    return {
+      startsAt: new Date(enrollment.waveStart),
+      endsAt: new Date(enrollment.weekEnd),
+    };
+  }
+  const wave = waveWindowAt(now);
+  return { startsAt: wave.waveStart, endsAt: wave.weekEnd };
+}
+
 export function buildSplitBoard(
   state: CompeteState,
   sport: SportId,
   track: ScoreTrack,
   now: Date = competeNow(state),
 ): SplitBoardModel {
-  const period = currentPeriodBounds(state.clock.kind, now);
+  const period = waveBoundsForSport(state, sport, now);
   const rating = state.ratings.find((item) => item.sport === sport);
   const optedIn = Boolean(rating?.optedIn);
   const rows = optedIn ? weeklyBoard(state, sport, track, now) : [];

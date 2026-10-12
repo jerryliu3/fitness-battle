@@ -2,4 +2,5 @@ export * from "./types";
 export * from "./period";
 export * from "./fitness";
 export * from "./compete";
+export * from "./matching";
 export { DEMO_CATEGORIES, DEMO_BATTLES, demoStandings } from "./demo-data";

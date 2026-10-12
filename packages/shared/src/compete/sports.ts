@@ -1,3 +1,4 @@
+import type { WaveEnrollment } from "../matching/types";
 import type { PeriodKind } from "../types";
 
 export const ELO_BASE = 1000;
@@ -214,6 +215,12 @@ export interface CompeteState {
    * wall time so "close this week" stays settled across reloads.
    */
   demoNow?: string | null;
+  /**
+   * Per-sport wave enrollments (rolling daily waves, Sunday week end).
+   * Each viewer’s board is derived from their own enrollment — not a shared
+   * central ranking.
+   */
+  enrollments: WaveEnrollment[];
 }
 
 export function hashString(value: string): number {

@@ -129,6 +129,10 @@ export default function FieldPage() {
         <section className="sp-empty">
           <h2>You are not on this field</h2>
           <p className="fb-copy">{spec.blurb}</p>
+          <p className="fb-note">
+            Fields are density groups of eight. Real athletes seat first;
+            synthetic rivals fill empty seats and drop when more people join.
+          </p>
           <button
             type="button"
             className="fb-btn"
