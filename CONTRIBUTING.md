@@ -32,3 +32,15 @@ Env template: `apps/web/.env.example`.
 4. Additive Supabase migrations only; encode battle/period invariants in SQL when correctness is cross-request.
 5. Stub Strava cleanly without secrets; do not fake a live connection status.
 6. Include or update tests when changing period math, scoring, or RPC semantics.
+
+## Git author (Vercel)
+
+Vercel blocks deploys when the commit author email is not linked to a GitHub account
+(e.g. `name@*.local`). Use a verified GitHub email:
+
+```bash
+git config --global user.name "Jerry Liu"
+git config --global user.email "3jerryliu@gmail.com"
+```
+
+Confirm with `git config --global --get user.email` before committing from a new machine.
