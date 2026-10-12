@@ -56,20 +56,34 @@ export function FieldStage({
     model.runners.find((runner) => runner.id === selectedId) ??
     (model.ghost?.id === selectedId ? model.ghost : null);
 
-  const rosterRows: BoardRow[] = useMemo(
-    () =>
-      orderedRunners(model.runners, checkpoint).map((runner, index) => ({
-        id: runner.id,
-        name: runner.name,
-        elo: 0,
-        effort: runner.effort,
-        distanceM: runner.km[2]! * 1000,
-        movingSec: 0,
-        you: Boolean(runner.you),
-        place: index + 1,
-      })),
-    [model.runners, checkpoint],
-  );
+  const rosterRows: BoardRow[] = useMemo(() => {
+    if (boardRows?.length) {
+      const byId = new Map(boardRows.map((row) => [row.id, row]));
+      return orderedRunners(model.runners, checkpoint).map((runner, index) => {
+        const row = byId.get(runner.id);
+        return {
+          id: runner.id,
+          name: row?.name ?? runner.name,
+          elo: row?.elo ?? 0,
+          effort: row?.effort ?? runner.effort,
+          distanceM: row?.distanceM ?? runner.km[2]! * 1000,
+          movingSec: row?.movingSec ?? 0,
+          you: Boolean(runner.you),
+          place: index + 1,
+        };
+      });
+    }
+    return orderedRunners(model.runners, checkpoint).map((runner, index) => ({
+      id: runner.id,
+      name: runner.name,
+      elo: 0,
+      effort: runner.effort,
+      distanceM: runner.km[2]! * 1000,
+      movingSec: 0,
+      you: Boolean(runner.you),
+      place: index + 1,
+    }));
+  }, [boardRows, model.runners, checkpoint]);
 
   if (!you) {
     return (
