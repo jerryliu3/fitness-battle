@@ -4,6 +4,7 @@ import { AuthGate } from "@/components/auth-gate";
 import { useAuth } from "@/components/auth-context";
 import { useCompete } from "@/components/compete-context";
 import {
+  activityFromSample,
   BACKFILL_DAYS,
   currentPeriodBounds,
   evidenceLabel,
@@ -12,16 +13,46 @@ import {
   rankForElo,
   SPORTS,
   STARTING_FREEZES,
+  type ActivitySample,
 } from "@fitness-battle/shared";
 import Link from "next/link";
-import { useState } from "react";
+import { useSearchParams } from "next/navigation";
+import { Suspense, useEffect, useRef, useState } from "react";
 
 function YouContent() {
   const { user, signOut, demoMode } = useAuth();
   const { state, dispatch } = useCompete();
   const [name, setName] = useState("");
   const [city, setCity] = useState("");
+  const [seeded, setSeeded] = useState(false);
   const [syncNote, setSyncNote] = useState<string | null>(null);
+  const searchParams = useSearchParams();
+  const tracker = searchParams.get("tracker");
+  const appliedTracker = useRef<string | null>(null);
+
+  if (state && !seeded) {
+    setSeeded(true);
+    setName(state.name);
+    setCity(state.city);
+  }
+
+  useEffect(() => {
+    if (!state || !tracker || appliedTracker.current === tracker) return;
+    appliedTracker.current = tracker;
+    if (tracker === "connected") {
+      dispatch({
+        type: "apply-sync",
+        provider: "strava",
+        activities: [],
+        linkStatus: "connected",
+      });
+    } else if (tracker === "stub") {
+      dispatch({ type: "link", provider: "strava" });
+    } else if (tracker === "error") {
+      setSyncNote("Strava did not connect. Sign in and try the link again.");
+    }
+  }, [dispatch, state, tracker]);
+
   if (!state) return <p className="fb-copy">Loading…</p>;
 
   const period = currentPeriodBounds(state.clock.kind, new Date());
@@ -30,13 +61,47 @@ function YouContent() {
   async function syncProvider(providerId: (typeof PROVIDERS)[number]["id"]) {
     setSyncNote(null);
     const link = state!.links.find((item) => item.provider === providerId);
-    if (!link?.linked) {
-      dispatch({ type: "link", provider: providerId });
-      setSyncNote(
-        `${providerId}: demo link only (stub). Live OAuth uses /api/fitness/connect.`,
-      );
+    if (providerId !== "strava") {
+      if (!link?.linked) {
+        dispatch({ type: "link", provider: providerId });
+        setSyncNote(`${providerId} is a demo link. It is not a live connection.`);
+        return;
+      }
+      dispatch({ type: "sync", provider: providerId });
+      setSyncNote("Demo sync applied on this device.");
       return;
     }
+
+    if (!link?.linked) {
+      try {
+        const response = await fetch("/api/fitness/connect", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ userId: user?.id }),
+        });
+        const body = (await response.json()) as {
+          authorizeUrl?: string;
+          status?: string;
+          message?: string;
+          error?: string;
+        };
+        if (!response.ok) {
+          setSyncNote(body.error ?? "Could not start Strava connect.");
+          return;
+        }
+        if (body.authorizeUrl) {
+          window.location.href = body.authorizeUrl;
+          return;
+        }
+        dispatch({ type: "link", provider: "strava" });
+        setSyncNote(body.message ?? "Demo tracker linked. This is not a live connection.");
+      } catch {
+        dispatch({ type: "link", provider: "strava" });
+        setSyncNote("Offline demo link only.");
+      }
+      return;
+    }
+
     try {
       const response = await fetch("/api/fitness/sync", {
         method: "POST",
@@ -45,7 +110,7 @@ function YouContent() {
       });
       const body = (await response.json()) as {
         usedMock?: boolean;
-        activities?: unknown[];
+        activities?: ActivitySample[];
         error?: string;
         windowKind?: string;
       };
@@ -53,11 +118,19 @@ function YouContent() {
         setSyncNote(body.error ?? "Sync failed");
         return;
       }
-      dispatch({ type: "sync", provider: providerId });
+      const activities = (body.activities ?? [])
+        .map((sample) => activityFromSample(sample))
+        .filter((activity) => activity != null);
+      dispatch({
+        type: "apply-sync",
+        provider: "strava",
+        activities,
+        linkStatus: body.usedMock ? "stub" : "connected",
+      });
       setSyncNote(
         body.usedMock
-          ? `Stub sync (${body.windowKind ?? "recent"}): ${body.activities?.length ?? 0} sample activities. Not a live connection.`
-          : `Synced ${body.activities?.length ?? 0} activities.`,
+          ? `Stub sync (${body.windowKind ?? "recent"}): ${activities.length} sample activities. Not a live connection.`
+          : `Synced ${activities.length} activities.`,
       );
     } catch {
       dispatch({ type: "sync", provider: providerId });
@@ -93,14 +166,14 @@ function YouContent() {
         <label className="fb-field">
           Name
           <input
-            defaultValue={state.name}
+            value={name}
             onChange={(event) => setName(event.target.value)}
           />
         </label>
         <label className="fb-field">
           City
           <input
-            defaultValue={state.city}
+            value={city}
             onChange={(event) => setCity(event.target.value)}
           />
         </label>
@@ -263,7 +336,9 @@ function YouContent() {
 export default function YouPage() {
   return (
     <AuthGate reason="You is your profile, connections, and freezes. Sign in to open it.">
-      <YouContent />
+      <Suspense fallback={<p className="fb-copy">Loading…</p>}>
+        <YouContent />
+      </Suspense>
     </AuthGate>
   );
 }

@@ -3,6 +3,7 @@
 import { createClient } from "@/lib/supabase/client";
 import { getSupabaseConfig } from "@/lib/supabase/config";
 import { webEnv } from "@/lib/env";
+import { hashString } from "@fitness-battle/shared";
 import {
   createContext,
   useCallback,
@@ -60,7 +61,7 @@ function writeDemoUser(user: AuthUser | null) {
 function demoUserFromEmail(email: string, displayName?: string): AuthUser {
   const local = email.split("@")[0] || "Athlete";
   return {
-    id: `demo-${btoa(email).replace(/=+/g, "").slice(0, 24)}`,
+    id: `demo-${hashString(email).toString(16)}`,
     email,
     displayName: displayName?.trim() || local,
     mode: "demo",

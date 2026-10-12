@@ -35,8 +35,9 @@ export interface Action {
     | "opt-out"
     | "link"
     | "unlink"
-    | "sync"
-    | "import-history"
+  | "sync"
+  | "apply-sync"
+  | "import-history"
     | "complete-lesson"
     | "complete-onboarding"
     | "freeze"
@@ -49,6 +50,9 @@ export interface Action {
   username?: string;
   mode?: "auto" | "invite";
   now?: string;
+  /** Tracker rows already mapped onto the compete activity shape. */
+  activities?: Activity[];
+  linkStatus?: "stub" | "connected";
 }
 
 function boundsOf(state: CompeteState, now: Date): PeriodBounds {
@@ -445,7 +449,14 @@ export function reduceCompete(
     }
     case "opt-out": {
       if (!action.sport) return rolled;
-      return withRating(rolled, action.sport, { optedIn: false });
+      const periodStart = rolled.clock.periodStart;
+      return {
+        ...withRating(rolled, action.sport, { optedIn: false }),
+        duels: rolled.duels.filter(
+          (duel) =>
+            !(duel.sport === action.sport && duel.periodStart === periodStart),
+        ),
+      };
     }
     case "link": {
       if (!action.provider) return rolled;
@@ -478,6 +489,28 @@ export function reduceCompete(
       const link = rolled.links.find((item) => item.provider === action.provider);
       if (!link?.linked) return rolled;
       return syncProvider(rolled, action.provider, now);
+    }
+    case "apply-sync": {
+      if (!action.provider) return rolled;
+      const seen = new Set(rolled.activities.map((activity) => activity.id));
+      const added = (action.activities ?? []).filter((activity) => {
+        if (activity.source !== action.provider || seen.has(activity.id)) return false;
+        seen.add(activity.id);
+        return true;
+      });
+      const linkStatus = action.linkStatus;
+      const links = linkStatus
+        ? rolled.links.map((link) =>
+            link.provider === action.provider
+              ? { ...link, linked: true, status: linkStatus }
+              : link,
+          )
+        : rolled.links;
+      return {
+        ...rolled,
+        activities: added.length ? [...rolled.activities, ...added] : rolled.activities,
+        links,
+      };
     }
     case "import-history": {
       // One-time calibration only. Re-importing would rewrite Elo and is blocked.

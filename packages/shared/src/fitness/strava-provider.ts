@@ -31,17 +31,34 @@ export interface StravaActivityRaw {
   average_heartrate?: number | null;
 }
 
-/** In-memory fallback when a durable store is not injected (dev / tests). */
-const memoryConnections = new Map<string, FitnessConnection>();
-const memoryTokens = new Map<string, StravaTokenSet>();
+/**
+ * In-memory fallback when a durable store is not injected (dev / tests).
+ * Next can bundle this module once per route, so the maps live on globalThis.
+ */
+type StravaMemory = {
+  connections: Map<string, FitnessConnection>;
+  tokens: Map<string, StravaTokenSet>;
+};
+
+const memory = ((globalThis as { __fbStravaMemory?: StravaMemory }).__fbStravaMemory ??= {
+  connections: new Map<string, FitnessConnection>(),
+  tokens: new Map<string, StravaTokenSet>(),
+});
+const memoryConnections = memory.connections;
+const memoryTokens = memory.tokens;
 
 function hasCredentials(env: StravaEnv): boolean {
   return Boolean(env.clientId && env.clientSecret && env.redirectUri);
 }
 
-export function mapSportToCategory(sportType: string): CategorySlug {
+/** Map a Strava sport. Unknown sports return null so they are not scored as runs. */
+export function mapSportToCategory(sportType: string): CategorySlug | null {
   const normalized = sportType.toLowerCase();
-  if (normalized.includes("ride") || normalized.includes("cycle")) {
+  if (
+    normalized.includes("ride") ||
+    normalized.includes("cycle") ||
+    normalized.includes("bike")
+  ) {
     return "cycling";
   }
   if (normalized.includes("walk") || normalized.includes("hike")) {
@@ -50,22 +67,20 @@ export function mapSportToCategory(sportType: string): CategorySlug {
   if (
     normalized.includes("weight") ||
     normalized.includes("strength") ||
-    normalized.includes("workout")
+    normalized === "workout"
   ) {
     return "strength";
   }
-  return "running";
+  if (normalized.includes("run")) return "running";
+  return null;
 }
 
-export function mapStravaActivity(
-  raw: StravaActivityRaw,
-  categorySlug?: CategorySlug,
-): ActivitySample {
-  const sport = raw.sport_type ?? raw.type ?? "Run";
-  const mapped = mapSportToCategory(sport);
-  const slug = categorySlug && categorySlug !== mapped ? mapped : mapped;
-  const metricValue =
-    slug === "strength" ? raw.moving_time : Math.max(0, raw.distance);
+export function mapStravaActivity(raw: StravaActivityRaw): ActivitySample | null {
+  const sport = raw.sport_type ?? raw.type ?? "";
+  const slug = mapSportToCategory(sport);
+  if (!slug) return null;
+  const movingSec = Math.max(0, raw.moving_time ?? 0);
+  const metricValue = slug === "strength" ? movingSec : Math.max(0, raw.distance);
   return {
     id: `strava-${raw.id}`,
     provider: "strava",
@@ -73,6 +88,8 @@ export function mapStravaActivity(
     categorySlug: slug,
     startedAt: raw.start_date,
     metricValue,
+    movingSec,
+    avgHr: raw.average_heartrate ?? null,
     rawName: raw.name || `${sport} activity`,
   };
 }
@@ -265,13 +282,6 @@ export function createStravaProvider(
       url.searchParams.set("scope", "read,activity:read_all");
       url.searchParams.set("state", userId);
 
-      await store.setConnection({
-        userId,
-        provider: "strava",
-        connectedAt: null,
-        status: "disconnected",
-      });
-
       const result: FitnessAuthResult = {
         provider: "strava",
         status: "disconnected",
@@ -324,10 +334,19 @@ export function createStravaProvider(
           provider: "strava",
           id: a.id.replace(/^mock-/, "strava-stub-"),
         }));
+        const syncedAt = new Date().toISOString();
+        const existing = await store.getConnection(userId);
+        if (existing) {
+          await store.setConnection({
+            ...existing,
+            lastSyncAt: syncedAt,
+            lastActivityAt: newestStartedAt(activities) ?? existing.lastActivityAt ?? null,
+          });
+        }
         const result: SyncResult = {
           provider: "strava",
           activities,
-          syncedAt: new Date().toISOString(),
+          syncedAt,
           usedMock: true,
         };
         return result;
@@ -343,28 +362,39 @@ export function createStravaProvider(
         };
       }
 
-      const window = syncWindow({
-        lastSyncAt: options?.since ?? null,
-        forceBackfill: !options?.since,
-      });
+      const since =
+        options?.since ?? syncWindow({ forceBackfill: true }).since;
       const tokens = await ensureAccessToken(env, userId, store, http);
-      const raw = await fetchAthleteActivities(
-        tokens.accessToken,
-        options?.since ?? window.since,
-        http,
-      );
-      let activities = raw.map((item) => mapStravaActivity(item));
+      const raw = await fetchAthleteActivities(tokens.accessToken, since, http);
+      let activities = raw
+        .map((item) => mapStravaActivity(item))
+        .filter((item): item is ActivitySample => item != null);
       if (options?.categorySlug) {
         activities = activities.filter(
           (item) => item.categorySlug === options.categorySlug,
         );
       }
+      const syncedAt = new Date().toISOString();
+      const lastActivityAt = newestStartedAt(activities) ?? connection.lastActivityAt;
+      await store.setConnection({
+        ...connection,
+        lastSyncAt: syncedAt,
+        lastActivityAt: lastActivityAt ?? null,
+      });
       return {
         provider: "strava",
         activities,
-        syncedAt: new Date().toISOString(),
+        syncedAt,
         usedMock: false,
       };
     },
   };
+}
+
+function newestStartedAt(activities: ActivitySample[]): string | null {
+  let newest: string | null = null;
+  for (const activity of activities) {
+    if (!newest || activity.startedAt > newest) newest = activity.startedAt;
+  }
+  return newest;
 }

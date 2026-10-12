@@ -9,6 +9,7 @@ import {
   SPORTS,
   type SportId,
 } from "@fitness-battle/shared";
+import { resolveSafePostLoginPath } from "@/lib/auth/login-redirect";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useState } from "react";
 
@@ -90,8 +91,7 @@ function OnboardingFlow() {
 
   function finish() {
     dispatch({ type: "complete-onboarding" });
-    const next = searchParams.get("next");
-    router.replace(next && next.startsWith("/") ? next : "/");
+    router.replace(resolveSafePostLoginPath(searchParams.get("next")));
   }
 
   return (

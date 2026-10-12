@@ -1,24 +1,8 @@
 import { NextResponse } from "next/server";
-import {
-  syncWindow,
-  type CategorySlug,
-} from "@fitness-battle/shared";
+import { syncWindow, type CategorySlug } from "@fitness-battle/shared";
+import { resolveUserId } from "@/lib/auth/request-user";
 import { getServerFitnessProvider } from "@/lib/fitness";
-import { createClient } from "@/lib/supabase/server";
-import { getSupabaseConfig } from "@/lib/supabase/config";
-import { webEnv } from "@/lib/env";
-
-async function resolveUserId(body: {
-  userId?: string;
-}): Promise<string | null> {
-  const { configured } = getSupabaseConfig();
-  if (configured && !webEnv.useDemoData) {
-    const supabase = await createClient();
-    const { data } = await supabase.auth.getUser();
-    return data.user?.id ?? null;
-  }
-  return body.userId ?? null;
-}
+import { persistSyncedActivities } from "@/lib/fitness-store";
 
 export async function POST(request: Request) {
   const body = (await request.json().catch(() => ({}))) as {
@@ -27,7 +11,7 @@ export async function POST(request: Request) {
     since?: string;
     backfill?: boolean;
   };
-  const userId = await resolveUserId(body);
+  const userId = await resolveUserId(body.userId);
   if (!userId) {
     return NextResponse.json(
       { error: "authentication_required" },
@@ -35,21 +19,32 @@ export async function POST(request: Request) {
     );
   }
 
+  const provider = getServerFitnessProvider();
+  const connection = await provider.getConnection(userId);
   const window = syncWindow({
-    lastSyncAt: body.backfill ? null : body.since ?? null,
-    forceBackfill: Boolean(body.backfill) || !body.since,
+    lastSyncAt: body.backfill ? null : (body.since ?? connection.lastSyncAt ?? null),
+    forceBackfill: Boolean(body.backfill),
   });
 
-  const provider = getServerFitnessProvider();
   const result = await provider.syncActivities(userId, {
     categorySlug: body.categorySlug,
     since: window.since,
   });
+
+  let persisted = false;
+  if (!result.usedMock) {
+    try {
+      persisted = await persistSyncedActivities(userId, result.activities);
+    } catch {
+      persisted = false;
+    }
+  }
 
   return NextResponse.json({
     ...result,
     since: window.since,
     windowKind: window.kind,
     windowDays: window.days,
+    persisted,
   });
 }

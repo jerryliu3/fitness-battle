@@ -23,6 +23,7 @@ export {
   type SyncEvidence,
   type SyncWindow,
 } from "./sync-window";
+export { activityFromSample } from "./samples";
 export {
   INTEGRATIONS,
   integrationById,

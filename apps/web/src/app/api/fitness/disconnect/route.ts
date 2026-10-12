@@ -1,20 +1,10 @@
 import { NextResponse } from "next/server";
+import { resolveUserId } from "@/lib/auth/request-user";
 import { getServerFitnessProvider } from "@/lib/fitness";
-import { createClient } from "@/lib/supabase/server";
-import { getSupabaseConfig } from "@/lib/supabase/config";
-import { webEnv } from "@/lib/env";
 
 export async function POST(request: Request) {
   const body = (await request.json().catch(() => ({}))) as { userId?: string };
-  const { configured } = getSupabaseConfig();
-  let userId: string | null = null;
-  if (configured && !webEnv.useDemoData) {
-    const supabase = await createClient();
-    const { data } = await supabase.auth.getUser();
-    userId = data.user?.id ?? null;
-  } else {
-    userId = body.userId ?? null;
-  }
+  const userId = await resolveUserId(body.userId);
   if (!userId) {
     return NextResponse.json(
       { error: "authentication_required" },

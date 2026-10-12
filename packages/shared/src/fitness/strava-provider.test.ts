@@ -10,7 +10,10 @@ describe("strava provider", () => {
     expect(mapSportToCategory("Ride")).toBe("cycling");
     expect(mapSportToCategory("Walk")).toBe("walking");
     expect(mapSportToCategory("WeightTraining")).toBe("strength");
+    expect(mapSportToCategory("Workout")).toBe("strength");
     expect(mapSportToCategory("Run")).toBe("running");
+    expect(mapSportToCategory("Swim")).toBeNull();
+    expect(mapSportToCategory("Yoga")).toBeNull();
   });
 
   it("maps raw activities to samples", () => {
@@ -22,10 +25,20 @@ describe("strava provider", () => {
       distance: 5000,
       moving_time: 1500,
     });
-    expect(sample.provider).toBe("strava");
-    expect(sample.externalId).toBe("42");
-    expect(sample.categorySlug).toBe("running");
-    expect(sample.metricValue).toBe(5000);
+    expect(sample).not.toBeNull();
+    expect(sample?.provider).toBe("strava");
+    expect(sample?.externalId).toBe("42");
+    expect(sample?.categorySlug).toBe("running");
+    expect(sample?.metricValue).toBe(5000);
+    expect(sample?.movingSec).toBe(1500);
+    expect(mapStravaActivity({
+      id: 9,
+      name: "Pool",
+      sport_type: "Swim",
+      start_date: "2026-10-01T12:00:00Z",
+      distance: 1500,
+      moving_time: 1800,
+    })).toBeNull();
   });
 
   it("connects as stub without credentials", async () => {

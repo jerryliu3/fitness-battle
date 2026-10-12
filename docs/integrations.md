@@ -25,8 +25,8 @@ Catalog source: `packages/shared/src/fitness/providers.ts`.
 5. Tokens belong in `private.fitness_tokens` (never client-readable). Public `fitness_connections` stores status + sync timestamps only.
 6. `POST /api/fitness/sync` pulls activities for a window from `syncWindow()`:
    - First sync / `backfill: true` → 90 days
-   - Later syncs → incremental with 1-day overlap
-7. Upsert into `activities` on `(provider, external_id)`; call `recompute_battle_standings` for battle boards.
+   - Later syncs → back to the previous sync, plus 1 day of overlap, never earlier than the 90-day horizon
+7. Upsert into `activities` on `(provider, external_id)` and recompute battle scores when the service role is configured. The play UI also folds those samples into the local effort board.
 
 Without keys, connect/sync stay on the stub path and responses include `usedMock: true` / `status: "stub"`.
 
@@ -46,7 +46,7 @@ Without keys, connect/sync stay on the stub path and responses include `usedMock
 | Route | Auth | Role |
 | --- | --- | --- |
 | `POST /api/fitness/connect` | Required | Start OAuth or stub |
-| `GET /api/fitness/strava/callback` | State = user id | Token exchange |
+| `GET /api/fitness/strava/callback` | Signed-in user; `state` must match | Token exchange into `private.fitness_tokens` |
 | `POST /api/fitness/sync` | Required | Pull windowed activities |
 | `POST /api/fitness/disconnect` | Required | Clear connection/tokens |
 | `GET /api/fitness/status` | Required | Connection + catalog |

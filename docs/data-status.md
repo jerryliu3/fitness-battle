@@ -11,7 +11,7 @@ What is loaded today versus what is still empty or synthetic.
 | Pace absolutes (5K–marathon, 20K/40K) | Your synced/history activities + synthetic field times from Elo | Works offline; empty for “you” until history/sync |
 | Lessons | Deterministic schedule in shared | Works offline |
 | 90-day calibration | Synthetic history generator (`import-history`) | One-time; not live tracker data |
-| Live activities | Strava sync API | Stub mock without keys; live pull coded when keys + OAuth complete |
+| Live activities | Strava sync API | Stub without keys or in demo mode. With keys, a signed-in sync is stored and applied to the local effort board |
 
 There is **no production athlete dataset** behind the weekly compete field yet — peers are generated for matching.
 
@@ -46,4 +46,4 @@ Separate Supabase project from battles (`rankings-db/`, hosted `pzadctqmyekkydte
 1. Emit OpenTrack import SQL (`packages/rankings/scripts/emit-import.mjs`) into `rankings-db` seed for local demos.
 2. Additional audited road races for 5K / half / marathon.
 3. Persist compete state (or battles standings) per authenticated user once Supabase env is live.
-4. Strava private token store + first real athlete backfill after keys are provisioned.
+4. Point `NEXT_PUBLIC_USE_DEMO_DATA=false` plus Strava keys and the service role at a real athlete backfill. Token storage and score recompute are already wired for that mode.

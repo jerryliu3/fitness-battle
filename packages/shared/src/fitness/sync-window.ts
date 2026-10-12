@@ -1,7 +1,12 @@
 /** Default historical pull when a user first connects or calibrates. */
 export const BACKFILL_DAYS = 90;
 
-/** Incremental sync lookback when a prior sync exists. */
+/**
+ * Operator hint for how often a linked tracker should sync.
+ * The fetch window is not capped at this value: it always covers back to the
+ * previous sync (with one day of overlap), and never starts earlier than the
+ * backfill horizon.
+ */
 export const INCREMENTAL_SYNC_DAYS = 14;
 
 /** After this many hours without a new sample, UI shows "stale". */
@@ -28,13 +33,11 @@ export function syncWindow(
     lastSyncAt?: string | null;
     forceBackfill?: boolean;
     backfillDays?: number;
-    incrementalDays?: number;
   } = {},
 ): SyncWindow {
   const now = options.now ?? new Date();
   const until = now.toISOString();
   const backfillDays = options.backfillDays ?? BACKFILL_DAYS;
-  const incrementalDays = options.incrementalDays ?? INCREMENTAL_SYNC_DAYS;
 
   if (options.forceBackfill || !options.lastSyncAt) {
     const since = new Date(now);
@@ -51,9 +54,10 @@ export function syncWindow(
   const since = new Date(last);
   // Overlap a day so borderline activities are not missed; upserts dedupe.
   since.setUTCDate(since.getUTCDate() - 1);
-  const floor = new Date(now);
-  floor.setUTCDate(floor.getUTCDate() - incrementalDays);
-  const effective = since < floor ? floor : since;
+  const earliest = new Date(now);
+  earliest.setUTCDate(earliest.getUTCDate() - backfillDays);
+  // A long gap must still be covered. Cap only at the backfill horizon.
+  const effective = since < earliest ? earliest : since;
   return {
     since: effective.toISOString(),
     until,

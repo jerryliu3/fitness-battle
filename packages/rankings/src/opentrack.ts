@@ -85,10 +85,18 @@ export function isUnder18AgeGroup(ageGroup: string | null | undefined): boolean 
 }
 
 function sexFromCodes(gender: string | undefined, eventGenders: string | undefined): SexCategory {
-  const code = (gender || eventGenders || "").toUpperCase();
-  if (code.startsWith("F") || code === "W" || code.startsWith("N")) return "female";
-  if (code.startsWith("M")) return "male";
-  if (code === "X" || code.includes("NB")) return "other";
+  const athlete = (gender || "").trim().toUpperCase();
+  const code = athlete || (eventGenders || "").trim().toUpperCase();
+  if (
+    code === "X" ||
+    code === "N" ||
+    code === "NB" ||
+    code.includes("NON")
+  ) {
+    return "other";
+  }
+  if (code.startsWith("F") || code === "W") return "female";
+  if (code === "M" || code.startsWith("MALE")) return "male";
   return "unknown";
 }
 
