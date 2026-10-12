@@ -23,6 +23,8 @@ export {
   type ReadinessMark,
   type Duel,
   type CompeteState,
+  type LinkStatus,
+  type ProviderLink,
 } from "./sports";
 export { RANK_BANDS, rankForElo, eloInBand, type RankBand } from "./ranks";
 export {
@@ -36,6 +38,7 @@ export { expectedScore, settleElo } from "./elo";
 export { lessonFor, type Lesson } from "./lessons";
 export {
   freshState,
+  migrateCompeteState,
   reduceCompete,
   rollClock,
   weeklyBoard,

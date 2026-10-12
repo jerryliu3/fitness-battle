@@ -38,6 +38,7 @@ export interface Action {
     | "sync"
     | "import-history"
     | "complete-lesson"
+    | "complete-onboarding"
     | "freeze"
     | "duel";
   name?: string;
@@ -73,6 +74,28 @@ function withRating(
   };
 }
 
+/** Normalize persisted JSON from older clients (missing link status / onboarding). */
+export function migrateCompeteState(parsed: CompeteState): CompeteState {
+  const links = (parsed.links ?? []).map((link) => ({
+    provider: link.provider,
+    linked: Boolean(link.linked),
+    status:
+      "status" in link && link.status
+        ? link.status
+        : link.linked
+          ? ("stub" as const)
+          : ("disconnected" as const),
+  }));
+  return {
+    ...parsed,
+    links,
+    calibrated: Boolean(parsed.calibrated),
+    onboardingCompleted: Boolean(
+      (parsed as CompeteState).onboardingCompleted,
+    ),
+  };
+}
+
 export function freshState(now: Date = new Date()): CompeteState {
   const period = currentPeriodBounds("weekly", now);
   const periodStart = period.startsAt.toISOString();
@@ -96,12 +119,14 @@ export function freshState(now: Date = new Date()): CompeteState {
     links: PROVIDERS.map((provider) => ({
       provider: provider.id,
       linked: false,
+      status: "disconnected" as const,
     })),
     freezesLeft: STARTING_FREEZES,
     frozenPeriods: [],
     duels: [],
     lessonDoneOn: null,
     calibrated: false,
+    onboardingCompleted: false,
   };
 }
 
@@ -189,7 +214,11 @@ function settlePeriod(state: CompeteState, periodStart: string): CompeteState {
   return next;
 }
 
-/** Close any finished periods. Safe to call on every load. */
+/**
+ * Close any finished periods. Safe to call on every load.
+ * After a long gap we settle at most 12 periods for Elo continuity, then
+ * jump the clock to the live window so the UI never sticks on a stale week.
+ */
 export function rollClock(state: CompeteState, now: Date = new Date()): CompeteState {
   const currentStart = boundsOf(state, now).startsAt.toISOString();
   let next = state;
@@ -209,8 +238,17 @@ export function rollClock(state: CompeteState, now: Date = new Date()): CompeteS
     };
     guard += 1;
   }
-  if (next.clock.periodStart !== currentStart && guard === 0) {
-    return { ...next, clock: { ...next.clock, periodStart: currentStart } };
+  if (next.clock.periodStart !== currentStart) {
+    return {
+      ...next,
+      clock: { ...next.clock, periodStart: currentStart },
+      ratings: next.ratings.map((item) => ({
+        ...item,
+        lockVerified: item.verifiedElo,
+        lockOpen: item.openElo,
+        lockPeriod: currentStart,
+      })),
+    };
   }
   return next;
 }
@@ -411,10 +449,14 @@ export function reduceCompete(
     }
     case "link": {
       if (!action.provider) return rolled;
+      // Demo/stub link only — never claim a live OAuth connection here.
+      // Real Strava connect goes through /api/fitness/* and reports status=stub|connected.
       return {
         ...rolled,
         links: rolled.links.map((link) =>
-          link.provider === action.provider ? { ...link, linked: true } : link,
+          link.provider === action.provider
+            ? { ...link, linked: true, status: "stub" as const }
+            : link,
         ),
       };
     }
@@ -423,10 +465,14 @@ export function reduceCompete(
       return {
         ...rolled,
         links: rolled.links.map((link) =>
-          link.provider === action.provider ? { ...link, linked: false } : link,
+          link.provider === action.provider
+            ? { ...link, linked: false, status: "disconnected" as const }
+            : link,
         ),
       };
     }
+    case "complete-onboarding":
+      return { ...rolled, onboardingCompleted: true };
     case "sync": {
       if (!action.provider) return rolled;
       const link = rolled.links.find((item) => item.provider === action.provider);
@@ -434,6 +480,8 @@ export function reduceCompete(
       return syncProvider(rolled, action.provider, now);
     }
     case "import-history": {
+      // One-time calibration only. Re-importing would rewrite Elo and is blocked.
+      if (rolled.calibrated) return rolled;
       const level = action.level ?? "steady";
       const kept = rolled.activities.filter((activity) => activity.source !== "history");
       const activities = [...kept, ...historyFor(level, now)];

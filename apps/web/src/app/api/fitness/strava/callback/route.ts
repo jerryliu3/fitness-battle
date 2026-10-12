@@ -1,26 +1,39 @@
 import { NextResponse } from "next/server";
-import { webEnv } from "@/lib/env";
+import { createStravaProvider } from "@fitness-battle/shared";
+import { serverEnv } from "@/lib/env";
 
 /**
- * Strava OAuth callback placeholder.
- * With credentials, exchange `code` for tokens and persist on fitness_connections.
- * Without credentials, redirect home with a stub notice.
+ * Strava OAuth callback.
+ * With credentials: exchange code → tokens → mark connected.
+ * Without credentials: redirect with tracker=stub (never claim connected).
  */
 export async function GET(request: Request) {
   const url = new URL(request.url);
   const code = url.searchParams.get("code");
+  const state = url.searchParams.get("state");
   const hasCreds = Boolean(
-    webEnv.stravaClientId && webEnv.stravaClientSecret,
+    serverEnv.stravaClientId && serverEnv.stravaClientSecret,
   );
 
   if (!hasCreds || !code) {
-    return NextResponse.redirect(
-      new URL("/?tracker=stub", url.origin),
-    );
+    return NextResponse.redirect(new URL("/you?tracker=stub", url.origin));
   }
 
-  // Token exchange is intentionally deferred until secrets are provisioned.
-  return NextResponse.redirect(
-    new URL("/?tracker=connected", url.origin),
-  );
+  const userId = state || "unknown";
+  const provider = createStravaProvider({
+    clientId: serverEnv.stravaClientId,
+    clientSecret: serverEnv.stravaClientSecret,
+    redirectUri: serverEnv.stravaRedirectUri,
+  });
+
+  try {
+    await provider.completeOAuth(userId, code);
+    return NextResponse.redirect(
+      new URL("/you?tracker=connected", url.origin),
+    );
+  } catch {
+    return NextResponse.redirect(
+      new URL("/you?tracker=error", url.origin),
+    );
+  }
 }

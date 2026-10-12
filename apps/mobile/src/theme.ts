@@ -1,12 +1,17 @@
 export const colors = {
-  ink: "#16181d",
-  paper: "#f4f5f7",
+  ink: "#12141a",
+  paper: "#eef1f4",
   card: "#ffffff",
-  muted: "#667085",
-  line: "#e6e8ee",
-  blue: "#0f64bf",
-  blueSoft: "#e8f1fb",
-  greenSoft: "#e7f7f0",
+  muted: "#5c6578",
+  line: "#dce1ea",
+  lime: "#b7f255",
+  limeDeep: "#7ab800",
+  accent: "#1a1f2b",
+  accentSoft: "#e8edf5",
+  greenSoft: "#e5f7ef",
+  /** @deprecated use accent — kept for older style refs */
+  blue: "#1a1f2b",
+  blueSoft: "#e8edf5",
 };
 
 export const fonts = {

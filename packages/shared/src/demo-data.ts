@@ -27,8 +27,8 @@ export const DEMO_CATEGORIES: Category[] = [
     id: "cat-strength",
     slug: "strength",
     name: "Strength",
-    unit: "reps",
-    description: "Reps logged from strength sessions.",
+    unit: "seconds",
+    description: "Session duration from strength workouts.",
   },
 ];
 

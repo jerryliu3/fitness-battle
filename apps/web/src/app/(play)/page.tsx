@@ -1,5 +1,7 @@
 "use client";
 
+import { AuthPrompt } from "@/components/auth-gate";
+import { useAuth } from "@/components/auth-context";
 import { useCompete } from "@/components/compete-context";
 import {
   currentPeriodBounds,
@@ -13,9 +15,15 @@ import {
   type SportId,
 } from "@fitness-battle/shared";
 import Link from "next/link";
+import { useState } from "react";
 
 export default function TodayPage() {
   const { state, dispatch } = useCompete();
+  const { user } = useAuth();
+  const [authOpen, setAuthOpen] = useState(false);
+  const [authReason, setAuthReason] = useState(
+    "Create an account to join a board and keep your rating.",
+  );
   if (!state) return <p className="fb-copy">Loading your week…</p>;
 
   const now = new Date();
@@ -28,6 +36,19 @@ export default function TodayPage() {
   const done = state.lessonDoneOn === now.toISOString().slice(0, 10);
   const sport = sportById(state.primary);
   const inBoard = rating?.optedIn ?? false;
+
+  function requireParticipate(reason: string, action: () => void) {
+    if (!user) {
+      setAuthReason(reason);
+      setAuthOpen(true);
+      return;
+    }
+    if (!state!.onboardingCompleted) {
+      window.location.href = "/onboarding";
+      return;
+    }
+    action();
+  }
 
   return (
     <>
@@ -51,7 +72,7 @@ export default function TodayPage() {
             <span className="fb-meta">
               {ladder.next
                 ? `${ladder.intoNext} to ${ladder.next.name}`
-                : "Top band"}
+                : "Top level"}
             </span>
           </div>
         </div>
@@ -67,7 +88,7 @@ export default function TodayPage() {
         </div>
         <p className="fb-note">
           Verified is GPS and device benchmarks. Open includes indoor work.
-          Everyone starts at 1000.
+          Everyone starts at 1000. Levels run from Beginner to Champion.
         </p>
       </section>
 
@@ -96,10 +117,14 @@ export default function TodayPage() {
               type="button"
               className={joined ? "fb-btn-line" : "fb-btn"}
               onClick={() =>
-                dispatch({
-                  type: joined ? "set-primary" : "opt-in",
-                  sport: item.id as SportId,
-                })
+                requireParticipate(
+                  `Sign in to compete in ${item.name} this week.`,
+                  () =>
+                    dispatch({
+                      type: joined ? "set-primary" : "opt-in",
+                      sport: item.id as SportId,
+                    }),
+                )
               }
             >
               {joined
@@ -112,6 +137,12 @@ export default function TodayPage() {
           {inBoard ? "See the weekly board" : "Challenge someone 1v1"}
         </Link>
       </section>
+
+      <AuthPrompt
+        open={authOpen}
+        reason={authReason}
+        onClose={() => setAuthOpen(false)}
+      />
     </>
   );
 }

@@ -5,7 +5,31 @@ import type { FitnessProviderId } from "../types";
 
 export type { FitnessAuthResult, FitnessProvider, SyncResult } from "./types";
 export { mockFitnessProvider } from "./mock-provider";
-export { createStravaProvider } from "./strava-provider";
+export {
+  createStravaProvider,
+  mapSportToCategory,
+  mapStravaActivity,
+  type StravaEnv,
+  type StravaStore,
+  type StravaTokenSet,
+} from "./strava-provider";
+export {
+  BACKFILL_DAYS,
+  INCREMENTAL_SYNC_DAYS,
+  SYNC_STALE_HOURS,
+  syncWindow,
+  evidenceFromConnection,
+  evidenceLabel,
+  type SyncEvidence,
+  type SyncWindow,
+} from "./sync-window";
+export {
+  INTEGRATIONS,
+  integrationById,
+  type IntegrationSpec,
+  type IntegrationKind,
+  type IntegrationMaturity,
+} from "./providers";
 
 export function getFitnessProvider(
   id: FitnessProviderId,

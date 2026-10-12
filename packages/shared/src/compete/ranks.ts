@@ -6,16 +6,20 @@ export interface RankBand {
   blurb: string;
 }
 
-/** Bands are data, so the ladder can move without touching screens. */
+/**
+ * Fitness-style ladder (not gaming metals).
+ * Champion is the top band; Beginner is the entry band.
+ * Names stay neutral — descriptive of training level, not pejorative.
+ */
 export const RANK_BANDS: RankBand[] = [
-  { name: "Iron", min: ELO_FLOOR, blurb: "Finding the week" },
-  { name: "Bronze", min: 800, blurb: "Showing up" },
-  { name: "Silver", min: 1000, blurb: "Steady company" },
-  { name: "Gold", min: 1200, blurb: "Pushing the group" },
-  { name: "Platinum", min: 1400, blurb: "Hard to drop" },
-  { name: "Diamond", min: 1600, blurb: "Serious volume" },
-  { name: "Master", min: 1800, blurb: "Rare consistency" },
-  { name: "Challenger", min: 2000, blurb: "Top of the ladder" },
+  { name: "Beginner", min: ELO_FLOOR, blurb: "Building the habit" },
+  { name: "Developing", min: 800, blurb: "Finding your rhythm" },
+  { name: "Active", min: 1000, blurb: "Showing up each week" },
+  { name: "Steady", min: 1200, blurb: "Reliable weekly volume" },
+  { name: "Strong", min: 1400, blurb: "Pushing past easy weeks" },
+  { name: "Elite", min: 1600, blurb: "High output among peers" },
+  { name: "Olympian", min: 1800, blurb: "Rare consistency and volume" },
+  { name: "Champion", min: 2000, blurb: "Top of the field" },
 ];
 
 export function rankForElo(elo: number): RankBand {
@@ -27,7 +31,11 @@ export function rankForElo(elo: number): RankBand {
   return band;
 }
 
-export function eloInBand(elo: number): { band: RankBand; next: RankBand | null; intoNext: number } {
+export function eloInBand(elo: number): {
+  band: RankBand;
+  next: RankBand | null;
+  intoNext: number;
+} {
   const band = rankForElo(elo);
   const index = RANK_BANDS.findIndex((item) => item.name === band.name);
   const next = RANK_BANDS[index + 1] ?? null;

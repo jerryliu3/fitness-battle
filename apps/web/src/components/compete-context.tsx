@@ -2,6 +2,7 @@
 
 import {
   freshState,
+  migrateCompeteState,
   reduceCompete,
   rollClock,
   type Action,
@@ -36,7 +37,7 @@ function readState(): CompeteState {
     if (parsed.version !== 1 || !Array.isArray(parsed.ratings)) {
       return rollClock(freshState());
     }
-    return rollClock(parsed);
+    return rollClock(migrateCompeteState(parsed));
   } catch {
     return rollClock(freshState());
   }

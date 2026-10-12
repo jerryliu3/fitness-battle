@@ -22,7 +22,7 @@ export interface Category {
   id: string;
   slug: CategorySlug;
   name: string;
-  unit: "meters" | "seconds" | "reps";
+  unit: "meters" | "seconds";
   description: string;
 }
 
