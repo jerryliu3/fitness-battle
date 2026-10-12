@@ -1,0 +1,53 @@
+{
+  "errors": [],
+  "network": [],
+  "overflow": [],
+  "webgl": [
+    {
+      "id": "pursuit",
+      "ready": true
+    },
+    {
+      "id": "circuit",
+      "ready": true
+    },
+    {
+      "id": "switchback",
+      "ready": true
+    },
+    {
+      "id": "pursuit",
+      "ready": true
+    },
+    {
+      "id": "circuit",
+      "ready": true
+    },
+    {
+      "id": "switchback",
+      "ready": true
+    },
+    {
+      "id": "pursuit",
+      "ready": true
+    },
+    {
+      "id": "circuit",
+      "ready": true
+    },
+    {
+      "id": "switchback",
+      "ready": true
+    },
+    {
+      "id": "pursuit",
+      "ready": true
+    },
+    {
+      "id": "circuit",
+      "ready": true
+    }
+  ],
+  "layouts": 15,
+  "interactionChecks": "3D mesh ray selection, camera pixel change, rear/POV/aerial, hypothetical pass/reset, units, ghost, native receipt/escape, proportional zoom/pan/vertical, 3D focus/orbit, milestone pass/reversal, manual playback/pause, reduced-motion milestones, GPU-unavailable interactive path fallback, evaluation."
+}
