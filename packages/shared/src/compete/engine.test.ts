@@ -136,6 +136,7 @@ describe("compete engine", () => {
       now,
     });
     expect(closed.clock.periodStart).toBe("2026-10-19T00:00:00.000Z");
+    expect(closed.demoNow).toBe("2026-10-19T00:01:00.000Z");
     expect(closed.periodResults.length).toBeGreaterThan(0);
     expect(closed.pendingRevealIds.length).toBeGreaterThan(0);
     const open = closed.periodResults.find(

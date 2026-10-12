@@ -16,6 +16,7 @@ import { buildSplitBoard } from "@/features/split/model";
 import {
   activityFromSample,
   BACKFILL_DAYS,
+  competeNow,
   currentPeriodBounds,
   evidenceLabel,
   PROVIDERS,
@@ -28,7 +29,7 @@ import {
 } from "@fitness-battle/shared";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { Suspense, useEffect, useMemo, useRef, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 
 function YouContent() {
   const { user, signOut, demoMode } = useAuth();
@@ -64,10 +65,9 @@ function YouContent() {
     }
   }, [dispatch, state, tracker]);
 
-  const now = useMemo(() => new Date(), []);
-
   if (!state) return <p className="fb-copy">Loading…</p>;
 
+  const now = competeNow(state);
   const period = currentPeriodBounds(state.clock.kind, now);
   const frozen = state.frozenPeriods.includes(period.startsAt.toISOString());
   const board = buildSplitBoard(state, state.primary, "open", now);
@@ -193,6 +193,15 @@ function YouContent() {
           >
             Close this week now
           </button>
+          {state.demoNow ? (
+            <p className="fb-note">
+              Demo clock pinned to{" "}
+              {new Date(state.demoNow).toLocaleString("en-US", {
+                timeZone: "UTC",
+              })}{" "}
+              UTC so the new week stays open after reload.
+            </p>
+          ) : null}
         </section>
       ) : null}
 

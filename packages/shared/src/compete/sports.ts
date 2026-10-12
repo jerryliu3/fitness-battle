@@ -209,6 +209,11 @@ export interface CompeteState {
   periodResults: PeriodResult[];
   /** Result ids waiting for the week-complete reveal UI. */
   pendingRevealIds: string[];
+  /**
+   * Demo/QA clock override. When set, period math uses this instant instead of
+   * wall time so "close this week" stays settled across reloads.
+   */
+  demoNow?: string | null;
 }
 
 export function hashString(value: string): number {

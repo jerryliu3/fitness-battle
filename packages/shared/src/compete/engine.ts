@@ -123,6 +123,10 @@ export function migrateCompeteState(parsed: CompeteState): CompeteState {
     ),
     periodResults,
     pendingRevealIds,
+    demoNow:
+      typeof (parsed as CompeteState).demoNow === "string"
+        ? (parsed as CompeteState).demoNow
+        : null,
   };
 }
 
@@ -159,7 +163,22 @@ export function freshState(now: Date = new Date()): CompeteState {
     onboardingCompleted: false,
     periodResults: [],
     pendingRevealIds: [],
+    demoNow: null,
   };
+}
+
+function effectiveNow(state: CompeteState, actionNow?: string): Date {
+  if (actionNow) return new Date(actionNow);
+  if (state.demoNow) return new Date(state.demoNow);
+  return new Date();
+}
+
+/** Wall clock, or pinned demoNow when QA has advanced the week. */
+export function competeNow(
+  state: CompeteState,
+  fallback: Date = new Date(),
+): Date {
+  return state.demoNow ? new Date(state.demoNow) : fallback;
 }
 
 function advanceStart(state: CompeteState, periodStart: string): string {
@@ -540,7 +559,7 @@ export function reduceCompete(
   state: CompeteState,
   action: Action,
 ): CompeteState {
-  const now = action.now ? new Date(action.now) : new Date();
+  const now = effectiveNow(state, action.now);
   const rolled = rollClock(state, now);
   switch (action.type) {
     case "rename": {
@@ -702,9 +721,10 @@ export function reduceCompete(
     }
     case "debug-close-week": {
       // Product settlement is load-time (rollClock). This action advances past
-      // the current week's exclusive end so QA can exercise the reveal + history.
+      // the current week's exclusive end and pins demoNow so the new week sticks.
       const period = boundsOf(rolled, now);
-      return rollClock(rolled, new Date(period.endsAt.getTime() + 60_000));
+      const demoNow = new Date(period.endsAt.getTime() + 60_000).toISOString();
+      return rollClock({ ...rolled, demoNow }, new Date(demoNow));
     }
     default:
       return rolled;

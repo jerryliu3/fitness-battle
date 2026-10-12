@@ -11,6 +11,7 @@ import {
 } from "@/features/split/components/product-header";
 import { buildSplitBoard } from "@/features/split/model";
 import {
+  competeNow,
   formatClock,
   formatEffort,
   projectedElo,
@@ -19,7 +20,7 @@ import {
   type ScoreTrack,
   type SportId,
 } from "@fitness-battle/shared";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 
 export default function FieldPage() {
   const { state, dispatch } = useCompete();
@@ -31,10 +32,10 @@ export default function FieldPage() {
   const [authReason, setAuthReason] = useState(
     "Sign in to join the weekly field or start a 1v1.",
   );
-  const now = useMemo(() => new Date(), []);
 
   if (!state) return <p className="fb-copy">Loading the field…</p>;
 
+  const now = competeNow(state);
   const active = sport ?? state.primary;
   const spec = sportById(active);
   const shownTrack: ScoreTrack = spec.gps ? track : "open";

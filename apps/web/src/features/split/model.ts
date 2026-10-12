@@ -1,5 +1,6 @@
 import {
   activityCheckpoints,
+  competeNow,
   currentPeriodBounds,
   duelViews,
   effortTrackMax,
@@ -60,7 +61,7 @@ export function buildSplitBoard(
   state: CompeteState,
   sport: SportId,
   track: ScoreTrack,
-  now: Date = new Date(),
+  now: Date = competeNow(state),
 ): SplitBoardModel {
   const period = currentPeriodBounds(state.clock.kind, now);
   const rating = state.ratings.find((item) => item.sport === sport);

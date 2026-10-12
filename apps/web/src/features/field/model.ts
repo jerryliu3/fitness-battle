@@ -1,4 +1,5 @@
 import {
+  competeNow,
   distanceTrackMaxKm,
   initialsFromName,
   interpolateSeries,
@@ -39,7 +40,7 @@ export function buildFieldModel(
   state: CompeteState,
   sport: SportId,
   track: ScoreTrack,
-  now: Date = new Date(),
+  now: Date = competeNow(state),
 ): FieldModel {
   const board = buildSplitBoard(state, sport, track, now);
   const gps = sport === "running" || sport === "cycling";

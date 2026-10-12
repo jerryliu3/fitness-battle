@@ -52,6 +52,7 @@ export {
   migrateCompeteState,
   reduceCompete,
   rollClock,
+  competeNow,
   weeklyBoard,
   projectedElo,
   duelViews,

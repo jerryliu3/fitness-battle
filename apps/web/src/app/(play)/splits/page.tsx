@@ -11,19 +11,20 @@ import {
   yourBenchmarkSeconds,
   formatClockTime,
   BENCHMARKS,
+  competeNow,
   sportById,
   type ScoreTrack,
 } from "@fitness-battle/shared";
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 
 export default function SplitsPage() {
   const { state } = useCompete();
   const [track, setTrack] = useState<ScoreTrack>("open");
-  const now = useMemo(() => new Date(), []);
 
   if (!state) return <p className="fb-copy">Loading splits…</p>;
 
+  const now = competeNow(state);
   const sport = state.primary;
   const spec = sportById(sport);
   const shownTrack: ScoreTrack = spec.gps ? track : "open";
