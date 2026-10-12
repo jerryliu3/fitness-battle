@@ -6,13 +6,13 @@ Mobile-first fitness battles (group or 1v1) with automatic tracker scoring and w
 
 Mirrors sibling repos (`goalmaxxing` / Cadence, `Coaching`):
 
-| Layer | Choice |
-| --- | --- |
-| Mobile | Expo Router (`apps/mobile`) |
-| Web / API | Next.js on Vercel (`apps/web`) |
-| Data | Supabase (`supabase/`) |
-| Shared | `@fitness-battle/shared` (period model, fitness providers, demo data) |
-| Tracker | Strava provider abstraction with mock stub when OAuth keys are missing |
+| Layer     | Choice                                                                 |
+| --------- | ---------------------------------------------------------------------- |
+| Mobile    | Expo Router (`apps/mobile`)                                            |
+| Web / API | Next.js on Vercel (`apps/web`)                                         |
+| Data      | Supabase (`supabase/`)                                                 |
+| Shared    | `@fitness-battle/shared` (period model, fitness providers, demo data)  |
+| Tracker   | Strava provider abstraction with mock stub when OAuth keys are missing |
 
 ## Quick start
 
@@ -58,7 +58,13 @@ Browsing Today / Board / Pace is open. **Join / compete / You / onboarding** req
 - Tracker scope and stub-vs-live rules: [`docs/integrations.md`](./docs/integrations.md)
 - What is loaded (OpenTrack 10K, synthetic compete field, etc.): [`docs/data-status.md`](./docs/data-status.md)
 
-## Docs
+## Design prototype
+
+Run `pnpm dev`, then open `/design` to compare five individual-first app experiences: Split, Bounce, Folio, Vector, and After. Each direction has personal progress, comparison, activity, history, and optional group views, with local sample interactions. **Evaluate directions** explains the different interaction models and tradeoffs.
+
+See [design directions v2](docs/design-directions-v2.md) for the brand systems, research, evaluation tasks, and image provenance. The [first study](docs/design-exploration-v1.md) is retained as an archive. Existing app routes remain available.
+
+## Living docs
 
 Living standards live in the Project Agent Store (and are summarized in-repo):
 
