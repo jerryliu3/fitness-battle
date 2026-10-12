@@ -30,8 +30,8 @@ export function CheckpointControl({
         }
       />
       <div className="sp-checkpoint-days">
-        {labels.map((label) => (
-          <span key={label}>{label}</span>
+        {labels.map((label, index) => (
+          <span key={`${index}-${label}`}>{label}</span>
         ))}
       </div>
     </div>

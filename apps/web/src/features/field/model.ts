@@ -3,7 +3,6 @@ import {
   initialsFromName,
   interpolateSeries,
   syntheticCheckpoints,
-  type BoardRow,
   type CompeteState,
   type ScoreTrack,
   type SportId,
@@ -162,17 +161,4 @@ export function orderedRunners(
       distanceAt(b, checkpoint, extraKm) - distanceAt(a, checkpoint, extraKm) ||
       a.id.localeCompare(b.id),
   );
-}
-
-export function boardRowsFromField(runners: FieldRunner[]): BoardRow[] {
-  return orderedRunners(runners, 2).map((runner, index) => ({
-    id: runner.id,
-    name: runner.name,
-    elo: 0,
-    effort: runner.effort,
-    distanceM: runner.km[2]! * 1000,
-    movingSec: 0,
-    you: Boolean(runner.you),
-    place: index + 1,
-  }));
 }

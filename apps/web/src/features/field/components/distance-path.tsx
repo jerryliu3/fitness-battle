@@ -118,8 +118,8 @@ export function DistancePath({
           y2={380}
           className="fd-path-axis"
         />
-        {[min, (min + max) / 2, max].map((tick) => (
-          <g key={tick}>
+        {[min, (min + max) / 2, max].map((tick, index) => (
+          <g key={`tick-${index}-${tick}`}>
             <line
               x1={roadX - 22}
               x2={roadX + 22}
