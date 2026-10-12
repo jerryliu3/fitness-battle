@@ -9,6 +9,7 @@
     ".": "./src/index.ts",
     "./period": "./src/period.ts",
     "./fitness": "./src/fitness/index.ts",
+    "./matching": "./src/matching/index.ts",
     "./types": "./src/types.ts"
   },
   "scripts": {

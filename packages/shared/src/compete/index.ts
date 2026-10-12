@@ -60,6 +60,8 @@ export {
   daysLeft,
   formatVolume,
   formatEffort,
+  setRealPlayerPool,
+  getRealPlayerPool,
   type Action,
   type BoardRow,
   type DuelView,

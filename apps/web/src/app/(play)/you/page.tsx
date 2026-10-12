@@ -17,7 +17,6 @@ import {
   activityFromSample,
   BACKFILL_DAYS,
   competeNow,
-  currentPeriodBounds,
   evidenceLabel,
   PROVIDERS,
   RANK_BANDS,
@@ -68,9 +67,10 @@ function YouContent() {
   if (!state) return <p className="fb-copy">Loading…</p>;
 
   const now = competeNow(state);
-  const period = currentPeriodBounds(state.clock.kind, now);
-  const frozen = state.frozenPeriods.includes(period.startsAt.toISOString());
   const board = buildSplitBoard(state, state.primary, "open", now);
+  const frozen = state.frozenPeriods.includes(
+    board.periodStart.toISOString(),
+  );
   const source = sourceFromLinks(state.links);
   const spec = sportById(state.primary);
 
@@ -182,9 +182,9 @@ function YouContent() {
         <section className="fb-card">
           <h2>Demo week close</h2>
           <p className="fb-copy">
-            Settlement normally runs when you open the app after a UTC Monday
-            rollover. This advances the clock so you can preview the week-complete
-            reveal and season history.
+            Settlement normally runs when you open the app after the Sunday UTC
+            wave reset. This advances the clock so you can preview the
+            week-complete reveal and season history.
           </p>
           <button
             type="button"

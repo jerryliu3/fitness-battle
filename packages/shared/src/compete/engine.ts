@@ -1,4 +1,11 @@
-import { currentPeriodBounds, type PeriodBounds } from "../period";
+import type { PeriodBounds } from "../period";
+import {
+  DensityMatcher,
+  buildLocalBoard,
+  waveWindowAt,
+  type PoolPlayer,
+  type WaveEnrollment,
+} from "../matching";
 import { eloFromWeeklyEffort, periodEffort, readinessBonus } from "./effort";
 import { settleElo } from "./elo";
 import {
@@ -10,10 +17,6 @@ import {
   appendPeriodResults,
   periodResultId,
 } from "./history";
-import {
-  athleteWeekDistanceM,
-  athleteWeekMovingSec,
-} from "./track";
 import {
   ELO_BASE,
   PROVIDERS,
@@ -34,6 +37,20 @@ import {
   type ScoreTrack,
   type SportId,
 } from "./sports";
+
+const densityMatcher = new DensityMatcher();
+
+/** Optional real-player pool for density matching (empty in solo local demo). */
+let realPlayerPool: PoolPlayer[] = [];
+
+/** Test/demo hook: inject overlapping real peers into density matching. */
+export function setRealPlayerPool(pool: readonly PoolPlayer[]): void {
+  realPlayerPool = [...pool];
+}
+
+export function getRealPlayerPool(): readonly PoolPlayer[] {
+  return realPlayerPool;
+}
 
 export interface Action {
   type:
@@ -67,10 +84,6 @@ export interface Action {
   linkStatus?: "stub" | "connected";
   /** Result ids to clear from the pending reveal queue. */
   revealIds?: string[];
-}
-
-function boundsOf(state: CompeteState, now: Date): PeriodBounds {
-  return currentPeriodBounds(state.clock.kind, now);
 }
 
 function rating(state: CompeteState, sport: SportId): Rating {
@@ -114,6 +127,9 @@ export function migrateCompeteState(parsed: CompeteState): CompeteState {
   )
     ? (parsed as CompeteState).pendingRevealIds
     : [];
+  const enrollments = Array.isArray((parsed as CompeteState).enrollments)
+    ? (parsed as CompeteState).enrollments
+    : [];
   return {
     ...parsed,
     links,
@@ -123,6 +139,7 @@ export function migrateCompeteState(parsed: CompeteState): CompeteState {
     ),
     periodResults,
     pendingRevealIds,
+    enrollments,
     demoNow:
       typeof (parsed as CompeteState).demoNow === "string"
         ? (parsed as CompeteState).demoNow
@@ -131,8 +148,8 @@ export function migrateCompeteState(parsed: CompeteState): CompeteState {
 }
 
 export function freshState(now: Date = new Date()): CompeteState {
-  const period = currentPeriodBounds("weekly", now);
-  const periodStart = period.startsAt.toISOString();
+  const wave = waveWindowAt(now);
+  const periodStart = wave.waveStart.toISOString();
   return {
     version: 1,
     name: "You",
@@ -164,6 +181,63 @@ export function freshState(now: Date = new Date()): CompeteState {
     periodResults: [],
     pendingRevealIds: [],
     demoNow: null,
+    enrollments: [],
+  };
+}
+
+function enrollmentFor(
+  state: CompeteState,
+  sport: SportId,
+): WaveEnrollment | undefined {
+  return state.enrollments.find((item) => item.sport === sport);
+}
+
+function waveBoundsFor(
+  state: CompeteState,
+  sport: SportId,
+  now: Date,
+): PeriodBounds {
+  const enrollment = enrollmentFor(state, sport);
+  if (enrollment) {
+    return {
+      kind: "weekly",
+      startsAt: new Date(enrollment.waveStart),
+      endsAt: new Date(enrollment.weekEnd),
+    };
+  }
+  const wave = waveWindowAt(now);
+  return { kind: "weekly", startsAt: wave.waveStart, endsAt: wave.weekEnd };
+}
+
+function enrollSport(
+  state: CompeteState,
+  sport: SportId,
+  now: Date,
+): CompeteState {
+  const mine = rating(state, sport);
+  const assignment = densityMatcher.assignGroup({
+    viewerId: "you",
+    viewerName: state.name,
+    viewerElo: mine.openElo,
+    sport,
+    now,
+    realPool: realPlayerPool,
+    seed: `you:${sport}:${waveWindowAt(now).waveStart.toISOString()}`,
+    autoEnrollNext: true,
+  });
+  const enrollments = [
+    ...state.enrollments.filter((item) => item.sport !== sport),
+    assignment.enrollment,
+  ];
+  return {
+    ...withRating(state, sport, {
+      optedIn: true,
+      lockVerified: mine.verifiedElo,
+      lockOpen: mine.openElo,
+      lockPeriod: assignment.enrollment.waveStart,
+    }),
+    enrollments,
+    clock: { ...state.clock, periodStart: assignment.enrollment.waveStart },
   };
 }
 
@@ -181,49 +255,40 @@ export function competeNow(
   return state.demoNow ? new Date(state.demoNow) : fallback;
 }
 
-function advanceStart(state: CompeteState, periodStart: string): string {
-  const start = new Date(periodStart);
-  const end = currentPeriodBounds(state.clock.kind, start).endsAt;
-  return currentPeriodBounds(state.clock.kind, end).startsAt.toISOString();
-}
-
 function groupFor(
   state: CompeteState,
   sport: SportId,
   track: ScoreTrack,
-  periodStart: string,
-  periodEnd: Date,
-): { id: string; name: string; elo: number; effort: number; you: boolean }[] {
+  enrollment: WaveEnrollment,
+  asOf: Date,
+): { id: string; name: string; elo: number; effort: number; distanceM: number; movingSec: number; you: boolean }[] {
   const mine = rating(state, sport);
-  const lock = track === "verified" ? mine.lockVerified : mine.lockOpen;
-  const rivals = nearestAthletes(sport, lock, 7);
-  const rows = rivals.map((athlete) => ({
-    id: athlete.id,
-    name: athlete.name,
-    elo: athlete.elo,
-    effort: athleteWeekEffort(athlete, periodStart, track),
-    you: false,
-  }));
-  const volume = periodEffort(
-    state.activities,
-    sport,
-    new Date(periodStart),
-    periodEnd,
-    track,
+  const peers = realPlayerPool.filter((player) =>
+    enrollment.peerIds.includes(player.id),
   );
-  const bonus =
-    track === "verified" && state.primary === sport
-      ? readinessBonus(state.readiness, new Date(periodStart), periodEnd)
-      : 0;
-  rows.push({
-    id: "you",
-    name: state.name,
-    elo: track === "verified" ? mine.verifiedElo : mine.openElo,
-    effort: volume.effort + bonus,
-    you: true,
+  const rows = buildLocalBoard({
+    enrollment,
+    viewer: {
+      id: "you",
+      name: state.name,
+      elo: track === "verified" ? mine.verifiedElo : mine.openElo,
+      activities: state.activities,
+      readiness: state.readiness,
+      primarySport: state.primary,
+    },
+    peers,
+    track,
+    asOf,
   });
-  rows.sort((a, b) => b.effort - a.effort || a.name.localeCompare(b.name));
-  return rows;
+  return rows.map((row) => ({
+    id: row.id,
+    name: row.name,
+    elo: row.elo,
+    effort: row.effort,
+    distanceM: row.distanceM,
+    movingSec: row.movingSec,
+    you: row.you,
+  }));
 }
 
 function settleTrackResult(input: {
@@ -235,18 +300,13 @@ function settleTrackResult(input: {
   place: number;
   fieldSize: number;
   effort: number;
+  distanceM: number;
+  movingSec: number;
   eloBefore: number;
   eloAfter: number;
   frozen: boolean;
   settledAt: string;
 }): PeriodResult {
-  const volume = periodEffort(
-    input.state.activities,
-    input.sport,
-    new Date(input.periodStart),
-    input.periodEnd,
-    input.track,
-  );
   return {
     id: periodResultId(input.periodStart, input.sport, input.track),
     periodStart: input.periodStart,
@@ -256,8 +316,8 @@ function settleTrackResult(input: {
     place: input.place + 1,
     fieldSize: input.fieldSize,
     effort: input.effort,
-    distanceM: volume.distanceM,
-    movingSec: volume.movingSec,
+    distanceM: input.distanceM,
+    movingSec: input.movingSec,
     eloBefore: input.eloBefore,
     eloAfter: input.eloAfter,
     frozen: input.frozen,
@@ -265,142 +325,174 @@ function settleTrackResult(input: {
   };
 }
 
-function settlePeriod(state: CompeteState, periodStart: string): CompeteState {
-  const start = new Date(periodStart);
-  const end = currentPeriodBounds(state.clock.kind, start).endsAt;
+function settleEnrollment(
+  state: CompeteState,
+  enrollment: WaveEnrollment,
+): CompeteState {
+  const periodStart = enrollment.waveStart;
+  const end = new Date(enrollment.weekEnd);
   const frozen = state.frozenPeriods.includes(periodStart);
   const settledAt = new Date().toISOString();
-  let next = state;
-  const additions: PeriodResult[] = [];
+  const sport = enrollment.sport;
+  const current = rating(state, sport);
+  if (!current.optedIn) {
+    return {
+      ...state,
+      enrollments: state.enrollments.filter((item) => item.sport !== sport),
+    };
+  }
 
-  for (const sport of SPORT_IDS) {
-    const current = rating(next, sport);
-    if (!current.optedIn) continue;
-    const verifiedRows = groupFor(next, sport, "verified", periodStart, end);
-    const openRows = groupFor(next, sport, "open", periodStart, end);
-    const verifiedPlace = verifiedRows.findIndex((row) => row.you);
-    const openPlace = openRows.findIndex((row) => row.you);
-    const verifiedEffort = verifiedRows[verifiedPlace]?.effort ?? 0;
-    const openEffort = openRows[openPlace]?.effort ?? 0;
-    const gps = sportById(sport).gps;
-    const nextVerified = gps
-      ? settleElo(
-          current.verifiedElo,
-          verifiedRows.filter((row) => !row.you).map((row) => row.elo),
-          verifiedPlace,
-          verifiedRows.length,
-          verifiedEffort,
-          frozen,
-        )
-      : current.verifiedElo;
-    const nextOpen = settleElo(
-      current.openElo,
-      openRows.filter((row) => !row.you).map((row) => row.elo),
-      openPlace,
-      openRows.length,
-      openEffort,
+  const asOf = end;
+  const verifiedRows = groupFor(state, sport, "verified", enrollment, asOf);
+  const openRows = groupFor(state, sport, "open", enrollment, asOf);
+  const verifiedPlace = verifiedRows.findIndex((row) => row.you);
+  const openPlace = openRows.findIndex((row) => row.you);
+  const verifiedEffort = verifiedRows[verifiedPlace]?.effort ?? 0;
+  const openEffort = openRows[openPlace]?.effort ?? 0;
+  const youVerified = verifiedRows[verifiedPlace];
+  const youOpen = openRows[openPlace];
+  const gps = sportById(sport).gps;
+  const nextVerified = gps
+    ? settleElo(
+        current.verifiedElo,
+        verifiedRows.filter((row) => !row.you).map((row) => row.elo),
+        verifiedPlace,
+        verifiedRows.length,
+        verifiedEffort,
+        frozen,
+      )
+    : current.verifiedElo;
+  const nextOpen = settleElo(
+    current.openElo,
+    openRows.filter((row) => !row.you).map((row) => row.elo),
+    openPlace,
+    openRows.length,
+    openEffort,
+    frozen,
+  );
+
+  const additions: PeriodResult[] = [
+    settleTrackResult({
+      state,
+      sport,
+      track: "open",
+      periodStart,
+      periodEnd: end,
+      place: openPlace,
+      fieldSize: openRows.length,
+      effort: openEffort,
+      distanceM: youOpen?.distanceM ?? 0,
+      movingSec: youOpen?.movingSec ?? 0,
+      eloBefore: current.openElo,
+      eloAfter: nextOpen,
       frozen,
-    );
-
+      settledAt,
+    }),
+  ];
+  if (gps) {
     additions.push(
       settleTrackResult({
-        state: next,
+        state,
         sport,
-        track: "open",
+        track: "verified",
         periodStart,
         periodEnd: end,
-        place: openPlace,
-        fieldSize: openRows.length,
-        effort: openEffort,
-        eloBefore: current.openElo,
-        eloAfter: nextOpen,
+        place: verifiedPlace,
+        fieldSize: verifiedRows.length,
+        effort: verifiedEffort,
+        distanceM: youVerified?.distanceM ?? 0,
+        movingSec: youVerified?.movingSec ?? 0,
+        eloBefore: current.verifiedElo,
+        eloAfter: nextVerified,
         frozen,
         settledAt,
       }),
     );
-    if (gps) {
-      additions.push(
-        settleTrackResult({
-          state: next,
-          sport,
-          track: "verified",
-          periodStart,
-          periodEnd: end,
-          place: verifiedPlace,
-          fieldSize: verifiedRows.length,
-          effort: verifiedEffort,
-          eloBefore: current.verifiedElo,
-          eloAfter: nextVerified,
-          frozen,
-          settledAt,
-        }),
-      );
-    }
-
-    next = withRating(next, sport, {
-      verifiedElo: nextVerified,
-      openElo: nextOpen,
-    });
   }
 
-  if (additions.length === 0) return next;
-  return {
+  let next = withRating(state, sport, {
+    verifiedElo: nextVerified,
+    openElo: nextOpen,
+  });
+  next = {
     ...next,
     periodResults: appendPeriodResults(next.periodResults, additions),
     pendingRevealIds: [
       ...new Set([...next.pendingRevealIds, ...additions.map((row) => row.id)]),
     ],
+    enrollments: next.enrollments.filter((item) => item.sport !== sport),
   };
+
+  if (enrollment.autoEnrollNext) {
+    // Next wave opens at the Sunday reset instant (weekEnd).
+    next = enrollSport(next, sport, end);
+  } else {
+    next = withRating(next, sport, { optedIn: false });
+  }
+  return next;
 }
 
 /**
- * Close any finished periods. Safe to call on every load.
- * After a long gap we settle at most 12 periods for Elo continuity, then
- * jump the clock to the live window so the UI never sticks on a stale week.
+ * Close any finished wave enrollments. Safe to call on every load.
+ * After a long gap we settle at most 12 waves for Elo continuity, then
+ * jump remaining enrollments to the live daily wave.
  */
 export function rollClock(state: CompeteState, now: Date = new Date()): CompeteState {
-  const currentStart = boundsOf(state, now).startsAt.toISOString();
-  let next = state;
+  const liveWave = waveWindowAt(now);
+  const liveStart = liveWave.waveStart.toISOString();
+  let next = ensureEnrollments(state, now);
   let guard = 0;
-  while (next.clock.periodStart < currentStart && guard < 12) {
-    next = settlePeriod(next, next.clock.periodStart);
-    const periodStart = advanceStart(next, next.clock.periodStart);
-    next = {
-      ...next,
-      clock: { ...next.clock, periodStart },
-      ratings: next.ratings.map((item) => ({
-        ...item,
-        lockVerified: item.verifiedElo,
-        lockOpen: item.openElo,
-        lockPeriod: periodStart,
-      })),
-    };
+
+  while (guard < 12) {
+    const due = next.enrollments
+      .filter((item) => item.weekEnd <= now.toISOString())
+      .sort((a, b) => a.weekEnd.localeCompare(b.weekEnd));
+    if (due.length === 0) break;
+    next = settleEnrollment(next, due[0]!);
     guard += 1;
   }
-  if (next.clock.periodStart !== currentStart) {
-    return {
+
+  // Long gap: drop stale enrollments and re-seat on the live wave.
+  if (next.enrollments.some((item) => item.weekEnd <= now.toISOString())) {
+    const opted = next.ratings.filter((item) => item.optedIn).map((item) => item.sport);
+    next = {
       ...next,
-      clock: { ...next.clock, periodStart: currentStart },
+      enrollments: [],
+      clock: { ...next.clock, periodStart: liveStart },
       ratings: next.ratings.map((item) => ({
         ...item,
         lockVerified: item.verifiedElo,
         lockOpen: item.openElo,
-        lockPeriod: currentStart,
+        lockPeriod: liveStart,
       })),
+    };
+    for (const sport of opted) {
+      next = enrollSport(next, sport, now);
+    }
+  }
+
+  if (next.clock.periodStart !== liveStart && next.enrollments.length === 0) {
+    return {
+      ...next,
+      clock: { ...next.clock, periodStart: liveStart },
     };
   }
   return next;
 }
 
+/** Backfill wave seats for opted-in sports missing an enrollment (migrations). */
+function ensureEnrollments(state: CompeteState, now: Date): CompeteState {
+  let next = state;
+  for (const item of state.ratings) {
+    if (!item.optedIn) continue;
+    if (enrollmentFor(next, item.sport)) continue;
+    next = enrollSport(next, item.sport, now);
+  }
+  return next;
+}
+
 function lockSport(state: CompeteState, sport: SportId, now: Date): CompeteState {
-  const periodStart = boundsOf(state, now).startsAt.toISOString();
-  const current = rating(state, sport);
-  return withRating(state, sport, {
-    optedIn: true,
-    lockVerified: current.verifiedElo,
-    lockOpen: current.openElo,
-    lockPeriod: periodStart,
-  });
+  return enrollSport(state, sport, now);
 }
 
 function makeActivity(
@@ -584,9 +676,13 @@ export function reduceCompete(
     }
     case "opt-out": {
       if (!action.sport) return rolled;
-      const periodStart = rolled.clock.periodStart;
+      const enrollment = enrollmentFor(rolled, action.sport);
+      const periodStart = enrollment?.waveStart ?? rolled.clock.periodStart;
       return {
         ...withRating(rolled, action.sport, { optedIn: false }),
+        enrollments: rolled.enrollments.filter(
+          (item) => item.sport !== action.sport,
+        ),
         duels: rolled.duels.filter(
           (duel) =>
             !(duel.sport === action.sport && duel.periodStart === periodStart),
@@ -658,7 +754,9 @@ export function reduceCompete(
     case "complete-lesson":
       return { ...rolled, lessonDoneOn: dayKey(now) };
     case "freeze": {
-      const periodStart = rolled.clock.periodStart;
+      const primaryEnrollment = enrollmentFor(rolled, rolled.primary);
+      const periodStart =
+        primaryEnrollment?.waveStart ?? rolled.clock.periodStart;
       if (rolled.frozenPeriods.includes(periodStart) || rolled.freezesLeft <= 0) {
         return rolled;
       }
@@ -670,7 +768,8 @@ export function reduceCompete(
     }
     case "duel": {
       const sport = action.sport ?? rolled.primary;
-      const periodStart = rolled.clock.periodStart;
+      const enrolled = enrollmentFor(rolled, sport);
+      const periodStart = enrolled?.waveStart ?? rolled.clock.periodStart;
       const existing = rolled.duels.find(
         (duel) => duel.sport === sport && duel.periodStart === periodStart,
       );
@@ -720,10 +819,13 @@ export function reduceCompete(
       };
     }
     case "debug-close-week": {
-      // Product settlement is load-time (rollClock). This action advances past
-      // the current week's exclusive end and pins demoNow so the new week sticks.
-      const period = boundsOf(rolled, now);
-      const demoNow = new Date(period.endsAt.getTime() + 60_000).toISOString();
+      // Product settlement is load-time (rollClock). Advance past the active
+      // wave's Sunday weekEnd and pin demoNow so the new wave sticks.
+      const primaryEnrollment = enrollmentFor(rolled, rolled.primary);
+      const end = primaryEnrollment
+        ? new Date(primaryEnrollment.weekEnd)
+        : waveWindowAt(now).weekEnd;
+      const demoNow = new Date(end.getTime() + 60_000).toISOString();
       return rollClock({ ...rolled, demoNow }, new Date(demoNow));
     }
     default:
@@ -749,44 +851,13 @@ export function weeklyBoard(
   now: Date = new Date(),
 ): BoardRow[] {
   const live = rollClock(state, now);
-  const period = boundsOf(live, now);
-  const rows = groupFor(
-    live,
-    sport,
-    track,
-    period.startsAt.toISOString(),
-    period.endsAt,
-  );
-  const periodStart = period.startsAt.toISOString();
-  return rows.map((row, index) => {
-    if (row.you) {
-      const volume = periodEffort(
-        live.activities,
-        sport,
-        period.startsAt,
-        period.endsAt,
-        track,
-      );
-      return {
-        ...row,
-        distanceM: volume.distanceM,
-        movingSec: volume.movingSec,
-        place: index + 1,
-      };
-    }
-    const athlete = {
-      id: row.id,
-      name: row.name,
-      city: "",
-      elo: row.elo,
-    };
-    return {
-      ...row,
-      distanceM: athleteWeekDistanceM(athlete, periodStart, track, sport),
-      movingSec: athleteWeekMovingSec(athlete, periodStart, track, sport),
-      place: index + 1,
-    };
-  });
+  const enrollment = enrollmentFor(live, sport);
+  if (!enrollment) return [];
+  const rows = groupFor(live, sport, track, enrollment, now);
+  return rows.map((row, index) => ({
+    ...row,
+    place: index + 1,
+  }));
 }
 
 export function projectedElo(
@@ -796,7 +867,20 @@ export function projectedElo(
   now: Date = new Date(),
 ): number {
   const live = rollClock(state, now);
-  const settled = settlePeriod(live, live.clock.periodStart);
+  const enrollment = enrollmentFor(live, sport);
+  if (!enrollment) {
+    const next = rating(live, sport);
+    return track === "verified" ? next.verifiedElo : next.openElo;
+  }
+  const settled = settleEnrollment(
+    {
+      ...live,
+      enrollments: live.enrollments.map((item) =>
+        item.sport === sport ? { ...item, autoEnrollNext: false } : item,
+      ),
+    },
+    { ...enrollment, autoEnrollNext: false },
+  );
   const next = rating(settled, sport);
   return track === "verified" ? next.verifiedElo : next.openElo;
 }
@@ -811,20 +895,20 @@ export interface DuelView {
 
 export function duelViews(state: CompeteState, now: Date = new Date()): DuelView[] {
   const live = rollClock(state, now);
-  const period = boundsOf(live, now);
   return live.duels
-    .filter((duel) => duel.periodStart === period.startsAt.toISOString())
     .map((duel) => {
+      const bounds = waveBoundsFor(live, duel.sport, now);
+      if (duel.periodStart !== bounds.startsAt.toISOString()) return null;
       const volume = periodEffort(
         live.activities,
         duel.sport,
-        period.startsAt,
-        period.endsAt,
+        bounds.startsAt,
+        bounds.endsAt,
         "open",
       );
       const bonus =
         live.primary === duel.sport
-          ? readinessBonus(live.readiness, period.startsAt, period.endsAt)
+          ? readinessBonus(live.readiness, bounds.startsAt, bounds.endsAt)
           : 0;
       const youEffort = volume.effort + bonus;
       const rivalEffort = athleteWeekEffort(
@@ -850,7 +934,8 @@ export function duelViews(state: CompeteState, now: Date = new Date()): DuelView
         youDistanceM: volume.distanceM,
         leading,
       };
-    });
+    })
+    .filter((row): row is DuelView => row != null);
 }
 
 export function formatClock(bounds: PeriodBounds): string {
