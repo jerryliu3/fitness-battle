@@ -1,8 +1,4 @@
 import {
-  BebasNeue_400Regular,
-  useFonts as useBebas,
-} from "@expo-google-fonts/bebas-neue";
-import {
   DMSans_400Regular,
   DMSans_500Medium,
   DMSans_700Bold,
@@ -14,35 +10,34 @@ import { ActivityIndicator, View } from "react-native";
 import { colors } from "../src/theme";
 
 export default function RootLayout() {
-  const [bebasLoaded] = useBebas({ BebasNeue_400Regular });
   const [dmLoaded] = useDmSans({
     DMSans_400Regular,
     DMSans_500Medium,
     DMSans_700Bold,
   });
 
-  if (!bebasLoaded || !dmLoaded) {
+  if (!dmLoaded) {
     return (
       <View
         style={{
           flex: 1,
-          backgroundColor: colors.ink,
+          backgroundColor: colors.paper,
           alignItems: "center",
           justifyContent: "center",
         }}
       >
-        <ActivityIndicator color={colors.lime} />
+        <ActivityIndicator color={colors.blue} />
       </View>
     );
   }
 
   return (
     <>
-      <StatusBar style="light" />
+      <StatusBar style="dark" />
       <Stack
         screenOptions={{
           headerShown: false,
-          contentStyle: { backgroundColor: colors.ink },
+          contentStyle: { backgroundColor: colors.paper },
           animation: "fade",
         }}
       />
