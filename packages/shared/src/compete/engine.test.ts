@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
 import { activityFromSample } from "../fitness/samples";
-import { freshState, reduceCompete, rollClock } from "./engine";
+import {
+  freshState,
+  migrateCompeteState,
+  reduceCompete,
+  rollClock,
+} from "./engine";
 
 describe("compete engine", () => {
   it("allows one-time history import only", () => {
@@ -99,5 +104,84 @@ describe("compete engine", () => {
     const done = reduceCompete(calibrated, { type: "complete-onboarding" });
     expect(done.onboardingCompleted).toBe(true);
     expect(done.calibrated).toBe(true);
+  });
+
+  it("settles a closed week into period history and pending reveal", () => {
+    const now = "2026-10-12T12:00:00.000Z";
+    const joined = reduceCompete(freshState(new Date(now)), {
+      type: "opt-in",
+      sport: "running",
+      now,
+    });
+    const withWork = reduceCompete(joined, {
+      type: "apply-sync",
+      provider: "strava",
+      linkStatus: "stub",
+      now,
+      activities: [
+        {
+          id: "run-1",
+          sport: "running",
+          startedAt: "2026-10-13T12:00:00.000Z",
+          distanceM: 10000,
+          movingSec: 3000,
+          avgHr: 150,
+          verified: true,
+          source: "strava",
+        },
+      ],
+    });
+    const closed = reduceCompete(withWork, {
+      type: "debug-close-week",
+      now,
+    });
+    expect(closed.clock.periodStart).toBe("2026-10-19T00:00:00.000Z");
+    expect(closed.demoNow).toBe("2026-10-19T00:01:00.000Z");
+    expect(closed.periodResults.length).toBeGreaterThan(0);
+    expect(closed.pendingRevealIds.length).toBeGreaterThan(0);
+    const open = closed.periodResults.find(
+      (row) => row.sport === "running" && row.track === "open",
+    );
+    expect(open?.place).toBeGreaterThanOrEqual(1);
+    expect(open?.fieldSize).toBeGreaterThan(1);
+    expect(open?.eloBefore).toBe(1000);
+    expect(typeof open?.eloAfter).toBe("number");
+
+    const cleared = reduceCompete(closed, {
+      type: "acknowledge-reveal",
+      now: "2026-10-19T12:00:00.000Z",
+    });
+    expect(cleared.pendingRevealIds).toHaveLength(0);
+    expect(cleared.periodResults.length).toBe(closed.periodResults.length);
+  });
+
+  it("holds elo and still records history when the week is frozen", () => {
+    const now = "2026-10-12T12:00:00.000Z";
+    const joined = reduceCompete(freshState(new Date(now)), {
+      type: "opt-in",
+      sport: "running",
+      now,
+    });
+    const frozen = reduceCompete(joined, { type: "freeze", now });
+    const closed = reduceCompete(frozen, { type: "debug-close-week", now });
+    const open = closed.periodResults.find(
+      (row) => row.sport === "running" && row.track === "open",
+    );
+    expect(open?.frozen).toBe(true);
+    expect(open?.eloAfter).toBe(open?.eloBefore);
+  });
+
+  it("migrates older compete payloads without period history", () => {
+    const legacy = {
+      ...freshState(new Date("2026-10-12T12:00:00.000Z")),
+    };
+    const stripped = {
+      ...legacy,
+      periodResults: undefined,
+      pendingRevealIds: undefined,
+    };
+    const migrated = migrateCompeteState(stripped as never);
+    expect(migrated.periodResults).toEqual([]);
+    expect(migrated.pendingRevealIds).toEqual([]);
   });
 });

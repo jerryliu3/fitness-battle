@@ -26,7 +26,17 @@ export {
   type CompeteState,
   type LinkStatus,
   type ProviderLink,
+  type PeriodResult,
 } from "./sports";
+export {
+  MAX_PERIOD_RESULTS,
+  appendPeriodResults,
+  formatEloDelta,
+  formatPlace,
+  pendingPeriodResults,
+  periodResultId,
+  primaryRevealResults,
+} from "./history";
 export { RANK_BANDS, rankForElo, eloInBand, type RankBand } from "./ranks";
 export {
   activityEffort,
@@ -42,6 +52,7 @@ export {
   migrateCompeteState,
   reduceCompete,
   rollClock,
+  competeNow,
   weeklyBoard,
   projectedElo,
   duelViews,
@@ -62,3 +73,17 @@ export {
   type PaceScope,
   type PaceRow,
 } from "./pace";
+export {
+  activityCheckpoints,
+  athleteWeekDistanceM,
+  athleteWeekMovingSec,
+  checkpointInstants,
+  distanceTrackMaxKm,
+  effortTrackMax,
+  initialsFromName,
+  interpolateSeries,
+  syntheticCheckpoints,
+  volumeThrough,
+  type CheckpointIndex,
+  type CheckpointSeries,
+} from "./track";

@@ -1,0 +1,116 @@
+"use client";
+
+import {
+  formatEloDelta,
+  formatEffort,
+  formatPlace,
+  primaryRevealResults,
+  sportById,
+  type CompeteState,
+} from "@fitness-battle/shared";
+
+function weekLabel(periodStart: string, periodEnd: string): string {
+  const start = new Date(periodStart).toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    timeZone: "UTC",
+  });
+  const end = new Date(new Date(periodEnd).getTime() - 1).toLocaleDateString(
+    "en-US",
+    {
+      month: "short",
+      day: "numeric",
+      timeZone: "UTC",
+    },
+  );
+  return `${start} – ${end}`;
+}
+
+export function WeekReveal({
+  state,
+  onDismiss,
+}: {
+  state: CompeteState;
+  onDismiss: () => void;
+}) {
+  const reveals = primaryRevealResults(
+    state.periodResults,
+    state.pendingRevealIds,
+    state.primary,
+  );
+  if (reveals.length === 0) return null;
+  const result = reveals[0]!;
+  const delta = result.eloAfter - result.eloBefore;
+  const sport = sportById(result.sport);
+  const headline =
+    result.frozen
+      ? "Week held."
+      : result.place === 1
+        ? "You took the field."
+        : delta > 0
+          ? "Week closed up."
+          : delta < 0
+            ? "Week closed."
+            : "Week settled even.";
+
+  return (
+    <section
+      className="sp-reveal"
+      role="dialog"
+      aria-labelledby="week-reveal-title"
+      aria-modal="false"
+    >
+      <p className="sp-reveal-kicker">Week complete · UTC</p>
+      <h2 id="week-reveal-title">{headline}</h2>
+      <p className="sp-reveal-week">
+        {sport.name} · {weekLabel(result.periodStart, result.periodEnd)}
+        {result.track === "verified" ? " · verified" : " · all efforts"}
+      </p>
+
+      <div className="sp-reveal-grid">
+        <div>
+          <span>Place</span>
+          <strong>{formatPlace(result.place, result.fieldSize)}</strong>
+        </div>
+        <div>
+          <span>Effort</span>
+          <strong>{formatEffort(result.effort)}</strong>
+        </div>
+        <div>
+          <span>Elo</span>
+          <strong>
+            {result.eloBefore}
+            <small> → {result.eloAfter}</small>
+          </strong>
+        </div>
+        <div>
+          <span>Change</span>
+          <strong
+            data-delta={delta > 0 ? "up" : delta < 0 ? "down" : "flat"}
+          >
+            {formatEloDelta(result.eloBefore, result.eloAfter)}
+          </strong>
+        </div>
+      </div>
+
+      {result.frozen ? (
+        <p className="fb-note">
+          This week was frozen. Your rating did not move.
+        </p>
+      ) : result.effort <= 0 ? (
+        <p className="fb-note">
+          No counted effort this week, so rating decayed slightly.
+        </p>
+      ) : (
+        <p className="fb-note">
+          Final place in your matched group sets next week’s starting rating.
+          Your new week is already open.
+        </p>
+      )}
+
+      <button type="button" className="sp-cta" onClick={onDismiss}>
+        Start the new week ↗
+      </button>
+    </section>
+  );
+}

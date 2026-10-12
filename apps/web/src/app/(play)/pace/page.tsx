@@ -25,12 +25,17 @@ export default function PacePage() {
 
   return (
     <>
-      <header>
+      <header className="sp-title-block">
         <p className="fb-kicker">Speed, not effort</p>
-        <h1 className="fb-title">Absolute times.</h1>
+        <h1>
+          ABSOLUTE
+          <br />
+          <span>TIMES.</span>
+        </h1>
         <p className="fb-copy">
           This board is completion time for a distance. It does not move your
-          Elo. Local uses your city. Category uses your current rank band.
+          Elo or the weekly effort track. Local uses your city. Category uses
+          your current rank band.
         </p>
       </header>
 

@@ -4,13 +4,25 @@ import { AuthGate } from "@/components/auth-gate";
 import { useAuth } from "@/components/auth-context";
 import { useCompete } from "@/components/compete-context";
 import {
+  AthleteCard,
+  WeekRecords,
+} from "@/features/split/components/athlete-card";
+import {
+  ProductHeader,
+  sourceFromLinks,
+} from "@/features/split/components/product-header";
+import { SeasonHistory } from "@/features/split/components/season-history";
+import { buildSplitBoard } from "@/features/split/model";
+import {
   activityFromSample,
   BACKFILL_DAYS,
+  competeNow,
   currentPeriodBounds,
   evidenceLabel,
   PROVIDERS,
   RANK_BANDS,
   rankForElo,
+  sportById,
   SPORTS,
   STARTING_FREEZES,
   type ActivitySample,
@@ -55,8 +67,12 @@ function YouContent() {
 
   if (!state) return <p className="fb-copy">Loading…</p>;
 
-  const period = currentPeriodBounds(state.clock.kind, new Date());
+  const now = competeNow(state);
+  const period = currentPeriodBounds(state.clock.kind, now);
   const frozen = state.frozenPeriods.includes(period.startsAt.toISOString());
+  const board = buildSplitBoard(state, state.primary, "open", now);
+  const source = sourceFromLinks(state.links);
+  const spec = sportById(state.primary);
 
   async function syncProvider(providerId: (typeof PROVIDERS)[number]["id"]) {
     setSyncNote(null);
@@ -140,14 +156,54 @@ function YouContent() {
 
   return (
     <>
-      <header>
-        <p className="fb-kicker">You</p>
-        <h1 className="fb-title">{state.name}</h1>
-        <p className="fb-copy">
-          {state.city}. {user?.email}
-          {demoMode ? " · demo account" : ""}.
-        </p>
-      </header>
+      <ProductHeader sourceStatus={source.status} sourceLabel={source.label} />
+
+      <AthleteCard
+        name={state.name}
+        city={state.city}
+        sportLabel={spec.name}
+        you={board.you}
+        placeLabel={
+          board.you
+            ? `${board.you.place} / ${board.rows.length}`
+            : "Not on a field"
+        }
+      />
+      <WeekRecords sport={state.primary} you={board.you} />
+
+      <p className="fb-copy">
+        {user?.email}
+        {demoMode ? " · demo account" : ""}.
+      </p>
+
+      <SeasonHistory results={state.periodResults} primary={state.primary} />
+
+      {demoMode ? (
+        <section className="fb-card">
+          <h2>Demo week close</h2>
+          <p className="fb-copy">
+            Settlement normally runs when you open the app after a UTC Monday
+            rollover. This advances the clock so you can preview the week-complete
+            reveal and season history.
+          </p>
+          <button
+            type="button"
+            className="fb-btn-line"
+            onClick={() => dispatch({ type: "debug-close-week" })}
+          >
+            Close this week now
+          </button>
+          {state.demoNow ? (
+            <p className="fb-note">
+              Demo clock pinned to{" "}
+              {new Date(state.demoNow).toLocaleString("en-US", {
+                timeZone: "UTC",
+              })}{" "}
+              UTC so the new week stays open after reload.
+            </p>
+          ) : null}
+        </section>
+      ) : null}
 
       {!state.onboardingCompleted ? (
         <section className="fb-card">
@@ -262,7 +318,7 @@ function YouContent() {
         )}
       </section>
 
-      <section className="fb-card">
+      <section className="fb-card" id="connections">
         <h2>Connections</h2>
         <p className="fb-note">
           Link a source, then sync. Stub means demo data — never a live athlete
@@ -325,6 +381,9 @@ function YouContent() {
       </section>
 
       <section className="fb-stack">
+        <Link href="/pace" className="fb-btn-line">
+          Pace board ↗
+        </Link>
         <button type="button" className="fb-btn-line" onClick={() => void signOut()}>
           Sign out
         </button>

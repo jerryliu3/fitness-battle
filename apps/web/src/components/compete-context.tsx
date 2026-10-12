@@ -37,7 +37,9 @@ function readState(): CompeteState {
     if (parsed.version !== 1 || !Array.isArray(parsed.ratings)) {
       return rollClock(freshState());
     }
-    return rollClock(migrateCompeteState(parsed));
+    const migrated = migrateCompeteState(parsed);
+    const now = migrated.demoNow ? new Date(migrated.demoNow) : new Date();
+    return rollClock(migrated, now);
   } catch {
     return rollClock(freshState());
   }
