@@ -70,6 +70,8 @@ See [design directions v2](docs/design-directions-v2.md) for the brand systems, 
 
 Open `/design/spatial` for five interactive mileage comparisons: **Pursuit**, **Distance path**, **Circuit**, **Switchback**, and **Week replay**. Direct links use `?scene=pursuit|path|circuit|switchback|replay`. These public presentation routes use synthetic data, with no account or tracker authorization required. Three of the concepts use real 3D cameras and selectable avatars; the others use calibrated distance axes and milestone replay. See [the spatial study](docs/spatial-design-study.md) for mechanisms, evaluation tasks, and limitations.
 
+The next exploration is `/design/evolution`: four complete identities (**VOLT**, **FORM**, **EVEN**, **CURRENT**) using Split's four navigation jobs, a nine-lane vertical distance track, and third-person Pursuit with a fixed starting line and customizable articulated runner. Use `?brand=even&view=field&mode=lanes` or `?brand=volt&view=field&mode=pursuit`. [Design evolution](docs/design-evolution.md) covers brand systems, interaction choices, evaluation, and the avatar art roadmap.
+
 ## Living docs
 
 Living standards live in the Project Agent Store (and are summarized in-repo):

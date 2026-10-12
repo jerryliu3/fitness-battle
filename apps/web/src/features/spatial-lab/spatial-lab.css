@@ -673,6 +673,10 @@
   font-weight: 500;
   color: var(--sp-ink);
 }
+.spatial-footer > a {
+  display: block;
+  margin-bottom: 10px;
+}
 .spatial-footer {
   max-width: 1400px;
   margin: 18px auto 0;
