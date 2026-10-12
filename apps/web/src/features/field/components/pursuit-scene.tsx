@@ -124,29 +124,32 @@ export function PursuitScene({
     const earth = material("#1d2830");
     const road = material("#2a3540");
     const line = material("#7f9d85");
-    mesh(new THREE.PlaneGeometry(140, 360), earth, 0, -0.12, -40).rotation.x =
+    // Center the corridor so look-ahead and turn-around both have scenery.
+    mesh(new THREE.PlaneGeometry(140, 420), earth, 0, -0.12, 0).rotation.x =
       -Math.PI / 2;
-    mesh(new THREE.BoxGeometry(8, 0.08, 320), road, 0, 0, -40);
-    for (let i = 0; i < 28; i += 1) {
-      mesh(new THREE.BoxGeometry(0.18, 0.04, 3.2), line, 0, 0.05, -6 - i * 10);
+    mesh(new THREE.BoxGeometry(8, 0.08, 400), road, 0, 0, 0);
+    for (let i = -18; i <= 18; i += 1) {
+      mesh(new THREE.BoxGeometry(0.18, 0.04, 3.2), line, 0, 0.05, i * 10);
     }
-    for (let i = 0; i < 18; i += 1) {
+    for (let i = -14; i <= 14; i += 1) {
+      if (i === 0) continue;
       const side = i % 2 === 0 ? -1 : 1;
       const trunk = material("#3a2d22");
-      const canopy = material(i % 3 === 0 ? "#3f6b45" : "#2f5a3c");
+      const canopy = material(Math.abs(i) % 3 === 0 ? "#3f6b45" : "#2f5a3c");
+      const z = i * 12;
       mesh(
         new THREE.CylinderGeometry(0.18, 0.24, 2.2, 5),
         trunk,
-        side * (7 + (i % 4)),
+        side * (7 + (Math.abs(i) % 4)),
         1.1,
-        -10 - i * 12,
+        z,
       );
       mesh(
-        new THREE.SphereGeometry(1.3 + (i % 3) * 0.15, 10, 10),
+        new THREE.SphereGeometry(1.3 + (Math.abs(i) % 3) * 0.15, 10, 10),
         canopy,
-        side * (7 + (i % 4)),
+        side * (7 + (Math.abs(i) % 4)),
         2.6,
-        -10 - i * 12,
+        z,
       );
     }
 
