@@ -2,6 +2,8 @@
 
 Cloud OAuth runs on the web server. Apple Health and Health Connect run on the phone and post into the same API. Missing keys keep a provider on the stub path. A stub is never shown as a live connection.
 
+Garmin-via-phone-bridge and Open Wearables investigation: [open-wearables-feasibility.md](./open-wearables-feasibility.md). Summary: HealthKit/Health Connect workout ingest already exists in the mobile app; Open Wearables was **not** adopted or deployed — missing on-device source filtering and HRV gaps block the OW path for now.
+
 ## Status matrix
 
 | Integration | Kind | Maturity | Without credentials | With credentials |
