@@ -14,6 +14,10 @@ describe("web env module", () => {
     expect(source).toContain("process.env.NEXT_PUBLIC_APP_URL");
     expect(source).toContain("process.env.NEXT_PUBLIC_USE_DEMO_DATA");
     // Dynamic lookups break Next client inlining for public env.
-    expect(source).not.toMatch(/process\.env\[[^\]]+\]/);
+    const code = source
+      .split("\n")
+      .filter((line) => !line.trimStart().startsWith("*") && !line.trimStart().startsWith("//"))
+      .join("\n");
+    expect(code).not.toMatch(/process\.env\[[^\]]+\]/);
   });
 });
