@@ -39,9 +39,7 @@ function SignupForm() {
         return;
       }
       if (result.needsEmailConfirm) {
-        setMessage(
-          "Account created. Check your email to confirm, then sign in.",
-        );
+        setMessage("Account created. Check your email to confirm, then sign in.");
         return;
       }
       const dest =
@@ -51,9 +49,7 @@ function SignupForm() {
       router.replace(dest);
       router.refresh();
     } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "Could not create the account.",
-      );
+      setError(err instanceof Error ? err.message : "Could not create the account.");
     } finally {
       setBusy(false);
     }
