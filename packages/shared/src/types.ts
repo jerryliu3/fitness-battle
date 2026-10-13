@@ -7,7 +7,14 @@ export type BattleStatus = "open" | "active" | "completed" | "cancelled";
 
 export type MembershipRole = "owner" | "member";
 
-export type FitnessProviderId = "strava" | "mock";
+export type FitnessProviderId =
+  | "strava"
+  | "mock"
+  | "garmin"
+  | "apple_health"
+  | "google_health"
+  | "whoop"
+  | "oura";
 
 export type CategorySlug = "running" | "cycling" | "walking" | "strength";
 
@@ -86,4 +93,15 @@ export interface ActivitySample {
   movingSec?: number;
   avgHr?: number | null;
   rawName: string;
+}
+
+/** Daily recovery or sleep score from a readiness provider. */
+export interface ReadinessSample {
+  id: string;
+  provider: FitnessProviderId;
+  externalId: string;
+  /** Calendar day, YYYY-MM-DD. */
+  day: string;
+  /** 0–100. */
+  score: number;
 }

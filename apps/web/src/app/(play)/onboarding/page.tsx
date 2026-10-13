@@ -60,7 +60,7 @@ function OnboardingFlow() {
       const response = await fetch("/api/fitness/connect", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId: user?.id }),
+        body: JSON.stringify({ userId: user?.id, provider: "strava" }),
       });
       const body = (await response.json()) as {
         status?: string;
@@ -112,7 +112,7 @@ function OnboardingFlow() {
           {step === "prefs" &&
             "Name, city, and primary sport. You can change these later on You."}
           {step === "connect" &&
-            "Strava is the cloud default. Without API keys we use an honest stub — never shown as fully connected."}
+            "Strava is the cloud default. Garmin, WHOOP, and Oura connect the same way on You once their keys are set. A Garmin file import works without API approval. Without keys this step stays an honest stub."}
           {step === "backfill" &&
             `Import a sample of the last ${BACKFILL_DAYS} days once. This sets your starting level and cannot be repeated.`}
           {step === "done" &&

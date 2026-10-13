@@ -20,4 +20,22 @@ export const serverEnv = {
     "STRAVA_REDIRECT_URI",
     "http://localhost:3000/api/fitness/strava/callback",
   ),
+  whoopClientId: process.env.WHOOP_CLIENT_ID,
+  whoopClientSecret: process.env.WHOOP_CLIENT_SECRET,
+  whoopRedirectUri: read(
+    "WHOOP_REDIRECT_URI",
+    "http://localhost:3000/api/fitness/whoop/callback",
+  ),
+  ouraClientId: process.env.OURA_CLIENT_ID,
+  ouraClientSecret: process.env.OURA_CLIENT_SECRET,
+  ouraRedirectUri: read(
+    "OURA_REDIRECT_URI",
+    "http://localhost:3000/api/fitness/oura/callback",
+  ),
+  garminConsumerKey: process.env.GARMIN_CONSUMER_KEY,
+  garminConsumerSecret: process.env.GARMIN_CONSUMER_SECRET,
+  garminRedirectUri: read(
+    "GARMIN_REDIRECT_URI",
+    "http://localhost:3000/api/fitness/garmin/callback",
+  ),
 };

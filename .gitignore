@@ -6,6 +6,7 @@ dist
 out
 .turbo
 .vercel
+.pnpm-store
 *.log
 .env
 .env.local

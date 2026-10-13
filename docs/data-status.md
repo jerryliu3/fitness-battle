@@ -11,7 +11,7 @@ What is loaded today versus what is still empty or synthetic.
 | Pace absolutes (5K–marathon, 20K/40K) | Your synced/history activities + synthetic field times from Elo | Works offline; empty for “you” until history/sync |
 | Lessons | Deterministic schedule in shared | Works offline |
 | 90-day calibration | Synthetic history generator (`import-history`) | One-time; not live tracker data |
-| Live activities | Strava sync API | Stub without keys or in demo mode. With keys, a signed-in sync is stored and applied to the local effort board |
+| Live activities | Strava, WHOOP, Oura, and Garmin sync APIs, plus Garmin file import and phone ingest | Stub without keys or in demo mode. With keys, a signed-in sync is stored and applied to the local effort board. FIT/GPX/TCX import does not need Garmin approval. |
 | Week close / Elo settle | `rollClock` on app load (UTC Mon boundary) | No server cron for the local engine; settles up to 12 missed weeks then jumps |
 | Week-complete reveal | `pendingRevealIds` + My track receipt | Place, Elo before→after, effort |
 | Season history | `periodResults` on Athlete | Cap 104 rows; open + verified tracks |
