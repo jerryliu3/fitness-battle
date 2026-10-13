@@ -14,8 +14,8 @@ describe("isSupabaseConfigured", () => {
   it("accepts hosted projects with publishable or JWT-shaped anon keys", () => {
     expect(
       isSupabaseConfigured(
-        "https://pxruixccvrykhbjzjqga.supabase.co",
-        "sb_publishable_qDgv-txtSFPU4VatDc1CGQ_2SwG-Po9",
+        "https://abcdefghijklmnop.supabase.co",
+        "sb_publishable_test_key_not_a_secret",
       ),
     ).toBe(true);
     expect(

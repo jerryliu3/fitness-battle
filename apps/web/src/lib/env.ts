@@ -1,11 +1,7 @@
 /**
- * Env access for the web app.
- *
- * NEXT_PUBLIC_* values must be read with static `process.env.NEXT_PUBLIC_…`
- * property access so Next.js can inline them into the browser bundle.
- * Dynamic string-key lookups stay empty on the client, which falls back to
- * local placeholders, flips auth into demo mode, and hydrates differently
- * from the server (broken signup / React #418).
+ * NEXT_PUBLIC_* must use static `process.env.NEXT_PUBLIC_…` access so Next
+ * inlines them into the client bundle. Dynamic `process.env[name]` stays empty
+ * in the browser and forces demo-auth fallbacks.
  */
 
 /** Public / isomorphic env. Safe to import from client components. */

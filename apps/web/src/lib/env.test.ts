@@ -13,10 +13,13 @@ describe("web env module", () => {
     expect(source).toContain("process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY");
     expect(source).toContain("process.env.NEXT_PUBLIC_APP_URL");
     expect(source).toContain("process.env.NEXT_PUBLIC_USE_DEMO_DATA");
-    // Dynamic lookups break Next client inlining for public env.
+    // Ignore comments; dynamic lookups break Next client inlining.
     const code = source
       .split("\n")
-      .filter((line) => !line.trimStart().startsWith("*") && !line.trimStart().startsWith("//"))
+      .filter((line) => {
+        const trimmed = line.trimStart();
+        return !trimmed.startsWith("*") && !trimmed.startsWith("//");
+      })
       .join("\n");
     expect(code).not.toMatch(/process\.env\[[^\]]+\]/);
   });
