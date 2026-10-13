@@ -15,7 +15,6 @@ export default function LegalLayout({ children }: { children: ReactNode }) {
         </Link>
         <nav className="fb-legal-nav" aria-label="Legal">
           <Link href="/privacy">Privacy</Link>
-          <Link href="/whoop">WHOOP</Link>
           <Link href="/login">Sign in</Link>
         </nav>
       </header>

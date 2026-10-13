@@ -29,12 +29,14 @@ Set these on the web server. Leave them empty until you have them. Demo mode (`N
 
 ### WHOOP developer dashboard
 
-WHOOP asks for public URLs when you create an app. Use your deployed web origin (production example: `https://fitness-battle-one.vercel.app`):
+WHOOP asks for public URLs when you create an app. Privacy and the app website are product-wide (same URLs you’d give Strava or Oura). The OAuth redirect is provider-specific — each tracker’s developer console registers its own callback, which is the usual consumer-app pattern.
+
+Use your deployed web origin (production example: `https://fitness-battle-one.vercel.app`):
 
 | Dashboard field | Public URL |
 | --- | --- |
 | Privacy policy | `{origin}/privacy` |
-| App / website link | `{origin}/whoop` |
+| App / website link | `{origin}/` |
 | Redirect URI | `{origin}/api/fitness/whoop/callback` |
 
 Set `WHOOP_REDIRECT_URI` to the same Redirect URI value (including `http://localhost:3000/...` for local). After WHOOP sends the user back with an auth code, the callback exchanges the token and redirects into Athlete (`/you?tracker=...&provider=whoop`).

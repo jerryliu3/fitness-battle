@@ -505,27 +505,6 @@ a {
   border-top: 1px solid var(--line);
 }
 
-.fb-legal-actions {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 12px 16px;
-  margin-top: 8px;
-}
-
-.fb-legal-actions .fb-btn {
-  width: auto;
-  min-width: 160px;
-  text-decoration: none;
-  text-align: center;
-}
-
-.fb-legal-secondary {
-  font-size: 14px;
-  font-weight: 650;
-  color: var(--muted);
-}
-
 @media (min-width: 720px) {
   .fb-modal {
     place-items: center;
