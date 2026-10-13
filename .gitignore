@@ -20,3 +20,4 @@ supabase/.temp
 rankings-db/supabase/.branches
 rankings-db/supabase/.temp
 *.import.sql
+packages/rankings/imports/

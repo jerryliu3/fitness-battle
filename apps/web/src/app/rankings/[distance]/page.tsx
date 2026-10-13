@@ -22,20 +22,14 @@ export default async function DistanceBoardPage({
   if (!stored || !label) notFound();
 
   const client = createRankingsClient();
-  let rows: LeaderboardRow[] = [];
-  if (client) {
-    const { data, error } = await client
-      .from("leaderboard_entries")
-      .select("*")
-      .eq("distance_slug", stored)
-      .order("rank_time_ms", { ascending: true })
-      .limit(1000);
-    if (!error && data) rows = data as LeaderboardRow[];
-  }
-
-  const women = rows.filter((row) => row.sex === "female");
-  const men = rows.filter((row) => row.sex === "male");
-  const sample = rows[0];
+  const [women, men] = client
+    ? await Promise.all([
+        loadBoard(client, stored, "female"),
+        loadBoard(client, stored, "male"),
+      ])
+    : [[], []];
+  const sample = women[0] ?? men[0];
+  const sources = [...new Set([...women, ...men].map((row) => row.attribution))];
 
   return (
     <main className="rankings-wrap">
@@ -46,20 +40,32 @@ export default async function DistanceBoardPage({
       <h1>{label}</h1>
       <p className="rankings-lede">
         {sample
-          ? `${sample.event_name}. Ranked by ${clockLabel(sample.rank_clock).toLowerCase()}.`
+          ? "Fastest published finishers. Chip time when the source has one, otherwise the official time."
           : "No finishers are published for this distance yet."}
       </p>
       <Board title="Women" rows={women} />
       <Board title="Men" rows={men} />
-      {sample ? (
-        <p className="rankings-source">
-          {sample.attribution}{" "}
-          <a href={sample.source_url}>Source results</a>.{" "}
-          <a href="https://www.opendatacommons.org/licenses/odbl/">Open Database License</a>.
-        </p>
+      {sources.length > 0 ? (
+        <p className="rankings-source">{sources.join(" · ")}</p>
       ) : null}
     </main>
   );
+}
+
+async function loadBoard(
+  client: NonNullable<ReturnType<typeof createRankingsClient>>,
+  distance: string,
+  sex: string,
+): Promise<LeaderboardRow[]> {
+  const { data, error } = await client
+    .from("leaderboard_entries")
+    .select("*")
+    .eq("distance_slug", distance)
+    .eq("sex", sex)
+    .order("rank_time_ms", { ascending: true })
+    .limit(200);
+  if (error || !data) return [];
+  return data as LeaderboardRow[];
 }
 
 function Board({ title, rows }: { title: string; rows: LeaderboardRow[] }) {
@@ -79,6 +85,7 @@ function Board({ title, rows }: { title: string; rows: LeaderboardRow[] }) {
               <th scope="col">Athlete</th>
               <th scope="col">Time</th>
               <th scope="col">Clock</th>
+              <th scope="col">Race</th>
             </tr>
           </thead>
           <tbody>
@@ -88,6 +95,9 @@ function Board({ title, rows }: { title: string; rows: LeaderboardRow[] }) {
                 <td>{row.athlete_name}</td>
                 <td>{formatRaceTime(row.rank_time_ms)}</td>
                 <td>{clockLabel(row.rank_clock)}</td>
+                <td>
+                  {row.event_name} {row.edition_year}
+                </td>
               </tr>
             ))}
           </tbody>
