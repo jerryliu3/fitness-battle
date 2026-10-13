@@ -23,6 +23,7 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { router } from "expo-router";
 import { colors, fonts } from "../src/theme";
 
 const KEY = "fb-compete-v1";
@@ -123,6 +124,10 @@ export default function HomeScreen() {
             </Pressable>
           );
         })}
+
+        <Pressable style={styles.line} onPress={() => router.push("/connections")}>
+          <Text style={styles.lineText}>Phone health sync</Text>
+        </Pressable>
 
         {board.length > 0 ? (
           <View style={styles.card}>

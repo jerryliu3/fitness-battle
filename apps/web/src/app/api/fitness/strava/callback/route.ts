@@ -1,6 +1,6 @@
-import { NextResponse } from "next/server";
-import { resolveSessionUserId } from "@/lib/auth/request-user";
 import { serverEnv, webEnv } from "@/lib/env";
+import { trackerRedirect } from "@/lib/oauth-callback";
+import { resolveSessionUserId } from "@/lib/auth/request-user";
 import { getServerFitnessProvider } from "@/lib/fitness";
 import { getSupabaseConfig } from "@/lib/supabase/config";
 
@@ -22,27 +22,22 @@ export async function GET(request: Request) {
   const liveAuth = configured && !webEnv.useDemoData;
 
   if (!hasCreds || !code) {
-    return NextResponse.redirect(new URL("/you?tracker=stub", url.origin));
+    return trackerRedirect(url.origin, "strava", "stub");
   }
-
   if (!liveAuth) {
-    return NextResponse.redirect(new URL("/you?tracker=stub", url.origin));
+    return trackerRedirect(url.origin, "strava", "stub");
   }
 
   const userId = await resolveSessionUserId();
   if (!userId || !state || state !== userId) {
-    return NextResponse.redirect(new URL("/you?tracker=error", url.origin));
+    return trackerRedirect(url.origin, "strava", "error");
   }
 
-  const provider = getServerFitnessProvider();
-  if (!provider.completeOAuth) {
-    return NextResponse.redirect(new URL("/you?tracker=error", url.origin));
-  }
-
+  const provider = getServerFitnessProvider("strava");
   try {
     await provider.completeOAuth(userId, code);
-    return NextResponse.redirect(new URL("/you?tracker=connected", url.origin));
+    return trackerRedirect(url.origin, "strava", "connected");
   } catch {
-    return NextResponse.redirect(new URL("/you?tracker=error", url.origin));
+    return trackerRedirect(url.origin, "strava", "error");
   }
 }

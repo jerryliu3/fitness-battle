@@ -2,8 +2,9 @@ import type { FitnessProviderId } from "../types";
 
 /**
  * Integration catalog for product + settings UI.
- * Only Strava and mock have runnable adapters today; others are scoped
- * so the UI can show honest "coming soon" vs stub vs live states.
+ * Only Strava, WHOOP, Oura, and Garmin have runnable server adapters.
+ * Apple Health and Health Connect ingest from the phone.
+ * Missing credentials stay on an honest stub.
  */
 export type IntegrationKind = "activity" | "readiness";
 export type IntegrationMaturity =
@@ -54,14 +55,16 @@ export const INTEGRATIONS: IntegrationSpec[] = [
     id: "garmin",
     name: "Garmin",
     kind: "activity",
-    maturity: "planned",
-    blurb: "Watch activities via Garmin Connect API",
+    maturity: "stub_ready",
+    blurb: "Watch activities via the Health API, or a FIT/GPX/TCX file",
     setupSteps: [
-      "Register a Garmin Connect developer app",
-      "OAuth 1.0a / Connect IQ credential exchange on server routes",
-      "Activity pull + activity webhook optional",
+      "Apply to the Garmin Health API program and wait for approval",
+      "Set GARMIN_CONSUMER_KEY, GARMIN_CONSUMER_SECRET, and GARMIN_REDIRECT_URI",
+      "User authorizes with OAuth 1.0a; the server pulls activity summaries",
+      "Until approval, import a Garmin export (.fit, .gpx, .tcx, or .zip)",
     ],
-    offlineCapability: "Compete UI can simulate a link for demos; no server sync yet.",
+    offlineCapability:
+      "Without keys, connect stays on the stub. GPX, TCX, and FIT import records real activities with no API approval.",
   },
   {
     id: "apple_health",
@@ -70,11 +73,11 @@ export const INTEGRATIONS: IntegrationSpec[] = [
     maturity: "device_only",
     blurb: "iPhone workouts pushed from the mobile app",
     setupSteps: [
-      "Mobile requests HealthKit workout read permission",
-      "Device batches samples to POST /api/fitness/ingest",
-      "Server upserts by provider_native_id",
+      "Build the Expo dev client (HealthKit is not available in Expo Go)",
+      "The phone requests HealthKit workout read permission",
+      "The app posts samples to POST /api/fitness/ingest",
     ],
-    offlineCapability: "Requires the Expo app; web cannot read HealthKit.",
+    offlineCapability: "Web cannot read HealthKit. The ingest route and mobile sync screen are implemented.",
   },
   {
     id: "google_health",
@@ -83,34 +86,39 @@ export const INTEGRATIONS: IntegrationSpec[] = [
     maturity: "device_only",
     blurb: "Android workouts via Health Connect",
     setupSteps: [
-      "Mobile requests Health Connect permissions",
-      "Device batches samples to POST /api/fitness/ingest",
+      "Build the Expo dev client with the Health Connect plugin",
+      "The phone requests exercise read permission",
+      "The app posts samples to POST /api/fitness/ingest",
     ],
-    offlineCapability: "Requires the Expo app; web cannot read Health Connect.",
+    offlineCapability: "Web cannot read Health Connect. The ingest route and mobile sync screen are implemented.",
   },
   {
     id: "whoop",
     name: "WHOOP",
     kind: "readiness",
-    maturity: "planned",
-    blurb: "Recovery and strain marks",
+    maturity: "stub_ready",
+    blurb: "Recovery score and scored workouts",
     setupSteps: [
-      "WHOOP developer OAuth app",
-      "Pull recovery / sleep daily; map to readiness score 0–100",
+      "Create a WHOOP developer application",
+      "Set WHOOP_CLIENT_ID, WHOOP_CLIENT_SECRET, and WHOOP_REDIRECT_URI",
+      "User authorizes; the server pulls recovery and workouts",
     ],
-    offlineCapability: "Compete UI can add a synthetic readiness mark after a demo link.",
+    offlineCapability:
+      "Without keys, connect returns status=stub. With keys, OAuth and the v2 recovery/workout pull run.",
   },
   {
     id: "oura",
     name: "Oura",
     kind: "readiness",
-    maturity: "planned",
-    blurb: "Sleep and readiness marks",
+    maturity: "stub_ready",
+    blurb: "Daily readiness and workouts",
     setupSteps: [
-      "Oura Cloud API OAuth app",
-      "Pull daily readiness; map to score 0–100",
+      "Create an Oura Cloud API application",
+      "Set OURA_CLIENT_ID, OURA_CLIENT_SECRET, and OURA_REDIRECT_URI",
+      "User authorizes; the server pulls daily readiness and workouts",
     ],
-    offlineCapability: "Compete UI can add a synthetic readiness mark after a demo link.",
+    offlineCapability:
+      "Without keys, connect returns status=stub. With keys, OAuth and the v2 readiness/workout pull run.",
   },
 ];
 

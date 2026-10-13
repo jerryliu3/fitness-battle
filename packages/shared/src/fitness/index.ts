@@ -13,6 +13,25 @@ export {
   type StravaStore,
   type StravaTokenSet,
 } from "./strava-provider";
+export { createWhoopProvider, mapWhoopRecovery, mapWhoopWorkout } from "./whoop-provider";
+export { createOuraProvider, mapOuraReadiness, mapOuraWorkout } from "./oura-provider";
+export {
+  GARMIN_DEFAULTS,
+  createGarminProvider,
+  garminAthleteExternalId,
+  isGarminCallbackUrl,
+  mapGarminActivity,
+  type GarminEnv,
+} from "./garmin-provider";
+export {
+  parseActivityFile,
+  parseFit,
+  parseGpx,
+  parseTcx,
+  type ParsedActivityFile,
+} from "./activity-files";
+export { oauth1AuthorizationHeader, oauth1BaseString } from "./oauth1";
+export type { OAuth2Env } from "./oauth2";
 export {
   BACKFILL_DAYS,
   INCREMENTAL_SYNC_DAYS,

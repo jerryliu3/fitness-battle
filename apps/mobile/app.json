@@ -7,16 +7,30 @@
     "orientation": "portrait",
     "userInterfaceStyle": "dark",
     "newArchEnabled": true,
-    "plugins": ["expo-router", "expo-font"],
+    "plugins": [
+      "expo-router",
+      "expo-font",
+      "react-native-health",
+      "react-native-health-connect"
+    ],
     "experiments": {
       "typedRoutes": true
     },
     "ios": {
       "supportsTablet": false,
-      "bundleIdentifier": "com.fitnessbattle.app"
+      "bundleIdentifier": "com.fitnessbattle.app",
+      "infoPlist": {
+        "NSHealthShareUsageDescription": "Fitness Battle reads workouts so your week can be scored.",
+        "NSHealthUpdateUsageDescription": "Fitness Battle does not write health data."
+      }
     },
     "android": {
-      "package": "com.fitnessbattle.app"
+      "package": "com.fitnessbattle.app",
+      "permissions": [
+        "android.permission.health.READ_EXERCISE",
+        "android.permission.health.READ_HEART_RATE",
+        "android.permission.health.READ_SLEEP"
+      ]
     },
     "web": {
       "bundler": "metro",

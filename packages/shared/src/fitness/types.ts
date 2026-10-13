@@ -3,6 +3,7 @@ import type {
   CategorySlug,
   FitnessConnection,
   FitnessProviderId,
+  ReadinessSample,
 } from "../types";
 
 export interface FitnessAuthResult {
@@ -15,6 +16,7 @@ export interface FitnessAuthResult {
 export interface SyncResult {
   provider: FitnessProviderId;
   activities: ActivitySample[];
+  readiness?: ReadinessSample[];
   syncedAt: string;
   usedMock: boolean;
   /** ISO window start used for the pull, when known. */

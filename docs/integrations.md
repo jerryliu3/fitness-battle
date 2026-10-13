@@ -1,34 +1,39 @@
 # Fitness integrations
 
-Scope of tracker and readiness integrations for Fitness Battle. Implement as much as possible without live API keys; never claim a stub is fully connected.
+Cloud OAuth runs on the web server. Apple Health and Health Connect run on the phone and post into the same API. Missing keys keep a provider on the stub path. A stub is never shown as a live connection.
 
 ## Status matrix
 
-| Integration | Kind | Maturity | Without API keys | With API keys |
+| Integration | Kind | Maturity | Without credentials | With credentials |
 | --- | --- | --- | --- | --- |
-| Strava | Activity | Stub-ready → live path coded | `status=stub`, mock activities | OAuth authorize → token exchange → refresh → activity pull |
+| Strava | Activity | Stub-ready, live path coded | `status=stub`, mock activities | OAuth → token exchange → refresh → activity pull |
 | Mock | Activity | Always on | Demo workouts | Same |
-| Garmin | Activity | Planned | Compete UI demo link only | Not implemented |
-| Apple Health | Activity | Device-only | N/A on web | Mobile push ingest (planned) |
-| Health Connect | Activity | Device-only | N/A on web | Mobile push ingest (planned) |
-| WHOOP | Readiness | Planned | Synthetic readiness mark in compete UI | Not implemented |
-| Oura | Readiness | Planned | Synthetic readiness mark in compete UI | Not implemented |
+| Garmin | Activity | Stub-ready, plus file import | Stub sync. FIT/GPX/TCX/zip import is real | OAuth 1.0a pull and Health API ping |
+| Apple Health | Activity | Device ingest | Web cannot read HealthKit | Expo dev client posts to `/api/fitness/ingest` |
+| Health Connect | Activity | Device ingest | Web cannot read Health Connect | Expo dev client posts to `/api/fitness/ingest` |
+| WHOOP | Readiness + workouts | Stub-ready, live path coded | Stub sync | OAuth → recovery score and workouts |
+| Oura | Readiness + workouts | Stub-ready, live path coded | Stub sync | OAuth → daily readiness and workouts |
 
 Catalog source: `packages/shared/src/fitness/providers.ts`.
 
-## Strava steps (live)
+## Keys
 
-1. Create a Strava API application.
-2. Set server env: `STRAVA_CLIENT_ID`, `STRAVA_CLIENT_SECRET`, `STRAVA_REDIRECT_URI`.
-3. Authenticated `POST /api/fitness/connect` returns `authorizeUrl`.
-4. User authorizes; `GET /api/fitness/strava/callback` exchanges `code` for tokens.
-5. Tokens belong in `private.fitness_tokens` (never client-readable). Public `fitness_connections` stores status + sync timestamps only.
-6. `POST /api/fitness/sync` pulls activities for a window from `syncWindow()`:
-   - First sync / `backfill: true` → 90 days
-   - Later syncs → back to the previous sync, plus 1 day of overlap, never earlier than the 90-day horizon
-7. Upsert into `activities` on `(provider, external_id)` and recompute battle scores when the service role is configured. The play UI also folds those samples into the local effort board.
+Set these on the web server. Leave them empty until you have them. Demo mode (`NEXT_PUBLIC_USE_DEMO_DATA=true`) refuses to finish OAuth even if the keys are present.
 
-Without keys, connect/sync stay on the stub path and responses include `usedMock: true` / `status: "stub"`.
+| Provider | Variables | Redirect |
+| --- | --- | --- |
+| Strava | `STRAVA_CLIENT_ID`, `STRAVA_CLIENT_SECRET` | `/api/fitness/strava/callback` |
+| WHOOP | `WHOOP_CLIENT_ID`, `WHOOP_CLIENT_SECRET` | `/api/fitness/whoop/callback` |
+| Oura | `OURA_CLIENT_ID`, `OURA_CLIENT_SECRET` | `/api/fitness/oura/callback` |
+| Garmin | `GARMIN_CONSUMER_KEY`, `GARMIN_CONSUMER_SECRET` | `/api/fitness/garmin/callback` |
+
+Garmin also needs `POST /api/fitness/garmin/ping` registered as the Health API notification URL after approval. The consumer key is not self-serve.
+
+Apple Health and Health Connect have no server keys. The phone app needs a development build (`EXPO_PUBLIC_API_URL` pointing at this web app) and a signed-in Supabase session. Expo Go cannot read HealthKit or Health Connect.
+
+## Garmin file import
+
+`POST /api/fitness/import` accepts one `.fit`, `.gpx`, `.tcx`, or `.zip` of those files. Parsed activities are stored as Garmin and applied to the local effort board. This does not require Garmin API approval.
 
 ## Sync evidence (UI)
 
@@ -45,12 +50,20 @@ Without keys, connect/sync stay on the stub path and responses include `usedMock
 
 | Route | Auth | Role |
 | --- | --- | --- |
-| `POST /api/fitness/connect` | Required | Start OAuth or stub |
-| `GET /api/fitness/strava/callback` | Signed-in user; `state` must match | Token exchange into `private.fitness_tokens` |
-| `POST /api/fitness/sync` | Required | Pull windowed activities |
-| `POST /api/fitness/disconnect` | Required | Clear connection/tokens |
-| `GET /api/fitness/status` | Required | Connection + catalog |
+| `POST /api/fitness/connect` | Required. Body `provider` | Start OAuth or stub |
+| `GET /api/fitness/strava/callback` | Signed-in user; `state` must match | Strava token exchange |
+| `GET /api/fitness/whoop/callback` | Signed-in user; `state` must match | WHOOP token exchange |
+| `GET /api/fitness/oura/callback` | Signed-in user; `state` must match | Oura token exchange |
+| `GET /api/fitness/garmin/callback` | Request token must belong to a user | Garmin access token |
+| `POST /api/fitness/garmin/ping` | Garmin server. Callback host must be `apis.garmin.com` | Pull summaries after a ping |
+| `POST /api/fitness/sync` | Required. Body `provider` | Pull a window |
+| `POST /api/fitness/disconnect` | Required. Body `provider` | Clear connection and tokens |
+| `GET /api/fitness/status` | Required | Every connection + catalog |
+| `POST /api/fitness/ingest` | Required. `apple_health` or `google_health` | Phone workout upload |
+| `POST /api/fitness/import` | Required. Multipart `file` | Garmin file import |
+
+Tokens live in `private.fitness_tokens`. The mobile app sends `Authorization: Bearer` from the Supabase session.
 
 ## One-time backfill
 
-Onboarding (and You, until used) offers a one-time 90-day calibration (`import-history` / `mark_backfill_complete`). After `calibrated` / `backfill_completed_at` is set, it cannot run again.
+Onboarding (and You, until used) offers a one-time 90-day calibration (`import-history` / `mark_backfill_complete`). After `calibrated` / `backfill_completed_at` is set, it cannot run again. A live provider sync uses the same 90-day horizon on the first pull.

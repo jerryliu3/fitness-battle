@@ -17,7 +17,8 @@ export interface StravaTokenSet {
   accessToken: string;
   refreshToken: string;
   expiresAt: number;
-  athleteId?: number;
+  /** Strava athlete id, or another provider's external user id. */
+  athleteId?: string | number;
 }
 
 export interface StravaActivityRaw {
@@ -51,9 +52,27 @@ function hasCredentials(env: StravaEnv): boolean {
   return Boolean(env.clientId && env.clientSecret && env.redirectUri);
 }
 
-/** Map a Strava sport. Unknown sports return null so they are not scored as runs. */
+/** Map a tracker sport label. Unknown sports return null so they are not scored as runs. */
 export function mapSportToCategory(sportType: string): CategorySlug | null {
-  const normalized = sportType.toLowerCase();
+  const normalized = sportType.toLowerCase().replace(/[\s-]+/g, "_");
+  const exact: Record<string, CategorySlug> = {
+    cycling: "cycling",
+    biking: "cycling",
+    ride: "cycling",
+    running: "running",
+    run: "running",
+    walking: "walking",
+    walk: "walking",
+    hiking: "walking",
+    hike: "walking",
+    strength: "strength",
+    strength_training: "strength",
+    weightlifting: "strength",
+    weight_training: "strength",
+    workout: "strength",
+    training: "strength",
+  };
+  if (exact[normalized]) return exact[normalized];
   if (
     normalized.includes("ride") ||
     normalized.includes("cycle") ||
@@ -61,13 +80,20 @@ export function mapSportToCategory(sportType: string): CategorySlug | null {
   ) {
     return "cycling";
   }
-  if (normalized.includes("walk") || normalized.includes("hike")) {
+  if (
+    normalized.includes("walk") ||
+    normalized.includes("hike") ||
+    normalized.includes("hiking")
+  ) {
     return "walking";
   }
   if (
     normalized.includes("weight") ||
     normalized.includes("strength") ||
-    normalized === "workout"
+    normalized.includes("crossfit") ||
+    normalized.includes("hiit") ||
+    normalized === "workout" ||
+    normalized === "training"
   ) {
     return "strength";
   }

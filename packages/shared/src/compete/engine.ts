@@ -33,6 +33,7 @@ import {
   type Duel,
   type PeriodResult,
   type ProviderId,
+  type ReadinessMark,
   type Rating,
   type ScoreTrack,
   type SportId,
@@ -81,6 +82,8 @@ export interface Action {
   now?: string;
   /** Tracker rows already mapped onto the compete activity shape. */
   activities?: Activity[];
+  /** Daily recovery marks from WHOOP or Oura. */
+  readiness?: ReadinessMark[];
   linkStatus?: "stub" | "connected";
   /** Result ids to clear from the pending reveal queue. */
   revealIds?: string[];
@@ -737,9 +740,19 @@ export function reduceCompete(
               : link,
           )
         : rolled.links;
+      const seenReady = new Set(rolled.readiness.map((mark) => mark.id));
+      const ready = (action.readiness ?? []).filter((mark) => {
+        if (mark.provider !== action.provider || seenReady.has(mark.id)) return false;
+        if (mark.score < 0 || mark.score > 100 || !/^\d{4}-\d{2}-\d{2}$/.test(mark.day)) {
+          return false;
+        }
+        seenReady.add(mark.id);
+        return true;
+      });
       return {
         ...rolled,
         activities: added.length ? [...rolled.activities, ...added] : rolled.activities,
+        readiness: ready.length ? [...rolled.readiness, ...ready] : rolled.readiness,
         links,
       };
     }

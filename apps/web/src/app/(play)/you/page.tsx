@@ -27,10 +27,16 @@ import {
   SPORTS,
   STARTING_FREEZES,
   type ActivitySample,
+  type ProviderId,
+  type ReadinessMark,
+  type ReadinessSample,
 } from "@fitness-battle/shared";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useRef, useState } from "react";
+
+const OAUTH_PROVIDERS = new Set<ProviderId>(["strava", "garmin", "whoop", "oura"]);
+const DEVICE_PROVIDERS = new Set<ProviderId>(["apple_health", "google_health"]);
 
 function YouContent() {
   const { user, signOut, demoMode } = useAuth();
@@ -42,7 +48,9 @@ function YouContent() {
   const [syncNote, setSyncNote] = useState<string | null>(null);
   const searchParams = useSearchParams();
   const tracker = searchParams.get("tracker");
+  const trackerProvider = searchParams.get("provider");
   const appliedTracker = useRef<string | null>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
 
   if (state && !seeded) {
     setSeeded(true);
@@ -51,21 +59,26 @@ function YouContent() {
   }
 
   useEffect(() => {
-    if (!state || !tracker || appliedTracker.current === tracker) return;
-    appliedTracker.current = tracker;
+    const key = `${tracker}:${trackerProvider ?? "strava"}`;
+    if (!state || !tracker || appliedTracker.current === key) return;
+    appliedTracker.current = key;
+    const provider = (trackerProvider ?? "strava") as ProviderId;
+    if (!OAUTH_PROVIDERS.has(provider)) return;
     if (tracker === "connected") {
       dispatch({
         type: "apply-sync",
-        provider: "strava",
+        provider,
         activities: [],
         linkStatus: "connected",
       });
+      setSyncNote(`${provider} connected. Sync to pull activities.`);
     } else if (tracker === "stub") {
-      dispatch({ type: "link", provider: "strava" });
+      dispatch({ type: "link", provider });
+      setSyncNote("Credentials are not set, so this link is a demo stub.");
     } else if (tracker === "error") {
-      setSyncNote("Strava did not connect. Sign in and try the link again.");
+      setSyncNote("That tracker did not connect. Sign in and try the link again.");
     }
-  }, [dispatch, state, tracker]);
+  }, [dispatch, state, tracker, trackerProvider]);
 
   if (!state) return <p className="fb-copy">Loading…</p>;
 
@@ -77,45 +90,85 @@ function YouContent() {
   const source = sourceFromLinks(state.links);
   const spec = sportById(state.primary);
 
-  async function syncProvider(providerId: (typeof PROVIDERS)[number]["id"]) {
-    setSyncNote(null);
-    const link = state!.links.find((item) => item.provider === providerId);
-    if (providerId !== "strava") {
-      if (!link?.linked) {
-        dispatch({ type: "link", provider: providerId });
-        setSyncNote(`${providerId} is a demo link. It is not a live connection.`);
-        return;
+  function applyRemote(body: {
+    provider: ProviderId;
+    usedMock?: boolean;
+    activities?: ActivitySample[];
+    readiness?: ReadinessSample[];
+    windowKind?: string;
+    source?: string;
+  }) {
+    const activities = (body.activities ?? [])
+      .map((sample) => activityFromSample(sample))
+      .filter((activity) => activity != null);
+    const readiness: ReadinessMark[] = (body.readiness ?? []).flatMap((sample) => {
+      if (!OAUTH_PROVIDERS.has(sample.provider as ProviderId) && !DEVICE_PROVIDERS.has(sample.provider as ProviderId)) {
+        return [];
       }
-      dispatch({ type: "sync", provider: providerId });
-      setSyncNote("Demo sync applied on this device.");
+      if (sample.provider === "mock") return [];
+      return [
+        {
+          id: sample.id,
+          provider: sample.provider as ProviderId,
+          day: sample.day,
+          score: sample.score,
+        },
+      ];
+    });
+    dispatch({
+      type: "apply-sync",
+      provider: body.provider,
+      activities,
+      readiness,
+      linkStatus: body.usedMock ? "stub" : "connected",
+    });
+    if (body.usedMock) {
+      setSyncNote(
+        `Stub sync (${body.windowKind ?? "recent"}): ${activities.length} sample activities. Not a live connection.`,
+      );
       return;
     }
+    const ready = readiness.length ? `, ${readiness.length} readiness marks` : "";
+    setSyncNote(
+      body.source === "file"
+        ? `Imported ${activities.length} activities from the file.`
+        : `Synced ${activities.length} activities${ready}.`,
+    );
+  }
 
-    if (!link?.linked) {
+  async function syncProvider(providerId: ProviderId) {
+    setSyncNote(null);
+    if (DEVICE_PROVIDERS.has(providerId)) {
+      setSyncNote("Apple Health and Health Connect sync from the phone app. The web app cannot read them.");
+      return;
+    }
+    const link = state!.links.find((item) => item.provider === providerId);
+    if (!OAUTH_PROVIDERS.has(providerId)) return;
+
+    if (!link?.linked || link.status === "disconnected") {
       try {
         const response = await fetch("/api/fitness/connect", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ userId: user?.id }),
+          body: JSON.stringify({ userId: user?.id, provider: providerId }),
         });
         const body = (await response.json()) as {
           authorizeUrl?: string;
-          status?: string;
           message?: string;
           error?: string;
         };
         if (!response.ok) {
-          setSyncNote(body.error ?? "Could not start Strava connect.");
+          setSyncNote(body.error ?? "Could not start connect.");
           return;
         }
         if (body.authorizeUrl) {
           window.location.href = body.authorizeUrl;
           return;
         }
-        dispatch({ type: "link", provider: "strava" });
+        dispatch({ type: "link", provider: providerId });
         setSyncNote(body.message ?? "Demo tracker linked. This is not a live connection.");
       } catch {
-        dispatch({ type: "link", provider: "strava" });
+        dispatch({ type: "link", provider: providerId });
         setSyncNote("Offline demo link only.");
       }
       return;
@@ -125,11 +178,12 @@ function YouContent() {
       const response = await fetch("/api/fitness/sync", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId: user?.id }),
+        body: JSON.stringify({ userId: user?.id, provider: providerId }),
       });
       const body = (await response.json()) as {
         usedMock?: boolean;
         activities?: ActivitySample[];
+        readiness?: ReadinessSample[];
         error?: string;
         windowKind?: string;
       };
@@ -137,23 +191,37 @@ function YouContent() {
         setSyncNote(body.error ?? "Sync failed");
         return;
       }
-      const activities = (body.activities ?? [])
-        .map((sample) => activityFromSample(sample))
-        .filter((activity) => activity != null);
-      dispatch({
-        type: "apply-sync",
-        provider: "strava",
-        activities,
-        linkStatus: body.usedMock ? "stub" : "connected",
-      });
-      setSyncNote(
-        body.usedMock
-          ? `Stub sync (${body.windowKind ?? "recent"}): ${activities.length} sample activities. Not a live connection.`
-          : `Synced ${activities.length} activities.`,
-      );
+      applyRemote({ ...body, provider: providerId });
     } catch {
       dispatch({ type: "sync", provider: providerId });
       setSyncNote("Offline demo sync applied locally.");
+    }
+  }
+
+  async function importGarminFile(file: File) {
+    setSyncNote(null);
+    const form = new FormData();
+    form.set("file", file);
+    if (user?.id) form.set("userId", user.id);
+    try {
+      const response = await fetch("/api/fitness/import", { method: "POST", body: form });
+      const body = (await response.json()) as {
+        activities?: ActivitySample[];
+        error?: string;
+        usedMock?: boolean;
+      };
+      if (!response.ok) {
+        setSyncNote(body.error ?? "Import failed");
+        return;
+      }
+      applyRemote({
+        provider: "garmin",
+        activities: body.activities,
+        usedMock: false,
+        source: "file",
+      });
+    } catch {
+      setSyncNote("Could not read that file.");
     }
   }
 
@@ -345,12 +413,14 @@ function YouContent() {
       <section className="fb-card" id="connections">
         <h2>Connections</h2>
         <p className="fb-note">
-          Link a source, then sync. Stub means demo data — never a live athlete
-          connection. WHOOP and Oura add readiness marks when linked in demo.
+          Cloud trackers open their own authorize page when API keys are set.
+          Without keys the link stays a stub. Garmin files import as real
+          activities. Apple Health and Health Connect sync from the phone.
         </p>
         {PROVIDERS.map((provider) => {
           const link = state.links.find((item) => item.provider === provider.id);
           const status = link?.status ?? "disconnected";
+          const device = DEVICE_PROVIDERS.has(provider.id);
           return (
             <div key={provider.id} className="fb-row">
               <span className="fb-grow">
@@ -362,26 +432,29 @@ function YouContent() {
                     : ""}
                 </small>
               </span>
-              {link?.linked ? (
-                <button
-                  type="button"
-                  className="fb-btn-ghost"
-                  onClick={() => void syncProvider(provider.id)}
-                >
-                  Sync
-                </button>
-              ) : (
-                <button
-                  type="button"
-                  className="fb-btn-ghost"
-                  onClick={() => void syncProvider(provider.id)}
-                >
-                  Link
-                </button>
-              )}
+              <button
+                type="button"
+                className="fb-btn-ghost"
+                onClick={() => void syncProvider(provider.id)}
+              >
+                {device ? "Phone" : link?.linked ? "Sync" : "Link"}
+              </button>
             </div>
           );
         })}
+        <label className="fb-field">
+          Garmin file (.fit, .gpx, .tcx, .zip)
+          <input
+            ref={fileRef}
+            type="file"
+            accept=".fit,.gpx,.tcx,.zip,application/zip"
+            onChange={(event) => {
+              const file = event.target.files?.[0];
+              if (file) void importGarminFile(file);
+              event.target.value = "";
+            }}
+          />
+        </label>
         {syncNote ? <p className="fb-note">{syncNote}</p> : null}
       </section>
 
