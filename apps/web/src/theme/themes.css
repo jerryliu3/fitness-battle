@@ -1,5 +1,29 @@
 /* Theme skins. Structure is shared; these tokens and a few chrome rules swap. */
 
+html[data-theme="rally"] {
+  --ink: #40234e;
+  --muted: #726377;
+  --line: #40234e26;
+  --paper: #fff9e9;
+  --card: #fffdf7;
+  --lime: #f6f253;
+  --lime-deep: #f6f253;
+  --accent: #40234e;
+  --accent-soft: #fff9e9;
+  --green: #2f6f4e;
+  --green-soft: #e7f3ec;
+  --fb-radius: 0;
+  --sp-you: #f6f253;
+  --sp-track: #40234e;
+  --sp-track-line: #726377;
+  --font-rf-display: var(--font-rally-display);
+  --font-rf-comic: var(--font-rally-comic);
+}
+
+html[data-theme="rally"] body {
+  font-family: var(--font-body), "DM Sans", sans-serif;
+}
+
 html[data-theme="form"] {
   --ink: #28282a;
   --muted: #707071;

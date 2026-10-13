@@ -5,10 +5,9 @@ import { useAuth } from "@/components/auth-context";
 import { useCompete } from "@/components/compete-context";
 import { useTheme } from "@/theme/theme-provider";
 import { THEME_OPTIONS } from "@/theme/catalog";
-import {
-  AthleteCard,
-  WeekRecords,
-} from "@/features/split/components/athlete-card";
+import { Ace } from "@/features/rally/ace";
+import { RallyHero } from "@/features/rally/hero";
+import { buildRallyBoard, formatRallyValue } from "@/features/rally/model";
 import {
   ProductHeader,
   sourceFromLinks,
@@ -84,11 +83,21 @@ function YouContent() {
 
   const now = competeNow(state);
   const board = buildSplitBoard(state, state.primary, "open", now);
+  const rally = buildRallyBoard(state, state.primary, "open", now);
   const frozen = state.frozenPeriods.includes(
     board.periodStart.toISOString(),
   );
   const source = sourceFromLinks(state.links);
   const spec = sportById(state.primary);
+  const thisWeekTotal =
+    rally.unit === "km"
+      ? (board.you?.distanceM ?? 0) / 1000
+      : (board.you?.effort ?? 0);
+  const priorTotal = board.ghostSeries
+    ? rally.unit === "km"
+      ? board.ghostSeries.distanceM[2]! / 1000
+      : board.ghostSeries.effort[2]!
+    : 0;
 
   function applyRemote(body: {
     provider: ProviderId;
@@ -226,31 +235,108 @@ function YouContent() {
   }
 
   return (
-    <>
+    <main>
       <ProductHeader sourceStatus={source.status} sourceLabel={source.label} />
+      <div className="rf-demo-line">
+        <span>
+          {spec.name} · {rally.periodLabel}
+        </span>
+        <span>
+          {user?.email}
+          {demoMode ? " · demo" : ""}
+        </span>
+      </div>
 
-      <AthleteCard
-        name={state.name}
-        city={state.city}
-        sportLabel={spec.name}
-        you={board.you}
-        placeLabel={
-          board.you
-            ? `${board.you.place} / ${board.rows.length}`
-            : "Not on a field"
-        }
+      <RallyHero
+        kicker={`YOUR ATHLETE CARD / ${rally.periodLabel}`}
+        line1="YOUR GAME."
+        line2="YOUR OWN PACE."
+        copy="A record of the movement you already did."
       />
-      <WeekRecords sport={state.primary} you={board.you} />
+
+      <div className="rf-you-layout">
+        <section className="rf-athlete-card">
+          <span className="rf-kicker">
+            YOUR ATHLETE CARD / {state.city || "Anywhere"}
+          </span>
+          <Ace decorative={false} />
+          <div>
+            <strong>{state.name || "YOU"}</strong>
+            <span>YOUR OWN KIND OF ATHLETE.</span>
+          </div>
+          <dl>
+            <div>
+              <dt>{rally.unit === "km" ? "Distance" : "Effort"}</dt>
+              <dd>
+                {formatRallyValue(thisWeekTotal, rally.unit)}
+                <small>{rally.unit}</small>
+              </dd>
+            </div>
+            <div>
+              <dt>Outings</dt>
+              <dd>{rally.moves.length}</dd>
+            </div>
+            <div>
+              <dt>Time moving</dt>
+              <dd>
+                {rally.movingMinutes}
+                <small>min</small>
+              </dd>
+            </div>
+          </dl>
+        </section>
+        <div className="rf-you-side">
+          <section className="rf-week-record">
+            <p className="rf-kicker">SAME POINT. TWO WEEKS.</p>
+            <h2>
+              {priorTotal > 0 && thisWeekTotal >= priorTotal
+                ? "A little more of your own work."
+                : "Your week, on your terms."}
+            </h2>
+            <div>
+              <span>
+                This week<small>{rally.periodLabel} · live snapshot</small>
+              </span>
+              <strong>
+                {formatRallyValue(thisWeekTotal, rally.unit)}
+                <small>{rally.unit}</small>
+              </strong>
+            </div>
+            <div>
+              <span>
+                Previous week<small>Same cutoff when available</small>
+              </span>
+              <strong>
+                {formatRallyValue(priorTotal, rally.unit)}
+                <small>{rally.unit}</small>
+              </strong>
+            </div>
+            <Link href="/">Replay the comparison ↗</Link>
+          </section>
+          <section className="rf-tracker-card">
+            <span className="rf-kicker">TRACKER IMPORTS</span>
+            <b className="rf-demo-badge">{source.label}</b>
+            <h2>Your moves find their way here.</h2>
+            <p>
+              Connect a tracker below. Counted imports appear as rings on Moves
+              and My week.
+            </p>
+            <Link href="/splits">View counted moves ↗</Link>
+          </section>
+        </div>
+      </div>
 
       {(() => {
-        const last = [...state.sleepNights].sort((a, b) => a.day.localeCompare(b.day)).at(-1);
+        const last = [...state.sleepNights]
+          .sort((a, b) => a.day.localeCompare(b.day))
+          .at(-1);
         if (!last) return null;
         return (
           <section className="fb-card">
             <p className="fb-kicker">Last night</p>
             <h2>Sleep {last.score}</h2>
             <p className="fb-copy">
-              Open My track and choose Sleep for the night and the weekly board.
+              Open My week and choose Sleep for the night and the weekly board.
             </p>
             <Link href="/" className="fb-btn-ghost">
               Open sleep
@@ -258,11 +344,6 @@ function YouContent() {
           </section>
         );
       })()}
-
-      <p className="fb-copy">
-        {user?.email}
-        {demoMode ? " · demo account" : ""}.
-      </p>
 
       <SeasonHistory results={state.periodResults} primary={state.primary} />
 
@@ -309,8 +390,9 @@ function YouContent() {
       <section className="fb-card" id="theme">
         <h2>Theme</h2>
         <p className="fb-copy">
-          Form is the product default. Ink keeps the earlier athletic chrome.
-          The same week, field, and imports stay underneath.
+          Rally is the product default — plum, tennis yellow, and Ace. Form and
+          Ink keep the earlier chrome shells. The same week, field, and imports
+          stay underneath.
         </p>
         <div className="fm-themes">
           {THEME_OPTIONS.map((option) => (
@@ -504,7 +586,7 @@ function YouContent() {
           Sign out
         </button>
       </section>
-    </>
+    </main>
   );
 }
 

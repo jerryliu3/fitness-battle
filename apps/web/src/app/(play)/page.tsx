@@ -3,75 +3,87 @@
 import { AuthPrompt } from "@/components/auth-gate";
 import { useAuth } from "@/components/auth-context";
 import { useCompete } from "@/components/compete-context";
-import { BrandArt } from "@/features/evolution-lab/brand-art";
-import { useTheme } from "@/theme/theme-provider";
-import { CheckpointControl } from "@/features/split/components/checkpoint-control";
+import { SleepPanel } from "@/features/health/sleep-panel";
+import { Ace } from "@/features/rally/ace";
+import { ActivityRing } from "@/features/rally/activity-ring";
+import {
+  ActivityReceipt,
+  RallyDetailDialog,
+} from "@/features/rally/detail-dialog";
+import { RallyHero } from "@/features/rally/hero";
+import { Matchup } from "@/features/rally/matchup";
+import { buildRallyBoard, type RallyMove } from "@/features/rally/model";
+import { useRallyWeek } from "@/features/rally/use-rally-week";
 import {
   ProductHeader,
   sourceFromLinks,
 } from "@/features/split/components/product-header";
-import { RaceTrack } from "@/features/split/components/race-track";
-import { TrackVerdict } from "@/features/split/components/track-verdict";
-import { FieldRoster } from "@/features/split/components/field-roster";
-import { SleepPanel } from "@/features/health/sleep-panel";
 import { WeekReveal } from "@/features/split/components/week-reveal";
 import {
-  buildSplitBoard,
-  formatPts,
-  laneAtCheckpoint,
-  type ComparisonMode,
-} from "@/features/split/model";
-import {
-  activityEffort,
   competeNow,
-  formatVolume,
   daysLeft,
   lessonFor,
   sportById,
   SPORTS,
   HEALTH_METRICS,
-  type CheckpointIndex,
   type ScoreTrack,
   type SportId,
 } from "@fitness-battle/shared";
 import Link from "next/link";
-import { useState } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 
-export default function MyTrackPage() {
+export default function MyWeekPage() {
   const { state, dispatch } = useCompete();
   const { user } = useAuth();
-  const { theme } = useTheme();
   const [authOpen, setAuthOpen] = useState(false);
   const [authReason, setAuthReason] = useState(
     "Create an account to join a board and keep your rating.",
   );
-  const [comparison, setComparison] = useState<ComparisonMode>("self");
-  const [checkpoint, setCheckpoint] = useState<CheckpointIndex>(2);
-  const [showField, setShowField] = useState(false);
   const [track, setTrack] = useState<ScoreTrack>("open");
+  const [detail, setDetail] = useState<{
+    title: string;
+    body: ReactNode;
+    kind: "activity" | "info";
+  } | null>(null);
 
-  if (!state) return <p className="fb-copy">Loading your week…</p>;
-
-  const now = competeNow(state);
-  const showingSleep = state.focus.family === "health" && state.focus.id === "sleep";
-  const sport = state.primary;
+  const showingSleep =
+    Boolean(state) &&
+    state!.focus.family === "health" &&
+    state!.focus.id === "sleep";
+  const sport = state?.primary ?? "running";
   const spec = sportById(sport);
   const shownTrack: ScoreTrack = spec.gps ? track : "open";
-  const board = buildSplitBoard(state, sport, shownTrack, now);
+
+  const rally = useMemo(() => {
+    if (!state) return null;
+    return buildRallyBoard(state, sport, shownTrack, competeNow(state));
+  }, [state, sport, shownTrack]);
+  const weekState = useRallyWeek(rally);
+  const now = state ? competeNow(state) : new Date();
+
+  if (!state || !rally || !weekState) {
+    return <p className="fb-copy">Loading your week…</p>;
+  }
+
   const source = sourceFromLinks(state.links);
-  const youLane = board.fieldLanes.find((lane) => lane.you) ?? null;
-  const ghostEffort = board.ghostEffortAt(checkpoint);
-  const youEffort = youLane ? laneAtCheckpoint(youLane, checkpoint) : 0;
   const lesson = lessonFor(sport, now);
   const done = state.lessonDoneOn === now.toISOString().slice(0, 10);
   const periodDaysLeft = daysLeft(
     {
       kind: state.clock.kind,
-      startsAt: board.periodStart,
-      endsAt: board.periodEnd,
+      startsAt: rally.board.periodStart,
+      endsAt: rally.board.periodEnd,
     },
     now,
   );
+  const selected =
+    weekState.week.cutoff === 0
+      ? null
+      : (rally.moves[
+          Math.min(rally.moves.length - 1, Math.max(0, weekState.week.count - 1))
+        ] ??
+        rally.moves.at(-1) ??
+        null);
 
   function requireParticipate(reason: string, action: () => void) {
     if (!user) {
@@ -86,9 +98,33 @@ export default function MyTrackPage() {
     action();
   }
 
+  function openMove(move: RallyMove) {
+    const at = weekState!.receiptFor(move);
+    setDetail({
+      title: move.title,
+      kind: "activity",
+      body: (
+        <ActivityReceipt
+          move={move}
+          at={at}
+          reference={weekState!.reference}
+          unit={rally!.unit}
+        />
+      ),
+    });
+  }
+
   return (
-    <>
+    <main>
       <ProductHeader sourceStatus={source.status} sourceLabel={source.label} />
+      <div className="rf-demo-line">
+        <span>
+          {spec.name} · {rally.periodLabel} UTC
+        </span>
+        <span>
+          {source.label} · {weekState.week.label} snapshot
+        </span>
+      </div>
 
       {state.pendingRevealIds.length > 0 ? (
         <WeekReveal
@@ -97,74 +133,18 @@ export default function MyTrackPage() {
         />
       ) : null}
 
-      {theme.id === "form" && !showingSleep ? (
-        <section className="fm-hero">
-          <div>
-            <p className="fb-kicker">Personal record / {board.periodLabel}</p>
-            <h1>
-              Built by
-              <br />
-              what you do.
-            </h1>
-            <div className="fm-score">
-              <strong>{formatPts(youEffort)}</strong>
-              <span>
-                effort
-                <br />
-                points
-              </span>
-            </div>
-            <p className="fb-copy">
-              {ghostEffort > 0 ? (
-                <>
-                  <b>
-                    {youEffort - ghostEffort >= 0 ? "+" : ""}
-                    {formatPts(youEffort - ghostEffort)}
-                  </b>{" "}
-                  vs your previous week · same cutoff
-                </>
-              ) : (
-                "No counted work in the previous week at this cutoff."
-              )}
-            </p>
-            <Link href="/board" className="fb-btn">
-              Inspect your field ↗
-            </Link>
-          </div>
-          <div className="fm-art">
-            <BrandArt brand="form" />
-            <p>EFFORT / RECORDED</p>
-          </div>
-        </section>
-      ) : showingSleep ? null : (
-        <div className="sp-title-block">
-          <p className="fb-kicker">
-            {board.periodLabel} / Weekly {spec.name.toLowerCase()}
-          </p>
-          <h1>
-            {comparison === "self" ? (
-              <>
-                CHASE YOUR
-                <br />
-                <span>OWN LINE.</span>
-              </>
-            ) : (
-              <>
-                FIND YOUR
-                <br />
-                <span>CLOSE CONTEST.</span>
-              </>
-            )}
-          </h1>
-          <p className="fb-copy">
-            {showingSleep
-              ? "Sleep is scored from last night and the nights logged this week."
-              : `${periodDaysLeft} days left. Effort points accumulate through the week — not a live race or pace board.`}
-          </p>
-        </div>
-      )}
+      <RallyHero
+        kicker={`YOUR WEEK / ${rally.periodLabel}`}
+        line1="SMALL MOVES."
+        line2="GOOD GAME."
+        copy={
+          showingSleep
+            ? "Sleep is scored from last night and the nights logged this week."
+            : `${periodDaysLeft} days left. A little movement. All your own work.`
+        }
+      />
 
-      <div className="fb-chips">
+      <div className="rf-sport-chips fb-chips">
         {SPORTS.map((item) => {
           const joined = state.ratings.find((row) => row.sport === item.id)
             ?.optedIn;
@@ -172,7 +152,9 @@ export default function MyTrackPage() {
             <button
               key={item.id}
               type="button"
-              className={!showingSleep && item.id === sport ? "fb-chip on" : "fb-chip"}
+              className={
+                !showingSleep && item.id === sport ? "fb-chip on" : "fb-chip"
+              }
               onClick={() =>
                 requireParticipate(
                   `Sign in to compete in ${item.name} this week.`,
@@ -184,16 +166,18 @@ export default function MyTrackPage() {
                 )
               }
             >
-            {item.name}
-            {joined ? "" : " · join"}
-          </button>
-        );
-      })}
+              {item.name}
+              {joined ? "" : " · join"}
+            </button>
+          );
+        })}
       </div>
 
       <div className="fb-chips" aria-label="Health metrics">
         {HEALTH_METRICS.map((item) => {
-          const joined = state.healthRatings.find((row) => row.metric === item.id)?.optedIn;
+          const joined = state.healthRatings.find(
+            (row) => row.metric === item.id,
+          )?.optedIn;
           const on = showingSleep && item.id === "sleep";
           return (
             <button
@@ -201,12 +185,17 @@ export default function MyTrackPage() {
               type="button"
               className={on ? "fb-chip on" : "fb-chip"}
               onClick={() =>
-                requireParticipate(`Sign in to compete on ${item.name} this week.`, () =>
-                  dispatch(
-                    joined
-                      ? { type: "set-focus", focus: { family: "health", id: item.id } }
-                      : { type: "opt-in-health", metric: item.id },
-                  ),
+                requireParticipate(
+                  `Sign in to compete on ${item.name} this week.`,
+                  () =>
+                    dispatch(
+                      joined
+                        ? {
+                            type: "set-focus",
+                            focus: { family: "health", id: item.id },
+                          }
+                        : { type: "opt-in-health", metric: item.id },
+                    ),
                 )
               }
             >
@@ -255,81 +244,13 @@ export default function MyTrackPage() {
         </div>
       ) : null}
 
-      {theme.id === "form" && board.optedIn && !showingSleep ? (
-        <>
-          <div className="fm-stats">
-            <div>
-              <span>{spec.gps ? "Your distance" : "Your time"}</span>
-              <strong>
-                {board.you
-                  ? formatVolume(sport, board.you.distanceM, board.you.movingSec)
-                  : "—"}
-              </strong>
-            </div>
-            <div>
-              <span>In your field</span>
-              <strong>
-                {youLane?.place ?? "—"}
-                <small> / {board.rows.length}</small>
-              </strong>
-            </div>
-            <div>
-              <span>Counted imports</span>
-              <strong>
-                {board.weekActivities.length}
-                <small> sessions</small>
-              </strong>
-            </div>
-          </div>
-          <section className="fm-lines" aria-label="Your week against the previous week">
-            {[
-              { label: "YOUR WEEK", value: youEffort, mine: true },
-              { label: "PAST YOU", value: ghostEffort, mine: false },
-            ].map((row) => (
-              <div key={row.label} className={row.mine ? "fm-line is-you" : "fm-line"}>
-                <span>{row.label}</span>
-                <i>
-                  <b
-                    style={{
-                      left: `${Math.min(100, (row.value / Math.max(board.trackMax, 1)) * 100)}%`,
-                    }}
-                  >
-                    {Math.round(row.value)}
-                  </b>
-                </i>
-                <strong>{Math.round(row.value)}</strong>
-              </div>
-            ))}
-          </section>
-          <CheckpointControl
-            checkpoint={checkpoint}
-            labels={board.checkpointLabels}
-            onChange={setCheckpoint}
-          />
-          {board.weekActivities.length > 0 ? (
-            <Link href="/splits" className="fb-card">
-              <p className="fb-kicker">Latest counted import</p>
-              <h2>{board.weekActivities.at(-1)?.sport}</h2>
-              <p className="fb-copy">
-                {new Date(board.weekActivities.at(-1)!.startedAt).toLocaleDateString(
-                  "en-US",
-                  { weekday: "long", timeZone: "UTC" },
-                )}{" "}
-                · +{formatPts(activityEffort(board.weekActivities.at(-1)!))} pts
-              </p>
-            </Link>
-          ) : null}
-        </>
-      ) : null}
-
-      {!showingSleep && !board.optedIn ? (
+      {!showingSleep && !rally.board.optedIn ? (
         <section className="sp-empty">
           <h2>You are not on a track yet</h2>
           <p className="fb-copy">{spec.blurb}</p>
           <p className="fb-note">
             Joining opens today’s wave. Your board counts effort from now until
-            the Sunday UTC reset — rivals only contribute distance inside your
-            window.
+            the Sunday UTC reset.
           </p>
           <button
             type="button"
@@ -343,80 +264,88 @@ export default function MyTrackPage() {
             Join {spec.name} this week
           </button>
         </section>
-      ) : !showingSleep && theme.id === "ink" ? (
-        <div className="sp-layout">
-          <section className="sp-board">
-            <div className="sp-mode-switch" aria-label="Comparison mode">
-              <button
-                type="button"
-                aria-pressed={comparison === "self"}
-                onClick={() => {
-                  setComparison("self");
-                  setShowField(false);
-                }}
-              >
-                Your previous week
-              </button>
-              <button
-                type="button"
-                aria-pressed={comparison === "field"}
-                onClick={() => setComparison("field")}
-              >
-                Nearby rivals
-              </button>
+      ) : null}
+
+      {!showingSleep && rally.board.optedIn ? (
+        <>
+          <div className="rf-week-layout">
+            <div>
+              <Matchup
+                week={weekState.week}
+                reference={weekState.reference}
+                playing={weekState.playing}
+                unit={rally.unit}
+                checkpointLabels={rally.board.checkpointLabels}
+                onCutoff={weekState.setCutoff}
+                onReplay={weekState.onReplay}
+              />
+              <Link className="rf-matchup-link" href="/board">
+                Choose a different matchup <span>↗</span>
+              </Link>
             </div>
-            <RaceTrack
-              comparison={comparison}
-              checkpoint={checkpoint}
-              trackMax={board.trackMax}
-              youLane={youLane}
-              ghostEffort={ghostEffort}
-              nearby={board.nearby}
-            />
-            <CheckpointControl
-              checkpoint={checkpoint}
-              labels={board.checkpointLabels}
-              onChange={setCheckpoint}
-            />
-          </section>
-          <TrackVerdict
-            comparison={comparison}
-            youLane={youLane}
-            ghostEffort={ghostEffort}
-            checkpointEffort={youEffort}
-            onOpenField={() => setShowField(true)}
-          />
-        </div>
-      ) : null}
+            <section className="rf-small-moves">
+              <header>
+                <div>
+                  <p className="rf-kicker">YOUR SMALL MOVES</p>
+                  <h2>They all add up.</h2>
+                </div>
+                <Link href="/splits">All moves ↗</Link>
+              </header>
+              {rally.moves.length === 0 ? (
+                <p className="fb-copy">
+                  Sync a tracker to see counted outings as rings.
+                </p>
+              ) : (
+                <div className="rf-small-ring-list">
+                  {rally.moves.map((move, index) => (
+                    <ActivityRing
+                      key={move.id}
+                      move={move}
+                      unit={rally.unit}
+                      counted={weekState.week.cutoff >= index + 1}
+                      onOpen={() => openMove(move)}
+                    />
+                  ))}
+                </div>
+              )}
+              <p className="rf-ring-caption">
+                Each ring uses the same 10 km distance scale.
+              </p>
+            </section>
+          </div>
 
-      {board.optedIn && theme.id === "ink" && !showingSleep ? (
-        <div className="sp-bottom">
-          <span>
-            Your field <strong>{youLane?.place ?? "—"} / {board.rows.length}</strong>
-          </span>
-          <span>
-            Your week <strong>{formatPts(youLane?.effort ?? 0)} pts</strong>
-          </span>
-          <Link href="/you#connections" className="fb-btn-ghost">
-            {source.label} ↗
-          </Link>
-        </div>
-      ) : null}
-
-      {showField && board.optedIn && theme.id === "ink" && !showingSleep ? (
-        <section>
-          <div className="fd-roster-head">
-            <h3>Full field</h3>
+          <section className="rf-highlight">
+            <div className="rf-highlight-art">
+              <span className="rf-sticker">
+                {weekState.week.cutoff === 0 ? "READY!" : "GOOD MOVE!"}
+              </span>
+              <Ace />
+            </div>
+            <div className="rf-highlight-copy">
+              <p className="rf-kicker">A MOMENT FROM YOUR WEEK</p>
+              <h2>
+                {weekState.week.cutoff === 0 || !selected
+                  ? "A fresh page."
+                  : selected.title}
+              </h2>
+              <p>
+                {weekState.week.cutoff === 0 || !selected
+                  ? "The start of your week. Zero on the board; room for what comes next."
+                  : selected.note}
+              </p>
+            </div>
             <button
               type="button"
-              className="fb-btn-ghost"
-              onClick={() => setShowField(false)}
+              disabled={weekState.week.cutoff === 0 || !selected}
+              onClick={() => selected && openMove(selected)}
             >
-              Hide
+              {weekState.week.cutoff === 0 || !selected
+                ? "The story is ready"
+                : `+${rally.unit === "km" ? `${selected.km} km` : `${selected.minutes} min`} / Read the moment`}{" "}
+              ↗
             </button>
-          </div>
-          <FieldRoster rows={board.rows} />
-        </section>
+          </section>
+        </>
       ) : null}
 
       <section className="fb-card fb-lesson">
@@ -435,11 +364,21 @@ export default function MyTrackPage() {
         </button>
       </section>
 
+      <footer className="rf-product-footer">
+        <span>GOOD COMPANY. GOOD GAME.</span>
+        <p>
+          Move at your own pace.
+          <br />
+          Ace is in your corner.
+        </p>
+      </footer>
+
+      <RallyDetailDialog detail={detail} onClose={() => setDetail(null)} />
       <AuthPrompt
         open={authOpen}
         reason={authReason}
         onClose={() => setAuthOpen(false)}
       />
-    </>
+    </main>
   );
 }

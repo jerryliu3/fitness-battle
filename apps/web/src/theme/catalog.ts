@@ -3,11 +3,11 @@
  * (tokens, type, wordmark). Add an id, a CSS block, and a catalog row to ship
  * another theme.
  */
-export const THEME_IDS = ["form", "ink"] as const;
+export const THEME_IDS = ["rally", "form", "ink"] as const;
 
 export type ThemeId = (typeof THEME_IDS)[number];
 
-export const DEFAULT_THEME_ID: ThemeId = "form";
+export const DEFAULT_THEME_ID: ThemeId = "rally";
 export const THEME_COOKIE_NAME = "fb_theme";
 export const THEME_COOKIE_MAX_AGE_SECONDS = 60 * 60 * 24 * 365;
 
@@ -24,12 +24,24 @@ export interface AppTheme {
 }
 
 export const THEMES: Record<ThemeId, AppTheme> = {
+  rally: {
+    id: "rally",
+    label: "Rally",
+    mood: "Playful sport",
+    description:
+      "Plum and tennis yellow, Ace in your corner, mileage matchups and small-move rings. Default product theme.",
+    htmlClass: "theme-rally",
+    wordmark: "RALLY",
+    mark: "/",
+    themeColor: "#40234e",
+    backgroundColor: "#40234e",
+  },
   form: {
     id: "form",
     label: "Form",
     mood: "Serious",
     description:
-      "Signal orange, graphite, and a squared record of effort. Default product theme.",
+      "Signal orange, graphite, and a squared record of effort.",
     htmlClass: "theme-form",
     wordmark: "FORM",
     mark: "/",
@@ -52,7 +64,7 @@ export const THEMES: Record<ThemeId, AppTheme> = {
 export const THEME_OPTIONS = THEME_IDS.map((id) => THEMES[id]);
 
 export function isThemeId(value: string | null | undefined): value is ThemeId {
-  return value === "form" || value === "ink";
+  return value === "rally" || value === "form" || value === "ink";
 }
 
 export function parseThemeId(value: string | null | undefined): ThemeId {

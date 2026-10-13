@@ -4,13 +4,15 @@ import { AuthPrompt } from "@/components/auth-gate";
 import { useAuth } from "@/components/auth-context";
 import { useCompete } from "@/components/compete-context";
 import { SleepPanel } from "@/features/health/sleep-panel";
-import { FieldStage } from "@/features/field/components/field-stage";
-import { buildFieldModel } from "@/features/field/model";
+import { DistanceField } from "@/features/rally/distance-field";
+import { RallyHero } from "@/features/rally/hero";
+import { Matchup } from "@/features/rally/matchup";
+import { buildRallyBoard } from "@/features/rally/model";
+import { useRallyWeek } from "@/features/rally/use-rally-week";
 import {
   ProductHeader,
   sourceFromLinks,
 } from "@/features/split/components/product-header";
-import { buildSplitBoard } from "@/features/split/model";
 import {
   competeNow,
   formatClock,
@@ -22,9 +24,9 @@ import {
   type ScoreTrack,
   type SportId,
 } from "@fitness-battle/shared";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 
-export default function FieldPage() {
+export default function MatchupsPage() {
   const { state, dispatch } = useCompete();
   const { user } = useAuth();
   const [sport, setSport] = useState<SportId | null>(null);
@@ -36,17 +38,25 @@ export default function FieldPage() {
     "Sign in to join the weekly field or start a 1v1.",
   );
 
-  if (!state) return <p className="fb-copy">Loading the field…</p>;
-
-  const now = competeNow(state);
   const sleepSelected =
-    showSleep || (sport == null && state.focus.family === "health");
-  const active = sport ?? state.primary;
+    showSleep || (state != null && sport == null && state.focus.family === "health");
+  const active = sport ?? state?.primary ?? "running";
   const spec = sportById(active);
   const shownTrack: ScoreTrack = spec.gps ? track : "open";
-  const board = buildSplitBoard(state, active, shownTrack, now);
-  const field = buildFieldModel(state, active, shownTrack, now);
+
+  const rally = useMemo(() => {
+    if (!state) return null;
+    return buildRallyBoard(state, active, shownTrack, competeNow(state));
+  }, [state, active, shownTrack]);
+  const weekState = useRallyWeek(rally);
+  const now = state ? competeNow(state) : new Date();
+
+  if (!state || !rally || !weekState) {
+    return <p className="fb-copy">Loading matchups…</p>;
+  }
+
   const source = sourceFromLinks(state.links);
+  const board = rally.board;
   const rating = state.ratings.find((item) => item.sport === active);
   const nextElo = rating?.optedIn
     ? projectedElo(state, active, shownTrack, now)
@@ -69,29 +79,30 @@ export default function FieldPage() {
   }
 
   return (
-    <>
+    <main>
       <ProductHeader sourceStatus={source.status} sourceLabel={source.label} />
-
-      <div className="sp-title-block">
-        <p className="fb-kicker">
-          The field ·{" "}
+      <div className="rf-demo-line">
+        <span>
+          {spec.name} ·{" "}
           {formatClock({
             startsAt: board.periodStart,
             endsAt: board.periodEnd,
             kind: state.clock.kind,
           })}
-        </p>
-        <h1>
-          THE
-          <br />
-          <span>FIELD.</span>
-        </h1>
-        <p className="fb-copy">
-          {sleepSelected
-            ? "Sleep ranks last night and the week’s average. It does not use the track."
-            : `2D lanes and 3D Pursuit. Positions use weekly ${spec.gps ? "distance" : "effort"} — lane number is not rank.`}
-        </p>
+        </span>
+        <span>{source.label}</span>
       </div>
+
+      <RallyHero
+        kicker="YOUR KIND OF COMPETITION"
+        line1="FIND YOUR"
+        line2="NEXT MATCHUP."
+        copy={
+          sleepSelected
+            ? "Sleep ranks last night and the week’s average."
+            : "Start with past you. Add a little company when you want it."
+        }
+      />
 
       <div className="fb-chips">
         {SPORTS.map((item) => (
@@ -173,10 +184,6 @@ export default function FieldPage() {
         <section className="sp-empty">
           <h2>You are not on this field</h2>
           <p className="fb-copy">{spec.blurb}</p>
-          <p className="fb-note">
-            Fields are density groups of eight. Real athletes seat first;
-            synthetic rivals fill empty seats and drop when more people join.
-          </p>
           <button
             type="button"
             className="fb-btn"
@@ -191,7 +198,60 @@ export default function FieldPage() {
         </section>
       ) : (
         <>
-          <FieldStage model={field} checkpoint={2} boardRows={board.rows} />
+          <section className="rf-matchup-choice">
+            <p className="rf-kicker">CHOOSE YOUR MATCHUP</p>
+            <div>
+              {rally.references.map((ref) => (
+                <button
+                  key={ref.id}
+                  type="button"
+                  onClick={() => weekState.setReference(ref.id)}
+                  aria-pressed={weekState.reference.id === ref.id}
+                >
+                  {ref.ghost
+                    ? "Me vs. past me"
+                    : `Me vs. ${ref.name.split(" ")[0]}`}
+                </button>
+              ))}
+              <label>
+                More runners
+                <select
+                  aria-label="Choose comparison runner"
+                  value={weekState.reference.id}
+                  onChange={(event) => weekState.setReference(event.target.value)}
+                >
+                  <option value="ghost">Your previous week</option>
+                  {rally.lanes
+                    .filter((lane) => !lane.you)
+                    .map((lane) => (
+                      <option key={lane.id} value={lane.id}>
+                        {lane.name}
+                      </option>
+                    ))}
+                </select>
+              </label>
+            </div>
+          </section>
+
+          <div className="rf-matchups-layout">
+            <Matchup
+              week={weekState.week}
+              reference={weekState.reference}
+              playing={weekState.playing}
+              unit={rally.unit}
+              checkpointLabels={board.checkpointLabels}
+              onCutoff={weekState.setCutoff}
+              onReplay={weekState.onReplay}
+            />
+            <DistanceField
+              rally={rally}
+              weekCutoff={weekState.cutoff}
+              weekTotal={weekState.week.total}
+              reference={weekState.reference}
+              onReference={weekState.setReference}
+            />
+          </div>
+
           <p className="fb-note">
             {frozen
               ? "This week is frozen. Rating will not move when it closes."
@@ -288,6 +348,6 @@ export default function FieldPage() {
         reason={authReason}
         onClose={() => setAuthOpen(false)}
       />
-    </>
+    </main>
   );
 }
