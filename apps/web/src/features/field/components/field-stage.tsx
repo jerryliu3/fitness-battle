@@ -101,6 +101,7 @@ export function FieldStage({
         distanceM: row?.distanceM ?? valueAt(runner, time, extra) * (model.gps ? 1000 : 1),
         movingSec: row?.movingSec ?? 0,
         you: Boolean(runner.you),
+        kind: row?.kind ?? (runner.you ? "real" : "synthetic"),
         place: placeAt(runners, runner.id, time, extra),
       };
     });

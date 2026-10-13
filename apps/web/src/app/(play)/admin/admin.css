@@ -1,0 +1,54 @@
+.fb-admin {
+  display: grid;
+  gap: 16px;
+  padding-bottom: 24px;
+}
+
+.fb-admin-actions,
+.fb-admin-form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: end;
+}
+
+.fb-admin-form .fb-field {
+  min-width: 8rem;
+  flex: 1;
+}
+
+.fb-admin-form select,
+.fb-admin table {
+  font: inherit;
+}
+
+.fb-admin-form select {
+  border: 1px solid var(--line);
+  background: white;
+  border-radius: 12px;
+  padding: 12px 14px;
+  font-size: 16px;
+}
+
+.fb-admin table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.fb-admin th,
+.fb-admin td {
+  text-align: left;
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--line);
+  vertical-align: top;
+}
+
+.fb-admin th {
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.fb-admin-clock {
+  font-variant-numeric: tabular-nums;
+}

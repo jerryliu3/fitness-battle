@@ -1,4 +1,4 @@
-import type { WaveEnrollment } from "../matching/types";
+import type { PoolPlayer, WaveEnrollment } from "../matching/types";
 import type { PeriodKind } from "../types";
 
 export const ELO_BASE = 1000;
@@ -138,7 +138,13 @@ export interface Activity {
   avgHr: number | null;
   /** GPS trace or a device benchmark that is hard to type in by hand. */
   verified: boolean;
-  source: ProviderId | "history";
+  source: ProviderId | "history" | "manual";
+}
+
+/** A session logged against a simulated peer, not the viewer. */
+export interface PeerActivity {
+  peerId: string;
+  activity: Activity;
 }
 
 export interface ReadinessMark {
@@ -221,6 +227,13 @@ export interface CompeteState {
    * central ranking.
    */
   enrollments: WaveEnrollment[];
+  /**
+   * Simulated peers stored with this device. `null` keeps the in-memory test
+   * pool. An array (including empty) is the week lab's explicit roster.
+   */
+  localPeers: PoolPlayer[] | null;
+  /** Sessions attributed to `localPeers`, scored when that peer is seated. */
+  peerActivities: PeerActivity[];
 }
 
 export function hashString(value: string): number {

@@ -249,6 +249,17 @@ function YouContent() {
 
       <SeasonHistory results={state.periodResults} primary={state.primary} />
 
+      <section className="fb-card">
+        <h2>Week lab</h2>
+        <p className="fb-copy">
+          Pin the clock, log a session, seat peers, and close the week on this
+          device. Settlement uses the same Sunday close as a real Monday.
+        </p>
+        <Link href="/admin" className="fb-btn-line">
+          Open the week lab
+        </Link>
+      </section>
+
       {demoMode ? (
         <section className="fb-card">
           <h2>Demo week close</h2>

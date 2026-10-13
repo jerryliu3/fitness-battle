@@ -27,6 +27,7 @@ export {
   type LinkStatus,
   type ProviderLink,
   type PeriodResult,
+  type PeerActivity,
 } from "./sports";
 export {
   MAX_PERIOD_RESULTS,
@@ -89,3 +90,8 @@ export {
   type CheckpointIndex,
   type CheckpointSeries,
 } from "./track";
+export {
+  adminSnapshot,
+  type AdminGroup,
+  type AdminSnapshot,
+} from "./admin";
