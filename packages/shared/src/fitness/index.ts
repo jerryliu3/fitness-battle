@@ -16,6 +16,12 @@ export {
 export { createWhoopProvider, mapWhoopRecovery, mapWhoopWorkout } from "./whoop-provider";
 export { createOuraProvider, mapOuraReadiness, mapOuraWorkout } from "./oura-provider";
 export {
+  mapOwHealthScoreToReadiness,
+  mapOwWorkoutToActivity,
+  type OwHealthScore,
+  type OwWorkout,
+} from "./open-wearables-map";
+export {
   GARMIN_DEFAULTS,
   createGarminProvider,
   garminAthleteExternalId,

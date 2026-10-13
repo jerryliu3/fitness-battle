@@ -38,4 +38,9 @@ export const serverEnv = {
   garminRedirectUri:
     process.env.GARMIN_REDIRECT_URI ??
     "http://localhost:3000/api/fitness/garmin/callback",
+  /** Open Wearables self-hosted API (WHOOP pilot). */
+  openWearablesApiUrl: process.env.OPEN_WEARABLES_API_URL,
+  openWearablesApiKey: process.env.OPEN_WEARABLES_API_KEY,
+  openWearablesWhoop:
+    (process.env.OPEN_WEARABLES_WHOOP ?? "false").toLowerCase() === "true",
 };

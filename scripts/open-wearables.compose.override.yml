@@ -1,0 +1,37 @@
+# Cloud agent / broken inter-container bridge: hairpin via published host ports.
+services:
+  app:
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    environment:
+      - DB_HOST=host.docker.internal
+      - DB_PORT=5433
+      - REDIS_HOST=host.docker.internal
+      - REDIS_PORT=6379
+  celery-worker:
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    environment:
+      - DB_HOST=host.docker.internal
+      - DB_PORT=5433
+      - REDIS_HOST=host.docker.internal
+      - REDIS_PORT=6379
+  celery-beat:
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    environment:
+      - DB_HOST=host.docker.internal
+      - DB_PORT=5433
+      - REDIS_HOST=host.docker.internal
+      - REDIS_PORT=6379
+  flower:
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    environment:
+      - DB_HOST=host.docker.internal
+      - DB_PORT=5433
+      - REDIS_HOST=host.docker.internal
+      - REDIS_PORT=6379
+  svix-server:
+    extra_hosts:
+      - "host.docker.internal:host-gateway"

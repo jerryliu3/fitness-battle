@@ -22,3 +22,6 @@ rankings-db/supabase/.branches
 rankings-db/supabase/.temp
 *.import.sql
 packages/rankings/imports/
+# Open Wearables upstream clone + local secrets (see scripts/open-wearables.sh)
+services/open-wearables/
+.cursor-local/

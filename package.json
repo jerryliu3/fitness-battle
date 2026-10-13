@@ -18,7 +18,11 @@
     "supabase:reset": "supabase db reset",
     "rankings:db:start": "supabase start --workdir rankings-db",
     "rankings:db:reset": "supabase db reset --workdir rankings-db",
-    "rankings:ingest": "node packages/rankings/scripts/ingest.mjs"
+    "rankings:ingest": "node packages/rankings/scripts/ingest.mjs",
+    "ow:clone": "bash scripts/open-wearables.sh clone",
+    "ow:up": "bash scripts/open-wearables.sh up",
+    "ow:down": "bash scripts/open-wearables.sh down",
+    "ow:status": "bash scripts/open-wearables.sh status"
   },
   "devDependencies": {
     "typescript": "^5.9.2"

@@ -2,6 +2,8 @@
 
 Cloud OAuth runs on the web server. Apple Health and Health Connect run on the phone and post into the same API. Missing keys keep a provider on the stub path. A stub is never shown as a live connection.
 
+Optional WHOOP via Open Wearables: [open-wearables-pilot.md](./open-wearables-pilot.md). When `OPEN_WEARABLES_WHOOP=true` and OW URL/key are set, WHOOP connect/sync go through self-hosted Open Wearables; otherwise the legacy direct WHOOP adapter remains.
+
 ## Status matrix
 
 | Integration | Kind | Maturity | Without credentials | With credentials |
@@ -11,7 +13,7 @@ Cloud OAuth runs on the web server. Apple Health and Health Connect run on the p
 | Garmin | Activity | Stub-ready, plus file import | Stub sync. FIT/GPX/TCX/zip import is real | OAuth 1.0a pull and Health API ping |
 | Apple Health | Activity | Device ingest | Web cannot read HealthKit | Expo dev client posts to `/api/fitness/ingest` |
 | Health Connect | Activity | Device ingest | Web cannot read Health Connect | Expo dev client posts to `/api/fitness/ingest` |
-| WHOOP | Readiness + workouts | Stub-ready, live path coded | Stub sync | OAuth → recovery score and workouts |
+| WHOOP | Readiness + workouts | Stub-ready; OW pilot optional | Stub sync | Direct OAuth, or OW pilot (`OPEN_WEARABLES_WHOOP`) |
 | Oura | Readiness + workouts | Stub-ready, live path coded | Stub sync | OAuth → daily readiness and workouts |
 
 Catalog source: `packages/shared/src/fitness/providers.ts`.
@@ -23,7 +25,7 @@ Set these on the web server. Leave them empty until you have them. Demo mode (`N
 | Provider | Variables | Redirect |
 | --- | --- | --- |
 | Strava | `STRAVA_CLIENT_ID`, `STRAVA_CLIENT_SECRET` | `/api/fitness/strava/callback` |
-| WHOOP | `WHOOP_CLIENT_ID`, `WHOOP_CLIENT_SECRET` | `/api/fitness/whoop/callback` |
+| WHOOP | `WHOOP_CLIENT_ID`, `WHOOP_CLIENT_SECRET` (direct) **or** same keys on Open Wearables + `OPEN_WEARABLES_*` | Direct: `/api/fitness/whoop/callback`. OW: `{OW}/api/v1/oauth/whoop/callback` then `/api/fitness/open-wearables/callback` |
 | Oura | `OURA_CLIENT_ID`, `OURA_CLIENT_SECRET` | `/api/fitness/oura/callback` |
 | Garmin | `GARMIN_CONSUMER_KEY`, `GARMIN_CONSUMER_SECRET` | `/api/fitness/garmin/callback` |
 

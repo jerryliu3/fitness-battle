@@ -10,6 +10,8 @@ import {
 } from "@fitness-battle/shared";
 import { serverEnv, webEnv } from "./env";
 import { createProviderStore } from "./fitness-store";
+import { openWearablesWhoopPilotEnabled } from "./open-wearables/client";
+import { createOwWhoopProvider } from "./open-wearables/whoop";
 
 export const OAUTH_PROVIDER_IDS = ["strava", "garmin", "whoop", "oura"] as const;
 export type OAuthProviderId = (typeof OAUTH_PROVIDER_IDS)[number];
@@ -38,11 +40,12 @@ type ServerFitnessProvider =
   | ReturnType<typeof createStravaProvider>
   | ReturnType<typeof createGarminProvider>
   | ReturnType<typeof createWhoopProvider>
-  | ReturnType<typeof createOuraProvider>;
+  | ReturnType<typeof createOuraProvider>
+  | ReturnType<typeof createOwWhoopProvider>;
 
 export function getServerFitnessProvider(provider?: "strava"): ReturnType<typeof createStravaProvider>;
 export function getServerFitnessProvider(provider: "garmin"): ReturnType<typeof createGarminProvider>;
-export function getServerFitnessProvider(provider: "whoop"): ReturnType<typeof createWhoopProvider>;
+export function getServerFitnessProvider(provider: "whoop"): ReturnType<typeof createWhoopProvider> | ReturnType<typeof createOwWhoopProvider>;
 export function getServerFitnessProvider(provider: "oura"): ReturnType<typeof createOuraProvider>;
 export function getServerFitnessProvider(provider: OAuthProviderId): ServerFitnessProvider;
 export function getServerFitnessProvider(provider: OAuthProviderId = "strava"): ServerFitnessProvider {
@@ -57,6 +60,9 @@ export function getServerFitnessProvider(provider: OAuthProviderId = "strava"): 
     return createGarminProvider(env, options);
   }
   if (provider === "whoop") {
+    if (openWearablesWhoopPilotEnabled()) {
+      return createOwWhoopProvider();
+    }
     const env = liveEnv<OAuth2Env>({
       clientId: serverEnv.whoopClientId,
       clientSecret: serverEnv.whoopClientSecret,

@@ -99,12 +99,13 @@ export const INTEGRATIONS: IntegrationSpec[] = [
     maturity: "stub_ready",
     blurb: "Recovery score and scored workouts",
     setupSteps: [
-      "Create a WHOOP developer application",
-      "Set WHOOP_CLIENT_ID, WHOOP_CLIENT_SECRET, and WHOOP_REDIRECT_URI",
-      "User authorizes; the server pulls recovery and workouts",
+      "Pilot: run Open Wearables (`pnpm ow:up`), set OPEN_WEARABLES_API_URL/API_KEY and OPEN_WEARABLES_WHOOP=true",
+      "Put WHOOP_CLIENT_ID/SECRET on the Open Wearables instance (callback {OW}/api/v1/oauth/whoop/callback)",
+      "Or legacy direct path: set WHOOP_* on the web app and leave OPEN_WEARABLES_WHOOP unset",
+      "User authorizes; sync pulls normalized workouts/recovery into Fitness Battle",
     ],
     offlineCapability:
-      "Without keys, connect returns status=stub. With keys, OAuth and the v2 recovery/workout pull run.",
+      "Without keys (or OW), connect returns status=stub. With the OW pilot, OAuth runs through Open Wearables.",
   },
   {
     id: "oura",
