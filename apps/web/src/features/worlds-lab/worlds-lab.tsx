@@ -218,6 +218,7 @@ export function WorldsLab() {
           prototypes
         </span>
         <Link href="/design/spatial">Spatial studies ↗</Link>
+        <Link href="/design/rally">Rally · the focused direction ↗</Link>
       </footer>
       <dialog
         ref={dialog}
