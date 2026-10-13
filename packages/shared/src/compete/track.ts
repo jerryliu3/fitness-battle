@@ -40,6 +40,24 @@ function labelUtc(date: Date): string {
 }
 
 /**
+ * Weekday names collapse early in a wave (the three cutoffs can share one UTC
+ * day). Name the scrub positions so the control still has three distinct stops.
+ */
+export function checkpointLabels(
+  dates: [Date, Date, Date],
+): [string, string, string] {
+  const weekdays = dates.map(labelUtc) as [string, string, string];
+  if (new Set(weekdays).size === weekdays.length) return weekdays;
+  if (weekdays[0] !== weekdays[1] && weekdays[1] === weekdays[2]) {
+    return [weekdays[0], weekdays[1], "Now"];
+  }
+  if (weekdays[0] === weekdays[1] && weekdays[1] !== weekdays[2]) {
+    return ["Early", weekdays[1], weekdays[2]];
+  }
+  return ["Early", "Mid", "Now"];
+}
+
+/**
  * Cutoff instants for the scrubber: end of day 0, end of day 2, and now
  * (clamped into the half-open period). Mirrors the Split prototype's three
  * progressive snapshots without hard-coding Mon/Tue/Thu.
@@ -100,7 +118,7 @@ export function activityCheckpoints(
       volumes[1]!.movingSec,
       volumes[2]!.movingSec,
     ],
-    labels: [labelUtc(early), labelUtc(mid), labelUtc(live)],
+    labels: checkpointLabels([early, mid, live]),
     liveAt: live,
   };
 }
@@ -141,7 +159,7 @@ export function syntheticCheckpoints(
       totalMovingSec * shares[1],
       totalMovingSec * shares[2],
     ],
-    labels: [labelUtc(early), labelUtc(mid), labelUtc(live)],
+    labels: checkpointLabels([early, mid, live]),
     liveAt: live,
   };
 }

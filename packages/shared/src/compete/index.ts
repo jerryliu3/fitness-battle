@@ -77,6 +77,7 @@ export {
 } from "./pace";
 export {
   activityCheckpoints,
+  checkpointLabels,
   athleteWeekDistanceM,
   athleteWeekMovingSec,
   checkpointInstants,

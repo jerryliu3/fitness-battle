@@ -64,6 +64,19 @@ describe("activityCheckpoints", () => {
     expect(series.distanceM[2]).toBe(19200);
     expect(series.effort[2]).toBeGreaterThan(series.effort[1]!);
     expect(series.labels).toHaveLength(3);
+    expect(new Set(series.labels).size).toBe(3);
+  });
+
+  it("names early-week cutoffs when they share a weekday", () => {
+    const series = activityCheckpoints(
+      [],
+      "running",
+      new Date("2026-10-13T00:00:00.000Z"),
+      new Date("2026-10-18T00:00:00.000Z"),
+      "open",
+      new Date("2026-10-13T06:00:00.000Z"),
+    );
+    expect(series.labels).toEqual(["Early", "Mid", "Now"]);
   });
 });
 
