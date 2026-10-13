@@ -7,16 +7,12 @@ export default async function RankingsHomePage() {
   const client = createRankingsClient();
   const counts = new Map<string, number>();
   if (client) {
-    await Promise.all(
-      DISTANCES.map(async (distance) => {
-        const stored = distance.slug === "half-marathon" ? "half_marathon" : distance.slug;
-        const { count } = await client
-          .from("leaderboard_entries")
-          .select("id", { count: "exact", head: true })
-          .eq("distance_slug", stored);
-        counts.set(stored, count ?? 0);
-      }),
-    );
+    const { data } = await client
+      .from("rankings_distance_stats")
+      .select("distance_slug, result_count");
+    for (const row of data ?? []) {
+      counts.set(row.distance_slug, Number(row.result_count) || 0);
+    }
   }
 
   return (
