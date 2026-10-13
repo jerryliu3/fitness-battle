@@ -3,6 +3,7 @@
 import { AuthPrompt } from "@/components/auth-gate";
 import { useAuth } from "@/components/auth-context";
 import { useCompete } from "@/components/compete-context";
+import { SleepPanel } from "@/features/health/sleep-panel";
 import { FieldStage } from "@/features/field/components/field-stage";
 import { buildFieldModel } from "@/features/field/model";
 import {
@@ -17,6 +18,7 @@ import {
   projectedElo,
   sportById,
   SPORTS,
+  HEALTH_METRICS,
   type ScoreTrack,
   type SportId,
 } from "@fitness-battle/shared";
@@ -26,6 +28,7 @@ export default function FieldPage() {
   const { state, dispatch } = useCompete();
   const { user } = useAuth();
   const [sport, setSport] = useState<SportId | null>(null);
+  const [showSleep, setShowSleep] = useState(false);
   const [track, setTrack] = useState<ScoreTrack>("open");
   const [username, setUsername] = useState("");
   const [authOpen, setAuthOpen] = useState(false);
@@ -36,6 +39,8 @@ export default function FieldPage() {
   if (!state) return <p className="fb-copy">Loading the field…</p>;
 
   const now = competeNow(state);
+  const sleepSelected =
+    showSleep || (sport == null && state.focus.family === "health");
   const active = sport ?? state.primary;
   const spec = sportById(active);
   const shownTrack: ScoreTrack = spec.gps ? track : "open";
@@ -82,8 +87,9 @@ export default function FieldPage() {
           <span>FIELD.</span>
         </h1>
         <p className="fb-copy">
-          2D lanes and 3D Pursuit. Positions use weekly{" "}
-          {spec.gps ? "distance" : "effort"} — lane number is not rank.
+          {sleepSelected
+            ? "Sleep ranks last night and the week’s average. It does not use the track."
+            : `2D lanes and 3D Pursuit. Positions use weekly ${spec.gps ? "distance" : "effort"} — lane number is not rank.`}
         </p>
       </div>
 
@@ -92,15 +98,53 @@ export default function FieldPage() {
           <button
             key={item.id}
             type="button"
-            className={item.id === active ? "fb-chip on" : "fb-chip"}
-            onClick={() => setSport(item.id)}
+            className={!sleepSelected && item.id === active ? "fb-chip on" : "fb-chip"}
+            onClick={() => {
+              setShowSleep(false);
+              setSport(item.id);
+            }}
           >
             {item.name}
           </button>
         ))}
       </div>
 
-      {spec.gps ? (
+      <div className="fb-chips" aria-label="Health metrics">
+        {HEALTH_METRICS.map((item) => (
+          <button
+            key={item.id}
+            type="button"
+            className={sleepSelected ? "fb-chip on" : "fb-chip"}
+            onClick={() => {
+              setShowSleep(true);
+              dispatch({ type: "set-focus", focus: { family: "health", id: item.id } });
+            }}
+          >
+            {item.name}
+          </button>
+        ))}
+      </div>
+
+      {sleepSelected ? (
+        <SleepPanel
+          state={state}
+          now={now}
+          onJoin={() =>
+            requireParticipate("Sign in to join the sleep board.", () =>
+              dispatch({ type: "opt-in-health", metric: "sleep" }),
+            )
+          }
+          onSample={() =>
+            requireParticipate("Sign in to record a sample night.", () =>
+              dispatch({ type: "log-sleep" }),
+            )
+          }
+          onLeave={() => {
+            dispatch({ type: "opt-out-health", metric: "sleep" });
+            setShowSleep(false);
+          }}
+        />
+      ) : spec.gps ? (
         <div className="fb-chips">
           {(
             [
@@ -125,7 +169,7 @@ export default function FieldPage() {
         </p>
       )}
 
-      {!board.optedIn ? (
+      {sleepSelected ? null : !board.optedIn ? (
         <section className="sp-empty">
           <h2>You are not on this field</h2>
           <p className="fb-copy">{spec.blurb}</p>

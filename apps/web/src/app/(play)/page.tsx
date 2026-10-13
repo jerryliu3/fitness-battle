@@ -13,6 +13,7 @@ import {
 import { RaceTrack } from "@/features/split/components/race-track";
 import { TrackVerdict } from "@/features/split/components/track-verdict";
 import { FieldRoster } from "@/features/split/components/field-roster";
+import { SleepPanel } from "@/features/health/sleep-panel";
 import { WeekReveal } from "@/features/split/components/week-reveal";
 import {
   buildSplitBoard,
@@ -28,6 +29,7 @@ import {
   lessonFor,
   sportById,
   SPORTS,
+  HEALTH_METRICS,
   type CheckpointIndex,
   type ScoreTrack,
   type SportId,
@@ -51,6 +53,7 @@ export default function MyTrackPage() {
   if (!state) return <p className="fb-copy">Loading your week…</p>;
 
   const now = competeNow(state);
+  const showingSleep = state.focus.family === "health" && state.focus.id === "sleep";
   const sport = state.primary;
   const spec = sportById(sport);
   const shownTrack: ScoreTrack = spec.gps ? track : "open";
@@ -94,7 +97,7 @@ export default function MyTrackPage() {
         />
       ) : null}
 
-      {theme.id === "form" ? (
+      {theme.id === "form" && !showingSleep ? (
         <section className="fm-hero">
           <div>
             <p className="fb-kicker">Personal record / {board.periodLabel}</p>
@@ -133,7 +136,7 @@ export default function MyTrackPage() {
             <p>EFFORT / RECORDED</p>
           </div>
         </section>
-      ) : (
+      ) : showingSleep ? null : (
         <div className="sp-title-block">
           <p className="fb-kicker">
             {board.periodLabel} / Weekly {spec.name.toLowerCase()}
@@ -154,8 +157,9 @@ export default function MyTrackPage() {
             )}
           </h1>
           <p className="fb-copy">
-            {periodDaysLeft} days left. Effort points accumulate through the week —
-            not a live race or pace board.
+            {showingSleep
+              ? "Sleep is scored from last night and the nights logged this week."
+              : `${periodDaysLeft} days left. Effort points accumulate through the week — not a live race or pace board.`}
           </p>
         </div>
       )}
@@ -168,7 +172,7 @@ export default function MyTrackPage() {
             <button
               key={item.id}
               type="button"
-              className={item.id === sport ? "fb-chip on" : "fb-chip"}
+              className={!showingSleep && item.id === sport ? "fb-chip on" : "fb-chip"}
               onClick={() =>
                 requireParticipate(
                   `Sign in to compete in ${item.name} this week.`,
@@ -180,6 +184,32 @@ export default function MyTrackPage() {
                 )
               }
             >
+            {item.name}
+            {joined ? "" : " · join"}
+          </button>
+        );
+      })}
+      </div>
+
+      <div className="fb-chips" aria-label="Health metrics">
+        {HEALTH_METRICS.map((item) => {
+          const joined = state.healthRatings.find((row) => row.metric === item.id)?.optedIn;
+          const on = showingSleep && item.id === "sleep";
+          return (
+            <button
+              key={item.id}
+              type="button"
+              className={on ? "fb-chip on" : "fb-chip"}
+              onClick={() =>
+                requireParticipate(`Sign in to compete on ${item.name} this week.`, () =>
+                  dispatch(
+                    joined
+                      ? { type: "set-focus", focus: { family: "health", id: item.id } }
+                      : { type: "opt-in-health", metric: item.id },
+                  ),
+                )
+              }
+            >
               {item.name}
               {joined ? "" : " · join"}
             </button>
@@ -187,7 +217,25 @@ export default function MyTrackPage() {
         })}
       </div>
 
-      {spec.gps ? (
+      {showingSleep ? (
+        <SleepPanel
+          state={state}
+          now={now}
+          onJoin={() =>
+            requireParticipate("Sign in to compete on sleep this week.", () =>
+              dispatch({ type: "opt-in-health", metric: "sleep" }),
+            )
+          }
+          onSample={() =>
+            requireParticipate("Sign in to record a sample night.", () =>
+              dispatch({ type: "log-sleep" }),
+            )
+          }
+          onLeave={() => dispatch({ type: "opt-out-health", metric: "sleep" })}
+        />
+      ) : null}
+
+      {!showingSleep && spec.gps ? (
         <div className="fb-chips">
           {(
             [
@@ -207,7 +255,7 @@ export default function MyTrackPage() {
         </div>
       ) : null}
 
-      {theme.id === "form" && board.optedIn ? (
+      {theme.id === "form" && board.optedIn && !showingSleep ? (
         <>
           <div className="fm-stats">
             <div>
@@ -274,7 +322,7 @@ export default function MyTrackPage() {
         </>
       ) : null}
 
-      {!board.optedIn ? (
+      {!showingSleep && !board.optedIn ? (
         <section className="sp-empty">
           <h2>You are not on a track yet</h2>
           <p className="fb-copy">{spec.blurb}</p>
@@ -295,7 +343,7 @@ export default function MyTrackPage() {
             Join {spec.name} this week
           </button>
         </section>
-      ) : theme.id === "ink" ? (
+      ) : !showingSleep && theme.id === "ink" ? (
         <div className="sp-layout">
           <section className="sp-board">
             <div className="sp-mode-switch" aria-label="Comparison mode">
@@ -341,7 +389,7 @@ export default function MyTrackPage() {
         </div>
       ) : null}
 
-      {board.optedIn && theme.id === "ink" ? (
+      {board.optedIn && theme.id === "ink" && !showingSleep ? (
         <div className="sp-bottom">
           <span>
             Your field <strong>{youLane?.place ?? "—"} / {board.rows.length}</strong>
@@ -355,7 +403,7 @@ export default function MyTrackPage() {
         </div>
       ) : null}
 
-      {showField && board.optedIn && theme.id === "ink" ? (
+      {showField && board.optedIn && theme.id === "ink" && !showingSleep ? (
         <section>
           <div className="fd-roster-head">
             <h3>Full field</h3>

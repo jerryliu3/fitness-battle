@@ -1,3 +1,9 @@
+import type {
+  CategoryFocus,
+  HealthPeriodResult,
+  HealthRating,
+  SleepNight,
+} from "./health";
 import type { WaveEnrollment } from "../matching/types";
 import type { PeriodKind } from "../types";
 
@@ -81,25 +87,25 @@ export const PROVIDERS: Provider[] = [
     id: "garmin",
     name: "Garmin",
     kind: "activity",
-    blurb: "Watch activities",
+    blurb: "Watch activities and sleep",
   },
   {
     id: "apple_health",
     name: "Apple Health",
     kind: "activity",
-    blurb: "iPhone workouts",
+    blurb: "Workouts and sleep",
   },
   {
     id: "google_health",
     name: "Health Connect",
     kind: "activity",
-    blurb: "Android workouts",
+    blurb: "Workouts and sleep",
   },
   {
     id: "whoop",
     name: "WHOOP",
     kind: "readiness",
-    blurb: "Recovery and strain",
+    blurb: "Sleep, recovery, and strain",
   },
   {
     id: "oura",
@@ -192,10 +198,17 @@ export interface CompeteState {
   name: string;
   city: string;
   primary: SportId;
+  /** Which category My track and the field are showing. */
+  focus: CategoryFocus;
   clock: SeasonClock;
   ratings: Rating[];
   activities: Activity[];
   readiness: ReadinessMark[];
+  /** Nightly sleep readings. Separate from workout activities. */
+  sleepNights: SleepNight[];
+  healthRatings: HealthRating[];
+  /** Closed sleep weeks, newest first. */
+  healthResults: HealthPeriodResult[];
   links: ProviderLink[];
   freezesLeft: number;
   /** Period starts the player froze. Elo is held when that period closes. */

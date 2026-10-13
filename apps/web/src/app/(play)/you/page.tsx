@@ -242,6 +242,23 @@ function YouContent() {
       />
       <WeekRecords sport={state.primary} you={board.you} />
 
+      {(() => {
+        const last = [...state.sleepNights].sort((a, b) => a.day.localeCompare(b.day)).at(-1);
+        if (!last) return null;
+        return (
+          <section className="fb-card">
+            <p className="fb-kicker">Last night</p>
+            <h2>Sleep {last.score}</h2>
+            <p className="fb-copy">
+              Open My track and choose Sleep for the night and the weekly board.
+            </p>
+            <Link href="/" className="fb-btn-ghost">
+              Open sleep
+            </Link>
+          </section>
+        );
+      })()}
+
       <p className="fb-copy">
         {user?.email}
         {demoMode ? " · demo account" : ""}.
@@ -416,6 +433,8 @@ function YouContent() {
           Cloud trackers open their own authorize page when API keys are set.
           Without keys the link stays a stub. Garmin files import as real
           activities. Apple Health and Health Connect sync from the phone.
+          WHOOP, Oura, Garmin, Apple Health, and Health Connect also send last
+          night’s sleep score.
         </p>
         {PROVIDERS.map((provider) => {
           const link = state.links.find((item) => item.provider === provider.id);
