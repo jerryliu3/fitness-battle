@@ -1,8 +1,10 @@
-/* Product Rally chrome — pairs with rally-lab/rally-focus.css. */
+/* Rally product accents — additive panels + theme chrome, not a page rewrite. */
 
 .rally-focus[data-product="on"] {
   --font-rf-display: var(--font-rally-display);
   --font-rf-comic: var(--font-rally-comic);
+  min-height: 100vh;
+  background: var(--rf-plum);
 }
 
 .rally-focus[data-product="on"] .rf-lab-bar,
@@ -10,22 +12,15 @@
   display: none;
 }
 
-.rally-focus[data-product="on"] {
-  /* Full-bleed product shell — ignore alternate theme body paints. */
-  min-height: 100vh;
-  background: var(--rf-plum);
-}
-
 .rally-focus[data-product="on"] .rf-app {
   padding-left: 0;
   padding-right: 0;
-  max-width: none;
+  max-width: min(1140px, 100%);
+  margin: 0 auto;
 }
 
-/* When Rally owns the play shell, the outer frame is plum. */
 body:has(.rally-focus[data-product="on"]) {
   background: #40234e;
-  color: #fff9e9;
 }
 
 body:has(.rally-focus[data-product="on"]) .fb {
@@ -48,81 +43,16 @@ body:has(.rally-focus[data-product="on"]) .fb {
 }
 
 .rally-focus[data-product="on"] .rf-product-main {
-  padding-bottom: 96px;
+  padding: 0 0 96px;
+  display: grid;
+  gap: 16px;
+  color: var(--rf-paper);
 }
 
 @media (min-width: 601px) {
   .rally-focus[data-product="on"] .rf-product-main {
     padding-bottom: 48px;
   }
-}
-
-/* Keep secondary product cards readable inside Rally surfaces. */
-.rally-focus[data-product="on"] .fb-card,
-.rally-focus[data-product="on"] .sp-empty,
-.rally-focus[data-product="on"] .fb-lesson {
-  background: var(--rf-paper);
-  border: 1px solid var(--rf-line);
-  border-radius: 0;
-  color: var(--rf-plum);
-  box-shadow: none;
-}
-
-.rally-focus[data-product="on"] .fb-btn {
-  background: var(--rf-plum);
-  color: var(--rf-tennis);
-  border: 0;
-  border-radius: 0;
-  border-bottom: 3px solid var(--rf-tennis);
-}
-
-.rally-focus[data-product="on"] .fb-btn-ghost,
-.rally-focus[data-product="on"] .fb-btn-line {
-  border: 1px solid var(--rf-plum);
-  border-radius: 0;
-  background: transparent;
-  color: var(--rf-plum);
-}
-
-.rally-focus[data-product="on"] .fb-chip {
-  border-radius: 0;
-  border: 1px solid var(--rf-line);
-  background: var(--rf-white);
-  color: var(--rf-plum);
-}
-
-.rally-focus[data-product="on"] .fb-chip.on {
-  background: var(--rf-plum);
-  color: var(--rf-tennis);
-  border-color: var(--rf-plum);
-}
-
-.rally-focus[data-product="on"] .fb-field input,
-.rally-focus[data-product="on"] .fb-field {
-  color: var(--rf-plum);
-}
-
-.rally-focus[data-product="on"] .fb-copy,
-.rally-focus[data-product="on"] .fb-note,
-.rally-focus[data-product="on"] .fb-kicker {
-  color: var(--rf-muted);
-}
-
-.rally-focus[data-product="on"] h2 {
-  font-family: var(--rf-display), sans-serif;
-  color: var(--rf-plum);
-}
-
-.rf-sport-chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin: 0 0 8px;
-}
-
-/* Rally chrome already has the wordmark; keep source status via demo line. */
-.rally-focus[data-product="on"] .sp-header {
-  display: none;
 }
 
 /* Product nav uses Links; mirror lab button chrome. */
@@ -144,11 +74,7 @@ body:has(.rally-focus[data-product="on"]) .fb {
   font-weight: 750;
 }
 
-.rally-focus[data-product="on"] .rf-wordmark {
-  display: inline-block;
-  text-decoration: none;
-}
-
+.rally-focus[data-product="on"] .rf-wordmark,
 .rally-focus[data-product="on"] .rf-club {
   display: inline-flex;
   align-items: center;
@@ -171,4 +97,151 @@ body:has(.rally-focus[data-product="on"]) .fb {
     background: var(--rf-plum);
     color: var(--rf-tennis);
   }
+}
+
+/* Core product surfaces stay readable on plum. */
+.rally-focus[data-product="on"] .sp-header {
+  color: var(--rf-paper);
+}
+
+.rally-focus[data-product="on"] .sp-brand {
+  font-family: var(--font-rf-display), sans-serif;
+  color: var(--rf-tennis);
+}
+
+.rally-focus[data-product="on"] .sp-title-block h1,
+.rally-focus[data-product="on"] .sp-title-block h1 span {
+  font-family: var(--font-rf-display), sans-serif;
+  color: var(--rf-tennis);
+}
+
+.rally-focus[data-product="on"] .fb-kicker {
+  color: var(--rf-tennis);
+}
+
+.rally-focus[data-product="on"] .fb-copy,
+.rally-focus[data-product="on"] .fb-note {
+  color: color-mix(in srgb, var(--rf-paper) 82%, transparent);
+}
+
+.rally-focus[data-product="on"] .fb-card,
+.rally-focus[data-product="on"] .sp-empty,
+.rally-focus[data-product="on"] .fb-lesson,
+.rally-focus[data-product="on"] .sp-board,
+.rally-focus[data-product="on"] .sp-splits,
+.rally-focus[data-product="on"] .fd-stage,
+.rally-focus[data-product="on"] .fd-inspector,
+.rally-focus[data-product="on"] .sp-split-entry {
+  background: var(--rf-paper);
+  border: 1px solid var(--rf-line);
+  border-radius: 0;
+  color: var(--rf-plum);
+  box-shadow: none;
+}
+
+.rally-focus[data-product="on"] .fd-stage {
+  padding: 14px;
+}
+
+.rally-focus[data-product="on"] .fd-field-head,
+.rally-focus[data-product="on"] .fd-inspector,
+.rally-focus[data-product="on"] .fd-lane-note,
+.rally-focus[data-product="on"] .fd-readout {
+  color: var(--rf-plum);
+}
+
+.rally-focus[data-product="on"] .fb-card .fb-copy,
+.rally-focus[data-product="on"] .fb-card .fb-note,
+.rally-focus[data-product="on"] .fb-card .fb-kicker,
+.rally-focus[data-product="on"] .sp-empty .fb-copy,
+.rally-focus[data-product="on"] .sp-empty .fb-note,
+.rally-focus[data-product="on"] .fd-stage .fb-copy,
+.rally-focus[data-product="on"] .fd-stage .fb-note {
+  color: var(--rf-muted);
+}
+
+.rally-focus[data-product="on"] .fb-card h2,
+.rally-focus[data-product="on"] .sp-empty h2 {
+  color: var(--rf-plum);
+}
+
+.rally-focus[data-product="on"] .fb-btn {
+  background: var(--rf-plum);
+  color: var(--rf-tennis);
+  border: 0;
+  border-radius: 0;
+  border-bottom: 3px solid var(--rf-tennis);
+}
+
+.rally-focus[data-product="on"] .fb-btn-ghost,
+.rally-focus[data-product="on"] .fb-btn-line {
+  border: 1px solid var(--rf-tennis);
+  border-radius: 0;
+  background: transparent;
+  color: var(--rf-tennis);
+}
+
+.rally-focus[data-product="on"] .fb-card .fb-btn-ghost,
+.rally-focus[data-product="on"] .fb-card .fb-btn-line,
+.rally-focus[data-product="on"] .sp-empty .fb-btn-ghost,
+.rally-focus[data-product="on"] .fd-stage .fb-btn-ghost {
+  border-color: var(--rf-plum);
+  color: var(--rf-plum);
+}
+
+.rally-focus[data-product="on"] .fb-chip {
+  border-radius: 0;
+  border: 1px solid color-mix(in srgb, var(--rf-paper) 35%, transparent);
+  background: transparent;
+  color: var(--rf-paper);
+}
+
+.rally-focus[data-product="on"] .fb-chip.on {
+  background: var(--rf-tennis);
+  color: var(--rf-plum);
+  border-color: var(--rf-tennis);
+}
+
+/* Additive Rally widgets sit in the normal page flow. */
+.rf-addon {
+  display: grid;
+  gap: 16px;
+}
+
+.rf-addon .rf-matchup,
+.rf-addon .rf-small-moves,
+.rf-addon .rf-moves-grid,
+.rf-addon .rf-highlight,
+.rf-addon .rf-ace-strip {
+  margin: 0;
+}
+
+.rf-ace-strip {
+  display: grid;
+  grid-template-columns: 88px 1fr;
+  gap: 14px;
+  align-items: center;
+  padding: 14px 16px;
+  background: var(--rf-paper);
+  color: var(--rf-plum);
+  border: 1px solid var(--rf-line);
+}
+
+.rf-ace-strip .world-mascot {
+  width: 72px;
+  height: auto;
+}
+
+.rf-ace-strip strong {
+  display: block;
+  font-family: var(--font-rf-display), sans-serif;
+  font-size: 22px;
+  line-height: 1;
+  margin: 4px 0 6px;
+}
+
+.rf-field-note {
+  margin: 0;
+  color: color-mix(in srgb, var(--rf-paper) 80%, transparent);
+  font-size: 13px;
 }

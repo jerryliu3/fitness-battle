@@ -35,14 +35,15 @@ The combination should feel inviting and recognizably sporting. Core chrome rema
 
 ## Implementation and boundaries
 
-The focused prototype remains at `/design/rally`. Production play routes now ship the same Rally structure:
+The focused prototype remains at `/design/rally`. In production, Rally is an **additive theme + accents**, not a replacement of core compete surfaces:
 
-- Nav: **My week** `/`, **Matchups** `/board`, **Moves** `/splits`, **You** `/you`
-- Theme default: **Rally** (plum / tennis / Ace), with Form and Ink retained as alternate catalog entries
-- Product UI: `apps/web/src/features/rally/*` wired to the compete board (live activities, ghost week, field lanes)
+- Theme default: **Rally** (plum / tennis / Ace); **Form** and **Ink** remain full alternate shells
+- Rally nav labels: My week / Matchups / Moves / You (same routes as My track / The field / Splits / Athlete)
+- **Kept core:** 2D lanes + 3D Pursuit `FieldStage`, race-track / Form effort UI, numbered `ActivitySplits`, Athlete card, 1v1s, join/opt-out
+- **Additive under Rally:** personal Matchup scoreboard + replay, activity rings, Ace accents, receipts
 - Ace asset: `apps/web/public/brand/ace.png` (same artwork as `public/design/worlds/rally.png`)
 
-Prototype helpers stay presentation-only. Production scoring, periods, auth, and tracker writes are unchanged — only the shell and presentation layer moved from lab into product.
+Prototype helpers stay presentation-only. Scoring, periods, auth, and tracker writes are unchanged.
 
 View URLs and comic state are whitelisted. Browser Back restores the selected view and style; navigation stops replay and returns to the current Thursday snapshot. The manual replay advances through three recorded milestones, stops after Thursday, and has no idle animation loop. Reduced-motion CSS disables travel transitions. Native activity/detail dialogs support Escape and restore focus.
 

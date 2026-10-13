@@ -1,19 +1,20 @@
 "use client";
 
 import { useCompete } from "@/components/compete-context";
-import { Ace } from "@/features/rally/ace";
 import { ActivityRing } from "@/features/rally/activity-ring";
 import {
   ActivityReceipt,
   RallyDetailDialog,
 } from "@/features/rally/detail-dialog";
-import { RallyHero } from "@/features/rally/hero";
-import { buildRallyBoard, formatRallyValue, type RallyMove } from "@/features/rally/model";
+import { buildRallyBoard, type RallyMove } from "@/features/rally/model";
 import { useRallyWeek } from "@/features/rally/use-rally-week";
+import { ActivitySplits } from "@/features/split/components/activity-splits";
 import {
   ProductHeader,
   sourceFromLinks,
 } from "@/features/split/components/product-header";
+import { buildSplitBoard } from "@/features/split/model";
+import { useTheme } from "@/theme/theme-provider";
 import {
   yourBenchmarkSeconds,
   formatClockTime,
@@ -25,8 +26,9 @@ import {
 import Link from "next/link";
 import { useMemo, useState, type ReactNode } from "react";
 
-export default function MovesPage() {
+export default function SplitsPage() {
   const { state } = useCompete();
+  const { theme } = useTheme();
   const [track, setTrack] = useState<ScoreTrack>("open");
   const [detail, setDetail] = useState<{
     title: string;
@@ -37,33 +39,26 @@ export default function MovesPage() {
   const sport = state?.primary ?? "running";
   const spec = sportById(sport);
   const shownTrack: ScoreTrack = spec.gps ? track : "open";
-
   const rally = useMemo(() => {
-    if (!state) return null;
+    if (!state || theme.id !== "rally") return null;
     return buildRallyBoard(state, sport, shownTrack, competeNow(state));
-  }, [state, sport, shownTrack]);
+  }, [state, sport, shownTrack, theme.id]);
   const weekState = useRallyWeek(rally);
 
-  if (!state || !rally || !weekState) {
-    return <p className="fb-copy">Loading moves…</p>;
-  }
+  if (!state) return <p className="fb-copy">Loading splits…</p>;
 
+  const now = competeNow(state);
+  const board = buildSplitBoard(state, sport, shownTrack, now);
   const source = sourceFromLinks(state.links);
   const benchmark =
     sport === "running" || sport === "cycling" ? BENCHMARKS[sport][0] : null;
   const estimate = benchmark
     ? yourBenchmarkSeconds(state, sport, benchmark.meters)
     : null;
-  const totalLabel =
-    rally.unit === "km"
-      ? formatRallyValue(
-          rally.moves.reduce((sum, move) => sum + move.km, 0),
-          "km",
-        )
-      : formatRallyValue(weekState.week.total, "pts");
 
   function openMove(move: RallyMove) {
-    const at = weekState!.receiptFor(move);
+    if (!weekState || !rally) return;
+    const at = weekState.receiptFor(move);
     setDetail({
       title: move.title,
       kind: "activity",
@@ -71,29 +66,42 @@ export default function MovesPage() {
         <ActivityReceipt
           move={move}
           at={at}
-          reference={weekState!.reference}
-          unit={rally!.unit}
+          reference={weekState.reference}
+          unit={rally.unit}
         />
       ),
     });
   }
 
   return (
-    <main>
+    <>
       <ProductHeader sourceStatus={source.status} sourceLabel={source.label} />
-      <div className="rf-demo-line">
-        <span>
-          {spec.name} · {rally.periodLabel}
-        </span>
-        <span>{source.label}</span>
-      </div>
 
-      <RallyHero
-        kicker="YOUR COUNTED MOVEMENT"
-        line1="THAT ONE"
-        line2="COUNTED."
-        copy="Every outing has a place in your week."
-      />
+      <div className="sp-title-block">
+        <p className="fb-kicker">
+          {board.periodLabel} / {spec.name}
+        </p>
+        <h1>
+          {theme.id === "rally" ? (
+            <>
+              YOUR
+              <br />
+              <span>MOVES.</span>
+            </>
+          ) : (
+            <>
+              YOUR
+              <br />
+              <span>SPLITS.</span>
+            </>
+          )}
+        </h1>
+        <p className="fb-copy">
+          The work behind the line. Each counted session is a numbered split for
+          this week
+          {theme.id === "rally" ? ", with optional activity rings above" : ""}.
+        </p>
+      </div>
 
       {spec.gps ? (
         <div className="fb-chips">
@@ -115,58 +123,26 @@ export default function MovesPage() {
         </div>
       ) : null}
 
-      <section className="rf-moves-summary">
-        <span className="rf-kicker">
-          {rally.moves.length} IMPORT{rally.moves.length === 1 ? "" : "S"}. COUNTED
-          ONCE.
-        </span>
-        <strong>
-          {totalLabel}
-          <small>
-            {rally.unit}, together
-          </small>
-        </strong>
-        <p>
-          {rally.moves.length === 0
-            ? "Sync a tracker to fill this week with counted moves."
-            : "Open a ring to see its part in the story."}
-        </p>
-      </section>
-
-      {rally.moves.length === 0 ? (
-        <section className="sp-empty">
-          <h2>No moves yet</h2>
-          <p className="fb-copy">
-            Sync a tracker or log work this week. Counted sessions appear here as
-            rings.
+      {theme.id === "rally" && rally && weekState && rally.moves.length > 0 ? (
+        <div className="rf-addon">
+          <div className="rf-moves-grid">
+            {rally.moves.map((move) => (
+              <ActivityRing
+                key={move.id}
+                move={move}
+                unit={rally.unit}
+                onOpen={() => openMove(move)}
+              />
+            ))}
+          </div>
+          <p className="rf-ring-caption">
+            Rings use a shared 10 km distance scale. The numbered splits below
+            stay the source of truth for effort.
           </p>
-        </section>
-      ) : (
-        <div className="rf-moves-grid">
-          {rally.moves.map((move) => (
-            <ActivityRing
-              key={move.id}
-              move={move}
-              unit={rally.unit}
-              onOpen={() => openMove(move)}
-            />
-          ))}
         </div>
-      )}
+      ) : null}
 
-      <p className="rf-ring-caption">
-        A shared 10 km distance scale. The filled arc shows mileage; “Counted”
-        records the completed import.
-      </p>
-
-      <section className="rf-moves-note">
-        <Ace />
-        <div>
-          <p className="rf-kicker">ACE’S CALL</p>
-          <h2>Good work looks like getting out.</h2>
-          <p>Long, short, steady, easy. These are your moves to keep.</p>
-        </div>
-      </section>
+      <ActivitySplits activities={board.weekActivities} sport={sport} />
 
       {benchmark && estimate != null ? (
         <section className="fb-card">
@@ -186,7 +162,8 @@ export default function MovesPage() {
         <section className="fb-card">
           <h2>Pace board</h2>
           <p className="fb-copy">
-            Absolute times stay separate from weekly effort.
+            Absolute times stay separate from weekly effort. Open pace when you
+            want completion speed, not volume.
           </p>
           <Link href="/pace" className="fb-btn-line">
             Open pace board ↗
@@ -199,6 +176,6 @@ export default function MovesPage() {
       </Link>
 
       <RallyDetailDialog detail={detail} onClose={() => setDetail(null)} />
-    </main>
+    </>
   );
 }

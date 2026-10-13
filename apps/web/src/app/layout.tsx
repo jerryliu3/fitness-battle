@@ -35,8 +35,8 @@ const rallyComic = Bangers({
 });
 
 export const metadata: Metadata = {
-  title: "Rally",
-  description: "Everyday play — mileage matchups, small moves, Ace in your corner.",
+  title: "Fitness Battle",
+  description: "One-tap group and 1v1 fitness battles with automatic tracking.",
 };
 
 export default async function RootLayout({
