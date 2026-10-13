@@ -32,19 +32,31 @@ function SignupForm() {
     setBusy(true);
     setError(null);
     setMessage(null);
-    const result = await signUp({ email, password, displayName });
-    setBusy(false);
-    if (result.error) {
-      setError(result.error);
-      return;
+    try {
+      const result = await signUp({ email, password, displayName });
+      if (result.error) {
+        setError(result.error);
+        return;
+      }
+      if (result.needsEmailConfirm) {
+        setMessage(
+          "Account created. Check your email to confirm, then sign in.",
+        );
+        return;
+      }
+      const dest =
+        next && next !== "/"
+          ? `/onboarding?next=${encodeURIComponent(next)}`
+          : "/onboarding";
+      router.replace(dest);
+      router.refresh();
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : "Could not create the account.",
+      );
+    } finally {
+      setBusy(false);
     }
-    if (result.needsEmailConfirm) {
-      setMessage("Account created. Check your email to confirm, then sign in.");
-      return;
-    }
-    const dest = next && next !== "/" ? `/onboarding?next=${encodeURIComponent(next)}` : "/onboarding";
-    router.replace(dest);
-    router.refresh();
   }
 
   return (

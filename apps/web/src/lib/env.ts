@@ -1,41 +1,45 @@
-function read(name: string, fallback = ""): string {
-  return process.env[name] ?? fallback;
-}
+/**
+ * Env access for the web app.
+ *
+ * NEXT_PUBLIC_* values must be read with static `process.env.NEXT_PUBLIC_…`
+ * property access so Next.js can inline them into the browser bundle.
+ * Dynamic lookups like `process.env[name]` stay empty on the client, which
+ * falls back to local placeholders, flips auth into demo mode, and hydrates
+ * differently from the server (broken signup / React #418).
+ */
 
 /** Public / isomorphic env. Safe to import from client components. */
 export const webEnv = {
-  supabaseUrl: read("NEXT_PUBLIC_SUPABASE_URL", "http://127.0.0.1:54321"),
-  supabaseAnonKey: read("NEXT_PUBLIC_SUPABASE_ANON_KEY", "public-anon-key"),
+  supabaseUrl:
+    process.env.NEXT_PUBLIC_SUPABASE_URL ?? "http://127.0.0.1:54321",
+  supabaseAnonKey:
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? "public-anon-key",
   useDemoData:
     (process.env.NEXT_PUBLIC_USE_DEMO_DATA ?? "true").toLowerCase() !== "false",
-  appUrl: read("NEXT_PUBLIC_APP_URL", "http://localhost:3000"),
+  appUrl: process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000",
 };
 
 /** Server-only secrets. Import only from Route Handlers / server modules. */
 export const serverEnv = {
-  supabaseServiceRoleKey: read("SUPABASE_SERVICE_ROLE_KEY"),
+  supabaseServiceRoleKey: process.env.SUPABASE_SERVICE_ROLE_KEY ?? "",
   stravaClientId: process.env.STRAVA_CLIENT_ID,
   stravaClientSecret: process.env.STRAVA_CLIENT_SECRET,
-  stravaRedirectUri: read(
-    "STRAVA_REDIRECT_URI",
+  stravaRedirectUri:
+    process.env.STRAVA_REDIRECT_URI ??
     "http://localhost:3000/api/fitness/strava/callback",
-  ),
   whoopClientId: process.env.WHOOP_CLIENT_ID,
   whoopClientSecret: process.env.WHOOP_CLIENT_SECRET,
-  whoopRedirectUri: read(
-    "WHOOP_REDIRECT_URI",
+  whoopRedirectUri:
+    process.env.WHOOP_REDIRECT_URI ??
     "http://localhost:3000/api/fitness/whoop/callback",
-  ),
   ouraClientId: process.env.OURA_CLIENT_ID,
   ouraClientSecret: process.env.OURA_CLIENT_SECRET,
-  ouraRedirectUri: read(
-    "OURA_REDIRECT_URI",
+  ouraRedirectUri:
+    process.env.OURA_REDIRECT_URI ??
     "http://localhost:3000/api/fitness/oura/callback",
-  ),
   garminConsumerKey: process.env.GARMIN_CONSUMER_KEY,
   garminConsumerSecret: process.env.GARMIN_CONSUMER_SECRET,
-  garminRedirectUri: read(
-    "GARMIN_REDIRECT_URI",
+  garminRedirectUri:
+    process.env.GARMIN_REDIRECT_URI ??
     "http://localhost:3000/api/fitness/garmin/callback",
-  ),
 };

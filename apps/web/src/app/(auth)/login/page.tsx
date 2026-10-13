@@ -29,14 +29,19 @@ function LoginForm() {
     event.preventDefault();
     setBusy(true);
     setError(null);
-    const result = await signIn(email, password);
-    setBusy(false);
-    if (result.error) {
-      setError(result.error);
-      return;
+    try {
+      const result = await signIn(email, password);
+      if (result.error) {
+        setError(result.error);
+        return;
+      }
+      router.replace(next);
+      router.refresh();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not sign in.");
+    } finally {
+      setBusy(false);
     }
-    router.replace(next);
-    router.refresh();
   }
 
   return (
