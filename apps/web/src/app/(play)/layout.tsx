@@ -57,7 +57,8 @@ function PlayChrome({ children }: { children: ReactNode }) {
             <p className="fb-guest-banner">
               Browsing as a guest.{" "}
               <Link href="/signup">Create an account</Link> to join a board or open
-              Athlete.
+              Athlete. The <Link href="/admin">week lab</Link> on this device
+              does not need an account.
             </p>
           ) : null}
           <div className="sp-shell">{children}</div>

@@ -1,10 +1,12 @@
 import { describe, expect, it } from "vitest";
 import { activityFromSample } from "../fitness/samples";
+import { adminSnapshot } from "./admin";
 import {
   freshState,
   migrateCompeteState,
   reduceCompete,
   rollClock,
+  weeklyBoard,
 } from "./engine";
 
 describe("compete engine", () => {
@@ -192,5 +194,157 @@ describe("compete engine", () => {
     expect(migrated.periodResults).toEqual([]);
     expect(migrated.pendingRevealIds).toEqual([]);
     expect(migrated.enrollments).toEqual([]);
+    expect(migrated.localPeers).toBeNull();
+    expect(migrated.peerActivities).toEqual([]);
+  });
+});
+
+describe("week lab", () => {
+  const now = "2026-10-13T06:00:00.000Z";
+
+  function joined() {
+    return reduceCompete(freshState(new Date(now)), {
+      type: "opt-in",
+      sport: "running",
+      now,
+    });
+  }
+
+  it("pins the clock without settling an open wave", () => {
+    const pinned = reduceCompete(joined(), {
+      type: "debug-set-clock",
+      now: "2026-10-14T18:00:00.000Z",
+    });
+    expect(pinned.demoNow).toBe("2026-10-14T18:00:00.000Z");
+    expect(pinned.periodResults).toHaveLength(0);
+    expect(pinned.enrollments[0]?.waveStart).toBe("2026-10-13T00:00:00.000Z");
+    const later = reduceCompete(pinned, { type: "rename", name: "Ada" });
+    expect(later.demoNow).toBe("2026-10-14T18:00:00.000Z");
+    expect(later.name).toBe("Ada");
+  });
+
+  it("counts a manual session inside the wave and ignores one before it", () => {
+    const withWork = reduceCompete(joined(), {
+      type: "debug-add-session",
+      sport: "running",
+      startedAt: "2026-10-13T04:00:00.000Z",
+      distanceM: 8000,
+      movingSec: 2400,
+      verified: true,
+      now,
+    });
+    const outside = reduceCompete(withWork, {
+      type: "debug-add-session",
+      sport: "running",
+      startedAt: "2026-10-01T15:00:00.000Z",
+      distanceM: 40000,
+      movingSec: 9000,
+      now,
+    });
+    const board = weeklyBoard(outside, "running", "open", new Date(now));
+    const you = board.find((row) => row.you);
+    expect(you?.distanceM).toBe(8000);
+    expect(outside.activities.every((item) => item.source === "manual")).toBe(
+      true,
+    );
+    const removed = reduceCompete(outside, {
+      type: "debug-remove-session",
+      activityId: outside.activities.find((item) => item.distanceM === 8000)?.id,
+    });
+    const after = weeklyBoard(removed, "running", "open", new Date(now));
+    expect(after.find((row) => row.you)?.distanceM).toBe(0);
+  });
+
+  it("seats a simulated peer and scores that peer's sessions", () => {
+    const peers = [
+      {
+        id: "ada",
+        name: "Ada",
+        elo: 1000,
+        sport: "running" as const,
+        waveStart: "2026-10-13T00:00:00.000Z",
+        weekEnd: "2026-10-18T00:00:00.000Z",
+      },
+    ];
+    const seated = reduceCompete(joined(), {
+      type: "debug-set-peers",
+      peers,
+      now,
+    });
+    expect(seated.localPeers).toEqual(peers);
+    expect(seated.enrollments[0]?.peerIds).toEqual(["ada"]);
+    expect(seated.enrollments[0]?.syntheticIds).toHaveLength(6);
+    const withPeer = reduceCompete(seated, {
+      type: "debug-add-session",
+      sport: "running",
+      peerId: "ada",
+      startedAt: "2026-10-13T05:00:00.000Z",
+      distanceM: 15000,
+      movingSec: 4500,
+      now,
+    });
+    const board = weeklyBoard(withPeer, "running", "open", new Date(now));
+    const ada = board.find((row) => row.id === "ada");
+    expect(ada?.kind).toBe("real");
+    expect(ada?.distanceM).toBe(15000);
+    expect(board.find((row) => row.you)?.place).toBeGreaterThan(ada?.place ?? 0);
+    const ignored = reduceCompete(withPeer, {
+      type: "debug-add-session",
+      sport: "running",
+      peerId: "missing",
+      distanceM: 1000,
+      movingSec: 300,
+      now,
+    });
+    expect(ignored.peerActivities).toHaveLength(1);
+    const closed = reduceCompete(seated, { type: "debug-close-week" });
+    const next = closed.enrollments.find((item) => item.sport === "running");
+    expect(next?.waveStart).toBe("2026-10-18T00:00:00.000Z");
+    expect(next?.peerIds).toContain("ada");
+    expect(closed.localPeers?.[0]?.weekEnd).toBe("2026-10-25T00:00:00.000Z");
+  });
+
+  it("restarts a wave without writing period results", () => {
+    const advanced = reduceCompete(joined(), {
+      type: "debug-advance",
+      hours: 26,
+      now,
+    });
+    expect(advanced.demoNow).toBe("2026-10-14T08:00:00.000Z");
+    const restarted = reduceCompete(advanced, {
+      type: "debug-restart-wave",
+      sport: "running",
+    });
+    expect(restarted.periodResults).toHaveLength(0);
+    expect(restarted.enrollments[0]?.waveStart).toBe("2026-10-14T00:00:00.000Z");
+  });
+
+  it("settles every opted-in sport when the week closes", () => {
+    const both = reduceCompete(joined(), {
+      type: "opt-in",
+      sport: "cycling",
+      now,
+    });
+    const closed = reduceCompete(both, { type: "debug-close-week" });
+    expect(closed.demoNow).toBe("2026-10-18T00:01:00.000Z");
+    const sports = new Set(
+      closed.periodResults.map((row) => row.sport),
+    );
+    expect(sports.has("running")).toBe(true);
+    expect(sports.has("cycling")).toBe(true);
+    expect(closed.periodResults[0]?.settledAt).toBe(closed.demoNow);
+    expect(closed.enrollments).toHaveLength(2);
+    expect(
+      closed.enrollments.every(
+        (item) => item.waveStart === "2026-10-18T00:00:00.000Z",
+      ),
+    ).toBe(true);
+    const view = adminSnapshot(closed, new Date("2026-10-13T06:00:00.000Z"));
+    expect(view.pinned).toBe(true);
+    expect(view.now).toBe("2026-10-18T00:01:00.000Z");
+    expect(view.wall).toBe("2026-10-13T06:00:00.000Z");
+    expect(view.groups.find((group) => group.sport === "running")?.optedIn).toBe(
+      true,
+    );
   });
 });

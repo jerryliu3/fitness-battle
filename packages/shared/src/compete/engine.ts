@@ -31,6 +31,7 @@ import {
   type Activity,
   type CompeteState,
   type Duel,
+  type PeerActivity,
   type PeriodResult,
   type ProviderId,
   type ReadinessMark,
@@ -70,8 +71,23 @@ export interface Action {
     | "freeze"
     | "duel"
     | "acknowledge-reveal"
-    /** Demo/dev: settle the open week as if Monday UTC already arrived. */
-    | "debug-close-week";
+    /** Settle every open wave as if its Sunday UTC close already arrived. */
+    | "debug-close-week"
+    /** Pin the device clock and roll settlement forward to that instant. */
+    | "debug-set-clock"
+    /** Stop pinning. Does not rewind Elo already settled. */
+    | "debug-clear-clock"
+    /** Move the pinned clock forward by `hours` (default 24). */
+    | "debug-advance"
+    /** Log a session for the viewer, or for `peerId` when that peer is seated. */
+    | "debug-add-session"
+    | "debug-remove-session"
+    /** Replace the simulated roster and reseat every open sport. */
+    | "debug-set-peers"
+    /** Rebuild one sport's seats from the simulated roster. */
+    | "debug-reseat"
+    /** Leave the open wave without scoring it, then join again at the pinned clock. */
+    | "debug-restart-wave";
   name?: string;
   city?: string;
   sport?: SportId;
@@ -87,6 +103,18 @@ export interface Action {
   linkStatus?: "stub" | "connected";
   /** Result ids to clear from the pending reveal queue. */
   revealIds?: string[];
+  /** Hours to move the pinned clock forward. */
+  hours?: number;
+  distanceM?: number;
+  movingSec?: number;
+  avgHr?: number | null;
+  verified?: boolean;
+  activityId?: string;
+  /** When set, the session is scored for this simulated peer. */
+  peerId?: string;
+  peers?: PoolPlayer[];
+  /** Session start. Separate from `now`, which moves the pinned clock. */
+  startedAt?: string;
 }
 
 function rating(state: CompeteState, sport: SportId): Rating {
@@ -147,6 +175,10 @@ export function migrateCompeteState(parsed: CompeteState): CompeteState {
       typeof (parsed as CompeteState).demoNow === "string"
         ? (parsed as CompeteState).demoNow
         : null,
+    localPeers: Array.isArray(parsed.localPeers) ? parsed.localPeers : null,
+    peerActivities: Array.isArray(parsed.peerActivities)
+      ? parsed.peerActivities
+      : [],
   };
 }
 
@@ -185,7 +217,13 @@ export function freshState(now: Date = new Date()): CompeteState {
     pendingRevealIds: [],
     demoNow: null,
     enrollments: [],
+    localPeers: null,
+    peerActivities: [],
   };
+}
+
+function poolFor(state: CompeteState): readonly PoolPlayer[] {
+  return state.localPeers ?? realPlayerPool;
 }
 
 function enrollmentFor(
@@ -224,7 +262,7 @@ function enrollSport(
     viewerElo: mine.openElo,
     sport,
     now,
-    realPool: realPlayerPool,
+    realPool: poolFor(state),
     seed: `you:${sport}:${waveWindowAt(now).waveStart.toISOString()}`,
     autoEnrollNext: true,
   });
@@ -264,11 +302,25 @@ function groupFor(
   track: ScoreTrack,
   enrollment: WaveEnrollment,
   asOf: Date,
-): { id: string; name: string; elo: number; effort: number; distanceM: number; movingSec: number; you: boolean }[] {
+): {
+  id: string;
+  name: string;
+  elo: number;
+  effort: number;
+  distanceM: number;
+  movingSec: number;
+  you: boolean;
+  kind: "real" | "synthetic";
+}[] {
   const mine = rating(state, sport);
-  const peers = realPlayerPool.filter((player) =>
-    enrollment.peerIds.includes(player.id),
-  );
+  const pool = poolFor(state);
+  const peers = pool.filter((player) => enrollment.peerIds.includes(player.id));
+  const peerActivities = new Map<string, Activity[]>();
+  for (const row of state.peerActivities ?? []) {
+    const list = peerActivities.get(row.peerId) ?? [];
+    list.push(row.activity);
+    peerActivities.set(row.peerId, list);
+  }
   const rows = buildLocalBoard({
     enrollment,
     viewer: {
@@ -280,6 +332,7 @@ function groupFor(
       primarySport: state.primary,
     },
     peers,
+    peerActivities,
     track,
     asOf,
   });
@@ -291,6 +344,7 @@ function groupFor(
     distanceM: row.distanceM,
     movingSec: row.movingSec,
     you: row.you,
+    kind: row.kind,
   }));
 }
 
@@ -335,7 +389,7 @@ function settleEnrollment(
   const periodStart = enrollment.waveStart;
   const end = new Date(enrollment.weekEnd);
   const frozen = state.frozenPeriods.includes(periodStart);
-  const settledAt = new Date().toISOString();
+  const settledAt = state.demoNow ?? new Date().toISOString();
   const sport = enrollment.sport;
   const current = rating(state, sport);
   if (!current.optedIn) {
@@ -831,19 +885,153 @@ export function reduceCompete(
         pendingRevealIds: rolled.pendingRevealIds.filter((id) => !clear.has(id)),
       };
     }
-    case "debug-close-week": {
-      // Product settlement is load-time (rollClock). Advance past the active
-      // wave's Sunday weekEnd and pin demoNow so the new wave sticks.
-      const primaryEnrollment = enrollmentFor(rolled, rolled.primary);
-      const end = primaryEnrollment
-        ? new Date(primaryEnrollment.weekEnd)
-        : waveWindowAt(now).weekEnd;
-      const demoNow = new Date(end.getTime() + 60_000).toISOString();
-      return rollClock({ ...rolled, demoNow }, new Date(demoNow));
+    case "debug-close-week":
+      return closeOpenWaves(rolled, now);
+    case "debug-set-clock": {
+      if (!action.now) return rolled;
+      return alignPeers({ ...rolled, demoNow: action.now });
+    }
+    case "debug-clear-clock":
+      return { ...rolled, demoNow: null };
+    case "debug-advance": {
+      const hours = Number.isFinite(action.hours) ? action.hours! : 24;
+      const next = new Date(now.getTime() + Math.max(0, hours) * 3_600_000);
+      const demoNow = next.toISOString();
+      return alignPeers(rollClock({ ...rolled, demoNow }, next));
+    }
+    case "debug-add-session":
+      return addDebugSession(rolled, action, now);
+    case "debug-remove-session": {
+      const id = action.activityId;
+      if (!id) return rolled;
+      return {
+        ...rolled,
+        activities: rolled.activities.filter((item) => item.id !== id),
+        peerActivities: rolled.peerActivities.filter(
+          (item) => item.activity.id !== id,
+        ),
+      };
+    }
+    case "debug-set-peers": {
+      const peers = action.peers ?? [];
+      const ids = new Set(peers.map((player) => player.id));
+      return reseatOpenSports({
+        ...rolled,
+        localPeers: peers,
+        peerActivities: (rolled.peerActivities ?? []).filter((row) =>
+          ids.has(row.peerId),
+        ),
+      });
+    }
+    case "debug-reseat": {
+      if (!action.sport) return reseatOpenSports(rolled);
+      return reseatSport(rolled, action.sport);
+    }
+    case "debug-restart-wave": {
+      if (!action.sport) return rolled;
+      const dropped = dropEnrollment(rolled, action.sport);
+      return alignPeers(enrollSport(dropped, action.sport, now));
     }
     default:
       return rolled;
   }
+}
+
+function alignPeers(state: CompeteState): CompeteState {
+  if (!state.localPeers?.length) return state;
+  let changed = false;
+  const localPeers = state.localPeers.map((peer) => {
+    const enrollment = enrollmentFor(state, peer.sport);
+    if (!enrollment) return peer;
+    const overlaps =
+      peer.waveStart < enrollment.weekEnd && enrollment.waveStart < peer.weekEnd;
+    if (overlaps) return peer;
+    changed = true;
+    return {
+      ...peer,
+      waveStart: enrollment.waveStart,
+      weekEnd: enrollment.weekEnd,
+    };
+  });
+  if (!changed) return state;
+  return reseatOpenSports({ ...state, localPeers });
+}
+function closeOpenWaves(state: CompeteState, now: Date): CompeteState {
+  const ends = state.enrollments.map((item) => new Date(item.weekEnd).getTime());
+  const endMs = ends.length
+    ? Math.max(...ends)
+    : waveWindowAt(now).weekEnd.getTime();
+  const demoNow = new Date(endMs + 60_000).toISOString();
+  return alignPeers(rollClock({ ...state, demoNow }, new Date(demoNow)));
+}
+
+function dropEnrollment(state: CompeteState, sport: SportId): CompeteState {
+  return {
+    ...withRating(state, sport, { optedIn: false }),
+    enrollments: state.enrollments.filter((item) => item.sport !== sport),
+  };
+}
+
+function reseatSport(state: CompeteState, sport: SportId): CompeteState {
+  const enrollment = enrollmentFor(state, sport);
+  if (!enrollment) return state;
+  const pool = poolFor(state).filter(
+    (player) =>
+      player.sport === sport &&
+      player.waveStart < enrollment.weekEnd &&
+      enrollment.waveStart < player.weekEnd,
+  );
+  const assignment = densityMatcher.preferReals(
+    { ...enrollment, peerIds: [], syntheticIds: [] },
+    pool,
+    `${enrollment.waveStart}:reseat`,
+  );
+  return {
+    ...state,
+    enrollments: state.enrollments.map((item) =>
+      item.sport === sport ? assignment.enrollment : item,
+    ),
+  };
+}
+
+function reseatOpenSports(state: CompeteState): CompeteState {
+  return state.ratings
+    .filter((item) => item.optedIn)
+    .reduce((next, item) => reseatSport(next, item.sport), state);
+}
+
+function addDebugSession(
+  state: CompeteState,
+  action: Action,
+  now: Date,
+): CompeteState {
+  if (!action.sport) return state;
+  const distanceM = Math.max(0, action.distanceM ?? 0);
+  const movingSec = Math.max(0, Math.round(action.movingSec ?? 0));
+  const startedAt = new Date(action.startedAt ?? now.toISOString());
+  if (Number.isNaN(startedAt.getTime())) return state;
+  const activity = {
+    ...makeActivity(
+      action.sport,
+      startedAt,
+      distanceM,
+      movingSec,
+      action.avgHr ?? 0,
+      action.verified !== false,
+      "manual",
+    ),
+    avgHr: action.avgHr == null ? null : action.avgHr,
+    id: `manual-${hashString(
+      `${action.sport}:${action.peerId ?? "you"}:${startedAt.toISOString()}:${distanceM}:${movingSec}:${state.activities.length}:${state.peerActivities.length}`,
+    ).toString(16)}`,
+  };
+  if (action.peerId) {
+    const known = poolFor(state).some((player) => player.id === action.peerId);
+    if (!known) return state;
+    const row: PeerActivity = { peerId: action.peerId, activity };
+    return { ...state, peerActivities: [...(state.peerActivities ?? []), row] };
+  }
+  return { ...state, activities: [...state.activities, activity] };
 }
 
 export interface BoardRow {
@@ -855,6 +1043,7 @@ export interface BoardRow {
   movingSec: number;
   you: boolean;
   place: number;
+  kind: "real" | "synthetic";
 }
 
 export function weeklyBoard(
