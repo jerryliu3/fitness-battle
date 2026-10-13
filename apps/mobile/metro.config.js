@@ -11,6 +11,7 @@ config.resolver.nodeModulesPaths = [
   path.resolve(projectRoot, "node_modules"),
   path.resolve(workspaceRoot, "node_modules"),
 ];
-config.resolver.disableHierarchicalLookup = true;
+// pnpm nests package deps under .pnpm; hierarchical lookup is required for Expo web.
+config.resolver.disableHierarchicalLookup = false;
 
 module.exports = config;
