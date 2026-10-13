@@ -17,7 +17,8 @@
     "supabase:status": "supabase status",
     "supabase:reset": "supabase db reset",
     "rankings:db:start": "supabase start --workdir rankings-db",
-    "rankings:db:reset": "supabase db reset --workdir rankings-db"
+    "rankings:db:reset": "supabase db reset --workdir rankings-db",
+    "rankings:ingest": "node packages/rankings/scripts/ingest.mjs"
   },
   "devDependencies": {
     "typescript": "^5.9.2"

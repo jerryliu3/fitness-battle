@@ -27,8 +27,8 @@ Separate Supabase project from battles (`rankings-db/`, hosted `pzadctqmyekkydte
 | Schema | Ledger with fingerprint uniqueness, youth filter, ODbL display gate |
 | Fixture | `packages/rankings/fixtures/emv-10k-2025.json` — 2025 Estonian 10 km (OpenTrack, ODbL) |
 | Parser tests | Expect 44 adult results, 5 under-18 skipped |
-| Distances with rows | **10K only** from this fixture |
-| 5K / half / marathon boards | UI exists; **no imported rows** yet |
+| Distances with rows | Import files exist for 5K (Berlin Generali, 9,168), 10K (OpenTrack fixture, 44), and marathon (Boston, London, Berlin, Chicago). Half marathon has no list yet. |
+| 5K / half / marathon boards | UI reads the ledger. The new import SQL is not applied until `RANKINGS_DATABASE_URL` is set. |
 | Local seed | No `rankings-db/seed.sql`; local reset leaves boards empty unless you emit+apply import SQL |
 | Hosted | README points at the live project; UI needs `NEXT_PUBLIC_RANKINGS_*` env |
 | Athlete identity merge | Out of scope — same person can appear twice across events |
@@ -46,7 +46,7 @@ Separate Supabase project from battles (`rankings-db/`, hosted `pzadctqmyekkydte
 
 ## What to load next
 
-1. Emit OpenTrack import SQL (`packages/rankings/scripts/emit-import.mjs`) into `rankings-db` seed for local demos.
-2. Additional audited road races for 5K / half / marathon.
+1. Apply `packages/rankings/imports/*.import.sql` with `RANKINGS_DATABASE_URL` (see `docs/ingestion.md`).
+2. A public half-marathon list, plus New York, Tokyo, and Sydney once a results list is on the page.
 3. Persist compete state (or battles standings) per authenticated user once Supabase env is live.
 4. Point `NEXT_PUBLIC_USE_DEMO_DATA=false` plus Strava keys and the service role at a real athlete backfill. Token storage and score recompute are already wired for that mode.

@@ -43,7 +43,7 @@ pnpm rankings:db:reset
 
 The first migration is the source ledger: provider result ids when present, otherwise source + edition + name + bib + category. Finish time is not part of that key.
 
-The public board is `/rankings`. The first loaded race is the 2025 Estonian 10 km road championship from OpenTrack, under the Open Database License. Age groups entirely under 18 are dropped before insert. Set `NEXT_PUBLIC_RANKINGS_SUPABASE_URL` and `NEXT_PUBLIC_RANKINGS_SUPABASE_ANON_KEY` in `apps/web/.env.local`.
+The public board is `/rankings`. Imports copy a full public results list (OpenTrack JSON, a MikaTiming list page, a CSV, or RunSignup's public results JSON), drop under-18 finishers, and write SQL under `packages/rankings/imports/`. See [`docs/ingestion.md`](./docs/ingestion.md). Set `NEXT_PUBLIC_RANKINGS_SUPABASE_URL` and `NEXT_PUBLIC_RANKINGS_SUPABASE_ANON_KEY` in `apps/web/.env.local`. Applying an import needs `RANKINGS_DATABASE_URL`.
 
 ## Auth (web)
 

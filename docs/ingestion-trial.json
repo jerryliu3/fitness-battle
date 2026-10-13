@@ -1,0 +1,74 @@
+{
+  "generatedAt": "2026-10-13T12:16:48.177Z",
+  "events": [
+    {
+      "slug": "opentrack-emv-10k-2025",
+      "status": "succeeded",
+      "results": 44,
+      "skippedYouth": 5,
+      "note": "Imported from the committed OpenTrack fixture. The live host returned 403."
+    },
+    {
+      "slug": "boston-marathon-2025",
+      "status": "succeeded",
+      "results": 28404,
+      "women": 12228,
+      "men": 16105,
+      "other": 71
+    },
+    {
+      "slug": "london-marathon-2025",
+      "status": "succeeded",
+      "results": 55226,
+      "women": 24146,
+      "men": 30999,
+      "other": 81
+    },
+    {
+      "slug": "berlin-marathon-2025",
+      "status": "succeeded",
+      "results": 48345,
+      "skippedYouth": 0,
+      "skippedUnparsed": 1,
+      "women": 17227,
+      "men": 31062
+    },
+    {
+      "slug": "chicago-marathon-2025",
+      "status": "succeeded",
+      "results": 54109,
+      "skippedYouth": 0,
+      "skippedUnparsed": 0,
+      "women": 24561,
+      "men": 29548,
+      "note": "The public page listed 54,315 results. The sex filter that is not men or women repeated rows already stored, so that pass stopped after one page."
+    },
+    {
+      "slug": "berlin-5k-2025",
+      "status": "succeeded",
+      "results": 9168,
+      "skippedYouth": 0,
+      "skippedUnparsed": 0,
+      "women": 4912,
+      "men": 4236
+    }
+  ],
+  "unresolved": [
+    {
+      "name": "TCS New York City Marathon",
+      "url": "https://results.nyrr.org/event/M2025/finishers",
+      "reason": "The public page is a script shell and does not include a results list."
+    },
+    {
+      "name": "Tokyo Marathon",
+      "url": "https://tokyo.r.mikatiming.com/2025/",
+      "reason": "The public timing host returned not found."
+    },
+    {
+      "name": "Sydney Marathon",
+      "url": "https://results.sydney.com.au/2025/",
+      "reason": "The results host name did not resolve."
+    }
+  ],
+  "apply": "SQL files were written under packages/rankings/imports. They are not loaded into the hosted rankings database. That project only has an anon key in apps/web/.env.local, and the ledger does not allow writes with that key. Apply with RANKINGS_DATABASE_URL."
+}

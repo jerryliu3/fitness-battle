@@ -7,14 +7,16 @@ export default async function RankingsHomePage() {
   const client = createRankingsClient();
   const counts = new Map<string, number>();
   if (client) {
-    const { data } = await client
-      .from("leaderboard_entries")
-      .select("distance_slug")
-      .limit(1000);
-    for (const row of data ?? []) {
-      const slug = String(row.distance_slug);
-      counts.set(slug, (counts.get(slug) ?? 0) + 1);
-    }
+    await Promise.all(
+      DISTANCES.map(async (distance) => {
+        const stored = distance.slug === "half-marathon" ? "half_marathon" : distance.slug;
+        const { count } = await client
+          .from("leaderboard_entries")
+          .select("id", { count: "exact", head: true })
+          .eq("distance_slug", stored);
+        counts.set(stored, count ?? 0);
+      }),
+    );
   }
 
   return (
@@ -54,8 +56,9 @@ export default async function RankingsHomePage() {
         })}
       </ul>
       <p className="rankings-note">
-        Coverage is one OpenTrack road race, not a global ranking. The same
-        person can appear twice until results are linked across events.
+        The count is every published finisher. A distance page shows the fastest
+        200 women and 200 men. The same person can appear twice until results
+        are linked across events.
         {client
           ? ""
           : " The rankings database is not configured in this environment."}
