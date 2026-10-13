@@ -1,0 +1,24 @@
+{
+  "environment": "Next production build",
+  "layouts": 15,
+  "finalVisualRefinement": {
+    "browser": "Codex in-app browser",
+    "additionalLayouts": 6,
+    "concepts": ["flip", "roam"],
+    "widths": [1440, 390, 320],
+    "documentOverflow": false,
+    "imagesLoaded": true,
+    "changes": "Undistorted landscape artwork, decluttered route labels, readable red-panel captions, and phone cover artwork clear of the heading."
+  },
+  "errors": [],
+  "network": [],
+  "overflows": [],
+  "fonts": {
+    "flip": "Bangers, \"Bangers Fallback\", sans-serif",
+    "rally": "\"Archivo Black\", \"Archivo Black Fallback\", sans-serif",
+    "roam": "Outfit, \"Outfit Fallback\", sans-serif",
+    "loop": "Outfit, \"Outfit Fallback\", sans-serif",
+    "tempo": "\"Space Grotesk\", \"Space Grotesk Fallback\", sans-serif"
+  },
+  "checks": "Comic turning and parallel cutoff reversal; native receipts/Escape; matchup switching/zero origin/finite replay; mobile trail camera/reference/start; orbit slider/keyboard/dial drag; mixtape A/B/reference/track selection; groups; five-way evaluation; back navigation/invalid URL; reduced motion."
+}

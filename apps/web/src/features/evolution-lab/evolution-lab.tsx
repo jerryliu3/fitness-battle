@@ -1044,6 +1044,7 @@ export function EvolutionLab() {
           Four new identities / Split’s practical structure / Nine-lane track /
           Third-person Pursuit
         </span>
+        <Link href="/design/worlds?concept=flip">Five new product worlds ↗</Link>
         <Link href="/design/spatial">Earlier spatial concepts ↗</Link>
       </footer>
       <dialog
