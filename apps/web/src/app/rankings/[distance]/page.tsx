@@ -57,13 +57,11 @@ async function loadBoard(
   distance: string,
   sex: string,
 ): Promise<LeaderboardRow[]> {
-  const { data, error } = await client
-    .from("leaderboard_entries")
-    .select("*")
-    .eq("distance_slug", distance)
-    .eq("sex", sex)
-    .order("rank_time_ms", { ascending: true })
-    .limit(200);
+  const { data, error } = await client.rpc("rankings_top", {
+    p_distance: distance,
+    p_sex: sex,
+    p_limit: 200,
+  });
   if (error || !data) return [];
   return data as LeaderboardRow[];
 }
