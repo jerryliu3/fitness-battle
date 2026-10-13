@@ -27,6 +27,20 @@ Set these on the web server. Leave them empty until you have them. Demo mode (`N
 | Oura | `OURA_CLIENT_ID`, `OURA_CLIENT_SECRET` | `/api/fitness/oura/callback` |
 | Garmin | `GARMIN_CONSUMER_KEY`, `GARMIN_CONSUMER_SECRET` | `/api/fitness/garmin/callback` |
 
+### WHOOP developer dashboard
+
+WHOOP asks for public URLs when you create an app. Privacy and the app website are product-wide (same URLs you’d give Strava or Oura). The OAuth redirect is provider-specific — each tracker’s developer console registers its own callback, which is the usual consumer-app pattern.
+
+Use your deployed web origin (production example: `https://fitness-battle-one.vercel.app`):
+
+| Dashboard field | Public URL |
+| --- | --- |
+| Privacy policy | `{origin}/privacy` |
+| App / website link | `{origin}/` |
+| Redirect URI | `{origin}/api/fitness/whoop/callback` |
+
+Set `WHOOP_REDIRECT_URI` to the same Redirect URI value (including `http://localhost:3000/...` for local). After WHOOP sends the user back with an auth code, the callback exchanges the token and redirects into Athlete (`/you?tracker=...&provider=whoop`).
+
 Garmin also needs `POST /api/fitness/garmin/ping` registered as the Health API notification URL after approval. The consumer key is not self-serve.
 
 Apple Health and Health Connect have no server keys. The phone app needs a development build (`EXPO_PUBLIC_API_URL` pointing at this web app) and a signed-in Supabase session. Expo Go cannot read HealthKit or Health Connect.

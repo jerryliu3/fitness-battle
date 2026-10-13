@@ -77,6 +77,9 @@ function LoginForm() {
         New here?{" "}
         <Link href={buildSignupHref(next)}>Create an account</Link>
       </p>
+      <p className="fb-note">
+        <Link href="/privacy">Privacy Policy</Link>
+      </p>
     </section>
   );
 }

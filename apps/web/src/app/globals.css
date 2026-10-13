@@ -417,6 +417,94 @@ a {
   }
 }
 
+/* Public legal docs (privacy, etc.) — readable, still mobile-first */
+.fb-legal {
+  max-width: 720px;
+  padding: 0 20px 48px;
+}
+
+.fb-legal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 20px 0 8px;
+}
+
+.fb-legal-brand {
+  font-family: var(--font-display), "Bebas Neue", sans-serif;
+  font-size: 22px;
+  letter-spacing: 0.02em;
+  text-decoration: none;
+}
+
+.fb-legal-nav {
+  display: flex;
+  gap: 14px;
+  font-size: 13px;
+  font-weight: 650;
+}
+
+.fb-legal-nav a {
+  color: var(--muted);
+  text-decoration: none;
+}
+
+.fb-legal-nav a:hover {
+  color: var(--ink);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.fb-legal-main {
+  padding-top: 12px;
+}
+
+.fb-legal-doc {
+  display: grid;
+  gap: 12px;
+  animation: fb-rise 420ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.fb-legal-doc h2 {
+  margin: 16px 0 0;
+  font-size: 18px;
+  letter-spacing: -0.02em;
+}
+
+.fb-legal-doc h3 {
+  margin: 8px 0 0;
+  font-size: 15px;
+  letter-spacing: -0.01em;
+}
+
+.fb-legal-doc p,
+.fb-legal-doc li {
+  margin: 0;
+  color: var(--ink);
+  line-height: 1.55;
+  font-size: 15px;
+}
+
+.fb-legal-doc ul {
+  margin: 0;
+  padding-left: 1.2em;
+  display: grid;
+  gap: 6px;
+}
+
+.fb-legal-doc a {
+  color: var(--lime-deep);
+  font-weight: 650;
+  text-underline-offset: 2px;
+}
+
+.fb-legal-foot {
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid var(--line);
+}
+
 @media (min-width: 720px) {
   .fb-modal {
     place-items: center;
