@@ -3,6 +3,8 @@
 import { AuthPrompt } from "@/components/auth-gate";
 import { useAuth } from "@/components/auth-context";
 import { useCompete } from "@/components/compete-context";
+import { BrandArt } from "@/features/evolution-lab/brand-art";
+import { useTheme } from "@/theme/theme-provider";
 import { CheckpointControl } from "@/features/split/components/checkpoint-control";
 import {
   ProductHeader,
@@ -19,7 +21,9 @@ import {
   type ComparisonMode,
 } from "@/features/split/model";
 import {
+  activityEffort,
   competeNow,
+  formatVolume,
   daysLeft,
   lessonFor,
   sportById,
@@ -34,6 +38,7 @@ import { useState } from "react";
 export default function MyTrackPage() {
   const { state, dispatch } = useCompete();
   const { user } = useAuth();
+  const { theme } = useTheme();
   const [authOpen, setAuthOpen] = useState(false);
   const [authReason, setAuthReason] = useState(
     "Create an account to join a board and keep your rating.",
@@ -89,30 +94,71 @@ export default function MyTrackPage() {
         />
       ) : null}
 
-      <div className="sp-title-block">
-        <p className="fb-kicker">
-          {board.periodLabel} / Weekly {spec.name.toLowerCase()}
-        </p>
-        <h1>
-          {comparison === "self" ? (
-            <>
-              CHASE YOUR
+      {theme.id === "form" ? (
+        <section className="fm-hero">
+          <div>
+            <p className="fb-kicker">Personal record / {board.periodLabel}</p>
+            <h1>
+              Built by
               <br />
-              <span>OWN LINE.</span>
-            </>
-          ) : (
-            <>
-              FIND YOUR
-              <br />
-              <span>CLOSE CONTEST.</span>
-            </>
-          )}
-        </h1>
-        <p className="fb-copy">
-          {periodDaysLeft} days left. Effort points accumulate through the week —
-          not a live race or pace board.
-        </p>
-      </div>
+              what you do.
+            </h1>
+            <div className="fm-score">
+              <strong>{formatPts(youEffort)}</strong>
+              <span>
+                effort
+                <br />
+                points
+              </span>
+            </div>
+            <p className="fb-copy">
+              {ghostEffort > 0 ? (
+                <>
+                  <b>
+                    {youEffort - ghostEffort >= 0 ? "+" : ""}
+                    {formatPts(youEffort - ghostEffort)}
+                  </b>{" "}
+                  vs your previous week · same cutoff
+                </>
+              ) : (
+                "No counted work in the previous week at this cutoff."
+              )}
+            </p>
+            <Link href="/board" className="fb-btn">
+              Inspect your field ↗
+            </Link>
+          </div>
+          <div className="fm-art">
+            <BrandArt brand="form" />
+            <p>EFFORT / RECORDED</p>
+          </div>
+        </section>
+      ) : (
+        <div className="sp-title-block">
+          <p className="fb-kicker">
+            {board.periodLabel} / Weekly {spec.name.toLowerCase()}
+          </p>
+          <h1>
+            {comparison === "self" ? (
+              <>
+                CHASE YOUR
+                <br />
+                <span>OWN LINE.</span>
+              </>
+            ) : (
+              <>
+                FIND YOUR
+                <br />
+                <span>CLOSE CONTEST.</span>
+              </>
+            )}
+          </h1>
+          <p className="fb-copy">
+            {periodDaysLeft} days left. Effort points accumulate through the week —
+            not a live race or pace board.
+          </p>
+        </div>
+      )}
 
       <div className="fb-chips">
         {SPORTS.map((item) => {
@@ -161,6 +207,73 @@ export default function MyTrackPage() {
         </div>
       ) : null}
 
+      {theme.id === "form" && board.optedIn ? (
+        <>
+          <div className="fm-stats">
+            <div>
+              <span>{spec.gps ? "Your distance" : "Your time"}</span>
+              <strong>
+                {board.you
+                  ? formatVolume(sport, board.you.distanceM, board.you.movingSec)
+                  : "—"}
+              </strong>
+            </div>
+            <div>
+              <span>In your field</span>
+              <strong>
+                {youLane?.place ?? "—"}
+                <small> / {board.rows.length}</small>
+              </strong>
+            </div>
+            <div>
+              <span>Counted imports</span>
+              <strong>
+                {board.weekActivities.length}
+                <small> sessions</small>
+              </strong>
+            </div>
+          </div>
+          <section className="fm-lines" aria-label="Your week against the previous week">
+            {[
+              { label: "YOUR WEEK", value: youEffort, mine: true },
+              { label: "PAST YOU", value: ghostEffort, mine: false },
+            ].map((row) => (
+              <div key={row.label} className={row.mine ? "fm-line is-you" : "fm-line"}>
+                <span>{row.label}</span>
+                <i>
+                  <b
+                    style={{
+                      left: `${Math.min(100, (row.value / Math.max(board.trackMax, 1)) * 100)}%`,
+                    }}
+                  >
+                    {Math.round(row.value)}
+                  </b>
+                </i>
+                <strong>{Math.round(row.value)}</strong>
+              </div>
+            ))}
+          </section>
+          <CheckpointControl
+            checkpoint={checkpoint}
+            labels={board.checkpointLabels}
+            onChange={setCheckpoint}
+          />
+          {board.weekActivities.length > 0 ? (
+            <Link href="/splits" className="fb-card">
+              <p className="fb-kicker">Latest counted import</p>
+              <h2>{board.weekActivities.at(-1)?.sport}</h2>
+              <p className="fb-copy">
+                {new Date(board.weekActivities.at(-1)!.startedAt).toLocaleDateString(
+                  "en-US",
+                  { weekday: "long", timeZone: "UTC" },
+                )}{" "}
+                · +{formatPts(activityEffort(board.weekActivities.at(-1)!))} pts
+              </p>
+            </Link>
+          ) : null}
+        </>
+      ) : null}
+
       {!board.optedIn ? (
         <section className="sp-empty">
           <h2>You are not on a track yet</h2>
@@ -182,7 +295,7 @@ export default function MyTrackPage() {
             Join {spec.name} this week
           </button>
         </section>
-      ) : (
+      ) : theme.id === "ink" ? (
         <div className="sp-layout">
           <section className="sp-board">
             <div className="sp-mode-switch" aria-label="Comparison mode">
@@ -226,9 +339,9 @@ export default function MyTrackPage() {
             onOpenField={() => setShowField(true)}
           />
         </div>
-      )}
+      ) : null}
 
-      {board.optedIn ? (
+      {board.optedIn && theme.id === "ink" ? (
         <div className="sp-bottom">
           <span>
             Your field <strong>{youLane?.place ?? "—"} / {board.rows.length}</strong>
@@ -242,7 +355,7 @@ export default function MyTrackPage() {
         </div>
       ) : null}
 
-      {showField && board.optedIn ? (
+      {showField && board.optedIn && theme.id === "ink" ? (
         <section>
           <div className="fd-roster-head">
             <h3>Full field</h3>

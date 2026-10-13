@@ -3,242 +3,321 @@
 import dynamic from "next/dynamic";
 import { useMemo, useState } from "react";
 import { FieldRoster } from "@/features/split/components/field-roster";
-import { DistancePath } from "./distance-path";
+import { defaultLook, kits, skins, type HairId, type KitId, type SkinId } from "../avatar";
 import {
-  distanceAt,
-  formatGapLabel,
-  formatKm,
-  orderedRunners,
-  type FieldModel,
-  type FieldViewMode,
-  type PursuitFacing,
-} from "../model";
+  gapLabel,
+  placeAt,
+  stableLanes,
+  valueAt,
+  type SceneRunner,
+} from "../geometry";
+import { LaneTrack } from "./lane-track";
+import type { FieldModel } from "../model";
 import type { BoardRow } from "@fitness-battle/shared";
 
-const PursuitScene = dynamic(
-  () => import("./pursuit-scene").then((mod) => mod.PursuitScene),
+const LivePursuit = dynamic(
+  () => import("./live-pursuit").then((mod) => mod.LivePursuit),
   {
     ssr: false,
-    loading: () => (
-      <div className="fd-loading">
-        <span />
-        Building your distance field…
-      </div>
-    ),
+    loading: () => <div className="fd-loading">Preparing the track…</div>,
   },
 );
 
+type Mode = "lanes" | "pursuit";
+type CameraMode = "follow" | "above" | "avatar";
+
+function toRunner(
+  id: string,
+  name: string,
+  initials: string,
+  km: readonly number[],
+  flags: { you?: boolean; ghost?: boolean } = {},
+): SceneRunner {
+  return {
+    id,
+    name,
+    initials,
+    series: [0, ...km],
+    ...flags,
+  };
+}
+
 export function FieldStage({
   model,
-  checkpoint = 2,
   boardRows,
 }: {
   model: FieldModel;
   checkpoint?: number;
-  /** Prefer live board rows so rating/distance stay accurate in the list. */
   boardRows?: BoardRow[];
 }) {
   const you = model.you;
-  const [view, setView] = useState<FieldViewMode>("pursuit");
-  const [facing, setFacing] = useState<PursuitFacing>("forward");
-  const [zoom, setZoom] = useState(0.35);
-  const [showGhost, setShowGhost] = useState(Boolean(model.ghost));
-  const [selectedId, setSelectedId] = useState(
-    you
-      ? orderedRunners(model.runners, checkpoint).find((r) => !r.you)?.id ??
-          you.id
-      : model.runners[0]?.id ?? "",
+  const unit = model.gps ? "km" : "pts";
+  const runners = useMemo(
+    () =>
+      model.runners.map((runner) =>
+        toRunner(runner.id, runner.name, runner.initials, runner.km, {
+          you: runner.you,
+        }),
+      ),
+    [model.runners],
   );
-  const [webglOk, setWebglOk] = useState(true);
+  const ghost = model.ghost
+    ? toRunner(model.ghost.id, model.ghost.name, model.ghost.initials, model.ghost.km, {
+        ghost: true,
+      })
+    : null;
+  const lanes = stableLanes(runners);
+  const youRunner = lanes.find((runner) => runner.you) ?? null;
+  const maxTime = Math.max(0, (youRunner?.series.length ?? 1) - 1);
+  const [mode, setMode] = useState<Mode>("lanes");
+  const [time, setTime] = useState(maxTime);
+  const [camera, setCamera] = useState<CameraMode>("follow");
+  const [showGhost, setShowGhost] = useState(Boolean(ghost));
+  const [selectedId, setSelectedId] = useState(you?.id ?? runners[0]?.id ?? "");
+  const [extra, setExtra] = useState(0);
+  const [look, setLook] = useState(defaultLook);
+  const [unavailable, setUnavailable] = useState(false);
+  const rawLabels = ["Start", ...model.checkpointLabels];
+  const labels =
+    new Set(model.checkpointLabels).size === 1
+      ? ["Start", "Early", "Mid", "Now"]
+      : rawLabels;
 
-  const unitLabel = model.gps ? "km" : "pts";
   const selected =
-    model.runners.find((runner) => runner.id === selectedId) ??
-    (model.ghost?.id === selectedId ? model.ghost : null);
+    (selectedId === ghost?.id ? ghost : runners.find((runner) => runner.id === selectedId)) ??
+    youRunner;
 
   const rosterRows: BoardRow[] = useMemo(() => {
-    if (boardRows?.length) {
-      const byId = new Map(boardRows.map((row) => [row.id, row]));
-      return orderedRunners(model.runners, checkpoint).map((runner, index) => {
-        const row = byId.get(runner.id);
-        return {
-          id: runner.id,
-          name: row?.name ?? runner.name,
-          elo: row?.elo ?? 0,
-          effort: row?.effort ?? runner.effort,
-          distanceM: row?.distanceM ?? runner.km[2]! * 1000,
-          movingSec: row?.movingSec ?? 0,
-          you: Boolean(runner.you),
-          place: index + 1,
-        };
-      });
-    }
-    return orderedRunners(model.runners, checkpoint).map((runner, index) => ({
-      id: runner.id,
-      name: runner.name,
-      elo: 0,
-      effort: runner.effort,
-      distanceM: runner.km[2]! * 1000,
-      movingSec: 0,
-      you: Boolean(runner.you),
-      place: index + 1,
-    }));
-  }, [boardRows, model.runners, checkpoint]);
+    const ordered = [...runners].sort(
+      (a, b) => valueAt(b, time, extra) - valueAt(a, time, extra) || a.id.localeCompare(b.id),
+    );
+    return ordered.map((runner) => {
+      const row = boardRows?.find((item) => item.id === runner.id);
+      return {
+        id: runner.id,
+        name: row?.name ?? runner.name,
+        elo: row?.elo ?? 0,
+        effort: valueAt(runner, time, extra),
+        distanceM: row?.distanceM ?? valueAt(runner, time, extra) * (model.gps ? 1000 : 1),
+        movingSec: row?.movingSec ?? 0,
+        you: Boolean(runner.you),
+        place: placeAt(runners, runner.id, time, extra),
+      };
+    });
+  }, [boardRows, extra, model.gps, runners, time]);
 
-  if (!you) {
+  if (!you || !youRunner || !selected) {
     return (
       <div className="sp-empty">
-        <h2>Join the field to see gaps</h2>
+        <h2>Join the field to see the track</h2>
         <p className="fb-copy">
-          Pursuit and the bird’s-eye path need your place in this week’s matched
-          group.
+          The 2D lanes and 3D pursuit need your place in this week’s group.
         </p>
       </div>
     );
   }
 
-  const activeView = view === "pursuit" && !webglOk ? "path" : view;
-  const selectedRunner =
-    selected && "km" in selected
-      ? selected
-      : model.runners.find((runner) => runner.id === selectedId) ?? you;
+  const sceneKey = lanes.map((runner) => runner.id).join(":");
 
   return (
     <section className="fd-stage">
+      <div className="fd-field-head">
+        <div>
+          <p className="fb-kicker">
+            {mode === "lanes" ? "A track you can read" : "A world you move through"}
+          </p>
+          <h2>The field.</h2>
+        </div>
+        <div className="fd-readout">
+          <strong>
+            {valueAt(youRunner, time, extra).toFixed(1)}
+            <small>{unit}</small>
+          </strong>
+          <span>
+            {extra > 0 ? "What-if" : model.gps ? "By distance" : "By effort"} ·{" "}
+            {placeAt(runners, youRunner.id, time, extra)} / {runners.length}
+          </span>
+        </div>
+      </div>
+
       <div className="fd-view-switch" role="tablist" aria-label="Field view">
         <button
           type="button"
           role="tab"
-          aria-selected={activeView === "pursuit"}
-          disabled={!webglOk && view === "pursuit"}
-          onClick={() => {
-            setView("pursuit");
-            setWebglOk(true);
-          }}
+          aria-selected={mode === "lanes"}
+          onClick={() => setMode("lanes")}
         >
-          POV pursuit
+          2D lanes
         </button>
         <button
           type="button"
           role="tab"
-          aria-selected={activeView === "path"}
-          onClick={() => setView("path")}
+          aria-selected={mode === "pursuit"}
+          onClick={() => {
+            setUnavailable(false);
+            setMode("pursuit");
+          }}
         >
-          Bird’s-eye path
+          3D Pursuit
         </button>
       </div>
 
-      {activeView === "pursuit" ? (
-        <>
-          <div className="fd-scene-frame">
-            <PursuitScene
-              runners={model.runners}
-              you={you}
-              ghost={model.ghost}
-              checkpoint={checkpoint}
-              selectedId={selectedId}
-              facing={facing}
-              zoom={zoom}
-              unitLabel={unitLabel}
-              showGhost={showGhost}
-              onSelect={setSelectedId}
-              onUnavailable={() => {
-                setWebglOk(false);
-                setView("path");
-              }}
-            />
-          </div>
-          <div className="fd-controls">
-            <label>
-              <span>Zoom · forward / back</span>
-              <input
-                type="range"
-                min={0}
-                max={1}
-                step={0.01}
-                value={zoom}
-                aria-valuetext={zoom < 0.33 ? "Close" : zoom > 0.66 ? "Far" : "Mid"}
-                onChange={(event) => setZoom(Number(event.target.value))}
+      <div className="fd-field-layout">
+        <div className="fd-scene-frame">
+          {mode === "pursuit" && !unavailable ? (
+            <>
+              <div className="fd-camera">
+                {(["follow", "above", "avatar"] as const).map((id) => (
+                  <button
+                    key={id}
+                    type="button"
+                    aria-pressed={camera === id}
+                    onClick={() => setCamera(id)}
+                  >
+                    {id === "follow" ? "Follow" : id === "above" ? "Above" : "Avatar"}
+                  </button>
+                ))}
+              </div>
+              <LivePursuit
+                key={sceneKey}
+                runners={lanes}
+                ghost={ghost}
+                time={time}
+                extra={extra}
+                selected={selectedId}
+                showGhost={showGhost}
+                camera={camera}
+                look={look}
+                unit={unit}
+                onSelect={setSelectedId}
+                onUnavailable={() => setUnavailable(true)}
               />
-            </label>
-            <div className="fd-facing">
-              <button
-                type="button"
-                aria-pressed={facing === "forward"}
-                onClick={() => setFacing("forward")}
-              >
-                Look ahead
-              </button>
-              <button
-                type="button"
-                aria-pressed={facing === "behind"}
-                onClick={() => setFacing("behind")}
-              >
-                Turn around
-              </button>
-              {model.ghost ? (
+            </>
+          ) : (
+            <LaneTrack
+              runners={lanes}
+              ghost={ghost}
+              time={time}
+              extra={extra}
+              selected={selectedId}
+              showGhost={showGhost}
+              unit={unit}
+              onSelect={setSelectedId}
+            />
+          )}
+          {unavailable ? (
+            <p className="fb-note">3D is unavailable here. The 2D track stays interactive.</p>
+          ) : null}
+          <div className="fd-replay">
+            <label htmlFor="field-replay">Rewind the week</label>
+            <input
+              id="field-replay"
+              type="range"
+              min={0}
+              max={maxTime}
+              step={0.01}
+              value={time}
+              aria-valuetext={labels[Math.round(time)] ?? "Replay"}
+              onChange={(event) => setTime(Number(event.target.value))}
+            />
+            <div>
+              {labels.map((label, index) => (
                 <button
+                  key={`${label}-${index}`}
                   type="button"
-                  aria-pressed={showGhost}
-                  onClick={() => setShowGhost((value) => !value)}
+                  aria-pressed={time === index}
+                  onClick={() => setTime(index)}
                 >
-                  {showGhost ? "Hide ghost" : "Show ghost"}
+                  {index === 0 ? "Start" : label}
                 </button>
-              ) : null}
+              ))}
             </div>
           </div>
-          {!webglOk ? (
-            <p className="fd-note">
-              3D pursuit needs WebGL. Showing the bird’s-eye path instead.
-            </p>
-          ) : (
-            <p className="fd-note">
-              POV from your week · gaps are weekly {unitLabel}, not live GPS ·
-              use the sliders (no drag gestures)
-            </p>
-          )}
-        </>
-      ) : (
-        <DistancePath
-          runners={model.runners}
-          you={you}
-          referenceKm={model.referenceKm}
-          checkpoint={checkpoint}
-          selectedId={selectedId}
-          unitLabel={unitLabel}
-          onSelect={setSelectedId}
-        />
-      )}
-
-      <aside className="fd-inspector" aria-live="polite">
-        <p className="fb-kicker">Selected in the field</p>
-        <h2>{selectedRunner.you ? "You" : selectedRunner.name}</h2>
-        <strong>
-          {formatKm(distanceAt(selectedRunner, checkpoint))}
-          <small> {unitLabel}</small>
-        </strong>
-        <p>
-          {formatGapLabel(selectedRunner, you, checkpoint, unitLabel)}
-          {" · "}
-          place {selectedRunner.place || "—"}
-        </p>
-      </aside>
-
-      <div>
-        <div className="fd-roster-head">
-          <h3>Exact field</h3>
-          <span>
-            {model.checkpointLabels[Math.min(2, Math.floor(checkpoint))]} ·{" "}
-            {unitLabel}
-          </span>
         </div>
-        <FieldRoster
-          rows={rosterRows}
-          selectedId={selectedId}
-          onSelect={setSelectedId}
-          detail={model.gps ? "distance" : "rating"}
-        />
+
+        <aside className="fd-inspector">
+          <p className="fb-kicker">Selected runner</p>
+          <h3>{selected.name}</h3>
+          <strong>
+            {valueAt(selected, time, extra).toFixed(1)} <small>{unit}</small>
+          </strong>
+          <p>{gapLabel(selected, youRunner, time, extra, unit)}</p>
+          <p className="fb-note">
+            {selected.you
+              ? "Your line uses imported activity through each cutoff."
+              : "Other lanes share this week’s total, spread across the same cutoffs. That is not a GPS trace."}
+          </p>
+          <button
+            type="button"
+            className="fb-btn-line"
+            aria-pressed={showGhost}
+            onClick={() => setShowGhost((value) => !value)}
+            disabled={!ghost}
+          >
+            {showGhost ? "Hide past you" : "Add past you"}
+          </button>
+          <label className="fb-field">
+            What if you added {unit}?
+            <strong>+{extra.toFixed(1)}</strong>
+            <input
+              type="range"
+              min={0}
+              max={model.gps ? 20 : 30}
+              step={0.1}
+              value={extra}
+              aria-label="Hypothetical addition"
+              onChange={(event) => setExtra(Number(event.target.value))}
+            />
+          </label>
+          <button type="button" className="fb-btn-ghost" disabled={extra === 0} onClick={() => setExtra(0)}>
+            Reset preview
+          </button>
+          {mode === "pursuit" && !unavailable ? (
+            <details>
+              <summary>Your runner’s look</summary>
+              <div className="fd-looks">
+                {(Object.keys(kits) as KitId[]).map((id) => (
+                  <button
+                    key={id}
+                    type="button"
+                    style={{ background: kits[id] }}
+                    aria-label={`${id} kit`}
+                    aria-pressed={look.kit === id}
+                    onClick={() => setLook({ ...look, kit: id })}
+                  />
+                ))}
+                {(Object.keys(skins) as SkinId[]).map((id) => (
+                  <button
+                    key={id}
+                    type="button"
+                    style={{ background: skins[id] }}
+                    aria-label={`${id} skin tone`}
+                    aria-pressed={look.skin === id}
+                    onClick={() => setLook({ ...look, skin: id })}
+                  />
+                ))}
+                {(["crop", "bun", "cap"] as HairId[]).map((id) => (
+                  <button
+                    key={id}
+                    type="button"
+                    aria-pressed={look.hair === id}
+                    onClick={() => setLook({ ...look, hair: id })}
+                  >
+                    {id}
+                  </button>
+                ))}
+              </div>
+            </details>
+          ) : null}
+        </aside>
       </div>
+
+      <FieldRoster
+        rows={rosterRows}
+        selectedId={selectedId}
+        onSelect={setSelectedId}
+        unit={unit}
+      />
     </section>
   );
 }

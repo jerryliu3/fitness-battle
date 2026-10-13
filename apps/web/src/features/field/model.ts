@@ -2,16 +2,12 @@ import {
   competeNow,
   distanceTrackMaxKm,
   initialsFromName,
-  interpolateSeries,
   syntheticCheckpoints,
   type CompeteState,
   type ScoreTrack,
   type SportId,
 } from "@fitness-battle/shared";
 import { buildSplitBoard } from "@/features/split/model";
-
-export type FieldViewMode = "pursuit" | "path";
-export type PursuitFacing = "forward" | "behind";
 
 export interface FieldRunner {
   id: string;
@@ -107,59 +103,4 @@ export function buildFieldModel(
     checkpointLabels: board.checkpointLabels,
     gps,
   };
-}
-
-export function distanceAt(
-  runner: FieldRunner,
-  checkpoint: number,
-  extraKm = 0,
-): number {
-  const base = interpolateSeries(runner.km, checkpoint);
-  return Math.round((base + (runner.you ? extraKm : 0)) * 1000) / 1000;
-}
-
-export function gapKm(
-  runner: FieldRunner,
-  you: FieldRunner,
-  checkpoint: number,
-  extraKm = 0,
-): number {
-  return (
-    Math.round(
-      (distanceAt(runner, checkpoint, extraKm) -
-        distanceAt(you, checkpoint, extraKm)) *
-        1000,
-    ) / 1000
-  );
-}
-
-export function formatKm(km: number, digits = 1): string {
-  return km.toFixed(digits);
-}
-
-export function formatGapLabel(
-  runner: FieldRunner,
-  you: FieldRunner,
-  checkpoint: number,
-  unitLabel: string,
-  extraKm = 0,
-): string {
-  if (runner.you) return "Your position";
-  const gap = gapKm(runner, you, checkpoint, extraKm);
-  if (Math.abs(gap) < 0.001) return "Level with you";
-  const abs =
-    Math.abs(gap) < 1 ? formatKm(Math.abs(gap), 2) : formatKm(Math.abs(gap), 1);
-  return `${abs} ${unitLabel} ${gap > 0 ? "ahead" : "behind"}`;
-}
-
-export function orderedRunners(
-  runners: FieldRunner[],
-  checkpoint: number,
-  extraKm = 0,
-): FieldRunner[] {
-  return [...runners].sort(
-    (a, b) =>
-      distanceAt(b, checkpoint, extraKm) - distanceAt(a, checkpoint, extraKm) ||
-      a.id.localeCompare(b.id),
-  );
 }
