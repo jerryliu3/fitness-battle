@@ -9,6 +9,15 @@ import {
 import { eloFromWeeklyEffort, periodEffort, readinessBonus } from "./effort";
 import { settleElo } from "./elo";
 import {
+  demoSleepNight,
+  freshHealthRatings,
+  providerRecordsSleep,
+  settleSleepWeeks,
+  type CategoryFocus,
+  type HealthMetricId,
+  type SleepNight,
+} from "./health";
+import {
   athleteWeekEffort,
   findAthlete,
   nearestAthletes,
@@ -58,8 +67,12 @@ export interface Action {
     | "rename"
     | "set-city"
     | "set-primary"
+    | "set-focus"
     | "opt-in"
     | "opt-out"
+    | "opt-in-health"
+    | "opt-out-health"
+    | "log-sleep"
     | "link"
     | "unlink"
   | "sync"
@@ -75,7 +88,13 @@ export interface Action {
   name?: string;
   city?: string;
   sport?: SportId;
+  metric?: HealthMetricId;
+  focus?: CategoryFocus;
   provider?: ProviderId;
+  /** Sleep nights already mapped from a tracker pull. */
+  sleepNights?: SleepNight[];
+  score?: number;
+  durationMin?: number;
   level?: "light" | "steady" | "heavy";
   username?: string;
   mode?: "auto" | "invite";
@@ -147,6 +166,19 @@ export function migrateCompeteState(parsed: CompeteState): CompeteState {
       typeof (parsed as CompeteState).demoNow === "string"
         ? (parsed as CompeteState).demoNow
         : null,
+    focus:
+      parsed.focus?.family === "health" || parsed.focus?.family === "sport"
+        ? parsed.focus
+        : { family: "sport", id: parsed.primary },
+    sleepNights: Array.isArray(parsed.sleepNights) ? parsed.sleepNights : [],
+    healthRatings:
+      Array.isArray(parsed.healthRatings) && parsed.healthRatings.length > 0
+        ? freshHealthRatings(parsed.clock.periodStart).map((blank) => {
+            const found = parsed.healthRatings.find((item) => item.metric === blank.metric);
+            return found ? { ...blank, ...found } : blank;
+          })
+        : freshHealthRatings(parsed.clock?.periodStart ?? new Date().toISOString()),
+    healthResults: Array.isArray(parsed.healthResults) ? parsed.healthResults : [],
   };
 }
 
@@ -158,6 +190,7 @@ export function freshState(now: Date = new Date()): CompeteState {
     name: "You",
     city: "Toronto",
     primary: "running",
+    focus: { family: "sport", id: "running" },
     clock: { kind: "weekly", periodStart },
     ratings: SPORT_IDS.map((sport) => ({
       sport,
@@ -170,6 +203,9 @@ export function freshState(now: Date = new Date()): CompeteState {
     })),
     activities: [],
     readiness: [],
+    sleepNights: [],
+    healthRatings: freshHealthRatings(periodStart),
+    healthResults: [],
     links: PROVIDERS.map((provider) => ({
       provider: provider.id,
       linked: false,
@@ -475,12 +511,12 @@ export function rollClock(state: CompeteState, now: Date = new Date()): CompeteS
   }
 
   if (next.clock.periodStart !== liveStart && next.enrollments.length === 0) {
-    return {
+    next = {
       ...next,
       clock: { ...next.clock, periodStart: liveStart },
     };
   }
-  return next;
+  return settleSleepWeeks(next, now, next.demoNow ?? now.toISOString());
 }
 
 /** Backfill wave seats for opted-in sports missing an enrollment (migrations). */
@@ -613,25 +649,32 @@ function syncProvider(
   const meta = PROVIDERS.find((item) => item.id === provider);
   if (!meta) return state;
   const day = dayKey(now);
+  let next = state;
+  if (providerRecordsSleep(provider)) {
+    const night = demoSleepNight(provider, day);
+    if (!next.sleepNights.some((item) => item.id === night.id)) {
+      next = { ...next, sleepNights: [...next.sleepNights, night] };
+    }
+  }
   if (meta.kind === "readiness") {
-    if (state.readiness.some((mark) => mark.provider === provider && mark.day === day)) {
-      return state;
+    if (next.readiness.some((mark) => mark.provider === provider && mark.day === day)) {
+      return next;
     }
     const score = 62 + Math.round(unitInterval(`${provider}:${day}`) * 30);
     return {
-      ...state,
+      ...next,
       readiness: [
-        ...state.readiness,
+        ...next.readiness,
         { id: `ready-${provider}-${day}`, provider, day, score },
       ],
     };
   }
-  const sport = state.primary;
-  const already = state.activities.some(
+  const sport = next.primary;
+  const already = next.activities.some(
     (activity) =>
       activity.source === provider && activity.startedAt.slice(0, 10) === day,
   );
-  if (already) return state;
+  if (already) return next;
   const gps = sportById(sport).gps;
   const verified = gps && hashString(`${provider}:${day}`) % 4 !== 0;
   const km = gps ? 5 + unitInterval(`${provider}:km:${day}`) * 8 : 0;
@@ -647,7 +690,19 @@ function syncProvider(
     verified,
     provider,
   );
-  return { ...state, activities: [...state.activities, activity] };
+  return { ...next, activities: [...next.activities, activity] };
+}
+
+function mergeSleepNights(state: CompeteState, incoming: SleepNight[]): CompeteState {
+  if (incoming.length === 0) return state;
+  const seen = new Set(state.sleepNights.map((night) => night.id));
+  const added = incoming.filter((night) => {
+    if (night.metric !== "sleep" || seen.has(night.id)) return false;
+    seen.add(night.id);
+    return true;
+  });
+  if (added.length === 0) return state;
+  return { ...state, sleepNights: [...state.sleepNights, ...added] };
 }
 
 export function reduceCompete(
@@ -667,7 +722,15 @@ export function reduceCompete(
     }
     case "set-primary": {
       if (!action.sport) return rolled;
-      return { ...rolled, primary: action.sport };
+      return {
+        ...rolled,
+        primary: action.sport,
+        focus: { family: "sport", id: action.sport },
+      };
+    }
+    case "set-focus": {
+      if (!action.focus) return rolled;
+      return { ...rolled, focus: action.focus };
     }
     case "opt-in": {
       if (!action.sport) return rolled;
@@ -675,7 +738,8 @@ export function reduceCompete(
       const anyPrimary = opted.ratings.some(
         (item) => item.optedIn && item.sport === opted.primary,
       );
-      return anyPrimary ? opted : { ...opted, primary: action.sport };
+      const next = anyPrimary ? opted : { ...opted, primary: action.sport };
+      return { ...next, focus: { family: "sport", id: action.sport } };
     }
     case "opt-out": {
       if (!action.sport) return rolled;
@@ -690,6 +754,63 @@ export function reduceCompete(
           (duel) =>
             !(duel.sport === action.sport && duel.periodStart === periodStart),
         ),
+      };
+    }
+    case "opt-in-health": {
+      const metric = action.metric ?? "sleep";
+      const waveStart = waveWindowAt(now).waveStart.toISOString();
+      return {
+        ...rolled,
+        focus: { family: "health", id: metric },
+        healthRatings: rolled.healthRatings.map((item) =>
+          item.metric === metric
+            ? {
+                ...item,
+                optedIn: true,
+                lockElo: item.elo,
+                lockPeriod: waveStart,
+                autoEnrollNext: true,
+              }
+            : item,
+        ),
+      };
+    }
+    case "opt-out-health": {
+      const metric = action.metric ?? "sleep";
+      return {
+        ...rolled,
+        focus:
+          rolled.focus.family === "health" && rolled.focus.id === metric
+            ? { family: "sport", id: rolled.primary }
+            : rolled.focus,
+        healthRatings: rolled.healthRatings.map((item) =>
+          item.metric === metric ? { ...item, optedIn: false } : item,
+        ),
+      };
+    }
+    case "log-sleep": {
+      const day = dayKey(now);
+      if (rolled.sleepNights.some((night) => night.source === "manual" && night.day === day)) {
+        return { ...rolled, focus: { family: "health", id: "sleep" } };
+      }
+      const durationMin = action.durationMin ?? 7 * 60 + 20;
+      const score = action.score;
+      const night = demoSleepNight("manual", day);
+      const logged: SleepNight = {
+        ...night,
+        id: `sleep-manual-${day}`,
+        score:
+          score == null
+            ? night.score
+            : Math.min(100, Math.max(0, Math.round(score))),
+        durationMin,
+        verified: false,
+        source: "manual",
+      };
+      return {
+        ...rolled,
+        focus: { family: "health", id: "sleep" },
+        sleepNights: [...rolled.sleepNights, logged],
       };
     }
     case "link": {
@@ -749,12 +870,15 @@ export function reduceCompete(
         seenReady.add(mark.id);
         return true;
       });
-      return {
-        ...rolled,
-        activities: added.length ? [...rolled.activities, ...added] : rolled.activities,
-        readiness: ready.length ? [...rolled.readiness, ...ready] : rolled.readiness,
-        links,
-      };
+      return mergeSleepNights(
+        {
+          ...rolled,
+          activities: added.length ? [...rolled.activities, ...added] : rolled.activities,
+          readiness: ready.length ? [...rolled.readiness, ...ready] : rolled.readiness,
+          links,
+        },
+        (action.sleepNights ?? []).filter((night) => night.source === action.provider),
+      );
     }
     case "import-history": {
       // One-time calibration only. Re-importing would rewrite Elo and is blocked.

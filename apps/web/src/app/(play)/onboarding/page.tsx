@@ -7,6 +7,7 @@ import {
   BACKFILL_DAYS,
   PROVIDERS,
   SPORTS,
+  HEALTH_METRICS,
   type SportId,
 } from "@fitness-battle/shared";
 import { resolveSafePostLoginPath } from "@/lib/auth/login-redirect";
@@ -24,6 +25,7 @@ function OnboardingFlow() {
   const [name, setName] = useState(user?.displayName ?? "");
   const [city, setCity] = useState("Toronto");
   const [sport, setSport] = useState<SportId>("running");
+  const [trackSleep, setTrackSleep] = useState(false);
   const [level, setLevel] = useState<"light" | "steady" | "heavy">("steady");
   const [connectMessage, setConnectMessage] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -50,6 +52,8 @@ function OnboardingFlow() {
     if (name.trim()) dispatch({ type: "rename", name });
     if (city.trim()) dispatch({ type: "set-city", city });
     dispatch({ type: "set-primary", sport });
+    if (trackSleep) dispatch({ type: "opt-in-health", metric: "sleep" });
+    if (trackSleep) dispatch({ type: "set-focus", focus: { family: "sport", id: sport } });
     setStep("connect");
   }
 
@@ -139,6 +143,21 @@ function OnboardingFlow() {
                 onClick={() => setSport(item.id)}
               >
                 {item.name}
+              </button>
+            ))}
+          </div>
+          <p className="fb-note">Health metrics use last night, not distance.</p>
+          <div className="fb-chips" aria-label="Health metrics">
+            {HEALTH_METRICS.map((item) => (
+              <button
+                key={item.id}
+                type="button"
+                className={trackSleep ? "fb-chip on" : "fb-chip"}
+                aria-pressed={trackSleep}
+                onClick={() => setTrackSleep((on) => !on)}
+              >
+                {item.name}
+                {trackSleep ? "" : " · add"}
               </button>
             ))}
           </div>
