@@ -1,10 +1,24 @@
+import { router } from "expo-router";
 import { useState } from "react";
-import { Pressable, ScrollView, StyleSheet, Text } from "react-native";
+import { ScrollView, Text } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useCompete } from "../src/lib/compete-context";
 import { syncAppleHealth, syncHealthConnect } from "../src/lib/device-health";
-import { colors, fonts } from "../src/theme";
+import {
+  Card,
+  Copy,
+  GhostButton,
+  Kicker,
+  LineButton,
+  Note,
+  PrimaryButton,
+  Title,
+} from "../src/ui/primitives";
+import { ui } from "../src/ui/styles";
 
+/** Deep-link friendly phone health screen; full connections also live on Athlete. */
 export default function ConnectionsScreen() {
+  const { dispatch } = useCompete();
   const [note, setNote] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -12,8 +26,17 @@ export default function ConnectionsScreen() {
     setBusy(true);
     setNote(null);
     try {
-      const result = kind === "apple" ? await syncAppleHealth() : await syncHealthConnect();
+      const result =
+        kind === "apple" ? await syncAppleHealth() : await syncHealthConnect();
       setNote(result.message);
+      if (result.ok) {
+        dispatch({
+          type: "apply-sync",
+          provider: kind === "apple" ? "apple_health" : "google_health",
+          activities: [],
+          linkStatus: "connected",
+        });
+      }
     } catch (error) {
       setNote(error instanceof Error ? error.message : "Sync failed");
     } finally {
@@ -22,52 +45,30 @@ export default function ConnectionsScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.safe}>
-      <ScrollView contentContainerStyle={styles.scroll}>
-        <Text style={styles.kicker}>Trackers</Text>
-        <Text style={styles.title}>Phone workouts</Text>
-        <Text style={styles.copy}>
-          Apple Health and Health Connect stay on the device. A development build
-          reads the last 90 days and sends them to the server. Strava, Garmin,
-          WHOOP, and Oura connect from the web app.
-        </Text>
-        <Pressable style={styles.primary} disabled={busy} onPress={() => void run("apple")}>
-          <Text style={styles.primaryText}>{busy ? "Syncing…" : "Sync Apple Health"}</Text>
-        </Pressable>
-        <Pressable style={styles.line} disabled={busy} onPress={() => void run("android")}>
-          <Text style={styles.lineText}>Sync Health Connect</Text>
-        </Pressable>
-        {note ? <Text style={styles.copy}>{note}</Text> : null}
+    <SafeAreaView style={ui.safe} edges={["top"]}>
+      <ScrollView contentContainerStyle={ui.scroll}>
+        <GhostButton label="← Athlete" onPress={() => router.push("/you")} />
+        <Kicker>Trackers</Kicker>
+        <Title line1="Phone" line2="workouts." />
+        <Copy>
+          Apple Health and Health Connect stay on the device. A development or
+          store build reads the last 90 days and sends them to the server.
+          Strava, Garmin, WHOOP, and Oura connect from Athlete.
+        </Copy>
+        <Card>
+          <PrimaryButton
+            label={busy ? "Syncing…" : "Sync Apple Health"}
+            disabled={busy}
+            onPress={() => void run("apple")}
+          />
+          <LineButton
+            label="Sync Health Connect"
+            disabled={busy}
+            onPress={() => void run("android")}
+          />
+          {note ? <Note>{note}</Note> : null}
+        </Card>
       </ScrollView>
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: colors.paper },
-  scroll: { padding: 20, gap: 12 },
-  kicker: {
-    fontFamily: fonts.bodyMedium,
-    color: colors.muted,
-    fontSize: 13,
-    textTransform: "uppercase",
-  },
-  title: { fontFamily: fonts.bodyBold, fontSize: 32, color: colors.ink },
-  copy: { fontFamily: fonts.body, color: colors.muted, fontSize: 15, lineHeight: 21 },
-  primary: {
-    backgroundColor: colors.blue,
-    borderRadius: 14,
-    paddingVertical: 14,
-    alignItems: "center",
-  },
-  primaryText: { color: "white", fontFamily: fonts.bodyBold },
-  line: {
-    borderWidth: 1,
-    borderColor: colors.line,
-    backgroundColor: colors.card,
-    borderRadius: 14,
-    paddingVertical: 14,
-    alignItems: "center",
-  },
-  lineText: { color: colors.ink, fontFamily: fonts.bodyBold },
-});

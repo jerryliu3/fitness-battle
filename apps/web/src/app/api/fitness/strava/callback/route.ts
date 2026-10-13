@@ -28,7 +28,9 @@ export async function GET(request: Request) {
     return trackerRedirect(url.origin, "strava", "stub");
   }
 
-  const userId = await resolveSessionUserId();
+  // Session cookie (web) or OAuth state (mobile browser return). State is the user id set at connect.
+  const sessionUserId = await resolveSessionUserId();
+  const userId = sessionUserId ?? state;
   if (!userId || !state || state !== userId) {
     return trackerRedirect(url.origin, "strava", "error");
   }

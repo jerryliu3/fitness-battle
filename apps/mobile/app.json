@@ -5,8 +5,14 @@
     "scheme": "fitnessbattle",
     "version": "0.1.0",
     "orientation": "portrait",
-    "userInterfaceStyle": "dark",
+    "userInterfaceStyle": "light",
     "newArchEnabled": true,
+    "icon": "./assets/icon.png",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#eef1f4"
+    },
     "plugins": [
       "expo-router",
       "expo-font",
@@ -21,11 +27,32 @@
       "bundleIdentifier": "com.fitnessbattle.app",
       "infoPlist": {
         "NSHealthShareUsageDescription": "Fitness Battle reads workouts so your week can be scored.",
-        "NSHealthUpdateUsageDescription": "Fitness Battle does not write health data."
+        "NSHealthUpdateUsageDescription": "Fitness Battle does not write health data.",
+        "CFBundleURLTypes": [
+          {
+            "CFBundleURLSchemes": ["fitnessbattle"]
+          }
+        ]
       }
     },
     "android": {
       "package": "com.fitnessbattle.app",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#12141a"
+      },
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "autoVerify": false,
+          "data": [
+            {
+              "scheme": "fitnessbattle"
+            }
+          ],
+          "category": ["BROWSABLE", "DEFAULT"]
+        }
+      ],
       "permissions": [
         "android.permission.health.READ_EXERCISE",
         "android.permission.health.READ_HEART_RATE",
@@ -34,7 +61,14 @@
     },
     "web": {
       "bundler": "metro",
-      "output": "static"
-    }
+      "output": "static",
+      "favicon": "./assets/favicon.png"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "fitness-battle-placeholder"
+      }
+    },
+    "owner": "fitness-battle"
   }
 }

@@ -28,7 +28,8 @@ export function oauthCodeCallback(providerId: OAuthProviderId) {
     if (!creds(providerId) || !code || !liveAuth) {
       return trackerRedirect(url.origin, providerId, "stub");
     }
-    const userId = await resolveSessionUserId();
+    const sessionUserId = await resolveSessionUserId();
+    const userId = sessionUserId ?? state;
     if (!userId || !state || state !== userId) {
       return trackerRedirect(url.origin, providerId, "error");
     }

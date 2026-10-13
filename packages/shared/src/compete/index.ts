@@ -116,3 +116,13 @@ export {
   type CheckpointIndex,
   type CheckpointSeries,
 } from "./track";
+export {
+  buildSplitBoard,
+  laneAtCheckpoint,
+  formatPts,
+  deltaCopy,
+  sourceFromLinks,
+  type ComparisonMode,
+  type TrackLane,
+  type SplitBoardModel,
+} from "./split-board";

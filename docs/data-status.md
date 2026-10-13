@@ -42,7 +42,7 @@ Separate Supabase project from battles (`rankings-db/`, hosted `pzadctqmyekkydte
 | Create battle + period seed | `create_battle` (additive migration) |
 | Period roll + late joiners | Fixed in additive migration |
 | Score recompute from activities | `recompute_battle_standings` |
-| Wired to play UI | **Not yet** — play UI still uses the local compete engine |
+| Wired to play UI | **Not yet** — web and mobile play UIs still use the local compete engine |
 
 ## What to load next
 

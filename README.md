@@ -22,7 +22,7 @@ pnpm install
 # Web (Vercel-shaped) — demo UI + fitness API routes
 pnpm dev
 
-# Mobile (Expo)
+# Mobile (Expo Router — tabs match web: Track / Field / Splits / You)
 pnpm dev:mobile
 
 # Local Supabase (optional)
@@ -45,9 +45,9 @@ The first migration is the source ledger: provider result ids when present, othe
 
 The public board is `/rankings`. Imports copy a full public results list (OpenTrack JSON, a MikaTiming list page, a CSV, or RunSignup's public results JSON), drop under-18 finishers, and write SQL under `packages/rankings/imports/`. See [`docs/ingestion.md`](./docs/ingestion.md). Set `NEXT_PUBLIC_RANKINGS_SUPABASE_URL` and `NEXT_PUBLIC_RANKINGS_SUPABASE_ANON_KEY` in `apps/web/.env.local`. Applying an import needs `RANKINGS_DATABASE_URL`.
 
-## Auth (web)
+## Auth (web + mobile)
 
-Browsing My track / The field / Splits / Pace is open. **Join / compete / Athlete / onboarding** require an account.
+Browsing My track / The field / Splits / Pace is open on web and in the Expo app. **Join / compete / Athlete / onboarding** require an account. Mobile uses the same demo-auth or Supabase session model; phone health sync lives on Athlete and `/connections`.
 
 Primary product IA follows the Split direction: effort track + previous-week ghost on **My track**, POV pursuit and bird’s-eye distance path on **The field**, counted sessions on **Splits**, and identity/connections on **Athlete**.
 

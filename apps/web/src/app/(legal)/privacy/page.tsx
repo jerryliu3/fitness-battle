@@ -26,10 +26,10 @@ export default function PrivacyPolicyPage() {
 
       <h2>1. Who this applies to</h2>
       <p>
-        This policy covers the Fitness Battle web app and related APIs. If you
-        use a third-party service through us (for example WHOOP, Strava, Oura,
-        or Garmin), that provider’s own privacy policy also applies to data they
-        hold.
+        This policy covers the Fitness Battle web app, iOS and Android apps, and
+        related APIs. If you use a third-party service through us (for example
+        WHOOP, Strava, Oura, Garmin, Apple Health, or Health Connect), that
+        provider’s own privacy policy also applies to data they hold.
       </p>
 
       <h2>2. Information we collect</h2>

@@ -31,15 +31,4 @@ export function ProductHeader({
   );
 }
 
-export function sourceFromLinks(
-  links: { provider: string; linked: boolean; status: string }[],
-): { status: "disconnected" | "stub" | "connected"; label: string } {
-  const strava = links.find((link) => link.provider === "strava");
-  if (!strava?.linked) {
-    return { status: "disconnected", label: "Link source" };
-  }
-  if (strava.status === "connected") {
-    return { status: "connected", label: "Strava live" };
-  }
-  return { status: "stub", label: "Demo source" };
-}
+export { sourceFromLinks } from "@fitness-battle/shared";
