@@ -13,7 +13,11 @@ describe("buildSplitBoard", () => {
   it("builds lanes after opt-in", () => {
     const now = new Date("2026-10-13T12:00:00.000Z");
     let state = rollClock(freshState(), now);
-    state = reduceCompete(state, { type: "opt-in", sport: "running" }, now);
+    state = reduceCompete(state, {
+      type: "opt-in",
+      sport: "running",
+      now: now.toISOString(),
+    });
     const board = buildSplitBoard(state, "running", "open", now);
     expect(board.optedIn).toBe(true);
     expect(board.rows.length).toBeGreaterThan(0);
