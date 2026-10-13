@@ -3,6 +3,8 @@
 import { AuthGate } from "@/components/auth-gate";
 import { useAuth } from "@/components/auth-context";
 import { useCompete } from "@/components/compete-context";
+import { useTheme } from "@/theme/theme-provider";
+import { THEME_OPTIONS } from "@/theme/catalog";
 import {
   AthleteCard,
   WeekRecords,
@@ -33,6 +35,7 @@ import { Suspense, useEffect, useRef, useState } from "react";
 function YouContent() {
   const { user, signOut, demoMode } = useAuth();
   const { state, dispatch } = useCompete();
+  const { theme, setTheme } = useTheme();
   const [name, setName] = useState("");
   const [city, setCity] = useState("");
   const [seeded, setSeeded] = useState(false);
@@ -217,6 +220,27 @@ function YouContent() {
           </Link>
         </section>
       ) : null}
+
+      <section className="fb-card" id="theme">
+        <h2>Theme</h2>
+        <p className="fb-copy">
+          Form is the product default. Ink keeps the earlier athletic chrome.
+          The same week, field, and imports stay underneath.
+        </p>
+        <div className="fm-themes">
+          {THEME_OPTIONS.map((option) => (
+            <button
+              key={option.id}
+              type="button"
+              className="fb-btn-line"
+              aria-pressed={theme.id === option.id}
+              onClick={() => setTheme(option.id)}
+            >
+              {option.label} · {option.mood}
+            </button>
+          ))}
+        </div>
+      </section>
 
       <section className="fb-card">
         <label className="fb-field">

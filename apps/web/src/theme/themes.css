@@ -1,0 +1,277 @@
+/* Theme skins. Structure is shared; these tokens and a few chrome rules swap. */
+
+html[data-theme="form"] {
+  --ink: #28282a;
+  --muted: #707071;
+  --line: #d8d8d5;
+  --paper: #e7e8eb;
+  --card: #ffffff;
+  --lime: #ef6635;
+  --lime-deep: #ef6635;
+  --accent: #28282a;
+  --accent-soft: #f3f3f1;
+  --green: #2f6f4e;
+  --green-soft: #e7f3ec;
+  --fb-radius: 2px;
+  --sp-you: #f97b47;
+  --sp-track: #404346;
+  --sp-track-line: #7b7d80;
+}
+
+html[data-theme="form"] body {
+  background: #e7e8eb;
+  font-family: var(--font-form), "Space Grotesk", sans-serif;
+}
+
+html[data-theme="form"] .fb {
+  max-width: 1120px;
+  margin: 12px auto;
+  background: #fff;
+  min-height: calc(100vh - 24px);
+}
+
+html[data-theme="form"] .sp-shell {
+  --sp-lime: #ef6635;
+  --sp-lime-deep: #ef6635;
+  --sp-you: #f97b47;
+  --sp-track: #404346;
+}
+
+html[data-theme="form"] .sp-brand,
+html[data-theme="form"] .sp-title-block h1,
+html[data-theme="form"] h1,
+html[data-theme="form"] h2 {
+  font-family: var(--font-form), "Space Grotesk", sans-serif;
+  font-weight: 700;
+  letter-spacing: -0.045em;
+}
+
+html[data-theme="form"] .sp-brand {
+  font-size: 22px;
+  text-transform: uppercase;
+}
+
+html[data-theme="form"] .sp-brand span,
+html[data-theme="form"] .sp-title-block h1 span {
+  color: #28282a;
+}
+
+html[data-theme="form"] .fb-btn,
+html[data-theme="form"] .fb-chip.on,
+html[data-theme="form"] .fb-tabs a.on {
+  background: #28282a;
+  color: #fff;
+  border-radius: 2px;
+}
+
+html[data-theme="form"] .fb-btn {
+  border-bottom: 3px solid #ef6635;
+}
+
+html[data-theme="form"] .fb-card,
+html[data-theme="form"] .sp-empty,
+html[data-theme="form"] .fb-chip,
+html[data-theme="form"] .fb-btn-line {
+  border-radius: 2px;
+}
+
+html[data-theme="form"] .fb-tabs {
+  width: min(1120px, 100%);
+  border-radius: 0;
+}
+
+html[data-theme="form"] .fb-guest-banner {
+  background: #f6f6f5;
+  border: 1px solid #d8d8d5;
+  border-radius: 2px;
+}
+
+@media (min-width: 960px) {
+  html[data-theme="form"] .fm-frame {
+    display: grid;
+    grid-template-columns: 196px minmax(0, 1fr);
+    min-height: calc(100vh - 24px);
+  }
+
+  html[data-theme="form"] .fb-tabs {
+    position: sticky;
+    top: 0;
+    left: auto;
+    bottom: auto;
+    transform: none;
+    width: auto;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 4px;
+    padding: 18px 12px;
+    border-top: none;
+    border-right: 1px solid var(--line);
+    background: #f6f6f5;
+  }
+
+  html[data-theme="form"] .fb-tabs a {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    text-align: left;
+    padding: 10px 12px;
+    border-radius: 2px;
+  }
+
+  html[data-theme="form"] .fb-scroll {
+    padding-bottom: 32px;
+  }
+}
+
+.fm-nav-icon {
+  width: 16px;
+  height: 16px;
+  display: none;
+}
+
+@media (min-width: 960px) {
+  html[data-theme="form"] .fm-nav-icon {
+    display: block;
+  }
+}
+
+.fm-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(180px, 0.8fr);
+  gap: 18px;
+  align-items: end;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--line);
+}
+
+.fm-hero h1 {
+  margin: 0;
+  font-size: clamp(40px, 6vw, 64px);
+  line-height: 0.92;
+}
+
+.fm-score {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+  margin: 8px 0;
+}
+
+.fm-score strong {
+  font-size: 72px;
+  line-height: 0.95;
+  letter-spacing: -0.05em;
+}
+
+.fm-hero .fb-btn {
+  display: inline-block;
+  margin-top: 8px;
+}
+
+.fm-score span,
+.fm-hero small {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.fm-art {
+  background: #222426;
+  color: #f4f4f1;
+  min-height: 180px;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  text-align: center;
+}
+
+.fm-art svg {
+  width: min(180px, 100%);
+  height: auto;
+}
+
+.fm-art p {
+  margin: 8px 0 0;
+  letter-spacing: 0.14em;
+  font-size: 11px;
+}
+
+.fm-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.fm-stats span {
+  display: block;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.fm-stats strong {
+  font-size: 28px;
+  letter-spacing: -0.04em;
+}
+
+.fm-lines {
+  display: grid;
+  gap: 10px;
+}
+
+.fm-line {
+  display: grid;
+  grid-template-columns: 88px 1fr 36px;
+  gap: 8px;
+  align-items: center;
+  font-size: 12px;
+  letter-spacing: 0.06em;
+}
+
+.fm-line i {
+  display: block;
+  height: 3px;
+  background: #c8c8c4;
+  position: relative;
+}
+
+.fm-line b {
+  position: absolute;
+  top: -7px;
+  width: 18px;
+  height: 18px;
+  margin-left: -9px;
+  background: #9a9a96;
+  color: #fff;
+  font-size: 10px;
+  display: grid;
+  place-items: center;
+}
+
+.fm-line.is-you i {
+  background: #ef6635;
+}
+
+.fm-line.is-you b {
+  background: #ef6635;
+}
+
+.fm-themes {
+  display: grid;
+  gap: 8px;
+}
+
+.fm-themes button[aria-pressed="true"] {
+  border-color: #28282a;
+  background: #28282a;
+  color: #fff;
+}
+
+@media (max-width: 720px) {
+  .fm-hero,
+  .fm-stats {
+    grid-template-columns: 1fr;
+  }
+}

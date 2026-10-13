@@ -77,13 +77,13 @@ export default function FieldPage() {
           })}
         </p>
         <h1>
-          THE GAP
+          THE
           <br />
-          <span>FEELS REAL.</span>
+          <span>FIELD.</span>
         </h1>
         <p className="fb-copy">
-          POV pursuit and a bird’s-eye distance path. Positions use weekly{" "}
-          {spec.gps ? "distance" : "effort"} — not equally spaced ranks.
+          2D lanes and 3D Pursuit. Positions use weekly{" "}
+          {spec.gps ? "distance" : "effort"} — lane number is not rank.
         </p>
       </div>
 

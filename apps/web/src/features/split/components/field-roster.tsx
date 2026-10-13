@@ -8,12 +8,14 @@ export function FieldRoster({
   onSelect,
   selectedId,
   detail = "rating",
+  unit = "pts",
 }: {
   rows: BoardRow[];
   onSelect?: (id: string) => void;
   selectedId?: string;
   /** What the secondary line explains. */
   detail?: "rating" | "distance";
+  unit?: string;
 }) {
   return (
     <div className="sp-roster" role="list" aria-label="Weekly field">
@@ -35,7 +37,9 @@ export function FieldRoster({
               {row.you ? "You" : row.name}
               <small>{secondary}</small>
             </span>
-            <b>{formatEffort(row.effort)} pts</b>
+            <b>
+              {formatEffort(row.effort)} {unit}
+            </b>
           </>
         );
         if (onSelect) {

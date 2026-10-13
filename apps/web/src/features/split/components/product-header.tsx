@@ -1,5 +1,6 @@
 "use client";
 
+import { useTheme } from "@/theme/theme-provider";
 import Link from "next/link";
 
 export function ProductHeader({
@@ -9,10 +10,12 @@ export function ProductHeader({
   sourceStatus?: "disconnected" | "stub" | "connected";
   sourceLabel?: string;
 }) {
+  const { theme } = useTheme();
   return (
     <header className="sp-header">
-      <Link href="/" className="sp-brand" aria-label="Split home">
-        SPLIT<span>//</span>
+      <Link href="/" className="sp-brand" aria-label={`${theme.label} home`}>
+        {theme.wordmark}
+        <span>{theme.mark}</span>
       </Link>
       <div className="sp-header-actions">
         <Link

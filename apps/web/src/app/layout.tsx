@@ -1,7 +1,10 @@
 import type { Metadata } from "next";
-import { Bebas_Neue, DM_Sans } from "next/font/google";
+import { Bebas_Neue, DM_Sans, Space_Grotesk } from "next/font/google";
+import { cookies } from "next/headers";
 import { Providers } from "@/components/providers";
+import { getTheme, parseThemeId } from "@/theme/catalog";
 import "./globals.css";
+import "@/theme/themes.css";
 
 const display = Bebas_Neue({
   weight: "400",
@@ -14,18 +17,29 @@ const body = DM_Sans({
   variable: "--font-body",
 });
 
+const formType = Space_Grotesk({
+  subsets: ["latin"],
+  variable: "--font-form",
+});
+
 export const metadata: Metadata = {
   title: "Fitness Battle",
   description: "One-tap group and 1v1 fitness battles with automatic tracking.",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
+  const jar = await cookies();
+  const theme = getTheme(parseThemeId(jar.get("fb_theme")?.value));
   return (
-    <html lang="en" className={`${display.variable} ${body.variable}`}>
+    <html
+      lang="en"
+      data-theme={theme.id}
+      className={`${display.variable} ${body.variable} ${formType.variable} ${theme.htmlClass}`}
+    >
       <body>
-        <Providers>{children}</Providers>
+        <Providers initialTheme={theme.id}>{children}</Providers>
       </body>
     </html>
   );
