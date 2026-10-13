@@ -97,6 +97,9 @@ function SignupForm() {
         Already have an account?{" "}
         <Link href={buildLoginHref(next)}>Sign in</Link>
       </p>
+      <p className="fb-note">
+        <Link href="/privacy">Privacy Policy</Link>
+      </p>
     </section>
   );
 }
