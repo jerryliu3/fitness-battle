@@ -18,12 +18,14 @@ const TABS = {
     { href: "/", label: "My week", kind: "track" as const },
     { href: "/board", label: "Matchups", kind: "field" as const },
     { href: "/splits", label: "Moves", kind: "splits" as const },
+    { href: "/progress", label: "Progress", kind: "athlete" as const },
     { href: "/you", label: "You", kind: "athlete" as const },
   ],
   classic: [
     { href: "/", label: "My track", kind: "track" as const },
     { href: "/board", label: "The field", kind: "field" as const },
     { href: "/splits", label: "Splits", kind: "splits" as const },
+    { href: "/progress", label: "Progress", kind: "athlete" as const },
     { href: "/you", label: "Athlete", kind: "athlete" as const },
   ],
 } as const;

@@ -27,7 +27,7 @@ import Link from "next/link";
 import { useState, type ReactNode } from "react";
 
 export default function SplitsPage() {
-  const { state } = useCompete();
+  const { state, dispatch } = useCompete();
   const { theme } = useTheme();
   const [track, setTrack] = useState<ScoreTrack>("open");
   const [detail, setDetail] = useState<{
@@ -174,6 +174,59 @@ export default function SplitsPage() {
         </section>
       )}
 
+      <section className="fb-card">
+        <h2>Session ledger</h2>
+        <p className="fb-copy">
+          Counted sessions change the week. Pending imports wait for you.
+          Excluded sessions stay visible and do not score.
+        </p>
+        {(state?.activities ?? [])
+          .filter((activity) => activity.sport === sport)
+          .slice(-12)
+          .reverse()
+          .map((activity) => (
+            <div key={activity.id} className="fb-row">
+              <span className="fb-grow">
+                {activity.startedAt.slice(0, 10)} · {activity.disposition ?? "counted"}
+                <small>{activity.dispositionReason ?? activity.provenance ?? activity.source}</small>
+              </span>
+              {activity.disposition === "pending" ? (
+                <button
+                  type="button"
+                  className="fb-btn-ghost"
+                  onClick={() =>
+                    dispatch({
+                      type: "set-disposition",
+                      activityId: activity.id,
+                      disposition: "counted",
+                    })
+                  }
+                >
+                  Count
+                </button>
+              ) : null}
+              {activity.disposition !== "excluded" ? (
+                <button
+                  type="button"
+                  className="fb-btn-ghost"
+                  onClick={() =>
+                    dispatch({
+                      type: "set-disposition",
+                      activityId: activity.id,
+                      disposition: "excluded",
+                    })
+                  }
+                >
+                  Exclude
+                </button>
+              ) : null}
+            </div>
+          ))}
+      </section>
+
+      <Link href="/progress" className="fb-btn-ghost">
+        Progress ↗
+      </Link>
       <Link href="/you#connections" className="fb-btn-ghost">
         {source.label} · manage source ↗
       </Link>

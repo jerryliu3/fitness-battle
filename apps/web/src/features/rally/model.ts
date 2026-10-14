@@ -172,9 +172,17 @@ export function movesFromActivities(
       }),
       km: Math.round((activity.distanceM / 1000) * 1000) / 1000,
       minutes: Math.max(1, Math.round(activity.movingSec / 60)),
-      note: activity.verified
-        ? "Verified import. Counted toward this week."
-        : "Counted toward this week’s open effort.",
+      note:
+        activity.dispositionReason ??
+        (activity.disposition === "pending"
+          ? "Pending. Count it to add it to the week."
+          : activity.disposition === "excluded"
+            ? "Excluded from this week."
+            : activity.provenance === "demo"
+              ? "Sample session. Not a recorded workout."
+              : activity.verified
+                ? "Recorded and verified. Counted toward this week."
+                : "Counted toward this week’s open effort."),
       startedAt: activity.startedAt,
       verified: activity.verified,
       source: activity.source,
