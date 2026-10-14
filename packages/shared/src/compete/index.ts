@@ -93,6 +93,19 @@ export {
   type DuelView,
 } from "./engine";
 export {
+  countsOnTrack,
+  dispositionOf,
+  isVerifiedActivity,
+  mergeActivities,
+  paceMinPerKm,
+  progressionTrends,
+  provenanceOf,
+  sameWorkout,
+  type ActivityDisposition,
+  type ActivityProvenance,
+  type TrendPoint,
+} from "./ledger";
+export {
   BENCHMARKS,
   paceBoard,
   yourBenchmarkSeconds,

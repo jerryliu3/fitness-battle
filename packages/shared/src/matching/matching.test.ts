@@ -7,23 +7,21 @@ import { DEFAULT_GROUP_CAPACITY } from "./types";
 import { waveLengthDays, waveWindowAt, weekEndAfter } from "./waves";
 
 describe("wave windows", () => {
-  it("opens a daily wave and ends on the next Sunday UTC", () => {
-    // Monday
+  it("opens the Monday UTC week that contains the instant", () => {
     const monday = waveWindowAt(new Date("2026-10-12T15:00:00.000Z"));
     expect(monday.waveStart.toISOString()).toBe("2026-10-12T00:00:00.000Z");
-    expect(monday.weekEnd.toISOString()).toBe("2026-10-18T00:00:00.000Z");
-    expect(waveLengthDays(monday)).toBe(6);
+    expect(monday.weekEnd.toISOString()).toBe("2026-10-19T00:00:00.000Z");
+    expect(waveLengthDays(monday)).toBe(7);
 
-    // Sunday joiner gets a full week
     const sunday = waveWindowAt(new Date("2026-10-11T08:00:00.000Z"));
-    expect(sunday.waveStart.toISOString()).toBe("2026-10-11T00:00:00.000Z");
-    expect(sunday.weekEnd.toISOString()).toBe("2026-10-18T00:00:00.000Z");
+    expect(sunday.waveStart.toISOString()).toBe("2026-10-05T00:00:00.000Z");
+    expect(sunday.weekEnd.toISOString()).toBe("2026-10-12T00:00:00.000Z");
     expect(waveLengthDays(sunday)).toBe(7);
   });
 
-  it("weekEndAfter from Saturday is the next calendar Sunday", () => {
+  it("weekEndAfter from Saturday is the following Monday", () => {
     const end = weekEndAfter(new Date("2026-10-17T12:00:00.000Z"));
-    expect(end.toISOString()).toBe("2026-10-18T00:00:00.000Z");
+    expect(end.toISOString()).toBe("2026-10-19T00:00:00.000Z");
   });
 });
 
@@ -47,15 +45,15 @@ describe("DensityMatcher", () => {
   });
 
   it("seats real peers first and fills the rest with synthetics", () => {
-    const sundayWave = waveWindowAt(new Date("2026-10-11T12:00:00.000Z"));
+    const monday = waveWindowAt(new Date("2026-10-12T12:00:00.000Z"));
     const pool: PoolPlayer[] = [
       {
         id: "real-1",
         name: "Early Bird",
         elo: 1010,
         sport: "running",
-        waveStart: sundayWave.waveStart.toISOString(),
-        weekEnd: sundayWave.weekEnd.toISOString(),
+        waveStart: monday.waveStart.toISOString(),
+        weekEnd: monday.weekEnd.toISOString(),
       },
     ];
     const assignment = matcher.assignGroup({
@@ -114,16 +112,16 @@ describe("local view clipping", () => {
     expect(clipped).toBeCloseTo(10, 5);
   });
 
-  it("builds a local board where Monday-joiner peers omit Sunday effort", () => {
+  it("omits activity logged before the Monday week", () => {
     const matcher = new DensityMatcher();
-    const sunday = waveWindowAt(new Date("2026-10-11T12:00:00.000Z"));
+    const week = waveWindowAt(new Date("2026-10-12T12:00:00.000Z"));
     const peer: PoolPlayer = {
       id: "real-1",
-      name: "Sunday Starter",
+      name: "Monday Starter",
       elo: 1000,
       sport: "running",
-      waveStart: sunday.waveStart.toISOString(),
-      weekEnd: sunday.weekEnd.toISOString(),
+      waveStart: week.waveStart.toISOString(),
+      weekEnd: week.weekEnd.toISOString(),
     };
     const assignment = matcher.assignGroup({
       viewerId: "you",
@@ -135,7 +133,7 @@ describe("local view clipping", () => {
       seed: "clip",
     });
 
-    // Peer logged a long Sunday run (before the viewer's Monday wave).
+    // Peer logged a long run on the previous Sunday, plus a Monday run.
     const peerActivities = new Map([
       [
         "real-1",

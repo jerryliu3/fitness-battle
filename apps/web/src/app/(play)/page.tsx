@@ -458,9 +458,9 @@ export default function MyTrackPage() {
           <h2>You are not on a track yet</h2>
           <p className="fb-copy">{spec.blurb}</p>
           <p className="fb-note">
-            Joining opens today’s wave. Your board counts effort from now until
-            the Sunday UTC reset — rivals only contribute distance inside your
-            window.
+            Joining opens this week’s board. It runs Monday 00:00 UTC through
+            the next Monday. Place follows effort points. The track draws
+            kilometers, so the furthest runner is not always the leader.
           </p>
           <button
             type="button"

@@ -142,9 +142,17 @@ export interface Activity {
   distanceM: number;
   movingSec: number;
   avgHr: number | null;
-  /** GPS trace or a device benchmark that is hard to type in by hand. */
+  /**
+   * GPS session recorded by a tracker. File imports and sample history are
+   * not verified even when this flag was set by an older client.
+   */
   verified: boolean;
-  source: ProviderId | "history";
+  source: ProviderId | "history" | "manual";
+  /** recorded | imported | manual | demo. Missing means recorded, except history. */
+  provenance?: "recorded" | "imported" | "manual" | "demo";
+  /** counted | pending | excluded. Missing means counted. */
+  disposition?: "counted" | "pending" | "excluded";
+  dispositionReason?: string;
 }
 
 export interface ReadinessMark {
@@ -229,7 +237,7 @@ export interface CompeteState {
    */
   demoNow?: string | null;
   /**
-   * Per-sport wave enrollments (rolling daily waves, Sunday week end).
+   * Per-sport enrollments. The open week is Monday 00:00 UTC through the next Monday.
    * Each viewer’s board is derived from their own enrollment — not a shared
    * central ranking.
    */

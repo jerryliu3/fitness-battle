@@ -1,3 +1,4 @@
+import type { ActivityProvenance } from "../compete/ledger";
 import type { ActivitySample } from "../types";
 import { sportById, type Activity } from "../compete/sports";
 
@@ -11,7 +12,10 @@ const COMPETE_SOURCES = new Set<Activity["source"]>([
 ]);
 
 /** Turn a tracker sample into a compete activity. Mock rows are not scored. */
-export function activityFromSample(sample: ActivitySample): Activity | null {
+export function activityFromSample(
+  sample: ActivitySample,
+  provenance: ActivityProvenance = "recorded",
+): Activity | null {
   if (!COMPETE_SOURCES.has(sample.provider as Activity["source"])) return null;
   const sport = sportById(sample.categorySlug);
   const movingSec = Math.max(0, sample.movingSec ?? (sport.gps ? 0 : sample.metricValue));
@@ -19,6 +23,7 @@ export function activityFromSample(sample: ActivitySample): Activity | null {
   if (!sample.startedAt || Number.isNaN(new Date(sample.startedAt).getTime())) {
     return null;
   }
+  const recorded = provenance === "recorded";
   return {
     id: sample.id,
     sport: sample.categorySlug,
@@ -26,7 +31,13 @@ export function activityFromSample(sample: ActivitySample): Activity | null {
     distanceM,
     movingSec,
     avgHr: sample.avgHr ?? null,
-    verified: sport.gps,
+    verified: recorded && sport.gps,
     source: sample.provider as Activity["source"],
+    provenance,
+    disposition: provenance === "imported" ? "pending" : "counted",
+    dispositionReason:
+      provenance === "imported"
+        ? "File import is pending until you count it."
+        : undefined,
   };
 }

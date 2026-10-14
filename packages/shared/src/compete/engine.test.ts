@@ -115,7 +115,7 @@ describe("compete engine", () => {
     });
     expect(joined.enrollments).toHaveLength(1);
     expect(joined.enrollments[0]?.waveStart).toBe("2026-10-12T00:00:00.000Z");
-    expect(joined.enrollments[0]?.weekEnd).toBe("2026-10-18T00:00:00.000Z");
+    expect(joined.enrollments[0]?.weekEnd).toBe("2026-10-19T00:00:00.000Z");
     expect(joined.enrollments[0]?.syntheticIds).toHaveLength(7);
 
     const withWork = reduceCompete(joined, {
@@ -140,9 +140,9 @@ describe("compete engine", () => {
       type: "debug-close-week",
       now,
     });
-    // Sunday UTC wave reset
-    expect(closed.clock.periodStart).toBe("2026-10-18T00:00:00.000Z");
-    expect(closed.demoNow).toBe("2026-10-18T00:01:00.000Z");
+    // Monday UTC week reset
+    expect(closed.clock.periodStart).toBe("2026-10-19T00:00:00.000Z");
+    expect(closed.demoNow).toBe("2026-10-19T00:01:00.000Z");
     expect(closed.periodResults.length).toBeGreaterThan(0);
     expect(closed.pendingRevealIds.length).toBeGreaterThan(0);
     const open = closed.periodResults.find(
@@ -152,11 +152,11 @@ describe("compete engine", () => {
     expect(open?.fieldSize).toBe(8);
     expect(open?.eloBefore).toBe(1000);
     expect(typeof open?.eloAfter).toBe("number");
-    expect(closed.enrollments[0]?.waveStart).toBe("2026-10-18T00:00:00.000Z");
+    expect(closed.enrollments[0]?.waveStart).toBe("2026-10-19T00:00:00.000Z");
 
     const cleared = reduceCompete(closed, {
       type: "acknowledge-reveal",
-      now: "2026-10-18T12:00:00.000Z",
+      now: "2026-10-19T12:00:00.000Z",
     });
     expect(cleared.pendingRevealIds).toHaveLength(0);
     expect(cleared.periodResults.length).toBe(closed.periodResults.length);

@@ -63,7 +63,12 @@ describe("sleep health metric", () => {
       provider: "oura",
       now,
     });
-    const synced = reduceCompete(linked, { type: "sync", provider: "oura", now });
+    const synced = reduceCompete(linked, {
+      type: "sync",
+      provider: "oura",
+      allowSample: true,
+      now,
+    });
     expect(synced.sleepNights.some((night) => night.source === "oura")).toBe(true);
     expect(synced.readiness.some((mark) => mark.provider === "oura")).toBe(true);
 
@@ -98,7 +103,7 @@ describe("sleep health metric", () => {
     expect(closed.healthResults).toHaveLength(1);
     expect(closed.healthResults[0]?.place).toBeGreaterThan(0);
     expect(rating?.optedIn).toBe(true);
-    expect(rating?.lockPeriod).toBe("2026-10-18T00:00:00.000Z");
+    expect(rating?.lockPeriod).toBe("2026-10-19T00:00:00.000Z");
     expect(rating?.elo).not.toBe(logged.healthRatings[0]?.elo);
   });
 

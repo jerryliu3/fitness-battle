@@ -1,4 +1,4 @@
-import { periodEffort, readinessBonus } from "../compete/effort";
+import { periodEffort } from "../compete/effort";
 import {
   athleteWeekDistanceM,
   athleteWeekMovingSec,
@@ -132,16 +132,6 @@ export function buildLocalBoard(input: LocalBoardInput): LocalBoardRow[] {
     through,
     input.track,
   );
-  const bonus =
-    input.track === "verified" &&
-    input.viewer.primarySport === sport &&
-    input.viewer.readiness
-      ? readinessBonus(
-          input.viewer.readiness as never,
-          waveStart,
-          through,
-        )
-      : 0;
 
   const rows: LocalBoardRow[] = [
     {
@@ -149,7 +139,7 @@ export function buildLocalBoard(input: LocalBoardInput): LocalBoardRow[] {
       name: input.viewer.name,
       elo: input.viewer.elo,
       kind: "real",
-      effort: youVolume.effort + bonus,
+      effort: youVolume.effort,
       distanceM: youVolume.distanceM,
       movingSec: youVolume.movingSec,
       you: true,

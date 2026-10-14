@@ -93,13 +93,15 @@ function YouContent() {
   function applyRemote(body: {
     provider: ProviderId;
     usedMock?: boolean;
+    persisted?: boolean;
     activities?: ActivitySample[];
     readiness?: ReadinessSample[];
     windowKind?: string;
     source?: string;
   }) {
+    const provenance = body.source === "file" ? "imported" : "recorded";
     const activities = (body.activities ?? [])
-      .map((sample) => activityFromSample(sample))
+      .map((sample) => activityFromSample(sample, provenance))
       .filter((activity) => activity != null);
     const readiness: ReadinessMark[] = (body.readiness ?? []).flatMap((sample) => {
       if (!OAUTH_PROVIDERS.has(sample.provider as ProviderId) && !DEVICE_PROVIDERS.has(sample.provider as ProviderId)) {
@@ -129,10 +131,14 @@ function YouContent() {
       return;
     }
     const ready = readiness.length ? `, ${readiness.length} readiness marks` : "";
+    const saved =
+      body.persisted === false
+        ? " Fetched on this device only — they were not saved to your account."
+        : "";
     setSyncNote(
       body.source === "file"
-        ? `Imported ${activities.length} activities from the file.`
-        : `Synced ${activities.length} activities${ready}.`,
+        ? `Imported ${activities.length} activities. File imports stay pending until you count them.${saved}`
+        : `Synced ${activities.length} activities${ready}.${saved}`,
     );
   }
 
@@ -168,8 +174,12 @@ function YouContent() {
         dispatch({ type: "link", provider: providerId });
         setSyncNote(body.message ?? "Demo tracker linked. This is not a live connection.");
       } catch {
-        dispatch({ type: "link", provider: providerId });
-        setSyncNote("Offline demo link only.");
+        if (demoMode) {
+          dispatch({ type: "link", provider: providerId });
+          setSyncNote("Offline demo link only.");
+          return;
+        }
+        setSyncNote("Could not reach the connect route. Nothing was linked.");
       }
       return;
     }
@@ -182,19 +192,24 @@ function YouContent() {
       });
       const body = (await response.json()) as {
         usedMock?: boolean;
+        persisted?: boolean;
         activities?: ActivitySample[];
         readiness?: ReadinessSample[];
         error?: string;
         windowKind?: string;
       };
       if (!response.ok) {
-        setSyncNote(body.error ?? "Sync failed");
+        setSyncNote(body.error ?? "Sync failed. Nothing new was counted.");
         return;
       }
       applyRemote({ ...body, provider: providerId });
     } catch {
-      dispatch({ type: "sync", provider: providerId });
-      setSyncNote("Offline demo sync applied locally.");
+      if (demoMode) {
+        dispatch({ type: "sync", provider: providerId, allowSample: true });
+        setSyncNote("Offline demo sync applied locally. These are sample sessions.");
+        return;
+      }
+      setSyncNote("Sync failed. No sample session was added.");
     }
   }
 
@@ -209,6 +224,7 @@ function YouContent() {
         activities?: ActivitySample[];
         error?: string;
         usedMock?: boolean;
+        persisted?: boolean;
       };
       if (!response.ok) {
         setSyncNote(body.error ?? "Import failed");
@@ -218,11 +234,34 @@ function YouContent() {
         provider: "garmin",
         activities: body.activities,
         usedMock: false,
+        persisted: body.persisted,
         source: "file",
       });
     } catch {
       setSyncNote("Could not read that file.");
     }
+  }
+
+  async function disconnectProvider(providerId: ProviderId) {
+    setSyncNote(null);
+    try {
+      const response = await fetch("/api/fitness/disconnect", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: user?.id, provider: providerId }),
+      });
+      if (!response.ok && !demoMode) {
+        setSyncNote("Could not disconnect that tracker.");
+        return;
+      }
+    } catch {
+      if (!demoMode) {
+        setSyncNote("Could not reach disconnect.");
+        return;
+      }
+    }
+    dispatch({ type: "unlink", provider: providerId });
+    setSyncNote(`${providerId} disconnected on this account.`);
   }
 
   return (
@@ -270,9 +309,9 @@ function YouContent() {
         <section className="fb-card">
           <h2>Demo week close</h2>
           <p className="fb-copy">
-            Settlement normally runs when you open the app after the Sunday UTC
-            wave reset. This advances the clock so you can preview the
-            week-complete reveal and season history.
+            Settlement runs when you open the app after Monday 00:00 UTC.
+            This advances the clock so you can preview the week-complete
+            reveal and season history.
           </p>
           <button
             type="button"
@@ -410,7 +449,8 @@ function YouContent() {
           <>
             <p className="fb-copy">
               Import a sample of the last {BACKFILL_DAYS} days once to leave the
-              1000 baseline. This can only be done once.
+              1000 baseline. The rows are labeled sample history and do not
+              count as workouts. This can only be done once.
             </p>
             <div className="fb-stack">
               {(["light", "steady", "heavy"] as const).map((level) => (
@@ -432,10 +472,9 @@ function YouContent() {
         <h2>Connections</h2>
         <p className="fb-note">
           Cloud trackers open their own authorize page when API keys are set.
-          Without keys the link stays a stub. Garmin files import as real
-          activities. Apple Health and Health Connect sync from the phone.
-          WHOOP, Oura, Garmin, Apple Health, and Health Connect also send last
-          night’s sleep score.
+          Without keys the link stays a stub. Garmin files stay pending until you
+          count them. Apple Health and Health Connect sync from the phone.
+          Sleep shown here is a sample. WHOOP and Oura do not import nights yet.
         </p>
         {PROVIDERS.map((provider) => {
           const link = state.links.find((item) => item.provider === provider.id);
@@ -459,6 +498,15 @@ function YouContent() {
               >
                 {device ? "Phone" : link?.linked ? "Sync" : "Link"}
               </button>
+              {link?.linked && !device ? (
+                <button
+                  type="button"
+                  className="fb-btn-ghost"
+                  onClick={() => void disconnectProvider(provider.id)}
+                >
+                  Disconnect
+                </button>
+              ) : null}
             </div>
           );
         })}
