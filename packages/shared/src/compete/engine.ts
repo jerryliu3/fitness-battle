@@ -7,7 +7,7 @@ import {
   type WaveEnrollment,
 } from "../matching";
 import { eloFromWeeklyEffort, periodEffort } from "./effort";
-import { mergeActivities, provenanceOf } from "./ledger";
+import { mergeActivities, normalizeSampleActivity, provenanceOf } from "./ledger";
 import { settleElo } from "./elo";
 import {
   demoSleepNight,
@@ -185,6 +185,9 @@ export function migrateCompeteState(parsed: CompeteState): CompeteState {
           })
         : freshHealthRatings(parsed.clock?.periodStart ?? new Date().toISOString()),
     healthResults: Array.isArray(parsed.healthResults) ? parsed.healthResults : [],
+    activities: Array.isArray(parsed.activities)
+      ? parsed.activities.map(normalizeSampleActivity)
+      : [],
   };
 }
 
