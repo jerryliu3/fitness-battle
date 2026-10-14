@@ -234,80 +234,64 @@ export function suggestToday(
 
   const history = historyLine(sessions, sport);
   const longestMin = sessions.reduce((best, activity) => Math.max(best, activity.movingSec / 60), 0);
-  const finish = (suggestion: DaySuggestion): DaySuggestion => {
-    let next = suggestion;
-    if (next.distanceKm != null && longest > 0) {
-      const cap = round1(longest * 1.1);
-      if (next.distanceKm > cap) {
-        const minutes = next.minutes == null ? null : Math.max(10, Math.round(cap * 6.5));
-        next = {
-          ...next,
-          distanceKm: cap,
-          minutes,
-          title: next.title.replace(/(\d+(?:\.\d+)?) km/, `${cap} km`),
-        };
-      }
-    }
-    if (
-      next.minutes != null &&
-      longestMin > 0 &&
-      next.distanceKm == null &&
-      next.kind !== "race" &&
-      next.kind !== "rest"
-    ) {
-      const cap = Math.max(10, Math.round(longestMin * 1.1));
-      if (next.minutes > cap) {
-        next = {
-          ...next,
-          minutes: cap,
-          title: next.title.replace(/(\d+) min/, `${cap} min`),
-        };
-      }
-    }
-    return next;
-  };
+
+  const say = (
+    kind: SuggestionKind,
+    phase: PlanPhase,
+    minutes: number | null,
+    distanceKm: number | null,
+    detail: string,
+    reason: string,
+    title: string,
+  ): DaySuggestion => ({
+    kind,
+    phase,
+    title,
+    detail,
+    minutes,
+    distanceKm,
+    reason,
+    pattern: plan.pattern,
+  });
 
   if (daysLeft < 0) {
-    return finish({
-      kind: "rest",
-      phase: "past",
-      title: "Set a new date",
-      detail: "That goal day has passed. Pick the next race or target day.",
-      minutes: null,
-      distanceKm: null,
-      reason: history,
-      pattern: plan.pattern,
-    });
+    return say(
+      "rest",
+      "past",
+      null,
+      null,
+      "That goal day has passed. Pick the next race or target day.",
+      history,
+      "Set a new date",
+    );
   }
 
   if (todaySession) {
     const minutes = Math.round(todaySession.movingSec / 60);
     const km = todaySession.distanceM > 0 ? round1(todaySession.distanceM / 1000) : null;
-    return finish({
-      kind: "rest",
-      phase: daysLeft <= plan.taperDays ? "taper" : "build",
-      title: "Already covered",
-      detail: km
+    return say(
+      "rest",
+      daysLeft <= plan.taperDays ? "taper" : "build",
+      null,
+      null,
+      km
         ? `You already recorded ${km} km today. Nothing else is required.`
         : `You already recorded ${minutes} minutes today. Nothing else is required.`,
-      minutes: null,
-      distanceKm: null,
-      reason: `${history} ${daysLeft} days remain until the ${plan.label}.`,
-      pattern: plan.pattern,
-    });
+      `${history} ${daysLeft} days remain until the ${plan.label}.`,
+      "Already covered",
+    );
   }
 
   if (daysLeft === 0) {
-    return finish({
-      kind: "race",
-      phase: "taper",
-      title: `${plan.label} day`,
-      detail: "Warm up with 10 easy minutes and a few short pickups, then run the race. Stop when it is done.",
-      minutes: 15,
-      distanceKm: null,
-      reason: `${history} The target day is today.`,
-      pattern: plan.pattern,
-    });
+    return say(
+      "race",
+      "taper",
+      15,
+      null,
+      "Warm up with 10 easy minutes and a few short pickups, then run the race. Stop when it is done.",
+      `${history} The target day is today.`,
+      `${plan.label} day`,
+    );
   }
 
   const phase: PlanPhase =
@@ -319,42 +303,88 @@ export function suggestToday(
           ? "peak"
           : "build";
 
+  const reason = `${history} ${daysLeft} days remain, ${phase} phase.`;
   const longWeekday = mainWeekday(sessions) ?? 0;
   const qualityWeekday = longWeekday === 2 ? 4 : 2;
   const weekday = today.getUTCDay();
   const yesterdayHard = yesterdayMin >= 70 || (longest > 0 && yesterdayKm >= Math.max(8, longest * 0.75));
   const taperScale = phase === "taper" ? 0.6 : 1;
 
+  const fit = (minutes: number | null, distanceKm: number | null) => {
+    const km = distanceKm == null ? null : longest > 0 ? round1(Math.min(distanceKm, longest * 1.1)) : round1(distanceKm);
+    const nextMinutes =
+      km != null
+        ? Math.max(10, Math.round(km * (phase === "taper" ? 6.2 : 6.5)))
+        : minutes != null && longestMin > 0
+          ? Math.max(10, Math.min(minutes, Math.round(longestMin * 1.1)))
+          : minutes;
+    const shrunk =
+      (distanceKm != null && km != null && km + 0.05 < distanceKm) ||
+      (distanceKm == null && minutes != null && nextMinutes != null && nextMinutes + 0.5 < minutes);
+    return { minutes: nextMinutes, distanceKm: km, shrunk };
+  };
+
+  const present = (
+    kind: SuggestionKind,
+    minutes: number | null,
+    distanceKm: number | null,
+    detail: string,
+  ): DaySuggestion => {
+    const fitted = fit(minutes, distanceKm);
+    if (fitted.shrunk && (kind === "quality" || kind === "long")) {
+      const easyDetail =
+        phase === "taper"
+          ? "Shorter than a normal week. Stay fresh for the target day."
+          : "Conversational the whole way. Walk if you need to.";
+      const title =
+        fitted.distanceKm != null
+          ? `${phase === "taper" ? "Short" : "Easy"} ${fitted.distanceKm} km`
+          : `${phase === "taper" ? "Short" : "Easy"} ${fitted.minutes} min`;
+      return say("easy", phase, fitted.minutes, fitted.distanceKm, easyDetail, reason, title);
+    }
+    if (kind === "quality") {
+      return say(
+        "quality",
+        phase,
+        minutes,
+        distanceKm,
+        detail,
+        reason,
+        goal.distance === "5k" ? "Short pickups" : "Steady effort",
+      );
+    }
+    const title =
+      fitted.distanceKm != null
+        ? `${kind === "long" ? "Long" : phase === "taper" ? "Short" : "Easy"} ${fitted.distanceKm} km`
+        : `${kind === "long" ? "Long" : phase === "taper" ? "Short" : "Easy"} ${fitted.minutes} min`;
+    return say(kind, phase, fitted.minutes, fitted.distanceKm, detail, reason, title);
+  };
+
   if (yesterdayHard || sessionsLast7 >= 5) {
-    return finish({
-      kind: "rest",
+    return say(
+      "rest",
       phase,
-      title: "Rest",
-      detail: "No extra session today. A walk is fine. The next easy session can wait until tomorrow.",
-      minutes: null,
-      distanceKm: null,
-      reason: `${history} ${
+      null,
+      null,
+      "No extra session today. A walk is fine. The next easy session can wait until tomorrow.",
+      `${history} ${
         yesterdayHard
           ? yesterdayKm >= 1
             ? `Yesterday was ${round1(yesterdayKm)} km.`
             : "Yesterday was already a full session."
           : `${sessionsLast7} sessions in the last 7 days.`
       } ${daysLeft} days remain.`,
-      pattern: plan.pattern,
-    });
+      "Rest",
+    );
   }
 
   if (sessions.length === 0) {
-    return finish({
-      kind: "easy",
-      phase,
-      title: "Easy 30 min",
-      detail: "Thirty easy minutes. Walk or jog, whatever you can keep comfortable.",
-      minutes: 30,
-      distanceKm: null,
-      reason: `${history} ${daysLeft} days remain, ${phase} phase.`,
-      pattern: plan.pattern,
-    });
+    return present(
+      "easy",
+      30,
+      null,
+      "Thirty easy minutes. Walk or jog, whatever you can keep comfortable.",
+    );
   }
 
   const useDistance = sport === "running" || longest >= 1;
@@ -362,85 +392,42 @@ export function suggestToday(
     .filter((activity) => new Date(activity.startedAt).getUTCDay() === longWeekday)
     .reduce((best, activity) => Math.max(best, activity.distanceM), 0) / 1000;
   const grewFrom = anchor > 0 ? anchor : longest;
-  const stepLong = useDistance
-    ? Math.min(sport === "running" ? plan.peakLongKm : grewFrom * 1.1, grewFrom * 1.1)
-    : 0;
+  const stepLong = useDistance ? Math.min(sport === "running" ? plan.peakLongKm : grewFrom * 1.1, grewFrom * 1.1) : 0;
   const easyKm =
     sport === "running"
       ? Math.min(14, Math.max(3, typical > 0 ? typical : longest / 2))
       : Math.max(1, typical > 0 ? typical : longest);
+  const easyText =
+    phase === "taper"
+      ? "Shorter than a normal week. Stay fresh for the target day."
+      : "Conversational the whole way. Walk if you need to.";
 
   if (weekday === longWeekday && phase !== "taper" && sessions.length >= 2) {
     if (!useDistance) {
       const minutes = Math.round(median(sessions.map((activity) => activity.movingSec / 60)) * 1.1);
-      return finish({
-        kind: "long",
-        phase,
-        title: `Long ${minutes} min`,
-        detail: "A little longer than a normal session. Keep it comfortable the whole way.",
-        minutes,
-        distanceKm: null,
-        reason: `${history} ${daysLeft} days remain, ${phase} phase. Today matches the weekday where your time usually lands.`,
-        pattern: plan.pattern,
-      });
+      return present( "long", minutes, null, "A little longer than a normal session. Keep it comfortable the whole way.");
     }
     const km = round1(Math.max(easyKm, stepLong) * taperScale);
-    return finish({
-      kind: "long",
-      phase,
-      title: `Long ${km} km`,
-      detail: "Keep it conversational the whole way. This is one step from your recent long session, not the plan's peak.",
-      minutes: Math.round(km * 6.5),
-      distanceKm: km,
-      reason: `${history} ${daysLeft} days remain, ${phase} phase. Today matches the weekday where your distance usually lands.`,
-      pattern: plan.pattern,
-    });
+    return present(
+      "long",
+      Math.round(km * 6.5),
+      km,
+      "Keep it conversational the whole way. This is one step from your recent long session, not the plan's peak.",
+    );
   }
 
   if (sport === "running" && (phase === "build" || phase === "peak") && weekday === qualityWeekday) {
-    return finish({
-      kind: "quality",
-      phase,
-      title: goal.distance === "5k" ? "Short pickups" : "Steady effort",
-      detail: plan.quality,
-      minutes: goal.distance === "5k" ? 35 : 45,
-      distanceKm: round1(Math.max(5, easyKm)),
-      reason: `${history} ${daysLeft} days remain, ${phase} phase. One harder day in the last 7 days is enough.`,
-      pattern: plan.pattern,
-    });
+    const km = round1(Math.max(5, easyKm));
+    return present("quality", goal.distance === "5k" ? 35 : 45, km, plan.quality);
   }
 
   if (!useDistance) {
     const minutes = Math.max(20, Math.round(median(sessions.map((activity) => activity.movingSec / 60)) * taperScale));
-    return finish({
-      kind: "easy",
-      phase,
-      title: phase === "taper" ? `Short ${minutes} min` : `Easy ${minutes} min`,
-      detail:
-        phase === "taper"
-          ? "Shorter than a normal week. Stay fresh for the target day."
-          : "Match a normal recent session. Keep it comfortable the whole way.",
-      minutes,
-      distanceKm: null,
-      reason: `${history} ${daysLeft} days remain, ${phase} phase.`,
-      pattern: plan.pattern,
-    });
+    return present("easy", minutes, null, easyText);
   }
 
   const km = round1(Math.max(3, easyKm * taperScale));
-  return finish({
-    kind: "easy",
-    phase,
-    title: phase === "taper" ? `Short ${km} km` : `Easy ${km} km`,
-    detail:
-      phase === "taper"
-        ? "Shorter than a normal week. Stay fresh for the target day."
-        : "Conversational the whole way. Walk if you need to.",
-    minutes: Math.round(km * (phase === "taper" ? 6.2 : 6.5)),
-    distanceKm: km,
-    reason: `${history} ${daysLeft} days remain, ${phase} phase.`,
-    pattern: plan.pattern,
-  });
+  return present("easy", Math.round(km * (phase === "taper" ? 6.2 : 6.5)), km, easyText);
 }
 
 function historyLine(sessions: Activity[], sport: SportId): string {

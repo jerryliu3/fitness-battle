@@ -169,8 +169,9 @@ describe("suggestToday", () => {
       ],
       sunday,
     );
-    expect(suggestion.kind).toBe("long");
+    expect(suggestion.kind).toBe("easy");
     expect(suggestion.distanceKm).toBeLessThanOrEqual(1.1);
+    expect(suggestion.detail).not.toMatch(/hard|faster/);
 
     const tuesday = new Date("2026-10-13T15:00:00.000Z");
     const quality = suggestToday(
@@ -178,8 +179,10 @@ describe("suggestToday", () => {
       [run({ id: "only", startedAt: "2026-10-08T14:00:00.000Z", distanceM: 1000 })],
       tuesday,
     );
-    expect(quality.kind).toBe("quality");
+    expect(quality.kind).toBe("easy");
     expect(quality.distanceKm).toBeLessThanOrEqual(1.1);
+    expect(quality.detail).not.toMatch(/hard|faster/);
+    expect(quality.title).toContain(String(quality.distanceKm));
   });
 
   it("rests after a hard run even on the long weekday and during taper", () => {
