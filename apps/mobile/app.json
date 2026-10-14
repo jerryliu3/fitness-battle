@@ -87,12 +87,11 @@
     },
     "extra": {
       "eas": {
-        "projectId": "fitness-battle-placeholder"
+        "projectId": "bea1932b-6a00-4edc-9710-22350423c446"
       },
       "privacyPolicyUrl": "https://fitness-battle-one.vercel.app/privacy",
       "termsOfServiceUrl": "https://fitness-battle-one.vercel.app/terms",
       "supportEmail": "jerrry333x@gmail.com"
-    },
-    "owner": "fitness-battle"
+    }
   }
 }

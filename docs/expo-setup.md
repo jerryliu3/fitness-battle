@@ -1,76 +1,97 @@
 # Expo setup (what you run locally)
 
-The agent cannot log into Expo for you. The **project ID is not something you invent** — Expo creates a UUID when you link the app. Until then `apps/mobile/app.json` has a placeholder.
+## Your Expo project ID
 
-You only need a free [expo.dev](https://expo.dev) account (same email you like for the app is fine).
+Expo already created a project for you. The ID is:
 
-## 1. One-time: create Expo account + link this app
+`bea1932b-6a00-4edc-9710-22350423c446`
 
-In a terminal on your machine, from the repo:
+It is written into `apps/mobile/app.json` → `extra.eas.projectId`. You do **not** invent this value.
+
+## Why bare `eas init` failed
+
+```
+expo config --json exited with non-zero code: 1
+Error: project:init command failed.
+```
+
+`eas init` (without `--id`) asks Expo CLI to evaluate the whole app config first. In this pnpm monorepo that step often fails on a fresh Mac checkout (plugins / workspace resolution). Use Expo’s **connect** command instead — it links by ID and skips that broken path.
+
+## Connect this repo (run on your Mac)
+
+From the monorepo root (or `apps/mobile`):
 
 ```bash
 cd apps/mobile
 
-# Install CLI if needed
-npm i -g eas-cli
-# or: npx eas-cli@latest …
+# Ensure deps are installed from the repo root first
+cd ../..
+pnpm install
+cd apps/mobile
 
-eas login
-# browser / email login to expo.dev
-
-eas init
-# Choose: create a new project under your account
-# Name suggestion: fitness-battle
-# When it asks to write projectId into app.json → Yes
+# You already logged in — keep that session
+# Then connect to the project Expo showed you:
+npx eas-cli@latest init --id bea1932b-6a00-4edc-9710-22350423c446
 ```
 
-That replaces `"projectId": "fitness-battle-placeholder"` with a real UUID like `"a1b2c3d4-…"`. **Commit that `app.json` change** (or paste the UUID back here and we will).
-
-Optional: set the Expo owner/slug to match your username:
+If it still errors on `expo config`, try:
 
 ```bash
-# app.json "owner" can be your Expo username instead of "fitness-battle"
+cd apps/mobile
+npx expo config --type public
+# If that prints JSON, retry the init --id command.
+# If it errors, paste the FULL error output (not just the eas wrapper line).
 ```
 
-## 2. Confirm production env (already in eas.json)
+Optional: install Expo’s Cursor skills (from the dashboard):
 
-These match the **battles** Supabase on Vercel (`NEXT_PUBLIC_SUPABASE_*`), not rankings:
+```bash
+npx skills@latest add expo/skills --skill '*' --agent cursor
+```
+
+Then restart Cursor. Not required for builds.
+
+## After it links
+
+Confirm `app.json` still has:
+
+```json
+"extra": {
+  "eas": {
+    "projectId": "bea1932b-6a00-4edc-9710-22350423c446"
+  }
+}
+```
+
+Commit if anything else changed (e.g. `owner`).
+
+## Production env (already in eas.json)
+
+Battles Supabase (not rankings), same as Vercel web:
 
 | Variable | Value |
 | --- | --- |
 | `EXPO_PUBLIC_API_URL` | `https://fitness-battle-one.vercel.app` |
 | `EXPO_PUBLIC_SUPABASE_URL` | `https://pxruixccvrykhbjzjqga.supabase.co` |
-| `EXPO_PUBLIC_SUPABASE_ANON_KEY` | publishable key from Vercel (wired in `eas.json`) |
+| `EXPO_PUBLIC_SUPABASE_ANON_KEY` | publishable key (in `eas.json`) |
 | `EXPO_PUBLIC_USE_DEMO_DATA` | `false` |
-| Rankings (optional) | separate project `nevwdslqilysyeaccptz` |
 
-Anon/publishable keys are meant to ship in the client (same as web). The **service role** stays server-only and is not in the mobile app.
-
-## 3. After Apple / Play finish approving
+## Builds (after Apple/Play are ready)
 
 ```bash
 cd apps/mobile
 
-# Internal test builds first (recommended)
-eas build --platform android --profile preview
-eas build --platform ios --profile preview
+# Internal test first
+npx eas-cli@latest build --platform android --profile preview
+npx eas-cli@latest build --platform ios --profile preview
 
-# Store builds
-eas build --platform android --profile production
-eas build --platform ios --profile production
+# Store
+npx eas-cli@latest build --platform android --profile production
+npx eas-cli@latest build --platform ios --profile production
 ```
 
-iOS needs an Apple Developer team linked (`eas credentials` / build prompts). Android can use EAS-managed keystore on first build.
+## What to reply with
 
-Submit later (when listings exist):
-
-```bash
-eas submit --platform ios --profile production --latest
-eas submit --platform android --profile production --latest
-```
-
-## What to send back after `eas init`
-
-1. The new `extra.eas.projectId` from `app.json` (or a commit/PR with it).
-2. Your Expo username (for `owner` if you want it exact).
-3. When Apple/Play are ready: App Store Connect app id + whether you want EAS to manage signing.
+1. Whether `npx eas-cli@latest init --id bea1932b-6a00-4edc-9710-22350423c446` succeeded.
+2. If it failed, the **full** `npx expo config --type public` error.
+3. Your Expo username (dashboard URL / profile), if you want `owner` set explicitly.
