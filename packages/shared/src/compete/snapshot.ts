@@ -1,4 +1,5 @@
-import { migrateCompeteState, type CompeteState } from "./engine";
+import { migrateCompeteState } from "./engine";
+import type { CompeteState } from "./sports";
 
 export interface CompeteEnvelope {
   savedAt: string;
