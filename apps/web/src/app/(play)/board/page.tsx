@@ -1,5 +1,6 @@
 "use client";
 
+import { CrewPanel } from "@/features/rally/crew-panel";
 import { AuthPrompt } from "@/components/auth-gate";
 import { useAuth } from "@/components/auth-context";
 import { useCompete } from "@/components/compete-context";
@@ -265,10 +266,13 @@ export default function FieldPage() {
         </>
       )}
 
+      <CrewPanel />
+
       <section className="fb-card" id="duel">
-        <h2>1v1 this week</h2>
+        <h2>Practice 1v1</h2>
         <p className="fb-copy">
-          One opponent, same weekly window. Auto match picks the closest rating.
+          One opponent, same weekly window. Auto match and a typed name stay on
+          this device. A real person joins through a crew code.
         </p>
         {board.duels.map((view) => {
           const total = view.youEffort + view.rivalEffort || 1;
@@ -333,7 +337,7 @@ export default function FieldPage() {
                 )
               }
             >
-              Send invite
+              Practice rival
             </button>
           </div>
         ) : null}
