@@ -7,7 +7,8 @@ What is loaded today versus what is still empty or synthetic.
 | Data | Source | Status |
 | --- | --- | --- |
 | Weekly effort board | Local compete engine + synthetic field athletes | Works offline in the browser (localStorage) |
-| 1v1 rivals | Synthetic nearest-Elo field | Works offline |
+| Private crew shared field | `crew_week_fields` + compete `crewBoard` pin | Signed-in crew mates sit on one individual leaderboard; team-vs-team scoring not built |
+| 1v1 rivals | Synthetic nearest-Elo field | Practice / offline only — deferred for live people until there is density |
 | Pace absolutes (5K–marathon, 20K/40K) | Your synced/history activities + synthetic field times from Elo | Works offline; empty for “you” until history/sync |
 | Lessons | Deterministic schedule in shared | Works offline |
 | 90-day calibration | Synthetic history generator (`import-history`) | One-time; not live tracker data |

@@ -248,10 +248,28 @@ export interface CompeteState {
   demoNow?: string | null;
   /**
    * Per-sport enrollments. The open week is Monday 00:00 UTC through the next Monday.
-   * Each viewer’s board is derived from their own enrollment — not a shared
-   * central ranking.
+   * Solo densify matching is per-viewer; when `crewBoard` is set for a sport,
+   * that sport’s enrollment is pinned to the crew’s shared individual field.
    */
   enrollments: WaveEnrollment[];
+  /**
+   * Active private-crew field pin. Members compete individually on one shared
+   * leaderboard. Team-vs-team scoring is future work.
+   */
+  crewBoard: CrewBoardPin | null;
+}
+
+/** Shared individual field for one private crew this week. */
+export interface CrewBoardPin {
+  crewId: string;
+  crewName: string;
+  sport: SportId;
+  waveStart: string;
+  weekEnd: string;
+  capacity: number;
+  memberIds: string[];
+  members: { id: string; name: string; elo: number }[];
+  syntheticIds: string[];
 }
 
 export function hashString(value: string): number {

@@ -33,8 +33,9 @@ export interface WaveWindow {
 }
 
 /**
- * Per-viewer enrollment. Source of truth for *this* user’s board —
- * not a shared central ranking.
+ * Per-viewer enrollment. Usually local density seating.
+ * When `crewId` is set, every crew mate uses the same member roster and
+ * synthetic fillers so they share one individual leaderboard.
  */
 export interface WaveEnrollment {
   sport: SportId;
@@ -47,6 +48,8 @@ export interface WaveEnrollment {
   syntheticIds: string[];
   /** After weekEnd, automatically enroll in the next open wave. */
   autoEnrollNext: boolean;
+  /** Private crew that pinned this shared individual field, when any. */
+  crewId?: string | null;
 }
 
 export interface GroupAssignment {

@@ -5,7 +5,9 @@ import {
   migrateCompeteState,
   reduceCompete,
   rollClock,
+  weeklyBoard,
 } from "./engine";
+import { planCrewWeekField } from "../matching";
 
 describe("compete engine", () => {
   it("allows one-time history import only", () => {
@@ -192,6 +194,88 @@ describe("compete engine", () => {
     expect(migrated.periodResults).toEqual([]);
     expect(migrated.pendingRevealIds).toEqual([]);
     expect(migrated.enrollments).toEqual([]);
+    expect(migrated.crewBoard).toBeNull();
     expect(migrateCompeteState({ ...legacy, trainingGoal: { distance: "5k", deadline: "2026-02-31" } } as never).trainingGoal).toBeNull();
+  });
+
+  it("pins opted-in athletes onto a shared crew field", () => {
+    const now = "2026-10-12T12:00:00.000Z";
+    const plan = planCrewWeekField({
+      crewId: "crew-shared",
+      sport: "running",
+      members: [
+        { id: "user-a", name: "Ada", elo: 1000 },
+        { id: "user-b", name: "Bea", elo: 1005 },
+      ],
+      now: new Date(now),
+    });
+    const pin = {
+      crewId: plan.crewId,
+      crewName: "Sunday Miles",
+      sport: plan.sport,
+      waveStart: plan.waveStart,
+      weekEnd: plan.weekEnd,
+      capacity: plan.capacity,
+      memberIds: plan.memberIds,
+      members: plan.members,
+      syntheticIds: plan.syntheticIds,
+    };
+
+    const joined = reduceCompete(freshState(new Date(now)), {
+      type: "opt-in",
+      sport: "running",
+      accountId: "user-a",
+      now,
+    });
+    const seated = reduceCompete(joined, {
+      type: "set-crew-board",
+      crewBoard: pin,
+      accountId: "user-a",
+      now,
+    });
+    expect(seated.crewBoard?.crewId).toBe("crew-shared");
+    expect(seated.enrollments[0]?.crewId).toBe("crew-shared");
+    expect(seated.enrollments[0]?.peerIds).toEqual(["user-b"]);
+    expect(seated.enrollments[0]?.syntheticIds).toEqual(plan.syntheticIds);
+
+    const board = weeklyBoard(seated, "running", "open", new Date(now));
+    expect(board.some((row) => row.id === "user-b")).toBe(true);
+    expect(board).toHaveLength(8);
+
+    const cleared = reduceCompete(seated, {
+      type: "clear-crew-board",
+      accountId: "user-a",
+      now,
+    });
+    expect(cleared.crewBoard).toBeNull();
+    expect(cleared.enrollments[0]?.crewId ?? null).toBeNull();
+  });
+
+  it("drops a stale crew pin when the week rolls", () => {
+    const now = "2026-10-12T12:00:00.000Z";
+    const plan = planCrewWeekField({
+      crewId: "crew-old",
+      sport: "running",
+      members: [{ id: "user-a", name: "Ada", elo: 1000 }],
+      now: new Date(now),
+    });
+    const pinned = reduceCompete(freshState(new Date(now)), {
+      type: "set-crew-board",
+      crewBoard: {
+        crewId: plan.crewId,
+        crewName: "Old",
+        sport: plan.sport,
+        waveStart: plan.waveStart,
+        weekEnd: plan.weekEnd,
+        capacity: plan.capacity,
+        memberIds: plan.memberIds,
+        members: plan.members,
+        syntheticIds: plan.syntheticIds,
+      },
+      accountId: "user-a",
+      now,
+    });
+    const rolled = rollClock(pinned, new Date("2026-10-19T12:00:00.000Z"));
+    expect(rolled.crewBoard).toBeNull();
   });
 });

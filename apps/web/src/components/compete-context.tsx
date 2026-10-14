@@ -10,6 +10,7 @@ import {
   rollClock,
   type Action,
   type CompeteState,
+  type CrewBoardPin,
 } from "@fitness-battle/shared";
 import {
   createContext,
@@ -220,6 +221,62 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
     };
   }, [attempt, demoMode, loading, publish, user, userId]);
 
+  // Private crews share one individual leaderboard. Pull the seated field and
+  // pin it onto this account's compete state when signed in.
+  useEffect(() => {
+    if (loading || !userId || demoMode || user?.mode === "demo") return;
+    if (loadStatus !== "ready" || !stateRef.current) return;
+    let cancelled = false;
+    void fetch("/api/crews/field")
+      .then(async (response) => {
+        if (!response.ok) return null;
+        return (await response.json()) as {
+          fields?: { pin: CrewBoardPin }[];
+        };
+      })
+      .then((body) => {
+        if (cancelled || userIdRef.current !== userId || !body?.fields?.length) {
+          return;
+        }
+        const current = stateRef.current;
+        if (!current) return;
+        const preferred =
+          body.fields.find((row) => row.pin.sport === current.primary)?.pin ??
+          body.fields[0]?.pin;
+        if (!preferred) return;
+        const existing = current.crewBoard;
+        if (
+          existing &&
+          existing.crewId === preferred.crewId &&
+          existing.waveStart === preferred.waveStart &&
+          existing.memberIds.length === preferred.memberIds.length &&
+          existing.memberIds.every((id, index) => id === preferred.memberIds[index]) &&
+          existing.syntheticIds.length === preferred.syntheticIds.length &&
+          existing.syntheticIds.every(
+            (id, index) => id === preferred.syntheticIds[index],
+          )
+        ) {
+          return;
+        }
+        const next = reduceCompete(current, {
+          type: "set-crew-board",
+          crewBoard: preferred,
+          accountId: userId,
+        });
+        const savedAt = new Date().toISOString();
+        stateRef.current = next;
+        setState(next);
+        writeLocal(userId, next, savedAt);
+        scheduleSave(userId, next);
+      })
+      .catch(() => {
+        /* Crew field is additive; solo density matching remains. */
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [demoMode, loadStatus, loading, scheduleSave, user, userId]);
+
   const recoverLegacy = useCallback(() => {
     const accountId = userIdRef.current;
     const raw = localStorage.getItem(LEGACY_KEY);
@@ -249,11 +306,15 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
       retryLoad,
       dispatch: (action: Action) => {
         if (statusRef.current === "failed") return;
+        const withAccount: Action =
+          userIdRef.current && !action.accountId
+            ? { ...action, accountId: userIdRef.current }
+            : action;
         if (statusRef.current === "loading" || !stateRef.current) {
-          queue.current.push(action);
+          queue.current.push(withAccount);
           return;
         }
-        const next = reduceCompete(stateRef.current, action);
+        const next = reduceCompete(stateRef.current, withAccount);
         const savedAt = new Date().toISOString();
         stateRef.current = next;
         setState(next);

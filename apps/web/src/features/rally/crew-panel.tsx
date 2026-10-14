@@ -42,7 +42,7 @@ interface NoticeRow {
 
 export function CrewPanel() {
   const { user, demoMode } = useAuth();
-  const { state } = useCompete();
+  const { state, dispatch } = useCompete();
   const [crews, setCrews] = useState<CrewRow[]>([]);
   const [members, setMembers] = useState<MemberRow[]>([]);
   const [entries, setEntries] = useState<EntryRow[]>([]);
@@ -52,6 +52,40 @@ export function CrewPanel() {
   const [code, setCode] = useState("");
   const [format, setFormat] = useState("volume");
   const [note, setNote] = useState<string | null>(null);
+
+  async function seatCrewField(crewId?: string) {
+    const response = await fetch("/api/crews/field", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(crewId ? { crewId } : {}),
+    });
+    if (!response.ok) return;
+    const body = (await response.json()) as {
+      fields?: { pin: {
+        crewId: string;
+        crewName: string;
+        sport: string;
+        waveStart: string;
+        weekEnd: string;
+        capacity: number;
+        memberIds: string[];
+        members: { id: string; name: string; elo: number }[];
+        syntheticIds: string[];
+      } }[];
+    };
+    const pin =
+      body.fields?.find((row) => row.pin.sport === (state?.primary ?? "running"))
+        ?.pin ?? body.fields?.[0]?.pin;
+    if (!pin) return;
+    dispatch({
+      type: "set-crew-board",
+      crewBoard: {
+        ...pin,
+        sport: pin.sport as "running" | "cycling" | "walking" | "strength",
+      },
+      accountId: user?.id,
+    });
+  }
 
   async function reload() {
     const response = await fetch("/api/crews");
@@ -107,6 +141,8 @@ export function CrewPanel() {
       return;
     }
     await reload();
+    await seatCrewField();
+    setNote("Crew created. You share one individual leaderboard this week.");
   }
 
   async function join() {
@@ -123,6 +159,8 @@ export function CrewPanel() {
     }
     setCode("");
     await reload();
+    await seatCrewField();
+    setNote("Joined. You and your crew share one individual leaderboard.");
   }
 
   async function share(crewId: string) {
@@ -144,9 +182,16 @@ export function CrewPanel() {
     <section className="fb-card">
       <h2>Private crew</h2>
       <p className="fb-copy">
-        Share a code. Both of you see the same counted sessions. The practice
-        field below is still generated.
+        Share a code. Crew mates keep individual scores but are seated on the
+        same weekly leaderboard. Team-versus-team scoring comes later.
       </p>
+      {state?.crewBoard ? (
+        <p className="fb-note">
+          Shared field: {state.crewBoard.crewName} ·{" "}
+          {state.crewBoard.memberIds.length} athletes ·{" "}
+          {state.crewBoard.syntheticIds.length} fillers this week.
+        </p>
+      ) : null}
       {notices.map((notice) => (
         <p key={notice.id} className="fb-note">
           {notice.body}

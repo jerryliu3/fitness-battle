@@ -197,8 +197,9 @@ export default function FieldPage() {
           <h2>You are not on this field</h2>
           <p className="fb-copy">{spec.blurb}</p>
           <p className="fb-note">
-            Fields are density groups of eight. Real athletes seat first;
-            synthetic rivals fill empty seats and drop when more people join.
+            {state?.crewBoard?.sport === active
+              ? `Your crew (${state.crewBoard.crewName}) shares this field of eight. Each person keeps their own score; fillers cover empty seats.`
+              : "Fields are density groups of eight. Real athletes seat first; synthetic rivals fill empty seats and drop when more people join. Join a crew to guarantee mates on the same board."}
           </p>
           <button
             type="button"
@@ -272,7 +273,8 @@ export default function FieldPage() {
         <h2>Practice 1v1</h2>
         <p className="fb-copy">
           One opponent, same weekly window. Auto match and a typed name stay on
-          this device. A real person joins through a crew code.
+          this device. For a real shared board with friends, use a crew code
+          above — crew mates sit on the same individual leaderboard.
         </p>
         {board.duels.map((view) => {
           const total = view.youEffort + view.rivalEffort || 1;
