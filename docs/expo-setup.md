@@ -1,104 +1,73 @@
 # Expo setup (what you run locally)
 
+## Branding (store-facing)
+
+| Field | Value |
+| --- | --- |
+| App Store / Play **listing name** | Overtaek - Compete on Effort |
+| Name under the icon | Overtaek |
+| **iOS Bundle ID** | `com.overtaek.app` |
+| **Android package name** | `com.overtaek.app` |
+| SKU (App Store Connect) | `overtaek-ios` |
+| Deep link scheme | `overtaek://` |
+| Expo slug | `overtaek` |
+| Expo project ID | `bea1932b-6a00-4edc-9710-22350423c446` |
+
+Internal monorepo packages still use `@fitness-battle/*` and the GitHub repo name; that does not appear on the store.
+
 ## Status
 
 | Step | Status |
 | --- | --- |
-| Expo account + `eas login` | Done |
-| Link project ID `bea1932b-6a00-4edc-9710-22350423c446` | Done |
-| Slug | Keep **`fitness-battle`** in `app.json` |
+| Expo account + login + project link | Done |
 | Apple Developer enrollment | Done |
-| App Store Connect app + first iOS build | **You — next** |
-| Google Play enrollment | Whenever ready (not blocking iOS) |
+| Register Bundle ID / package `com.overtaek.app` | **You — use this, not `com.fitnessbattle.app`** |
+| App Store Connect app + first iOS build | Next |
 
 ## Working directory
 
 Commands assume you are in **`apps/mobile`**.
 
-- Prompt already ends in `mobile %` → stay put (do **not** `cd apps/mobile`).
+- Prompt already ends in `mobile %` → stay put.
 - From monorepo root → `cd apps/mobile`.
 
-## Apple → first iOS build (do this now)
-
-### 1. Create the app in App Store Connect (browser)
+## Apple → App Store Connect
 
 1. Open [App Store Connect](https://appstoreconnect.apple.com) → **My Apps** → **+** → **New App**.
 2. Use:
    - **Platforms:** iOS
-   - **Name:** Fitness Battle (or whatever is available)
+   - **Name:** `Overtaek - Compete on Effort` (≤30 characters; this fits)
    - **Primary language:** English (U.S.)
-   - **Bundle ID:** register/select **`com.fitnessbattle.app`** (must match `app.json`)
-   - **SKU:** e.g. `fitness-battle-ios`
-3. After it exists, open the app → **App Information**. Copy the numeric **Apple ID** (digits only, under General Information). That is `ascAppId` for later submit — paste it in chat or put it in `eas.json` when you have it.
+   - **Bundle ID:** register/select **`com.overtaek.app`**
+   - **SKU:** `overtaek-ios`
+3. Subtitle (optional, 30 chars): `Compete on Effort`
+4. After it exists, copy the numeric **Apple ID** on App Information → paste in chat for `eas.json` submit.
 
-You do **not** need screenshots or Privacy Nutrition filled before the first EAS build.
+If you already created an app with `com.fitnessbattle.app`, delete/abandon that App ID and create a new one with `com.overtaek.app` before the first store build.
 
-### 2. Build on your Mac (Terminal)
+## First iOS build
 
 ```bash
-# Repo root once if needed
 git fetch origin
 git checkout cursor/mobile-rally-style-fbce
 pnpm install
+cd apps/mobile   # skip if already here
 
-# Then into the Expo app (skip if already there)
-cd apps/mobile
-
-# Logged into Expo already. First iOS cloud build:
 npx eas-cli@latest build --platform ios --profile preview
 ```
 
-When EAS prompts:
+When EAS prompts: Apple login → your team → let EAS generate credentials → confirm bundle id `com.overtaek.app`. If it asks about slug `overtaek` vs old `fitness-battle`, choose to align with **`overtaek`**.
 
-| Prompt | Answer |
-| --- | --- |
-| Log in to Apple / Apple ID | Use the Apple ID that owns the Developer account |
-| Select team | Your paid Apple Developer team |
-| Generate credentials / distribution cert / provisioning | **Yes** — let EAS manage |
-| Bundle identifier | Confirm `com.fitnessbattle.app` |
-| Push notifications / other extras | Defaults / No unless asked for HealthKit and you know you need a manual capability |
+## What to send back
 
-Build runs in Expo’s cloud. When it finishes, open the build URL Expo prints (also under [expo.dev](https://expo.dev) → project → Builds). For **preview**, install via the QR / internal link on a registered device, or use a simulator build later if you switch profile.
-
-### 3. After a green preview build (store path)
-
-```bash
-# Still in apps/mobile
-npx eas-cli@latest build --platform ios --profile production
-```
-
-Submit only after `ascAppId` is set in `eas.json` (or pass it when EAS asks):
-
-```bash
-npx eas-cli@latest submit --platform ios --profile production --latest
-```
-
-## What to send back in chat
-
-1. Whether the **preview** iOS build succeeded (or paste the full error).
-2. The App Store Connect numeric **Apple ID** (`ascAppId`) when you have it — so it can be written into `eas.json`.
-3. Nothing else (no passwords, no .p8 keys in chat). EAS stores credentials for you.
+1. Preview build success/fail (or full error).
+2. App Store Connect numeric Apple ID (`ascAppId`).
+3. No passwords or `.p8` keys in chat.
 
 ## Production env (already in eas.json)
 
-| Variable | Value |
-| --- | --- |
-| `EXPO_PUBLIC_API_URL` | `https://fitness-battle-one.vercel.app` |
-| `EXPO_PUBLIC_SUPABASE_URL` | `https://pxruixccvrykhbjzjqga.supabase.co` (battles, not rankings) |
-| `EXPO_PUBLIC_USE_DEMO_DATA` | `false` |
+Battles Supabase + `https://fitness-battle-one.vercel.app` (web hostname unchanged for now).
 
-## Android (later)
+## Android package (Play Console)
 
-After Google Play enrollment:
-
-```bash
-npx eas-cli@latest build --platform android --profile preview
-```
-
-## Optional: Expo Cursor skills
-
-```bash
-npx skills@latest add expo/skills --skill '*' --agent cursor
-```
-
-Then restart Cursor. Not required for builds.
+Use the same package name: **`com.overtaek.app`**.

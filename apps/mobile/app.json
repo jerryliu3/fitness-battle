@@ -1,8 +1,8 @@
 {
   "expo": {
-    "name": "Fitness Battle",
-    "slug": "fitness-battle",
-    "scheme": "fitnessbattle",
+    "name": "Overtaek",
+    "slug": "overtaek",
+    "scheme": "overtaek",
     "version": "0.1.0",
     "orientation": "portrait",
     "userInterfaceStyle": "light",
@@ -20,8 +20,8 @@
         "react-native-health",
         {
           "isClinicalDataEnabled": false,
-          "healthSharePermission": "Fitness Battle reads workouts so your week can be scored.",
-          "healthUpdatePermission": "Fitness Battle does not write health data."
+          "healthSharePermission": "Overtaek reads workouts so your week can be scored.",
+          "healthUpdatePermission": "Overtaek does not write health data."
         }
       ],
       "react-native-health-connect"
@@ -31,16 +31,17 @@
     },
     "ios": {
       "supportsTablet": false,
-      "bundleIdentifier": "com.fitnessbattle.app",
+      "bundleIdentifier": "com.overtaek.app",
       "buildNumber": "1",
       "usesAppleSignIn": false,
       "infoPlist": {
-        "NSHealthShareUsageDescription": "Fitness Battle reads workouts so your week can be scored.",
-        "NSHealthUpdateUsageDescription": "Fitness Battle does not write health data.",
+        "CFBundleDisplayName": "Overtaek",
+        "NSHealthShareUsageDescription": "Overtaek reads workouts so your week can be scored.",
+        "NSHealthUpdateUsageDescription": "Overtaek does not write health data.",
         "ITSAppUsesNonExemptEncryption": false,
         "CFBundleURLTypes": [
           {
-            "CFBundleURLSchemes": ["fitnessbattle"]
+            "CFBundleURLSchemes": ["overtaek"]
           }
         ]
       },
@@ -55,7 +56,7 @@
       }
     },
     "android": {
-      "package": "com.fitnessbattle.app",
+      "package": "com.overtaek.app",
       "versionCode": 1,
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
@@ -67,7 +68,7 @@
           "autoVerify": false,
           "data": [
             {
-              "scheme": "fitnessbattle"
+              "scheme": "overtaek"
             }
           ],
           "category": ["BROWSABLE", "DEFAULT"]

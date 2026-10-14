@@ -30,6 +30,7 @@ site_url = "http://localhost:3000"
 additional_redirect_urls = [
   "http://localhost:3000/**",
   "http://localhost:8081/**",
+  "overtaek://**",
   "fitnessbattle://**",
 ]
 enable_signup = true

@@ -15,8 +15,9 @@ Expo CLI steps: [`docs/expo-setup.md`](./expo-setup.md)
 | --- | --- |
 | Product parity (My week / Matchups / Moves / You, auth, onboarding, pace, rankings, privacy/terms) | Done |
 | Rally visual theme | Done on mobile |
-| Bundle IDs | `com.fitnessbattle.app` (iOS + Android) |
-| Deep link scheme | `fitnessbattle://` |
+| Store name | Overtaek - Compete on Effort (icon: Overtaek) |
+| Bundle / package | `com.overtaek.app` (iOS + Android) |
+| Deep link scheme | `overtaek://` |
 | HealthKit / Health Connect strings + permissions | In `apps/mobile/app.json` |
 | Privacy + Terms (web + in-app) | `/privacy`, `/terms` |
 | EAS build profiles + **production public env** | `apps/mobile/eas.json` (API URL, battles + rankings publishable keys, demo off) |
@@ -26,7 +27,7 @@ Expo CLI steps: [`docs/expo-setup.md`](./expo-setup.md)
 ## Waiting on you
 
 1. **Expo** — linked (`bea1932b-6a00-4edc-9710-22350423c446`, slug `fitness-battle`).
-2. **Apple Developer** — enrollment done. Next: create the App Store Connect app + run the first iOS EAS preview build ([`expo-setup.md`](./expo-setup.md)).
+2. **Apple / Play listings** — use package/bundle **`com.overtaek.app`** and listing name **Overtaek - Compete on Effort** ([`expo-setup.md`](./expo-setup.md)). Do not register `com.fitnessbattle.app`.
 3. **Paste back** — preview build success/fail (or error log), and the App Store Connect numeric Apple ID (`ascAppId`) for `eas.json` submit.
 4. **Google Play** — whenever enrollment finishes (not blocking iOS).
 5. **Store screenshots** — phone frames for listings (after a build you can install).

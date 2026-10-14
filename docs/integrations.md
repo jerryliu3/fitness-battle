@@ -43,7 +43,7 @@ Set `WHOOP_REDIRECT_URI` to the same Redirect URI value (including `http://local
 
 Garmin also needs `POST /api/fitness/garmin/ping` registered as the Health API notification URL after approval. The consumer key is not self-serve.
 
-Apple Health and Health Connect have no server keys. The phone app needs a development or store build (`EXPO_PUBLIC_API_URL` pointing at this web app) and a signed-in Supabase session. Expo Go cannot read HealthKit or Health Connect. Cloud OAuth (Strava, Garmin, WHOOP, Oura) starts from the mobile Athlete screen against the same web API; the OAuth callback returns via `fitnessbattle://you` when the app is installed, with a browser fallback to `/you`.
+Apple Health and Health Connect have no server keys. The phone app needs a development or store build (`EXPO_PUBLIC_API_URL` pointing at this web app) and a signed-in Supabase session. Expo Go cannot read HealthKit or Health Connect. Cloud OAuth (Strava, Garmin, WHOOP, Oura) starts from the mobile Athlete screen against the same web API; the OAuth callback returns via `overtaek://you` when the app is installed, with a browser fallback to `/you`.
 
 ## Garmin file import
 

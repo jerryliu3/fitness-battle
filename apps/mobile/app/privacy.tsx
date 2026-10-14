@@ -16,17 +16,17 @@ export default function PrivacyScreen() {
           <Text style={ui.title}>Privacy Policy</Text>
           <Copy>Last updated {UPDATED}</Copy>
           <Copy>
-            Fitness Battle helps you run group and 1v1 fitness battles with
-            automatic tracking on web, iOS, and Android. This policy explains
-            what we collect, why we use it, and the choices you have.
+            Overtaek helps you run group and 1v1 fitness battles with automatic
+            tracking on web, iOS, and Android. This policy explains what we
+            collect, why we use it, and the choices you have.
           </Copy>
 
           <Text style={ui.cardTitle}>1. Who this applies to</Text>
           <Copy>
-            This policy covers the Fitness Battle apps and related APIs. If you
-            use a third-party service through us (WHOOP, Strava, Oura, Garmin,
-            Apple Health, or Health Connect), that provider’s own privacy policy
-            also applies.
+            This policy covers the Overtaek apps and related APIs. If you use a
+            third-party service through us (WHOOP, Strava, Oura, Garmin, Apple
+            Health, or Health Connect), that provider’s own privacy policy also
+            applies.
           </Copy>
 
           <Text style={ui.cardTitle}>2. Information we collect</Text>

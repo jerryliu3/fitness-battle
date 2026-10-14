@@ -16,7 +16,7 @@ export default function TermsScreen() {
           <Text style={ui.title}>Terms of Use</Text>
           <Copy>Last updated {UPDATED}</Copy>
           <Copy>
-            These terms govern Fitness Battle on iOS and Android. By creating an
+            These terms govern Overtaek on iOS and Android. By creating an
             account or using the app, you agree to them.
           </Copy>
           <Text style={ui.cardTitle}>The service</Text>
@@ -28,7 +28,7 @@ export default function TermsScreen() {
           <Text style={ui.cardTitle}>Fitness data</Text>
           <Copy>
             Connecting trackers or Apple Health / Health Connect is optional.
-            Fitness Battle is not a medical device and does not provide medical
+            Overtaek is not a medical device and does not provide medical
             advice.
           </Copy>
           <Text style={ui.cardTitle}>Conduct</Text>
