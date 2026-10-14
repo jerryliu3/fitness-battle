@@ -265,11 +265,13 @@ begin
         "distanceM" numeric,
         "movingSec" numeric,
         disposition text,
-        provenance text
+        provenance text,
+        source text
       )
     where activity.id is not null
       and activity.sport = crew_sport
       and coalesce(activity.disposition, 'counted') = 'counted'
+      and coalesce(activity.source, '') <> 'history'
       and coalesce(activity.provenance, 'recorded') <> 'demo'
       and activity."startedAt" >= week_start
       and activity."startedAt" < week_end
