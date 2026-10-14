@@ -13,6 +13,7 @@ as $$
 declare
   uid uuid := auth.uid();
   actor text;
+  inserted integer;
 begin
   if uid is null then
     raise exception 'authentication_required';
@@ -26,9 +27,23 @@ begin
   ) then
     raise exception 'not_a_member';
   end if;
+  if not exists (
+    select 1
+    from public.crew_entries entry
+    where entry.crew_id = p_crew_id
+      and entry.user_id = p_owner
+      and entry.activity_id = p_activity_id
+      and entry.disposition = 'counted'
+  ) then
+    raise exception 'entry_not_found';
+  end if;
   insert into public.crew_cheers (crew_id, from_user, activity_id)
   values (p_crew_id, uid, p_activity_id)
   on conflict (crew_id, from_user, activity_id) do nothing;
+  get diagnostics inserted = row_count;
+  if inserted = 0 then
+    return;
+  end if;
   select display_name into actor from public.profiles where id = uid;
   insert into public.crew_notices (user_id, crew_id, kind, body)
   values (

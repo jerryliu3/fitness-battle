@@ -2,6 +2,7 @@
 
 import { useAuth } from "@/components/auth-context";
 import { useCompete } from "@/components/compete-context";
+import { waveWindowAt } from "@fitness-battle/shared";
 import { useEffect, useState } from "react";
 
 interface CrewRow {
@@ -46,6 +47,7 @@ export function CrewPanel() {
   const [members, setMembers] = useState<MemberRow[]>([]);
   const [entries, setEntries] = useState<EntryRow[]>([]);
   const [notices, setNotices] = useState<NoticeRow[]>([]);
+  const [seasonWeeks, setSeasonWeeks] = useState<Record<string, number>>({});
   const [name, setName] = useState("Sunday easy");
   const [code, setCode] = useState("");
   const [format, setFormat] = useState("volume");
@@ -61,11 +63,13 @@ export function CrewPanel() {
       crews: CrewRow[];
       members: MemberRow[];
       entries: EntryRow[];
+      seasonWeeks?: Record<string, number>;
       notices: NoticeRow[];
     };
     setCrews(body.crews);
     setMembers(body.members);
     setEntries(body.entries);
+    setSeasonWeeks(body.seasonWeeks ?? {});
     setNotices(body.notices);
   }
 
@@ -122,20 +126,10 @@ export function CrewPanel() {
   }
 
   async function share(crewId: string) {
-    if (!state) return;
     const response = await fetch("/api/crews/entries", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        crewId,
-        activities: state.activities.filter(
-          (activity) =>
-            activity.sport === state.primary &&
-            activity.disposition !== "excluded" &&
-            activity.disposition !== "pending" &&
-            activity.provenance !== "demo",
-        ),
-      }),
+      body: JSON.stringify({ crewId }),
     });
     const body = (await response.json()) as { saved?: number; error?: string; persisted?: boolean };
     if (!response.ok || body.persisted === false) {
@@ -183,9 +177,14 @@ export function CrewPanel() {
       {crews.map((row) => {
         const crew = row.crews;
         if (!crew) return null;
+        const weeks = seasonWeeks[crew.id] ?? 0;
+        const monday = waveWindowAt().waveStart.toISOString().slice(0, 10);
         const roster = members.filter((member) => member.crew_id === crew.id);
         const counted = entries.filter(
-          (entry) => entry.crew_id === crew.id && entry.disposition === "counted",
+          (entry) =>
+            entry.crew_id === crew.id &&
+            entry.sport === crew.sport &&
+            entry.disposition === "counted",
         );
         const km = counted.reduce((sum, entry) => sum + Number(entry.distance_m), 0) / 1000;
         const rule =
@@ -200,8 +199,8 @@ export function CrewPanel() {
               {crew.name} · {crew.format.replaceAll("_", " ")}
             </h3>
             <p className="fb-copy">
-              Code {crew.invite_code}. {roster.length} people. {rule} A season is
-              four closed weeks with this same code.
+              Code {crew.invite_code}. {roster.length} people. {rule}{" "}
+              {weeks} week{weeks === 1 ? "" : "s"} with counted sessions on this code.
             </p>
             <ul>
               {roster.map((member) => {
@@ -209,6 +208,7 @@ export function CrewPanel() {
                   (entry) =>
                     entry.crew_id === crew.id &&
                     entry.user_id === member.user_id &&
+                    entry.sport === crew.sport &&
                     entry.disposition === "counted",
                 );
                 const latest = mine[0];
@@ -218,7 +218,9 @@ export function CrewPanel() {
                 return (
                   <li key={member.user_id}>
                     {member.display_name}
-                    {member.rest_week ? " · rest week, rating can stay put if you also freeze" : ""}
+                    {member.rest_week?.slice(0, 10) === monday
+                      ? " · rest week, rating can stay put if you also freeze"
+                      : ""}
                     {" · "}
                     {sessions} sessions
                     {targetMet ? " · target met" : ""}
