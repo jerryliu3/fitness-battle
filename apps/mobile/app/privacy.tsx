@@ -62,7 +62,7 @@ export default function PrivacyScreen() {
 
           <Note>
             Full policy: https://fitness-battle-one.vercel.app/privacy · Contact
-            3jerryliu@gmail.com
+            jerrry333x@gmail.com
           </Note>
           <GhostButton label="Terms of Use" onPress={() => router.push("/terms")} />
         </Card>

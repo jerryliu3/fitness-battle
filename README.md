@@ -74,8 +74,8 @@ The next exploration is `/design/evolution`: four complete identities (**VOLT**,
 
 ## Store submission
 
-iOS / Android store packaging checklist (EAS, Apple/Play accounts, production env):
-[`docs/store-submission.md`](./docs/store-submission.md).
+iOS / Android packaging: [`docs/store-submission.md`](./docs/store-submission.md).  
+Expo account + `eas init` (you run locally): [`docs/expo-setup.md`](./docs/expo-setup.md).
 
 ## Living docs
 

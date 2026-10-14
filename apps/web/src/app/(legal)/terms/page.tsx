@@ -69,7 +69,7 @@ export default function TermsPage() {
       <h2>7. Contact</h2>
       <p>
         Questions:{" "}
-        <a href="mailto:3jerryliu@gmail.com">3jerryliu@gmail.com</a>. Privacy
+        <a href="mailto:jerrry333x@gmail.com">jerrry333x@gmail.com</a>. Privacy
         details are in the{" "}
         <Link href="/privacy">Privacy Policy</Link>.
       </p>

@@ -38,7 +38,7 @@ export default function TermsScreen() {
           </Copy>
           <Note>
             Full terms live at fitness-battle-one.vercel.app/terms. Contact
-            3jerryliu@gmail.com.
+            jerrry333x@gmail.com.
           </Note>
           <GhostButton
             label="Privacy Policy"

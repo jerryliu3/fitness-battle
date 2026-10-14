@@ -182,7 +182,7 @@ export default function PrivacyPolicyPage() {
       <h2>12. Contact</h2>
       <p>
         Privacy questions:{" "}
-        <a href="mailto:3jerryliu@gmail.com">3jerryliu@gmail.com</a>
+        <a href="mailto:jerrry333x@gmail.com">jerrry333x@gmail.com</a>
         . You can also reach us through the{" "}
         <a
           href="https://github.com/jerryliu3/fitness-battle"
