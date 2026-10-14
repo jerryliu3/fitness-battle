@@ -25,6 +25,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
 import { colors, fonts } from "../src/theme";
+import { AceStrip } from "../src/ui/ace-strip";
 
 const KEY = "fb-compete-v1";
 
@@ -87,6 +88,12 @@ export default function HomeScreen() {
           {daysLeft(period, now)} days left. {rankForElo(rating?.openElo ?? 1000).name}{" "}
           · {rating?.openElo ?? 1000}
         </Text>
+
+        <AceStrip
+          kicker="YOUR WEEK"
+          title="One move at a time."
+          detail="Make a little progress today."
+        />
 
         <View style={[styles.card, styles.lesson]}>
           <Text style={styles.kicker}>Today’s lesson</Text>

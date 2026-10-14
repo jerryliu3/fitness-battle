@@ -348,7 +348,7 @@ function YouContent() {
       <section className="fb-card" id="theme">
         <h2>Theme</h2>
         <p className="fb-copy">
-          Rally is the default skin — plum, tennis yellow, and Ace accents. Form
+          Rally is the default skin — plum, tennis yellow, and Star Ember accents. Form
           and Ink keep their earlier chrome. The same week, 2D/3D field, and
           imports stay underneath every theme.
         </p>

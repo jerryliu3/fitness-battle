@@ -6,7 +6,7 @@ This follow-up is stacked on the five-world exploration in PR #14. It converges 
 
 ## Decisions
 
-- **Locked: Rally and Ace.** The original Rally mascot asset is reused without modification on every screen, activity receipt and group preview. Ace remains active, friendly and encouraging. No alternative mascot is introduced.
+- **Product mascot update (October 14, 2026): Star Ember is the default.** Gold Star Ember and plum Quiet Ace are both encoded for web and mobile. `DEFAULT_MASCOT` in `packages/shared/src/brand.ts` selects the shared default; individual `Ace` / `AceStrip` instances can pass `variant="quiet-ace"` or `variant="star-ember"`. Both are sport-neutral floating characters with no limbs or shoes. The original mascot remains in historical design-lab studies.
 - **Foundation: Rally's sporting structure.** Plum/tennis palette, Archivo Black display type, an accumulating mileage matchup, commentary and finite week replay. Four practical jobs—My week, Matchups, Moves and You—make this an app-shaped prototype.
 - **Borrowed from Loop: small-move rings.** Each counted import appears as a tangible ring with its distance, title and duration. The weekly view uses a compact shelf; Moves gives each outing more room.
 - **Optional from Flip: visual treatment only.** Inked borders, halftones, expressive headings, speech-like stickers and panels appear on highlights and receipts. Product navigation, the matchup and the mascot stay Rally. The study control “Comic accents” compares the treatments while keeping all data and the selected opponent unchanged. There is no Flip comic chapter flow.
@@ -29,7 +29,7 @@ Each activity ring uses a shared **10 km distance scale**, preserving the visual
 
 ## Brand system
 
-All tokens are scoped to `.rally-focus`: plum `#40234e`, tennis `#f6f253`, pale sporting surface `#fff9e9`, and light activity surface `#fffdf7`. Display: Archivo Black; body: the existing DM Sans; optional accent type: Bangers. Rings use a plum arc for contrast against the light surface, with tennis highlights for counted status. Ace is the sole character asset, from `apps/web/public/design/worlds/rally.png` in the parent PR.
+All tokens are scoped to `.rally-focus`: plum `#40234e`, tennis `#f6f253`, pale sporting surface `#fff9e9`, and light activity surface `#fffdf7`. Display: Archivo Black; body: the existing DM Sans; optional accent type: Bangers. Rings use a plum arc for contrast against the light surface, with tennis highlights for counted status. Production uses gold Star Ember by default, with plum Quiet Ace available as an alternative. Historical design-lab studies retain the original Ace artwork.
 
 The combination should feel inviting and recognizably sporting. Core chrome remains calm enough to read; the highlight is where character and expressiveness can turn up. Comic accents use Rally's palette, preserving a coherent identity rather than importing Flip's red as another competing brand color.
 
@@ -37,11 +37,11 @@ The combination should feel inviting and recognizably sporting. Core chrome rema
 
 The focused prototype remains at `/design/rally`. In production, Rally is an **additive theme + accents**, not a replacement of core compete surfaces:
 
-- Theme default: **Rally** (plum / tennis / Ace); **Form** and **Ink** remain full alternate shells
+- Theme default: **Rally** (plum / tennis / Star Ember); **Form** and **Ink** remain full alternate shells
 - Rally nav labels: My week / Matchups / Moves / You (same routes as My track / The field / Splits / Athlete)
 - **Kept core:** 2D lanes + 3D Pursuit `FieldStage`, race-track / Form effort UI, numbered `ActivitySplits`, Athlete card, 1v1s, join/opt-out
 - **Additive under Rally:** personal Matchup scoreboard + replay, activity rings, Ace accents, receipts
-- Ace asset: `apps/web/public/design/worlds/rally.png` (shared by product Ace and `/design/rally`)
+- Product mascot assets: `apps/web/public/brand/mascots/` and `apps/mobile/assets/mascots/`. The original Ace asset at `apps/web/public/design/worlds/rally.png` remains in historical design-lab studies.
 
 Prototype helpers stay presentation-only. Scoring, periods, auth, and tracker writes are unchanged.
 
@@ -49,4 +49,4 @@ View URLs and comic state are whitelisted. Browser Back restores the selected vi
 
 ## Review
 
-Browser evidence lives in `docs/rally-reviews/`. Verify the four views in both comic treatments, the one canonical mascot, personal/rival comparisons and their exact cutoffs, zero origin, finite replay, empty/not-yet-counted rings, activity receipts, navigation, optional group preview, phone layout and reduced-motion styles. Prior domain/model tests continue to apply; this follow-up changes presentation only.
+Browser evidence for the historical prototype lives in `docs/rally-reviews/`. Verify the four views in both comic treatments, personal/rival comparisons and their exact cutoffs, zero origin, finite replay, empty/not-yet-counted rings, activity receipts, navigation, optional group preview, phone layout and reduced-motion styles. Production mascot options and verification are documented in `docs/brand-study/production-mascots.md`. Prior domain/model tests continue to apply; this follow-up changes presentation only.
