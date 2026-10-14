@@ -5,7 +5,7 @@ import type { Activity, CompeteState, GoalDistance, TrainingGoal } from "./sport
 export type { GoalDistance, TrainingGoal } from "./sports";
 
 export type SuggestionKind = "rest" | "easy" | "long" | "quality" | "race";
-export type PlanPhase = "base" | "build" | "peak" | "taper" | "past";
+export type PlanPhase = "open" | "base" | "build" | "peak" | "taper" | "past";
 
 export interface DaySuggestion {
   kind: SuggestionKind;
@@ -89,10 +89,10 @@ export function isTrainingGoal(value: unknown): value is TrainingGoal {
   );
 }
 
-function countedRuns(activities: Activity[], now: Date): Activity[] {
-  const start = utcDay(now).getTime() - 28 * DAY_MS;
+function countedSince(activities: Activity[], now: Date, days: number, runningOnly: boolean): Activity[] {
+  const start = utcDay(now).getTime() - days * DAY_MS;
   return activities.filter((activity) => {
-    if (activity.sport !== "running") return false;
+    if (runningOnly && activity.sport !== "running") return false;
     if (provenanceOf(activity) === "demo") return false;
     if (dispositionOf(activity) === "excluded" || dispositionOf(activity) === "pending") {
       return false;
@@ -100,6 +100,10 @@ function countedRuns(activities: Activity[], now: Date): Activity[] {
     const at = new Date(activity.startedAt).getTime();
     return at >= start && at <= now.getTime() + DAY_MS;
   });
+}
+
+function countedRuns(activities: Activity[], now: Date): Activity[] {
+  return countedSince(activities, now, 28, true);
 }
 
 function median(values: number[]): number {
@@ -113,6 +117,84 @@ function median(values: number[]): number {
 
 function round1(value: number): number {
   return Math.round(value * 10) / 10;
+}
+
+const OPEN_PATTERN =
+  "No race date. Today follows the length of your recent counted sessions.";
+
+function round5(minutes: number): number {
+  return Math.max(20, Math.min(50, Math.round(minutes / 5) * 5));
+}
+
+/**
+ * One session when the athlete has not set a race or target day.
+ * Length follows counted sessions from the last 7 days, or 30 easy minutes.
+ */
+export function suggestOpen(activities: Activity[], now: Date): DaySuggestion {
+  const today = utcDay(now);
+  const todayKey = today.toISOString().slice(0, 10);
+  const recent = countedSince(activities, now, 7, false);
+  const todaySession = recent.find((activity) => activity.startedAt.slice(0, 10) === todayKey);
+  const yesterdayKey = new Date(today.getTime() - DAY_MS).toISOString().slice(0, 10);
+  const yesterday = recent.filter((activity) => activity.startedAt.slice(0, 10) === yesterdayKey);
+  const yesterdayMin = yesterday.reduce((sum, activity) => sum + activity.movingSec, 0) / 60;
+  const yesterdayKm =
+    yesterday
+      .filter((activity) => activity.sport === "running")
+      .reduce((sum, activity) => sum + activity.distanceM, 0) / 1000;
+  const prior = recent.filter((activity) => activity.startedAt.slice(0, 10) !== todayKey);
+  const history = prior.length
+    ? `${prior.length} counted session${prior.length === 1 ? "" : "s"} in the last 7 days.`
+    : "No counted sessions in the last 7 days.";
+
+  if (todaySession) {
+    const minutes = Math.round(todaySession.movingSec / 60);
+    return {
+      kind: "rest",
+      phase: "open",
+      title: "Already covered",
+      detail: `You already recorded ${minutes} minutes today. Nothing else is required.`,
+      minutes: null,
+      distanceKm: null,
+      reason: history,
+      pattern: OPEN_PATTERN,
+    };
+  }
+
+  if (yesterdayMin >= 70 || yesterdayKm >= 8 || prior.length >= 5) {
+    return {
+      kind: "rest",
+      phase: "open",
+      title: "Rest",
+      detail: "No extra session today. A walk is fine.",
+      minutes: null,
+      distanceKm: null,
+      reason: `${history} ${
+        yesterdayMin >= 70 || yesterdayKm >= 8
+          ? "Yesterday was already a full session."
+          : "Five sessions in the last 7 days is enough for this week."
+      }`,
+      pattern: OPEN_PATTERN,
+    };
+  }
+
+  const typicalMin = median(prior.map((activity) => activity.movingSec / 60));
+  const minutes = prior.length ? round5(typicalMin) : 30;
+  const runs = prior.filter((activity) => activity.sport === "running" && activity.distanceM > 0);
+  const typicalKm = median(runs.map((activity) => activity.distanceM / 1000));
+  const distanceKm = runs.length ? round1(Math.max(3, Math.min(10, typicalKm))) : null;
+  return {
+    kind: "easy",
+    phase: "open",
+    title: distanceKm ? `Easy ${distanceKm} km` : `Easy ${minutes} min`,
+    detail: prior.length
+      ? "Match a normal recent session. Keep it comfortable the whole way."
+      : "Thirty easy minutes. Walk or jog, whatever you can keep comfortable.",
+    minutes,
+    distanceKm,
+    reason: history,
+    pattern: OPEN_PATTERN,
+  };
 }
 
 /**
@@ -266,7 +348,7 @@ function modalWeekday(runs: Activity[]): number | null {
   return new Date(longest.startedAt).getUTCDay();
 }
 
-export function suggestionForState(state: CompeteState, now: Date): DaySuggestion | null {
-  if (!state.trainingGoal) return null;
+export function suggestionForState(state: CompeteState, now: Date): DaySuggestion {
+  if (!state.trainingGoal) return suggestOpen(state.activities, now);
   return suggestToday(state.trainingGoal, state.activities, now);
 }

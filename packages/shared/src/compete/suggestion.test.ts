@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { suggestToday } from "./suggestion";
+import { suggestOpen, suggestToday } from "./suggestion";
 import type { Activity } from "./sports";
 
 function run(partial: Partial<Activity> & Pick<Activity, "id" | "startedAt" | "distanceM">): Activity {
@@ -14,6 +14,40 @@ function run(partial: Partial<Activity> & Pick<Activity, "id" | "startedAt" | "d
     ...partial,
   };
 }
+
+describe("suggestOpen", () => {
+  const now = new Date("2026-10-13T15:00:00.000Z");
+
+  it("suggests 30 easy minutes when nothing has been counted", () => {
+    const suggestion = suggestOpen([], now);
+    expect(suggestion.phase).toBe("open");
+    expect(suggestion.kind).toBe("easy");
+    expect(suggestion.minutes).toBe(30);
+    expect(suggestion.distanceKm).toBeNull();
+  });
+
+  it("matches the length of last week's counted sessions", () => {
+    const suggestion = suggestOpen(
+      [
+        run({ id: "a", startedAt: "2026-10-08T14:00:00.000Z", distanceM: 8000, movingSec: 48 * 60 }),
+        run({ id: "b", startedAt: "2026-10-10T14:00:00.000Z", distanceM: 6000, movingSec: 36 * 60 }),
+      ],
+      now,
+    );
+    expect(suggestion.kind).toBe("easy");
+    expect(suggestion.minutes).toBe(40);
+    expect(suggestion.distanceKm).toBeGreaterThanOrEqual(3);
+    expect(suggestion.distanceKm).toBeLessThanOrEqual(10);
+  });
+
+  it("rests after a full session yesterday even without a goal", () => {
+    const suggestion = suggestOpen(
+      [run({ id: "long", startedAt: "2026-10-12T14:00:00.000Z", distanceM: 12000, movingSec: 75 * 60 })],
+      now,
+    );
+    expect(suggestion.kind).toBe("rest");
+  });
+});
 
 describe("suggestToday", () => {
   const now = new Date("2026-10-13T15:00:00.000Z"); // Tuesday

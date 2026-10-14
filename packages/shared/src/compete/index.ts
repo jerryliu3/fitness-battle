@@ -132,6 +132,7 @@ export {
 } from "./track";
 export {
   isTrainingGoal,
+  suggestOpen,
   suggestToday,
   suggestionForState,
   type DaySuggestion,

@@ -21,40 +21,38 @@ export function TodaySuggestion({
   dispatch: (action: Action) => void;
 }) {
   const suggestion = suggestionForState(state, now);
+  const [editing, setEditing] = useState(false);
   const [distance, setDistance] = useState<GoalDistance>(
     state.trainingGoal?.distance ?? "10k",
   );
   const [deadline, setDeadline] = useState(
     state.trainingGoal?.deadline ?? defaultDeadline(now),
   );
-
   return (
     <section className="fb-card fb-lesson">
       <p className="fb-kicker">Today</p>
-      {suggestion ? (
+      <h2>
+        {suggestion.title}
+        {suggestion.minutes ? ` · ${suggestion.minutes} min` : ""}
+      </h2>
+      <p className="fb-copy">{suggestion.detail}</p>
+      <p className="fb-note">{suggestion.reason}</p>
+      <p className="fb-note">{suggestion.pattern}</p>
+      {state.trainingGoal && !editing ? (
+        <button type="button" className="fb-btn-ghost" onClick={() => setEditing(true)}>
+          Change goal
+        </button>
+      ) : null}
+      {!state.trainingGoal && !editing ? (
+        <button type="button" className="fb-btn-ghost" onClick={() => setEditing(true)}>
+          Add a race date
+        </button>
+      ) : null}
+      {editing ? (
         <>
-          <h2>
-            {suggestion.title}
-            {suggestion.minutes ? ` · ${suggestion.minutes} min` : ""}
-          </h2>
-          <p className="fb-copy">{suggestion.detail}</p>
-          <p className="fb-note">{suggestion.reason}</p>
-          <p className="fb-note">{suggestion.pattern}</p>
-          <button
-            type="button"
-            className="fb-btn-ghost"
-            onClick={() => dispatch({ type: "clear-training-goal" })}
-          >
-            Change goal
-          </button>
-        </>
-      ) : (
-        <>
-          <h2>Set a race or a target day</h2>
           <p className="fb-copy">
-            Today’s session uses your counted runs from the last four weeks and
-            a standard recreational shape for the distance. It is one day, not
-            a full plan.
+            Optional. A date switches today from a normal session to a standard
+            recreational shape for that distance.
           </p>
           <div className="fb-chips">
             {DISTANCES.map((item) => (
@@ -79,18 +77,35 @@ export function TodaySuggestion({
           <button
             type="button"
             className="fb-btn"
-            onClick={() =>
+            onClick={() => {
               dispatch({
                 type: "set-training-goal",
                 goalDistance: distance,
                 deadline,
-              })
-            }
+              });
+              setEditing(false);
+            }}
           >
             Save goal
           </button>
+          {state.trainingGoal ? (
+            <button
+              type="button"
+              className="fb-btn-ghost"
+              onClick={() => {
+                dispatch({ type: "clear-training-goal" });
+                setEditing(false);
+              }}
+            >
+              Remove goal
+            </button>
+          ) : (
+            <button type="button" className="fb-btn-ghost" onClick={() => setEditing(false)}>
+              Keep it general
+            </button>
+          )}
         </>
-      )}
+      ) : null}
     </section>
   );
 }
