@@ -60,7 +60,12 @@ export default function ProgressPage() {
       })),
   );
   const best = state.activities
-    .filter((activity) => activity.sport === sport && activity.provenance === "recorded")
+    .filter(
+      (activity) =>
+        activity.sport === sport &&
+        activity.provenance === "recorded" &&
+        (activity.disposition ?? "counted") === "counted",
+    )
     .map((activity) => ({ activity, pace: paceMinPerKm(activity) }))
     .filter((row) => row.pace != null)
     .sort((a, b) => a.pace! - b.pace!)[0];

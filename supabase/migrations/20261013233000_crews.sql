@@ -55,6 +55,29 @@ create table public.crew_notices (
   created_at timestamptz not null default now()
 );
 
+-- Membership checks must not query crew_members under that table's own policy.
+create schema if not exists private;
+
+create or replace function private.is_active_crew_member(p_crew_id uuid)
+returns boolean
+language sql
+stable
+security definer
+set search_path = ''
+as $$
+  select exists (
+    select 1
+    from public.crew_members member
+    where member.crew_id = p_crew_id
+      and member.user_id = (select auth.uid())
+      and member.status = 'active'
+  );
+$$;
+
+revoke all on function private.is_active_crew_member(uuid) from public, anon;
+grant usage on schema private to authenticated;
+grant execute on function private.is_active_crew_member(uuid) to authenticated;
+
 alter table public.crews enable row level security;
 alter table public.crew_members enable row level security;
 alter table public.crew_entries enable row level security;
@@ -63,59 +86,37 @@ alter table public.crew_notices enable row level security;
 
 create policy crews_member_select on public.crews
   for select to authenticated
-  using (
-    exists (
-      select 1 from public.crew_members m
-      where m.crew_id = crews.id
-        and m.user_id = (select auth.uid())
-        and m.status = 'active'
-    )
-  );
+  using (private.is_active_crew_member(id));
 
 create policy crew_members_select on public.crew_members
   for select to authenticated
-  using (
-    exists (
-      select 1 from public.crew_members mine
-      where mine.crew_id = crew_members.crew_id
-        and mine.user_id = (select auth.uid())
-        and mine.status = 'active'
-    )
-  );
+  using (private.is_active_crew_member(crew_id));
 
 create policy crew_entries_select on public.crew_entries
   for select to authenticated
-  using (
-    exists (
-      select 1 from public.crew_members mine
-      where mine.crew_id = crew_entries.crew_id
-        and mine.user_id = (select auth.uid())
-        and mine.status = 'active'
-    )
-  );
+  using (private.is_active_crew_member(crew_id));
 
 create policy crew_entries_insert_own on public.crew_entries
   for insert to authenticated
   with check (
     user_id = (select auth.uid())
-    and exists (
-      select 1 from public.crew_members mine
-      where mine.crew_id = crew_entries.crew_id
-        and mine.user_id = (select auth.uid())
-        and mine.status = 'active'
-    )
+    and private.is_active_crew_member(crew_id)
+  );
+
+create policy crew_entries_update_own on public.crew_entries
+  for update to authenticated
+  using (
+    user_id = (select auth.uid())
+    and private.is_active_crew_member(crew_id)
+  )
+  with check (
+    user_id = (select auth.uid())
+    and private.is_active_crew_member(crew_id)
   );
 
 create policy crew_cheers_select on public.crew_cheers
   for select to authenticated
-  using (
-    exists (
-      select 1 from public.crew_members mine
-      where mine.crew_id = crew_cheers.crew_id
-        and mine.user_id = (select auth.uid())
-        and mine.status = 'active'
-    )
-  );
+  using (private.is_active_crew_member(crew_id));
 
 create policy crew_notices_own on public.crew_notices
   for select to authenticated
@@ -219,7 +220,99 @@ begin
 end;
 $$;
 
+-- Rebuild this member's current Monday week from the account snapshot.
+create or replace function public.share_crew_week(p_crew_id uuid)
+returns integer
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  uid uuid := auth.uid();
+  crew_sport text;
+  snapshot jsonb;
+  week_start timestamptz;
+  week_end timestamptz;
+  saved integer := 0;
+begin
+  if uid is null then
+    raise exception 'authentication_required';
+  end if;
+  if not private.is_active_crew_member(p_crew_id) then
+    raise exception 'not_a_member';
+  end if;
+  select sport into crew_sport from public.crews where id = p_crew_id;
+  if crew_sport is null then
+    raise exception 'crew_not_found';
+  end if;
+  select state into snapshot from public.compete_snapshots where user_id = uid;
+  week_start := (date_trunc('week', (statement_timestamp() at time zone 'utc')) at time zone 'utc');
+  week_end := week_start + interval '7 days';
+
+  with incoming as (
+    select
+      activity.id,
+      activity."startedAt" as started_at,
+      activity.sport,
+      coalesce(activity."distanceM", 0) as distance_m,
+      coalesce(activity."movingSec", 0) as moving_sec,
+      coalesce(activity.provenance, 'recorded') as provenance
+    from jsonb_to_recordset(coalesce(snapshot -> 'activities', '[]'::jsonb))
+      as activity(
+        id text,
+        "startedAt" timestamptz,
+        sport text,
+        "distanceM" numeric,
+        "movingSec" numeric,
+        disposition text,
+        provenance text
+      )
+    where activity.id is not null
+      and activity.sport = crew_sport
+      and coalesce(activity.disposition, 'counted') = 'counted'
+      and coalesce(activity.provenance, 'recorded') <> 'demo'
+      and activity."startedAt" >= week_start
+      and activity."startedAt" < week_end
+  ),
+  upserted as (
+    insert into public.crew_entries (
+      crew_id, user_id, activity_id, started_at, sport, distance_m, moving_sec, disposition, provenance
+    )
+    select p_crew_id, uid, id, started_at, sport, distance_m, moving_sec, 'counted', provenance
+    from incoming
+    on conflict (crew_id, user_id, activity_id) do update
+      set started_at = excluded.started_at,
+          sport = excluded.sport,
+          distance_m = excluded.distance_m,
+          moving_sec = excluded.moving_sec,
+          disposition = 'counted',
+          provenance = excluded.provenance
+    returning 1
+  ),
+  retired as (
+    update public.crew_entries entry
+    set disposition = 'excluded'
+    where entry.crew_id = p_crew_id
+      and entry.user_id = uid
+      and entry.started_at >= week_start
+      and entry.started_at < week_end
+      and not exists (
+        select 1 from incoming where incoming.id = entry.activity_id
+      )
+    returning 1
+  )
+  select
+    coalesce((select count(*) from upserted), 0)::integer
+    + coalesce((select count(*) from retired), 0) * 0
+  into saved;
+
+  return saved;
+end;
+$$;
+
 revoke all on function public.create_crew(text, text, text, integer, numeric) from public, anon;
+revoke all on function public.share_crew_week(uuid) from public, anon;
+grant execute on function public.share_crew_week(uuid) to authenticated;
 revoke all on function public.join_crew(text) from public, anon;
 grant execute on function public.create_crew(text, text, text, integer, numeric) to authenticated;
 grant execute on function public.join_crew(text) to authenticated;

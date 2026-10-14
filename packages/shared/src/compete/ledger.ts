@@ -78,7 +78,14 @@ export function mergeActivities(
       continue;
     }
     const twin = next[twinIndex]!;
-    if (twin.id === activity.id) continue;
+    if (twin.id === activity.id) {
+      next[twinIndex] = {
+        ...activity,
+        disposition: dispositionOf(twin),
+        dispositionReason: twin.dispositionReason,
+      };
+      continue;
+    }
     const winner = prefer(twin, activity);
     const loser = winner.id === activity.id ? twin : activity;
     next[twinIndex] = {
@@ -118,7 +125,7 @@ export function progressionTrends(
   const paceByDay = new Map<string, { sec: number; meters: number }>();
   for (const activity of activities) {
     if (activity.sport !== sport) continue;
-    if (dispositionOf(activity) === "excluded") continue;
+    if (dispositionOf(activity) !== "counted") continue;
     if (provenanceOf(activity) === "demo") continue;
     const day = activity.startedAt.slice(0, 10);
     distanceByDay.set(day, (distanceByDay.get(day) ?? 0) + activity.distanceM / 1000);
