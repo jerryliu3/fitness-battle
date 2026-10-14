@@ -11,6 +11,7 @@
     "typecheck": "tsc --noEmit",
     "lint": "echo 'no lint configured'",
     "test": "echo 'no mobile unit tests yet'",
+    "eas:init": "npx eas-cli@latest init --id bea1932b-6a00-4edc-9710-22350423c446",
     "eas:build:ios": "eas build --platform ios --profile production",
     "eas:build:android": "eas build --platform android --profile production",
     "eas:submit:ios": "eas submit --platform ios --profile production --latest",

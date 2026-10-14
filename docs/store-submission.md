@@ -25,7 +25,7 @@ Expo CLI steps: [`docs/expo-setup.md`](./expo-setup.md)
 
 ## Waiting on you
 
-1. **Expo** — account + login done. Project ID is `bea1932b-6a00-4edc-9710-22350423c446` (in `app.json`). Connect with `npx eas-cli@latest init --id bea1932b-6a00-4edc-9710-22350423c446` (see [`expo-setup.md`](./expo-setup.md)). Do **not** use bare `eas init` in this monorepo.
+1. **Expo** — account + login done. Project ID is `bea1932b-6a00-4edc-9710-22350423c446` (in `app.json`). Connect with the dashboard command (or `pnpm eas:init` in `apps/mobile`) — see [`expo-setup.md`](./expo-setup.md). Skip `create-expo-app` and bare `eas init`.
 2. **Apple Developer / Google Play** — finish enrollment (you said this is in progress). Then create the app listings and link teams when EAS asks.
 3. **First builds** — after `eas init`, run preview then production builds from [`expo-setup.md`](./expo-setup.md).
 4. **Store screenshots** — phone frames for listings (Expo web demos exist; stores want device screenshots).
