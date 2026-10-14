@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { mergeActivities, progressionTrends, sameWorkout } from "./ledger";
+import { countsOnTrack, mergeActivities, normalizeSampleActivity, progressionTrends, sameWorkout } from "./ledger";
 import type { Activity } from "./sports";
 
 function run(partial: Partial<Activity> & Pick<Activity, "id" | "startedAt">): Activity {
@@ -100,5 +100,21 @@ describe("activity ledger", () => {
     expect(trends.distance).toEqual([{ day: "2026-10-13", value: 10 }]);
     expect(trends.pace[0]?.value).toBe(5.5);
     expect(trends.elo.map((point) => point.value)).toEqual([1000, 1012]);
+  });
+
+  it("keeps unlabeled history samples off the open track", () => {
+    const sample = run({
+      id: "old-sample",
+      startedAt: "2026-10-13T12:00:00.000Z",
+      source: "history",
+      distanceM: 20000,
+    });
+    delete sample.provenance;
+    delete sample.disposition;
+    expect(countsOnTrack(sample, "open")).toBe(false);
+    const normalized = normalizeSampleActivity(sample);
+    expect(normalized.provenance).toBe("demo");
+    expect(normalized.disposition).toBe("excluded");
+    expect(countsOnTrack(normalized, "open")).toBe(false);
   });
 });
