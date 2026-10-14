@@ -31,7 +31,7 @@ const TABS = {
 function PlayChrome({ children }: { children: ReactNode }) {
   const path = usePathname();
   const { user, loading } = useAuth();
-  const { saveError, legacyOffer, loadFailed, recoverLegacy, continueOnDevice } = useCompete();
+  const { saveError, legacyOffer, loadStatus, recoverLegacy, retryLoad } = useCompete();
   const { theme } = useTheme();
   const hideTabs = path.startsWith("/onboarding");
   const tabs = theme.id === "rally" ? TABS.rally : TABS.classic;
@@ -131,10 +131,11 @@ function PlayChrome({ children }: { children: ReactNode }) {
               </button>
             </p>
           ) : null}
-          {!hideTabs && loadFailed ? (
+          {!hideTabs && loadStatus === "failed" ? (
             <p className="fb-guest-banner">
-              <button type="button" className="fb-btn-ghost" onClick={continueOnDevice}>
-                Keep changes on this device
+              Could not load the account copy. This screen is read-only.{" "}
+              <button type="button" className="fb-btn-ghost" onClick={retryLoad}>
+                Retry
               </button>
             </p>
           ) : null}

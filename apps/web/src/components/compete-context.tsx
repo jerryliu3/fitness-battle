@@ -13,6 +13,7 @@ import {
 } from "@fitness-battle/shared";
 import {
   createContext,
+  useCallback,
   useContext,
   useEffect,
   useMemo,
@@ -25,6 +26,9 @@ const LEGACY_KEY = "fb-compete-v1";
 /** Copy of the unscoped blob after the signed-in user chooses to recover it. */
 const RECOVERY_KEY = "fb-compete-v1:recovered";
 
+/** One account-load state. Failed loads are read-only until retry succeeds. */
+type LoadStatus = "local" | "loading" | "ready" | "failed";
+
 interface CompeteApi {
   state: CompeteState | null;
   dispatch: (action: Action) => void;
@@ -32,10 +36,9 @@ interface CompeteApi {
   saveError: string | null;
   /** Unscoped pre-account history is still on this browser. */
   legacyOffer: boolean;
-  /** Account GET failed, so uploads stay off. */
-  loadFailed: boolean;
+  loadStatus: LoadStatus;
   recoverLegacy: () => void;
-  continueOnDevice: () => void;
+  retryLoad: () => void;
 }
 
 const CompeteContext = createContext<CompeteApi>({
@@ -43,17 +46,17 @@ const CompeteContext = createContext<CompeteApi>({
   dispatch: () => {},
   saveError: null,
   legacyOffer: false,
-  loadFailed: false,
+  loadStatus: "loading",
   recoverLegacy: () => {},
-  continueOnDevice: () => {},
+  retryLoad: () => {},
 });
 
 function storageKey(userId: string | null): string {
   return userId ? `fb-compete-v1:${userId}` : "fb-compete-v1:guest";
 }
 
-function accountToken(userId: string | null): string {
-  return userId ?? "guest";
+function deviceOnlyKey(userId: string): string {
+  return `fb-compete-v1:${userId}:device-only`;
 }
 
 function parseStored(raw: string | null): { savedAt: string; state: CompeteState } | null {
@@ -84,10 +87,6 @@ function readLocal(userId: string | null): { savedAt: string; state: CompeteStat
   );
 }
 
-function deviceOnlyKey(userId: string): string {
-  return `fb-compete-v1:${userId}:device-only`;
-}
-
 function writeLocal(userId: string | null, state: CompeteState, savedAt: string) {
   localStorage.setItem(storageKey(userId), JSON.stringify({ savedAt, state }));
 }
@@ -98,22 +97,22 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<CompeteState | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [legacyOffer, setLegacyOffer] = useState(false);
-  const [loadFailed, setLoadFailed] = useState(false);
+  const [loadStatus, setLoadStatus] = useState<LoadStatus>("loading");
+  const [attempt, setAttempt] = useState(0);
   const userIdRef = useRef(userId);
   const demoRef = useRef(demoMode || user?.mode === "demo");
+  const statusRef = useRef<LoadStatus>("loading");
+  const stateRef = useRef<CompeteState | null>(null);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const queue = useRef<Action[]>([]);
-  const hydratedAccount = useRef<string | null>(null);
-  const accountReady = useRef(false);
-  const localFallback = useRef(false);
   userIdRef.current = userId;
   demoRef.current = demoMode || user?.mode === "demo";
 
-  function scheduleSave(accountId: string | null, next: CompeteState) {
-    if (!accountId || demoRef.current || !accountReady.current) return;
+  const scheduleSave = useCallback((accountId: string | null, next: CompeteState) => {
+    if (!accountId || demoRef.current || statusRef.current !== "ready") return;
     if (timer.current) clearTimeout(timer.current);
     timer.current = setTimeout(() => {
-      if (userIdRef.current !== accountId) return;
+      if (userIdRef.current !== accountId || statusRef.current !== "ready") return;
       void fetch("/api/compete", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
@@ -132,7 +131,26 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
           setSaveError("This device updated. The account copy did not save.");
         });
     }, 400);
-  }
+  }, []);
+
+  const publish = useCallback(
+    (
+      accountId: string | null,
+      next: CompeteState,
+      savedAt: string,
+      status: LoadStatus,
+      upload: boolean,
+    ) => {
+      statusRef.current = status;
+      stateRef.current = next;
+      setLoadStatus(status);
+      setState(next);
+      if (status === "failed") return;
+      writeLocal(accountId, next, savedAt);
+      if (upload) scheduleSave(accountId, next);
+    },
+    [scheduleSave],
+  );
 
   useEffect(() => {
     if (loading) return;
@@ -141,114 +159,68 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
       timer.current = null;
     }
     queue.current = [];
-    hydratedAccount.current = null;
-    accountReady.current = false;
-    localFallback.current = false;
     const accountId = userId;
     let cancelled = false;
     const signedIn = Boolean(accountId) && !(demoMode || user?.mode === "demo");
     setLegacyOffer(signedIn && parseStored(localStorage.getItem(LEGACY_KEY)) != null);
-    setLoadFailed(false);
     const local = readLocal(accountId);
 
-    const finish = (chosen: CompeteState, savedAt: string) => {
+    const settle = (chosen: CompeteState, savedAt: string, status: LoadStatus) => {
       if (cancelled || userIdRef.current !== accountId) return;
-      hydratedAccount.current = accountToken(accountId);
-      setState(() => {
-        let next = chosen;
-        const pending = queue.current.splice(0);
-        for (const action of pending) next = reduceCompete(next, action);
-        const stamped = pending.length > 0 ? new Date().toISOString() : savedAt;
-        writeLocal(accountId, next, stamped);
-        if (pending.length > 0) scheduleSave(accountId, next);
-        return next;
-      });
+      let next = chosen;
+      const pending = queue.current.splice(0);
+      for (const action of pending) next = reduceCompete(next, action);
+      const stamped = pending.length > 0 ? new Date().toISOString() : savedAt;
+      publish(accountId, next, stamped, status, status === "ready" && pending.length > 0);
     };
 
-    if (!accountId || demoMode || user?.mode === "demo") {
-      accountReady.current = true;
-      finish(local.state, local.savedAt);
+    if (!signedIn) {
+      settle(local.state, local.savedAt, "local");
       return () => {
         cancelled = true;
       };
     }
 
+    statusRef.current = "loading";
+    setLoadStatus("loading");
     setState(null);
+    stateRef.current = null;
     void fetch("/api/compete")
       .then(async (response) => {
         if (!response.ok) throw new Error("load failed");
         return (await response.json()) as { state?: unknown; updatedAt?: string | null };
       })
       .then((body) => {
-        if (cancelled || userIdRef.current !== accountId) return;
-        accountReady.current = true;
-        const deviceOnly = localStorage.getItem(deviceOnlyKey(accountId)) === "1";
-        if (deviceOnly && body?.updatedAt && isCompeteState(body.state)) {
-          localStorage.removeItem(deviceOnlyKey(accountId));
-          finish(rollClock(migrateCompeteState(body.state)), body.updatedAt);
+        if (cancelled || userIdRef.current !== accountId || !accountId) return;
+        const staleDeviceDraft = localStorage.getItem(deviceOnlyKey(accountId)) === "1";
+        localStorage.removeItem(deviceOnlyKey(accountId));
+        if (staleDeviceDraft && body?.updatedAt && isCompeteState(body.state)) {
+          settle(rollClock(migrateCompeteState(body.state)), body.updatedAt, "ready");
           return;
         }
-        if (deviceOnly) localStorage.removeItem(deviceOnlyKey(accountId));
         if (!body?.updatedAt) {
-          finish(local.state, local.savedAt);
+          settle(local.state, local.savedAt, "ready");
           return;
         }
         const chosen = chooseCompeteState(local, {
           updatedAt: body.updatedAt,
           state: body.state,
         });
-        finish(chosen, chosen === local.state ? local.savedAt : body.updatedAt);
+        settle(chosen, chosen === local.state ? local.savedAt : body.updatedAt, "ready");
       })
       .catch(() => {
         if (cancelled || userIdRef.current !== accountId) return;
-        hydratedAccount.current = accountToken(accountId);
-        accountReady.current = false;
-        setLoadFailed(true);
-        setSaveError("Could not load the account copy. This screen is not uploading.");
-        setState(() => {
-          let next = local.state;
-          const pending = queue.current.splice(0);
-          for (const action of pending) next = reduceCompete(next, action);
-          return next;
-        });
+        queue.current = [];
+        publish(accountId, local.state, local.savedAt, "failed", false);
+        setSaveError(null);
       });
 
     return () => {
       cancelled = true;
     };
-  }, [demoMode, loading, user, userId]);
+  }, [attempt, demoMode, loading, publish, user, userId]);
 
-  const api = useMemo(
-    () => ({
-      state,
-      saveError,
-      dispatch: (action) => {
-        const accountId = userIdRef.current;
-        if (hydratedAccount.current !== accountToken(accountId)) {
-          queue.current.push(action);
-          return;
-        }
-        setState((prev) => {
-          if (!prev) {
-            queue.current.push(action);
-            return prev;
-          }
-          const next = reduceCompete(prev, action);
-          if (accountReady.current) {
-            writeLocal(accountId, next, new Date().toISOString());
-            scheduleSave(accountId, next);
-          } else if (localFallback.current && accountId) {
-            writeLocal(accountId, next, new Date().toISOString());
-            localStorage.setItem(deviceOnlyKey(accountId), "1");
-          }
-          return next;
-        });
-      },
-    }),
-    [saveError, state],
-  );
-
-  function recoverLegacy() {
+  const recoverLegacy = useCallback(() => {
     const accountId = userIdRef.current;
     const raw = localStorage.getItem(LEGACY_KEY);
     const parsed = parseStored(raw);
@@ -258,29 +230,41 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
     localStorage.setItem(RECOVERY_KEY, raw);
     localStorage.removeItem(LEGACY_KEY);
     setLegacyOffer(false);
+    stateRef.current = parsed.state;
     setState(parsed.state);
-    if (accountReady.current) scheduleSave(accountId, parsed.state);
-    else setSaveError("Previous device history is on this screen. It uploads after the account loads.");
-  }
+    if (statusRef.current === "ready") scheduleSave(accountId, parsed.state);
+  }, [scheduleSave]);
 
-  function continueOnDevice() {
-    const accountId = userIdRef.current;
-    if (!accountId) return;
-    localFallback.current = true;
-    localStorage.setItem(deviceOnlyKey(accountId), "1");
-    setLoadFailed(false);
-    setSaveError("Working from this device. The account copy is not being updated.");
-    setState((prev) => {
-      if (prev) writeLocal(accountId, prev, new Date().toISOString());
-      return prev;
-    });
-  }
+  const retryLoad = useCallback(() => {
+    setAttempt((value) => value + 1);
+  }, []);
 
-  return (
-    <CompeteContext.Provider value={{ ...api, legacyOffer, loadFailed, recoverLegacy, continueOnDevice }}>
-      {children}
-    </CompeteContext.Provider>
+  const api = useMemo<CompeteApi>(
+    () => ({
+      state,
+      saveError,
+      legacyOffer,
+      loadStatus,
+      recoverLegacy,
+      retryLoad,
+      dispatch: (action: Action) => {
+        if (statusRef.current === "failed") return;
+        if (statusRef.current === "loading" || !stateRef.current) {
+          queue.current.push(action);
+          return;
+        }
+        const next = reduceCompete(stateRef.current, action);
+        const savedAt = new Date().toISOString();
+        stateRef.current = next;
+        setState(next);
+        writeLocal(userIdRef.current, next, savedAt);
+        if (statusRef.current === "ready") scheduleSave(userIdRef.current, next);
+      },
+    }),
+    [legacyOffer, loadStatus, recoverLegacy, retryLoad, saveError, scheduleSave, state],
   );
+
+  return <CompeteContext.Provider value={api}>{children}</CompeteContext.Provider>;
 }
 
 export function useCompete(): CompeteApi {
