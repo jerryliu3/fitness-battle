@@ -19,6 +19,25 @@ export function provenanceOf(activity: Activity): ActivityProvenance {
   return "recorded";
 }
 
+/** Calibration rows predate provenance and must not score or be shared. */
+export function isSampleActivity(activity: Activity): boolean {
+  return activity.source === "history" || provenanceOf(activity) === "demo";
+}
+
+export function normalizeSampleActivity(activity: Activity): Activity {
+  if (!isSampleActivity(activity)) return activity;
+  if (activity.provenance === "demo" && activity.disposition === "excluded" && activity.verified === false) {
+    return activity;
+  }
+  return {
+    ...activity,
+    provenance: "demo",
+    disposition: "excluded",
+    verified: false,
+    dispositionReason: activity.dispositionReason ?? "Sample calibration does not count.",
+  };
+}
+
 export function dispositionOf(activity: Activity): ActivityDisposition {
   return activity.disposition ?? "counted";
 }
@@ -34,6 +53,7 @@ export function countsOnTrack(
   activity: Activity,
   track: "open" | "verified",
 ): boolean {
+  if (isSampleActivity(activity)) return false;
   if (dispositionOf(activity) !== "counted") return false;
   if (track === "verified") return isVerifiedActivity(activity);
   return true;
@@ -125,8 +145,8 @@ export function progressionTrends(
   const paceByDay = new Map<string, { sec: number; meters: number }>();
   for (const activity of activities) {
     if (activity.sport !== sport) continue;
+    if (isSampleActivity(activity)) continue;
     if (dispositionOf(activity) !== "counted") continue;
-    if (provenanceOf(activity) === "demo") continue;
     const day = activity.startedAt.slice(0, 10);
     distanceByDay.set(day, (distanceByDay.get(day) ?? 0) + activity.distanceM / 1000);
     const bucket = paceByDay.get(day) ?? { sec: 0, meters: 0 };

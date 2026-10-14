@@ -22,7 +22,7 @@ import {
 } from "react";
 
 const LEGACY_KEY = "fb-compete-v1";
-/** Kept when an unscoped history blob is copied onto an account. */
+/** Copy of the unscoped blob after the signed-in user chooses to recover it. */
 const RECOVERY_KEY = "fb-compete-v1:recovered";
 
 interface CompeteApi {
@@ -30,12 +30,22 @@ interface CompeteApi {
   dispatch: (action: Action) => void;
   /** True when the last account save failed. */
   saveError: string | null;
+  /** Unscoped pre-account history is still on this browser. */
+  legacyOffer: boolean;
+  /** Account GET failed, so uploads stay off. */
+  loadFailed: boolean;
+  recoverLegacy: () => void;
+  continueOnDevice: () => void;
 }
 
 const CompeteContext = createContext<CompeteApi>({
   state: null,
   dispatch: () => {},
   saveError: null,
+  legacyOffer: false,
+  loadFailed: false,
+  recoverLegacy: () => {},
+  continueOnDevice: () => {},
 });
 
 function storageKey(userId: string | null): string {
@@ -74,23 +84,12 @@ function readLocal(userId: string | null): { savedAt: string; state: CompeteStat
   );
 }
 
-function writeLocal(userId: string | null, state: CompeteState, savedAt: string) {
-  localStorage.setItem(storageKey(userId), JSON.stringify({ savedAt, state }));
+function deviceOnlyKey(userId: string): string {
+  return `fb-compete-v1:${userId}:device-only`;
 }
 
-/**
- * Copy the pre-account blob onto this account once. If the account already
- * has a blob, the old key stays put so it can be recovered by hand.
- */
-function adoptLegacy(userId: string) {
-  const key = storageKey(userId);
-  if (localStorage.getItem(key)) return;
-  const raw = localStorage.getItem(LEGACY_KEY);
-  const parsed = parseStored(raw);
-  if (!raw || !parsed) return;
-  localStorage.setItem(key, JSON.stringify(parsed));
-  localStorage.setItem(RECOVERY_KEY, raw);
-  localStorage.removeItem(LEGACY_KEY);
+function writeLocal(userId: string | null, state: CompeteState, savedAt: string) {
+  localStorage.setItem(storageKey(userId), JSON.stringify({ savedAt, state }));
 }
 
 export function CompeteProvider({ children }: { children: ReactNode }) {
@@ -98,16 +97,20 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
   const userId = user?.id ?? null;
   const [state, setState] = useState<CompeteState | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
+  const [legacyOffer, setLegacyOffer] = useState(false);
+  const [loadFailed, setLoadFailed] = useState(false);
   const userIdRef = useRef(userId);
   const demoRef = useRef(demoMode || user?.mode === "demo");
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const queue = useRef<Action[]>([]);
   const hydratedAccount = useRef<string | null>(null);
+  const accountReady = useRef(false);
+  const localFallback = useRef(false);
   userIdRef.current = userId;
   demoRef.current = demoMode || user?.mode === "demo";
 
   function scheduleSave(accountId: string | null, next: CompeteState) {
-    if (!accountId || demoRef.current) return;
+    if (!accountId || demoRef.current || !accountReady.current) return;
     if (timer.current) clearTimeout(timer.current);
     timer.current = setTimeout(() => {
       if (userIdRef.current !== accountId) return;
@@ -139,9 +142,13 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
     }
     queue.current = [];
     hydratedAccount.current = null;
+    accountReady.current = false;
+    localFallback.current = false;
     const accountId = userId;
     let cancelled = false;
-    if (accountId && !(demoMode || user?.mode === "demo")) adoptLegacy(accountId);
+    const signedIn = Boolean(accountId) && !(demoMode || user?.mode === "demo");
+    setLegacyOffer(signedIn && parseStored(localStorage.getItem(LEGACY_KEY)) != null);
+    setLoadFailed(false);
     const local = readLocal(accountId);
 
     const finish = (chosen: CompeteState, savedAt: string) => {
@@ -159,6 +166,7 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
     };
 
     if (!accountId || demoMode || user?.mode === "demo") {
+      accountReady.current = true;
       finish(local.state, local.savedAt);
       return () => {
         cancelled = true;
@@ -168,11 +176,19 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
     setState(null);
     void fetch("/api/compete")
       .then(async (response) => {
-        if (!response.ok) return null;
+        if (!response.ok) throw new Error("load failed");
         return (await response.json()) as { state?: unknown; updatedAt?: string | null };
       })
       .then((body) => {
         if (cancelled || userIdRef.current !== accountId) return;
+        accountReady.current = true;
+        const deviceOnly = localStorage.getItem(deviceOnlyKey(accountId)) === "1";
+        if (deviceOnly && body?.updatedAt && isCompeteState(body.state)) {
+          localStorage.removeItem(deviceOnlyKey(accountId));
+          finish(rollClock(migrateCompeteState(body.state)), body.updatedAt);
+          return;
+        }
+        if (deviceOnly) localStorage.removeItem(deviceOnlyKey(accountId));
         if (!body?.updatedAt) {
           finish(local.state, local.savedAt);
           return;
@@ -185,8 +201,16 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
       })
       .catch(() => {
         if (cancelled || userIdRef.current !== accountId) return;
-        setSaveError("Could not load the account copy. Showing this device.");
-        finish(local.state, local.savedAt);
+        hydratedAccount.current = accountToken(accountId);
+        accountReady.current = false;
+        setLoadFailed(true);
+        setSaveError("Could not load the account copy. This screen is not uploading.");
+        setState(() => {
+          let next = local.state;
+          const pending = queue.current.splice(0);
+          for (const action of pending) next = reduceCompete(next, action);
+          return next;
+        });
       });
 
     return () => {
@@ -194,7 +218,7 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
     };
   }, [demoMode, loading, user, userId]);
 
-  const api = useMemo<CompeteApi>(
+  const api = useMemo(
     () => ({
       state,
       saveError,
@@ -210,8 +234,13 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
             return prev;
           }
           const next = reduceCompete(prev, action);
-          writeLocal(accountId, next, new Date().toISOString());
-          scheduleSave(accountId, next);
+          if (accountReady.current) {
+            writeLocal(accountId, next, new Date().toISOString());
+            scheduleSave(accountId, next);
+          } else if (localFallback.current && accountId) {
+            writeLocal(accountId, next, new Date().toISOString());
+            localStorage.setItem(deviceOnlyKey(accountId), "1");
+          }
           return next;
         });
       },
@@ -219,8 +248,38 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
     [saveError, state],
   );
 
+  function recoverLegacy() {
+    const accountId = userIdRef.current;
+    const raw = localStorage.getItem(LEGACY_KEY);
+    const parsed = parseStored(raw);
+    if (!accountId || !raw || !parsed) return;
+    const stamped = new Date().toISOString();
+    writeLocal(accountId, parsed.state, stamped);
+    localStorage.setItem(RECOVERY_KEY, raw);
+    localStorage.removeItem(LEGACY_KEY);
+    setLegacyOffer(false);
+    setState(parsed.state);
+    if (accountReady.current) scheduleSave(accountId, parsed.state);
+    else setSaveError("Previous device history is on this screen. It uploads after the account loads.");
+  }
+
+  function continueOnDevice() {
+    const accountId = userIdRef.current;
+    if (!accountId) return;
+    localFallback.current = true;
+    localStorage.setItem(deviceOnlyKey(accountId), "1");
+    setLoadFailed(false);
+    setSaveError("Working from this device. The account copy is not being updated.");
+    setState((prev) => {
+      if (prev) writeLocal(accountId, prev, new Date().toISOString());
+      return prev;
+    });
+  }
+
   return (
-    <CompeteContext.Provider value={api}>{children}</CompeteContext.Provider>
+    <CompeteContext.Provider value={{ ...api, legacyOffer, loadFailed, recoverLegacy, continueOnDevice }}>
+      {children}
+    </CompeteContext.Provider>
   );
 }
 
