@@ -27,10 +27,16 @@ export async function GET(request: Request) {
 }
 
 export async function PUT(request: Request) {
-  const body = (await request.json().catch(() => null)) as { state?: unknown } | null;
+  const body = (await request.json().catch(() => null)) as {
+    state?: unknown;
+    accountId?: unknown;
+  } | null;
   const userId = await resolveRequestUserId(request);
   if (!userId) {
     return NextResponse.json({ error: "authentication_required" }, { status: 401 });
+  }
+  if (body?.accountId !== userId) {
+    return NextResponse.json({ error: "account_mismatch" }, { status: 409 });
   }
   if (!body || !isCompeteState(body.state)) {
     return NextResponse.json({ error: "invalid_state" }, { status: 400 });
