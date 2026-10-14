@@ -7,7 +7,7 @@ import {
   rollClock,
   weeklyBoard,
 } from "./engine";
-import { planCrewWeekField } from "../matching";
+import { crewBoardPinFromPlan, planCrewWeekField } from "../matching";
 
 describe("compete engine", () => {
   it("allows one-time history import only", () => {
@@ -198,80 +198,22 @@ describe("compete engine", () => {
     expect(migrateCompeteState({ ...legacy, trainingGoal: { distance: "5k", deadline: "2026-02-31" } } as never).trainingGoal).toBeNull();
   });
 
-  it("clears a crew pin when leaving that sport's field", () => {
-    const now = "2026-10-12T12:00:00.000Z";
-    const plan = planCrewWeekField({
-      crewId: "crew-leave",
-      sport: "running",
-      members: [
-        { id: "user-a", name: "Ada", elo: 1000 },
-        { id: "user-b", name: "Bea", elo: 1005 },
-      ],
-      now: new Date(now),
-    });
-    const seated = reduceCompete(freshState(new Date(now)), {
-      type: "set-crew-board",
-      crewBoard: {
-        crewId: plan.crewId,
-        crewName: "Sunday Miles",
-        sport: plan.sport,
-        waveStart: plan.waveStart,
-        weekEnd: plan.weekEnd,
-        capacity: plan.capacity,
-        memberIds: plan.memberIds,
-        members: plan.members,
-        syntheticIds: plan.syntheticIds,
-      },
-      accountId: "user-a",
-      now,
-    });
-    const joined = reduceCompete(seated, {
-      type: "opt-in",
-      sport: "running",
-      accountId: "user-a",
-      now,
-    });
-    expect(joined.crewBoard?.crewId).toBe("crew-leave");
-    const left = reduceCompete(joined, {
-      type: "opt-out",
-      sport: "running",
-      now,
-    });
-    expect(left.crewBoard).toBeNull();
-    expect(left.enrollments).toHaveLength(0);
-  });
-
-  it("pins opted-in athletes onto a shared crew field", () => {
+  it("joins together in one opt-in and clears the pin on leave", () => {
     const now = "2026-10-12T12:00:00.000Z";
     const plan = planCrewWeekField({
       crewId: "crew-shared",
       sport: "running",
       members: [
         { id: "user-a", name: "Ada", elo: 1000 },
-        { id: "user-b", name: "Bea", elo: 1005 },
+        { id: "user-b", name: "Bea", elo: 1005, distanceM: 8000, movingSec: 2400 },
       ],
       now: new Date(now),
     });
-    const pin = {
-      crewId: plan.crewId,
-      crewName: "Sunday Miles",
-      sport: plan.sport,
-      waveStart: plan.waveStart,
-      weekEnd: plan.weekEnd,
-      capacity: plan.capacity,
-      memberIds: plan.memberIds,
-      members: plan.members,
-      syntheticIds: plan.syntheticIds,
-    };
+    const pin = crewBoardPinFromPlan(plan, "Sunday Miles");
 
-    const joined = reduceCompete(freshState(new Date(now)), {
+    const seated = reduceCompete(freshState(new Date(now)), {
       type: "opt-in",
       sport: "running",
-      accountId: "user-a",
-      now,
-    });
-    const seated = reduceCompete(joined, {
-      type: "set-crew-board",
       crewBoard: pin,
       accountId: "user-a",
       now,
@@ -283,15 +225,26 @@ describe("compete engine", () => {
 
     const board = weeklyBoard(seated, "running", "open", new Date(now));
     expect(board.some((row) => row.id === "user-b")).toBe(true);
+    expect(board.find((row) => row.id === "user-b")?.distanceM).toBe(8000);
     expect(board).toHaveLength(8);
 
-    const cleared = reduceCompete(seated, {
-      type: "clear-crew-board",
+    const alone = reduceCompete(seated, {
+      type: "opt-in",
+      sport: "running",
+      crewBoard: null,
       accountId: "user-a",
       now,
     });
-    expect(cleared.crewBoard).toBeNull();
-    expect(cleared.enrollments[0]?.crewId ?? null).toBeNull();
+    expect(alone.crewBoard).toBeNull();
+    expect(alone.enrollments[0]?.crewId ?? null).toBeNull();
+
+    const left = reduceCompete(seated, {
+      type: "opt-out",
+      sport: "running",
+      now,
+    });
+    expect(left.crewBoard).toBeNull();
+    expect(left.enrollments).toHaveLength(0);
   });
 
   it("drops a stale crew pin when the week rolls", () => {
@@ -304,17 +257,7 @@ describe("compete engine", () => {
     });
     const pinned = reduceCompete(freshState(new Date(now)), {
       type: "set-crew-board",
-      crewBoard: {
-        crewId: plan.crewId,
-        crewName: "Old",
-        sport: plan.sport,
-        waveStart: plan.waveStart,
-        weekEnd: plan.weekEnd,
-        capacity: plan.capacity,
-        memberIds: plan.memberIds,
-        members: plan.members,
-        syntheticIds: plan.syntheticIds,
-      },
+      crewBoard: crewBoardPinFromPlan(plan, "Old"),
       accountId: "user-a",
       now,
     });

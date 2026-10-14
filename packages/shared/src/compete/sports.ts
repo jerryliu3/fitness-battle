@@ -269,8 +269,17 @@ export interface CrewBoardPin {
   weekEnd: string;
   capacity: number;
   memberIds: string[];
-  members: { id: string; name: string; elo: number }[];
+  members: CrewBoardMember[];
   syntheticIds: string[];
+}
+
+export interface CrewBoardMember {
+  id: string;
+  name: string;
+  elo: number;
+  /** Counted crew-week distance when known (shared entries). */
+  distanceM?: number;
+  movingSec?: number;
 }
 
 export function hashString(value: string): number {

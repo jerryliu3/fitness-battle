@@ -3,6 +3,7 @@ import {
   DensityMatcher,
   buildLocalBoard,
   enrollmentFromCrewPlan,
+  planFromCrewBoardPin,
   poolFromCrewPlan,
   waveWindowAt,
   type PoolPlayer,
@@ -294,18 +295,6 @@ function waveBoundsFor(
   return { kind: "weekly", startsAt: wave.waveStart, endsAt: wave.weekEnd };
 }
 
-function resolveCrewViewerId(
-  pin: CrewBoardPin,
-  viewerId: string,
-  displayName: string,
-): string {
-  if (viewerId !== "you" && pin.memberIds.includes(viewerId)) return viewerId;
-  const byName = pin.members.find((member) => member.name === displayName)?.id;
-  if (byName) return byName;
-  // Local/demo boards still need every other member as a peer.
-  return "you";
-}
-
 function enrollSport(
   state: CompeteState,
   sport: SportId,
@@ -316,48 +305,20 @@ function enrollSport(
   const pin = state.crewBoard;
   const waveStart = waveWindowAt(now).waveStart.toISOString();
 
-  let enrollment: WaveEnrollment;
-  if (pin && pin.sport === sport && pin.waveStart === waveStart) {
-    const selfId = resolveCrewViewerId(pin, viewerId, state.name);
-    const plan = {
-      crewId: pin.crewId,
-      sport: pin.sport,
-      waveStart: pin.waveStart,
-      weekEnd: pin.weekEnd,
-      capacity: pin.capacity,
-      memberIds: pin.memberIds,
-      members: pin.members,
-      syntheticIds: pin.syntheticIds,
-      seed: `crew:${pin.crewId}:${pin.sport}:${pin.waveStart}`,
-    };
-    enrollment = enrollmentFromCrewPlan(
-      plan,
-      selfId === "you" ? "" : selfId,
-    );
-    if (selfId === "you") {
-      enrollment = {
-        ...enrollment,
-        peerIds: pin.memberIds.filter((id) => id !== "you"),
-      };
-    }
-  } else {
-    const assignment = densityMatcher.assignGroup({
-      viewerId,
-      viewerName: state.name,
-      viewerElo: mine.openElo,
-      sport,
-      now,
-      realPool: realPlayerPool,
-      seed: `${viewerId}:${sport}:${waveStart}`,
-      autoEnrollNext: true,
-    });
-    enrollment = assignment.enrollment;
-  }
+  const enrollment =
+    pin && pin.sport === sport && pin.waveStart === waveStart
+      ? enrollmentFromCrewPlan(planFromCrewBoardPin(pin), viewerId)
+      : densityMatcher.assignGroup({
+          viewerId,
+          viewerName: state.name,
+          viewerElo: mine.openElo,
+          sport,
+          now,
+          realPool: realPlayerPool,
+          seed: `${viewerId}:${sport}:${waveStart}`,
+          autoEnrollNext: true,
+        }).enrollment;
 
-  const enrollments = [
-    ...state.enrollments.filter((item) => item.sport !== sport),
-    enrollment,
-  ];
   return {
     ...withRating(state, sport, {
       optedIn: true,
@@ -365,9 +326,39 @@ function enrollSport(
       lockOpen: mine.openElo,
       lockPeriod: enrollment.waveStart,
     }),
-    enrollments,
+    enrollments: [
+      ...state.enrollments.filter((item) => item.sport !== sport),
+      enrollment,
+    ],
     clock: { ...state.clock, periodStart: enrollment.waveStart },
   };
+}
+
+/** Stub activities so crew mates use shared counted volume, not Elo guesses. */
+function crewPeerActivities(
+  pin: CrewBoardPin,
+  viewerId: string,
+): Map<string, Activity[]> {
+  const map = new Map<string, Activity[]>();
+  for (const member of pin.members) {
+    if (member.id === viewerId) continue;
+    if (member.distanceM == null && member.movingSec == null) continue;
+    map.set(member.id, [
+      {
+        id: `crew-week:${pin.crewId}:${member.id}`,
+        sport: pin.sport,
+        startedAt: pin.waveStart,
+        distanceM: member.distanceM ?? 0,
+        movingSec: member.movingSec ?? 0,
+        avgHr: null,
+        verified: false,
+        source: "manual",
+        provenance: "recorded",
+        disposition: "counted",
+      },
+    ]);
+  }
+  return map;
 }
 
 function effectiveNow(state: CompeteState, actionNow?: string): Date {
@@ -392,32 +383,20 @@ function groupFor(
   asOf: Date,
 ): { id: string; name: string; elo: number; effort: number; distanceM: number; movingSec: number; you: boolean }[] {
   const mine = rating(state, sport);
+  const pin =
+    state.crewBoard?.sport === sport && enrollment.crewId === state.crewBoard.crewId
+      ? state.crewBoard
+      : null;
   const fromPool = realPlayerPool.filter((player) =>
     enrollment.peerIds.includes(player.id),
   );
-  const pin = state.crewBoard;
-  const fromCrew =
-    pin && pin.sport === sport && enrollment.crewId === pin.crewId
-      ? poolFromCrewPlan(
-          {
-            crewId: pin.crewId,
-            sport: pin.sport,
-            waveStart: pin.waveStart,
-            weekEnd: pin.weekEnd,
-            capacity: pin.capacity,
-            memberIds: pin.memberIds,
-            members: pin.members,
-            syntheticIds: pin.syntheticIds,
-            seed: `crew:${pin.crewId}:${pin.sport}:${pin.waveStart}`,
-          },
-          "you",
-        ).filter((player) => enrollment.peerIds.includes(player.id))
-      : [];
+  const fromCrew = pin
+    ? poolFromCrewPlan(planFromCrewBoardPin(pin), "you").filter((player) =>
+        enrollment.peerIds.includes(player.id),
+      )
+    : [];
   const seen = new Set(fromPool.map((peer) => peer.id));
-  const peers = [
-    ...fromPool,
-    ...fromCrew.filter((peer) => !seen.has(peer.id)),
-  ];
+  const peers = [...fromPool, ...fromCrew.filter((peer) => !seen.has(peer.id))];
   const rows = buildLocalBoard({
     enrollment,
     viewer: {
@@ -429,6 +408,7 @@ function groupFor(
       primarySport: state.primary,
     },
     peers,
+    peerActivities: pin ? crewPeerActivities(pin, "you") : undefined,
     track,
     asOf,
   });
@@ -862,16 +842,22 @@ export function reduceCompete(
     }
     case "opt-in": {
       if (!action.sport) return rolled;
-      const opted = lockSport(
-        rolled,
-        action.sport,
-        now,
-        action.accountId ?? "you",
+      // Together: crewBoard pin. Alone: crewBoard null. Omit to leave pin as-is.
+      let next: CompeteState = rolled;
+      if (action.crewBoard !== undefined) {
+        next = {
+          ...rolled,
+          crewBoard:
+            action.crewBoard && isCrewBoardPin(action.crewBoard)
+              ? action.crewBoard
+              : null,
+        };
+      }
+      next = lockSport(next, action.sport, now, action.accountId ?? "you");
+      const anyPrimary = next.ratings.some(
+        (item) => item.optedIn && item.sport === next.primary,
       );
-      const anyPrimary = opted.ratings.some(
-        (item) => item.optedIn && item.sport === opted.primary,
-      );
-      const next = anyPrimary ? opted : { ...opted, primary: action.sport };
+      if (!anyPrimary) next = { ...next, primary: action.sport };
       return { ...next, focus: { family: "sport", id: action.sport } };
     }
     case "opt-out": {

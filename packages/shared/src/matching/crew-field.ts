@@ -1,8 +1,9 @@
+import type { CrewBoardPin } from "../compete/sports";
+import type { SportId } from "../compete/sports";
 import { pickSynthetics } from "./synthetic-bank";
 import type { PoolPlayer, WaveEnrollment } from "./types";
 import { DEFAULT_GROUP_CAPACITY } from "./types";
 import { waveWindowAt } from "./waves";
-import type { SportId } from "../compete/sports";
 
 /** Stable seed so every crew mate draws the same synthetic fillers. */
 export function crewFieldSeed(
@@ -17,6 +18,8 @@ export interface CrewFieldMember {
   id: string;
   name: string;
   elo: number;
+  distanceM?: number;
+  movingSec?: number;
 }
 
 export interface CrewWeekFieldPlan {
@@ -30,13 +33,11 @@ export interface CrewWeekFieldPlan {
   members: CrewFieldMember[];
   /** Shared synthetic fillers so every mate sees the same board size. */
   syntheticIds: string[];
-  seed: string;
 }
 
 /**
  * Plan one shared individual field for a crew this week.
- * Each member competes separately; seating (peers + synthetics) is identical
- * across mates. Team-vs-team scoring is intentionally out of scope.
+ * Each member competes separately; seating is identical across mates.
  */
 export function planCrewWeekField(input: {
   crewId: string;
@@ -51,23 +52,19 @@ export function planCrewWeekField(input: {
   const weekEnd = window.weekEnd.toISOString();
   const seed = crewFieldSeed(input.crewId, input.sport, waveStart);
 
-  const sorted = [...input.members]
+  const seated = [...input.members]
     .filter((member) => member.id.trim().length > 0)
-    .sort((a, b) => a.id.localeCompare(b.id));
-  const seated = sorted.slice(0, capacity);
+    .sort((a, b) => a.id.localeCompare(b.id))
+    .slice(0, capacity);
   const memberIds = seated.map((member) => member.id);
+  const elos = seated.map((member) => member.elo).sort((a, b) => a - b);
   const medianElo =
-    seated.length === 0
-      ? 1000
-      : seated.map((member) => member.elo).sort((a, b) => a - b)[
-          Math.floor((seated.length - 1) / 2)
-        ]!;
+    elos.length === 0 ? 1000 : elos[Math.floor((elos.length - 1) / 2)]!;
 
-  const syntheticSlots = Math.max(0, capacity - seated.length);
   const synthetics = pickSynthetics(
     input.sport,
     medianElo,
-    syntheticSlots,
+    Math.max(0, capacity - seated.length),
     memberIds,
     seed,
   );
@@ -81,7 +78,36 @@ export function planCrewWeekField(input: {
     memberIds,
     members: seated,
     syntheticIds: synthetics.map((rival) => rival.id),
-    seed,
+  };
+}
+
+export function crewBoardPinFromPlan(
+  plan: CrewWeekFieldPlan,
+  crewName: string,
+): CrewBoardPin {
+  return {
+    crewId: plan.crewId,
+    crewName,
+    sport: plan.sport,
+    waveStart: plan.waveStart,
+    weekEnd: plan.weekEnd,
+    capacity: plan.capacity,
+    memberIds: plan.memberIds,
+    members: plan.members,
+    syntheticIds: plan.syntheticIds,
+  };
+}
+
+export function planFromCrewBoardPin(pin: CrewBoardPin): CrewWeekFieldPlan {
+  return {
+    crewId: pin.crewId,
+    sport: pin.sport,
+    waveStart: pin.waveStart,
+    weekEnd: pin.weekEnd,
+    capacity: pin.capacity,
+    memberIds: pin.memberIds,
+    members: pin.members,
+    syntheticIds: pin.syntheticIds,
   };
 }
 

@@ -76,6 +76,20 @@ begin
   if not (uid = any (p_member_ids)) then
     raise exception 'caller_not_on_roster';
   end if;
+  -- Every id must be an active member of this crew (no forged peers).
+  if exists (
+    select 1
+    from unnest(p_member_ids) as roster(user_id)
+    where not exists (
+      select 1
+      from public.crew_members member
+      where member.crew_id = p_crew_id
+        and member.user_id = roster.user_id
+        and member.status = 'active'
+    )
+  ) then
+    raise exception 'roster_not_members';
+  end if;
 
   insert into public.crew_week_fields (
     crew_id, wave_start, week_end, sport, capacity, member_ids, synthetic_ids, updated_at

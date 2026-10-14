@@ -25,6 +25,7 @@ export {
   type Duel,
   type CompeteState,
   type CrewBoardPin,
+  type CrewBoardMember,
   type LinkStatus,
   type ProviderLink,
   type PeriodResult,

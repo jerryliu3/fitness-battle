@@ -37,6 +37,8 @@ export {
 export {
   crewFieldSeed,
   planCrewWeekField,
+  crewBoardPinFromPlan,
+  planFromCrewBoardPin,
   enrollmentFromCrewPlan,
   poolFromCrewPlan,
   type CrewFieldMember,
