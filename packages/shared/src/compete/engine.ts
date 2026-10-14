@@ -7,7 +7,7 @@ import {
   type WaveEnrollment,
 } from "../matching";
 import { eloFromWeeklyEffort, periodEffort } from "./effort";
-import { mergeActivities, provenanceOf } from "./ledger";
+import { mergeActivities, normalizeSampleActivity, provenanceOf } from "./ledger";
 import { isTrainingGoal } from "./suggestion";
 import { settleElo } from "./elo";
 import {
@@ -190,6 +190,10 @@ export function migrateCompeteState(parsed: CompeteState): CompeteState {
           })
         : freshHealthRatings(parsed.clock?.periodStart ?? new Date().toISOString()),
     healthResults: Array.isArray(parsed.healthResults) ? parsed.healthResults : [],
+    healthResults: Array.isArray(parsed.healthResults) ? parsed.healthResults : [],
+    activities: Array.isArray(parsed.activities)
+      ? parsed.activities.map(normalizeSampleActivity)
+      : [],
     trainingGoal: isTrainingGoal(parsed.trainingGoal) ? parsed.trainingGoal : null,
   };
 }
@@ -996,10 +1000,12 @@ export function reduceCompete(
       };
     }
     case "set-training-goal": {
-      const distance = action.goalDistance;
-      const deadline = action.deadline?.trim() ?? "";
-      if (!isTrainingGoal({ distance, deadline })) return rolled;
-      return { ...rolled, trainingGoal: { distance, deadline } };
+      const goal = {
+        distance: action.goalDistance,
+        deadline: action.deadline?.trim() ?? "",
+      };
+      if (!isTrainingGoal(goal)) return rolled;
+      return { ...rolled, trainingGoal: goal };
     }
     case "clear-training-goal":
       return { ...rolled, trainingGoal: null };

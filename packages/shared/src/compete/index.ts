@@ -96,8 +96,10 @@ export { chooseCompeteState, isCompeteState, type CompeteEnvelope } from "./snap
 export {
   countsOnTrack,
   dispositionOf,
+  isSampleActivity,
   isVerifiedActivity,
   mergeActivities,
+  normalizeSampleActivity,
   paceMinPerKm,
   progressionTrends,
   provenanceOf,
