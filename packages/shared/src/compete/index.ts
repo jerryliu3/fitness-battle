@@ -92,6 +92,22 @@ export {
   type BoardRow,
   type DuelView,
 } from "./engine";
+export { chooseCompeteState, isCompeteState, type CompeteEnvelope } from "./snapshot";
+export {
+  countsOnTrack,
+  dispositionOf,
+  isSampleActivity,
+  isVerifiedActivity,
+  mergeActivities,
+  normalizeSampleActivity,
+  paceMinPerKm,
+  progressionTrends,
+  provenanceOf,
+  sameWorkout,
+  type ActivityDisposition,
+  type ActivityProvenance,
+  type TrendPoint,
+} from "./ledger";
 export {
   BENCHMARKS,
   paceBoard,
@@ -116,3 +132,13 @@ export {
   type CheckpointIndex,
   type CheckpointSeries,
 } from "./track";
+export {
+  isTrainingGoal,
+  suggestOpen,
+  suggestToday,
+  suggestionForState,
+  type DaySuggestion,
+  type PlanPhase,
+  type SuggestionKind,
+} from "./suggestion";
+export type { GoalDistance, TrainingGoal } from "./sports";

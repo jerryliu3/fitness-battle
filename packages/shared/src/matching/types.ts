@@ -13,7 +13,7 @@ export interface PoolPlayer {
   sport: SportId;
   /** When this player’s own wave started (ISO). Used for pool filtering. */
   waveStart: string;
-  /** Exclusive Sunday week end for this player’s enrollment (ISO). */
+  /** Exclusive Monday week end for this player’s enrollment (ISO). */
   weekEnd: string;
 }
 
@@ -26,9 +26,9 @@ export interface SyntheticRival {
 }
 
 export interface WaveWindow {
-  /** Inclusive UTC midnight when the daily wave opened. */
+  /** Inclusive Monday 00:00 UTC for the week that contains the join. */
   waveStart: Date;
-  /** Exclusive UTC Sunday midnight when this competition week ends. */
+  /** Exclusive UTC Monday midnight when this competition week ends. */
   weekEnd: Date;
 }
 

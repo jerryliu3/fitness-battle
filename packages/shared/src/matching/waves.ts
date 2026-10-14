@@ -10,26 +10,29 @@ export function startOfUtcDay(date: Date): Date {
 }
 
 /**
- * Exclusive end of the competition week that contains `from`.
- * Weeks reset Sunday 00:00 UTC. If `from` is already Sunday midnight,
- * the window runs a full seven days to the following Sunday.
+ * Exclusive end of the UTC Monday week that contains `from`.
+ * Monday 00:00 is already the next week, so it runs seven days forward.
  */
 export function weekEndAfter(from: Date): Date {
   const day = startOfUtcDay(from);
   const weekday = day.getUTCDay(); // 0 Sun … 6 Sat
-  const daysUntilNextSunday = weekday === 0 ? 7 : 7 - weekday;
-  const endsAt = new Date(day);
-  endsAt.setUTCDate(endsAt.getUTCDate() + daysUntilNextSunday);
+  const daysFromMonday = weekday === 0 ? 6 : weekday - 1;
+  const startsAt = new Date(day);
+  startsAt.setUTCDate(startsAt.getUTCDate() - daysFromMonday);
+  const endsAt = new Date(startsAt);
+  endsAt.setUTCDate(endsAt.getUTCDate() + 7);
   return endsAt;
 }
 
 /**
- * Rolling daily wave: join locks waveStart to today's UTC midnight;
- * weekEnd is the upcoming Sunday reset (exclusive).
+ * The open competition week: Monday 00:00 UTC through the next Monday.
+ * Joining mid-week uses that same window. Late activities in the week count.
  */
 export function waveWindowAt(now: Date = new Date()): WaveWindow {
-  const waveStart = startOfUtcDay(now);
-  return { waveStart, weekEnd: weekEndAfter(waveStart) };
+  const end = weekEndAfter(now);
+  const waveStart = new Date(end);
+  waveStart.setUTCDate(waveStart.getUTCDate() - 7);
+  return { waveStart, weekEnd: end };
 }
 
 export function isWithinWave(
@@ -63,8 +66,7 @@ export function utcDaysInRange(start: Date, throughExclusive: Date): Date[] {
 }
 
 /**
- * Fraction of a full Sun→Sun week that this wave covers (1 for Sunday joiners,
- * 6/7 for Monday, …, 1/7 for Saturday).
+ * UTC days in the enrollment window. A Monday week is 7.
  */
 export function waveLengthDays(window: WaveWindow): number {
   return Math.max(

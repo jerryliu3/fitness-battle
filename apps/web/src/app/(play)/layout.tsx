@@ -1,7 +1,7 @@
 "use client";
 
 import { useAuth } from "@/components/auth-context";
-import { CompeteProvider } from "@/components/compete-context";
+import { CompeteProvider, useCompete } from "@/components/compete-context";
 import { NavIcon } from "@/features/evolution-lab/brand-art";
 import { useTheme } from "@/theme/theme-provider";
 import Link from "next/link";
@@ -18,12 +18,14 @@ const TABS = {
     { href: "/", label: "My week", kind: "track" as const },
     { href: "/board", label: "Matchups", kind: "field" as const },
     { href: "/splits", label: "Moves", kind: "splits" as const },
+    { href: "/progress", label: "Progress", kind: "athlete" as const },
     { href: "/you", label: "You", kind: "athlete" as const },
   ],
   classic: [
     { href: "/", label: "My track", kind: "track" as const },
     { href: "/board", label: "The field", kind: "field" as const },
     { href: "/splits", label: "Splits", kind: "splits" as const },
+    { href: "/progress", label: "Progress", kind: "athlete" as const },
     { href: "/you", label: "Athlete", kind: "athlete" as const },
   ],
 } as const;
@@ -31,6 +33,7 @@ const TABS = {
 function PlayChrome({ children }: { children: ReactNode }) {
   const path = usePathname();
   const { user, loading } = useAuth();
+  const { saveError, legacyOffer, loadStatus, recoverLegacy, retryLoad } = useCompete();
   const { theme } = useTheme();
   const hideTabs = path.startsWith("/onboarding");
   const tabs = theme.id === "rally" ? TABS.rally : TABS.classic;
@@ -119,6 +122,25 @@ function PlayChrome({ children }: { children: ReactNode }) {
           </nav>
         )}
         <div className={`fb-scroll${hideTabs ? " fb-scroll-solo" : ""}`}>
+          {!hideTabs && saveError ? (
+            <p className="fb-guest-banner">{saveError}</p>
+          ) : null}
+          {!hideTabs && legacyOffer ? (
+            <p className="fb-guest-banner">
+              This browser still has history from before accounts.{" "}
+              <button type="button" className="fb-btn-ghost" onClick={recoverLegacy}>
+                Use it on this account
+              </button>
+            </p>
+          ) : null}
+          {!hideTabs && loadStatus === "failed" ? (
+            <p className="fb-guest-banner">
+              Could not load the account copy. This screen is read-only.{" "}
+              <button type="button" className="fb-btn-ghost" onClick={retryLoad}>
+                Retry
+              </button>
+            </p>
+          ) : null}
           {!hideTabs && !loading && !user ? (
             <p className="fb-guest-banner">
               Browsing as a guest.{" "}

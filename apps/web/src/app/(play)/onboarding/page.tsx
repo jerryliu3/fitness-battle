@@ -71,6 +71,10 @@ function OnboardingFlow() {
         message?: string;
         authorizeUrl?: string;
       };
+      if (!response.ok) {
+        setConnectMessage("Could not start Strava. You can skip for now.");
+        return;
+      }
       if (body.authorizeUrl) {
         window.location.href = body.authorizeUrl;
         return;

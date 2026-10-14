@@ -1,3 +1,4 @@
+import { countsOnTrack } from "./ledger";
 import { clamp, sportById, type Activity, type ReadinessMark, type SportId } from "./sports";
 
 /**
@@ -46,7 +47,7 @@ export function periodEffort(
     if (activity.sport !== sport) continue;
     const at = new Date(activity.startedAt);
     if (at < periodStart || at >= periodEnd) continue;
-    if (track === "verified" && !activity.verified) continue;
+    if (!countsOnTrack(activity, track)) continue;
     effort += activityEffort(activity);
     distanceM += activity.distanceM;
     movingSec += activity.movingSec;

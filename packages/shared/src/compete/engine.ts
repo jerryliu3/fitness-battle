@@ -6,7 +6,9 @@ import {
   type PoolPlayer,
   type WaveEnrollment,
 } from "../matching";
-import { eloFromWeeklyEffort, periodEffort, readinessBonus } from "./effort";
+import { eloFromWeeklyEffort, periodEffort } from "./effort";
+import { mergeActivities, normalizeSampleActivity, provenanceOf } from "./ledger";
+import { isTrainingGoal } from "./suggestion";
 import { settleElo } from "./elo";
 import {
   demoSleepNight,
@@ -83,6 +85,9 @@ export interface Action {
     | "freeze"
     | "duel"
     | "acknowledge-reveal"
+    | "set-disposition"
+    | "set-training-goal"
+    | "clear-training-goal"
     /** Demo/dev: settle the open week as if Monday UTC already arrived. */
     | "debug-close-week";
   name?: string;
@@ -104,8 +109,14 @@ export interface Action {
   /** Daily recovery marks from WHOOP or Oura. */
   readiness?: ReadinessMark[];
   linkStatus?: "stub" | "connected";
+  /** Demo mode may invent a local session. Live mode must not. */
+  allowSample?: boolean;
   /** Result ids to clear from the pending reveal queue. */
   revealIds?: string[];
+  activityId?: string;
+  disposition?: "counted" | "pending" | "excluded";
+  goalDistance?: "5k" | "10k" | "half" | "marathon";
+  deadline?: string;
 }
 
 function rating(state: CompeteState, sport: SportId): Rating {
@@ -179,6 +190,10 @@ export function migrateCompeteState(parsed: CompeteState): CompeteState {
           })
         : freshHealthRatings(parsed.clock?.periodStart ?? new Date().toISOString()),
     healthResults: Array.isArray(parsed.healthResults) ? parsed.healthResults : [],
+    activities: Array.isArray(parsed.activities)
+      ? parsed.activities.map(normalizeSampleActivity)
+      : [],
+    trainingGoal: isTrainingGoal(parsed.trainingGoal) ? parsed.trainingGoal : null,
   };
 }
 
@@ -219,6 +234,7 @@ export function freshState(now: Date = new Date()): CompeteState {
     onboardingCompleted: false,
     periodResults: [],
     pendingRevealIds: [],
+    trainingGoal: null,
     demoNow: null,
     enrollments: [],
   };
@@ -463,7 +479,7 @@ function settleEnrollment(
   };
 
   if (enrollment.autoEnrollNext) {
-    // Next wave opens at the Sunday reset instant (weekEnd).
+    // Next week opens at Monday 00:00 UTC (weekEnd).
     next = enrollSport(next, sport, end);
   } else {
     next = withRating(next, sport, { optedIn: false });
@@ -542,6 +558,7 @@ function makeActivity(
   avgHr: number,
   verified: boolean,
   source: Activity["source"],
+  provenance: Activity["provenance"] = "recorded",
 ): Activity {
   return {
     id: `act-${hashString(`${sport}:${startedAt.toISOString()}:${distanceM}:${source}`).toString(16)}`,
@@ -550,8 +567,10 @@ function makeActivity(
     distanceM,
     movingSec,
     avgHr,
-    verified,
+    verified: provenance === "recorded" && verified,
     source,
+    provenance,
+    disposition: "counted",
   };
 }
 
@@ -574,27 +593,28 @@ function historyFor(level: "light" | "steady" | "heavy", now: Date): Activity[] 
           km * 1000,
           km * minPerKm * 60,
           136 + Math.round(unitInterval(`run-hr:${key}`) * 24),
-          true,
+          false,
           "history",
+          "demo",
         ),
       );
     }
     if (hashString(`ride:${key}`) % (level === "heavy" ? 4 : 6) === 0) {
       const km = (16 + unitInterval(`ride-km:${key}`) * 28) * volume;
       activities.push(
-        makeActivity("cycling", at, km * 1000, km * 2.05 * 60, 130, true, "history"),
+        makeActivity("cycling", at, km * 1000, km * 2.05 * 60, 130, false, "history", "demo"),
       );
     }
     if (hashString(`walk:${key}`) % 4 === 0) {
       const km = (2.5 + unitInterval(`walk-km:${key}`) * 4) * volume;
       activities.push(
-        makeActivity("walking", at, km * 1000, km * 12 * 60, 108, true, "history"),
+        makeActivity("walking", at, km * 1000, km * 12 * 60, 108, false, "history", "demo"),
       );
     }
     if (hashString(`lift:${key}`) % (level === "light" ? 4 : 3) === 0) {
       const minutes = (22 + Math.round(unitInterval(`lift-min:${key}`) * 28)) * volume;
       activities.push(
-        makeActivity("strength", at, 0, minutes * 60, 124, false, "history"),
+        makeActivity("strength", at, 0, minutes * 60, 124, false, "history", "demo"),
       );
     }
   }
@@ -676,7 +696,6 @@ function syncProvider(
   );
   if (already) return next;
   const gps = sportById(sport).gps;
-  const verified = gps && hashString(`${provider}:${day}`) % 4 !== 0;
   const km = gps ? 5 + unitInterval(`${provider}:km:${day}`) * 8 : 0;
   const minutes = gps
     ? km * (5.2 + unitInterval(`${provider}:pace:${day}`))
@@ -687,9 +706,11 @@ function syncProvider(
     km * 1000,
     minutes * 60,
     140 + Math.round(unitInterval(`${provider}:hr:${day}`) * 18),
-    verified,
+    false,
     provider,
+    "demo",
   );
+  activity.dispositionReason = "Sample session. Not a live tracker pull.";
   return { ...next, activities: [...next.activities, activity] };
 }
 
@@ -840,19 +861,17 @@ export function reduceCompete(
     case "complete-onboarding":
       return { ...rolled, onboardingCompleted: true };
     case "sync": {
-      if (!action.provider) return rolled;
+      if (!action.provider || !action.allowSample) return rolled;
       const link = rolled.links.find((item) => item.provider === action.provider);
       if (!link?.linked) return rolled;
       return syncProvider(rolled, action.provider, now);
     }
     case "apply-sync": {
       if (!action.provider) return rolled;
-      const seen = new Set(rolled.activities.map((activity) => activity.id));
-      const added = (action.activities ?? []).filter((activity) => {
-        if (activity.source !== action.provider || seen.has(activity.id)) return false;
-        seen.add(activity.id);
-        return true;
-      });
+      const incoming = (action.activities ?? []).filter(
+        (activity) => activity.source === action.provider,
+      );
+      const merged = mergeActivities(rolled.activities, incoming);
       const linkStatus = action.linkStatus;
       const links = linkStatus
         ? rolled.links.map((link) =>
@@ -873,7 +892,7 @@ export function reduceCompete(
       return mergeSleepNights(
         {
           ...rolled,
-          activities: added.length ? [...rolled.activities, ...added] : rolled.activities,
+          activities: merged,
           readiness: ready.length ? [...rolled.readiness, ...ready] : rolled.readiness,
           links,
         },
@@ -886,7 +905,21 @@ export function reduceCompete(
       const level = action.level ?? "steady";
       const kept = rolled.activities.filter((activity) => activity.source !== "history");
       const activities = [...kept, ...historyFor(level, now)];
-      return calibrate({ ...rolled, activities }, now);
+      const calibrated = calibrate({ ...rolled, activities }, now);
+      return {
+        ...calibrated,
+        activities: calibrated.activities.map((activity) =>
+          provenanceOf(activity) === "demo"
+            ? {
+                ...activity,
+                verified: false,
+                disposition: "excluded" as const,
+                dispositionReason:
+                  "Sample calibration. It set a starting rating and is not a counted workout.",
+              }
+            : activity,
+        ),
+      };
     }
     case "complete-lesson":
       return { ...rolled, lessonDoneOn: dayKey(now) };
@@ -944,6 +977,37 @@ export function reduceCompete(
       const opted = mine.optedIn ? rolled : lockSport(rolled, sport, now);
       return { ...opted, duels: [...opted.duels, duel] };
     }
+    case "set-disposition": {
+      if (!action.activityId || !action.disposition) return rolled;
+      const disposition = action.disposition;
+      return {
+        ...rolled,
+        activities: rolled.activities.map((activity) =>
+          activity.id === action.activityId
+            ? {
+                ...activity,
+                disposition,
+                dispositionReason:
+                  disposition === "counted"
+                    ? "You counted this session."
+                    : disposition === "excluded"
+                      ? "You left this session out of the week."
+                      : "Waiting for you to count this session.",
+              }
+            : activity,
+        ),
+      };
+    }
+    case "set-training-goal": {
+      const goal = {
+        distance: action.goalDistance,
+        deadline: action.deadline?.trim() ?? "",
+      };
+      if (!isTrainingGoal(goal)) return rolled;
+      return { ...rolled, trainingGoal: goal };
+    }
+    case "clear-training-goal":
+      return { ...rolled, trainingGoal: null };
     case "acknowledge-reveal": {
       const clearAll = !action.revealIds || action.revealIds.length === 0;
       if (clearAll) {
@@ -957,7 +1021,7 @@ export function reduceCompete(
     }
     case "debug-close-week": {
       // Product settlement is load-time (rollClock). Advance past the active
-      // wave's Sunday weekEnd and pin demoNow so the new wave sticks.
+      // wave's Monday weekEnd and pin demoNow so the new wave sticks.
       const primaryEnrollment = enrollmentFor(rolled, rolled.primary);
       const end = primaryEnrollment
         ? new Date(primaryEnrollment.weekEnd)
@@ -1043,11 +1107,7 @@ export function duelViews(state: CompeteState, now: Date = new Date()): DuelView
         bounds.endsAt,
         "open",
       );
-      const bonus =
-        live.primary === duel.sport
-          ? readinessBonus(live.readiness, bounds.startsAt, bounds.endsAt)
-          : 0;
-      const youEffort = volume.effort + bonus;
+      const youEffort = volume.effort;
       const rivalEffort = athleteWeekEffort(
         {
           id: duel.rivalId,

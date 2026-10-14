@@ -142,9 +142,17 @@ export interface Activity {
   distanceM: number;
   movingSec: number;
   avgHr: number | null;
-  /** GPS trace or a device benchmark that is hard to type in by hand. */
+  /**
+   * GPS session recorded by a tracker. File imports and sample history are
+   * not verified even when this flag was set by an older client.
+   */
   verified: boolean;
-  source: ProviderId | "history";
+  source: ProviderId | "history" | "manual";
+  /** recorded | imported | manual | demo. Missing means recorded, except history. */
+  provenance?: "recorded" | "imported" | "manual" | "demo";
+  /** counted | pending | excluded. Missing means counted. */
+  disposition?: "counted" | "pending" | "excluded";
+  dispositionReason?: string;
 }
 
 export interface ReadinessMark {
@@ -172,6 +180,14 @@ export interface ProviderLink {
   linked: boolean;
   /** Honest connection evidence. Stub means demo sync, not live OAuth. */
   status: LinkStatus;
+}
+
+export type GoalDistance = "5k" | "10k" | "half" | "marathon";
+
+export interface TrainingGoal {
+  distance: GoalDistance;
+  /** Race or target day, YYYY-MM-DD. */
+  deadline: string;
 }
 
 /** Locked snapshot written when a weekly period settles. */
@@ -223,13 +239,15 @@ export interface CompeteState {
   periodResults: PeriodResult[];
   /** Result ids waiting for the week-complete reveal UI. */
   pendingRevealIds: string[];
+  /** Race or target day. Today's suggestion is derived from this plus counted runs. */
+  trainingGoal: TrainingGoal | null;
   /**
    * Demo/QA clock override. When set, period math uses this instant instead of
    * wall time so "close this week" stays settled across reloads.
    */
   demoNow?: string | null;
   /**
-   * Per-sport wave enrollments (rolling daily waves, Sunday week end).
+   * Per-sport enrollments. The open week is Monday 00:00 UTC through the next Monday.
    * Each viewer’s board is derived from their own enrollment — not a shared
    * central ranking.
    */
