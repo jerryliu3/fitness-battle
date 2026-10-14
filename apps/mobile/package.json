@@ -10,7 +10,11 @@
     "ios": "expo start --ios",
     "typecheck": "tsc --noEmit",
     "lint": "echo 'no lint configured'",
-    "test": "echo 'no mobile unit tests yet'"
+    "test": "echo 'no mobile unit tests yet'",
+    "eas:build:ios": "eas build --platform ios --profile production",
+    "eas:build:android": "eas build --platform android --profile production",
+    "eas:submit:ios": "eas submit --platform ios --profile production --latest",
+    "eas:submit:android": "eas submit --platform android --profile production --latest"
   },
   "dependencies": {
     "@expo-google-fonts/bebas-neue": "^0.4.0",

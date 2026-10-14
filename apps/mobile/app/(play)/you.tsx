@@ -389,6 +389,7 @@ function YouContent() {
       <LineButton label="Pace board" onPress={() => router.push("/pace")} />
       <LineButton label="Race rankings" onPress={() => router.push("/rankings")} />
       <LineButton label="Privacy Policy" onPress={() => router.push("/privacy")} />
+      <LineButton label="Terms of Use" onPress={() => router.push("/terms")} />
       <LineButton label="Sign out" onPress={() => void signOut()} />
     </>
   );

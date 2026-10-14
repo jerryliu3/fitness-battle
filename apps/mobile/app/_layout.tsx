@@ -50,6 +50,7 @@ export default function RootLayout() {
           <Stack.Screen name="onboarding" />
           <Stack.Screen name="pace" />
           <Stack.Screen name="privacy" />
+          <Stack.Screen name="terms" />
           <Stack.Screen name="rankings/index" />
           <Stack.Screen name="rankings/[distance]" />
           <Stack.Screen name="connections" />

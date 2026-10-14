@@ -61,9 +61,10 @@ export default function PrivacyScreen() {
           </Copy>
 
           <Note>
-            This summary matches the web privacy page intent for store review.
-            The full web policy lives at /privacy on the deployed site.
+            Full policy: https://fitness-battle-one.vercel.app/privacy · Contact
+            3jerryliu@gmail.com
           </Note>
+          <GhostButton label="Terms of Use" onPress={() => router.push("/terms")} />
         </Card>
       </ScrollView>
     </SafeAreaView>

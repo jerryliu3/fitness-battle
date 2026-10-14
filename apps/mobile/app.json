@@ -16,7 +16,14 @@
     "plugins": [
       "expo-router",
       "expo-font",
-      "react-native-health",
+      [
+        "react-native-health",
+        {
+          "isClinicalDataEnabled": false,
+          "healthSharePermission": "Fitness Battle reads workouts so your week can be scored.",
+          "healthUpdatePermission": "Fitness Battle does not write health data."
+        }
+      ],
       "react-native-health-connect"
     ],
     "experiments": {
@@ -25,18 +32,31 @@
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "com.fitnessbattle.app",
+      "buildNumber": "1",
+      "usesAppleSignIn": false,
       "infoPlist": {
         "NSHealthShareUsageDescription": "Fitness Battle reads workouts so your week can be scored.",
         "NSHealthUpdateUsageDescription": "Fitness Battle does not write health data.",
+        "ITSAppUsesNonExemptEncryption": false,
         "CFBundleURLTypes": [
           {
             "CFBundleURLSchemes": ["fitnessbattle"]
           }
         ]
+      },
+      "privacyManifests": {
+        "NSPrivacyAccessedAPITypes": [
+          {
+            "NSPrivacyAccessedAPIType": "NSPrivacyAccessedAPICategoryUserDefaults",
+            "NSPrivacyAccessedAPITypeReasons": ["CA92.1"]
+          }
+        ],
+        "NSPrivacyTracking": false
       }
     },
     "android": {
       "package": "com.fitnessbattle.app",
+      "versionCode": 1,
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#12141a"
@@ -54,6 +74,7 @@
         }
       ],
       "permissions": [
+        "android.permission.INTERNET",
         "android.permission.health.READ_EXERCISE",
         "android.permission.health.READ_HEART_RATE",
         "android.permission.health.READ_SLEEP"
@@ -67,7 +88,10 @@
     "extra": {
       "eas": {
         "projectId": "fitness-battle-placeholder"
-      }
+      },
+      "privacyPolicyUrl": "https://fitness-battle-one.vercel.app/privacy",
+      "termsOfServiceUrl": "https://fitness-battle-one.vercel.app/terms",
+      "supportEmail": "3jerryliu@gmail.com"
     },
     "owner": "fitness-battle"
   }
