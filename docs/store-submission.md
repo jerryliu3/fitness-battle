@@ -25,11 +25,12 @@ Expo CLI steps: [`docs/expo-setup.md`](./expo-setup.md)
 
 ## Waiting on you
 
-1. **Expo** — linked. Project ID `bea1932b-6a00-4edc-9710-22350423c446`, slug `fitness-battle` (see [`expo-setup.md`](./expo-setup.md)).
-2. **Apple Developer / Google Play** — finish enrollment (in progress). Then create the app listings and link teams when EAS asks.
-3. **First builds** — after enrollment, run preview then production builds from [`expo-setup.md`](./expo-setup.md).
-4. **Store screenshots** — phone frames for listings (Expo web demos exist; stores want device screenshots).
-5. **Legal skim** — confirm privacy/terms are OK for HealthKit / Health Connect.
+1. **Expo** — linked (`bea1932b-6a00-4edc-9710-22350423c446`, slug `fitness-battle`).
+2. **Apple Developer** — enrollment done. Next: create the App Store Connect app + run the first iOS EAS preview build ([`expo-setup.md`](./expo-setup.md)).
+3. **Paste back** — preview build success/fail (or error log), and the App Store Connect numeric Apple ID (`ascAppId`) for `eas.json` submit.
+4. **Google Play** — whenever enrollment finishes (not blocking iOS).
+5. **Store screenshots** — phone frames for listings (after a build you can install).
+6. **Legal skim** — confirm privacy/terms are OK for HealthKit / Health Connect.
 
 ## App Store Connect — Privacy Nutrition (draft)
 

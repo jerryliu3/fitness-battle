@@ -5,71 +5,94 @@
 | Step | Status |
 | --- | --- |
 | Expo account + `eas login` | Done |
-| Link project ID `bea1932b-6a00-4edc-9710-22350423c446` | Done (`Project already linked`) |
-| Slug | Keep **`fitness-battle`** in `app.json` (remote was briefly `fitness`; saying yes to overwrite aligned Expo with the repo) |
-| Apple Developer / Google Play enrollment | Waiting on you |
-| First EAS preview builds | After enrollment |
-
-## Ignore these Expo dashboard steps
-
-The Expo “Get started” page is for a **brand-new** app. For this monorepo:
-
-| Dashboard step | Do this instead |
-| --- | --- |
-| `npx create-expo-app@latest fitness` | **Skip.** App already lives in `apps/mobile`. |
-| Bare `eas init` | **Skip.** Use connect-by-id only. |
-| `npx eas-cli@latest init --id bea1932b-…` | **Done** on the mobile branch. |
-| Install Expo Cursor skills | Optional. |
-| `npx expo start` | From `apps/mobile`, or `pnpm dev:mobile` at repo root. |
+| Link project ID `bea1932b-6a00-4edc-9710-22350423c446` | Done |
+| Slug | Keep **`fitness-battle`** in `app.json` |
+| Apple Developer enrollment | Done |
+| App Store Connect app + first iOS build | **You — next** |
+| Google Play enrollment | Whenever ready (not blocking iOS) |
 
 ## Working directory
 
-Commands below assume you are in **`apps/mobile`**.
+Commands assume you are in **`apps/mobile`**.
 
-- If your prompt already ends in `mobile %`, you are there — do **not** run `cd apps/mobile` again (that path only exists from the repo root).
-- From the monorepo root: `cd apps/mobile`.
+- Prompt already ends in `mobile %` → stay put (do **not** `cd apps/mobile`).
+- From monorepo root → `cd apps/mobile`.
 
-## Your Expo project ID
+## Apple → first iOS build (do this now)
 
-`bea1932b-6a00-4edc-9710-22350423c446`
+### 1. Create the app in App Store Connect (browser)
 
-In `apps/mobile/app.json` → `extra.eas.projectId`. Slug must stay `fitness-battle`.
+1. Open [App Store Connect](https://appstoreconnect.apple.com) → **My Apps** → **+** → **New App**.
+2. Use:
+   - **Platforms:** iOS
+   - **Name:** Fitness Battle (or whatever is available)
+   - **Primary language:** English (U.S.)
+   - **Bundle ID:** register/select **`com.fitnessbattle.app`** (must match `app.json`)
+   - **SKU:** e.g. `fitness-battle-ios`
+3. After it exists, open the app → **App Information**. Copy the numeric **Apple ID** (digits only, under General Information). That is `ascAppId` for later submit — paste it in chat or put it in `eas.json` when you have it.
 
-## Why bare `eas init` failed
+You do **not** need screenshots or Privacy Nutrition filled before the first EAS build.
 
-```
-expo config --json exited with non-zero code: 1
-Error: project:init command failed.
-```
-
-Bare `eas init` (no `--id`) fails in this pnpm monorepo on some Mac checkouts. Connect-by-id is the supported path:
+### 2. Build on your Mac (Terminal)
 
 ```bash
-# From apps/mobile (after git checkout cursor/mobile-rally-style-fbce + pnpm install at root)
-npx eas-cli@latest init --id bea1932b-6a00-4edc-9710-22350423c446
-# or: pnpm eas:init
+# Repo root once if needed
+git fetch origin
+git checkout cursor/mobile-rally-style-fbce
+pnpm install
+
+# Then into the Expo app (skip if already there)
+cd apps/mobile
+
+# Logged into Expo already. First iOS cloud build:
+npx eas-cli@latest build --platform ios --profile preview
 ```
 
-## Production env (already in eas.json)
+When EAS prompts:
 
-Battles Supabase (not rankings), same as Vercel web:
+| Prompt | Answer |
+| --- | --- |
+| Log in to Apple / Apple ID | Use the Apple ID that owns the Developer account |
+| Select team | Your paid Apple Developer team |
+| Generate credentials / distribution cert / provisioning | **Yes** — let EAS manage |
+| Bundle identifier | Confirm `com.fitnessbattle.app` |
+| Push notifications / other extras | Defaults / No unless asked for HealthKit and you know you need a manual capability |
+
+Build runs in Expo’s cloud. When it finishes, open the build URL Expo prints (also under [expo.dev](https://expo.dev) → project → Builds). For **preview**, install via the QR / internal link on a registered device, or use a simulator build later if you switch profile.
+
+### 3. After a green preview build (store path)
+
+```bash
+# Still in apps/mobile
+npx eas-cli@latest build --platform ios --profile production
+```
+
+Submit only after `ascAppId` is set in `eas.json` (or pass it when EAS asks):
+
+```bash
+npx eas-cli@latest submit --platform ios --profile production --latest
+```
+
+## What to send back in chat
+
+1. Whether the **preview** iOS build succeeded (or paste the full error).
+2. The App Store Connect numeric **Apple ID** (`ascAppId`) when you have it — so it can be written into `eas.json`.
+3. Nothing else (no passwords, no .p8 keys in chat). EAS stores credentials for you.
+
+## Production env (already in eas.json)
 
 | Variable | Value |
 | --- | --- |
 | `EXPO_PUBLIC_API_URL` | `https://fitness-battle-one.vercel.app` |
-| `EXPO_PUBLIC_SUPABASE_URL` | `https://pxruixccvrykhbjzjqga.supabase.co` |
-| `EXPO_PUBLIC_SUPABASE_ANON_KEY` | publishable key (in `eas.json`) |
+| `EXPO_PUBLIC_SUPABASE_URL` | `https://pxruixccvrykhbjzjqga.supabase.co` (battles, not rankings) |
 | `EXPO_PUBLIC_USE_DEMO_DATA` | `false` |
 
-## Builds (after Apple / Play enrollment)
+## Android (later)
+
+After Google Play enrollment:
 
 ```bash
-# From apps/mobile
 npx eas-cli@latest build --platform android --profile preview
-npx eas-cli@latest build --platform ios --profile preview
-
-npx eas-cli@latest build --platform android --profile production
-npx eas-cli@latest build --platform ios --profile production
 ```
 
 ## Optional: Expo Cursor skills
