@@ -85,14 +85,14 @@ export default function FieldScreen() {
         <ProductHeader sourceStatus={source.status} sourceLabel={source.label} />
         <View style={{ gap: 8 }}>
           <Kicker>
-            The field ·{" "}
+            Matchups ·{" "}
             {formatClock({
               startsAt: board.periodStart,
               endsAt: board.periodEnd,
               kind: state.clock.kind,
             })}
           </Kicker>
-          <Title line1="THE" line2="FIELD." />
+          <Title line1="FIND YOUR" line2="MATCHUP." />
           <Copy>
             {sleepSelected
               ? "Sleep ranks last night and the week’s average. It does not use the track."
@@ -176,8 +176,8 @@ export default function FieldScreen() {
         {!sleepSelected && !board.optedIn ? (
           <View style={ui.empty}>
             <Text style={ui.cardTitle}>You are not on this field</Text>
-            <Copy>{spec.blurb}</Copy>
-            <Note>
+            <Copy onCard>{spec.blurb}</Copy>
+            <Note onCard>
               Fields are density groups of eight. Synthetic rivals fill empty
               seats and drop when more people join.
             </Note>
@@ -195,7 +195,7 @@ export default function FieldScreen() {
         {!sleepSelected && board.optedIn ? (
           <>
             <Card>
-              <Kicker>This week’s field</Kicker>
+              <Kicker onCard>This week’s field</Kicker>
               {board.rows.map((row) => (
                 <View key={row.id} style={[ui.row, row.you ? ui.youRow : null]}>
                   <Text style={ui.place}>{row.place}</Text>
@@ -205,7 +205,7 @@ export default function FieldScreen() {
                   </View>
                 </View>
               ))}
-              <Note>
+              <Note onCard>
                 {frozen
                   ? "This week is frozen. Rating will not move when it closes."
                   : board.you && nextElo != null && currentElo != null
@@ -222,7 +222,7 @@ export default function FieldScreen() {
 
         <Card>
           <Text style={ui.cardTitle}>1v1 this week</Text>
-          <Copy>
+          <Copy onCard>
             One opponent, same weekly window. Auto match picks the closest
             rating.
           </Copy>
@@ -252,7 +252,7 @@ export default function FieldScreen() {
                     ]}
                   />
                 </View>
-                <Note>
+                <Note onCard>
                   {view.leading === "tie"
                     ? "Level right now."
                     : view.leading === "you"

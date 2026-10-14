@@ -55,10 +55,10 @@ export default function SplitsScreen() {
           <Kicker>
             {board.periodLabel} / {spec.name}
           </Kicker>
-          <Title line1="YOUR" line2="SPLITS." />
+          <Title line1="YOUR" line2="MOVES." />
           <Copy>
-            The work behind the line. Each counted session is a numbered split
-            for this week.
+            Each counted session is a move for this week — rings on My week,
+            receipts here.
           </Copy>
         </View>
 

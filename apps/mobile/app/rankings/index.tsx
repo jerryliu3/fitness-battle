@@ -45,7 +45,11 @@ export default function RankingsHomeScreen() {
   return (
     <SafeAreaView style={ui.safe} edges={["top"]}>
       <ScrollView contentContainerStyle={ui.scroll}>
-        <GhostButton label="← Fitness Battle" onPress={() => router.push("/")} />
+        <GhostButton
+          label="← Rally"
+          onPress={() => router.push("/")}
+          onPlum
+        />
         <Kicker>Race Rankings</Kicker>
         <Title line1="Road" line2="leaderboards." />
         <Copy>

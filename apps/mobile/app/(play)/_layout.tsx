@@ -1,14 +1,14 @@
 import { Tabs } from "expo-router";
 import { Text } from "react-native";
-import { colors, fonts } from "../../src/theme";
+import { brand, colors, fonts } from "../../src/theme";
 
 function TabLabel({ label, focused }: { label: string; focused: boolean }) {
   return (
     <Text
       style={{
         fontFamily: focused ? fonts.bodyBold : fonts.bodyMedium,
-        fontSize: 11,
-        color: focused ? colors.ink : colors.muted,
+        fontSize: 10,
+        color: focused ? colors.tennis : colors.plum,
       }}
     >
       {label}
@@ -22,42 +22,57 @@ export default function PlayLayout() {
       screenOptions={{
         headerShown: false,
         tabBarStyle: {
-          backgroundColor: colors.card,
+          backgroundColor: colors.surface,
           borderTopColor: colors.line,
-          height: 64,
-          paddingTop: 6,
-          paddingBottom: 8,
+          borderTopWidth: 1,
+          height: 68,
+          paddingTop: 8,
+          paddingBottom: 10,
         },
-        tabBarActiveTintColor: colors.ink,
-        tabBarInactiveTintColor: colors.muted,
+        tabBarActiveBackgroundColor: colors.plum,
+        tabBarItemStyle: {
+          borderRadius: 0,
+          marginHorizontal: 2,
+          paddingVertical: 2,
+        },
+        tabBarActiveTintColor: colors.tennis,
+        tabBarInactiveTintColor: colors.plum,
       }}
     >
       <Tabs.Screen
         name="index"
         options={{
-          title: "My track",
-          tabBarLabel: ({ focused }) => <TabLabel label="Track" focused={focused} />,
+          title: brand.tabs.track,
+          tabBarLabel: ({ focused }) => (
+            <TabLabel label={brand.tabs.track} focused={focused} />
+          ),
         }}
       />
       <Tabs.Screen
         name="board"
         options={{
-          title: "The field",
-          tabBarLabel: ({ focused }) => <TabLabel label="Field" focused={focused} />,
+          title: brand.tabs.field,
+          tabBarLabel: ({ focused }) => (
+            <TabLabel label={brand.tabs.field} focused={focused} />
+          ),
         }}
       />
       <Tabs.Screen
         name="splits"
         options={{
-          title: "Splits",
-          tabBarLabel: ({ focused }) => <TabLabel label="Splits" focused={focused} />,
+          title: brand.tabs.splits,
+          tabBarLabel: ({ focused }) => (
+            <TabLabel label={brand.tabs.splits} focused={focused} />
+          ),
         }}
       />
       <Tabs.Screen
         name="you"
         options={{
-          title: "Athlete",
-          tabBarLabel: ({ focused }) => <TabLabel label="You" focused={focused} />,
+          title: brand.tabs.you,
+          tabBarLabel: ({ focused }) => (
+            <TabLabel label={brand.tabs.you} focused={focused} />
+          ),
         }}
       />
     </Tabs>

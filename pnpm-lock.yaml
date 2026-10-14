@@ -14,6 +14,12 @@ importers:
 
   apps/mobile:
     dependencies:
+      '@expo-google-fonts/archivo-black':
+        specifier: ^0.4.1
+        version: 0.4.1
+      '@expo-google-fonts/bangers':
+        specifier: ^0.4.1
+        version: 0.4.1
       '@expo-google-fonts/bebas-neue':
         specifier: ^0.4.0
         version: 0.4.1
@@ -881,6 +887,12 @@ packages:
     engines: {node: '>=18'}
     cpu: [x64]
     os: [win32]
+
+  '@expo-google-fonts/archivo-black@0.4.1':
+    resolution: {integrity: sha512-Zi4M9NPyKBllCd8TobvYRRAAm/dbhnrYTywbkfGVOJ7cThEetli+jYBh/deAjzOEqYMTrlSM89uEiherIPjkpQ==}
+
+  '@expo-google-fonts/bangers@0.4.1':
+    resolution: {integrity: sha512-yc/iz6OOs3b6JW5KXZFhiwyAxsZHR3JQC854frmsOVWcOeZzCuwvFE/dIywHR+wy6Y7pv0eBwgMJqO7gkav2mQ==}
 
   '@expo-google-fonts/bebas-neue@0.4.1':
     resolution: {integrity: sha512-Ibnf0EQgMUj01tT/ws64RlsMQmOvDP+UDFW93bld0C/WwaOaCGWKgNnqxNkKxmL73y2kpT8EB4dkSNUOyAOEJA==}
@@ -5137,6 +5149,10 @@ snapshots:
 
   '@esbuild/win32-x64@0.28.2':
     optional: true
+
+  '@expo-google-fonts/archivo-black@0.4.1': {}
+
+  '@expo-google-fonts/bangers@0.4.1': {}
 
   '@expo-google-fonts/bebas-neue@0.4.1': {}
 

@@ -10,7 +10,7 @@ export default function TermsScreen() {
   return (
     <SafeAreaView style={ui.safe} edges={["top"]}>
       <ScrollView contentContainerStyle={ui.scroll}>
-        <GhostButton label="← Back" onPress={() => router.back()} />
+        <GhostButton label="← Back" onPress={() => router.back()} onPlum />
         <Card>
           <Kicker>Legal</Kicker>
           <Text style={ui.title}>Terms of Use</Text>

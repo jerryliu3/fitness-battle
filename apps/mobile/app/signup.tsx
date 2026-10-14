@@ -69,9 +69,9 @@ export default function SignupScreen() {
     <SafeAreaView style={ui.safe}>
       <ScrollView contentContainerStyle={ui.scroll} keyboardShouldPersistTaps="handled">
         <Card>
-          <Kicker>Fitness Battle</Kicker>
-          <Text style={ui.title}>Create account</Text>
-          <Copy>
+          <Kicker onCard>RALLY</Kicker>
+          <Text style={ui.cardTitle}>Create account</Text>
+          <Copy onCard>
             Join boards, link trackers, and keep your rating.
             {demoMode ? " Demo mode stores your session on this device." : ""}
           </Copy>

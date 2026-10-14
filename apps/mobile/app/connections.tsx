@@ -47,13 +47,13 @@ export default function ConnectionsScreen() {
   return (
     <SafeAreaView style={ui.safe} edges={["top"]}>
       <ScrollView contentContainerStyle={ui.scroll}>
-        <GhostButton label="← Athlete" onPress={() => router.push("/you")} />
+        <GhostButton label="← You" onPress={() => router.push("/you")} onPlum />
         <Kicker>Trackers</Kicker>
         <Title line1="Phone" line2="workouts." />
         <Copy>
           Apple Health and Health Connect stay on the device. A development or
           store build reads the last 90 days and sends them to the server.
-          Strava, Garmin, WHOOP, and Oura connect from Athlete.
+          Strava, Garmin, WHOOP, and Oura connect from You.
         </Copy>
         <Card>
           <PrimaryButton
@@ -66,7 +66,7 @@ export default function ConnectionsScreen() {
             disabled={busy}
             onPress={() => void run("android")}
           />
-          {note ? <Note>{note}</Note> : null}
+          {note ? <Note onCard>{note}</Note> : null}
         </Card>
       </ScrollView>
     </SafeAreaView>

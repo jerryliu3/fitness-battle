@@ -8,7 +8,8 @@ Production web origin used below: `https://fitness-battle-one.vercel.app`
 
 | Item | Status |
 | --- | --- |
-| Product parity (Track / Field / Splits / You, auth, onboarding, pace, rankings, privacy) | Done |
+| Product parity (My week / Matchups / Moves / You, auth, onboarding, pace, rankings, privacy) | Done |
+| Rally visual theme (plum / tennis, Archivo Black, Ace) | Done on mobile (matches web default) |
 | Bundle IDs | `com.fitnessbattle.app` (iOS + Android) |
 | Deep link scheme | `fitnessbattle://` |
 | HealthKit usage strings + Health Connect permissions | In `apps/mobile/app.json` |

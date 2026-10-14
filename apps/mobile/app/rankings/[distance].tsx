@@ -98,7 +98,11 @@ export default function DistanceBoardScreen() {
   return (
     <SafeAreaView style={ui.safe} edges={["top"]}>
       <ScrollView contentContainerStyle={ui.scroll}>
-        <GhostButton label="← All distances" onPress={() => router.push("/rankings")} />
+        <GhostButton
+          label="← All distances"
+          onPress={() => router.push("/rankings")}
+          onPlum
+        />
         <Kicker>{label}</Kicker>
         <Title line1={label} />
         <Copy>

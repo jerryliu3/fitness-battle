@@ -54,9 +54,9 @@ export default function LoginScreen() {
     <SafeAreaView style={ui.safe}>
       <ScrollView contentContainerStyle={ui.scroll} keyboardShouldPersistTaps="handled">
         <Card>
-          <Kicker>Fitness Battle</Kicker>
-          <Text style={ui.title}>Sign in</Text>
-          <Copy>
+          <Kicker onCard>RALLY</Kicker>
+          <Text style={ui.cardTitle}>Sign in</Text>
+          <Copy onCard>
             Browse freely. Sign in when you are ready to join a board or open
             You.
             {demoMode ? " Demo mode stores your session on this device." : ""}

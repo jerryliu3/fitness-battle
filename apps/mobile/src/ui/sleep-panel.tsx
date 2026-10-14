@@ -44,7 +44,7 @@ export function SleepPanel({
     return (
       <Card style={ui.empty}>
         <Text style={ui.cardTitle}>You are not on the sleep board</Text>
-        <Copy>
+        <Copy onCard>
           Sleep scores last night and your week average. It does not use
           distance.
         </Copy>
@@ -55,11 +55,11 @@ export function SleepPanel({
 
   return (
     <Card>
-      <Kicker>Sleep</Kicker>
+      <Kicker onCard>Sleep</Kicker>
       <Text style={ui.cardTitle}>
         Last night {view.lastNight ? view.lastNight.score : "—"}
       </Text>
-      <Copy>
+      <Copy onCard>
         {view.lastNight
           ? `${formatSleepDuration(view.lastNight.durationMin)} · ${view.lastNight.source}`
           : "No night logged yet. Sync a tracker or record a sample."}
@@ -79,7 +79,7 @@ export function SleepPanel({
           ))}
         </View>
       ) : (
-        <Note>Board fills once rivals have nights in this wave.</Note>
+        <Note onCard>Board fills once rivals have nights in this wave.</Note>
       )}
       <ChipRow>
         <Chip label="Sample night" onPress={onSample} />

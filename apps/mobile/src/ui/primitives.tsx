@@ -12,11 +12,19 @@ import {
 import { Link, router } from "expo-router";
 import { useAuth } from "../lib/auth-context";
 import { buildLoginHref, buildSignupHref } from "../lib/auth-redirect";
-import { colors } from "../theme";
+import { brand, colors } from "../theme";
 import { ui } from "./styles";
 
-export function Kicker({ children }: { children: ReactNode }) {
-  return <Text style={ui.kicker}>{children}</Text>;
+export function Kicker({
+  children,
+  onCard,
+}: {
+  children: ReactNode;
+  onCard?: boolean;
+}) {
+  return (
+    <Text style={onCard ? ui.kickerOnCard : ui.kicker}>{children}</Text>
+  );
 }
 
 export function Title({
@@ -39,12 +47,24 @@ export function Title({
   );
 }
 
-export function Copy({ children }: { children: ReactNode }) {
-  return <Text style={ui.copy}>{children}</Text>;
+export function Copy({
+  children,
+  onCard,
+}: {
+  children: ReactNode;
+  onCard?: boolean;
+}) {
+  return <Text style={onCard ? ui.cardCopy : ui.copy}>{children}</Text>;
 }
 
-export function Note({ children }: { children: ReactNode }) {
-  return <Text style={ui.note}>{children}</Text>;
+export function Note({
+  children,
+  onCard,
+}: {
+  children: ReactNode;
+  onCard?: boolean;
+}) {
+  return <Text style={onCard ? ui.cardNote : ui.note}>{children}</Text>;
 }
 
 export function Card({
@@ -100,13 +120,20 @@ export function LineButton({
 export function GhostButton({
   label,
   onPress,
+  onPlum,
 }: {
   label: string;
   onPress: () => void;
+  onPlum?: boolean;
 }) {
   return (
-    <Pressable style={ui.btnGhost} onPress={onPress}>
-      <Text style={ui.btnGhostText}>{label}</Text>
+    <Pressable
+      style={onPlum ? ui.btnGhostOnPlum : ui.btnGhost}
+      onPress={onPress}
+    >
+      <Text style={onPlum ? ui.btnGhostTextOnPlum : ui.btnGhostText}>
+        {label}
+      </Text>
     </Pressable>
   );
 }
@@ -115,14 +142,26 @@ export function Chip({
   label,
   on,
   onPress,
+  onCard,
 }: {
   label: string;
   on?: boolean;
   onPress: () => void;
+  onCard?: boolean;
 }) {
   return (
-    <Pressable style={[ui.chip, on ? ui.chipOn : null]} onPress={onPress}>
-      <Text style={[ui.chipText, on ? ui.chipTextOn : null]}>{label}</Text>
+    <Pressable
+      style={[ui.chip, onCard ? ui.chipOnCard : null, on ? ui.chipOn : null]}
+      onPress={onPress}
+    >
+      <Text
+        style={[
+          onCard ? ui.chipTextOnCard : ui.chipText,
+          on ? ui.chipTextOn : null,
+        ]}
+      >
+        {label}
+      </Text>
     </Pressable>
   );
 }
@@ -159,7 +198,9 @@ export function ProductHeader({
       <Link href="/" asChild>
         <Pressable>
           <Text style={ui.brand}>
-            Fitness Battle <Text style={ui.brandMark}>·</Text>
+            {brand.wordmark}
+            {"\n"}
+            <Text style={ui.brandMark}>{brand.tagline}</Text>
           </Text>
         </Pressable>
       </Link>
@@ -195,9 +236,9 @@ export function AuthPrompt({
     <Modal transparent animationType="slide" visible={open} onRequestClose={onClose}>
       <Pressable style={ui.modalBackdrop} onPress={onClose}>
         <Pressable style={ui.modalCard} onPress={(e) => e.stopPropagation()}>
-          <Kicker>Join in</Kicker>
+          <Kicker onCard>Join in</Kicker>
           <Text style={ui.cardTitle}>Create an account to compete</Text>
-          <Copy>{reason}</Copy>
+          <Copy onCard>{reason}</Copy>
           <PrimaryButton
             label="Create account"
             onPress={() => {
@@ -230,7 +271,7 @@ export function AuthGate({
   if (loading) {
     return (
       <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
-        <ActivityIndicator color={colors.accent} />
+        <ActivityIndicator color={colors.tennis} />
         <Text style={[ui.copy, { marginTop: 12 }]}>Checking your account…</Text>
       </View>
     );
@@ -240,9 +281,9 @@ export function AuthGate({
   return (
     <View style={ui.scroll}>
       <Card>
-        <Kicker>Account</Kicker>
-        <Text style={ui.title}>Sign in to continue</Text>
-        <Copy>{reason}</Copy>
+        <Kicker onCard>Account</Kicker>
+        <Text style={ui.cardTitle}>Sign in to continue</Text>
+        <Copy onCard>{reason}</Copy>
         <PrimaryButton
           label="Create account"
           onPress={() => router.push(buildSignupHref("/you"))}
@@ -258,8 +299,16 @@ export function AuthGate({
 
 export function LoadingCopy({ label }: { label: string }) {
   return (
-    <View style={{ flex: 1, alignItems: "center", justifyContent: "center", padding: 24 }}>
-      <ActivityIndicator color={colors.accent} />
+    <View
+      style={{
+        flex: 1,
+        alignItems: "center",
+        justifyContent: "center",
+        padding: 24,
+        backgroundColor: colors.plum,
+      }}
+    >
+      <ActivityIndicator color={colors.tennis} />
       <Text style={[ui.copy, { marginTop: 12 }]}>{label}</Text>
     </View>
   );

@@ -39,7 +39,7 @@ export default function PaceScreen() {
   return (
     <SafeAreaView style={ui.safe} edges={["top"]}>
       <ScrollView contentContainerStyle={ui.scroll}>
-        <GhostButton label="← Back" onPress={() => router.back()} />
+        <GhostButton label="← Back" onPress={() => router.back()} onPlum />
         <View style={{ gap: 8 }}>
           <Kicker>Speed, not effort</Kicker>
           <Title line1="ABSOLUTE" line2="TIMES." />

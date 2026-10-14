@@ -19,6 +19,8 @@ import { Pressable, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useAuth } from "../../src/lib/auth-context";
 import { useCompete } from "../../src/lib/compete-context";
+import { AceStrip } from "../../src/ui/ace-strip";
+import { ActivityRing } from "../../src/ui/activity-ring";
 import {
   AuthPrompt,
   Card,
@@ -35,6 +37,7 @@ import {
 } from "../../src/ui/primitives";
 import { SleepPanel } from "../../src/ui/sleep-panel";
 import { ui } from "../../src/ui/styles";
+import { buildRallyBoard } from "../../src/features/rally/model";
 
 export default function MyTrackScreen() {
   const { state, dispatch } = useCompete();
@@ -57,6 +60,7 @@ export default function MyTrackScreen() {
   const spec = sportById(sport);
   const shownTrack: ScoreTrack = spec.gps ? track : "open";
   const board = buildSplitBoard(state, sport, shownTrack, now);
+  const rally = buildRallyBoard(state, sport, shownTrack, now);
   const source = sourceFromLinks(state.links);
   const youLane = board.fieldLanes.find((lane) => lane.you) ?? null;
   const ghostEffort = board.ghostEffortAt(checkpoint);
@@ -92,10 +96,10 @@ export default function MyTrackScreen() {
 
         {state.pendingRevealIds.length > 0 ? (
           <Card>
-            <Kicker>Week complete</Kicker>
+            <Kicker onCard>Week complete</Kicker>
             <Text style={ui.cardTitle}>Your week settled</Text>
-            <Copy>
-              Place and Elo snapshots are on Athlete. Dismiss to keep racing this
+            <Copy onCard>
+              Place and Elo snapshots are on You. Dismiss to keep racing this
               wave.
             </Copy>
             <PrimaryButton
@@ -107,16 +111,11 @@ export default function MyTrackScreen() {
 
         {!showingSleep ? (
           <View style={{ gap: 8 }}>
-            <Kicker>
-              {board.periodLabel} / Weekly {spec.name.toLowerCase()}
-            </Kicker>
-            <Title
-              line1={comparison === "self" ? "CHASE YOUR" : "FIND YOUR"}
-              line2={comparison === "self" ? "OWN LINE." : "CLOSE CONTEST."}
-            />
+            <Kicker>YOUR WEEK / {board.periodLabel}</Kicker>
+            <Title line1="SMALL MOVES." line2="GOOD GAME." />
             <Copy>
-              {periodDaysLeft} days left. Effort points accumulate through the
-              week — not a live race or pace board.
+              {periodDaysLeft} days left. Your personal matchup lives here; the
+              field stays on Matchups.
             </Copy>
           </View>
         ) : null}
@@ -214,8 +213,8 @@ export default function MyTrackScreen() {
         {!showingSleep && !board.optedIn ? (
           <View style={ui.empty}>
             <Text style={ui.cardTitle}>You are not on a track yet</Text>
-            <Copy>{spec.blurb}</Copy>
-            <Note>
+            <Copy onCard>{spec.blurb}</Copy>
+            <Note onCard>
               Joining opens today’s wave. Your board counts effort until the
               Sunday UTC reset.
             </Note>
@@ -234,6 +233,7 @@ export default function MyTrackScreen() {
           <Card>
             <ChipRow>
               <Chip
+                onCard
                 label="Your previous week"
                 on={comparison === "self"}
                 onPress={() => {
@@ -242,6 +242,7 @@ export default function MyTrackScreen() {
                 }}
               />
               <Chip
+                onCard
                 label="Nearby rivals"
                 on={comparison === "field"}
                 onPress={() => setComparison("field")}
@@ -253,13 +254,14 @@ export default function MyTrackScreen() {
                 ? ` · ${youEffort - ghostEffort >= 0 ? "+" : ""}${formatPts(youEffort - ghostEffort)} vs past you`
                 : ""}
             </Text>
-            <Copy>
+            <Copy onCard>
               Place {youLane?.place ?? "—"} / {board.rows.length}. Checkpoint{" "}
               {board.checkpointLabels[checkpoint] ?? checkpoint}.
             </Copy>
             <ChipRow>
               {board.checkpointLabels.map((label, index) => (
                 <Chip
+                  onCard
                   key={label}
                   label={label}
                   on={checkpoint === index}
@@ -318,7 +320,7 @@ export default function MyTrackScreen() {
               : null}
             {board.weekActivities.length > 0 ? (
               <Pressable onPress={() => router.push("/splits")}>
-                <Note>
+                <Note onCard>
                   Latest counted import · +
                   {formatPts(activityEffort(board.weekActivities.at(-1)!))} pts
                 </Note>
@@ -327,12 +329,40 @@ export default function MyTrackScreen() {
           </Card>
         ) : null}
 
+        {board.optedIn && !showingSleep && rally.moves.length > 0 ? (
+          <Card>
+            <Kicker onCard>YOUR SMALL MOVES</Kicker>
+            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
+              {rally.moves.map((move) => (
+                <ActivityRing
+                  key={move.id}
+                  km={move.km}
+                  title={move.title}
+                  minutes={move.minutes}
+                  counted
+                />
+              ))}
+            </View>
+          </Card>
+        ) : null}
+
+        {!showingSleep ? (
+          <AceStrip
+            title="Keep each other moving."
+            detail={
+              board.optedIn
+                ? `Place ${youLane?.place ?? "—"} / ${board.rows.length} · ${formatPts(youLane?.effort ?? 0)} pts this week.`
+                : "Join a sport to open this week’s matchup."
+            }
+          />
+        ) : null}
+
         <Card style={ui.lesson}>
-          <Kicker>Today’s lesson</Kicker>
+          <Kicker onCard>Today’s lesson</Kicker>
           <Text style={ui.cardTitle}>
             {lesson.title} · {lesson.minutes} min
           </Text>
-          <Copy>{lesson.detail}</Copy>
+          <Copy onCard>{lesson.detail}</Copy>
           <PrimaryButton
             label={done ? "Done for today" : "Mark done"}
             disabled={done}
