@@ -114,35 +114,29 @@ export async function GET(request: Request) {
       .eq("wave_start", waveStart)
       .maybeSingle();
 
-    if (existing) {
-      const memberSet = new Set(existing.member_ids as string[]);
-      fields.push({
-        pin: {
-          crewId: crew.id,
-          crewName: crew.name,
-          sport,
-          waveStart: existing.wave_start,
-          weekEnd: existing.week_end,
-          capacity: existing.capacity,
-          memberIds: existing.member_ids,
-          members: rows
-            .filter((row) => memberSet.has(row.user_id))
-            .map((row) => ({
-              id: row.user_id,
-              name: row.display_name || "Athlete",
-              elo: Number(row.open_elo) || 1000,
-            }))
-            .sort((a, b) => a.id.localeCompare(b.id)),
-          syntheticIds: existing.synthetic_ids,
-        },
-      });
-      continue;
-    }
-
-    const seated = await seatCrew(supabase, crew);
-    if ("pin" in seated && seated.pin) {
-      fields.push({ pin: seated.pin });
-    }
+    // Read-only: seating happens on POST when someone chooses “together”.
+    if (!existing) continue;
+    const memberSet = new Set(existing.member_ids as string[]);
+    fields.push({
+      pin: {
+        crewId: crew.id,
+        crewName: crew.name,
+        sport,
+        waveStart: existing.wave_start,
+        weekEnd: existing.week_end,
+        capacity: existing.capacity,
+        memberIds: existing.member_ids,
+        members: rows
+          .filter((row) => memberSet.has(row.user_id))
+          .map((row) => ({
+            id: row.user_id,
+            name: row.display_name || "Athlete",
+            elo: Number(row.open_elo) || 1000,
+          }))
+          .sort((a, b) => a.id.localeCompare(b.id)),
+        syntheticIds: existing.synthetic_ids,
+      },
+    });
   }
 
   return NextResponse.json({ fields });

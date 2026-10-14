@@ -7,6 +7,7 @@ import { useCompete } from "@/components/compete-context";
 import { SleepPanel } from "@/features/health/sleep-panel";
 import { FieldStage } from "@/features/field/components/field-stage";
 import { buildFieldModel } from "@/features/field/model";
+import { FieldCrewSwitch, FieldJoinActions } from "@/features/rally/field-join";
 import { Matchup } from "@/features/rally/matchup";
 import { useRallyPresentation } from "@/features/rally/use-rally-week";
 import {
@@ -196,22 +197,11 @@ export default function FieldPage() {
         <section className="sp-empty">
           <h2>You are not on this field</h2>
           <p className="fb-copy">{spec.blurb}</p>
-          <p className="fb-note">
-            {state?.crewBoard?.sport === active
-              ? `Your crew (${state.crewBoard.crewName}) shares this field of eight. Each person keeps their own score; fillers cover empty seats.`
-              : "Fields are density groups of eight. Real athletes seat first; synthetic rivals fill empty seats and drop when more people join. Join a crew to guarantee mates on the same board."}
-          </p>
-          <button
-            type="button"
-            className="fb-btn"
-            onClick={() =>
-              requireParticipate(`Sign in to join ${spec.name} this week.`, () =>
-                dispatch({ type: "opt-in", sport: active }),
-              )
-            }
-          >
-            Join {spec.name} this week
-          </button>
+          <FieldJoinActions
+            sport={active}
+            sportName={spec.name}
+            requireParticipate={requireParticipate}
+          />
         </section>
       ) : (
         <>
@@ -257,6 +247,7 @@ export default function FieldPage() {
                 ? `If the week ended now, ${shownTrack} rating would be ${nextElo} (${nextElo - currentElo >= 0 ? "+" : ""}${nextElo - currentElo}).`
                 : "Rating updates when the week closes."}
           </p>
+          <FieldCrewSwitch sport={active} />
           <button
             type="button"
             className="fb-btn-ghost"
@@ -273,8 +264,8 @@ export default function FieldPage() {
         <h2>Practice 1v1</h2>
         <p className="fb-copy">
           One opponent, same weekly window. Auto match and a typed name stay on
-          this device. For a real shared board with friends, use a crew code
-          above — crew mates sit on the same individual leaderboard.
+          this device. For friends on the same board, create a crew and choose
+          Join with crew when you register for the week.
         </p>
         {board.duels.map((view) => {
           const total = view.youEffort + view.rivalEffort || 1;

@@ -198,6 +198,49 @@ describe("compete engine", () => {
     expect(migrateCompeteState({ ...legacy, trainingGoal: { distance: "5k", deadline: "2026-02-31" } } as never).trainingGoal).toBeNull();
   });
 
+  it("clears a crew pin when leaving that sport's field", () => {
+    const now = "2026-10-12T12:00:00.000Z";
+    const plan = planCrewWeekField({
+      crewId: "crew-leave",
+      sport: "running",
+      members: [
+        { id: "user-a", name: "Ada", elo: 1000 },
+        { id: "user-b", name: "Bea", elo: 1005 },
+      ],
+      now: new Date(now),
+    });
+    const seated = reduceCompete(freshState(new Date(now)), {
+      type: "set-crew-board",
+      crewBoard: {
+        crewId: plan.crewId,
+        crewName: "Sunday Miles",
+        sport: plan.sport,
+        waveStart: plan.waveStart,
+        weekEnd: plan.weekEnd,
+        capacity: plan.capacity,
+        memberIds: plan.memberIds,
+        members: plan.members,
+        syntheticIds: plan.syntheticIds,
+      },
+      accountId: "user-a",
+      now,
+    });
+    const joined = reduceCompete(seated, {
+      type: "opt-in",
+      sport: "running",
+      accountId: "user-a",
+      now,
+    });
+    expect(joined.crewBoard?.crewId).toBe("crew-leave");
+    const left = reduceCompete(joined, {
+      type: "opt-out",
+      sport: "running",
+      now,
+    });
+    expect(left.crewBoard).toBeNull();
+    expect(left.enrollments).toHaveLength(0);
+  });
+
   it("pins opted-in athletes onto a shared crew field", () => {
     const now = "2026-10-12T12:00:00.000Z";
     const plan = planCrewWeekField({

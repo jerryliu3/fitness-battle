@@ -878,8 +878,11 @@ export function reduceCompete(
       if (!action.sport) return rolled;
       const enrollment = enrollmentFor(rolled, action.sport);
       const periodStart = enrollment?.waveStart ?? rolled.clock.periodStart;
+      const clearCrew =
+        rolled.crewBoard?.sport === action.sport ? null : rolled.crewBoard;
       return {
         ...withRating(rolled, action.sport, { optedIn: false }),
+        crewBoard: clearCrew,
         enrollments: rolled.enrollments.filter(
           (item) => item.sport !== action.sport,
         ),

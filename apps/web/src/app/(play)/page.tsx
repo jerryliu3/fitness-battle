@@ -29,6 +29,7 @@ import { FieldRoster } from "@/features/split/components/field-roster";
 import { SleepPanel } from "@/features/health/sleep-panel";
 import { WeekReveal } from "@/features/split/components/week-reveal";
 import { TodaySuggestion } from "@/features/rally/today-suggestion";
+import { FieldJoinActions } from "@/features/rally/field-join";
 import {
   buildSplitBoard,
   formatPts,
@@ -460,17 +461,11 @@ export default function MyTrackPage() {
             the next Monday. Place follows effort points. The track draws
             kilometers, so the furthest runner is not always the leader.
           </p>
-          <button
-            type="button"
-            className="fb-btn"
-            onClick={() =>
-              requireParticipate(`Sign in to join ${spec.name} this week.`, () =>
-                dispatch({ type: "opt-in", sport }),
-              )
-            }
-          >
-            Join {spec.name} this week
-          </button>
+          <FieldJoinActions
+            sport={sport}
+            sportName={spec.name}
+            requireParticipate={requireParticipate}
+          />
         </section>
       ) : !showingSleep && theme.id === "ink" ? (
         <div className="sp-layout">

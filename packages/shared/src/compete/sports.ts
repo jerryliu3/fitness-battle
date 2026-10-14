@@ -253,8 +253,9 @@ export interface CompeteState {
    */
   enrollments: WaveEnrollment[];
   /**
-   * Active private-crew field pin. Members compete individually on one shared
-   * leaderboard. Team-vs-team scoring is future work.
+   * Optional private-crew field pin, set only when the athlete chooses
+   * “together” at join (or switches mid-week). Alone keeps normal density
+   * matching even if they belong to a crew. Team-vs-team is future work.
    */
   crewBoard: CrewBoardPin | null;
 }
