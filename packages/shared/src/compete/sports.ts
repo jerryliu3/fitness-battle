@@ -182,6 +182,14 @@ export interface ProviderLink {
   status: LinkStatus;
 }
 
+export type GoalDistance = "5k" | "10k" | "half" | "marathon";
+
+export interface TrainingGoal {
+  distance: GoalDistance;
+  /** Race or target day, YYYY-MM-DD. */
+  deadline: string;
+}
+
 /** Locked snapshot written when a weekly period settles. */
 export interface PeriodResult {
   id: string;
@@ -231,6 +239,8 @@ export interface CompeteState {
   periodResults: PeriodResult[];
   /** Result ids waiting for the week-complete reveal UI. */
   pendingRevealIds: string[];
+  /** Race or target day. Today's suggestion is derived from this plus counted runs. */
+  trainingGoal: TrainingGoal | null;
   /**
    * Demo/QA clock override. When set, period math uses this instant instead of
    * wall time so "close this week" stays settled across reloads.

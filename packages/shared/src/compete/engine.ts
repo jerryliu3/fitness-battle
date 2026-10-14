@@ -85,6 +85,8 @@ export interface Action {
     | "duel"
     | "acknowledge-reveal"
     | "set-disposition"
+    | "set-training-goal"
+    | "clear-training-goal"
     /** Demo/dev: settle the open week as if Monday UTC already arrived. */
     | "debug-close-week";
   name?: string;
@@ -112,6 +114,8 @@ export interface Action {
   revealIds?: string[];
   activityId?: string;
   disposition?: "counted" | "pending" | "excluded";
+  goalDistance?: "5k" | "10k" | "half" | "marathon";
+  deadline?: string;
 }
 
 function rating(state: CompeteState, sport: SportId): Rating {
@@ -185,6 +189,15 @@ export function migrateCompeteState(parsed: CompeteState): CompeteState {
           })
         : freshHealthRatings(parsed.clock?.periodStart ?? new Date().toISOString()),
     healthResults: Array.isArray(parsed.healthResults) ? parsed.healthResults : [],
+    trainingGoal:
+      parsed.trainingGoal &&
+      (parsed.trainingGoal.distance === "5k" ||
+        parsed.trainingGoal.distance === "10k" ||
+        parsed.trainingGoal.distance === "half" ||
+        parsed.trainingGoal.distance === "marathon") &&
+      /^\d{4}-\d{2}-\d{2}$/.test(parsed.trainingGoal.deadline)
+        ? parsed.trainingGoal
+        : null,
   };
 }
 
@@ -225,6 +238,7 @@ export function freshState(now: Date = new Date()): CompeteState {
     onboardingCompleted: false,
     periodResults: [],
     pendingRevealIds: [],
+    trainingGoal: null,
     demoNow: null,
     enrollments: [],
   };
@@ -988,6 +1002,16 @@ export function reduceCompete(
         ),
       };
     }
+    case "set-training-goal": {
+      const distance = action.goalDistance;
+      const deadline = action.deadline?.trim() ?? "";
+      if (!distance || !/^\d{4}-\d{2}-\d{2}$/.test(deadline)) return rolled;
+      const parsed = new Date(`${deadline}T00:00:00.000Z`);
+      if (Number.isNaN(parsed.getTime())) return rolled;
+      return { ...rolled, trainingGoal: { distance, deadline } };
+    }
+    case "clear-training-goal":
+      return { ...rolled, trainingGoal: null };
     case "acknowledge-reveal": {
       const clearAll = !action.revealIds || action.revealIds.length === 0;
       if (clearAll) {

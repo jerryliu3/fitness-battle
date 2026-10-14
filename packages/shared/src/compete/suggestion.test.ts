@@ -1,0 +1,93 @@
+import { describe, expect, it } from "vitest";
+import { suggestToday } from "./suggestion";
+import type { Activity } from "./sports";
+
+function run(partial: Partial<Activity> & Pick<Activity, "id" | "startedAt" | "distanceM">): Activity {
+  return {
+    sport: "running",
+    movingSec: (partial.distanceM / 1000) * 6 * 60,
+    avgHr: 140,
+    verified: true,
+    source: "strava",
+    provenance: "recorded",
+    disposition: "counted",
+    ...partial,
+  };
+}
+
+describe("suggestToday", () => {
+  const now = new Date("2026-10-13T15:00:00.000Z"); // Tuesday
+
+  it("starts short when there is no counted history", () => {
+    const suggestion = suggestToday(
+      { distance: "5k", deadline: "2026-12-08" },
+      [],
+      now,
+    );
+    expect(suggestion.kind).toBe("quality");
+    expect(suggestion.phase).toBe("build");
+    expect(suggestion.reason).toContain("No counted runs");
+    expect(suggestion.distanceKm).toBeLessThanOrEqual(8);
+  });
+
+  it("rests after a long run yesterday", () => {
+    const suggestion = suggestToday(
+      { distance: "10k", deadline: "2026-12-08" },
+      [
+        run({ id: "long", startedAt: "2026-10-12T14:00:00.000Z", distanceM: 14000, movingSec: 80 * 60 }),
+        run({ id: "easy", startedAt: "2026-10-08T14:00:00.000Z", distanceM: 6000 }),
+      ],
+      now,
+    );
+    expect(suggestion.kind).toBe("rest");
+    expect(suggestion.reason).toContain("14 km");
+  });
+
+  it("does not jump the long run more than 10 percent past the recent longest", () => {
+    const sunday = new Date("2026-10-18T15:00:00.000Z");
+    const suggestion = suggestToday(
+      { distance: "marathon", deadline: "2027-02-14" },
+      [
+        run({ id: "long", startedAt: "2026-10-11T14:00:00.000Z", distanceM: 10000 }),
+        run({ id: "easy", startedAt: "2026-10-07T14:00:00.000Z", distanceM: 5000 }),
+      ],
+      sunday,
+    );
+    expect(suggestion.kind).toBe("long");
+    expect(suggestion.distanceKm).toBeLessThanOrEqual(11);
+    expect(suggestion.distanceKm).toBeGreaterThan(10);
+  });
+
+  it("names race day and a passed deadline", () => {
+    const race = suggestToday({ distance: "half", deadline: "2026-10-13" }, [], now);
+    expect(race.kind).toBe("race");
+    const past = suggestToday({ distance: "half", deadline: "2026-10-01" }, [], now);
+    expect(past.phase).toBe("past");
+  });
+
+  it("does not add work after a run already recorded today", () => {
+    const suggestion = suggestToday(
+      { distance: "5k", deadline: "2026-12-08" },
+      [run({ id: "today", startedAt: "2026-10-13T12:00:00.000Z", distanceM: 5000 })],
+      now,
+    );
+    expect(suggestion.title).toBe("Already covered");
+  });
+
+  it("ignores sample calibration rows", () => {
+    const suggestion = suggestToday(
+      { distance: "5k", deadline: "2026-12-08" },
+      [
+        run({
+          id: "sample",
+          startedAt: "2026-10-12T12:00:00.000Z",
+          distanceM: 20000,
+          provenance: "demo",
+          source: "history",
+        }),
+      ],
+      now,
+    );
+    expect(suggestion.reason).toContain("No counted runs");
+  });
+});

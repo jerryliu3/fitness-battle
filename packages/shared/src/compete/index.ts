@@ -130,3 +130,12 @@ export {
   type CheckpointIndex,
   type CheckpointSeries,
 } from "./track";
+export {
+  isTrainingGoal,
+  suggestToday,
+  suggestionForState,
+  type DaySuggestion,
+  type PlanPhase,
+  type SuggestionKind,
+} from "./suggestion";
+export type { GoalDistance, TrainingGoal } from "./sports";

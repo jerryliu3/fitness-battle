@@ -28,6 +28,7 @@ import { TrackVerdict } from "@/features/split/components/track-verdict";
 import { FieldRoster } from "@/features/split/components/field-roster";
 import { SleepPanel } from "@/features/health/sleep-panel";
 import { WeekReveal } from "@/features/split/components/week-reveal";
+import { TodaySuggestion } from "@/features/rally/today-suggestion";
 import {
   buildSplitBoard,
   formatPts,
@@ -39,7 +40,6 @@ import {
   competeNow,
   formatVolume,
   daysLeft,
-  lessonFor,
   sportById,
   SPORTS,
   HEALTH_METRICS,
@@ -87,8 +87,6 @@ export default function MyTrackPage() {
   const youLane = board.fieldLanes.find((lane) => lane.you) ?? null;
   const ghostEffort = board.ghostEffortAt(checkpoint);
   const youEffort = youLane ? laneAtCheckpoint(youLane, checkpoint) : 0;
-  const lesson = lessonFor(sport, now);
-  const done = state.lessonDoneOn === now.toISOString().slice(0, 10);
   const periodDaysLeft = daysLeft(
     {
       kind: state.clock.kind,
@@ -550,21 +548,7 @@ export default function MyTrackPage() {
         </section>
       ) : null}
 
-      <section className="fb-card fb-lesson">
-        <p className="fb-kicker">Today’s lesson</p>
-        <h2>
-          {lesson.title} · {lesson.minutes} min
-        </h2>
-        <p className="fb-copy">{lesson.detail}</p>
-        <button
-          type="button"
-          className="fb-btn"
-          disabled={done}
-          onClick={() => dispatch({ type: "complete-lesson" })}
-        >
-          {done ? "Done for today" : "Mark done"}
-        </button>
-      </section>
+      <TodaySuggestion state={state} now={now} dispatch={dispatch} />
 
       <RallyDetailDialog detail={detail} onClose={() => setDetail(null)} />
       <AuthPrompt
