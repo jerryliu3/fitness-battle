@@ -31,7 +31,7 @@ const TABS = {
 function PlayChrome({ children }: { children: ReactNode }) {
   const path = usePathname();
   const { user, loading } = useAuth();
-  const { saveError } = useCompete();
+  const { saveError, legacyOffer, loadFailed, recoverLegacy, continueOnDevice } = useCompete();
   const { theme } = useTheme();
   const hideTabs = path.startsWith("/onboarding");
   const tabs = theme.id === "rally" ? TABS.rally : TABS.classic;
@@ -122,6 +122,21 @@ function PlayChrome({ children }: { children: ReactNode }) {
         <div className={`fb-scroll${hideTabs ? " fb-scroll-solo" : ""}`}>
           {!hideTabs && saveError ? (
             <p className="fb-guest-banner">{saveError}</p>
+          ) : null}
+          {!hideTabs && legacyOffer ? (
+            <p className="fb-guest-banner">
+              This browser still has history from before accounts.{" "}
+              <button type="button" className="fb-btn-ghost" onClick={recoverLegacy}>
+                Use it on this account
+              </button>
+            </p>
+          ) : null}
+          {!hideTabs && loadFailed ? (
+            <p className="fb-guest-banner">
+              <button type="button" className="fb-btn-ghost" onClick={continueOnDevice}>
+                Keep changes on this device
+              </button>
+            </p>
           ) : null}
           {!hideTabs && !loading && !user ? (
             <p className="fb-guest-banner">
