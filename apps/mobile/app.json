@@ -1,8 +1,8 @@
 {
   "expo": {
-    "name": "Fitness Battle",
-    "slug": "fitness-battle",
-    "scheme": "fitnessbattle",
+    "name": "Overtaek",
+    "slug": "overtaek",
+    "scheme": "overtaek",
     "version": "0.1.0",
     "orientation": "portrait",
     "userInterfaceStyle": "dark",
@@ -10,7 +10,14 @@
     "plugins": [
       "expo-router",
       "expo-font",
-      "react-native-health",
+      [
+        "react-native-health",
+        {
+          "isClinicalDataEnabled": false,
+          "healthSharePermission": "Overtaek reads workouts so your week can be scored.",
+          "healthUpdatePermission": "Overtaek does not write health data."
+        }
+      ],
       "react-native-health-connect"
     ],
     "experiments": {
@@ -18,14 +25,33 @@
     },
     "ios": {
       "supportsTablet": false,
-      "bundleIdentifier": "com.fitnessbattle.app",
+      "bundleIdentifier": "com.overtaek.app",
       "infoPlist": {
-        "NSHealthShareUsageDescription": "Fitness Battle reads workouts so your week can be scored.",
-        "NSHealthUpdateUsageDescription": "Fitness Battle does not write health data."
+        "CFBundleDisplayName": "Overtaek",
+        "NSHealthShareUsageDescription": "Overtaek reads workouts so your week can be scored.",
+        "NSHealthUpdateUsageDescription": "Overtaek does not write health data.",
+        "ITSAppUsesNonExemptEncryption": false,
+        "CFBundleURLTypes": [
+          {
+            "CFBundleURLSchemes": ["overtaek"]
+          }
+        ]
       }
     },
     "android": {
-      "package": "com.fitnessbattle.app",
+      "package": "com.overtaek.app",
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "autoVerify": false,
+          "data": [
+            {
+              "scheme": "overtaek"
+            }
+          ],
+          "category": ["BROWSABLE", "DEFAULT"]
+        }
+      ],
       "permissions": [
         "android.permission.health.READ_EXERCISE",
         "android.permission.health.READ_HEART_RATE",
@@ -35,6 +61,12 @@
     "web": {
       "bundler": "metro",
       "output": "static"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "bea1932b-6a00-4edc-9710-22350423c446"
+      },
+      "supportEmail": "jerrry333x@gmail.com"
     }
   }
 }
