@@ -41,7 +41,7 @@ The focused prototype remains at `/design/rally`. In production, Rally is an **a
 - Rally nav labels: My week / Matchups / Moves / You (same routes as My track / The field / Splits / Athlete)
 - **Kept core:** 2D lanes + 3D Pursuit `FieldStage`, race-track / Form effort UI, numbered `ActivitySplits`, Athlete card, 1v1s, join/opt-out
 - **Additive under Rally:** personal Matchup scoreboard + replay, activity rings, Ace accents, receipts
-- Ace asset: `apps/web/public/brand/ace.png` (same artwork as `public/design/worlds/rally.png`)
+- Ace asset: `apps/web/public/design/worlds/rally.png` (shared by product Ace and `/design/rally`)
 
 Prototype helpers stay presentation-only. Scoring, periods, auth, and tracker writes are unchanged.
 

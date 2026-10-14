@@ -11,8 +11,12 @@ import {
   RallyDetailDialog,
 } from "@/features/rally/detail-dialog";
 import { Matchup } from "@/features/rally/matchup";
-import { buildRallyBoard, type RallyMove } from "@/features/rally/model";
-import { useRallyWeek } from "@/features/rally/use-rally-week";
+import {
+  formatRallyValue,
+  moveIsCounted,
+  type RallyMove,
+} from "@/features/rally/model";
+import { useRallyPresentation } from "@/features/rally/use-rally-week";
 import { useTheme } from "@/theme/theme-provider";
 import { CheckpointControl } from "@/features/split/components/checkpoint-control";
 import {
@@ -44,7 +48,7 @@ import {
   type SportId,
 } from "@fitness-battle/shared";
 import Link from "next/link";
-import { useMemo, useState, type ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 
 export default function MyTrackPage() {
   const { state, dispatch } = useCompete();
@@ -67,11 +71,12 @@ export default function MyTrackPage() {
   const sport = state?.primary ?? "running";
   const spec = sportById(sport);
   const shownTrack: ScoreTrack = spec.gps ? track : "open";
-  const rally = useMemo(() => {
-    if (!state || theme.id !== "rally") return null;
-    return buildRallyBoard(state, sport, shownTrack, competeNow(state));
-  }, [state, sport, shownTrack, theme.id]);
-  const weekState = useRallyWeek(rally);
+  const rallyWeek = useRallyPresentation(
+    state,
+    sport,
+    shownTrack,
+    theme.id === "rally",
+  );
 
   if (!state) return <p className="fb-copy">Loading your week…</p>;
 
@@ -107,8 +112,8 @@ export default function MyTrackPage() {
   }
 
   function openMove(move: RallyMove) {
-    if (!weekState || !rally) return;
-    const at = weekState.receiptFor(move);
+    if (!rallyWeek) return;
+    const at = rallyWeek.receiptFor(move);
     setDetail({
       title: move.title,
       kind: "activity",
@@ -116,8 +121,8 @@ export default function MyTrackPage() {
         <ActivityReceipt
           move={move}
           at={at}
-          reference={weekState.reference}
-          unit={rally.unit}
+          reference={rallyWeek.reference}
+          unit={rallyWeek.rally.unit}
         />
       ),
     });
@@ -371,16 +376,16 @@ export default function MyTrackPage() {
         </>
       ) : null}
 
-      {theme.id === "rally" && board.optedIn && !showingSleep && weekState && rally ? (
+      {theme.id === "rally" && board.optedIn && !showingSleep && rallyWeek ? (
         <div className="rf-addon">
           <Matchup
-            week={weekState.week}
-            reference={weekState.reference}
-            playing={weekState.playing}
-            unit={rally.unit}
+            week={rallyWeek.week}
+            reference={rallyWeek.reference}
+            playing={rallyWeek.playing}
+            unit={rallyWeek.rally.unit}
             checkpointLabels={board.checkpointLabels}
-            onCutoff={weekState.setCutoff}
-            onReplay={weekState.onReplay}
+            onCutoff={rallyWeek.setCutoff}
+            onReplay={rallyWeek.onReplay}
           />
           <section className="rf-small-moves">
             <header>
@@ -390,19 +395,24 @@ export default function MyTrackPage() {
               </div>
               <Link href="/splits">All moves ↗</Link>
             </header>
-            {rally.moves.length === 0 ? (
+            {rallyWeek.rally.moves.length === 0 ? (
               <p className="fb-copy">
                 Sync a tracker to see counted outings as rings. Splits stay on
                 Moves.
               </p>
             ) : (
               <div className="rf-small-ring-list">
-                {rally.moves.map((move, index) => (
+                {rallyWeek.rally.moves.map((move) => (
                   <ActivityRing
                     key={move.id}
                     move={move}
-                    unit={rally.unit}
-                    counted={weekState.week.cutoff >= index + 1}
+                    unit={rallyWeek.rally.unit}
+                    counted={moveIsCounted(
+                      move,
+                      rallyWeek.cutoff,
+                      board.periodStart,
+                      board.periodEnd,
+                    )}
                     onOpen={() => openMove(move)}
                   />
                 ))}
@@ -430,7 +440,11 @@ export default function MyTrackPage() {
               </strong>
             </span>
             <span>
-              Your week <strong>{formatPts(youLane?.effort ?? 0)} pts</strong>
+              Your week{" "}
+              <strong>
+                {formatRallyValue(rallyWeek.week.total, rallyWeek.rally.unit)}{" "}
+                {rallyWeek.rally.unit}
+              </strong>
             </span>
             <Link href="/you#connections" className="fb-btn-ghost">
               {source.label} ↗

@@ -7,8 +7,7 @@ import { SleepPanel } from "@/features/health/sleep-panel";
 import { FieldStage } from "@/features/field/components/field-stage";
 import { buildFieldModel } from "@/features/field/model";
 import { Matchup } from "@/features/rally/matchup";
-import { buildRallyBoard } from "@/features/rally/model";
-import { useRallyWeek } from "@/features/rally/use-rally-week";
+import { useRallyPresentation } from "@/features/rally/use-rally-week";
 import {
   ProductHeader,
   sourceFromLinks,
@@ -26,7 +25,7 @@ import {
   type ScoreTrack,
   type SportId,
 } from "@fitness-battle/shared";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 
 export default function FieldPage() {
   const { state, dispatch } = useCompete();
@@ -47,12 +46,12 @@ export default function FieldPage() {
   const active = sport ?? state?.primary ?? "running";
   const spec = sportById(active);
   const shownTrack: ScoreTrack = spec.gps ? track : "open";
-
-  const rally = useMemo(() => {
-    if (!state || theme.id !== "rally") return null;
-    return buildRallyBoard(state, active, shownTrack, competeNow(state));
-  }, [state, active, shownTrack, theme.id]);
-  const weekState = useRallyWeek(rally);
+  const rallyWeek = useRallyPresentation(
+    state,
+    active,
+    shownTrack,
+    theme.id === "rally",
+  );
 
   if (!state) return <p className="fb-copy">Loading the field…</p>;
 
@@ -214,17 +213,17 @@ export default function FieldPage() {
         </section>
       ) : (
         <>
-          {theme.id === "rally" && weekState ? (
+          {theme.id === "rally" && rallyWeek ? (
             <div className="rf-addon">
               <section className="rf-matchup-choice">
                 <p className="rf-kicker">PERSONAL MATCHUP</p>
                 <div>
-                  {rally!.references.map((ref) => (
+                  {rallyWeek.rally.references.map((ref) => (
                     <button
                       key={ref.id}
                       type="button"
-                      onClick={() => weekState.setReference(ref.id)}
-                      aria-pressed={weekState.reference.id === ref.id}
+                      onClick={() => rallyWeek.setReference(ref.id)}
+                      aria-pressed={rallyWeek.reference.id === ref.id}
                     >
                       {ref.ghost
                         ? "Me vs. past me"
@@ -234,13 +233,13 @@ export default function FieldPage() {
                 </div>
               </section>
               <Matchup
-                week={weekState.week}
-                reference={weekState.reference}
-                playing={weekState.playing}
-                unit={rally!.unit}
+                week={rallyWeek.week}
+                reference={rallyWeek.reference}
+                playing={rallyWeek.playing}
+                unit={rallyWeek.rally.unit}
                 checkpointLabels={board.checkpointLabels}
-                onCutoff={weekState.setCutoff}
-                onReplay={weekState.onReplay}
+                onCutoff={rallyWeek.setCutoff}
+                onReplay={rallyWeek.onReplay}
               />
               <p className="rf-field-note">
                 The 2D lanes and 3D Pursuit below remain the live field. The

@@ -1,7 +1,6 @@
 import {
   activityEffort,
   formatEffort,
-  initialsFromName,
   interpolateSeries,
   sportById,
   syntheticCheckpoints,
@@ -11,15 +10,10 @@ import {
   type ScoreTrack,
   type SportId,
 } from "@fitness-battle/shared";
-import {
-  buildSplitBoard,
-  type SplitBoardModel,
-  type TrackLane,
-} from "@/features/split/model";
+import { buildSplitBoard, type SplitBoardModel } from "@/features/split/model";
 
-/** Start + three live cutoffs, matching the Rally prototype replay. */
+/** Start + three live cutoffs for week replay. */
 export type RallyCutoff = 0 | 1 | 2 | 3;
-
 export type RallyUnit = "km" | "pts";
 
 export interface RallyReference {
@@ -27,7 +21,6 @@ export interface RallyReference {
   name: string;
   initials: string;
   ghost?: boolean;
-  you?: boolean;
 }
 
 export interface RallyMove {
@@ -41,6 +34,8 @@ export interface RallyMove {
   startedAt: string;
   verified: boolean;
   source: string;
+  /** Effort points for this activity (non-GPS matchups). */
+  effort: number;
 }
 
 export interface RallySnapshot {
@@ -58,21 +53,18 @@ export interface RallyLane {
   name: string;
   initials: string;
   you?: boolean;
-  place?: number;
   values: [number, number, number];
 }
 
 export interface RallyBoard {
   board: SplitBoardModel;
-  sport: SportId;
   unit: RallyUnit;
   periodLabel: string;
-  youSeries: CheckpointSeries;
-  ghostSeries: CheckpointSeries | null;
   moves: RallyMove[];
   lanes: RallyLane[];
   references: RallyReference[];
-  movingMinutes: number;
+  youValues: [number, number, number];
+  ghostValues: [number, number, number] | null;
 }
 
 export function gapText(gap: number, unit: RallyUnit): string {
@@ -92,7 +84,10 @@ export function formatRallyValue(value: number, unit: RallyUnit): string {
   return unit === "km" ? value.toFixed(1) : formatEffort(value);
 }
 
-function seriesValues(series: CheckpointSeries, unit: RallyUnit): [number, number, number] {
+function seriesValues(
+  series: CheckpointSeries,
+  unit: RallyUnit,
+): [number, number, number] {
   if (unit === "km") {
     return [
       series.distanceM[0] / 1000,
@@ -103,35 +98,73 @@ function seriesValues(series: CheckpointSeries, unit: RallyUnit): [number, numbe
   return series.effort;
 }
 
-function valueAtCutoff(values: [number, number, number], cutoff: RallyCutoff): number {
+function valueAtCutoff(
+  values: [number, number, number],
+  cutoff: RallyCutoff,
+): number {
   if (cutoff <= 0) return 0;
+  return Math.round(interpolateSeries(values, cutoff - 1) * 1000) / 1000;
+}
+
+/** Week progress 0..1 for a timestamp inside the period. */
+export function weekProgress(
+  iso: string,
+  periodStart: Date,
+  periodEnd: Date,
+): number {
+  const span = periodEnd.getTime() - periodStart.getTime();
+  if (span <= 0) return 1;
+  const raw =
+    (new Date(iso).getTime() - periodStart.getTime()) / span;
+  return Math.min(1, Math.max(0, raw));
+}
+
+/**
+ * Interpolate Start + three checkpoint values by week progress (0..1).
+ * Used for same-point receipts, independent of the 0..3 replay scrubber.
+ */
+export function valueAtProgress(
+  values: [number, number, number],
+  progress: number,
+): number {
+  const series = [0, ...values];
+  const t = Math.min(3, Math.max(0, progress * 3));
+  const i = Math.min(2, Math.floor(t));
   return (
-    Math.round(interpolateSeries(values, cutoff - 1) * 1000) / 1000
+    Math.round(
+      (series[i]! + (series[i + 1]! - series[i]!) * (t - i)) * 1000,
+    ) / 1000
   );
 }
 
-function moveTitle(activity: Activity, sport: SportId): string {
-  const day = new Date(activity.startedAt).toLocaleDateString("en-US", {
-    weekday: "long",
-    timeZone: "UTC",
-  });
-  const name = sportById(sport).name;
-  return `${day} ${name.toLowerCase()}`;
+export function moveIsCounted(
+  move: RallyMove,
+  cutoff: RallyCutoff,
+  periodStart: Date,
+  periodEnd: Date,
+): boolean {
+  if (cutoff <= 0) return false;
+  if (cutoff >= 3) return true;
+  return (
+    weekProgress(move.startedAt, periodStart, periodEnd) <= cutoff / 3 + 1e-9
+  );
 }
 
 export function movesFromActivities(
   activities: Activity[],
   sport: SportId,
 ): RallyMove[] {
+  const sportName = sportById(sport).name.toLowerCase();
   return activities.map((activity) => {
     const started = new Date(activity.startedAt);
+    const day = started.toLocaleDateString("en-US", {
+      weekday: "long",
+      timeZone: "UTC",
+    });
     return {
       id: activity.id,
-      title: moveTitle(activity, sport),
-      day: started.toLocaleDateString("en-US", {
-        weekday: "long",
-        timeZone: "UTC",
-      }),
+      title: `${day} ${sportName}`,
+      day,
       date: started.toLocaleDateString("en-US", {
         month: "short",
         day: "numeric",
@@ -145,8 +178,21 @@ export function movesFromActivities(
       startedAt: activity.startedAt,
       verified: activity.verified,
       source: activity.source,
+      effort: activityEffort(activity),
     };
   });
+}
+
+function againstValuesFor(
+  rally: Pick<RallyBoard, "ghostValues" | "lanes">,
+  reference: RallyReference,
+): [number, number, number] {
+  if (reference.ghost) {
+    return rally.ghostValues ?? [0, 0, 0];
+  }
+  return (
+    rally.lanes.find((lane) => lane.id === reference.id)?.values ?? [0, 0, 0]
+  );
 }
 
 export function buildRallyBoard(
@@ -162,14 +208,13 @@ export function buildRallyBoard(
     ? seriesValues(board.ghostSeries, unit)
     : null;
 
-  const lanes: RallyLane[] = board.fieldLanes.map((lane: TrackLane) => {
+  const lanes: RallyLane[] = board.fieldLanes.map((lane) => {
     if (lane.you) {
       return {
         id: lane.id,
         name: "You",
         initials: lane.initials,
         you: true,
-        place: lane.place,
         values: youValues,
       };
     }
@@ -187,11 +232,11 @@ export function buildRallyBoard(
       id: lane.id,
       name: lane.name,
       initials: lane.initials,
-      place: lane.place,
       values: seriesValues(series, unit),
     };
   });
 
+  const rivals = lanes.filter((lane) => !lane.you);
   const references: RallyReference[] = [
     {
       id: "ghost",
@@ -199,30 +244,22 @@ export function buildRallyBoard(
       initials: "PW",
       ghost: true,
     },
-    ...lanes
-      .filter((lane) => !lane.you)
-      .slice(0, 2)
-      .map((lane) => ({
-        id: lane.id,
-        name: lane.name,
-        initials: lane.initials,
-      })),
+    ...rivals.slice(0, 2).map((lane) => ({
+      id: lane.id,
+      name: lane.name,
+      initials: lane.initials,
+    })),
   ];
 
   return {
     board,
-    sport,
     unit,
     periodLabel: board.periodLabel,
-    youSeries: board.youSeries,
-    ghostSeries: board.ghostSeries,
     moves: movesFromActivities(board.weekActivities, sport),
     lanes,
     references,
-    movingMinutes: Math.round(
-      board.weekActivities.reduce((sum, activity) => sum + activity.movingSec, 0) /
-        60,
-    ),
+    youValues,
+    ghostValues,
   };
 }
 
@@ -230,25 +267,10 @@ export function resolveReference(
   rally: RallyBoard,
   referenceId: string,
 ): RallyReference {
-  if (referenceId === "ghost") {
-    return (
-      rally.references.find((item) => item.ghost) ?? {
-        id: "ghost",
-        name: "Your previous week",
-        initials: "PW",
-        ghost: true,
-      }
-    );
-  }
-  const lane = rally.lanes.find((item) => item.id === referenceId);
-  if (lane) {
-    return {
-      id: lane.id,
-      name: lane.name,
-      initials: lane.initials,
-    };
-  }
-  return rally.references[0]!;
+  return (
+    rally.references.find((item) => item.id === referenceId) ??
+    rally.references[0]!
+  );
 }
 
 export function snapshotAt(
@@ -256,31 +278,20 @@ export function snapshotAt(
   reference: RallyReference,
   cutoff: RallyCutoff,
 ): RallySnapshot {
-  const youValues = seriesValues(rally.youSeries, rally.unit);
-  const againstValues = reference.ghost
-    ? rally.ghostSeries
-      ? seriesValues(rally.ghostSeries, rally.unit)
-      : ([0, 0, 0] as [number, number, number])
-    : (rally.lanes.find((lane) => lane.id === reference.id)?.values ??
-      ([0, 0, 0] as [number, number, number]));
-
-  const total = valueAtCutoff(youValues, cutoff);
-  const against = valueAtCutoff(againstValues, cutoff);
+  const total = valueAtCutoff(rally.youValues, cutoff);
+  const against = valueAtCutoff(againstValuesFor(rally, reference), cutoff);
   const labels = ["Start", ...rally.board.checkpointLabels] as const;
-  const counted =
-    cutoff === 0
+  const count =
+    cutoff <= 0
       ? 0
-      : rally.moves.filter((move) => {
-          const at = new Date(move.startedAt);
-          // Approximate: counted if activity falls at or before this cutoff share.
-          const span =
-            rally.board.periodEnd.getTime() - rally.board.periodStart.getTime();
-          const progress =
-            span <= 0
-              ? 1
-              : (at.getTime() - rally.board.periodStart.getTime()) / span;
-          return progress <= cutoff / 3 + 1e-6;
-        }).length;
+      : rally.moves.filter((move) =>
+          moveIsCounted(
+            move,
+            cutoff,
+            rally.board.periodStart,
+            rally.board.periodEnd,
+          ),
+        ).length;
 
   return {
     cutoff,
@@ -288,53 +299,44 @@ export function snapshotAt(
     total,
     against,
     gap: Math.round((total - against) * 1000) / 1000,
-    count: counted,
+    count,
     unit: rally.unit,
   };
 }
 
-/** Snapshot immediately after a specific counted move (receipt semantics). */
+/** Receipt: your cumulative after this move vs reference at the same week progress. */
 export function snapshotAfterMove(
   rally: RallyBoard,
   reference: RallyReference,
   moveIndex: number,
 ): RallySnapshot {
-  const through = rally.moves.slice(0, moveIndex + 1);
+  const index = Math.max(0, Math.min(rally.moves.length - 1, moveIndex));
+  const move = rally.moves[index]!;
+  const through = rally.moves.slice(0, index + 1);
   const total =
     rally.unit === "km"
-      ? Math.round(through.reduce((sum, move) => sum + move.km, 0) * 1000) / 1000
-      : Math.round(
-          through.reduce((sum, move) => {
-            const activity = rally.board.weekActivities.find(
-              (item) => item.id === move.id,
-            );
-            return activity ? sum + activityEffort(activity) : sum;
-          }, 0) * 10,
-        ) / 10;
+      ? Math.round(through.reduce((sum, item) => sum + item.km, 0) * 1000) /
+        1000
+      : Math.round(through.reduce((sum, item) => sum + item.effort, 0) * 10) /
+        10;
 
-  // Same-time comparison: map move index onto the 1..3 cutoff scale.
-  const cutoff = Math.min(3, Math.max(1, moveIndex + 1)) as RallyCutoff;
-  const base = snapshotAt(rally, reference, cutoff);
+  const progress = weekProgress(
+    move.startedAt,
+    rally.board.periodStart,
+    rally.board.periodEnd,
+  );
+  const against = valueAtProgress(
+    againstValuesFor(rally, reference),
+    progress,
+  );
+
   return {
-    ...base,
+    cutoff: 3,
+    label: move.day,
     total,
-    gap: Math.round((total - base.against) * 1000) / 1000,
-    count: moveIndex + 1,
+    against,
+    gap: Math.round((total - against) * 1000) / 1000,
+    count: index + 1,
+    unit: rally.unit,
   };
-}
-
-export function placeAtCutoff(rally: RallyBoard, cutoff: RallyCutoff): number {
-  const you = valueAtCutoff(seriesValues(rally.youSeries, rally.unit), cutoff);
-  const ahead = rally.lanes.filter(
-    (lane) => !lane.you && valueAtCutoff(lane.values, cutoff) > you + 1e-6,
-  ).length;
-  return ahead + 1;
-}
-
-export function laneValueAt(lane: RallyLane, cutoff: RallyCutoff): number {
-  return valueAtCutoff(lane.values, cutoff);
-}
-
-export function referenceInitials(name: string): string {
-  return initialsFromName(name);
 }

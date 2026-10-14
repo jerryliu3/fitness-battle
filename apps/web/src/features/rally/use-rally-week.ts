@@ -1,14 +1,23 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import type { RallyBoard, RallyCutoff, RallyMove, RallyReference } from "./model";
 import {
+  competeNow,
+  type CompeteState,
+  type ScoreTrack,
+  type SportId,
+} from "@fitness-battle/shared";
+import { useEffect, useMemo, useState } from "react";
+import {
+  buildRallyBoard,
   resolveReference,
   snapshotAfterMove,
   snapshotAt,
+  type RallyBoard,
+  type RallyCutoff,
+  type RallyMove,
 } from "./model";
 
-export function useRallyWeek(rally: RallyBoard | null) {
+function useRallyReplay(rally: RallyBoard | null) {
   const [cutoff, setCutoff] = useState<RallyCutoff>(3);
   const [referenceId, setReferenceId] = useState("ghost");
   const [playing, setPlaying] = useState(false);
@@ -27,14 +36,13 @@ export function useRallyWeek(rally: RallyBoard | null) {
     return () => window.clearInterval(timer);
   }, [playing]);
 
-  if (!rally) {
-    return null;
-  }
+  if (!rally) return null;
 
   const reference = resolveReference(rally, referenceId);
   const week = snapshotAt(rally, reference, cutoff);
 
   return {
+    rally,
     cutoff,
     reference,
     week,
@@ -48,28 +56,31 @@ export function useRallyWeek(rally: RallyBoard | null) {
       setPlaying(false);
     },
     onReplay: () => {
-      if (playing) setPlaying(false);
-      else {
-        setCutoff(0);
-        setPlaying(true);
+      if (playing) {
+        setPlaying(false);
+        return;
       }
+      setCutoff(0);
+      setPlaying(true);
     },
     receiptFor: (move: RallyMove) => {
       const index = rally.moves.findIndex((item) => item.id === move.id);
       return snapshotAfterMove(rally, reference, Math.max(0, index));
     },
-    allReferences: [
-      reference.ghost
-        ? reference
-        : ({
-            id: "ghost",
-            name: "Your previous week",
-            initials: "PW",
-            ghost: true,
-          } satisfies RallyReference),
-      ...rally.lanes.filter((lane) => !lane.you),
-    ].filter(
-      (item, index, list) => list.findIndex((row) => row.id === item.id) === index,
-    ),
   };
+}
+
+/** Shared Rally accents: board model + personal-matchup replay state. */
+export function useRallyPresentation(
+  state: CompeteState | null,
+  sport: SportId,
+  track: ScoreTrack,
+  enabled: boolean,
+) {
+  const rally = useMemo(() => {
+    if (!enabled || !state) return null;
+    return buildRallyBoard(state, sport, track, competeNow(state));
+  }, [enabled, state, sport, track]);
+
+  return useRallyReplay(rally);
 }

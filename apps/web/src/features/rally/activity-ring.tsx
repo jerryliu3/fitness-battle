@@ -1,7 +1,6 @@
 import type { RallyMove, RallyUnit } from "./model";
-import { formatRallyValue } from "./model";
 
-/** Shared 10 km (or proportional) distance scale — mileage fill, not a workout goal. */
+/** Shared 10 km distance scale — mileage fill, not a workout goal. */
 export function ActivityRing({
   move,
   unit,
@@ -14,7 +13,7 @@ export function ActivityRing({
   onOpen: () => void;
 }) {
   const circumference = 2 * Math.PI * 44;
-  const display = counted ? (unit === "km" ? move.km : move.minutes / 6) : 0;
+  const fillKm = counted ? (unit === "km" ? move.km : move.minutes / 6) : 0;
   const labelValue = counted
     ? unit === "km"
       ? move.km
@@ -28,7 +27,7 @@ export function ActivityRing({
       className="rf-move"
       disabled={!counted}
       onClick={onOpen}
-      aria-label={`${move.title}, ${formatRallyValue(labelValue, unit === "km" ? "km" : "pts")} ${unitLabel}, ${counted ? "counted import. Open activity" : "not yet counted at this replay cutoff"}`}
+      aria-label={`${move.title}, ${labelValue} ${unitLabel}, ${counted ? "counted import. Open activity" : "not yet counted at this replay cutoff"}`}
     >
       <span className="rf-move-day">
         {move.day}
@@ -42,7 +41,7 @@ export function ActivityRing({
             cy="56"
             r="44"
             className="rf-ring-value"
-            strokeDasharray={`${Math.min(display / 10, 1) * circumference} ${circumference}`}
+            strokeDasharray={`${Math.min(fillKm / 10, 1) * circumference} ${circumference}`}
             transform="rotate(-90 56 56)"
           />
         </svg>

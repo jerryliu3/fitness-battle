@@ -6,8 +6,8 @@ import {
   ActivityReceipt,
   RallyDetailDialog,
 } from "@/features/rally/detail-dialog";
-import { buildRallyBoard, type RallyMove } from "@/features/rally/model";
-import { useRallyWeek } from "@/features/rally/use-rally-week";
+import { type RallyMove } from "@/features/rally/model";
+import { useRallyPresentation } from "@/features/rally/use-rally-week";
 import { ActivitySplits } from "@/features/split/components/activity-splits";
 import {
   ProductHeader,
@@ -24,7 +24,7 @@ import {
   type ScoreTrack,
 } from "@fitness-battle/shared";
 import Link from "next/link";
-import { useMemo, useState, type ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 
 export default function SplitsPage() {
   const { state } = useCompete();
@@ -39,11 +39,12 @@ export default function SplitsPage() {
   const sport = state?.primary ?? "running";
   const spec = sportById(sport);
   const shownTrack: ScoreTrack = spec.gps ? track : "open";
-  const rally = useMemo(() => {
-    if (!state || theme.id !== "rally") return null;
-    return buildRallyBoard(state, sport, shownTrack, competeNow(state));
-  }, [state, sport, shownTrack, theme.id]);
-  const weekState = useRallyWeek(rally);
+  const rallyWeek = useRallyPresentation(
+    state,
+    sport,
+    shownTrack,
+    theme.id === "rally",
+  );
 
   if (!state) return <p className="fb-copy">Loading splits…</p>;
 
@@ -57,8 +58,8 @@ export default function SplitsPage() {
     : null;
 
   function openMove(move: RallyMove) {
-    if (!weekState || !rally) return;
-    const at = weekState.receiptFor(move);
+    if (!rallyWeek) return;
+    const at = rallyWeek.receiptFor(move);
     setDetail({
       title: move.title,
       kind: "activity",
@@ -66,8 +67,8 @@ export default function SplitsPage() {
         <ActivityReceipt
           move={move}
           at={at}
-          reference={weekState.reference}
-          unit={rally.unit}
+          reference={rallyWeek.reference}
+          unit={rallyWeek.rally.unit}
         />
       ),
     });
@@ -123,14 +124,16 @@ export default function SplitsPage() {
         </div>
       ) : null}
 
-      {theme.id === "rally" && rally && weekState && rally.moves.length > 0 ? (
+      {theme.id === "rally" &&
+      rallyWeek &&
+      rallyWeek.rally.moves.length > 0 ? (
         <div className="rf-addon">
           <div className="rf-moves-grid">
-            {rally.moves.map((move) => (
+            {rallyWeek.rally.moves.map((move) => (
               <ActivityRing
                 key={move.id}
                 move={move}
-                unit={rally.unit}
+                unit={rallyWeek.rally.unit}
                 onOpen={() => openMove(move)}
               />
             ))}

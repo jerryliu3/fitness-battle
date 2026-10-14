@@ -97,7 +97,7 @@ export function ActivityReceipt({
           </p>
         </section>
         <section>
-          <span>03 / SAME {move.day.toUpperCase()} CUTOFF</span>
+          <span>03 / SAME POINT IN THE WEEK</span>
           <strong className="rf-receipt-gap">{gapText(at.gap, unit)}</strong>
           <p>
             {reference.ghost
