@@ -95,8 +95,10 @@ export {
 export {
   countsOnTrack,
   dispositionOf,
+  isSampleActivity,
   isVerifiedActivity,
   mergeActivities,
+  normalizeSampleActivity,
   paceMinPerKm,
   progressionTrends,
   provenanceOf,
