@@ -48,6 +48,28 @@ describe("activity ledger", () => {
     expect(merged.find((item) => item.id === "file-1")?.disposition).toBe("excluded");
   });
 
+  it("updates a resynced activity and keeps the user's disposition", () => {
+    const existing = run({
+      id: "strava-1",
+      startedAt: "2026-10-13T12:00:00.000Z",
+      distanceM: 5000,
+      disposition: "excluded",
+      dispositionReason: "You left this session out of the week.",
+    });
+    const corrected = run({
+      id: "strava-1",
+      startedAt: "2026-10-13T12:00:00.000Z",
+      distanceM: 8200,
+      movingSec: 2500,
+    });
+    const merged = mergeActivities([existing], [corrected]);
+    expect(merged).toHaveLength(1);
+    expect(merged[0]?.distanceM).toBe(8200);
+    expect(merged[0]?.movingSec).toBe(2500);
+    expect(merged[0]?.disposition).toBe("excluded");
+    expect(merged[0]?.dispositionReason).toBe("You left this session out of the week.");
+  });
+
   it("builds distance and pace trends from counted sessions", () => {
     const trends = progressionTrends(
       [
@@ -63,6 +85,13 @@ describe("activity ledger", () => {
           startedAt: "2026-10-14T12:00:00.000Z",
           provenance: "demo",
           source: "history",
+        }),
+        run({
+          id: "pending",
+          startedAt: "2026-10-15T12:00:00.000Z",
+          provenance: "imported",
+          disposition: "pending",
+          distanceM: 9000,
         }),
       ],
       "running",
