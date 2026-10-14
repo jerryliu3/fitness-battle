@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { suggestOpen, suggestToday } from "./suggestion";
+import { freshState } from "./engine";
+import { suggestionForState, suggestOpen, suggestToday } from "./suggestion";
 import type { Activity } from "./sports";
 
 function run(partial: Partial<Activity> & Pick<Activity, "id" | "startedAt" | "distanceM">): Activity {
@@ -58,10 +59,12 @@ describe("suggestToday", () => {
       [],
       now,
     );
-    expect(suggestion.kind).toBe("quality");
+    expect(suggestion.kind).toBe("easy");
     expect(suggestion.phase).toBe("build");
-    expect(suggestion.reason).toContain("No counted runs");
-    expect(suggestion.distanceKm).toBeLessThanOrEqual(8);
+    expect(suggestion.minutes).toBe(30);
+    expect(suggestion.distanceKm).toBeNull();
+    expect(suggestion.reason).toContain("No counted running");
+    expect(suggestion.title).toBe("Easy 30 min");
   });
 
   it("rests after a long run yesterday", () => {
@@ -108,6 +111,54 @@ describe("suggestToday", () => {
     expect(suggestion.title).toBe("Already covered");
   });
 
+  it("keeps the long day on the weekday with the most distance", () => {
+    const sunday = new Date("2026-10-18T15:00:00.000Z");
+    const suggestion = suggestToday(
+      { distance: "10k", deadline: "2026-12-08" },
+      [
+        run({ id: "odd", startedAt: "2026-10-14T14:00:00.000Z", distanceM: 12000 }),
+        run({ id: "sun-a", startedAt: "2026-10-11T14:00:00.000Z", distanceM: 8000 }),
+        run({ id: "sun-b", startedAt: "2026-10-04T14:00:00.000Z", distanceM: 8000 }),
+      ],
+      sunday,
+    );
+    expect(suggestion.kind).toBe("long");
+    expect(suggestion.distanceKm).toBeLessThanOrEqual(8.8);
+  });
+
+  it("uses the athlete's sport and treats any session today as covered", () => {
+    const now = new Date("2026-10-13T15:00:00.000Z");
+    const state = freshState(now);
+    state.primary = "cycling";
+    state.trainingGoal = { distance: "10k", deadline: "2026-12-08" };
+    state.activities = [
+      run({
+        id: "ride",
+        sport: "cycling",
+        startedAt: "2026-10-13T12:00:00.000Z",
+        distanceM: 30000,
+        movingSec: 60 * 60,
+      }),
+    ];
+    const covered = suggestionForState(state, now);
+    expect(covered.title).toBe("Already covered");
+    expect(covered.reason).toContain("cycling");
+
+    state.activities = [
+      run({
+        id: "earlier",
+        sport: "cycling",
+        startedAt: "2026-10-10T12:00:00.000Z",
+        distanceM: 25000,
+        movingSec: 50 * 60,
+      }),
+    ];
+    const planned = suggestionForState(state, now);
+    expect(planned.kind).not.toBe("quality");
+    expect(planned.reason).toContain("cycling");
+    expect(planned.reason).not.toContain("No counted running");
+  });
+
   it("ignores sample calibration rows", () => {
     const suggestion = suggestToday(
       { distance: "5k", deadline: "2026-12-08" },
@@ -122,6 +173,6 @@ describe("suggestToday", () => {
       ],
       now,
     );
-    expect(suggestion.reason).toContain("No counted runs");
+    expect(suggestion.reason).toContain("No counted running");
   });
 });

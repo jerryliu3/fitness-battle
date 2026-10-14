@@ -192,5 +192,6 @@ describe("compete engine", () => {
     expect(migrated.periodResults).toEqual([]);
     expect(migrated.pendingRevealIds).toEqual([]);
     expect(migrated.enrollments).toEqual([]);
+    expect(migrateCompeteState({ ...legacy, trainingGoal: { distance: "5k", deadline: "2026-02-31" } } as never).trainingGoal).toBeNull();
   });
 });

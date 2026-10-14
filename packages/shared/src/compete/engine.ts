@@ -8,6 +8,7 @@ import {
 } from "../matching";
 import { eloFromWeeklyEffort, periodEffort } from "./effort";
 import { mergeActivities, provenanceOf } from "./ledger";
+import { isTrainingGoal } from "./suggestion";
 import { settleElo } from "./elo";
 import {
   demoSleepNight,
@@ -189,15 +190,7 @@ export function migrateCompeteState(parsed: CompeteState): CompeteState {
           })
         : freshHealthRatings(parsed.clock?.periodStart ?? new Date().toISOString()),
     healthResults: Array.isArray(parsed.healthResults) ? parsed.healthResults : [],
-    trainingGoal:
-      parsed.trainingGoal &&
-      (parsed.trainingGoal.distance === "5k" ||
-        parsed.trainingGoal.distance === "10k" ||
-        parsed.trainingGoal.distance === "half" ||
-        parsed.trainingGoal.distance === "marathon") &&
-      /^\d{4}-\d{2}-\d{2}$/.test(parsed.trainingGoal.deadline)
-        ? parsed.trainingGoal
-        : null,
+    trainingGoal: isTrainingGoal(parsed.trainingGoal) ? parsed.trainingGoal : null,
   };
 }
 
@@ -1005,9 +998,7 @@ export function reduceCompete(
     case "set-training-goal": {
       const distance = action.goalDistance;
       const deadline = action.deadline?.trim() ?? "";
-      if (!distance || !/^\d{4}-\d{2}-\d{2}$/.test(deadline)) return rolled;
-      const parsed = new Date(`${deadline}T00:00:00.000Z`);
-      if (Number.isNaN(parsed.getTime())) return rolled;
+      if (!isTrainingGoal({ distance, deadline })) return rolled;
       return { ...rolled, trainingGoal: { distance, deadline } };
     }
     case "clear-training-goal":
