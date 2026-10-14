@@ -104,12 +104,22 @@ export function WeekReveal({
       ) : (
         <p className="fb-note">
           Final place in your matched group sets next week’s starting rating.
-          Your new week is already open.
+          The new week is already open. A crew keeps the same invite code.
         </p>
       )}
 
+      <button
+        type="button"
+        className="fb-btn-line"
+        onClick={() => {
+          const text = `${headline} ${sport.name} ${formatPlace(result.place, result.fieldSize)}, ${formatEffort(result.effort)} effort.`;
+          void navigator.clipboard?.writeText(text);
+        }}
+      >
+        Copy recap
+      </button>
       <button type="button" className="sp-cta" onClick={onDismiss}>
-        Start the new week ↗
+        Play next week
       </button>
     </section>
   );

@@ -48,6 +48,7 @@ export function CrewPanel() {
   const [notices, setNotices] = useState<NoticeRow[]>([]);
   const [name, setName] = useState("Sunday easy");
   const [code, setCode] = useState("");
+  const [format, setFormat] = useState("volume");
   const [note, setNote] = useState<string | null>(null);
 
   async function reload() {
@@ -93,7 +94,7 @@ export function CrewPanel() {
       body: JSON.stringify({
         name,
         sport: state?.primary ?? "running",
-        format: "volume",
+        format,
       }),
     });
     const body = (await response.json()) as { error?: string };
@@ -161,6 +162,14 @@ export function CrewPanel() {
         Crew name
         <input value={name} onChange={(event) => setName(event.target.value)} />
       </label>
+      <label className="fb-field">
+        Format
+        <select value={format} onChange={(event) => setFormat(event.target.value)}>
+          <option value="volume">Same-sport volume</option>
+          <option value="personal_target">Each person, three sessions</option>
+          <option value="cooperative">Shared distance</option>
+        </select>
+      </label>
       <button type="button" className="fb-btn" onClick={() => void createCrew()}>
         Create crew
       </button>
@@ -175,38 +184,82 @@ export function CrewPanel() {
         const crew = row.crews;
         if (!crew) return null;
         const roster = members.filter((member) => member.crew_id === crew.id);
-        const km = entries
-          .filter((entry) => entry.crew_id === crew.id && entry.disposition === "counted")
-          .reduce((sum, entry) => sum + Number(entry.distance_m), 0);
+        const counted = entries.filter(
+          (entry) => entry.crew_id === crew.id && entry.disposition === "counted",
+        );
+        const km = counted.reduce((sum, entry) => sum + Number(entry.distance_m), 0) / 1000;
+        const rule =
+          crew.format === "personal_target"
+            ? `Each person aims for ${crew.target_sessions} counted sessions.`
+            : crew.format === "cooperative"
+              ? `Together, ${km.toFixed(1)} of ${crew.journey_km} km.`
+              : `${km.toFixed(1)} km on the volume board.`;
         return (
           <div key={crew.id} className="fb-stack">
             <h3>
-              {crew.name} · {crew.format.replace("_", " ")}
+              {crew.name} · {crew.format.replaceAll("_", " ")}
             </h3>
             <p className="fb-copy">
-              Code {crew.invite_code}. {roster.length} people. {(km / 1000).toFixed(1)} km
-              counted together.
+              Code {crew.invite_code}. {roster.length} people. {rule} A season is
+              four closed weeks with this same code.
             </p>
             <ul>
               {roster.map((member) => {
-                const theirs = entries
-                  .filter(
-                    (entry) =>
-                      entry.crew_id === crew.id &&
-                      entry.user_id === member.user_id &&
-                      entry.disposition === "counted",
-                  )
-                  .reduce((sum, entry) => sum + Number(entry.distance_m), 0);
+                const mine = entries.filter(
+                  (entry) =>
+                    entry.crew_id === crew.id &&
+                    entry.user_id === member.user_id &&
+                    entry.disposition === "counted",
+                );
+                const latest = mine[0];
+                const sessions = mine.length;
+                const targetMet =
+                  crew.format === "personal_target" && sessions >= crew.target_sessions;
                 return (
                   <li key={member.user_id}>
                     {member.display_name}
-                    {member.rest_week ? " · resting" : ""} · {(theirs / 1000).toFixed(1)} km
+                    {member.rest_week ? " · rest week, rating can stay put if you also freeze" : ""}
+                    {" · "}
+                    {sessions} sessions
+                    {targetMet ? " · target met" : ""}
+                    {latest && member.user_id !== user?.id ? (
+                      <button
+                        type="button"
+                        className="fb-btn-ghost"
+                        onClick={() =>
+                          void fetch("/api/crews/cheer", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({
+                              crewId: crew.id,
+                              activityId: latest.activity_id,
+                              ownerId: member.user_id,
+                            }),
+                          }).then(() => reload())
+                        }
+                      >
+                        Cheer
+                      </button>
+                    ) : null}
                   </li>
                 );
               })}
             </ul>
             <button type="button" className="fb-btn-ghost" onClick={() => void share(crew.id)}>
               Share this week’s counted sessions
+            </button>
+            <button
+              type="button"
+              className="fb-btn-ghost"
+              onClick={() =>
+                void fetch("/api/crews/rest", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ crewId: crew.id, rest: true }),
+                }).then(() => reload())
+              }
+            >
+              Rest this week
             </button>
           </div>
         );
