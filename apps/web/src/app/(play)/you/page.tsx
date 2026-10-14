@@ -309,8 +309,9 @@ function YouContent() {
       <section className="fb-card" id="theme">
         <h2>Theme</h2>
         <p className="fb-copy">
-          Form is the product default. Ink keeps the earlier athletic chrome.
-          The same week, field, and imports stay underneath.
+          Rally is the default skin — plum, tennis yellow, and Ace accents. Form
+          and Ink keep their earlier chrome. The same week, 2D/3D field, and
+          imports stay underneath every theme.
         </p>
         <div className="fm-themes">
           {THEME_OPTIONS.map((option) => (

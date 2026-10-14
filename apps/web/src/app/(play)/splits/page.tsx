@@ -1,12 +1,20 @@
 "use client";
 
 import { useCompete } from "@/components/compete-context";
+import { ActivityRing } from "@/features/rally/activity-ring";
+import {
+  ActivityReceipt,
+  RallyDetailDialog,
+} from "@/features/rally/detail-dialog";
+import { type RallyMove } from "@/features/rally/model";
+import { useRallyPresentation } from "@/features/rally/use-rally-week";
 import { ActivitySplits } from "@/features/split/components/activity-splits";
 import {
   ProductHeader,
   sourceFromLinks,
 } from "@/features/split/components/product-header";
 import { buildSplitBoard } from "@/features/split/model";
+import { useTheme } from "@/theme/theme-provider";
 import {
   yourBenchmarkSeconds,
   formatClockTime,
@@ -16,27 +24,55 @@ import {
   type ScoreTrack,
 } from "@fitness-battle/shared";
 import Link from "next/link";
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 
 export default function SplitsPage() {
   const { state } = useCompete();
+  const { theme } = useTheme();
   const [track, setTrack] = useState<ScoreTrack>("open");
+  const [detail, setDetail] = useState<{
+    title: string;
+    body: ReactNode;
+    kind: "activity" | "info";
+  } | null>(null);
+
+  const sport = state?.primary ?? "running";
+  const spec = sportById(sport);
+  const shownTrack: ScoreTrack = spec.gps ? track : "open";
+  const rallyWeek = useRallyPresentation(
+    state,
+    sport,
+    shownTrack,
+    theme.id === "rally",
+  );
 
   if (!state) return <p className="fb-copy">Loading splits…</p>;
 
   const now = competeNow(state);
-  const sport = state.primary;
-  const spec = sportById(sport);
-  const shownTrack: ScoreTrack = spec.gps ? track : "open";
   const board = buildSplitBoard(state, sport, shownTrack, now);
   const source = sourceFromLinks(state.links);
   const benchmark =
-    sport === "running" || sport === "cycling"
-      ? BENCHMARKS[sport][0]
-      : null;
+    sport === "running" || sport === "cycling" ? BENCHMARKS[sport][0] : null;
   const estimate = benchmark
     ? yourBenchmarkSeconds(state, sport, benchmark.meters)
     : null;
+
+  function openMove(move: RallyMove) {
+    if (!rallyWeek) return;
+    const at = rallyWeek.receiptFor(move);
+    setDetail({
+      title: move.title,
+      kind: "activity",
+      body: (
+        <ActivityReceipt
+          move={move}
+          at={at}
+          reference={rallyWeek.reference}
+          unit={rallyWeek.rally.unit}
+        />
+      ),
+    });
+  }
 
   return (
     <>
@@ -47,13 +83,24 @@ export default function SplitsPage() {
           {board.periodLabel} / {spec.name}
         </p>
         <h1>
-          YOUR
-          <br />
-          <span>SPLITS.</span>
+          {theme.id === "rally" ? (
+            <>
+              YOUR
+              <br />
+              <span>MOVES.</span>
+            </>
+          ) : (
+            <>
+              YOUR
+              <br />
+              <span>SPLITS.</span>
+            </>
+          )}
         </h1>
         <p className="fb-copy">
           The work behind the line. Each counted session is a numbered split for
-          this week.
+          this week
+          {theme.id === "rally" ? ", with optional activity rings above" : ""}.
         </p>
       </div>
 
@@ -74,6 +121,27 @@ export default function SplitsPage() {
               {label}
             </button>
           ))}
+        </div>
+      ) : null}
+
+      {theme.id === "rally" &&
+      rallyWeek &&
+      rallyWeek.rally.moves.length > 0 ? (
+        <div className="rf-addon">
+          <div className="rf-moves-grid">
+            {rallyWeek.rally.moves.map((move) => (
+              <ActivityRing
+                key={move.id}
+                move={move}
+                unit={rallyWeek.rally.unit}
+                onOpen={() => openMove(move)}
+              />
+            ))}
+          </div>
+          <p className="rf-ring-caption">
+            Rings use a shared 10 km distance scale. The numbered splits below
+            stay the source of truth for effort.
+          </p>
         </div>
       ) : null}
 
@@ -109,6 +177,8 @@ export default function SplitsPage() {
       <Link href="/you#connections" className="fb-btn-ghost">
         {source.label} · manage source ↗
       </Link>
+
+      <RallyDetailDialog detail={detail} onClose={() => setDetail(null)} />
     </>
   );
 }

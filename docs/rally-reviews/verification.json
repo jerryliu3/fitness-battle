@@ -1,0 +1,37 @@
+{
+  "environment": "Next production build, Codex in-app browser",
+  "layouts": 32,
+  "widths": [1440, 770, 390, 320],
+  "views": ["week", "matchups", "moves", "you"],
+  "comicTreatments": ["on", "off"],
+  "documentOverflow": false,
+  "browserErrorsAndWarnings": [],
+  "textOverflow": [],
+  "canonicalMascot": "Original apps/web/public/design/worlds/rally.png reused unchanged",
+  "checks": [
+    "Tuesday pass against Maya",
+    "Thursday reversal against Maya",
+    "Select a runner from the distance field",
+    "Monday receipt uses Monday cutoff against Theo",
+    "Native dialog Escape",
+    "Comic toggle preserves reference and receipt numbers",
+    "Reference persists between product views",
+    "Zero origin and future rings uncounted",
+    "Finite replay ends at Thursday",
+    "Replay reveals all three counted rings",
+    "Optional group opens the existing sample field",
+    "Athlete snapshot reconciles sample activity minutes",
+    "Profile comparison restores the personal reference",
+    "Browser Back restores view and comic treatment",
+    "Invalid view safely falls back to My week",
+    "Reduced-motion rule disables travel transitions",
+    "320 px receipt fit and original Ace",
+    "Parent study links to focused direction"
+  ],
+  "receiptFit": {
+    "aceOnly": true,
+    "overflow": false,
+    "scroll": 292,
+    "width": 292
+  }
+}
