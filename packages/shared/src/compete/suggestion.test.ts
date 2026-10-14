@@ -159,6 +159,50 @@ describe("suggestToday", () => {
     expect(planned.reason).not.toContain("No counted running");
   });
 
+  it("does not grow a short history past 10 percent", () => {
+    const sunday = new Date("2026-10-18T15:00:00.000Z");
+    const suggestion = suggestToday(
+      { distance: "10k", deadline: "2026-12-08" },
+      [
+        run({ id: "long", startedAt: "2026-10-11T14:00:00.000Z", distanceM: 1000 }),
+        run({ id: "easy", startedAt: "2026-10-14T14:00:00.000Z", distanceM: 500 }),
+      ],
+      sunday,
+    );
+    expect(suggestion.kind).toBe("long");
+    expect(suggestion.distanceKm).toBeLessThanOrEqual(1.1);
+
+    const tuesday = new Date("2026-10-13T15:00:00.000Z");
+    const quality = suggestToday(
+      { distance: "5k", deadline: "2026-12-08" },
+      [run({ id: "only", startedAt: "2026-10-08T14:00:00.000Z", distanceM: 1000 })],
+      tuesday,
+    );
+    expect(quality.kind).toBe("quality");
+    expect(quality.distanceKm).toBeLessThanOrEqual(1.1);
+  });
+
+  it("rests after a hard run even on the long weekday and during taper", () => {
+    const sunday = new Date("2026-10-18T15:00:00.000Z");
+    const longDay = suggestToday(
+      { distance: "10k", deadline: "2026-12-08" },
+      [
+        run({ id: "sun-a", startedAt: "2026-10-04T14:00:00.000Z", distanceM: 8000 }),
+        run({ id: "sun-b", startedAt: "2026-10-11T14:00:00.000Z", distanceM: 8000 }),
+        run({ id: "yesterday", startedAt: "2026-10-17T14:00:00.000Z", distanceM: 14000, movingSec: 80 * 60 }),
+      ],
+      sunday,
+    );
+    expect(longDay.kind).toBe("rest");
+
+    const taper = suggestToday(
+      { distance: "half", deadline: "2026-10-20" },
+      [run({ id: "yesterday", startedAt: "2026-10-12T14:00:00.000Z", distanceM: 14000, movingSec: 80 * 60 })],
+      new Date("2026-10-13T15:00:00.000Z"),
+    );
+    expect(taper.kind).toBe("rest");
+  });
+
   it("ignores sample calibration rows", () => {
     const suggestion = suggestToday(
       { distance: "5k", deadline: "2026-12-08" },

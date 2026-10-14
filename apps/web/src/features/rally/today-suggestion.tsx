@@ -1,6 +1,6 @@
 "use client";
 
-import { suggestionForState, type GoalDistance } from "@fitness-battle/shared";
+import { isTrainingGoal, suggestionForState, type GoalDistance } from "@fitness-battle/shared";
 import { useState } from "react";
 import type { Action, CompeteState } from "@fitness-battle/shared";
 
@@ -79,15 +79,16 @@ export function TodaySuggestion({
             type="button"
             className="fb-btn"
             onClick={() => {
-              if (!validDeadline(deadline)) {
+              const goal = { distance, deadline };
+              if (!isTrainingGoal(goal)) {
                 setDateError("Enter a real target day.");
                 return;
               }
               setDateError(null);
               dispatch({
                 type: "set-training-goal",
-                goalDistance: distance,
-                deadline,
+                goalDistance: goal.distance,
+                deadline: goal.deadline,
               });
               setEditing(false);
             }}
@@ -121,10 +122,4 @@ function defaultDeadline(now: Date): string {
   const next = new Date(now);
   next.setUTCDate(next.getUTCDate() + 12 * 7);
   return next.toISOString().slice(0, 10);
-}
-
-function validDeadline(value: string): boolean {
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
-  const parsed = new Date(`${value}T00:00:00.000Z`);
-  return !Number.isNaN(parsed.getTime()) && parsed.toISOString().slice(0, 10) === value;
 }

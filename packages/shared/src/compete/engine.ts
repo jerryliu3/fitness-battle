@@ -190,7 +190,6 @@ export function migrateCompeteState(parsed: CompeteState): CompeteState {
           })
         : freshHealthRatings(parsed.clock?.periodStart ?? new Date().toISOString()),
     healthResults: Array.isArray(parsed.healthResults) ? parsed.healthResults : [],
-    healthResults: Array.isArray(parsed.healthResults) ? parsed.healthResults : [],
     activities: Array.isArray(parsed.activities)
       ? parsed.activities.map(normalizeSampleActivity)
       : [],
