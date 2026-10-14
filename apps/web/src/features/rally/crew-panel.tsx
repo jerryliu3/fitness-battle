@@ -107,6 +107,9 @@ export function CrewPanel() {
       return;
     }
     await reload();
+    setNote(
+      "Crew created. When you join this week’s field, choose Join with crew if you want the shared board.",
+    );
   }
 
   async function join() {
@@ -123,6 +126,9 @@ export function CrewPanel() {
     }
     setCode("");
     await reload();
+    setNote(
+      "Joined the crew. Shared leaderboard is optional — pick Join with crew when you register for the week.",
+    );
   }
 
   async function share(crewId: string) {
@@ -144,9 +150,17 @@ export function CrewPanel() {
     <section className="fb-card">
       <h2>Private crew</h2>
       <p className="fb-copy">
-        Share a code. Both of you see the same counted sessions. The practice
-        field below is still generated.
+        Share a code for counted sessions, cheers, and the option to register
+        for a week together. Together is chosen when you join the field — not
+        automatically. Team-versus-team scoring comes later.
       </p>
+      {state?.crewBoard ? (
+        <p className="fb-note">
+          This week you chose a shared field with {state.crewBoard.crewName} ·{" "}
+          {state.crewBoard.memberIds.length} athletes ·{" "}
+          {state.crewBoard.syntheticIds.length} fillers.
+        </p>
+      ) : null}
       {notices.map((notice) => (
         <p key={notice.id} className="fb-note">
           {notice.body}

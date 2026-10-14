@@ -35,6 +35,16 @@ export {
   type AssignGroupInput,
 } from "./compose";
 export {
+  crewFieldSeed,
+  planCrewWeekField,
+  crewBoardPinFromPlan,
+  planFromCrewBoardPin,
+  enrollmentFromCrewPlan,
+  poolFromCrewPlan,
+  type CrewFieldMember,
+  type CrewWeekFieldPlan,
+} from "./crew-field";
+export {
   buildLocalBoard,
   clipFullWeekEstimate,
   type LocalBoardInput,

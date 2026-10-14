@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
 import { DensityMatcher } from "./compose";
+import {
+  enrollmentFromCrewPlan,
+  planCrewWeekField,
+} from "./crew-field";
 import { buildLocalBoard, clipFullWeekEstimate } from "./local-view";
 import { pickSynthetics, syntheticVolumeInWindow } from "./synthetic-bank";
 import type { PoolPlayer } from "./types";
@@ -67,6 +71,86 @@ describe("DensityMatcher", () => {
     });
     expect(assignment.peers.map((peer) => peer.id)).toEqual(["real-1"]);
     expect(assignment.synthetics).toHaveLength(6);
+  });
+
+  it("seats forced crew peers before density picks and synthetics", () => {
+    const monday = waveWindowAt(new Date("2026-10-12T12:00:00.000Z"));
+    const forced: PoolPlayer[] = [
+      {
+        id: "mate-a",
+        name: "Mate A",
+        elo: 900,
+        sport: "running",
+        waveStart: monday.waveStart.toISOString(),
+        weekEnd: monday.weekEnd.toISOString(),
+      },
+      {
+        id: "mate-b",
+        name: "Mate B",
+        elo: 1100,
+        sport: "running",
+        waveStart: monday.waveStart.toISOString(),
+        weekEnd: monday.weekEnd.toISOString(),
+      },
+    ];
+    const assignment = matcher.assignGroup({
+      viewerId: "you",
+      viewerName: "You",
+      viewerElo: 1000,
+      sport: "running",
+      now: new Date("2026-10-12T12:00:00.000Z"),
+      forcedPeers: forced,
+      realPool: [],
+      seed: "crew:test:running",
+      crewId: "crew-1",
+    });
+    expect(assignment.peers.map((peer) => peer.id)).toEqual(["mate-a", "mate-b"]);
+    expect(assignment.synthetics).toHaveLength(5);
+    expect(assignment.enrollment.crewId).toBe("crew-1");
+  });
+
+  it("keeps protected crew peers when preferReals is over capacity", () => {
+    const wave = waveWindowAt(new Date("2026-10-12T12:00:00.000Z"));
+    const mates: PoolPlayer[] = Array.from({ length: 7 }, (_, index) => ({
+      id: `mate-${index}`,
+      name: `Mate ${index}`,
+      elo: 1000,
+      sport: "running" as const,
+      waveStart: wave.waveStart.toISOString(),
+      weekEnd: wave.weekEnd.toISOString(),
+    }));
+    const initial = matcher.assignGroup({
+      viewerId: "you",
+      viewerName: "You",
+      viewerElo: 1000,
+      sport: "running",
+      now: new Date("2026-10-12T12:00:00.000Z"),
+      forcedPeers: mates,
+      seed: "full-crew",
+      crewId: "crew-full",
+    });
+    expect(initial.peers).toHaveLength(7);
+    expect(initial.synthetics).toHaveLength(0);
+
+    const outsider: PoolPlayer = {
+      id: "outsider",
+      name: "Outsider",
+      elo: 1000,
+      sport: "running",
+      waveStart: wave.waveStart.toISOString(),
+      weekEnd: wave.weekEnd.toISOString(),
+    };
+    const refreshed = matcher.preferReals(
+      initial.enrollment,
+      [...mates, outsider],
+      "prefer",
+      mates.map((mate) => mate.id),
+    );
+    expect(refreshed.peers).toHaveLength(7);
+    expect(refreshed.peers.map((peer) => peer.id)).not.toContain("outsider");
+    expect(refreshed.peers.every((peer) => peer.id.startsWith("mate-"))).toBe(
+      true,
+    );
   });
 
   it("drops synthetics first when preferReals finds newcomers", () => {
@@ -205,5 +289,46 @@ describe("local view clipping", () => {
     );
     expect(after.effort).toBeGreaterThan(0);
     expect(after.distanceM).toBeGreaterThan(0);
+  });
+});
+
+describe("crew shared field", () => {
+  it("gives every mate the same synthetics and mutual peers", () => {
+    const plan = planCrewWeekField({
+      crewId: "crew-42",
+      sport: "running",
+      members: [
+        { id: "a", name: "Ada", elo: 1000 },
+        { id: "b", name: "Bea", elo: 1010 },
+        { id: "c", name: "Cal", elo: 990 },
+      ],
+      now: new Date("2026-10-12T12:00:00.000Z"),
+    });
+    expect(plan.memberIds).toEqual(["a", "b", "c"]);
+    expect(plan.syntheticIds).toHaveLength(5);
+
+    const forA = enrollmentFromCrewPlan(plan, "a");
+    const forB = enrollmentFromCrewPlan(plan, "b");
+    expect(forA.syntheticIds).toEqual(forB.syntheticIds);
+    expect(forA.peerIds).toEqual(["b", "c"]);
+    expect(forB.peerIds).toEqual(["a", "c"]);
+    expect(forA.crewId).toBe("crew-42");
+  });
+
+  it("fills no synthetics when the crew already has eight athletes", () => {
+    const members = Array.from({ length: 8 }, (_, index) => ({
+      id: `u${index}`,
+      name: `Runner ${index}`,
+      elo: 1000 + index,
+    }));
+    const plan = planCrewWeekField({
+      crewId: "crew-full",
+      sport: "cycling",
+      members,
+      now: new Date("2026-10-12T12:00:00.000Z"),
+    });
+    expect(plan.memberIds).toHaveLength(8);
+    expect(plan.syntheticIds).toHaveLength(0);
+    expect(enrollmentFromCrewPlan(plan, "u0").peerIds).toHaveLength(7);
   });
 });

@@ -24,12 +24,19 @@ export interface AssignGroupInput {
    * Viewer is never selected from this pool.
    */
   realPool?: readonly PoolPlayer[];
+  /**
+   * Must-seat peers (crew mates). Taken first up to capacity-1; remaining
+   * seats use Elo density picks then synthetics. Team scoring is out of scope.
+   */
+  forcedPeers?: readonly PoolPlayer[];
   /** Stable seed so seating does not reshuffle on reload. */
   seed?: string;
   capacity?: number;
   autoEnrollNext?: boolean;
   /** Prefer peers within ±eloBand of the viewer before widening. */
   eloBand?: number;
+  /** When set, stamped onto the enrollment for shared-field audits. */
+  crewId?: string | null;
 }
 
 /**
@@ -56,17 +63,29 @@ export class DensityMatcher {
       input.seed ??
       `${input.viewerId}:${input.sport}:${window.waveStart.toISOString()}`;
 
-    const peers = pickRealPeers({
-      pool: input.realPool ?? [],
-      viewerId: input.viewerId,
-      viewerElo: input.viewerElo,
-      sport: input.sport,
-      waveStart: window.waveStart,
-      weekEnd: window.weekEnd,
-      count: need,
-      eloBand,
-      seed,
-    });
+    const forced = dedupeForcedPeers(
+      input.forcedPeers ?? [],
+      input.viewerId,
+      need,
+    );
+    const remaining = Math.max(0, need - forced.length);
+    const picked =
+      remaining > 0
+        ? pickRealPeers({
+            pool: (input.realPool ?? []).filter(
+              (player) => !forced.some((peer) => peer.id === player.id),
+            ),
+            viewerId: input.viewerId,
+            viewerElo: input.viewerElo,
+            sport: input.sport,
+            waveStart: window.waveStart,
+            weekEnd: window.weekEnd,
+            count: remaining,
+            eloBand,
+            seed,
+          })
+        : [];
+    const peers = [...forced, ...picked];
 
     const synthetics = pickSynthetics(
       input.sport,
@@ -84,6 +103,7 @@ export class DensityMatcher {
       peerIds: peers.map((peer) => peer.id),
       syntheticIds: synthetics.map((rival) => rival.id),
       autoEnrollNext: input.autoEnrollNext ?? true,
+      crewId: input.crewId ?? null,
     };
 
     return { enrollment, synthetics, peers };
@@ -92,13 +112,16 @@ export class DensityMatcher {
   /**
    * When new reals appear, drop synthetics first to make room — never kick
    * an existing real peer unless capacity is somehow exceeded.
+   * `protectIds` (crew mates) are never dropped to free seats.
    */
   preferReals(
     enrollment: WaveEnrollment,
     availableReals: readonly PoolPlayer[],
     seed = "refresh",
+    protectIds: readonly string[] = [],
   ): GroupAssignment {
     const seats = Math.max(0, enrollment.capacity - 1);
+    const protectedSet = new Set(protectIds);
     const existingPeers = availableReals.filter((player) =>
       enrollment.peerIds.includes(player.id),
     );
@@ -133,7 +156,12 @@ export class DensityMatcher {
       .filter((player) => !added.some((row) => row.id === player.id))
       .slice(0, stillNeed);
 
-    const peers = [...existingPeers, ...added, ...forced].slice(0, seats);
+    let peers = [...existingPeers, ...added, ...forced];
+    if (peers.length > seats) {
+      const protectedPeers = peers.filter((peer) => protectedSet.has(peer.id));
+      const flexible = peers.filter((peer) => !protectedSet.has(peer.id));
+      peers = [...protectedPeers, ...flexible].slice(0, seats);
+    }
     const syntheticSlots = Math.max(0, seats - peers.length);
     const keptSyntheticIds = enrollment.syntheticIds.slice(0, syntheticSlots);
     // Top up if preferReals ran when the group was under-filled.
@@ -158,6 +186,22 @@ export class DensityMatcher {
     };
     return { enrollment: next, synthetics, peers };
   }
+}
+
+function dedupeForcedPeers(
+  peers: readonly PoolPlayer[],
+  viewerId: string,
+  limit: number,
+): PoolPlayer[] {
+  const seen = new Set<string>();
+  const out: PoolPlayer[] = [];
+  for (const peer of peers) {
+    if (peer.id === viewerId || seen.has(peer.id)) continue;
+    seen.add(peer.id);
+    out.push(peer);
+    if (out.length >= limit) break;
+  }
+  return out;
 }
 
 function wavesOverlap(

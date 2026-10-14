@@ -249,11 +249,15 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
       retryLoad,
       dispatch: (action: Action) => {
         if (statusRef.current === "failed") return;
+        const withAccount: Action =
+          userIdRef.current && !action.accountId
+            ? { ...action, accountId: userIdRef.current }
+            : action;
         if (statusRef.current === "loading" || !stateRef.current) {
-          queue.current.push(action);
+          queue.current.push(withAccount);
           return;
         }
-        const next = reduceCompete(stateRef.current, action);
+        const next = reduceCompete(stateRef.current, withAccount);
         const savedAt = new Date().toISOString();
         stateRef.current = next;
         setState(next);
