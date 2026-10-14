@@ -1,7 +1,7 @@
 "use client";
 
 import { useAuth } from "@/components/auth-context";
-import { CompeteProvider } from "@/components/compete-context";
+import { CompeteProvider, useCompete } from "@/components/compete-context";
 import { NavIcon } from "@/features/evolution-lab/brand-art";
 import { useTheme } from "@/theme/theme-provider";
 import Link from "next/link";
@@ -31,6 +31,7 @@ const TABS = {
 function PlayChrome({ children }: { children: ReactNode }) {
   const path = usePathname();
   const { user, loading } = useAuth();
+  const { saveError } = useCompete();
   const { theme } = useTheme();
   const hideTabs = path.startsWith("/onboarding");
   const tabs = theme.id === "rally" ? TABS.rally : TABS.classic;
@@ -119,6 +120,9 @@ function PlayChrome({ children }: { children: ReactNode }) {
           </nav>
         )}
         <div className={`fb-scroll${hideTabs ? " fb-scroll-solo" : ""}`}>
+          {!hideTabs && saveError ? (
+            <p className="fb-guest-banner">{saveError}</p>
+          ) : null}
           {!hideTabs && !loading && !user ? (
             <p className="fb-guest-banner">
               Browsing as a guest.{" "}
