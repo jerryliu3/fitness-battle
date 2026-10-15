@@ -101,3 +101,49 @@ create policy readiness_marks_own on public.readiness_marks
   for all to authenticated
   using (user_id = (select auth.uid()))
   with check (user_id = (select auth.uid()));
+
+-- Peer Elo must come from sport_ratings after compete_snapshots jsonb is retired.
+create or replace function public.crew_field_roster(p_crew_id uuid)
+returns table (
+  user_id uuid,
+  display_name text,
+  open_elo numeric
+)
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  crew_sport text;
+begin
+  if auth.uid() is null then
+    raise exception 'authentication_required';
+  end if;
+  if not private.is_active_crew_member(p_crew_id) then
+    raise exception 'not_a_member';
+  end if;
+  select sport into crew_sport from public.crews where id = p_crew_id;
+  if crew_sport is null then
+    raise exception 'crew_not_found';
+  end if;
+
+  return query
+  select
+    member.user_id,
+    member.display_name,
+    coalesce(rating.open_elo, 1000::numeric) as open_elo
+  from public.crew_members member
+  left join public.sport_ratings rating
+    on rating.user_id = member.user_id
+    and rating.sport = crew_sport
+  where member.crew_id = p_crew_id
+    and member.status = 'active'
+  order by member.user_id;
+end;
+$$;
+
+revoke all on function public.crew_field_roster(uuid) from public, anon;
+grant execute on function public.crew_field_roster(uuid) to authenticated;
+
+-- Hard cutover: no compete jsonb remaining (no active accounts to migrate).
+drop table if exists public.compete_snapshots;

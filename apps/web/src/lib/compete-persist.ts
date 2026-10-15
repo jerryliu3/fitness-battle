@@ -3,8 +3,6 @@ import {
   dispositionOf,
   freshHealthRatings,
   freshState,
-  isCompeteState,
-  migrateCompeteState,
   periodResultId,
   prepareCompeteStateForAccount,
   provenanceOf,
@@ -111,6 +109,7 @@ function splitCompeteKey(activity: Activity): {
   };
 }
 
+/** Replace compete-owned rows for a user (document SoT for that table). */
 async function replaceRows(
   db: Db,
   table: string,
@@ -174,6 +173,35 @@ export async function persistCompeteActivities(
 
   if (activityRows.length === 0) return;
   const { error } = await db.from("activities").upsert(activityRows, {
+    onConflict: "user_id,provider,external_id",
+  });
+  if (error) throw new Error(error.message);
+}
+
+/**
+ * Readiness is shared with fitness sync — upsert only, never delete-all.
+ * Sync can race ahead of the compete document the same way activities do.
+ */
+async function persistCompeteReadiness(
+  db: Db,
+  userId: string,
+  marks: ReadinessMark[],
+): Promise<void> {
+  const rows = marks.flatMap((mark) => {
+    const provider = asProvider(String(mark.provider));
+    if (!provider) return [];
+    return [
+      {
+        user_id: userId,
+        provider,
+        external_id: mark.id,
+        day: mark.day,
+        score: mark.score,
+      },
+    ];
+  });
+  if (rows.length === 0) return;
+  const { error } = await db.from("readiness_marks").upsert(rows, {
     onConflict: "user_id,provider,external_id",
   });
   if (error) throw new Error(error.message);
@@ -352,38 +380,9 @@ export async function persistCompeteAccount(
     })),
   );
 
-  await replaceRows(
-    db,
-    "readiness_marks",
-    userId,
-    clean.readiness.flatMap((mark) => {
-      const provider = asProvider(String(mark.provider));
-      if (!provider) return [];
-      return [
-        {
-          user_id: userId,
-          provider,
-          external_id: mark.id,
-          day: mark.day,
-          score: mark.score,
-        },
-      ];
-    }),
-  );
-
-  // Drop legacy jsonb blob once the account is fully relational.
-  await db.from("compete_snapshots").delete().eq("user_id", userId);
+  await persistCompeteReadiness(db, userId, clean.readiness);
 
   return updatedAt;
-}
-
-/** @deprecated Use persistCompeteAccount. */
-export async function persistCompeteCore(
-  db: Db,
-  userId: string,
-  state: CompeteState,
-): Promise<void> {
-  await persistCompeteAccount(db, userId, state);
 }
 
 /** Load signed-in compete state entirely from relational tables. */
@@ -398,9 +397,7 @@ export async function loadCompeteAccount(
     .maybeSingle();
   if (prefsError) throw new Error(prefsError.message);
 
-  if (!prefs) {
-    return migrateLegacySnapshot(db, userId);
-  }
+  if (!prefs) return null;
 
   const [
     { data: profile },
@@ -697,51 +694,8 @@ export async function loadCompeteAccount(
   });
 
   return {
-    state,
+    state: sanitizeCompeteStateForAccount(state),
     updatedAt: String(prefs.updated_at ?? new Date().toISOString()),
-  };
-}
-
-async function migrateLegacySnapshot(
-  db: Db,
-  userId: string,
-): Promise<{ state: CompeteState; updatedAt: string } | null> {
-  const { data, error } = await db
-    .from("compete_snapshots")
-    .select("state, updated_at")
-    .eq("user_id", userId)
-    .maybeSingle();
-  if (error) throw new Error(error.message);
-  if (!data?.state || typeof data.state !== "object") return null;
-
-  if (!isCompeteState(data.state)) return null;
-
-  const legacy = prepareCompeteStateForAccount(
-    sanitizeCompeteStateForAccount(migrateCompeteState(data.state)),
-  );
-  const updatedAt = await persistCompeteAccount(db, userId, legacy);
-  const loaded = await loadCompeteAccount(db, userId);
-  return loaded ?? { state: legacy, updatedAt };
-}
-
-/** @deprecated Prefer loadCompeteAccount — kept for transitional call sites. */
-export async function hydrateCompeteCollections(
-  db: Db,
-  userId: string,
-  state: CompeteState,
-): Promise<CompeteState> {
-  const loaded = await loadCompeteAccount(db, userId);
-  if (!loaded) return state;
-  // Preserve any in-memory activities not yet flushed (race with sync).
-  const byId = new Map(loaded.state.activities.map((item) => [item.id, item]));
-  for (const activity of state.activities) {
-    if (!byId.has(activity.id)) byId.set(activity.id, activity);
-  }
-  return {
-    ...loaded.state,
-    activities: [...byId.values()].sort((a, b) =>
-      b.startedAt.localeCompare(a.startedAt),
-    ),
   };
 }
 

@@ -13,7 +13,7 @@ What is loaded today versus what is still empty or synthetic.
 | Lessons | Deterministic schedule in shared | Works offline |
 | 90-day calibration | Synthetic history generator (`import-history`) | One-time; not live tracker data |
 | Live activities | Strava, WHOOP, Oura, and Garmin sync APIs, plus Garmin file import and phone ingest | Stub without keys or in demo mode. With keys, a signed-in sync is stored and applied to the local effort board. FIT/GPX/TCX import does not need Garmin approval. |
-| Week close / Elo settle | `rollClock` on app load + signed-in `/api/compete` GET/PUT | No cron; server settles account snapshots on load/save (up to 12 missed weeks then jumps) |
+| Week close / Elo settle | `rollClock` on app load + signed-in `/api/compete` GET/PUT | No cron; server settles relational account state on load/save (up to 12 missed weeks then jumps) |
 | Week-complete reveal | `pendingRevealIds` + My track receipt | Place, Elo before→after, effort |
 | Season history | `periodResults` on Athlete | Cap 104 rows; open + verified tracks |
 
@@ -38,8 +38,8 @@ Separate Supabase project from battles (`rankings-db/`, hosted `pzadctqmyekkydte
 
 | Item | Status |
 | --- | --- |
-| Account compete | Relational only (`athlete_prefs` + related tables); legacy `compete_snapshots` migrated then deleted |
-| Relational normalize | Full signed-in compete cutover — no dual-write jsonb for play state |
+| Account compete | Relational only (`athlete_prefs` + related tables); `compete_snapshots` dropped |
+| Relational normalize | Full signed-in cutover — single table path, no compete jsonb |
 | Density matching | Still per-viewer (not global standings) |
 
 See [compete-persistence.md](compete-persistence.md).
@@ -57,5 +57,4 @@ Invite-code `battles` / `periods` / `standings` remain from the early scaffold. 
 
 1. Apply `packages/rankings/imports/*.import.sql` with `RANKINGS_DATABASE_URL` (see `docs/ingestion.md`).
 2. A public half-marathon list, plus New York, Tokyo, and Sydney once a results list is on the page.
-3. Optionally drop the unused `compete_snapshots` table after all environments migrate.
-4. Point `NEXT_PUBLIC_USE_DEMO_DATA=false` plus Strava keys and the service role at a real athlete backfill. Token storage and score recompute are already wired for that mode.
+3. Point `NEXT_PUBLIC_USE_DEMO_DATA=false` plus Strava keys and the service role at a real athlete backfill. Token storage and score recompute are already wired for that mode.

@@ -101,13 +101,9 @@ export {
 } from "./engine";
 export { chooseCompeteState, isCompeteState, type CompeteEnvelope } from "./snapshot";
 export {
-  isFatCompeteSnapshot,
   prepareCompeteStateForAccount,
   sanitizeCompeteStateForAccount,
-  snapshotCarriesActivities,
   stripDurableCrewBoard,
-  stripSnapshotActivities,
-  thinCompeteStateForAccount,
   withDerivedPendingReveals,
 } from "./sanitize";
 export {

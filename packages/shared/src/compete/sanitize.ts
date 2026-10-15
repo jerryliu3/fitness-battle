@@ -30,32 +30,7 @@ export function prepareCompeteStateForAccount(
   return { ...cleaned, pendingRevealIds: [] };
 }
 
-/**
- * @deprecated Snapshots are no longer written. Kept for tests / legacy callers.
- * Strips activities from a document that must not embed them.
- */
-export function stripSnapshotActivities(state: CompeteState): CompeteState {
-  const prepared = prepareCompeteStateForAccount(state);
-  if (prepared.activities.length === 0) return prepared;
-  return { ...prepared, activities: [] };
-}
-
-/** @deprecated Use stripSnapshotActivities. */
-export function thinCompeteStateForAccount(state: CompeteState): CompeteState {
-  return stripSnapshotActivities(state);
-}
-
-/** @deprecated Legacy fat-blob detector; always false for relational accounts. */
-export function snapshotCarriesActivities(state: CompeteState): boolean {
-  return state.activities.length > 0;
-}
-
-/** @deprecated Use snapshotCarriesActivities. */
-export function isFatCompeteSnapshot(state: CompeteState): boolean {
-  return snapshotCarriesActivities(state);
-}
-
-/** Recompute pendingRevealIds after relational hydrate / migrate. */
+/** Recompute pendingRevealIds after relational hydrate. */
 export function withDerivedPendingReveals(state: CompeteState): CompeteState {
   const pendingRevealIds = pendingRevealIdsFromResults(state.periodResults);
   if (

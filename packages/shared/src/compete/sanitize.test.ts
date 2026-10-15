@@ -3,8 +3,6 @@ import { freshState } from "./engine";
 import {
   prepareCompeteStateForAccount,
   sanitizeCompeteStateForAccount,
-  snapshotCarriesActivities,
-  stripSnapshotActivities,
   withDerivedPendingReveals,
 } from "./sanitize";
 
@@ -68,46 +66,23 @@ describe("sanitizeCompeteStateForAccount", () => {
     expect(withDerivedPendingReveals(state).pendingRevealIds).toEqual(["a"]);
   });
 
-  it("never stores activities in the account snapshot document", () => {
-    const state = {
+  it("keeps activities on the wire document for relational persist", () => {
+    const activities = [
+      {
+        id: "a1",
+        sport: "running" as const,
+        startedAt: "2026-10-12T12:00:00.000Z",
+        distanceM: 5000,
+        movingSec: 1500,
+        avgHr: null,
+        verified: true,
+        source: "strava" as const,
+      },
+    ];
+    const prepared = prepareCompeteStateForAccount({
       ...freshState(),
-      activities: [
-        {
-          id: "a1",
-          sport: "running" as const,
-          startedAt: "2026-10-12T12:00:00.000Z",
-          distanceM: 5000,
-          movingSec: 1500,
-          avgHr: null,
-          verified: true,
-          source: "strava" as const,
-        },
-      ],
-      periodResults: [
-        {
-          id: "r1",
-          periodStart: "2026-10-05T00:00:00.000Z",
-          periodEnd: "2026-10-12T00:00:00.000Z",
-          sport: "running" as const,
-          track: "open" as const,
-          place: 1,
-          fieldSize: 8,
-          effort: 1,
-          distanceM: 1000,
-          movingSec: 300,
-          eloBefore: 1000,
-          eloAfter: 1010,
-          frozen: false,
-          settledAt: "2026-10-12T00:00:01.000Z",
-          acknowledgedAt: null,
-        },
-      ],
-    };
-    expect(snapshotCarriesActivities(state)).toBe(true);
-    const stored = stripSnapshotActivities(state);
-    expect(stored.activities).toEqual([]);
-    // Other dual-written collections may still ride in the blob for now.
-    expect(stored.periodResults).toHaveLength(1);
-    expect(snapshotCarriesActivities(stored)).toBe(false);
+      activities,
+    });
+    expect(prepared.activities).toEqual(activities);
   });
 });
