@@ -15,19 +15,22 @@ type BootSplashProps = {
 
 /**
  * Strip clip translation (host carries travel). Pin the anatomical right arm
- * (screen-left tip) down at Ember’s side. Wind folds that tip; `heading: -90`
- * only boosts the upward term in the arm formula (body rotate uses `rotation`),
- * so at rest the tip hangs along the flank instead of sticking out sideways.
+ * (screen-left tip) down at Ember’s side for the whole boot pass. Wind folds
+ * that tip; `heading: -90` only boosts the upward term in the arm formula
+ * (body rotate uses `rotation`), so the tip hangs along the flank instead of
+ * sticking out into the neighboring letters. Trail is cleared — travel lives
+ * on the host.
  */
 function bodyPose(pose: EmberPose): EmberPose {
-  const atSide = pose.wind < 0.25 && Math.abs(pose.rotation) < 8;
   return {
     ...pose,
     x: 0,
     y: 0,
+    trail: 0,
     armLeft: -1,
-    wind: Math.max(pose.wind, atSide ? 1 : 0.75),
-    ...(atSide ? { heading: -90, armRight: 1 } : {}),
+    armRight: 1,
+    wind: 1,
+    heading: -90,
   };
 }
 

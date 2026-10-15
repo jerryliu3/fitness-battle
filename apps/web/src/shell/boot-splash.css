@@ -84,7 +84,8 @@
   bottom: 0;
   width: 1.16em;
   height: 1.16em;
-  transform: translate(-50%, 0);
+  /* Slight lift: viewBox pad below the feet sits them a few px under the baseline. */
+  transform: translate(-50%, -5%);
 }
 
 .boot-splash-ember-align svg {
