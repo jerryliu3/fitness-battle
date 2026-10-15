@@ -93,13 +93,13 @@ export const PROVIDERS: Provider[] = [
     id: "apple_health",
     name: "Apple Health",
     kind: "activity",
-    blurb: "Workouts and sleep",
+    blurb: "iOS workouts and sleep",
   },
   {
     id: "google_health",
     name: "Health Connect",
     kind: "activity",
-    blurb: "Workouts and sleep",
+    blurb: "Android workouts and sleep",
   },
   {
     id: "whoop",

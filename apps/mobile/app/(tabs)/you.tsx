@@ -1,7 +1,6 @@
 import {
   awardCards,
   initialsFromName,
-  PROVIDERS,
   rankForElo,
   type ProviderId,
 } from "@fitness-battle/shared";
@@ -13,12 +12,18 @@ import { useEffect, useRef, useState } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useCompeteStore } from "../../src/lib/compete-store";
+import { syncAppleHealth, syncHealthConnect } from "../../src/lib/device-health";
+import { providersForDevice } from "../../src/lib/platform-providers";
 import {
   isCloudOAuthProvider,
   startCloudTrackerConnect,
 } from "../../src/lib/tracker-connect";
 import { AwardShelf } from "../../src/ui/award-shelf";
 import { SHELL_COLORS, SHELL_RADIUS } from "../../src/theme";
+
+function isDeviceProvider(id: ProviderId): id is "apple_health" | "google_health" {
+  return id === "apple_health" || id === "google_health";
+}
 
 export default function YouScreen() {
   const { state, dispatch } = useCompeteStore();
@@ -27,6 +32,7 @@ export default function YouScreen() {
   const [name, setName] = useState<string | null>(null);
   const [city, setCity] = useState<string | null>(null);
   const [note, setNote] = useState<string | null>(null);
+  const [syncBusy, setSyncBusy] = useState(false);
   const [busyProvider, setBusyProvider] = useState<string | null>(null);
   const appliedTracker = useRef<string | null>(null);
 
@@ -68,9 +74,35 @@ export default function YouScreen() {
   const rating = state.ratings.find((row) => row.sport === state.primary);
   const rank = rankForElo(rating?.openElo ?? 1000);
   const cards = awardCards(state);
+  const rowBusy = syncBusy || Boolean(busyProvider);
+
+  async function syncDevice(providerId: "apple_health" | "google_health") {
+    if (rowBusy) return;
+    setSyncBusy(true);
+    setNote(null);
+    try {
+      const result =
+        providerId === "apple_health"
+          ? await syncAppleHealth()
+          : await syncHealthConnect();
+      setNote(result.message);
+      if (result.ok && result.count > 0) {
+        dispatch({
+          type: "apply-sync",
+          provider: providerId,
+          activities: [],
+          linkStatus: "connected",
+        });
+      }
+    } catch (error) {
+      setNote(error instanceof Error ? error.message : "Sync failed");
+    } finally {
+      setSyncBusy(false);
+    }
+  }
 
   async function connectCloud(providerId: ProviderId) {
-    if (!isCloudOAuthProvider(providerId)) return;
+    if (!isCloudOAuthProvider(providerId) || rowBusy) return;
     appliedTracker.current = null;
     setBusyProvider(providerId);
     setNote(null);
@@ -134,7 +166,7 @@ export default function YouScreen() {
         ) : null}
 
         <Text style={styles.section}>Trackers</Text>
-        {PROVIDERS.map((provider) => {
+        {providersForDevice().map((provider) => {
           const link = state.links.find((row) => row.provider === provider.id);
           const status =
             link?.status === "connected"
@@ -142,14 +174,12 @@ export default function YouScreen() {
               : link?.status === "stub"
                 ? "Demo link"
                 : "Not connected";
-          const onPhone =
-            provider.id === "apple_health" || provider.id === "google_health";
+          const onPhone = isDeviceProvider(provider.id);
           const cloud = isCloudOAuthProvider(provider.id);
-          const busy = busyProvider === provider.id;
           const hint = onPhone
-            ? ""
+            ? ` · ${syncBusy ? "Syncing…" : "Tap to sync"}`
             : cloud
-              ? busy
+              ? busyProvider === provider.id
                 ? " · opening browser…"
                 : " · opens browser"
               : "";
@@ -162,25 +192,28 @@ export default function YouScreen() {
               </Text>
             </>
           );
-          if (onPhone) {
+          if (isDeviceProvider(provider.id)) {
+            const deviceId = provider.id;
             return (
               <Pressable
-                key={provider.id}
+                key={deviceId}
                 accessibilityRole="button"
-                onPress={() => router.push("/connections")}
+                disabled={rowBusy}
+                onPress={() => void syncDevice(deviceId)}
                 style={styles.row}
               >
                 {copy}
               </Pressable>
             );
           }
-          if (cloud) {
+          if (isCloudOAuthProvider(provider.id)) {
+            const cloudId = provider.id;
             return (
               <Pressable
-                key={provider.id}
+                key={cloudId}
                 accessibilityRole="button"
-                disabled={Boolean(busyProvider)}
-                onPress={() => void connectCloud(provider.id)}
+                disabled={rowBusy}
+                onPress={() => void connectCloud(cloudId)}
                 style={styles.row}
               >
                 {copy}

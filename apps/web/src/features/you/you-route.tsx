@@ -149,7 +149,11 @@ function YouContent() {
   async function syncProvider(providerId: ProviderId) {
     setSyncNote(null);
     if (DEVICE_PROVIDERS.has(providerId)) {
-      setSyncNote("Apple Health and Health Connect sync from the phone app. The web app cannot read them.");
+      setSyncNote(
+        providerId === "apple_health"
+          ? "Apple Health syncs from the iOS app. The web app cannot read it."
+          : "Health Connect syncs from the Android app. The web app cannot read it.",
+      );
       return;
     }
     const link = state!.links.find((item) => item.provider === providerId);
@@ -486,7 +490,7 @@ function YouContent() {
         <p className="fb-note">
           Cloud trackers open their own authorize page when API keys are set.
           Without keys the link stays a stub. Garmin files stay pending until you
-          count them. Apple Health and Health Connect sync from the phone.
+          count them. Apple Health syncs from iOS; Health Connect from Android.
           Sleep shown here is a sample. WHOOP and Oura do not import nights yet.
         </p>
         {PROVIDERS.map((provider) => {

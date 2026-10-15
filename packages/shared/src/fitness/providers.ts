@@ -77,7 +77,7 @@ export const INTEGRATIONS: IntegrationSpec[] = [
       "The phone requests HealthKit workout read permission",
       "The app posts samples to POST /api/fitness/ingest",
     ],
-    offlineCapability: "Web cannot read HealthKit. The ingest route and mobile sync screen are implemented.",
+    offlineCapability: "Web cannot read HealthKit. The ingest route and mobile You sync action are implemented.",
   },
   {
     id: "google_health",
@@ -90,7 +90,7 @@ export const INTEGRATIONS: IntegrationSpec[] = [
       "The phone requests exercise read permission",
       "The app posts samples to POST /api/fitness/ingest",
     ],
-    offlineCapability: "Web cannot read Health Connect. The ingest route and mobile sync screen are implemented.",
+    offlineCapability: "Web cannot read Health Connect. The ingest route and mobile You sync action are implemented.",
   },
   {
     id: "whoop",
