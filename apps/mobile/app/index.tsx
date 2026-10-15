@@ -136,6 +136,10 @@ export default function HomeScreen() {
           <Text style={styles.lineText}>Phone health sync</Text>
         </Pressable>
 
+        <Pressable style={styles.line} onPress={() => router.push("/settings")}>
+          <Text style={styles.lineText}>Notification settings</Text>
+        </Pressable>
+
         {board.length > 0 ? (
           <View style={styles.card}>
             <Text style={styles.cardTitle}>This week</Text>

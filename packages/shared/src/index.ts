@@ -4,4 +4,5 @@ export * from "./fitness";
 export * from "./compete";
 export * from "./matching";
 export * from "./brand";
+export * from "./notifications";
 export { DEMO_CATEGORIES, DEMO_BATTLES, demoStandings } from "./demo-data";

@@ -351,6 +351,58 @@ a {
   margin: 0;
 }
 
+.fb-switch {
+  position: relative;
+  width: 48px;
+  height: 28px;
+  flex-shrink: 0;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--accent-soft);
+  padding: 0;
+  cursor: pointer;
+  transition: background 160ms ease, border-color 160ms ease;
+}
+
+.fb-switch.on {
+  background: var(--ink);
+  border-color: var(--ink);
+}
+
+.fb-switch:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.fb-switch-knob {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: white;
+  box-shadow: 0 1px 3px rgba(16, 24, 40, 0.2);
+  transition: transform 160ms ease;
+}
+
+.fb-switch.on .fb-switch-knob {
+  transform: translateX(20px);
+  background: var(--lime);
+}
+
+.fb-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
 .fb-error {
   margin: 0;
   color: var(--danger);

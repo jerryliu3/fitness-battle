@@ -129,4 +129,4 @@ Screenshots, privacy nutrition, HealthKit usage text, support URL (`https://fitn
 
 ## Push notifications note
 
-You enabled Push on the App ID — good for later. Shipping *actual* push still needs app code + a push service (Expo Notifications, etc.). Credentials/build can proceed now; push product work is a follow-up.
+You enabled Push on the App ID — good for later. The mobile app already has notification settings (master + category toggles) and registers a **stub** device token via `@fitness-battle/shared`. Shipping *actual* APNs/FCM delivery still needs Expo Notifications (or similar) plus a push service. Credentials/build can proceed without that wiring.

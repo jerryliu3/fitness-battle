@@ -3,6 +3,7 @@
 import { AuthGate } from "@/components/auth-gate";
 import { useAuth } from "@/components/auth-context";
 import { useCompete } from "@/components/compete-context";
+import { NotificationSettings } from "@/components/notification-settings";
 import { useTheme } from "@/theme/theme-provider";
 import { THEME_OPTIONS } from "@/theme/catalog";
 import {
@@ -366,6 +367,8 @@ function YouContent() {
           ))}
         </div>
       </section>
+
+      <NotificationSettings />
 
       <section className="fb-card">
         <label className="fb-field">
