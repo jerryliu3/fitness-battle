@@ -92,7 +92,7 @@ export function ArenaScreen() {
           <FieldStage model={field} checkpoint={2} boardRows={board.rows} />
         </>
       )}
-      {gain ? (
+      {gain && !finished ? (
         <div aria-live="polite">
           <Ace />
           <p>
