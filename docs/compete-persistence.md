@@ -29,3 +29,7 @@ Week reveal is derived from `acknowledged_at`, not a separate pending table.
 ## P3 activities
 
 `public.activities` gains compete columns (`sport`, `distance_m`, disposition/provenance, `compete_key`, `source_label`). Dual-write **upserts only** — never deletes orphans (live sync can race). `share_crew_week` reads these rows instead of snapshot jsonb.
+
+## P4 enrollments
+
+`wave_enrollments` stores per-viewer seating (`peer_ids[]`, `synthetic_ids[]`, optional `crew_id`). Dual-write **replaces** the athlete’s enrollment rows from the document (same pattern as `period_freezes`). Account snapshots no longer persist `crewBoard`; GET hydrates it from `crew_week_fields` when `crew_id` is set (hydrate failure clears the pin).

@@ -1,10 +1,11 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import {
   dispositionOf,
+  prepareCompeteStateForAccount,
   provenanceOf,
-  sanitizeCompeteStateForAccount,
   type Activity,
   type CompeteState,
+  type SportId,
 } from "@fitness-battle/shared";
 
 type Db = SupabaseClient;
@@ -56,7 +57,7 @@ export async function persistCompeteCore(
   userId: string,
   state: CompeteState,
 ): Promise<void> {
-  const clean = sanitizeCompeteStateForAccount(state);
+  const clean = prepareCompeteStateForAccount(state);
 
   const { error: profileError } = await db.from("profiles").upsert({
     id: userId,
@@ -175,4 +176,95 @@ export async function persistCompeteCore(
     });
     if (error) throw new Error(error.message);
   }
+
+  // Enrollments are a small per-viewer set — replace from document (same as freezes).
+  const { error: clearEnrollError } = await db
+    .from("wave_enrollments")
+    .delete()
+    .eq("user_id", userId);
+  if (clearEnrollError) throw new Error(clearEnrollError.message);
+  if (clean.enrollments.length > 0) {
+    const { error } = await db.from("wave_enrollments").insert(
+      clean.enrollments.map((enrollment) => ({
+        user_id: userId,
+        sport: enrollment.sport,
+        wave_start: enrollment.waveStart,
+        week_end: enrollment.weekEnd,
+        capacity: enrollment.capacity,
+        peer_ids: enrollment.peerIds,
+        synthetic_ids: enrollment.syntheticIds,
+        auto_enroll_next: enrollment.autoEnrollNext,
+        crew_id: enrollment.crewId ?? null,
+      })),
+    );
+    if (error) throw new Error(error.message);
+  }
+}
+
+/** Hydrate crewBoard from shared crew_week_fields when enrollment has crew_id. */
+export async function hydrateCrewBoard(
+  db: Db,
+  userId: string,
+  state: CompeteState,
+): Promise<CompeteState> {
+  const pinned = state.enrollments.find((item) => item.crewId);
+  if (!pinned?.crewId) {
+    return state.crewBoard ? { ...state, crewBoard: null } : state;
+  }
+
+  const { data: field } = await db
+    .from("crew_week_fields")
+    .select("*")
+    .eq("crew_id", pinned.crewId)
+    .eq("wave_start", pinned.waveStart)
+    .maybeSingle();
+  if (!field) {
+    return { ...state, crewBoard: null };
+  }
+
+  const { data: crew } = await db
+    .from("crews")
+    .select("name")
+    .eq("id", pinned.crewId)
+    .maybeSingle();
+
+  const memberIds = (field.member_ids as string[]) ?? [];
+  const { data: members } = memberIds.length
+    ? await db
+        .from("crew_members")
+        .select("user_id, display_name")
+        .eq("crew_id", pinned.crewId)
+        .in("user_id", memberIds)
+    : { data: [] as { user_id: string; display_name: string }[] };
+
+  const { data: ratings } = memberIds.length
+    ? await db
+        .from("sport_ratings")
+        .select("user_id, open_elo")
+        .eq("sport", field.sport)
+        .in("user_id", memberIds)
+    : { data: [] as { user_id: string; open_elo: number }[] };
+
+  const eloByUser = new Map(
+    (ratings ?? []).map((row) => [String(row.user_id), Number(row.open_elo)]),
+  );
+
+  return {
+    ...state,
+    crewBoard: {
+      crewId: pinned.crewId,
+      crewName: (crew?.name as string) ?? "Crew",
+      sport: field.sport as SportId,
+      waveStart: String(field.wave_start),
+      weekEnd: String(field.week_end),
+      capacity: Number(field.capacity),
+      memberIds,
+      members: (members ?? []).map((member) => ({
+        id: String(member.user_id),
+        name: String(member.display_name),
+        elo: eloByUser.get(String(member.user_id)) ?? 1000,
+      })),
+      syntheticIds: (field.synthetic_ids as string[]) ?? [],
+    },
+  };
 }

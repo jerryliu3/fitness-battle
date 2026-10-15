@@ -99,7 +99,11 @@ export {
   type DuelView,
 } from "./engine";
 export { chooseCompeteState, isCompeteState, type CompeteEnvelope } from "./snapshot";
-export { sanitizeCompeteStateForAccount } from "./sanitize";
+export {
+  prepareCompeteStateForAccount,
+  sanitizeCompeteStateForAccount,
+  stripDurableCrewBoard,
+} from "./sanitize";
 export {
   countsOnTrack,
   dispositionOf,
