@@ -162,6 +162,9 @@ describe("compete engine", () => {
     });
     expect(cleared.pendingRevealIds).toHaveLength(0);
     expect(cleared.periodResults.length).toBe(closed.periodResults.length);
+    expect(
+      cleared.periodResults.every((row) => row.acknowledgedAt != null),
+    ).toBe(true);
   });
 
   it("holds elo and still records history when the week is frozen", () => {
@@ -196,6 +199,38 @@ describe("compete engine", () => {
     expect(migrated.enrollments).toEqual([]);
     expect(migrated.crewBoard).toBeNull();
     expect(migrateCompeteState({ ...legacy, trainingGoal: { distance: "5k", deadline: "2026-02-31" } } as never).trainingGoal).toBeNull();
+  });
+
+  it("keeps pending reveals when account snapshot stores empty pendingRevealIds", () => {
+    const base = freshState(new Date("2026-10-12T12:00:00.000Z"));
+    const settled = {
+      ...base,
+      pendingRevealIds: [] as string[],
+      periodResults: [
+        {
+          id: "2026-10-05T00:00:00.000Z:running:open",
+          periodStart: "2026-10-05T00:00:00.000Z",
+          periodEnd: "2026-10-12T00:00:00.000Z",
+          sport: "running" as const,
+          track: "open" as const,
+          place: 2,
+          fieldSize: 8,
+          effort: 10,
+          distanceM: 8000,
+          movingSec: 2400,
+          eloBefore: 1000,
+          eloAfter: 1010,
+          frozen: false,
+          settledAt: "2026-10-12T00:00:01.000Z",
+          acknowledgedAt: null,
+        },
+      ],
+    };
+    const migrated = migrateCompeteState(settled);
+    expect(migrated.pendingRevealIds).toEqual([
+      "2026-10-05T00:00:00.000Z:running:open",
+    ]);
+    expect(migrated.periodResults[0]?.acknowledgedAt).toBeNull();
   });
 
   it("joins together in one opt-in and clears the pin on leave", () => {

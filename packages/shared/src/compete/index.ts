@@ -58,12 +58,17 @@ export {
 } from "./health";
 export {
   MAX_PERIOD_RESULTS,
+  acknowledgePeriodResults,
   appendPeriodResults,
   formatEloDelta,
   formatPlace,
+  isPeriodResultPending,
   pendingPeriodResults,
+  pendingRevealIdsFromResults,
   periodResultId,
   primaryRevealResults,
+  shouldSyncLegacyPendingReveals,
+  syncPeriodResultAcknowledgements,
 } from "./history";
 export { RANK_BANDS, rankForElo, eloInBand, type RankBand } from "./ranks";
 export {
@@ -95,6 +100,12 @@ export {
   type DuelView,
 } from "./engine";
 export { chooseCompeteState, isCompeteState, type CompeteEnvelope } from "./snapshot";
+export {
+  prepareCompeteStateForAccount,
+  sanitizeCompeteStateForAccount,
+  stripDurableCrewBoard,
+  withDerivedPendingReveals,
+} from "./sanitize";
 export {
   countsOnTrack,
   dispositionOf,

@@ -28,8 +28,12 @@ import {
   nearestAthletes,
 } from "./field";
 import {
+  acknowledgePeriodResults,
   appendPeriodResults,
+  pendingRevealIdsFromResults,
   periodResultId,
+  shouldSyncLegacyPendingReveals,
+  syncPeriodResultAcknowledgements,
 } from "./history";
 import {
   ELO_BASE,
@@ -161,16 +165,23 @@ export function migrateCompeteState(parsed: CompeteState): CompeteState {
           ? ("stub" as const)
           : ("disconnected" as const),
   }));
-  const periodResults = Array.isArray(
+  const rawPeriodResults = Array.isArray(
     (parsed as CompeteState).periodResults,
   )
     ? (parsed as CompeteState).periodResults
     : [];
-  const pendingRevealIds = Array.isArray(
+  const legacyPending = Array.isArray(
     (parsed as CompeteState).pendingRevealIds,
   )
     ? (parsed as CompeteState).pendingRevealIds
-    : [];
+    : undefined;
+  const periodResults = shouldSyncLegacyPendingReveals(
+    rawPeriodResults,
+    legacyPending,
+  )
+    ? syncPeriodResultAcknowledgements(rawPeriodResults, legacyPending)
+    : rawPeriodResults;
+  const pendingRevealIds = pendingRevealIdsFromResults(periodResults);
   const enrollments = Array.isArray((parsed as CompeteState).enrollments)
     ? (parsed as CompeteState).enrollments
     : [];
@@ -454,6 +465,7 @@ function settleTrackResult(input: {
     eloAfter: input.eloAfter,
     frozen: input.frozen,
     settledAt: input.settledAt,
+    acknowledgedAt: null,
   };
 }
 
@@ -546,12 +558,11 @@ function settleEnrollment(
     verifiedElo: nextVerified,
     openElo: nextOpen,
   });
+  const periodResults = appendPeriodResults(next.periodResults, additions);
   next = {
     ...next,
-    periodResults: appendPeriodResults(next.periodResults, additions),
-    pendingRevealIds: [
-      ...new Set([...next.pendingRevealIds, ...additions.map((row) => row.id)]),
-    ],
+    periodResults,
+    pendingRevealIds: pendingRevealIdsFromResults(periodResults),
     enrollments: next.enrollments.filter((item) => item.sport !== sport),
   };
 
@@ -1139,14 +1150,14 @@ export function reduceCompete(
     case "clear-training-goal":
       return { ...rolled, trainingGoal: null };
     case "acknowledge-reveal": {
-      const clearAll = !action.revealIds || action.revealIds.length === 0;
-      if (clearAll) {
-        return { ...rolled, pendingRevealIds: [] };
-      }
-      const clear = new Set(action.revealIds);
+      const periodResults = acknowledgePeriodResults(
+        rolled.periodResults,
+        action.revealIds ?? null,
+      );
       return {
         ...rolled,
-        pendingRevealIds: rolled.pendingRevealIds.filter((id) => !clear.has(id)),
+        periodResults,
+        pendingRevealIds: pendingRevealIdsFromResults(periodResults),
       };
     }
     case "debug-close-week": {
