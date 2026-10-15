@@ -14,6 +14,7 @@ import { GestureHandlerRootView } from "react-native-gesture-handler";
 import "../global.css";
 // Registers the foreground notification handler.
 import "../src/lib/expo-push-register";
+import { CompeteProvider } from "../src/lib/compete-store";
 import { SHELL_COLORS } from "../src/theme";
 
 function pathFromNotificationResponse(
@@ -71,14 +72,16 @@ export default function RootLayout() {
   return (
     <GestureHandlerRootView style={{ flex: 1, backgroundColor: SHELL_COLORS.paper }}>
       <HeroUINativeProvider>
-        <StatusBar style="dark" />
-        <Stack
-          screenOptions={{
-            headerShown: false,
-            contentStyle: { backgroundColor: SHELL_COLORS.paper },
-            animation: "fade",
-          }}
-        />
+        <CompeteProvider>
+          <StatusBar style="dark" />
+          <Stack
+            screenOptions={{
+              headerShown: false,
+              contentStyle: { backgroundColor: SHELL_COLORS.paper },
+              animation: "fade",
+            }}
+          />
+        </CompeteProvider>
       </HeroUINativeProvider>
     </GestureHandlerRootView>
   );
