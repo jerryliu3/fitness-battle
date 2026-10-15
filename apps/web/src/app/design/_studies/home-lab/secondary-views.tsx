@@ -11,9 +11,11 @@ export function DockIcon({ view }: { view: "today" | "arena" | "progress" | "ath
   </svg>;
 }
 
-export function HomeSecondaryView({ view, state, snapshot, sampleMode, unsynced, onActivity, onProfile }: {
+export function HomeSecondaryView({ view, state, snapshot, sampleMode, unsynced, onActivity, onProfile, embedded = false }: {
   view: "progress" | "athlete"; state: CompeteState; snapshot: ProgressSnapshot;
   sampleMode: boolean; unsynced: boolean; onActivity: (activity: Activity) => void; onProfile: () => void;
+  /** Production shell keeps history and settings on this screen. */
+  embedded?: boolean;
 }) {
   const spec = sportById(state.primary);
   const counted = state.activities.filter(a => a.sport===state.primary && countsOnTrack(a,"open"));
@@ -24,8 +26,8 @@ export function HomeSecondaryView({ view, state, snapshot, sampleMode, unsynced,
       <button className="ah-athlete-portrait" onClick={onProfile} aria-label="Open athlete details">{initialsFromName(state.name)}</button>
       <h1>{state.name}</h1><p className="ah-athlete-city">{state.city}</p>
       <div className="ah-athlete-rating"><span>{rankForElo(rating).name}</span><b>{rating}</b></div>
-      <Link className="ah-tracker-link" href="/you#connections"><DockIcon view="arena" /><span>{unsynced || !connected ? "Connect tracker" : "Trackers"}</span><span aria-hidden="true">↗</span></Link>
-      <Link className="ah-text-link" href="/you">Settings ↗</Link>
+      {embedded ? <a className="ah-tracker-link" href="#connections"><DockIcon view="arena" /><span>{unsynced || !connected ? "Connect tracker" : "Trackers"}</span></a> : <Link className="ah-tracker-link" href="/you#connections"><DockIcon view="arena" /><span>{unsynced || !connected ? "Connect tracker" : "Trackers"}</span><span aria-hidden="true">↗</span></Link>}
+      {embedded ? null : <Link className="ah-text-link" href="/you">Settings ↗</Link>}
     </section>;
   }
   const trends = progressionTrends(state.activities,state.primary,state.periodResults.filter(r=>r.sport===state.primary && r.track==="open").map(r=>({day:r.periodStart.slice(0,10),elo:r.eloAfter})));
@@ -39,6 +41,6 @@ export function HomeSecondaryView({ view, state, snapshot, sampleMode, unsynced,
       {!points.length && <p>No activities yet.</p>}
     </div>
     <div className="ah-progress-metrics"><div><span>Rating</span><b>{rating}</b></div>{lastPace != null && <div><span>Latest pace</span><b>{lastPace.toFixed(1)}<small> min/km</small></b></div>}</div>
-    <Link className="ah-text-link" href="/progress">History ↗</Link>
+    {embedded ? null : <Link className="ah-text-link" href="/progress">History ↗</Link>}
   </section>;
 }

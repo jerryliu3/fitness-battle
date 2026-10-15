@@ -12,7 +12,10 @@ import {
   seenKey,
   type ProgressSnapshot,
 } from "@/app/design/_studies/home-lab/model";
-import { DockIcon, HomeSecondaryView } from "@/app/design/_studies/home-lab/secondary-views";
+import { HomeSecondaryView } from "@/app/design/_studies/home-lab/secondary-views";
+import { AthleteSettings } from "@/features/home/athlete-settings";
+import { FieldTools } from "@/features/home/field-tools";
+import { SessionLedger } from "@/features/home/session-ledger";
 import { defaultLook } from "@/features/field/avatar";
 import { LaneTrack } from "@/features/field/components/lane-track";
 import { buildFieldModel } from "@/features/field/model";
@@ -38,7 +41,8 @@ import {
 } from "@fitness-battle/shared";
 import dynamic from "next/dynamic";
 import Link from "next/link";
-import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { usePathname, useRouter } from "next/navigation";
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import "@/app/design/_studies/home-lab/home-lab.css";
 import "@/app/design/_studies/home-lab/home-concepts.css";
 
@@ -47,8 +51,23 @@ const Pursuit = dynamic(
   { ssr: false, loading: () => <div className="ah-scene-loading">Opening the track…</div> },
 );
 
-type View = "today" | "arena" | "progress" | "athlete";
+export type HomeView = "today" | "arena" | "progress" | "athlete";
+
+export function viewFromPath(path: string): HomeView {
+  if (path.startsWith("/board")) return "arena";
+  if (path.startsWith("/progress") || path.startsWith("/splits") || path.startsWith("/pace")) return "progress";
+  if (path.startsWith("/you")) return "athlete";
+  return "today";
+}
+
+const VIEW_HREF: Record<HomeView, string> = {
+  today: "/",
+  arena: "/board",
+  progress: "/progress",
+  athlete: "/you",
+};
 type Detail = { title: string; body: ReactNode } | null;
+type View = HomeView;
 
 function formatDay(at: string) {
   return new Date(at).toLocaleDateString("en-US", { weekday: "short", timeZone: "UTC" });
@@ -56,11 +75,6 @@ function formatDay(at: string) {
 
 function valueLabel(value: number, unit: string) {
   return `${value.toFixed(1)} ${unit}`;
-}
-
-function parseView(value: string | null): View {
-  if (value === "arena" || value === "progress" || value === "athlete" || value === "today") return value;
-  return "today";
 }
 
 function DetailSheet({ detail, onClose }: { detail: Detail; onClose: () => void }) {
@@ -93,9 +107,11 @@ function DetailSheet({ detail, onClose }: { detail: Detail; onClose: () => void 
 
 /** Checkpoints home for the signed-in and guest play shell. */
 export function ProductHome() {
-  const { state, dispatch, loadStatus, saveError, legacyOffer, recoverLegacy, retryLoad } = useCompete();
+  const { state, dispatch, loadStatus } = useCompete();
   const { user, loading } = useAuth();
-  const [view, setView] = useState<View>("today");
+  const path = usePathname();
+  const router = useRouter();
+  const view = viewFromPath(path);
   const [detail, setDetail] = useState<Detail>(null);
   const [scene, setScene] = useState<"2d" | "3d">("2d");
   const [sceneUnavailable, setSceneUnavailable] = useState(false);
@@ -130,16 +146,10 @@ export function ProductHome() {
   );
 
   const go = useCallback((next: View) => {
-    setView(next);
-    const url = new URL(window.location.href);
-    if (next === "today") url.searchParams.delete("view");
-    else url.searchParams.set("view", next);
-    window.history.replaceState(null, "", url);
-  }, []);
-
-  useEffect(() => {
-    go(parseView(new URL(window.location.href).searchParams.get("view")));
-  }, [go]);
+    const href = VIEW_HREF[next];
+    if (viewFromPath(path) === next && (next === "today" ? path === "/" : path.startsWith(href))) return;
+    router.push(href);
+  }, [path, router]);
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "instant" });
@@ -169,9 +179,9 @@ export function ProductHome() {
     if (reveal) {
       setScene("2d");
       setDetail(null);
-      go("arena");
+      if (viewFromPath(path) !== "arena") router.push("/board");
     } else saveSeen(snapshot);
-  }, [snapshot, persist, accountId, saveSeen, loadStatus, go]);
+  }, [snapshot, persist, accountId, saveSeen, loadStatus, path, router]);
 
   useEffect(() => {
     if (!arrival?.reveal && replay === 0) return;
@@ -201,7 +211,7 @@ export function ProductHome() {
   }, [arrival, replay, saveSeen]);
 
   if (loading || !state || !snapshot || !arrival) {
-    return <div className="ah-phone ah-loading">Loading your movement…</div>;
+    return <p className="ah-small">Loading your movement…</p>;
   }
 
   const now = competeNow(state);
@@ -316,9 +326,9 @@ export function ProductHome() {
           >
             See it on the track
           </button>
-          <Link href="/splits" className="ah-text-link">
+          <button type="button" className="ah-text-link" onClick={() => { setDetail(null); go("progress"); }}>
             All moves
-          </Link>
+          </button>
         </>
       ),
     });
@@ -345,9 +355,9 @@ export function ProductHome() {
             ))}
           </div>
           {!activities.length ? <p>Your counted activities will appear here after an import.</p> : null}
-          <Link href="/progress" className="ah-text-link">
+          <button type="button" className="ah-text-link" onClick={() => { setDetail(null); go("progress"); }}>
             History
-          </Link>
+          </button>
         </>
       ),
     });
@@ -409,9 +419,9 @@ export function ProductHome() {
               {lane.name.split(" ")[0]} <b>{valueLabel(lane.value, unit)}</b>
             </span>
           </div>
-          <Link className="ah-primary" href="/board">
-            Open matchups
-          </Link>
+          <button type="button" className="ah-primary" onClick={() => { setDetail(null); go("arena"); }}>
+            Open the field
+          </button>
         </>
       ),
     });
@@ -428,12 +438,9 @@ export function ProductHome() {
           </p>
           <strong className="ah-sheet-number">{rating?.openElo ?? 1000}</strong>
           <p className="ah-small">{connected ? "A tracker is connected." : "No live tracker connected."}</p>
-          <Link href="/you#connections" className="ah-text-link">
-            Manage tracker connections
-          </Link>
-          <Link href="/you" className="ah-primary">
+          <button type="button" className="ah-primary" onClick={() => { setDetail(null); go("athlete"); }}>
             Settings
-          </Link>
+          </button>
         </>
       ),
     });
@@ -511,33 +518,7 @@ export function ProductHome() {
   const scale = Math.ceil(peak / 5) * 5;
 
   return (
-    <div className="ah-product">
-      <div className="ah-phone" data-view={view} data-reveal={arrival.reveal && !finished ? "playing" : "settled"}>
-        <a className="rf-skip" href="#ah-main">
-          Skip to content
-        </a>
-        {saveError ? <p className="ah-status">{saveError}</p> : null}
-        {legacyOffer ? (
-          <p className="ah-status">
-            This browser still has history from before accounts.{" "}
-            <button type="button" className="ah-text-link" onClick={recoverLegacy}>
-              Use it on this account
-            </button>
-          </p>
-        ) : null}
-        {loadStatus === "failed" ? (
-          <p className="ah-status">
-            Account data couldn’t load. This screen is read-only.{" "}
-            <button type="button" className="ah-text-link" onClick={retryLoad}>
-              Retry
-            </button>
-          </p>
-        ) : null}
-        {!loading && !user ? (
-          <p className="ah-status">
-            Browsing as a guest. <Link href="/signup">Create an account</Link> to join a field.
-          </p>
-        ) : null}
+    <div data-view={view} data-reveal={arrival.reveal && !finished ? "playing" : "settled"}>
         <header className="ah-app-header">
           <button type="button" className="ah-sport-name" onClick={openFocus}>
             {showingSleep ? "Sleep" : sport.name}
@@ -548,7 +529,7 @@ export function ProductHome() {
             </button>
           ) : null}
         </header>
-        <main className="ah-app-main" id="ah-main">
+        <main className="ah-app-main">
           {state.pendingRevealIds.length > 0 && view === "today" ? (
             <WeekReveal state={state} onDismiss={() => dispatch({ type: "acknowledge-reveal" })} />
           ) : null}
@@ -581,12 +562,15 @@ export function ProductHome() {
                 />
                 {!optedIn ? (
                   <p className="ah-small ah-join-note">
-                    <Link href="/board">Join this week’s field</Link> when you want a place on the track.
+                    <button type="button" className="ah-text-link" onClick={() => go("arena")}>
+                      Join this week’s field
+                    </button>
                   </p>
                 ) : null}
               </>
             )
           ) : view === "progress" || view === "athlete" ? (
+            <>
             <HomeSecondaryView
               view={view}
               state={state}
@@ -595,7 +579,16 @@ export function ProductHome() {
               unsynced={!connected}
               onActivity={openActivity}
               onProfile={openProfile}
+              embedded
             />
+            {view === "progress" ? <SessionLedger /> : user ? (
+              <Suspense fallback={<p className="ah-small">Loading settings…</p>}>
+                <AthleteSettings />
+              </Suspense>
+            ) : (
+              <p className="ah-small">Sign in to manage trackers and settings.</p>
+            )}
+            </>
           ) : (
             <section className="ah-arena" aria-label="Weekly track">
               <div className="ah-arena-heading">
@@ -709,9 +702,13 @@ export function ProductHome() {
                   </button>
                 </div>
               ) : null}
-              <Link href="/board" className="ah-text-link">
-                Matchups, crews, and the full field
-              </Link>
+              <FieldTools
+                sport={state.primary}
+                sportName={sport.name}
+                optedIn={optedIn}
+                duels={board.duels}
+                requireParticipate={requireParticipate}
+              />
               {gain ? (
                 <button
                   type="button"
@@ -727,26 +724,8 @@ export function ProductHome() {
             </section>
           )}
         </main>
-        <nav className="ah-dock" aria-label="App views">
-          {(["today", "arena", "progress", "athlete"] as const).map((tab) => (
-            <button
-              key={tab}
-              type="button"
-              aria-pressed={view === tab}
-              onClick={() => {
-                if (tab === "today") saveSeen(snapshot);
-                go(tab);
-              }}
-            >
-              <DockIcon view={tab} />
-              <span>{tab[0]!.toUpperCase() + tab.slice(1)}</span>
-              {tab === "arena" && gain && !finished ? <span className="ah-new-dot" /> : null}
-            </button>
-          ))}
-        </nav>
         <DetailSheet detail={detail} onClose={() => setDetail(null)} />
         <AuthPrompt open={authOpen} reason={authReason} onClose={() => setAuthOpen(false)} />
-      </div>
     </div>
   );
 }

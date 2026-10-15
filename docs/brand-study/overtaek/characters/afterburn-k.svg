@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-8 -8 120 130" role="img" aria-label="Afterburn Star Ember K concept">
+ <defs><linearGradient id="gold" x1="20%" y1="0%" x2="65%" y2="100%"><stop offset="0%" stop-color="#fff18a"/><stop offset="43%" stop-color="#ffd63e"/><stop offset="100%" stop-color="#ff962f"/></linearGradient></defs>
+ <path d="M 13 0 Q 4 -4 6 10 Q 14 33 10 48 L 1 94 Q -2 107 11 106 L 23 105 Q 29 105 32 94 L 40 72 L 66 100 Q 76 109 87 99 Q 93 92 85 83 L 61 55 L 96 24 Q 107 13 94 7 Q 87 4 79 10 L 40 43 L 35 23 Q 30 10 13 0 Z" fill="#df8927" transform="translate(0 4)"/>
+ <path d="M 13 0 Q 4 -4 6 10 Q 14 33 10 48 L 1 94 Q -2 107 11 106 L 23 105 Q 29 105 32 94 L 40 72 L 66 100 Q 76 109 87 99 Q 93 92 85 83 L 61 55 L 96 24 Q 107 13 94 7 Q 87 4 79 10 L 40 43 L 35 23 Q 30 10 13 0 Z" fill="url(#gold)"/>
+ <g fill="#153e32"><ellipse cx="29" cy="48" rx="3.3" ry="5"/><ellipse cx="47" cy="48" rx="3.3" ry="5"/></g>
+ <g fill="#fff9e9"><circle cx="30" cy="46" r="1"/><circle cx="48" cy="46" r="1"/></g>
+ <path d="M31 58 Q40 64 48 57" fill="none" stroke="#153e32" stroke-width="3" stroke-linecap="round"/>
+</svg>

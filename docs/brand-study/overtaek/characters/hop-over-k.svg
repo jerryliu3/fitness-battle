@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-8 -8 120 130" role="img" aria-label="Hop over Star Ember K concept">
+ <defs><linearGradient id="gold" x1="20%" y1="0%" x2="65%" y2="100%"><stop offset="0%" stop-color="#fff18a"/><stop offset="43%" stop-color="#ffd63e"/><stop offset="100%" stop-color="#ff962f"/></linearGradient></defs>
+ <path d="M 20 2 Q 12 -2 11 12 L 9 40 Q 7 46 3 50 Q -2 55 5 60 L 10 66 L 7 98 Q 6 109 17 105 L 33 88 Q 36 85 40 88 L 69 107 Q 81 114 82 100 L 75 73 Q 74 67 81 61 L 94 49 Q 103 38 90 35 L 65 35 Q 59 35 57 39 L 33 61 L 32 28 Q 32 12 20 2 Z" fill="#df8927" transform="translate(0 4)"/>
+ <path d="M 20 2 Q 12 -2 11 12 L 9 40 Q 7 46 3 50 Q -2 55 5 60 L 10 66 L 7 98 Q 6 109 17 105 L 33 88 Q 36 85 40 88 L 69 107 Q 81 114 82 100 L 75 73 Q 74 67 81 61 L 94 49 Q 103 38 90 35 L 65 35 Q 59 35 57 39 L 33 61 L 32 28 Q 32 12 20 2 Z" fill="url(#gold)"/>
+ <g fill="#153e32"><ellipse cx="27" cy="61" rx="3.3" ry="5"/><ellipse cx="45" cy="61" rx="3.3" ry="5"/></g>
+ <g fill="#fff9e9"><circle cx="28" cy="59" r="1"/><circle cx="46" cy="59" r="1"/></g>
+ <path d="M28 71 Q38 78 47 70" fill="none" stroke="#153e32" stroke-width="3" stroke-linecap="round"/>
+</svg>

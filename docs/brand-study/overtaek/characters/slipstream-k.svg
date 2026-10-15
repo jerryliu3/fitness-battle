@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-8 -8 120 130" role="img" aria-label="Slipstream Star Ember K concept">
+ <defs><linearGradient id="gold" x1="20%" y1="0%" x2="65%" y2="100%"><stop offset="0%" stop-color="#fff18a"/><stop offset="43%" stop-color="#ffd63e"/><stop offset="100%" stop-color="#ff962f"/></linearGradient></defs>
+ <path d="M 19 5 C 9 3 6 10 7 21 L 7 91 Q 7 104 19 104 Q 32 104 32 91 L 32 69 Q 32 65 36 68 L 69 101 Q 79 110 88 100 Q 97 90 87 81 L 59 54 L 87 26 Q 97 16 88 7 Q 79 -1 69 9 L 33 45 L 32 20 Q 32 6 19 5 Z" fill="#df8927" transform="translate(0 4)"/>
+ <path d="M 19 5 C 9 3 6 10 7 21 L 7 91 Q 7 104 19 104 Q 32 104 32 91 L 32 69 Q 32 65 36 68 L 69 101 Q 79 110 88 100 Q 97 90 87 81 L 59 54 L 87 26 Q 97 16 88 7 Q 79 -1 69 9 L 33 45 L 32 20 Q 32 6 19 5 Z" fill="url(#gold)"/>
+ <g fill="#153e32"><ellipse cx="27" cy="49" rx="3.3" ry="5"/><ellipse cx="45" cy="49" rx="3.3" ry="5"/></g>
+ <g fill="#fff9e9"><circle cx="28" cy="47" r="1"/><circle cx="46" cy="47" r="1"/></g>
+ <path d="M29 59 Q38 66 46 58" fill="none" stroke="#153e32" stroke-width="3" stroke-linecap="round"/>
+</svg>

@@ -1,0 +1,180 @@
+<div id="overtaek-star-turn">
+  <div class="viz-carousel viz-dotted-background" aria-label="Overtaek star character refinements">
+    <section data-variant="Afterburn · turned star" aria-label="Afterburn star refinement"><div class="ot-concept" data-concept="0"></div></section>
+    <section data-variant="Slipstream · turned star" aria-label="Slipstream star refinement" hidden><div class="ot-concept" data-concept="1"></div></section>
+  </div>
+</div>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@800;900;1000&display=swap');
+#overtaek-star-turn .ot-concept{--ot-plum:#40234e;--ot-paper:#fff9e9;--ot-gold:#ffc935;--ot-orange:#ff8b27;--ot-green:#153e32;--ot-text:light-dark(#40234e,#fff9e9);--ot-muted:light-dark(#726377,#c1b1c8);padding:12px 8px 6px;font-family:Arial,sans-serif;color:var(--ot-text)}
+#overtaek-star-turn .ot-stage{position:relative;background:var(--ot-paper);color:var(--ot-plum);border-radius:24px;overflow:hidden;isolation:isolate}
+#overtaek-star-turn .ot-stage.ot-night{background:var(--ot-plum);color:var(--ot-paper)}
+#overtaek-star-turn .ot-stage svg{display:block;width:100%;height:auto;aspect-ratio:720/440;overflow:visible}
+#overtaek-star-turn .ot-word{font-family:'Nunito',Arial,sans-serif;font-size:96px;font-weight:1000;letter-spacing:-4px;fill:currentColor}
+#overtaek-star-turn .ot-title{margin:18px 0 5px;font-size:19px;font-weight:600;letter-spacing:-.4px}
+#overtaek-star-turn .ot-description{font-size:14px;line-height:1.5;margin:0;color:var(--ot-muted);max-width:570px}
+#overtaek-star-turn .ot-bottom{display:flex;align-items:center;justify-content:space-between;gap:18px;min-height:120px}
+#overtaek-star-turn .ot-character,#overtaek-star-turn .ot-front{width:96px;height:112px;flex:none}
+#overtaek-star-turn .ot-poses{display:flex;gap:10px;flex:none;align-items:center}
+#overtaek-star-turn .ot-poses figure{margin:0;text-align:center}
+#overtaek-star-turn .ot-poses figcaption{font:12px Arial,sans-serif;color:var(--ot-muted);margin-top:3px}
+#overtaek-star-turn .ot-controls{display:flex;align-items:center;flex-wrap:wrap;gap:10px;margin-top:14px;color:var(--ot-text)}
+#overtaek-star-turn .ot-button{font:600 13px Arial,sans-serif;padding:10px 15px;min-height:42px;border-radius:24px;border:1px solid light-dark(#d5cbd7,#6b5376);color:var(--ot-text);background:transparent}
+#overtaek-star-turn .ot-button.ot-primary{background:var(--ot-plum);color:var(--ot-paper);border-color:var(--ot-plum)}
+#overtaek-star-turn .ot-scrub{accent-color:light-dark(#40234e,#ffc935);flex:1;min-width:70px;max-width:220px;height:30px;margin:0}
+#overtaek-star-turn .ot-time{font:12px Arial,sans-serif;color:var(--ot-muted);min-width:38px;font-variant-numeric:tabular-nums}
+#overtaek-star-turn .ot-sr{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)}
+#overtaek-star-turn .ot-caption{font:500 17px Arial,sans-serif;letter-spacing:.1px;fill:currentColor}
+#overtaek-star-turn .ot-small{font:600 12px Arial,sans-serif;letter-spacing:2px;fill:currentColor}
+#overtaek-star-turn .ot-face{fill:var(--ot-green)}
+#overtaek-star-turn .ot-stage .ot-k-body{filter:drop-shadow(0 4px 0 #df8927)}
+#overtaek-star-turn [hidden]{display:none!important}
+@media(max-width:460px){#overtaek-star-turn .ot-concept{padding:8px 0 4px}#overtaek-star-turn .ot-stage{border-radius:18px}#overtaek-star-turn .ot-stage svg{aspect-ratio:1.35;min-height:255px}#overtaek-star-turn .ot-bottom{gap:8px;min-height:132px}#overtaek-star-turn .ot-character{width:80px;height:96px}#overtaek-star-turn .ot-description{font-size:13px}#overtaek-star-turn .ot-title{font-size:18px}#overtaek-star-turn .ot-button{padding:10px 12px}#overtaek-star-turn .ot-scrub{max-width:120px}}
+@media(max-width:460px){#overtaek-star-turn .ot-small{font-size:28px;letter-spacing:1px}#overtaek-star-turn .ot-caption{font-size:30px}#overtaek-star-turn .ot-bottom{min-height:180px}}
+@media(max-width:460px){#overtaek-star-turn .ot-bottom{flex-direction:column;align-items:flex-start;padding:4px 0 14px;min-height:272px}#overtaek-star-turn .ot-poses{align-self:center}#overtaek-star-turn .ot-character,#overtaek-star-turn .ot-front{width:94px;height:108px}}
+</style>
+<script>
+(() => {
+  const root = document.getElementById('overtaek-star-turn');
+  const NS = 'http://www.w3.org/2000/svg';
+  const concepts = [
+    {name:'Afterburn · turned star', upper:true, night:true, duration:1700, kind:'rocket', summary:'A sideways glance at E. A wind-up. One quick fly-by.', sub:'Flame-shaped star · far point tucked behind the body', shape:'M 17 4 Q 4 -6 12 12 Q 31 37 29 48 L 13 94 Q 7 112 22 104 L 48 87 Q 53 84 59 88 L 87 105 Q 103 114 96 98 L 81 65 Q 77 56 83 47 L 103 18 Q 112 4 96 10 L 60 31 Q 54 34 49 29 L 17 4 Z', eyes:[57,51,74,49], mouth:[59,63,69,71,79,59]},
+    {name:'Slipstream · turned star', upper:true, night:false, duration:1850, kind:'dash', summary:'A softer star. A buoyant pass. A little look back.', sub:'Rounded star · four visible points, one hidden on the far side', shape:'M 23 5 Q 10 -4 15 12 L 26 43 Q 29 50 26 57 L 13 94 Q 6 111 22 105 L 48 88 Q 54 85 60 89 L 87 105 Q 103 113 96 98 L 81 65 Q 77 57 83 48 L 101 21 Q 110 6 94 12 L 60 32 Q 54 36 48 31 L 23 5 Z', eyes:[57,52,74,50], mouth:[59,64,69,72,79,60]}
+  ];
+  const star = 'M 50 1 Q 54 -3 58 8 L 68 30 Q 69 34 75 35 L 99 38 Q 111 40 102 49 L 84 67 Q 81 70 83 76 L 88 99 Q 90 112 78 106 L 55 94 Q 51 91 46 94 L 23 107 Q 11 113 14 99 L 19 75 Q 20 70 16 67 L -2 50 Q -11 40 2 38 L 27 35 Q 32 35 34 29 L 43 8 Q 46 0 50 1 Z';
+  const clamp = (v, a=0, b=1) => Math.max(a,Math.min(b,v));
+  const smooth = t => {t=clamp(t);return t*t*(3-2*t)};
+  const lerp = (a,b,t) => a+(b-a)*t;
+  const instances=[];
+  const remembered=window.openai?.widgetState?.privateContent?.concepts||{};
+  function remember(){
+    if(!window.openai?.setWidgetState)return;
+    const choices=Object.fromEntries(instances.map((v,j)=>[concepts[j].name,{face:v.state.face,slow:v.state.speed!==1,hiddenPoint:v.state.hiddenPoint}]));
+    window.openai.setWidgetState({modelContent:{brand:'Overtaek',motionOptions:choices},privateContent:{concepts:choices}}).catch(()=>{});
+  }
+  function el(name,attrs,parent){const node=document.createElementNS(NS,name);for(const [k,v] of Object.entries(attrs||{}))node.setAttribute(k,String(v));if(parent)parent.appendChild(node);return node}
+  function character(parent,c,id){
+    const group=el('g',{},parent);
+    const defs=el('defs',{},group);
+    const grad=el('linearGradient',{id:id+'-gold',x1:'20%',y1:'0%',x2:'65%',y2:'100%'},defs);
+    el('stop',{offset:'0%','stop-color':'#fff18a'},grad);el('stop',{offset:'43%','stop-color':'#ffd63e'},grad);el('stop',{offset:'100%','stop-color':'#ff962f'},grad);
+    const depth=el('path',{d:c.shape,fill:'#e89a30',transform:'translate(3 1)'},group);
+    const farPoint=el('path',{d:'M 69 45 Q 75 47 79 49 L 84 53 Q 88 57 82 61 L 71 69 Z',fill:'#ed9228'},group);
+    const body=el('path',{d:c.shape,fill:'url(#'+id+'-gold)','class':'ot-k-body'},group);
+    const highlight=el('path',{d:'M 26 23 Q 34 38 35 45',fill:'none',stroke:'#fff7b3','stroke-width':3,'stroke-linecap':'round',opacity:.55},group);
+    const starBody=el('path',{d:star,fill:'url(#'+id+'-gold)',opacity:0,'class':'ot-k-body'},group);
+    const face=el('g',{'class':'ot-face'},group);
+    const [x1,y1,x2,y2]=c.eyes;
+    const eye1=el('ellipse',{cx:x1,cy:y1,rx:2.5,ry:4.7},face), eye2=el('ellipse',{cx:x2,cy:y2,rx:3.6,ry:5.8},face);
+    el('circle',{cx:x1+1,cy:y1-2,r:1,fill:'#fff9e9'},face);el('circle',{cx:x2+1,cy:y2-2,r:1,fill:'#fff9e9'},face);
+    const m=c.mouth;
+    const mouth=el('path',{d:`M${m[0]} ${m[1]} Q${m[2]} ${m[3]} ${m[4]} ${m[5]}`,fill:'none',stroke:'#153e32','stroke-width':3,'stroke-linecap':'round'},face);
+    const lengthA=body.getTotalLength(),lengthB=starBody.getTotalLength();
+    const contourA=Array.from({length:120},(_,n)=>body.getPointAtLength(lengthA*n/120));
+    const contourB=Array.from({length:120},(_,n)=>starBody.getPointAtLength(lengthB*(1-n/120)));
+    return {group,body,depth,farPoint,highlight,starBody,face,eye1,eye2,mouth,contourA,contourB};
+  }
+  for(const [i,c] of concepts.entries()){
+    const host=root.querySelector('[data-concept="'+i+'"]');
+    host.innerHTML=`<div class="ot-stage ${c.night?'ot-night':''}" aria-label="${c.name}: OVERTAKE becomes OVERTAEK"><svg viewBox="0 0 720 440" role="img"><title>${c.name}: Star Ember overtakes E</title><desc>A golden star faces E, hiding its far point for a loose K silhouette, then passes it to form Overtaek.</desc></svg></div><div class="ot-controls"><button type="button" class="ot-button ot-primary cursor-interaction ot-play">Replay</button><button type="button" class="ot-button cursor-interaction ot-slow" aria-pressed="false">Slow motion</button><label class="ot-sr" for="ot-progress-${i}">Animation position</label><input id="ot-progress-${i}" class="ot-scrub" type="range" min="0" max="1000" value="1000"><output class="ot-time">${(c.duration/1000).toFixed(2)}s</output></div><div class="ot-bottom"><div><h3 class="ot-title">${c.name}</h3><p class="ot-description">${c.summary}<br>${c.sub}</p></div><div class="ot-poses"><figure><svg class="ot-front" viewBox="-9 -7 125 125" role="img" aria-label="Front view: five-point Star Ember"></svg><figcaption>Front</figcaption></figure><figure><svg class="ot-character" viewBox="-9 -7 125 125" role="img" aria-label="Facing E: far point hidden"></svg><figcaption>Facing E</figcaption></figure></div></div><span class="ot-sr ot-status" aria-live="polite">Overtaek. Animation finished.</span>`;
+    const svg=host.querySelector('.ot-stage svg');
+    const label=el('text',{x:360,y:65,'text-anchor':'middle','class':'ot-small',opacity:.65},svg);label.textContent='A LITTLE FURTHER.';
+    const word=el('g',{'class':'ot-word'},svg);
+    const prefix=el('text',{x:0,y:0},word);prefix.textContent=c.upper?'OVERTA':'Overta';
+    const e=el('text',{x:0,y:0},word);e.textContent=c.upper?'E':'e';
+    const shadow=el('ellipse',{cx:0,cy:18,rx:25,ry:4,fill:'currentColor',opacity:0},word);
+    const trail=el('g',{fill:'none',stroke:'#ffc935','stroke-linecap':'round',opacity:0},word);
+    const trails=[0,1,2].map(j=>el('path',{'stroke-width':5-j},trail));
+    const particles=el('g',{fill:'#ffc935',opacity:0},word);
+    const sparks=Array.from({length:6},()=>el('circle',{r:2},particles));
+    const motion=el('g',{},word);
+    const k=character(motion,c,'ot-'+i);
+    const detailK=character(host.querySelector('.ot-character'),c,'ot-detail-'+i);
+    const front=character(host.querySelector('.ot-front'),{...c,shape:star,eyes:[40,56,60,55],mouth:[42,67,52,75,63,65]},'ot-front-'+i);
+    front.highlight.setAttribute('opacity',0);front.farPoint.setAttribute('opacity',0);
+    const tagline=el('text',{x:360,y:315,'text-anchor':'middle','class':'ot-caption'},svg);tagline.textContent='A little better. Every day.';
+    const dots=el('g',{fill:'currentColor',opacity:.35},svg);
+    [-10,0,10].forEach(x=>el('circle',{cx:360+x,cy:359,r:2.2},dots));
+    const state={p:1,playing:false,speed:remembered[c.name]?.slow?2.5:1,face:remembered[c.name]?.face!==false,hiddenPoint:remembered[c.name]?.hiddenPoint!==false,raf:0,prefixW:300,eW:58,kW:78,scale:.73,start:0,initial:0};
+    const scrub=host.querySelector('.ot-scrub'), play=host.querySelector('.ot-play'), slow=host.querySelector('.ot-slow');
+    function layout(){
+      state.prefixW=prefix.getComputedTextLength()+4;
+      state.eW=e.getComputedTextLength()+5;
+      word.setAttribute('transform',`translate(${(720-state.prefixW-state.eW-state.kW)/2} 242)`);
+      draw(state.p);
+    }
+    function draw(p){
+      state.p=clamp(p);scrub.value=String(Math.round(p*1000));
+      const move=smooth((p-.25)/.34), eMove=smooth((p-.35)/.30);
+      const lift=clamp((p-.25)/.40);
+      const anticipation=Math.sin(clamp((p-.08)/.17)*Math.PI);
+      let x=state.prefixW+state.eW*move-anticipation*6,y=0,angle=0,sx=1,sy=1;
+      const airtime=Math.sin(lift*Math.PI);
+      const bounce=p>.65?Math.sin((p-.65)/.35*Math.PI*4)*Math.exp(-(p-.65)*12):0;
+      if(c.kind==='dash'){y=-airtime*38+bounce*4;angle=anticipation*-10+airtime*8;sx=1+airtime*.12;sy=1-airtime*.06}
+      if(c.kind==='hop'){y=-airtime*98+bounce*8;angle=-airtime*15+bounce*7;sx=1+anticipation*.14-airtime*.05;sy=1-anticipation*.17+airtime*.06}
+      if(c.kind==='rocket'){y=-airtime*30+bounce*3;angle=airtime*12-anticipation*10;sx=1+airtime*.23;sy=1-airtime*.10}
+      if(c.kind==='morph'){y=-airtime*90+bounce*7;angle=airtime*17+bounce*4;sx=1+anticipation*.12;sy=1-anticipation*.13}
+      e.setAttribute('transform',`translate(${state.prefixW+state.kW-state.kW*eMove} ${c.kind==='hop'?Math.sin(eMove*Math.PI)*7:Math.sin(eMove*Math.PI)*5}) rotate(${c.kind==='rocket'?Math.sin(eMove*Math.PI)*-9:0} ${state.eW/2} -30)`);
+      const kh=110*state.scale;
+      motion.setAttribute('transform',`translate(${x+state.kW/2} ${-kh/2+y}) rotate(${angle}) scale(${state.scale*sx} ${state.scale*sy}) translate(-48 -55)`);
+      const turn=state.hiddenPoint?smooth((p-.03)/.19):0;
+      const shape=turn===0?star:turn===1?c.shape:k.contourA.map((a,n)=>`${n?'L':'M'}${lerp(k.contourB[n].x,a.x,turn).toFixed(2)} ${lerp(k.contourB[n].y,a.y,turn).toFixed(2)}`).join(' ')+' Z';
+      k.body.setAttribute('d',shape);k.depth.setAttribute('d',shape);
+      const glanceBack=smooth((p-.79)/.15);
+      k.face.setAttribute('transform',`translate(${lerp(-13,0,turn)-glanceBack*8} ${lerp(4,0,turn)+anticipation*-1.5})`);
+      detailK.farPoint.setAttribute('opacity',state.hiddenPoint?1:0);
+      k.farPoint.setAttribute('opacity',turn);
+      detailK.depth.setAttribute('d',state.hiddenPoint?c.shape:star);
+      detailK.body.setAttribute('d',state.hiddenPoint?c.shape:star);
+      k.highlight.setAttribute('opacity',turn*.55);detailK.highlight.setAttribute('opacity',state.hiddenPoint?.55:0);
+      k.face.setAttribute('opacity',state.face?1:0);
+      detailK.face.setAttribute('opacity',state.face?1:0);
+      front.face.setAttribute('opacity',state.face?1:0);
+      detailK.face.setAttribute('transform',state.hiddenPoint?'translate(0 0)':'translate(-13 4)');
+      const focused=c.kind==='rocket'?1-airtime*.40:1;
+      k.eye1.setAttribute('ry',4.7*focused);k.eye2.setAttribute('ry',5.8*focused);
+      if(p>.83&&p<.93){k.eye2.setAttribute('ry',1.1)}
+      const trailAlpha=clamp(airtime-.4)*1.1*(c.kind==='hop'?.4:1);
+      trail.setAttribute('opacity',trailAlpha);
+      trails.forEach((line,j)=>{const yy=-kh/2+y+10+j*8;line.setAttribute('d',`M${x-12-j*8} ${yy} Q${x-38} ${yy-4} ${x-55-j*13} ${yy+2}`)});
+      const landing=clamp((p-.64)/.18), sparkAlpha=(1-landing)*landing*4;
+      particles.setAttribute('opacity',sparkAlpha);
+      sparks.forEach((spark,j)=>{const theta=j/6*Math.PI*2;spark.setAttribute('cx',x+state.kW/2+Math.cos(theta)*(22+landing*38));spark.setAttribute('cy',-kh/2+Math.sin(theta)*(20+landing*30));spark.setAttribute('r',j%2?2:3)});
+      shadow.setAttribute('cx',x+state.kW/2);shadow.setAttribute('rx',25-airtime*10);shadow.setAttribute('opacity',c.kind==='hop'?.10*(1-airtime*.7):0);
+      tagline.setAttribute('opacity',smooth((p-.70)/.20));
+      dots.setAttribute('opacity',.35*(1-smooth((p-.70)/.20)));
+      svg.setAttribute('aria-label',p<.45?'Overtake':p<.70?'K overtakes E':'Overtaek');
+    }
+    function stop(){cancelAnimationFrame(state.raf);state.playing=false;play.textContent='Replay'}
+    function run(){
+      if(matchMedia('(prefers-reduced-motion: reduce)').matches){draw(1);host.querySelector('.ot-status').textContent='Overtaek. Reduced motion: final frame.';return}
+      if(state.playing){stop();play.textContent='Resume';return}
+      if(state.p>=.999)state.p=0;
+      state.initial=state.p;state.start=performance.now();state.playing=true;play.textContent='Pause';
+      host.querySelector('.ot-status').textContent='Playing: K overtakes E.';
+      function tick(now){
+        if(!state.playing)return;
+        const p=clamp(state.initial+(now-state.start)/(c.duration*state.speed));
+        draw(p);
+        if(p<1){state.raf=requestAnimationFrame(tick)}else{stop();host.querySelector('.ot-status').textContent='Overtaek. Animation finished.'}
+      }
+      state.raf=requestAnimationFrame(tick);
+    }
+    play.addEventListener('click',run);
+    scrub.addEventListener('input',()=>{stop();draw(Number(scrub.value)/1000);host.querySelector('.ot-status').textContent=state.p<.45?'Overtake.':state.p<.70?'K overtakes E.':'Overtaek.'});
+    slow.addEventListener('click',()=>{
+      const was=state.playing;stop();state.speed=state.speed===1?2.5:1;slow.setAttribute('aria-pressed',String(state.speed!==1));slow.textContent=state.speed===1?'Slow motion':'Normal speed';remember();if(was)run();
+    });
+    slow.setAttribute('aria-pressed',String(state.speed!==1));slow.textContent=state.speed===1?'Slow motion':'Normal speed';
+    const settings={face:state.face,hiddenPoint:state.hiddenPoint};
+    function renderOptions(){state.face=settings.face;state.hiddenPoint=settings.hiddenPoint;draw(state.p);remember()}
+    if(globalThis.Tweak){const t=new Tweak({container:host,onChange:renderOptions});t.addToggle(settings,'face',{label:'Character face'});t.addToggle(settings,'hiddenPoint',{label:'Tuck the far point'})}
+    instances.push({state,draw,layout});
+    layout();
+  }
+  if(document.fonts){document.fonts.ready.then(()=>instances.forEach(i=>i.layout()))}
+  new ResizeObserver(()=>instances.forEach(i=>i.layout())).observe(root);
+  new MutationObserver(()=>instances.forEach(i=>i.layout())).observe(root.querySelector('.viz-carousel'),{attributes:true,subtree:true,attributeFilter:['hidden']});
+})();
+</script>

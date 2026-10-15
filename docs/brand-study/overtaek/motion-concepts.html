@@ -1,0 +1,168 @@
+<div id="overtaek-motion">
+  <div class="viz-carousel viz-dotted-background" aria-label="Overtaek loading animations">
+    <section data-variant="Slipstream" aria-label="Slipstream loading concept"><div class="ot-concept" data-concept="0"></div></section>
+    <section data-variant="Hop over" aria-label="Hop over loading concept" hidden><div class="ot-concept" data-concept="1"></div></section>
+    <section data-variant="Afterburn" aria-label="Afterburn loading concept" hidden><div class="ot-concept" data-concept="2"></div></section>
+    <section data-variant="Starburst" aria-label="Starburst loading concept" hidden><div class="ot-concept" data-concept="3"></div></section>
+  </div>
+</div>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@800;900;1000&display=swap');
+#overtaek-motion .ot-concept{--ot-plum:#40234e;--ot-paper:#fff9e9;--ot-gold:#ffc935;--ot-orange:#ff8b27;--ot-green:#153e32;--ot-text:light-dark(#40234e,#fff9e9);--ot-muted:light-dark(#726377,#c1b1c8);padding:12px 8px 6px;font-family:Arial,sans-serif;color:var(--ot-text)}
+#overtaek-motion .ot-stage{position:relative;background:var(--ot-paper);color:var(--ot-plum);border-radius:24px;overflow:hidden;isolation:isolate}
+#overtaek-motion .ot-stage.ot-night{background:var(--ot-plum);color:var(--ot-paper)}
+#overtaek-motion .ot-stage svg{display:block;width:100%;height:auto;aspect-ratio:720/440;overflow:visible}
+#overtaek-motion .ot-word{font-family:'Nunito',Arial,sans-serif;font-size:96px;font-weight:1000;letter-spacing:-4px;fill:currentColor}
+#overtaek-motion .ot-title{margin:18px 0 5px;font-size:19px;font-weight:600;letter-spacing:-.4px}
+#overtaek-motion .ot-description{font-size:14px;line-height:1.5;margin:0;color:var(--ot-muted);max-width:570px}
+#overtaek-motion .ot-bottom{display:flex;align-items:center;justify-content:space-between;gap:18px;min-height:120px}
+#overtaek-motion .ot-character{width:100px;height:108px;flex:none}
+#overtaek-motion .ot-controls{display:flex;align-items:center;flex-wrap:wrap;gap:10px;margin-top:14px;color:var(--ot-text)}
+#overtaek-motion .ot-button{font:600 13px Arial,sans-serif;padding:10px 15px;min-height:42px;border-radius:24px;border:1px solid light-dark(#d5cbd7,#6b5376);color:var(--ot-text);background:transparent}
+#overtaek-motion .ot-button.ot-primary{background:var(--ot-plum);color:var(--ot-paper);border-color:var(--ot-plum)}
+#overtaek-motion .ot-scrub{accent-color:light-dark(#40234e,#ffc935);flex:1;min-width:70px;max-width:220px;height:30px;margin:0}
+#overtaek-motion .ot-time{font:12px Arial,sans-serif;color:var(--ot-muted);min-width:38px;font-variant-numeric:tabular-nums}
+#overtaek-motion .ot-sr{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)}
+#overtaek-motion .ot-caption{font:500 17px Arial,sans-serif;letter-spacing:.1px;fill:currentColor}
+#overtaek-motion .ot-small{font:600 12px Arial,sans-serif;letter-spacing:2px;fill:currentColor}
+#overtaek-motion .ot-face{fill:var(--ot-green)}
+#overtaek-motion .ot-stage .ot-k-body{filter:drop-shadow(0 4px 0 #df8927)}
+#overtaek-motion [hidden]{display:none!important}
+@media(max-width:460px){#overtaek-motion .ot-concept{padding:8px 0 4px}#overtaek-motion .ot-stage{border-radius:18px}#overtaek-motion .ot-stage svg{aspect-ratio:1.35;min-height:255px}#overtaek-motion .ot-bottom{gap:8px;min-height:132px}#overtaek-motion .ot-character{width:80px;height:96px}#overtaek-motion .ot-description{font-size:13px}#overtaek-motion .ot-title{font-size:18px}#overtaek-motion .ot-button{padding:10px 12px}#overtaek-motion .ot-scrub{max-width:120px}}
+@media(max-width:460px){#overtaek-motion .ot-small{font-size:28px;letter-spacing:1px}#overtaek-motion .ot-caption{font-size:30px}#overtaek-motion .ot-bottom{min-height:180px}}
+</style>
+<script>
+(() => {
+  const root = document.getElementById('overtaek-motion');
+  const NS = 'http://www.w3.org/2000/svg';
+  const concepts = [
+    {name:'Slipstream', upper:true, night:false, duration:1750, kind:'dash', summary:'A tiny wind-up. A quick pass. A proud little settle.', sub:'The clearest K · compact, rounded silhouette', shape:'M 19 5 C 9 3 6 10 7 21 L 7 91 Q 7 104 19 104 Q 32 104 32 91 L 32 69 Q 32 65 36 68 L 69 101 Q 79 110 88 100 Q 97 90 87 81 L 59 54 L 87 26 Q 97 16 88 7 Q 79 -1 69 9 L 33 45 L 32 20 Q 32 6 19 5 Z', eyes:[27,49,45,49], mouth:[29,59,38,66,46,58]},
+    {name:'Hop over', upper:false, night:true, duration:2050, kind:'hop', summary:'A squash, a flying leap, and a very pleased landing.', sub:'Closest to Ember · five-point body, taller flame stem', shape:'M 20 2 Q 12 -2 11 12 L 9 40 Q 7 46 3 50 Q -2 55 5 60 L 10 66 L 7 98 Q 6 109 17 105 L 33 88 Q 36 85 40 88 L 69 107 Q 81 114 82 100 L 75 73 Q 74 67 81 61 L 94 49 Q 103 38 90 35 L 65 35 Q 59 35 57 39 L 33 61 L 32 28 Q 32 12 20 2 Z', eyes:[27,61,45,61], mouth:[28,71,38,78,47,70]},
+    {name:'Afterburn', upper:true, night:true, duration:1550, kind:'rocket', summary:'Eyes focus. The flame stretches. K shoots past E.', sub:'Most athletic · a swept-back, forward-leaning K', shape:'M 13 0 Q 4 -4 6 10 Q 14 33 10 48 L 1 94 Q -2 107 11 106 L 23 105 Q 29 105 32 94 L 40 72 L 66 100 Q 76 109 87 99 Q 93 92 85 83 L 61 55 L 96 24 Q 107 13 94 7 Q 87 4 79 10 L 40 43 L 35 23 Q 30 10 13 0 Z', eyes:[29,48,47,48], mouth:[31,58,40,64,48,57]},
+    {name:'Starburst', upper:false, night:false, duration:2250, kind:'morph', summary:'K opens into a star in flight, then tucks back into the name.', sub:'Most expressive · soft, puffy K with a star transformation', shape:'M 19 4 Q 5 -2 6 16 L 8 42 Q -1 48 4 58 L 9 66 L 7 93 Q 6 110 20 106 Q 29 103 33 89 L 39 75 L 65 100 Q 79 114 90 100 Q 100 88 86 77 L 64 57 L 87 35 Q 101 22 87 13 Q 77 7 67 18 L 35 50 L 33 22 Q 31 7 19 4 Z', eyes:[27,50,45,50], mouth:[28,60,38,68,47,59]}
+  ];
+  const star = 'M 50 1 Q 54 -3 58 8 L 68 30 Q 69 34 75 35 L 99 38 Q 111 40 102 49 L 84 67 Q 81 70 83 76 L 88 99 Q 90 112 78 106 L 55 94 Q 51 91 46 94 L 23 107 Q 11 113 14 99 L 19 75 Q 20 70 16 67 L -2 50 Q -11 40 2 38 L 27 35 Q 32 35 34 29 L 43 8 Q 46 0 50 1 Z';
+  const clamp = (v, a=0, b=1) => Math.max(a,Math.min(b,v));
+  const smooth = t => {t=clamp(t);return t*t*(3-2*t)};
+  const lerp = (a,b,t) => a+(b-a)*t;
+  const instances=[];
+  const remembered=window.openai?.widgetState?.privateContent?.concepts||{};
+  function remember(){
+    if(!window.openai?.setWidgetState)return;
+    const choices=Object.fromEntries(instances.map((v,j)=>[concepts[j].name,{face:v.state.face,slow:v.state.speed!==1}]));
+    window.openai.setWidgetState({modelContent:{brand:'Overtaek',motionOptions:choices},privateContent:{concepts:choices}}).catch(()=>{});
+  }
+  function el(name,attrs,parent){const node=document.createElementNS(NS,name);for(const [k,v] of Object.entries(attrs||{}))node.setAttribute(k,String(v));if(parent)parent.appendChild(node);return node}
+  function character(parent,c,id){
+    const group=el('g',{},parent);
+    const defs=el('defs',{},group);
+    const grad=el('linearGradient',{id:id+'-gold',x1:'20%',y1:'0%',x2:'65%',y2:'100%'},defs);
+    el('stop',{offset:'0%','stop-color':'#fff18a'},grad);el('stop',{offset:'43%','stop-color':'#ffd63e'},grad);el('stop',{offset:'100%','stop-color':'#ff962f'},grad);
+    const body=el('path',{d:c.shape,fill:'url(#'+id+'-gold)','class':'ot-k-body'},group);
+    const starBody=el('path',{d:star,fill:'url(#'+id+'-gold)',opacity:0,'class':'ot-k-body'},group);
+    const face=el('g',{'class':'ot-face'},group);
+    const [x1,y1,x2,y2]=c.eyes;
+    const eye1=el('ellipse',{cx:x1,cy:y1,rx:3.3,ry:5},face), eye2=el('ellipse',{cx:x2,cy:y2,rx:3.3,ry:5},face);
+    el('circle',{cx:x1+1,cy:y1-2,r:1,fill:'#fff9e9'},face);el('circle',{cx:x2+1,cy:y2-2,r:1,fill:'#fff9e9'},face);
+    const m=c.mouth;
+    const mouth=el('path',{d:`M${m[0]} ${m[1]} Q${m[2]} ${m[3]} ${m[4]} ${m[5]}`,fill:'none',stroke:'#153e32','stroke-width':3,'stroke-linecap':'round'},face);
+    const lengthA=body.getTotalLength(),lengthB=starBody.getTotalLength();
+    const contourA=Array.from({length:120},(_,n)=>body.getPointAtLength(lengthA*n/120));
+    const contourB=Array.from({length:120},(_,n)=>starBody.getPointAtLength(lengthB*(1-n/120)));
+    return {group,body,starBody,face,eye1,eye2,mouth,contourA,contourB};
+  }
+  for(const [i,c] of concepts.entries()){
+    const host=root.querySelector('[data-concept="'+i+'"]');
+    host.innerHTML=`<div class="ot-stage ${c.night?'ot-night':''}" aria-label="${c.name}: ${c.upper?'OVERTAKE becomes OVERTAEK':'Overtake becomes Overtaek'}"><svg viewBox="0 0 720 440" role="img"><title>${c.name}: Star Ember K overtakes E</title><desc>The letters start in Overtake order. A golden, smiling K passes the E on the right to form Overtaek.</desc></svg></div><div class="ot-controls"><button type="button" class="ot-button ot-primary cursor-interaction ot-play">Replay</button><button type="button" class="ot-button cursor-interaction ot-slow" aria-pressed="false">Slow motion</button><label class="ot-sr" for="ot-progress-${i}">Animation position</label><input id="ot-progress-${i}" class="ot-scrub" type="range" min="0" max="1000" value="1000"><output class="ot-time">${(c.duration/1000).toFixed(2)}s</output></div><div class="ot-bottom"><div><h3 class="ot-title">${c.name}</h3><p class="ot-description">${c.summary}<br>${c.sub}</p></div><svg class="ot-character" viewBox="-5 -5 115 125" role="img" aria-label="${c.name} K character silhouette"></svg></div><span class="ot-sr ot-status" aria-live="polite">Overtaek. Animation finished.</span>`;
+    const svg=host.querySelector('.ot-stage svg');
+    const label=el('text',{x:360,y:65,'text-anchor':'middle','class':'ot-small',opacity:.65},svg);label.textContent='A LITTLE FURTHER.';
+    const word=el('g',{'class':'ot-word'},svg);
+    const prefix=el('text',{x:0,y:0},word);prefix.textContent=c.upper?'OVERTA':'Overta';
+    const e=el('text',{x:0,y:0},word);e.textContent=c.upper?'E':'e';
+    const shadow=el('ellipse',{cx:0,cy:18,rx:25,ry:4,fill:'currentColor',opacity:0},word);
+    const trail=el('g',{fill:'none',stroke:'#ffc935','stroke-linecap':'round',opacity:0},word);
+    const trails=[0,1,2].map(j=>el('path',{'stroke-width':5-j},trail));
+    const particles=el('g',{fill:'#ffc935',opacity:0},word);
+    const sparks=Array.from({length:6},()=>el('circle',{r:2},particles));
+    const motion=el('g',{},word);
+    const k=character(motion,c,'ot-'+i);
+    const detailK=character(host.querySelector('.ot-character'),c,'ot-detail-'+i);
+    const tagline=el('text',{x:360,y:315,'text-anchor':'middle','class':'ot-caption'},svg);tagline.textContent='A little better. Every day.';
+    const dots=el('g',{fill:'currentColor',opacity:.35},svg);
+    [-10,0,10].forEach(x=>el('circle',{cx:360+x,cy:359,r:2.2},dots));
+    const state={p:1,playing:false,speed:remembered[c.name]?.slow?2.5:1,face:remembered[c.name]?.face!==false,raf:0,prefixW:300,eW:58,kW:c.upper?68:65,scale:c.upper?.70:.77,start:0,initial:0};
+    const scrub=host.querySelector('.ot-scrub'), play=host.querySelector('.ot-play'), slow=host.querySelector('.ot-slow');
+    function layout(){
+      state.prefixW=prefix.getComputedTextLength()+4;
+      state.eW=e.getComputedTextLength()+5;
+      word.setAttribute('transform',`translate(${(720-state.prefixW-state.eW-state.kW)/2} 242)`);
+      draw(state.p);
+    }
+    function draw(p){
+      state.p=clamp(p);scrub.value=String(Math.round(p*1000));
+      const move=smooth((p-.25)/.34), eMove=smooth((p-.35)/.30);
+      const lift=clamp((p-.25)/.40);
+      const anticipation=Math.sin(clamp((p-.08)/.17)*Math.PI);
+      let x=state.prefixW+state.eW*move-anticipation*6,y=0,angle=0,sx=1,sy=1;
+      const airtime=Math.sin(lift*Math.PI);
+      const bounce=p>.65?Math.sin((p-.65)/.35*Math.PI*4)*Math.exp(-(p-.65)*12):0;
+      if(c.kind==='dash'){y=-airtime*20+bounce*4;angle=anticipation*-7+airtime*10;sx=1+airtime*.17;sy=1-airtime*.08}
+      if(c.kind==='hop'){y=-airtime*98+bounce*8;angle=-airtime*15+bounce*7;sx=1+anticipation*.14-airtime*.05;sy=1-anticipation*.17+airtime*.06}
+      if(c.kind==='rocket'){y=-airtime*28+bounce*3;angle=airtime*13-anticipation*7;sx=1+airtime*.30;sy=1-airtime*.13}
+      if(c.kind==='morph'){y=-airtime*90+bounce*7;angle=airtime*17+bounce*4;sx=1+anticipation*.12;sy=1-anticipation*.13}
+      e.setAttribute('transform',`translate(${state.prefixW+state.kW-state.kW*eMove} ${c.kind==='hop'?Math.sin(eMove*Math.PI)*7:Math.sin(eMove*Math.PI)*5}) rotate(${c.kind==='rocket'?Math.sin(eMove*Math.PI)*-9:0} ${state.eW/2} -30)`);
+      const kh=110*state.scale;
+      motion.setAttribute('transform',`translate(${x+state.kW/2} ${-kh/2+y}) rotate(${angle}) scale(${state.scale*sx} ${state.scale*sy}) translate(-48 -55)`);
+      const starBlend=c.kind==='morph'?smooth((lift-.07)/.20)*(1-smooth((lift-.72)/.20)):0;
+      if(starBlend>0&&starBlend<1){
+        k.body.setAttribute('d',k.contourA.map((a,n)=>`${n?'L':'M'}${lerp(a.x,k.contourB[n].x,starBlend).toFixed(2)} ${lerp(a.y,k.contourB[n].y,starBlend).toFixed(2)}`).join(' ')+' Z');
+      }else{k.body.setAttribute('d',starBlend===1?star:c.shape)}
+      k.face.setAttribute('transform',`translate(${starBlend*6} ${starBlend*2})`);
+      k.face.setAttribute('opacity',state.face?1:0);
+      detailK.face.setAttribute('opacity',state.face?1:0);
+      const focused=c.kind==='rocket'?1-airtime*.40:1;
+      k.eye1.setAttribute('ry',5*focused);k.eye2.setAttribute('ry',5*focused);
+      if(p>.83&&p<.93){k.eye2.setAttribute('ry',1.1)}
+      const trailAlpha=clamp(airtime-.4)*1.1*(c.kind==='hop'?.4:1);
+      trail.setAttribute('opacity',trailAlpha);
+      trails.forEach((line,j)=>{const yy=-kh/2+y+10+j*8;line.setAttribute('d',`M${x-12-j*8} ${yy} Q${x-38} ${yy-4} ${x-55-j*13} ${yy+2}`)});
+      const landing=clamp((p-.64)/.18), sparkAlpha=(1-landing)*landing*4;
+      particles.setAttribute('opacity',sparkAlpha);
+      sparks.forEach((spark,j)=>{const theta=j/6*Math.PI*2;spark.setAttribute('cx',x+state.kW/2+Math.cos(theta)*(22+landing*38));spark.setAttribute('cy',-kh/2+Math.sin(theta)*(20+landing*30));spark.setAttribute('r',j%2?2:3)});
+      shadow.setAttribute('cx',x+state.kW/2);shadow.setAttribute('rx',25-airtime*10);shadow.setAttribute('opacity',c.kind==='hop'?.10*(1-airtime*.7):0);
+      tagline.setAttribute('opacity',smooth((p-.70)/.20));
+      dots.setAttribute('opacity',.35*(1-smooth((p-.70)/.20)));
+      svg.setAttribute('aria-label',p<.45?'Overtake':p<.70?'K overtakes E':'Overtaek');
+    }
+    function stop(){cancelAnimationFrame(state.raf);state.playing=false;play.textContent='Replay'}
+    function run(){
+      if(matchMedia('(prefers-reduced-motion: reduce)').matches){draw(1);host.querySelector('.ot-status').textContent='Overtaek. Reduced motion: final frame.';return}
+      if(state.playing){stop();play.textContent='Resume';return}
+      if(state.p>=.999)state.p=0;
+      state.initial=state.p;state.start=performance.now();state.playing=true;play.textContent='Pause';
+      host.querySelector('.ot-status').textContent='Playing: K overtakes E.';
+      function tick(now){
+        if(!state.playing)return;
+        const p=clamp(state.initial+(now-state.start)/(c.duration*state.speed));
+        draw(p);
+        if(p<1){state.raf=requestAnimationFrame(tick)}else{stop();host.querySelector('.ot-status').textContent='Overtaek. Animation finished.'}
+      }
+      state.raf=requestAnimationFrame(tick);
+    }
+    play.addEventListener('click',run);
+    scrub.addEventListener('input',()=>{stop();draw(Number(scrub.value)/1000);host.querySelector('.ot-status').textContent=state.p<.45?'Overtake.':state.p<.70?'K overtakes E.':'Overtaek.'});
+    slow.addEventListener('click',()=>{
+      const was=state.playing;stop();state.speed=state.speed===1?2.5:1;slow.setAttribute('aria-pressed',String(state.speed!==1));slow.textContent=state.speed===1?'Slow motion':'Normal speed';remember();if(was)run();
+    });
+    slow.setAttribute('aria-pressed',String(state.speed!==1));slow.textContent=state.speed===1?'Slow motion':'Normal speed';
+    const settings={face:state.face};
+    function renderOptions(){state.face=settings.face;draw(state.p);remember()}
+    if(globalThis.Tweak){const t=new Tweak({container:host,onChange:renderOptions});t.addToggle(settings,'face',{label:'Character face'})}
+    instances.push({state,draw,layout});
+    layout();
+  }
+  if(document.fonts){document.fonts.ready.then(()=>instances.forEach(i=>i.layout()))}
+  new ResizeObserver(()=>instances.forEach(i=>i.layout())).observe(root);
+  new MutationObserver(()=>instances.forEach(i=>i.layout())).observe(root.querySelector('.viz-carousel'),{attributes:true,subtree:true,attributeFilter:['hidden']});
+})();
+</script>

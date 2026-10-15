@@ -33,8 +33,21 @@
 .ah-app-main{flex:1;padding:8px 26px 24px;min-width:0}
 .ah-status{background:var(--card);color:var(--muted);font-size:12px;padding:14px;margin:0 26px 12px;border-radius:14px}
 .ah-dock{display:flex;gap:4px;background:var(--card);border:1px solid var(--line);border-radius:22px;padding:7px;margin:0 20px 22px;position:relative}
-.ah-dock button{flex:1;background:transparent;border:0;border-radius:16px;padding:8px 3px;min-width:0;min-height:59px;font-size:10px;font-weight:600;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px;position:relative}
-.ah-dock button[aria-pressed=true]{background:var(--ink);color:var(--card)}
+.ah-dock button,.ah-dock a{flex:1;background:transparent;border:0;border-radius:16px;padding:8px 3px;min-width:0;min-height:59px;font-size:10px;font-weight:600;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px;position:relative;text-decoration:none;color:inherit}
+.ah-dock button[aria-pressed=true],.ah-dock a[aria-current=page]{background:var(--ink);color:var(--card)}
+.ah-shell-body{flex:1;min-height:0;overflow:auto}
+.ah-phone{max-height:100dvh}
+.ah-field-tools,.ah-ledger,.ah-settings{display:grid;gap:16px;margin-top:28px}
+.ah-field-duel,.ah-ledger{display:grid;gap:10px}
+.ah-field-duel h2,.ah-ledger h2,.ah-settings h2{font-family:var(--font-body),sans-serif;font-size:22px;letter-spacing:-.6px;margin:8px 0 0}
+.ah-duel-name{display:grid;gap:6px;font-size:12px;color:var(--muted)}
+.ah-duel-name input{min-height:44px;border:1px solid var(--line);border-radius:12px;padding:0 12px;background:var(--card)}
+.ah-ledger-list{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.ah-ledger-list li,.ah-ledger-row{display:flex;justify-content:space-between;gap:12px;align-items:center;font-size:13px}
+.ah-ledger-row small{display:block;color:var(--muted);font-size:11px}
+.ah-ledger-row button{border:0;background:var(--card);border-radius:12px;min-height:36px;padding:0 12px}
+.ah-phone .fb-card{background:transparent;border:0;box-shadow:none;padding:4px 0 12px}
+.ah-phone .fb-card h2,.ah-phone .sp-title-block h1{font-family:var(--font-body),sans-serif;font-size:28px;letter-spacing:-1px;font-weight:700}
 .ah-dock svg{width:22px;height:22px}
 .ah-new-dot{position:absolute;right:16px;top:8px;width:6px;height:6px;background:var(--lime);border-radius:50%}
 .ah-arena-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:10px 0 30px}
