@@ -66,7 +66,7 @@ Set `WHOOP_REDIRECT_URI` to the same Redirect URI value (including `http://local
 
 Garmin also needs `POST /api/fitness/garmin/ping` registered as the Health API notification URL after approval. The consumer key is not self-serve.
 
-Apple Health and Health Connect have no server keys. The phone app needs a development or TestFlight build (`EXPO_PUBLIC_API_URL` pointing at this web app) and a signed-in Supabase session. Expo Go cannot read HealthKit or Health Connect. On iOS, sync resolves `NativeModules.AppleHealthKit` at call time so New Architecture lazy loading does not leave `initHealthKit` undefined. The mobile You / Connections UI shows Apple Health only on iOS and Health Connect only on Android. Cloud OAuth callbacks return via `overtaek://you` when the app is installed, with a browser fallback to `/you`.
+Apple Health and Health Connect have no server keys. The phone app needs a development or TestFlight build (`EXPO_PUBLIC_API_URL` pointing at this web app) and a signed-in Supabase session. Expo Go cannot read HealthKit or Health Connect. On iOS, sync resolves `NativeModules.AppleHealthKit` at call time so New Architecture lazy loading does not leave `initHealthKit` undefined. The mobile You trackers list shows Apple Health only on iOS and Health Connect only on Android; tapping the row syncs from the device (there is no nested connections screen). Cloud OAuth callbacks return via `overtaek://you` when the app is installed, with a browser fallback to `/you`.
 
 ## Garmin file import
 

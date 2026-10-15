@@ -17,9 +17,3 @@ export function providersForDevice(): Provider[] {
     return true;
   });
 }
-
-export function deviceHealthKind(): "apple" | "android" | null {
-  if (Platform.OS === "ios") return "apple";
-  if (Platform.OS === "android") return "android";
-  return null;
-}

@@ -2,6 +2,7 @@ import {
   awardCards,
   initialsFromName,
   rankForElo,
+  type ProviderId,
 } from "@fitness-battle/shared";
 import { useRouter } from "expo-router";
 import { Avatar } from "heroui-native/avatar";
@@ -11,15 +12,22 @@ import { useState } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useCompeteStore } from "../../src/lib/compete-store";
+import { syncAppleHealth, syncHealthConnect } from "../../src/lib/device-health";
 import { providersForDevice } from "../../src/lib/platform-providers";
 import { AwardShelf } from "../../src/ui/award-shelf";
 import { SHELL_COLORS, SHELL_RADIUS } from "../../src/theme";
+
+function isDeviceProvider(id: ProviderId): id is "apple_health" | "google_health" {
+  return id === "apple_health" || id === "google_health";
+}
 
 export default function YouScreen() {
   const { state, dispatch } = useCompeteStore();
   const router = useRouter();
   const [name, setName] = useState<string | null>(null);
   const [city, setCity] = useState<string | null>(null);
+  const [syncBusy, setSyncBusy] = useState(false);
+  const [syncNote, setSyncNote] = useState<string | null>(null);
 
   if (!state) {
     return (
@@ -35,6 +43,31 @@ export default function YouScreen() {
   const rating = state.ratings.find((row) => row.sport === state.primary);
   const rank = rankForElo(rating?.openElo ?? 1000);
   const cards = awardCards(state);
+
+  async function syncDevice(providerId: "apple_health" | "google_health") {
+    if (syncBusy) return;
+    setSyncBusy(true);
+    setSyncNote(null);
+    try {
+      const result =
+        providerId === "apple_health"
+          ? await syncAppleHealth()
+          : await syncHealthConnect();
+      setSyncNote(result.message);
+      if (result.ok && result.count > 0) {
+        dispatch({
+          type: "apply-sync",
+          provider: providerId,
+          activities: [],
+          linkStatus: "connected",
+        });
+      }
+    } catch (error) {
+      setSyncNote(error instanceof Error ? error.message : "Sync failed");
+    } finally {
+      setSyncBusy(false);
+    }
+  }
 
   return (
     <SafeAreaView style={styles.safe} edges={["top"]}>
@@ -91,35 +124,38 @@ export default function YouScreen() {
               : link?.status === "stub"
                 ? "Demo link"
                 : "Not connected";
-          const onPhone =
-            provider.id === "apple_health" || provider.id === "google_health";
+          const onPhone = isDeviceProvider(provider.id);
           const copy = (
             <>
               <Text style={styles.rowTitle}>{provider.name}</Text>
               <Text style={styles.copy}>
-                {status}
-                {onPhone ? "" : " · connect on the web"}
+                {onPhone
+                  ? `${status} · ${syncBusy ? "Syncing…" : "Tap to sync"}`
+                  : `${status} · connect on the web`}
               </Text>
             </>
           );
-          if (!onPhone) {
+          if (!isDeviceProvider(provider.id)) {
             return (
               <View key={provider.id} style={styles.row}>
                 {copy}
               </View>
             );
           }
+          const deviceId = provider.id;
           return (
             <Pressable
-              key={provider.id}
+              key={deviceId}
               accessibilityRole="button"
-              onPress={() => router.push("/connections")}
+              disabled={syncBusy}
+              onPress={() => void syncDevice(deviceId)}
               style={styles.row}
             >
               {copy}
             </Pressable>
           );
         })}
+        {syncNote ? <Text style={styles.copy}>{syncNote}</Text> : null}
 
         <Pressable
           accessibilityRole="button"
