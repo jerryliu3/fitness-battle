@@ -8,6 +8,8 @@ export default function TabLayout() {
       tabBar={(props) => <PhoneTabBar {...props} />}
       screenOptions={{
         headerShown: false,
+        lazy: false,
+        freezeOnBlur: true,
         sceneStyle: { backgroundColor: SHELL_COLORS.paper },
       }}
     >

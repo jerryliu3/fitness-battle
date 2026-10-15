@@ -2,14 +2,25 @@
 
 import { useAuth } from "@/components/auth-context";
 import { useCompete } from "@/components/compete-context";
+import { ArenaScreen } from "@/features/arena/arena-screen";
+import { FieldScreen } from "@/features/field/field-screen";
+import { TodayScreen } from "@/features/today/today-screen";
+import YouRoute from "@/features/you/you-route";
 import { SHELL_TABS, shellTabFromPath, type ShellTabId } from "@fitness-battle/shared";
 import * as ScrollArea from "@radix-ui/react-scroll-area";
 import * as Tabs from "@radix-ui/react-tabs";
 import { motion, useReducedMotion } from "motion/react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState, type ReactNode } from "react";
 import "./shell.css";
+
+const WARMED: Record<ShellTabId, ReactNode> = {
+  today: <TodayScreen />,
+  arena: <ArenaScreen />,
+  field: <FieldScreen />,
+  you: <YouRoute />,
+};
 
 export function PhoneShell({
   children,
@@ -19,6 +30,7 @@ export function PhoneShell({
   hideTabs?: boolean;
 }) {
   const path = usePathname();
+  const router = useRouter();
   const reduce = useReducedMotion();
   const { user, loading } = useAuth();
   const { state, saveError, legacyOffer, loadStatus, recoverLegacy, retryLoad } = useCompete();
@@ -29,6 +41,10 @@ export function PhoneShell({
   useEffect(() => {
     setPressed(null);
   }, [path]);
+
+  useEffect(() => {
+    for (const tab of SHELL_TABS) router.prefetch(tab.href);
+  }, [router]);
 
   if (loadStatus === "loading" && !state) {
     return <div className="boot-splash">Fitness Battle</div>;
@@ -62,7 +78,15 @@ export function PhoneShell({
                   Browsing as a guest. <Link href="/signup">Create an account</Link>
                 </p>
               ) : null}
-              {children}
+              {matched ? (
+                SHELL_TABS.map((tab) => (
+                  <div key={tab.id} hidden={active !== tab.id}>
+                    {WARMED[tab.id]}
+                  </div>
+                ))
+              ) : (
+                children
+              )}
             </div>
           </ScrollArea.Viewport>
           <ScrollArea.Scrollbar orientation="vertical">
