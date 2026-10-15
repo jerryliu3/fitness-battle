@@ -14,12 +14,18 @@ importers:
 
   apps/mobile:
     dependencies:
+      '@babel/runtime':
+        specifier: ^7.29.10
+        version: 7.29.10
       '@expo-google-fonts/bebas-neue':
         specifier: ^0.4.0
         version: 0.4.1
       '@expo-google-fonts/dm-sans':
         specifier: ^0.4.0
         version: 0.4.2
+      '@expo/metro-runtime':
+        specifier: ~6.1.2
+        version: 6.1.2(expo@54.0.37)(react-dom@19.1.0(react@19.1.0))(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.1.17)(react@19.1.0))(react@19.1.0)
       '@fitness-battle/shared':
         specifier: workspace:*
         version: link:../../packages/shared
@@ -110,6 +116,9 @@ importers:
       uniwind:
         specifier: ^1.12.2
         version: 1.12.2(@expo/metro-config@54.0.17(expo@54.0.37))(metro-cache@0.83.8)(metro-transform-worker@0.83.8)(metro@0.83.8)(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.1.17)(react@19.1.0))(react@19.1.0)(tailwindcss@4.3.3)
+      whatwg-fetch:
+        specifier: ^3.6.20
+        version: 3.6.20
     devDependencies:
       '@types/node':
         specifier: ^20

@@ -12,7 +12,9 @@ config.resolver.nodeModulesPaths = [
   path.resolve(projectRoot, "node_modules"),
   path.resolve(workspaceRoot, "node_modules"),
 ];
-config.resolver.disableHierarchicalLookup = true;
+// pnpm nests packages under .pnpm; hierarchical lookup is required so Metro
+// can resolve transitive deps like @babel/runtime and whatwg-fetch.
+config.resolver.disableHierarchicalLookup = false;
 
 module.exports = withUniwindConfig(config, {
   cssEntryFile: "./global.css",
