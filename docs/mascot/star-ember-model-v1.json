@@ -1,0 +1,523 @@
+{
+  "model": {
+    "version": 1,
+    "viewBox": "0 -45 360 445",
+    "width": 360,
+    "height": 445,
+    "pivot": [
+      180,
+      235
+    ],
+    "palette": {
+      "gold": "#ffc629",
+      "light": "#ffd648",
+      "edge": "#e98a06",
+      "ink": "#234039",
+      "mouth": "#74351e",
+      "tongue": "#e47b64",
+      "glint": "#fffef3",
+      "shadow": "#17231e"
+    },
+    "start": [
+      140,
+      57
+    ],
+    "body": [
+      [
+        154,
+        45,
+        211,
+        64,
+        228,
+        155
+      ],
+      [
+        254,
+        160,
+        303,
+        164,
+        308,
+        177
+      ],
+      [
+        311,
+        191,
+        280,
+        219,
+        261,
+        238
+      ],
+      [
+        255,
+        250,
+        269,
+        342,
+        250,
+        345
+      ],
+      [
+        235,
+        351,
+        196,
+        290,
+        182,
+        289
+      ],
+      [
+        167,
+        285,
+        125,
+        350,
+        109,
+        346
+      ],
+      [
+        91,
+        345,
+        97,
+        261,
+        99,
+        238
+      ],
+      [
+        96,
+        228,
+        40,
+        186,
+        45,
+        172
+      ],
+      [
+        48,
+        160,
+        105,
+        152,
+        126,
+        149
+      ],
+      [
+        134,
+        127,
+        161,
+        99,
+        146,
+        76
+      ],
+      [
+        142,
+        68,
+        133,
+        62,
+        140,
+        57
+      ]
+    ],
+    "crescentStart": [
+      140,
+      57
+    ],
+    "crescent": [
+      [
+        156,
+        67,
+        176,
+        89,
+        166,
+        119
+      ],
+      [
+        162,
+        139,
+        152,
+        146,
+        126,
+        149
+      ],
+      [
+        134,
+        127,
+        161,
+        99,
+        146,
+        76
+      ],
+      [
+        142,
+        68,
+        133,
+        62,
+        140,
+        57
+      ]
+    ]
+  },
+  "rest": {
+    "x": 0,
+    "y": 0,
+    "rotation": 0,
+    "scaleX": 1,
+    "scaleY": 1,
+    "yaw": 0,
+    "crest": 0,
+    "armLeft": 0,
+    "armRight": 0,
+    "legLeft": 0,
+    "legRight": 0,
+    "lookX": 0,
+    "lookY": 0,
+    "eyeLeft": 1,
+    "eyeRight": 1,
+    "mouthOpen": 0,
+    "smile": 1,
+    "sparkle": 0,
+    "trail": 0
+  },
+  "clips": {
+    "idle": {
+      "duration": 3200,
+      "description": "A gentle breath and a blink",
+      "keyframes": [
+        {
+          "at": 0,
+          "pose": {}
+        },
+        {
+          "at": 0.3,
+          "pose": {
+            "y": -5,
+            "scaleX": 1.018,
+            "scaleY": 1.012,
+            "crest": -0.06
+          }
+        },
+        {
+          "at": 0.6,
+          "pose": {}
+        },
+        {
+          "at": 0.66,
+          "pose": {
+            "eyeLeft": 0,
+            "eyeRight": 0
+          }
+        },
+        {
+          "at": 0.71,
+          "pose": {}
+        },
+        {
+          "at": 1,
+          "pose": {}
+        }
+      ]
+    },
+    "wave": {
+      "duration": 1800,
+      "description": "A hello from the right star point",
+      "keyframes": [
+        {
+          "at": 0,
+          "pose": {}
+        },
+        {
+          "at": 0.18,
+          "pose": {
+            "armRight": 0.9,
+            "rotation": -5,
+            "mouthOpen": 0.8
+          }
+        },
+        {
+          "at": 0.32,
+          "pose": {
+            "armRight": 0.45,
+            "rotation": -3,
+            "mouthOpen": 0.8
+          }
+        },
+        {
+          "at": 0.47,
+          "pose": {
+            "armRight": 1,
+            "rotation": -5,
+            "mouthOpen": 0.8,
+            "eyeLeft": 0
+          }
+        },
+        {
+          "at": 0.62,
+          "pose": {
+            "armRight": 0.5,
+            "mouthOpen": 0.8
+          }
+        },
+        {
+          "at": 0.77,
+          "pose": {
+            "armRight": 1,
+            "mouthOpen": 0.8
+          }
+        },
+        {
+          "at": 1,
+          "pose": {}
+        }
+      ]
+    },
+    "hop": {
+      "duration": 1250,
+      "description": "Anticipation, takeoff, hang time and a soft landing",
+      "keyframes": [
+        {
+          "at": 0,
+          "pose": {}
+        },
+        {
+          "at": 0.17,
+          "pose": {
+            "y": 12,
+            "scaleX": 1.12,
+            "scaleY": 0.86,
+            "legLeft": 0.15,
+            "legRight": 0.15
+          }
+        },
+        {
+          "at": 0.32,
+          "pose": {
+            "y": -38,
+            "scaleX": 0.92,
+            "scaleY": 1.09,
+            "armLeft": 0.6,
+            "armRight": 0.6,
+            "crest": 0.2,
+            "mouthOpen": 1
+          }
+        },
+        {
+          "at": 0.49,
+          "pose": {
+            "y": -64,
+            "armLeft": 0.85,
+            "armRight": 0.85,
+            "mouthOpen": 1
+          }
+        },
+        {
+          "at": 0.68,
+          "pose": {
+            "y": -10,
+            "scaleX": 0.96,
+            "scaleY": 1.05,
+            "mouthOpen": 0.7
+          }
+        },
+        {
+          "at": 0.77,
+          "pose": {
+            "y": 10,
+            "scaleX": 1.11,
+            "scaleY": 0.88,
+            "crest": -0.15
+          }
+        },
+        {
+          "at": 1,
+          "pose": {}
+        }
+      ]
+    },
+    "run": {
+      "duration": 820,
+      "description": "An in-place stride with alternating feet and a trailing crest",
+      "keyframes": [
+        {
+          "at": 0,
+          "pose": {}
+        },
+        {
+          "at": 0.2,
+          "pose": {
+            "legLeft": 1,
+            "legRight": -0.1,
+            "armLeft": 0.4,
+            "armRight": -0.3,
+            "y": -9,
+            "rotation": 9,
+            "crest": 0.65,
+            "yaw": 0.2,
+            "mouthOpen": 0.65,
+            "trail": 0.6
+          }
+        },
+        {
+          "at": 0.42,
+          "pose": {
+            "y": -2,
+            "rotation": 7,
+            "crest": 0.5,
+            "yaw": 0.2,
+            "mouthOpen": 0.65,
+            "trail": 0.5
+          }
+        },
+        {
+          "at": 0.65,
+          "pose": {
+            "legRight": 1,
+            "legLeft": -0.1,
+            "armRight": 0.4,
+            "armLeft": -0.3,
+            "y": -9,
+            "rotation": 9,
+            "crest": 0.65,
+            "yaw": 0.2,
+            "mouthOpen": 0.65,
+            "trail": 0.6
+          }
+        },
+        {
+          "at": 0.85,
+          "pose": {
+            "y": -2,
+            "rotation": 7,
+            "crest": 0.5,
+            "yaw": 0.2,
+            "mouthOpen": 0.65,
+            "trail": 0.5
+          }
+        },
+        {
+          "at": 1,
+          "pose": {}
+        }
+      ]
+    },
+    "celebrate": {
+      "duration": 2200,
+      "description": "A joyful stretch, hop and sparkle",
+      "keyframes": [
+        {
+          "at": 0,
+          "pose": {}
+        },
+        {
+          "at": 0.13,
+          "pose": {
+            "y": 8,
+            "scaleX": 1.1,
+            "scaleY": 0.9
+          }
+        },
+        {
+          "at": 0.32,
+          "pose": {
+            "y": -43,
+            "armLeft": 1,
+            "armRight": 1,
+            "eyeLeft": 0,
+            "eyeRight": 0,
+            "mouthOpen": 1,
+            "sparkle": 1,
+            "rotation": -8
+          }
+        },
+        {
+          "at": 0.54,
+          "pose": {
+            "y": -26,
+            "armLeft": 0.8,
+            "armRight": 1,
+            "mouthOpen": 1,
+            "sparkle": 1,
+            "rotation": 8
+          }
+        },
+        {
+          "at": 0.7,
+          "pose": {
+            "y": 6,
+            "scaleX": 1.07,
+            "scaleY": 0.94,
+            "mouthOpen": 0.8,
+            "sparkle": 0.5
+          }
+        },
+        {
+          "at": 0.86,
+          "pose": {
+            "armRight": 0.5,
+            "eyeLeft": 0,
+            "mouthOpen": 0.7,
+            "sparkle": 0.2
+          }
+        },
+        {
+          "at": 1,
+          "pose": {}
+        }
+      ]
+    },
+    "dash": {
+      "duration": 1600,
+      "description": "Wind up, accelerate and settle",
+      "keyframes": [
+        {
+          "at": 0,
+          "pose": {}
+        },
+        {
+          "at": 0.18,
+          "pose": {
+            "x": -18,
+            "rotation": -10,
+            "scaleX": 1.08,
+            "scaleY": 0.94
+          }
+        },
+        {
+          "at": 0.4,
+          "pose": {
+            "x": 9,
+            "y": -26,
+            "rotation": 24,
+            "scaleX": 0.94,
+            "scaleY": 1.08,
+            "crest": 1,
+            "legLeft": -0.15,
+            "legRight": 0.8,
+            "yaw": 0.5,
+            "trail": 1,
+            "mouthOpen": 0.8
+          }
+        },
+        {
+          "at": 0.6,
+          "pose": {
+            "x": 24,
+            "y": -36,
+            "rotation": 18,
+            "crest": 0.8,
+            "trail": 1,
+            "sparkle": 0.5,
+            "mouthOpen": 0.9
+          }
+        },
+        {
+          "at": 0.78,
+          "pose": {
+            "x": 7,
+            "rotation": -7,
+            "crest": -0.3,
+            "scaleX": 1.06,
+            "scaleY": 0.94
+          }
+        },
+        {
+          "at": 1,
+          "pose": {}
+        }
+      ]
+    }
+  }
+}

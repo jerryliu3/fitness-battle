@@ -11,6 +11,7 @@
     "./fitness": "./src/fitness/index.ts",
     "./matching": "./src/matching/index.ts",
     "./notifications": "./src/notifications/index.ts",
+    "./mascot": "./src/mascot/index.ts",
     "./types": "./src/types.ts"
   },
   "scripts": {
