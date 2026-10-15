@@ -4,9 +4,11 @@ import {
   duelViews,
   effortTrackMax,
   formatEffort,
+  ghostEffortAt as effortAtGhost,
+  ghostHasVolume,
   initialsFromName,
   interpolateSeries,
-  periodEffort,
+  resolvePastSelfGhost,
   syntheticCheckpoints,
   waveWindowAt,
   weeklyBoard,
@@ -14,6 +16,8 @@ import {
   type CheckpointIndex,
   type CheckpointSeries,
   type CompeteState,
+  type GhostPeriodSelector,
+  type GhostReference,
   type ScoreTrack,
   type SportId,
 } from "@fitness-battle/shared";
@@ -41,6 +45,9 @@ export interface SplitBoardModel {
   rows: BoardRow[];
   you: BoardRow | null;
   youSeries: CheckpointSeries;
+  /** Past-self (or other) ghost for the selected prior window. */
+  ghost: GhostReference;
+  /** Convenience: `ghost.series` when the window has countable volume. */
   ghostSeries: CheckpointSeries | null;
   ghostEffortAt: (checkpoint: number) => number;
   nearby: TrackLane[];
@@ -51,10 +58,9 @@ export interface SplitBoardModel {
   weekActivities: CompeteState["activities"];
 }
 
-function previousPeriod(start: Date): { start: Date; end: Date } {
-  const end = start;
-  const prev = new Date(start.getTime() - 7 * 86_400_000);
-  return { start: prev, end };
+export interface BuildSplitBoardOptions {
+  /** Default: immediately previous equal-length period (last week). */
+  ghostSelector?: GhostPeriodSelector;
 }
 
 function waveBoundsForSport(state: CompeteState, sport: SportId, now: Date) {
@@ -74,6 +80,7 @@ export function buildSplitBoard(
   sport: SportId,
   track: ScoreTrack,
   now: Date = competeNow(state),
+  options: BuildSplitBoardOptions = {},
 ): SplitBoardModel {
   const period = waveBoundsForSport(state, sport, now);
   const rating = state.ratings.find((item) => item.sport === sport);
@@ -90,29 +97,17 @@ export function buildSplitBoard(
     now,
   );
 
-  const prior = previousPeriod(period.startsAt);
-  const priorVolume = periodEffort(
-    state.activities,
+  const ghost = resolvePastSelfGhost({
+    activities: state.activities,
     sport,
-    prior.start,
-    prior.end,
     track,
-  );
-  const ghostSeries =
-    priorVolume.effort > 0.01
-      ? activityCheckpoints(
-          state.activities,
-          sport,
-          prior.start,
-          prior.end,
-          track,
-          // Compare same weekday progress inside the prior week.
-          new Date(
-            prior.start.getTime() +
-              (youSeries.liveAt.getTime() - period.startsAt.getTime()),
-          ),
-        )
-      : null;
+    currentStart: period.startsAt,
+    currentEnd: period.endsAt,
+    currentLiveAt: youSeries.liveAt,
+    selector: options.ghostSelector,
+    periodKind: state.clock.kind,
+  });
+  const ghostSeries = ghostHasVolume(ghost) ? ghost.series : null;
 
   const nearbyRows = (() => {
     if (!you) return rows.slice(0, 3);
@@ -171,9 +166,9 @@ export function buildSplitBoard(
     rows,
     you,
     youSeries,
+    ghost,
     ghostSeries,
-    ghostEffortAt: (checkpoint: number) =>
-      ghostSeries ? interpolateSeries(ghostSeries.effort, checkpoint) : 0,
+    ghostEffortAt: (checkpoint: number) => effortAtGhost(ghost, checkpoint),
     nearby,
     fieldLanes,
     trackMax,
@@ -204,19 +199,20 @@ export function formatPts(value: number): string {
 export function deltaCopy(
   youEffort: number,
   ghostEffort: number,
+  ghostLabel = "your previous week",
 ): { delta: number; headline: string; detail: string } {
   const delta = Math.round((youEffort - ghostEffort) * 10) / 10;
   if (ghostEffort <= 0) {
     return {
       delta,
       headline: "Your line this week.",
-      detail: "No counted work in the previous week at this cutoff.",
+      detail: `No counted work in ${ghostLabel} at this cutoff.`,
     };
   }
   if (Math.abs(delta) < 0.05) {
     return {
       delta: 0,
-      headline: "Level with your previous week.",
+      headline: `Level with ${ghostLabel}.`,
       detail: "Same cutoff. Same effort points so far.",
     };
   }
@@ -229,7 +225,7 @@ export function deltaCopy(
   }
   return {
     delta,
-    headline: "points behind your previous week.",
+    headline: `points behind ${ghostLabel}.`,
     detail: "Same cutoff. Room to catch your own line.",
   };
 }

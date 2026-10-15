@@ -278,7 +278,7 @@ export function LivePursuit(props: PursuitProps) {
       { skin: "rose", kit: "midnight", hair: "crop" },
       4,
     );
-    ghostAvatar.group.userData.runnerId = "ghost";
+    ghostAvatar.group.userData.runnerId = latest.current.ghost?.id ?? "ghost";
     scene.add(ghostAvatar.group);
     ghostAvatar.group.traverse((object: THREE.Object3D) => {
       if (object instanceof THREE.Mesh) {
@@ -372,6 +372,7 @@ export function LivePursuit(props: PursuitProps) {
       }
       ghostAvatar.group.visible = Boolean(p.showGhost && p.ghost);
       if (p.ghost) {
+        ghostAvatar.group.userData.runnerId = p.ghost.id;
         ghostAvatar.group.position.set(
           -0.85,
           0,

@@ -1,9 +1,11 @@
 import {
   competeNow,
   distanceTrackMaxKm,
+  ghostHasVolume,
   initialsFromName,
   syntheticCheckpoints,
   type CompeteState,
+  type GhostPeriodSelector,
   type ScoreTrack,
   type SportId,
 } from "@fitness-battle/shared";
@@ -37,8 +39,9 @@ export function buildFieldModel(
   sport: SportId,
   track: ScoreTrack,
   now: Date = competeNow(state),
+  options?: { ghostSelector?: GhostPeriodSelector },
 ): FieldModel {
-  const board = buildSplitBoard(state, sport, track, now);
+  const board = buildSplitBoard(state, sport, track, now, options);
   const gps = sport === "running" || sport === "cycling";
 
   const runners: FieldRunner[] = board.rows.map((row) => {
@@ -71,21 +74,22 @@ export function buildFieldModel(
     };
   });
 
-  const ghost: FieldRunner | null = board.ghostSeries
-    ? {
-        id: "ghost",
-        name: "Your previous week",
-        initials: "PW",
-        km: (
-          gps
-            ? board.ghostSeries.distanceM.map((m) => m / 1000)
-            : board.ghostSeries.effort.map((e) => e)
-        ) as [number, number, number],
-        place: 0,
-        effort: board.ghostSeries.effort[2]!,
-        ghost: true,
-      }
-    : null;
+  const ghost: FieldRunner | null =
+    ghostHasVolume(board.ghost) && board.ghost.series
+      ? {
+          id: board.ghost.id,
+          name: board.ghost.name,
+          initials: board.ghost.initials,
+          km: (
+            gps
+              ? board.ghost.series.distanceM.map((m) => m / 1000)
+              : board.ghost.series.effort.map((e) => e)
+          ) as [number, number, number],
+          place: 0,
+          effort: board.ghost.series.effort[2]!,
+          ghost: true,
+        }
+      : null;
 
   const you = runners.find((runner) => runner.you) ?? null;
   const peak = [

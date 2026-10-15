@@ -21,6 +21,8 @@ export interface RallyReference {
   name: string;
   initials: string;
   ghost?: boolean;
+  /** Stable ghost id from the shared GhostReference when subject is past_self. */
+  ghostId?: string;
 }
 
 export interface RallyMove {
@@ -212,8 +214,8 @@ export function buildRallyBoard(
   const board = buildSplitBoard(state, sport, track, now);
   const unit: RallyUnit = sportById(sport).gps ? "km" : "pts";
   const youValues = seriesValues(board.youSeries, unit);
-  const ghostValues = board.ghostSeries
-    ? seriesValues(board.ghostSeries, unit)
+  const ghostValues = board.ghost.series
+    ? seriesValues(board.ghost.series, unit)
     : null;
 
   const lanes: RallyLane[] = board.fieldLanes.map((lane) => {
@@ -248,9 +250,10 @@ export function buildRallyBoard(
   const references: RallyReference[] = [
     {
       id: "ghost",
-      name: "Your previous week",
-      initials: "PW",
+      name: board.ghost.name,
+      initials: board.ghost.initials,
       ghost: true,
+      ghostId: board.ghost.id,
     },
     ...rivals.slice(0, 2).map((lane) => ({
       id: lane.id,

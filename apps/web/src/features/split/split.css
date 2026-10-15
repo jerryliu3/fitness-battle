@@ -390,6 +390,15 @@
   background: var(--sp-soft);
 }
 
+.sp-roster .ghost-ref {
+  background: color-mix(in srgb, var(--sp-soft) 70%, transparent);
+  color: var(--sp-muted);
+}
+
+.sp-roster .ghost-ref b {
+  font-weight: 600;
+}
+
 .sp-roster .place {
   width: 28px;
   color: var(--sp-muted);
