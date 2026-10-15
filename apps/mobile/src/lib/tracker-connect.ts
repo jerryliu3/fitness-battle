@@ -39,11 +39,10 @@ export type StartCloudTrackerConnectDeps = {
     authorizeUrl: string,
     returnUrl: string,
   ) => Promise<AuthSessionResult>;
-  /** Android dismiss race: wait briefly for the OAuth deep link. */
-  waitForReturnUrl?: (
-    matches: (url: string) => boolean,
-    timeoutMs: number,
-  ) => Promise<string | null>;
+  /** Subscribe to app URL opens for the duration of an auth attempt. */
+  onAppUrl?: (handler: (url: string) => void) => () => void;
+  /** How long to wait after dismiss/cancel for a late Android deep link. */
+  returnUrlWaitMs?: number;
 };
 
 export function isAuthReturnUrl(url: string): boolean {
@@ -79,29 +78,59 @@ export function outcomeFromReturnUrl(url: string): {
   }
 }
 
-function defaultWaitForReturnUrl(
-  matches: (url: string) => boolean,
-  timeoutMs: number,
-): Promise<string | null> {
-  return new Promise((resolve) => {
-    let settled = false;
-    const finish = (url: string | null) => {
-      if (settled) return;
-      settled = true;
-      clearTimeout(timer);
-      sub.remove();
-      resolve(url);
-    };
-    // Lazy require so Vitest can unit-test without loading react-native.
-    const Linking = require("expo-linking") as typeof import("expo-linking");
-    const sub = Linking.addEventListener("url", (event) => {
-      if (matches(event.url)) finish(event.url);
-    });
-    const timer = setTimeout(() => finish(null), timeoutMs);
-    void Linking.getInitialURL().then((url) => {
-      if (url && matches(url)) finish(url);
-    });
+/** Return URL for this attempt — ignores other providers' deep links. */
+export function isReturnUrlForProvider(
+  url: string,
+  expectedProvider: CloudOAuthProvider,
+): boolean {
+  if (!isAuthReturnUrl(url)) return false;
+  const { provider } = outcomeFromReturnUrl(url);
+  return provider == null || provider === expectedProvider;
+}
+
+function defaultOnAppUrl(handler: (url: string) => void): () => void {
+  // Lazy require so Vitest can unit-test without loading native modules.
+  const Linking = require("expo-linking") as typeof import("expo-linking");
+  const sub = Linking.addEventListener("url", (event) => {
+    handler(event.url);
   });
+  return () => sub.remove();
+}
+
+function watchReturnUrls(
+  expectedProvider: CloudOAuthProvider,
+  onAppUrl: (handler: (url: string) => void) => () => void,
+) {
+  let latest: string | null = null;
+  let waiter: ((url: string | null) => void) | null = null;
+
+  const stop = onAppUrl((url) => {
+    if (!isReturnUrlForProvider(url, expectedProvider)) return;
+    latest = url;
+    if (waiter) {
+      const resolve = waiter;
+      waiter = null;
+      resolve(url);
+    }
+  });
+
+  return {
+    take(): string | null {
+      return latest;
+    },
+    wait(timeoutMs: number): Promise<string | null> {
+      if (latest) return Promise.resolve(latest);
+      return new Promise((resolve) => {
+        waiter = resolve;
+        setTimeout(() => {
+          if (waiter !== resolve) return;
+          waiter = null;
+          resolve(latest);
+        }, timeoutMs);
+      });
+    },
+    stop,
+  };
 }
 
 function defaultDeps(): StartCloudTrackerConnectDeps {
@@ -113,38 +142,92 @@ function defaultDeps(): StartCloudTrackerConnectDeps {
     },
     fetchFn: fetch,
     openAuthSession: async (authorizeUrl, returnUrl) => {
-      // Lazy require so Vitest can unit-test without loading native modules.
       const WebBrowser = require("expo-web-browser") as typeof import("expo-web-browser");
       return WebBrowser.openAuthSessionAsync(authorizeUrl, returnUrl);
     },
-    waitForReturnUrl: defaultWaitForReturnUrl,
+    onAppUrl: defaultOnAppUrl,
   };
 }
 
 async function resolveAuthSession(
   authorizeUrl: string,
+  provider: CloudOAuthProvider,
   deps: StartCloudTrackerConnectDeps,
 ): Promise<AuthSessionResult> {
-  let session: AuthSessionResult;
+  const onAppUrl = deps.onAppUrl ?? defaultOnAppUrl;
+  // Listen before opening the sheet so Android redirects delivered during the
+  // session are not missed. Do not read getInitialURL — that can be a stale
+  // cold-start deep link from an earlier OAuth attempt.
+  const watch = watchReturnUrls(provider, onAppUrl);
+
   try {
-    session = await deps.openAuthSession(authorizeUrl, AUTH_RETURN_URL);
-  } catch {
-    return { type: "error" };
-  }
+    let session: AuthSessionResult;
+    try {
+      session = await deps.openAuthSession(authorizeUrl, AUTH_RETURN_URL);
+    } catch {
+      return { type: "error" };
+    }
 
-  if (session.type === "success" && session.url && isAuthReturnUrl(session.url)) {
+    if (
+      session.type === "success" &&
+      session.url &&
+      isReturnUrlForProvider(session.url, provider)
+    ) {
+      return session;
+    }
+
+    const buffered = watch.take();
+    if (buffered) return { type: "success", url: buffered };
+
+    // Android Custom Tabs often resolves `dismiss` before Linking delivers the
+    // redirect. Keep listening briefly after the sheet closes.
+    if (session.type === "cancel" || session.type === "dismiss" || session.type === "success") {
+      const late = await watch.wait(deps.returnUrlWaitMs ?? 2000);
+      if (late) return { type: "success", url: late };
+    }
+
     return session;
+  } finally {
+    watch.stop();
   }
+}
 
-  // Android's Custom Tabs polyfill often resolves `dismiss` before the Linking
-  // redirect is delivered, even when OAuth succeeded.
-  if (session.type === "cancel" || session.type === "dismiss" || session.type === "success") {
-    const wait = deps.waitForReturnUrl ?? defaultWaitForReturnUrl;
-    const linked = await wait(isAuthReturnUrl, 2000);
-    if (linked) return { type: "success", url: linked };
+function resultFromReturnUrl(
+  url: string,
+  fallbackProvider: CloudOAuthProvider,
+): CloudConnectResult {
+  const outcome = outcomeFromReturnUrl(url);
+  const tracker = outcome.tracker;
+  const resolvedProvider = outcome.provider ?? fallbackProvider;
+  if (tracker === "connected") {
+    return {
+      ok: true,
+      tracker,
+      provider: resolvedProvider,
+      message: `${resolvedProvider} connected.`,
+    };
   }
-
-  return session;
+  if (tracker === "stub") {
+    return {
+      ok: true,
+      stub: true,
+      tracker,
+      provider: resolvedProvider,
+      message: "Credentials are not set, so this link is a demo stub.",
+    };
+  }
+  if (tracker === "error") {
+    return {
+      ok: false,
+      tracker,
+      provider: resolvedProvider,
+      message: "That tracker did not connect. Try again from the app.",
+    };
+  }
+  return {
+    ok: true,
+    message: "Returned from authorize. Check tracker status in a moment.",
+  };
 }
 
 /**
@@ -191,7 +274,7 @@ export async function startCloudTrackerConnect(
   }
 
   if (body.authorizeUrl) {
-    const session = await resolveAuthSession(body.authorizeUrl, deps);
+    const session = await resolveAuthSession(body.authorizeUrl, provider, deps);
     if (session.type === "error") {
       return { ok: false, message: "Could not open the sign-in sheet to finish connect." };
     }
@@ -205,38 +288,7 @@ export async function startCloudTrackerConnect(
     }
 
     if (session.type === "success" && session.url) {
-      const outcome = outcomeFromReturnUrl(session.url);
-      const tracker = outcome.tracker;
-      const resolvedProvider = outcome.provider ?? provider;
-      if (tracker === "connected") {
-        return {
-          ok: true,
-          tracker,
-          provider: resolvedProvider,
-          message: `${resolvedProvider} connected.`,
-        };
-      }
-      if (tracker === "stub") {
-        return {
-          ok: true,
-          stub: true,
-          tracker,
-          provider: resolvedProvider,
-          message: "Credentials are not set, so this link is a demo stub.",
-        };
-      }
-      if (tracker === "error") {
-        return {
-          ok: false,
-          tracker,
-          provider: resolvedProvider,
-          message: "That tracker did not connect. Try again from the app.",
-        };
-      }
-      return {
-        ok: true,
-        message: "Returned from authorize. Check tracker status in a moment.",
-      };
+      return resultFromReturnUrl(session.url, provider);
     }
 
     return {

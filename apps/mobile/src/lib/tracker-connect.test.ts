@@ -24,6 +24,7 @@ vi.mock("./supabase", () => ({
 import {
   AUTH_RETURN_URL,
   isAuthReturnUrl,
+  isReturnUrlForProvider,
   outcomeFromReturnUrl,
   startCloudTrackerConnect,
 } from "./tracker-connect";
@@ -49,11 +50,26 @@ describe("outcomeFromReturnUrl", () => {
   });
 });
 
-describe("isAuthReturnUrl", () => {
+describe("isAuthReturnUrl / isReturnUrlForProvider", () => {
   it("accepts both slash styles", () => {
     expect(isAuthReturnUrl("overtaek:///you?tracker=connected")).toBe(true);
     expect(isAuthReturnUrl("overtaek://you?tracker=connected")).toBe(true);
     expect(isAuthReturnUrl("https://example.com/you")).toBe(false);
+  });
+
+  it("rejects another provider's return URL", () => {
+    expect(
+      isReturnUrlForProvider(
+        "overtaek:///you?tracker=connected&provider=strava",
+        "oura",
+      ),
+    ).toBe(false);
+    expect(
+      isReturnUrlForProvider(
+        "overtaek:///you?tracker=connected&provider=oura",
+        "oura",
+      ),
+    ).toBe(true);
   });
 });
 
@@ -85,6 +101,7 @@ describe("startCloudTrackerConnect", () => {
       getAccessToken: async () => "token",
       fetchFn: fetchFn as unknown as typeof fetch,
       openAuthSession,
+      onAppUrl: () => () => undefined,
     });
     expect(result).toEqual({
       ok: true,
@@ -98,7 +115,13 @@ describe("startCloudTrackerConnect", () => {
     );
   });
 
-  it("recovers when Android dismisses before the deep link arrives", async () => {
+  it("captures a deep link delivered while the auth sheet is open", async () => {
+    let handler: ((url: string) => void) | null = null;
+    const openAuthSession = vi.fn(async () => {
+      handler?.("overtaek://you?tracker=connected&provider=oura");
+      return { type: "dismiss" };
+    });
+
     const result = await startCloudTrackerConnect("oura", {
       apiUrl: "https://example.com",
       getAccessToken: async () => "token",
@@ -107,14 +130,84 @@ describe("startCloudTrackerConnect", () => {
           authorizeUrl: "https://cloud.ouraring.com/oauth/authorize",
         }),
       ) as unknown as typeof fetch,
-      openAuthSession: vi.fn(async () => ({ type: "dismiss" })),
-      waitForReturnUrl: vi.fn(async () => "overtaek://you?tracker=connected&provider=oura"),
+      openAuthSession,
+      onAppUrl: (next) => {
+        handler = next;
+        return () => {
+          handler = null;
+        };
+      },
     });
+
     expect(result).toEqual({
       ok: true,
       tracker: "connected",
       provider: "oura",
       message: "oura connected.",
+    });
+  });
+
+  it("recovers when the deep link arrives shortly after dismiss", async () => {
+    let handler: ((url: string) => void) | null = null;
+    const openAuthSession = vi.fn(async () => {
+      setTimeout(() => {
+        handler?.("overtaek:///you?tracker=connected&provider=oura");
+      }, 20);
+      return { type: "dismiss" };
+    });
+
+    const result = await startCloudTrackerConnect("oura", {
+      apiUrl: "https://example.com",
+      getAccessToken: async () => "token",
+      fetchFn: vi.fn(async () =>
+        Response.json({
+          authorizeUrl: "https://cloud.ouraring.com/oauth/authorize",
+        }),
+      ) as unknown as typeof fetch,
+      openAuthSession,
+      onAppUrl: (next) => {
+        handler = next;
+        return () => {
+          handler = null;
+        };
+      },
+    });
+
+    expect(result).toEqual({
+      ok: true,
+      tracker: "connected",
+      provider: "oura",
+      message: "oura connected.",
+    });
+  });
+
+  it("does not treat another provider's deep link as success after dismiss", async () => {
+    let handler: ((url: string) => void) | null = null;
+    const resultPromise = startCloudTrackerConnect("oura", {
+      apiUrl: "https://example.com",
+      getAccessToken: async () => "token",
+      fetchFn: vi.fn(async () =>
+        Response.json({
+          authorizeUrl: "https://cloud.ouraring.com/oauth/authorize",
+        }),
+      ) as unknown as typeof fetch,
+      openAuthSession: vi.fn(async () => {
+        handler?.("overtaek:///you?tracker=connected&provider=strava");
+        return { type: "dismiss" };
+      }),
+      onAppUrl: (next) => {
+        handler = next;
+        return () => {
+          handler = null;
+        };
+      },
+      returnUrlWaitMs: 20,
+    });
+
+    await expect(resultPromise).resolves.toEqual({
+      ok: false,
+      cancelled: true,
+      message: "Connect cancelled.",
     });
   });
 
@@ -128,7 +221,8 @@ describe("startCloudTrackerConnect", () => {
         }),
       ) as unknown as typeof fetch,
       openAuthSession: vi.fn(async () => ({ type: "cancel" })),
-      waitForReturnUrl: vi.fn(async () => null),
+      onAppUrl: () => () => undefined,
+      returnUrlWaitMs: 20,
     });
     expect(result).toEqual({
       ok: false,
