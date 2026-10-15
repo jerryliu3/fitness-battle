@@ -1,6 +1,6 @@
 # Fitness integrations
 
-Cloud OAuth token exchange runs on the web server. The mobile app can start the same connect flow and open the system browser on the provider authorize page; callbacks return via `overtaek:///you` (browser fallback `/you`). Apple Health and Health Connect run on the phone and post into the same API. Missing keys keep a provider on the stub path. A stub is never shown as a live connection.
+Cloud OAuth token exchange runs on the web server. The mobile app starts the same connect flow in an in-app auth session (ASWebAuthenticationSession / Chrome Custom Tabs); callbacks return via `overtaek:///you` (browser fallback `/you`). Apple Health and Health Connect run on the phone and post into the same API. Missing keys keep a provider on the stub path. A stub is never shown as a live connection.
 
 ## Status matrix
 
@@ -68,7 +68,7 @@ Garmin also needs `POST /api/fitness/garmin/ping` registered as the Health API n
 
 Apple Health and Health Connect have no server keys. The phone app needs a development or TestFlight build (`EXPO_PUBLIC_API_URL` pointing at this web app) and a signed-in Supabase session. Expo Go cannot read HealthKit or Health Connect. On iOS, sync resolves `NativeModules.AppleHealthKit` at call time so New Architecture lazy loading does not leave `initHealthKit` undefined. The mobile You trackers list shows Apple Health only on iOS and Health Connect only on Android; tapping the row syncs from the device (there is no nested connections screen).
 
-Mobile can start Strava / Garmin / WHOOP / Oura connect itself: `POST /api/fitness/connect` with Bearer auth, then `Linking.openURL(authorizeUrl)`. Connect signs OAuth `state` with a `bearer` or `session` channel: Bearer (mobile) callbacks do not need a web cookie; cookie-session (web) callbacks still require the browser session to match (CSRF bind). Callbacks return via `overtaek:///you` when the app is installed, with a browser fallback to `/you`.
+Mobile can start Strava / Garmin / WHOOP / Oura connect itself: `POST /api/fitness/connect` with Bearer auth, then `WebBrowser.openAuthSessionAsync(authorizeUrl, overtaek:///you)`. Connect signs OAuth `state` with a `bearer` or `session` channel: Bearer (mobile) callbacks do not need a web cookie; cookie-session (web) callbacks still require the browser session to match (CSRF bind). The HTTPS callback deep-links to `overtaek:///you`, which dismisses the auth sheet and returns the outcome URL to the app (web browsers without the app fall back to `/you`).
 
 ## Garmin file import
 

@@ -7,6 +7,7 @@ import {
 import * as Notifications from "expo-notifications";
 import { router, Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
+import * as WebBrowser from "expo-web-browser";
 import { HeroUINativeProvider } from "heroui-native/provider";
 import { useEffect } from "react";
 import { ActivityIndicator, Text, View } from "react-native";
@@ -16,6 +17,9 @@ import "../global.css";
 import "../src/lib/expo-push-register";
 import { CompeteProvider } from "../src/lib/compete-store";
 import { SHELL_COLORS } from "../src/theme";
+
+// Closes an in-app auth session when the OAuth deep link returns (web + native).
+WebBrowser.maybeCompleteAuthSession();
 
 function pathFromNotificationResponse(
   response: Notifications.NotificationResponse,

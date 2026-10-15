@@ -4,23 +4,59 @@ import { supabase } from "./supabase";
 export const CLOUD_OAUTH_PROVIDERS = ["strava", "garmin", "whoop", "oura"] as const;
 export type CloudOAuthProvider = (typeof CLOUD_OAUTH_PROVIDERS)[number];
 
+export const AUTH_RETURN_URL = "overtaek:///you";
+
 export function isCloudOAuthProvider(id: string): id is CloudOAuthProvider {
   return (CLOUD_OAUTH_PROVIDERS as readonly string[]).includes(id);
 }
 
+export type TrackerOutcome = "connected" | "stub" | "error";
+
 export type CloudConnectResult = {
   ok: boolean;
   stub?: boolean;
-  openedBrowser?: boolean;
+  cancelled?: boolean;
+  /** Auth session returned to the app with an outcome. */
+  tracker?: TrackerOutcome;
+  provider?: CloudOAuthProvider;
   message: string;
+};
+
+export type AuthSessionResult = {
+  type: string;
+  url?: string;
 };
 
 export type StartCloudTrackerConnectDeps = {
   apiUrl: string;
   getAccessToken: () => Promise<string | undefined>;
   fetchFn: typeof fetch;
-  openUrl: (url: string) => Promise<void>;
+  openAuthSession: (
+    authorizeUrl: string,
+    returnUrl: string,
+  ) => Promise<AuthSessionResult>;
 };
+
+/** Parse `overtaek:///you?tracker=…&provider=…` (or https fallback). */
+export function outcomeFromReturnUrl(url: string): {
+  tracker?: TrackerOutcome;
+  provider?: CloudOAuthProvider;
+} {
+  try {
+    const parsed = new URL(url);
+    const trackerRaw = parsed.searchParams.get("tracker");
+    const providerRaw = parsed.searchParams.get("provider");
+    const tracker =
+      trackerRaw === "connected" || trackerRaw === "stub" || trackerRaw === "error"
+        ? trackerRaw
+        : undefined;
+    const provider =
+      providerRaw && isCloudOAuthProvider(providerRaw) ? providerRaw : undefined;
+    return { tracker, provider };
+  } catch {
+    return {};
+  }
+}
 
 function defaultDeps(): StartCloudTrackerConnectDeps {
   return {
@@ -30,18 +66,19 @@ function defaultDeps(): StartCloudTrackerConnectDeps {
       return data.session?.access_token;
     },
     fetchFn: fetch,
-    openUrl: async (url) => {
-      // Lazy require so Vitest can unit-test without loading react-native.
-      const { Linking } = require("react-native") as typeof import("react-native");
-      await Linking.openURL(url);
+    openAuthSession: async (authorizeUrl, returnUrl) => {
+      // Lazy require so Vitest can unit-test without loading native modules.
+      const WebBrowser = require("expo-web-browser") as typeof import("expo-web-browser");
+      return WebBrowser.openAuthSessionAsync(authorizeUrl, returnUrl);
     },
   };
 }
 
 /**
- * Start cloud tracker OAuth from the phone: call the web API, then open the
- * system browser on the provider authorize page. Callbacks return via
- * `overtaek:///you` when the app is installed.
+ * Start cloud tracker OAuth from the phone: call the web API, then open an
+ * in-app auth session (ASWebAuthenticationSession / Chrome Custom Tabs) on the
+ * provider authorize page. The HTTPS callback deep-links to `overtaek:///you`,
+ * which closes the session and returns the outcome URL to the app.
  */
 export async function startCloudTrackerConnect(
   provider: CloudOAuthProvider,
@@ -81,22 +118,68 @@ export async function startCloudTrackerConnect(
   }
 
   if (body.authorizeUrl) {
+    let session: AuthSessionResult;
     try {
-      await deps.openUrl(body.authorizeUrl);
+      session = await deps.openAuthSession(body.authorizeUrl, AUTH_RETURN_URL);
+    } catch {
+      return { ok: false, message: "Could not open the sign-in sheet to finish connect." };
+    }
+
+    if (session.type === "cancel" || session.type === "dismiss") {
+      return {
+        ok: false,
+        cancelled: true,
+        message: "Connect cancelled.",
+      };
+    }
+
+    if (session.type === "success" && session.url) {
+      const outcome = outcomeFromReturnUrl(session.url);
+      const tracker = outcome.tracker;
+      const resolvedProvider = outcome.provider ?? provider;
+      if (tracker === "connected") {
+        return {
+          ok: true,
+          tracker,
+          provider: resolvedProvider,
+          message: `${resolvedProvider} connected.`,
+        };
+      }
+      if (tracker === "stub") {
+        return {
+          ok: true,
+          stub: true,
+          tracker,
+          provider: resolvedProvider,
+          message: "Credentials are not set, so this link is a demo stub.",
+        };
+      }
+      if (tracker === "error") {
+        return {
+          ok: false,
+          tracker,
+          provider: resolvedProvider,
+          message: "That tracker did not connect. Try again from the app.",
+        };
+      }
       return {
         ok: true,
-        openedBrowser: true,
-        message: "Continue in your browser, then return to Overtaek.",
+        message: "Returned from authorize. Pull to refresh if status looks stale.",
       };
-    } catch {
-      return { ok: false, message: "Could not open the browser to finish connect." };
     }
+
+    return {
+      ok: false,
+      message: "Authorize finished without a return URL. Try again.",
+    };
   }
 
   if (body.status === "stub") {
     return {
       ok: true,
       stub: true,
+      tracker: "stub",
+      provider,
       message: body.message ?? "Demo tracker linked. This is not a live connection.",
     };
   }

@@ -108,8 +108,18 @@ export default function YouScreen() {
     setNote(null);
     try {
       const result = await startCloudTrackerConnect(providerId);
-      if (result.stub) {
-        dispatch({ type: "link", provider: providerId });
+      const linked = result.provider ?? providerId;
+      if (result.tracker === "connected") {
+        appliedTracker.current = `connected:${linked}`;
+        dispatch({
+          type: "apply-sync",
+          provider: linked,
+          activities: [],
+          linkStatus: "connected",
+        });
+      } else if (result.stub || result.tracker === "stub") {
+        appliedTracker.current = `stub:${linked}`;
+        dispatch({ type: "link", provider: linked });
       }
       setNote(result.message);
     } catch (error) {
@@ -180,8 +190,8 @@ export default function YouScreen() {
             ? ` · ${syncBusy ? "Syncing…" : "Tap to sync"}`
             : cloud
               ? busyProvider === provider.id
-                ? " · opening browser…"
-                : " · opens browser"
+                ? " · authorizing…"
+                : " · tap to connect"
               : "";
           const copy = (
             <>
