@@ -4,8 +4,8 @@ import { Ember2DPrototype } from "@/app/design/_studies/ember-2d/prototype";
 
 const type = Nunito_Sans({ subsets: ["latin"], weight: "900", variable: "--font-overtaek" });
 export const metadata: Metadata = {
-  title: "Overtaek · 2D Ember studies",
-  description: "Three fully 2D mascot concepts with the Overtaek overtaking animation.",
+  title: "Overtaek · Ember in motion",
+  description: "Reference-based Star Ember poses and a flexible 2D overtaking animation.",
   robots: { index: false, follow: false },
 };
 

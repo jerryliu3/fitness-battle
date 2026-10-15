@@ -1,25 +1,25 @@
-# Overtaek: fully 2D Ember prototypes
+# Overtaek: reference-based 2D Ember
 
-Open `/design/overtaek/2d`, also linked from the original `/design/overtaek` prototype. This is an isolated, unindexed design study. Production startup and the accepted 3D animation are unchanged.
+Open `/design/overtaek/2d`, linked from `/design/overtaek`. This isolated, unindexed study replaces the earlier three shaded concept explorations with one character based on the supplied front/turnaround and flying pose sheets. It does not alter production startup or the accepted 3D prototype.
 
-Three native SVG characters are available:
+## Character
 
-- **Cel Ember:** closest to the original gold Ember, with a curved flame crest and two solid shading planes. Recommended starting point for continuity and small-size clarity.
-- **Puff Ember:** rounder points, warmer orange, cheeks and a more open smile.
-- **Bolt Ember:** swept points, lime body, a dark outline and a graphic highlight, using the product's athletic color direction.
+`mascot.tsx` draws an editable SVG character. `rig.ts` contains the traced front silhouette and pose deformation. The ordinary left/right and lower points mirror around x=160 in a 320 × 360 view box; only the top crest is asymmetric. The body has one flat gold fill. Tiny dark-green oval eyes, eye catchlights, a quiet smile, and an open flying/celebration mouth follow the references. The orange edge/extrusion in the supplied images is omitted to retain the requested flat treatment. No source images are shipped in the application.
 
-All three retain five connected points and a face. `mascot.tsx` owns their editable contours, palette, clipped shadows and facial features. There are no raster assets, meshes, render libraries, SVG filters or new dependencies. The original artwork remains available in the existing prototype.
+The pose library shows front, approximately 45° turn, flying, braking and finish. It uses the same rig as the animation; there is no separate set of illustration assets. These are code interpretations of the reference poses, rather than raster cutouts.
 
-## Animation
+## Motion
 
-`prototype.tsx` reuses the accepted deterministic `overtaek-lab/motion.ts` timeline: preparation, acceleration, pass, braking and spring settle. OVERTAKE becomes OVERTAEK as Ember passes above E and E moves into the former K slot. The mascot starts facing front, turns using horizontal foreshortening and face displacement, then returns to front at rest. This is a 2D pose illusion rather than 3D rotation.
+The existing deterministic `overtaek-lab/motion.ts` timeline still controls acceleration, distance, overtaking, braking and damped wind response. The four ordinary points have separate local deformation fields around their own attached roots. They sweep backward or lift at different rates, while the torso and face stay stable. The crest bends under wind and rebounds under braking. One connected Bezier outline prevents gaps between body parts.
 
-The crest bends backward under acceleration and rebounds during braking. Smaller deformation affects the outer points; the connected body contour and its clipping path always deform together. The face is independent of the wind deformation. All variants use the same movement and controls so their design can be compared fairly.
+The roughly 45° orientation uses mild horizontal foreshortening, a small face displacement and a slightly narrower far eye. The points remain recognizable throughout the turn. At rest, the silhouette returns exactly to its original shape. A brief arm lift celebrates the finish.
 
-Wordmark and character close-up views include play/pause, replay, slow motion and scrubbing. Switching concept or view resets playback. Only the selected scene animates, capped at 30 updates per second. No animation runs while idle; leaving the viewport, hiding the document or unmounting stops playback. Reduced motion displays the finished pose and disables playback/scrubbing. Resize and font loading remeasure the letter positions.
+The initial view is a character close-up. Wordmark mode retains the OVERTAKE → OVERTAEK pass: Ember flies above E, E slides into K's old slot, and Ember settles to its right. Both modes include play/pause, replay, slow motion and deterministic scrubbing.
 
-The study lives under `apps/web/src/app/design/_studies/ember-2d/`; the route wrapper is `apps/web/src/app/design/overtaek/2d/page.tsx`. Colors are local concept explorations; no global product tokens change.
+## Runtime and review
 
-## Verification
+Only one SVG scene animates, capped at 30 updates per second. No idle render loop, WebGL, meshes, gradients, filters, raster animation assets or new dependencies are used. Hidden/offscreen playback pauses, unmount releases observers/listeners, reduced motion shows the finished pose, and font/resize events remeasure letter positions. No global product tokens change.
 
-`pnpm typecheck`, `pnpm build:web`, and the five shared motion/asset Vitest tests passed. Build preparation used one temporary worker and a 1.5 GB Node heap limit; the repository build configuration is unchanged. Browser review covered all three concepts, completed playback, slow motion, scrubbing to the passing pose, close-up, 320 px layout with no horizontal overflow, and navigation to the original prototype and back. No browser warnings or errors were observed. Native reduced-motion preference changes were not manually exercised.
+Focused rig tests cover balanced front points, independent movement with a fixed torso, bounded finite geometry throughout the timeline, and drift-free return to the original shape when scrubbing. The existing five motion/asset tests also apply.
+
+Verified with monorepo typecheck, production web build, eight focused tests, and browser review of close-up flight, slow motion, wordmark playback to the finished OVERTAEK order, and a 320 px phone layout with no horizontal overflow. No browser warnings/errors were observed. Native reduced-motion preference changes were not manually exercised. Build preparation uses one temporary worker and a 1.5 GB Node heap cap; repository build configuration is unchanged.

@@ -16,7 +16,7 @@ export default function OvertaekPrototypePage() {
       <Link href="/design">← Design lab</Link>
       <h1 style={{ fontSize: 24, margin: "24px 0 8px" }}>Overtaek loading prototype</h1>
       <p style={{ marginBottom: 24 }}>OVERTAKE becomes OVERTAEK. Ember makes the pass.</p>
-      <p style={{ marginBottom: 24 }}><Link href="/design/overtaek/2d">Explore three fully 2D Ember concepts →</Link></p>
+      <p style={{ marginBottom: 24 }}><Link href="/design/overtaek/2d">Explore the reference-based 2D Ember animation →</Link></p>
       <LoadingPrototype />
     </main>
   );
