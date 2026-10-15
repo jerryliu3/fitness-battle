@@ -9,6 +9,7 @@ import {
   setCategoryEnabled,
   setMasterEnabled,
   unregisterPush,
+  withPermissionStatus,
 } from "./prefs";
 
 const NOW = new Date("2026-10-15T12:00:00.000Z");
@@ -63,14 +64,50 @@ describe("notification preferences", () => {
     });
   });
 
+  it("reuses an existing stub token and can record a granted permission", () => {
+    const first = registerStubPush(defaultNotificationPreferences(NOW), "ios", NOW);
+    const again = registerStubPush(first, "ios", NOW, "granted");
+    expect(again.registration?.token).toBe(first.registration?.token);
+    expect(again.permissionStatus).toBe("granted");
+  });
+
   it("blocks delivery when master is off or unregistered", () => {
     let prefs = registerStubPush(defaultNotificationPreferences(NOW), "ios", NOW);
     prefs = setMasterEnabled(prefs, false, NOW);
     expect(canDeliverNotification(prefs, "week_summary")).toBe(false);
 
-    prefs = unregisterPush(registerStubPush(defaultNotificationPreferences(NOW), "android", NOW), NOW);
+    prefs = unregisterPush(
+      registerStubPush(defaultNotificationPreferences(NOW), "android", NOW),
+      NOW,
+    );
     expect(prefs.enabled).toBe(false);
     expect(prefs.registration).toBeNull();
+    expect(prefs.permissionStatus).toBe("prompt");
     expect(canDeliverNotification(prefs, "connection_alerts")).toBe(false);
+  });
+
+  it("keeps granted OS permission when unregistering", () => {
+    let prefs = registerStubPush(
+      defaultNotificationPreferences(NOW),
+      "web",
+      NOW,
+      "granted",
+    );
+    prefs = unregisterPush(prefs, NOW);
+    expect(prefs.enabled).toBe(false);
+    expect(prefs.registration).toBeNull();
+    expect(prefs.permissionStatus).toBe("granted");
+  });
+
+  it("does not deliver when permission is denied even if enabled is flipped", () => {
+    const prefs = withPermissionStatus(
+      {
+        ...registerStubPush(defaultNotificationPreferences(NOW), "web", NOW),
+        enabled: true,
+      },
+      "denied",
+      NOW,
+    );
+    expect(canDeliverNotification(prefs, "week_summary")).toBe(false);
   });
 });

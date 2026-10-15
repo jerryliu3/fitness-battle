@@ -3,7 +3,6 @@
 import { ThemeProvider } from "@/theme/theme-provider";
 import type { ReactNode } from "react";
 import { AuthProvider } from "./auth-context";
-import { NotificationProvider } from "./notification-context";
 
 export function Providers({
   initialTheme,
@@ -14,9 +13,7 @@ export function Providers({
 }) {
   return (
     <ThemeProvider initialTheme={initialTheme}>
-      <AuthProvider>
-        <NotificationProvider>{children}</NotificationProvider>
-      </AuthProvider>
+      <AuthProvider>{children}</AuthProvider>
     </ThemeProvider>
   );
 }

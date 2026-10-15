@@ -176,18 +176,6 @@ export function withPermissionStatus(
   };
 }
 
-export function withRegistration(
-  prefs: NotificationPreferences,
-  registration: PushRegistration | null,
-  now: Date = new Date(),
-): NotificationPreferences {
-  return {
-    ...prefs,
-    registration,
-    updatedAt: now.toISOString(),
-  };
-}
-
 /** Whether a category may deliver given current prefs + permission. */
 export function canDeliverNotification(
   prefs: NotificationPreferences,
@@ -214,26 +202,43 @@ export function createStubPushToken(
   return `stub-${platform}-${stamp}-${rand}`;
 }
 
+/**
+ * Arm push with a stub device token.
+ * Reuses an existing token for the same platform when present.
+ * `permissionStatus` defaults to `stub` (no OS grant); pass `granted` when
+ * the browser/OS already allowed notifications.
+ */
 export function registerStubPush(
   prefs: NotificationPreferences,
   platform: NotificationPlatform,
   now: Date = new Date(),
+  permissionStatus: PushPermissionStatus = "stub",
 ): NotificationPreferences {
-  const token = createStubPushToken(platform, now);
+  const existing =
+    prefs.registration?.platform === platform && prefs.registration.token
+      ? prefs.registration
+      : null;
   return {
     ...prefs,
     enabled: true,
-    permissionStatus: "stub",
-    registration: {
-      platform,
-      token,
-      registeredAt: now.toISOString(),
-      stub: true,
-    },
+    permissionStatus,
+    registration: existing
+      ? { ...existing, stub: true }
+      : {
+          platform,
+          token: createStubPushToken(platform, now),
+          registeredAt: now.toISOString(),
+          stub: true,
+        },
     updatedAt: now.toISOString(),
   };
 }
 
+/**
+ * Turn push off and clear the device registration.
+ * Preserves real OS permission (`granted` / `denied` / …); only a local
+ * `stub` status falls back to `prompt`.
+ */
 export function unregisterPush(
   prefs: NotificationPreferences,
   now: Date = new Date(),
@@ -242,9 +247,7 @@ export function unregisterPush(
     ...prefs,
     enabled: false,
     permissionStatus:
-      prefs.permissionStatus === "granted" || prefs.permissionStatus === "stub"
-        ? "prompt"
-        : prefs.permissionStatus,
+      prefs.permissionStatus === "stub" ? "prompt" : prefs.permissionStatus,
     registration: null,
     updatedAt: now.toISOString(),
   };

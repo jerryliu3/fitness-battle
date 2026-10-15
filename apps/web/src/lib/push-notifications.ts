@@ -1,6 +1,5 @@
 import {
   NOTIFICATION_STORAGE_KEY,
-  createStubPushToken,
   normalizeNotificationPreferences,
   parseNotificationPreferences,
   prepareNotificationDelivery,
@@ -47,20 +46,27 @@ function browserPermission(): PushPermissionStatus {
 export function loadNotificationPreferences(): NotificationPreferences {
   const prefs = readStored();
   const browser = browserPermission();
-  // Keep stub status when already stub-registered; otherwise mirror the browser.
+
+  // Local stub registration (no Notification API grant) stays as-is.
   if (prefs.permissionStatus === "stub" && prefs.registration?.stub) {
     return prefs;
   }
-  if (browser !== prefs.permissionStatus && browser !== "unsupported") {
+
+  if (browser === "unsupported") {
+    if (prefs.permissionStatus === "unknown") {
+      const next = withPermissionStatus(prefs, "unsupported");
+      writeStored(next);
+      return next;
+    }
+    return prefs;
+  }
+
+  if (browser !== prefs.permissionStatus) {
     const next = withPermissionStatus(prefs, browser);
     writeStored(next);
     return next;
   }
-  if (browser === "unsupported" && prefs.permissionStatus === "unknown") {
-    const next = withPermissionStatus(prefs, "unsupported");
-    writeStored(next);
-    return next;
-  }
+
   return prefs;
 }
 
@@ -77,12 +83,12 @@ export function saveNotificationPreferences(
  * device token. Live FCM/web-push endpoints are not wired yet.
  */
 export async function enableWebPush(): Promise<NotificationPreferences> {
-  let prefs = loadNotificationPreferences();
-  const hasApi = typeof window !== "undefined" && typeof Notification !== "undefined";
+  const prefs = loadNotificationPreferences();
+  const hasApi =
+    typeof window !== "undefined" && typeof Notification !== "undefined";
 
   if (!hasApi) {
-    prefs = registerStubPush(prefs, "web");
-    return saveNotificationPreferences(prefs);
+    return saveNotificationPreferences(registerStubPush(prefs, "web"));
   }
 
   let permission = Notification.permission;
@@ -91,38 +97,28 @@ export async function enableWebPush(): Promise<NotificationPreferences> {
   }
 
   if (permission === "denied") {
-    prefs = withPermissionStatus(
-      { ...prefs, enabled: false, registration: null },
-      "denied",
+    return saveNotificationPreferences(
+      withPermissionStatus(
+        { ...prefs, enabled: false, registration: null },
+        "denied",
+      ),
     );
-    return saveNotificationPreferences(prefs);
   }
 
   if (permission === "granted") {
-    const now = new Date();
-    prefs = {
-      ...prefs,
-      enabled: true,
-      permissionStatus: "granted",
-      registration: {
-        platform: "web",
-        token: createStubPushToken("web", now),
-        registeredAt: now.toISOString(),
-        stub: true,
-      },
-      updatedAt: now.toISOString(),
-    };
-    return saveNotificationPreferences(prefs);
+    return saveNotificationPreferences(
+      registerStubPush(prefs, "web", new Date(), "granted"),
+    );
   }
 
-  // Safari / restricted contexts may leave permission unsettled — still stub.
-  prefs = registerStubPush(prefs, "web");
-  return saveNotificationPreferences(prefs);
+  // Restricted contexts may leave permission unsettled — still stub.
+  return saveNotificationPreferences(registerStubPush(prefs, "web"));
 }
 
 export function disableWebPush(): NotificationPreferences {
-  const prefs = unregisterPush(loadNotificationPreferences());
-  return saveNotificationPreferences(prefs);
+  return saveNotificationPreferences(
+    unregisterPush(loadNotificationPreferences()),
+  );
 }
 
 export type DeliverResult =

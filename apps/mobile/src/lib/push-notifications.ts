@@ -1,13 +1,11 @@
 import {
   NOTIFICATION_STORAGE_KEY,
-  createStubPushToken,
   normalizeNotificationPreferences,
   parseNotificationPreferences,
   prepareNotificationDelivery,
   registerStubPush,
   serializeNotificationPreferences,
   unregisterPush,
-  withPermissionStatus,
   type NotificationDeliveryPayload,
   type NotificationPlatform,
   type NotificationPreferences,
@@ -64,14 +62,4 @@ export async function deliverNativeNotification(
   const prepared = prepareNotificationDelivery(prefs, payload);
   if (!prepared) return { ok: false, reason: "blocked" };
   return { ok: true, payload: prepared };
-}
-
-/** Reserved for when expo-notifications is added — keeps call sites stable. */
-export async function markPermissionUnsupported(): Promise<NotificationPreferences> {
-  const prefs = await loadNotificationPreferences();
-  return saveNotificationPreferences(withPermissionStatus(prefs, "unsupported"));
-}
-
-export function previewStubToken(platform: NotificationPlatform): string {
-  return createStubPushToken(platform, new Date());
 }

@@ -3,16 +3,29 @@
 import {
   NOTIFICATION_CATEGORIES,
   permissionLabel,
+  setCategoryEnabled,
+  type NotificationCategoryId,
+  type NotificationPreferences,
 } from "@fitness-battle/shared";
-import { useState } from "react";
-import { useNotifications } from "./notification-context";
+import { useEffect, useState } from "react";
+import {
+  deliverWebNotification,
+  disableWebPush,
+  enableWebPush,
+  loadNotificationPreferences,
+  saveNotificationPreferences,
+} from "@/lib/push-notifications";
 
 export function NotificationSettings() {
-  const { prefs, ready, setEnabled, setCategory, sendTest } = useNotifications();
+  const [prefs, setPrefs] = useState<NotificationPreferences | null>(null);
   const [note, setNote] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
-  if (!ready || !prefs) {
+  useEffect(() => {
+    setPrefs(loadNotificationPreferences());
+  }, []);
+
+  if (!prefs) {
     return (
       <section className="fb-card" id="notifications">
         <h2>Notifications</h2>
@@ -21,13 +34,25 @@ export function NotificationSettings() {
     );
   }
 
+  const current = prefs;
+
   async function onToggleMaster() {
+    const turningOn = !current.enabled;
     setBusy(true);
     setNote(null);
     try {
-      await setEnabled(!prefs!.enabled);
+      const next = turningOn ? await enableWebPush() : disableWebPush();
+      setPrefs(next);
+      if (turningOn && !next.enabled) {
+        setNote(
+          next.permissionStatus === "denied"
+            ? "Notifications are blocked in this browser. Allow them in site settings to arm push."
+            : "Could not arm push on this browser.",
+        );
+        return;
+      }
       setNote(
-        !prefs!.enabled
+        next.enabled
           ? "Push armed on this browser. Delivery still uses a stub token until a provider is wired."
           : "Push turned off on this device.",
       );
@@ -36,8 +61,22 @@ export function NotificationSettings() {
     }
   }
 
+  function onToggleCategory(category: NotificationCategoryId) {
+    setPrefs((prev) => {
+      if (!prev) return prev;
+      return saveNotificationPreferences(
+        setCategoryEnabled(prev, category, !prev.categories[category]),
+      );
+    });
+  }
+
   function onTest() {
-    const result = sendTest();
+    const result = deliverWebNotification({
+      category: "week_summary",
+      title: "Overtaek",
+      body: "Test push — delivery is stubbed on this device.",
+      path: "/you#notifications",
+    });
     if (!result.ok) {
       setNote("Turn notifications on and allow permission before testing.");
       return;
@@ -62,24 +101,22 @@ export function NotificationSettings() {
         <span className="fb-grow">
           Push notifications
           <small>
-            {permissionLabel(prefs.permissionStatus)}
-            {prefs.registration?.token
-              ? ` · ${prefs.registration.stub ? "stub" : "live"} token`
+            {permissionLabel(current.permissionStatus)}
+            {current.registration?.token
+              ? ` · ${current.registration.stub ? "stub" : "live"} token`
               : ""}
           </small>
         </span>
         <button
           type="button"
-          className={`fb-switch${prefs.enabled ? " on" : ""}`}
+          className={`fb-switch${current.enabled ? " on" : ""}`}
           role="switch"
-          aria-checked={prefs.enabled}
+          aria-checked={current.enabled}
           disabled={busy}
           onClick={() => void onToggleMaster()}
         >
           <span className="fb-switch-knob" />
-          <span className="fb-sr-only">
-            {prefs.enabled ? "On" : "Off"}
-          </span>
+          <span className="fb-sr-only">{current.enabled ? "On" : "Off"}</span>
         </button>
       </div>
 
@@ -91,17 +128,15 @@ export function NotificationSettings() {
           </span>
           <button
             type="button"
-            className={`fb-switch${prefs.categories[category.id] ? " on" : ""}`}
+            className={`fb-switch${current.categories[category.id] ? " on" : ""}`}
             role="switch"
-            aria-checked={prefs.categories[category.id]}
-            disabled={!prefs.enabled}
-            onClick={() =>
-              setCategory(category.id, !prefs.categories[category.id])
-            }
+            aria-checked={current.categories[category.id]}
+            disabled={!current.enabled}
+            onClick={() => onToggleCategory(category.id)}
           >
             <span className="fb-switch-knob" />
             <span className="fb-sr-only">
-              {prefs.categories[category.id] ? "On" : "Off"}
+              {current.categories[category.id] ? "On" : "Off"}
             </span>
           </button>
         </div>
@@ -110,7 +145,7 @@ export function NotificationSettings() {
       <button
         type="button"
         className="fb-btn-line"
-        disabled={!prefs.enabled}
+        disabled={!current.enabled}
         onClick={onTest}
       >
         Send test notification

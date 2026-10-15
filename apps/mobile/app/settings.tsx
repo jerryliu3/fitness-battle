@@ -62,9 +62,10 @@ export default function SettingsScreen() {
     id: (typeof NOTIFICATION_CATEGORIES)[number]["id"],
     enabled: boolean,
   ) {
-    if (!prefs) return;
+    // Read-modify-write from storage so rapid toggles don't clobber each other.
+    const current = await loadNotificationPreferences();
     const next = await saveNotificationPreferences(
-      setCategoryEnabled(prefs, id, enabled),
+      setCategoryEnabled(current, id, enabled),
     );
     setPrefs(next);
   }
