@@ -9,6 +9,7 @@ import {
   type Activity,
   type CompeteState,
   type GoalDistance,
+  type PeriodResult,
   type Rating,
   type SportId,
   type WaveEnrollment,
@@ -20,6 +21,40 @@ function asSport(value: string): SportId | null {
   return (SPORT_IDS as readonly string[]).includes(value)
     ? (value as SportId)
     : null;
+}
+
+function isAcked(row: PeriodResult): boolean {
+  return row.acknowledgedAt != null && row.acknowledgedAt !== "";
+}
+
+/** Merge snapshot + DB results; never drop snapshot-ahead rows after a laggy dual-write. */
+function mergePeriodResults(
+  snapshot: PeriodResult[],
+  fromDb: PeriodResult[],
+): PeriodResult[] {
+  const byId = new Map<string, PeriodResult>();
+  for (const row of snapshot) byId.set(row.id, row);
+  for (const row of fromDb) {
+    const existing = byId.get(row.id);
+    if (!existing) {
+      byId.set(row.id, row);
+      continue;
+    }
+    // Prefer acknowledged (dismissed reveal); else newer settledAt.
+    if (isAcked(existing) !== isAcked(row)) {
+      byId.set(row.id, isAcked(row) ? row : existing);
+      continue;
+    }
+    byId.set(
+      row.id,
+      existing.settledAt >= row.settledAt ? existing : row,
+    );
+  }
+  return [...byId.values()].sort(
+    (a, b) =>
+      b.periodStart.localeCompare(a.periodStart) ||
+      a.sport.localeCompare(b.sport),
+  );
 }
 
 const CLOUD_PROVIDERS = new Set([
@@ -301,37 +336,37 @@ export async function hydrateCompeteCollections(
   }
 
   if (resultRows && resultRows.length > 0) {
+    const fromDb = resultRows.flatMap((row) => {
+      const sport = asSport(String(row.sport));
+      const track =
+        row.track === "verified" || row.track === "open" ? row.track : null;
+      if (!sport || !track) return [];
+      const periodStart = String(row.period_start);
+      return [
+        {
+          id: periodResultId(periodStart, sport, track),
+          periodStart,
+          periodEnd: String(row.period_end),
+          sport,
+          track,
+          place: Number(row.place),
+          fieldSize: Number(row.field_size),
+          effort: Number(row.effort),
+          distanceM: Number(row.distance_m),
+          movingSec: Number(row.moving_sec),
+          eloBefore: Number(row.elo_before),
+          eloAfter: Number(row.elo_after),
+          frozen: Boolean(row.frozen),
+          settledAt: String(row.settled_at),
+          acknowledgedAt: row.acknowledged_at
+            ? String(row.acknowledged_at)
+            : null,
+        } satisfies PeriodResult,
+      ];
+    });
     next = {
       ...next,
-      periodResults: resultRows.flatMap((row) => {
-        const sport = asSport(String(row.sport));
-        const track = row.track === "verified" || row.track === "open"
-          ? row.track
-          : null;
-        if (!sport || !track) return [];
-        const periodStart = String(row.period_start);
-        return [
-          {
-            id: periodResultId(periodStart, sport, track),
-            periodStart,
-            periodEnd: String(row.period_end),
-            sport,
-            track,
-            place: Number(row.place),
-            fieldSize: Number(row.field_size),
-            effort: Number(row.effort),
-            distanceM: Number(row.distance_m),
-            movingSec: Number(row.moving_sec),
-            eloBefore: Number(row.elo_before),
-            eloAfter: Number(row.elo_after),
-            frozen: Boolean(row.frozen),
-            settledAt: String(row.settled_at),
-            acknowledgedAt: row.acknowledged_at
-              ? String(row.acknowledged_at)
-              : null,
-          },
-        ];
-      }),
+      periodResults: mergePeriodResults(next.periodResults, fromDb),
     };
   }
 
@@ -344,7 +379,7 @@ export async function hydrateCompeteCollections(
   }
 
   if (enrollmentRows && enrollmentRows.length > 0) {
-    const enrollments: WaveEnrollment[] = enrollmentRows.flatMap((row) => {
+    const fromDb: WaveEnrollment[] = enrollmentRows.flatMap((row) => {
       const sport = asSport(String(row.sport));
       if (!sport) return [];
       return [
@@ -360,7 +395,16 @@ export async function hydrateCompeteCollections(
         },
       ];
     });
-    next = { ...next, enrollments };
+    // Per sport: later wave wins; same wave prefers DB seating.
+    const bySport = new Map<SportId, WaveEnrollment>();
+    for (const item of next.enrollments) bySport.set(item.sport, item);
+    for (const item of fromDb) {
+      const existing = bySport.get(item.sport);
+      if (!existing || item.waveStart >= existing.waveStart) {
+        bySport.set(item.sport, item);
+      }
+    }
+    next = { ...next, enrollments: [...bySport.values()] };
   }
 
   return withDerivedPendingReveals(next);

@@ -37,5 +37,5 @@ Week reveal is derived from `acknowledged_at`, not a separate pending table.
 ## P5 thin snapshot + derive reveals
 
 - Account writes store `pendingRevealIds: []` — always re-derived from `periodResults.acknowledgedAt` on migrate/load.
-- GET overlays relational SoT (prefs, ratings, period_results, freezes, enrollments) when dual-write rows exist; activities stay snapshot-primary (sync can race).
+- GET overlays relational SoT (prefs, ratings, freezes, enrollments) when dual-write rows exist; `period_results` **merge** with the snapshot (prefer acknowledged / newer settledAt) so a laggy dual-write cannot erase snapshot-ahead weeks. Activities stay snapshot-primary (sync can race).
 - Bulky array omission from jsonb is deferred until hydrate has soaked — snapshot remains a fallback cache.
