@@ -186,6 +186,12 @@ async function resolveAuthSession(
       if (late) return { type: "success", url: late };
     }
 
+    // Never hand a non-matching success URL to the caller — that would mark the
+    // wrong tracker connected after the wait timed out.
+    if (session.type === "success") {
+      return { type: "success" };
+    }
+
     return session;
   } finally {
     watch.stop();
@@ -287,7 +293,11 @@ export async function startCloudTrackerConnect(
       };
     }
 
-    if (session.type === "success" && session.url) {
+    if (
+      session.type === "success" &&
+      session.url &&
+      isReturnUrlForProvider(session.url, provider)
+    ) {
       return resultFromReturnUrl(session.url, provider);
     }
 

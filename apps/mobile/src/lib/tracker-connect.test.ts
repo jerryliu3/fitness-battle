@@ -181,6 +181,28 @@ describe("startCloudTrackerConnect", () => {
     });
   });
 
+  it("does not mark connect success from another provider's auth-session URL", async () => {
+    const result = await startCloudTrackerConnect("oura", {
+      apiUrl: "https://example.com",
+      getAccessToken: async () => "token",
+      fetchFn: vi.fn(async () =>
+        Response.json({
+          authorizeUrl: "https://cloud.ouraring.com/oauth/authorize",
+        }),
+      ) as unknown as typeof fetch,
+      openAuthSession: vi.fn(async () => ({
+        type: "success",
+        url: "overtaek:///you?tracker=connected&provider=strava",
+      })),
+      onAppUrl: () => () => undefined,
+      returnUrlWaitMs: 20,
+    });
+    expect(result).toEqual({
+      ok: false,
+      message: "Authorize finished without a return URL. Try again.",
+    });
+  });
+
   it("does not treat another provider's deep link as success after dismiss", async () => {
     let handler: ((url: string) => void) | null = null;
     const resultPromise = startCloudTrackerConnect("oura", {
