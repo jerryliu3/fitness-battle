@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { CompeteProvider } from "@/components/compete-context";
-import { HomeLab } from "@/ux/home-lab/home-lab";
+import { HomeLab } from "@/app/design/_studies/home-lab/home-lab";
 
 export const metadata: Metadata = {
   title: "Adaptive home · Fitness Battle",

@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { SpatialLab } from "@/ux/spatial-lab/spatial-lab";
+import { SpatialLab } from "@/app/design/_studies/spatial-lab/spatial-lab";
 
 export const metadata: Metadata = {
   title: "Spatial leaderboards · Fitness design lab",

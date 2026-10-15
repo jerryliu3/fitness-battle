@@ -2,7 +2,7 @@
 
 Route: `/design/home?layout=trail|circuit|calendar|islands|today&source=sample|account`.
 
-This is a working design route in the existing Next app. Its implementation lives in `apps/web/src/ux/home-lab/`; `src/app/design/home/page.tsx` is the route wrapper. It uses CompeteState, counted activities, actual suggestions/lessons, Ace, the weekly board and the existing 3D Pursuit. The production and Expo home routes remain separate.
+This is a working design route in the existing Next app. Its implementation lives in `apps/web/src/app/design/_studies/home-lab/`; `src/app/design/home/page.tsx` is the route wrapper. It uses CompeteState, counted activities, actual suggestions/lessons, Ace, the weekly board and the existing 3D Pursuit. The production and Expo home routes remain separate.
 
 ## Compositions
 
