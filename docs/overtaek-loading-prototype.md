@@ -6,7 +6,7 @@ Product boot splash and design study share the OVERTAKE → OVERTAEK letter chor
 
 On play routes, `PhoneShell` shows `apps/web/src/shell/boot-splash.tsx` while compete state is loading **or** the overtake animation has not finished (`boot-gate.ts`). The animation always runs to completion even if app data is already ready. If the animation finishes first, a spinner appears under the settled OVERTAEK mark until data is ready.
 
-Letter travel still uses `features/overtaek/motion.ts` (pass, E shift, lift, settle). Ember’s deformation, crest, wind and trails come from `sampleEmber("dash", …)` stretched across the same 0→1 progress; clip `x`/`y` are zeroed so the stage host alone carries Ember across the wordmark (same pattern as `/design/mascot`). Background tabs pause until visible. Reduced motion jumps to the finished wordmark and releases the animation gate.
+Letter travel uses the short boot curve in `boot-splash-motion.ts` (~0.9 s): hold ready, zoom across, stop. Ember’s body samples the studio `dash` clip (windup → burst → rest) on that same progress; clip `x`/`y` are zeroed so the stage host alone carries Ember across the wordmark. Optical alignment lifts the SVG so the face matches capital height despite viewBox jump headroom. Background tabs pause until visible. Reduced motion jumps to the finished wordmark and releases the animation gate.
 
 The wordmark font is `--font-overtaek` (Nunito Sans 900) from the root layout. No WebGL mesh is used on the product splash.
 

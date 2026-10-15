@@ -48,13 +48,24 @@
 
 .boot-splash-ember {
   position: absolute;
-  inset: -0.08em -0.04em;
-  display: grid;
-  place-items: center;
+  inset: 0;
   will-change: transform;
 }
 
-.boot-splash-ember svg {
+.boot-splash-ember-align {
+  /*
+   * Ember's viewBox is taller than the drawn body (jump headroom above the crest).
+   * Pull the SVG up so the body fills the capital box instead of sitting on the baseline.
+   */
+  position: absolute;
+  left: 50%;
+  top: -0.38em;
+  width: 1.52em;
+  height: 1.52em;
+  transform: translateX(-50%);
+}
+
+.boot-splash-ember-align svg {
   display: block;
   width: 100%;
   height: 100%;

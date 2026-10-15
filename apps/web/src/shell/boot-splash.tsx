@@ -3,7 +3,8 @@
 import { useEffect, useRef, useState } from "react";
 import { EMBER_CLIPS, EMBER_REST, sampleEmber, type EmberPose } from "@fitness-battle/shared/mascot";
 import { Ember } from "@/components/mascot/ember";
-import { clamp, DURATION_MS, frameAt } from "@/features/overtaek/motion";
+import { clamp } from "@/features/overtaek/motion";
+import { BOOT_DURATION_MS, bootDashProgress, bootFrame } from "./boot-splash-motion";
 import "./boot-splash.css";
 
 type BootSplashProps = {
@@ -19,7 +20,7 @@ function bodyPose(pose: EmberPose): EmberPose {
 
 /**
  * Product boot splash: OVERTAKE → OVERTAEK with the shared vector Ember.
- * Letter travel stays on the overtake timeline; Ember’s body uses the studio `dash` clip.
+ * Letter travel uses the short boot curve; Ember’s body uses the studio `dash` clip.
  */
 export function BootSplash({ waiting = false, onAnimationComplete }: BootSplashProps) {
   const stageRef = useRef<HTMLDivElement>(null);
@@ -57,20 +58,17 @@ export function BootSplash({ waiting = false, onAnimationComplete }: BootSplashP
     function draw(progress: number, publishPose: boolean) {
       if (disposed || !wordRef.current) return;
       p = clamp(progress);
-      const frame = frameAt(p);
+      const frame = bootFrame(p);
       const l = layout;
-      const pass = frame.distance;
-      const overshoot = l.font * 0.23 * Math.sin(pass * Math.PI);
-      const windup = p > 0.12 && p < 0.31 ? -l.font * 0.045 * Math.sin(((p - 0.12) / 0.19) * Math.PI) : 0;
-      const dx = l.eWidth * pass + overshoot + windup + frame.settle * l.font;
-      const lift = l.font * 0.4 * frame.lift;
-      letter.style.transform = `translate(${-l.slotWidth * frame.eShift}px,${Math.sin(frame.eShift * Math.PI) * l.font * 0.045}px)`;
+      const dx = l.eWidth * frame.travel + l.font * 0.05 * frame.windup;
+      const lift = l.font * 0.14 * frame.lift;
+      letter.style.transform = `translate(${-l.slotWidth * frame.eShift}px,0)`;
       emberHost.style.transform = `translate(${dx}px,${-lift}px)`;
-      wordRef.current.setAttribute("aria-label", p < 0.5 ? "OVERTAKE" : "OVERTAEK");
+      wordRef.current.setAttribute("aria-label", frame.phase === "OVERTAEK" ? "OVERTAEK" : "OVERTAKE");
       if (publishPose) {
         setPose(
           bodyPose(
-            sampleEmber("dash", p * dashMs, {
+            sampleEmber("dash", bootDashProgress(p) * dashMs, {
               reducedMotion: media.matches,
             }),
           ),
@@ -119,7 +117,7 @@ export function BootSplash({ waiting = false, onAnimationComplete }: BootSplashP
       running = true;
       function tick(now: number) {
         if (!running || disposed) return;
-        const next = clamp(initial + (now - start) / DURATION_MS);
+        const next = clamp(initial + (now - start) / BOOT_DURATION_MS);
         const publish = now - lastPublish >= 1000 / 30 || next === 1;
         if (publish) lastPublish = now;
         draw(next, publish);
@@ -177,7 +175,10 @@ export function BootSplash({ waiting = false, onAnimationComplete }: BootSplashP
           <span aria-hidden="true">OVERTA</span>
           <span ref={slotRef} className="boot-splash-slot" aria-hidden="true">
             <span ref={emberHostRef} className="boot-splash-ember">
-              <Ember pose={pose} shadow={false} />
+              {/* Nested align layer: viewBox headroom sits the face too low in the em square. */}
+              <span className="boot-splash-ember-align">
+                <Ember pose={pose} shadow={false} />
+              </span>
             </span>
           </span>
           <span ref={eRef} className="boot-splash-e" aria-hidden="true">
