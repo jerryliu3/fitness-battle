@@ -102,6 +102,7 @@ export function BootSplash({ waiting = false, onAnimationComplete }: BootSplashP
       const outer = stage.getBoundingClientRect();
       const rect = slot.getBoundingClientRect();
       const font = Number.parseFloat(getComputedStyle(wordRef.current).fontSize);
+      if (!Number.isFinite(font) || font <= 0 || outer.width <= 0 || outer.height <= 0) return;
       const unit = font / 3.515;
       layout = {
         width: outer.width,
@@ -122,16 +123,27 @@ export function BootSplash({ waiting = false, onAnimationComplete }: BootSplashP
       running = false;
     }
 
+    /** Free WebGL and pin the static final mark (safe after completion or graphics loss). */
+    function settleStatic() {
+      pause();
+      abort?.abort();
+      renderer?.destroy();
+      renderer = null;
+      if (!disposed) setMode("static");
+      draw(1);
+    }
+
     function play() {
       if (disposed || running || completed.current) return;
       if (!renderer || media.matches) {
-        draw(1);
+        settleStatic();
         finish();
         return;
       }
       // Background tabs: wait until visible so the overtake is not spent off-screen.
       if (document.hidden) return;
       if (p >= 1) {
+        settleStatic();
         finish();
         return;
       }
@@ -148,7 +160,7 @@ export function BootSplash({ waiting = false, onAnimationComplete }: BootSplashP
         }
         if (next < 1) raf = requestAnimationFrame(tick);
         else {
-          pause();
+          settleStatic();
           finish();
         }
       }
@@ -156,13 +168,8 @@ export function BootSplash({ waiting = false, onAnimationComplete }: BootSplashP
     }
 
     function staticFinal() {
-      if (disposed || completed.current) return;
-      pause();
-      abort?.abort();
-      renderer?.destroy();
-      renderer = null;
-      if (!disposed) setMode("static");
-      draw(1);
+      if (disposed) return;
+      settleStatic();
       finish();
     }
 
@@ -178,8 +185,14 @@ export function BootSplash({ waiting = false, onAnimationComplete }: BootSplashP
       if (!disposed) setMode("loading");
       try {
         const next = await createEmberRenderer(canvas, request.signal, () => {
+          // Always reveal the static mark on context loss, even after animationComplete.
           if (!disposed) staticFinal();
         });
+        if (disposed || request.signal.aborted) {
+          next.destroy();
+          return;
+        }
+        await document.fonts.ready;
         if (disposed || request.signal.aborted) {
           next.destroy();
           return;
@@ -215,9 +228,6 @@ export function BootSplash({ waiting = false, onAnimationComplete }: BootSplashP
     media.addEventListener("change", preferenceChanged);
     document.addEventListener("visibilitychange", visibilityChanged);
     measure();
-    void document.fonts.ready.then(() => {
-      if (!disposed) measure();
-    });
     void initialize();
 
     return () => {
@@ -233,13 +243,7 @@ export function BootSplash({ waiting = false, onAnimationComplete }: BootSplashP
   }, []);
 
   return (
-    <div
-      className="boot-splash"
-      role="status"
-      aria-live="polite"
-      aria-busy="true"
-      aria-label={waiting ? "Overtaek is still loading" : "Overtaek"}
-    >
+    <div className="boot-splash" role="status" aria-live="polite" aria-busy="true">
       <div ref={stageRef} className="boot-splash-stage">
         <div ref={wordRef} className="boot-splash-word" role="img" aria-label="OVERTAKE">
           <span aria-hidden="true">OVERTA</span>
@@ -249,8 +253,14 @@ export function BootSplash({ waiting = false, onAnimationComplete }: BootSplashP
               className="boot-splash-fallback"
               hidden={mode === "animated"}
             >
-              {/* Plain img: boot path should not wait on next/image machinery. */}
-              <img src="/brand/mascots/star-ember.webp" width={480} height={480} alt="" />
+              <img
+                src="/brand/mascots/star-ember.webp"
+                width={480}
+                height={480}
+                alt=""
+                fetchPriority="high"
+                decoding="async"
+              />
             </span>
           </span>
           <span ref={eRef} className="boot-splash-e" aria-hidden="true">
@@ -259,9 +269,8 @@ export function BootSplash({ waiting = false, onAnimationComplete }: BootSplashP
         </div>
         <canvas
           ref={canvasRef}
-          className="boot-splash-canvas"
+          className={mode === "animated" ? "boot-splash-canvas is-live" : "boot-splash-canvas"}
           aria-hidden="true"
-          hidden={mode !== "animated"}
         />
         {[0, 1, 2].map((i) => (
           <span

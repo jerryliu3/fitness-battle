@@ -4,7 +4,7 @@ Product boot splash and design study share the same choreography: OVERTAKE → O
 
 ## Product boot splash
 
-On play routes, `PhoneShell` shows `apps/web/src/shell/boot-splash.tsx` while compete state is loading **or** the overtake animation has not finished (`boot-gate.ts`). The animation always runs to completion even if app data is already ready. If the animation finishes first, a spinner appears under the settled OVERTAEK mark until data is ready. Background tabs pause playback until visible so the overtake is not spent off-screen. Reduced motion, missing WebGL, or asset failure jump to the finished wordmark and release the animation gate.
+On play routes, `PhoneShell` shows `apps/web/src/shell/boot-splash.tsx` while compete state is loading **or** the overtake animation has not finished (`boot-gate.ts`). The animation always runs to completion even if app data is already ready. If the animation finishes first, a spinner appears under the settled OVERTAEK mark until data is ready. When the mark settles (or graphics fail), WebGL is torn down and the static Ember image holds the final pose so a later context loss cannot blank the slot. Background tabs pause playback until visible so the overtake is not spent off-screen. Reduced motion, missing WebGL, or asset failure jump to the finished wordmark and release the animation gate.
 
 Motion and WebGL live in `apps/web/src/features/overtaek/` (`motion.ts`, `renderer.ts`). The wordmark font is `--font-overtaek` (Nunito Sans 900) from the root layout.
 

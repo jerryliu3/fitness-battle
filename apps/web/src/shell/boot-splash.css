@@ -65,6 +65,12 @@
   height: 100%;
   pointer-events: none;
   z-index: 1;
+  /* Keep the canvas in layout (not display:none) so WebGL context stays alive while preparing. */
+  opacity: 0;
+}
+
+.boot-splash-canvas.is-live {
+  opacity: 1;
 }
 
 .boot-splash-trail {
