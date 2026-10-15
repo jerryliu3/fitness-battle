@@ -1,5 +1,10 @@
 import { mapSportToCategory, type ActivitySample, type CategorySlug } from "@fitness-battle/shared";
 import { NativeModules, Platform } from "react-native";
+import {
+  resolveAppleHealthKit,
+  type AppleHealthKitNative,
+  type AppleHealthKitPackageExport,
+} from "./apple-health-kit";
 import { mobileEnv } from "./env";
 import { supabase } from "./supabase";
 
@@ -21,58 +26,41 @@ type WorkoutLike = {
   duration?: number;
 };
 
-type AppleHealthKitNative = {
-  initHealthKit: (permissions: unknown, cb: (error: string) => void) => void;
-  getAnchoredWorkouts: (
-    options: { startDate: string; endDate?: string; type?: string },
-    cb: (
-      error: string | { message?: string } | null,
-      results: { data?: WorkoutLike[] },
-    ) => void,
-  ) => void;
+export type SyncAppleHealthDeps = {
+  platform: string;
+  nativeModule: AppleHealthKitNative | null | undefined;
+  packageExport: AppleHealthKitPackageExport | null | undefined;
+  apiUrl: string;
+  getAccessToken: () => Promise<{ token?: string; userId?: string }>;
+  fetchFn: typeof fetch;
 };
 
-type AppleHealthKitModule = AppleHealthKitNative & {
-  Constants: { Permissions: { Workout: string } };
-};
-
-/**
- * react-native-health Object.assigns NativeModules.AppleHealthKit at import time.
- * Under React Native New Architecture those modules are lazy, so the package
- * export ends up with Constants only and initHealthKit is undefined. Re-bind
- * from NativeModules at call time.
- */
-function loadAppleHealthKit(): AppleHealthKitModule | "unavailable" | "unsupported" {
-  if (Platform.OS !== "ios") return "unsupported";
-
-  let constants: AppleHealthKitModule["Constants"] | undefined;
+function readReactNativeHealthPackage(): AppleHealthKitPackageExport | null {
   try {
-    const mod = require("react-native-health") as {
-      Constants?: AppleHealthKitModule["Constants"];
-      default?: { Constants?: AppleHealthKitModule["Constants"] };
-    };
-    constants = mod.Constants ?? mod.default?.Constants;
+    return require("react-native-health") as AppleHealthKitPackageExport;
   } catch {
-    return "unavailable";
+    return null;
   }
+}
 
-  const native = NativeModules.AppleHealthKit as AppleHealthKitNative | undefined;
-  if (
-    typeof native?.initHealthKit !== "function" ||
-    typeof native?.getAnchoredWorkouts !== "function" ||
-    !constants?.Permissions?.Workout
-  ) {
-    return "unavailable";
-  }
-
+function defaultAppleHealthDeps(): SyncAppleHealthDeps {
   return {
-    initHealthKit: native.initHealthKit.bind(native),
-    getAnchoredWorkouts: native.getAnchoredWorkouts.bind(native),
-    Constants: constants,
+    platform: Platform.OS,
+    nativeModule: NativeModules.AppleHealthKit as AppleHealthKitNative | undefined,
+    packageExport: readReactNativeHealthPackage(),
+    apiUrl: mobileEnv.apiUrl,
+    getAccessToken: async () => {
+      const { data } = await supabase.auth.getSession();
+      return {
+        token: data.session?.access_token,
+        userId: data.session?.user.id,
+      };
+    },
+    fetchFn: fetch,
   };
 }
 
-function sampleFromWorkout(
+export function sampleFromWorkout(
   provider: "apple_health" | "google_health",
   raw: WorkoutLike,
   sportHint: string,
@@ -107,18 +95,18 @@ function sampleFromWorkout(
 async function postIngest(
   provider: "apple_health" | "google_health",
   activities: ActivitySample[],
+  deps: Pick<SyncAppleHealthDeps, "apiUrl" | "getAccessToken" | "fetchFn">,
 ): Promise<DeviceSyncResult> {
-  const { data } = await supabase.auth.getSession();
-  const token = data.session?.access_token;
+  const auth = await deps.getAccessToken();
   const headers: Record<string, string> = { "Content-Type": "application/json" };
-  if (token) headers.Authorization = `Bearer ${token}`;
-  const response = await fetch(`${mobileEnv.apiUrl}/api/fitness/ingest`, {
+  if (auth.token) headers.Authorization = `Bearer ${auth.token}`;
+  const response = await deps.fetchFn(`${deps.apiUrl}/api/fitness/ingest`, {
     method: "POST",
     headers,
     body: JSON.stringify({
       provider,
       activities,
-      userId: data.session?.user.id,
+      userId: auth.userId,
     }),
   });
   if (!response.ok) {
@@ -138,12 +126,19 @@ function healthKitErrorMessage(error: unknown): string {
   return "Apple Health sync failed.";
 }
 
-export async function syncAppleHealth(): Promise<DeviceSyncResult> {
-  const health = loadAppleHealthKit();
-  if (health === "unsupported") {
+export async function syncAppleHealth(
+  deps: SyncAppleHealthDeps = defaultAppleHealthDeps(),
+): Promise<DeviceSyncResult> {
+  const kit = resolveAppleHealthKit({
+    platform: deps.platform,
+    nativeModule: deps.nativeModule,
+    packageExport: deps.packageExport,
+  });
+
+  if (kit === "unsupported") {
     return { ok: false, message: "Apple Health is only available on iOS.", count: 0 };
   }
-  if (health === "unavailable") {
+  if (kit === "unavailable") {
     return {
       ok: false,
       message:
@@ -157,21 +152,21 @@ export async function syncAppleHealth(): Promise<DeviceSyncResult> {
   let workouts: WorkoutLike[];
   try {
     workouts = await new Promise<WorkoutLike[]>((resolve, reject) => {
-      health.initHealthKit(
-        { permissions: { read: [health.Constants.Permissions.Workout], write: [] } },
+      kit.initHealthKit(
+        { permissions: { read: [kit.Constants.Permissions.Workout], write: [] } },
         (error) => {
           if (error) {
             reject(new Error(healthKitErrorMessage(error)));
             return;
           }
-          health.getAnchoredWorkouts(
+          kit.getAnchoredWorkouts(
             { startDate, endDate, type: "Workout" },
             (workoutError, results) => {
               if (workoutError) {
                 reject(new Error(healthKitErrorMessage(workoutError)));
                 return;
               }
-              resolve(results?.data ?? []);
+              resolve((results?.data ?? []) as WorkoutLike[]);
             },
           );
         },
@@ -197,7 +192,7 @@ export async function syncAppleHealth(): Promise<DeviceSyncResult> {
   if (activities.length === 0) {
     return { ok: true, message: "Apple Health returned no mapped workouts.", count: 0 };
   }
-  return postIngest("apple_health", activities);
+  return postIngest("apple_health", activities, deps);
 }
 
 const HEALTH_CONNECT_SPORTS: Record<string, string> = {
@@ -298,5 +293,15 @@ export async function syncHealthConnect(): Promise<DeviceSyncResult> {
   if (activities.length === 0) {
     return { ok: true, message: "Health Connect returned no mapped workouts.", count: 0 };
   }
-  return postIngest("google_health", activities);
+  return postIngest("google_health", activities, {
+    apiUrl: mobileEnv.apiUrl,
+    getAccessToken: async () => {
+      const { data } = await supabase.auth.getSession();
+      return {
+        token: data.session?.access_token,
+        userId: data.session?.user.id,
+      };
+    },
+    fetchFn: fetch,
+  });
 }

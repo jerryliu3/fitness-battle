@@ -10,7 +10,7 @@
     "ios": "expo start --ios",
     "typecheck": "tsc --noEmit",
     "lint": "echo 'no lint configured'",
-    "test": "echo 'no mobile unit tests yet'",
+    "test": "vitest run",
     "eas:build:ios": "npx eas-cli@latest build --platform ios --profile production",
     "eas:submit:ios": "npx eas-cli@latest submit --platform ios --profile production --latest"
   },
@@ -55,6 +55,7 @@
   "devDependencies": {
     "@types/node": "^20",
     "@types/react": "~19.1.10",
-    "typescript": "^5.9.2"
+    "typescript": "^5.9.2",
+    "vitest": "^3.2.4"
   }
 }
