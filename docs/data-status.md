@@ -34,20 +34,28 @@ Separate Supabase project from battles (`rankings-db/`, hosted `pzadctqmyekkydte
 | Hosted | README points at the live project; UI needs `NEXT_PUBLIC_RANKINGS_*` env |
 | Athlete identity merge | Out of scope — same person can appear twice across events |
 
-## Battles Supabase (`supabase/`)
+## Compete persistence (signed-in)
 
 | Item | Status |
 | --- | --- |
-| Profiles / battles / periods / standings / activities | Schema present |
-| Join RPC | `join_battle_by_code` |
-| Create battle + period seed | `create_battle` (additive migration) |
-| Period roll + late joiners | Fixed in additive migration |
-| Score recompute from activities | `recompute_battle_standings` |
-| Wired to play UI | **Not yet** — play UI still uses the local compete engine |
+| Account snapshot | `compete_snapshots` — `demoNow` stripped on `/api/compete` read/write |
+| Relational normalize | Stacked follow-ups: period_results → activities → enrollments → thin snapshot → server rollClock |
+| Density matching | Still per-viewer (not global standings) |
+
+See [compete-persistence.md](compete-persistence.md).
+
+## Battles Supabase (`supabase/`) — **not the play path**
+
+Invite-code `battles` / `periods` / `standings` remain from the early scaffold. **Do not migrate the weekly compete product onto them.**
+
+| Item | Status |
+| --- | --- |
+| Schema / join RPC / recompute | Present |
+| Wired to play UI | **No — intentionally parked** |
 
 ## What to load next
 
 1. Apply `packages/rankings/imports/*.import.sql` with `RANKINGS_DATABASE_URL` (see `docs/ingestion.md`).
 2. A public half-marathon list, plus New York, Tokyo, and Sydney once a results list is on the page.
-3. Persist compete state (or battles standings) per authenticated user once Supabase env is live.
+3. Continue the compete normalize PR stack (period_results → activities → enrollments).
 4. Point `NEXT_PUBLIC_USE_DEMO_DATA=false` plus Strava keys and the service role at a real athlete backfill. Token storage and score recompute are already wired for that mode.

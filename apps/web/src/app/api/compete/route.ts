@@ -1,5 +1,9 @@
 import { NextResponse } from "next/server";
-import { isCompeteState, migrateCompeteState } from "@fitness-battle/shared";
+import {
+  isCompeteState,
+  migrateCompeteState,
+  sanitizeCompeteStateForAccount,
+} from "@fitness-battle/shared";
 import { resolveRequestUserId } from "@/lib/auth/request-user";
 import { createClient } from "@/lib/supabase/server";
 
@@ -21,7 +25,7 @@ export async function GET(request: Request) {
     return NextResponse.json({ state: null, updatedAt: null });
   }
   return NextResponse.json({
-    state: migrateCompeteState(data.state),
+    state: sanitizeCompeteStateForAccount(migrateCompeteState(data.state)),
     updatedAt: data.updated_at,
   });
 }
@@ -41,7 +45,8 @@ export async function PUT(request: Request) {
   if (!body || !isCompeteState(body.state)) {
     return NextResponse.json({ error: "invalid_state" }, { status: 400 });
   }
-  const state = migrateCompeteState(body.state);
+  // Never persist QA demoNow on the account document.
+  const state = sanitizeCompeteStateForAccount(migrateCompeteState(body.state));
   const encoded = JSON.stringify(state);
   if (encoded.length > 500_000) {
     return NextResponse.json({ error: "state_too_large" }, { status: 413 });
