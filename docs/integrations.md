@@ -28,6 +28,8 @@ Tables: `notification_preferences`, `push_devices`, `notification_outbox`. Route
 
 API auth: cookie session (web) or `Authorization: Bearer <access_token>` (mobile). The request-scoped Supabase client must carry that Bearer so RLS can write `push_devices`.
 
+Migrations under `supabase/migrations/` are applied by `.github/workflows/supabase-migrate.yml` on push to `main` (needs GitHub Actions secrets `SUPABASE_ACCESS_TOKEN`, `SUPABASE_PROJECT_REF`, `SUPABASE_DB_PASSWORD`). You can also enable Supabase → Project Settings → Integrations → GitHub for the same effect.
+
 Product hooks (web play shell):
 
 | Category | When |
