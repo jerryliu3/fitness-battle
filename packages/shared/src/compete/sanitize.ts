@@ -19,8 +19,8 @@ export function stripDurableCrewBoard(state: CompeteState): CompeteState {
 }
 
 /**
- * Account write shape: no demoNow, no durable crewBoard, no pendingRevealIds.
- * Reveal ids are always derived from periodResults.acknowledgedAt.
+ * Account write shape before relational persist: no demoNow, no durable
+ * crewBoard, no pendingRevealIds. Collections stay so dual-write can run.
  */
 export function prepareCompeteStateForAccount(
   state: CompeteState,
@@ -28,6 +28,35 @@ export function prepareCompeteStateForAccount(
   const cleaned = stripDurableCrewBoard(sanitizeCompeteStateForAccount(state));
   if (cleaned.pendingRevealIds.length === 0) return cleaned;
   return { ...cleaned, pendingRevealIds: [] };
+}
+
+/**
+ * Stored snapshot after successful relational persist.
+ * Bulky dual-written collections live in tables; GET hydrates them back.
+ * Sleep / health / links / duels / readiness / clock stay in jsonb for now.
+ */
+export function thinCompeteStateForAccount(state: CompeteState): CompeteState {
+  const prepared = prepareCompeteStateForAccount(state);
+  return {
+    ...prepared,
+    activities: [],
+    periodResults: [],
+    enrollments: [],
+    frozenPeriods: [],
+    pendingRevealIds: [],
+    crewBoard: null,
+    demoNow: null,
+  };
+}
+
+/** True when the stored jsonb still carries dual-written bulk collections. */
+export function isFatCompeteSnapshot(state: CompeteState): boolean {
+  return (
+    state.activities.length > 0 ||
+    state.periodResults.length > 0 ||
+    state.enrollments.length > 0 ||
+    state.frozenPeriods.length > 0
+  );
 }
 
 /** Recompute pendingRevealIds after relational hydrate / migrate. */

@@ -4,12 +4,14 @@ import {
   periodResultId,
   prepareCompeteStateForAccount,
   provenanceOf,
+  PROVIDER_IDS,
   SPORT_IDS,
   withDerivedPendingReveals,
   type Activity,
   type CompeteState,
   type GoalDistance,
   type PeriodResult,
+  type ProviderId,
   type Rating,
   type SportId,
   type WaveEnrollment,
@@ -21,6 +23,37 @@ function asSport(value: string): SportId | null {
   return (SPORT_IDS as readonly string[]).includes(value)
     ? (value as SportId)
     : null;
+}
+
+function asActivitySource(label: string): Activity["source"] {
+  if ((PROVIDER_IDS as readonly string[]).includes(label)) {
+    return label as ProviderId;
+  }
+  if (label === "history" || label === "manual") return label;
+  return "manual";
+}
+
+function asProvenance(
+  value: unknown,
+): NonNullable<Activity["provenance"]> {
+  if (
+    value === "recorded" ||
+    value === "imported" ||
+    value === "manual" ||
+    value === "demo"
+  ) {
+    return value;
+  }
+  return "recorded";
+}
+
+function asDisposition(
+  value: unknown,
+): NonNullable<Activity["disposition"]> {
+  if (value === "counted" || value === "pending" || value === "excluded") {
+    return value;
+  }
+  return "counted";
 }
 
 function isAcked(row: PeriodResult): boolean {
@@ -95,8 +128,8 @@ function splitCompeteKey(activity: Activity): {
 }
 
 /**
- * Dual-write durable prefs / ratings / settled weeks / activities.
- * Snapshot jsonb stays the full document — additive SoT only.
+ * Dual-write durable prefs / ratings / settled weeks / activities / enrollments.
+ * Caller stores a thin snapshot after this succeeds.
  * Never deletes activity rows (sync may race ahead of the blob).
  */
 export async function persistCompeteCore(
@@ -250,8 +283,8 @@ export async function persistCompeteCore(
 
 /**
  * Overlay dual-written relational SoT onto the snapshot document.
- * Snapshot arrays remain a cache; when prefs/results/enrollments/ratings
- * rows exist they win. Bulky activity rows stay snapshot-primary (sync races).
+ * When athlete_prefs exists, tables are authoritative for dual-written
+ * collections (thin snapshots store those arrays empty).
  */
 export async function hydrateCompeteCollections(
   db: Db,
@@ -265,6 +298,7 @@ export async function hydrateCompeteCollections(
     { data: resultRows },
     { data: freezeRows },
     { data: enrollmentRows },
+    { data: activityRows },
   ] = await Promise.all([
     db
       .from("profiles")
@@ -280,9 +314,19 @@ export async function hydrateCompeteCollections(
       .order("period_start", { ascending: false }),
     db.from("period_freezes").select("period_start").eq("user_id", userId),
     db.from("wave_enrollments").select("*").eq("user_id", userId),
+    db
+      .from("activities")
+      .select(
+        "compete_key, sport, started_at, distance_m, moving_sec, avg_hr, verified, provenance, disposition, disposition_reason, source_label, provider",
+      )
+      .eq("user_id", userId)
+      .not("compete_key", "is", null)
+      .order("started_at", { ascending: false })
+      .limit(2000),
   ]);
 
   let next = state;
+  const relational = Boolean(prefs);
 
   if (profile) {
     const primary = asSport(String(profile.primary_sport ?? ""));
@@ -311,6 +355,7 @@ export async function hydrateCompeteCollections(
               deadline: String(prefs.training_goal_deadline),
             }
           : null,
+      frozenPeriods: (freezeRows ?? []).map((row) => String(row.period_start)),
     };
   }
 
@@ -335,51 +380,48 @@ export async function hydrateCompeteCollections(
     };
   }
 
-  if (resultRows && resultRows.length > 0) {
-    const fromDb = resultRows.flatMap((row) => {
-      const sport = asSport(String(row.sport));
-      const track =
-        row.track === "verified" || row.track === "open" ? row.track : null;
-      if (!sport || !track) return [];
-      const periodStart = String(row.period_start);
-      return [
-        {
-          id: periodResultId(periodStart, sport, track),
-          periodStart,
-          periodEnd: String(row.period_end),
-          sport,
-          track,
-          place: Number(row.place),
-          fieldSize: Number(row.field_size),
-          effort: Number(row.effort),
-          distanceM: Number(row.distance_m),
-          movingSec: Number(row.moving_sec),
-          eloBefore: Number(row.elo_before),
-          eloAfter: Number(row.elo_after),
-          frozen: Boolean(row.frozen),
-          settledAt: String(row.settled_at),
-          acknowledgedAt: row.acknowledged_at
-            ? String(row.acknowledged_at)
-            : null,
-        } satisfies PeriodResult,
-      ];
-    });
+  const fromDbResults = (resultRows ?? []).flatMap((row) => {
+    const sport = asSport(String(row.sport));
+    const track =
+      row.track === "verified" || row.track === "open" ? row.track : null;
+    if (!sport || !track) return [];
+    const periodStart = String(row.period_start);
+    return [
+      {
+        id: periodResultId(periodStart, sport, track),
+        periodStart,
+        periodEnd: String(row.period_end),
+        sport,
+        track,
+        place: Number(row.place),
+        fieldSize: Number(row.field_size),
+        effort: Number(row.effort),
+        distanceM: Number(row.distance_m),
+        movingSec: Number(row.moving_sec),
+        eloBefore: Number(row.elo_before),
+        eloAfter: Number(row.elo_after),
+        frozen: Boolean(row.frozen),
+        settledAt: String(row.settled_at),
+        acknowledgedAt: row.acknowledged_at
+          ? String(row.acknowledged_at)
+          : null,
+      } satisfies PeriodResult,
+    ];
+  });
+  if (relational) {
     next = {
       ...next,
-      periodResults: mergePeriodResults(next.periodResults, fromDb),
+      periodResults: mergePeriodResults([], fromDbResults),
+    };
+  } else if (fromDbResults.length > 0) {
+    next = {
+      ...next,
+      periodResults: mergePeriodResults(next.periodResults, fromDbResults),
     };
   }
 
-  // Empty freezes are meaningful only once dual-write has created prefs.
-  if (prefs && freezeRows) {
-    next = {
-      ...next,
-      frozenPeriods: freezeRows.map((row) => String(row.period_start)),
-    };
-  }
-
-  if (enrollmentRows && enrollmentRows.length > 0) {
-    const fromDb: WaveEnrollment[] = enrollmentRows.flatMap((row) => {
+  const fromDbEnrollments: WaveEnrollment[] = (enrollmentRows ?? []).flatMap(
+    (row) => {
       const sport = asSport(String(row.sport));
       if (!sport) return [];
       return [
@@ -394,17 +436,58 @@ export async function hydrateCompeteCollections(
           crewId: row.crew_id ? String(row.crew_id) : null,
         },
       ];
-    });
-    // Per sport: later wave wins; same wave prefers DB seating.
+    },
+  );
+  if (relational) {
+    next = { ...next, enrollments: fromDbEnrollments };
+  } else if (fromDbEnrollments.length > 0) {
     const bySport = new Map<SportId, WaveEnrollment>();
     for (const item of next.enrollments) bySport.set(item.sport, item);
-    for (const item of fromDb) {
+    for (const item of fromDbEnrollments) {
       const existing = bySport.get(item.sport);
       if (!existing || item.waveStart >= existing.waveStart) {
         bySport.set(item.sport, item);
       }
     }
     next = { ...next, enrollments: [...bySport.values()] };
+  }
+
+  const fromDbActivities: Activity[] = (activityRows ?? []).flatMap((row) => {
+    const sport = asSport(String(row.sport ?? ""));
+    const competeKey = row.compete_key ? String(row.compete_key) : "";
+    if (!sport || !competeKey) return [];
+    const sourceLabel = String(row.source_label ?? row.provider ?? "manual");
+    return [
+      {
+        id: competeKey,
+        sport,
+        startedAt: String(row.started_at),
+        distanceM: Number(row.distance_m ?? 0),
+        movingSec: Number(row.moving_sec ?? 0),
+        avgHr: row.avg_hr == null ? null : Number(row.avg_hr),
+        verified: Boolean(row.verified),
+        source: asActivitySource(sourceLabel),
+        provenance: asProvenance(row.provenance),
+        disposition: asDisposition(row.disposition),
+        dispositionReason: row.disposition_reason
+          ? String(row.disposition_reason)
+          : undefined,
+      } satisfies Activity,
+    ];
+  });
+  if (relational || fromDbActivities.length > 0) {
+    const byId = new Map<string, Activity>();
+    for (const activity of fromDbActivities) byId.set(activity.id, activity);
+    // Keep snapshot-only ids (client ahead of last dual-write / fat cutover).
+    for (const activity of next.activities) {
+      if (!byId.has(activity.id)) byId.set(activity.id, activity);
+    }
+    next = {
+      ...next,
+      activities: [...byId.values()].sort((a, b) =>
+        b.startedAt.localeCompare(a.startedAt),
+      ),
+    };
   }
 
   return withDerivedPendingReveals(next);

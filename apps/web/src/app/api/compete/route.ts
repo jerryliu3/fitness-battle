@@ -1,11 +1,13 @@
 import { NextResponse } from "next/server";
 import {
   isCompeteState,
+  isFatCompeteSnapshot,
   migrateCompeteState,
   prepareCompeteStateForAccount,
   rollClock,
   sanitizeCompeteStateForAccount,
   stripDurableCrewBoard,
+  thinCompeteStateForAccount,
   withDerivedPendingReveals,
   type CompeteState,
 } from "@fitness-battle/shared";
@@ -17,13 +19,16 @@ import {
 } from "@/lib/compete-persist";
 import { createClient } from "@/lib/supabase/server";
 
-/** Durable account document: strip demoNow / crewBoard / pendingRevealIds. */
-function accountWriteState(state: CompeteState): CompeteState {
+/** In-memory account shape used for rollClock + dual-write. */
+function accountLiveState(state: CompeteState): CompeteState {
   return prepareCompeteStateForAccount(state);
 }
 
-function sameCompeteDocument(left: CompeteState, right: CompeteState): boolean {
-  return JSON.stringify(accountWriteState(left)) === JSON.stringify(accountWriteState(right));
+function sameThinDocument(left: CompeteState, right: CompeteState): boolean {
+  return (
+    JSON.stringify(thinCompeteStateForAccount(left)) ===
+    JSON.stringify(thinCompeteStateForAccount(right))
+  );
 }
 
 export async function GET(request: Request) {
@@ -47,28 +52,41 @@ export async function GET(request: Request) {
   const base = withDerivedPendingReveals(
     sanitizeCompeteStateForAccount(migrateCompeteState(data.state)),
   );
+  const fatSnapshot = isFatCompeteSnapshot(base);
 
   try {
     const hydrated = await hydrateCompeteCollections(supabase, userId, base);
-    // Settle weeks on the server (wall clock — demoNow already stripped).
     const rolled = withDerivedPendingReveals(rollClock(hydrated));
     const state = await hydrateCrewBoard(supabase, userId, rolled);
+    const settled = !sameThinDocument(hydrated, state);
 
-    if (!sameCompeteDocument(hydrated, state)) {
-      const stored = accountWriteState(state);
+    if (settled || fatSnapshot) {
+      const live = accountLiveState(state);
       const updatedAt = new Date().toISOString();
-      const { error: saveError } = await supabase.from("compete_snapshots").upsert({
-        user_id: userId,
-        state: stored,
-        updated_at: updatedAt,
-      });
-      if (!saveError) {
-        try {
-          await persistCompeteCore(supabase, userId, stored);
-        } catch {
-          // Snapshot advanced; relational can catch up on the next PUT.
-        }
-        return NextResponse.json({ state, updatedAt, settled: true });
+      try {
+        await persistCompeteCore(supabase, userId, live);
+        const { error: saveError } = await supabase
+          .from("compete_snapshots")
+          .upsert({
+            user_id: userId,
+            state: thinCompeteStateForAccount(live),
+            updated_at: updatedAt,
+          });
+        if (saveError) throw new Error(saveError.message);
+        return NextResponse.json({
+          state,
+          updatedAt,
+          settled,
+          thinned: true,
+        });
+      } catch {
+        // Relational/thin rewrite failed — still return live state to the client.
+        return NextResponse.json({
+          state,
+          updatedAt: data.updated_at,
+          settled,
+          thinned: false,
+        });
       }
     }
 
@@ -76,9 +94,9 @@ export async function GET(request: Request) {
       state,
       updatedAt: data.updated_at,
       settled: false,
+      thinned: false,
     });
   } catch {
-    // Hydrate failed — still settle from the snapshot cache.
     const state = withDerivedPendingReveals(
       rollClock(stripDurableCrewBoard(base)),
     );
@@ -86,6 +104,7 @@ export async function GET(request: Request) {
       state,
       updatedAt: data.updated_at,
       settled: false,
+      thinned: false,
     });
   }
 }
@@ -106,41 +125,55 @@ export async function PUT(request: Request) {
     return NextResponse.json({ error: "invalid_state" }, { status: 400 });
   }
 
-  // Roll before store so a Monday-crossing save settles server-side.
-  const state = accountWriteState(
+  const live = accountLiveState(
     rollClock(prepareCompeteStateForAccount(migrateCompeteState(body.state))),
   );
-  const encoded = JSON.stringify(state);
+  const encoded = JSON.stringify(live);
   if (encoded.length > 500_000) {
     return NextResponse.json({ error: "state_too_large" }, { status: 413 });
   }
   const supabase = await createClient();
   const updatedAt = new Date().toISOString();
 
-  const { error } = await supabase.from("compete_snapshots").upsert({
-    user_id: userId,
-    state,
-    updated_at: updatedAt,
-  });
-  if (error) {
-    return NextResponse.json({ error: "snapshot_not_saved", persisted: false }, { status: 500 });
-  }
-
   try {
-    await persistCompeteCore(supabase, userId, state);
+    await persistCompeteCore(supabase, userId, live);
+    const { error } = await supabase.from("compete_snapshots").upsert({
+      user_id: userId,
+      state: thinCompeteStateForAccount(live),
+      updated_at: updatedAt,
+    });
+    if (error) {
+      return NextResponse.json(
+        { error: "snapshot_not_saved", persisted: false },
+        { status: 500 },
+      );
+    }
+    return NextResponse.json({
+      ok: true,
+      persisted: true,
+      updatedAt,
+      relational: true,
+      thinned: true,
+    });
   } catch {
+    // Keep a full prepared document so client data is not lost when tables lag.
+    const { error } = await supabase.from("compete_snapshots").upsert({
+      user_id: userId,
+      state: live,
+      updated_at: updatedAt,
+    });
+    if (error) {
+      return NextResponse.json(
+        { error: "snapshot_not_saved", persisted: false },
+        { status: 500 },
+      );
+    }
     return NextResponse.json({
       ok: true,
       persisted: true,
       updatedAt,
       relational: false,
+      thinned: false,
     });
   }
-
-  return NextResponse.json({
-    ok: true,
-    persisted: true,
-    updatedAt,
-    relational: true,
-  });
 }
