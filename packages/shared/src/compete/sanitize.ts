@@ -19,9 +19,8 @@ export function stripDurableCrewBoard(state: CompeteState): CompeteState {
 }
 
 /**
- * Account write shape before relational persist: no demoNow, no durable
- * crewBoard, no pendingRevealIds. Activities may still be present in memory
- * so they can be upserted into `public.activities`.
+ * Shape used before relational persist: no demoNow, no durable crewBoard,
+ * no pendingRevealIds (derived from acknowledgedAt).
  */
 export function prepareCompeteStateForAccount(
   state: CompeteState,
@@ -32,8 +31,8 @@ export function prepareCompeteStateForAccount(
 }
 
 /**
- * Stored `compete_snapshots.state` shape for activities.
- * Activities are table-only SoT — never written into the jsonb blob.
+ * @deprecated Snapshots are no longer written. Kept for tests / legacy callers.
+ * Strips activities from a document that must not embed them.
  */
 export function stripSnapshotActivities(state: CompeteState): CompeteState {
   const prepared = prepareCompeteStateForAccount(state);
@@ -41,12 +40,12 @@ export function stripSnapshotActivities(state: CompeteState): CompeteState {
   return { ...prepared, activities: [] };
 }
 
-/** @deprecated Use stripSnapshotActivities — kept for call sites mid-rename. */
+/** @deprecated Use stripSnapshotActivities. */
 export function thinCompeteStateForAccount(state: CompeteState): CompeteState {
   return stripSnapshotActivities(state);
 }
 
-/** Legacy fat blob still carries activities that must be flushed to the table. */
+/** @deprecated Legacy fat-blob detector; always false for relational accounts. */
 export function snapshotCarriesActivities(state: CompeteState): boolean {
   return state.activities.length > 0;
 }

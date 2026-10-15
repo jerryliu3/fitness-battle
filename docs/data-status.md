@@ -38,8 +38,8 @@ Separate Supabase project from battles (`rankings-db/`, hosted `pzadctqmyekkydte
 
 | Item | Status |
 | --- | --- |
-| Account snapshot | `compete_snapshots` — **activities never in jsonb**; hydrated from `public.activities` |
-| Relational normalize | Activities table-SoT; prefs/ratings/results/enrollments still dual-written; sleep/health jsonb |
+| Account compete | Relational only (`athlete_prefs` + related tables); legacy `compete_snapshots` migrated then deleted |
+| Relational normalize | Full signed-in compete cutover — no dual-write jsonb for play state |
 | Density matching | Still per-viewer (not global standings) |
 
 See [compete-persistence.md](compete-persistence.md).
@@ -57,5 +57,5 @@ Invite-code `battles` / `periods` / `standings` remain from the early scaffold. 
 
 1. Apply `packages/rankings/imports/*.import.sql` with `RANKINGS_DATABASE_URL` (see `docs/ingestion.md`).
 2. A public half-marathon list, plus New York, Tokyo, and Sydney once a results list is on the page.
-3. Optional: dual-write sleep/health out of the thin compete snapshot.
+3. Optionally drop the unused `compete_snapshots` table after all environments migrate.
 4. Point `NEXT_PUBLIC_USE_DEMO_DATA=false` plus Strava keys and the service role at a real athlete backfill. Token storage and score recompute are already wired for that mode.

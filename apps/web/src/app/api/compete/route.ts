@@ -4,22 +4,16 @@ import {
   migrateCompeteState,
   prepareCompeteStateForAccount,
   rollClock,
-  sanitizeCompeteStateForAccount,
-  snapshotCarriesActivities,
-  stripSnapshotActivities,
   withDerivedPendingReveals,
   type CompeteState,
 } from "@fitness-battle/shared";
 import { resolveRequestUserId } from "@/lib/auth/request-user";
 import {
-  hydrateCompeteCollections,
   hydrateCrewBoard,
-  persistCompeteActivities,
-  persistCompeteCore,
+  loadCompeteAccount,
+  persistCompeteAccount,
 } from "@/lib/compete-persist";
 import { createClient } from "@/lib/supabase/server";
-
-type Db = Awaited<ReturnType<typeof createClient>>;
 
 function sameLiveDocument(left: CompeteState, right: CompeteState): boolean {
   return (
@@ -28,73 +22,24 @@ function sameLiveDocument(left: CompeteState, right: CompeteState): boolean {
   );
 }
 
-/** Persist relational rows, then store snapshot with activities always stripped. */
-async function saveAccountSnapshot(
-  supabase: Db,
-  userId: string,
-  live: CompeteState,
-  updatedAt: string,
-): Promise<"ok" | "activities_only" | "failed"> {
-  const stored = stripSnapshotActivities(live);
-  try {
-    await persistCompeteCore(supabase, userId, live);
-    const { error } = await supabase.from("compete_snapshots").upsert({
-      user_id: userId,
-      state: stored,
-      updated_at: updatedAt,
-    });
-    return error ? "failed" : "ok";
-  } catch {
-    // Other dual-writes may have failed — still get activities into the table.
-    try {
-      await persistCompeteActivities(supabase, userId, live);
-      const { error } = await supabase.from("compete_snapshots").upsert({
-        user_id: userId,
-        state: stored,
-        updated_at: updatedAt,
-      });
-      return error ? "failed" : "activities_only";
-    } catch {
-      return "failed";
-    }
-  }
-}
-
 export async function GET(request: Request) {
   const userId = await resolveRequestUserId(request);
   if (!userId) {
     return NextResponse.json({ error: "authentication_required" }, { status: 401 });
   }
   const supabase = await createClient();
-  const { data, error } = await supabase
-    .from("compete_snapshots")
-    .select("state, updated_at")
-    .eq("user_id", userId)
-    .maybeSingle();
-  if (error) {
-    return NextResponse.json({ error: "snapshot_unavailable" }, { status: 500 });
+
+  let loaded: { state: CompeteState; updatedAt: string } | null;
+  try {
+    loaded = await loadCompeteAccount(supabase, userId);
+  } catch {
+    return NextResponse.json({ error: "account_unavailable" }, { status: 500 });
   }
-  if (!data || !isCompeteState(data.state)) {
+  if (!loaded) {
     return NextResponse.json({ state: null, updatedAt: null });
   }
 
-  const base = withDerivedPendingReveals(
-    sanitizeCompeteStateForAccount(migrateCompeteState(data.state)),
-  );
-  const legacyActivities = snapshotCarriesActivities(base);
-
-  let hydrated: CompeteState;
-  try {
-    hydrated = await hydrateCompeteCollections(supabase, userId, base);
-  } catch {
-    // After activities leave the blob, empty snapshot.activities is normal —
-    // hydrate failure would blank the board.
-    if (!legacyActivities) {
-      return NextResponse.json({ error: "hydrate_failed" }, { status: 500 });
-    }
-    hydrated = base;
-  }
-
+  const hydrated = withDerivedPendingReveals(loaded.state);
   const rolled = withDerivedPendingReveals(rollClock(hydrated));
   let state = rolled;
   try {
@@ -104,18 +49,26 @@ export async function GET(request: Request) {
   }
 
   const settled = !sameLiveDocument(hydrated, state);
-  if (settled || legacyActivities) {
-    const live = prepareCompeteStateForAccount(state);
-    const updatedAt = new Date().toISOString();
-    const saved = await saveAccountSnapshot(supabase, userId, live, updatedAt);
-    if (saved !== "failed") {
+  if (settled) {
+    try {
+      const updatedAt = await persistCompeteAccount(
+        supabase,
+        userId,
+        prepareCompeteStateForAccount(state),
+      );
       return NextResponse.json({ state, updatedAt, settled: true });
+    } catch {
+      return NextResponse.json({
+        state,
+        updatedAt: loaded.updatedAt,
+        settled: false,
+      });
     }
   }
 
   return NextResponse.json({
     state,
-    updatedAt: data.updated_at,
+    updatedAt: loaded.updatedAt,
     settled: false,
   });
 }
@@ -142,22 +95,20 @@ export async function PUT(request: Request) {
   if (JSON.stringify(live).length > 500_000) {
     return NextResponse.json({ error: "state_too_large" }, { status: 413 });
   }
-  const supabase = await createClient();
-  const updatedAt = new Date().toISOString();
-  const saved = await saveAccountSnapshot(supabase, userId, live, updatedAt);
 
-  if (saved === "failed") {
+  const supabase = await createClient();
+  try {
+    const updatedAt = await persistCompeteAccount(supabase, userId, live);
+    return NextResponse.json({
+      ok: true,
+      persisted: true,
+      updatedAt,
+      relational: true,
+    });
+  } catch {
     return NextResponse.json(
-      { error: "snapshot_not_saved", persisted: false },
+      { error: "account_not_saved", persisted: false },
       { status: 500 },
     );
   }
-
-  return NextResponse.json({
-    ok: true,
-    persisted: true,
-    updatedAt,
-    relational: saved === "ok",
-    activities: true,
-  });
 }

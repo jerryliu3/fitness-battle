@@ -2,25 +2,29 @@
 
 Signed-in play is **per-viewer**. Guests may use device-local storage.
 
-## Activities — table SoT (this cutover)
+## Model (no compete jsonb)
 
-`CompeteState.activities` is **not** stored in `compete_snapshots` jsonb.
+Account compete state is **relational only**. `/api/compete` does not read or write `compete_snapshots.state`.
 
-| Direction | Path |
+| Store | Holds |
 | --- | --- |
-| Write | `persistCompeteActivities` → `public.activities` (also from fitness sync). Upsert only; no orphan deletes. |
-| Read | GET `/api/compete` hydrates `activities` from `public.activities` (`compete_key` rows). |
-| Snapshot | Always `activities: []` via `stripSnapshotActivities`, including failure fallbacks. |
+| `profiles` | name, city, primary sport |
+| `athlete_prefs` | freezes, calibrated, onboarding, lesson, training goal, **clock**, **focus**, `updated_at` |
+| `sport_ratings` | Elo + locks |
+| `period_results` / `period_freezes` | Settled weeks + freezes |
+| `activities` | Compete sessions (`compete_key`, disposition, …) — upsert only |
+| `wave_enrollments` | Per-viewer seating + optional `crew_id` |
+| `sleep_nights` / `health_ratings` / `health_period_results` | Sleep contest |
+| `compete_duels` | 1v1 practice rivals |
+| `readiness_marks` | Daily readiness |
+| `fitness_connections` | Provider link status (**read** into compete; OAuth owns writes) |
+| Ephemeral on GET | `crewBoard` from `crew_week_fields`, `pendingRevealIds` from `acknowledgedAt`, `rollClock` |
 
-Legacy fat blobs that still embed activities are flushed into the table on the next GET/PUT, then stripped.
+`demoNow` is never account-durable. Legacy `compete_snapshots` rows are migrated once into tables on GET, then deleted.
 
-Client memory / localStorage may still hold activities for the engine; the **account** copy is the table.
-
-## Rest of compete document
-
-Still dual-written / jsonb for now: prefs, ratings, period_results, freezes, enrollments, sleep/health/links/duels/clock. `demoNow` / `crewBoard` / `pendingRevealIds` are not account-durable. `battles` schema is not the play path.
+`battles` / `periods` / `standings` are not the play path.
 
 ## API
 
-- **PUT:** persist relational (activities required) → store snapshot with activities stripped.
-- **GET:** hydrate collections → `rollClock` → crew board; rewrite when settled or legacy activities remain in the blob.
+- **GET:** `loadCompeteAccount` → `rollClock` → hydrate crew board; persist if settlement changed the document.
+- **PUT:** `persistCompeteAccount` only (tables). Failure → 500 (no jsonb fallback).
