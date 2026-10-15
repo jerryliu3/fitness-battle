@@ -61,6 +61,9 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Build iOS (production)
+        env:
+          # app.json has no custom dev client; silence Expo Go production warning
+          EAS_BUILD_NO_EXPO_GO_WARNING: "true"
         run: eas build --platform ios --profile production --non-interactive --wait
 
       - name: Submit to TestFlight
