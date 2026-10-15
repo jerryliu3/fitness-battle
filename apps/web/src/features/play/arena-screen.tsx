@@ -52,7 +52,7 @@ export function ArenaScreen() {
   return (
     <section aria-label="Weekly track">
       <p className="ps-kicker">Arena</p>
-      <h1>{sport.name}</h1>
+      <h1 className="ps-title">{sport.name}</h1>
       {!board.optedIn ? (
         <p className="ps-note">
           <Link href="/field">Join this week’s field</Link> to take a lane.

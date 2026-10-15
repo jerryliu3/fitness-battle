@@ -61,7 +61,7 @@ export function TodayScreen() {
   return (
     <>
       <p className="ps-kicker">{showingSleep ? "Sleep" : sport.name}</p>
-      <h1>{formatVolume(state.primary, distanceM, movingSec)}</h1>
+      <h1 className="ps-title">{formatVolume(state.primary, distanceM, movingSec)}</h1>
       {state.pendingRevealIds.length > 0 ? (
         <WeekReveal state={state} onDismiss={() => dispatch({ type: "acknowledge-reveal" })} />
       ) : null}

@@ -33,11 +33,15 @@
   overflow: auto;
   padding: 18px 16px 24px;
 }
-.ps-body h1 {
+.ps-title {
   font-size: 32px;
   letter-spacing: -0.4px;
   line-height: 1.05;
   margin: 0 0 8px;
+}
+.ps-body .fd-field-layout,
+.ps-body .fd-field-head {
+  grid-template-columns: 1fr;
 }
 .ps-kicker {
   margin: 0;

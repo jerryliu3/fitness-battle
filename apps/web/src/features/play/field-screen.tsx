@@ -48,7 +48,7 @@ export function FieldScreen() {
   return (
     <section aria-label="Field">
       <p className="ps-kicker">Field</p>
-      <h1>{sport.name}</h1>
+      <h1 className="ps-title">{sport.name}</h1>
       {SPORTS.map((item) => {
         const joined = state.ratings.find((row) => row.sport === item.id)?.optedIn;
         const current = !sleepOn && item.id === state.primary;
