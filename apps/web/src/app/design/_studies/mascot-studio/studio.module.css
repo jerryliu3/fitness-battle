@@ -1,0 +1,172 @@
+.studio {
+  --ink: #12141a; --muted: #5c6578; --line: #dce1ea; --paper: #eef1f4; --card: #fff; --lime: #b7f255;
+  min-height: 100vh; background: var(--paper); color: var(--ink); padding: 0 5vw;
+  font-family: var(--font-body), sans-serif; -webkit-font-smoothing: antialiased;
+}
+.studio button, .studio select, .studio input { font: inherit; }
+.studio button { cursor: pointer; }
+.studio button:disabled { cursor: default; opacity: .4; }
+.studio button:focus-visible, .studio a:focus-visible, .studio input:focus-visible, .studio select:focus-visible { outline: 3px solid #4c7900; outline-offset: 4px; }
+.header { max-width: 1440px; margin: auto; height: 88px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--line); gap: 18px; }
+.brand { display: flex; align-items: center; gap: 12px; font-size: 11px; font-weight: 800; letter-spacing: 1.1px; text-decoration: none; }
+.brandIcon { width: 33px; height: 33px; display: grid; place-items: center; background: var(--ink); color: var(--lime); border-radius: 10px; font-size: 30px; font-weight: 400; }
+.brandSub { color: var(--muted); font-weight: 500; font-size: 10px; }
+.divider { color: #a7aeb8; margin: 0 4px; }
+.version { display: flex; align-items: center; gap: 8px; font-size: 9px; letter-spacing: 1.4px; font-weight: 700; white-space: nowrap; }
+.version > span:first-child, .stageTop i { width: 6px; height: 6px; background: #568321; border-radius: 50%; display: inline-block; }
+.versionSep { color: #9198a2; }
+.intro { max-width: 1440px; margin: 48px auto 38px; display: flex; align-items: flex-end; justify-content: space-between; gap: 24px; }
+.eyebrow { font-size: 9px; letter-spacing: 1.7px; font-weight: 800; margin: 0 0 14px; }
+.intro h1 { margin: 0; font-size: clamp(54px, 6.3vw, 88px); font-weight: 650; letter-spacing: -.075em; line-height: 1; }
+.intro h1 span { font-weight: 400; }
+.intro > p { margin: 0 36px 3px 0; font-size: 13px; line-height: 1.65; color: var(--muted); }
+.workspace { max-width: 1440px; margin: auto; display: grid; grid-template-columns: minmax(0, 1fr) 330px; gap: 22px; }
+.preview { min-width: 0; display: flex; flex-direction: column; }
+.stage { min-height: 535px; flex: 1; position: relative; background: radial-gradient(ellipse at 50% 46%, #fff 15%, transparent 65%), radial-gradient(#cbd2d9 0.7px, transparent 0.7px), #f8fafb; background-size: 100% 100%, 20px 20px, 100% 100%; border: 1px solid var(--line); border-radius: 20px 20px 0 0; overflow: hidden; display: grid; place-items: center; }
+.stageTop, .stageBottom { position: absolute; left: 26px; right: 26px; display: flex; justify-content: space-between; align-items: center; }
+.stageTop { top: 23px; font-size: 8px; letter-spacing: 1.4px; font-weight: 700; color: var(--muted); }
+.stageTop > span:first-child { display: flex; align-items: center; gap: 7px; }
+.stageTop i { width: 5px; height: 5px; background: #7c9e58; }
+.character { width: min(75%, 415px); margin: 20px 0 30px; }
+.character svg { display: block; width: 100%; overflow: visible; }
+.stageBottom { bottom: 23px; gap: 12px; }
+.motionName { font-size: 13px; font-weight: 700; }
+.motionName small { display: block; color: var(--muted); font-size: 10px; margin-top: 5px; font-weight: 400; }
+.dimension { font-size: 9px; letter-spacing: 1px; font-weight: 700; white-space: nowrap; }
+.dimension span { color: #98a0a8; margin: 0 3px; }
+.transport { padding: 17px 23px; background: var(--card); border: 1px solid var(--line); border-top: 0; border-radius: 0 0 20px 20px; display: flex; gap: 14px; align-items: center; }
+.play, .replay { background: none; border: none; flex: 0 0 auto; padding: 0; }
+.play { width: 32px; height: 32px; border-radius: 50%; background: var(--ink); color: #fff; font-size: 12px !important; }
+.replay { font-size: 24px !important; line-height: 1; }
+.scrubber { flex: 1; min-width: 20px; display: flex; }
+.studio input[type="range"] { width: 100%; margin: 0; height: 17px; cursor: pointer; accent-color: var(--ink); }
+.timestamp { color: var(--muted); font-size: 9px; min-width: 68px; font-variant-numeric: tabular-nums; }
+.speed select { background: transparent; border: none; font-size: 10px; padding: 4px; }
+.loop { display: flex; align-items: center; gap: 5px; font-size: 10px; }
+.studio input[type="checkbox"] { accent-color: var(--ink); }
+.inspector { background: var(--card); border: 1px solid var(--line); border-radius: 20px; padding: 25px 24px; }
+.panelHeading { display: flex; justify-content: space-between; gap: 5px; }
+.panelHeading .eyebrow { font-size: 8px; letter-spacing: 1px; margin-bottom: 16px; }
+.panelNumber { font-size: 8px; color: var(--muted); }
+.inspector h2 { font-size: 26px; font-weight: 600; letter-spacing: -.055em; line-height: 1.1; margin: 0 0 7px; }
+.panelHint, .rigHint { font-size: 10px; color: var(--muted); line-height: 1.5; margin: 0 0 17px; }
+.expressions { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 7px; }
+.expressions button { background: #f7f9fa; border: 1px solid transparent; border-radius: 12px; padding: 4px 4px 10px; font-size: 9px; color: var(--muted); }
+.expressions button svg { width: 57px; height: 57px; display: block; margin: auto; }
+.expressions .expressionSelected { background: #f2f9e9; border-color: #7ba048; color: var(--ink); }
+.autoFace { padding: 12px 0 17px; font-size: 9px !important; background: none; border: none; border-bottom: 1px solid var(--line); display: block; width: 100%; text-align: left; color: var(--muted); }
+.autoFace[aria-pressed="true"] { color: var(--ink); }
+.rigHeading { margin: 19px 0 5px; display: flex; justify-content: space-between; align-items: center; }
+.rigHeading h3 { font-size: 12px; margin: 0; }
+.rigHeading button { background: none; border: none; color: var(--muted); font-size: 9px; text-decoration: underline; padding: 3px 0; }
+.rigHint { font-size: 9px; margin-bottom: 14px; }
+.slider { display: block; margin-bottom: 13px; min-width: 0; }
+.slider > span { font-size: 9px; display: flex; justify-content: space-between; margin-bottom: 4px; }
+.slider output { color: var(--muted); font-variant-numeric: tabular-nums; font-size: 8px; }
+.controlPair { display: grid; grid-template-columns: 1fr 1fr; gap: 19px; }
+.shadowToggle { display: flex; align-items: center; gap: 5px; font-size: 9px; padding-top: 8px; border-top: 1px solid var(--line); }
+.shadowToggle input { margin-left: 0; }
+.shadowToggle span { margin-left: auto; color: var(--muted); font-size: 8px; }
+.reduced { font-size: 11px; color: var(--muted); padding: 0 10px; line-height: 1.5; }
+.reduced button { border: none; padding: 0 0 0 5px; background: none; text-decoration: underline; color: var(--ink); font-size: inherit; }
+.motionSection { max-width: 1440px; margin: 44px auto 0; }
+.sectionHeading { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 20px; gap: 15px; }
+.sectionHeading .eyebrow { margin-bottom: 9px; }
+.sectionHeading h2, .handoff h2 { margin: 0; font-size: 28px; letter-spacing: -.05em; font-weight: 550; line-height: 1.2; }
+.sectionHeading > span { font-size: 8px; letter-spacing: 1.4px; font-weight: 700; white-space: nowrap; }
+.arrow { font-size: 30px; line-height: .8; margin-left: 10px; }
+.motionGrid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.motionCard { text-align: left; border: 1px solid var(--line); background: #f8fafb; border-radius: 14px; padding: 13px 15px 19px; min-width: 0; transition: background .15s; }
+.motionCard:hover { background: #fff; }
+.motionCard.motionSelected { background: var(--lime); border-color: #9ddc3d; }
+.cardTop { display: flex; justify-content: space-between; align-items: center; font-size: 9px; color: var(--muted); }
+.cardTop > span:last-child { font-size: 17px; line-height: 1; color: var(--ink); }
+.motionCard svg { width: 100%; max-height: 140px; display: block; margin: 3px auto 8px; }
+.motionCard strong { font-size: 11px; font-weight: 700; display: block; }
+.motionCard small { font-size: 9px; color: var(--muted); display: block; margin-top: 5px; }
+.motionSelected small { color: #35471e; }
+.handoff { max-width: 1440px; margin: 38px auto 0; border-top: 1px solid var(--line); padding-top: 30px; display: flex; align-items: center; justify-content: space-between; gap: 24px; }
+.handoff .eyebrow { display: block; margin-bottom: 9px; }
+.handoff h2 { font-size: 23px; }
+.handoff p { font-size: 11px; color: var(--muted); margin: 10px 0 0; }
+.exports { display: flex; gap: 9px; flex-shrink: 0; }
+.exports button { font-size: 10px; padding: 14px 17px; border-radius: 9px; background: transparent; border: 1px solid #b9c1c9; }
+.exports button span { margin-left: 15px; }
+.exports .exportPrimary { background: var(--ink); color: #fff; border-color: var(--ink); }
+.status { max-width: 1440px; margin: 10px auto 20px; min-height: 16px; font-size: 11px; color: var(--muted); text-align: right; }
+.footer { max-width: 1440px; margin: auto; padding: 22px 0; display: flex; justify-content: space-between; gap: 15px; border-top: 1px solid var(--line); color: var(--muted); font-size: 8px; letter-spacing: 1px; }
+.footer b { padding: 0 8px; color: #648d2b; }
+.srOnly { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+@media (min-width: 1550px) { .studio { padding: 0 max(5vw, calc((100vw - 1440px) / 2)); } }
+@media (max-width: 1050px) {
+  .workspace { grid-template-columns: minmax(0, 1fr) 300px; gap: 14px; }
+  .inspector { padding: 24px 18px; }
+  .stage { min-height: 535px; }
+  .stageBottom { left: 19px; right: 19px; }
+  .dimension { display: none; }
+  .transport { gap: 10px; padding: 16px; }
+  .loop { display: none; }
+  .motionGrid { gap: 8px; }
+  .motionCard { padding: 12px 10px 16px; }
+  .motionCard small { font-size: 8px; }
+}
+@media (max-width: 760px) {
+  .studio { padding: 0 5vw; }
+  .header { height: 70px; }
+  .brand { font-size: 10px; gap: 8px; }
+  .brandSub, .divider { display: none; }
+  .version { font-size: 8px; gap: 5px; letter-spacing: .8px; }
+  .intro { margin: 30px auto 26px; display: block; }
+  .intro h1 { font-size: 65px; }
+  .intro > p { font-size: 12px; margin: 18px 0 0; }
+  .desktopBreak { display: none; }
+  .workspace { grid-template-columns: 1fr; gap: 18px; }
+  .stage { min-height: 400px; }
+  .character { width: min(88%, 335px); margin: 15px 0 35px; }
+  .stageTop { left: 18px; right: 18px; top: 18px; font-size: 7px; letter-spacing: 1px; }
+  .stageBottom { bottom: 17px; }
+  .motionName { font-size: 11px; }
+  .motionName small { font-size: 9px; }
+  .loop { display: flex; }
+  .transport { gap: 10px; padding: 14px 16px; }
+  .timestamp { min-width: 61px; font-size: 8px; }
+  .inspector { padding: 23px; }
+  .expressions { grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 6px; }
+  .expressions button { font-size: 8px; padding: 3px 0 8px; }
+  .expressions button svg { width: 100%; height: auto; }
+  .panelHeading .eyebrow { font-size: 9px; }
+  .panelHint { font-size: 11px; }
+  .autoFace { font-size: 10px !important; padding-top: 14px; }
+  .rigHeading h3 { font-size: 14px; }
+  .rigHeading button, .rigHint, .slider > span, .shadowToggle { font-size: 11px; }
+  .slider output, .shadowToggle span { font-size: 10px; }
+  .slider { margin-bottom: 17px; }
+  .motionSection { margin-top: 32px; }
+  .sectionHeading h2 { font-size: 24px; }
+  .sectionHeading > span { display: none; }
+  .motionGrid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 9px; }
+  .motionCard { padding: 12px 12px 17px; }
+  .motionCard strong { font-size: 11px; }
+  .motionCard small { font-size: 8px; }
+  .handoff { display: block; margin-top: 28px; padding-top: 25px; }
+  .handoff h2 { font-size: 23px; max-width: 280px; }
+  .handoff p { line-height: 1.6; }
+  .exports { margin-top: 21px; }
+  .exports button { flex: 1; font-size: 11px; }
+  .footer { line-height: 1.6; font-size: 7px; letter-spacing: .6px; }
+  .footer > span:last-child { text-align: right; max-width: 140px; }
+}
+@media (max-width: 370px) {
+  .intro h1 { font-size: 57px; }
+  .version { letter-spacing: .2px; }
+  .stage { min-height: 365px; }
+  .stageTop { font-size: 6px; }
+  .loop { display: none; }
+  .inspector { padding: 20px 16px; }
+  .expressions { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .expressions button svg { width: 57px; height: 57px; }
+  .motionCard { padding: 10px 8px 15px; }
+  .motionCard strong { font-size: 10px; }
+  .motionCard small { font-size: 7px; }
+}
+@media (prefers-reduced-motion: reduce) { .motionCard { transition: none; } }
