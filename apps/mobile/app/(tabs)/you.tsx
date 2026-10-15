@@ -108,9 +108,21 @@ export default function YouScreen() {
     setNote(null);
     try {
       const result = await startCloudTrackerConnect(providerId);
-      if (result.stub) {
-        dispatch({ type: "link", provider: providerId });
+      const linked = result.provider ?? providerId;
+      if (result.tracker === "connected") {
+        appliedTracker.current = `connected:${linked}`;
+        dispatch({
+          type: "apply-sync",
+          provider: linked,
+          activities: [],
+          linkStatus: "connected",
+        });
+      } else if (result.stub || result.tracker === "stub") {
+        appliedTracker.current = `stub:${linked}`;
+        dispatch({ type: "link", provider: linked });
       }
+      // Cancelled false-positives are handled in startCloudTrackerConnect (Android
+      // dismiss race waits for the deep link before returning cancelled).
       setNote(result.message);
     } catch (error) {
       setNote(error instanceof Error ? error.message : "Could not start connect.");
@@ -180,8 +192,8 @@ export default function YouScreen() {
             ? ` · ${syncBusy ? "Syncing…" : "Tap to sync"}`
             : cloud
               ? busyProvider === provider.id
-                ? " · opening browser…"
-                : " · opens browser"
+                ? " · authorizing…"
+                : " · tap to connect"
               : "";
           const copy = (
             <>

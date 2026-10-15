@@ -26,7 +26,8 @@
           "healthUpdatePermission": "Overtaek does not write health data."
         }
       ],
-      "react-native-health-connect"
+      "react-native-health-connect",
+      "expo-web-browser"
     ],
     "experiments": {
       "typedRoutes": true
@@ -41,7 +42,9 @@
         "ITSAppUsesNonExemptEncryption": false,
         "CFBundleURLTypes": [
           {
-            "CFBundleURLSchemes": ["overtaek"]
+            "CFBundleURLSchemes": [
+              "overtaek"
+            ]
           }
         ]
       }
@@ -57,7 +60,10 @@
               "scheme": "overtaek"
             }
           ],
-          "category": ["BROWSABLE", "DEFAULT"]
+          "category": [
+            "BROWSABLE",
+            "DEFAULT"
+          ]
         }
       ],
       "permissions": [
