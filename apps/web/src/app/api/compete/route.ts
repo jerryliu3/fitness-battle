@@ -103,7 +103,6 @@ export async function PUT(request: Request) {
       ok: true,
       persisted: true,
       updatedAt,
-      relational: true,
     });
   } catch {
     return NextResponse.json(

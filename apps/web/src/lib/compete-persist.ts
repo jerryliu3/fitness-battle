@@ -127,7 +127,7 @@ async function replaceRows(
  * Activities SoT write — `public.activities` only.
  * Never deletes rows (live sync can race ahead of the compete document).
  */
-export async function persistCompeteActivities(
+async function persistCompeteActivities(
   db: Db,
   userId: string,
   state: CompeteState,
