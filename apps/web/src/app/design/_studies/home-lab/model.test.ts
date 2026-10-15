@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { fixtureWeek, homeSnapshot, progressGain, readSnapshot, seenKey } from "./model";
+import { fixtureWeek, homeSnapshot, PRODUCT_SEEN_PREFIX, progressGain, readSnapshot, seenKey } from "./model";
 
 describe("adaptive home arrival", () => {
   it("reveals actual newly counted progress", () => {
@@ -43,6 +43,7 @@ describe("adaptive home arrival", () => {
   it("isolates accounts and safely ignores corrupt saved snapshots", () => {
     const snapshot = homeSnapshot(fixtureWeek("quiet").state);
     expect(seenKey("one", snapshot)).not.toBe(seenKey("two", snapshot));
+    expect(seenKey("one", snapshot, PRODUCT_SEEN_PREFIX)).not.toBe(seenKey("one", snapshot));
     expect(readSnapshot(JSON.stringify(snapshot))).toEqual(snapshot);
     for (const raw of ["not json", "{}", "null", JSON.stringify({ ...snapshot, distanceM: -1 }), JSON.stringify({ ...snapshot, lanes: [null] })]) expect(readSnapshot(raw)).toBeNull();
   });

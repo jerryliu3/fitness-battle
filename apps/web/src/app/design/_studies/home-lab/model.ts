@@ -72,9 +72,16 @@ export function readSnapshot(raw: string | null): ProgressSnapshot | null {
   } catch { return null; }
 }
 
-export function seenKey(accountId: string, snapshot: ProgressSnapshot) {
-  return `fb-home-prototype:seen:${encodeURIComponent(accountId)}:${snapshot.scope}`;
+export function seenKey(
+  accountId: string,
+  snapshot: ProgressSnapshot,
+  prefix = "fb-home-prototype:seen",
+) {
+  return `${prefix}:${encodeURIComponent(accountId)}:${snapshot.scope}`;
 }
+
+/** Production home remembers a visit separately from the design lab. */
+export const PRODUCT_SEEN_PREFIX = "fb-home:seen";
 
 export const FIXTURE_NOW = "2026-10-14T18:00:00.000Z";
 /** Isolated presentation fixture. Manual rows exercise real scoring; never saved to an account. */

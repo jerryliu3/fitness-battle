@@ -2,7 +2,9 @@
 
 Route: `/design/home?layout=trail|circuit|calendar|islands|today&source=sample|account`.
 
-This is a working design route in the existing Next app. Its implementation lives in `apps/web/src/app/design/_studies/home-lab/`; `src/app/design/home/page.tsx` is the route wrapper. It uses CompeteState, counted activities, actual suggestions/lessons, Ace, the weekly board and the existing 3D Pursuit. The production and Expo home routes remain separate.
+This is a working design route in the existing Next app. Its implementation lives in `apps/web/src/app/design/_studies/home-lab/`; `src/app/design/home/page.tsx` is the route wrapper. It uses CompeteState, counted activities, actual suggestions/lessons, Ace, the weekly board and the existing 3D Pursuit.
+
+The production home (`/`) now uses the checkpoints layout from this study. `apps/web/src/features/home/product-home.tsx` keeps the same return reveal, with seen state under `fb-home:seen` so the lab does not clear it. A new counted gain opens Arena first. After that reveal, Arena shows the existing 2D lane track and 3D pursuit. Progress and Athlete stay the simplified views; matchups, move edits, history, and settings remain on `/board`, `/splits`, `/progress`, and `/you`. Sleep still uses the existing sleep panel when that focus is selected.
 
 ## Compositions
 

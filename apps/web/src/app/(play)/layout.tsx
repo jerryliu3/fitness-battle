@@ -48,6 +48,10 @@ function PlayChrome({ children }: { children: ReactNode }) {
           ? "you"
           : "week";
 
+  if (path === "/") {
+    return <div className="fb ah-product-frame">{children}</div>;
+  }
+
   if (theme.id === "rally" && !hideTabs) {
     return (
       <div className="fb">
