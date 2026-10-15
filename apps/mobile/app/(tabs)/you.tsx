@@ -20,8 +20,6 @@ import {
 import { AwardShelf } from "../../src/ui/award-shelf";
 import { SHELL_COLORS, SHELL_RADIUS } from "../../src/theme";
 
-const OAUTH_PROVIDERS = new Set<ProviderId>(["strava", "garmin", "whoop", "oura"]);
-
 export default function YouScreen() {
   const { state, dispatch } = useCompeteStore();
   const router = useRouter();
@@ -39,21 +37,20 @@ export default function YouScreen() {
     const key = `${tracker}:${trackerProvider}`;
     if (!state || !tracker || appliedTracker.current === key) return;
     appliedTracker.current = key;
-    if (!OAUTH_PROVIDERS.has(trackerProvider as ProviderId)) return;
-    const provider = trackerProvider as ProviderId;
+    if (!isCloudOAuthProvider(trackerProvider)) return;
     if (tracker === "connected") {
       dispatch({
         type: "apply-sync",
-        provider,
+        provider: trackerProvider,
         activities: [],
         linkStatus: "connected",
       });
-      setNote(`${provider} connected.`);
+      setNote(`${trackerProvider} connected.`);
     } else if (tracker === "stub") {
-      dispatch({ type: "link", provider });
+      dispatch({ type: "link", provider: trackerProvider });
       setNote("Credentials are not set, so this link is a demo stub.");
     } else if (tracker === "error") {
-      setNote("That tracker did not connect. Sign in and try again.");
+      setNote("That tracker did not connect. Try again from the app.");
     }
   }, [dispatch, params.provider, params.tracker, state]);
 
@@ -74,6 +71,7 @@ export default function YouScreen() {
 
   async function connectCloud(providerId: ProviderId) {
     if (!isCloudOAuthProvider(providerId)) return;
+    appliedTracker.current = null;
     setBusyProvider(providerId);
     setNote(null);
     try {

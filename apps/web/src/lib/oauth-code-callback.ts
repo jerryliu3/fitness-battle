@@ -30,7 +30,7 @@ export function oauthCodeCallback(providerId: OAuthProviderId) {
       return trackerRedirect(url.origin, providerId, "stub");
     }
     const sessionUserId = await resolveSessionUserId();
-    const userId = await resolveOAuthCallbackUserId({
+    const userId = resolveOAuthCallbackUserId({
       state,
       provider: providerId,
       sessionUserId,

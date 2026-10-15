@@ -41,7 +41,7 @@ function defaultDeps(): StartCloudTrackerConnectDeps {
 /**
  * Start cloud tracker OAuth from the phone: call the web API, then open the
  * system browser on the provider authorize page. Callbacks return via
- * `overtaek://you` when the app is installed.
+ * `overtaek:///you` when the app is installed.
  */
 export async function startCloudTrackerConnect(
   provider: CloudOAuthProvider,

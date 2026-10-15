@@ -30,7 +30,7 @@ export async function GET(request: Request) {
   }
 
   const sessionUserId = await resolveSessionUserId();
-  const userId = await resolveOAuthCallbackUserId({
+  const userId = resolveOAuthCallbackUserId({
     state,
     provider: "strava",
     sessionUserId,
