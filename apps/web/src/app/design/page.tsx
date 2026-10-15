@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { DesignLab } from "@/features/design-lab/design-lab";
+import { DesignLab } from "@/ux/design-lab/design-lab";
 
 export const metadata: Metadata = {
   title: "Five directions · Fitness design lab",

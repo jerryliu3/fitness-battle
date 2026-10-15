@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { Archivo_Black, Bangers } from "next/font/google";
-import { RallyFocus } from "@/features/rally-lab/rally-focus";
+import { RallyFocus } from "@/ux/rally-lab/rally-focus";
 
 const rallyType = Archivo_Black({
   subsets: ["latin"],

@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { activities } from "../design-lab/data";
 import { ghost } from "../spatial-lab/model";
-import { BrandArt, NavIcon } from "./brand-art";
+import { BrandArt, NavIcon } from "@/features/brand/brand-art";
 import { LaneTrack } from "./lane-track";
 import {
   brandIds,

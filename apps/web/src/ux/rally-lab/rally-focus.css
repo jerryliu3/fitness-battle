@@ -1,0 +1,93 @@
+/* Prototype-only reviewer controls; product chrome is shared in features/rally. */
+
+.rf-lab-bar {
+  background: #f7f8fa;
+  color: #303442;
+  padding: 14px max(24px, calc((100% - 1140px) / 2));
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  font-size: 12px;
+}
+.rf-lab-bar > span {
+  color: #647080;
+  margin-right: auto;
+  font-size: 11px;
+}
+.rf-lab-bar label {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  font-size: 11px;
+}
+.rf-lab-bar input {
+  width: 17px;
+  height: 17px;
+  accent-color: var(--rf-plum);
+}
+.rf-lab-bar > button {
+  border: 0;
+  background: none;
+  font-size: 11px;
+  padding: 8px 0;
+  color: #303442;
+  white-space: nowrap;
+}
+.rf-lab-footer {
+  background: #f7f8fa;
+  color: #657082;
+  padding: 18px max(24px, calc((100% - 1140px) / 2));
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+  font-size: 11px;
+}
+.rf-lab-footer a {
+  color: #303442;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+@media (max-width: 760px) {
+  .rf-lab-bar {
+    padding: 12px 20px;
+    gap: 18px;
+    flex-wrap: wrap;
+  }
+  .rf-lab-bar > span {
+    display: none;
+  }
+  .rf-lab-bar label {
+    margin-left: auto;
+  }
+  .rf-lab-bar > button {
+    display: none;
+  }
+  .rf-lab-footer {
+    padding: 18px 20px;
+    flex-wrap: wrap;
+    font-size: 10px;
+  }
+}
+@media (max-width: 600px) {
+  .rf-lab-bar {
+    padding: 11px 16px;
+    gap: 14px;
+    font-size: 11px;
+  }
+  .rf-lab-bar label {
+    font-size: 10px;
+  }
+  .rf-lab-footer {
+    padding: 17px 16px calc(112px + env(safe-area-inset-bottom));
+    font-size: 10px;
+    gap: 10px;
+  }
+  .rf-lab-footer > span {
+    flex-basis: 100%;
+  }
+}
+@media (pointer: coarse) {
+  .rf-lab-bar label {
+    min-height: 32px;
+  }
+}

@@ -1,8 +1,9 @@
 import { athletes, previousWeek } from "../design-lab/data";
 import { runners, type Runner } from "../spatial-lab/model";
+import type { BrandId } from "@/features/brand/brand-art";
 
 export const brandIds = ["volt", "form", "even", "current"] as const;
-export type BrandId = (typeof brandIds)[number];
+export type { BrandId } from "@/features/brand/brand-art";
 export const viewIds = ["track", "field", "splits", "athlete"] as const;
 export type ViewId = (typeof viewIds)[number];
 export type TrackMode = "lanes" | "pursuit";

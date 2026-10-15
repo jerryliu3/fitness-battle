@@ -2,14 +2,14 @@
 
 import { useAuth } from "@/components/auth-context";
 import { CompeteProvider, useCompete } from "@/components/compete-context";
-import { NavIcon } from "@/features/evolution-lab/brand-art";
+import { NavIcon } from "@/features/brand/brand-art";
 import { useTheme } from "@/theme/theme-provider";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
 import "@/features/split/split.css";
 import "@/features/field/field.css";
-import "@/features/rally-lab/rally-focus.css";
+import "@/features/rally/rally-shell.css";
 import "@/features/rally/product.css";
 
 /** Shared jobs; Rally theme uses friendlier labels without changing routes. */

@@ -5,7 +5,7 @@ import {
   Outfit,
   Space_Grotesk,
 } from "next/font/google";
-import { WorldsLab } from "@/features/worlds-lab/worlds-lab";
+import { WorldsLab } from "@/ux/worlds-lab/worlds-lab";
 
 const comic = Bangers({
   subsets: ["latin"],

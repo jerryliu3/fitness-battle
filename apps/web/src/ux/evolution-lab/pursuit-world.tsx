@@ -1,11 +1,11 @@
 "use client";
 
-import { LivePursuit } from "../field/components/live-pursuit";
-import type { SceneRunner } from "../field/geometry";
+import { LivePursuit } from "@/features/field/components/live-pursuit";
+import type { SceneRunner } from "@/features/field/geometry";
 import { ghost } from "../spatial-lab/model";
 import { laneRunners, type AvatarLook, type CameraMode } from "./model";
 import type { SceneProps } from "./lane-track";
-import "../field/field.css";
+import "@/features/field/field.css";
 
 interface Props extends SceneProps {
   camera: CameraMode;

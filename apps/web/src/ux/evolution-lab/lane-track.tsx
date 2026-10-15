@@ -1,10 +1,10 @@
 "use client";
 
-import { LaneTrack as FieldLanes } from "../field/components/lane-track";
-import type { SceneRunner } from "../field/geometry";
+import { LaneTrack as FieldLanes } from "@/features/field/components/lane-track";
+import type { SceneRunner } from "@/features/field/geometry";
 import { ghost } from "../spatial-lab/model";
 import { laneRunners } from "./model";
-import "../field/field.css";
+import "@/features/field/field.css";
 
 export interface SceneProps {
   time: number;
