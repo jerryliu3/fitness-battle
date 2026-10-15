@@ -58,13 +58,22 @@ export {
 } from "./health";
 export {
   MAX_PERIOD_RESULTS,
+  acknowledgePeriodResults,
   appendPeriodResults,
   formatEloDelta,
   formatPlace,
+  isPeriodResultPending,
   pendingPeriodResults,
+  pendingRevealIdsFromResults,
   periodResultId,
   primaryRevealResults,
+  syncPeriodResultAcknowledgements,
 } from "./history";
+export {
+  sanitizeCompeteStateForAccount,
+  shrinkCompeteSnapshot,
+  stripDurableCrewBoard,
+} from "./sanitize";
 export { RANK_BANDS, rankForElo, eloInBand, type RankBand } from "./ranks";
 export {
   activityEffort,

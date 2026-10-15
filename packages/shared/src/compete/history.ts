@@ -11,6 +11,59 @@ export function periodResultId(
   return `${periodStart}:${sport}:${track}`;
 }
 
+export function isPeriodResultPending(row: PeriodResult): boolean {
+  return row.acknowledgedAt == null || row.acknowledgedAt === "";
+}
+
+/** Derive pending reveal ids from settled rows (acknowledged_at is null). */
+export function pendingRevealIdsFromResults(
+  results: PeriodResult[],
+): string[] {
+  return results.filter(isPeriodResultPending).map((row) => row.id);
+}
+
+/**
+ * Align legacy pendingRevealIds with acknowledgedAt on each result.
+ * New settlements leave acknowledgedAt unset; dismiss stamps it.
+ */
+export function syncPeriodResultAcknowledgements(
+  results: PeriodResult[],
+  pendingIds: string[] | undefined,
+): PeriodResult[] {
+  if (!Array.isArray(results) || results.length === 0) return results ?? [];
+  if (pendingIds === undefined) {
+    return results;
+  }
+  const pending = new Set(pendingIds);
+  return results.map((row) => {
+    if (pending.has(row.id)) {
+      return { ...row, acknowledgedAt: null };
+    }
+    if (isPeriodResultPending(row)) {
+      return { ...row, acknowledgedAt: row.settledAt ?? new Date(0).toISOString() };
+    }
+    return row;
+  });
+}
+
+export function acknowledgePeriodResults(
+  results: PeriodResult[],
+  revealIds: string[] | null,
+  at: string = new Date().toISOString(),
+): PeriodResult[] {
+  if (revealIds == null || revealIds.length === 0) {
+    return results.map((row) =>
+      isPeriodResultPending(row) ? { ...row, acknowledgedAt: at } : row,
+    );
+  }
+  const clear = new Set(revealIds);
+  return results.map((row) =>
+    clear.has(row.id) && isPeriodResultPending(row)
+      ? { ...row, acknowledgedAt: at }
+      : row,
+  );
+}
+
 export function appendPeriodResults(
   existing: PeriodResult[],
   additions: PeriodResult[],
@@ -26,10 +79,12 @@ export function appendPeriodResults(
 
 export function pendingPeriodResults(
   results: PeriodResult[],
-  pendingIds: string[],
+  pendingIds?: string[],
 ): PeriodResult[] {
-  if (pendingIds.length === 0) return [];
-  const wanted = new Set(pendingIds);
+  const ids =
+    pendingIds ?? pendingRevealIdsFromResults(results);
+  if (ids.length === 0) return [];
+  const wanted = new Set(ids);
   return results
     .filter((row) => wanted.has(row.id))
     .sort(
@@ -43,7 +98,7 @@ export function pendingPeriodResults(
 /** Prefer open-track rows for the primary sport in the week-complete reveal. */
 export function primaryRevealResults(
   results: PeriodResult[],
-  pendingIds: string[],
+  pendingIds: string[] | undefined,
   primary: SportId,
 ): PeriodResult[] {
   const pending = pendingPeriodResults(results, pendingIds);

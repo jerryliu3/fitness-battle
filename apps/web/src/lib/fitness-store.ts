@@ -235,6 +235,8 @@ export async function persistSyncedActivities(
     if (!CLOUD_PROVIDERS.has(activity.provider) || activity.provider === "mock") return [];
     const categoryId = bySlug.get(activity.categorySlug);
     if (!categoryId) return [];
+    const competeKey = `${activity.provider}-${activity.externalId}`;
+    const sport = activity.categorySlug;
     return [
       {
         user_id: userId,
@@ -246,6 +248,14 @@ export async function persistSyncedActivities(
         moving_sec: activity.movingSec ?? null,
         avg_hr: activity.avgHr ?? null,
         raw_name: activity.rawName,
+        sport,
+        distance_m:
+          sport === "strength" ? 0 : Number(activity.metricValue ?? 0),
+        verified: true,
+        provenance: "recorded",
+        disposition: "counted",
+        compete_key: competeKey,
+        source_label: activity.provider,
       },
     ];
   });

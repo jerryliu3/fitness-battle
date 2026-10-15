@@ -125,6 +125,20 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
             return;
           }
           setSaveError(null);
+          const body = (await response.json().catch(() => null)) as {
+            state?: unknown;
+            updatedAt?: string;
+          } | null;
+          if (body?.state && isCompeteState(body.state)) {
+            const serverState = rollClock(migrateCompeteState(body.state));
+            stateRef.current = serverState;
+            setState(serverState);
+            writeLocal(
+              accountId,
+              serverState,
+              body.updatedAt ?? new Date().toISOString(),
+            );
+          }
         })
         .catch(() => {
           if (userIdRef.current !== accountId) return;

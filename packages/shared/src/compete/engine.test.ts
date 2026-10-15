@@ -162,6 +162,9 @@ describe("compete engine", () => {
     });
     expect(cleared.pendingRevealIds).toHaveLength(0);
     expect(cleared.periodResults.length).toBe(closed.periodResults.length);
+    expect(
+      cleared.periodResults.every((row) => row.acknowledgedAt != null),
+    ).toBe(true);
   });
 
   it("holds elo and still records history when the week is frozen", () => {

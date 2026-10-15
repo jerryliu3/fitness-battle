@@ -207,6 +207,11 @@ export interface PeriodResult {
   eloAfter: number;
   frozen: boolean;
   settledAt: string;
+  /**
+   * When the week-complete reveal was dismissed. Null/undefined means pending.
+   * Replaces the separate pendingRevealIds list as the durable receipt flag.
+   */
+  acknowledgedAt?: string | null;
 }
 
 export interface CompeteState {

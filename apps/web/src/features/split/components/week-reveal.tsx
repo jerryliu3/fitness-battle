@@ -4,6 +4,7 @@ import {
   formatEloDelta,
   formatEffort,
   formatPlace,
+  pendingRevealIdsFromResults,
   primaryRevealResults,
   sportById,
   type CompeteState,
@@ -33,9 +34,10 @@ export function WeekReveal({
   state: CompeteState;
   onDismiss: () => void;
 }) {
+  const pendingIds = pendingRevealIdsFromResults(state.periodResults);
   const reveals = primaryRevealResults(
     state.periodResults,
-    state.pendingRevealIds,
+    pendingIds,
     state.primary,
   );
   if (reveals.length === 0) return null;
