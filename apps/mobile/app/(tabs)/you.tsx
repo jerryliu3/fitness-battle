@@ -3,23 +3,59 @@ import {
   initialsFromName,
   PROVIDERS,
   rankForElo,
+  type ProviderId,
 } from "@fitness-battle/shared";
-import { useRouter } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { Avatar } from "heroui-native/avatar";
 import { Button } from "heroui-native/button";
 import { Input } from "heroui-native/input";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useCompeteStore } from "../../src/lib/compete-store";
+import {
+  isCloudOAuthProvider,
+  startCloudTrackerConnect,
+} from "../../src/lib/tracker-connect";
 import { AwardShelf } from "../../src/ui/award-shelf";
 import { SHELL_COLORS, SHELL_RADIUS } from "../../src/theme";
+
+const OAUTH_PROVIDERS = new Set<ProviderId>(["strava", "garmin", "whoop", "oura"]);
 
 export default function YouScreen() {
   const { state, dispatch } = useCompeteStore();
   const router = useRouter();
+  const params = useLocalSearchParams<{ tracker?: string; provider?: string }>();
   const [name, setName] = useState<string | null>(null);
   const [city, setCity] = useState<string | null>(null);
+  const [note, setNote] = useState<string | null>(null);
+  const [busyProvider, setBusyProvider] = useState<string | null>(null);
+  const appliedTracker = useRef<string | null>(null);
+
+  useEffect(() => {
+    const tracker = typeof params.tracker === "string" ? params.tracker : null;
+    const trackerProvider =
+      typeof params.provider === "string" ? params.provider : "strava";
+    const key = `${tracker}:${trackerProvider}`;
+    if (!state || !tracker || appliedTracker.current === key) return;
+    appliedTracker.current = key;
+    if (!OAUTH_PROVIDERS.has(trackerProvider as ProviderId)) return;
+    const provider = trackerProvider as ProviderId;
+    if (tracker === "connected") {
+      dispatch({
+        type: "apply-sync",
+        provider,
+        activities: [],
+        linkStatus: "connected",
+      });
+      setNote(`${provider} connected.`);
+    } else if (tracker === "stub") {
+      dispatch({ type: "link", provider });
+      setNote("Credentials are not set, so this link is a demo stub.");
+    } else if (tracker === "error") {
+      setNote("That tracker did not connect. Sign in and try again.");
+    }
+  }, [dispatch, params.provider, params.tracker, state]);
 
   if (!state) {
     return (
@@ -35,6 +71,23 @@ export default function YouScreen() {
   const rating = state.ratings.find((row) => row.sport === state.primary);
   const rank = rankForElo(rating?.openElo ?? 1000);
   const cards = awardCards(state);
+
+  async function connectCloud(providerId: ProviderId) {
+    if (!isCloudOAuthProvider(providerId)) return;
+    setBusyProvider(providerId);
+    setNote(null);
+    try {
+      const result = await startCloudTrackerConnect(providerId);
+      if (result.stub) {
+        dispatch({ type: "link", provider: providerId });
+      }
+      setNote(result.message);
+    } catch (error) {
+      setNote(error instanceof Error ? error.message : "Could not start connect.");
+    } finally {
+      setBusyProvider(null);
+    }
+  }
 
   return (
     <SafeAreaView style={styles.safe} edges={["top"]}>
@@ -91,34 +144,58 @@ export default function YouScreen() {
               : link?.status === "stub"
                 ? "Demo link"
                 : "Not connected";
-          const onPhone = provider.id === "apple_health" || provider.id === "google_health";
+          const onPhone =
+            provider.id === "apple_health" || provider.id === "google_health";
+          const cloud = isCloudOAuthProvider(provider.id);
+          const busy = busyProvider === provider.id;
+          const hint = onPhone
+            ? ""
+            : cloud
+              ? busy
+                ? " · opening browser…"
+                : " · opens browser"
+              : "";
           const copy = (
             <>
               <Text style={styles.rowTitle}>{provider.name}</Text>
               <Text style={styles.copy}>
                 {status}
-                {onPhone ? "" : " · connect on the web"}
+                {hint}
               </Text>
             </>
           );
-          if (!onPhone) {
+          if (onPhone) {
             return (
-              <View key={provider.id} style={styles.row}>
+              <Pressable
+                key={provider.id}
+                accessibilityRole="button"
+                onPress={() => router.push("/connections")}
+                style={styles.row}
+              >
                 {copy}
-              </View>
+              </Pressable>
+            );
+          }
+          if (cloud) {
+            return (
+              <Pressable
+                key={provider.id}
+                accessibilityRole="button"
+                disabled={Boolean(busyProvider)}
+                onPress={() => void connectCloud(provider.id)}
+                style={styles.row}
+              >
+                {copy}
+              </Pressable>
             );
           }
           return (
-            <Pressable
-              key={provider.id}
-              accessibilityRole="button"
-              onPress={() => router.push("/connections")}
-              style={styles.row}
-            >
+            <View key={provider.id} style={styles.row}>
               {copy}
-            </Pressable>
+            </View>
           );
         })}
+        {note ? <Text style={styles.copy}>{note}</Text> : null}
 
         <Pressable
           accessibilityRole="button"
