@@ -1,17 +1,21 @@
+import { PHONE_COLORS } from "@fitness-battle/shared";
+
 export const colors = {
-  ink: "#12141a",
-  paper: "#eef1f4",
-  card: "#ffffff",
-  muted: "#5c6578",
-  line: "#dce1ea",
-  lime: "#b7f255",
-  limeDeep: "#7ab800",
-  accent: "#1a1f2b",
-  accentSoft: "#e8edf5",
-  greenSoft: "#e5f7ef",
-  /** @deprecated use accent — kept for older style refs */
-  blue: "#1a1f2b",
-  blueSoft: "#e8edf5",
+  ink: PHONE_COLORS.plumInk,
+  paper: PHONE_COLORS.paper,
+  card: PHONE_COLORS.card,
+  muted: PHONE_COLORS.muted,
+  line: PHONE_COLORS.line,
+  plum: PHONE_COLORS.plum,
+  tennis: PHONE_COLORS.tennis,
+  lime: PHONE_COLORS.tennis,
+  limeDeep: PHONE_COLORS.plum,
+  accent: PHONE_COLORS.plum,
+  accentSoft: "#f3e7c2",
+  greenSoft: "#f7f0c8",
+  /** Older screens still read these names. */
+  blue: PHONE_COLORS.plum,
+  blueSoft: "#f3e7c2",
 };
 
 export const fonts = {

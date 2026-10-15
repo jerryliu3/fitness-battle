@@ -10,6 +10,7 @@ import { StatusBar } from "expo-status-bar";
 import { useEffect } from "react";
 import { ActivityIndicator, View } from "react-native";
 // Registers the foreground notification handler.
+import { CompeteProvider } from "../src/compete/store";
 import "../src/lib/expo-push-register";
 import { colors } from "../src/theme";
 
@@ -66,7 +67,7 @@ export default function RootLayout() {
   }
 
   return (
-    <>
+    <CompeteProvider>
       <StatusBar style="dark" />
       <Stack
         screenOptions={{
@@ -75,6 +76,6 @@ export default function RootLayout() {
           animation: "fade",
         }}
       />
-    </>
+    </CompeteProvider>
   );
 }
