@@ -21,7 +21,7 @@ export function PhoneShell({
   const path = usePathname();
   const reduce = useReducedMotion();
   const { user, loading } = useAuth();
-  const { saveError, legacyOffer, loadStatus, recoverLegacy, retryLoad } = useCompete();
+  const { state, saveError, legacyOffer, loadStatus, recoverLegacy, retryLoad } = useCompete();
   const [pressed, setPressed] = useState<ShellTabId | null>(null);
   const matched = shellTabFromPath(path)?.id ?? null;
   const active = pressed ?? matched;
@@ -29,6 +29,10 @@ export function PhoneShell({
   useEffect(() => {
     setPressed(null);
   }, [path]);
+
+  if (loadStatus === "loading" && !state) {
+    return <div className="boot-splash">Fitness Battle</div>;
+  }
 
   return (
     <div className="phone-frame">

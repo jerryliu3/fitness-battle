@@ -7,7 +7,6 @@ import { FieldStage } from "@/features/field/components/field-stage";
 import { buildFieldModel } from "@/features/field/model";
 import { buildSplitBoard } from "@/features/split/model";
 import { buildArenaModel, competeNow } from "@fitness-battle/shared";
-import { NumberTicker } from "@/ui/number-ticker";
 import { useState } from "react";
 
 export function ArenaScreen() {
@@ -37,18 +36,8 @@ export function ArenaScreen() {
   return (
     <>
       <p className="fb-kicker">Arena</p>
-      <p className="fb-copy">
-        Arrival{" "}
-        <strong>
-          <NumberTicker
-            digits={1}
-            value={arena.lanes.find((lane) => lane.you)?.values[2] ?? 0}
-          />
-        </strong>{" "}
-        {arena.unit}
-      </p>
       {arena.optedIn ? (
-        <FieldStage model={field} boardRows={board.rows} />
+        <FieldStage model={field} boardRows={board.rows} chrome="shell" />
       ) : (
         <section className="sp-empty">
           <h2>You are not on a track yet</h2>

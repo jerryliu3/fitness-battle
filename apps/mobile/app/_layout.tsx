@@ -9,7 +9,7 @@ import { router, Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { HeroUINativeProvider } from "heroui-native/provider";
 import { useEffect } from "react";
-import { ActivityIndicator, View } from "react-native";
+import { ActivityIndicator, Text, View } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import "../global.css";
 // Registers the foreground notification handler.
@@ -65,6 +65,16 @@ export default function RootLayout() {
         }}
       >
         <ActivityIndicator color={SHELL_COLORS.plum} />
+        <Text
+          style={{
+            marginTop: 16,
+            color: SHELL_COLORS.plum,
+            fontFamily: "DMSans_700Bold",
+            letterSpacing: 1,
+          }}
+        >
+          FITNESS BATTLE
+        </Text>
       </View>
     );
   }

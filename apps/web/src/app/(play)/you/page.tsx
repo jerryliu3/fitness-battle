@@ -1,6 +1,5 @@
 "use client";
 
-import { AuthGate } from "@/components/auth-gate";
 import { useAuth } from "@/components/auth-context";
 import { useCompete } from "@/components/compete-context";
 import { NotificationSettings } from "@/components/notification-settings";
@@ -583,10 +582,8 @@ function YouContent() {
 
 export default function YouPage() {
   return (
-    <AuthGate reason="You is your profile, connections, and freezes. Sign in to open it.">
-      <Suspense fallback={<p className="fb-copy">Loading…</p>}>
-        <YouContent />
-      </Suspense>
-    </AuthGate>
+    <Suspense fallback={<p className="fb-copy">Loading…</p>}>
+      <YouContent />
+    </Suspense>
   );
 }

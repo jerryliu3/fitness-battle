@@ -245,8 +245,67 @@
   font-size: 14px;
 }
 
+.phone-shell .fb-btn,
+.phone-shell .fb-btn-line,
+.phone-shell .sheet-close {
+  min-height: 48px;
+  border-radius: 14px;
+  width: 100%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.phone-shell .fb-row {
+  min-height: 52px;
+}
+
+.track-gain {
+  display: grid;
+  gap: 4px;
+}
+
+.track-gain strong {
+  font-size: 42px;
+  letter-spacing: -1px;
+  line-height: 1;
+}
+
+.track-gain small {
+  font-size: 18px;
+  color: var(--muted);
+}
+
+.track-switch button,
+.track-replay button {
+  min-height: 44px;
+  border-radius: 999px;
+}
+
+.boot-splash {
+  min-height: 100dvh;
+  display: grid;
+  place-items: center;
+  background: #fff9e9;
+  color: #40234e;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.sheet-content {
+  animation: sheet-up 220ms ease-out;
+}
+
+@keyframes sheet-up {
+  from { transform: translateX(-50%) translateY(16px); }
+  to { transform: translateX(-50%) translateY(0); }
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .phone-pill {
+  .phone-pill,
+  .sheet-content {
     transition: none;
+    animation: none;
   }
 }
