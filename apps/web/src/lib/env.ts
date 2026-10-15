@@ -38,4 +38,10 @@ export const serverEnv = {
   garminRedirectUri:
     process.env.GARMIN_REDIRECT_URI ??
     "http://localhost:3000/api/fitness/garmin/callback",
+  /**
+   * Optional Expo access token for the Push API
+   * (https://expo.dev/accounts/[account]/settings/access-tokens).
+   * Not required for basic sends; improves attribution and limits.
+   */
+  expoAccessToken: process.env.EXPO_ACCESS_TOKEN ?? "",
 };

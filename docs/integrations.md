@@ -18,7 +18,13 @@ Catalog source: `packages/shared/src/fitness/providers.ts`.
 
 ## Push notifications
 
-Account prefs and device tokens persist in Supabase (`notification_preferences`, `push_devices`). Test sends write a `notification_outbox` row with `status=stubbed`. APNs / FCM / web-push credentials are not connected yet — enabling push still registers a stub token so the product path is end-to-end without a live provider.
+| Surface | Token | Delivery |
+| --- | --- | --- |
+| iOS / Android (dev/prod build) | Expo push token via `expo-notifications` | Server → Expo Push API → APNs/FCM |
+| Simulator / demo | Stub token (`stub-*`) | Outbox `stubbed` only |
+| Web | Browser permission + stub device row | Local `Notification` API; no web-push VAPID yet |
+
+Tables: `notification_preferences`, `push_devices`, `notification_outbox`. Routes: `GET/PUT /api/notifications`, `POST /api/notifications/test`, `POST /api/notifications/send`. Optional env: `EXPO_ACCESS_TOKEN`.
 
 ## Keys
 

@@ -11,6 +11,14 @@
       "expo-router",
       "expo-font",
       [
+        "expo-notifications",
+        {
+          "color": "#B7F255",
+          "defaultChannel": "default",
+          "sounds": []
+        }
+      ],
+      [
         "react-native-health",
         {
           "isClinicalDataEnabled": false,
@@ -53,6 +61,7 @@
         }
       ],
       "permissions": [
+        "android.permission.POST_NOTIFICATIONS",
         "android.permission.health.READ_EXERCISE",
         "android.permission.health.READ_HEART_RATE",
         "android.permission.health.READ_SLEEP"

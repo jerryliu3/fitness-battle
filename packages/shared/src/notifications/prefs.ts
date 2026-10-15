@@ -202,6 +202,38 @@ export function createStubPushToken(
   return `stub-${platform}-${stamp}-${rand}`;
 }
 
+/** Expo Push Service tokens look like `ExponentPushToken[…]`. */
+export function isExpoPushToken(token: string | null | undefined): boolean {
+  return typeof token === "string" && /^ExponentPushToken\[.+\]$/.test(token);
+}
+
+export function registerPushDevice(
+  prefs: NotificationPreferences,
+  input: {
+    platform: NotificationPlatform;
+    token: string;
+    stub: boolean;
+    permissionStatus: PushPermissionStatus;
+    now?: Date;
+  },
+): NotificationPreferences {
+  const now = input.now ?? new Date();
+  return {
+    ...prefs,
+    enabled: true,
+    permissionStatus: input.permissionStatus,
+    registration: {
+      platform: input.platform,
+      token: input.token,
+      registeredAt: prefs.registration?.token === input.token
+        ? prefs.registration.registeredAt ?? now.toISOString()
+        : now.toISOString(),
+      stub: input.stub,
+    },
+    updatedAt: now.toISOString(),
+  };
+}
+
 /**
  * Arm push with a stub device token.
  * Reuses an existing token for the same platform when present.
@@ -218,20 +250,25 @@ export function registerStubPush(
     prefs.registration?.platform === platform && prefs.registration.token
       ? prefs.registration
       : null;
-  return {
-    ...prefs,
-    enabled: true,
+  // Keep a live Expo token if we already have one for this platform.
+  const existingToken = existing?.token;
+  if (existing && existingToken && isExpoPushToken(existingToken) && !existing.stub) {
+    return registerPushDevice(prefs, {
+      platform,
+      token: existingToken,
+      stub: false,
+      permissionStatus:
+        permissionStatus === "stub" ? "granted" : permissionStatus,
+      now,
+    });
+  }
+  return registerPushDevice(prefs, {
+    platform,
+    token: existingToken ?? createStubPushToken(platform, now),
+    stub: true,
     permissionStatus,
-    registration: existing
-      ? { ...existing, stub: true }
-      : {
-          platform,
-          token: createStubPushToken(platform, now),
-          registeredAt: now.toISOString(),
-          stub: true,
-        },
-    updatedAt: now.toISOString(),
-  };
+    now,
+  });
 }
 
 /**

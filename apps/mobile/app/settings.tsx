@@ -64,17 +64,26 @@ export default function SettingsScreen() {
     setBusy(true);
     setNote(null);
     try {
-      const next = enabled
-        ? await enableNativePush(identity)
-        : await disableNativePush(identity);
-      setPrefs(next);
-      const synced = identity && !identity.localOnly
-        ? " Synced to your account."
-        : " Stored on this device only.";
+      if (!enabled) {
+        const next = await disableNativePush(identity);
+        setPrefs(next);
+        setNote("Push turned off on this device.");
+        return;
+      }
+      const result = await enableNativePush(identity);
+      setPrefs(result.prefs);
+      if (!result.prefs.enabled) {
+        setNote(result.detail ?? "Notification permission was denied.");
+        return;
+      }
+      const synced =
+        identity && !identity.localOnly
+          ? " Synced to your account."
+          : " Stored on this device only.";
       setNote(
-        enabled
-          ? `Stub ${platform} token registered. Live push is not wired yet.${synced}`
-          : `Push turned off on this device.${synced}`,
+        result.mode === "expo"
+          ? `Live Expo push token registered for ${platform}.${synced}`
+          : `${result.detail ?? "Using a stub token."}${synced}`,
       );
     } finally {
       setBusy(false);
@@ -109,10 +118,19 @@ export default function SettingsScreen() {
       return;
     }
     Alert.alert(result.payload.title, result.payload.body);
+    if (result.mode === "expo") {
+      setNote(
+        result.persisted
+          ? "Sent via Expo Push Service and recorded in the outbox."
+          : "Sent via Expo Push Service.",
+      );
+      return;
+    }
     setNote(
-      result.persisted
-        ? "Stub delivery shown and recorded in the outbox."
-        : "Stub delivery shown as an in-app alert.",
+      result.message ??
+        (result.persisted
+          ? "Stub delivery recorded in the outbox (no live Expo token yet)."
+          : "Local stub delivery — use a physical device + live auth for Expo Push."),
     );
   }
 
@@ -133,12 +151,13 @@ export default function SettingsScreen() {
         <Text style={styles.kicker}>Settings</Text>
         <Text style={styles.title}>Notifications</Text>
         <Text style={styles.copy}>
-          Same controls as the web app. Enabling registers a stub {platform}{" "}
-          device token
+          Enabling asks for permission and registers an Expo push token on a
+          physical {platform} device
           {identity && !identity.localOnly
-            ? " and syncs preferences to your account"
-            : " on this device"}
-          . APNs / FCM are not connected yet.
+            ? ", then syncs it to your account"
+            : " (demo stays on-device)"}
+          . Simulators fall back to a stub token. The server sends through the
+          Expo Push Service (which talks to APNs/FCM).
         </Text>
 
         <View style={styles.card}>

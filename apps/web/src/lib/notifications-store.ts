@@ -125,13 +125,16 @@ export async function clearRemoteDevices(
   return true;
 }
 
-export async function recordStubDelivery(input: {
+export type OutboxStatus = "stubbed" | "queued" | "sent" | "failed";
+
+export async function recordDelivery(input: {
   userId: string;
   category: string;
   title: string;
   body: string;
   path?: string;
   deviceCount: number;
+  status: OutboxStatus;
 }): Promise<{ id: string; persisted: boolean }> {
   if (!canPersistNotifications(input.userId)) {
     return { id: `local-${Date.now()}`, persisted: false };
@@ -145,11 +148,23 @@ export async function recordStubDelivery(input: {
       title: input.title,
       body: input.body,
       path: input.path ?? null,
-      status: "stubbed",
+      status: input.status,
       device_count: input.deviceCount,
     })
     .select("id")
     .single();
   if (error || !data) throw new Error("outbox_not_saved");
   return { id: data.id as string, persisted: true };
+}
+
+/** @deprecated use recordDelivery */
+export async function recordStubDelivery(input: {
+  userId: string;
+  category: string;
+  title: string;
+  body: string;
+  path?: string;
+  deviceCount: number;
+}): Promise<{ id: string; persisted: boolean }> {
+  return recordDelivery({ ...input, status: "stubbed" });
 }

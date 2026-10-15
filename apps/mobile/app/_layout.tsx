@@ -4,10 +4,25 @@ import {
   DMSans_700Bold,
   useFonts as useDmSans,
 } from "@expo-google-fonts/dm-sans";
-import { Stack } from "expo-router";
+import * as Notifications from "expo-notifications";
+import { router, Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
+import { useEffect } from "react";
 import { ActivityIndicator, View } from "react-native";
+// Registers the foreground notification handler.
+import "../src/lib/expo-push-register";
 import { colors } from "../src/theme";
+
+function pathFromNotificationResponse(
+  response: Notifications.NotificationResponse,
+): string | null {
+  const data = response.notification.request.content.data as {
+    path?: unknown;
+  };
+  return typeof data.path === "string" && data.path.startsWith("/")
+    ? data.path
+    : null;
+}
 
 export default function RootLayout() {
   const [dmLoaded] = useDmSans({
@@ -15,6 +30,16 @@ export default function RootLayout() {
     DMSans_500Medium,
     DMSans_700Bold,
   });
+
+  useEffect(() => {
+    const sub = Notifications.addNotificationResponseReceivedListener(
+      (response) => {
+        const path = pathFromNotificationResponse(response);
+        if (path) router.push(path as "/settings");
+      },
+    );
+    return () => sub.remove();
+  }, []);
 
   if (!dmLoaded) {
     return (

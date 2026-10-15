@@ -125,10 +125,10 @@ export function NotificationSettings() {
     <section className="fb-card" id="notifications">
       <h2>Notifications</h2>
       <p className="fb-copy">
-        Control push for this browser and your account. Preferences and device
-        tokens sync when you are signed in with live Supabase. Live APNs / FCM
-        delivery is not wired yet — enabling registers a stub device token and
-        records test sends in the notification outbox.
+        Control push for this browser and your account. Preferences sync when
+        you are signed in with live Supabase. Web uses the browser Notification
+        API locally; iOS/Android register Expo push tokens and the server sends
+        through the Expo Push Service (APNs/FCM).
       </p>
 
       <div className="fb-row">

@@ -3,6 +3,7 @@ import {
   normalizeNotificationPreferences,
   parseNotificationPreferences,
   prepareNotificationDelivery,
+  registerPushDevice,
   registerStubPush,
   serializeNotificationPreferences,
   setCategoryEnabled,
@@ -15,6 +16,7 @@ import {
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Platform } from "react-native";
 import { mobileEnv } from "./env";
+import { registerExpoPushToken } from "./expo-push-register";
 import { supabase } from "./supabase";
 
 export type SyncIdentity = {
@@ -129,16 +131,55 @@ export async function hydrateNotificationPreferences(
   }
 }
 
+export type EnablePushResult = {
+  prefs: NotificationPreferences;
+  /** How the device token was obtained. */
+  mode: "expo" | "stub";
+  detail?: string;
+};
+
 export async function enableNativePush(
   identity?: SyncIdentity | null,
-): Promise<NotificationPreferences> {
+): Promise<EnablePushResult> {
   return enqueueWrite(async () => {
     const platform = detectionPlatform();
     const prefs = await loadNotificationPreferences();
-    const saved = await saveNotificationPreferences(
-      registerStubPush(prefs, platform),
-    );
-    return persistRemote(saved, identity, { registerDevice: true });
+    const expo = await registerExpoPushToken();
+
+    let next: NotificationPreferences;
+    let mode: "expo" | "stub" = "stub";
+    let detail: string | undefined;
+
+    if (expo.ok) {
+      next = registerPushDevice(prefs, {
+        platform,
+        token: expo.token,
+        stub: false,
+        permissionStatus: "granted",
+      });
+      mode = "expo";
+    } else {
+      if (expo.reason === "denied") {
+        next = {
+          ...prefs,
+          enabled: false,
+          permissionStatus: "denied",
+          registration: null,
+          updatedAt: new Date().toISOString(),
+        };
+        const savedDenied = await saveNotificationPreferences(next);
+        const synced = await persistRemote(savedDenied, identity, {
+          clearDevices: true,
+        });
+        return { prefs: synced, mode: "stub", detail: expo.message };
+      }
+      next = registerStubPush(prefs, platform, new Date(), "stub");
+      detail = expo.message;
+    }
+
+    const saved = await saveNotificationPreferences(next);
+    const synced = await persistRemote(saved, identity, { registerDevice: true });
+    return { prefs: synced, mode, detail };
   });
 }
 
@@ -167,7 +208,13 @@ export async function updateNativeCategory(
 }
 
 export type DeliverResult =
-  | { ok: true; payload: NotificationDeliveryPayload; persisted?: boolean }
+  | {
+      ok: true;
+      payload: NotificationDeliveryPayload;
+      persisted?: boolean;
+      mode?: "expo" | "stub" | "local";
+      message?: string;
+    }
   | { ok: false; reason: "blocked" };
 
 export async function deliverNativeNotification(
@@ -189,14 +236,25 @@ export async function deliverNativeNotification(
           prefs,
         }),
       });
-      const body = (await response.json()) as { ok?: boolean; persisted?: boolean };
+      const body = (await response.json()) as {
+        ok?: boolean;
+        persisted?: boolean;
+        mode?: "expo" | "stub";
+        message?: string;
+      };
       if (response.ok && body.ok) {
-        return { ok: true, payload: prepared, persisted: body.persisted === true };
+        return {
+          ok: true,
+          payload: prepared,
+          persisted: body.persisted === true,
+          mode: body.mode ?? "stub",
+          message: body.message,
+        };
       }
     } catch {
       // Fall through to local acknowledgement.
     }
   }
 
-  return { ok: true, payload: prepared };
+  return { ok: true, payload: prepared, mode: "local" };
 }
