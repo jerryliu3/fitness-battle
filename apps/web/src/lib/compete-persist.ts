@@ -413,7 +413,7 @@ export async function hydrateCompeteCollections(
 /** Hydrate crewBoard from shared crew_week_fields when enrollment has crew_id. */
 export async function hydrateCrewBoard(
   db: Db,
-  userId: string,
+  _userId: string,
   state: CompeteState,
 ): Promise<CompeteState> {
   const pinned = state.enrollments.find((item) => item.crewId);
@@ -421,42 +421,41 @@ export async function hydrateCrewBoard(
     return state.crewBoard ? { ...state, crewBoard: null } : state;
   }
 
-  const { data: field } = await db
-    .from("crew_week_fields")
-    .select("*")
-    .eq("crew_id", pinned.crewId)
-    .eq("wave_start", pinned.waveStart)
-    .maybeSingle();
+  const [{ data: field }, { data: crew }, { data: roster, error: rosterError }] =
+    await Promise.all([
+      db
+        .from("crew_week_fields")
+        .select("*")
+        .eq("crew_id", pinned.crewId)
+        .eq("wave_start", pinned.waveStart)
+        .maybeSingle(),
+      db.from("crews").select("name").eq("id", pinned.crewId).maybeSingle(),
+      // SECURITY DEFINER — peer open Elo is not readable via sport_ratings RLS.
+      db.rpc("crew_field_roster", { p_crew_id: pinned.crewId }),
+    ]);
   if (!field) {
     return { ...state, crewBoard: null };
   }
-
-  const { data: crew } = await db
-    .from("crews")
-    .select("name")
-    .eq("id", pinned.crewId)
-    .maybeSingle();
+  if (rosterError) {
+    throw new Error(rosterError.message);
+  }
 
   const memberIds = (field.member_ids as string[]) ?? [];
-  const { data: members } = memberIds.length
-    ? await db
-        .from("crew_members")
-        .select("user_id, display_name")
-        .eq("crew_id", pinned.crewId)
-        .in("user_id", memberIds)
-    : { data: [] as { user_id: string; display_name: string }[] };
-
-  const { data: ratings } = memberIds.length
-    ? await db
-        .from("sport_ratings")
-        .select("user_id, open_elo")
-        .eq("sport", field.sport)
-        .in("user_id", memberIds)
-    : { data: [] as { user_id: string; open_elo: number }[] };
-
-  const eloByUser = new Map(
-    (ratings ?? []).map((row) => [String(row.user_id), Number(row.open_elo)]),
-  );
+  const memberSet = new Set(memberIds);
+  const members = (
+    (roster ?? []) as {
+      user_id: string;
+      display_name: string;
+      open_elo: number;
+    }[]
+  )
+    .filter((row) => memberSet.has(String(row.user_id)))
+    .map((row) => ({
+      id: String(row.user_id),
+      name: String(row.display_name || "Athlete"),
+      elo: Number(row.open_elo) || 1000,
+    }))
+    .sort((a, b) => a.id.localeCompare(b.id));
 
   return {
     ...state,
@@ -468,11 +467,7 @@ export async function hydrateCrewBoard(
       weekEnd: String(field.week_end),
       capacity: Number(field.capacity),
       memberIds,
-      members: (members ?? []).map((member) => ({
-        id: String(member.user_id),
-        name: String(member.display_name),
-        elo: eloByUser.get(String(member.user_id)) ?? 1000,
-      })),
+      members,
       syntheticIds: (field.synthetic_ids as string[]) ?? [],
     },
   };

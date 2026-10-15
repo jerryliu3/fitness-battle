@@ -47,6 +47,22 @@ export function syncPeriodResultAcknowledgements(
   });
 }
 
+/**
+ * Account writes store `pendingRevealIds: []` and use `acknowledgedAt` as SoT.
+ * An empty array must NOT run legacy sync — that would auto-ack every pending
+ * week and wipe the week-complete reveal. Sync only when:
+ * - legacy list has ids to keep pending, or
+ * - results predate the acknowledgedAt field (missing key).
+ */
+export function shouldSyncLegacyPendingReveals(
+  results: PeriodResult[],
+  pendingIds: string[] | undefined,
+): boolean {
+  if (pendingIds === undefined) return false;
+  if (pendingIds.length > 0) return true;
+  return results.some((row) => !("acknowledgedAt" in row));
+}
+
 export function acknowledgePeriodResults(
   results: PeriodResult[],
   revealIds: string[] | null,

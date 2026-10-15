@@ -32,6 +32,7 @@ import {
   appendPeriodResults,
   pendingRevealIdsFromResults,
   periodResultId,
+  shouldSyncLegacyPendingReveals,
   syncPeriodResultAcknowledgements,
 } from "./history";
 import {
@@ -174,10 +175,12 @@ export function migrateCompeteState(parsed: CompeteState): CompeteState {
   )
     ? (parsed as CompeteState).pendingRevealIds
     : undefined;
-  const periodResults = syncPeriodResultAcknowledgements(
+  const periodResults = shouldSyncLegacyPendingReveals(
     rawPeriodResults,
     legacyPending,
-  );
+  )
+    ? syncPeriodResultAcknowledgements(rawPeriodResults, legacyPending)
+    : rawPeriodResults;
   const pendingRevealIds = pendingRevealIdsFromResults(periodResults);
   const enrollments = Array.isArray((parsed as CompeteState).enrollments)
     ? (parsed as CompeteState).enrollments

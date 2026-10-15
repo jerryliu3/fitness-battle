@@ -37,5 +37,7 @@ Week reveal is derived from `acknowledged_at`, not a separate pending table.
 ## P5 thin snapshot + derive reveals
 
 - Account writes store `pendingRevealIds: []` — always re-derived from `periodResults.acknowledgedAt` on migrate/load.
+- `migrateCompeteState` must **not** treat that empty array as a legacy “all dismissed” list (see `shouldSyncLegacyPendingReveals`); otherwise every pending week would be auto-acked.
 - GET overlays relational SoT (prefs, ratings, freezes, enrollments) when dual-write rows exist; `period_results` **merge** with the snapshot (prefer acknowledged / newer settledAt) so a laggy dual-write cannot erase snapshot-ahead weeks. Activities stay snapshot-primary (sync can race).
+- Crew board Elo comes from `crew_field_roster` (SECURITY DEFINER), not `sport_ratings` RLS.
 - Bulky array omission from jsonb is deferred until hydrate has soaked — snapshot remains a fallback cache.

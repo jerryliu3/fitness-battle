@@ -67,6 +67,7 @@ export {
   pendingRevealIdsFromResults,
   periodResultId,
   primaryRevealResults,
+  shouldSyncLegacyPendingReveals,
   syncPeriodResultAcknowledgements,
 } from "./history";
 export { RANK_BANDS, rankForElo, eloInBand, type RankBand } from "./ranks";
