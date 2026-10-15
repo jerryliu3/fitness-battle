@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "Overtaek",
-    "slug": "fitness",
+    "slug": "overtaek",
     "scheme": "overtaek",
     "version": "0.1.0",
     "orientation": "portrait",
@@ -73,7 +73,7 @@
     },
     "extra": {
       "eas": {
-        "projectId": "bea1932b-6a00-4edc-9710-22350423c446"
+        "projectId": "30807072-a0b4-44cd-bd15-ec186e40ceed"
       },
       "supportEmail": "jerrry333x@gmail.com"
     }

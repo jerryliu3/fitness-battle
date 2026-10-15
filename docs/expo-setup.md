@@ -4,7 +4,7 @@
 
 | Piece | Role |
 | --- | --- |
-| Expo project `bea1932b-…` | Cloud builds (EAS). Dashboard slug is **`fitness`**; `app.json` `slug` must match that (display name stays Overtaek). |
+| Expo project `30807072-…` (`overtaek`) | Cloud builds (EAS). `app.json` `slug` + `extra.eas.projectId` must match this project — not the older `fitness` / `bea1932b-…` project. |
 | Bundle ID `com.overtaek.app` | Must match App Store Connect **and** the built `.ipa` |
 | Numeric Apple ID (`ascAppId`) | Tells `eas submit` which listing to upload to (`6822939070`) |
 
@@ -63,18 +63,19 @@ On every push to `main` that touches `apps/mobile`, `packages/shared`, or the lo
 | Secret | Required | What it is |
 | --- | --- | --- |
 | `EXPO_ACCESS_TOKEN` | Yes | Expo **account** access token ([expo.dev → Access tokens](https://expo.dev/accounts/[account]/settings/access-tokens)). Same kind of token as for EAS CLI — not a Vercel token. |
-| `ASC_APP_ID` | For submit | App Store Connect numeric **Apple ID** (App Information). Not the Expo project id `bea1932b-…`. |
+| `ASC_APP_ID` | For submit | App Store Connect numeric **Apple ID** (App Information). Not the Expo project id. |
 
 ### Prerequisites (one-time, usually on a Mac)
 
-Non-interactive CI only works after EAS already has iOS credentials from a successful interactive build:
+Non-interactive CI only works after EAS already has iOS credentials **on the Overtaek Expo project** (`30807072-…`) from a successful interactive build. Credentials on the old `fitness` project do not carry over.
 
 ```bash
 cd apps/mobile
+# Confirm app.json projectId is 30807072-a0b4-44cd-bd15-ec186e40ceed and slug is overtaek
 npx eas-cli@latest build --platform ios --profile production
 ```
 
-Confirm Bundle ID `com.overtaek.app`. If credentials were never created, the GitHub job will fail until that Mac step (or Expo dashboard credential setup) is done.
+Confirm Bundle ID `com.overtaek.app`. If credentials were never created for this project, the GitHub job will fail until that Mac step (or Expo dashboard credential setup) is done.
 
 Optional: if CI needs to repair Apple credentials, also set Expo’s ASC API key env vars (`EXPO_ASC_*`, `EXPO_APPLE_TEAM_*`) as documented in [Trigger builds from CI](https://docs.expo.dev/build/building-on-ci/).
 
@@ -105,7 +106,7 @@ npx eas-cli@latest submit --platform ios --latest --id YOUR_NUMERIC_APPLE_ID
 | Icon name | Overtaek |
 | Bundle ID | `com.overtaek.app` |
 | SKU | `overtaek-ios` |
-| Expo project ID | `bea1932b-6a00-4edc-9710-22350423c446` |
+| Expo project ID | `30807072-a0b4-44cd-bd15-ec186e40ceed` (slug `overtaek`) |
 
 ## Push notifications note
 
