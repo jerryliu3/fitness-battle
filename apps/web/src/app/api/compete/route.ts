@@ -5,6 +5,7 @@ import {
   sanitizeCompeteStateForAccount,
 } from "@fitness-battle/shared";
 import { resolveRequestUserId } from "@/lib/auth/request-user";
+import { persistCompeteCore } from "@/lib/compete-persist";
 import { createClient } from "@/lib/supabase/server";
 
 export async function GET(request: Request) {
@@ -45,7 +46,6 @@ export async function PUT(request: Request) {
   if (!body || !isCompeteState(body.state)) {
     return NextResponse.json({ error: "invalid_state" }, { status: 400 });
   }
-  // Never persist QA demoNow on the account document.
   const state = sanitizeCompeteStateForAccount(migrateCompeteState(body.state));
   const encoded = JSON.stringify(state);
   if (encoded.length > 500_000) {
@@ -53,6 +53,8 @@ export async function PUT(request: Request) {
   }
   const supabase = await createClient();
   const updatedAt = new Date().toISOString();
+
+  // Full snapshot first (rollback-friendly), then additive relational dual-write.
   const { error } = await supabase.from("compete_snapshots").upsert({
     user_id: userId,
     state,
@@ -61,5 +63,23 @@ export async function PUT(request: Request) {
   if (error) {
     return NextResponse.json({ error: "snapshot_not_saved", persisted: false }, { status: 500 });
   }
-  return NextResponse.json({ ok: true, persisted: true, updatedAt });
+
+  try {
+    await persistCompeteCore(supabase, userId, state);
+  } catch {
+    // Snapshot is saved; relational lag is repaired on the next successful PUT.
+    return NextResponse.json({
+      ok: true,
+      persisted: true,
+      updatedAt,
+      relational: false,
+    });
+  }
+
+  return NextResponse.json({
+    ok: true,
+    persisted: true,
+    updatedAt,
+    relational: true,
+  });
 }

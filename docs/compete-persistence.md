@@ -14,3 +14,14 @@ Normalize durable facts out of `compete_snapshots` jsonb into relational tables,
 ## Battles schema — not the play path
 
 `battles` / `periods` / `standings` are an early invite-code scaffold. **Do not migrate My track / The field onto them.** Weekly compete uses `compete_snapshots` (and the relational tables introduced in follow-up PRs).
+
+## P2 tables (dual-write, full snapshot kept)
+
+| Table | Role |
+| --- | --- |
+| `athlete_prefs` | freezes, calibrated, onboarding, lesson, training goal |
+| `sport_ratings` | Elo + opt-in locks |
+| `period_results` | Settled weeks; `acknowledged_at null` = pending week reveal |
+| `period_freezes` | Frozen period starts |
+
+Week reveal is derived from `acknowledged_at`, not a separate pending table.
