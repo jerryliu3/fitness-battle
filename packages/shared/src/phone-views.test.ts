@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { freshState, reduceCompete } from "./compete/engine";
 import type { Activity, PeriodResult } from "./compete/sports";
 import {
+  CHECKPOINT_ANCHORS,
   awardCards,
   buildArenaModel,
   buildTodayRoute,
@@ -52,6 +53,18 @@ describe("today checkpoints", () => {
       route.suggestion.title,
     );
     expect(route.discs.find((disc) => disc.id === "future-0")?.activityId).toBeNull();
+  });
+
+  it("seats a single counted session on the past disc nearest today", () => {
+    const state = {
+      ...freshState(now),
+      activities: [
+        run({ id: "only", startedAt: "2026-10-14T12:00:00.000Z", distanceM: 3000 }),
+      ],
+    };
+    const past = buildTodayRoute(state, now).discs.filter((disc) => disc.role === "past");
+    expect(past.map((disc) => disc.activityId)).toEqual(["only"]);
+    expect(past[0]?.top).toBe(CHECKPOINT_ANCHORS.past.at(-1)?.top);
   });
 });
 

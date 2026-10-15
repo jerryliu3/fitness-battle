@@ -1,5 +1,6 @@
 import {
   duelViews,
+  competeNow,
   SPORTS,
   type SportId,
 } from "@fitness-battle/shared";
@@ -28,7 +29,7 @@ export default function FieldScreen() {
     );
   }
 
-  const now = new Date();
+  const now = competeNow(state);
   const duels = duelViews(state, now);
   const primary = SPORTS.find((sport) => sport.id === state.primary) ?? SPORTS[0]!;
   const optedIn = Boolean(
@@ -145,7 +146,7 @@ export default function FieldScreen() {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: SHELL_COLORS.paper },
-  scroll: { padding: 16, gap: 12, paddingBottom: 120 },
+  scroll: { padding: 16, gap: 12, paddingBottom: 28 },
   kicker: {
     fontFamily: "DMSans_700Bold",
     fontSize: 13,

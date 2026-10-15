@@ -7,11 +7,13 @@ import { CrewPanel } from "@/features/rally/crew-panel";
 import { FieldJoinActions } from "@/features/rally/field-join";
 import { buildSplitBoard } from "@/features/split/model";
 import { competeNow, formatEffort, sportById } from "@fitness-battle/shared";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 export function FieldScreen() {
   const { state, dispatch } = useCompete();
   const { user } = useAuth();
+  const router = useRouter();
   const [authOpen, setAuthOpen] = useState(false);
   const [authReason, setAuthReason] = useState("Sign in to join the field.");
   const [username, setUsername] = useState("");
@@ -30,7 +32,7 @@ export function FieldScreen() {
       return;
     }
     if (!state!.onboardingCompleted) {
-      window.location.href = "/onboarding";
+      router.push("/onboarding");
       return;
     }
     action();

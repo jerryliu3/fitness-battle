@@ -6,7 +6,12 @@ import { ArenaScreen } from "@/features/arena/arena-screen";
 import { FieldScreen } from "@/features/field/field-screen";
 import { TodayScreen } from "@/features/today/today-screen";
 import YouRoute from "@/features/you/you-route";
-import { SHELL_TABS, shellTabFromPath, type ShellTabId } from "@fitness-battle/shared";
+import {
+  SHELL_TABS,
+  isShellTabId,
+  shellTabFromPath,
+  type ShellTabId,
+} from "@fitness-battle/shared";
 import * as ScrollArea from "@radix-ui/react-scroll-area";
 import * as Tabs from "@radix-ui/react-tabs";
 import { motion, useReducedMotion } from "motion/react";
@@ -38,6 +43,52 @@ export function PhoneShell({
   const matched = shellTabFromPath(path)?.id ?? null;
   const active = pressed ?? matched;
 
+  function notices() {
+    if (hideTabs) return null;
+    return (
+      <>
+        {saveError ? <p className="phone-guest">{saveError}</p> : null}
+        {legacyOffer ? (
+          <p className="phone-guest">
+            This browser still has history from before accounts.{" "}
+            <button type="button" className="fb-btn-ghost" onClick={recoverLegacy}>
+              Use it on this account
+            </button>
+          </p>
+        ) : null}
+        {loadStatus === "failed" ? (
+          <p className="phone-guest">
+            Could not load the account copy. This screen is read-only.{" "}
+            <button type="button" className="fb-btn-ghost" onClick={retryLoad}>
+              Retry
+            </button>
+          </p>
+        ) : null}
+        {!loading && !user ? (
+          <p className="phone-guest">
+            Browsing as a guest. <Link href="/signup">Create an account</Link>
+          </p>
+        ) : null}
+      </>
+    );
+  }
+
+  function panel(body: ReactNode) {
+    return (
+      <ScrollArea.Root className="phone-scroll" type="scroll">
+        <ScrollArea.Viewport>
+          <div className={hideTabs ? "phone-main phone-main-solo" : "phone-main"}>
+            {notices()}
+            {body}
+          </div>
+        </ScrollArea.Viewport>
+        <ScrollArea.Scrollbar orientation="vertical">
+          <ScrollArea.Thumb />
+        </ScrollArea.Scrollbar>
+      </ScrollArea.Root>
+    );
+  }
+
   useEffect(() => {
     setPressed(null);
   }, [path]);
@@ -53,53 +104,30 @@ export function PhoneShell({
   return (
     <div className="phone-frame">
       <div className="phone-shell">
-        <ScrollArea.Root className="phone-scroll" type="scroll">
-          <ScrollArea.Viewport>
-            <div className={hideTabs ? "phone-main phone-main-solo" : "phone-main"}>
-              {!hideTabs && saveError ? <p className="phone-guest">{saveError}</p> : null}
-              {!hideTabs && legacyOffer ? (
-                <p className="phone-guest">
-                  This browser still has history from before accounts.{" "}
-                  <button type="button" className="fb-btn-ghost" onClick={recoverLegacy}>
-                    Use it on this account
-                  </button>
-                </p>
-              ) : null}
-              {!hideTabs && loadStatus === "failed" ? (
-                <p className="phone-guest">
-                  Could not load the account copy. This screen is read-only.{" "}
-                  <button type="button" className="fb-btn-ghost" onClick={retryLoad}>
-                    Retry
-                  </button>
-                </p>
-              ) : null}
-              {!hideTabs && !loading && !user ? (
-                <p className="phone-guest">
-                  Browsing as a guest. <Link href="/signup">Create an account</Link>
-                </p>
-              ) : null}
-              {matched ? (
-                SHELL_TABS.map((tab) => (
-                  <div key={tab.id} hidden={active !== tab.id}>
-                    {WARMED[tab.id]}
-                  </div>
-                ))
-              ) : (
-                children
-              )}
-            </div>
-          </ScrollArea.Viewport>
-          <ScrollArea.Scrollbar orientation="vertical">
-            <ScrollArea.Thumb />
-          </ScrollArea.Scrollbar>
-        </ScrollArea.Root>
+        {matched ? (
+          <div className="phone-panels">
+            {SHELL_TABS.map((tab) => {
+              const on = active === tab.id;
+              return (
+                <div
+                  key={tab.id}
+                  className={on ? "phone-panel is-active" : "phone-panel"}
+                  inert={!on}
+                  aria-hidden={!on}
+                >
+                  {panel(WARMED[tab.id])}
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          panel(children)
+        )}
         {hideTabs ? null : (
           <Tabs.Root
             value={active ?? ""}
             onValueChange={(value) => {
-              if (value === "today" || value === "arena" || value === "field" || value === "you") {
-                setPressed(value);
-              }
+              if (isShellTabId(value)) setPressed(value);
             }}
           >
             <Tabs.List className="phone-tabs" aria-label="Primary">

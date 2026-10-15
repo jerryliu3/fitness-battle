@@ -15,6 +15,7 @@ import {
   useCallback,
   useContext,
   useEffect,
+  useRef,
   useState,
   type ReactNode,
 } from "react";
@@ -48,6 +49,8 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
   const router = useRouter();
   const [state, setState] = useState<CompeteState | null>(null);
   const [returnGain, setReturnGain] = useState(0);
+  const stateRef = useRef<CompeteState | null>(null);
+  stateRef.current = state;
 
   useEffect(() => {
     let alive = true;
@@ -70,38 +73,58 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
-  useEffect(() => {
-    if (!state) return;
-    let seen = countedActivityIds(state);
-    let alive = true;
+  const seenRef = useRef<{ ids: string[] | null; ready: boolean; opened: boolean }>({
+    ids: null,
+    ready: false,
+    opened: false,
+  });
 
-    function noteProgress(previous: string[] | null, current: string[]) {
-      if (!previous) return;
-      const added = newCountedIds(previous, current);
-      if (added.length === 0) return;
-      setReturnGain(added.length);
-      router.navigate("/arena");
+  const remember = useCallback((current: string[], announce: boolean) => {
+    const seen = seenRef.current;
+    if (announce && seen.ids) {
+      const added = newCountedIds(seen.ids, current);
+      if (added.length > 0) {
+        setReturnGain(added.length);
+        router.navigate("/arena");
+      }
     }
+    seen.ids = current;
+    void AsyncStorage.setItem(SEEN_KEY, JSON.stringify(current));
+  }, [router]);
 
+  useEffect(() => {
+    let alive = true;
     void AsyncStorage.getItem(SEEN_KEY).then((raw) => {
       if (!alive) return;
-      noteProgress(readIds(raw), seen);
-      void AsyncStorage.setItem(SEEN_KEY, JSON.stringify(seen));
+      seenRef.current.ids = readIds(raw);
+      seenRef.current.ready = true;
+      const current = stateRef.current;
+      if (!current || seenRef.current.opened) return;
+      seenRef.current.opened = true;
+      remember(countedActivityIds(current), true);
     });
 
     const sub = AppState.addEventListener("change", (status) => {
-      if (status !== "active") return;
-      const current = countedActivityIds(state);
-      noteProgress(seen, current);
-      seen = current;
-      void AsyncStorage.setItem(SEEN_KEY, JSON.stringify(seen));
+      if (status !== "active" || !seenRef.current.ready || !stateRef.current) return;
+      remember(countedActivityIds(stateRef.current), true);
     });
 
     return () => {
       alive = false;
       sub.remove();
     };
-  }, [router, state]);
+  }, [remember]);
+
+  useEffect(() => {
+    if (!state || !seenRef.current.ready) return;
+    const ids = countedActivityIds(state);
+    if (!seenRef.current.opened) {
+      seenRef.current.opened = true;
+      remember(ids, true);
+      return;
+    }
+    if (AppState.currentState === "active") remember(ids, false);
+  }, [remember, state]);
 
   const dispatch = useCallback((action: Action) => {
     setState((prev) => {

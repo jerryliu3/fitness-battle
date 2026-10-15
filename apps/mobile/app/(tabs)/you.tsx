@@ -92,20 +92,30 @@ export default function YouScreen() {
                 ? "Demo link"
                 : "Not connected";
           const onPhone = provider.id === "apple_health" || provider.id === "google_health";
-          return (
-            <Pressable
-              key={provider.id}
-              accessibilityRole="button"
-              onPress={() => {
-                if (onPhone) router.push("/connections");
-              }}
-              style={styles.row}
-            >
+          const copy = (
+            <>
               <Text style={styles.rowTitle}>{provider.name}</Text>
               <Text style={styles.copy}>
                 {status}
                 {onPhone ? "" : " · connect on the web"}
               </Text>
+            </>
+          );
+          if (!onPhone) {
+            return (
+              <View key={provider.id} style={styles.row}>
+                {copy}
+              </View>
+            );
+          }
+          return (
+            <Pressable
+              key={provider.id}
+              accessibilityRole="button"
+              onPress={() => router.push("/connections")}
+              style={styles.row}
+            >
+              {copy}
             </Pressable>
           );
         })}

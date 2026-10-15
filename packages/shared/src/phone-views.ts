@@ -137,8 +137,10 @@ export function buildTodayRoute(
   const past = countedInPeriod(state, now).slice(-2);
   const discs: CheckpointDisc[] = [];
 
+  const pastAnchors = CHECKPOINT_ANCHORS.past;
+  const pastStart = pastAnchors.length - past.length;
   past.forEach((activity, index) => {
-    const anchor = CHECKPOINT_ANCHORS.past[index];
+    const anchor = pastAnchors[pastStart + index];
     if (!anchor) return;
     const volume = volumeLabel(activity);
     const day = weekdayLabel(activity.startedAt);
