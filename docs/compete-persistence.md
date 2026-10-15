@@ -25,3 +25,7 @@ Normalize durable facts out of `compete_snapshots` jsonb into relational tables,
 | `period_freezes` | Frozen period starts |
 
 Week reveal is derived from `acknowledged_at`, not a separate pending table.
+
+## P3 activities
+
+`public.activities` gains compete columns (`sport`, `distance_m`, disposition/provenance, `compete_key`, `source_label`). Dual-write **upserts only** — never deletes orphans (live sync can race). `share_crew_week` reads these rows instead of snapshot jsonb.

@@ -1,15 +1,55 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import {
+  dispositionOf,
+  provenanceOf,
   sanitizeCompeteStateForAccount,
+  type Activity,
   type CompeteState,
 } from "@fitness-battle/shared";
 
 type Db = SupabaseClient;
 
+const CLOUD_PROVIDERS = new Set([
+  "strava",
+  "garmin",
+  "apple_health",
+  "google_health",
+  "whoop",
+  "oura",
+]);
+
+function splitCompeteKey(activity: Activity): {
+  provider: string;
+  externalId: string;
+  sourceLabel: string;
+  competeKey: string;
+} {
+  const competeKey = activity.id;
+  const sourceLabel = String(activity.source);
+  if (CLOUD_PROVIDERS.has(sourceLabel)) {
+    const prefix = `${sourceLabel}-`;
+    const externalId = competeKey.startsWith(prefix)
+      ? competeKey.slice(prefix.length)
+      : competeKey;
+    return {
+      provider: sourceLabel,
+      externalId: externalId || competeKey,
+      sourceLabel,
+      competeKey,
+    };
+  }
+  return {
+    provider: "mock",
+    externalId: competeKey,
+    sourceLabel,
+    competeKey,
+  };
+}
+
 /**
- * Dual-write durable prefs / ratings / settled weeks.
- * Snapshot jsonb stays the full document in P2 — this is additive SoT.
- * Failures are logged by the caller; do not throw away the snapshot write.
+ * Dual-write durable prefs / ratings / settled weeks / activities.
+ * Snapshot jsonb stays the full document — additive SoT only.
+ * Never deletes activity rows (sync may race ahead of the blob).
  */
 export async function persistCompeteCore(
   db: Db,
@@ -78,7 +118,6 @@ export async function persistCompeteCore(
     if (error) throw new Error(error.message);
   }
 
-  // Freezes are a small set — replace from document.
   const { error: clearFreezeError } = await db
     .from("period_freezes")
     .delete()
@@ -91,6 +130,49 @@ export async function persistCompeteCore(
         period_start: periodStart,
       })),
     );
+    if (error) throw new Error(error.message);
+  }
+
+  const { data: categories, error: categoryError } = await db
+    .from("categories")
+    .select("id, slug");
+  if (categoryError) throw new Error(categoryError.message);
+  const categoryBySlug = new Map(
+    (categories ?? []).map((row) => [row.slug as string, row.id as string]),
+  );
+
+  const activityRows = clean.activities.flatMap((activity) => {
+    const parts = splitCompeteKey(activity);
+    const categoryId = categoryBySlug.get(activity.sport);
+    if (!categoryId) return [];
+    return [
+      {
+        user_id: userId,
+        provider: parts.provider,
+        external_id: parts.externalId,
+        category_id: categoryId,
+        started_at: activity.startedAt,
+        metric_value:
+          activity.sport === "strength" ? activity.movingSec : activity.distanceM,
+        moving_sec: activity.movingSec,
+        avg_hr: activity.avgHr,
+        raw_name: "",
+        sport: activity.sport,
+        distance_m: activity.distanceM,
+        verified: activity.verified,
+        provenance: provenanceOf(activity),
+        disposition: dispositionOf(activity),
+        disposition_reason: activity.dispositionReason ?? null,
+        compete_key: parts.competeKey,
+        source_label: parts.sourceLabel,
+      },
+    ];
+  });
+
+  if (activityRows.length > 0) {
+    const { error } = await db.from("activities").upsert(activityRows, {
+      onConflict: "user_id,provider,external_id",
+    });
     if (error) throw new Error(error.message);
   }
 }
