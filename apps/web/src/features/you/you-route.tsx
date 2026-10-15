@@ -11,6 +11,7 @@ import {
   AthleteCard,
   WeekRecords,
 } from "@/features/split/components/athlete-card";
+import { SleepPanel } from "@/features/health/sleep-panel";
 import { AwardShelf } from "@/features/you/award-shelf";
 import { NumberTicker } from "@/ui/number-ticker";
 import { SeasonHistory } from "@/features/split/components/season-history";
@@ -302,22 +303,13 @@ function YouContent() {
       />
       <WeekRecords sport={state.primary} you={board.you} />
 
-      {(() => {
-        const last = [...state.sleepNights].sort((a, b) => a.day.localeCompare(b.day)).at(-1);
-        if (!last) return null;
-        return (
-          <section className="fb-card">
-            <p className="fb-kicker">Last night</p>
-            <h2>Sleep {last.score}</h2>
-            <p className="fb-copy">
-              Open My track and choose Sleep for the night and the weekly board.
-            </p>
-            <Link href="/" className="fb-btn-ghost">
-              Open sleep
-            </Link>
-          </section>
-        );
-      })()}
+      <SleepPanel
+        state={state}
+        now={now}
+        onJoin={() => dispatch({ type: "opt-in-health", metric: "sleep" })}
+        onSample={() => dispatch({ type: "log-sleep" })}
+        onLeave={() => dispatch({ type: "opt-out-health", metric: "sleep" })}
+      />
 
       <p className="fb-copy">
         {user?.email}

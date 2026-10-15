@@ -25,19 +25,11 @@ export default function PacePage() {
 
   return (
     <>
-      <header className="sp-title-block">
-        <p className="fb-kicker">Speed, not effort</p>
-        <h1>
-          ABSOLUTE
-          <br />
-          <span>TIMES.</span>
-        </h1>
-        <p className="fb-copy">
-          This board is completion time for a distance. It does not move your
-          Elo or the weekly effort track. Local uses your city. Category uses
-          your current rank band.
-        </p>
-      </header>
+      <p className="fb-kicker">Pace</p>
+      <h1>Times</h1>
+      <p className="fb-copy">
+        Completion time for a distance. It does not move your rating or the weekly track.
+      </p>
 
       <div className="fb-chips">
         {(["running", "cycling"] as const).map((id) => (
