@@ -4,9 +4,9 @@
 
 | Piece | Role |
 | --- | --- |
-| Expo project `bea1932b-…` | Cloud builds (EAS) |
+| Expo project `bea1932b-…` | Cloud builds (EAS). Dashboard slug is **`fitness`**; `app.json` `slug` must match that (display name stays Overtaek). |
 | Bundle ID `com.overtaek.app` | Must match App Store Connect **and** the built `.ipa` |
-| Numeric Apple ID (`ascAppId`) | Tells `eas submit` which listing to upload to |
+| Numeric Apple ID (`ascAppId`) | Tells `eas submit` which listing to upload to (`6822939070`) |
 
 If EAS prints `com.fitnessbattle.app`, you built from an **old branch**. Stop and switch to current `main` (Overtaek IDs are on `main`).
 
