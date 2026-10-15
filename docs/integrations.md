@@ -9,8 +9,8 @@ Cloud OAuth runs on the web server. Apple Health and Health Connect run on the p
 | Strava | Activity | Stub-ready, live path coded | `status=stub`, mock activities | OAuth → token exchange → refresh → activity pull |
 | Mock | Activity | Always on | Demo workouts | Same |
 | Garmin | Activity | Stub-ready, plus file import | Stub sync. FIT/GPX/TCX/zip import is real | OAuth 1.0a pull and Health API ping |
-| Apple Health | Activity | Device ingest | Web cannot read HealthKit | iOS build posts workouts to `/api/fitness/ingest` (HealthKit via call-time `NativeModules` bind; Expo Go unsupported) |
-| Health Connect | Activity | Device ingest | Web cannot read Health Connect | Expo dev client posts to `/api/fitness/ingest` |
+| Apple Health | Activity | Device ingest (iOS only) | Web cannot read HealthKit | iOS build posts workouts to `/api/fitness/ingest` (HealthKit via call-time `NativeModules` bind; Expo Go unsupported) |
+| Health Connect | Activity | Device ingest (Android only) | Web cannot read Health Connect | Expo Android build posts to `/api/fitness/ingest` |
 | WHOOP | Readiness + workouts | Stub-ready, live path coded | Stub sync | OAuth → recovery score and workouts |
 | Oura | Readiness + workouts | Stub-ready, live path coded | Stub sync | OAuth → daily readiness and workouts |
 
@@ -66,7 +66,7 @@ Set `WHOOP_REDIRECT_URI` to the same Redirect URI value (including `http://local
 
 Garmin also needs `POST /api/fitness/garmin/ping` registered as the Health API notification URL after approval. The consumer key is not self-serve.
 
-Apple Health and Health Connect have no server keys. The phone app needs a development or TestFlight build (`EXPO_PUBLIC_API_URL` pointing at this web app) and a signed-in Supabase session. Expo Go cannot read HealthKit or Health Connect. On iOS, sync resolves `NativeModules.AppleHealthKit` at call time so New Architecture lazy loading does not leave `initHealthKit` undefined. Cloud OAuth callbacks return via `overtaek://you` when the app is installed, with a browser fallback to `/you`.
+Apple Health and Health Connect have no server keys. The phone app needs a development or TestFlight build (`EXPO_PUBLIC_API_URL` pointing at this web app) and a signed-in Supabase session. Expo Go cannot read HealthKit or Health Connect. On iOS, sync resolves `NativeModules.AppleHealthKit` at call time so New Architecture lazy loading does not leave `initHealthKit` undefined. The mobile You / Connections UI shows Apple Health only on iOS and Health Connect only on Android. Cloud OAuth callbacks return via `overtaek://you` when the app is installed, with a browser fallback to `/you`.
 
 ## Garmin file import
 

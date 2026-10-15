@@ -2,17 +2,24 @@ import { useState } from "react";
 import { Pressable, ScrollView, StyleSheet, Text } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { syncAppleHealth, syncHealthConnect } from "../src/lib/device-health";
+import { deviceHealthKind } from "../src/lib/platform-providers";
 import { colors, fonts } from "../src/theme";
 
 export default function ConnectionsScreen() {
   const [note, setNote] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const kind = deviceHealthKind();
 
-  async function run(kind: "apple" | "android") {
+  async function run() {
+    if (!kind) {
+      setNote("Device health sync is only available on iOS and Android.");
+      return;
+    }
     setBusy(true);
     setNote(null);
     try {
-      const result = kind === "apple" ? await syncAppleHealth() : await syncHealthConnect();
+      const result =
+        kind === "apple" ? await syncAppleHealth() : await syncHealthConnect();
       setNote(result.message);
     } catch (error) {
       const message = error instanceof Error ? error.message : "Sync failed";
@@ -26,22 +33,35 @@ export default function ConnectionsScreen() {
     }
   }
 
+  const title = kind === "apple" ? "Apple Health" : kind === "android" ? "Health Connect" : "Phone workouts";
+  const copy =
+    kind === "apple"
+      ? "Apple Health stays on this iPhone. A development build reads the last 90 days and sends them to the server. Strava, Garmin, WHOOP, and Oura connect from the web app."
+      : kind === "android"
+        ? "Health Connect stays on this Android phone. A development build reads the last 90 days and sends them to the server. Strava, Garmin, WHOOP, and Oura connect from the web app."
+        : "Device health sync needs an iOS or Android phone.";
+  const buttonLabel =
+    kind === "apple"
+      ? busy
+        ? "Syncing…"
+        : "Sync Apple Health"
+      : kind === "android"
+        ? busy
+          ? "Syncing…"
+          : "Sync Health Connect"
+        : null;
+
   return (
     <SafeAreaView style={styles.safe}>
       <ScrollView contentContainerStyle={styles.scroll}>
         <Text style={styles.kicker}>Trackers</Text>
-        <Text style={styles.title}>Phone workouts</Text>
-        <Text style={styles.copy}>
-          Apple Health and Health Connect stay on the device. A development build
-          reads the last 90 days and sends them to the server. Strava, Garmin,
-          WHOOP, and Oura connect from the web app.
-        </Text>
-        <Pressable style={styles.primary} disabled={busy} onPress={() => void run("apple")}>
-          <Text style={styles.primaryText}>{busy ? "Syncing…" : "Sync Apple Health"}</Text>
-        </Pressable>
-        <Pressable style={styles.line} disabled={busy} onPress={() => void run("android")}>
-          <Text style={styles.lineText}>Sync Health Connect</Text>
-        </Pressable>
+        <Text style={styles.title}>{title}</Text>
+        <Text style={styles.copy}>{copy}</Text>
+        {buttonLabel ? (
+          <Pressable style={styles.primary} disabled={busy} onPress={() => void run()}>
+            <Text style={styles.primaryText}>{buttonLabel}</Text>
+          </Pressable>
+        ) : null}
         {note ? <Text style={styles.copy}>{note}</Text> : null}
       </ScrollView>
     </SafeAreaView>
@@ -66,13 +86,4 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   primaryText: { color: "white", fontFamily: fonts.bodyBold },
-  line: {
-    borderWidth: 1,
-    borderColor: colors.line,
-    backgroundColor: colors.card,
-    borderRadius: 14,
-    paddingVertical: 14,
-    alignItems: "center",
-  },
-  lineText: { color: colors.ink, fontFamily: fonts.bodyBold },
 });

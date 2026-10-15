@@ -1,7 +1,6 @@
 import {
   awardCards,
   initialsFromName,
-  PROVIDERS,
   rankForElo,
 } from "@fitness-battle/shared";
 import { useRouter } from "expo-router";
@@ -12,6 +11,7 @@ import { useState } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useCompeteStore } from "../../src/lib/compete-store";
+import { providersForDevice } from "../../src/lib/platform-providers";
 import { AwardShelf } from "../../src/ui/award-shelf";
 import { SHELL_COLORS, SHELL_RADIUS } from "../../src/theme";
 
@@ -83,7 +83,7 @@ export default function YouScreen() {
         ) : null}
 
         <Text style={styles.section}>Trackers</Text>
-        {PROVIDERS.map((provider) => {
+        {providersForDevice().map((provider) => {
           const link = state.links.find((row) => row.provider === provider.id);
           const status =
             link?.status === "connected"
@@ -91,7 +91,8 @@ export default function YouScreen() {
               : link?.status === "stub"
                 ? "Demo link"
                 : "Not connected";
-          const onPhone = provider.id === "apple_health" || provider.id === "google_health";
+          const onPhone =
+            provider.id === "apple_health" || provider.id === "google_health";
           const copy = (
             <>
               <Text style={styles.rowTitle}>{provider.name}</Text>
