@@ -41,3 +41,7 @@ Week reveal is derived from `acknowledged_at`, not a separate pending table.
 - GET overlays relational SoT (prefs, ratings, freezes, enrollments) when dual-write rows exist; `period_results` **merge** with the snapshot (prefer acknowledged / newer settledAt) so a laggy dual-write cannot erase snapshot-ahead weeks. Activities stay snapshot-primary (sync can race).
 - Crew board Elo comes from `crew_field_roster` (SECURITY DEFINER), not `sport_ratings` RLS.
 - Bulky array omission from jsonb is deferred until hydrate has soaked — snapshot remains a fallback cache.
+
+## P6 server rollClock
+
+Signed-in `/api/compete` runs `rollClock` on GET (after hydrate) and PUT (before store) using wall time (`demoNow` already stripped). When GET settlement changes the document, the snapshot (+ relational best-effort) is rewritten so other devices see settled weeks without relying on a client save.
