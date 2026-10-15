@@ -2,7 +2,8 @@
 
 .phone-frame {
   height: 100dvh;
-  background: #2a1634;
+  width: 100%;
+  background: #fff9e9;
 }
 
 .phone-shell {
@@ -18,10 +19,12 @@
   --green: #2f6f4e;
   --green-soft: #e7f3ec;
   --fb-radius: 22px;
-  width: min(440px, 100%);
+  --shell-pad-x: clamp(16px, 4vw, 48px);
+  width: 100%;
+  max-width: none;
   height: 100dvh;
   min-height: 0;
-  margin: 0 auto;
+  margin: 0;
   background: var(--paper);
   color: var(--ink);
   display: flex;
@@ -67,21 +70,25 @@
 
 .phone-main {
   display: grid;
-  gap: 16px;
-  padding: 20px 16px 28px;
+  gap: 20px;
+  padding: 24px var(--shell-pad-x) 32px;
   min-height: 100%;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .phone-main-solo {
-  padding-bottom: 32px;
+  padding-bottom: 40px;
 }
 
 .phone-tabs {
   display: flex;
-  gap: 6px;
-  padding: 8px 12px calc(10px + env(safe-area-inset-bottom));
+  gap: 8px;
+  padding: 10px var(--shell-pad-x) calc(12px + env(safe-area-inset-bottom));
   background: var(--card);
   border-top: 1px solid var(--line);
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .phone-tab {
@@ -129,11 +136,11 @@
   left: 50%;
   bottom: 0;
   transform: translateX(-50%);
-  width: min(440px, 100%);
+  width: min(720px, 100%);
   background: var(--card, #fffdf7);
   color: var(--ink, #40234e);
   border-radius: 28px 28px 0 0;
-  padding: 20px 16px 28px;
+  padding: 24px var(--shell-pad-x, 24px) 32px;
   display: grid;
   gap: 12px;
   z-index: 40;
@@ -161,15 +168,18 @@
 }
 
 .checkpoint-frame {
+  --cp-h: clamp(480px, 62vh, 720px);
   position: relative;
-  height: 570px;
+  width: 100%;
+  height: var(--cp-h);
+  min-height: 480px;
 }
 
 .checkpoint-route {
   position: absolute;
   inset: 0;
   width: 100%;
-  height: 570px;
+  height: 100%;
 }
 
 .checkpoint-route path {
@@ -209,10 +219,11 @@
   opacity: 0.7;
 }
 
-.checkpoint-disc img {
+.checkpoint-disc img,
+.checkpoint-disc .world-mascot {
   position: absolute;
-  width: 112px;
-  height: 112px;
+  width: clamp(112px, 12vw, 168px);
+  height: clamp(112px, 12vw, 168px);
   object-fit: contain;
   left: 50%;
   bottom: 6px;
@@ -222,41 +233,41 @@
 
 .checkpoint-copy {
   position: absolute;
-  top: 295px;
+  top: 52%;
   left: 0;
   right: 0;
   z-index: 4;
   text-align: center;
-  background: var(--paper);
-  padding: 8px 12px;
+  background: color-mix(in srgb, var(--paper) 92%, transparent);
+  padding: 10px 16px;
 }
 
 .checkpoint-copy h1 {
   margin: 4px 0;
-  font-size: 28px;
+  font-size: clamp(28px, 3.2vw, 40px);
   letter-spacing: -0.6px;
   line-height: 1.1;
 }
 
 .award-row {
-  display: flex;
-  gap: 12px;
-  overflow-x: auto;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 14px;
   padding-bottom: 4px;
 }
 
 .award-card {
-  flex: 0 0 220px;
   background: var(--card);
   border: 1px solid var(--line);
   border-radius: 22px;
-  padding: 14px;
+  padding: 16px;
   display: grid;
   gap: 6px;
+  min-width: 0;
 }
 
 .award-card strong {
-  font-size: 28px;
+  font-size: clamp(28px, 2.4vw, 36px);
 }
 
 .phone-guest {
@@ -272,7 +283,7 @@
 .phone-shell .sheet-close {
   min-height: 48px;
   border-radius: 14px;
-  width: 100%;
+  width: min(100%, 28rem);
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -280,6 +291,18 @@
 
 .phone-shell .fb-row {
   min-height: 52px;
+}
+
+.phone-shell .fb-field,
+.phone-shell .fb-card,
+.phone-shell .sp-empty {
+  max-width: none;
+  width: 100%;
+}
+
+.phone-shell .fb-field input,
+.phone-shell .fb-field textarea {
+  width: min(100%, 36rem);
 }
 
 .track-gain {
@@ -302,6 +325,29 @@
 .track-replay button {
   min-height: 44px;
   border-radius: 999px;
+}
+
+.phone-shell .fd-stage {
+  width: 100%;
+}
+
+.phone-shell .track-gain strong {
+  font-size: clamp(42px, 5vw, 64px);
+}
+
+@media (min-width: 900px) {
+  .phone-shell .phone-main {
+    gap: 24px;
+  }
+
+  .phone-tabs {
+    justify-content: stretch;
+  }
+
+  .phone-tab {
+    font-size: 14px;
+    min-height: 48px;
+  }
 }
 
 .boot-splash {
