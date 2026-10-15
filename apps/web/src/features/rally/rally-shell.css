@@ -15,15 +15,10 @@
 .rally-focus * {
   box-sizing: border-box;
 }
-.rally-focus h1,
-.rally-focus h2,
-.rally-focus h3,
-.rally-focus p {
+.rally-focus h1, .rally-focus h2, .rally-focus h3, .rally-focus p {
   margin: 0;
 }
-.rally-focus button,
-.rally-focus input,
-.rally-focus select {
+.rally-focus button, .rally-focus input, .rally-focus select {
   font: inherit;
 }
 .rally-focus button {
@@ -43,10 +38,7 @@
   pointer-events: none;
   user-select: none;
 }
-.rally-focus button:focus-visible,
-.rally-focus a:focus-visible,
-.rally-focus input:focus-visible,
-.rally-focus select:focus-visible {
+.rally-focus button:focus-visible, .rally-focus a:focus-visible, .rally-focus input:focus-visible, .rally-focus select:focus-visible {
   outline: 3px solid #2994ff;
   outline-offset: 4px;
 }
@@ -68,39 +60,6 @@
   font-weight: 750;
   line-height: 1.5;
   letter-spacing: 0.07em;
-}
-.rf-lab-bar {
-  background: #f7f8fa;
-  color: #303442;
-  padding: 14px max(24px, calc((100% - 1140px) / 2));
-  display: flex;
-  align-items: center;
-  gap: 24px;
-  font-size: 12px;
-}
-.rf-lab-bar > span {
-  color: #647080;
-  margin-right: auto;
-  font-size: 11px;
-}
-.rf-lab-bar label {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-  font-size: 11px;
-}
-.rf-lab-bar input {
-  width: 17px;
-  height: 17px;
-  accent-color: var(--rf-plum);
-}
-.rf-lab-bar > button {
-  border: 0;
-  background: none;
-  font-size: 11px;
-  padding: 8px 0;
-  color: #303442;
-  white-space: nowrap;
 }
 .rf-app {
   max-width: 1140px;
@@ -676,20 +635,6 @@
   font-size: 11px;
   line-height: 1.6;
 }
-.rf-lab-footer {
-  background: #f7f8fa;
-  color: #657082;
-  padding: 18px max(24px, calc((100% - 1140px) / 2));
-  display: flex;
-  justify-content: space-between;
-  gap: 20px;
-  font-size: 11px;
-}
-.rf-lab-footer a {
-  color: #303442;
-  text-decoration: underline;
-  text-underline-offset: 3px;
-}
 .rf-matchup-choice {
   background: #ffffff0c;
   border: 1px solid #ffffff33;
@@ -1098,8 +1043,7 @@
   font-weight: 500;
   letter-spacing: 0;
 }
-.rf-week-record > button,
-.rf-tracker-card > button {
+.rf-week-record > button, .rf-tracker-card > button {
   background: none;
   border: 0;
   border-bottom: 1px solid currentColor;
@@ -1191,8 +1135,7 @@
   height: 160px;
   margin: 0 auto 20px;
 }
-.rf-dialog .rf-primary,
-.rf-dialog-done {
+.rf-dialog .rf-primary, .rf-dialog-done {
   padding: 13px 18px;
   background: var(--rf-plum);
   color: var(--rf-paper);
@@ -1401,9 +1344,7 @@
     grid-template-columns: 1.45fr 1fr;
     gap: 16px;
   }
-  .rf-matchup,
-  .rf-small-moves,
-  .rf-distance-field {
+  .rf-matchup, .rf-small-moves, .rf-distance-field {
     padding: 20px;
   }
   .rf-scoreboard strong {
@@ -1535,8 +1476,7 @@
   .rf-athlete-card {
     padding: 25px;
   }
-  .rf-week-record,
-  .rf-tracker-card {
+  .rf-week-record, .rf-tracker-card {
     padding: 24px;
   }
   .rf-athlete-card dd {
@@ -1552,20 +1492,6 @@
   }
 }
 @media (max-width: 760px) {
-  .rf-lab-bar {
-    padding: 12px 20px;
-    gap: 18px;
-    flex-wrap: wrap;
-  }
-  .rf-lab-bar > span {
-    display: none;
-  }
-  .rf-lab-bar label {
-    margin-left: auto;
-  }
-  .rf-lab-bar > button {
-    display: none;
-  }
   .rf-app {
     padding: 0 20px;
   }
@@ -1607,8 +1533,7 @@
   .rf-hero-ace > span {
     font-size: 8px;
   }
-  .rf-week-layout,
-  .rf-matchups-layout {
+  .rf-week-layout, .rf-matchups-layout {
     grid-template-columns: 1fr;
   }
   .rf-scoreboard strong {
@@ -1764,21 +1689,8 @@
   .rf-tracker-card h2 {
     font-size: 24px;
   }
-  .rf-lab-footer {
-    padding: 18px 20px;
-    flex-wrap: wrap;
-    font-size: 10px;
-  }
 }
 @media (max-width: 600px) {
-  .rf-lab-bar {
-    padding: 11px 16px;
-    gap: 14px;
-    font-size: 11px;
-  }
-  .rf-lab-bar label {
-    font-size: 10px;
-  }
   .rf-app {
     padding: 0 16px;
   }
@@ -1873,8 +1785,7 @@
     font-size: 6px;
     letter-spacing: 0.05em;
   }
-  .rf-week-layout,
-  .rf-matchups-layout {
+  .rf-week-layout, .rf-matchups-layout {
     gap: 18px;
   }
   .rf-matchup {
@@ -2118,14 +2029,6 @@
     line-height: 1.5;
     text-align: right;
   }
-  .rf-lab-footer {
-    padding: 17px 16px calc(112px + env(safe-area-inset-bottom));
-    font-size: 10px;
-    gap: 10px;
-  }
-  .rf-lab-footer > span {
-    flex-basis: 100%;
-  }
   .rf-matchup-choice {
     padding: 17px 16px;
     margin-bottom: 17px;
@@ -2348,8 +2251,7 @@
     grid-template-columns: 1fr;
     gap: 17px;
   }
-  .rf-week-record,
-  .rf-tracker-card {
+  .rf-week-record, .rf-tracker-card {
     padding: 23px 22px;
     border-radius: 18px;
   }
@@ -2372,8 +2274,7 @@
   .rf-week-record > div > strong small {
     font-size: 10px;
   }
-  .rf-week-record > button,
-  .rf-tracker-card > button {
+  .rf-week-record > button, .rf-tracker-card > button {
     font-size: 11px;
   }
   .rf-tracker-card h2 {
@@ -2454,8 +2355,7 @@
     font-size: 10px !important;
     line-height: 1.6;
   }
-  .rf-dialog .rf-primary,
-  .rf-dialog-done {
+  .rf-dialog .rf-primary, .rf-dialog-done {
     font-size: 11px;
     padding: 13px 16px;
   }
@@ -2633,12 +2533,8 @@
   }
 }
 @media (pointer: coarse) {
-  .rally-focus button,
-  .rally-focus select {
+  .rally-focus button, .rally-focus select {
     min-height: 44px;
-  }
-  .rf-lab-bar label {
-    min-height: 32px;
   }
   .rf-replay > div button {
     min-height: 44px;

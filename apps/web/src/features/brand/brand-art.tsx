@@ -1,4 +1,4 @@
-import type { BrandId } from "./model";
+export type BrandId = "volt" | "form" | "even" | "current";
 
 export function BrandArt({
   brand,

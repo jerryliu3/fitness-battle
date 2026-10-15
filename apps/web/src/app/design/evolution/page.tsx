@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { Manrope, Nunito_Sans, Space_Grotesk } from "next/font/google";
-import { EvolutionLab } from "@/features/evolution-lab/evolution-lab";
+import { EvolutionLab } from "@/app/design/_studies/evolution-lab/evolution-lab";
 
 const formType = Space_Grotesk({ subsets: ["latin"], variable: "--font-form" });
 const evenType = Nunito_Sans({ subsets: ["latin"], variable: "--font-even" });

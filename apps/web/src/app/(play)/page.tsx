@@ -3,7 +3,7 @@
 import { AuthPrompt } from "@/components/auth-gate";
 import { useAuth } from "@/components/auth-context";
 import { useCompete } from "@/components/compete-context";
-import { BrandArt } from "@/features/evolution-lab/brand-art";
+import { BrandArt } from "@/features/brand/brand-art";
 import { Ace } from "@/features/rally/ace";
 import { ActivityRing } from "@/features/rally/activity-ring";
 import {

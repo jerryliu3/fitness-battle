@@ -2,7 +2,7 @@
 import Link from "next/link";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import type { Activity } from "../design-lab/data";
-import { NavIcon } from "../evolution-lab/brand-art";
+import { NavIcon } from "@/features/brand/brand-art";
 import { laneRunners } from "../evolution-lab/model";
 import { Mascot } from "../worlds-lab/mascot";
 import { imports, references, snapshot, gapText } from "../worlds-lab/model";
@@ -10,6 +10,7 @@ import type { WorldProps } from "../worlds-lab/types";
 import { ActivityRing } from "./activity-ring";
 import { Matchup } from "./matchup";
 import { DistanceField } from "./field";
+import "@/features/rally/rally-shell.css";
 import "./rally-focus.css";
 
 const views = ["week", "matchups", "moves", "you"] as const;
