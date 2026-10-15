@@ -1,9 +1,9 @@
-/** Star Ember v1. Coordinate space, palette and contours are shared by every renderer. */
+/** Star Ember v2. One outer silhouette with a clipped directional bevel. */
 export const EMBER_MODEL = {
-  version: 1,
-  viewBox: "0 -45 360 445",
+  version: 2,
+  viewBox: "0 -85 360 485",
   width: 360,
-  height: 445,
+  height: 485,
   pivot: [180, 235],
   palette: {
     gold: "#ffc629", light: "#ffd648", edge: "#e98a06",
@@ -45,13 +45,15 @@ export interface EmberPose {
   legLeft: number; legRight: number; lookX: number; lookY: number;
   eyeLeft: number; eyeRight: number; mouthOpen: number; smile: number;
   sparkle: number; trail: number;
+  /** Travel direction: 0 = right, -45 = up-right, -90 = up. Effects follow this heading. */
+  heading: number;
 }
 
 export const EMBER_REST: Readonly<EmberPose> = Object.freeze({
   x: 0, y: 0, rotation: 0, scaleX: 1, scaleY: 1,
   yaw: 0, crest: 0, armLeft: 0, armRight: 0, legLeft: 0, legRight: 0,
   lookX: 0, lookY: 0, eyeLeft: 1, eyeRight: 1, mouthOpen: 0, smile: 1,
-  sparkle: 0, trail: 0,
+  sparkle: 0, trail: 0, heading: 0,
 });
 
 const clamp = (v: number, min: number, max: number) => Math.max(min, Math.min(max, v));
@@ -69,6 +71,7 @@ export function normalizeEmberPose(input: Partial<EmberPose> = {}): EmberPose {
   p.scaleY = clamp(p.scaleY, 0.65, 1.35);
   p.x = clamp(p.x, -45, 45); p.y = clamp(p.y, -90, 15);
   p.rotation = clamp(p.rotation, -35, 35);
+  p.heading = clamp(p.heading, -90, 0);
   return p;
 }
 

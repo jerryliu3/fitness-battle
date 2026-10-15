@@ -75,7 +75,7 @@
 .sectionHeading h2, .handoff h2 { margin: 0; font-size: 28px; letter-spacing: -.05em; font-weight: 550; line-height: 1.2; }
 .sectionHeading > span { font-size: 8px; letter-spacing: 1.4px; font-weight: 700; white-space: nowrap; }
 .arrow { font-size: 30px; line-height: .8; margin-left: 10px; }
-.motionGrid { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 12px; }
+.motionGrid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
 .motionCard { text-align: left; border: 1px solid var(--line); background: #f8fafb; border-radius: 14px; padding: 13px 15px 19px; min-width: 0; transition: background .15s; }
 .motionCard:hover { background: #fff; }
 .motionCard.motionSelected { background: var(--lime); border-color: #9ddc3d; }

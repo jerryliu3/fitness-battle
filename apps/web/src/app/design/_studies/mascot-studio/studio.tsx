@@ -6,16 +6,8 @@ import { Ember } from "@/components/mascot/ember";
 import { useEmberPlayback } from "@/components/mascot/use-ember-playback";
 import styles from "./studio.module.css";
 
-const actionDetails: Record<EmberAction, { title: string; caption: string; sample: number }> = {
-  idle: { title: "Breathe", caption: "Easy does it", sample: 0.3 },
-  wave: { title: "Say hello", caption: "A little welcome", sample: 0.47 },
-  hop: { title: "Hop", caption: "Find your lift", sample: 0.49 },
-  run: { title: "Run", caption: "Keep it moving", sample: 0.2 },
-  celebrate: { title: "Celebrate", caption: "You earned this", sample: 0.32 },
-  dash: { title: "Dash", caption: "Make your move", sample: 0.4 },
-};
 const expressions: Record<EmberExpression, string> = { smile: "Smile", happy: "Happy", wink: "Wink", joy: "Joy", surprised: "Surprised", focused: "Focused" };
-const motionPoses = Object.fromEntries(EMBER_ACTIONS.map(action => [action, sampleEmber(action, EMBER_CLIPS[action].duration * actionDetails[action].sample)])) as Record<EmberAction, EmberPose>;
+const motionPoses = Object.fromEntries(EMBER_ACTIONS.map(action => [action, sampleEmber(action, EMBER_CLIPS[action].duration * EMBER_CLIPS[action].poster)])) as Record<EmberAction, EmberPose>;
 
 function download(filename: string, content: string, type: string) {
   const url = URL.createObjectURL(new Blob([content], { type }));
@@ -50,7 +42,7 @@ export function MascotStudio() {
   return <main className={styles.studio}>
     <header className={styles.header}>
       <a href="/design" className={styles.brand}><span className={styles.brandIcon}>✳</span> FITNESS BATTLE <span className={styles.divider}>/</span> <span className={styles.brandSub}>CHARACTER STUDIO</span></a>
-      <span className={styles.version}><span /> MODEL 01 <span className={styles.versionSep}>·</span> VECTOR RIG</span>
+      <span className={styles.version}><span /> MODEL {String(EMBER_MODEL.version).padStart(2, "0")} <span className={styles.versionSep}>·</span> VECTOR RIG</span>
     </header>
 
     <section className={styles.intro}>
@@ -63,7 +55,7 @@ export function MascotStudio() {
         <div className={styles.stage} ref={playback.hostRef}>
           <div className={styles.stageTop}><span><i /> LIVE CHARACTER</span><span>STAR EMBER / V{EMBER_MODEL.version}</span></div>
           <div className={styles.character}><Ember pose={pose} expression={selectedExpression} shadow={shadow} label="Star Ember, a golden star with a curved flame tip" /></div>
-          <div className={styles.stageBottom}><span className={styles.motionName}>{actionDetails[action].title}<small>{EMBER_CLIPS[action].description}</small></span><span className={styles.dimension}>2D <span>+</span> DEPTH</span></div>
+          <div className={styles.stageBottom}><span className={styles.motionName}>{EMBER_CLIPS[action].label}<small>{EMBER_CLIPS[action].description}</small></span><span className={styles.dimension}>2D <span>+</span> DEPTH</span></div>
         </div>
         <div className={styles.transport}>
           <button className={styles.play} onClick={() => { if (!loop && playback.time >= duration) { setRestartKey(value => value + 1); setPlaying(true); } else setPlaying(value => !value); }} disabled={playback.reducedMotion} aria-label={isPlaying ? "Pause animation" : "Play animation"}>{isPlaying ? "Ⅱ" : "▶"}</button>
@@ -92,11 +84,11 @@ export function MascotStudio() {
     </div>
 
     <section className={styles.motionSection} aria-label="Motion library">
-      <div className={styles.sectionHeading}><div><p className={styles.eyebrow}>ONE CHARACTER. EVERY MOVE.</p><h2>A spark of personality.</h2></div><span>06 MOTION STUDIES <span className={styles.arrow}>↙</span></span></div>
+      <div className={styles.sectionHeading}><div><p className={styles.eyebrow}>ONE CHARACTER. EVERY MOVE.</p><h2>A spark of personality.</h2></div><span>{String(EMBER_ACTIONS.length).padStart(2, "0")} MOTION STUDIES <span className={styles.arrow}>↙</span></span></div>
       <div className={styles.motionGrid}>{EMBER_ACTIONS.map((item, index) => <button className={`${styles.motionCard} ${item === action ? styles.motionSelected : ""}`} key={item} aria-pressed={item === action} onClick={() => chooseAction(item)}>
         <div className={styles.cardTop}><span>0{index + 1}</span><span>{item === action ? "↗" : "+"}</span></div>
         <Ember pose={motionPoses[item]} />
-        <strong>{actionDetails[item].title}</strong><small>{actionDetails[item].caption}</small>
+        <strong>{EMBER_CLIPS[item].label}</strong><small>{EMBER_CLIPS[item].caption}</small>
       </button>)}</div>
     </section>
 
@@ -104,7 +96,7 @@ export function MascotStudio() {
       <div><span className={styles.eyebrow}>BUILT TO STAY ITSELF</span><h2>One model. Anywhere Ember goes.</h2><p>Shared curves, colors and motion. Rendered as vectors on web and mobile.</p></div>
       <div className={styles.exports}>
         <button className={styles.exportPrimary} onClick={() => { download(`ember-${action}.svg`, exportEmberSvg({ pose, expression: selectedExpression, shadow }), "image/svg+xml"); setMessage("Current pose exported as a transparent SVG."); }}>Export pose <span>↗</span></button>
-        <button onClick={() => { download("star-ember-model-v1.json", JSON.stringify({ model: EMBER_MODEL, rest: EMBER_REST, clips: EMBER_CLIPS, preview: { action, timeMs: playback.time, expression, pose, shadow } }, null, 2), "application/json"); setMessage("Model, motion keyframes and current pose exported as JSON."); }}>Model JSON <span>↓</span></button>
+        <button onClick={() => { download(`star-ember-model-v${EMBER_MODEL.version}.json`, JSON.stringify({ model: EMBER_MODEL, rest: EMBER_REST, clips: EMBER_CLIPS, preview: { action, timeMs: playback.time, expression, pose, shadow } }, null, 2), "application/json"); setMessage("Model, motion keyframes and current pose exported as JSON."); }}>Model JSON <span>↓</span></button>
       </div>
     </section>
     <p className={styles.status} role="status">{message}</p>

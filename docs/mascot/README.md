@@ -2,9 +2,28 @@
 
 Star Ember is a connected, deformable vector character based on the four pose references supplied on October 15, 2026. The canonical source is `packages/shared/src/mascot/`. It contains the silhouette, palette, deformation rules, face, vector layers and animation keyframes. Web, native and SVG export all render the **same display list**. A new expression or motion does not require drawing another mascot.
 
-Review it on web at `/design/mascot`, or in the Expo app at `/mascot`. The web studio provides six motion clips, six expressions, time scrubbing, replay, speed, looping, pose controls, optional ground shadow, and SVG/JSON download. These are dedicated review surfaces. Production `Ace` / `AceStrip` continue to use their approved bundled artwork until a product surface explicitly adopts the new component.
+Review it on web at `/design/mascot`, or in the Expo app at `/mascot`. The web studio provides nine motion clips, six expressions, time scrubbing, replay, speed, looping, pose controls, optional ground shadow, and SVG/JSON download. These are dedicated review surfaces. Production `Ace` / `AceStrip` continue to use their approved bundled artwork until a product surface explicitly adopts the new component.
 
-![Six poses sampled from the same model](ember-pose-sheet.png)
+![Nine poses sampled from the same model](ember-pose-sheet.png)
+
+## Version 2: connected shading and flight
+
+The orange depth layer previously repeated the entire star with a translation behind the gold star. That gave the two layers separate limb tips and could read as overlapping characters. Version 2 draws exactly one exterior contour. A directional orange rim uses that same contour as its centerline and is clipped to the body, so only its inner half is visible. The flame crescent and face are clipped to the same silhouette. Raising a point or changing its yaw cannot separate the shading from the outside edge.
+
+Three moves interpret the reference showing forward flight, diagonal flight and a vertical launch:
+
+| Action | Duration | Movement |
+| --- | --- | --- |
+| `flyForward` | 3.0 s | Windup, lift, sustained rightward cruise with a swept crest and folded foot, then float home. |
+| `flyDiagonal` | 2.8 s | Travel up-right with a trailing foot, joyful face and diagonal stardust. |
+| `jumpUp` | 2.1 s | Deep anticipation, a higher straight-up launch, raised points, hang time and a soft landing. |
+| `dash` — revised | 2.4 s | Longer than the original 1.6 s burst, with stronger anticipation, a sustained extension, braking and crest rebound. |
+
+![The three flight/jump poses](ember-flight-sheet.png)
+
+The `heading` pose channel rotates the trails behind the movement: 0° points right, -45° up-right, -90° up. Trails follow the body's translation. The loops intentionally return to rest; for continuous travel across a screen, move the component's container in the application. Clip labels, poster sampling times and captions are shared by web, native and the export script.
+
+This is a stacked follow-up to [the initial rig PR #76](https://github.com/jerryliu3/fitness-battle/pull/76). Review/merge the base first, then the connected-shading/flight follow-up. Version 2 replaces the generated v1 JSON with `star-ember-model-v2.json`. Existing partial poses continue to work: normalization supplies `heading: 0` when absent.
 
 ## What kind of model is this?
 
@@ -14,7 +33,7 @@ The references vary their proportions and perspectives between drawings. This im
 
 - Five connected points, with a distinctive crest curving toward screen-left.
 - Broad shoulders, rounded tips, two tapered feet and a soft inner notch.
-- Golden face, orange thickness and crescent, deep green oval eyes with small light glints.
+- Golden face, connected orange bevel and crescent, deep green oval eyes with small light glints.
 - A centered, simple face independent of body deformation. No added hands, shoes or equipment.
 - Ground shadow and sparkles are separate layers; the character background stays transparent.
 
@@ -32,7 +51,7 @@ The turn control horizontally foreshortens the body and shifts the face. It supp
 
 Sources consulted:
 
-- [Expo SDK 54: react-native-svg](https://docs.expo.dev/versions/v54.0.0/sdk/svg/): supports native SVG primitives, interactivity and animation; `15.12.1` is the SDK's recommended version and is included in Expo Go. This is the only added runtime dependency, in `apps/mobile`.
+- [Expo SDK 54: react-native-svg](https://docs.expo.dev/versions/v54.0.0/sdk/svg/): supports native SVG primitives, interactivity and animation; `15.12.1` is the SDK's recommended version and is included in Expo Go. The current mobile manifest already declares that version; the follow-up adds no dependencies.
 - [Rive runtimes and licensing](https://rive.app/docs/runtimes/getting-started): web, React and React Native runtimes; MIT licensing and platform feature considerations.
 - [Rive state machines](https://github.com/rive-app/help-center/blob/master/runtimes/state-machines.md): combining animations through application-controlled inputs.
 - [Lottie feature support](https://github.com/airbnb/lottie/blob/master/supported-features.md): cross-renderer limitations and fallback behavior.
@@ -44,7 +63,7 @@ Sources consulted:
 | File | Owns |
 | --- | --- |
 | `packages/shared/src/mascot/model.ts` | Versioned proportions, palette, cubic control points, pose types, expression presets, input bounds and deformation fields. |
-| `packages/shared/src/mascot/motion.ts` | Six deterministic clips and smooth interpolation. |
+| `packages/shared/src/mascot/motion.ts` | Nine deterministic clips, preview metadata and smooth interpolation. |
 | `packages/shared/src/mascot/scene.ts` | Platform-neutral layer tree, shading, face and transparent SVG serialization. |
 | `apps/web/src/components/mascot/ember.tsx` | Stateless DOM SVG adapter. |
 | `apps/web/src/components/mascot/animated-ember.tsx` | Reusable animated web component. |
@@ -53,7 +72,7 @@ Sources consulted:
 
 `@fitness-battle/shared/mascot` has no React, Next, Expo, native or DOM imports. Both adapters change element names only. All coordinates, paths, colors, transforms, clipping IDs and facial features originate in shared code.
 
-The neutral viewBox includes headroom for the hop. Body and crescent control points pass through the same weighted deformation. The body and face clip path are generated from the same contour. Lowering or raising a point keeps a continuous outline, with unchanged path topology. Each SVG instance gets its own gradient and clipping IDs.
+The neutral viewBox includes headroom for the high jump. Body and crescent control points pass through the same weighted deformation. The directional rim, body and face clip path use the same contour. Lowering or raising a point keeps a continuous outline, with unchanged path topology. Each SVG instance gets its own gradient and clipping IDs.
 
 ## Using the model
 
@@ -65,6 +84,7 @@ import { Ember } from "@/components/mascot/ember";
 
 <AnimatedEmber action="celebrate" loop={false} restartKey={successCount}
   className="mascot" />
+<AnimatedEmber action="flyDiagonal" />
 <Ember expression="wink" pose={{ armRight: 0.8, crest: 0.2 }} />
 ```
 
@@ -90,11 +110,11 @@ const looped = sampleEmber("run", elapsedMs, { loop: true });
 const transition = blendEmberPoses(previousPose, pose, 0.4);
 ```
 
-Public actions: `idle | wave | hop | run | celebrate | dash`.
+Public actions: `idle | wave | hop | run | celebrate | dash | flyForward | flyDiagonal | jumpUp`.
 
 Expressions: `smile | happy | wink | joy | surprised | focused`. Omit `expression` to use the clip's face. An expression preset overrides its relevant channels while other channels, such as a normal blink, can continue. Direct numeric pose controls offer finer control than the presets.
 
-Pose translations are viewBox units; rotation is degrees. `yaw`, `crest`, star-point/foot controls, gaze and smile are bounded to `[-1, 1]`. Eye openness, mouth opening and effects are `[0, 1]`. `scaleX` / `scaleY` provide squash and stretch. Inputs are sanitized; exporting or scrubbing does not mutate the canonical model.
+Pose translations are viewBox units; rotation and `heading` are degrees. `heading` is bounded to `[-90, 0]`. `yaw`, `crest`, star-point/foot controls, gaze and smile are bounded to `[-1, 1]`. Eye openness, mouth opening and effects are `[0, 1]`. `scaleX` / `scaleY` provide squash and stretch. Inputs are sanitized; exporting or scrubbing does not mutate the canonical model.
 
 Application state chooses the action: welcome → wave, waiting → idle, completed effort → celebrate. Animation does not write to application/domain state. Use a textual message to communicate success or progress rather than making the mascot the sole state indicator.
 
@@ -110,7 +130,7 @@ The native implementation updates React/SVG on the JS thread. This is a practica
 
 ## Art exports and regeneration
 
-`ember-neutral.svg` is transparent, scalable artwork. `ember-pose-sheet.svg` and its PNG preview show samples of the six clips. `star-ember-model-v1.json` contains the geometry, palette, rest controls and clip data. The JSON is an inspectable data export for **this** TypeScript implementation; it is not a `.riv`, Lottie or glTF file and does not contain the deformation/renderer algorithms. Keep the versioned TypeScript source with it.
+`ember-neutral.svg` is transparent, scalable artwork. `ember-pose-sheet.svg` and its PNG preview show samples of all nine clips. `ember-flight-sheet.svg` and its PNG isolate the three new reference moves. `star-ember-model-v2.json` contains the geometry, palette, rest controls and clip data. The JSON is an inspectable data export for **this** TypeScript implementation; it is not a `.riv`, Lottie or glTF file and does not contain the deformation/renderer algorithms. Keep the versioned TypeScript source with it.
 
 Regenerate the SVG and JSON files from the current source, from the repository root:
 
@@ -128,9 +148,9 @@ If moving to Rive, import the neutral SVG as a starting drawing, then explicitly
 
 ## Verification
 
-`pnpm typecheck`, `pnpm test` (171 tests) and the production web build pass. Shared mascot tests cover finite/sanitized inputs, deterministic sampling, loop endpoints, reduced-motion poses, local point deformation, consistent closed contour topology, isolated/resolved IDs and valid export attribute names. Native visual/runtime review remains outstanding.
+The follow-up passes `pnpm typecheck`, `pnpm test` (183 tests) and `pnpm build:web`. The base PR also passed all three checks (180 tests). The follow-up adds three tests for connected shading, the three travel directions/longer dash, and sampled body geometry staying inside the export viewport throughout every clip. Shared mascot tests also cover finite/sanitized inputs, deterministic sampling, loop endpoints, reduced-motion poses, local point deformation, consistent closed contour topology, isolated/resolved IDs and valid export attribute names. Native visual/runtime review remains outstanding.
 
-Browser review confirmed playback/pause, expression selection, right-point deformation, keyboard scrubbing and the SVG export completion message. Layout checks found no horizontal overflow at 390 px or 320 px. Screenshots are `studio-desktop.jpg` and `studio-phone.jpg`; the page console reported no warnings/errors during the final check. The in-app browser's download-event capture timed out, so actual downloaded-file delivery was not verified there. SVG/JSON generation was verified independently through the export script and shared tests; the generated assets are included in this folder. Device/system preference changes and native animation performance were not manually exercised.
+Browser review confirmed playback/pause, expression selection, right-point deformation, keyboard scrubbing and the SVG export completion message. The follow-up's forward flight, diagonal flight, vertical jump and longer dash were reviewed in the studio, including their attached shading and directional trails. Layout checks found no horizontal overflow at 390 px or 320 px. Screenshots are `studio-desktop.jpg` and `studio-phone.jpg`; the page console reported no warnings/errors during the final check. The in-app browser's download-event capture timed out, so actual downloaded-file delivery was not verified there. SVG/JSON generation was verified independently through the export script and shared tests; the generated assets are included in this folder. Device/system preference changes and native animation performance were not manually exercised.
 
 An attempted iOS Metro export stops in the existing Expo Router entrypoint: `@expo/metro-runtime` cannot resolve under the repository's current mobile manifest/Metro resolver configuration. This happens before the new component loads and is also recorded in the earlier production mascot notes. `react-native-svg` matches the installed Expo SDK's `bundledNativeModules.json`. Typechecking does not establish appearance or animation performance on a physical device.
 

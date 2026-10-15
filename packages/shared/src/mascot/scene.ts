@@ -22,7 +22,7 @@ export function createEmberScene({ id, pose, expression, shadow = true }: EmberS
   const c = EMBER_MODEL.palette;
   const body = emberContour(p);
   const yawScale = Math.cos(p.yaw * 1.12);
-  const depth = -10 - Math.abs(p.yaw) * 15;
+  const rimWidth = 26 + Math.abs(p.yaw) * 16;
   const faceShift = p.yaw * 38;
   const eye = (x: number, open: number): EmberNode => node("g", { transform: `translate(${x} 206)` }, [
     node("g", { opacity: f(open) }, [
@@ -50,24 +50,35 @@ export function createEmberScene({ id, pose, expression, shadow = true }: EmberS
       node("linearGradient", { id: `${prefix}-gold`, x1: "20%", y1: "0%", x2: "85%", y2: "100%" }, [
         node("stop", { offset: "0%", stopColor: c.light }), node("stop", { offset: "70%", stopColor: c.gold }),
       ]),
+      node("linearGradient", { id: `${prefix}-rim`, x1: "0%", y1: "85%", x2: "90%", y2: "15%" }, [
+        node("stop", { offset: "0%", stopColor: c.edge, stopOpacity: 1 }),
+        node("stop", { offset: "45%", stopColor: c.edge, stopOpacity: 0.95 }),
+        node("stop", { offset: "85%", stopColor: c.edge, stopOpacity: 0 }),
+      ]),
       node("clipPath", { id: `${prefix}-body` }, [node("path", { d: body })]),
       node("clipPath", { id: `${prefix}-mouth` }, [node("path", { d: mouth })]),
     ]),
     ...(shadow ? [node("ellipse", { cx: 180 + p.x * 0.2, cy: 359, rx: f(105 + p.y * 0.5), ry: f(10 + p.y * 0.025), fill: c.shadow, opacity: f(0.15 + p.y * 0.001) })] : []),
-    node("g", { opacity: f(p.trail * 0.65), stroke: c.edge, strokeWidth: 3.5, strokeLinecap: "round" }, [
-      node("path", { d: "M 52 230 L 18 247 M 67 252 L 33 272 M 84 274 L 53 293" }),
+    node("g", { transform: `translate(${f(180 + p.x)} ${f(218 + p.y)}) rotate(${f(p.heading)})`, opacity: f(p.trail) }, [
+      node("path", { d: "M -125 -25 L -151 -25 M -136 3 L -157 3 M -119 33 L -153 33", fill: "none", stroke: c.edge, strokeWidth: 3.5, strokeLinecap: "round", opacity: 0.5 }),
+      node("path", { d: "M -146 -5 L -156 -5 M -130 49 L -143 49", fill: "none", stroke: c.gold, strokeWidth: 2.5, strokeLinecap: "round", opacity: 0.7 }),
+      node("g", { opacity: f(p.sparkle) }, [sparkle(-157, -43, 6), sparkle(-175, 23, 4), sparkle(-126, 58, 7)]),
     ]),
-    node("g", { opacity: f(p.sparkle) }, [sparkle(287, 88, 12), sparkle(318, 114, 7), sparkle(303, 57, 6), sparkle(65, 105, 8)]),
+    node("g", { opacity: f(p.sparkle * (1 - p.trail * 0.85)) }, [sparkle(287, 88, 12), sparkle(318, 114, 7), sparkle(303, 57, 6), sparkle(65, 105, 8)]),
     node("g", { transform: `translate(${f(p.x)} ${f(p.y)}) translate(180 235) rotate(${f(p.rotation)}) scale(${f(p.scaleX * yawScale)} ${f(p.scaleY)}) translate(-180 -235)` }, [
-      node("path", { d: body, fill: c.edge, transform: `translate(${f(depth)} 5)` }),
       node("path", { d: body, fill: `url(#${prefix}-gold)` }),
-      node("path", { d: emberContour(p, true), fill: c.edge }),
-      node("g", { clipPath: `url(#${prefix}-body)` }, [face]),
+      // The contour is also the rim's centerline. Clipping keeps its inner half and
+      // gives the face and shading exactly the same tips, not two displaced stars.
+      node("g", { clipPath: `url(#${prefix}-body)` }, [
+        node("path", { d: body, fill: "none", stroke: `url(#${prefix}-rim)`, strokeWidth: f(rimWidth), strokeLinejoin: "round" }),
+        node("path", { d: emberContour(p, true), fill: c.edge }),
+        face,
+      ]),
     ]),
   ];
 }
 
-const xmlNames: Record<string, string> = { strokeWidth: "stroke-width", strokeLinecap: "stroke-linecap", strokeLinejoin: "stroke-linejoin", stopColor: "stop-color", clipPath: "clip-path" };
+const xmlNames: Record<string, string> = { strokeWidth: "stroke-width", strokeLinecap: "stroke-linecap", strokeLinejoin: "stroke-linejoin", stopColor: "stop-color", stopOpacity: "stop-opacity", clipPath: "clip-path" };
 const escapeXml = (value: string | number) => String(value).replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 
 /** A transparent, self-contained pose asset; animation lives in the model, not the exported SVG. */

@@ -1,48 +1,73 @@
 import { EMBER_REST, blendEmberPoses, type EmberPose } from "./model";
 
 interface Keyframe { at: number; pose: Partial<EmberPose> }
-interface Clip { duration: number; description: string; keyframes: readonly Keyframe[] }
+interface Clip { duration: number; description: string; label: string; caption: string; poster: number; keyframes: readonly Keyframe[] }
 
 /** All clips begin/end at the same rest pose, and can be sampled or scrubbed without a clock. */
 export const EMBER_CLIPS = {
-  idle: { duration: 3200, description: "A gentle breath and a blink", keyframes: [
+  idle: { duration: 3200, label: "Breathe", caption: "Easy does it", poster: 0.3, description: "A gentle breath and a blink", keyframes: [
     { at: 0, pose: {} }, { at: 0.3, pose: { y: -5, scaleX: 1.018, scaleY: 1.012, crest: -0.06 } },
     { at: 0.6, pose: {} }, { at: 0.66, pose: { eyeLeft: 0, eyeRight: 0 } },
     { at: 0.71, pose: {} }, { at: 1, pose: {} },
   ] },
-  wave: { duration: 1800, description: "A hello from the right star point", keyframes: [
+  wave: { duration: 1800, label: "Say hello", caption: "A little welcome", poster: 0.47, description: "A hello from the right star point", keyframes: [
     { at: 0, pose: {} }, { at: 0.18, pose: { armRight: 0.9, rotation: -5, mouthOpen: 0.8 } },
     { at: 0.32, pose: { armRight: 0.45, rotation: -3, mouthOpen: 0.8 } },
     { at: 0.47, pose: { armRight: 1, rotation: -5, mouthOpen: 0.8, eyeLeft: 0 } },
     { at: 0.62, pose: { armRight: 0.5, mouthOpen: 0.8 } },
     { at: 0.77, pose: { armRight: 1, mouthOpen: 0.8 } }, { at: 1, pose: {} },
   ] },
-  hop: { duration: 1250, description: "Anticipation, takeoff, hang time and a soft landing", keyframes: [
+  hop: { duration: 1250, label: "Hop", caption: "Find your lift", poster: 0.49, description: "Anticipation, takeoff, hang time and a soft landing", keyframes: [
     { at: 0, pose: {} }, { at: 0.17, pose: { y: 12, scaleX: 1.12, scaleY: 0.86, legLeft: 0.15, legRight: 0.15 } },
     { at: 0.32, pose: { y: -38, scaleX: 0.92, scaleY: 1.09, armLeft: 0.6, armRight: 0.6, crest: 0.2, mouthOpen: 1 } },
     { at: 0.49, pose: { y: -64, armLeft: 0.85, armRight: 0.85, mouthOpen: 1 } },
     { at: 0.68, pose: { y: -10, scaleX: 0.96, scaleY: 1.05, mouthOpen: 0.7 } },
     { at: 0.77, pose: { y: 10, scaleX: 1.11, scaleY: 0.88, crest: -0.15 } }, { at: 1, pose: {} },
   ] },
-  run: { duration: 820, description: "An in-place stride with alternating feet and a trailing crest", keyframes: [
+  run: { duration: 820, label: "Run", caption: "Keep it moving", poster: 0.2, description: "An in-place stride with alternating feet and a trailing crest", keyframes: [
     { at: 0, pose: {} },
     { at: 0.2, pose: { legLeft: 1, legRight: -0.1, armLeft: 0.4, armRight: -0.3, y: -9, rotation: 9, crest: 0.65, yaw: 0.2, mouthOpen: 0.65, trail: 0.6 } },
     { at: 0.42, pose: { y: -2, rotation: 7, crest: 0.5, yaw: 0.2, mouthOpen: 0.65, trail: 0.5 } },
     { at: 0.65, pose: { legRight: 1, legLeft: -0.1, armRight: 0.4, armLeft: -0.3, y: -9, rotation: 9, crest: 0.65, yaw: 0.2, mouthOpen: 0.65, trail: 0.6 } },
     { at: 0.85, pose: { y: -2, rotation: 7, crest: 0.5, yaw: 0.2, mouthOpen: 0.65, trail: 0.5 } }, { at: 1, pose: {} },
   ] },
-  celebrate: { duration: 2200, description: "A joyful stretch, hop and sparkle", keyframes: [
+  celebrate: { duration: 2200, label: "Celebrate", caption: "You earned this", poster: 0.32, description: "A joyful stretch, hop and sparkle", keyframes: [
     { at: 0, pose: {} }, { at: 0.13, pose: { y: 8, scaleX: 1.1, scaleY: 0.9 } },
     { at: 0.32, pose: { y: -43, armLeft: 1, armRight: 1, eyeLeft: 0, eyeRight: 0, mouthOpen: 1, sparkle: 1, rotation: -8 } },
     { at: 0.54, pose: { y: -26, armLeft: 0.8, armRight: 1, mouthOpen: 1, sparkle: 1, rotation: 8 } },
     { at: 0.7, pose: { y: 6, scaleX: 1.07, scaleY: 0.94, mouthOpen: 0.8, sparkle: 0.5 } },
     { at: 0.86, pose: { armRight: 0.5, eyeLeft: 0, mouthOpen: 0.7, sparkle: 0.2 } }, { at: 1, pose: {} },
   ] },
-  dash: { duration: 1600, description: "Wind up, accelerate and settle", keyframes: [
-    { at: 0, pose: {} }, { at: 0.18, pose: { x: -18, rotation: -10, scaleX: 1.08, scaleY: 0.94 } },
-    { at: 0.4, pose: { x: 9, y: -26, rotation: 24, scaleX: 0.94, scaleY: 1.08, crest: 1, legLeft: -0.15, legRight: 0.8, yaw: 0.5, trail: 1, mouthOpen: 0.8 } },
-    { at: 0.6, pose: { x: 24, y: -36, rotation: 18, crest: 0.8, trail: 1, sparkle: 0.5, mouthOpen: 0.9 } },
-    { at: 0.78, pose: { x: 7, rotation: -7, crest: -0.3, scaleX: 1.06, scaleY: 0.94 } }, { at: 1, pose: {} },
+  dash: { duration: 2400, label: "Dash", caption: "Make your move", poster: 0.48, description: "A deeper windup, a longer burst and a springy brake", keyframes: [
+    { at: 0, pose: {} }, { at: 0.16, pose: { x: -22, y: 8, rotation: -10, scaleX: 1.1, scaleY: 0.9, crest: -0.25 } },
+    { at: 0.3, pose: { x: -8, y: -15, rotation: 21, scaleX: 1.08, scaleY: 0.94, crest: 0.9, legLeft: -0.8, legRight: 0.65, yaw: 0.2, trail: 0.8, mouthOpen: 0.9 } },
+    { at: 0.48, pose: { x: 19, y: -29, rotation: 25, scaleX: 1.08, scaleY: 0.95, crest: 1, legLeft: -0.8, legRight: 0.75, armLeft: -0.25, yaw: 0.2, trail: 1, mouthOpen: 0.9 } },
+    { at: 0.65, pose: { x: 32, y: -26, rotation: 20, crest: 0.85, legLeft: -0.5, legRight: 0.45, trail: 1, sparkle: 0.45, mouthOpen: 0.9 } },
+    { at: 0.79, pose: { x: 16, y: 4, rotation: -8, crest: -0.4, scaleX: 1.08, scaleY: 0.91, trail: 0.15 } },
+    { at: 0.9, pose: { x: -3, y: -3, rotation: 3, crest: 0.15 } }, { at: 1, pose: {} },
+  ] },
+  flyForward: { duration: 3000, label: "Fly forward", caption: "Catch the current", poster: 0.48, description: "Lift off, cruise forward with a swept crest, then float home", keyframes: [
+    { at: 0, pose: {} }, { at: 0.12, pose: { x: -15, y: 8, scaleX: 1.1, scaleY: 0.9, rotation: -5 } },
+    { at: 0.27, pose: { x: -20, y: -28, rotation: 17, crest: 0.8, legLeft: -0.6, legRight: 0.6, scaleX: 1.07, scaleY: 0.94, trail: 0.65, mouthOpen: 1 } },
+    { at: 0.48, pose: { x: 3, y: -37, rotation: 19, crest: 1, legLeft: -0.85, legRight: 0.75, armLeft: -0.35, scaleX: 1.1, scaleY: 0.92, trail: 1, mouthOpen: 1 } },
+    { at: 0.67, pose: { x: 28, y: -34, rotation: 16, crest: 0.9, legLeft: -0.7, legRight: 0.55, scaleX: 1.07, scaleY: 0.95, trail: 0.9, mouthOpen: 0.9 } },
+    { at: 0.84, pose: { x: 14, y: -14, rotation: 3, crest: 0.2, trail: 0.2, mouthOpen: 0.5 } }, { at: 1, pose: {} },
+  ] },
+  flyDiagonal: { duration: 2800, label: "Fly diagonally", caption: "Up and onward", poster: 0.5, description: "Accelerate diagonally upward with a long trailing foot and stardust", keyframes: [
+    { at: 0, pose: {} }, { at: 0.13, pose: { x: -18, y: 9, rotation: -7, scaleX: 1.1, scaleY: 0.89, heading: -45 } },
+    { at: 0.29, pose: { x: -13, y: -22, rotation: 28, scaleX: 0.98, scaleY: 1.04, crest: 0.85, legLeft: -1, legRight: 0.6, heading: -45, trail: 0.75, sparkle: 0.5, mouthOpen: 0.9 } },
+    { at: 0.5, pose: { x: 8, y: -61, rotation: 31, scaleX: 0.98, scaleY: 1.08, crest: 0.9, armRight: 0.4, legLeft: -1, legRight: 0.7, heading: -45, trail: 1, sparkle: 1, eyeLeft: 0, eyeRight: 0, mouthOpen: 1 } },
+    { at: 0.67, pose: { x: 28, y: -82, rotation: 25, scaleY: 1.04, crest: 0.65, legLeft: -0.8, legRight: 0.45, heading: -45, trail: 0.9, sparkle: 0.8, mouthOpen: 1 } },
+    { at: 0.82, pose: { x: 18, y: -38, rotation: 9, armRight: 0.3, heading: -45, trail: 0.2, sparkle: 0.4, mouthOpen: 0.7 } },
+    { at: 0.94, pose: { y: 4, scaleX: 1.04, scaleY: 0.96, heading: -45 } }, { at: 1, pose: {} },
+  ] },
+  jumpUp: { duration: 2100, label: "Jump up", caption: "A bigger leap", poster: 0.46, description: "Squash, launch straight up with raised points, hang and land", keyframes: [
+    { at: 0, pose: {} }, { at: 0.16, pose: { y: 13, scaleX: 1.14, scaleY: 0.84, crest: -0.1, heading: -90 } },
+    { at: 0.3, pose: { y: -34, scaleX: 0.92, scaleY: 1.12, armLeft: 0.95, armRight: 1, crest: -0.1, heading: -90, trail: 1, mouthOpen: 1 } },
+    { at: 0.46, pose: { y: -88, scaleX: 0.97, scaleY: 1.04, armLeft: 1, armRight: 1, heading: -90, trail: 0.85, mouthOpen: 1 } },
+    { at: 0.59, pose: { y: -84, armLeft: 0.9, armRight: 1, heading: -90, trail: 0.2, mouthOpen: 1 } },
+    { at: 0.76, pose: { y: -14, scaleX: 0.97, scaleY: 1.04, armLeft: 0.35, armRight: 0.4, mouthOpen: 0.7 } },
+    { at: 0.84, pose: { y: 11, scaleX: 1.12, scaleY: 0.87, crest: -0.2 } }, { at: 1, pose: {} },
   ] },
 } as const satisfies Record<string, Clip>;
 

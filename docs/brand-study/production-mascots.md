@@ -1,6 +1,6 @@
 # Product mascot options
 
-October 15, 2026: Star Ember now also has a [shared vector rig, animation components and review studio](../mascot/README.md), based on the supplied multi-pose reference sheets. It owns consistent code-defined geometry, shading, expressions and six motion clips across web/native renderers. Review at `/design/mascot` on web or `/mascot` in Expo. This is the animation model for new integrations; the bundled raster assets described below remain in the existing product components. The rig's modest turns simulate depth in 2D; true side/back views require further artwork or a 3D asset.
+October 15, 2026: Star Ember now also has a [shared vector rig, animation components and review studio](../mascot/README.md), based on the supplied multi-pose reference sheets. Version 2 uses one exterior silhouette with a clipped directional bevel, rather than a translated back star. Its nine shared clips include a longer dash, forward flight, diagonal flight and a high vertical jump. Review at `/design/mascot` on web or `/mascot` in Expo. This is the animation model for new integrations; the bundled raster assets described below remain in the existing product components. The rig's modest turns simulate depth in 2D; true side/back views require further artwork or a 3D asset.
 
 October 14, 2026: the user selected gold **Star Ember** as the default production mascot, with plum **Quiet Ace** retained as an available alternative. Both have simple faces and no limbs or sport-specific equipment.
 
