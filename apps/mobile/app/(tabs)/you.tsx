@@ -117,11 +117,19 @@ export default function YouScreen() {
           activities: [],
           linkStatus: "connected",
         });
+        setNote(result.message);
       } else if (result.stub || result.tracker === "stub") {
         appliedTracker.current = `stub:${linked}`;
         dispatch({ type: "link", provider: linked });
+        setNote(result.message);
+      } else if (result.cancelled) {
+        // Deep-link effect may still mark connected on Android; don't clobber it.
+        if (!appliedTracker.current?.startsWith("connected:")) {
+          setNote(result.message);
+        }
+      } else {
+        setNote(result.message);
       }
-      setNote(result.message);
     } catch (error) {
       setNote(error instanceof Error ? error.message : "Could not start connect.");
     } finally {

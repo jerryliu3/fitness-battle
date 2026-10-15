@@ -4,7 +4,11 @@ import { supabase } from "./supabase";
 export const CLOUD_OAUTH_PROVIDERS = ["strava", "garmin", "whoop", "oura"] as const;
 export type CloudOAuthProvider = (typeof CLOUD_OAUTH_PROVIDERS)[number];
 
-export const AUTH_RETURN_URL = "overtaek:///you";
+/**
+ * Prefix passed to openAuthSessionAsync. Must match both `overtaek:///you`
+ * and `overtaek://you` (Android sometimes normalizes the slash count).
+ */
+export const AUTH_RETURN_URL = "overtaek://";
 
 export function isCloudOAuthProvider(id: string): id is CloudOAuthProvider {
   return (CLOUD_OAUTH_PROVIDERS as readonly string[]).includes(id);
@@ -35,9 +39,26 @@ export type StartCloudTrackerConnectDeps = {
     authorizeUrl: string,
     returnUrl: string,
   ) => Promise<AuthSessionResult>;
+  /** Android dismiss race: wait briefly for the OAuth deep link. */
+  waitForReturnUrl?: (
+    matches: (url: string) => boolean,
+    timeoutMs: number,
+  ) => Promise<string | null>;
 };
 
-/** Parse `overtaek:///you?tracker=…&provider=…` (or https fallback). */
+export function isAuthReturnUrl(url: string): boolean {
+  if (!url.startsWith("overtaek:")) return false;
+  try {
+    const parsed = new URL(url);
+    const host = parsed.hostname || parsed.host || "";
+    const path = parsed.pathname.replace(/\/+$/, "");
+    return host === "you" || path === "/you" || path === "you";
+  } catch {
+    return /overtaek:\/+you(\?|$)/.test(url);
+  }
+}
+
+/** Parse `overtaek:///you?tracker=…&provider=…` (or host-style deep links). */
 export function outcomeFromReturnUrl(url: string): {
   tracker?: TrackerOutcome;
   provider?: CloudOAuthProvider;
@@ -58,6 +79,31 @@ export function outcomeFromReturnUrl(url: string): {
   }
 }
 
+function defaultWaitForReturnUrl(
+  matches: (url: string) => boolean,
+  timeoutMs: number,
+): Promise<string | null> {
+  return new Promise((resolve) => {
+    let settled = false;
+    const finish = (url: string | null) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      sub.remove();
+      resolve(url);
+    };
+    // Lazy require so Vitest can unit-test without loading react-native.
+    const Linking = require("expo-linking") as typeof import("expo-linking");
+    const sub = Linking.addEventListener("url", (event) => {
+      if (matches(event.url)) finish(event.url);
+    });
+    const timer = setTimeout(() => finish(null), timeoutMs);
+    void Linking.getInitialURL().then((url) => {
+      if (url && matches(url)) finish(url);
+    });
+  });
+}
+
 function defaultDeps(): StartCloudTrackerConnectDeps {
   return {
     apiUrl: mobileEnv.apiUrl,
@@ -71,7 +117,34 @@ function defaultDeps(): StartCloudTrackerConnectDeps {
       const WebBrowser = require("expo-web-browser") as typeof import("expo-web-browser");
       return WebBrowser.openAuthSessionAsync(authorizeUrl, returnUrl);
     },
+    waitForReturnUrl: defaultWaitForReturnUrl,
   };
+}
+
+async function resolveAuthSession(
+  authorizeUrl: string,
+  deps: StartCloudTrackerConnectDeps,
+): Promise<AuthSessionResult> {
+  let session: AuthSessionResult;
+  try {
+    session = await deps.openAuthSession(authorizeUrl, AUTH_RETURN_URL);
+  } catch {
+    return { type: "error" };
+  }
+
+  if (session.type === "success" && session.url && isAuthReturnUrl(session.url)) {
+    return session;
+  }
+
+  // Android's Custom Tabs polyfill often resolves `dismiss` before the Linking
+  // redirect is delivered, even when OAuth succeeded.
+  if (session.type === "cancel" || session.type === "dismiss" || session.type === "success") {
+    const wait = deps.waitForReturnUrl ?? defaultWaitForReturnUrl;
+    const linked = await wait(isAuthReturnUrl, 2000);
+    if (linked) return { type: "success", url: linked };
+  }
+
+  return session;
 }
 
 /**
@@ -118,10 +191,8 @@ export async function startCloudTrackerConnect(
   }
 
   if (body.authorizeUrl) {
-    let session: AuthSessionResult;
-    try {
-      session = await deps.openAuthSession(body.authorizeUrl, AUTH_RETURN_URL);
-    } catch {
+    const session = await resolveAuthSession(body.authorizeUrl, deps);
+    if (session.type === "error") {
       return { ok: false, message: "Could not open the sign-in sheet to finish connect." };
     }
 
@@ -164,7 +235,7 @@ export async function startCloudTrackerConnect(
       }
       return {
         ok: true,
-        message: "Returned from authorize. Pull to refresh if status looks stale.",
+        message: "Returned from authorize. Check tracker status in a moment.",
       };
     }
 
