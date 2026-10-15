@@ -1,0 +1,87 @@
+@import "tailwindcss";
+@import "uniwind";
+@import "heroui-native/styles";
+
+@source "./node_modules/heroui-native/lib";
+
+@theme {
+  --font-normal: "DMSans_400Regular";
+  --font-medium: "DMSans_500Medium";
+  --font-semibold: "DMSans_700Bold";
+  --font-bold: "DMSans_700Bold";
+  --radius: 14px;
+}
+
+/* Fitness Battle phone tokens. Light and dark stay on paper so the shell
+   does not fall back to HeroUI's indigo accent. */
+@layer theme {
+  :root {
+    @variant light {
+      --background: #fff9e9;
+      --foreground: #40234e;
+      --surface: #fffdf7;
+      --surface-foreground: #40234e;
+      --surface-secondary: #fff4d4;
+      --surface-secondary-foreground: #40234e;
+      --surface-tertiary: #f6f253;
+      --surface-tertiary-foreground: #40234e;
+      --overlay: #fffdf7;
+      --overlay-foreground: #40234e;
+      --muted: #726377;
+      --default: #fff4d4;
+      --default-foreground: #40234e;
+      --accent: #40234e;
+      --accent-foreground: #f6f253;
+      --field-background: #fffdf7;
+      --field-foreground: #40234e;
+      --field-placeholder: #726377;
+      --field-border: #e4d7c4;
+      --success: #2f6f4e;
+      --success-foreground: #fffdf7;
+      --warning: #f5c451;
+      --warning-foreground: #40234e;
+      --danger: #b42318;
+      --danger-foreground: #fffdf7;
+      --segment: #fffdf7;
+      --segment-foreground: #40234e;
+      --border: #e4d7c4;
+      --separator: #e4d7c4;
+      --focus: #40234e;
+      --link: #40234e;
+    }
+
+    @variant dark {
+      --background: #fff9e9;
+      --foreground: #40234e;
+      --surface: #fffdf7;
+      --surface-foreground: #40234e;
+      --surface-secondary: #fff4d4;
+      --surface-secondary-foreground: #40234e;
+      --surface-tertiary: #f6f253;
+      --surface-tertiary-foreground: #40234e;
+      --overlay: #fffdf7;
+      --overlay-foreground: #40234e;
+      --muted: #726377;
+      --default: #fff4d4;
+      --default-foreground: #40234e;
+      --accent: #40234e;
+      --accent-foreground: #f6f253;
+      --field-background: #fffdf7;
+      --field-foreground: #40234e;
+      --field-placeholder: #726377;
+      --field-border: #e4d7c4;
+      --success: #2f6f4e;
+      --success-foreground: #fffdf7;
+      --warning: #f5c451;
+      --warning-foreground: #40234e;
+      --danger: #b42318;
+      --danger-foreground: #fffdf7;
+      --segment: #fffdf7;
+      --segment-foreground: #40234e;
+      --border: #e4d7c4;
+      --separator: #e4d7c4;
+      --focus: #40234e;
+      --link: #40234e;
+    }
+  }
+}

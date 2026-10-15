@@ -121,26 +121,23 @@ export function FieldStage({
 
   return (
     <section className="fd-stage">
-      <div className="fd-field-head">
-        <div>
-          <p className="fb-kicker">
-            {mode === "lanes" ? "A track you can read" : "A world you move through"}
-          </p>
-          <h2>The field.</h2>
-        </div>
-        <div className="fd-readout">
-          <strong>
-            {valueAt(youRunner, time, extra).toFixed(1)}
-            <small>{unit}</small>
-          </strong>
-          <span>
-            {extra > 0 ? "What-if" : model.gps ? "By distance" : "By effort"} ·{" "}
-            {placeAt(runners, youRunner.id, time, extra)} / {runners.length}
-          </span>
-        </div>
+      <div className="track-gain">
+        <strong>
+          {valueAt(youRunner, time, extra).toFixed(1)}
+          <small>{unit}</small>
+        </strong>
+        <span>
+          {ghost && showGhost
+            ? `${(valueAt(youRunner, time, extra) - valueAt(ghost, time, 0) >= 0 ? "+" : "")}${(valueAt(youRunner, time, extra) - valueAt(ghost, time, 0)).toFixed(1)} ${unit} vs ${ghost.name.toLowerCase()}`
+            : `${placeAt(runners, youRunner.id, time, extra)} / ${runners.length}`}
+        </span>
       </div>
 
-      <div className="fd-view-switch" role="tablist" aria-label="Field view">
+      <div
+        className="fd-view-switch track-switch"
+        role="tablist"
+        aria-label="Field view"
+      >
         <button
           type="button"
           role="tab"
@@ -208,7 +205,7 @@ export function FieldStage({
           {unavailable ? (
             <p className="fb-note">3D is unavailable here. The 2D track stays interactive.</p>
           ) : null}
-          <div className="fd-replay">
+          <div className="fd-replay track-replay">
             <label htmlFor="field-replay">Rewind the week</label>
             <input
               id="field-replay"
