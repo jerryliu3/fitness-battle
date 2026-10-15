@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 import { clamp, DURATION_MS, frameAt } from "@/features/overtaek/motion";
 import { createEmberRenderer, type EmberRenderer } from "@/features/overtaek/renderer";
@@ -27,11 +26,8 @@ export function BootSplash({ waiting = false, onAnimationComplete }: BootSplashP
   const trailRefs = useRef<(HTMLSpanElement | null)[]>([]);
   const completed = useRef(false);
   const onCompleteRef = useRef(onAnimationComplete);
+  onCompleteRef.current = onAnimationComplete;
   const [mode, setMode] = useState<"loading" | "animated" | "static">("loading");
-
-  useEffect(() => {
-    onCompleteRef.current = onAnimationComplete;
-  }, [onAnimationComplete]);
 
   useEffect(() => {
     const stage = stageRef.current!;
@@ -42,12 +38,12 @@ export function BootSplash({ waiting = false, onAnimationComplete }: BootSplashP
     let renderer: EmberRenderer | null = null;
     let abort: AbortController | null = null;
     let disposed = false;
-    let visible = true;
     let p = 0;
     let running = false;
     let raf = 0;
     let lastDraw = 0;
     let start = 0;
+    let initial = 0;
     let layout = {
       width: 1,
       height: 1,
@@ -79,7 +75,7 @@ export function BootSplash({ waiting = false, onAnimationComplete }: BootSplashP
       const centerY = l.centerY - lift;
       letter.style.transform = `translate(${-l.slotWidth * frame.eShift}px,${Math.sin(frame.eShift * Math.PI) * l.font * 0.045}px)`;
       fallbackRef.current.style.transform = `translate(${dx}px,${-lift}px)`;
-      if (renderer && visible) {
+      if (renderer) {
         renderer.draw({
           x: (centerX - l.width / 2) / l.unit,
           y: (l.height / 2 - centerY) / l.unit,
@@ -127,14 +123,19 @@ export function BootSplash({ waiting = false, onAnimationComplete }: BootSplashP
     }
 
     function play() {
-      if (disposed || running) return;
+      if (disposed || running || completed.current) return;
       if (!renderer || media.matches) {
         draw(1);
         finish();
         return;
       }
-      if (p >= 1) p = 0;
-      const initial = p;
+      // Background tabs: wait until visible so the overtake is not spent off-screen.
+      if (document.hidden) return;
+      if (p >= 1) {
+        finish();
+        return;
+      }
+      initial = p;
       start = performance.now();
       lastDraw = 0;
       running = true;
@@ -155,11 +156,12 @@ export function BootSplash({ waiting = false, onAnimationComplete }: BootSplashP
     }
 
     function staticFinal() {
+      if (disposed || completed.current) return;
       pause();
       abort?.abort();
       renderer?.destroy();
       renderer = null;
-      setMode("static");
+      if (!disposed) setMode("static");
       draw(1);
       finish();
     }
@@ -173,7 +175,7 @@ export function BootSplash({ waiting = false, onAnimationComplete }: BootSplashP
       abort?.abort();
       const request = new AbortController();
       abort = request;
-      setMode("loading");
+      if (!disposed) setMode("loading");
       try {
         const next = await createEmberRenderer(canvas, request.signal, () => {
           if (!disposed) staticFinal();
@@ -183,7 +185,7 @@ export function BootSplash({ waiting = false, onAnimationComplete }: BootSplashP
           return;
         }
         renderer = next;
-        setMode("animated");
+        if (!disposed) setMode("animated");
         measure();
         play();
       } catch {
@@ -192,20 +194,25 @@ export function BootSplash({ waiting = false, onAnimationComplete }: BootSplashP
     }
 
     function visibilityChanged() {
-      if (document.hidden) pause();
-      else if (!completed.current && renderer && !media.matches) {
-        if (!running && p < 1) play();
-        else draw(p);
+      if (document.hidden) {
+        pause();
+        return;
       }
+      if (completed.current || disposed) {
+        draw(p);
+        return;
+      }
+      if (renderer && !media.matches) play();
+      else draw(p);
+    }
+
+    function preferenceChanged() {
+      if (media.matches) staticFinal();
     }
 
     const observer = new ResizeObserver(measure);
     observer.observe(stage);
-    const intersection = new IntersectionObserver((entries) => {
-      visible = entries[0]?.isIntersecting ?? true;
-      if (visible) draw(p);
-    });
-    intersection.observe(stage);
+    media.addEventListener("change", preferenceChanged);
     document.addEventListener("visibilitychange", visibilityChanged);
     measure();
     void document.fonts.ready.then(() => {
@@ -220,13 +227,19 @@ export function BootSplash({ waiting = false, onAnimationComplete }: BootSplashP
       abort?.abort();
       renderer?.destroy();
       observer.disconnect();
-      intersection.disconnect();
+      media.removeEventListener("change", preferenceChanged);
       document.removeEventListener("visibilitychange", visibilityChanged);
     };
   }, []);
 
   return (
-    <div className="boot-splash" role="status" aria-live="polite" aria-busy="true">
+    <div
+      className="boot-splash"
+      role="status"
+      aria-live="polite"
+      aria-busy="true"
+      aria-label={waiting ? "Overtaek is still loading" : "Overtaek"}
+    >
       <div ref={stageRef} className="boot-splash-stage">
         <div ref={wordRef} className="boot-splash-word" role="img" aria-label="OVERTAKE">
           <span aria-hidden="true">OVERTA</span>
@@ -236,14 +249,8 @@ export function BootSplash({ waiting = false, onAnimationComplete }: BootSplashP
               className="boot-splash-fallback"
               hidden={mode === "animated"}
             >
-              <Image
-                src="/brand/mascots/star-ember.webp"
-                width={480}
-                height={480}
-                alt=""
-                unoptimized
-                priority
-              />
+              {/* Plain img: boot path should not wait on next/image machinery. */}
+              <img src="/brand/mascots/star-ember.webp" width={480} height={480} alt="" />
             </span>
           </span>
           <span ref={eRef} className="boot-splash-e" aria-hidden="true">
@@ -254,7 +261,7 @@ export function BootSplash({ waiting = false, onAnimationComplete }: BootSplashP
           ref={canvasRef}
           className="boot-splash-canvas"
           aria-hidden="true"
-          hidden={mode === "static"}
+          hidden={mode !== "animated"}
         />
         {[0, 1, 2].map((i) => (
           <span
