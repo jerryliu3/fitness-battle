@@ -15,7 +15,12 @@ export default function ConnectionsScreen() {
       const result = kind === "apple" ? await syncAppleHealth() : await syncHealthConnect();
       setNote(result.message);
     } catch (error) {
-      setNote(error instanceof Error ? error.message : "Sync failed");
+      const message = error instanceof Error ? error.message : "Sync failed";
+      setNote(
+        message.includes("is not a function")
+          ? "Apple Health native module failed to load. Install a fresh TestFlight build."
+          : message,
+      );
     } finally {
       setBusy(false);
     }
