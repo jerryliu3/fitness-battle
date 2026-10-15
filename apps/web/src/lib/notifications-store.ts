@@ -7,7 +7,7 @@ import {
   type NotificationPlatform,
   type PushPermissionStatus,
 } from "@fitness-battle/shared";
-import { createClient } from "@/lib/supabase/server";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { getSupabaseConfig } from "@/lib/supabase/config";
 import { webEnv } from "@/lib/env";
 
@@ -21,6 +21,7 @@ export function canPersistNotifications(userId: string): boolean {
 }
 
 export async function loadRemoteNotificationState(
+  supabase: SupabaseClient,
   userId: string,
   platform?: NotificationPlatform,
 ): Promise<{
@@ -35,7 +36,6 @@ export async function loadRemoteNotificationState(
       persisted: false,
     };
   }
-  const supabase = await createClient();
   const [{ data: row }, { data: devices, error: deviceError }] = await Promise.all([
     supabase
       .from("notification_preferences")
@@ -66,11 +66,11 @@ export async function loadRemoteNotificationState(
 }
 
 export async function saveRemotePreferences(
+  supabase: SupabaseClient,
   userId: string,
   prefs: NotificationPreferences,
 ): Promise<boolean> {
   if (!canPersistNotifications(userId)) return false;
-  const supabase = await createClient();
   const { error } = await supabase
     .from("notification_preferences")
     .upsert(preferencesToRow(userId, prefs));
@@ -79,6 +79,7 @@ export async function saveRemotePreferences(
 }
 
 export async function upsertRemoteDevice(
+  supabase: SupabaseClient,
   userId: string,
   input: {
     platform: NotificationPlatform;
@@ -88,7 +89,6 @@ export async function upsertRemoteDevice(
   },
 ): Promise<PushDeviceRow | null> {
   if (!canPersistNotifications(userId)) return null;
-  const supabase = await createClient();
   const now = new Date().toISOString();
   const { data, error } = await supabase
     .from("push_devices")
@@ -113,11 +113,11 @@ export async function upsertRemoteDevice(
 }
 
 export async function clearRemoteDevices(
+  supabase: SupabaseClient,
   userId: string,
   platform?: NotificationPlatform,
 ): Promise<boolean> {
   if (!canPersistNotifications(userId)) return false;
-  const supabase = await createClient();
   let query = supabase.from("push_devices").delete().eq("user_id", userId);
   if (platform) query = query.eq("platform", platform);
   const { error } = await query;
@@ -127,19 +127,21 @@ export async function clearRemoteDevices(
 
 export type OutboxStatus = "stubbed" | "queued" | "sent" | "failed";
 
-export async function recordDelivery(input: {
-  userId: string;
-  category: string;
-  title: string;
-  body: string;
-  path?: string;
-  deviceCount: number;
-  status: OutboxStatus;
-}): Promise<{ id: string; persisted: boolean }> {
+export async function recordDelivery(
+  supabase: SupabaseClient,
+  input: {
+    userId: string;
+    category: string;
+    title: string;
+    body: string;
+    path?: string;
+    deviceCount: number;
+    status: OutboxStatus;
+  },
+): Promise<{ id: string; persisted: boolean }> {
   if (!canPersistNotifications(input.userId)) {
     return { id: `local-${Date.now()}`, persisted: false };
   }
-  const supabase = await createClient();
   const { data, error } = await supabase
     .from("notification_outbox")
     .insert({
@@ -155,16 +157,4 @@ export async function recordDelivery(input: {
     .single();
   if (error || !data) throw new Error("outbox_not_saved");
   return { id: data.id as string, persisted: true };
-}
-
-/** @deprecated use recordDelivery */
-export async function recordStubDelivery(input: {
-  userId: string;
-  category: string;
-  title: string;
-  body: string;
-  path?: string;
-  deviceCount: number;
-}): Promise<{ id: string; persisted: boolean }> {
-  return recordDelivery({ ...input, status: "stubbed" });
 }

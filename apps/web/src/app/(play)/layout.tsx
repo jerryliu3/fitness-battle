@@ -2,6 +2,7 @@
 
 import { useAuth } from "@/components/auth-context";
 import { CompeteProvider, useCompete } from "@/components/compete-context";
+import { NotificationTriggers } from "@/components/notification-triggers";
 import { NavIcon } from "@/features/brand/brand-art";
 import { useTheme } from "@/theme/theme-provider";
 import Link from "next/link";
@@ -158,6 +159,7 @@ function PlayChrome({ children }: { children: ReactNode }) {
 export default function PlayLayout({ children }: { children: ReactNode }) {
   return (
     <CompeteProvider>
+      <NotificationTriggers />
       <PlayChrome>{children}</PlayChrome>
     </CompeteProvider>
   );

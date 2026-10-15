@@ -114,7 +114,9 @@ export default function SettingsScreen() {
       identity,
     );
     if (!result.ok) {
-      setNote("Turn notifications on before testing.");
+      setNote(
+        "Could not deliver. Turn notifications on, allow permission, and use a live Expo token on a physical device when testing remote push.",
+      );
       return;
     }
     Alert.alert(result.payload.title, result.payload.body);

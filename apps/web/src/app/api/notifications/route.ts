@@ -10,6 +10,7 @@ import {
   saveRemotePreferences,
   upsertRemoteDevice,
 } from "@/lib/notifications-store";
+import { createRequestClient } from "@/lib/supabase/request";
 
 function parsePlatform(value: unknown): NotificationPlatform | undefined {
   if (value === "web" || value === "ios" || value === "android") return value;
@@ -27,7 +28,8 @@ export async function GET(request: Request) {
   }
   const platform = parsePlatform(url.searchParams.get("platform"));
   try {
-    const state = await loadRemoteNotificationState(userId, platform);
+    const supabase = await createRequestClient(request);
+    const state = await loadRemoteNotificationState(supabase, userId, platform);
     return NextResponse.json({
       prefs: state.prefs,
       devices: state.devices,
@@ -59,17 +61,18 @@ export async function PUT(request: Request) {
   const platform = parsePlatform(body?.platform) ?? prefs.registration?.platform ?? "web";
 
   try {
-    const prefsPersisted = await saveRemotePreferences(userId, prefs);
+    const supabase = await createRequestClient(request);
+    const prefsPersisted = await saveRemotePreferences(supabase, userId, prefs);
     let devicePersisted = false;
 
     if (body?.clearDevices) {
-      devicePersisted = await clearRemoteDevices(userId, platform);
+      devicePersisted = await clearRemoteDevices(supabase, userId, platform);
     } else if (
       body?.registerDevice !== false &&
       prefs.enabled &&
       prefs.registration?.token
     ) {
-      const device = await upsertRemoteDevice(userId, {
+      const device = await upsertRemoteDevice(supabase, userId, {
         platform,
         token: prefs.registration.token,
         stub: prefs.registration.stub !== false,
@@ -78,7 +81,6 @@ export async function PUT(request: Request) {
       devicePersisted = device != null;
     }
 
-    // Demo / unconfigured Supabase cannot persist — echo the client prefs.
     if (!prefsPersisted && !devicePersisted) {
       return NextResponse.json({
         ok: true,
@@ -88,7 +90,7 @@ export async function PUT(request: Request) {
       });
     }
 
-    const state = await loadRemoteNotificationState(userId, platform);
+    const state = await loadRemoteNotificationState(supabase, userId, platform);
     return NextResponse.json({
       ok: true,
       prefs: state.prefs,

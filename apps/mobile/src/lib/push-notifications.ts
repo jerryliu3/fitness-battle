@@ -1,5 +1,6 @@
 import {
   NOTIFICATION_STORAGE_KEY,
+  mergeNotificationPreferences,
   normalizeNotificationPreferences,
   parseNotificationPreferences,
   prepareNotificationDelivery,
@@ -121,10 +122,10 @@ export async function hydrateNotificationPreferences(
     };
     if (!body.prefs || body.persisted === false) return local;
     return saveNotificationPreferences(
-      normalizeNotificationPreferences({
-        ...body.prefs,
-        registration: body.prefs.registration ?? local.registration,
-      }),
+      mergeNotificationPreferences(
+        local,
+        normalizeNotificationPreferences(body.prefs),
+      ),
     );
   } catch {
     return local;
@@ -241,6 +242,8 @@ export async function deliverNativeNotification(
         persisted?: boolean;
         mode?: "expo" | "stub";
         message?: string;
+        reason?: string;
+        error?: string;
       };
       if (response.ok && body.ok) {
         return {
@@ -251,8 +254,12 @@ export async function deliverNativeNotification(
           message: body.message,
         };
       }
+      return {
+        ok: false,
+        reason: "blocked",
+      };
     } catch {
-      // Fall through to local acknowledgement.
+      return { ok: false, reason: "blocked" };
     }
   }
 

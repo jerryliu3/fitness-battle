@@ -32,13 +32,22 @@ export default function RootLayout() {
   });
 
   useEffect(() => {
+    let alive = true;
+    void Notifications.getLastNotificationResponseAsync().then((response) => {
+      if (!alive || !response) return;
+      const path = pathFromNotificationResponse(response);
+      if (path) router.push(path as "/settings");
+    });
     const sub = Notifications.addNotificationResponseReceivedListener(
       (response) => {
         const path = pathFromNotificationResponse(response);
         if (path) router.push(path as "/settings");
       },
     );
-    return () => sub.remove();
+    return () => {
+      alive = false;
+      sub.remove();
+    };
   }, []);
 
   if (!dmLoaded) {

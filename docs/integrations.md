@@ -26,6 +26,17 @@ Catalog source: `packages/shared/src/fitness/providers.ts`.
 
 Tables: `notification_preferences`, `push_devices`, `notification_outbox`. Routes: `GET/PUT /api/notifications`, `POST /api/notifications/test`, `POST /api/notifications/send`. Optional env: `EXPO_ACCESS_TOKEN`.
 
+API auth: cookie session (web) or `Authorization: Bearer <access_token>` (mobile). The request-scoped Supabase client must carry that Bearer so RLS can write `push_devices`.
+
+Product hooks (web play shell):
+
+| Category | When |
+| --- | --- |
+| `week_summary` | New `periodResults` row after week settlement |
+| `rival_moves` | Your open-board place worsens |
+| `lesson_reminder` | Once per UTC day if today’s lesson is still open |
+| `connection_alerts` | Tracker sync/connect failure on You |
+
 ## Keys
 
 Set these on the web server. Leave them empty until you have them. Demo mode (`NEXT_PUBLIC_USE_DEMO_DATA=true`) refuses to finish OAuth even if the keys are present.

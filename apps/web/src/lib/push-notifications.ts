@@ -1,5 +1,6 @@
 import {
   NOTIFICATION_STORAGE_KEY,
+  mergeNotificationPreferences,
   normalizeNotificationPreferences,
   parseNotificationPreferences,
   prepareNotificationDelivery,
@@ -163,13 +164,11 @@ export async function hydrateNotificationPreferences(
       persisted?: boolean;
     };
     if (!body.prefs || body.persisted === false) return local;
-    // Remote wins for account switches; keep fresher local browser permission.
     const merged = reconcileBrowserPermission(
-      normalizeNotificationPreferences({
-        ...body.prefs,
-        // Prefer local registration token if remote has none yet.
-        registration: body.prefs.registration ?? local.registration,
-      }),
+      mergeNotificationPreferences(
+        local,
+        normalizeNotificationPreferences(body.prefs),
+      ),
     );
     return saveNotificationPreferences(merged);
   } catch {
