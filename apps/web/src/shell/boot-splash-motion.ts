@@ -2,9 +2,13 @@
 export {
   BOOT_DURATION_MS,
   READY_END,
+  FLIGHT_END,
   ZOOM_END,
   bootDashProgress,
   bootEmberPose,
+  bootFlightT,
+  bootFlyProgress,
   bootFrame,
+  bootKCrossfade,
   bootKMorph,
 } from "@fitness-battle/shared/boot";
