@@ -158,9 +158,63 @@ function splitCompeteKey(activity: Activity): {
 }
 
 /**
- * Dual-write durable prefs / ratings / settled weeks / activities / enrollments.
- * Caller stores a thin snapshot after this succeeds.
- * Never deletes activity rows (sync may race ahead of the blob).
+ * Activities SoT write — `public.activities` only.
+ * Never deletes rows (live sync can race ahead of the compete document).
+ */
+export async function persistCompeteActivities(
+  db: Db,
+  userId: string,
+  state: CompeteState,
+): Promise<void> {
+  const clean = prepareCompeteStateForAccount(state);
+  if (clean.activities.length === 0) return;
+
+  const { data: categories, error: categoryError } = await db
+    .from("categories")
+    .select("id, slug");
+  if (categoryError) throw new Error(categoryError.message);
+  const categoryBySlug = new Map(
+    (categories ?? []).map((row) => [row.slug as string, row.id as string]),
+  );
+
+  const activityRows = clean.activities.flatMap((activity) => {
+    const parts = splitCompeteKey(activity);
+    const categoryId = categoryBySlug.get(activity.sport);
+    if (!categoryId) return [];
+    return [
+      {
+        user_id: userId,
+        provider: parts.provider,
+        external_id: parts.externalId,
+        category_id: categoryId,
+        started_at: activity.startedAt,
+        metric_value:
+          activity.sport === "strength" ? activity.movingSec : activity.distanceM,
+        moving_sec: activity.movingSec,
+        avg_hr: activity.avgHr,
+        raw_name: "",
+        sport: activity.sport,
+        distance_m: activity.distanceM,
+        verified: activity.verified,
+        provenance: provenanceOf(activity),
+        disposition: dispositionOf(activity),
+        disposition_reason: activity.dispositionReason ?? null,
+        compete_key: parts.competeKey,
+        source_label: parts.sourceLabel,
+      },
+    ];
+  });
+
+  if (activityRows.length === 0) return;
+  const { error } = await db.from("activities").upsert(activityRows, {
+    onConflict: "user_id,provider,external_id",
+  });
+  if (error) throw new Error(error.message);
+}
+
+/**
+ * Dual-write prefs / ratings / settled weeks / enrollments / activities.
+ * Caller must store the snapshot with activities stripped (`stripSnapshotActivities`).
  */
 export async function persistCompeteCore(
   db: Db,
@@ -244,50 +298,8 @@ export async function persistCompeteCore(
     if (error) throw new Error(error.message);
   }
 
-  const { data: categories, error: categoryError } = await db
-    .from("categories")
-    .select("id, slug");
-  if (categoryError) throw new Error(categoryError.message);
-  const categoryBySlug = new Map(
-    (categories ?? []).map((row) => [row.slug as string, row.id as string]),
-  );
+  await persistCompeteActivities(db, userId, clean);
 
-  const activityRows = clean.activities.flatMap((activity) => {
-    const parts = splitCompeteKey(activity);
-    const categoryId = categoryBySlug.get(activity.sport);
-    if (!categoryId) return [];
-    return [
-      {
-        user_id: userId,
-        provider: parts.provider,
-        external_id: parts.externalId,
-        category_id: categoryId,
-        started_at: activity.startedAt,
-        metric_value:
-          activity.sport === "strength" ? activity.movingSec : activity.distanceM,
-        moving_sec: activity.movingSec,
-        avg_hr: activity.avgHr,
-        raw_name: "",
-        sport: activity.sport,
-        distance_m: activity.distanceM,
-        verified: activity.verified,
-        provenance: provenanceOf(activity),
-        disposition: dispositionOf(activity),
-        disposition_reason: activity.dispositionReason ?? null,
-        compete_key: parts.competeKey,
-        source_label: parts.sourceLabel,
-      },
-    ];
-  });
-
-  if (activityRows.length > 0) {
-    const { error } = await db.from("activities").upsert(activityRows, {
-      onConflict: "user_id,provider,external_id",
-    });
-    if (error) throw new Error(error.message);
-  }
-
-  // Enrollments are a small per-viewer set — replace from document (same as freezes).
   const { error: clearEnrollError } = await db
     .from("wave_enrollments")
     .delete()
@@ -312,8 +324,9 @@ export async function persistCompeteCore(
 }
 
 /**
- * Overlay dual-written relational rows onto the snapshot document.
- * Always merge — never drop snapshot-ahead collections (fat cutover / lag).
+ * Overlay relational rows onto the snapshot document.
+ * Activities: table is SoT; snapshot activities only appear during legacy flush.
+ * Other collections: merge snapshot + DB (dual-write lag / fat leftovers).
  */
 export async function hydrateCompeteCollections(
   db: Db,

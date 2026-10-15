@@ -2,20 +2,25 @@
 
 Signed-in play is **per-viewer**. Guests may use device-local storage.
 
-## Model
+## Activities — table SoT (this cutover)
 
-| Layer | Holds |
+`CompeteState.activities` is **not** stored in `compete_snapshots` jsonb.
+
+| Direction | Path |
 | --- | --- |
-| Relational | prefs, ratings, period_results, freezes, activities, wave_enrollments |
-| Thin `compete_snapshots` | identity, clock, ratings template, sleep/health/links/duels/readiness; dual-written arrays empty |
-| Ephemeral on GET | `crewBoard` (from `crew_week_fields`), `pendingRevealIds` (from `acknowledgedAt`), `rollClock` |
+| Write | `persistCompeteActivities` → `public.activities` (also from fitness sync). Upsert only; no orphan deletes. |
+| Read | GET `/api/compete` hydrates `activities` from `public.activities` (`compete_key` rows). |
+| Snapshot | Always `activities: []` via `stripSnapshotActivities`, including failure fallbacks. |
 
-`demoNow` is never account-durable. `battles` / `periods` / `standings` are not the play path.
+Legacy fat blobs that still embed activities are flushed into the table on the next GET/PUT, then stripped.
 
-## Write / read
+Client memory / localStorage may still hold activities for the engine; the **account** copy is the table.
 
-- **PUT:** `persistCompeteCore` then store `thinCompeteStateForAccount`. On relational failure, store the full prepared document.
-- **GET:** hydrate (merge snapshot + tables) → `rollClock` → crew board. Fat snapshots or settlement rewrite thin.
-- Hydrate **always merges** so snapshot-ahead rows survive lag / fat cutover. Thin-snapshot hydrate failure returns 500 (empty arrays are not a valid fallback).
+## Rest of compete document
 
-Sleep/health remain jsonb until a later phase.
+Still dual-written / jsonb for now: prefs, ratings, period_results, freezes, enrollments, sleep/health/links/duels/clock. `demoNow` / `crewBoard` / `pendingRevealIds` are not account-durable. `battles` schema is not the play path.
+
+## API
+
+- **PUT:** persist relational (activities required) → store snapshot with activities stripped.
+- **GET:** hydrate collections → `rollClock` → crew board; rewrite when settled or legacy activities remain in the blob.

@@ -1,12 +1,12 @@
 import { NextResponse } from "next/server";
 import {
   isCompeteState,
-  isFatCompeteSnapshot,
   migrateCompeteState,
   prepareCompeteStateForAccount,
   rollClock,
   sanitizeCompeteStateForAccount,
-  thinCompeteStateForAccount,
+  snapshotCarriesActivities,
+  stripSnapshotActivities,
   withDerivedPendingReveals,
   type CompeteState,
 } from "@fitness-battle/shared";
@@ -14,34 +14,49 @@ import { resolveRequestUserId } from "@/lib/auth/request-user";
 import {
   hydrateCompeteCollections,
   hydrateCrewBoard,
+  persistCompeteActivities,
   persistCompeteCore,
 } from "@/lib/compete-persist";
 import { createClient } from "@/lib/supabase/server";
 
+type Db = Awaited<ReturnType<typeof createClient>>;
+
 function sameLiveDocument(left: CompeteState, right: CompeteState): boolean {
-  // Compare prepared (full) documents — thin compare would miss settlement.
   return (
     JSON.stringify(prepareCompeteStateForAccount(left)) ===
     JSON.stringify(prepareCompeteStateForAccount(right))
   );
 }
 
-async function saveThinSnapshot(
-  supabase: Awaited<ReturnType<typeof createClient>>,
+/** Persist relational rows, then store snapshot with activities always stripped. */
+async function saveAccountSnapshot(
+  supabase: Db,
   userId: string,
   live: CompeteState,
   updatedAt: string,
-): Promise<boolean> {
+): Promise<"ok" | "activities_only" | "failed"> {
+  const stored = stripSnapshotActivities(live);
   try {
     await persistCompeteCore(supabase, userId, live);
     const { error } = await supabase.from("compete_snapshots").upsert({
       user_id: userId,
-      state: thinCompeteStateForAccount(live),
+      state: stored,
       updated_at: updatedAt,
     });
-    return !error;
+    return error ? "failed" : "ok";
   } catch {
-    return false;
+    // Other dual-writes may have failed — still get activities into the table.
+    try {
+      await persistCompeteActivities(supabase, userId, live);
+      const { error } = await supabase.from("compete_snapshots").upsert({
+        user_id: userId,
+        state: stored,
+        updated_at: updatedAt,
+      });
+      return error ? "failed" : "activities_only";
+    } catch {
+      return "failed";
+    }
   }
 }
 
@@ -66,14 +81,15 @@ export async function GET(request: Request) {
   const base = withDerivedPendingReveals(
     sanitizeCompeteStateForAccount(migrateCompeteState(data.state)),
   );
-  const fatSnapshot = isFatCompeteSnapshot(base);
+  const legacyActivities = snapshotCarriesActivities(base);
 
   let hydrated: CompeteState;
   try {
     hydrated = await hydrateCompeteCollections(supabase, userId, base);
   } catch {
-    // Thin snapshots have empty collections — falling back to base would blank the UI.
-    if (!fatSnapshot) {
+    // After activities leave the blob, empty snapshot.activities is normal —
+    // hydrate failure would blank the board.
+    if (!legacyActivities) {
       return NextResponse.json({ error: "hydrate_failed" }, { status: 500 });
     }
     hydrated = base;
@@ -88,11 +104,11 @@ export async function GET(request: Request) {
   }
 
   const settled = !sameLiveDocument(hydrated, state);
-  if (settled || fatSnapshot) {
+  if (settled || legacyActivities) {
     const live = prepareCompeteStateForAccount(state);
     const updatedAt = new Date().toISOString();
-    const thinned = await saveThinSnapshot(supabase, userId, live, updatedAt);
-    if (thinned) {
+    const saved = await saveAccountSnapshot(supabase, userId, live, updatedAt);
+    if (saved !== "failed") {
       return NextResponse.json({ state, updatedAt, settled: true });
     }
   }
@@ -128,32 +144,20 @@ export async function PUT(request: Request) {
   }
   const supabase = await createClient();
   const updatedAt = new Date().toISOString();
+  const saved = await saveAccountSnapshot(supabase, userId, live, updatedAt);
 
-  if (await saveThinSnapshot(supabase, userId, live, updatedAt)) {
-    return NextResponse.json({
-      ok: true,
-      persisted: true,
-      updatedAt,
-      relational: true,
-    });
-  }
-
-  // Relational failed — keep a full document so client data is not lost.
-  const { error } = await supabase.from("compete_snapshots").upsert({
-    user_id: userId,
-    state: live,
-    updated_at: updatedAt,
-  });
-  if (error) {
+  if (saved === "failed") {
     return NextResponse.json(
       { error: "snapshot_not_saved", persisted: false },
       { status: 500 },
     );
   }
+
   return NextResponse.json({
     ok: true,
     persisted: true,
     updatedAt,
-    relational: false,
+    relational: saved === "ok",
+    activities: true,
   });
 }

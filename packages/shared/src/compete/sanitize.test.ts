@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
 import { freshState } from "./engine";
 import {
-  isFatCompeteSnapshot,
   prepareCompeteStateForAccount,
   sanitizeCompeteStateForAccount,
-  thinCompeteStateForAccount,
+  snapshotCarriesActivities,
+  stripSnapshotActivities,
   withDerivedPendingReveals,
 } from "./sanitize";
 
@@ -68,7 +68,7 @@ describe("sanitizeCompeteStateForAccount", () => {
     expect(withDerivedPendingReveals(state).pendingRevealIds).toEqual(["a"]);
   });
 
-  it("thins dual-written bulk collections from the stored snapshot", () => {
+  it("never stores activities in the account snapshot document", () => {
     const state = {
       ...freshState(),
       activities: [
@@ -102,27 +102,12 @@ describe("sanitizeCompeteStateForAccount", () => {
           acknowledgedAt: null,
         },
       ],
-      enrollments: [
-        {
-          sport: "running" as const,
-          waveStart: "2026-10-12T00:00:00.000Z",
-          weekEnd: "2026-10-19T00:00:00.000Z",
-          capacity: 8,
-          peerIds: [] as string[],
-          syntheticIds: ["s1"],
-          autoEnrollNext: true,
-        },
-      ],
-      frozenPeriods: ["2026-10-05T00:00:00.000Z"],
-      sleepNights: freshState().sleepNights,
     };
-    expect(isFatCompeteSnapshot(state)).toBe(true);
-    const thin = thinCompeteStateForAccount(state);
-    expect(thin.activities).toEqual([]);
-    expect(thin.periodResults).toEqual([]);
-    expect(thin.enrollments).toEqual([]);
-    expect(thin.frozenPeriods).toEqual([]);
-    expect(thin.ratings.length).toBe(state.ratings.length);
-    expect(isFatCompeteSnapshot(thin)).toBe(false);
+    expect(snapshotCarriesActivities(state)).toBe(true);
+    const stored = stripSnapshotActivities(state);
+    expect(stored.activities).toEqual([]);
+    // Other dual-written collections may still ride in the blob for now.
+    expect(stored.periodResults).toHaveLength(1);
+    expect(snapshotCarriesActivities(stored)).toBe(false);
   });
 });

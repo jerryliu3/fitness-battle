@@ -38,8 +38,8 @@ Separate Supabase project from battles (`rankings-db/`, hosted `pzadctqmyekkydte
 
 | Item | Status |
 | --- | --- |
-| Account snapshot | Thin `compete_snapshots` after dual-write; hydrate collections on GET |
-| Relational normalize | Prefs / ratings / period_results / freezes / activities / enrollments are SoT; sleep/health still jsonb |
+| Account snapshot | `compete_snapshots` — **activities never in jsonb**; hydrated from `public.activities` |
+| Relational normalize | Activities table-SoT; prefs/ratings/results/enrollments still dual-written; sleep/health jsonb |
 | Density matching | Still per-viewer (not global standings) |
 
 See [compete-persistence.md](compete-persistence.md).

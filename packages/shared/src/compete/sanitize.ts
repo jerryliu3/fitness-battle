@@ -20,7 +20,8 @@ export function stripDurableCrewBoard(state: CompeteState): CompeteState {
 
 /**
  * Account write shape before relational persist: no demoNow, no durable
- * crewBoard, no pendingRevealIds. Collections stay so dual-write can run.
+ * crewBoard, no pendingRevealIds. Activities may still be present in memory
+ * so they can be upserted into `public.activities`.
  */
 export function prepareCompeteStateForAccount(
   state: CompeteState,
@@ -31,32 +32,28 @@ export function prepareCompeteStateForAccount(
 }
 
 /**
- * Stored snapshot after successful relational persist.
- * Bulky dual-written collections live in tables; GET hydrates them back.
- * Sleep / health / links / duels / readiness / clock stay in jsonb for now.
+ * Stored `compete_snapshots.state` shape for activities.
+ * Activities are table-only SoT — never written into the jsonb blob.
  */
-export function thinCompeteStateForAccount(state: CompeteState): CompeteState {
+export function stripSnapshotActivities(state: CompeteState): CompeteState {
   const prepared = prepareCompeteStateForAccount(state);
-  return {
-    ...prepared,
-    activities: [],
-    periodResults: [],
-    enrollments: [],
-    frozenPeriods: [],
-    pendingRevealIds: [],
-    crewBoard: null,
-    demoNow: null,
-  };
+  if (prepared.activities.length === 0) return prepared;
+  return { ...prepared, activities: [] };
 }
 
-/** True when the stored jsonb still carries dual-written bulk collections. */
+/** @deprecated Use stripSnapshotActivities — kept for call sites mid-rename. */
+export function thinCompeteStateForAccount(state: CompeteState): CompeteState {
+  return stripSnapshotActivities(state);
+}
+
+/** Legacy fat blob still carries activities that must be flushed to the table. */
+export function snapshotCarriesActivities(state: CompeteState): boolean {
+  return state.activities.length > 0;
+}
+
+/** @deprecated Use snapshotCarriesActivities. */
 export function isFatCompeteSnapshot(state: CompeteState): boolean {
-  return (
-    state.activities.length > 0 ||
-    state.periodResults.length > 0 ||
-    state.enrollments.length > 0 ||
-    state.frozenPeriods.length > 0
-  );
+  return snapshotCarriesActivities(state);
 }
 
 /** Recompute pendingRevealIds after relational hydrate / migrate. */

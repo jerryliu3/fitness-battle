@@ -104,7 +104,9 @@ export {
   isFatCompeteSnapshot,
   prepareCompeteStateForAccount,
   sanitizeCompeteStateForAccount,
+  snapshotCarriesActivities,
   stripDurableCrewBoard,
+  stripSnapshotActivities,
   thinCompeteStateForAccount,
   withDerivedPendingReveals,
 } from "./sanitize";
