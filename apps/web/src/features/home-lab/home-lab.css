@@ -1,0 +1,109 @@
+/* Product tokens stay unchanged; chrome and copy are deliberately sparse. */
+.ah-lab{max-width:1120px;margin:0 auto;display:grid;grid-template-columns:260px minmax(0,1fr);gap:72px;padding:48px 32px 72px;align-items:start}
+.ah-lab-controls{position:sticky;top:36px;padding-top:26px}
+.ah-eyebrow{font-size:10px;font-weight:700;letter-spacing:.12em;line-height:1.5;color:var(--muted);margin:0}
+.ah-lab-controls h1{font-family:var(--font-body),sans-serif;font-size:28px;line-height:1.1;letter-spacing:-1px;margin:0 0 28px}
+.ah-lab-controls fieldset{border:0;padding:0;margin:25px 0}
+.ah-lab-controls legend{font-size:12px;font-weight:700;margin-bottom:10px}
+.ah-lab-pills{display:flex;flex-wrap:wrap;gap:6px}
+.ah-lab button,.ah-sheet button{cursor:pointer}
+.ah-lab button:focus-visible,.ah-sheet button:focus-visible,.ah-sheet a:focus-visible{outline:3px solid var(--ink);outline-offset:4px}
+.ah-lab-pills button,.ah-data-source button{background:var(--card);border:1px solid var(--line);padding:9px 12px;border-radius:10px;font-size:12px;min-height:40px}
+.ah-lab-pills button[aria-pressed=true],.ah-data-source button[aria-pressed=true]{background:var(--ink);color:var(--card);border-color:var(--ink)}
+.ah-data-source{border-top:1px solid var(--line);padding-top:20px;display:grid;gap:10px;justify-items:start}
+.ah-data-source small{font-size:11px;line-height:1.5;color:var(--muted)}
+.ah-preview{display:flex;justify-content:center;min-width:0}
+.ah-phone{width:100%;max-width:430px;min-height:820px;background:var(--paper);border:1px solid var(--line);border-radius:32px;box-shadow:0 18px 80px color-mix(in srgb,var(--ink) 10%,transparent);overflow:hidden;position:relative;display:flex;flex-direction:column}
+.ah-phone button,.ah-sheet button{font-family:var(--font-body),sans-serif}
+.ah-app-header{display:flex;justify-content:space-between;align-items:center;gap:16px;padding:24px 28px 8px;min-height:74px}
+.ah-sport-name{font-size:15px;font-weight:700}
+.ah-week-header{border:0;background:transparent;padding:0;min-height:44px;font-size:13px;color:var(--muted)}
+.ah-app-main{flex:1;padding:8px 26px 24px;min-width:0}
+.ah-status{background:var(--card);color:var(--muted);font-size:12px;padding:14px;margin:0 26px 12px;border-radius:14px}
+.ah-dock{display:flex;gap:4px;background:var(--card);border:1px solid var(--line);border-radius:22px;padding:7px;margin:0 20px 22px;position:relative}
+.ah-dock button{flex:1;background:transparent;border:0;border-radius:16px;padding:8px 3px;min-width:0;min-height:59px;font-size:10px;font-weight:600;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px;position:relative}
+.ah-dock button[aria-pressed=true]{background:var(--ink);color:var(--card)}
+.ah-dock svg{width:22px;height:22px}
+.ah-new-dot{position:absolute;right:16px;top:8px;width:6px;height:6px;background:var(--lime);border-radius:50%}
+.ah-arena-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:10px 0 30px}
+.ah-arena-heading h1,.ah-progress-view h1{font-family:var(--font-body),sans-serif;font-size:30px;font-weight:700;line-height:1.1;letter-spacing:-1px;margin:0}
+.ah-arena-heading button{border:0;background:var(--card);padding:8px 12px;min-height:40px;border-radius:22px;font-size:11px}
+.ah-arrival-stats{display:flex;align-items:center;justify-content:space-between;gap:20px;margin:0 0 24px}
+.ah-arrival-stats button{display:grid;gap:9px;padding:0;background:transparent;border:0;text-align:left;min-height:60px}
+.ah-arrival-stats strong{font-size:40px;line-height:1;letter-spacing:-1.6px;font-variant-numeric:tabular-nums}
+.ah-arrival-stats span{font-size:11px;color:var(--muted)}
+.ah-arrival-stats>div{text-align:right;display:grid;gap:8px}
+.ah-arrival-stats>div b{font-size:27px;letter-spacing:-1px}
+.ah-arena-track{background:var(--card);padding:18px 12px 15px;border-radius:22px;overflow:hidden}
+.ah-scale{display:flex;justify-content:space-between;gap:16px;padding:0 32px 10px 56px;font-size:10px;color:var(--muted)}
+.ah-runner{display:grid;grid-template-columns:45px minmax(0,1fr) 28px;align-items:center;gap:11px;background:transparent;border:0;border-radius:10px;padding:12px 4px;min-height:50px;width:100%;text-align:left}
+.ah-runner-label{font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ah-runner-lane{position:relative;display:block;height:4px;background:var(--line);border-radius:5px;margin:0 7px}
+.ah-runner-fill{position:absolute;height:4px;left:0;top:0;background:color-mix(in srgb,var(--ink) 35%,var(--line));border-radius:5px}
+.ah-runner-dot{position:absolute;top:50%;transform:translate(-50%,-50%);width:23px;height:23px;border-radius:50%;display:grid;place-items:center;background:var(--accent-soft);color:var(--ink);border:2px solid var(--card);font-size:8px;font-weight:700;z-index:2}
+.ah-runner-value{font-size:11px;text-align:right;font-variant-numeric:tabular-nums}
+.ah-runner-you{background:var(--accent-soft);font-weight:700}
+.ah-runner-you .ah-runner-dot{background:var(--lime);width:30px;height:30px;font-size:8px}
+.ah-runner-you .ah-runner-fill{background:var(--ink)}
+.ah-old-position{position:absolute;width:6px;height:16px;top:-6px;background:var(--muted);opacity:.45;border-radius:4px}
+.ah-arena-verdict{display:flex;align-items:center;gap:16px;padding:24px 4px 18px;min-height:100px}
+.ah-arena-verdict img{width:72px;height:72px;object-fit:contain}
+.ah-arena-verdict b{font-size:26px;letter-spacing:-1px;flex:1}
+.ah-replay{border:0;background:transparent;font-size:25px;color:var(--muted);width:44px;height:44px}
+.ah-primary{display:block;text-align:center;min-height:48px;width:100%;border:0;background:var(--ink);color:var(--card);border-radius:16px;padding:15px 18px;font-size:13px;font-weight:700;text-decoration:none}
+.ah-primary:disabled{opacity:.55;cursor:default}
+.ah-continue{margin-top:10px}
+.ah-small{font-size:11px;color:var(--muted);line-height:1.6}
+.ah-arena-track .fd-world{height:360px;min-height:360px;border-radius:12px}
+.ah-scene-loading{min-height:360px;display:grid;place-items:center;font-size:13px}
+.ah-field-expand{display:block;margin:8px auto 0;background:transparent;border:0;min-height:40px;font-size:11px;color:var(--muted)}
+.ah-sheet{position:fixed;inset:auto 0 0;width:min(100%,460px);max-height:85dvh;margin:0 auto;border:1px solid var(--line);border-bottom:0;border-radius:28px 28px 0 0;padding:0;background:var(--card);color:var(--ink);box-shadow:0 -16px 90px #0002}
+.ah-sheet::backdrop{background:color-mix(in srgb,var(--ink) 35%,transparent);backdrop-filter:blur(4px)}
+.ah-sheet>header{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:24px 26px 0}
+.ah-sheet h2{font-family:var(--font-body),sans-serif;font-size:24px;letter-spacing:-.7px;line-height:1.2;margin:0}
+.ah-sheet>header button{background:var(--accent-soft);border:0;border-radius:50%;width:40px;height:40px;font-size:25px;flex-shrink:0}
+.ah-sheet-body{padding:26px;display:flex;flex-direction:column;gap:20px;overflow-wrap:anywhere}
+.ah-sheet-body p{margin:0;line-height:1.6;font-size:14px}
+.ah-sheet-body .ah-eyebrow{font-size:10px}
+.ah-sheet-body .ah-small{font-size:11px}
+.ah-sheet-number{font-family:var(--font-body),sans-serif;font-size:44px;letter-spacing:-1.7px;line-height:1.1}
+.ah-stat-row{display:grid;grid-template-columns:1fr 1fr;gap:20px;border-top:1px solid var(--line);padding-top:18px}
+.ah-stat-row>div{display:grid;gap:5px}
+.ah-stat-row b{font-size:23px;letter-spacing:-.5px}
+.ah-stat-row span{font-size:11px;color:var(--muted)}
+.ah-week-moves{display:flex;flex-wrap:wrap;gap:12px}
+.ah-week-moves button{flex:1;min-width:86px;display:grid;text-align:left;gap:10px;border:0;padding:18px 12px;background:var(--paper);border-radius:16px}
+.ah-week-moves span,.ah-week-moves small{font-size:11px;color:var(--muted)}
+.ah-week-moves b{font-size:20px}
+.ah-text-link{font-size:13px;text-underline-offset:4px}
+.ah-sheet-body>img{width:110px;height:110px;object-fit:contain;align-self:center}
+.ah-sheet-body h3{margin:0;font-size:24px;letter-spacing:-.7px}
+.ah-comparison{display:flex;gap:12px}
+.ah-comparison>span{flex:1;padding:18px;background:var(--paper);border-radius:14px;font-size:12px;display:grid;gap:10px}
+.ah-comparison b{font-size:22px;letter-spacing:-.8px}
+.ah-loading{display:grid;place-items:center;font-size:14px}
+.ah-athlete-view{text-align:center;padding:52px 10px 20px;display:flex;flex-direction:column;align-items:center}
+.ah-athlete-portrait{width:114px;height:114px;border-radius:50%;border:0;background:var(--lime);box-shadow:0 8px 0 color-mix(in srgb,var(--ink) 16%,var(--lime));font-size:30px;font-weight:700}
+.ah-athlete-view h1{font-family:var(--font-body),sans-serif;font-size:34px;letter-spacing:-1px;margin:28px 0 8px}
+.ah-athlete-city{font-size:13px;color:var(--muted);margin:0}
+.ah-athlete-rating{padding:36px 0 40px;display:grid;gap:8px}
+.ah-athlete-rating>span{font-size:14px;color:var(--muted)}
+.ah-athlete-rating b{font-size:40px;letter-spacing:-1px}
+.ah-tracker-link{display:flex;align-items:center;gap:14px;justify-content:center;padding:18px 16px;background:var(--card);border-radius:18px;text-decoration:none;font-size:13px;width:100%;margin-bottom:28px}
+.ah-tracker-link svg{width:22px;height:22px}
+.ah-progress-view{padding:18px 4px 25px}
+.ah-progress-volume{display:block;font-size:46px;letter-spacing:-1.8px;margin:40px 0 20px}
+.ah-progress-chart{display:flex;align-items:flex-end;justify-content:space-around;gap:14px;height:190px;padding:10px 0 0;max-width:100%;margin-bottom:35px}
+.ah-progress-chart button{position:relative;flex:1;min-width:0;max-width:80px;height:170px;background:transparent;border:0;padding:0}
+.ah-chart-bar{position:absolute;bottom:44px;left:15%;width:70%;background:var(--lime);border-radius:7px 7px 0 0}
+.ah-progress-chart b{position:absolute;bottom:24px;left:0;width:100%;font-size:12px;font-weight:500}
+.ah-progress-chart small{position:absolute;bottom:0;left:0;width:100%;font-size:11px;color:var(--muted)}
+.ah-progress-chart p{font-size:13px;color:var(--muted);align-self:center}
+.ah-progress-metrics{display:grid;grid-template-columns:1fr 1fr;gap:22px;padding:22px 0 40px;border-top:1px solid var(--line)}
+.ah-progress-metrics>div{display:grid;gap:12px}
+.ah-progress-metrics span{font-size:12px;color:var(--muted)}
+.ah-progress-metrics b{font-size:25px;letter-spacing:-.5px;font-weight:600}
+.ah-progress-metrics small{font-size:10px;letter-spacing:0;font-weight:400}
+@media(max-width:760px){.ah-lab{display:flex;flex-direction:column;padding:0;gap:24px}.ah-preview{order:0;width:100%}.ah-phone{max-width:480px;border:0;border-radius:0;box-shadow:none;min-height:100dvh}.ah-lab-controls{order:1;position:static;padding:24px 26px 36px;width:100%;max-width:480px;margin:0 auto;border-top:1px solid var(--line)}.ah-lab-controls h1{font-size:24px;margin-bottom:20px}.ah-lab-controls fieldset{margin:20px 0}.ah-dock{margin-bottom:20px}}
+@media(max-width:360px){.ah-app-header{padding:18px 20px 8px}.ah-app-main{padding:8px 18px 20px}.ah-arrival-stats{gap:12px}.ah-arrival-stats strong{font-size:34px}.ah-runner{grid-template-columns:39px minmax(0,1fr) 26px;gap:6px}.ah-dock{margin-left:14px;margin-right:14px}.ah-dock button{font-size:10px}.ah-progress-volume{font-size:40px}}
+@media(prefers-reduced-motion:reduce){.ah-phone *,.ah-sheet *{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
