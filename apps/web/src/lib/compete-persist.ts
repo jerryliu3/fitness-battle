@@ -90,6 +90,36 @@ function mergePeriodResults(
   );
 }
 
+/** Per sport: later wave wins; same wave prefers DB seating. */
+function mergeEnrollments(
+  snapshot: WaveEnrollment[],
+  fromDb: WaveEnrollment[],
+): WaveEnrollment[] {
+  const bySport = new Map<SportId, WaveEnrollment>();
+  for (const item of snapshot) bySport.set(item.sport, item);
+  for (const item of fromDb) {
+    const existing = bySport.get(item.sport);
+    if (!existing || item.waveStart >= existing.waveStart) {
+      bySport.set(item.sport, item);
+    }
+  }
+  return [...bySport.values()];
+}
+
+function mergeActivities(
+  snapshot: Activity[],
+  fromDb: Activity[],
+): Activity[] {
+  const byId = new Map<string, Activity>();
+  for (const activity of fromDb) byId.set(activity.id, activity);
+  for (const activity of snapshot) {
+    if (!byId.has(activity.id)) byId.set(activity.id, activity);
+  }
+  return [...byId.values()].sort((a, b) =>
+    b.startedAt.localeCompare(a.startedAt),
+  );
+}
+
 const CLOUD_PROVIDERS = new Set([
   "strava",
   "garmin",
@@ -282,9 +312,8 @@ export async function persistCompeteCore(
 }
 
 /**
- * Overlay dual-written relational SoT onto the snapshot document.
- * When athlete_prefs exists, tables are authoritative for dual-written
- * collections (thin snapshots store those arrays empty).
+ * Overlay dual-written relational rows onto the snapshot document.
+ * Always merge — never drop snapshot-ahead collections (fat cutover / lag).
  */
 export async function hydrateCompeteCollections(
   db: Db,
@@ -292,13 +321,13 @@ export async function hydrateCompeteCollections(
   state: CompeteState,
 ): Promise<CompeteState> {
   const [
-    { data: profile },
-    { data: prefs },
-    { data: ratingRows },
-    { data: resultRows },
-    { data: freezeRows },
-    { data: enrollmentRows },
-    { data: activityRows },
+    { data: profile, error: profileError },
+    { data: prefs, error: prefsError },
+    { data: ratingRows, error: ratingError },
+    { data: resultRows, error: resultError },
+    { data: freezeRows, error: freezeError },
+    { data: enrollmentRows, error: enrollError },
+    { data: activityRows, error: activityError },
   ] = await Promise.all([
     db
       .from("profiles")
@@ -324,9 +353,17 @@ export async function hydrateCompeteCollections(
       .order("started_at", { ascending: false })
       .limit(2000),
   ]);
+  const firstError =
+    profileError ??
+    prefsError ??
+    ratingError ??
+    resultError ??
+    freezeError ??
+    enrollError ??
+    activityError;
+  if (firstError) throw new Error(firstError.message);
 
   let next = state;
-  const relational = Boolean(prefs);
 
   if (profile) {
     const primary = asSport(String(profile.primary_sport ?? ""));
@@ -355,6 +392,7 @@ export async function hydrateCompeteCollections(
               deadline: String(prefs.training_goal_deadline),
             }
           : null,
+      // Empty freezes are meaningful once prefs exist.
       frozenPeriods: (freezeRows ?? []).map((row) => String(row.period_start)),
     };
   }
@@ -408,12 +446,7 @@ export async function hydrateCompeteCollections(
       } satisfies PeriodResult,
     ];
   });
-  if (relational) {
-    next = {
-      ...next,
-      periodResults: mergePeriodResults([], fromDbResults),
-    };
-  } else if (fromDbResults.length > 0) {
+  if (fromDbResults.length > 0 || next.periodResults.length > 0) {
     next = {
       ...next,
       periodResults: mergePeriodResults(next.periodResults, fromDbResults),
@@ -438,18 +471,11 @@ export async function hydrateCompeteCollections(
       ];
     },
   );
-  if (relational) {
-    next = { ...next, enrollments: fromDbEnrollments };
-  } else if (fromDbEnrollments.length > 0) {
-    const bySport = new Map<SportId, WaveEnrollment>();
-    for (const item of next.enrollments) bySport.set(item.sport, item);
-    for (const item of fromDbEnrollments) {
-      const existing = bySport.get(item.sport);
-      if (!existing || item.waveStart >= existing.waveStart) {
-        bySport.set(item.sport, item);
-      }
-    }
-    next = { ...next, enrollments: [...bySport.values()] };
+  if (fromDbEnrollments.length > 0 || next.enrollments.length > 0) {
+    next = {
+      ...next,
+      enrollments: mergeEnrollments(next.enrollments, fromDbEnrollments),
+    };
   }
 
   const fromDbActivities: Activity[] = (activityRows ?? []).flatMap((row) => {
@@ -475,18 +501,10 @@ export async function hydrateCompeteCollections(
       } satisfies Activity,
     ];
   });
-  if (relational || fromDbActivities.length > 0) {
-    const byId = new Map<string, Activity>();
-    for (const activity of fromDbActivities) byId.set(activity.id, activity);
-    // Keep snapshot-only ids (client ahead of last dual-write / fat cutover).
-    for (const activity of next.activities) {
-      if (!byId.has(activity.id)) byId.set(activity.id, activity);
-    }
+  if (fromDbActivities.length > 0 || next.activities.length > 0) {
     next = {
       ...next,
-      activities: [...byId.values()].sort((a, b) =>
-        b.startedAt.localeCompare(a.startedAt),
-      ),
+      activities: mergeActivities(next.activities, fromDbActivities),
     };
   }
 

@@ -6,7 +6,6 @@ import {
   prepareCompeteStateForAccount,
   rollClock,
   sanitizeCompeteStateForAccount,
-  stripDurableCrewBoard,
   thinCompeteStateForAccount,
   withDerivedPendingReveals,
   type CompeteState,
@@ -19,16 +18,31 @@ import {
 } from "@/lib/compete-persist";
 import { createClient } from "@/lib/supabase/server";
 
-/** In-memory account shape used for rollClock + dual-write. */
-function accountLiveState(state: CompeteState): CompeteState {
-  return prepareCompeteStateForAccount(state);
+function sameLiveDocument(left: CompeteState, right: CompeteState): boolean {
+  // Compare prepared (full) documents — thin compare would miss settlement.
+  return (
+    JSON.stringify(prepareCompeteStateForAccount(left)) ===
+    JSON.stringify(prepareCompeteStateForAccount(right))
+  );
 }
 
-function sameThinDocument(left: CompeteState, right: CompeteState): boolean {
-  return (
-    JSON.stringify(thinCompeteStateForAccount(left)) ===
-    JSON.stringify(thinCompeteStateForAccount(right))
-  );
+async function saveThinSnapshot(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  userId: string,
+  live: CompeteState,
+  updatedAt: string,
+): Promise<boolean> {
+  try {
+    await persistCompeteCore(supabase, userId, live);
+    const { error } = await supabase.from("compete_snapshots").upsert({
+      user_id: userId,
+      state: thinCompeteStateForAccount(live),
+      updated_at: updatedAt,
+    });
+    return !error;
+  } catch {
+    return false;
+  }
 }
 
 export async function GET(request: Request) {
@@ -54,59 +68,40 @@ export async function GET(request: Request) {
   );
   const fatSnapshot = isFatCompeteSnapshot(base);
 
+  let hydrated: CompeteState;
   try {
-    const hydrated = await hydrateCompeteCollections(supabase, userId, base);
-    const rolled = withDerivedPendingReveals(rollClock(hydrated));
-    const state = await hydrateCrewBoard(supabase, userId, rolled);
-    const settled = !sameThinDocument(hydrated, state);
-
-    if (settled || fatSnapshot) {
-      const live = accountLiveState(state);
-      const updatedAt = new Date().toISOString();
-      try {
-        await persistCompeteCore(supabase, userId, live);
-        const { error: saveError } = await supabase
-          .from("compete_snapshots")
-          .upsert({
-            user_id: userId,
-            state: thinCompeteStateForAccount(live),
-            updated_at: updatedAt,
-          });
-        if (saveError) throw new Error(saveError.message);
-        return NextResponse.json({
-          state,
-          updatedAt,
-          settled,
-          thinned: true,
-        });
-      } catch {
-        // Relational/thin rewrite failed — still return live state to the client.
-        return NextResponse.json({
-          state,
-          updatedAt: data.updated_at,
-          settled,
-          thinned: false,
-        });
-      }
-    }
-
-    return NextResponse.json({
-      state,
-      updatedAt: data.updated_at,
-      settled: false,
-      thinned: false,
-    });
+    hydrated = await hydrateCompeteCollections(supabase, userId, base);
   } catch {
-    const state = withDerivedPendingReveals(
-      rollClock(stripDurableCrewBoard(base)),
-    );
-    return NextResponse.json({
-      state,
-      updatedAt: data.updated_at,
-      settled: false,
-      thinned: false,
-    });
+    // Thin snapshots have empty collections — falling back to base would blank the UI.
+    if (!fatSnapshot) {
+      return NextResponse.json({ error: "hydrate_failed" }, { status: 500 });
+    }
+    hydrated = base;
   }
+
+  const rolled = withDerivedPendingReveals(rollClock(hydrated));
+  let state = rolled;
+  try {
+    state = await hydrateCrewBoard(supabase, userId, rolled);
+  } catch {
+    state = { ...rolled, crewBoard: null };
+  }
+
+  const settled = !sameLiveDocument(hydrated, state);
+  if (settled || fatSnapshot) {
+    const live = prepareCompeteStateForAccount(state);
+    const updatedAt = new Date().toISOString();
+    const thinned = await saveThinSnapshot(supabase, userId, live, updatedAt);
+    if (thinned) {
+      return NextResponse.json({ state, updatedAt, settled: true });
+    }
+  }
+
+  return NextResponse.json({
+    state,
+    updatedAt: data.updated_at,
+    settled: false,
+  });
 }
 
 export async function PUT(request: Request) {
@@ -125,55 +120,40 @@ export async function PUT(request: Request) {
     return NextResponse.json({ error: "invalid_state" }, { status: 400 });
   }
 
-  const live = accountLiveState(
-    rollClock(prepareCompeteStateForAccount(migrateCompeteState(body.state))),
+  const live = prepareCompeteStateForAccount(
+    rollClock(migrateCompeteState(body.state)),
   );
-  const encoded = JSON.stringify(live);
-  if (encoded.length > 500_000) {
+  if (JSON.stringify(live).length > 500_000) {
     return NextResponse.json({ error: "state_too_large" }, { status: 413 });
   }
   const supabase = await createClient();
   const updatedAt = new Date().toISOString();
 
-  try {
-    await persistCompeteCore(supabase, userId, live);
-    const { error } = await supabase.from("compete_snapshots").upsert({
-      user_id: userId,
-      state: thinCompeteStateForAccount(live),
-      updated_at: updatedAt,
-    });
-    if (error) {
-      return NextResponse.json(
-        { error: "snapshot_not_saved", persisted: false },
-        { status: 500 },
-      );
-    }
+  if (await saveThinSnapshot(supabase, userId, live, updatedAt)) {
     return NextResponse.json({
       ok: true,
       persisted: true,
       updatedAt,
       relational: true,
-      thinned: true,
-    });
-  } catch {
-    // Keep a full prepared document so client data is not lost when tables lag.
-    const { error } = await supabase.from("compete_snapshots").upsert({
-      user_id: userId,
-      state: live,
-      updated_at: updatedAt,
-    });
-    if (error) {
-      return NextResponse.json(
-        { error: "snapshot_not_saved", persisted: false },
-        { status: 500 },
-      );
-    }
-    return NextResponse.json({
-      ok: true,
-      persisted: true,
-      updatedAt,
-      relational: false,
-      thinned: false,
     });
   }
+
+  // Relational failed — keep a full document so client data is not lost.
+  const { error } = await supabase.from("compete_snapshots").upsert({
+    user_id: userId,
+    state: live,
+    updated_at: updatedAt,
+  });
+  if (error) {
+    return NextResponse.json(
+      { error: "snapshot_not_saved", persisted: false },
+      { status: 500 },
+    );
+  }
+  return NextResponse.json({
+    ok: true,
+    persisted: true,
+    updatedAt,
+    relational: false,
+  });
 }
