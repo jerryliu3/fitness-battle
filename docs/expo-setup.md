@@ -48,11 +48,41 @@ Confirm in the credentials summary line:
 
 If it still says `com.fitnessbattle.app`, you are not on updated `main` — fix that before uploading again.
 
-## After a green Overtaek build
+## CI: auto build → TestFlight (no laptop)
+
+GitHub Actions workflow: [`.github/workflows/eas-ios-testflight.yml`](../.github/workflows/eas-ios-testflight.yml).
+
+On every push to `main` that touches `apps/mobile`, `packages/shared`, or the lockfile (and on manual **Run workflow**), it:
+
+1. Authenticates with Expo using the `EXPO_ACCESS_TOKEN` repo secret
+2. Runs `eas build --platform ios --profile production --non-interactive --wait`
+3. If `ASC_APP_ID` is set, runs `eas submit … --id $ASC_APP_ID` into TestFlight
+
+### Secrets (GitHub → Settings → Secrets and variables → Actions)
+
+| Secret | Required | What it is |
+| --- | --- | --- |
+| `EXPO_ACCESS_TOKEN` | Yes | Expo **account** access token ([expo.dev → Access tokens](https://expo.dev/accounts/[account]/settings/access-tokens)). Same kind of token as for EAS CLI — not a Vercel token. |
+| `ASC_APP_ID` | For submit | App Store Connect numeric **Apple ID** (App Information). Not the Expo project id `bea1932b-…`. |
+
+### Prerequisites (one-time, usually on a Mac)
+
+Non-interactive CI only works after EAS already has iOS credentials from a successful interactive build:
+
+```bash
+cd apps/mobile
+npx eas-cli@latest build --platform ios --profile production
+```
+
+Confirm Bundle ID `com.overtaek.app`. If credentials were never created, the GitHub job will fail until that Mac step (or Expo dashboard credential setup) is done.
+
+Optional: if CI needs to repair Apple credentials, also set Expo’s ASC API key env vars (`EXPO_ASC_*`, `EXPO_APPLE_TEAM_*`) as documented in [Trigger builds from CI](https://docs.expo.dev/build/building-on-ci/).
+
+### After a green Overtaek build (manual / laptop)
 
 1. Paste the new build URL and confirm Bundle ID `com.overtaek.app`.
-2. Paste the App Store Connect numeric **Apple ID** (App Information).
-3. Then submit:
+2. Paste the App Store Connect numeric **Apple ID** (App Information) into GitHub secret `ASC_APP_ID` (preferred for CI) or into `eas.json` → `submit.production.ios.ascAppId`.
+3. Then submit (laptop), or re-run the GitHub workflow:
 
 ```bash
 # from apps/mobile, after ascAppId is set (or pass when prompted)

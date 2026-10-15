@@ -1,0 +1,76 @@
+# Build Overtaek iOS on EAS and upload to TestFlight.
+#
+# Secrets (repo Settings → Secrets and variables → Actions):
+#   EXPO_ACCESS_TOKEN  — Expo account access token (required)
+#   ASC_APP_ID         — App Store Connect numeric Apple ID (required to submit)
+#
+# Optional (only if iOS credentials need repair on CI):
+#   EXPO_ASC_API_KEY_PATH / EXPO_ASC_KEY_ID / EXPO_ASC_ISSUER_ID /
+#   EXPO_APPLE_TEAM_ID / EXPO_APPLE_TEAM_TYPE
+#
+# Apple signing must already live in EAS (from a prior interactive Mac build).
+
+name: EAS iOS → TestFlight
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - "apps/mobile/**"
+      - "packages/shared/**"
+      - "pnpm-lock.yaml"
+      - ".github/workflows/eas-ios-testflight.yml"
+
+concurrency:
+  group: eas-ios-testflight-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build-and-submit:
+    name: Build and submit iOS
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    defaults:
+      run:
+        working-directory: apps/mobile
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.4
+
+      - name: Setup Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Setup Expo and EAS
+        uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_ACCESS_TOKEN }}
+
+      - name: Install dependencies
+        working-directory: .
+        run: pnpm install --frozen-lockfile
+
+      - name: Build iOS (production)
+        run: eas build --platform ios --profile production --non-interactive --wait
+
+      - name: Submit to TestFlight
+        env:
+          ASC_APP_ID: ${{ secrets.ASC_APP_ID }}
+        run: |
+          if [ -z "$ASC_APP_ID" ] || [ "$ASC_APP_ID" = "REPLACE_AFTER_APP_STORE_CONNECT" ]; then
+            echo "::warning::Built on EAS, but did not submit to TestFlight."
+            echo "Add repository secret ASC_APP_ID (App Store Connect → App Information → Apple ID),"
+            echo "then re-run this workflow from Actions → EAS iOS → TestFlight → Run workflow."
+            exit 0
+          fi
+          eas submit --platform ios --profile production --latest --non-interactive --id "$ASC_APP_ID"
