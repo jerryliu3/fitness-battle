@@ -42,9 +42,9 @@
 .boot-splash-slot {
   position: relative;
   display: inline-block;
-  /* Letter-like advance; negative margin kerns into A / E. */
-  width: 0.62em;
-  margin: 0 -0.16em;
+  /* Letter-like advance with a clear ink gap — no A / Ember / E overlap. */
+  width: 0.9em;
+  margin: 0;
   flex: none;
   overflow: visible;
   vertical-align: baseline;
@@ -77,18 +77,14 @@
 .boot-splash-ember-align {
   /*
    * ViewBox has empty headroom above the crest and a little pad below the feet.
-   * Size so drawn body ≈ capital height; shift so feet land on the shared baseline.
+   * Size so drawn body ≈ capital height; feet flush with letter bottoms.
    */
   position: absolute;
   left: 50%;
   bottom: 0;
-  width: 1.28em;
-  height: 1.28em;
-  /*
-   * Optical correction: star face sits lower in the silhouette than a capital’s
-   * center, so lift past geometric baseline match; scale up so tips tuck into A/E.
-   */
-  transform: translate(-50%, -9%);
+  width: 1.16em;
+  height: 1.16em;
+  transform: translate(-50%, 0);
 }
 
 .boot-splash-ember-align svg {

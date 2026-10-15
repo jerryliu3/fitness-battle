@@ -13,9 +13,22 @@ type BootSplashProps = {
   onAnimationComplete: () => void;
 };
 
-/** Strip clip translation — the stage host moves Ember across the wordmark. */
+/**
+ * Strip clip translation (host carries travel). Pin the anatomical right arm
+ * (screen-left tip) down at Ember’s side. Wind folds that tip; `heading: -90`
+ * only boosts the upward term in the arm formula (body rotate uses `rotation`),
+ * so at rest the tip hangs along the flank instead of sticking out sideways.
+ */
 function bodyPose(pose: EmberPose): EmberPose {
-  return { ...pose, x: 0, y: 0 };
+  const atSide = pose.wind < 0.25 && Math.abs(pose.rotation) < 8;
+  return {
+    ...pose,
+    x: 0,
+    y: 0,
+    armLeft: -1,
+    wind: Math.max(pose.wind, atSide ? 1 : 0.75),
+    ...(atSide ? { heading: -90, armRight: 1 } : {}),
+  };
 }
 
 /**
