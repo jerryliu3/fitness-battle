@@ -1,10 +1,10 @@
 # Overtaek loading-wordmark prototype
 
-Open `/design/overtaek`. This is an isolated, unindexed prototype route with Play/Pause, replay, slow motion, and a position scrubber. It does not replace app startup or change the application name elsewhere.
+Open `/design/overtaek`. The route wrapper stays in `src/app/design/overtaek/`; the study lives in `src/app/design/_studies/overtaek-lab/`. Next treats `_studies` as a private folder, so that path adds no extra URL. This is an isolated, unindexed prototype with Play/Pause, replay, slow motion, and a position scrubber. It does not replace app startup or change the application name elsewhere.
 
 The initial mark reads OVERTAKE, with approved Star Ember artwork occupying K's slot. Ember turns right, accelerates above E, and settles on E's right as E glides left into the vacated slot. The final mark reads OVERTAEK. The original face stays stable; bounded damped springs add wind lag and a braking rebound in the flame tip and outer points. The accepted face texture is reused from `/brand/mascots/star-ember.webp`.
 
-`features/overtaek-loading/motion.ts` contains the deterministic motion and spring response. `renderer.ts` owns the native WebGL resources. The React component measures the real letter boxes after fonts load and on resize, and converts those positions into the 3D scene. It aborts pending asset loads and releases resources on unmount, including React development remounts.
+`_studies/overtaek-lab/motion.ts` contains the deterministic motion and spring response. `renderer.ts` owns the native WebGL resources. The React component measures the real letter boxes after fonts load and on resize, and converts those positions into the 3D scene. It aborts pending asset loads and releases resources on unmount, including React development remounts.
 
 ## Asset and memory limits
 

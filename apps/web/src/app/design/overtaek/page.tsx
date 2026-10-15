@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Nunito_Sans } from "next/font/google";
-import { LoadingPrototype } from "@/features/overtaek-loading/loading-prototype";
+import { LoadingPrototype } from "@/app/design/_studies/overtaek-lab/loading-prototype";
 
 const type = Nunito_Sans({ subsets: ["latin"], weight: "900", variable: "--font-overtaek" });
 export const metadata: Metadata = {
