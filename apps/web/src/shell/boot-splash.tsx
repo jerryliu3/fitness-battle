@@ -1,9 +1,9 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { EMBER_CLIPS, EMBER_REST, sampleEmber, type EmberPose } from "@fitness-battle/shared/mascot";
+import { type EmberPose } from "@fitness-battle/shared/mascot";
 import { Ember } from "@/components/mascot/ember";
-import { BOOT_DURATION_MS, bootDashProgress, bootFrame, clamp } from "@fitness-battle/shared/boot";
+import { BOOT_DURATION_MS, bootEmberPose, bootFrame, clamp } from "@fitness-battle/shared/boot";
 
 import "./boot-splash.css";
 
@@ -14,29 +14,8 @@ type BootSplashProps = {
 };
 
 /**
- * Strip clip translation (host carries travel). Pin the anatomical right arm
- * (screen-left tip) down at Ember’s side for the whole boot pass. Wind folds
- * that tip; `heading: -90` only boosts the upward term in the arm formula
- * (body rotate uses `rotation`), so the tip hangs along the flank instead of
- * sticking out into the neighboring letters. Trail is cleared — travel lives
- * on the host.
- */
-function bodyPose(pose: EmberPose): EmberPose {
-  return {
-    ...pose,
-    x: 0,
-    y: 0,
-    trail: 0,
-    armLeft: -1,
-    armRight: 1,
-    wind: 1,
-    heading: -90,
-  };
-}
-
-/**
  * Product boot splash: OVERTAKE → OVERTAEK with the shared vector Ember.
- * Letter travel uses the short boot curve; Ember’s body uses the studio `dash` clip.
+ * Slow ready morphs Ember into a K; the letter jump is a short, sharp pass.
  */
 export function BootSplash({ waiting = false, onAnimationComplete }: BootSplashProps) {
   const stageRef = useRef<HTMLDivElement>(null);
@@ -47,7 +26,7 @@ export function BootSplash({ waiting = false, onAnimationComplete }: BootSplashP
   const completed = useRef(false);
   const onCompleteRef = useRef(onAnimationComplete);
   onCompleteRef.current = onAnimationComplete;
-  const [pose, setPose] = useState<EmberPose>(() => bodyPose(EMBER_REST));
+  const [pose, setPose] = useState<EmberPose>(() => bootEmberPose(0));
 
   useEffect(() => {
     const stage = stageRef.current!;
@@ -63,7 +42,6 @@ export function BootSplash({ waiting = false, onAnimationComplete }: BootSplashP
     let start = 0;
     let initial = 0;
     let layout = { slotWidth: 1, eWidth: 1, font: 1 };
-    const dashMs = EMBER_CLIPS.dash.duration;
 
     function finish() {
       if (completed.current || disposed) return;
@@ -82,13 +60,7 @@ export function BootSplash({ waiting = false, onAnimationComplete }: BootSplashP
       emberHost.style.transform = `translate(${dx}px,${-lift}px)`;
       wordRef.current.setAttribute("aria-label", frame.phase === "OVERTAEK" ? "OVERTAEK" : "OVERTAKE");
       if (publishPose) {
-        setPose(
-          bodyPose(
-            sampleEmber("dash", bootDashProgress(p) * dashMs, {
-              reducedMotion: media.matches,
-            }),
-          ),
-        );
+        setPose(bootEmberPose(p, { reducedMotion: media.matches }));
       }
     }
 

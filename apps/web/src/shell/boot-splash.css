@@ -15,8 +15,8 @@
   position: relative;
   display: grid;
   place-items: center;
-  width: min(100%, 720px);
-  height: clamp(160px, 28vw, 240px);
+  width: min(100%, 920px);
+  height: clamp(200px, 36vw, 320px);
   overflow: hidden;
   isolation: isolate;
 }
@@ -26,7 +26,7 @@
   align-items: baseline;
   font-family: var(--font-overtaek), var(--font-body), sans-serif;
   font-weight: 900;
-  font-size: clamp(36px, 9vw, 80px);
+  font-size: clamp(48px, 12vw, 108px);
   line-height: 1;
   letter-spacing: 0;
   white-space: nowrap;

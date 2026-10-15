@@ -4,14 +4,16 @@ Product boot splash and design study share the OVERTAKE → OVERTAEK letter chor
 
 ## Product boot splash
 
-Gate + motion live in `@fitness-battle/shared/boot` (`shouldShowBootSplash`, `bootFrame`, ~780 ms). The animation **always runs to completion** even when compete data is already ready; if the mark settles first, a spinner waits under OVERTAEK until data is ready.
+Gate + motion live in `@fitness-battle/shared/boot` (`shouldShowBootSplash`, `bootFrame`, `bootEmberPose`, ~1600 ms). The animation **always runs to completion** even when compete data is already ready; if the mark settles first, a spinner waits under OVERTAEK until data is ready.
 
 - **Web:** `PhoneShell` shows `apps/web/src/shell/boot-splash.tsx` on play routes.
 - **Mobile (TestFlight / Expo):** `BootGate` in `apps/mobile/app/_layout.tsx` shows `apps/mobile/src/ui/boot-splash.tsx` before the tab stack. Local AsyncStorage hydrate is usually instant — without this gate the app would skip straight to Today.
 
-Letter travel: hold ready, zoom across, stop. Ember’s body samples the studio `dash` clip on that same progress; clip `x`/`y` are zeroed so the stage host alone carries Ember across the wordmark. Background / inactive app pauses the pass. Reduced motion jumps to the finished wordmark and releases the animation gate.
+Beat: long ready while Ember morphs from standing rest into a vague K (right tip down, left tip up), then a short sharp letter jump, then settle with the upper arm still raised. Host travel carries Ember; dash clip only adds light body language during the jump. Background / inactive app pauses the pass. Reduced motion jumps to the finished K wordmark.
 
-Wordmark type is Nunito Sans 900 (`--font-overtaek` on web; `NunitoSans_900Black` on Expo). No WebGL mesh on the product splash.
+Wordmark is scaled larger than body UI type (Nunito Sans 900). Undecided experiment: fade Ember into a literal `K` at settle — not shipped.
+
+No WebGL mesh on the product splash.
 
 ## Design study
 

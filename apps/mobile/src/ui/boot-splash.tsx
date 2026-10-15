@@ -1,15 +1,10 @@
 import {
   BOOT_DURATION_MS,
-  bootDashProgress,
+  bootEmberPose,
   bootFrame,
   clamp,
 } from "@fitness-battle/shared/boot";
-import {
-  EMBER_CLIPS,
-  EMBER_REST,
-  sampleEmber,
-  type EmberPose,
-} from "@fitness-battle/shared/mascot";
+import { type EmberPose } from "@fitness-battle/shared/mascot";
 import { useEffect, useRef, useState } from "react";
 import {
   AccessibilityInfo,
@@ -30,33 +25,16 @@ type BootSplashProps = {
 };
 
 /**
- * Strip clip translation (host carries travel). Pin the anatomical right arm
- * (screen-left tip) down at Ember’s side for the whole boot pass.
- */
-function bodyPose(pose: EmberPose): EmberPose {
-  return {
-    ...pose,
-    x: 0,
-    y: 0,
-    trail: 0,
-    armLeft: -1,
-    armRight: 1,
-    wind: 1,
-    heading: -90,
-  };
-}
-
-/**
  * Product boot splash: OVERTAKE → OVERTAEK with the shared vector Ember.
- * Letter travel uses the short boot curve; Ember’s body uses the studio `dash` clip.
+ * Slow ready morphs Ember into a K; the letter jump is a short, sharp pass.
  */
 export function BootSplash({ waiting = false, onAnimationComplete }: BootSplashProps) {
   const { width: windowWidth } = useWindowDimensions();
-  const fontSize = Math.max(36, Math.min(80, windowWidth * 0.09));
+  const fontSize = Math.max(48, Math.min(108, windowWidth * 0.12));
   const completed = useRef(false);
   const onCompleteRef = useRef(onAnimationComplete);
   onCompleteRef.current = onAnimationComplete;
-  const [pose, setPose] = useState<EmberPose>(() => bodyPose(EMBER_REST));
+  const [pose, setPose] = useState<EmberPose>(() => bootEmberPose(0));
   const [letterShift, setLetterShift] = useState(0);
   const [emberDx, setEmberDx] = useState(0);
   const [emberLift, setEmberLift] = useState(0);
@@ -77,7 +55,6 @@ export function BootSplash({ waiting = false, onAnimationComplete }: BootSplashP
     let start = 0;
     let initial = 0;
     let reduced = false;
-    const dashMs = EMBER_CLIPS.dash.duration;
 
     void AccessibilityInfo.isReduceMotionEnabled().then((value) => {
       if (!disposed) reduced = value;
@@ -112,13 +89,7 @@ export function BootSplash({ waiting = false, onAnimationComplete }: BootSplashP
       setEmberLift(-lift);
       setLabel(frame.phase === "OVERTAEK" ? "OVERTAEK" : "OVERTAKE");
       if (publishPose) {
-        setPose(
-          bodyPose(
-            sampleEmber("dash", bootDashProgress(p) * dashMs, {
-              reducedMotion: reduced,
-            }),
-          ),
-        );
+        setPose(bootEmberPose(p, { reducedMotion: reduced }));
       }
     }
 
@@ -198,11 +169,12 @@ export function BootSplash({ waiting = false, onAnimationComplete }: BootSplashP
   }
 
   const emberSize = fontSize * 1.16;
+  const stageHeight = Math.max(220, Math.min(320, fontSize * 2.8));
 
   return (
     <View style={styles.root} accessibilityRole="progressbar" accessibilityLabel={label}>
       <View style={styles.glow} pointerEvents="none" />
-      <View style={styles.stage}>
+      <View style={[styles.stage, { height: stageHeight }]}>
         <View style={styles.word} accessible accessibilityLabel={label}>
           <Text
             style={[styles.letter, { fontSize, letterSpacing: fontSize * -0.055, marginRight: fontSize * -0.055 }]}
@@ -267,7 +239,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     gap: 28,
-    paddingHorizontal: 16,
+    paddingHorizontal: 12,
     paddingVertical: 24,
     backgroundColor: "#1a0f22",
   },
@@ -283,8 +255,7 @@ const styles = StyleSheet.create({
   },
   stage: {
     width: "100%",
-    maxWidth: 720,
-    height: 200,
+    maxWidth: 920,
     alignItems: "center",
     justifyContent: "center",
     overflow: "hidden",
