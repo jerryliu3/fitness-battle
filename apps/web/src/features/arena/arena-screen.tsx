@@ -1,0 +1,68 @@
+"use client";
+
+import { useAuth } from "@/components/auth-context";
+import { useCompete } from "@/components/compete-context";
+import { AuthPrompt } from "@/components/auth-gate";
+import { FieldStage } from "@/features/field/components/field-stage";
+import { buildFieldModel } from "@/features/field/model";
+import { buildSplitBoard } from "@/features/split/model";
+import { buildArenaModel, competeNow } from "@fitness-battle/shared";
+import { NumberTicker } from "@/ui/number-ticker";
+import { useState } from "react";
+
+export function ArenaScreen() {
+  const { state, dispatch } = useCompete();
+  const { user } = useAuth();
+  const [authOpen, setAuthOpen] = useState(false);
+
+  if (!state) return <p className="fb-copy">Loading the track…</p>;
+
+  const now = competeNow(state);
+  const arena = buildArenaModel(state, now);
+  const board = buildSplitBoard(state, state.primary, "open", now);
+  const field = buildFieldModel(state, state.primary, "open", now);
+
+  function join() {
+    if (!user) {
+      setAuthOpen(true);
+      return;
+    }
+    if (!state!.onboardingCompleted) {
+      window.location.href = "/onboarding";
+      return;
+    }
+    dispatch({ type: "opt-in", sport: state!.primary });
+  }
+
+  return (
+    <>
+      <p className="fb-kicker">Arena</p>
+      <p className="fb-copy">
+        Arrival{" "}
+        <strong>
+          <NumberTicker
+            digits={1}
+            value={arena.lanes.find((lane) => lane.you)?.values[2] ?? 0}
+          />
+        </strong>{" "}
+        {arena.unit}
+      </p>
+      {arena.optedIn ? (
+        <FieldStage model={field} boardRows={board.rows} />
+      ) : (
+        <section className="sp-empty">
+          <h2>You are not on a track yet</h2>
+          <p className="fb-copy">Join this week to see the 2D lanes and 3D pursuit.</p>
+          <button type="button" className="fb-btn" onClick={join}>
+            Join {arena.sportName}
+          </button>
+        </section>
+      )}
+      <AuthPrompt
+        open={authOpen}
+        reason="Sign in to join the weekly track."
+        onClose={() => setAuthOpen(false)}
+      />
+    </>
+  );
+}

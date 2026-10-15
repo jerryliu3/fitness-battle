@@ -12,10 +12,8 @@ import {
   AthleteCard,
   WeekRecords,
 } from "@/features/split/components/athlete-card";
-import {
-  ProductHeader,
-  sourceFromLinks,
-} from "@/features/split/components/product-header";
+import { AwardShelf } from "@/features/you/award-shelf";
+import { NumberTicker } from "@/ui/number-ticker";
 import { SeasonHistory } from "@/features/split/components/season-history";
 import { buildSplitBoard } from "@/features/split/model";
 import {
@@ -23,6 +21,7 @@ import {
   BACKFILL_DAYS,
   competeNow,
   evidenceLabel,
+  initialsFromName,
   PROVIDERS,
   RANK_BANDS,
   rankForElo,
@@ -93,7 +92,6 @@ function YouContent() {
   const frozen = state.frozenPeriods.includes(
     board.periodStart.toISOString(),
   );
-  const source = sourceFromLinks(state.links);
   const spec = sportById(state.primary);
 
   function applyRemote(body: {
@@ -278,7 +276,19 @@ function YouContent() {
 
   return (
     <>
-      <ProductHeader sourceStatus={source.status} sourceLabel={source.label} />
+      <p className="fb-kicker">You</p>
+      <section className="fb-row">
+        <span className="fb-grow">
+          <h1>{state.name}</h1>
+          <p className="fb-copy">
+            {initialsFromName(state.name)} · {rankForElo(board.you?.elo ?? 1000).name} ·{" "}
+            <NumberTicker value={board.you?.elo ?? 1000} />
+          </p>
+          <p className="fb-copy">{state.city}</p>
+        </span>
+      </section>
+      <h2>Week awards</h2>
+      <AwardShelf state={state} />
 
       <AthleteCard
         name={state.name}
