@@ -19,3 +19,10 @@ export const fonts = {
   bodyMedium: "DMSans_500Medium",
   bodyBold: "DMSans_700Bold",
 };
+
+export {
+  SHELL_COLORS,
+  SHELL_RADIUS,
+  SHELL_TYPE,
+  SHELL_TABS,
+} from "@fitness-battle/shared";

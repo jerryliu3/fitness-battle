@@ -7,11 +7,14 @@ import {
 import * as Notifications from "expo-notifications";
 import { router, Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
+import { HeroUINativeProvider } from "heroui-native/provider";
 import { useEffect } from "react";
 import { ActivityIndicator, View } from "react-native";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
+import "../global.css";
 // Registers the foreground notification handler.
 import "../src/lib/expo-push-register";
-import { colors } from "../src/theme";
+import { SHELL_COLORS } from "../src/theme";
 
 function pathFromNotificationResponse(
   response: Notifications.NotificationResponse,
@@ -55,26 +58,28 @@ export default function RootLayout() {
       <View
         style={{
           flex: 1,
-          backgroundColor: colors.paper,
+          backgroundColor: SHELL_COLORS.paper,
           alignItems: "center",
           justifyContent: "center",
         }}
       >
-        <ActivityIndicator color={colors.blue} />
+        <ActivityIndicator color={SHELL_COLORS.plum} />
       </View>
     );
   }
 
   return (
-    <>
-      <StatusBar style="dark" />
-      <Stack
-        screenOptions={{
-          headerShown: false,
-          contentStyle: { backgroundColor: colors.paper },
-          animation: "fade",
-        }}
-      />
-    </>
+    <GestureHandlerRootView style={{ flex: 1, backgroundColor: SHELL_COLORS.paper }}>
+      <HeroUINativeProvider>
+        <StatusBar style="dark" />
+        <Stack
+          screenOptions={{
+            headerShown: false,
+            contentStyle: { backgroundColor: SHELL_COLORS.paper },
+            animation: "fade",
+          }}
+        />
+      </HeroUINativeProvider>
+    </GestureHandlerRootView>
   );
 }
