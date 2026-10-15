@@ -1,7 +1,7 @@
 "use client";
 
-import { ProductHome } from "@/features/home/product-home";
+import { TodayScreen } from "@/features/play/today-screen";
 
 export default function HomePage() {
-  return <ProductHome />;
+  return <TodayScreen />;
 }

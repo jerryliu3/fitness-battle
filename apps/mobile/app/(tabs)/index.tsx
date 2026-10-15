@@ -19,13 +19,13 @@ import { Sheet } from "../../src/ui/sheet";
 import { colors, fonts } from "../../src/theme";
 
 export default function TodayScreen() {
-  const { state, arrival, dispatch } = useCompete();
+  const { state, arrival, settled, dispatch } = useCompete();
   const [activity, setActivity] = useState<Activity | null>(null);
   const [coach, setCoach] = useState(false);
 
   useEffect(() => {
-    if (arrival) router.replace("/arena");
-  }, [arrival]);
+    if (arrival && !settled) router.replace("/arena");
+  }, [arrival, settled]);
 
   if (!state) {
     return (

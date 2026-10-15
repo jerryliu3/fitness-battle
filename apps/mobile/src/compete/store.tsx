@@ -29,6 +29,8 @@ type Action = Parameters<typeof reduceCompete>[1];
 interface CompeteApi {
   state: CompeteState | null;
   arrival: ReturnType<typeof visitGain>;
+  /** True after the athlete leaves the return reveal, so Today does not send them back. */
+  settled: boolean;
   dispatch: (action: Action) => void;
   acknowledgeArrival: () => void;
 }
@@ -36,6 +38,7 @@ interface CompeteApi {
 const CompeteContext = createContext<CompeteApi>({
   state: null,
   arrival: null,
+  settled: false,
   dispatch: () => {},
   acknowledgeArrival: () => {},
 });
@@ -47,6 +50,7 @@ async function remember(visit: WeekVisit) {
 export function CompeteProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<CompeteState | null>(null);
   const [arrival, setArrival] = useState<ReturnType<typeof visitGain>>(null);
+  const [settled, setSettled] = useState(false);
 
   useEffect(() => {
     let alive = true;
@@ -85,16 +89,17 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const acknowledgeArrival = useCallback(() => {
+    setSettled(true);
+    setArrival(null);
     setState((prev) => {
       if (prev) void remember(weekVisit(prev));
       return prev;
     });
-    setArrival(null);
   }, []);
 
   const api = useMemo(
-    () => ({ state, arrival, dispatch, acknowledgeArrival }),
-    [acknowledgeArrival, arrival, dispatch, state],
+    () => ({ state, arrival, settled, dispatch, acknowledgeArrival }),
+    [acknowledgeArrival, arrival, dispatch, settled, state],
   );
 
   return <CompeteContext.Provider value={api}>{children}</CompeteContext.Provider>;

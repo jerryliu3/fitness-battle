@@ -1,0 +1,227 @@
+.ps-product {
+  min-height: 100dvh;
+  display: flex;
+  justify-content: center;
+  background: var(--paper);
+  color: var(--ink);
+}
+.ps-phone {
+  width: min(100%, 440px);
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  background: var(--paper);
+}
+.ps-status {
+  margin: 0;
+  padding: 10px 16px;
+  background: var(--card);
+  border-bottom: 1px solid var(--line);
+  font-size: 14px;
+}
+.ps-status a,
+.ps-status button {
+  color: inherit;
+  font-weight: 700;
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+}
+.ps-body {
+  flex: 1;
+  overflow: auto;
+  padding: 18px 16px 24px;
+}
+.ps-body h1 {
+  font-size: 32px;
+  letter-spacing: -0.4px;
+  line-height: 1.05;
+  margin: 0 0 8px;
+}
+.ps-kicker {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.ps-dock {
+  display: flex;
+  gap: 4px;
+  padding: 8px 10px calc(10px + env(safe-area-inset-bottom));
+  background: var(--card);
+  border-top: 1px solid var(--line);
+}
+.ps-dock a {
+  flex: 1;
+  min-height: 48px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  text-decoration: none;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 600;
+  border-radius: 14px;
+}
+.ps-dock a[aria-current="page"] {
+  color: var(--ink);
+}
+.ps-dock i {
+  width: 22px;
+  height: 3px;
+  border-radius: 2px;
+  background: transparent;
+}
+.ps-dock a[aria-current="page"] i {
+  background: var(--lime);
+}
+.ps-btn,
+.ps-body .fb-btn,
+.ps-body .ah-primary {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 48px;
+  margin-top: 8px;
+  border: 0;
+  border-radius: 14px;
+  background: var(--ink);
+  color: var(--paper);
+  font: inherit;
+  font-weight: 700;
+  text-decoration: none;
+  cursor: pointer;
+}
+.ps-btn:disabled,
+.ps-body .fb-btn:disabled {
+  opacity: 0.5;
+}
+.ps-btn-quiet,
+.ps-body .fb-btn-line,
+.ps-body .fb-btn-ghost,
+.ps-body .ah-text-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  background: transparent;
+  border: 0;
+  color: var(--ink);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+  text-decoration: none;
+}
+.ps-row {
+  width: 100%;
+  min-height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 0;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.ps-row small {
+  color: var(--muted);
+}
+.ps-row b {
+  color: var(--ink);
+}
+.ps-sheet {
+  position: fixed;
+  inset: auto 0 0;
+  width: min(100%, 460px);
+  max-height: 85dvh;
+  margin: 0 auto;
+  border: 1px solid var(--line);
+  border-bottom: 0;
+  border-radius: 22px 22px 0 0;
+  padding: 0;
+  background: var(--card);
+  color: var(--ink);
+}
+.ps-sheet::backdrop {
+  background: color-mix(in srgb, var(--ink) 35%, transparent);
+}
+.ps-sheet > header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 18px 0;
+}
+.ps-sheet h2 {
+  margin: 0;
+  font-size: 22px;
+}
+.ps-sheet > header button {
+  width: 40px;
+  height: 40px;
+  border: 0;
+  border-radius: 50%;
+  background: var(--paper);
+  font-size: 22px;
+  cursor: pointer;
+}
+.ps-sheet-body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 18px;
+}
+.ps-awards {
+  display: flex;
+  gap: 12px;
+  overflow-x: auto;
+  padding-bottom: 8px;
+}
+.ps-award {
+  flex: 0 0 160px;
+  background: var(--ink);
+  color: var(--paper);
+  border-radius: 18px;
+  padding: 14px;
+}
+.ps-award span {
+  color: var(--lime);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+.ps-award strong {
+  display: block;
+  font-size: 28px;
+  margin-top: 6px;
+}
+.ps-note {
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.45;
+}
+@media (min-width: 800px) {
+  .ps-phone {
+    min-height: 860px;
+    margin: 24px 0;
+    border: 1px solid var(--line);
+    border-radius: 32px;
+    overflow: hidden;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ps-phone * {
+    animation: none !important;
+    transition: none !important;
+  }
+}

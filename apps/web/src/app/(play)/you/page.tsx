@@ -16,6 +16,7 @@ import {
   ProductHeader,
   sourceFromLinks,
 } from "@/features/split/components/product-header";
+import { AwardShelf } from "@/features/play/award-shelf";
 import { SeasonHistory } from "@/features/split/components/season-history";
 import { buildSplitBoard } from "@/features/split/model";
 import {
@@ -278,6 +279,7 @@ function YouContent() {
 
   return (
     <>
+      <AwardShelf />
       <ProductHeader sourceStatus={source.status} sourceLabel={source.label} />
 
       <AthleteCard
