@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import {
+  normalizeNotificationPreferences,
   type NotificationCategoryId,
   type NotificationDeliveryPayload,
 } from "@fitness-battle/shared";
@@ -22,6 +23,7 @@ export async function POST(request: Request) {
   const body = (await request.json().catch(() => null)) as {
     userId?: unknown;
     payload?: Partial<NotificationDeliveryPayload> | null;
+    prefs?: unknown;
     /** Demo clients may allow stub outbox rows. */
     allowStub?: unknown;
   } | null;
@@ -59,6 +61,9 @@ export async function POST(request: Request) {
     const supabase = await createRequestClient(request);
     const allowStub = body?.allowStub === true;
     const result = await deliverNotificationToUser(supabase, userId, payload, {
+      prefs: body?.prefs
+        ? normalizeNotificationPreferences(body.prefs)
+        : undefined,
       requireLive: !allowStub,
     });
 

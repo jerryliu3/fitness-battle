@@ -42,6 +42,7 @@ export async function requestAccountPush(
       body: JSON.stringify({
         userId: identity.userId,
         payload,
+        prefs,
         allowStub: identity.localOnly,
       }),
     });
