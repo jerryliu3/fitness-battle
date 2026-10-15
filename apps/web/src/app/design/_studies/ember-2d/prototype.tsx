@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
-import { clamp, DURATION_MS, frameAt, smooth } from "../overtaek-lab/motion";
+import { clamp, DURATION_MS, frameAt, smooth } from "@/features/overtaek/motion";
 import { concepts, Mascot, silhouetteAt, type Concept } from "./mascot";
 import styles from "./prototype.module.css";
 

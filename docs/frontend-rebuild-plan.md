@@ -88,7 +88,7 @@ Onboarding and login sit outside the tabs. On a wide web window the same phone c
 
 This pass restyles the chrome around the views we are keeping. It does not redesign the checkpoint route or the 2D and 3D renders.
 
-- **Chrome.** New tab bar, boot splash, and account entry. The four tabs still open the same Today, Arena, Field, and You content.
+- **Chrome.** New tab bar, boot splash (Overtaek OVERTAKE → OVERTAEK animation; spinner if data still loads after the mark settles), and account entry. The four tabs still open the same Today, Arena, Field, and You content.
 - **Buttons and rows.** Throw out the current button layouts. One primary action, one row height, library styling on both apps.
 - **Sheet.** The receipt, coaching tip, and athlete detail keep their content. The sheet itself is a library component.
 - **Track frame.** New switch, gain line, and replay control. [lane-track](apps/web/src/features/field/components/lane-track.tsx) and [live-pursuit](apps/web/src/features/field/components/live-pursuit.tsx) render as they do now.

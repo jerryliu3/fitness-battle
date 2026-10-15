@@ -12,7 +12,7 @@ All three retain five connected points and a face. `mascot.tsx` owns their edita
 
 ## Animation
 
-`prototype.tsx` reuses the accepted deterministic `overtaek-lab/motion.ts` timeline: preparation, acceleration, pass, braking and spring settle. OVERTAKE becomes OVERTAEK as Ember passes above E and E moves into the former K slot. The mascot starts facing front, turns using horizontal foreshortening and face displacement, then returns to front at rest. This is a 2D pose illusion rather than 3D rotation.
+`prototype.tsx` reuses the accepted deterministic `features/overtaek/motion.ts` timeline: preparation, acceleration, pass, braking and spring settle. OVERTAKE becomes OVERTAEK as Ember passes above E and E moves into the former K slot. The mascot starts facing front, turns using horizontal foreshortening and face displacement, then returns to front at rest. This is a 2D pose illusion rather than 3D rotation.
 
 The crest bends backward under acceleration and rebounds during braking. Smaller deformation affects the outer points; the connected body contour and its clipping path always deform together. The face is independent of the wind deformation. All variants use the same movement and controls so their design can be compared fairly.
 

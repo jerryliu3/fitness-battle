@@ -1,0 +1,139 @@
+.boot-splash {
+  min-height: 100dvh;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 28px;
+  padding: 24px 16px;
+  background:
+    radial-gradient(ellipse 90% 70% at 50% 42%, #4a2a5c 0%, transparent 58%),
+    linear-gradient(165deg, #2c1937 0%, #1a0f22 55%, #241428 100%);
+  color: #fff9e9;
+}
+
+.boot-splash-stage {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: min(100%, 720px);
+  height: clamp(160px, 28vw, 240px);
+  overflow: hidden;
+  isolation: isolate;
+}
+
+.boot-splash-word {
+  display: flex;
+  align-items: baseline;
+  font-family: var(--font-overtaek), var(--font-body), sans-serif;
+  font-weight: 900;
+  font-size: clamp(36px, 9vw, 80px);
+  line-height: 1;
+  letter-spacing: 0;
+  white-space: nowrap;
+  color: #fff9e9;
+}
+
+/* Keep tight tracking only inside the text run, not as space around the Ember slot. */
+.boot-splash-letters {
+  letter-spacing: -0.055em;
+  margin-right: -0.055em;
+}
+
+.boot-splash-slot {
+  position: relative;
+  display: inline-block;
+  /* Letter-like advance with a clear ink gap — no A / Ember / E overlap. */
+  width: 0.9em;
+  margin: 0;
+  flex: none;
+  overflow: visible;
+  vertical-align: baseline;
+}
+
+/* Invisible capital so the slot shares the text baseline. */
+.boot-splash-strut {
+  display: inline-block;
+  width: 0;
+  overflow: hidden;
+  vertical-align: baseline;
+  speak: never;
+}
+
+.boot-splash-e {
+  display: inline-block;
+  letter-spacing: -0.055em;
+  margin-left: -0.055em;
+}
+
+.boot-splash-ember {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 1em;
+  will-change: transform;
+}
+
+.boot-splash-ember-align {
+  /*
+   * ViewBox has empty headroom above the crest and a little pad below the feet.
+   * Size so drawn body ≈ capital height; feet flush with letter bottoms.
+   */
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  width: 1.16em;
+  height: 1.16em;
+  /* Slight lift: viewBox pad below the feet sits them a few px under the baseline. */
+  transform: translate(-50%, -5%);
+}
+
+.boot-splash-ember-align svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.boot-splash-wait {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  min-height: 52px;
+}
+
+.boot-splash-spacer {
+  display: block;
+  min-height: 52px;
+}
+
+.boot-splash-spinner {
+  width: 22px;
+  height: 22px;
+  border: 2px solid #fff9e944;
+  border-top-color: #ffcf47;
+  border-radius: 50%;
+  animation: boot-spin 0.7s linear infinite;
+}
+
+.boot-splash-wait-label {
+  font-family: var(--font-body), sans-serif;
+  font-size: 13px;
+  letter-spacing: 0.04em;
+  color: #fff9e9cc;
+}
+
+@keyframes boot-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .boot-splash-spinner {
+    animation: none;
+    border-top-color: #fff9e944;
+    border-right-color: #ffcf47;
+  }
+}

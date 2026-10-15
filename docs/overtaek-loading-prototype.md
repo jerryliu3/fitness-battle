@@ -1,27 +1,23 @@
-# Overtaek loading-wordmark prototype
+# Overtaek loading wordmark
 
-Open `/design/overtaek`. The route wrapper stays in `src/app/design/overtaek/`; the study lives in `src/app/design/_studies/overtaek-lab/`. Next treats `_studies` as a private folder, so that path adds no extra URL. This is an isolated, unindexed prototype with Play/Pause, replay, slow motion, and a position scrubber. It does not replace app startup or change the application name elsewhere.
+Product boot splash and design study share the OVERTAKE → OVERTAEK letter choreography. The product splash now renders the shared vector Star Ember from `@fitness-battle/shared/mascot` using the studio **`dash`** clip for body language.
 
-The initial mark reads OVERTAKE, with approved Star Ember artwork occupying K's slot. Ember turns right, accelerates above E, and settles on E's right as E glides left into the vacated slot. The final mark reads OVERTAEK. The original face stays stable; bounded damped springs add wind lag and a braking rebound in the flame tip and outer points. The accepted face texture is reused from `/brand/mascots/star-ember.webp`.
+## Product boot splash
 
-`_studies/overtaek-lab/motion.ts` contains the deterministic motion and spring response. `renderer.ts` owns the native WebGL resources. The React component measures the real letter boxes after fonts load and on resize, and converts those positions into the 3D scene. It aborts pending asset loads and releases resources on unmount, including React development remounts.
+On play routes, `PhoneShell` shows `apps/web/src/shell/boot-splash.tsx` while compete state is loading **or** the overtake animation has not finished (`boot-gate.ts`). The animation always runs to completion even if app data is already ready. If the animation finishes first, a spinner appears under the settled OVERTAEK mark until data is ready.
 
-## Asset and memory limits
+Letter travel uses the short boot curve in `boot-splash-motion.ts` (~0.9 s): hold ready, zoom across, stop. Ember’s body samples the studio `dash` clip (windup → burst → rest) on that same progress; clip `x`/`y` are zeroed so the stage host alone carries Ember across the wordmark. Optical alignment lifts the SVG so the face matches capital height despite viewBox jump headroom. Background tabs pause until visible. Reduced motion jumps to the finished wordmark and releases the animation gate.
 
-`public/brand/overtaek/ember-mesh.bin` is a precomputed closed, padded mesh inferred from the approved artwork's alpha. Its depth/back are approximations, not an original authored 3D model. Header: four little-endian uint32 values (OVTK magic `0x4b54564f`, vertex count, index count, vertex byte length), followed by interleaved float32 XYZ/UV vertices and uint16 indices. Negative U identifies the untextured back surface.
+The wordmark font is `--font-overtaek` (Nunito Sans 900) from the root layout. No WebGL mesh is used on the product splash.
 
-The mesh contains 6,366 vertices / 11,660 triangles in 197,280 bytes of buffers. One canvas, program, original texture, and two buffers are used. Resolution is capped at 640 × 360; animation is capped at 24 fps with no idle render loop. Springs add 3,656 bytes. Visibility changes pause playback. No rendering library or new dependency is added.
+## Design study
 
-Regenerate the asset with `python3 scripts/build-overtaek-mesh.py` (preparation requires Pillow and NumPy). The generator derives the silhouette and padded depth from the existing WebP and writes the binary directly; it does not modify the source artwork.
-
-Reduced-motion users get the finished wordmark without fetching the mesh or allocating WebGL. Unavailable WebGL, failed assets, or graphics-context loss also produce a static final wordmark. The prototype never blocks navigation.
+Open `/design/overtaek` for the earlier WebGL loading study (still useful as a motion reference). `/design/mascot` is the vector Ember studio, including the `dash` clip used by the product splash. The study routes stay unindexed.
 
 ## Review
 
-- Initial OVERTAKE and final OVERTAEK spelling, with Ember replacing K.
-- Pass, braking, and rebound at normal speed and slow motion.
-- Narrow layout, resize/font changes, and returning to the page.
-- Reduced motion and WebGL/asset failure fallback.
-- Typecheck, production build, and focused motion/asset tests.
-
-Verified: `pnpm typecheck`, `pnpm build:web`, and five focused Vitest tests passed. Asset regeneration matched byte for byte. Browser checks covered the initial mark, overtaking frame, final mark, complete replay, 320 px layout, and navigation away/back without console errors. The build used one temporary build worker and a bounded Node heap to limit preparation memory; repository build configuration is unchanged. Native reduced-motion and graphics-context-loss paths were not manually triggered in the browser.
+- Initial OVERTAKE and final OVERTAEK spelling, with vector Ember replacing K.
+- Dash body language peaks while Ember passes E.
+- Boot splash holds until animation completes, then shows a spinner if data is still loading.
+- Reduced motion and background-tab pause.
+- Typecheck, production build, and focused motion/boot-gate/dash sync tests.

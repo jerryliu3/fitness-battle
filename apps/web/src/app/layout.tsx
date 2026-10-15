@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Archivo_Black, Bangers, Bebas_Neue, DM_Sans, Space_Grotesk } from "next/font/google";
+import { Archivo_Black, Bangers, Bebas_Neue, DM_Sans, Nunito_Sans, Space_Grotesk } from "next/font/google";
 import { cookies } from "next/headers";
 import { Providers } from "@/components/providers";
 import { getTheme, parseThemeId } from "@/theme/catalog";
@@ -34,6 +34,12 @@ const rallyComic = Bangers({
   variable: "--font-rally-comic",
 });
 
+const overtaek = Nunito_Sans({
+  subsets: ["latin"],
+  weight: "900",
+  variable: "--font-overtaek",
+});
+
 export const metadata: Metadata = {
   title: "Fitness Battle",
   description: "One-tap group and 1v1 fitness battles with automatic tracking.",
@@ -48,7 +54,7 @@ export default async function RootLayout({
     <html
       lang="en"
       data-theme={theme.id}
-      className={`${display.variable} ${body.variable} ${formType.variable} ${rallyDisplay.variable} ${rallyComic.variable} ${theme.htmlClass}`}
+      className={`${display.variable} ${body.variable} ${formType.variable} ${rallyDisplay.variable} ${rallyComic.variable} ${overtaek.variable} ${theme.htmlClass}`}
     >
       <body>
         <Providers initialTheme={theme.id}>{children}</Providers>
