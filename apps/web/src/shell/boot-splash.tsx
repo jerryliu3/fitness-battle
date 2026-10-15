@@ -172,10 +172,12 @@ export function BootSplash({ waiting = false, onAnimationComplete }: BootSplashP
     <div className="boot-splash" role="status" aria-live="polite" aria-busy="true">
       <div ref={stageRef} className="boot-splash-stage">
         <div ref={wordRef} className="boot-splash-word" role="img" aria-label="OVERTAKE">
-          <span aria-hidden="true">OVERTA</span>
+          <span className="boot-splash-letters" aria-hidden="true">
+            OVERTA
+          </span>
           <span ref={slotRef} className="boot-splash-slot" aria-hidden="true">
+            <span className="boot-splash-strut">A</span>
             <span ref={emberHostRef} className="boot-splash-ember">
-              {/* Nested align layer: viewBox headroom sits the face too low in the em square. */}
               <span className="boot-splash-ember-align">
                 <Ember pose={pose} shadow={false} />
               </span>

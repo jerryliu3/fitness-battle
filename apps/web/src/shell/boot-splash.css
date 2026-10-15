@@ -23,46 +23,72 @@
 
 .boot-splash-word {
   display: flex;
-  align-items: center;
+  align-items: baseline;
   font-family: var(--font-overtaek), var(--font-body), sans-serif;
   font-weight: 900;
   font-size: clamp(36px, 9vw, 80px);
   line-height: 1;
-  letter-spacing: -0.055em;
+  letter-spacing: 0;
   white-space: nowrap;
   color: #fff9e9;
+}
+
+/* Keep tight tracking only inside the text run, not as space around the Ember slot. */
+.boot-splash-letters {
+  letter-spacing: -0.055em;
+  margin-right: -0.055em;
 }
 
 .boot-splash-slot {
   position: relative;
   display: inline-block;
-  width: 1.04em;
-  height: 1em;
+  /* Letter-like advance; negative margin kerns into A / E. */
+  width: 0.62em;
+  margin: 0 -0.16em;
   flex: none;
+  overflow: visible;
+  vertical-align: baseline;
+}
+
+/* Invisible capital so the slot shares the text baseline. */
+.boot-splash-strut {
+  display: inline-block;
+  width: 0;
+  overflow: hidden;
+  vertical-align: baseline;
+  speak: never;
 }
 
 .boot-splash-e {
   display: inline-block;
-  letter-spacing: 0;
+  letter-spacing: -0.055em;
+  margin-left: -0.055em;
 }
 
 .boot-splash-ember {
   position: absolute;
-  inset: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 1em;
   will-change: transform;
 }
 
 .boot-splash-ember-align {
   /*
-   * Ember's viewBox is taller than the drawn body (jump headroom above the crest).
-   * Size to capital ink (~0.72em), not the full em square, so feet don't hang under the glyphs.
+   * ViewBox has empty headroom above the crest and a little pad below the feet.
+   * Size so drawn body ≈ capital height; shift so feet land on the shared baseline.
    */
   position: absolute;
   left: 50%;
-  top: -0.04em;
-  width: 1.16em;
-  height: 1.16em;
-  transform: translateX(-50%);
+  bottom: 0;
+  width: 1.28em;
+  height: 1.28em;
+  /*
+   * Optical correction: star face sits lower in the silhouette than a capital’s
+   * center, so lift past geometric baseline match; scale up so tips tuck into A/E.
+   */
+  transform: translate(-50%, -9%);
 }
 
 .boot-splash-ember-align svg {
