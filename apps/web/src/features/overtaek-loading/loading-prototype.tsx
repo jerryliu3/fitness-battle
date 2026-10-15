@@ -28,6 +28,7 @@ export function LoadingPrototype() {
     let layout = { width: 1, height: 1, initialX: 0, centerY: 0, slotWidth: 1, eWidth: 1, unit: 1, font: 1 };
 
     function draw(progress: number) {
+      if (disposed || !wordRef.current || !fallbackRef.current || !sliderRef.current) return;
       p = clamp(progress);
       const frame = frameAt(p), l = layout;
       const pass = frame.distance;
@@ -56,6 +57,7 @@ export function LoadingPrototype() {
       if (frame.phase !== lastPhase) { lastPhase = frame.phase; setPhase(frame.phase); }
     }
     function measure() {
+      if (disposed || !wordRef.current) return;
       const outer = stage.getBoundingClientRect(), rect = slot.getBoundingClientRect();
       const font = Number.parseFloat(getComputedStyle(wordRef.current!).fontSize), unit = font / 3.515;
       layout = { width: outer.width, height: outer.height, initialX: rect.left - outer.left + rect.width / 2,
@@ -63,9 +65,10 @@ export function LoadingPrototype() {
         slotWidth: rect.width, eWidth: letter.getBoundingClientRect().width, unit, font };
       renderer?.resize(outer.width, outer.height); draw(p);
     }
-    function pause() { cancelAnimationFrame(raf); running = false; setPlaying(false); }
+    function pause() { cancelAnimationFrame(raf); running = false; if (!disposed) setPlaying(false); }
     function seek(progress: number) { pause(); draw(progress); }
     function play() {
+      if (disposed) return;
       if (!renderer || media.matches) { seek(1); return; }
       if (running) { pause(); return; }
       if (p >= 1) p = 0;
@@ -83,6 +86,7 @@ export function LoadingPrototype() {
       setMode("static"); setNotice(message); seek(1);
     }
     async function initialize() {
+      if (disposed) return;
       if (media.matches) { staticPreview("Reduced motion: showing the finished wordmark."); return; }
       abort?.abort(); const request = new AbortController(); abort = request;
       setMode("loading"); setNotice("");
