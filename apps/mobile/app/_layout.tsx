@@ -4,6 +4,7 @@ import {
   DMSans_700Bold,
   useFonts as useDmSans,
 } from "@expo-google-fonts/dm-sans";
+import { NunitoSans_900Black, useFonts as useNunito } from "@expo-google-fonts/nunito-sans";
 import * as Notifications from "expo-notifications";
 import { router, Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
@@ -16,6 +17,7 @@ import "../global.css";
 import "../src/lib/expo-push-register";
 import { CompeteProvider } from "../src/lib/compete-store";
 import { SHELL_COLORS } from "../src/theme";
+import { BootGate } from "../src/ui/boot-gate";
 
 function pathFromNotificationResponse(
   response: Notifications.NotificationResponse,
@@ -34,6 +36,8 @@ export default function RootLayout() {
     DMSans_500Medium,
     DMSans_700Bold,
   });
+  const [nunitoLoaded] = useNunito({ NunitoSans_900Black });
+  const fontsLoaded = dmLoaded && nunitoLoaded;
 
   useEffect(() => {
     let alive = true;
@@ -54,27 +58,17 @@ export default function RootLayout() {
     };
   }, []);
 
-  if (!dmLoaded) {
+  if (!fontsLoaded) {
     return (
       <View
         style={{
           flex: 1,
-          backgroundColor: SHELL_COLORS.paper,
+          backgroundColor: "#1a0f22",
           alignItems: "center",
           justifyContent: "center",
         }}
       >
-        <ActivityIndicator color={SHELL_COLORS.plum} />
-        <Text
-          style={{
-            marginTop: 16,
-            color: SHELL_COLORS.plum,
-            fontFamily: "DMSans_700Bold",
-            letterSpacing: 1,
-          }}
-        >
-          FITNESS BATTLE
-        </Text>
+        <ActivityIndicator color="#ffcf47" />
       </View>
     );
   }
@@ -83,14 +77,16 @@ export default function RootLayout() {
     <GestureHandlerRootView style={{ flex: 1, backgroundColor: SHELL_COLORS.paper }}>
       <HeroUINativeProvider>
         <CompeteProvider>
-          <StatusBar style="dark" />
-          <Stack
-            screenOptions={{
-              headerShown: false,
-              contentStyle: { backgroundColor: SHELL_COLORS.paper },
-              animation: "fade",
-            }}
-          />
+          <BootGate>
+            <StatusBar style="dark" />
+            <Stack
+              screenOptions={{
+                headerShown: false,
+                contentStyle: { backgroundColor: SHELL_COLORS.paper },
+                animation: "fade",
+              }}
+            />
+          </BootGate>
         </CompeteProvider>
       </HeroUINativeProvider>
     </GestureHandlerRootView>
