@@ -1,14 +1,26 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import {
   dispositionOf,
+  periodResultId,
   prepareCompeteStateForAccount,
   provenanceOf,
+  SPORT_IDS,
+  withDerivedPendingReveals,
   type Activity,
   type CompeteState,
+  type GoalDistance,
+  type Rating,
   type SportId,
+  type WaveEnrollment,
 } from "@fitness-battle/shared";
 
 type Db = SupabaseClient;
+
+function asSport(value: string): SportId | null {
+  return (SPORT_IDS as readonly string[]).includes(value)
+    ? (value as SportId)
+    : null;
+}
 
 const CLOUD_PROVIDERS = new Set([
   "strava",
@@ -199,6 +211,159 @@ export async function persistCompeteCore(
     );
     if (error) throw new Error(error.message);
   }
+}
+
+/**
+ * Overlay dual-written relational SoT onto the snapshot document.
+ * Snapshot arrays remain a cache; when prefs/results/enrollments/ratings
+ * rows exist they win. Bulky activity rows stay snapshot-primary (sync races).
+ */
+export async function hydrateCompeteCollections(
+  db: Db,
+  userId: string,
+  state: CompeteState,
+): Promise<CompeteState> {
+  const [
+    { data: profile },
+    { data: prefs },
+    { data: ratingRows },
+    { data: resultRows },
+    { data: freezeRows },
+    { data: enrollmentRows },
+  ] = await Promise.all([
+    db
+      .from("profiles")
+      .select("display_name, city, primary_sport")
+      .eq("id", userId)
+      .maybeSingle(),
+    db.from("athlete_prefs").select("*").eq("user_id", userId).maybeSingle(),
+    db.from("sport_ratings").select("*").eq("user_id", userId),
+    db
+      .from("period_results")
+      .select("*")
+      .eq("user_id", userId)
+      .order("period_start", { ascending: false }),
+    db.from("period_freezes").select("period_start").eq("user_id", userId),
+    db.from("wave_enrollments").select("*").eq("user_id", userId),
+  ]);
+
+  let next = state;
+
+  if (profile) {
+    const primary = asSport(String(profile.primary_sport ?? ""));
+    next = {
+      ...next,
+      name: String(profile.display_name ?? next.name).slice(0, 80) || next.name,
+      city: String(profile.city ?? next.city).slice(0, 80),
+      primary: primary ?? next.primary,
+    };
+  }
+
+  if (prefs) {
+    const distance = prefs.training_goal_distance as GoalDistance | null;
+    next = {
+      ...next,
+      freezesLeft: Number(prefs.freezes_left ?? next.freezesLeft),
+      calibrated: Boolean(prefs.calibrated),
+      onboardingCompleted: Boolean(prefs.onboarding_completed),
+      lessonDoneOn: prefs.lesson_done_on
+        ? String(prefs.lesson_done_on)
+        : null,
+      trainingGoal:
+        distance && prefs.training_goal_deadline
+          ? {
+              distance,
+              deadline: String(prefs.training_goal_deadline),
+            }
+          : null,
+    };
+  }
+
+  if (ratingRows && ratingRows.length > 0) {
+    const bySport = new Map<SportId, Rating>();
+    for (const row of ratingRows) {
+      const sport = asSport(String(row.sport));
+      if (!sport) continue;
+      bySport.set(sport, {
+        sport,
+        verifiedElo: Number(row.verified_elo),
+        openElo: Number(row.open_elo),
+        optedIn: Boolean(row.opted_in),
+        lockVerified: Number(row.lock_verified),
+        lockOpen: Number(row.lock_open),
+        lockPeriod: String(row.lock_period),
+      });
+    }
+    next = {
+      ...next,
+      ratings: next.ratings.map((rating) => bySport.get(rating.sport) ?? rating),
+    };
+  }
+
+  if (resultRows && resultRows.length > 0) {
+    next = {
+      ...next,
+      periodResults: resultRows.flatMap((row) => {
+        const sport = asSport(String(row.sport));
+        const track = row.track === "verified" || row.track === "open"
+          ? row.track
+          : null;
+        if (!sport || !track) return [];
+        const periodStart = String(row.period_start);
+        return [
+          {
+            id: periodResultId(periodStart, sport, track),
+            periodStart,
+            periodEnd: String(row.period_end),
+            sport,
+            track,
+            place: Number(row.place),
+            fieldSize: Number(row.field_size),
+            effort: Number(row.effort),
+            distanceM: Number(row.distance_m),
+            movingSec: Number(row.moving_sec),
+            eloBefore: Number(row.elo_before),
+            eloAfter: Number(row.elo_after),
+            frozen: Boolean(row.frozen),
+            settledAt: String(row.settled_at),
+            acknowledgedAt: row.acknowledged_at
+              ? String(row.acknowledged_at)
+              : null,
+          },
+        ];
+      }),
+    };
+  }
+
+  // Empty freezes are meaningful only once dual-write has created prefs.
+  if (prefs && freezeRows) {
+    next = {
+      ...next,
+      frozenPeriods: freezeRows.map((row) => String(row.period_start)),
+    };
+  }
+
+  if (enrollmentRows && enrollmentRows.length > 0) {
+    const enrollments: WaveEnrollment[] = enrollmentRows.flatMap((row) => {
+      const sport = asSport(String(row.sport));
+      if (!sport) return [];
+      return [
+        {
+          sport,
+          waveStart: String(row.wave_start),
+          weekEnd: String(row.week_end),
+          capacity: Number(row.capacity),
+          peerIds: (row.peer_ids as string[]) ?? [],
+          syntheticIds: (row.synthetic_ids as string[]) ?? [],
+          autoEnrollNext: Boolean(row.auto_enroll_next),
+          crewId: row.crew_id ? String(row.crew_id) : null,
+        },
+      ];
+    });
+    next = { ...next, enrollments };
+  }
+
+  return withDerivedPendingReveals(next);
 }
 
 /** Hydrate crewBoard from shared crew_week_fields when enrollment has crew_id. */

@@ -103,6 +103,7 @@ export {
   prepareCompeteStateForAccount,
   sanitizeCompeteStateForAccount,
   stripDurableCrewBoard,
+  withDerivedPendingReveals,
 } from "./sanitize";
 export {
   countsOnTrack,

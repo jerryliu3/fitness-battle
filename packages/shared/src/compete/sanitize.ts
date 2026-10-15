@@ -1,3 +1,4 @@
+import { pendingRevealIdsFromResults } from "./history";
 import type { CompeteState } from "./sports";
 
 /**
@@ -17,9 +18,26 @@ export function stripDurableCrewBoard(state: CompeteState): CompeteState {
   return { ...state, crewBoard: null };
 }
 
-/** Account write shape: no demoNow, no durable crewBoard pin. */
+/**
+ * Account write shape: no demoNow, no durable crewBoard, no pendingRevealIds.
+ * Reveal ids are always derived from periodResults.acknowledgedAt.
+ */
 export function prepareCompeteStateForAccount(
   state: CompeteState,
 ): CompeteState {
-  return stripDurableCrewBoard(sanitizeCompeteStateForAccount(state));
+  const cleaned = stripDurableCrewBoard(sanitizeCompeteStateForAccount(state));
+  if (cleaned.pendingRevealIds.length === 0) return cleaned;
+  return { ...cleaned, pendingRevealIds: [] };
+}
+
+/** Recompute pendingRevealIds after relational hydrate / migrate. */
+export function withDerivedPendingReveals(state: CompeteState): CompeteState {
+  const pendingRevealIds = pendingRevealIdsFromResults(state.periodResults);
+  if (
+    pendingRevealIds.length === state.pendingRevealIds.length &&
+    pendingRevealIds.every((id, i) => id === state.pendingRevealIds[i])
+  ) {
+    return state;
+  }
+  return { ...state, pendingRevealIds };
 }

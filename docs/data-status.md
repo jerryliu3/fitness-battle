@@ -39,7 +39,7 @@ Separate Supabase project from battles (`rankings-db/`, hosted `pzadctqmyekkydte
 | Item | Status |
 | --- | --- |
 | Account snapshot | `compete_snapshots` — `demoNow` stripped on `/api/compete` read/write |
-| Relational normalize | Stacked follow-ups: period_results → activities → enrollments → thin snapshot → server rollClock |
+| Relational normalize | Stacked PRs: P1 demoNow → P2 period_results → P3 activities → P4 enrollments → P5 hydrate/derive → P6 server rollClock |
 | Density matching | Still per-viewer (not global standings) |
 
 See [compete-persistence.md](compete-persistence.md).
@@ -57,5 +57,5 @@ Invite-code `battles` / `periods` / `standings` remain from the early scaffold. 
 
 1. Apply `packages/rankings/imports/*.import.sql` with `RANKINGS_DATABASE_URL` (see `docs/ingestion.md`).
 2. A public half-marathon list, plus New York, Tokyo, and Sydney once a results list is on the page.
-3. Continue the compete normalize PR stack (period_results → activities → enrollments).
+3. Continue the compete normalize PR stack through thin snapshot + server rollClock.
 4. Point `NEXT_PUBLIC_USE_DEMO_DATA=false` plus Strava keys and the service role at a real athlete backfill. Token storage and score recompute are already wired for that mode.

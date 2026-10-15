@@ -33,3 +33,9 @@ Week reveal is derived from `acknowledged_at`, not a separate pending table.
 ## P4 enrollments
 
 `wave_enrollments` stores per-viewer seating (`peer_ids[]`, `synthetic_ids[]`, optional `crew_id`). Dual-write **replaces** the athlete’s enrollment rows from the document (same pattern as `period_freezes`). Account snapshots no longer persist `crewBoard`; GET hydrates it from `crew_week_fields` when `crew_id` is set (hydrate failure clears the pin).
+
+## P5 thin snapshot + derive reveals
+
+- Account writes store `pendingRevealIds: []` — always re-derived from `periodResults.acknowledgedAt` on migrate/load.
+- GET overlays relational SoT (prefs, ratings, period_results, freezes, enrollments) when dual-write rows exist; activities stay snapshot-primary (sync can race).
+- Bulky array omission from jsonb is deferred until hydrate has soaked — snapshot remains a fallback cache.

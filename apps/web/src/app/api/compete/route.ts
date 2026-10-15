@@ -4,9 +4,12 @@ import {
   migrateCompeteState,
   prepareCompeteStateForAccount,
   sanitizeCompeteStateForAccount,
+  stripDurableCrewBoard,
+  withDerivedPendingReveals,
 } from "@fitness-battle/shared";
 import { resolveRequestUserId } from "@/lib/auth/request-user";
 import {
+  hydrateCompeteCollections,
   hydrateCrewBoard,
   persistCompeteCore,
 } from "@/lib/compete-persist";
@@ -29,14 +32,18 @@ export async function GET(request: Request) {
   if (!data || !isCompeteState(data.state)) {
     return NextResponse.json({ state: null, updatedAt: null });
   }
-  // Strip demoNow; leave crewBoard for hydrate (or clear on hydrate failure).
-  const base = sanitizeCompeteStateForAccount(migrateCompeteState(data.state));
+  // Strip demoNow; overlay relational SoT; hydrate crewBoard (or clear on failure).
+  const base = withDerivedPendingReveals(
+    sanitizeCompeteStateForAccount(migrateCompeteState(data.state)),
+  );
   try {
-    const state = await hydrateCrewBoard(supabase, userId, base);
+    const hydrated = await hydrateCompeteCollections(supabase, userId, base);
+    const state = await hydrateCrewBoard(supabase, userId, hydrated);
     return NextResponse.json({ state, updatedAt: data.updated_at });
   } catch {
+    // Do not use prepare() here — it clears pendingRevealIds for writes.
     return NextResponse.json({
-      state: prepareCompeteStateForAccount(base),
+      state: withDerivedPendingReveals(stripDurableCrewBoard(base)),
       updatedAt: data.updated_at,
     });
   }

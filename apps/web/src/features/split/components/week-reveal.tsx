@@ -33,9 +33,10 @@ export function WeekReveal({
   state: CompeteState;
   onDismiss: () => void;
 }) {
+  // Derive from acknowledgedAt; ignore any stale pendingRevealIds blob.
   const reveals = primaryRevealResults(
     state.periodResults,
-    state.pendingRevealIds,
+    undefined,
     state.primary,
   );
   if (reveals.length === 0) return null;
