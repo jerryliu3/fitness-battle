@@ -2,6 +2,7 @@ import { serverEnv, webEnv } from "@/lib/env";
 import { trackerRedirect } from "@/lib/oauth-callback";
 import { resolveSessionUserId } from "@/lib/auth/request-user";
 import { getServerFitnessProvider, type OAuthProviderId } from "@/lib/fitness";
+import { resolveOAuthCallbackUserId } from "@/lib/oauth-state";
 import { getSupabaseConfig } from "@/lib/supabase/config";
 
 function creds(provider: "whoop" | "oura"): boolean {
@@ -28,8 +29,13 @@ export function oauthCodeCallback(providerId: OAuthProviderId) {
     if (!creds(providerId) || !code || !liveAuth) {
       return trackerRedirect(url.origin, providerId, "stub");
     }
-    const userId = await resolveSessionUserId();
-    if (!userId || !state || state !== userId) {
+    const sessionUserId = await resolveSessionUserId();
+    const userId = resolveOAuthCallbackUserId({
+      state,
+      provider: providerId,
+      sessionUserId,
+    });
+    if (!userId) {
       return trackerRedirect(url.origin, providerId, "error");
     }
     try {

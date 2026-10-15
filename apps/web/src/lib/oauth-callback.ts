@@ -12,7 +12,8 @@ export function trackerRedirect(
   const webUrl = new URL("/you", origin);
   webUrl.searchParams.set("tracker", outcome);
   webUrl.searchParams.set("provider", provider);
-  const deep = `overtaek://you?tracker=${encodeURIComponent(outcome)}&provider=${encodeURIComponent(provider)}`;
+  // Three slashes so Expo Router treats `you` as a path, not a host.
+  const deep = `overtaek:///you?tracker=${encodeURIComponent(outcome)}&provider=${encodeURIComponent(provider)}`;
   const web = webUrl.toString();
   const html = `<!DOCTYPE html>
 <html lang="en">

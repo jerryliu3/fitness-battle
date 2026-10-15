@@ -2,12 +2,13 @@ import { serverEnv, webEnv } from "@/lib/env";
 import { trackerRedirect } from "@/lib/oauth-callback";
 import { resolveSessionUserId } from "@/lib/auth/request-user";
 import { getServerFitnessProvider } from "@/lib/fitness";
+import { resolveOAuthCallbackUserId } from "@/lib/oauth-state";
 import { getSupabaseConfig } from "@/lib/supabase/config";
 
 /**
  * Strava OAuth callback.
- * Live mode exchanges the code only for the signed-in user, and only when
- * `state` matches that user. Demo mode never stores tokens from this URL.
+ * Live mode exchanges the code when `state` is a signed ticket (mobile Safari)
+ * or matches the browser session user. Demo mode never stores tokens here.
  */
 export async function GET(request: Request) {
   const url = new URL(request.url);
@@ -28,8 +29,13 @@ export async function GET(request: Request) {
     return trackerRedirect(url.origin, "strava", "stub");
   }
 
-  const userId = await resolveSessionUserId();
-  if (!userId || !state || state !== userId) {
+  const sessionUserId = await resolveSessionUserId();
+  const userId = resolveOAuthCallbackUserId({
+    state,
+    provider: "strava",
+    sessionUserId,
+  });
+  if (!userId) {
     return trackerRedirect(url.origin, "strava", "error");
   }
 
