@@ -124,7 +124,8 @@ export default function YouScreen() {
         setNote(result.message);
       } else if (result.cancelled) {
         // Deep-link effect may still mark connected on Android; don't clobber it.
-        if (!appliedTracker.current?.startsWith("connected:")) {
+        const already = appliedTracker.current;
+        if (!(typeof already === "string" && already.startsWith("connected:"))) {
           setNote(result.message);
         }
       } else {
