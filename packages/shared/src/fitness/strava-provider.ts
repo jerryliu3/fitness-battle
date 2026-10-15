@@ -67,6 +67,8 @@ export function mapSportToCategory(sportType: string): CategorySlug | null {
     hike: "walking",
     strength: "strength",
     strength_training: "strength",
+    traditional_strength_training: "strength",
+    functional_strength_training: "strength",
     weightlifting: "strength",
     weight_training: "strength",
     workout: "strength",

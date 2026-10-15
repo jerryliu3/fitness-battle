@@ -1,4 +1,5 @@
 import { mapSportToCategory, type ActivitySample, type CategorySlug } from "@fitness-battle/shared";
+import { NativeModules, Platform } from "react-native";
 import { mobileEnv } from "./env";
 import { supabase } from "./supabase";
 
@@ -19,6 +20,57 @@ type WorkoutLike = {
   distance?: number;
   duration?: number;
 };
+
+type AppleHealthKitNative = {
+  initHealthKit: (permissions: unknown, cb: (error: string) => void) => void;
+  getAnchoredWorkouts: (
+    options: { startDate: string; endDate?: string; type?: string },
+    cb: (
+      error: string | { message?: string } | null,
+      results: { data?: WorkoutLike[] },
+    ) => void,
+  ) => void;
+};
+
+type AppleHealthKitModule = AppleHealthKitNative & {
+  Constants: { Permissions: { Workout: string } };
+};
+
+/**
+ * react-native-health Object.assigns NativeModules.AppleHealthKit at import time.
+ * Under React Native New Architecture those modules are lazy, so the package
+ * export ends up with Constants only and initHealthKit is undefined. Re-bind
+ * from NativeModules at call time.
+ */
+function loadAppleHealthKit(): AppleHealthKitModule | "unavailable" | "unsupported" {
+  if (Platform.OS !== "ios") return "unsupported";
+
+  let constants: AppleHealthKitModule["Constants"] | undefined;
+  try {
+    const mod = require("react-native-health") as {
+      Constants?: AppleHealthKitModule["Constants"];
+      default?: { Constants?: AppleHealthKitModule["Constants"] };
+    };
+    constants = mod.Constants ?? mod.default?.Constants;
+  } catch {
+    return "unavailable";
+  }
+
+  const native = NativeModules.AppleHealthKit as AppleHealthKitNative | undefined;
+  if (
+    typeof native?.initHealthKit !== "function" ||
+    typeof native?.getAnchoredWorkouts !== "function" ||
+    !constants?.Permissions?.Workout
+  ) {
+    return "unavailable";
+  }
+
+  return {
+    initHealthKit: native.initHealthKit.bind(native),
+    getAnchoredWorkouts: native.getAnchoredWorkouts.bind(native),
+    Constants: constants,
+  };
+}
 
 function sampleFromWorkout(
   provider: "apple_health" | "google_health",
@@ -76,50 +128,70 @@ async function postIngest(
   return { ok: true, message: `Sent ${activities.length} workouts.`, count: activities.length };
 }
 
+function healthKitErrorMessage(error: unknown): string {
+  if (typeof error === "string" && error.trim()) return error;
+  if (error && typeof error === "object" && "message" in error) {
+    const message = (error as { message?: unknown }).message;
+    if (typeof message === "string" && message.trim()) return message;
+  }
+  if (error instanceof Error && error.message.trim()) return error.message;
+  return "Apple Health sync failed.";
+}
+
 export async function syncAppleHealth(): Promise<DeviceSyncResult> {
-  let health: {
-    initHealthKit: (permissions: unknown, cb: (error: string) => void) => void;
-    getAnchoredWorkouts: (
-      options: { startDate: string },
-      cb: (error: string, results: { data?: WorkoutLike[] }) => void,
-    ) => void;
-    Constants: { Permissions: { Workout: string } };
-  };
-  try {
-    health = require("react-native-health") as typeof health;
-  } catch {
+  const health = loadAppleHealthKit();
+  if (health === "unsupported") {
+    return { ok: false, message: "Apple Health is only available on iOS.", count: 0 };
+  }
+  if (health === "unavailable") {
     return {
       ok: false,
-      message: "Apple Health needs a development build. It is not available in Expo Go.",
+      message:
+        "Apple Health needs a development or TestFlight build with HealthKit. It is not available in Expo Go.",
       count: 0,
     };
   }
+
   const startDate = new Date(Date.now() - BACKFILL_MS).toISOString();
-  const workouts = await new Promise<WorkoutLike[]>((resolve, reject) => {
-    health.initHealthKit(
-      { permissions: { read: [health.Constants.Permissions.Workout], write: [] } },
-      (error) => {
-        if (error) {
-          reject(new Error(error));
-          return;
-        }
-        health.getAnchoredWorkouts({ startDate }, (workoutError, results) => {
-          if (workoutError) reject(new Error(String(workoutError)));
-          else resolve(results?.data ?? []);
-        });
-      },
-    );
-  }).catch((error: Error) => {
-    throw error;
-  });
+  const endDate = new Date().toISOString();
+  let workouts: WorkoutLike[];
+  try {
+    workouts = await new Promise<WorkoutLike[]>((resolve, reject) => {
+      health.initHealthKit(
+        { permissions: { read: [health.Constants.Permissions.Workout], write: [] } },
+        (error) => {
+          if (error) {
+            reject(new Error(healthKitErrorMessage(error)));
+            return;
+          }
+          health.getAnchoredWorkouts(
+            { startDate, endDate, type: "Workout" },
+            (workoutError, results) => {
+              if (workoutError) {
+                reject(new Error(healthKitErrorMessage(workoutError)));
+                return;
+              }
+              resolve(results?.data ?? []);
+            },
+          );
+        },
+      );
+    });
+  } catch (error) {
+    return { ok: false, message: healthKitErrorMessage(error), count: 0 };
+  }
+
   const activities = workouts
     .map((workout) =>
-      sampleFromWorkout("apple_health", {
-        ...workout,
-        // react-native-health reports workout distance in miles.
-        distance: (workout.distance ?? 0) * 1609.344,
-        duration: undefined,
-      }, workout.activityName ?? ""),
+      sampleFromWorkout(
+        "apple_health",
+        {
+          ...workout,
+          // react-native-health reports workout distance in miles.
+          distance: (workout.distance ?? 0) * 1609.344,
+        },
+        workout.activityName ?? "",
+      ),
     )
     .filter((item): item is ActivitySample => item != null);
   if (activities.length === 0) {
@@ -141,6 +213,10 @@ const HEALTH_CONNECT_SPORTS: Record<string, string> = {
 };
 
 export async function syncHealthConnect(): Promise<DeviceSyncResult> {
+  if (Platform.OS !== "android") {
+    return { ok: false, message: "Health Connect is only available on Android.", count: 0 };
+  }
+
   let health: {
     initialize: () => Promise<boolean>;
     requestPermission: (permissions: { accessType: string; recordType: string }[]) => Promise<unknown>;
@@ -165,6 +241,13 @@ export async function syncHealthConnect(): Promise<DeviceSyncResult> {
     return {
       ok: false,
       message: "Health Connect needs a development build. It is not available in Expo Go.",
+      count: 0,
+    };
+  }
+  if (typeof health.initialize !== "function" || typeof health.readRecords !== "function") {
+    return {
+      ok: false,
+      message: "Health Connect native module is unavailable in this build.",
       count: 0,
     };
   }

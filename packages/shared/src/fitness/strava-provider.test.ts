@@ -12,6 +12,8 @@ describe("strava provider", () => {
     expect(mapSportToCategory("WeightTraining")).toBe("strength");
     expect(mapSportToCategory("Workout")).toBe("strength");
     expect(mapSportToCategory("Run")).toBe("running");
+    expect(mapSportToCategory("TraditionalStrengthTraining")).toBe("strength");
+    expect(mapSportToCategory("FunctionalStrengthTraining")).toBe("strength");
     expect(mapSportToCategory("Swim")).toBeNull();
     expect(mapSportToCategory("Yoga")).toBeNull();
   });
