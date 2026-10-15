@@ -33,7 +33,7 @@ export function TodayScreen() {
           const nudge = future ? 33 : 39;
           const style = {
             left: `calc(${item.cx * 100}% - ${nudge}px)`,
-            top: item.top,
+            top: `${(item.top / route.frame.height) * 100}%`,
           };
           if (future) {
             return (
