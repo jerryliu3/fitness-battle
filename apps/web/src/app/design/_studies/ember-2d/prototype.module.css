@@ -1,0 +1,70 @@
+.page { max-width: 1100px; margin: auto; padding: 30px 40px 50px; color: var(--ink); }
+.header { display: flex; justify-content: space-between; align-items: center; gap: 20px; padding-bottom: 25px; border-bottom: 1px solid var(--line); font-size: 12px; }
+.header a { text-decoration: none; font-weight: 650; }
+.header > span { font-size: 10px; letter-spacing: .12em; color: var(--muted); }
+.intro { display: grid; grid-template-columns: 1.3fr 1fr; column-gap: 60px; align-items: end; padding: 42px 0 32px; }
+.eyebrow { text-transform: uppercase; letter-spacing: .13em; font-size: 10px; font-weight: 750; margin: 0 0 12px; color: var(--muted); }
+.intro .eyebrow { grid-column: 1 / -1; }
+.intro h1 { font-size: clamp(36px, 5vw, 58px); letter-spacing: -.055em; line-height: 1.05; margin: 0; font-weight: 800; }
+.intro > p:last-child { font-size: 15px; color: var(--muted); line-height: 1.7; max-width: 350px; margin: 0 0 3px; }
+.cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+.card { text-align: left; border: 1px solid var(--line); border-radius: 20px; padding: 19px 21px 22px; background: var(--card); cursor: pointer; position: relative; }
+.card[aria-pressed="true"] { border-color: var(--ink); box-shadow: 0 0 0 1px var(--ink); }
+.card:hover { border-color: var(--ink); }
+.card:focus-visible, .controls button:focus-visible, .viewToggle button:focus-visible { outline: 3px solid var(--lime-deep); outline-offset: 4px; }
+.cardTop { display: flex; justify-content: space-between; font-size: 9px; font-weight: 700; letter-spacing: .1em; color: var(--muted); }
+.card[aria-pressed="true"] .cardTop { color: var(--ink); }
+.preview { display: block; width: 145px; height: 145px; margin: 10px auto 8px; }
+.card h2 { margin: 0; font-size: 19px; letter-spacing: -.035em; }
+.card p { font-size: 12px; line-height: 1.6; color: var(--muted); margin: 8px 0 0; }
+.card .tag { font-size: 11px; color: var(--ink); font-weight: 650; margin-top: 5px; }
+.player { margin-top: 38px; }
+.playerHeader { display: flex; align-items: center; justify-content: space-between; gap: 18px; margin-bottom: 18px; }
+.playerHeader .eyebrow { margin-bottom: 6px; }
+.playerHeader h2 { font-size: 22px; letter-spacing: -.035em; margin: 0; }
+.viewToggle { display: flex; padding: 4px; border: 1px solid var(--line); border-radius: 30px; background: var(--card); }
+.viewToggle button { border: 0; border-radius: 25px; padding: 9px 15px; background: transparent; color: var(--muted); font-size: 11px; cursor: pointer; }
+.viewToggle button[aria-pressed="true"] { color: white; background: var(--ink); }
+.stage { position: relative; display: grid; place-items: center; height: 350px; overflow: hidden; background: #202b28; border-radius: 22px; color: #fffdeb; isolation: isolate; }
+.stageLabel { position: absolute; top: 22px; left: 25px; right: 25px; display: flex; justify-content: space-between; gap: 12px; font-size: 10px; color: #b5c8bc; letter-spacing: .04em; }
+.word { display: flex; align-items: center; font-family: var(--font-overtaek), sans-serif; font-weight: 900; font-size: clamp(35px, 8.5vw, 88px); line-height: 1; letter-spacing: -.055em; white-space: nowrap; }
+.slot { display: inline-block; width: 1.04em; height: 1em; flex: none; }
+.actor { position: absolute; top: 0; left: 0; width: 100px; aspect-ratio: 1; pointer-events: none; z-index: 2; }
+.actor svg { display: block; width: 100%; height: 100%; overflow: visible; }
+.trail { position: absolute; left: 0; top: 0; height: 2px; border-radius: 2px; background: #eff5ad; opacity: 0; z-index: 1; }
+.track { position: absolute; bottom: 23px; left: 25px; right: 25px; display: flex; justify-content: space-between; border-top: 1px solid #46564d; padding-top: 10px; font-size: 8px; letter-spacing: .16em; color: #8eaa99; }
+.controls { display: flex; align-items: center; gap: 20px; padding-top: 18px; font-size: 12px; }
+.play { min-width: 136px; border: 0; border-radius: 30px; padding: 13px 20px; background: var(--ink); color: white; cursor: pointer; font-weight: 650; }
+.play:disabled { opacity: .45; cursor: default; }
+.slow { display: flex; align-items: center; gap: 7px; white-space: nowrap; }
+.slow input, .scrub input { accent-color: var(--ink); }
+.controls output { min-width: 66px; color: var(--muted); font-size: 11px; }
+.scrub { display: flex; align-items: center; flex: 1; gap: 12px; color: var(--muted); font-size: 10px; }
+.scrub span { white-space: nowrap; }
+.scrub input { width: 100%; min-width: 60px; min-height: 35px; }
+.footer { display: grid; grid-template-columns: 1.3fr 1fr; gap: 60px; border-top: 1px solid var(--line); margin-top: 28px; padding-top: 12px; }
+.footer p, .note { color: var(--muted); font-size: 12px; line-height: 1.7; }
+.footer strong { color: var(--ink); }
+@media (max-width: 700px) {
+  .page { padding: 22px 20px 35px; }
+  .header > span { font-size: 8px; max-width: 125px; text-align: right; line-height: 1.5; }
+  .intro { grid-template-columns: 1fr; gap: 14px; padding-top: 30px; }
+  .intro .eyebrow { margin-bottom: 0; }
+  .intro > p:last-child { max-width: 450px; font-size: 13px; }
+  .cards { gap: 8px; }
+  .card { border-radius: 14px; padding: 12px 9px; }
+  .cardTop { font-size: 8px; }
+  .cardTop span:last-child { display: none; }
+  .preview { width: 100%; height: auto; margin: 6px auto; }
+  .card h2 { font-size: 14px; }
+  .card p:not(.tag) { display: none; }
+  .card .tag { font-size: 9px; line-height: 1.5; }
+  .player { margin-top: 28px; }
+  .playerHeader h2 { font-size: 18px; }
+  .viewToggle button { padding: 9px 11px; font-size: 10px; }
+  .stage { height: 300px; border-radius: 16px; }
+  .stageLabel { left: 17px; right: 17px; font-size: 9px; }
+  .controls { flex-wrap: wrap; gap: 14px; }
+  .scrub { flex-basis: 100%; }
+  .footer { grid-template-columns: 1fr; gap: 0; }
+}
