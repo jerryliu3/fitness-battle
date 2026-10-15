@@ -1,4 +1,4 @@
-/** Star Ember v2. One outer silhouette with a clipped directional bevel. */
+/** Star Ember v2. A continuous face, connected side walls and a soft joint rig. */
 export const EMBER_MODEL = {
   version: 2,
   viewBox: "0 -85 360 485",
@@ -33,6 +33,7 @@ export const EMBER_MODEL = {
     [134, 127, 161, 99, 146, 76],
     [142, 68, 133, 62, 140, 57],
   ],
+  joints: { crest: [180, 155], armLeft: [112, 230], armRight: [254, 210], legLeft: [141, 273], legRight: [221, 273] },
 } as const;
 
 export type EmberExpression = "smile" | "happy" | "wink" | "joy" | "surprised" | "focused";
@@ -47,13 +48,15 @@ export interface EmberPose {
   sparkle: number; trail: number;
   /** Travel direction: 0 = right, -45 = up-right, -90 = up. Effects follow this heading. */
   heading: number;
+  /** Aerodynamic arm fold and extra apparent extrusion, both in [0, 1]. */
+  wind: number; depth: number;
 }
 
 export const EMBER_REST: Readonly<EmberPose> = Object.freeze({
   x: 0, y: 0, rotation: 0, scaleX: 1, scaleY: 1,
   yaw: 0, crest: 0, armLeft: 0, armRight: 0, legLeft: 0, legRight: 0,
   lookX: 0, lookY: 0, eyeLeft: 1, eyeRight: 1, mouthOpen: 0, smile: 1,
-  sparkle: 0, trail: 0, heading: 0,
+  sparkle: 0, trail: 0, heading: 0, wind: 0, depth: 0,
 });
 
 const clamp = (v: number, min: number, max: number) => Math.max(min, Math.min(max, v));
@@ -66,7 +69,7 @@ export function normalizeEmberPose(input: Partial<EmberPose> = {}): EmberPose {
     if (typeof value === "number" && Number.isFinite(value)) p[key] = value;
   }
   for (const key of ["yaw", "crest", "armLeft", "armRight", "legLeft", "legRight", "lookX", "lookY", "smile"] as const) p[key] = clamp(p[key], -1, 1);
-  for (const key of ["eyeLeft", "eyeRight", "mouthOpen", "sparkle", "trail"] as const) p[key] = clamp(p[key], 0, 1);
+  for (const key of ["eyeLeft", "eyeRight", "mouthOpen", "sparkle", "trail", "wind", "depth"] as const) p[key] = clamp(p[key], 0, 1);
   p.scaleX = clamp(p.scaleX, 0.65, 1.35);
   p.scaleY = clamp(p.scaleY, 0.65, 1.35);
   p.x = clamp(p.x, -45, 45); p.y = clamp(p.y, -90, 15);
@@ -94,20 +97,66 @@ export function emberExpression(expression: EmberExpression): Partial<EmberPose>
   }
 }
 
-/** Smooth weights bend points and handles together; no detached arm/leg sprite pieces. */
+const smoothWeight = (value: number) => { const t = clamp(value, 0, 1); return t * t * (3 - 2 * t); };
+
+/** Rotate around a fixed joint; the distal region retains its length and curved tip. */
+export function rotateEmberPoint(x: number, y: number, joint: readonly [number, number], degrees: number): [number, number] {
+  const radians = degrees * Math.PI / 180, dx = x - joint[0], dy = y - joint[1];
+  return [joint[0] + dx * Math.cos(radians) - dy * Math.sin(radians), joint[1] + dx * Math.sin(radians) + dy * Math.cos(radians)];
+}
+
+/** Blend joint rotations at the roots, with rigid motion across each rounded tip. */
 export function deformEmberPoint(x: number, y: number, p: EmberPose): [number, number] {
-  const crest = Math.max(0, (152 - y) / 100) ** 2;
-  // A flat weight across the arm's tip preserves its tangent when raised.
-  const armBand = Math.max(0, 1 - Math.max(0, y - 200) / 70);
-  const left = clamp((145 - x) / 100, 0, 1) * armBand;
-  const right = clamp((x - 217) / 91, 0, 1) * armBand;
-  const foot = Math.max(0, (y - 250) / 100);
-  const legL = Math.max(0, (182 - x) / 83) * foot;
-  const legR = Math.max(0, (x - 182) / 83) * foot;
-  return [
-    x - p.crest * 33 * crest + p.armLeft * 9 * left - p.armRight * 9 * right + p.legLeft * 29 * legL - p.legRight * 29 * legR,
-    y + p.crest * 8 * crest - p.armLeft * 58 * left - p.armRight * 58 * right - p.legLeft * 37 * legL - p.legRight * 37 * legR,
-  ];
+  const armBand = 1 - smoothWeight((y - 202) / 48);
+  const crest = smoothWeight((155 - y) / 65);
+  const left = smoothWeight((145 - x) / 70) * armBand;
+  const right = smoothWeight((x - 217) / 63) * armBand;
+  const foot = smoothWeight((y - 265) / 60);
+  const legL = smoothWeight((182 - x) / 65) * foot;
+  const legR = smoothWeight((x - 182) / 65) * foot;
+  const joints = EMBER_MODEL.joints;
+  const upward = -Math.sin(p.heading * Math.PI / 180);
+  const rotations = [
+    [joints.crest, -p.crest * 55, crest],
+    [joints.armLeft, p.armLeft * 32 - p.wind * (34 + 36 * upward), left],
+    [joints.armRight, -p.armRight * 32 + p.wind * (100 - 30 * upward), right],
+    [joints.legLeft, p.legLeft * 38, legL],
+    [joints.legRight, -p.legRight * 38, legR],
+  ] as const;
+  let dx = 0, dy = 0;
+  for (const [joint, angle, weight] of rotations) {
+    const rotated = rotateEmberPoint(x, y, joint, angle);
+    dx += (rotated[0] - x) * weight; dy += (rotated[1] - y) * weight;
+  }
+  // A soft underarm corrective keeps the inner handle outside the torso as the
+  // far arm folds down/back. The tip and shoulder still follow their joint arc.
+  const underarm = smoothWeight((x - 250) / 25) * smoothWeight((y - 195) / 24) * (1 - smoothWeight((y - 219) / 19));
+  dx += p.wind * 20 * underarm; dy += p.wind * 22 * underarm;
+  return [x + dx, y + dy];
+}
+
+/** The back recedes left/down at rest and farther against the travel direction in a burst. */
+export function emberDepthOffset(p: EmberPose): [number, number] {
+  const radians = (p.heading - p.rotation) * Math.PI / 180;
+  return [-10 - Math.abs(p.yaw) * 10 - Math.cos(radians) * p.depth * 12, 5 - Math.sin(radians) * p.depth * 12];
+}
+
+/** Swept cubic side walls join corresponding front/back edges, including every tip. */
+export function emberSideWalls(p: EmberPose): string {
+  const [dx, dy] = emberDepthOffset(p);
+  const point = ([x, y]: readonly number[]) => `${x.toFixed(2)} ${y.toFixed(2)}`;
+  const back = ([x, y]: readonly number[]) => [x + dx, y + dy];
+  let start = deformEmberPoint(...EMBER_MODEL.start, p);
+  return EMBER_MODEL.body.map(s => {
+    const c1 = deformEmberPoint(s[0], s[1], p), c2 = deformEmberPoint(s[2], s[3], p), end = deformEmberPoint(s[4], s[5], p);
+    // Give overlapping patches the same winding so concave joins cannot cancel into holes.
+    const outward = (end[1] - start[1]) * dx - (end[0] - start[0]) * dy > 0;
+    const wall = outward
+      ? `M ${point(start)} C ${point(c1)} ${point(c2)} ${point(end)} L ${point(back(end))} C ${point(back(c2))} ${point(back(c1))} ${point(back(start))} Z`
+      : `M ${point(end)} C ${point(c2)} ${point(c1)} ${point(start)} L ${point(back(start))} C ${point(back(c1))} ${point(back(c2))} ${point(back(end))} Z`;
+    start = end;
+    return wall;
+  }).join(" ");
 }
 
 export function emberContour(pose: EmberPose, crescent = false): string {

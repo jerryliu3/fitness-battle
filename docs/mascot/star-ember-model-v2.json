@@ -149,7 +149,29 @@
         140,
         57
       ]
-    ]
+    ],
+    "joints": {
+      "crest": [
+        180,
+        155
+      ],
+      "armLeft": [
+        112,
+        230
+      ],
+      "armRight": [
+        254,
+        210
+      ],
+      "legLeft": [
+        141,
+        273
+      ],
+      "legRight": [
+        221,
+        273
+      ]
+    }
   },
   "rest": {
     "x": 0,
@@ -171,7 +193,9 @@
     "smile": 1,
     "sparkle": 0,
     "trail": 0,
-    "heading": 0
+    "heading": 0,
+    "wind": 0,
+    "depth": 0
   },
   "clips": {
     "idle": {
@@ -488,7 +512,7 @@
         {
           "at": 0.16,
           "pose": {
-            "x": -22,
+            "x": -10,
             "y": 8,
             "rotation": -10,
             "scaleX": 1.1,
@@ -497,16 +521,18 @@
           }
         },
         {
-          "at": 0.3,
+          "at": 0.28,
           "pose": {
             "x": -8,
             "y": -15,
-            "rotation": 21,
-            "scaleX": 1.08,
-            "scaleY": 0.94,
-            "crest": 0.9,
-            "legLeft": -0.8,
-            "legRight": 0.65,
+            "rotation": 30,
+            "scaleX": 1.02,
+            "scaleY": 0.98,
+            "crest": 0.25,
+            "wind": 0.35,
+            "depth": 0.9,
+            "legLeft": -0.25,
+            "legRight": -0.2,
             "yaw": 0.2,
             "trail": 0.8,
             "mouthOpen": 0.9
@@ -517,14 +543,14 @@
           "pose": {
             "x": 19,
             "y": -29,
-            "rotation": 25,
-            "scaleX": 1.08,
-            "scaleY": 0.95,
+            "rotation": 35,
             "crest": 1,
-            "legLeft": -0.8,
-            "legRight": 0.75,
-            "armLeft": -0.25,
-            "yaw": 0.2,
+            "wind": 1,
+            "depth": 1,
+            "legLeft": -0.3,
+            "legRight": -0.4,
+            "armLeft": -0.15,
+            "yaw": 0.25,
             "trail": 1,
             "mouthOpen": 0.9
           }
@@ -532,36 +558,43 @@
         {
           "at": 0.65,
           "pose": {
-            "x": 32,
+            "x": 28,
             "y": -26,
-            "rotation": 20,
-            "crest": 0.85,
-            "legLeft": -0.5,
-            "legRight": 0.45,
+            "rotation": 33,
+            "crest": 0.9,
+            "wind": 0.9,
+            "depth": 0.7,
+            "legLeft": -0.2,
+            "legRight": -0.3,
+            "yaw": 0.2,
             "trail": 1,
             "sparkle": 0.45,
             "mouthOpen": 0.9
           }
         },
         {
-          "at": 0.79,
+          "at": 0.76,
           "pose": {
             "x": 16,
-            "y": 4,
-            "rotation": -8,
-            "crest": -0.4,
-            "scaleX": 1.08,
-            "scaleY": 0.91,
+            "y": 1,
+            "rotation": -4,
+            "crest": 0.6,
+            "wind": 0.5,
+            "depth": 0.3,
+            "scaleX": 1.04,
+            "scaleY": 0.96,
             "trail": 0.15
           }
         },
         {
-          "at": 0.9,
+          "at": 0.88,
           "pose": {
             "x": -3,
             "y": -3,
             "rotation": 3,
-            "crest": 0.15
+            "crest": -0.25,
+            "armLeft": 0.15,
+            "armRight": 0.2
           }
         },
         {
@@ -575,7 +608,7 @@
       "label": "Fly forward",
       "caption": "Catch the current",
       "poster": 0.48,
-      "description": "Lift off, cruise forward with a swept crest, then float home",
+      "description": "Lean into flight; crest and arms trail, then swing back to rest",
       "keyframes": [
         {
           "at": 0,
@@ -596,12 +629,13 @@
           "pose": {
             "x": -20,
             "y": -28,
-            "rotation": 17,
-            "crest": 0.8,
-            "legLeft": -0.6,
-            "legRight": 0.6,
-            "scaleX": 1.07,
-            "scaleY": 0.94,
+            "rotation": 29,
+            "crest": 0.2,
+            "wind": 0.35,
+            "depth": 0.8,
+            "legLeft": -0.2,
+            "legRight": -0.2,
+            "yaw": 0.15,
             "trail": 0.65,
             "mouthOpen": 1
           }
@@ -611,13 +645,14 @@
           "pose": {
             "x": 3,
             "y": -37,
-            "rotation": 19,
+            "rotation": 35,
             "crest": 1,
-            "legLeft": -0.85,
-            "legRight": 0.75,
-            "armLeft": -0.35,
-            "scaleX": 1.1,
-            "scaleY": 0.92,
+            "wind": 1,
+            "depth": 0.9,
+            "legLeft": -0.3,
+            "legRight": -0.4,
+            "armLeft": -0.15,
+            "yaw": 0.3,
             "trail": 1,
             "mouthOpen": 1
           }
@@ -627,25 +662,37 @@
           "pose": {
             "x": 28,
             "y": -34,
-            "rotation": 16,
-            "crest": 0.9,
-            "legLeft": -0.7,
-            "legRight": 0.55,
-            "scaleX": 1.07,
-            "scaleY": 0.95,
+            "rotation": 34,
+            "crest": 0.85,
+            "wind": 0.95,
+            "depth": 0.65,
+            "legLeft": -0.2,
+            "legRight": -0.25,
+            "yaw": 0.25,
             "trail": 0.9,
             "mouthOpen": 0.9
           }
         },
         {
-          "at": 0.84,
+          "at": 0.82,
           "pose": {
             "x": 14,
             "y": -14,
-            "rotation": 3,
-            "crest": 0.2,
+            "rotation": 7,
+            "crest": 0.65,
+            "wind": 0.5,
+            "depth": 0.25,
             "trail": 0.2,
             "mouthOpen": 0.5
+          }
+        },
+        {
+          "at": 0.92,
+          "pose": {
+            "y": -2,
+            "crest": -0.18,
+            "armLeft": 0.15,
+            "armRight": 0.2
           }
         },
         {
@@ -659,7 +706,7 @@
       "label": "Fly diagonally",
       "caption": "Up and onward",
       "poster": 0.5,
-      "description": "Accelerate diagonally upward with a long trailing foot and stardust",
+      "description": "Climb up-right with folded arms, a trailing crest and stardust",
       "keyframes": [
         {
           "at": 0,
@@ -668,7 +715,7 @@
         {
           "at": 0.13,
           "pose": {
-            "x": -18,
+            "x": -12,
             "y": 9,
             "rotation": -7,
             "scaleX": 1.1,
@@ -681,12 +728,13 @@
           "pose": {
             "x": -13,
             "y": -22,
-            "rotation": 28,
-            "scaleX": 0.98,
-            "scaleY": 1.04,
-            "crest": 0.85,
-            "legLeft": -1,
-            "legRight": 0.6,
+            "rotation": 23,
+            "crest": 0.2,
+            "wind": 0.35,
+            "depth": 0.8,
+            "legLeft": -0.3,
+            "legRight": 0.4,
+            "yaw": 0.15,
             "heading": -45,
             "trail": 0.75,
             "sparkle": 0.5,
@@ -698,13 +746,13 @@
           "pose": {
             "x": 8,
             "y": -61,
-            "rotation": 31,
-            "scaleX": 0.98,
-            "scaleY": 1.08,
-            "crest": 0.9,
-            "armRight": 0.4,
-            "legLeft": -1,
-            "legRight": 0.7,
+            "rotation": 30,
+            "crest": 1,
+            "wind": 1,
+            "depth": 1,
+            "legLeft": -0.35,
+            "legRight": 0.6,
+            "yaw": 0.25,
             "heading": -45,
             "trail": 1,
             "sparkle": 1,
@@ -718,11 +766,13 @@
           "pose": {
             "x": 28,
             "y": -82,
-            "rotation": 25,
-            "scaleY": 1.04,
-            "crest": 0.65,
-            "legLeft": -0.8,
-            "legRight": 0.45,
+            "rotation": 27,
+            "crest": 0.85,
+            "wind": 0.9,
+            "depth": 0.7,
+            "legLeft": -0.2,
+            "legRight": 0.4,
+            "yaw": 0.2,
             "heading": -45,
             "trail": 0.9,
             "sparkle": 0.8,
@@ -735,7 +785,9 @@
             "x": 18,
             "y": -38,
             "rotation": 9,
-            "armRight": 0.3,
+            "crest": 0.5,
+            "wind": 0.4,
+            "depth": 0.2,
             "heading": -45,
             "trail": 0.2,
             "sparkle": 0.4,
@@ -746,6 +798,7 @@
           "at": 0.94,
           "pose": {
             "y": 4,
+            "crest": -0.18,
             "scaleX": 1.04,
             "scaleY": 0.96,
             "heading": -45
@@ -782,11 +835,13 @@
           "at": 0.3,
           "pose": {
             "y": -34,
-            "scaleX": 0.92,
-            "scaleY": 1.12,
-            "armLeft": 0.95,
-            "armRight": 1,
-            "crest": -0.1,
+            "scaleX": 0.96,
+            "scaleY": 1.05,
+            "armLeft": 0.5,
+            "armRight": 0.55,
+            "wind": 0.35,
+            "depth": 0.9,
+            "crest": 0.2,
             "heading": -90,
             "trail": 1,
             "mouthOpen": 1
@@ -796,10 +851,12 @@
           "at": 0.46,
           "pose": {
             "y": -88,
-            "scaleX": 0.97,
-            "scaleY": 1.04,
+            "scaleX": 0.99,
+            "scaleY": 1.02,
             "armLeft": 1,
             "armRight": 1,
+            "depth": 0.5,
+            "crest": 0.35,
             "heading": -90,
             "trail": 0.85,
             "mouthOpen": 1
@@ -811,6 +868,8 @@
             "y": -84,
             "armLeft": 0.9,
             "armRight": 1,
+            "depth": 0.1,
+            "crest": -0.1,
             "heading": -90,
             "trail": 0.2,
             "mouthOpen": 1
@@ -820,10 +879,11 @@
           "at": 0.76,
           "pose": {
             "y": -14,
-            "scaleX": 0.97,
-            "scaleY": 1.04,
+            "scaleX": 0.98,
+            "scaleY": 1.02,
             "armLeft": 0.35,
             "armRight": 0.4,
+            "crest": -0.2,
             "mouthOpen": 0.7
           }
         },

@@ -1,4 +1,4 @@
-import { EMBER_MODEL, emberContour, emberExpression, normalizeEmberPose, type EmberExpression, type EmberPose } from "./model";
+import { EMBER_MODEL, emberContour, emberSideWalls, emberExpression, normalizeEmberPose, type EmberExpression, type EmberPose } from "./model";
 
 /** A small platform-neutral vector display list. No React, native or DOM dependencies. */
 export interface EmberNode {
@@ -22,7 +22,6 @@ export function createEmberScene({ id, pose, expression, shadow = true }: EmberS
   const c = EMBER_MODEL.palette;
   const body = emberContour(p);
   const yawScale = Math.cos(p.yaw * 1.12);
-  const rimWidth = 26 + Math.abs(p.yaw) * 16;
   const faceShift = p.yaw * 38;
   const eye = (x: number, open: number): EmberNode => node("g", { transform: `translate(${x} 206)` }, [
     node("g", { opacity: f(open) }, [
@@ -50,11 +49,6 @@ export function createEmberScene({ id, pose, expression, shadow = true }: EmberS
       node("linearGradient", { id: `${prefix}-gold`, x1: "20%", y1: "0%", x2: "85%", y2: "100%" }, [
         node("stop", { offset: "0%", stopColor: c.light }), node("stop", { offset: "70%", stopColor: c.gold }),
       ]),
-      node("linearGradient", { id: `${prefix}-rim`, x1: "0%", y1: "85%", x2: "90%", y2: "15%" }, [
-        node("stop", { offset: "0%", stopColor: c.edge, stopOpacity: 1 }),
-        node("stop", { offset: "45%", stopColor: c.edge, stopOpacity: 0.95 }),
-        node("stop", { offset: "85%", stopColor: c.edge, stopOpacity: 0 }),
-      ]),
       node("clipPath", { id: `${prefix}-body` }, [node("path", { d: body })]),
       node("clipPath", { id: `${prefix}-mouth` }, [node("path", { d: mouth })]),
     ]),
@@ -66,11 +60,11 @@ export function createEmberScene({ id, pose, expression, shadow = true }: EmberS
     ]),
     node("g", { opacity: f(p.sparkle * (1 - p.trail * 0.85)) }, [sparkle(287, 88, 12), sparkle(318, 114, 7), sparkle(303, 57, 6), sparkle(65, 105, 8)]),
     node("g", { transform: `translate(${f(p.x)} ${f(p.y)}) translate(180 235) rotate(${f(p.rotation)}) scale(${f(p.scaleX * yawScale)} ${f(p.scaleY)}) translate(-180 -235)` }, [
+      // Filled connecting surfaces restore the baseline's directional extrusion.
+      // The gold face occludes inward-facing walls; there is no outline stroke or second back star.
+      node("path", { d: emberSideWalls(p), fill: c.edge }),
       node("path", { d: body, fill: `url(#${prefix}-gold)` }),
-      // The contour is also the rim's centerline. Clipping keeps its inner half and
-      // gives the face and shading exactly the same tips, not two displaced stars.
       node("g", { clipPath: `url(#${prefix}-body)` }, [
-        node("path", { d: body, fill: "none", stroke: `url(#${prefix}-rim)`, strokeWidth: f(rimWidth), strokeLinejoin: "round" }),
         node("path", { d: emberContour(p, true), fill: c.edge }),
         face,
       ]),

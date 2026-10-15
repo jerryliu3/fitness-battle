@@ -22,3 +22,30 @@ function sheet(actions, title) {
 fs.writeFileSync(path.join(output, "ember-pose-sheet.svg"), sheet(EMBER_ACTIONS, "STAR EMBER · ONE SILHOUETTE / NINE MOTIONS"));
 fs.writeFileSync(path.join(output, "ember-flight-sheet.svg"), sheet(["flyForward", "flyDiagonal", "jumpUp"], "STAR EMBER · FORWARD / DIAGONAL / UPWARD"));
 console.log(`Exported neutral SVG, pose sheets and model JSON to ${output}`);
+
+// Optional review media, using Next's existing Sharp dependency. The model itself has no dependencies.
+if (process.argv.includes("--previews")) {
+  async function previews() {
+    const sharp = require(require.resolve("sharp", { paths: [fs.realpathSync("apps/web/node_modules/next")] }));
+    for (const name of ["ember-pose-sheet", "ember-flight-sheet"]) {
+      await sharp(path.join(output, `${name}.svg`)).png().toFile(path.join(output, `${name}.png`));
+    }
+    const width = 1000, height = 400, frameCount = 64, frames = [];
+    const actions = ["flyForward", "flyDiagonal", "jumpUp", "dash"];
+    for (let frame = 0; frame < frameCount; frame++) {
+      const time = frame * 50;
+      const cells = actions.map((action, i) => {
+        const svg = exportEmberSvg({ pose: sampleEmber(action, time) })
+          .replaceAll("ember-export", `ember-review-${i}`)
+          .replace('<svg xmlns=', `<svg x="${i * 250 + 5}" y="40" width="240" height="320" xmlns=`);
+        return `${svg}<text x="${i * 250 + 125}" y="380" text-anchor="middle" font-family="sans-serif" font-size="15" font-weight="600" fill="#12141a">${EMBER_CLIPS[action].label}</text>`;
+      }).join("");
+      const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}"><rect width="100%" height="100%" fill="#eef1f4"/><text x="25" y="28" font-family="sans-serif" font-size="12" font-weight="600" letter-spacing="2" fill="#5c6578">STAR EMBER · JOINT MOTION / DIRECTIONAL DEPTH</text>${cells}</svg>`;
+      frames.push(await sharp(Buffer.from(svg)).ensureAlpha().raw().toBuffer());
+    }
+    await sharp(Buffer.concat(frames), { raw: { width, height: height * frameCount, channels: 4, pageHeight: height } })
+      .gif({ loop: 0, delay: Array(frameCount).fill(50), colours: 128, dither: 0, effort: 3 }).toFile(path.join(output, "ember-motion-review.gif"));
+    console.log("Rendered PNG sheets and a 20 fps motion review GIF");
+  }
+  previews().catch(error => { console.error(error); process.exitCode = 1; });
+}

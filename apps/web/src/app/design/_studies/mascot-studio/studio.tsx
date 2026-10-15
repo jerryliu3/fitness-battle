@@ -35,8 +35,8 @@ export function MascotStudio() {
   const reset = () => { setOverrides({}); setExpression("auto"); setShadow(true); };
 
   const control = (label: string, key: keyof EmberPose, min = -1, max = 1) => <label className={styles.slider} key={key}>
-    <span>{label}<output aria-live="off">{(overrides[key] ?? 0).toFixed(2)}</output></span>
-    <input aria-label={label} type="range" min={min} max={max} step="0.01" value={overrides[key] ?? 0} onChange={event => { setPlaying(false); setOverrides(value => ({ ...value, [key]: Number(event.target.value) })); }} />
+    <span>{label}<output aria-live="off">{pose[key].toFixed(2)}</output></span>
+    <input aria-label={label} type="range" min={min} max={max} step="0.01" value={pose[key]} onChange={event => { setPlaying(false); setOverrides(value => ({ ...value, [key]: Number(event.target.value) })); }} />
   </label>;
 
   return <main className={styles.studio}>
@@ -79,6 +79,7 @@ export function MascotStudio() {
         {control("Flame bend", "crest")}
         <div className={styles.controlPair}>{control("Left point", "armLeft")}{control("Right point", "armRight")}</div>
         <div className={styles.controlPair}>{control("Left foot", "legLeft")}{control("Right foot", "legRight")}</div>
+        <div className={styles.controlPair}>{control("Arms · wind drag", "wind", 0)}{control("Side depth", "depth", 0)}</div>
         <label className={styles.shadowToggle}><input type="checkbox" checked={shadow} onChange={event => setShadow(event.target.checked)} />Ground shadow<span>Transparent artwork</span></label>
       </aside>
     </div>
