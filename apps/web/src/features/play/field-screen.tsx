@@ -60,9 +60,14 @@ export function FieldScreen() {
             aria-pressed={current}
             onClick={() => {
               setShowSleep(false);
+              if (!joined && current) return;
               requireParticipate(`Sign in to compete in ${item.name}.`, () => {
-                dispatch(joined ? { type: "set-primary", sport: item.id as SportId } : { type: "opt-in", sport: item.id as SportId });
-                if (joined) dispatch({ type: "set-focus", focus: { family: "sport", id: item.id } });
+                if (joined) {
+                  dispatch({ type: "set-primary", sport: item.id as SportId });
+                  dispatch({ type: "set-focus", focus: { family: "sport", id: item.id } });
+                  return;
+                }
+                dispatch({ type: "opt-in", sport: item.id as SportId });
               });
             }}
           >
@@ -71,7 +76,7 @@ export function FieldScreen() {
               <br />
               <small>{current ? "This week" : joined ? "Joined" : "Not joined"}</small>
             </span>
-            <b>{current ? "Current" : joined ? "Switch" : "Join"}</b>
+            <b>{current && joined ? "Current" : joined ? "Switch" : current ? "Join below" : "Join"}</b>
           </button>
         );
       })}

@@ -53,6 +53,11 @@ export function ArenaScreen() {
     <section aria-label="Weekly track">
       <p className="ps-kicker">Arena</p>
       <h1>{sport.name}</h1>
+      {!board.optedIn ? (
+        <p className="ps-note">
+          <Link href="/field">Join this week’s field</Link> to take a lane.
+        </p>
+      ) : null}
       {showArrival && you ? (
         <div className="ah-arena-track">
           {visible.map((lane) => {

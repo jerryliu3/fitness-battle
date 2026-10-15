@@ -90,7 +90,7 @@ export function VisitProvider({ children }: { children: ReactNode }) {
     });
     setFinished(!reveal);
     setProgress(reveal ? 0 : 1);
-    if (reveal && path !== "/board") router.push("/board");
+    if (reveal && path !== "/board" && !path.startsWith("/onboarding")) router.push("/board");
     if (!reveal) saveSeen(snapshot);
   }, [accountId, loadStatus, path, persist, router, saveSeen, snapshot]);
 
