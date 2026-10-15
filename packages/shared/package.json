@@ -12,6 +12,7 @@
     "./matching": "./src/matching/index.ts",
     "./notifications": "./src/notifications/index.ts",
     "./mascot": "./src/mascot/index.ts",
+    "./boot": "./src/boot/index.ts",
     "./types": "./src/types.ts"
   },
   "scripts": {

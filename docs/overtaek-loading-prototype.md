@@ -4,11 +4,14 @@ Product boot splash and design study share the OVERTAKE → OVERTAEK letter chor
 
 ## Product boot splash
 
-On play routes, `PhoneShell` shows `apps/web/src/shell/boot-splash.tsx` while compete state is loading **or** the overtake animation has not finished (`boot-gate.ts`). The animation always runs to completion even if app data is already ready. If the animation finishes first, a spinner appears under the settled OVERTAEK mark until data is ready.
+Gate + motion live in `@fitness-battle/shared/boot` (`shouldShowBootSplash`, `bootFrame`, ~780 ms). The animation **always runs to completion** even when compete data is already ready; if the mark settles first, a spinner waits under OVERTAEK until data is ready.
 
-Letter travel uses the short boot curve in `boot-splash-motion.ts` (~0.9 s): hold ready, zoom across, stop. Ember’s body samples the studio `dash` clip (windup → burst → rest) on that same progress; clip `x`/`y` are zeroed so the stage host alone carries Ember across the wordmark. Optical alignment lifts the SVG so the face matches capital height despite viewBox jump headroom. Background tabs pause until visible. Reduced motion jumps to the finished wordmark and releases the animation gate.
+- **Web:** `PhoneShell` shows `apps/web/src/shell/boot-splash.tsx` on play routes.
+- **Mobile (TestFlight / Expo):** `BootGate` in `apps/mobile/app/_layout.tsx` shows `apps/mobile/src/ui/boot-splash.tsx` before the tab stack. Local AsyncStorage hydrate is usually instant — without this gate the app would skip straight to Today.
 
-The wordmark font is `--font-overtaek` (Nunito Sans 900) from the root layout. No WebGL mesh is used on the product splash.
+Letter travel: hold ready, zoom across, stop. Ember’s body samples the studio `dash` clip on that same progress; clip `x`/`y` are zeroed so the stage host alone carries Ember across the wordmark. Background / inactive app pauses the pass. Reduced motion jumps to the finished wordmark and releases the animation gate.
+
+Wordmark type is Nunito Sans 900 (`--font-overtaek` on web; `NunitoSans_900Black` on Expo). No WebGL mesh on the product splash.
 
 ## Design study
 

@@ -3,8 +3,8 @@
 import { useEffect, useRef, useState } from "react";
 import { EMBER_CLIPS, EMBER_REST, sampleEmber, type EmberPose } from "@fitness-battle/shared/mascot";
 import { Ember } from "@/components/mascot/ember";
-import { clamp } from "@/features/overtaek/motion";
-import { BOOT_DURATION_MS, bootDashProgress, bootFrame } from "./boot-splash-motion";
+import { BOOT_DURATION_MS, bootDashProgress, bootFrame, clamp } from "@fitness-battle/shared/boot";
+
 import "./boot-splash.css";
 
 type BootSplashProps = {
