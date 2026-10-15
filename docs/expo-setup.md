@@ -129,4 +129,10 @@ Screenshots, privacy nutrition, HealthKit usage text, support URL (`https://fitn
 
 ## Push notifications note
 
-You enabled Push on the App ID — good for later. The mobile app already has notification settings (master + category toggles) and registers a **stub** device token via `@fitness-battle/shared`. Shipping *actual* APNs/FCM delivery still needs Expo Notifications (or similar) plus a push service. Credentials/build can proceed without that wiring.
+You enabled Push on the App ID — good for later. Product path today:
+
+1. Settings UI (web You + mobile `/settings`) for master + category toggles
+2. Stub device tokens via `@fitness-battle/shared`
+3. Account persistence in Supabase (`notification_preferences`, `push_devices`, `notification_outbox`) through `/api/notifications` when live auth is on
+
+Shipping *actual* APNs/FCM delivery still needs Expo Notifications (or similar) plus provider credentials. The outbox records stub test sends until that lands.

@@ -1,7 +1,6 @@
 import {
   NOTIFICATION_CATEGORIES,
   permissionLabel,
-  setCategoryEnabled,
   type NotificationPreferences,
 } from "@fitness-battle/shared";
 import { useEffect, useState } from "react";
@@ -21,22 +20,41 @@ import {
   detectionPlatform,
   disableNativePush,
   enableNativePush,
-  loadNotificationPreferences,
-  saveNotificationPreferences,
+  hydrateNotificationPreferences,
+  updateNativeCategory,
+  type SyncIdentity,
 } from "../src/lib/push-notifications";
+import { mobileEnv } from "../src/lib/env";
+import { supabase } from "../src/lib/supabase";
 import { colors, fonts } from "../src/theme";
 
 export default function SettingsScreen() {
   const [prefs, setPrefs] = useState<NotificationPreferences | null>(null);
   const [busy, setBusy] = useState(false);
   const [note, setNote] = useState<string | null>(null);
+  const [identity, setIdentity] = useState<SyncIdentity | null>(null);
   const platform = detectionPlatform();
 
   useEffect(() => {
     let alive = true;
-    loadNotificationPreferences().then((next) => {
+    void (async () => {
+      let nextIdentity: SyncIdentity | null = null;
+      if (!mobileEnv.useDemoData) {
+        const { data } = await supabase.auth.getSession();
+        const userId = data.session?.user?.id;
+        if (userId) {
+          nextIdentity = {
+            userId,
+            localOnly: false,
+            accessToken: data.session?.access_token,
+          };
+        }
+      }
+      if (!alive) return;
+      setIdentity(nextIdentity);
+      const next = await hydrateNotificationPreferences(nextIdentity);
       if (alive) setPrefs(next);
-    });
+    })();
     return () => {
       alive = false;
     };
@@ -46,12 +64,17 @@ export default function SettingsScreen() {
     setBusy(true);
     setNote(null);
     try {
-      const next = enabled ? await enableNativePush() : await disableNativePush();
+      const next = enabled
+        ? await enableNativePush(identity)
+        : await disableNativePush(identity);
       setPrefs(next);
+      const synced = identity && !identity.localOnly
+        ? " Synced to your account."
+        : " Stored on this device only.";
       setNote(
         enabled
-          ? `Stub ${platform} token registered. Live push is not wired yet.`
-          : "Push turned off on this device.",
+          ? `Stub ${platform} token registered. Live push is not wired yet.${synced}`
+          : `Push turned off on this device.${synced}`,
       );
     } finally {
       setBusy(false);
@@ -62,27 +85,35 @@ export default function SettingsScreen() {
     id: (typeof NOTIFICATION_CATEGORIES)[number]["id"],
     enabled: boolean,
   ) {
-    // Read-modify-write from storage so rapid toggles don't clobber each other.
-    const current = await loadNotificationPreferences();
-    const next = await saveNotificationPreferences(
-      setCategoryEnabled(current, id, enabled),
-    );
-    setPrefs(next);
+    setBusy(true);
+    try {
+      const next = await updateNativeCategory(id, enabled, identity);
+      setPrefs(next);
+    } finally {
+      setBusy(false);
+    }
   }
 
   async function sendTest() {
-    const result = await deliverNativeNotification({
-      category: "week_summary",
-      title: "Overtaek",
-      body: "Test push — delivery is stubbed on this device.",
-      path: "/settings",
-    });
+    const result = await deliverNativeNotification(
+      {
+        category: "week_summary",
+        title: "Overtaek",
+        body: "Test push — delivery is stubbed on this device.",
+        path: "/settings",
+      },
+      identity,
+    );
     if (!result.ok) {
       setNote("Turn notifications on before testing.");
       return;
     }
     Alert.alert(result.payload.title, result.payload.body);
-    setNote("Stub delivery shown as an in-app alert.");
+    setNote(
+      result.persisted
+        ? "Stub delivery shown and recorded in the outbox."
+        : "Stub delivery shown as an in-app alert.",
+    );
   }
 
   if (!prefs) {
@@ -103,8 +134,11 @@ export default function SettingsScreen() {
         <Text style={styles.title}>Notifications</Text>
         <Text style={styles.copy}>
           Same controls as the web app. Enabling registers a stub {platform}{" "}
-          device token so the rest of the product can treat push as available.
-          APNs / FCM are not connected yet.
+          device token
+          {identity && !identity.localOnly
+            ? " and syncs preferences to your account"
+            : " on this device"}
+          . APNs / FCM are not connected yet.
         </Text>
 
         <View style={styles.card}>
@@ -135,7 +169,7 @@ export default function SettingsScreen() {
               </View>
               <Switch
                 value={prefs.categories[category.id]}
-                disabled={!prefs.enabled}
+                disabled={!prefs.enabled || busy}
                 onValueChange={(value) => void toggleCategory(category.id, value)}
                 trackColor={{ false: colors.line, true: colors.ink }}
                 thumbColor={prefs.categories[category.id] ? colors.lime : "#f4f4f5"}
@@ -145,8 +179,8 @@ export default function SettingsScreen() {
         </View>
 
         <Pressable
-          style={[styles.line, !prefs.enabled && styles.disabled]}
-          disabled={!prefs.enabled}
+          style={[styles.line, (!prefs.enabled || busy) && styles.disabled]}
+          disabled={!prefs.enabled || busy}
           onPress={() => void sendTest()}
         >
           <Text style={styles.lineText}>Send test notification</Text>

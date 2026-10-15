@@ -8,22 +8,38 @@ import {
   type NotificationPreferences,
 } from "@fitness-battle/shared";
 import { useEffect, useState } from "react";
+import { useAuth } from "@/components/auth-context";
 import {
   deliverWebNotification,
   disableWebPush,
   enableWebPush,
-  loadNotificationPreferences,
-  saveNotificationPreferences,
+  hydrateNotificationPreferences,
+  updateCategoryPreferences,
+  type SyncIdentity,
 } from "@/lib/push-notifications";
 
 export function NotificationSettings() {
+  const { user, demoMode } = useAuth();
   const [prefs, setPrefs] = useState<NotificationPreferences | null>(null);
   const [note, setNote] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [accountPersisted, setAccountPersisted] = useState(false);
+
+  const identity: SyncIdentity | null = user
+    ? { userId: user.id, localOnly: demoMode || user.mode === "demo" }
+    : null;
 
   useEffect(() => {
-    setPrefs(loadNotificationPreferences());
-  }, []);
+    let alive = true;
+    void hydrateNotificationPreferences(identity).then((next) => {
+      if (!alive) return;
+      setPrefs(next);
+      setAccountPersisted(Boolean(identity && !identity.localOnly));
+    });
+    return () => {
+      alive = false;
+    };
+  }, [user?.id, demoMode, user?.mode]);
 
   if (!prefs) {
     return (
@@ -41,7 +57,9 @@ export function NotificationSettings() {
     setBusy(true);
     setNote(null);
     try {
-      const next = turningOn ? await enableWebPush() : disableWebPush();
+      const next = turningOn
+        ? await enableWebPush(identity)
+        : await disableWebPush(identity);
       setPrefs(next);
       if (turningOn && !next.enabled) {
         setNote(
@@ -51,40 +69,55 @@ export function NotificationSettings() {
         );
         return;
       }
+      const synced =
+        identity && !identity.localOnly
+          ? " Saved to your account."
+          : " Stored on this device only (demo).";
       setNote(
         next.enabled
-          ? "Push armed on this browser. Delivery still uses a stub token until a provider is wired."
-          : "Push turned off on this device.",
+          ? `Push armed on this browser. Delivery still uses a stub token until APNs/FCM is wired.${synced}`
+          : `Push turned off on this device.${synced}`,
       );
     } finally {
       setBusy(false);
     }
   }
 
-  function onToggleCategory(category: NotificationCategoryId) {
-    setPrefs((prev) => {
-      if (!prev) return prev;
-      return saveNotificationPreferences(
-        setCategoryEnabled(prev, category, !prev.categories[category]),
+  async function onToggleCategory(category: NotificationCategoryId) {
+    setBusy(true);
+    try {
+      const next = await updateCategoryPreferences(
+        setCategoryEnabled(current, category, !current.categories[category]),
+        identity,
       );
-    });
+      setPrefs(next);
+    } finally {
+      setBusy(false);
+    }
   }
 
-  function onTest() {
-    const result = deliverWebNotification({
-      category: "week_summary",
-      title: "Overtaek",
-      body: "Test push — delivery is stubbed on this device.",
-      path: "/you#notifications",
-    });
+  async function onTest() {
+    const result = await deliverWebNotification(
+      {
+        category: "week_summary",
+        title: "Overtaek",
+        body: "Test push — delivery is stubbed on this device.",
+        path: "/you#notifications",
+      },
+      identity,
+    );
     if (!result.ok) {
       setNote("Turn notifications on and allow permission before testing.");
       return;
     }
-    setNote(
+    const where =
       result.mode === "browser"
-        ? "Browser notification shown (stub registration)."
-        : `Would deliver: ${result.payload.title} — ${result.payload.body}`,
+        ? "Browser notification shown"
+        : result.mode === "stub"
+          ? "Stub delivery recorded"
+          : "In-app stub delivery";
+    setNote(
+      `${where}${result.persisted ? " and saved to the outbox" : ""}.`,
     );
   }
 
@@ -92,9 +125,10 @@ export function NotificationSettings() {
     <section className="fb-card" id="notifications">
       <h2>Notifications</h2>
       <p className="fb-copy">
-        Control push for this browser. Mobile apps have the same switches. Live
-        APNs / FCM delivery is not wired yet — enabling registers a stub device
-        token so the rest of the product can treat push as available.
+        Control push for this browser and your account. Preferences and device
+        tokens sync when you are signed in with live Supabase. Live APNs / FCM
+        delivery is not wired yet — enabling registers a stub device token and
+        records test sends in the notification outbox.
       </p>
 
       <div className="fb-row">
@@ -105,6 +139,7 @@ export function NotificationSettings() {
             {current.registration?.token
               ? ` · ${current.registration.stub ? "stub" : "live"} token`
               : ""}
+            {accountPersisted ? " · account sync on" : " · device only"}
           </small>
         </span>
         <button
@@ -131,8 +166,8 @@ export function NotificationSettings() {
             className={`fb-switch${current.categories[category.id] ? " on" : ""}`}
             role="switch"
             aria-checked={current.categories[category.id]}
-            disabled={!current.enabled}
-            onClick={() => onToggleCategory(category.id)}
+            disabled={!current.enabled || busy}
+            onClick={() => void onToggleCategory(category.id)}
           >
             <span className="fb-switch-knob" />
             <span className="fb-sr-only">
@@ -145,8 +180,8 @@ export function NotificationSettings() {
       <button
         type="button"
         className="fb-btn-line"
-        disabled={!current.enabled}
-        onClick={onTest}
+        disabled={!current.enabled || busy}
+        onClick={() => void onTest()}
       >
         Send test notification
       </button>

@@ -16,6 +16,10 @@ Cloud OAuth runs on the web server. Apple Health and Health Connect run on the p
 
 Catalog source: `packages/shared/src/fitness/providers.ts`.
 
+## Push notifications
+
+Account prefs and device tokens persist in Supabase (`notification_preferences`, `push_devices`). Test sends write a `notification_outbox` row with `status=stubbed`. APNs / FCM / web-push credentials are not connected yet — enabling push still registers a stub token so the product path is end-to-end without a live provider.
+
 ## Keys
 
 Set these on the web server. Leave them empty until you have them. Demo mode (`NEXT_PUBLIC_USE_DEMO_DATA=true`) refuses to finish OAuth even if the keys are present.
