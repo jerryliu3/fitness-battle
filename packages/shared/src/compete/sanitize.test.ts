@@ -65,4 +65,24 @@ describe("sanitizeCompeteStateForAccount", () => {
     };
     expect(withDerivedPendingReveals(state).pendingRevealIds).toEqual(["a"]);
   });
+
+  it("keeps activities on the wire document for relational persist", () => {
+    const activities = [
+      {
+        id: "a1",
+        sport: "running" as const,
+        startedAt: "2026-10-12T12:00:00.000Z",
+        distanceM: 5000,
+        movingSec: 1500,
+        avgHr: null,
+        verified: true,
+        source: "strava" as const,
+      },
+    ];
+    const prepared = prepareCompeteStateForAccount({
+      ...freshState(),
+      activities,
+    });
+    expect(prepared.activities).toEqual(activities);
+  });
 });

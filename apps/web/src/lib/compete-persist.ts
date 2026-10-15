@@ -1,16 +1,29 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import {
   dispositionOf,
+  freshHealthRatings,
+  freshState,
   periodResultId,
   prepareCompeteStateForAccount,
   provenanceOf,
+  PROVIDER_IDS,
+  PROVIDERS,
+  sanitizeCompeteStateForAccount,
   SPORT_IDS,
   withDerivedPendingReveals,
   type Activity,
   type CompeteState,
+  type Duel,
   type GoalDistance,
+  type HealthMetricId,
+  type HealthPeriodResult,
+  type HealthRating,
+  type LinkStatus,
   type PeriodResult,
+  type ProviderId,
   type Rating,
+  type ReadinessMark,
+  type SleepNight,
   type SportId,
   type WaveEnrollment,
 } from "@fitness-battle/shared";
@@ -23,48 +36,50 @@ function asSport(value: string): SportId | null {
     : null;
 }
 
-function isAcked(row: PeriodResult): boolean {
-  return row.acknowledgedAt != null && row.acknowledgedAt !== "";
+function asProvider(value: string): ProviderId | null {
+  return (PROVIDER_IDS as readonly string[]).includes(value)
+    ? (value as ProviderId)
+    : null;
 }
 
-/** Merge snapshot + DB results; never drop snapshot-ahead rows after a laggy dual-write. */
-function mergePeriodResults(
-  snapshot: PeriodResult[],
-  fromDb: PeriodResult[],
-): PeriodResult[] {
-  const byId = new Map<string, PeriodResult>();
-  for (const row of snapshot) byId.set(row.id, row);
-  for (const row of fromDb) {
-    const existing = byId.get(row.id);
-    if (!existing) {
-      byId.set(row.id, row);
-      continue;
-    }
-    // Prefer acknowledged (dismissed reveal); else newer settledAt.
-    if (isAcked(existing) !== isAcked(row)) {
-      byId.set(row.id, isAcked(row) ? row : existing);
-      continue;
-    }
-    byId.set(
-      row.id,
-      existing.settledAt >= row.settledAt ? existing : row,
-    );
+function asActivitySource(label: string): Activity["source"] {
+  const provider = asProvider(label);
+  if (provider) return provider;
+  if (label === "history" || label === "manual") return label;
+  return "manual";
+}
+
+function asProvenance(
+  value: unknown,
+): NonNullable<Activity["provenance"]> {
+  if (
+    value === "recorded" ||
+    value === "imported" ||
+    value === "manual" ||
+    value === "demo"
+  ) {
+    return value;
   }
-  return [...byId.values()].sort(
-    (a, b) =>
-      b.periodStart.localeCompare(a.periodStart) ||
-      a.sport.localeCompare(b.sport),
-  );
+  return "recorded";
 }
 
-const CLOUD_PROVIDERS = new Set([
-  "strava",
-  "garmin",
-  "apple_health",
-  "google_health",
-  "whoop",
-  "oura",
-]);
+function asDisposition(
+  value: unknown,
+): NonNullable<Activity["disposition"]> {
+  if (value === "counted" || value === "pending" || value === "excluded") {
+    return value;
+  }
+  return "counted";
+}
+
+function asLinkStatus(value: string): LinkStatus {
+  if (value === "connected" || value === "stub" || value === "disconnected") {
+    return value;
+  }
+  return "disconnected";
+}
+
+const CLOUD_PROVIDERS = new Set<string>(PROVIDER_IDS);
 
 function splitCompeteKey(activity: Activity): {
   provider: string;
@@ -94,27 +109,124 @@ function splitCompeteKey(activity: Activity): {
   };
 }
 
+/** Replace compete-owned rows for a user (document SoT for that table). */
+async function replaceRows(
+  db: Db,
+  table: string,
+  userId: string,
+  rows: Record<string, unknown>[],
+): Promise<void> {
+  const { error: clearError } = await db.from(table).delete().eq("user_id", userId);
+  if (clearError) throw new Error(clearError.message);
+  if (rows.length === 0) return;
+  const { error } = await db.from(table).insert(rows);
+  if (error) throw new Error(error.message);
+}
+
 /**
- * Dual-write durable prefs / ratings / settled weeks / activities.
- * Snapshot jsonb stays the full document — additive SoT only.
- * Never deletes activity rows (sync may race ahead of the blob).
+ * Activities SoT write — `public.activities` only.
+ * Never deletes rows (live sync can race ahead of the compete document).
  */
-export async function persistCompeteCore(
+async function persistCompeteActivities(
   db: Db,
   userId: string,
   state: CompeteState,
 ): Promise<void> {
   const clean = prepareCompeteStateForAccount(state);
+  if (clean.activities.length === 0) return;
+
+  const { data: categories, error: categoryError } = await db
+    .from("categories")
+    .select("id, slug");
+  if (categoryError) throw new Error(categoryError.message);
+  const categoryBySlug = new Map(
+    (categories ?? []).map((row) => [row.slug as string, row.id as string]),
+  );
+
+  const activityRows = clean.activities.flatMap((activity) => {
+    const parts = splitCompeteKey(activity);
+    const categoryId = categoryBySlug.get(activity.sport);
+    if (!categoryId) return [];
+    return [
+      {
+        user_id: userId,
+        provider: parts.provider,
+        external_id: parts.externalId,
+        category_id: categoryId,
+        started_at: activity.startedAt,
+        metric_value:
+          activity.sport === "strength" ? activity.movingSec : activity.distanceM,
+        moving_sec: activity.movingSec,
+        avg_hr: activity.avgHr,
+        raw_name: "",
+        sport: activity.sport,
+        distance_m: activity.distanceM,
+        verified: activity.verified,
+        provenance: provenanceOf(activity),
+        disposition: dispositionOf(activity),
+        disposition_reason: activity.dispositionReason ?? null,
+        compete_key: parts.competeKey,
+        source_label: parts.sourceLabel,
+      },
+    ];
+  });
+
+  if (activityRows.length === 0) return;
+  const { error } = await db.from("activities").upsert(activityRows, {
+    onConflict: "user_id,provider,external_id",
+  });
+  if (error) throw new Error(error.message);
+}
+
+/**
+ * Readiness is shared with fitness sync — upsert only, never delete-all.
+ * Sync can race ahead of the compete document the same way activities do.
+ */
+async function persistCompeteReadiness(
+  db: Db,
+  userId: string,
+  marks: ReadinessMark[],
+): Promise<void> {
+  const rows = marks.flatMap((mark) => {
+    const provider = asProvider(String(mark.provider));
+    if (!provider) return [];
+    return [
+      {
+        user_id: userId,
+        provider,
+        external_id: mark.id,
+        day: mark.day,
+        score: mark.score,
+      },
+    ];
+  });
+  if (rows.length === 0) return;
+  const { error } = await db.from("readiness_marks").upsert(rows, {
+    onConflict: "user_id,provider,external_id",
+  });
+  if (error) throw new Error(error.message);
+}
+
+/** Persist the full signed-in compete account to relational tables only. */
+export async function persistCompeteAccount(
+  db: Db,
+  userId: string,
+  state: CompeteState,
+): Promise<string> {
+  const clean = prepareCompeteStateForAccount(state);
+  const updatedAt = new Date().toISOString();
 
   const { error: profileError } = await db.from("profiles").upsert({
     id: userId,
     display_name: clean.name.slice(0, 80) || "Athlete",
     city: clean.city.slice(0, 80),
     primary_sport: clean.primary,
-    updated_at: new Date().toISOString(),
+    updated_at: updatedAt,
   });
   if (profileError) throw new Error(profileError.message);
 
+  const focusFamily = clean.focus.family;
+  const focusId = clean.focus.id;
   const { error: prefsError } = await db.from("athlete_prefs").upsert({
     user_id: userId,
     freezes_left: clean.freezesLeft,
@@ -123,7 +235,10 @@ export async function persistCompeteCore(
     lesson_done_on: clean.lessonDoneOn,
     training_goal_distance: clean.trainingGoal?.distance ?? null,
     training_goal_deadline: clean.trainingGoal?.deadline ?? null,
-    updated_at: new Date().toISOString(),
+    clock_period_start: clean.clock.periodStart,
+    focus_family: focusFamily,
+    focus_id: focusId,
+    updated_at: updatedAt,
   });
   if (prefsError) throw new Error(prefsError.message);
 
@@ -166,112 +281,143 @@ export async function persistCompeteCore(
     if (error) throw new Error(error.message);
   }
 
-  const { error: clearFreezeError } = await db
-    .from("period_freezes")
-    .delete()
-    .eq("user_id", userId);
-  if (clearFreezeError) throw new Error(clearFreezeError.message);
-  if (clean.frozenPeriods.length > 0) {
-    const { error } = await db.from("period_freezes").insert(
-      clean.frozenPeriods.map((periodStart) => ({
-        user_id: userId,
-        period_start: periodStart,
-      })),
-    );
-    if (error) throw new Error(error.message);
-  }
-
-  const { data: categories, error: categoryError } = await db
-    .from("categories")
-    .select("id, slug");
-  if (categoryError) throw new Error(categoryError.message);
-  const categoryBySlug = new Map(
-    (categories ?? []).map((row) => [row.slug as string, row.id as string]),
+  await replaceRows(
+    db,
+    "period_freezes",
+    userId,
+    clean.frozenPeriods.map((periodStart) => ({
+      user_id: userId,
+      period_start: periodStart,
+    })),
   );
 
-  const activityRows = clean.activities.flatMap((activity) => {
-    const parts = splitCompeteKey(activity);
-    const categoryId = categoryBySlug.get(activity.sport);
-    if (!categoryId) return [];
-    return [
-      {
-        user_id: userId,
-        provider: parts.provider,
-        external_id: parts.externalId,
-        category_id: categoryId,
-        started_at: activity.startedAt,
-        metric_value:
-          activity.sport === "strength" ? activity.movingSec : activity.distanceM,
-        moving_sec: activity.movingSec,
-        avg_hr: activity.avgHr,
-        raw_name: "",
-        sport: activity.sport,
-        distance_m: activity.distanceM,
-        verified: activity.verified,
-        provenance: provenanceOf(activity),
-        disposition: dispositionOf(activity),
-        disposition_reason: activity.dispositionReason ?? null,
-        compete_key: parts.competeKey,
-        source_label: parts.sourceLabel,
-      },
-    ];
-  });
+  await persistCompeteActivities(db, userId, clean);
 
-  if (activityRows.length > 0) {
-    const { error } = await db.from("activities").upsert(activityRows, {
-      onConflict: "user_id,provider,external_id",
-    });
-    if (error) throw new Error(error.message);
-  }
+  await replaceRows(
+    db,
+    "wave_enrollments",
+    userId,
+    clean.enrollments.map((enrollment) => ({
+      user_id: userId,
+      sport: enrollment.sport,
+      wave_start: enrollment.waveStart,
+      week_end: enrollment.weekEnd,
+      capacity: enrollment.capacity,
+      peer_ids: enrollment.peerIds,
+      synthetic_ids: enrollment.syntheticIds,
+      auto_enroll_next: enrollment.autoEnrollNext,
+      crew_id: enrollment.crewId ?? null,
+    })),
+  );
 
-  // Enrollments are a small per-viewer set — replace from document (same as freezes).
-  const { error: clearEnrollError } = await db
-    .from("wave_enrollments")
-    .delete()
-    .eq("user_id", userId);
-  if (clearEnrollError) throw new Error(clearEnrollError.message);
-  if (clean.enrollments.length > 0) {
-    const { error } = await db.from("wave_enrollments").insert(
-      clean.enrollments.map((enrollment) => ({
-        user_id: userId,
-        sport: enrollment.sport,
-        wave_start: enrollment.waveStart,
-        week_end: enrollment.weekEnd,
-        capacity: enrollment.capacity,
-        peer_ids: enrollment.peerIds,
-        synthetic_ids: enrollment.syntheticIds,
-        auto_enroll_next: enrollment.autoEnrollNext,
-        crew_id: enrollment.crewId ?? null,
-      })),
-    );
-    if (error) throw new Error(error.message);
-  }
+  await replaceRows(
+    db,
+    "sleep_nights",
+    userId,
+    clean.sleepNights.map((night) => ({
+      user_id: userId,
+      night_id: night.id,
+      day: night.day,
+      score: night.score,
+      duration_min: night.durationMin,
+      efficiency: night.efficiency,
+      deep_min: night.deepMin,
+      rem_min: night.remMin,
+      light_min: night.lightMin,
+      awake_min: night.awakeMin,
+      source: night.source,
+      verified: night.verified,
+    })),
+  );
+
+  await replaceRows(
+    db,
+    "health_ratings",
+    userId,
+    clean.healthRatings.map((rating) => ({
+      user_id: userId,
+      metric: rating.metric,
+      elo: rating.elo,
+      opted_in: rating.optedIn,
+      lock_elo: rating.lockElo,
+      lock_period: rating.lockPeriod,
+      auto_enroll_next: rating.autoEnrollNext,
+    })),
+  );
+
+  await replaceRows(
+    db,
+    "health_period_results",
+    userId,
+    clean.healthResults.map((row) => ({
+      user_id: userId,
+      result_id: row.id,
+      metric: row.metric,
+      period_start: row.periodStart,
+      period_end: row.periodEnd,
+      place: row.place,
+      field_size: row.fieldSize,
+      score: row.score,
+      elo_before: row.eloBefore,
+      elo_after: row.eloAfter,
+      settled_at: row.settledAt,
+    })),
+  );
+
+  await replaceRows(
+    db,
+    "compete_duels",
+    userId,
+    clean.duels.map((duel) => ({
+      user_id: userId,
+      duel_id: duel.id,
+      sport: duel.sport,
+      period_start: duel.periodStart,
+      rival_id: duel.rivalId,
+      rival_name: duel.rivalName,
+      rival_elo: duel.rivalElo,
+      source: duel.source,
+    })),
+  );
+
+  await persistCompeteReadiness(db, userId, clean.readiness);
+
+  return updatedAt;
 }
 
-/**
- * Overlay dual-written relational SoT onto the snapshot document.
- * Snapshot arrays remain a cache; when prefs/results/enrollments/ratings
- * rows exist they win. Bulky activity rows stay snapshot-primary (sync races).
- */
-export async function hydrateCompeteCollections(
+/** Load signed-in compete state entirely from relational tables. */
+export async function loadCompeteAccount(
   db: Db,
   userId: string,
-  state: CompeteState,
-): Promise<CompeteState> {
+): Promise<{ state: CompeteState; updatedAt: string } | null> {
+  const { data: prefs, error: prefsError } = await db
+    .from("athlete_prefs")
+    .select("*")
+    .eq("user_id", userId)
+    .maybeSingle();
+  if (prefsError) throw new Error(prefsError.message);
+
+  if (!prefs) return null;
+
   const [
     { data: profile },
-    { data: prefs },
     { data: ratingRows },
     { data: resultRows },
     { data: freezeRows },
     { data: enrollmentRows },
+    { data: activityRows },
+    { data: sleepRows },
+    { data: healthRatingRows },
+    { data: healthResultRows },
+    { data: duelRows },
+    { data: readinessRows },
+    { data: connectionRows },
   ] = await Promise.all([
     db
       .from("profiles")
       .select("display_name, city, primary_sport")
       .eq("id", userId)
       .maybeSingle(),
-    db.from("athlete_prefs").select("*").eq("user_id", userId).maybeSingle(),
     db.from("sport_ratings").select("*").eq("user_id", userId),
     db
       .from("period_results")
@@ -280,39 +426,72 @@ export async function hydrateCompeteCollections(
       .order("period_start", { ascending: false }),
     db.from("period_freezes").select("period_start").eq("user_id", userId),
     db.from("wave_enrollments").select("*").eq("user_id", userId),
+    db
+      .from("activities")
+      .select(
+        "compete_key, sport, started_at, distance_m, moving_sec, avg_hr, verified, provenance, disposition, disposition_reason, source_label, provider",
+      )
+      .eq("user_id", userId)
+      .not("compete_key", "is", null)
+      .order("started_at", { ascending: false })
+      .limit(2000),
+    db.from("sleep_nights").select("*").eq("user_id", userId).order("day", {
+      ascending: false,
+    }),
+    db.from("health_ratings").select("*").eq("user_id", userId),
+    db
+      .from("health_period_results")
+      .select("*")
+      .eq("user_id", userId)
+      .order("period_start", { ascending: false }),
+    db.from("compete_duels").select("*").eq("user_id", userId),
+    db.from("readiness_marks").select("*").eq("user_id", userId),
+    db.from("fitness_connections").select("provider, status").eq("user_id", userId),
   ]);
 
-  let next = state;
+  const periodStart =
+    prefs.clock_period_start != null
+      ? String(prefs.clock_period_start)
+      : freshState().clock.periodStart;
+
+  let state = freshState(new Date(periodStart));
+  state = {
+    ...state,
+    clock: { kind: "weekly", periodStart },
+  };
 
   if (profile) {
     const primary = asSport(String(profile.primary_sport ?? ""));
-    next = {
-      ...next,
-      name: String(profile.display_name ?? next.name).slice(0, 80) || next.name,
-      city: String(profile.city ?? next.city).slice(0, 80),
-      primary: primary ?? next.primary,
+    state = {
+      ...state,
+      name: String(profile.display_name ?? state.name).slice(0, 80) || state.name,
+      city: String(profile.city ?? state.city).slice(0, 80),
+      primary: primary ?? state.primary,
     };
   }
 
-  if (prefs) {
-    const distance = prefs.training_goal_distance as GoalDistance | null;
-    next = {
-      ...next,
-      freezesLeft: Number(prefs.freezes_left ?? next.freezesLeft),
-      calibrated: Boolean(prefs.calibrated),
-      onboardingCompleted: Boolean(prefs.onboarding_completed),
-      lessonDoneOn: prefs.lesson_done_on
-        ? String(prefs.lesson_done_on)
+  const distance = prefs.training_goal_distance as GoalDistance | null;
+  const focusFamily =
+    prefs.focus_family === "health" || prefs.focus_family === "sport"
+      ? prefs.focus_family
+      : "sport";
+  const focusId = String(prefs.focus_id ?? state.primary);
+  state = {
+    ...state,
+    freezesLeft: Number(prefs.freezes_left ?? state.freezesLeft),
+    calibrated: Boolean(prefs.calibrated),
+    onboardingCompleted: Boolean(prefs.onboarding_completed),
+    lessonDoneOn: prefs.lesson_done_on ? String(prefs.lesson_done_on) : null,
+    trainingGoal:
+      distance && prefs.training_goal_deadline
+        ? { distance, deadline: String(prefs.training_goal_deadline) }
         : null,
-      trainingGoal:
-        distance && prefs.training_goal_deadline
-          ? {
-              distance,
-              deadline: String(prefs.training_goal_deadline),
-            }
-          : null,
-    };
-  }
+    focus:
+      focusFamily === "health"
+        ? { family: "health", id: focusId as HealthMetricId }
+        : { family: "sport", id: (asSport(focusId) ?? state.primary) },
+    frozenPeriods: (freezeRows ?? []).map((row) => String(row.period_start)),
+  };
 
   if (ratingRows && ratingRows.length > 0) {
     const bySport = new Map<SportId, Rating>();
@@ -329,85 +508,195 @@ export async function hydrateCompeteCollections(
         lockPeriod: String(row.lock_period),
       });
     }
-    next = {
-      ...next,
-      ratings: next.ratings.map((rating) => bySport.get(rating.sport) ?? rating),
+    state = {
+      ...state,
+      ratings: state.ratings.map((rating) => bySport.get(rating.sport) ?? rating),
     };
   }
 
-  if (resultRows && resultRows.length > 0) {
-    const fromDb = resultRows.flatMap((row) => {
-      const sport = asSport(String(row.sport));
-      const track =
-        row.track === "verified" || row.track === "open" ? row.track : null;
-      if (!sport || !track) return [];
-      const periodStart = String(row.period_start);
+  const periodResults: PeriodResult[] = (resultRows ?? []).flatMap((row) => {
+    const sport = asSport(String(row.sport));
+    const track =
+      row.track === "verified" || row.track === "open" ? row.track : null;
+    if (!sport || !track) return [];
+    const start = String(row.period_start);
+    return [
+      {
+        id: periodResultId(start, sport, track),
+        periodStart: start,
+        periodEnd: String(row.period_end),
+        sport,
+        track,
+        place: Number(row.place),
+        fieldSize: Number(row.field_size),
+        effort: Number(row.effort),
+        distanceM: Number(row.distance_m),
+        movingSec: Number(row.moving_sec),
+        eloBefore: Number(row.elo_before),
+        eloAfter: Number(row.elo_after),
+        frozen: Boolean(row.frozen),
+        settledAt: String(row.settled_at),
+        acknowledgedAt: row.acknowledged_at ? String(row.acknowledged_at) : null,
+      },
+    ];
+  });
+
+  const enrollments: WaveEnrollment[] = (enrollmentRows ?? []).flatMap((row) => {
+    const sport = asSport(String(row.sport));
+    if (!sport) return [];
+    return [
+      {
+        sport,
+        waveStart: String(row.wave_start),
+        weekEnd: String(row.week_end),
+        capacity: Number(row.capacity),
+        peerIds: (row.peer_ids as string[]) ?? [],
+        syntheticIds: (row.synthetic_ids as string[]) ?? [],
+        autoEnrollNext: Boolean(row.auto_enroll_next),
+        crewId: row.crew_id ? String(row.crew_id) : null,
+      },
+    ];
+  });
+
+  const activities: Activity[] = (activityRows ?? []).flatMap((row) => {
+    const sport = asSport(String(row.sport ?? ""));
+    const competeKey = row.compete_key ? String(row.compete_key) : "";
+    if (!sport || !competeKey) return [];
+    return [
+      {
+        id: competeKey,
+        sport,
+        startedAt: String(row.started_at),
+        distanceM: Number(row.distance_m ?? 0),
+        movingSec: Number(row.moving_sec ?? 0),
+        avgHr: row.avg_hr == null ? null : Number(row.avg_hr),
+        verified: Boolean(row.verified),
+        source: asActivitySource(String(row.source_label ?? row.provider ?? "manual")),
+        provenance: asProvenance(row.provenance),
+        disposition: asDisposition(row.disposition),
+        dispositionReason: row.disposition_reason
+          ? String(row.disposition_reason)
+          : undefined,
+      },
+    ];
+  });
+
+  const sleepNights: SleepNight[] = (sleepRows ?? []).map((row) => ({
+    id: String(row.night_id),
+    metric: "sleep" as const,
+    day: String(row.day).slice(0, 10),
+    score: Number(row.score),
+    durationMin: Number(row.duration_min ?? 0),
+    efficiency: row.efficiency == null ? null : Number(row.efficiency),
+    deepMin: row.deep_min == null ? null : Number(row.deep_min),
+    remMin: row.rem_min == null ? null : Number(row.rem_min),
+    lightMin: row.light_min == null ? null : Number(row.light_min),
+    awakeMin: row.awake_min == null ? null : Number(row.awake_min),
+    source: asActivitySource(String(row.source)) as SleepNight["source"],
+    verified: Boolean(row.verified),
+  }));
+
+  const healthFromDb = (healthRatingRows ?? []).flatMap((row) => {
+    if (row.metric !== "sleep") return [];
+    return [
+      {
+        metric: "sleep" as const,
+        elo: Number(row.elo),
+        optedIn: Boolean(row.opted_in),
+        lockElo: Number(row.lock_elo),
+        lockPeriod: String(row.lock_period),
+        autoEnrollNext: Boolean(row.auto_enroll_next),
+      } satisfies HealthRating,
+    ];
+  });
+  const healthRatings =
+    healthFromDb.length > 0 ? healthFromDb : freshHealthRatings(periodStart);
+
+  const healthResults: HealthPeriodResult[] = (healthResultRows ?? []).flatMap(
+    (row) => {
+      if (row.metric !== "sleep") return [];
       return [
         {
-          id: periodResultId(periodStart, sport, track),
-          periodStart,
+          id: String(row.result_id),
+          metric: "sleep",
+          periodStart: String(row.period_start),
           periodEnd: String(row.period_end),
-          sport,
-          track,
           place: Number(row.place),
           fieldSize: Number(row.field_size),
-          effort: Number(row.effort),
-          distanceM: Number(row.distance_m),
-          movingSec: Number(row.moving_sec),
+          score: Number(row.score),
           eloBefore: Number(row.elo_before),
           eloAfter: Number(row.elo_after),
-          frozen: Boolean(row.frozen),
           settledAt: String(row.settled_at),
-          acknowledgedAt: row.acknowledged_at
-            ? String(row.acknowledged_at)
-            : null,
-        } satisfies PeriodResult,
-      ];
-    });
-    next = {
-      ...next,
-      periodResults: mergePeriodResults(next.periodResults, fromDb),
-    };
-  }
-
-  // Empty freezes are meaningful only once dual-write has created prefs.
-  if (prefs && freezeRows) {
-    next = {
-      ...next,
-      frozenPeriods: freezeRows.map((row) => String(row.period_start)),
-    };
-  }
-
-  if (enrollmentRows && enrollmentRows.length > 0) {
-    const fromDb: WaveEnrollment[] = enrollmentRows.flatMap((row) => {
-      const sport = asSport(String(row.sport));
-      if (!sport) return [];
-      return [
-        {
-          sport,
-          waveStart: String(row.wave_start),
-          weekEnd: String(row.week_end),
-          capacity: Number(row.capacity),
-          peerIds: (row.peer_ids as string[]) ?? [],
-          syntheticIds: (row.synthetic_ids as string[]) ?? [],
-          autoEnrollNext: Boolean(row.auto_enroll_next),
-          crewId: row.crew_id ? String(row.crew_id) : null,
         },
       ];
-    });
-    // Per sport: later wave wins; same wave prefers DB seating.
-    const bySport = new Map<SportId, WaveEnrollment>();
-    for (const item of next.enrollments) bySport.set(item.sport, item);
-    for (const item of fromDb) {
-      const existing = bySport.get(item.sport);
-      if (!existing || item.waveStart >= existing.waveStart) {
-        bySport.set(item.sport, item);
-      }
-    }
-    next = { ...next, enrollments: [...bySport.values()] };
-  }
+    },
+  );
 
-  return withDerivedPendingReveals(next);
+  const duels: Duel[] = (duelRows ?? []).flatMap((row) => {
+    const sport = asSport(String(row.sport));
+    if (!sport) return [];
+    if (row.source !== "auto" && row.source !== "invite") return [];
+    return [
+      {
+        id: String(row.duel_id),
+        sport,
+        periodStart: String(row.period_start),
+        rivalId: String(row.rival_id),
+        rivalName: String(row.rival_name),
+        rivalElo: Number(row.rival_elo),
+        source: row.source,
+      },
+    ];
+  });
+
+  const readiness: ReadinessMark[] = (readinessRows ?? []).flatMap((row) => {
+    const provider = asProvider(String(row.provider));
+    if (!provider) return [];
+    return [
+      {
+        id: String(row.external_id),
+        provider,
+        day: String(row.day).slice(0, 10),
+        score: Number(row.score),
+      },
+    ];
+  });
+
+  const statusByProvider = new Map(
+    (connectionRows ?? []).map((row) => [
+      String(row.provider),
+      asLinkStatus(String(row.status)),
+    ]),
+  );
+  const links = PROVIDERS.map((provider) => {
+    const status = statusByProvider.get(provider.id) ?? "disconnected";
+    return {
+      provider: provider.id,
+      linked: status === "connected" || status === "stub",
+      status,
+    };
+  });
+
+  state = withDerivedPendingReveals({
+    ...state,
+    periodResults,
+    enrollments,
+    activities,
+    sleepNights,
+    healthRatings,
+    healthResults,
+    duels,
+    readiness,
+    links,
+    demoNow: null,
+    crewBoard: null,
+    pendingRevealIds: [],
+  });
+
+  return {
+    state: sanitizeCompeteStateForAccount(state),
+    updatedAt: String(prefs.updated_at ?? new Date().toISOString()),
+  };
 }
 
 /** Hydrate crewBoard from shared crew_week_fields when enrollment has crew_id. */
@@ -430,7 +719,6 @@ export async function hydrateCrewBoard(
         .eq("wave_start", pinned.waveStart)
         .maybeSingle(),
       db.from("crews").select("name").eq("id", pinned.crewId).maybeSingle(),
-      // SECURITY DEFINER — peer open Elo is not readable via sport_ratings RLS.
       db.rpc("crew_field_roster", { p_crew_id: pinned.crewId }),
     ]);
   if (!field) {

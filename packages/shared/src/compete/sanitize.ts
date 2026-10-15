@@ -19,8 +19,8 @@ export function stripDurableCrewBoard(state: CompeteState): CompeteState {
 }
 
 /**
- * Account write shape: no demoNow, no durable crewBoard, no pendingRevealIds.
- * Reveal ids are always derived from periodResults.acknowledgedAt.
+ * Shape used before relational persist: no demoNow, no durable crewBoard,
+ * no pendingRevealIds (derived from acknowledgedAt).
  */
 export function prepareCompeteStateForAccount(
   state: CompeteState,
@@ -30,7 +30,7 @@ export function prepareCompeteStateForAccount(
   return { ...cleaned, pendingRevealIds: [] };
 }
 
-/** Recompute pendingRevealIds after relational hydrate / migrate. */
+/** Recompute pendingRevealIds after relational hydrate. */
 export function withDerivedPendingReveals(state: CompeteState): CompeteState {
   const pendingRevealIds = pendingRevealIdsFromResults(state.periodResults);
   if (
