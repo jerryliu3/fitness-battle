@@ -129,4 +129,12 @@ Screenshots, privacy nutrition, HealthKit usage text, support URL (`https://fitn
 
 ## Push notifications note
 
-You enabled Push on the App ID — good for later. Shipping *actual* push still needs app code + a push service (Expo Notifications, etc.). Credentials/build can proceed now; push product work is a follow-up.
+Push capability is on the App ID. Product path:
+
+1. Settings UI (web You + mobile `/settings`) for master + category toggles
+2. Physical iOS/Android builds call `expo-notifications` → `ExponentPushToken[…]`
+3. Tokens + prefs persist in Supabase (`push_devices`, `notification_preferences`)
+4. Server sends through the **Expo Push Service** (`/api/notifications/test` and `/api/notifications/send`), which fans out to APNs/FCM
+5. Simulators / demo mode still use stub tokens; outbox status is `stubbed` | `sent` | `failed`
+
+Optional: set `EXPO_ACCESS_TOKEN` on the web server (Expo → Access tokens) for higher Push API limits. Apple Push key / FCM credentials are managed by EAS when you enable push on the project.

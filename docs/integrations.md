@@ -16,6 +16,29 @@ Cloud OAuth runs on the web server. Apple Health and Health Connect run on the p
 
 Catalog source: `packages/shared/src/fitness/providers.ts`.
 
+## Push notifications
+
+| Surface | Token | Delivery |
+| --- | --- | --- |
+| iOS / Android (dev/prod build) | Expo push token via `expo-notifications` | Server → Expo Push API → APNs/FCM |
+| Simulator / demo | Stub token (`stub-*`) | Outbox `stubbed` only |
+| Web | Browser permission + stub device row | Local `Notification` API; no web-push VAPID yet |
+
+Tables: `notification_preferences`, `push_devices`, `notification_outbox`. Routes: `GET/PUT /api/notifications`, `POST /api/notifications/test`, `POST /api/notifications/send`. Optional env: `EXPO_ACCESS_TOKEN`.
+
+API auth: cookie session (web) or `Authorization: Bearer <access_token>` (mobile). The request-scoped Supabase client must carry that Bearer so RLS can write `push_devices`.
+
+Migrations under `supabase/migrations/` are applied by `.github/workflows/supabase-migrate.yml` on push to `main` (needs GitHub Actions secrets `SUPABASE_ACCESS_TOKEN`, `SUPABASE_PROJECT_REF`, `SUPABASE_DB_PASSWORD`). You can also enable Supabase → Project Settings → Integrations → GitHub for the same effect.
+
+Product hooks (web play shell):
+
+| Category | When |
+| --- | --- |
+| `week_summary` | New `periodResults` row after week settlement |
+| `rival_moves` | Your open-board place worsens |
+| `lesson_reminder` | Once per UTC day if today’s lesson is still open |
+| `connection_alerts` | Tracker sync/connect failure on You |
+
 ## Keys
 
 Set these on the web server. Leave them empty until you have them. Demo mode (`NEXT_PUBLIC_USE_DEMO_DATA=true`) refuses to finish OAuth even if the keys are present.

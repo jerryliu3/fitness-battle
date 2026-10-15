@@ -3,6 +3,9 @@
 import { AuthGate } from "@/components/auth-gate";
 import { useAuth } from "@/components/auth-context";
 import { useCompete } from "@/components/compete-context";
+import { NotificationSettings } from "@/components/notification-settings";
+import { requestAccountPush } from "@/lib/request-push";
+import type { SyncIdentity } from "@/lib/push-notifications";
 import { useTheme } from "@/theme/theme-provider";
 import { THEME_OPTIONS } from "@/theme/catalog";
 import {
@@ -47,6 +50,9 @@ function YouContent() {
   const [seeded, setSeeded] = useState(false);
   const [syncNote, setSyncNote] = useState<string | null>(null);
   const searchParams = useSearchParams();
+  const pushIdentity: SyncIdentity | null = user
+    ? { userId: user.id, localOnly: demoMode || user.mode === "demo" }
+    : null;
   const tracker = searchParams.get("tracker");
   const trackerProvider = searchParams.get("provider");
   const appliedTracker = useRef<string | null>(null);
@@ -200,6 +206,9 @@ function YouContent() {
       };
       if (!response.ok) {
         setSyncNote(body.error ?? "Sync failed. Nothing new was counted.");
+        void requestAccountPush("connection_alerts", pushIdentity, {
+          provider: providerId,
+        });
         return;
       }
       applyRemote({ ...body, provider: providerId });
@@ -210,6 +219,9 @@ function YouContent() {
         return;
       }
       setSyncNote("Sync failed. No sample session was added.");
+      void requestAccountPush("connection_alerts", pushIdentity, {
+        provider: providerId,
+      });
     }
   }
 
@@ -366,6 +378,8 @@ function YouContent() {
           ))}
         </div>
       </section>
+
+      <NotificationSettings />
 
       <section className="fb-card">
         <label className="fb-field">
