@@ -16,6 +16,7 @@ What is loaded today versus what is still empty or synthetic.
 | Week close / Elo settle | `rollClock` on app load (UTC Mon boundary) | No server cron for the local engine; settles up to 12 missed weeks then jumps |
 | Week-complete reveal | `pendingRevealIds` + My track receipt | Place, Elo before→after, effort |
 | Season history | `periodResults` on Athlete | Cap 104 rows; open + verified tracks |
+| Past-self ghost | Shared `GhostReference` via `resolvePastSelfGhost` | Same-cutoff overlay from activities in a prior window (default: previous equal-length period). Not ranked. Arbitrary bounds / N-periods-ago supported; UI defaults to last week |
 
 There is **no production athlete dataset** behind the weekly compete field yet — peers are generated for matching.
 

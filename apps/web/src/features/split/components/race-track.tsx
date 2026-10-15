@@ -14,6 +14,8 @@ export function RaceTrack({
   trackMax,
   youLane,
   ghostEffort,
+  ghostName = "Your previous week",
+  ghostInitials = "PW",
   nearby,
   onSelect,
 }: {
@@ -22,6 +24,8 @@ export function RaceTrack({
   trackMax: number;
   youLane: TrackLane | null;
   ghostEffort: number;
+  ghostName?: string;
+  ghostInitials?: string;
   nearby: TrackLane[];
   onSelect?: (lane: TrackLane) => void;
 }) {
@@ -42,7 +46,7 @@ export function RaceTrack({
       {comparison === "self" ? (
         <div className="sp-lane ghost" aria-hidden={ghostEffort <= 0}>
           <div className="sp-lane-label">
-            <span>Last week</span>
+            <span>{ghostName}</span>
             <strong>
               {formatPts(ghostEffort)} <small>pts</small>
             </strong>
@@ -60,7 +64,7 @@ export function RaceTrack({
                 left: `${Math.min(100, (ghostEffort / trackMax) * 100)}%`,
               }}
             >
-              PW
+              {ghostInitials}
             </span>
           </div>
         </div>

@@ -317,6 +317,16 @@ export function FieldStage({
         selectedId={selectedId}
         onSelect={setSelectedId}
         unit={unit}
+        ghost={
+          showGhost && ghost
+            ? {
+                id: ghost.id,
+                name: ghost.name,
+                effort: valueAt(ghost, time, 0),
+                detail: "Past you · not ranked",
+              }
+            : null
+        }
       />
     </section>
   );

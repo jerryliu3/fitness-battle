@@ -162,10 +162,10 @@ export default function MyTrackPage() {
                     {youEffort - ghostEffort >= 0 ? "+" : ""}
                     {formatPts(youEffort - ghostEffort)}
                   </b>{" "}
-                  vs your previous week · same cutoff
+                  vs {board.ghost.name.toLowerCase()} · same cutoff
                 </>
               ) : (
-                "No counted work in the previous week at this cutoff."
+                `No counted work in ${board.ghost.name.toLowerCase()} at this cutoff.`
               )}
             </p>
             <Link href="/board" className="fb-btn">
@@ -334,10 +334,13 @@ export default function MyTrackPage() {
               </strong>
             </div>
           </div>
-          <section className="fm-lines" aria-label="Your week against the previous week">
+          <section
+            className="fm-lines"
+            aria-label={`Your week against ${board.ghost.name.toLowerCase()}`}
+          >
             {[
               { label: "YOUR WEEK", value: youEffort, mine: true },
-              { label: "PAST YOU", value: ghostEffort, mine: false },
+              { label: board.ghost.initials, value: ghostEffort, mine: false },
             ].map((row) => (
               <div key={row.label} className={row.mine ? "fm-line is-you" : "fm-line"}>
                 <span>{row.label}</span>
@@ -479,7 +482,7 @@ export default function MyTrackPage() {
                   setShowField(false);
                 }}
               >
-                Your previous week
+                {board.ghost.name}
               </button>
               <button
                 type="button"
@@ -495,6 +498,8 @@ export default function MyTrackPage() {
               trackMax={board.trackMax}
               youLane={youLane}
               ghostEffort={ghostEffort}
+              ghostName={board.ghost.name}
+              ghostInitials={board.ghost.initials}
               nearby={board.nearby}
             />
             <CheckpointControl
@@ -508,6 +513,7 @@ export default function MyTrackPage() {
             youLane={youLane}
             ghostEffort={ghostEffort}
             checkpointEffort={youEffort}
+            ghostLabel={board.ghost.name.toLowerCase()}
             onOpenField={() => setShowField(true)}
           />
         </div>

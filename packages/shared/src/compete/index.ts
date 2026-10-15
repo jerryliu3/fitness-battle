@@ -135,6 +135,21 @@ export {
   type CheckpointSeries,
 } from "./track";
 export {
+  DEFAULT_GHOST_SELECTOR,
+  alignedGhostNow,
+  ghostDisplayName,
+  ghostEffortAt,
+  ghostHasVolume,
+  ghostReferenceId,
+  resolveGhostPeriodBounds,
+  resolvePastSelfGhost,
+  shiftedPeriodBounds,
+  type GhostPeriodSelector,
+  type GhostReference,
+  type GhostSubject,
+  type ResolvePastSelfGhostInput,
+} from "./ghost";
+export {
   isTrainingGoal,
   suggestOpen,
   suggestToday,

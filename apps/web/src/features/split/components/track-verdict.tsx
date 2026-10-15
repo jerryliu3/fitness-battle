@@ -8,12 +8,14 @@ export function TrackVerdict({
   youLane,
   ghostEffort,
   checkpointEffort,
+  ghostLabel = "your previous week",
   onOpenField,
 }: {
   comparison: ComparisonMode;
   youLane: TrackLane | null;
   ghostEffort: number;
   checkpointEffort: number;
+  ghostLabel?: string;
   onOpenField?: () => void;
 }) {
   if (comparison === "field") {
@@ -45,7 +47,7 @@ export function TrackVerdict({
     );
   }
 
-  const copy = deltaCopy(checkpointEffort, ghostEffort);
+  const copy = deltaCopy(checkpointEffort, ghostEffort, ghostLabel);
   return (
     <aside className="sp-verdict" aria-live="polite">
       <p className="sp-kicker">Against yourself</p>
