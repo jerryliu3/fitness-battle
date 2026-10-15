@@ -18,6 +18,7 @@ import { motion, useReducedMotion } from "motion/react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState, type ReactNode } from "react";
+import { BootSplash } from "./boot-splash";
 import "./shell.css";
 
 const WARMED: Record<ShellTabId, ReactNode> = {
@@ -40,8 +41,10 @@ export function PhoneShell({
   const { user, loading } = useAuth();
   const { state, saveError, legacyOffer, loadStatus, recoverLegacy, retryLoad } = useCompete();
   const [pressed, setPressed] = useState<ShellTabId | null>(null);
+  const [bootAnimDone, setBootAnimDone] = useState(false);
   const matched = shellTabFromPath(path)?.id ?? null;
   const active = pressed ?? matched;
+  const dataReady = !(loadStatus === "loading" && !state);
 
   function notices() {
     if (hideTabs) return null;
@@ -97,8 +100,14 @@ export function PhoneShell({
     for (const tab of SHELL_TABS) router.prefetch(tab.href);
   }, [router]);
 
-  if (loadStatus === "loading" && !state) {
-    return <div className="boot-splash">Fitness Battle</div>;
+  // Finish the overtake animation even if compete state is already ready.
+  if (!dataReady || !bootAnimDone) {
+    return (
+      <BootSplash
+        waiting={bootAnimDone && !dataReady}
+        onAnimationComplete={() => setBootAnimDone(true)}
+      />
+    );
   }
 
   return (

@@ -1,10 +1,18 @@
-# Overtaek loading-wordmark prototype
+# Overtaek loading wordmark
 
-Open `/design/overtaek`. The route wrapper stays in `src/app/design/overtaek/`; the study lives in `src/app/design/_studies/overtaek-lab/`. Next treats `_studies` as a private folder, so that path adds no extra URL. This is an isolated, unindexed prototype with Play/Pause, replay, slow motion, and a position scrubber. It does not replace app startup or change the application name elsewhere.
+Product boot splash and design study share the same choreography: OVERTAKE → OVERTAEK with Star Ember.
+
+## Product boot splash
+
+On play routes, `PhoneShell` shows `apps/web/src/shell/boot-splash.tsx` while compete state is loading **or** the overtake animation has not finished. The animation always runs to completion even if app data is already ready. If the animation finishes first, a spinner appears under the settled OVERTAEK mark until data is ready. Reduced motion, missing WebGL, or asset failure jump to the finished wordmark and release the animation gate.
+
+Motion and WebGL live in `apps/web/src/features/overtaek/` (`motion.ts`, `renderer.ts`). The wordmark font is `--font-overtaek` (Nunito Sans 900) from the root layout.
+
+## Design study
+
+Open `/design/overtaek`. The route wrapper stays in `src/app/design/overtaek/`; the interactive study lives in `src/app/design/_studies/overtaek-lab/`. Next treats `_studies` as a private folder, so that path adds no extra URL. The study adds Play/Pause, replay, slow motion, and a position scrubber on top of the shared engine; it does not change application naming elsewhere.
 
 The initial mark reads OVERTAKE, with approved Star Ember artwork occupying K's slot. Ember turns right, accelerates above E, and settles on E's right as E glides left into the vacated slot. The final mark reads OVERTAEK. The original face stays stable; bounded damped springs add wind lag and a braking rebound in the flame tip and outer points. The accepted face texture is reused from `/brand/mascots/star-ember.webp`.
-
-`_studies/overtaek-lab/motion.ts` contains the deterministic motion and spring response. `renderer.ts` owns the native WebGL resources. The React component measures the real letter boxes after fonts load and on resize, and converts those positions into the 3D scene. It aborts pending asset loads and releases resources on unmount, including React development remounts.
 
 ## Asset and memory limits
 
@@ -14,14 +22,11 @@ The mesh contains 6,366 vertices / 11,660 triangles in 197,280 bytes of buffers.
 
 Regenerate the asset with `python3 scripts/build-overtaek-mesh.py` (preparation requires Pillow and NumPy). The generator derives the silhouette and padded depth from the existing WebP and writes the binary directly; it does not modify the source artwork.
 
-Reduced-motion users get the finished wordmark without fetching the mesh or allocating WebGL. Unavailable WebGL, failed assets, or graphics-context loss also produce a static final wordmark. The prototype never blocks navigation.
-
 ## Review
 
 - Initial OVERTAKE and final OVERTAEK spelling, with Ember replacing K.
-- Pass, braking, and rebound at normal speed and slow motion.
+- Boot splash holds until animation completes, then shows a spinner if data is still loading.
+- Pass, braking, and rebound at normal speed (and slow motion in the study).
 - Narrow layout, resize/font changes, and returning to the page.
 - Reduced motion and WebGL/asset failure fallback.
 - Typecheck, production build, and focused motion/asset tests.
-
-Verified: `pnpm typecheck`, `pnpm build:web`, and five focused Vitest tests passed. Asset regeneration matched byte for byte. Browser checks covered the initial mark, overtaking frame, final mark, complete replay, 320 px layout, and navigation away/back without console errors. The build used one temporary build worker and a bounded Node heap to limit preparation memory; repository build configuration is unchanged. Native reduced-motion and graphics-context-loss paths were not manually triggered in the browser.

@@ -1,0 +1,123 @@
+.boot-splash {
+  min-height: 100dvh;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 28px;
+  padding: 24px 16px;
+  background:
+    radial-gradient(ellipse 90% 70% at 50% 42%, #4a2a5c 0%, transparent 58%),
+    linear-gradient(165deg, #2c1937 0%, #1a0f22 55%, #241428 100%);
+  color: #fff9e9;
+}
+
+.boot-splash-stage {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: min(100%, 720px);
+  height: clamp(160px, 28vw, 240px);
+  overflow: hidden;
+  isolation: isolate;
+}
+
+.boot-splash-word {
+  display: flex;
+  align-items: center;
+  font-family: var(--font-overtaek), var(--font-body), sans-serif;
+  font-weight: 900;
+  font-size: clamp(36px, 9vw, 80px);
+  line-height: 1;
+  letter-spacing: -0.055em;
+  white-space: nowrap;
+  color: #fff9e9;
+}
+
+.boot-splash-slot {
+  position: relative;
+  display: inline-block;
+  width: 1.04em;
+  height: 1em;
+  flex: none;
+}
+
+.boot-splash-e {
+  display: inline-block;
+  letter-spacing: 0;
+}
+
+.boot-splash-fallback {
+  position: absolute;
+  inset: -0.06em;
+}
+
+.boot-splash-fallback img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.boot-splash-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.boot-splash-trail {
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: 2px;
+  border-radius: 2px;
+  background: linear-gradient(90deg, transparent, #ffcf47);
+  opacity: 0;
+  pointer-events: none;
+  z-index: 2;
+}
+
+.boot-splash-wait {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  min-height: 52px;
+}
+
+.boot-splash-spacer {
+  display: block;
+  min-height: 52px;
+}
+
+.boot-splash-spinner {
+  width: 22px;
+  height: 22px;
+  border: 2px solid #fff9e944;
+  border-top-color: #ffcf47;
+  border-radius: 50%;
+  animation: boot-spin 0.7s linear infinite;
+}
+
+.boot-splash-wait-label {
+  font-family: var(--font-body), sans-serif;
+  font-size: 13px;
+  letter-spacing: 0.04em;
+  color: #fff9e9cc;
+}
+
+@keyframes boot-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .boot-splash-spinner {
+    animation: none;
+    border-top-color: #fff9e944;
+    border-right-color: #ffcf47;
+  }
+}

@@ -2,8 +2,8 @@
 
 import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
-import { clamp, DURATION_MS, frameAt } from "./motion";
-import { createEmberRenderer, type EmberRenderer } from "./renderer";
+import { clamp, DURATION_MS, frameAt } from "@/features/overtaek/motion";
+import { createEmberRenderer, type EmberRenderer } from "@/features/overtaek/renderer";
 import styles from "./loading-prototype.module.css";
 
 interface Controls { play(): void; seek(p: number): void; slow(value: boolean): void }

@@ -350,17 +350,6 @@
   }
 }
 
-.boot-splash {
-  min-height: 100dvh;
-  display: grid;
-  place-items: center;
-  background: #fff9e9;
-  color: #40234e;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-
 .sheet-content {
   animation: sheet-up 220ms ease-out;
 }
