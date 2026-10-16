@@ -1,6 +1,9 @@
 import { createElement, useEffect, useRef } from "react";
 import { mobileEnv } from "../lib/env";
 import type { Arena3DProps } from "./arena-3d";
+
+const SYNC_MS = 80;
+
 export function Arena3D({
   model,
   onSelect,
@@ -12,6 +15,21 @@ export function Arena3D({
   const origin = new URL(mobileEnv.apiUrl).origin;
   const latest = useRef({ model, onSelect, onPan, onUnavailable });
   latest.current = { model, onSelect, onPan, onUnavailable };
+  const timer = useRef<number | null>(null);
+
+  function post(next = latest.current.model) {
+    ref.current?.contentWindow?.postMessage(next, origin);
+  }
+
+  function scheduleSync() {
+    if (!ready.current) return;
+    if (timer.current != null) return;
+    timer.current = window.setTimeout(() => {
+      timer.current = null;
+      post();
+    }, SYNC_MS);
+  }
+
   useEffect(() => {
     const receive = (event: MessageEvent) => {
       if (
@@ -23,7 +41,7 @@ export function Arena3D({
       const p = latest.current;
       if (m?.type === "arena-ready") {
         ready.current = true;
-        ref.current?.contentWindow?.postMessage(p.model, origin);
+        post(p.model);
       }
       if (
         m?.type === "arena-selected" &&
@@ -40,16 +58,15 @@ export function Arena3D({
     window.addEventListener("message", receive);
     return () => {
       clearTimeout(timeout);
+      if (timer.current != null) window.clearTimeout(timer.current);
       window.removeEventListener("message", receive);
     };
   }, [origin]);
+
   useEffect(() => {
-    if (!ready.current) return;
-    const id = window.setTimeout(() => {
-      ref.current?.contentWindow?.postMessage(latest.current.model, origin);
-    }, 80);
-    return () => window.clearTimeout(id);
-  }, [model, origin]);
+    scheduleSync();
+  }, [model]);
+
   return createElement("iframe", {
     ref,
     src: `${origin}/arena-scene`,
@@ -61,8 +78,9 @@ export function Arena3D({
       borderRadius: 20,
       background: "#edf2e8",
     },
-    onLoad: () =>
-      ref.current?.contentWindow?.postMessage(latest.current.model, origin),
+    onLoad: () => {
+      if (ready.current) post(latest.current.model);
+    },
     onError: onUnavailable,
   });
 }

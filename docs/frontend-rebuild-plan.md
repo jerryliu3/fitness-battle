@@ -31,7 +31,7 @@ Functionality, data, and the custom screens we already like stay. They move into
 
 - **Checkpoints.** The winding Today view: past counted sessions, Ace on today’s suggestion, blank future nodes, and the return that opens Arena when there is new counted progress. The route, discs, and mascot stay. Buttons and labels around them can be replaced.
 - **2D competition.** The lane track and the standings it draws from. Same model, same lanes. The toggle, replay, and surrounding totals can be restyled.
-- **3D competition.** The existing pursuit render stays on the web Arena, switched with the 2D track. It is a web extra until a phone port exists. It is not replaced by a chart from a library.
+- **3D competition.** The existing pursuit render stays on the web Arena, switched with the 2D track. Mobile embeds the same `/arena-scene` renderer. It is not replaced by a chart from a library.
 - **The data under those views.** Compete state, period standings, sessions, and crews. `@fitness-battle/shared`, Supabase, and the tracker and crew APIs stay.
 
 ## Replace the generic chrome
@@ -83,7 +83,7 @@ Onboarding and login sit outside the tabs. On a wide web window the same phone c
 
 - Shared tokens and tab names in [packages/shared](packages/shared), as plain data. No React Native or DOM imports there.
 - Expo screens in [apps/mobile](apps/mobile), HeroUI Native provider in the root layout. New tab routes replace the current single home screen.
-- Web shell in `apps/web/src/shell/` and `apps/web/src/ui/`, screens in `apps/web/src/features/today|arena|field|you/`. Arena on the web mounts the current [lane-track](apps/web/src/features/field/components/lane-track.tsx) and [live-pursuit](apps/web/src/features/field/components/live-pursuit.tsx).
+- Web shell in `apps/web/src/shell/` and `apps/web/src/ui/`, screens in `apps/web/src/features/today|arena|field|you/`. Arena mounts Focus [arena-lanes](apps/web/src/features/focus/arena-lanes.tsx) and [live-pursuit](apps/web/src/features/field/components/live-pursuit.tsx).
 - API routes stay. The current checkpoints-home branch is not the base to keep patching.
 
 ## Component redesign
@@ -93,7 +93,7 @@ This pass restyles the chrome around the views we are keeping. It does not redes
 - **Chrome.** New tab bar, boot splash (Overtaek OVERTAKE → OVERTAEK animation; spinner if data still loads after the mark settles), and account entry. The four tabs still open the same Today, Arena, Field, and You content.
 - **Buttons and rows.** Throw out the current button layouts. One primary action, one row height, library styling on both apps.
 - **Sheet.** The receipt, coaching tip, and athlete detail keep their content. The sheet itself is a library component.
-- **Track frame.** New switch, gain line, and replay control. [lane-track](apps/web/src/features/field/components/lane-track.tsx) and [live-pursuit](apps/web/src/features/field/components/live-pursuit.tsx) render as they do now.
+- **Track frame.** View switch, gain line, and window controls. Production uses Focus arena-lanes and live-pursuit; older lab lane-track lives under `design/_studies/shared`.
 - **Award card.** Week results use the goal-card shelf. This is a new frame for a result we already compute, not a new sport.
 - **Empty and guest.** Short line and one action. No slogan hero.
 - **Motion.** Tab pill and sheet come from the library. The return reveal and the track replay stay the ones we have. Reduced motion snaps to the end state.

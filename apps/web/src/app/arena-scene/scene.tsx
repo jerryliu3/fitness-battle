@@ -16,16 +16,12 @@ const Scene = dynamic(
   { ssr: false },
 );
 
-function parentOrigin(): string {
-  try {
-    if (document.referrer) return new URL(document.referrer).origin;
-  } catch {
-    /* ignore bad referrer */
-  }
-  return window.location.origin;
+function isNativeBridge() {
+  return !!(window as unknown as { ReactNativeWebView?: unknown })
+    .ReactNativeWebView;
 }
 
-function send(data: object) {
+function send(data: object, targetOrigin = "*") {
   const native = (
     window as unknown as {
       ReactNativeWebView?: { postMessage: (s: string) => void };
@@ -33,20 +29,20 @@ function send(data: object) {
   ).ReactNativeWebView;
   if (native) native.postMessage(JSON.stringify(data));
   else if (window.parent !== window)
-    window.parent.postMessage(data, parentOrigin());
+    window.parent.postMessage(data, targetOrigin);
 }
 
 export function ArenaScene() {
   const [model, setModel] = useState<ArenaSceneMessage | null>(null);
   const [error, setError] = useState(false);
+  const [parent, setParent] = useState<string | null>(null);
   useEffect(() => {
     function receive(event: MessageEvent) {
-      const native = !!(window as unknown as { ReactNativeWebView?: unknown })
-        .ReactNativeWebView;
-      if (!native) {
+      if (!isNativeBridge()) {
         if (event.source !== window.parent) return;
-        if (event.origin !== parentOrigin() && event.origin !== window.location.origin)
-          return;
+        // Learn the embedder origin from the first valid parent message.
+        if (!parent && event.origin) setParent(event.origin);
+        else if (parent && event.origin !== parent) return;
       }
       let data = event.data;
       try {
@@ -58,9 +54,9 @@ export function ArenaScene() {
       if (m) setModel(m);
     }
     window.addEventListener("message", receive);
-    send({ type: "arena-ready" });
+    send({ type: "arena-ready" }, parent ?? "*");
     return () => window.removeEventListener("message", receive);
-  }, []);
+  }, [parent]);
   return (
     <div
       style={{ height: "100dvh", background: "#edf2e8", overflow: "hidden" }}
@@ -86,11 +82,13 @@ export function ArenaScene() {
           look={defaultLook}
           unit={model.unit}
           view={model.view}
-          onPan={(center) => send({ type: "arena-pan", center })}
-          onSelect={(id) => send({ type: "arena-selected", id })}
+          onPan={(center) => send({ type: "arena-pan", center }, parent ?? "*")}
+          onSelect={(id) =>
+            send({ type: "arena-selected", id }, parent ?? "*")
+          }
           onUnavailable={() => {
             setError(true);
-            send({ type: "arena-unavailable" });
+            send({ type: "arena-unavailable" }, parent ?? "*");
           }}
         />
       ) : (

@@ -41,15 +41,17 @@ export default function Home() {
   const route = buildTodayRoute(state);
   const now = competeNow(state);
   const period = currentPeriodBounds(state.clock.kind, now);
-  const sessions = state.activities
-    .filter((a) => countsOnTrack(a, "open") && new Date(a.startedAt) <= now)
-    .slice()
-    .sort((a, b) => b.startedAt.localeCompare(a.startedAt))
-    .slice(0, 10);
-  const weekSessions = sessions.filter((a) => {
+  const counted = state.activities.filter(
+    (a) => countsOnTrack(a, "open") && new Date(a.startedAt) <= now,
+  );
+  const weekSessions = counted.filter((a) => {
     const at = new Date(a.startedAt).getTime();
     return at >= period.startsAt.getTime() && at < period.endsAt.getTime();
   }).length;
+  const sessions = counted
+    .slice()
+    .sort((a, b) => b.startedAt.localeCompare(a.startedAt))
+    .slice(0, 10);
   function today() {
     void AccessibilityInfo.isReduceMotionEnabled().then((reduce) => {
       if (!reduce)
