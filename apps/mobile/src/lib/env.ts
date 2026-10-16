@@ -10,7 +10,7 @@ export const mobileEnv = {
   supabaseUrl:
     publicEnv.EXPO_PUBLIC_SUPABASE_URL ??
     extra.supabaseUrl ??
-    "http://127.0.0.1:54321",
+    "http://127.0.0.1:54621",
   supabaseAnonKey:
     publicEnv.EXPO_PUBLIC_SUPABASE_ANON_KEY ??
     extra.supabaseAnonKey ??

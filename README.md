@@ -25,7 +25,7 @@ pnpm dev
 # Mobile (Expo)
 pnpm dev:mobile
 
-# Local Supabase (optional)
+# Local Supabase (optional). API is http://127.0.0.1:54621 so it can run next to other local stacks.
 pnpm supabase:start
 pnpm supabase:reset
 ```
