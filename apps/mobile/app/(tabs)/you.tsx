@@ -15,6 +15,7 @@ import { useAuth } from "../../src/lib/auth";
 import { useCompeteStore } from "../../src/lib/compete-store";
 import {
   createAppleHealthDeps,
+  createHealthConnectDeps,
   syncAppleHealth,
   syncHealthConnect,
 } from "../../src/lib/device-health";
@@ -151,20 +152,19 @@ export default function YouScreen() {
     setNote(null);
     try {
       const localOnly = user.mode === "demo" || demoMode;
+      const ingestAuth = {
+        localOnly,
+        getAccessToken: async () => ({
+          token: accessToken ?? undefined,
+          userId: user.id,
+        }),
+      };
       const result =
         providerId === "apple_health"
-          ? await syncAppleHealth(
-              createAppleHealthDeps({
-                localOnly,
-                getAccessToken: async () => ({
-                  token: accessToken ?? undefined,
-                  userId: user.id,
-                }),
-              }),
-            )
-          : await syncHealthConnect();
+          ? await syncAppleHealth(createAppleHealthDeps(ingestAuth))
+          : await syncHealthConnect(createHealthConnectDeps(ingestAuth));
       // "Connected" means device permission (or a successful upload). Upload
-      // failures keep Connected when HealthKit already authorized, with a clear note.
+      // failures keep Connected when already authorized, with a clear note.
       if (result.ok || result.authorized) {
         dispatch({
           type: "apply-sync",
@@ -174,7 +174,12 @@ export default function YouScreen() {
         });
       }
       if (!result.ok && result.authorized) {
-        setNote(`Connected on this phone. ${result.message}`);
+        const prefix = "Connected on this phone.";
+        setNote(
+          result.message.startsWith(prefix)
+            ? result.message
+            : `${prefix} ${result.message}`,
+        );
       } else {
         setNote(result.message);
       }

@@ -265,32 +265,68 @@ const HEALTH_CONNECT_SPORTS: Record<string, string> = {
   CALISTHENICS: "strength",
 };
 
-export async function syncHealthConnect(): Promise<DeviceSyncResult> {
-  if (Platform.OS !== "android") {
+type HealthConnectModule = {
+  initialize: () => Promise<boolean>;
+  requestPermission: (permissions: { accessType: string; recordType: string }[]) => Promise<unknown>;
+  readRecords: (
+    type: string,
+    options: { timeRangeFilter: { operator: string; startTime: string; endTime: string } },
+  ) => Promise<{
+    records?: {
+      metadata?: { id?: string };
+      startTime?: string;
+      endTime?: string;
+      title?: string;
+      exerciseType?: number | string;
+      distance?: { inMeters?: number };
+    }[];
+  }>;
+  ExerciseType?: Record<string, number>;
+};
+
+export type SyncHealthConnectDeps = Pick<
+  SyncAppleHealthDeps,
+  "apiUrl" | "getAccessToken" | "fetchFn" | "localOnly"
+> & {
+  platform?: string;
+  /** Injectable for tests; defaults to require("react-native-health-connect"). */
+  healthModule?: HealthConnectModule | null;
+};
+
+function defaultLoadHealthConnect(): HealthConnectModule | null {
+  try {
+    return require("react-native-health-connect") as HealthConnectModule;
+  } catch {
+    return null;
+  }
+}
+
+/** Build ingest deps for Health Connect, merging over platform defaults. */
+export function createHealthConnectDeps(
+  overrides: Partial<SyncHealthConnectDeps> = {},
+): SyncHealthConnectDeps {
+  const base = createAppleHealthDeps(overrides);
+  return {
+    apiUrl: base.apiUrl,
+    getAccessToken: base.getAccessToken,
+    fetchFn: base.fetchFn,
+    localOnly: base.localOnly,
+    platform: overrides.platform ?? Platform.OS,
+    healthModule: overrides.healthModule,
+  };
+}
+
+export async function syncHealthConnect(
+  deps: SyncHealthConnectDeps = createHealthConnectDeps(),
+): Promise<DeviceSyncResult> {
+  const platform = deps.platform ?? Platform.OS;
+  if (platform !== "android") {
     return { ok: false, message: "Health Connect is only available on Android.", count: 0 };
   }
 
-  let health: {
-    initialize: () => Promise<boolean>;
-    requestPermission: (permissions: { accessType: string; recordType: string }[]) => Promise<unknown>;
-    readRecords: (
-      type: string,
-      options: { timeRangeFilter: { operator: string; startTime: string; endTime: string } },
-    ) => Promise<{
-      records?: {
-        metadata?: { id?: string };
-        startTime?: string;
-        endTime?: string;
-        title?: string;
-        exerciseType?: number | string;
-        distance?: { inMeters?: number };
-      }[];
-    }>;
-    ExerciseType?: Record<string, number>;
-  };
-  try {
-    health = require("react-native-health-connect") as typeof health;
-  } catch {
+  const health =
+    deps.healthModule === undefined ? defaultLoadHealthConnect() : deps.healthModule;
+  if (!health) {
     return {
       ok: false,
       message: "Health Connect needs a development build. It is not available in Expo Go.",
@@ -356,5 +392,5 @@ export async function syncHealthConnect(): Promise<DeviceSyncResult> {
       count: 0,
     };
   }
-  return postIngest("google_health", activities, createAppleHealthDeps());
+  return postIngest("google_health", activities, deps);
 }

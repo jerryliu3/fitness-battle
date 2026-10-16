@@ -137,7 +137,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (!email.trim() || password.length < 4) {
           return { error: "Enter an email and a password (4+ characters)." };
         }
-        const next = demoUserFromEmail(email.trim().toLowerCase());
+        const normalized = email.trim().toLowerCase();
+        const existing = await readDemoUser();
+        const next =
+          existing?.email === normalized
+            ? existing
+            : demoUserFromEmail(normalized);
         await writeDemoUser(next);
         setUser(next);
         setAccessToken(null);
