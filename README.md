@@ -81,7 +81,7 @@ Open `/design/structure` for five complete Home / Arena / Crew / Athlete concept
 
 Run `pnpm dev`, then open `/design` to compare five individual-first app experiences: Split, Bounce, Folio, Vector, and After. Each direction has personal progress, comparison, activity, history, and optional group views, with local sample interactions. **Evaluate directions** explains the different interaction models and tradeoffs.
 
-See [design directions v2](docs/design-directions-v2.md) for the brand systems, research, evaluation tasks, and image provenance. The [first study](docs/design-exploration-v1.md) is retained as an archive. The live product shell now uses the Split structure; `/design` remains the comparative lab.
+See [design directions v2](docs/design-directions-v2.md) for the brand systems, research, evaluation tasks, and image provenance. The [first study](docs/design-exploration-v1.md) is retained as an archive. The live product shell now follows **Focus** (see above); `/design` and `/design/structure` remain comparative labs.
 
 Open `/design/spatial` for five interactive mileage comparisons: **Pursuit**, **Distance path**, **Circuit**, **Switchback**, and **Week replay**. Direct links use `?scene=pursuit|path|circuit|switchback|replay`. These public presentation routes use synthetic data, with no account or tracker authorization required. Three of the concepts use real 3D cameras and selectable avatars; the others use calibrated distance axes and milestone replay. See [the spatial study](docs/spatial-design-study.md) for mechanisms, evaluation tasks, and limitations.
 
