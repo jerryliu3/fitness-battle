@@ -10,7 +10,10 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useCompeteStore } from "../../src/lib/compete-store";
 import { DetailSheet } from "../../src/ui/detail-sheet";
 import { LaneTrack } from "../../src/ui/lane-track";
+import { Pursuit, type CameraMode } from "../../src/ui/pursuit";
 import { SHELL_COLORS, SHELL_RADIUS } from "../../src/theme";
+
+type FieldMode = "lanes" | "pursuit";
 
 export default function ArenaScreen() {
   const { state, dispatch, returnGain, clearReturn } = useCompeteStore();
@@ -18,6 +21,9 @@ export default function ArenaScreen() {
   const [index, setIndex] = useState(2);
   const [showGhost, setShowGhost] = useState(true);
   const [selected, setSelected] = useState<ArenaLane | null>(null);
+  const [mode, setMode] = useState<FieldMode>("lanes");
+  const [camera, setCamera] = useState<CameraMode>("follow");
+  const [unavailable, setUnavailable] = useState(false);
 
   if (!state) {
     return (
@@ -69,14 +75,69 @@ export default function ArenaScreen() {
 
         {arena.optedIn && you ? (
           <>
-            <LaneTrack
-              lanes={arena.lanes}
-              labels={arena.labels}
-              unit={arena.unit}
-              showGhost={showGhost}
-              index={index}
-              onSelect={setSelected}
-            />
+            <View style={styles.replay} accessibilityRole="tablist">
+              <Pressable
+                accessibilityRole="tab"
+                accessibilityState={{ selected: mode === "lanes" }}
+                onPress={() => setMode("lanes")}
+                style={[styles.replayTab, mode === "lanes" ? styles.replayOn : null]}
+              >
+                <Text style={[styles.replayText, mode === "lanes" ? styles.replayTextOn : null]}>
+                  2D lanes
+                </Text>
+              </Pressable>
+              <Pressable
+                accessibilityRole="tab"
+                accessibilityState={{ selected: mode === "pursuit" }}
+                onPress={() => {
+                  setUnavailable(false);
+                  setMode("pursuit");
+                }}
+                style={[styles.replayTab, mode === "pursuit" ? styles.replayOn : null]}
+              >
+                <Text style={[styles.replayText, mode === "pursuit" ? styles.replayTextOn : null]}>
+                  3D Pursuit
+                </Text>
+              </Pressable>
+            </View>
+            {mode === "pursuit" && !unavailable ? (
+              <>
+                <View style={styles.replay}>
+                  {(["follow", "above", "avatar"] as const).map((id) => (
+                    <Pressable
+                      key={id}
+                      accessibilityRole="button"
+                      accessibilityState={{ selected: camera === id }}
+                      onPress={() => setCamera(id)}
+                      style={[styles.replayTab, camera === id ? styles.replayOn : null]}
+                    >
+                      <Text style={[styles.replayText, camera === id ? styles.replayTextOn : null]}>
+                        {id === "follow" ? "Follow" : id === "above" ? "Above" : "Avatar"}
+                      </Text>
+                    </Pressable>
+                  ))}
+                </View>
+                <Pursuit
+                  lanes={arena.lanes}
+                  index={index}
+                  showGhost={showGhost}
+                  camera={camera}
+                  onUnavailable={() => setUnavailable(true)}
+                />
+              </>
+            ) : (
+              <LaneTrack
+                lanes={arena.lanes}
+                labels={arena.labels}
+                unit={arena.unit}
+                showGhost={showGhost}
+                index={index}
+                onSelect={setSelected}
+              />
+            )}
+            {unavailable ? (
+              <Text style={styles.copy}>3D is unavailable here. The 2D track stays interactive.</Text>
+            ) : null}
             <View style={styles.replay} accessibilityRole="tablist">
               {arena.labels.map((label, labelIndex) => {
                 const on = index === labelIndex;

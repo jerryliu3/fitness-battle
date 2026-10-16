@@ -73,6 +73,19 @@ export interface ArenaLane {
   values: [number, number, number];
 }
 
+/** Field lanes only. You stays in the middle. Ghost is not a lane. */
+export function stableFieldLanes(lanes: readonly ArenaLane[]): ArenaLane[] {
+  const field = lanes.filter((lane) => !lane.ghost);
+  const you = field.find((lane) => lane.you);
+  const others = field
+    .filter((lane) => !lane.you)
+    .slice()
+    .sort((a, b) => a.id.localeCompare(b.id));
+  if (!you) return others;
+  const mid = Math.floor(others.length / 2);
+  return [...others.slice(0, mid), you, ...others.slice(mid)];
+}
+
 export interface ArenaModel {
   sportId: SportId;
   sportName: string;
