@@ -3,7 +3,13 @@
 import { useEffect, useRef, useState } from "react";
 import { type EmberPose } from "@fitness-battle/shared/mascot";
 import { Ember } from "@/components/mascot/ember";
-import { BOOT_DURATION_MS, bootEmberPose, bootFrame, clamp } from "@fitness-battle/shared/boot";
+import {
+  BOOT_DURATION_MS,
+  bootEmberPose,
+  bootFrame,
+  clamp,
+  type BootLayout,
+} from "@fitness-battle/shared/boot";
 
 import "./boot-splash.css";
 
@@ -14,15 +20,18 @@ type BootSplashProps = {
 };
 
 /**
- * Product boot splash: OVERTAKE → OVERTAEK with the shared vector Ember.
- * Slow ready morphs Ember into a K; the letter jump is a short, sharp pass.
+ * Product boot splash: OVERTAKE → OVERTAEK.
+ * Ember morphs into a K, flies behind the word and around the O, returns in
+ * front to overtake E, then crossfades into a literal K.
  */
 export function BootSplash({ waiting = false, onAnimationComplete }: BootSplashProps) {
   const stageRef = useRef<HTMLDivElement>(null);
   const wordRef = useRef<HTMLDivElement>(null);
+  const lettersRef = useRef<HTMLSpanElement>(null);
   const slotRef = useRef<HTMLSpanElement>(null);
   const eRef = useRef<HTMLSpanElement>(null);
   const emberHostRef = useRef<HTMLSpanElement>(null);
+  const kHostRef = useRef<HTMLSpanElement>(null);
   const completed = useRef(false);
   const onCompleteRef = useRef(onAnimationComplete);
   onCompleteRef.current = onAnimationComplete;
@@ -30,9 +39,11 @@ export function BootSplash({ waiting = false, onAnimationComplete }: BootSplashP
 
   useEffect(() => {
     const stage = stageRef.current!;
+    const letters = lettersRef.current!;
     const slot = slotRef.current!;
     const letter = eRef.current!;
     const emberHost = emberHostRef.current!;
+    const kHost = kHostRef.current!;
     const media = matchMedia("(prefers-reduced-motion: reduce)");
     let disposed = false;
     let p = 0;
@@ -41,7 +52,14 @@ export function BootSplash({ waiting = false, onAnimationComplete }: BootSplashP
     let lastPublish = 0;
     let start = 0;
     let initial = 0;
-    let layout = { slotWidth: 1, eWidth: 1, font: 1 };
+    let layout: BootLayout & { homeX: number; homeY: number } = {
+      overtaWidth: 1,
+      slotWidth: 1,
+      eWidth: 1,
+      font: 1,
+      homeX: 0,
+      homeY: 0,
+    };
 
     function finish() {
       if (completed.current || disposed) return;
@@ -52,12 +70,22 @@ export function BootSplash({ waiting = false, onAnimationComplete }: BootSplashP
     function draw(progress: number, publishPose: boolean) {
       if (disposed || !wordRef.current) return;
       p = clamp(progress);
-      const frame = bootFrame(p);
+      const frame = bootFrame(p, layout);
       const l = layout;
-      const dx = l.eWidth * frame.travel + l.font * 0.05 * frame.windup;
-      const lift = l.font * 0.14 * frame.lift;
       letter.style.transform = `translate(${-l.slotWidth * frame.eShift}px,0)`;
-      emberHost.style.transform = `translate(${dx}px,${-lift}px)`;
+      const size = l.font * 1.16 * frame.scale;
+      emberHost.style.left = `${l.homeX + frame.x}px`;
+      emberHost.style.bottom = `${l.homeY - frame.y}px`;
+      emberHost.style.width = `${size}px`;
+      emberHost.style.height = `${size}px`;
+      emberHost.style.opacity = String(frame.emberOpacity);
+      emberHost.style.zIndex = frame.depth < 0 ? "1" : "3";
+      emberHost.style.transform = `translate(-50%, 5%) scale(${frame.facing}, 1)`;
+      kHost.style.left = `${l.homeX + bootFrame(1, layout).x}px`;
+      kHost.style.bottom = `${l.homeY}px`;
+      kHost.style.fontSize = `${l.font}px`;
+      kHost.style.opacity = String(frame.kOpacity);
+      kHost.style.zIndex = "3";
       wordRef.current.setAttribute("aria-label", frame.phase === "OVERTAEK" ? "OVERTAEK" : "OVERTAKE");
       if (publishPose) {
         setPose(bootEmberPose(p, { reducedMotion: media.matches }));
@@ -68,10 +96,15 @@ export function BootSplash({ waiting = false, onAnimationComplete }: BootSplashP
       if (disposed || !wordRef.current) return;
       const font = Number.parseFloat(getComputedStyle(wordRef.current).fontSize);
       if (!Number.isFinite(font) || font <= 0) return;
+      const stageBox = stage.getBoundingClientRect();
+      const slotBox = slot.getBoundingClientRect();
       layout = {
-        slotWidth: slot.getBoundingClientRect().width,
+        overtaWidth: letters.getBoundingClientRect().width,
+        slotWidth: slotBox.width,
         eWidth: letter.getBoundingClientRect().width,
         font,
+        homeX: slotBox.left - stageBox.left + slotBox.width / 2,
+        homeY: stageBox.bottom - slotBox.bottom,
       };
       draw(p, false);
     }
@@ -160,21 +193,22 @@ export function BootSplash({ waiting = false, onAnimationComplete }: BootSplashP
     <div className="boot-splash" role="status" aria-live="polite" aria-busy="true">
       <div ref={stageRef} className="boot-splash-stage">
         <div ref={wordRef} className="boot-splash-word" role="img" aria-label="OVERTAKE">
-          <span className="boot-splash-letters" aria-hidden="true">
+          <span ref={lettersRef} className="boot-splash-letters" aria-hidden="true">
             OVERTA
           </span>
           <span ref={slotRef} className="boot-splash-slot" aria-hidden="true">
             <span className="boot-splash-strut">A</span>
-            <span ref={emberHostRef} className="boot-splash-ember">
-              <span className="boot-splash-ember-align">
-                <Ember pose={pose} shadow={false} />
-              </span>
-            </span>
           </span>
           <span ref={eRef} className="boot-splash-e" aria-hidden="true">
             E
           </span>
         </div>
+        <span ref={emberHostRef} className="boot-splash-ember-fly" aria-hidden="true">
+          <Ember pose={pose} shadow={false} />
+        </span>
+        <span ref={kHostRef} className="boot-splash-k" aria-hidden="true">
+          K
+        </span>
       </div>
       {waiting ? (
         <div className="boot-splash-wait">
