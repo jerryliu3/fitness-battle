@@ -3,9 +3,10 @@ import {
   bootEmberPose,
   bootFrame,
   clamp,
+  type BootFlightStyle,
   type BootLayout,
 } from "@fitness-battle/shared/boot";
-import { type EmberPose } from "@fitness-battle/shared/mascot";
+import { type EmberKConcept, type EmberPose } from "@fitness-battle/shared/mascot";
 import { useEffect, useRef, useState } from "react";
 import {
   AccessibilityInfo,
@@ -22,32 +23,42 @@ import { Ember } from "./mascot/ember";
 type BootSplashProps = {
   /** True after the overtake animation finished but app data is still loading. */
   waiting?: boolean;
+  concept?: EmberKConcept;
+  flightStyle?: BootFlightStyle;
   onAnimationComplete: () => void;
 };
 
 /**
  * Product boot splash: OVERTAKE → OVERTAEK.
- * Ember morphs into a K, flies behind the word and around the O, returns in
- * front to overtake E, then crossfades into a literal K.
+ * The literal K in OVERTAKE topologically un-morphs into 3D Star Ember, banks
+ * smoothly behind OVERTA and around the O, returns in front to overtake E, and
+ * topologically morphs back into the final K of OVERTAEK.
  */
-export function BootSplash({ waiting = false, onAnimationComplete }: BootSplashProps) {
+export function BootSplash({
+  waiting = false,
+  concept = "tucked",
+  flightStyle = "orbit",
+  onAnimationComplete,
+}: BootSplashProps) {
   const { width: windowWidth } = useWindowDimensions();
   const fontSize = Math.max(48, Math.min(108, windowWidth * 0.12));
+  const stageHeight = Math.max(260, Math.min(360, fontSize * 3.2));
   const completed = useRef(false);
   const onCompleteRef = useRef(onAnimationComplete);
   onCompleteRef.current = onAnimationComplete;
-  const [pose, setPose] = useState<EmberPose>(() => bootEmberPose(0));
+  const [pose, setPose] = useState<EmberPose>(() =>
+    bootEmberPose(0, { concept, style: flightStyle }),
+  );
+  const [kMorph, setKMorph] = useState<number>(() => bootFrame(0).kMorph);
   const [letterShift, setLetterShift] = useState(0);
+  const [letterLift, setLetterLift] = useState(0);
   const [emberX, setEmberX] = useState(0);
   const [emberY, setEmberY] = useState(0);
   const [emberScale, setEmberScale] = useState(1);
-  const [emberFacing, setEmberFacing] = useState<1 | -1>(1);
-  const [emberOpacity, setEmberOpacity] = useState(1);
   const [emberBehind, setEmberBehind] = useState(false);
-  const [kOpacity, setKOpacity] = useState(0);
-  const [kX, setKX] = useState(0);
   const [label, setLabel] = useState("OVERTAKE");
-  const [homeX, setHomeX] = useState(0);
+  const [wordOffset, setWordOffset] = useState({ x: 0, bottom: (stageHeight - fontSize) / 2 });
+  const [slotCenterInWord, setSlotCenterInWord] = useState(fontSize * 3.6 + fontSize * 0.45);
   const layoutRef = useRef<BootLayout>({
     overtaWidth: fontSize * 3.6,
     slotWidth: fontSize * 0.9,
@@ -55,7 +66,6 @@ export function BootSplash({ waiting = false, onAnimationComplete }: BootSplashP
     font: fontSize,
   });
   const progressRef = useRef(0);
-  const wordWidthRef = useRef(fontSize * 5);
 
   useEffect(() => {
     layoutRef.current.font = fontSize;
@@ -66,7 +76,6 @@ export function BootSplash({ waiting = false, onAnimationComplete }: BootSplashP
     let disposed = false;
     let running = false;
     let raf = 0;
-    let lastPublish = 0;
     let start = 0;
     let initial = 0;
     let reduced = false;
@@ -95,19 +104,23 @@ export function BootSplash({ waiting = false, onAnimationComplete }: BootSplashP
       if (disposed) return;
       const p = clamp(progress);
       progressRef.current = p;
-      const frame = bootFrame(p, layoutRef.current);
+      const frame = bootFrame(p, layoutRef.current, flightStyle);
       setLetterShift(-layoutRef.current.slotWidth * frame.eShift);
+      setLetterLift(-frame.eLift);
       setEmberX(frame.x);
       setEmberY(frame.y);
       setEmberScale(frame.scale);
-      setEmberFacing(frame.facing);
-      setEmberOpacity(frame.emberOpacity);
       setEmberBehind(frame.depth < 0);
-      setKOpacity(frame.kOpacity);
-      setKX(bootFrame(1, layoutRef.current).x);
       setLabel(frame.phase === "OVERTAEK" ? "OVERTAEK" : "OVERTAKE");
       if (publishPose) {
-        setPose(bootEmberPose(p, { reducedMotion: reduced }));
+        setKMorph(frame.kMorph);
+        setPose(
+          bootEmberPose(p, {
+            reducedMotion: reduced,
+            concept,
+            style: flightStyle,
+          }),
+        );
       }
     }
 
@@ -136,14 +149,11 @@ export function BootSplash({ waiting = false, onAnimationComplete }: BootSplashP
       }
       initial = progressRef.current;
       start = performance.now();
-      lastPublish = 0;
       running = true;
       function tick(now: number) {
         if (!running || disposed) return;
         const next = clamp(initial + (now - start) / BOOT_DURATION_MS);
-        const publish = now - lastPublish >= 1000 / 30 || next === 1;
-        if (publish) lastPublish = now;
-        draw(next, publish);
+        draw(next, true);
         if (next < 1) raf = requestAnimationFrame(tick);
         else {
           settle();
@@ -174,10 +184,14 @@ export function BootSplash({ waiting = false, onAnimationComplete }: BootSplashP
       appSub.remove();
       reduceSub.remove();
     };
-  }, []);
+  }, [concept, flightStyle]);
 
   function onWordLayout(event: LayoutChangeEvent) {
-    wordWidthRef.current = event.nativeEvent.layout.width;
+    const { x, y, height } = event.nativeEvent.layout;
+    setWordOffset({
+      x,
+      bottom: Math.max(0, stageHeight - (y + height)),
+    });
   }
 
   function onLettersLayout(event: LayoutChangeEvent) {
@@ -189,7 +203,7 @@ export function BootSplash({ waiting = false, onAnimationComplete }: BootSplashP
     const { width, x } = event.nativeEvent.layout;
     if (width > 0) {
       layoutRef.current.slotWidth = width;
-      setHomeX(x + width / 2);
+      setSlotCenterInWord(x + width / 2);
     }
   }
 
@@ -199,7 +213,8 @@ export function BootSplash({ waiting = false, onAnimationComplete }: BootSplashP
   }
 
   const emberSize = fontSize * 1.16 * emberScale;
-  const stageHeight = Math.max(260, Math.min(360, fontSize * 3.2));
+  const homeX = wordOffset.x + slotCenterInWord;
+  const homeY = wordOffset.bottom;
 
   return (
     <View style={styles.root} accessibilityRole="progressbar" accessibilityLabel={label}>
@@ -221,7 +236,7 @@ export function BootSplash({ waiting = false, onAnimationComplete }: BootSplashP
                 fontSize,
                 letterSpacing: fontSize * -0.055,
                 marginLeft: fontSize * -0.055,
-                transform: [{ translateX: letterShift }],
+                transform: [{ translateX: letterShift }, { translateY: letterLift }],
                 zIndex: 2,
               },
             ]}
@@ -238,33 +253,22 @@ export function BootSplash({ waiting = false, onAnimationComplete }: BootSplashP
             styles.emberFly,
             {
               left: homeX + emberX,
-              bottom: -emberY,
+              bottom: homeY - emberY - emberSize * 0.05,
               width: emberSize,
               height: emberSize,
-              opacity: emberOpacity,
               zIndex: emberBehind ? 1 : 3,
-              transform: [{ translateX: -emberSize / 2 }, { scaleX: emberFacing }],
+              transform: [{ translateX: -emberSize / 2 }],
             },
           ]}
         >
-          <Ember pose={pose} shadow={false} size={emberSize} />
+          <Ember
+            pose={pose}
+            kMorph={kMorph}
+            kConcept={concept}
+            shadow={false}
+            size={emberSize}
+          />
         </View>
-
-        <Text
-          pointerEvents="none"
-          style={[
-            styles.kLetter,
-            {
-              left: homeX + kX,
-              fontSize,
-              opacity: kOpacity,
-              transform: [{ translateX: -fontSize * 0.35 }],
-            },
-          ]}
-          maxFontSizeMultiplier={1.2}
-        >
-          K
-        </Text>
       </View>
       {waiting ? (
         <View style={styles.wait}>

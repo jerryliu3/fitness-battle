@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { EMBER_ACTIONS, EMBER_CLIPS, EMBER_MODEL, EMBER_REST, blendEmberPoses, createEmberScene, deformEmberPoint, emberContour, emberDepthOffset, emberSideWalls, exportEmberSvg, normalizeEmberPose, sampleEmber, type EmberNode, type EmberPose } from "./index";
+import { EMBER_ACTIONS, EMBER_CLIPS, EMBER_MODEL, EMBER_REST, blendEmberPoses, createEmberScene, deformEmberPoint, emberContour, emberDepthOffset, emberKCharacterPose, emberKMorphContour, emberKMorphPoints, emberSideWalls, exportEmberSvg, normalizeEmberPose, sampleEmber, type EmberKConcept, type EmberNode, type EmberPose } from "./index";
 
 function flatten(nodes: EmberNode[]): EmberNode[] { return nodes.flatMap(n => [n, ...flatten(n.children ?? [])]); }
 function sampleOutline(p: EmberPose, steps = 16): number[][] {
@@ -182,6 +182,24 @@ describe("Star Ember model", () => {
       expect(bounds[1], action).toBeGreaterThanOrEqual(top);
       expect(bounds[2], action).toBeLessThanOrEqual(left + width);
       expect(bounds[3], action).toBeLessThanOrEqual(top + height);
+    }
+  });
+  it("morphs smoothly between Star Ember and both anatomical K concepts (tucked & skater) with matching cubic topology", () => {
+    const baseStructure = emberContour({ ...EMBER_REST }).replace(/[-\d.]+/g, "");
+    for (const concept of ["tucked", "skater"] as EmberKConcept[]) {
+      for (let step = 0; step <= 20; step++) {
+        const m = step / 20;
+        const pose = emberKCharacterPose(concept, m);
+        const contour = emberKMorphContour(pose, m, concept);
+        expect(contour.replace(/[-\d.]+/g, "")).toBe(baseStructure);
+        expect(contour).not.toMatch(/NaN|Infinity/);
+        expect(contour.endsWith(" Z")).toBe(true);
+
+        const pts = emberKMorphPoints(pose, m, concept);
+        expect(pts.segments).toHaveLength(EMBER_MODEL.body.length);
+        const scene = createEmberScene({ id: `k-${concept}`, pose, kMorph: m, kConcept: concept });
+        expect(JSON.stringify(scene)).not.toMatch(/NaN|Infinity/);
+      }
     }
   });
 });

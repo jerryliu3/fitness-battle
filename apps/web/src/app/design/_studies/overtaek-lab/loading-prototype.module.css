@@ -1,19 +1,483 @@
-.prototype { width: 100%; max-width: 860px; margin: 0 auto; }
-.stage { position: relative; display: grid; place-items: center; height: 360px; overflow: hidden; border-radius: 24px; background: #2c1937; color: #fff9e9; isolation: isolate; }
-.word { display: flex; align-items: center; font-family: var(--font-overtaek), var(--font-body), sans-serif; font-weight: 900; font-size: clamp(40px, 10vw, 88px); line-height: 1; letter-spacing: -.055em; white-space: nowrap; }
-.slot { position: relative; display: inline-block; width: 1.04em; height: 1em; flex: none; }
-.e { display: inline-block; letter-spacing: 0; }
-.fallback { position: absolute; inset: -.06em -.06em; }
-.fallback img { display: block; width: 100%; height: 100%; object-fit: contain; }
-.canvas { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 1; }
-.trail { position: absolute; left: 0; top: 0; height: 2px; border-radius: 2px; background: linear-gradient(90deg, transparent, #ffcf47); opacity: 0; pointer-events: none; z-index: 2; }
-.controls { display: flex; align-items: center; flex-wrap: wrap; gap: 16px; padding: 20px 0; color: var(--fb-ink, #40234e); font-family: var(--font-body), sans-serif; font-size: 14px; }
-.controls button { padding: 10px 22px; min-height: 44px; border: 0; border-radius: 24px; background: #40234e; color: #fff9e9; font: inherit; cursor: pointer; }
-.controls button:disabled { opacity: .45; cursor: default; }
-.slow { display: flex; align-items: center; gap: 8px; }
-.scrub { display: flex; align-items: center; gap: 10px; flex: 1; min-width: 160px; font-size: 0; }
-.scrub input { width: 100%; min-height: 32px; accent-color: #40234e; }
-.slow input { accent-color: #40234e; }
-.phase { min-width: 88px; font-size: 12px; }
-.notice { font-family: var(--font-body), sans-serif; font-size: 13px; }
-@media (max-width: 540px) { .stage { height: 290px; border-radius: 16px; } .controls { gap: 12px; } .scrub { flex-basis: 100%; order: 4; } }
+.prototype {
+  width: 100%;
+  max-width: 960px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  color: var(--fb-ink, #40234e);
+  font-family: var(--font-body), sans-serif;
+}
+
+.selectorGrid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
+  background: #fff4dc;
+  border: 2px solid #40234e26;
+  border-radius: 22px;
+  padding: 18px;
+}
+
+.selectorGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.groupLabel {
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #40234eb3;
+}
+
+.pillRow {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: 10px;
+}
+
+.choicePill {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  text-align: left;
+  padding: 12px 14px;
+  border-radius: 16px;
+  border: 2px solid #40234e24;
+  background: #fff9e9;
+  color: #40234e;
+  cursor: pointer;
+  transition: transform 0.16s ease, border-color 0.16s ease, background-color 0.16s ease, box-shadow 0.16s ease;
+}
+
+.choicePill:hover {
+  transform: translateY(-1px);
+  border-color: #40234e66;
+}
+
+.choicePill strong {
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.choicePill span {
+  font-size: 12px;
+  line-height: 1.35;
+  color: #40234ecc;
+}
+
+.choicePillActive {
+  background: #40234e;
+  color: #fff9e9;
+  border-color: #40234e;
+  box-shadow: 0 8px 20px -8px rgba(64, 35, 78, 0.45);
+}
+
+.choicePillActive span {
+  color: #fff9e9cc;
+}
+
+.stage {
+  position: relative;
+  display: grid;
+  place-items: center;
+  height: 360px;
+  overflow: hidden;
+  border-radius: 28px;
+  background:
+    radial-gradient(ellipse 90% 70% at 50% 42%, #4a2a5c 0%, transparent 58%),
+    linear-gradient(165deg, #2c1937 0%, #1a0f22 55%, #241428 100%);
+  color: #fff9e9;
+  isolation: isolate;
+  box-shadow: 0 22px 44px -18px rgba(26, 15, 34, 0.55);
+}
+
+.stageBadges {
+  position: absolute;
+  top: 16px;
+  left: 18px;
+  right: 18px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  z-index: 5;
+  pointer-events: none;
+}
+
+.stageBadge {
+  padding: 5px 11px;
+  border-radius: 999px;
+  background: rgba(255, 249, 233, 0.12);
+  border: 1px solid rgba(255, 249, 233, 0.22);
+  font-size: 12px;
+  color: #fff9e9e6;
+  backdrop-filter: blur(8px);
+}
+
+.stageBadge strong {
+  color: #f6f253;
+}
+
+.word {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: baseline;
+  font-family: var(--font-overtaek), var(--font-body), sans-serif;
+  font-weight: 900;
+  font-size: clamp(46px, 11vw, 96px);
+  line-height: 1;
+  letter-spacing: 0;
+  white-space: nowrap;
+  color: #fff9e9;
+  text-shadow: 0 0 0 #fff9e9;
+}
+
+.letters {
+  letter-spacing: -0.055em;
+  margin-right: -0.055em;
+}
+
+.slot {
+  position: relative;
+  display: inline-block;
+  width: 0.9em;
+  margin: 0;
+  flex: none;
+  overflow: visible;
+  vertical-align: baseline;
+}
+
+.strut {
+  display: inline-block;
+  width: 0;
+  overflow: hidden;
+  vertical-align: baseline;
+}
+
+.e {
+  display: inline-block;
+  letter-spacing: -0.055em;
+  margin-left: -0.055em;
+  will-change: transform;
+}
+
+.emberFly {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 1.16em;
+  height: 1.16em;
+  transform: translate(-50%, 5%);
+  transform-origin: center bottom;
+  will-change: transform, opacity, left, bottom;
+  pointer-events: none;
+}
+
+.emberFly svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.kGlyph {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  transform: translate(-50%, 0);
+  font-family: var(--font-overtaek), var(--font-body), sans-serif;
+  font-weight: 900;
+  line-height: 1;
+  color: #f6f253;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.controls {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+  padding: 14px 18px;
+  background: #fff4dc;
+  border-radius: 18px;
+  border: 2px solid #40234e1f;
+  font-size: 14px;
+}
+
+.primaryBtn {
+  padding: 10px 22px;
+  min-height: 42px;
+  border: 0;
+  border-radius: 999px;
+  background: #40234e;
+  color: #fff9e9;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.secondaryBtn {
+  padding: 8px 16px;
+  border-radius: 999px;
+  border: 2px solid #40234e;
+  background: #fff9e9;
+  color: #40234e;
+  font-weight: 800;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.toggleLabel {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.toggleLabel input {
+  accent-color: #40234e;
+}
+
+.scrub {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+  min-width: 220px;
+  font-weight: 700;
+  font-size: 13px;
+}
+
+.scrub input {
+  flex: 1;
+  min-height: 32px;
+  accent-color: #40234e;
+}
+
+.bookmarks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.bookmarkBtn {
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 1.5px solid #40234e33;
+  background: #fff9e9;
+  color: #40234e;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.bookmarkBtnActive {
+  background: #f6f253;
+  border-color: #40234e;
+}
+
+.anatomySection {
+  margin-top: 8px;
+  padding: 22px;
+  border-radius: 26px;
+  background: #fff4dc;
+  border: 2px solid #40234e26;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.anatomyHeader {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+.anatomyTitle {
+  font-size: 20px;
+  font-weight: 900;
+  margin: 0 0 6px;
+}
+
+.anatomySubtitle {
+  margin: 0;
+  max-width: 620px;
+  font-size: 13.5px;
+  line-height: 1.45;
+  color: #40234ecc;
+}
+
+.anatomyControls {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+}
+
+.anatomyQuickBtns {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.anatomySliderRow {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 10px 14px;
+  border-radius: 14px;
+  background: #fff9e9;
+  border: 1.5px solid #40234e22;
+  font-size: 13px;
+}
+
+.anatomySliderRow input {
+  flex: 1;
+  accent-color: #40234e;
+}
+
+.conceptCards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+  gap: 18px;
+}
+
+.conceptCard {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 18px;
+  border-radius: 22px;
+  background: #241428;
+  color: #fff9e9;
+  border: 2.5px solid transparent;
+  transition: border-color 0.2s ease, transform 0.2s ease;
+}
+
+.conceptCardSelected {
+  border-color: #f6f253;
+}
+
+.conceptCardTop {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+.conceptTag {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  color: #f6f253;
+}
+
+.conceptName {
+  margin: 2px 0 0;
+  font-size: 18px;
+  font-weight: 800;
+}
+
+.useConceptBtn {
+  padding: 7px 14px;
+  border-radius: 999px;
+  border: 1.5px solid #f6f253;
+  background: rgba(246, 242, 83, 0.14);
+  color: #f6f253;
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.conceptCardSelected .useConceptBtn {
+  background: #f6f253;
+  color: #241428;
+}
+
+.conceptViewport {
+  position: relative;
+  height: 270px;
+  border-radius: 18px;
+  background:
+    radial-gradient(circle at 50% 50%, rgba(255, 214, 72, 0.16), transparent 65%),
+    #1a0f22;
+  display: grid;
+  place-items: center;
+  padding: 12px;
+  overflow: hidden;
+}
+
+.conceptEmberWrap {
+  position: relative;
+  z-index: 2;
+}
+
+.limbBadge {
+  position: absolute;
+  max-width: 145px;
+  padding: 6px 9px;
+  border-radius: 10px;
+  background: rgba(255, 249, 233, 0.1);
+  border: 1px solid rgba(255, 249, 233, 0.2);
+  font-size: 11px;
+  line-height: 1.25;
+  color: #fff9e9e6;
+  z-index: 3;
+}
+
+.limbBadge strong {
+  display: block;
+  color: #ffd648;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 2px;
+}
+
+.limbTopLeft {
+  top: 10px;
+  left: 10px;
+}
+
+.limbTopRight {
+  top: 10px;
+  right: 10px;
+  text-align: right;
+}
+
+.limbBottomLeft {
+  bottom: 10px;
+  left: 10px;
+}
+
+.limbBottomRight {
+  bottom: 10px;
+  right: 10px;
+  text-align: right;
+}
+
+.conceptDesc {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.45;
+  color: #fff9e9cc;
+}
+
+@media (max-width: 640px) {
+  .stage {
+    height: 290px;
+    border-radius: 18px;
+  }
+  .conceptCards {
+    grid-template-columns: 1fr;
+  }
+}

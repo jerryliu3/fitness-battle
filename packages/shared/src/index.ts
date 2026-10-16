@@ -7,4 +7,5 @@ export * from "./brand";
 export * from "./shell";
 export * from "./phone-views";
 export * from "./notifications";
+export * from "./mascot";
 export { DEMO_CATEGORIES, DEMO_BATTLES, demoStandings } from "./demo-data";

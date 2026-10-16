@@ -73,6 +73,7 @@ export const EMBER_CLIPS = {
 } as const satisfies Record<string, Clip>;
 
 export type EmberAction = keyof typeof EMBER_CLIPS;
+export type EmberClipName = EmberAction;
 export const EMBER_ACTIONS = Object.keys(EMBER_CLIPS) as EmberAction[];
 
 export function sampleEmber(action: EmberAction, timeMs: number, options: { loop?: boolean; reducedMotion?: boolean } = {}): EmberPose {

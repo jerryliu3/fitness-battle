@@ -165,3 +165,251 @@ export function emberContour(pose: EmberPose, crescent = false): string {
   const point = (x: number, y: number) => deformEmberPoint(x, y, pose).map(v => v.toFixed(2)).join(" ");
   return `M ${point(...start)} ${segments.map(s => `C ${point(s[0], s[1])} ${point(s[2], s[3])} ${point(s[4], s[5])}`).join(" ")} Z`;
 }
+
+/**
+ * Topological K-morph concepts:
+ * - "tucked" (Concept 1): Top-left = hair/crest, Top-right = anatomical left arm (screen-right),
+ *   Bottom-left = anatomical right leg + right arm tucked against side, Bottom-right = anatomical left leg.
+ * - "skater" (Concept 2): Top-left = anatomical right arm raised high, Top-right = hair/crest leaning forward,
+ *   Bottom-left = anatomical right leg planted back, Bottom-right = anatomical left arm + left leg tucked together
+ *   like a speed skater at the starting line.
+ */
+export type EmberKConcept = "tucked" | "skater";
+export const EMBER_K_CONCEPTS: readonly EmberKConcept[] = ["tucked", "skater"];
+
+type ContourShape = {
+  start: readonly [number, number];
+  segments: readonly (readonly [number, number, number, number, number, number])[];
+};
+
+/**
+ * Concept 1 ("tucked") intermediate organic character-K silhouette (at morph ~ 0.48):
+ * Crest upright at top-left, screen-right arm up-right, screen-right leg down-right,
+ * screen-left leg straight down-left, and screen-left arm tucked down along the left side.
+ */
+const K_TUCKED_MID: ContourShape = {
+  start: [128, 54],
+  segments: [
+    [142, 62, 148, 122, 148, 174],
+    [186, 134, 266, 56, 294, 58],
+    [310, 72, 254, 148, 206, 196],
+    [238, 238, 298, 316, 292, 342],
+    [270, 352, 206, 288, 154, 236],
+    [148, 286, 144, 344, 118, 346],
+    [92, 348, 76, 342, 74, 312],
+    [72, 296, 56, 282, 58, 256],
+    [56, 224, 70, 184, 78, 148],
+    [78, 112, 76, 72, 84, 56],
+    [96, 48, 114, 48, 128, 54],
+  ],
+};
+
+/**
+ * Concept 1 ("tucked") final architectural capital K contour (at morph = 1.0):
+ * Matches Nunito Sans 900 Black cap-height (y: 52..346) and stem weight.
+ */
+const K_TUCKED_FINAL: ContourShape = {
+  start: [134, 52],
+  segments: [
+    [134, 94, 134, 136, 134, 178],
+    [182, 126, 244, 52, 296, 52],
+    [304, 58, 250, 132, 196, 194],
+    [240, 252, 298, 332, 304, 346],
+    [234, 346, 220, 330, 134, 222],
+    [134, 264, 134, 305, 134, 346],
+    [112, 346, 88, 346, 66, 346],
+    [66, 312, 66, 278, 66, 244],
+    [66, 206, 66, 168, 66, 130],
+    [66, 98, 66, 72, 66, 52],
+    [88, 52, 112, 52, 134, 52],
+  ],
+};
+
+/**
+ * Concept 2 ("skater") intermediate organic speed-skater silhouette (at morph ~ 0.48):
+ * Screen-left arm (Ember's right arm) thrown high up-left, crest leaning into top-right,
+ * screen-right arm + leg tucked together down-right like a speed skater, screen-left leg planted down-left.
+ */
+const K_SKATER_MID: ContourShape = {
+  start: [288, 58],
+  segments: [
+    [302, 74, 252, 146, 204, 194],
+    [236, 218, 284, 262, 286, 288],
+    [288, 304, 262, 302, 268, 314],
+    [284, 326, 302, 344, 272, 346],
+    [232, 348, 194, 286, 152, 232],
+    [144, 286, 132, 346, 88, 346],
+    [68, 344, 72, 276, 76, 212],
+    [72, 158, 64, 78, 82, 54],
+    [104, 46, 134, 108, 148, 172],
+    [178, 132, 218, 82, 252, 58],
+    [266, 52, 278, 52, 288, 58],
+  ],
+};
+
+/**
+ * Concept 2 ("skater") final architectural capital K contour (at morph = 1.0):
+ * Identical outer K geometry to K_TUCKED_FINAL, with segment topology shifted by 1 limb.
+ */
+const K_SKATER_FINAL: ContourShape = {
+  start: [296, 52],
+  segments: [
+    [304, 58, 250, 132, 196, 194],
+    [232, 242, 268, 292, 288, 322],
+    [294, 330, 300, 338, 304, 346],
+    [280, 346, 256, 346, 234, 346],
+    [202, 306, 168, 264, 134, 222],
+    [134, 346, 134, 346, 66, 346],
+    [66, 300, 66, 254, 66, 208],
+    [66, 156, 66, 104, 66, 52],
+    [134, 52, 134, 52, 134, 178],
+    [172, 136, 212, 92, 250, 52],
+    [266, 52, 282, 52, 296, 52],
+  ],
+};
+
+const smootherstep = (value: number) => {
+  const t = clamp(value, 0, 1);
+  return t * t * t * (t * (6 * t - 15) + 10);
+};
+
+/**
+ * Rig pose that coils Star Ember toward the chosen K concept before/during the contour morph.
+ */
+export function emberKCharacterPose(concept: EmberKConcept, morph: number): EmberPose {
+  const t = smootherstep(morph);
+  if (concept === "skater") {
+    return {
+      ...EMBER_REST,
+      crest: 0.72 * t,
+      armLeft: 1.0 * t,
+      armRight: -0.88 * t,
+      legLeft: 0.42 * t,
+      legRight: -0.62 * t,
+      wind: 0.78 * t,
+      rotation: 16 * t,
+      lookX: 0.45 * t,
+      lookY: -0.15 * t,
+      eyeLeft: 1 - 0.25 * t,
+      eyeRight: 1 - 0.25 * t,
+      smile: 1 - 0.65 * t,
+    };
+  }
+  return {
+    ...EMBER_REST,
+    crest: -0.32 * t,
+    armLeft: -0.96 * t,
+    armRight: 0.95 * t,
+    legLeft: 0.28 * t,
+    legRight: -0.58 * t,
+    wind: 0.52 * t,
+    rotation: -4 * t,
+    lookX: 0.2 * t,
+    lookY: 0,
+    eyeLeft: 1 - 0.2 * t,
+    eyeRight: 1 - 0.2 * t,
+    smile: 1 - 0.45 * t,
+  };
+}
+
+function sampleMorphedPoint(
+  baseX: number,
+  baseY: number,
+  midX: number,
+  midY: number,
+  finalX: number,
+  finalY: number,
+  p: EmberPose,
+  kMorph: number,
+): [number, number] {
+  const m = clamp(kMorph, 0, 1);
+  const [dx, dy] = deformEmberPoint(baseX, baseY, p);
+  // Fold body transform into the point so at kMorph = 1 the K lands in exact viewBox space.
+  const yawScale = Math.cos(p.yaw * 1.12);
+  const rad = (p.rotation * Math.PI) / 180;
+  const lx = (dx - 180) * p.scaleX * yawScale;
+  const ly = (dy - 235) * p.scaleY;
+  const posedX = 180 + p.x + lx * Math.cos(rad) - ly * Math.sin(rad);
+  const posedY = 235 + p.y + lx * Math.sin(rad) + ly * Math.cos(rad);
+  if (m <= 0) return [posedX, posedY];
+  if (m >= 1) return [finalX, finalY];
+  // Two-stage C1 spline through the organic character-K silhouette at m = 0.46.
+  const pivot = 0.46;
+  if (m < pivot) {
+    const u = smootherstep(m / pivot);
+    return [posedX + (midX - posedX) * u, posedY + (midY - posedY) * u];
+  }
+  const u = smootherstep((m - pivot) / (1 - pivot));
+  return [midX + (finalX - midX) * u, midY + (finalY - midY) * u];
+}
+
+export function emberKMorphPoints(
+  pose: EmberPose,
+  kMorph: number,
+  concept: EmberKConcept = "skater",
+): { start: [number, number]; segments: [number, number, number, number, number, number][] } {
+  const mid = concept === "skater" ? K_SKATER_MID : K_TUCKED_MID;
+  const final = concept === "skater" ? K_SKATER_FINAL : K_TUCKED_FINAL;
+  const start = sampleMorphedPoint(
+    EMBER_MODEL.start[0],
+    EMBER_MODEL.start[1],
+    mid.start[0],
+    mid.start[1],
+    final.start[0],
+    final.start[1],
+    pose,
+    kMorph,
+  );
+  const segments = EMBER_MODEL.body.map((s, i) => {
+    const ms = mid.segments[i]!;
+    const fs = final.segments[i]!;
+    const c1 = sampleMorphedPoint(s[0], s[1], ms[0], ms[1], fs[0], fs[1], pose, kMorph);
+    const c2 = sampleMorphedPoint(s[2], s[3], ms[2], ms[3], fs[2], fs[3], pose, kMorph);
+    const end = sampleMorphedPoint(s[4], s[5], ms[4], ms[5], fs[4], fs[5], pose, kMorph);
+    return [c1[0], c1[1], c2[0], c2[1], end[0], end[1]] as [number, number, number, number, number, number];
+  });
+  return { start, segments };
+}
+
+export function emberKMorphContour(
+  pose: EmberPose,
+  kMorph: number,
+  concept: EmberKConcept = "skater",
+): string {
+  if (kMorph <= 0) return emberContour(pose, false);
+  const { start, segments } = emberKMorphPoints(pose, kMorph, concept);
+  const pt = (x: number, y: number) => `${x.toFixed(2)} ${y.toFixed(2)}`;
+  return `M ${pt(start[0], start[1])} ${segments
+    .map((s) => `C ${pt(s[0], s[1])} ${pt(s[2], s[3])} ${pt(s[4], s[5])}`)
+    .join(" ")} Z`;
+}
+
+export function emberKMorphSideWalls(
+  pose: EmberPose,
+  kMorph: number,
+  concept: EmberKConcept = "skater",
+): string {
+  if (kMorph <= 0) return emberSideWalls(pose);
+  const extrudeScale = 1 - smootherstep(clamp(kMorph / 0.82, 0, 1));
+  const [rawDx, rawDy] = emberDepthOffset(pose);
+  const dx = rawDx * extrudeScale;
+  const dy = rawDy * extrudeScale;
+  const { start: initStart, segments } = emberKMorphPoints(pose, kMorph, concept);
+  const point = ([x, y]: readonly number[]) => `${x.toFixed(2)} ${y.toFixed(2)}`;
+  const back = ([x, y]: readonly number[]) => [x + dx, y + dy];
+  let start: [number, number] = initStart;
+  return segments
+    .map((s) => {
+      const c1: [number, number] = [s[0], s[1]];
+      const c2: [number, number] = [s[2], s[3]];
+      const end: [number, number] = [s[4], s[5]];
+      const outward = (end[1] - start[1]) * dx - (end[0] - start[0]) * dy > 0;
+      const wall = outward
+        ? `M ${point(start)} C ${point(c1)} ${point(c2)} ${point(end)} L ${point(back(end))} C ${point(back(c2))} ${point(back(c1))} ${point(back(start))} Z`
+        : `M ${point(end)} C ${point(c2)} ${point(c1)} ${point(start)} L ${point(back(start))} C ${point(back(c1))} ${point(back(c2))} ${point(back(end))} Z`;
+      start = end;
+      return wall;
+    })
+    .join(" ");
+}
+

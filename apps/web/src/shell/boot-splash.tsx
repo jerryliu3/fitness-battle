@@ -1,13 +1,14 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { type EmberPose } from "@fitness-battle/shared/mascot";
+import { type EmberKConcept, type EmberPose } from "@fitness-battle/shared/mascot";
 import { Ember } from "@/components/mascot/ember";
 import {
   BOOT_DURATION_MS,
   bootEmberPose,
   bootFrame,
   clamp,
+  type BootFlightStyle,
   type BootLayout,
 } from "@fitness-battle/shared/boot";
 
@@ -16,15 +17,25 @@ import "./boot-splash.css";
 type BootSplashProps = {
   /** True after the overtake animation finished but app data is still loading. */
   waiting?: boolean;
+  /** Anatomical K ↔ Ember morph concept ("tucked" Concept 1 vs "skater" Concept 2). */
+  concept?: EmberKConcept;
+  /** Flight trajectory style ("orbit" | "figure8" | "sprint"). */
+  flightStyle?: BootFlightStyle;
   onAnimationComplete: () => void;
 };
 
 /**
  * Product boot splash: OVERTAKE → OVERTAEK.
- * Ember morphs into a K, flies behind the word and around the O, returns in
- * front to overtake E, then crossfades into a literal K.
+ * The literal K in OVERTAKE topologically un-morphs into 3D Star Ember, banks
+ * smoothly behind OVERTA and around the O, slingshots across the foreground to
+ * overtake E, and topologically morphs its limbs back into the final K of OVERTAEK.
  */
-export function BootSplash({ waiting = false, onAnimationComplete }: BootSplashProps) {
+export function BootSplash({
+  waiting = false,
+  concept: conceptProp,
+  flightStyle: styleProp,
+  onAnimationComplete,
+}: BootSplashProps) {
   const stageRef = useRef<HTMLDivElement>(null);
   const wordRef = useRef<HTMLDivElement>(null);
   const lettersRef = useRef<HTMLSpanElement>(null);
@@ -35,7 +46,39 @@ export function BootSplash({ waiting = false, onAnimationComplete }: BootSplashP
   const completed = useRef(false);
   const onCompleteRef = useRef(onAnimationComplete);
   onCompleteRef.current = onAnimationComplete;
-  const [pose, setPose] = useState<EmberPose>(() => bootEmberPose(0));
+
+  const [concept, setConcept] = useState<EmberKConcept>(conceptProp ?? "tucked");
+  const [flightStyle, setFlightStyle] = useState<BootFlightStyle>(styleProp ?? "orbit");
+  const [pose, setPose] = useState<EmberPose>(() =>
+    bootEmberPose(0, { concept: conceptProp ?? "tucked", style: styleProp ?? "orbit" }),
+  );
+  const [kMorph, setKMorph] = useState<number>(() => bootFrame(0).kMorph);
+
+  useEffect(() => {
+    if (conceptProp) {
+      setConcept(conceptProp);
+      return;
+    }
+    try {
+      const saved = window.localStorage.getItem("overtaek-k-concept");
+      if (saved === "tucked" || saved === "skater") setConcept(saved);
+    } catch {
+      // ignore storage errors
+    }
+  }, [conceptProp]);
+
+  useEffect(() => {
+    if (styleProp) {
+      setFlightStyle(styleProp);
+      return;
+    }
+    try {
+      const saved = window.localStorage.getItem("overtaek-flight-style");
+      if (saved === "orbit" || saved === "figure8" || saved === "sprint") setFlightStyle(saved);
+    } catch {
+      // ignore storage errors
+    }
+  }, [styleProp]);
 
   useEffect(() => {
     const stage = stageRef.current!;
@@ -49,7 +92,6 @@ export function BootSplash({ waiting = false, onAnimationComplete }: BootSplashP
     let p = 0;
     let running = false;
     let raf = 0;
-    let lastPublish = 0;
     let start = 0;
     let initial = 0;
     let layout: BootLayout & { homeX: number; homeY: number } = {
@@ -70,25 +112,33 @@ export function BootSplash({ waiting = false, onAnimationComplete }: BootSplashP
     function draw(progress: number, publishPose: boolean) {
       if (disposed || !wordRef.current) return;
       p = clamp(progress);
-      const frame = bootFrame(p, layout);
+      const frame = bootFrame(p, layout, flightStyle);
       const l = layout;
-      letter.style.transform = `translate(${-l.slotWidth * frame.eShift}px,0)`;
+      letter.style.transform = `translate(${-l.slotWidth * frame.eShift}px, ${-frame.eLift}px)`;
       const size = l.font * 1.16 * frame.scale;
       emberHost.style.left = `${l.homeX + frame.x}px`;
       emberHost.style.bottom = `${l.homeY - frame.y}px`;
       emberHost.style.width = `${size}px`;
       emberHost.style.height = `${size}px`;
-      emberHost.style.opacity = String(frame.emberOpacity);
+      // Vector Ember morphs directly from K (kMorph=1) -> Star (kMorph=0) -> K (kMorph=1)
+      emberHost.style.opacity = "1";
       emberHost.style.zIndex = frame.depth < 0 ? "1" : "3";
-      emberHost.style.transform = `translate(-50%, 5%) scale(${frame.facing}, 1)`;
-      kHost.style.left = `${l.homeX + bootFrame(1, layout).x}px`;
+      emberHost.style.transform = "translate(-50%, 5%)";
+      kHost.style.left = `${l.homeX + bootFrame(1, layout, flightStyle).x}px`;
       kHost.style.bottom = `${l.homeY}px`;
       kHost.style.fontSize = `${l.font}px`;
-      kHost.style.opacity = String(frame.kOpacity);
+      kHost.style.opacity = "0";
       kHost.style.zIndex = "3";
       wordRef.current.setAttribute("aria-label", frame.phase === "OVERTAEK" ? "OVERTAEK" : "OVERTAKE");
       if (publishPose) {
-        setPose(bootEmberPose(p, { reducedMotion: media.matches }));
+        setKMorph(frame.kMorph);
+        setPose(
+          bootEmberPose(p, {
+            reducedMotion: media.matches,
+            concept,
+            style: flightStyle,
+          }),
+        );
       }
     }
 
@@ -134,14 +184,11 @@ export function BootSplash({ waiting = false, onAnimationComplete }: BootSplashP
       }
       initial = p;
       start = performance.now();
-      lastPublish = 0;
       running = true;
       function tick(now: number) {
         if (!running || disposed) return;
         const next = clamp(initial + (now - start) / BOOT_DURATION_MS);
-        const publish = now - lastPublish >= 1000 / 30 || next === 1;
-        if (publish) lastPublish = now;
-        draw(next, publish);
+        draw(next, true);
         if (next < 1) raf = requestAnimationFrame(tick);
         else {
           settle();
@@ -187,7 +234,7 @@ export function BootSplash({ waiting = false, onAnimationComplete }: BootSplashP
       media.removeEventListener("change", preferenceChanged);
       document.removeEventListener("visibilitychange", visibilityChanged);
     };
-  }, []);
+  }, [concept, flightStyle]);
 
   return (
     <div className="boot-splash" role="status" aria-live="polite" aria-busy="true">
@@ -204,7 +251,7 @@ export function BootSplash({ waiting = false, onAnimationComplete }: BootSplashP
           </span>
         </div>
         <span ref={emberHostRef} className="boot-splash-ember-fly" aria-hidden="true">
-          <Ember pose={pose} shadow={false} />
+          <Ember pose={pose} kMorph={kMorph} kConcept={concept} shadow={false} />
         </span>
         <span ref={kHostRef} className="boot-splash-k" aria-hidden="true">
           K

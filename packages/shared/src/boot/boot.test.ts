@@ -6,6 +6,7 @@ import {
   bootEmberPose,
   bootFlightT,
   bootFrame,
+  bootKContourMorph,
   bootKCrossfade,
   bootKMorph,
   isCompeteDataReady,
@@ -57,6 +58,7 @@ describe("boot flight path", () => {
     expect(end.kOpacity).toBe(1);
     expect(end.emberOpacity).toBe(0);
     expect(end.eShift).toBe(1);
+    expect(end.kMorph).toBe(1);
   });
 
   it("crossfades Ember into K only after the flight lands", () => {
@@ -78,5 +80,22 @@ describe("boot flight path", () => {
     expect(ready.armRight).toBeGreaterThan(0.7);
     const midFlight = bootEmberPose(READY_END + (FLIGHT_END - READY_END) * 0.5);
     expect(midFlight.trail).toBeGreaterThan(0.3);
+  });
+
+  it("performs bidirectional K -> Ember -> K contour morph and supports both anatomical concepts", () => {
+    expect(bootKContourMorph(0)).toBe(1);
+    expect(bootKContourMorph(READY_END)).toBe(0);
+    expect(bootKContourMorph((READY_END + FLIGHT_END) / 2)).toBe(0);
+    expect(bootKContourMorph(1)).toBe(1);
+
+    const skaterReady = bootEmberPose(READY_END, { concept: "skater" });
+    expect(skaterReady.armLeft).toBeGreaterThan(0.8);
+    expect(skaterReady.armRight).toBeLessThan(-0.7);
+
+    for (const style of ["orbit", "figure8", "sprint"] as const) {
+      const fEnd = bootFrame(1, layout, style);
+      expect(fEnd.x).toBeCloseTo(layout.eWidth, 0);
+      expect(fEnd.kMorph).toBe(1);
+    }
   });
 });
