@@ -35,6 +35,11 @@ export function Arena3D({
         ghost: true,
       }
     : null;
+  const ids = new Set(runners.map((r) => r.id));
+  if (ghost) ids.add(ghost.id);
+  const selected = ids.has(model.selected)
+    ? model.selected
+    : (runners.find((r) => r.you)?.id ?? model.selected);
 
   return createElement(
     "div",
@@ -59,7 +64,7 @@ export function Arena3D({
       ghost,
       time: 1,
       extra: 0,
-      selected: model.selected,
+      selected,
       showGhost: true,
       camera: "above" as const,
       look: defaultLook,

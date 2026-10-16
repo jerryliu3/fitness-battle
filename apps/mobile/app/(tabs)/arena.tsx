@@ -53,8 +53,6 @@ export default function ArenaScreen() {
   const defaultSpan = arena.unit === "km" ? 6 : 20;
   const viewSpan = span ?? defaultSpan;
   const me = arena.lanes.find((l) => l.you);
-  const selected =
-    arena.lanes.find((l) => l.id === selectedId) ?? null;
   const total = me?.values[2] ?? 0;
   const view = { center: center ?? total, span: viewSpan };
   const lanes = arena.lanes
@@ -67,6 +65,11 @@ export default function ArenaScreen() {
       you: l.you,
       ghost: l.ghost,
     }));
+  // Resolve selection against visible lanes so a hidden ghost cannot stick.
+  const selected =
+    arena.lanes.find(
+      (l) => l.id === selectedId && (ghost || !l.ghost),
+    ) ?? null;
   const model: ArenaSceneMessage = {
     type: "arena-view",
     lanes,
@@ -293,7 +296,16 @@ export default function ArenaScreen() {
                 <Text style={f.copy}>Show past you</Text>
                 <Switch
                   value={ghost}
-                  onValueChange={setGhost}
+                  onValueChange={(next) => {
+                    setGhost(next);
+                    if (
+                      !next &&
+                      arena.lanes.some(
+                        (l) => l.id === selectedId && l.ghost,
+                      )
+                    )
+                      setSelectedId(null);
+                  }}
                   accessibilityLabel="Show past you"
                 />
               </View>

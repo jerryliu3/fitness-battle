@@ -63,7 +63,7 @@ flowchart LR
   phone[Phone shell]
   phone --> today[Today checkpoints]
   phone --> arena[Arena track]
-  phone --> field[Field crews and matchups]
+  phone --> field[Crew shared field]
   phone --> you[You medals and settings]
   today --> sheet[Detail sheet]
   arena --> track[2D track]
@@ -73,7 +73,7 @@ flowchart LR
 
 
 - **Today.** Winding checkpoints. Past nodes are counted sessions. Ace stands on today and opens the real suggestion. Future nodes are blank. A return with new counted progress opens Arena first, then Today.
-- **Arena.** The track and the arrival total. No settings under the track. Web also offers the existing 3D pursuit.
+- **Arena.** The track and the arrival total. No settings under the track. 3D pursuit is in-process on web and Expo web; native embeds `/arena-scene` via WebView.
 - **Field / Crew.** Private crews and shared week activity. Practice 1v1 was removed.
 - **You.** Portrait, rating, tracker connections, and a medal shelf. Goalmaxxing goal cards become week-award cards.
 
@@ -83,7 +83,7 @@ Onboarding and login sit outside the tabs. On a wide web window the same phone c
 
 - Shared tokens and tab names in [packages/shared](packages/shared), as plain data. No React Native or DOM imports there.
 - Expo screens in [apps/mobile](apps/mobile), HeroUI Native provider in the root layout. New tab routes replace the current single home screen.
-- Web shell in `apps/web/src/shell/` and `apps/web/src/ui/`, screens in `apps/web/src/features/today|arena|field|you/`. Arena mounts Focus [arena-lanes](apps/web/src/features/focus/arena-lanes.tsx) and [live-pursuit](apps/web/src/features/field/components/live-pursuit.tsx).
+- Web shell in `apps/web/src/shell/` and `apps/web/src/ui/`, screens in `apps/web/src/features/today|arena|field|you/`. Arena mounts Focus [arena-lanes](apps/web/src/features/focus/arena-lanes.tsx) and `@fitness-battle/pursuit` (thin re-export at [live-pursuit](apps/web/src/features/field/components/live-pursuit.tsx)).
 - API routes stay. The current checkpoints-home branch is not the base to keep patching.
 
 ## Component redesign
