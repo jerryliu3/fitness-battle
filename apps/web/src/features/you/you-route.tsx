@@ -44,7 +44,7 @@ function YouContent() {
   const { state, dispatch } = useCompete();
   const [name, setName] = useState("");
   const [city, setCity] = useState("");
-  const [seeded, setSeeded] = useState(false);
+  const seeded = useRef(false);
   const [syncNote, setSyncNote] = useState<string | null>(null);
   const searchParams = useSearchParams();
   const pushIdentity: SyncIdentity | null = user
@@ -55,11 +55,13 @@ function YouContent() {
   const appliedTracker = useRef<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
-  if (state && !seeded) {
-    setSeeded(true);
-    setName(state.name);
-    setCity(state.city);
-  }
+  useEffect(() => {
+    if (state && !seeded.current) {
+      seeded.current = true;
+      setName(state.name);
+      setCity(state.city);
+    }
+  }, [state]);
 
   useEffect(() => {
     const key = `${tracker}:${trackerProvider ?? "strava"}`;

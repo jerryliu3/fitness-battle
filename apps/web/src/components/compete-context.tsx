@@ -88,7 +88,11 @@ function readLocal(userId: string | null): { savedAt: string; state: CompeteStat
 }
 
 function writeLocal(userId: string | null, state: CompeteState, savedAt: string) {
-  localStorage.setItem(storageKey(userId), JSON.stringify({ savedAt, state }));
+  try {
+    localStorage.setItem(storageKey(userId), JSON.stringify({ savedAt, state }));
+  } catch (error) {
+    console.warn("Could not save compete state to local storage:", error);
+  }
 }
 
 export function CompeteProvider({ children }: { children: ReactNode }) {

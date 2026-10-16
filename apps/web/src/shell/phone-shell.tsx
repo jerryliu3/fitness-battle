@@ -24,12 +24,18 @@ import { BootSplash } from "./boot-splash";
 import { isCompeteDataReady, shouldShowBootSplash } from "./boot-gate";
 import "./shell.css";
 
-const WARMED: Record<ShellTabId, ReactNode> = {
-  today: <TodayScreen />,
-  arena: <ArenaScreen />,
-  field: <FieldScreen />,
-  you: <YouRoute />,
-};
+function renderTab(tabId: ShellTabId): ReactNode {
+  switch (tabId) {
+    case "today":
+      return <TodayScreen />;
+    case "arena":
+      return <ArenaScreen />;
+    case "field":
+      return <FieldScreen />;
+    case "you":
+      return <YouRoute />;
+  }
+}
 
 export function PhoneShell({
   children,
@@ -54,6 +60,16 @@ export function PhoneShell({
   const [bootAnimDone, setBootAnimDone] = useState(false);
   const matched = shellTabFromPath(path)?.id ?? null;
   const active = pressed ?? matched;
+  const [visited, setVisited] = useState<Set<ShellTabId>>(() =>
+    new Set(matched ? [matched] : ["today"]),
+  );
+
+  useEffect(() => {
+    if (active && isShellTabId(active)) {
+      setVisited((prev) => (prev.has(active) ? prev : new Set([...prev, active])));
+    }
+  }, [active]);
+
   const dataReady = isCompeteDataReady(loadStatus, state);
 
   function notices() {
@@ -145,7 +161,7 @@ export function PhoneShell({
                   inert={!on}
                   aria-hidden={!on}
                 >
-                  {panel(WARMED[tab.id])}
+                  {visited.has(tab.id) ? panel(renderTab(tab.id)) : null}
                 </div>
               );
             })}
