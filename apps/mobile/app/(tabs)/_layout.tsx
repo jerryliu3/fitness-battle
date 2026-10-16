@@ -13,10 +13,10 @@ export default function TabLayout() {
         sceneStyle: { backgroundColor: SHELL_COLORS.paper },
       }}
     >
-      <Tabs.Screen name="today" options={{ title: "Today" }} />
+      <Tabs.Screen name="today" options={{ title: "Home" }} />
       <Tabs.Screen name="arena" options={{ title: "Arena" }} />
-      <Tabs.Screen name="field" options={{ title: "Field" }} />
-      <Tabs.Screen name="you" options={{ title: "You" }} />
+      <Tabs.Screen name="field" options={{ title: "Crew" }} />
+      <Tabs.Screen name="you" options={{ title: "Athlete" }} />
     </Tabs>
   );
 }

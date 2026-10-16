@@ -4,6 +4,7 @@ import { useCompete } from "@/components/compete-context";
 import { Ace } from "@/features/rally/ace";
 import { Sheet } from "@/ui/sheet";
 import { buildTodayRoute, type CheckpointDisc } from "@fitness-battle/shared";
+import Link from "next/link";
 import { useState } from "react";
 
 export function TodayScreen() {
@@ -18,7 +19,23 @@ export function TodayScreen() {
 
   return (
     <>
-      <p className="fb-kicker">Today</p>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
+        <p className="fb-kicker" style={{ margin: 0 }}>Today</p>
+        <Link
+          href="/design/prototypes"
+          style={{
+            fontSize: 11,
+            fontWeight: 800,
+            background: "var(--lime, #b7f255)",
+            color: "var(--ink, #12141a)",
+            padding: "4px 10px",
+            borderRadius: 999,
+            textDecoration: "none",
+          }}
+        >
+          ✨ UI Redesign Prototypes (5 Designs) →
+        </Link>
+      </div>
       <section className="checkpoint-frame" aria-label="Winding activity checkpoints">
         <svg
           className="checkpoint-route"

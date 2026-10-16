@@ -32,12 +32,22 @@ export function PhoneTabBar({ state, navigation }: PhoneTabBarProps) {
         const tab = SHELL_TABS.find((item) => item.id === (route.name as ShellTabId));
         if (!tab) return null;
         const selected = active === index;
+        const label =
+          route.name === "today"
+            ? "Home"
+            : route.name === "arena"
+              ? "Arena"
+              : route.name === "field"
+                ? "Crew"
+                : route.name === "you"
+                  ? "Athlete"
+                  : tab.label;
         return (
           <Pressable
             key={route.key}
             accessibilityRole="tab"
             accessibilityState={{ selected }}
-            accessibilityLabel={tab.label}
+            accessibilityLabel={label}
             onPress={() => {
               setOptimistic(index);
               navigation.navigate(route.name);
@@ -45,7 +55,7 @@ export function PhoneTabBar({ state, navigation }: PhoneTabBarProps) {
             style={[styles.tab, selected ? styles.tabOn : null]}
           >
             <Text style={[styles.label, selected ? styles.labelOn : null]}>
-              {tab.label}
+              {label}
             </Text>
           </Pressable>
         );
