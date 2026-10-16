@@ -2,6 +2,7 @@ import type { BootLayout } from "../boot/motion";
 import { blendEmberPoses, normalizeEmberPose } from "./model";
 import { EMBER_SKID_SPRAY_DURATION } from "./skid-spray";
 import { sampleEmberLaunch, type EmberLaunchFrame } from "./launch-motion";
+import { emberAirGroundY } from "./skid-rig";
 
 export const EMBER_SKID_TOUCHDOWN = .685;
 export const EMBER_SKID_STOP = .775;
@@ -18,7 +19,7 @@ export function emberSkidWordmarkLayout(layout?:BootLayout) {
 const clamp=(n:number)=>Number.isFinite(n)?Math.max(0,Math.min(1,n)):0;
 const smooth=(n:number)=>{const t=clamp(n);return t*t*(3-2*t);};
 const pulse=(n:number)=>{const t=clamp(n);return 16*t*t*(1-t)**2;};
-const hermite=(a:number,b:number,va:number,t:number,span:number)=>(2*t**3-3*t*t+1)*a+(t**3-2*t*t+t)*span*va+(-2*t**3+3*t*t)*b;
+const hermite=(a:number,b:number,va:number,t:number,span:number,vb=0)=>(2*t**3-3*t*t+1)*a+(t**3-2*t*t+t)*span*va+(-2*t**3+3*t*t)*b+(t**3-t*t)*span*vb;
 /** Forward-only ground travel. Small force changes suggest stick/slip friction. */
 export function emberSkidTravel(amount:number): number {
   const t=clamp(amount);
@@ -26,7 +27,8 @@ export function emberSkidTravel(amount:number): number {
 }
 export type EmberSkidFrame = EmberLaunchFrame & {skid:number;spray?:number};
 /** The skid candidate uses a lower takeoff and one combined turn-to-K finish. */
-export function sampleEmberSkid(progress:number,options:{layout?:BootLayout;returnToK?:boolean;reducedMotion?:boolean}={}): EmberSkidFrame {
+type SkidOptions={layout?:BootLayout;returnToK?:boolean;reducedMotion?:boolean};
+function skidFrame(progress:number,options:SkidOptions): EmberSkidFrame {
   const p=options.reducedMotion?1:clamp(progress),base=sampleEmberLaunch(p,"crest-launch",options);
   const font=options.layout?.font??1,{finalX,passX}=emberSkidWordmarkLayout(options.layout);
   const finish=options.returnToK?EMBER_SKID_FOLDED:EMBER_SKID_SETTLED;
@@ -75,4 +77,24 @@ export function sampleEmberSkid(progress:number,options:{layout?:BootLayout;retu
   const eShift=smooth((x-passX)/(finalX-passX));
   const phase=p<EMBER_SKID_TOUCHDOWN?"Fast pass":p<EMBER_SKID_TOUCHDOWN+.018?"Touchdown":p<EMBER_SKID_STOP?"Slide":options.returnToK?"Reform K":"Settle";
   return {...base,x,y,scale:entry.scale+(1-entry.scale)*smooth((p-.58)/airSpan),depth:1,facing:1,flight,crouch,skid,pose,morph,eShift,landingDust:undefined,spray:activeSpray,phase};
+}
+
+/** Keep the return airborne until the single front-foot contact. The old orbit's
+ * low dip and subsequent climb remain available in the original launch study.
+ */
+export function sampleEmberSkid(progress:number,options:SkidOptions={}): EmberSkidFrame {
+  const p=options.reducedMotion?1:clamp(progress),frame=skidFrame(p,options);
+  if(p<=.42||p>=EMBER_SKID_TOUCHDOWN)return frame;
+  const font=options.layout?.font??1,h=.00001,apex=skidFrame(.5,options);
+  const scaleVelocity=(apex.scale-skidFrame(.5-h,options).scale)/h;
+  // Perspective also joins continuously; a sudden scale-velocity change reads
+  // as a vertical bump when the host is anchored at the bottom of the SVG.
+  const airFrame=(time:number)=>({...skidFrame(time,options),scale:hermite(apex.scale,1,scaleVelocity,(time-.5)/(EMBER_SKID_TOUCHDOWN-.5),EMBER_SKID_TOUCHDOWN-.5)});
+  const descent=(time:number,f:EmberSkidFrame)=>font*(emberAirGroundY(f.pose,f.flight,f.crouch,f.skid,f.scale)-.85*(EMBER_SKID_TOUCHDOWN-time)/(EMBER_SKID_TOUCHDOWN-.5));
+  if(p>=.5){const air=airFrame(p);return {...air,y:descent(p,air)};}
+  // Turn above O before the halfway mark; join the slower descent with the
+  // same vertical velocity, without changing the forward acceleration.
+  const start=skidFrame(.42,options),before=skidFrame(.42-h,options);
+  const endY=descent(.5,apex),endVelocity=(descent(.5+h,airFrame(.5+h))-endY)/h;
+  return {...frame,y:hermite(start.y,endY,(start.y-before.y)/h,(p-.42)/.08,.08,endVelocity)};
 }

@@ -2,7 +2,11 @@
 
 Review `/design/mascot/skid`. This separate follow-up keeps `/design/mascot/launch` and its quick-stop timing available for comparison. Production callers remain on their existing animation.
 
-`sampleEmberSkid()` uses the crest-first crouch and orbit with a lower, shorter hop. Backward flight starts earlier, and the landing has three connected beats:
+`sampleEmberSkid()` uses the crest-first crouch and orbit with a lower, shorter hop. Backward flight starts earlier.
+
+The return now turns above O before the halfway point, then descends continuously into touchdown. The original orbit's low dip and climb are removed from this candidate. Ground clearance is measured from the deformed soles, including body rotation, perspective scale, and the SVG's bottom anchor; the lower sole stays airborne until 3.29s. Perspective scale joins smoothly through the return so it cannot create an apparent second hop. The enlarged preview and exported GIF compensate for their larger character scale while retaining their compressed travel distances.
+
+The landing has three connected beats:
 
 - **Touchdown at 3.29s:** reach the ground before the final seat, with roughly 1.2em still to travel. The accelerating air pass and the grounded slide share their entry velocity.
 - **Slide for 432ms:** brace on Ember's left foot (screen right), keep the rear leg light, and lean back slightly. Small changes in travel rate and torso rotation suggest friction without reversing direction or bouncing the supporting sole.
@@ -12,9 +16,11 @@ Review `/design/mascot/skid`. This separate follow-up keeps `/design/mascot/laun
 
 E stays still until Ember reaches its original position during the skid. Its movement follows Ember’s horizontal pass rather than an early timer. A shared 0.14em spacing correction shifts both E’s final seat and K’s final seat, opening a small visible A–E gap while preserving E–K spacing.
 
+The authoring wordmark measures a zero-height baseline marker aligned with its live text. K uses Nunito Sans's exact .705em cap height, matching the extracted outline's 288-unit height. This replaces the approximate baseline inferred from the slot's nested line box, keeping the initial and final K aligned with E and the other capitals across responsive sizes.
+
 The enlarged demo shows a ground-contact guide and finish marker during the landing. The wordmark uses the same clock and rig without this authoring guide. A landing-only replay runs the approach, slide, and combined turn-to-K finish, while the full replay retains the complete K → Ember → K sequence. Both respect Reduced Motion and stop when the tab is hidden.
 
-Tests cover forward-only sliding, continuous velocity at touchdown and rest, a constant sole height, the raised rear foot, non-crossing silhouette throughout the weight transfer, exact recovery, simultaneous turn/morph, later E movement, spacing, sustained spray, and Reduced Motion. Web and native share the same model; native bundle verification is separate from on-device visual review.
+Tests cover continuous downward travel without premature ground contact, forward-only sliding, continuous horizontal velocity at touchdown and rest, a constant sole height, the raised rear foot, non-crossing silhouette throughout the weight transfer, exact recovery, simultaneous turn/morph, later E movement, spacing, sustained spray, and Reduced Motion. Web and native share the same model; native bundle verification is separate from on-device visual review.
 
 Reproduce the animation from the repository root:
 

@@ -6,23 +6,44 @@ import {skidSprayNodes,EMBER_SKID_SPRAY_DURATION} from "./skid-spray";
 import {emberSkidOffset} from "./skid-rig";
 import {launchFootPoints} from "./launch-shape";
 import {morphEmberContour} from "./morph";
+import {EMBER_K_SIZE_EM} from "./k-outline";
 
 function worldFeet(p:number) {
   const f=sampleEmberSkid(p),pose=f.pose,[dx,dy]=emberSkidOffset(pose,f.flight,f.crouch,f.skid);
   return launchFootPoints(pose,"crest-launch",f.flight,f.crouch,f.skid).map(([x,y])=>{
     const q=rotateEmberPoint(180+(x-180)*pose.scaleX*Math.cos(pose.yaw*1.12),235+(y-235)*pose.scaleY,[180,235],pose.rotation);
-    return [(q[0]+pose.x+dx)*f.scale+f.x*360/.88,(q[1]+pose.y+dy)*f.scale+f.y*360/.88];
+    return [(q[0]+pose.x+dx-180)*f.scale+180+f.x*360/EMBER_K_SIZE_EM,(q[1]+pose.y+dy-400)*f.scale+400+f.y*360/EMBER_K_SIZE_EM];
   });
 }
 describe("front-foot skid follow-up",()=>{
   it("preserves the K and orbit, but makes the hop lower and moves backward earlier",()=>{
-    for(const p of [0,.15,.18,.50,.57]) {
+    for(const p of [0,.15,.18,.20]) {
       const {skid,...frame}=sampleEmberSkid(p);
       expect(skid).toBe(0);expect(frame).toEqual(sampleEmberLaunch(p,"crest-launch"));
     }
     const hop=sampleEmberSkid(.285),oldHop=sampleEmberLaunch(.285,"crest-launch");
     expect(Math.abs(hop.y)).toBeLessThan(Math.abs(oldHop.y)*.6);
     expect(sampleEmberSkid(.255).x).toBeLessThan(sampleEmberLaunch(.255,"crest-launch").x);
+  });
+  it("descends throughout the return and reaches the ground only at touchdown",()=>{
+    const rail=worldFeet(EMBER_SKID_TOUCHDOWN)[1][1];
+    let lastY=-Infinity,lastSole=-Infinity;
+    for(let i=0;i<=740;i++) {
+      const p=.5+(EMBER_SKID_TOUCHDOWN-.5)*i/740,f=sampleEmberSkid(p);
+      const sole=Math.max(...worldFeet(p).map(q=>q[1]));
+      expect(f.y,`host reversal at ${p}`).toBeGreaterThanOrEqual(lastY-1e-8);
+      expect(sole,`sole reversal at ${p}`).toBeGreaterThanOrEqual(lastSole-1e-8);
+      if(i<740)expect(sole,`premature contact at ${p}`).toBeLessThan(rail);
+      lastY=f.y;lastSole=sole;
+    }
+    expect(lastSole).toBeCloseTo(rail,6);
+    // The new aerial turn joins continuously, rather than hiding a height cut.
+    const h=.000001,y=(p:number)=>sampleEmberSkid(p).y;
+    for(const p of [.42,.5,.58])expect(Math.abs((y(p)-y(p-h))/h-(y(p+h)-y(p))/h)).toBeLessThan(.01);
+    for(const font of [40,108]) {
+      const layout={font,overtaWidth:3.6*font,slotWidth:.712*font,eWidth:.55*font};
+      expect(sampleEmberSkid(.62,{layout}).y).toBeCloseTo(sampleEmberSkid(.62).y*font,6);
+    }
   });
   it("lands before the seat, slides forward with friction, then stays still",()=>{
     const at=sampleEmberSkid(EMBER_SKID_TOUCHDOWN),end=sampleEmberSkid(EMBER_SKID_STOP);

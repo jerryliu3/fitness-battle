@@ -7,3 +7,4 @@ export * from "./launch-shape";
 export * from "./launch-motion";
 export * from "./skid-motion";
 export * from "./skid-rig";
+export { EMBER_K_SIZE_EM } from "./k-outline";

@@ -2,7 +2,7 @@
 
 import {useEffect,useRef,useState} from "react";
 import Link from "next/link";
-import {EMBER_LAUNCH_DURATION,EMBER_BRAKE_START,sampleEmberLaunch,sampleEmberSkid,EMBER_SKID_TOUCHDOWN,EMBER_SKID_STOP,EMBER_SKID_FOLDED,type EmberLaunchConcept} from "@fitness-battle/shared/mascot";
+import {EMBER_LAUNCH_DURATION,EMBER_BRAKE_START,sampleEmberLaunch,sampleEmberSkid,emberAirGroundY,EMBER_K_SIZE_EM,EMBER_SKID_TOUCHDOWN,EMBER_SKID_STOP,EMBER_SKID_FOLDED,type EmberLaunchConcept} from "@fitness-battle/shared/mascot";
 import {Ember} from "@/components/mascot/ember";
 import {LaunchWordmark} from "./launch-wordmark";
 import styles from "./launch-study.module.css";
@@ -36,9 +36,14 @@ function useLaunchClock() {
 }
 function CharacterStage({concept,progress,reducedMotion,sliding=false,returnToK=false}:{concept:EmberLaunchConcept;progress:number;reducedMotion:boolean;sliding?:boolean;returnToK?:boolean}) {
   const frame=sliding?sampleEmberSkid(progress,{returnToK}):sampleEmberLaunch(progress,concept);
+  const t=Math.max(0,Math.min(1,(progress-.42)/.08));
+  // This enlarged view compresses travel to 45px/em, while the rig is 240px
+  // wide. Reproject its ground compensation at the rig's actual display size.
+  const ground=sliding&&progress>.42&&progress<EMBER_SKID_TOUCHDOWN?emberAirGroundY(frame.pose,frame.flight,frame.crouch,"skid" in frame?Number(frame.skid):0,frame.scale)*t*t*(3-2*t):0;
+  const y=frame.y*45+ground*(240/EMBER_K_SIZE_EM-45)-(sliding?0:frame.flight*26);
   return <div className={`${styles.characterStage} ${sliding?styles.slidingStage:""}`} role="img" aria-label={`${concept==="crest-launch"?"Crest first":"Race start"}, ${frame.phase}`}>
     {sliding?<div className={styles.skidGround} style={{opacity:frame.phase==="Touchdown"||frame.phase==="Slide"||frame.phase==="Settle"?1:0}} aria-hidden="true"><span>Finish</span></div>:null}
-    <div className={styles.character} style={{transform:`translate(calc(-50% + ${frame.x} * var(--travel-unit, 12px)), ${frame.y*45-(sliding?0:frame.flight*26)}px) scale(${frame.scale*frame.facing},${frame.scale})`}}>
+    <div className={styles.character} style={{transform:`translate(calc(-50% + ${frame.x} * var(--travel-unit, 12px)), ${y}px) scale(${frame.scale*frame.facing},${frame.scale})`}}>
       <Ember pose={frame.pose} morph={frame.morph} morphConcept={concept} launchFlight={frame.flight} launchCrouch={frame.crouch} launchSkid={"skid" in frame?Number(frame.skid):0} skidSpray={reducedMotion?undefined:("spray" in frame?frame.spray as number|undefined:undefined)} landingDust={reducedMotion?undefined:frame.landingDust} shadow={false}/>
     </div>
   </div>;

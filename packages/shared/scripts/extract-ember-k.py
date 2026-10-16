@@ -51,4 +51,6 @@ for i in range(128):
     out.append([round(points[j][k]+(points[j+1][k]-points[j][k])*t,3) for k in range(2)])
 Path("packages/shared/src/mascot/k-outline.ts").write_text(
     "/** Nunito Sans 900 Black K, sampled from the bundled OFL font. Regenerate with scripts/extract-ember-k.py. */\n"
+    + "/** Match the font's .705em cap height to the extracted outline's 288 units. */\n"
+    + "export const EMBER_K_SIZE_EM = .705*360/288;\n"
     + "export const EMBER_K_OUTLINE: readonly (readonly [number, number])[] = " + json.dumps(out,separators=(',',':')) + ";\n")
