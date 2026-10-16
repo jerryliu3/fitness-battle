@@ -1,7 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { FieldRoster } from "@/features/split/components/field-roster";
 import { defaultLook, kits, skins, type HairId, type KitId, type SkinId } from "../avatar";
 import {
@@ -71,6 +71,7 @@ export function FieldStage({
   const maxTime = Math.max(0, (youRunner?.series.length ?? 1) - 1);
   const [mode, setMode] = useState<Mode>("lanes");
   const [time, setTime] = useState(maxTime);
+  const [replaying, setReplaying] = useState(false);
   const [camera, setCamera] = useState<CameraMode>("follow");
   const [showGhost, setShowGhost] = useState(Boolean(ghost));
   const [selectedId, setSelectedId] = useState(you?.id ?? runners[0]?.id ?? "");
@@ -82,6 +83,28 @@ export function FieldStage({
     new Set(model.checkpointLabels).size === 1
       ? ["Start", "Early", "Mid", "Now"]
       : rawLabels;
+
+  // Smooth auto-replay of the week across checkpoints
+  useEffect(() => {
+    if (!replaying || maxTime <= 0) return;
+    let raf = 0;
+    let last = performance.now();
+    function tick(now: number) {
+      const dt = (now - last) / 1000;
+      last = now;
+      setTime((prev) => {
+        const next = prev + dt * (maxTime / 3.4);
+        if (next >= maxTime) {
+          setReplaying(false);
+          return maxTime;
+        }
+        raf = requestAnimationFrame(tick);
+        return next;
+      });
+    }
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [replaying, maxTime]);
 
   const selected =
     (selectedId === ghost?.id ? ghost : runners.find((runner) => runner.id === selectedId)) ??
@@ -118,18 +141,28 @@ export function FieldStage({
   }
 
   const sceneKey = lanes.map((runner) => runner.id).join(":");
+  const currentPlace = placeAt(runners, youRunner.id, time, extra);
+  const basePlace = placeAt(runners, youRunner.id, time, 0);
+  const rankDelta = basePlace - currentPlace;
 
   return (
     <section className="fd-stage">
       <div className="track-gain">
-        <strong>
-          {valueAt(youRunner, time, extra).toFixed(1)}
-          <small>{unit}</small>
-        </strong>
+        <div className="track-gain-top">
+          <strong>
+            {valueAt(youRunner, time, extra).toFixed(1)}
+            <small>{unit}</small>
+          </strong>
+          {rankDelta > 0 ? (
+            <span className="track-overtake-pill">
+              ⚡ Overtakes +{rankDelta} {rankDelta === 1 ? "runner" : "runners"} (#{currentPlace})
+            </span>
+          ) : null}
+        </div>
         <span>
           {ghost && showGhost
             ? `${(valueAt(youRunner, time, extra) - valueAt(ghost, time, 0) >= 0 ? "+" : "")}${(valueAt(youRunner, time, extra) - valueAt(ghost, time, 0)).toFixed(1)} ${unit} vs ${ghost.name.toLowerCase()}`
-            : `${placeAt(runners, youRunner.id, time, extra)} / ${runners.length}`}
+            : `Rank #${currentPlace} of ${runners.length} in your weekly field`}
         </span>
       </div>
 
@@ -206,7 +239,21 @@ export function FieldStage({
             <p className="fb-note">3D is unavailable here. The 2D track stays interactive.</p>
           ) : null}
           <div className="fd-replay track-replay">
-            <label htmlFor="field-replay">Rewind the week</label>
+            <div className="fd-replay-head">
+              <label htmlFor="field-replay">Rewind the week</label>
+              <button
+                type="button"
+                className="fd-replay-play-btn"
+                onClick={() => {
+                  if (!replaying && time >= maxTime - 0.05) {
+                    setTime(0);
+                  }
+                  setReplaying((v) => !v);
+                }}
+              >
+                {replaying ? "⏸ Pause replay" : "▶ Replay week"}
+              </button>
+            </div>
             <input
               id="field-replay"
               type="range"
@@ -215,15 +262,21 @@ export function FieldStage({
               step={0.01}
               value={time}
               aria-valuetext={labels[Math.round(time)] ?? "Replay"}
-              onChange={(event) => setTime(Number(event.target.value))}
+              onChange={(event) => {
+                setReplaying(false);
+                setTime(Number(event.target.value));
+              }}
             />
-            <div>
+            <div className="fd-replay-cuts">
               {labels.map((label, index) => (
                 <button
                   key={`${label}-${index}`}
                   type="button"
-                  aria-pressed={time === index}
-                  onClick={() => setTime(index)}
+                  aria-pressed={Math.abs(time - index) < 0.08}
+                  onClick={() => {
+                    setReplaying(false);
+                    setTime(index);
+                  }}
                 >
                   {index === 0 ? "Start" : label}
                 </button>

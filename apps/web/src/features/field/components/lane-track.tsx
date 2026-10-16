@@ -1,8 +1,11 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { AnimatedEmber } from "@/components/mascot/ember";
+import type { EmberClipName } from "@fitness-battle/shared";
 import {
   gapLabel,
+  placeAt,
   stableLanes,
   trackWindow,
   trackY,
@@ -35,6 +38,31 @@ export function LaneTrack({
   const [span, setSpan] = useState(6);
   const [pan, setPan] = useState<number | null>(null);
   const [overview, setOverview] = useState(true);
+
+  // Smooth spring-like interpolation for time & extra so checkpoint jumps glide smoothly
+  const [animState, setAnimState] = useState({ t: time, ex: extra, moving: false });
+  const targetRef = useRef({ t: time, ex: extra });
+  targetRef.current = { t: time, ex: extra };
+
+  useEffect(() => {
+    let raf = 0;
+    function step() {
+      setAnimState((prev) => {
+        const dt = targetRef.current.t - prev.t;
+        const dex = targetRef.current.ex - prev.ex;
+        if (Math.abs(dt) < 0.004 && Math.abs(dex) < 0.01) {
+          return { t: targetRef.current.t, ex: targetRef.current.ex, moving: false };
+        }
+        const nextT = prev.t + dt * 0.18;
+        const nextEx = prev.ex + dex * 0.22;
+        raf = requestAnimationFrame(step);
+        return { t: nextT, ex: nextEx, moving: true };
+      });
+    }
+    raf = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(raf);
+  }, [time, extra]);
+
   const lanes = stableLanes(runners);
   const you = lanes.find((runner) => runner.you) ?? lanes[0];
 
@@ -50,8 +78,12 @@ export function LaneTrack({
 
   if (!you || lanes.length === 0) return null;
 
+  const displayTime = animState.t;
+  const displayExtra = animState.ex;
+
   const height = 520;
-  const total = valueAt(you, time, extra);
+  const total = valueAt(you, displayTime, displayExtra);
+  const baseTotal = valueAt(you, displayTime, 0);
   const peak = Math.max(
     ...lanes.map((runner) => runner.series.at(-1) ?? 0),
     ghost?.series.at(-1) ?? 0,
@@ -62,6 +94,21 @@ export function LaneTrack({
   const plotWidth = width - 56;
   const laneWidth = plotWidth / lanes.length;
   const y = (distance: number) => trackY(distance, window.min, window.max, height);
+  const startY = Math.max(70, Math.min(height - 36, y(window.min)));
+  const leaderKm = Math.max(...lanes.map((r) => valueAt(r, displayTime, r.you ? displayExtra : 0)));
+  const leaderY = Math.max(70, Math.min(height - 36, y(leaderKm)));
+  const youPlace = placeAt(lanes, you.id, displayTime, displayExtra);
+  const basePlace = placeAt(lanes, you.id, displayTime, 0);
+
+  const emberClip: EmberClipName =
+    youPlace < basePlace
+      ? "celebrate"
+      : animState.moving
+        ? "dash"
+        : youPlace === 1
+          ? "celebrate"
+          : "idle";
+
   const tickStep = overview
     ? Math.max(1, Math.ceil((window.max - window.min) / 6))
     : span <= 3
@@ -152,7 +199,7 @@ export function LaneTrack({
           drag.current = null;
         }}
       >
-        <rect className="lane-ground" width={plotWidth} height={height} />
+        <rect className="lane-ground" width={plotWidth} height={height} rx="14" />
         {lanes.map((runner, index) => (
           <rect
             key={runner.id}
@@ -171,26 +218,76 @@ export function LaneTrack({
             </text>
           </g>
         ))}
+
+        {/* Leader pace reference line */}
+        {leaderKm > 0.1 ? (
+          <line
+            className="lane-leader-line"
+            x1="0"
+            x2={plotWidth}
+            y1={leaderY}
+            y2={leaderY}
+          />
+        ) : null}
+
         {startVisible ? (
           <text className="lane-start" x={plotWidth / 2} y={y(0) + 28} textAnchor="middle">
-            START
+            START LINE
           </text>
         ) : null}
+
+        {/* Effort wake bars behind each runner */}
+        {lanes.map((runner, index) => {
+          const km = valueAt(runner, displayTime, runner.you ? displayExtra : 0);
+          const yy = Math.max(70, Math.min(height - 36, y(km)));
+          const x = (index + 0.5) * laneWidth;
+          const wakeHeight = Math.max(0, startY - yy);
+          const baseYy = runner.you
+            ? Math.max(70, Math.min(height - 36, y(baseTotal)))
+            : yy;
+          return (
+            <g key={`${runner.id}-wake`} pointerEvents="none">
+              {wakeHeight > 2 ? (
+                <rect
+                  className={runner.you ? "lane-wake lane-wake-you" : "lane-wake"}
+                  x={x - (runner.you ? 6 : 4)}
+                  y={yy}
+                  width={runner.you ? 12 : 8}
+                  height={wakeHeight}
+                  rx={runner.you ? 6 : 4}
+                />
+              ) : null}
+              {runner.you && displayExtra > 0.05 && baseYy > yy ? (
+                <line
+                  className="lane-extra-projection"
+                  x1={x}
+                  y1={baseYy}
+                  x2={x}
+                  y2={yy}
+                />
+              ) : null}
+            </g>
+          );
+        })}
+
         {showGhost && ghost ? (
           <g>
             <circle
               className="lane-ghost"
               cx={laneWidth * (lanes.findIndex((runner) => runner.you) + 0.5)}
-              cy={Math.max(70, Math.min(height - 36, y(valueAt(ghost, time))))}
+              cy={Math.max(70, Math.min(height - 36, y(valueAt(ghost, displayTime))))}
               r="12"
             />
           </g>
         ) : null}
+
         {lanes.map((runner, index) => {
           const km = valueAt(runner, time, extra);
-          const raw = y(km);
+          const animKm = valueAt(runner, displayTime, runner.you ? displayExtra : 0);
+          const raw = y(animKm);
           const yy = Math.max(70, Math.min(height - 36, raw));
           const x = (index + 0.5) * laneWidth;
+          const place = placeAt(lanes, runner.id, displayTime, displayExtra);
           return (
             <g
               key={runner.id}
@@ -206,7 +303,16 @@ export function LaneTrack({
                   onSelect(runner.id);
                 }
               }}
+              style={{ cursor: "pointer" }}
             >
+              {runner.you ? (
+                <circle
+                  className="lane-you-halo"
+                  cx={x}
+                  cy={yy}
+                  r="19"
+                />
+              ) : null}
               <circle
                 className={
                   runner.id === selected
@@ -217,8 +323,35 @@ export function LaneTrack({
                 }
                 cx={x}
                 cy={yy}
-                r={runner.you ? 11 : 7}
+                r={runner.you ? 13 : 9}
               />
+              {runner.you ? (
+                <g
+                  transform={`translate(${x - 22}, ${yy - 24})`}
+                  pointerEvents="none"
+                >
+                  <AnimatedEmber clip={emberClip} size={44} shadow={false} />
+                </g>
+              ) : (
+                <text
+                  className="lane-dot-rank"
+                  x={x}
+                  y={yy + 3.5}
+                  textAnchor="middle"
+                  pointerEvents="none"
+                >
+                  {place}
+                </text>
+              )}
+              <text
+                className={runner.you ? "lane-val-label is-you" : "lane-val-label"}
+                x={x}
+                y={yy - (runner.you ? 22 : 14)}
+                textAnchor="middle"
+                pointerEvents="none"
+              >
+                {animKm.toFixed(1)}
+              </text>
             </g>
           );
         })}
@@ -227,13 +360,13 @@ export function LaneTrack({
             key={`${runner.id}-label`}
             className={runner.you ? "lane-heading lane-heading-you" : "lane-heading"}
             x={(index + 0.5) * laneWidth}
-            y="22"
+            y="24"
             textAnchor="middle"
           >
-            {runner.you ? "YOU" : runner.initials}
+            {runner.you ? "★ YOU" : runner.initials}
           </text>
         ))}
-        <text className="lane-unit" x={plotWidth + 8} y="22">
+        <text className="lane-unit" x={plotWidth + 8} y="24">
           {unit.toUpperCase()}
         </text>
       </svg>

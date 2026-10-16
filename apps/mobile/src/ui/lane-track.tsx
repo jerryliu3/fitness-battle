@@ -1,6 +1,7 @@
 import { initialsFromName, stableFieldLanes, type ArenaLane } from "@fitness-battle/shared";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { SHELL_COLORS } from "../theme";
+import { AnimatedEmber } from "./mascot/ember";
 
 const HEIGHT = 360;
 
@@ -34,6 +35,7 @@ export function LaneTrack({
     showGhost ? ghost?.values[index] ?? 0 : 0,
   );
   const youIndex = field.findIndex((lane) => lane.you);
+  const startTop = HEIGHT - 36;
 
   if (!you || field.length === 0) return null;
 
@@ -46,7 +48,8 @@ export function LaneTrack({
         {field.map((lane) => {
           const value = lane.values[index] ?? 0;
           const top = markerTop(value, peak);
-          const radius = lane.you ? 11 : 7;
+          const radius = lane.you ? 13 : 8;
+          const wakeHeight = Math.max(0, startTop - top);
           return (
             <Pressable
               key={lane.id}
@@ -56,8 +59,21 @@ export function LaneTrack({
               style={[styles.lane, lane.you ? styles.laneYou : null]}
             >
               <Text style={lane.you ? styles.headingYou : styles.heading}>
-                {lane.you ? "YOU" : initialsFromName(lane.name)}
+                {lane.you ? "★ YOU" : initialsFromName(lane.name)}
               </Text>
+              {wakeHeight > 2 ? (
+                <View
+                  pointerEvents="none"
+                  style={[
+                    styles.wake,
+                    lane.you ? styles.wakeYou : null,
+                    {
+                      top,
+                      height: wakeHeight,
+                    },
+                  ]}
+                />
+              ) : null}
               <View
                 style={[
                   styles.dot,
@@ -71,6 +87,14 @@ export function LaneTrack({
                   },
                 ]}
               />
+              {lane.you ? (
+                <View
+                  pointerEvents="none"
+                  style={[styles.emberMarker, { top: top - 22 }]}
+                >
+                  <AnimatedEmber clip="idle" size={40} shadow={false} />
+                </View>
+              ) : null}
             </Pressable>
           );
         })}
@@ -129,7 +153,28 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: SHELL_COLORS.ink,
   },
+  wake: {
+    position: "absolute",
+    left: "50%",
+    width: 6,
+    marginLeft: -3,
+    borderRadius: 3,
+    backgroundColor: "rgba(64,35,78,0.16)",
+  },
+  wakeYou: {
+    width: 10,
+    marginLeft: -5,
+    borderRadius: 5,
+    backgroundColor: "rgba(64,35,78,0.32)",
+  },
   dot: { position: "absolute", left: "50%" },
+  emberMarker: {
+    position: "absolute",
+    left: "50%",
+    width: 40,
+    height: 40,
+    marginLeft: -20,
+  },
   ghost: {
     position: "absolute",
     width: 16,
