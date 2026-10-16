@@ -1,13 +1,24 @@
-import { initialsFromName, stableFieldLanes, type ArenaLane } from "@fitness-battle/shared";
+import {
+  distanceTrackMaxKm,
+  effortTrackMax,
+  initialsFromName,
+  stableFieldLanes,
+  type ArenaLane,
+} from "@fitness-battle/shared";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { SHELL_COLORS } from "../theme";
 
 const HEIGHT = 360;
 
-function markerTop(value: number, peak: number): number {
-  const span = Math.max(0.001, peak);
+function markerTop(value: number, ceiling: number): number {
+  const span = Math.max(0.001, ceiling);
   const y = HEIGHT - 36 - (value / span) * (HEIGHT - 96);
   return Math.max(28, Math.min(HEIGHT - 28, y));
+}
+
+/** Shared track ceilings: kilometers keep 5–10 km past the leader, points step by 20. */
+function laneCeiling(unit: string, marks: number[]): number {
+  return unit === "km" ? distanceTrackMaxKm(marks) : effortTrackMax(marks);
 }
 
 export function LaneTrack({
@@ -28,11 +39,9 @@ export function LaneTrack({
   const field = stableFieldLanes(lanes);
   const you = field.find((lane) => lane.you);
   const ghost = lanes.find((lane) => lane.ghost) ?? null;
-  const peak = Math.max(
-    0.001,
-    ...field.map((lane) => lane.values[index] ?? 0),
-    showGhost ? ghost?.values[index] ?? 0 : 0,
-  );
+  const marks = field.map((lane) => lane.values[index] ?? 0);
+  if (showGhost && ghost) marks.push(ghost.values[index] ?? 0);
+  const ceiling = laneCeiling(unit, marks);
   const youIndex = field.findIndex((lane) => lane.you);
 
   if (!you || field.length === 0) return null;
@@ -45,7 +54,7 @@ export function LaneTrack({
       >
         {field.map((lane) => {
           const value = lane.values[index] ?? 0;
-          const top = markerTop(value, peak);
+          const top = markerTop(value, ceiling);
           const radius = lane.you ? 11 : 7;
           return (
             <Pressable
@@ -81,18 +90,15 @@ export function LaneTrack({
               styles.ghost,
               {
                 left: `${((youIndex + 0.5) / field.length) * 100}%`,
-                top: markerTop(ghost.values[index] ?? 0, peak) - 8,
+                top: markerTop(ghost.values[index] ?? 0, ceiling) - 8,
               },
             ]}
           />
         ) : null}
         <Text style={styles.start}>START</Text>
-        <Text style={styles.peak}>
-          {peak.toFixed(1)} {unit}
-        </Text>
       </View>
       <Text style={styles.cutoff}>
-        {labels[index]} · lanes stay put when rank changes
+        {labels[index]} · top of the lane is {ceiling} {unit}
       </Text>
     </View>
   );
@@ -149,14 +155,6 @@ const styles = StyleSheet.create({
     fontFamily: "DMSans_700Bold",
     fontSize: 11,
     letterSpacing: 1.2,
-    color: SHELL_COLORS.muted,
-  },
-  peak: {
-    position: "absolute",
-    top: 8,
-    right: 8,
-    fontFamily: "DMSans_500Medium",
-    fontSize: 11,
     color: SHELL_COLORS.muted,
   },
   cutoff: {
