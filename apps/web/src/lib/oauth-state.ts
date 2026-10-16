@@ -28,11 +28,14 @@ function providerSecret(provider: string): string | undefined {
 
 /** Prefer the live provider secret (always present when authorizeUrl is real). */
 function signingSecret(provider: string): string {
-  return (
-    providerSecret(provider) ||
-    process.env.SUPABASE_SERVICE_ROLE_KEY ||
-    "dev-oauth-state"
-  );
+  const secret = providerSecret(provider) || process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!secret) {
+    if (process.env.NODE_ENV === "production") {
+      throw new Error(`Missing OAuth signing secret for ${provider} in production.`);
+    }
+    return "dev-oauth-state";
+  }
+  return secret;
 }
 
 function b64url(input: string | Buffer): string {
