@@ -47,7 +47,7 @@ export function MascotStudio() {
 
     <section className={styles.intro}>
       <div><p className={styles.eyebrow}>A LITTLE FIRE. A LOT OF CHARACTER.</p><h1>Meet <span>Ember.</span></h1></div>
-      <p>One little spark, ready for anything.<br />The same character in every expression,<br className={styles.desktopBreak} /> every stretch, every small victory.</p>
+      <p>One little spark, ready for anything.<br />The same character in every expression,<br className={styles.desktopBreak} /> every stretch, every small victory.<br /><a href="/design/mascot/motion">Review product motion →</a></p>
     </section>
 
     <div className={styles.workspace}>

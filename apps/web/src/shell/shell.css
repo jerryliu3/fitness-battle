@@ -242,6 +242,14 @@
   padding: 10px 16px;
 }
 
+.checkpoint-ember { position: absolute; width: clamp(140px, 14vw, 180px); aspect-ratio: 360 / 485; bottom: -10px; left: 50%; transform: translateX(-50%); pointer-events: auto; }
+.checkpoint-greeting { display: flex; align-items: center; gap: 16px; margin-block: 12px; }
+.checkpoint-greeting > div { width: 76px; aspect-ratio: 360 / 485; flex: none; }
+.checkpoint-greeting p { color: var(--muted); font-size: 14px; }
+button.checkpoint-disc { cursor: pointer; transition: box-shadow 180ms ease, background-color 180ms ease; }
+button.checkpoint-disc:focus-visible { outline: 3px solid var(--ink); outline-offset: 6px; }
+button.checkpoint-disc:active { box-shadow: 0 0 0 7px color-mix(in srgb, var(--lime) 35%, transparent); }
+
 .checkpoint-copy h1 {
   margin: 4px 0;
   font-size: clamp(28px, 3.2vw, 40px);
@@ -365,4 +373,8 @@
     transition: none;
     animation: none;
   }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .checkpoint-disc { transition: none; }
 }

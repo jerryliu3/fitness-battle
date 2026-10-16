@@ -1,11 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { EMBER_CLIPS, sampleEmber } from "@fitness-battle/shared/mascot";
 import {
   BOOT_DURATION_MS,
   FLIGHT_END,
   READY_END,
   bootEmberPose,
-  bootFlyProgress,
   bootFrame,
 } from "@fitness-battle/shared/boot";
 
@@ -20,22 +18,24 @@ describe("boot splash flight", () => {
     expect(mid.phase).toBe("Flight");
     expect(mid.travel).toBeGreaterThan(0.2);
     expect(bootFrame(1, layout).phase).toBe("OVERTAEK");
-    expect(bootFrame(1, layout).kOpacity).toBe(1);
+    expect(bootFrame(1, layout).morph).toBe(1);
   });
 
-  it("samples flyForward body language during the journey", () => {
-    const mid = sampleEmber("flyForward", bootFlyProgress((READY_END + FLIGHT_END) / 2) * EMBER_CLIPS.flyForward.duration);
-    const end = sampleEmber("flyForward", bootFlyProgress(1) * EMBER_CLIPS.flyForward.duration);
-    expect(mid.trail).toBeGreaterThan(0.3);
-    expect(end.x).toBeDefined();
+  it("banks and streams the crest with the measured journey, then returns to rest", () => {
+    const p = .6;
+    const pose = bootEmberPose(p, { frame: bootFrame(p, layout) });
+    expect(pose.wind).toBeGreaterThan(.8);
+    expect(pose.crest).toBeGreaterThan(.8);
+    expect(pose.depth).toBeGreaterThan(.5);
+    expect(bootEmberPose(1).wind).toBe(0);
   });
 
-  it("starts standing and settles ready for the K crossfade", () => {
+  it("starts standing and settles ready for the K morph", () => {
     const start = bootEmberPose(0);
     expect(start.armLeft).toBeCloseTo(0);
     expect(start.armRight).toBeCloseTo(0);
     const ready = bootEmberPose(READY_END);
-    expect(ready.armLeft).toBeCloseTo(-1);
-    expect(ready.armRight).toBeGreaterThan(0.7);
+    expect(ready.armLeft).toBeCloseTo(0);
+    expect(ready.armRight).toBeCloseTo(0);
   });
 });

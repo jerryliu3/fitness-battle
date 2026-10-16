@@ -180,7 +180,7 @@ export function buildTodayRoute(
     volume: null,
     title: suggestion.title,
     detail: suggestion.detail,
-    accessibilityLabel: "Ace at today’s checkpoint. Open recommendation and coaching",
+    accessibilityLabel: "Ember at today’s checkpoint. Open recommendation and coaching",
   });
 
   CHECKPOINT_ANCHORS.future.forEach((anchor, index) => {

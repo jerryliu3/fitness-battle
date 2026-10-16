@@ -1,7 +1,8 @@
 "use client";
 
 import { useCompete } from "@/components/compete-context";
-import { Ace } from "@/features/rally/ace";
+import { AnimatedEmber } from "@/components/mascot/animated-ember";
+import type { EmberAction } from "@fitness-battle/shared/mascot";
 import { Sheet } from "@/ui/sheet";
 import { buildTodayRoute, type CheckpointDisc } from "@fitness-battle/shared";
 import { useState } from "react";
@@ -9,6 +10,8 @@ import { useState } from "react";
 export function TodayScreen() {
   const { state } = useCompete();
   const [disc, setDisc] = useState<CheckpointDisc | null>(null);
+  const [reaction, setReaction] = useState<{ action: EmberAction; key: number }>({ action: "wave", key: 0 });
+  const react = (action: EmberAction) => setReaction(value => ({ action, key: value.key + 1 }));
   if (!state) return <p className="fb-copy">Loading your week…</p>;
 
   const route = buildTodayRoute(state);
@@ -55,9 +58,12 @@ export function TodayScreen() {
               className={`checkpoint-disc is-${item.role}`}
               style={style}
               aria-label={item.accessibilityLabel}
-              onClick={() => setDisc(item)}
+              onFocus={event => { if(item.role === "today" && event.currentTarget.matches(":focus-visible")) react("wave"); }}
+              onMouseEnter={() => { if(item.role === "today") react("wave"); }}
+              onPointerDown={() => { if(item.role === "today") react("hop"); }}
+              onClick={event => { if(item.role === "today" && event.detail === 0) react("hop"); setDisc(item); }}
             >
-              {item.role === "today" ? <Ace /> : null}
+              {item.role === "today" ? <AnimatedEmber className="checkpoint-ember" action={reaction.action} restartKey={reaction.key} loop={false} playing={reaction.key > 0} /> : null}
               {item.role === "past" ? (
                 <>
                   <span aria-hidden="true">✓</span>
@@ -78,7 +84,9 @@ export function TodayScreen() {
         title={disc?.title ?? "Detail"}
         body={body}
         onClose={() => setDisc(null)}
-      />
+      >
+        {disc?.role === "today" ? <div className="checkpoint-greeting"><AnimatedEmber action="wave" loop={false} restartKey={reaction.key} /><p>One small step. Your pace.</p></div> : null}
+      </Sheet>
     </>
   );
 }

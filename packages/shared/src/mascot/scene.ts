@@ -1,4 +1,5 @@
-import { EMBER_MODEL, emberContour, emberSideWalls, emberExpression, normalizeEmberPose, type EmberExpression, type EmberPose } from "./model";
+import { EMBER_MODEL, emberContour, emberExpression, normalizeEmberPose, type EmberExpression, type EmberPose } from "./model";
+import { morphEmberContour, morphEmberSideWalls, emberMorphColor } from "./morph";
 
 /** A small platform-neutral vector display list. No React, native or DOM dependencies. */
 export interface EmberNode {
@@ -14,13 +15,16 @@ export interface EmberSceneOptions {
   pose?: Partial<EmberPose>;
   expression?: EmberExpression;
   shadow?: boolean;
+  morph?: number;
 }
 
-export function createEmberScene({ id, pose, expression, shadow = true }: EmberSceneOptions): EmberNode[] {
+export function createEmberScene({ id, pose, expression, shadow = true, morph = 0 }: EmberSceneOptions): EmberNode[] {
   const prefix = `ember-${id.replace(/[^a-zA-Z0-9_-]/g, "") || "model"}`;
   const p = normalizeEmberPose({ ...pose, ...(expression ? emberExpression(expression) : {}) });
   const c = EMBER_MODEL.palette;
-  const body = emberContour(p);
+  const amount = Number.isFinite(morph) ? Math.max(0,Math.min(1,morph)) : 0;
+  const detail = (1-amount)**3;
+  const body = morphEmberContour(p, amount);
   const yawScale = Math.cos(p.yaw * 1.12);
   const faceShift = p.yaw * 38;
   const eye = (x: number, open: number): EmberNode => node("g", { transform: `translate(${x} 206)` }, [
@@ -47,7 +51,7 @@ export function createEmberScene({ id, pose, expression, shadow = true }: EmberS
   return [
     node("defs", {}, [
       node("linearGradient", { id: `${prefix}-gold`, x1: "20%", y1: "0%", x2: "85%", y2: "100%" }, [
-        node("stop", { offset: "0%", stopColor: c.light }), node("stop", { offset: "70%", stopColor: c.gold }),
+        node("stop", { offset: "0%", stopColor: emberMorphColor(c.light, amount) }), node("stop", { offset: "70%", stopColor: emberMorphColor(c.gold, amount) }),
       ]),
       node("clipPath", { id: `${prefix}-body` }, [node("path", { d: body })]),
       node("clipPath", { id: `${prefix}-mouth` }, [node("path", { d: mouth })]),
@@ -62,9 +66,9 @@ export function createEmberScene({ id, pose, expression, shadow = true }: EmberS
     node("g", { transform: `translate(${f(p.x)} ${f(p.y)}) translate(180 235) rotate(${f(p.rotation)}) scale(${f(p.scaleX * yawScale)} ${f(p.scaleY)}) translate(-180 -235)` }, [
       // Filled connecting surfaces restore the baseline's directional extrusion.
       // The gold face occludes inward-facing walls; there is no outline stroke or second back star.
-      node("path", { d: emberSideWalls(p), fill: c.edge }),
+      node("path", { d: morphEmberSideWalls(p, amount), fill: emberMorphColor(c.edge, amount) }),
       node("path", { d: body, fill: `url(#${prefix}-gold)` }),
-      node("g", { clipPath: `url(#${prefix}-body)` }, [
+      node("g", { clipPath: `url(#${prefix}-body)`, opacity: detail }, [
         node("path", { d: emberContour(p, true), fill: c.edge }),
         face,
       ]),

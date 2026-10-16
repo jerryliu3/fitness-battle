@@ -5,6 +5,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useCompeteStore } from "../../src/lib/compete-store";
 import { CheckpointRoute } from "../../src/ui/checkpoints";
 import { DetailSheet } from "../../src/ui/detail-sheet";
+import { AnimatedEmber } from "../../src/ui/mascot/animated-ember";
 import { SHELL_COLORS } from "../../src/theme";
 
 export default function TodayScreen() {
@@ -36,7 +37,9 @@ export default function TodayScreen() {
         title={disc?.role === "today" ? disc.title : (disc?.title ?? "Session")}
         body={sheetBody}
         onClose={() => setDisc(null)}
-      />
+      >
+        {disc?.role === "today" ? <AnimatedEmber action="wave" size={72} loop={false} /> : null}
+      </DetailSheet>
     </SafeAreaView>
   );
 }

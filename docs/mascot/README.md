@@ -2,7 +2,7 @@
 
 Star Ember is a connected, deformable vector character based on the four pose references supplied on October 15, 2026. The canonical source is `packages/shared/src/mascot/`. It contains the silhouette, palette, deformation rules, face, vector layers and animation keyframes. Web, native and SVG export all render the **same display list**. A new expression or motion does not require drawing another mascot.
 
-Review it on web at `/design/mascot`, or in the Expo app at `/mascot`. The web studio provides nine motion clips, six expressions, time scrubbing, replay, speed, looping, pose controls, optional ground shadow, and SVG/JSON download. These are dedicated review surfaces. Production `Ace` / `AceStrip` continue to use their approved bundled artwork until a product surface explicitly adopts the new component.
+Review it on web at `/design/mascot`, or in the Expo app at `/mascot`. The web studio provides nine motion clips, six expressions, time scrubbing, replay, speed, looping, pose controls, optional ground shadow, and SVG/JSON download. These are dedicated review surfaces. The production loading screen and Today checkpoint now adopt the vector character; other `Ace` / `AceStrip` surfaces retain their bundled artwork. See the [product motion review](product-motion.md) and `/design/mascot/motion` for the K morph, checkpoint feedback and field transitions.
 
 ![Nine poses sampled from the same model](ember-pose-sheet.png)
 
@@ -29,7 +29,7 @@ The crest, arms and feet rotate around explicit joints. Smooth weights blend tho
 
 The `heading` pose channel rotates the trails behind the movement: 0° points right, -45° up-right, -90° up. Trails follow the body's translation. The loops intentionally return to rest; for continuous travel across a screen, move the component's container in the application. Clip labels, poster sampling times and captions are shared by web, native and the export script.
 
-This is [PR #77](https://github.com/jerryliu3/fitness-battle/pull/77), stacked on [the initial rig PR #76](https://github.com/jerryliu3/fitness-battle/pull/76). Review/merge the base first. Version 2 replaces the generated v1 JSON with `star-ember-model-v2.json`. Existing partial poses continue to work: normalization supplies `heading: 0`, `wind: 0` and `depth: 0` when absent.
+Introduced in [PR #77](https://github.com/jerryliu3/fitness-battle/pull/77), following [the initial rig PR #76](https://github.com/jerryliu3/fitness-battle/pull/76); both are merged. Version 2 replaces the generated v1 JSON with `star-ember-model-v2.json`. Existing partial poses continue to work: normalization supplies `heading: 0`, `wind: 0` and `depth: 0` when absent.
 
 ## What kind of model is this?
 

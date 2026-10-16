@@ -2,6 +2,7 @@
 
 import { formatEffort } from "@fitness-battle/shared";
 import type { BoardRow } from "@fitness-battle/shared";
+import { motion, useReducedMotion } from "motion/react";
 
 export interface RosterGhost {
   id: string;
@@ -28,6 +29,9 @@ export function FieldRoster({
   /** Past-self (or other) ghost — shown as a reference, never ranked. */
   ghost?: RosterGhost | null;
 }) {
+  const reduced = useReducedMotion();
+  const layout = reduced ? false : "position" as const;
+  const transition = { layout: { type: "spring" as const, stiffness: 380, damping: 34 } };
   return (
     <div className="sp-roster" role="list" aria-label="Weekly field">
       {ghost ? (
@@ -100,8 +104,10 @@ export function FieldRoster({
         );
         if (onSelect) {
           return (
-            <button
+            <motion.button
               key={row.id}
+              layout={layout}
+              transition={transition}
               type="button"
               role="listitem"
               className={className}
@@ -109,17 +115,19 @@ export function FieldRoster({
               onClick={() => onSelect(row.id)}
             >
               {body}
-            </button>
+            </motion.button>
           );
         }
         return (
-          <div
+          <motion.div
             key={row.id}
+            layout={layout}
+            transition={transition}
             role="listitem"
             className={`sp-roster-row ${className}`}
           >
             {body}
-          </div>
+          </motion.div>
         );
       })}
     </div>
