@@ -19,6 +19,7 @@ import {
   syntheticCheckpoints,
   type CheckpointSeries,
 } from "./compete/track";
+import { orderedArenaLanes } from "./arena-view";
 import { currentPeriodBounds } from "./period";
 
 export const CHECKPOINT_FRAME = { width: 320, height: 570 } as const;
@@ -81,15 +82,7 @@ export interface ArenaLane {
 
 /** Field lanes only. You stays in the middle. Ghost is not a lane. */
 export function stableFieldLanes(lanes: readonly ArenaLane[]): ArenaLane[] {
-  const field = lanes.filter((lane) => !lane.ghost);
-  const you = field.find((lane) => lane.you);
-  const others = field
-    .filter((lane) => !lane.you)
-    .slice()
-    .sort((a, b) => a.id.localeCompare(b.id));
-  if (!you) return others;
-  const mid = Math.floor(others.length / 2);
-  return [...others.slice(0, mid), you, ...others.slice(mid)];
+  return orderedArenaLanes(lanes);
 }
 
 export interface ArenaModel {

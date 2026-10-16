@@ -38,7 +38,7 @@ export default function ArenaScreen() {
   const [track, setTrack] = useState<ScoreTrack>("open");
   const [mode, setMode] = useState("2D lanes");
   const [center, setCenter] = useState<number | null>(null);
-  const [span, setSpan] = useState(6);
+  const [span, setSpan] = useState<number | null>(null);
   const [ghost, setGhost] = useState(true);
   const [selected, setSelected] = useState<ArenaLane | null>(null);
   const [register, setRegister] = useState(false);
@@ -51,9 +51,11 @@ export default function ArenaScreen() {
       </SafeAreaView>
     );
   const arena = buildArenaModel(state, undefined, track);
+  const defaultSpan = arena.unit === "km" ? 6 : 20;
+  const viewSpan = span ?? defaultSpan;
   const me = arena.lanes.find((l) => l.you);
   const total = me?.values[2] ?? 0;
-  const view = { center: center ?? total, span };
+  const view = { center: center ?? total, span: viewSpan };
   const lanes = arena.lanes
     .filter((l) => ghost || !l.ghost)
     .map((l) => ({
@@ -214,7 +216,6 @@ export default function ArenaScreen() {
             ) : (
               <LaneTrack
                 lanes={arena.lanes}
-                labels={arena.labels}
                 unit={arena.unit}
                 showGhost={ghost}
                 index={2}
@@ -233,22 +234,23 @@ export default function ArenaScreen() {
               {[
                 {
                   label: "＋",
-                  a: () => setSpan(Math.max(1, span / 1.5)),
+                  a: () => setSpan(Math.max(1, viewSpan / 1.5)),
                   name: "Zoom in",
                 },
                 {
                   label: "−",
-                  a: () => setSpan(Math.min(5000, span * 1.5)),
+                  a: () => setSpan(Math.min(5000, viewSpan * 1.5)),
                   name: "Zoom out",
                 },
                 {
                   label: "↓",
-                  a: () => setCenter(Math.max(0, view.center - span / 3)),
+                  a: () =>
+                    setCenter(Math.max(0, view.center - viewSpan / 3)),
                   name: "Move window backward",
                 },
                 {
                   label: "↑",
-                  a: () => setCenter(view.center + span / 3),
+                  a: () => setCenter(view.center + viewSpan / 3),
                   name: "Move window forward",
                 },
               ].map((b) => (
@@ -269,7 +271,7 @@ export default function ArenaScreen() {
                 secondary
                 onPress={() => {
                   setCenter(null);
-                  setSpan(arena.unit === "km" ? 6 : 20);
+                  setSpan(null);
                 }}
               />
               <FocusButton
@@ -283,7 +285,7 @@ export default function ArenaScreen() {
               />
             </View>
             <Text style={f.small}>
-              ± {(span / 2).toFixed(1)} {arena.unit} around{" "}
+              ± {(viewSpan / 2).toFixed(1)} {arena.unit} around{" "}
               {center === null ? "you" : view.center.toFixed(1)}
             </Text>
             {arena.lanes.some((l) => l.ghost) && (

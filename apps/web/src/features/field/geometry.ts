@@ -1,3 +1,5 @@
+import { orderedArenaLanes } from "@fitness-battle/shared";
+
 export interface SceneRunner {
   id: string;
   name: string;
@@ -57,18 +59,11 @@ export function trackY(
   return height - 54 - ((distance - min) / span) * (height - 132);
 }
 
-/** Lane index is identity, never rank. You stays in the middle. */
-export function stableLanes<T extends { id: string; you?: boolean }>(
-  runners: readonly T[],
-): T[] {
-  const you = runners.find((runner) => runner.you);
-  const others = runners
-    .filter((runner) => !runner.you)
-    .slice()
-    .sort((a, b) => a.id.localeCompare(b.id));
-  if (!you) return others;
-  const mid = Math.floor(others.length / 2);
-  return [...others.slice(0, mid), you, ...others.slice(mid)];
+/** Lane index is identity, never rank. You stays in the middle. Ghosts out. */
+export function stableLanes<
+  T extends { id: string; you?: boolean; ghost?: boolean },
+>(runners: readonly T[]): T[] {
+  return orderedArenaLanes(runners);
 }
 
 export function gapLabel(

@@ -32,7 +32,7 @@ Functionality, data, and the custom screens we already like stay. They move into
 - **Checkpoints.** The winding Today view: past counted sessions, Ace on today’s suggestion, blank future nodes, and the return that opens Arena when there is new counted progress. The route, discs, and mascot stay. Buttons and labels around them can be replaced.
 - **2D competition.** The lane track and the standings it draws from. Same model, same lanes. The toggle, replay, and surrounding totals can be restyled.
 - **3D competition.** The existing pursuit render stays on the web Arena, switched with the 2D track. It is a web extra until a phone port exists. It is not replaced by a chart from a library.
-- **The data under those views.** Compete state, period standings, sessions, crews, and 1v1s. `@fitness-battle/shared`, Supabase, and the tracker and crew APIs stay.
+- **The data under those views.** Compete state, period standings, sessions, and crews. `@fitness-battle/shared`, Supabase, and the tracker and crew APIs stay.
 
 ## Replace the generic chrome
 
@@ -74,7 +74,7 @@ flowchart LR
 
 - **Today.** Winding checkpoints. Past nodes are counted sessions. Ace stands on today and opens the real suggestion. Future nodes are blank. A return with new counted progress opens Arena first, then Today.
 - **Arena.** The track and the arrival total. No settings under the track. Web also offers the existing 3D pursuit.
-- **Field.** Join, crews, and practice 1v1.
+- **Field / Crew.** Private crews and shared week activity. Practice 1v1 was removed.
 - **You.** Portrait, rating, tracker connections, and a medal shelf. Goalmaxxing goal cards become week-award cards.
 
 Onboarding and login sit outside the tabs. On a wide web window the same phone column stays centered. Desktop-only layout, if any, comes after the phone screens are right.

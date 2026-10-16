@@ -1,6 +1,6 @@
 "use client";
 
-import { LaneTrack as FieldLanes } from "@/features/field/components/lane-track";
+import { LaneTrack as FieldLanes } from "@/app/design/_studies/shared/lane-track";
 import type { SceneRunner } from "@/features/field/geometry";
 import { ghost } from "../spatial-lab/model";
 import { laneRunners } from "./model";

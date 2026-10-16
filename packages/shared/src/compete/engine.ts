@@ -22,11 +22,7 @@ import {
   type HealthMetricId,
   type SleepNight,
 } from "./health";
-import {
-  athleteWeekEffort,
-  findAthlete,
-  nearestAthletes,
-} from "./field";
+import { athleteWeekEffort } from "./field";
 import {
   acknowledgePeriodResults,
   appendPeriodResults,
@@ -1077,47 +1073,10 @@ export function reduceCompete(
         frozenPeriods: [...rolled.frozenPeriods, periodStart],
       };
     }
-    case "duel": {
-      const sport = action.sport ?? rolled.primary;
-      const enrolled = enrollmentFor(rolled, sport);
-      const periodStart = enrolled?.waveStart ?? rolled.clock.periodStart;
-      const existing = rolled.duels.find(
-        (duel) => duel.sport === sport && duel.periodStart === periodStart,
-      );
-      if (existing) return rolled;
-      const mine = rating(rolled, sport);
-      let rivalId = "";
-      let rivalName = "";
-      let rivalElo = mine.openElo;
-      if (action.mode === "invite") {
-        const username = action.username?.trim() ?? "";
-        if (!username) return rolled;
-        const known = findAthlete(sport, username);
-        rivalId = known?.id ?? `guest:${username.toLowerCase()}`;
-        rivalName = known?.name ?? username;
-        rivalElo = known?.elo ?? mine.openElo;
-      } else {
-        const taken = rolled.duels
-          .filter((duel) => duel.periodStart === periodStart)
-          .map((duel) => duel.rivalId);
-        const match = nearestAthletes(sport, mine.openElo, 1, taken)[0];
-        if (!match) return rolled;
-        rivalId = match.id;
-        rivalName = match.name;
-        rivalElo = match.elo;
-      }
-      const duel: Duel = {
-        id: `duel-${sport}-${periodStart}`,
-        sport,
-        periodStart,
-        rivalId,
-        rivalName,
-        rivalElo,
-        source: action.mode === "invite" ? "invite" : "auto",
-      };
-      const opted = mine.optedIn ? rolled : lockSport(rolled, sport, now);
-      return { ...opted, duels: [...opted.duels, duel] };
-    }
+    case "duel":
+      // Practice 1v1 was removed from the product. Keep the action no-op so
+      // older clients and persisted payloads cannot reintroduce matchups.
+      return rolled.duels.length === 0 ? rolled : { ...rolled, duels: [] };
     case "set-disposition": {
       if (!action.activityId || !action.disposition) return rolled;
       const disposition = action.disposition;

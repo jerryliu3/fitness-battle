@@ -29,7 +29,6 @@ export function LaneTrack({
   onPan,
 }: {
   lanes: ArenaLane[];
-  labels: [string, string, string];
   unit: string;
   showGhost: boolean;
   index: number;

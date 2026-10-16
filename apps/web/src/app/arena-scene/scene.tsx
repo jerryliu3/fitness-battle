@@ -7,6 +7,7 @@ import {
 } from "@fitness-battle/shared";
 import { defaultLook } from "@/features/field/avatar";
 import "@/features/field/field.css";
+
 const Scene = dynamic(
   () =>
     import("@/features/field/components/live-pursuit").then(
@@ -14,6 +15,16 @@ const Scene = dynamic(
     ),
   { ssr: false },
 );
+
+function parentOrigin(): string {
+  try {
+    if (document.referrer) return new URL(document.referrer).origin;
+  } catch {
+    /* ignore bad referrer */
+  }
+  return window.location.origin;
+}
+
 function send(data: object) {
   const native = (
     window as unknown as {
@@ -21,8 +32,10 @@ function send(data: object) {
     }
   ).ReactNativeWebView;
   if (native) native.postMessage(JSON.stringify(data));
-  else if (window.parent !== window) window.parent.postMessage(data, "*");
+  else if (window.parent !== window)
+    window.parent.postMessage(data, parentOrigin());
 }
+
 export function ArenaScene() {
   const [model, setModel] = useState<ArenaSceneMessage | null>(null);
   const [error, setError] = useState(false);
@@ -30,7 +43,11 @@ export function ArenaScene() {
     function receive(event: MessageEvent) {
       const native = !!(window as unknown as { ReactNativeWebView?: unknown })
         .ReactNativeWebView;
-      if (!native && event.source !== window.parent) return;
+      if (!native) {
+        if (event.source !== window.parent) return;
+        if (event.origin !== parentOrigin() && event.origin !== window.location.origin)
+          return;
+      }
       let data = event.data;
       try {
         if (typeof data === "string") data = JSON.parse(data);

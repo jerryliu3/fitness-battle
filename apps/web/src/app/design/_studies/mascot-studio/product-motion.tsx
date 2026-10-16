@@ -6,7 +6,7 @@ import { Ember } from "@/components/mascot/ember";
 import { BOOT_DURATION_MS } from "@fitness-battle/shared/boot";
 import type { EmberMorphConcept } from "@fitness-battle/shared/mascot";
 import { FieldRoster } from "@/features/split/components/field-roster";
-import { LaneTrack } from "@/features/field/components/lane-track";
+import { LaneTrack } from "@/app/design/_studies/shared/lane-track";
 import { valueAt, type SceneRunner } from "@/features/field/geometry";
 import "@/features/split/split.css";
 import "@/features/field/field.css";

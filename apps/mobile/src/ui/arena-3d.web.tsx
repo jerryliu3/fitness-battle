@@ -44,7 +44,11 @@ export function Arena3D({
     };
   }, [origin]);
   useEffect(() => {
-    ref.current?.contentWindow?.postMessage(model, origin);
+    if (!ready.current) return;
+    const id = window.setTimeout(() => {
+      ref.current?.contentWindow?.postMessage(latest.current.model, origin);
+    }, 80);
+    return () => window.clearTimeout(id);
   }, [model, origin]);
   return createElement("iframe", {
     ref,

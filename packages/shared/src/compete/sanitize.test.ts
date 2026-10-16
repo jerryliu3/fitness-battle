@@ -16,6 +16,24 @@ describe("sanitizeCompeteStateForAccount", () => {
     expect(sanitizeCompeteStateForAccount(freshState()).demoNow).toBeNull();
   });
 
+  it("clears retired practice duel rows on account sanitize", () => {
+    const state = {
+      ...freshState(),
+      duels: [
+        {
+          id: "legacy",
+          sport: "running" as const,
+          periodStart: "2026-10-12T00:00:00.000Z",
+          rivalId: "rival",
+          rivalName: "Rival",
+          rivalElo: 1000,
+          source: "auto" as const,
+        },
+      ],
+    };
+    expect(sanitizeCompeteStateForAccount(state).duels).toEqual([]);
+  });
+
   it("strips durable crewBoard and pendingRevealIds for account writes", () => {
     const state = {
       ...freshState(),

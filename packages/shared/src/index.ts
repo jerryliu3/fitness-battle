@@ -8,6 +8,5 @@ export * from "./shell";
 export * from "./phone-views";
 export * from "./notifications";
 export { DEMO_CATEGORIES, DEMO_BATTLES, demoStandings } from "./demo-data";
-export * from "./layout-concepts";
 export * from "./arena-view";
 export * from "./arena-bridge";

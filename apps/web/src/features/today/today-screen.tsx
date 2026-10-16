@@ -8,6 +8,7 @@ import {
   buildTodayRoute,
   competeNow,
   countsOnTrack,
+  currentPeriodBounds,
   formatVolume,
   sportById,
   type Activity,
@@ -26,11 +27,16 @@ export function TodayScreen() {
   if (!state) return <p className="fb-copy">Loading your week…</p>;
   const route = buildTodayRoute(state);
   const now = competeNow(state);
+  const period = currentPeriodBounds(state.clock.kind, now);
   const sessions = state.activities
     .filter((a) => countsOnTrack(a, "open") && new Date(a.startedAt) <= now)
     .slice()
     .sort((a, b) => b.startedAt.localeCompare(a.startedAt))
     .slice(0, 10);
+  const weekSessions = sessions.filter((a) => {
+    const at = new Date(a.startedAt).getTime();
+    return at >= period.startsAt.getTime() && at < period.endsAt.getTime();
+  }).length;
   const openToday = () => {
     react("hop");
     setDetail({
@@ -80,15 +86,8 @@ export function TodayScreen() {
         </summary>
         <div className="focus-details-body">
           <p className="fb-copy">
-            {
-              sessions.filter(
-                (a) =>
-                  new Date(a.startedAt) >=
-                  new Date(now.getTime() - 7 * 86400000),
-              ).length
-            }{" "}
-            counted sessions in the last seven days. Open Arena to see your
-            competition totals.
+            {weekSessions} counted sessions in this competition period. Open
+            Arena to see your competition totals.
           </p>
         </div>
       </details>

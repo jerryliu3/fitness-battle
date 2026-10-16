@@ -10,7 +10,13 @@ import {
 import { ArenaLanes } from "@/features/focus/arena-lanes";
 import { Sheet } from "@/ui/sheet";
 import { defaultLook } from "../avatar";
-import { gapLabel, stableLanes, valueAt, type SceneRunner } from "../geometry";
+import {
+  gapLabel,
+  placeAt,
+  stableLanes,
+  valueAt,
+  type SceneRunner,
+} from "../geometry";
 import type { FieldModel } from "../model";
 const LivePursuit = dynamic(
   () => import("./live-pursuit").then((m) => m.LivePursuit),
@@ -75,9 +81,6 @@ export function FieldStage({
   }));
   const chosen =
     selected === ghost?.id ? ghost : runners.find((r) => r.id === selected);
-  const sorted = [...runners].sort(
-    (a, b) => valueAt(b, time) - valueAt(a, time),
-  );
   if (!you) return <p className="fb-copy">Join a field to see your lanes.</p>;
   return (
     <section className="focus-arena-stage">
@@ -90,7 +93,7 @@ export function FieldStage({
           </strong>
         </div>
         <span className="focus-status">
-          {sorted.findIndex((r) => r.you) + 1} / {runners.length}
+          {placeAt(runners, you.id, time, 0)} / {runners.length}
           <small>your place</small>
         </span>
       </div>
@@ -226,18 +229,20 @@ export function FieldStage({
           Full standings <span>＋</span>
         </summary>
         <div className="focus-standings">
-          {sorted.map((r, i) => (
-            <button key={r.id} onClick={() => setSelected(r.id)}>
-              <span>{i + 1}</span>
-              <b>{r.you ? "You" : r.name}</b>
-              <small>
-                {boardRows?.find((row) => row.id === r.id)?.elo ?? "—"} Elo
-              </small>
-              <strong>
-                {valueAt(r, time).toFixed(1)} {unit}
-              </strong>
-            </button>
-          ))}
+          {[...runners]
+            .sort((a, b) => valueAt(b, time) - valueAt(a, time))
+            .map((r) => (
+              <button key={r.id} onClick={() => setSelected(r.id)}>
+                <span>{placeAt(runners, r.id, time, 0)}</span>
+                <b>{r.you ? "You" : r.name}</b>
+                <small>
+                  {boardRows?.find((row) => row.id === r.id)?.elo ?? "—"} Elo
+                </small>
+                <strong>
+                  {valueAt(r, time).toFixed(1)} {unit}
+                </strong>
+              </button>
+            ))}
         </div>
       </details>
       <p className="fb-note">

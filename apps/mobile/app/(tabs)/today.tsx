@@ -13,6 +13,7 @@ import {
   buildTodayRoute,
   competeNow,
   countsOnTrack,
+  currentPeriodBounds,
   formatVolume,
   sportById,
   type Activity,
@@ -39,11 +40,16 @@ export default function Home() {
     );
   const route = buildTodayRoute(state);
   const now = competeNow(state);
+  const period = currentPeriodBounds(state.clock.kind, now);
   const sessions = state.activities
     .filter((a) => countsOnTrack(a, "open") && new Date(a.startedAt) <= now)
     .slice()
     .sort((a, b) => b.startedAt.localeCompare(a.startedAt))
     .slice(0, 10);
+  const weekSessions = sessions.filter((a) => {
+    const at = new Date(a.startedAt).getTime();
+    return at >= period.startsAt.getTime() && at < period.endsAt.getTime();
+  }).length;
   function today() {
     void AccessibilityInfo.isReduceMotionEnabled().then((reduce) => {
       if (!reduce)
@@ -97,15 +103,8 @@ export default function Home() {
         </Pressable>
         <FocusDisclosure title="Your week at a glance">
           <Text style={f.copy}>
-            {
-              sessions.filter(
-                (a) =>
-                  new Date(a.startedAt) >=
-                  new Date(now.getTime() - 7 * 86400000),
-              ).length
-            }{" "}
-            counted sessions in the last seven days. Explore Arena for your
-            competition totals.
+            {weekSessions} counted sessions in this competition period. Explore
+            Arena for your competition totals.
           </Text>
         </FocusDisclosure>
         <View style={f.row}>

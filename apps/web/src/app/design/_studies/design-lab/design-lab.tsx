@@ -456,9 +456,6 @@ export function DesignLab() {
         </button>
       </header>
       <div className="lab-context">
-        <Link href="/design/structure">
-          New: five complete Home / Arena / Crew / Athlete layouts ↗
-        </Link>
         <span>{direction.descriptor}</span>
         <span>70% individual / 30% optional groups · Design intent</span>
         <span>Sample snapshot · Thu, Oct 15, 2026</span>
