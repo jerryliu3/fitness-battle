@@ -28,4 +28,6 @@
 .branchMap i { display:inline-block; width:6px; height:6px; border-radius:50%; margin-right:5px; }
 .caption { margin-top:18px; max-width:850px; }
 .section :is(button,input):focus-visible { outline:3px solid #8ab254; outline-offset:5px; }
-@media(max-width:700px) { .grid { grid-template-columns:1fr; } .heading { flex-direction:column; align-items:start; } .actions { flex-direction:row; align-items:center; flex-wrap:wrap; } .card { padding:20px; } .stage { height:290px; } }
+@media(max-width:700px) { .heading { flex-direction:column; align-items:start; } .actions { flex-direction:row; align-items:center; flex-wrap:wrap; } .card { padding:20px; } .stage { height:290px; } }
+
+@media(max-width:600px) { .grid { grid-template-columns:1fr; } }
