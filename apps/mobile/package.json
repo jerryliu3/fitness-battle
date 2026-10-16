@@ -29,6 +29,7 @@
     "expo-constants": "~18.0.14",
     "expo-device": "~8.0.10",
     "expo-font": "~14.0.12",
+    "expo-gl": "~16.0.7",
     "expo-linking": "^8.0.7",
     "expo-notifications": "~0.32.17",
     "expo-router": "^6.0.8",
@@ -51,12 +52,14 @@
     "tailwind-merge": "^3.4.0",
     "tailwind-variants": "^3.2.2",
     "tailwindcss": "^4.3.3",
+    "three": "0.186.1",
     "uniwind": "^1.12.2",
     "whatwg-fetch": "^3.6.20"
   },
   "devDependencies": {
     "@types/node": "^20",
     "@types/react": "~19.1.10",
+    "@types/three": "0.186.0",
     "typescript": "^5.9.2",
     "vitest": "^3.2.4"
   }

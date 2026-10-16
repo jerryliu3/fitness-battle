@@ -1,10 +1,12 @@
 import {
   buildArenaModel,
+  initialsFromName,
+  stableFieldLanes,
   type ArenaLane,
 } from "@fitness-battle/shared";
 import { Button } from "heroui-native/button";
 import { useRouter } from "expo-router";
-import { useState } from "react";
+import { useEffect, useRef, useState, type ComponentType } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useCompeteStore } from "../../src/lib/compete-store";
@@ -12,12 +14,60 @@ import { DetailSheet } from "../../src/ui/detail-sheet";
 import { LaneTrack } from "../../src/ui/lane-track";
 import { SHELL_COLORS, SHELL_RADIUS } from "../../src/theme";
 
+type FieldMode = "lanes" | "pursuit";
+type CameraMode = "follow" | "above" | "avatar";
+
+type PursuitProps = {
+  lanes: ArenaLane[];
+  index: number;
+  showGhost: boolean;
+  camera: CameraMode;
+  onUnavailable: () => void;
+};
+
+function LivePursuit({ sceneKey, ...props }: PursuitProps & { sceneKey: string }) {
+  const [Comp, setComp] = useState<ComponentType<PursuitProps> | null>(null);
+  const [failed, setFailed] = useState(false);
+  const report = useRef(props.onUnavailable);
+  report.current = props.onUnavailable;
+
+  useEffect(() => {
+    let alive = true;
+    import("../../src/ui/pursuit")
+      .then((mod) => {
+        if (alive) setComp(() => mod.Pursuit);
+      })
+      .catch(() => {
+        if (alive) setFailed(true);
+      });
+    return () => {
+      alive = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (failed) report.current();
+  }, [failed]);
+
+  if (failed || !Comp) {
+    return (
+      <View style={styles.pursuitHold}>
+        <Text style={styles.copy}>Preparing the track…</Text>
+      </View>
+    );
+  }
+  return <Comp key={sceneKey} {...props} />;
+}
+
 export default function ArenaScreen() {
   const { state, dispatch, returnGain, clearReturn } = useCompeteStore();
   const router = useRouter();
   const [index, setIndex] = useState(2);
   const [showGhost, setShowGhost] = useState(true);
   const [selected, setSelected] = useState<ArenaLane | null>(null);
+  const [mode, setMode] = useState<FieldMode>("lanes");
+  const [camera, setCamera] = useState<CameraMode>("follow");
+  const [unavailable, setUnavailable] = useState(false);
 
   if (!state) {
     return (
@@ -69,14 +119,92 @@ export default function ArenaScreen() {
 
         {arena.optedIn && you ? (
           <>
-            <LaneTrack
-              lanes={arena.lanes}
-              labels={arena.labels}
-              unit={arena.unit}
-              showGhost={showGhost}
-              index={index}
-              onSelect={setSelected}
-            />
+            <View style={styles.replay} accessibilityRole="tablist">
+              <Pressable
+                accessibilityRole="tab"
+                accessibilityState={{ selected: mode === "lanes" }}
+                onPress={() => setMode("lanes")}
+                style={[styles.replayTab, mode === "lanes" ? styles.replayOn : null]}
+              >
+                <Text style={[styles.replayText, mode === "lanes" ? styles.replayTextOn : null]}>
+                  2D lanes
+                </Text>
+              </Pressable>
+              <Pressable
+                accessibilityRole="tab"
+                accessibilityState={{ selected: mode === "pursuit" }}
+                onPress={() => {
+                  setUnavailable(false);
+                  setMode("pursuit");
+                }}
+                style={[styles.replayTab, mode === "pursuit" ? styles.replayOn : null]}
+              >
+                <Text style={[styles.replayText, mode === "pursuit" ? styles.replayTextOn : null]}>
+                  3D Pursuit
+                </Text>
+              </Pressable>
+            </View>
+            {mode === "pursuit" && !unavailable ? (
+              <>
+                <View style={styles.replay}>
+                  {(["follow", "above", "avatar"] as const).map((id) => (
+                    <Pressable
+                      key={id}
+                      accessibilityRole="button"
+                      accessibilityState={{ selected: camera === id }}
+                      onPress={() => setCamera(id)}
+                      style={[styles.replayTab, camera === id ? styles.replayOn : null]}
+                    >
+                      <Text style={[styles.replayText, camera === id ? styles.replayTextOn : null]}>
+                        {id === "follow" ? "Follow" : id === "above" ? "Above" : "Avatar"}
+                      </Text>
+                    </Pressable>
+                  ))}
+                </View>
+                <LivePursuit
+                  sceneKey={arena.lanes
+                    .map((lane) => lane.id)
+                    .sort()
+                    .join("|")}
+                  lanes={arena.lanes}
+                  index={index}
+                  showGhost={showGhost}
+                  camera={camera}
+                  onUnavailable={() => setUnavailable(true)}
+                />
+                <View style={styles.pickers}>
+                  {stableFieldLanes(arena.lanes).map((lane) => {
+                    const on = selected?.id === lane.id;
+                    return (
+                      <Pressable
+                        key={lane.id}
+                        accessibilityRole="button"
+                        accessibilityLabel={lane.name}
+                        accessibilityState={{ selected: on }}
+                        onPress={() => setSelected(lane)}
+                        style={[styles.picker, on ? styles.replayOn : null]}
+                      >
+                        <Text style={[styles.replayText, on ? styles.replayTextOn : null]}>
+                          {lane.you ? "YOU" : initialsFromName(lane.name)}
+                        </Text>
+                      </Pressable>
+                    );
+                  })}
+                </View>
+              </>
+            ) : (
+              <LaneTrack
+                lanes={arena.lanes}
+                labels={arena.labels}
+                unit={arena.unit}
+                showGhost={showGhost}
+                index={index}
+                onSelect={setSelected}
+              />
+            )}
+            {unavailable ? (
+              <Text style={styles.copy}>3D is unavailable here. The 2D track stays interactive.</Text>
+            ) : null}
             <View style={styles.replay} accessibilityRole="tablist">
               {arena.labels.map((label, labelIndex) => {
                 const on = index === labelIndex;
@@ -188,6 +316,19 @@ const styles = StyleSheet.create({
   replayTextOn: { color: SHELL_COLORS.tennis },
   ghostToggle: { minHeight: 44, justifyContent: "center" },
   ghostText: { fontFamily: "DMSans_700Bold", color: SHELL_COLORS.plum },
+  pursuitHold: { height: 360, alignItems: "center", justifyContent: "center" },
+  pickers: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
+  picker: {
+    minHeight: 44,
+    minWidth: 52,
+    paddingHorizontal: 12,
+    borderRadius: SHELL_RADIUS.pill,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: SHELL_COLORS.card,
+    borderWidth: 1,
+    borderColor: SHELL_COLORS.line,
+  },
   empty: { gap: 12, paddingTop: 12 },
   copy: { fontFamily: "DMSans_400Regular", color: SHELL_COLORS.muted, fontSize: 15 },
 });

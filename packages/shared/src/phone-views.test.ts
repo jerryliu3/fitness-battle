@@ -5,6 +5,7 @@ import {
   CHECKPOINT_ANCHORS,
   awardCards,
   buildArenaModel,
+  stableFieldLanes,
   buildTodayRoute,
   countedActivityIds,
   newCountedIds,
@@ -86,6 +87,21 @@ describe("arena lanes", () => {
     expect(you?.values[2]).toBeGreaterThan(0);
     expect(ghost?.values[2]).toBeGreaterThan(0);
     expect(arena.labels).toHaveLength(3);
+  });
+
+  it("keeps you in the middle lane when the field is reordered", () => {
+    const lanes = [
+      { id: "b", name: "B", you: false, ghost: false, values: [1, 2, 3] as [number, number, number] },
+      { id: "a", name: "A", you: false, ghost: false, values: [1, 2, 3] as [number, number, number] },
+      { id: "you", name: "You", you: true, ghost: false, values: [1, 2, 3] as [number, number, number] },
+      { id: "ghost", name: "Past", you: false, ghost: true, values: [1, 2, 3] as [number, number, number] },
+    ];
+    expect(stableFieldLanes(lanes).map((lane) => lane.id)).toEqual(["a", "you", "b"]);
+    expect(stableFieldLanes([...lanes].reverse()).map((lane) => lane.id)).toEqual([
+      "a",
+      "you",
+      "b",
+    ]);
   });
 
   it("stays empty until the athlete opts in", () => {
