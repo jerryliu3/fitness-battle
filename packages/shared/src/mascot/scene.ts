@@ -1,6 +1,6 @@
-import { EMBER_MODEL, emberContour, emberExpression, normalizeEmberPose, type EmberExpression, type EmberPose } from "./model";
+import { EMBER_MODEL, emberContour, emberExpression, normalizeEmberPose, rotateEmberPoint, type EmberExpression, type EmberPose } from "./model";
 import { morphEmberContour, morphEmberSideWalls, emberMorphColor, type EmberMorphConcept } from "./morph";
-import { launchCrescent, launchForearm, launchLean } from "./launch-shape";
+import { launchCrescent, launchFootPoints, launchForearm, launchLean } from "./launch-shape";
 import { landingDustNodes } from "./landing-dust";
 import { limbMorphCrescent } from "./limb-morph";
 
@@ -23,11 +23,13 @@ export interface EmberSceneOptions {
   morphConcept?: EmberMorphConcept;
   /** New launch study only; zero holds its sculpted stance, one is flying. */
   launchFlight?: number;
-  /** Normalized elapsed time since a sharp stop. */
+  /** Local knee bend with fixed soles, used by the crest-first launch study. */
+  launchCrouch?: number;
+  /** Normalized elapsed time since touchdown. */
   landingDust?: number;
 }
 
-export function createEmberScene({ id, pose, expression, shadow = true, morph = 0, morphConcept = "baseline", launchFlight = 0, landingDust }: EmberSceneOptions): EmberNode[] {
+export function createEmberScene({ id, pose, expression, shadow = true, morph = 0, morphConcept = "baseline", launchFlight = 0, launchCrouch = 0, landingDust }: EmberSceneOptions): EmberNode[] {
   const prefix = `ember-${id.replace(/[^a-zA-Z0-9_-]/g, "") || "model"}`;
   const p = normalizeEmberPose({ ...pose, ...(expression ? emberExpression(expression) : {}) });
   const c = EMBER_MODEL.palette;
@@ -35,9 +37,14 @@ export function createEmberScene({ id, pose, expression, shadow = true, morph = 
   const detail = (1-amount)**3;
   const isLaunch = morphConcept === "crest-launch" || morphConcept === "race-launch";
   const flight = Number.isFinite(launchFlight) ? Math.max(0,Math.min(1,launchFlight)) : 0;
-  const body = morphEmberContour(p, amount, morphConcept, flight);
-  const crescent = isLaunch ? launchCrescent(p, amount, morphConcept, flight) : morphConcept === "baseline" ? emberContour(p,true) : limbMorphCrescent(p,amount,morphConcept);
+  const crouch = Number.isFinite(launchCrouch) ? Math.max(0,Math.min(1,launchCrouch)) : 0;
+  const body = morphEmberContour(p, amount, morphConcept, flight, crouch);
+  const crescent = isLaunch ? launchCrescent(p, amount, morphConcept, flight, crouch) : morphConcept === "baseline" ? emberContour(p,true) : limbMorphCrescent(p,amount,morphConcept);
   const yawScale = Math.cos(p.yaw * 1.12);
+  const dust = landingDust === undefined ? [] : (isLaunch ? launchFootPoints(p,morphConcept,flight,crouch) : [[140,362] as const]).flatMap(([x,y],i)=>{
+    const sole=rotateEmberPoint(180+(x-180)*p.scaleX*yawScale,235+(y-235)*p.scaleY,[180,235],p.rotation);
+    return landingDustNodes(landingDust,[sole[0]+p.x,sole[1]+p.y],i===0?-1:1);
+  });
   const faceShift = p.yaw * 38;
   const eye = (x: number, open: number): EmberNode => node("g", { transform: `translate(${x} 206)` }, [
     node("g", { opacity: f(open) }, [
@@ -75,15 +82,15 @@ export function createEmberScene({ id, pose, expression, shadow = true, morph = 
       node("g", { opacity: f(p.sparkle) }, [sparkle(-157, -43, 6), sparkle(-175, 23, 4), sparkle(-126, 58, 7)]),
     ]),
     node("g", { opacity: f(p.sparkle * (1 - p.trail * 0.85)) }, [sparkle(287, 88, 12), sparkle(318, 114, 7), sparkle(303, 57, 6), sparkle(65, 105, 8)]),
-    ...landingDustNodes(landingDust, morphConcept === "race-launch" ? [250,350] : [140,362]),
+    ...dust,
     node("g", { transform: `translate(${f(p.x)} ${f(p.y)}) translate(180 235) rotate(${f(p.rotation)}) scale(${f(p.scaleX * yawScale)} ${f(p.scaleY)}) translate(-180 -235)` }, [
       // Filled connecting surfaces restore the baseline's directional extrusion.
       // The gold face occludes inward-facing walls; there is no outline stroke or second back star.
-      node("path", { d: morphEmberSideWalls(p, amount, morphConcept, flight), fill: emberMorphColor(c.edge, amount) }),
+      node("path", { d: morphEmberSideWalls(p, amount, morphConcept, flight, crouch), fill: emberMorphColor(c.edge, amount) }),
       node("path", { d: body, fill: `url(#${prefix}-gold)` }),
       node("g", { clipPath: `url(#${prefix}-body)`, opacity: detail }, [
         node("path", { d: crescent, fill: c.edge }),
-        ...(isLaunch ? [node("g", {transform:`rotate(${f(launchLean(morphConcept,flight)*(1-amount))} 180 235)`},[face])] : [face]),
+        ...(isLaunch ? [node("g", {transform:`rotate(${f(launchLean(morphConcept,flight)*(1-amount))} 180 235) translate(0 ${morphConcept==="crest-launch"?f(30*crouch):0})`},[face])] : [face]),
         ...(morphConcept === "race-launch" ? [node("g",{opacity:f((1-flight)**2)},[
           node("path",{d:launchForearm(p,amount,flight),fill:`url(#${prefix}-gold)`}),
           node("path",{d:launchForearm(p,amount,flight,true),fill:"none",stroke:c.edge,strokeWidth:3,strokeLinecap:"round",opacity:.42}),

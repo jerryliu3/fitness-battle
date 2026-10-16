@@ -1,9 +1,10 @@
 import {describe,it,expect} from "vitest";
 import {EMBER_REST,normalizeEmberPose} from "./model";
 import {morphEmberContour} from "./morph";
-import {sampleEmberLaunch,EMBER_CONTACT} from "./launch-motion";
-import {type EmberLaunchConcept} from "./launch-shape";
+import {sampleEmberLaunch,EMBER_BRAKE_START,EMBER_CONTACT} from "./launch-motion";
+import {launchFootPoints,launchSourcePoint,type EmberLaunchConcept} from "./launch-shape";
 import {landingDustNodes} from "./landing-dust";
+import {createEmberScene} from "./scene";
 const points=(d:string)=>Array.from(d.matchAll(/([-\d.]+) ([-\d.]+)/g),m=>[+m[1],+m[2]]);
 const cross=(a:number[],b:number[],c:number[])=>(b[0]-a[0])*(c[1]-a[1])-(b[1]-a[1])*(c[0]-a[0]);
 function simple(path:string,where:string) {
@@ -22,9 +23,9 @@ describe("held launch studies",()=>{
   for(const concept of ["crest-launch","race-launch"] as EmberLaunchConcept[]) {
     it(`${concept} keeps a simple outline through the held-pose morph and flight transition`,()=>{
       for(let i=0;i<=100;i++)simple(morphEmberContour({...EMBER_REST},i/100,concept,0),`${concept} morph ${i/100}`);
-      for(let i=0;i<=100;i++){
-        const p=i/100,frame=sampleEmberLaunch(p,concept,{returnToK:true});
-        simple(morphEmberContour(frame.pose,frame.morph,concept,frame.flight),`${concept} sequence ${p}`);
+      for(let i=0;i<=240;i++){
+        const p=i/240,frame=sampleEmberLaunch(p,concept,{returnToK:true});
+        simple(morphEmberContour(frame.pose,frame.morph,concept,frame.flight,frame.crouch),`${concept} sequence ${p}`);
       }
     });
     it(`${concept} returns directly to the same held stance before folding`,()=>{
@@ -37,14 +38,46 @@ describe("held launch studies",()=>{
       expect(sampleEmberLaunch(1,concept).morph).toBe(0);
     });
   }
-  it("decelerates sharply in the final 120ms and stays planted after contact",()=>{
+  it("accelerates across the word, touches down at speed, then skids to a fixed seat",()=>{
     const x=(p:number)=>sampleEmberLaunch(p,"crest-launch").x;
     const h=.00001;
-    const approach=(x(.72)-x(.72-h))/h,braking=(x(.74)-x(.74-h))/h;
-    expect(approach).toBeGreaterThan(15);expect(braking).toBeLessThan(approach*.1);
+    const speed=(p:number)=>(x(p+h)-x(p-h))/(2*h);
+    const entry=speed(.5801);
+    let previous=entry;
+    for(let p=.59;p<EMBER_BRAKE_START;p+=.01){
+      const current=speed(p);expect(current).toBeGreaterThan(previous);previous=current;
+      expect(sampleEmberLaunch(p,"crest-launch").flight).toBe(1);
+    }
+    expect(speed(EMBER_BRAKE_START-.0001)).toBeGreaterThan(entry*1.8);
+    expect(speed(EMBER_CONTACT-.004)).toBeLessThan(entry*.05);
+    expect(x(EMBER_CONTACT)-x(EMBER_BRAKE_START)).toBeGreaterThan(.4);
     expect(x(EMBER_CONTACT)).toBe(x(.86));
-    for(const p of [.60,.72,EMBER_CONTACT]){
+    for(const p of [.58,EMBER_BRAKE_START,EMBER_CONTACT]){
       expect(Math.abs((x(p)-x(p-h))/h-(x(p+h)-x(p))/h)).toBeLessThan(.05);
+    }
+    expect(sampleEmberLaunch(EMBER_BRAKE_START-.001,"crest-launch").landingDust).toBeUndefined();
+    expect(sampleEmberLaunch(EMBER_BRAKE_START+.001,"crest-launch").landingDust).toBeGreaterThan(0);
+  });
+  it("bends the knees with planted soles and pushes off into a separate jump arc",()=>{
+    const rest={...EMBER_REST};
+    expect(launchFootPoints(rest,"crest-launch",0,1)).toEqual(launchFootPoints(rest,"crest-launch",0,0));
+    const high=launchSourcePoint(180,235,rest,"crest-launch",0,0),low=launchSourcePoint(180,235,rest,"crest-launch",0,1);
+    expect(low[1]-high[1]).toBeGreaterThan(29);
+    const crouch=sampleEmberLaunch(.232,"crest-launch"),jump=sampleEmberLaunch(.285,"crest-launch");
+    expect(crouch.crouch).toBeGreaterThan(.98);expect(crouch.y).toBe(0);
+    expect(jump.crouch).toBe(0);expect(jump.y).toBeLessThan(-.8);
+    for(let i=0;i<=20;i++)simple(morphEmberContour(rest,0,"crest-launch",0,i/20),`knee bend ${i/20}`);
+  });
+  it("emits separate, visible plumes from both animated feet during the skid",()=>{
+    const frame=sampleEmberLaunch(.715,"crest-launch");
+    const scene=createEmberScene({id:"skid",pose:frame.pose,morphConcept:"crest-launch",launchFlight:frame.flight,launchCrouch:frame.crouch,landingDust:frame.landingDust});
+    const plumes=scene.filter(n=>n.children?.some(child=>child.tag==="circle"&&child.attrs.fill==="#e4cba7"));
+    expect(plumes).toHaveLength(2);
+    const origins=plumes.map(n=>String(n.attrs.transform).match(/[-\d.]+/g)!.map(Number));
+    expect(Math.abs(origins[0][0]-origins[1][0])).toBeGreaterThan(60);
+    for(const plume of plumes) {
+      expect(Number(plume.attrs.opacity)).toBeGreaterThan(.8);
+      expect(plume.children!.filter(n=>n.tag==="circle").every(n=>Number(n.attrs.r)>=3.5)).toBe(true);
     }
   });
   it("gates deterministic dust to a single contact event and honors Reduced Motion",()=>{

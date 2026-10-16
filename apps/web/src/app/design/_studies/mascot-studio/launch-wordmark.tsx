@@ -29,7 +29,7 @@ export function LaunchWordmark({progress,concept,returnToK,reducedMotion}:{progr
         <span ref={letters} className="boot-splash-letters">OVERTA</span><span ref={slot} className="boot-splash-slot"><span className="boot-splash-strut">A</span></span><span ref={e} className="boot-splash-e" style={{transform:`translateX(${-(layout?.slotWidth??0)*frame.eShift}px)`}}>E</span>
       </div>
       <span className="boot-splash-ember-fly" style={{visibility:layout?"visible":"hidden",left:(layout?.homeX??0)+frame.x,bottom:(layout?.homeY??0)-frame.y,width:size,height:size*485/360,zIndex:frame.depth<0?1:3,transform:`translate(-50%,0) scale(${frame.facing},1)`}} aria-hidden="true">
-        <Ember morph={frame.morph} morphConcept={concept} launchFlight={frame.flight} pose={frame.pose} landingDust={reducedMotion?undefined:frame.landingDust} shadow={false}/>
+        <Ember morph={frame.morph} morphConcept={concept} launchFlight={frame.flight} launchCrouch={frame.crouch} pose={frame.pose} landingDust={reducedMotion?undefined:frame.landingDust} shadow={false}/>
       </span>
     </div>
   </div>;
