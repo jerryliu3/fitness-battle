@@ -3,24 +3,27 @@ import {
   DEFAULT_MASCOT,
   MASCOTS,
   type CheckpointDisc,
+  type EmberClipName,
   type TodayRoute,
 } from "@fitness-battle/shared";
-import { Image, Pressable, StyleSheet, Text, View } from "react-native";
+import { useEffect, useState } from "react";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 import Svg, { Path } from "react-native-svg";
 import { SHELL_COLORS } from "../theme";
-
-const mascot = require("../../assets/mascots/star-ember.png");
+import { AnimatedEmber } from "./mascot/ember";
 
 function Disc({
   disc,
+  clip = "idle",
   onPress,
 }: {
   disc: CheckpointDisc;
+  clip?: EmberClipName;
   onPress?: () => void;
 }) {
   const future = disc.role === "future";
-  const width = future ? 66 : 78;
-  const height = future ? 56 : 68;
+  const width = future ? 66 : disc.role === "today" ? 88 : 78;
+  const height = future ? 56 : disc.role === "today" ? 74 : 68;
   const body = (
     <View
       style={[
@@ -32,12 +35,9 @@ function Disc({
       ]}
     >
       {disc.role === "today" ? (
-        <Image
-          source={mascot}
-          style={styles.ace}
-          accessibilityElementsHidden
-          importantForAccessibility="no"
-        />
+        <View style={styles.ace} pointerEvents="none">
+          <AnimatedEmber clip={clip} size={118} />
+        </View>
       ) : null}
       {disc.role === "past" ? (
         <>
@@ -85,6 +85,14 @@ export function CheckpointRoute({
   route: TodayRoute;
   onOpen: (disc: CheckpointDisc) => void;
 }) {
+  const [emberClip, setEmberClip] = useState<EmberClipName>("idle");
+
+  useEffect(() => {
+    if (emberClip === "idle") return;
+    const timer = setTimeout(() => setEmberClip("idle"), 1150);
+    return () => clearTimeout(timer);
+  }, [emberClip]);
+
   return (
     <View
       style={styles.frame}
@@ -109,7 +117,15 @@ export function CheckpointRoute({
         <Disc
           key={disc.id}
           disc={disc}
-          onPress={disc.role === "future" ? undefined : () => onOpen(disc)}
+          clip={disc.role === "today" ? emberClip : "idle"}
+          onPress={
+            disc.role === "future"
+              ? undefined
+              : () => {
+                  setEmberClip(disc.role === "today" ? "jumpUp" : "hop");
+                  onOpen(disc);
+                }
+          }
         />
       ))}
       <View style={styles.copy} pointerEvents="none">
@@ -134,7 +150,12 @@ const styles = StyleSheet.create({
     backgroundColor: SHELL_COLORS.card,
   },
   past: { backgroundColor: SHELL_COLORS.greenSoft },
-  today: { backgroundColor: SHELL_COLORS.tennis, zIndex: 3 },
+  today: {
+    backgroundColor: SHELL_COLORS.tennis,
+    borderWidth: 2,
+    borderColor: SHELL_COLORS.ink,
+    zIndex: 3,
+  },
   future: { backgroundColor: "#fff4d4", opacity: 0.7 },
   check: { color: SHELL_COLORS.green, fontSize: 18, fontFamily: "DMSans_700Bold" },
   volume: { color: SHELL_COLORS.ink, fontSize: 11, fontFamily: "DMSans_700Bold" },
@@ -147,10 +168,10 @@ const styles = StyleSheet.create({
   },
   ace: {
     position: "absolute",
-    width: 112,
-    height: 112,
+    width: 118,
+    height: 118,
     bottom: 6,
-    left: -17,
+    left: -15,
   },
   copy: {
     position: "absolute",
@@ -161,7 +182,11 @@ const styles = StyleSheet.create({
     gap: 6,
     zIndex: 4,
     backgroundColor: SHELL_COLORS.paper,
-    paddingVertical: 8,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: SHELL_COLORS.line,
   },
   kicker: {
     fontFamily: "DMSans_500Medium",
