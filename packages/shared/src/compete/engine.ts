@@ -483,12 +483,14 @@ function settleEnrollment(
   const asOf = end;
   const verifiedRows = groupFor(state, sport, "verified", enrollment, asOf);
   const openRows = groupFor(state, sport, "open", enrollment, asOf);
-  const verifiedPlace = verifiedRows.findIndex((row) => row.you);
-  const openPlace = openRows.findIndex((row) => row.you);
-  const verifiedEffort = verifiedRows[verifiedPlace]?.effort ?? 0;
-  const openEffort = openRows[openPlace]?.effort ?? 0;
-  const youVerified = verifiedRows[verifiedPlace];
-  const youOpen = openRows[openPlace];
+  const verifiedIdx = verifiedRows.findIndex((row) => row.you);
+  const openIdx = openRows.findIndex((row) => row.you);
+  const verifiedPlace = verifiedIdx >= 0 ? verifiedIdx : Math.max(0, verifiedRows.length - 1);
+  const openPlace = openIdx >= 0 ? openIdx : Math.max(0, openRows.length - 1);
+  const verifiedEffort = verifiedIdx >= 0 ? (verifiedRows[verifiedIdx]?.effort ?? 0) : 0;
+  const openEffort = openIdx >= 0 ? (openRows[openIdx]?.effort ?? 0) : 0;
+  const youVerified = verifiedIdx >= 0 ? verifiedRows[verifiedIdx] : undefined;
+  const youOpen = openIdx >= 0 ? openRows[openIdx] : undefined;
   const gps = sportById(sport).gps;
   const nextVerified = gps
     ? settleElo(
