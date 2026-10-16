@@ -1,4 +1,5 @@
 import { createElement } from "react";
+import { resolveArenaSelectedId } from "@fitness-battle/shared";
 import {
   LivePursuit,
   defaultLook,
@@ -35,11 +36,10 @@ export function Arena3D({
         ghost: true,
       }
     : null;
-  const ids = new Set(runners.map((r) => r.id));
-  if (ghost) ids.add(ghost.id);
-  const selected = ids.has(model.selected)
-    ? model.selected
-    : (runners.find((r) => r.you)?.id ?? model.selected);
+  const selected = resolveArenaSelectedId(model.selected, [
+    ...runners,
+    ...(ghost ? [ghost] : []),
+  ]);
 
   return createElement(
     "div",

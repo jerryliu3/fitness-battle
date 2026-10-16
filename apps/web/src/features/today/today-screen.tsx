@@ -7,8 +7,8 @@ import { Sheet } from "@/ui/sheet";
 import {
   buildTodayRoute,
   competeNow,
+  countedPrimarySessionsInPeriod,
   countsOnTrack,
-  currentPeriodBounds,
   formatVolume,
   sportById,
   type Activity,
@@ -27,15 +27,10 @@ export function TodayScreen() {
   if (!state) return <p className="fb-copy">Loading your week…</p>;
   const route = buildTodayRoute(state);
   const now = competeNow(state);
-  const period = currentPeriodBounds(state.clock.kind, now);
   const counted = state.activities.filter(
     (a) => countsOnTrack(a, "open") && new Date(a.startedAt) <= now,
   );
-  const weekSessions = counted.filter((a) => {
-    if (a.sport !== state.primary) return false;
-    const at = new Date(a.startedAt).getTime();
-    return at >= period.startsAt.getTime() && at < period.endsAt.getTime();
-  }).length;
+  const weekSessions = countedPrimarySessionsInPeriod(state, now);
   const sessions = counted
     .slice()
     .sort((a, b) => b.startedAt.localeCompare(a.startedAt))

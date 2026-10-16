@@ -105,10 +105,13 @@ export interface AwardCardModel {
 }
 
 /**
- * Arena / Today checkpoint volume uses the seated wave when enrolled
- * (same source as web `buildSplitBoard`), else the clock period bounds.
+ * Competition volume window: seated enrollment wave when present
+ * (same source as web `buildSplitBoard`), else clock period bounds.
  */
-function periodWindow(state: CompeteState, now: Date) {
+export function competePeriodWindow(
+  state: CompeteState,
+  now: Date = competeNow(state),
+) {
   const enrollment = state.enrollments.find(
     (item) => item.sport === state.primary,
   );
@@ -121,11 +124,52 @@ function periodWindow(state: CompeteState, now: Date) {
   return currentPeriodBounds(state.clock.kind, now);
 }
 
+/** Freeze key must match `reduceCompete` (`enrollment.waveStart ?? clock.periodStart`). */
+export function primaryFreezePeriodStart(state: CompeteState): string {
+  const enrollment = state.enrollments.find(
+    (item) => item.sport === state.primary,
+  );
+  return enrollment?.waveStart ?? state.clock.periodStart;
+}
+
+/**
+ * Resolve a lane selection against currently visible lanes.
+ * Hidden ghosts cannot remain selected.
+ */
+export function resolveArenaSelectedId(
+  selectedId: string | null | undefined,
+  lanes: readonly { id: string; you?: boolean; ghost?: boolean }[],
+  showGhost = true,
+): string {
+  const visible = lanes.filter((lane) => showGhost || !lane.ghost);
+  if (selectedId && visible.some((lane) => lane.id === selectedId)) {
+    return selectedId;
+  }
+  return visible.find((lane) => lane.you)?.id ?? selectedId ?? "";
+}
+
+/** Primary-sport open sessions inside the competition volume window. */
+export function countedPrimarySessionsInPeriod(
+  state: CompeteState,
+  now: Date = competeNow(state),
+): number {
+  const period = competePeriodWindow(state, now);
+  const start = period.startsAt.getTime();
+  const end = period.endsAt.getTime();
+  return state.activities.filter((activity) => {
+    if (activity.sport !== state.primary) return false;
+    if (!countsOnTrack(activity, "open")) return false;
+    if (new Date(activity.startedAt) > now) return false;
+    const at = new Date(activity.startedAt).getTime();
+    return at >= start && at < end;
+  }).length;
+}
+
 function countedInPeriod(
   state: CompeteState,
   now: Date,
 ): Activity[] {
-  const period = periodWindow(state, now);
+  const period = competePeriodWindow(state, now);
   const start = period.startsAt.getTime();
   const end = period.endsAt.getTime();
   return state.activities
@@ -229,7 +273,7 @@ export function buildArenaModel(
 ): ArenaModel {
   const sport = state.primary;
   const spec = sportById(sport);
-  const period = periodWindow(state, now);
+  const period = competePeriodWindow(state, now);
   const optedIn = Boolean(
     state.ratings.find((row) => row.sport === sport)?.optedIn,
   );

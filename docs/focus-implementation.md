@@ -9,6 +9,6 @@ The live web and Expo tab screens use **Focus** as the product direction, with t
 - Arena registration calls the existing compete actions and crew seating API. Open and GPS-verified activity/ratings remain separate. Awards use real settled result rows.
 - Crew pages lead with the dark identity hero, then shared goal + activity/leaderboard feed beside (or under on narrow screens) a member accountability rail. Create/join/share/cheer/rest use existing APIs with request-scoped Supabase so mobile Bearer tokens satisfy RLS.
 - Athlete opens with identity, a **Your season so far** strip (km / sessions / settled weeks), Elo trend, and benchmarks, then Progress / Connections / Preferences disclosures.
-- Home “week at a glance” counts **primary-sport** sessions in the current competition period (UTC period bounds), not a rolling 7×86400000 window. Arena volume uses the seated enrollment wave when present (same as web), else those clock bounds.
+- Home week glance, Arena volume, and Today checkpoints all use `competePeriodWindow` (seated enrollment wave when present, else clock period bounds) — not a rolling 7×86400000 window. Athlete freeze keys use `primaryFreezePeriodStart` (same as the compete engine).
 
 Verification covers typechecking, existing and targeted tests, and production web compilation. Real provider OAuth, live crew mutations, physical-device WebGL/gestures, and signed native store builds require the corresponding configured environment and device checks.

@@ -7,6 +7,7 @@ import {
   SPORTS,
   initialsFromName,
   fitArenaWindow,
+  resolveArenaSelectedId,
   type SportId,
   type ScoreTrack,
   type CrewBoardPin,
@@ -65,17 +66,19 @@ export default function ArenaScreen() {
       you: l.you,
       ghost: l.ghost,
     }));
-  // Resolve selection against visible lanes so a hidden ghost cannot stick.
+  const selectedIdResolved = resolveArenaSelectedId(
+    selectedId,
+    arena.lanes,
+    ghost,
+  );
   const selected =
-    arena.lanes.find(
-      (l) => l.id === selectedId && (ghost || !l.ghost),
-    ) ?? null;
+    arena.lanes.find((l) => l.id === selectedIdResolved) ?? null;
   const model: ArenaSceneMessage = {
     type: "arena-view",
     lanes,
     view,
     unit: arena.unit,
-    selected: selected?.id ?? me?.id ?? "",
+    selected: selectedIdResolved || me?.id || "",
   };
   async function join() {
     if (!user) {

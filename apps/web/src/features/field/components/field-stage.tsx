@@ -3,6 +3,7 @@ import dynamic from "next/dynamic";
 import { useMemo, useState } from "react";
 import {
   fitArenaWindow,
+  resolveArenaSelectedId,
   type ArenaSceneLane,
   type ArenaViewWindow,
   type BoardRow,
@@ -78,10 +79,15 @@ export function FieldStage({
     you: r.you,
     ghost: r.ghost,
   }));
+  const effectiveSelected = resolveArenaSelectedId(
+    selected,
+    [...runners, ...(ghost ? [ghost] : [])],
+    showGhost,
+  );
   const chosen =
-    selected === ghost?.id && showGhost
+    effectiveSelected === ghost?.id && showGhost
       ? ghost
-      : runners.find((r) => r.id === selected);
+      : runners.find((r) => r.id === effectiveSelected);
   if (!you) return <p className="fb-copy">Join a field to see your lanes.</p>;
   return (
     <section className="focus-arena-stage">
@@ -128,7 +134,7 @@ export function FieldStage({
               ghost={ghost}
               time={time}
               extra={0}
-              selected={selected ?? you.id}
+              selected={effectiveSelected || you.id}
               showGhost={showGhost}
               camera={camera}
               look={defaultLook}
@@ -153,7 +159,7 @@ export function FieldStage({
             lanes={sceneLanes}
             view={view}
             unit={unit}
-            selected={selected ?? you.id}
+            selected={effectiveSelected || you.id}
             onSelect={setSelected}
             onPan={(v) => setCenter(Math.max(0, v))}
           />

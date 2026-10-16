@@ -1,7 +1,6 @@
 import {
   SPORTS,
-  currentPeriodBounds,
-  competeNow,
+  primaryFreezePeriodStart,
   initialsFromName,
   rankForElo,
   type ProviderId,
@@ -109,12 +108,7 @@ export default function YouScreen() {
   const draftName = name ?? state.name;
   const draftCity = city ?? state.city;
   const dirty = draftName !== state.name || draftCity !== state.city;
-  const frozen = state.frozenPeriods.includes(
-    currentPeriodBounds(
-      state.clock.kind,
-      competeNow(state),
-    ).startsAt.toISOString(),
-  );
+  const frozen = state.frozenPeriods.includes(primaryFreezePeriodStart(state));
   const rating = state.ratings.find((row) => row.sport === state.primary);
   const rank = rankForElo(rating?.openElo ?? 1000);
 

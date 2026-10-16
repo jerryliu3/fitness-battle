@@ -5,6 +5,9 @@ import {
   CHECKPOINT_ANCHORS,
   awardCards,
   buildArenaModel,
+  countedPrimarySessionsInPeriod,
+  primaryFreezePeriodStart,
+  resolveArenaSelectedId,
   stableFieldLanes,
   buildTodayRoute,
   countedActivityIds,
@@ -251,5 +254,57 @@ describe("award cards and counted progress", () => {
     expect(countedActivityIds(state)).toEqual(["a"]);
     expect(newCountedIds(["a"], ["a", "c"])).toEqual(["c"]);
     expect(newCountedIds([], ["a"])).toEqual(["a"]);
+  });
+
+  it("counts Home week sessions with the same enrollment window as Arena", () => {
+    let state = reduceCompete(freshState(now), {
+      type: "opt-in",
+      sport: "running",
+    });
+    state = {
+      ...state,
+      enrollments: state.enrollments.map((row) =>
+        row.sport === "running"
+          ? {
+              ...row,
+              waveStart: "2026-10-13T00:00:00.000Z",
+              weekEnd: "2026-10-20T00:00:00.000Z",
+            }
+          : row,
+      ),
+      activities: [
+        run({
+          id: "before-seat",
+          startedAt: "2026-10-12T12:00:00.000Z",
+          distanceM: 8000,
+        }),
+        run({
+          id: "after-seat",
+          startedAt: "2026-10-14T12:00:00.000Z",
+          distanceM: 4000,
+        }),
+        run({
+          id: "other-sport",
+          sport: "cycling",
+          startedAt: "2026-10-14T13:00:00.000Z",
+          distanceM: 10000,
+        }),
+      ],
+    };
+    expect(countedPrimarySessionsInPeriod(state, now)).toBe(1);
+    expect(primaryFreezePeriodStart(state)).toBe("2026-10-13T00:00:00.000Z");
+  });
+});
+
+describe("arena selection", () => {
+  it("falls back to you when a hidden ghost stays selected", () => {
+    const lanes = [
+      { id: "a", you: false, ghost: false },
+      { id: "me", you: true, ghost: false },
+      { id: "ghost", you: false, ghost: true },
+    ];
+    expect(resolveArenaSelectedId("ghost", lanes, true)).toBe("ghost");
+    expect(resolveArenaSelectedId("ghost", lanes, false)).toBe("me");
+    expect(resolveArenaSelectedId("missing", lanes, true)).toBe("me");
   });
 });
