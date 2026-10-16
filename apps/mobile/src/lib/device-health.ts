@@ -35,6 +35,8 @@ export type SyncAppleHealthDeps = {
   apiUrl: string;
   getAccessToken: () => Promise<{ token?: string; userId?: string }>;
   fetchFn: typeof fetch;
+  /** Demo accounts: keep workouts on-device; do not call the live ingest API. */
+  localOnly?: boolean;
 };
 
 function readReactNativeHealthPackage(): AppleHealthKitPackageExport | null {
@@ -59,7 +61,15 @@ function defaultAppleHealthDeps(): SyncAppleHealthDeps {
       };
     },
     fetchFn: fetch,
+    localOnly: false,
   };
+}
+
+/** Build deps for Apple Health sync, merging over platform defaults. */
+export function createAppleHealthDeps(
+  overrides: Partial<SyncAppleHealthDeps> = {},
+): SyncAppleHealthDeps {
+  return { ...defaultAppleHealthDeps(), ...overrides };
 }
 
 export function sampleFromWorkout(
@@ -97,14 +107,25 @@ export function sampleFromWorkout(
 async function postIngest(
   provider: "apple_health" | "google_health",
   activities: ActivitySample[],
-  deps: Pick<SyncAppleHealthDeps, "apiUrl" | "getAccessToken" | "fetchFn">,
+  deps: Pick<SyncAppleHealthDeps, "apiUrl" | "getAccessToken" | "fetchFn" | "localOnly">,
 ): Promise<DeviceSyncResult> {
+  if (deps.localOnly) {
+    return {
+      ok: true,
+      authorized: true,
+      message:
+        activities.length > 0
+          ? `Connected on this phone. ${activities.length} workouts stay local on a demo account.`
+          : "Connected on this phone. Demo accounts do not upload to the server.",
+      count: activities.length,
+    };
+  }
   const auth = await deps.getAccessToken();
   if (!auth.token) {
     return {
       ok: false,
       authorized: true,
-      message: "Sign in on the You tab to upload workouts to your account.",
+      message: "Sign in with a live account to upload workouts to the server.",
       count: 0,
     };
   }
@@ -335,15 +356,5 @@ export async function syncHealthConnect(): Promise<DeviceSyncResult> {
       count: 0,
     };
   }
-  return postIngest("google_health", activities, {
-    apiUrl: mobileEnv.apiUrl,
-    getAccessToken: async () => {
-      const { data } = await supabase.auth.getSession();
-      return {
-        token: data.session?.access_token,
-        userId: data.session?.user.id,
-      };
-    },
-    fetchFn: fetch,
-  });
+  return postIngest("google_health", activities, createAppleHealthDeps());
 }

@@ -13,7 +13,11 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useAuth } from "../../src/lib/auth";
 import { useCompeteStore } from "../../src/lib/compete-store";
-import { syncAppleHealth, syncHealthConnect } from "../../src/lib/device-health";
+import {
+  createAppleHealthDeps,
+  syncAppleHealth,
+  syncHealthConnect,
+} from "../../src/lib/device-health";
 import { providersForDevice } from "../../src/lib/platform-providers";
 import {
   isCloudOAuthProvider,
@@ -30,7 +34,15 @@ type AuthMode = "signin" | "signup";
 
 export default function YouScreen() {
   const { state, dispatch } = useCompeteStore();
-  const { user, loading: authLoading, demoMode, signIn, signUp, signOut } = useAuth();
+  const {
+    user,
+    loading: authLoading,
+    demoMode,
+    accessToken,
+    signIn,
+    signUp,
+    signOut,
+  } = useAuth();
   const router = useRouter();
   const params = useLocalSearchParams<{ tracker?: string; provider?: string }>();
   const [name, setName] = useState<string | null>(null);
@@ -138,18 +150,33 @@ export default function YouScreen() {
     setSyncBusy(true);
     setNote(null);
     try {
+      const localOnly = user.mode === "demo" || demoMode;
       const result =
         providerId === "apple_health"
-          ? await syncAppleHealth()
+          ? await syncAppleHealth(
+              createAppleHealthDeps({
+                localOnly,
+                getAccessToken: async () => ({
+                  token: accessToken ?? undefined,
+                  userId: user.id,
+                }),
+              }),
+            )
           : await syncHealthConnect();
-      setNote(result.message);
-      if (result.authorized || (result.ok && result.count > 0)) {
+      // "Connected" means device permission (or a successful upload). Upload
+      // failures keep Connected when HealthKit already authorized, with a clear note.
+      if (result.ok || result.authorized) {
         dispatch({
           type: "apply-sync",
           provider: providerId,
           activities: [],
           linkStatus: "connected",
         });
+      }
+      if (!result.ok && result.authorized) {
+        setNote(`Connected on this phone. ${result.message}`);
+      } else {
+        setNote(result.message);
       }
     } catch (error) {
       setNote(error instanceof Error ? error.message : "Sync failed");
@@ -162,6 +189,15 @@ export default function YouScreen() {
     if (!isCloudOAuthProvider(providerId) || rowBusy) return;
     if (!user) {
       setNote("Sign in above to connect cloud trackers.");
+      return;
+    }
+    if (user.mode === "demo" || demoMode || !accessToken) {
+      dispatch({ type: "link", provider: providerId });
+      setNote(
+        user.mode === "demo" || demoMode
+          ? "Demo account — cloud trackers need a live signed-in account."
+          : "Session expired. Sign out and sign in again to connect trackers.",
+      );
       return;
     }
     appliedTracker.current = null;

@@ -203,6 +203,28 @@ describe("syncAppleHealth", () => {
     expect(result.authorized).toBe(true);
     expect(result.message).toMatch(/could not reach the server/i);
   });
+
+  it("keeps demo/local-only syncs on-device without calling ingest", async () => {
+    const deps = testDeps({
+      localOnly: true,
+      workouts: [
+        {
+          id: "hk-5",
+          activityName: "Running",
+          start: "2026-10-01T12:00:00.000Z",
+          end: "2026-10-01T12:30:00.000Z",
+          distance: 1,
+          duration: 600,
+        },
+      ],
+    });
+    const result = await syncAppleHealth(deps);
+    expect(result.ok).toBe(true);
+    expect(result.authorized).toBe(true);
+    expect(result.count).toBe(1);
+    expect(result.message).toMatch(/demo/i);
+    expect(deps.fetchFn).not.toHaveBeenCalled();
+  });
 });
 
 describe("sampleFromWorkout", () => {
