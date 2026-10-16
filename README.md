@@ -55,7 +55,18 @@ Weekly periods settle on app load via `rollClock` (UTC Monday boundary) — ther
 
 - `/signup` → `/onboarding` (preferences → tracker link → one-time 90-day calibration)
 - `/login` with safe `?next=` return
-- Demo mode (`NEXT_PUBLIC_USE_DEMO_DATA=true` or placeholder Supabase keys) keeps a device-local session so flows work without a live project
+- Demo mode stays on for local `pnpm dev` (`apps/web/.env.development` and `.env.local`). It stays off on preview and production unless `NEXT_PUBLIC_USE_DEMO_DATA=true` is set there. Placeholder Supabase keys also keep a device-local session.
+
+### Local accounts
+
+`pnpm supabase:reset` loads `supabase/seed.sql`. Password for each account is `password123`:
+
+| Email | Use |
+| --- | --- |
+| `alice@example.com` | Finished onboarding. Owns crew **Weekday miles** (`WEEKLY`). |
+| `bob@example.com` | Finished onboarding. Crew member. |
+| `carla@example.com` | Finished onboarding. Crew member. |
+| `dana@example.com` | Account only. Login still opens onboarding. |
 
 ## Integrations & data
 
