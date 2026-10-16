@@ -13,7 +13,7 @@ import {
   loadCompeteAccount,
   persistCompeteAccount,
 } from "@/lib/compete-persist";
-import { createClient } from "@/lib/supabase/server";
+import { createRequestClient } from "@/lib/supabase/request";
 
 function sameLiveDocument(left: CompeteState, right: CompeteState): boolean {
   return (
@@ -27,7 +27,7 @@ export async function GET(request: Request) {
   if (!userId) {
     return NextResponse.json({ error: "authentication_required" }, { status: 401 });
   }
-  const supabase = await createClient();
+  const supabase = await createRequestClient(request);
 
   let loaded: { state: CompeteState; updatedAt: string } | null;
   try {
@@ -96,7 +96,7 @@ export async function PUT(request: Request) {
     return NextResponse.json({ error: "state_too_large" }, { status: 413 });
   }
 
-  const supabase = await createClient();
+  const supabase = await createRequestClient(request);
   try {
     const updatedAt = await persistCompeteAccount(supabase, userId, live);
     return NextResponse.json({
