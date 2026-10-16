@@ -14,6 +14,8 @@ export interface DeviceSyncResult {
   ok: boolean;
   message: string;
   count: number;
+  /** HealthKit / Health Connect permission was granted on this attempt. */
+  authorized?: boolean;
 }
 
 type WorkoutLike = {
@@ -98,22 +100,52 @@ async function postIngest(
   deps: Pick<SyncAppleHealthDeps, "apiUrl" | "getAccessToken" | "fetchFn">,
 ): Promise<DeviceSyncResult> {
   const auth = await deps.getAccessToken();
-  const headers: Record<string, string> = { "Content-Type": "application/json" };
-  if (auth.token) headers.Authorization = `Bearer ${auth.token}`;
-  const response = await deps.fetchFn(`${deps.apiUrl}/api/fitness/ingest`, {
-    method: "POST",
-    headers,
-    body: JSON.stringify({
-      provider,
-      activities,
-      userId: auth.userId,
-    }),
-  });
+  if (!auth.token) {
+    return {
+      ok: false,
+      authorized: true,
+      message: "Sign in on the You tab to upload workouts to your account.",
+      count: 0,
+    };
+  }
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    Authorization: `Bearer ${auth.token}`,
+  };
+  let response: Response;
+  try {
+    response = await deps.fetchFn(`${deps.apiUrl}/api/fitness/ingest`, {
+      method: "POST",
+      headers,
+      body: JSON.stringify({
+        provider,
+        activities,
+        userId: auth.userId,
+      }),
+    });
+  } catch (error) {
+    const detail = error instanceof Error ? error.message : "Network request failed";
+    return {
+      ok: false,
+      authorized: true,
+      message: `Could not reach the server (${detail}). Check your connection and try again.`,
+      count: 0,
+    };
+  }
   if (!response.ok) {
     const body = (await response.json().catch(() => ({}))) as { error?: string };
-    return { ok: false, message: body.error ?? "Ingest failed", count: 0 };
+    const message =
+      body.error === "authentication_required"
+        ? "Sign in on the You tab to upload workouts to your account."
+        : (body.error ?? "Ingest failed");
+    return { ok: false, authorized: true, message, count: 0 };
   }
-  return { ok: true, message: `Sent ${activities.length} workouts.`, count: activities.length };
+  return {
+    ok: true,
+    authorized: true,
+    message: `Sent ${activities.length} workouts.`,
+    count: activities.length,
+  };
 }
 
 function healthKitErrorMessage(error: unknown): string {
@@ -190,7 +222,12 @@ export async function syncAppleHealth(
     )
     .filter((item): item is ActivitySample => item != null);
   if (activities.length === 0) {
-    return { ok: true, message: "Apple Health returned no mapped workouts.", count: 0 };
+    return {
+      ok: true,
+      authorized: true,
+      message: "Apple Health is connected. No mapped workouts in the last 90 days yet.",
+      count: 0,
+    };
   }
   return postIngest("apple_health", activities, deps);
 }
@@ -291,7 +328,12 @@ export async function syncHealthConnect(): Promise<DeviceSyncResult> {
     })
     .filter((item): item is ActivitySample => item != null);
   if (activities.length === 0) {
-    return { ok: true, message: "Health Connect returned no mapped workouts.", count: 0 };
+    return {
+      ok: true,
+      authorized: true,
+      message: "Health Connect is connected. No mapped workouts in the last 90 days yet.",
+      count: 0,
+    };
   }
   return postIngest("google_health", activities, {
     apiUrl: mobileEnv.apiUrl,

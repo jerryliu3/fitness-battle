@@ -148,6 +148,61 @@ describe("syncAppleHealth", () => {
       count: 0,
     });
   });
+
+  it("marks authorized and asks for sign-in when there is no access token", async () => {
+    const deps = testDeps({
+      workouts: [
+        {
+          id: "hk-3",
+          activityName: "Running",
+          start: "2026-10-01T12:00:00.000Z",
+          end: "2026-10-01T12:30:00.000Z",
+          distance: 1,
+          duration: 600,
+        },
+      ],
+      getAccessToken: async () => ({}),
+    });
+    const result = await syncAppleHealth(deps);
+    expect(result.ok).toBe(false);
+    expect(result.authorized).toBe(true);
+    expect(result.message).toMatch(/sign in/i);
+    expect(deps.fetchFn).not.toHaveBeenCalled();
+  });
+
+  it("marks authorized with zero workouts after HealthKit permission", async () => {
+    const deps = testDeps({ workouts: [] });
+    const result = await syncAppleHealth(deps);
+    expect(result).toMatchObject({
+      ok: true,
+      authorized: true,
+      count: 0,
+    });
+    expect(result.message).toMatch(/connected/i);
+    expect(deps.fetchFn).not.toHaveBeenCalled();
+  });
+
+  it("surfaces a clear message when ingest fetch fails", async () => {
+    const deps = testDeps({
+      workouts: [
+        {
+          id: "hk-4",
+          activityName: "Running",
+          start: "2026-10-01T12:00:00.000Z",
+          end: "2026-10-01T12:30:00.000Z",
+          distance: 1,
+          duration: 600,
+        },
+      ],
+      fetchFn: vi.fn(async () => {
+        throw new Error("Network request failed");
+      }) as unknown as typeof fetch,
+    });
+    const result = await syncAppleHealth(deps);
+    expect(result.ok).toBe(false);
+    expect(result.authorized).toBe(true);
+    expect(result.message).toMatch(/could not reach the server/i);
+  });
 });
 
 describe("sampleFromWorkout", () => {
