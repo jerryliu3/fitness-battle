@@ -5,10 +5,16 @@ import { sampleEmberLaunch, sampleEmberSkid, emberSkidWordmarkLayout, EMBER_K_SI
 import type { BootLayout } from "@fitness-battle/shared/boot";
 import { Ember } from "@/components/mascot/ember";
 import "@/shell/boot-splash.css";
+import { BootSplash } from "@/shell/boot-splash";
 
 type Layout = BootLayout & {homeX:number;homeY:number};
-/** A separate authoring copy: no changes to the current production splash. */
-export function LaunchWordmark({progress,concept,returnToK,reducedMotion,sliding=false}:{progress:number;concept:EmberLaunchConcept;returnToK:boolean;reducedMotion:boolean;sliding?:boolean}) {
+/** The approved skid preview renders the actual production loader. */
+export function LaunchWordmark(props:{progress:number;concept:EmberLaunchConcept;returnToK:boolean;reducedMotion:boolean;sliding?:boolean}) {
+  if(props.sliding && props.returnToK)return <BootSplash progress={props.progress} onAnimationComplete={()=>{}}/>;
+  return <StandaloneLaunchWordmark {...props}/>;
+}
+/** Keep the earlier launch and the optional unmorphed endpoint available. */
+function StandaloneLaunchWordmark({progress,concept,returnToK,reducedMotion,sliding=false}:{progress:number;concept:EmberLaunchConcept;returnToK:boolean;reducedMotion:boolean;sliding?:boolean}) {
   const stage=useRef<HTMLDivElement>(null),word=useRef<HTMLDivElement>(null),letters=useRef<HTMLSpanElement>(null),slot=useRef<HTMLSpanElement>(null),e=useRef<HTMLSpanElement>(null),baseline=useRef<HTMLSpanElement>(null);
   const [layout,setLayout]=useState<Layout|null>(null);
   useEffect(()=>{

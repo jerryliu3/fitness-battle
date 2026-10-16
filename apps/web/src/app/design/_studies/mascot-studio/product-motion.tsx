@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 import Link from "next/link";
-import { BootSplash } from "@/shell/boot-splash";
+import { BootSplash } from "./legacy-boot-splash";
 import { Ember } from "@/components/mascot/ember";
 import { BOOT_DURATION_MS } from "@fitness-battle/shared/boot";
 import type { EmberMorphConcept } from "@fitness-battle/shared/mascot";

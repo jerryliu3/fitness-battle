@@ -1,6 +1,6 @@
 # Front-foot skid candidate
 
-Review `/design/mascot/skid`. This separate follow-up keeps `/design/mascot/launch` and its quick-stop timing available for comparison. Production callers remain on their existing animation.
+Review `/design/mascot/skid`. The approved sequence now drives the web and mobile application loading screens. With “Rotate into K” enabled, this study embeds the production web loader directly. `/design/mascot/launch` and its quick-stop timing remain available for comparison; `/design/mascot/motion` retains the earlier loading experiment in an archived study component.
 
 `sampleEmberSkid()` uses the crest-first crouch and orbit with a lower, shorter hop. Backward flight starts earlier.
 
@@ -21,6 +21,12 @@ The authoring wordmark measures a zero-height baseline marker aligned with its l
 The enlarged demo shows a ground-contact guide and finish marker during the landing. The wordmark uses the same clock and rig without this authoring guide. A landing-only replay runs the approach, slide, and combined turn-to-K finish, while the full replay retains the complete K → Ember → K sequence. Both respect Reduced Motion and stop when the tab is hidden.
 
 Tests cover continuous downward travel without premature ground contact, forward-only sliding, continuous horizontal velocity at touchdown and rest, a constant sole height, the raised rear foot, non-crossing silhouette throughout the weight transfer, exact recovery, simultaneous turn/morph, later E movement, spacing, sustained spray, and Reduced Motion. Web and native share the same model; native bundle verification is separate from on-device visual review.
+
+## Product integration
+
+Both loaders play the same 4.8-second `sampleEmberSkid` sequence with `returnToK: true`, including the crest-first shape, launch bend, foot pinning, spray, delayed E displacement, and combined recovery/morph. They preserve the existing data-ready gate: the animation finishes once, then the final wordmark waits if data is still loading. Reduced Motion settles immediately; hidden tabs/background apps pause playback and resume from the saved progress. The web baseline marker and the native baseline-aligned zero-height slot align K to the live letters. The native host scales around the same SVG bottom anchor as the web host.
+
+Today’s checkpoint and greeting already render `AnimatedEmber`, backed by `createEmberScene`. Rally’s `Ace` adapter and the mobile `AceStrip` now render this same vector model for Star Ember. These appearances use their existing action clips or a static rest pose, rather than replaying the loading choreography. Other mascot variants and the historical image/mesh design experiments remain separate artwork.
 
 Reproduce the animation from the repository root:
 

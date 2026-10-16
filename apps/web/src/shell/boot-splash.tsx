@@ -1,12 +1,9 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { type EmberPose, type EmberMorphConcept } from "@fitness-battle/shared/mascot";
+import { EMBER_K_SIZE_EM, EMBER_LAUNCH_DURATION, emberSkidWordmarkLayout, sampleEmberSkid } from "@fitness-battle/shared/mascot";
 import { Ember } from "@/components/mascot/ember";
 import {
-  BOOT_DURATION_MS,
-  bootEmberPose,
-  bootFrame,
   clamp,
   type BootLayout,
 } from "@fitness-battle/shared/boot";
@@ -19,20 +16,19 @@ type BootSplashProps = {
   onAnimationComplete: () => void;
   /** Authoring surface only; product callers leave this undefined. */
   progress?: number;
-  /** Optional anatomical candidates for the authoring surface. */
-  morphConcept?: EmberMorphConcept;
 };
 
 /**
  * Product boot splash: OVERTAKE → OVERTAEK.
  * A single K outline unfolds into Ember, flies the word and returns to K.
  */
-export function BootSplash({ waiting = false, onAnimationComplete, progress, morphConcept = "baseline" }: BootSplashProps) {
+export function BootSplash({ waiting = false, onAnimationComplete, progress }: BootSplashProps) {
   const stageRef = useRef<HTMLDivElement>(null);
   const wordRef = useRef<HTMLDivElement>(null);
   const lettersRef = useRef<HTMLSpanElement>(null);
   const slotRef = useRef<HTMLSpanElement>(null);
   const eRef = useRef<HTMLSpanElement>(null);
+  const baselineRef = useRef<HTMLSpanElement>(null);
   const emberHostRef = useRef<HTMLSpanElement>(null);
 
   const completed = useRef(false);
@@ -41,8 +37,7 @@ export function BootSplash({ waiting = false, onAnimationComplete, progress, mor
   const drawRef = useRef<((p: number) => void) | null>(null);
   const onCompleteRef = useRef(onAnimationComplete);
   onCompleteRef.current = onAnimationComplete;
-  const [pose, setPose] = useState<EmberPose>(() => bootEmberPose(0));
-  const [morph, setMorph] = useState(1);
+  const [character, setCharacter] = useState(() => sampleEmberSkid(0, {returnToK:true}));
 
   useEffect(() => {
     const stage = stageRef.current!;
@@ -56,7 +51,6 @@ export function BootSplash({ waiting = false, onAnimationComplete, progress, mor
     let p = completed.current ? 1 : 0;
     let running = false;
     let raf = 0;
-    let lastPublish = 0;
     let start = 0;
     let initial = 0;
     let layout: BootLayout & { homeX: number; homeY: number } = {
@@ -77,10 +71,10 @@ export function BootSplash({ waiting = false, onAnimationComplete, progress, mor
     function draw(progress: number, publishPose: boolean) {
       if (disposed || !wordRef.current) return;
       p = clamp(progress);
-      const frame = bootFrame(p, layout);
+      const frame = sampleEmberSkid(p, {layout, returnToK:true, reducedMotion:media.matches && preview.current === undefined});
       const l = layout;
-      letter.style.transform = `translate(${-l.slotWidth * frame.eShift}px,0)`;
-      const size = l.font * 0.88 * frame.scale;
+      letter.style.transform = `translate(${-emberSkidWordmarkLayout(l).eDistance * frame.eShift}px,0)`;
+      const size = l.font * EMBER_K_SIZE_EM * frame.scale;
       emberHost.style.left = `${l.homeX + frame.x}px`;
       emberHost.style.bottom = `${l.homeY - frame.y}px`;
       emberHost.style.width = `${size}px`;
@@ -89,10 +83,9 @@ export function BootSplash({ waiting = false, onAnimationComplete, progress, mor
       emberHost.style.visibility = "visible";
       emberHost.style.zIndex = frame.depth < 0 ? "1" : "3";
       emberHost.style.transform = `translate(-50%, 0) scale(${frame.facing}, 1)`;
-      wordRef.current.setAttribute("aria-label", frame.phase === "OVERTAEK" ? "OVERTAEK" : "OVERTAKE");
+      wordRef.current.setAttribute("aria-label", p >= .93 ? "OVERTAEK" : "OVERTAKE");
       if (publishPose) {
-        setPose(bootEmberPose(p, { reducedMotion: media.matches, frame }));
-        setMorph(frame.morph);
+        setCharacter({...frame,spray:media.matches?undefined:frame.spray});
       }
     }
 
@@ -109,10 +102,10 @@ export function BootSplash({ waiting = false, onAnimationComplete, progress, mor
         font,
         // Glyph center includes the K's asymmetric side bearings.
         homeX: slotBox.left - stageBox.left + font * 0.4085,
-        // Nunito ascent 1.011, descent .353, line-height 1 → baseline .171em above bottom.
-        homeY: stageBox.bottom - slotBox.bottom + font * (0.171 - 0.88 * 55 / 360),
+        // Use the live alphabetic baseline and exact glyph cap height.
+        homeY: stageBox.bottom - baselineRef.current!.getBoundingClientRect().top - font * EMBER_K_SIZE_EM * 55 / 360,
       };
-      draw(p, false);
+      draw(p, true);
     }
 
     function pause() {
@@ -141,14 +134,12 @@ export function BootSplash({ waiting = false, onAnimationComplete, progress, mor
       }
       initial = p;
       start = performance.now();
-      lastPublish = 0;
       running = true;
       function tick(now: number) {
         if (!running || disposed) return;
-        const next = clamp(initial + (now - start) / BOOT_DURATION_MS);
-        const publish = now - lastPublish >= 1000 / 60 || next === 1;
-        if (publish) lastPublish = now;
-        draw(next, publish);
+        const next = clamp(initial + (now - start) / EMBER_LAUNCH_DURATION);
+        // Publish the rig and its host together on the same animation frame.
+        draw(next, true);
         if (next < 1) raf = requestAnimationFrame(tick);
         else {
           settle();
@@ -213,9 +204,10 @@ export function BootSplash({ waiting = false, onAnimationComplete, progress, mor
           <span ref={eRef} className="boot-splash-e" aria-hidden="true">
             E
           </span>
+          <span ref={baselineRef} style={{width:0,height:0,flex:"none"}} aria-hidden="true"/>
         </div>
         <span ref={emberHostRef} className="boot-splash-ember-fly" aria-hidden="true">
-          <Ember pose={pose} morph={morph} morphConcept={morphConcept} shadow={false} />
+          <Ember pose={character.pose} morph={character.morph} morphConcept="crest-launch" launchFlight={character.flight} launchCrouch={character.crouch} launchSkid={character.skid} skidSpray={character.spray} shadow={false} />
         </span>
       </div>
       {waiting ? (
