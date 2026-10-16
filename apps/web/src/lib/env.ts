@@ -11,7 +11,7 @@ export const webEnv = {
   supabaseAnonKey:
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? "public-anon-key",
   useDemoData:
-    (process.env.NEXT_PUBLIC_USE_DEMO_DATA ?? "true").toLowerCase() !== "false",
+    (process.env.NEXT_PUBLIC_USE_DEMO_DATA ?? "false").toLowerCase() === "true",
   appUrl: process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000",
 };
 

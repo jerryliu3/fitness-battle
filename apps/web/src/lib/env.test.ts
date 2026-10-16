@@ -13,6 +13,7 @@ describe("web env module", () => {
     expect(source).toContain("process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY");
     expect(source).toContain("process.env.NEXT_PUBLIC_APP_URL");
     expect(source).toContain("process.env.NEXT_PUBLIC_USE_DEMO_DATA");
+    expect(source).toContain('?? "false"');
     // Ignore comments; dynamic lookups break Next client inlining.
     const code = source
       .split("\n")
