@@ -112,6 +112,10 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
   const [legacyOffer, setLegacyOffer] = useState(false);
   const [loadStatus, setLoadStatus] = useState<LoadStatus>("loading");
   const [attempt, setAttempt] = useState(0);
+  /** Account the current `state`/`loadStatus` belong to — cleared synchronously on switch. */
+  const [loadedFor, setLoadedFor] = useState<string | null | undefined>(
+    undefined,
+  );
   const userIdRef = useRef(userId);
   const demoRef = useRef(demoMode || user?.mode === "demo");
   const statusRef = useRef<LoadStatus>("loading");
@@ -120,6 +124,21 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
   const queue = useRef<Action[]>([]);
   userIdRef.current = userId;
   demoRef.current = demoMode || user?.mode === "demo";
+
+  // Drop prior-account state before children render with the new userId.
+  if (!loading && loadedFor !== userId) {
+    setLoadedFor(userId);
+    setState(null);
+    setLoadStatus("loading");
+    setSaveError(null);
+    statusRef.current = "loading";
+    stateRef.current = null;
+    queue.current = [];
+    if (timer.current) {
+      clearTimeout(timer.current);
+      timer.current = null;
+    }
+  }
 
   const scheduleSave = useCallback((accountId: string | null, next: CompeteState) => {
     if (!accountId || demoRef.current || statusRef.current !== "ready") return;
