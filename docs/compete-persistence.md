@@ -15,7 +15,7 @@ Account compete state is **tables only**. `/api/compete` never reads or writes a
 | `activities` | Compete sessions (`compete_key`, disposition, …) — **upsert only** |
 | `wave_enrollments` | Per-viewer seating + optional `crew_id` |
 | `sleep_nights` / `health_ratings` / `health_period_results` | Sleep contest |
-| `compete_duels` | 1v1 practice rivals |
+| `compete_duels` | Legacy 1v1 rows (product removed; sanitize clears; table kept) |
 | `readiness_marks` | Daily readiness — **upsert only** (shared with fitness sync) |
 | `fitness_connections` | Provider link status (**read** into compete; OAuth owns writes) |
 | Ephemeral on GET | `crewBoard` from `crew_week_fields` + `crew_field_roster` (`sport_ratings`), `pendingRevealIds` from `acknowledgedAt`, `rollClock` |

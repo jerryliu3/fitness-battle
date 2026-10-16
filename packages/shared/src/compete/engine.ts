@@ -22,7 +22,6 @@ import {
   type HealthMetricId,
   type SleepNight,
 } from "./health";
-import { athleteWeekEffort } from "./field";
 import {
   acknowledgePeriodResults,
   appendPeriodResults,
@@ -45,7 +44,6 @@ import {
   type Activity,
   type CompeteState,
   type CrewBoardPin,
-  type Duel,
   type PeriodResult,
   type ProviderId,
   type ReadinessMark,
@@ -1184,55 +1182,6 @@ export function projectedElo(
   );
   const next = rating(settled, sport);
   return track === "verified" ? next.verifiedElo : next.openElo;
-}
-
-export interface DuelView {
-  duel: Duel;
-  youEffort: number;
-  rivalEffort: number;
-  youDistanceM: number;
-  leading: "you" | "rival" | "tie";
-}
-
-export function duelViews(state: CompeteState, now: Date = new Date()): DuelView[] {
-  const live = rollClock(state, now);
-  return live.duels
-    .map((duel) => {
-      const bounds = waveBoundsFor(live, duel.sport, now);
-      if (duel.periodStart !== bounds.startsAt.toISOString()) return null;
-      const volume = periodEffort(
-        live.activities,
-        duel.sport,
-        bounds.startsAt,
-        bounds.endsAt,
-        "open",
-      );
-      const youEffort = volume.effort;
-      const rivalEffort = athleteWeekEffort(
-        {
-          id: duel.rivalId,
-          name: duel.rivalName,
-          city: "",
-          elo: duel.rivalElo,
-        },
-        duel.periodStart,
-        "open",
-      );
-      const leading =
-        Math.abs(youEffort - rivalEffort) < 0.05
-          ? "tie"
-          : youEffort > rivalEffort
-            ? "you"
-            : "rival";
-      return {
-        duel,
-        youEffort,
-        rivalEffort,
-        youDistanceM: volume.distanceM,
-        leading,
-      };
-    })
-    .filter((row): row is DuelView => row != null);
 }
 
 export function formatClock(bounds: PeriodBounds): string {

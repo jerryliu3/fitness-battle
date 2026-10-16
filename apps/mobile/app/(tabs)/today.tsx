@@ -45,6 +45,7 @@ export default function Home() {
     (a) => countsOnTrack(a, "open") && new Date(a.startedAt) <= now,
   );
   const weekSessions = counted.filter((a) => {
+    if (a.sport !== state.primary) return false;
     const at = new Date(a.startedAt).getTime();
     return at >= period.startsAt.getTime() && at < period.endsAt.getTime();
   }).length;

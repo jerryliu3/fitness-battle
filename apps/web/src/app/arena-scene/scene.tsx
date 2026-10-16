@@ -1,6 +1,6 @@
 "use client";
 import dynamic from "next/dynamic";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   parseArenaSceneMessage,
   type ArenaSceneMessage,
@@ -21,28 +21,44 @@ function isNativeBridge() {
     .ReactNativeWebView;
 }
 
-function send(data: object, targetOrigin = "*") {
-  const native = (
-    window as unknown as {
-      ReactNativeWebView?: { postMessage: (s: string) => void };
-    }
-  ).ReactNativeWebView;
-  if (native) native.postMessage(JSON.stringify(data));
-  else if (window.parent !== window)
-    window.parent.postMessage(data, targetOrigin);
-}
-
+/**
+ * Parent ↔ child handshake for the embedded Arena 3D page.
+ *
+ * Native WebView never uses window.postMessage target origins — it goes
+ * through ReactNativeWebView.postMessage / injectJavaScript.
+ *
+ * Expo web embeds this page in a cross-origin iframe. The child does not
+ * know the parent's origin until the parent posts the first valid model.
+ * So `arena-ready` may use targetOrigin "*" until that parse succeeds
+ * (browser requirement when the peer origin is unknown). Ready is retried
+ * briefly so a missed first ping cannot leave the iframe blank. After a
+ * successfully parsed parent message, replies lock to that origin.
+ */
 export function ArenaScene() {
   const [model, setModel] = useState<ArenaSceneMessage | null>(null);
   const [error, setError] = useState(false);
-  const [parent, setParent] = useState<string | null>(null);
+  const parentOrigin = useRef<string | null>(null);
+  const gotModel = useRef(false);
+
+  function send(data: object) {
+    const native = (
+      window as unknown as {
+        ReactNativeWebView?: { postMessage: (s: string) => void };
+      }
+    ).ReactNativeWebView;
+    if (native) {
+      native.postMessage(JSON.stringify(data));
+      return;
+    }
+    if (window.parent !== window) {
+      window.parent.postMessage(data, parentOrigin.current ?? "*");
+    }
+  }
+
   useEffect(() => {
     function receive(event: MessageEvent) {
       if (!isNativeBridge()) {
         if (event.source !== window.parent) return;
-        // Learn the embedder origin from the first valid parent message.
-        if (!parent && event.origin) setParent(event.origin);
-        else if (parent && event.origin !== parent) return;
       }
       let data = event.data;
       try {
@@ -50,13 +66,33 @@ export function ArenaScene() {
       } catch {
         return;
       }
-      const m = parseArenaSceneMessage(data);
-      if (m) setModel(m);
+      const next = parseArenaSceneMessage(data);
+      if (!next) return;
+      if (!isNativeBridge()) {
+        if (!parentOrigin.current) parentOrigin.current = event.origin;
+        else if (event.origin !== parentOrigin.current) return;
+      }
+      gotModel.current = true;
+      setModel(next);
     }
     window.addEventListener("message", receive);
-    send({ type: "arena-ready" }, parent ?? "*");
-    return () => window.removeEventListener("message", receive);
-  }, [parent]);
+    // Ping until the parent delivers a model (covers a missed first ready).
+    send({ type: "arena-ready" });
+    const retry = window.setInterval(() => {
+      if (gotModel.current) {
+        window.clearInterval(retry);
+        return;
+      }
+      send({ type: "arena-ready" });
+    }, 500);
+    const stop = window.setTimeout(() => window.clearInterval(retry), 8000);
+    return () => {
+      window.removeEventListener("message", receive);
+      window.clearInterval(retry);
+      window.clearTimeout(stop);
+    };
+  }, []);
+
   return (
     <div
       style={{ height: "100dvh", background: "#edf2e8", overflow: "hidden" }}
@@ -82,13 +118,11 @@ export function ArenaScene() {
           look={defaultLook}
           unit={model.unit}
           view={model.view}
-          onPan={(center) => send({ type: "arena-pan", center }, parent ?? "*")}
-          onSelect={(id) =>
-            send({ type: "arena-selected", id }, parent ?? "*")
-          }
+          onPan={(center) => send({ type: "arena-pan", center })}
+          onSelect={(id) => send({ type: "arena-selected", id })}
           onUnavailable={() => {
             setError(true);
-            send({ type: "arena-unavailable" }, parent ?? "*");
+            send({ type: "arena-unavailable" });
           }}
         />
       ) : (

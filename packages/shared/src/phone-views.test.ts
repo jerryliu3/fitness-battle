@@ -170,6 +170,39 @@ describe("arena lanes", () => {
     expect(arena.optedIn).toBe(false);
     expect(arena.lanes.filter((lane) => !lane.ghost)).toHaveLength(0);
   });
+
+  it("uses the seated enrollment wave for you-series, not only clock bounds", () => {
+    let state = reduceCompete(freshState(now), {
+      type: "opt-in",
+      sport: "running",
+    });
+    state = {
+      ...state,
+      enrollments: state.enrollments.map((row) =>
+        row.sport === "running"
+          ? {
+              ...row,
+              waveStart: "2026-10-13T00:00:00.000Z",
+              weekEnd: "2026-10-20T00:00:00.000Z",
+            }
+          : row,
+      ),
+      activities: [
+        run({
+          id: "before-seat",
+          startedAt: "2026-10-12T12:00:00.000Z",
+          distanceM: 8000,
+        }),
+        run({
+          id: "after-seat",
+          startedAt: "2026-10-14T12:00:00.000Z",
+          distanceM: 4000,
+        }),
+      ],
+    };
+    const you = buildArenaModel(state, now).lanes.find((lane) => lane.you);
+    expect(you?.values[2]).toBe(4);
+  });
 });
 
 describe("award cards and counted progress", () => {

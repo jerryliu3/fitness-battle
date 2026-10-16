@@ -7,7 +7,6 @@ import {
   SPORTS,
   initialsFromName,
   fitArenaWindow,
-  type ArenaLane,
   type SportId,
   type ScoreTrack,
   type CrewBoardPin,
@@ -40,7 +39,7 @@ export default function ArenaScreen() {
   const [center, setCenter] = useState<number | null>(null);
   const [span, setSpan] = useState<number | null>(null);
   const [ghost, setGhost] = useState(true);
-  const [selected, setSelected] = useState<ArenaLane | null>(null);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
   const [register, setRegister] = useState(false);
   const [sport, setSport] = useState<SportId>("running");
   const [failed, setFailed] = useState(false);
@@ -54,6 +53,8 @@ export default function ArenaScreen() {
   const defaultSpan = arena.unit === "km" ? 6 : 20;
   const viewSpan = span ?? defaultSpan;
   const me = arena.lanes.find((l) => l.you);
+  const selected =
+    arena.lanes.find((l) => l.id === selectedId) ?? null;
   const total = me?.values[2] ?? 0;
   const view = { center: center ?? total, span: viewSpan };
   const lanes = arena.lanes
@@ -120,7 +121,8 @@ export default function ArenaScreen() {
                 onPress={() => {
                   dispatch({ type: "set-primary", sport: r.sport });
                   setCenter(null);
-                  setSpan(SPORTS.find((s) => s.id === r.sport)?.gps ? 6 : 20);
+                  setSpan(null);
+                  setSelectedId(null);
                   setFailed(false);
                 }}
                 style={[f.chip, r.sport === state.primary && f.chipActive]}
@@ -180,6 +182,7 @@ export default function ArenaScreen() {
                   onPress={() => {
                     setTrack(t);
                     setCenter(null);
+                    setSelectedId(null);
                   }}
                 >
                   <Text style={f.rowTitle}>
@@ -208,9 +211,7 @@ export default function ArenaScreen() {
               <Arena3D
                 model={model}
                 onPan={(v) => setCenter(Math.max(0, v))}
-                onSelect={(id) =>
-                  setSelected(arena.lanes.find((l) => l.id === id) ?? null)
-                }
+                onSelect={(id) => setSelectedId(id)}
                 onUnavailable={() => setFailed(true)}
               />
             ) : (
@@ -219,7 +220,7 @@ export default function ArenaScreen() {
                 unit={arena.unit}
                 showGhost={ghost}
                 index={2}
-                onSelect={setSelected}
+                onSelect={(lane) => setSelectedId(lane.id)}
                 view={view}
                 onPan={(v) => setCenter(Math.max(0, v))}
               />
@@ -310,7 +311,7 @@ export default function ArenaScreen() {
                   <Pressable
                     accessibilityRole="button"
                     key={l.id}
-                    onPress={() => setSelected(l)}
+                    onPress={() => setSelectedId(l.id)}
                     style={f.row}
                   >
                     <Text style={f.small}>{i + 1}</Text>
@@ -362,7 +363,7 @@ export default function ArenaScreen() {
       <FocusSheet
         open={register}
         title="Find your next arena."
-        body="Choose a sport for your individual field. Private crew participation is available from Crew."
+        body="Choose a sport for your individual field. You can seat a private crew on the same field here, or manage membership from Crew."
         onClose={() => setRegister(false)}
       >
         {SPORTS.map((s) => (
@@ -426,7 +427,7 @@ export default function ArenaScreen() {
             ? `${selected.values[2].toFixed(1)} ${arena.unit}${selected.ghost ? " · past you, comparison only" : ""}`
             : ""
         }
-        onClose={() => setSelected(null)}
+        onClose={() => setSelectedId(null)}
       />
     </SafeAreaView>
   );

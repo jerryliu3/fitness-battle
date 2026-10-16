@@ -88,7 +88,6 @@ export {
   competeNow,
   weeklyBoard,
   projectedElo,
-  duelViews,
   formatClock,
   daysLeft,
   formatVolume,
@@ -97,7 +96,6 @@ export {
   getRealPlayerPool,
   type Action,
   type BoardRow,
-  type DuelView,
 } from "./engine";
 export { chooseCompeteState, isCompeteState, type CompeteEnvelope } from "./snapshot";
 export {

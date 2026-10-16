@@ -104,7 +104,20 @@ export interface AwardCardModel {
   headline: string;
 }
 
+/**
+ * Arena / Today checkpoint volume uses the seated wave when enrolled
+ * (same source as web `buildSplitBoard`), else the clock period bounds.
+ */
 function periodWindow(state: CompeteState, now: Date) {
+  const enrollment = state.enrollments.find(
+    (item) => item.sport === state.primary,
+  );
+  if (enrollment) {
+    return {
+      startsAt: new Date(enrollment.waveStart),
+      endsAt: new Date(enrollment.weekEnd),
+    };
+  }
   return currentPeriodBounds(state.clock.kind, now);
 }
 

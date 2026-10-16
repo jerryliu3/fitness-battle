@@ -30,7 +30,6 @@ export function FieldStage({
   boardRows,
 }: {
   model: FieldModel;
-  checkpoint?: number;
   boardRows?: BoardRow[];
 }) {
   const unit = model.gps ? "km" : "pts";
