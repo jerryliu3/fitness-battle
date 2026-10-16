@@ -1,4 +1,4 @@
-export const clamp = (n: number) => Math.max(0, Math.min(1, n));
+export const clamp = (n: number) => Number.isFinite(n) ? Math.max(0, Math.min(1, n)) : 0;
 export const smooth = (n: number) => {
   const t = clamp(n);
   return t * t * (3 - 2 * t);
@@ -6,14 +6,14 @@ export const smooth = (n: number) => {
 
 /**
  * Wall-clock length: ready K-morph, then a long fly (behind → around O → overtake),
- * then Ember→K crossfade settle.
+ * then the same outline returns to K.
  */
 export const BOOT_DURATION_MS = 3200;
 
 /** Standing / K-morph window. */
 export const READY_END = 0.2;
-/** Flight finishes; remainder is crossfade settle. */
-export const FLIGHT_END = 0.86;
+/** Flight finishes; remainder is geometric morph settle. */
+export const FLIGHT_END = 0.78;
 /** @deprecated alias — flight end is the old “zoom end”. */
 export const ZOOM_END = FLIGHT_END;
 
@@ -33,7 +33,7 @@ type PathKey = {
 
 /**
  * Authored flight: left behind the word, loop the O, come forward, overtake E.
- * Catmull-Rom through these keys keeps velocity continuous for object consistency.
+ * Non-uniform Hermite interpolation preserves velocity through unequal key intervals.
  */
 const FLIGHT_KEYS: PathKey[] = [
   { t: 0, nx: 0, yEm: 0, depth: 0.2 },
@@ -48,44 +48,29 @@ const FLIGHT_KEYS: PathKey[] = [
   { t: 1, nx: 1, yEm: 0, depth: 1 },
 ];
 
-function catmullRom(p0: number, p1: number, p2: number, p3: number, t: number) {
-  const t2 = t * t;
-  const t3 = t2 * t;
-  return (
-    0.5 *
-    (2 * p1 +
-      (-p0 + p2) * t +
-      (2 * p0 - 5 * p1 + 4 * p2 - p3) * t2 +
-      (-p0 + 3 * p1 - 3 * p2 + p3) * t3)
-  );
-}
-
-function sampleKeys(t: number): { nx: number; yEm: number; depth: number; dnx: number } {
+/** Non-uniform cubic Hermite: derivatives use actual key times, so knot velocity agrees. */
+function sampleKeys(t: number, behind = 1, front = 1): { nx: number; yEm: number; depth: number } {
   const u = clamp(t);
-  if (u <= FLIGHT_KEYS[0].t) {
-    const a = FLIGHT_KEYS[0];
-    const b = FLIGHT_KEYS[1];
-    return { nx: a.nx, yEm: a.yEm, depth: a.depth, dnx: b.nx - a.nx };
-  }
-  if (u >= FLIGHT_KEYS[FLIGHT_KEYS.length - 1].t) {
-    const n = FLIGHT_KEYS.length;
-    const a = FLIGHT_KEYS[n - 2];
-    const b = FLIGHT_KEYS[n - 1];
-    return { nx: b.nx, yEm: b.yEm, depth: b.depth, dnx: b.nx - a.nx };
-  }
-  let i = 0;
-  while (i < FLIGHT_KEYS.length - 1 && FLIGHT_KEYS[i + 1].t < u) i += 1;
-  const k0 = FLIGHT_KEYS[Math.max(0, i - 1)];
-  const k1 = FLIGHT_KEYS[i];
-  const k2 = FLIGHT_KEYS[Math.min(FLIGHT_KEYS.length - 1, i + 1)];
-  const k3 = FLIGHT_KEYS[Math.min(FLIGHT_KEYS.length - 1, i + 2)];
-  const span = Math.max(1e-6, k2.t - k1.t);
-  const local = (u - k1.t) / span;
-  const nx = catmullRom(k0.nx, k1.nx, k2.nx, k3.nx, local);
-  const yEm = catmullRom(k0.yEm, k1.yEm, k2.yEm, k3.yEm, local);
-  const depth = catmullRom(k0.depth, k1.depth, k2.depth, k3.depth, local);
-  const dnx = (catmullRom(k0.nx, k1.nx, k2.nx, k3.nx, Math.min(1, local + 0.02)) - nx) / 0.02;
-  return { nx, yEm, depth, dnx };
+  let end = 1;
+  while (end < FLIGHT_KEYS.length - 1 && u > FLIGHT_KEYS[end].t) end++;
+  const a = FLIGHT_KEYS[end - 1], b = FLIGHT_KEYS[end];
+  const span = b.t - a.t, v = (u - a.t) / span;
+  type Channel = "nx" | "yEm" | "depth";
+  const value = (index: number, key: Channel) => {
+    const k = FLIGHT_KEYS[index];
+    return key === "nx" ? k.nx * (k.nx <= 0 ? behind : front) : k[key];
+  };
+  const tangent = (index: number, key: Channel) => {
+    if (index === 0 || index === FLIGHT_KEYS.length - 1) return 0;
+    const prev = FLIGHT_KEYS[index - 1], next = FLIGHT_KEYS[index + 1];
+    return (value(index + 1, key) - value(index - 1, key)) / (next.t - prev.t);
+  };
+  const channel = (key: Channel) =>
+    (2*v**3 - 3*v*v + 1) * value(end - 1, key) +
+    (v**3 - 2*v*v + v) * span * tangent(end - 1, key) +
+    (-2*v**3 + 3*v*v) * value(end, key) +
+    (v**3 - v*v) * span * tangent(end, key);
+  return { nx: channel("nx"), yEm: channel("yEm"), depth: channel("depth") };
 }
 
 /** 0–1 progress through the flight window alone. */
@@ -96,20 +81,14 @@ export function bootFlightT(progress: number): number {
   return smooth((p - READY_END) / (FLIGHT_END - READY_END));
 }
 
-/**
- * How far Ember has morphed from standing rest into a K-like arm silhouette.
- * Completes in ready so the launch reads as an already-formed K.
- */
+/** One surface starts as K, unfolds to Ember, then returns to K after landing. */
 export const bootKMorph = (progress: number): number => {
   const p = clamp(progress);
-  const start = 0.02;
-  const end = READY_END * 0.92;
-  if (p <= start) return 0;
-  if (p >= end) return 1;
-  return smooth((p - start) / (end - start));
+  if (p <= READY_END) return 1 - smooth((p - 0.025) / (READY_END - 0.025));
+  return smooth((p - FLIGHT_END) / (1 - FLIGHT_END - 0.025));
 };
 
-/** Ember→K letter crossfade after the overtake lands. */
+/** @deprecated Historical name for final morph progress; no layer crossfade is rendered. */
 export function bootKCrossfade(progress: number): number {
   const p = clamp(progress);
   if (p <= FLIGHT_END) return 0;
@@ -146,11 +125,14 @@ export type BootFrame = {
   /** Perspective scale from depth. */
   scale: number;
   /** Horizontal facing for the host (flip when flying left). */
-  facing: 1 | -1;
+  facing: number;
+  /** Same outline's K interpolation, never host opacity. */
+  morph: number;
+  /** Flight tangent in screen space. */
+  angle: number;
   /** E slides left into the slot as Ember overtakes. */
   eShift: number;
-  emberOpacity: number;
-  kOpacity: number;
+
   /** Soft pullback before launch. */
   windup: number;
   phase: "Ready" | "Flight" | "OVERTAEK";
@@ -167,14 +149,15 @@ export function bootFrame(progress: number, layout?: BootLayout): BootFrame {
   const p = clamp(progress);
   const font = layout?.font ?? 1;
   const overta = layout?.overtaWidth ?? font * 3.6;
-  const slot = layout?.slotWidth ?? font * 0.9;
+  const slot = layout?.slotWidth ?? font * 0.712;
   const eWidth = layout?.eWidth ?? font * 0.55;
   const behindSpan = overta + slot * 0.55;
-  const finalSpan = eWidth;
+  // Match the text run's tracking after E, including the K's side bearing.
+  const finalSpan = eWidth - font * 0.055;
 
   const windup =
     p > READY_END * 0.45 && p < READY_END
-      ? -Math.sin(((p - READY_END * 0.45) / (READY_END * 0.55)) * Math.PI)
+      ? -(Math.sin(((p - READY_END * 0.45) / (READY_END * 0.55)) * Math.PI) ** 2)
       : 0;
 
   if (p <= READY_END) {
@@ -185,8 +168,8 @@ export function bootFrame(progress: number, layout?: BootLayout): BootFrame {
       scale: 1,
       facing: 1,
       eShift: 0,
-      emberOpacity: 1,
-      kOpacity: 0,
+      morph: bootKMorph(p),
+      angle: 0,
       windup,
       phase: "Ready",
       travel: 0,
@@ -194,16 +177,20 @@ export function bootFrame(progress: number, layout?: BootLayout): BootFrame {
   }
 
   const flightT = bootFlightT(p);
-  const sample = sampleKeys(flightT);
-  const x =
-    sample.nx <= 0 ? sample.nx * behindSpan : sample.nx * finalSpan;
+  const sample = sampleKeys(flightT, behindSpan, finalSpan);
+  const x = sample.nx;
   const y = sample.yEm * font;
   const depth = Math.max(-1, Math.min(1, sample.depth));
-  const scale = 0.78 + 0.22 * ((depth + 1) / 2);
-  const facing: 1 | -1 = sample.dnx < -0.02 ? -1 : 1;
+  // Recede behind the ink, grow slightly on the return pass, settle at exactly one.
+  const scale = 1 - 0.22 * Math.max(0, -depth) + 0.18 * Math.max(0, depth) * Math.sin(Math.PI * flightT) ** 2;
+  const facing = flightT < 0.3
+    ? 1 - 2 * smooth(flightT / 0.09)
+    : -1 + 2 * smooth((flightT - 0.4) / 0.18);
+  const before = sampleKeys(Math.max(0, flightT - 0.001), behindSpan, finalSpan);
+  const after = sampleKeys(Math.min(1, flightT + 0.001), behindSpan, finalSpan);
+  const angle = Math.atan2((after.yEm - before.yEm) * font, Math.abs(after.nx - before.nx) + 0.0001) * 180 / Math.PI;
   // E yields once Ember is clearly past mid-word on the return pass.
   const eShift = smooth(clamp((flightT - 0.72) / 0.22));
-  const fade = bootKCrossfade(p);
 
   return {
     x: x + font * 0.04 * windup * (1 - flightT),
@@ -212,10 +199,10 @@ export function bootFrame(progress: number, layout?: BootLayout): BootFrame {
     scale,
     facing,
     eShift,
-    emberOpacity: 1 - fade,
-    kOpacity: fade,
+    morph: bootKMorph(p),
+    angle,
     windup,
-    phase: p >= FLIGHT_END || fade > 0.55 ? "OVERTAEK" : "Flight",
+    phase: p >= FLIGHT_END ? "OVERTAEK" : "Flight",
     travel: flightT,
   };
 }

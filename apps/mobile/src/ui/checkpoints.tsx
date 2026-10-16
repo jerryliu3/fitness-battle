@@ -1,15 +1,14 @@
 import {
   CHECKPOINT_FRAME,
-  DEFAULT_MASCOT,
-  MASCOTS,
   type CheckpointDisc,
   type TodayRoute,
 } from "@fitness-battle/shared";
-import { Image, Pressable, StyleSheet, Text, View } from "react-native";
+import { Pressable, StyleSheet, Text, View } from "react-native";
+import { useState } from "react";
+import { AnimatedEmber } from "./mascot/animated-ember";
 import Svg, { Path } from "react-native-svg";
 import { SHELL_COLORS } from "../theme";
 
-const mascot = require("../../assets/mascots/star-ember.png");
 
 function Disc({
   disc,
@@ -19,6 +18,7 @@ function Disc({
   onPress?: () => void;
 }) {
   const future = disc.role === "future";
+  const [reaction, setReaction] = useState(0);
   const width = future ? 66 : 78;
   const height = future ? 56 : 68;
   const body = (
@@ -28,16 +28,11 @@ function Disc({
         disc.role === "past" ? styles.past : null,
         disc.role === "today" ? styles.today : null,
         future ? styles.future : null,
-        { width, height, marginLeft: -width / 2 },
+        { width, height },
       ]}
     >
       {disc.role === "today" ? (
-        <Image
-          source={mascot}
-          style={styles.ace}
-          accessibilityElementsHidden
-          importantForAccessibility="no"
-        />
+        <View style={styles.ember} pointerEvents="none"><AnimatedEmber action="hop" size={140} playing={reaction > 0} loop={false} restartKey={reaction} /></View>
       ) : null}
       {disc.role === "past" ? (
         <>
@@ -52,6 +47,7 @@ function Disc({
   const position = {
     left: `${disc.cx * 100}%` as `${number}%`,
     top: disc.top,
+    width, height, marginLeft: -width / 2,
   };
 
   if (future) {
@@ -71,6 +67,8 @@ function Disc({
       style={[styles.slot, position]}
       accessibilityRole="button"
       accessibilityLabel={disc.accessibilityLabel}
+      hitSlop={disc.role === "today" ? { top: 90, left: 28, right: 28, bottom: 6 } : undefined}
+      onPressIn={() => { if(disc.role === "today") setReaction(value => value + 1); }}
       onPress={onPress}
     >
       {body}
@@ -119,7 +117,6 @@ export function CheckpointRoute({
           <Text style={styles.minutes}>{route.suggestion.minutes} min</Text>
         ) : null}
       </View>
-      <Text style={styles.srOnly}>{MASCOTS[DEFAULT_MASCOT].name}</Text>
     </View>
   );
 }
@@ -145,12 +142,12 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: SHELL_COLORS.line,
   },
-  ace: {
+  ember: {
     position: "absolute",
-    width: 112,
-    height: 112,
-    bottom: 6,
-    left: -17,
+    width: 140,
+    height: 140 * 485 / 360,
+    bottom: -10,
+    left: -31,
   },
   copy: {
     position: "absolute",
@@ -180,5 +177,4 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: SHELL_COLORS.muted,
   },
-  srOnly: { position: "absolute", width: 1, height: 1, opacity: 0 },
 });

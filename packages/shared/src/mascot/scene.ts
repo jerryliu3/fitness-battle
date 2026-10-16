@@ -1,4 +1,10 @@
-import { EMBER_MODEL, emberContour, emberSideWalls, emberExpression, normalizeEmberPose, type EmberExpression, type EmberPose } from "./model";
+import { EMBER_REST, EMBER_MODEL, emberContour, emberExpression, normalizeEmberPose, rotateEmberPoint, type EmberExpression, type EmberPose } from "./model";
+import { morphEmberContour, morphEmberSideWalls, emberMorphColor, type EmberMorphConcept } from "./morph";
+import { launchCrescent, launchFootPoints, launchForearm, launchLean } from "./launch-shape";
+import { landingDustNodes } from "./landing-dust";
+import { limbMorphCrescent } from "./limb-morph";
+import { emberSkidOffset } from "./skid-rig";
+import { skidSprayNodes } from "./skid-spray";
 
 /** A small platform-neutral vector display list. No React, native or DOM dependencies. */
 export interface EmberNode {
@@ -14,14 +20,39 @@ export interface EmberSceneOptions {
   pose?: Partial<EmberPose>;
   expression?: EmberExpression;
   shadow?: boolean;
+  morph?: number;
+  /** Review-only candidates; product defaults to the current baseline. */
+  morphConcept?: EmberMorphConcept;
+  /** New launch study only; zero holds its sculpted stance, one is flying. */
+  launchFlight?: number;
+  /** Local knee bend with fixed soles, used by the crest-first launch study. */
+  launchCrouch?: number;
+  /** Follow-up skid only: pin Ember's left/front sole while the body pivots. */
+  launchSkid?: number;
+  /** Sustained skid spray clock; independent of the recovering/morphing body. */
+  skidSpray?: number;
+  /** Normalized elapsed time since touchdown. */
+  landingDust?: number;
 }
 
-export function createEmberScene({ id, pose, expression, shadow = true }: EmberSceneOptions): EmberNode[] {
+export function createEmberScene({ id, pose, expression, shadow = true, morph = 0, morphConcept = "baseline", launchFlight = 0, launchCrouch = 0, launchSkid = 0, skidSpray, landingDust }: EmberSceneOptions): EmberNode[] {
   const prefix = `ember-${id.replace(/[^a-zA-Z0-9_-]/g, "") || "model"}`;
   const p = normalizeEmberPose({ ...pose, ...(expression ? emberExpression(expression) : {}) });
   const c = EMBER_MODEL.palette;
-  const body = emberContour(p);
+  const amount = Number.isFinite(morph) ? Math.max(0,Math.min(1,morph)) : 0;
+  const detail = (1-amount)**3;
+  const isLaunch = morphConcept === "crest-launch" || morphConcept === "race-launch";
+  const flight = Number.isFinite(launchFlight) ? Math.max(0,Math.min(1,launchFlight)) : 0;
+  const crouch = Number.isFinite(launchCrouch) ? Math.max(0,Math.min(1,launchCrouch)) : 0;
+  const skid=morphConcept==="crest-launch"&&Number.isFinite(launchSkid)?Math.max(0,Math.min(1,launchSkid))*(1-amount):0;
+  const body = morphEmberContour(p, amount, morphConcept, flight, crouch, skid);
+  const crescent = isLaunch ? launchCrescent(p, amount, morphConcept, flight, crouch) : morphConcept === "baseline" ? emberContour(p,true) : limbMorphCrescent(p,amount,morphConcept);
   const yawScale = Math.cos(p.yaw * 1.12);
+  const [skidX,skidY]=emberSkidOffset(p,flight,crouch,skid);
+  const dust = landingDust === undefined ? [] : (isLaunch ? launchFootPoints(p,morphConcept,flight,crouch,skid) : [[140,362] as const]).flatMap(([x,y],i)=>{
+    const sole=rotateEmberPoint(180+(x-180)*p.scaleX*yawScale,235+(y-235)*p.scaleY,[180,235],p.rotation);
+    return landingDustNodes(landingDust,[sole[0]+p.x+skidX,sole[1]+p.y+skidY],i===0||skid>.1?-1:1).map(plume=>i===0&&skid>0?{...plume,attrs:{...plume.attrs,opacity:Number(plume.attrs.opacity)*(1-skid)**3}}:plume);
+  });
   const faceShift = p.yaw * 38;
   const eye = (x: number, open: number): EmberNode => node("g", { transform: `translate(${x} 206)` }, [
     node("g", { opacity: f(open) }, [
@@ -47,7 +78,7 @@ export function createEmberScene({ id, pose, expression, shadow = true }: EmberS
   return [
     node("defs", {}, [
       node("linearGradient", { id: `${prefix}-gold`, x1: "20%", y1: "0%", x2: "85%", y2: "100%" }, [
-        node("stop", { offset: "0%", stopColor: c.light }), node("stop", { offset: "70%", stopColor: c.gold }),
+        node("stop", { offset: "0%", stopColor: emberMorphColor(c.light, amount) }), node("stop", { offset: "70%", stopColor: emberMorphColor(c.gold, amount) }),
       ]),
       node("clipPath", { id: `${prefix}-body` }, [node("path", { d: body })]),
       node("clipPath", { id: `${prefix}-mouth` }, [node("path", { d: mouth })]),
@@ -59,16 +90,24 @@ export function createEmberScene({ id, pose, expression, shadow = true }: EmberS
       node("g", { opacity: f(p.sparkle) }, [sparkle(-157, -43, 6), sparkle(-175, 23, 4), sparkle(-126, 58, 7)]),
     ]),
     node("g", { opacity: f(p.sparkle * (1 - p.trail * 0.85)) }, [sparkle(287, 88, 12), sparkle(318, 114, 7), sparkle(303, 57, 6), sparkle(65, 105, 8)]),
-    node("g", { transform: `translate(${f(p.x)} ${f(p.y)}) translate(180 235) rotate(${f(p.rotation)}) scale(${f(p.scaleX * yawScale)} ${f(p.scaleY)}) translate(-180 -235)` }, [
+    ...(skid>0?[]:dust),
+    node("g", { transform: `translate(${f(p.x+skidX)} ${f(p.y+skidY)}) translate(180 235) rotate(${f(p.rotation)}) scale(${f(p.scaleX * yawScale)} ${f(p.scaleY)}) translate(-180 -235)` }, [
       // Filled connecting surfaces restore the baseline's directional extrusion.
       // The gold face occludes inward-facing walls; there is no outline stroke or second back star.
-      node("path", { d: emberSideWalls(p), fill: c.edge }),
+      node("path", { d: morphEmberSideWalls(p, amount, morphConcept, flight, crouch, skid), fill: emberMorphColor(c.edge, amount) }),
       node("path", { d: body, fill: `url(#${prefix}-gold)` }),
-      node("g", { clipPath: `url(#${prefix}-body)` }, [
-        node("path", { d: emberContour(p, true), fill: c.edge }),
-        face,
+      node("g", { clipPath: `url(#${prefix}-body)`, opacity: detail }, [
+        node("path", { d: crescent, fill: c.edge }),
+        ...(isLaunch ? [node("g", {transform:`rotate(${f(launchLean(morphConcept,flight)*(1-amount))} 180 235) translate(0 ${morphConcept==="crest-launch"?f(30*crouch):0})`},[face])] : [face]),
+        ...(morphConcept === "race-launch" ? [node("g",{opacity:f((1-flight)**2)},[
+          node("path",{d:launchForearm(p,amount,flight),fill:`url(#${prefix}-gold)`}),
+          node("path",{d:launchForearm(p,amount,flight,true),fill:"none",stroke:c.edge,strokeWidth:3,strokeLinecap:"round",opacity:.42}),
+        ])] : []),
       ]),
     ]),
+    // Skid dust can veil the planting toe while the rear leg is airborne.
+    ...(skid>0?dust:[]),
+    ...(skidSpray===undefined?[]:skidSprayNodes(skidSpray,launchFootPoints({...EMBER_REST},"crest-launch")[1])),
   ];
 }
 

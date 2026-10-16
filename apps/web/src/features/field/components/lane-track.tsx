@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { motion, useReducedMotion } from "motion/react";
 import {
   gapLabel,
   stableLanes,
@@ -29,6 +30,7 @@ export function LaneTrack({
   unit: string;
   onSelect: (id: string) => void;
 }) {
+  const reduced = useReducedMotion();
   const host = useRef<HTMLDivElement>(null);
   const drag = useRef<{ y: number; min: number; moved: boolean } | null>(null);
   const [width, setWidth] = useState(720);
@@ -178,7 +180,10 @@ export function LaneTrack({
         ) : null}
         {showGhost && ghost ? (
           <g>
-            <circle
+            <motion.circle
+              initial={false}
+              animate={{ cx: laneWidth * (lanes.findIndex((runner) => runner.you) + 0.5), cy: Math.max(70, Math.min(height - 36, y(valueAt(ghost, time)))) }}
+              transition={{ duration: reduced || drag.current?.moved ? 0 : 0.32 }}
               className="lane-ghost"
               cx={laneWidth * (lanes.findIndex((runner) => runner.you) + 0.5)}
               cy={Math.max(70, Math.min(height - 36, y(valueAt(ghost, time))))}
@@ -207,7 +212,10 @@ export function LaneTrack({
                 }
               }}
             >
-              <circle
+              <motion.circle
+                initial={false}
+                animate={{ cx: x, cy: yy, r: (runner.you ? 11 : 7) + (runner.id === selected ? 3 : 0) }}
+                transition={{ duration: reduced || drag.current?.moved ? 0 : 0.32, ease: [0.22, 1, 0.36, 1] }}
                 className={
                   runner.id === selected
                     ? "lane-dot lane-selected"
@@ -215,9 +223,6 @@ export function LaneTrack({
                       ? "lane-dot lane-you"
                       : "lane-dot"
                 }
-                cx={x}
-                cy={yy}
-                r={runner.you ? 11 : 7}
               />
             </g>
           );

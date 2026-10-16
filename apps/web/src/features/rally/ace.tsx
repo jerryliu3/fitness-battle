@@ -1,5 +1,6 @@
 import Image from "next/image";
 import { DEFAULT_MASCOT, MASCOTS, type MascotVariant } from "@fitness-battle/shared";
+import { Ember } from "@/components/mascot/ember";
 
 /** Product mascot; retain the Ace API for existing Rally surfaces. */
 export function Ace({
@@ -11,6 +12,9 @@ export function Ace({
   decorative?: boolean;
   variant?: MascotVariant;
 }) {
+  if (variant === "star-ember") {
+    return <Ember className={`world-mascot ${className}`} label={decorative ? undefined : MASCOTS[variant].description} />;
+  }
   return (
     <Image
       className={`world-mascot ${className}`}

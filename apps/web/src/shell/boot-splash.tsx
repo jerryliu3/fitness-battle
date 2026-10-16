@@ -1,12 +1,9 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { type EmberPose } from "@fitness-battle/shared/mascot";
+import { EMBER_K_SIZE_EM, EMBER_LAUNCH_DURATION, emberSkidWordmarkLayout, sampleEmberSkid } from "@fitness-battle/shared/mascot";
 import { Ember } from "@/components/mascot/ember";
 import {
-  BOOT_DURATION_MS,
-  bootEmberPose,
-  bootFrame,
   clamp,
   type BootLayout,
 } from "@fitness-battle/shared/boot";
@@ -17,25 +14,30 @@ type BootSplashProps = {
   /** True after the overtake animation finished but app data is still loading. */
   waiting?: boolean;
   onAnimationComplete: () => void;
+  /** Authoring surface only; product callers leave this undefined. */
+  progress?: number;
 };
 
 /**
  * Product boot splash: OVERTAKE → OVERTAEK.
- * Ember morphs into a K, flies behind the word and around the O, returns in
- * front to overtake E, then crossfades into a literal K.
+ * A single K outline unfolds into Ember, flies the word and returns to K.
  */
-export function BootSplash({ waiting = false, onAnimationComplete }: BootSplashProps) {
+export function BootSplash({ waiting = false, onAnimationComplete, progress }: BootSplashProps) {
   const stageRef = useRef<HTMLDivElement>(null);
   const wordRef = useRef<HTMLDivElement>(null);
   const lettersRef = useRef<HTMLSpanElement>(null);
   const slotRef = useRef<HTMLSpanElement>(null);
   const eRef = useRef<HTMLSpanElement>(null);
+  const baselineRef = useRef<HTMLSpanElement>(null);
   const emberHostRef = useRef<HTMLSpanElement>(null);
-  const kHostRef = useRef<HTMLSpanElement>(null);
+
   const completed = useRef(false);
+  const preview = useRef(progress);
+  preview.current = progress;
+  const drawRef = useRef<((p: number) => void) | null>(null);
   const onCompleteRef = useRef(onAnimationComplete);
   onCompleteRef.current = onAnimationComplete;
-  const [pose, setPose] = useState<EmberPose>(() => bootEmberPose(0));
+  const [character, setCharacter] = useState(() => sampleEmberSkid(0, {returnToK:true}));
 
   useEffect(() => {
     const stage = stageRef.current!;
@@ -43,13 +45,12 @@ export function BootSplash({ waiting = false, onAnimationComplete }: BootSplashP
     const slot = slotRef.current!;
     const letter = eRef.current!;
     const emberHost = emberHostRef.current!;
-    const kHost = kHostRef.current!;
+
     const media = matchMedia("(prefers-reduced-motion: reduce)");
     let disposed = false;
-    let p = 0;
+    let p = completed.current ? 1 : 0;
     let running = false;
     let raf = 0;
-    let lastPublish = 0;
     let start = 0;
     let initial = 0;
     let layout: BootLayout & { homeX: number; homeY: number } = {
@@ -70,25 +71,21 @@ export function BootSplash({ waiting = false, onAnimationComplete }: BootSplashP
     function draw(progress: number, publishPose: boolean) {
       if (disposed || !wordRef.current) return;
       p = clamp(progress);
-      const frame = bootFrame(p, layout);
+      const frame = sampleEmberSkid(p, {layout, returnToK:true, reducedMotion:media.matches && preview.current === undefined});
       const l = layout;
-      letter.style.transform = `translate(${-l.slotWidth * frame.eShift}px,0)`;
-      const size = l.font * 1.16 * frame.scale;
+      letter.style.transform = `translate(${-emberSkidWordmarkLayout(l).eDistance * frame.eShift}px,0)`;
+      const size = l.font * EMBER_K_SIZE_EM * frame.scale;
       emberHost.style.left = `${l.homeX + frame.x}px`;
       emberHost.style.bottom = `${l.homeY - frame.y}px`;
       emberHost.style.width = `${size}px`;
-      emberHost.style.height = `${size}px`;
-      emberHost.style.opacity = String(frame.emberOpacity);
+      emberHost.style.height = `${size * 485 / 360}px`;
+
+      emberHost.style.visibility = "visible";
       emberHost.style.zIndex = frame.depth < 0 ? "1" : "3";
-      emberHost.style.transform = `translate(-50%, 5%) scale(${frame.facing}, 1)`;
-      kHost.style.left = `${l.homeX + bootFrame(1, layout).x}px`;
-      kHost.style.bottom = `${l.homeY}px`;
-      kHost.style.fontSize = `${l.font}px`;
-      kHost.style.opacity = String(frame.kOpacity);
-      kHost.style.zIndex = "3";
-      wordRef.current.setAttribute("aria-label", frame.phase === "OVERTAEK" ? "OVERTAEK" : "OVERTAKE");
+      emberHost.style.transform = `translate(-50%, 0) scale(${frame.facing}, 1)`;
+      wordRef.current.setAttribute("aria-label", p >= .93 ? "OVERTAEK" : "OVERTAKE");
       if (publishPose) {
-        setPose(bootEmberPose(p, { reducedMotion: media.matches }));
+        setCharacter({...frame,spray:media.matches?undefined:frame.spray});
       }
     }
 
@@ -103,10 +100,12 @@ export function BootSplash({ waiting = false, onAnimationComplete }: BootSplashP
         slotWidth: slotBox.width,
         eWidth: letter.getBoundingClientRect().width,
         font,
-        homeX: slotBox.left - stageBox.left + slotBox.width / 2,
-        homeY: stageBox.bottom - slotBox.bottom,
+        // Glyph center includes the K's asymmetric side bearings.
+        homeX: slotBox.left - stageBox.left + font * 0.4085,
+        // Use the live alphabetic baseline and exact glyph cap height.
+        homeY: stageBox.bottom - baselineRef.current!.getBoundingClientRect().top - font * EMBER_K_SIZE_EM * 55 / 360,
       };
-      draw(p, false);
+      draw(p, true);
     }
 
     function pause() {
@@ -121,6 +120,7 @@ export function BootSplash({ waiting = false, onAnimationComplete }: BootSplashP
 
     function play() {
       if (disposed || running || completed.current) return;
+      if (preview.current !== undefined) { draw(preview.current, true); return; }
       if (media.matches) {
         settle();
         finish();
@@ -134,14 +134,12 @@ export function BootSplash({ waiting = false, onAnimationComplete }: BootSplashP
       }
       initial = p;
       start = performance.now();
-      lastPublish = 0;
       running = true;
       function tick(now: number) {
         if (!running || disposed) return;
-        const next = clamp(initial + (now - start) / BOOT_DURATION_MS);
-        const publish = now - lastPublish >= 1000 / 30 || next === 1;
-        if (publish) lastPublish = now;
-        draw(next, publish);
+        const next = clamp(initial + (now - start) / EMBER_LAUNCH_DURATION);
+        // Publish the rig and its host together on the same animation frame.
+        draw(next, true);
         if (next < 1) raf = requestAnimationFrame(tick);
         else {
           settle();
@@ -170,6 +168,7 @@ export function BootSplash({ waiting = false, onAnimationComplete }: BootSplashP
     }
 
     const observer = new ResizeObserver(measure);
+    drawRef.current = value => { pause(); draw(value, true); };
     observer.observe(stage);
     media.addEventListener("change", preferenceChanged);
     document.addEventListener("visibilitychange", visibilityChanged);
@@ -181,6 +180,7 @@ export function BootSplash({ waiting = false, onAnimationComplete }: BootSplashP
 
     return () => {
       disposed = true;
+      drawRef.current = null;
       cancelAnimationFrame(raf);
       running = false;
       observer.disconnect();
@@ -188,6 +188,8 @@ export function BootSplash({ waiting = false, onAnimationComplete }: BootSplashP
       document.removeEventListener("visibilitychange", visibilityChanged);
     };
   }, []);
+
+  useEffect(() => { if(progress !== undefined) drawRef.current?.(progress); }, [progress]);
 
   return (
     <div className="boot-splash" role="status" aria-live="polite" aria-busy="true">
@@ -202,12 +204,10 @@ export function BootSplash({ waiting = false, onAnimationComplete }: BootSplashP
           <span ref={eRef} className="boot-splash-e" aria-hidden="true">
             E
           </span>
+          <span ref={baselineRef} style={{width:0,height:0,flex:"none"}} aria-hidden="true"/>
         </div>
         <span ref={emberHostRef} className="boot-splash-ember-fly" aria-hidden="true">
-          <Ember pose={pose} shadow={false} />
-        </span>
-        <span ref={kHostRef} className="boot-splash-k" aria-hidden="true">
-          K
+          <Ember pose={character.pose} morph={character.morph} morphConcept="crest-launch" launchFlight={character.flight} launchCrouch={character.crouch} launchSkid={character.skid} skidSpray={character.spray} shadow={false} />
         </span>
       </div>
       {waiting ? (

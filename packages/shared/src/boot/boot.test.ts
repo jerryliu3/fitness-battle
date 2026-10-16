@@ -53,13 +53,12 @@ describe("boot flight path", () => {
 
     const end = bootFrame(1, layout);
     expect(end.phase).toBe("OVERTAEK");
-    expect(end.x).toBeCloseTo(layout.eWidth, 0);
-    expect(end.kOpacity).toBe(1);
-    expect(end.emberOpacity).toBe(0);
+    expect(end.x).toBeCloseTo(layout.eWidth - layout.font * 0.055, 3);
+    expect(end.morph).toBe(1);
     expect(end.eShift).toBe(1);
   });
 
-  it("crossfades Ember into K only after the flight lands", () => {
+  it("keeps the legacy final-morph alias after the flight lands", () => {
     expect(bootKCrossfade(FLIGHT_END)).toBe(0);
     expect(bootKCrossfade((FLIGHT_END + 1) / 2)).toBeGreaterThan(0.2);
     expect(bootKCrossfade(1)).toBe(1);
@@ -67,16 +66,44 @@ describe("boot flight path", () => {
     expect(bootFlightT(FLIGHT_END)).toBe(1);
   });
 
-  it("morphs from standing rest into a K silhouette before launch", () => {
-    expect(bootKMorph(0)).toBe(0);
-    expect(bootKMorph(READY_END)).toBe(1);
+  it("unfolds the K into Ember before launch, then reforms the K", () => {
+    expect(bootKMorph(0)).toBe(1);
+    expect(bootKMorph(READY_END)).toBe(0);
     const start = bootEmberPose(0);
     expect(start.armLeft).toBeCloseTo(0);
     expect(start.armRight).toBeCloseTo(0);
     const ready = bootEmberPose(READY_END);
-    expect(ready.armLeft).toBeCloseTo(-1);
-    expect(ready.armRight).toBeGreaterThan(0.7);
+    expect(ready.armLeft).toBeCloseTo(0);
+    expect(ready.armRight).toBeCloseTo(0);
     const midFlight = bootEmberPose(READY_END + (FLIGHT_END - READY_END) * 0.5);
     expect(midFlight.trail).toBeGreaterThan(0.3);
+    expect(bootKMorph(1)).toBe(1);
+  });
+
+  it("keeps translation velocity continuous at every flight knot in measured pixel space", () => {
+    const progressAt = (travel: number) => {
+      let lo=READY_END, hi=FLIGHT_END;
+      for(let i=0;i<40;i++) { const mid=(lo+hi)/2; if(bootFlightT(mid)<travel) lo=mid; else hi=mid; }
+      return (lo+hi)/2;
+    };
+    for(const t of [.1,.28,.4,.48,.56,.66,.8,.9]) {
+      const p=progressAt(t), h=1e-6;
+      const a=bootFrame(p-h,layout), b=bootFrame(p,layout), c=bootFrame(p+h,layout);
+      expect(Math.abs((b.x-a.x)/h-(c.x-b.x)/h)).toBeLessThan(.2);
+      expect(Math.abs((b.y-a.y)/h-(c.y-b.y)/h)).toBeLessThan(.2);
+    }
+  });
+
+  it("turns continuously, settles without a scale jump and drives deformation from the measured path", () => {
+    let previous=bootFrame(0,layout);
+    for(let i=1;i<=1000;i++) {
+      const frame=bootFrame(i/1000,layout);
+      expect(Math.abs(frame.facing-previous.facing)).toBeLessThan(.1);
+      expect(Math.abs(frame.scale-previous.scale)).toBeLessThan(.02);
+      previous=frame;
+    }
+    const p=.6, frame=bootFrame(p,layout);
+    expect(bootEmberPose(p,{frame}).rotation).not.toBe(bootEmberPose(p,{frame:{...frame,angle:0}}).rotation);
+    expect(bootEmberPose(p,{reducedMotion:true})).toEqual(bootEmberPose(0));
   });
 });
