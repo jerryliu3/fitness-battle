@@ -6,7 +6,13 @@ import { competeNow, formatEffort, weeklyBoard } from "./compete/engine";
 import { resolvePastSelfGhost, ghostHasVolume } from "./compete/ghost";
 import { formatEloDelta, formatPlace } from "./compete/history";
 import { countsOnTrack } from "./compete/ledger";
-import { sportById, type Activity, type CompeteState, type SportId } from "./compete/sports";
+import {
+  sportById,
+  type Activity,
+  type CompeteState,
+  type ScoreTrack,
+  type SportId,
+} from "./compete/sports";
 import { suggestionForState, type DaySuggestion } from "./compete/suggestion";
 import {
   activityCheckpoints,
@@ -213,20 +219,23 @@ function seriesValues(series: CheckpointSeries, gps: boolean): [number, number, 
 export function buildArenaModel(
   state: CompeteState,
   now: Date = competeNow(state),
+  track: ScoreTrack = "open",
 ): ArenaModel {
   const sport = state.primary;
   const spec = sportById(sport);
   const period = periodWindow(state, now);
-  const optedIn = Boolean(state.ratings.find((row) => row.sport === sport)?.optedIn);
+  const optedIn = Boolean(
+    state.ratings.find((row) => row.sport === sport)?.optedIn,
+  );
   const youSeries = activityCheckpoints(
     state.activities,
     sport,
     period.startsAt,
     period.endsAt,
-    "open",
+    track,
     now,
   );
-  const board = optedIn ? weeklyBoard(state, sport, "open", now) : [];
+  const board = optedIn ? weeklyBoard(state, sport, track, now) : [];
   const lanes: ArenaLane[] = board.map((row) => {
     const series = row.you
       ? youSeries
@@ -251,7 +260,7 @@ export function buildArenaModel(
   const ghost = resolvePastSelfGhost({
     activities: state.activities,
     sport,
-    track: "open",
+    track,
     currentStart: period.startsAt,
     currentEnd: period.endsAt,
     currentLiveAt: youSeries.liveAt,

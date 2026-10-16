@@ -3,7 +3,7 @@ import { Pressable, Text, TextInput, View } from "react-native";
 import { useAuth } from "../lib/auth";
 import { useCompeteStore } from "../lib/compete-store";
 import { mobileEnv } from "../lib/env";
-import { FocusButton, FocusDisclosure, FocusSheet, f } from "../ui/focus";
+import { FocusButton, FocusSheet, f } from "../ui/focus";
 import { useRouter } from "expo-router";
 export interface PrivateCrew {
   id: string;
@@ -128,16 +128,13 @@ export function CrewHub() {
       setBusy(false);
     }
   }
+  const memberNames = members.map((m) => m.display_name);
+  const memberCaption =
+    memberNames.length <= 3
+      ? memberNames.join(", ") || "No members yet"
+      : `${memberNames.slice(0, 3).join(", ")} + ${memberNames.length - 3} more`;
   return (
     <>
-      <View style={f.row}>
-        <Text style={f.h2}>Your crews</Text>
-        <FocusButton
-          label="Join with code"
-          secondary
-          onPress={() => setPanel("join")}
-        />
-      </View>
       {!api.live ? (
         <View style={f.card}>
           <Text style={f.title}>Make room for your people.</Text>
@@ -168,22 +165,33 @@ export function CrewHub() {
           <Text style={f.copy}>
             Create a crew or use an invite code to start sharing your week.
           </Text>
+          <FocusButton
+            label="Join with code"
+            secondary
+            onPress={() => setPanel("join")}
+          />
+          <FocusButton
+            label="Create a private crew"
+            onPress={() => setPanel("create")}
+          />
         </View>
       ) : (
         <>
-          <View style={f.chipRow}>
-            {crews.map((c) => (
-              <Pressable
-                key={c.id}
-                accessibilityRole="button"
-                accessibilityState={{ selected: c.id === crew.id }}
-                style={[f.chip, c.id === crew.id && f.chipActive]}
-                onPress={() => setSelected(c.id)}
-              >
-                <Text style={f.rowTitle}>{c.name}</Text>
-              </Pressable>
-            ))}
-          </View>
+          {crews.length > 1 ? (
+            <View style={f.chipRow}>
+              {crews.map((c) => (
+                <Pressable
+                  key={c.id}
+                  accessibilityRole="button"
+                  accessibilityState={{ selected: c.id === crew.id }}
+                  style={[f.chip, c.id === crew.id && f.chipActive]}
+                  onPress={() => setSelected(c.id)}
+                >
+                  <Text style={f.rowTitle}>{c.name}</Text>
+                </Pressable>
+              ))}
+            </View>
+          ) : null}
           <View
             style={{
               padding: 28,
@@ -387,13 +395,29 @@ export function CrewHub() {
                 ))
             )}
           </View>
-          <FocusDisclosure
-            title="Crew details"
-            detail="Members, format & rest week"
-          >
-            <Text style={f.copy}>
-              {crew.sport} · {crew.format.replaceAll("_", " ")}
-            </Text>
+          <View style={f.card} accessibilityLabel="Crew members">
+            <Text style={f.kicker}>A little accountability</Text>
+            <Text style={f.h2}>We go further together.</Text>
+            <View style={{ flexDirection: "row", marginTop: 8 }}>
+              {members.slice(0, 8).map((m, i) => (
+                <View
+                  key={m.user_id}
+                  style={[
+                    f.avatar,
+                    {
+                      borderWidth: 2,
+                      borderColor: "#fff",
+                      marginLeft: i ? -8 : 0,
+                    },
+                  ]}
+                >
+                  <Text style={f.rowTitle}>
+                    {m.display_name.slice(0, 2).toUpperCase()}
+                  </Text>
+                </View>
+              ))}
+            </View>
+            <Text style={f.copy}>{memberCaption}</Text>
             {members.map((m) => (
               <View key={m.user_id} style={f.row}>
                 <Text style={[f.rowTitle, f.grow]}>{m.display_name}</Text>
@@ -403,6 +427,11 @@ export function CrewHub() {
               </View>
             ))}
             <FocusButton
+              label="Invite someone ＋"
+              secondary
+              onPress={() => setPanel("invite")}
+            />
+            <FocusButton
               label="Mark my rest week"
               secondary
               disabled={busy}
@@ -410,15 +439,23 @@ export function CrewHub() {
                 void write("/rest", { crewId: crew.id, rest: true })
               }
             />
-            <Text style={f.small}>A crew rest marker does not freeze Elo.</Text>
-          </FocusDisclosure>
+            <FocusButton
+              label="Join another crew"
+              secondary
+              onPress={() => setPanel("join")}
+            />
+            <FocusButton
+              label="Create another crew"
+              secondary
+              onPress={() => setPanel("create")}
+            />
+            <Text style={f.small}>
+              {crew.sport} · {crew.format.replaceAll("_", " ")}. A crew rest
+              marker does not freeze Elo.
+            </Text>
+          </View>
         </>
       )}
-      <FocusButton
-        label="Create a private crew"
-        secondary
-        onPress={() => setPanel("create")}
-      />
       {(note || api.error) && (
         <Text style={[f.copy, f.feedback]} accessibilityLiveRegion="polite">
           {note || api.error}

@@ -1,7 +1,8 @@
 "use client";
 import { useState } from "react";
 import { useCompete } from "@/components/compete-context";
-import { Ember } from "@/components/mascot/ember";
+import { AnimatedEmber } from "@/components/mascot/animated-ember";
+import type { EmberAction } from "@fitness-battle/shared/mascot";
 import { Sheet } from "@/ui/sheet";
 import {
   buildTodayRoute,
@@ -16,6 +17,12 @@ export function TodayScreen() {
   const [detail, setDetail] = useState<{ title: string; body: string } | null>(
     null,
   );
+  const [reaction, setReaction] = useState<{
+    action: EmberAction;
+    key: number;
+  }>({ action: "wave", key: 0 });
+  const react = (action: EmberAction) =>
+    setReaction((value) => ({ action, key: value.key + 1 }));
   if (!state) return <p className="fb-copy">Loading your week…</p>;
   const route = buildTodayRoute(state);
   const now = competeNow(state);
@@ -24,11 +31,13 @@ export function TodayScreen() {
     .slice()
     .sort((a, b) => b.startedAt.localeCompare(a.startedAt))
     .slice(0, 10);
-  const openToday = () =>
+  const openToday = () => {
+    react("hop");
     setDetail({
       title: route.suggestion.title,
       body: `${route.suggestion.detail} ${route.suggestion.reason}`,
     });
+  };
   const openSession = (a: Activity) =>
     setDetail({
       title: `${sportById(a.sport).name} · ${formatVolume(a.sport, a.distanceM, a.movingSec)}`,
@@ -41,7 +50,11 @@ export function TodayScreen() {
         <h1>Just one good move.</h1>
         <p className="fb-copy">Small steps. A week that adds up.</p>
       </header>
-      <button className="focus-suggestion" onClick={openToday}>
+      <button
+        className="focus-suggestion"
+        onClick={openToday}
+        onMouseEnter={() => react("wave")}
+      >
         <span>
           <small>Today's suggestion</small>
           <strong>{route.suggestion.title}</strong>
@@ -52,7 +65,14 @@ export function TodayScreen() {
             Your next move ↗
           </em>
         </span>
-        <Ember expression="happy" />
+        <AnimatedEmber
+          className="focus-suggestion-ember"
+          expression="happy"
+          action={reaction.action}
+          restartKey={reaction.key}
+          loop={false}
+          playing={reaction.key > 0}
+        />
       </button>
       <details className="focus-disclosure">
         <summary>
@@ -83,9 +103,16 @@ export function TodayScreen() {
         <div className="focus-path-row is-current">
           <button
             onClick={openToday}
+            onMouseEnter={() => react("wave")}
             aria-label="Ember: open today's recommendation"
           >
-            <Ember expression="happy" />
+            <AnimatedEmber
+              expression="happy"
+              action={reaction.action}
+              restartKey={reaction.key}
+              loop={false}
+              playing={reaction.key > 0}
+            />
           </button>
           <span>
             <small>Today</small>

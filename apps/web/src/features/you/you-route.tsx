@@ -5,13 +5,9 @@ import { useCompete } from "@/components/compete-context";
 import { NotificationSettings } from "@/components/notification-settings";
 import { requestAccountPush } from "@/lib/request-push";
 import type { SyncIdentity } from "@/lib/push-notifications";
-import {
-  AthleteCard,
-  WeekRecords,
-} from "@/features/split/components/athlete-card";
+import { WeekRecords } from "@/features/split/components/athlete-card";
 import { SleepPanel } from "@/features/health/sleep-panel";
 import { AthleteOverview } from "@/features/focus/athlete-overview";
-import { NumberTicker } from "@/ui/number-ticker";
 import { SeasonHistory } from "@/features/split/components/season-history";
 import { buildSplitBoard } from "@/features/split/model";
 import {
@@ -19,7 +15,6 @@ import {
   BACKFILL_DAYS,
   competeNow,
   evidenceLabel,
-  initialsFromName,
   PROVIDERS,
   RANK_BANDS,
   rankForElo,

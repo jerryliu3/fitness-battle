@@ -182,9 +182,90 @@
   margin: auto;
 }
 .focus-crew {
-  max-width: 880px;
+  max-width: 960px;
   width: 100%;
   margin: auto;
+}
+.focus-crew-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.55fr) minmax(240px, 0.85fr);
+  gap: 22px;
+  align-items: start;
+  margin-top: 8px;
+}
+.focus-crew-main {
+  min-width: 0;
+}
+.focus-crew-rail {
+  position: sticky;
+  top: 18px;
+}
+.focus-crew-rail h3 {
+  font-size: 22px;
+  font-weight: 400;
+  letter-spacing: -0.6px;
+  margin: 8px 0 16px;
+}
+.focus-avatar-stack-rail span {
+  border-color: #fff;
+}
+.focus-member-list {
+  list-style: none;
+  margin: 16px 0 0;
+  padding: 0;
+  display: grid;
+  gap: 10px;
+}
+.focus-member-list li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #e8eee3;
+  font-size: 13px;
+}
+.focus-member-list small {
+  color: #768172;
+  font-size: 10px;
+}
+.focus-actions-stack {
+  flex-direction: column;
+  align-items: stretch;
+  margin-top: 18px;
+}
+.focus-actions-stack .fb-btn-line {
+  width: 100%;
+  justify-content: center;
+}
+.focus-season-strip {
+  background: #edf2e8;
+  border: 1px solid #d7e0d0;
+  border-radius: 18px;
+  padding: 20px 22px;
+  margin: 0 0 20px;
+}
+.focus-season-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-top: 14px;
+  text-align: center;
+}
+.focus-season-stats strong {
+  display: block;
+  font-size: 28px;
+  font-weight: 400;
+  letter-spacing: -1px;
+  color: #26382d;
+}
+.focus-season-stats span {
+  display: block;
+  margin-top: 4px;
+  font-size: 10px;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  color: #768172;
 }
 .focus-row {
   display: flex;
@@ -241,14 +322,16 @@
   font-size: 11px;
   color: #768172;
 }
-.focus-suggestion > svg {
+.focus-suggestion > svg,
+.focus-suggestion-ember {
   position: absolute;
   width: 145px;
   right: 12px;
   bottom: 10px;
   transition: transform 0.25s;
 }
-.focus-suggestion:hover > svg {
+.focus-suggestion:hover > svg,
+.focus-suggestion:hover .focus-suggestion-ember {
   transform: translateY(-8px) rotate(7deg);
 }
 .phone-shell .focus-disclosure {
@@ -475,7 +558,8 @@
   background: #d4ee89;
   margin-top: 28px;
 }
-.focus-path-row.is-current svg {
+.focus-path-row.is-current svg,
+.focus-path-row.is-current > button > div {
   position: absolute;
   width: 115px;
   bottom: 7px;
@@ -590,11 +674,14 @@
 }
 .focus-track-frame {
   position: relative;
-  border: 1px solid #e0e5dd;
-  border-radius: 20px;
+  border: 1px solid #d7e0cf;
+  border-radius: 24px;
   overflow: hidden;
-  background: #edf2e8;
+  background:
+    radial-gradient(ellipse at 50% 0%, #f7fbef 0%, transparent 55%),
+    linear-gradient(180deg, #f4f8ef, #e8efdf);
   margin: 18px 0;
+  box-shadow: inset 0 1px 0 #ffffffaa;
 }
 .focus-lane-scroll {
   overflow-x: auto;
@@ -604,7 +691,7 @@
 .focus-lane-track {
   display: block;
   width: 100%;
-  height: 530px;
+  height: 540px;
   touch-action: none;
   cursor: grab;
 }
@@ -955,11 +1042,11 @@
     font-size: 48px;
   }
   .focus-track-frame .fd-live-world {
-    height: 490px;
-    min-height: 490px;
+    height: 500px;
+    min-height: 500px;
   }
   .focus-lane-track {
-    height: 490px;
+    height: 500px;
   }
   .focus-track-controls {
     gap: 5px;
@@ -973,6 +1060,15 @@
   }
   .focus-status {
     font-size: 18px;
+  }
+  .focus-crew-layout {
+    grid-template-columns: 1fr;
+  }
+  .focus-crew-rail {
+    position: static;
+  }
+  .focus-season-stats strong {
+    font-size: 24px;
   }
   .focus-crew-hero {
     padding: 27px;
@@ -1037,10 +1133,12 @@
   }
 }
 @media (prefers-reduced-motion: reduce) {
-  .focus-path-row.is-current svg {
+  .focus-path-row.is-current svg,
+  .focus-path-row.is-current > button > div {
     animation: none;
   }
-  .focus-suggestion > svg {
+  .focus-suggestion > svg,
+  .focus-suggestion-ember {
     transition: none;
   }
 }

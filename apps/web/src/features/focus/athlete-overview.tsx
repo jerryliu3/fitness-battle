@@ -1,13 +1,25 @@
 "use client";
 import Link from "next/link";
 import {
+  countsOnTrack,
   initialsFromName,
   rankForElo,
   type CompeteState,
 } from "@fitness-battle/shared";
+
+function seasonSummary(state: CompeteState) {
+  const counted = state.activities.filter((a) => countsOnTrack(a, "open"));
+  const km = counted.reduce((t, a) => t + a.distanceM, 0) / 1000;
+  const weeks = state.periodResults.filter(
+    (r) => r.sport === state.primary && r.track === "open",
+  ).length;
+  return { km, sessions: counted.length, weeks };
+}
+
 export function AthleteOverview({ state }: { state: CompeteState }) {
   const rating = state.ratings.find((r) => r.sport === state.primary);
   const elo = rating?.openElo ?? 1000;
+  const season = seasonSummary(state);
   const history = state.periodResults
     .filter((r) => r.sport === state.primary && r.track === "open")
     .slice()
@@ -30,6 +42,26 @@ export function AthleteOverview({ state }: { state: CompeteState }) {
         <h1>{state.name}</h1>
         <p className="fb-copy">Your own kind of progress.</p>
       </header>
+      <section
+        className="focus-season-strip"
+        aria-label="Your season so far"
+      >
+        <p className="fb-kicker">Your season so far</p>
+        <div className="focus-season-stats">
+          <div>
+            <strong>{season.km.toFixed(1)}</strong>
+            <span>km counted</span>
+          </div>
+          <div>
+            <strong>{season.sessions}</strong>
+            <span>sessions</span>
+          </div>
+          <div>
+            <strong>{season.weeks}</strong>
+            <span>settled weeks</span>
+          </div>
+        </div>
+      </section>
       <section className="focus-card focus-elo">
         <div className="focus-row">
           <div>

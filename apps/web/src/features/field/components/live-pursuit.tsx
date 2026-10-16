@@ -75,9 +75,9 @@ export function LivePursuit(props: PursuitProps) {
     renderer.domElement.setAttribute("aria-hidden", "true");
     host.prepend(renderer.domElement);
     const scene = new THREE.Scene();
-    scene.background = new THREE.Color("#edf2e8");
-    scene.fog = new THREE.Fog("#edf2e8", 42, 180);
-    scene.add(new THREE.HemisphereLight("#f6f8ff", "#6c718d", 2.3));
+    scene.background = new THREE.Color("#eef3e8");
+    scene.fog = new THREE.Fog("#e8efdf", 48, 190);
+    scene.add(new THREE.HemisphereLight("#f7fbef", "#6a7a63", 2.35));
     const sun = new THREE.DirectionalLight("#ffe3c2", 3.2);
     sun.position.set(-14, 26, 15);
     sun.castShadow = true;
@@ -103,12 +103,12 @@ export function LivePursuit(props: PursuitProps) {
       : "pan-y";
     const mat = (color: string) =>
       new THREE.MeshStandardMaterial({ color, roughness: 0.9 });
-    const roadMat = mat("#d6e0cd"),
-      grassMat = mat("#edf2e8"),
-      stripeMat = mat("#fafcf6"),
-      woodMat = mat("#2a2c2e"),
-      leafMat = mat("#a5ba94"),
-      whiteMat = mat("#f4f4f1");
+    const roadMat = mat("#cfdcc5"),
+      grassMat = mat("#e8efdf"),
+      stripeMat = mat("#f7fbef"),
+      woodMat = mat("#26382d"),
+      leafMat = mat("#9bb086"),
+      whiteMat = mat("#f7faf3");
     const mesh = (
       parent: THREE.Scene | THREE.Group,
       g: THREE.BufferGeometry,

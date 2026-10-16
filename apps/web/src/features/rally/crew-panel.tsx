@@ -90,19 +90,13 @@ export function CrewPanel() {
     (e) => e.crew_id === crew?.id && e.disposition === "counted",
   );
   const km = entries.reduce((t, e) => t + Number(e.distance_m), 0) / 1000;
+  const memberNames = members.map((m) => m.display_name);
+  const memberCaption =
+    memberNames.length <= 3
+      ? memberNames.join(", ") || "No members yet"
+      : `${memberNames.slice(0, 3).join(", ")} + ${memberNames.length - 3} more`;
   return (
     <>
-      <div className="focus-row">
-        <h2>Your crews</h2>
-        <div className="focus-actions">
-          <button className="fb-btn-line" onClick={() => setPanel("join")}>
-            Join with code
-          </button>
-          <button className="fb-btn" onClick={() => setPanel("create")}>
-            Create crew ＋
-          </button>
-        </div>
-      </div>
       {!user || demoMode ? (
         <section className="focus-card focus-empty">
           <h2>Make room for your people.</h2>
@@ -110,11 +104,13 @@ export function CrewPanel() {
             Private crews need a live signed-in account. Your practice field is
             kept separate.
           </p>
-          {!user && (
-            <Link className="fb-btn" href="/login?next=/field">
-              Sign in to join a crew
-            </Link>
-          )}
+          <div className="focus-actions">
+            {!user && (
+              <Link className="fb-btn" href="/login?next=/field">
+                Sign in to join a crew
+              </Link>
+            )}
+          </div>
         </section>
       ) : !data ? (
         <section className="focus-card">
@@ -130,22 +126,34 @@ export function CrewPanel() {
             Create a private crew or use an invite code. Shared goals make
             showing up feel a little easier.
           </p>
+          <div className="focus-actions">
+            <button className="fb-btn-line" onClick={() => setPanel("join")}>
+              Join with code
+            </button>
+            <button className="fb-btn" onClick={() => setPanel("create")}>
+              Create crew ＋
+            </button>
+          </div>
         </section>
       ) : (
         <>
-          <div className="focus-registration-tabs">
-            {crews.map((c) => (
-              <button
-                key={c.id}
-                aria-pressed={crew.id === c.id}
-                onClick={() => setSelected(c.id)}
-              >
-                {c.name}
-              </button>
-            ))}
-          </div>
+          {crews.length > 1 && (
+            <div className="focus-registration-tabs">
+              {crews.map((c) => (
+                <button
+                  key={c.id}
+                  aria-pressed={crew.id === c.id}
+                  onClick={() => setSelected(c.id)}
+                >
+                  {c.name}
+                </button>
+              ))}
+            </div>
+          )}
           <section className="focus-crew-hero">
-            <p className="fb-kicker">Your people · {members.length} members</p>
+            <p className="fb-kicker">
+              Your people · {members.length} members
+            </p>
             <h2>{crew.name}</h2>
             <p>Different paces. Same direction.</p>
             <div className="focus-row">
@@ -161,143 +169,191 @@ export function CrewPanel() {
               </button>
             </div>
           </section>
-          <section className="focus-card">
-            <p className="fb-kicker">Our shared week · {crew.sport}</p>
-            {crew.format === "personal_target" ? (
-              <h2>{entries.length} counted sessions</h2>
-            ) : (
-              <h2 className="focus-goal">
-                {km.toFixed(1)}{" "}
-                <small>
-                  {crew.format === "cooperative"
-                    ? `/ ${crew.journey_km} km`
-                    : "km together"}
-                </small>
-              </h2>
-            )}
-            {crew.format === "cooperative" && (
-              <progress
-                value={km}
-                max={Math.max(1, crew.journey_km)}
-                aria-label="Crew distance goal"
-              />
-            )}
-            <p className="fb-copy">
-              {crew.format === "personal_target"
-                ? `Each member aims for ${crew.target_sessions} sessions.`
-                : "Every pace belongs here."}
-            </p>
-            <div className="focus-actions">
-              <button
-                className="fb-btn-line"
-                onClick={() => setPanel("manage")}
-              >
-                Crew details ↗
-              </button>
-              <button
-                className="fb-btn"
-                disabled={busy}
-                onClick={() => void write("/entries", { crewId: crew.id })}
-              >
-                Share my counted sessions
-              </button>
-            </div>
-          </section>
-          <div className="focus-row">
-            <h2>The latest, together.</h2>
-            <div className="focus-segments">
-              {["Activity", "Leaderboard"].map((v) => (
-                <button
-                  key={v}
-                  aria-pressed={view === v}
-                  onClick={() => setView(v)}
-                >
-                  {v}
-                </button>
-              ))}
-            </div>
-          </div>
-          <section className="focus-card">
-            {view === "Activity" ? (
-              entries.length ? (
-                entries
-                  .slice()
-                  .sort((a, b) => b.started_at.localeCompare(a.started_at))
-                  .map((e) => (
-                    <article
-                      className="focus-feed-entry"
-                      key={`${e.user_id}:${e.activity_id}`}
-                    >
-                      <span className="focus-small-avatar">
-                        {members
-                          .find((m) => m.user_id === e.user_id)
-                          ?.display_name.slice(0, 2)
-                          .toUpperCase() ?? "AT"}
-                      </span>
-                      <div>
-                        <b>
-                          {members.find((m) => m.user_id === e.user_id)
-                            ?.display_name ?? "Athlete"}
-                        </b>
-                        <small>
-                          {new Date(e.started_at).toLocaleDateString()}
-                        </small>
-                        <p>
-                          {e.sport} · {(Number(e.distance_m) / 1000).toFixed(1)}{" "}
-                          km · {Math.round(e.moving_sec / 60)} min
-                        </p>
-                        {e.user_id !== user?.id && (
-                          <button
-                            className="fb-btn-line"
-                            disabled={busy}
-                            onClick={() =>
-                              void write("/cheer", {
-                                crewId: crew.id,
-                                activityId: e.activity_id,
-                                ownerId: e.user_id,
-                              })
-                            }
-                          >
-                            ♡ Cheer this session
-                          </button>
-                        )}
-                      </div>
-                    </article>
-                  ))
-              ) : (
+          <div className="focus-crew-layout">
+            <div className="focus-crew-main">
+              <section className="focus-card">
+                <p className="fb-kicker">Our shared week · {crew.sport}</p>
+                {crew.format === "personal_target" ? (
+                  <h2>{entries.length} counted sessions</h2>
+                ) : (
+                  <h2 className="focus-goal">
+                    {km.toFixed(1)}{" "}
+                    <small>
+                      {crew.format === "cooperative"
+                        ? `/ ${crew.journey_km} km`
+                        : "km together"}
+                    </small>
+                  </h2>
+                )}
+                {crew.format === "cooperative" && (
+                  <progress
+                    value={km}
+                    max={Math.max(1, crew.journey_km)}
+                    aria-label="Crew distance goal"
+                  />
+                )}
                 <p className="fb-copy">
-                  No shared sessions this week yet. Share yours to start the
-                  feed.
+                  {crew.format === "personal_target"
+                    ? `Each member aims for ${crew.target_sessions} sessions.`
+                    : "Every pace belongs here."}
                 </p>
-              )
-            ) : (
-              members
-                .slice()
-                .sort(
-                  (a, b) =>
+                <div className="focus-actions">
+                  <button
+                    className="fb-btn"
+                    disabled={busy}
+                    onClick={() => void write("/entries", { crewId: crew.id })}
+                  >
+                    Share my counted sessions
+                  </button>
+                </div>
+              </section>
+              <div className="focus-row">
+                <h2>The latest, together.</h2>
+                <div className="focus-segments">
+                  {["Activity", "Leaderboard"].map((v) => (
+                    <button
+                      key={v}
+                      aria-pressed={view === v}
+                      onClick={() => setView(v)}
+                    >
+                      {v}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <section className="focus-card">
+                {view === "Activity" ? (
+                  entries.length ? (
                     entries
-                      .filter((e) => e.user_id === b.user_id)
-                      .reduce((t, e) => t + Number(e.distance_m), 0) -
-                    entries
-                      .filter((e) => e.user_id === a.user_id)
-                      .reduce((t, e) => t + Number(e.distance_m), 0),
-                )
-                .map((m, i) => (
-                  <div className="fb-row" key={m.user_id}>
-                    <span>{i + 1}</span>
-                    <b className="fb-grow">{m.display_name}</b>
-                    <span>
-                      {(
+                      .slice()
+                      .sort((a, b) => b.started_at.localeCompare(a.started_at))
+                      .map((e) => (
+                        <article
+                          className="focus-feed-entry"
+                          key={`${e.user_id}:${e.activity_id}`}
+                        >
+                          <span className="focus-small-avatar">
+                            {members
+                              .find((m) => m.user_id === e.user_id)
+                              ?.display_name.slice(0, 2)
+                              .toUpperCase() ?? "AT"}
+                          </span>
+                          <div>
+                            <b>
+                              {members.find((m) => m.user_id === e.user_id)
+                                ?.display_name ?? "Athlete"}
+                            </b>
+                            <small>
+                              {new Date(e.started_at).toLocaleDateString()}
+                            </small>
+                            <p>
+                              {e.sport} ·{" "}
+                              {(Number(e.distance_m) / 1000).toFixed(1)} km ·{" "}
+                              {Math.round(e.moving_sec / 60)} min
+                            </p>
+                            {e.user_id !== user?.id && (
+                              <button
+                                className="fb-btn-line"
+                                disabled={busy}
+                                onClick={() =>
+                                  void write("/cheer", {
+                                    crewId: crew.id,
+                                    activityId: e.activity_id,
+                                    ownerId: e.user_id,
+                                  })
+                                }
+                              >
+                                ♡ Cheer this session
+                              </button>
+                            )}
+                          </div>
+                        </article>
+                      ))
+                  ) : (
+                    <p className="fb-copy">
+                      No shared sessions this week yet. Share yours to start the
+                      feed.
+                    </p>
+                  )
+                ) : (
+                  members
+                    .slice()
+                    .sort(
+                      (a, b) =>
                         entries
-                          .filter((e) => e.user_id === m.user_id)
-                          .reduce((t, e) => t + Number(e.distance_m), 0) / 1000
-                      ).toFixed(1)}{" "}
-                      km
+                          .filter((e) => e.user_id === b.user_id)
+                          .reduce((t, e) => t + Number(e.distance_m), 0) -
+                        entries
+                          .filter((e) => e.user_id === a.user_id)
+                          .reduce((t, e) => t + Number(e.distance_m), 0),
+                    )
+                    .map((m, i) => (
+                      <div className="fb-row" key={m.user_id}>
+                        <span>{i + 1}</span>
+                        <b className="fb-grow">{m.display_name}</b>
+                        <span>
+                          {(
+                            entries
+                              .filter((e) => e.user_id === m.user_id)
+                              .reduce((t, e) => t + Number(e.distance_m), 0) /
+                            1000
+                          ).toFixed(1)}{" "}
+                          km
+                        </span>
+                      </div>
+                    ))
+                )}
+              </section>
+            </div>
+            <aside className="focus-crew-rail" aria-label="Crew members">
+              <section className="focus-card">
+                <p className="fb-kicker">A little accountability</p>
+                <h3>We go further together.</h3>
+                <div className="focus-avatar-stack focus-avatar-stack-rail">
+                  {members.slice(0, 8).map((m) => (
+                    <span key={m.user_id} title={m.display_name}>
+                      {m.display_name.slice(0, 2).toUpperCase()}
                     </span>
-                  </div>
-                ))
-            )}
-          </section>
+                  ))}
+                </div>
+                <p className="fb-copy">{memberCaption}</p>
+                <ul className="focus-member-list">
+                  {members.map((m) => (
+                    <li key={m.user_id}>
+                      <b>{m.display_name}</b>
+                      <small>{m.rest_week ? "Rest week" : "Active"}</small>
+                    </li>
+                  ))}
+                </ul>
+                <div className="focus-actions focus-actions-stack">
+                  <button
+                    className="fb-btn-line"
+                    onClick={() => setPanel("manage")}
+                  >
+                    Crew settings ↗
+                  </button>
+                  <button
+                    className="fb-btn-line"
+                    onClick={() => setPanel("invite")}
+                  >
+                    Invite someone ＋
+                  </button>
+                  <button
+                    className="fb-btn-line"
+                    onClick={() => setPanel("create")}
+                  >
+                    Create another crew
+                  </button>
+                  <button
+                    className="fb-btn-line"
+                    onClick={() => setPanel("join")}
+                  >
+                    Join with code
+                  </button>
+                </div>
+              </section>
+            </aside>
+          </div>
         </>
       )}
       {note && (
