@@ -6,9 +6,9 @@ import {
   currentWaveStart,
   type RosterRow,
 } from "@/lib/crew-field";
-import { createClient } from "@/lib/supabase/server";
+import { createRequestClient } from "@/lib/supabase/request";
 
-type Supabase = Awaited<ReturnType<typeof createClient>>;
+type Supabase = Awaited<ReturnType<typeof createRequestClient>>;
 
 interface CrewRow {
   id: string;
@@ -126,7 +126,7 @@ export async function GET(request: Request) {
   if (!crewId) {
     return NextResponse.json({ error: "crew_required" }, { status: 400 });
   }
-  const supabase = await createClient();
+  const supabase = await createRequestClient(request);
   const crew = await loadCrew(supabase, userId, crewId);
   if (!crew) return NextResponse.json({ fields: [] });
   const sport = asSportId(crew.sport);
@@ -160,7 +160,7 @@ export async function POST(request: Request) {
   if (!body.crewId) {
     return NextResponse.json({ error: "crew_required" }, { status: 400 });
   }
-  const supabase = await createClient();
+  const supabase = await createRequestClient(request);
   const crew = await loadCrew(supabase, userId, body.crewId);
   if (!crew) {
     return NextResponse.json({ error: "crew_not_found" }, { status: 404 });

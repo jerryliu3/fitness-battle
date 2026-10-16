@@ -1,47 +1,24 @@
 "use client";
-
 import dynamic from "next/dynamic";
 import { useMemo, useState } from "react";
-import { FieldRoster } from "@/features/split/components/field-roster";
-import { defaultLook, kits, skins, type HairId, type KitId, type SkinId } from "../avatar";
 import {
-  gapLabel,
-  placeAt,
-  stableLanes,
-  valueAt,
-  type SceneRunner,
-} from "../geometry";
-import { LaneTrack } from "./lane-track";
+  fitArenaWindow,
+  type ArenaSceneLane,
+  type ArenaViewWindow,
+  type BoardRow,
+} from "@fitness-battle/shared";
+import { ArenaLanes } from "@/features/focus/arena-lanes";
+import { Sheet } from "@/ui/sheet";
+import { defaultLook } from "../avatar";
+import { gapLabel, stableLanes, valueAt, type SceneRunner } from "../geometry";
 import type { FieldModel } from "../model";
-import type { BoardRow } from "@fitness-battle/shared";
-
 const LivePursuit = dynamic(
-  () => import("./live-pursuit").then((mod) => mod.LivePursuit),
+  () => import("./live-pursuit").then((m) => m.LivePursuit),
   {
     ssr: false,
-    loading: () => <div className="fd-loading">Preparing the track…</div>,
+    loading: () => <div className="fd-loading">Preparing your lanes…</div>,
   },
 );
-
-type Mode = "lanes" | "pursuit";
-type CameraMode = "follow" | "above" | "avatar";
-
-function toRunner(
-  id: string,
-  name: string,
-  initials: string,
-  km: readonly number[],
-  flags: { you?: boolean; ghost?: boolean } = {},
-): SceneRunner {
-  return {
-    id,
-    name,
-    initials,
-    series: [0, ...km],
-    ...flags,
-  };
-}
-
 export function FieldStage({
   model,
   boardRows,
@@ -50,280 +27,232 @@ export function FieldStage({
   checkpoint?: number;
   boardRows?: BoardRow[];
 }) {
-  const you = model.you;
   const unit = model.gps ? "km" : "pts";
-  const runners = useMemo(
+  const runners = useMemo<SceneRunner[]>(
     () =>
-      model.runners.map((runner) =>
-        toRunner(runner.id, runner.name, runner.initials, runner.km, {
-          you: runner.you,
-        }),
-      ),
+      model.runners.map((r) => ({
+        id: r.id,
+        name: r.name,
+        initials: r.initials,
+        series: [0, ...r.km],
+        you: r.you,
+      })),
     [model.runners],
   );
-  const ghost = model.ghost
-    ? toRunner(model.ghost.id, model.ghost.name, model.ghost.initials, model.ghost.km, {
+  const time = Math.max(
+    0,
+    (runners.find((r) => r.you)?.series.length ?? 1) - 1,
+  );
+  const you = runners.find((r) => r.you);
+  const total = you ? valueAt(you, time) : 0;
+  const ghost: SceneRunner | null = model.ghost
+    ? {
+        id: model.ghost.id,
+        name: model.ghost.name,
+        initials: model.ghost.initials,
+        series: [0, ...model.ghost.km],
         ghost: true,
-      })
+      }
     : null;
-  const lanes = stableLanes(runners);
-  const youRunner = lanes.find((runner) => runner.you) ?? null;
-  const maxTime = Math.max(0, (youRunner?.series.length ?? 1) - 1);
-  const [mode, setMode] = useState<Mode>("lanes");
-  const [time, setTime] = useState(maxTime);
-  const [camera, setCamera] = useState<CameraMode>("follow");
-  const [showGhost, setShowGhost] = useState(Boolean(ghost));
-  const [selectedId, setSelectedId] = useState(you?.id ?? runners[0]?.id ?? "");
-  const [extra, setExtra] = useState(0);
-  const [look, setLook] = useState(defaultLook);
+  const [mode, setMode] = useState<"lanes" | "pursuit">("lanes");
+  const [camera, setCamera] = useState<"above" | "follow">("above");
+  const [span, setSpan] = useState(model.gps ? 6 : 20);
+  const [center, setCenter] = useState<number | null>(null);
+  const [showGhost, setShowGhost] = useState(true);
+  const [selected, setSelected] = useState<string | null>(null);
   const [unavailable, setUnavailable] = useState(false);
-  const rawLabels = ["Start", ...model.checkpointLabels];
-  const labels =
-    new Set(model.checkpointLabels).size === 1
-      ? ["Start", "Early", "Mid", "Now"]
-      : rawLabels;
-
-  const selected =
-    (selectedId === ghost?.id ? ghost : runners.find((runner) => runner.id === selectedId)) ??
-    youRunner;
-
-  const rosterRows: BoardRow[] = useMemo(() => {
-    const ordered = [...runners].sort(
-      (a, b) => valueAt(b, time, extra) - valueAt(a, time, extra) || a.id.localeCompare(b.id),
-    );
-    return ordered.map((runner) => {
-      const row = boardRows?.find((item) => item.id === runner.id);
-      return {
-        id: runner.id,
-        name: row?.name ?? runner.name,
-        elo: row?.elo ?? 0,
-        effort: valueAt(runner, time, extra),
-        distanceM: row?.distanceM ?? valueAt(runner, time, extra) * (model.gps ? 1000 : 1),
-        movingSec: row?.movingSec ?? 0,
-        you: Boolean(runner.you),
-        place: placeAt(runners, runner.id, time, extra),
-      };
-    });
-  }, [boardRows, extra, model.gps, runners, time]);
-
-  if (!you || !youRunner || !selected) {
-    return (
-      <div className="sp-empty">
-        <h2>Join the field to see the track</h2>
-        <p className="fb-copy">
-          The 2D lanes and 3D pursuit need your place in this week’s group.
-        </p>
-      </div>
-    );
-  }
-
-  const sceneKey = lanes.map((runner) => runner.id).join(":");
-
+  const view: ArenaViewWindow = { center: center ?? total, span };
+  const sceneLanes: ArenaSceneLane[] = [
+    ...runners,
+    ...(showGhost && ghost ? [ghost] : []),
+  ].map((r) => ({
+    id: r.id,
+    name: r.name,
+    initials: r.initials,
+    value: valueAt(r, time),
+    you: r.you,
+    ghost: r.ghost,
+  }));
+  const chosen =
+    selected === ghost?.id ? ghost : runners.find((r) => r.id === selected);
+  const sorted = [...runners].sort(
+    (a, b) => valueAt(b, time) - valueAt(a, time),
+  );
+  if (!you) return <p className="fb-copy">Join a field to see your lanes.</p>;
   return (
-    <section className="fd-stage">
-      <div className="track-gain">
-        <strong>
-          {valueAt(youRunner, time, extra).toFixed(1)}
-          <small>{unit}</small>
-        </strong>
-        <span>
-          {ghost && showGhost
-            ? `${(valueAt(youRunner, time, extra) - valueAt(ghost, time, 0) >= 0 ? "+" : "")}${(valueAt(youRunner, time, extra) - valueAt(ghost, time, 0)).toFixed(1)} ${unit} vs ${ghost.name.toLowerCase()}`
-            : `${placeAt(runners, youRunner.id, time, extra)} / ${runners.length}`}
+    <section className="focus-arena-stage">
+      <div className="focus-arena-total">
+        <div>
+          <p className="fb-kicker">Your week in motion</p>
+          <strong>
+            {total.toFixed(1)}
+            <small>{unit}</small>
+          </strong>
+        </div>
+        <span className="focus-status">
+          {sorted.findIndex((r) => r.you) + 1} / {runners.length}
+          <small>your place</small>
         </span>
       </div>
-
-      <div
-        className="fd-view-switch track-switch"
-        role="tablist"
-        aria-label="Field view"
-      >
-        <button
-          type="button"
-          role="tab"
-          aria-selected={mode === "lanes"}
-          onClick={() => setMode("lanes")}
-        >
-          2D lanes
-        </button>
-        <button
-          type="button"
-          role="tab"
-          aria-selected={mode === "pursuit"}
-          onClick={() => {
-            setUnavailable(false);
-            setMode("pursuit");
-          }}
-        >
-          3D Pursuit
-        </button>
+      {ghost && (
+        <p className="focus-gain">
+          {total - valueAt(ghost, time) >= 0 ? "+" : ""}
+          {(total - valueAt(ghost, time)).toFixed(1)} {unit} vs past you · same
+          cutoff
+        </p>
+      )}
+      <div className="focus-segments" role="tablist" aria-label="Arena view">
+        {(["lanes", "pursuit"] as const).map((m) => (
+          <button
+            key={m}
+            role="tab"
+            aria-selected={mode === m}
+            onClick={() => {
+              setMode(m);
+              setUnavailable(false);
+            }}
+          >
+            {m === "lanes" ? "2D lanes" : "3D pursuit"}
+          </button>
+        ))}
       </div>
-
-      <div className="fd-field-layout">
-        <div className="fd-scene-frame">
-          {mode === "pursuit" && !unavailable ? (
-            <>
-              <div className="fd-camera">
-                {(["follow", "above", "avatar"] as const).map((id) => (
-                  <button
-                    key={id}
-                    type="button"
-                    aria-pressed={camera === id}
-                    onClick={() => setCamera(id)}
-                  >
-                    {id === "follow" ? "Follow" : id === "above" ? "Above" : "Avatar"}
-                  </button>
-                ))}
-              </div>
-              <LivePursuit
-                key={sceneKey}
-                runners={lanes}
-                ghost={ghost}
-                time={time}
-                extra={extra}
-                selected={selectedId}
-                showGhost={showGhost}
-                camera={camera}
-                look={look}
-                unit={unit}
-                onSelect={setSelectedId}
-                onUnavailable={() => setUnavailable(true)}
-              />
-            </>
-          ) : (
-            <LaneTrack
-              runners={lanes}
+      <div className="focus-track-frame">
+        {mode === "pursuit" && !unavailable ? (
+          <>
+            <LivePursuit
+              runners={stableLanes(runners)}
               ghost={ghost}
               time={time}
-              extra={extra}
-              selected={selectedId}
+              extra={0}
+              selected={selected ?? you.id}
               showGhost={showGhost}
+              camera={camera}
+              look={defaultLook}
               unit={unit}
-              onSelect={setSelectedId}
+              view={view}
+              onPan={(v) => setCenter(Math.max(0, v))}
+              onSelect={setSelected}
+              onUnavailable={() => setUnavailable(true)}
             />
-          )}
-          {unavailable ? (
-            <p className="fb-note">3D is unavailable here. The 2D track stays interactive.</p>
-          ) : null}
-          <div className="fd-replay track-replay">
-            <label htmlFor="field-replay">Rewind the week</label>
-            <input
-              id="field-replay"
-              type="range"
-              min={0}
-              max={maxTime}
-              step={0.01}
-              value={time}
-              aria-valuetext={labels[Math.round(time)] ?? "Replay"}
-              onChange={(event) => setTime(Number(event.target.value))}
-            />
-            <div>
-              {labels.map((label, index) => (
-                <button
-                  key={`${label}-${index}`}
-                  type="button"
-                  aria-pressed={time === index}
-                  onClick={() => setTime(index)}
-                >
-                  {index === 0 ? "Start" : label}
-                </button>
-              ))}
+            <div className="focus-camera">
+              <button
+                onClick={() =>
+                  setCamera(camera === "above" ? "follow" : "above")
+                }
+              >
+                {camera === "above" ? "Follow camera ↗" : "Above camera ↗"}
+              </button>
             </div>
-          </div>
-        </div>
-
-        <aside className="fd-inspector">
-          <p className="fb-kicker">Selected runner</p>
-          <h3>{selected.name}</h3>
-          <strong>
-            {valueAt(selected, time, extra).toFixed(1)} <small>{unit}</small>
-          </strong>
-          <p>{gapLabel(selected, youRunner, time, extra, unit)}</p>
+          </>
+        ) : (
+          <ArenaLanes
+            lanes={sceneLanes}
+            view={view}
+            unit={unit}
+            selected={selected ?? you.id}
+            onSelect={setSelected}
+            onPan={(v) => setCenter(Math.max(0, v))}
+          />
+        )}
+        {unavailable && (
           <p className="fb-note">
-            {selected.you
-              ? "Your line uses imported activity through each cutoff."
-              : "Other lanes share this week’s total, spread across the same cutoffs. That is not a GPS trace."}
+            3D is unavailable on this device. Your 2D lanes remain interactive.
           </p>
-          <button
-            type="button"
-            className="fb-btn-line"
-            aria-pressed={showGhost}
-            onClick={() => setShowGhost((value) => !value)}
-            disabled={!ghost}
-          >
-            {showGhost ? "Hide past you" : "Add past you"}
-          </button>
-          <label className="fb-field">
-            What if you added {unit}?
-            <strong>+{extra.toFixed(1)}</strong>
-            <input
-              type="range"
-              min={0}
-              max={model.gps ? 20 : 30}
-              step={0.1}
-              value={extra}
-              aria-label="Hypothetical addition"
-              onChange={(event) => setExtra(Number(event.target.value))}
-            />
-          </label>
-          <button type="button" className="fb-btn-ghost" disabled={extra === 0} onClick={() => setExtra(0)}>
-            Reset preview
-          </button>
-          {mode === "pursuit" && !unavailable ? (
-            <details>
-              <summary>Your runner’s look</summary>
-              <div className="fd-looks">
-                {(Object.keys(kits) as KitId[]).map((id) => (
-                  <button
-                    key={id}
-                    type="button"
-                    style={{ background: kits[id] }}
-                    aria-label={`${id} kit`}
-                    aria-pressed={look.kit === id}
-                    onClick={() => setLook({ ...look, kit: id })}
-                  />
-                ))}
-                {(Object.keys(skins) as SkinId[]).map((id) => (
-                  <button
-                    key={id}
-                    type="button"
-                    style={{ background: skins[id] }}
-                    aria-label={`${id} skin tone`}
-                    aria-pressed={look.skin === id}
-                    onClick={() => setLook({ ...look, skin: id })}
-                  />
-                ))}
-                {(["crop", "bun", "cap"] as HairId[]).map((id) => (
-                  <button
-                    key={id}
-                    type="button"
-                    aria-pressed={look.hair === id}
-                    onClick={() => setLook({ ...look, hair: id })}
-                  >
-                    {id}
-                  </button>
-                ))}
-              </div>
-            </details>
-          ) : null}
-        </aside>
+        )}
       </div>
-
-      <FieldRoster
-        rows={rosterRows}
-        selectedId={selectedId}
-        onSelect={setSelectedId}
-        unit={unit}
-        ghost={
-          showGhost && ghost
-            ? {
-                id: ghost.id,
-                name: ghost.name,
-                effort: valueAt(ghost, time, 0),
-                detail: "Past you · not ranked",
-              }
-            : null
+      <div className="focus-track-controls">
+        <button
+          aria-label="Zoom in"
+          disabled={span <= 1}
+          onClick={() => setSpan(Math.max(1, span / 1.5))}
+        >
+          ＋
+        </button>
+        <button
+          aria-label="Zoom out"
+          disabled={span >= 5000}
+          onClick={() => setSpan(Math.min(5000, span * 1.5))}
+        >
+          −
+        </button>
+        <button
+          aria-label="Move window backward"
+          onClick={() => setCenter(Math.max(0, view.center - span / 3))}
+        >
+          ↓
+        </button>
+        <button
+          aria-label="Move window forward"
+          onClick={() => setCenter(view.center + span / 3)}
+        >
+          ↑
+        </button>
+        <button
+          onClick={() => {
+            setCenter(null);
+            setSpan(model.gps ? 6 : 20);
+          }}
+        >
+          Center me
+        </button>
+        <button
+          onClick={() => {
+            const fit = fitArenaWindow(sceneLanes);
+            setCenter(fit.center);
+            setSpan(fit.span);
+          }}
+        >
+          Fit field
+        </button>
+      </div>
+      <div className="focus-track-caption">
+        <span>
+          ± {(span / 2).toFixed(1)} {unit} around{" "}
+          {center === null ? "you" : view.center.toFixed(1)}
+        </span>
+        {ghost && (
+          <label>
+            <input
+              type="checkbox"
+              checked={showGhost}
+              onChange={(e) => setShowGhost(e.target.checked)}
+            />{" "}
+            Past you
+          </label>
+        )}
+      </div>
+      <details className="focus-disclosure">
+        <summary>
+          Full standings <span>＋</span>
+        </summary>
+        <div className="focus-standings">
+          {sorted.map((r, i) => (
+            <button key={r.id} onClick={() => setSelected(r.id)}>
+              <span>{i + 1}</span>
+              <b>{r.you ? "You" : r.name}</b>
+              <small>
+                {boardRows?.find((row) => row.id === r.id)?.elo ?? "—"} Elo
+              </small>
+              <strong>
+                {valueAt(r, time).toFixed(1)} {unit}
+              </strong>
+            </button>
+          ))}
+        </div>
+      </details>
+      <p className="fb-note">
+        Lanes show accumulated activity, not live GPS positions. Practice fields
+        may contain synthetic athletes.
+      </p>
+      <Sheet
+        open={!!chosen}
+        title={chosen?.you ? "Your position" : (chosen?.name ?? "Athlete")}
+        body={
+          chosen
+            ? `${valueAt(chosen, time).toFixed(1)} ${unit} · ${gapLabel(chosen, you, time, 0, unit)}${chosen.ghost ? " · comparison only, not ranked" : ""}`
+            : ""
         }
+        onClose={() => setSelected(null)}
       />
     </section>
   );

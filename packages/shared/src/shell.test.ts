@@ -11,10 +11,10 @@ describe("phone shell", () => {
   it("names the four product tabs in order", () => {
     expect(SHELL_TABS.map((tab) => tab.id)).toEqual([...SHELL_TAB_IDS]);
     expect(SHELL_TABS.map((tab) => tab.label)).toEqual([
-      "Today",
+      "Home",
       "Arena",
-      "Field",
-      "You",
+      "Crew",
+      "Athlete",
     ]);
     expect(new Set(SHELL_TABS.map((tab) => tab.href)).size).toBe(4);
   });
@@ -28,10 +28,10 @@ describe("phone shell", () => {
     expect(shellTabById("board")).toBeNull();
   });
 
-  it("keeps the plum, tennis, paper, and Star Ember tokens", () => {
-    expect(SHELL_COLORS.plum).toBe("#40234e");
-    expect(SHELL_COLORS.tennis).toBe("#f6f253");
-    expect(SHELL_COLORS.paper).toBe("#fff9e9");
+  it("keeps the Focus ink, lime, paper, and Star Ember tokens", () => {
+    expect(SHELL_COLORS.plum).toBe("#26382d");
+    expect(SHELL_COLORS.tennis).toBe("#d4ee89");
+    expect(SHELL_COLORS.paper).toBe("#fafbf8");
     expect(SHELL_COLORS.starEmber).toBe("#f5c451");
   });
 });

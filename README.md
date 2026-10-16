@@ -49,7 +49,7 @@ The public board is `/rankings`. Imports copy a full public results list (OpenTr
 
 Browsing My track / The field / Splits / Pace is open. **Join / compete / Athlete / onboarding** require an account.
 
-Primary product IA follows the Split direction: effort track + previous-week ghost on **My track**, POV pursuit and bird’s-eye distance path on **The field**, counted sessions on **Splits**, and identity/connections on **Athlete**.
+The live product follows **Focus**: **Home** (daily suggestion and counted-session path), **Arena** (vertical 2D/3D lanes, registration, ghosts, and awards), **Crew** (shared activity and members), and **Athlete** (Elo and benchmarks first, then progress and settings). Stable routes remain `/today`, `/arena`, `/field`, and `/you`. See [the design guide](docs/design-guide.md) and [Focus implementation notes](docs/focus-implementation.md).
 
 Weekly periods settle on app load via `rollClock` (UTC Monday boundary) — there is no server cron for the local compete engine. Closed weeks write place/Elo snapshots, show a one-shot week-complete reveal on My track, and accumulate a Strava-style season history on Athlete.
 
@@ -72,6 +72,10 @@ Weekly periods settle on app load via `rollClock` (UTC Monday boundary) — ther
 
 - Tracker scope and stub-vs-live rules: [`docs/integrations.md`](./docs/integrations.md)
 - What is loaded (OpenTrack 10K, synthetic compete field, etc.): [`docs/data-status.md`](./docs/data-status.md)
+
+## Interface structure study
+
+Open `/design/structure` for five complete Home / Arena / Crew / Athlete concepts, with responsive web layouts and interactive registration, crew, settings, and progress flows. Native counterparts live at `overtaek:///structure` and can also be opened from You → Interface study. See [the study guide](docs/interface-structure-study.md).
 
 ## Design prototype
 

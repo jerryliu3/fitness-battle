@@ -1,5 +1,7 @@
 import {
-  awardCards,
+  SPORTS,
+  currentPeriodBounds,
+  competeNow,
   initialsFromName,
   rankForElo,
   type ProviderId,
@@ -24,10 +26,13 @@ import {
   isCloudOAuthProvider,
   startCloudTrackerConnect,
 } from "../../src/lib/tracker-connect";
-import { AwardShelf } from "../../src/ui/award-shelf";
+import { AthleteMetrics } from "../../src/features/athlete-metrics";
+import { FocusButton, FocusDisclosure, f } from "../../src/ui/focus";
 import { SHELL_COLORS, SHELL_RADIUS } from "../../src/theme";
 
-function isDeviceProvider(id: ProviderId): id is "apple_health" | "google_health" {
+function isDeviceProvider(
+  id: ProviderId,
+): id is "apple_health" | "google_health" {
   return id === "apple_health" || id === "google_health";
 }
 
@@ -45,7 +50,10 @@ export default function YouScreen() {
     signOut,
   } = useAuth();
   const router = useRouter();
-  const params = useLocalSearchParams<{ tracker?: string; provider?: string }>();
+  const params = useLocalSearchParams<{
+    tracker?: string;
+    provider?: string;
+  }>();
   const [name, setName] = useState<string | null>(null);
   const [city, setCity] = useState<string | null>(null);
   const [note, setNote] = useState<string | null>(null);
@@ -101,9 +109,15 @@ export default function YouScreen() {
   const draftName = name ?? state.name;
   const draftCity = city ?? state.city;
   const dirty = draftName !== state.name || draftCity !== state.city;
+  const frozen = state.frozenPeriods.includes(
+    currentPeriodBounds(
+      state.clock.kind,
+      competeNow(state),
+    ).startsAt.toISOString(),
+  );
   const rating = state.ratings.find((row) => row.sport === state.primary);
   const rank = rankForElo(rating?.openElo ?? 1000);
-  const cards = awardCards(state);
+
   const rowBusy = syncBusy || Boolean(busyProvider);
   const signedIn = Boolean(user);
 
@@ -225,7 +239,9 @@ export default function YouScreen() {
       }
       setNote(result.message);
     } catch (error) {
-      setNote(error instanceof Error ? error.message : "Could not start connect.");
+      setNote(
+        error instanceof Error ? error.message : "Could not start connect.",
+      );
     } finally {
       setBusyProvider(null);
     }
@@ -234,12 +250,16 @@ export default function YouScreen() {
   if (!signedIn) {
     return (
       <SafeAreaView style={styles.safe} edges={["top"]}>
-        <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
+        <ScrollView
+          contentContainerStyle={styles.scroll}
+          keyboardShouldPersistTaps="handled"
+        >
           <Text style={styles.kicker}>Account</Text>
+
           <Text style={styles.name}>Sign in to Overtaek</Text>
           <Text style={styles.copy}>
-            Create an account or sign in to sync Apple Health, connect trackers, and
-            keep your battles on this device.
+            Create an account or sign in to sync Apple Health, connect trackers,
+            and keep your battles on this device.
             {demoMode ? " Demo mode stores a local account on this phone." : ""}
           </Text>
 
@@ -250,7 +270,10 @@ export default function YouScreen() {
                 setAuthMode("signin");
                 setAuthNote(null);
               }}
-              style={[styles.authTab, authMode === "signin" ? styles.authTabOn : null]}
+              style={[
+                styles.authTab,
+                authMode === "signin" ? styles.authTabOn : null,
+              ]}
             >
               <Text style={styles.authTabText}>Sign in</Text>
             </Pressable>
@@ -260,7 +283,10 @@ export default function YouScreen() {
                 setAuthMode("signup");
                 setAuthNote(null);
               }}
-              style={[styles.authTab, authMode === "signup" ? styles.authTabOn : null]}
+              style={[
+                styles.authTab,
+                authMode === "signup" ? styles.authTabOn : null,
+              ]}
             >
               <Text style={styles.authTabText}>Create account</Text>
             </Pressable>
@@ -288,7 +314,9 @@ export default function YouScreen() {
             value={password}
             onChangeText={setPassword}
             accessibilityLabel="Password"
-            placeholder={authMode === "signup" ? "Password (6+ characters)" : "Password"}
+            placeholder={
+              authMode === "signup" ? "Password (6+ characters)" : "Password"
+            }
             secureTextEntry
             autoComplete={authMode === "signup" ? "new-password" : "password"}
           />
@@ -310,140 +338,153 @@ export default function YouScreen() {
 
   return (
     <SafeAreaView style={styles.safe} edges={["top"]}>
-      <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
-        <Text style={styles.kicker}>Signed in</Text>
-        <View style={styles.portrait}>
-          <Avatar color="accent" size="lg">
-            <Avatar.Fallback>
-              {initialsFromName(account.displayName || state.name)}
-            </Avatar.Fallback>
-          </Avatar>
-          <View style={styles.portraitCopy}>
-            <Text style={styles.name}>{account.displayName || state.name}</Text>
-            <Text style={styles.copy}>{account.email}</Text>
-            <Text style={styles.copy}>
-              {rank.name} · {rating?.openElo ?? 1000}
-              {account.mode === "demo" ? " · Demo account" : ""}
-            </Text>
+      <ScrollView
+        contentContainerStyle={f.content}
+        keyboardShouldPersistTaps="handled"
+      >
+        <AthleteMetrics state={state} />
+        <FocusButton
+          label="Progress · statistics & season history"
+          secondary
+          onPress={() => router.push("/athlete-progress")}
+        />
+        <FocusDisclosure title="Connections" detail="Trackers & device health">
+          {providersForDevice().map((provider) => {
+            const link = state.links.find(
+              (row) => row.provider === provider.id,
+            );
+            const status =
+              link?.status === "connected"
+                ? "Connected"
+                : link?.status === "stub"
+                  ? "Demo link"
+                  : "Not connected";
+            const onPhone = isDeviceProvider(provider.id);
+            const cloud = isCloudOAuthProvider(provider.id);
+            const hint = onPhone
+              ? ` · ${syncBusy ? "Syncing…" : "Tap to sync"}`
+              : cloud
+                ? busyProvider === provider.id
+                  ? " · authorizing…"
+                  : " · tap to connect"
+                : "";
+            const copy = (
+              <>
+                <Text style={styles.rowTitle}>{provider.name}</Text>
+                <Text style={styles.copy}>
+                  {status}
+                  {hint}
+                </Text>
+              </>
+            );
+            if (isDeviceProvider(provider.id)) {
+              const deviceId = provider.id;
+              return (
+                <Pressable
+                  key={deviceId}
+                  accessibilityRole="button"
+                  disabled={rowBusy}
+                  onPress={() => void syncDevice(deviceId)}
+                  style={styles.row}
+                >
+                  {copy}
+                </Pressable>
+              );
+            }
+            if (isCloudOAuthProvider(provider.id)) {
+              const cloudId = provider.id;
+              return (
+                <Pressable
+                  key={cloudId}
+                  accessibilityRole="button"
+                  disabled={rowBusy}
+                  onPress={() => void connectCloud(cloudId)}
+                  style={styles.row}
+                >
+                  {copy}
+                </Pressable>
+              );
+            }
+            return (
+              <View key={provider.id} style={styles.row}>
+                {copy}
+              </View>
+            );
+          })}
+          {note ? <Text style={styles.copy}>{note}</Text> : null}
+        </FocusDisclosure>
+        <FocusDisclosure title="Preferences" detail="Profile & primary sport">
+          <Text style={styles.section}>Profile</Text>
+          <Input
+            value={draftName}
+            onChangeText={setName}
+            accessibilityLabel="Name"
+            placeholder="Name"
+          />
+          <Input
+            value={draftCity}
+            onChangeText={setCity}
+            accessibilityLabel="City"
+            placeholder="City"
+          />
+          {dirty ? (
+            <Button
+              onPress={() => {
+                dispatch({
+                  type: "rename",
+                  name: draftName.trim() || state.name,
+                });
+                dispatch({
+                  type: "set-city",
+                  city: draftCity.trim() || state.city,
+                });
+                setName(null);
+                setCity(null);
+              }}
+            >
+              Save profile
+            </Button>
+          ) : null}
+
+          <View style={f.chipRow}>
+            {SPORTS.map((s) => (
+              <Pressable
+                accessibilityRole="button"
+                key={s.id}
+                style={[f.chip, state.primary === s.id && f.chipActive]}
+                onPress={() => dispatch({ type: "set-primary", sport: s.id })}
+              >
+                <Text style={f.rowTitle}>{s.name}</Text>
+              </Pressable>
+            ))}
           </View>
-        </View>
-
-        <Text style={styles.section}>Account</Text>
-        <View style={styles.row}>
-          <Text style={styles.rowTitle}>Email</Text>
-          <Text style={styles.copy}>{account.email}</Text>
-        </View>
-        <View style={styles.row}>
-          <Text style={styles.rowTitle}>Display name</Text>
-          <Text style={styles.copy}>{account.displayName}</Text>
-        </View>
-        <Pressable
-          accessibilityRole="button"
-          onPress={() => void signOut()}
-          style={styles.row}
-        >
-          <Text style={styles.rowTitle}>Sign out</Text>
-        </Pressable>
-
-        <Text style={styles.section}>Week awards</Text>
-        <AwardShelf cards={cards} />
-
-        <Text style={styles.section}>Profile</Text>
-        <Input
-          value={draftName}
-          onChangeText={setName}
-          accessibilityLabel="Name"
-          placeholder="Name"
-        />
-        <Input
-          value={draftCity}
-          onChangeText={setCity}
-          accessibilityLabel="City"
-          placeholder="City"
-        />
-        {dirty ? (
-          <Button
-            onPress={() => {
-              dispatch({ type: "rename", name: draftName.trim() || state.name });
-              dispatch({ type: "set-city", city: draftCity.trim() || state.city });
-              setName(null);
-              setCity(null);
-            }}
-          >
-            Save profile
-          </Button>
-        ) : null}
-
-        <Text style={styles.section}>Trackers</Text>
-        {providersForDevice().map((provider) => {
-          const link = state.links.find((row) => row.provider === provider.id);
-          const status =
-            link?.status === "connected"
-              ? "Connected"
-              : link?.status === "stub"
-                ? "Demo link"
-                : "Not connected";
-          const onPhone = isDeviceProvider(provider.id);
-          const cloud = isCloudOAuthProvider(provider.id);
-          const hint = onPhone
-            ? ` · ${syncBusy ? "Syncing…" : "Tap to sync"}`
-            : cloud
-              ? busyProvider === provider.id
-                ? " · authorizing…"
-                : " · tap to connect"
-              : "";
-          const copy = (
-            <>
-              <Text style={styles.rowTitle}>{provider.name}</Text>
-              <Text style={styles.copy}>
-                {status}
-                {hint}
-              </Text>
-            </>
-          );
-          if (isDeviceProvider(provider.id)) {
-            const deviceId = provider.id;
-            return (
-              <Pressable
-                key={deviceId}
-                accessibilityRole="button"
-                disabled={rowBusy}
-                onPress={() => void syncDevice(deviceId)}
-                style={styles.row}
-              >
-                {copy}
-              </Pressable>
-            );
-          }
-          if (isCloudOAuthProvider(provider.id)) {
-            const cloudId = provider.id;
-            return (
-              <Pressable
-                key={cloudId}
-                accessibilityRole="button"
-                disabled={rowBusy}
-                onPress={() => void connectCloud(cloudId)}
-                style={styles.row}
-              >
-                {copy}
-              </Pressable>
-            );
-          }
-          return (
-            <View key={provider.id} style={styles.row}>
-              {copy}
-            </View>
-          );
-        })}
-        {note ? <Text style={styles.copy}>{note}</Text> : null}
-
-        <Pressable
-          accessibilityRole="button"
+          <Text style={f.copy}>
+            {state.freezesLeft} week freezes remaining. A freeze holds Elo
+            during a rest week.
+          </Text>
+          <FocusButton
+            label={frozen ? "This week is frozen" : "Freeze this week"}
+            secondary
+            disabled={frozen || state.freezesLeft <= 0}
+            onPress={() => dispatch({ type: "freeze" })}
+          />
+        </FocusDisclosure>
+        <FocusButton
+          label="Notification settings"
+          secondary
           onPress={() => router.push("/settings")}
-          style={styles.row}
-        >
-          <Text style={styles.rowTitle}>Notification settings</Text>
-        </Pressable>
+        />
+        <FocusDisclosure title="Account" detail={account.email}>
+          <Text style={f.copy}>
+            {account.email}
+            {demoMode ? " · demo account" : ""}
+          </Text>
+          <FocusButton
+            label="Sign out"
+            secondary
+            onPress={() => void signOut()}
+          />
+        </FocusDisclosure>
       </ScrollView>
     </SafeAreaView>
   );
@@ -483,8 +524,16 @@ const styles = StyleSheet.create({
     borderColor: SHELL_COLORS.line,
     gap: 2,
   },
-  rowTitle: { fontFamily: "DMSans_700Bold", color: SHELL_COLORS.ink, fontSize: 16 },
-  copy: { fontFamily: "DMSans_400Regular", color: SHELL_COLORS.muted, fontSize: 14 },
+  rowTitle: {
+    fontFamily: "DMSans_700Bold",
+    color: SHELL_COLORS.ink,
+    fontSize: 16,
+  },
+  copy: {
+    fontFamily: "DMSans_400Regular",
+    color: SHELL_COLORS.muted,
+    fontSize: 14,
+  },
   authToggle: { flexDirection: "row", gap: 8 },
   authTab: {
     flex: 1,

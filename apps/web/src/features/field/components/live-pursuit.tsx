@@ -1,4 +1,5 @@
 "use client";
+import type { ArenaViewWindow } from "@fitness-battle/shared";
 import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
@@ -8,6 +9,7 @@ import { stableLanes, valueAt, worldZ, type SceneRunner } from "../geometry";
 export type CameraMode = "follow" | "above" | "avatar";
 
 export interface PursuitProps {
+  view?: ArenaViewWindow;
   runners: SceneRunner[];
   ghost: SceneRunner | null;
   time: number;
@@ -17,6 +19,7 @@ export interface PursuitProps {
   camera: CameraMode;
   look: AvatarLook;
   unit: string;
+  onPan?: (center: number) => void;
   onSelect: (id: string) => void;
   onUnavailable: () => void;
 }
@@ -36,9 +39,11 @@ function gapText(
   unit: string,
 ): string {
   const gap =
-    Math.round((valueAt(runner, time, extra) - valueAt(you, time, extra)) * 1000) /
-    1000;
-  if (runner.you) return `${valueAt(you, time, extra).toFixed(1)} ${unit} from start`;
+    Math.round(
+      (valueAt(runner, time, extra) - valueAt(you, time, extra)) * 1000,
+    ) / 1000;
+  if (runner.you)
+    return `${valueAt(you, time, extra).toFixed(1)} ${unit} from start`;
   if (Math.abs(gap) < 0.001) return "Level with you";
   return `${Math.abs(gap).toFixed(Math.abs(gap) < 1 ? 2 : 1)} ${unit} ${gap > 0 ? "ahead" : "behind"}`;
 }
@@ -70,8 +75,8 @@ export function LivePursuit(props: PursuitProps) {
     renderer.domElement.setAttribute("aria-hidden", "true");
     host.prepend(renderer.domElement);
     const scene = new THREE.Scene();
-    scene.background = new THREE.Color("#d5d6d3");
-    scene.fog = new THREE.Fog("#d5d6d3", 42, 180);
+    scene.background = new THREE.Color("#edf2e8");
+    scene.fog = new THREE.Fog("#edf2e8", 42, 180);
     scene.add(new THREE.HemisphereLight("#f6f8ff", "#6c718d", 2.3));
     const sun = new THREE.DirectionalLight("#ffe3c2", 3.2);
     sun.position.set(-14, 26, 15);
@@ -89,16 +94,20 @@ export function LivePursuit(props: PursuitProps) {
     controls.enableDamping = false;
     controls.enablePan = false;
     controls.minDistance = 3;
-    controls.maxDistance = 80;
+    controls.maxDistance = 10000;
+    controls.enableZoom = !latest.current.view;
+    controls.enableRotate = !latest.current.view;
     controls.maxPolarAngle = Math.PI * 0.48;
-    renderer.domElement.style.touchAction = "pan-y";
+    renderer.domElement.style.touchAction = latest.current.view
+      ? "none"
+      : "pan-y";
     const mat = (color: string) =>
       new THREE.MeshStandardMaterial({ color, roughness: 0.9 });
-    const roadMat = mat("#404346"),
-      grassMat = mat("#c8c9c4"),
-      stripeMat = mat("#ecece8"),
+    const roadMat = mat("#d6e0cd"),
+      grassMat = mat("#edf2e8"),
+      stripeMat = mat("#fafcf6"),
       woodMat = mat("#2a2c2e"),
-      leafMat = mat("#8e918c"),
+      leafMat = mat("#a5ba94"),
       whiteMat = mat("#f4f4f1");
     const mesh = (
       parent: THREE.Scene | THREE.Group,
@@ -130,6 +139,21 @@ export function LivePursuit(props: PursuitProps) {
       roadMat,
       0,
       -0.015,
+      0,
+    );
+    const initialLanes = stableLanes(latest.current.runners);
+    const yourLaneIndex = initialLanes.findIndex((r) => r.you);
+    const laneHighlight = mesh(
+      scene,
+      new THREE.BoxGeometry(2.35, 0.018, 420),
+      new THREE.MeshStandardMaterial({
+        color: "#d4ee89",
+        roughness: 1,
+        transparent: true,
+        opacity: 0.5,
+      }),
+      (yourLaneIndex - (initialLanes.length - 1) / 2) * 2.4,
+      0.055,
       0,
     );
     const stripes = Array.from({ length: 10 }, (_, i) =>
@@ -272,7 +296,9 @@ export function LivePursuit(props: PursuitProps) {
       avatars.set(r.id, avatar);
     });
     const yourAvatar = [...avatars.values()].find((avatar) =>
-      lanes.find((runner) => runner.you && avatar.group.userData.runnerId === runner.id),
+      lanes.find(
+        (runner) => runner.you && avatar.group.userData.runnerId === runner.id,
+      ),
     );
     const ghostAvatar = createAvatar(
       { skin: "rose", kit: "midnight", hair: "crop" },
@@ -292,7 +318,7 @@ export function LivePursuit(props: PursuitProps) {
     const halo = mesh(
       scene,
       new THREE.TorusGeometry(0.57, 0.035, 6, 48),
-      mat("#f97b47"),
+      mat("#a7cd54"),
       0,
       0.1,
       0,
@@ -386,9 +412,32 @@ export function LivePursuit(props: PursuitProps) {
       stripes.forEach((s) => {
         s.position.z = yourZ - 55;
       });
-      const first = Math.max(0, Math.floor(total) - 5);
+      const viewCenter = p.view?.center ?? total;
+      const viewZ = worldZ(viewCenter);
+      floor.position.z = viewZ - 60;
+      road.position.z = viewZ - 55;
+      stripes.forEach((s) => {
+        s.position.z = viewZ - 55;
+      });
+      const extent = Math.max(1, ((p.view?.span ?? 12) * 9) / 300);
+      road.scale.z = extent;
+      laneHighlight.scale.z = extent;
+      laneHighlight.position.z = viewZ - 55;
+      floor.scale.y = extent;
+      stripes.forEach((s) => {
+        s.scale.z = extent;
+      });
+      if (p.view && scene.fog instanceof THREE.Fog) {
+        scene.fog.near = Math.max(42, p.view.span * 10);
+        scene.fog.far = Math.max(180, p.view.span * 50);
+      }
+      const markerStep = Math.max(0.5, Math.ceil((p.view?.span ?? 12) / 12));
+      const first = Math.max(
+        0,
+        (Math.floor(viewCenter / markerStep) - 11) * markerStep,
+      );
       markers.forEach((marker, i) => {
-        const km = first + i;
+        const km = first + i * markerStep;
         marker.group.position.z = worldZ(km);
         marker.group.visible = km > 0;
         if (marker.km !== km) {
@@ -410,7 +459,21 @@ export function LivePursuit(props: PursuitProps) {
         building.position.z = worldZ(total) - 30 - i * 18;
       });
       // Move the follow camera through absolute world space. Free orbit keeps its offset.
-      if (p.camera !== cameraMode) {
+      if (p.view) {
+        const focusZ = worldZ(p.view.center);
+        const height = Math.max(12, p.view.span * 8);
+        const userX = (lanesNow.findIndex((r) => r.you) - center) * 2.4;
+        camera.far = Math.max(350, height * 10);
+        camera.updateProjectionMatrix();
+        if (p.camera === "above") {
+          camera.position.set(userX, height, focusZ + height * 0.12);
+          controls.target.set(userX, 0, focusZ);
+        } else {
+          camera.position.set(userX, height * 0.5, focusZ + height * 0.65);
+          controls.target.set(userX, 0, focusZ - height * 0.18);
+        }
+        cameraMode = p.camera;
+      } else if (p.camera !== cameraMode) {
         cameraMode = p.camera;
         if (p.camera === "follow") {
           camera.position.set(2.5, 4.4, yourZ + 10);
@@ -448,10 +511,31 @@ export function LivePursuit(props: PursuitProps) {
     controls.addEventListener("change", render);
     const raycaster = new THREE.Raycaster();
     let down = { x: 0, y: 0 };
+    let dragging = false,
+      downCenter = 0;
     const press = (e: PointerEvent) => {
       down = { x: e.clientX, y: e.clientY };
+      dragging = true;
+      downCenter = latest.current.view?.center ?? 0;
+      if (latest.current.view)
+        renderer.domElement.setPointerCapture(e.pointerId);
+    };
+    const move = (e: PointerEvent) => {
+      const p = latest.current;
+      if (dragging && p.view && Math.abs(e.clientY - down.y) > 5)
+        p.onPan?.(
+          Math.max(
+            0,
+            downCenter +
+              ((e.clientY - down.y) / host.clientHeight) * p.view.span,
+          ),
+        );
+    };
+    const cancel = () => {
+      dragging = false;
     };
     const release = (e: PointerEvent) => {
+      dragging = false;
       if (Math.hypot(e.clientX - down.x, e.clientY - down.y) > 5) return;
       const rect = renderer.domElement.getBoundingClientRect();
       raycaster.setFromCamera(
@@ -476,6 +560,8 @@ export function LivePursuit(props: PursuitProps) {
     };
     renderer.domElement.addEventListener("pointerdown", press);
     renderer.domElement.addEventListener("pointerup", release);
+    renderer.domElement.addEventListener("pointermove", move);
+    renderer.domElement.addEventListener("pointercancel", cancel);
     renderer.domElement.addEventListener("webglcontextlost", lost);
     update();
     setReady(true);
@@ -486,6 +572,8 @@ export function LivePursuit(props: PursuitProps) {
       controls.dispose();
       renderer.domElement.removeEventListener("pointerdown", press);
       renderer.domElement.removeEventListener("pointerup", release);
+      renderer.domElement.removeEventListener("pointermove", move);
+      renderer.domElement.removeEventListener("pointercancel", cancel);
       renderer.domElement.removeEventListener("webglcontextlost", lost);
       const geometries = new Set<THREE.BufferGeometry>(),
         materials = new Set<THREE.Material>(),
@@ -513,6 +601,8 @@ export function LivePursuit(props: PursuitProps) {
   useEffect(() => {
     updater.current?.();
   }, [
+    props.view?.center,
+    props.view?.span,
     props.time,
     props.extra,
     props.runners,

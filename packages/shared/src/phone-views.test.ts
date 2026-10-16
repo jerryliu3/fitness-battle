@@ -33,15 +33,27 @@ describe("today checkpoints", () => {
     const state = {
       ...freshState(now),
       activities: [
-        run({ id: "old", startedAt: "2026-10-12T12:00:00.000Z", distanceM: 5000 }),
-        run({ id: "new", startedAt: "2026-10-14T12:00:00.000Z", distanceM: 8000 }),
+        run({
+          id: "old",
+          startedAt: "2026-10-12T12:00:00.000Z",
+          distanceM: 5000,
+        }),
+        run({
+          id: "new",
+          startedAt: "2026-10-14T12:00:00.000Z",
+          distanceM: 8000,
+        }),
         run({
           id: "skip",
           startedAt: "2026-10-13T12:00:00.000Z",
           distanceM: 1000,
           disposition: "excluded",
         }),
-        run({ id: "last-week", startedAt: "2026-10-08T12:00:00.000Z", distanceM: 9000 }),
+        run({
+          id: "last-week",
+          startedAt: "2026-10-08T12:00:00.000Z",
+          distanceM: 9000,
+        }),
       ],
     };
     const route = buildTodayRoute(state, now);
@@ -49,21 +61,31 @@ describe("today checkpoints", () => {
     expect(past.map((disc) => disc.activityId)).toEqual(["old", "new"]);
     expect(past[1]?.volume).toBe("8.0 km");
     expect(route.discs.filter((disc) => disc.role === "today")).toHaveLength(1);
-    expect(route.discs.filter((disc) => disc.role === "future")).toHaveLength(3);
+    expect(route.discs.filter((disc) => disc.role === "future")).toHaveLength(
+      3,
+    );
     expect(route.discs.find((disc) => disc.role === "today")?.title).toBe(
       route.suggestion.title,
     );
-    expect(route.discs.find((disc) => disc.id === "future-0")?.activityId).toBeNull();
+    expect(
+      route.discs.find((disc) => disc.id === "future-0")?.activityId,
+    ).toBeNull();
   });
 
   it("seats a single counted session on the past disc nearest today", () => {
     const state = {
       ...freshState(now),
       activities: [
-        run({ id: "only", startedAt: "2026-10-14T12:00:00.000Z", distanceM: 3000 }),
+        run({
+          id: "only",
+          startedAt: "2026-10-14T12:00:00.000Z",
+          distanceM: 3000,
+        }),
       ],
     };
-    const past = buildTodayRoute(state, now).discs.filter((disc) => disc.role === "past");
+    const past = buildTodayRoute(state, now).discs.filter(
+      (disc) => disc.role === "past",
+    );
     expect(past.map((disc) => disc.activityId)).toEqual(["only"]);
     expect(past[0]?.top).toBe(CHECKPOINT_ANCHORS.past.at(-1)?.top);
   });
@@ -71,12 +93,23 @@ describe("today checkpoints", () => {
 
 describe("arena lanes", () => {
   it("draws you and a past-self ghost from the same checkpoint series", () => {
-    let state = reduceCompete(freshState(now), { type: "opt-in", sport: "running" });
+    let state = reduceCompete(freshState(now), {
+      type: "opt-in",
+      sport: "running",
+    });
     state = {
       ...state,
       activities: [
-        run({ id: "prior", startedAt: "2026-10-08T12:00:00.000Z", distanceM: 6000 }),
-        run({ id: "live", startedAt: "2026-10-14T12:00:00.000Z", distanceM: 4000 }),
+        run({
+          id: "prior",
+          startedAt: "2026-10-08T12:00:00.000Z",
+          distanceM: 6000,
+        }),
+        run({
+          id: "live",
+          startedAt: "2026-10-14T12:00:00.000Z",
+          distanceM: 4000,
+        }),
       ],
     };
     const arena = buildArenaModel(state, now);
@@ -102,6 +135,34 @@ describe("arena lanes", () => {
       "you",
       "b",
     ]);
+  });
+
+  it("keeps open and verified activity separate in the Arena presentation", () => {
+    const state = {
+      ...reduceCompete(freshState(now), { type: "opt-in", sport: "running" }),
+      activities: [
+        run({
+          id: "verified",
+          startedAt: "2026-10-14T12:00:00.000Z",
+          distanceM: 4000,
+        }),
+        run({
+          id: "open",
+          startedAt: "2026-10-14T15:00:00.000Z",
+          distanceM: 3000,
+          verified: false,
+          provenance: "manual",
+          source: "manual",
+        }),
+      ],
+    };
+    expect(
+      buildArenaModel(state, now, "open").lanes.find((l) => l.you)?.values[2],
+    ).toBe(7);
+    expect(
+      buildArenaModel(state, now, "verified").lanes.find((l) => l.you)
+        ?.values[2],
+    ).toBe(4);
   });
 
   it("stays empty until the athlete opts in", () => {
@@ -141,7 +202,11 @@ describe("award cards and counted progress", () => {
     const state = {
       ...freshState(now),
       activities: [
-        run({ id: "a", startedAt: "2026-10-14T12:00:00.000Z", distanceM: 1000 }),
+        run({
+          id: "a",
+          startedAt: "2026-10-14T12:00:00.000Z",
+          distanceM: 1000,
+        }),
         run({
           id: "b",
           startedAt: "2026-10-14T18:00:00.000Z",

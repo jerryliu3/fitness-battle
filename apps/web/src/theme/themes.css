@@ -299,3 +299,36 @@ html[data-theme="form"] .fb-guest-banner {
     grid-template-columns: 1fr;
   }
 }
+
+html[data-theme="focus"] {
+  --ink: #26382d;
+  --muted: #768172;
+  --line: #e0e5dd;
+  --paper: #fafbf8;
+  --card: #ffffff;
+  --lime: #d4ee89;
+  --lime-deep: #9bbf63;
+  --accent: #26382d;
+  --accent-soft: #edf2e8;
+  --green: #2f6f4e;
+  --green-soft: #edf4e6;
+  --fb-radius: 20px;
+  --sp-you: #d4ee89;
+  --sp-track: #26382d;
+  --sp-track-line: #e0e5dd;
+}
+html[data-theme="focus"] body {
+  background: #fafbf8;
+  font-family: var(--font-body), sans-serif;
+}
+html[data-theme="focus"] .fb-auth-card {
+  border-radius: 24px;
+  background: #fff;
+  border: 1px solid #e0e5dd;
+  padding: 28px;
+}
+html[data-theme="focus"] .fb-title {
+  font-family: var(--font-body), sans-serif;
+  font-weight: 400;
+  letter-spacing: -1px;
+}

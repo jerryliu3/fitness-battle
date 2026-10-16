@@ -1,4 +1,9 @@
-import { SHELL_TABS, type ShellTabId } from "@fitness-battle/shared";
+import Svg, { Path } from "react-native-svg";
+import {
+  SHELL_TAB_ICONS,
+  SHELL_TABS,
+  type ShellTabId,
+} from "@fitness-battle/shared";
 import { useEffect, useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -29,7 +34,9 @@ export function PhoneTabBar({ state, navigation }: PhoneTabBarProps) {
       style={[styles.bar, { paddingBottom: Math.max(insets.bottom, 10) }]}
     >
       {state.routes.map((route, index) => {
-        const tab = SHELL_TABS.find((item) => item.id === (route.name as ShellTabId));
+        const tab = SHELL_TABS.find(
+          (item) => item.id === (route.name as ShellTabId),
+        );
         if (!tab) return null;
         const selected = active === index;
         return (
@@ -44,6 +51,16 @@ export function PhoneTabBar({ state, navigation }: PhoneTabBarProps) {
             }}
             style={[styles.tab, selected ? styles.tabOn : null]}
           >
+            <Svg width={22} height={22} viewBox="0 0 24 24" accessible={false}>
+              <Path
+                d={SHELL_TAB_ICONS[tab.id]}
+                fill="none"
+                stroke={selected ? SHELL_COLORS.ink : SHELL_COLORS.muted}
+                strokeWidth={1.6}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </Svg>
             <Text style={[styles.label, selected ? styles.labelOn : null]}>
               {tab.label}
             </Text>
@@ -66,20 +83,21 @@ const styles = StyleSheet.create({
   },
   tab: {
     flex: 1,
-    minHeight: 44,
+    minHeight: 56,
+    gap: 5,
     alignItems: "center",
     justifyContent: "center",
     borderRadius: SHELL_RADIUS.pill,
   },
   tabOn: {
-    backgroundColor: SHELL_COLORS.plum,
+    backgroundColor: SHELL_COLORS.tennis,
   },
   label: {
     fontFamily: "DMSans_700Bold",
-    fontSize: 13,
+    fontSize: 10,
     color: SHELL_COLORS.muted,
   },
   labelOn: {
-    color: SHELL_COLORS.tennis,
+    color: SHELL_COLORS.ink,
   },
 });

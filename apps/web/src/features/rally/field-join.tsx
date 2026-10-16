@@ -37,6 +37,7 @@ interface FieldJoinProps {
   sport: SportId;
   sportName: string;
   requireParticipate: (reason: string, next: () => void) => void;
+  onJoined?: () => void;
 }
 
 /**
@@ -47,6 +48,7 @@ export function FieldJoinActions({
   sport,
   sportName,
   requireParticipate,
+  onJoined,
 }: FieldJoinProps) {
   const { dispatch } = useCompete();
   const crews = useCrewOptions(sport, true);
@@ -55,7 +57,9 @@ export function FieldJoinActions({
 
   function joinAlone() {
     requireParticipate(`Sign in to join ${sportName} this week.`, () => {
+      dispatch({ type: "set-primary", sport });
       dispatch({ type: "opt-in", sport, crewBoard: null });
+      onJoined?.();
     });
   }
 
@@ -69,7 +73,9 @@ export function FieldJoinActions({
             setNote("Could not seat the crew field. Try again or join alone.");
             return;
           }
+          dispatch({ type: "set-primary", sport });
           dispatch({ type: "opt-in", sport, crewBoard: pin });
+          onJoined?.();
         })
         .finally(() => setBusy(false));
     });

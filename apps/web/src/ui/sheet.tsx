@@ -25,7 +25,7 @@ export function Sheet({
     >
       <Dialog.Portal>
         <Dialog.Overlay className="sheet-overlay" />
-        <Dialog.Content className="sheet-content">
+        <Dialog.Content className="sheet-content focus-sheet">
           <Dialog.Title>{title}</Dialog.Title>
           <Dialog.Description>{body}</Dialog.Description>
           {children}

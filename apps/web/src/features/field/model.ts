@@ -1,5 +1,6 @@
 import {
   competeNow,
+  sportById,
   distanceTrackMaxKm,
   ghostHasVolume,
   initialsFromName,
@@ -42,7 +43,7 @@ export function buildFieldModel(
   options?: { ghostSelector?: GhostPeriodSelector },
 ): FieldModel {
   const board = buildSplitBoard(state, sport, track, now, options);
-  const gps = sport === "running" || sport === "cycling";
+  const gps = sportById(sport).gps;
 
   const runners: FieldRunner[] = board.rows.map((row) => {
     const series = row.you

@@ -19,6 +19,8 @@ isProject: false
 
 # Rebuild both apps from the Goalmaxxing phone UX
 
+> Selection update (October 16, 2026): Focus is now the production direction, with Trail’s Crew layout and Elo/benchmarks at the top of Athlete. The live Arena keeps vertical 2D/3D lanes with a user-centered window; replay and what-if controls are removed. See [the current design guide](design-guide.md) and [implementation notes](focus-implementation.md). The original plan below is retained as history.
+
 Fitness Battle already has two frontends: [apps/web](apps/web) (Next.js) and [apps/mobile](apps/mobile) (Expo). They should show the same product. When a choice conflicts, the phone app wins. The web app stays long term and may add web-only pieces, but it does not get a different information architecture.
 
 Goalmaxxing is a Next.js app built to feel like a phone. We use that UX as the baseline for both Fitness Battle apps: one shell, a bottom tab bar, a page that keeps its tab when a sheet opens on top, optimistic tab highlight, and tab data that is warm before you tap. We do not copy Cadence screens, coach, or XP. On Expo we rebuild those patterns with a native library. On the web we can adapt Goalmaxxing’s shell more directly.
