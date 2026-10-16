@@ -1,19 +1,63 @@
 import {
   buildArenaModel,
+  initialsFromName,
+  stableFieldLanes,
   type ArenaLane,
 } from "@fitness-battle/shared";
 import { Button } from "heroui-native/button";
 import { useRouter } from "expo-router";
-import { useState } from "react";
+import { useEffect, useRef, useState, type ComponentType } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useCompeteStore } from "../../src/lib/compete-store";
 import { DetailSheet } from "../../src/ui/detail-sheet";
 import { LaneTrack } from "../../src/ui/lane-track";
-import { Pursuit, type CameraMode } from "../../src/ui/pursuit";
 import { SHELL_COLORS, SHELL_RADIUS } from "../../src/theme";
 
 type FieldMode = "lanes" | "pursuit";
+type CameraMode = "follow" | "above" | "avatar";
+
+type PursuitProps = {
+  lanes: ArenaLane[];
+  index: number;
+  showGhost: boolean;
+  camera: CameraMode;
+  onUnavailable: () => void;
+};
+
+function LivePursuit({ sceneKey, ...props }: PursuitProps & { sceneKey: string }) {
+  const [Comp, setComp] = useState<ComponentType<PursuitProps> | null>(null);
+  const [failed, setFailed] = useState(false);
+  const report = useRef(props.onUnavailable);
+  report.current = props.onUnavailable;
+
+  useEffect(() => {
+    let alive = true;
+    import("../../src/ui/pursuit")
+      .then((mod) => {
+        if (alive) setComp(() => mod.Pursuit);
+      })
+      .catch(() => {
+        if (alive) setFailed(true);
+      });
+    return () => {
+      alive = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (failed) report.current();
+  }, [failed]);
+
+  if (failed || !Comp) {
+    return (
+      <View style={styles.pursuitHold}>
+        <Text style={styles.copy}>Preparing the track…</Text>
+      </View>
+    );
+  }
+  return <Comp key={sceneKey} {...props} />;
+}
 
 export default function ArenaScreen() {
   const { state, dispatch, returnGain, clearReturn } = useCompeteStore();
@@ -117,13 +161,36 @@ export default function ArenaScreen() {
                     </Pressable>
                   ))}
                 </View>
-                <Pursuit
+                <LivePursuit
+                  sceneKey={arena.lanes
+                    .map((lane) => lane.id)
+                    .sort()
+                    .join("|")}
                   lanes={arena.lanes}
                   index={index}
                   showGhost={showGhost}
                   camera={camera}
                   onUnavailable={() => setUnavailable(true)}
                 />
+                <View style={styles.pickers}>
+                  {stableFieldLanes(arena.lanes).map((lane) => {
+                    const on = selected?.id === lane.id;
+                    return (
+                      <Pressable
+                        key={lane.id}
+                        accessibilityRole="button"
+                        accessibilityLabel={lane.name}
+                        accessibilityState={{ selected: on }}
+                        onPress={() => setSelected(lane)}
+                        style={[styles.picker, on ? styles.replayOn : null]}
+                      >
+                        <Text style={[styles.replayText, on ? styles.replayTextOn : null]}>
+                          {lane.you ? "YOU" : initialsFromName(lane.name)}
+                        </Text>
+                      </Pressable>
+                    );
+                  })}
+                </View>
               </>
             ) : (
               <LaneTrack
@@ -249,6 +316,19 @@ const styles = StyleSheet.create({
   replayTextOn: { color: SHELL_COLORS.tennis },
   ghostToggle: { minHeight: 44, justifyContent: "center" },
   ghostText: { fontFamily: "DMSans_700Bold", color: SHELL_COLORS.plum },
+  pursuitHold: { height: 360, alignItems: "center", justifyContent: "center" },
+  pickers: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
+  picker: {
+    minHeight: 44,
+    minWidth: 52,
+    paddingHorizontal: 12,
+    borderRadius: SHELL_RADIUS.pill,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: SHELL_COLORS.card,
+    borderWidth: 1,
+    borderColor: SHELL_COLORS.line,
+  },
   empty: { gap: 12, paddingTop: 12 },
   copy: { fontFamily: "DMSans_400Regular", color: SHELL_COLORS.muted, fontSize: 15 },
 });

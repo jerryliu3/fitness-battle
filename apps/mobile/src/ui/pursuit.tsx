@@ -1,7 +1,8 @@
 import { stableFieldLanes, type ArenaLane } from "@fitness-battle/shared";
 import { GLView, type ExpoWebGLRenderingContext } from "expo-gl";
+import { useNavigation } from "expo-router";
 import { useEffect, useRef } from "react";
-import { StyleSheet, View } from "react-native";
+import { AppState, StyleSheet, View } from "react-native";
 import * as THREE from "three";
 
 export type CameraMode = "follow" | "above" | "avatar";
@@ -86,17 +87,45 @@ export function Pursuit({
   const latest = useRef({ lanes, index, showGhost, camera, onUnavailable });
   latest.current = { lanes, index, showGhost, camera, onUnavailable };
   const stop = useRef<(() => void) | null>(null);
+  const resume = useRef<(() => void) | null>(null);
+  const frame = useRef(0);
+  const tabFocused = useRef(true);
+  const appActive = useRef(AppState.currentState === "active");
   const mounted = useRef(true);
   const started = useRef(false);
+  const navigation = useNavigation();
 
   useEffect(() => {
     mounted.current = true;
+    const pause = () => {
+      tabFocused.current = false;
+      cancelAnimationFrame(frame.current);
+      frame.current = 0;
+    };
+    const play = () => {
+      tabFocused.current = true;
+      resume.current?.();
+    };
+    const unsubBlur = navigation.addListener("blur", pause);
+    const unsubFocus = navigation.addListener("focus", play);
+    const appState = AppState.addEventListener("change", (next) => {
+      appActive.current = next === "active";
+      if (appActive.current) resume.current?.();
+      else {
+        cancelAnimationFrame(frame.current);
+        frame.current = 0;
+      }
+    });
     return () => {
       mounted.current = false;
+      unsubBlur();
+      unsubFocus();
+      appState.remove();
       stop.current?.();
       stop.current = null;
+      resume.current = null;
     };
-  }, []);
+  }, [navigation]);
 
   function onContextCreate(gl: ExpoWebGLRenderingContext) {
     if (!mounted.current || started.current) return;
@@ -194,7 +223,6 @@ export function Pursuit({
     let cameraMode: CameraMode | null = null;
     let lastYouZ = 0;
     let alive = true;
-    let frame = 0;
 
     function update() {
       const props = latest.current;
@@ -242,23 +270,36 @@ export function Pursuit({
       sun.target.position.set(0, 0, yourZ - 8);
     }
 
+    function showing() {
+      return tabFocused.current && appActive.current;
+    }
+
     function loop() {
-      if (!alive) return;
-      frame = requestAnimationFrame(loop);
+      if (!alive || !showing()) {
+        frame.current = 0;
+        return;
+      }
+      frame.current = requestAnimationFrame(loop);
       try {
         update();
         renderer.render(scene, camera3);
         gl.endFrameEXP();
       } catch {
+        frame.current = 0;
+        if (!showing()) return;
         alive = false;
         latest.current.onUnavailable();
       }
     }
+    resume.current = () => {
+      if (alive && showing() && frame.current === 0) loop();
+    };
     loop();
 
     stop.current = () => {
       alive = false;
-      cancelAnimationFrame(frame);
+      cancelAnimationFrame(frame.current);
+      frame.current = 0;
       const geometries = new Set<THREE.BufferGeometry>();
       const materials = new Set<THREE.Material>();
       scene.traverse((object) => {

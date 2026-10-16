@@ -1,4 +1,4 @@
-import { stableFieldLanes, type ArenaLane } from "@fitness-battle/shared";
+import { initialsFromName, stableFieldLanes, type ArenaLane } from "@fitness-battle/shared";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { SHELL_COLORS } from "../theme";
 
@@ -29,7 +29,7 @@ export function LaneTrack({
   const you = field.find((lane) => lane.you);
   const ghost = lanes.find((lane) => lane.ghost) ?? null;
   const peak = Math.max(
-    1,
+    0.001,
     ...field.map((lane) => lane.values[index] ?? 0),
     showGhost ? ghost?.values[index] ?? 0 : 0,
   );
@@ -56,7 +56,7 @@ export function LaneTrack({
               style={[styles.lane, lane.you ? styles.laneYou : null]}
             >
               <Text style={lane.you ? styles.headingYou : styles.heading}>
-                {lane.you ? "YOU" : lane.name.slice(0, 2).toUpperCase()}
+                {lane.you ? "YOU" : initialsFromName(lane.name)}
               </Text>
               <View
                 style={[
