@@ -83,6 +83,7 @@ export { lessonFor, type Lesson } from "./lessons";
 export {
   freshState,
   migrateCompeteState,
+  placeOrLast,
   reduceCompete,
   rollClock,
   competeNow,

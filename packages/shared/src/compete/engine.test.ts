@@ -1,8 +1,12 @@
 import { describe, expect, it } from "vitest";
 import { activityFromSample } from "../fitness/samples";
+import { activityEffort } from "./effort";
+import { sameWorkout } from "./ledger";
+import { settleElo } from "./elo";
 import {
   freshState,
   migrateCompeteState,
+  placeOrLast,
   reduceCompete,
   rollClock,
   weeklyBoard,
@@ -211,6 +215,40 @@ describe("compete engine", () => {
     expect(migrateCompeteState({ ...legacy, trainingGoal: { distance: "5k", deadline: "2026-02-31" } } as never).trainingGoal).toBeNull();
   });
 
+  it("backfills missing sports in ratings and missing providers in links without crashing", () => {
+    const partialState = {
+      version: 1,
+      name: "Old Athlete",
+      ratings: [{ sport: "running", verifiedElo: 1050, openElo: 1050, optedIn: true, lockVerified: 1000, lockOpen: 1000, lockPeriod: "2026-10-12T00:00:00.000Z" }],
+      links: [{ provider: "strava", linked: true, status: "connected" }],
+    };
+    const migrated = migrateCompeteState(partialState as never);
+    expect(migrated.ratings.length).toBe(4);
+    expect(migrated.ratings.find((r) => r.sport === "running")?.verifiedElo).toBe(1050);
+    expect(migrated.ratings.find((r) => r.sport === "cycling")?.verifiedElo).toBe(1000);
+    expect(migrated.ratings.find((r) => r.sport === "walking")?.verifiedElo).toBe(1000);
+    expect(migrated.ratings.find((r) => r.sport === "strength")?.verifiedElo).toBe(1000);
+
+    expect(migrated.links.length).toBe(6);
+    expect(migrated.links.find((l) => l.provider === "strava")?.status).toBe("connected");
+    expect(migrated.links.find((l) => l.provider === "whoop")?.status).toBe("disconnected");
+
+    expect(migrated.clock).toBeDefined();
+    expect(migrated.clock.kind).toBe("weekly");
+  });
+
+  it("safely handles missing clock and healthRatings without throwing", () => {
+    const headlessState = {
+      version: 1,
+      name: "Headless",
+      clock: undefined,
+      healthRatings: [{ metric: "sleep", score: 85 }],
+    };
+    const migrated = migrateCompeteState(headlessState as never);
+    expect(migrated.clock.periodStart).toBeTruthy();
+    expect(migrated.healthRatings.length).toBeGreaterThan(0);
+  });
+
   it("keeps pending reveals when account snapshot stores empty pendingRevealIds", () => {
     const base = freshState(new Date("2026-10-12T12:00:00.000Z"));
     const settled = {
@@ -308,5 +346,102 @@ describe("compete engine", () => {
     });
     const rolled = rollClock(pinned, new Date("2026-10-19T12:00:00.000Z"));
     expect(rolled.crewBoard).toBeNull();
+  });
+
+  it("guards missing settlement seats so place stays >= 1 and Elo is not inflated", () => {
+    expect(placeOrLast(-1, 8)).toBe(7);
+    expect(placeOrLast(-1, 0)).toBe(0);
+    expect(placeOrLast(2, 8)).toBe(2);
+    // Stored history uses place + 1; -1 would become 0 and fail place >= 1 checks.
+    expect(placeOrLast(-1, 8) + 1).toBeGreaterThanOrEqual(1);
+
+    const opponents = [1000, 1000, 1000];
+    const inflated = settleElo(1000, opponents, -1, 4, 12, false);
+    const lastPlace = settleElo(1000, opponents, placeOrLast(-1, 4), 4, 12, false);
+    expect(inflated).toBeGreaterThan(lastPlace);
+  });
+
+  it("scales pace bonus based on sport-specific baseline", () => {
+    // 5km in 20 min (4 min/km):
+    // Running base is 6.5 -> pace bonus should apply
+    const runEffort = activityEffort({
+      id: "run-fast",
+      sport: "running",
+      startedAt: "2026-10-12T10:00:00Z",
+      distanceM: 5000,
+      movingSec: 1200,
+      avgHr: null,
+      verified: true,
+      source: "strava",
+    });
+    expect(runEffort).toBeGreaterThan(5);
+
+    // Cycling 10km in 20 min (2 min/km = 30 km/h):
+    // Cycling base is 3.0 -> gets bonus
+    const cycleFast = activityEffort({
+      id: "cycle-fast",
+      sport: "cycling",
+      startedAt: "2026-10-12T10:00:00Z",
+      distanceM: 10000,
+      movingSec: 1200,
+      avgHr: null,
+      verified: true,
+      source: "strava",
+    });
+    // Cycling 10km in 60 min (6 min/km = 10 km/h):
+    // Slower than 3.0 base pace -> no bonus
+    const cycleSlow = activityEffort({
+      id: "cycle-slow",
+      sport: "cycling",
+      startedAt: "2026-10-12T10:00:00Z",
+      distanceM: 10000,
+      movingSec: 3600,
+      avgHr: null,
+      verified: true,
+      source: "strava",
+    });
+    expect(cycleFast).toBeGreaterThan(cycleSlow);
+
+    // Walking 3km in 30 min (10 min/km = 6 km/h):
+    // Faster than walking base (12.0) -> gets small pace bonus
+    const walkFast = activityEffort({
+      id: "walk-fast",
+      sport: "walking",
+      startedAt: "2026-10-12T10:00:00Z",
+      distanceM: 3000,
+      movingSec: 1800,
+      avgHr: null,
+      verified: true,
+      source: "strava",
+    });
+    expect(walkFast).toBeGreaterThan(3.0);
+  });
+
+  it("differentiates non-GPS workouts by duration rather than 0-distance", () => {
+    const act1 = {
+      id: "str-1",
+      sport: "strength" as const,
+      startedAt: "2026-10-12T10:00:00Z",
+      distanceM: 0,
+      movingSec: 3600, // 60 min
+      avgHr: null,
+      verified: false,
+      source: "apple_health" as const,
+    };
+    const act2 = {
+      id: "str-2",
+      sport: "strength" as const,
+      startedAt: "2026-10-12T10:01:00Z", // starts 1 min later
+      distanceM: 0,
+      movingSec: 900, // 15 min (distinct set/workout)
+      avgHr: null,
+      verified: false,
+      source: "apple_health" as const,
+    };
+    expect(sameWorkout(act1, act2)).toBe(false);
+
+    // But identical time and started within tolerance matches
+    const actTwin = { ...act1, id: "str-twin", movingSec: 3650 };
+    expect(sameWorkout(act1, actTwin)).toBe(true);
   });
 });

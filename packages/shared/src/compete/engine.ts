@@ -149,16 +149,71 @@ function withRating(
 
 /** Normalize persisted JSON from older clients (missing link status / onboarding). */
 export function migrateCompeteState(parsed: CompeteState): CompeteState {
-  const links = (parsed.links ?? []).map((link) => ({
-    provider: link.provider,
-    linked: Boolean(link.linked),
-    status:
-      "status" in link && link.status
-        ? link.status
-        : link.linked
-          ? ("stub" as const)
-          : ("disconnected" as const),
-  }));
+  const wave = waveWindowAt(new Date());
+  const fallbackPeriodStart = wave.waveStart.toISOString();
+  const clock =
+    parsed.clock &&
+    typeof parsed.clock === "object" &&
+    typeof parsed.clock.periodStart === "string"
+      ? parsed.clock
+      : { kind: "weekly" as const, periodStart: fallbackPeriodStart };
+
+  const existingRatings = new Map(
+    (Array.isArray(parsed.ratings) ? parsed.ratings : []).map((r) => [r.sport, r]),
+  );
+  const ratings = SPORT_IDS.map((sport) => {
+    const existing = existingRatings.get(sport);
+    if (!existing) {
+      return {
+        sport,
+        verifiedElo: ELO_BASE,
+        openElo: ELO_BASE,
+        optedIn: false,
+        lockVerified: ELO_BASE,
+        lockOpen: ELO_BASE,
+        lockPeriod: clock.periodStart,
+      };
+    }
+    return {
+      sport,
+      verifiedElo:
+        typeof existing.verifiedElo === "number" ? existing.verifiedElo : ELO_BASE,
+      openElo: typeof existing.openElo === "number" ? existing.openElo : ELO_BASE,
+      optedIn: Boolean(existing.optedIn),
+      lockVerified:
+        typeof existing.lockVerified === "number" ? existing.lockVerified : ELO_BASE,
+      lockOpen: typeof existing.lockOpen === "number" ? existing.lockOpen : ELO_BASE,
+      lockPeriod:
+        typeof existing.lockPeriod === "string" && existing.lockPeriod
+          ? existing.lockPeriod
+          : clock.periodStart,
+    };
+  });
+
+  const existingLinks = new Map(
+    (Array.isArray(parsed.links) ? parsed.links : []).map((link) => [link.provider, link]),
+  );
+  const links = PROVIDERS.map((provider) => {
+    const existing = existingLinks.get(provider.id);
+    if (!existing) {
+      return {
+        provider: provider.id,
+        linked: false,
+        status: "disconnected" as const,
+      };
+    }
+    return {
+      provider: provider.id,
+      linked: Boolean(existing.linked),
+      status:
+        "status" in existing && existing.status
+          ? existing.status
+          : existing.linked
+            ? ("stub" as const)
+            : ("disconnected" as const),
+    };
+  });
+
   const rawPeriodResults = Array.isArray(
     (parsed as CompeteState).periodResults,
   )
@@ -181,6 +236,8 @@ export function migrateCompeteState(parsed: CompeteState): CompeteState {
     : [];
   return {
     ...parsed,
+    clock,
+    ratings,
     links,
     calibrated: Boolean(parsed.calibrated),
     onboardingCompleted: Boolean(
@@ -200,11 +257,11 @@ export function migrateCompeteState(parsed: CompeteState): CompeteState {
     sleepNights: Array.isArray(parsed.sleepNights) ? parsed.sleepNights : [],
     healthRatings:
       Array.isArray(parsed.healthRatings) && parsed.healthRatings.length > 0
-        ? freshHealthRatings(parsed.clock.periodStart).map((blank) => {
+        ? freshHealthRatings(clock.periodStart).map((blank) => {
             const found = parsed.healthRatings.find((item) => item.metric === blank.metric);
             return found ? { ...blank, ...found } : blank;
           })
-        : freshHealthRatings(parsed.clock?.periodStart ?? new Date().toISOString()),
+        : freshHealthRatings(clock.periodStart),
     healthResults: Array.isArray(parsed.healthResults) ? parsed.healthResults : [],
     activities: Array.isArray(parsed.activities)
       ? parsed.activities.map(normalizeSampleActivity)
@@ -463,6 +520,16 @@ function settleTrackResult(input: {
   };
 }
 
+/**
+ * 0-based seat for Elo + period history.
+ * `findIndex === -1` must never pass through: place+1 would become 0 (DB check)
+ * and settleElo would treat it as better than first.
+ */
+export function placeOrLast(index: number, fieldSize: number): number {
+  if (index >= 0) return index;
+  return Math.max(0, fieldSize - 1);
+}
+
 function settleEnrollment(
   state: CompeteState,
   enrollment: WaveEnrollment,
@@ -483,12 +550,15 @@ function settleEnrollment(
   const asOf = end;
   const verifiedRows = groupFor(state, sport, "verified", enrollment, asOf);
   const openRows = groupFor(state, sport, "open", enrollment, asOf);
-  const verifiedPlace = verifiedRows.findIndex((row) => row.you);
-  const openPlace = openRows.findIndex((row) => row.you);
-  const verifiedEffort = verifiedRows[verifiedPlace]?.effort ?? 0;
-  const openEffort = openRows[openPlace]?.effort ?? 0;
-  const youVerified = verifiedRows[verifiedPlace];
-  const youOpen = openRows[openPlace];
+  const verifiedIdx = verifiedRows.findIndex((row) => row.you);
+  const openIdx = openRows.findIndex((row) => row.you);
+  const verifiedPlace = placeOrLast(verifiedIdx, verifiedRows.length);
+  const openPlace = placeOrLast(openIdx, openRows.length);
+  // Missing you → zero effort so Elo takes inactivity decay, not a fake last-place race.
+  const verifiedEffort = verifiedIdx >= 0 ? (verifiedRows[verifiedIdx]?.effort ?? 0) : 0;
+  const openEffort = openIdx >= 0 ? (openRows[openIdx]?.effort ?? 0) : 0;
+  const youVerified = verifiedIdx >= 0 ? verifiedRows[verifiedIdx] : undefined;
+  const youOpen = openIdx >= 0 ? openRows[openIdx] : undefined;
   const gps = sportById(sport).gps;
   const nextVerified = gps
     ? settleElo(

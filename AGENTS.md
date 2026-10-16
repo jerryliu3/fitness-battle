@@ -8,7 +8,7 @@ This version has breaking changes — APIs, conventions, and file structure may 
 
 Living standards (Project store — source of truth):
 
-- Design: `docs/design-guide.md` (ink/lime athletic UI, mobile-first)
+- Design: `docs/design-guide.md` (Focus athletic UI — ink/tennis tokens, mobile-first)
 - Coding: `docs/coding-principles.md` (monorepo, period/standings, tracker, RLS)
 - Context / setup: `docs/project-context.md`, `docs/setup-plan.md`
 

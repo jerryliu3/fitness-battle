@@ -78,9 +78,18 @@ function parseStored(raw: string | null): { savedAt: string; state: CompeteState
   }
 }
 
+function readStorageItem(key: string): string | null {
+  try {
+    return localStorage.getItem(key);
+  } catch (error) {
+    console.warn("Could not read compete state from local storage:", error);
+    return null;
+  }
+}
+
 function readLocal(userId: string | null): { savedAt: string; state: CompeteState } {
   return (
-    parseStored(localStorage.getItem(storageKey(userId))) ?? {
+    parseStored(readStorageItem(storageKey(userId))) ?? {
       savedAt: new Date(0).toISOString(),
       state: rollClock(freshState()),
     }
@@ -88,7 +97,11 @@ function readLocal(userId: string | null): { savedAt: string; state: CompeteStat
 }
 
 function writeLocal(userId: string | null, state: CompeteState, savedAt: string) {
-  localStorage.setItem(storageKey(userId), JSON.stringify({ savedAt, state }));
+  try {
+    localStorage.setItem(storageKey(userId), JSON.stringify({ savedAt, state }));
+  } catch (error) {
+    console.warn("Could not save compete state to local storage:", error);
+  }
 }
 
 export function CompeteProvider({ children }: { children: ReactNode }) {
@@ -99,6 +112,10 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
   const [legacyOffer, setLegacyOffer] = useState(false);
   const [loadStatus, setLoadStatus] = useState<LoadStatus>("loading");
   const [attempt, setAttempt] = useState(0);
+  /** Account the current `state`/`loadStatus` belong to — cleared synchronously on switch. */
+  const [loadedFor, setLoadedFor] = useState<string | null | undefined>(
+    undefined,
+  );
   const userIdRef = useRef(userId);
   const demoRef = useRef(demoMode || user?.mode === "demo");
   const statusRef = useRef<LoadStatus>("loading");
@@ -107,6 +124,21 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
   const queue = useRef<Action[]>([]);
   userIdRef.current = userId;
   demoRef.current = demoMode || user?.mode === "demo";
+
+  // Drop prior-account state before children render with the new userId.
+  if (!loading && loadedFor !== userId) {
+    setLoadedFor(userId);
+    setState(null);
+    setLoadStatus("loading");
+    setSaveError(null);
+    statusRef.current = "loading";
+    stateRef.current = null;
+    queue.current = [];
+    if (timer.current) {
+      clearTimeout(timer.current);
+      timer.current = null;
+    }
+  }
 
   const scheduleSave = useCallback((accountId: string | null, next: CompeteState) => {
     if (!accountId || demoRef.current || statusRef.current !== "ready") return;
@@ -162,7 +194,7 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
     const accountId = userId;
     let cancelled = false;
     const signedIn = Boolean(accountId) && !(demoMode || user?.mode === "demo");
-    setLegacyOffer(signedIn && parseStored(localStorage.getItem(LEGACY_KEY)) != null);
+    setLegacyOffer(signedIn && parseStored(readStorageItem(LEGACY_KEY)) != null);
     const local = readLocal(accountId);
 
     const settle = (chosen: CompeteState, savedAt: string, status: LoadStatus) => {
@@ -192,8 +224,12 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
       })
       .then((body) => {
         if (cancelled || userIdRef.current !== accountId || !accountId) return;
-        const staleDeviceDraft = localStorage.getItem(deviceOnlyKey(accountId)) === "1";
-        localStorage.removeItem(deviceOnlyKey(accountId));
+        const staleDeviceDraft = readStorageItem(deviceOnlyKey(accountId)) === "1";
+        try {
+          localStorage.removeItem(deviceOnlyKey(accountId));
+        } catch {
+          /* ignore quota / private-mode failures */
+        }
         if (staleDeviceDraft && body?.updatedAt && isCompeteState(body.state)) {
           settle(rollClock(migrateCompeteState(body.state)), body.updatedAt, "ready");
           return;
@@ -222,13 +258,17 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
 
   const recoverLegacy = useCallback(() => {
     const accountId = userIdRef.current;
-    const raw = localStorage.getItem(LEGACY_KEY);
+    const raw = readStorageItem(LEGACY_KEY);
     const parsed = parseStored(raw);
     if (!accountId || !raw || !parsed) return;
     const stamped = new Date().toISOString();
     writeLocal(accountId, parsed.state, stamped);
-    localStorage.setItem(RECOVERY_KEY, raw);
-    localStorage.removeItem(LEGACY_KEY);
+    try {
+      localStorage.setItem(RECOVERY_KEY, raw);
+      localStorage.removeItem(LEGACY_KEY);
+    } catch (error) {
+      console.warn("Could not update legacy recovery keys:", error);
+    }
     setLegacyOffer(false);
     stateRef.current = parsed.state;
     setState(parsed.state);

@@ -15,6 +15,24 @@ const CATEGORIES = new Set<NotificationCategoryId>([
   "connection_alerts",
 ]);
 
+const RATE_LIMIT_WINDOW_MS = 10_000;
+const MAX_REQUESTS_PER_WINDOW = 5;
+const userSendTimestamps = new Map<string, number[]>();
+
+function checkRateLimit(userId: string): boolean {
+  const now = Date.now();
+  const timestamps = (userSendTimestamps.get(userId) ?? []).filter(
+    (t) => now - t < RATE_LIMIT_WINDOW_MS,
+  );
+  if (timestamps.length >= MAX_REQUESTS_PER_WINDOW) {
+    userSendTimestamps.set(userId, timestamps);
+    return false;
+  }
+  timestamps.push(now);
+  userSendTimestamps.set(userId, timestamps);
+  return true;
+}
+
 /**
  * Product / client-triggered push for the signed-in user.
  * Requires a live Expo device unless the account is demo (then stub outbox).
@@ -47,6 +65,11 @@ export async function POST(request: Request) {
     !body.payload.body.trim()
   ) {
     return NextResponse.json({ error: "invalid_payload" }, { status: 400 });
+  }
+
+  // Count only well-formed sends so bad clients cannot burn the window.
+  if (!checkRateLimit(userId)) {
+    return NextResponse.json({ error: "too_many_requests" }, { status: 429 });
   }
 
   const payload: NotificationDeliveryPayload = {

@@ -41,12 +41,14 @@ const DEVICE_PROVIDERS = new Set<ProviderId>(["apple_health", "google_health"]);
 
 function YouContent() {
   const { user, signOut, demoMode } = useAuth();
-  const { state, dispatch } = useCompete();
+  const { state, dispatch, loadStatus } = useCompete();
   const [name, setName] = useState("");
   const [city, setCity] = useState("");
-  const [seeded, setSeeded] = useState(false);
+  /** Tracks which account the form fields were seeded from (resets on switch). */
+  const seededFor = useRef<string | null>(null);
   const [syncNote, setSyncNote] = useState<string | null>(null);
   const searchParams = useSearchParams();
+  const accountKey = user?.id ?? "guest";
   const pushIdentity: SyncIdentity | null = user
     ? { userId: user.id, localOnly: demoMode || user.mode === "demo" }
     : null;
@@ -54,16 +56,29 @@ function YouContent() {
   const trackerProvider = searchParams.get("provider");
   const appliedTracker = useRef<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
-
-  if (state && !seeded) {
-    setSeeded(true);
-    setName(state.name);
-    setCity(state.city);
-  }
+  const accountReady =
+    loadStatus === "ready" || loadStatus === "local" || loadStatus === "failed";
 
   useEffect(() => {
-    const key = `${tracker}:${trackerProvider ?? "strava"}`;
-    if (!state || !tracker || appliedTracker.current === key) return;
+    if (loadStatus === "loading" || !state) {
+      if (loadStatus === "loading") {
+        seededFor.current = null;
+        appliedTracker.current = null;
+      }
+      return;
+    }
+    if (seededFor.current === accountKey) return;
+    seededFor.current = accountKey;
+    appliedTracker.current = null;
+    setName(state.name);
+    setCity(state.city);
+  }, [accountKey, loadStatus, state]);
+
+  useEffect(() => {
+    // Only apply OAuth return params after this account's compete load settled.
+    if (!accountReady || !state || !tracker) return;
+    const key = `${accountKey}:${tracker}:${trackerProvider ?? "strava"}`;
+    if (appliedTracker.current === key) return;
     appliedTracker.current = key;
     const provider = (trackerProvider ?? "strava") as ProviderId;
     if (!OAUTH_PROVIDERS.has(provider)) return;
@@ -83,9 +98,18 @@ function YouContent() {
         "That tracker did not connect. Sign in and try the link again.",
       );
     }
-  }, [dispatch, state, tracker, trackerProvider]);
+  }, [
+    accountKey,
+    accountReady,
+    dispatch,
+    state,
+    tracker,
+    trackerProvider,
+  ]);
 
-  if (!state) return <p className="fb-copy">Loading…</p>;
+  if (!state || loadStatus === "loading") {
+    return <p className="fb-copy">Loading…</p>;
+  }
 
   const now = competeNow(state);
   const board = buildSplitBoard(state, state.primary, "open", now);

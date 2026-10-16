@@ -27,8 +27,9 @@ export function activityEffort(activity: Activity): number {
   if (km <= 0) return 0;
   let pace = 0;
   if (activity.distanceM > 500 && activity.movingSec > 0) {
+    const basePace = sport.basePaceMinPerKm ?? 6.5;
     const minPerKm = activity.movingSec / 60 / km;
-    pace = clamp(0, 1, (6.5 - minPerKm) / 6.5) * PACE_WEIGHT;
+    pace = clamp(0, 1, (basePace - minPerKm) / basePace) * PACE_WEIGHT;
   }
   return km * (1 + hr + pace);
 }

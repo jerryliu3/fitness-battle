@@ -65,6 +65,11 @@ export function sameWorkout(left: Activity, right: Activity): boolean {
     new Date(left.startedAt).getTime() - new Date(right.startedAt).getTime(),
   );
   if (Number.isNaN(startGap) || startGap > 120_000) return false;
+  if (!sportById(left.sport).gps) {
+    const timeGap = Math.abs(left.movingSec - right.movingSec);
+    const toleranceSec = Math.max(120, Math.max(left.movingSec, right.movingSec) * 0.1);
+    return timeGap <= toleranceSec;
+  }
   const distanceGap = Math.abs(left.distanceM - right.distanceM);
   const tolerance = Math.max(200, Math.max(left.distanceM, right.distanceM) * 0.05);
   return distanceGap <= tolerance;
