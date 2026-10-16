@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { type EmberPose } from "@fitness-battle/shared/mascot";
+import { type EmberPose, type EmberMorphConcept } from "@fitness-battle/shared/mascot";
 import { Ember } from "@/components/mascot/ember";
 import {
   BOOT_DURATION_MS,
@@ -19,13 +19,15 @@ type BootSplashProps = {
   onAnimationComplete: () => void;
   /** Authoring surface only; product callers leave this undefined. */
   progress?: number;
+  /** Optional anatomical candidates for the authoring surface. */
+  morphConcept?: EmberMorphConcept;
 };
 
 /**
  * Product boot splash: OVERTAKE → OVERTAEK.
  * A single K outline unfolds into Ember, flies the word and returns to K.
  */
-export function BootSplash({ waiting = false, onAnimationComplete, progress }: BootSplashProps) {
+export function BootSplash({ waiting = false, onAnimationComplete, progress, morphConcept = "baseline" }: BootSplashProps) {
   const stageRef = useRef<HTMLDivElement>(null);
   const wordRef = useRef<HTMLDivElement>(null);
   const lettersRef = useRef<HTMLSpanElement>(null);
@@ -213,7 +215,7 @@ export function BootSplash({ waiting = false, onAnimationComplete, progress }: B
           </span>
         </div>
         <span ref={emberHostRef} className="boot-splash-ember-fly" aria-hidden="true">
-          <Ember pose={pose} morph={morph} shadow={false} />
+          <Ember pose={pose} morph={morph} morphConcept={morphConcept} shadow={false} />
         </span>
       </div>
       {waiting ? (

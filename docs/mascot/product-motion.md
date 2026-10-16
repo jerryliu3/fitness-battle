@@ -5,6 +5,50 @@ inspect five morph poses, then advance/rewind a small field using the production
 lane and leaderboard components. The field uses explicitly labeled preview data.
 `/today` exercises the actual checkpoint and coaching sheet.
 
+## Anatomical morph prototypes
+
+The review page now opens with two candidates, each using explicit anatomical
+landmarks along both contours. Corner names below are from the viewer's K;
+limb names are from Ember's perspective. Concept 2 incorporates the clarified
+bottom-left → right-leg assignment.
+
+| K branch | 01 · Crest first | 02 · Race start |
+| --- | --- | --- |
+| Top left | Hair/crest | Right arm |
+| Top right | Left arm | Hair/crest |
+| Bottom left | Right arm + right leg | Right leg |
+| Bottom right | Left leg | Left arm + left leg |
+
+Both candidates converge to the same original K and the same resting Ember.
+The paired arm and leg occupy separate landmarks on one K branch. This lets
+them unfold in perimeter order, without crossing two edges through the body.
+Concept 1 holds the right arm alongside the leg before releasing it. Concept 2
+gathers the left arm and bent left leg in a starting stance. Source wrists and
+foot rotate around the rig's joints while shape keys describe the elbow/cuff;
+they retain their reach instead of scaling down. The orange crescent follows
+the crest during the morph.
+
+Replay each candidate, **Play both concepts**, scrub either independently,
+or toggle colored **Limb guides** to track identities. The loading-preview
+selector also places either candidate into the complete production sequence.
+The actual application still defaults to `baseline`; selecting a prototype on
+this page does not change product settings. Reduced Motion skips automatic
+replay to the static Ember endpoint; manual scrubbing remains available.
+
+![Two reversible limb-mapping candidates](ember-limb-concepts.gif)
+
+The source is `packages/shared/src/mascot/limb-morph.ts`. Its tests sweep both
+morphs for finite coordinates, winding and edge crossings, check branch
+assignments, and check joint reach through the release. To regenerate the GIF,
+use the existing TypeScript compiler and Sharp dependency:
+
+```sh
+pnpm --filter @fitness-battle/shared exec tsc src/mascot/index.ts --target ES2022 --module commonjs --outDir /private/tmp/ember-limb-compiled --skipLibCheck
+node packages/shared/scripts/export-limb-concepts.cjs /private/tmp/ember-limb-compiled
+```
+
+The preview clock is shared by the browser and exporter.
+
 ## Review and changes
 
 The previous loader moved a mascot around the word but crossfaded to a separate

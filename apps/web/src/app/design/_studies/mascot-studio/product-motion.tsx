@@ -4,12 +4,14 @@ import Link from "next/link";
 import { BootSplash } from "@/shell/boot-splash";
 import { Ember } from "@/components/mascot/ember";
 import { BOOT_DURATION_MS } from "@fitness-battle/shared/boot";
+import type { EmberMorphConcept } from "@fitness-battle/shared/mascot";
 import { FieldRoster } from "@/features/split/components/field-roster";
 import { LaneTrack } from "@/features/field/components/lane-track";
 import { valueAt, type SceneRunner } from "@/features/field/geometry";
 import "@/features/split/split.css";
 import "@/features/field/field.css";
 import styles from "./product-motion.module.css";
+import { LimbConcepts } from "./limb-concepts";
 
 const runners: SceneRunner[] = [
   { id: "preview-mira", name: "Mira", initials: "MI", series: [0, 2, 4, 4, 6, 7] },
@@ -20,6 +22,7 @@ const runners: SceneRunner[] = [
 export function ProductMotionStudy() {
   const [progress,setProgress]=useState<number|undefined>(0);
   const [replay,setReplay]=useState(0);
+  const [bootConcept,setBootConcept]=useState<EmberMorphConcept>("baseline");
   const [friday,setFriday]=useState(false);
   const [selected,setSelected]=useState("preview-you");
   const time=friday?5:2;
@@ -29,9 +32,11 @@ export function ProductMotionStudy() {
     <header><Link href="/design/mascot">← Character studio</Link><span>PRODUCT MOTION / 01</span></header>
     <p className={styles.eyebrow}>ONE OUTLINE. EVERY MOVE.</p>
     <h1>A little spark.<br/>A familiar signature.</h1>
-    <p className={styles.intro}>K unfolds into Ember, flies behind the word, rounds the O, then returns as the final K. One surface carries the whole transformation.</p>
+    <p className={styles.intro}>Carry the K’s branches into Ember’s limbs. Compare two anatomical mappings, then review the loading sequence and field motion below.</p>
+    <LimbConcepts/>
+    <div className={styles.loadingHeading}><h2>Try it in the loading sequence.</h2><label>Loading morph<select aria-label="Loading morph concept" value={bootConcept} onChange={event=>{setBootConcept(event.target.value as EmberMorphConcept);setProgress(0);}}><option value="baseline">Current baseline</option><option value="crest-first">01 · Crest first</option><option value="race-start">02 · Race start</option></select></label></div>
     <section className={styles.preview} aria-label="Production loading animation review">
-      <BootSplash key={replay} progress={progress} onAnimationComplete={()=>setProgress(1)} />
+      <BootSplash key={`${replay}-${bootConcept}`} morphConcept={bootConcept} progress={progress} onAnimationComplete={()=>setProgress(1)} />
     </section>
     <div className={styles.controls}>
       <button onClick={()=>{setProgress(undefined);setReplay(v=>v+1);}}>Replay loading sequence ↗</button>
