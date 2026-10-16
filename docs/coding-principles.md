@@ -23,7 +23,8 @@
 4. **Security & Data Integrity**:
    - Database functions marked `SECURITY DEFINER` must set `SET search_path = ''` and check `auth.uid()`.
    - Never expose third-party client secrets (e.g., Strava client secret) on client devices or public bundles.
-   - OAuth state parameters must be HMAC-signed with expiration.
+   - OAuth state parameters must be HMAC-signed with expiration; production must not fall back to a hard-coded signing secret.
+   - API routes that touch RLS-backed tables should use `createRequestClient(request)` so mobile Bearer tokens see `auth.uid()` the same way cookie sessions do.
 
 5. **Testing & Quality**:
    - Every semantic change to scoring, Elo calculations, period bounds, or database models must ship with unit tests in Vitest.

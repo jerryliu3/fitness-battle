@@ -174,7 +174,20 @@ export function migrateCompeteState(parsed: CompeteState): CompeteState {
         lockPeriod: clock.periodStart,
       };
     }
-    return existing;
+    return {
+      sport,
+      verifiedElo:
+        typeof existing.verifiedElo === "number" ? existing.verifiedElo : ELO_BASE,
+      openElo: typeof existing.openElo === "number" ? existing.openElo : ELO_BASE,
+      optedIn: Boolean(existing.optedIn),
+      lockVerified:
+        typeof existing.lockVerified === "number" ? existing.lockVerified : ELO_BASE,
+      lockOpen: typeof existing.lockOpen === "number" ? existing.lockOpen : ELO_BASE,
+      lockPeriod:
+        typeof existing.lockPeriod === "string" && existing.lockPeriod
+          ? existing.lockPeriod
+          : clock.periodStart,
+    };
   });
 
   const existingLinks = new Map(
@@ -507,6 +520,16 @@ function settleTrackResult(input: {
   };
 }
 
+/**
+ * 0-based seat for Elo + period history.
+ * `findIndex === -1` must never pass through: place+1 would become 0 (DB check)
+ * and settleElo would treat it as better than first.
+ */
+export function placeOrLast(index: number, fieldSize: number): number {
+  if (index >= 0) return index;
+  return Math.max(0, fieldSize - 1);
+}
+
 function settleEnrollment(
   state: CompeteState,
   enrollment: WaveEnrollment,
@@ -529,8 +552,9 @@ function settleEnrollment(
   const openRows = groupFor(state, sport, "open", enrollment, asOf);
   const verifiedIdx = verifiedRows.findIndex((row) => row.you);
   const openIdx = openRows.findIndex((row) => row.you);
-  const verifiedPlace = verifiedIdx >= 0 ? verifiedIdx : Math.max(0, verifiedRows.length - 1);
-  const openPlace = openIdx >= 0 ? openIdx : Math.max(0, openRows.length - 1);
+  const verifiedPlace = placeOrLast(verifiedIdx, verifiedRows.length);
+  const openPlace = placeOrLast(openIdx, openRows.length);
+  // Missing you → zero effort so Elo takes inactivity decay, not a fake last-place race.
   const verifiedEffort = verifiedIdx >= 0 ? (verifiedRows[verifiedIdx]?.effort ?? 0) : 0;
   const openEffort = openIdx >= 0 ? (openRows[openIdx]?.effort ?? 0) : 0;
   const youVerified = verifiedIdx >= 0 ? verifiedRows[verifiedIdx] : undefined;

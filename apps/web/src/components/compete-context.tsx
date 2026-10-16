@@ -78,9 +78,18 @@ function parseStored(raw: string | null): { savedAt: string; state: CompeteState
   }
 }
 
+function readStorageItem(key: string): string | null {
+  try {
+    return localStorage.getItem(key);
+  } catch (error) {
+    console.warn("Could not read compete state from local storage:", error);
+    return null;
+  }
+}
+
 function readLocal(userId: string | null): { savedAt: string; state: CompeteState } {
   return (
-    parseStored(localStorage.getItem(storageKey(userId))) ?? {
+    parseStored(readStorageItem(storageKey(userId))) ?? {
       savedAt: new Date(0).toISOString(),
       state: rollClock(freshState()),
     }
@@ -166,7 +175,7 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
     const accountId = userId;
     let cancelled = false;
     const signedIn = Boolean(accountId) && !(demoMode || user?.mode === "demo");
-    setLegacyOffer(signedIn && parseStored(localStorage.getItem(LEGACY_KEY)) != null);
+    setLegacyOffer(signedIn && parseStored(readStorageItem(LEGACY_KEY)) != null);
     const local = readLocal(accountId);
 
     const settle = (chosen: CompeteState, savedAt: string, status: LoadStatus) => {
@@ -196,8 +205,12 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
       })
       .then((body) => {
         if (cancelled || userIdRef.current !== accountId || !accountId) return;
-        const staleDeviceDraft = localStorage.getItem(deviceOnlyKey(accountId)) === "1";
-        localStorage.removeItem(deviceOnlyKey(accountId));
+        const staleDeviceDraft = readStorageItem(deviceOnlyKey(accountId)) === "1";
+        try {
+          localStorage.removeItem(deviceOnlyKey(accountId));
+        } catch {
+          /* ignore quota / private-mode failures */
+        }
         if (staleDeviceDraft && body?.updatedAt && isCompeteState(body.state)) {
           settle(rollClock(migrateCompeteState(body.state)), body.updatedAt, "ready");
           return;
@@ -226,13 +239,17 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
 
   const recoverLegacy = useCallback(() => {
     const accountId = userIdRef.current;
-    const raw = localStorage.getItem(LEGACY_KEY);
+    const raw = readStorageItem(LEGACY_KEY);
     const parsed = parseStored(raw);
     if (!accountId || !raw || !parsed) return;
     const stamped = new Date().toISOString();
     writeLocal(accountId, parsed.state, stamped);
-    localStorage.setItem(RECOVERY_KEY, raw);
-    localStorage.removeItem(LEGACY_KEY);
+    try {
+      localStorage.setItem(RECOVERY_KEY, raw);
+      localStorage.removeItem(LEGACY_KEY);
+    } catch (error) {
+      console.warn("Could not update legacy recovery keys:", error);
+    }
     setLegacyOffer(false);
     stateRef.current = parsed.state;
     setState(parsed.state);

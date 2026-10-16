@@ -24,7 +24,7 @@ import { BootSplash } from "./boot-splash";
 import { isCompeteDataReady, shouldShowBootSplash } from "./boot-gate";
 import "./shell.css";
 
-function renderTab(tabId: ShellTabId): ReactNode {
+function renderTab(tabId: ShellTabId, accountKey: string): ReactNode {
   switch (tabId) {
     case "today":
       return <TodayScreen />;
@@ -33,7 +33,8 @@ function renderTab(tabId: ShellTabId): ReactNode {
     case "field":
       return <FieldScreen />;
     case "you":
-      return <YouRoute />;
+      // Remount Athlete on account switch so form/local UI cannot leak across users.
+      return <YouRoute key={accountKey} />;
   }
 }
 
@@ -60,6 +61,7 @@ export function PhoneShell({
   const [bootAnimDone, setBootAnimDone] = useState(false);
   const matched = shellTabFromPath(path)?.id ?? null;
   const active = pressed ?? matched;
+  const accountKey = user?.id ?? "guest";
   const [visited, setVisited] = useState<Set<ShellTabId>>(() =>
     new Set(matched ? [matched] : ["today"]),
   );
@@ -161,7 +163,7 @@ export function PhoneShell({
                   inert={!on}
                   aria-hidden={!on}
                 >
-                  {visited.has(tab.id) ? panel(renderTab(tab.id)) : null}
+                  {visited.has(tab.id) ? panel(renderTab(tab.id, accountKey)) : null}
                 </div>
               );
             })}

@@ -2,9 +2,11 @@ import { describe, expect, it } from "vitest";
 import { activityFromSample } from "../fitness/samples";
 import { activityEffort } from "./effort";
 import { sameWorkout } from "./ledger";
+import { settleElo } from "./elo";
 import {
   freshState,
   migrateCompeteState,
+  placeOrLast,
   reduceCompete,
   rollClock,
   weeklyBoard,
@@ -344,6 +346,19 @@ describe("compete engine", () => {
     });
     const rolled = rollClock(pinned, new Date("2026-10-19T12:00:00.000Z"));
     expect(rolled.crewBoard).toBeNull();
+  });
+
+  it("guards missing settlement seats so place stays >= 1 and Elo is not inflated", () => {
+    expect(placeOrLast(-1, 8)).toBe(7);
+    expect(placeOrLast(-1, 0)).toBe(0);
+    expect(placeOrLast(2, 8)).toBe(2);
+    // Stored history uses place + 1; -1 would become 0 and fail place >= 1 checks.
+    expect(placeOrLast(-1, 8) + 1).toBeGreaterThanOrEqual(1);
+
+    const opponents = [1000, 1000, 1000];
+    const inflated = settleElo(1000, opponents, -1, 4, 12, false);
+    const lastPlace = settleElo(1000, opponents, placeOrLast(-1, 4), 4, 12, false);
+    expect(inflated).toBeGreaterThan(lastPlace);
   });
 
   it("scales pace bonus based on sport-specific baseline", () => {

@@ -44,9 +44,11 @@ function YouContent() {
   const { state, dispatch } = useCompete();
   const [name, setName] = useState("");
   const [city, setCity] = useState("");
-  const seeded = useRef(false);
+  /** Tracks which account the form fields were seeded from (resets on switch). */
+  const seededFor = useRef<string | null>(null);
   const [syncNote, setSyncNote] = useState<string | null>(null);
   const searchParams = useSearchParams();
+  const accountKey = user?.id ?? "guest";
   const pushIdentity: SyncIdentity | null = user
     ? { userId: user.id, localOnly: demoMode || user.mode === "demo" }
     : null;
@@ -56,15 +58,16 @@ function YouContent() {
   const fileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    if (state && !seeded.current) {
-      seeded.current = true;
-      setName(state.name);
-      setCity(state.city);
-    }
-  }, [state]);
+    if (!state) return;
+    if (seededFor.current === accountKey) return;
+    seededFor.current = accountKey;
+    appliedTracker.current = null;
+    setName(state.name);
+    setCity(state.city);
+  }, [accountKey, state]);
 
   useEffect(() => {
-    const key = `${tracker}:${trackerProvider ?? "strava"}`;
+    const key = `${accountKey}:${tracker}:${trackerProvider ?? "strava"}`;
     if (!state || !tracker || appliedTracker.current === key) return;
     appliedTracker.current = key;
     const provider = (trackerProvider ?? "strava") as ProviderId;
@@ -85,7 +88,7 @@ function YouContent() {
         "That tracker did not connect. Sign in and try the link again.",
       );
     }
-  }, [dispatch, state, tracker, trackerProvider]);
+  }, [accountKey, dispatch, state, tracker, trackerProvider]);
 
   if (!state) return <p className="fb-copy">Loading…</p>;
 

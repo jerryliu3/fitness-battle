@@ -25,6 +25,7 @@ function checkRateLimit(userId: string): boolean {
     (t) => now - t < RATE_LIMIT_WINDOW_MS,
   );
   if (timestamps.length >= MAX_REQUESTS_PER_WINDOW) {
+    userSendTimestamps.set(userId, timestamps);
     return false;
   }
   timestamps.push(now);
@@ -53,10 +54,6 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "authentication_required" }, { status: 401 });
   }
 
-  if (!checkRateLimit(userId)) {
-    return NextResponse.json({ error: "too_many_requests" }, { status: 429 });
-  }
-
   const category = body?.payload?.category;
   if (!category || !CATEGORIES.has(category as NotificationCategoryId)) {
     return NextResponse.json({ error: "invalid_category" }, { status: 400 });
@@ -68,6 +65,11 @@ export async function POST(request: Request) {
     !body.payload.body.trim()
   ) {
     return NextResponse.json({ error: "invalid_payload" }, { status: 400 });
+  }
+
+  // Count only well-formed sends so bad clients cannot burn the window.
+  if (!checkRateLimit(userId)) {
+    return NextResponse.json({ error: "too_many_requests" }, { status: 429 });
   }
 
   const payload: NotificationDeliveryPayload = {
