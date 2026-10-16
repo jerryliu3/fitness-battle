@@ -79,7 +79,9 @@ export function FieldStage({
     ghost: r.ghost,
   }));
   const chosen =
-    selected === ghost?.id ? ghost : runners.find((r) => r.id === selected);
+    selected === ghost?.id && showGhost
+      ? ghost
+      : runners.find((r) => r.id === selected);
   if (!you) return <p className="fb-copy">Join a field to see your lanes.</p>;
   return (
     <section className="focus-arena-stage">
@@ -217,7 +219,11 @@ export function FieldStage({
             <input
               type="checkbox"
               checked={showGhost}
-              onChange={(e) => setShowGhost(e.target.checked)}
+              onChange={(e) => {
+                const next = e.target.checked;
+                setShowGhost(next);
+                if (!next && selected === ghost?.id) setSelected(null);
+              }}
             />{" "}
             Past you
           </label>
