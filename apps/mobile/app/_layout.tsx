@@ -16,6 +16,7 @@ import { GestureHandlerRootView } from "react-native-gesture-handler";
 import "../global.css";
 // Registers the foreground notification handler.
 import "../src/lib/expo-push-register";
+import { AuthProvider } from "../src/lib/auth";
 import { CompeteProvider } from "../src/lib/compete-store";
 import { SHELL_COLORS } from "../src/theme";
 import { BootGate } from "../src/ui/boot-gate";
@@ -80,18 +81,20 @@ export default function RootLayout() {
   return (
     <GestureHandlerRootView style={{ flex: 1, backgroundColor: SHELL_COLORS.paper }}>
       <HeroUINativeProvider>
-        <CompeteProvider>
-          <BootGate>
-            <StatusBar style="dark" />
-            <Stack
-              screenOptions={{
-                headerShown: false,
-                contentStyle: { backgroundColor: SHELL_COLORS.paper },
-                animation: "fade",
-              }}
-            />
-          </BootGate>
-        </CompeteProvider>
+        <AuthProvider>
+          <CompeteProvider>
+            <BootGate>
+              <StatusBar style="dark" />
+              <Stack
+                screenOptions={{
+                  headerShown: false,
+                  contentStyle: { backgroundColor: SHELL_COLORS.paper },
+                  animation: "fade",
+                }}
+              />
+            </BootGate>
+          </CompeteProvider>
+        </AuthProvider>
       </HeroUINativeProvider>
     </GestureHandlerRootView>
   );

@@ -11,8 +11,14 @@ import { Input } from "heroui-native/input";
 import { useEffect, useRef, useState } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useAuth } from "../../src/lib/auth";
 import { useCompeteStore } from "../../src/lib/compete-store";
-import { syncAppleHealth, syncHealthConnect } from "../../src/lib/device-health";
+import {
+  createAppleHealthDeps,
+  createHealthConnectDeps,
+  syncAppleHealth,
+  syncHealthConnect,
+} from "../../src/lib/device-health";
 import { providersForDevice } from "../../src/lib/platform-providers";
 import {
   isCloudOAuthProvider,
@@ -25,8 +31,19 @@ function isDeviceProvider(id: ProviderId): id is "apple_health" | "google_health
   return id === "apple_health" || id === "google_health";
 }
 
+type AuthMode = "signin" | "signup";
+
 export default function YouScreen() {
   const { state, dispatch } = useCompeteStore();
+  const {
+    user,
+    loading: authLoading,
+    demoMode,
+    accessToken,
+    signIn,
+    signUp,
+    signOut,
+  } = useAuth();
   const router = useRouter();
   const params = useLocalSearchParams<{ tracker?: string; provider?: string }>();
   const [name, setName] = useState<string | null>(null);
@@ -34,6 +51,12 @@ export default function YouScreen() {
   const [note, setNote] = useState<string | null>(null);
   const [syncBusy, setSyncBusy] = useState(false);
   const [busyProvider, setBusyProvider] = useState<string | null>(null);
+  const [authMode, setAuthMode] = useState<AuthMode>("signin");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [displayName, setDisplayName] = useState("");
+  const [authBusy, setAuthBusy] = useState(false);
+  const [authNote, setAuthNote] = useState<string | null>(null);
   const appliedTracker = useRef<string | null>(null);
 
   useEffect(() => {
@@ -60,10 +83,17 @@ export default function YouScreen() {
     }
   }, [dispatch, params.provider, params.tracker, state]);
 
-  if (!state) {
+  useEffect(() => {
+    if (!user) return;
+    if (user.displayName) {
+      dispatch({ type: "rename", name: user.displayName });
+    }
+  }, [dispatch, user?.displayName, user?.id]);
+
+  if (!state || authLoading) {
     return (
       <SafeAreaView style={styles.safe}>
-        <Text style={styles.copy}>Loading you…</Text>
+        <Text style={styles.copy}>Loading account…</Text>
       </SafeAreaView>
     );
   }
@@ -75,24 +105,83 @@ export default function YouScreen() {
   const rank = rankForElo(rating?.openElo ?? 1000);
   const cards = awardCards(state);
   const rowBusy = syncBusy || Boolean(busyProvider);
+  const signedIn = Boolean(user);
+
+  async function submitAuth() {
+    setAuthBusy(true);
+    setAuthNote(null);
+    try {
+      if (authMode === "signin") {
+        const result = await signIn(email, password);
+        if (result.error) {
+          setAuthNote(result.error);
+          return;
+        }
+        setPassword("");
+        setAuthNote(null);
+        return;
+      }
+      const result = await signUp({
+        email,
+        password,
+        displayName: displayName.trim() || email.split("@")[0] || "Athlete",
+      });
+      if (result.error) {
+        setAuthNote(result.error);
+        return;
+      }
+      if (result.needsEmailConfirm) {
+        setAuthNote("Check your email to confirm, then sign in.");
+        setAuthMode("signin");
+        return;
+      }
+      setPassword("");
+      setAuthNote(null);
+    } finally {
+      setAuthBusy(false);
+    }
+  }
 
   async function syncDevice(providerId: "apple_health" | "google_health") {
     if (rowBusy) return;
+    if (!user) {
+      setNote("Sign in above to sync workouts to your account.");
+      return;
+    }
     setSyncBusy(true);
     setNote(null);
     try {
+      const localOnly = user.mode === "demo" || demoMode;
+      const ingestAuth = {
+        localOnly,
+        getAccessToken: async () => ({
+          token: accessToken ?? undefined,
+          userId: user.id,
+        }),
+      };
       const result =
         providerId === "apple_health"
-          ? await syncAppleHealth()
-          : await syncHealthConnect();
-      setNote(result.message);
-      if (result.ok && result.count > 0) {
+          ? await syncAppleHealth(createAppleHealthDeps(ingestAuth))
+          : await syncHealthConnect(createHealthConnectDeps(ingestAuth));
+      // "Connected" means device permission (or a successful upload). Upload
+      // failures keep Connected when already authorized, with a clear note.
+      if (result.ok || result.authorized) {
         dispatch({
           type: "apply-sync",
           provider: providerId,
           activities: [],
           linkStatus: "connected",
         });
+      }
+      if (!result.ok && result.authorized) {
+        const prefix = "Connected on this phone.";
+        setNote(
+          result.message.startsWith(prefix)
+            ? result.message
+            : `${prefix} ${result.message}`,
+        );
+      } else {
+        setNote(result.message);
       }
     } catch (error) {
       setNote(error instanceof Error ? error.message : "Sync failed");
@@ -103,6 +192,19 @@ export default function YouScreen() {
 
   async function connectCloud(providerId: ProviderId) {
     if (!isCloudOAuthProvider(providerId) || rowBusy) return;
+    if (!user) {
+      setNote("Sign in above to connect cloud trackers.");
+      return;
+    }
+    if (user.mode === "demo" || demoMode || !accessToken) {
+      dispatch({ type: "link", provider: providerId });
+      setNote(
+        user.mode === "demo" || demoMode
+          ? "Demo account — cloud trackers need a live signed-in account."
+          : "Session expired. Sign out and sign in again to connect trackers.",
+      );
+      return;
+    }
     appliedTracker.current = null;
     setBusyProvider(providerId);
     setNote(null);
@@ -121,8 +223,6 @@ export default function YouScreen() {
         appliedTracker.current = `stub:${linked}`;
         dispatch({ type: "link", provider: linked });
       }
-      // Cancelled false-positives are handled in startCloudTrackerConnect (Android
-      // dismiss race waits for the deep link before returning cancelled).
       setNote(result.message);
     } catch (error) {
       setNote(error instanceof Error ? error.message : "Could not start connect.");
@@ -131,22 +231,119 @@ export default function YouScreen() {
     }
   }
 
+  if (!signedIn) {
+    return (
+      <SafeAreaView style={styles.safe} edges={["top"]}>
+        <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
+          <Text style={styles.kicker}>Account</Text>
+          <Text style={styles.name}>Sign in to Overtaek</Text>
+          <Text style={styles.copy}>
+            Create an account or sign in to sync Apple Health, connect trackers, and
+            keep your battles on this device.
+            {demoMode ? " Demo mode stores a local account on this phone." : ""}
+          </Text>
+
+          <View style={styles.authToggle}>
+            <Pressable
+              accessibilityRole="button"
+              onPress={() => {
+                setAuthMode("signin");
+                setAuthNote(null);
+              }}
+              style={[styles.authTab, authMode === "signin" ? styles.authTabOn : null]}
+            >
+              <Text style={styles.authTabText}>Sign in</Text>
+            </Pressable>
+            <Pressable
+              accessibilityRole="button"
+              onPress={() => {
+                setAuthMode("signup");
+                setAuthNote(null);
+              }}
+              style={[styles.authTab, authMode === "signup" ? styles.authTabOn : null]}
+            >
+              <Text style={styles.authTabText}>Create account</Text>
+            </Pressable>
+          </View>
+
+          {authMode === "signup" ? (
+            <Input
+              value={displayName}
+              onChangeText={setDisplayName}
+              accessibilityLabel="Display name"
+              placeholder="Display name"
+              autoCapitalize="words"
+            />
+          ) : null}
+          <Input
+            value={email}
+            onChangeText={setEmail}
+            accessibilityLabel="Email"
+            placeholder="Email"
+            autoCapitalize="none"
+            keyboardType="email-address"
+            autoComplete="email"
+          />
+          <Input
+            value={password}
+            onChangeText={setPassword}
+            accessibilityLabel="Password"
+            placeholder={authMode === "signup" ? "Password (6+ characters)" : "Password"}
+            secureTextEntry
+            autoComplete={authMode === "signup" ? "new-password" : "password"}
+          />
+          <Button onPress={() => void submitAuth()} isDisabled={authBusy}>
+            {authBusy
+              ? "Working…"
+              : authMode === "signin"
+                ? "Sign in"
+                : "Create account"}
+          </Button>
+          {authNote ? <Text style={styles.copy}>{authNote}</Text> : null}
+        </ScrollView>
+      </SafeAreaView>
+    );
+  }
+
+  if (!user) return null;
+  const account = user;
+
   return (
     <SafeAreaView style={styles.safe} edges={["top"]}>
-      <ScrollView contentContainerStyle={styles.scroll}>
-        <Text style={styles.kicker}>You</Text>
+      <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
+        <Text style={styles.kicker}>Signed in</Text>
         <View style={styles.portrait}>
           <Avatar color="accent" size="lg">
-            <Avatar.Fallback>{initialsFromName(state.name)}</Avatar.Fallback>
+            <Avatar.Fallback>
+              {initialsFromName(account.displayName || state.name)}
+            </Avatar.Fallback>
           </Avatar>
           <View style={styles.portraitCopy}>
-            <Text style={styles.name}>{state.name}</Text>
+            <Text style={styles.name}>{account.displayName || state.name}</Text>
+            <Text style={styles.copy}>{account.email}</Text>
             <Text style={styles.copy}>
               {rank.name} · {rating?.openElo ?? 1000}
+              {account.mode === "demo" ? " · Demo account" : ""}
             </Text>
-            <Text style={styles.copy}>{state.city}</Text>
           </View>
         </View>
+
+        <Text style={styles.section}>Account</Text>
+        <View style={styles.row}>
+          <Text style={styles.rowTitle}>Email</Text>
+          <Text style={styles.copy}>{account.email}</Text>
+        </View>
+        <View style={styles.row}>
+          <Text style={styles.rowTitle}>Display name</Text>
+          <Text style={styles.copy}>{account.displayName}</Text>
+        </View>
+        <Pressable
+          accessibilityRole="button"
+          onPress={() => void signOut()}
+          style={styles.row}
+        >
+          <Text style={styles.rowTitle}>Sign out</Text>
+        </Pressable>
 
         <Text style={styles.section}>Week awards</Text>
         <AwardShelf cards={cards} />
@@ -288,4 +485,23 @@ const styles = StyleSheet.create({
   },
   rowTitle: { fontFamily: "DMSans_700Bold", color: SHELL_COLORS.ink, fontSize: 16 },
   copy: { fontFamily: "DMSans_400Regular", color: SHELL_COLORS.muted, fontSize: 14 },
+  authToggle: { flexDirection: "row", gap: 8 },
+  authTab: {
+    flex: 1,
+    alignItems: "center",
+    paddingVertical: 12,
+    borderRadius: SHELL_RADIUS.control,
+    borderWidth: 1,
+    borderColor: SHELL_COLORS.line,
+    backgroundColor: SHELL_COLORS.card,
+  },
+  authTabOn: {
+    borderColor: SHELL_COLORS.ink,
+    backgroundColor: SHELL_COLORS.greenSoft,
+  },
+  authTabText: {
+    fontFamily: "DMSans_700Bold",
+    color: SHELL_COLORS.ink,
+    fontSize: 15,
+  },
 });
