@@ -38,7 +38,7 @@ export function launchSourcePoint(x:number,y:number,pose:EmberPose,concept:Ember
   }
   return rotateEmberPoint(p[0],p[1],[180,235],launchLean(concept,flight));
 }
-function curves(pose: EmberPose, concept: EmberLaunchConcept, flight:number,crouch=0) {
+function curves(pose: EmberPose, concept: EmberLaunchConcept, flight:number,crouch=0,skid=0) {
   const ready=1-clamp(flight);
   const body=EMBER_MODEL.body.map((segment,index)=>segment.map((v,k)=>{
     const target=held[concept][index]; return target ? v+(target[k]-v)*ready : v;
@@ -62,21 +62,33 @@ function curves(pose: EmberPose, concept: EmberLaunchConcept, flight:number,crou
     // Fold this knee inward, away from the arm resting beside that leg.
     body[6][0]+=12*bend;body[6][2]+=22*bend;
   }
+  if(concept==="crest-launch"&&skid>0) {
+    // Reach the bracing foot forward on an almost constant-length arc. Its
+    // adjacent handles move with the toe, keeping the connecting leg smooth.
+    const plant=clamp(skid)*clamp((-pose.legRight-.3)/.5);
+    for(const [segment,x,y] of [[3,2,3],[3,4,5],[4,0,1]]) {
+      body[segment][x]+=40*plant;body[segment][y]-=25*plant;
+    }
+    // A small fold at the rear hip lifts that sole clear of the ground rail.
+    for(const [segment,x,y] of [[5,2,3],[5,4,5],[6,0,1]]) {
+      body[segment][x]-=14*plant;body[segment][y]-=9*plant;
+    }
+  }
   const starts=[EMBER_MODEL.start,...body.slice(0,-1).map(s=>[s[4],s[5]])];
   return body.map((s,i)=>[starts[i],[s[0],s[1]],[s[2],s[3]],[s[4],s[5]]].map(([x,y])=>launchSourcePoint(x,y,pose,concept,flight,crouch)));
 }
 /** Screen-left and screen-right soles, after the same bend/rig as the outline. */
-export function launchFootPoints(pose:EmberPose,concept:EmberLaunchConcept,flight=0,crouch=0): Point[] {
-  const body=curves(pose,concept,flight,crouch);
+export function launchFootPoints(pose:EmberPose,concept:EmberLaunchConcept,flight=0,crouch=0,skid=0): Point[] {
+  const body=curves(pose,concept,flight,crouch,skid);
   return [body[5][3],body[3][3]];
 }
 function glyph(index:number): Point {
   const n=EMBER_K_OUTLINE.length,i=Math.floor(index),t=index-i,a=EMBER_K_OUTLINE[i%n],b=EMBER_K_OUTLINE[(i+1)%n];
   return [a[0]+(b[0]-a[0])*t,a[1]+(b[1]-a[1])*t];
 }
-export function launchMorphPoints(pose:EmberPose,amount:number,concept:EmberLaunchConcept,flight=0,crouch=0): Point[] {
+export function launchMorphPoints(pose:EmberPose,amount:number,concept:EmberLaunchConcept,flight=0,crouch=0,skid=0): Point[] {
   const morph=clamp(amount),k=knots[concept];
-  return curves(pose,concept,flight,crouch).flatMap((curve,i)=>{
+  return curves(pose,concept,flight,crouch,skid).flatMap((curve,i)=>{
     const a=k[i],b=k[i+1],samples=new Set<number>();
     for(let j=a;j<b;j++)samples.add(j);
     for(let j=0;j<20;j++)samples.add(a+(b-a)*j/20);

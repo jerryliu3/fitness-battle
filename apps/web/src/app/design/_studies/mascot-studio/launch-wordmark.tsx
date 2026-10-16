@@ -1,14 +1,14 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { sampleEmberLaunch, type EmberLaunchConcept } from "@fitness-battle/shared/mascot";
+import { sampleEmberLaunch, sampleEmberSkid, type EmberLaunchConcept } from "@fitness-battle/shared/mascot";
 import type { BootLayout } from "@fitness-battle/shared/boot";
 import { Ember } from "@/components/mascot/ember";
 import "@/shell/boot-splash.css";
 
 type Layout = BootLayout & {homeX:number;homeY:number};
 /** A separate authoring copy: no changes to the current production splash. */
-export function LaunchWordmark({progress,concept,returnToK,reducedMotion}:{progress:number;concept:EmberLaunchConcept;returnToK:boolean;reducedMotion:boolean}) {
+export function LaunchWordmark({progress,concept,returnToK,reducedMotion,sliding=false}:{progress:number;concept:EmberLaunchConcept;returnToK:boolean;reducedMotion:boolean;sliding?:boolean}) {
   const stage=useRef<HTMLDivElement>(null),word=useRef<HTMLDivElement>(null),letters=useRef<HTMLSpanElement>(null),slot=useRef<HTMLSpanElement>(null),e=useRef<HTMLSpanElement>(null);
   const [layout,setLayout]=useState<Layout|null>(null);
   useEffect(()=>{
@@ -21,7 +21,8 @@ export function LaunchWordmark({progress,concept,returnToK,reducedMotion}:{progr
     let alive=true;void document.fonts.ready.then(()=>{if(alive)measure();});
     return()=>{alive=false;observer.disconnect();};
   },[]);
-  const frame=sampleEmberLaunch(progress,concept,{layout:layout??undefined,returnToK});
+  const options={layout:layout??undefined,returnToK};
+  const frame=sliding?sampleEmberSkid(progress,options):sampleEmberLaunch(progress,concept,options);
   const size=(layout?.font??1)*.88*frame.scale;
   return <div className="boot-splash" role="img" aria-label={`${concept==="crest-launch"?"Crest first":"Race start"} loading study, ${frame.phase}`}>
     <div ref={stage} className="boot-splash-stage">
@@ -29,7 +30,7 @@ export function LaunchWordmark({progress,concept,returnToK,reducedMotion}:{progr
         <span ref={letters} className="boot-splash-letters">OVERTA</span><span ref={slot} className="boot-splash-slot"><span className="boot-splash-strut">A</span></span><span ref={e} className="boot-splash-e" style={{transform:`translateX(${-(layout?.slotWidth??0)*frame.eShift}px)`}}>E</span>
       </div>
       <span className="boot-splash-ember-fly" style={{visibility:layout?"visible":"hidden",left:(layout?.homeX??0)+frame.x,bottom:(layout?.homeY??0)-frame.y,width:size,height:size*485/360,zIndex:frame.depth<0?1:3,transform:`translate(-50%,0) scale(${frame.facing},1)`}} aria-hidden="true">
-        <Ember morph={frame.morph} morphConcept={concept} launchFlight={frame.flight} launchCrouch={frame.crouch} pose={frame.pose} landingDust={reducedMotion?undefined:frame.landingDust} shadow={false}/>
+        <Ember morph={frame.morph} morphConcept={concept} launchFlight={frame.flight} launchCrouch={frame.crouch} launchSkid={"skid" in frame?Number(frame.skid):0} pose={frame.pose} landingDust={reducedMotion?undefined:frame.landingDust} shadow={false}/>
       </span>
     </div>
   </div>;

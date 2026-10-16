@@ -45,8 +45,8 @@ function outline(pose: EmberPose): Point[] {
   });
 }
 
-function morphedPoints(pose: EmberPose, t: number, concept: EmberMorphConcept, flight = 0, crouch = 0): Point[] {
-  if (concept === "crest-launch" || concept === "race-launch") return launchMorphPoints(pose, t, concept, flight, crouch);
+function morphedPoints(pose: EmberPose, t: number, concept: EmberMorphConcept, flight = 0, crouch = 0, skid = 0): Point[] {
+  if (concept === "crest-launch" || concept === "race-launch") return launchMorphPoints(pose, t, concept, flight, crouch, skid);
   if (concept !== "baseline") return sampleLimbMorph(pose, t, concept);
   return outline(pose).map((p, i) => {
     const k = EMBER_K_OUTLINE[(i + K_SEAM) % EMBER_K_OUTLINE.length];
@@ -55,17 +55,17 @@ function morphedPoints(pose: EmberPose, t: number, concept: EmberMorphConcept, f
 }
 
 /** One continuous opaque surface, reversible at every progress value. */
-export function morphEmberContour(pose: EmberPose, amount: number, concept: EmberMorphConcept = "baseline", flight = 0, crouch = 0): string {
+export function morphEmberContour(pose: EmberPose, amount: number, concept: EmberMorphConcept = "baseline", flight = 0, crouch = 0, skid = 0): string {
   const t = clamp(amount);
   if (t === 0 && concept !== "crest-launch" && concept !== "race-launch") return emberContour(pose);
-  return `M ${morphedPoints(pose, t, concept, flight, crouch).map(point).join(" L ")} Z`;
+  return `M ${morphedPoints(pose, t, concept, flight, crouch, skid).map(point).join(" L ")} Z`;
 }
 
 /** Depth follows the new outline, leaving no old star behind the letter. */
-export function morphEmberSideWalls(pose: EmberPose, amount: number, concept: EmberMorphConcept = "baseline", flight = 0, crouch = 0): string {
+export function morphEmberSideWalls(pose: EmberPose, amount: number, concept: EmberMorphConcept = "baseline", flight = 0, crouch = 0, skid = 0): string {
   const t = clamp(amount);
   if (t === 0 && concept !== "crest-launch" && concept !== "race-launch") return emberSideWalls(pose);
-  const points = morphedPoints(pose, t, concept, flight, crouch);
+  const points = morphedPoints(pose, t, concept, flight, crouch, skid);
   const [dx, dy] = emberDepthOffset(pose).map(v => v * (1 - t));
   return points.map((a, i) => {
     const b = points[(i + 1) % points.length];

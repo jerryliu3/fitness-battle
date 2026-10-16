@@ -21,7 +21,7 @@ function orbitAt(travel:number,layout?:BootLayout) {
 export interface EmberLaunchFrame {
   x:number;y:number;scale:number;depth:number;facing:number;eShift:number;
   morph:number;flight:number;crouch:number;pose:EmberPose;landingDust?:number;
-  phase:"Unfold"|"Set"|"Crouch"|"Push off"|"Launch & orbit"|"Fast pass"|"Approach"|"Brake"|"Skid"|"Landed"|"Reform K";
+  phase:"Unfold"|"Set"|"Crouch"|"Push off"|"Launch & orbit"|"Fast pass"|"Approach"|"Brake"|"Skid"|"Landed"|"Reform K"|"Touchdown"|"Slide"|"Settle";
 }
 /** Authoring study only. The product splash and original morphs are unchanged. */
 export function sampleEmberLaunch(progress:number,concept:EmberLaunchConcept,options:{layout?:BootLayout;returnToK?:boolean;reducedMotion?:boolean}={}): EmberLaunchFrame {

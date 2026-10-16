@@ -5,3 +5,5 @@ export * from "./morph";
 export * from "./limb-morph";
 export * from "./launch-shape";
 export * from "./launch-motion";
+export * from "./skid-motion";
+export * from "./skid-rig";

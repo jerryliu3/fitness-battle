@@ -2,7 +2,7 @@
 
 import {useEffect,useRef,useState} from "react";
 import Link from "next/link";
-import {EMBER_LAUNCH_DURATION,EMBER_BRAKE_START,sampleEmberLaunch,type EmberLaunchConcept} from "@fitness-battle/shared/mascot";
+import {EMBER_LAUNCH_DURATION,EMBER_BRAKE_START,sampleEmberLaunch,sampleEmberSkid,EMBER_SKID_TOUCHDOWN,EMBER_SKID_STOP,type EmberLaunchConcept} from "@fitness-battle/shared/mascot";
 import {Ember} from "@/components/mascot/ember";
 import {LaunchWordmark} from "./launch-wordmark";
 import styles from "./launch-study.module.css";
@@ -14,14 +14,14 @@ function useLaunchClock() {
   const publish=(value:number)=>{setProgress(value);};
   const stop=()=>{cancelAnimationFrame(frameRef.current);active.current=false;setPlaying(false);};
   const seek=(value:number)=>{stop();publish(value);};
-  const play=()=>{
+  const play=(from=0,to=1)=>{
     stop();
     if(matchMedia("(prefers-reduced-motion: reduce)").matches){publish(1);return;}
-    publish(0);started.current=performance.now();active.current=true;setPlaying(true);
+    publish(from);started.current=performance.now()-from*EMBER_LAUNCH_DURATION;active.current=true;setPlaying(true);
     const tick=(now:number)=>{
       if(!active.current)return;
-      const value=Math.min(1,(now-started.current)/EMBER_LAUNCH_DURATION);publish(value);
-      if(value<1)frameRef.current=requestAnimationFrame(tick);else stop();
+      const value=Math.min(to,(now-started.current)/EMBER_LAUNCH_DURATION);publish(value);
+      if(value<to)frameRef.current=requestAnimationFrame(tick);else stop();
     };
     frameRef.current=requestAnimationFrame(tick);
   };
@@ -34,30 +34,32 @@ function useLaunchClock() {
   },[]);
   return {progress,playing,reduced,play,seek};
 }
-function CharacterStage({concept,progress,reducedMotion}:{concept:EmberLaunchConcept;progress:number;reducedMotion:boolean}) {
-  const frame=sampleEmberLaunch(progress,concept);
-  return <div className={styles.characterStage} role="img" aria-label={`${concept==="crest-launch"?"Crest first":"Race start"}, ${frame.phase}`}>
-    <div className={styles.character} style={{transform:`translate(calc(-50% + ${frame.x*12}px), ${frame.y*45-frame.flight*26}px) scale(${frame.scale*frame.facing},${frame.scale})`}}>
-      <Ember pose={frame.pose} morph={frame.morph} morphConcept={concept} launchFlight={frame.flight} launchCrouch={frame.crouch} landingDust={reducedMotion?undefined:frame.landingDust} shadow={false}/>
+function CharacterStage({concept,progress,reducedMotion,sliding=false}:{concept:EmberLaunchConcept;progress:number;reducedMotion:boolean;sliding?:boolean}) {
+  const frame=sliding?sampleEmberSkid(progress):sampleEmberLaunch(progress,concept);
+  return <div className={`${styles.characterStage} ${sliding?styles.slidingStage:""}`} role="img" aria-label={`${concept==="crest-launch"?"Crest first":"Race start"}, ${frame.phase}`}>
+    {sliding?<div className={styles.skidGround} style={{opacity:frame.phase==="Touchdown"||frame.phase==="Slide"||frame.phase==="Settle"?1:0}} aria-hidden="true"><span>Finish</span></div>:null}
+    <div className={styles.character} style={{transform:`translate(calc(-50% + ${frame.x} * var(--travel-unit, 12px)), ${frame.y*45-(sliding?0:frame.flight*26)}px) scale(${frame.scale*frame.facing},${frame.scale})`}}>
+      <Ember pose={frame.pose} morph={frame.morph} morphConcept={concept} launchFlight={frame.flight} launchCrouch={frame.crouch} launchSkid={"skid" in frame?Number(frame.skid):0} landingDust={reducedMotion?undefined:frame.landingDust} shadow={false}/>
     </div>
   </div>;
 }
-export function LaunchStudy() {
+export function LaunchStudy({sliding=false}:{sliding?:boolean}) {
   const clock=useLaunchClock();
   const [returnToK,setReturnToK]=useState(true);
   const [compareOld,setCompareOld]=useState(false);
-  const frame=sampleEmberLaunch(clock.progress,concept);
+  const frame=sliding?sampleEmberSkid(clock.progress):sampleEmberLaunch(clock.progress,concept);
   return <main className={styles.page}>
-    <header className={styles.top}><Link href="/design/mascot/motion">← Original morph study</Link><span>FOLLOW-UP / LAUNCH & LANDING</span></header>
-    <p className={styles.eyebrow}>CREST FIRST / LOAD. LAUNCH. SKID.</p><h1>A little crouch.<br/>A lot of momentum.</h1>
-    <p className={styles.intro}>Bend the knees, spring into flight, then accelerate across the word. Feet down at full speed. A hard skid, dust from both legs, and the same familiar stance.</p>
-    <div className={styles.toolbar}><button onClick={clock.play}>Replay crest first · 4.8 s ↗</button><label>Sequence time<input type="range" aria-label="Launch sequence time" min="0" max="1" step="0.001" value={clock.progress} onChange={event=>clock.seek(Number(event.target.value))}/></label><output aria-live="off">{(clock.progress*4.8).toFixed(2)} s · {frame.phase}</output></div>
-    <div className={styles.beats} aria-label="Sequence checkpoints">{[[0,"K"],[.18,"Launch stance"],[.232,"Crouch"],[.285,"Jump"],[.665,"Fast pass"],[EMBER_BRAKE_START+.015,"Skid"],[.85,"Landed"]].map(([p,label])=><button key={label} aria-pressed={Math.abs(clock.progress-Number(p))<.01} onClick={()=>clock.seek(Number(p))}>{label}</button>)}</div>
+    <header className={styles.top}><Link href={sliding?"/design/mascot/launch":"/design/mascot/motion"}>{sliding?"← Previous quick stop":"← Original morph study"}</Link><span>FOLLOW-UP / {sliding?"FRONT-FOOT SLIDE":"LAUNCH & LANDING"}</span></header>
+    {!sliding?<p className={styles.caption}><Link href="/design/mascot/skid">New follow-up: left-foot slide & friction →</Link></p>:null}
+    <p className={styles.eyebrow}>{sliding?"CREST FIRST / TOUCH DOWN. SLIDE. SETTLE.":"CREST FIRST / LOAD. LAUNCH. SKID."}</p><h1>{sliding?<>Feet down.<br/>Still moving.</>:<>A little crouch.<br/>A lot of momentum.</>}</h1>
+    <p className={styles.intro}>{sliding?"Touch down before the finish. Brace on the left foot, slide forward through a little friction chatter, then lower the arm and settle into the final stance.":"Bend the knees, spring into flight, then accelerate across the word. Feet down at full speed. A hard skid, dust from both legs, and the same familiar stance."}</p>
+    <div className={styles.toolbar}><button onClick={()=>clock.play()}>Replay {sliding?"slide":"crest first"} · 4.8 s ↗</button>{sliding?<button onClick={()=>clock.play(.62,.85)}>Replay landing ↗</button>:null}<label>Sequence time<input type="range" aria-label="Launch sequence time" min="0" max="1" step="0.001" value={clock.progress} onChange={event=>clock.seek(Number(event.target.value))}/></label><output aria-live="off">{(clock.progress*4.8).toFixed(2)} s · {frame.phase}</output></div>
+    <div className={styles.beats} aria-label="Sequence checkpoints">{(sliding?[[.18,"Launch stance"],[.65,"Fast pass"],[EMBER_SKID_TOUCHDOWN,"Touchdown"],[.725,"Slide"],[EMBER_SKID_STOP,"Stop"],[.81,"Settle"],[.85,"Standing"]]:[[0,"K"],[.18,"Launch stance"],[.232,"Crouch"],[.285,"Jump"],[.665,"Fast pass"],[EMBER_BRAKE_START+.015,"Skid"],[.85,"Landed"]]).map(([p,label])=><button key={label} aria-pressed={Math.abs(clock.progress-Number(p))<.01} onClick={()=>clock.seek(Number(p))}>{label}</button>)}</div>
     <section className={styles.cards} aria-label="Crest first launch">
-      <article className={styles.card}><span className={styles.number}>CREST FIRST / HELD STANCE</span><h2>Load. Launch. Skid.</h2><p>Feet planted for the crouch. A spring into the air. Keep flying until the feet hit, then brake.</p><CharacterStage concept={concept} progress={clock.progress} reducedMotion={clock.reduced}/><footer><span>{frame.phase}</span><b>Same pose before & after</b></footer></article>
+      <article className={styles.card}><span className={styles.number}>CREST FIRST / HELD STANCE</span><h2>{sliding?"Land early. Slide into place.":"Load. Launch. Skid."}</h2><p>{sliding?"Left foot forward. Rear leg light. Dust while sliding; stand up after stopping.":"Feet planted for the crouch. A spring into the air. Keep flying until the feet hit, then brake."}</p><CharacterStage concept={concept} progress={clock.progress} reducedMotion={clock.reduced} sliding={sliding}/><footer><span>{frame.phase}</span><b>Same pose before & after</b></footer></article>
     </section>
     <p className={styles.caption}>Ember finishes in the original crest-first launch stance. The wordmark below can then fold that stance directly back into the K.</p>
-    <section className={styles.wordmark} aria-label="Launch and landing wordmark preview"><div className={styles.wordmarkHeading}><h2>In the wordmark.</h2><label className={styles.check}><input type="checkbox" checked={returnToK} onChange={e=>setReturnToK(e.target.checked)}/> Return to K</label></div><div className={styles.wordmarkStage}><LaunchWordmark progress={clock.progress} concept={concept} returnToK={returnToK} reducedMotion={clock.reduced}/></div><div className={styles.toolbar}><button onClick={clock.play}>Replay wordmark ↗</button><label>Wordmark sequence<input type="range" aria-label="Wordmark sequence time" min="0" max="1" step="0.001" value={clock.progress} onChange={e=>clock.seek(Number(e.target.value))}/></label></div></section>
+    <section className={styles.wordmark} aria-label="Launch and landing wordmark preview"><div className={styles.wordmarkHeading}><h2>In the wordmark.</h2><label className={styles.check}><input type="checkbox" checked={returnToK} onChange={e=>setReturnToK(e.target.checked)}/> Return to K</label></div><div className={styles.wordmarkStage}><LaunchWordmark progress={clock.progress} concept={concept} returnToK={returnToK} reducedMotion={clock.reduced} sliding={sliding}/></div><div className={styles.toolbar}><button onClick={()=>clock.play()}>Replay wordmark ↗</button><label>Wordmark sequence<input type="range" aria-label="Wordmark sequence time" min="0" max="1" step="0.001" value={clock.progress} onChange={e=>clock.seek(Number(e.target.value))}/></label></div></section>
     <section className={styles.reference}><button onClick={()=>setCompareOld(value=>!value)} aria-expanded={compareOld}> {compareOld?"Hide":"Show"} original neutral endpoint</button>{compareOld?<div className={styles.oldPoses}><div><Ember morph={0} morphConcept="crest-first" shadow={false}/><p>Crest first · original endpoint</p></div></div>:null}<p><Link href="/design/mascot/motion">The complete original study remains available →</Link></p></section>
     <p className={styles.caption}>Replay is finite and stops in the background. Reduced Motion skips automatic travel and dust; the scrubber remains available for inspecting individual poses.</p>
   </main>;
