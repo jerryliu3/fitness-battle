@@ -39,7 +39,7 @@ The focused prototype remains at `/design/rally`. In production, Rally is an **a
 
 - Theme default: **Rally** (plum / tennis / Star Ember); **Form** and **Ink** remain full alternate shells
 - Rally nav labels: My week / Matchups / Moves / You (same routes as My track / The field / Splits / Athlete)
-- **Kept core:** 2D lanes + 3D Pursuit `FieldStage`, race-track / Form effort UI, numbered `ActivitySplits`, Athlete card, 1v1s, join/opt-out
+- **Kept core:** 2D lanes + 3D Pursuit `FieldStage`, race-track / Form effort UI, numbered `ActivitySplits`, Athlete card, join/opt-out (practice 1v1 removed)
 - **Additive under Rally:** personal Matchup scoreboard + replay, activity rings, Ace accents, receipts
 - Product mascot assets: `apps/web/public/brand/mascots/` and `apps/mobile/assets/mascots/`. The original Ace asset at `apps/web/public/design/worlds/rally.png` remains in historical design-lab studies.
 

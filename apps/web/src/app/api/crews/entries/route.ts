@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { resolveRequestUserId } from "@/lib/auth/request-user";
-import { createClient } from "@/lib/supabase/server";
+import { createRequestClient } from "@/lib/supabase/request";
 
 export async function POST(request: Request) {
   const userId = await resolveRequestUserId(request);
@@ -11,7 +11,7 @@ export async function POST(request: Request) {
   if (!body.crewId) {
     return NextResponse.json({ error: "crew_required" }, { status: 400 });
   }
-  const supabase = await createClient();
+  const supabase = await createRequestClient(request);
   const { data, error } = await supabase.rpc("share_crew_week", {
     p_crew_id: body.crewId,
   });

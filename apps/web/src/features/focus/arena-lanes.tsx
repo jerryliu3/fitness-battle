@@ -1,0 +1,301 @@
+"use client";
+import { useRef, useEffect } from "react";
+import {
+  arenaPosition,
+  arenaWindow,
+  orderedArenaLanes,
+  type ArenaSceneLane,
+  type ArenaViewWindow,
+} from "@fitness-battle/shared";
+export function ArenaLanes({
+  lanes,
+  view,
+  unit,
+  selected,
+  onSelect,
+  onPan,
+}: {
+  lanes: ArenaSceneLane[];
+  view: ArenaViewWindow;
+  unit: string;
+  selected: string;
+  onSelect: (id: string) => void;
+  onPan: (center: number) => void;
+}) {
+  const host = useRef<HTMLDivElement>(null);
+  const drag = useRef<{
+    y: number;
+    center: number;
+    moved: boolean;
+    id: string | null;
+  } | null>(null);
+  const ordered = orderedArenaLanes(lanes);
+  const ghost = lanes.find((l) => l.ghost);
+  const bounds = arenaWindow(view.center, view.span);
+  const width = Math.max(360, ordered.length * 72 + 52),
+    height = 540,
+    laneWidth = (width - 52) / Math.max(1, ordered.length);
+  const y = (v: number) => 72 + arenaPosition(v, view).fraction * 400;
+  useEffect(() => {
+    const el = host.current;
+    if (el) el.scrollLeft = (el.scrollWidth - el.clientWidth) / 2;
+  }, [lanes.length]);
+  return (
+    <div className="focus-lane-scroll" ref={host}>
+      <svg
+        className="focus-lane-track"
+        viewBox={`0 0 ${width} ${height}`}
+        style={{ minWidth: width }}
+        role="group"
+        aria-label={`Vertical athlete lanes, ${bounds.min.toFixed(1)} to ${bounds.max.toFixed(1)} ${unit}. Drag to explore.`}
+        tabIndex={0}
+        onKeyDown={(e) => {
+          if (e.key === "ArrowUp" || e.key === "ArrowDown") {
+            e.preventDefault();
+            onPan(
+              view.center + ((e.key === "ArrowUp" ? 1 : -1) * view.span) / 4,
+            );
+          }
+        }}
+        onPointerDown={(e) => {
+          drag.current = {
+            y: e.clientY,
+            center: view.center,
+            moved: false,
+            id:
+              (e.target as Element)
+                .closest("[data-athlete]")
+                ?.getAttribute("data-athlete") ?? null,
+          };
+          e.currentTarget.setPointerCapture(e.pointerId);
+        }}
+        onPointerMove={(e) => {
+          if (!drag.current) return;
+          const delta = e.clientY - drag.current.y;
+          if (Math.abs(delta) > 5) {
+            drag.current.moved = true;
+            onPan(drag.current.center + (delta / 400) * view.span);
+          }
+        }}
+        onPointerUp={(e) => {
+          const press = drag.current;
+          drag.current = null;
+          if (press && !press.moved && press.id) onSelect(press.id);
+        }}
+        onPointerCancel={() => {
+          drag.current = null;
+        }}
+      >
+        <defs>
+          <linearGradient id="focus-road" x2="0" y2="1">
+            <stop stopColor="#f7faf3" />
+            <stop offset="0.45" stopColor="#eef3e8" />
+            <stop offset="1" stopColor="#e4ecdc" />
+          </linearGradient>
+          <linearGradient id="focus-you-lane" x2="0" y2="1">
+            <stop stopColor="#d4ee8966" />
+            <stop offset="1" stopColor="#d4ee8920" />
+          </linearGradient>
+          <radialGradient id="focus-you-glow" cx="50%" cy="50%" r="50%">
+            <stop stopColor="#d4ee89" stopOpacity="0.55" />
+            <stop offset="1" stopColor="#d4ee89" stopOpacity="0" />
+          </radialGradient>
+          <filter id="focus-soft" x="-40%" y="-40%" width="180%" height="180%">
+            <feDropShadow
+              dx="0"
+              dy="3"
+              stdDeviation="3"
+              floodColor="#26382d"
+              floodOpacity="0.18"
+            />
+          </filter>
+        </defs>
+        <rect width={width} height={height} rx="24" fill="url(#focus-road)" />
+        <rect
+          x="10"
+          y="56"
+          width={width - 62}
+          height="430"
+          rx="18"
+          fill="#ffffff55"
+          stroke="#d7e0cf"
+        />
+        {ordered.map((l, i) => (
+          <g key={l.id}>
+            {l.you && (
+              <rect
+                x={i * laneWidth + 10}
+                y="56"
+                width={laneWidth}
+                height="430"
+                fill="url(#focus-you-lane)"
+                rx="14"
+              />
+            )}
+            <line
+              x1={i * laneWidth + 10}
+              x2={i * laneWidth + 10}
+              y1="64"
+              y2="476"
+              stroke={l.you ? "#b7c9a4" : "#d3ddcb"}
+              strokeWidth={l.you ? 1.5 : 1}
+              strokeDasharray={l.you ? "0" : "5 9"}
+            />
+            <text
+              x={(i + 0.5) * laneWidth + 10}
+              y="36"
+              textAnchor="middle"
+              className={l.you ? "lane-title is-you" : "lane-title"}
+            >
+              {l.you ? "YOU" : l.initials}
+            </text>
+          </g>
+        ))}
+        {Array.from({ length: 7 }, (_, i) => bounds.min + (bounds.span * i) / 6)
+          .filter((v) => v >= 0)
+          .map((v) => (
+            <g key={v}>
+              <line
+                x1="18"
+                x2={width - 52}
+                y1={y(v)}
+                y2={y(v)}
+                stroke="#c5d2bb"
+                strokeDasharray="2 7"
+              />
+              <text x={width - 42} y={y(v) + 4} className="lane-distance">
+                {v.toFixed(view.span < 6 ? 1 : 0)}
+              </text>
+            </g>
+          ))}
+        {bounds.min <= 0 && bounds.max >= 0 && (
+          <>
+            <line
+              x1="18"
+              x2={width - 52}
+              y1={y(0)}
+              y2={y(0)}
+              stroke="#26382d"
+              strokeWidth="2"
+            />
+            <text x="18" y={y(0) - 10} className="lane-distance">
+              START
+            </text>
+          </>
+        )}
+        {ordered.map((l, i) => {
+          const position = arenaPosition(l.value, view),
+            yy = y(l.value),
+            xx = (i + 0.5) * laneWidth + 10;
+          const active = selected === l.id || l.you;
+          return (
+            <g
+              key={l.id}
+              data-athlete={l.id}
+              role="button"
+              tabIndex={0}
+              aria-label={`${l.name}, ${l.value.toFixed(1)} ${unit}${position.edge ? `, ${position.edge} of visible range` : ""}`}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  onSelect(l.id);
+                }
+              }}
+            >
+              {l.you && (
+                <circle cx={xx} cy={yy} r="34" fill="url(#focus-you-glow)" />
+              )}
+              <circle
+                cx={xx}
+                cy={yy + 4}
+                r={l.you ? 24 : 19}
+                fill="#26382d18"
+              />
+              <circle
+                cx={xx}
+                cy={yy}
+                r={l.you ? 23 : 18}
+                fill={l.you ? "#26382d" : active ? "#d4ee89" : "#ffffff"}
+                stroke={l.you ? "#d4ee89" : active ? "#9bbf63" : "#c9d5bf"}
+                strokeWidth={l.you ? 4 : 2}
+                filter={active ? "url(#focus-soft)" : undefined}
+              />
+              <text
+                x={xx}
+                y={yy + 4}
+                textAnchor="middle"
+                className="lane-initial"
+                fill={l.you ? "#f7fbef" : "#26382d"}
+              >
+                {position.edge
+                  ? position.edge === "ahead"
+                    ? "↑"
+                    : "↓"
+                  : l.initials}
+              </text>
+              <rect
+                x={xx - 24}
+                y={yy + 28}
+                width="48"
+                height="20"
+                rx="10"
+                fill={l.you ? "#26382d" : "#ffffffee"}
+                stroke="#d3ddcb"
+              />
+              <text
+                x={xx}
+                y={yy + 42}
+                textAnchor="middle"
+                className="lane-total"
+                fill={l.you ? "#d4ee89" : "#26382d"}
+              >
+                {l.value.toFixed(1)}
+              </text>
+            </g>
+          );
+        })}
+        {ghost &&
+          (() => {
+            const i = ordered.findIndex((l) => l.you);
+            const gx = (i + 0.5) * laneWidth + 28;
+            const gy = y(ghost.value);
+            return (
+              <g
+                role="button"
+                tabIndex={0}
+                data-athlete={ghost.id}
+                aria-label={`Past you, ${ghost.value.toFixed(1)} ${unit}, not ranked`}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") onSelect(ghost.id);
+                }}
+              >
+                <circle
+                  cx={gx}
+                  cy={gy}
+                  r="13"
+                  fill="#ffffffcc"
+                  stroke="#768172"
+                  strokeDasharray="3 3"
+                />
+                <text
+                  x={gx}
+                  y={gy + 4}
+                  textAnchor="middle"
+                  className="lane-distance"
+                >
+                  ◌
+                </text>
+              </g>
+            );
+          })()}
+        <text x={width - 42} y="36" className="lane-distance">
+          {unit}
+        </text>
+        <text x="18" y="522" className="lane-distance">
+          Drag ↕ to explore · zoom keeps you centered
+        </text>
+      </svg>
+    </div>
+  );
+}

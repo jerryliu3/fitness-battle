@@ -8,8 +8,11 @@ import type { CompeteState } from "./sports";
 export function sanitizeCompeteStateForAccount(
   state: CompeteState,
 ): CompeteState {
-  if (state.demoNow == null) return state;
-  return { ...state, demoNow: null };
+  const withoutDemo =
+    state.demoNow == null ? state : { ...state, demoNow: null };
+  // Practice 1v1 is retired; strip any leftover rows on account write/load.
+  if (withoutDemo.duels.length === 0) return withoutDemo;
+  return { ...withoutDemo, duels: [] };
 }
 
 /** Drop durable crewBoard pin; hydrate from crew_week_fields at load. */

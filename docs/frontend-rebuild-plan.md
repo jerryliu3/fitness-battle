@@ -19,6 +19,8 @@ isProject: false
 
 # Rebuild both apps from the Goalmaxxing phone UX
 
+> Selection update (October 16, 2026): Focus is now the production direction, with Trail’s Crew layout and Elo/benchmarks at the top of Athlete. The live Arena keeps vertical 2D/3D lanes with a user-centered window; replay and what-if controls are removed. See [the current design guide](design-guide.md) and [implementation notes](focus-implementation.md). The original plan below is retained as history.
+
 Fitness Battle already has two frontends: [apps/web](apps/web) (Next.js) and [apps/mobile](apps/mobile) (Expo). They should show the same product. When a choice conflicts, the phone app wins. The web app stays long term and may add web-only pieces, but it does not get a different information architecture.
 
 Goalmaxxing is a Next.js app built to feel like a phone. We use that UX as the baseline for both Fitness Battle apps: one shell, a bottom tab bar, a page that keeps its tab when a sheet opens on top, optimistic tab highlight, and tab data that is warm before you tap. We do not copy Cadence screens, coach, or XP. On Expo we rebuild those patterns with a native library. On the web we can adapt Goalmaxxing’s shell more directly.
@@ -29,8 +31,8 @@ Functionality, data, and the custom screens we already like stay. They move into
 
 - **Checkpoints.** The winding Today view: past counted sessions, Ace on today’s suggestion, blank future nodes, and the return that opens Arena when there is new counted progress. The route, discs, and mascot stay. Buttons and labels around them can be replaced.
 - **2D competition.** The lane track and the standings it draws from. Same model, same lanes. The toggle, replay, and surrounding totals can be restyled.
-- **3D competition.** The existing pursuit render stays on the web Arena, switched with the 2D track. It is a web extra until a phone port exists. It is not replaced by a chart from a library.
-- **The data under those views.** Compete state, period standings, sessions, crews, and 1v1s. `@fitness-battle/shared`, Supabase, and the tracker and crew APIs stay.
+- **3D competition.** Shared `@fitness-battle/pursuit` (Three.js) on web and Expo web in-process; native embeds `/arena-scene` via WebView. Not replaced by a chart library.
+- **The data under those views.** Compete state, period standings, sessions, and crews. `@fitness-battle/shared`, Supabase, and the tracker and crew APIs stay.
 
 ## Replace the generic chrome
 
@@ -61,7 +63,7 @@ flowchart LR
   phone[Phone shell]
   phone --> today[Today checkpoints]
   phone --> arena[Arena track]
-  phone --> field[Field crews and matchups]
+  phone --> field[Crew shared field]
   phone --> you[You medals and settings]
   today --> sheet[Detail sheet]
   arena --> track[2D track]
@@ -71,8 +73,8 @@ flowchart LR
 
 
 - **Today.** Winding checkpoints. Past nodes are counted sessions. Ace stands on today and opens the real suggestion. Future nodes are blank. A return with new counted progress opens Arena first, then Today.
-- **Arena.** The track and the arrival total. No settings under the track. Web also offers the existing 3D pursuit.
-- **Field.** Join, crews, and practice 1v1.
+- **Arena.** The track and the arrival total. No settings under the track. 3D pursuit is in-process on web and Expo web; native embeds `/arena-scene` via WebView.
+- **Field / Crew.** Private crews and shared week activity. Practice 1v1 was removed.
 - **You.** Portrait, rating, tracker connections, and a medal shelf. Goalmaxxing goal cards become week-award cards.
 
 Onboarding and login sit outside the tabs. On a wide web window the same phone column stays centered. Desktop-only layout, if any, comes after the phone screens are right.
@@ -81,7 +83,7 @@ Onboarding and login sit outside the tabs. On a wide web window the same phone c
 
 - Shared tokens and tab names in [packages/shared](packages/shared), as plain data. No React Native or DOM imports there.
 - Expo screens in [apps/mobile](apps/mobile), HeroUI Native provider in the root layout. New tab routes replace the current single home screen.
-- Web shell in `apps/web/src/shell/` and `apps/web/src/ui/`, screens in `apps/web/src/features/today|arena|field|you/`. Arena on the web mounts the current [lane-track](apps/web/src/features/field/components/lane-track.tsx) and [live-pursuit](apps/web/src/features/field/components/live-pursuit.tsx).
+- Web shell in `apps/web/src/shell/` and `apps/web/src/ui/`, screens in `apps/web/src/features/today|arena|field|you/`. Arena mounts Focus [arena-lanes](apps/web/src/features/focus/arena-lanes.tsx) and `@fitness-battle/pursuit` (thin re-export at [live-pursuit](apps/web/src/features/field/components/live-pursuit.tsx)).
 - API routes stay. The current checkpoints-home branch is not the base to keep patching.
 
 ## Component redesign
@@ -91,7 +93,7 @@ This pass restyles the chrome around the views we are keeping. It does not redes
 - **Chrome.** New tab bar, boot splash (Overtaek OVERTAKE → OVERTAEK animation; spinner if data still loads after the mark settles), and account entry. The four tabs still open the same Today, Arena, Field, and You content.
 - **Buttons and rows.** Throw out the current button layouts. One primary action, one row height, library styling on both apps.
 - **Sheet.** The receipt, coaching tip, and athlete detail keep their content. The sheet itself is a library component.
-- **Track frame.** New switch, gain line, and replay control. [lane-track](apps/web/src/features/field/components/lane-track.tsx) and [live-pursuit](apps/web/src/features/field/components/live-pursuit.tsx) render as they do now.
+- **Track frame.** View switch, gain line, and window controls. Production uses Focus arena-lanes and live-pursuit; older lab lane-track lives under `design/_studies/shared`.
 - **Award card.** Week results use the goal-card shelf. This is a new frame for a result we already compute, not a new sport.
 - **Empty and guest.** Short line and one action. No slogan hero.
 - **Motion.** Tab pill and sheet come from the library. The return reveal and the track replay stay the ones we have. Reduced motion snaps to the end state.

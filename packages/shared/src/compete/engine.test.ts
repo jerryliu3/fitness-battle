@@ -81,20 +81,30 @@ describe("compete engine", () => {
     );
   });
 
-  it("drops this week's duel when leaving the board", () => {
+  it("ignores practice duel actions and clears leftover matchups", () => {
     const now = "2026-10-12T12:00:00.000Z";
-    const joined = reduceCompete(freshState(new Date(now)), {
+    const base = freshState(new Date(now));
+    const withLegacy = {
+      ...base,
+      duels: [
+        {
+          id: "legacy",
+          sport: "running" as const,
+          periodStart: base.clock.periodStart,
+          rivalId: "rival",
+          rivalName: "Rival",
+          rivalElo: 1000,
+          source: "auto" as const,
+        },
+      ],
+    };
+    const cleared = reduceCompete(withLegacy, {
       type: "duel",
       sport: "running",
       mode: "auto",
       now,
     });
-    expect(joined.duels).toHaveLength(1);
-    const left = reduceCompete(joined, { type: "opt-out", sport: "running", now });
-    expect(left.ratings.find((item) => item.sport === "running")?.optedIn).toBe(
-      false,
-    );
-    expect(left.duels).toHaveLength(0);
+    expect(cleared.duels).toHaveLength(0);
   });
 
   it("completes onboarding without clearing calibrated", () => {

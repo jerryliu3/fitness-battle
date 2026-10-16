@@ -1,286 +1,500 @@
 "use client";
-
+import { useEffect, useState } from "react";
 import { useAuth } from "@/components/auth-context";
 import { useCompete } from "@/components/compete-context";
-import { waveWindowAt } from "@fitness-battle/shared";
-import { useEffect, useState } from "react";
-
-interface CrewRow {
-  crew_id: string;
-  crews: {
-    id: string;
-    name: string;
-    invite_code: string;
-    sport: string;
-    format: string;
-    target_sessions: number;
-    journey_km: number;
-  } | null;
+import { Sheet } from "@/ui/sheet";
+import Link from "next/link";
+interface Crew {
+  id: string;
+  name: string;
+  invite_code: string;
+  sport: string;
+  format: string;
+  target_sessions: number;
+  journey_km: number;
 }
-
-interface MemberRow {
+interface Member {
   crew_id: string;
   user_id: string;
   display_name: string;
   rest_week: string | null;
 }
-
-interface EntryRow {
+interface Entry {
   crew_id: string;
   user_id: string;
   activity_id: string;
   distance_m: number;
-  disposition: string;
+  moving_sec: number;
+  started_at: string;
   sport: string;
+  disposition: string;
 }
-
-interface NoticeRow {
-  id: string;
-  body: string;
-  kind: string;
+interface CrewData {
+  crews: { crew_id: string; crews: Crew | null }[];
+  members: Member[];
+  entries: Entry[];
+  notices: { id: string; body: string }[];
 }
-
 export function CrewPanel() {
   const { user, demoMode } = useAuth();
   const { state } = useCompete();
-  const [crews, setCrews] = useState<CrewRow[]>([]);
-  const [members, setMembers] = useState<MemberRow[]>([]);
-  const [entries, setEntries] = useState<EntryRow[]>([]);
-  const [notices, setNotices] = useState<NoticeRow[]>([]);
-  const [seasonWeeks, setSeasonWeeks] = useState<Record<string, number>>({});
-  const [name, setName] = useState("Sunday easy");
+  const [data, setData] = useState<CrewData | null>(null);
+  const [selected, setSelected] = useState("");
+  const [view, setView] = useState("Activity");
+  const [panel, setPanel] = useState<
+    "create" | "join" | "invite" | "manage" | null
+  >(null);
+  const [name, setName] = useState("");
   const [code, setCode] = useState("");
   const [format, setFormat] = useState("volume");
-  const [note, setNote] = useState<string | null>(null);
-
+  const [busy, setBusy] = useState(false);
+  const [note, setNote] = useState("");
   async function reload() {
-    const response = await fetch("/api/crews");
-    if (!response.ok) {
-      setNote("Crews need a signed-in account.");
-      return;
+    try {
+      const res = await fetch("/api/crews");
+      if (!res.ok) throw Error("Could not load your crews. Try again.");
+      setData(await res.json());
+    } catch (e) {
+      setNote(e instanceof Error ? e.message : "Could not load crews.");
     }
-    const body = (await response.json()) as {
-      crews: CrewRow[];
-      members: MemberRow[];
-      entries: EntryRow[];
-      seasonWeeks?: Record<string, number>;
-      notices: NoticeRow[];
-    };
-    setCrews(body.crews);
-    setMembers(body.members);
-    setEntries(body.entries);
-    setSeasonWeeks(body.seasonWeeks ?? {});
-    setNotices(body.notices);
   }
-
   useEffect(() => {
-    if (!user || demoMode) return;
-    void reload();
-  }, [demoMode, user]);
-
-  if (!user || demoMode) {
-    return (
-      <section className="fb-card">
-        <h2>Private crew</h2>
-        <p className="fb-copy">
-          A crew is a shared week with people you invite. Demo mode keeps the
-          practice field on this device and does not deliver invitations.
-        </p>
-      </section>
-    );
-  }
-
-  async function createCrew() {
-    setNote(null);
-    const response = await fetch("/api/crews", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        name,
-        sport: state?.primary ?? "running",
-        format,
-      }),
-    });
-    const body = (await response.json()) as { error?: string };
-    if (!response.ok) {
-      setNote(body.error ?? "Could not create the crew.");
-      return;
+    if (user && !demoMode) void reload();
+    else setData(null);
+  }, [user?.id, demoMode]);
+  async function write(path: string, body: object) {
+    setBusy(true);
+    setNote("");
+    try {
+      const res = await fetch(`/api/crews${path}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      const result = await res.json();
+      if (!res.ok || result.persisted === false)
+        throw Error(result.error ?? "Could not save this change.");
+      await reload();
+      setPanel(null);
+      setNote("Saved. Your crew is up to date.");
+    } catch (e) {
+      setNote(e instanceof Error ? e.message : "Could not reach your crew.");
+    } finally {
+      setBusy(false);
     }
-    await reload();
-    setNote(
-      "Crew created. When you join this week’s field, choose Join with crew if you want the shared board.",
-    );
   }
-
-  async function join() {
-    setNote(null);
-    const response = await fetch("/api/crews/join", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ code }),
-    });
-    const body = (await response.json()) as { error?: string };
-    if (!response.ok) {
-      setNote(body.error ?? "That invite was not accepted.");
-      return;
-    }
-    setCode("");
-    await reload();
-    setNote(
-      "Joined the crew. Shared leaderboard is optional — pick Join with crew when you register for the week.",
-    );
-  }
-
-  async function share(crewId: string) {
-    const response = await fetch("/api/crews/entries", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ crewId }),
-    });
-    const body = (await response.json()) as { saved?: number; error?: string; persisted?: boolean };
-    if (!response.ok || body.persisted === false) {
-      setNote(body.error ?? "Those sessions were not saved to the crew.");
-      return;
-    }
-    setNote(`Shared ${body.saved ?? 0} counted sessions.`);
-    await reload();
-  }
-
+  const crews = (data?.crews ?? []).flatMap((r) => (r.crews ? [r.crews] : []));
+  const crew = crews.find((c) => c.id === selected) ?? crews[0];
+  const members = (data?.members ?? []).filter((m) => m.crew_id === crew?.id);
+  const entries = (data?.entries ?? []).filter(
+    (e) => e.crew_id === crew?.id && e.disposition === "counted",
+  );
+  const km = entries.reduce((t, e) => t + Number(e.distance_m), 0) / 1000;
+  const memberNames = members.map((m) => m.display_name);
+  const memberCaption =
+    memberNames.length <= 3
+      ? memberNames.join(", ") || "No members yet"
+      : `${memberNames.slice(0, 3).join(", ")} + ${memberNames.length - 3} more`;
   return (
-    <section className="fb-card">
-      <h2>Private crew</h2>
-      <p className="fb-copy">
-        Share a code for counted sessions, cheers, and the option to register
-        for a week together. Together is chosen when you join the field — not
-        automatically. Team-versus-team scoring comes later.
-      </p>
-      {state?.crewBoard ? (
-        <p className="fb-note">
-          This week you chose a shared field with {state.crewBoard.crewName} ·{" "}
-          {state.crewBoard.memberIds.length} athletes ·{" "}
-          {state.crewBoard.syntheticIds.length} fillers.
-        </p>
-      ) : null}
-      {notices.map((notice) => (
-        <p key={notice.id} className="fb-note">
-          {notice.body}
-        </p>
-      ))}
-      <label className="fb-field">
-        Crew name
-        <input value={name} onChange={(event) => setName(event.target.value)} />
-      </label>
-      <label className="fb-field">
-        Format
-        <select value={format} onChange={(event) => setFormat(event.target.value)}>
-          <option value="volume">Same-sport volume</option>
-          <option value="personal_target">Each person, three sessions</option>
-          <option value="cooperative">Shared distance</option>
-        </select>
-      </label>
-      <button type="button" className="fb-btn" onClick={() => void createCrew()}>
-        Create crew
-      </button>
-      <label className="fb-field">
-        Invite code
-        <input value={code} onChange={(event) => setCode(event.target.value)} />
-      </label>
-      <button type="button" className="fb-btn-line" onClick={() => void join()}>
-        Join with code
-      </button>
-      {crews.map((row) => {
-        const crew = row.crews;
-        if (!crew) return null;
-        const weeks = seasonWeeks[crew.id] ?? 0;
-        const monday = waveWindowAt().waveStart.toISOString().slice(0, 10);
-        const roster = members.filter((member) => member.crew_id === crew.id);
-        const counted = entries.filter(
-          (entry) =>
-            entry.crew_id === crew.id &&
-            entry.sport === crew.sport &&
-            entry.disposition === "counted",
-        );
-        const km = counted.reduce((sum, entry) => sum + Number(entry.distance_m), 0) / 1000;
-        const rule =
-          crew.format === "personal_target"
-            ? `Each person aims for ${crew.target_sessions} counted sessions.`
-            : crew.format === "cooperative"
-              ? `Together, ${km.toFixed(1)} of ${crew.journey_km} km.`
-              : `${km.toFixed(1)} km on the volume board.`;
-        return (
-          <div key={crew.id} className="fb-stack">
-            <h3>
-              {crew.name} · {crew.format.replaceAll("_", " ")}
-            </h3>
-            <p className="fb-copy">
-              Code {crew.invite_code}. {roster.length} people. {rule}{" "}
-              {weeks} week{weeks === 1 ? "" : "s"} with counted sessions on this code.
-            </p>
-            <ul>
-              {roster.map((member) => {
-                const mine = entries.filter(
-                  (entry) =>
-                    entry.crew_id === crew.id &&
-                    entry.user_id === member.user_id &&
-                    entry.sport === crew.sport &&
-                    entry.disposition === "counted",
-                );
-                const latest = mine[0];
-                const sessions = mine.length;
-                const targetMet =
-                  crew.format === "personal_target" && sessions >= crew.target_sessions;
-                return (
-                  <li key={member.user_id}>
-                    {member.display_name}
-                    {member.rest_week?.slice(0, 10) === monday
-                      ? " · rest week, rating can stay put if you also freeze"
-                      : ""}
-                    {" · "}
-                    {sessions} sessions
-                    {targetMet ? " · target met" : ""}
-                    {latest && member.user_id !== user?.id ? (
-                      <button
-                        type="button"
-                        className="fb-btn-ghost"
-                        onClick={() =>
-                          void fetch("/api/crews/cheer", {
-                            method: "POST",
-                            headers: { "Content-Type": "application/json" },
-                            body: JSON.stringify({
-                              crewId: crew.id,
-                              activityId: latest.activity_id,
-                              ownerId: member.user_id,
-                            }),
-                          }).then(() => reload())
-                        }
-                      >
-                        Cheer
-                      </button>
-                    ) : null}
-                  </li>
-                );
-              })}
-            </ul>
-            <button type="button" className="fb-btn-ghost" onClick={() => void share(crew.id)}>
-              Share this week’s counted sessions
+    <>
+      {!user || demoMode ? (
+        <section className="focus-card focus-empty">
+          <h2>Make room for your people.</h2>
+          <p className="fb-copy">
+            Private crews need a live signed-in account. Your practice field is
+            kept separate.
+          </p>
+          <div className="focus-actions">
+            {!user && (
+              <Link className="fb-btn" href="/login?next=/field">
+                Sign in to join a crew
+              </Link>
+            )}
+          </div>
+        </section>
+      ) : !data ? (
+        <section className="focus-card">
+          <p className="fb-copy">{note || "Loading your circle…"}</p>
+          <button className="fb-btn-line" onClick={() => void reload()}>
+            Refresh crews
+          </button>
+        </section>
+      ) : !crew ? (
+        <section className="focus-card focus-empty">
+          <h2>Your circle starts here.</h2>
+          <p className="fb-copy">
+            Create a private crew or use an invite code. Shared goals make
+            showing up feel a little easier.
+          </p>
+          <div className="focus-actions">
+            <button className="fb-btn-line" onClick={() => setPanel("join")}>
+              Join with code
             </button>
-            <button
-              type="button"
-              className="fb-btn-ghost"
-              onClick={() =>
-                void fetch("/api/crews/rest", {
-                  method: "POST",
-                  headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify({ crewId: crew.id, rest: true }),
-                }).then(() => reload())
-              }
-            >
-              Rest this week
+            <button className="fb-btn" onClick={() => setPanel("create")}>
+              Create crew ＋
             </button>
           </div>
-        );
-      })}
-      {note ? <p className="fb-note">{note}</p> : null}
-    </section>
+        </section>
+      ) : (
+        <>
+          {crews.length > 1 && (
+            <div className="focus-registration-tabs">
+              {crews.map((c) => (
+                <button
+                  key={c.id}
+                  aria-pressed={crew.id === c.id}
+                  onClick={() => setSelected(c.id)}
+                >
+                  {c.name}
+                </button>
+              ))}
+            </div>
+          )}
+          <section className="focus-crew-hero">
+            <p className="fb-kicker">
+              Your people · {members.length} members
+            </p>
+            <h2>{crew.name}</h2>
+            <p>Different paces. Same direction.</p>
+            <div className="focus-row">
+              <div className="focus-avatar-stack">
+                {members.slice(0, 5).map((m) => (
+                  <span key={m.user_id}>
+                    {m.display_name.slice(0, 2).toUpperCase()}
+                  </span>
+                ))}
+              </div>
+              <button onClick={() => setPanel("invite")}>
+                Invite a friend ＋
+              </button>
+            </div>
+          </section>
+          <div className="focus-crew-layout">
+            <div className="focus-crew-main">
+              <section className="focus-card">
+                <p className="fb-kicker">Our shared week · {crew.sport}</p>
+                {crew.format === "personal_target" ? (
+                  <h2>{entries.length} counted sessions</h2>
+                ) : (
+                  <h2 className="focus-goal">
+                    {km.toFixed(1)}{" "}
+                    <small>
+                      {crew.format === "cooperative"
+                        ? `/ ${crew.journey_km} km`
+                        : "km together"}
+                    </small>
+                  </h2>
+                )}
+                {crew.format === "cooperative" && (
+                  <progress
+                    value={km}
+                    max={Math.max(1, crew.journey_km)}
+                    aria-label="Crew distance goal"
+                  />
+                )}
+                <p className="fb-copy">
+                  {crew.format === "personal_target"
+                    ? `Each member aims for ${crew.target_sessions} sessions.`
+                    : "Every pace belongs here."}
+                </p>
+                <div className="focus-actions">
+                  <button
+                    className="fb-btn"
+                    disabled={busy}
+                    onClick={() => void write("/entries", { crewId: crew.id })}
+                  >
+                    Share my counted sessions
+                  </button>
+                </div>
+              </section>
+              <div className="focus-row">
+                <h2>The latest, together.</h2>
+                <div className="focus-segments">
+                  {["Activity", "Leaderboard"].map((v) => (
+                    <button
+                      key={v}
+                      aria-pressed={view === v}
+                      onClick={() => setView(v)}
+                    >
+                      {v}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <section className="focus-card">
+                {view === "Activity" ? (
+                  entries.length ? (
+                    entries
+                      .slice()
+                      .sort((a, b) => b.started_at.localeCompare(a.started_at))
+                      .map((e) => (
+                        <article
+                          className="focus-feed-entry"
+                          key={`${e.user_id}:${e.activity_id}`}
+                        >
+                          <span className="focus-small-avatar">
+                            {members
+                              .find((m) => m.user_id === e.user_id)
+                              ?.display_name.slice(0, 2)
+                              .toUpperCase() ?? "AT"}
+                          </span>
+                          <div>
+                            <b>
+                              {members.find((m) => m.user_id === e.user_id)
+                                ?.display_name ?? "Athlete"}
+                            </b>
+                            <small>
+                              {new Date(e.started_at).toLocaleDateString()}
+                            </small>
+                            <p>
+                              {e.sport} ·{" "}
+                              {(Number(e.distance_m) / 1000).toFixed(1)} km ·{" "}
+                              {Math.round(e.moving_sec / 60)} min
+                            </p>
+                            {e.user_id !== user?.id && (
+                              <button
+                                className="fb-btn-line"
+                                disabled={busy}
+                                onClick={() =>
+                                  void write("/cheer", {
+                                    crewId: crew.id,
+                                    activityId: e.activity_id,
+                                    ownerId: e.user_id,
+                                  })
+                                }
+                              >
+                                ♡ Cheer this session
+                              </button>
+                            )}
+                          </div>
+                        </article>
+                      ))
+                  ) : (
+                    <p className="fb-copy">
+                      No shared sessions this week yet. Share yours to start the
+                      feed.
+                    </p>
+                  )
+                ) : (
+                  members
+                    .slice()
+                    .sort(
+                      (a, b) =>
+                        entries
+                          .filter((e) => e.user_id === b.user_id)
+                          .reduce((t, e) => t + Number(e.distance_m), 0) -
+                        entries
+                          .filter((e) => e.user_id === a.user_id)
+                          .reduce((t, e) => t + Number(e.distance_m), 0),
+                    )
+                    .map((m, i) => (
+                      <div className="fb-row" key={m.user_id}>
+                        <span>{i + 1}</span>
+                        <b className="fb-grow">{m.display_name}</b>
+                        <span>
+                          {(
+                            entries
+                              .filter((e) => e.user_id === m.user_id)
+                              .reduce((t, e) => t + Number(e.distance_m), 0) /
+                            1000
+                          ).toFixed(1)}{" "}
+                          km
+                        </span>
+                      </div>
+                    ))
+                )}
+              </section>
+            </div>
+            <aside className="focus-crew-rail" aria-label="Crew members">
+              <section className="focus-card">
+                <p className="fb-kicker">A little accountability</p>
+                <h3>We go further together.</h3>
+                <div className="focus-avatar-stack focus-avatar-stack-rail">
+                  {members.slice(0, 8).map((m) => (
+                    <span key={m.user_id} title={m.display_name}>
+                      {m.display_name.slice(0, 2).toUpperCase()}
+                    </span>
+                  ))}
+                </div>
+                <p className="fb-copy">{memberCaption}</p>
+                <ul className="focus-member-list">
+                  {members.map((m) => (
+                    <li key={m.user_id}>
+                      <b>{m.display_name}</b>
+                      <small>{m.rest_week ? "Rest week" : "Active"}</small>
+                    </li>
+                  ))}
+                </ul>
+                <div className="focus-actions focus-actions-stack">
+                  <button
+                    className="fb-btn-line"
+                    onClick={() => setPanel("manage")}
+                  >
+                    Crew settings ↗
+                  </button>
+                  <button
+                    className="fb-btn-line"
+                    onClick={() => setPanel("invite")}
+                  >
+                    Invite someone ＋
+                  </button>
+                  <button
+                    className="fb-btn-line"
+                    onClick={() => setPanel("create")}
+                  >
+                    Create another crew
+                  </button>
+                  <button
+                    className="fb-btn-line"
+                    onClick={() => setPanel("join")}
+                  >
+                    Join with code
+                  </button>
+                </div>
+              </section>
+            </aside>
+          </div>
+        </>
+      )}
+      {note && (
+        <p className="focus-feedback" role="status">
+          {note}
+        </p>
+      )}
+      {data?.notices?.map((n) => (
+        <p className="fb-note" key={n.id}>
+          {n.body}
+        </p>
+      ))}
+      <Sheet
+        open={!!panel}
+        title={
+          panel === "create"
+            ? "Start your circle."
+            : panel === "join"
+              ? "Find your people."
+              : panel === "invite"
+                ? "Better with your people."
+                : "Your crew, your rhythm."
+        }
+        body={
+          !user || demoMode
+            ? "A live account is needed to create or join a private crew."
+            : "Private crew activity stays with your members."
+        }
+        onClose={() => setPanel(null)}
+      >
+        {!user || demoMode ? (
+          <p className="fb-copy">
+            Sign in with a configured account to use private crews.
+          </p>
+        ) : panel === "create" ? (
+          <>
+            <label className="fb-field">
+              Crew name
+              <input
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                maxLength={60}
+              />
+            </label>
+            <label className="fb-field">
+              Format
+              <select
+                value={format}
+                onChange={(e) => setFormat(e.target.value)}
+              >
+                <option value="volume">Same-sport volume</option>
+                <option value="personal_target">
+                  Personal session targets
+                </option>
+                <option value="cooperative">Shared distance</option>
+              </select>
+            </label>
+            <button
+              className="fb-btn"
+              disabled={busy || !name.trim()}
+              onClick={() =>
+                void write("", {
+                  name,
+                  sport: state?.primary ?? "running",
+                  format,
+                })
+              }
+            >
+              Create crew
+            </button>
+          </>
+        ) : panel === "join" ? (
+          <>
+            <label className="fb-field">
+              Invite code
+              <input
+                value={code}
+                onChange={(e) => setCode(e.target.value)}
+                autoCapitalize="characters"
+              />
+            </label>
+            <button
+              className="fb-btn"
+              disabled={busy || !code.trim()}
+              onClick={() => void write("/join", { code })}
+            >
+              Join crew
+            </button>
+          </>
+        ) : panel === "invite" ? (
+          <>
+            <label className="fb-field">
+              Invite code
+              <input readOnly value={crew?.invite_code ?? ""} />
+            </label>
+            <button
+              className="fb-btn"
+              onClick={() => {
+                void navigator.clipboard
+                  .writeText(crew?.invite_code ?? "")
+                  .then(
+                    () => setNote("Invite code copied."),
+                    () => setNote(`Invite code: ${crew?.invite_code}`),
+                  );
+              }}
+            >
+              Copy invite code
+            </button>
+          </>
+        ) : (
+          <>
+            <p className="fb-copy">
+              {crew?.name} · {crew?.sport} · {crew?.format.replaceAll("_", " ")}
+            </p>
+            {members.map((m) => (
+              <div className="fb-row" key={m.user_id}>
+                <b className="fb-grow">{m.display_name}</b>
+                <small>{m.rest_week ? "Rest week" : "Active"}</small>
+              </div>
+            ))}
+            <button
+              className="fb-btn-line"
+              disabled={busy}
+              onClick={() =>
+                void write("/rest", { crewId: crew?.id, rest: true })
+              }
+            >
+              Mark my rest week
+            </button>
+            <p className="fb-note">
+              A crew rest marker does not freeze Elo. Week freezes live in
+              Athlete → Preferences.
+            </p>
+          </>
+        )}
+        {note && (
+          <p className="fb-note" role="status">
+            {note}
+          </p>
+        )}
+      </Sheet>
+    </>
   );
 }

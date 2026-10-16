@@ -20,5 +20,5 @@ export const mobileEnv = {
   stravaClientId: publicEnv.EXPO_PUBLIC_STRAVA_CLIENT_ID,
   stravaRedirectUri:
     publicEnv.EXPO_PUBLIC_STRAVA_REDIRECT_URI || "overtaek://strava",
-  apiUrl: publicEnv.EXPO_PUBLIC_API_URL ?? extra.apiUrl ?? "http://localhost:3000",
+  apiUrl: process.env.EXPO_PUBLIC_API_URL ?? extra.apiUrl ?? "http://localhost:3000",
 };

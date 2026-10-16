@@ -6,13 +6,20 @@ import { competeNow, formatEffort, weeklyBoard } from "./compete/engine";
 import { resolvePastSelfGhost, ghostHasVolume } from "./compete/ghost";
 import { formatEloDelta, formatPlace } from "./compete/history";
 import { countsOnTrack } from "./compete/ledger";
-import { sportById, type Activity, type CompeteState, type SportId } from "./compete/sports";
+import {
+  sportById,
+  type Activity,
+  type CompeteState,
+  type ScoreTrack,
+  type SportId,
+} from "./compete/sports";
 import { suggestionForState, type DaySuggestion } from "./compete/suggestion";
 import {
   activityCheckpoints,
   syntheticCheckpoints,
   type CheckpointSeries,
 } from "./compete/track";
+import { orderedArenaLanes } from "./arena-view";
 import { currentPeriodBounds } from "./period";
 
 export const CHECKPOINT_FRAME = { width: 320, height: 570 } as const;
@@ -75,15 +82,7 @@ export interface ArenaLane {
 
 /** Field lanes only. You stays in the middle. Ghost is not a lane. */
 export function stableFieldLanes(lanes: readonly ArenaLane[]): ArenaLane[] {
-  const field = lanes.filter((lane) => !lane.ghost);
-  const you = field.find((lane) => lane.you);
-  const others = field
-    .filter((lane) => !lane.you)
-    .slice()
-    .sort((a, b) => a.id.localeCompare(b.id));
-  if (!you) return others;
-  const mid = Math.floor(others.length / 2);
-  return [...others.slice(0, mid), you, ...others.slice(mid)];
+  return orderedArenaLanes(lanes);
 }
 
 export interface ArenaModel {
@@ -105,15 +104,73 @@ export interface AwardCardModel {
   headline: string;
 }
 
-function periodWindow(state: CompeteState, now: Date) {
+/**
+ * Competition volume window: seated enrollment wave when present
+ * (same source as web `buildSplitBoard`), else clock period bounds.
+ */
+export function competePeriodWindow(
+  state: CompeteState,
+  now: Date = competeNow(state),
+) {
+  const enrollment = state.enrollments.find(
+    (item) => item.sport === state.primary,
+  );
+  if (enrollment) {
+    return {
+      startsAt: new Date(enrollment.waveStart),
+      endsAt: new Date(enrollment.weekEnd),
+    };
+  }
   return currentPeriodBounds(state.clock.kind, now);
+}
+
+/** Freeze key must match `reduceCompete` (`enrollment.waveStart ?? clock.periodStart`). */
+export function primaryFreezePeriodStart(state: CompeteState): string {
+  const enrollment = state.enrollments.find(
+    (item) => item.sport === state.primary,
+  );
+  return enrollment?.waveStart ?? state.clock.periodStart;
+}
+
+/**
+ * Resolve a lane/3D highlight id against currently visible lanes.
+ * Falls back to you when the selection is missing or a hidden ghost.
+ * Do not use this for detail-sheet open state — keep that nullable.
+ */
+export function resolveArenaSelectedId(
+  selectedId: string | null | undefined,
+  lanes: readonly { id: string; you?: boolean; ghost?: boolean }[],
+  showGhost = true,
+): string {
+  const visible = lanes.filter((lane) => showGhost || !lane.ghost);
+  if (selectedId && visible.some((lane) => lane.id === selectedId)) {
+    return selectedId;
+  }
+  return visible.find((lane) => lane.you)?.id ?? selectedId ?? "";
+}
+
+/** Primary-sport open sessions inside the competition volume window. */
+export function countedPrimarySessionsInPeriod(
+  state: CompeteState,
+  now: Date = competeNow(state),
+): number {
+  const period = competePeriodWindow(state, now);
+  const start = period.startsAt.getTime();
+  const end = period.endsAt.getTime();
+  return state.activities.filter((activity) => {
+    if (activity.sport !== state.primary) return false;
+    if (!countsOnTrack(activity, "open")) return false;
+    if (new Date(activity.startedAt) > now) return false;
+    const at = new Date(activity.startedAt).getTime();
+    return at >= start && at < end;
+  }).length;
 }
 
 function countedInPeriod(
   state: CompeteState,
   now: Date,
 ): Activity[] {
-  const period = periodWindow(state, now);
+  const period = competePeriodWindow(state, now);
   const start = period.startsAt.getTime();
   const end = period.endsAt.getTime();
   return state.activities
@@ -213,20 +270,23 @@ function seriesValues(series: CheckpointSeries, gps: boolean): [number, number, 
 export function buildArenaModel(
   state: CompeteState,
   now: Date = competeNow(state),
+  track: ScoreTrack = "open",
 ): ArenaModel {
   const sport = state.primary;
   const spec = sportById(sport);
-  const period = periodWindow(state, now);
-  const optedIn = Boolean(state.ratings.find((row) => row.sport === sport)?.optedIn);
+  const period = competePeriodWindow(state, now);
+  const optedIn = Boolean(
+    state.ratings.find((row) => row.sport === sport)?.optedIn,
+  );
   const youSeries = activityCheckpoints(
     state.activities,
     sport,
     period.startsAt,
     period.endsAt,
-    "open",
+    track,
     now,
   );
-  const board = optedIn ? weeklyBoard(state, sport, "open", now) : [];
+  const board = optedIn ? weeklyBoard(state, sport, track, now) : [];
   const lanes: ArenaLane[] = board.map((row) => {
     const series = row.you
       ? youSeries
@@ -251,7 +311,7 @@ export function buildArenaModel(
   const ghost = resolvePastSelfGhost({
     activities: state.activities,
     sport,
-    track: "open",
+    track,
     currentStart: period.startsAt,
     currentEnd: period.endsAt,
     currentLiveAt: youSeries.liveAt,

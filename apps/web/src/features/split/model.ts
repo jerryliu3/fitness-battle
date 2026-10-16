@@ -1,7 +1,6 @@
 import {
   activityCheckpoints,
   competeNow,
-  duelViews,
   effortTrackMax,
   formatEffort,
   ghostEffortAt as effortAtGhost,
@@ -54,7 +53,6 @@ export interface SplitBoardModel {
   fieldLanes: TrackLane[];
   trackMax: number;
   checkpointLabels: [string, string, string];
-  duels: ReturnType<typeof duelViews>;
   weekActivities: CompeteState["activities"];
 }
 
@@ -173,7 +171,6 @@ export function buildSplitBoard(
     fieldLanes,
     trackMax,
     checkpointLabels: youSeries.labels,
-    duels: duelViews(state, now).filter((view) => view.duel.sport === sport),
     weekActivities: state.activities
       .filter((activity) => {
         if (activity.sport !== sport) return false;

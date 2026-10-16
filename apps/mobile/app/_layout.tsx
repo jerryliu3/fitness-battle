@@ -11,7 +11,7 @@ import { StatusBar } from "expo-status-bar";
 import * as WebBrowser from "expo-web-browser";
 import { HeroUINativeProvider } from "heroui-native/provider";
 import { useEffect } from "react";
-import { ActivityIndicator, Text, View } from "react-native";
+import { ActivityIndicator, Platform, Text, View } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import "../global.css";
 // Registers the foreground notification handler.
@@ -45,6 +45,8 @@ export default function RootLayout() {
   const fontsLoaded = dmLoaded && nunitoLoaded;
 
   useEffect(() => {
+    // Browser study previews do not have a native notification response API.
+    if (Platform.OS === "web") return;
     let alive = true;
     void Notifications.getLastNotificationResponseAsync().then((response) => {
       if (!alive || !response) return;

@@ -228,7 +228,7 @@ function AdaptiveHome({ state, layout, accountId, baseline, persist, failed, sam
       <p className="ah-eyebrow">THIS WEEK · {sport.name.toUpperCase()}</p><strong className="ah-sheet-number">{valueLabel(lane.value,unit)}</strong>
       <p>{Math.abs(gap).toFixed(1)} {unit} {gap > 0 ? "ahead of you" : "behind you"}.</p>
       <div className="ah-comparison"><span>You <b>{valueLabel(you.value,unit)}</b></span><span>{lane.name.split(" ")[0]} <b>{valueLabel(lane.value,unit)}</b></span></div>
-      <Link className="ah-primary" href="/board#duel">Open 1v1 matchups ↗</Link>
+      <Link className="ah-primary" href="/arena">Open Arena ↗</Link>
       <p className="ah-small">{sampleMode ? "Sample opponent from the app’s existing field model." : "Opponent values follow the app’s current field model, including synthetic peers where used."}</p>
     </> });
   }

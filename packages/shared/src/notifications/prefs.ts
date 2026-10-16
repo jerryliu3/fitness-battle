@@ -18,8 +18,8 @@ export const NOTIFICATION_CATEGORIES: NotificationCategoryMeta[] = [
   },
   {
     id: "rival_moves",
-    label: "Rival moves",
-    description: "When someone nearby jumps the board or starts a duel.",
+    label: "Field moves",
+    description: "When someone nearby jumps ahead on your Arena field.",
   },
   {
     id: "lesson_reminder",

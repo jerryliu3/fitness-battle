@@ -1,6 +1,6 @@
 # Fitness Battle
 
-Mobile-first fitness battles (group or 1v1) with automatic tracker scoring and weekly standings.
+Mobile-first fitness battles with automatic tracker scoring and weekly standings.
 
 ## Stack
 
@@ -49,7 +49,7 @@ The public board is `/rankings`. Imports copy a full public results list (OpenTr
 
 Browsing My track / The field / Splits / Pace is open. **Join / compete / Athlete / onboarding** require an account.
 
-Primary product IA follows the Split direction: effort track + previous-week ghost on **My track**, POV pursuit and bird’s-eye distance path on **The field**, counted sessions on **Splits**, and identity/connections on **Athlete**.
+The live product follows **Focus**: **Home** (daily suggestion and counted-session path), **Arena** (vertical 2D/3D lanes, registration, ghosts, and awards), **Crew** (shared activity and members), and **Athlete** (Elo and benchmarks first, then progress and settings). Stable routes remain `/today`, `/arena`, `/field`, and `/you`. See [the design guide](docs/design-guide.md) and [Focus implementation notes](docs/focus-implementation.md).
 
 Weekly periods settle on app load via `rollClock` (UTC Monday boundary) — there is no server cron for the local compete engine. Closed weeks write place/Elo snapshots, show a one-shot week-complete reveal on My track, and accumulate a Strava-style season history on Athlete.
 
@@ -75,9 +75,9 @@ Weekly periods settle on app load via `rollClock` (UTC Monday boundary) — ther
 
 ## Design prototype
 
-Run `pnpm dev`, then open `/design` to compare five individual-first app experiences: Split, Bounce, Folio, Vector, and After. Each direction has personal progress, comparison, activity, history, and optional group views, with local sample interactions. **Evaluate directions** explains the different interaction models and tradeoffs.
+Run `pnpm dev`, then open `/design` to compare archived individual-first experiences (Split, Bounce, Folio, Vector, After). **Evaluate directions** explains the interaction models. The live product shell follows **Focus** (see above); `/design` remains a comparative lab, not production chrome.
 
-See [design directions v2](docs/design-directions-v2.md) for the brand systems, research, evaluation tasks, and image provenance. The [first study](docs/design-exploration-v1.md) is retained as an archive. The live product shell now uses the Split structure; `/design` remains the comparative lab.
+See [design directions v2](docs/design-directions-v2.md) and [the design guide](docs/design-guide.md).
 
 Open `/design/spatial` for five interactive mileage comparisons: **Pursuit**, **Distance path**, **Circuit**, **Switchback**, and **Week replay**. Direct links use `?scene=pursuit|path|circuit|switchback|replay`. These public presentation routes use synthetic data, with no account or tracker authorization required. Three of the concepts use real 3D cameras and selectable avatars; the others use calibrated distance axes and milestone replay. See [the spatial study](docs/spatial-design-study.md) for mechanisms, evaluation tasks, and limitations.
 

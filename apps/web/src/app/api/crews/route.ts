@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { waveWindowAt } from "@fitness-battle/shared";
 import { resolveRequestUserId } from "@/lib/auth/request-user";
-import { createClient } from "@/lib/supabase/server";
+import { createRequestClient } from "@/lib/supabase/request";
 
 interface CrewEmbed {
   id: string;
@@ -39,7 +39,7 @@ export async function GET(request: Request) {
   if (!userId) {
     return NextResponse.json({ error: "authentication_required" }, { status: 401 });
   }
-  const supabase = await createClient();
+  const supabase = await createRequestClient(request);
   const { data: memberships, error } = await supabase
     .from("crew_members")
     .select("crew_id, display_name, status, rest_week, crews(id, name, invite_code, sport, format, target_sessions, journey_km)")
@@ -106,7 +106,7 @@ export async function POST(request: Request) {
   if (!userId) {
     return NextResponse.json({ error: "authentication_required" }, { status: 401 });
   }
-  const supabase = await createClient();
+  const supabase = await createRequestClient(request);
   const body = (await request.json().catch(() => ({}))) as {
     name?: string;
     sport?: string;

@@ -17,11 +17,11 @@ export default function PrivacyPolicyPage() {
       <p className="fb-copy">Last updated {UPDATED}</p>
 
       <p>
-        Fitness Battle (“we”, “us”, or “the app”) helps you run group and 1v1
-        fitness battles with automatic tracking. This policy explains what we
-        collect, why we use it, and the choices you have. It is written for
-        ordinary use of the product, including when you connect a wearable or
-        activity service such as WHOOP.
+        Fitness Battle (“we”, “us”, or “the app”) helps you run fitness battles
+        with automatic tracking. This policy explains what we collect, why we
+        use it, and the choices you have. It is written for ordinary use of the
+        product, including when you connect a wearable or activity service such
+        as WHOOP.
       </p>
 
       <h2>1. Who this applies to</h2>

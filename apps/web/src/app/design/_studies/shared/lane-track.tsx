@@ -9,7 +9,7 @@ import {
   trackY,
   valueAt,
   type SceneRunner,
-} from "../geometry";
+} from "@/features/field/geometry";
 
 export function LaneTrack({
   runners,

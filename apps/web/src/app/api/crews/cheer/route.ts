@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { resolveRequestUserId } from "@/lib/auth/request-user";
-import { createClient } from "@/lib/supabase/server";
+import { createRequestClient } from "@/lib/supabase/request";
 
 export async function POST(request: Request) {
   const userId = await resolveRequestUserId(request);
@@ -15,7 +15,7 @@ export async function POST(request: Request) {
   if (!body.crewId || !body.activityId || !body.ownerId) {
     return NextResponse.json({ error: "cheer_target_required" }, { status: 400 });
   }
-  const supabase = await createClient();
+  const supabase = await createRequestClient(request);
   const { error } = await supabase.rpc("cheer_entry", {
     p_crew_id: body.crewId,
     p_activity_id: body.activityId,

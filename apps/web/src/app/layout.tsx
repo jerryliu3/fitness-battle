@@ -41,8 +41,8 @@ const overtaek = Nunito_Sans({
 });
 
 export const metadata: Metadata = {
-  title: "Fitness Battle",
-  description: "One-tap group and 1v1 fitness battles with automatic tracking.",
+  title: "Overtaek",
+  description: "Everyday training, weekly fields, and progress with your crew.",
 };
 
 export default async function RootLayout({
