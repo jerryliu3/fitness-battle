@@ -265,9 +265,13 @@ const HEALTH_CONNECT_SPORTS: Record<string, string> = {
   CALISTHENICS: "strength",
 };
 
+type HealthConnectPermission = { accessType?: string; recordType?: string };
+
 type HealthConnectModule = {
   initialize: () => Promise<boolean>;
-  requestPermission: (permissions: { accessType: string; recordType: string }[]) => Promise<unknown>;
+  requestPermission: (
+    permissions: { accessType: string; recordType: string }[],
+  ) => Promise<HealthConnectPermission[]>;
   readRecords: (
     type: string,
     options: { timeRangeFilter: { operator: string; startTime: string; endTime: string } },
@@ -283,6 +287,13 @@ type HealthConnectModule = {
   }>;
   ExerciseType?: Record<string, number>;
 };
+
+function healthConnectGrantedExerciseRead(granted: HealthConnectPermission[]): boolean {
+  return granted.some(
+    (permission) =>
+      permission.recordType === "ExerciseSession" && permission.accessType === "read",
+  );
+}
 
 export type SyncHealthConnectDeps = Pick<
   SyncAppleHealthDeps,
@@ -342,10 +353,18 @@ export async function syncHealthConnect(
   }
   const ready = await health.initialize();
   if (!ready) return { ok: false, message: "Health Connect is not available on this device.", count: 0 };
-  await health.requestPermission([
+  const granted = await health.requestPermission([
     { accessType: "read", recordType: "ExerciseSession" },
     { accessType: "read", recordType: "Distance" },
   ]);
+  if (!healthConnectGrantedExerciseRead(granted ?? [])) {
+    return {
+      ok: false,
+      authorized: false,
+      message: "Health Connect permission was not granted. Allow workout access and try again.",
+      count: 0,
+    };
+  }
   const startTime = new Date(Date.now() - BACKFILL_MS).toISOString();
   const endTime = new Date().toISOString();
   const range = { timeRangeFilter: { operator: "between", startTime, endTime } };

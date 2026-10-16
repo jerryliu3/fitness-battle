@@ -19,10 +19,18 @@ vi.mock("./supabase", () => ({
 
 import { createHealthConnectDeps, syncHealthConnect } from "./device-health";
 
-function mockHealthModule() {
+function mockHealthModule(
+  overrides: {
+    granted?: { accessType: string; recordType: string }[];
+  } = {},
+) {
+  const granted = overrides.granted ?? [
+    { accessType: "read", recordType: "ExerciseSession" },
+    { accessType: "read", recordType: "Distance" },
+  ];
   return {
     initialize: vi.fn(async () => true),
-    requestPermission: vi.fn(async () => undefined),
+    requestPermission: vi.fn(async () => granted),
     readRecords: vi.fn(async (type: string) => {
       if (type === "ExerciseSession") {
         return {
@@ -67,6 +75,24 @@ describe("syncHealthConnect", () => {
     );
     expect(result).toMatchObject({ ok: true, authorized: true, count: 1 });
     expect(result.message).toMatch(/demo/i);
+    expect(fetchFn).not.toHaveBeenCalled();
+  });
+
+  it("does not mark connected when ExerciseSession read is denied", async () => {
+    const fetchFn = vi.fn() as unknown as typeof fetch;
+    const result = await syncHealthConnect(
+      createHealthConnectDeps({
+        platform: "android",
+        fetchFn,
+        healthModule: mockHealthModule({ granted: [] }),
+      }),
+    );
+    expect(result).toEqual({
+      ok: false,
+      authorized: false,
+      message: "Health Connect permission was not granted. Allow workout access and try again.",
+      count: 0,
+    });
     expect(fetchFn).not.toHaveBeenCalled();
   });
 
