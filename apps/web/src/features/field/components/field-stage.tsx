@@ -79,15 +79,21 @@ export function FieldStage({
     you: r.you,
     ghost: r.ghost,
   }));
-  const effectiveSelected = resolveArenaSelectedId(
+  // Lane/3D highlight falls back to you; the detail sheet uses raw `selected`
+  // so dismiss (null) still works.
+  const trackSelected = resolveArenaSelectedId(
     selected,
     [...runners, ...(ghost ? [ghost] : [])],
     showGhost,
   );
   const chosen =
-    effectiveSelected === ghost?.id && showGhost
-      ? ghost
-      : runners.find((r) => r.id === effectiveSelected);
+    selected == null
+      ? null
+      : selected === ghost?.id
+        ? showGhost
+          ? ghost
+          : null
+        : (runners.find((r) => r.id === selected) ?? null);
   if (!you) return <p className="fb-copy">Join a field to see your lanes.</p>;
   return (
     <section className="focus-arena-stage">
@@ -134,7 +140,7 @@ export function FieldStage({
               ghost={ghost}
               time={time}
               extra={0}
-              selected={effectiveSelected || you.id}
+              selected={trackSelected || you.id}
               showGhost={showGhost}
               camera={camera}
               look={defaultLook}
@@ -159,7 +165,7 @@ export function FieldStage({
             lanes={sceneLanes}
             view={view}
             unit={unit}
-            selected={effectiveSelected || you.id}
+            selected={trackSelected || you.id}
             onSelect={setSelected}
             onPan={(v) => setCenter(Math.max(0, v))}
           />

@@ -15,6 +15,7 @@ import {
   BACKFILL_DAYS,
   competeNow,
   evidenceLabel,
+  primaryFreezePeriodStart,
   PROVIDERS,
   RANK_BANDS,
   rankForElo,
@@ -88,7 +89,7 @@ function YouContent() {
 
   const now = competeNow(state);
   const board = buildSplitBoard(state, state.primary, "open", now);
-  const frozen = state.frozenPeriods.includes(board.periodStart.toISOString());
+  const frozen = state.frozenPeriods.includes(primaryFreezePeriodStart(state));
   const spec = sportById(state.primary);
 
   function applyRemote(body: {

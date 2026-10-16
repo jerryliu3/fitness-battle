@@ -133,8 +133,9 @@ export function primaryFreezePeriodStart(state: CompeteState): string {
 }
 
 /**
- * Resolve a lane selection against currently visible lanes.
- * Hidden ghosts cannot remain selected.
+ * Resolve a lane/3D highlight id against currently visible lanes.
+ * Falls back to you when the selection is missing or a hidden ghost.
+ * Do not use this for detail-sheet open state — keep that nullable.
  */
 export function resolveArenaSelectedId(
   selectedId: string | null | undefined,

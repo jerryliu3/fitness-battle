@@ -66,19 +66,25 @@ export default function ArenaScreen() {
       you: l.you,
       ghost: l.ghost,
     }));
-  const selectedIdResolved = resolveArenaSelectedId(
+  // Track/3D always need a concrete id (fall back to you). The detail sheet
+  // must stay tied to the raw nullable selection or it cannot close.
+  const trackSelectedId = resolveArenaSelectedId(
     selectedId,
     arena.lanes,
     ghost,
   );
   const selected =
-    arena.lanes.find((l) => l.id === selectedIdResolved) ?? null;
+    selectedId == null
+      ? null
+      : (arena.lanes.find(
+          (l) => l.id === selectedId && (ghost || !l.ghost),
+        ) ?? null);
   const model: ArenaSceneMessage = {
     type: "arena-view",
     lanes,
     view,
     unit: arena.unit,
-    selected: selectedIdResolved || me?.id || "",
+    selected: trackSelectedId || me?.id || "",
   };
   async function join() {
     if (!user) {
