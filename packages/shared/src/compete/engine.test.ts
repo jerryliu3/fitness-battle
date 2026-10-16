@@ -213,6 +213,40 @@ describe("compete engine", () => {
     expect(migrateCompeteState({ ...legacy, trainingGoal: { distance: "5k", deadline: "2026-02-31" } } as never).trainingGoal).toBeNull();
   });
 
+  it("backfills missing sports in ratings and missing providers in links without crashing", () => {
+    const partialState = {
+      version: 1,
+      name: "Old Athlete",
+      ratings: [{ sport: "running", verifiedElo: 1050, openElo: 1050, optedIn: true, lockVerified: 1000, lockOpen: 1000, lockPeriod: "2026-10-12T00:00:00.000Z" }],
+      links: [{ provider: "strava", linked: true, status: "connected" }],
+    };
+    const migrated = migrateCompeteState(partialState as never);
+    expect(migrated.ratings.length).toBe(4);
+    expect(migrated.ratings.find((r) => r.sport === "running")?.verifiedElo).toBe(1050);
+    expect(migrated.ratings.find((r) => r.sport === "cycling")?.verifiedElo).toBe(1000);
+    expect(migrated.ratings.find((r) => r.sport === "walking")?.verifiedElo).toBe(1000);
+    expect(migrated.ratings.find((r) => r.sport === "strength")?.verifiedElo).toBe(1000);
+
+    expect(migrated.links.length).toBe(6);
+    expect(migrated.links.find((l) => l.provider === "strava")?.status).toBe("connected");
+    expect(migrated.links.find((l) => l.provider === "whoop")?.status).toBe("disconnected");
+
+    expect(migrated.clock).toBeDefined();
+    expect(migrated.clock.kind).toBe("weekly");
+  });
+
+  it("safely handles missing clock and healthRatings without throwing", () => {
+    const headlessState = {
+      version: 1,
+      name: "Headless",
+      clock: undefined,
+      healthRatings: [{ metric: "sleep", score: 85 }],
+    };
+    const migrated = migrateCompeteState(headlessState as never);
+    expect(migrated.clock.periodStart).toBeTruthy();
+    expect(migrated.healthRatings.length).toBeGreaterThan(0);
+  });
+
   it("keeps pending reveals when account snapshot stores empty pendingRevealIds", () => {
     const base = freshState(new Date("2026-10-12T12:00:00.000Z"));
     const settled = {

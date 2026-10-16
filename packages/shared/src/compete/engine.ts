@@ -149,16 +149,58 @@ function withRating(
 
 /** Normalize persisted JSON from older clients (missing link status / onboarding). */
 export function migrateCompeteState(parsed: CompeteState): CompeteState {
-  const links = (parsed.links ?? []).map((link) => ({
-    provider: link.provider,
-    linked: Boolean(link.linked),
-    status:
-      "status" in link && link.status
-        ? link.status
-        : link.linked
-          ? ("stub" as const)
-          : ("disconnected" as const),
-  }));
+  const wave = waveWindowAt(new Date());
+  const fallbackPeriodStart = wave.waveStart.toISOString();
+  const clock =
+    parsed.clock &&
+    typeof parsed.clock === "object" &&
+    typeof parsed.clock.periodStart === "string"
+      ? parsed.clock
+      : { kind: "weekly" as const, periodStart: fallbackPeriodStart };
+
+  const existingRatings = new Map(
+    (Array.isArray(parsed.ratings) ? parsed.ratings : []).map((r) => [r.sport, r]),
+  );
+  const ratings = SPORT_IDS.map((sport) => {
+    const existing = existingRatings.get(sport);
+    if (!existing) {
+      return {
+        sport,
+        verifiedElo: ELO_BASE,
+        openElo: ELO_BASE,
+        optedIn: false,
+        lockVerified: ELO_BASE,
+        lockOpen: ELO_BASE,
+        lockPeriod: clock.periodStart,
+      };
+    }
+    return existing;
+  });
+
+  const existingLinks = new Map(
+    (Array.isArray(parsed.links) ? parsed.links : []).map((link) => [link.provider, link]),
+  );
+  const links = PROVIDERS.map((provider) => {
+    const existing = existingLinks.get(provider.id);
+    if (!existing) {
+      return {
+        provider: provider.id,
+        linked: false,
+        status: "disconnected" as const,
+      };
+    }
+    return {
+      provider: provider.id,
+      linked: Boolean(existing.linked),
+      status:
+        "status" in existing && existing.status
+          ? existing.status
+          : existing.linked
+            ? ("stub" as const)
+            : ("disconnected" as const),
+    };
+  });
+
   const rawPeriodResults = Array.isArray(
     (parsed as CompeteState).periodResults,
   )
@@ -181,6 +223,8 @@ export function migrateCompeteState(parsed: CompeteState): CompeteState {
     : [];
   return {
     ...parsed,
+    clock,
+    ratings,
     links,
     calibrated: Boolean(parsed.calibrated),
     onboardingCompleted: Boolean(
@@ -200,11 +244,11 @@ export function migrateCompeteState(parsed: CompeteState): CompeteState {
     sleepNights: Array.isArray(parsed.sleepNights) ? parsed.sleepNights : [],
     healthRatings:
       Array.isArray(parsed.healthRatings) && parsed.healthRatings.length > 0
-        ? freshHealthRatings(parsed.clock.periodStart).map((blank) => {
+        ? freshHealthRatings(clock.periodStart).map((blank) => {
             const found = parsed.healthRatings.find((item) => item.metric === blank.metric);
             return found ? { ...blank, ...found } : blank;
           })
-        : freshHealthRatings(parsed.clock?.periodStart ?? new Date().toISOString()),
+        : freshHealthRatings(clock.periodStart),
     healthResults: Array.isArray(parsed.healthResults) ? parsed.healthResults : [],
     activities: Array.isArray(parsed.activities)
       ? parsed.activities.map(normalizeSampleActivity)
