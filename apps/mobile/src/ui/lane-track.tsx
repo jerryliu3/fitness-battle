@@ -11,9 +11,7 @@ import { SHELL_COLORS } from "../theme";
 const HEIGHT = 360;
 
 function markerTop(value: number, ceiling: number): number {
-  const span = Math.max(0.001, ceiling);
-  const y = HEIGHT - 36 - (value / span) * (HEIGHT - 96);
-  return Math.max(28, Math.min(HEIGHT - 28, y));
+  return HEIGHT - 36 - (value / ceiling) * (HEIGHT - 96);
 }
 
 /** Shared track ceilings: kilometers keep 5–10 km past the leader, points step by 20. */
