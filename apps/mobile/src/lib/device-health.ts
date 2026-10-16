@@ -14,6 +14,8 @@ export interface DeviceSyncResult {
   ok: boolean;
   message: string;
   count: number;
+  /** HealthKit / Health Connect permission was granted on this attempt. */
+  authorized?: boolean;
 }
 
 type WorkoutLike = {
@@ -33,6 +35,8 @@ export type SyncAppleHealthDeps = {
   apiUrl: string;
   getAccessToken: () => Promise<{ token?: string; userId?: string }>;
   fetchFn: typeof fetch;
+  /** Demo accounts: keep workouts on-device; do not call the live ingest API. */
+  localOnly?: boolean;
 };
 
 function readReactNativeHealthPackage(): AppleHealthKitPackageExport | null {
@@ -57,7 +61,15 @@ function defaultAppleHealthDeps(): SyncAppleHealthDeps {
       };
     },
     fetchFn: fetch,
+    localOnly: false,
   };
+}
+
+/** Build deps for Apple Health sync, merging over platform defaults. */
+export function createAppleHealthDeps(
+  overrides: Partial<SyncAppleHealthDeps> = {},
+): SyncAppleHealthDeps {
+  return { ...defaultAppleHealthDeps(), ...overrides };
 }
 
 export function sampleFromWorkout(
@@ -95,25 +107,66 @@ export function sampleFromWorkout(
 async function postIngest(
   provider: "apple_health" | "google_health",
   activities: ActivitySample[],
-  deps: Pick<SyncAppleHealthDeps, "apiUrl" | "getAccessToken" | "fetchFn">,
+  deps: Pick<SyncAppleHealthDeps, "apiUrl" | "getAccessToken" | "fetchFn" | "localOnly">,
 ): Promise<DeviceSyncResult> {
+  if (deps.localOnly) {
+    return {
+      ok: true,
+      authorized: true,
+      message:
+        activities.length > 0
+          ? `Connected on this phone. ${activities.length} workouts stay local on a demo account.`
+          : "Connected on this phone. Demo accounts do not upload to the server.",
+      count: activities.length,
+    };
+  }
   const auth = await deps.getAccessToken();
-  const headers: Record<string, string> = { "Content-Type": "application/json" };
-  if (auth.token) headers.Authorization = `Bearer ${auth.token}`;
-  const response = await deps.fetchFn(`${deps.apiUrl}/api/fitness/ingest`, {
-    method: "POST",
-    headers,
-    body: JSON.stringify({
-      provider,
-      activities,
-      userId: auth.userId,
-    }),
-  });
+  if (!auth.token) {
+    return {
+      ok: false,
+      authorized: true,
+      message: "Sign in with a live account to upload workouts to the server.",
+      count: 0,
+    };
+  }
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    Authorization: `Bearer ${auth.token}`,
+  };
+  let response: Response;
+  try {
+    response = await deps.fetchFn(`${deps.apiUrl}/api/fitness/ingest`, {
+      method: "POST",
+      headers,
+      body: JSON.stringify({
+        provider,
+        activities,
+        userId: auth.userId,
+      }),
+    });
+  } catch (error) {
+    const detail = error instanceof Error ? error.message : "Network request failed";
+    return {
+      ok: false,
+      authorized: true,
+      message: `Could not reach the server (${detail}). Check your connection and try again.`,
+      count: 0,
+    };
+  }
   if (!response.ok) {
     const body = (await response.json().catch(() => ({}))) as { error?: string };
-    return { ok: false, message: body.error ?? "Ingest failed", count: 0 };
+    const message =
+      body.error === "authentication_required"
+        ? "Sign in on the You tab to upload workouts to your account."
+        : (body.error ?? "Ingest failed");
+    return { ok: false, authorized: true, message, count: 0 };
   }
-  return { ok: true, message: `Sent ${activities.length} workouts.`, count: activities.length };
+  return {
+    ok: true,
+    authorized: true,
+    message: `Sent ${activities.length} workouts.`,
+    count: activities.length,
+  };
 }
 
 function healthKitErrorMessage(error: unknown): string {
@@ -190,7 +243,12 @@ export async function syncAppleHealth(
     )
     .filter((item): item is ActivitySample => item != null);
   if (activities.length === 0) {
-    return { ok: true, message: "Apple Health returned no mapped workouts.", count: 0 };
+    return {
+      ok: true,
+      authorized: true,
+      message: "Apple Health is connected. No mapped workouts in the last 90 days yet.",
+      count: 0,
+    };
   }
   return postIngest("apple_health", activities, deps);
 }
@@ -207,32 +265,79 @@ const HEALTH_CONNECT_SPORTS: Record<string, string> = {
   CALISTHENICS: "strength",
 };
 
-export async function syncHealthConnect(): Promise<DeviceSyncResult> {
-  if (Platform.OS !== "android") {
+type HealthConnectPermission = { accessType?: string; recordType?: string };
+
+type HealthConnectModule = {
+  initialize: () => Promise<boolean>;
+  requestPermission: (
+    permissions: { accessType: string; recordType: string }[],
+  ) => Promise<HealthConnectPermission[]>;
+  readRecords: (
+    type: string,
+    options: { timeRangeFilter: { operator: string; startTime: string; endTime: string } },
+  ) => Promise<{
+    records?: {
+      metadata?: { id?: string };
+      startTime?: string;
+      endTime?: string;
+      title?: string;
+      exerciseType?: number | string;
+      distance?: { inMeters?: number };
+    }[];
+  }>;
+  ExerciseType?: Record<string, number>;
+};
+
+function healthConnectGrantedExerciseRead(granted: HealthConnectPermission[]): boolean {
+  return granted.some(
+    (permission) =>
+      permission.recordType === "ExerciseSession" && permission.accessType === "read",
+  );
+}
+
+export type SyncHealthConnectDeps = Pick<
+  SyncAppleHealthDeps,
+  "apiUrl" | "getAccessToken" | "fetchFn" | "localOnly"
+> & {
+  platform?: string;
+  /** Injectable for tests; defaults to require("react-native-health-connect"). */
+  healthModule?: HealthConnectModule | null;
+};
+
+function defaultLoadHealthConnect(): HealthConnectModule | null {
+  try {
+    return require("react-native-health-connect") as HealthConnectModule;
+  } catch {
+    return null;
+  }
+}
+
+/** Build ingest deps for Health Connect, merging over platform defaults. */
+export function createHealthConnectDeps(
+  overrides: Partial<SyncHealthConnectDeps> = {},
+): SyncHealthConnectDeps {
+  const base = createAppleHealthDeps(overrides);
+  return {
+    apiUrl: base.apiUrl,
+    getAccessToken: base.getAccessToken,
+    fetchFn: base.fetchFn,
+    localOnly: base.localOnly,
+    platform: overrides.platform ?? Platform.OS,
+    healthModule: overrides.healthModule,
+  };
+}
+
+export async function syncHealthConnect(
+  deps: SyncHealthConnectDeps = createHealthConnectDeps(),
+): Promise<DeviceSyncResult> {
+  const platform = deps.platform ?? Platform.OS;
+  if (platform !== "android") {
     return { ok: false, message: "Health Connect is only available on Android.", count: 0 };
   }
 
-  let health: {
-    initialize: () => Promise<boolean>;
-    requestPermission: (permissions: { accessType: string; recordType: string }[]) => Promise<unknown>;
-    readRecords: (
-      type: string,
-      options: { timeRangeFilter: { operator: string; startTime: string; endTime: string } },
-    ) => Promise<{
-      records?: {
-        metadata?: { id?: string };
-        startTime?: string;
-        endTime?: string;
-        title?: string;
-        exerciseType?: number | string;
-        distance?: { inMeters?: number };
-      }[];
-    }>;
-    ExerciseType?: Record<string, number>;
-  };
-  try {
-    health = require("react-native-health-connect") as typeof health;
-  } catch {
+  const health =
+    deps.healthModule === undefined ? defaultLoadHealthConnect() : deps.healthModule;
+  if (!health) {
     return {
       ok: false,
       message: "Health Connect needs a development build. It is not available in Expo Go.",
@@ -248,10 +353,18 @@ export async function syncHealthConnect(): Promise<DeviceSyncResult> {
   }
   const ready = await health.initialize();
   if (!ready) return { ok: false, message: "Health Connect is not available on this device.", count: 0 };
-  await health.requestPermission([
+  const granted = await health.requestPermission([
     { accessType: "read", recordType: "ExerciseSession" },
     { accessType: "read", recordType: "Distance" },
   ]);
+  if (!healthConnectGrantedExerciseRead(granted ?? [])) {
+    return {
+      ok: false,
+      authorized: false,
+      message: "Health Connect permission was not granted. Allow workout access and try again.",
+      count: 0,
+    };
+  }
   const startTime = new Date(Date.now() - BACKFILL_MS).toISOString();
   const endTime = new Date().toISOString();
   const range = { timeRangeFilter: { operator: "between", startTime, endTime } };
@@ -291,17 +404,12 @@ export async function syncHealthConnect(): Promise<DeviceSyncResult> {
     })
     .filter((item): item is ActivitySample => item != null);
   if (activities.length === 0) {
-    return { ok: true, message: "Health Connect returned no mapped workouts.", count: 0 };
+    return {
+      ok: true,
+      authorized: true,
+      message: "Health Connect is connected. No mapped workouts in the last 90 days yet.",
+      count: 0,
+    };
   }
-  return postIngest("google_health", activities, {
-    apiUrl: mobileEnv.apiUrl,
-    getAccessToken: async () => {
-      const { data } = await supabase.auth.getSession();
-      return {
-        token: data.session?.access_token,
-        userId: data.session?.user.id,
-      };
-    },
-    fetchFn: fetch,
-  });
+  return postIngest("google_health", activities, deps);
 }

@@ -16,12 +16,14 @@
   display: grid;
   place-items: center;
   width: min(100%, 920px);
-  height: clamp(200px, 36vw, 320px);
-  overflow: hidden;
+  height: clamp(240px, 42vw, 360px);
+  overflow: visible;
   isolation: isolate;
 }
 
 .boot-splash-word {
+  position: relative;
+  z-index: 2;
   display: flex;
   align-items: baseline;
   font-family: var(--font-overtaek), var(--font-body), sans-serif;
@@ -31,6 +33,8 @@
   letter-spacing: 0;
   white-space: nowrap;
   color: #fff9e9;
+  /* Solid enough that Ember reads as behind the ink when depth < 0. */
+  text-shadow: 0 0 0 #fff9e9;
 }
 
 /* Keep tight tracking only inside the text run, not as space around the Ember slot. */
@@ -42,7 +46,6 @@
 .boot-splash-slot {
   position: relative;
   display: inline-block;
-  /* Letter-like advance with a clear ink gap — no A / Ember / E overlap. */
   width: 0.9em;
   margin: 0;
   flex: none;
@@ -63,36 +66,40 @@
   display: inline-block;
   letter-spacing: -0.055em;
   margin-left: -0.055em;
-}
-
-.boot-splash-ember {
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  height: 1em;
   will-change: transform;
 }
 
-.boot-splash-ember-align {
-  /*
-   * ViewBox has empty headroom above the crest and a little pad below the feet.
-   * Size so drawn body ≈ capital height; feet flush with letter bottoms.
-   */
+.boot-splash-ember-fly {
   position: absolute;
-  left: 50%;
+  left: 0;
   bottom: 0;
   width: 1.16em;
   height: 1.16em;
-  /* Slight lift: viewBox pad below the feet sits them a few px under the baseline. */
-  transform: translate(-50%, -5%);
+  transform: translate(-50%, 5%);
+  transform-origin: center bottom;
+  will-change: transform, opacity, left, bottom;
+  pointer-events: none;
 }
 
-.boot-splash-ember-align svg {
+.boot-splash-ember-fly svg {
   display: block;
   width: 100%;
   height: 100%;
   overflow: visible;
+}
+
+.boot-splash-k {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  transform: translate(-50%, 0);
+  font-family: var(--font-overtaek), var(--font-body), sans-serif;
+  font-weight: 900;
+  line-height: 1;
+  color: #fff9e9;
+  opacity: 0;
+  pointer-events: none;
+  will-change: opacity, left;
 }
 
 .boot-splash-wait {

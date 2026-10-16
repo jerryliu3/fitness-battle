@@ -1,28 +1,32 @@
 # Overtaek loading wordmark
 
-Product boot splash and design study share the OVERTAKE → OVERTAEK letter choreography. The product splash now renders the shared vector Star Ember from `@fitness-battle/shared/mascot` using the studio **`dash`** clip for body language.
+Product boot splash and design study share the OVERTAKE → OVERTAEK letter choreography. The product splash renders the shared vector Star Ember from `@fitness-battle/shared/mascot`.
 
 ## Product boot splash
 
-Gate + motion live in `@fitness-battle/shared/boot` (`shouldShowBootSplash`, `bootFrame`, `bootEmberPose`, ~1600 ms). The animation **always runs to completion** even when compete data is already ready; if the mark settles first, a spinner waits under OVERTAEK until data is ready.
+Gate + motion live in `@fitness-battle/shared/boot` (`shouldShowBootSplash`, `bootFrame`, `bootEmberPose`, ~3200 ms). The animation **always runs to completion** even when compete data is already ready; if the mark settles first, a spinner waits under OVERTAEK until data is ready.
 
 - **Web:** `PhoneShell` shows `apps/web/src/shell/boot-splash.tsx` on play routes.
-- **Mobile (TestFlight / Expo):** `BootGate` in `apps/mobile/app/_layout.tsx` shows `apps/mobile/src/ui/boot-splash.tsx` before the tab stack. Local AsyncStorage hydrate is usually instant — without this gate the app would skip straight to Today.
+- **Mobile (TestFlight / Expo):** `BootGate` in `apps/mobile/app/_layout.tsx` shows `apps/mobile/src/ui/boot-splash.tsx` before the tab stack.
 
-Beat: long ready while Ember morphs from standing rest into a vague K (right tip down, left tip up), then a short sharp letter jump, then settle with the upper arm still raised. Host travel carries Ember; dash clip only adds light body language during the jump. Background / inactive app pauses the pass. Reduced motion jumps to the finished K wordmark.
+### Beat
 
-Wordmark is scaled larger than body UI type (Nunito Sans 900). Undecided experiment: fade Ember into a literal `K` at settle — not shipped.
+1. **Ready** — Ember stands in the K slot and morphs into a vague K (right tip down, left tip up).
+2. **Flight** — host path flies left **behind** the letters, loops the **O**, returns **in front**, then overtakes **E**. Body language samples studio `flyForward` for object-consistent lean/trail; the host flips facing when traveling left. Depth drives z-order so letter ink occludes Ember while behind.
+3. **Settle** — Ember crossfades into a literal **K** while E finishes sliding into the former slot (OVERTAEK).
 
-No WebGL mesh on the product splash.
+Background / inactive app pauses the pass. Reduced motion jumps to the finished OVERTAEK with the K letter.
+
+Wordmark is scaled larger than body UI type (Nunito Sans 900). No WebGL mesh on the product splash.
 
 ## Design study
 
-Open `/design/overtaek` for the earlier WebGL loading study (still useful as a motion reference). `/design/mascot` is the vector Ember studio, including the `dash` clip used by the product splash. The study routes stay unindexed.
+Open `/design/overtaek` for the earlier WebGL loading study (still useful as a motion reference). `/design/mascot` is the vector Ember studio, including `flyForward` / `dash`. The study routes stay unindexed.
 
 ## Review
 
-- Initial OVERTAKE and final OVERTAEK spelling, with vector Ember replacing K.
-- Dash body language peaks while Ember passes E.
+- Initial OVERTAKE and final OVERTAEK spelling, with Ember→K crossfade at settle.
+- Flight reads behind → around O → in front → overtake E.
 - Boot splash holds until animation completes, then shows a spinner if data is still loading.
-- Reduced motion and background-tab pause.
-- Typecheck, production build, and focused motion/boot-gate/dash sync tests.
+- Reduced motion and background-tab / inactive-app pause.
+- Typecheck and focused boot gate / flight path tests.
