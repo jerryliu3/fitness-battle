@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { sampleEmberLaunch, sampleEmberSkid, type EmberLaunchConcept } from "@fitness-battle/shared/mascot";
+import { sampleEmberLaunch, sampleEmberSkid, emberSkidWordmarkLayout, type EmberLaunchConcept } from "@fitness-battle/shared/mascot";
 import type { BootLayout } from "@fitness-battle/shared/boot";
 import { Ember } from "@/components/mascot/ember";
 import "@/shell/boot-splash.css";
@@ -23,14 +23,15 @@ export function LaunchWordmark({progress,concept,returnToK,reducedMotion,sliding
   },[]);
   const options={layout:layout??undefined,returnToK};
   const frame=sliding?sampleEmberSkid(progress,options):sampleEmberLaunch(progress,concept,options);
+  const eDistance=sliding?emberSkidWordmarkLayout(layout??undefined).eDistance:(layout?.slotWidth??0);
   const size=(layout?.font??1)*.88*frame.scale;
   return <div className="boot-splash" role="img" aria-label={`${concept==="crest-launch"?"Crest first":"Race start"} loading study, ${frame.phase}`}>
     <div ref={stage} className="boot-splash-stage">
       <div ref={word} className="boot-splash-word" aria-hidden="true">
-        <span ref={letters} className="boot-splash-letters">OVERTA</span><span ref={slot} className="boot-splash-slot"><span className="boot-splash-strut">A</span></span><span ref={e} className="boot-splash-e" style={{transform:`translateX(${-(layout?.slotWidth??0)*frame.eShift}px)`}}>E</span>
+        <span ref={letters} className="boot-splash-letters">OVERTA</span><span ref={slot} className="boot-splash-slot"><span className="boot-splash-strut">A</span></span><span ref={e} className="boot-splash-e" style={{transform:`translateX(${-eDistance*frame.eShift}px)`}}>E</span>
       </div>
       <span className="boot-splash-ember-fly" style={{visibility:layout?"visible":"hidden",left:(layout?.homeX??0)+frame.x,bottom:(layout?.homeY??0)-frame.y,width:size,height:size*485/360,zIndex:frame.depth<0?1:3,transform:`translate(-50%,0) scale(${frame.facing},1)`}} aria-hidden="true">
-        <Ember morph={frame.morph} morphConcept={concept} launchFlight={frame.flight} launchCrouch={frame.crouch} launchSkid={"skid" in frame?Number(frame.skid):0} pose={frame.pose} landingDust={reducedMotion?undefined:frame.landingDust} shadow={false}/>
+        <Ember morph={frame.morph} morphConcept={concept} launchFlight={frame.flight} launchCrouch={frame.crouch} launchSkid={"skid" in frame?Number(frame.skid):0} pose={frame.pose} skidSpray={reducedMotion?undefined:("spray" in frame?frame.spray as number|undefined:undefined)} landingDust={reducedMotion?undefined:frame.landingDust} shadow={false}/>
       </span>
     </div>
   </div>;

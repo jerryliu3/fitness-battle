@@ -1,10 +1,20 @@
 import type { BootLayout } from "../boot/motion";
 import { blendEmberPoses, normalizeEmberPose } from "./model";
+import { EMBER_SKID_SPRAY_DURATION } from "./skid-spray";
 import { sampleEmberLaunch, type EmberLaunchFrame } from "./launch-motion";
 
 export const EMBER_SKID_TOUCHDOWN = .685;
 export const EMBER_SKID_STOP = .775;
 export const EMBER_SKID_SETTLED = .84;
+export const EMBER_SKID_FOLDED = .93;
+/** Leave a small optical gap between A and the moved E; K travels with that gap. */
+export const EMBER_SKID_LETTER_GAP = .14;
+export function emberSkidWordmarkLayout(layout?:BootLayout) {
+  const font=layout?.font??1;
+  return {finalX:(layout?.eWidth??.55*font)-.055*font+EMBER_SKID_LETTER_GAP*font,
+    eDistance:(layout?.slotWidth??.712*font)-EMBER_SKID_LETTER_GAP*font,
+    passX:(layout?.slotWidth??.712*font)-(.4085+.055+.20)*font};
+}
 const clamp=(n:number)=>Number.isFinite(n)?Math.max(0,Math.min(1,n)):0;
 const smooth=(n:number)=>{const t=clamp(n);return t*t*(3-2*t);};
 const pulse=(n:number)=>{const t=clamp(n);return 16*t*t*(1-t)**2;};
@@ -12,14 +22,26 @@ const hermite=(a:number,b:number,va:number,t:number,span:number)=>(2*t**3-3*t*t+
 /** Forward-only ground travel. Small force changes suggest stick/slip friction. */
 export function emberSkidTravel(amount:number): number {
   const t=clamp(amount);
-  return 1-(1-t)**3+.025*Math.sin(6*Math.PI*t)*Math.sin(Math.PI*t)**2*(1-t)**2;
+  return 1-(1-t)**3+.032*Math.sin(6*Math.PI*t)*Math.sin(Math.PI*t)**2*(1-t)**2;
 }
-export type EmberSkidFrame = EmberLaunchFrame & {skid:number};
-/** A separate candidate: preserve the #99 jump/orbit and change only its landing. */
+export type EmberSkidFrame = EmberLaunchFrame & {skid:number;spray?:number};
+/** The skid candidate uses a lower takeoff and one combined turn-to-K finish. */
 export function sampleEmberSkid(progress:number,options:{layout?:BootLayout;returnToK?:boolean;reducedMotion?:boolean}={}): EmberSkidFrame {
   const p=options.reducedMotion?1:clamp(progress),base=sampleEmberLaunch(p,"crest-launch",options);
-  if(p<.58||p>=EMBER_SKID_SETTLED)return {...base,skid:0};
-  const font=options.layout?.font??1,finalX=(options.layout?.eWidth??.55*font)-.055*font;
+  const font=options.layout?.font??1,{finalX,passX}=emberSkidWordmarkLayout(options.layout);
+  const finish=options.returnToK?EMBER_SKID_FOLDED:EMBER_SKID_SETTLED;
+  const spray=p>EMBER_SKID_TOUCHDOWN&&!options.reducedMotion?(p-EMBER_SKID_TOUCHDOWN)*4.8/EMBER_SKID_SPRAY_DURATION:undefined;
+  const activeSpray=spray!==undefined&&spray<1?spray:undefined;
+  if(p<.58) {
+    const lead=.025*smooth((p-.215)/.02)*(1-smooth((p-.31)/.16));
+    const travel=sampleEmberLaunch(p+lead,"crest-launch",options);
+    const oldLoad=smooth((p+lead-.18)/.055)*(1-smooth((p+lead-.235)/.04));
+    const heldLoad=smooth((p-.18)/.055)*(1-smooth((p-.30)/.10));
+    // Remove the earlier tall jump and use a lower, shorter spring into the orbit.
+    const y=travel.y+1.05*font*pulse((p+lead-.235)/.15)-.40*font*pulse((p-.235)/.12);
+    return {...base,x:travel.x+.12*font*(oldLoad-heldLoad),y,scale:travel.scale,depth:travel.depth,facing:travel.facing,eShift:0,skid:0};
+  }
+  if(p>=finish)return {...base,x:finalX,eShift:1,morph:options.returnToK?1:base.morph,skid:0,landingDust:undefined,spray:activeSpray};
   const entry=sampleEmberLaunch(.58,"crest-launch",options),before=sampleEmberLaunch(.58-.00001,"crest-launch",options);
   const vx=(entry.x-before.x)/.00001,vy=(entry.y-before.y)/.00001;
   const airSpan=EMBER_SKID_TOUCHDOWN-.58,slideSpan=EMBER_SKID_STOP-EMBER_SKID_TOUCHDOWN;
@@ -27,7 +49,7 @@ export function sampleEmberSkid(progress:number,options:{layout?:BootLayout;retu
   const speed=(finalX-entry.x-vx*airSpan/2)/(airSpan/2+slideSpan/3);
   const distance=speed*slideSpan/3;
   const t=clamp((p-EMBER_SKID_TOUCHDOWN)/slideSpan);
-  const recover=smooth((p-EMBER_SKID_STOP)/(EMBER_SKID_SETTLED-EMBER_SKID_STOP));
+  const recover=smooth((p-EMBER_SKID_STOP)/(finish-EMBER_SKID_STOP));
   const skid=smooth((p-.675)/.01),support=skid*(1-recover);
   const lean=smooth((p-EMBER_SKID_TOUCHDOWN)/.025);
   const chatter=Math.sin(8*Math.PI*t)*Math.sin(Math.PI*t)**2*(1-t);
@@ -41,7 +63,7 @@ export function sampleEmberSkid(progress:number,options:{layout?:BootLayout;retu
   const impact=pulse((p-EMBER_SKID_TOUCHDOWN)/.045);
   const crouch=.18*support+.2*impact;
   const targetPose=normalizeEmberPose({
-    rotation:((1-lean)*base.pose.rotation-6*lean+1.1*chatter)*(1-recover),
+    rotation:((1-lean)*base.pose.rotation-6*lean+1.4*chatter)*(1-recover),
     crest:.8*flight,wind:.9*flight,depth:.75*flight,yaw:.1*flight,
     legLeft:support-.2*flight*(1-support),legRight:-.8*support-.3*flight*(1-support),
     mouthOpen:.55*flight,trail:.8*flight*(1-smooth((p-EMBER_SKID_TOUCHDOWN)/.02)),
@@ -49,9 +71,8 @@ export function sampleEmberSkid(progress:number,options:{layout?:BootLayout;retu
     eyeLeft:1-.12*impact,eyeRight:1-.12*impact,
   });
   const pose=blendEmberPoses(base.pose,targetPose,smooth((p-.64)/.045));
-  const landingDust=p>EMBER_SKID_TOUCHDOWN&&p<.88&&!options.reducedMotion
-    ? p<EMBER_SKID_STOP?.08+.35*t:.43+.57*smooth((p-EMBER_SKID_STOP)/(.88-EMBER_SKID_STOP))
-    : undefined;
-  const phase=p<EMBER_SKID_TOUCHDOWN?"Fast pass":p<EMBER_SKID_TOUCHDOWN+.018?"Touchdown":p<EMBER_SKID_STOP?"Slide":"Settle";
-  return {...base,x,y,scale:entry.scale+(1-entry.scale)*smooth((p-.58)/airSpan),depth:1,facing:1,flight,crouch,skid,pose,landingDust,phase};
+  const morph=options.returnToK?smooth((p-EMBER_SKID_STOP)/(finish-EMBER_SKID_STOP)):0;
+  const eShift=smooth((x-passX)/(finalX-passX));
+  const phase=p<EMBER_SKID_TOUCHDOWN?"Fast pass":p<EMBER_SKID_TOUCHDOWN+.018?"Touchdown":p<EMBER_SKID_STOP?"Slide":options.returnToK?"Reform K":"Settle";
+  return {...base,x,y,scale:entry.scale+(1-entry.scale)*smooth((p-.58)/airSpan),depth:1,facing:1,flight,crouch,skid,pose,morph,eShift,landingDust:undefined,spray:activeSpray,phase};
 }

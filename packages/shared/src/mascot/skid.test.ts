@@ -1,7 +1,8 @@
 import {describe,it,expect} from "vitest";
 import {EMBER_REST,emberDepthOffset,rotateEmberPoint} from "./model";
 import {sampleEmberLaunch} from "./launch-motion";
-import {sampleEmberSkid,emberSkidTravel,EMBER_SKID_TOUCHDOWN,EMBER_SKID_STOP,EMBER_SKID_SETTLED} from "./skid-motion";
+import {sampleEmberSkid,emberSkidTravel,emberSkidWordmarkLayout,EMBER_SKID_TOUCHDOWN,EMBER_SKID_STOP,EMBER_SKID_SETTLED,EMBER_SKID_FOLDED} from "./skid-motion";
+import {skidSprayNodes,EMBER_SKID_SPRAY_DURATION} from "./skid-spray";
 import {emberSkidOffset} from "./skid-rig";
 import {launchFootPoints} from "./launch-shape";
 import {morphEmberContour} from "./morph";
@@ -14,11 +15,14 @@ function worldFeet(p:number) {
   });
 }
 describe("front-foot skid follow-up",()=>{
-  it("preserves the earlier takeoff and original sampler",()=>{
-    for(const p of [0,.15,.18,.232,.285,.45,.57]) {
+  it("preserves the K and orbit, but makes the hop lower and moves backward earlier",()=>{
+    for(const p of [0,.15,.18,.50,.57]) {
       const {skid,...frame}=sampleEmberSkid(p);
       expect(skid).toBe(0);expect(frame).toEqual(sampleEmberLaunch(p,"crest-launch"));
     }
+    const hop=sampleEmberSkid(.285),oldHop=sampleEmberLaunch(.285,"crest-launch");
+    expect(Math.abs(hop.y)).toBeLessThan(Math.abs(oldHop.y)*.6);
+    expect(sampleEmberSkid(.255).x).toBeLessThan(sampleEmberLaunch(.255,"crest-launch").x);
   });
   it("lands before the seat, slides forward with friction, then stays still",()=>{
     const at=sampleEmberSkid(EMBER_SKID_TOUCHDOWN),end=sampleEmberSkid(EMBER_SKID_STOP);
@@ -28,7 +32,7 @@ describe("front-foot skid follow-up",()=>{
     for(let i=1;i<=180;i++) {
       const p=EMBER_SKID_TOUCHDOWN+(EMBER_SKID_STOP-EMBER_SKID_TOUCHDOWN)*i/180,f=sampleEmberSkid(p);
       expect(f.x).toBeGreaterThanOrEqual(last-1e-10);expect(f.y).toBe(0);last=f.x;
-      if(i<180)expect(f.landingDust).toBeGreaterThan(0);
+      if(i<180)expect(f.spray).toBeGreaterThan(0);
     }
     expect(sampleEmberSkid(.83).x).toBe(end.x);
     const h=.00001,x=(p:number)=>sampleEmberSkid(p).x;
@@ -36,6 +40,37 @@ describe("front-foot skid follow-up",()=>{
       expect(Math.abs((x(p)-x(p-h))/h-(x(p+h)-x(p))/h)).toBeLessThan(.05);
     // Friction changes velocity slightly, without reversing the slide.
     expect(emberSkidTravel(.4)).not.toBeCloseTo(1-(1-.4)**3,5);
+  });
+  it("waits for the actual pass before moving E and leaves room after A",()=>{
+    for(const font of [40,80,108]) {
+      const layout={font,slotWidth:.712*font,eWidth:.55*font,overtaWidth:3.6*font};
+      for(const p of [.6,.64,.67,EMBER_SKID_TOUCHDOWN])expect(sampleEmberSkid(p,{layout}).eShift).toBe(0);
+      expect(sampleEmberSkid(.73,{layout}).eShift).toBeGreaterThan(.5);
+      expect(sampleEmberSkid(EMBER_SKID_STOP,{layout}).eShift).toBe(1);
+      const word=emberSkidWordmarkLayout(layout);
+      expect(layout.slotWidth-word.eDistance).toBeCloseTo(.14*font);
+      expect(sampleEmberSkid(1,{layout}).x).toBe(word.finalX);
+    }
+  });
+  it("emits fresh dust throughout the slide, then disperses the last grains",()=>{
+    for(const seconds of [.06,.16,.28,.40]) {
+      const frame=sampleEmberSkid(EMBER_SKID_TOUCHDOWN+seconds/4.8);
+      const plumes=skidSprayNodes(frame.spray,[272,328]);
+      const grains=plumes[0].children!.filter(n=>n.tag==="circle");
+      expect(grains.length).toBeGreaterThanOrEqual(3);
+      expect(grains.some(n=>Number(n.attrs.opacity)>.7)).toBe(true);
+      expect(plumes).toEqual(skidSprayNodes(frame.spray,[272,328]));
+    }
+    expect(skidSprayNodes(1,[272,328])).toEqual([]);
+    expect(sampleEmberSkid(EMBER_SKID_TOUCHDOWN+EMBER_SKID_SPRAY_DURATION/4.8+.001).spray).toBeUndefined();
+  });
+  it("starts the K morph with the recovery rotation, without standing first",()=>{
+    const start=sampleEmberSkid(EMBER_SKID_STOP,{returnToK:true});
+    const turning=sampleEmberSkid(.81,{returnToK:true}),end=sampleEmberSkid(EMBER_SKID_FOLDED,{returnToK:true});
+    expect(start.morph).toBe(0);expect(turning.morph).toBeGreaterThan(0);
+    expect(turning.morph).toBeLessThan(1);expect(turning.pose.rotation).toBeLessThan(-3);
+    expect(turning.flight).toBeGreaterThan(0);expect(end.morph).toBe(1);
+    expect(end.pose).toEqual(EMBER_REST);expect(end.skid).toBe(0);
   });
   it("keeps the left/front sole on the ground rail while leaning and recovering",()=>{
     const target=worldFeet(EMBER_SKID_SETTLED)[1],start=worldFeet(EMBER_SKID_TOUCHDOWN)[1];
@@ -51,12 +86,12 @@ describe("front-foot skid follow-up",()=>{
   });
   it("keeps the silhouette simple through the weight shift and arm recovery",()=>{
     const cross=(a:number[],b:number[],c:number[])=>(b[0]-a[0])*(c[1]-a[1])-(b[1]-a[1])*(c[0]-a[0]);
-    for(let i=0;i<=160;i++) {
-      const p=.64+.21*i/160,f=sampleEmberSkid(p);
-      const d=morphEmberContour(f.pose,f.morph,"crest-launch",f.flight,f.crouch,f.skid);
+    for(const returnToK of [false,true])for(let i=0;i<=200;i++) {
+      const p=.64+.30*i/200,f=sampleEmberSkid(p,{returnToK}),rig=f.skid*(1-f.morph);
+      const d=morphEmberContour(f.pose,f.morph,"crest-launch",f.flight,f.crouch,rig);
       expect(d).not.toMatch(/NaN|Infinity/);
       const points=Array.from(d.matchAll(/([-\d.]+) ([-\d.]+)/g),m=>[+m[1],+m[2]]),n=points.length;
-      const [ox,oy]=emberSkidOffset(f.pose,f.flight,f.crouch,f.skid),depth=emberDepthOffset(f.pose);
+      const [ox,oy]=emberSkidOffset(f.pose,f.flight,f.crouch,rig),depth=emberDepthOffset(f.pose).map(v=>v*(1-f.morph));
       const rendered=points.flatMap(([x,y])=>[[x,y],[x+depth[0],y+depth[1]]]).map(([x,y])=>{
         const q=rotateEmberPoint(180+(x-180)*f.pose.scaleX*Math.cos(f.pose.yaw*1.12),235+(y-235)*f.pose.scaleY,[180,235],f.pose.rotation);
         return [q[0]+f.pose.x+ox,q[1]+f.pose.y+oy];
@@ -77,5 +112,6 @@ describe("front-foot skid follow-up",()=>{
   it("settles without dust or chatter under Reduced Motion",()=>{
     const f=sampleEmberSkid(.73,{returnToK:true,reducedMotion:true});
     expect(f.morph).toBe(1);expect(f.pose).toEqual(EMBER_REST);expect(f.skid).toBe(0);expect(f.landingDust).toBeUndefined();
+    expect(f.spray).toBeUndefined();
   });
 });

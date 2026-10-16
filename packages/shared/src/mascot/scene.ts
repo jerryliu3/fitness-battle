@@ -1,9 +1,10 @@
-import { EMBER_MODEL, emberContour, emberExpression, normalizeEmberPose, rotateEmberPoint, type EmberExpression, type EmberPose } from "./model";
+import { EMBER_REST, EMBER_MODEL, emberContour, emberExpression, normalizeEmberPose, rotateEmberPoint, type EmberExpression, type EmberPose } from "./model";
 import { morphEmberContour, morphEmberSideWalls, emberMorphColor, type EmberMorphConcept } from "./morph";
 import { launchCrescent, launchFootPoints, launchForearm, launchLean } from "./launch-shape";
 import { landingDustNodes } from "./landing-dust";
 import { limbMorphCrescent } from "./limb-morph";
 import { emberSkidOffset } from "./skid-rig";
+import { skidSprayNodes } from "./skid-spray";
 
 /** A small platform-neutral vector display list. No React, native or DOM dependencies. */
 export interface EmberNode {
@@ -28,11 +29,13 @@ export interface EmberSceneOptions {
   launchCrouch?: number;
   /** Follow-up skid only: pin Ember's left/front sole while the body pivots. */
   launchSkid?: number;
+  /** Sustained skid spray clock; independent of the recovering/morphing body. */
+  skidSpray?: number;
   /** Normalized elapsed time since touchdown. */
   landingDust?: number;
 }
 
-export function createEmberScene({ id, pose, expression, shadow = true, morph = 0, morphConcept = "baseline", launchFlight = 0, launchCrouch = 0, launchSkid = 0, landingDust }: EmberSceneOptions): EmberNode[] {
+export function createEmberScene({ id, pose, expression, shadow = true, morph = 0, morphConcept = "baseline", launchFlight = 0, launchCrouch = 0, launchSkid = 0, skidSpray, landingDust }: EmberSceneOptions): EmberNode[] {
   const prefix = `ember-${id.replace(/[^a-zA-Z0-9_-]/g, "") || "model"}`;
   const p = normalizeEmberPose({ ...pose, ...(expression ? emberExpression(expression) : {}) });
   const c = EMBER_MODEL.palette;
@@ -104,6 +107,7 @@ export function createEmberScene({ id, pose, expression, shadow = true, morph = 
     ]),
     // Skid dust can veil the planting toe while the rear leg is airborne.
     ...(skid>0?dust:[]),
+    ...(skidSpray===undefined?[]:skidSprayNodes(skidSpray,launchFootPoints({...EMBER_REST},"crest-launch")[1])),
   ];
 }
 

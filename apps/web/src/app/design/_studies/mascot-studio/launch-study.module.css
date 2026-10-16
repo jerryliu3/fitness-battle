@@ -41,8 +41,8 @@
 @media(max-width:700px) { .card { padding:20px; } .card footer { flex-direction:column; align-items:start; } .top > span { display:none; } }
 @media(max-width:600px) { .cards { grid-template-columns:1fr; } .characterStage { height:295px; } .wordmarkStage :global(.boot-splash-word) { font-size:clamp(28px,10.8vw,48px); } .wordmarkStage :global(.boot-splash) { min-height:320px; } .toolbar { gap:16px; } }
 
-.slidingStage { --travel-unit:46px; }
+.slidingStage { --travel-unit:46px; --finish-x:.635; }
 @media(max-width:600px) { .slidingStage { --travel-unit:26px; } }
 
 .skidGround { position:absolute; bottom:60px; left:12%; right:8%; height:1px; background:#cbbbd640; }
-.skidGround span { position:absolute; left:calc(47.5% + .495 * var(--travel-unit) + 62px); bottom:-18px; font-size:9px; color:#cbbbd6; transform:translateX(-50%); }
+.skidGround span { position:absolute; left:calc(47.5% + var(--finish-x, .495) * var(--travel-unit) + 62px); bottom:-18px; font-size:9px; color:#cbbbd6; transform:translateX(-50%); }
