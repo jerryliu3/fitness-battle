@@ -20,6 +20,7 @@
     "@expo-google-fonts/dm-sans": "^0.4.0",
     "@expo-google-fonts/nunito-sans": "^0.4.2",
     "@expo/metro-runtime": "~6.1.2",
+    "@fitness-battle/pursuit": "workspace:*",
     "@fitness-battle/shared": "workspace:*",
     "@gorhom/bottom-sheet": "^5.2.9",
     "@react-native-async-storage/async-storage": "^2.2.0",

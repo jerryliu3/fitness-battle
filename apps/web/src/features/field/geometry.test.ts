@@ -6,7 +6,7 @@ import {
   valueAt,
   worldZ,
   type SceneRunner,
-} from "./geometry";
+} from "@fitness-battle/pursuit/geometry";
 
 const you: SceneRunner = {
   id: "you",

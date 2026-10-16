@@ -29,6 +29,9 @@ importers:
       '@expo/metro-runtime':
         specifier: ~6.1.2
         version: 6.1.2(expo@54.0.37)(react-dom@19.1.0(react@19.1.0))(react-native@0.81.5(@babel/core@7.29.7)(@types/react@19.1.17)(react@19.1.0))(react@19.1.0)
+      '@fitness-battle/pursuit':
+        specifier: workspace:*
+        version: link:../../packages/pursuit
       '@fitness-battle/shared':
         specifier: workspace:*
         version: link:../../packages/shared
@@ -147,6 +150,9 @@ importers:
 
   apps/web:
     dependencies:
+      '@fitness-battle/pursuit':
+        specifier: workspace:*
+        version: link:../../packages/pursuit
       '@fitness-battle/rankings':
         specifier: workspace:*
         version: link:../../packages/rankings
@@ -205,6 +211,34 @@ importers:
       '@types/react-dom':
         specifier: ^19
         version: 19.3.0(@types/react@19.1.17)
+      '@types/three':
+        specifier: 0.186.0
+        version: 0.186.0
+      typescript:
+        specifier: ^5.9.2
+        version: 5.9.3
+      vitest:
+        specifier: ^3.2.4
+        version: 3.2.7(@types/node@20.19.43)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.51.2)(yaml@2.9.1)
+
+  packages/pursuit:
+    dependencies:
+      '@fitness-battle/shared':
+        specifier: workspace:*
+        version: link:../shared
+      react:
+        specifier: ^19.1.0
+        version: 19.1.0
+      react-dom:
+        specifier: ^19.1.0
+        version: 19.1.0(react@19.1.0)
+      three:
+        specifier: 0.186.1
+        version: 0.186.1
+    devDependencies:
+      '@types/react':
+        specifier: ^19
+        version: 19.1.17
       '@types/three':
         specifier: 0.186.0
         version: 0.186.0

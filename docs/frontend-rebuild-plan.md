@@ -31,7 +31,7 @@ Functionality, data, and the custom screens we already like stay. They move into
 
 - **Checkpoints.** The winding Today view: past counted sessions, Ace on today’s suggestion, blank future nodes, and the return that opens Arena when there is new counted progress. The route, discs, and mascot stay. Buttons and labels around them can be replaced.
 - **2D competition.** The lane track and the standings it draws from. Same model, same lanes. The toggle, replay, and surrounding totals can be restyled.
-- **3D competition.** The existing pursuit render stays on the web Arena, switched with the 2D track. Mobile embeds the same `/arena-scene` renderer. It is not replaced by a chart from a library.
+- **3D competition.** Shared `@fitness-battle/pursuit` (Three.js) on web and Expo web in-process; native embeds `/arena-scene` via WebView. Not replaced by a chart library.
 - **The data under those views.** Compete state, period standings, sessions, and crews. `@fitness-battle/shared`, Supabase, and the tracker and crew APIs stay.
 
 ## Replace the generic chrome

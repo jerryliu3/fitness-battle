@@ -1,86 +1,73 @@
-import { createElement, useEffect, useRef } from "react";
-import { mobileEnv } from "../lib/env";
+import { createElement } from "react";
+import {
+  LivePursuit,
+  defaultLook,
+  type SceneRunner,
+} from "@fitness-battle/pursuit";
 import type { Arena3DProps } from "./arena-3d";
 
-const SYNC_MS = 80;
-
+/**
+ * Expo web runs the Three.js pursuit in-process (same as Next Arena).
+ * Only native uses a WebView → /arena-scene bridge.
+ */
 export function Arena3D({
   model,
   onSelect,
   onPan,
   onUnavailable,
 }: Arena3DProps) {
-  const ref = useRef<HTMLIFrameElement>(null);
-  const ready = useRef(false);
-  const origin = new URL(mobileEnv.apiUrl).origin;
-  const latest = useRef({ model, onSelect, onPan, onUnavailable });
-  latest.current = { model, onSelect, onPan, onUnavailable };
-  const timer = useRef<number | null>(null);
-
-  function post(next = latest.current.model) {
-    ref.current?.contentWindow?.postMessage(next, origin);
-  }
-
-  function scheduleSync() {
-    if (!ready.current) return;
-    if (timer.current != null) return;
-    timer.current = window.setTimeout(() => {
-      timer.current = null;
-      post();
-    }, SYNC_MS);
-  }
-
-  useEffect(() => {
-    const receive = (event: MessageEvent) => {
-      if (
-        event.source !== ref.current?.contentWindow ||
-        event.origin !== origin
-      )
-        return;
-      const m = event.data;
-      const p = latest.current;
-      if (m?.type === "arena-ready") {
-        ready.current = true;
-        post(p.model);
+  const runners: SceneRunner[] = model.lanes
+    .filter((lane) => !lane.ghost)
+    .map((lane) => ({
+      id: lane.id,
+      name: lane.name,
+      initials: lane.initials,
+      series: [0, lane.value],
+      you: lane.you,
+    }));
+  const ghostLane = model.lanes.find((item) => item.ghost);
+  const ghost: SceneRunner | null = ghostLane
+    ? {
+        id: ghostLane.id,
+        name: ghostLane.name,
+        initials: ghostLane.initials,
+        series: [0, ghostLane.value],
+        ghost: true,
       }
-      if (
-        m?.type === "arena-selected" &&
-        p.model.lanes.some((l) => l.id === m.id)
-      )
-        p.onSelect(m.id);
-      if (m?.type === "arena-pan" && Number.isFinite(m.center))
-        p.onPan(Math.max(0, m.center));
-      if (m?.type === "arena-unavailable") p.onUnavailable();
-    };
-    const timeout = setTimeout(() => {
-      if (!ready.current) latest.current.onUnavailable();
-    }, 12000);
-    window.addEventListener("message", receive);
-    return () => {
-      clearTimeout(timeout);
-      if (timer.current != null) window.clearTimeout(timer.current);
-      window.removeEventListener("message", receive);
-    };
-  }, [origin]);
+    : null;
 
-  useEffect(() => {
-    scheduleSync();
-  }, [model]);
-
-  return createElement("iframe", {
-    ref,
-    src: `${origin}/arena-scene`,
-    title: "3D athlete lanes",
-    style: {
-      height: 520,
-      width: "100%",
-      border: 0,
-      borderRadius: 20,
-      background: "#edf2e8",
+  return createElement(
+    "div",
+    {
+      className: "fb-arena-3d",
+      style: {
+        height: 520,
+        width: "100%",
+        borderRadius: 20,
+        overflow: "hidden",
+        background: "#edf2e8",
+        position: "relative" as const,
+      },
     },
-    onLoad: () => {
-      if (ready.current) post(latest.current.model);
-    },
-    onError: onUnavailable,
-  });
+    createElement(
+      "style",
+      null,
+      `.fb-arena-3d .fd-live-world{height:520px;min-height:520px}.fb-arena-3d .fd-world-label{background:#fffffff0;color:#26382d;border:1px solid #dce3d7;border-radius:10px}.fb-arena-3d canvas{touch-action:none;height:520px!important}`,
+    ),
+    createElement(LivePursuit, {
+      runners,
+      ghost,
+      time: 1,
+      extra: 0,
+      selected: model.selected,
+      showGhost: true,
+      camera: "above" as const,
+      look: defaultLook,
+      unit: model.unit,
+      view: model.view,
+      onPan,
+      onSelect,
+      onUnavailable,
+    }),
+  );
 }

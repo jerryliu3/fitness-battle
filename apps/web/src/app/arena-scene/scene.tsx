@@ -5,39 +5,23 @@ import {
   parseArenaSceneMessage,
   type ArenaSceneMessage,
 } from "@fitness-battle/shared";
-import { defaultLook } from "@/features/field/avatar";
-import "@/features/field/field.css";
+import { defaultLook } from "@fitness-battle/pursuit";
 
 const Scene = dynamic(
-  () =>
-    import("@/features/field/components/live-pursuit").then(
-      (m) => m.LivePursuit,
-    ),
+  () => import("@fitness-battle/pursuit").then((m) => m.LivePursuit),
   { ssr: false },
 );
 
-function isNativeBridge() {
-  return !!(window as unknown as { ReactNativeWebView?: unknown })
-    .ReactNativeWebView;
-}
-
 /**
- * Parent ↔ child handshake for the embedded Arena 3D page.
+ * Native-only host page for Arena 3D.
  *
- * Native WebView never uses window.postMessage target origins — it goes
- * through ReactNativeWebView.postMessage / injectJavaScript.
- *
- * Expo web embeds this page in a cross-origin iframe. The child does not
- * know the parent's origin until the parent posts the first valid model.
- * So `arena-ready` may use targetOrigin "*" until that parse succeeds
- * (browser requirement when the peer origin is unknown). Ready is retried
- * briefly so a missed first ping cannot leave the iframe blank. After a
- * successfully parsed parent message, replies lock to that origin.
+ * Expo web renders LivePursuit in-process (no iframe). Native WebView loads
+ * this route and talks through ReactNativeWebView.postMessage / injectJavaScript
+ * — never window.postMessage target origins.
  */
 export function ArenaScene() {
   const [model, setModel] = useState<ArenaSceneMessage | null>(null);
   const [error, setError] = useState(false);
-  const parentOrigin = useRef<string | null>(null);
   const gotModel = useRef(false);
 
   function send(data: object) {
@@ -46,20 +30,11 @@ export function ArenaScene() {
         ReactNativeWebView?: { postMessage: (s: string) => void };
       }
     ).ReactNativeWebView;
-    if (native) {
-      native.postMessage(JSON.stringify(data));
-      return;
-    }
-    if (window.parent !== window) {
-      window.parent.postMessage(data, parentOrigin.current ?? "*");
-    }
+    if (native) native.postMessage(JSON.stringify(data));
   }
 
   useEffect(() => {
     function receive(event: MessageEvent) {
-      if (!isNativeBridge()) {
-        if (event.source !== window.parent) return;
-      }
       let data = event.data;
       try {
         if (typeof data === "string") data = JSON.parse(data);
@@ -68,15 +43,10 @@ export function ArenaScene() {
       }
       const next = parseArenaSceneMessage(data);
       if (!next) return;
-      if (!isNativeBridge()) {
-        if (!parentOrigin.current) parentOrigin.current = event.origin;
-        else if (event.origin !== parentOrigin.current) return;
-      }
       gotModel.current = true;
       setModel(next);
     }
     window.addEventListener("message", receive);
-    // Ping until the parent delivers a model (covers a missed first ready).
     send({ type: "arena-ready" });
     const retry = window.setInterval(() => {
       if (gotModel.current) {

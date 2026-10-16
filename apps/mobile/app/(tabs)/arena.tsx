@@ -227,8 +227,7 @@ export default function ArenaScreen() {
             )}
             {failed && (
               <Text style={f.small}>
-                3D needs an available web renderer. Your native 2D lanes remain
-                interactive.
+                3D needs WebGL on this device. Your 2D lanes remain interactive.
               </Text>
             )}
             <View style={f.chipRow}>

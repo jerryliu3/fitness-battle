@@ -1,0 +1,38 @@
+.fd-live-world {
+  position: relative;
+  min-height: clamp(460px, 58vh, 680px);
+  width: 100%;
+  background: #d5d6d3;
+}
+
+.fd-live-world canvas {
+  width: 100%;
+  height: 100%;
+  min-height: inherit;
+  display: block;
+}
+
+.fd-world-label {
+  position: absolute;
+  transform: translate(-50%, -120%);
+  border: 0;
+  background: #fff;
+  color: #28282a;
+  padding: 4px 8px;
+  border-radius: 2px;
+  display: grid;
+  cursor: pointer;
+}
+
+.fd-world-label strong {
+  font-size: 12px;
+}
+
+.fd-world-label small {
+  font-size: 10px;
+  opacity: 0.75;
+}
+
+.fd-world-label.is-selected {
+  outline: 2px solid #ef6635;
+}
