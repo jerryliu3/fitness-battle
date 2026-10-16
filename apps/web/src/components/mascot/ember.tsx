@@ -8,13 +8,13 @@ function renderNode(node: EmberNode, key: number): React.ReactNode {
 }
 
 /** Stateless renderer. The same display list also drives the native component and SVG exports. */
-export const Ember = memo(function Ember({ pose, expression, shadow = true, morph = 0, morphConcept = "baseline", label, className, style }: {
+export const Ember = memo(function Ember({ pose, expression, shadow = true, morph = 0, morphConcept = "baseline", launchFlight = 0, landingDust, label, className, style }: {
   pose?: Partial<EmberPose>; expression?: EmberExpression; shadow?: boolean;
   /** Omit label when decorative. Describe the outcome separately when it conveys product state. */
-  label?: string; className?: string; style?: CSSProperties; morph?: number; morphConcept?: EmberMorphConcept;
+  label?: string; className?: string; style?: CSSProperties; morph?: number; morphConcept?: EmberMorphConcept; launchFlight?: number; landingDust?: number;
 }) {
   const id = useId();
   return <svg viewBox={EMBER_MODEL.viewBox} className={className} style={style} role={label ? "img" : undefined} aria-label={label} aria-hidden={label ? undefined : true} focusable="false">
-    {createEmberScene({ id, pose, expression, shadow, morph, morphConcept }).map(renderNode)}
+    {createEmberScene({ id, pose, expression, shadow, morph, morphConcept, launchFlight, landingDust }).map(renderNode)}
   </svg>;
 });

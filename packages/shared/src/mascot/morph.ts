@@ -5,7 +5,9 @@ import {
 import { EMBER_K_OUTLINE } from "./k-outline";
 import { sampleLimbMorph, type EmberLimbConcept } from "./limb-morph";
 
-export type EmberMorphConcept = "baseline" | EmberLimbConcept;
+import { launchMorphPoints, type EmberLaunchConcept } from "./launch-shape";
+
+export type EmberMorphConcept = "baseline" | EmberLimbConcept | EmberLaunchConcept;
 
 type Point = readonly [number, number];
 const clamp = (n: number) => Number.isFinite(n) ? Math.max(0, Math.min(1, n)) : 0;
@@ -43,7 +45,8 @@ function outline(pose: EmberPose): Point[] {
   });
 }
 
-function morphedPoints(pose: EmberPose, t: number, concept: EmberMorphConcept): Point[] {
+function morphedPoints(pose: EmberPose, t: number, concept: EmberMorphConcept, flight = 0): Point[] {
+  if (concept === "crest-launch" || concept === "race-launch") return launchMorphPoints(pose, t, concept, flight);
   if (concept !== "baseline") return sampleLimbMorph(pose, t, concept);
   return outline(pose).map((p, i) => {
     const k = EMBER_K_OUTLINE[(i + K_SEAM) % EMBER_K_OUTLINE.length];
@@ -52,17 +55,17 @@ function morphedPoints(pose: EmberPose, t: number, concept: EmberMorphConcept): 
 }
 
 /** One continuous opaque surface, reversible at every progress value. */
-export function morphEmberContour(pose: EmberPose, amount: number, concept: EmberMorphConcept = "baseline"): string {
+export function morphEmberContour(pose: EmberPose, amount: number, concept: EmberMorphConcept = "baseline", flight = 0): string {
   const t = clamp(amount);
-  if (t === 0) return emberContour(pose);
-  return `M ${morphedPoints(pose, t, concept).map(point).join(" L ")} Z`;
+  if (t === 0 && concept !== "crest-launch" && concept !== "race-launch") return emberContour(pose);
+  return `M ${morphedPoints(pose, t, concept, flight).map(point).join(" L ")} Z`;
 }
 
 /** Depth follows the new outline, leaving no old star behind the letter. */
-export function morphEmberSideWalls(pose: EmberPose, amount: number, concept: EmberMorphConcept = "baseline"): string {
+export function morphEmberSideWalls(pose: EmberPose, amount: number, concept: EmberMorphConcept = "baseline", flight = 0): string {
   const t = clamp(amount);
-  if (t === 0) return emberSideWalls(pose);
-  const points = morphedPoints(pose, t, concept);
+  if (t === 0 && concept !== "crest-launch" && concept !== "race-launch") return emberSideWalls(pose);
+  const points = morphedPoints(pose, t, concept, flight);
   const [dx, dy] = emberDepthOffset(pose).map(v => v * (1 - t));
   return points.map((a, i) => {
     const b = points[(i + 1) % points.length];

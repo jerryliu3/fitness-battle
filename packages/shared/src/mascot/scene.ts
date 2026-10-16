@@ -1,5 +1,7 @@
 import { EMBER_MODEL, emberContour, emberExpression, normalizeEmberPose, type EmberExpression, type EmberPose } from "./model";
 import { morphEmberContour, morphEmberSideWalls, emberMorphColor, type EmberMorphConcept } from "./morph";
+import { launchCrescent, launchForearm, launchLean } from "./launch-shape";
+import { landingDustNodes } from "./landing-dust";
 import { limbMorphCrescent } from "./limb-morph";
 
 /** A small platform-neutral vector display list. No React, native or DOM dependencies. */
@@ -19,15 +21,22 @@ export interface EmberSceneOptions {
   morph?: number;
   /** Review-only candidates; product defaults to the current baseline. */
   morphConcept?: EmberMorphConcept;
+  /** New launch study only; zero holds its sculpted stance, one is flying. */
+  launchFlight?: number;
+  /** Normalized elapsed time since a sharp stop. */
+  landingDust?: number;
 }
 
-export function createEmberScene({ id, pose, expression, shadow = true, morph = 0, morphConcept = "baseline" }: EmberSceneOptions): EmberNode[] {
+export function createEmberScene({ id, pose, expression, shadow = true, morph = 0, morphConcept = "baseline", launchFlight = 0, landingDust }: EmberSceneOptions): EmberNode[] {
   const prefix = `ember-${id.replace(/[^a-zA-Z0-9_-]/g, "") || "model"}`;
   const p = normalizeEmberPose({ ...pose, ...(expression ? emberExpression(expression) : {}) });
   const c = EMBER_MODEL.palette;
   const amount = Number.isFinite(morph) ? Math.max(0,Math.min(1,morph)) : 0;
   const detail = (1-amount)**3;
-  const body = morphEmberContour(p, amount, morphConcept);
+  const isLaunch = morphConcept === "crest-launch" || morphConcept === "race-launch";
+  const flight = Number.isFinite(launchFlight) ? Math.max(0,Math.min(1,launchFlight)) : 0;
+  const body = morphEmberContour(p, amount, morphConcept, flight);
+  const crescent = isLaunch ? launchCrescent(p, amount, morphConcept, flight) : morphConcept === "baseline" ? emberContour(p,true) : limbMorphCrescent(p,amount,morphConcept);
   const yawScale = Math.cos(p.yaw * 1.12);
   const faceShift = p.yaw * 38;
   const eye = (x: number, open: number): EmberNode => node("g", { transform: `translate(${x} 206)` }, [
@@ -66,14 +75,19 @@ export function createEmberScene({ id, pose, expression, shadow = true, morph = 
       node("g", { opacity: f(p.sparkle) }, [sparkle(-157, -43, 6), sparkle(-175, 23, 4), sparkle(-126, 58, 7)]),
     ]),
     node("g", { opacity: f(p.sparkle * (1 - p.trail * 0.85)) }, [sparkle(287, 88, 12), sparkle(318, 114, 7), sparkle(303, 57, 6), sparkle(65, 105, 8)]),
+    ...landingDustNodes(landingDust, morphConcept === "race-launch" ? [250,350] : [140,362]),
     node("g", { transform: `translate(${f(p.x)} ${f(p.y)}) translate(180 235) rotate(${f(p.rotation)}) scale(${f(p.scaleX * yawScale)} ${f(p.scaleY)}) translate(-180 -235)` }, [
       // Filled connecting surfaces restore the baseline's directional extrusion.
       // The gold face occludes inward-facing walls; there is no outline stroke or second back star.
-      node("path", { d: morphEmberSideWalls(p, amount, morphConcept), fill: emberMorphColor(c.edge, amount) }),
+      node("path", { d: morphEmberSideWalls(p, amount, morphConcept, flight), fill: emberMorphColor(c.edge, amount) }),
       node("path", { d: body, fill: `url(#${prefix}-gold)` }),
       node("g", { clipPath: `url(#${prefix}-body)`, opacity: detail }, [
-        node("path", { d: morphConcept === "baseline" ? emberContour(p, true) : limbMorphCrescent(p, amount, morphConcept), fill: c.edge }),
-        face,
+        node("path", { d: crescent, fill: c.edge }),
+        ...(isLaunch ? [node("g", {transform:`rotate(${f(launchLean(morphConcept,flight)*(1-amount))} 180 235)`},[face])] : [face]),
+        ...(morphConcept === "race-launch" ? [node("g",{opacity:f((1-flight)**2)},[
+          node("path",{d:launchForearm(p,amount,flight),fill:`url(#${prefix}-gold)`}),
+          node("path",{d:launchForearm(p,amount,flight,true),fill:"none",stroke:c.edge,strokeWidth:3,strokeLinecap:"round",opacity:.42}),
+        ])] : []),
       ]),
     ]),
   ];

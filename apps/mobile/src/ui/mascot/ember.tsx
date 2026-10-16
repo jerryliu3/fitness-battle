@@ -9,11 +9,11 @@ function renderNode(node: EmberNode, key: number): React.ReactNode {
   return createElement(Element, { ...node.attrs, key }, node.children?.map(renderNode));
 }
 
-export function Ember({ pose, expression, size = 160, shadow = true, morph = 0, morphConcept = "baseline", label }: {
-  pose?: Partial<EmberPose>; expression?: EmberExpression; size?: number; shadow?: boolean; label?: string; morph?: number; morphConcept?: EmberMorphConcept;
+export function Ember({ pose, expression, size = 160, shadow = true, morph = 0, morphConcept = "baseline", launchFlight = 0, landingDust, label }: {
+  pose?: Partial<EmberPose>; expression?: EmberExpression; size?: number; shadow?: boolean; label?: string; morph?: number; morphConcept?: EmberMorphConcept; launchFlight?: number; landingDust?: number;
 }) {
   const id = useId();
   return <Svg width={size} height={size * EMBER_MODEL.height / EMBER_MODEL.width} viewBox={EMBER_MODEL.viewBox} accessible={Boolean(label)} accessibilityRole={label ? "image" : undefined} accessibilityLabel={label}>
-    {createEmberScene({ id, pose, expression, shadow, morph, morphConcept }).map(renderNode)}
+    {createEmberScene({ id, pose, expression, shadow, morph, morphConcept, launchFlight, landingDust }).map(renderNode)}
   </Svg>;
 }

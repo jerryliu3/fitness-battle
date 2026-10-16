@@ -3,3 +3,5 @@ export * from "./motion";
 export * from "./scene";
 export * from "./morph";
 export * from "./limb-morph";
+export * from "./launch-shape";
+export * from "./launch-motion";

@@ -33,6 +33,7 @@ export function ProductMotionStudy() {
     <p className={styles.eyebrow}>ONE OUTLINE. EVERY MOVE.</p>
     <h1>A little spark.<br/>A familiar signature.</h1>
     <p className={styles.intro}>Carry the K’s branches into Ember’s limbs. Compare two anatomical mappings, then review the loading sequence and field motion below.</p>
+    <p><Link href="/design/mascot/launch">New follow-up: held launch poses & sharp landing →</Link></p>
     <LimbConcepts/>
     <div className={styles.loadingHeading}><h2>Try it in the loading sequence.</h2><label>Loading morph<select aria-label="Loading morph concept" value={bootConcept} onChange={event=>{setBootConcept(event.target.value as EmberMorphConcept);setProgress(0);}}><option value="baseline">Current baseline</option><option value="crest-first">01 · Crest first</option><option value="race-start">02 · Race start</option></select></label></div>
     <section className={styles.preview} aria-label="Production loading animation review">
