@@ -24,6 +24,20 @@ export function arenaWindow(center: number, span: number) {
     span: safeSpan,
   };
 }
+
+/**
+ * For 2D vertical lanes, ensures the starting line (0) remains near the bottom
+ * of the visible track (leaving a minimal ~7% margin behind the line) rather
+ * than centering on 0 and showing extensive empty space behind the start line.
+ */
+export function clampArenaLaneCenter(center: number, span: number): number {
+  const safeSpan = Number.isFinite(span)
+    ? Math.max(0.5, Math.min(5000, span))
+    : 6;
+  const minCenter = safeSpan * 0.43;
+  const safeCenter = Number.isFinite(center) ? center : 0;
+  return Math.max(minCenter, safeCenter);
+}
 export function arenaPosition(value: number, view: ArenaViewWindow) {
   const bounds = arenaWindow(view.center, view.span);
   return {

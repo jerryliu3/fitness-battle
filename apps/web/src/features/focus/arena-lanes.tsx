@@ -3,6 +3,7 @@ import { useRef, useEffect } from "react";
 import {
   arenaPosition,
   arenaWindow,
+  clampArenaLaneCenter,
   orderedArenaLanes,
   type ArenaSceneLane,
   type ArenaViewWindow,
@@ -32,11 +33,16 @@ export function ArenaLanes({
   } | null>(null);
   const ordered = orderedArenaLanes(lanes);
   const ghost = lanes.find((l) => l.ghost);
-  const bounds = arenaWindow(view.center, view.span);
+  const effectiveCenter = clampArenaLaneCenter(view.center, view.span);
+  const effectiveView: ArenaViewWindow =
+    effectiveCenter === view.center
+      ? view
+      : { center: effectiveCenter, span: view.span };
+  const bounds = arenaWindow(effectiveView.center, effectiveView.span);
   const width = Math.max(360, ordered.length * 72 + 52),
     height = 540,
     laneWidth = (width - 52) / Math.max(1, ordered.length);
-  const y = (v: number) => 72 + arenaPosition(v, view).fraction * 400;
+  const y = (v: number) => 72 + arenaPosition(v, effectiveView).fraction * 400;
 
   const sortedByValue = [...ordered].sort((a, b) => b.value - a.value);
   const topRunner = sortedByValue[0];
@@ -77,14 +83,18 @@ export function ArenaLanes({
           if (e.key === "ArrowUp" || e.key === "ArrowDown") {
             e.preventDefault();
             onPan(
-              view.center + ((e.key === "ArrowUp" ? 1 : -1) * view.span) / 4,
+              clampArenaLaneCenter(
+                effectiveView.center +
+                  ((e.key === "ArrowUp" ? 1 : -1) * effectiveView.span) / 4,
+                effectiveView.span,
+              ),
             );
           }
         }}
         onPointerDown={(e) => {
           drag.current = {
             y: e.clientY,
-            center: view.center,
+            center: effectiveView.center,
             moved: false,
             id:
               (e.target as Element)
@@ -98,7 +108,12 @@ export function ArenaLanes({
           const delta = e.clientY - drag.current.y;
           if (Math.abs(delta) > 5) {
             drag.current.moved = true;
-            onPan(drag.current.center + (delta / 400) * view.span);
+            onPan(
+              clampArenaLaneCenter(
+                drag.current.center + (delta / 400) * effectiveView.span,
+                effectiveView.span,
+              ),
+            );
           }
         }}
         onPointerUp={(e) => {

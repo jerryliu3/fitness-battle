@@ -38,6 +38,24 @@ function renderTab(tabId: ShellTabId, accountKey: string): ReactNode {
   }
 }
 
+const BOOT_SEEN_KEY = "fb-boot-splash-seen";
+
+function hasSeenBootSplash(): boolean {
+  if (typeof window === "undefined") return false;
+  try {
+    return sessionStorage.getItem(BOOT_SEEN_KEY) === "1";
+  } catch {
+    return false;
+  }
+}
+
+function markBootSplashSeen(): void {
+  if (typeof window === "undefined") return;
+  try {
+    sessionStorage.setItem(BOOT_SEEN_KEY, "1");
+  } catch {}
+}
+
 export function PhoneShell({
   children,
   hideTabs = false,
@@ -58,7 +76,7 @@ export function PhoneShell({
     retryLoad,
   } = useCompete();
   const [pressed, setPressed] = useState<ShellTabId | null>(null);
-  const [bootAnimDone, setBootAnimDone] = useState(false);
+  const [bootAnimDone, setBootAnimDone] = useState(() => hasSeenBootSplash());
   const matched = shellTabFromPath(path)?.id ?? null;
   const active = pressed ?? matched;
   const accountKey = user?.id ?? "guest";
@@ -135,13 +153,35 @@ export function PhoneShell({
     for (const tab of SHELL_TABS) router.prefetch(tab.href);
   }, [router]);
 
-  // Finish the overtake animation even if compete state is already ready.
-  if (shouldShowBootSplash(dataReady, bootAnimDone)) {
+  // Only play the full initial mascot boot splash on fresh browser boot.
+  // Account creation, login, or page transitions don't reload the splash.
+  if (!bootAnimDone) {
     return (
       <BootSplash
-        waiting={bootAnimDone && !dataReady}
-        onAnimationComplete={() => setBootAnimDone(true)}
+        waiting={false}
+        onAnimationComplete={() => {
+          markBootSplashSeen();
+          setBootAnimDone(true);
+        }}
       />
+    );
+  }
+
+  if (!dataReady) {
+    return (
+      <div className="phone-frame">
+        <div className="phone-shell">
+          <header className="focus-shell-header">
+            <Link href="/today">OVERTAEK</Link>
+            <span>A LITTLE FURTHER, TOGETHER.</span>
+          </header>
+          <div className="phone-main phone-main-solo">
+            <p className="fb-copy" style={{ margin: "auto", textAlign: "center" }}>
+              Loading…
+            </p>
+          </div>
+        </div>
+      </div>
     );
   }
 

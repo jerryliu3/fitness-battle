@@ -71,6 +71,7 @@ export interface Action {
   type:
     | "rename"
     | "set-city"
+    | "set-avatar"
     | "set-units"
     | "set-primary"
     | "set-focus"
@@ -100,6 +101,7 @@ export interface Action {
     | "debug-close-week";
   name?: string;
   city?: string;
+  avatarUrl?: string | null;
   units?: UnitSystem;
   sport?: SportId;
   metric?: HealthMetricId;
@@ -275,6 +277,11 @@ export function migrateCompeteState(parsed: CompeteState): CompeteState {
       ? (parsed as CompeteState).crewBoard
       : null,
     units: parseUnitSystem((parsed as CompeteState).units),
+    avatarUrl:
+      typeof (parsed as CompeteState).avatarUrl === "string" &&
+      (parsed as CompeteState).avatarUrl!.trim().length > 0
+        ? (parsed as CompeteState).avatarUrl!.trim()
+        : null,
   };
 }
 
@@ -340,6 +347,7 @@ export function freshState(now: Date = new Date()): CompeteState {
     demoNow: null,
     enrollments: [],
     crewBoard: null,
+    avatarUrl: null,
   };
 }
 
@@ -914,6 +922,13 @@ export function reduceCompete(
     case "set-city": {
       const city = action.city?.trim().slice(0, 40);
       return city ? { ...rolled, city } : rolled;
+    }
+    case "set-avatar": {
+      const avatarUrl =
+        typeof action.avatarUrl === "string" && action.avatarUrl.trim().length > 0
+          ? action.avatarUrl.trim()
+          : null;
+      return { ...rolled, avatarUrl };
     }
     case "set-units": {
       if (action.units !== "us" && action.units !== "metric") return rolled;

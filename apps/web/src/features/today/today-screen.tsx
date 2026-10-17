@@ -6,7 +6,10 @@ import type { EmberAction } from "@fitness-battle/shared/mascot";
 import {
   buildTodayRoute,
   competeNow,
+  competePeriodWindow,
   countsOnTrack,
+  distanceUnitLabel,
+  formatDistanceM,
   formatVolume,
   isSampleActivity,
   primaryFreezePeriodStart,
@@ -37,6 +40,40 @@ export function TodayScreen() {
     .sort((a, b) => b.startedAt.localeCompare(a.startedAt))
     .slice(0, 10);
   const units = state.units;
+  const unitLabel = distanceUnitLabel(units);
+
+  const weekPeriod = competePeriodWindow(state, now);
+  const weekStart = weekPeriod.startsAt.getTime();
+  const weekEnd = weekPeriod.endsAt.getTime();
+  const weekActivities = state.activities.filter((a) => {
+    if (!countsOnTrack(a, "open")) return false;
+    const t = new Date(a.startedAt).getTime();
+    return t >= weekStart && t < weekEnd;
+  });
+  const weekDistanceM = weekActivities.reduce((acc, a) => acc + (a.distanceM || 0), 0);
+  const weekMovingSec = weekActivities.reduce((acc, a) => acc + (a.movingSec || 0), 0);
+  const nowDayIso = now.toISOString().slice(0, 10);
+
+  const dayLabels = ["M", "T", "W", "T", "F", "S", "S"];
+  const weekDays = Array.from({ length: 7 }, (_, i) => {
+    const d = new Date(weekStart + i * 86_400_000);
+    const dayIso = d.toISOString().slice(0, 10);
+    const dayActs = weekActivities.filter((a) => a.startedAt.slice(0, 10) === dayIso);
+    const dayVolume = dayActs.reduce((acc, a) => acc + (a.distanceM || a.movingSec || 0), 0);
+    return {
+      key: dayIso,
+      label: dayLabels[i],
+      isToday: dayIso === nowDayIso,
+      hasActivity: dayActs.length > 0,
+      volume: dayVolume,
+    };
+  });
+  const maxDayVolume = Math.max(1, ...weekDays.map((d) => d.volume));
+  const weekDaysWithPct = weekDays.map((d) => ({
+    ...d,
+    pct: d.hasActivity ? Math.max(20, Math.round((d.volume / maxDayVolume) * 100)) : 0,
+  }));
+  const activeDaysCount = weekDays.filter((d) => d.hasActivity).length;
 
   if (expanded === "suggestion") {
     return (
@@ -117,28 +154,42 @@ export function TodayScreen() {
           <span>Your Elo rating is protected through next Monday.</span>
         </div>
       )}
-      <div
-        role="button"
-        tabIndex={0}
-        className="focus-suggestion"
-        onClick={() => {
-          setExpanded("suggestion");
-        }}
-        onKeyDown={(e) => {
-          if (e.key === "Enter" || e.key === " ") {
-            e.preventDefault();
-            setExpanded("suggestion");
-          }
-        }}
-      >
-        <span>
-          <small>Today&apos;s suggestion</small>
-          <strong>{route.suggestion.title}</strong>
-          <em className="focus-suggestion-hint" aria-hidden="true">
-            Your next move
-          </em>
-        </span>
-      </div>
+      <section className="focus-stats-card" aria-label="This week's progress">
+        <div className="focus-stats-header">
+          <div>
+            <p className="fb-kicker">This week</p>
+            <strong>
+              {sportById(state.primary).gps
+                ? `${formatDistanceM(weekDistanceM, units)} ${unitLabel}`
+                : `${Math.round(weekMovingSec / 60)} min`}
+            </strong>
+          </div>
+          <div className="focus-stats-summary">
+            <span>
+              <b>{weekActivities.length}</b> {weekActivities.length === 1 ? "session" : "sessions"}
+            </span>
+            <span>
+              <b>{activeDaysCount}</b> of 7 days
+            </span>
+          </div>
+        </div>
+        <div className="focus-mini-chart" aria-hidden="true">
+          {weekDaysWithPct.map((d) => (
+            <div
+              key={d.key}
+              className={`focus-mini-bar-col${d.isToday ? " is-today" : ""}`}
+            >
+              <div className="focus-mini-bar-track">
+                <div
+                  className="focus-mini-bar-fill"
+                  style={{ height: `${d.pct}%` }}
+                />
+              </div>
+              <span className="focus-mini-bar-day">{d.label}</span>
+            </div>
+          ))}
+        </div>
+      </section>
       <div className="focus-row">
         <h2>Your fitness journey</h2>
         {sessions.length ? (
@@ -152,7 +203,7 @@ export function TodayScreen() {
               react("hop");
               setExpanded("suggestion");
             }}
-            aria-label="Ember: open today's recommendation"
+            aria-label="Ember: open today's session"
           >
             <AnimatedEmber
               expression="happy"
@@ -164,8 +215,7 @@ export function TodayScreen() {
           </button>
           <span>
             <small>Today</small>
-            <b>You are here</b>
-            <em>Tap Ember for your next move</em>
+            <b>See today&apos;s session</b>
           </span>
         </div>
         {sessions.map((a, i) => (
@@ -203,6 +253,22 @@ export function TodayScreen() {
             </span>
           </div>
         ))}
+        <div
+          className={`focus-path-row is-start ${sessions.length % 2 === 0 ? "is-left" : "is-right"}`}
+        >
+          <button
+            type="button"
+            aria-label="Starting line"
+            onClick={() => react("hop")}
+          >
+            <i>🏁</i>
+            <b>START</b>
+          </button>
+          <span>
+            <small>Baseline</small>
+            <b>Starting line</b>
+          </span>
+        </div>
       </section>
     </div>
   );

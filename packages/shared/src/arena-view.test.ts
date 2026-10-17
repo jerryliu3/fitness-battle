@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import {
   arenaWindow,
   arenaPosition,
+  clampArenaLaneCenter,
   orderedArenaLanes,
   fitArenaWindow,
 } from "./arena-view";
@@ -40,5 +41,17 @@ describe("distance viewport", () => {
     ]);
     expect(arenaPosition(100, fit).edge).toBeNull();
     expect(fit.span).toBeCloseTo(115);
+  });
+  it("clamps center in 2D lanes so the start line remains near the bottom", () => {
+    // When center is 0 (start line) and span is 20, center is clamped to 8.6
+    const clampedCenter = clampArenaLaneCenter(0, 20);
+    expect(clampedCenter).toBeCloseTo(8.6);
+    // At center = 8.6, start line (0) is at fraction 0.93 (near bottom of visual)
+    const pos = arenaPosition(0, { center: clampedCenter, span: 20 });
+    expect(pos.fraction).toBeCloseTo(0.93);
+    expect(pos.edge).toBeNull();
+
+    // When athlete has progressed well forward (e.g. 30 km), athlete remains centered
+    expect(clampArenaLaneCenter(30, 20)).toBe(30);
   });
 });

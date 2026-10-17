@@ -2,6 +2,7 @@
 import dynamic from "next/dynamic";
 import { useMemo, useState } from "react";
 import {
+  clampArenaLaneCenter,
   resolveArenaSelectedId,
   type ArenaSceneLane,
   type ArenaViewWindow,
@@ -71,7 +72,10 @@ export function FieldStage({
   const toggleSelect = (id: string) =>
     setSelected((prev) => (prev === id ? null : id));
 
-  const view: ArenaViewWindow = { center: center ?? total, span };
+  const view: ArenaViewWindow = {
+    center: clampArenaLaneCenter(center ?? total, span),
+    span,
+  };
   const sceneLanes: ArenaSceneLane[] = [
     ...runners,
     ...(showGhost && ghost ? [ghost] : []),
@@ -197,7 +201,7 @@ export function FieldStage({
                 unit={unit}
                 selected={trackSelected || you.id}
                 onSelect={toggleSelect}
-                onPan={(v) => setCenter(Math.max(0, v))}
+                onPan={(v) => setCenter(clampArenaLaneCenter(v, span))}
               />
             )}
             {unavailable && (

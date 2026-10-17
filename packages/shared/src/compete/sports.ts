@@ -226,6 +226,7 @@ export interface CompeteState {
   version: 1;
   name: string;
   city: string;
+  avatarUrl?: string | null;
   /** Miles (us) or kilometres (metric). Chosen in onboarding; changeable later. */
   units: UnitSystem;
   primary: SportId;
