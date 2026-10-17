@@ -390,14 +390,14 @@ export function AthleteOverview({
           <div
             className="focus-elo-track-toggle"
             role="group"
-            aria-label="Elo Track"
+            aria-label="Effort Score Track"
           >
             <button
               type="button"
               aria-pressed={track === "open"}
               onClick={() => setTrack("open")}
             >
-              Open Elo
+              Open Effort Score
             </button>
             <button
               type="button"
@@ -420,7 +420,7 @@ export function AthleteOverview({
           viewBox="0 0 340 150"
           className="focus-trend"
           role="img"
-          aria-label={`30-day ${track === "open" ? "Open" : "GPS verified"} Elo history ending at ${currentElo}`}
+          aria-label={`30-day ${track === "open" ? "Open" : "GPS verified"} effort score history ending at ${currentElo}`}
         >
           <defs>
             <linearGradient id="focus-trend-grad" x1="0" y1="0" x2="0" y2="1">

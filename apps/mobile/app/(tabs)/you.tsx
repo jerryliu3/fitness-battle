@@ -491,7 +491,7 @@ export default function YouScreen() {
             ))}
           </View>
           <Text style={f.copy}>
-            {state.freezesLeft} week freezes remaining. A freeze holds Elo
+            {state.freezesLeft} week freezes remaining. A freeze holds effort score
             during a rest week.
           </Text>
           <FocusButton

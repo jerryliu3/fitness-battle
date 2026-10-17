@@ -127,14 +127,14 @@ export function AthleteMetrics({
       <View style={f.card}>
         <View style={f.row}>
           <View>
-            <Text style={f.kicker}>{rankForElo(elo).name} · Open Elo</Text>
+            <Text style={f.kicker}>{rankForElo(elo).name} · Open Effort Score</Text>
             <Text style={f.massive}>{elo}</Text>
           </View>
           <View>
             <Text style={[f.h2, { textAlign: "right" }]}>
               {rating?.verifiedElo ?? 1000}
             </Text>
-            <Text style={f.small}>GPS-verified Elo</Text>
+            <Text style={f.small}>GPS-verified Effort Score</Text>
           </View>
         </View>
         <Svg
@@ -144,8 +144,8 @@ export function AthleteMetrics({
           accessible
           accessibilityLabel={
             values.length > 1
-              ? "Settled weekly Elo trend"
-              : "Current Elo; no closed weeks yet"
+              ? "Settled weekly effort score trend"
+              : "Current effort score; no closed weeks yet"
           }
         >
           <Line x1={0} x2={320} y1={35} y2={35} stroke="#e0e5dd" />

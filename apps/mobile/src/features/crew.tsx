@@ -466,7 +466,7 @@ export function CrewHub() {
             />
             <Text style={f.small}>
               {crew.sport} · {crew.format.replaceAll("_", " ")}. A crew rest
-              marker does not freeze Elo.
+              marker does not freeze effort score.
             </Text>
           </View>
         </>

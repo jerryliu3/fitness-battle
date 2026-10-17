@@ -29,7 +29,7 @@ export default function Benchmarks() {
         <FocusHeading
           kicker="Beyond this week"
           title="Your benchmarks."
-          body="Distance times, separate from weekly effort and Elo."
+          body="Distance times, separate from weekly effort and effort score."
         />
         <View style={f.chipRow}>
           {(["running", "cycling"] as const).map((s) => (

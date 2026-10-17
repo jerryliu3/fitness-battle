@@ -366,7 +366,7 @@ function DesignSurface({
       </div>
       <div>
         <b>+18</b>
-        <span>Weekly Elo</span>
+        <span>Weekly Effort Score</span>
       </div>
     </div>
   );
@@ -449,7 +449,7 @@ function DesignSurface({
         <span className="award-medal">✺</span>
       </div>
       <p>2nd in last week’s running field.</p>
-      <span className="s-caption">23.8 km · +24 Elo · October 5—12</span>
+      <span className="s-caption">23.8 km · +24 Effort Score · October 5—12</span>
       {action("Open your awards", "awards", true)}
     </section>
   );
@@ -494,7 +494,7 @@ function DesignSurface({
             key={p.name}
             onClick={() => {
               setNotice(
-                `${p.name} · ${p.elo} Elo · ${formatValue(contest.values[i]!)} ${unit} this week`,
+                `${p.name} · Effort Score ${p.elo} · ${formatValue(contest.values[i]!)} ${unit} this week`,
               );
             }}
             className={p.name === "You" ? "is-you" : ""}
@@ -716,7 +716,7 @@ function DesignSurface({
         <p className="s-eyebrow">ATHLETE / TORONTO</p>
         <h2>{nickname}</h2>
         <p>Not the fastest. Just getting better.</p>
-        <span className="s-pill">↗ Strider · 1,248 Elo</span>
+        <span className="s-pill">↗ Strider · 1,248 Effort Score</span>
       </div>
       <button
         className="s-icon-button"
@@ -732,7 +732,7 @@ function DesignSurface({
       <p className="s-eyebrow">YOUR LEVEL IS MOVING</p>
       <div className="s-row">
         <strong>
-          1,248<small>Elo</small>
+          1,248<small>Effort Score</small>
         </strong>
         <span className="s-positive">+86 in 12 weeks</span>
       </div>
@@ -770,7 +770,7 @@ function DesignSurface({
           {
             icon: "↗",
             title: "Progress",
-            sub: "Statistics, trends & Elo history",
+            sub: "Statistics, trends & effort score history",
             p: "progress",
           },
         ] as const
@@ -965,7 +965,7 @@ function DesignSurface({
                 <b>{joined.length.toString().padStart(2, "0")}</b>
               </div>
               <div>
-                <span>OPEN ELO</span>
+                <span>OPEN EFFORT SCORE</span>
                 <b>1,248</b>
               </div>
               <div>
@@ -1380,12 +1380,12 @@ function DesignSurface({
               </h3>
               <p>23.8 km · 5 counted sessions</p>
               <b>
-                1,224 → 1,248 Elo <span>+24</span>
+                1,224 → 1,248 Effort Score <span>+24</span>
               </b>
             </div>
             <div className="s-list-row">
               <span className="s-grow">Previous week · Running</span>
-              <b>3rd · +18 Elo</b>
+              <b>3rd · +18 Effort Score</b>
             </div>
             <p className="s-caption">
               Completed weeks keep their final place and rating change. New
@@ -1557,7 +1557,7 @@ function DesignSurface({
               ))}
             </div>
             <p className="s-eyebrow">
-              OPEN ELO / {progressRange.toUpperCase()}
+              OPEN EFFORT SCORE / {progressRange.toUpperCase()}
             </p>
             <div className="receipt-total">
               1,248{" "}
@@ -1573,7 +1573,7 @@ function DesignSurface({
             <TrendChart range={progressRange} />
             {summary}
             <div className="s-list-row">
-              <span className="s-grow">GPS-verified running Elo</span>
+              <span className="s-grow">GPS-verified running effort score</span>
               <b>1,216</b>
             </div>
             <p className="s-caption">
@@ -1948,7 +1948,7 @@ function TrendChart({ range = "12 weeks" }: { range?: string }) {
       className="trend-chart"
       viewBox="0 0 320 130"
       role="img"
-      aria-label={`Illustrative increasing Elo trend over ${range}`}
+      aria-label={`Illustrative increasing effort score trend over ${range}`}
     >
       <path
         d="M0 30H320M0 70H320M0 110H320"

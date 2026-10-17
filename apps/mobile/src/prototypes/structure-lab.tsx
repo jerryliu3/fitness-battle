@@ -256,7 +256,7 @@ export default function StructureLab() {
       {[
         ["23.4", "km this week"],
         ["4 / 5", "sessions"],
-        ["+18", "weekly Elo"],
+        ["+18", "weekly effort score"],
       ].map(([v, l]) => (
         <View key={l}>
           <Text style={s.statValue}>{v}</Text>
@@ -451,7 +451,7 @@ export default function StructureLab() {
           key={p.name}
           onPress={() =>
             announce(
-              `${p.name} · ${p.elo} Elo · ${formatValue(contest.values[i]!)} ${unit}`,
+              `${p.name} · Effort Score ${p.elo} · ${formatValue(contest.values[i]!)} ${unit}`,
             )
           }
           style={s.laneRow}
@@ -514,13 +514,13 @@ export default function StructureLab() {
         <Pressable
           key={p.name}
           accessibilityRole="button"
-          onPress={() => announce(`${p.name} · ${p.elo} Elo`)}
+          onPress={() => announce(`${p.name} · Effort Score ${p.elo}`)}
           style={s.leaderRow}
         >
           <Text style={s.position}>{String(i + 1).padStart(2, "0")}</Text>
           <View style={s.grow}>
             <Text style={s.rowTitle}>{p.name}</Text>
-            <Text style={s.small}>{p.elo} Elo</Text>
+            <Text style={s.small}>Effort Score {p.elo}</Text>
           </View>
           <Text style={s.rowTitle}>
             {formatValue(contest.values[i]!)} {unit}
@@ -566,7 +566,7 @@ export default function StructureLab() {
         </View>
       </View>
       {copy("2nd in last week’s running field.")}
-      {copy("23.8 km · +24 Elo · October 5—12")}
+      {copy("23.8 km · +24 Effort Score · October 5—12")}
       {button("Open your awards", () => setPanel("awards"), true)}
     </>,
   );
@@ -747,7 +747,7 @@ export default function StructureLab() {
             alignItems: conceptId === "focus" ? "center" : "flex-start",
           }}
         >
-          {pill("Strider · 1,248 Elo")}
+          {pill("Strider · 1,248 Effort Score")}
         </View>
       </View>
       <Pressable
@@ -765,7 +765,7 @@ export default function StructureLab() {
       {eyebrow("YOUR LEVEL IS MOVING")}
       <View style={s.flexRow}>
         <Text style={s.goalTotal}>
-          1,248 <Text style={s.unit}>Elo</Text>
+          1,248 <Text style={s.unit}>Effort Score</Text>
         </Text>
         <Text style={s.small}>+86 in 12 weeks</Text>
       </View>
@@ -800,7 +800,7 @@ export default function StructureLab() {
       )}
       {row(
         "Progress",
-        "Statistics, trends & Elo history",
+        "Statistics, trends & effort score history",
         () => setPanel("progress"),
         "↗",
       )}
@@ -949,7 +949,7 @@ export default function StructureLab() {
             <View style={s.bento}>
               {[
                 [String(joined.length).padStart(2, "0"), "ACTIVE"],
-                ["1,248", "OPEN ELO"],
+                ["1,248", "OPEN EFFORT SCORE"],
                 ["+18", "THIS WEEK"],
               ].map(([v, l]) => (
                 <View key={l} style={s.metricBox}>
@@ -1313,13 +1313,13 @@ export default function StructureLab() {
               </Text>
               {copy("23.8 km · 5 counted sessions")}
               <Text style={s.goalTotal}>1,224 → 1,248</Text>
-              {pill("+24 Elo")}
+              {pill("+24 Effort Score")}
             </View>
             {copy(
               "Completed weeks keep their final place and rating change. New weeks begin Monday 00:00 UTC.",
             )}
-            {row("Previous week · Running", "3rd place · +18 Elo", () =>
-              announce("Previous result: 3rd of 8, 21.2 km, +18 Elo."),
+            {row("Previous week · Running", "3rd place · +18 Effort Score", () =>
+              announce("Previous result: 3rd of 8, 21.2 km, +18 Effort Score."),
             )}
             {button("Back to this week", () => {
               setPanel(null);
@@ -1419,7 +1419,7 @@ export default function StructureLab() {
               onSelect={setRange}
               c={c}
             />
-            {eyebrow(`OPEN ELO / ${range.toUpperCase()}`)}
+            {eyebrow(`OPEN EFFORT SCORE / ${range.toUpperCase()}`)}
             <Text style={s.massive}>
               1,248
               <Text style={s.unit}>
@@ -1430,7 +1430,7 @@ export default function StructureLab() {
             <NativeChart c={c} range={range} />
             {summary}
             <View style={s.leaderRow}>
-              <Text style={[s.rowTitle, s.grow]}>GPS-verified running Elo</Text>
+              <Text style={[s.rowTitle, s.grow]}>GPS-verified running effort score</Text>
               <Text style={s.rowTitle}>1,216</Text>
             </View>
             {copy(
@@ -1893,7 +1893,7 @@ function NativeChart({
       width="100%"
       height={150}
       viewBox="0 0 330 140"
-      accessibilityLabel={`Illustrative increasing Elo trend over ${range}`}
+      accessibilityLabel={`Illustrative increasing effort score trend over ${range}`}
       accessible
     >
       <Line x1="0" y1="40" x2="320" y2="40" stroke={c.muted} opacity={0.2} />

@@ -43,7 +43,7 @@ export default function Progress() {
                   {r.effort.toFixed(1)} effort
                 </Text>
                 <Text style={f.rowTitle}>
-                  {r.eloBefore} → {r.eloAfter} Elo{r.frozen ? " · frozen" : ""}
+                  {r.eloBefore} → {r.eloAfter} Effort Score{r.frozen ? " · frozen" : ""}
                 </Text>
               </View>
             ))
