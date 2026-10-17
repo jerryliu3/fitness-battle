@@ -144,10 +144,16 @@ export function SleepPanel({
               ) : null}
             </div>
             <div>
-              <span>Nights logged</span>
+              <span>Nights so far</span>
               <strong>
-                {view.nightsLogged}
-                <small> / 7</small>
+                {view.elapsedNights > 0 ? (
+                  <>
+                    {view.nightsLogged}
+                    <small> / {view.elapsedNights}</small>
+                  </>
+                ) : (
+                  "—"
+                )}
               </strong>
             </div>
             <div>

@@ -385,7 +385,7 @@ export default function ArenaScreen() {
       </ScrollView>
       <FocusSheet
         open={register}
-        title="Find your next field."
+        title="Register for this week."
         body="Tap a sport to join for the week."
         onClose={() => {
           setRegister(false);

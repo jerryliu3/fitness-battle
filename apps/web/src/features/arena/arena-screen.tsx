@@ -232,7 +232,7 @@ export function ArenaScreen() {
 
       <Sheet
         open={register}
-        title="Find your next field."
+        title="Register for this week."
         body="Tap a sport or recovery category to join for the week."
         onClose={() => {
           setRegister(false);
