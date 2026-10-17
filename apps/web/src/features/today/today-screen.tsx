@@ -189,7 +189,8 @@ export function TodayScreen() {
         ) : null}
       </div>
       <section className="focus-journey" aria-label="Activity journey">
-        <div className="focus-path-row is-future is-left">
+        {/* Lane x-coords (viewBox 0–100) match CSS --path-l/c/r percentages. */}
+        <div className="focus-path-row is-future is-right">
           <button type="button" disabled aria-label="Upcoming session">
             <span className="focus-path-hollow" aria-hidden="true" />
           </button>
@@ -201,12 +202,12 @@ export function TodayScreen() {
         <div className="focus-path-row is-current">
           <svg
             className="focus-path-curve"
-            viewBox="0 0 200 140"
+            viewBox="0 0 100 100"
             preserveAspectRatio="none"
             aria-hidden="true"
           >
-            {/* From future (left) → today (center), winding S-bend */}
-            <path d="M 52 4 C 52 36, 160 44, 160 78 S 48 104, 100 136" />
+            {/* Right (76) → center (50) */}
+            <path d="M 76 0 C 76 28, 24 36, 24 58 S 62 78, 50 100" />
           </svg>
           <button
             onClick={() => {
@@ -244,21 +245,20 @@ export function TodayScreen() {
           </span>
         </div>
         {sessions.map((a, i) => {
-          const fromCenter = i === 0;
-          const toLeft = i % 2 === 1;
-          const curve = fromCenter
-            ? "M 100 4 C 100 36, 160 52, 148 136"
-            : toLeft
-              ? "M 148 4 C 148 40, 40 56, 52 136"
-              : "M 52 4 C 52 40, 160 56, 148 136";
+          // Future sits on the right; first past stop goes left to keep winding.
+          const toLeft = i % 2 === 0;
+          const lane = toLeft ? "is-left" : "is-right";
+          const curve =
+            i === 0
+              ? "M 50 0 C 50 28, 24 40, 24 100"
+              : toLeft
+                ? "M 76 0 C 76 30, 24 42, 24 100"
+                : "M 24 0 C 24 30, 76 42, 76 100";
           return (
-            <div
-              className={`focus-path-row ${toLeft ? "is-left" : "is-right"}`}
-              key={a.id}
-            >
+            <div className={`focus-path-row ${lane}`} key={a.id}>
               <svg
                 className="focus-path-curve"
-                viewBox="0 0 200 140"
+                viewBox="0 0 100 100"
                 preserveAspectRatio="none"
                 aria-hidden="true"
               >
@@ -298,17 +298,17 @@ export function TodayScreen() {
         <div className="focus-path-row is-start">
           <svg
             className="focus-path-curve"
-            viewBox="0 0 200 140"
+            viewBox="0 0 100 100"
             preserveAspectRatio="none"
             aria-hidden="true"
           >
             <path
               d={
                 sessions.length === 0
-                  ? "M 100 4 C 40 48, 160 88, 100 136"
+                  ? "M 50 0 C 22 32, 78 64, 50 100"
                   : sessions.length % 2 === 1
-                    ? "M 148 4 C 148 40, 52 72, 100 136"
-                    : "M 52 4 C 52 40, 148 72, 100 136"
+                    ? "M 24 0 C 24 34, 78 58, 50 100"
+                    : "M 76 0 C 76 34, 22 58, 50 100"
               }
             />
           </svg>

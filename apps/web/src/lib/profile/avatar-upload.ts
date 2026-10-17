@@ -87,42 +87,42 @@ export async function uploadWebProfileAvatar({
 
   const { blob, dataUrl } = await processImageFile(file);
 
-  // If user is authenticated and Supabase client is available, upload to storage
+  // Signed-in users must land in storage — never persist a base64 data URL
+  // into compete state / account sync (payload size + avatar_url limits).
   if (supabase && userId) {
-    try {
-      const canonicalPath = getCanonicalAvatarObjectPath(userId);
-      const { error: uploadError } = await supabase.storage
-        .from(AVATAR_BUCKET)
-        .upload(canonicalPath, blob, {
-          contentType: "image/jpeg",
-          upsert: true,
-        });
+    const canonicalPath = getCanonicalAvatarObjectPath(userId);
+    const { error: uploadError } = await supabase.storage
+      .from(AVATAR_BUCKET)
+      .upload(canonicalPath, blob, {
+        contentType: "image/jpeg",
+        upsert: true,
+      });
 
-      if (!uploadError) {
-        const { data: publicUrlData } = supabase.storage
-          .from(AVATAR_BUCKET)
-          .getPublicUrl(canonicalPath);
-
-        const nextAvatarUrl = `${publicUrlData.publicUrl}?v=${Date.now()}`;
-
-        // Cleanup any obsolete paths
-        const cleanupPaths = buildAvatarCleanupPathsForProfileChange({
-          userId,
-          previousAvatarUrl,
-          nextAvatarUrl,
-        });
-        if (cleanupPaths.length > 0) {
-          void supabase.storage.from(AVATAR_BUCKET).remove(cleanupPaths);
-        }
-
-        return nextAvatarUrl;
-      }
-    } catch {
-      // Fallback to dataUrl below
+    if (uploadError) {
+      throw new Error(
+        uploadError.message || "Could not upload profile photo. Try again.",
+      );
     }
+
+    const { data: publicUrlData } = supabase.storage
+      .from(AVATAR_BUCKET)
+      .getPublicUrl(canonicalPath);
+
+    const nextAvatarUrl = `${publicUrlData.publicUrl}?v=${Date.now()}`;
+
+    const cleanupPaths = buildAvatarCleanupPathsForProfileChange({
+      userId,
+      previousAvatarUrl,
+      nextAvatarUrl,
+    });
+    if (cleanupPaths.length > 0) {
+      void supabase.storage.from(AVATAR_BUCKET).remove(cleanupPaths);
+    }
+
+    return nextAvatarUrl;
   }
 
-  // Offline / Demo fallback: use the optimized data URL
+  // Guest / demo only: keep a local optimized data URL.
   return dataUrl;
 }
 

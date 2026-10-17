@@ -240,11 +240,7 @@ export function ArenaScreen() {
         }}
       >
         <p className="fb-kicker">Category</p>
-        <div
-          className="focus-sport-options"
-          role="listbox"
-          aria-label="Sport or Category"
-        >
+        <div className="focus-sport-options" aria-label="Sport or Category">
           {SPORTS.map((s) => {
             const isRegistered = state.ratings.find(
               (r) => r.sport === s.id,
@@ -253,9 +249,12 @@ export function ArenaScreen() {
               <button
                 key={s.id}
                 type="button"
-                role="option"
-                aria-selected={sport === s.id}
                 disabled={Boolean(isRegistered)}
+                aria-label={
+                  isRegistered
+                    ? `${s.name}, already registered this week`
+                    : `Join ${s.name}`
+                }
                 className={
                   sport === s.id
                     ? "focus-sport-option is-on"
@@ -285,9 +284,12 @@ export function ArenaScreen() {
           })}
           <button
             type="button"
-            role="option"
-            aria-selected={sport === "sleep"}
             disabled={sleepOptedIn}
+            aria-label={
+              sleepOptedIn
+                ? "Sleep and Recovery, already registered this week"
+                : "Join Sleep and Recovery"
+            }
             className={
               sport === "sleep"
                 ? "focus-sport-option is-on"

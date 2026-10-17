@@ -211,6 +211,7 @@ export function AthleteOverview({
             className="focus-portrait"
             role="button"
             tabIndex={0}
+            aria-label={state.avatarUrl ? "Change photo" : "Upload photo"}
             title={state.avatarUrl ? "Change photo" : "Upload photo"}
             onClick={() => fileInputRef.current?.click()}
             onKeyDown={(e) => {
@@ -223,7 +224,7 @@ export function AthleteOverview({
             {state.avatarUrl ? (
               <img
                 src={state.avatarUrl}
-                alt={name || state.name}
+                alt=""
                 className="focus-portrait-img"
               />
             ) : (

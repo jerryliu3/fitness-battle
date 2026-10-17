@@ -768,6 +768,11 @@
   margin-top: 6px;
 }
 .focus-journey {
+  /* Shared lane centers — keep in sync with SVG path x coords (L/C/R). */
+  --path-l: 24%;
+  --path-c: 50%;
+  --path-r: 76%;
+  --path-row: 120px;
   position: relative;
   border-radius: 24px;
   background: transparent;
@@ -776,29 +781,19 @@
   overflow-x: visible;
   overflow-y: auto;
   overscroll-behavior: contain;
-  padding: 0 12px 20px;
+  padding: 8px 8px 20px;
 }
 .focus-path-row {
   position: relative;
-  display: flex;
-  align-items: center;
-  gap: 18px;
-  height: 118px;
-  padding-left: 12%;
-}
-.focus-path-row.is-right {
-  padding-left: 36%;
-}
-.focus-path-row.is-left {
-  padding-left: 12%;
+  height: var(--path-row);
 }
 .focus-path-curve {
   position: absolute;
-  left: 8%;
-  right: 8%;
-  top: -58px;
-  height: 118px;
-  width: auto;
+  left: 0;
+  width: 100%;
+  /* Bridge previous row midpoint → this row midpoint. */
+  top: calc(var(--path-row) / -2);
+  height: var(--path-row);
   z-index: 0;
   pointer-events: none;
   overflow: visible;
@@ -812,16 +807,18 @@
   vector-effect: non-scaling-stroke;
 }
 .focus-path-row > button {
-  position: relative;
+  position: absolute;
+  left: var(--path-l);
+  top: 50%;
   z-index: 1;
   width: 80px;
   height: 80px;
-  flex-shrink: 0;
+  margin: 0;
   background: #fff;
   border: 1px solid #e0e5dd;
   border-bottom: 5px solid #cdd9c1;
   border-radius: 50%;
-  transform: none;
+  transform: translate(-50%, -50%);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -830,11 +827,21 @@
   cursor: pointer;
   transition: transform 0.15s ease;
 }
+.focus-path-row.is-left > button {
+  left: var(--path-l);
+}
+.focus-path-row.is-right > button {
+  left: var(--path-r);
+}
+.focus-path-row.is-current > button,
+.focus-path-row.is-start > button {
+  left: var(--path-c);
+}
 .focus-path-row > button:hover {
-  transform: translateY(-2px);
+  transform: translate(-50%, calc(-50% - 2px));
 }
 .focus-path-row > button:active {
-  transform: rotate(-6deg) scale(0.96);
+  transform: translate(-50%, -50%) rotate(-6deg) scale(0.96);
 }
 .focus-path-row > button b {
   font-size: 13px;
@@ -859,13 +866,28 @@
   border: 2px solid #fafbf8;
 }
 .focus-path-row > span {
-  position: relative;
+  position: absolute;
+  top: 50%;
   z-index: 1;
+  transform: translateY(-50%);
   background: #fafbf8bb;
   display: flex;
   flex-direction: column;
   gap: 5px;
-  max-width: 155px;
+  max-width: 140px;
+}
+.focus-path-row.is-left > span,
+.focus-path-row.is-current > span {
+  left: calc(var(--path-l) + 48px);
+}
+.focus-path-row.is-current > span {
+  left: calc(var(--path-c) + 52px);
+}
+.focus-path-row.is-right > span {
+  right: calc(100% - var(--path-r) + 48px);
+  left: auto;
+  text-align: right;
+  align-items: flex-end;
 }
 .focus-path-row > span small {
   font-size: 9px;
@@ -884,7 +906,6 @@
   line-height: 1.6;
 }
 .focus-path-row.is-future {
-  height: 108px;
   opacity: 0.72;
 }
 .focus-path-row.is-future > button {
@@ -895,7 +916,7 @@
 }
 .focus-path-row.is-future > button:hover,
 .focus-path-row.is-future > button:active {
-  transform: none;
+  transform: translate(-50%, -50%);
 }
 .focus-path-hollow {
   width: 22px;
@@ -905,17 +926,13 @@
   display: block;
 }
 .focus-path-row.is-current {
-  height: 140px;
-  padding-left: 0;
-  justify-content: center;
-  gap: 16px;
+  overflow: visible;
 }
 .focus-path-row.is-current > button {
   background: #d4ee89;
   border-radius: 50%;
   width: 82px;
   height: 82px;
-  margin-top: 18px;
   border: 2px solid #b5d55b;
   border-bottom: 5px solid #9ebf42;
   overflow: visible;
@@ -961,11 +978,6 @@
 .focus-path-row.is-current > button > div svg {
   width: 100%;
   height: 100%;
-}
-.focus-path-row.is-start {
-  padding-left: 0;
-  justify-content: center;
-  height: 110px;
 }
 .focus-path-row.is-start > button {
   background: #f1f5ec;
@@ -1644,35 +1656,21 @@
   .focus-crew .focus-row .focus-segments {
     width: 100%;
   }
-  .focus-path-row {
-    padding-left: 4%;
-    gap: 14px;
-    height: 108px;
-  }
-  .focus-path-row.is-right {
-    padding-left: 25%;
-  }
-  .focus-path-row.is-left {
-    padding-left: 4%;
-  }
-  .focus-path-row.is-current,
-  .focus-path-row.is-start {
-    padding-left: 0;
-  }
-  .focus-path-row.is-future {
-    padding-left: 8%;
+  .focus-journey {
+    --path-l: 22%;
+    --path-r: 78%;
+    --path-row: 112px;
   }
   .focus-path-row > span {
-    max-width: 115px;
+    max-width: 110px;
   }
   .focus-path-row > button {
-    width: 79px;
+    width: 76px;
+    height: 76px;
   }
-  .focus-path-curve {
-    left: 4%;
-    right: 4%;
-    top: -52px;
-    height: 108px;
+  .focus-path-row.is-current > button {
+    width: 78px;
+    height: 78px;
   }
   .focus-stats-hours {
     min-width: 72px;

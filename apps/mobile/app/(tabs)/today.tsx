@@ -23,11 +23,16 @@ import { useCompeteStore } from "../../src/lib/compete-store";
 import { Ember } from "../../src/ui/mascot/ember";
 import { FocusHeading, f } from "../../src/ui/focus";
 
+const PATH_L = "24%";
+const PATH_C = "50%";
+const PATH_R = "76%";
+const PATH_ROW = 120;
+
 function PathCurve({ d }: { d: string }) {
   return (
     <Svg
       style={s.pathCurve}
-      viewBox="0 0 200 140"
+      viewBox="0 0 100 100"
       preserveAspectRatio="none"
       pointerEvents="none"
     >
@@ -242,11 +247,13 @@ export default function Home() {
           ) : null}
         </View>
         <View style={s.journey}>
-          <View style={[s.stop, { paddingLeft: "12%", opacity: 0.72 }]}>
+          <View style={[s.stop, { opacity: 0.72 }]}>
             <View
               style={[
                 s.tile,
+                s.tileAbs,
                 {
+                  left: PATH_R,
                   backgroundColor: "#f4f7f0",
                   borderStyle: "dashed",
                   borderColor: "#c5d2bb",
@@ -257,19 +264,21 @@ export default function Home() {
             >
               <View style={s.hollow} />
             </View>
-            <View style={s.stopCopy}>
+            <View style={[s.stopCopy, s.copyRight]}>
               <Text style={f.kicker}>Up next</Text>
               <Text style={f.rowTitle}>Room for what&apos;s next</Text>
             </View>
           </View>
-          <View style={[s.stop, s.stopCentered]}>
-            <PathCurve d="M 52 4 C 52 36, 160 44, 160 78 S 48 104, 100 136" />
+          <View style={s.stop}>
+            <PathCurve d="M 76 0 C 76 28, 24 36, 24 58 S 62 78, 50 100" />
             <Pressable
               accessibilityRole="button"
               accessibilityLabel="Ember: open today's session"
               style={[
                 s.tile,
+                s.tileAbs,
                 {
+                  left: PATH_C,
                   backgroundColor: "#d4ee89",
                   borderColor: "#b5d55b",
                   borderBottomColor: "#9ebf42",
@@ -277,7 +286,6 @@ export default function Home() {
                   width: 82,
                   height: 82,
                   borderRadius: 41,
-                  transform: [],
                   zIndex: 1,
                 },
               ]}
@@ -305,31 +313,32 @@ export default function Home() {
                 bounce();
                 setExpanded("suggestion");
               }}
-              style={s.stopCopy}
+              style={[s.stopCopy, s.copyCenter]}
             >
               <Text style={f.kicker}>Today</Text>
               <Text style={f.rowTitle}>See today&apos;s session</Text>
             </Pressable>
           </View>
           {sessions.map((a, i) => {
-            const toLeft = i % 2 === 1;
+            const toLeft = i % 2 === 0;
             const curve =
               i === 0
-                ? "M 100 4 C 100 36, 160 52, 148 136"
+                ? "M 50 0 C 50 28, 24 40, 24 100"
                 : toLeft
-                  ? "M 148 4 C 148 40, 40 56, 52 136"
-                  : "M 52 4 C 52 40, 160 56, 148 136";
+                  ? "M 76 0 C 76 30, 24 42, 24 100"
+                  : "M 24 0 C 24 30, 76 42, 76 100";
             return (
-              <View
-                key={a.id}
-                style={[s.stop, { paddingLeft: toLeft ? "5%" : "26%" }]}
-              >
+              <View key={a.id} style={s.stop}>
                 <PathCurve d={curve} />
                 <Pressable
                   accessibilityRole="button"
                   onPress={() => setExpanded(a)}
                   accessibilityLabel={`Open ${sportById(a.sport).name} session ${formatVolume(a.sport, a.distanceM, a.movingSec, units)}`}
-                  style={s.tile}
+                  style={[
+                    s.tile,
+                    s.tileAbs,
+                    { left: toLeft ? PATH_L : PATH_R },
+                  ]}
                 >
                   <View style={s.check}>
                     <Text style={{ fontSize: 9, color: "#26382d" }}>✓</Text>
@@ -344,7 +353,9 @@ export default function Home() {
                     })}
                   </Text>
                 </Pressable>
-                <View style={s.stopCopy}>
+                <View
+                  style={[s.stopCopy, toLeft ? s.copyLeft : s.copyRight]}
+                >
                   <Text style={f.kicker}>
                     {new Date(a.startedAt).toLocaleDateString("en-US", {
                       month: "short",
@@ -360,14 +371,14 @@ export default function Home() {
               </View>
             );
           })}
-          <View style={[s.stop, s.stopCentered]}>
+          <View style={s.stop}>
             <PathCurve
               d={
                 sessions.length === 0
-                  ? "M 100 4 C 40 48, 160 88, 100 136"
+                  ? "M 50 0 C 22 32, 78 64, 50 100"
                   : sessions.length % 2 === 1
-                    ? "M 148 4 C 148 40, 52 72, 100 136"
-                    : "M 52 4 C 52 40, 148 72, 100 136"
+                    ? "M 24 0 C 24 34, 78 58, 50 100"
+                    : "M 76 0 C 76 34, 22 58, 50 100"
               }
             />
             <Pressable
@@ -376,12 +387,13 @@ export default function Home() {
               onPress={bounce}
               style={[
                 s.tile,
+                s.tileAbs,
                 {
+                  left: PATH_C,
                   backgroundColor: "#f1f5ec",
                   borderStyle: "dashed",
                   borderColor: "#b7c9a4",
                   borderBottomColor: "#a4b990",
-                  transform: [],
                 },
               ]}
             >
@@ -491,22 +503,15 @@ const s = StyleSheet.create({
   expandEmber: { position: "absolute", right: -10, bottom: 10 },
   journey: { gap: 0, paddingBottom: 20 },
   stop: {
-    height: 118,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 16,
+    height: PATH_ROW,
     position: "relative",
-  },
-  stopCentered: {
-    justifyContent: "center",
-    paddingLeft: 0,
   },
   pathCurve: {
     position: "absolute",
-    left: "8%",
-    right: "8%",
-    top: -58,
-    height: 118,
+    left: 0,
+    width: "100%",
+    top: -PATH_ROW / 2,
+    height: PATH_ROW,
     zIndex: 0,
   },
   hollow: {
@@ -528,6 +533,13 @@ const s = StyleSheet.create({
     alignItems: "center",
     gap: 3,
   },
+  tileAbs: {
+    position: "absolute",
+    top: "50%",
+    marginTop: -40,
+    marginLeft: -40,
+    zIndex: 1,
+  },
   tileValue: { fontFamily: "DMSans_500Medium", fontSize: 12, color: "#26382d" },
   check: {
     position: "absolute",
@@ -542,5 +554,15 @@ const s = StyleSheet.create({
     borderWidth: 2,
     borderColor: "#fafbf8",
   },
-  stopCopy: { maxWidth: 120, gap: 3 },
+  stopCopy: {
+    position: "absolute",
+    top: "50%",
+    marginTop: -22,
+    maxWidth: 120,
+    gap: 3,
+    zIndex: 1,
+  },
+  copyLeft: { left: "24%", marginLeft: 48 },
+  copyCenter: { left: "50%", marginLeft: 52 },
+  copyRight: { right: "24%", marginRight: 48, alignItems: "flex-end" },
 });
