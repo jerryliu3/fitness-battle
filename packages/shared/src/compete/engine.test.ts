@@ -462,6 +462,25 @@ describe("compete engine", () => {
     expect(sameWorkout(act1, actTwin)).toBe(true);
   });
 
+  it("starts unsigned local state as Guest", () => {
+    expect(freshState().name).toBe("Guest");
+  });
+
+  it("migrates legacy unsigned You label to Guest", () => {
+    const legacy = {
+      ...freshState(),
+      name: "You",
+      onboardingCompleted: false,
+    };
+    expect(migrateCompeteState(legacy).name).toBe("Guest");
+    const named = {
+      ...freshState(),
+      name: "You",
+      onboardingCompleted: true,
+    };
+    expect(migrateCompeteState(named).name).toBe("You");
+  });
+
   it("updates and clears profile avatarUrl via set-avatar", () => {
     const state = freshState();
     expect(state.avatarUrl).toBeNull();

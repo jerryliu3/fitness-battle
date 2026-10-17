@@ -206,6 +206,16 @@ export function initialsFromName(name: string): string {
   return `${parts[0]![0] ?? ""}${parts[parts.length - 1]![0] ?? ""}`.toUpperCase();
 }
 
+/** Label for the viewer's own row — Guest when unsigned, You when signed in. */
+export function selfLaneLabel(
+  name: string,
+  style: "title" | "caps" = "title",
+): string {
+  const guest = name === "Guest" || name === "You";
+  if (style === "caps") return guest ? "GUEST" : "YOU";
+  return guest ? "Guest" : "You";
+}
+
 /** Axis ceiling for the Split effort track — pads the current field max. */
 export function effortTrackMax(values: number[]): number {
   const peak = Math.max(20, ...values, 0);

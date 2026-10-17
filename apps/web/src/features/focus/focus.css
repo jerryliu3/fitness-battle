@@ -430,37 +430,71 @@
 .focus-profile-card {
   display: grid;
   grid-template-columns: auto 1fr;
-  gap: 18px;
+  gap: 16px;
   align-items: center;
   background: #fff;
   border: 1px solid #e0e5dd;
   border-radius: 22px;
-  padding: 22px 20px;
+  padding: 18px 18px;
   margin: 8px 0 22px;
   text-align: left;
 }
 .focus-profile-card .focus-portrait {
   margin: 0;
   flex-shrink: 0;
+  cursor: default;
+}
+.focus-profile-card.is-editing .focus-portrait {
+  cursor: pointer;
 }
 .focus-profile-card-copy {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 4px;
   min-width: 0;
+}
+.focus-profile-identity {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  min-width: 0;
+}
+.focus-profile-identity-text {
+  min-width: 0;
+  flex: 1;
 }
 .focus-profile-card h1 {
   margin: 0;
-  font-size: 28px;
+  font-size: 26px;
   font-weight: 400;
   letter-spacing: -0.8px;
   line-height: 1.15;
 }
 .focus-profile-email {
-  margin: 0;
+  margin: 2px 0 0;
   font-size: 13px;
   color: #768172;
   word-break: break-word;
+}
+.focus-profile-edit {
+  flex-shrink: 0;
+  width: 34px;
+  height: 34px;
+  border: 1px solid #e0e5dd;
+  border-radius: 50%;
+  background: #f7f9f4;
+  color: #43543f;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  padding: 0;
+}
+.focus-profile-edit:hover {
+  background: #edf2e8;
+}
+.focus-profile-edit svg {
+  width: 15px;
+  height: 15px;
 }
 .focus-portrait {
   width: 86px;
@@ -476,10 +510,9 @@
   position: relative;
   overflow: hidden;
   flex-shrink: 0;
-  cursor: pointer;
   transition: opacity 0.15s ease;
 }
-.focus-portrait:hover {
+.focus-profile-card.is-editing .focus-portrait:hover {
   opacity: 0.92;
 }
 .focus-portrait-img {
@@ -493,7 +526,7 @@
   display: flex;
   gap: 8px;
   align-items: center;
-  margin-top: 10px;
+  margin-top: 8px;
   flex-wrap: wrap;
 }
 .focus-avatar-btn {
@@ -848,6 +881,9 @@
 }
 .focus-path-row.is-current {
   height: 165px;
+  padding-left: 0;
+  justify-content: center;
+  gap: 16px;
 }
 .focus-path-row.is-current:before {
   display: none;
@@ -861,6 +897,7 @@
   border: 2px solid #b5d55b;
   border-bottom: 5px solid #9ebf42;
   overflow: visible;
+  z-index: 1;
 }
 .focus-path-row.is-current > button::after {
   content: "";
@@ -870,6 +907,7 @@
   border: 2px solid rgba(181, 213, 91, 0.85);
   animation: fb-duo-pulse 2s cubic-bezier(0.25, 1, 0.5, 1) infinite;
   pointer-events: none;
+  z-index: 0;
 }
 @keyframes fb-duo-pulse {
   0% {
@@ -887,19 +925,32 @@
 }
 .focus-path-row.is-current > button > div {
   position: absolute;
-  width: 96px;
-  height: 96px;
-  bottom: 22px;
+  width: 118px;
+  height: 118px;
+  bottom: 18px;
   left: 50%;
   transform: translateX(-50%);
   display: flex;
   align-items: center;
   justify-content: center;
   pointer-events: none;
+  z-index: 2;
 }
 .focus-path-row.is-current > button > div svg {
   width: 100%;
   height: 100%;
+}
+.focus-path-row.is-start {
+  padding-left: 0;
+  justify-content: center;
+}
+.focus-path-row.is-start:before {
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  border-left: 3px dashed #dce3d6;
+  border-right: 0;
+  border-radius: 0;
 }
 .focus-path-row.is-start > button {
   background: #f1f5ec;
@@ -926,38 +977,32 @@
   border-radius: 20px;
   padding: 16px 20px;
   margin: 6px 0 20px;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
 }
-.focus-stats-header {
+.focus-stats-body {
   display: flex;
   align-items: flex-end;
-  justify-content: space-between;
+  gap: 18px;
 }
-.focus-stats-header strong {
-  font-size: 22px;
+.focus-stats-hours {
+  flex: 0 0 auto;
+  min-width: 88px;
+}
+.focus-stats-hours strong {
+  display: block;
+  font-size: 28px;
   font-weight: 600;
   color: #26382d;
-}
-.focus-stats-summary {
-  display: flex;
-  gap: 12px;
-  font-size: 12px;
-  color: #768172;
-}
-.focus-stats-summary b {
-  color: #26382d;
-  font-weight: 600;
+  letter-spacing: -0.6px;
+  line-height: 1.1;
 }
 .focus-mini-chart {
+  flex: 1;
   display: flex;
   align-items: flex-end;
   justify-content: space-between;
-  gap: 8px;
+  gap: 6px;
   height: 58px;
-  padding-top: 8px;
-  border-top: 1px solid #e0e5dd;
+  min-width: 0;
 }
 .focus-mini-bar-col {
   flex: 1;
@@ -1571,11 +1616,21 @@
   .focus-path-row.is-right {
     padding-left: 25%;
   }
+  .focus-path-row.is-current,
+  .focus-path-row.is-start {
+    padding-left: 0;
+  }
   .focus-path-row > span {
     max-width: 115px;
   }
   .focus-path-row > button {
     width: 79px;
+  }
+  .focus-stats-hours {
+    min-width: 72px;
+  }
+  .focus-stats-hours strong {
+    font-size: 24px;
   }
   .phone-shell .focus-disclosure > summary {
     padding: 19px 17px;

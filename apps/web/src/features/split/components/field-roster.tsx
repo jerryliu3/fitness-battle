@@ -1,6 +1,6 @@
 "use client";
 
-import { formatEffort } from "@fitness-battle/shared";
+import { formatEffort, selfLaneLabel } from "@fitness-battle/shared";
 import type { BoardRow } from "@fitness-battle/shared";
 import { motion, useReducedMotion } from "motion/react";
 
@@ -94,7 +94,7 @@ export function FieldRoster({
           <>
             <span className="place">{row.place}</span>
             <span className="grow">
-              {row.you ? "You" : row.name}
+              {row.you ? selfLaneLabel(row.name) : row.name}
               <small>{secondary}</small>
             </span>
             <b>

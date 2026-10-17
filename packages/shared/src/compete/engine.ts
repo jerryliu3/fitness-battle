@@ -282,6 +282,16 @@ export function migrateCompeteState(parsed: CompeteState): CompeteState {
       (parsed as CompeteState).avatarUrl!.trim().length > 0
         ? (parsed as CompeteState).avatarUrl!.trim()
         : null,
+    // Legacy guest label was "You"; keep unsigned local state on Guest.
+    name:
+      typeof parsed.name === "string" &&
+      parsed.name.trim().length > 0 &&
+      !(
+        parsed.name.trim() === "You" &&
+        !Boolean((parsed as CompeteState).onboardingCompleted)
+      )
+        ? parsed.name.trim()
+        : "Guest",
   };
 }
 
@@ -310,7 +320,7 @@ export function freshState(now: Date = new Date()): CompeteState {
   const periodStart = wave.waveStart.toISOString();
   return {
     version: 1,
-    name: "You",
+    name: "Guest",
     city: "Toronto",
     units: "us",
     primary: "running",

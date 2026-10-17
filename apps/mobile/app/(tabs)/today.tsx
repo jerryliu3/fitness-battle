@@ -14,8 +14,6 @@ import {
   competeNow,
   competePeriodWindow,
   countsOnTrack,
-  distanceUnitLabel,
-  formatDistanceM,
   formatVolume,
   sportById,
   type Activity,
@@ -46,7 +44,6 @@ export default function Home() {
     .sort((a, b) => b.startedAt.localeCompare(a.startedAt))
     .slice(0, 10);
   const units = state.units;
-  const unitLabel = distanceUnitLabel(units);
 
   const weekPeriod = competePeriodWindow(state, now);
   const weekStart = weekPeriod.startsAt.getTime();
@@ -56,14 +53,15 @@ export default function Home() {
     const t = new Date(a.startedAt).getTime();
     return t >= weekStart && t < weekEnd;
   });
-  const weekDistanceM = weekActivities.reduce(
-    (acc, a) => acc + (a.distanceM || 0),
-    0,
-  );
   const weekMovingSec = weekActivities.reduce(
     (acc, a) => acc + (a.movingSec || 0),
     0,
   );
+  const weekHours = weekMovingSec / 3600;
+  const weekHoursLabel =
+    weekHours >= 10
+      ? `${Math.round(weekHours)} hr`
+      : `${(Math.round(weekHours * 10) / 10).toFixed(1).replace(/\.0$/, "")} hr`;
   const nowDayIso = now.toISOString().slice(0, 10);
   const dayLabels = ["M", "T", "W", "T", "F", "S", "S"];
   const weekDays = Array.from({ length: 7 }, (_, i) => {
@@ -73,7 +71,7 @@ export default function Home() {
       (a) => a.startedAt.slice(0, 10) === dayIso,
     );
     const dayVolume = dayActs.reduce(
-      (acc, a) => acc + (a.distanceM || a.movingSec || 0),
+      (acc, a) => acc + (a.movingSec || 0),
       0,
     );
     return {
@@ -91,7 +89,6 @@ export default function Home() {
       ? Math.max(20, Math.round((d.volume / maxDayVolume) * 100))
       : 0,
   }));
-  const activeDaysCount = weekDays.filter((d) => d.hasActivity).length;
 
   function bounce() {
     void AccessibilityInfo.isReduceMotionEnabled().then((reduce) => {
@@ -178,52 +175,36 @@ export default function Home() {
           body="Small steps. A week that adds up."
         />
         <View style={s.statsCard} accessibilityLabel="This week's progress">
-          <View style={s.statsHeader}>
-            <View>
+          <View style={s.statsBody}>
+            <View style={s.statsHours}>
               <Text style={f.kicker}>This week</Text>
-              <Text style={s.statsMain}>
-                {sportById(state.primary).gps
-                  ? `${formatDistanceM(weekDistanceM, units)} ${unitLabel}`
-                  : `${Math.round(weekMovingSec / 60)} min`}
-              </Text>
+              <Text style={s.statsMain}>{weekHoursLabel}</Text>
             </View>
-            <View style={s.statsSummary}>
-              <Text style={f.small}>
-                <Text style={{ fontWeight: "700", color: "#26382d" }}>
-                  {weekActivities.length}
-                </Text>{" "}
-                {weekActivities.length === 1 ? "session" : "sessions"}
-              </Text>
-              <Text style={f.small}>
-                <Text style={{ fontWeight: "700", color: "#26382d" }}>
-                  {activeDaysCount}
-                </Text>{" "}
-                of 7 days
-              </Text>
-            </View>
-          </View>
-          <View style={s.miniChart} aria-hidden>
-            {weekDaysWithPct.map((d) => (
-              <View key={d.key} style={s.miniBarCol}>
-                <View style={s.miniBarTrack}>
-                  <View
+            <View style={s.miniChart} aria-hidden>
+              {weekDaysWithPct.map((d) => (
+                <View key={d.key} style={s.miniBarCol}>
+                  <View style={s.miniBarTrack}>
+                    <View
+                      style={[
+                        s.miniBarFill,
+                        { height: `${d.pct}%` },
+                        d.isToday ? { backgroundColor: "#26382d" } : null,
+                      ]}
+                    />
+                  </View>
+                  <Text
                     style={[
-                      s.miniBarFill,
-                      { height: `${d.pct}%` },
-                      d.isToday ? { backgroundColor: "#26382d" } : null,
+                      s.miniBarDay,
+                      d.isToday
+                        ? { color: "#26382d", fontWeight: "700" }
+                        : null,
                     ]}
-                  />
+                  >
+                    {d.label}
+                  </Text>
                 </View>
-                <Text
-                  style={[
-                    s.miniBarDay,
-                    d.isToday ? { color: "#26382d", fontWeight: "700" } : null,
-                  ]}
-                >
-                  {d.label}
-                </Text>
-              </View>
-            ))}
+              ))}
+            </View>
           </View>
         </View>
         <View style={f.row}>
@@ -233,7 +214,7 @@ export default function Home() {
           ) : null}
         </View>
         <View style={s.journey}>
-          <View style={[s.stop, { paddingLeft: "12%" }]}>
+          <View style={[s.stop, s.stopCentered]}>
             <Pressable
               accessibilityRole="button"
               accessibilityLabel="Ember: open today's session"
@@ -248,6 +229,7 @@ export default function Home() {
                   height: 82,
                   borderRadius: 41,
                   transform: [],
+                  zIndex: 1,
                 },
               ]}
               onPress={() => {
@@ -258,13 +240,14 @@ export default function Home() {
               <Animated.View
                 style={{
                   position: "absolute",
-                  bottom: 22,
+                  bottom: 18,
                   left: "50%",
-                  marginLeft: -48,
+                  marginLeft: -59,
+                  zIndex: 2,
                   transform: [{ translateY: lift }],
                 }}
               >
-                <Ember size={96} expression="happy" />
+                <Ember size={118} expression="happy" />
               </Animated.View>
             </Pressable>
             <Pressable
@@ -324,25 +307,11 @@ export default function Home() {
               </View>
             </View>
           ))}
-          <View
-            style={[
-              s.stop,
-              {
-                paddingLeft: sessions.length % 2 === 0 ? "26%" : "5%",
-              },
-            ]}
-          >
-            <View
-              style={[
-                s.connector,
-                sessions.length % 2 === 0
-                  ? null
-                  : { transform: [{ scaleX: -1 }], left: "35%" },
-              ]}
-            />
+          <View style={[s.stop, s.stopCentered]}>
+            <View style={s.connectorCenter} />
             <Pressable
               accessibilityRole="button"
-              accessibilityLabel="Starting line"
+              accessibilityLabel="Start"
               onPress={bounce}
               style={[
                 s.tile,
@@ -367,10 +336,6 @@ export default function Home() {
                 START
               </Text>
             </Pressable>
-            <View style={s.stopCopy}>
-              <Text style={f.kicker}>Baseline</Text>
-              <Text style={f.rowTitle}>Starting line</Text>
-            </View>
           </View>
         </View>
       </ScrollView>
@@ -385,32 +350,30 @@ const s = StyleSheet.create({
     borderColor: "#e0e5dd",
     borderRadius: 20,
     padding: 16,
-    gap: 12,
     marginBottom: 8,
   },
-  statsHeader: {
+  statsBody: {
     flexDirection: "row",
-    justifyContent: "space-between",
     alignItems: "flex-end",
+    gap: 16,
+  },
+  statsHours: {
+    minWidth: 88,
   },
   statsMain: {
     fontFamily: "DMSans_700Bold",
-    fontSize: 22,
+    fontSize: 28,
     color: "#26382d",
-  },
-  statsSummary: {
-    alignItems: "flex-end",
-    gap: 2,
+    letterSpacing: -0.6,
   },
   miniChart: {
+    flex: 1,
     flexDirection: "row",
     alignItems: "flex-end",
     justifyContent: "space-between",
-    gap: 8,
+    gap: 6,
     height: 58,
-    paddingTop: 8,
-    borderTopWidth: 1,
-    borderTopColor: "#e0e5dd",
+    minWidth: 0,
   },
   miniBarCol: {
     flex: 1,
@@ -464,6 +427,21 @@ const s = StyleSheet.create({
     alignItems: "center",
     gap: 16,
     position: "relative",
+  },
+  stopCentered: {
+    justifyContent: "center",
+    paddingLeft: 0,
+  },
+  connectorCenter: {
+    position: "absolute",
+    left: "50%",
+    marginLeft: -1.5,
+    width: 0,
+    height: 105,
+    top: -30,
+    borderLeftWidth: 3,
+    borderColor: "#dce3d6",
+    borderStyle: "dashed",
   },
   tile: {
     width: 80,

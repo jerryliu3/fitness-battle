@@ -142,6 +142,7 @@ export {
   distanceTrackMaxKm,
   effortTrackMax,
   initialsFromName,
+  selfLaneLabel,
   interpolateSeries,
   syntheticCheckpoints,
   volumeThrough,

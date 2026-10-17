@@ -8,8 +8,6 @@ import {
   competeNow,
   competePeriodWindow,
   countsOnTrack,
-  distanceUnitLabel,
-  formatDistanceM,
   formatVolume,
   isSampleActivity,
   primaryFreezePeriodStart,
@@ -40,7 +38,6 @@ export function TodayScreen() {
     .sort((a, b) => b.startedAt.localeCompare(a.startedAt))
     .slice(0, 10);
   const units = state.units;
-  const unitLabel = distanceUnitLabel(units);
 
   const weekPeriod = competePeriodWindow(state, now);
   const weekStart = weekPeriod.startsAt.getTime();
@@ -50,8 +47,12 @@ export function TodayScreen() {
     const t = new Date(a.startedAt).getTime();
     return t >= weekStart && t < weekEnd;
   });
-  const weekDistanceM = weekActivities.reduce((acc, a) => acc + (a.distanceM || 0), 0);
   const weekMovingSec = weekActivities.reduce((acc, a) => acc + (a.movingSec || 0), 0);
+  const weekHours = weekMovingSec / 3600;
+  const weekHoursLabel =
+    weekHours >= 10
+      ? `${Math.round(weekHours)} hr`
+      : `${(Math.round(weekHours * 10) / 10).toFixed(1).replace(/\.0$/, "")} hr`;
   const nowDayIso = now.toISOString().slice(0, 10);
 
   const dayLabels = ["M", "T", "W", "T", "F", "S", "S"];
@@ -59,7 +60,7 @@ export function TodayScreen() {
     const d = new Date(weekStart + i * 86_400_000);
     const dayIso = d.toISOString().slice(0, 10);
     const dayActs = weekActivities.filter((a) => a.startedAt.slice(0, 10) === dayIso);
-    const dayVolume = dayActs.reduce((acc, a) => acc + (a.distanceM || a.movingSec || 0), 0);
+    const dayVolume = dayActs.reduce((acc, a) => acc + (a.movingSec || 0), 0);
     return {
       key: dayIso,
       label: dayLabels[i],
@@ -73,7 +74,6 @@ export function TodayScreen() {
     ...d,
     pct: d.hasActivity ? Math.max(20, Math.round((d.volume / maxDayVolume) * 100)) : 0,
   }));
-  const activeDaysCount = weekDays.filter((d) => d.hasActivity).length;
 
   if (expanded === "suggestion") {
     return (
@@ -155,39 +155,27 @@ export function TodayScreen() {
         </div>
       )}
       <section className="focus-stats-card" aria-label="This week's progress">
-        <div className="focus-stats-header">
-          <div>
+        <div className="focus-stats-body">
+          <div className="focus-stats-hours">
             <p className="fb-kicker">This week</p>
-            <strong>
-              {sportById(state.primary).gps
-                ? `${formatDistanceM(weekDistanceM, units)} ${unitLabel}`
-                : `${Math.round(weekMovingSec / 60)} min`}
-            </strong>
+            <strong>{weekHoursLabel}</strong>
           </div>
-          <div className="focus-stats-summary">
-            <span>
-              <b>{weekActivities.length}</b> {weekActivities.length === 1 ? "session" : "sessions"}
-            </span>
-            <span>
-              <b>{activeDaysCount}</b> of 7 days
-            </span>
-          </div>
-        </div>
-        <div className="focus-mini-chart" aria-hidden="true">
-          {weekDaysWithPct.map((d) => (
-            <div
-              key={d.key}
-              className={`focus-mini-bar-col${d.isToday ? " is-today" : ""}`}
-            >
-              <div className="focus-mini-bar-track">
-                <div
-                  className="focus-mini-bar-fill"
-                  style={{ height: `${d.pct}%` }}
-                />
+          <div className="focus-mini-chart" aria-hidden="true">
+            {weekDaysWithPct.map((d) => (
+              <div
+                key={d.key}
+                className={`focus-mini-bar-col${d.isToday ? " is-today" : ""}`}
+              >
+                <div className="focus-mini-bar-track">
+                  <div
+                    className="focus-mini-bar-fill"
+                    style={{ height: `${d.pct}%` }}
+                  />
+                </div>
+                <span className="focus-mini-bar-day">{d.label}</span>
               </div>
-              <span className="focus-mini-bar-day">{d.label}</span>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
       </section>
       <div className="focus-row">
@@ -268,21 +256,15 @@ export function TodayScreen() {
             </span>
           </div>
         ))}
-        <div
-          className={`focus-path-row is-start ${sessions.length % 2 === 0 ? "is-right" : "is-left"}`}
-        >
+        <div className="focus-path-row is-start">
           <button
             type="button"
-            aria-label="Starting line"
+            aria-label="Start"
             onClick={() => react("hop")}
           >
             <i>🏁</i>
             <b>START</b>
           </button>
-          <span>
-            <small>Baseline</small>
-            <b>Starting line</b>
-          </span>
         </div>
       </section>
     </div>

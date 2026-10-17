@@ -8,7 +8,7 @@ import { AuthPrompt } from "@/components/auth-gate";
 import { FieldStage } from "@/features/field/components/field-stage";
 import { buildFieldModel } from "@/features/field/model";
 import { buildSplitBoard } from "@/features/split/model";
-import { FieldJoinActions, FieldCrewSwitch } from "@/features/rally/field-join";
+import { FieldCrewSwitch } from "@/features/rally/field-join";
 import { AwardShelf } from "@/features/you/award-shelf";
 import { WeekReveal } from "@/features/split/components/week-reveal";
 import { SleepPanel } from "@/features/health/sleep-panel";
@@ -29,7 +29,7 @@ export function ArenaScreen() {
   const router = useRouter();
   const [authOpen, setAuthOpen] = useState(false);
   const [register, setRegister] = useState(false);
-  const [sport, setSport] = useState<SportId | "sleep">("running");
+  const [sport, setSport] = useState<SportId | "sleep" | null>(null);
   const [track, setTrack] = useState<ScoreTrack>("open");
 
   if (!state) return <p className="fb-copy">Loading your lanes…</p>;
@@ -56,10 +56,13 @@ export function ArenaScreen() {
   function participate(_reason: string, action: () => void) {
     if (!user) {
       setRegister(false);
+      setSport(null);
       setAuthOpen(true);
       return;
     }
     if (!state!.onboardingCompleted) {
+      setRegister(false);
+      setSport(null);
       router.push("/onboarding");
       return;
     }
@@ -97,7 +100,7 @@ export function ArenaScreen() {
             className="fb-btn"
             style={{ width: "100%", justifyContent: "center", padding: "12px 20px" }}
             onClick={() => {
-              setSport(state.primary);
+              setSport(null);
               setRegister(true);
             }}
           >
@@ -182,10 +185,7 @@ export function ArenaScreen() {
                 className="fb-btn-line"
                 style={{ width: "100%", justifyContent: "center" }}
                 onClick={() => {
-                  const nextSport =
-                    SPORTS.find((s) => !active.some((r) => r.sport === s.id))
-                      ?.id ?? state.primary;
-                  setSport(nextSport);
+                  setSport(null);
                   setRegister(true);
                 }}
               >
@@ -233,13 +233,16 @@ export function ArenaScreen() {
       <Sheet
         open={register}
         title="Find your next field."
-        body="Choose a sport or recovery category to join for the week."
-        onClose={() => setRegister(false)}
+        body="Tap a sport or recovery category to join for the week."
+        onClose={() => {
+          setRegister(false);
+          setSport(null);
+        }}
       >
         <p className="fb-kicker">Category</p>
         <div
           className="focus-sport-options"
-          role="radiogroup"
+          role="listbox"
           aria-label="Sport or Category"
         >
           {SPORTS.map((s) => {
@@ -250,14 +253,24 @@ export function ArenaScreen() {
               <button
                 key={s.id}
                 type="button"
-                role="radio"
-                aria-checked={sport === s.id}
+                role="option"
+                aria-selected={sport === s.id}
+                disabled={Boolean(isRegistered)}
                 className={
                   sport === s.id
                     ? "focus-sport-option is-on"
                     : "focus-sport-option"
                 }
-                onClick={() => setSport(s.id)}
+                onClick={() => {
+                  if (isRegistered) return;
+                  setSport(s.id);
+                  participate(`Sign in to join ${s.name} this week.`, () => {
+                    dispatch({ type: "set-primary", sport: s.id });
+                    dispatch({ type: "opt-in", sport: s.id, crewBoard: null });
+                    setRegister(false);
+                    setSport(null);
+                  });
+                }}
               >
                 <b>{s.name}</b>
                 <small>
@@ -272,14 +285,23 @@ export function ArenaScreen() {
           })}
           <button
             type="button"
-            role="radio"
-            aria-checked={sport === "sleep"}
+            role="option"
+            aria-selected={sport === "sleep"}
+            disabled={sleepOptedIn}
             className={
               sport === "sleep"
                 ? "focus-sport-option is-on"
                 : "focus-sport-option"
             }
-            onClick={() => setSport("sleep")}
+            onClick={() => {
+              if (sleepOptedIn) return;
+              setSport("sleep");
+              participate("join sleep", () => {
+                dispatch({ type: "opt-in-health", metric: "sleep" });
+                setRegister(false);
+                setSport(null);
+              });
+            }}
           >
             <b>Sleep & Recovery</b>
             <small>
@@ -289,34 +311,6 @@ export function ArenaScreen() {
             </small>
           </button>
         </div>
-
-        {sport === "sleep" ? (
-          <div style={{ marginTop: 16 }}>
-            <button
-              type="button"
-              className="fb-btn"
-              style={{ width: "100%", justifyContent: "center" }}
-              disabled={sleepOptedIn}
-              onClick={() => {
-                participate("join sleep", () => {
-                  dispatch({ type: "opt-in-health", metric: "sleep" });
-                  setRegister(false);
-                });
-              }}
-            >
-              {sleepOptedIn
-                ? "Already registered this week ✓"
-                : "Join sleep leaderboard"}
-            </button>
-          </div>
-        ) : (
-          <FieldJoinActions
-            sport={sport}
-            sportName={SPORTS.find((s) => s.id === sport)?.name ?? sport}
-            requireParticipate={participate}
-            onJoined={() => setRegister(false)}
-          />
-        )}
       </Sheet>
 
       <AuthPrompt
