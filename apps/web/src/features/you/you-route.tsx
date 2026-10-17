@@ -81,7 +81,6 @@ function YouContent() {
   const [profileSaved, setProfileSaved] = useState(false);
   const [primaryNote, setPrimaryNote] = useState<string | null>(null);
   const [confirmFreeze, setConfirmFreeze] = useState(false);
-  const [freezeNote, setFreezeNote] = useState<string | null>(null);
   const searchParams = useSearchParams();
   const accountKey = user?.id ?? "guest";
   const pushIdentity: SyncIdentity | null = user
@@ -543,11 +542,6 @@ function YouContent() {
                 >
                   {profileSaved ? "Saved ✓" : "Save"}
                 </button>
-                {profileSaved ? (
-                  <p className="fb-note" style={{ color: "var(--green, #2f6f4e)" }}>
-                    Profile saved.
-                  </p>
-                ) : null}
               </section>
               <section className="fb-card">
                 <h2>Units</h2>
@@ -625,11 +619,7 @@ function YouContent() {
                     <button
                       type="button"
                       className="fb-btn-ghost"
-                      onClick={() => {
-                        dispatch({ type: "unfreeze" });
-                        setFreezeNote("Freeze removed. Normal scoring resumed for this week.");
-                        setTimeout(() => setFreezeNote(null), 4000);
-                      }}
+                      onClick={() => dispatch({ type: "unfreeze" })}
                     >
                       Undo freeze
                     </button>
@@ -647,8 +637,6 @@ function YouContent() {
                         onClick={() => {
                           dispatch({ type: "freeze" });
                           setConfirmFreeze(false);
-                          setFreezeNote("This week is frozen. Your Elo will hold through next Monday.");
-                          setTimeout(() => setFreezeNote(null), 4000);
                         }}
                       >
                         Confirm freeze
@@ -672,7 +660,6 @@ function YouContent() {
                     {state.freezesLeft <= 0 ? "No freezes left" : "Freeze this week"}
                   </button>
                 )}
-                {freezeNote ? <p className="fb-note">{freezeNote}</p> : null}
               </section>
             </>
           ) : null}
