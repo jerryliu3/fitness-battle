@@ -430,37 +430,71 @@
 .focus-profile-card {
   display: grid;
   grid-template-columns: auto 1fr;
-  gap: 18px;
+  gap: 16px;
   align-items: center;
   background: #fff;
   border: 1px solid #e0e5dd;
   border-radius: 22px;
-  padding: 22px 20px;
+  padding: 18px 18px;
   margin: 8px 0 22px;
   text-align: left;
 }
 .focus-profile-card .focus-portrait {
   margin: 0;
   flex-shrink: 0;
+  cursor: default;
+}
+.focus-profile-card.is-editing .focus-portrait {
+  cursor: pointer;
 }
 .focus-profile-card-copy {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 4px;
   min-width: 0;
+}
+.focus-profile-identity {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  min-width: 0;
+}
+.focus-profile-identity-text {
+  min-width: 0;
+  flex: 1;
 }
 .focus-profile-card h1 {
   margin: 0;
-  font-size: 28px;
+  font-size: 26px;
   font-weight: 400;
   letter-spacing: -0.8px;
   line-height: 1.15;
 }
 .focus-profile-email {
-  margin: 0;
+  margin: 2px 0 0;
   font-size: 13px;
   color: #768172;
   word-break: break-word;
+}
+.focus-profile-edit {
+  flex-shrink: 0;
+  width: 34px;
+  height: 34px;
+  border: 1px solid #e0e5dd;
+  border-radius: 50%;
+  background: #f7f9f4;
+  color: #43543f;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  padding: 0;
+}
+.focus-profile-edit:hover {
+  background: #edf2e8;
+}
+.focus-profile-edit svg {
+  width: 15px;
+  height: 15px;
 }
 .focus-portrait {
   width: 86px;
@@ -476,10 +510,9 @@
   position: relative;
   overflow: hidden;
   flex-shrink: 0;
-  cursor: pointer;
   transition: opacity 0.15s ease;
 }
-.focus-portrait:hover {
+.focus-profile-card.is-editing .focus-portrait:hover {
   opacity: 0.92;
 }
 .focus-portrait-img {
@@ -493,7 +526,7 @@
   display: flex;
   gap: 8px;
   align-items: center;
-  margin-top: 10px;
+  margin-top: 8px;
   flex-wrap: wrap;
 }
 .focus-avatar-btn {
@@ -735,56 +768,59 @@
   margin-top: 6px;
 }
 .focus-journey {
-  position: relative;
+  /* Stop circle lane centers only — the dashed route is derived from measured centers. */
+  --path-l: 24%;
+  --path-c: 50%;
+  --path-r: 76%;
+  --path-row: 120px;
   border-radius: 24px;
   background: transparent;
-  margin: 25px 0;
+  margin: 12px 0 20px;
   max-height: 900px;
   overflow-x: visible;
   overflow-y: auto;
   overscroll-behavior: contain;
-  padding: 0 12px 28px;
+  padding: 0 8px 20px;
+}
+/* Full scroll height of all stops; path SVG covers this, not the scrollport. */
+.focus-journey-track {
+  position: relative;
 }
 .focus-path-row {
   position: relative;
-  display: flex;
-  align-items: center;
-  gap: 18px;
-  height: 150px;
-  padding-left: 12%;
+  height: var(--path-row);
+  z-index: 1;
 }
-.focus-path-row.is-right {
-  padding-left: 36%;
-}
-.focus-path-row:before {
-  content: "";
+.focus-journey-path {
   position: absolute;
-  width: 40%;
-  height: 110px;
-  border: 3px dashed #dce3d6;
-  border-top: 0;
-  border-right: 0;
-  border-radius: 0 0 0 65px;
-  left: 22%;
-  top: -35px;
+  inset: 0;
+  width: 100%;
+  height: 100%;
   z-index: 0;
   pointer-events: none;
+  overflow: visible;
 }
-.focus-path-row.is-left:before {
-  transform: scaleX(-1);
-  left: 35%;
+.focus-journey-path path {
+  fill: none;
+  stroke: #c9d5bf;
+  stroke-width: 2.5;
+  stroke-linecap: round;
+  stroke-dasharray: 4 7;
+  vector-effect: non-scaling-stroke;
 }
 .focus-path-row > button {
-  position: relative;
+  position: absolute;
+  left: var(--path-c);
+  top: 50%;
   z-index: 1;
   width: 80px;
   height: 80px;
-  flex-shrink: 0;
+  margin: 0;
   background: #fff;
   border: 1px solid #e0e5dd;
   border-bottom: 5px solid #cdd9c1;
   border-radius: 50%;
-  transform: none;
+  transform: translate(-50%, -50%);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -793,11 +829,20 @@
   cursor: pointer;
   transition: transform 0.15s ease;
 }
+.focus-path-row[data-lane="l"] > button {
+  left: var(--path-l);
+}
+.focus-path-row[data-lane="c"] > button {
+  left: var(--path-c);
+}
+.focus-path-row[data-lane="r"] > button {
+  left: var(--path-r);
+}
 .focus-path-row > button:hover {
-  transform: translateY(-2px);
+  transform: translate(-50%, calc(-50% - 2px));
 }
 .focus-path-row > button:active {
-  transform: rotate(-6deg) scale(0.96);
+  transform: translate(-50%, -50%) rotate(-6deg) scale(0.96);
 }
 .focus-path-row > button b {
   font-size: 13px;
@@ -822,13 +867,27 @@
   border: 2px solid #fafbf8;
 }
 .focus-path-row > span {
-  position: relative;
+  position: absolute;
+  top: 50%;
   z-index: 1;
+  transform: translateY(-50%);
   background: #fafbf8bb;
   display: flex;
   flex-direction: column;
   gap: 5px;
-  max-width: 155px;
+  max-width: 140px;
+}
+.focus-path-row[data-lane="l"] > span {
+  left: calc(var(--path-l) + 48px);
+}
+.focus-path-row[data-lane="c"] > span {
+  left: calc(var(--path-c) + 52px);
+}
+.focus-path-row[data-lane="r"] > span {
+  right: calc(100% - var(--path-r) + 48px);
+  left: auto;
+  text-align: right;
+  align-items: flex-end;
 }
 .focus-path-row > span small {
   font-size: 9px;
@@ -846,21 +905,38 @@
   color: #768172;
   line-height: 1.6;
 }
-.focus-path-row.is-current {
-  height: 165px;
+.focus-path-row.is-future {
+  opacity: 0.72;
 }
-.focus-path-row.is-current:before {
-  display: none;
+.focus-path-row.is-future > button {
+  background: #f4f7f0;
+  border: 2px dashed #c5d2bb;
+  border-bottom: 4px solid #b7c4ad;
+  cursor: default;
+}
+.focus-path-row.is-future > button:hover,
+.focus-path-row.is-future > button:active {
+  transform: translate(-50%, -50%);
+}
+.focus-path-hollow {
+  width: 22px;
+  height: 22px;
+  border: 2.5px solid #9eb090;
+  border-radius: 50%;
+  display: block;
+}
+.focus-path-row.is-current {
+  overflow: visible;
 }
 .focus-path-row.is-current > button {
   background: #d4ee89;
   border-radius: 50%;
   width: 82px;
   height: 82px;
-  margin-top: 36px;
   border: 2px solid #b5d55b;
   border-bottom: 5px solid #9ebf42;
   overflow: visible;
+  z-index: 1;
 }
 .focus-path-row.is-current > button::after {
   content: "";
@@ -870,6 +946,7 @@
   border: 2px solid rgba(181, 213, 91, 0.85);
   animation: fb-duo-pulse 2s cubic-bezier(0.25, 1, 0.5, 1) infinite;
   pointer-events: none;
+  z-index: 0;
 }
 @keyframes fb-duo-pulse {
   0% {
@@ -887,15 +964,16 @@
 }
 .focus-path-row.is-current > button > div {
   position: absolute;
-  width: 96px;
-  height: 96px;
-  bottom: 22px;
+  width: 118px;
+  height: 118px;
+  bottom: 18px;
   left: 50%;
   transform: translateX(-50%);
   display: flex;
   align-items: center;
   justify-content: center;
   pointer-events: none;
+  z-index: 2;
 }
 .focus-path-row.is-current > button > div svg {
   width: 100%;
@@ -926,38 +1004,32 @@
   border-radius: 20px;
   padding: 16px 20px;
   margin: 6px 0 20px;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
 }
-.focus-stats-header {
+.focus-stats-body {
   display: flex;
   align-items: flex-end;
-  justify-content: space-between;
+  gap: 18px;
 }
-.focus-stats-header strong {
-  font-size: 22px;
+.focus-stats-hours {
+  flex: 0 0 auto;
+  min-width: 88px;
+}
+.focus-stats-hours strong {
+  display: block;
+  font-size: 28px;
   font-weight: 600;
   color: #26382d;
-}
-.focus-stats-summary {
-  display: flex;
-  gap: 12px;
-  font-size: 12px;
-  color: #768172;
-}
-.focus-stats-summary b {
-  color: #26382d;
-  font-weight: 600;
+  letter-spacing: -0.6px;
+  line-height: 1.1;
 }
 .focus-mini-chart {
+  flex: 1;
   display: flex;
   align-items: flex-end;
   justify-content: space-between;
-  gap: 8px;
+  gap: 6px;
   height: 58px;
-  padding-top: 8px;
-  border-top: 1px solid #e0e5dd;
+  min-width: 0;
 }
 .focus-mini-bar-col {
   flex: 1;
@@ -970,21 +1042,34 @@
 .focus-mini-bar-track {
   flex: 1;
   width: 100%;
-  max-width: 26px;
-  background: #e0e6db;
+  max-width: 22px;
+  background: transparent;
   border-radius: 6px;
   display: flex;
   align-items: flex-end;
-  overflow: hidden;
+  justify-content: center;
+  overflow: visible;
 }
 .focus-mini-bar-fill {
   width: 100%;
   background: #a4be60;
-  border-radius: 6px;
+  border-radius: 8px 8px 4px 4px;
   transition: height 0.3s ease;
+  min-height: 8px;
 }
 .focus-mini-bar-col.is-today .focus-mini-bar-fill {
   background: #26382d;
+}
+.focus-mini-bar-col.is-empty .focus-mini-bar-track {
+  align-items: flex-end;
+}
+.focus-mini-bar-flat {
+  display: block;
+  width: 14px;
+  height: 3px;
+  border-radius: 2px;
+  background: #8a9785;
+  flex-shrink: 0;
 }
 .focus-mini-bar-day {
   font-size: 10px;
@@ -994,6 +1079,13 @@
 .focus-mini-bar-col.is-today .focus-mini-bar-day {
   color: #26382d;
   font-weight: 700;
+}
+.focus-mini-bar-col:not(.is-empty) .focus-mini-bar-day {
+  color: #5f7a45;
+  font-weight: 600;
+}
+.focus-mini-bar-col.is-today:not(.is-empty) .focus-mini-bar-day {
+  color: #26382d;
 }
 .focus-athlete-popup {
   position: relative;
@@ -1564,18 +1656,26 @@
   .focus-crew .focus-row .focus-segments {
     width: 100%;
   }
-  .focus-path-row {
-    padding-left: 4%;
-    gap: 14px;
-  }
-  .focus-path-row.is-right {
-    padding-left: 25%;
+  .focus-journey {
+    --path-l: 22%;
+    --path-r: 78%;
   }
   .focus-path-row > span {
-    max-width: 115px;
+    max-width: 110px;
   }
   .focus-path-row > button {
-    width: 79px;
+    width: 76px;
+    height: 76px;
+  }
+  .focus-path-row.is-current > button {
+    width: 78px;
+    height: 78px;
+  }
+  .focus-stats-hours {
+    min-width: 72px;
+  }
+  .focus-stats-hours strong {
+    font-size: 24px;
   }
   .phone-shell .focus-disclosure > summary {
     padding: 19px 17px;

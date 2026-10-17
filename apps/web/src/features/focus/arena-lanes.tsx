@@ -5,6 +5,7 @@ import {
   arenaWindow,
   clampArenaLaneCenter,
   orderedArenaLanes,
+  selfLaneLabel,
   type ArenaSceneLane,
   type ArenaViewWindow,
 } from "@fitness-battle/shared";
@@ -186,7 +187,7 @@ export function ArenaLanes({
               textAnchor="middle"
               className={l.you ? "lane-title is-you" : "lane-title"}
             >
-              {l.you ? "YOU" : l.initials}
+              {l.you ? selfLaneLabel(l.name, "caps") : l.initials}
             </text>
           </g>
         ))}

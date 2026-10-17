@@ -25,6 +25,25 @@ function seasonSummary(state: CompeteState) {
   return { meters, sessions: counted.length, weeks };
 }
 
+function EditIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path
+        d="M4 20h4.5L19 9.5 14.5 5 4 15.5V20z"
+        stroke="currentColor"
+        strokeWidth="1.7"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M12.5 7l4.5 4.5"
+        stroke="currentColor"
+        strokeWidth="1.7"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
+
 export function AthleteOverview({
   state,
   email,
@@ -45,8 +64,8 @@ export function AthleteOverview({
   const [avatarError, setAvatarError] = useState<string | null>(null);
 
   const rating = state.ratings.find((r) => r.sport === state.primary);
-  const openElo = rating?.openElo ?? 1000;
-  const verifiedElo = rating?.verifiedElo ?? 1000;
+  const openElo = rating?.openElo ?? 0;
+  const verifiedElo = rating?.verifiedElo ?? 0;
   const currentElo = track === "open" ? openElo : verifiedElo;
 
   const season = seasonSummary(state);
@@ -67,6 +86,8 @@ export function AthleteOverview({
         userId: user?.id,
         previousAvatarUrl: state.avatarUrl,
         supabase,
+        // Signed-in athletes (email present) must use storage — never data URLs.
+        requireStorage: Boolean(email),
       });
       dispatch({ type: "set-avatar", avatarUrl: newUrl });
     } catch (err) {
@@ -105,17 +126,27 @@ export function AthleteOverview({
   // 30-day fixed time-series Elo history
   const today = competeNow(state);
   const thirtyDaysAgo = new Date(today.getTime() - 29 * 24 * 3600 * 1000);
+  const todayIso = today.toISOString().slice(0, 10);
 
   const history = state.periodResults
     .filter((r) => r.sport === state.primary && r.track === track)
     .slice()
     .sort((a, b) => a.periodStart.localeCompare(b.periodStart));
 
-  // Build daily series for the last 30 days
+  // With settled history, days before the first week stay at 0. With no
+  // history yet, hold the current score (0 for guests, 1000 after account)
+  // so new accounts do not fake a jump from 0 → baseline on "today".
+  const startIso =
+    history.length > 0 ? history[0].periodStart.slice(0, 10) : todayIso;
+
   const dailyValues: number[] = [];
   for (let d = 29; d >= 0; d--) {
     const dayDate = new Date(today.getTime() - d * 24 * 3600 * 1000);
     const dayIso = dayDate.toISOString().slice(0, 10);
+    if (dayIso < startIso) {
+      dailyValues.push(history.length === 0 ? currentElo : 0);
+      continue;
+    }
     const matching = history.filter((r) => r.periodStart.slice(0, 10) <= dayIso);
     if (matching.length > 0) {
       dailyValues.push(matching[matching.length - 1].eloAfter);
@@ -175,14 +206,23 @@ export function AthleteOverview({
       />
 
       {editing ? (
-        <section className="focus-profile-card" aria-label="Edit athlete profile">
+        <section
+          className="focus-profile-card is-editing"
+          aria-label="Edit athlete profile"
+        >
           <div
             className="focus-portrait"
             role="button"
-            tabIndex={0}
+            tabIndex={avatarBusy ? -1 : 0}
+            aria-busy={avatarBusy || undefined}
+            aria-disabled={avatarBusy || undefined}
+            aria-label={state.avatarUrl ? "Change photo" : "Upload photo"}
             title={state.avatarUrl ? "Change photo" : "Upload photo"}
-            onClick={() => fileInputRef.current?.click()}
+            onClick={() => {
+              if (!avatarBusy) fileInputRef.current?.click();
+            }}
             onKeyDown={(e) => {
+              if (avatarBusy) return;
               if (e.key === "Enter" || e.key === " ") {
                 e.preventDefault();
                 fileInputRef.current?.click();
@@ -192,7 +232,7 @@ export function AthleteOverview({
             {state.avatarUrl ? (
               <img
                 src={state.avatarUrl}
-                alt={name || state.name}
+                alt=""
                 className="focus-portrait-img"
               />
             ) : (
@@ -218,20 +258,8 @@ export function AthleteOverview({
                 maxLength={48}
               />
             </label>
-            <div className="focus-avatar-actions" style={{ marginBottom: 12 }}>
-              <button
-                type="button"
-                className="fb-btn-ghost focus-avatar-btn"
-                disabled={avatarBusy}
-                onClick={() => fileInputRef.current?.click()}
-              >
-                {avatarBusy
-                  ? "Uploading…"
-                  : state.avatarUrl
-                    ? "Change photo"
-                    : "Upload photo"}
-              </button>
-              {state.avatarUrl && (
+            {state.avatarUrl ? (
+              <div className="focus-avatar-actions" style={{ marginBottom: 12 }}>
                 <button
                   type="button"
                   className="fb-btn-ghost focus-avatar-btn is-danger"
@@ -240,8 +268,8 @@ export function AthleteOverview({
                 >
                   Remove photo
                 </button>
-              )}
-            </div>
+              </div>
+            ) : null}
             {avatarError && (
               <p className="fb-error" style={{ fontSize: 11, marginBottom: 8 }}>
                 {avatarError}
@@ -277,19 +305,7 @@ export function AthleteOverview({
         </section>
       ) : (
         <section className="focus-profile-card" aria-label="Athlete profile">
-          <div
-            className="focus-portrait"
-            role="button"
-            tabIndex={0}
-            title={state.avatarUrl ? "Change photo" : "Upload photo"}
-            onClick={() => fileInputRef.current?.click()}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" || e.key === " ") {
-                e.preventDefault();
-                fileInputRef.current?.click();
-              }
-            }}
-          >
+          <div className="focus-portrait">
             {state.avatarUrl ? (
               <img
                 src={state.avatarUrl}
@@ -300,66 +316,31 @@ export function AthleteOverview({
               initialsFromName(state.name)
             )}
           </div>
-          <div className="focus-profile-card-copy" style={{ flex: 1 }}>
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "flex-start",
-              }}
-            >
-              <div>
+          <div className="focus-profile-card-copy">
+            <div className="focus-profile-identity">
+              <div className="focus-profile-identity-text">
                 <p className="fb-kicker">{state.city || "Your location"}</p>
                 <h1>{state.name}</h1>
+                {email ? (
+                  <p className="focus-profile-email">
+                    {email}
+                    {demoMode ? " · demo" : ""}
+                  </p>
+                ) : null}
               </div>
               <button
                 type="button"
-                className="fb-btn-ghost"
-                style={{ fontSize: 12, padding: "4px 10px" }}
+                className="focus-profile-edit"
+                aria-label="Edit profile"
                 onClick={() => {
                   setName(state.name);
                   setCity(state.city);
                   setEditing(true);
                 }}
               >
-                Edit profile
+                <EditIcon />
               </button>
             </div>
-            {email ? (
-              <p className="focus-profile-email">
-                {email}
-                {demoMode ? " · demo" : ""}
-              </p>
-            ) : null}
-            <div className="focus-avatar-actions">
-              <button
-                type="button"
-                className="fb-btn-ghost focus-avatar-btn"
-                disabled={avatarBusy}
-                onClick={() => fileInputRef.current?.click()}
-              >
-                {avatarBusy
-                  ? "Uploading…"
-                  : state.avatarUrl
-                    ? "Change photo"
-                    : "Upload photo"}
-              </button>
-              {state.avatarUrl && (
-                <button
-                  type="button"
-                  className="fb-btn-ghost focus-avatar-btn is-danger"
-                  disabled={avatarBusy}
-                  onClick={onRemovePhoto}
-                >
-                  Remove
-                </button>
-              )}
-            </div>
-            {avatarError && (
-              <p className="fb-error" style={{ fontSize: 11, marginTop: 4 }}>
-                {avatarError}
-              </p>
-            )}
           </div>
         </section>
       )}
@@ -390,14 +371,14 @@ export function AthleteOverview({
           <div
             className="focus-elo-track-toggle"
             role="group"
-            aria-label="Elo Track"
+            aria-label="Effort score track"
           >
             <button
               type="button"
               aria-pressed={track === "open"}
               onClick={() => setTrack("open")}
             >
-              Open Elo
+              Open
             </button>
             <button
               type="button"
@@ -420,7 +401,7 @@ export function AthleteOverview({
           viewBox="0 0 340 150"
           className="focus-trend"
           role="img"
-          aria-label={`30-day ${track === "open" ? "Open" : "GPS verified"} Elo history ending at ${currentElo}`}
+          aria-label={`30-day ${track === "open" ? "Open" : "GPS verified"} effort score history ending at ${currentElo}`}
         >
           <defs>
             <linearGradient id="focus-trend-grad" x1="0" y1="0" x2="0" y2="1">
@@ -514,7 +495,8 @@ export function AthleteOverview({
             fill="none"
           />
 
-          {/* Live pulsing dot at current day */}
+          {/* Live pulsing dot at current day — drawn before the solid point so
+              the pulse stays behind the marker when they overlap. */}
           <circle
             cx={lastPoint.x}
             cy={lastPoint.y}

@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import {
   clampArenaLaneCenter,
   resolveArenaSelectedId,
+  selfLaneLabel,
   type ArenaSceneLane,
   type ArenaViewWindow,
   type BoardRow,
@@ -154,7 +155,7 @@ export function FieldStage({
                 aria-pressed={selected === r.id}
               >
                 <span>{placeAt(runners, r.id, time, 0)}</span>
-                <b>{r.you ? "You" : r.name}</b>
+                <b>{r.you ? selfLaneLabel(r.name) : r.name}</b>
                 <small>
                   {boardRows?.find((row) => row.id === r.id)?.elo ?? "—"} Elo
                 </small>
@@ -267,7 +268,7 @@ export function FieldStage({
       {chosen && (
         <div className="focus-athlete-popup" role="dialog" aria-label="Athlete details">
           <div className="focus-athlete-popup-head">
-            <b>{chosen.you ? "You" : chosen.name}</b>
+            <b>{chosen.you ? selfLaneLabel(chosen.name) : chosen.name}</b>
             <button
               type="button"
               aria-label="Close"

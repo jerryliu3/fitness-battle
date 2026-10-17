@@ -74,11 +74,14 @@ export async function uploadWebProfileAvatar({
   userId,
   previousAvatarUrl,
   supabase,
+  requireStorage = false,
 }: {
   file: File;
   userId?: string | null;
   previousAvatarUrl?: string | null;
   supabase?: SupabaseClient | null;
+  /** When true (signed-in athlete), never fall back to a base64 data URL. */
+  requireStorage?: boolean;
 }): Promise<string> {
   const error = validateAvatarFile(file);
   if (error) {
@@ -87,42 +90,44 @@ export async function uploadWebProfileAvatar({
 
   const { blob, dataUrl } = await processImageFile(file);
 
-  // If user is authenticated and Supabase client is available, upload to storage
-  if (supabase && userId) {
-    try {
-      const canonicalPath = getCanonicalAvatarObjectPath(userId);
-      const { error: uploadError } = await supabase.storage
-        .from(AVATAR_BUCKET)
-        .upload(canonicalPath, blob, {
-          contentType: "image/jpeg",
-          upsert: true,
-        });
-
-      if (!uploadError) {
-        const { data: publicUrlData } = supabase.storage
-          .from(AVATAR_BUCKET)
-          .getPublicUrl(canonicalPath);
-
-        const nextAvatarUrl = `${publicUrlData.publicUrl}?v=${Date.now()}`;
-
-        // Cleanup any obsolete paths
-        const cleanupPaths = buildAvatarCleanupPathsForProfileChange({
-          userId,
-          previousAvatarUrl,
-          nextAvatarUrl,
-        });
-        if (cleanupPaths.length > 0) {
-          void supabase.storage.from(AVATAR_BUCKET).remove(cleanupPaths);
-        }
-
-        return nextAvatarUrl;
-      }
-    } catch {
-      // Fallback to dataUrl below
+  const mustStore = requireStorage || Boolean(supabase && userId);
+  if (mustStore) {
+    if (!supabase || !userId) {
+      throw new Error("Sign in again to update your photo.");
     }
+    const canonicalPath = getCanonicalAvatarObjectPath(userId);
+    const { error: uploadError } = await supabase.storage
+      .from(AVATAR_BUCKET)
+      .upload(canonicalPath, blob, {
+        contentType: "image/jpeg",
+        upsert: true,
+      });
+
+    if (uploadError) {
+      throw new Error(
+        uploadError.message || "Could not upload profile photo. Try again.",
+      );
+    }
+
+    const { data: publicUrlData } = supabase.storage
+      .from(AVATAR_BUCKET)
+      .getPublicUrl(canonicalPath);
+
+    const nextAvatarUrl = `${publicUrlData.publicUrl}?v=${Date.now()}`;
+
+    const cleanupPaths = buildAvatarCleanupPathsForProfileChange({
+      userId,
+      previousAvatarUrl,
+      nextAvatarUrl,
+    });
+    if (cleanupPaths.length > 0) {
+      void supabase.storage.from(AVATAR_BUCKET).remove(cleanupPaths);
+    }
+
+    return nextAvatarUrl;
   }
 
-  // Offline / Demo fallback: use the optimized data URL
+  // Guest / demo only: keep a local optimized data URL.
   return dataUrl;
 }
 

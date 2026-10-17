@@ -16,6 +16,13 @@ describe("sanitizeCompeteStateForAccount", () => {
     expect(sanitizeCompeteStateForAccount(freshState()).demoNow).toBeNull();
   });
 
+  it("sets unranked guest scores to the account baseline on sanitize", () => {
+    const sanitized = sanitizeCompeteStateForAccount(freshState());
+    expect(
+      sanitized.ratings.every((r) => r.openElo === 1000 && r.verifiedElo === 1000),
+    ).toBe(true);
+  });
+
   it("clears retired practice duel rows on account sanitize", () => {
     const state = {
       ...freshState(),
