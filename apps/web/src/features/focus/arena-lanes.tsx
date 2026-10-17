@@ -218,7 +218,7 @@ export function ArenaLanes({
               data-athlete={l.id}
               role="button"
               tabIndex={0}
-              aria-label={`${l.name}, ${l.value.toFixed(1)} ${unit}${position.edge ? `, ${position.edge} of visible range` : ""}`}
+              aria-label={`${l.name}, ${formatLastUpdated(l)}, ${l.value.toFixed(1)} ${unit}${position.edge ? `, ${position.edge} of visible range` : ""}`}
               onKeyDown={(e) => {
                 if (e.key === "Enter" || e.key === " ") {
                   e.preventDefault();

@@ -220,7 +220,7 @@ export function FieldStage({
             <input
               type="range"
               min="2"
-              max="40"
+              max={model.gps ? 40 : 100}
               step="1"
               value={span}
               onChange={(e) => setSpan(Number(e.target.value))}

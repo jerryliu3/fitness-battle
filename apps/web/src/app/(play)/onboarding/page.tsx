@@ -28,7 +28,6 @@ function OnboardingFlow() {
   const [sport, setSport] = useState<SportId>("running");
   const [units, setUnits] = useState<UnitSystem>("us");
   const [trackSleep, setTrackSleep] = useState(false);
-  const [level, setLevel] = useState<"light" | "steady" | "heavy">("steady");
   const [connectMessage, setConnectMessage] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -96,7 +95,7 @@ function OnboardingFlow() {
   }
 
   function runBackfill() {
-    dispatch({ type: "import-history", level });
+    dispatch({ type: "import-history", level: "steady" });
     setStep("done");
   }
 

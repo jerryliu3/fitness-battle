@@ -45,10 +45,13 @@ export function ArenaScreen() {
   const msLeft = Math.max(0, period.endsAt.getTime() - now.getTime());
   const daysLeft = Math.floor(msLeft / (24 * 3600 * 1000));
   const hoursLeft = Math.floor((msLeft % (24 * 3600 * 1000)) / (3600 * 1000));
+  const minutesLeft = Math.floor((msLeft % (3600 * 1000)) / (60 * 1000));
   const countdownLabel =
     daysLeft >= 1
       ? `${daysLeft} day${daysLeft === 1 ? "" : "s"} left this week`
-      : `${hoursLeft} hour${hoursLeft === 1 ? "" : "s"} left this week`;
+      : hoursLeft >= 1
+        ? `${hoursLeft} hour${hoursLeft === 1 ? "" : "s"} left this week`
+        : `${Math.max(1, minutesLeft)} min left this week`;
 
   function participate(_reason: string, action: () => void) {
     if (!user) {
