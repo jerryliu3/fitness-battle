@@ -1,0 +1,586 @@
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap">
+<div id="ot-experiences" class="viz-carousel viz-dotted-background" aria-label="Overtaek experience concepts">
+  <section data-variant="Glass Track" aria-label="Glass Track concept">
+    <div class="ot-stage"><article class="ot-phone ot-arena">
+      <header class="ot-header"><span class="ot-brand">overtaek<span>↗</span></span><span class="ot-demo">Concept · Sample data</span></header>
+      <div class="ot-heading"><div class="ot-eyebrow">COMPETE / GLASS TRACK</div><h2>Your place.<br>Your perspective.</h2></div>
+      <div class="ot-glass ot-sport"><span>Running</span><span>Week 42 · Open track</span></div>
+      <div class="ot-field" aria-label="Weekly running distance, 16 to 22 kilometers. Stable lanes; not a live race.">
+        <div class="ot-axis"><span>22 km</span><span>20</span><span>18</span><span>16</span></div>
+        <div class="ot-lanes">
+          <div class="ot-lane"><span class="ot-lane-name">Maya</span><button class="ot-runner" data-athlete="maya" style="bottom:76.7%" aria-label="Inspect Maya, 20.6 kilometers">MC</button></div>
+          <div class="ot-lane ot-own"><span class="ot-lane-name">You</span><button class="ot-runner" data-athlete="you" style="bottom:53.3%" aria-label="Inspect you, 19.2 kilometers" aria-pressed="true">YOU</button></div>
+          <div class="ot-lane"><span class="ot-lane-name">Leo</span><button class="ot-runner" data-athlete="leo" style="bottom:30%" aria-label="Inspect Leo, 17.8 kilometers">LS</button></div>
+          <div class="ot-lane ot-ghost"><span class="ot-lane-name">Past you</span><div class="ot-ghost-mark" style="bottom:40%">PW</div></div>
+        </div>
+      </div>
+      <div class="ot-glass ot-inspector" aria-live="polite"><span id="ot-athlete-name">Your week</span><div><strong id="ot-athlete-total">19.2</strong><span> km</span><small id="ot-athlete-gap">1.4 km behind Maya</small></div></div>
+      <div class="ot-bottom-note">Past you · same cutoff · unranked</div>
+      <nav class="ot-nav ot-glass" aria-label="App context"><span>Home</span><span aria-current="page">Compete</span><span>Crew</span><span>Athlete</span></nav>
+    </article></div>
+  </section>
+  <section data-variant="Forged Week" aria-label="Forged Week concept" hidden>
+    <div class="ot-stage"><article class="ot-phone ot-forged">
+      <header class="ot-header"><span class="ot-brand">overtaek<span>↗</span></span><span class="ot-demo">Concept · Sample data</span></header>
+      <div class="ot-heading"><div class="ot-eyebrow">ATHLETE / FORGED WEEK</div><h2>Effort, made<br>something tangible.</h2></div>
+      <div class="ot-segments" role="group" aria-label="Object type"><button data-object="goal" aria-pressed="true">Home goal · optional</button><button data-object="medal" aria-pressed="false">Weekly medal</button></div>
+      <div class="ot-object-scene" aria-label="Dimensional goal plate with a thick edge">
+        <div id="ot-object" class="ot-object" data-material="alloy">
+          <div class="ot-object-back"><span class="ot-eyebrow">THE RECORD</span><h3 id="ot-record-title">Make room to move.</h3><p id="ot-record-copy">3 counted sessions<br>of a chosen 4-session goal</p><small id="ot-record-date">Speculative goal feature</small></div>
+          <div class="ot-object-face"><div class="ot-object-frame"></div><span class="ot-object-kicker" id="ot-object-kicker">RUNNING / MEDIUM ▰▰▱</span><h3 id="ot-object-title">Make room<br>to move.</h3><div class="ot-relief" id="ot-object-value">3<span> / 4</span></div><span class="ot-object-caption" id="ot-object-caption">COUNTED SESSIONS</span><div class="ot-object-base"><span id="ot-object-finish">ANODIZED ALLOY</span><span>↗</span></div></div>
+        </div>
+      </div>
+      <div class="ot-materials" role="group" aria-label="Goal difficulty and material"><button data-material="glass" aria-pressed="false"><span class="ot-swatch ot-swatch-glass"></span>Easy<small>Glass</small></button><button data-material="alloy" aria-pressed="true"><span class="ot-swatch ot-swatch-alloy"></span>Medium<small>Alloy</small></button><button data-material="chromatic" aria-pressed="false"><span class="ot-swatch ot-swatch-foil"></span>Hard<small>Foil</small></button></div>
+      <div class="ot-object-actions"><button class="ot-action" id="ot-turn">Turn object ↻</button><button class="ot-action" id="ot-flip">Flip to record</button></div>
+      <div class="ot-bottom-note" id="ot-material-note" aria-live="polite">Medium · category-tinted brushed alloy</div>
+      <nav class="ot-nav" aria-label="App context"><span>Home</span><span>Compete</span><span>Crew</span><span aria-current="page">Athlete</span></nav>
+    </article></div>
+  </section>
+  <section data-variant="Weekly Training" aria-label="Weekly Training concept" hidden>
+    <div class="ot-stage ot-week-stage">
+      <div class="ot-study-options" role="group" aria-label="Study comparison, not product navigation"><span>Chart comparison</span><button data-chart="bars" aria-pressed="true">Bars</button><button data-chart="line" aria-pressed="false">Line</button></div>
+      <article class="ot-phone ot-weekly">
+        <header class="ot-header"><span class="ot-brand">overtaek<span>↗</span></span><span class="ot-demo">Concept · Sample data</span></header>
+        <div class="ot-heading"><div class="ot-eyebrow">ATHLETE / PROGRESS</div><h2>Weeks of<br>showing up.</h2><p>Running distance · Weekly totals · UTC</p></div>
+        <div id="ot-week-chart" class="ot-week-chart"></div>
+        <div class="ot-chart-caption"><span>Week starting</span><span>◌ Current week is partial</span></div>
+        <label class="ot-week-selector">Inspect week<select id="ot-week-select" aria-label="Inspect week"></select></label>
+        <section class="ot-week-detail" aria-live="polite" aria-label="Selected week">
+          <span class="ot-eyebrow" id="ot-week-bounds">OCT 5–12 / UTC</span>
+          <div class="ot-week-value"><strong id="ot-week-total">30.6</strong><span> km</span></div>
+          <p id="ot-week-status">Complete week · 3 counted sessions</p>
+        </section>
+        <details class="ot-week-sessions"><summary>Counted sessions</summary><div id="ot-week-sessions"></div></details>
+        <nav class="ot-nav" aria-label="App context"><span>Home</span><span>Compete</span><span>Crew</span><span aria-current="page">Athlete</span></nav>
+      </article>
+    </div>
+  </section>
+  <section data-variant="Body Clock" aria-label="Body Clock concept" hidden>
+    <div class="ot-stage"><article class="ot-phone ot-clock">
+      <header class="ot-header"><span class="ot-brand">overtaek<span>↗</span></span><span class="ot-demo">Concept · Sample data</span></header>
+      <div class="ot-heading"><div class="ot-eyebrow">ATHLETE / PROGRESS / DAILY TIMING</div><h2>Your day has<br>its own tempo.</h2><p>Thursday · America/New_York</p></div>
+      <div class="ot-day-dial" aria-label="24-hour clock: recorded sleep from midnight to 7 AM; run at 7:30 AM; walk at 6 PM">
+        <div class="ot-clock-track"></div><div class="ot-clock-sleep"></div><div class="ot-clock-center"><span>THU 15</span><strong id="ot-clock-time">07:30</strong><span id="ot-clock-center-title">Morning run</span></div>
+        <span class="ot-clock-label ot-midnight">00</span><span class="ot-clock-label ot-six">06</span><span class="ot-clock-label ot-noon">12</span><span class="ot-clock-label ot-eighteen">18</span>
+        <button class="ot-clock-event ot-clock-run" data-event="run" aria-label="Inspect 7:30 AM morning run" aria-pressed="true">↗</button><button class="ot-clock-event ot-clock-walk" data-event="walk" aria-label="Inspect 6 PM evening walk" aria-pressed="false">↗</button>
+      </div>
+      <div class="ot-clock-legend"><span><b></b> Movement</span><span><b></b> Recorded sleep</span></div>
+      <div class="ot-glass ot-clock-detail" aria-live="polite"><span class="ot-eyebrow" id="ot-clock-detail-time">07:30–08:04</span><h3 id="ot-clock-detail-title">Morning run</h3><p id="ot-clock-detail-copy">34 min · 6.2 km</p></div>
+      <div class="ot-bottom-note">Secondary detail · recorded events only</div>
+      <nav class="ot-nav" aria-label="App context"><span>Home</span><span>Compete</span><span>Crew</span><span aria-current="page">Athlete</span></nav>
+    </article></div>
+  </section>
+  <section data-variant="PR Timeline" aria-label="PR Timeline concept" hidden>
+    <div class="ot-stage"><article class="ot-phone ot-lab">
+      <header class="ot-header"><span class="ot-brand">overtaek<span>↗</span></span><span class="ot-demo">Concept · Sample data</span></header>
+      <div class="ot-heading"><div class="ot-eyebrow">ATHLETE / PERSONAL RECORDS</div><h2>A history of<br>getting faster.</h2></div>
+      <div class="ot-segments" role="group" aria-label="Race distance"><button data-distance="5" aria-pressed="true">5K</button><button data-distance="10" aria-pressed="false">10K</button><button data-distance="21" aria-pressed="false">Half</button></div>
+      <div class="ot-benchmark"><span class="ot-eyebrow" id="ot-benchmark-label">CURRENT PR / 5K</span><strong id="ot-benchmark-time">23:42</strong><p>Verified result series · Sample records</p><span class="ot-benchmark-gain" id="ot-benchmark-gain">48 seconds faster since May</span></div>
+      <div class="ot-pr-caption">Standing record / elapsed time</div>
+      <div id="ot-pr-chart" class="ot-pr-chart"></div>
+      <div class="ot-pr-dates" role="group" aria-label="Inspect PR milestone"><button data-record="0" aria-pressed="false">May</button><button data-record="1" aria-pressed="false">June</button><button data-record="2" aria-pressed="false">Aug</button><button data-record="3" aria-pressed="true">Oct</button></div>
+      <section class="ot-pr-receipt" aria-live="polite"><span class="ot-eyebrow" id="ot-pr-date">OCT 4, 2026</span><h3 id="ot-pr-result">23:42 · Riverside 5K</h3><p id="ot-pr-proof">Verified race result · Current personal record</p></section>
+      <div class="ot-bottom-note">Record milestones · estimates kept separate</div>
+      <nav class="ot-nav" aria-label="App context"><span>Home</span><span>Compete</span><span>Crew</span><span aria-current="page">Athlete</span></nav>
+    </article></div>
+  </section>
+  <section data-variant="Crew Relay" aria-label="Crew Relay concept" hidden>
+    <div class="ot-stage"><article class="ot-phone ot-relay">
+      <header class="ot-header"><span class="ot-brand">overtaek<span>↗</span></span><span class="ot-demo">Concept · Sample data</span></header>
+      <div class="ot-heading"><div class="ot-eyebrow">CREW / RELAY</div><h2>Different runs.<br>One finish line.</h2><p>Northside crew · Weekly running goal</p></div>
+      <div class="ot-relay-total"><strong>76.0<span> / 100 km</span></strong><p>24.0 km to the crew goal</p></div>
+      <div class="ot-relay-tape" aria-label="Crew contributions, 0 to 100 kilometers"><div class="ot-relay-filled"><button data-member="maya" style="width:42.1%" aria-label="Inspect Maya, 32 kilometers" aria-pressed="false">MC</button><button data-member="you" style="width:25.26%" aria-label="Inspect your 19.2 kilometers" aria-pressed="true">YOU</button><button data-member="leo" style="width:32.64%" aria-label="Inspect Leo, 24.8 kilometers" aria-pressed="false">LS</button></div><span class="ot-finish-gate"></span></div>
+      <div class="ot-relay-scale"><span>0 km</span><span>100 km</span></div>
+      <div class="ot-glass ot-relay-detail" aria-live="polite"><span class="ot-eyebrow">PART OF THE WHOLE</span><div class="ot-relay-person"><span class="ot-avatar" id="ot-relay-avatar">YOU</span><div><h3 id="ot-relay-name">Your contribution</h3><p id="ot-relay-contribution">19.2 km · 3 runs</p></div></div><div class="ot-relay-fraction"><span id="ot-relay-share">25.3% of recorded crew distance</span><b>↗</b></div></div>
+      <div class="ot-relay-members"><span>MC</span><span>YOU</span><span>LS</span><span>+3</span><p>Everyone has a place.</p></div>
+      <nav class="ot-nav" aria-label="App context"><span>Home</span><span>Compete</span><span aria-current="page">Crew</span><span>Athlete</span></nav>
+    </article></div>
+  </section>
+  <section data-variant="Finish-Line Moment" aria-label="Finish-Line Moment in the existing Compete" hidden>
+    <div class="ot-stage"><article class="ot-phone ot-arena ot-return">
+      <header class="ot-header"><span class="ot-brand">overtaek<span>↗</span></span><span class="ot-demo">Concept · Sample data</span></header>
+      <div class="ot-heading"><div class="ot-eyebrow">COMPETE</div><h2>Your week<br>in the field.</h2></div>
+      <div class="ot-return-banner" id="ot-return-banner"><div><span class="ot-eyebrow">SINCE YOUR LAST VISIT</span><p>+2.2 km counted · Up one place</p></div><div class="ot-return-actions"><button id="ot-return-replay">Replay</button><button id="ot-return-dismiss">Dismiss</button></div></div>
+      <div class="ot-glass ot-sport"><span>Running</span><span>Week 42 · Open track</span></div>
+      <div class="ot-field" aria-label="Existing Compete lanes, distance scale 16 to 22 kilometers">
+        <div class="ot-axis"><span>22 km</span><span>20</span><span>18</span><span>16</span></div>
+        <div class="ot-lanes">
+          <div class="ot-lane"><span class="ot-lane-name">Maya</span><div class="ot-runner" style="bottom:76.7%">MC</div></div>
+          <div class="ot-lane ot-own"><span class="ot-lane-name">You</span><div class="ot-runner" id="ot-return-marker" style="bottom:53.3%">YOU</div></div>
+          <div class="ot-lane"><span class="ot-lane-name">Leo</span><div class="ot-runner" style="bottom:30%">LS</div></div>
+          <div class="ot-lane ot-ghost"><span class="ot-lane-name">Past you</span><div class="ot-ghost-mark" style="bottom:40%">PW</div></div>
+        </div>
+      </div>
+      <div class="ot-glass ot-inspector"><span>Your week</span><div><strong id="ot-return-total">19.2</strong><span> km</span><small id="ot-return-place">4th · 1.4 km ahead of Leo</small></div></div>
+      <div class="ot-bottom-note" id="ot-return-status" aria-live="polite">Updated Compete · continue as usual</div>
+      <nav class="ot-nav ot-glass" aria-label="App context"><span>Home</span><span aria-current="page">Compete</span><span>Crew</span><span>Athlete</span></nav>
+    </article></div>
+  </section>
+
+</div>
+<style>
+#ot-experiences{--ot-paper:light-dark(#fafbf8,#15231c);--ot-ink:light-dark(#26382d,#ecf3e6);--ot-panel:light-dark(#fff,#20362a);--ot-line:light-dark(#e0e5dd,#435447);--ot-muted:light-dark(#60705f,#b0c1ae);--ot-tennis:#d4ee89;--ot-dark:#26382d;--ot-ghost:light-dark(#b3beb1,#81917f);--ot-wash:light-dark(#edf1e8,#2e4230);--ot-glass:light-dark(#ffffffb8,#263d30d9);--ot-sheen:light-dark(#ffffffdc,#ffffff4d);font-family:'DM Sans',sans-serif;color:var(--ot-ink)}
+#ot-experiences *{box-sizing:border-box}
+#ot-experiences [hidden]{display:none!important}
+#ot-experiences .ot-stage{min-height:860px;display:flex;justify-content:center;align-items:flex-start;padding:20px 10px 24px}
+#ot-experiences .ot-phone{width:min(100%,370px);min-height:654px;background:var(--ot-paper);border:1px solid var(--ot-line);border-radius:34px;padding:22px 22px 12px;position:relative;display:flex;flex-direction:column;box-shadow:0 16px 35px #18281812;isolation:isolate;overflow:hidden}
+#ot-experiences .ot-header{display:flex;justify-content:space-between;align-items:center;gap:8px}
+#ot-experiences .ot-brand{font-weight:700;font-size:19px;letter-spacing:-1px}
+#ot-experiences .ot-brand>span{margin-left:3px}
+#ot-experiences .ot-demo{font-size:10px;color:var(--ot-muted);text-align:right}
+#ot-experiences .ot-heading{margin:27px 0 19px}
+#ot-experiences .ot-eyebrow{font-size:10px;letter-spacing:1.5px;font-weight:600;line-height:1.5}
+#ot-experiences h2{font-size:31px;line-height:1.07;letter-spacing:-1.3px;font-weight:500;margin:10px 0 0}
+#ot-experiences h3{font-size:19px;line-height:1.2;font-weight:500;letter-spacing:-.5px;margin:6px 0}
+#ot-experiences p{font-size:12px;line-height:1.5;margin:8px 0;color:var(--ot-muted)}
+#ot-experiences button{font:inherit;color:inherit;border:0;cursor:var(--cursor-interaction,pointer);-webkit-tap-highlight-color:transparent}
+#ot-experiences button:focus-visible{outline:3px solid var(--ot-ink);outline-offset:4px}
+#ot-experiences button:active{scale:.98}
+#ot-experiences .ot-glass{background:linear-gradient(125deg,var(--ot-sheen),transparent 40%),var(--ot-glass);backdrop-filter:blur(16px) saturate(1.25);-webkit-backdrop-filter:blur(16px) saturate(1.25);border:1px solid var(--ot-sheen);box-shadow:inset 0 1px 1px #fff9,inset 0 -1px 2px #18281814,0 7px 20px #18281812;border-radius:23px}
+#ot-experiences .ot-nav{margin-top:auto;display:flex;align-items:center;justify-content:space-between;padding:14px 7px 4px;border-top:1px solid var(--ot-line);gap:4px;font-size:11px;color:var(--ot-muted)}
+#ot-experiences .ot-nav span{padding:10px 7px;border-radius:20px}
+#ot-experiences .ot-nav [aria-current]{background:var(--ot-tennis);color:var(--ot-dark);font-weight:600}
+#ot-experiences .ot-nav.ot-glass{padding:4px;margin-top:8px;border:1px solid var(--ot-sheen)}
+#ot-experiences .ot-bottom-note{text-align:center;font-size:10px;line-height:1.4;color:var(--ot-muted);margin:12px 0 15px}
+#ot-experiences .ot-segments{display:flex;background:var(--ot-wash);border-radius:18px;padding:4px;gap:4px}
+#ot-experiences .ot-segments button{flex:1;background:transparent;border-radius:14px;padding:10px;font-size:12px;min-height:42px}
+#ot-experiences .ot-segments [aria-pressed=true]{background:var(--ot-panel);box-shadow:0 2px 5px #14251a13;font-weight:600}
+#ot-experiences .ot-action{background:var(--ot-panel);border:1px solid var(--ot-line);border-radius:14px;min-height:44px;padding:10px 13px;font-size:12px}
+#ot-experiences .ot-arena{background:radial-gradient(ellipse at 80% 38%,light-dark(#d4ee8952,#4b653c52),transparent 70%),var(--ot-paper)}
+#ot-experiences .ot-arena .ot-heading{margin-bottom:16px}
+#ot-experiences .ot-sport{display:flex;justify-content:space-between;align-items:center;padding:12px 16px;border-radius:18px;font-size:12px;z-index:2}
+#ot-experiences .ot-sport span+span{font-size:10px;color:var(--ot-muted)}
+#ot-experiences .ot-field{height:258px;position:relative;margin:8px 0 -24px;display:flex;gap:7px}
+#ot-experiences .ot-axis{width:31px;display:flex;flex-direction:column;justify-content:space-between;padding:12px 0;font-size:9px;color:var(--ot-muted)}
+#ot-experiences .ot-lanes{display:flex;flex:1;position:relative;background:repeating-linear-gradient(to top,transparent 0,transparent calc(33.333% - 1px),var(--ot-line) calc(33.333% - 1px),var(--ot-line) 33.333%)}
+#ot-experiences .ot-lane{width:25%;height:100%;border-inline-start:1px solid var(--ot-line);position:relative}
+#ot-experiences .ot-lane:last-child{border-inline-end:1px solid var(--ot-line)}
+#ot-experiences .ot-own{background:linear-gradient(0deg,transparent,#d4ee8952 45%,#d4ee8920)}
+#ot-experiences .ot-lane-name{position:absolute;left:0;right:0;bottom:6px;text-align:center;font-size:9px;color:var(--ot-muted)}
+#ot-experiences .ot-runner,#ot-experiences .ot-ghost-mark{position:absolute;left:50%;transform:translate(-50%,50%);width:43px;height:43px;display:grid;place-items:center;background:var(--ot-panel);border:2px solid var(--ot-line);border-radius:50%;font-size:10px;box-shadow:0 4px 8px #18281813;transition:box-shadow .25s}
+#ot-experiences .ot-own .ot-runner{background:var(--ot-tennis);color:var(--ot-dark);border-color:var(--ot-tennis);font-size:9px}
+#ot-experiences .ot-runner[aria-pressed=true]{box-shadow:0 0 0 4px var(--ot-panel),0 0 0 5px var(--ot-ink)}
+#ot-experiences .ot-ghost-mark{width:31px;height:31px;border:1px dashed var(--ot-muted);color:var(--ot-muted);background:var(--ot-paper);box-shadow:none;font-size:9px}
+#ot-experiences .ot-inspector{position:relative;z-index:2;margin:0 0 0 26px;padding:15px 19px}
+#ot-experiences .ot-inspector>span{font-size:11px}
+#ot-experiences .ot-inspector strong{font-size:35px;letter-spacing:-1px;font-weight:500}
+#ot-experiences .ot-inspector small{display:block;color:var(--ot-muted);font-size:11px}
+#ot-experiences .ot-forged .ot-heading{margin-bottom:14px}
+#ot-experiences .ot-forged h2{font-size:28px}
+#ot-experiences .ot-object-scene{perspective:1000px;display:flex;justify-content:center;align-items:center;min-height:292px;padding:20px 10px 17px}
+#ot-experiences .ot-object{--ot-edge:#a6b96d;position:relative;width:258px;height:254px;transform-style:preserve-3d;transform:rotateX(9deg) rotateY(-13deg) rotateZ(-3deg);transition:transform .65s cubic-bezier(.2,.8,.2,1);border-radius:23px;box-shadow:2px 3px 0 var(--ot-edge),4px 6px 0 var(--ot-edge),6px 9px 0 var(--ot-edge),10px 18px 20px #17251522}
+#ot-experiences .ot-object-face,#ot-experiences .ot-object-back{position:absolute;inset:0;border-radius:23px;backface-visibility:hidden;-webkit-backface-visibility:hidden;display:flex;flex-direction:column;padding:24px 22px;background:repeating-linear-gradient(0deg,#ffffff16 0 1px,transparent 1px 3px),linear-gradient(125deg,#f4f8cc,#b5ca7c 35%,#dfeaaf 53%,#a9bd70 76%,#d7e7a3);color:#26382d;border:1px solid #ffffffa8;overflow:hidden}
+#ot-experiences .ot-object-face::after{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(105deg,transparent 20%,#fff0 38%,#fff8 45%,#fff0 52%,transparent 70%);background-size:250% 100%;background-position:var(--ot-light,70%) 0;mix-blend-mode:soft-light;transition:background-position .5s}
+#ot-experiences .ot-object-frame{position:absolute;inset:9px;border:1px solid #26382d35;border-radius:16px;pointer-events:none}
+#ot-experiences .ot-object-kicker{font-size:9px;letter-spacing:1.1px}
+#ot-experiences .ot-object-face h3{font-size:27px;letter-spacing:-.8px;margin-top:18px;line-height:1.05;text-shadow:0 1px 0 #fff9,1px 2px 0 #26382d20}
+#ot-experiences .ot-relief{font-size:64px;font-weight:600;line-height:1.1;letter-spacing:-3px;text-shadow:0 1px 0 #ffffffd9,1px 2px 0 #667a43,2px 3px 0 #667a4350}
+#ot-experiences .ot-relief>span{font-size:29px;letter-spacing:-1px;font-weight:400}
+#ot-experiences .ot-object-caption{font-size:9px;letter-spacing:1.2px}
+#ot-experiences .ot-object-base{margin-top:auto;padding-top:12px;display:flex;justify-content:space-between;font-size:8px;letter-spacing:1px}
+#ot-experiences .ot-object-back{transform:rotateY(180deg);justify-content:center;text-align:center;background:linear-gradient(140deg,#eaf0d6,#b5c581)}
+#ot-experiences .ot-object-back p{color:#3c4e32;font-size:13px}
+#ot-experiences .ot-object-back small{font-size:10px}
+#ot-experiences .ot-object[data-material=glass]{--ot-edge:#b6cbbc}
+#ot-experiences .ot-object[data-material=glass] .ot-object-face{background:radial-gradient(ellipse at 10% 0,#ffffffdf,transparent 60%),linear-gradient(145deg,#eff9e7,#d3e7c6c9 50%,#f6fff2);box-shadow:inset 0 0 14px #fff,inset 0 -7px 13px #8fa48a40}
+#ot-experiences .ot-object[data-material=chromatic]{--ot-edge:#788d4c}
+#ot-experiences .ot-object[data-material=chromatic] .ot-object-face{background:radial-gradient(ellipse at 90% 5%,#78983d77,transparent 50%),linear-gradient(125deg,#26382d,#101c17 50%,#344b35);color:#ecf5dd}
+#ot-experiences .ot-object[data-material=chromatic] .ot-object-frame{border-color:#d4ee8980}
+#ot-experiences .ot-object[data-material=chromatic] .ot-relief{color:#d4ee89;text-shadow:0 1px 0 #eeffc4,1px 2px 0 #547234,2px 3px 0 #193316}
+#ot-experiences .ot-object[data-material=chromatic] h3{text-shadow:0 1px 0 #fff3,1px 2px 0 #000a}
+#ot-experiences .ot-object[data-material=medal]{--ot-edge:#8f6531;width:230px;height:230px;border-radius:50%}
+#ot-experiences .ot-object[data-material=medal] .ot-object-face,#ot-experiences .ot-object[data-material=medal] .ot-object-back{border-radius:50%;align-items:center;text-align:center;padding:26px 23px;background:radial-gradient(circle at 50% 50%,#f2dba6 0%,#d7b375 56%,#b78a44 61%,#fff0c4 62%,transparent 64%),repeating-conic-gradient(#ae793c 0deg,#dec28b 2deg,#b58745 4deg);color:#47341c}
+#ot-experiences .ot-object[data-material=medal] .ot-object-face::before{content:"";position:absolute;inset:7px;border-radius:50%;background:radial-gradient(circle at 30% 20%,#fff1c7,#e1bf7c 45%,#b78a44);z-index:-1;border:1px solid #fff2c6}
+#ot-experiences .ot-object[data-material=medal] .ot-object-frame{border-radius:50%;inset:15px;border-color:#8c632a66}
+#ot-experiences .ot-object[data-material=medal] h3{font-size:17px;margin-top:9px}
+#ot-experiences .ot-object[data-material=medal] .ot-relief{font-size:63px;color:#78501f;text-shadow:0 1px 0 #ffeac1,1px 2px 0 #aa7b38}
+#ot-experiences .ot-object[data-material=medal] .ot-object-kicker{font-size:8px}
+#ot-experiences .ot-object[data-material=medal] .ot-object-base{padding-top:8px;font-size:7px;gap:12px;margin-top:2px}
+#ot-experiences .ot-materials{display:flex;gap:6px;justify-content:center}
+#ot-experiences .ot-materials button{background:transparent;padding:6px 12px;min-height:65px;border-radius:13px;display:flex;flex-direction:column;align-items:center;gap:3px;font-size:11px;flex:1}
+#ot-experiences .ot-materials [aria-pressed=true]{background:var(--ot-wash)}
+#ot-experiences .ot-materials small{font-size:9px;color:var(--ot-muted)}
+#ot-experiences .ot-swatch{display:block;width:25px;height:15px;border-radius:5px;box-shadow:1px 2px 0 #435b3e60}
+#ot-experiences .ot-swatch-glass{background:linear-gradient(125deg,#fff,#cfdec7)}
+#ot-experiences .ot-swatch-alloy{background:linear-gradient(125deg,#e8efbb,#a6be72,#d9e7a3)}
+#ot-experiences .ot-swatch-foil{background:linear-gradient(125deg,#26382d,#546b3b,#17251c)}
+#ot-experiences .ot-object-actions{display:flex;gap:8px;margin:9px 0 0}
+#ot-experiences .ot-object-actions button{flex:1}
+#ot-experiences .ot-forged .ot-bottom-note{min-height:28px;margin:8px 0}
+#ot-experiences .ot-clock .ot-heading{margin-bottom:5px}
+#ot-experiences .ot-day-dial{width:min(250px,100%);height:auto;aspect-ratio:1;position:relative;align-self:center;margin:14px 0 4px}
+#ot-experiences .ot-clock-track{position:absolute;inset:20px;border:18px solid var(--ot-wash);border-radius:50%;background:repeating-conic-gradient(var(--ot-line) 0deg .5deg,transparent .5deg 15deg);mask:radial-gradient(closest-side,transparent 0 82%,#000 83%)}
+#ot-experiences .ot-clock-sleep{position:absolute;inset:18.8%;border-radius:50%;background:conic-gradient(from 0deg,var(--ot-ghost) 0deg 105deg,transparent 105deg);mask:radial-gradient(closest-side,transparent 0 86%,#000 87%)}
+#ot-experiences .ot-clock-center{position:absolute;inset:26% 11.2%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px}
+#ot-experiences .ot-clock-center>span:first-child{font-size:9px;letter-spacing:2px;color:var(--ot-muted)}
+#ot-experiences .ot-clock-center strong{font-size:38px;font-weight:500;letter-spacing:-2px}
+#ot-experiences .ot-clock-center>span:last-child{font-size:11px;color:var(--ot-muted)}
+#ot-experiences .ot-clock-label{position:absolute;font-size:10px;color:var(--ot-muted)}
+#ot-experiences .ot-midnight{top:0;left:calc(50% - 7px)}
+#ot-experiences .ot-six{right:0;top:calc(50% - 6px)}
+#ot-experiences .ot-noon{bottom:0;left:calc(50% - 7px)}
+#ot-experiences .ot-eighteen{left:0;top:calc(50% - 6px)}
+#ot-experiences .ot-clock-event{position:absolute;width:40px;height:40px;border-radius:50%;background:var(--ot-tennis);color:var(--ot-dark);box-shadow:0 3px 6px #18281826;font-size:18px}
+#ot-experiences .ot-clock-run{right:6.8%;top:56.4%}
+#ot-experiences .ot-clock-walk{left:4.8%;top:42%}
+#ot-experiences .ot-clock-event[aria-pressed=true]{outline:1px solid var(--ot-ink);outline-offset:4px}
+#ot-experiences .ot-clock-legend{display:flex;justify-content:center;gap:18px;font-size:9px;color:var(--ot-muted);margin:4px 0 16px}
+#ot-experiences .ot-clock-legend b{display:inline-block;width:6px;height:6px;background:var(--ot-tennis);border-radius:50%;margin-right:3px}
+#ot-experiences .ot-clock-legend span+span b{background:var(--ot-ghost)}
+#ot-experiences .ot-clock-detail{padding:16px 20px}
+#ot-experiences .ot-clock-detail h3{font-size:19px}
+#ot-experiences .ot-clock-detail p{margin-bottom:0}
+#ot-experiences .ot-relay-total{padding:17px 0 8px}
+#ot-experiences .ot-relay-total>strong{font-size:43px;font-weight:500;letter-spacing:-2px}
+#ot-experiences .ot-relay-total>strong>span{font-size:20px;letter-spacing:-.5px;color:var(--ot-muted)}
+#ot-experiences .ot-relay-total p{margin:0}
+#ot-experiences .ot-relay-tape{height:82px;position:relative;margin-top:33px;background:repeating-linear-gradient(0deg,var(--ot-line) 0 1px,transparent 1px 4px),var(--ot-wash);border-radius:8px;transform:rotate(-5deg);box-shadow:0 9px 0 var(--ot-line),0 18px 24px #26382d0d}
+#ot-experiences .ot-relay-filled{width:76%;display:flex;height:100%;border-radius:8px 0 0 8px;overflow:hidden}
+#ot-experiences .ot-relay-filled button{position:relative;background:repeating-linear-gradient(0deg,#26382d18 0 1px,transparent 1px 4px),#9cb76c;color:#26382d;font-size:10px;border-right:2px solid #ecf3df55}
+#ot-experiences .ot-relay-filled button:first-child{background:repeating-linear-gradient(0deg,#ffffff20 0 1px,transparent 1px 4px),#536f45;color:#fff}
+#ot-experiences .ot-relay-filled button[aria-pressed=true]{background:repeating-linear-gradient(0deg,#26382d18 0 1px,transparent 1px 4px),#d4ee89;box-shadow:inset 0 4px 0 #fff8,inset 0 -4px 0 #78944170;font-weight:700}
+#ot-experiences .ot-finish-gate{position:absolute;top:-12px;bottom:-12px;right:4px;width:7px;background:repeating-conic-gradient(var(--ot-ink) 0% 25%,var(--ot-paper) 0% 50%) 0 0/8px 8px}
+#ot-experiences .ot-relay-scale{display:flex;justify-content:space-between;font-size:9px;color:var(--ot-muted);margin:29px 0 18px}
+#ot-experiences .ot-relay-detail{padding:20px}
+#ot-experiences .ot-relay-person{display:flex;gap:13px;align-items:center;margin:17px 0}
+#ot-experiences .ot-avatar{width:40px;height:40px;border-radius:50%;background:var(--ot-tennis);color:var(--ot-dark);display:grid;place-items:center;font-size:10px}
+#ot-experiences .ot-relay-person h3{font-size:17px;margin:0}
+#ot-experiences .ot-relay-person p{margin:2px 0 0}
+#ot-experiences .ot-relay-fraction{border-top:1px solid var(--ot-line);padding-top:12px;display:flex;justify-content:space-between;font-size:10px;color:var(--ot-muted)}
+#ot-experiences .ot-relay-members{display:flex;align-items:center;margin:22px 0 20px}
+#ot-experiences .ot-relay-members>span{width:26px;height:26px;border:2px solid var(--ot-paper);border-radius:50%;display:grid;place-items:center;background:var(--ot-wash);margin-left:-4px;font-size:7px}
+#ot-experiences .ot-relay-members p{font-size:10px;margin-left:9px}
+@media(max-width:400px){#ot-experiences .ot-stage{min-height:860px;padding-inline:0}
+#ot-experiences .ot-phone{padding-inline:17px;border-radius:27px}
+#ot-experiences h2{font-size:29px}
+#ot-experiences .ot-object{width:240px}
+#ot-experiences .ot-nav{font-size:10px}
+#ot-experiences .ot-nav span{padding-inline:6px}
+#ot-experiences .ot-demo{font-size:9px}
+#ot-experiences .ot-header{gap:4px}}
+@media(prefers-reduced-motion:reduce){#ot-experiences *,#ot-experiences *::after{transition:none!important;animation:none!important}
+#ot-experiences .ot-object{transform:none!important}
+#ot-experiences .ot-object.ot-flipped{transform:rotateY(180deg)!important}
+}
+@media(prefers-reduced-transparency:reduce){#ot-experiences .ot-glass{background:var(--ot-panel);backdrop-filter:none;-webkit-backdrop-filter:none}}
+</style>
+<style>
+#ot-experiences .ot-week-stage{flex-direction:column;align-items:center;gap:12px}
+#ot-experiences .ot-study-options{display:flex;align-items:center;gap:5px;font-size:11px;flex-wrap:wrap;justify-content:center}
+#ot-experiences .ot-study-options>span{margin-right:8px;color:var(--ot-muted)}
+#ot-experiences .ot-study-options button{min-height:38px;padding:8px 14px;border-radius:18px;background:var(--ot-paper);border:1px solid var(--ot-line)}
+#ot-experiences .ot-study-options [aria-pressed=true]{background:var(--ot-ink);color:var(--ot-paper)}
+#ot-experiences .ot-week-chart{width:100%;height:210px;margin:10px 0 0}
+#ot-experiences .ot-week-chart svg,#ot-experiences .ot-pr-chart svg{display:block;width:100%;height:100%;overflow:visible;font-family:inherit}
+#ot-experiences .ot-chart-caption{display:flex;flex-wrap:wrap;justify-content:space-between;gap:6px;font-size:11px;color:var(--ot-muted);margin:8px 0 20px}
+#ot-experiences .ot-week-selector{display:flex;flex-direction:column;gap:7px;font-size:11px;color:var(--ot-muted)}
+#ot-experiences .ot-week-selector select{font:inherit;font-size:14px;min-height:44px;border:1px solid var(--ot-line);border-radius:12px;padding:9px 12px;background:var(--ot-panel);color:var(--ot-ink);width:100%;min-width:0}
+#ot-experiences .ot-week-detail{border-top:1px solid var(--ot-line);padding:18px 0 0;margin-top:22px}
+#ot-experiences .ot-week-value{margin-top:8px}
+#ot-experiences .ot-week-value strong{font-size:38px;font-weight:500;letter-spacing:-1px}
+#ot-experiences .ot-week-detail p{margin:4px 0 12px}
+#ot-experiences .ot-week-sessions{border-top:1px solid var(--ot-line);margin-bottom:20px;font-size:12px}
+#ot-experiences .ot-week-sessions summary{padding:16px 0;min-height:44px;cursor:pointer}
+#ot-experiences .ot-session-row{display:flex;justify-content:space-between;gap:10px;padding:11px 0;border-top:1px solid var(--ot-line)}
+#ot-experiences .ot-session-row span:last-child{white-space:nowrap;font-variant-numeric:tabular-nums}
+#ot-experiences .ot-benchmark{padding:24px 0 22px}
+#ot-experiences .ot-benchmark>strong{display:block;font-size:54px;letter-spacing:-3px;font-weight:500;line-height:1.3;margin-top:8px}
+#ot-experiences .ot-benchmark p{margin:3px 0 14px}
+#ot-experiences .ot-benchmark-gain{font-size:12px;border-bottom:3px solid var(--ot-tennis);padding-bottom:4px}
+#ot-experiences .ot-pr-chart{width:100%;height:152px;margin-top:8px}
+#ot-experiences .ot-pr-caption{font-size:11px;color:var(--ot-muted)}
+#ot-experiences .ot-pr-dates{display:flex;gap:4px;margin:5px 0 20px}
+#ot-experiences .ot-pr-dates button{min-height:44px;flex:1;font-size:12px;background:transparent;border-radius:13px;padding:9px 2px}
+#ot-experiences .ot-pr-dates [aria-pressed=true]{background:var(--ot-tennis);color:var(--ot-dark)}
+#ot-experiences .ot-pr-receipt{padding:17px 0 0;border-top:1px solid var(--ot-line);min-height:111px}
+#ot-experiences .ot-pr-receipt h3{font-size:17px;margin-top:9px}
+#ot-experiences .ot-return .ot-heading{margin-top:20px;margin-bottom:15px}
+#ot-experiences .ot-return-banner{padding:12px 14px;background:var(--ot-wash);border-radius:16px;margin-bottom:14px}
+#ot-experiences .ot-return-banner .ot-eyebrow{font-size:9px}
+#ot-experiences .ot-return-banner p{margin:4px 0 0;font-size:12px;color:var(--ot-ink)}
+#ot-experiences .ot-return-actions{display:flex;gap:6px;margin-top:8px}
+#ot-experiences .ot-return-actions button{min-height:38px;padding:7px 10px;border:1px solid var(--ot-line);background:var(--ot-panel);border-radius:12px;font-size:11px}
+#ot-experiences .ot-return .ot-field{height:216px}
+#ot-experiences .ot-clock .ot-heading .ot-eyebrow{font-size:9px;letter-spacing:1px}
+#ot-experiences .ot-stage{min-height:910px}
+@media(max-width:400px){#ot-experiences .ot-stage{min-height:950px}
+#ot-experiences .ot-week-selector select{font-size:16px}}
+</style>
+<script>
+(() => {
+  const root = document.getElementById('ot-experiences');
+  const get = id => root.querySelector('#' + id);
+  const saved = window.openai?.widgetState?.privateContent;
+  const initial = saved?.revision === 2 ? saved : {};
+  const choice = (value, allowed, fallback) => allowed.includes(value) ? value : fallback;
+  const state = {
+    revision: 2,
+    athlete: choice(initial.athlete, ['you', 'maya', 'leo'], 'you'),
+    material: choice(initial.material, ['glass', 'alloy', 'chromatic'], 'alloy'),
+    object: choice(initial.object, ['medal', 'goal'], 'medal'),
+    flipped: !!initial.flipped,
+    turned: !!initial.turned,
+    chart: choice(initial.chart, ['bars', 'line'], 'bars'),
+    week: choice(initial.week, [0, 1, 2, 3, 4, 5, 6], 5),
+    event: choice(initial.event, ['run', 'walk'], 'run'),
+    distance: choice(initial.distance, ['5', '10', '21'], '5'),
+    record: choice(initial.record, [0, 1, 2, 3], 3),
+    member: choice(initial.member, ['you', 'maya', 'leo'], 'you'),
+    banner: initial.banner !== false,
+  };
+  const press = (selector, key, value) => root.querySelectorAll(selector).forEach(el => {
+    el.setAttribute('aria-pressed', String(el.dataset[key] === String(value)));
+  });
+  function save(concept) {
+    window.openai?.setWidgetState?.({
+      modelContent: { concept, chart: state.chart, selectedWeek: state.week, object: state.object },
+      privateContent: { ...state },
+    })?.catch(() => {});
+  }
+  const athletes = {
+    you: ['Your week', '19.2', '1.4 km behind Maya'],
+    maya: ['Maya Chen', '20.6', '1.4 km ahead of you'],
+    leo: ['Leo Santos', '17.8', '1.4 km behind you'],
+  };
+  function arena() {
+    const a = athletes[state.athlete];
+    get('ot-athlete-name').textContent = a[0];
+    get('ot-athlete-total').textContent = a[1];
+    get('ot-athlete-gap').textContent = a[2];
+    press('[data-athlete]', 'athlete', state.athlete);
+  }
+  root.querySelectorAll('[data-athlete]').forEach(el => el.addEventListener('click', () => {
+    state.athlete = el.dataset.athlete; arena(); save('Glass Track');
+  }));
+  const materials = {
+    glass: ['EASY ▰▱▱', 'LIQUID GLASS', 'Easy · polished glass / optional personal target'],
+    alloy: ['MEDIUM ▰▰▱', 'ANODIZED ALLOY', 'Medium · brushed alloy / optional personal target'],
+    chromatic: ['HARD ▰▰▰', 'CHROMATIC FOIL', 'Hard · chromatic foil / optional personal target'],
+  };
+  function object() {
+    const medal = state.object === 'medal';
+    const m = materials[state.material];
+    const obj = get('ot-object');
+    obj.dataset.material = medal ? 'medal' : state.material;
+    root.querySelector('.ot-object-face').setAttribute('aria-hidden', String(state.flipped));
+    root.querySelector('.ot-object-back').setAttribute('aria-hidden', String(!state.flipped));
+    root.querySelector('.ot-object-scene').setAttribute('aria-label', medal ? 'Settled weekly medal' : 'Optional Home goal plate');
+    obj.classList.toggle('ot-flipped', state.flipped);
+    obj.style.transform = state.flipped ? 'rotateX(5deg) rotateY(180deg)' : state.turned ? 'rotateX(-12deg) rotateY(19deg) rotateZ(3deg)' : 'rotateX(9deg) rotateY(-13deg) rotateZ(-3deg)';
+    obj.style.setProperty('--ot-light', state.turned ? '25%' : '70%');
+    get('ot-object-kicker').textContent = medal ? 'RUNNING / SETTLED RESULT' : 'PERSONAL GOAL / ' + m[0];
+    get('ot-object-title').innerHTML = medal ? 'Week 41' : 'Make room<br>to move.';
+    get('ot-object-value').innerHTML = medal ? '1<span>st</span>' : '3<span> / 4</span>';
+    get('ot-object-caption').textContent = medal ? '142 EFFORT POINTS' : 'COUNTED SESSIONS';
+    get('ot-object-finish').textContent = medal ? 'OCT 5–12, 2026 UTC' : m[1];
+    get('ot-material-note').textContent = medal ? 'Settled result · no completion target required' : m[2];
+    get('ot-record-title').textContent = medal ? 'First in your field.' : 'A target you chose.';
+    get('ot-record-copy').innerHTML = medal ? 'Running · Open track<br>142 effort points · +18 rating' : '3 of 4 counted sessions<br>Does not affect competition scoring';
+    get('ot-record-date').textContent = medal ? 'Oct 5–12, 2026 · UTC' : 'Optional Home feature proposal';
+    get('ot-flip').textContent = state.flipped ? 'Show the object' : 'Flip to record';
+    root.querySelector('.ot-materials').hidden = medal;
+    root.querySelectorAll('.ot-forged .ot-nav span').forEach(el => {
+      if (el.textContent === (medal ? 'Athlete' : 'Home')) el.setAttribute('aria-current', 'page');
+      else el.removeAttribute('aria-current');
+    });
+    press('[data-object]', 'object', state.object);
+    press('button[data-material]', 'material', state.material);
+  }
+  root.querySelectorAll('button[data-material]').forEach(el => el.addEventListener('click', () => {
+    state.material = el.dataset.material; state.flipped = false; object(); save('Forged Week');
+  }));
+  root.querySelectorAll('[data-object]').forEach(el => el.addEventListener('click', () => {
+    state.object = el.dataset.object; state.flipped = false; object(); save('Forged Week');
+  }));
+  get('ot-turn').addEventListener('click', () => { state.turned = !state.turned; object(); save('Forged Week'); });
+  get('ot-flip').addEventListener('click', () => { state.flipped = !state.flipped; object(); save('Forged Week'); });
+
+  const weeks = [
+    { date: 'Aug 31', axis: '8/31', bounds: 'AUG 31–SEP 7 / UTC', total: 24.6 },
+    { date: 'Sep 7', axis: '9/7', bounds: 'SEP 7–14 / UTC', total: 28.1 },
+    { date: 'Sep 14', axis: '9/14', bounds: 'SEP 14–21 / UTC', total: 23.8 },
+    { date: 'Sep 21', axis: '9/21', bounds: 'SEP 21–28 / UTC', total: 32.4 },
+    { date: 'Sep 28', axis: '9/28', bounds: 'SEP 28–OCT 5 / UTC', total: 26.7 },
+    { date: 'Oct 5', axis: '10/5', bounds: 'OCT 5–12 / UTC', total: 30.6 },
+    { date: 'Oct 12', axis: '10/12', bounds: 'OCT 12–19 / UTC', total: 19.2, partial: true },
+  ];
+  weeks.forEach((week, index) => {
+    const option = document.createElement('option');
+    option.value = String(index);
+    option.textContent = week.date + (week.partial ? ' · This week so far' : ' · Complete week');
+    get('ot-week-select').append(option);
+  });
+  const ns = 'http://www.w3.org/2000/svg';
+  function svgNode(tag, attributes, parent, text) {
+    const node = document.createElementNS(ns, tag);
+    for (const [key, value] of Object.entries(attributes || {})) node.setAttribute(key, String(value));
+    if (text !== undefined) node.textContent = text;
+    parent.append(node);
+    return node;
+  }
+  function chartBase(container, height, label) {
+    const width = container.clientWidth;
+    if (!width) return null;
+    container.replaceChildren();
+    const svg = svgNode('svg', { viewBox: `0 0 ${width} ${height}`, role: 'img', 'aria-label': label }, container);
+    return { width, svg };
+  }
+  function weekChart() {
+    const base = chartBase(get('ot-week-chart'), 210, 'Weekly running distance in kilometers. Current week is partial. Select a week using the selector below.');
+    if (!base) return;
+    const { width, svg } = base;
+    const left = 30, right = width - 9, top = 17, bottom = 177;
+    const ceiling = Math.ceil(Math.max(...weeks.map(w => w.total)) / 10) * 10;
+    const x = i => left + (i + .5) * (right - left) / weeks.length;
+    const y = value => bottom - value / ceiling * (bottom - top);
+    for (const tick of [0, ceiling / 2, ceiling]) {
+      svgNode('line', { x1: left, x2: right, y1: y(tick), y2: y(tick), stroke: 'var(--ot-line)', 'stroke-width': 1 }, svg);
+      svgNode('text', { x: left - 8, y: y(tick) + 4, 'text-anchor': 'end', fill: 'var(--ot-muted)', 'font-size': 11 }, svg, tick);
+    }
+    svgNode('text', { x: 0, y: 10, fill: 'var(--ot-muted)', 'font-size': 11 }, svg, 'km');
+    const defs = svgNode('defs', {}, svg);
+    const pattern = svgNode('pattern', { id: 'ot-partial-hatch', width: 5, height: 5, patternUnits: 'userSpaceOnUse', patternTransform: 'rotate(35)' }, defs);
+    svgNode('rect', { width: 5, height: 5, fill: 'var(--ot-wash)' }, pattern);
+    svgNode('line', { x1: 0, x2: 0, y1: 0, y2: 5, stroke: 'var(--ot-muted)', 'stroke-width': 2 }, pattern);
+    if (state.chart === 'line') {
+      const points = weeks.slice(0, -1).map((w, i) => `${x(i)},${y(w.total)}`).join(' ');
+      svgNode('polyline', { points, fill: 'none', stroke: 'var(--ot-ink)', 'stroke-width': 2 }, svg);
+      svgNode('line', { x1: x(5), y1: y(weeks[5].total), x2: x(6), y2: y(weeks[6].total), stroke: 'var(--ot-muted)', 'stroke-dasharray': '4 4', 'stroke-width': 2 }, svg);
+    }
+    weeks.forEach((week, i) => {
+      const selected = state.week === i;
+      const mark = state.chart === 'bars'
+        ? svgNode('rect', { x: x(i) - 10, y: y(week.total), width: 20, height: bottom - y(week.total), rx: 3, fill: week.partial ? 'url(#ot-partial-hatch)' : selected ? 'var(--ot-ink)' : 'var(--ot-tennis)' }, svg)
+        : svgNode('circle', { cx: x(i), cy: y(week.total), r: selected ? 6 : 4, fill: week.partial ? 'var(--ot-paper)' : 'var(--ot-ink)', stroke: 'var(--ot-ink)', 'stroke-width': 2 }, svg);
+      mark.style.cursor = 'pointer';
+      svgNode('title', {}, mark, `${week.date}: ${week.total} km${week.partial ? ', partial' : ''}`);
+      mark.addEventListener('click', () => { state.week = i; training(); save('Weekly Training'); });
+      if (selected) svgNode('text', { x: x(i), y: y(week.total) - 12, 'text-anchor': 'middle', fill: 'var(--ot-ink)', 'font-size': 12 }, svg, week.total.toFixed(1));
+      if ([0, 2, 4, 6].includes(i)) svgNode('text', { x: x(i), y: 203, 'text-anchor': 'middle', fill: 'var(--ot-muted)', 'font-size': 11 }, svg, week.axis);
+    });
+  }
+  function training() {
+    const week = weeks[state.week];
+    get('ot-week-select').value = String(state.week);
+    get('ot-week-bounds').textContent = week.bounds;
+    get('ot-week-total').textContent = week.total.toFixed(1);
+    get('ot-week-status').textContent = (week.partial ? 'This week so far' : 'Complete week') + ' · 3 counted sessions';
+    const distances = week.partial ? [5.9, 7.1, 6.2] : [Math.round(week.total * 3) / 10, Math.round(week.total * 3.5) / 10];
+    if (!week.partial) distances.push(Math.round((week.total - distances[0] - distances[1]) * 10) / 10);
+    const holder = get('ot-week-sessions'); holder.replaceChildren();
+    distances.forEach((distance, i) => {
+      const row = document.createElement('div'); row.className = 'ot-session-row';
+      for (const text of [['Easy run', 'Park loop', 'Long run'][i], distance.toFixed(1) + ' km']) {
+        const span = document.createElement('span'); span.textContent = text; row.append(span);
+      }
+      holder.append(row);
+    });
+    press('[data-chart]', 'chart', state.chart);
+    weekChart();
+  }
+  get('ot-week-select').addEventListener('change', event => { state.week = Number(event.target.value); training(); save('Weekly Training'); });
+  root.querySelectorAll('[data-chart]').forEach(el => el.addEventListener('click', () => { state.chart = el.dataset.chart; training(); save('Weekly Training'); }));
+
+  function clock() {
+    const walk = state.event === 'walk';
+    get('ot-clock-time').textContent = walk ? '18:00' : '07:30';
+    get('ot-clock-center-title').textContent = walk ? 'Evening walk' : 'Morning run';
+    get('ot-clock-detail-time').textContent = walk ? '18:00–18:25' : '07:30–08:04';
+    get('ot-clock-detail-title').textContent = walk ? 'Evening walk' : 'Morning run';
+    get('ot-clock-detail-copy').textContent = walk ? '25 min · 1.9 km' : '34 min · 6.2 km';
+    press('[data-event]', 'event', state.event);
+  }
+  root.querySelectorAll('[data-event]').forEach(el => el.addEventListener('click', () => { state.event = el.dataset.event; clock(); save('Body Clock'); }));
+  const recordDates = ['May 10, 2026', 'Jun 14, 2026', 'Aug 2, 2026', 'Oct 4, 2026'];
+  const recordDays = [Date.UTC(2026, 4, 10), Date.UTC(2026, 5, 14), Date.UTC(2026, 7, 2), Date.UTC(2026, 9, 4)];
+  const races = {
+    '5': { event: '5K', seconds: [1470, 1452, 1438, 1422] },
+    '10': { event: '10K', seconds: [3062, 3035, 3008, 2958] },
+    '21': { event: 'Half', seconds: [6990, 6900, 6830, 6726] },
+  };
+  const time = seconds => {
+    const h = Math.floor(seconds / 3600), m = Math.floor(seconds % 3600 / 60), s = seconds % 60;
+    return (h ? h + ':' + String(m).padStart(2, '0') : String(m)) + ':' + String(s).padStart(2, '0');
+  };
+  function prChart() {
+    const race = races[state.distance];
+    const base = chartBase(get('ot-pr-chart'), 152, `Standing ${race.event} personal record from May to October. Lower elapsed time is faster. Inspect milestones with the month buttons below.`);
+    if (!base) return;
+    const { width, svg } = base;
+    const low = Math.min(...race.seconds) - 5, high = Math.max(...race.seconds) + 5;
+    const x = i => 54 + (recordDays[i] - recordDays[0]) / (recordDays[3] - recordDays[0]) * (width - 66);
+    const y = value => 17 + (high - value) / (high - low) * 102;
+    for (const tick of [race.seconds[0], race.seconds[3]]) {
+      svgNode('line', { x1: 54, x2: width - 10, y1: y(tick), y2: y(tick), stroke: 'var(--ot-line)' }, svg);
+      svgNode('text', { x: 47, y: y(tick) + 4, 'text-anchor': 'end', fill: 'var(--ot-muted)', 'font-size': 11 }, svg, time(tick));
+    }
+    let d = `M ${x(0)} ${y(race.seconds[0])}`;
+    for (let i = 1; i < 4; i++) d += ` H ${x(i)} V ${y(race.seconds[i])}`;
+    svgNode('path', { d, fill: 'none', stroke: 'var(--ot-ink)', 'stroke-width': 2 }, svg);
+    race.seconds.forEach((seconds, i) => svgNode('circle', { cx: x(i), cy: y(seconds), r: state.record === i ? 6 : 4, fill: state.record === i ? 'var(--ot-ink)' : 'var(--ot-paper)', stroke: 'var(--ot-ink)', 'stroke-width': 2 }, svg));
+    svgNode('text', { x: 54, y: 145, fill: 'var(--ot-muted)', 'font-size': 11 }, svg, 'May');
+    svgNode('text', { x: width - 10, y: 145, 'text-anchor': 'end', fill: 'var(--ot-muted)', 'font-size': 11 }, svg, 'Oct / lower is faster');
+  }
+  function benchmark() {
+    const race = races[state.distance], gain = race.seconds[0] - race.seconds[3];
+    get('ot-benchmark-label').textContent = 'CURRENT PR / ' + race.event;
+    get('ot-benchmark-time').textContent = time(race.seconds[3]);
+    get('ot-benchmark-gain').textContent = (gain < 60 ? gain + ' seconds' : time(gain)) + ' faster since May';
+    get('ot-pr-date').textContent = recordDates[state.record].toUpperCase();
+    get('ot-pr-result').textContent = time(race.seconds[state.record]) + ' · ' + ['Spring', 'Summer', 'Park', 'Riverside'][state.record] + ' ' + race.event;
+    get('ot-pr-proof').textContent = 'Verified sample race result · ' + (state.record === 3 ? 'Current PR' : 'PR when recorded');
+    press('[data-distance]', 'distance', state.distance); press('[data-record]', 'record', state.record); prChart();
+  }
+  root.querySelectorAll('[data-distance]').forEach(el => el.addEventListener('click', () => { state.distance = el.dataset.distance; state.record = 3; benchmark(); save('PR Timeline'); }));
+  root.querySelectorAll('[data-record]').forEach(el => el.addEventListener('click', () => { state.record = Number(el.dataset.record); benchmark(); save('PR Timeline'); }));
+  const members = {
+    maya: ['MC', 'Maya Chen', '32.0 km · 4 runs', '42.1%'],
+    you: ['YOU', 'Your contribution', '19.2 km · 3 runs', '25.3%'],
+    leo: ['LS', 'Leo Santos', '24.8 km · 3 runs', '32.6%'],
+  };
+  function relay() {
+    const m = members[state.member];
+    get('ot-relay-avatar').textContent = m[0]; get('ot-relay-name').textContent = m[1];
+    get('ot-relay-contribution').textContent = m[2]; get('ot-relay-share').textContent = m[3] + ' of recorded crew distance';
+    press('[data-member]', 'member', state.member);
+  }
+  root.querySelectorAll('[data-member]').forEach(el => el.addEventListener('click', () => { state.member = el.dataset.member; relay(); save('Crew Relay'); }));
+
+  let replayFrame = null;
+  function returnValue(distance) {
+    get('ot-return-marker').style.bottom = ((distance - 16) / 6 * 100) + '%';
+    get('ot-return-total').textContent = distance.toFixed(1);
+    get('ot-return-place').textContent = (distance > 17.8 ? '4th' : '5th') + ' · ' + Math.abs(distance - 17.8).toFixed(1) + ' km ' + (distance > 17.8 ? 'ahead of' : 'behind') + ' Leo';
+  }
+  function finishReplay() {
+    if (replayFrame !== null) cancelAnimationFrame(replayFrame);
+    replayFrame = null; returnValue(19.2);
+    get('ot-return-replay').textContent = 'Replay';
+    get('ot-return-status').textContent = 'Updated Compete · continue as usual';
+  }
+  get('ot-return-replay').addEventListener('click', () => {
+    if (replayFrame !== null) { finishReplay(); return; }
+    if (matchMedia('(prefers-reduced-motion: reduce)').matches) { finishReplay(); return; }
+    const start = performance.now();
+    get('ot-return-replay').textContent = 'Skip';
+    get('ot-return-status').textContent = 'Showing your newly counted contribution';
+    function tick(now) {
+      const progress = Math.min(1, (now - start) / 1800);
+      if (get('ot-return-marker').closest('[data-variant]').hidden || progress === 1) { finishReplay(); return; }
+      returnValue(17 + 2.2 * (1 - (1 - progress) ** 3));
+      replayFrame = requestAnimationFrame(tick);
+    }
+    returnValue(17); replayFrame = requestAnimationFrame(tick); save('Finish-Line Moment');
+  });
+  get('ot-return-dismiss').addEventListener('click', () => {
+    finishReplay(); state.banner = false; get('ot-return-banner').hidden = true; save('Finish-Line Moment');
+  });
+  function render() {
+    arena(); object(); training(); clock(); benchmark(); relay(); finishReplay();
+    get('ot-return-banner').hidden = !state.banner;
+  }
+  render();
+  const observer = new ResizeObserver(() => { weekChart(); prChart(); });
+  observer.observe(get('ot-week-chart')); observer.observe(get('ot-pr-chart'));
+})();
+</script>
