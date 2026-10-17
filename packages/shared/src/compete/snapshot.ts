@@ -1,4 +1,4 @@
-import { migrateCompeteState } from "./engine";
+import { competeNow, migrateCompeteState, rollClock } from "./engine";
 import type { CompeteState } from "./sports";
 
 export interface CompeteEnvelope {
@@ -23,4 +23,52 @@ export function chooseCompeteState(
   if (Number.isNaN(remoteAt)) return local.state;
   if (!Number.isNaN(localAt) && localAt >= remoteAt) return local.state;
   return migrateCompeteState(remote.state);
+}
+
+function sameDocument(left: CompeteState, right: CompeteState): boolean {
+  return JSON.stringify(left) === JSON.stringify(right);
+}
+
+/** Fold server activities and the hydrated crew board into an unsaved device copy. */
+function mergeFreshRemote(local: CompeteState, remote: CompeteState): CompeteState {
+  const activityIds = new Set(local.activities.map((activity) => activity.id));
+  const activities = [...local.activities];
+  for (const activity of remote.activities) {
+    if (!activityIds.has(activity.id)) activities.push(activity);
+  }
+  const nightIds = new Set(local.sleepNights.map((night) => night.id));
+  const sleepNights = [...local.sleepNights];
+  for (const night of remote.sleepNights) {
+    if (!nightIds.has(night.id)) sleepNights.push(night);
+  }
+  const readinessIds = new Set(local.readiness.map((mark) => mark.id));
+  const readiness = [...local.readiness];
+  for (const mark of remote.readiness) {
+    if (!readinessIds.has(mark.id)) readiness.push(mark);
+  }
+  const merged = rollClock(
+    {
+      ...local,
+      activities,
+      sleepNights,
+      readiness,
+      crewBoard: remote.crewBoard,
+    },
+    competeNow(local),
+  );
+  return sameDocument(local, merged) ? local : merged;
+}
+
+/**
+ * Idle devices take the server copy, including crew scores that do not bump
+ * `updated_at`. A device with unsaved edits keeps those edits and still
+ * receives new server activities and the current crew board.
+ */
+export function applyRemoteSnapshot(
+  local: CompeteState,
+  remote: CompeteState,
+  dirty: boolean,
+): CompeteState {
+  const next = dirty ? mergeFreshRemote(local, remote) : remote;
+  return sameDocument(local, next) ? local : next;
 }

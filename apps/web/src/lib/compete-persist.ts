@@ -10,6 +10,7 @@ import {
   PROVIDERS,
   sanitizeCompeteStateForAccount,
   SPORT_IDS,
+  sumCrewWindow,
   withDerivedPendingReveals,
   type Activity,
   type CompeteState,
@@ -725,7 +726,7 @@ export async function hydrateCrewBoard(
     return state.crewBoard ? { ...state, crewBoard: null } : state;
   }
 
-  const [{ data: field }, { data: crew }, { data: roster, error: rosterError }] =
+  const [{ data: field }, { data: crew }, { data: roster, error: rosterError }, { data: entries, error: entriesError }] =
     await Promise.all([
       db
         .from("crew_week_fields")
@@ -735,6 +736,11 @@ export async function hydrateCrewBoard(
         .maybeSingle(),
       db.from("crews").select("name").eq("id", pinned.crewId).maybeSingle(),
       db.rpc("crew_field_roster", { p_crew_id: pinned.crewId }),
+      db
+        .from("crew_entries")
+        .select("user_id, distance_m, moving_sec, started_at, sport")
+        .eq("crew_id", pinned.crewId)
+        .eq("disposition", "counted"),
     ]);
   if (!field) {
     return { ...state, crewBoard: null };
@@ -742,9 +748,24 @@ export async function hydrateCrewBoard(
   if (rosterError) {
     throw new Error(rosterError.message);
   }
+  if (entriesError) {
+    throw new Error(entriesError.message);
+  }
 
   const memberIds = (field.member_ids as string[]) ?? [];
   const memberSet = new Set(memberIds);
+  const volume = sumCrewWindow(
+    (entries ?? [])
+      .filter((entry) => String(entry.sport) === String(field.sport))
+      .map((entry) => ({
+        userId: String(entry.user_id),
+        distanceM: Number(entry.distance_m) || 0,
+        movingSec: Number(entry.moving_sec) || 0,
+        startedAt: String(entry.started_at),
+      })),
+    String(field.wave_start),
+    String(field.week_end),
+  );
   const members = (
     (roster ?? []) as {
       user_id: string;
@@ -753,11 +774,16 @@ export async function hydrateCrewBoard(
     }[]
   )
     .filter((row) => memberSet.has(String(row.user_id)))
-    .map((row) => ({
-      id: String(row.user_id),
-      name: String(row.display_name || "Athlete"),
-      elo: Number(row.open_elo) || 1000,
-    }))
+    .map((row) => {
+      const week = volume.get(String(row.user_id));
+      return {
+        id: String(row.user_id),
+        name: String(row.display_name || "Athlete"),
+        elo: Number(row.open_elo) || 1000,
+        distanceM: week?.distanceM ?? 0,
+        movingSec: week?.movingSec ?? 0,
+      };
+    })
     .sort((a, b) => a.id.localeCompare(b.id));
 
   return {

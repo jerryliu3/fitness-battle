@@ -8,10 +8,15 @@ import {
   initialsFromName,
   fitArenaWindow,
   resolveArenaSelectedId,
+  primaryRevealResults,
+  sportById,
+  sportRenewal,
+  type Action,
   type SportId,
   type ScoreTrack,
   type CrewBoardPin,
   type ArenaSceneMessage,
+  type CompeteState,
 } from "@fitness-battle/shared";
 import { useCompeteStore } from "../../src/lib/compete-store";
 import { LaneTrack } from "../../src/ui/lane-track";
@@ -28,7 +33,15 @@ import { awardCards } from "@fitness-battle/shared";
 import { useCrewApi } from "../../src/features/crew";
 import { useAuth } from "../../src/lib/auth";
 export default function ArenaScreen() {
-  const { state, dispatch, returnGain, clearReturn } = useCompeteStore();
+  const {
+    state,
+    dispatch,
+    returnGain,
+    clearReturn,
+    fieldNotice,
+    dismissFieldNotice,
+    standingsStale,
+  } = useCompeteStore();
   const { user } = useAuth();
   const router = useRouter();
   const crewApi = useCrewApi();
@@ -155,7 +168,19 @@ export default function ArenaScreen() {
             }}
           />
         </View>
-        {returnGain > 0 && (
+        {standingsStale ? (
+          <Text style={f.copy} accessibilityLiveRegion="polite">
+            Standings may be out of date until the next refresh.
+          </Text>
+        ) : null}
+        {fieldNotice ? (
+          <View style={f.card}>
+            <Text style={f.h2}>{fieldNotice.title}</Text>
+            <FocusButton label="Got it" secondary onPress={dismissFieldNotice} />
+          </View>
+        ) : null}
+        <WeekRecap state={state} dispatch={dispatch} />
+        {returnGain > 0 && !fieldNotice ? (
           <View style={f.card}>
             <Text style={f.h2}>
               {returnGain} new counted{" "}
@@ -172,7 +197,7 @@ export default function ArenaScreen() {
               }}
             />
           </View>
-        )}
+        ) : null}
         {arena.optedIn && me ? (
           <View style={f.card}>
             <View style={f.row}>
@@ -461,5 +486,45 @@ export default function ArenaScreen() {
         onClose={() => setSelectedId(null)}
       />
     </SafeAreaView>
+  );
+}
+
+function WeekRecap({
+  state,
+  dispatch,
+}: {
+  state: CompeteState;
+  dispatch: (action: Action) => void;
+}) {
+  const reveals = primaryRevealResults(state.periodResults, undefined, state.primary);
+  if (reveals.length === 0) return null;
+  const result = reveals[0]!;
+  const renewal = sportRenewal(state, result.sport);
+  return (
+    <View style={f.card}>
+      <Text style={f.h2}>Week complete · {sportById(result.sport).name}</Text>
+      <Text style={f.copy}>{renewal.detail}</Text>
+      {renewal.enrolled && renewal.renews ? (
+        <FocusButton
+          label="Stop after this week"
+          secondary
+          onPress={() => dispatch({ type: "schedule-leave", sport: result.sport })}
+        />
+      ) : null}
+      {renewal.enrolled && !renewal.renews ? (
+        <FocusButton
+          label="Keep playing next week"
+          secondary
+          onPress={() => dispatch({ type: "resume-renewal", sport: result.sport })}
+        />
+      ) : null}
+      <FocusButton
+        label={renewal.enrolled ? "Continue" : "Play this week"}
+        onPress={() => {
+          if (!renewal.enrolled) dispatch({ type: "opt-in", sport: result.sport });
+          dispatch({ type: "acknowledge-reveal", revealIds: [result.id] });
+        }}
+      />
+    </View>
   );
 }

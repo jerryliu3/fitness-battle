@@ -6,7 +6,7 @@ import {
 } from "@expo-google-fonts/dm-sans";
 import { NunitoSans_900Black, useFonts as useNunito } from "@expo-google-fonts/nunito-sans";
 import * as Notifications from "expo-notifications";
-import { router, Stack } from "expo-router";
+import { router, Stack, usePathname } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import * as WebBrowser from "expo-web-browser";
 import { HeroUINativeProvider } from "heroui-native/provider";
@@ -17,9 +17,16 @@ import "../global.css";
 // Registers the foreground notification handler.
 import "../src/lib/expo-push-register";
 import { AuthProvider } from "../src/lib/auth";
-import { CompeteProvider } from "../src/lib/compete-store";
+import { CompeteProvider, useCompeteFieldRefresh } from "../src/lib/compete-store";
+import { shellTabFromPath } from "@fitness-battle/shared";
 import { SHELL_COLORS } from "../src/theme";
 import { BootGate } from "../src/ui/boot-gate";
+
+function LiveFieldRefresh() {
+  const tab = shellTabFromPath(usePathname());
+  useCompeteFieldRefresh(tab?.id === "arena" || tab?.id === "field");
+  return null;
+}
 
 // Closes an in-app auth session when the OAuth deep link returns (web + native).
 WebBrowser.maybeCompleteAuthSession();
@@ -85,6 +92,7 @@ export default function RootLayout() {
       <HeroUINativeProvider>
         <AuthProvider>
           <CompeteProvider>
+            <LiveFieldRefresh />
             <BootGate>
               <StatusBar style="dark" />
               <Stack

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { resolveRequestUserId } from "@/lib/auth/request-user";
+import { sumCrewWindow } from "@fitness-battle/shared";
 import {
   asSportId,
   buildCrewBoardPin,
@@ -57,24 +58,24 @@ async function rosterWithVolume(
   if (rosterError) return { error: rosterError.message };
 
   const waveStart = currentWaveStart();
-  const weekEndMs = new Date(waveStart).getTime() + 7 * 86_400_000;
-  const volume = new Map<string, { distanceM: number; movingSec: number }>();
-  for (const entry of entries ?? []) {
-    const at = new Date(entry.started_at).getTime();
-    if (at < new Date(waveStart).getTime() || at >= weekEndMs) continue;
-    const prior = volume.get(entry.user_id) ?? { distanceM: 0, movingSec: 0 };
-    volume.set(entry.user_id, {
-      distanceM: prior.distanceM + Number(entry.distance_m),
-      movingSec: prior.movingSec + Number(entry.moving_sec),
-    });
-  }
+  const weekEnd = new Date(new Date(waveStart).getTime() + 7 * 86_400_000).toISOString();
+  const volume = sumCrewWindow(
+    (entries ?? []).map((entry) => ({
+      userId: entry.user_id,
+      distanceM: Number(entry.distance_m) || 0,
+      movingSec: Number(entry.moving_sec) || 0,
+      startedAt: entry.started_at,
+    })),
+    waveStart,
+    weekEnd,
+  );
 
   return ((roster ?? []) as RosterRow[]).map((row) => {
     const week = volume.get(row.user_id);
     return {
       ...row,
-      distance_m: week?.distanceM,
-      moving_sec: week?.movingSec,
+      distance_m: week?.distanceM ?? 0,
+      moving_sec: week?.movingSec ?? 0,
     };
   });
 }

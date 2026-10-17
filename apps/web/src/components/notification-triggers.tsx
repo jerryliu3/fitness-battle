@@ -16,6 +16,7 @@ export function NotificationTriggers() {
   const { state } = useCompete();
   const resultsBaseline = useRef<number | null>(null);
   const placeBaseline = useRef<number | null>(null);
+  const volumeBaseline = useRef<string | null>(null);
   const lessonDay = useRef<string | null>(null);
 
   const identity = useMemo<SyncIdentity | null>(
@@ -49,14 +50,23 @@ export function NotificationTriggers() {
     const board = weeklyBoard(state, state.primary, "open", competeNow(state));
     const place = board.find((row) => row.id === "you")?.place;
     if (place == null) return;
-    if (placeBaseline.current == null) {
+    const volume = (state.crewBoard?.members ?? [])
+      .map((member) => `${member.id}:${member.distanceM ?? 0}:${member.movingSec ?? 0}`)
+      .join("|");
+    if (placeBaseline.current == null || volumeBaseline.current == null) {
       placeBaseline.current = place;
+      volumeBaseline.current = volume;
       return;
     }
-    if (place > placeBaseline.current) {
+    if (
+      state.crewBoard &&
+      place > placeBaseline.current &&
+      volume !== volumeBaseline.current
+    ) {
       void requestAccountPush("rival_moves", identity, { place });
     }
     placeBaseline.current = place;
+    volumeBaseline.current = volume;
   }, [state, identity]);
 
   useEffect(() => {

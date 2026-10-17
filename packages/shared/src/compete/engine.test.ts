@@ -86,6 +86,38 @@ describe("compete engine", () => {
     );
   });
 
+  it("finishes the open week before a scheduled stop takes effect", () => {
+    const now = "2026-10-12T12:00:00.000Z";
+    const joined = reduceCompete(freshState(new Date(now)), {
+      type: "opt-in",
+      sport: "running",
+      now,
+    });
+    const stopping = reduceCompete(joined, {
+      type: "schedule-leave",
+      sport: "running",
+      now,
+    });
+    expect(stopping.enrollments).toHaveLength(1);
+    expect(stopping.enrollments[0]?.autoEnrollNext).toBe(false);
+    expect(stopping.ratings.find((item) => item.sport === "running")?.optedIn).toBe(
+      true,
+    );
+
+    const resumed = reduceCompete(stopping, {
+      type: "resume-renewal",
+      sport: "running",
+      now,
+    });
+    expect(resumed.enrollments[0]?.autoEnrollNext).toBe(true);
+
+    const closed = rollClock(stopping, new Date("2026-10-19T00:01:00.000Z"));
+    expect(closed.enrollments.find((item) => item.sport === "running")).toBeUndefined();
+    expect(closed.ratings.find((item) => item.sport === "running")?.optedIn).toBe(
+      false,
+    );
+  });
+
   it("ignores practice duel actions and clears leftover matchups", () => {
     const now = "2026-10-12T12:00:00.000Z";
     const base = freshState(new Date(now));

@@ -77,6 +77,8 @@ export interface Action {
     | "set-focus"
     | "opt-in"
     | "opt-out"
+    | "schedule-leave"
+    | "resume-renewal"
     | "opt-in-health"
     | "opt-out-health"
     | "log-sleep"
@@ -380,14 +382,18 @@ function enrollSport(
   sport: SportId,
   now: Date,
   viewerId = "you",
+  forceRenew = false,
 ): CompeteState {
   const mine = rating(state, sport);
   const pin = state.crewBoard;
   const waveStart = waveWindowAt(now).waveStart.toISOString();
+  const autoEnrollNext = forceRenew
+    ? true
+    : (enrollmentFor(state, sport)?.autoEnrollNext ?? true);
 
-  const enrollment =
-    pin && pin.sport === sport && pin.waveStart === waveStart
-      ? enrollmentFromCrewPlan(planFromCrewBoardPin(pin), viewerId)
+  const enrollment = {
+    ...(pin && pin.sport === sport && pin.waveStart === waveStart
+      ? enrollmentFromCrewPlan(planFromCrewBoardPin(pin), viewerId, autoEnrollNext)
       : densityMatcher.assignGroup({
           viewerId,
           viewerName: state.name,
@@ -396,8 +402,10 @@ function enrollSport(
           now,
           realPool: realPlayerPool,
           seed: `${viewerId}:${sport}:${waveStart}`,
-          autoEnrollNext: true,
-        }).enrollment;
+          autoEnrollNext,
+        }).enrollment),
+    autoEnrollNext,
+  };
 
   return {
     ...withRating(state, sport, {
@@ -414,15 +422,15 @@ function enrollSport(
   };
 }
 
-/** Stub activities so crew mates use shared counted volume, not Elo guesses. */
+/** Stub activities so seated crew mates use shared counted volume, including zero. */
 function crewPeerActivities(
   pin: CrewBoardPin,
-  viewerId: string,
+  peerIds: readonly string[],
 ): Map<string, Activity[]> {
+  const allowed = new Set(peerIds);
   const map = new Map<string, Activity[]>();
   for (const member of pin.members) {
-    if (member.id === viewerId) continue;
-    if (member.distanceM == null && member.movingSec == null) continue;
+    if (!allowed.has(member.id)) continue;
     map.set(member.id, [
       {
         id: `crew-week:${pin.crewId}:${member.id}`,
@@ -488,7 +496,7 @@ function groupFor(
       primarySport: state.primary,
     },
     peers,
-    peerActivities: pin ? crewPeerActivities(pin, "you") : undefined,
+    peerActivities: pin ? crewPeerActivities(pin, enrollment.peerIds) : undefined,
     track,
     asOf,
   });
@@ -683,19 +691,24 @@ export function rollClock(state: CompeteState, now: Date = new Date()): CompeteS
   }
 
   // Long gap: drop stale enrollments and re-seat on the live wave.
+  // A scheduled stop stays stopped instead of being seated again.
   if (next.enrollments.some((item) => item.weekEnd <= now.toISOString())) {
-    const opted = next.ratings.filter((item) => item.optedIn).map((item) => item.sport);
+    const stopping = new Set(
+      next.enrollments.filter((item) => !item.autoEnrollNext).map((item) => item.sport),
+    );
     next = {
       ...next,
       enrollments: [],
       clock: { ...next.clock, periodStart: liveStart },
       ratings: next.ratings.map((item) => ({
         ...item,
+        optedIn: stopping.has(item.sport) ? false : item.optedIn,
         lockVerified: item.verifiedElo,
         lockOpen: item.openElo,
         lockPeriod: liveStart,
       })),
     };
+    const opted = next.ratings.filter((item) => item.optedIn).map((item) => item.sport);
     for (const sport of opted) {
       next = enrollSport(next, sport, now);
     }
@@ -727,7 +740,7 @@ function lockSport(
   now: Date,
   viewerId = "you",
 ): CompeteState {
-  return enrollSport(state, sport, now, viewerId);
+  return enrollSport(state, sport, now, viewerId, true);
 }
 
 function makeActivity(
@@ -965,6 +978,44 @@ export function reduceCompete(
       );
       if (!anyPrimary) next = { ...next, primary: action.sport };
       return { ...next, focus: { family: "sport", id: action.sport } };
+    }
+    case "schedule-leave": {
+      if (action.metric) {
+        return {
+          ...rolled,
+          healthRatings: rolled.healthRatings.map((item) =>
+            item.metric === action.metric && item.optedIn
+              ? { ...item, autoEnrollNext: false }
+              : item,
+          ),
+        };
+      }
+      if (!action.sport) return rolled;
+      return {
+        ...rolled,
+        enrollments: rolled.enrollments.map((item) =>
+          item.sport === action.sport ? { ...item, autoEnrollNext: false } : item,
+        ),
+      };
+    }
+    case "resume-renewal": {
+      if (action.metric) {
+        return {
+          ...rolled,
+          healthRatings: rolled.healthRatings.map((item) =>
+            item.metric === action.metric && item.optedIn
+              ? { ...item, autoEnrollNext: true }
+              : item,
+          ),
+        };
+      }
+      if (!action.sport) return rolled;
+      return {
+        ...rolled,
+        enrollments: rolled.enrollments.map((item) =>
+          item.sport === action.sport ? { ...item, autoEnrollNext: true } : item,
+        ),
+      };
     }
     case "opt-out": {
       if (!action.sport) return rolled;

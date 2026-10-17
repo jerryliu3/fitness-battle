@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import {
   isCompeteState,
   migrateCompeteState,
+  openEnrollmentRemoved,
   prepareCompeteStateForAccount,
   rollClock,
   withDerivedPendingReveals,
@@ -97,6 +98,22 @@ export async function PUT(request: Request) {
   }
 
   const supabase = await createRequestClient(request);
+  try {
+    const existing = await loadCompeteAccount(supabase, userId);
+    if (
+      existing &&
+      openEnrollmentRemoved(
+        rollClock(migrateCompeteState(existing.state)),
+        live,
+        new Date(),
+      )
+    ) {
+      return NextResponse.json({ error: "week_still_open" }, { status: 409 });
+    }
+  } catch {
+    return NextResponse.json({ error: "account_unavailable" }, { status: 500 });
+  }
+
   try {
     const updatedAt = await persistCompeteAccount(supabase, userId, live);
     return NextResponse.json({

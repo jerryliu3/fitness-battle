@@ -116,6 +116,21 @@ export async function loadCrewJoinOptions(): Promise<CrewJoinOption[]> {
   });
 }
 
+function memberSignature(pin: CrewBoardPin): string {
+  return [...pin.members]
+    .sort((a, b) => a.id.localeCompare(b.id))
+    .map((member) =>
+      [
+        member.id,
+        member.name,
+        member.elo,
+        member.distanceM ?? "",
+        member.movingSec ?? "",
+      ].join(":"),
+    )
+    .join("|");
+}
+
 export function pinsEqual(a: CrewBoardPin, b: CrewBoardPin): boolean {
   return (
     a.crewId === b.crewId &&
@@ -124,6 +139,7 @@ export function pinsEqual(a: CrewBoardPin, b: CrewBoardPin): boolean {
     a.memberIds.length === b.memberIds.length &&
     a.memberIds.every((id, index) => id === b.memberIds[index]) &&
     a.syntheticIds.length === b.syntheticIds.length &&
-    a.syntheticIds.every((id, index) => id === b.syntheticIds[index])
+    a.syntheticIds.every((id, index) => id === b.syntheticIds[index]) &&
+    memberSignature(a) === memberSignature(b)
   );
 }
