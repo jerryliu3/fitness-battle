@@ -68,7 +68,7 @@ export function TodayScreen() {
     );
   }
 
-  if (expanded && typeof expanded === "object") {
+  if (expanded) {
     const a = expanded;
     return (
       <div className="focus-home focus-home-expanded">
@@ -79,23 +79,26 @@ export function TodayScreen() {
         >
           ← Back
         </button>
-        <section className="focus-expand-panel" aria-label="Session detail">
+        <section className="focus-expand-panel" aria-label="Activity details">
           <p className="fb-kicker">
+            {sportById(a.sport).name} ·{" "}
             {new Date(a.startedAt).toLocaleDateString("en-US", {
               weekday: "long",
-              month: "long",
+              month: "short",
               day: "numeric",
               timeZone: "UTC",
             })}
           </p>
-          <h1>{sportById(a.sport).name}</h1>
+          <h1>{formatVolume(a.sport, a.distanceM, a.movingSec, units)}</h1>
           <p className="fb-copy">
-            {formatVolume(a.sport, a.distanceM, a.movingSec, units)}
+            Source: {a.source} · {a.verified ? "GPS verified" : "Open effort"}
           </p>
+          {a.avgHr ? (
+            <p className="fb-copy">Avg heart rate: {a.avgHr} bpm</p>
+          ) : null}
           <p className="fb-note">
-            {a.source} · {a.verified ? "Verified" : "Open"} ·{" "}
             {a.disposition === "excluded"
-              ? a.dispositionReason ?? "Sample session (not counted)"
+              ? "Sample activity. Not counted toward rankings."
               : a.disposition === "pending"
                 ? "Pending file import"
                 : "Counted toward your training."}
@@ -107,11 +110,6 @@ export function TodayScreen() {
 
   return (
     <div className="focus-home">
-      <header className="focus-heading">
-        <p className="fb-kicker">Your daily starting point</p>
-        <h1>Just one good move.</h1>
-        <p className="fb-copy">Small steps. A week that adds up.</p>
-      </header>
       {frozen && (
         <div className="fb-pill" style={{ marginBottom: "16px" }}>
           <b>❄ Week frozen</b>
@@ -123,54 +121,36 @@ export function TodayScreen() {
         tabIndex={0}
         className="focus-suggestion"
         onClick={() => {
-          react("hop");
           setExpanded("suggestion");
         }}
         onKeyDown={(e) => {
           if (e.key === "Enter" || e.key === " ") {
             e.preventDefault();
-            react("hop");
             setExpanded("suggestion");
           }
         }}
-        onMouseEnter={() => react("wave")}
       >
         <span>
           <small>Today&apos;s suggestion</small>
           <strong>{route.suggestion.title}</strong>
-          <em>
-            {route.suggestion.minutes
-              ? `${route.suggestion.minutes} min · `
-              : ""}
+          <em className="focus-suggestion-hint" aria-hidden="true">
             Your next move
           </em>
         </span>
-        <AnimatedEmber
-          className="focus-suggestion-ember"
-          expression="happy"
-          action={reaction.action}
-          restartKey={reaction.key}
-          loop={false}
-          playing={reaction.key > 0}
-        />
       </div>
       <div className="focus-row">
-        <h2>Your recent rhythm</h2>
+        <h2>Your fitness journey</h2>
         {sessions.length ? (
           <span className="fb-note">Last {sessions.length} sessions</span>
         ) : null}
       </div>
       <section className="focus-journey" aria-label="Activity journey">
-        <div className="focus-future" aria-label="Future day, not interactive">
-          ○ <small>Tomorrow · room for what&apos;s next</small>
-        </div>
         <div className="focus-path-row is-current">
           <button
             onClick={() => {
               react("hop");
               setExpanded("suggestion");
             }}
-            onMouseEnter={() => react("wave")}
             aria-label="Ember: open today's recommendation"
           >
             <AnimatedEmber

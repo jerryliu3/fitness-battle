@@ -6,7 +6,6 @@ import { NotificationSettings } from "@/components/notification-settings";
 import { requestAccountPush } from "@/lib/request-push";
 import type { SyncIdentity } from "@/lib/push-notifications";
 import { WeekRecords } from "@/features/split/components/athlete-card";
-import { SleepPanel } from "@/features/health/sleep-panel";
 import { AthleteOverview } from "@/features/focus/athlete-overview";
 import { SeasonHistory } from "@/features/split/components/season-history";
 import { buildSplitBoard } from "@/features/split/model";
@@ -19,6 +18,7 @@ import {
   PROVIDERS,
   RANK_BANDS,
   rankForElo,
+  sportById,
   SPORTS,
   STARTING_FREEZES,
   type ActivitySample,
@@ -44,15 +44,13 @@ type AthletePanel =
   | "connections"
   | "preferences"
   | "notifications"
-  | "health"
   | "scoring";
 
 const PANEL_TITLES: Record<AthletePanel, string> = {
   progress: "Progress",
-  connections: "Connections",
+  connections: "Data Tracking",
   preferences: "Preferences",
   notifications: "Notifications",
-  health: "Health",
   scoring: "How scoring works",
 };
 
@@ -70,12 +68,12 @@ function humanError(code?: string): string {
 function YouContent() {
   const { user, signOut, demoMode } = useAuth();
   const { state, dispatch, loadStatus } = useCompete();
+  const [panel, setPanel] = useState<AthletePanel | null>(null);
   const [name, setName] = useState("");
   const [city, setCity] = useState("");
   /** Tracks which account the form fields were seeded from (resets on switch). */
   const seededFor = useRef<string | null>(null);
   const [syncNote, setSyncNote] = useState<string | null>(null);
-  const [panel, setPanel] = useState<AthletePanel | null>(null);
   const [authPrompt, setAuthPrompt] = useState<{ open: boolean; reason: string } | null>(null);
   const [connectingProvider, setConnectingProvider] = useState<ProviderId | null>(null);
   const [profileSaved, setProfileSaved] = useState(false);
@@ -132,7 +130,6 @@ function YouContent() {
         "That tracker did not connect. Sign in and try the link again.",
       );
     }
-    setPanel("connections");
   }, [
     accountKey,
     accountReady,
@@ -149,6 +146,7 @@ function YouContent() {
   const now = competeNow(state);
   const board = buildSplitBoard(state, state.primary, "open", now);
   const frozen = state.frozenPeriods.includes(primaryFreezePeriodStart(state));
+  const spec = sportById(state.primary);
 
   function applyRemote(body: {
     provider: ProviderId;
@@ -428,11 +426,12 @@ function YouContent() {
           {panel === "connections" ? (
             <>
               <section className="fb-card">
+                <h2>Data Tracking</h2>
                 <p className="fb-note">
                   Cloud trackers open their own authorize page when API keys are
                   set. Without keys the link stays a stub. Garmin files stay
                   pending until you count them. Apple Health syncs from iOS;
-                  Health Connect from Android.
+                  Health Connect from Android. Sleep syncs from connected wearables or sample data.
                 </p>
                 {PROVIDERS.map((provider) => {
                   const link = state.links.find(
@@ -454,6 +453,7 @@ function YouContent() {
                       <button
                         type="button"
                         className="fb-btn-ghost"
+                        disabled={connectingProvider === provider.id}
                         onClick={() => void syncProvider(provider.id)}
                       >
                         {device ? "Phone" : link?.linked ? "Sync" : "Link"}
@@ -470,6 +470,19 @@ function YouContent() {
                     </div>
                   );
                 })}
+                <div className="fb-row" style={{ marginTop: 12 }}>
+                  <span className="fb-grow">
+                    Sleep & recovery
+                    <small>Nightly recovery metrics and sleep score</small>
+                  </span>
+                  <button
+                    type="button"
+                    className="fb-btn-ghost"
+                    onClick={() => dispatch({ type: "log-sleep" })}
+                  >
+                    Sync sleep
+                  </button>
+                </div>
                 <label className="fb-field">
                   Garmin file (.fit, .gpx, .tcx, .zip)
                   <input
@@ -486,7 +499,7 @@ function YouContent() {
                 {syncNote ? <p className="fb-note">{syncNote}</p> : null}
               </section>
               <section className="fb-card">
-                <h2>{BACKFILL_DAYS}-day calibration</h2>
+                <h2>Import fitness history</h2>
                 {state.calibrated ? (
                   <p className="fb-copy">
                     History is locked in. This one-time calibration cannot run
@@ -495,23 +508,16 @@ function YouContent() {
                 ) : (
                   <>
                     <p className="fb-copy">
-                      Import a sample of the last {BACKFILL_DAYS} days once to
-                      leave the 1000 baseline. This can only be done once.
+                      Import your recent activity history to calibrate your starting rating
+                      and leave the baseline.
                     </p>
-                    <div className="fb-stack">
-                      {(["light", "steady", "heavy"] as const).map((level) => (
-                        <button
-                          key={level}
-                          type="button"
-                          className="fb-btn-line"
-                          onClick={() =>
-                            dispatch({ type: "import-history", level })
-                          }
-                        >
-                          Import {level} history
-                        </button>
-                      ))}
-                    </div>
+                    <button
+                      type="button"
+                      className="fb-btn"
+                      onClick={() => dispatch({ type: "import-history" })}
+                    >
+                      Import fitness history
+                    </button>
                   </>
                 )}
               </section>
@@ -547,10 +553,11 @@ function YouContent() {
                   {profileSaved ? "Saved ✓" : "Save"}
                 </button>
               </section>
+
               <section className="fb-card">
                 <h2>Units</h2>
                 <p className="fb-copy">
-                  Distance display for Home, Compete, and Athlete.
+                  Distance display for Home, Arena, and Athlete.
                 </p>
                 <div className="focus-segments" role="group" aria-label="Units">
                   <button
@@ -571,6 +578,7 @@ function YouContent() {
                   </button>
                 </div>
               </section>
+
               <section className="fb-card">
                 <h2>Sports</h2>
                 {primaryNote ? (
@@ -589,8 +597,7 @@ function YouContent() {
                         {sport.name}
                         {primary ? " · primary" : ""}
                         <small>
-                          Verified {rating?.verifiedElo} · Open{" "}
-                          {rating?.openElo} ·{" "}
+                          Verified {rating?.verifiedElo} · Open {rating?.openElo} ·{" "}
                           {rankForElo(rating?.openElo ?? 1000).name}
                         </small>
                       </span>
@@ -609,6 +616,7 @@ function YouContent() {
                   );
                 })}
               </section>
+
               <section className="fb-card">
                 <h2>Week freezes</h2>
                 <p className="fb-copy">
@@ -668,26 +676,6 @@ function YouContent() {
             </>
           ) : null}
           {panel === "notifications" ? <NotificationSettings /> : null}
-          {panel === "health" ? (
-            <SleepPanel
-              state={state}
-              now={now}
-              onJoin={() => {
-                if (!user) {
-                  setAuthPrompt({
-                    open: true,
-                    reason: "Sign in to join the weekly sleep leaderboard and track recovery.",
-                  });
-                  return;
-                }
-                dispatch({ type: "opt-in-health", metric: "sleep" });
-              }}
-              onSample={() => dispatch({ type: "log-sleep" })}
-              onLeave={() =>
-                dispatch({ type: "opt-out-health", metric: "sleep" })
-              }
-            />
-          ) : null}
           {panel === "scoring" ? (
             <section className="fb-card">
               <h2>Levels</h2>
@@ -738,7 +726,6 @@ function YouContent() {
             ["connections", "Trackers & history"],
             ["preferences", "Profile, units, sports & freezes"],
             ["notifications", "Your updates, your choice"],
-            ["health", "Sleep and recovery"],
             ["scoring", "Levels & eligibility"],
           ] as const
         ).map(([id, detail]) => (
@@ -778,23 +765,35 @@ function YouContent() {
             {user.email}
             {demoMode ? " · demo account" : ""}
           </p>
-          <button
-            type="button"
-            className="fb-btn-line"
-            onClick={() => void signOut()}
-          >
-            Sign out
-          </button>
+          <div className="fb-row" style={{ gap: 10, marginTop: 12 }}>
+            <button
+              type="button"
+              className="fb-btn-line"
+              style={{ flex: 1, justifyContent: "center" }}
+              onClick={() => void signOut()}
+            >
+              Sign out
+            </button>
+            <a
+              href="mailto:support@overtaek.com?subject=Fitness%20Battle%20Issue%20Report"
+              className="fb-btn-line"
+              style={{ flex: 1, justifyContent: "center", textDecoration: "none" }}
+            >
+              Report an issue
+            </a>
+          </div>
         </>
       ) : (
         <div className="fb-stack">
           <p className="fb-note">Browsing as a guest</p>
-          <Link href="/signup" className="fb-btn">
-            Create account
-          </Link>
-          <Link href="/login" className="fb-btn-line">
-            Sign in
-          </Link>
+          <div className="fb-row" style={{ gap: 10 }}>
+            <Link href="/signup" className="fb-btn" style={{ flex: 1, justifyContent: "center" }}>
+              Create account
+            </Link>
+            <Link href="/login" className="fb-btn-line" style={{ flex: 1, justifyContent: "center" }}>
+              Sign in
+            </Link>
+          </div>
         </div>
       )}
       <AuthPrompt

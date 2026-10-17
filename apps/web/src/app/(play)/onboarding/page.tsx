@@ -28,7 +28,6 @@ function OnboardingFlow() {
   const [sport, setSport] = useState<SportId>("running");
   const [units, setUnits] = useState<UnitSystem>("us");
   const [trackSleep, setTrackSleep] = useState(false);
-  const [level, setLevel] = useState<"light" | "steady" | "heavy">("steady");
   const [connectMessage, setConnectMessage] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -96,7 +95,7 @@ function OnboardingFlow() {
   }
 
   function runBackfill() {
-    dispatch({ type: "import-history", level });
+    dispatch({ type: "import-history", level: "steady" });
     setStep("done");
   }
 
@@ -116,7 +115,7 @@ function OnboardingFlow() {
         <h1 className="fb-title">
           {step === "prefs" && "Your training profile"}
           {step === "connect" && "Link a tracker"}
-          {step === "backfill" && `${BACKFILL_DAYS}-day calibration`}
+          {step === "backfill" && "Import fitness history"}
           {step === "done" && "You are ready"}
         </h1>
         <p className="fb-copy">
@@ -125,7 +124,7 @@ function OnboardingFlow() {
           {step === "connect" &&
             "Strava is the cloud default. Garmin, WHOOP, and Oura connect the same way on You once their keys are set. A Garmin file import works without API approval. Without keys this step stays an honest stub."}
           {step === "backfill" &&
-            `Import a sample of the last ${BACKFILL_DAYS} days once. This sets your starting level and cannot be repeated.`}
+            "Import your recent activity history to calibrate your starting rating and leave the baseline."}
           {step === "done" &&
             "Join a board when you want. Browsing Today and Pace stays open without competing."}
         </p>
@@ -226,23 +225,11 @@ function OnboardingFlow() {
           ) : (
             <>
               <p className="fb-copy">
-                Pick a history volume that matches how you have been training.
-                Live provider backfill will replace this once OAuth keys are live.
+                Import your recent activity history to calibrate your starting rating
+                and leave the baseline.
               </p>
-              <div className="fb-chips">
-                {(["light", "steady", "heavy"] as const).map((id) => (
-                  <button
-                    key={id}
-                    type="button"
-                    className={level === id ? "fb-chip on" : "fb-chip"}
-                    onClick={() => setLevel(id)}
-                  >
-                    {id}
-                  </button>
-                ))}
-              </div>
               <button type="button" className="fb-btn" onClick={runBackfill}>
-                Run one-time calibration
+                Import fitness history
               </button>
             </>
           )}

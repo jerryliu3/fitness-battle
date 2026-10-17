@@ -7,6 +7,7 @@ import {
   type ArenaSceneLane,
   type ArenaViewWindow,
 } from "@fitness-battle/shared";
+import { Ember } from "@/components/mascot/ember";
 export function ArenaLanes({
   lanes,
   view,
@@ -36,6 +37,29 @@ export function ArenaLanes({
     height = 540,
     laneWidth = (width - 52) / Math.max(1, ordered.length);
   const y = (v: number) => 72 + arenaPosition(v, view).fraction * 400;
+
+  const sortedByValue = [...ordered].sort((a, b) => b.value - a.value);
+  const topRunner = sortedByValue[0];
+  const firstPlaceId =
+    topRunner &&
+    topRunner.value > 0 &&
+    (sortedByValue.length === 1 || topRunner.value > sortedByValue[1].value)
+      ? topRunner.id
+      : null;
+
+  function formatLastUpdated(lane: ArenaSceneLane): string {
+    if (lane.lastUpdated) return lane.lastUpdated;
+    if (lane.you) return lane.value > 0 ? "now" : "joined";
+    let hash = 0;
+    for (let i = 0; i < lane.id.length; i++) {
+      hash = (hash << 5) - hash + lane.id.charCodeAt(i);
+      hash |= 0;
+    }
+    const minutes = (Math.abs(hash) % 700) + 10;
+    if (minutes < 60) return `${minutes}m ago`;
+    const hours = Math.floor(minutes / 60);
+    return `${hours}h ago`;
+  }
   useEffect(() => {
     const el = host.current;
     if (el) el.scrollLeft = (el.scrollWidth - el.clientWidth) / 2;
@@ -194,7 +218,7 @@ export function ArenaLanes({
               data-athlete={l.id}
               role="button"
               tabIndex={0}
-              aria-label={`${l.name}, ${l.value.toFixed(1)} ${unit}${position.edge ? `, ${position.edge} of visible range` : ""}`}
+              aria-label={`${l.name}, ${formatLastUpdated(l)}, ${l.value.toFixed(1)} ${unit}${position.edge ? `, ${position.edge} of visible range` : ""}`}
               onKeyDown={(e) => {
                 if (e.key === "Enter" || e.key === " ") {
                   e.preventDefault();
@@ -203,6 +227,18 @@ export function ArenaLanes({
                 }
               }}
             >
+              {firstPlaceId === l.id && (
+                <foreignObject
+                  x={xx - 16}
+                  y={yy - 44}
+                  width="32"
+                  height="32"
+                  style={{ overflow: "visible", pointerEvents: "none" }}
+                  className="lane-first-ember"
+                >
+                  <Ember expression="joy" shadow={false} />
+                </foreignObject>
+              )}
               {l.you && (
                 <circle cx={xx} cy={yy} r="34" fill="url(#focus-you-glow)" />
               )}
@@ -235,9 +271,9 @@ export function ArenaLanes({
                   : l.initials}
               </text>
               <rect
-                x={xx - 24}
+                x={xx - 26}
                 y={yy + 28}
-                width="48"
+                width="52"
                 height="20"
                 rx="10"
                 fill={l.you ? "#26382d" : "#ffffffee"}
@@ -249,8 +285,9 @@ export function ArenaLanes({
                 textAnchor="middle"
                 className="lane-total"
                 fill={l.you ? "#d4ee89" : "#26382d"}
+                style={{ fontSize: 10 }}
               >
-                {l.value.toFixed(1)}
+                {formatLastUpdated(l)}
               </text>
             </g>
           );

@@ -10,6 +10,7 @@ export interface ArenaSceneLane {
   value: number;
   you?: boolean;
   ghost?: boolean;
+  lastUpdated?: string;
 }
 export function arenaWindow(center: number, span: number) {
   const safeCenter = Number.isFinite(center) ? Math.max(0, center) : 0;

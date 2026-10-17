@@ -707,16 +707,20 @@
   border: 1px solid #e0e5dd;
   border-bottom: 5px solid #cdd9c1;
   border-radius: 20px;
-  transform: rotate(-6deg);
+  transform: none;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   gap: 5px;
   cursor: pointer;
+  transition: transform 0.15s ease;
 }
 .focus-path-row > button:hover {
-  transform: translateY(-4px);
+  transform: translateY(-2px);
+}
+.focus-path-row > button:active {
+  transform: rotate(-6deg) scale(0.96);
 }
 .focus-path-row > button b {
   font-size: 13px;
@@ -765,32 +769,122 @@
   color: #768172;
   line-height: 1.6;
 }
+.focus-path-row.is-current:before {
+  display: none;
+}
 .focus-path-row.is-current > button {
   background: #d4ee89;
-  margin-top: 28px;
+  border-radius: 50%;
+  width: 82px;
+  height: 82px;
+  margin-top: 10px;
+  border: 2px solid #b5d55b;
+  border-bottom: 5px solid #9ebf42;
   overflow: visible;
+}
+.focus-path-row.is-current > button::after {
+  content: "";
+  position: absolute;
+  inset: -8px;
+  border-radius: 50%;
+  border: 2px solid rgba(181, 213, 91, 0.85);
+  animation: fb-duo-pulse 2s cubic-bezier(0.25, 1, 0.5, 1) infinite;
+  pointer-events: none;
+}
+@keyframes fb-duo-pulse {
+  0% {
+    transform: scale(0.96);
+    opacity: 0.9;
+  }
+  70% {
+    transform: scale(1.24);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(1.24);
+    opacity: 0;
+  }
 }
 .focus-path-row.is-current svg,
 .focus-path-row.is-current > button > div {
   position: absolute;
-  width: 115px;
-  height: 115px;
-  bottom: 7px;
-  left: -13px;
-  animation: focus-breathe 3s ease-in-out infinite;
-}
-.focus-future {
+  width: 78px;
+  height: 78px;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 14px;
-  color: #a1aa9b;
-  font-size: 40px;
-  padding: 8px 0 30px;
 }
-.focus-future small {
-  font-size: 10px;
+.focus-athlete-popup {
+  position: relative;
+  margin-top: 10px;
+  padding: 12px 14px;
+  background: #ffffff;
+  border: 1px solid #e0e5dd;
+  border-radius: 12px;
+  box-shadow: 0 4px 14px rgba(38, 56, 45, 0.08);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.focus-athlete-popup-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.focus-athlete-popup-head b {
+  font-size: 14px;
+  font-weight: 600;
+  color: #26382d;
+}
+.focus-athlete-popup-close {
+  background: none;
+  border: none;
+  font-size: 18px;
+  line-height: 1;
   color: #768172;
+  cursor: pointer;
+  padding: 0 4px;
+}
+.focus-athlete-popup-close:hover {
+  color: #26382d;
+}
+.focus-athlete-popup-body {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font-size: 13px;
+  color: #26382d;
+}
+@keyframes fb-stock-pulse {
+  0% {
+    r: 3.5;
+    opacity: 0.9;
+  }
+  50% {
+    r: 8.5;
+    opacity: 0.25;
+  }
+  100% {
+    r: 3.5;
+    opacity: 0.9;
+  }
+}
+.focus-trend-pulse {
+  animation: fb-stock-pulse 1.8s ease-in-out infinite;
+}
+@keyframes fb-ember-float {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-4px);
+  }
+}
+.lane-first-ember {
+  animation: fb-ember-float 2s ease-in-out infinite;
 }
 .focus-empty-copy {
   text-align: center;
