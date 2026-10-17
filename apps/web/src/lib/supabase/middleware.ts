@@ -1,11 +1,15 @@
 import { createServerClient, type CookieOptions } from "@supabase/ssr";
+import type { User } from "@supabase/supabase-js";
 import { NextResponse, type NextRequest } from "next/server";
 import { getSupabaseConfig } from "./config";
 
-export async function updateSession(request: NextRequest) {
+export async function updateSessionAndGetUser(request: NextRequest): Promise<{
+  response: NextResponse;
+  user: User | null;
+}> {
   const { supabaseUrl, supabaseAnonKey, configured } = getSupabaseConfig();
   if (!configured) {
-    return NextResponse.next({ request });
+    return { response: NextResponse.next({ request }), user: null };
   }
 
   let response = NextResponse.next({ request });
@@ -27,6 +31,11 @@ export async function updateSession(request: NextRequest) {
     },
   });
 
-  await supabase.auth.getUser();
+  const { data } = await supabase.auth.getUser();
+  return { response, user: data.user ?? null };
+}
+
+export async function updateSession(request: NextRequest): Promise<NextResponse> {
+  const { response } = await updateSessionAndGetUser(request);
   return response;
 }
