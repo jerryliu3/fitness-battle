@@ -151,7 +151,7 @@ export function TodayScreen() {
       {frozen && (
         <div className="fb-pill" style={{ marginBottom: "16px" }}>
           <b>❄ Week frozen</b>
-          <span>Your Elo rating is protected through next Monday.</span>
+          <span>Your effort score is protected through next Monday.</span>
         </div>
       )}
       <section className="focus-stats-card" aria-label="This week's progress">

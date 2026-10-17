@@ -156,7 +156,7 @@ export function FieldStage({
                 <span>{placeAt(runners, r.id, time, 0)}</span>
                 <b>{r.you ? "You" : r.name}</b>
                 <small>
-                  {boardRows?.find((row) => row.id === r.id)?.elo ?? "—"} Elo
+                  Effort Score {boardRows?.find((row) => row.id === r.id)?.elo ?? "—"}
                 </small>
                 <strong>
                   {valueAt(r, time).toFixed(1)} {unit}

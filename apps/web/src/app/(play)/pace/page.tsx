@@ -82,7 +82,7 @@ export default function PacePage() {
       </div>
       {scope === "category" ? (
         <p className="fb-note" style={{ margin: "4px 0 12px" }}>
-          Showing athletes in your {currentRank} rating tier ({yourElo} Elo).
+          Showing athletes in your {currentRank} rating tier (effort score {yourElo}).
         </p>
       ) : null}
 
