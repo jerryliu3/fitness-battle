@@ -1,7 +1,8 @@
 "use client";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useCompete } from "@/components/compete-context";
 import {
+  competeNow,
   countsOnTrack,
   distanceUnitLabel,
   formatDistanceM,
@@ -9,6 +10,11 @@ import {
   rankForElo,
   type CompeteState,
 } from "@fitness-battle/shared";
+import {
+  removeWebProfileAvatar,
+  uploadWebProfileAvatar,
+} from "@/lib/profile/avatar-upload";
+import { createClient } from "@/lib/supabase/client";
 
 function seasonSummary(state: CompeteState) {
   const counted = state.activities.filter((a) => countsOnTrack(a, "open"));
@@ -34,6 +40,10 @@ export function AthleteOverview({
   const [city, setCity] = useState(state.city);
   const [track, setTrack] = useState<"open" | "verified">("open");
 
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [avatarBusy, setAvatarBusy] = useState(false);
+  const [avatarError, setAvatarError] = useState<string | null>(null);
+
   const rating = state.ratings.find((r) => r.sport === state.primary);
   const openElo = rating?.openElo ?? 1000;
   const verifiedElo = rating?.verifiedElo ?? 1000;
@@ -42,8 +52,58 @@ export function AthleteOverview({
   const season = seasonSummary(state);
   const unit = distanceUnitLabel(state.units);
 
+  async function onAvatarChosen(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setAvatarBusy(true);
+    setAvatarError(null);
+    try {
+      const supabase = createClient();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser().catch(() => ({ data: { user: null } }));
+      const newUrl = await uploadWebProfileAvatar({
+        file,
+        userId: user?.id,
+        previousAvatarUrl: state.avatarUrl,
+        supabase,
+      });
+      dispatch({ type: "set-avatar", avatarUrl: newUrl });
+    } catch (err) {
+      setAvatarError(
+        err instanceof Error ? err.message : "Failed to upload photo.",
+      );
+    } finally {
+      setAvatarBusy(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  }
+
+  async function onRemovePhoto() {
+    setAvatarBusy(true);
+    setAvatarError(null);
+    try {
+      const supabase = createClient();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser().catch(() => ({ data: { user: null } }));
+      await removeWebProfileAvatar({
+        userId: user?.id,
+        previousAvatarUrl: state.avatarUrl,
+        supabase,
+      });
+      dispatch({ type: "set-avatar", avatarUrl: null });
+    } catch (err) {
+      setAvatarError(
+        err instanceof Error ? err.message : "Failed to remove photo.",
+      );
+    } finally {
+      setAvatarBusy(false);
+    }
+  }
+
   // 30-day fixed time-series Elo history
-  const today = new Date();
+  const today = competeNow(state);
   const thirtyDaysAgo = new Date(today.getTime() - 29 * 24 * 3600 * 1000);
 
   const history = state.periodResults
@@ -56,7 +116,6 @@ export function AthleteOverview({
   for (let d = 29; d >= 0; d--) {
     const dayDate = new Date(today.getTime() - d * 24 * 3600 * 1000);
     const dayIso = dayDate.toISOString().slice(0, 10);
-    // Find the latest settled result on or before this day
     const matching = history.filter((r) => r.periodStart.slice(0, 10) <= dayIso);
     if (matching.length > 0) {
       dailyValues.push(matching[matching.length - 1].eloAfter);
@@ -71,32 +130,75 @@ export function AthleteOverview({
 
   const minVal = Math.min(...dailyValues);
   const maxVal = Math.max(...dailyValues);
-  const padding = Math.max(15, (maxVal - minVal) * 0.2);
-  const yMin = minVal - padding;
-  const yMax = maxVal + padding;
+  const rawMid = (minVal + maxVal) / 2;
+  const halfSpread = Math.max(15, (maxVal - minVal) / 2);
+  const step = Math.max(10, Math.ceil((halfSpread * 1.25) / 10) * 10);
+  const yMid = Math.round(rawMid / 10) * 10;
+  const yMin = yMid - step;
+  const yMax = yMid + step;
+
+  // SVG plot area layout (viewBox 0 0 340 150)
+  const xStart = 44;
+  const xEnd = 326;
+  const xMid = Math.round((xStart + xEnd) / 2);
+  const yTop = 20;
+  const yBottom = 116;
+  const yMidPos = Math.round((yTop + yBottom) / 2);
 
   const pts = dailyValues.map((v, i) => ({
-    x: 16 + (i / 29) * 288,
-    y: 100 - ((v - yMin) / (yMax - yMin)) * 75,
+    x: xStart + (i / 29) * (xEnd - xStart),
+    y: yBottom - ((v - yMin) / (yMax - yMin)) * (yBottom - yTop),
   }));
   const linePoints = pts.map((p) => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(" ");
-  const areaPoints = `${linePoints} 304,115 16,115`;
+  const areaPoints = `${linePoints} ${xEnd},${yBottom} ${xStart},${yBottom}`;
   const lastPoint = pts[pts.length - 1];
 
   const startDateLabel = thirtyDaysAgo.toLocaleDateString("en-US", {
     month: "short",
     day: "numeric",
+    timeZone: "UTC",
   });
   const todayDateLabel = today.toLocaleDateString("en-US", {
     month: "short",
     day: "numeric",
+    timeZone: "UTC",
   });
 
   return (
     <>
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/png,image/jpeg,image/webp"
+        style={{ display: "none" }}
+        onChange={onAvatarChosen}
+      />
+
       {editing ? (
         <section className="focus-profile-card" aria-label="Edit athlete profile">
-          <div className="focus-portrait">{initialsFromName(name || state.name)}</div>
+          <div
+            className="focus-portrait"
+            role="button"
+            tabIndex={0}
+            title={state.avatarUrl ? "Change photo" : "Upload photo"}
+            onClick={() => fileInputRef.current?.click()}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                fileInputRef.current?.click();
+              }
+            }}
+          >
+            {state.avatarUrl ? (
+              <img
+                src={state.avatarUrl}
+                alt={name || state.name}
+                className="focus-portrait-img"
+              />
+            ) : (
+              initialsFromName(name || state.name)
+            )}
+          </div>
           <div className="focus-profile-card-copy" style={{ flex: 1 }}>
             <label className="fb-field" style={{ marginBottom: 8 }}>
               Display name
@@ -116,6 +218,35 @@ export function AthleteOverview({
                 maxLength={48}
               />
             </label>
+            <div className="focus-avatar-actions" style={{ marginBottom: 12 }}>
+              <button
+                type="button"
+                className="fb-btn-ghost focus-avatar-btn"
+                disabled={avatarBusy}
+                onClick={() => fileInputRef.current?.click()}
+              >
+                {avatarBusy
+                  ? "Uploading…"
+                  : state.avatarUrl
+                    ? "Change photo"
+                    : "Upload photo"}
+              </button>
+              {state.avatarUrl && (
+                <button
+                  type="button"
+                  className="fb-btn-ghost focus-avatar-btn is-danger"
+                  disabled={avatarBusy}
+                  onClick={onRemovePhoto}
+                >
+                  Remove photo
+                </button>
+              )}
+            </div>
+            {avatarError && (
+              <p className="fb-error" style={{ fontSize: 11, marginBottom: 8 }}>
+                {avatarError}
+              </p>
+            )}
             <div className="fb-row" style={{ gap: 8 }}>
               <button
                 type="button"
@@ -146,9 +277,37 @@ export function AthleteOverview({
         </section>
       ) : (
         <section className="focus-profile-card" aria-label="Athlete profile">
-          <div className="focus-portrait">{initialsFromName(state.name)}</div>
+          <div
+            className="focus-portrait"
+            role="button"
+            tabIndex={0}
+            title={state.avatarUrl ? "Change photo" : "Upload photo"}
+            onClick={() => fileInputRef.current?.click()}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                fileInputRef.current?.click();
+              }
+            }}
+          >
+            {state.avatarUrl ? (
+              <img
+                src={state.avatarUrl}
+                alt={state.name}
+                className="focus-portrait-img"
+              />
+            ) : (
+              initialsFromName(state.name)
+            )}
+          </div>
           <div className="focus-profile-card-copy" style={{ flex: 1 }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "flex-start",
+              }}
+            >
               <div>
                 <p className="fb-kicker">{state.city || "Your location"}</p>
                 <h1>{state.name}</h1>
@@ -172,6 +331,35 @@ export function AthleteOverview({
                 {demoMode ? " · demo" : ""}
               </p>
             ) : null}
+            <div className="focus-avatar-actions">
+              <button
+                type="button"
+                className="fb-btn-ghost focus-avatar-btn"
+                disabled={avatarBusy}
+                onClick={() => fileInputRef.current?.click()}
+              >
+                {avatarBusy
+                  ? "Uploading…"
+                  : state.avatarUrl
+                    ? "Change photo"
+                    : "Upload photo"}
+              </button>
+              {state.avatarUrl && (
+                <button
+                  type="button"
+                  className="fb-btn-ghost focus-avatar-btn is-danger"
+                  disabled={avatarBusy}
+                  onClick={onRemovePhoto}
+                >
+                  Remove
+                </button>
+              )}
+            </div>
+            {avatarError && (
+              <p className="fb-error" style={{ fontSize: 11, marginTop: 4 }}>
+                {avatarError}
+              </p>
+            )}
           </div>
         </section>
       )}
@@ -198,14 +386,12 @@ export function AthleteOverview({
       </section>
 
       <section className="focus-card focus-elo">
-        <div className="focus-row" style={{ alignItems: "center" }}>
-          <div>
-            <p className="fb-kicker">
-              {rankForElo(currentElo).name} · {track === "open" ? "Open Elo" : "GPS Verified Elo"}
-            </p>
-            <strong>{currentElo.toLocaleString()}</strong>
-          </div>
-          <div className="focus-segments" role="group" aria-label="Elo Track">
+        <div className="focus-elo-top">
+          <div
+            className="focus-elo-track-toggle"
+            role="group"
+            aria-label="Elo Track"
+          >
             <button
               type="button"
               aria-pressed={track === "open"}
@@ -221,20 +407,103 @@ export function AthleteOverview({
               GPS verified
             </button>
           </div>
+          <span className="focus-elo-rank-pill">
+            {rankForElo(currentElo).name}
+          </span>
         </div>
+
+        <div className="focus-elo-score-row">
+          <strong>{currentElo.toLocaleString()}</strong>
+        </div>
+
         <svg
-          viewBox="0 0 320 120"
+          viewBox="0 0 340 150"
           className="focus-trend"
           role="img"
           aria-label={`30-day ${track === "open" ? "Open" : "GPS verified"} Elo history ending at ${currentElo}`}
         >
           <defs>
             <linearGradient id="focus-trend-grad" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#d4ee89" stopOpacity="0.45" />
+              <stop offset="0%" stopColor="#d4ee89" stopOpacity="0.5" />
               <stop offset="100%" stopColor="#d4ee89" stopOpacity="0.0" />
             </linearGradient>
           </defs>
-          <path d="M0 35H320M0 75H320M0 115H320" stroke="#e0e5dd" />
+
+          {/* Horizontal gridlines & Y-axis numbers */}
+          <text
+            x="36"
+            y={yTop}
+            textAnchor="end"
+            dominantBaseline="middle"
+            fill="#768172"
+            fontSize="10"
+            fontFamily="inherit"
+            fontWeight="500"
+          >
+            {yMax}
+          </text>
+          <line
+            x1={xStart}
+            y1={yTop}
+            x2={xEnd}
+            y2={yTop}
+            stroke="#e4ebd9"
+            strokeDasharray="3 3"
+          />
+
+          <text
+            x="36"
+            y={yMidPos}
+            textAnchor="end"
+            dominantBaseline="middle"
+            fill="#768172"
+            fontSize="10"
+            fontFamily="inherit"
+            fontWeight="500"
+          >
+            {yMid}
+          </text>
+          <line
+            x1={xStart}
+            y1={yMidPos}
+            x2={xEnd}
+            y2={yMidPos}
+            stroke="#e4ebd9"
+            strokeDasharray="3 3"
+          />
+
+          <text
+            x="36"
+            y={yBottom}
+            textAnchor="end"
+            dominantBaseline="middle"
+            fill="#768172"
+            fontSize="10"
+            fontFamily="inherit"
+            fontWeight="500"
+          >
+            {yMin}
+          </text>
+          <line
+            x1={xStart}
+            y1={yBottom}
+            x2={xEnd}
+            y2={yBottom}
+            stroke="#c8d2c2"
+            strokeWidth="1"
+          />
+
+          {/* Y-axis vertical line */}
+          <line
+            x1={xStart}
+            y1={yTop}
+            x2={xStart}
+            y2={yBottom}
+            stroke="#c8d2c2"
+            strokeWidth="1"
+          />
+
+          {/* Area under curve & trend polyline */}
           <polygon points={areaPoints} fill="url(#focus-trend-grad)" />
           <polyline
             points={linePoints}
@@ -244,6 +513,7 @@ export function AthleteOverview({
             strokeLinecap="round"
             fill="none"
           />
+
           {/* Live pulsing dot at current day */}
           <circle
             cx={lastPoint.x}
@@ -255,11 +525,65 @@ export function AthleteOverview({
             className="focus-trend-pulse"
           />
           <circle cx={lastPoint.x} cy={lastPoint.y} r="3.5" fill="#26382d" />
+
+          {/* X-axis tick marks */}
+          <line
+            x1={xStart}
+            y1={yBottom}
+            x2={xStart}
+            y2={yBottom + 5}
+            stroke="#8a9785"
+            strokeWidth="1"
+          />
+          <line
+            x1={xMid}
+            y1={yBottom}
+            x2={xMid}
+            y2={yBottom + 5}
+            stroke="#8a9785"
+            strokeWidth="1"
+          />
+          <line
+            x1={xEnd}
+            y1={yBottom}
+            x2={xEnd}
+            y2={yBottom + 5}
+            stroke="#8a9785"
+            strokeWidth="1"
+          />
+
+          {/* X-axis date labels integrated directly into the graph */}
+          <text
+            x={xStart}
+            y="136"
+            textAnchor="start"
+            fill="#768172"
+            fontSize="10"
+            fontFamily="inherit"
+          >
+            {startDateLabel}
+          </text>
+          <text
+            x={xMid}
+            y="136"
+            textAnchor="middle"
+            fill="#768172"
+            fontSize="10"
+            fontFamily="inherit"
+          >
+            15d ago
+          </text>
+          <text
+            x={xEnd}
+            y="136"
+            textAnchor="end"
+            fill="#768172"
+            fontSize="10"
+            fontFamily="inherit"
+          >
+            Today ({todayDateLabel})
+          </text>
         </svg>
-        <div style={{ display: "flex", justifyContent: "space-between", marginTop: 4 }}>
-          <span className="fb-note">{startDateLabel}</span>
-          <span className="fb-note">Today ({todayDateLabel})</span>
-        </div>
       </section>
     </>
   );

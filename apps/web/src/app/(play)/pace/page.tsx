@@ -5,6 +5,7 @@ import {
   BENCHMARKS,
   formatClockTime,
   paceBoard,
+  rankForElo,
   type Benchmark,
   type PaceScope,
 } from "@fitness-battle/shared";
@@ -22,6 +23,9 @@ export default function PacePage() {
   const selected = options.find((item) => item.id === benchmark.id) ?? options[0]!;
   const rows = paceBoard(state, sport, selected, scope);
   const you = rows.find((row) => row.you);
+  const mine = state.ratings.find((item) => item.sport === sport);
+  const yourElo = mine?.openElo ?? 1000;
+  const currentRank = rankForElo(yourElo).name;
 
   return (
     <>
@@ -62,8 +66,8 @@ export default function PacePage() {
         {(
           [
             ["global", "Global"],
-            ["local", "Local"],
-            ["category", "Category"],
+            ["local", `Local (${state.city})`],
+            ["category", `Category (${currentRank})`],
           ] as const
         ).map(([id, label]) => (
           <button
@@ -76,6 +80,11 @@ export default function PacePage() {
           </button>
         ))}
       </div>
+      {scope === "category" ? (
+        <p className="fb-note" style={{ margin: "4px 0 12px" }}>
+          Showing athletes in your {currentRank} rating tier ({yourElo} Elo).
+        </p>
+      ) : null}
 
       <section className="fb-card">
         {rows.length === 0 ? (

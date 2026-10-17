@@ -1,4 +1,4 @@
-import { Text, View } from "react-native";
+import { Image, Text, View } from "react-native";
 import Svg, { Line, Polyline, Circle } from "react-native-svg";
 import {
   countsOnTrack,
@@ -70,17 +70,25 @@ export function AthleteMetrics({
             backgroundColor: "#26382d",
             justifyContent: "center",
             alignItems: "center",
+            overflow: "hidden",
           }}
         >
-          <Text
-            style={{
-              fontFamily: "DMSans_400Regular",
-              fontSize: 29,
-              color: "#d4ee89",
-            }}
-          >
-            {initialsFromName(state.name)}
-          </Text>
+          {state.avatarUrl ? (
+            <Image
+              source={{ uri: state.avatarUrl }}
+              style={{ width: "100%", height: "100%" }}
+            />
+          ) : (
+            <Text
+              style={{
+                fontFamily: "DMSans_400Regular",
+                fontSize: 29,
+                color: "#d4ee89",
+              }}
+            >
+              {initialsFromName(state.name)}
+            </Text>
+          )}
         </View>
         <View style={{ flex: 1, gap: 4 }}>
           <Text style={f.kicker}>Athlete · {state.city || "Your own pace"}</Text>

@@ -33,6 +33,9 @@ function OnboardingFlow() {
 
   if (!state) return <p className="fb-copy">Loading…</p>;
 
+  const stravaLink = state.links.find((l) => l.provider === "strava");
+  const isStravaLinked = Boolean(stravaLink?.linked);
+
   if (state.onboardingCompleted) {
     return (
       <section className="fb-card">
@@ -198,12 +201,27 @@ function OnboardingFlow() {
             <div key={provider.id} className="fb-row">
               <span className="fb-grow">
                 {provider.name}
-                <small>{provider.blurb}</small>
+                <small>
+                  {provider.blurb}
+                  {isStravaLinked
+                    ? ` · ${stravaLink?.status === "connected" ? "Connected" : "Demo stub (not live)"}`
+                    : " · Not connected"}
+                </small>
               </span>
             </div>
           ))}
-          {connectMessage ? <p className="fb-note">{connectMessage}</p> : null}
-          {state.links.find((l) => l.provider === "strava")?.linked ? (
+          {connectMessage ? (
+            <p className="fb-note">{connectMessage}</p>
+          ) : isStravaLinked ? (
+            <p className="fb-note">
+              Demo stub linked. Live Strava OAuth is not configured in this environment.
+            </p>
+          ) : (
+            <p className="fb-note">
+              Without server API keys, linking connects an honest demo stub for testing.
+            </p>
+          )}
+          {isStravaLinked ? (
             <button type="button" className="fb-btn" onClick={() => setStep("backfill")}>
               Continue to calibration
             </button>

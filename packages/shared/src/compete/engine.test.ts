@@ -461,4 +461,21 @@ describe("compete engine", () => {
     const actTwin = { ...act1, id: "str-twin", movingSec: 3650 };
     expect(sameWorkout(act1, actTwin)).toBe(true);
   });
+
+  it("updates and clears profile avatarUrl via set-avatar", () => {
+    const state = freshState();
+    expect(state.avatarUrl).toBeNull();
+    const updated = reduceCompete(state, {
+      type: "set-avatar",
+      avatarUrl: "https://project.supabase.co/storage/v1/object/public/avatars/user-1/avatar.jpg",
+    });
+    expect(updated.avatarUrl).toBe(
+      "https://project.supabase.co/storage/v1/object/public/avatars/user-1/avatar.jpg",
+    );
+    const cleared = reduceCompete(updated, {
+      type: "set-avatar",
+      avatarUrl: null,
+    });
+    expect(cleared.avatarUrl).toBeNull();
+  });
 });

@@ -222,6 +222,7 @@ export async function persistCompeteAccount(
       display_name: clean.name.slice(0, 80) || "Athlete",
       city: clean.city.slice(0, 80),
       primary_sport: clean.primary,
+      avatar_url: clean.avatarUrl ?? null,
       updated_at: updatedAt,
     })
     .eq("id", userId)
@@ -232,6 +233,7 @@ export async function persistCompeteAccount(
       display_name: clean.name.slice(0, 80) || "Athlete",
       city: clean.city.slice(0, 80),
       primary_sport: clean.primary,
+      avatar_url: clean.avatarUrl ?? null,
       updated_at: updatedAt,
     });
     if (upsertError) throw new Error(upsertError.message || profileError?.message);
@@ -427,7 +429,7 @@ export async function loadCompeteAccount(
   ] = await Promise.all([
     db
       .from("profiles")
-      .select("display_name, city, primary_sport")
+      .select("display_name, city, primary_sport, avatar_url")
       .eq("id", userId)
       .maybeSingle(),
     db.from("sport_ratings").select("*").eq("user_id", userId),
@@ -479,6 +481,7 @@ export async function loadCompeteAccount(
       name: String(profile.display_name ?? state.name).slice(0, 80) || state.name,
       city: String(profile.city ?? state.city).slice(0, 80),
       primary: primary ?? state.primary,
+      avatarUrl: profile.avatar_url ? String(profile.avatar_url) : null,
     };
   }
 

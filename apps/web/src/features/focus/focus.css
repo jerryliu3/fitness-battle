@@ -473,6 +473,36 @@
   margin: 0 auto 22px;
   font-size: 30px;
   letter-spacing: -2px;
+  position: relative;
+  overflow: hidden;
+  flex-shrink: 0;
+  cursor: pointer;
+  transition: opacity 0.15s ease;
+}
+.focus-portrait:hover {
+  opacity: 0.92;
+}
+.focus-portrait-img {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+  display: block;
+}
+.focus-avatar-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-top: 10px;
+  flex-wrap: wrap;
+}
+.focus-avatar-btn {
+  font-size: 11px !important;
+  padding: 4px 10px !important;
+  cursor: pointer;
+}
+.focus-avatar-btn.is-danger {
+  color: #c0392b !important;
 }
 .focus-profile h1 {
   margin: 8px 0;
@@ -599,10 +629,61 @@
     align-items: center;
   }
 }
-.focus-elo strong {
-  font-size: 54px;
-  font-weight: 400;
-  letter-spacing: -2px;
+.focus-elo-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+.focus-elo-track-toggle {
+  display: inline-flex;
+  background: #edf2e8;
+  border: 1px solid #dce3d7;
+  border-radius: 7px;
+  padding: 2px;
+  gap: 2px;
+}
+.focus-elo-track-toggle button {
+  border: 0;
+  background: transparent;
+  padding: 4px 10px;
+  font-size: 9.5px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  border-radius: 5px;
+  color: #768172;
+  cursor: pointer;
+  line-height: 1.4;
+  transition: all 0.15s ease;
+}
+.focus-elo-track-toggle button[aria-pressed="true"] {
+  background: #fff;
+  color: #26382d;
+  box-shadow: 0 1px 3px rgba(38, 56, 45, 0.08);
+}
+.focus-elo-rank-pill {
+  font-size: 9.5px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: #2f6f4e;
+  background: #e4ebd9;
+  border-radius: 999px;
+  padding: 3px 9px;
+}
+.focus-elo-score-row {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.focus-elo-score-row strong {
+  font-size: 38px;
+  line-height: 1;
+  font-weight: 700;
+  letter-spacing: -1.5px;
+  color: #26382d;
 }
 .focus-status {
   text-align: right;
@@ -618,9 +699,11 @@
 }
 .focus-trend {
   width: 100%;
-  height: 135px;
-  margin: 15px 0;
+  height: auto;
+  max-height: 160px;
+  margin: 12px 0 0;
   overflow: visible;
+  display: block;
 }
 .focus-benchmark {
   display: flex;
@@ -654,13 +737,7 @@
 .focus-journey {
   position: relative;
   border-radius: 24px;
-  background: linear-gradient(
-    90deg,
-    transparent 49%,
-    #e0e5dd 49%,
-    #e0e5dd 50%,
-    transparent 50%
-  );
+  background: transparent;
   margin: 25px 0;
   max-height: 900px;
   overflow-x: visible;
@@ -700,19 +777,19 @@
 .focus-path-row > button {
   position: relative;
   z-index: 1;
-  width: 88px;
-  height: 75px;
+  width: 80px;
+  height: 80px;
   flex-shrink: 0;
   background: #fff;
   border: 1px solid #e0e5dd;
   border-bottom: 5px solid #cdd9c1;
-  border-radius: 20px;
+  border-radius: 50%;
   transform: none;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 5px;
+  gap: 3px;
   cursor: pointer;
   transition: transform 0.15s ease;
 }
@@ -769,6 +846,9 @@
   color: #768172;
   line-height: 1.6;
 }
+.focus-path-row.is-current {
+  height: 165px;
+}
 .focus-path-row.is-current:before {
   display: none;
 }
@@ -777,7 +857,7 @@
   border-radius: 50%;
   width: 82px;
   height: 82px;
-  margin-top: 10px;
+  margin-top: 36px;
   border: 2px solid #b5d55b;
   border-bottom: 5px solid #9ebf42;
   overflow: visible;
@@ -805,17 +885,115 @@
     opacity: 0;
   }
 }
-.focus-path-row.is-current svg,
 .focus-path-row.is-current > button > div {
   position: absolute;
-  width: 78px;
-  height: 78px;
-  top: 50%;
+  width: 96px;
+  height: 96px;
+  bottom: 22px;
   left: 50%;
-  transform: translate(-50%, -50%);
+  transform: translateX(-50%);
   display: flex;
   align-items: center;
   justify-content: center;
+  pointer-events: none;
+}
+.focus-path-row.is-current > button > div svg {
+  width: 100%;
+  height: 100%;
+}
+.focus-path-row.is-start > button {
+  background: #f1f5ec;
+  border: 2px dashed #b7c9a4;
+  border-bottom: 4px solid #a4b990;
+  color: #26382d;
+}
+.focus-path-row.is-start > button i {
+  position: static;
+  width: auto;
+  height: auto;
+  background: none;
+  border: none;
+  font-size: 18px;
+}
+.focus-path-row.is-start > button b {
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  color: #43543f;
+}
+.focus-stats-card {
+  background: #edf2e8;
+  border: 1px solid #e0e5dd;
+  border-radius: 20px;
+  padding: 16px 20px;
+  margin: 6px 0 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.focus-stats-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+}
+.focus-stats-header strong {
+  font-size: 22px;
+  font-weight: 600;
+  color: #26382d;
+}
+.focus-stats-summary {
+  display: flex;
+  gap: 12px;
+  font-size: 12px;
+  color: #768172;
+}
+.focus-stats-summary b {
+  color: #26382d;
+  font-weight: 600;
+}
+.focus-mini-chart {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 8px;
+  height: 58px;
+  padding-top: 8px;
+  border-top: 1px solid #e0e5dd;
+}
+.focus-mini-bar-col {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  height: 100%;
+}
+.focus-mini-bar-track {
+  flex: 1;
+  width: 100%;
+  max-width: 26px;
+  background: #e0e6db;
+  border-radius: 6px;
+  display: flex;
+  align-items: flex-end;
+  overflow: hidden;
+}
+.focus-mini-bar-fill {
+  width: 100%;
+  background: #a4be60;
+  border-radius: 6px;
+  transition: height 0.3s ease;
+}
+.focus-mini-bar-col.is-today .focus-mini-bar-fill {
+  background: #26382d;
+}
+.focus-mini-bar-day {
+  font-size: 10px;
+  font-weight: 500;
+  color: #768172;
+}
+.focus-mini-bar-col.is-today .focus-mini-bar-day {
+  color: #26382d;
+  font-weight: 700;
 }
 .focus-athlete-popup {
   position: relative;

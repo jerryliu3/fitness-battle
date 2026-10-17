@@ -48,7 +48,7 @@ type AthletePanel =
 
 const PANEL_TITLES: Record<AthletePanel, string> = {
   progress: "Progress",
-  connections: "Data Tracking",
+  connections: "Data Sync",
   preferences: "Preferences",
   notifications: "Notifications",
   scoring: "How scoring works",
@@ -426,7 +426,7 @@ function YouContent() {
           {panel === "connections" ? (
             <>
               <section className="fb-card">
-                <h2>Data Tracking</h2>
+                <h2>Data Sync</h2>
                 <p className="fb-note">
                   Cloud trackers open their own authorize page when API keys are
                   set. Without keys the link stays a stub. Garmin files stay
@@ -760,29 +760,23 @@ function YouContent() {
         </section>
       ) : null}
       {user ? (
-        <>
-          <p className="fb-note">
-            {user.email}
-            {demoMode ? " · demo account" : ""}
-          </p>
-          <div className="fb-row" style={{ gap: 10, marginTop: 12 }}>
-            <button
-              type="button"
-              className="fb-btn-line"
-              style={{ flex: 1, justifyContent: "center" }}
-              onClick={() => void signOut()}
-            >
-              Sign out
-            </button>
-            <a
-              href="mailto:support@overtaek.com?subject=Fitness%20Battle%20Issue%20Report"
-              className="fb-btn-line"
-              style={{ flex: 1, justifyContent: "center", textDecoration: "none" }}
-            >
-              Report an issue
-            </a>
-          </div>
-        </>
+        <div className="fb-row" style={{ gap: 10, marginTop: 12 }}>
+          <button
+            type="button"
+            className="fb-btn-line"
+            style={{ flex: 1, justifyContent: "center" }}
+            onClick={() => void signOut()}
+          >
+            Sign out
+          </button>
+          <a
+            href="mailto:support@overtaek.com?subject=Fitness%20Battle%20Issue%20Report"
+            className="fb-btn-line"
+            style={{ flex: 1, justifyContent: "center", textDecoration: "none" }}
+          >
+            Report an issue
+          </a>
+        </div>
       ) : (
         <div className="fb-stack">
           <p className="fb-note">Browsing as a guest</p>

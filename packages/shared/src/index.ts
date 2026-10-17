@@ -12,3 +12,4 @@ export * from "./arena-view";
 export * from "./arena-bridge";
 
 export * from "./layout-concepts";
+export * from "./profile/avatar-paths";
