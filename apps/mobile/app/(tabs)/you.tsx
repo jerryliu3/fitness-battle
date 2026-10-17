@@ -4,7 +4,6 @@ import {
   type ProviderId,
 } from "@fitness-battle/shared";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { Avatar } from "heroui-native/avatar";
 import { Button } from "heroui-native/button";
 import { Input } from "heroui-native/input";
 import { useEffect, useRef, useState } from "react";
