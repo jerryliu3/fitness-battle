@@ -11,6 +11,7 @@ import { routeThroughCenters, type JourneyPt } from "./journey-route";
 
 export type { JourneyLane, JourneyLanePlan } from "./journey-route";
 export {
+  groupActivitiesByDay,
   planJourneyLanes,
   planJourneyTrail,
   routeThroughCenters,
@@ -69,6 +70,8 @@ export function JourneyTrail({
     const redraw = () => {
       const svg = svgRef.current;
       if (!svg) return;
+      // Drop stale refs when the trail shrinks (e.g. fewer active days).
+      stopEls.current.length = stopCount;
       const measured = readStopCenters(
         svg,
         stopEls.current.slice(0, stopCount),

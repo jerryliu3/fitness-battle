@@ -13,33 +13,41 @@ import {
   primaryFreezePeriodStart,
   sportById,
   type Activity,
+  type UnitSystem,
 } from "@fitness-battle/shared";
 import {
   JourneyTrail,
+  groupActivitiesByDay,
   planJourneyTrail,
   type JourneyLane,
 } from "./journey-trail";
 
+type JourneyDay = {
+  id: string;
+  day: string;
+  items: Activity[];
+};
+
 type JourneyStop =
   | { key: "future"; kind: "future"; lane: JourneyLane }
   | { key: "today"; kind: "today"; lane: JourneyLane }
-  | { key: string; kind: "session"; lane: JourneyLane; activity: Activity }
+  | { key: string; kind: "day"; lane: JourneyLane; day: JourneyDay }
   | { key: "start"; kind: "start"; lane: JourneyLane };
 
-function buildJourneyStops(sessions: Activity[]): JourneyStop[] {
-  // Lanes assigned bottom-up from Start — earlier sessions keep their side
-  // when a newer activity is prepended (see planJourneyTrail).
-  const plan = planJourneyTrail(sessions);
+function buildJourneyStops(days: JourneyDay[]): JourneyStop[] {
+  // One circle per activity-day. Lanes assigned bottom-up from Start so
+  // Oct 17 keeps its side when Oct 18 appears (see planJourneyTrail).
+  const plan = planJourneyTrail(days);
   const stops: JourneyStop[] = [
     { key: "future", kind: "future", lane: plan.future },
     { key: "today", kind: "today", lane: plan.today },
   ];
-  sessions.forEach((activity, i) => {
+  days.forEach((day, i) => {
     stops.push({
-      key: activity.id,
-      kind: "session",
-      lane: plan.sessions[i]!,
-      activity,
+      key: day.id,
+      kind: "day",
+      lane: plan.days[i]!,
+      day,
     });
   });
   stops.push({ key: "start", kind: "start", lane: plan.start });
@@ -56,6 +64,61 @@ function stopRowClass(stop: JourneyStop): string {
           ? " is-start"
           : "";
   return `focus-path-row${tone}`;
+}
+
+function JourneyDayStop({
+  day,
+  units,
+  stopRef,
+  onOpen,
+}: {
+  day: JourneyDay;
+  units: UnitSystem;
+  stopRef: React.Ref<HTMLButtonElement>;
+  onOpen: (activity: Activity) => void;
+}) {
+  const primary = day.items[0]!;
+  const volume = formatVolume(
+    primary.sport,
+    primary.distanceM,
+    primary.movingSec,
+    units,
+  );
+  const dayDate = new Date(`${day.day}T12:00:00.000Z`);
+  const weekday = dayDate.toLocaleDateString("en-US", {
+    weekday: "short",
+    timeZone: "UTC",
+  });
+  const monthDay = dayDate.toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    timeZone: "UTC",
+  });
+  const detail =
+    day.items.length > 1
+      ? `${day.items.length} sessions`
+      : primary.disposition === "excluded" || isSampleActivity(primary)
+        ? `${primary.source} · sample (excluded)`
+        : `${primary.verified ? "Verified" : "Open"} · ${primary.disposition === "pending" ? "pending" : "counted"}`;
+
+  return (
+    <>
+      <button
+        ref={stopRef}
+        onClick={() => onOpen(primary)}
+        aria-label={`Open ${sportById(primary.sport).name} from ${day.day} ${volume}`}
+      >
+        <i>✓</i>
+        <b>{volume}</b>
+        <small>{weekday}</small>
+      </button>
+      <span>
+        <small>{monthDay}</small>
+        <b>{sportById(primary.sport).name}</b>
+        <em>{detail}</em>
+      </span>
+    </>
+  );
 }
 
 export function TodayScreen() {
@@ -78,12 +141,11 @@ export function TodayScreen() {
   const counted = state.activities.filter(
     (a) => countsOnTrack(a, "open") && new Date(a.startedAt) <= now,
   );
-  const sessions = counted
-    .slice()
-    .sort((a, b) => b.startedAt.localeCompare(a.startedAt))
-    .slice(0, 10);
+  // Days with activity (not empty calendar days). A new day with a workout
+  // prepends one circle; earlier days keep the same lane.
+  const journeyDays = groupActivitiesByDay(counted, 10);
   const units = state.units;
-  const journeyStops = buildJourneyStops(sessions);
+  const journeyStops = buildJourneyStops(journeyDays);
 
   const weekPeriod = competePeriodWindow(state, now);
   const weekStart = weekPeriod.startsAt.getTime();
@@ -230,8 +292,10 @@ export function TodayScreen() {
       </section>
       <div className="focus-row">
         <h2>Your fitness journey</h2>
-        {sessions.length ? (
-          <span className="fb-note">Last {sessions.length} sessions</span>
+        {journeyDays.length ? (
+          <span className="fb-note">
+            Last {journeyDays.length} active day{journeyDays.length === 1 ? "" : "s"}
+          </span>
         ) : null}
       </div>
       <JourneyTrail
@@ -301,45 +365,13 @@ export function TodayScreen() {
                   </span>
                 </>
               ) : null}
-              {stop.kind === "session" ? (
-                <>
-                  <button
-                    ref={setStopRef(index)}
-                    onClick={() => setExpanded(stop.activity)}
-                    aria-label={`Open ${sportById(stop.activity.sport).name} session ${formatVolume(stop.activity.sport, stop.activity.distanceM, stop.activity.movingSec, units)}`}
-                  >
-                    <i>✓</i>
-                    <b>
-                      {formatVolume(
-                        stop.activity.sport,
-                        stop.activity.distanceM,
-                        stop.activity.movingSec,
-                        units,
-                      )}
-                    </b>
-                    <small>
-                      {new Date(stop.activity.startedAt).toLocaleDateString(
-                        "en-US",
-                        { weekday: "short", timeZone: "UTC" },
-                      )}
-                    </small>
-                  </button>
-                  <span>
-                    <small>
-                      {new Date(stop.activity.startedAt).toLocaleDateString(
-                        "en-US",
-                        { month: "short", day: "numeric", timeZone: "UTC" },
-                      )}
-                    </small>
-                    <b>{sportById(stop.activity.sport).name}</b>
-                    <em>
-                      {stop.activity.disposition === "excluded" ||
-                      isSampleActivity(stop.activity)
-                        ? `${stop.activity.source} · sample (excluded)`
-                        : `${stop.activity.verified ? "Verified" : "Open"} · ${stop.activity.disposition === "pending" ? "pending" : "counted"}`}
-                    </em>
-                  </span>
-                </>
+              {stop.kind === "day" ? (
+                <JourneyDayStop
+                  day={stop.day}
+                  units={units}
+                  stopRef={setStopRef(index)}
+                  onOpen={(activity) => setExpanded(activity)}
+                />
               ) : null}
               {stop.kind === "start" ? (
                 <button

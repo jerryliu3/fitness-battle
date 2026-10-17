@@ -8,11 +8,44 @@ export type JourneyLanePlan = {
   future: JourneyLane;
   /** Ember / today stop — prefers center when allowed. */
   today: JourneyLane;
-  /** Newest-first, same order as the sessions list passed in. */
-  sessions: JourneyLane[];
+  /** Newest-first activity days, same order as the days list passed in. */
+  days: JourneyLane[];
   /** Always center. */
   start: "c";
 };
+
+/** One journey circle per calendar day that has activity (UTC date from startedAt). */
+export type JourneyActivityDay<T extends { startedAt: string } = { startedAt: string }> = {
+  /** Stable id = YYYY-MM-DD — lanes key off this so a new day only extends the tip. */
+  id: string;
+  day: string;
+  /** Newest-first within the day. */
+  items: T[];
+};
+
+/**
+ * Collapse activities into newest-first activity days.
+ * Multiple workouts on the same day share one circle; a new day prepends a circle.
+ */
+export function groupActivitiesByDay<T extends { startedAt: string }>(
+  activities: ReadonlyArray<T>,
+  limit = 10,
+): JourneyActivityDay<T>[] {
+  const byDay = new Map<string, T[]>();
+  const newestFirst = [...activities].sort((a, b) =>
+    b.startedAt.localeCompare(a.startedAt),
+  );
+  for (const activity of newestFirst) {
+    const day = activity.startedAt.slice(0, 10);
+    const bucket = byDay.get(day);
+    if (bucket) bucket.push(activity);
+    else byDay.set(day, [activity]);
+  }
+  return [...byDay.entries()]
+    .sort(([a], [b]) => b.localeCompare(a))
+    .slice(0, limit)
+    .map(([day, items]) => ({ id: day, day, items }));
+}
 
 /** Next lane in the winding — never equals `prev`. */
 export function nextLane(
@@ -26,25 +59,24 @@ export function nextLane(
 }
 
 /**
- * Assign lanes bottom-up from Start so earlier stops stay put when a newer
- * session is prepended (append-stable). Rules:
+ * Assign lanes bottom-up from Start so earlier activity-days stay put when a
+ * newer day is prepended (append-stable). Rules:
  * - Start is always center
  * - No lane repeats consecutively
  * - Today prefers center; future prefers right
  *
- * Display order is still future → today → sessions(newest-first) → start;
- * assignment walks start → oldest session → … → newest → today → future.
+ * Display order: future → today → days(newest-first) → start
+ * Assignment walk: start → oldest day → … → newest day → today → future
  */
 export function planJourneyTrail(
-  sessionsNewestFirst: ReadonlyArray<{ id: string }>,
+  daysNewestFirst: ReadonlyArray<{ id: string }>,
 ): JourneyLanePlan {
   const byId = new Map<string, JourneyLane>();
   let prev: JourneyLane = "c"; // start
 
-  // Oldest → newest so a newly logged session only extends the tip.
-  for (const session of [...sessionsNewestFirst].reverse()) {
+  for (const day of [...daysNewestFirst].reverse()) {
     const lane = nextLane(prev);
-    byId.set(session.id, lane);
+    byId.set(day.id, lane);
     prev = lane;
   }
 
@@ -55,23 +87,24 @@ export function planJourneyTrail(
   return {
     future,
     today,
-    sessions: sessionsNewestFirst.map((s) => byId.get(s.id)!),
+    days: daysNewestFirst.map((d) => byId.get(d.id)!),
     start: "c",
   };
 }
 
-/** Flat display order: future → today → sessions → start (for tests / callers). */
+/** Flat display order: future → today → days → start (for tests / callers). */
 export function planJourneyLanes(
-  sessionsNewestFirst: ReadonlyArray<{ id: string }> | number,
+  daysNewestFirst: ReadonlyArray<{ id: string }> | number,
 ): JourneyLane[] {
-  const sessions =
-    typeof sessionsNewestFirst === "number"
-      ? Array.from({ length: sessionsNewestFirst }, (_, i) => ({
-          id: `session-${i}`,
+  const days =
+    typeof daysNewestFirst === "number"
+      ? Array.from({ length: daysNewestFirst }, (_, i) => ({
+          // Fake chronological ids so "session-0" is newest when using a count.
+          id: `day-${String(i).padStart(2, "0")}`,
         }))
-      : sessionsNewestFirst;
-  const plan = planJourneyTrail(sessions);
-  return [plan.future, plan.today, ...plan.sessions, plan.start];
+      : daysNewestFirst;
+  const plan = planJourneyTrail(days);
+  return [plan.future, plan.today, ...plan.days, plan.start];
 }
 
 /** Assert invariant used by tests and debug. */

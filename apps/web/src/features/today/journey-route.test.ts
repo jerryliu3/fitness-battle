@@ -1,10 +1,35 @@
 import { describe, expect, it } from "vitest";
 import {
+  groupActivitiesByDay,
   lanesHaveNoConsecutiveRepeats,
   planJourneyLanes,
   planJourneyTrail,
   routeThroughCenters,
 } from "./journey-route";
+
+describe("groupActivitiesByDay", () => {
+  it("one circle per calendar day; newest day first; keeps multiple same-day items together", () => {
+    const days = groupActivitiesByDay([
+      { startedAt: "2026-10-17T08:00:00.000Z", id: "a" },
+      { startedAt: "2026-10-18T07:00:00.000Z", id: "b" },
+      { startedAt: "2026-10-17T18:00:00.000Z", id: "c" },
+    ]);
+    expect(days.map((d) => d.id)).toEqual(["2026-10-18", "2026-10-17"]);
+    expect(days[1]!.items.map((i) => i.id)).toEqual(["c", "a"]);
+  });
+
+  it("respects day limit", () => {
+    const days = groupActivitiesByDay(
+      [
+        { startedAt: "2026-10-18T12:00:00.000Z" },
+        { startedAt: "2026-10-17T12:00:00.000Z" },
+        { startedAt: "2026-10-16T12:00:00.000Z" },
+      ],
+      2,
+    );
+    expect(days.map((d) => d.id)).toEqual(["2026-10-18", "2026-10-17"]);
+  });
+});
 
 describe("planJourneyTrail", () => {
   it("keeps start centered and never repeats a lane consecutively", () => {
@@ -17,32 +42,40 @@ describe("planJourneyTrail", () => {
 
   it("puts future on the right when today is not already right", () => {
     expect(planJourneyTrail([]).future).toBe("r");
-    expect(planJourneyTrail([{ id: "a" }]).future).toBe("r");
-    expect(planJourneyTrail([{ id: "b" }, { id: "a" }]).future).toBe("r");
+    expect(planJourneyTrail([{ id: "2026-10-17" }]).future).toBe("r");
+    expect(
+      planJourneyTrail([{ id: "2026-10-18" }, { id: "2026-10-17" }]).future,
+    ).toBe("r");
   });
 
-  it("keeps earlier session lanes stable when a newer session is prepended", () => {
-    const before = planJourneyTrail([{ id: "newish" }, { id: "oldest" }]);
-    const after = planJourneyTrail([
-      { id: "newest" },
-      { id: "newish" },
-      { id: "oldest" },
+  it("keeps earlier day lanes stable when a newer activity-day is prepended", () => {
+    // Oct 17 alone, then user sleeps and logs Oct 18 — 17th must not move.
+    const on17 = planJourneyTrail([{ id: "2026-10-17" }]);
+    const on18 = planJourneyTrail([
+      { id: "2026-10-18" },
+      { id: "2026-10-17" },
     ]);
-    // sessions arrays are newest-first — oldest stays at the end with same lane
-    expect(after.sessions[2]).toBe(before.sessions[1]); // oldest
-    expect(after.sessions[1]).toBe(before.sessions[0]); // newish
-    expect(after.start).toBe("c");
-    expect(lanesHaveNoConsecutiveRepeats([
-      after.future,
-      after.today,
-      ...after.sessions,
-      after.start,
-    ])).toBe(true);
+    expect(on18.days[1]).toBe(on17.days[0]);
+    expect(on18.start).toBe("c");
+    expect(
+      lanesHaveNoConsecutiveRepeats([
+        on18.future,
+        on18.today,
+        ...on18.days,
+        on18.start,
+      ]),
+    ).toBe(true);
   });
 
-  it("prefers today on center once at least one session exists", () => {
-    expect(planJourneyTrail([{ id: "a" }]).today).toBe("c");
-    // Zero sessions: start is already center, so today must step aside
+  it("does not add a lane when a second workout lands on an existing day", () => {
+    const oneWorkout = planJourneyTrail([{ id: "2026-10-17" }]);
+    // Same day id — still one stop in the plan input.
+    const twoWorkoutsSameDay = planJourneyTrail([{ id: "2026-10-17" }]);
+    expect(twoWorkoutsSameDay.days).toEqual(oneWorkout.days);
+  });
+
+  it("prefers today on center once at least one activity-day exists", () => {
+    expect(planJourneyTrail([{ id: "2026-10-17" }]).today).toBe("c");
     expect(planJourneyTrail([]).today).not.toBe("c");
   });
 });
