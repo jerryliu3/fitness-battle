@@ -8,6 +8,7 @@ import {
   competeNow,
   countsOnTrack,
   formatVolume,
+  primaryFreezePeriodStart,
   sportById,
   type Activity,
 } from "@fitness-battle/shared";
@@ -26,6 +27,7 @@ export function TodayScreen() {
   if (!state) return <p className="fb-copy">Loading your week…</p>;
   const route = buildTodayRoute(state);
   const now = competeNow(state);
+  const frozen = state.frozenPeriods.includes(primaryFreezePeriodStart(state));
   const counted = state.activities.filter(
     (a) => countsOnTrack(a, "open") && new Date(a.startedAt) <= now,
   );
@@ -106,6 +108,12 @@ export function TodayScreen() {
         <h1>Just one good move.</h1>
         <p className="fb-copy">Small steps. A week that adds up.</p>
       </header>
+      {frozen && (
+        <div className="fb-pill" style={{ marginBottom: "16px" }}>
+          <b>❄ Week frozen</b>
+          <span>Your Elo rating is protected through next Monday.</span>
+        </div>
+      )}
       <button
         className="focus-suggestion"
         onClick={() => {

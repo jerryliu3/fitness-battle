@@ -178,10 +178,20 @@ export function BootSplash({ waiting = false, onAnimationComplete, progress }: B
     });
     play();
 
+    // Fallback: If page is opened in a background tab or emulation where document.hidden is true,
+    // settle after the animation duration so the app is never blocked forever.
+    const fallbackTimer = window.setTimeout(() => {
+      if (!completed.current && !disposed) {
+        settle();
+        finish();
+      }
+    }, EMBER_LAUNCH_DURATION + 1000);
+
     return () => {
       disposed = true;
       drawRef.current = null;
       cancelAnimationFrame(raf);
+      window.clearTimeout(fallbackTimer);
       running = false;
       observer.disconnect();
       media.removeEventListener("change", preferenceChanged);

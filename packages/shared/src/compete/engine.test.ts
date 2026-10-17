@@ -196,6 +196,10 @@ describe("compete engine", () => {
     );
     expect(open?.frozen).toBe(true);
     expect(open?.eloAfter).toBe(open?.eloBefore);
+
+    const unfrozen = reduceCompete(frozen, { type: "unfreeze", now });
+    expect(unfrozen.freezesLeft).toBe(joined.freezesLeft);
+    expect(unfrozen.frozenPeriods).toEqual(joined.frozenPeriods);
   });
 
   it("migrates older compete payloads without period history", () => {

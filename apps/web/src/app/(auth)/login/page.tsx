@@ -46,7 +46,7 @@ function LoginForm() {
 
   return (
     <section className="fb-card fb-auth-card">
-      <p className="fb-kicker">Fitness Battle</p>
+      <p className="fb-kicker">overtaek</p>
       <h1 className="fb-title">Sign in</h1>
       <p className="fb-copy">
         Browse freely. Sign in when you are ready to join a board or open You.
@@ -73,11 +73,28 @@ function LoginForm() {
             required
           />
         </label>
-        {error ? <p className="fb-error">{error}</p> : null}
+        {error ? (
+          <p className="fb-error" role="alert" aria-live="assertive">
+            {error}
+          </p>
+        ) : null}
         <button type="submit" className="fb-btn" disabled={busy}>
           {busy ? "Signing in…" : "Sign in"}
         </button>
       </form>
+      <p className="fb-note">
+        Forgot password?{" "}
+        <button
+          type="button"
+          className="fb-btn-ghost"
+          style={{ padding: 0, minHeight: "auto", display: "inline", textDecoration: "underline" }}
+          onClick={() =>
+            setError("Password reset: Sign up with a new email for local demo mode or contact support.")
+          }
+        >
+          Reset info
+        </button>
+      </p>
       <p className="fb-note">
         New here?{" "}
         <Link href={buildSignupHref(next)}>Create an account</Link>

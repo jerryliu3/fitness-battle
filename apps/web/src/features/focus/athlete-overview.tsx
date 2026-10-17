@@ -31,6 +31,13 @@ export function AthleteOverview({
   const elo = rating?.openElo ?? 1000;
   const season = seasonSummary(state);
   const unit = distanceUnitLabel(state.units);
+  const hasVerified =
+    state.activities.some(
+      (a) => countsOnTrack(a, "verified") && a.sport === state.primary,
+    ) ||
+    state.periodResults.some(
+      (r) => r.sport === state.primary && r.track === "verified",
+    );
   const history = state.periodResults
     .filter((r) => r.sport === state.primary && r.track === "open")
     .slice()
@@ -88,8 +95,8 @@ export function AthleteOverview({
             <strong>{elo.toLocaleString()}</strong>
           </div>
           <span className="focus-status">
-            {rating?.verifiedElo ?? 1000}
-            <small>GPS-verified Elo</small>
+            {hasVerified ? (rating?.verifiedElo ?? 1000) : "—"}
+            <small>{hasVerified ? "GPS-verified Elo" : "GPS uncalibrated"}</small>
           </span>
         </div>
         <svg

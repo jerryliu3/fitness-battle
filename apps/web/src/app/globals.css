@@ -412,10 +412,11 @@ a {
 .fb-modal {
   position: fixed;
   inset: 0;
-  z-index: 40;
+  z-index: 200;
   display: grid;
   place-items: end center;
   padding: 16px;
+  padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px));
 }
 
 .fb-modal-backdrop {

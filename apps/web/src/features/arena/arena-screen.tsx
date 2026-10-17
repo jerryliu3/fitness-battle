@@ -14,6 +14,7 @@ import { WeekReveal } from "@/features/split/components/week-reveal";
 import { Sheet } from "@/ui/sheet";
 import {
   competeNow,
+  primaryFreezePeriodStart,
   SPORTS,
   type SportId,
   type ScoreTrack,
@@ -29,11 +30,13 @@ export function ArenaScreen() {
   const [track, setTrack] = useState<ScoreTrack>("open");
   if (!state) return <p className="fb-copy">Loading your lanes…</p>;
   const now = competeNow(state);
+  const frozen = state.frozenPeriods.includes(primaryFreezePeriodStart(state));
   const active = state.ratings.filter((r) => r.optedIn);
   const board = buildSplitBoard(state, state.primary, track, now);
   const model = buildFieldModel(state, state.primary, track, now);
   function participate(_reason: string, action: () => void) {
     if (!user) {
+      setRegister(false);
       setAuthOpen(true);
       return;
     }
@@ -50,6 +53,12 @@ export function ArenaScreen() {
         <h1>A little further than before.</h1>
         <p className="fb-copy">Your effort. Your field. Your past self.</p>
       </header>
+      {frozen && (
+        <div className="fb-pill" style={{ marginBottom: "16px" }}>
+          <b>❄ Week frozen</b>
+          <span>Your Elo rating is protected through next Monday.</span>
+        </div>
+      )}
       <div className="focus-registration-tabs">
         {active.map((r) => (
           <button

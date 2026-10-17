@@ -75,7 +75,7 @@ export function NotificationSettings() {
           : " Stored on this device only (demo).";
       setNote(
         next.enabled
-          ? `Push armed on this browser. Delivery still uses a stub token until APNs/FCM is wired.${synced}`
+          ? `Push notifications enabled for this browser.${synced}`
           : `Push turned off on this device.${synced}`,
       );
     } finally {
@@ -123,12 +123,9 @@ export function NotificationSettings() {
 
   return (
     <section className="fb-card" id="notifications">
-      <h2>Notifications</h2>
       <p className="fb-copy">
-        Control push for this browser and your account. Preferences sync when
-        you are signed in with live Supabase. Web uses the browser Notification
-        API locally; iOS/Android register Expo push tokens and the server sends
-        through the Expo Push Service (APNs/FCM).
+        Control reminders, weekly summaries, and competition alerts for this
+        browser and your account.
       </p>
 
       <div className="fb-row">
@@ -136,9 +133,6 @@ export function NotificationSettings() {
           Push notifications
           <small>
             {permissionLabel(current.permissionStatus)}
-            {current.registration?.token
-              ? ` · ${current.registration.stub ? "stub" : "live"} token`
-              : ""}
             {accountPersisted ? " · account sync on" : " · device only"}
           </small>
         </span>
