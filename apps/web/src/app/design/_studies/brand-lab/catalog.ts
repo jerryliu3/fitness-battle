@@ -239,26 +239,26 @@ export const BRAND_CONCEPTS: readonly BrandConcept[] = [
     traits: ["Quiet surfaces", "Soft depth", "Personal finishes"],
     role: "A warm, familiar companion whose skin belongs to the athlete.",
     recommendation:
-      "Recommended: Chain Reaction’s warmth, quieter surfaces, and a little tactile depth.",
+      "The warmer, softer comparison: familiar surfaces with a little tactile depth.",
   },
   {
     id: "open-field",
     name: "Open Field",
     family: "neutral",
     className: "open",
-    premise: "Cool neutral foundation · clear sporting context",
+    premise: "Warm neutral foundation · clear sporting context",
     headline: "Room for every\nversion of you.",
     heading: "Find your next move.",
     eyebrow: "YOUR RUNNING WEEK",
     rankTitle: "People in your field",
     chart: "area",
-    colors: ["#263c37", "#c4e5d7", "#f5f8f7", "#dfe9e4"],
+    colors: ["#282f2c", "#f1c75b", "#fafaf7", "#e6e8e1"],
     fonts: "DM Sans + Space Grotesk",
     emberName: "Your field companion",
     traits: ["Airy grid", "Fixed lane identity", "Quiet contrast"],
     role: "Colorful skins stay expressive on a calm, legible sporting field.",
     recommendation:
-      "The most sport-focused neutral option; the app stays composed as skins get brighter.",
+      "Selected direction: Open Field’s sporting structure with Everyday Club’s warm white, charcoal and gold.",
   },
   {
     id: "pocket-arena",
@@ -411,7 +411,7 @@ export const TERRITORY_ART: Record<string, string> = {
   "play-forward": "play",
   "chain-reaction": "chain",
 };
-export const DEFAULT_CONCEPT = "everyday-club";
+export const DEFAULT_CONCEPT = "open-field";
 export function getConcept(id: string | null | undefined): BrandConcept {
   return (
     BRAND_CONCEPTS.find((c) => c.id === id) ??

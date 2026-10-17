@@ -36,7 +36,7 @@ describe("brand gallery review state", () => {
   });
   it("normalizes an unknown deep link without executing or reflecting it", () => {
     expect(parseSelection("<script>", "../../today")).toEqual({
-      concept: "everyday-club",
+      concept: "open-field",
       view: "product",
     });
     expect(parseSelection("chain-reaction", "locker")).toEqual({

@@ -291,7 +291,8 @@
     monospace;
 }
 .brand-preview .current,
-.brand-preview .everyday {
+.brand-preview .everyday,
+.brand-preview .open {
   --ot-bg: #fafaf7;
   --ot-surface: #fff;
   --ot-ink: #282f2c;
@@ -310,15 +311,6 @@
   --ot-signal: #f5c451;
 }
 .brand-preview .open {
-  --ot-bg: #f5f8f7;
-  --ot-surface: #fff;
-  --ot-ink: #263c37;
-  --ot-muted: #60736c;
-  --ot-signal: #c4e5d7;
-  --ot-on-signal: #263c37;
-  --ot-line: #dbe5df;
-  --ot-soft: #e9f0ec;
-  --ot-secondary: #7d9a8c;
   --ot-radius: 15px;
   --ot-display: var(--font-form), sans-serif;
 }

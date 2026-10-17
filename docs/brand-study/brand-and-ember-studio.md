@@ -10,7 +10,7 @@ The [original ten-territory strategy](ten-territories.md) preserves the first-ph
 
 The user favours **Chain Reaction** and **Play Forward**, particularly the former's warmth and the latter's modest dimensionality. The complex, glossy Play Forward mascot is too elaborate for the desired default. The emerging direction is a broadly usable, calmer app with one recognizable star character and optional cosmetic finishes.
 
-The recommendation is **Everyday Club**: warm neutral surfaces, charcoal type, a small fixed golden accent, readable standings, and a little physical depth on key controls. The original Ember is the welcoming default. A personal Ember can become mint, lilac, violet or another finish without recoloring the navigation, affecting chart semantics or replacing the app's brand.
+The selected direction after review is **Open Field with Everyday Club’s palette**: warm neutral surfaces, charcoal type and a small fixed golden accent, combined with Open Field’s airy grid, comparison-first hierarchy and restrained controls. This is an evolution of the existing app rather than a wholesale visual reset. The gallery opens on this combination by default. The original Ember is the welcoming default. A personal Ember can become mint, lilac, violet or another finish without recoloring the navigation, affecting chart semantics or replacing the app's brand.
 
 This separates three decisions:
 
@@ -30,8 +30,8 @@ The ten territories are The Pass, After Hours, Rival Club, Good Pressure, Margin
 
 | Direction | Foundation | Distinctive behavior | Best reason to choose it |
 | --- | --- | --- | --- |
-| Everyday Club — recommended | Warm white, charcoal, small fixed gold accent | Soft controls, subtly raised surfaces, friendly hierarchy | Chain Reaction's human warmth with broad visual compatibility |
-| Open Field | Cool fog, pine type, restrained mint | Airy grid, comparison before standings, a clear sporting field | The most athletic and composed foundation |
+| Everyday Club | Warm white, charcoal, small fixed gold accent | Soft controls, subtly raised surfaces, friendly hierarchy | Chain Reaction's human warmth with broad visual compatibility |
+| Open Field — selected | Everyday Club’s warm white, charcoal and gold | Airy grid, comparison before standings, a clear sporting field | The most athletic and composed foundation |
 | Pocket Arena | Cloud white, charcoal-violet, quiet lavender | Slight button bevels and tactile hierarchy, with a simpler star | Play Forward's satisfying depth without its visual complexity |
 
 All three support the same skin collection. Changing the finish updates Ember in the hero and character preview while leaving product colors, distances, rank and chart meaning intact.
@@ -57,7 +57,7 @@ These are design precedents, not evidence that a particular skin system will imp
 
 ## Review paths
 
-- Recommended neutral default: `/design/brand?concept=everyday-club&view=product`
+- Recommended neutral default: `/design/brand?concept=open-field&view=product`
 - Current Ember: `/design/brand?concept=current-ember&view=product`
 - Pocket Arena locker: `/design/brand?concept=pocket-arena&view=locker`
 - Original Chain Reaction: `/design/brand?concept=chain-reaction&view=product`
@@ -83,3 +83,20 @@ Validation covers workspace typechecking, relevant study tests and the full test
 - [Ember locker with the simplified Arcade finish equipped](reviews/ember-locker-desktop.png).
 
 The initial sandboxed build could not resolve Google Fonts. Re-running with normal network access completed successfully. This required no project configuration or dependency changes.
+
+## Ember art and animation decision
+
+The preferred character references are **The Pass / Challenger**, **Marginal Gains** and **Higher Ground**. Preserve what makes their actual looks appealing: compact star proportions, rounded dimensional volume, a clean face and a confident expression. Color and material are adjustable; they need not define separate character anatomies.
+
+Recommended production art brief:
+
+- Use one recognizable five-point body, crest and face placement, with shared deformation controls. Challenger supplies the confident character; Marginal Gains supplies the restrained, softly beveled finish. Keep golden Ember as the default colorway.
+- Treat Higher Ground’s frosted blue as a cosmetic finish. Begin with opaque satin shading and restrained highlights; true refraction is optional, not required for the character to feel dimensional.
+- Keep facial features on a stable readable surface. Avoid tiny facets, floating accessories and painted highlights that fight the bend of a limb. Judge the silhouette at 32 and 64 px as well as in the large locker preview.
+- Before rebuilding a whole collection, prove one revised body with idle, run, a three-quarter turn and celebration. Check limb intersections, crest recovery, face stability, small-size readability, reduced motion and representative phones. Then apply gold, mint and frosted-blue finishes to the same motion.
+
+**Implemented today:** the locker recolors the existing procedural vector rig and reuses its motion. It does not animate the exact generated territory renders or replace the production character. The current rig provides art-directed depth and modest turns, not full 3D geometry or material simulation; see the [mascot model documentation](../mascot/README.md).
+
+**Recommended next decision:** refine the current 2.5D rig if the desired look can be expressed with controlled gradients, side planes and a fixed viewing range. If matching the sculpted renders, real side/back turns or changing light is essential, build one rigged 3D master and reuse its skeleton and expression controls across material variants. That requires modeling and motion validation, rather than animating a PNG. [Three.js glTF support](https://threejs.org/docs/pages/GLTFLoader.html) provides a delivery path for modeled scenes and animation; its [physical material documentation](https://threejs.org/docs/pages/MeshPhysicalMaterial.html) describes transmission and its higher rendering cost. Our preference for satin over real-time glass is an art and performance recommendation, not a measured device result.
+
+The complexity of a still render alone does not determine motion quality. Consistent geometry, a well-authored rig and restrained materials matter more. No new animation dependency or production skin entitlement is introduced by this decision.
