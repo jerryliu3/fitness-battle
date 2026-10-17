@@ -32,6 +32,7 @@ import {
 } from "./history";
 import {
   ELO_BASE,
+  ELO_UNRANKED,
   PROVIDERS,
   SPORT_IDS,
   SPORTS,
@@ -153,6 +154,61 @@ function withRating(
   };
 }
 
+/** Lift unranked (0) effort scores to the account baseline of 1000. */
+export function withAccountEloBaseline(state: CompeteState): CompeteState {
+  let changed = false;
+  const ratings = state.ratings.map((item) => {
+    const openElo = item.openElo <= ELO_UNRANKED ? ELO_BASE : item.openElo;
+    const verifiedElo =
+      item.verifiedElo <= ELO_UNRANKED ? ELO_BASE : item.verifiedElo;
+    const lockOpen = item.lockOpen <= ELO_UNRANKED ? ELO_BASE : item.lockOpen;
+    const lockVerified =
+      item.lockVerified <= ELO_UNRANKED ? ELO_BASE : item.lockVerified;
+    if (
+      openElo === item.openElo &&
+      verifiedElo === item.verifiedElo &&
+      lockOpen === item.lockOpen &&
+      lockVerified === item.lockVerified
+    ) {
+      return item;
+    }
+    changed = true;
+    return { ...item, openElo, verifiedElo, lockOpen, lockVerified };
+  });
+  return changed ? { ...state, ratings } : state;
+}
+
+function isUnsignedEmptyCompete(state: CompeteState): boolean {
+  return (
+    (state.name === "Guest" || state.name === "You") &&
+    !state.onboardingCompleted &&
+    state.activities.length === 0 &&
+    state.periodResults.length === 0 &&
+    state.ratings.every((item) => !item.optedIn)
+  );
+}
+
+/** Guest empty state that still carries the old 1000 baseline → unranked 0. */
+function demoteGuestBaselineRatings(ratings: Rating[]): Rating[] {
+  return ratings.map((item) => {
+    if (
+      item.openElo === ELO_BASE &&
+      item.verifiedElo === ELO_BASE &&
+      item.lockOpen === ELO_BASE &&
+      item.lockVerified === ELO_BASE
+    ) {
+      return {
+        ...item,
+        openElo: ELO_UNRANKED,
+        verifiedElo: ELO_UNRANKED,
+        lockOpen: ELO_UNRANKED,
+        lockVerified: ELO_UNRANKED,
+      };
+    }
+    return item;
+  });
+}
+
 /** Normalize persisted JSON from older clients (missing link status / onboarding). */
 export function migrateCompeteState(parsed: CompeteState): CompeteState {
   const wave = waveWindowAt(new Date());
@@ -240,7 +296,7 @@ export function migrateCompeteState(parsed: CompeteState): CompeteState {
   const enrollments = Array.isArray((parsed as CompeteState).enrollments)
     ? (parsed as CompeteState).enrollments
     : [];
-  return {
+  const migrated: CompeteState = {
     ...parsed,
     clock,
     ratings,
@@ -293,6 +349,12 @@ export function migrateCompeteState(parsed: CompeteState): CompeteState {
         ? parsed.name.trim()
         : "Guest",
   };
+
+  // Older guests stored the account baseline (1000) before they had a score.
+  if (isUnsignedEmptyCompete(migrated)) {
+    return { ...migrated, ratings: demoteGuestBaselineRatings(migrated.ratings) };
+  }
+  return migrated;
 }
 
 function parseUnitSystem(value: unknown): UnitSystem {
@@ -328,11 +390,11 @@ export function freshState(now: Date = new Date()): CompeteState {
     clock: { kind: "weekly", periodStart },
     ratings: SPORT_IDS.map((sport) => ({
       sport,
-      verifiedElo: ELO_BASE,
-      openElo: ELO_BASE,
+      verifiedElo: ELO_UNRANKED,
+      openElo: ELO_UNRANKED,
       optedIn: false,
-      lockVerified: ELO_BASE,
-      lockOpen: ELO_BASE,
+      lockVerified: ELO_UNRANKED,
+      lockOpen: ELO_UNRANKED,
       lockPeriod: periodStart,
     })),
     activities: [],
@@ -392,6 +454,10 @@ function enrollSport(
   viewerId = "you",
 ): CompeteState {
   const mine = rating(state, sport);
+  // First join from an unranked guest/account starts at the account baseline.
+  const openElo = mine.openElo <= ELO_UNRANKED ? ELO_BASE : mine.openElo;
+  const verifiedElo =
+    mine.verifiedElo <= ELO_UNRANKED ? ELO_BASE : mine.verifiedElo;
   const pin = state.crewBoard;
   const waveStart = waveWindowAt(now).waveStart.toISOString();
 
@@ -401,7 +467,7 @@ function enrollSport(
       : densityMatcher.assignGroup({
           viewerId,
           viewerName: state.name,
-          viewerElo: mine.openElo,
+          viewerElo: openElo,
           sport,
           now,
           realPool: realPlayerPool,
@@ -412,8 +478,10 @@ function enrollSport(
   return {
     ...withRating(state, sport, {
       optedIn: true,
-      lockVerified: mine.verifiedElo,
-      lockOpen: mine.openElo,
+      openElo,
+      verifiedElo,
+      lockVerified: verifiedElo,
+      lockOpen: openElo,
       lockPeriod: enrollment.waveStart,
     }),
     enrollments: [
