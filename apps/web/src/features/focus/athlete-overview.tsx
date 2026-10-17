@@ -64,8 +64,8 @@ export function AthleteOverview({
   const [avatarError, setAvatarError] = useState<string | null>(null);
 
   const rating = state.ratings.find((r) => r.sport === state.primary);
-  const openElo = rating?.openElo ?? 1000;
-  const verifiedElo = rating?.verifiedElo ?? 1000;
+  const openElo = rating?.openElo ?? 0;
+  const verifiedElo = rating?.verifiedElo ?? 0;
   const currentElo = track === "open" ? openElo : verifiedElo;
 
   const season = seasonSummary(state);
@@ -133,8 +133,8 @@ export function AthleteOverview({
     .slice()
     .sort((a, b) => a.periodStart.localeCompare(b.periodStart));
 
-  // Guests / new users start at 0, then jump to the base score on their
-  // starting day (first settled week, or today when there is no history yet).
+  // Guests stay at 0 until account creation / first join lifts them to 1000.
+  // Chart history before the start day stays at 0.
   const startIso =
     history.length > 0 ? history[0].periodStart.slice(0, 10) : todayIso;
 

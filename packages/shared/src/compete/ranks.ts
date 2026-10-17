@@ -55,6 +55,13 @@ export const RANK_BANDS: RankBand[] = [
 ];
 
 export function rankForElo(elo: number): RankBand {
+  if (elo <= 0) {
+    return {
+      name: "Unranked",
+      min: 0,
+      blurb: "No account baseline yet — create an account to start at 1000",
+    };
+  }
   const safe = clamp(ELO_FLOOR, ELO_CAP, elo);
   let band = RANK_BANDS[0]!;
   for (const candidate of RANK_BANDS) {

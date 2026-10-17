@@ -1,9 +1,11 @@
+import { withAccountEloBaseline } from "./engine";
 import { pendingRevealIdsFromResults } from "./history";
 import type { CompeteState } from "./sports";
 
 /**
  * Account-durable compete document. Strips QA-only clock pins so a debug week
  * close cannot become the athlete’s permanent settlement clock.
+ * Also lifts unranked guest scores (0) to the account baseline (1000).
  */
 export function sanitizeCompeteStateForAccount(
   state: CompeteState,
@@ -11,8 +13,11 @@ export function sanitizeCompeteStateForAccount(
   const withoutDemo =
     state.demoNow == null ? state : { ...state, demoNow: null };
   // Practice 1v1 is retired; strip any leftover rows on account write/load.
-  if (withoutDemo.duels.length === 0) return withoutDemo;
-  return { ...withoutDemo, duels: [] };
+  const withoutDuels =
+    withoutDemo.duels.length === 0
+      ? withoutDemo
+      : { ...withoutDemo, duels: [] };
+  return withAccountEloBaseline(withoutDuels);
 }
 
 /** Drop durable crewBoard pin; hydrate from crew_week_fields at load. */
