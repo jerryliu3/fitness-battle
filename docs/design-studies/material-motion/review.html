@@ -1,0 +1,2915 @@
+<!doctype html>
+<html lang="en" data-visualize-standalone>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="referrer" content="no-referrer">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline' 'unsafe-eval' 'wasm-unsafe-eval' blob: data: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://esm.sh https://fonts.bunny.net https://fonts.googleapis.com https://fonts.gstatic.com https://unpkg.com; style-src 'unsafe-inline' blob: data: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://esm.sh https://fonts.bunny.net https://fonts.googleapis.com https://fonts.gstatic.com https://unpkg.com; img-src blob: data: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://esm.sh https://fonts.bunny.net https://fonts.googleapis.com https://fonts.gstatic.com https://unpkg.com; font-src blob: data: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://esm.sh https://fonts.bunny.net https://fonts.googleapis.com https://fonts.gstatic.com https://unpkg.com; media-src blob: data: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://esm.sh https://fonts.bunny.net https://fonts.googleapis.com https://fonts.gstatic.com https://unpkg.com; worker-src blob:; connect-src blob: data:; frame-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
+<title>Overtaek — selected material and motion directions</title>
+<style>:root{color-scheme:light dark;background:light-dark(rgb(255 255 255), rgb(24 24 24))}html,body{margin:0}body{box-sizing:border-box;padding:1rem;background:inherit}iframe{display:block;width:100%;height:calc(100vh - 2rem);margin:0 auto;border:0}</style>
+</head>
+<body>
+<iframe id="codex-visualization" sandbox="allow-scripts" referrerpolicy="no-referrer" title="Overtaek — selected material and motion directions" data-srcdoc="&lt;!doctype html&gt;
+&lt;html lang=&quot;en&quot; data-visualize-standalone&gt;
+&lt;head&gt;
+&lt;meta charset=&quot;utf-8&quot;&gt;
+&lt;meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1&quot;&gt;
+&lt;meta name=&quot;referrer&quot; content=&quot;no-referrer&quot;&gt;
+&lt;meta http-equiv=&quot;Content-Security-Policy&quot; content=&quot;default-src &#x27;none&#x27;; script-src &#x27;unsafe-inline&#x27; &#x27;unsafe-eval&#x27; &#x27;wasm-unsafe-eval&#x27; blob: data: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://esm.sh https://fonts.bunny.net https://fonts.googleapis.com https://fonts.gstatic.com https://unpkg.com; style-src &#x27;unsafe-inline&#x27; blob: data: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://esm.sh https://fonts.bunny.net https://fonts.googleapis.com https://fonts.gstatic.com https://unpkg.com; img-src blob: data: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://esm.sh https://fonts.bunny.net https://fonts.googleapis.com https://fonts.gstatic.com https://unpkg.com; font-src blob: data: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://esm.sh https://fonts.bunny.net https://fonts.googleapis.com https://fonts.gstatic.com https://unpkg.com; media-src blob: data: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://esm.sh https://fonts.bunny.net https://fonts.googleapis.com https://fonts.gstatic.com https://unpkg.com; worker-src blob:; connect-src blob: data:; frame-src &#x27;none&#x27;; object-src &#x27;none&#x27;; base-uri &#x27;none&#x27;; form-action &#x27;none&#x27;&quot;&gt;
+&lt;title&gt;Overtaek — selected material and motion directions&lt;/title&gt;
+&lt;style&gt;:root {
+  color-scheme: light dark;
+  background-color: var(
+    --background,
+    var(--color-background-primary, light-dark(rgb(255 255 255), rgb(24 24 24)))
+  ) !important;
+
+  /* Agent-facing contract; keep in sync with SKILL.md. */
+  --background: var(
+    --color-background-primary,
+    light-dark(rgb(255 255 255), rgb(24 24 24))
+  );
+  --foreground: var(
+    --color-text-primary,
+    light-dark(rgb(26 28 31), rgb(255 255 255))
+  );
+  --card: color-mix(in oklab, var(--foreground) 5%, var(--background));
+  --card-foreground: var(
+    --color-text-primary,
+    light-dark(rgb(26 28 31), rgb(255 255 255))
+  );
+  --popover: var(
+    --color-background-secondary,
+    light-dark(rgb(255 255 255), rgb(45 45 45))
+  );
+  --popover-foreground: var(
+    --color-text-primary,
+    light-dark(rgb(26 28 31), rgb(255 255 255))
+  );
+  --primary: var(
+    --color-text-info,
+    light-dark(rgb(51 156 255), rgb(131 195 255))
+  );
+  --primary-foreground: var(
+    --color-text-inverse,
+    light-dark(rgb(255 255 255), rgb(13 13 13))
+  );
+  --secondary: var(
+    --color-background-secondary,
+    light-dark(rgb(255 255 255 / 96%), rgb(54 54 54 / 96%))
+  );
+  --secondary-foreground: var(
+    --color-text-primary,
+    light-dark(rgb(26 28 31), rgb(255 255 255))
+  );
+  --muted: color-mix(in srgb, var(--foreground) 10%, transparent);
+  --muted-foreground: var(
+    --color-text-secondary,
+    light-dark(rgb(26 28 31 / 49.4%), rgb(255 255 255 / 49.8%))
+  );
+  --accent: var(
+    --color-background-info,
+    light-dark(rgb(229 242 255), rgb(13 39 63))
+  );
+  --accent-foreground: var(
+    --color-text-info,
+    light-dark(rgb(51 156 255), rgb(131 195 255))
+  );
+  --destructive: var(
+    --color-text-warning,
+    light-dark(rgb(226 85 7), rgb(255 133 73))
+  );
+  --border: var(
+    --color-border-secondary,
+    light-dark(rgb(26 28 31 / 8%), rgb(255 255 255 / 8.2%))
+  );
+  --input: var(
+    --color-border-primary,
+    light-dark(
+      rgb(26 28 31 / 11.8%),
+      color-mix(in oklab, rgb(0 0 0) 10%, transparent)
+    )
+  );
+  --ring: var(
+    --color-ring-primary,
+    light-dark(rgb(51 156 255), rgb(131 195 255 / 76%))
+  );
+  --font-size-base: var(--font-text-md-size, 14px);
+  --blue: light-dark(rgb(51 156 255), rgb(51 156 255));
+  --orange: light-dark(rgb(226 85 7), rgb(251 106 34));
+  --green: light-dark(rgb(0 162 64), rgb(64 201 119));
+  --red: light-dark(rgb(224 46 42), rgb(255 103 100));
+  --purple: light-dark(rgb(146 79 247), rgb(173 123 249));
+  --yellow: light-dark(rgb(255 195 0), rgb(255 210 64));
+  --viz-series-1: var(--primary);
+  --viz-series-2: light-dark(rgb(243 136 59), rgb(245 154 86));
+  --viz-series-3: light-dark(rgb(93 201 119), rgb(116 213 139));
+  --viz-series-4: light-dark(rgb(235 119 177), rgb(240 143 192));
+  --viz-series-5: light-dark(rgb(155 121 236), rgb(170 145 239));
+  --viz-series-6: light-dark(rgb(58 185 177), rgb(90 203 194));
+
+  /* Internal implementation variables; not part of the agent contract. */
+  --font-sans: -apple-system, system-ui, &quot;Segoe UI&quot;, sans-serif;
+  --font-mono:
+    ui-monospace, SFMono-Regular, &quot;SF Mono&quot;, Menlo, Consolas, &quot;Liberation Mono&quot;,
+    monospace;
+  --font-size-normal: max(11px, var(--font-size-base));
+  --font-size-tooltip: calc(var(--font-size-base) - 1px);
+  --font-size-small: max(11px, calc(var(--font-size-base) - 2px));
+  --font-size-h1: calc(var(--font-size-normal) * 1.7142857143);
+  --font-size-h2: calc(var(--font-size-normal) * 1.4285714286);
+  --font-size-h3: calc(var(--font-size-normal) * 1.2857142857);
+  --font-weight-normal: 430;
+  --font-weight-medium: 500;
+  --icon-size: 16px;
+  --line-height-normal: calc(var(--font-size-normal) * 1.5);
+  --line-height-tooltip: calc(var(--font-size-tooltip) * 1.4285714286);
+  --line-height-small: calc(var(--font-size-small) + 4px);
+  --corner-shape: round;
+  --radius: var(--border-radius-lg, 10px);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-2xl: calc(var(--radius) * 1.6);
+  --radius-full: 9999px;
+  --shadow-sm: 0 1px 2px -1px rgb(0 0 0 / 8%);
+  --checkmark-image: url(&quot;data:image/svg+xml,%3Csvg xmlns=&#x27;http://www.w3.org/2000/svg&#x27; viewBox=&#x27;0 0 17 17&#x27;%3E%3Cpath d=&#x27;M12.8961 3.64101C13.1297 3.41418 13.4984 3.37523 13.7779 3.56581C14.0571 3.75635 14.1554 4.11331 14.0299 4.41347L13.9615 4.53847L7.71151 13.7045C7.59411 13.8767 7.4063 13.9877 7.19881 14.0072C6.99136 14.0267 6.78564 13.9533 6.63826 13.806L2.88826 10.056L2.79842 9.9457C2.6192 9.67407 2.64927 9.30496 2.88826 9.06581C3.12738 8.82669 3.49647 8.79676 3.76815 8.97597L3.8785 9.06581L7.03084 12.2182L12.8053 3.74941L12.8961 3.64101Z&#x27;/%3E%3C/svg%3E&quot;);
+
+  /* Legacy aliases; not part of the current agent contract. */
+  --viz-bg: transparent;
+  --viz-panel: var(--card);
+  --viz-border: var(--border);
+  --viz-text: var(--foreground);
+  --viz-muted: var(--muted-foreground);
+  --viz-accent: var(--primary);
+  --viz-accent-text: var(--primary-foreground);
+  --viz-accent-bg: var(--accent);
+  --viz-font-size: var(--font-size-base);
+  --viz-warning: var(--destructive);
+}
+
+:root[data-theme=&quot;light&quot;] {
+  color-scheme: light;
+}
+
+:root[data-theme=&quot;dark&quot;] {
+  color-scheme: dark;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html &gt; body {
+  /* Preserve MCP aliases for older inline renderers without creating :root cycles. */
+  --color-background-primary: var(
+    --background,
+    light-dark(rgb(255 255 255), rgb(24 24 24))
+  );
+  --color-text-primary: var(
+    --foreground,
+    light-dark(rgb(26 28 31), rgb(255 255 255))
+  );
+  --color-border-secondary: var(
+    --border,
+    light-dark(rgb(26 28 31 / 8%), rgb(255 255 255 / 8.2%))
+  );
+
+  margin: 0;
+  padding: var(--visualize-paint-gutter, 0px);
+  color: var(--foreground);
+  background: transparent !important;
+  font-family: var(--font-sans) !important;
+  font-size: var(--font-size-normal);
+  font-weight: var(--font-weight-normal);
+  line-height: var(--line-height-normal);
+}
+
+.cursor-interaction {
+  cursor: var(--cursor-interaction, pointer);
+}
+
+a {
+  color: color-mix(in srgb, var(--viz-accent) 80%, var(--viz-text) 20%);
+  cursor: var(--cursor-interaction, pointer);
+  font-weight: var(--font-weight-medium, 500);
+  text-decoration: none;
+  text-underline-offset: 2px;
+}
+
+a:is(:hover, :focus-visible) {
+  text-decoration-line: underline;
+  text-decoration-style: dashed;
+  text-decoration-thickness: 0.5px;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+p {
+  margin-block: 0;
+}
+
+h1 {
+  font-size: var(--font-size-h1);
+  font-weight: var(--font-weight-medium);
+  line-height: 1.25;
+}
+
+h2 {
+  font-size: var(--font-size-h2);
+  font-weight: var(--font-weight-medium);
+  line-height: 1.25;
+}
+
+h3,
+h4,
+h5,
+h6 {
+  font-size: var(--font-size-h3);
+  font-weight: var(--font-weight-medium);
+  line-height: 1.3;
+}
+
+b,
+strong,
+th {
+  font-weight: var(--font-weight-medium);
+}
+
+code:not(pre code) {
+  display: inline;
+  padding: 1px 6px;
+  border-radius: var(--radius-sm);
+  corner-shape: var(--corner-shape);
+  background: var(--muted);
+  font-family: var(--font-mono);
+  font-size: 0.92em;
+  overflow-wrap: anywhere;
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+  word-break: break-word;
+}
+
+.table-responsive {
+  width: 100%;
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  color: var(--foreground);
+  font: inherit;
+  text-align: start;
+}
+
+.table :is(th, td) {
+  padding-block: 10px;
+  padding-inline: 0 24px;
+  overflow-wrap: anywhere;
+  border-bottom: 1px solid var(--border);
+  text-align: start;
+  vertical-align: top;
+}
+
+.table-responsive &gt; .table :is(th, td) {
+  overflow-wrap: break-word;
+}
+
+.table :is(th, td):last-child {
+  padding-inline-end: 0;
+}
+
+.table :is(caption, thead th) {
+  font-weight: 600;
+}
+
+.table thead th {
+  padding-block: 8px;
+  border-bottom-color: color-mix(in srgb, var(--foreground) 16%, transparent);
+}
+
+.table tbody tr:last-child :is(th, td) {
+  border-bottom: 0;
+}
+
+.table.table-sm :is(th, td) {
+  padding-block: 6px;
+}
+
+.table.table-sm :is(th, td):not(:last-child) {
+  padding-inline-end: 16px;
+}
+
+.table :is(.text-end, [align=&quot;right&quot;]) {
+  text-align: end;
+  font-variant-numeric: tabular-nums;
+}
+
+.table :is(.text-center, [align=&quot;center&quot;]) {
+  text-align: center;
+}
+
+.table .text-nowrap {
+  white-space: nowrap;
+}
+
+#widget {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+  padding: 0;
+  background: transparent !important;
+}
+
+.card {
+  min-width: 0;
+  padding: 12px;
+  overflow: hidden;
+  overflow-wrap: break-word;
+  border-radius: var(--radius-2xl);
+  corner-shape: var(--corner-shape);
+  color: var(--card-foreground);
+  background: var(--card);
+}
+
+.widget {
+  min-width: 0;
+  overflow: hidden;
+  border: 0;
+  border-radius: var(--radius-lg);
+  corner-shape: var(--corner-shape);
+  box-shadow: 0 0 0 0.5px var(--border-strong, var(--border));
+  color: var(--foreground);
+  background: var(--background);
+}
+
+#widget &gt; :not(.card, .widget, .progress) {
+  width: 100% !important;
+  max-width: none !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.tooltip {
+  position: fixed;
+  z-index: 50;
+  top: 0;
+  left: 0;
+  width: max-content;
+  max-width: min(
+    20rem,
+    var(--tooltip-available-width, calc(100vw - 10px)),
+    calc(100vw - 10px)
+  );
+  max-height: min(
+    var(--tooltip-available-height, calc(100vh - 10px)),
+    calc(100vh - 10px)
+  );
+  padding: 4px 8px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  corner-shape: var(--corner-shape);
+  color: var(--popover-foreground);
+  background: var(--popover);
+  box-shadow: none;
+  font-size: var(--font-size-tooltip);
+  line-height: var(--line-height-tooltip);
+  overflow-wrap: break-word;
+  white-space: normal;
+  pointer-events: none;
+  user-select: none;
+}
+
+.viz-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(max(180px, 24%), 1fr));
+  gap: 10px;
+}
+
+.viz-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.viz-stat-value {
+  font-size: var(--font-size-h2);
+  font-weight: var(--font-weight-medium);
+  line-height: 1.25;
+}
+
+.viz-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+
+hr {
+  width: 100%;
+  height: 1px;
+  margin-block: 6px;
+  border: 0;
+  background: var(--border);
+}
+
+.nav {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 4px;
+}
+
+.progress {
+  display: flex;
+  height: 8px;
+  margin-block: calc((var(--line-height-normal, 1.5em) - 8px) / 2);
+  overflow: hidden;
+  border: 0;
+  border-radius: var(--radius-full);
+  background: var(--muted);
+}
+
+.progress-bar:only-child {
+  border-radius: var(--radius-full);
+}
+
+.progress-bar {
+  height: 100%;
+  flex-shrink: 0;
+  border: 0;
+  background: var(--viz-series-1);
+}
+
+.viz-badge {
+  padding: 3px 8px;
+  border-radius: var(--radius-full);
+  color: var(--accent-foreground);
+  background: var(--accent);
+  font-weight: var(--font-weight-medium);
+}
+
+small,
+.text-small,
+.viz-badge {
+  font-size: var(--font-size-small);
+  line-height: var(--line-height-small);
+}
+
+.text-muted {
+  color: var(--muted-foreground);
+}
+
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.viz-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.viz-controls &gt; .form-label {
+  display: grid;
+  min-width: min(100%, 260px);
+  flex: 1 1 280px;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: baseline;
+  gap: 2px 12px;
+  margin-bottom: 0;
+}
+
+.viz-controls &gt; .form-label &gt; :is(.form-control, .form-range, .form-select) {
+  grid-column: 1 / -1;
+}
+
+.btn,
+.nav-link,
+.form-check-input,
+.form-control,
+.form-range,
+.form-select {
+  font: inherit;
+}
+
+.btn,
+.nav-link {
+  appearance: button;
+  display: inline-flex;
+  inline-size: fit-content;
+  max-inline-size: 100%;
+  min-height: 28px;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  margin: 0;
+  padding: 0 8px;
+  -webkit-app-region: no-drag;
+  border: 1px solid var(--input);
+  border-radius: var(--radius-lg);
+  corner-shape: var(--corner-shape);
+  color: var(--secondary-foreground);
+  background: var(--secondary);
+  cursor: var(--cursor-interaction, pointer);
+  text-align: center;
+  text-decoration: none;
+  white-space: nowrap;
+  user-select: none;
+  -webkit-font-smoothing: antialiased;
+}
+
+.btn:is(.btn-block, .viz-tile) {
+  inline-size: 100%;
+}
+
+.btn.viz-tile {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
+
+a.btn {
+  cursor: var(--cursor-interaction, pointer);
+  text-decoration: none;
+}
+
+.btn:not(:disabled):hover,
+.nav-link:not(:disabled):not([aria-disabled=&quot;true&quot;]):hover {
+  background: color-mix(in srgb, var(--foreground) 6%, var(--secondary));
+}
+
+.btn-primary {
+  border-color: transparent;
+  color: var(--primary-foreground);
+  background: var(--foreground);
+  background-clip: padding-box;
+}
+
+.btn-primary .text-muted {
+  color: color-mix(in srgb, var(--primary-foreground) 50%, transparent);
+}
+
+.btn-primary:not(:disabled):hover {
+  background: color-mix(in srgb, var(--foreground) 80%, transparent);
+  background-clip: padding-box;
+}
+
+.btn-ghost {
+  border-color: transparent;
+  color: var(--muted-foreground);
+  background: transparent;
+}
+
+.btn-ghost:not(:disabled):hover {
+  color: var(--foreground);
+  background: color-mix(in srgb, var(--foreground) 6%, var(--secondary));
+}
+
+.nav-pills .nav-link {
+  min-width: 0;
+  border-color: transparent;
+  color: var(--muted-foreground);
+  background: transparent;
+}
+
+.nav-justified .nav-link {
+  flex: 1 1 0;
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
+
+.nav-pills .nav-link.active {
+  color: var(--foreground);
+  background: var(--muted);
+}
+
+/* Shared preview chrome; product styles stay inside each variant. */
+.viz-dotted-background {
+  background-image: radial-gradient(
+    circle,
+    color-mix(in srgb, var(--foreground) 14%, transparent) 0.8px,
+    transparent 0.8px
+  );
+  background-position: center;
+  background-size: 16px 16px;
+}
+
+.viz-carousel {
+  position: relative;
+  min-width: 0;
+}
+
+.viz-carousel:has(&gt; .viz-carousel-controls) {
+  min-height: calc(60px + var(--viz-carousel-picker-height, 0px));
+  padding-bottom: 60px;
+}
+
+.viz-carousel &gt; [data-variant][hidden] {
+  display: none !important;
+}
+
+.viz-carousel &gt; [data-variant] {
+  isolation: isolate;
+}
+
+.viz-carousel-controls {
+  --viz-carousel-hover: light-dark(
+    color-mix(in srgb, var(--foreground) 5.4%, transparent),
+    color-mix(in srgb, var(--foreground) 7.8%, transparent)
+  );
+  position: absolute;
+  z-index: 2;
+  bottom: 8px;
+  left: 50%;
+  display: flex;
+  width: max-content;
+  /* Leave room for the host&#x27;s design-controls launcher at the trailing edge. */
+  max-width: calc(100% - 96px);
+  align-items: center;
+  gap: 0;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  color: var(--foreground);
+  background: var(--background);
+  font-family: var(--font-sans);
+  /* Match the settings dropdown chrome independently of the content font size. */
+  font-size: 13px;
+  font-weight: var(--font-weight-normal);
+  line-height: 18px;
+  transform: translateX(-50%);
+  user-select: none;
+}
+
+/* Keep authored mockup button styles out of the shared carousel chrome. */
+.viz-carousel-controls button,
+.viz-carousel-picker &gt; summary {
+  display: flex !important;
+  height: auto !important;
+  min-height: 30px;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 4px;
+  padding: 0 6px !important;
+  -webkit-app-region: no-drag;
+  border: 0 !important;
+  border-radius: 14px !important;
+  color: inherit !important;
+  background: transparent !important;
+  font: inherit !important;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.viz-carousel-controls &gt; button,
+.viz-carousel-picker &gt; summary {
+  position: relative;
+  isolation: isolate;
+}
+
+.viz-carousel-controls &gt; button {
+  --icon-size: 16px;
+  width: 30px !important;
+  padding: 0 !important;
+}
+
+.viz-carousel-picker &gt; summary {
+  padding-inline: 12px !important;
+}
+
+.viz-carousel-controls .viz-carousel-caret {
+  width: 14px;
+  height: 14px;
+  flex: none;
+  margin: 0;
+  color: inherit;
+  transform: rotate(180deg);
+}
+
+.viz-carousel-controls &gt; button &gt; svg,
+.viz-carousel-controls .viz-carousel-caret,
+.viz-carousel-count {
+  opacity: 0.5;
+}
+
+.viz-carousel-controls &gt; button::before,
+.viz-carousel-picker &gt; summary::before {
+  position: absolute;
+  z-index: -1;
+  inset: 3px;
+  border-radius: 12px;
+  content: &quot;&quot;;
+  pointer-events: none;
+}
+
+.viz-carousel-controls &gt; button:hover::before,
+.viz-carousel-picker &gt; summary:hover::before {
+  background: var(--viz-carousel-hover);
+}
+
+.viz-carousel-controls &gt; button,
+.viz-carousel-controls [data-lucide],
+.viz-carousel-controls .lucide {
+  flex-shrink: 0;
+}
+
+.viz-carousel-picker {
+  min-width: 0;
+}
+
+.viz-carousel-picker &gt; summary {
+  min-width: 0;
+  list-style: none;
+}
+
+.viz-carousel-picker &gt; summary::-webkit-details-marker {
+  display: none;
+}
+
+.viz-carousel-count {
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+.viz-carousel-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.viz-carousel-options {
+  position: absolute;
+  right: 0;
+  bottom: calc(100% + 4px);
+  left: 0;
+  display: flex;
+  max-height: 240px;
+  flex-direction: column;
+  gap: 2px;
+  overflow: auto;
+  padding: 4px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--background);
+  box-shadow: 0 4px 12px light-dark(rgb(0 0 0 / 6%), rgb(0 0 0 / 25%));
+}
+
+.viz-carousel-options &gt; button {
+  border-radius: max(0px, calc(var(--radius-lg) - 5px)) !important;
+  width: 100% !important;
+  min-height: 28px;
+  justify-content: flex-start !important;
+  padding: 4px 8px !important;
+  font-size: var(--font-size-small) !important;
+  text-align: start;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.viz-carousel-options &gt; [aria-current=&quot;true&quot;],
+.viz-carousel-options &gt; button:hover {
+  background: var(--viz-carousel-hover) !important;
+}
+
+.btn:disabled,
+.nav-link:disabled,
+.nav-link[aria-disabled=&quot;true&quot;] {
+  cursor: not-allowed;
+  opacity: 0.4;
+}
+
+[data-lucide] {
+  stroke-width: 1.6;
+}
+
+.form-label {
+  display: block;
+  margin-bottom: 6px;
+  color: var(--foreground);
+}
+
+.form-control {
+  display: block;
+  width: 100%;
+  min-height: 28px;
+  padding: 0 8px;
+  outline: none;
+  border: 1px solid var(--input);
+  border-radius: var(--radius-lg);
+  corner-shape: var(--corner-shape);
+  color: var(--foreground);
+  background: var(--secondary);
+}
+
+.form-control::placeholder {
+  color: var(--muted-foreground);
+}
+
+.form-control[type=&quot;file&quot;] {
+  padding: 0;
+  overflow: hidden;
+  cursor: var(--cursor-interaction, pointer);
+}
+
+.form-control[type=&quot;file&quot;]::file-selector-button {
+  min-height: 26px;
+  margin-right: 8px;
+  padding: 0 8px;
+  border: 0;
+  border-right: 1px solid var(--input);
+  color: var(--secondary-foreground);
+  background: var(--secondary);
+  cursor: inherit;
+  font: inherit;
+}
+
+.form-control[type=&quot;file&quot;]:not(:disabled):hover::file-selector-button {
+  background: color-mix(in srgb, var(--foreground) 6%, var(--secondary));
+}
+
+.form-control-color[type=&quot;color&quot;] {
+  width: 40px;
+  height: 28px;
+  padding: 3px;
+  cursor: var(--cursor-interaction, pointer);
+}
+
+.form-control-color[type=&quot;color&quot;]::-webkit-color-swatch-wrapper {
+  padding: 0;
+}
+
+.form-control-color[type=&quot;color&quot;]::-webkit-color-swatch {
+  border: 0;
+  border-radius: calc(var(--radius-lg) - 4px);
+  corner-shape: var(--corner-shape);
+}
+
+textarea.form-control {
+  height: auto;
+  min-height: 72px;
+  padding: 8px 10px;
+  resize: vertical;
+}
+
+.form-control:focus-visible {
+  border-color: var(--ring);
+  box-shadow: inset 0 0 0 1px var(--ring);
+}
+
+.form-control:disabled,
+.form-select:disabled {
+  cursor: not-allowed;
+  opacity: 0.4;
+}
+
+.form-select {
+  appearance: none;
+  display: block;
+  width: 100%;
+  min-height: 28px;
+  margin: 0;
+  padding: 0 32px 0 8px;
+  outline: none;
+  border: 1px solid var(--input);
+  border-radius: var(--radius-lg);
+  corner-shape: var(--corner-shape);
+  color: var(--foreground);
+  background-color: var(--secondary);
+  background-image:
+    linear-gradient(45deg, transparent 50%, var(--muted-foreground) 50%),
+    linear-gradient(135deg, var(--muted-foreground) 50%, transparent 50%);
+  background-position:
+    calc(100% - 14px) 50%,
+    calc(100% - 10px) 50%;
+  background-repeat: no-repeat;
+  background-size: 4px 4px;
+  cursor: var(--cursor-interaction, default);
+}
+
+.form-select:not(:disabled):hover {
+  background-color: color-mix(in srgb, var(--foreground) 6%, var(--secondary));
+}
+
+.form-select:focus-visible {
+  border-color: var(--ring);
+  box-shadow: inset 0 0 0 1px var(--ring);
+}
+
+.form-check {
+  display: flex;
+  min-height: 20px;
+  align-items: center;
+  gap: 6px;
+}
+
+.form-check-input {
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  flex: 0 0 auto;
+  margin: 0;
+  border: 1px solid var(--input);
+  color: var(--primary-foreground);
+  background-color: transparent;
+  cursor: var(--cursor-interaction, default);
+  transition:
+    background-color 150ms,
+    border-color 150ms,
+    box-shadow 150ms;
+}
+
+.form-check:not(.form-switch) .form-check-input[type=&quot;checkbox&quot;] {
+  border-color: var(--input);
+  border-radius: var(--radius-sm);
+  corner-shape: var(--corner-shape);
+  background-color: var(--secondary);
+  box-shadow: var(--shadow-sm);
+}
+
+.form-check:not(.form-switch)
+  .form-check-input:not(:disabled):not(:checked):hover {
+  background-color: var(--card);
+}
+
+.form-check:not(.form-switch) .form-check-input[type=&quot;checkbox&quot;]:checked {
+  border-color: var(--primary);
+  background-color: var(--primary);
+}
+
+.form-check:not(.form-switch)
+  .form-check-input[type=&quot;checkbox&quot;]:checked::before {
+  display: block;
+  width: 100%;
+  height: 100%;
+  background: var(--primary-foreground);
+  content: &quot;&quot;;
+  mask: var(--checkmark-image) center / 12px 12px no-repeat;
+}
+
+.form-check-input[type=&quot;radio&quot;] {
+  width: 14px;
+  height: 14px;
+  border-radius: var(--radius-full);
+}
+
+.form-check-input[type=&quot;radio&quot;]:checked {
+  border: 2px solid var(--primary);
+  background:
+    radial-gradient(circle, var(--primary-foreground) 0 2.5px, transparent 3px),
+    var(--primary);
+}
+
+.form-check:not(.form-switch) .form-check-input:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+
+.form-check:not(.form-switch) .form-check-input:disabled {
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.form-check:not(.form-switch) .form-check-input:disabled + .form-check-label {
+  cursor: not-allowed;
+}
+
+.form-switch .form-check-input:disabled,
+.form-switch .form-check-input:disabled + .form-check-label {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.form-check-label {
+  color: var(--foreground);
+  cursor: var(--cursor-interaction, default);
+}
+
+.form-switch .form-check-input {
+  position: relative;
+  width: 32px;
+  height: 20px;
+  border: 0;
+  border-radius: var(--radius-full);
+  background: var(--muted);
+  box-shadow: none;
+  transition: background-color 200ms cubic-bezier(0, 0, 0.2, 1);
+}
+
+.form-switch .form-check-input::before {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  width: 16px;
+  height: 16px;
+  box-sizing: border-box;
+  border: 1px solid light-dark(var(--primary-foreground), var(--foreground));
+  border-radius: var(--radius-full);
+  background: light-dark(var(--primary-foreground), var(--foreground));
+  box-shadow: var(--shadow-sm);
+  content: &quot;&quot;;
+  transform: translate(2px, -50%);
+  transition: transform 200ms cubic-bezier(0, 0, 0.2, 1);
+}
+
+.form-switch .form-check-input:checked {
+  background: var(--primary);
+}
+
+.form-switch .form-check-input:checked::before {
+  transform: translate(14px, -50%);
+}
+
+.form-switch .form-check-input:focus-visible {
+  box-shadow: 0 0 0 2px var(--ring);
+}
+
+.form-range {
+  appearance: none;
+  display: block;
+  width: 100%;
+  height: 28px;
+  flex: 1;
+  margin: 0;
+  padding: 0;
+  outline: none;
+  border: 0;
+  accent-color: var(--primary);
+  background: linear-gradient(
+      color-mix(in srgb, var(--foreground) 7%, transparent),
+      color-mix(in srgb, var(--foreground) 7%, transparent)
+    )
+    center / 100% 2px no-repeat;
+}
+
+.form-range::-webkit-slider-runnable-track {
+  height: 28px;
+  background: transparent;
+}
+
+.form-range::-webkit-slider-thumb {
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  margin-top: 4px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-full);
+  background: light-dark(var(--primary-foreground), var(--foreground));
+}
+
+.form-range:focus-visible::-webkit-slider-thumb {
+  border-color: var(--ring);
+  box-shadow: inset 0 0 0 1px var(--ring);
+}
+
+.form-range::-moz-range-track {
+  height: 28px;
+  background: transparent;
+}
+
+.form-range::-moz-range-thumb {
+  width: 20px;
+  height: 20px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-full);
+  background: light-dark(var(--primary-foreground), var(--foreground));
+}
+
+.form-range:focus-visible::-moz-range-thumb {
+  border-color: var(--ring);
+  box-shadow: inset 0 0 0 1px var(--ring);
+}
+
+.form-range:disabled {
+  cursor: not-allowed;
+  opacity: 0.4;
+}
+
+.btn:not(.btn-primary, .viz-tile):is(
+  [aria-pressed=&quot;true&quot;],
+  [aria-selected=&quot;true&quot;],
+  .is-selected
+) {
+  border-color: var(--primary);
+  color: var(--primary-foreground);
+  background: var(--primary);
+}
+
+.btn.viz-tile:is([aria-pressed=&quot;true&quot;], [aria-selected=&quot;true&quot;], .is-selected) {
+  border-color: var(--primary);
+  box-shadow: inset 0 0 0 1px var(--primary);
+}
+
+.btn:focus-visible,
+.nav-link:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+
+.viz-carousel-controls :is(button, summary):focus-visible {
+  outline: 2px solid var(--ring) !important;
+  outline-offset: 2px !important;
+}
+
+@media (pointer: coarse) {
+  .viz-carousel:has(&gt; .viz-carousel-controls) {
+    min-height: calc(76px + var(--viz-carousel-picker-height, 0px));
+    padding-bottom: 76px;
+  }
+
+  .btn,
+  .nav-link,
+  .viz-carousel-controls button,
+  .viz-carousel-picker &gt; summary,
+  .form-control,
+  .form-select {
+    min-width: 44px;
+    min-height: 44px;
+  }
+
+  /* Keep small-screen WebKit from zooming when a text field receives focus. */
+  .form-control,
+  .form-select {
+    font-size: max(16px, var(--font-size-normal));
+  }
+
+  .form-control[type=&quot;file&quot;]::file-selector-button {
+    min-width: 44px;
+    min-height: 44px;
+  }
+
+  .form-control-color[type=&quot;color&quot;] {
+    width: 44px;
+    height: 44px;
+  }
+
+  .form-control:is(
+    [type=&quot;date&quot;],
+    [type=&quot;datetime-local&quot;],
+    [type=&quot;month&quot;],
+    [type=&quot;time&quot;],
+    [type=&quot;week&quot;]
+  ) {
+    min-width: 0;
+    max-width: 100%;
+    padding-block: 8px;
+  }
+
+  .form-check {
+    min-height: 44px;
+    padding-inline: 15px;
+  }
+
+  .form-check-input {
+    position: relative;
+  }
+
+  .form-check-input::after {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 44px;
+    height: 44px;
+    content: &quot;&quot;;
+    transform: translate(-50%, -50%);
+  }
+
+  .form-check-label {
+    display: inline-flex;
+    min-width: 44px;
+    min-height: 44px;
+    align-items: center;
+  }
+
+  .form-range {
+    height: 44px;
+    touch-action: pan-y;
+  }
+
+  .form-range::-webkit-slider-runnable-track {
+    height: 44px;
+  }
+
+  .form-range::-moz-range-track {
+    height: 44px;
+  }
+
+  .form-range::-webkit-slider-thumb {
+    margin-top: 12px;
+  }
+}
+
+svg {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+
+#widget &gt; svg {
+  width: 100%;
+}
+
+/* Model-authored chart rules can otherwise stretch icons after these styles load. */
+svg.lucide {
+  display: block;
+  width: var(--icon-size) !important;
+  height: var(--icon-size) !important;
+  flex: none;
+  margin: 0 !important;
+  stroke-width: 1.6;
+}
+
+.text-warning,
+.text-destructive {
+  color: var(--destructive);
+}
+
+html&gt;body{padding:0}&lt;/style&gt;
+&lt;/head&gt;
+&lt;body&gt;
+&lt;script type=&quot;application/json&quot; id=&quot;codex-visualization-widget-state&quot;&gt;__CODEX_VISUALIZATION_WIDGET_STATE__&lt;/script&gt;
+&lt;script&gt;(() =&gt; {
+  const root = document.documentElement;
+  const mediaQuery = globalThis.matchMedia(&quot;(prefers-color-scheme: dark)&quot;);
+  const apply = Reflect.apply;
+  const isArray = Array.isArray;
+  const hasOwn = Object.hasOwn;
+  const parentWindow = globalThis.parent;
+  const stringify = JSON.stringify;
+  const parse = JSON.parse;
+  const encode = TextEncoder.prototype.encode.bind(new TextEncoder());
+  const initialStateElement = document.getElementById(
+    &quot;codex-visualization-widget-state&quot;,
+  );
+  const initialGlobals = parse(initialStateElement?.textContent ?? &quot;{}&quot;);
+  initialStateElement?.remove();
+  /** @type {Record&lt;string, unknown&gt; | null} */
+  let state = initialGlobals.widgetState ?? null;
+  const statePersistence = initialGlobals.statePersistence ?? &quot;none&quot;;
+  let nextStateRequestId = 0;
+  /** @type {Map&lt;number, { resolve: () =&gt; void; reject: (error: Error) =&gt; void; timeout: ReturnType&lt;typeof globalThis.setTimeout&gt;; serializedState: string }&gt;} */
+  const pendingStateWrites = new Map();
+  const persistenceError = () =&gt;
+    Object.assign(
+      new Error(&quot;The host could not persist the widget state update&quot;),
+      {
+        code: -32000,
+        data: { code: &quot;widget_state_persistence_failed&quot;, retryable: false },
+      },
+    );
+  /**
+   * @param {object} prototype
+   * @param {string} property
+   */
+  const getPrototypeGetter = (prototype, property) =&gt; {
+    // oxlint-disable-next-line typescript/unbound-method -- invoked through captured Reflect.apply
+    const getter = Object.getOwnPropertyDescriptor(prototype, property)?.get;
+    if (getter == null) {
+      throw new Error(`Missing ${property} getter`);
+    }
+    return getter;
+  };
+  const getMessageData = getPrototypeGetter(MessageEvent.prototype, &quot;data&quot;);
+  const getMessagePorts = getPrototypeGetter(MessageEvent.prototype, &quot;ports&quot;);
+  const getMessageSource = getPrototypeGetter(MessageEvent.prototype, &quot;source&quot;);
+  // oxlint-disable-next-line typescript/unbound-method -- captured before the untrusted fragment runs
+  const addHostMessageListener = MessagePort.prototype.addEventListener;
+  // oxlint-disable-next-line typescript/unbound-method -- captured before the untrusted fragment runs
+  const postHostMessage = MessagePort.prototype.postMessage;
+  // oxlint-disable-next-line typescript/unbound-method -- captured before the untrusted fragment runs
+  const startHostPort = MessagePort.prototype.start;
+  // oxlint-disable-next-line typescript/unbound-method -- captured before the untrusted fragment runs
+  const stopMessagePropagation = Event.prototype.stopImmediatePropagation;
+  /** @type {MessagePort | null} */
+  let hostPort = null;
+  const postToHost = (type, payload) =&gt; {
+    if (hostPort != null) {
+      apply(postHostMessage, hostPort, [{ type, ...payload }]);
+    }
+  };
+  const openExternal = ({ href }) =&gt; {
+    if (globalThis.navigator.userActivation?.isActive === true) {
+      postToHost(&quot;open-external&quot;, { href });
+    }
+  };
+  const sendFollowUpMessage = ({ context, prompt, title }) =&gt; {
+    if (globalThis.navigator.userActivation?.isActive === true) {
+      postToHost(&quot;follow-up&quot;, { context, prompt, title });
+    }
+    return Promise.resolve();
+  };
+  /**
+   * @param {Record&lt;string, unknown&gt; | ((previous: Record&lt;string, unknown&gt; | null) =&gt; Record&lt;string, unknown&gt;)} next
+   * @returns {Promise&lt;void&gt;}
+   */
+  const setWidgetState = async (next) =&gt; {
+    const nextState = typeof next === &quot;function&quot; ? next(state) : next;
+    if (
+      nextState == null ||
+      typeof nextState !== &quot;object&quot; ||
+      isArray(nextState)
+    ) {
+      throw new TypeError(&quot;Widget state must be a JSON object&quot;);
+    }
+    const inputState = stringify(
+      nextState,
+      (_key, /** @type {unknown} */ value) =&gt; {
+        if (
+          typeof value === &quot;undefined&quot; ||
+          typeof value === &quot;function&quot; ||
+          typeof value === &quot;symbol&quot; ||
+          (typeof value === &quot;number&quot; &amp;&amp; !Number.isFinite(value))
+        ) {
+          throw new TypeError(&quot;Widget state must be a JSON object&quot;);
+        }
+        return value;
+      },
+    );
+    const parsedState = parse(inputState);
+    if (
+      parsedState == null ||
+      typeof parsedState !== &quot;object&quot; ||
+      isArray(parsedState)
+    ) {
+      throw new TypeError(&quot;Widget state must be a JSON object&quot;);
+    }
+    const storedState = {
+      modelContent: null,
+      privateContent: null,
+      ...parsedState,
+    };
+    const serializedState = stringify(storedState);
+    if (encode(serializedState).length &gt; 16 * 1024) {
+      throw new TypeError(
+        &quot;Widget state must be a JSON object of at most 16 KiB&quot;,
+      );
+    }
+    if (
+      hasOwn(storedState, &quot;imageIds&quot;) &amp;&amp;
+      (!isArray(storedState.imageIds) ||
+        storedState.imageIds.some(
+          (/** @type {unknown} */ id) =&gt; typeof id !== &quot;string&quot;,
+        ))
+    ) {
+      throw new TypeError(&quot;Widget state imageIds must be an array of strings&quot;);
+    }
+    if (storedState.imageIds?.length &gt; 0) {
+      throw Object.assign(
+        new TypeError(&quot;Visualization state does not support image attachments&quot;),
+        { code: -32602, data: { code: &quot;images_unsupported&quot; } },
+      );
+    }
+    state = storedState;
+    globalThis.openai.widgetState = state;
+    globalThis.dispatchEvent(
+      new CustomEvent(&quot;openai:set_globals&quot;, {
+        detail: { globals: { widgetState: state } },
+      }),
+    );
+    if (statePersistence === &quot;none&quot;) {
+      throw persistenceError();
+    }
+    const id = ++nextStateRequestId;
+    return new Promise((resolve, reject) =&gt; {
+      const timeout = globalThis.setTimeout(() =&gt; {
+        pendingStateWrites.delete(id);
+        reject(persistenceError());
+      }, 30_000);
+      pendingStateWrites.set(id, { resolve, reject, timeout, serializedState });
+      postToHost(&quot;widget-state-write&quot;, { id, state: serializedState });
+    });
+  };
+  const syncTheme = () =&gt; {
+    const theme = mediaQuery.matches ? &quot;dark&quot; : &quot;light&quot;;
+    root.dataset.theme = theme;
+    globalThis.openai = {
+      ...globalThis.openai,
+      openExternal,
+      sendFollowUpMessage,
+      setWidgetState,
+      theme,
+      visualizationStyleVariables: {},
+      visualizationTheme: theme,
+      widgetState: state,
+      statePersistence,
+      stateModelContext: &quot;none&quot;,
+    };
+    globalThis.dispatchEvent(
+      new CustomEvent(&quot;openai:set_globals&quot;, {
+        detail: { globals: globalThis.openai },
+      }),
+    );
+  };
+  const sendHeight = () =&gt; {
+    postToHost(&quot;height&quot;, {
+      height: Math.ceil(
+        Math.max(
+          document.body.scrollHeight,
+          document.body.getBoundingClientRect().height,
+        ),
+      ),
+    });
+  };
+
+  globalThis.addEventListener(
+    &quot;message&quot;,
+    (event) =&gt; {
+      const data = apply(getMessageData, event, []);
+      const ports = apply(getMessagePorts, event, []);
+      const source = apply(getMessageSource, event, []);
+      if (
+        hostPort != null ||
+        source !== parentWindow ||
+        typeof data !== &quot;object&quot; ||
+        data?.type !== &quot;codex-visualization-initialize&quot; ||
+        !isArray(ports) ||
+        ports.length !== 1
+      ) {
+        return;
+      }
+      apply(stopMessagePropagation, event, []);
+      const nextHostPort = ports[0];
+      try {
+        apply(addHostMessageListener, nextHostPort, [
+          &quot;message&quot;,
+          (event) =&gt; {
+            const data = apply(getMessageData, event, []);
+            if (typeof data === &quot;object&quot; &amp;&amp; data?.type === &quot;measure&quot;) {
+              sendHeight();
+            } else if (
+              typeof data === &quot;object&quot; &amp;&amp;
+              data?.type === &quot;widget-state-result&quot;
+            ) {
+              /** @type {unknown} */
+              const id = data.id;
+              if (typeof id !== &quot;number&quot;) {
+                return;
+              }
+              const pending = pendingStateWrites.get(id);
+              if (pending != null) {
+                pendingStateWrites.delete(id);
+                globalThis.clearTimeout(pending.timeout);
+                if (data.ok === true) {
+                  pending.resolve();
+                } else {
+                  pending.reject(persistenceError());
+                }
+              }
+            }
+          },
+        ]);
+        apply(startHostPort, nextHostPort, []);
+      } catch {
+        return;
+      }
+      hostPort = nextHostPort;
+      for (const [id, { serializedState }] of pendingStateWrites) {
+        postToHost(&quot;widget-state-write&quot;, { id, state: serializedState });
+      }
+      sendHeight();
+    },
+    { capture: true },
+  );
+  document.currentScript?.remove();
+  mediaQuery.addEventListener(&quot;change&quot;, syncTheme);
+  globalThis.addEventListener(&quot;click&quot;, (event) =&gt; {
+    if (event.defaultPrevented) {
+      return;
+    }
+    let element = null;
+    if (event.target instanceof globalThis.Element) {
+      element = event.target;
+    } else if (event.target instanceof globalThis.Node) {
+      element = event.target.parentElement;
+    }
+    const link = element?.closest(&quot;a[href]&quot;);
+    const href = link?.getAttribute(&quot;href&quot;);
+    if (href == null) {
+      return;
+    }
+    if (href.startsWith(&quot;#&quot;)) {
+      let id;
+      try {
+        id = decodeURIComponent(href.slice(1));
+      } catch {
+        return;
+      }
+      const target = id.length === 0 ? root : document.getElementById(id);
+      if (
+        target == null ||
+        globalThis.navigator.userActivation?.isActive !== true
+      ) {
+        return;
+      }
+      event.preventDefault();
+      postToHost(&quot;scroll-to&quot;, {
+        top: target.getBoundingClientRect().top + globalThis.scrollY,
+      });
+      return;
+    }
+    event.preventDefault();
+    openExternal({ href });
+  });
+  new ResizeObserver(sendHeight).observe(document.body);
+  syncTheme();
+})();
+&lt;/script&gt;
+&lt;link rel=&quot;stylesheet&quot; href=&quot;https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&amp;display=swap&quot;&gt;
+&lt;div id=&quot;ot-experiences&quot; class=&quot;viz-carousel viz-dotted-background&quot; aria-label=&quot;Overtaek experience concepts&quot;&gt;
+  &lt;section data-variant=&quot;Glass Track&quot; aria-label=&quot;Glass Track concept&quot;&gt;
+    &lt;div class=&quot;ot-stage&quot;&gt;&lt;article class=&quot;ot-phone ot-arena&quot;&gt;
+      &lt;header class=&quot;ot-header&quot;&gt;&lt;span class=&quot;ot-brand&quot;&gt;overtaek&lt;span&gt;↗&lt;/span&gt;&lt;/span&gt;&lt;span class=&quot;ot-demo&quot;&gt;Concept · Sample data&lt;/span&gt;&lt;/header&gt;
+      &lt;div class=&quot;ot-heading&quot;&gt;&lt;div class=&quot;ot-eyebrow&quot;&gt;COMPETE / GLASS TRACK&lt;/div&gt;&lt;h2&gt;Your place.&lt;br&gt;Your perspective.&lt;/h2&gt;&lt;/div&gt;
+      &lt;div class=&quot;ot-glass ot-sport&quot;&gt;&lt;span&gt;Running&lt;/span&gt;&lt;span&gt;Week 42 · Open track&lt;/span&gt;&lt;/div&gt;
+      &lt;div class=&quot;ot-field&quot; aria-label=&quot;Weekly running distance, 16 to 22 kilometers. Stable lanes; not a live race.&quot;&gt;
+        &lt;div class=&quot;ot-axis&quot;&gt;&lt;span&gt;22 km&lt;/span&gt;&lt;span&gt;20&lt;/span&gt;&lt;span&gt;18&lt;/span&gt;&lt;span&gt;16&lt;/span&gt;&lt;/div&gt;
+        &lt;div class=&quot;ot-lanes&quot;&gt;
+          &lt;div class=&quot;ot-lane&quot;&gt;&lt;span class=&quot;ot-lane-name&quot;&gt;Maya&lt;/span&gt;&lt;button class=&quot;ot-runner&quot; data-athlete=&quot;maya&quot; style=&quot;bottom:76.7%&quot; aria-label=&quot;Inspect Maya, 20.6 kilometers&quot;&gt;MC&lt;/button&gt;&lt;/div&gt;
+          &lt;div class=&quot;ot-lane ot-own&quot;&gt;&lt;span class=&quot;ot-lane-name&quot;&gt;You&lt;/span&gt;&lt;button class=&quot;ot-runner&quot; data-athlete=&quot;you&quot; style=&quot;bottom:53.3%&quot; aria-label=&quot;Inspect you, 19.2 kilometers&quot; aria-pressed=&quot;true&quot;&gt;YOU&lt;/button&gt;&lt;/div&gt;
+          &lt;div class=&quot;ot-lane&quot;&gt;&lt;span class=&quot;ot-lane-name&quot;&gt;Leo&lt;/span&gt;&lt;button class=&quot;ot-runner&quot; data-athlete=&quot;leo&quot; style=&quot;bottom:30%&quot; aria-label=&quot;Inspect Leo, 17.8 kilometers&quot;&gt;LS&lt;/button&gt;&lt;/div&gt;
+          &lt;div class=&quot;ot-lane ot-ghost&quot;&gt;&lt;span class=&quot;ot-lane-name&quot;&gt;Past you&lt;/span&gt;&lt;div class=&quot;ot-ghost-mark&quot; style=&quot;bottom:40%&quot;&gt;PW&lt;/div&gt;&lt;/div&gt;
+        &lt;/div&gt;
+      &lt;/div&gt;
+      &lt;div class=&quot;ot-glass ot-inspector&quot; aria-live=&quot;polite&quot;&gt;&lt;span id=&quot;ot-athlete-name&quot;&gt;Your week&lt;/span&gt;&lt;div&gt;&lt;strong id=&quot;ot-athlete-total&quot;&gt;19.2&lt;/strong&gt;&lt;span&gt; km&lt;/span&gt;&lt;small id=&quot;ot-athlete-gap&quot;&gt;1.4 km behind Maya&lt;/small&gt;&lt;/div&gt;&lt;/div&gt;
+      &lt;div class=&quot;ot-bottom-note&quot;&gt;Past you · same cutoff · unranked&lt;/div&gt;
+      &lt;nav class=&quot;ot-nav ot-glass&quot; aria-label=&quot;App context&quot;&gt;&lt;span&gt;Home&lt;/span&gt;&lt;span aria-current=&quot;page&quot;&gt;Compete&lt;/span&gt;&lt;span&gt;Crew&lt;/span&gt;&lt;span&gt;Athlete&lt;/span&gt;&lt;/nav&gt;
+    &lt;/article&gt;&lt;/div&gt;
+  &lt;/section&gt;
+  &lt;section data-variant=&quot;Forged Week&quot; aria-label=&quot;Forged Week concept&quot; hidden&gt;
+    &lt;div class=&quot;ot-stage&quot;&gt;&lt;article class=&quot;ot-phone ot-forged&quot;&gt;
+      &lt;header class=&quot;ot-header&quot;&gt;&lt;span class=&quot;ot-brand&quot;&gt;overtaek&lt;span&gt;↗&lt;/span&gt;&lt;/span&gt;&lt;span class=&quot;ot-demo&quot;&gt;Concept · Sample data&lt;/span&gt;&lt;/header&gt;
+      &lt;div class=&quot;ot-heading&quot;&gt;&lt;div class=&quot;ot-eyebrow&quot;&gt;ATHLETE / FORGED WEEK&lt;/div&gt;&lt;h2&gt;Effort, made&lt;br&gt;something tangible.&lt;/h2&gt;&lt;/div&gt;
+      &lt;div class=&quot;ot-segments&quot; role=&quot;group&quot; aria-label=&quot;Object type&quot;&gt;&lt;button data-object=&quot;goal&quot; aria-pressed=&quot;true&quot;&gt;Home goal · optional&lt;/button&gt;&lt;button data-object=&quot;medal&quot; aria-pressed=&quot;false&quot;&gt;Weekly medal&lt;/button&gt;&lt;/div&gt;
+      &lt;div class=&quot;ot-object-scene&quot; aria-label=&quot;Dimensional goal plate with a thick edge&quot;&gt;
+        &lt;div id=&quot;ot-object&quot; class=&quot;ot-object&quot; data-material=&quot;alloy&quot;&gt;
+          &lt;div class=&quot;ot-object-back&quot;&gt;&lt;span class=&quot;ot-eyebrow&quot;&gt;THE RECORD&lt;/span&gt;&lt;h3 id=&quot;ot-record-title&quot;&gt;Make room to move.&lt;/h3&gt;&lt;p id=&quot;ot-record-copy&quot;&gt;3 counted sessions&lt;br&gt;of a chosen 4-session goal&lt;/p&gt;&lt;small id=&quot;ot-record-date&quot;&gt;Speculative goal feature&lt;/small&gt;&lt;/div&gt;
+          &lt;div class=&quot;ot-object-face&quot;&gt;&lt;div class=&quot;ot-object-frame&quot;&gt;&lt;/div&gt;&lt;span class=&quot;ot-object-kicker&quot; id=&quot;ot-object-kicker&quot;&gt;RUNNING / MEDIUM ▰▰▱&lt;/span&gt;&lt;h3 id=&quot;ot-object-title&quot;&gt;Make room&lt;br&gt;to move.&lt;/h3&gt;&lt;div class=&quot;ot-relief&quot; id=&quot;ot-object-value&quot;&gt;3&lt;span&gt; / 4&lt;/span&gt;&lt;/div&gt;&lt;span class=&quot;ot-object-caption&quot; id=&quot;ot-object-caption&quot;&gt;COUNTED SESSIONS&lt;/span&gt;&lt;div class=&quot;ot-object-base&quot;&gt;&lt;span id=&quot;ot-object-finish&quot;&gt;ANODIZED ALLOY&lt;/span&gt;&lt;span&gt;↗&lt;/span&gt;&lt;/div&gt;&lt;/div&gt;
+        &lt;/div&gt;
+      &lt;/div&gt;
+      &lt;div class=&quot;ot-materials&quot; role=&quot;group&quot; aria-label=&quot;Goal difficulty and material&quot;&gt;&lt;button data-material=&quot;glass&quot; aria-pressed=&quot;false&quot;&gt;&lt;span class=&quot;ot-swatch ot-swatch-glass&quot;&gt;&lt;/span&gt;Easy&lt;small&gt;Glass&lt;/small&gt;&lt;/button&gt;&lt;button data-material=&quot;alloy&quot; aria-pressed=&quot;true&quot;&gt;&lt;span class=&quot;ot-swatch ot-swatch-alloy&quot;&gt;&lt;/span&gt;Medium&lt;small&gt;Alloy&lt;/small&gt;&lt;/button&gt;&lt;button data-material=&quot;chromatic&quot; aria-pressed=&quot;false&quot;&gt;&lt;span class=&quot;ot-swatch ot-swatch-foil&quot;&gt;&lt;/span&gt;Hard&lt;small&gt;Foil&lt;/small&gt;&lt;/button&gt;&lt;/div&gt;
+      &lt;div class=&quot;ot-object-actions&quot;&gt;&lt;button class=&quot;ot-action&quot; id=&quot;ot-turn&quot;&gt;Turn object ↻&lt;/button&gt;&lt;button class=&quot;ot-action&quot; id=&quot;ot-flip&quot;&gt;Flip to record&lt;/button&gt;&lt;/div&gt;
+      &lt;div class=&quot;ot-bottom-note&quot; id=&quot;ot-material-note&quot; aria-live=&quot;polite&quot;&gt;Medium · category-tinted brushed alloy&lt;/div&gt;
+      &lt;nav class=&quot;ot-nav&quot; aria-label=&quot;App context&quot;&gt;&lt;span&gt;Home&lt;/span&gt;&lt;span&gt;Compete&lt;/span&gt;&lt;span&gt;Crew&lt;/span&gt;&lt;span aria-current=&quot;page&quot;&gt;Athlete&lt;/span&gt;&lt;/nav&gt;
+    &lt;/article&gt;&lt;/div&gt;
+  &lt;/section&gt;
+  &lt;section data-variant=&quot;Weekly Training&quot; aria-label=&quot;Weekly Training concept&quot; hidden&gt;
+    &lt;div class=&quot;ot-stage ot-week-stage&quot;&gt;
+      &lt;div class=&quot;ot-study-options&quot; role=&quot;group&quot; aria-label=&quot;Study comparison, not product navigation&quot;&gt;&lt;span&gt;Chart comparison&lt;/span&gt;&lt;button data-chart=&quot;bars&quot; aria-pressed=&quot;true&quot;&gt;Bars&lt;/button&gt;&lt;button data-chart=&quot;line&quot; aria-pressed=&quot;false&quot;&gt;Line&lt;/button&gt;&lt;/div&gt;
+      &lt;article class=&quot;ot-phone ot-weekly&quot;&gt;
+        &lt;header class=&quot;ot-header&quot;&gt;&lt;span class=&quot;ot-brand&quot;&gt;overtaek&lt;span&gt;↗&lt;/span&gt;&lt;/span&gt;&lt;span class=&quot;ot-demo&quot;&gt;Concept · Sample data&lt;/span&gt;&lt;/header&gt;
+        &lt;div class=&quot;ot-heading&quot;&gt;&lt;div class=&quot;ot-eyebrow&quot;&gt;ATHLETE / PROGRESS&lt;/div&gt;&lt;h2&gt;Weeks of&lt;br&gt;showing up.&lt;/h2&gt;&lt;p&gt;Running distance · Weekly totals · UTC&lt;/p&gt;&lt;/div&gt;
+        &lt;div id=&quot;ot-week-chart&quot; class=&quot;ot-week-chart&quot;&gt;&lt;/div&gt;
+        &lt;div class=&quot;ot-chart-caption&quot;&gt;&lt;span&gt;Week starting&lt;/span&gt;&lt;span&gt;◌ Current week is partial&lt;/span&gt;&lt;/div&gt;
+        &lt;label class=&quot;ot-week-selector&quot;&gt;Inspect week&lt;select id=&quot;ot-week-select&quot; aria-label=&quot;Inspect week&quot;&gt;&lt;/select&gt;&lt;/label&gt;
+        &lt;section class=&quot;ot-week-detail&quot; aria-live=&quot;polite&quot; aria-label=&quot;Selected week&quot;&gt;
+          &lt;span class=&quot;ot-eyebrow&quot; id=&quot;ot-week-bounds&quot;&gt;OCT 5–12 / UTC&lt;/span&gt;
+          &lt;div class=&quot;ot-week-value&quot;&gt;&lt;strong id=&quot;ot-week-total&quot;&gt;30.6&lt;/strong&gt;&lt;span&gt; km&lt;/span&gt;&lt;/div&gt;
+          &lt;p id=&quot;ot-week-status&quot;&gt;Complete week · 3 counted sessions&lt;/p&gt;
+        &lt;/section&gt;
+        &lt;details class=&quot;ot-week-sessions&quot;&gt;&lt;summary&gt;Counted sessions&lt;/summary&gt;&lt;div id=&quot;ot-week-sessions&quot;&gt;&lt;/div&gt;&lt;/details&gt;
+        &lt;nav class=&quot;ot-nav&quot; aria-label=&quot;App context&quot;&gt;&lt;span&gt;Home&lt;/span&gt;&lt;span&gt;Compete&lt;/span&gt;&lt;span&gt;Crew&lt;/span&gt;&lt;span aria-current=&quot;page&quot;&gt;Athlete&lt;/span&gt;&lt;/nav&gt;
+      &lt;/article&gt;
+    &lt;/div&gt;
+  &lt;/section&gt;
+  &lt;section data-variant=&quot;Body Clock&quot; aria-label=&quot;Body Clock concept&quot; hidden&gt;
+    &lt;div class=&quot;ot-stage&quot;&gt;&lt;article class=&quot;ot-phone ot-clock&quot;&gt;
+      &lt;header class=&quot;ot-header&quot;&gt;&lt;span class=&quot;ot-brand&quot;&gt;overtaek&lt;span&gt;↗&lt;/span&gt;&lt;/span&gt;&lt;span class=&quot;ot-demo&quot;&gt;Concept · Sample data&lt;/span&gt;&lt;/header&gt;
+      &lt;div class=&quot;ot-heading&quot;&gt;&lt;div class=&quot;ot-eyebrow&quot;&gt;ATHLETE / PROGRESS / DAILY TIMING&lt;/div&gt;&lt;h2&gt;Your day has&lt;br&gt;its own tempo.&lt;/h2&gt;&lt;p&gt;Thursday · America/New_York&lt;/p&gt;&lt;/div&gt;
+      &lt;div class=&quot;ot-day-dial&quot; aria-label=&quot;24-hour clock: recorded sleep from midnight to 7 AM; run at 7:30 AM; walk at 6 PM&quot;&gt;
+        &lt;div class=&quot;ot-clock-track&quot;&gt;&lt;/div&gt;&lt;div class=&quot;ot-clock-sleep&quot;&gt;&lt;/div&gt;&lt;div class=&quot;ot-clock-center&quot;&gt;&lt;span&gt;THU 15&lt;/span&gt;&lt;strong id=&quot;ot-clock-time&quot;&gt;07:30&lt;/strong&gt;&lt;span id=&quot;ot-clock-center-title&quot;&gt;Morning run&lt;/span&gt;&lt;/div&gt;
+        &lt;span class=&quot;ot-clock-label ot-midnight&quot;&gt;00&lt;/span&gt;&lt;span class=&quot;ot-clock-label ot-six&quot;&gt;06&lt;/span&gt;&lt;span class=&quot;ot-clock-label ot-noon&quot;&gt;12&lt;/span&gt;&lt;span class=&quot;ot-clock-label ot-eighteen&quot;&gt;18&lt;/span&gt;
+        &lt;button class=&quot;ot-clock-event ot-clock-run&quot; data-event=&quot;run&quot; aria-label=&quot;Inspect 7:30 AM morning run&quot; aria-pressed=&quot;true&quot;&gt;↗&lt;/button&gt;&lt;button class=&quot;ot-clock-event ot-clock-walk&quot; data-event=&quot;walk&quot; aria-label=&quot;Inspect 6 PM evening walk&quot; aria-pressed=&quot;false&quot;&gt;↗&lt;/button&gt;
+      &lt;/div&gt;
+      &lt;div class=&quot;ot-clock-legend&quot;&gt;&lt;span&gt;&lt;b&gt;&lt;/b&gt; Movement&lt;/span&gt;&lt;span&gt;&lt;b&gt;&lt;/b&gt; Recorded sleep&lt;/span&gt;&lt;/div&gt;
+      &lt;div class=&quot;ot-glass ot-clock-detail&quot; aria-live=&quot;polite&quot;&gt;&lt;span class=&quot;ot-eyebrow&quot; id=&quot;ot-clock-detail-time&quot;&gt;07:30–08:04&lt;/span&gt;&lt;h3 id=&quot;ot-clock-detail-title&quot;&gt;Morning run&lt;/h3&gt;&lt;p id=&quot;ot-clock-detail-copy&quot;&gt;34 min · 6.2 km&lt;/p&gt;&lt;/div&gt;
+      &lt;div class=&quot;ot-bottom-note&quot;&gt;Secondary detail · recorded events only&lt;/div&gt;
+      &lt;nav class=&quot;ot-nav&quot; aria-label=&quot;App context&quot;&gt;&lt;span&gt;Home&lt;/span&gt;&lt;span&gt;Compete&lt;/span&gt;&lt;span&gt;Crew&lt;/span&gt;&lt;span aria-current=&quot;page&quot;&gt;Athlete&lt;/span&gt;&lt;/nav&gt;
+    &lt;/article&gt;&lt;/div&gt;
+  &lt;/section&gt;
+  &lt;section data-variant=&quot;PR Timeline&quot; aria-label=&quot;PR Timeline concept&quot; hidden&gt;
+    &lt;div class=&quot;ot-stage&quot;&gt;&lt;article class=&quot;ot-phone ot-lab&quot;&gt;
+      &lt;header class=&quot;ot-header&quot;&gt;&lt;span class=&quot;ot-brand&quot;&gt;overtaek&lt;span&gt;↗&lt;/span&gt;&lt;/span&gt;&lt;span class=&quot;ot-demo&quot;&gt;Concept · Sample data&lt;/span&gt;&lt;/header&gt;
+      &lt;div class=&quot;ot-heading&quot;&gt;&lt;div class=&quot;ot-eyebrow&quot;&gt;ATHLETE / PERSONAL RECORDS&lt;/div&gt;&lt;h2&gt;A history of&lt;br&gt;getting faster.&lt;/h2&gt;&lt;/div&gt;
+      &lt;div class=&quot;ot-segments&quot; role=&quot;group&quot; aria-label=&quot;Race distance&quot;&gt;&lt;button data-distance=&quot;5&quot; aria-pressed=&quot;true&quot;&gt;5K&lt;/button&gt;&lt;button data-distance=&quot;10&quot; aria-pressed=&quot;false&quot;&gt;10K&lt;/button&gt;&lt;button data-distance=&quot;21&quot; aria-pressed=&quot;false&quot;&gt;Half&lt;/button&gt;&lt;/div&gt;
+      &lt;div class=&quot;ot-benchmark&quot;&gt;&lt;span class=&quot;ot-eyebrow&quot; id=&quot;ot-benchmark-label&quot;&gt;CURRENT PR / 5K&lt;/span&gt;&lt;strong id=&quot;ot-benchmark-time&quot;&gt;23:42&lt;/strong&gt;&lt;p&gt;Verified result series · Sample records&lt;/p&gt;&lt;span class=&quot;ot-benchmark-gain&quot; id=&quot;ot-benchmark-gain&quot;&gt;48 seconds faster since May&lt;/span&gt;&lt;/div&gt;
+      &lt;div class=&quot;ot-pr-caption&quot;&gt;Standing record / elapsed time&lt;/div&gt;
+      &lt;div id=&quot;ot-pr-chart&quot; class=&quot;ot-pr-chart&quot;&gt;&lt;/div&gt;
+      &lt;div class=&quot;ot-pr-dates&quot; role=&quot;group&quot; aria-label=&quot;Inspect PR milestone&quot;&gt;&lt;button data-record=&quot;0&quot; aria-pressed=&quot;false&quot;&gt;May&lt;/button&gt;&lt;button data-record=&quot;1&quot; aria-pressed=&quot;false&quot;&gt;June&lt;/button&gt;&lt;button data-record=&quot;2&quot; aria-pressed=&quot;false&quot;&gt;Aug&lt;/button&gt;&lt;button data-record=&quot;3&quot; aria-pressed=&quot;true&quot;&gt;Oct&lt;/button&gt;&lt;/div&gt;
+      &lt;section class=&quot;ot-pr-receipt&quot; aria-live=&quot;polite&quot;&gt;&lt;span class=&quot;ot-eyebrow&quot; id=&quot;ot-pr-date&quot;&gt;OCT 4, 2026&lt;/span&gt;&lt;h3 id=&quot;ot-pr-result&quot;&gt;23:42 · Riverside 5K&lt;/h3&gt;&lt;p id=&quot;ot-pr-proof&quot;&gt;Verified race result · Current personal record&lt;/p&gt;&lt;/section&gt;
+      &lt;div class=&quot;ot-bottom-note&quot;&gt;Record milestones · estimates kept separate&lt;/div&gt;
+      &lt;nav class=&quot;ot-nav&quot; aria-label=&quot;App context&quot;&gt;&lt;span&gt;Home&lt;/span&gt;&lt;span&gt;Compete&lt;/span&gt;&lt;span&gt;Crew&lt;/span&gt;&lt;span aria-current=&quot;page&quot;&gt;Athlete&lt;/span&gt;&lt;/nav&gt;
+    &lt;/article&gt;&lt;/div&gt;
+  &lt;/section&gt;
+  &lt;section data-variant=&quot;Crew Relay&quot; aria-label=&quot;Crew Relay concept&quot; hidden&gt;
+    &lt;div class=&quot;ot-stage&quot;&gt;&lt;article class=&quot;ot-phone ot-relay&quot;&gt;
+      &lt;header class=&quot;ot-header&quot;&gt;&lt;span class=&quot;ot-brand&quot;&gt;overtaek&lt;span&gt;↗&lt;/span&gt;&lt;/span&gt;&lt;span class=&quot;ot-demo&quot;&gt;Concept · Sample data&lt;/span&gt;&lt;/header&gt;
+      &lt;div class=&quot;ot-heading&quot;&gt;&lt;div class=&quot;ot-eyebrow&quot;&gt;CREW / RELAY&lt;/div&gt;&lt;h2&gt;Different runs.&lt;br&gt;One finish line.&lt;/h2&gt;&lt;p&gt;Northside crew · Weekly running goal&lt;/p&gt;&lt;/div&gt;
+      &lt;div class=&quot;ot-relay-total&quot;&gt;&lt;strong&gt;76.0&lt;span&gt; / 100 km&lt;/span&gt;&lt;/strong&gt;&lt;p&gt;24.0 km to the crew goal&lt;/p&gt;&lt;/div&gt;
+      &lt;div class=&quot;ot-relay-tape&quot; aria-label=&quot;Crew contributions, 0 to 100 kilometers&quot;&gt;&lt;div class=&quot;ot-relay-filled&quot;&gt;&lt;button data-member=&quot;maya&quot; style=&quot;width:42.1%&quot; aria-label=&quot;Inspect Maya, 32 kilometers&quot; aria-pressed=&quot;false&quot;&gt;MC&lt;/button&gt;&lt;button data-member=&quot;you&quot; style=&quot;width:25.26%&quot; aria-label=&quot;Inspect your 19.2 kilometers&quot; aria-pressed=&quot;true&quot;&gt;YOU&lt;/button&gt;&lt;button data-member=&quot;leo&quot; style=&quot;width:32.64%&quot; aria-label=&quot;Inspect Leo, 24.8 kilometers&quot; aria-pressed=&quot;false&quot;&gt;LS&lt;/button&gt;&lt;/div&gt;&lt;span class=&quot;ot-finish-gate&quot;&gt;&lt;/span&gt;&lt;/div&gt;
+      &lt;div class=&quot;ot-relay-scale&quot;&gt;&lt;span&gt;0 km&lt;/span&gt;&lt;span&gt;100 km&lt;/span&gt;&lt;/div&gt;
+      &lt;div class=&quot;ot-glass ot-relay-detail&quot; aria-live=&quot;polite&quot;&gt;&lt;span class=&quot;ot-eyebrow&quot;&gt;PART OF THE WHOLE&lt;/span&gt;&lt;div class=&quot;ot-relay-person&quot;&gt;&lt;span class=&quot;ot-avatar&quot; id=&quot;ot-relay-avatar&quot;&gt;YOU&lt;/span&gt;&lt;div&gt;&lt;h3 id=&quot;ot-relay-name&quot;&gt;Your contribution&lt;/h3&gt;&lt;p id=&quot;ot-relay-contribution&quot;&gt;19.2 km · 3 runs&lt;/p&gt;&lt;/div&gt;&lt;/div&gt;&lt;div class=&quot;ot-relay-fraction&quot;&gt;&lt;span id=&quot;ot-relay-share&quot;&gt;25.3% of recorded crew distance&lt;/span&gt;&lt;b&gt;↗&lt;/b&gt;&lt;/div&gt;&lt;/div&gt;
+      &lt;div class=&quot;ot-relay-members&quot;&gt;&lt;span&gt;MC&lt;/span&gt;&lt;span&gt;YOU&lt;/span&gt;&lt;span&gt;LS&lt;/span&gt;&lt;span&gt;+3&lt;/span&gt;&lt;p&gt;Everyone has a place.&lt;/p&gt;&lt;/div&gt;
+      &lt;nav class=&quot;ot-nav&quot; aria-label=&quot;App context&quot;&gt;&lt;span&gt;Home&lt;/span&gt;&lt;span&gt;Compete&lt;/span&gt;&lt;span aria-current=&quot;page&quot;&gt;Crew&lt;/span&gt;&lt;span&gt;Athlete&lt;/span&gt;&lt;/nav&gt;
+    &lt;/article&gt;&lt;/div&gt;
+  &lt;/section&gt;
+  &lt;section data-variant=&quot;Finish-Line Moment&quot; aria-label=&quot;Finish-Line Moment in the existing Compete&quot; hidden&gt;
+    &lt;div class=&quot;ot-stage&quot;&gt;&lt;article class=&quot;ot-phone ot-arena ot-return&quot;&gt;
+      &lt;header class=&quot;ot-header&quot;&gt;&lt;span class=&quot;ot-brand&quot;&gt;overtaek&lt;span&gt;↗&lt;/span&gt;&lt;/span&gt;&lt;span class=&quot;ot-demo&quot;&gt;Concept · Sample data&lt;/span&gt;&lt;/header&gt;
+      &lt;div class=&quot;ot-heading&quot;&gt;&lt;div class=&quot;ot-eyebrow&quot;&gt;COMPETE&lt;/div&gt;&lt;h2&gt;Your week&lt;br&gt;in the field.&lt;/h2&gt;&lt;/div&gt;
+      &lt;div class=&quot;ot-return-banner&quot; id=&quot;ot-return-banner&quot;&gt;&lt;div&gt;&lt;span class=&quot;ot-eyebrow&quot;&gt;SINCE YOUR LAST VISIT&lt;/span&gt;&lt;p&gt;+2.2 km counted · Up one place&lt;/p&gt;&lt;/div&gt;&lt;div class=&quot;ot-return-actions&quot;&gt;&lt;button id=&quot;ot-return-replay&quot;&gt;Replay&lt;/button&gt;&lt;button id=&quot;ot-return-dismiss&quot;&gt;Dismiss&lt;/button&gt;&lt;/div&gt;&lt;/div&gt;
+      &lt;div class=&quot;ot-glass ot-sport&quot;&gt;&lt;span&gt;Running&lt;/span&gt;&lt;span&gt;Week 42 · Open track&lt;/span&gt;&lt;/div&gt;
+      &lt;div class=&quot;ot-field&quot; aria-label=&quot;Existing Compete lanes, distance scale 16 to 22 kilometers&quot;&gt;
+        &lt;div class=&quot;ot-axis&quot;&gt;&lt;span&gt;22 km&lt;/span&gt;&lt;span&gt;20&lt;/span&gt;&lt;span&gt;18&lt;/span&gt;&lt;span&gt;16&lt;/span&gt;&lt;/div&gt;
+        &lt;div class=&quot;ot-lanes&quot;&gt;
+          &lt;div class=&quot;ot-lane&quot;&gt;&lt;span class=&quot;ot-lane-name&quot;&gt;Maya&lt;/span&gt;&lt;div class=&quot;ot-runner&quot; style=&quot;bottom:76.7%&quot;&gt;MC&lt;/div&gt;&lt;/div&gt;
+          &lt;div class=&quot;ot-lane ot-own&quot;&gt;&lt;span class=&quot;ot-lane-name&quot;&gt;You&lt;/span&gt;&lt;div class=&quot;ot-runner&quot; id=&quot;ot-return-marker&quot; style=&quot;bottom:53.3%&quot;&gt;YOU&lt;/div&gt;&lt;/div&gt;
+          &lt;div class=&quot;ot-lane&quot;&gt;&lt;span class=&quot;ot-lane-name&quot;&gt;Leo&lt;/span&gt;&lt;div class=&quot;ot-runner&quot; style=&quot;bottom:30%&quot;&gt;LS&lt;/div&gt;&lt;/div&gt;
+          &lt;div class=&quot;ot-lane ot-ghost&quot;&gt;&lt;span class=&quot;ot-lane-name&quot;&gt;Past you&lt;/span&gt;&lt;div class=&quot;ot-ghost-mark&quot; style=&quot;bottom:40%&quot;&gt;PW&lt;/div&gt;&lt;/div&gt;
+        &lt;/div&gt;
+      &lt;/div&gt;
+      &lt;div class=&quot;ot-glass ot-inspector&quot;&gt;&lt;span&gt;Your week&lt;/span&gt;&lt;div&gt;&lt;strong id=&quot;ot-return-total&quot;&gt;19.2&lt;/strong&gt;&lt;span&gt; km&lt;/span&gt;&lt;small id=&quot;ot-return-place&quot;&gt;4th · 1.4 km ahead of Leo&lt;/small&gt;&lt;/div&gt;&lt;/div&gt;
+      &lt;div class=&quot;ot-bottom-note&quot; id=&quot;ot-return-status&quot; aria-live=&quot;polite&quot;&gt;Updated Compete · continue as usual&lt;/div&gt;
+      &lt;nav class=&quot;ot-nav ot-glass&quot; aria-label=&quot;App context&quot;&gt;&lt;span&gt;Home&lt;/span&gt;&lt;span aria-current=&quot;page&quot;&gt;Compete&lt;/span&gt;&lt;span&gt;Crew&lt;/span&gt;&lt;span&gt;Athlete&lt;/span&gt;&lt;/nav&gt;
+    &lt;/article&gt;&lt;/div&gt;
+  &lt;/section&gt;
+
+&lt;/div&gt;
+&lt;style&gt;
+#ot-experiences{--ot-paper:light-dark(#fafbf8,#15231c);--ot-ink:light-dark(#26382d,#ecf3e6);--ot-panel:light-dark(#fff,#20362a);--ot-line:light-dark(#e0e5dd,#435447);--ot-muted:light-dark(#60705f,#b0c1ae);--ot-tennis:#d4ee89;--ot-dark:#26382d;--ot-ghost:light-dark(#b3beb1,#81917f);--ot-wash:light-dark(#edf1e8,#2e4230);--ot-glass:light-dark(#ffffffb8,#263d30d9);--ot-sheen:light-dark(#ffffffdc,#ffffff4d);font-family:&#x27;DM Sans&#x27;,sans-serif;color:var(--ot-ink)}
+#ot-experiences *{box-sizing:border-box}
+#ot-experiences [hidden]{display:none!important}
+#ot-experiences .ot-stage{min-height:860px;display:flex;justify-content:center;align-items:flex-start;padding:20px 10px 24px}
+#ot-experiences .ot-phone{width:min(100%,370px);min-height:654px;background:var(--ot-paper);border:1px solid var(--ot-line);border-radius:34px;padding:22px 22px 12px;position:relative;display:flex;flex-direction:column;box-shadow:0 16px 35px #18281812;isolation:isolate;overflow:hidden}
+#ot-experiences .ot-header{display:flex;justify-content:space-between;align-items:center;gap:8px}
+#ot-experiences .ot-brand{font-weight:700;font-size:19px;letter-spacing:-1px}
+#ot-experiences .ot-brand&gt;span{margin-left:3px}
+#ot-experiences .ot-demo{font-size:10px;color:var(--ot-muted);text-align:right}
+#ot-experiences .ot-heading{margin:27px 0 19px}
+#ot-experiences .ot-eyebrow{font-size:10px;letter-spacing:1.5px;font-weight:600;line-height:1.5}
+#ot-experiences h2{font-size:31px;line-height:1.07;letter-spacing:-1.3px;font-weight:500;margin:10px 0 0}
+#ot-experiences h3{font-size:19px;line-height:1.2;font-weight:500;letter-spacing:-.5px;margin:6px 0}
+#ot-experiences p{font-size:12px;line-height:1.5;margin:8px 0;color:var(--ot-muted)}
+#ot-experiences button{font:inherit;color:inherit;border:0;cursor:var(--cursor-interaction,pointer);-webkit-tap-highlight-color:transparent}
+#ot-experiences button:focus-visible{outline:3px solid var(--ot-ink);outline-offset:4px}
+#ot-experiences button:active{scale:.98}
+#ot-experiences .ot-glass{background:linear-gradient(125deg,var(--ot-sheen),transparent 40%),var(--ot-glass);backdrop-filter:blur(16px) saturate(1.25);-webkit-backdrop-filter:blur(16px) saturate(1.25);border:1px solid var(--ot-sheen);box-shadow:inset 0 1px 1px #fff9,inset 0 -1px 2px #18281814,0 7px 20px #18281812;border-radius:23px}
+#ot-experiences .ot-nav{margin-top:auto;display:flex;align-items:center;justify-content:space-between;padding:14px 7px 4px;border-top:1px solid var(--ot-line);gap:4px;font-size:11px;color:var(--ot-muted)}
+#ot-experiences .ot-nav span{padding:10px 7px;border-radius:20px}
+#ot-experiences .ot-nav [aria-current]{background:var(--ot-tennis);color:var(--ot-dark);font-weight:600}
+#ot-experiences .ot-nav.ot-glass{padding:4px;margin-top:8px;border:1px solid var(--ot-sheen)}
+#ot-experiences .ot-bottom-note{text-align:center;font-size:10px;line-height:1.4;color:var(--ot-muted);margin:12px 0 15px}
+#ot-experiences .ot-segments{display:flex;background:var(--ot-wash);border-radius:18px;padding:4px;gap:4px}
+#ot-experiences .ot-segments button{flex:1;background:transparent;border-radius:14px;padding:10px;font-size:12px;min-height:42px}
+#ot-experiences .ot-segments [aria-pressed=true]{background:var(--ot-panel);box-shadow:0 2px 5px #14251a13;font-weight:600}
+#ot-experiences .ot-action{background:var(--ot-panel);border:1px solid var(--ot-line);border-radius:14px;min-height:44px;padding:10px 13px;font-size:12px}
+#ot-experiences .ot-arena{background:radial-gradient(ellipse at 80% 38%,light-dark(#d4ee8952,#4b653c52),transparent 70%),var(--ot-paper)}
+#ot-experiences .ot-arena .ot-heading{margin-bottom:16px}
+#ot-experiences .ot-sport{display:flex;justify-content:space-between;align-items:center;padding:12px 16px;border-radius:18px;font-size:12px;z-index:2}
+#ot-experiences .ot-sport span+span{font-size:10px;color:var(--ot-muted)}
+#ot-experiences .ot-field{height:258px;position:relative;margin:8px 0 -24px;display:flex;gap:7px}
+#ot-experiences .ot-axis{width:31px;display:flex;flex-direction:column;justify-content:space-between;padding:12px 0;font-size:9px;color:var(--ot-muted)}
+#ot-experiences .ot-lanes{display:flex;flex:1;position:relative;background:repeating-linear-gradient(to top,transparent 0,transparent calc(33.333% - 1px),var(--ot-line) calc(33.333% - 1px),var(--ot-line) 33.333%)}
+#ot-experiences .ot-lane{width:25%;height:100%;border-inline-start:1px solid var(--ot-line);position:relative}
+#ot-experiences .ot-lane:last-child{border-inline-end:1px solid var(--ot-line)}
+#ot-experiences .ot-own{background:linear-gradient(0deg,transparent,#d4ee8952 45%,#d4ee8920)}
+#ot-experiences .ot-lane-name{position:absolute;left:0;right:0;bottom:6px;text-align:center;font-size:9px;color:var(--ot-muted)}
+#ot-experiences .ot-runner,#ot-experiences .ot-ghost-mark{position:absolute;left:50%;transform:translate(-50%,50%);width:43px;height:43px;display:grid;place-items:center;background:var(--ot-panel);border:2px solid var(--ot-line);border-radius:50%;font-size:10px;box-shadow:0 4px 8px #18281813;transition:box-shadow .25s}
+#ot-experiences .ot-own .ot-runner{background:var(--ot-tennis);color:var(--ot-dark);border-color:var(--ot-tennis);font-size:9px}
+#ot-experiences .ot-runner[aria-pressed=true]{box-shadow:0 0 0 4px var(--ot-panel),0 0 0 5px var(--ot-ink)}
+#ot-experiences .ot-ghost-mark{width:31px;height:31px;border:1px dashed var(--ot-muted);color:var(--ot-muted);background:var(--ot-paper);box-shadow:none;font-size:9px}
+#ot-experiences .ot-inspector{position:relative;z-index:2;margin:0 0 0 26px;padding:15px 19px}
+#ot-experiences .ot-inspector&gt;span{font-size:11px}
+#ot-experiences .ot-inspector strong{font-size:35px;letter-spacing:-1px;font-weight:500}
+#ot-experiences .ot-inspector small{display:block;color:var(--ot-muted);font-size:11px}
+#ot-experiences .ot-forged .ot-heading{margin-bottom:14px}
+#ot-experiences .ot-forged h2{font-size:28px}
+#ot-experiences .ot-object-scene{perspective:1000px;display:flex;justify-content:center;align-items:center;min-height:292px;padding:20px 10px 17px}
+#ot-experiences .ot-object{--ot-edge:#a6b96d;position:relative;width:258px;height:254px;transform-style:preserve-3d;transform:rotateX(9deg) rotateY(-13deg) rotateZ(-3deg);transition:transform .65s cubic-bezier(.2,.8,.2,1);border-radius:23px;box-shadow:2px 3px 0 var(--ot-edge),4px 6px 0 var(--ot-edge),6px 9px 0 var(--ot-edge),10px 18px 20px #17251522}
+#ot-experiences .ot-object-face,#ot-experiences .ot-object-back{position:absolute;inset:0;border-radius:23px;backface-visibility:hidden;-webkit-backface-visibility:hidden;display:flex;flex-direction:column;padding:24px 22px;background:repeating-linear-gradient(0deg,#ffffff16 0 1px,transparent 1px 3px),linear-gradient(125deg,#f4f8cc,#b5ca7c 35%,#dfeaaf 53%,#a9bd70 76%,#d7e7a3);color:#26382d;border:1px solid #ffffffa8;overflow:hidden}
+#ot-experiences .ot-object-face::after{content:&quot;&quot;;position:absolute;inset:0;pointer-events:none;background:linear-gradient(105deg,transparent 20%,#fff0 38%,#fff8 45%,#fff0 52%,transparent 70%);background-size:250% 100%;background-position:var(--ot-light,70%) 0;mix-blend-mode:soft-light;transition:background-position .5s}
+#ot-experiences .ot-object-frame{position:absolute;inset:9px;border:1px solid #26382d35;border-radius:16px;pointer-events:none}
+#ot-experiences .ot-object-kicker{font-size:9px;letter-spacing:1.1px}
+#ot-experiences .ot-object-face h3{font-size:27px;letter-spacing:-.8px;margin-top:18px;line-height:1.05;text-shadow:0 1px 0 #fff9,1px 2px 0 #26382d20}
+#ot-experiences .ot-relief{font-size:64px;font-weight:600;line-height:1.1;letter-spacing:-3px;text-shadow:0 1px 0 #ffffffd9,1px 2px 0 #667a43,2px 3px 0 #667a4350}
+#ot-experiences .ot-relief&gt;span{font-size:29px;letter-spacing:-1px;font-weight:400}
+#ot-experiences .ot-object-caption{font-size:9px;letter-spacing:1.2px}
+#ot-experiences .ot-object-base{margin-top:auto;padding-top:12px;display:flex;justify-content:space-between;font-size:8px;letter-spacing:1px}
+#ot-experiences .ot-object-back{transform:rotateY(180deg);justify-content:center;text-align:center;background:linear-gradient(140deg,#eaf0d6,#b5c581)}
+#ot-experiences .ot-object-back p{color:#3c4e32;font-size:13px}
+#ot-experiences .ot-object-back small{font-size:10px}
+#ot-experiences .ot-object[data-material=glass]{--ot-edge:#b6cbbc}
+#ot-experiences .ot-object[data-material=glass] .ot-object-face{background:radial-gradient(ellipse at 10% 0,#ffffffdf,transparent 60%),linear-gradient(145deg,#eff9e7,#d3e7c6c9 50%,#f6fff2);box-shadow:inset 0 0 14px #fff,inset 0 -7px 13px #8fa48a40}
+#ot-experiences .ot-object[data-material=chromatic]{--ot-edge:#788d4c}
+#ot-experiences .ot-object[data-material=chromatic] .ot-object-face{background:radial-gradient(ellipse at 90% 5%,#78983d77,transparent 50%),linear-gradient(125deg,#26382d,#101c17 50%,#344b35);color:#ecf5dd}
+#ot-experiences .ot-object[data-material=chromatic] .ot-object-frame{border-color:#d4ee8980}
+#ot-experiences .ot-object[data-material=chromatic] .ot-relief{color:#d4ee89;text-shadow:0 1px 0 #eeffc4,1px 2px 0 #547234,2px 3px 0 #193316}
+#ot-experiences .ot-object[data-material=chromatic] h3{text-shadow:0 1px 0 #fff3,1px 2px 0 #000a}
+#ot-experiences .ot-object[data-material=medal]{--ot-edge:#8f6531;width:230px;height:230px;border-radius:50%}
+#ot-experiences .ot-object[data-material=medal] .ot-object-face,#ot-experiences .ot-object[data-material=medal] .ot-object-back{border-radius:50%;align-items:center;text-align:center;padding:26px 23px;background:radial-gradient(circle at 50% 50%,#f2dba6 0%,#d7b375 56%,#b78a44 61%,#fff0c4 62%,transparent 64%),repeating-conic-gradient(#ae793c 0deg,#dec28b 2deg,#b58745 4deg);color:#47341c}
+#ot-experiences .ot-object[data-material=medal] .ot-object-face::before{content:&quot;&quot;;position:absolute;inset:7px;border-radius:50%;background:radial-gradient(circle at 30% 20%,#fff1c7,#e1bf7c 45%,#b78a44);z-index:-1;border:1px solid #fff2c6}
+#ot-experiences .ot-object[data-material=medal] .ot-object-frame{border-radius:50%;inset:15px;border-color:#8c632a66}
+#ot-experiences .ot-object[data-material=medal] h3{font-size:17px;margin-top:9px}
+#ot-experiences .ot-object[data-material=medal] .ot-relief{font-size:63px;color:#78501f;text-shadow:0 1px 0 #ffeac1,1px 2px 0 #aa7b38}
+#ot-experiences .ot-object[data-material=medal] .ot-object-kicker{font-size:8px}
+#ot-experiences .ot-object[data-material=medal] .ot-object-base{padding-top:8px;font-size:7px;gap:12px;margin-top:2px}
+#ot-experiences .ot-materials{display:flex;gap:6px;justify-content:center}
+#ot-experiences .ot-materials button{background:transparent;padding:6px 12px;min-height:65px;border-radius:13px;display:flex;flex-direction:column;align-items:center;gap:3px;font-size:11px;flex:1}
+#ot-experiences .ot-materials [aria-pressed=true]{background:var(--ot-wash)}
+#ot-experiences .ot-materials small{font-size:9px;color:var(--ot-muted)}
+#ot-experiences .ot-swatch{display:block;width:25px;height:15px;border-radius:5px;box-shadow:1px 2px 0 #435b3e60}
+#ot-experiences .ot-swatch-glass{background:linear-gradient(125deg,#fff,#cfdec7)}
+#ot-experiences .ot-swatch-alloy{background:linear-gradient(125deg,#e8efbb,#a6be72,#d9e7a3)}
+#ot-experiences .ot-swatch-foil{background:linear-gradient(125deg,#26382d,#546b3b,#17251c)}
+#ot-experiences .ot-object-actions{display:flex;gap:8px;margin:9px 0 0}
+#ot-experiences .ot-object-actions button{flex:1}
+#ot-experiences .ot-forged .ot-bottom-note{min-height:28px;margin:8px 0}
+#ot-experiences .ot-clock .ot-heading{margin-bottom:5px}
+#ot-experiences .ot-day-dial{width:min(250px,100%);height:auto;aspect-ratio:1;position:relative;align-self:center;margin:14px 0 4px}
+#ot-experiences .ot-clock-track{position:absolute;inset:20px;border:18px solid var(--ot-wash);border-radius:50%;background:repeating-conic-gradient(var(--ot-line) 0deg .5deg,transparent .5deg 15deg);mask:radial-gradient(closest-side,transparent 0 82%,#000 83%)}
+#ot-experiences .ot-clock-sleep{position:absolute;inset:18.8%;border-radius:50%;background:conic-gradient(from 0deg,var(--ot-ghost) 0deg 105deg,transparent 105deg);mask:radial-gradient(closest-side,transparent 0 86%,#000 87%)}
+#ot-experiences .ot-clock-center{position:absolute;inset:26% 11.2%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px}
+#ot-experiences .ot-clock-center&gt;span:first-child{font-size:9px;letter-spacing:2px;color:var(--ot-muted)}
+#ot-experiences .ot-clock-center strong{font-size:38px;font-weight:500;letter-spacing:-2px}
+#ot-experiences .ot-clock-center&gt;span:last-child{font-size:11px;color:var(--ot-muted)}
+#ot-experiences .ot-clock-label{position:absolute;font-size:10px;color:var(--ot-muted)}
+#ot-experiences .ot-midnight{top:0;left:calc(50% - 7px)}
+#ot-experiences .ot-six{right:0;top:calc(50% - 6px)}
+#ot-experiences .ot-noon{bottom:0;left:calc(50% - 7px)}
+#ot-experiences .ot-eighteen{left:0;top:calc(50% - 6px)}
+#ot-experiences .ot-clock-event{position:absolute;width:40px;height:40px;border-radius:50%;background:var(--ot-tennis);color:var(--ot-dark);box-shadow:0 3px 6px #18281826;font-size:18px}
+#ot-experiences .ot-clock-run{right:6.8%;top:56.4%}
+#ot-experiences .ot-clock-walk{left:4.8%;top:42%}
+#ot-experiences .ot-clock-event[aria-pressed=true]{outline:1px solid var(--ot-ink);outline-offset:4px}
+#ot-experiences .ot-clock-legend{display:flex;justify-content:center;gap:18px;font-size:9px;color:var(--ot-muted);margin:4px 0 16px}
+#ot-experiences .ot-clock-legend b{display:inline-block;width:6px;height:6px;background:var(--ot-tennis);border-radius:50%;margin-right:3px}
+#ot-experiences .ot-clock-legend span+span b{background:var(--ot-ghost)}
+#ot-experiences .ot-clock-detail{padding:16px 20px}
+#ot-experiences .ot-clock-detail h3{font-size:19px}
+#ot-experiences .ot-clock-detail p{margin-bottom:0}
+#ot-experiences .ot-relay-total{padding:17px 0 8px}
+#ot-experiences .ot-relay-total&gt;strong{font-size:43px;font-weight:500;letter-spacing:-2px}
+#ot-experiences .ot-relay-total&gt;strong&gt;span{font-size:20px;letter-spacing:-.5px;color:var(--ot-muted)}
+#ot-experiences .ot-relay-total p{margin:0}
+#ot-experiences .ot-relay-tape{height:82px;position:relative;margin-top:33px;background:repeating-linear-gradient(0deg,var(--ot-line) 0 1px,transparent 1px 4px),var(--ot-wash);border-radius:8px;transform:rotate(-5deg);box-shadow:0 9px 0 var(--ot-line),0 18px 24px #26382d0d}
+#ot-experiences .ot-relay-filled{width:76%;display:flex;height:100%;border-radius:8px 0 0 8px;overflow:hidden}
+#ot-experiences .ot-relay-filled button{position:relative;background:repeating-linear-gradient(0deg,#26382d18 0 1px,transparent 1px 4px),#9cb76c;color:#26382d;font-size:10px;border-right:2px solid #ecf3df55}
+#ot-experiences .ot-relay-filled button:first-child{background:repeating-linear-gradient(0deg,#ffffff20 0 1px,transparent 1px 4px),#536f45;color:#fff}
+#ot-experiences .ot-relay-filled button[aria-pressed=true]{background:repeating-linear-gradient(0deg,#26382d18 0 1px,transparent 1px 4px),#d4ee89;box-shadow:inset 0 4px 0 #fff8,inset 0 -4px 0 #78944170;font-weight:700}
+#ot-experiences .ot-finish-gate{position:absolute;top:-12px;bottom:-12px;right:4px;width:7px;background:repeating-conic-gradient(var(--ot-ink) 0% 25%,var(--ot-paper) 0% 50%) 0 0/8px 8px}
+#ot-experiences .ot-relay-scale{display:flex;justify-content:space-between;font-size:9px;color:var(--ot-muted);margin:29px 0 18px}
+#ot-experiences .ot-relay-detail{padding:20px}
+#ot-experiences .ot-relay-person{display:flex;gap:13px;align-items:center;margin:17px 0}
+#ot-experiences .ot-avatar{width:40px;height:40px;border-radius:50%;background:var(--ot-tennis);color:var(--ot-dark);display:grid;place-items:center;font-size:10px}
+#ot-experiences .ot-relay-person h3{font-size:17px;margin:0}
+#ot-experiences .ot-relay-person p{margin:2px 0 0}
+#ot-experiences .ot-relay-fraction{border-top:1px solid var(--ot-line);padding-top:12px;display:flex;justify-content:space-between;font-size:10px;color:var(--ot-muted)}
+#ot-experiences .ot-relay-members{display:flex;align-items:center;margin:22px 0 20px}
+#ot-experiences .ot-relay-members&gt;span{width:26px;height:26px;border:2px solid var(--ot-paper);border-radius:50%;display:grid;place-items:center;background:var(--ot-wash);margin-left:-4px;font-size:7px}
+#ot-experiences .ot-relay-members p{font-size:10px;margin-left:9px}
+@media(max-width:400px){#ot-experiences .ot-stage{min-height:860px;padding-inline:0}
+#ot-experiences .ot-phone{padding-inline:17px;border-radius:27px}
+#ot-experiences h2{font-size:29px}
+#ot-experiences .ot-object{width:240px}
+#ot-experiences .ot-nav{font-size:10px}
+#ot-experiences .ot-nav span{padding-inline:6px}
+#ot-experiences .ot-demo{font-size:9px}
+#ot-experiences .ot-header{gap:4px}}
+@media(prefers-reduced-motion:reduce){#ot-experiences *,#ot-experiences *::after{transition:none!important;animation:none!important}
+#ot-experiences .ot-object{transform:none!important}
+#ot-experiences .ot-object.ot-flipped{transform:rotateY(180deg)!important}
+}
+@media(prefers-reduced-transparency:reduce){#ot-experiences .ot-glass{background:var(--ot-panel);backdrop-filter:none;-webkit-backdrop-filter:none}}
+&lt;/style&gt;
+&lt;style&gt;
+#ot-experiences .ot-week-stage{flex-direction:column;align-items:center;gap:12px}
+#ot-experiences .ot-study-options{display:flex;align-items:center;gap:5px;font-size:11px;flex-wrap:wrap;justify-content:center}
+#ot-experiences .ot-study-options&gt;span{margin-right:8px;color:var(--ot-muted)}
+#ot-experiences .ot-study-options button{min-height:38px;padding:8px 14px;border-radius:18px;background:var(--ot-paper);border:1px solid var(--ot-line)}
+#ot-experiences .ot-study-options [aria-pressed=true]{background:var(--ot-ink);color:var(--ot-paper)}
+#ot-experiences .ot-week-chart{width:100%;height:210px;margin:10px 0 0}
+#ot-experiences .ot-week-chart svg,#ot-experiences .ot-pr-chart svg{display:block;width:100%;height:100%;overflow:visible;font-family:inherit}
+#ot-experiences .ot-chart-caption{display:flex;flex-wrap:wrap;justify-content:space-between;gap:6px;font-size:11px;color:var(--ot-muted);margin:8px 0 20px}
+#ot-experiences .ot-week-selector{display:flex;flex-direction:column;gap:7px;font-size:11px;color:var(--ot-muted)}
+#ot-experiences .ot-week-selector select{font:inherit;font-size:14px;min-height:44px;border:1px solid var(--ot-line);border-radius:12px;padding:9px 12px;background:var(--ot-panel);color:var(--ot-ink);width:100%;min-width:0}
+#ot-experiences .ot-week-detail{border-top:1px solid var(--ot-line);padding:18px 0 0;margin-top:22px}
+#ot-experiences .ot-week-value{margin-top:8px}
+#ot-experiences .ot-week-value strong{font-size:38px;font-weight:500;letter-spacing:-1px}
+#ot-experiences .ot-week-detail p{margin:4px 0 12px}
+#ot-experiences .ot-week-sessions{border-top:1px solid var(--ot-line);margin-bottom:20px;font-size:12px}
+#ot-experiences .ot-week-sessions summary{padding:16px 0;min-height:44px;cursor:pointer}
+#ot-experiences .ot-session-row{display:flex;justify-content:space-between;gap:10px;padding:11px 0;border-top:1px solid var(--ot-line)}
+#ot-experiences .ot-session-row span:last-child{white-space:nowrap;font-variant-numeric:tabular-nums}
+#ot-experiences .ot-benchmark{padding:24px 0 22px}
+#ot-experiences .ot-benchmark&gt;strong{display:block;font-size:54px;letter-spacing:-3px;font-weight:500;line-height:1.3;margin-top:8px}
+#ot-experiences .ot-benchmark p{margin:3px 0 14px}
+#ot-experiences .ot-benchmark-gain{font-size:12px;border-bottom:3px solid var(--ot-tennis);padding-bottom:4px}
+#ot-experiences .ot-pr-chart{width:100%;height:152px;margin-top:8px}
+#ot-experiences .ot-pr-caption{font-size:11px;color:var(--ot-muted)}
+#ot-experiences .ot-pr-dates{display:flex;gap:4px;margin:5px 0 20px}
+#ot-experiences .ot-pr-dates button{min-height:44px;flex:1;font-size:12px;background:transparent;border-radius:13px;padding:9px 2px}
+#ot-experiences .ot-pr-dates [aria-pressed=true]{background:var(--ot-tennis);color:var(--ot-dark)}
+#ot-experiences .ot-pr-receipt{padding:17px 0 0;border-top:1px solid var(--ot-line);min-height:111px}
+#ot-experiences .ot-pr-receipt h3{font-size:17px;margin-top:9px}
+#ot-experiences .ot-return .ot-heading{margin-top:20px;margin-bottom:15px}
+#ot-experiences .ot-return-banner{padding:12px 14px;background:var(--ot-wash);border-radius:16px;margin-bottom:14px}
+#ot-experiences .ot-return-banner .ot-eyebrow{font-size:9px}
+#ot-experiences .ot-return-banner p{margin:4px 0 0;font-size:12px;color:var(--ot-ink)}
+#ot-experiences .ot-return-actions{display:flex;gap:6px;margin-top:8px}
+#ot-experiences .ot-return-actions button{min-height:38px;padding:7px 10px;border:1px solid var(--ot-line);background:var(--ot-panel);border-radius:12px;font-size:11px}
+#ot-experiences .ot-return .ot-field{height:216px}
+#ot-experiences .ot-clock .ot-heading .ot-eyebrow{font-size:9px;letter-spacing:1px}
+#ot-experiences .ot-stage{min-height:910px}
+@media(max-width:400px){#ot-experiences .ot-stage{min-height:950px}
+#ot-experiences .ot-week-selector select{font-size:16px}}
+&lt;/style&gt;
+&lt;script&gt;
+(() =&gt; {
+  const root = document.getElementById(&#x27;ot-experiences&#x27;);
+  const get = id =&gt; root.querySelector(&#x27;#&#x27; + id);
+  const saved = window.openai?.widgetState?.privateContent;
+  const initial = saved?.revision === 2 ? saved : {};
+  const choice = (value, allowed, fallback) =&gt; allowed.includes(value) ? value : fallback;
+  const state = {
+    revision: 2,
+    athlete: choice(initial.athlete, [&#x27;you&#x27;, &#x27;maya&#x27;, &#x27;leo&#x27;], &#x27;you&#x27;),
+    material: choice(initial.material, [&#x27;glass&#x27;, &#x27;alloy&#x27;, &#x27;chromatic&#x27;], &#x27;alloy&#x27;),
+    object: choice(initial.object, [&#x27;medal&#x27;, &#x27;goal&#x27;], &#x27;medal&#x27;),
+    flipped: !!initial.flipped,
+    turned: !!initial.turned,
+    chart: choice(initial.chart, [&#x27;bars&#x27;, &#x27;line&#x27;], &#x27;bars&#x27;),
+    week: choice(initial.week, [0, 1, 2, 3, 4, 5, 6], 5),
+    event: choice(initial.event, [&#x27;run&#x27;, &#x27;walk&#x27;], &#x27;run&#x27;),
+    distance: choice(initial.distance, [&#x27;5&#x27;, &#x27;10&#x27;, &#x27;21&#x27;], &#x27;5&#x27;),
+    record: choice(initial.record, [0, 1, 2, 3], 3),
+    member: choice(initial.member, [&#x27;you&#x27;, &#x27;maya&#x27;, &#x27;leo&#x27;], &#x27;you&#x27;),
+    banner: initial.banner !== false,
+  };
+  const press = (selector, key, value) =&gt; root.querySelectorAll(selector).forEach(el =&gt; {
+    el.setAttribute(&#x27;aria-pressed&#x27;, String(el.dataset[key] === String(value)));
+  });
+  function save(concept) {
+    window.openai?.setWidgetState?.({
+      modelContent: { concept, chart: state.chart, selectedWeek: state.week, object: state.object },
+      privateContent: { ...state },
+    })?.catch(() =&gt; {});
+  }
+  const athletes = {
+    you: [&#x27;Your week&#x27;, &#x27;19.2&#x27;, &#x27;1.4 km behind Maya&#x27;],
+    maya: [&#x27;Maya Chen&#x27;, &#x27;20.6&#x27;, &#x27;1.4 km ahead of you&#x27;],
+    leo: [&#x27;Leo Santos&#x27;, &#x27;17.8&#x27;, &#x27;1.4 km behind you&#x27;],
+  };
+  function arena() {
+    const a = athletes[state.athlete];
+    get(&#x27;ot-athlete-name&#x27;).textContent = a[0];
+    get(&#x27;ot-athlete-total&#x27;).textContent = a[1];
+    get(&#x27;ot-athlete-gap&#x27;).textContent = a[2];
+    press(&#x27;[data-athlete]&#x27;, &#x27;athlete&#x27;, state.athlete);
+  }
+  root.querySelectorAll(&#x27;[data-athlete]&#x27;).forEach(el =&gt; el.addEventListener(&#x27;click&#x27;, () =&gt; {
+    state.athlete = el.dataset.athlete; arena(); save(&#x27;Glass Track&#x27;);
+  }));
+  const materials = {
+    glass: [&#x27;EASY ▰▱▱&#x27;, &#x27;LIQUID GLASS&#x27;, &#x27;Easy · polished glass / optional personal target&#x27;],
+    alloy: [&#x27;MEDIUM ▰▰▱&#x27;, &#x27;ANODIZED ALLOY&#x27;, &#x27;Medium · brushed alloy / optional personal target&#x27;],
+    chromatic: [&#x27;HARD ▰▰▰&#x27;, &#x27;CHROMATIC FOIL&#x27;, &#x27;Hard · chromatic foil / optional personal target&#x27;],
+  };
+  function object() {
+    const medal = state.object === &#x27;medal&#x27;;
+    const m = materials[state.material];
+    const obj = get(&#x27;ot-object&#x27;);
+    obj.dataset.material = medal ? &#x27;medal&#x27; : state.material;
+    root.querySelector(&#x27;.ot-object-face&#x27;).setAttribute(&#x27;aria-hidden&#x27;, String(state.flipped));
+    root.querySelector(&#x27;.ot-object-back&#x27;).setAttribute(&#x27;aria-hidden&#x27;, String(!state.flipped));
+    root.querySelector(&#x27;.ot-object-scene&#x27;).setAttribute(&#x27;aria-label&#x27;, medal ? &#x27;Settled weekly medal&#x27; : &#x27;Optional Home goal plate&#x27;);
+    obj.classList.toggle(&#x27;ot-flipped&#x27;, state.flipped);
+    obj.style.transform = state.flipped ? &#x27;rotateX(5deg) rotateY(180deg)&#x27; : state.turned ? &#x27;rotateX(-12deg) rotateY(19deg) rotateZ(3deg)&#x27; : &#x27;rotateX(9deg) rotateY(-13deg) rotateZ(-3deg)&#x27;;
+    obj.style.setProperty(&#x27;--ot-light&#x27;, state.turned ? &#x27;25%&#x27; : &#x27;70%&#x27;);
+    get(&#x27;ot-object-kicker&#x27;).textContent = medal ? &#x27;RUNNING / SETTLED RESULT&#x27; : &#x27;PERSONAL GOAL / &#x27; + m[0];
+    get(&#x27;ot-object-title&#x27;).innerHTML = medal ? &#x27;Week 41&#x27; : &#x27;Make room&lt;br&gt;to move.&#x27;;
+    get(&#x27;ot-object-value&#x27;).innerHTML = medal ? &#x27;1&lt;span&gt;st&lt;/span&gt;&#x27; : &#x27;3&lt;span&gt; / 4&lt;/span&gt;&#x27;;
+    get(&#x27;ot-object-caption&#x27;).textContent = medal ? &#x27;142 EFFORT POINTS&#x27; : &#x27;COUNTED SESSIONS&#x27;;
+    get(&#x27;ot-object-finish&#x27;).textContent = medal ? &#x27;OCT 5–12, 2026 UTC&#x27; : m[1];
+    get(&#x27;ot-material-note&#x27;).textContent = medal ? &#x27;Settled result · no completion target required&#x27; : m[2];
+    get(&#x27;ot-record-title&#x27;).textContent = medal ? &#x27;First in your field.&#x27; : &#x27;A target you chose.&#x27;;
+    get(&#x27;ot-record-copy&#x27;).innerHTML = medal ? &#x27;Running · Open track&lt;br&gt;142 effort points · +18 rating&#x27; : &#x27;3 of 4 counted sessions&lt;br&gt;Does not affect competition scoring&#x27;;
+    get(&#x27;ot-record-date&#x27;).textContent = medal ? &#x27;Oct 5–12, 2026 · UTC&#x27; : &#x27;Optional Home feature proposal&#x27;;
+    get(&#x27;ot-flip&#x27;).textContent = state.flipped ? &#x27;Show the object&#x27; : &#x27;Flip to record&#x27;;
+    root.querySelector(&#x27;.ot-materials&#x27;).hidden = medal;
+    root.querySelectorAll(&#x27;.ot-forged .ot-nav span&#x27;).forEach(el =&gt; {
+      if (el.textContent === (medal ? &#x27;Athlete&#x27; : &#x27;Home&#x27;)) el.setAttribute(&#x27;aria-current&#x27;, &#x27;page&#x27;);
+      else el.removeAttribute(&#x27;aria-current&#x27;);
+    });
+    press(&#x27;[data-object]&#x27;, &#x27;object&#x27;, state.object);
+    press(&#x27;button[data-material]&#x27;, &#x27;material&#x27;, state.material);
+  }
+  root.querySelectorAll(&#x27;button[data-material]&#x27;).forEach(el =&gt; el.addEventListener(&#x27;click&#x27;, () =&gt; {
+    state.material = el.dataset.material; state.flipped = false; object(); save(&#x27;Forged Week&#x27;);
+  }));
+  root.querySelectorAll(&#x27;[data-object]&#x27;).forEach(el =&gt; el.addEventListener(&#x27;click&#x27;, () =&gt; {
+    state.object = el.dataset.object; state.flipped = false; object(); save(&#x27;Forged Week&#x27;);
+  }));
+  get(&#x27;ot-turn&#x27;).addEventListener(&#x27;click&#x27;, () =&gt; { state.turned = !state.turned; object(); save(&#x27;Forged Week&#x27;); });
+  get(&#x27;ot-flip&#x27;).addEventListener(&#x27;click&#x27;, () =&gt; { state.flipped = !state.flipped; object(); save(&#x27;Forged Week&#x27;); });
+
+  const weeks = [
+    { date: &#x27;Aug 31&#x27;, axis: &#x27;8/31&#x27;, bounds: &#x27;AUG 31–SEP 7 / UTC&#x27;, total: 24.6 },
+    { date: &#x27;Sep 7&#x27;, axis: &#x27;9/7&#x27;, bounds: &#x27;SEP 7–14 / UTC&#x27;, total: 28.1 },
+    { date: &#x27;Sep 14&#x27;, axis: &#x27;9/14&#x27;, bounds: &#x27;SEP 14–21 / UTC&#x27;, total: 23.8 },
+    { date: &#x27;Sep 21&#x27;, axis: &#x27;9/21&#x27;, bounds: &#x27;SEP 21–28 / UTC&#x27;, total: 32.4 },
+    { date: &#x27;Sep 28&#x27;, axis: &#x27;9/28&#x27;, bounds: &#x27;SEP 28–OCT 5 / UTC&#x27;, total: 26.7 },
+    { date: &#x27;Oct 5&#x27;, axis: &#x27;10/5&#x27;, bounds: &#x27;OCT 5–12 / UTC&#x27;, total: 30.6 },
+    { date: &#x27;Oct 12&#x27;, axis: &#x27;10/12&#x27;, bounds: &#x27;OCT 12–19 / UTC&#x27;, total: 19.2, partial: true },
+  ];
+  weeks.forEach((week, index) =&gt; {
+    const option = document.createElement(&#x27;option&#x27;);
+    option.value = String(index);
+    option.textContent = week.date + (week.partial ? &#x27; · This week so far&#x27; : &#x27; · Complete week&#x27;);
+    get(&#x27;ot-week-select&#x27;).append(option);
+  });
+  const ns = &#x27;http://www.w3.org/2000/svg&#x27;;
+  function svgNode(tag, attributes, parent, text) {
+    const node = document.createElementNS(ns, tag);
+    for (const [key, value] of Object.entries(attributes || {})) node.setAttribute(key, String(value));
+    if (text !== undefined) node.textContent = text;
+    parent.append(node);
+    return node;
+  }
+  function chartBase(container, height, label) {
+    const width = container.clientWidth;
+    if (!width) return null;
+    container.replaceChildren();
+    const svg = svgNode(&#x27;svg&#x27;, { viewBox: `0 0 ${width} ${height}`, role: &#x27;img&#x27;, &#x27;aria-label&#x27;: label }, container);
+    return { width, svg };
+  }
+  function weekChart() {
+    const base = chartBase(get(&#x27;ot-week-chart&#x27;), 210, &#x27;Weekly running distance in kilometers. Current week is partial. Select a week using the selector below.&#x27;);
+    if (!base) return;
+    const { width, svg } = base;
+    const left = 30, right = width - 9, top = 17, bottom = 177;
+    const ceiling = Math.ceil(Math.max(...weeks.map(w =&gt; w.total)) / 10) * 10;
+    const x = i =&gt; left + (i + .5) * (right - left) / weeks.length;
+    const y = value =&gt; bottom - value / ceiling * (bottom - top);
+    for (const tick of [0, ceiling / 2, ceiling]) {
+      svgNode(&#x27;line&#x27;, { x1: left, x2: right, y1: y(tick), y2: y(tick), stroke: &#x27;var(--ot-line)&#x27;, &#x27;stroke-width&#x27;: 1 }, svg);
+      svgNode(&#x27;text&#x27;, { x: left - 8, y: y(tick) + 4, &#x27;text-anchor&#x27;: &#x27;end&#x27;, fill: &#x27;var(--ot-muted)&#x27;, &#x27;font-size&#x27;: 11 }, svg, tick);
+    }
+    svgNode(&#x27;text&#x27;, { x: 0, y: 10, fill: &#x27;var(--ot-muted)&#x27;, &#x27;font-size&#x27;: 11 }, svg, &#x27;km&#x27;);
+    const defs = svgNode(&#x27;defs&#x27;, {}, svg);
+    const pattern = svgNode(&#x27;pattern&#x27;, { id: &#x27;ot-partial-hatch&#x27;, width: 5, height: 5, patternUnits: &#x27;userSpaceOnUse&#x27;, patternTransform: &#x27;rotate(35)&#x27; }, defs);
+    svgNode(&#x27;rect&#x27;, { width: 5, height: 5, fill: &#x27;var(--ot-wash)&#x27; }, pattern);
+    svgNode(&#x27;line&#x27;, { x1: 0, x2: 0, y1: 0, y2: 5, stroke: &#x27;var(--ot-muted)&#x27;, &#x27;stroke-width&#x27;: 2 }, pattern);
+    if (state.chart === &#x27;line&#x27;) {
+      const points = weeks.slice(0, -1).map((w, i) =&gt; `${x(i)},${y(w.total)}`).join(&#x27; &#x27;);
+      svgNode(&#x27;polyline&#x27;, { points, fill: &#x27;none&#x27;, stroke: &#x27;var(--ot-ink)&#x27;, &#x27;stroke-width&#x27;: 2 }, svg);
+      svgNode(&#x27;line&#x27;, { x1: x(5), y1: y(weeks[5].total), x2: x(6), y2: y(weeks[6].total), stroke: &#x27;var(--ot-muted)&#x27;, &#x27;stroke-dasharray&#x27;: &#x27;4 4&#x27;, &#x27;stroke-width&#x27;: 2 }, svg);
+    }
+    weeks.forEach((week, i) =&gt; {
+      const selected = state.week === i;
+      const mark = state.chart === &#x27;bars&#x27;
+        ? svgNode(&#x27;rect&#x27;, { x: x(i) - 10, y: y(week.total), width: 20, height: bottom - y(week.total), rx: 3, fill: week.partial ? &#x27;url(#ot-partial-hatch)&#x27; : selected ? &#x27;var(--ot-ink)&#x27; : &#x27;var(--ot-tennis)&#x27; }, svg)
+        : svgNode(&#x27;circle&#x27;, { cx: x(i), cy: y(week.total), r: selected ? 6 : 4, fill: week.partial ? &#x27;var(--ot-paper)&#x27; : &#x27;var(--ot-ink)&#x27;, stroke: &#x27;var(--ot-ink)&#x27;, &#x27;stroke-width&#x27;: 2 }, svg);
+      mark.style.cursor = &#x27;pointer&#x27;;
+      svgNode(&#x27;title&#x27;, {}, mark, `${week.date}: ${week.total} km${week.partial ? &#x27;, partial&#x27; : &#x27;&#x27;}`);
+      mark.addEventListener(&#x27;click&#x27;, () =&gt; { state.week = i; training(); save(&#x27;Weekly Training&#x27;); });
+      if (selected) svgNode(&#x27;text&#x27;, { x: x(i), y: y(week.total) - 12, &#x27;text-anchor&#x27;: &#x27;middle&#x27;, fill: &#x27;var(--ot-ink)&#x27;, &#x27;font-size&#x27;: 12 }, svg, week.total.toFixed(1));
+      if ([0, 2, 4, 6].includes(i)) svgNode(&#x27;text&#x27;, { x: x(i), y: 203, &#x27;text-anchor&#x27;: &#x27;middle&#x27;, fill: &#x27;var(--ot-muted)&#x27;, &#x27;font-size&#x27;: 11 }, svg, week.axis);
+    });
+  }
+  function training() {
+    const week = weeks[state.week];
+    get(&#x27;ot-week-select&#x27;).value = String(state.week);
+    get(&#x27;ot-week-bounds&#x27;).textContent = week.bounds;
+    get(&#x27;ot-week-total&#x27;).textContent = week.total.toFixed(1);
+    get(&#x27;ot-week-status&#x27;).textContent = (week.partial ? &#x27;This week so far&#x27; : &#x27;Complete week&#x27;) + &#x27; · 3 counted sessions&#x27;;
+    const distances = week.partial ? [5.9, 7.1, 6.2] : [Math.round(week.total * 3) / 10, Math.round(week.total * 3.5) / 10];
+    if (!week.partial) distances.push(Math.round((week.total - distances[0] - distances[1]) * 10) / 10);
+    const holder = get(&#x27;ot-week-sessions&#x27;); holder.replaceChildren();
+    distances.forEach((distance, i) =&gt; {
+      const row = document.createElement(&#x27;div&#x27;); row.className = &#x27;ot-session-row&#x27;;
+      for (const text of [[&#x27;Easy run&#x27;, &#x27;Park loop&#x27;, &#x27;Long run&#x27;][i], distance.toFixed(1) + &#x27; km&#x27;]) {
+        const span = document.createElement(&#x27;span&#x27;); span.textContent = text; row.append(span);
+      }
+      holder.append(row);
+    });
+    press(&#x27;[data-chart]&#x27;, &#x27;chart&#x27;, state.chart);
+    weekChart();
+  }
+  get(&#x27;ot-week-select&#x27;).addEventListener(&#x27;change&#x27;, event =&gt; { state.week = Number(event.target.value); training(); save(&#x27;Weekly Training&#x27;); });
+  root.querySelectorAll(&#x27;[data-chart]&#x27;).forEach(el =&gt; el.addEventListener(&#x27;click&#x27;, () =&gt; { state.chart = el.dataset.chart; training(); save(&#x27;Weekly Training&#x27;); }));
+
+  function clock() {
+    const walk = state.event === &#x27;walk&#x27;;
+    get(&#x27;ot-clock-time&#x27;).textContent = walk ? &#x27;18:00&#x27; : &#x27;07:30&#x27;;
+    get(&#x27;ot-clock-center-title&#x27;).textContent = walk ? &#x27;Evening walk&#x27; : &#x27;Morning run&#x27;;
+    get(&#x27;ot-clock-detail-time&#x27;).textContent = walk ? &#x27;18:00–18:25&#x27; : &#x27;07:30–08:04&#x27;;
+    get(&#x27;ot-clock-detail-title&#x27;).textContent = walk ? &#x27;Evening walk&#x27; : &#x27;Morning run&#x27;;
+    get(&#x27;ot-clock-detail-copy&#x27;).textContent = walk ? &#x27;25 min · 1.9 km&#x27; : &#x27;34 min · 6.2 km&#x27;;
+    press(&#x27;[data-event]&#x27;, &#x27;event&#x27;, state.event);
+  }
+  root.querySelectorAll(&#x27;[data-event]&#x27;).forEach(el =&gt; el.addEventListener(&#x27;click&#x27;, () =&gt; { state.event = el.dataset.event; clock(); save(&#x27;Body Clock&#x27;); }));
+  const recordDates = [&#x27;May 10, 2026&#x27;, &#x27;Jun 14, 2026&#x27;, &#x27;Aug 2, 2026&#x27;, &#x27;Oct 4, 2026&#x27;];
+  const recordDays = [Date.UTC(2026, 4, 10), Date.UTC(2026, 5, 14), Date.UTC(2026, 7, 2), Date.UTC(2026, 9, 4)];
+  const races = {
+    &#x27;5&#x27;: { event: &#x27;5K&#x27;, seconds: [1470, 1452, 1438, 1422] },
+    &#x27;10&#x27;: { event: &#x27;10K&#x27;, seconds: [3062, 3035, 3008, 2958] },
+    &#x27;21&#x27;: { event: &#x27;Half&#x27;, seconds: [6990, 6900, 6830, 6726] },
+  };
+  const time = seconds =&gt; {
+    const h = Math.floor(seconds / 3600), m = Math.floor(seconds % 3600 / 60), s = seconds % 60;
+    return (h ? h + &#x27;:&#x27; + String(m).padStart(2, &#x27;0&#x27;) : String(m)) + &#x27;:&#x27; + String(s).padStart(2, &#x27;0&#x27;);
+  };
+  function prChart() {
+    const race = races[state.distance];
+    const base = chartBase(get(&#x27;ot-pr-chart&#x27;), 152, `Standing ${race.event} personal record from May to October. Lower elapsed time is faster. Inspect milestones with the month buttons below.`);
+    if (!base) return;
+    const { width, svg } = base;
+    const low = Math.min(...race.seconds) - 5, high = Math.max(...race.seconds) + 5;
+    const x = i =&gt; 54 + (recordDays[i] - recordDays[0]) / (recordDays[3] - recordDays[0]) * (width - 66);
+    const y = value =&gt; 17 + (high - value) / (high - low) * 102;
+    for (const tick of [race.seconds[0], race.seconds[3]]) {
+      svgNode(&#x27;line&#x27;, { x1: 54, x2: width - 10, y1: y(tick), y2: y(tick), stroke: &#x27;var(--ot-line)&#x27; }, svg);
+      svgNode(&#x27;text&#x27;, { x: 47, y: y(tick) + 4, &#x27;text-anchor&#x27;: &#x27;end&#x27;, fill: &#x27;var(--ot-muted)&#x27;, &#x27;font-size&#x27;: 11 }, svg, time(tick));
+    }
+    let d = `M ${x(0)} ${y(race.seconds[0])}`;
+    for (let i = 1; i &lt; 4; i++) d += ` H ${x(i)} V ${y(race.seconds[i])}`;
+    svgNode(&#x27;path&#x27;, { d, fill: &#x27;none&#x27;, stroke: &#x27;var(--ot-ink)&#x27;, &#x27;stroke-width&#x27;: 2 }, svg);
+    race.seconds.forEach((seconds, i) =&gt; svgNode(&#x27;circle&#x27;, { cx: x(i), cy: y(seconds), r: state.record === i ? 6 : 4, fill: state.record === i ? &#x27;var(--ot-ink)&#x27; : &#x27;var(--ot-paper)&#x27;, stroke: &#x27;var(--ot-ink)&#x27;, &#x27;stroke-width&#x27;: 2 }, svg));
+    svgNode(&#x27;text&#x27;, { x: 54, y: 145, fill: &#x27;var(--ot-muted)&#x27;, &#x27;font-size&#x27;: 11 }, svg, &#x27;May&#x27;);
+    svgNode(&#x27;text&#x27;, { x: width - 10, y: 145, &#x27;text-anchor&#x27;: &#x27;end&#x27;, fill: &#x27;var(--ot-muted)&#x27;, &#x27;font-size&#x27;: 11 }, svg, &#x27;Oct / lower is faster&#x27;);
+  }
+  function benchmark() {
+    const race = races[state.distance], gain = race.seconds[0] - race.seconds[3];
+    get(&#x27;ot-benchmark-label&#x27;).textContent = &#x27;CURRENT PR / &#x27; + race.event;
+    get(&#x27;ot-benchmark-time&#x27;).textContent = time(race.seconds[3]);
+    get(&#x27;ot-benchmark-gain&#x27;).textContent = (gain &lt; 60 ? gain + &#x27; seconds&#x27; : time(gain)) + &#x27; faster since May&#x27;;
+    get(&#x27;ot-pr-date&#x27;).textContent = recordDates[state.record].toUpperCase();
+    get(&#x27;ot-pr-result&#x27;).textContent = time(race.seconds[state.record]) + &#x27; · &#x27; + [&#x27;Spring&#x27;, &#x27;Summer&#x27;, &#x27;Park&#x27;, &#x27;Riverside&#x27;][state.record] + &#x27; &#x27; + race.event;
+    get(&#x27;ot-pr-proof&#x27;).textContent = &#x27;Verified sample race result · &#x27; + (state.record === 3 ? &#x27;Current PR&#x27; : &#x27;PR when recorded&#x27;);
+    press(&#x27;[data-distance]&#x27;, &#x27;distance&#x27;, state.distance); press(&#x27;[data-record]&#x27;, &#x27;record&#x27;, state.record); prChart();
+  }
+  root.querySelectorAll(&#x27;[data-distance]&#x27;).forEach(el =&gt; el.addEventListener(&#x27;click&#x27;, () =&gt; { state.distance = el.dataset.distance; state.record = 3; benchmark(); save(&#x27;PR Timeline&#x27;); }));
+  root.querySelectorAll(&#x27;[data-record]&#x27;).forEach(el =&gt; el.addEventListener(&#x27;click&#x27;, () =&gt; { state.record = Number(el.dataset.record); benchmark(); save(&#x27;PR Timeline&#x27;); }));
+  const members = {
+    maya: [&#x27;MC&#x27;, &#x27;Maya Chen&#x27;, &#x27;32.0 km · 4 runs&#x27;, &#x27;42.1%&#x27;],
+    you: [&#x27;YOU&#x27;, &#x27;Your contribution&#x27;, &#x27;19.2 km · 3 runs&#x27;, &#x27;25.3%&#x27;],
+    leo: [&#x27;LS&#x27;, &#x27;Leo Santos&#x27;, &#x27;24.8 km · 3 runs&#x27;, &#x27;32.6%&#x27;],
+  };
+  function relay() {
+    const m = members[state.member];
+    get(&#x27;ot-relay-avatar&#x27;).textContent = m[0]; get(&#x27;ot-relay-name&#x27;).textContent = m[1];
+    get(&#x27;ot-relay-contribution&#x27;).textContent = m[2]; get(&#x27;ot-relay-share&#x27;).textContent = m[3] + &#x27; of recorded crew distance&#x27;;
+    press(&#x27;[data-member]&#x27;, &#x27;member&#x27;, state.member);
+  }
+  root.querySelectorAll(&#x27;[data-member]&#x27;).forEach(el =&gt; el.addEventListener(&#x27;click&#x27;, () =&gt; { state.member = el.dataset.member; relay(); save(&#x27;Crew Relay&#x27;); }));
+
+  let replayFrame = null;
+  function returnValue(distance) {
+    get(&#x27;ot-return-marker&#x27;).style.bottom = ((distance - 16) / 6 * 100) + &#x27;%&#x27;;
+    get(&#x27;ot-return-total&#x27;).textContent = distance.toFixed(1);
+    get(&#x27;ot-return-place&#x27;).textContent = (distance &gt; 17.8 ? &#x27;4th&#x27; : &#x27;5th&#x27;) + &#x27; · &#x27; + Math.abs(distance - 17.8).toFixed(1) + &#x27; km &#x27; + (distance &gt; 17.8 ? &#x27;ahead of&#x27; : &#x27;behind&#x27;) + &#x27; Leo&#x27;;
+  }
+  function finishReplay() {
+    if (replayFrame !== null) cancelAnimationFrame(replayFrame);
+    replayFrame = null; returnValue(19.2);
+    get(&#x27;ot-return-replay&#x27;).textContent = &#x27;Replay&#x27;;
+    get(&#x27;ot-return-status&#x27;).textContent = &#x27;Updated Compete · continue as usual&#x27;;
+  }
+  get(&#x27;ot-return-replay&#x27;).addEventListener(&#x27;click&#x27;, () =&gt; {
+    if (replayFrame !== null) { finishReplay(); return; }
+    if (matchMedia(&#x27;(prefers-reduced-motion: reduce)&#x27;).matches) { finishReplay(); return; }
+    const start = performance.now();
+    get(&#x27;ot-return-replay&#x27;).textContent = &#x27;Skip&#x27;;
+    get(&#x27;ot-return-status&#x27;).textContent = &#x27;Showing your newly counted contribution&#x27;;
+    function tick(now) {
+      const progress = Math.min(1, (now - start) / 1800);
+      if (get(&#x27;ot-return-marker&#x27;).closest(&#x27;[data-variant]&#x27;).hidden || progress === 1) { finishReplay(); return; }
+      returnValue(17 + 2.2 * (1 - (1 - progress) ** 3));
+      replayFrame = requestAnimationFrame(tick);
+    }
+    returnValue(17); replayFrame = requestAnimationFrame(tick); save(&#x27;Finish-Line Moment&#x27;);
+  });
+  get(&#x27;ot-return-dismiss&#x27;).addEventListener(&#x27;click&#x27;, () =&gt; {
+    finishReplay(); state.banner = false; get(&#x27;ot-return-banner&#x27;).hidden = true; save(&#x27;Finish-Line Moment&#x27;);
+  });
+  function render() {
+    arena(); object(); training(); clock(); benchmark(); relay(); finishReplay();
+    get(&#x27;ot-return-banner&#x27;).hidden = !state.banner;
+  }
+  render();
+  const observer = new ResizeObserver(() =&gt; { weekChart(); prChart(); });
+  observer.observe(get(&#x27;ot-week-chart&#x27;)); observer.observe(get(&#x27;ot-pr-chart&#x27;));
+})();
+&lt;/script&gt;
+
+&lt;script src=&quot;https://unpkg.com/@floating-ui/core@1.7.3/dist/floating-ui.core.umd.min.js&quot;&gt;&lt;/script&gt;
+&lt;script src=&quot;https://unpkg.com/@floating-ui/dom@1.7.4/dist/floating-ui.dom.umd.min.js&quot;&gt;&lt;/script&gt;
+&lt;script&gt;
+(() =&gt; {
+  if (window.FloatingUIDOM == null) {
+    return;
+  }
+  const { autoUpdate, computePosition, flip, offset, shift, size } =
+    window.FloatingUIDOM;
+  const tooltipPlacements = new Set([&quot;top&quot;, &quot;right&quot;, &quot;bottom&quot;, &quot;left&quot;]);
+  const tooltipId = `codex-visualization-tooltip-${
+    window.crypto?.randomUUID?.() ?? Date.now().toString(36)
+  }`;
+  const tooltipGap = 5;
+  const hoverDelay = 700;
+  const skipDelay = 300;
+  let activeTrigger = null;
+  let pendingTrigger = null;
+  let tooltip = null;
+  let openTimeout = null;
+  let autoUpdateCleanup = null;
+  let positionRequest = 0;
+  let skipDelayUntil = 0;
+  let lastPointerWasTouch = false;
+  let pinnedByTouch = false;
+
+  const getTrigger = (event) =&gt; {
+    for (const target of event.composedPath()) {
+      if (target?.nodeType === Node.ELEMENT_NODE) {
+        const trigger = target.closest(&quot;[data-tooltip]&quot;);
+        if (trigger) return trigger;
+      }
+    }
+    return null;
+  };
+  const containsTarget = (trigger, target) =&gt;
+    target?.nodeType != null &amp;&amp; trigger.contains(target);
+  const getContent = (trigger) =&gt;
+    trigger.getAttribute(&quot;data-tooltip&quot;)?.trim() ?? &quot;&quot;;
+  const getPlacement = (trigger) =&gt; {
+    const placement = trigger.getAttribute(&quot;data-tooltip-placement&quot;);
+    return tooltipPlacements.has(placement) ? placement : &quot;top&quot;;
+  };
+  const getTooltip = () =&gt; {
+    if (tooltip == null) {
+      tooltip = document.createElement(&quot;div&quot;);
+      tooltip.id = tooltipId;
+      tooltip.className = &quot;tooltip&quot;;
+      tooltip.setAttribute(&quot;role&quot;, &quot;tooltip&quot;);
+    }
+    return tooltip;
+  };
+  const setDescribedBy = (trigger, described) =&gt; {
+    const ids = new Set(
+      (trigger.getAttribute(&quot;aria-describedby&quot;) ?? &quot;&quot;)
+        .split(/\s+/)
+        .filter(Boolean),
+    );
+    if (described) {
+      ids.add(tooltipId);
+    } else {
+      ids.delete(tooltipId);
+    }
+    if (ids.size === 0) {
+      trigger.removeAttribute(&quot;aria-describedby&quot;);
+    } else {
+      trigger.setAttribute(&quot;aria-describedby&quot;, [...ids].join(&quot; &quot;));
+    }
+  };
+  const clearOpenTimeout = () =&gt; {
+    if (openTimeout != null) {
+      window.clearTimeout(openTimeout);
+      openTimeout = null;
+    }
+    pendingTrigger = null;
+  };
+  const closeTooltip = (activateSkipDelay = true) =&gt; {
+    clearOpenTimeout();
+    pinnedByTouch = false;
+    positionRequest += 1;
+    autoUpdateCleanup?.();
+    autoUpdateCleanup = null;
+    if (activeTrigger == null) {
+      return;
+    }
+    setDescribedBy(activeTrigger, false);
+    activeTrigger = null;
+    tooltip?.remove();
+    if (activateSkipDelay) {
+      skipDelayUntil = Date.now() + skipDelay;
+    }
+  };
+  const updatePosition = (trigger, floating) =&gt; {
+    const request = ++positionRequest;
+    void computePosition(trigger, floating, {
+      middleware: [
+        offset(tooltipGap),
+        flip({ padding: tooltipGap }),
+        shift({ padding: tooltipGap }),
+        size({
+          padding: tooltipGap,
+          apply({ availableHeight, availableWidth, elements }) {
+            elements.floating.style.setProperty(
+              &quot;--tooltip-available-width&quot;,
+              `${Math.max(0, availableWidth)}px`,
+            );
+            elements.floating.style.setProperty(
+              &quot;--tooltip-available-height&quot;,
+              `${Math.max(0, availableHeight)}px`,
+            );
+          },
+        }),
+      ],
+      placement: getPlacement(trigger),
+      strategy: &quot;fixed&quot;,
+    })
+      .then(({ x, y }) =&gt; {
+        if (activeTrigger !== trigger || request !== positionRequest) {
+          return;
+        }
+        const scale = window.devicePixelRatio || 1;
+        floating.style.transform = `translate(${Math.round(x * scale) / scale}px, ${Math.round(y * scale) / scale}px)`;
+        floating.style.visibility = &quot;visible&quot;;
+      })
+      .catch(() =&gt; {
+        if (activeTrigger === trigger &amp;&amp; request === positionRequest) {
+          closeTooltip(false);
+        }
+      });
+  };
+  const openTooltip = (trigger) =&gt; {
+    const content = getContent(trigger);
+    if (!trigger.isConnected || content.length === 0) {
+      return;
+    }
+    clearOpenTimeout();
+    if (activeTrigger === trigger) {
+      return;
+    }
+    closeTooltip();
+    const floating = getTooltip();
+    floating.textContent = content;
+    floating.style.visibility = &quot;hidden&quot;;
+    floating.style.transform = &quot;translate(0, 0)&quot;;
+    document.body.appendChild(floating);
+    activeTrigger = trigger;
+    setDescribedBy(trigger, true);
+    autoUpdateCleanup = autoUpdate(trigger, floating, () =&gt; {
+      updatePosition(trigger, floating);
+    });
+  };
+  const requestOpen = (trigger, immediate = false) =&gt; {
+    if (
+      getContent(trigger).length === 0 ||
+      activeTrigger === trigger ||
+      pendingTrigger === trigger
+    ) {
+      return;
+    }
+    clearOpenTimeout();
+    pendingTrigger = trigger;
+    const delay =
+      immediate || activeTrigger != null || Date.now() &lt; skipDelayUntil
+        ? 0
+        : hoverDelay;
+    if (delay === 0) {
+      openTooltip(trigger);
+      return;
+    }
+    openTimeout = window.setTimeout(() =&gt; {
+      openTimeout = null;
+      pendingTrigger = null;
+      openTooltip(trigger);
+    }, delay);
+  };
+  const handlePointerOpen = (event) =&gt; {
+    if (event.pointerType === &quot;touch&quot;) {
+      return;
+    }
+    const trigger = getTrigger(event);
+    if (trigger == null || containsTarget(trigger, event.relatedTarget)) {
+      return;
+    }
+    requestOpen(trigger);
+  };
+  const handlePointer = (event) =&gt; {
+    lastPointerWasTouch =
+      event.type === &quot;pointerdown&quot; &amp;&amp; event.pointerType === &quot;touch&quot;;
+  };
+  const handleTouchClick = (event) =&gt; {
+    const isTouch = event.pointerType === &quot;touch&quot; || lastPointerWasTouch;
+    lastPointerWasTouch = false;
+    if (!isTouch || event.detail === 0) {
+      return;
+    }
+    const trigger = getTrigger(event);
+    if (
+      trigger == null ||
+      !trigger.isConnected ||
+      getContent(trigger).length === 0 ||
+      (pinnedByTouch &amp;&amp; activeTrigger === trigger)
+    ) {
+      if (pinnedByTouch) {
+        closeTooltip();
+      }
+      return;
+    }
+    openTooltip(trigger);
+    pinnedByTouch = activeTrigger === trigger;
+    window.setTimeout(() =&gt; {
+      if (activeTrigger === trigger &amp;&amp; !trigger.isConnected) {
+        closeTooltip(false);
+      }
+    }, 0);
+  };
+  const handleLeave = (event) =&gt; {
+    if (pinnedByTouch) {
+      return;
+    }
+    const trigger = getTrigger(event);
+    if (trigger == null || containsTarget(trigger, event.relatedTarget)) {
+      return;
+    }
+    if (activeTrigger === trigger || pendingTrigger === trigger) {
+      closeTooltip();
+    }
+  };
+  const handleFocusIn = (event) =&gt; {
+    const trigger = getTrigger(event);
+    if (trigger?.matches(&quot;:focus-visible&quot;)) {
+      requestOpen(trigger, true);
+    }
+  };
+  const handleKeyDown = (event) =&gt; {
+    if (event.key === &quot;Escape&quot;) {
+      closeTooltip();
+    }
+  };
+  const handleContextMenu = (event) =&gt; {
+    lastPointerWasTouch = false;
+    const trigger = getTrigger(event);
+    if (activeTrigger === trigger || pendingTrigger === trigger) {
+      closeTooltip();
+    }
+  };
+  const handlers = {
+    pointerover: handlePointerOpen,
+    pointerdown: handlePointer,
+    pointercancel: handlePointer,
+    click: handleTouchClick,
+    pointerout: handleLeave,
+    focusin: handleFocusIn,
+    focusout: handleLeave,
+    keydown: handleKeyDown,
+    contextmenu: handleContextMenu,
+  };
+  const roots = new Map();
+  const handledEvents = new WeakSet();
+  const handleEvent = (event) =&gt; {
+    if (handledEvents.has(event)) return;
+    handledEvents.add(event);
+    handlers[event.type](event);
+  };
+  const discoverRoots = (node) =&gt; {
+    if (node.shadowRoot) listen(node.shadowRoot);
+    for (const element of node.querySelectorAll(&quot;*&quot;)) {
+      if (element.shadowRoot) listen(element.shadowRoot);
+    }
+  };
+  const listen = (root) =&gt; {
+    if (roots.has(root)) return;
+    for (const type of Object.keys(handlers)) root.addEventListener(type, handleEvent);
+    const observer = new window.MutationObserver((records) =&gt; {
+      for (const { addedNodes } of records) {
+        for (const node of addedNodes) {
+          if (node.nodeType === Node.ELEMENT_NODE) discoverRoots(node);
+        }
+      }
+      for (const [root, cleanup] of roots) {
+        if (root.host &amp;&amp; !root.host.isConnected) {
+          cleanup();
+          roots.delete(root);
+        }
+      }
+      if (activeTrigger &amp;&amp; !activeTrigger.isConnected) closeTooltip(false);
+    });
+    observer.observe(root, { childList: true, subtree: true });
+    roots.set(root, () =&gt; {
+      observer.disconnect();
+      for (const type of Object.keys(handlers)) root.removeEventListener(type, handleEvent);
+    });
+    discoverRoots(root);
+  };
+  const destroy = () =&gt; {
+    closeTooltip(false);
+    lastPointerWasTouch = false;
+    for (const cleanup of roots.values()) cleanup();
+    roots.clear();
+    tooltip = null;
+  };
+
+  // Events between children of one shadow root never reach the document.
+  listen(document);
+  window.addEventListener(&quot;pagehide&quot;, destroy, { once: true });
+})();
+&lt;/script&gt;
+&lt;script id=&quot;codex-visualization-tabs&quot;&gt;
+(() =&gt; {
+  const selector = &#x27;.nav[role=&quot;tablist&quot;] [role=&quot;tab&quot;]&#x27;;
+  const disabled = &#x27;:disabled,[aria-disabled=&quot;true&quot;]&#x27;;
+  const selectTab = (selected) =&gt; {
+    const panelId = selected.getAttribute(&quot;aria-controls&quot;);
+    for (const tab of selected.closest(&#x27;[role=&quot;tablist&quot;]&#x27;).querySelectorAll(&#x27;[role=&quot;tab&quot;]&#x27;)) {
+      const active = tab === selected;
+      tab.classList.toggle(&quot;active&quot;, active);
+      tab.setAttribute(&quot;aria-selected&quot;, String(active));
+      const id = tab.getAttribute(&quot;aria-controls&quot;);
+      const panel = id &amp;&amp; document.getElementById(id);
+      if (panel != null) {
+        panel.hidden = id !== panelId;
+        if (!panel.hidden &amp;&amp; selected.id) {
+          panel.setAttribute(&quot;aria-labelledby&quot;, selected.id);
+        }
+      }
+    }
+  };
+  const interact = (event) =&gt; {
+    const tab = event.target?.closest?.(selector);
+    if (event.defaultPrevented || tab == null || tab.matches(disabled)) {
+      return;
+    }
+    if (event.type === &quot;click&quot;) {
+      selectTab(tab);
+      return;
+    }
+    const tabs = Array.from(
+      tab.closest(&#x27;[role=&quot;tablist&quot;]&#x27;).querySelectorAll(&#x27;[role=&quot;tab&quot;]&#x27;),
+    ).filter((candidate) =&gt; !candidate.matches(disabled));
+    const current = tabs.indexOf(tab);
+    let next;
+    if (event.key === &quot;ArrowRight&quot; || event.key === &quot;ArrowDown&quot;) {
+      next = (current + 1) % tabs.length;
+    } else if (event.key === &quot;ArrowLeft&quot; || event.key === &quot;ArrowUp&quot;) {
+      next = (current + tabs.length - 1) % tabs.length;
+    } else if (event.key === &quot;Home&quot;) {
+      next = 0;
+    } else if (event.key === &quot;End&quot;) {
+      next = tabs.length - 1;
+    } else {
+      return;
+    }
+    event.preventDefault();
+    tabs[next].focus();
+    selectTab(tabs[next]);
+  };
+
+  for (const list of document.querySelectorAll(&#x27;.nav[role=&quot;tablist&quot;]&#x27;)) {
+    const selected =
+      list.querySelector(&#x27;[role=&quot;tab&quot;][aria-selected=&quot;true&quot;]&#x27;) ??
+      list.querySelector(&#x27;[role=&quot;tab&quot;].active&#x27;) ??
+      list.querySelector(&#x27;[role=&quot;tab&quot;]&#x27;);
+    if (selected != null) {
+      selectTab(selected);
+    }
+  }
+  document.addEventListener(&quot;click&quot;, interact);
+  document.addEventListener(&quot;keydown&quot;, interact);
+  window.addEventListener(&quot;pagehide&quot;, () =&gt; {
+    document.removeEventListener(&quot;click&quot;, interact);
+    document.removeEventListener(&quot;keydown&quot;, interact);
+  }, { once: true });
+})();
+&lt;/script&gt;
+&lt;script id=&quot;codex-visualization-carousel&quot;&gt;
+  (() =&gt; {
+    for (const root of document.querySelectorAll(&quot;.viz-carousel&quot;)) {
+      const panels = Array.from(
+        root.querySelectorAll(&quot;:scope &gt; [data-variant]&quot;),
+      );
+      if (panels.length === 0) {
+        continue;
+      }
+      root.setAttribute(&quot;role&quot;, &quot;group&quot;);
+      panels.forEach((panel, index) =&gt; {
+        panel.hidden = index !== 0;
+        panel.setAttribute(&quot;role&quot;, &quot;group&quot;);
+        if (!panel.hasAttribute(&quot;aria-label&quot;)) {
+          panel.setAttribute(&quot;aria-label&quot;, panel.dataset.variant);
+        }
+      });
+      root.dataset.activeVariant = panels[0].dataset.variant;
+      if (panels.length === 1) {
+        continue;
+      }
+
+      const controls = document.createElement(&quot;div&quot;);
+      controls.className = &quot;viz-carousel-controls&quot;;
+      // Portable copy of the settings dropdown&#x27;s legacy glyph; no 14px icon-package preset matches it.
+      // https://github.com/openai/openai/blob/master/codex/codex-apps/webview/src/icons/chevron.svg
+      controls.innerHTML = `
+      &lt;button type=&quot;button&quot; class=&quot;viz-carousel-previous cursor-interaction&quot;&gt;&lt;i data-lucide=&quot;chevron-left&quot; aria-hidden=&quot;true&quot;&gt;&lt;/i&gt;&lt;/button&gt;
+      &lt;details class=&quot;viz-carousel-picker&quot;&gt;
+        &lt;summary class=&quot;cursor-interaction&quot;&gt;
+          &lt;span class=&quot;viz-carousel-count tabular-nums&quot;&gt;&lt;/span&gt;
+          &lt;span class=&quot;viz-carousel-name&quot;&gt;&lt;/span&gt;
+          &lt;svg class=&quot;viz-carousel-caret&quot; width=&quot;14&quot; height=&quot;14&quot; viewBox=&quot;0 0 20 21&quot; fill=&quot;none&quot; aria-hidden=&quot;true&quot; focusable=&quot;false&quot;&gt;
+            &lt;path d=&quot;M15.2793 7.71101C15.539 7.45131 15.961 7.45131 16.2207 7.71101C16.4804 7.97071 16.4804 8.39272 16.2207 8.65242L10.4707 14.4024C10.211 14.6621 9.78902 14.6621 9.52932 14.4024L3.77932 8.65242L3.69436 8.54792C3.52385 8.28979 3.55205 7.93828 3.77932 7.71101C4.00659 7.48374 4.3581 7.45554 4.61623 7.62605L4.72073 7.71101L10 12.9903L15.2793 7.71101Z&quot; fill=&quot;currentColor&quot; stroke=&quot;currentColor&quot; stroke-width=&quot;0.6&quot; /&gt;
+          &lt;/svg&gt;
+        &lt;/summary&gt;
+        &lt;div class=&quot;viz-carousel-options&quot;&gt;&lt;/div&gt;
+      &lt;/details&gt;
+      &lt;button type=&quot;button&quot; class=&quot;viz-carousel-next cursor-interaction&quot;&gt;&lt;i data-lucide=&quot;chevron-right&quot; aria-hidden=&quot;true&quot;&gt;&lt;/i&gt;&lt;/button&gt;`;
+      const previous = controls.querySelector(&quot;.viz-carousel-previous&quot;);
+      const next = controls.querySelector(&quot;.viz-carousel-next&quot;);
+      const picker = controls.querySelector(&quot;.viz-carousel-picker&quot;);
+      const summary = picker.querySelector(&quot;summary&quot;);
+      const count = controls.querySelector(&quot;.viz-carousel-count&quot;);
+      const name = controls.querySelector(&quot;.viz-carousel-name&quot;);
+      const options = controls.querySelector(&quot;.viz-carousel-options&quot;);
+      const status = document.createElement(&quot;span&quot;);
+      status.className = &quot;sr-only&quot;;
+      status.setAttribute(&quot;role&quot;, &quot;status&quot;);
+      status.setAttribute(&quot;aria-live&quot;, &quot;polite&quot;);
+      status.setAttribute(&quot;aria-atomic&quot;, &quot;true&quot;);
+      previous.setAttribute(
+        &quot;aria-label&quot;,
+        root.dataset.previousLabel ?? &quot;Previous variant&quot;,
+      );
+      next.setAttribute(&quot;aria-label&quot;, root.dataset.nextLabel ?? &quot;Next variant&quot;);
+
+      let active = 0;
+      let mousePointerId = null;
+      let summaryPointerHandled = false;
+      summary.addEventListener(&quot;pointerdown&quot;, (event) =&gt; {
+        summaryPointerHandled =
+          event.pointerType === &quot;mouse&quot; &amp;&amp; event.button === 0 &amp;&amp; !event.ctrlKey;
+        if (!summaryPointerHandled) {
+          return;
+        }
+        event.preventDefault();
+        summary.focus({ preventScroll: true });
+        picker.open = !picker.open;
+        mousePointerId = picker.open ? event.pointerId : null;
+      });
+      summary.addEventListener(&quot;click&quot;, (event) =&gt; {
+        if (summaryPointerHandled &amp;&amp; event.detail &gt; 0) {
+          event.preventDefault();
+        }
+      });
+      const choices = panels.map((panel, index) =&gt; {
+        const choice = document.createElement(&quot;button&quot;);
+        choice.type = &quot;button&quot;;
+        choice.className = &quot;cursor-interaction&quot;;
+        choice.textContent = panel.dataset.variant;
+        choice.addEventListener(&quot;click&quot;, () =&gt; {
+          select(index);
+          summary.focus();
+        });
+        choice.addEventListener(&quot;pointerup&quot;, (event) =&gt; {
+          if (
+            picker.open &amp;&amp;
+            event.pointerType === &quot;mouse&quot; &amp;&amp;
+            event.button === 0 &amp;&amp;
+            event.pointerId === mousePointerId
+          ) {
+            choice.click();
+          }
+        });
+        options.appendChild(choice);
+        return choice;
+      });
+      const select = (index) =&gt; {
+        const changed = active !== index;
+        active = index;
+        panels.forEach((panel, position) =&gt; {
+          panel.hidden = position !== active;
+          choices[position].setAttribute(
+            &quot;aria-current&quot;,
+            String(position === active),
+          );
+        });
+        root.dataset.activeVariant = panels[active].dataset.variant;
+        count.textContent = `${active + 1} / ${panels.length}`;
+        name.textContent = panels[active].dataset.variant;
+        picker.open = false;
+        mousePointerId = null;
+        if (changed) {
+          status.textContent = `${count.textContent}: ${name.textContent}`;
+        }
+      };
+      previous.addEventListener(&quot;click&quot;, () =&gt;
+        select((active + panels.length - 1) % panels.length),
+      );
+      next.addEventListener(&quot;click&quot;, () =&gt;
+        select((active + 1) % panels.length),
+      );
+      picker.addEventListener(&quot;keydown&quot;, (event) =&gt; {
+        if (event.key === &quot;Escape&quot; &amp;&amp; picker.open) {
+          event.preventDefault();
+          picker.open = false;
+          mousePointerId = null;
+          summary.focus();
+          return;
+        }
+        if (event.altKey || event.ctrlKey || event.metaKey) {
+          return;
+        }
+        const index = choices.indexOf(document.activeElement);
+        let nextIndex;
+        if (event.key === &quot;ArrowDown&quot;) {
+          nextIndex = index &lt; 0 ? active : (index + 1) % choices.length;
+        } else if (event.key === &quot;ArrowUp&quot;) {
+          nextIndex = index &lt; 0 ? active : (index + choices.length - 1) % choices.length;
+        } else if (picker.open &amp;&amp; event.key === &quot;Home&quot;) {
+          nextIndex = 0;
+        } else if (picker.open &amp;&amp; event.key === &quot;End&quot;) {
+          nextIndex = choices.length - 1;
+        } else {
+          return;
+        }
+        event.preventDefault();
+        picker.open = true;
+        choices[nextIndex].focus();
+      });
+      picker.addEventListener(&quot;focusout&quot;, (event) =&gt; {
+        if (!picker.contains(event.relatedTarget)) {
+          picker.open = false;
+          mousePointerId = null;
+        }
+      });
+      const dismiss = (event) =&gt; {
+        if (!summary.contains(event.target)) {
+          mousePointerId = null;
+        }
+        if (!picker.contains(event.target)) {
+          picker.open = false;
+        }
+      };
+      const endPointerSelection = () =&gt; {
+        mousePointerId = null;
+      };
+      const sizePicker = () =&gt; {
+        root.style.setProperty(
+          &quot;--viz-carousel-picker-height&quot;,
+          `${picker.open ? options.offsetHeight : 0}px`,
+        );
+      };
+      picker.addEventListener(&quot;toggle&quot;, sizePicker);
+      window.addEventListener(&quot;resize&quot;, sizePicker);
+      document.addEventListener(&quot;pointerdown&quot;, dismiss);
+      document.addEventListener(&quot;pointerup&quot;, endPointerSelection);
+      document.addEventListener(&quot;pointercancel&quot;, endPointerSelection);
+      window.addEventListener(&quot;blur&quot;, endPointerSelection);
+      window.addEventListener(
+        &quot;pagehide&quot;,
+        () =&gt; {
+          document.removeEventListener(&quot;pointerdown&quot;, dismiss);
+          document.removeEventListener(&quot;pointerup&quot;, endPointerSelection);
+          document.removeEventListener(&quot;pointercancel&quot;, endPointerSelection);
+          window.removeEventListener(&quot;blur&quot;, endPointerSelection);
+          window.removeEventListener(&quot;resize&quot;, sizePicker);
+        },
+        { once: true },
+      );
+      root.append(controls, status);
+      select(0);
+    }
+  })();
+&lt;/script&gt;
+&lt;script id=&quot;codex-visualization-lucide&quot; async src=&quot;https://unpkg.com/lucide@1.17.0/dist/umd/lucide.js&quot;&gt;&lt;/script&gt;
+&lt;script&gt;
+(() =&gt; {
+  const initialize = () =&gt; {
+    globalThis.lucide?.createIcons({ attrs: { width: 16, height: 16 } });
+  };
+  if (globalThis.lucide != null) {
+    initialize();
+    return;
+  }
+  document
+    .getElementById(&quot;codex-visualization-lucide&quot;)
+    ?.addEventListener(&quot;load&quot;, initialize, { once: true });
+})();
+&lt;/script&gt;
+
+&lt;/body&gt;
+&lt;/html&gt;
+"></iframe>
+<script>(() => {
+  const frame = document.getElementById("codex-visualization");
+  if (!(frame instanceof HTMLIFrameElement)) {
+    return;
+  }
+  let viewportHeight = globalThis.innerHeight;
+  const storageKey = `codex:visualization-widget-state-v2:${JSON.stringify([
+    globalThis.location.pathname,
+    globalThis.location.search,
+  ])}`;
+  const parseState = (serializedState) => {
+    if (
+      typeof serializedState !== "string" ||
+      new TextEncoder().encode(serializedState).length > 16 * 1024
+    ) {
+      throw new TypeError(
+        "Widget state must be a JSON object of at most 16 KiB",
+      );
+    }
+    /** @type {unknown} */
+    const state = JSON.parse(serializedState);
+    if (
+      state == null ||
+      typeof state !== "object" ||
+      Array.isArray(state) ||
+      ("imageIds" in state &&
+        (!Array.isArray(state.imageIds) || state.imageIds.length > 0))
+    ) {
+      throw new TypeError("Widget state must be a JSON object");
+    }
+    const storedState = { modelContent: null, privateContent: null, ...state };
+    const canonicalState = JSON.stringify(
+      storedState,
+      (_key, /** @type {unknown} */ value) => {
+        if (typeof value === "number" && !Number.isFinite(value)) {
+          throw new TypeError("Widget state must contain finite numbers");
+        }
+        return value;
+      },
+    );
+    if (new TextEncoder().encode(canonicalState).length > 16 * 1024) {
+      throw new TypeError(
+        "Widget state must be a JSON object of at most 16 KiB",
+      );
+    }
+    return storedState;
+  };
+  let storage = null;
+  let state = null;
+  try {
+    const localStorage = globalThis.localStorage;
+    const probeKey = `${storageKey}:probe`;
+    localStorage.setItem(probeKey, "1");
+    localStorage.removeItem(probeKey);
+    storage = localStorage;
+    const savedState = storage.getItem(storageKey);
+    if (savedState != null) {
+      try {
+        state = parseState(savedState);
+      } catch {
+        // Invalid saved state does not disable future writes.
+      }
+    }
+  } catch {
+    storage = null;
+  }
+  const initialGlobals = {
+    widgetState: state,
+    statePersistence: storage == null ? "none" : "local",
+  };
+
+  const channel = new MessageChannel();
+  channel.port1.addEventListener("message", (event) => {
+    const data = event.data;
+    if (typeof data !== "object" || data == null) {
+      return;
+    }
+    if (data.type === "widget-state-write") {
+      if (!Number.isSafeInteger(data.id) || data.id <= 0) {
+        return;
+      }
+      let ok = false;
+      try {
+        if (storage != null) {
+          const state = parseState(data.state);
+          storage.setItem(storageKey, JSON.stringify(state));
+          ok = true;
+        }
+      } catch {
+        // Storage denial, quota limits, and invalid state return a failed receipt.
+      }
+      channel.port1.postMessage({
+        type: "widget-state-result",
+        id: data.id,
+        ok,
+      });
+      return;
+    }
+    if (data.type === "height") {
+      const height = data.height;
+      if (
+        typeof height === "number" &&
+        Number.isFinite(height) &&
+        height >= 0 &&
+        height <= 10_000
+      ) {
+        frame.style.height = Math.ceil(height) + "px";
+      }
+      return;
+    }
+    if (data.type === "scroll-to") {
+      const top = data.top;
+      if (
+        typeof top === "number" &&
+        Number.isFinite(top) &&
+        top >= 0 &&
+        globalThis.navigator.userActivation?.isActive === true
+      ) {
+        globalThis.scrollTo({
+          top: Math.ceil(
+            globalThis.scrollY + frame.getBoundingClientRect().top + top,
+          ),
+        });
+      }
+      return;
+    }
+    if (data.type === "open-external") {
+      const rawHref = data.href;
+      if (typeof rawHref !== "string") {
+        return;
+      }
+      let href;
+      try {
+        const url = new URL(rawHref, document.baseURI);
+        if (url.protocol !== "https:") {
+          return;
+        }
+        href = url.href;
+      } catch {
+        return;
+      }
+      if (globalThis.navigator.userActivation?.isActive === true) {
+        const anchor = document.createElement("a");
+        anchor.href = href;
+        anchor.rel = "noopener noreferrer";
+        anchor.target = "_blank";
+        document.body.appendChild(anchor);
+        anchor.click();
+        anchor.remove();
+      }
+      return;
+    }
+    if (data.type === "follow-up") {
+      const prompt = data.prompt;
+      if (
+        typeof prompt !== "string" ||
+        globalThis.navigator.userActivation?.isActive !== true
+      ) {
+        return;
+      }
+      const title = data.title;
+      globalThis.prompt(typeof title === "string" ? title : prompt, prompt);
+    }
+  });
+  channel.port1.start();
+  const srcdoc = frame.dataset.srcdoc;
+  if (srcdoc == null) {
+    return;
+  }
+  globalThis.addEventListener("resize", () => {
+    const height = Number.parseFloat(frame.style.height);
+    if (!Number.isFinite(height) || height <= viewportHeight) {
+      frame.style.removeProperty("height");
+    }
+    viewportHeight = globalThis.innerHeight;
+    channel.port1.postMessage({ type: "measure" });
+  });
+  frame.addEventListener(
+    "load",
+    () => {
+      frame.contentWindow?.postMessage(
+        { type: "codex-visualization-initialize" },
+        "*",
+        [channel.port2],
+      );
+    },
+    { once: true },
+  );
+  // Match the trusted bootstrap element, not the same text in an authored title.
+  frame.srcdoc = srcdoc.replace(
+    '<script type="application/json" id="codex-visualization-widget-state">__CODEX_VISUALIZATION_WIDGET_STATE__<\/script>',
+    () =>
+      '<script type="application/json" id="codex-visualization-widget-state">' +
+      JSON.stringify(initialGlobals).replaceAll("<", "\\u003c") +
+      "<\/script>",
+  );
+  delete frame.dataset.srcdoc;
+})();
+</script>
+</body>
+</html>
