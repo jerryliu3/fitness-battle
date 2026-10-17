@@ -17,7 +17,7 @@ export function AwardShelf({ state }: { state: CompeteState }) {
           <p className="fb-copy">
             {card.weekLabel}
             <br />
-            {card.effort} effort · {card.delta} rating
+            {card.effort} effort · {card.delta} effort score
           </p>
         </article>
       ))}

@@ -78,7 +78,7 @@ export function WeekReveal({
           <strong>{formatEffort(result.effort)}</strong>
         </div>
         <div>
-          <span>Elo</span>
+          <span>Effort Score</span>
           <strong>
             {result.eloBefore}
             <small> → {result.eloAfter}</small>
@@ -96,15 +96,15 @@ export function WeekReveal({
 
       {result.frozen ? (
         <p className="fb-note">
-          This week was frozen. Your rating did not move.
+          This week was frozen. Your effort score did not move.
         </p>
       ) : result.effort <= 0 ? (
         <p className="fb-note">
-          No counted effort this week, so rating decayed slightly.
+          No counted effort this week, so effort score decayed slightly.
         </p>
       ) : (
         <p className="fb-note">
-          Final place in your matched group sets next week’s starting rating.
+          Final place in your matched group sets next week’s starting effort score.
           The new week is already open. A crew keeps the same invite code.
         </p>
       )}

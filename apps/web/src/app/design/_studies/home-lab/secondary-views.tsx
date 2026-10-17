@@ -38,7 +38,7 @@ export function HomeSecondaryView({ view, state, snapshot, sampleMode, unsynced,
       {points.map(point => <button key={point.day} onClick={() => { const activity=counted.filter(a=>a.startedAt.startsWith(point.day)).at(-1); if(activity)onActivity(activity); }} aria-label={`${point.day}, ${point.value} ${spec.gps ? "km" : "min"}. Open activity`}><span className="ah-chart-bar" style={{height:`${point.value/max*120}px`}} /><b>{point.value}</b><small>{new Date(`${point.day}T12:00:00Z`).toLocaleDateString("en-US",{weekday:"short",timeZone:"UTC"})}</small></button>)}
       {!points.length && <p>No activities yet.</p>}
     </div>
-    <div className="ah-progress-metrics"><div><span>Rating</span><b>{rating}</b></div>{lastPace != null && <div><span>Latest pace</span><b>{lastPace.toFixed(1)}<small> min/km</small></b></div>}</div>
+    <div className="ah-progress-metrics"><div><span>Effort Score</span><b>{rating}</b></div>{lastPace != null && <div><span>Latest pace</span><b>{lastPace.toFixed(1)}<small> min/km</small></b></div>}</div>
     <Link className="ah-text-link" href="/progress">History ↗</Link>
   </section>;
 }

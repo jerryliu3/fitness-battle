@@ -508,7 +508,7 @@ function YouContent() {
                 ) : (
                   <>
                     <p className="fb-copy">
-                      Import your recent activity history to calibrate your starting rating
+                      Import your recent activity history to calibrate your starting effort score
                       and leave the baseline.
                     </p>
                     <button
@@ -621,12 +621,12 @@ function YouContent() {
                 <h2>Week freezes</h2>
                 <p className="fb-copy">
                   {state.freezesLeft} of {STARTING_FREEZES} left. A freeze holds
-                  Elo for a taper or a vacation. It does not pause the lesson.
+                  effort score for a taper or a vacation. It does not pause the lesson.
                 </p>
                 {frozen ? (
                   <div className="fb-stack">
                     <p className="fb-note" style={{ color: "var(--green, #2f6f4e)" }}>
-                      ❄ This week is frozen. Your Elo will hold through next Monday.
+                      ❄ This week is frozen. Your effort score will hold through next Monday.
                     </p>
                     <button
                       type="button"
@@ -640,7 +640,7 @@ function YouContent() {
                   <div className="fb-stack">
                     <p className="fb-note">
                       Freeze this week? You will have {state.freezesLeft - 1} freezes left.
-                      Your Elo rating will hold steady until next Monday.
+                      Your effort score will hold steady until next Monday.
                     </p>
                     <div className="fb-row">
                       <button
@@ -680,7 +680,7 @@ function YouContent() {
             <section className="fb-card">
               <h2>Levels</h2>
               <p className="fb-copy">
-                Your level is a band on the weekly effort Elo ladder. It rises
+                Your level is a band on the weekly effort score ladder. It rises
                 when you accumulate counted volume against peers on your field,
                 and drifts down slightly after empty weeks.
               </p>
@@ -696,7 +696,7 @@ function YouContent() {
               ))}
               <p className="fb-note">
                 Score is mostly distance, or time when there is no GPS. Heart
-                rate can add a little. Pace adds less. Rating never falls below
+                rate can add a little. Pace adds less. Effort score never falls below
                 500.
               </p>
               <p className="fb-note">
@@ -749,7 +749,7 @@ function YouContent() {
           <p className="fb-copy">
             {user
               ? `Preferences and the optional ${BACKFILL_DAYS}-day calibration live in onboarding.`
-              : "Create an account to lock in preferences, link trackers, and calibrate your rating."}
+              : "Create an account to lock in preferences, link trackers, and calibrate your effort score."}
           </p>
           <Link
             href={user ? "/onboarding" : "/signup?next=%2Fonboarding"}

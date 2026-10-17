@@ -89,7 +89,7 @@ export function FieldRoster({
         const secondary =
           detail === "distance"
             ? `${(row.distanceM / 1000).toFixed(1)} km`
-            : `Rating ${row.elo}`;
+            : `Effort Score ${row.elo}`;
         const body = (
           <>
             <span className="place">{row.place}</span>

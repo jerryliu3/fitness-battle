@@ -62,6 +62,7 @@ export {
   acknowledgePeriodResults,
   appendPeriodResults,
   formatEloDelta,
+  formatEffortScoreDelta,
   formatPlace,
   isPeriodResultPending,
   pendingPeriodResults,
@@ -71,7 +72,14 @@ export {
   shouldSyncLegacyPendingReveals,
   syncPeriodResultAcknowledgements,
 } from "./history";
-export { RANK_BANDS, rankForElo, eloInBand, type RankBand } from "./ranks";
+export {
+  RANK_BANDS,
+  rankForElo,
+  rankForEffortScore,
+  eloInBand,
+  effortScoreInBand,
+  type RankBand,
+} from "./ranks";
 export {
   activityEffort,
   periodEffort,

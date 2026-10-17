@@ -28,7 +28,7 @@ export default function PacePage() {
       <p className="fb-kicker">Pace</p>
       <h1>Times</h1>
       <p className="fb-copy">
-        Completion time for a distance. It does not move your rating or the weekly track.
+        Completion time for a distance. It does not move your effort score or the weekly track.
       </p>
 
       <div className="fb-chips">

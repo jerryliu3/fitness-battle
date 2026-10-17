@@ -596,7 +596,7 @@ export function SpatialLab() {
             <p>
               Default weekly bounds remain Monday 00:00 to next Monday 00:00
               UTC. These distance comparisons do not change production effort
-              scores or Elo.
+              score.
             </p>
             <button className="receipt-done" onClick={() => setReceipt(false)}>
               Return to the field ↗
