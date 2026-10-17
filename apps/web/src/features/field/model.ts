@@ -5,6 +5,7 @@ import {
   ghostHasVolume,
   initialsFromName,
   syntheticCheckpoints,
+  type ArenaDistanceUnit,
   type CompeteState,
   type GhostPeriodSelector,
   type ScoreTrack,
@@ -16,7 +17,7 @@ export interface FieldRunner {
   id: string;
   name: string;
   initials: string;
-  /** Cumulative km at three checkpoints. */
+  /** Cumulative display distance (km or mi) or effort points at three checkpoints. */
   km: [number, number, number];
   place: number;
   effort: number;
@@ -33,6 +34,24 @@ export interface FieldModel {
   referenceKm: number;
   checkpointLabels: [string, string, string];
   gps: boolean;
+  unit: ArenaDistanceUnit;
+}
+
+function displaySeries(
+  distanceM: number[],
+  effort: number[],
+  gps: boolean,
+  units: CompeteState["units"],
+): [number, number, number] {
+  if (!gps) {
+    return [effort[0] ?? 0, effort[1] ?? 0, effort[2] ?? 0];
+  }
+  const divisor = units === "metric" ? 1000 : 1609.344;
+  return [
+    (distanceM[0] ?? 0) / divisor,
+    (distanceM[1] ?? 0) / divisor,
+    (distanceM[2] ?? 0) / divisor,
+  ];
 }
 
 export function buildFieldModel(
@@ -44,6 +63,11 @@ export function buildFieldModel(
 ): FieldModel {
   const board = buildSplitBoard(state, sport, track, now, options);
   const gps = sportById(sport).gps;
+  const unit: ArenaDistanceUnit = gps
+    ? state.units === "metric"
+      ? "km"
+      : "mi"
+    : "pts";
 
   const runners: FieldRunner[] = board.rows.map((row) => {
     const series = row.you
@@ -57,11 +81,12 @@ export function buildFieldModel(
           board.periodEnd,
           now,
         );
-    const km = (
-      gps
-        ? series.distanceM.map((m) => m / 1000)
-        : series.effort.map((e) => e)
-    ) as [number, number, number];
+    const km = displaySeries(
+      series.distanceM,
+      series.effort,
+      gps,
+      state.units,
+    );
     return {
       id: row.id,
       name: row.you ? state.name : row.name,
@@ -81,11 +106,12 @@ export function buildFieldModel(
           id: board.ghost.id,
           name: board.ghost.name,
           initials: board.ghost.initials,
-          km: (
-            gps
-              ? board.ghost.series.distanceM.map((m) => m / 1000)
-              : board.ghost.series.effort.map((e) => e)
-          ) as [number, number, number],
+          km: displaySeries(
+            board.ghost.series.distanceM,
+            board.ghost.series.effort,
+            gps,
+            state.units,
+          ),
           place: 0,
           effort: board.ghost.series.effort[2]!,
           ghost: true,
@@ -107,5 +133,6 @@ export function buildFieldModel(
     referenceKm: distanceTrackMaxKm(peak),
     checkpointLabels: board.checkpointLabels,
     gps,
+    unit,
   };
 }

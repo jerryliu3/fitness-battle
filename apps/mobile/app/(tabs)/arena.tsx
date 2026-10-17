@@ -51,7 +51,8 @@ export default function ArenaScreen() {
       </SafeAreaView>
     );
   const arena = buildArenaModel(state, undefined, track);
-  const defaultSpan = arena.unit === "km" ? 6 : 20;
+  const defaultSpan =
+    arena.unit === "pts" ? 20 : arena.unit === "mi" ? 4 : 6;
   const viewSpan = span ?? defaultSpan;
   const me = arena.lanes.find((l) => l.you);
   const total = me?.values[2] ?? 0;
@@ -105,7 +106,8 @@ export default function ArenaScreen() {
       dispatch({ type: "set-primary", sport });
       dispatch({ type: "opt-in", sport, crewBoard: pin });
       setCenter(null);
-      setSpan(SPORTS.find((s) => s.id === sport)?.gps ? 6 : 20);
+      const gps = SPORTS.find((s) => s.id === sport)?.gps;
+      setSpan(gps ? (state?.units === "metric" ? 6 : 4) : 20);
       setRegister(false);
     } catch (e) {
       setJoinError(e instanceof Error ? e.message : "Could not join.");
@@ -416,7 +418,9 @@ export default function ArenaScreen() {
           style={[f.chip, !crew && f.chipActive]}
           onPress={() => setCrew("")}
         >
-          <Text style={f.rowTitle}>Join</Text>
+          <Text style={f.rowTitle}>
+            Join {SPORTS.find((s) => s.id === sport)?.name ?? sport}
+          </Text>
           <Text style={f.small}>Density field of similar athletes</Text>
         </Pressable>
         {crewApi.data?.crews

@@ -94,7 +94,7 @@ export function FieldJoinActions({
         disabled={busy}
         onClick={joinField}
       >
-        Join
+        Join {sportName}
       </button>
       {crews.map((crew) => (
         <button

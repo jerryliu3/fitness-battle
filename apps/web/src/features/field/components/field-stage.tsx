@@ -33,7 +33,7 @@ export function FieldStage({
   model: FieldModel;
   boardRows?: BoardRow[];
 }) {
-  const unit = model.gps ? "km" : "pts";
+  const unit = model.unit;
   const runners = useMemo<SceneRunner[]>(
     () =>
       model.runners.map((r) => ({

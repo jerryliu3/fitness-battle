@@ -117,12 +117,19 @@ describe("arena lanes", () => {
     };
     const arena = buildArenaModel(state, now);
     expect(arena.optedIn).toBe(true);
-    expect(arena.unit).toBe("km");
+    expect(arena.unit).toBe("mi");
     const you = arena.lanes.find((lane) => lane.you);
     const ghost = arena.lanes.find((lane) => lane.ghost);
-    expect(you?.values[2]).toBeGreaterThan(0);
+    expect(you?.values[2]).toBeCloseTo(4000 / 1609.344, 1);
     expect(ghost?.values[2]).toBeGreaterThan(0);
     expect(arena.labels).toHaveLength(3);
+
+    const metric = buildArenaModel(
+      { ...state, units: "metric" },
+      now,
+    );
+    expect(metric.unit).toBe("km");
+    expect(metric.lanes.find((lane) => lane.you)?.values[2]).toBeCloseTo(4, 1);
   });
 
   it("keeps you in the middle lane when the field is reordered", () => {
@@ -143,6 +150,7 @@ describe("arena lanes", () => {
   it("keeps open and verified activity separate in the Arena presentation", () => {
     const state = {
       ...reduceCompete(freshState(now), { type: "opt-in", sport: "running" }),
+      units: "metric" as const,
       activities: [
         run({
           id: "verified",
@@ -181,6 +189,7 @@ describe("arena lanes", () => {
     });
     state = {
       ...state,
+      units: "metric",
       enrollments: state.enrollments.map((row) =>
         row.sport === "running"
           ? {

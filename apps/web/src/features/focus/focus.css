@@ -720,6 +720,7 @@
 .focus-path-row.is-current > button {
   background: #d4ee89;
   margin-top: 28px;
+  overflow: visible;
 }
 .focus-path-row.is-current svg,
 .focus-path-row.is-current > button > div {
@@ -729,9 +730,6 @@
   bottom: 7px;
   left: -13px;
   animation: focus-breathe 3s ease-in-out infinite;
-}
-.focus-path-row.is-current > button {
-  overflow: visible;
 }
 .focus-future {
   display: flex;

@@ -3,13 +3,19 @@ import {
   type ArenaSceneLane,
   type ArenaViewWindow,
 } from "./arena-view";
+
+export type ArenaSceneUnit = "km" | "mi" | "pts";
+
 export interface ArenaSceneMessage {
   type: "arena-view";
   lanes: ArenaSceneLane[];
   view: ArenaViewWindow;
-  unit: "km" | "pts";
+  unit: ArenaSceneUnit;
   selected: string;
 }
+
+const ARENA_UNITS = new Set<ArenaSceneUnit>(["km", "mi", "pts"]);
+
 /** Only bounded presentation data crosses into the embedded renderer; never credentials. */
 export function parseArenaSceneMessage(
   input: unknown,
@@ -26,7 +32,7 @@ export function parseArenaSceneMessage(
     typeof p.view.span !== "number" ||
     !Number.isFinite(p.view.center) ||
     !Number.isFinite(p.view.span) ||
-    !["km", "pts"].includes(p.unit ?? "")
+    !ARENA_UNITS.has(p.unit as ArenaSceneUnit)
   )
     return null;
   const ids = new Set<string>();
@@ -62,7 +68,7 @@ export function parseArenaSceneMessage(
       ghost: !!l.ghost,
     })),
     view: { center: v.center, span: v.span },
-    unit: p.unit as "km" | "pts",
+    unit: p.unit as ArenaSceneUnit,
     selected:
       typeof p.selected === "string" && ids.has(p.selected)
         ? p.selected

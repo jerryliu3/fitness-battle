@@ -6,6 +6,7 @@ import {
   formatVolume,
   type Activity,
   type SportId,
+  type UnitSystem,
 } from "@fitness-battle/shared";
 import { useState } from "react";
 
@@ -21,9 +22,11 @@ function dayLabel(iso: string): string {
 export function ActivitySplits({
   activities,
   sport,
+  units = "us",
 }: {
   activities: Activity[];
   sport: SportId;
+  units?: UnitSystem;
 }) {
   const [openId, setOpenId] = useState<string | null>(null);
   const total = activities.reduce((sum, item) => sum + activityEffort(item), 0);
@@ -57,7 +60,12 @@ export function ActivitySplits({
               <span>
                 <strong>{dayLabel(activity.startedAt)}</strong>
                 <small>
-                  {formatVolume(sport, activity.distanceM, activity.movingSec)}
+                  {formatVolume(
+                    sport,
+                    activity.distanceM,
+                    activity.movingSec,
+                    units,
+                  )}
                   {activity.verified ? " · verified" : " · open"}
                   {" · "}
                   {activity.source}

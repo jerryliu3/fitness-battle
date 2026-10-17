@@ -41,7 +41,7 @@ export function LaneTrack({
   const me = lanes.find((l) => l.you);
   const v = view ?? {
     center: me?.values[index] ?? 0,
-    span: unit === "km" ? 6 : 20,
+    span: unit === "pts" ? 20 : unit === "mi" ? 4 : 6,
   };
   const latest = useRef({ v, onPan });
   latest.current = { v, onPan };

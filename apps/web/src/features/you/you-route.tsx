@@ -314,10 +314,6 @@ function YouContent() {
     setSyncNote(`${providerId} disconnected on this account.`);
   }
 
-  async function handleSignOut() {
-    await signOut();
-  }
-
   if (!user) {
     return (
       <div className="focus-athlete">
@@ -348,7 +344,11 @@ function YouContent() {
           Progress <span>Statistics, records & season history</span>
         </summary>
         <div className="focus-details-body">
-          <WeekRecords sport={state.primary} you={board.you} />
+          <WeekRecords
+            sport={state.primary}
+            you={board.you}
+            units={state.units}
+          />
           <SeasonHistory
             results={state.periodResults}
             primary={state.primary}
@@ -630,7 +630,7 @@ function YouContent() {
       <button
         type="button"
         className="fb-btn-line"
-        onClick={() => void handleSignOut()}
+        onClick={() => void signOut()}
       >
         Sign out
       </button>
