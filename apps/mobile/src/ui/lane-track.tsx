@@ -17,6 +17,7 @@ import {
   clampArenaLaneCenter,
   orderedArenaLanes,
   initialsFromName,
+  selfLaneLabel,
   type ArenaLane,
   type ArenaViewWindow,
 } from "@fitness-battle/shared";
@@ -159,7 +160,7 @@ export function LaneTrack({
                   fontWeight={l.you ? "700" : "400"}
                   fill={l.you ? "#26382d" : "#768172"}
                 >
-                  {l.you ? "YOU" : initialsFromName(l.name)}
+                  {l.you ? selfLaneLabel(l.name, "caps") : initialsFromName(l.name)}
                 </SvgText>
               </G>
             ))}

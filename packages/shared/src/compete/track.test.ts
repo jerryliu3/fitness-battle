@@ -7,6 +7,7 @@ import {
   effortTrackMax,
   initialsFromName,
   interpolateSeries,
+  selfLaneLabel,
   syntheticCheckpoints,
 } from "./track";
 import type { Activity } from "./sports";
@@ -121,5 +122,15 @@ describe("initialsFromName / interpolateSeries", () => {
   it("derives initials and interpolates checkpoints", () => {
     expect(initialsFromName("Maya Chen")).toBe("MC");
     expect(interpolateSeries([10, 20, 40], 1.5)).toBe(30);
+  });
+});
+
+describe("selfLaneLabel", () => {
+  it("labels unsigned guests as Guest and signed-in viewers as You", () => {
+    expect(selfLaneLabel("Guest")).toBe("Guest");
+    expect(selfLaneLabel("You")).toBe("Guest");
+    expect(selfLaneLabel("Maya")).toBe("You");
+    expect(selfLaneLabel("Guest", "caps")).toBe("GUEST");
+    expect(selfLaneLabel("Maya", "caps")).toBe("YOU");
   });
 });

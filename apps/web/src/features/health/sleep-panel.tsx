@@ -5,6 +5,7 @@ import {
   formatClock,
   formatSleepDuration,
   healthMetricById,
+  selfLaneLabel,
   stageShares,
   type CompeteState,
   type SleepNight,
@@ -164,7 +165,7 @@ export function SleepPanel({
                 <li key={row.id} className={row.you ? "is-you" : ""}>
                   <span>{row.place}</span>
                   <span>
-                    {row.you ? "You" : row.name}
+                    {row.you ? selfLaneLabel(row.name) : row.name}
                     <small>
                       {row.lastNight == null ? "No night yet" : `Last night ${row.lastNight}`}
                     </small>

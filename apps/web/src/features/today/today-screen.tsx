@@ -8,8 +8,6 @@ import {
   competeNow,
   competePeriodWindow,
   countsOnTrack,
-  distanceUnitLabel,
-  formatDistanceM,
   formatVolume,
   isSampleActivity,
   primaryFreezePeriodStart,
@@ -40,7 +38,6 @@ export function TodayScreen() {
     .sort((a, b) => b.startedAt.localeCompare(a.startedAt))
     .slice(0, 10);
   const units = state.units;
-  const unitLabel = distanceUnitLabel(units);
 
   const weekPeriod = competePeriodWindow(state, now);
   const weekStart = weekPeriod.startsAt.getTime();
@@ -50,8 +47,12 @@ export function TodayScreen() {
     const t = new Date(a.startedAt).getTime();
     return t >= weekStart && t < weekEnd;
   });
-  const weekDistanceM = weekActivities.reduce((acc, a) => acc + (a.distanceM || 0), 0);
   const weekMovingSec = weekActivities.reduce((acc, a) => acc + (a.movingSec || 0), 0);
+  const weekHours = weekMovingSec / 3600;
+  const weekHoursLabel =
+    weekHours >= 10
+      ? `${Math.round(weekHours)} hr`
+      : `${(Math.round(weekHours * 10) / 10).toFixed(1).replace(/\.0$/, "")} hr`;
   const nowDayIso = now.toISOString().slice(0, 10);
 
   const dayLabels = ["M", "T", "W", "T", "F", "S", "S"];
@@ -59,7 +60,7 @@ export function TodayScreen() {
     const d = new Date(weekStart + i * 86_400_000);
     const dayIso = d.toISOString().slice(0, 10);
     const dayActs = weekActivities.filter((a) => a.startedAt.slice(0, 10) === dayIso);
-    const dayVolume = dayActs.reduce((acc, a) => acc + (a.distanceM || a.movingSec || 0), 0);
+    const dayVolume = dayActs.reduce((acc, a) => acc + (a.movingSec || 0), 0);
     return {
       key: dayIso,
       label: dayLabels[i],
@@ -73,7 +74,6 @@ export function TodayScreen() {
     ...d,
     pct: d.hasActivity ? Math.max(20, Math.round((d.volume / maxDayVolume) * 100)) : 0,
   }));
-  const activeDaysCount = weekDays.filter((d) => d.hasActivity).length;
 
   if (expanded === "suggestion") {
     return (
@@ -155,39 +155,31 @@ export function TodayScreen() {
         </div>
       )}
       <section className="focus-stats-card" aria-label="This week's progress">
-        <div className="focus-stats-header">
-          <div>
+        <div className="focus-stats-body">
+          <div className="focus-stats-hours">
             <p className="fb-kicker">This week</p>
-            <strong>
-              {sportById(state.primary).gps
-                ? `${formatDistanceM(weekDistanceM, units)} ${unitLabel}`
-                : `${Math.round(weekMovingSec / 60)} min`}
-            </strong>
+            <strong>{weekHoursLabel}</strong>
           </div>
-          <div className="focus-stats-summary">
-            <span>
-              <b>{weekActivities.length}</b> {weekActivities.length === 1 ? "session" : "sessions"}
-            </span>
-            <span>
-              <b>{activeDaysCount}</b> of 7 days
-            </span>
-          </div>
-        </div>
-        <div className="focus-mini-chart" aria-hidden="true">
-          {weekDaysWithPct.map((d) => (
-            <div
-              key={d.key}
-              className={`focus-mini-bar-col${d.isToday ? " is-today" : ""}`}
-            >
-              <div className="focus-mini-bar-track">
-                <div
-                  className="focus-mini-bar-fill"
-                  style={{ height: `${d.pct}%` }}
-                />
+          <div className="focus-mini-chart" aria-hidden="true">
+            {weekDaysWithPct.map((d) => (
+              <div
+                key={d.key}
+                className={`focus-mini-bar-col${d.isToday ? " is-today" : ""}${d.hasActivity ? "" : " is-empty"}`}
+              >
+                <div className="focus-mini-bar-track">
+                  {d.hasActivity ? (
+                    <div
+                      className="focus-mini-bar-fill"
+                      style={{ height: `${d.pct}%` }}
+                    />
+                  ) : (
+                    <span className="focus-mini-bar-flat" />
+                  )}
+                </div>
+                <span className="focus-mini-bar-day">{d.label}</span>
               </div>
-              <span className="focus-mini-bar-day">{d.label}</span>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
       </section>
       <div className="focus-row">
@@ -197,7 +189,26 @@ export function TodayScreen() {
         ) : null}
       </div>
       <section className="focus-journey" aria-label="Activity journey">
+        {/* Lane x-coords (viewBox 0–100) match CSS --path-l/c/r percentages. */}
+        <div className="focus-path-row is-future is-right">
+          <button type="button" disabled aria-label="Upcoming session">
+            <span className="focus-path-hollow" aria-hidden="true" />
+          </button>
+          <span>
+            <small>Up next</small>
+            <b>Room for what&apos;s next</b>
+          </span>
+        </div>
         <div className="focus-path-row is-current">
+          <svg
+            className="focus-path-curve"
+            viewBox="0 0 100 100"
+            preserveAspectRatio="none"
+            aria-hidden="true"
+          >
+            {/* Right (76) → center (50) */}
+            <path d="M 76 0 C 76 28, 24 36, 24 58 S 62 78, 50 100" />
+          </svg>
           <button
             onClick={() => {
               react("hop");
@@ -233,56 +244,82 @@ export function TodayScreen() {
             <b>See today&apos;s session</b>
           </span>
         </div>
-        {sessions.map((a, i) => (
-          <div
-            className={`focus-path-row ${i % 2 ? "is-left" : "is-right"}`}
-            key={a.id}
+        {sessions.map((a, i) => {
+          // Future sits on the right; first past stop goes left to keep winding.
+          const toLeft = i % 2 === 0;
+          const lane = toLeft ? "is-left" : "is-right";
+          const curve =
+            i === 0
+              ? "M 50 0 C 50 28, 24 40, 24 100"
+              : toLeft
+                ? "M 76 0 C 76 30, 24 42, 24 100"
+                : "M 24 0 C 24 30, 76 42, 76 100";
+          return (
+            <div className={`focus-path-row ${lane}`} key={a.id}>
+              <svg
+                className="focus-path-curve"
+                viewBox="0 0 100 100"
+                preserveAspectRatio="none"
+                aria-hidden="true"
+              >
+                <path d={curve} />
+              </svg>
+              <button
+                onClick={() => setExpanded(a)}
+                aria-label={`Open ${sportById(a.sport).name} session ${formatVolume(a.sport, a.distanceM, a.movingSec, units)}`}
+              >
+                <i>✓</i>
+                <b>{formatVolume(a.sport, a.distanceM, a.movingSec, units)}</b>
+                <small>
+                  {new Date(a.startedAt).toLocaleDateString("en-US", {
+                    weekday: "short",
+                    timeZone: "UTC",
+                  })}
+                </small>
+              </button>
+              <span>
+                <small>
+                  {new Date(a.startedAt).toLocaleDateString("en-US", {
+                    month: "short",
+                    day: "numeric",
+                    timeZone: "UTC",
+                  })}
+                </small>
+                <b>{sportById(a.sport).name}</b>
+                <em>
+                  {a.disposition === "excluded" || isSampleActivity(a)
+                    ? `${a.source} · sample (excluded)`
+                    : `${a.verified ? "Verified" : "Open"} · ${a.disposition === "pending" ? "pending" : "counted"}`}
+                </em>
+              </span>
+            </div>
+          );
+        })}
+        <div className="focus-path-row is-start">
+          <svg
+            className="focus-path-curve"
+            viewBox="0 0 100 100"
+            preserveAspectRatio="none"
+            aria-hidden="true"
           >
-            <button
-              onClick={() => setExpanded(a)}
-              aria-label={`Open ${sportById(a.sport).name} session ${formatVolume(a.sport, a.distanceM, a.movingSec, units)}`}
-            >
-              <i>✓</i>
-              <b>{formatVolume(a.sport, a.distanceM, a.movingSec, units)}</b>
-              <small>
-                {new Date(a.startedAt).toLocaleDateString("en-US", {
-                  weekday: "short",
-                  timeZone: "UTC",
-                })}
-              </small>
-            </button>
-            <span>
-              <small>
-                {new Date(a.startedAt).toLocaleDateString("en-US", {
-                  month: "short",
-                  day: "numeric",
-                  timeZone: "UTC",
-                })}
-              </small>
-              <b>{sportById(a.sport).name}</b>
-              <em>
-                {a.disposition === "excluded" || isSampleActivity(a)
-                  ? `${a.source} · sample (excluded)`
-                  : `${a.verified ? "Verified" : "Open"} · ${a.disposition === "pending" ? "pending" : "counted"}`}
-              </em>
-            </span>
-          </div>
-        ))}
-        <div
-          className={`focus-path-row is-start ${sessions.length % 2 === 0 ? "is-right" : "is-left"}`}
-        >
+            <path
+              d={
+                sessions.length === 0
+                  ? "M 50 0 C 22 32, 78 64, 50 100"
+                  : sessions.length % 2 === 1
+                    ? "M 24 0 C 24 34, 78 58, 50 100"
+                    : "M 76 0 C 76 34, 22 58, 50 100"
+              }
+            />
+          </svg>
           <button
             type="button"
-            aria-label="Starting line"
+            aria-label="Start"
             onClick={() => react("hop")}
           >
             <i>🏁</i>
             <b>START</b>
           </button>
-          <span>
-            <small>Baseline</small>
-            <b>Starting line</b>
-          </span>
         </div>
       </section>
     </div>
