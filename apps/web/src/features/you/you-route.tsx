@@ -149,7 +149,6 @@ function YouContent() {
   const sleep = sleepRenewal(state);
   const board = buildSplitBoard(state, state.primary, "open", now);
   const frozen = state.frozenPeriods.includes(primaryFreezePeriodStart(state));
-  const spec = sportById(state.primary);
 
   function applyRemote(body: {
     provider: ProviderId;

@@ -233,9 +233,9 @@ export function ArenaScreen() {
         onDismiss={(revealId) =>
           dispatch({ type: "acknowledge-reveal", revealIds: [revealId] })
         }
-        onStop={() => dispatch({ type: "schedule-leave", sport: state.primary })}
-        onKeep={() => dispatch({ type: "resume-renewal", sport: state.primary })}
-        onJoin={() => dispatch({ type: "opt-in", sport: state.primary })}
+        onStop={(sport) => dispatch({ type: "schedule-leave", sport })}
+        onKeep={(sport) => dispatch({ type: "resume-renewal", sport })}
+        onJoin={(sport) => dispatch({ type: "opt-in", sport })}
       />
 
       {awardCards(state).length > 0 && (

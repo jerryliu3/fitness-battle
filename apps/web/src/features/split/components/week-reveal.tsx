@@ -8,6 +8,7 @@ import {
   sportById,
   sportRenewal,
   type CompeteState,
+  type SportId,
 } from "@fitness-battle/shared";
 
 function weekLabel(periodStart: string, periodEnd: string): string {
@@ -36,9 +37,9 @@ export function WeekReveal({
 }: {
   state: CompeteState;
   onDismiss: (revealId: string) => void;
-  onStop: () => void;
-  onKeep: () => void;
-  onJoin: () => void;
+  onStop: (sport: SportId) => void;
+  onKeep: (sport: SportId) => void;
+  onJoin: (sport: SportId) => void;
 }) {
   // Derive from acknowledgedAt; ignore any stale pendingRevealIds blob.
   const reveals = primaryRevealResults(
@@ -129,12 +130,12 @@ export function WeekReveal({
         Copy recap
       </button>
       {renewal.enrolled && renewal.renews ? (
-        <button type="button" className="fb-btn-line" onClick={onStop}>
+        <button type="button" className="fb-btn-line" onClick={() => onStop(result.sport)}>
           Stop after this week
         </button>
       ) : null}
       {renewal.enrolled && !renewal.renews ? (
-        <button type="button" className="fb-btn-line" onClick={onKeep}>
+        <button type="button" className="fb-btn-line" onClick={() => onKeep(result.sport)}>
           Keep playing next week
         </button>
       ) : null}
@@ -142,7 +143,7 @@ export function WeekReveal({
         type="button"
         className="sp-cta"
         onClick={() => {
-          if (!renewal.enrolled) onJoin();
+          if (!renewal.enrolled) onJoin(result.sport);
           onDismiss(result.id);
         }}
       >
