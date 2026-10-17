@@ -1,0 +1,333 @@
+<!-- ARCHIVE ONLY: initial exploration, superseded by docs/social-next-steps.md. The fixed-season concept, planning, comeback flow and standalone Sideline are not current implementation scope. -->
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap">
+<div id="ot-next-five" class="viz-carousel viz-dotted-background" aria-label="Five new Overtaek feature directions">
+  <section data-variant="Rival Circuit" aria-label="Rival Circuit concept">
+    <div class="nf-stage"><article class="nf-phone nf-circuit">
+      <header class="nf-header"><span class="nf-brand">overtaek ↗</span><span>Future concept · Sample data</span></header>
+      <div class="nf-heading"><div class="nf-eyebrow">COMPETE / SEASON FIELD</div><h2>Same people.<br>A new week.</h2><p>Six runners · Four-week season · Week 4</p></div>
+      <div class="nf-field-roster" role="group" aria-label="Inspect a familiar rival">
+        <button data-rival="maya" aria-pressed="true"><b>MC</b><span>Maya</span><small>07</small></button>
+        <button data-rival="leo" aria-pressed="false"><b>LS</b><span>Leo</span><small>12</small></button>
+        <button data-rival="kit" aria-pressed="false"><b>KP</b><span>Kit</span><small>23</small></button>
+        <div class="nf-roster-you"><b>YOU</b><span>Jerry</span><small>04</small></div>
+        <div><b>SR</b><span>Sam</span><small>18</small></div>
+        <div><b>RL</b><span>Rae</span><small>31</small></div>
+      </div>
+      <div class="nf-season-bib">
+        <div class="nf-bib-rivets" aria-hidden="true"><i></i><i></i></div>
+        <span class="nf-eyebrow">YOUR FAMILIAR FIELD</span>
+        <div class="nf-bib-person"><strong id="nf-rival-number">07</strong><div><h3 id="nf-rival-name">Maya Chen</h3><p>Three completed weeks together</p></div></div>
+        <div class="nf-fixture-head"><span>Week</span><span>You</span><span id="nf-rival-short">Maya</span></div>
+        <div class="nf-fixtures" id="nf-fixtures" aria-live="polite"></div>
+        <div class="nf-season-live"><span>WEEK 4</span><b>In progress</b><span>↗</span></div>
+      </div>
+      <p class="nf-note">A shared season gives familiar faces a story.</p>
+      <nav class="nf-nav" aria-label="App context"><span>Home</span><span aria-current="page">Compete</span><span>Crew</span><span>Athlete</span></nav>
+    </article></div>
+  </section>
+  <section data-variant="Training Kit" aria-label="Training Kit concept" hidden>
+    <div class="nf-stage"><article class="nf-phone nf-kit">
+      <header class="nf-header"><span class="nf-brand">overtaek ↗</span><span>Future concept · Sample data</span></header>
+      <div class="nf-heading"><div class="nf-eyebrow">HOME / YOUR PLAN</div><h2>Make room<br>for your training.</h2><p>Oct 19–25 · Your local week</p></div>
+      <div class="nf-kit-tray" aria-label="Sample plan: run Tuesday, strength Friday, rest Wednesday and Sunday">
+        <div class="nf-kit-label"><span>THIS WEEK'S KIT</span><span>↗</span></div>
+        <div class="nf-week-pockets">
+          <div><span>M</span><i></i><small>19</small></div>
+          <div id="nf-tuesday" class="has-run"><span>T</span><i><b>↗</b></i><small>20</small></div>
+          <div class="is-rest"><span>W</span><i>—</i><small>21</small></div>
+          <div id="nf-thursday"><span>T</span><i><b>↗</b></i><small>22</small></div>
+          <div class="has-strength"><span>F</span><i>＋</i><small>23</small></div>
+          <div><span>S</span><i></i><small>24</small></div>
+          <div class="is-rest"><span>S</span><i>—</i><small>25</small></div>
+        </div>
+        <div class="nf-kit-key"><span>↗ Run</span><span>＋ Strength</span><span>— Planned rest</span></div>
+      </div>
+      <div class="nf-move-ticket" aria-live="polite"><span class="nf-eyebrow">SELECTED SESSION</span><div><i data-lucide="footprints" aria-hidden="true"></i><h3>Easy run</h3><span>30 min</span></div><p id="nf-run-date">Tuesday, Oct 20</p></div>
+      <button class="nf-primary" id="nf-move-run">Move run to Thursday →</button>
+      <div class="nf-glass nf-rest-note" aria-label="Training Kit rest inspector"><i data-lucide="pause" aria-hidden="true"></i><div><b>Rest has a place here.</b><p>Your Wednesday and Sunday stay clear.</p></div></div>
+      <p class="nf-note">Your plan stays flexible as the week changes.</p>
+      <nav class="nf-nav" aria-label="App context"><span aria-current="page">Home</span><span>Compete</span><span>Crew</span><span>Athlete</span></nav>
+    </article></div>
+  </section>
+  <section data-variant="Start Line" aria-label="Start Line workout invitation concept" hidden>
+    <div class="nf-stage"><article class="nf-phone nf-start">
+      <header class="nf-header"><span class="nf-brand">overtaek ↗</span><span>Future concept · Sample data</span></header>
+      <div class="nf-heading"><div class="nf-eyebrow">CREW / UPCOMING SESSION</div><h2>A little easier<br>to show up.</h2><p>Northside crew · Maya's invitation</p></div>
+      <div class="nf-start-ticket">
+        <div class="nf-ticket-upper"><span class="nf-eyebrow">SATURDAY / 17 OCT</span><strong>08:00</strong><span class="nf-ticket-zone">America/New_York · 30 minutes</span><h3>Easy run, together.</h3><p>Same time. Your own place.</p></div>
+        <div class="nf-ticket-tear" aria-hidden="true"></div>
+        <div class="nf-ticket-lower"><div class="nf-start-lights"><span class="is-in">MC</span><span class="is-in">LS</span><span class="is-in">SR</span><span id="nf-your-light">YOU</span></div><div class="nf-start-count"><b id="nf-start-count">3 on the start list</b><span>CREW / 017</span></div></div>
+      </div>
+      <button class="nf-primary" id="nf-rsvp" aria-pressed="false">Count me in ↗</button>
+      <div class="nf-rsvp-status" id="nf-rsvp-status" aria-live="polite">A shared time, even when you're miles apart.</div>
+      <nav class="nf-nav" aria-label="App context"><span>Home</span><span>Compete</span><span aria-current="page">Crew</span><span>Athlete</span></nav>
+    </article></div>
+  </section>
+  <section data-variant="Fresh Start" aria-label="Fresh Start return experience concept" hidden>
+    <div class="nf-stage"><article class="nf-phone nf-comeback">
+      <header class="nf-header"><span class="nf-brand">overtaek ↗</span><span>Future concept · Sample data</span></header>
+      <div class="nf-heading"><div class="nf-eyebrow">HOME / WELCOME BACK</div><h2>Still your story.<br>A new starting line.</h2><p>Good to see you, Jerry.</p></div>
+      <div class="nf-starting-blocks" aria-label="A fresh starting line with your past activity preserved">
+        <div class="nf-old-track"><span>YOUR STORY SO FAR</span><div><strong>18</strong><small>weeks recorded</small><strong>2</strong><small>seasons completed</small></div></div>
+        <div class="nf-new-track"><div class="nf-future-lanes"></div><span class="nf-track-word">START</span><div class="nf-you-block">YOU<span>↗</span></div></div>
+      </div>
+      <div class="nf-comeback-prompt"><span class="nf-eyebrow">WHAT FEELS RIGHT TODAY?</span><div class="nf-choice-row" role="group" aria-label="Choose a starting point"><button data-move="walking" aria-pressed="false">Walking</button><button data-move="running" aria-pressed="false">Running</button><button data-move="strength" aria-pressed="false">Strength</button></div></div>
+      <div class="nf-glass nf-next-move" aria-live="polite"><h3 id="nf-next-title">Start wherever you are.</h3><p id="nf-next-copy">Your next move can be small. Your history stays with you.</p></div>
+      <p class="nf-note">Room to return, whenever you're ready.</p>
+      <nav class="nf-nav" aria-label="App context"><span aria-current="page">Home</span><span>Compete</span><span>Crew</span><span>Athlete</span></nav>
+    </article></div>
+  </section>
+  <section data-variant="Sideline" aria-label="Sideline encouragement concept" hidden>
+    <div class="nf-stage"><article class="nf-phone nf-sideline">
+      <header class="nf-header"><span class="nf-brand">overtaek ↗</span><span>Future concept · Sample data</span></header>
+      <div class="nf-heading"><div class="nf-eyebrow">CREW / A MOMENT WORTH NOTICING</div><h2>Someone saw<br>you show up.</h2></div>
+      <div class="nf-moment"><div class="nf-moment-top"><span class="nf-avatar">MC</span><div><h3>Maya's first 10K.</h3><p>Today · Shared with Northside crew</p></div></div><strong>10.0<span> km</span></strong><p>A first worth remembering.</p><div class="nf-finish-tape" aria-hidden="true"><span>FIRST TEN / FIRST TEN / FIRST TEN /</span></div></div>
+      <div class="nf-pennants" role="group" aria-label="Read a crew member's encouragement"><button data-supporter="sam" aria-pressed="true"><span>SR</span><small>Sam</small></button><button data-supporter="kit" aria-pressed="false"><span>KP</span><small>Kit</small></button><button data-supporter="leo" aria-pressed="false"><span>LS</span><small>Leo</small></button><div class="nf-your-pennant" id="nf-your-pennant" hidden><span>YOU</span><small>Jerry</small></div></div>
+      <div class="nf-support-note" aria-live="polite"><span id="nf-support-name">Sam</span><p id="nf-support-copy">“The first ten! So good seeing you get here.”</p></div>
+      <button class="nf-primary" id="nf-highfive" aria-pressed="false">Add my high five <i data-lucide="hand" aria-hidden="true"></i></button>
+      <p class="nf-note" id="nf-cheer-count">3 people are on Maya's sideline.</p>
+      <nav class="nf-nav" aria-label="App context"><span>Home</span><span>Compete</span><span aria-current="page">Crew</span><span>Athlete</span></nav>
+    </article></div>
+  </section>
+</div>
+<style>
+#ot-next-five{--nf-bg:light-dark(#fafbf8,#15231c);--nf-ink:light-dark(#26382d,#ecf3e6);--nf-surface:light-dark(#fff,#20362a);--nf-muted:light-dark(#657461,#b3c4af);--nf-line:light-dark(#e0e5dd,#435447);--nf-wash:light-dark(#edf1e8,#2e4230);--nf-lime:#d4ee89;--nf-dark:#26382d;--nf-glass:light-dark(#ffffffc9,#263d30e6);--nf-edge:light-dark(#ffffffee,#ffffff44);font-family:'DM Sans',sans-serif;color:var(--nf-ink)}
+#ot-next-five *{box-sizing:border-box}
+#ot-next-five [hidden]{display:none!important}
+#ot-next-five .nf-stage{min-height:950px;padding:18px 8px 26px;display:flex;justify-content:center;align-items:flex-start}
+#ot-next-five .nf-phone{width:min(100%,370px);min-height:748px;padding:24px 22px 14px;background:var(--nf-bg);border:1px solid var(--nf-line);border-radius:32px;display:flex;flex-direction:column;position:relative;overflow:hidden;isolation:isolate;box-shadow:0 15px 35px #17251a12}
+#ot-next-five .nf-header{display:flex;align-items:center;justify-content:space-between;gap:7px}
+#ot-next-five .nf-brand{font-size:18px;font-weight:700;letter-spacing:-.7px;white-space:nowrap}
+#ot-next-five .nf-header>span+span{font-size:10px;color:var(--nf-muted);text-align:right;line-height:1.3;max-width:135px}
+#ot-next-five .nf-heading{margin:28px 0 22px}
+#ot-next-five .nf-eyebrow{font-size:10px;font-weight:600;letter-spacing:1.3px;line-height:1.5}
+#ot-next-five h2{font-size:30px;font-weight:500;line-height:1.08;letter-spacing:-1.2px;margin:10px 0 0}
+#ot-next-five h3{font-size:18px;font-weight:500;line-height:1.25;letter-spacing:-.4px;margin:0}
+#ot-next-five p{font-size:12px;line-height:1.5;color:var(--nf-muted);margin:8px 0 0}
+#ot-next-five button{font:inherit;color:inherit;cursor:var(--cursor-interaction,pointer);-webkit-tap-highlight-color:transparent}
+#ot-next-five button:focus-visible{outline:2px solid var(--nf-ink);outline-offset:4px}
+#ot-next-five button:active{scale:.98}
+#ot-next-five .nf-nav{margin-top:auto;display:flex;justify-content:space-between;align-items:center;gap:3px;border-top:1px solid var(--nf-line);padding:12px 0 0;font-size:11px;color:var(--nf-muted)}
+#ot-next-five .nf-nav span{padding:10px 8px;border-radius:20px}
+#ot-next-five .nf-nav [aria-current]{background:var(--nf-lime);color:var(--nf-dark);font-weight:600}
+#ot-next-five .nf-note{font-size:11px;line-height:1.5;text-align:center;margin:17px 6px 23px}
+#ot-next-five .nf-glass{background:linear-gradient(130deg,var(--nf-edge),transparent 55%),var(--nf-glass);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border:1px solid var(--nf-edge);border-radius:21px;box-shadow:inset 0 1px 0 #fff9,0 7px 15px #17251a0d}
+#ot-next-five .nf-primary{width:100%;min-height:48px;padding:13px 17px;border:0;border-radius:16px;background:var(--nf-ink);color:var(--nf-bg);font-size:13px;font-weight:500;display:flex;align-items:center;justify-content:center;gap:8px}
+#ot-next-five .nf-avatar{width:37px;height:37px;border-radius:50%;display:grid;place-items:center;background:var(--nf-lime);color:var(--nf-dark);font-size:11px;flex-shrink:0}
+#ot-next-five .nf-field-roster{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;margin-bottom:19px}
+#ot-next-five .nf-field-roster>button,#ot-next-five .nf-field-roster>div{min-height:64px;display:grid;grid-template-columns:auto 1fr;align-content:center;gap:3px 5px;padding:9px 8px;background:var(--nf-surface);border:1px solid var(--nf-line);border-radius:12px;text-align:left;position:relative}
+#ot-next-five .nf-field-roster b{font-size:10px;width:23px;height:23px;border-radius:50%;display:grid;place-items:center;background:var(--nf-wash);grid-row:span 2;font-weight:500}
+#ot-next-five .nf-field-roster span{font-size:11px;line-height:1.1}
+#ot-next-five .nf-field-roster small{font-size:10px;color:var(--nf-muted);line-height:1}
+#ot-next-five .nf-field-roster [aria-pressed=true]{border-color:var(--nf-ink);box-shadow:0 2px 0 var(--nf-ink)}
+#ot-next-five .nf-field-roster .nf-roster-you{background:var(--nf-lime);color:var(--nf-dark);border-color:var(--nf-lime)}
+#ot-next-five .nf-roster-you b{background:#ffffff80}
+#ot-next-five .nf-season-bib{position:relative;padding:22px 18px 14px;background:var(--nf-surface);border:1px solid var(--nf-line);border-radius:8px 8px 17px 17px;box-shadow:0 4px 0 var(--nf-line),0 10px 17px #17251a0b}
+#ot-next-five .nf-bib-rivets{position:absolute;left:12px;right:12px;top:9px;display:flex;justify-content:space-between}
+#ot-next-five .nf-bib-rivets i{width:5px;height:5px;border:1px solid var(--nf-line);border-radius:50%;background:var(--nf-bg)}
+#ot-next-five .nf-bib-person{display:flex;align-items:center;gap:15px;margin:12px 0 18px}
+#ot-next-five .nf-bib-person>strong{font-size:53px;font-weight:500;letter-spacing:-3px;line-height:1}
+#ot-next-five .nf-bib-person h3{font-size:17px}
+#ot-next-five .nf-bib-person p{font-size:11px;margin-top:3px;max-width:125px}
+#ot-next-five .nf-fixture-head,#ot-next-five .nf-fixture-row{display:grid;grid-template-columns:1.1fr 1fr 1fr;gap:6px;padding:9px 0;text-align:center}
+#ot-next-five .nf-fixture-head{font-size:10px;color:var(--nf-muted);border-top:1px solid var(--nf-line)}
+#ot-next-five .nf-fixture-row{font-size:12px;border-top:1px solid var(--nf-line)}
+#ot-next-five .nf-fixture-head span:first-child,#ot-next-five .nf-fixture-row span:first-child{text-align:left}
+#ot-next-five .nf-fixture-row span:first-child{color:var(--nf-muted)}
+#ot-next-five .nf-season-live{display:flex;align-items:center;justify-content:space-between;gap:7px;padding:12px 0 0;margin-top:2px;border-top:1px solid var(--nf-line);font-size:11px}
+#ot-next-five .nf-season-live>span:first-child{font-size:9px;letter-spacing:1px;color:var(--nf-muted)}
+#ot-next-five .nf-season-live b{font-weight:500}
+#ot-next-five .nf-kit-tray{background:var(--nf-wash);border:1px solid var(--nf-line);border-radius:23px;padding:20px 13px 18px;box-shadow:inset 0 3px 6px #17251a0d,0 5px 0 var(--nf-line)}
+#ot-next-five .nf-kit-label{display:flex;justify-content:space-between;align-items:center;font-size:10px;letter-spacing:1.3px;color:var(--nf-muted);margin:0 2px 18px}
+#ot-next-five .nf-week-pockets{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:5px}
+#ot-next-five .nf-week-pockets>div{display:flex;flex-direction:column;align-items:center;gap:10px;font-size:11px}
+#ot-next-five .nf-week-pockets i{width:100%;height:60px;border-radius:10px;background:var(--nf-bg);box-shadow:inset 1px 2px 4px #17251a13;display:grid;place-items:center;font-size:15px;font-style:normal;position:relative}
+#ot-next-five .nf-week-pockets i>b{display:none}
+#ot-next-five .nf-week-pockets small{font-size:10px;color:var(--nf-muted)}
+#ot-next-five .nf-week-pockets .has-run i{background:linear-gradient(110deg,#e2f5b4,#bedc7b);color:var(--nf-dark);box-shadow:inset 1px 1px 2px #fff9,1px 4px 0 #8ba05c;font-size:18px;transform:translateY(-3px);transition:transform .25s}
+#ot-next-five .nf-week-pockets .has-run i>b{display:block}
+#ot-next-five .nf-week-pockets .has-strength i{background:var(--nf-ink);color:var(--nf-bg);box-shadow:1px 4px 0 var(--nf-muted)}
+#ot-next-five .nf-week-pockets .is-rest i{background:transparent;box-shadow:none;color:var(--nf-muted)}
+#ot-next-five .nf-kit-key{display:flex;flex-wrap:wrap;gap:6px 11px;margin-top:22px;color:var(--nf-muted);font-size:10px}
+#ot-next-five .nf-move-ticket{margin:25px 0 17px;padding:18px 3px 0;border-top:1px solid var(--nf-line)}
+#ot-next-five .nf-move-ticket>div{display:flex;align-items:center;gap:9px;margin-top:11px}
+#ot-next-five .nf-move-ticket>div>span{margin-left:auto;font-size:12px;color:var(--nf-muted)}
+#ot-next-five .nf-move-ticket p{margin-left:25px}
+#ot-next-five .nf-rest-note{display:flex;gap:13px;align-items:center;padding:16px;margin-top:22px}
+#ot-next-five .nf-rest-note svg{flex-shrink:0}
+#ot-next-five .nf-rest-note b{font-size:13px;font-weight:500}
+#ot-next-five .nf-rest-note p{font-size:11px;margin-top:4px}
+#ot-next-five .nf-start-ticket{border-radius:22px;background:var(--nf-surface);border:1px solid var(--nf-line);box-shadow:0 4px 0 var(--nf-line),0 13px 20px #17251a0e;transform:rotate(-2deg);margin:5px 6px 25px;overflow:hidden}
+#ot-next-five .nf-ticket-upper{padding:25px 24px 22px;background:radial-gradient(ellipse at 0 0,#d4ee8975,transparent 75%),var(--nf-surface)}
+#ot-next-five .nf-ticket-upper>strong{display:block;font-size:59px;font-weight:500;letter-spacing:-3px;line-height:1.1;margin:16px 0 8px;font-variant-numeric:tabular-nums}
+#ot-next-five .nf-ticket-zone{display:block;font-size:10px;color:var(--nf-muted);line-height:1.5}
+#ot-next-five .nf-ticket-upper h3{font-size:21px;margin-top:20px}
+#ot-next-five .nf-ticket-upper p{margin-top:5px}
+#ot-next-five .nf-ticket-tear{position:relative;height:1px;border-top:1px dashed var(--nf-muted);margin:0 12px}
+#ot-next-five .nf-ticket-tear:before,#ot-next-five .nf-ticket-tear:after{content:"";position:absolute;width:20px;height:20px;background:var(--nf-bg);border:1px solid var(--nf-line);border-radius:50%;top:-11px}
+#ot-next-five .nf-ticket-tear:before{left:-23px}#ot-next-five .nf-ticket-tear:after{right:-23px}
+#ot-next-five .nf-ticket-lower{padding:22px}
+#ot-next-five .nf-start-lights{display:flex;justify-content:space-between;gap:7px;margin:0 0 17px}
+#ot-next-five .nf-start-lights span{width:42px;height:42px;display:grid;place-items:center;border-radius:50%;background:var(--nf-wash);border:1px dashed var(--nf-muted);font-size:10px;color:var(--nf-muted);transition:background .2s,box-shadow .2s}
+#ot-next-five .nf-start-lights .is-in{background:var(--nf-lime);color:var(--nf-dark);border:1px solid #b5cd85;box-shadow:inset 0 2px 2px #fff9,0 3px 0 #a4bd71}
+#ot-next-five .nf-start-count{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:11px}
+#ot-next-five .nf-start-count b{font-weight:500}
+#ot-next-five .nf-start-count>span{font-size:9px;color:var(--nf-muted);letter-spacing:.7px}
+#ot-next-five .nf-rsvp-status{font-size:12px;line-height:1.5;color:var(--nf-muted);text-align:center;margin:15px 8px 24px;min-height:36px}
+#ot-next-five .nf-starting-blocks{position:relative;height:240px;margin:0 0 18px;perspective:800px}
+#ot-next-five .nf-old-track{position:absolute;left:13px;right:13px;top:0;padding:15px 18px 27px;background:var(--nf-wash);border:1px solid var(--nf-line);border-radius:12px;transform:rotate(-4deg)}
+#ot-next-five .nf-old-track>span{font-size:9px;letter-spacing:1.3px;color:var(--nf-muted)}
+#ot-next-five .nf-old-track>div{display:grid;grid-template-columns:auto 1fr auto 1fr;align-items:center;gap:7px;margin-top:13px}
+#ot-next-five .nf-old-track strong{font-size:28px;font-weight:500;letter-spacing:-1px}
+#ot-next-five .nf-old-track small{font-size:10px;line-height:1.4;color:var(--nf-muted)}
+#ot-next-five .nf-new-track{position:absolute;inset:97px 5px 0;background:var(--nf-surface);border:1px solid var(--nf-line);border-radius:18px;box-shadow:0 5px 0 var(--nf-line),0 12px 16px #17251a13;transform:rotateX(10deg) rotateZ(2deg);overflow:hidden}
+#ot-next-five .nf-future-lanes{position:absolute;inset:0;background:repeating-linear-gradient(90deg,transparent 0,transparent calc(33.333% - 1px),var(--nf-line) calc(33.333% - 1px),var(--nf-line) 33.333%)}
+#ot-next-five .nf-track-word{position:absolute;left:0;right:0;bottom:22px;text-align:center;font-size:36px;font-weight:600;letter-spacing:9px;color:var(--nf-line);border-top:2px solid var(--nf-line);padding-top:7px}
+#ot-next-five .nf-you-block{position:absolute;left:calc(50% - 30px);top:15px;width:60px;height:50px;background:linear-gradient(120deg,#e7f8bd,#b9d876);border-radius:12px 12px 4px 4px;box-shadow:3px 7px 0 #97b568,4px 12px 9px #17251a15;color:var(--nf-dark);display:flex;flex-direction:column;justify-content:center;align-items:center;gap:2px;font-size:10px;transform:rotate(-6deg);transition:transform .3s}
+#ot-next-five .nf-you-block>span{font-size:18px}
+#ot-next-five .nf-comeback-prompt{margin:0 0 15px}
+#ot-next-five .nf-choice-row{display:flex;gap:5px;margin-top:11px}
+#ot-next-five .nf-choice-row button{flex:1;min-height:44px;padding:10px 6px;border-radius:14px;background:var(--nf-surface);border:1px solid var(--nf-line);font-size:11px}
+#ot-next-five .nf-choice-row [aria-pressed=true]{background:var(--nf-ink);color:var(--nf-bg);border-color:var(--nf-ink)}
+#ot-next-five .nf-next-move{padding:17px 19px;min-height:110px}
+#ot-next-five .nf-next-move h3{font-size:17px}
+#ot-next-five .nf-next-move p{font-size:11px;margin-top:6px}
+#ot-next-five .nf-moment{padding:18px 18px 0;background:var(--nf-surface);border:1px solid var(--nf-line);border-radius:17px;box-shadow:0 3px 0 var(--nf-line);overflow:hidden}
+#ot-next-five .nf-moment-top{display:flex;align-items:center;gap:10px}
+#ot-next-five .nf-moment-top h3{font-size:17px}
+#ot-next-five .nf-moment-top p{font-size:10px;margin:2px 0 0}
+#ot-next-five .nf-moment>strong{display:block;font-size:60px;font-weight:500;letter-spacing:-3px;margin:19px 0 0;line-height:1.2}
+#ot-next-five .nf-moment>strong>span{font-size:22px;letter-spacing:0}
+#ot-next-five .nf-moment>p{margin:3px 0 22px}
+#ot-next-five .nf-finish-tape{height:35px;background:var(--nf-lime);color:var(--nf-dark);margin:0 -25px;transform:rotate(-3deg);display:flex;align-items:center;padding-left:22px}
+#ot-next-five .nf-finish-tape span{font-size:10px;letter-spacing:1.6px;white-space:nowrap}
+#ot-next-five .nf-pennants{display:flex;justify-content:center;gap:17px;min-height:108px;padding-top:12px;position:relative}
+#ot-next-five .nf-pennants:before{content:"";position:absolute;left:15px;right:15px;top:15px;border-top:1px solid var(--nf-muted);transform:rotate(3deg)}
+#ot-next-five .nf-pennants button,#ot-next-five .nf-your-pennant{width:44px;background:transparent;border:0;padding:0;display:flex;flex-direction:column;align-items:center;gap:7px;z-index:1;font-size:10px}
+#ot-next-five .nf-pennants button>span,#ot-next-five .nf-your-pennant>span{width:39px;height:57px;display:grid;place-items:center;padding-bottom:8px;background:var(--nf-wash);clip-path:polygon(0 0,100% 0,100% 100%,50% 83%,0 100%);transform:rotate(5deg);transition:transform .25s,background .25s;box-shadow:inset 2px 0 0 #ffffff88}
+#ot-next-five .nf-pennants small{font-size:10px;color:var(--nf-muted)}
+#ot-next-five .nf-pennants [aria-pressed=true]>span{background:var(--nf-ink);color:var(--nf-bg);transform:rotate(-6deg) translateY(3px)}
+#ot-next-five .nf-your-pennant>span{background:var(--nf-lime);color:var(--nf-dark);transform:rotate(-3deg)}
+#ot-next-five .nf-support-note{padding:3px 4px 18px;min-height:92px}
+#ot-next-five .nf-support-note>span{font-size:11px;font-weight:500}
+#ot-next-five .nf-support-note p{color:var(--nf-ink);font-size:13px;margin-top:5px}
+@media(max-width:400px){#ot-next-five .nf-stage{min-height:950px;padding-inline:0}#ot-next-five .nf-phone{padding-inline:17px;border-radius:27px}#ot-next-five h2{font-size:28px}#ot-next-five .nf-header>span+span{font-size:9px;max-width:100px}#ot-next-five .nf-brand{font-size:17px}#ot-next-five .nf-nav span{padding-inline:6px}#ot-next-five .nf-nav{font-size:10px}#ot-next-five .nf-field-roster{gap:5px}#ot-next-five .nf-field-roster>button,#ot-next-five .nf-field-roster>div{padding-inline:5px;gap:3px}#ot-next-five .nf-field-roster b{width:20px;height:20px;font-size:8px}#ot-next-five .nf-week-pockets{gap:4px}#ot-next-five .nf-bib-person{gap:10px}#ot-next-five .nf-ticket-upper{padding-inline:20px}}
+@media(prefers-reduced-motion:reduce){#ot-next-five *,#ot-next-five *::before{transition:none!important;animation:none!important}#ot-next-five .nf-you-block,#ot-next-five .nf-new-track,#ot-next-five .nf-start-ticket{transform:none!important}}
+@media(prefers-reduced-transparency:reduce){#ot-next-five .nf-glass{background:var(--nf-surface);backdrop-filter:none;-webkit-backdrop-filter:none}}
+</style>
+<script>
+(() => {
+  const root = document.getElementById('ot-next-five');
+  const get = id => root.querySelector('#' + id);
+  const prior = window.openai?.widgetState?.privateContent;
+  const seed = prior?.round === 'next-five' ? prior : {};
+  const allowed = (value, options, fallback) => options.includes(value) ? value : fallback;
+  const state = {
+    round: 'next-five',
+    rival: allowed(seed.rival, ['maya', 'leo', 'kit'], 'maya'),
+    moved: !!seed.moved,
+    joined: !!seed.joined,
+    move: allowed(seed.move, ['walking', 'running', 'strength', ''], ''),
+    supporter: allowed(seed.supporter, ['sam', 'kit', 'leo'], 'sam'),
+    cheered: !!seed.cheered,
+  };
+  function press(selector, key, value) {
+    root.querySelectorAll(selector).forEach(el => el.setAttribute('aria-pressed', String(el.dataset[key] === value)));
+  }
+  function save(concept) {
+    window.openai?.setWidgetState?.({modelContent: {concept, rival: state.rival, selectedMove: state.move}, privateContent: {...state}})?.catch(() => {});
+  }
+  const rivals = {
+    maya: {number:'07', name:'Maya Chen', short:'Maya', places:['2nd','4th','3rd']},
+    leo: {number:'12', name:'Leo Santos', short:'Leo', places:['5th','2nd','5th']},
+    kit: {number:'23', name:'Kit Park', short:'Kit', places:['3rd','5th','2nd']},
+  };
+  function circuit() {
+    const rival = rivals[state.rival];
+    get('nf-rival-number').textContent = rival.number;
+    get('nf-rival-name').textContent = rival.name;
+    get('nf-rival-short').textContent = rival.short;
+    const holder = get('nf-fixtures'); holder.replaceChildren();
+    ['4th','3rd','4th'].forEach((place, i) => {
+      const row = document.createElement('div'); row.className = 'nf-fixture-row';
+      for (const text of ['Week ' + (i+1), place, rival.places[i]]) {
+        const span = document.createElement('span'); span.textContent = text; row.append(span);
+      }
+      holder.append(row);
+    });
+    press('[data-rival]', 'rival', state.rival);
+  }
+  root.querySelectorAll('[data-rival]').forEach(button => button.addEventListener('click', () => {
+    state.rival = button.dataset.rival; circuit(); save('Rival Circuit');
+  }));
+  function kit() {
+    get('nf-tuesday').classList.toggle('has-run', !state.moved);
+    get('nf-thursday').classList.toggle('has-run', state.moved);
+    root.querySelector('.nf-kit-tray').setAttribute('aria-label', 'Sample plan: run ' + (state.moved ? 'Thursday' : 'Tuesday') + ', strength Friday, rest Wednesday and Sunday');
+    get('nf-run-date').textContent = state.moved ? 'Thursday, Oct 22' : 'Tuesday, Oct 20';
+    get('nf-move-run').textContent = state.moved ? 'Move run back to Tuesday ←' : 'Move run to Thursday →';
+  }
+  get('nf-move-run').addEventListener('click', () => { state.moved = !state.moved; kit(); save('Training Kit'); });
+  function start() {
+    get('nf-your-light').classList.toggle('is-in', state.joined);
+    get('nf-start-count').textContent = state.joined ? '4 on the start list' : '3 on the start list';
+    get('nf-rsvp').textContent = state.joined ? 'Leave session' : 'Count me in ↗';
+    get('nf-rsvp').setAttribute('aria-pressed', String(state.joined));
+    get('nf-rsvp-status').textContent = state.joined ? "You're on the start list. Saturday, 08:00." : "A shared time, even when you're miles apart.";
+  }
+  get('nf-rsvp').addEventListener('click', () => { state.joined = !state.joined; start(); save('Start Line'); });
+  const moves = {
+    '': ['Start wherever you are.', 'Your next move can be small. Your history stays with you.'],
+    walking: ['A little fresh air.', 'Walking is your starting point. Choose your own pace.'],
+    running: ['Back on your own terms.', 'Running is your starting point. Make this one yours.'],
+    strength: ['One session to begin.', 'Strength is your starting point. Pick what fits today.'],
+  };
+  function comeback() {
+    const move = moves[state.move];
+    get('nf-next-title').textContent = move[0]; get('nf-next-copy').textContent = move[1];
+    press('[data-move]', 'move', state.move);
+    root.querySelector('.nf-you-block').style.transform = state.move ? 'rotate(-2deg) translateY(-5px)' : 'rotate(-6deg)';
+  }
+  root.querySelectorAll('[data-move]').forEach(button => button.addEventListener('click', () => {
+    state.move = state.move === button.dataset.move ? '' : button.dataset.move; comeback(); save('Fresh Start');
+  }));
+  const supporters = {
+    sam: ['Sam', '“The first ten! So good seeing you get here.”'],
+    kit: ['Kit', '“All those little runs added up. Proud of you!”'],
+    leo: ['Leo', '“This deserves a very big high five.”'],
+  };
+  function sideline() {
+    const supporter = supporters[state.supporter];
+    get('nf-support-name').textContent = supporter[0]; get('nf-support-copy').textContent = supporter[1];
+    get('nf-your-pennant').hidden = !state.cheered;
+    get('nf-cheer-count').textContent = (state.cheered ? '4' : '3') + " people are on Maya's sideline.";
+    get('nf-highfive').setAttribute('aria-pressed', String(state.cheered));
+    get('nf-highfive').firstChild.textContent = state.cheered ? 'High five added · Undo ' : 'Add my high five ';
+    press('[data-supporter]', 'supporter', state.supporter);
+  }
+  root.querySelectorAll('[data-supporter]').forEach(button => button.addEventListener('click', () => {
+    state.supporter = button.dataset.supporter; sideline(); save('Sideline');
+  }));
+  get('nf-highfive').addEventListener('click', () => { state.cheered = !state.cheered; sideline(); save('Sideline'); });
+  function render() { circuit(); kit(); start(); comeback(); sideline(); }
+  render();
+  window.addEventListener('openai:set_globals', event => {
+    const saved = event.detail?.globals?.widgetState?.privateContent;
+    if (saved?.round !== 'next-five') return;
+    state.rival = allowed(saved.rival, ['maya','leo','kit'], 'maya');
+    state.moved = !!saved.moved; state.joined = !!saved.joined;
+    state.move = allowed(saved.move, ['walking','running','strength',''], '');
+    state.supporter = allowed(saved.supporter, ['sam','kit','leo'], 'sam'); state.cheered = !!saved.cheered;
+    render();
+  });
+  if (globalThis.Tweak) {
+    const surface = root.querySelector('.nf-rest-note');
+    const options = {glass:true};
+    const tweak = new Tweak({container:surface, onChange:() => {
+      surface.style.background = options.glass ? '' : 'var(--nf-surface)';
+      surface.style.backdropFilter = options.glass ? '' : 'none';
+    }});
+    tweak.addToggle(options, 'glass', {label:'Glass inspector'});
+  }
+})();
+</script>
