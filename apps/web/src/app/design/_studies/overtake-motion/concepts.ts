@@ -44,14 +44,15 @@ export const concepts: Record<Family, Concept[]> = {
     { id: "photo-combo", name: "Photo combo", label: "YOUR SELECTED DIRECTION", description: "Every pass gets its moment. Pure afterburn behind you.", detail: "The camera follows each crossing, slows shoulder-to-shoulder, then releases into the next dash. Only the afterburn speed trail follows your character while each pass banks a +1 overtake and builds your combo.", duration: 7600, beats: ["Run arrives", "Build momentum", "Pass by pass", "Bank the combo"] },
   ],
   logo: [
-    { id: "chase-stagger", name: "Staggered chase", label: "50% HEIGHT · 3-LETTER OVERLAP", description: "Three-stage lead swap into a double-exposure lockup.", detail: "Continuous motion with no mid-race pauses or end consolidation: 1) “taek” charges in and edges past “over”, 2) “over” surges back in front, and 3) “taek” pulls away into the final 50% height, three-letter overlap with double-exposure echoes.", duration: 5200, beats: ["Launch", "Taek edges past", "Over counters", "Taek pulls away"] },
-    { id: "chase-close", name: "Close pursuit", label: "60% HEIGHT · 3-LETTER OVERLAP", description: "A deeper 60% vertical interlock and steeper racing lean.", detail: "Pushes “taek” 60% up into “over”’s visible letter height across three shared letters (v-e-r over t-a-e). While moving, both rows lean in harder with stepped tennis-green exposures before settling into a tight emblem.", duration: 5200, beats: ["Launch", "Taek edges past", "Over counters", "Deep lockup"] },
-    { id: "chase-open", name: "Draft & pull away", label: "55% HEIGHT · 3-LETTER OVERLAP", description: "High-lane drafting weave with a longer four-step exposure.", detail: "“taek” drafts high behind “over” as it edges ahead in stage one, drops into the lower lane as “over” retakes the lead in stage two, then pulls away into a 55% height, three-letter double-exposure finish.", duration: 5400, beats: ["Draft in", "Taek edges past", "Over counters", "Pull away"] },
+    { id: "chase-stagger", name: "Staggered chase · 40%", label: "40% HEIGHT · 3-LETTER OVERLAP", description: "Over enters first. Three-stage duel into a 40% vertical overlap.", detail: "“over” enters the stage by itself first. Then “taek” charges in from behind: 1) “taek” edges past “over”, 2) “over” surges back in front, and 3) “taek” pulls away into a 40% height, three-letter double-exposure lockup with matching letter styling.", duration: 5400, beats: ["Over enters", "Taek edges past", "Over counters", "Taek pulls away"] },
+    { id: "chase-open", name: "Staggered chase · 35%", label: "35% HEIGHT · 3-LETTER OVERLAP", description: "A lighter 35% vertical overlap with more breathing room.", detail: "Same “over”-first entry, three-stage lead swap, and three-letter horizontal overlap (v-e-r over t-a-e), but with a more open 35% vertical overlap so the bowls of “a” and “e” kiss the baseline of “over” while “t” and “k” interlock.", duration: 5400, beats: ["Over enters", "Taek edges past", "Over counters", "Taek pulls away"] },
+    { id: "chase-mid", name: "Staggered chase · 45%", label: "45% HEIGHT · 3-LETTER OVERLAP", description: "Medium-tight 45% vertical overlap between 40% and 50%.", detail: "Splits the difference between the 40% and 50% vertical overlaps while keeping the three-letter horizontal offset, consistent outline-free glyph styling, and stepped double-exposure finish.", duration: 5400, beats: ["Over enters", "Taek edges past", "Over counters", "Taek pulls away"] },
+    { id: "chase-close", name: "Staggered chase · 50%", label: "50% HEIGHT · 3-LETTER OVERLAP", description: "Compact 50% vertical overlap for comparison.", detail: "The tighter 50% vertical overlap paired with the same “over”-first intro, three-stage lead swap, consistent glyph styling, and three-letter horizontal lockup.", duration: 5400, beats: ["Over enters", "Taek edges past", "Over counters", "Taek pulls away"] },
   ],
   type: [
-    { id: "echo-stagger", name: "Double exposure", label: "50% HEIGHT · 3-LETTER OVERLAP", description: "Two interlocked rows. Three stepped memories of the pass.", detail: "Folded into the logo race as the final lockup: “taek” sits one letter to the right of “over” so three letters overlap horizontally (v-e-r over t-a-e) with a 50% vertical overlap and three offset exposures.", duration: 3400, beats: ["Two rows", "Build the echo", "Full speed", "Hold the trace"] },
-    { id: "echo-liquid", name: "Liquid exposure", label: "50% HEIGHT · ONE CONTINUOUS TRAIL", description: "The letter shape stretches into a single fading wake.", detail: "Uses the same 50% height and three-letter horizontal overlap while stretching each word’s silhouette left into a horizontally blurred, progressively dissolved wake.", duration: 3600, beats: ["Two rows", "Stretch the shape", "Let it dissolve", "Hold the wake"] },
-    { id: "echo-jet", name: "Jetstream", label: "50% HEIGHT · GLYPH TO AIRFLOW", description: "Letter-shaped at the front. Pure airflow behind.", detail: "Pairs the 50% height, three-letter overlap lockup with a continuous letter wake that melts into a tapered aerodynamic stream behind both rows.", duration: 3800, beats: ["Two rows", "Catch the air", "Form the stream", "Hold the flow"] },
+    { id: "echo-stagger", name: "Double exposure", label: "40% HEIGHT · 3-LETTER OVERLAP", description: "Two interlocked rows. Three stepped memories of the pass.", detail: "Folded into the logo race as the final lockup: “taek” sits one letter to the right of “over” so three letters overlap horizontally (v-e-r over t-a-e) with a 40% vertical overlap and three offset exposures.", duration: 3400, beats: ["Two rows", "Build the echo", "Full speed", "Hold the trace"] },
+    { id: "echo-liquid", name: "Liquid exposure", label: "40% HEIGHT · ONE CONTINUOUS TRAIL", description: "The letter shape stretches into a single fading wake.", detail: "Uses the same 40% height and three-letter horizontal overlap while stretching each word’s silhouette left into a horizontally blurred, progressively dissolved wake.", duration: 3600, beats: ["Two rows", "Stretch the shape", "Let it dissolve", "Hold the wake"] },
+    { id: "echo-jet", name: "Jetstream", label: "40% HEIGHT · GLYPH TO AIRFLOW", description: "Letter-shaped at the front. Pure airflow behind.", detail: "Pairs the 40% height, three-letter overlap lockup with a continuous letter wake that melts into a tapered aerodynamic stream behind both rows.", duration: 3800, beats: ["Two rows", "Catch the air", "Form the stream", "Hold the flow"] },
   ],
 };
 
@@ -126,23 +127,18 @@ export function smoothVelocity(p: number, points: [number, number][]) {
 }
 
 export function stackedLayout(concept: string) {
-  if (concept === "chase-close") return { ox: 234, tx: 294, oy: 219, gap: 32, lean: 11, heightOverlap: .6, letterOverlap: 3 };
-  if (concept === "chase-open") return { ox: 230, tx: 298, oy: 217, gap: 35, lean: 10, heightOverlap: .55, letterOverlap: 3 };
-  return { ox: 232, tx: 296, oy: 216, gap: 38, lean: 9, heightOverlap: .5, letterOverlap: 3 };
+  if (concept === "chase-open") return { ox: 232, tx: 296, oy: 211, gap: 48, lean: 9, heightOverlap: .35, letterOverlap: 3 };
+  if (concept === "chase-mid") return { ox: 232, tx: 296, oy: 214, gap: 41, lean: 9, heightOverlap: .45, letterOverlap: 3 };
+  if (concept === "chase-close") return { ox: 232, tx: 296, oy: 216, gap: 38, lean: 9, heightOverlap: .5, letterOverlap: 3 };
+  return { ox: 232, tx: 296, oy: 213, gap: 44, lean: 9, heightOverlap: .4, letterOverlap: 3 };
 }
 
 export function staggeredLogoFrame(p: number, concept = "chase-stagger") {
   const layout = stackedLayout(concept);
-  const overPoints: [number, number][] = concept === "chase-close"
-    ? [[0, -135], [.32, 94], [.58, 196], [.9, layout.ox]]
-    : concept === "chase-open"
-      ? [[0, -145], [.32, 88], [.58, 195], [.9, layout.ox]]
-      : [[0, -140], [.32, 92], [.58, 194], [.9, layout.ox]];
-  const taekPoints: [number, number][] = concept === "chase-close"
-    ? [[0, -245], [.32, 106], [.58, 152], [.94, layout.tx]]
-    : concept === "chase-open"
-      ? [[0, -260], [.32, 108], [.58, 146], [.94, layout.tx]]
-      : [[0, -250], [.32, 106], [.58, 150], [.94, layout.tx]];
+  // "over" enters first by itself (0..0.18), then "taek" charges in (0.16..0.44) and edges ahead,
+  // "over" counters to retake the lead (0.44..0.68), and "taek" pulls away into the final lockup (0.68..0.94).
+  const overPoints: [number, number][] = [[0, -260], [.18, 78], [.44, 136], [.68, 210], [.9, layout.ox]];
+  const taekPoints: [number, number][] = [[.16, -340], [.44, 150], [.68, 172], [.94, layout.tx]];
   const ox = smoothTrack(p, overPoints);
   const tx = smoothTrack(p, taekPoints);
   const overSpeed = clamp(smoothVelocity(p, overPoints) / 850);

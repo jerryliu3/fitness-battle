@@ -45,28 +45,29 @@ describe("overtake study fixtures", () => {
   });
 
   for (const concept of concepts.logo) {
-    it(`${concept.id} runs a continuous 3-stage lead swap without mid-race pauses or end consolidation`, () => {
-      const start = staggeredLogoFrame(0, concept.id);
-      const stage1 = staggeredLogoFrame(.32, concept.id);
-      const stage2 = staggeredLogoFrame(.58, concept.id);
+    it(`${concept.id} has over enter first, then runs a continuous 3-stage lead swap without mid-race pauses or end consolidation`, () => {
+      const intro = staggeredLogoFrame(.15, concept.id);
+      const stage1 = staggeredLogoFrame(.44, concept.id);
+      const stage2 = staggeredLogoFrame(.68, concept.id);
       const end = staggeredLogoFrame(1, concept.id);
 
-      // Start: taek trails behind over.
-      expect(start.tx).toBeLessThan(start.ox);
-      // Stage 1: taek edges past over by a tiny bit.
+      // Intro: over is on stage by itself while taek has not entered yet.
+      expect(intro.ox).toBeGreaterThan(0);
+      expect(intro.tx).toBeLessThanOrEqual(-340);
+      expect(intro.taekSpeed).toBe(0);
+      // Stage 1: taek charges in and edges past over by a tiny bit.
       expect(stage1.tx).toBeGreaterThan(stage1.ox);
       expect(stage1.taekRight).toBeGreaterThan(stage1.overRight);
       // Stage 2: over passes taek back by a little bit and goes in front again.
       expect(stage2.ox).toBeGreaterThan(stage2.tx);
       expect(stage2.overRight).toBeGreaterThan(stage2.taekRight);
-      // Stage 3: taek pulls away into the final 3-letter, 50-60% height overlap without consolidating back.
-      expect(end.tx - end.ox).toBeGreaterThanOrEqual(60);
-      expect(end.tx - end.ox).toBeLessThanOrEqual(68);
-      expect(end.layout.heightOverlap).toBeGreaterThanOrEqual(.5);
-      expect(end.layout.heightOverlap).toBeLessThanOrEqual(.6);
+      // Stage 3: taek pulls away into the final 3-letter, 35-50% height overlap without consolidating back.
+      expect(end.tx - end.ox).toBe(64);
+      expect(end.layout.heightOverlap).toBeGreaterThanOrEqual(.35);
+      expect(end.layout.heightOverlap).toBeLessThanOrEqual(.5);
 
-      let prevOx = start.ox;
-      let prevTx = start.tx;
+      let prevOx = staggeredLogoFrame(0, concept.id).ox;
+      let prevTx = staggeredLogoFrame(0, concept.id).tx;
       let prevLead = stage2.tx - stage2.ox;
       for (let i = 1; i <= 500; i++) {
         const p = i / 500;
@@ -75,9 +76,11 @@ describe("overtake study fixtures", () => {
         expect(frame.tx).toBeGreaterThanOrEqual(prevTx - 1e-6);
         if (p >= .05 && p <= .85) {
           expect(frame.overSpeed).toBeGreaterThan(0);
+        }
+        if (p >= .18 && p <= .9) {
           expect(frame.taekSpeed).toBeGreaterThan(0);
         }
-        if (p >= .58) {
+        if (p >= .68) {
           const lead = frame.tx - frame.ox;
           expect(lead).toBeGreaterThanOrEqual(prevLead - 1e-6);
           prevLead = lead;

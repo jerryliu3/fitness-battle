@@ -186,7 +186,7 @@ export function TypeScene({ progress: p, concept, dark, reduced }: Omit<ScenePro
     <Word word="overtaek" x={x + moving * 11} y={y} width={width} color={color} lean={lean} />
     {concept === "echo" && <rect x="73" y="277" width="535" height="2" fill={`url(#${uid}-fade)`} opacity={t * .45} />}
     {!reduced && [0, 1, 2, 3, 4].map(i => <line key={i} x1={95 + (i * 143 + 900 - p * 900) % 570} x2={125 + (i * 143 + 900 - p * 900) % 570} y1={150 + i * 37} y2={150 + i * 37} stroke={accent} strokeWidth="1.5" opacity={moving * .25} />)}
-    <text x="380" y="349" textAnchor="middle" fontSize="10" letterSpacing="3.4" fill={dark ? "#b2c0a9" : "#768172"} opacity={ease(between(p, .7, 1))}>ALWAYS A LITTLE AHEAD.</text>
+    <text x="380" y="349" textAnchor="middle" fontSize="10" letterSpacing="3.4" fill={dark ? "#b2c0a9" : "#768172"} opacity={ease(between(p, .7, 1))}>ALWAYS SURPASSING YOURSELF.</text>
   </Frame>;
 }
 
@@ -205,44 +205,36 @@ function ContinuousWake({ word, x, y, width, lean, color, length, strength, jet,
 }
 
 function StaggeredLogoScene({ progress: p, concept, dark, reduced, lockup = "stacked" }: Pick<SceneProps, "progress" | "concept" | "dark" | "reduced" | "lockup">) {
-  const color = dark ? "#f7faef" : ink, accent = dark ? green : "#769d3e", bg = dark ? ink : "#fafbf8";
+  const color = dark ? "#f7faef" : ink, accent = dark ? green : "#769d3e";
   const { layout, ox, tx, overSpeed, taekSpeed } = staggeredLogoFrame(p, concept);
   const settle = ease(between(p, .7, 1));
   const resolve = lockup === "inline" ? ease(between(p, .79, .98)) : 0;
   const moving = reduced ? 0 : Math.sin(between(p, .06, .92) * Math.PI);
-  const draftWeave = concept === "chase-open" && !reduced ? Math.sin(between(p, .05, .64) * Math.PI) * 16 : 0;
   const overX = mix(ox, 160, resolve), taekX = mix(tx, 368, resolve);
-  const oy = mix(layout.oy, 253, resolve), ty = mix(layout.oy + layout.gap - draftWeave, 253, resolve);
+  const oy = mix(layout.oy, 253, resolve), ty = mix(layout.oy + layout.gap, 253, resolve);
   const size = mix(124, 98, resolve), ow = mix(248, 208, resolve), tw = mix(272, 232, resolve);
   const overLean = mix(layout.lean + (reduced ? 0 : overSpeed * 9 + moving * 2), 9, resolve);
   const taekLean = mix(layout.lean + (reduced ? 0 : taekSpeed * 10 + moving * 2), 9, resolve);
-  const enterOver = out(between(p, .01, .1));
-  const enterTaek = out(between(p, .02, .14));
-  const echoSteps = concept === "chase-open" ? [4, 3, 2, 1] : [3, 2, 1];
-  return <Frame dark={dark} label={`${concept}: over above and to the left of taek with a ${Math.round(layout.heightOverlap * 100)}% height and ${layout.letterOverlap}-letter overlap, ${lockup === "inline" ? "resolving into a single line" : "finishing on the double-exposure lockup"}.`}>
+  const enterOver = out(between(p, .01, .14));
+  const enterTaek = out(between(p, .16, .28));
+  return <Frame dark={dark} label={`${concept}: over enters first, then taek races into a ${Math.round(layout.heightOverlap * 100)}% height and ${layout.letterOverlap}-letter overlap, ${lockup === "inline" ? "resolving into a single line" : "finishing on the double-exposure lockup"}.`}>
     {!reduced && Array.from({ length: 16 }, (_, i) => <line key={i} x1={45 + ((i * 81 - p * 700) % 660 + 660) % 660} x2={62 + ((i * 81 - p * 700) % 660 + 660) % 660} y1={123 + i * 17 % 210} y2={123 + i * 17 % 210} stroke={accent} strokeWidth={i % 3 === 0 ? 2 : 1} opacity={moving * .22} />)}
     <g opacity={enterOver}>
-      {echoSteps.map(i => {
-        const base = i === 4 ? (reduced ? 0 : overSpeed * .045) : (.19 - i * .044);
-        return <Word key={`o-${i}`} word="over" x={overX - i * (19 + (reduced ? 0 : overSpeed * 12))} y={oy} width={ow} size={size} color={accent} lean={overLean} opacity={base * (1 + (reduced ? 0 : overSpeed * .55))} />;
-      })}
+      {[3, 2, 1].map(i => <Word key={`o-${i}`} word="over" x={overX - i * (19 + (reduced ? 0 : overSpeed * 12))} y={oy} width={ow} size={size} color={accent} lean={overLean} opacity={(.19 - i * .044) * (1 + (reduced ? 0 : overSpeed * .55))} />)}
     </g>
     <g opacity={enterTaek}>
-      {echoSteps.map(i => {
-        const base = i === 4 ? (reduced ? 0 : taekSpeed * .05) : (.19 - i * .044);
-        return <Word key={`t-${i}`} word="taek" x={taekX - i * (19 + (reduced ? 0 : taekSpeed * 13))} y={ty} width={tw} size={size} color={accent} lean={taekLean} opacity={base * (1 + (reduced ? 0 : taekSpeed * .65))} />;
-      })}
+      {[3, 2, 1].map(i => <Word key={`t-${i}`} word="taek" x={taekX - i * (19 + (reduced ? 0 : taekSpeed * 13))} y={ty} width={tw} size={size} color={accent} lean={taekLean} opacity={(.19 - i * .044) * (1 + (reduced ? 0 : taekSpeed * .65))} />)}
     </g>
     <Word word="over" x={overX} y={oy} width={ow} size={size} color={color} lean={overLean} opacity={enterOver} />
-    <Word word="taek" x={taekX} y={ty} width={tw} size={size} color={color} lean={taekLean} outline={bg} opacity={enterTaek} />
-    <g opacity={pulse(p, .74, .11)}><Spark x={taekX + tw + 14} y={ty - 75} r={10} color={accent} /><Spark x={taekX + tw + 27} y={ty - 25} r={5} color={accent} /></g>
-    <text x="380" y="350" fill={dark ? "#b2c0a9" : "#768172"} opacity={settle} fontSize="10" letterSpacing="3.4" textAnchor="middle">ALWAYS A LITTLE AHEAD.</text>
+    <Word word="taek" x={taekX} y={ty} width={tw} size={size} color={color} lean={taekLean} opacity={enterTaek} />
+    <g opacity={pulse(p, .78, .11)}><Spark x={taekX + tw + 14} y={ty - 75} r={10} color={accent} /><Spark x={taekX + tw + 27} y={ty - 25} r={5} color={accent} /></g>
+    <text x="380" y="350" fill={dark ? "#b2c0a9" : "#768172"} opacity={settle} fontSize="10" letterSpacing="3.4" textAnchor="middle">ALWAYS SURPASSING YOURSELF.</text>
   </Frame>;
 }
 
 function StaggeredTypeScene({ progress: p, concept, dark, reduced }: Pick<SceneProps, "progress" | "concept" | "dark" | "reduced">) {
   const uid = useId().replace(/:/g, "");
-  const color = dark ? "#f7faef" : ink, accent = dark ? green : "#769d3e", bg = dark ? ink : "#fafbf8";
+  const color = dark ? "#f7faef" : ink, accent = dark ? green : "#769d3e";
   const t = out(between(p, .04, .84));
   const speed = reduced ? 0 : Math.sin(between(p, .1, .94) * Math.PI);
   const layout = stackedLayout("chase-stagger");
@@ -254,8 +246,8 @@ function StaggeredTypeScene({ progress: p, concept, dark, reduced }: Pick<SceneP
         : <ContinuousWake {...row} lean={lean} color={accent} length={(concept === "echo-jet" ? 152 : 110) * t + speed * 40} strength={t} jet={concept === "echo-jet"} uid={`${uid}-${index}`} />}
     </g>)}
     <Word {...rows[0]} size={124} lean={lean} color={color} />
-    <Word {...rows[1]} size={124} lean={lean} color={color} outline={bg} />
-    <text x="380" y="350" textAnchor="middle" fontSize="10" letterSpacing="3.4" fill={dark ? "#b2c0a9" : "#768172"} opacity={ease(between(p, .7, 1))}>ALWAYS A LITTLE AHEAD.</text>
+    <Word {...rows[1]} size={124} lean={lean} color={color} />
+    <text x="380" y="350" textAnchor="middle" fontSize="10" letterSpacing="3.4" fill={dark ? "#b2c0a9" : "#768172"} opacity={ease(between(p, .7, 1))}>ALWAYS SURPASSING YOURSELF.</text>
   </Frame>;
 }
 
