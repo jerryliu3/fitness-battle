@@ -63,6 +63,8 @@ export function rankForElo(elo: number): RankBand {
   return band;
 }
 
+export const rankForEffortScore = rankForElo;
+
 export function eloInBand(elo: number): {
   band: RankBand;
   next: RankBand | null;
@@ -74,3 +76,5 @@ export function eloInBand(elo: number): {
   const intoNext = next ? Math.max(0, next.min - elo) : 0;
   return { band, next, intoNext };
 }
+
+export const effortScoreInBand = eloInBand;

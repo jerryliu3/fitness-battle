@@ -30,7 +30,7 @@ export function AwardShelf({ cards }: { cards: AwardCardModel[] }) {
           <Card.Body>
             <Text style={styles.place}>{card.place}</Text>
             <Text style={styles.meta}>
-              {card.effort} effort · {card.delta} rating
+              {card.effort} effort · {card.delta} effort score
             </Text>
           </Card.Body>
         </Card>

@@ -1134,7 +1134,7 @@ export function reduceCompete(
                 verified: false,
                 disposition: "excluded" as const,
                 dispositionReason:
-                  "Sample calibration. It set a starting rating and is not a counted workout.",
+                  "Sample calibration. It set a starting effort score and is not a counted workout.",
               }
             : activity,
         ),

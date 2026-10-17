@@ -178,7 +178,7 @@ export function SleepPanel({
           {view.latestResult ? (
             <p className="fb-note">
               Last closed week: place {view.latestResult.place} of {view.latestResult.fieldSize},
-              score {view.latestResult.score.toFixed(0)}. Rating {view.latestResult.eloBefore} →{" "}
+              score {view.latestResult.score.toFixed(0)}. Effort Score {view.latestResult.eloBefore} →{" "}
               {view.latestResult.eloAfter}.
             </p>
           ) : (

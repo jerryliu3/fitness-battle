@@ -237,7 +237,7 @@ function AdaptiveHome({ state, layout, accountId, baseline, persist, failed, sam
     const links = state.links.filter(l => l.status === "connected");
     setDetail({ title: state.name, body: <>
       <p className="ah-eyebrow">{state.city} · {sport.name}</p><strong className="ah-sheet-number">{rankForElo(rating?.openElo ?? 1000).name}</strong>
-      <div className="ah-stat-row"><div><b>{rating?.openElo ?? 1000}</b><span>Rating</span></div><div><b>{activities.length}</b><span>Moves this week</span></div></div>
+      <div className="ah-stat-row"><div><b>{rating?.openElo ?? 1000}</b><span>Effort Score</span></div><div><b>{activities.length}</b><span>Moves this week</span></div></div>
       <p>{sampleMode ? "Sample week · no tracker is connected." : links.length ? `${links.map(l=>l.provider).join(", ")} connected.` : "No live tracker connected."}</p>
       <Link href="/you#connections" className="ah-text-link">Manage tracker connections ↗</Link>
       <Link href="/you" className="ah-primary">Full athlete profile ↗</Link>

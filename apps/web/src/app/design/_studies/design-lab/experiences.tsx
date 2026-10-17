@@ -1077,7 +1077,7 @@ export function Benchmark({
       onClick={() =>
         onDetail(
           "5 km training benchmark · Estimated",
-          "27:25, scaled from the 6.2 km / 34 min sample activity. It is an estimated training benchmark, not a race result or personal best. It does not change weekly effort or Elo. Published race rankings remain a separate destination.",
+          "27:25, scaled from the 6.2 km / 34 min sample activity. It is an estimated training benchmark, not a race result or personal best. It does not change weekly effort or effort score. Published race rankings remain a separate destination.",
         )
       }
     >

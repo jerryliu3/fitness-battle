@@ -544,7 +544,7 @@ function humanCrewError(code?: string): string {
               Mark my rest week
             </button>
             <p className="fb-note">
-              A crew rest marker does not freeze Elo. Week freezes live in
+              A crew rest marker does not freeze effort score. Week freezes live in
               Athlete → Preferences.
             </p>
           </>

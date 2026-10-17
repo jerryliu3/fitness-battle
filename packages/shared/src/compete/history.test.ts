@@ -3,6 +3,7 @@ import {
   acknowledgePeriodResults,
   appendPeriodResults,
   formatEloDelta,
+  formatEffortScoreDelta,
   pendingPeriodResults,
   pendingRevealIdsFromResults,
   primaryRevealResults,
@@ -114,5 +115,6 @@ describe("period history helpers", () => {
     expect(formatEloDelta(1000, 1015)).toBe("+15");
     expect(formatEloDelta(1000, 988)).toBe("-12");
     expect(formatEloDelta(1000, 1000)).toBe("0");
+    expect(formatEffortScoreDelta(1000, 1015)).toBe("+15");
   });
 });

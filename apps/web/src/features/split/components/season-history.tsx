@@ -61,7 +61,7 @@ export function SeasonHistory({
         <div className="sp-empty">
           <h2>No closed weeks yet</h2>
           <p className="fb-copy">
-            When a UTC week ends, your place and Elo change land here — a
+            When a UTC week ends, your place and effort score change land here — a
             Strava-style ledger of how the field treated you.
           </p>
         </div>
@@ -137,7 +137,7 @@ export function SeasonHistory({
                   {formatEffort(row.effort)}
                 </span>
                 <span>
-                  <em>Elo</em>
+                  <em>Effort Score</em>
                   {row.eloBefore}→{row.eloAfter}
                 </span>
                 <span data-delta={delta > 0 ? "up" : delta < 0 ? "down" : "flat"}>

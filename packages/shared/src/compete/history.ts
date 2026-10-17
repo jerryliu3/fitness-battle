@@ -140,6 +140,8 @@ export function formatEloDelta(before: number, after: number): string {
   return delta > 0 ? `+${delta}` : `${delta}`;
 }
 
+export const formatEffortScoreDelta = formatEloDelta;
+
 export function formatPlace(place: number, fieldSize: number): string {
   return `${place} / ${fieldSize}`;
 }

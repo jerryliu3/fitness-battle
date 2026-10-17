@@ -182,7 +182,7 @@ export function EvolutionLab() {
           <p className="evo-small">
             Week-close design preview. The current sample Thursday is still in
             progress; opening this does not settle the live period or update
-            your rating.
+            your effort score.
           </p>
         </>
       ),
