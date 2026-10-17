@@ -74,11 +74,14 @@ export async function uploadWebProfileAvatar({
   userId,
   previousAvatarUrl,
   supabase,
+  requireStorage = false,
 }: {
   file: File;
   userId?: string | null;
   previousAvatarUrl?: string | null;
   supabase?: SupabaseClient | null;
+  /** When true (signed-in athlete), never fall back to a base64 data URL. */
+  requireStorage?: boolean;
 }): Promise<string> {
   const error = validateAvatarFile(file);
   if (error) {
@@ -87,9 +90,11 @@ export async function uploadWebProfileAvatar({
 
   const { blob, dataUrl } = await processImageFile(file);
 
-  // Signed-in users must land in storage — never persist a base64 data URL
-  // into compete state / account sync (payload size + avatar_url limits).
-  if (supabase && userId) {
+  const mustStore = requireStorage || Boolean(supabase && userId);
+  if (mustStore) {
+    if (!supabase || !userId) {
+      throw new Error("Sign in again to update your photo.");
+    }
     const canonicalPath = getCanonicalAvatarObjectPath(userId);
     const { error: uploadError } = await supabase.storage
       .from(AVATAR_BUCKET)

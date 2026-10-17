@@ -86,6 +86,8 @@ export function AthleteOverview({
         userId: user?.id,
         previousAvatarUrl: state.avatarUrl,
         supabase,
+        // Signed-in athletes (email present) must use storage — never data URLs.
+        requireStorage: Boolean(email),
       });
       dispatch({ type: "set-avatar", avatarUrl: newUrl });
     } catch (err) {
@@ -210,11 +212,16 @@ export function AthleteOverview({
           <div
             className="focus-portrait"
             role="button"
-            tabIndex={0}
+            tabIndex={avatarBusy ? -1 : 0}
+            aria-busy={avatarBusy || undefined}
+            aria-disabled={avatarBusy || undefined}
             aria-label={state.avatarUrl ? "Change photo" : "Upload photo"}
             title={state.avatarUrl ? "Change photo" : "Upload photo"}
-            onClick={() => fileInputRef.current?.click()}
+            onClick={() => {
+              if (!avatarBusy) fileInputRef.current?.click();
+            }}
             onKeyDown={(e) => {
+              if (avatarBusy) return;
               if (e.key === "Enter" || e.key === " ") {
                 e.preventDefault();
                 fileInputRef.current?.click();

@@ -128,9 +128,10 @@ describe("initialsFromName / interpolateSeries", () => {
 describe("selfLaneLabel", () => {
   it("labels unsigned guests as Guest and signed-in viewers as You", () => {
     expect(selfLaneLabel("Guest")).toBe("Guest");
-    expect(selfLaneLabel("You")).toBe("Guest");
+    expect(selfLaneLabel("You")).toBe("You");
     expect(selfLaneLabel("Maya")).toBe("You");
     expect(selfLaneLabel("Guest", "caps")).toBe("GUEST");
+    expect(selfLaneLabel("You", "caps")).toBe("YOU");
     expect(selfLaneLabel("Maya", "caps")).toBe("YOU");
   });
 });

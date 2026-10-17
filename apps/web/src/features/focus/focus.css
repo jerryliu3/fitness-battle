@@ -781,29 +781,28 @@
   overflow-x: visible;
   overflow-y: auto;
   overscroll-behavior: contain;
-  padding: 8px 8px 20px;
+  padding: 0 8px 20px;
 }
 .focus-path-row {
   position: relative;
   height: var(--path-row);
+  z-index: 1;
 }
-.focus-path-curve {
+.focus-journey-path {
   position: absolute;
-  left: 0;
+  inset: 0;
   width: 100%;
-  /* Bridge previous row midpoint → this row midpoint. */
-  top: calc(var(--path-row) / -2);
-  height: var(--path-row);
+  height: 100%;
   z-index: 0;
   pointer-events: none;
   overflow: visible;
 }
-.focus-path-curve path {
+.focus-journey-path path {
   fill: none;
   stroke: #c9d5bf;
-  stroke-width: 2.75;
+  stroke-width: 2.5;
   stroke-linecap: round;
-  stroke-dasharray: 5 9;
+  stroke-dasharray: 4 7;
   vector-effect: non-scaling-stroke;
 }
 .focus-path-row > button {
@@ -1659,7 +1658,6 @@
   .focus-journey {
     --path-l: 22%;
     --path-r: 78%;
-    --path-row: 112px;
   }
   .focus-path-row > span {
     max-width: 110px;

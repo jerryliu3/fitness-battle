@@ -211,7 +211,8 @@ export function selfLaneLabel(
   name: string,
   style: "title" | "caps" = "title",
 ): string {
-  const guest = name === "Guest" || name === "You";
+  // Only the unsigned default is Guest. Legacy onboarded "You" stays "You".
+  const guest = name === "Guest";
   if (style === "caps") return guest ? "GUEST" : "YOU";
   return guest ? "Guest" : "You";
 }
