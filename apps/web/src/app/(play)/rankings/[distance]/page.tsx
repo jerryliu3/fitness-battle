@@ -34,7 +34,9 @@ export default async function DistanceBoardPage({
   return (
     <main className="rankings-wrap">
       <header className="rankings-top">
-        <Link href="/rankings">All distances</Link>
+        <Link href="/rankings" className="fb-back">
+          ← All distances
+        </Link>
         <span className="rankings-kicker">{label}</span>
       </header>
       <h1>{label}</h1>
@@ -73,33 +75,37 @@ function Board({ title, rows }: { title: string; rows: LeaderboardRow[] }) {
       {rows.length === 0 ? (
         <p className="rankings-note">No results yet.</p>
       ) : (
-        <table className="rankings-table">
-          <caption className="rankings-kicker">
-            {title}, fastest official time first
-          </caption>
-          <thead>
-            <tr>
-              <th scope="col">Place</th>
-              <th scope="col">Athlete</th>
-              <th scope="col">Time</th>
-              <th scope="col">Clock</th>
-              <th scope="col">Race</th>
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((row, index) => (
-              <tr key={row.id}>
-                <td>{index + 1}</td>
-                <td>{row.athlete_name}</td>
-                <td>{formatRaceTime(row.rank_time_ms)}</td>
-                <td>{clockLabel(row.rank_clock)}</td>
-                <td>
-                  {row.event_name} {row.edition_year}
-                </td>
+        <div className="rankings-table-wrap">
+          <table className="rankings-table">
+            <caption className="rankings-kicker">
+              {title}, fastest official time first
+            </caption>
+            <thead>
+              <tr>
+                <th scope="col">Place</th>
+                <th scope="col">Athlete</th>
+                <th scope="col">Time</th>
+                <th scope="col">Clock</th>
+                <th scope="col">Race</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {rows.map((row, index) => (
+                <tr key={row.id}>
+                  <td>{index + 1}</td>
+                  <td>{row.athlete_name}</td>
+                  <td>{formatRaceTime(row.rank_time_ms)}</td>
+                  <td>{clockLabel(row.rank_clock)}</td>
+                  <td>
+                    {row.event_name.includes(String(row.edition_year))
+                      ? row.event_name
+                      : `${row.event_name} ${row.edition_year}`}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       )}
     </section>
   );

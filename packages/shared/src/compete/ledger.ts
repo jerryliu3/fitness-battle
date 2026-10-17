@@ -19,14 +19,34 @@ export function provenanceOf(activity: Activity): ActivityProvenance {
   return "recorded";
 }
 
+const SAMPLE_ID_PREFIXES = [
+  "strava-stub-",
+  "garmin-stub-",
+  "whoop-stub-",
+  "oura-stub-",
+  "mock-",
+];
+
+export function isSampleActivityId(id: string): boolean {
+  return SAMPLE_ID_PREFIXES.some((prefix) => id.startsWith(prefix));
+}
+
 /** Calibration rows predate provenance and must not score or be shared. */
 export function isSampleActivity(activity: Activity): boolean {
-  return activity.source === "history" || provenanceOf(activity) === "demo";
+  return (
+    activity.source === "history" ||
+    provenanceOf(activity) === "demo" ||
+    isSampleActivityId(activity.id)
+  );
 }
 
 export function normalizeSampleActivity(activity: Activity): Activity {
   if (!isSampleActivity(activity)) return activity;
-  if (activity.provenance === "demo" && activity.disposition === "excluded" && activity.verified === false) {
+  if (
+    activity.provenance === "demo" &&
+    activity.disposition === "excluded" &&
+    activity.verified === false
+  ) {
     return activity;
   }
   return {
@@ -34,7 +54,8 @@ export function normalizeSampleActivity(activity: Activity): Activity {
     provenance: "demo",
     disposition: "excluded",
     verified: false,
-    dispositionReason: activity.dispositionReason ?? "Sample calibration does not count.",
+    dispositionReason:
+      activity.dispositionReason ?? "Sample tracker data does not count.",
   };
 }
 
@@ -45,6 +66,7 @@ export function dispositionOf(activity: Activity): ActivityDisposition {
 /** Verified means a GPS session the tracker recorded, not a file or a sample. */
 export function isVerifiedActivity(activity: Activity): boolean {
   if (provenanceOf(activity) !== "recorded") return false;
+  if (isSampleActivity(activity)) return false;
   if (!sportById(activity.sport).gps) return false;
   return activity.verified;
 }
@@ -90,9 +112,13 @@ export function mergeActivities(
   existing: Activity[],
   incoming: Activity[],
 ): Activity[] {
-  const next = existing.map((activity) => ({ ...activity }));
+  const next = existing.map((activity) =>
+    isSampleActivity(activity) ? normalizeSampleActivity(activity) : { ...activity },
+  );
   for (const raw of incoming) {
-    const activity = { ...raw };
+    const activity = isSampleActivity(raw)
+      ? normalizeSampleActivity(raw)
+      : { ...raw };
     const twinIndex = next.findIndex(
       (item) =>
         item.id === activity.id ||
@@ -104,22 +130,27 @@ export function mergeActivities(
     }
     const twin = next[twinIndex]!;
     if (twin.id === activity.id) {
-      next[twinIndex] = {
-        ...activity,
-        disposition: dispositionOf(twin),
-        dispositionReason: twin.dispositionReason,
-      };
+      next[twinIndex] = isSampleActivity(activity)
+        ? normalizeSampleActivity(activity)
+        : {
+            ...activity,
+            disposition: dispositionOf(twin),
+            dispositionReason: twin.dispositionReason,
+          };
       continue;
     }
     const winner = prefer(twin, activity);
     const loser = winner.id === activity.id ? twin : activity;
-    next[twinIndex] = {
-      ...winner,
-      disposition: dispositionOf(winner) === "pending" ? "pending" : "counted",
-    };
+    next[twinIndex] = isSampleActivity(winner)
+      ? normalizeSampleActivity(winner)
+      : {
+          ...winner,
+          disposition: dispositionOf(winner) === "pending" ? "pending" : "counted",
+        };
     const excluded: Activity = {
       ...loser,
       disposition: "excluded",
+      verified: false,
       dispositionReason: `Already counted from ${provenanceOf(winner)} ${winner.source}.`,
     };
     const loserIndex = next.findIndex((item) => item.id === excluded.id);

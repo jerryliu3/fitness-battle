@@ -76,7 +76,10 @@ export function reconcileBrowserPermission(
   }
 
   if (browser === "unsupported") {
-    if (prefs.permissionStatus === "unknown") {
+    if (prefs.permissionStatus === "stub" && prefs.registration?.stub) {
+      return prefs;
+    }
+    if (prefs.permissionStatus !== "unsupported") {
       return withPermissionStatus(prefs, "unsupported");
     }
     return prefs;
@@ -209,15 +212,22 @@ export async function enableWebPush(
       })).prefs;
     }
     if (permission !== "granted") {
-      next = withPermissionStatus(
-        { ...prefs, enabled: false, registration: null },
-        "prompt",
-      );
-      return (await persistRemote(saveNotificationPreferences(next), identity, {
-        clearDevices: true,
-      })).prefs;
+      // In demo/local sessions or restricted/emulated contexts where browser permission
+      // is not granted (or prompts are suppressed), register a local stub so testing works.
+      if (!identity || identity.localOnly) {
+        next = registerStubPush(prefs, "web", new Date(), "stub");
+      } else {
+        next = withPermissionStatus(
+          { ...prefs, enabled: false, registration: null },
+          "prompt",
+        );
+        return (await persistRemote(saveNotificationPreferences(next), identity, {
+          clearDevices: true,
+        })).prefs;
+      }
+    } else {
+      next = registerStubPush(prefs, "web", new Date(), "granted");
     }
-    next = registerStubPush(prefs, "web", new Date(), "granted");
   }
 
   const saved = saveNotificationPreferences(next);

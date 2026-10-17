@@ -1,4 +1,4 @@
-import type { ActivityProvenance } from "../compete/ledger";
+import { isSampleActivityId, type ActivityProvenance } from "../compete/ledger";
 import type { ActivitySample } from "../types";
 import { sportById, type Activity } from "../compete/sports";
 
@@ -23,8 +23,11 @@ export function activityFromSample(
   if (!sample.startedAt || Number.isNaN(new Date(sample.startedAt).getTime())) {
     return null;
   }
-  const isDemo = provenance === "demo";
-  const recorded = provenance === "recorded";
+  const isDemo =
+    provenance === "demo" ||
+    sample.provider === "mock" ||
+    isSampleActivityId(sample.id);
+  const recorded = !isDemo && provenance === "recorded";
   return {
     id: sample.id,
     sport: sample.categorySlug,
@@ -34,7 +37,7 @@ export function activityFromSample(
     avgHr: sample.avgHr ?? null,
     verified: !isDemo && recorded && sport.gps,
     source: sample.provider as Activity["source"],
-    provenance,
+    provenance: isDemo ? "demo" : provenance,
     disposition: isDemo ? "excluded" : provenance === "imported" ? "pending" : "counted",
     dispositionReason: isDemo
       ? "Sample tracker data does not count."

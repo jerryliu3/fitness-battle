@@ -732,6 +732,7 @@ function makeActivity(
   source: Activity["source"],
   provenance: Activity["provenance"] = "recorded",
 ): Activity {
+  const isDemo = provenance === "demo" || source === "history";
   return {
     id: `act-${hashString(`${sport}:${startedAt.toISOString()}:${distanceM}:${source}`).toString(16)}`,
     sport,
@@ -739,10 +740,11 @@ function makeActivity(
     distanceM,
     movingSec,
     avgHr,
-    verified: provenance === "recorded" && verified,
+    verified: !isDemo && provenance === "recorded" && verified,
     source,
     provenance,
-    disposition: "counted",
+    disposition: isDemo ? "excluded" : "counted",
+    dispositionReason: isDemo ? "Sample tracker data does not count." : undefined,
   };
 }
 

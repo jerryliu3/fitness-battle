@@ -8,6 +8,7 @@ import {
   competeNow,
   countsOnTrack,
   formatVolume,
+  isSampleActivity,
   primaryFreezePeriodStart,
   sportById,
   type Activity,
@@ -195,7 +196,7 @@ export function TodayScreen() {
               </small>
               <b>{sportById(a.sport).name}</b>
               <em>
-                {a.disposition === "excluded"
+                {a.disposition === "excluded" || isSampleActivity(a)
                   ? `${a.source} · sample (excluded)`
                   : `${a.verified ? "Verified" : "Open"} · ${a.disposition === "pending" ? "pending" : "counted"}`}
               </em>

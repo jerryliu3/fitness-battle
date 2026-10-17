@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { useAuth } from "@/components/auth-context";
 import { useCompete } from "@/components/compete-context";
 import { Sheet } from "@/ui/sheet";
+import { distanceUnitLabel, formatDistanceM } from "@fitness-battle/shared";
 import Link from "next/link";
 interface Crew {
   id: string;
@@ -99,7 +100,9 @@ function humanCrewError(code?: string): string {
   const entries = (data?.entries ?? []).filter(
     (e) => e.crew_id === crew?.id && e.disposition === "counted",
   );
-  const km = entries.reduce((t, e) => t + Number(e.distance_m), 0) / 1000;
+  const unitLabel = distanceUnitLabel(state?.units);
+  const totalM = entries.reduce((t, e) => t + Number(e.distance_m), 0);
+  const targetM = (crew?.journey_km ?? 40) * 1000;
   const memberNames = members.map((m) => m.display_name);
   const memberCaption =
     memberNames.length <= 3
@@ -211,18 +214,18 @@ function humanCrewError(code?: string): string {
                   <h2>{entries.length} counted sessions</h2>
                 ) : (
                   <h2 className="focus-goal">
-                    {km.toFixed(1)}{" "}
+                    {formatDistanceM(totalM, state?.units)}{" "}
                     <small>
                       {crew.format === "cooperative"
-                        ? `/ ${crew.journey_km} km`
-                        : "km together"}
+                        ? `/ ${formatDistanceM(targetM, state?.units)} ${unitLabel}`
+                        : `${unitLabel} together`}
                     </small>
                   </h2>
                 )}
                 {crew.format === "cooperative" && (
                   <progress
-                    value={km}
-                    max={Math.max(1, crew.journey_km)}
+                    value={totalM}
+                    max={Math.max(1, targetM)}
                     aria-label="Crew distance goal"
                   />
                 )}
@@ -282,7 +285,8 @@ function humanCrewError(code?: string): string {
                             </small>
                             <p>
                               {e.sport} ·{" "}
-                              {(Number(e.distance_m) / 1000).toFixed(1)} km ·{" "}
+                              {formatDistanceM(Number(e.distance_m), state?.units)}{" "}
+                              {unitLabel} ·{" "}
                               {Math.round(e.moving_sec / 60)} min
                             </p>
                             {e.user_id !== user?.id && (
@@ -326,13 +330,13 @@ function humanCrewError(code?: string): string {
                         <span>{i + 1}</span>
                         <b className="fb-grow">{m.display_name}</b>
                         <span>
-                          {(
+                          {formatDistanceM(
                             entries
                               .filter((e) => e.user_id === m.user_id)
-                              .reduce((t, e) => t + Number(e.distance_m), 0) /
-                            1000
-                          ).toFixed(1)}{" "}
-                          km
+                              .reduce((t, e) => t + Number(e.distance_m), 0),
+                            state?.units,
+                          )}{" "}
+                          {unitLabel}
                         </span>
                       </div>
                     ))
@@ -390,7 +394,7 @@ function humanCrewError(code?: string): string {
           </div>
         </>
       )}
-      {note && (
+      {!panel && note && (
         <p className="focus-feedback" role="status">
           {note}
         </p>

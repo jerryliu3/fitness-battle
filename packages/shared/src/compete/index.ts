@@ -112,6 +112,7 @@ export {
   countsOnTrack,
   dispositionOf,
   isSampleActivity,
+  isSampleActivityId,
   isVerifiedActivity,
   mergeActivities,
   normalizeSampleActivity,
