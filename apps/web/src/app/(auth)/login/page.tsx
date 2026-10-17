@@ -82,19 +82,7 @@ function LoginForm() {
           {busy ? "Signing in…" : "Sign in"}
         </button>
       </form>
-      <p className="fb-note">
-        Forgot password?{" "}
-        <button
-          type="button"
-          className="fb-btn-ghost"
-          style={{ padding: 0, minHeight: "auto", display: "inline", textDecoration: "underline" }}
-          onClick={() =>
-            setError("Password reset: Sign up with a new email for local demo mode or contact support.")
-          }
-        >
-          Reset info
-        </button>
-      </p>
+
       <p className="fb-note">
         New here?{" "}
         <Link href={buildSignupHref(next)}>Create an account</Link>
