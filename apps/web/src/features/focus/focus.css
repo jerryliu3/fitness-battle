@@ -771,41 +771,45 @@
   position: relative;
   border-radius: 24px;
   background: transparent;
-  margin: 25px 0;
+  margin: 12px 0 20px;
   max-height: 900px;
   overflow-x: visible;
   overflow-y: auto;
   overscroll-behavior: contain;
-  padding: 0 12px 28px;
+  padding: 0 12px 20px;
 }
 .focus-path-row {
   position: relative;
   display: flex;
   align-items: center;
   gap: 18px;
-  height: 150px;
+  height: 118px;
   padding-left: 12%;
 }
 .focus-path-row.is-right {
   padding-left: 36%;
 }
-.focus-path-row:before {
-  content: "";
+.focus-path-row.is-left {
+  padding-left: 12%;
+}
+.focus-path-curve {
   position: absolute;
-  width: 40%;
-  height: 110px;
-  border: 3px dashed #dce3d6;
-  border-top: 0;
-  border-right: 0;
-  border-radius: 0 0 0 65px;
-  left: 22%;
-  top: -35px;
+  left: 8%;
+  right: 8%;
+  top: -58px;
+  height: 118px;
+  width: auto;
   z-index: 0;
   pointer-events: none;
+  overflow: visible;
 }
-.focus-path-row.is-left:before {
-  transform: scaleX(-1);
-  left: 35%;
+.focus-path-curve path {
+  fill: none;
+  stroke: #c9d5bf;
+  stroke-width: 2.75;
+  stroke-linecap: round;
+  stroke-dasharray: 5 9;
+  vector-effect: non-scaling-stroke;
 }
 .focus-path-row > button {
   position: relative;
@@ -879,21 +883,39 @@
   color: #768172;
   line-height: 1.6;
 }
+.focus-path-row.is-future {
+  height: 108px;
+  opacity: 0.72;
+}
+.focus-path-row.is-future > button {
+  background: #f4f7f0;
+  border: 2px dashed #c5d2bb;
+  border-bottom: 4px solid #b7c4ad;
+  cursor: default;
+}
+.focus-path-row.is-future > button:hover,
+.focus-path-row.is-future > button:active {
+  transform: none;
+}
+.focus-path-hollow {
+  width: 22px;
+  height: 22px;
+  border: 2.5px solid #9eb090;
+  border-radius: 50%;
+  display: block;
+}
 .focus-path-row.is-current {
-  height: 165px;
+  height: 140px;
   padding-left: 0;
   justify-content: center;
   gap: 16px;
-}
-.focus-path-row.is-current:before {
-  display: none;
 }
 .focus-path-row.is-current > button {
   background: #d4ee89;
   border-radius: 50%;
   width: 82px;
   height: 82px;
-  margin-top: 36px;
+  margin-top: 18px;
   border: 2px solid #b5d55b;
   border-bottom: 5px solid #9ebf42;
   overflow: visible;
@@ -943,14 +965,7 @@
 .focus-path-row.is-start {
   padding-left: 0;
   justify-content: center;
-}
-.focus-path-row.is-start:before {
-  left: 50%;
-  transform: translateX(-50%);
-  width: 0;
-  border-left: 3px dashed #dce3d6;
-  border-right: 0;
-  border-radius: 0;
+  height: 110px;
 }
 .focus-path-row.is-start > button {
   background: #f1f5ec;
@@ -1015,21 +1030,34 @@
 .focus-mini-bar-track {
   flex: 1;
   width: 100%;
-  max-width: 26px;
-  background: #e0e6db;
+  max-width: 22px;
+  background: transparent;
   border-radius: 6px;
   display: flex;
   align-items: flex-end;
-  overflow: hidden;
+  justify-content: center;
+  overflow: visible;
 }
 .focus-mini-bar-fill {
   width: 100%;
   background: #a4be60;
-  border-radius: 6px;
+  border-radius: 8px 8px 4px 4px;
   transition: height 0.3s ease;
+  min-height: 8px;
 }
 .focus-mini-bar-col.is-today .focus-mini-bar-fill {
   background: #26382d;
+}
+.focus-mini-bar-col.is-empty .focus-mini-bar-track {
+  align-items: flex-end;
+}
+.focus-mini-bar-flat {
+  display: block;
+  width: 14px;
+  height: 3px;
+  border-radius: 2px;
+  background: #8a9785;
+  flex-shrink: 0;
 }
 .focus-mini-bar-day {
   font-size: 10px;
@@ -1039,6 +1067,13 @@
 .focus-mini-bar-col.is-today .focus-mini-bar-day {
   color: #26382d;
   font-weight: 700;
+}
+.focus-mini-bar-col:not(.is-empty) .focus-mini-bar-day {
+  color: #5f7a45;
+  font-weight: 600;
+}
+.focus-mini-bar-col.is-today:not(.is-empty) .focus-mini-bar-day {
+  color: #26382d;
 }
 .focus-athlete-popup {
   position: relative;
@@ -1612,19 +1647,32 @@
   .focus-path-row {
     padding-left: 4%;
     gap: 14px;
+    height: 108px;
   }
   .focus-path-row.is-right {
     padding-left: 25%;
   }
+  .focus-path-row.is-left {
+    padding-left: 4%;
+  }
   .focus-path-row.is-current,
   .focus-path-row.is-start {
     padding-left: 0;
+  }
+  .focus-path-row.is-future {
+    padding-left: 8%;
   }
   .focus-path-row > span {
     max-width: 115px;
   }
   .focus-path-row > button {
     width: 79px;
+  }
+  .focus-path-curve {
+    left: 4%;
+    right: 4%;
+    top: -52px;
+    height: 108px;
   }
   .focus-stats-hours {
     min-width: 72px;

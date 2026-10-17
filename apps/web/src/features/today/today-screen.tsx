@@ -164,13 +164,17 @@ export function TodayScreen() {
             {weekDaysWithPct.map((d) => (
               <div
                 key={d.key}
-                className={`focus-mini-bar-col${d.isToday ? " is-today" : ""}`}
+                className={`focus-mini-bar-col${d.isToday ? " is-today" : ""}${d.hasActivity ? "" : " is-empty"}`}
               >
                 <div className="focus-mini-bar-track">
-                  <div
-                    className="focus-mini-bar-fill"
-                    style={{ height: `${d.pct}%` }}
-                  />
+                  {d.hasActivity ? (
+                    <div
+                      className="focus-mini-bar-fill"
+                      style={{ height: `${d.pct}%` }}
+                    />
+                  ) : (
+                    <span className="focus-mini-bar-flat" />
+                  )}
                 </div>
                 <span className="focus-mini-bar-day">{d.label}</span>
               </div>
@@ -185,7 +189,25 @@ export function TodayScreen() {
         ) : null}
       </div>
       <section className="focus-journey" aria-label="Activity journey">
+        <div className="focus-path-row is-future is-left">
+          <button type="button" disabled aria-label="Upcoming session">
+            <span className="focus-path-hollow" aria-hidden="true" />
+          </button>
+          <span>
+            <small>Up next</small>
+            <b>Room for what&apos;s next</b>
+          </span>
+        </div>
         <div className="focus-path-row is-current">
+          <svg
+            className="focus-path-curve"
+            viewBox="0 0 200 140"
+            preserveAspectRatio="none"
+            aria-hidden="true"
+          >
+            {/* From future (left) → today (center), winding S-bend */}
+            <path d="M 52 4 C 52 36, 160 44, 160 78 S 48 104, 100 136" />
+          </svg>
           <button
             onClick={() => {
               react("hop");
@@ -221,42 +243,75 @@ export function TodayScreen() {
             <b>See today&apos;s session</b>
           </span>
         </div>
-        {sessions.map((a, i) => (
-          <div
-            className={`focus-path-row ${i % 2 ? "is-left" : "is-right"}`}
-            key={a.id}
-          >
-            <button
-              onClick={() => setExpanded(a)}
-              aria-label={`Open ${sportById(a.sport).name} session ${formatVolume(a.sport, a.distanceM, a.movingSec, units)}`}
+        {sessions.map((a, i) => {
+          const fromCenter = i === 0;
+          const toLeft = i % 2 === 1;
+          const curve = fromCenter
+            ? "M 100 4 C 100 36, 160 52, 148 136"
+            : toLeft
+              ? "M 148 4 C 148 40, 40 56, 52 136"
+              : "M 52 4 C 52 40, 160 56, 148 136";
+          return (
+            <div
+              className={`focus-path-row ${toLeft ? "is-left" : "is-right"}`}
+              key={a.id}
             >
-              <i>✓</i>
-              <b>{formatVolume(a.sport, a.distanceM, a.movingSec, units)}</b>
-              <small>
-                {new Date(a.startedAt).toLocaleDateString("en-US", {
-                  weekday: "short",
-                  timeZone: "UTC",
-                })}
-              </small>
-            </button>
-            <span>
-              <small>
-                {new Date(a.startedAt).toLocaleDateString("en-US", {
-                  month: "short",
-                  day: "numeric",
-                  timeZone: "UTC",
-                })}
-              </small>
-              <b>{sportById(a.sport).name}</b>
-              <em>
-                {a.disposition === "excluded" || isSampleActivity(a)
-                  ? `${a.source} · sample (excluded)`
-                  : `${a.verified ? "Verified" : "Open"} · ${a.disposition === "pending" ? "pending" : "counted"}`}
-              </em>
-            </span>
-          </div>
-        ))}
+              <svg
+                className="focus-path-curve"
+                viewBox="0 0 200 140"
+                preserveAspectRatio="none"
+                aria-hidden="true"
+              >
+                <path d={curve} />
+              </svg>
+              <button
+                onClick={() => setExpanded(a)}
+                aria-label={`Open ${sportById(a.sport).name} session ${formatVolume(a.sport, a.distanceM, a.movingSec, units)}`}
+              >
+                <i>✓</i>
+                <b>{formatVolume(a.sport, a.distanceM, a.movingSec, units)}</b>
+                <small>
+                  {new Date(a.startedAt).toLocaleDateString("en-US", {
+                    weekday: "short",
+                    timeZone: "UTC",
+                  })}
+                </small>
+              </button>
+              <span>
+                <small>
+                  {new Date(a.startedAt).toLocaleDateString("en-US", {
+                    month: "short",
+                    day: "numeric",
+                    timeZone: "UTC",
+                  })}
+                </small>
+                <b>{sportById(a.sport).name}</b>
+                <em>
+                  {a.disposition === "excluded" || isSampleActivity(a)
+                    ? `${a.source} · sample (excluded)`
+                    : `${a.verified ? "Verified" : "Open"} · ${a.disposition === "pending" ? "pending" : "counted"}`}
+                </em>
+              </span>
+            </div>
+          );
+        })}
         <div className="focus-path-row is-start">
+          <svg
+            className="focus-path-curve"
+            viewBox="0 0 200 140"
+            preserveAspectRatio="none"
+            aria-hidden="true"
+          >
+            <path
+              d={
+                sessions.length === 0
+                  ? "M 100 4 C 40 48, 160 88, 100 136"
+                  : sessions.length % 2 === 1
+                    ? "M 148 4 C 148 40, 52 72, 100 136"
+                    : "M 52 4 C 52 40, 148 72, 100 136"
+              }
+            />
+          </svg>
           <button
             type="button"
             aria-label="Start"
