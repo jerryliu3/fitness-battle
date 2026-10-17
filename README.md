@@ -95,3 +95,7 @@ Living standards live in the Project Agent Store (and are summarized in-repo):
 - `docs/data-status.md`
 
 See [`AGENTS.md`](./AGENTS.md) and [`CONTRIBUTING.md`](./CONTRIBUTING.md).
+
+## Interface concept gallery
+
+The five original layout concepts remain separate from the live Focus application: web `/design/structure` and Expo `overtaek:///structure`. See [the study guide](docs/interface-structure-study.md) for previews and interactions.
