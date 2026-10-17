@@ -700,19 +700,19 @@
 .focus-path-row > button {
   position: relative;
   z-index: 1;
-  width: 88px;
-  height: 75px;
+  width: 80px;
+  height: 80px;
   flex-shrink: 0;
   background: #fff;
   border: 1px solid #e0e5dd;
   border-bottom: 5px solid #cdd9c1;
-  border-radius: 20px;
+  border-radius: 50%;
   transform: none;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 5px;
+  gap: 3px;
   cursor: pointer;
   transition: transform 0.15s ease;
 }
