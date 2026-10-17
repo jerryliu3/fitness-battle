@@ -1,5 +1,6 @@
 export {
   ELO_BASE,
+  ELO_UNRANKED,
   ELO_FLOOR,
   ELO_CAP,
   ELO_K,
@@ -84,6 +85,7 @@ export { lessonFor, type Lesson } from "./lessons";
 export {
   freshState,
   migrateCompeteState,
+  withAccountEloBaseline,
   placeOrLast,
   reduceCompete,
   rollClock,

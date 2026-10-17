@@ -18,6 +18,7 @@ describe("fitness-style ranks", () => {
   });
 
   it("maps Elo to bands", () => {
+    expect(rankForElo(0).name).toBe("Unranked");
     expect(rankForElo(500).name).toBe("Beginner");
     expect(rankForElo(1000).name).toBe("Active");
     expect(rankForElo(1600).name).toBe("Elite");
