@@ -213,7 +213,22 @@ export function TodayScreen() {
               playing={reaction.key > 0}
             />
           </button>
-          <span>
+          <span
+            role="button"
+            tabIndex={0}
+            onClick={() => {
+              react("hop");
+              setExpanded("suggestion");
+            }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                react("hop");
+                setExpanded("suggestion");
+              }
+            }}
+            style={{ cursor: "pointer" }}
+          >
             <small>Today</small>
             <b>See today&apos;s session</b>
           </span>

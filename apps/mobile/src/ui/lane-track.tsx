@@ -14,6 +14,7 @@ import Svg, {
 import {
   arenaPosition,
   arenaWindow,
+  clampArenaLaneCenter,
   orderedArenaLanes,
   initialsFromName,
   type ArenaLane,
@@ -39,10 +40,15 @@ export function LaneTrack({
   const [width, setWidth] = useState(340);
   const scroll = useRef<ScrollView>(null);
   const me = lanes.find((l) => l.you);
-  const v = view ?? {
+  const rawV = view ?? {
     center: me?.values[index] ?? 0,
     span: unit === "pts" ? 20 : unit === "mi" ? 4 : 6,
   };
+  const effectiveCenter = clampArenaLaneCenter(rawV.center, rawV.span);
+  const v =
+    effectiveCenter === rawV.center
+      ? rawV
+      : { center: effectiveCenter, span: rawV.span };
   const latest = useRef({ v, onPan });
   latest.current = { v, onPan };
   const start = useRef(v.center);
@@ -56,7 +62,10 @@ export function LaneTrack({
         },
         onPanResponderMove: (_, g) =>
           latest.current.onPan?.(
-            Math.max(0, start.current + (g.dy / 400) * latest.current.v.span),
+            clampArenaLaneCenter(
+              start.current + (g.dy / 400) * latest.current.v.span,
+              latest.current.v.span,
+            ),
           ),
       }),
     [],

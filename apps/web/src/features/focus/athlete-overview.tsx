@@ -129,15 +129,12 @@ export function AthleteOverview({
 
   const minVal = Math.min(...dailyValues);
   const maxVal = Math.max(...dailyValues);
-  let range = maxVal - minVal;
-  if (range < 20) range = 20;
-  const padding = Math.ceil(range * 0.15);
-  let yMin = Math.floor((minVal - padding) / 10) * 10;
-  let yMax = Math.ceil((maxVal + padding) / 10) * 10;
-  if (yMax <= yMin) {
-    yMax = yMin + 20;
-  }
-  const yMid = Math.round((yMin + yMax) / 2);
+  const rawMid = (minVal + maxVal) / 2;
+  const halfSpread = Math.max(15, (maxVal - minVal) / 2);
+  const step = Math.max(10, Math.ceil((halfSpread * 1.25) / 10) * 10);
+  const yMid = Math.round(rawMid / 10) * 10;
+  const yMin = yMid - step;
+  const yMax = yMid + step;
 
   // SVG plot area layout (viewBox 0 0 340 150)
   const xStart = 44;
@@ -176,7 +173,19 @@ export function AthleteOverview({
 
       {editing ? (
         <section className="focus-profile-card" aria-label="Edit athlete profile">
-          <div className="focus-portrait">
+          <div
+            className="focus-portrait"
+            role="button"
+            tabIndex={0}
+            title={state.avatarUrl ? "Change photo" : "Upload photo"}
+            onClick={() => fileInputRef.current?.click()}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                fileInputRef.current?.click();
+              }
+            }}
+          >
             {state.avatarUrl ? (
               <img
                 src={state.avatarUrl}
@@ -265,7 +274,19 @@ export function AthleteOverview({
         </section>
       ) : (
         <section className="focus-profile-card" aria-label="Athlete profile">
-          <div className="focus-portrait">
+          <div
+            className="focus-portrait"
+            role="button"
+            tabIndex={0}
+            title={state.avatarUrl ? "Change photo" : "Upload photo"}
+            onClick={() => fileInputRef.current?.click()}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                fileInputRef.current?.click();
+              }
+            }}
+          >
             {state.avatarUrl ? (
               <img
                 src={state.avatarUrl}

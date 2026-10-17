@@ -476,6 +476,11 @@
   position: relative;
   overflow: hidden;
   flex-shrink: 0;
+  cursor: pointer;
+  transition: opacity 0.15s ease;
+}
+.focus-portrait:hover {
+  opacity: 0.92;
 }
 .focus-portrait-img {
   width: 100%;
@@ -694,9 +699,11 @@
 }
 .focus-trend {
   width: 100%;
-  height: 150px;
+  height: auto;
+  max-height: 160px;
   margin: 12px 0 0;
   overflow: visible;
+  display: block;
 }
 .focus-benchmark {
   display: flex;

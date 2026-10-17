@@ -21,7 +21,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState, type ReactNode } from "react";
 import { ReturnProgress } from "@/features/focus/return-progress";
 import { BootSplash } from "./boot-splash";
-import { isCompeteDataReady, shouldShowBootSplash } from "./boot-gate";
+import { isCompeteDataReady } from "./boot-gate";
 import "./shell.css";
 
 function renderTab(tabId: ShellTabId, accountKey: string): ReactNode {

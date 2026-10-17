@@ -761,22 +761,22 @@ function YouContent() {
       ) : null}
       {user ? (
         <div className="fb-row" style={{ gap: 10, marginTop: 12 }}>
-            <button
-              type="button"
-              className="fb-btn-line"
-              style={{ flex: 1, justifyContent: "center" }}
-              onClick={() => void signOut()}
-            >
-              Sign out
-            </button>
-            <a
-              href="mailto:support@overtaek.com?subject=Fitness%20Battle%20Issue%20Report"
-              className="fb-btn-line"
-              style={{ flex: 1, justifyContent: "center", textDecoration: "none" }}
-            >
-              Report an issue
-            </a>
-          </div>
+          <button
+            type="button"
+            className="fb-btn-line"
+            style={{ flex: 1, justifyContent: "center" }}
+            onClick={() => void signOut()}
+          >
+            Sign out
+          </button>
+          <a
+            href="mailto:support@overtaek.com?subject=Fitness%20Battle%20Issue%20Report"
+            className="fb-btn-line"
+            style={{ flex: 1, justifyContent: "center", textDecoration: "none" }}
+          >
+            Report an issue
+          </a>
+        </div>
       ) : (
         <div className="fb-stack">
           <p className="fb-note">Browsing as a guest</p>
