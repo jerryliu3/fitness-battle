@@ -12,7 +12,7 @@ describe("phone shell", () => {
     expect(SHELL_TABS.map((tab) => tab.id)).toEqual([...SHELL_TAB_IDS]);
     expect(SHELL_TABS.map((tab) => tab.label)).toEqual([
       "Home",
-      "Arena",
+      "Compete",
       "Crew",
       "Athlete",
     ]);

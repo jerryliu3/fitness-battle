@@ -16,7 +16,7 @@ export interface ShellTab {
 
 export const SHELL_TABS: readonly ShellTab[] = [
   { id: "today", label: "Home", href: "/today" },
-  { id: "arena", label: "Arena", href: "/arena" },
+  { id: "arena", label: "Compete", href: "/arena" },
   { id: "field", label: "Crew", href: "/field" },
   { id: "you", label: "Athlete", href: "/you" },
 ];

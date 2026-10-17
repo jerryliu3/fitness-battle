@@ -19,7 +19,6 @@ import {
   PROVIDERS,
   RANK_BANDS,
   rankForElo,
-  sportById,
   SPORTS,
   STARTING_FREEZES,
   type ActivitySample,
@@ -39,6 +38,23 @@ const OAUTH_PROVIDERS = new Set<ProviderId>([
 ]);
 const DEVICE_PROVIDERS = new Set<ProviderId>(["apple_health", "google_health"]);
 
+type AthletePanel =
+  | "progress"
+  | "connections"
+  | "preferences"
+  | "notifications"
+  | "health"
+  | "scoring";
+
+const PANEL_TITLES: Record<AthletePanel, string> = {
+  progress: "Progress",
+  connections: "Connections",
+  preferences: "Preferences",
+  notifications: "Notifications",
+  health: "Health",
+  scoring: "How scoring works",
+};
+
 function YouContent() {
   const { user, signOut, demoMode } = useAuth();
   const { state, dispatch, loadStatus } = useCompete();
@@ -47,6 +63,7 @@ function YouContent() {
   /** Tracks which account the form fields were seeded from (resets on switch). */
   const seededFor = useRef<string | null>(null);
   const [syncNote, setSyncNote] = useState<string | null>(null);
+  const [panel, setPanel] = useState<AthletePanel | null>(null);
   const searchParams = useSearchParams();
   const accountKey = user?.id ?? "guest";
   const pushIdentity: SyncIdentity | null = user
@@ -98,6 +115,7 @@ function YouContent() {
         "That tracker did not connect. Sign in and try the link again.",
       );
     }
+    setPanel("connections");
   }, [
     accountKey,
     accountReady,
@@ -114,7 +132,6 @@ function YouContent() {
   const now = competeNow(state);
   const board = buildSplitBoard(state, state.primary, "open", now);
   const frozen = state.frozenPeriods.includes(primaryFreezePeriodStart(state));
-  const spec = sportById(state.primary);
 
   function applyRemote(body: {
     provider: ProviderId;
@@ -336,284 +353,298 @@ function YouContent() {
     );
   }
 
+  if (panel) {
+    return (
+      <div className="focus-athlete">
+        <button
+          type="button"
+          className="focus-expand-back"
+          onClick={() => setPanel(null)}
+        >
+          ← Athlete
+        </button>
+        <header className="focus-heading">
+          <p className="fb-kicker">Settings</p>
+          <h1>{PANEL_TITLES[panel]}</h1>
+        </header>
+        <div className="focus-settings-panel">
+          {panel === "progress" ? (
+            <>
+              <WeekRecords
+                sport={state.primary}
+                you={board.you}
+                units={state.units}
+              />
+              <SeasonHistory
+                results={state.periodResults}
+                primary={state.primary}
+              />
+            </>
+          ) : null}
+          {panel === "connections" ? (
+            <>
+              <section className="fb-card">
+                <p className="fb-note">
+                  Cloud trackers open their own authorize page when API keys are
+                  set. Without keys the link stays a stub. Garmin files stay
+                  pending until you count them. Apple Health syncs from iOS;
+                  Health Connect from Android.
+                </p>
+                {PROVIDERS.map((provider) => {
+                  const link = state.links.find(
+                    (item) => item.provider === provider.id,
+                  );
+                  const status = link?.status ?? "disconnected";
+                  const device = DEVICE_PROVIDERS.has(provider.id);
+                  return (
+                    <div key={provider.id} className="fb-row">
+                      <span className="fb-grow">
+                        {provider.name}
+                        <small>
+                          {provider.blurb}
+                          {link?.linked
+                            ? ` · ${evidenceLabel(status === "stub" ? "stub" : status === "connected" ? "receiving_data" : "disconnected")}`
+                            : ""}
+                        </small>
+                      </span>
+                      <button
+                        type="button"
+                        className="fb-btn-ghost"
+                        onClick={() => void syncProvider(provider.id)}
+                      >
+                        {device ? "Phone" : link?.linked ? "Sync" : "Link"}
+                      </button>
+                      {link?.linked && !device ? (
+                        <button
+                          type="button"
+                          className="fb-btn-ghost"
+                          onClick={() => void disconnectProvider(provider.id)}
+                        >
+                          Disconnect
+                        </button>
+                      ) : null}
+                    </div>
+                  );
+                })}
+                <label className="fb-field">
+                  Garmin file (.fit, .gpx, .tcx, .zip)
+                  <input
+                    ref={fileRef}
+                    type="file"
+                    accept=".fit,.gpx,.tcx,.zip,application/zip"
+                    onChange={(event) => {
+                      const file = event.target.files?.[0];
+                      if (file) void importGarminFile(file);
+                      event.target.value = "";
+                    }}
+                  />
+                </label>
+                {syncNote ? <p className="fb-note">{syncNote}</p> : null}
+              </section>
+              <section className="fb-card">
+                <h2>{BACKFILL_DAYS}-day calibration</h2>
+                {state.calibrated ? (
+                  <p className="fb-copy">
+                    History is locked in. This one-time calibration cannot run
+                    again.
+                  </p>
+                ) : (
+                  <>
+                    <p className="fb-copy">
+                      Import a sample of the last {BACKFILL_DAYS} days once to
+                      leave the 1000 baseline. This can only be done once.
+                    </p>
+                    <div className="fb-stack">
+                      {(["light", "steady", "heavy"] as const).map((level) => (
+                        <button
+                          key={level}
+                          type="button"
+                          className="fb-btn-line"
+                          onClick={() =>
+                            dispatch({ type: "import-history", level })
+                          }
+                        >
+                          Import {level} history
+                        </button>
+                      ))}
+                    </div>
+                  </>
+                )}
+              </section>
+            </>
+          ) : null}
+          {panel === "preferences" ? (
+            <>
+              <section className="fb-card">
+                <label className="fb-field">
+                  Name
+                  <input
+                    value={name}
+                    onChange={(event) => setName(event.target.value)}
+                  />
+                </label>
+                <label className="fb-field">
+                  City
+                  <input
+                    value={city}
+                    onChange={(event) => setCity(event.target.value)}
+                  />
+                </label>
+                <button
+                  type="button"
+                  className="fb-btn"
+                  onClick={() => {
+                    if (name.trim()) dispatch({ type: "rename", name });
+                    if (city.trim()) dispatch({ type: "set-city", city });
+                  }}
+                >
+                  Save
+                </button>
+              </section>
+              <section className="fb-card">
+                <h2>Units</h2>
+                <p className="fb-copy">
+                  Distance display for Home, Compete, and Athlete.
+                </p>
+                <div className="focus-segments" role="group" aria-label="Units">
+                  <button
+                    type="button"
+                    aria-pressed={state.units === "us"}
+                    onClick={() => dispatch({ type: "set-units", units: "us" })}
+                  >
+                    Miles (US)
+                  </button>
+                  <button
+                    type="button"
+                    aria-pressed={state.units === "metric"}
+                    onClick={() =>
+                      dispatch({ type: "set-units", units: "metric" })
+                    }
+                  >
+                    Kilometres
+                  </button>
+                </div>
+              </section>
+              <section className="fb-card">
+                <h2>Sports</h2>
+                {SPORTS.map((sport) => {
+                  const rating = state.ratings.find(
+                    (item) => item.sport === sport.id,
+                  );
+                  const primary = state.primary === sport.id;
+                  return (
+                    <div key={sport.id} className="fb-row">
+                      <span className="fb-grow">
+                        {sport.name}
+                        {primary ? " · primary" : ""}
+                        <small>
+                          Verified {rating?.verifiedElo} · Open{" "}
+                          {rating?.openElo} ·{" "}
+                          {rankForElo(rating?.openElo ?? 1000).name}
+                        </small>
+                      </span>
+                      <button
+                        type="button"
+                        className="fb-btn-ghost"
+                        onClick={() =>
+                          dispatch({ type: "set-primary", sport: sport.id })
+                        }
+                      >
+                        {primary ? "Primary" : "Make primary"}
+                      </button>
+                    </div>
+                  );
+                })}
+              </section>
+              <section className="fb-card">
+                <h2>Week freezes</h2>
+                <p className="fb-copy">
+                  {state.freezesLeft} of {STARTING_FREEZES} left. A freeze holds
+                  Elo for a taper or a vacation.
+                </p>
+                <button
+                  type="button"
+                  className="fb-btn"
+                  disabled={frozen || state.freezesLeft <= 0}
+                  onClick={() => dispatch({ type: "freeze" })}
+                >
+                  {frozen ? "This week is frozen" : "Freeze this week"}
+                </button>
+              </section>
+            </>
+          ) : null}
+          {panel === "notifications" ? <NotificationSettings /> : null}
+          {panel === "health" ? (
+            <SleepPanel
+              state={state}
+              now={now}
+              onJoin={() =>
+                dispatch({ type: "opt-in-health", metric: "sleep" })
+              }
+              onSample={() => dispatch({ type: "log-sleep" })}
+              onLeave={() =>
+                dispatch({ type: "opt-out-health", metric: "sleep" })
+              }
+            />
+          ) : null}
+          {panel === "scoring" ? (
+            <section className="fb-card">
+              <h2>Levels</h2>
+              <p className="fb-copy">
+                Your level is a band on the weekly effort Elo ladder. It rises
+                when you accumulate counted volume against peers on your field,
+                and drifts down slightly after empty weeks.
+              </p>
+              {RANK_BANDS.map((band) => (
+                <div key={band.name} className="fb-row">
+                  <span className="fb-grow">
+                    {band.name}
+                    <small>
+                      {band.min}+ · {band.blurb}
+                    </small>
+                  </span>
+                </div>
+              ))}
+              <p className="fb-note">
+                Score is mostly distance, or time when there is no GPS. Heart
+                rate can add a little. Pace adds less. Rating never falls below
+                500.
+              </p>
+            </section>
+          ) : null}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="focus-athlete">
       <AthleteOverview state={state} email={user.email} demoMode={demoMode} />
-      <details className="focus-disclosure">
-        <summary>
-          Progress <span>Statistics, records & season history</span>
-        </summary>
-        <div className="focus-details-body">
-          <WeekRecords
-            sport={state.primary}
-            you={board.you}
-            units={state.units}
-          />
-          <SeasonHistory
-            results={state.periodResults}
-            primary={state.primary}
-          />
-        </div>
-      </details>
-      <details className="focus-disclosure" id="connections">
-        <summary>
-          Connections <span>Trackers & history</span>
-        </summary>
-        <div className="focus-details-body">
-          <section className="fb-card">
-            <h2>Connections</h2>
-            <p className="fb-note">
-              Cloud trackers open their own authorize page when API keys are
-              set. Without keys the link stays a stub. Garmin files stay pending
-              until you count them. Apple Health syncs from iOS; Health Connect
-              from Android. Sleep shown here is a sample. WHOOP and Oura do not
-              import nights yet.
-            </p>
-            {PROVIDERS.map((provider) => {
-              const link = state.links.find(
-                (item) => item.provider === provider.id,
-              );
-              const status = link?.status ?? "disconnected";
-              const device = DEVICE_PROVIDERS.has(provider.id);
-              return (
-                <div key={provider.id} className="fb-row">
-                  <span className="fb-grow">
-                    {provider.name}
-                    <small>
-                      {provider.blurb}
-                      {link?.linked
-                        ? ` · ${evidenceLabel(status === "stub" ? "stub" : status === "connected" ? "receiving_data" : "disconnected")}`
-                        : ""}
-                    </small>
-                  </span>
-                  <button
-                    type="button"
-                    className="fb-btn-ghost"
-                    onClick={() => void syncProvider(provider.id)}
-                  >
-                    {device ? "Phone" : link?.linked ? "Sync" : "Link"}
-                  </button>
-                  {link?.linked && !device ? (
-                    <button
-                      type="button"
-                      className="fb-btn-ghost"
-                      onClick={() => void disconnectProvider(provider.id)}
-                    >
-                      Disconnect
-                    </button>
-                  ) : null}
-                </div>
-              );
-            })}
-            <label className="fb-field">
-              Garmin file (.fit, .gpx, .tcx, .zip)
-              <input
-                ref={fileRef}
-                type="file"
-                accept=".fit,.gpx,.tcx,.zip,application/zip"
-                onChange={(event) => {
-                  const file = event.target.files?.[0];
-                  if (file) void importGarminFile(file);
-                  event.target.value = "";
-                }}
-              />
-            </label>
-            {syncNote ? <p className="fb-note">{syncNote}</p> : null}
-          </section>
-
-          <section className="fb-card">
-            <h2>{BACKFILL_DAYS}-day calibration</h2>
-            {state.calibrated ? (
-              <p className="fb-copy">
-                History is locked in. This one-time calibration cannot run
-                again.
-              </p>
-            ) : (
-              <>
-                <p className="fb-copy">
-                  Import a sample of the last {BACKFILL_DAYS} days once to leave
-                  the 1000 baseline. The rows are labeled sample history and do
-                  not count as workouts. This can only be done once.
-                </p>
-                <div className="fb-stack">
-                  {(["light", "steady", "heavy"] as const).map((level) => (
-                    <button
-                      key={level}
-                      type="button"
-                      className="fb-btn-line"
-                      onClick={() =>
-                        dispatch({ type: "import-history", level })
-                      }
-                    >
-                      Import {level} history
-                    </button>
-                  ))}
-                </div>
-              </>
-            )}
-          </section>
-        </div>
-      </details>
-      <details className="focus-disclosure">
-        <summary>
-          Preferences <span>Profile, units, sports & freezes</span>
-        </summary>
-        <div className="focus-details-body">
-          <section className="fb-card">
-            <label className="fb-field">
-              Name
-              <input
-                value={name}
-                onChange={(event) => setName(event.target.value)}
-              />
-            </label>
-            <label className="fb-field">
-              City
-              <input
-                value={city}
-                onChange={(event) => setCity(event.target.value)}
-              />
-            </label>
-            <button
-              type="button"
-              className="fb-btn"
-              onClick={() => {
-                if (name.trim()) dispatch({ type: "rename", name });
-                if (city.trim()) dispatch({ type: "set-city", city });
-              }}
-            >
-              Save
-            </button>
-          </section>
-
-          <section className="fb-card">
-            <h2>Units</h2>
-            <p className="fb-copy">
-              Distance display for Home, Arena, and Athlete.
-            </p>
-            <div className="focus-segments" role="group" aria-label="Units">
-              <button
-                type="button"
-                aria-pressed={state.units === "us"}
-                onClick={() => dispatch({ type: "set-units", units: "us" })}
-              >
-                Miles (US)
-              </button>
-              <button
-                type="button"
-                aria-pressed={state.units === "metric"}
-                onClick={() =>
-                  dispatch({ type: "set-units", units: "metric" })
-                }
-              >
-                Kilometres
-              </button>
-            </div>
-          </section>
-
-          <section className="fb-card">
-            <h2>Sports</h2>
-            {SPORTS.map((sport) => {
-              const rating = state.ratings.find(
-                (item) => item.sport === sport.id,
-              );
-              const primary = state.primary === sport.id;
-              return (
-                <div key={sport.id} className="fb-row">
-                  <span className="fb-grow">
-                    {sport.name}
-                    {primary ? " · primary" : ""}
-                    <small>
-                      Verified {rating?.verifiedElo} · Open {rating?.openElo} ·{" "}
-                      {rankForElo(rating?.openElo ?? 1000).name}
-                    </small>
-                  </span>
-                  <button
-                    type="button"
-                    className="fb-btn-ghost"
-                    onClick={() =>
-                      dispatch({ type: "set-primary", sport: sport.id })
-                    }
-                  >
-                    {primary ? "Primary" : "Make primary"}
-                  </button>
-                </div>
-              );
-            })}
-          </section>
-
-          <section className="fb-card">
-            <h2>Week freezes</h2>
-            <p className="fb-copy">
-              {state.freezesLeft} of {STARTING_FREEZES} left. A freeze holds Elo
-              for a taper or a vacation. It does not pause the lesson.
-            </p>
-            <button
-              type="button"
-              className="fb-btn"
-              disabled={frozen || state.freezesLeft <= 0}
-              onClick={() => dispatch({ type: "freeze" })}
-            >
-              {frozen ? "This week is frozen" : "Freeze this week"}
-            </button>
-          </section>
-
-
-        </div>
-      </details>
-      <details className="focus-disclosure">
-        <summary>
-          Notifications <span>Your updates, your choice</span>
-        </summary>
-        <div className="focus-details-body">
-          <NotificationSettings />
-        </div>
-      </details>
-      <details className="focus-disclosure">
-        <summary>
-          Health <span>Sleep and recovery</span>
-        </summary>
-        <div className="focus-details-body">
-          <SleepPanel
-            state={state}
-            now={now}
-            onJoin={() => dispatch({ type: "opt-in-health", metric: "sleep" })}
-            onSample={() => dispatch({ type: "log-sleep" })}
-            onLeave={() =>
-              dispatch({ type: "opt-out-health", metric: "sleep" })
-            }
-          />
-        </div>
-      </details>
-      <details className="focus-disclosure">
-        <summary>
-          How scoring works <span>Levels & eligibility</span>
-        </summary>
-        <div className="focus-details-body">
-          <section className="fb-card">
-            <h2>Levels</h2>
-            <p className="fb-copy">
-              Your level is a band on the weekly effort Elo ladder. It rises
-              when you accumulate counted volume against peers on your field,
-              and drifts down slightly after empty weeks.
-            </p>
-            {RANK_BANDS.map((band) => (
-              <div key={band.name} className="fb-row">
-                <span className="fb-grow">
-                  {band.name}
-                  <small>
-                    {band.min}+ · {band.blurb}
-                  </small>
-                </span>
-              </div>
-            ))}
-            <p className="fb-note">
-              Score is mostly distance, or time when there is no GPS. Heart rate
-              can add a little. Pace adds less. Rating never falls below 500.
-            </p>
-          </section>
-        </div>
-      </details>
+      <nav className="focus-settings-list" aria-label="Athlete settings">
+        {(
+          [
+            ["progress", "Statistics, records & season history"],
+            ["connections", "Trackers & history"],
+            ["preferences", "Profile, units, sports & freezes"],
+            ["notifications", "Your updates, your choice"],
+            ["health", "Sleep and recovery"],
+            ["scoring", "Levels & eligibility"],
+          ] as const
+        ).map(([id, detail]) => (
+          <button
+            key={id}
+            type="button"
+            className="focus-settings-row"
+            onClick={() => setPanel(id)}
+          >
+            <span>
+              <b>{PANEL_TITLES[id]}</b>
+              <small>{detail}</small>
+            </span>
+            <span aria-hidden="true">→</span>
+          </button>
+        ))}
+      </nav>
       {!state.onboardingCompleted ? (
         <section className="fb-card">
           <h2>Finish setup</h2>
@@ -626,7 +657,6 @@ function YouContent() {
           </Link>
         </section>
       ) : null}
-
       <button
         type="button"
         className="fb-btn-line"

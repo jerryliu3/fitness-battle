@@ -117,7 +117,7 @@ export function FieldStage({
           cutoff
         </p>
       )}
-      <div className="focus-segments" role="tablist" aria-label="Arena view">
+      <div className="focus-segments" role="tablist" aria-label="Compete view">
         {(["lanes", "pursuit"] as const).map((m) => (
           <button
             key={m}
