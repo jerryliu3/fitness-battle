@@ -2,7 +2,7 @@
 
 import { useId, type ReactNode } from "react";
 import { Ember } from "@/components/mascot/ember";
-import { between, clamp, ease, mix, out, pulse, rivals, runFrame, runMiles, startMiles, type Avatar, type Family, type Outcome } from "./concepts";
+import { between, clamp, ease, mix, out, pulse, rivals, runFrame, runMiles, stackedLayout, staggeredLogoFrame, startMiles, type Avatar, type Family, type Outcome } from "./concepts";
 
 export interface SceneProps {
   family: Family;
@@ -81,8 +81,7 @@ export function OvertakeScene({ progress: p, concept, outcome, avatar, dark, red
         {[12, 13, 14, 15, 16, 17, 18].map(mile => <g key={mile}><line x1={distanceX(mile)} x2={distanceX(mile)} y1="110" y2="365" stroke={line} strokeWidth="1" strokeDasharray="2 8" opacity=".45" /><text x={distanceX(mile)} y="373" textAnchor="middle" fontSize="9" fill={muted}>{mile} mi</text></g>)}
         {[156, 244, 332].map(y => <g key={y}><rect x="25" y={y - 36} width="710" height="72" rx="16" fill={y === 244 ? (dark ? "#354b34" : "#eef5e3") : (dark ? "#2d4032" : "#f2f4ef")} /><line x1="105" x2="735" y1={y} y2={y} stroke={y === 244 ? (dark ? "#b6d678" : "#8eaa68") : line} strokeDasharray="4 7" opacity=".5" /><text x="42" y={y - 7} fontSize="12" fill={y === 244 ? foreground : muted} fontWeight="700">{y === 244 ? "YOU" : y === 156 ? "Jules" : "Mara"}</text><text x="42" y={y + 12} fontSize="10" fill={muted}>{y === 244 ? `#${f.rank}` : `#${(y === 156 ? 2 : 3) + (f.miles > (y === 156 ? 15.6 : 13.8) ? 1 : 0)}`}</text></g>)}
         {concept === "draft" && <path d={`M${x - 210} 258C${x - 100} 296 ${x - 94} 206 ${x - 24} 244L${x - 24} 259C${x - 104} 220 ${x - 95} 311 ${x - 210} 258Z`} fill={`url(#${uid}-wake)`} opacity={moving} />}
-        {combo && <g opacity={moving * .6}>{[1, 2, 3].map(i => <circle key={i} cx={x - i * 27 - 24} cy="244" r={12 - i * 2} stroke={green} strokeWidth="3" opacity={1 - i * .22} />)}</g>}
-        {(concept === "dash" || cinematic) && [0, 1, 2, 3, 4].map(i => <line key={i} x1={x - 33 - moving * (80 + i * 16)} x2={x - 33} y1={226 + i * 9} y2={226 + i * 9} stroke={green} strokeWidth={i === 2 ? 7 : 2} strokeLinecap="round" opacity={moving * (i === 2 ? .45 : .7)} />)}
+        {(concept === "dash" || cinematic || combo) && [0, 1, 2, 3, 4].map(i => <line key={i} x1={x - 33 - moving * (80 + i * 16)} x2={x - 33} y1={226 + i * 9} y2={226 + i * 9} stroke={green} strokeWidth={i === 2 ? 7 : 2} strokeLinecap="round" opacity={moving * (i === 2 ? .45 : .7)} />)}
         {rivals.map(rival => {
           const rx = distanceX(rival.miles);
           const impact = !reduced && outcome > 0 ? pulse(f.miles, rival.miles + .12, .42) : 0;
@@ -97,7 +96,6 @@ export function OvertakeScene({ progress: p, concept, outcome, avatar, dark, red
             {combo && isPassed && <Spark x={rx - 40} y={rival.y - 14} r={9} color={green} opacity={1 - ripple} />}
           </g>;
         })}
-        <circle cx={distanceX(startMiles)} cy="244" r="25" stroke={muted} strokeDasharray="3 5" opacity={.32 * f.travel} />
         {concept === "dash" && <g opacity={charging}><circle cx={x} cy="244" r={35 + charging * 12} stroke={green} strokeWidth="2" /><path d={`m${x - 49} 235-14 10 9 2-8 11m${x + 45} 223 11 9-6 5 12 7`} stroke={green} strokeWidth="2" /></g>}
         <AvatarMark x={x - charging * 7} y={244} own avatar={avatar} dark={dark} tilt={reduced ? 0 : -moving * 10} scale={reduced ? 1 : 1 - charging * .1} />
         <rect x={x - 32} y="190" width="64" height="23" rx="11.5" fill={green} /><text x={x} y="206" fontSize="11" fontWeight="800" textAnchor="middle" fill={ink}>{f.miles.toFixed(1)} mi</text>
@@ -192,12 +190,6 @@ export function TypeScene({ progress: p, concept, dark, reduced }: Omit<ScenePro
   </Frame>;
 }
 
-function stackedLayout(concept: string) {
-  if (concept === "chase-close") return { ox: 182, tx: 292, oy: 208, gap: 55, lean: 12 };
-  if (concept === "chase-open") return { ox: 165, tx: 310, oy: 202, gap: 69, lean: 6 };
-  return { ox: 174, tx: 304, oy: 205, gap: 62, lean: 8 };
-}
-
 /** One stretched glyph silhouette, progressively dissolved into a continuous wake. */
 function ContinuousWake({ word, x, y, width, lean, color, length, strength, jet, uid }: { word: string; x: number; y: number; width: number; lean: number; color: string; length: number; strength: number; jet?: boolean; uid: string }) {
   return <g opacity={strength}>
@@ -214,29 +206,37 @@ function ContinuousWake({ word, x, y, width, lean, color, length, strength, jet,
 
 function StaggeredLogoScene({ progress: p, concept, dark, reduced, lockup = "stacked" }: Pick<SceneProps, "progress" | "concept" | "dark" | "reduced" | "lockup">) {
   const color = dark ? "#f7faef" : ink, accent = dark ? green : "#769d3e", bg = dark ? ink : "#fafbf8";
-  const layout = stackedLayout(concept);
-  const settle = ease(between(p, .72, .94));
+  const { layout, ox, tx, overSpeed, taekSpeed } = staggeredLogoFrame(p, concept);
+  const settle = ease(between(p, .7, 1));
   const resolve = lockup === "inline" ? ease(between(p, .79, .98)) : 0;
-  const moving = reduced ? 0 : Math.sin(between(p, .1, .94) * Math.PI);
-  const ox = keyframe(p, [[0, -300], [.2, 256], [.42, 256], [.76, layout.ox - 10], [.94, layout.ox]]);
-  const tx = keyframe(p, [[0, -360], [.2, -360], [.38, 45], [.53, 205], [.69, layout.tx + 44], [.91, layout.tx]]);
+  const moving = reduced ? 0 : Math.sin(between(p, .06, .92) * Math.PI);
+  const draftWeave = concept === "chase-open" && !reduced ? Math.sin(between(p, .05, .64) * Math.PI) * 16 : 0;
   const overX = mix(ox, 160, resolve), taekX = mix(tx, 368, resolve);
-  const oy = mix(layout.oy, 253, resolve), ty = mix(layout.oy + layout.gap, 253, resolve);
+  const oy = mix(layout.oy, 253, resolve), ty = mix(layout.oy + layout.gap - draftWeave, 253, resolve);
   const size = mix(124, 98, resolve), ow = mix(248, 208, resolve), tw = mix(272, 232, resolve);
-  const lean = mix(layout.lean + moving * 3, 8, resolve);
-  const echo = .07 * settle + moving * .19;
-  return <Frame dark={dark} label={`${concept}: over above and to the left of taek, ${lockup === "inline" ? "resolving into a single line" : "holding a staggered two-row finish"}.`}>
+  const overLean = mix(layout.lean + (reduced ? 0 : overSpeed * 9 + moving * 2), 9, resolve);
+  const taekLean = mix(layout.lean + (reduced ? 0 : taekSpeed * 10 + moving * 2), 9, resolve);
+  const enterOver = out(between(p, .01, .1));
+  const enterTaek = out(between(p, .02, .14));
+  const echoSteps = concept === "chase-open" ? [4, 3, 2, 1] : [3, 2, 1];
+  return <Frame dark={dark} label={`${concept}: over above and to the left of taek with a ${Math.round(layout.heightOverlap * 100)}% height and ${layout.letterOverlap}-letter overlap, ${lockup === "inline" ? "resolving into a single line" : "finishing on the double-exposure lockup"}.`}>
     {!reduced && Array.from({ length: 16 }, (_, i) => <line key={i} x1={45 + ((i * 81 - p * 700) % 660 + 660) % 660} x2={62 + ((i * 81 - p * 700) % 660 + 660) % 660} y1={123 + i * 17 % 210} y2={123 + i * 17 % 210} stroke={accent} strokeWidth={i % 3 === 0 ? 2 : 1} opacity={moving * .22} />)}
-    <g opacity={out(between(p, .02, .2))}>
-      {[2, 1].map(i => <Word key={i} word="over" x={overX - i * (12 + moving * 10)} y={oy} width={ow} size={size} color={accent} lean={lean} opacity={echo * .55 / i} />)}
-      <Word word="over" x={overX} y={oy} width={ow} size={size} color={color} lean={lean} />
+    <g opacity={enterOver}>
+      {echoSteps.map(i => {
+        const base = i === 4 ? (reduced ? 0 : overSpeed * .045) : (.19 - i * .044);
+        return <Word key={`o-${i}`} word="over" x={overX - i * (19 + (reduced ? 0 : overSpeed * 12))} y={oy} width={ow} size={size} color={accent} lean={overLean} opacity={base * (1 + (reduced ? 0 : overSpeed * .55))} />;
+      })}
     </g>
-    <g opacity={out(between(p, .2, .38))}>
-      {[2, 1].map(i => <Word key={i} word="taek" x={taekX - i * (15 + moving * 14)} y={ty} width={tw} size={size} color={accent} lean={lean} opacity={echo / i} />)}
-      <Word word="taek" x={taekX} y={ty} width={tw} size={size} color={accent} lean={lean} outline={bg} />
+    <g opacity={enterTaek}>
+      {echoSteps.map(i => {
+        const base = i === 4 ? (reduced ? 0 : taekSpeed * .05) : (.19 - i * .044);
+        return <Word key={`t-${i}`} word="taek" x={taekX - i * (19 + (reduced ? 0 : taekSpeed * 13))} y={ty} width={tw} size={size} color={accent} lean={taekLean} opacity={base * (1 + (reduced ? 0 : taekSpeed * .65))} />;
+      })}
     </g>
-    <g opacity={pulse(p, .64, .14)}><Spark x={taekX + tw + 14} y={ty - 75} r={10} color={accent} /><Spark x={taekX + tw + 27} y={ty - 25} r={5} color={accent} /></g>
-    <text x="380" y="350" fill={dark ? "#b2c0a9" : "#768172"} opacity={settle} fontSize="10" letterSpacing="4" textAnchor="middle">MAKE YOUR MOVE.</text>
+    <Word word="over" x={overX} y={oy} width={ow} size={size} color={color} lean={overLean} opacity={enterOver} />
+    <Word word="taek" x={taekX} y={ty} width={tw} size={size} color={color} lean={taekLean} outline={bg} opacity={enterTaek} />
+    <g opacity={pulse(p, .74, .11)}><Spark x={taekX + tw + 14} y={ty - 75} r={10} color={accent} /><Spark x={taekX + tw + 27} y={ty - 25} r={5} color={accent} /></g>
+    <text x="380" y="350" fill={dark ? "#b2c0a9" : "#768172"} opacity={settle} fontSize="10" letterSpacing="3.4" textAnchor="middle">ALWAYS A LITTLE AHEAD.</text>
   </Frame>;
 }
 
@@ -246,7 +246,7 @@ function StaggeredTypeScene({ progress: p, concept, dark, reduced }: Pick<SceneP
   const t = out(between(p, .04, .84));
   const speed = reduced ? 0 : Math.sin(between(p, .1, .94) * Math.PI);
   const layout = stackedLayout("chase-stagger");
-  const lean = 9 * t;
+  const lean = layout.lean * t;
   const rows = [{ word: "over", x: layout.ox, y: layout.oy, width: 248 }, { word: "taek", x: layout.tx, y: layout.oy + layout.gap, width: 272 }];
   return <Frame dark={dark} label={`${concept}: staggered over and taek with ${concept === "echo-stagger" ? "separate afterimages" : "one continuous fading letter-shaped trail on each row"}.`}>
     {rows.map((row, index) => <g key={row.word}>

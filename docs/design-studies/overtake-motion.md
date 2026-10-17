@@ -4,11 +4,15 @@ Review at `/design/motion`. Round 2 contains one combined overtake direction, th
 
 ## Round 2 — user feedback
 
-The user selected Photo Finish + Combo for the overtake moment, The Chase + Split Second’s afterimage for the logo, and Afterimage for type. The new identity studies keep “over” on the upper row and “taek” on a lower, rightward-staggered row. Both words remain readable while sharing roughly two letter positions horizontally and 30–50% of the upper row’s visible height.
+The user selected Photo Finish + Combo for the overtake moment, The Chase + Split Second’s afterimage for the logo, and Double Exposure for type. The refined identity studies keep “over” on the upper row and “taek” on a lower, rightward-staggered row with a **50–60% visible height overlap** and a **three-letter horizontal overlap** (`v-e-r` over `t-a-e`, leaving `o` leading on the upper left and `k` pulling ahead on the lower right).
 
-- **Photo combo:** slow motion and camera focus around every actual pass, +1 overtake, a collectible ring, and a cumulative combo. The timeline builds a slower window around each crossed athlete, rather than applying a hard-coded slowdown only to the first crossing. Zero-pass runs retain simple forward progress.
-- **Staggered chase / Close pursuit / Open draft:** balanced, tighter, and airier two-row lockups. Each uses The Chase’s arrival/pass sequence and a short exposure echo. A **Staggered / Single line** finish toggle allows either a lasting overlap or resolution into overtaek.
-- **Double exposure:** distinct afterimage copies behind both staggered rows.
+- **Photo combo:** slow motion and camera focus around every actual pass, +1 overtake, a pass ripple on the crossed rival, and a cumulative combo. Only the afterburn speed trail follows behind your character (no trailing circles). The timeline builds a slower window around each crossed athlete, rather than applying a hard-coded slowdown only to the first crossing. Zero-pass runs retain simple forward progress.
+- **Staggered chase / Close pursuit / Draft & pull away:** 50%, 60%, and 55% vertical height overlaps with three shared letter columns. Each runs a continuous three-stage lead swap with no mid-race pauses and no backward consolidation at the end:
+  1. “taek” charges in from behind and edges past “over” by a tiny bit.
+  2. “over” surges back on the upper row and retakes the lead by a little bit.
+  3. “taek” accelerates and pulls away forward directly into the final three-letter overlap.
+  While moving, both words lean in dynamically with their velocity and trail Double Exposure’s stepped tennis-green afterimages, resolving into the exact Double Exposure final frame. A **Staggered / Single line** finish toggle allows either a lasting overlap or resolution into `overtaek`.
+- **Double exposure:** stored in Type in Motion and folded directly into the logo race as the signature finish, with three distinct afterimage copies behind both staggered rows.
 - **Liquid exposure:** a single stretched glyph silhouette per row, horizontally blurred and progressively faded.
 - **Jetstream:** the continuous glyph-shaped wake transitions into a tapered abstract airflow shape.
 
