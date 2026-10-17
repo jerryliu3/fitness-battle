@@ -7,19 +7,51 @@ export interface RankBand {
 }
 
 /**
- * Fitness-style ladder (not gaming metals).
- * Champion is the top band; Beginner is the entry band.
- * Names stay neutral — descriptive of training level, not pejorative.
+ * Fitness-style ladder from weekly effort Elo (not gaming metals).
+ * Score moves mainly with counted distance (or time when there is no GPS).
+ * Empty weeks decay slightly; floor is 500. Names describe training level.
  */
 export const RANK_BANDS: RankBand[] = [
-  { name: "Beginner", min: ELO_FLOOR, blurb: "Building the habit" },
-  { name: "Developing", min: 800, blurb: "Finding your rhythm" },
-  { name: "Active", min: 1000, blurb: "Showing up each week" },
-  { name: "Steady", min: 1200, blurb: "Reliable weekly volume" },
-  { name: "Strong", min: 1400, blurb: "Pushing past easy weeks" },
-  { name: "Elite", min: 1600, blurb: "High output among peers" },
-  { name: "Olympian", min: 1800, blurb: "Rare consistency and volume" },
-  { name: "Champion", min: 2000, blurb: "Top of the field" },
+  {
+    name: "Beginner",
+    min: ELO_FLOOR,
+    blurb: "Just getting started — every counted session moves you up",
+  },
+  {
+    name: "Developing",
+    min: 800,
+    blurb: "Habit forming — a few solid weeks of showing up",
+  },
+  {
+    name: "Active",
+    min: 1000,
+    blurb: "Baseline field — regular weekly volume among peers",
+  },
+  {
+    name: "Steady",
+    min: 1200,
+    blurb: "Reliable weeks — volume holds without long gaps",
+  },
+  {
+    name: "Strong",
+    min: 1400,
+    blurb: "Above the pack — harder weeks than most on your field",
+  },
+  {
+    name: "Elite",
+    min: 1600,
+    blurb: "High output — consistently near the top of peer fields",
+  },
+  {
+    name: "Olympian",
+    min: 1800,
+    blurb: "Rare consistency — big volume sustained week after week",
+  },
+  {
+    name: "Champion",
+    min: 2000,
+    blurb: "Top band — maxed weekly effort relative to the field",
+  },
 ];
 
 export function rankForElo(elo: number): RankBand {

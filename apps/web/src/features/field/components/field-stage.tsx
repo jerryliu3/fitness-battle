@@ -156,7 +156,7 @@ export function FieldStage({
                   setCamera(camera === "above" ? "follow" : "above")
                 }
               >
-                {camera === "above" ? "Follow camera ↗" : "Above camera ↗"}
+                {camera === "above" ? "Follow camera" : "Above camera"}
               </button>
             </div>
           </>

@@ -336,7 +336,11 @@ export default function YouScreen() {
         contentContainerStyle={f.content}
         keyboardShouldPersistTaps="handled"
       >
-        <AthleteMetrics state={state} />
+        <AthleteMetrics
+          state={state}
+          email={account.email}
+          demoMode={demoMode}
+        />
         <FocusButton
           label="Progress · statistics & season history"
           secondary
@@ -407,7 +411,7 @@ export default function YouScreen() {
           })}
           {note ? <Text style={styles.copy}>{note}</Text> : null}
         </FocusDisclosure>
-        <FocusDisclosure title="Preferences" detail="Profile & primary sport">
+        <FocusDisclosure title="Preferences" detail="Profile, units & sport">
           <Text style={styles.section}>Profile</Text>
           <Input
             value={draftName}
@@ -440,6 +444,26 @@ export default function YouScreen() {
             </Button>
           ) : null}
 
+          <Text style={styles.section}>Units</Text>
+          <View style={f.chipRow}>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityState={{ selected: state.units === "us" }}
+              style={[f.chip, state.units === "us" && f.chipActive]}
+              onPress={() => dispatch({ type: "set-units", units: "us" })}
+            >
+              <Text style={f.rowTitle}>Miles (US)</Text>
+            </Pressable>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityState={{ selected: state.units === "metric" }}
+              style={[f.chip, state.units === "metric" && f.chipActive]}
+              onPress={() => dispatch({ type: "set-units", units: "metric" })}
+            >
+              <Text style={f.rowTitle}>Kilometres</Text>
+            </Pressable>
+          </View>
+
           <View style={f.chipRow}>
             {SPORTS.map((s) => (
               <Pressable
@@ -468,17 +492,11 @@ export default function YouScreen() {
           secondary
           onPress={() => router.push("/settings")}
         />
-        <FocusDisclosure title="Account" detail={account.email}>
-          <Text style={f.copy}>
-            {account.email}
-            {demoMode ? " · demo account" : ""}
-          </Text>
-          <FocusButton
-            label="Sign out"
-            secondary
-            onPress={() => void signOut()}
-          />
-        </FocusDisclosure>
+        <FocusButton
+          label="Sign out"
+          secondary
+          onPress={() => void signOut()}
+        />
       </ScrollView>
     </SafeAreaView>
   );

@@ -2,6 +2,8 @@ import { Text, View } from "react-native";
 import Svg, { Line, Polyline, Circle } from "react-native-svg";
 import {
   countsOnTrack,
+  distanceUnitLabel,
+  formatDistanceM,
   initialsFromName,
   rankForElo,
   type CompeteState,
@@ -11,18 +13,27 @@ import { useRouter } from "expo-router";
 
 function seasonSummary(state: CompeteState) {
   const counted = state.activities.filter((a) => countsOnTrack(a, "open"));
-  const km = counted.reduce((t, a) => t + a.distanceM, 0) / 1000;
+  const meters = counted.reduce((t, a) => t + a.distanceM, 0);
   const weeks = state.periodResults.filter(
     (r) => r.sport === state.primary && r.track === "open",
   ).length;
-  return { km, sessions: counted.length, weeks };
+  return { meters, sessions: counted.length, weeks };
 }
 
-export function AthleteMetrics({ state }: { state: CompeteState }) {
+export function AthleteMetrics({
+  state,
+  email,
+  demoMode,
+}: {
+  state: CompeteState;
+  email?: string | null;
+  demoMode?: boolean;
+}) {
   const router = useRouter();
   const rating = state.ratings.find((r) => r.sport === state.primary);
   const elo = rating?.openElo ?? 1000;
   const season = seasonSummary(state);
+  const unit = distanceUnitLabel(state.units);
   const settledWeeks = season.weeks;
   const values = state.periodResults
     .filter((r) => r.sport === state.primary && r.track === "open")
@@ -40,7 +51,17 @@ export function AthleteMetrics({ state }: { state: CompeteState }) {
     .join(" ");
   return (
     <>
-      <View style={{ alignItems: "center", gap: 12, marginVertical: 18 }}>
+      <View
+        style={[
+          f.card,
+          {
+            flexDirection: "row",
+            alignItems: "center",
+            gap: 16,
+            marginVertical: 8,
+          },
+        ]}
+      >
         <View
           style={{
             width: 86,
@@ -61,9 +82,17 @@ export function AthleteMetrics({ state }: { state: CompeteState }) {
             {initialsFromName(state.name)}
           </Text>
         </View>
-        <Text style={f.kicker}>Athlete · {state.city || "Your own pace"}</Text>
-        <Text style={f.title}>{state.name}</Text>
-        <Text style={f.copy}>Your own kind of progress.</Text>
+        <View style={{ flex: 1, gap: 4 }}>
+          <Text style={f.kicker}>Athlete · {state.city || "Your own pace"}</Text>
+          <Text style={f.title}>{state.name}</Text>
+          {email ? (
+            <Text style={f.small}>
+              {email}
+              {demoMode ? " · demo" : ""}
+            </Text>
+          ) : null}
+          <Text style={f.copy}>Your own kind of progress.</Text>
+        </View>
       </View>
       <View
         style={[f.card, { backgroundColor: "#edf2e8", borderColor: "#d7e0d0" }]}
@@ -72,8 +101,10 @@ export function AthleteMetrics({ state }: { state: CompeteState }) {
         <Text style={f.kicker}>Your season so far</Text>
         <View style={[f.row, { marginTop: 12 }]}>
           <View style={{ flex: 1, alignItems: "center", gap: 4 }}>
-            <Text style={f.h2}>{season.km.toFixed(1)}</Text>
-            <Text style={f.small}>km counted</Text>
+            <Text style={f.h2}>
+              {formatDistanceM(season.meters, state.units)}
+            </Text>
+            <Text style={f.small}>{unit} counted</Text>
           </View>
           <View style={{ flex: 1, alignItems: "center", gap: 4 }}>
             <Text style={f.h2}>{season.sessions}</Text>

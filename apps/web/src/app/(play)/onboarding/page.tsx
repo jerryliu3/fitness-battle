@@ -9,6 +9,7 @@ import {
   SPORTS,
   HEALTH_METRICS,
   type SportId,
+  type UnitSystem,
 } from "@fitness-battle/shared";
 import { resolveSafePostLoginPath } from "@/lib/auth/login-redirect";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -25,6 +26,7 @@ function OnboardingFlow() {
   const [name, setName] = useState(user?.displayName ?? "");
   const [city, setCity] = useState("Toronto");
   const [sport, setSport] = useState<SportId>("running");
+  const [units, setUnits] = useState<UnitSystem>("us");
   const [trackSleep, setTrackSleep] = useState(false);
   const [level, setLevel] = useState<"light" | "steady" | "heavy">("steady");
   const [connectMessage, setConnectMessage] = useState<string | null>(null);
@@ -51,6 +53,7 @@ function OnboardingFlow() {
   async function savePrefs() {
     if (name.trim()) dispatch({ type: "rename", name });
     if (city.trim()) dispatch({ type: "set-city", city });
+    dispatch({ type: "set-units", units });
     dispatch({ type: "set-primary", sport });
     if (trackSleep) dispatch({ type: "opt-in-health", metric: "sleep" });
     if (trackSleep) dispatch({ type: "set-focus", focus: { family: "sport", id: sport } });
@@ -118,7 +121,7 @@ function OnboardingFlow() {
         </h1>
         <p className="fb-copy">
           {step === "prefs" &&
-            "Name, city, and primary sport. You can change these later on You."}
+            "Name, city, units, and primary sport. You can change these later on Athlete."}
           {step === "connect" &&
             "Strava is the cloud default. Garmin, WHOOP, and Oura connect the same way on You once their keys are set. A Garmin file import works without API approval. Without keys this step stays an honest stub."}
           {step === "backfill" &&
@@ -138,6 +141,25 @@ function OnboardingFlow() {
             City
             <input value={city} onChange={(e) => setCity(e.target.value)} maxLength={40} />
           </label>
+          <p className="fb-note">Units of measurement (required)</p>
+          <div className="fb-chips" role="group" aria-label="Units">
+            <button
+              type="button"
+              className={units === "us" ? "fb-chip on" : "fb-chip"}
+              aria-pressed={units === "us"}
+              onClick={() => setUnits("us")}
+            >
+              Miles (US)
+            </button>
+            <button
+              type="button"
+              className={units === "metric" ? "fb-chip on" : "fb-chip"}
+              aria-pressed={units === "metric"}
+              onClick={() => setUnits("metric")}
+            >
+              Kilometres
+            </button>
+          </div>
           <div className="fb-chips">
             {SPORTS.map((item) => (
               <button

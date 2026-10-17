@@ -18,6 +18,7 @@ import {
   type SportId,
   type ScoreTrack,
 } from "@fitness-battle/shared";
+
 export function ArenaScreen() {
   const { state, dispatch } = useCompete();
   const { user } = useAuth();
@@ -72,14 +73,22 @@ export function ArenaScreen() {
         <>
           <div className="focus-row">
             <h2>{SPORTS.find((s) => s.id === state.primary)?.name}</h2>
-            <select
-              aria-label="Score track"
-              value={track}
-              onChange={(e) => setTrack(e.target.value as ScoreTrack)}
-            >
-              <option value="open">Open score</option>
-              <option value="verified">GPS verified</option>
-            </select>
+            <div className="focus-segments" role="group" aria-label="Score track">
+              <button
+                type="button"
+                aria-pressed={track === "open"}
+                onClick={() => setTrack("open")}
+              >
+                Open score
+              </button>
+              <button
+                type="button"
+                aria-pressed={track === "verified"}
+                onClick={() => setTrack("verified")}
+              >
+                GPS verified
+              </button>
+            </div>
           </div>
           <FieldStage
             key={`${state.primary}-${track}`}
@@ -99,14 +108,23 @@ export function ArenaScreen() {
         <section className="focus-card focus-empty">
           <span className="focus-empty-mark">◎</span>
           <h2>Your next chapter starts here.</h2>
-          <p className="fb-copy">
-            Pick a sport. Join solo or register with your crew.
-          </p>
+          <p className="fb-copy">Pick a sport and join for the week.</p>
           <button className="fb-btn" onClick={() => setRegister(true)}>
-            Find an arena ↗
+            Find a field
           </button>
         </section>
       )}
+      <section className="focus-card focus-coming-soon" aria-disabled="true">
+        <p className="fb-kicker">Coming soon</p>
+        <h2>1v1</h2>
+        <p className="fb-copy">
+          Challenge a friend head-to-head for the week. Not open yet — stay
+          tuned.
+        </p>
+        <button type="button" className="fb-btn-line" disabled>
+          1v1 · Coming soon
+        </button>
+      </section>
       <WeekReveal
         state={state}
         onDismiss={() => dispatch({ type: "acknowledge-reveal" })}
@@ -120,32 +138,39 @@ export function ArenaScreen() {
         </div>
       </details>
       <Link href="/pace" className="focus-benchmark">
-        <span>↗</span>
+        <span aria-hidden="true">→</span>
         <div>
           <b>Beyond this week</b>
           <small>All-time pace & race rankings</small>
         </div>
-        <span>→</span>
+        <span aria-hidden="true">→</span>
       </Link>
       <Sheet
         open={register}
-        title="Find your next arena."
-        body="Choose a sport and join solo or with a private crew. Each member opts in individually."
+        title="Find your next field."
+        body="Choose a sport and join, or register with a private crew. Each member opts in individually."
         onClose={() => setRegister(false)}
       >
-        <label className="fb-field">
-          Your sport
-          <select
-            value={sport}
-            onChange={(e) => setSport(e.target.value as SportId)}
-          >
-            {SPORTS.map((s) => (
-              <option key={s.id} value={s.id}>
-                {s.name}
-              </option>
-            ))}
-          </select>
-        </label>
+        <p className="fb-kicker">Your sport</p>
+        <div className="focus-sport-options" role="radiogroup" aria-label="Sport">
+          {SPORTS.map((s) => (
+            <button
+              key={s.id}
+              type="button"
+              role="radio"
+              aria-checked={sport === s.id}
+              className={
+                sport === s.id ? "focus-sport-option is-on" : "focus-sport-option"
+              }
+              onClick={() => setSport(s.id)}
+            >
+              <b>{s.name}</b>
+              <small>
+                {s.gps ? "GPS distance & open effort" : "Open effort score"}
+              </small>
+            </button>
+          ))}
+        </div>
         <FieldJoinActions
           sport={sport}
           sportName={SPORTS.find((s) => s.id === sport)?.name ?? sport}

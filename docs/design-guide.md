@@ -22,10 +22,10 @@ Use DM Sans for product UI, restrained display sizes, readable supporting copy, 
 
 The visible tabs are **Home / Arena / Crew / Athlete**. Stable route IDs remain `/today`, `/arena`, `/field`, and `/you` so existing deep links continue to work.
 
-- Home: one recommendation, an expandable summary, then the winding recent counted-session path. Empty and future sessions never invent activity.
-- Arena: active sports, registration panel (solo / eligible crew), separate score tracks, current vertical lanes, prior-self ghost, awards, and benchmark links. No replay, hypothetical effort, or practice 1v1 controls.
-- Crew: Trail-style club identity, shared week progress, activity/standings, members, invites and existing supported crew actions. Empty/live/demo states remain honest.
-- Athlete: centered identity; **season summary, Elo, and benchmarks near the top**; progress, connections, preferences and account settings behind focused sections.
+- Home: one recommendation (expands in-place for detail), then the winding recent counted-session path. Empty paths stay quiet — no invented activity and no “connect/sync” empty copy on the path itself.
+- Arena: active sports, registration panel (join / eligible crew — never “solo” wording), separate score tracks, current vertical lanes, prior-self ghost, awards, and benchmark links. A disabled **1v1 · Coming soon** teaser is allowed; no live 1v1 yet.
+- Crew: Trail-style club identity, shared week progress, activity/standings, members, invites and existing supported crew actions. Signed-out/demo states preview what crews unlock. Empty/live states remain honest.
+- Athlete: profile card with portrait, name, city, and email; **season summary, Elo, and benchmarks near the top**; progress, connections, preferences (including units) and account settings behind focused sections.
 
 ## Lane viewport contract
 

@@ -2,6 +2,8 @@
 import Link from "next/link";
 import {
   countsOnTrack,
+  distanceUnitLabel,
+  formatDistanceM,
   initialsFromName,
   rankForElo,
   type CompeteState,
@@ -9,17 +11,26 @@ import {
 
 function seasonSummary(state: CompeteState) {
   const counted = state.activities.filter((a) => countsOnTrack(a, "open"));
-  const km = counted.reduce((t, a) => t + a.distanceM, 0) / 1000;
+  const meters = counted.reduce((t, a) => t + a.distanceM, 0);
   const weeks = state.periodResults.filter(
     (r) => r.sport === state.primary && r.track === "open",
   ).length;
-  return { km, sessions: counted.length, weeks };
+  return { meters, sessions: counted.length, weeks };
 }
 
-export function AthleteOverview({ state }: { state: CompeteState }) {
+export function AthleteOverview({
+  state,
+  email,
+  demoMode,
+}: {
+  state: CompeteState;
+  email?: string | null;
+  demoMode?: boolean;
+}) {
   const rating = state.ratings.find((r) => r.sport === state.primary);
   const elo = rating?.openElo ?? 1000;
   const season = seasonSummary(state);
+  const unit = distanceUnitLabel(state.units);
   const history = state.periodResults
     .filter((r) => r.sport === state.primary && r.track === "open")
     .slice()
@@ -36,12 +47,20 @@ export function AthleteOverview({ state }: { state: CompeteState }) {
     .join(" ");
   return (
     <>
-      <header className="focus-profile">
+      <section className="focus-profile-card" aria-label="Athlete profile">
         <div className="focus-portrait">{initialsFromName(state.name)}</div>
-        <p className="fb-kicker">Athlete · {state.city || "Your own pace"}</p>
-        <h1>{state.name}</h1>
-        <p className="fb-copy">Your own kind of progress.</p>
-      </header>
+        <div className="focus-profile-card-copy">
+          <p className="fb-kicker">Athlete · {state.city || "Your own pace"}</p>
+          <h1>{state.name}</h1>
+          {email ? (
+            <p className="focus-profile-email">
+              {email}
+              {demoMode ? " · demo" : ""}
+            </p>
+          ) : null}
+          <p className="fb-copy">Your own kind of progress.</p>
+        </div>
+      </section>
       <section
         className="focus-season-strip"
         aria-label="Your season so far"
@@ -49,8 +68,8 @@ export function AthleteOverview({ state }: { state: CompeteState }) {
         <p className="fb-kicker">Your season so far</p>
         <div className="focus-season-stats">
           <div>
-            <strong>{season.km.toFixed(1)}</strong>
-            <span>km counted</span>
+            <strong>{formatDistanceM(season.meters, state.units)}</strong>
+            <span>{unit} counted</span>
           </div>
           <div>
             <strong>{season.sessions}</strong>
@@ -99,12 +118,12 @@ export function AthleteOverview({ state }: { state: CompeteState }) {
         </p>
       </section>
       <Link href="/pace" className="focus-benchmark">
-        <span>↗</span>
+        <span aria-hidden="true">→</span>
         <div>
           <b>Your benchmarks</b>
           <small>Training pace & all-time race rankings</small>
         </div>
-        <span>→</span>
+        <span aria-hidden="true">→</span>
       </Link>
     </>
   );

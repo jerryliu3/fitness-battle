@@ -352,15 +352,21 @@ export default function ArenaScreen() {
         ) : (
           <View style={f.card}>
             <Text style={f.title}>Your next chapter starts here.</Text>
-            <Text style={f.copy}>
-              Choose a sport and join your weekly field.
-            </Text>
+            <Text style={f.copy}>Pick a sport and join for the week.</Text>
             <FocusButton
-              label="Find an arena"
+              label="Find a field"
               onPress={() => setRegister(true)}
             />
           </View>
         )}
+        <View style={[f.card, { opacity: 0.72 }]}>
+          <Text style={f.kicker}>Coming soon</Text>
+          <Text style={f.title}>1v1</Text>
+          <Text style={f.copy}>
+            Challenge a friend head-to-head for the week. Not open yet.
+          </Text>
+          <FocusButton label="1v1 · Coming soon" disabled onPress={() => {}} />
+        </View>
         {state.periodResults.some((r) => !r.acknowledgedAt) && (
           <View style={f.card}>
             <Text style={f.h2}>Your week is complete.</Text>
@@ -382,7 +388,7 @@ export default function ArenaScreen() {
       </ScrollView>
       <FocusSheet
         open={register}
-        title="Find your next arena."
+        title="Find your next field."
         body="Choose a sport for your individual field. You can seat a private crew on the same field here, or manage membership from Crew."
         onClose={() => setRegister(false)}
       >
@@ -410,7 +416,8 @@ export default function ArenaScreen() {
           style={[f.chip, !crew && f.chipActive]}
           onPress={() => setCrew("")}
         >
-          <Text style={f.rowTitle}>Solo · find a similar field</Text>
+          <Text style={f.rowTitle}>Join</Text>
+          <Text style={f.small}>Density field of similar athletes</Text>
         </Pressable>
         {crewApi.data?.crews
           .flatMap((r) => (r.crews && r.crews.sport === sport ? [r.crews] : []))

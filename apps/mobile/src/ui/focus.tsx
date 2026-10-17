@@ -129,7 +129,6 @@ export function FocusButton({
       ]}
     >
       <Text style={[f.buttonText, secondary && { color: c.ink }]}>{label}</Text>
-      <Text style={[f.buttonText, secondary && { color: c.ink }]}>↗</Text>
     </Pressable>
   );
 }
@@ -241,7 +240,7 @@ export const f = StyleSheet.create({
     padding: 15,
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
+    justifyContent: "center",
     gap: 12,
   },
   buttonText: {

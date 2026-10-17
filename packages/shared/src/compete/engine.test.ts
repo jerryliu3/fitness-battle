@@ -4,6 +4,7 @@ import { activityEffort } from "./effort";
 import { sameWorkout } from "./ledger";
 import { settleElo } from "./elo";
 import {
+  formatVolume,
   freshState,
   migrateCompeteState,
   placeOrLast,
@@ -206,13 +207,25 @@ describe("compete engine", () => {
       periodResults: undefined,
       pendingRevealIds: undefined,
       enrollments: undefined,
+      units: undefined,
     };
     const migrated = migrateCompeteState(stripped as never);
     expect(migrated.periodResults).toEqual([]);
     expect(migrated.pendingRevealIds).toEqual([]);
     expect(migrated.enrollments).toEqual([]);
     expect(migrated.crewBoard).toBeNull();
+    expect(migrated.units).toBe("us");
     expect(migrateCompeteState({ ...legacy, trainingGoal: { distance: "5k", deadline: "2026-02-31" } } as never).trainingGoal).toBeNull();
+  });
+
+  it("sets units and formats distance for US and metric", () => {
+    const metric = reduceCompete(freshState(), {
+      type: "set-units",
+      units: "metric",
+    });
+    expect(metric.units).toBe("metric");
+    expect(formatVolume("running", 5000, 1800, "us")).toBe("3.1 mi");
+    expect(formatVolume("running", 5000, 1800, "metric")).toBe("5.0 km");
   });
 
   it("backfills missing sports in ratings and missing providers in links without crashing", () => {

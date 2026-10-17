@@ -29,6 +29,7 @@ export {
   type LinkStatus,
   type ProviderLink,
   type PeriodResult,
+  type UnitSystem,
 } from "./sports";
 export {
   HEALTH_METRIC_IDS,
@@ -92,6 +93,8 @@ export {
   formatClock,
   daysLeft,
   formatVolume,
+  formatDistanceM,
+  distanceUnitLabel,
   formatEffort,
   setRealPlayerPool,
   getRealPlayerPool,
