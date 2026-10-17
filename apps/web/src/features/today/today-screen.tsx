@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, type Ref } from "react";
 import { useCompete } from "@/components/compete-context";
 import { AnimatedEmber } from "@/components/mascot/animated-ember";
 import type { EmberAction } from "@fitness-battle/shared/mascot";
@@ -74,7 +74,7 @@ function JourneyDayStop({
 }: {
   day: JourneyDay;
   units: UnitSystem;
-  stopRef: React.Ref<HTMLButtonElement>;
+  stopRef: Ref<HTMLButtonElement>;
   onOpen: (activity: Activity) => void;
 }) {
   const primary = day.items[0]!;
@@ -301,7 +301,6 @@ export function TodayScreen() {
       <JourneyTrail
         stopCount={journeyStops.length}
         layoutKey={journeyStops.map((s) => `${s.key}:${s.lane}`).join("|")}
-        active={!expanded}
       >
         {({ setStopRef }) =>
           journeyStops.map((stop, index) => (
