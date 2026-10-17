@@ -5,6 +5,11 @@ import { getSupabaseConfig } from "@/lib/supabase/config";
 import { webEnv } from "@/lib/env";
 import { hashString } from "@fitness-battle/shared";
 import {
+  DEMO_USER_COOKIE,
+  parseDemoUserFromCookie,
+  serializeDemoUserCookie,
+} from "@/lib/auth/design-access";
+import {
   createContext,
   useCallback,
   useContext,
@@ -40,23 +45,77 @@ interface AuthApi {
 
 const AuthContext = createContext<AuthApi | null>(null);
 
-function readDemoUser(): AuthUser | null {
-  if (typeof window === "undefined") return null;
-  const raw = localStorage.getItem(DEMO_KEY);
-  if (!raw) return null;
-  try {
-    const parsed = JSON.parse(raw) as AuthUser;
-    if (!parsed?.id || !parsed?.email) return null;
-    return { ...parsed, mode: "demo" };
-  } catch {
-    return null;
+function writeDemoCookie(user: AuthUser | null) {
+  if (typeof document === "undefined") return;
+  if (user) {
+    const serialized = serializeDemoUserCookie(user);
+    document.cookie = `${DEMO_USER_COOKIE}=${serialized}; Path=/; Max-Age=${60 * 60 * 24 * 30}; SameSite=Lax`;
+  } else {
+    document.cookie = `${DEMO_USER_COOKIE}=; Path=/; Max-Age=0; SameSite=Lax`;
   }
 }
 
-function writeDemoUser(user: AuthUser | null) {
-  if (user) localStorage.setItem(DEMO_KEY, JSON.stringify(user));
-  else localStorage.removeItem(DEMO_KEY);
+function readDemoCookie(): AuthUser | null {
+  if (typeof document === "undefined") return null;
+  const match = document.cookie
+    .split("; ")
+    .find((row) => row.startsWith(`${DEMO_USER_COOKIE}=`));
+  if (!match) return null;
+  const value = match.split("=").slice(1).join("=");
+  const parsed = parseDemoUserFromCookie(value);
+  if (!parsed) return null;
+  return {
+    id: parsed.id,
+    email: parsed.email,
+    displayName: parsed.displayName ?? parsed.email.split("@")[0] ?? "Athlete",
+    mode: "demo",
+  };
 }
+
+function readDemoUser(): AuthUser | null {
+  if (typeof window === "undefined") return null;
+  const raw = localStorage.getItem(DEMO_KEY);
+  if (raw) {
+    try {
+      const parsed = JSON.parse(raw) as AuthUser;
+      if (parsed?.id && parsed?.email) {
+        const u: AuthUser = { ...parsed, mode: "demo" };
+        writeDemoCookie(u);
+        return u;
+      }
+    } catch {
+      // Ignore malformed localStorage and try cookie fallback
+    }
+  }
+  const fromCookie = readDemoCookie();
+  if (fromCookie) {
+    try {
+      localStorage.setItem(DEMO_KEY, JSON.stringify(fromCookie));
+    } catch {
+      // Ignore localStorage errors
+    }
+    return fromCookie;
+  }
+  return null;
+}
+
+function writeDemoUser(user: AuthUser | null) {
+  if (user) {
+    try {
+      localStorage.setItem(DEMO_KEY, JSON.stringify(user));
+    } catch {
+      // Ignore localStorage errors
+    }
+  } else {
+    try {
+      localStorage.removeItem(DEMO_KEY);
+    } catch {
+      // Ignore localStorage errors
+    }
+  }
+  writeDemoCookie(user);
+}
+
 
 function demoUserFromEmail(email: string, displayName?: string): AuthUser {
   const local = email.split("@")[0] || "Athlete";
