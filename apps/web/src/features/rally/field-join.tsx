@@ -2,6 +2,7 @@
 
 import { useAuth } from "@/components/auth-context";
 import { useCompete } from "@/components/compete-context";
+import Link from "next/link";
 import {
   loadCrewFieldPin,
   loadCrewJoinOptions,
@@ -50,10 +51,15 @@ export function FieldJoinActions({
   requireParticipate,
   onJoined,
 }: FieldJoinProps) {
-  const { dispatch } = useCompete();
+  const { dispatch, state } = useCompete();
   const crews = useCrewOptions(sport, true);
   const [busy, setBusy] = useState(false);
   const [note, setNote] = useState<string | null>(null);
+
+  const isOptedIn = Boolean(
+    state?.ratings.find((r) => r.sport === sport)?.optedIn,
+  );
+  const isCurrentCrew = state?.crewBoard?.sport === sport;
 
   function joinField() {
     requireParticipate(`Sign in to join ${sportName} this week.`, () => {
@@ -84,29 +90,41 @@ export function FieldJoinActions({
   return (
     <div className="fb-stack">
       <p className="fb-note">
-        {crews.length > 0
-          ? "Join a density field, or register with a crew so you share one individual leaderboard. Each person still opts in on their own."
-          : "Fields are density groups of eight. Create or join a private crew if you want the option to register together."}
+        {isOptedIn
+          ? `You are registered for ${sportName} this week.`
+          : crews.length > 0
+            ? "Join a density field, or register with a crew so you share one individual leaderboard. Each person still opts in on their own."
+            : "Fields are density groups of eight. Create or join a private crew if you want the option to register together."}
       </p>
       <button
         type="button"
         className="fb-btn"
-        disabled={busy}
+        disabled={busy || (isOptedIn && !isCurrentCrew)}
         onClick={joinField}
       >
-        Join {sportName}
+        {isOptedIn && !isCurrentCrew
+          ? "Already registered for this week"
+          : isOptedIn && isCurrentCrew
+            ? `Switch to solo ${sportName}`
+            : `Join ${sportName}`}
       </button>
-      {crews.map((crew) => (
-        <button
-          key={crew.id}
-          type="button"
-          className="fb-btn-line"
-          disabled={busy}
-          onClick={() => joinTogether(crew)}
-        >
-          Join with {crew.name} ({crew.memberCount})
-        </button>
-      ))}
+      {crews.map((crew) => {
+        const isJoinedThisCrew =
+          isCurrentCrew && state?.crewBoard?.crewId === crew.id;
+        return (
+          <button
+            key={crew.id}
+            type="button"
+            className="fb-btn-line"
+            disabled={busy || isJoinedThisCrew}
+            onClick={() => joinTogether(crew)}
+          >
+            {isJoinedThisCrew
+              ? `Registered with ${crew.name}`
+              : `Join with ${crew.name} (${crew.memberCount})`}
+          </button>
+        );
+      })}
       {note ? <p className="fb-note">{note}</p> : null}
     </div>
   );
@@ -157,7 +175,16 @@ export function FieldCrewSwitch({ sport }: { sport: SportId }) {
     );
   }
 
-  if (crews.length === 0) return null;
+  if (crews.length === 0) {
+    return (
+      <div className="fb-stack">
+        <p className="fb-note">You aren’t in any {sport} crews yet.</p>
+        <Link href="/field" className="fb-btn-ghost">
+          Find or create a crew
+        </Link>
+      </div>
+    );
+  }
 
   return (
     <div className="fb-stack">

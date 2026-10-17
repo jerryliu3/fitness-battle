@@ -95,7 +95,7 @@ export function AthleteOverview({
             <strong>{elo.toLocaleString()}</strong>
           </div>
           <span className="focus-status">
-            {hasVerified ? (rating?.verifiedElo ?? 1000) : "—"}
+            {hasVerified ? (rating?.verifiedElo ?? 1000).toLocaleString() : "—"}
             <small>{hasVerified ? "GPS-verified Elo" : "GPS uncalibrated"}</small>
           </span>
         </div>

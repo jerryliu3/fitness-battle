@@ -69,14 +69,19 @@ export function ArenaScreen() {
             {SPORTS.find((s) => s.id === r.sport)?.name}
           </button>
         ))}
-        <button
-          onClick={() => {
-            setSport(state.primary);
-            setRegister(true);
-          }}
-        >
-          ＋ Register
-        </button>
+        {active.length < SPORTS.length && (
+          <button
+            onClick={() => {
+              const nextSport =
+                SPORTS.find((s) => !active.some((r) => r.sport === s.id))?.id ??
+                state.primary;
+              setSport(nextSport);
+              setRegister(true);
+            }}
+          >
+            ＋ Register
+          </button>
+        )}
       </div>
       {board.optedIn ? (
         <>
@@ -162,23 +167,34 @@ export function ArenaScreen() {
       >
         <p className="fb-kicker">Your sport</p>
         <div className="focus-sport-options" role="radiogroup" aria-label="Sport">
-          {SPORTS.map((s) => (
-            <button
-              key={s.id}
-              type="button"
-              role="radio"
-              aria-checked={sport === s.id}
-              className={
-                sport === s.id ? "focus-sport-option is-on" : "focus-sport-option"
-              }
-              onClick={() => setSport(s.id)}
-            >
-              <b>{s.name}</b>
-              <small>
-                {s.gps ? "GPS distance & open effort" : "Open effort score"}
-              </small>
-            </button>
-          ))}
+          {SPORTS.map((s) => {
+            const isRegistered = state.ratings.find(
+              (r) => r.sport === s.id,
+            )?.optedIn;
+            return (
+              <button
+                key={s.id}
+                type="button"
+                role="radio"
+                aria-checked={sport === s.id}
+                className={
+                  sport === s.id
+                    ? "focus-sport-option is-on"
+                    : "focus-sport-option"
+                }
+                onClick={() => setSport(s.id)}
+              >
+                <b>{s.name}</b>
+                <small>
+                  {isRegistered
+                    ? "Registered this week"
+                    : s.gps
+                      ? "GPS distance & open effort"
+                      : "Open effort score"}
+                </small>
+              </button>
+            );
+          })}
         </div>
         <FieldJoinActions
           sport={sport}

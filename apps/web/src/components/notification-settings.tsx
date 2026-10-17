@@ -65,7 +65,7 @@ export function NotificationSettings() {
         setNote(
           next.permissionStatus === "denied"
             ? "Notifications are blocked in this browser. Allow them in site settings to arm push."
-            : "Could not arm push on this browser.",
+            : "Notification permissions were not granted by the browser.",
         );
         return;
       }

@@ -93,8 +93,12 @@ export function TodayScreen() {
             {formatVolume(a.sport, a.distanceM, a.movingSec, units)}
           </p>
           <p className="fb-note">
-            {a.source} · {a.verified ? "Verified" : "Open"} · counted toward
-            your training.
+            {a.source} · {a.verified ? "Verified" : "Open"} ·{" "}
+            {a.disposition === "excluded"
+              ? a.dispositionReason ?? "Sample session (not counted)"
+              : a.disposition === "pending"
+                ? "Pending file import"
+                : "Counted toward your training."}
           </p>
         </section>
       </div>
@@ -114,11 +118,20 @@ export function TodayScreen() {
           <span>Your Elo rating is protected through next Monday.</span>
         </div>
       )}
-      <button
+      <div
+        role="button"
+        tabIndex={0}
         className="focus-suggestion"
         onClick={() => {
           react("hop");
           setExpanded("suggestion");
+        }}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            react("hop");
+            setExpanded("suggestion");
+          }
         }}
         onMouseEnter={() => react("wave")}
       >
@@ -140,7 +153,7 @@ export function TodayScreen() {
           loop={false}
           playing={reaction.key > 0}
         />
-      </button>
+      </div>
       <div className="focus-row">
         <h2>Your recent rhythm</h2>
         {sessions.length ? (
@@ -201,7 +214,11 @@ export function TodayScreen() {
                 })}
               </small>
               <b>{sportById(a.sport).name}</b>
-              <em>{a.verified ? "Verified" : "Open"} · counted</em>
+              <em>
+                {a.disposition === "excluded"
+                  ? `${a.source} · sample (excluded)`
+                  : `${a.verified ? "Verified" : "Open"} · ${a.disposition === "pending" ? "pending" : "counted"}`}
+              </em>
             </span>
           </div>
         ))}

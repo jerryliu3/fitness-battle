@@ -193,7 +193,11 @@ export async function enableWebPush(
   } else {
     let permission = Notification.permission;
     if (permission === "default") {
-      permission = await Notification.requestPermission();
+      try {
+        permission = await Notification.requestPermission();
+      } catch {
+        permission = "default";
+      }
     }
     if (permission === "denied") {
       next = withPermissionStatus(
@@ -204,11 +208,16 @@ export async function enableWebPush(
         clearDevices: true,
       })).prefs;
     }
-    if (permission === "granted") {
-      next = registerStubPush(prefs, "web", new Date(), "granted");
-    } else {
-      next = registerStubPush(prefs, "web");
+    if (permission !== "granted") {
+      next = withPermissionStatus(
+        { ...prefs, enabled: false, registration: null },
+        "prompt",
+      );
+      return (await persistRemote(saveNotificationPreferences(next), identity, {
+        clearDevices: true,
+      })).prefs;
     }
+    next = registerStubPush(prefs, "web", new Date(), "granted");
   }
 
   const saved = saveNotificationPreferences(next);

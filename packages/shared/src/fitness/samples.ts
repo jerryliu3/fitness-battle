@@ -23,6 +23,7 @@ export function activityFromSample(
   if (!sample.startedAt || Number.isNaN(new Date(sample.startedAt).getTime())) {
     return null;
   }
+  const isDemo = provenance === "demo";
   const recorded = provenance === "recorded";
   return {
     id: sample.id,
@@ -31,12 +32,13 @@ export function activityFromSample(
     distanceM,
     movingSec,
     avgHr: sample.avgHr ?? null,
-    verified: recorded && sport.gps,
+    verified: !isDemo && recorded && sport.gps,
     source: sample.provider as Activity["source"],
     provenance,
-    disposition: provenance === "imported" ? "pending" : "counted",
-    dispositionReason:
-      provenance === "imported"
+    disposition: isDemo ? "excluded" : provenance === "imported" ? "pending" : "counted",
+    dispositionReason: isDemo
+      ? "Sample tracker data does not count."
+      : provenance === "imported"
         ? "File import is pending until you count it."
         : undefined,
   };

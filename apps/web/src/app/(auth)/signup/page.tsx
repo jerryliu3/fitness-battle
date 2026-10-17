@@ -23,9 +23,9 @@ function SignupForm() {
 
   useEffect(() => {
     if (!loading && user) {
-      router.replace("/onboarding");
+      router.replace(next);
     }
-  }, [loading, user, router]);
+  }, [loading, user, next, router]);
 
   async function onSubmit(event: FormEvent) {
     event.preventDefault();

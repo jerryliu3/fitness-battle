@@ -159,7 +159,11 @@ function YouContent() {
     windowKind?: string;
     source?: string;
   }) {
-    const provenance = body.source === "file" ? "imported" : "recorded";
+    const provenance = body.usedMock
+      ? "demo"
+      : body.source === "file"
+        ? "imported"
+        : "recorded";
     const activities = (body.activities ?? [])
       .map((sample) => activityFromSample(sample, provenance))
       .filter((activity) => activity != null);

@@ -103,7 +103,7 @@ export function preferencesFromRemote(
         lesson_reminder: row.lesson_reminder,
         connection_alerts: row.connection_alerts,
       } satisfies Record<NotificationCategoryId, boolean>,
-      permissionStatus: device?.permission_status ?? (row.enabled ? "prompt" : "unknown"),
+      permissionStatus: device?.permission_status ?? "prompt",
       registration,
       updatedAt: row.updated_at,
     },

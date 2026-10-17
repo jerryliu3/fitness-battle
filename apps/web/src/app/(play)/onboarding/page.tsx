@@ -40,8 +40,9 @@ function OnboardingFlow() {
         <p className="fb-kicker">You are set</p>
         <h1 className="fb-title">Onboarding already finished</h1>
         <p className="fb-copy">
-          Preferences and the one-time {BACKFILL_DAYS}-day calibration cannot be
-          run again.
+          {state.calibrated
+            ? `Preferences and the one-time ${BACKFILL_DAYS}-day calibration cannot be run again.`
+            : "Onboarding is complete. You can update preferences and run your one-time calibration anytime from Athlete."}
         </p>
         <button type="button" className="fb-btn" onClick={() => router.replace("/")}>
           Back to Today
@@ -85,9 +86,8 @@ function OnboardingFlow() {
       dispatch({ type: "link", provider: "strava" });
       setConnectMessage(
         body.message ??
-          "Demo tracker linked (stub). Live Strava needs API keys on the server.",
+          "Live Strava needs server API keys. Demo stub linked for testing.",
       );
-      setStep("backfill");
     } catch {
       setConnectMessage("Could not reach the connect route. You can skip for now.");
     } finally {
@@ -204,9 +204,15 @@ function OnboardingFlow() {
             </div>
           ))}
           {connectMessage ? <p className="fb-note">{connectMessage}</p> : null}
-          <button type="button" className="fb-btn" disabled={busy} onClick={connectTracker}>
-            {busy ? "Connecting…" : "Link Strava"}
-          </button>
+          {state.links.find((l) => l.provider === "strava")?.linked ? (
+            <button type="button" className="fb-btn" onClick={() => setStep("backfill")}>
+              Continue to calibration
+            </button>
+          ) : (
+            <button type="button" className="fb-btn" disabled={busy} onClick={connectTracker}>
+              {busy ? "Connecting…" : "Link Strava"}
+            </button>
+          )}
           <button type="button" className="fb-btn-line" onClick={() => setStep("backfill")}>
             Skip for now
           </button>
