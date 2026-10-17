@@ -98,7 +98,7 @@ export function BrandGallery({
           overtaek
         </Link>
         <span>BRAND & EMBER STUDIO</span>
-        <Link href="/design/mascot">Current Ember rig ↗</Link>
+        <Link href="/design/brand/motion">Compare Ember loading styles ↗</Link>
       </header>
       <section className="brand-studio-intro">
         <div>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ComponentProps, type ReactNode } from "react";
 import { EMBER_K_SIZE_EM, EMBER_LAUNCH_DURATION, emberSkidWordmarkLayout, sampleEmberSkid } from "@fitness-battle/shared/mascot";
 import { Ember } from "@/components/mascot/ember";
 import {
@@ -16,13 +16,15 @@ type BootSplashProps = {
   onAnimationComplete: () => void;
   /** Authoring surface only; product callers leave this undefined. */
   progress?: number;
+  /** Design review injection; production keeps the canonical Ember. */
+  renderCharacter?: (props: ComponentProps<typeof Ember>) => ReactNode;
 };
 
 /**
  * Product boot splash: OVERTAKE → OVERTAEK.
  * A single K outline unfolds into Ember, flies the word and returns to K.
  */
-export function BootSplash({ waiting = false, onAnimationComplete, progress }: BootSplashProps) {
+export function BootSplash({ waiting = false, onAnimationComplete, progress, renderCharacter }: BootSplashProps) {
   const stageRef = useRef<HTMLDivElement>(null);
   const wordRef = useRef<HTMLDivElement>(null);
   const lettersRef = useRef<HTMLSpanElement>(null);
@@ -181,7 +183,7 @@ export function BootSplash({ waiting = false, onAnimationComplete, progress }: B
     // Fallback: If page is opened in a background tab or emulation where document.hidden is true,
     // settle after the animation duration so the app is never blocked forever.
     const fallbackTimer = window.setTimeout(() => {
-      if (!completed.current && !disposed) {
+      if (preview.current === undefined && !completed.current && !disposed) {
         settle();
         finish();
       }
@@ -217,7 +219,7 @@ export function BootSplash({ waiting = false, onAnimationComplete, progress }: B
           <span ref={baselineRef} style={{width:0,height:0,flex:"none"}} aria-hidden="true"/>
         </div>
         <span ref={emberHostRef} className="boot-splash-ember-fly" aria-hidden="true">
-          <Ember pose={character.pose} morph={character.morph} morphConcept="crest-launch" launchFlight={character.flight} launchCrouch={character.crouch} launchSkid={character.skid} skidSpray={character.spray} shadow={false} />
+          {(renderCharacter ?? (props => <Ember {...props} />))({ pose: character.pose, morph: character.morph, morphConcept: "crest-launch", launchFlight: character.flight, launchCrouch: character.crouch, launchSkid: character.skid, skidSpray: character.spray, shadow: false })}
         </span>
       </div>
       {waiting ? (
