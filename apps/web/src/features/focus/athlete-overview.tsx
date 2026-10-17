@@ -103,13 +103,17 @@ export function AthleteOverview({
           }
         >
           <path d="M0 35H320M0 75H320M0 115H320" stroke="#e0e5dd" />
-          <polyline
-            points={points}
-            stroke="#26382d"
-            strokeWidth="3"
-            strokeLinejoin="round"
-            fill="none"
-          />
+          {values.length === 1 ? (
+            <circle cx="160" cy="60" r="5" fill="#26382d" />
+          ) : (
+            <polyline
+              points={points}
+              stroke="#26382d"
+              strokeWidth="3"
+              strokeLinejoin="round"
+              fill="none"
+            />
+          )}
         </svg>
         <p className="fb-note">
           {history.length
