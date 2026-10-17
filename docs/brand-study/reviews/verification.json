@@ -1,0 +1,322 @@
+{
+  "date": "2026-10-17",
+  "desktopProduct": [
+    {
+      "artLoaded": true,
+      "chart": true,
+      "concept": "Everyday Club",
+      "overflow": []
+    },
+    {
+      "artLoaded": true,
+      "chart": true,
+      "concept": "Open Field",
+      "overflow": []
+    },
+    {
+      "artLoaded": true,
+      "chart": true,
+      "concept": "Pocket Arena",
+      "overflow": []
+    },
+    {
+      "artLoaded": true,
+      "chart": true,
+      "concept": "Current Ember",
+      "overflow": []
+    },
+    {
+      "artLoaded": true,
+      "chart": true,
+      "concept": "The Pass",
+      "overflow": []
+    },
+    {
+      "artLoaded": true,
+      "chart": true,
+      "concept": "After Hours",
+      "overflow": []
+    },
+    {
+      "artLoaded": true,
+      "chart": true,
+      "concept": "Rival Club",
+      "overflow": []
+    },
+    {
+      "artLoaded": true,
+      "chart": true,
+      "concept": "Good Pressure",
+      "overflow": []
+    },
+    {
+      "artLoaded": true,
+      "chart": true,
+      "concept": "Marginal Gains",
+      "overflow": []
+    },
+    {
+      "artLoaded": true,
+      "chart": true,
+      "concept": "Proof of Work",
+      "overflow": []
+    },
+    {
+      "artLoaded": true,
+      "chart": true,
+      "concept": "The Weekly Sport",
+      "overflow": []
+    },
+    {
+      "artLoaded": true,
+      "chart": true,
+      "concept": "Higher Ground",
+      "overflow": []
+    },
+    {
+      "artLoaded": true,
+      "chart": true,
+      "concept": "Play Forward",
+      "overflow": []
+    },
+    {
+      "artLoaded": true,
+      "chart": true,
+      "concept": "Chain Reaction",
+      "overflow": []
+    }
+  ],
+  "mobileProduct": [
+    {
+      "concept": "Everyday Club",
+      "overflow": [],
+      "pageOverflow": false,
+      "width": 305
+    },
+    {
+      "concept": "Open Field",
+      "overflow": [],
+      "pageOverflow": false,
+      "width": 305
+    },
+    {
+      "concept": "Pocket Arena",
+      "overflow": [],
+      "pageOverflow": false,
+      "width": 305
+    },
+    {
+      "concept": "Current Ember",
+      "overflow": [],
+      "pageOverflow": false,
+      "width": 305
+    },
+    {
+      "concept": "The Pass",
+      "overflow": [],
+      "pageOverflow": false,
+      "width": 305
+    },
+    {
+      "concept": "After Hours",
+      "overflow": [],
+      "pageOverflow": false,
+      "width": 305
+    },
+    {
+      "concept": "Rival Club",
+      "overflow": [],
+      "pageOverflow": false,
+      "width": 305
+    },
+    {
+      "concept": "Good Pressure",
+      "overflow": [],
+      "pageOverflow": false,
+      "width": 305
+    },
+    {
+      "concept": "Marginal Gains",
+      "overflow": [],
+      "pageOverflow": false,
+      "width": 305
+    },
+    {
+      "concept": "Proof of Work",
+      "overflow": [],
+      "pageOverflow": false,
+      "width": 305
+    },
+    {
+      "concept": "The Weekly Sport",
+      "overflow": [],
+      "pageOverflow": false,
+      "width": 305
+    },
+    {
+      "concept": "Higher Ground",
+      "overflow": [],
+      "pageOverflow": false,
+      "width": 305
+    },
+    {
+      "concept": "Play Forward",
+      "overflow": [],
+      "pageOverflow": false,
+      "width": 305
+    },
+    {
+      "concept": "Chain Reaction",
+      "overflow": [],
+      "pageOverflow": false,
+      "width": 305
+    }
+  ],
+  "additionalMobile": [
+    {
+      "heading": "Your Ember locker",
+      "overflow": [],
+      "pageOverflow": false,
+      "width": 305
+    },
+    {
+      "heading": "Your Ember locker",
+      "overflow": [],
+      "pageOverflow": false,
+      "width": 305
+    },
+    {
+      "heading": "Current Ember",
+      "overflow": [],
+      "pageOverflow": false,
+      "width": 305
+    },
+    {
+      "heading": "Everyday Club",
+      "overflow": [],
+      "pageOverflow": false,
+      "width": 375
+    },
+    {
+      "heading": "Open Field",
+      "overflow": [],
+      "pageOverflow": false,
+      "width": 375
+    },
+    {
+      "heading": "Pocket Arena",
+      "overflow": [],
+      "pageOverflow": false,
+      "width": 375
+    }
+  ],
+  "currentEmberSmallScreenBoard": {
+    "fontSize": "28px",
+    "overflow": false,
+    "scrollWidth": 221,
+    "text": "Small star.\nReal momentum.\n",
+    "width": 221
+  },
+  "campaigns": [
+    {
+      "concept": "Everyday Club",
+      "poster": true,
+      "textOverflow": [],
+      "intentionalGraphicCropping": false
+    },
+    {
+      "concept": "Open Field",
+      "poster": true,
+      "textOverflow": [],
+      "intentionalGraphicCropping": false
+    },
+    {
+      "concept": "Pocket Arena",
+      "poster": true,
+      "textOverflow": [],
+      "intentionalGraphicCropping": false
+    },
+    {
+      "concept": "Current Ember",
+      "poster": true,
+      "textOverflow": [],
+      "intentionalGraphicCropping": false
+    },
+    {
+      "concept": "The Pass",
+      "poster": true,
+      "textOverflow": [],
+      "intentionalGraphicCropping": true
+    },
+    {
+      "concept": "After Hours",
+      "poster": true,
+      "textOverflow": [],
+      "intentionalGraphicCropping": true
+    },
+    {
+      "concept": "Rival Club",
+      "poster": true,
+      "textOverflow": [],
+      "intentionalGraphicCropping": false
+    },
+    {
+      "concept": "Good Pressure",
+      "poster": true,
+      "textOverflow": [],
+      "intentionalGraphicCropping": true
+    },
+    {
+      "concept": "Marginal Gains",
+      "poster": true,
+      "textOverflow": [],
+      "intentionalGraphicCropping": false
+    },
+    {
+      "concept": "Proof of Work",
+      "poster": true,
+      "textOverflow": [],
+      "intentionalGraphicCropping": false
+    },
+    {
+      "concept": "The Weekly Sport",
+      "poster": true,
+      "textOverflow": [],
+      "intentionalGraphicCropping": false
+    },
+    {
+      "concept": "Higher Ground",
+      "poster": true,
+      "textOverflow": [],
+      "intentionalGraphicCropping": true
+    },
+    {
+      "concept": "Play Forward",
+      "poster": true,
+      "textOverflow": [],
+      "intentionalGraphicCropping": false
+    },
+    {
+      "concept": "Chain Reaction",
+      "poster": true,
+      "textOverflow": [],
+      "intentionalGraphicCropping": true
+    }
+  ],
+  "interactionChecks": {
+    "previousWeekUpdatesRankAndGap": true,
+    "pastYouComparison": true,
+    "radixDialogFocusIsolation": true,
+    "escapeDismissal": true,
+    "lockedPreviewDoesNotEquip": true,
+    "ownedArcadeEquips": true,
+    "runPreviewStartsAndPauses": true
+  },
+  "tests": {
+    "workspaceTests": 350,
+    "newStudyTests": 6,
+    "typecheck": "passed",
+    "webBuild": "passed"
+  },
+  "browserErrors": []
+}
