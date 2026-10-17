@@ -16,7 +16,7 @@ import {
 } from "@fitness-battle/shared";
 import {
   JourneyTrail,
-  planJourneyLanes,
+  planJourneyTrail,
   type JourneyLane,
 } from "./journey-trail";
 
@@ -27,24 +27,22 @@ type JourneyStop =
   | { key: "start"; kind: "start"; lane: JourneyLane };
 
 function buildJourneyStops(sessions: Activity[]): JourneyStop[] {
-  const lanes = planJourneyLanes(sessions.length);
+  // Lanes assigned bottom-up from Start — earlier sessions keep their side
+  // when a newer activity is prepended (see planJourneyTrail).
+  const plan = planJourneyTrail(sessions);
   const stops: JourneyStop[] = [
-    { key: "future", kind: "future", lane: lanes[0]! },
-    { key: "today", kind: "today", lane: lanes[1]! },
+    { key: "future", kind: "future", lane: plan.future },
+    { key: "today", kind: "today", lane: plan.today },
   ];
   sessions.forEach((activity, i) => {
     stops.push({
       key: activity.id,
       kind: "session",
-      lane: lanes[2 + i]!,
+      lane: plan.sessions[i]!,
       activity,
     });
   });
-  stops.push({
-    key: "start",
-    kind: "start",
-    lane: lanes[2 + sessions.length]!,
-  });
+  stops.push({ key: "start", kind: "start", lane: plan.start });
   return stops;
 }
 
@@ -236,7 +234,11 @@ export function TodayScreen() {
           <span className="fb-note">Last {sessions.length} sessions</span>
         ) : null}
       </div>
-      <JourneyTrail stopCount={journeyStops.length} active={!expanded}>
+      <JourneyTrail
+        stopCount={journeyStops.length}
+        layoutKey={journeyStops.map((s) => `${s.key}:${s.lane}`).join("|")}
+        active={!expanded}
+      >
         {({ setStopRef }) =>
           journeyStops.map((stop, index) => (
             <div

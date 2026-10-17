@@ -9,8 +9,12 @@ import {
 } from "react";
 import { routeThroughCenters, type JourneyPt } from "./journey-route";
 
-export type { JourneyLane } from "./journey-route";
-export { planJourneyLanes, routeThroughCenters } from "./journey-route";
+export type { JourneyLane, JourneyLanePlan } from "./journey-route";
+export {
+  planJourneyLanes,
+  planJourneyTrail,
+  routeThroughCenters,
+} from "./journey-route";
 
 function readStopCenters(
   svg: SVGSVGElement,
@@ -39,10 +43,13 @@ function readStopCenters(
  */
 export function JourneyTrail({
   stopCount,
+  /** Changes when stop identity/order changes (not only count) so the route remeasures. */
+  layoutKey,
   active = true,
   children,
 }: {
   stopCount: number;
+  layoutKey: string;
   active?: boolean;
   children: (api: {
     setStopRef: (index: number) => Ref<HTMLButtonElement>;
@@ -79,7 +86,7 @@ export function JourneyTrail({
       ro.disconnect();
       window.removeEventListener("resize", redraw);
     };
-  }, [active, stopCount]);
+  }, [active, stopCount, layoutKey]);
 
   const setStopRef =
     (index: number): Ref<HTMLButtonElement> =>

@@ -3,21 +3,83 @@ export type JourneyLane = "l" | "c" | "r";
 
 export type JourneyPt = { x: number; y: number };
 
+export type JourneyLanePlan = {
+  /** Top placeholder — prefers right when allowed. */
+  future: JourneyLane;
+  /** Ember / today stop — prefers center when allowed. */
+  today: JourneyLane;
+  /** Newest-first, same order as the sessions list passed in. */
+  sessions: JourneyLane[];
+  /** Always center. */
+  start: "c";
+};
+
+/** Next lane in the winding — never equals `prev`. */
+export function nextLane(
+  prev: JourneyLane,
+  prefer?: JourneyLane,
+): JourneyLane {
+  if (prefer && prefer !== prev) return prefer;
+  if (prev === "c") return "l";
+  if (prev === "l") return "r";
+  return "l";
+}
+
 /**
- * Lane plan for an arbitrary stop list.
- * Default winding: future right → today center → sessions L/R/L… → start center.
- * Count and order are free to change; this is just one planner.
+ * Assign lanes bottom-up from Start so earlier stops stay put when a newer
+ * session is prepended (append-stable). Rules:
+ * - Start is always center
+ * - No lane repeats consecutively
+ * - Today prefers center; future prefers right
+ *
+ * Display order is still future → today → sessions(newest-first) → start;
+ * assignment walks start → oldest session → … → newest → today → future.
  */
-export function planJourneyLanes(sessionCount: number): JourneyLane[] {
-  return [
-    "r",
-    "c",
-    ...Array.from(
-      { length: sessionCount },
-      (_, i): JourneyLane => (i % 2 === 0 ? "l" : "r"),
-    ),
-    "c",
-  ];
+export function planJourneyTrail(
+  sessionsNewestFirst: ReadonlyArray<{ id: string }>,
+): JourneyLanePlan {
+  const byId = new Map<string, JourneyLane>();
+  let prev: JourneyLane = "c"; // start
+
+  // Oldest → newest so a newly logged session only extends the tip.
+  for (const session of [...sessionsNewestFirst].reverse()) {
+    const lane = nextLane(prev);
+    byId.set(session.id, lane);
+    prev = lane;
+  }
+
+  const today = nextLane(prev, "c");
+  prev = today;
+  const future = nextLane(prev, "r");
+
+  return {
+    future,
+    today,
+    sessions: sessionsNewestFirst.map((s) => byId.get(s.id)!),
+    start: "c",
+  };
+}
+
+/** Flat display order: future → today → sessions → start (for tests / callers). */
+export function planJourneyLanes(
+  sessionsNewestFirst: ReadonlyArray<{ id: string }> | number,
+): JourneyLane[] {
+  const sessions =
+    typeof sessionsNewestFirst === "number"
+      ? Array.from({ length: sessionsNewestFirst }, (_, i) => ({
+          id: `session-${i}`,
+        }))
+      : sessionsNewestFirst;
+  const plan = planJourneyTrail(sessions);
+  return [plan.future, plan.today, ...plan.sessions, plan.start];
+}
+
+/** Assert invariant used by tests and debug. */
+export function lanesHaveNoConsecutiveRepeats(lanes: JourneyLane[]): boolean {
+  for (let i = 1; i < lanes.length; i++) {
+    if (lanes[i] === lanes[i - 1]) return false;
+  }
+  return true;
 }
 
 /**

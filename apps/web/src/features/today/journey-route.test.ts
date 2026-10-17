@@ -1,12 +1,49 @@
 import { describe, expect, it } from "vitest";
-import { planJourneyLanes, routeThroughCenters } from "./journey-route";
+import {
+  lanesHaveNoConsecutiveRepeats,
+  planJourneyLanes,
+  planJourneyTrail,
+  routeThroughCenters,
+} from "./journey-route";
 
-describe("planJourneyLanes", () => {
-  it("winds future→today→sessions→start for any session count", () => {
-    expect(planJourneyLanes(0)).toEqual(["r", "c", "c"]);
-    expect(planJourneyLanes(1)).toEqual(["r", "c", "l", "c"]);
-    expect(planJourneyLanes(2)).toEqual(["r", "c", "l", "r", "c"]);
-    expect(planJourneyLanes(3)).toEqual(["r", "c", "l", "r", "l", "c"]);
+describe("planJourneyTrail", () => {
+  it("keeps start centered and never repeats a lane consecutively", () => {
+    for (const n of [0, 1, 2, 3, 4, 5, 8]) {
+      const lanes = planJourneyLanes(n);
+      expect(lanes[lanes.length - 1]).toBe("c");
+      expect(lanesHaveNoConsecutiveRepeats(lanes)).toBe(true);
+    }
+  });
+
+  it("puts future on the right when today is not already right", () => {
+    expect(planJourneyTrail([]).future).toBe("r");
+    expect(planJourneyTrail([{ id: "a" }]).future).toBe("r");
+    expect(planJourneyTrail([{ id: "b" }, { id: "a" }]).future).toBe("r");
+  });
+
+  it("keeps earlier session lanes stable when a newer session is prepended", () => {
+    const before = planJourneyTrail([{ id: "newish" }, { id: "oldest" }]);
+    const after = planJourneyTrail([
+      { id: "newest" },
+      { id: "newish" },
+      { id: "oldest" },
+    ]);
+    // sessions arrays are newest-first — oldest stays at the end with same lane
+    expect(after.sessions[2]).toBe(before.sessions[1]); // oldest
+    expect(after.sessions[1]).toBe(before.sessions[0]); // newish
+    expect(after.start).toBe("c");
+    expect(lanesHaveNoConsecutiveRepeats([
+      after.future,
+      after.today,
+      ...after.sessions,
+      after.start,
+    ])).toBe(true);
+  });
+
+  it("prefers today on center once at least one session exists", () => {
+    expect(planJourneyTrail([{ id: "a" }]).today).toBe("c");
+    // Zero sessions: start is already center, so today must step aside
+    expect(planJourneyTrail([]).today).not.toBe("c");
   });
 });
 
