@@ -68,6 +68,8 @@ export function FieldStage({
   const [showGhost, setShowGhost] = useState(true);
   const [selected, setSelected] = useState<string | null>(null);
   const [unavailable, setUnavailable] = useState(false);
+  const toggleSelect = (id: string) =>
+    setSelected((prev) => (prev === id ? null : id));
 
   const view: ArenaViewWindow = { center: center ?? total, span };
   const sceneLanes: ArenaSceneLane[] = [
@@ -144,7 +146,7 @@ export function FieldStage({
             .map((r) => (
               <button
                 key={r.id}
-                onClick={() => setSelected(r.id)}
+                onClick={() => toggleSelect(r.id)}
                 aria-pressed={selected === r.id}
               >
                 <span>{placeAt(runners, r.id, time, 0)}</span>
@@ -175,7 +177,7 @@ export function FieldStage({
                   unit={unit}
                   view={view}
                   onPan={(v) => setCenter(Math.max(0, v))}
-                  onSelect={setSelected}
+                  onSelect={toggleSelect}
                   onUnavailable={() => setUnavailable(true)}
                 />
                 <div className="focus-camera">
@@ -194,7 +196,7 @@ export function FieldStage({
                 view={view}
                 unit={unit}
                 selected={trackSelected || you.id}
-                onSelect={setSelected}
+                onSelect={toggleSelect}
                 onPan={(v) => setCenter(Math.max(0, v))}
               />
             )}
