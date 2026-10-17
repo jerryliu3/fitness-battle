@@ -7,7 +7,8 @@ import { defaultLook } from "@/features/field/avatar";
 import { stableLanes, type SceneRunner } from "@/features/field/geometry";
 import { buildSplitBoard } from "@/features/split/model";
 import {
-  activityEffort, competeNow, countsOnTrack, formatEffort, formatVolume,
+  APP_TIMEZONE,
+  activityEffort, competeNow, countsOnTrack, dayKey, formatEffort, formatVolume,
   initialsFromName, lessonFor, rankForElo, reduceCompete, sportById, suggestionForState,
   type Activity, type CompeteState,
 } from "@fitness-battle/shared";
@@ -28,7 +29,7 @@ const Pursuit = dynamic(() => import("@/features/field/components/live-pursuit")
   ssr: false, loading: () => <div className="ah-scene-loading">Opening your field…</div>,
 });
 type Detail = { title: string; body: ReactNode } | null;
-function formatDay(at: string) { return new Date(at).toLocaleDateString("en-US", { weekday: "short", timeZone: "UTC" }); }
+function formatDay(at: string) { return new Date(at).toLocaleDateString("en-US", { weekday: "short", timeZone: APP_TIMEZONE }); }
 function valueLabel(value: number, unit: string) { return `${value.toFixed(1)} ${unit}`; }
 
 /** Native modal sheet: direct content, Escape, focus trapping and return focus. */
@@ -124,7 +125,7 @@ function AdaptiveHome({ state, layout, accountId, baseline, persist, failed, sam
   const unit = sport.gps ? "km" : "pts";
   const today = state.primary === "running" ? suggestionForState(state, now) : lessonFor(state.primary, now);
   const lesson = lessonFor(state.primary, now);
-  const done = state.lessonDoneOn === now.toISOString().slice(0, 10);
+  const done = state.lessonDoneOn === dayKey(now);
   const activities = board.weekActivities.filter(a => countsOnTrack(a, "open") && new Date(a.startedAt) <= now);
   const gain = arrival ? progressGain(arrival.previous, arrival.current) : null;
   const saveSeen = useCallback((value: ProgressSnapshot) => {

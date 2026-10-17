@@ -1,4 +1,4 @@
-import { hashString, unitInterval } from "../compete/sports";
+import { dayKey, hashString, unitInterval } from "../compete/sports";
 import type { SportId } from "../compete/sports";
 import type { SyntheticRival } from "./types";
 
@@ -204,27 +204,21 @@ export function syntheticVolumeInWindow(
 
   let distanceM = 0;
   let movingSec = 0;
-  let cursor = new Date(
-    Date.UTC(
-      waveStart.getUTCFullYear(),
-      waveStart.getUTCMonth(),
-      waveStart.getUTCDate(),
-    ),
-  );
+  let cursor = new Date(waveStart.getTime());
 
   while (cursor.getTime() < through.getTime()) {
     const dayEnd = new Date(cursor.getTime() + dayMs);
-    const dayKey = cursor.toISOString().slice(0, 10);
+    const day = dayKey(cursor);
     // ~5 active days / week on average, scaled by Elo band.
     const activeChance = 0.55 + (rival.elo - 1000) * 0.00025;
-    const rolls = unitInterval(`${rival.id}:day:${dayKey}:${track}`);
+    const rolls = unitInterval(`${rival.id}:day:${day}:${track}`);
     if (rolls < Math.min(0.92, Math.max(0.35, activeChance))) {
       const dayShare =
-        (0.7 + unitInterval(`${rival.id}:share:${dayKey}`) * 0.6) / 7;
+        (0.7 + unitInterval(`${rival.id}:share:${day}`) * 0.6) / 7;
       if (gps) {
         const km = fullWeekKm * dayShare;
         const minPerKm =
-          5.1 + unitInterval(`${rival.id}:pace:${dayKey}`) * 1.5;
+          5.1 + unitInterval(`${rival.id}:pace:${day}`) * 1.5;
         distanceM += km * 1000;
         movingSec += km * minPerKm * 60;
       } else {

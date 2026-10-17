@@ -230,7 +230,7 @@ values
     'Dana Singh',
     '',
     'running',
-    'UTC',
+    'America/New_York',
     null,
     null,
     null
@@ -262,7 +262,7 @@ values
     3,
     true,
     true,
-    (date_trunc('week', (now() at time zone 'utc')) at time zone 'utc'),
+    (date_trunc('week', (now() at time zone 'America/New_York')) at time zone 'America/New_York'),
     'sport',
     'running'
   ),
@@ -271,7 +271,7 @@ values
     3,
     true,
     true,
-    (date_trunc('week', (now() at time zone 'utc')) at time zone 'utc'),
+    (date_trunc('week', (now() at time zone 'America/New_York')) at time zone 'America/New_York'),
     'sport',
     'running'
   ),
@@ -280,7 +280,7 @@ values
     3,
     true,
     true,
-    (date_trunc('week', (now() at time zone 'utc')) at time zone 'utc'),
+    (date_trunc('week', (now() at time zone 'America/New_York')) at time zone 'America/New_York'),
     'sport',
     'running'
   )
@@ -312,7 +312,7 @@ values
     true,
     1040,
     1040,
-    (date_trunc('week', (now() at time zone 'utc')) at time zone 'utc')
+    (date_trunc('week', (now() at time zone 'America/New_York')) at time zone 'America/New_York')
   ),
   (
     '22222222-2222-4222-8222-222222222222',
@@ -322,7 +322,7 @@ values
     true,
     980,
     980,
-    (date_trunc('week', (now() at time zone 'utc')) at time zone 'utc')
+    (date_trunc('week', (now() at time zone 'America/New_York')) at time zone 'America/New_York')
   ),
   (
     '33333333-3333-4333-8333-333333333333',
@@ -332,7 +332,7 @@ values
     true,
     1010,
     1010,
-    (date_trunc('week', (now() at time zone 'utc')) at time zone 'utc')
+    (date_trunc('week', (now() at time zone 'America/New_York')) at time zone 'America/New_York')
   )
 on conflict (user_id, sport) do update
 set
@@ -406,7 +406,7 @@ values
     'mock',
     'seed-alice-mon',
     '11111111-1111-4111-8111-111111111101',
-    (date_trunc('week', (now() at time zone 'utc')) at time zone 'utc') + interval '1 day 7 hours',
+    (date_trunc('week', (now() at time zone 'America/New_York')) at time zone 'America/New_York') + interval '1 day 7 hours',
     8200,
     'Prospect Park loop',
     2640,
@@ -424,7 +424,7 @@ values
     'mock',
     'seed-bob-tue',
     '11111111-1111-4111-8111-111111111101',
-    (date_trunc('week', (now() at time zone 'utc')) at time zone 'utc') + interval '2 days 6 hours',
+    (date_trunc('week', (now() at time zone 'America/New_York')) at time zone 'America/New_York') + interval '2 days 6 hours',
     5100,
     'Queens easy',
     1920,
@@ -442,7 +442,7 @@ values
     'mock',
     'seed-carla-wed',
     '11111111-1111-4111-8111-111111111101',
-    (date_trunc('week', (now() at time zone 'utc')) at time zone 'utc') + interval '3 days 18 hours',
+    (date_trunc('week', (now() at time zone 'America/New_York')) at time zone 'America/New_York') + interval '3 days 18 hours',
     10400,
     'Hudson path',
     3180,
@@ -477,7 +477,7 @@ values
     'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
     '11111111-1111-4111-8111-111111111111',
     'mock-seed-alice-mon',
-    (date_trunc('week', (now() at time zone 'utc')) at time zone 'utc') + interval '1 day 7 hours',
+    (date_trunc('week', (now() at time zone 'America/New_York')) at time zone 'America/New_York') + interval '1 day 7 hours',
     'running',
     8200,
     2640,
@@ -488,7 +488,7 @@ values
     'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
     '22222222-2222-4222-8222-222222222222',
     'mock-seed-bob-tue',
-    (date_trunc('week', (now() at time zone 'utc')) at time zone 'utc') + interval '2 days 6 hours',
+    (date_trunc('week', (now() at time zone 'America/New_York')) at time zone 'America/New_York') + interval '2 days 6 hours',
     'running',
     5100,
     1920,
@@ -499,7 +499,7 @@ values
     'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
     '33333333-3333-4333-8333-333333333333',
     'mock-seed-carla-wed',
-    (date_trunc('week', (now() at time zone 'utc')) at time zone 'utc') + interval '3 days 18 hours',
+    (date_trunc('week', (now() at time zone 'America/New_York')) at time zone 'America/New_York') + interval '3 days 18 hours',
     'running',
     10400,
     3180,

@@ -2,8 +2,10 @@
 import { useRef, useState } from "react";
 import { useCompete } from "@/components/compete-context";
 import {
+  APP_TIMEZONE,
   competeNow,
   countsOnTrack,
+  dayKey,
   distanceUnitLabel,
   formatDistanceM,
   initialsFromName,
@@ -115,8 +117,9 @@ export function AthleteOverview({
   const dailyValues: number[] = [];
   for (let d = 29; d >= 0; d--) {
     const dayDate = new Date(today.getTime() - d * 24 * 3600 * 1000);
-    const dayIso = dayDate.toISOString().slice(0, 10);
-    const matching = history.filter((r) => r.periodStart.slice(0, 10) <= dayIso);
+    const dayIso = dayKey(dayDate);
+    // Find the latest settled result on or before this day
+    const matching = history.filter((r) => dayKey(new Date(r.periodStart)) <= dayIso);
     if (matching.length > 0) {
       dailyValues.push(matching[matching.length - 1].eloAfter);
     } else if (history.length > 0) {
@@ -156,12 +159,12 @@ export function AthleteOverview({
   const startDateLabel = thirtyDaysAgo.toLocaleDateString("en-US", {
     month: "short",
     day: "numeric",
-    timeZone: "UTC",
+    timeZone: APP_TIMEZONE,
   });
   const todayDateLabel = today.toLocaleDateString("en-US", {
     month: "short",
     day: "numeric",
-    timeZone: "UTC",
+    timeZone: APP_TIMEZONE,
   });
 
   return (

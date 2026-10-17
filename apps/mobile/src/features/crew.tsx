@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Pressable, Text, TextInput, View } from "react-native";
 import { useAuth } from "../lib/auth";
 import { useCompeteStore } from "../lib/compete-store";
+import { APP_TIMEZONE } from "@fitness-battle/shared";
 import { mobileEnv } from "../lib/env";
 import { FocusButton, FocusSheet, f } from "../ui/focus";
 import { useRouter } from "expo-router";
@@ -353,7 +354,11 @@ export function CrewHub() {
                               ?.display_name ?? "Athlete"}
                           </Text>
                           <Text style={f.small}>
-                            {new Date(e.started_at).toLocaleDateString()}
+                            {new Date(e.started_at).toLocaleDateString("en-US", {
+                              month: "short",
+                              day: "numeric",
+                              timeZone: APP_TIMEZONE,
+                            })}
                           </Text>
                         </View>
                       </View>

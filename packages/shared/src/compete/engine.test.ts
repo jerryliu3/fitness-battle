@@ -49,7 +49,7 @@ describe("compete engine", () => {
   it("jumps the clock after a long gap instead of staying stale", () => {
     const ancient = freshState(new Date("2025-01-06T12:00:00.000Z"));
     const rolled = rollClock(ancient, new Date("2026-10-12T12:00:00.000Z"));
-    expect(rolled.clock.periodStart).toBe("2026-10-12T00:00:00.000Z");
+    expect(rolled.clock.periodStart).toBe("2026-10-12T04:00:00.000Z");
   });
 
   it("applies tracker rows once and marks a live link", () => {
@@ -111,7 +111,7 @@ describe("compete engine", () => {
     });
     expect(resumed.enrollments[0]?.autoEnrollNext).toBe(true);
 
-    const closed = rollClock(stopping, new Date("2026-10-19T00:01:00.000Z"));
+    const closed = rollClock(stopping, new Date("2026-10-19T04:01:00.000Z"));
     expect(closed.enrollments.find((item) => item.sport === "running")).toBeUndefined();
     expect(closed.ratings.find((item) => item.sport === "running")?.optedIn).toBe(
       false,
@@ -163,8 +163,8 @@ describe("compete engine", () => {
       now,
     });
     expect(joined.enrollments).toHaveLength(1);
-    expect(joined.enrollments[0]?.waveStart).toBe("2026-10-12T00:00:00.000Z");
-    expect(joined.enrollments[0]?.weekEnd).toBe("2026-10-19T00:00:00.000Z");
+    expect(joined.enrollments[0]?.waveStart).toBe("2026-10-12T04:00:00.000Z");
+    expect(joined.enrollments[0]?.weekEnd).toBe("2026-10-19T04:00:00.000Z");
     expect(joined.enrollments[0]?.syntheticIds).toHaveLength(7);
 
     const withWork = reduceCompete(joined, {
@@ -189,9 +189,9 @@ describe("compete engine", () => {
       type: "debug-close-week",
       now,
     });
-    // Monday UTC week reset
-    expect(closed.clock.periodStart).toBe("2026-10-19T00:00:00.000Z");
-    expect(closed.demoNow).toBe("2026-10-19T00:01:00.000Z");
+    // Monday America/New_York week reset
+    expect(closed.clock.periodStart).toBe("2026-10-19T04:00:00.000Z");
+    expect(closed.demoNow).toBe("2026-10-19T04:01:00.000Z");
     expect(closed.periodResults.length).toBeGreaterThan(0);
     expect(closed.pendingRevealIds.length).toBeGreaterThan(0);
     const open = closed.periodResults.find(
@@ -201,7 +201,7 @@ describe("compete engine", () => {
     expect(open?.fieldSize).toBe(8);
     expect(open?.eloBefore).toBe(1000);
     expect(typeof open?.eloAfter).toBe("number");
-    expect(closed.enrollments[0]?.waveStart).toBe("2026-10-19T00:00:00.000Z");
+    expect(closed.enrollments[0]?.waveStart).toBe("2026-10-19T04:00:00.000Z");
 
     const cleared = reduceCompete(closed, {
       type: "acknowledge-reveal",

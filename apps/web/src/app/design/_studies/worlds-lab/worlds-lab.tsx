@@ -168,7 +168,7 @@ export function WorldsLab() {
           ))}
         </nav>
         <div className="world-lab-meta">
-          <span>Illustrative week · 12–19 Oct 2026 UTC · sample imports</span>
+          <span>Illustrative week · 12–19 Oct 2026 ET · sample imports</span>
           <button
             onClick={() => setEvaluating(!evaluating)}
             aria-expanded={evaluating}

@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  APP_TIMEZONE,
   formatEloDelta,
   formatEffort,
   formatPlace,
@@ -15,14 +16,14 @@ function weekLabel(periodStart: string, periodEnd: string): string {
   const start = new Date(periodStart).toLocaleDateString("en-US", {
     month: "short",
     day: "numeric",
-    timeZone: "UTC",
+    timeZone: APP_TIMEZONE,
   });
   const end = new Date(new Date(periodEnd).getTime() - 1).toLocaleDateString(
     "en-US",
     {
       month: "short",
       day: "numeric",
-      timeZone: "UTC",
+      timeZone: APP_TIMEZONE,
     },
   );
   return `${start} – ${end}`;
@@ -70,7 +71,7 @@ export function WeekReveal({
       aria-labelledby="week-reveal-title"
       aria-modal="false"
     >
-      <p className="sp-reveal-kicker">Week complete · UTC</p>
+      <p className="sp-reveal-kicker">Week complete · Eastern Time</p>
       <h2 id="week-reveal-title">{headline}</h2>
       <p className="sp-reveal-week">
         {sport.name} · {weekLabel(result.periodStart, result.periodEnd)}

@@ -80,7 +80,7 @@ export function FlipWorld(p: WorldProps) {
           <article className="flip-feature-panel" data-cutoff={p.week.cutoff}>
             <span className="flip-panel-date">
               {p.week.cutoff === 0
-                ? "MONDAY / 00:00 UTC"
+                ? "MONDAY / 00:00 ET"
                 : `${current.day.toUpperCase()} / ${current.date}`}
             </span>
             <div className="flip-panel-sky" aria-hidden="true">

@@ -1,3 +1,4 @@
+import { dayKey, getZonedWeekday, startOfZonedDay } from "../period";
 import { dispositionOf, provenanceOf } from "./ledger";
 import type { Activity, CompeteState, GoalDistance, SportId, TrainingGoal } from "./sports";
 
@@ -67,10 +68,6 @@ const PLANS: Record<
 
 const DAY_MS = 86_400_000;
 
-function utcDay(date: Date): Date {
-  return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()));
-}
-
 function parseDeadline(deadline: string): Date | null {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(deadline)) return null;
   const parsed = new Date(`${deadline}T00:00:00.000Z`);
@@ -97,7 +94,7 @@ function countedSince(
   days: number,
   sport: SportId | null,
 ): Activity[] {
-  const start = utcDay(now).getTime() - days * DAY_MS;
+  const start = startOfZonedDay(now).getTime() - days * DAY_MS;
   return activities.filter((activity) => {
     if (sport && activity.sport !== sport) return false;
     if (provenanceOf(activity) === "demo") return false;
@@ -138,18 +135,18 @@ export function suggestOpen(
   now: Date,
   primary: SportId = "running",
 ): DaySuggestion {
-  const today = utcDay(now);
-  const todayKey = today.toISOString().slice(0, 10);
+  const today = startOfZonedDay(now);
+  const todayKey = dayKey(today);
   const recent = countedSince(activities, now, 7, null);
-  const todaySession = recent.find((activity) => activity.startedAt.slice(0, 10) === todayKey);
-  const yesterdayKey = new Date(today.getTime() - DAY_MS).toISOString().slice(0, 10);
-  const yesterday = recent.filter((activity) => activity.startedAt.slice(0, 10) === yesterdayKey);
+  const todaySession = recent.find((activity) => dayKey(new Date(activity.startedAt)) === todayKey);
+  const yesterdayKey = dayKey(new Date(today.getTime() - DAY_MS));
+  const yesterday = recent.filter((activity) => dayKey(new Date(activity.startedAt)) === yesterdayKey);
   const yesterdayMin = yesterday.reduce((sum, activity) => sum + activity.movingSec, 0) / 60;
   const yesterdayKm =
     yesterday
       .filter((activity) => activity.sport === primary)
       .reduce((sum, activity) => sum + activity.distanceM, 0) / 1000;
-  const prior = recent.filter((activity) => activity.startedAt.slice(0, 10) !== todayKey);
+  const prior = recent.filter((activity) => dayKey(new Date(activity.startedAt)) !== todayKey);
   const history = prior.length
     ? `${prior.length} counted session${prior.length === 1 ? "" : "s"} in the last 7 days.`
     : "No counted sessions in the last 7 days.";
@@ -229,17 +226,17 @@ export function suggestToday(
   const plan = PLANS[goal.distance];
   const deadline = parseDeadline(goal.deadline);
   if (!deadline) return suggestOpen(activities, now);
-  const today = utcDay(now);
-  const todayKey = today.toISOString().slice(0, 10);
+  const today = startOfZonedDay(now);
+  const todayKey = dayKey(today);
   const daysLeft = Math.round((deadline.getTime() - today.getTime()) / DAY_MS);
   const recent = countedSince(activities, now, 28, null);
   const sessions = recent.filter((activity) => activity.sport === sport);
   const longest = sessions.reduce((best, activity) => Math.max(best, activity.distanceM), 0) / 1000;
   const distances = sessions.map((activity) => activity.distanceM / 1000);
   const typical = median(distances.filter((km) => km < longest || sessions.length < 2));
-  const todaySession = recent.find((activity) => activity.startedAt.slice(0, 10) === todayKey);
-  const yesterdayKey = new Date(today.getTime() - DAY_MS).toISOString().slice(0, 10);
-  const yesterday = recent.filter((activity) => activity.startedAt.slice(0, 10) === yesterdayKey);
+  const todaySession = recent.find((activity) => dayKey(new Date(activity.startedAt)) === todayKey);
+  const yesterdayKey = dayKey(new Date(today.getTime() - DAY_MS));
+  const yesterday = recent.filter((activity) => dayKey(new Date(activity.startedAt)) === yesterdayKey);
   const yesterdayKm = yesterday
     .filter((activity) => activity.sport === sport)
     .reduce((sum, activity) => sum + activity.distanceM, 0) / 1000;
@@ -322,7 +319,7 @@ export function suggestToday(
   const reason = `${history} ${daysLeft} days remain, ${phase} phase.`;
   const longWeekday = mainWeekday(sessions) ?? 0;
   const qualityWeekday = longWeekday === 2 ? 4 : 2;
-  const weekday = today.getUTCDay();
+  const weekday = getZonedWeekday(today);
   const yesterdayHard = yesterdayMin >= 70 || (longest > 0 && yesterdayKm >= Math.max(8, longest * 0.75));
   const taperScale = phase === "taper" ? 0.6 : 1;
 
@@ -405,7 +402,7 @@ export function suggestToday(
 
   const useDistance = sport === "running" || longest >= 1;
   const anchor = sessions
-    .filter((activity) => new Date(activity.startedAt).getUTCDay() === longWeekday)
+    .filter((activity) => getZonedWeekday(new Date(activity.startedAt)) === longWeekday)
     .reduce((best, activity) => Math.max(best, activity.distanceM), 0) / 1000;
   const grewFrom = anchor > 0 ? anchor : longest;
   const stepLong = useDistance ? Math.min(sport === "running" ? plan.peakLongKm : grewFrom * 1.1, grewFrom * 1.1) : 0;
@@ -462,7 +459,7 @@ function mainWeekday(sessions: Activity[]): number | null {
   if (sessions.length < 2) return null;
   const totals = new Map<number, number>();
   for (const activity of sessions) {
-    const day = new Date(activity.startedAt).getUTCDay();
+    const day = getZonedWeekday(new Date(activity.startedAt));
     const weight = activity.distanceM > 0 ? activity.distanceM : activity.movingSec;
     totals.set(day, (totals.get(day) ?? 0) + weight);
   }

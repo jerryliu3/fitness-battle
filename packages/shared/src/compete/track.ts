@@ -1,3 +1,4 @@
+import { APP_TIMEZONE, endOfZonedDay } from "../period";
 import { periodEffort } from "./effort";
 import { athleteWeekEffort, type FieldAthlete } from "./field";
 import {
@@ -28,14 +29,14 @@ export interface CheckpointSeries {
 
 const DAY_MS = 86_400_000;
 
-function endOfUtcDay(dayStart: Date): Date {
-  return new Date(dayStart.getTime() + DAY_MS);
+function endOfPeriodDay(dayStart: Date): Date {
+  return endOfZonedDay(dayStart, APP_TIMEZONE);
 }
 
-function labelUtc(date: Date): string {
+function labelDay(date: Date): string {
   return date.toLocaleDateString("en-US", {
     weekday: "short",
-    timeZone: "UTC",
+    timeZone: APP_TIMEZONE,
   });
 }
 
@@ -46,7 +47,7 @@ function labelUtc(date: Date): string {
 export function checkpointLabels(
   dates: [Date, Date, Date],
 ): [string, string, string] {
-  const weekdays = dates.map(labelUtc) as [string, string, string];
+  const weekdays = dates.map(labelDay) as [string, string, string];
   if (new Set(weekdays).size === weekdays.length) return weekdays;
   if (weekdays[0] !== weekdays[1] && weekdays[1] === weekdays[2]) {
     return [weekdays[0], weekdays[1], "Now"];
@@ -71,7 +72,7 @@ export function checkpointInstants(
     clamp(periodStart.getTime(), periodEnd.getTime() - 1, now.getTime()),
   );
   const early = new Date(
-    Math.min(endOfUtcDay(periodStart).getTime(), live.getTime()),
+    Math.min(endOfPeriodDay(periodStart).getTime(), live.getTime()),
   );
   const midCandidate = new Date(periodStart.getTime() + 3 * DAY_MS);
   const mid = new Date(

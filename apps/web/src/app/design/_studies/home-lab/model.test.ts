@@ -49,8 +49,8 @@ describe("adaptive home arrival", () => {
   it("uses half-open period bounds", () => {
     const { state } = fixtureWeek("quiet");
     const current = homeSnapshot(state);
-    const future = { ...state.activities[0]!, id: "end", startedAt: "2026-10-19T00:00:00.000Z" };
-    // Period end is Monday 00:00 UTC; an activity there belongs to the next period.
+    const future = { ...state.activities[0]!, id: "end", startedAt: "2026-10-19T04:00:00.000Z" };
+    // Period end is Monday 00:00 ET; an activity there belongs to the next period.
     expect(homeSnapshot({ ...state, activities: [...state.activities, future] }).effort).toBe(current.effort);
   });
 });

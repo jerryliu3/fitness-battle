@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  APP_TIMEZONE,
   formatEloDelta,
   formatEffort,
   formatPlace,
@@ -14,14 +15,14 @@ function weekLabel(periodStart: string, periodEnd: string): string {
   const start = new Date(periodStart).toLocaleDateString("en-US", {
     month: "short",
     day: "numeric",
-    timeZone: "UTC",
+    timeZone: APP_TIMEZONE,
   });
   const end = new Date(new Date(periodEnd).getTime() - 1).toLocaleDateString(
     "en-US",
     {
       month: "short",
       day: "numeric",
-      timeZone: "UTC",
+      timeZone: APP_TIMEZONE,
     },
   );
   return `${start} – ${end}`;
@@ -61,7 +62,7 @@ export function SeasonHistory({
         <div className="sp-empty">
           <h2>No closed weeks yet</h2>
           <p className="fb-copy">
-            When a UTC week ends, your place and effort score change land here — a
+            When a competition week ends, your place and effort score change land here — a
             Strava-style ledger of how the field treated you.
           </p>
         </div>

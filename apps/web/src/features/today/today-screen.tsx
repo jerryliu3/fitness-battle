@@ -4,6 +4,7 @@ import { useCompete } from "@/components/compete-context";
 import { AnimatedEmber } from "@/components/mascot/animated-ember";
 import type { EmberAction } from "@fitness-battle/shared/mascot";
 import {
+  APP_TIMEZONE,
   buildTodayRoute,
   competeNow,
   competePeriodWindow,
@@ -124,7 +125,7 @@ export function TodayScreen() {
               weekday: "long",
               month: "short",
               day: "numeric",
-              timeZone: "UTC",
+              timeZone: APP_TIMEZONE,
             })}
           </p>
           <h1>{formatVolume(a.sport, a.distanceM, a.movingSec, units)}</h1>
@@ -247,7 +248,7 @@ export function TodayScreen() {
               <small>
                 {new Date(a.startedAt).toLocaleDateString("en-US", {
                   weekday: "short",
-                  timeZone: "UTC",
+                  timeZone: APP_TIMEZONE,
                 })}
               </small>
             </button>
@@ -256,7 +257,7 @@ export function TodayScreen() {
                 {new Date(a.startedAt).toLocaleDateString("en-US", {
                   month: "short",
                   day: "numeric",
-                  timeZone: "UTC",
+                  timeZone: APP_TIMEZONE,
                 })}
               </small>
               <b>{sportById(a.sport).name}</b>

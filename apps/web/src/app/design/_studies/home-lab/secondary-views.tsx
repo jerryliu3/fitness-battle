@@ -1,5 +1,6 @@
 import {
-  countsOnTrack, formatVolume, initialsFromName, progressionTrends, rankForElo,
+  APP_TIMEZONE,
+  countsOnTrack, dayKey, formatVolume, initialsFromName, progressionTrends, rankForElo,
   sportById, type Activity, type CompeteState,
 } from "@fitness-battle/shared";
 import Link from "next/link";
@@ -28,14 +29,14 @@ export function HomeSecondaryView({ view, state, snapshot, sampleMode, unsynced,
       <Link className="ah-text-link" href="/you">Settings ↗</Link>
     </section>;
   }
-  const trends = progressionTrends(state.activities,state.primary,state.periodResults.filter(r=>r.sport===state.primary && r.track==="open").map(r=>({day:r.periodStart.slice(0,10),elo:r.eloAfter})));
-  const points = spec.gps ? trends.distance.slice(-7) : [...new Set(counted.map(a=>a.startedAt.slice(0,10)))].sort().slice(-7).map(day=>({day,value:Math.round(counted.filter(a=>a.startedAt.startsWith(day)).reduce((sum,a)=>sum+a.movingSec,0)/60)}));
+  const trends = progressionTrends(state.activities,state.primary,state.periodResults.filter(r=>r.sport===state.primary && r.track==="open").map(r=>({day:dayKey(new Date(r.periodStart)),elo:r.eloAfter})));
+  const points = spec.gps ? trends.distance.slice(-7) : [...new Set(counted.map(a=>dayKey(new Date(a.startedAt))))].sort().slice(-7).map(day=>({day,value:Math.round(counted.filter(a=>dayKey(new Date(a.startedAt))===day).reduce((sum,a)=>sum+a.movingSec,0)/60)}));
   const max = Math.max(1,...points.map(p=>p.value));
   const lastPace = trends.pace.at(-1)?.value;
   return <section className="ah-progress-view" aria-label="Your progress">
     <h1>Progress</h1><strong className="ah-progress-volume">{formatVolume(state.primary,snapshot.distanceM,snapshot.movingSec)}</strong>
     <div className="ah-progress-chart" role="group" aria-label={`Recent daily ${spec.gps ? "distance in kilometers" : "movement in minutes"}`}>
-      {points.map(point => <button key={point.day} onClick={() => { const activity=counted.filter(a=>a.startedAt.startsWith(point.day)).at(-1); if(activity)onActivity(activity); }} aria-label={`${point.day}, ${point.value} ${spec.gps ? "km" : "min"}. Open activity`}><span className="ah-chart-bar" style={{height:`${point.value/max*120}px`}} /><b>{point.value}</b><small>{new Date(`${point.day}T12:00:00Z`).toLocaleDateString("en-US",{weekday:"short",timeZone:"UTC"})}</small></button>)}
+      {points.map(point => <button key={point.day} onClick={() => { const activity=counted.filter(a=>dayKey(new Date(a.startedAt))===point.day).at(-1); if(activity)onActivity(activity); }} aria-label={`${point.day}, ${point.value} ${spec.gps ? "km" : "min"}. Open activity`}><span className="ah-chart-bar" style={{height:`${point.value/max*120}px`}} /><b>{point.value}</b><small>{new Date(`${point.day}T12:00:00Z`).toLocaleDateString("en-US",{weekday:"short",timeZone:APP_TIMEZONE})}</small></button>)}
       {!points.length && <p>No activities yet.</p>}
     </div>
     <div className="ah-progress-metrics"><div><span>Effort Score</span><b>{rating}</b></div>{lastPace != null && <div><span>Latest pace</span><b>{lastPace.toFixed(1)}<small> min/km</small></b></div>}</div>

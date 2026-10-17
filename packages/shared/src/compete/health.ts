@@ -1,4 +1,5 @@
 import { weekEndAfter } from "../matching/waves";
+import { APP_TIMEZONE, endOfZonedDay, startOfZonedDay } from "../period";
 import { settleElo } from "./elo";
 import {
   ELO_BASE,
@@ -56,7 +57,7 @@ export type SleepSource = ProviderId | "history" | "manual";
 export interface SleepNight {
   id: string;
   metric: "sleep";
-  /** Wake day the night is credited to (YYYY-MM-DD, UTC). */
+  /** Wake day the night is credited to (YYYY-MM-DD in APP_TIMEZONE). */
   day: string;
   /** 0–100 composite. Device score when the tracker sent one. */
   score: number;
@@ -91,7 +92,7 @@ export interface HealthRating {
   elo: number;
   optedIn: boolean;
   lockElo: number;
-  /** Inclusive UTC start of the open health week. */
+  /** Inclusive start of the open health week (ISO string). */
   lockPeriod: string;
   autoEnrollNext: boolean;
 }
@@ -241,11 +242,11 @@ export function collapseNights(nights: SleepNight[]): SleepNight[] {
 function wakeDays(start: Date, end: Date, asOf: Date): string[] {
   const cap = new Date(Math.min(asOf.getTime(), end.getTime() - 1));
   const days: string[] = [];
-  let cursor = new Date(Date.UTC(start.getUTCFullYear(), start.getUTCMonth(), start.getUTCDate()));
-  const last = new Date(Date.UTC(cap.getUTCFullYear(), cap.getUTCMonth(), cap.getUTCDate()));
+  let cursor = startOfZonedDay(start);
+  const last = startOfZonedDay(cap);
   while (cursor.getTime() <= last.getTime() && cursor.getTime() < end.getTime()) {
-    days.push(cursor.toISOString().slice(0, 10));
-    cursor = new Date(cursor.getTime() + DAY_MS);
+    days.push(dayKey(cursor));
+    cursor = endOfZonedDay(cursor);
   }
   return days;
 }
@@ -310,8 +311,8 @@ export function sleepBoard(input: {
   const last = collapseNights(input.nights)
     .filter((night) => {
       const day = night.day;
-      const startKey = input.periodStart.slice(0, 10);
-      const endKey = input.periodEnd.toISOString().slice(0, 10);
+      const startKey = dayKey(new Date(input.periodStart));
+      const endKey = dayKey(input.periodEnd);
       return day >= startKey && day < endKey && day <= dayKey(input.asOf);
     })
     .at(-1);
@@ -401,7 +402,7 @@ export function buildSleepView(input: {
     day,
     label: new Date(`${day}T12:00:00.000Z`).toLocaleDateString("en-US", {
       weekday: "narrow",
-      timeZone: "UTC",
+      timeZone: APP_TIMEZONE,
     }),
     night: collapsed.find((night) => night.day === day) ?? null,
     future: day > today,
@@ -543,7 +544,7 @@ export function settleSleepWeeks<T extends {
   if (rating?.optedIn) {
     const end = weekEndAfter(new Date(rating.lockPeriod));
     if (end.getTime() <= now.getTime()) {
-      const live = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+      const live = startOfZonedDay(now);
       next = {
         ...next,
         healthRatings: next.healthRatings.map((item) =>

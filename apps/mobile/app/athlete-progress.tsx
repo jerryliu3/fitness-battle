@@ -3,6 +3,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useCompeteStore } from "../src/lib/compete-store";
 import { FocusButton, FocusHeading, f } from "../src/ui/focus";
+import { APP_TIMEZONE } from "@fitness-battle/shared";
 import { AthleteMetrics } from "../src/features/athlete-metrics";
 export default function Progress() {
   const { state } = useCompeteStore();
@@ -39,7 +40,11 @@ export default function Progress() {
                   Place {r.place} / {r.fieldSize}
                 </Text>
                 <Text style={f.copy}>
-                  {new Date(r.periodStart).toLocaleDateString()} ·{" "}
+                  {new Date(r.periodStart).toLocaleDateString("en-US", {
+                    month: "short",
+                    day: "numeric",
+                    timeZone: APP_TIMEZONE,
+                  })} ·{" "}
                   {r.effort.toFixed(1)} effort
                 </Text>
                 <Text style={f.rowTitle}>

@@ -751,9 +751,8 @@ function YouContent() {
                 500.
               </p>
               <p className="fb-note">
-                Competition weeks run Monday 00:00 UTC to next Monday 00:00 UTC.
-                Depending on your local timezone, new fields open Sunday evening
-                or Monday morning.
+                Competition weeks run Monday 00:00 to next Monday 00:00 Eastern
+                Time (ET / New York). New fields open Monday midnight Eastern Time.
               </p>
             </section>
           ) : null}

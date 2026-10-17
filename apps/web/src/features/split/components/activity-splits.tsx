@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  APP_TIMEZONE,
   activityEffort,
   formatEffort,
   formatVolume,
@@ -15,7 +16,7 @@ function dayLabel(iso: string): string {
     weekday: "short",
     month: "short",
     day: "numeric",
-    timeZone: "UTC",
+    timeZone: APP_TIMEZONE,
   });
 }
 

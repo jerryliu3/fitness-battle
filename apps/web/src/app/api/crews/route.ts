@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { waveWindowAt } from "@fitness-battle/shared";
+import { dayKey, waveWindowAt } from "@fitness-battle/shared";
 import { resolveRequestUserId } from "@/lib/auth/request-user";
 import { createRequestClient } from "@/lib/supabase/request";
 
@@ -81,7 +81,7 @@ export async function GET(request: Request) {
   for (const entry of allEntries) {
     if (entry.disposition !== "counted") continue;
     if (entry.sport !== sportByCrew.get(entry.crew_id)) continue;
-    const weekStart = waveWindowAt(new Date(entry.started_at)).waveStart.toISOString().slice(0, 10);
+    const weekStart = dayKey(waveWindowAt(new Date(entry.started_at)).waveStart);
     const key = `${entry.crew_id}:${weekStart}`;
     if (weeksSeen.has(key)) continue;
     weeksSeen.add(key);

@@ -1,3 +1,4 @@
+import { APP_TIMEZONE } from "../period";
 import type { CompeteState, SportId } from "./sports";
 import { weekEndAfter } from "../matching/waves";
 
@@ -8,7 +9,7 @@ export interface RenewalView {
   enrolled: boolean;
   /** When false, the current period finishes and the next one does not start. */
   renews: boolean;
-  /** Exclusive UTC close of the open period, when there is one. */
+  /** Exclusive close of the open period, when there is one. */
   weekEnd: string | null;
   detail: string;
 }
@@ -18,9 +19,9 @@ function closeLabel(weekEnd: string): string {
     weekday: "short",
     month: "short",
     day: "numeric",
-    timeZone: "UTC",
+    timeZone: APP_TIMEZONE,
   });
-  return `${label} 00:00 UTC`;
+  return `${label} 00:00 ET`;
 }
 
 export function sportRenewal(state: CompeteState, sport: SportId): RenewalView {

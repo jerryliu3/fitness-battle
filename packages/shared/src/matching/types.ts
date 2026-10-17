@@ -26,9 +26,9 @@ export interface SyntheticRival {
 }
 
 export interface WaveWindow {
-  /** Inclusive Monday 00:00 UTC for the week that contains the join. */
+  /** Inclusive Monday 00:00 for the week that contains the join. */
   waveStart: Date;
-  /** Exclusive UTC Monday midnight when this competition week ends. */
+  /** Exclusive Monday midnight when this competition week ends. */
   weekEnd: Date;
 }
 

@@ -254,7 +254,7 @@ export function SpatialLab() {
           </div>
           <div className="spatial-status">
             <span>{cutoffLabel(time)}</span>
-            <span>Sample week / Oct 12–19, 2026 / UTC</span>
+            <span>Sample week / Oct 12–19, 2026 / ET</span>
             <span className={extraKm > 0 ? "preview-status" : ""}>
               {extraKm > 0
                 ? `Preview +${formatDistance(extraKm, unit)} ${unit}`
@@ -595,7 +595,7 @@ export function SpatialLab() {
             )}
             <p>
               Default weekly bounds remain Monday 00:00 to next Monday 00:00
-              UTC. These distance comparisons do not change production effort
+              ET. These distance comparisons do not change production effort
               score.
             </p>
             <button className="receipt-done" onClick={() => setReceipt(false)}>

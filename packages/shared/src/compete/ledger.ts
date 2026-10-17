@@ -1,3 +1,4 @@
+import { dayKey } from "../period";
 import { sportById, type Activity, type SportId } from "./sports";
 
 /** How a session entered the product. Demo rows are never a live tracker pull. */
@@ -183,7 +184,7 @@ export function progressionTrends(
     if (activity.sport !== sport) continue;
     if (isSampleActivity(activity)) continue;
     if (dispositionOf(activity) !== "counted") continue;
-    const day = activity.startedAt.slice(0, 10);
+    const day = dayKey(new Date(activity.startedAt));
     distanceByDay.set(day, (distanceByDay.get(day) ?? 0) + activity.distanceM / 1000);
     const bucket = paceByDay.get(day) ?? { sec: 0, meters: 0 };
     bucket.sec += activity.movingSec;

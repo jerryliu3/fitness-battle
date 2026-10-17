@@ -294,7 +294,7 @@ export function RallyFocus() {
           </button>
         </header>
         <div className="rf-demo-line">
-          <span>Running · Oct 12–19, 2026 UTC</span>
+          <span>Running · Oct 12–19, 2026 ET</span>
           <span>Sample imports · {week.label} snapshot</span>
         </div>
         <main id="rf-main">
