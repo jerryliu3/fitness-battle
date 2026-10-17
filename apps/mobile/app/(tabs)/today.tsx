@@ -9,14 +9,13 @@ import {
   AccessibilityInfo,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import Svg, { Path } from "react-native-svg";
 import {
   APP_TIMEZONE,
   buildTodayRoute,
   competeNow,
   competePeriodWindow,
   countsOnTrack,
-  distanceUnitLabel,
-  formatDistanceM,
   formatVolume,
   sportById,
   type Activity,
@@ -24,6 +23,31 @@ import {
 import { useCompeteStore } from "../../src/lib/compete-store";
 import { Ember } from "../../src/ui/mascot/ember";
 import { FocusHeading, f } from "../../src/ui/focus";
+
+const PATH_L = "24%";
+const PATH_C = "50%";
+const PATH_R = "76%";
+const PATH_ROW = 120;
+
+function PathCurve({ d }: { d: string }) {
+  return (
+    <Svg
+      style={s.pathCurve}
+      viewBox="0 0 100 100"
+      preserveAspectRatio="none"
+      pointerEvents="none"
+    >
+      <Path
+        d={d}
+        fill="none"
+        stroke="#c9d5bf"
+        strokeWidth={2.75}
+        strokeLinecap="round"
+        strokeDasharray="5 9"
+      />
+    </Svg>
+  );
+}
 
 export default function Home() {
   const { state } = useCompeteStore();
@@ -47,7 +71,6 @@ export default function Home() {
     .sort((a, b) => b.startedAt.localeCompare(a.startedAt))
     .slice(0, 10);
   const units = state.units;
-  const unitLabel = distanceUnitLabel(units);
 
   const weekPeriod = competePeriodWindow(state, now);
   const weekStart = weekPeriod.startsAt.getTime();
@@ -57,14 +80,15 @@ export default function Home() {
     const t = new Date(a.startedAt).getTime();
     return t >= weekStart && t < weekEnd;
   });
-  const weekDistanceM = weekActivities.reduce(
-    (acc, a) => acc + (a.distanceM || 0),
-    0,
-  );
   const weekMovingSec = weekActivities.reduce(
     (acc, a) => acc + (a.movingSec || 0),
     0,
   );
+  const weekHours = weekMovingSec / 3600;
+  const weekHoursLabel =
+    weekHours >= 10
+      ? `${Math.round(weekHours)} hr`
+      : `${(Math.round(weekHours * 10) / 10).toFixed(1).replace(/\.0$/, "")} hr`;
   const nowDayIso = now.toISOString().slice(0, 10);
   const dayLabels = ["M", "T", "W", "T", "F", "S", "S"];
   const weekDays = Array.from({ length: 7 }, (_, i) => {
@@ -74,7 +98,7 @@ export default function Home() {
       (a) => a.startedAt.slice(0, 10) === dayIso,
     );
     const dayVolume = dayActs.reduce(
-      (acc, a) => acc + (a.distanceM || a.movingSec || 0),
+      (acc, a) => acc + (a.movingSec || 0),
       0,
     );
     return {
@@ -92,7 +116,6 @@ export default function Home() {
       ? Math.max(20, Math.round((d.volume / maxDayVolume) * 100))
       : 0,
   }));
-  const activeDaysCount = weekDays.filter((d) => d.hasActivity).length;
 
   function bounce() {
     void AccessibilityInfo.isReduceMotionEnabled().then((reduce) => {
@@ -179,52 +202,43 @@ export default function Home() {
           body="Small steps. A week that adds up."
         />
         <View style={s.statsCard} accessibilityLabel="This week's progress">
-          <View style={s.statsHeader}>
-            <View>
+          <View style={s.statsBody}>
+            <View style={s.statsHours}>
               <Text style={f.kicker}>This week</Text>
-              <Text style={s.statsMain}>
-                {sportById(state.primary).gps
-                  ? `${formatDistanceM(weekDistanceM, units)} ${unitLabel}`
-                  : `${Math.round(weekMovingSec / 60)} min`}
-              </Text>
+              <Text style={s.statsMain}>{weekHoursLabel}</Text>
             </View>
-            <View style={s.statsSummary}>
-              <Text style={f.small}>
-                <Text style={{ fontWeight: "700", color: "#26382d" }}>
-                  {weekActivities.length}
-                </Text>{" "}
-                {weekActivities.length === 1 ? "session" : "sessions"}
-              </Text>
-              <Text style={f.small}>
-                <Text style={{ fontWeight: "700", color: "#26382d" }}>
-                  {activeDaysCount}
-                </Text>{" "}
-                of 7 days
-              </Text>
-            </View>
-          </View>
-          <View style={s.miniChart} aria-hidden>
-            {weekDaysWithPct.map((d) => (
-              <View key={d.key} style={s.miniBarCol}>
-                <View style={s.miniBarTrack}>
-                  <View
+            <View style={s.miniChart} aria-hidden>
+              {weekDaysWithPct.map((d) => (
+                <View key={d.key} style={s.miniBarCol}>
+                  <View style={s.miniBarTrack}>
+                    {d.hasActivity ? (
+                      <View
+                        style={[
+                          s.miniBarFill,
+                          { height: `${d.pct}%` },
+                          d.isToday ? { backgroundColor: "#26382d" } : null,
+                        ]}
+                      />
+                    ) : (
+                      <View style={s.miniBarFlat} />
+                    )}
+                  </View>
+                  <Text
                     style={[
-                      s.miniBarFill,
-                      { height: `${d.pct}%` },
-                      d.isToday ? { backgroundColor: "#26382d" } : null,
+                      s.miniBarDay,
+                      d.hasActivity && !d.isToday
+                        ? { color: "#5f7a45", fontWeight: "600" }
+                        : null,
+                      d.isToday
+                        ? { color: "#26382d", fontWeight: "700" }
+                        : null,
                     ]}
-                  />
+                  >
+                    {d.label}
+                  </Text>
                 </View>
-                <Text
-                  style={[
-                    s.miniBarDay,
-                    d.isToday ? { color: "#26382d", fontWeight: "700" } : null,
-                  ]}
-                >
-                  {d.label}
-                </Text>
-              </View>
-            ))}
+              ))}
+            </View>
           </View>
         </View>
         <View style={f.row}>
@@ -234,13 +248,38 @@ export default function Home() {
           ) : null}
         </View>
         <View style={s.journey}>
-          <View style={[s.stop, { paddingLeft: "12%" }]}>
+          <View style={[s.stop, { opacity: 0.72 }]}>
+            <View
+              style={[
+                s.tile,
+                s.tileAbs,
+                {
+                  left: PATH_R,
+                  backgroundColor: "#f4f7f0",
+                  borderStyle: "dashed",
+                  borderColor: "#c5d2bb",
+                  borderBottomColor: "#b7c4ad",
+                },
+              ]}
+              accessibilityLabel="Upcoming session"
+            >
+              <View style={s.hollow} />
+            </View>
+            <View style={[s.stopCopy, s.copyRight]}>
+              <Text style={f.kicker}>Up next</Text>
+              <Text style={f.rowTitle}>Room for what&apos;s next</Text>
+            </View>
+          </View>
+          <View style={s.stop}>
+            <PathCurve d="M 76 0 C 76 28, 24 36, 24 58 S 62 78, 50 100" />
             <Pressable
               accessibilityRole="button"
               accessibilityLabel="Ember: open today's session"
               style={[
                 s.tile,
+                s.tileAbs,
                 {
+                  left: PATH_C,
                   backgroundColor: "#d4ee89",
                   borderColor: "#b5d55b",
                   borderBottomColor: "#9ebf42",
@@ -248,7 +287,7 @@ export default function Home() {
                   width: 82,
                   height: 82,
                   borderRadius: 41,
-                  transform: [],
+                  zIndex: 1,
                 },
               ]}
               onPress={() => {
@@ -259,13 +298,14 @@ export default function Home() {
               <Animated.View
                 style={{
                   position: "absolute",
-                  bottom: 22,
+                  bottom: 18,
                   left: "50%",
-                  marginLeft: -48,
+                  marginLeft: -59,
+                  zIndex: 2,
                   transform: [{ translateY: lift }],
                 }}
               >
-                <Ember size={96} expression="happy" />
+                <Ember size={118} expression="happy" />
               </Animated.View>
             </Pressable>
             <Pressable
@@ -274,85 +314,87 @@ export default function Home() {
                 bounce();
                 setExpanded("suggestion");
               }}
-              style={s.stopCopy}
+              style={[s.stopCopy, s.copyCenter]}
             >
               <Text style={f.kicker}>Today</Text>
               <Text style={f.rowTitle}>See today&apos;s session</Text>
             </Pressable>
           </View>
-          {sessions.map((a, i) => (
-            <View
-              key={a.id}
-              style={[s.stop, { paddingLeft: i % 2 ? "5%" : "26%" }]}
-            >
-              <View
-                style={[
-                  s.connector,
-                  i % 2 ? { transform: [{ scaleX: -1 }], left: "35%" } : null,
-                ]}
-              />
-              <Pressable
-                accessibilityRole="button"
-                onPress={() => setExpanded(a)}
-                accessibilityLabel={`Open ${sportById(a.sport).name} session ${formatVolume(a.sport, a.distanceM, a.movingSec, units)}`}
-                style={s.tile}
-              >
-                <View style={s.check}>
-                  <Text style={{ fontSize: 9, color: "#26382d" }}>✓</Text>
+          {sessions.map((a, i) => {
+            const toLeft = i % 2 === 0;
+            const curve =
+              i === 0
+                ? "M 50 0 C 50 28, 24 40, 24 100"
+                : toLeft
+                  ? "M 76 0 C 76 30, 24 42, 24 100"
+                  : "M 24 0 C 24 30, 76 42, 76 100";
+            return (
+              <View key={a.id} style={s.stop}>
+                <PathCurve d={curve} />
+                <Pressable
+                  accessibilityRole="button"
+                  onPress={() => setExpanded(a)}
+                  accessibilityLabel={`Open ${sportById(a.sport).name} session ${formatVolume(a.sport, a.distanceM, a.movingSec, units)}`}
+                  style={[
+                    s.tile,
+                    s.tileAbs,
+                    { left: toLeft ? PATH_L : PATH_R },
+                  ]}
+                >
+                  <View style={s.check}>
+                    <Text style={{ fontSize: 9, color: "#26382d" }}>✓</Text>
+                  </View>
+                  <Text style={s.tileValue}>
+                    {formatVolume(a.sport, a.distanceM, a.movingSec, units)}
+                  </Text>
+                  <Text style={f.small}>
+                    {new Date(a.startedAt).toLocaleDateString("en-US", {
+                      weekday: "short",
+                      timeZone: "UTC",
+                    })}
+                  </Text>
+                </Pressable>
+                <View
+                  style={[s.stopCopy, toLeft ? s.copyLeft : s.copyRight]}
+                >
+                  <Text style={f.kicker}>
+                    {new Date(a.startedAt).toLocaleDateString("en-US", {
+                      month: "short",
+                      day: "numeric",
+                      timeZone: "UTC",
+                    })}
+                  </Text>
+                  <Text style={f.rowTitle}>{sportById(a.sport).name}</Text>
+                  <Text style={f.small}>
+                    {a.verified ? "Verified" : "Open"} · counted
+                  </Text>
                 </View>
-                <Text style={s.tileValue}>
-                  {formatVolume(a.sport, a.distanceM, a.movingSec, units)}
-                </Text>
-                <Text style={f.small}>
-                  {new Date(a.startedAt).toLocaleDateString("en-US", {
-                    weekday: "short",
-                    timeZone: APP_TIMEZONE,
-                  })}
-                </Text>
-              </Pressable>
-              <View style={s.stopCopy}>
-                <Text style={f.kicker}>
-                  {new Date(a.startedAt).toLocaleDateString("en-US", {
-                    month: "short",
-                    day: "numeric",
-                    timeZone: APP_TIMEZONE,
-                  })}
-                </Text>
-                <Text style={f.rowTitle}>{sportById(a.sport).name}</Text>
-                <Text style={f.small}>
-                  {a.verified ? "Verified" : "Open"} · counted
-                </Text>
               </View>
-            </View>
-          ))}
-          <View
-            style={[
-              s.stop,
-              {
-                paddingLeft: sessions.length % 2 === 0 ? "26%" : "5%",
-              },
-            ]}
-          >
-            <View
-              style={[
-                s.connector,
-                sessions.length % 2 === 0
-                  ? null
-                  : { transform: [{ scaleX: -1 }], left: "35%" },
-              ]}
+            );
+          })}
+          <View style={s.stop}>
+            <PathCurve
+              d={
+                sessions.length === 0
+                  ? "M 50 0 C 22 32, 78 64, 50 100"
+                  : sessions.length % 2 === 1
+                    ? "M 24 0 C 24 34, 78 58, 50 100"
+                    : "M 76 0 C 76 34, 22 58, 50 100"
+              }
             />
             <Pressable
               accessibilityRole="button"
-              accessibilityLabel="Starting line"
+              accessibilityLabel="Start"
               onPress={bounce}
               style={[
                 s.tile,
+                s.tileAbs,
                 {
+                  left: PATH_C,
                   backgroundColor: "#f1f5ec",
                   borderStyle: "dashed",
                   borderColor: "#b7c9a4",
                   borderBottomColor: "#a4b990",
-                  transform: [],
                 },
               ]}
             >
@@ -368,10 +410,6 @@ export default function Home() {
                 START
               </Text>
             </Pressable>
-            <View style={s.stopCopy}>
-              <Text style={f.kicker}>Baseline</Text>
-              <Text style={f.rowTitle}>Starting line</Text>
-            </View>
           </View>
         </View>
       </ScrollView>
@@ -386,32 +424,30 @@ const s = StyleSheet.create({
     borderColor: "#e0e5dd",
     borderRadius: 20,
     padding: 16,
-    gap: 12,
     marginBottom: 8,
   },
-  statsHeader: {
+  statsBody: {
     flexDirection: "row",
-    justifyContent: "space-between",
     alignItems: "flex-end",
+    gap: 16,
+  },
+  statsHours: {
+    minWidth: 88,
   },
   statsMain: {
     fontFamily: "DMSans_700Bold",
-    fontSize: 22,
+    fontSize: 28,
     color: "#26382d",
-  },
-  statsSummary: {
-    alignItems: "flex-end",
-    gap: 2,
+    letterSpacing: -0.6,
   },
   miniChart: {
+    flex: 1,
     flexDirection: "row",
     alignItems: "flex-end",
     justifyContent: "space-between",
-    gap: 8,
+    gap: 6,
     height: 58,
-    paddingTop: 8,
-    borderTopWidth: 1,
-    borderTopColor: "#e0e5dd",
+    minWidth: 0,
   },
   miniBarCol: {
     flex: 1,
@@ -422,16 +458,24 @@ const s = StyleSheet.create({
   miniBarTrack: {
     flex: 1,
     width: "100%",
-    maxWidth: 24,
-    backgroundColor: "#e0e6db",
+    maxWidth: 22,
+    backgroundColor: "transparent",
     borderRadius: 6,
     justifyContent: "flex-end",
-    overflow: "hidden",
+    alignItems: "center",
+    overflow: "visible",
   },
   miniBarFill: {
     width: "100%",
     backgroundColor: "#a4be60",
-    borderRadius: 6,
+    borderRadius: 8,
+    minHeight: 8,
+  },
+  miniBarFlat: {
+    width: 14,
+    height: 3,
+    borderRadius: 2,
+    backgroundColor: "#8a9785",
   },
   miniBarDay: {
     fontSize: 10,
@@ -460,11 +504,23 @@ const s = StyleSheet.create({
   expandEmber: { position: "absolute", right: -10, bottom: 10 },
   journey: { gap: 0, paddingBottom: 20 },
   stop: {
-    height: 150,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 16,
+    height: PATH_ROW,
     position: "relative",
+  },
+  pathCurve: {
+    position: "absolute",
+    left: 0,
+    width: "100%",
+    top: -PATH_ROW / 2,
+    height: PATH_ROW,
+    zIndex: 0,
+  },
+  hollow: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    borderWidth: 2.5,
+    borderColor: "#9eb090",
   },
   tile: {
     width: 80,
@@ -477,6 +533,13 @@ const s = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     gap: 3,
+  },
+  tileAbs: {
+    position: "absolute",
+    top: "50%",
+    marginTop: -40,
+    marginLeft: -40,
+    zIndex: 1,
   },
   tileValue: { fontFamily: "DMSans_500Medium", fontSize: 12, color: "#26382d" },
   check: {
@@ -492,17 +555,15 @@ const s = StyleSheet.create({
     borderWidth: 2,
     borderColor: "#fafbf8",
   },
-  stopCopy: { maxWidth: 120, gap: 3 },
-  connector: {
+  stopCopy: {
     position: "absolute",
-    left: "18%",
-    width: "43%",
-    height: 105,
-    top: -30,
-    borderLeftWidth: 3,
-    borderBottomWidth: 3,
-    borderColor: "#dce3d6",
-    borderStyle: "dashed",
-    borderBottomLeftRadius: 60,
+    top: "50%",
+    marginTop: -22,
+    maxWidth: 120,
+    gap: 3,
+    zIndex: 1,
   },
+  copyLeft: { left: "24%", marginLeft: 48 },
+  copyCenter: { left: "50%", marginLeft: 52 },
+  copyRight: { right: "24%", marginRight: 48, alignItems: "flex-end" },
 });

@@ -600,7 +600,7 @@ function YouContent() {
                         {primary ? " · primary" : ""}
                         <small>
                           Verified {rating?.verifiedElo} · Open {rating?.openElo} ·{" "}
-                          {rankForElo(rating?.openElo ?? 1000).name}
+                          {rankForElo(rating?.openElo ?? 0).name}
                         </small>
                       </span>
                       <button
@@ -820,7 +820,7 @@ function YouContent() {
             Sign out
           </button>
           <a
-            href="mailto:support@overtaek.com?subject=Fitness%20Battle%20Issue%20Report"
+            href="mailto:support@overtaek.com?subject=Overtaek%20Issue%20Report"
             className="fb-btn-line"
             style={{ flex: 1, justifyContent: "center", textDecoration: "none" }}
           >
