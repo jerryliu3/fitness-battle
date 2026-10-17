@@ -133,7 +133,11 @@ function round5(minutes: number): number {
  * One session when the athlete has not set a race or target day.
  * Length follows counted sessions from the last 7 days, or 30 easy minutes.
  */
-export function suggestOpen(activities: Activity[], now: Date): DaySuggestion {
+export function suggestOpen(
+  activities: Activity[],
+  now: Date,
+  primary: SportId = "running",
+): DaySuggestion {
   const today = utcDay(now);
   const todayKey = today.toISOString().slice(0, 10);
   const recent = countedSince(activities, now, 7, null);
@@ -143,7 +147,7 @@ export function suggestOpen(activities: Activity[], now: Date): DaySuggestion {
   const yesterdayMin = yesterday.reduce((sum, activity) => sum + activity.movingSec, 0) / 60;
   const yesterdayKm =
     yesterday
-      .filter((activity) => activity.sport === "running")
+      .filter((activity) => activity.sport === primary)
       .reduce((sum, activity) => sum + activity.distanceM, 0) / 1000;
   const prior = recent.filter((activity) => activity.startedAt.slice(0, 10) !== todayKey);
   const history = prior.length
@@ -164,16 +168,17 @@ export function suggestOpen(activities: Activity[], now: Date): DaySuggestion {
     };
   }
 
-  if (yesterdayMin >= 70 || yesterdayKm >= 8 || prior.length >= 5) {
+  const thresholdKm = primary === "cycling" ? 20 : 8;
+  if (yesterdayMin >= 70 || yesterdayKm >= thresholdKm || prior.length >= 5) {
     return {
       kind: "rest",
       phase: "open",
       title: "Rest",
-      detail: "No extra session today. A walk is fine.",
+      detail: primary === "cycling" ? "No extra ride today. An easy spin or walk is fine." : "No extra session today. A walk is fine.",
       minutes: null,
       distanceKm: null,
       reason: `${history} ${
-        yesterdayMin >= 70 || yesterdayKm >= 8
+        yesterdayMin >= 70 || yesterdayKm >= thresholdKm
           ? "Yesterday was already a full session."
           : "Five sessions in the last 7 days is enough."
       }`,
@@ -183,16 +188,27 @@ export function suggestOpen(activities: Activity[], now: Date): DaySuggestion {
 
   const typicalMin = median(prior.map((activity) => activity.movingSec / 60));
   const minutes = prior.length ? round5(typicalMin) : 30;
-  const runs = prior.filter((activity) => activity.sport === "running" && activity.distanceM > 0);
-  const typicalKm = median(runs.map((activity) => activity.distanceM / 1000));
-  const distanceKm = runs.length && typicalKm >= 1 ? round1(Math.min(10, typicalKm)) : null;
+  const primarySessions = prior.filter((activity) => activity.sport === primary && activity.distanceM > 0);
+  const typicalKm = median(primarySessions.map((activity) => activity.distanceM / 1000));
+  const maxKm = primary === "cycling" ? 25 : 10;
+  const distanceKm = primarySessions.length && typicalKm >= 1 ? round1(Math.min(maxKm, typicalKm)) : null;
+
+  let firstSessionDetail = "Thirty easy minutes. Walk or jog, whatever you can keep comfortable.";
+  if (primary === "cycling") {
+    firstSessionDetail = "Thirty easy minutes on the bike. Spin easy, whatever you can keep comfortable.";
+  } else if (primary === "walking") {
+    firstSessionDetail = "Thirty easy minutes. Keep a comfortable walking pace.";
+  } else if (primary === "strength") {
+    firstSessionDetail = "Thirty easy minutes of steady bodyweight or resistance training.";
+  }
+
   return {
     kind: "easy",
     phase: "open",
     title: distanceKm ? `Easy ${distanceKm} km` : `Easy ${minutes} min`,
     detail: prior.length
       ? "Match a normal recent session. Keep it comfortable the whole way."
-      : "Thirty easy minutes. Walk or jog, whatever you can keep comfortable.",
+      : firstSessionDetail,
     minutes,
     distanceKm,
     reason: history,
@@ -463,7 +479,7 @@ function mainWeekday(sessions: Activity[]): number | null {
 
 export function suggestionForState(state: CompeteState, now: Date): DaySuggestion {
   if (!state.trainingGoal || !isTrainingGoal(state.trainingGoal)) {
-    return suggestOpen(state.activities, now);
+    return suggestOpen(state.activities, now, state.primary);
   }
   return suggestToday(state.trainingGoal, state.activities, now, state.primary);
 }

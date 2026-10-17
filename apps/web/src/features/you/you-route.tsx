@@ -26,6 +26,7 @@ import {
   type ReadinessMark,
   type ReadinessSample,
 } from "@fitness-battle/shared";
+import { AuthPrompt } from "@/components/auth-gate";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useRef, useState } from "react";
@@ -55,6 +56,17 @@ const PANEL_TITLES: Record<AthletePanel, string> = {
   scoring: "How scoring works",
 };
 
+function humanError(code?: string): string {
+  if (!code) return "Something went wrong.";
+  if (code === "authentication_required") return "Sign in to connect trackers and sync activities.";
+  if (code === "unknown_provider") return "That provider is not supported.";
+  if (code === "file_required") return "Please select a file to import.";
+  if (code === "file_too_large") return "That file exceeds the maximum 8 MB limit.";
+  if (code === "unsupported_activity_file") return "Could not parse that file. Use .fit, .gpx, or .tcx.";
+  if (code === "no_activities") return "No valid activities found in that file.";
+  return code;
+}
+
 function YouContent() {
   const { user, signOut, demoMode } = useAuth();
   const { state, dispatch, loadStatus } = useCompete();
@@ -64,6 +76,11 @@ function YouContent() {
   const seededFor = useRef<string | null>(null);
   const [syncNote, setSyncNote] = useState<string | null>(null);
   const [panel, setPanel] = useState<AthletePanel | null>(null);
+  const [authPrompt, setAuthPrompt] = useState<{ open: boolean; reason: string } | null>(null);
+  const [connectingProvider, setConnectingProvider] = useState<ProviderId | null>(null);
+  const [profileSaved, setProfileSaved] = useState(false);
+  const [primaryNote, setPrimaryNote] = useState<string | null>(null);
+  const [confirmFreeze, setConfirmFreeze] = useState(false);
   const searchParams = useSearchParams();
   const accountKey = user?.id ?? "guest";
   const pushIdentity: SyncIdentity | null = user
@@ -142,7 +159,11 @@ function YouContent() {
     windowKind?: string;
     source?: string;
   }) {
-    const provenance = body.source === "file" ? "imported" : "recorded";
+    const provenance = body.usedMock
+      ? "demo"
+      : body.source === "file"
+        ? "imported"
+        : "recorded";
     const activities = (body.activities ?? [])
       .map((sample) => activityFromSample(sample, provenance))
       .filter((activity) => activity != null);
@@ -205,6 +226,17 @@ function YouContent() {
     const link = state!.links.find((item) => item.provider === providerId);
     if (!OAUTH_PROVIDERS.has(providerId)) return;
 
+    if (!user) {
+      const spec = PROVIDERS.find((p) => p.id === providerId);
+      setAuthPrompt({
+        open: true,
+        reason: `Sign in to connect ${spec?.name ?? "a tracker"} and sync workouts.`,
+      });
+      setSyncNote(`Sign in to connect ${spec?.name ?? "a tracker"} and sync workouts.`);
+      return;
+    }
+
+    setConnectingProvider(providerId);
     if (!link?.linked || link.status === "disconnected") {
       try {
         const response = await fetch("/api/fitness/connect", {
@@ -218,7 +250,7 @@ function YouContent() {
           error?: string;
         };
         if (!response.ok) {
-          setSyncNote(body.error ?? "Could not start connect.");
+          setSyncNote(humanError(body.error) ?? "Could not start connect.");
           return;
         }
         if (body.authorizeUrl) {
@@ -236,6 +268,8 @@ function YouContent() {
           return;
         }
         setSyncNote("Could not reach the connect route. Nothing was linked.");
+      } finally {
+        setConnectingProvider(null);
       }
       return;
     }
@@ -255,7 +289,7 @@ function YouContent() {
         windowKind?: string;
       };
       if (!response.ok) {
-        setSyncNote(body.error ?? "Sync failed. Nothing new was counted.");
+        setSyncNote(humanError(body.error) ?? "Sync failed. Nothing new was counted.");
         void requestAccountPush("connection_alerts", pushIdentity, {
           provider: providerId,
         });
@@ -274,11 +308,21 @@ function YouContent() {
       void requestAccountPush("connection_alerts", pushIdentity, {
         provider: providerId,
       });
+    } finally {
+      setConnectingProvider(null);
     }
   }
 
   async function importGarminFile(file: File) {
     setSyncNote(null);
+    if (!user) {
+      setAuthPrompt({
+        open: true,
+        reason: "Sign in to import Garmin activity files.",
+      });
+      setSyncNote("Sign in to import activity files.");
+      return;
+    }
     const form = new FormData();
     form.set("file", file);
     if (user?.id) form.set("userId", user.id);
@@ -294,7 +338,7 @@ function YouContent() {
         persisted?: boolean;
       };
       if (!response.ok) {
-        setSyncNote(body.error ?? "Import failed");
+        setSyncNote(humanError(body.error) ?? "Import failed");
         return;
       }
       applyRemote({
@@ -496,9 +540,11 @@ function YouContent() {
                   onClick={() => {
                     if (name.trim()) dispatch({ type: "rename", name });
                     if (city.trim()) dispatch({ type: "set-city", city });
+                    setProfileSaved(true);
+                    setTimeout(() => setProfileSaved(false), 3000);
                   }}
                 >
-                  Save
+                  {profileSaved ? "Saved ✓" : "Save"}
                 </button>
               </section>
               <section className="fb-card">
@@ -527,6 +573,11 @@ function YouContent() {
               </section>
               <section className="fb-card">
                 <h2>Sports</h2>
+                {primaryNote ? (
+                  <p className="fb-note" style={{ color: "var(--green, #2f6f4e)" }}>
+                    {primaryNote}
+                  </p>
+                ) : null}
                 {SPORTS.map((sport) => {
                   const rating = state.ratings.find(
                     (item) => item.sport === sport.id,
@@ -546,9 +597,11 @@ function YouContent() {
                       <button
                         type="button"
                         className="fb-btn-ghost"
-                        onClick={() =>
-                          dispatch({ type: "set-primary", sport: sport.id })
-                        }
+                        onClick={() => {
+                          dispatch({ type: "set-primary", sport: sport.id });
+                          setPrimaryNote(`${sport.name} is now your primary sport.`);
+                          setTimeout(() => setPrimaryNote(null), 3000);
+                        }}
                       >
                         {primary ? "Primary" : "Make primary"}
                       </button>
@@ -560,16 +613,57 @@ function YouContent() {
                 <h2>Week freezes</h2>
                 <p className="fb-copy">
                   {state.freezesLeft} of {STARTING_FREEZES} left. A freeze holds
-                  Elo for a taper or a vacation.
+                  Elo for a taper or a vacation. It does not pause the lesson.
                 </p>
-                <button
-                  type="button"
-                  className="fb-btn"
-                  disabled={frozen || state.freezesLeft <= 0}
-                  onClick={() => dispatch({ type: "freeze" })}
-                >
-                  {frozen ? "This week is frozen" : "Freeze this week"}
-                </button>
+                {frozen ? (
+                  <div className="fb-stack">
+                    <p className="fb-note" style={{ color: "var(--green, #2f6f4e)" }}>
+                      ❄ This week is frozen. Your Elo will hold through next Monday.
+                    </p>
+                    <button
+                      type="button"
+                      className="fb-btn-ghost"
+                      onClick={() => dispatch({ type: "unfreeze" })}
+                    >
+                      Undo freeze
+                    </button>
+                  </div>
+                ) : confirmFreeze ? (
+                  <div className="fb-stack">
+                    <p className="fb-note">
+                      Freeze this week? You will have {state.freezesLeft - 1} freezes left.
+                      Your Elo rating will hold steady until next Monday.
+                    </p>
+                    <div className="fb-row">
+                      <button
+                        type="button"
+                        className="fb-btn"
+                        onClick={() => {
+                          dispatch({ type: "freeze" });
+                          setConfirmFreeze(false);
+                        }}
+                      >
+                        Confirm freeze
+                      </button>
+                      <button
+                        type="button"
+                        className="fb-btn-ghost"
+                        onClick={() => setConfirmFreeze(false)}
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    className="fb-btn"
+                    disabled={state.freezesLeft <= 0}
+                    onClick={() => setConfirmFreeze(true)}
+                  >
+                    {state.freezesLeft <= 0 ? "No freezes left" : "Freeze this week"}
+                  </button>
+                )}
               </section>
             </>
           ) : null}
@@ -578,9 +672,16 @@ function YouContent() {
             <SleepPanel
               state={state}
               now={now}
-              onJoin={() =>
-                dispatch({ type: "opt-in-health", metric: "sleep" })
-              }
+              onJoin={() => {
+                if (!user) {
+                  setAuthPrompt({
+                    open: true,
+                    reason: "Sign in to join the weekly sleep leaderboard and track recovery.",
+                  });
+                  return;
+                }
+                dispatch({ type: "opt-in-health", metric: "sleep" });
+              }}
               onSample={() => dispatch({ type: "log-sleep" })}
               onLeave={() =>
                 dispatch({ type: "opt-out-health", metric: "sleep" })
@@ -610,9 +711,19 @@ function YouContent() {
                 rate can add a little. Pace adds less. Rating never falls below
                 500.
               </p>
+              <p className="fb-note">
+                Competition weeks run Monday 00:00 UTC to next Monday 00:00 UTC.
+                Depending on your local timezone, new fields open Sunday evening
+                or Monday morning.
+              </p>
             </section>
           ) : null}
         </div>
+        <AuthPrompt
+          open={Boolean(authPrompt?.open)}
+          reason={authPrompt?.reason ?? "Sign in to compete."}
+          onClose={() => setAuthPrompt(null)}
+        />
       </div>
     );
   }
@@ -649,21 +760,48 @@ function YouContent() {
         <section className="fb-card">
           <h2>Finish setup</h2>
           <p className="fb-copy">
-            Preferences and the optional {BACKFILL_DAYS}-day calibration live in
-            onboarding.
+            {user
+              ? `Preferences and the optional ${BACKFILL_DAYS}-day calibration live in onboarding.`
+              : "Create an account to lock in preferences, link trackers, and calibrate your rating."}
           </p>
-          <Link href="/onboarding" className="fb-btn">
-            Continue onboarding
+          <Link
+            href={user ? "/onboarding" : "/signup?next=%2Fonboarding"}
+            className="fb-btn"
+          >
+            {user ? "Continue onboarding" : "Create account to finish setup"}
           </Link>
         </section>
       ) : null}
-      <button
-        type="button"
-        className="fb-btn-line"
-        onClick={() => void signOut()}
-      >
-        Sign out
-      </button>
+      {user ? (
+        <>
+          <p className="fb-note">
+            {user.email}
+            {demoMode ? " · demo account" : ""}
+          </p>
+          <button
+            type="button"
+            className="fb-btn-line"
+            onClick={() => void signOut()}
+          >
+            Sign out
+          </button>
+        </>
+      ) : (
+        <div className="fb-stack">
+          <p className="fb-note">Browsing as a guest</p>
+          <Link href="/signup" className="fb-btn">
+            Create account
+          </Link>
+          <Link href="/login" className="fb-btn-line">
+            Sign in
+          </Link>
+        </div>
+      )}
+      <AuthPrompt
+        open={Boolean(authPrompt?.open)}
+        reason={authPrompt?.reason ?? "Sign in to compete."}
+        onClose={() => setAuthPrompt(null)}
+      />
     </div>
   );
 }

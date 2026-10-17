@@ -2,14 +2,15 @@ project_id = "fitness-battle"
 
 [api]
 enabled = true
-port = 54321
+# 54321/54322 are taken by the Resolution local stack.
+port = 54621
 schemas = ["public", "graphql_public"]
 extra_search_path = ["public", "extensions"]
 max_rows = 1000
 
 [db]
-port = 54322
-shadow_port = 54320
+port = 54622
+shadow_port = 54620
 major_version = 15
 
 [db.seed]
@@ -18,11 +19,11 @@ sql_paths = ["./seed.sql"]
 
 [studio]
 enabled = true
-port = 54323
+port = 54623
 
 [inbucket]
 enabled = true
-port = 54324
+port = 54624
 
 [auth]
 enabled = true

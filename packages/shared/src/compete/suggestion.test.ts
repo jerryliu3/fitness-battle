@@ -222,4 +222,12 @@ describe("suggestToday", () => {
     );
     expect(suggestion.reason).toContain("No counted running");
   });
+
+  it("suggests cycling workouts when primary sport is cycling", () => {
+    const state = freshState(now);
+    state.primary = "cycling";
+    const suggestion = suggestionForState(state, now);
+    expect(suggestion.detail).toContain("bike");
+    expect(suggestion.detail).not.toContain("Walk or jog");
+  });
 });

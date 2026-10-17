@@ -62,6 +62,16 @@ export function CrewPanel() {
     if (user && !demoMode) void reload();
     else setData(null);
   }, [user?.id, demoMode]);
+function humanCrewError(code?: string): string {
+  if (!code) return "Could not reach your crew.";
+  if (code === "invite_not_found") return "We couldn't find a crew with that invite code.";
+  if (code === "already_a_member") return "You are already a member of this crew.";
+  if (code === "crew_not_found") return "We couldn't find that crew.";
+  if (code === "name_required") return "Please enter a crew name.";
+  if (code === "authentication_required") return "Sign in to manage crews.";
+  return code;
+}
+
   async function write(path: string, body: object) {
     setBusy(true);
     setNote("");
@@ -73,7 +83,7 @@ export function CrewPanel() {
       });
       const result = await res.json();
       if (!res.ok || result.persisted === false)
-        throw Error(result.error ?? "Could not save this change.");
+        throw Error(humanCrewError(result.error));
       await reload();
       setPanel(null);
       setNote("Saved. Your crew is up to date.");
@@ -406,8 +416,16 @@ export function CrewPanel() {
             ? "A live account is needed to create or join a private crew."
             : "Private crew activity stays with your members."
         }
-        onClose={() => setPanel(null)}
+        onClose={() => {
+          setPanel(null);
+          setNote("");
+        }}
       >
+        {note ? (
+          <p className="fb-error" role="alert" style={{ marginBottom: "12px" }}>
+            {note}
+          </p>
+        ) : null}
         {!user || demoMode ? (
           <p className="fb-copy">
             Sign in with a configured account to use private crews.
@@ -418,8 +436,12 @@ export function CrewPanel() {
               Crew name
               <input
                 value={name}
-                onChange={(e) => setName(e.target.value)}
+                onChange={(e) => {
+                  setName(e.target.value);
+                  if (note) setNote("");
+                }}
                 maxLength={60}
+                placeholder="e.g. Dawn Patrol"
               />
             </label>
             <label className="fb-field">
@@ -437,14 +459,18 @@ export function CrewPanel() {
             </label>
             <button
               className="fb-btn"
-              disabled={busy || !name.trim()}
-              onClick={() =>
+              disabled={busy}
+              onClick={() => {
+                if (!name.trim()) {
+                  setNote("Please enter a crew name.");
+                  return;
+                }
                 void write("", {
-                  name,
+                  name: name.trim(),
                   sport: state?.primary ?? "running",
                   format,
-                })
-              }
+                });
+              }}
             >
               Create crew
             </button>
@@ -455,14 +481,24 @@ export function CrewPanel() {
               Invite code
               <input
                 value={code}
-                onChange={(e) => setCode(e.target.value)}
+                onChange={(e) => {
+                  setCode(e.target.value);
+                  if (note) setNote("");
+                }}
                 autoCapitalize="characters"
+                placeholder="e.g. RALLY7"
               />
             </label>
             <button
               className="fb-btn"
-              disabled={busy || !code.trim()}
-              onClick={() => void write("/join", { code })}
+              disabled={busy}
+              onClick={() => {
+                if (!code.trim()) {
+                  setNote("Please enter an invite code.");
+                  return;
+                }
+                void write("/join", { code: code.trim().toUpperCase() });
+              }}
             >
               Join crew
             </button>

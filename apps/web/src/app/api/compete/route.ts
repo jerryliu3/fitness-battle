@@ -104,7 +104,8 @@ export async function PUT(request: Request) {
       persisted: true,
       updatedAt,
     });
-  } catch {
+  } catch (error) {
+    console.error("PUT /api/compete save failed:", error);
     return NextResponse.json(
       { error: "account_not_saved", persisted: false },
       { status: 500 },

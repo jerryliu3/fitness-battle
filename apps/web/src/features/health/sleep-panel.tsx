@@ -134,14 +134,19 @@ export function SleepPanel({
 
           <div className="sl-stats">
             <div>
-              <span>Week average</span>
-              <strong>{view.nightsLogged ? view.mean.toFixed(0) : "—"}</strong>
+              <span>Contest score</span>
+              <strong>{view.nightsLogged ? view.contestScore.toFixed(0) : "—"}</strong>
+              {view.nightsLogged ? (
+                <small style={{ display: "block", fontSize: "11px", color: "var(--fb-muted, #768375)" }}>
+                  Avg: {view.mean.toFixed(0)}
+                </small>
+              ) : null}
             </div>
             <div>
               <span>Nights logged</span>
               <strong>
                 {view.nightsLogged}
-                <small> / {view.elapsedNights}</small>
+                <small> / 7</small>
               </strong>
             </div>
             <div>

@@ -101,7 +101,8 @@ export function PhoneShell({
         ) : null}
         {!loading && !user ? (
           <p className="phone-guest">
-            Browsing as a guest. <Link href="/signup">Create an account</Link>
+            Browsing as a guest. <Link href="/signup">Create account</Link> ·{" "}
+            <Link href="/login">Sign in</Link>
           </p>
         ) : null}
       </>

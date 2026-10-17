@@ -8,6 +8,15 @@ const nextConfig: NextConfig = {
     "@fitness-battle/pursuit",
   ],
   outputFileTracingRoot: path.join(__dirname, "../.."),
+  async redirects() {
+    return [
+      {
+        source: "/signin",
+        destination: "/login",
+        permanent: true,
+      },
+    ];
+  },
 };
 
 export default nextConfig;

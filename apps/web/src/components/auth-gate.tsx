@@ -3,7 +3,8 @@
 import { buildLoginHref, buildSignupHref } from "@/lib/auth/login-redirect";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import type { ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
+import { createPortal } from "react-dom";
 import { useAuth } from "./auth-context";
 
 interface AuthGateProps {
@@ -47,13 +48,28 @@ interface AuthPromptProps {
   onClose: () => void;
 }
 
-/** Modal prompt when a guest hits Join / participate. */
+/** Modal prompt when a guest hits Join / participate. Portals to body to stay on top of all sheets. */
 export function AuthPrompt({ open, reason, nextPath, onClose }: AuthPromptProps) {
   const path = usePathname();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (!open) return;
+    function onKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") onClose();
+    }
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [open, onClose]);
+
   if (!open) return null;
   const next = nextPath ?? path;
 
-  return (
+  const content = (
     <div className="fb-modal" role="dialog" aria-modal="true" aria-label="Sign in">
       <button type="button" className="fb-modal-backdrop" onClick={onClose} aria-label="Close" />
       <div className="fb-modal-card">
@@ -74,4 +90,10 @@ export function AuthPrompt({ open, reason, nextPath, onClose }: AuthPromptProps)
       </div>
     </div>
   );
+
+  if (!mounted || typeof document === "undefined") {
+    return content;
+  }
+
+  return createPortal(content, document.body);
 }

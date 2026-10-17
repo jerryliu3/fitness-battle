@@ -23,9 +23,9 @@ function SignupForm() {
 
   useEffect(() => {
     if (!loading && user) {
-      router.replace("/onboarding");
+      router.replace(next);
     }
-  }, [loading, user, router]);
+  }, [loading, user, next, router]);
 
   async function onSubmit(event: FormEvent) {
     event.preventDefault();
@@ -57,7 +57,7 @@ function SignupForm() {
 
   return (
     <section className="fb-card fb-auth-card">
-      <p className="fb-kicker">Fitness Battle</p>
+      <p className="fb-kicker">overtaek</p>
       <h1 className="fb-title">Create account</h1>
       <p className="fb-copy">
         After signup you will set preferences and run a one-time 90-day
@@ -95,8 +95,16 @@ function SignupForm() {
             minLength={6}
           />
         </label>
-        {error ? <p className="fb-error">{error}</p> : null}
-        {message ? <p className="fb-note">{message}</p> : null}
+        {error ? (
+          <p className="fb-error" role="alert" aria-live="assertive">
+            {error}
+          </p>
+        ) : null}
+        {message ? (
+          <p className="fb-note" role="status" aria-live="polite">
+            {message}
+          </p>
+        ) : null}
         <button type="submit" className="fb-btn" disabled={busy}>
           {busy ? "Creating…" : "Create account"}
         </button>

@@ -216,14 +216,26 @@ export async function persistCompeteAccount(
   const clean = prepareCompeteStateForAccount(state);
   const updatedAt = new Date().toISOString();
 
-  const { error: profileError } = await db.from("profiles").upsert({
-    id: userId,
-    display_name: clean.name.slice(0, 80) || "Athlete",
-    city: clean.city.slice(0, 80),
-    primary_sport: clean.primary,
-    updated_at: updatedAt,
-  });
-  if (profileError) throw new Error(profileError.message);
+  const { error: profileError, data } = await db
+    .from("profiles")
+    .update({
+      display_name: clean.name.slice(0, 80) || "Athlete",
+      city: clean.city.slice(0, 80),
+      primary_sport: clean.primary,
+      updated_at: updatedAt,
+    })
+    .eq("id", userId)
+    .select("id");
+  if (profileError || !data || data.length === 0) {
+    const { error: upsertError } = await db.from("profiles").upsert({
+      id: userId,
+      display_name: clean.name.slice(0, 80) || "Athlete",
+      city: clean.city.slice(0, 80),
+      primary_sport: clean.primary,
+      updated_at: updatedAt,
+    });
+    if (upsertError) throw new Error(upsertError.message || profileError?.message);
+  }
 
   const focusFamily = clean.focus.family;
   const focusId = clean.focus.id;

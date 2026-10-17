@@ -2,12 +2,12 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 export const metadata: Metadata = {
-  title: "Privacy Policy · Fitness Battle",
+  title: "Privacy Policy · overtaek",
   description:
-    "How Fitness Battle collects, uses, and shares account and fitness data, including WHOOP and other trackers.",
+    "How overtaek collects, uses, and shares account and fitness data, including WHOOP and other trackers.",
 };
 
-const UPDATED = "October 13, 2026";
+const UPDATED = "October 16, 2026";
 
 export default function PrivacyPolicyPage() {
   return (
@@ -17,7 +17,7 @@ export default function PrivacyPolicyPage() {
       <p className="fb-copy">Last updated {UPDATED}</p>
 
       <p>
-        Fitness Battle (“we”, “us”, or “the app”) helps you run fitness battles
+        overtaek (“we”, “us”, or “the app”, formerly Fitness Battle) helps you run fitness battles
         with automatic tracking. This policy explains what we collect, why we
         use it, and the choices you have. It is written for ordinary use of the
         product, including when you connect a wearable or activity service such
@@ -26,7 +26,7 @@ export default function PrivacyPolicyPage() {
 
       <h2>1. Who this applies to</h2>
       <p>
-        This policy covers the Fitness Battle web app and related APIs. If you
+        This policy covers the overtaek web app and related APIs. If you
         use a third-party service through us (for example WHOOP, Strava, Oura,
         or Garmin), that provider’s own privacy policy also applies to data they
         hold.
@@ -195,7 +195,7 @@ export default function PrivacyPolicyPage() {
       </p>
 
       <p className="fb-legal-foot">
-        <Link href="/">Back to Fitness Battle</Link>
+        <Link href="/">Back to overtaek</Link>
       </p>
     </article>
   );

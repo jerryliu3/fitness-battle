@@ -8,6 +8,7 @@ import {
   competeNow,
   countsOnTrack,
   formatVolume,
+  primaryFreezePeriodStart,
   sportById,
   type Activity,
 } from "@fitness-battle/shared";
@@ -26,6 +27,7 @@ export function TodayScreen() {
   if (!state) return <p className="fb-copy">Loading your week…</p>;
   const route = buildTodayRoute(state);
   const now = competeNow(state);
+  const frozen = state.frozenPeriods.includes(primaryFreezePeriodStart(state));
   const counted = state.activities.filter(
     (a) => countsOnTrack(a, "open") && new Date(a.startedAt) <= now,
   );
@@ -91,8 +93,12 @@ export function TodayScreen() {
             {formatVolume(a.sport, a.distanceM, a.movingSec, units)}
           </p>
           <p className="fb-note">
-            {a.source} · {a.verified ? "Verified" : "Open"} · counted toward
-            your training.
+            {a.source} · {a.verified ? "Verified" : "Open"} ·{" "}
+            {a.disposition === "excluded"
+              ? a.dispositionReason ?? "Sample session (not counted)"
+              : a.disposition === "pending"
+                ? "Pending file import"
+                : "Counted toward your training."}
           </p>
         </section>
       </div>
@@ -106,11 +112,26 @@ export function TodayScreen() {
         <h1>Just one good move.</h1>
         <p className="fb-copy">Small steps. A week that adds up.</p>
       </header>
-      <button
+      {frozen && (
+        <div className="fb-pill" style={{ marginBottom: "16px" }}>
+          <b>❄ Week frozen</b>
+          <span>Your Elo rating is protected through next Monday.</span>
+        </div>
+      )}
+      <div
+        role="button"
+        tabIndex={0}
         className="focus-suggestion"
         onClick={() => {
           react("hop");
           setExpanded("suggestion");
+        }}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            react("hop");
+            setExpanded("suggestion");
+          }
         }}
         onMouseEnter={() => react("wave")}
       >
@@ -132,7 +153,7 @@ export function TodayScreen() {
           loop={false}
           playing={reaction.key > 0}
         />
-      </button>
+      </div>
       <div className="focus-row">
         <h2>Your recent rhythm</h2>
         {sessions.length ? (
@@ -193,7 +214,11 @@ export function TodayScreen() {
                 })}
               </small>
               <b>{sportById(a.sport).name}</b>
-              <em>{a.verified ? "Verified" : "Open"} · counted</em>
+              <em>
+                {a.disposition === "excluded"
+                  ? `${a.source} · sample (excluded)`
+                  : `${a.verified ? "Verified" : "Open"} · ${a.disposition === "pending" ? "pending" : "counted"}`}
+              </em>
             </span>
           </div>
         ))}

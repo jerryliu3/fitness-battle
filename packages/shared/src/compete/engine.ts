@@ -87,6 +87,7 @@ export interface Action {
     | "complete-lesson"
     | "complete-onboarding"
     | "freeze"
+    | "unfreeze"
     | "duel"
     | "acknowledge-reveal"
     | "set-disposition"
@@ -1152,6 +1153,19 @@ export function reduceCompete(
         ...rolled,
         freezesLeft: rolled.freezesLeft - 1,
         frozenPeriods: [...rolled.frozenPeriods, periodStart],
+      };
+    }
+    case "unfreeze": {
+      const primaryEnrollment = enrollmentFor(rolled, rolled.primary);
+      const periodStart =
+        primaryEnrollment?.waveStart ?? rolled.clock.periodStart;
+      if (!rolled.frozenPeriods.includes(periodStart)) {
+        return rolled;
+      }
+      return {
+        ...rolled,
+        freezesLeft: Math.min(STARTING_FREEZES, rolled.freezesLeft + 1),
+        frozenPeriods: rolled.frozenPeriods.filter((p) => p !== periodStart),
       };
     }
     case "duel":

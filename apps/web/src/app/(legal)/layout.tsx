@@ -3,7 +3,7 @@ import type { ReactNode } from "react";
 import Link from "next/link";
 
 export const metadata: Metadata = {
-  title: "Legal · Fitness Battle",
+  title: "Legal · overtaek",
 };
 
 export default function LegalLayout({ children }: { children: ReactNode }) {
@@ -11,7 +11,7 @@ export default function LegalLayout({ children }: { children: ReactNode }) {
     <div className="fb fb-legal">
       <header className="fb-legal-header">
         <Link href="/" className="fb-legal-brand">
-          Fitness Battle
+          overtaek
         </Link>
         <nav className="fb-legal-nav" aria-label="Legal">
           <Link href="/privacy">Privacy</Link>
