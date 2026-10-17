@@ -185,6 +185,54 @@
   width: 100%;
   margin: auto;
 }
+.focus-settings-list {
+  display: grid;
+  gap: 0;
+  background: #fff;
+  border: 1px solid #e0e5dd;
+  border-radius: 18px;
+  overflow: hidden;
+  margin: 8px 0 20px;
+}
+.focus-settings-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  width: 100%;
+  text-align: left;
+  padding: 18px 20px;
+  border: 0;
+  border-bottom: 1px solid #e8eee3;
+  background: #fff;
+  color: #26382d;
+  font: inherit;
+  cursor: pointer;
+}
+.focus-settings-row:last-child {
+  border-bottom: 0;
+}
+.focus-settings-row span:first-child {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+.focus-settings-row b {
+  font-size: 15px;
+  font-weight: 500;
+}
+.focus-settings-row small {
+  font-size: 12px;
+  color: #768172;
+}
+.focus-settings-row:hover {
+  background: #f5f8f1;
+}
+.focus-settings-panel {
+  display: grid;
+  gap: 16px;
+}
 .focus-crew {
   max-width: 960px;
   width: 100%;

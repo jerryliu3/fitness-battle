@@ -1,12 +1,9 @@
 import {
   SPORTS,
   primaryFreezePeriodStart,
-  initialsFromName,
-  rankForElo,
   type ProviderId,
 } from "@fitness-battle/shared";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { Avatar } from "heroui-native/avatar";
 import { Button } from "heroui-native/button";
 import { Input } from "heroui-native/input";
 import { useEffect, useRef, useState } from "react";
@@ -26,7 +23,7 @@ import {
   startCloudTrackerConnect,
 } from "../../src/lib/tracker-connect";
 import { AthleteMetrics } from "../../src/features/athlete-metrics";
-import { FocusButton, FocusDisclosure, f } from "../../src/ui/focus";
+import { FocusButton, f } from "../../src/ui/focus";
 import { SHELL_COLORS, SHELL_RADIUS } from "../../src/theme";
 
 function isDeviceProvider(
@@ -36,6 +33,7 @@ function isDeviceProvider(
 }
 
 type AuthMode = "signin" | "signup";
+type AthletePanel = "connections" | "preferences";
 
 export default function YouScreen() {
   const { state, dispatch } = useCompeteStore();
@@ -64,6 +62,7 @@ export default function YouScreen() {
   const [displayName, setDisplayName] = useState("");
   const [authBusy, setAuthBusy] = useState(false);
   const [authNote, setAuthNote] = useState<string | null>(null);
+  const [panel, setPanel] = useState<AthletePanel | null>(null);
   const appliedTracker = useRef<string | null>(null);
 
   useEffect(() => {
@@ -88,6 +87,7 @@ export default function YouScreen() {
     } else if (tracker === "error") {
       setNote("That tracker did not connect. Try again from the app.");
     }
+    setPanel("connections");
   }, [dispatch, params.provider, params.tracker, state]);
 
   useEffect(() => {
@@ -109,8 +109,6 @@ export default function YouScreen() {
   const draftCity = city ?? state.city;
   const dirty = draftName !== state.name || draftCity !== state.city;
   const frozen = state.frozenPeriods.includes(primaryFreezePeriodStart(state));
-  const rating = state.ratings.find((row) => row.sport === state.primary);
-  const rank = rankForElo(rating?.openElo ?? 1000);
 
   const rowBusy = syncBusy || Boolean(busyProvider);
   const signedIn = Boolean(user);
@@ -330,23 +328,22 @@ export default function YouScreen() {
   if (!user) return null;
   const account = user;
 
-  return (
-    <SafeAreaView style={styles.safe} edges={["top"]}>
-      <ScrollView
-        contentContainerStyle={f.content}
-        keyboardShouldPersistTaps="handled"
-      >
-        <AthleteMetrics
-          state={state}
-          email={account.email}
-          demoMode={demoMode}
-        />
-        <FocusButton
-          label="Progress · statistics & season history"
-          secondary
-          onPress={() => router.push("/athlete-progress")}
-        />
-        <FocusDisclosure title="Connections" detail="Trackers & device health">
+  if (panel === "connections") {
+    return (
+      <SafeAreaView style={styles.safe} edges={["top"]}>
+        <ScrollView
+          contentContainerStyle={f.content}
+          keyboardShouldPersistTaps="handled"
+        >
+          <Pressable
+            accessibilityRole="button"
+            onPress={() => setPanel(null)}
+            style={{ paddingVertical: 8 }}
+          >
+            <Text style={f.small}>← Athlete</Text>
+          </Pressable>
+          <Text style={f.kicker}>Settings</Text>
+          <Text style={f.title}>Connections</Text>
           {providersForDevice().map((provider) => {
             const link = state.links.find(
               (row) => row.provider === provider.id,
@@ -410,8 +407,27 @@ export default function YouScreen() {
             );
           })}
           {note ? <Text style={styles.copy}>{note}</Text> : null}
-        </FocusDisclosure>
-        <FocusDisclosure title="Preferences" detail="Profile, units & sport">
+        </ScrollView>
+      </SafeAreaView>
+    );
+  }
+
+  if (panel === "preferences") {
+    return (
+      <SafeAreaView style={styles.safe} edges={["top"]}>
+        <ScrollView
+          contentContainerStyle={f.content}
+          keyboardShouldPersistTaps="handled"
+        >
+          <Pressable
+            accessibilityRole="button"
+            onPress={() => setPanel(null)}
+            style={{ paddingVertical: 8 }}
+          >
+            <Text style={f.small}>← Athlete</Text>
+          </Pressable>
+          <Text style={f.kicker}>Settings</Text>
+          <Text style={f.title}>Preferences</Text>
           <Text style={styles.section}>Profile</Text>
           <Input
             value={draftName}
@@ -443,7 +459,6 @@ export default function YouScreen() {
               Save profile
             </Button>
           ) : null}
-
           <Text style={styles.section}>Units</Text>
           <View style={f.chipRow}>
             <Pressable
@@ -463,7 +478,6 @@ export default function YouScreen() {
               <Text style={f.rowTitle}>Kilometres</Text>
             </Pressable>
           </View>
-
           <View style={f.chipRow}>
             {SPORTS.map((s) => (
               <Pressable
@@ -486,12 +500,68 @@ export default function YouScreen() {
             disabled={frozen || state.freezesLeft <= 0}
             onPress={() => dispatch({ type: "freeze" })}
           />
-        </FocusDisclosure>
-        <FocusButton
-          label="Notification settings"
-          secondary
-          onPress={() => router.push("/settings")}
+        </ScrollView>
+      </SafeAreaView>
+    );
+  }
+
+  return (
+    <SafeAreaView style={styles.safe} edges={["top"]}>
+      <ScrollView
+        contentContainerStyle={f.content}
+        keyboardShouldPersistTaps="handled"
+      >
+        <AthleteMetrics
+          state={state}
+          email={account.email}
+          demoMode={demoMode}
         />
+        <View style={styles.settingsList}>
+          <Pressable
+            accessibilityRole="button"
+            style={styles.settingsRow}
+            onPress={() => router.push("/athlete-progress")}
+          >
+            <View style={styles.settingsCopy}>
+              <Text style={styles.rowTitle}>Progress</Text>
+              <Text style={styles.copy}>Statistics & season history</Text>
+            </View>
+            <Text style={f.small}>→</Text>
+          </Pressable>
+          <Pressable
+            accessibilityRole="button"
+            style={styles.settingsRow}
+            onPress={() => setPanel("connections")}
+          >
+            <View style={styles.settingsCopy}>
+              <Text style={styles.rowTitle}>Connections</Text>
+              <Text style={styles.copy}>Trackers & device health</Text>
+            </View>
+            <Text style={f.small}>→</Text>
+          </Pressable>
+          <Pressable
+            accessibilityRole="button"
+            style={styles.settingsRow}
+            onPress={() => setPanel("preferences")}
+          >
+            <View style={styles.settingsCopy}>
+              <Text style={styles.rowTitle}>Preferences</Text>
+              <Text style={styles.copy}>Profile, units & sport</Text>
+            </View>
+            <Text style={f.small}>→</Text>
+          </Pressable>
+          <Pressable
+            accessibilityRole="button"
+            style={[styles.settingsRow, styles.settingsRowLast]}
+            onPress={() => router.push("/settings")}
+          >
+            <View style={styles.settingsCopy}>
+              <Text style={styles.rowTitle}>Notifications</Text>
+              <Text style={styles.copy}>Your updates, your choice</Text>
+            </View>
+            <Text style={f.small}>→</Text>
+          </Pressable>
+        </View>
         <FocusButton
           label="Sign out"
           secondary
@@ -524,6 +594,31 @@ const styles = StyleSheet.create({
     fontFamily: "DMSans_700Bold",
     color: SHELL_COLORS.ink,
     fontSize: 16,
+  },
+  settingsList: {
+    backgroundColor: SHELL_COLORS.card,
+    borderWidth: 1,
+    borderColor: SHELL_COLORS.line,
+    borderRadius: 18,
+    overflow: "hidden",
+    marginVertical: 8,
+  },
+  settingsRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 12,
+    paddingHorizontal: 18,
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: SHELL_COLORS.line,
+  },
+  settingsRowLast: {
+    borderBottomWidth: 0,
+  },
+  settingsCopy: {
+    flex: 1,
+    gap: 3,
   },
   row: {
     minHeight: 52,

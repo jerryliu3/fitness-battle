@@ -20,12 +20,12 @@ Use DM Sans for product UI, restrained display sizes, readable supporting copy, 
 
 ## Information architecture
 
-The visible tabs are **Home / Arena / Crew / Athlete**. Stable route IDs remain `/today`, `/arena`, `/field`, and `/you` so existing deep links continue to work.
+The visible tabs are **Home / Compete / Crew / Athlete**. Stable route IDs remain `/today`, `/arena`, `/field`, and `/you` so existing deep links continue to work. Tab label is **Compete** (not Arena).
 
 - Home: one recommendation (expands in-place for detail), then the winding recent counted-session path. Empty paths stay quiet — no invented activity and no “connect/sync” empty copy on the path itself.
-- Arena: active sports, registration panel (join / eligible crew — never “solo” wording), separate score tracks, current vertical lanes, prior-self ghost, awards, and benchmark links. A disabled **1v1 · Coming soon** teaser is allowed; no live 1v1 yet.
+- Compete (`/arena`): active sports, registration panel (join / eligible crew — never “solo” wording), separate score tracks, current vertical lanes, prior-self ghost, awards, and benchmark links. A disabled **1v1 · Coming soon** teaser is allowed; no live 1v1 yet.
 - Crew: Trail-style club identity, shared week progress, activity/standings, members, invites and existing supported crew actions. Signed-out/demo states preview what crews unlock. Empty/live states remain honest.
-- Athlete: profile card with portrait, name, city, and email; **season summary, Elo, and benchmarks near the top**; progress, connections, preferences (including units) and account settings behind focused sections.
+- Athlete: profile card with portrait, name, city, and email; **season summary, Elo, and benchmarks near the top**. Account controls follow Strava/Duolingo-style IA: a short list on Athlete that opens a Settings hub and separate screens (not a wall of expanders).
 
 ## Lane viewport contract
 
