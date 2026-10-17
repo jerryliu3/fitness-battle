@@ -8,6 +8,7 @@ import {
   migrateCompeteState,
   reduceCompete,
   rollClock,
+  withAccountEloBaseline,
   type Action,
   type CompeteState,
 } from "@fitness-battle/shared";
@@ -199,9 +200,12 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
 
     const settle = (chosen: CompeteState, savedAt: string, status: LoadStatus) => {
       if (cancelled || userIdRef.current !== accountId) return;
-      let next = chosen;
+      // Signed-in documents always carry the account baseline (1000), even when
+      // migrate demotes empty Guest-shaped local copies back to unranked 0.
+      let next = signedIn ? withAccountEloBaseline(chosen) : chosen;
       const pending = queue.current.splice(0);
       for (const action of pending) next = reduceCompete(next, action);
+      if (signedIn) next = withAccountEloBaseline(next);
       const stamped = pending.length > 0 ? new Date().toISOString() : savedAt;
       publish(accountId, next, stamped, status, status === "ready" && pending.length > 0);
     };
@@ -247,7 +251,13 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
       .catch(() => {
         if (cancelled || userIdRef.current !== accountId) return;
         queue.current = [];
-        publish(accountId, local.state, local.savedAt, "failed", false);
+        publish(
+          accountId,
+          withAccountEloBaseline(local.state),
+          local.savedAt,
+          "failed",
+          false,
+        );
         setSaveError(null);
       });
 
@@ -262,7 +272,8 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
     const parsed = parseStored(raw);
     if (!accountId || !raw || !parsed) return;
     const stamped = new Date().toISOString();
-    writeLocal(accountId, parsed.state, stamped);
+    const recovered = withAccountEloBaseline(parsed.state);
+    writeLocal(accountId, recovered, stamped);
     try {
       localStorage.setItem(RECOVERY_KEY, raw);
       localStorage.removeItem(LEGACY_KEY);
@@ -270,9 +281,9 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
       console.warn("Could not update legacy recovery keys:", error);
     }
     setLegacyOffer(false);
-    stateRef.current = parsed.state;
-    setState(parsed.state);
-    if (statusRef.current === "ready") scheduleSave(accountId, parsed.state);
+    stateRef.current = recovered;
+    setState(recovered);
+    if (statusRef.current === "ready") scheduleSave(accountId, recovered);
   }, [scheduleSave]);
 
   const retryLoad = useCallback(() => {

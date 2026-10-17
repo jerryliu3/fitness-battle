@@ -133,8 +133,9 @@ export function AthleteOverview({
     .slice()
     .sort((a, b) => a.periodStart.localeCompare(b.periodStart));
 
-  // Guests stay at 0 until account creation / first join lifts them to 1000.
-  // Chart history before the start day stays at 0.
+  // With settled history, days before the first week stay at 0. With no
+  // history yet, hold the current score (0 for guests, 1000 after account)
+  // so new accounts do not fake a jump from 0 → baseline on "today".
   const startIso =
     history.length > 0 ? history[0].periodStart.slice(0, 10) : todayIso;
 
@@ -143,7 +144,7 @@ export function AthleteOverview({
     const dayDate = new Date(today.getTime() - d * 24 * 3600 * 1000);
     const dayIso = dayDate.toISOString().slice(0, 10);
     if (dayIso < startIso) {
-      dailyValues.push(0);
+      dailyValues.push(history.length === 0 ? currentElo : 0);
       continue;
     }
     const matching = history.filter((r) => r.periodStart.slice(0, 10) <= dayIso);
