@@ -1,4 +1,4 @@
-import type { PeriodBounds } from "../period";
+import { APP_TIMEZONE, type PeriodBounds } from "../period";
 import {
   DensityMatcher,
   buildLocalBoard,
@@ -99,7 +99,7 @@ export interface Action {
     /** Pin this account to a crew’s shared individual field for one sport. */
     | "set-crew-board"
     | "clear-crew-board"
-    /** Demo/dev: settle the open week as if Monday UTC already arrived. */
+    /** Demo/dev: settle the open week as if Monday already arrived. */
     | "debug-close-week";
   name?: string;
   city?: string;
@@ -657,7 +657,7 @@ function settleEnrollment(
   };
 
   if (enrollment.autoEnrollNext) {
-    // Next week opens at Monday 00:00 UTC (weekEnd).
+    // Next week opens at Monday 00:00 (weekEnd).
     next = enrollSport(next, sport, end);
   } else {
     next = withRating(next, sport, { optedIn: false });
@@ -887,7 +887,7 @@ function syncProvider(
   const sport = next.primary;
   const already = next.activities.some(
     (activity) =>
-      activity.source === provider && activity.startedAt.slice(0, 10) === day,
+      activity.source === provider && dayKey(new Date(activity.startedAt)) === day,
   );
   if (already) return next;
   const gps = sportById(sport).gps;
@@ -1353,12 +1353,12 @@ export function formatClock(bounds: PeriodBounds): string {
   const start = bounds.startsAt.toLocaleDateString("en-US", {
     month: "short",
     day: "numeric",
-    timeZone: "UTC",
+    timeZone: APP_TIMEZONE,
   });
   const end = new Date(bounds.endsAt.getTime() - 1).toLocaleDateString("en-US", {
     month: "short",
     day: "numeric",
-    timeZone: "UTC",
+    timeZone: APP_TIMEZONE,
   });
   return `${start} – ${end}`;
 }

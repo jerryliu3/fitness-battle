@@ -1,38 +1,35 @@
 import type { WaveWindow } from "./types";
+import {
+  APP_TIMEZONE,
+  dayKey,
+  endOfZonedDay,
+  startOfZonedDay,
+  weeklyPeriodBounds,
+} from "../period";
 
 const DAY_MS = 86_400_000;
 
-/** UTC calendar day containing `date` (00:00 exclusive of next day). */
-export function startOfUtcDay(date: Date): Date {
-  return new Date(
-    Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()),
-  );
-}
-
 /**
- * Exclusive end of the UTC Monday week that contains `from`.
+ * Exclusive end of the America/New_York Monday week that contains `from`.
  * Monday 00:00 is already the next week, so it runs seven days forward.
  */
-export function weekEndAfter(from: Date): Date {
-  const day = startOfUtcDay(from);
-  const weekday = day.getUTCDay(); // 0 Sun … 6 Sat
-  const daysFromMonday = weekday === 0 ? 6 : weekday - 1;
-  const startsAt = new Date(day);
-  startsAt.setUTCDate(startsAt.getUTCDate() - daysFromMonday);
-  const endsAt = new Date(startsAt);
-  endsAt.setUTCDate(endsAt.getUTCDate() + 7);
-  return endsAt;
+export function weekEndAfter(
+  from: Date,
+  timeZone: string = APP_TIMEZONE,
+): Date {
+  return weeklyPeriodBounds(from, timeZone).endsAt;
 }
 
 /**
- * The open competition week: Monday 00:00 UTC through the next Monday.
+ * The open competition week: Monday 00:00 through the next Monday in America/New_York.
  * Joining mid-week uses that same window. Late activities in the week count.
  */
-export function waveWindowAt(now: Date = new Date()): WaveWindow {
-  const end = weekEndAfter(now);
-  const waveStart = new Date(end);
-  waveStart.setUTCDate(waveStart.getUTCDate() - 7);
-  return { waveStart, weekEnd: end };
+export function waveWindowAt(
+  now: Date = new Date(),
+  timeZone: string = APP_TIMEZONE,
+): WaveWindow {
+  const { startsAt, endsAt } = weeklyPeriodBounds(now, timeZone);
+  return { waveStart: startsAt, weekEnd: endsAt };
 }
 
 export function isWithinWave(
@@ -46,27 +43,34 @@ export function waveIsOpen(window: WaveWindow, now: Date = new Date()): boolean 
   return now < window.weekEnd;
 }
 
-/** Whole UTC days remaining until weekEnd (ceil), clamped ≥ 0. */
+/** Whole calendar days remaining until weekEnd (ceil), clamped ≥ 0. */
 export function daysLeftInWave(window: WaveWindow, now: Date = new Date()): number {
   const ms = window.weekEnd.getTime() - now.getTime();
   if (ms <= 0) return 0;
   return Math.ceil(ms / DAY_MS);
 }
 
-/** Inclusive UTC midnights from waveStart up to (but not including) through. */
-export function utcDaysInRange(start: Date, throughExclusive: Date): Date[] {
+/** Inclusive zoned midnights from waveStart up to (but not including) through. */
+export function zonedDaysInRange(
+  start: Date,
+  throughExclusive: Date,
+  timeZone: string = APP_TIMEZONE,
+): Date[] {
   const days: Date[] = [];
-  let cursor = startOfUtcDay(start);
+  let cursor = startOfZonedDay(start, timeZone);
   const end = throughExclusive.getTime();
   while (cursor.getTime() < end) {
     days.push(cursor);
-    cursor = new Date(cursor.getTime() + DAY_MS);
+    cursor = endOfZonedDay(cursor, timeZone);
   }
   return days;
 }
 
+/** @deprecated Alias for zonedDaysInRange */
+export const utcDaysInRange = zonedDaysInRange;
+
 /**
- * UTC days in the enrollment window. A Monday week is 7.
+ * Days in the enrollment window. A Monday week is 7.
  */
 export function waveLengthDays(window: WaveWindow): number {
   return Math.max(

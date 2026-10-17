@@ -1,4 +1,5 @@
 import {
+  APP_TIMEZONE,
   activityCheckpoints,
   competeNow,
   effortTrackMax,
@@ -152,11 +153,11 @@ export function buildSplitBoard(
     periodLabel: `${period.startsAt.toLocaleDateString("en-US", {
       month: "short",
       day: "numeric",
-      timeZone: "UTC",
+      timeZone: APP_TIMEZONE,
     })}–${new Date(period.endsAt.getTime() - 1).toLocaleDateString("en-US", {
       month: "short",
       day: "numeric",
-      timeZone: "UTC",
+      timeZone: APP_TIMEZONE,
     })}`,
     periodStart: period.startsAt,
     periodEnd: period.endsAt,

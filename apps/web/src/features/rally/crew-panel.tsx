@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { useAuth } from "@/components/auth-context";
 import { useCompete } from "@/components/compete-context";
 import { Sheet } from "@/ui/sheet";
-import { distanceUnitLabel, formatDistanceM } from "@fitness-battle/shared";
+import { APP_TIMEZONE, distanceUnitLabel, formatDistanceM } from "@fitness-battle/shared";
 import Link from "next/link";
 interface Crew {
   id: string;
@@ -281,7 +281,11 @@ function humanCrewError(code?: string): string {
                                 ?.display_name ?? "Athlete"}
                             </b>
                             <small>
-                              {new Date(e.started_at).toLocaleDateString()}
+                              {new Date(e.started_at).toLocaleDateString("en-US", {
+                                month: "short",
+                                day: "numeric",
+                                timeZone: APP_TIMEZONE,
+                              })}
                             </small>
                             <p>
                               {e.sport} ·{" "}

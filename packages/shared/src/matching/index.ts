@@ -10,13 +10,13 @@ export {
   type DensityMatcherConfig,
 } from "./types";
 export {
-  startOfUtcDay,
   weekEndAfter,
   waveWindowAt,
   isWithinWave,
   waveIsOpen,
   daysLeftInWave,
   utcDaysInRange,
+  zonedDaysInRange,
   waveLengthDays,
 } from "./waves";
 export {

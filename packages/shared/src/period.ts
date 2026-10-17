@@ -1,4 +1,12 @@
 import type { PeriodKind } from "./types";
+import {
+  APP_TIMEZONE,
+  dayKey,
+  getZonedWeekday,
+  startOfZonedDay,
+} from "./timezone";
+
+export * from "./timezone";
 
 export interface PeriodBounds {
   kind: PeriodKind;
@@ -11,38 +19,56 @@ export interface CustomPeriodInput {
   endsAt: Date;
 }
 
-function startOfUtcDay(date: Date): Date {
-  return new Date(
-    Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()),
-  );
+/** @deprecated Kept for compatibility. Delegates to startOfZonedDay. */
+export function startOfUtcDay(date: Date): Date {
+  return startOfZonedDay(date, APP_TIMEZONE);
 }
 
-/** Monday 00:00 UTC through next Monday 00:00 UTC (exclusive end). */
-export function weeklyPeriodBounds(anchor: Date = new Date()): PeriodBounds {
-  const day = startOfUtcDay(anchor);
-  const weekday = day.getUTCDay(); // 0 Sun … 6 Sat
+/** Monday 00:00 through next Monday 00:00 in target timezone (default America/New_York). */
+export function weeklyPeriodBounds(
+  anchor: Date = new Date(),
+  timeZone: string = APP_TIMEZONE,
+): PeriodBounds {
+  const weekday = getZonedWeekday(anchor, timeZone);
   const daysFromMonday = weekday === 0 ? 6 : weekday - 1;
-  const startsAt = new Date(day);
-  startsAt.setUTCDate(startsAt.getUTCDate() - daysFromMonday);
-  const endsAt = new Date(startsAt);
-  endsAt.setUTCDate(endsAt.getUTCDate() + 7);
+  const dayStr = dayKey(anchor, timeZone);
+  const [y, m, d] = dayStr.split("-").map(Number);
+
+  const mondayAnchor = new Date(
+    Date.UTC(y!, m! - 1, d! - daysFromMonday, 12, 0, 0),
+  );
+  const startsAt = startOfZonedDay(mondayAnchor, timeZone);
+
+  const nextMondayAnchor = new Date(
+    Date.UTC(y!, m! - 1, d! - daysFromMonday + 7, 12, 0, 0),
+  );
+  const endsAt = startOfZonedDay(nextMondayAnchor, timeZone);
+
   return { kind: "weekly", startsAt, endsAt };
 }
 
-export function dailyPeriodBounds(anchor: Date = new Date()): PeriodBounds {
-  const startsAt = startOfUtcDay(anchor);
-  const endsAt = new Date(startsAt);
-  endsAt.setUTCDate(endsAt.getUTCDate() + 1);
+export function dailyPeriodBounds(
+  anchor: Date = new Date(),
+  timeZone: string = APP_TIMEZONE,
+): PeriodBounds {
+  const startsAt = startOfZonedDay(anchor, timeZone);
+  const dayStr = dayKey(anchor, timeZone);
+  const [y, m, d] = dayStr.split("-").map(Number);
+  const nextDayAnchor = new Date(Date.UTC(y!, m! - 1, d! + 1, 12, 0, 0));
+  const endsAt = startOfZonedDay(nextDayAnchor, timeZone);
   return { kind: "daily", startsAt, endsAt };
 }
 
-export function monthlyPeriodBounds(anchor: Date = new Date()): PeriodBounds {
-  const startsAt = new Date(
-    Date.UTC(anchor.getUTCFullYear(), anchor.getUTCMonth(), 1),
-  );
-  const endsAt = new Date(
-    Date.UTC(anchor.getUTCFullYear(), anchor.getUTCMonth() + 1, 1),
-  );
+export function monthlyPeriodBounds(
+  anchor: Date = new Date(),
+  timeZone: string = APP_TIMEZONE,
+): PeriodBounds {
+  const dayStr = dayKey(anchor, timeZone);
+  const [y, m] = dayStr.split("-").map(Number);
+  const monthStartAnchor = new Date(Date.UTC(y!, m! - 1, 1, 12, 0, 0));
+  const startsAt = startOfZonedDay(monthStartAnchor, timeZone);
+  const nextMonthAnchor = new Date(Date.UTC(y!, m!, 1, 12, 0, 0));
+  const endsAt = startOfZonedDay(nextMonthAnchor, timeZone);
   return { kind: "monthly", startsAt, endsAt };
 }
 
@@ -62,14 +88,15 @@ export function currentPeriodBounds(
   kind: PeriodKind,
   anchor: Date = new Date(),
   custom?: CustomPeriodInput,
+  timeZone: string = APP_TIMEZONE,
 ): PeriodBounds {
   switch (kind) {
     case "daily":
-      return dailyPeriodBounds(anchor);
+      return dailyPeriodBounds(anchor, timeZone);
     case "weekly":
-      return weeklyPeriodBounds(anchor);
+      return weeklyPeriodBounds(anchor, timeZone);
     case "monthly":
-      return monthlyPeriodBounds(anchor);
+      return monthlyPeriodBounds(anchor, timeZone);
     case "custom":
       if (!custom) {
         throw new Error("custom_period_input_required");

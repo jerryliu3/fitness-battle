@@ -11,21 +11,21 @@ import { DEFAULT_GROUP_CAPACITY } from "./types";
 import { waveLengthDays, waveWindowAt, weekEndAfter } from "./waves";
 
 describe("wave windows", () => {
-  it("opens the Monday UTC week that contains the instant", () => {
+  it("opens the Monday America/New_York week that contains the instant", () => {
     const monday = waveWindowAt(new Date("2026-10-12T15:00:00.000Z"));
-    expect(monday.waveStart.toISOString()).toBe("2026-10-12T00:00:00.000Z");
-    expect(monday.weekEnd.toISOString()).toBe("2026-10-19T00:00:00.000Z");
+    expect(monday.waveStart.toISOString()).toBe("2026-10-12T04:00:00.000Z");
+    expect(monday.weekEnd.toISOString()).toBe("2026-10-19T04:00:00.000Z");
     expect(waveLengthDays(monday)).toBe(7);
 
     const sunday = waveWindowAt(new Date("2026-10-11T08:00:00.000Z"));
-    expect(sunday.waveStart.toISOString()).toBe("2026-10-05T00:00:00.000Z");
-    expect(sunday.weekEnd.toISOString()).toBe("2026-10-12T00:00:00.000Z");
+    expect(sunday.waveStart.toISOString()).toBe("2026-10-05T04:00:00.000Z");
+    expect(sunday.weekEnd.toISOString()).toBe("2026-10-12T04:00:00.000Z");
     expect(waveLengthDays(sunday)).toBe(7);
   });
 
   it("weekEndAfter from Saturday is the following Monday", () => {
     const end = weekEndAfter(new Date("2026-10-17T12:00:00.000Z"));
-    expect(end.toISOString()).toBe("2026-10-19T00:00:00.000Z");
+    expect(end.toISOString()).toBe("2026-10-19T04:00:00.000Z");
   });
 });
 

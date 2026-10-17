@@ -1,3 +1,4 @@
+import { APP_TIMEZONE } from "../period";
 import type { PeriodKind } from "../types";
 import { periodEffort } from "./effort";
 import type { Activity, ScoreTrack, SportId } from "./sports";
@@ -104,13 +105,13 @@ export function ghostDisplayName(
     const start = selector.startsAt.toLocaleDateString("en-US", {
       month: "short",
       day: "numeric",
-      timeZone: "UTC",
+      timeZone: APP_TIMEZONE,
     });
     const endExclusive = new Date(selector.endsAt.getTime() - 1);
     const end = endExclusive.toLocaleDateString("en-US", {
       month: "short",
       day: "numeric",
-      timeZone: "UTC",
+      timeZone: APP_TIMEZONE,
     });
     return { name: `Past you (${start}–${end})`, initials: "PY" };
   }

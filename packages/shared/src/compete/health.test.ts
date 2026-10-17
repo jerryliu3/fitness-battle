@@ -35,8 +35,8 @@ describe("sleep health metric", () => {
   });
 
   it("lowers the week score when nights are missing", () => {
-    const start = new Date("2026-10-12T00:00:00.000Z");
-    const end = new Date("2026-10-19T00:00:00.000Z");
+    const start = new Date("2026-10-12T04:00:00.000Z");
+    const end = new Date("2026-10-19T04:00:00.000Z");
     const asOf = new Date("2026-10-15T12:00:00.000Z");
     const night = demoSleepNight("oura", "2026-10-12");
     night.score = 80;
@@ -98,12 +98,12 @@ describe("sleep health metric", () => {
       durationMin: 450,
       now: monday,
     });
-    const closed = rollClock(logged, new Date("2026-10-19T00:00:00.000Z"));
+    const closed = rollClock(logged, new Date("2026-10-19T04:01:00.000Z"));
     const rating = closed.healthRatings.find((item) => item.metric === "sleep");
     expect(closed.healthResults).toHaveLength(1);
     expect(closed.healthResults[0]?.place).toBeGreaterThan(0);
     expect(rating?.optedIn).toBe(true);
-    expect(rating?.lockPeriod).toBe("2026-10-19T00:00:00.000Z");
+    expect(rating?.lockPeriod).toBe("2026-10-19T04:00:00.000Z");
     expect(rating?.elo).not.toBe(logged.healthRatings[0]?.elo);
   });
 

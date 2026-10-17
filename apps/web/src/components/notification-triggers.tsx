@@ -4,7 +4,7 @@ import { useAuth } from "@/components/auth-context";
 import { useCompete } from "@/components/compete-context";
 import { requestAccountPush } from "@/lib/request-push";
 import type { SyncIdentity } from "@/lib/push-notifications";
-import { competeNow, weeklyBoard } from "@fitness-battle/shared";
+import { competeNow, dayKey, weeklyBoard } from "@fitness-battle/shared";
 import { useEffect, useMemo, useRef } from "react";
 
 /**
@@ -71,7 +71,7 @@ export function NotificationTriggers() {
 
   useEffect(() => {
     if (!state) return;
-    const day = new Date().toISOString().slice(0, 10);
+    const day = dayKey(new Date());
     if (lessonDay.current === day) return;
     lessonDay.current = day;
     if (typeof window === "undefined") return;

@@ -263,7 +263,7 @@ export interface CompeteState {
    */
   demoNow?: string | null;
   /**
-   * Per-sport enrollments. The open week is Monday 00:00 UTC through the next Monday.
+   * Per-sport enrollments. The open week is Monday 00:00 through the next Monday in America/New_York.
    * Solo densify matching is per-viewer; when `crewBoard` is set for a sport,
    * that sport’s enrollment is pinned to the crew’s shared individual field.
    */
@@ -315,6 +315,5 @@ export function clamp(min: number, max: number, value: number): number {
   return Math.min(max, Math.max(min, value));
 }
 
-export function dayKey(date: Date): string {
-  return date.toISOString().slice(0, 10);
-}
+export { dayKey } from "../period";
+

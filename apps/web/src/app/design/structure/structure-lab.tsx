@@ -943,7 +943,7 @@ function DesignSurface({
               </aside>
               <div>
                 <div className="s-row">
-                  <p className="s-caption">Week 42 · closes Monday 00:00 UTC</p>
+                  <p className="s-caption">Week 42 · closes Monday 00:00 ET</p>
                   <span className="s-pill">
                     {selectedRegistration?.sport === "sleep"
                       ? "Sleep score"
@@ -1338,7 +1338,7 @@ function DesignSurface({
               </fieldset>
             )}
             <p className="s-caption">
-              Monday—Monday · closes 00:00 UTC. Crew entries stay individual;
+              Monday—Monday · closes 00:00 ET. Crew entries stay individual;
               this is not team-versus-team scoring. Health uses its own score,
               not mileage.
             </p>
@@ -1389,7 +1389,7 @@ function DesignSurface({
             </div>
             <p className="s-caption">
               Completed weeks keep their final place and rating change. New
-              weeks start at Monday 00:00 UTC.
+              weeks start at Monday 00:00 ET.
             </p>
             <button
               className="s-button"

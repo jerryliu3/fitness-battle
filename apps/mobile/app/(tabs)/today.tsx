@@ -10,6 +10,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import {
+  APP_TIMEZONE,
   buildTodayRoute,
   competeNow,
   competePeriodWindow,
@@ -153,7 +154,7 @@ export default function Home() {
                 weekday: "long",
                 month: "long",
                 day: "numeric",
-                timeZone: "UTC",
+                timeZone: APP_TIMEZONE,
               })}
             </Text>
             <Text style={s.expandTitle}>{sportById(a.sport).name}</Text>
@@ -305,7 +306,7 @@ export default function Home() {
                 <Text style={f.small}>
                   {new Date(a.startedAt).toLocaleDateString("en-US", {
                     weekday: "short",
-                    timeZone: "UTC",
+                    timeZone: APP_TIMEZONE,
                   })}
                 </Text>
               </Pressable>
@@ -314,7 +315,7 @@ export default function Home() {
                   {new Date(a.startedAt).toLocaleDateString("en-US", {
                     month: "short",
                     day: "numeric",
-                    timeZone: "UTC",
+                    timeZone: APP_TIMEZONE,
                   })}
                 </Text>
                 <Text style={f.rowTitle}>{sportById(a.sport).name}</Text>

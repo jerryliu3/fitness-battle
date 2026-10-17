@@ -3,6 +3,7 @@ import {
   activityCheckpoints,
   athleteWeekDistanceM,
   checkpointInstants,
+  checkpointLabels,
   distanceTrackMaxKm,
   effortTrackMax,
   initialsFromName,
@@ -11,8 +12,8 @@ import {
 } from "./track";
 import type { Activity } from "./sports";
 
-const periodStart = new Date("2026-10-12T00:00:00.000Z");
-const periodEnd = new Date("2026-10-19T00:00:00.000Z");
+const periodStart = new Date("2026-10-12T04:00:00.000Z");
+const periodEnd = new Date("2026-10-19T04:00:00.000Z");
 
 function activity(
   day: string,
@@ -44,6 +45,18 @@ describe("checkpointInstants", () => {
   });
 });
 
+describe("checkpointLabels", () => {
+  it("formats weekday names in America/New_York including Sunday night ET", () => {
+    // Sunday 11:30 PM EDT (Oct 19 03:30 UTC) should be labeled "Sun"
+    const labels = checkpointLabels([
+      new Date("2026-10-12T15:00:00.000Z"),
+      new Date("2026-10-15T15:00:00.000Z"),
+      new Date("2026-10-19T03:30:00.000Z"),
+    ]);
+    expect(labels).toEqual(["Mon", "Thu", "Sun"]);
+  });
+});
+
 describe("activityCheckpoints", () => {
   it("accumulates effort and distance through each cutoff", () => {
     const activities = [
@@ -71,10 +84,10 @@ describe("activityCheckpoints", () => {
     const series = activityCheckpoints(
       [],
       "running",
-      new Date("2026-10-13T00:00:00.000Z"),
-      new Date("2026-10-18T00:00:00.000Z"),
+      new Date("2026-10-13T04:00:00.000Z"),
+      new Date("2026-10-18T04:00:00.000Z"),
       "open",
-      new Date("2026-10-13T06:00:00.000Z"),
+      new Date("2026-10-13T10:00:00.000Z"),
     );
     expect(series.labels).toEqual(["Early", "Mid", "Now"]);
   });

@@ -1,7 +1,7 @@
 "use client";
 
 import { Ace } from "@/features/rally/ace";
-import { formatVolume, type Activity, type SportId } from "@fitness-battle/shared";
+import { APP_TIMEZONE, dayKey, formatVolume, type Activity, type SportId } from "@fitness-battle/shared";
 import { useEffect, useRef, useState, type CSSProperties, type PointerEvent } from "react";
 import type { HomeLayout } from "./model";
 import "./home-concepts.css";
@@ -21,7 +21,7 @@ function ActivityDisc({ activity, sport, onOpen, className = "", style }: {
   activity: Activity; sport: SportId; onOpen: () => void; className?: string; style?: CSSProperties;
 }) {
   const volume = formatVolume(sport, activity.distanceM, activity.movingSec);
-  return <button className={`hc-disc hc-past ${className}`} style={style} onClick={onOpen} aria-label={`${new Date(activity.startedAt).toLocaleDateString("en-US", { weekday: "long", timeZone: "UTC" })}, ${volume}. Open activity`}>
+  return <button className={`hc-disc hc-past ${className}`} style={style} onClick={onOpen} aria-label={`${new Date(activity.startedAt).toLocaleDateString("en-US", { weekday: "long", timeZone: APP_TIMEZONE })}, ${volume}. Open activity`}>
     <span aria-hidden="true">✓</span><b>{volume}</b>
   </button>;
 }
@@ -66,23 +66,23 @@ export function HomeConcept(props: HomeConceptProps) {
   </section>;
 
   if (layout === "calendar") {
-    const todayKey = props.now.toISOString().slice(0,10);
+    const todayKey = dayKey(props.now);
     return <section className="hc-calendar" aria-label="Your activity week">
       <div className="hc-week-strip">
         {Array.from({length:7}, (_, index) => {
           const day = new Date(props.periodStart.getTime()+index*86400000);
-          const key = day.toISOString().slice(0,10);
-          const entries = activities.filter(a => a.startedAt.slice(0,10)===key);
+          const key = dayKey(day);
+          const entries = activities.filter(a => dayKey(new Date(a.startedAt))===key);
           const isToday = key === todayKey;
           const future = key > todayKey;
           return <div key={key} className={`hc-calendar-day ${isToday ? "is-today" : ""}`}>
-            <span aria-label={day.toLocaleDateString("en-US",{weekday:"long",timeZone:"UTC"})}>{day.toLocaleDateString("en-US",{weekday:"narrow",timeZone:"UTC"})}</span>
+            <span aria-label={day.toLocaleDateString("en-US",{weekday:"long",timeZone:APP_TIMEZONE})}>{day.toLocaleDateString("en-US",{weekday:"narrow",timeZone:APP_TIMEZONE})}</span>
             {isToday ? <span className="hc-day-current" aria-hidden="true" /> : entries.length && !future ? <button onClick={() => onActivity(entries.at(-1)!)} aria-label={`${entries.length} activities on ${key}. Open latest activity`}>✓</button> : <span className="hc-day-empty" role="img" aria-label={future ? "Future day, nothing scheduled" : "No activity recorded"} />}
           </div>;
         })}
       </div>
       <div className="hc-calendar-now"><TodayDisc onOpen={onCoach} /><Recommendation value={recommendation} /></div>
-      <div className="hc-calendar-history">{activities.slice(-3).map(a => <button key={a.id} onClick={() => onActivity(a)}><b>{volume(a)}</b><span>{new Date(a.startedAt).toLocaleDateString("en-US",{weekday:"short",timeZone:"UTC"})}</span></button>)}</div>
+      <div className="hc-calendar-history">{activities.slice(-3).map(a => <button key={a.id} onClick={() => onActivity(a)}><b>{volume(a)}</b><span>{new Date(a.startedAt).toLocaleDateString("en-US",{weekday:"short",timeZone:APP_TIMEZONE})}</span></button>)}</div>
     </section>;
   }
 

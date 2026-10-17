@@ -20,7 +20,7 @@ import {
   type CheckpointSeries,
 } from "./compete/track";
 import { orderedArenaLanes } from "./arena-view";
-import { currentPeriodBounds } from "./period";
+import { APP_TIMEZONE, currentPeriodBounds } from "./period";
 
 export const CHECKPOINT_FRAME = { width: 320, height: 570 } as const;
 
@@ -197,7 +197,7 @@ function volumeLabel(activity: Activity): string {
 function weekdayLabel(iso: string): string {
   return new Date(iso).toLocaleDateString("en-US", {
     weekday: "long",
-    timeZone: "UTC",
+    timeZone: APP_TIMEZONE,
   });
 }
 
@@ -351,12 +351,12 @@ function weekLabel(periodStart: string, periodEnd: string): string {
   const start = new Date(periodStart).toLocaleDateString("en-US", {
     month: "short",
     day: "numeric",
-    timeZone: "UTC",
+    timeZone: APP_TIMEZONE,
   });
   const end = new Date(new Date(periodEnd).getTime() - 1).toLocaleDateString("en-US", {
     month: "short",
     day: "numeric",
-    timeZone: "UTC",
+    timeZone: APP_TIMEZONE,
   });
   return `${start} – ${end}`;
 }
