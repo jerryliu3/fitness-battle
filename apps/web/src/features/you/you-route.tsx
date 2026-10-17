@@ -18,7 +18,9 @@ import {
   PROVIDERS,
   RANK_BANDS,
   rankForElo,
+  sleepRenewal,
   sportById,
+  sportRenewal,
   SPORTS,
   STARTING_FREEZES,
   type ActivitySample,
@@ -144,9 +146,9 @@ function YouContent() {
   }
 
   const now = competeNow(state);
+  const sleep = sleepRenewal(state);
   const board = buildSplitBoard(state, state.primary, "open", now);
   const frozen = state.frozenPeriods.includes(primaryFreezePeriodStart(state));
-  const spec = sportById(state.primary);
 
   function applyRemote(body: {
     provider: ProviderId;
@@ -615,6 +617,55 @@ function YouContent() {
                     </div>
                   );
                 })}
+              </section>
+
+              <section className="fb-card" aria-label="This week">
+                <h2>This week</h2>
+                {state.enrollments.length === 0 ? (
+                  <p className="fb-copy">You are not registered for a sport this week.</p>
+                ) : (
+                  state.enrollments.map((enrollment) => {
+                    const renewal = sportRenewal(state, enrollment.sport);
+                    return (
+                      <div key={enrollment.sport}>
+                        <p className="fb-copy">
+                          {sportById(enrollment.sport).name}. {renewal.detail}
+                        </p>
+                        <button
+                          type="button"
+                          className="fb-btn-line"
+                          onClick={() =>
+                            dispatch({
+                              type: renewal.renews ? "schedule-leave" : "resume-renewal",
+                              sport: enrollment.sport,
+                            })
+                          }
+                        >
+                          {renewal.renews
+                            ? `Stop ${sportById(enrollment.sport).name} after this week`
+                            : `Keep ${sportById(enrollment.sport).name} next week`}
+                        </button>
+                      </div>
+                    );
+                  })
+                )}
+                {sleep.enrolled ? (
+                  <div>
+                    <p className="fb-copy">{sleep.detail}</p>
+                    <button
+                      type="button"
+                      className="fb-btn-line"
+                      onClick={() =>
+                        dispatch({
+                          type: sleep.renews ? "schedule-leave" : "resume-renewal",
+                          metric: "sleep",
+                        })
+                      }
+                    >
+                      {sleep.renews ? "Stop sleep after this week" : "Keep sleep next week"}
+                    </button>
+                  </div>
+                ) : null}
               </section>
 
               <section className="fb-card">

@@ -109,7 +109,29 @@ export {
   type Action,
   type BoardRow,
 } from "./engine";
-export { chooseCompeteState, isCompeteState, type CompeteEnvelope } from "./snapshot";
+export {
+  chooseCompeteState,
+  applyRemoteSnapshot,
+  isCompeteState,
+  type CompeteEnvelope,
+} from "./snapshot";
+export {
+  FIELD_REFRESH_MS,
+  openEnrollmentRemoved,
+  sleepRenewal,
+  sportRenewal,
+  type RenewalView,
+} from "./participation";
+export {
+  fieldChangeNotice,
+  fieldSeenStorageKey,
+  readSeenField,
+  seenFieldFromState,
+  type FieldNotice,
+  type SeenField,
+  type SeenRival,
+} from "./field-notice";
+export { sumCrewWindow, type CrewVolumeEntry } from "./crew-volume";
 export {
   prepareCompeteStateForAccount,
   sanitizeCompeteStateForAccount,

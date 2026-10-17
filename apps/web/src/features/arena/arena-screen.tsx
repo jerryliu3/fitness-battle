@@ -17,6 +17,7 @@ import {
   awardCards,
   competeNow,
   primaryFreezePeriodStart,
+  sleepRenewal,
   SPORTS,
   weeklyPeriodBounds,
   type SportId,
@@ -24,7 +25,7 @@ import {
 } from "@fitness-battle/shared";
 
 export function ArenaScreen() {
-  const { state, dispatch } = useCompete();
+  const { state, dispatch, fieldNotice, dismissFieldNotice, standingsStale } = useCompete();
   const { user } = useAuth();
   const router = useRouter();
   const [authOpen, setAuthOpen] = useState(false);
@@ -68,6 +69,8 @@ export function ArenaScreen() {
 
   const hasAnyRegistration = active.length > 0 || sleepOptedIn;
 
+  const sleep = sleepRenewal(state);
+
   return (
     <div className="focus-arena">
       <div
@@ -89,6 +92,20 @@ export function ArenaScreen() {
           <span>Your Elo rating is protected through next Monday.</span>
         </div>
       )}
+
+      {standingsStale ? (
+        <p className="fb-note" role="status">
+          Standings may be out of date. They'll refresh when the connection returns.
+        </p>
+      ) : null}
+      {fieldNotice ? (
+        <p className="fb-note" role="status">
+          {fieldNotice.title}{" "}
+          <button type="button" className="fb-btn-ghost" onClick={dismissFieldNotice}>
+            Got it
+          </button>
+        </p>
+      ) : null}
 
       {!hasAnyRegistration ? (
         <div style={{ margin: "16px 0 24px" }}>
@@ -169,7 +186,13 @@ export function ArenaScreen() {
                 }}
                 onSample={() => dispatch({ type: "log-sleep" })}
                 onLeave={() =>
-                  dispatch({ type: "opt-out-health", metric: "sleep" })
+                  dispatch({
+                    type: sleep.renews ? "schedule-leave" : "resume-renewal",
+                    metric: "sleep",
+                  })
+                }
+                leaveLabel={
+                  sleep.renews ? "Stop after this week" : "Keep playing next week"
                 }
               />
             </section>
@@ -207,7 +230,12 @@ export function ArenaScreen() {
 
       <WeekReveal
         state={state}
-        onDismiss={() => dispatch({ type: "acknowledge-reveal" })}
+        onDismiss={(revealId) =>
+          dispatch({ type: "acknowledge-reveal", revealIds: [revealId] })
+        }
+        onStop={(sport) => dispatch({ type: "schedule-leave", sport })}
+        onKeep={(sport) => dispatch({ type: "resume-renewal", sport })}
+        onJoin={(sport) => dispatch({ type: "opt-in", sport })}
       />
 
       {awardCards(state).length > 0 && (

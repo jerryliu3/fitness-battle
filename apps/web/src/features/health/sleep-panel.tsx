@@ -36,12 +36,14 @@ export function SleepPanel({
   onJoin,
   onSample,
   onLeave,
+  leaveLabel = "Stop after this week",
 }: {
   state: CompeteState;
   now: Date;
   onJoin: () => void;
   onSample: () => void;
   onLeave: () => void;
+  leaveLabel?: string;
 }) {
   const metric = healthMetricById("sleep");
   const rating = state.healthRatings.find((item) => item.metric === "sleep");
@@ -188,7 +190,7 @@ export function SleepPanel({
           )}
 
           <button type="button" className="fb-btn-ghost" onClick={onLeave}>
-            Leave sleep
+            {leaveLabel}
           </button>
         </>
       ) : (

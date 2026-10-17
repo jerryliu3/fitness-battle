@@ -6,7 +6,9 @@ import {
   formatPlace,
   primaryRevealResults,
   sportById,
+  sportRenewal,
   type CompeteState,
+  type SportId,
 } from "@fitness-battle/shared";
 
 function weekLabel(periodStart: string, periodEnd: string): string {
@@ -29,9 +31,15 @@ function weekLabel(periodStart: string, periodEnd: string): string {
 export function WeekReveal({
   state,
   onDismiss,
+  onStop,
+  onKeep,
+  onJoin,
 }: {
   state: CompeteState;
-  onDismiss: () => void;
+  onDismiss: (revealId: string) => void;
+  onStop: (sport: SportId) => void;
+  onKeep: (sport: SportId) => void;
+  onJoin: (sport: SportId) => void;
 }) {
   // Derive from acknowledgedAt; ignore any stale pendingRevealIds blob.
   const reveals = primaryRevealResults(
@@ -41,6 +49,7 @@ export function WeekReveal({
   );
   if (reveals.length === 0) return null;
   const result = reveals[0]!;
+  const renewal = sportRenewal(state, result.sport);
   const delta = result.eloAfter - result.eloBefore;
   const sport = sportById(result.sport);
   const headline =
@@ -108,6 +117,7 @@ export function WeekReveal({
           The new week is already open. A crew keeps the same invite code.
         </p>
       )}
+      <p className="fb-note">{renewal.detail}</p>
 
       <button
         type="button"
@@ -119,8 +129,25 @@ export function WeekReveal({
       >
         Copy recap
       </button>
-      <button type="button" className="sp-cta" onClick={onDismiss}>
-        Play next week
+      {renewal.enrolled && renewal.renews ? (
+        <button type="button" className="fb-btn-line" onClick={() => onStop(result.sport)}>
+          Stop after this week
+        </button>
+      ) : null}
+      {renewal.enrolled && !renewal.renews ? (
+        <button type="button" className="fb-btn-line" onClick={() => onKeep(result.sport)}>
+          Keep playing next week
+        </button>
+      ) : null}
+      <button
+        type="button"
+        className="sp-cta"
+        onClick={() => {
+          if (!renewal.enrolled) onJoin(result.sport);
+          onDismiss(result.id);
+        }}
+      >
+        {renewal.enrolled ? "Continue" : "Play this week"}
       </button>
     </section>
   );

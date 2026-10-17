@@ -2,14 +2,21 @@
 
 import { useAuth } from "@/components/auth-context";
 import {
-  chooseCompeteState,
+  applyRemoteSnapshot,
+  FIELD_REFRESH_MS,
+  fieldChangeNotice,
+  fieldSeenStorageKey,
   freshState,
   isCompeteState,
   migrateCompeteState,
+  primaryRevealResults,
+  readSeenField,
   reduceCompete,
   rollClock,
+  seenFieldFromState,
   type Action,
   type CompeteState,
+  type FieldNotice,
 } from "@fitness-battle/shared";
 import {
   createContext,
@@ -37,8 +44,14 @@ interface CompeteApi {
   /** Unscoped pre-account history is still on this browser. */
   legacyOffer: boolean;
   loadStatus: LoadStatus;
+  /** Real crew or personal movement since this browser last acknowledged the field. */
+  fieldNotice: FieldNotice | null;
+  /** The last field refresh failed. Lanes may be behind the server. */
+  standingsStale: boolean;
   recoverLegacy: () => void;
   retryLoad: () => void;
+  dismissFieldNotice: () => void;
+  refresh: () => Promise<boolean>;
 }
 
 const CompeteContext = createContext<CompeteApi>({
@@ -47,8 +60,12 @@ const CompeteContext = createContext<CompeteApi>({
   saveError: null,
   legacyOffer: false,
   loadStatus: "loading",
+  fieldNotice: null,
+  standingsStale: false,
   recoverLegacy: () => {},
   retryLoad: () => {},
+  dismissFieldNotice: () => {},
+  refresh: async () => false,
 });
 
 function storageKey(userId: string | null): string {
@@ -116,12 +133,17 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
   const [loadedFor, setLoadedFor] = useState<string | null | undefined>(
     undefined,
   );
+  const [fieldNotice, setFieldNotice] = useState<FieldNotice | null>(null);
+  const [standingsStale, setStandingsStale] = useState(false);
   const userIdRef = useRef(userId);
   const demoRef = useRef(demoMode || user?.mode === "demo");
   const statusRef = useRef<LoadStatus>("loading");
   const stateRef = useRef<CompeteState | null>(null);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const queue = useRef<Action[]>([]);
+  const dirtyRef = useRef(0);
+  const unsavedRef = useRef(false);
+  const refreshFlight = useRef<Promise<boolean> | null>(null);
   userIdRef.current = userId;
   demoRef.current = demoMode || user?.mode === "demo";
 
@@ -134,6 +156,10 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
     statusRef.current = "loading";
     stateRef.current = null;
     queue.current = [];
+    dirtyRef.current = 0;
+    unsavedRef.current = false;
+    setFieldNotice(null);
+    setStandingsStale(false);
     if (timer.current) {
       clearTimeout(timer.current);
       timer.current = null;
@@ -144,7 +170,9 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
     if (!accountId || demoRef.current || statusRef.current !== "ready") return;
     if (timer.current) clearTimeout(timer.current);
     timer.current = setTimeout(() => {
+      timer.current = null;
       if (userIdRef.current !== accountId || statusRef.current !== "ready") return;
+      const generation = dirtyRef.current;
       void fetch("/api/compete", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
@@ -153,13 +181,26 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
         .then(async (response) => {
           if (userIdRef.current !== accountId) return;
           if (!response.ok) {
-            setSaveError("This device updated. The account copy did not save.");
+            localStorage.setItem(deviceOnlyKey(accountId), "1");
+            const body = (await response.json().catch(() => null)) as {
+              error?: string;
+            } | null;
+            setSaveError(
+              body?.error === "week_still_open"
+                ? "This week stays active until it closes. Stop after this week from You."
+                : "This device updated. The account copy did not save.",
+            );
             return;
+          }
+          if (dirtyRef.current === generation) {
+            localStorage.removeItem(deviceOnlyKey(accountId));
+            unsavedRef.current = false;
           }
           setSaveError(null);
         })
         .catch(() => {
           if (userIdRef.current !== accountId) return;
+          localStorage.setItem(deviceOnlyKey(accountId), "1");
           setSaveError("This device updated. The account copy did not save.");
         });
     }, 400);
@@ -225,24 +266,21 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
       .then((body) => {
         if (cancelled || userIdRef.current !== accountId || !accountId) return;
         const staleDeviceDraft = readStorageItem(deviceOnlyKey(accountId)) === "1";
-        try {
-          localStorage.removeItem(deviceOnlyKey(accountId));
-        } catch {
-          /* ignore quota / private-mode failures */
-        }
-        if (staleDeviceDraft && body?.updatedAt && isCompeteState(body.state)) {
-          settle(rollClock(migrateCompeteState(body.state)), body.updatedAt, "ready");
-          return;
-        }
-        if (!body?.updatedAt) {
+        const remote = isCompeteState(body.state)
+          ? rollClock(migrateCompeteState(body.state))
+          : null;
+        if (!remote) {
           settle(local.state, local.savedAt, "ready");
           return;
         }
-        const chosen = chooseCompeteState(local, {
-          updatedAt: body.updatedAt,
-          state: body.state,
-        });
-        settle(chosen, chosen === local.state ? local.savedAt : body.updatedAt, "ready");
+        const dirty = staleDeviceDraft || !body.updatedAt;
+        if (!dirty) localStorage.removeItem(deviceOnlyKey(accountId));
+        const chosen = applyRemoteSnapshot(local.state, remote, dirty);
+        settle(
+          chosen,
+          chosen === local.state ? local.savedAt : (body.updatedAt ?? local.savedAt),
+          "ready",
+        );
       })
       .catch(() => {
         if (cancelled || userIdRef.current !== accountId) return;
@@ -255,6 +293,39 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
       cancelled = true;
     };
   }, [attempt, demoMode, loading, publish, user, userId]);
+
+  useEffect(() => {
+    if (!state || loadStatus === "loading" || loadStatus === "failed") return;
+    const accountKey = userId ?? "guest";
+    const next = seenFieldFromState(state, accountKey);
+    if (primaryRevealResults(state.periodResults, undefined, state.primary).length > 0) {
+      if (next) {
+        try {
+          localStorage.setItem(fieldSeenStorageKey(accountKey), JSON.stringify(next));
+        } catch {
+          /* The recap still shows if device storage is disabled. */
+        }
+      }
+      setFieldNotice(null);
+      return;
+    }
+    if (!next) {
+      setFieldNotice(null);
+      return;
+    }
+    const previous = readSeenField(readStorageItem(fieldSeenStorageKey(accountKey)));
+    const notice = fieldChangeNotice(previous, next);
+    if (!notice) {
+      try {
+        localStorage.setItem(fieldSeenStorageKey(accountKey), JSON.stringify(next));
+      } catch {
+        /* Progress remains available if device storage is disabled. */
+      }
+      setFieldNotice(null);
+      return;
+    }
+    setFieldNotice(notice);
+  }, [loadStatus, state, userId]);
 
   const recoverLegacy = useCallback(() => {
     const accountId = userIdRef.current;
@@ -279,14 +350,90 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
     setAttempt((value) => value + 1);
   }, []);
 
+  const refresh = useCallback(async (): Promise<boolean> => {
+    const accountId = userIdRef.current;
+    if (!accountId || demoRef.current || statusRef.current !== "ready") return true;
+    if (refreshFlight.current) return refreshFlight.current;
+    const generation = dirtyRef.current;
+    const task = (async () => {
+      try {
+        const response = await fetch("/api/compete");
+        if (!response.ok) {
+          setStandingsStale(true);
+          return false;
+        }
+        const body = (await response.json()) as { state?: unknown; updatedAt?: string | null };
+        if (userIdRef.current !== accountId || statusRef.current !== "ready") return false;
+        if (!isCompeteState(body.state)) return false;
+        const remote = rollClock(migrateCompeteState(body.state));
+        const local = stateRef.current;
+        if (!local) return false;
+        const dirty =
+          unsavedRef.current ||
+          dirtyRef.current !== generation ||
+          timer.current != null;
+        const next = applyRemoteSnapshot(local, remote, dirty);
+        if (next !== local) {
+          const savedAt = dirty
+            ? new Date().toISOString()
+            : (body.updatedAt ?? new Date().toISOString());
+          publish(accountId, next, savedAt, "ready", false);
+        }
+        setStandingsStale(false);
+        return true;
+      } catch {
+        if (userIdRef.current === accountId) setStandingsStale(true);
+        return false;
+      } finally {
+        refreshFlight.current = null;
+      }
+    })();
+    refreshFlight.current = task;
+    return task;
+  }, [publish]);
+
+  useEffect(() => {
+    if (loading || !userId || demoMode || user?.mode === "demo") return;
+    const kick = () => {
+      if (document.visibilityState === "hidden") return;
+      void refresh();
+    };
+    document.addEventListener("visibilitychange", kick);
+    window.addEventListener("online", kick);
+    return () => {
+      document.removeEventListener("visibilitychange", kick);
+      window.removeEventListener("online", kick);
+    };
+  }, [demoMode, loading, refresh, user?.mode, userId]);
+
+  const dismissFieldNotice = useCallback(() => {
+    const accountKey = userIdRef.current ?? "guest";
+    const current = stateRef.current;
+    if (current) {
+      const seen = seenFieldFromState(current, accountKey);
+      if (seen) {
+        try {
+          localStorage.setItem(fieldSeenStorageKey(accountKey), JSON.stringify(seen));
+        } catch {
+          /* Acknowledgement stays in memory if device storage is disabled. */
+        }
+      }
+    }
+    setFieldNotice(null);
+  }, []);
+
   const api = useMemo<CompeteApi>(
     () => ({
       state,
       saveError,
       legacyOffer,
       loadStatus,
+      fieldNotice,
+      standingsStale,
       recoverLegacy,
       retryLoad,
+      dismissFieldNotice,
+      refresh,
       dispatch: (action: Action) => {
         if (statusRef.current === "failed") return;
         const withAccount: Action =
@@ -295,8 +442,12 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
             : action;
         if (statusRef.current === "loading" || !stateRef.current) {
           queue.current.push(withAccount);
+          dirtyRef.current += 1;
+          unsavedRef.current = true;
           return;
         }
+        dirtyRef.current += 1;
+        unsavedRef.current = true;
         const next = reduceCompete(stateRef.current, withAccount);
         const savedAt = new Date().toISOString();
         stateRef.current = next;
@@ -305,7 +456,19 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
         if (statusRef.current === "ready") scheduleSave(userIdRef.current, next);
       },
     }),
-    [legacyOffer, loadStatus, recoverLegacy, retryLoad, saveError, scheduleSave, state],
+    [
+      dismissFieldNotice,
+      fieldNotice,
+      legacyOffer,
+      loadStatus,
+      recoverLegacy,
+      refresh,
+      retryLoad,
+      saveError,
+      scheduleSave,
+      standingsStale,
+      state,
+    ],
   );
 
   return <CompeteContext.Provider value={api}>{children}</CompeteContext.Provider>;
@@ -313,4 +476,32 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
 
 export function useCompete(): CompeteApi {
   return useContext(CompeteContext);
+}
+
+/** Poll the signed-in field while Compete is the visible tab. */
+export function useCompeteFieldRefresh(active: boolean) {
+  const { refresh, loadStatus } = useCompete();
+  useEffect(() => {
+    if (!active || (loadStatus !== "ready" && loadStatus !== "local")) return;
+    let stopped = false;
+    let delay = FIELD_REFRESH_MS;
+    let timer: ReturnType<typeof setTimeout>;
+    const tick = () => {
+      if (document.visibilityState === "hidden") {
+        timer = setTimeout(tick, FIELD_REFRESH_MS);
+        return;
+      }
+      void refresh().then((ok) => {
+        if (stopped) return;
+        delay = ok ? FIELD_REFRESH_MS : Math.min(delay * 2, 5 * 60_000);
+        timer = setTimeout(tick, delay);
+      });
+    };
+    void refresh();
+    timer = setTimeout(tick, FIELD_REFRESH_MS);
+    return () => {
+      stopped = true;
+      clearTimeout(timer);
+    };
+  }, [active, loadStatus, refresh]);
 }

@@ -27,8 +27,11 @@ import {
 import { mobileEnv } from "../src/lib/env";
 import { supabase } from "../src/lib/supabase";
 import { colors, fonts } from "../src/theme";
+import { useCompeteStore } from "../src/lib/compete-store";
+import { sleepRenewal, sportById, sportRenewal } from "@fitness-battle/shared";
 
 export default function SettingsScreen() {
+  const { state, dispatch } = useCompeteStore();
   const [prefs, setPrefs] = useState<NotificationPreferences | null>(null);
   const [busy, setBusy] = useState(false);
   const [note, setNote] = useState<string | null>(null);
@@ -151,6 +154,54 @@ export default function SettingsScreen() {
           <Text style={styles.back}>← Back</Text>
         </Pressable>
         <Text style={styles.kicker}>Settings</Text>
+        <Text style={styles.title}>This week</Text>
+        <View style={styles.card}>
+          {state && state.enrollments.length > 0 ? (
+            state.enrollments.map((enrollment) => {
+              const renewal = sportRenewal(state, enrollment.sport);
+              const name = sportById(enrollment.sport).name;
+              return (
+                <View key={enrollment.sport} style={styles.row}>
+                  <View style={styles.grow}>
+                    <Text style={styles.rowTitle}>{name}</Text>
+                    <Text style={styles.rowDetail}>{renewal.detail}</Text>
+                  </View>
+                  <Pressable
+                    accessibilityRole="button"
+                    onPress={() =>
+                      dispatch({
+                        type: renewal.renews ? "schedule-leave" : "resume-renewal",
+                        sport: enrollment.sport,
+                      })
+                    }
+                  >
+                    <Text style={styles.rowTitle}>
+                      {renewal.renews ? "Stop" : "Keep"}
+                    </Text>
+                  </Pressable>
+                </View>
+              );
+            })
+          ) : (
+            <Text style={styles.copy}>You are not registered for a sport this week.</Text>
+          )}
+          {state && sleepRenewal(state).enrolled ? (
+            <Pressable
+              accessibilityRole="button"
+              onPress={() =>
+                dispatch({
+                  type: sleepRenewal(state).renews ? "schedule-leave" : "resume-renewal",
+                  metric: "sleep",
+                })
+              }
+            >
+              <Text style={styles.rowDetail}>{sleepRenewal(state).detail}</Text>
+              <Text style={styles.rowTitle}>
+                {sleepRenewal(state).renews ? "Stop sleep after this week" : "Keep sleep next week"}
+              </Text>
+            </Pressable>
+          ) : null}
+        </View>
         <Text style={styles.title}>Notifications</Text>
         <Text style={styles.copy}>
           Enabling asks for permission and registers an Expo push token on a

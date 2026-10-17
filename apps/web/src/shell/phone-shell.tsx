@@ -1,7 +1,7 @@
 "use client";
 
 import { useAuth } from "@/components/auth-context";
-import { useCompete } from "@/components/compete-context";
+import { useCompete, useCompeteFieldRefresh } from "@/components/compete-context";
 import { ArenaScreen } from "@/features/arena/arena-screen";
 import { FieldScreen } from "@/features/field/field-screen";
 import { TodayScreen } from "@/features/today/today-screen";
@@ -18,7 +18,7 @@ import * as Tabs from "@radix-ui/react-tabs";
 import { motion, useReducedMotion } from "motion/react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { ReturnProgress } from "@/features/focus/return-progress";
 import { BootSplash } from "./boot-splash";
 import {
@@ -60,10 +60,13 @@ export function PhoneShell({
     loadStatus,
     recoverLegacy,
     retryLoad,
+    fieldNotice,
   } = useCompete();
+  const tab = shellTabFromPath(path);
+  useCompeteFieldRefresh(!hideTabs && (tab?.id === "arena" || tab?.id === "field"));
   const [pressed, setPressed] = useState<ShellTabId | null>(null);
   const [bootAnimDone, setBootAnimDone] = useState(() => hasSeenBootSplash());
-  const matched = shellTabFromPath(path)?.id ?? null;
+  const matched = tab?.id ?? null;
   const active = pressed ?? matched;
   const accountKey = user?.id ?? "guest";
   const [visited, setVisited] = useState<Set<ShellTabId>>(() =>
@@ -77,6 +80,14 @@ export function PhoneShell({
   }, [active]);
 
   const dataReady = isCompeteDataReady(loadStatus, state);
+  const routedNotice = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (!fieldNotice?.personal || tab?.id === "arena") return;
+    if (routedNotice.current === fieldNotice.title) return;
+    routedNotice.current = fieldNotice.title;
+    router.push("/arena");
+  }, [fieldNotice, router, tab?.id]);
 
   function notices() {
     if (hideTabs) return null;
@@ -178,7 +189,7 @@ export function PhoneShell({
           <Link href="/today">OVERTAEK</Link>
           <span>A LITTLE FURTHER, TOGETHER.</span>
         </header>
-        <ReturnProgress />
+        {fieldNotice ? null : <ReturnProgress />}
         {matched ? (
           <div className="phone-panels">
             {SHELL_TABS.map((tab) => {
