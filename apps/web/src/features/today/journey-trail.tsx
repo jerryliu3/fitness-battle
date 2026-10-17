@@ -56,7 +56,7 @@ export function JourneyTrail({
     setStopRef: (index: number) => Ref<HTMLButtonElement>;
   }) => ReactNode;
 }) {
-  const rootRef = useRef<HTMLElement>(null);
+  const rootRef = useRef<HTMLDivElement>(null);
   const svgRef = useRef<SVGSVGElement>(null);
   const stopEls = useRef<(HTMLButtonElement | null)[]>([]);
   const [pathSegs, setPathSegs] = useState<string[]>([]);
@@ -98,23 +98,23 @@ export function JourneyTrail({
     };
 
   return (
-    <section
-      ref={rootRef}
-      className="focus-journey"
-      aria-label="Activity journey"
-    >
-      <svg
-        ref={svgRef}
-        className="focus-journey-path"
-        viewBox={`0 0 ${svgBox.w} ${svgBox.h}`}
-        preserveAspectRatio="none"
-        aria-hidden="true"
-      >
-        {pathSegs.map((d, i) => (
-          <path key={i} d={d} />
-        ))}
-      </svg>
-      {children({ setStopRef })}
+    <section className="focus-journey" aria-label="Activity journey">
+      {/* Track grows with all stops; section scrolls. SVG must cover the
+          full track — not the 900px scrollport — or lower days clip. */}
+      <div ref={rootRef} className="focus-journey-track">
+        <svg
+          ref={svgRef}
+          className="focus-journey-path"
+          viewBox={`0 0 ${svgBox.w} ${svgBox.h}`}
+          preserveAspectRatio="none"
+          aria-hidden="true"
+        >
+          {pathSegs.map((d, i) => (
+            <path key={i} d={d} />
+          ))}
+        </svg>
+        {children({ setStopRef })}
+      </div>
     </section>
   );
 }

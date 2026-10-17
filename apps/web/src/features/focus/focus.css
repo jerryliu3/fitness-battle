@@ -773,7 +773,6 @@
   --path-c: 50%;
   --path-r: 76%;
   --path-row: 120px;
-  position: relative;
   border-radius: 24px;
   background: transparent;
   margin: 12px 0 20px;
@@ -782,6 +781,10 @@
   overflow-y: auto;
   overscroll-behavior: contain;
   padding: 0 8px 20px;
+}
+/* Full scroll height of all stops; path SVG covers this, not the scrollport. */
+.focus-journey-track {
+  position: relative;
 }
 .focus-path-row {
   position: relative;
