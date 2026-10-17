@@ -11,6 +11,7 @@ import {
   sanitizeCompeteStateForAccount,
   SPORT_IDS,
   sumCrewWindow,
+  withAccountEloBaseline,
   withDerivedPendingReveals,
   type Activity,
   type CompeteState,
@@ -469,7 +470,8 @@ export async function loadCompeteAccount(
       ? String(prefs.clock_period_start)
       : freshState().clock.periodStart;
 
-  let state = freshState(new Date(periodStart));
+  // Account documents always start from the signed-in baseline (1000), not guest 0.
+  let state = withAccountEloBaseline(freshState(new Date(periodStart)));
   state = {
     ...state,
     clock: { kind: "weekly", periodStart },

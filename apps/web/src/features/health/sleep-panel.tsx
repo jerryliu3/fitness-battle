@@ -5,6 +5,7 @@ import {
   formatClock,
   formatSleepDuration,
   healthMetricById,
+  selfLaneLabel,
   stageShares,
   type CompeteState,
   type SleepNight,
@@ -145,10 +146,16 @@ export function SleepPanel({
               ) : null}
             </div>
             <div>
-              <span>Nights logged</span>
+              <span>Nights so far</span>
               <strong>
-                {view.nightsLogged}
-                <small> / 7</small>
+                {view.elapsedNights > 0 ? (
+                  <>
+                    {view.nightsLogged}
+                    <small> / {view.elapsedNights}</small>
+                  </>
+                ) : (
+                  "—"
+                )}
               </strong>
             </div>
             <div>
@@ -166,7 +173,7 @@ export function SleepPanel({
                 <li key={row.id} className={row.you ? "is-you" : ""}>
                   <span>{row.place}</span>
                   <span>
-                    {row.you ? "You" : row.name}
+                    {row.you ? selfLaneLabel(row.name) : row.name}
                     <small>
                       {row.lastNight == null ? "No night yet" : `Last night ${row.lastNight}`}
                     </small>

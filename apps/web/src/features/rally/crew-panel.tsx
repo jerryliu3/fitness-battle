@@ -36,6 +36,31 @@ interface CrewData {
   entries: Entry[];
   notices: { id: string; body: string }[];
 }
+
+function humanCrewError(code?: string): string {
+  if (!code) return "Could not reach your crew.";
+  const raw = code.toLowerCase();
+  if (raw.includes("invite_not_found"))
+    return "We couldn't find a crew with that invite code.";
+  if (raw.includes("already_a_member"))
+    return "You are already a member of this crew.";
+  if (raw.includes("crew_not_found")) return "We couldn't find that crew.";
+  if (raw.includes("name_required")) return "Please enter a crew name.";
+  if (raw.includes("authentication_required"))
+    return "Sign in to manage crews.";
+  return code;
+}
+
+function isCrewErrorNote(note: string): boolean {
+  return (
+    note.startsWith("Please ") ||
+    note.startsWith("We couldn't") ||
+    note.startsWith("Could not") ||
+    note.startsWith("You are already") ||
+    note.startsWith("Sign in")
+  );
+}
+
 export function CrewPanel() {
   const { user, demoMode } = useAuth();
   const { state } = useCompete();
@@ -63,15 +88,6 @@ export function CrewPanel() {
     if (user && !demoMode) void reload();
     else setData(null);
   }, [user?.id, demoMode]);
-function humanCrewError(code?: string): string {
-  if (!code) return "Could not reach your crew.";
-  if (code === "invite_not_found") return "We couldn't find a crew with that invite code.";
-  if (code === "already_a_member") return "You are already a member of this crew.";
-  if (code === "crew_not_found") return "We couldn't find that crew.";
-  if (code === "name_required") return "Please enter a crew name.";
-  if (code === "authentication_required") return "Sign in to manage crews.";
-  return code;
-}
 
   async function write(path: string, body: object) {
     setBusy(true);
@@ -430,7 +446,11 @@ function humanCrewError(code?: string): string {
         }}
       >
         {note ? (
-          <p className="fb-error" role="alert" style={{ marginBottom: "12px" }}>
+          <p
+            className={isCrewErrorNote(note) ? "fb-error" : "fb-note"}
+            role={isCrewErrorNote(note) ? "alert" : "status"}
+            style={{ marginBottom: "12px" }}
+          >
             {note}
           </p>
         ) : null}
@@ -556,11 +576,6 @@ function humanCrewError(code?: string): string {
               Athlete → Preferences.
             </p>
           </>
-        )}
-        {note && (
-          <p className="fb-note" role="status">
-            {note}
-          </p>
         )}
       </Sheet>
     </>

@@ -9,12 +9,12 @@ import {
   fitArenaWindow,
   resolveArenaSelectedId,
   primaryRevealResults,
+  selfLaneLabel,
   sportById,
   sportRenewal,
   type Action,
   type SportId,
   type ScoreTrack,
-  type CrewBoardPin,
   type ArenaSceneMessage,
   type CompeteState,
 } from "@fitness-battle/shared";
@@ -30,7 +30,6 @@ import {
 } from "../../src/ui/focus";
 import { AwardShelf } from "../../src/ui/award-shelf";
 import { awardCards } from "@fitness-battle/shared";
-import { useCrewApi } from "../../src/features/crew";
 import { useAuth } from "../../src/lib/auth";
 export default function ArenaScreen() {
   const {
@@ -44,8 +43,6 @@ export default function ArenaScreen() {
   } = useCompeteStore();
   const { user } = useAuth();
   const router = useRouter();
-  const crewApi = useCrewApi();
-  const [crew, setCrew] = useState("");
   const [joinBusy, setJoinBusy] = useState(false);
   const [joinError, setJoinError] = useState("");
   const [track, setTrack] = useState<ScoreTrack>("open");
@@ -55,7 +52,7 @@ export default function ArenaScreen() {
   const [ghost, setGhost] = useState(true);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [register, setRegister] = useState(false);
-  const [sport, setSport] = useState<SportId>("running");
+  const [sport, setSport] = useState<SportId | null>(null);
   const [failed, setFailed] = useState(false);
   if (!state)
     return (
@@ -100,28 +97,23 @@ export default function ArenaScreen() {
     unit: arena.unit,
     selected: trackSelectedId || me?.id || "",
   };
-  async function join() {
+  async function join(nextSport: SportId) {
     if (!user) {
       setRegister(false);
+      setSport(null);
       router.navigate("/you");
       return;
     }
     setJoinBusy(true);
     setJoinError("");
     try {
-      let pin: CrewBoardPin | null = null;
-      if (crew) {
-        const result = await crewApi.request("/field", { crewId: crew, sport });
-        pin = result.pin;
-        if (!pin || pin.sport !== sport)
-          throw Error("Could not seat your crew field.");
-      }
-      dispatch({ type: "set-primary", sport });
-      dispatch({ type: "opt-in", sport, crewBoard: pin });
+      dispatch({ type: "set-primary", sport: nextSport });
+      dispatch({ type: "opt-in", sport: nextSport, crewBoard: null });
       setCenter(null);
-      const gps = SPORTS.find((s) => s.id === sport)?.gps;
+      const gps = SPORTS.find((s) => s.id === nextSport)?.gps;
       setSpan(gps ? (state?.units === "metric" ? 6 : 4) : 20);
       setRegister(false);
+      setSport(null);
     } catch (e) {
       setJoinError(e instanceof Error ? e.message : "Could not join.");
     } finally {
@@ -163,7 +155,7 @@ export default function ArenaScreen() {
             label="Register ＋"
             secondary
             onPress={() => {
-              setSport(state.primary);
+              setSport(null);
               setRegister(true);
             }}
           />
@@ -363,7 +355,7 @@ export default function ArenaScreen() {
                   >
                     <Text style={f.small}>{i + 1}</Text>
                     <Text style={[f.rowTitle, f.grow]}>
-                      {l.you ? "You" : l.name}
+                      {l.you ? selfLaneLabel(l.name) : l.name}
                     </Text>
                     <Text style={f.rowTitle}>
                       {l.values[2].toFixed(1)} {arena.unit}
@@ -382,7 +374,10 @@ export default function ArenaScreen() {
             <Text style={f.copy}>Pick a sport and join for the week.</Text>
             <FocusButton
               label="Find a field"
-              onPress={() => setRegister(true)}
+              onPress={() => {
+                setSport(null);
+                setRegister(true);
+              }}
             />
           </View>
         )}
@@ -415,65 +410,44 @@ export default function ArenaScreen() {
       </ScrollView>
       <FocusSheet
         open={register}
-        title="Find your next field."
-        body="Choose a sport for your individual field. You can seat a private crew on the same field here, or manage membership from Crew."
-        onClose={() => setRegister(false)}
+        title="Register for this week."
+        body="Tap a sport to join for the week."
+        onClose={() => {
+          setRegister(false);
+          setSport(null);
+        }}
       >
-        {SPORTS.map((s) => (
-          <Pressable
-            key={s.id}
-            accessibilityRole="radio"
-            accessibilityState={{ checked: sport === s.id }}
-            onPress={() => {
-              setSport(s.id);
-              setCrew("");
-            }}
-            style={[f.chip, sport === s.id && f.chipActive]}
-          >
-            <Text style={f.rowTitle}>{s.name}</Text>
-            <Text style={f.small}>
-              {s.gps ? "GPS distance & open effort" : "Open effort score"}
-            </Text>
-          </Pressable>
-        ))}
-        <Text style={f.kicker}>How will you join?</Text>
-        <Pressable
-          accessibilityRole="radio"
-          accessibilityState={{ checked: !crew }}
-          style={[f.chip, !crew && f.chipActive]}
-          onPress={() => setCrew("")}
-        >
-          <Text style={f.rowTitle}>
-            Join {SPORTS.find((s) => s.id === sport)?.name ?? sport}
-          </Text>
-          <Text style={f.small}>Density field of similar athletes</Text>
-        </Pressable>
-        {crewApi.data?.crews
-          .flatMap((r) => (r.crews && r.crews.sport === sport ? [r.crews] : []))
-          .map((c) => (
+        {SPORTS.map((s) => {
+          const isRegistered = state.ratings.find((r) => r.sport === s.id)
+            ?.optedIn;
+          return (
             <Pressable
-              accessibilityRole="radio"
-              accessibilityState={{ checked: crew === c.id }}
-              key={c.id}
-              style={[f.chip, crew === c.id && f.chipActive]}
-              onPress={() => setCrew(c.id)}
+              key={s.id}
+              accessibilityRole="button"
+              disabled={Boolean(isRegistered) || joinBusy}
+              onPress={() => {
+                if (isRegistered || joinBusy) return;
+                setSport(s.id);
+                void join(s.id);
+              }}
+              style={[f.chip, sport === s.id && f.chipActive]}
             >
-              <Text style={f.rowTitle}>With {c.name}</Text>
+              <Text style={f.rowTitle}>{s.name}</Text>
               <Text style={f.small}>
-                Shared field · scores remain individual
+                {isRegistered
+                  ? "Registered this week"
+                  : s.gps
+                    ? "GPS distance & open effort"
+                    : "Open effort score"}
               </Text>
             </Pressable>
-          ))}
+          );
+        })}
         {joinError && (
           <Text style={f.copy} accessibilityLiveRegion="polite">
             {joinError}
           </Text>
         )}
-        <FocusButton
-          label={user ? "Join this week" : "Sign in to participate"}
-          disabled={joinBusy}
-          onPress={() => void join()}
-        />
       </FocusSheet>
       <FocusSheet
         open={!!selected}

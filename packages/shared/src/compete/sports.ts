@@ -7,7 +7,10 @@ import type {
 import type { WaveEnrollment } from "../matching/types";
 import type { PeriodKind } from "../types";
 
+/** Starting effort score for signed-in accounts (and after first join). */
 export const ELO_BASE = 1000;
+/** Guest / pre-account default — not a rated baseline until account creation. */
+export const ELO_UNRANKED = 0;
 export const ELO_FLOOR = 500;
 export const ELO_CAP = 2400;
 export const ELO_K = 24;

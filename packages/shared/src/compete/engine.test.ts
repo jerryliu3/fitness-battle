@@ -11,6 +11,7 @@ import {
   reduceCompete,
   rollClock,
   weeklyBoard,
+  withAccountEloBaseline,
 } from "./engine";
 import { crewBoardPinFromPlan, planCrewWeekField } from "../matching";
 
@@ -492,6 +493,64 @@ describe("compete engine", () => {
     // But identical time and started within tolerance matches
     const actTwin = { ...act1, id: "str-twin", movingSec: 3650 };
     expect(sameWorkout(act1, actTwin)).toBe(true);
+  });
+
+  it("starts unsigned local state as Guest with unranked effort scores", () => {
+    const state = freshState();
+    expect(state.name).toBe("Guest");
+    expect(state.ratings.every((r) => r.openElo === 0 && r.verifiedElo === 0)).toBe(
+      true,
+    );
+  });
+
+  it("lifts unranked scores to the account baseline", () => {
+    const baseline = withAccountEloBaseline(freshState());
+    expect(
+      baseline.ratings.every((r) => r.openElo === 1000 && r.verifiedElo === 1000),
+    ).toBe(true);
+  });
+
+  it("starts opted-in guests at the account baseline", () => {
+    const joined = reduceCompete(freshState(new Date("2026-10-12T12:00:00.000Z")), {
+      type: "opt-in",
+      sport: "running",
+    });
+    const rating = joined.ratings.find((r) => r.sport === "running");
+    expect(rating?.openElo).toBe(1000);
+    expect(rating?.verifiedElo).toBe(1000);
+    expect(rating?.optedIn).toBe(true);
+  });
+
+  it("migrates legacy unsigned You label to Guest", () => {
+    const legacy = {
+      ...freshState(),
+      name: "You",
+      onboardingCompleted: false,
+    };
+    expect(migrateCompeteState(legacy).name).toBe("Guest");
+    const named = {
+      ...freshState(),
+      name: "You",
+      onboardingCompleted: true,
+    };
+    expect(migrateCompeteState(named).name).toBe("You");
+  });
+
+  it("demotes empty guest baseline scores from 1000 to 0", () => {
+    const legacy = {
+      ...freshState(),
+      ratings: freshState().ratings.map((r) => ({
+        ...r,
+        openElo: 1000,
+        verifiedElo: 1000,
+        lockOpen: 1000,
+        lockVerified: 1000,
+      })),
+    };
+    const migrated = migrateCompeteState(legacy);
+    expect(migrated.ratings.every((r) => r.openElo === 0 && r.verifiedElo === 0)).toBe(
+      true,
+    );
   });
 
   it("updates and clears profile avatarUrl via set-avatar", () => {

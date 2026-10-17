@@ -31,7 +31,8 @@ export function AthleteMetrics({
 }) {
   const router = useRouter();
   const rating = state.ratings.find((r) => r.sport === state.primary);
-  const elo = rating?.openElo ?? 1000;
+  const elo = rating?.openElo ?? 0;
+  const verifiedElo = rating?.verifiedElo ?? 0;
   const season = seasonSummary(state);
   const unit = distanceUnitLabel(state.units);
   const settledWeeks = season.weeks;
@@ -131,9 +132,7 @@ export function AthleteMetrics({
             <Text style={f.massive}>{elo}</Text>
           </View>
           <View>
-            <Text style={[f.h2, { textAlign: "right" }]}>
-              {rating?.verifiedElo ?? 1000}
-            </Text>
+            <Text style={[f.h2, { textAlign: "right" }]}>{verifiedElo}</Text>
             <Text style={f.small}>GPS-verified Effort Score</Text>
           </View>
         </View>

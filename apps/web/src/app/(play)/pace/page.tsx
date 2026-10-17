@@ -24,7 +24,7 @@ export default function PacePage() {
   const rows = paceBoard(state, sport, selected, scope);
   const you = rows.find((row) => row.you);
   const mine = state.ratings.find((item) => item.sport === sport);
-  const yourElo = mine?.openElo ?? 1000;
+  const yourElo = mine?.openElo ?? 0;
   const currentRank = rankForElo(yourElo).name;
 
   return (
