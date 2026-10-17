@@ -1,0 +1,129 @@
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap">
+<div id="social-next" class="viz-carousel viz-dotted-background" aria-label="Weekly results and shared starts">
+  <section data-variant="Week Close" aria-label="Settled results with congratulations and repeat interest">
+    <div class="sn-stage">
+      <div class="sn-scenarios" role="group" aria-label="Sample pairing scenarios outside the app"><span>Sample scenario</span><button data-scenario="one" aria-pressed="true">Your choice only</button><button data-scenario="mutual" aria-pressed="false">Mutual</button><button data-scenario="unpaired" aria-pressed="false">Not paired</button></div>
+      <article class="sn-phone">
+        <header class="sn-header"><span class="sn-brand">overtaek ↗</span><span>Design study · Fictional data</span></header>
+        <div class="sn-heading"><div class="sn-eyebrow">COMPETE / WEEKLY RESULT</div><h2>A week finished.<br>People to remember.</h2><p>Oct 5–12, 2026 · UTC · Settled</p></div>
+        <div class="sn-result" aria-label="Your final result, fourth of six, 19.2 counted kilometers"><span>RUNNING / OPEN TRACK</span><div><strong>4<span>th</span></strong><p>of 6 athletes<br><b>19.2 km</b> counted</p></div><footer>YOUR SETTLED RESULT <span>↗</span></footer></div>
+        <label class="sn-peer-picker">Finished together<select id="sn-peer-select" aria-label="Choose an athlete from your settled field"><option value="maya">1st · Maya Chen</option><option value="kit">2nd · Kit Park</option><option value="sam">3rd · Sam Rivera</option><option value="leo">5th · Leo Santos</option><option value="rae">6th · Rae Lee</option></select></label>
+        <div class="sn-peer-card"><span class="sn-avatar" id="sn-avatar">MC</span><div><h3 id="sn-peer-name">Maya Chen</h3><p id="sn-peer-result">1st place · 26.0 km</p></div></div>
+        <div class="sn-peer-actions"><button id="sn-congrats" aria-pressed="false">Congrats</button><button id="sn-again" aria-pressed="false">Race again</button></div>
+        <div class="sn-glass sn-preference-status" aria-live="polite"><b id="sn-status-title">Another round?</b><p id="sn-status-copy">Choose Race again to save your preference. If mutual, we'll try to pair you again.</p></div>
+        <p class="sn-note">Congratulate, race again, or simply keep going.</p>
+        <nav class="sn-nav" aria-label="App context"><span>Home</span><span aria-current="page">Compete</span><span>Crew</span><span>Athlete</span></nav>
+      </article>
+    </div>
+  </section>
+  <section data-variant="Start Line" aria-label="Start Line near-term candidate" hidden>
+    <div class="sn-stage">
+      <div class="sn-candidate">Near-term candidate · timing undecided</div>
+      <article class="sn-phone sn-start">
+        <header class="sn-header"><span class="sn-brand">overtaek ↗</span><span>Design study · Fictional data</span></header>
+        <div class="sn-heading"><div class="sn-eyebrow">CREW / UPCOMING SESSION</div><h2>A little easier<br>to show up.</h2><p>Northside crew · Maya's invitation</p></div>
+        <div class="sn-ticket"><div class="sn-ticket-top"><span class="sn-eyebrow">SATURDAY / 17 OCT</span><strong>08:00</strong><span>America/New_York · 30 minutes</span><h3>Easy run, together.</h3><p>Same time. Your own place.</p></div><div class="sn-ticket-tear" aria-hidden="true"></div><div class="sn-ticket-bottom"><div class="sn-lights"><span class="is-in">MC</span><span class="is-in">LS</span><span class="is-in">SR</span><span id="sn-you-light">YOU</span></div><p id="sn-start-count">3 on the start list</p></div></div>
+        <button class="sn-primary" id="sn-rsvp" aria-pressed="false">Count me in ↗</button>
+        <p class="sn-note" id="sn-rsvp-status" aria-live="polite">A shared time, even when you're miles apart.</p>
+        <nav class="sn-nav" aria-label="App context"><span>Home</span><span>Compete</span><span aria-current="page">Crew</span><span>Athlete</span></nav>
+      </article>
+    </div>
+  </section>
+</div>
+<style>
+#social-next{--sn-bg:light-dark(#fafbf8,#15231c);--sn-ink:light-dark(#26382d,#ecf3e6);--sn-surface:light-dark(#fff,#20362a);--sn-muted:light-dark(#657461,#b3c4af);--sn-line:light-dark(#e0e5dd,#435447);--sn-wash:light-dark(#edf1e8,#2e4230);--sn-lime:#d4ee89;--sn-dark:#26382d;--sn-glass:light-dark(#ffffffc9,#263d30e6);--sn-edge:light-dark(#ffffffee,#ffffff44);font-family:'DM Sans',sans-serif;color:var(--sn-ink)}
+#social-next *{box-sizing:border-box}#social-next [hidden]{display:none!important}
+#social-next .sn-stage{min-height:1050px;padding:18px 8px 26px;display:flex;flex-direction:column;align-items:center;gap:14px}
+#social-next .sn-phone{width:min(100%,370px);min-height:820px;padding:24px 22px 14px;background:var(--sn-bg);border:1px solid var(--sn-line);border-radius:32px;display:flex;flex-direction:column;position:relative;overflow:hidden;isolation:isolate;box-shadow:0 15px 35px #17251a12}
+#social-next .sn-header{display:flex;align-items:center;justify-content:space-between;gap:8px}#social-next .sn-brand{font-size:18px;font-weight:700;letter-spacing:-.7px;white-space:nowrap}#social-next .sn-header>span+span{font-size:10px;color:var(--sn-muted);text-align:right;line-height:1.3;max-width:123px}
+#social-next .sn-heading{margin:25px 0 21px}#social-next .sn-eyebrow{font-size:10px;font-weight:600;letter-spacing:1.2px;line-height:1.5}
+#social-next h2{font-size:29px;font-weight:500;line-height:1.08;letter-spacing:-1.1px;margin:10px 0 0}#social-next h3{font-size:18px;font-weight:500;line-height:1.25;letter-spacing:-.4px;margin:0}
+#social-next p{font-size:12px;line-height:1.5;color:var(--sn-muted);margin:8px 0 0}#social-next button{font:inherit;color:inherit;cursor:var(--cursor-interaction,pointer);-webkit-tap-highlight-color:transparent}
+#social-next button:focus-visible,#social-next select:focus-visible{outline:2px solid var(--sn-ink);outline-offset:4px}#social-next button:active{scale:.98}
+#social-next .sn-scenarios{display:flex;align-items:center;justify-content:center;gap:5px;flex-wrap:wrap;max-width:420px;font-size:11px;min-height:46px}#social-next .sn-scenarios>span{color:var(--sn-muted);flex-basis:100%;text-align:center;margin-bottom:3px}
+#social-next .sn-scenarios button{min-height:38px;padding:8px 10px;border:1px solid var(--sn-line);background:var(--sn-surface);border-radius:15px;font-size:11px}#social-next .sn-scenarios [aria-pressed=true]{background:var(--sn-ink);color:var(--sn-bg);border-color:var(--sn-ink)}
+#social-next .sn-candidate{font-size:12px;line-height:1.5;color:var(--sn-muted);min-height:67px;display:flex;align-items:center;text-align:center;padding:0 20px}
+#social-next .sn-result{padding:18px 21px 13px;background:repeating-linear-gradient(0deg,#ffffff20 0 1px,transparent 1px 4px),linear-gradient(130deg,#e7f4c7,#b9ce8b 55%,#d7e8af);color:var(--sn-dark);border:1px solid #eff6dd;border-radius:18px;box-shadow:2px 5px 0 #99af72,3px 9px 13px #17251a14;transform:perspective(900px) rotateX(3deg) rotateY(-4deg);margin:0 3px 24px}
+#social-next .sn-result>span{font-size:9px;letter-spacing:1.4px}#social-next .sn-result>div{display:flex;align-items:center;gap:22px;margin:10px 0 12px}#social-next .sn-result strong{font-size:68px;letter-spacing:-3px;font-weight:500;line-height:1.05;text-shadow:0 1px 0 #fff8,1px 2px 0 #71834c66}#social-next .sn-result strong>span{font-size:29px;letter-spacing:-1px}#social-next .sn-result p{color:#415132;font-size:12px;margin:0}#social-next .sn-result p>b{font-weight:500}#social-next .sn-result footer{display:flex;justify-content:space-between;font-size:8px;letter-spacing:1.1px;border-top:1px solid #26382d33;padding-top:11px}
+#social-next .sn-peer-picker{display:flex;flex-direction:column;gap:9px;font-size:12px;margin:0 0 17px}#social-next .sn-peer-picker select{font:inherit;font-size:14px;color:var(--sn-ink);background:var(--sn-surface);border:1px solid var(--sn-line);padding:11px 12px;min-height:46px;border-radius:13px;width:100%;min-width:0}
+#social-next .sn-peer-card{display:flex;align-items:center;gap:12px;padding:0 3px;margin-bottom:16px}#social-next .sn-avatar{width:40px;height:40px;display:grid;place-items:center;border-radius:50%;background:var(--sn-wash);font-size:11px}#social-next .sn-peer-card h3{font-size:17px}#social-next .sn-peer-card p{font-size:11px;margin:3px 0 0}
+#social-next .sn-peer-actions{display:flex;gap:8px;margin-bottom:16px}#social-next .sn-peer-actions button{flex:1;min-height:48px;padding:11px 8px;border:1px solid var(--sn-line);border-radius:14px;font-size:12px;background:var(--sn-surface);font-weight:500}#social-next .sn-peer-actions [aria-pressed=true]{background:var(--sn-lime);color:var(--sn-dark);border-color:var(--sn-lime)}
+#social-next .sn-glass{background:linear-gradient(130deg,var(--sn-edge),transparent 55%),var(--sn-glass);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border:1px solid var(--sn-edge);border-radius:20px;box-shadow:inset 0 1px 0 #fff9,0 7px 15px #17251a0d}
+#social-next .sn-preference-status{padding:17px 18px;min-height:116px}#social-next .sn-preference-status>b{font-size:13px;font-weight:500}#social-next .sn-preference-status p{font-size:12px;margin-top:6px}
+#social-next .sn-note{font-size:11px;line-height:1.5;text-align:center;margin:17px 6px 23px;min-height:33px}
+#social-next .sn-nav{margin-top:auto;display:flex;justify-content:space-between;align-items:center;gap:3px;border-top:1px solid var(--sn-line);padding:12px 0 0;font-size:11px;color:var(--sn-muted)}#social-next .sn-nav span{padding:10px 8px;border-radius:20px}#social-next .sn-nav [aria-current]{background:var(--sn-lime);color:var(--sn-dark);font-weight:600}
+#social-next .sn-ticket{border-radius:22px;background:var(--sn-surface);border:1px solid var(--sn-line);box-shadow:0 4px 0 var(--sn-line),0 13px 20px #17251a0e;transform:rotate(-2deg);margin:5px 6px 27px;overflow:hidden}
+#social-next .sn-ticket-top{padding:25px 23px 22px;background:radial-gradient(ellipse at 0 0,#d4ee8975,transparent 75%),var(--sn-surface)}#social-next .sn-ticket-top>strong{display:block;font-size:59px;font-weight:500;letter-spacing:-3px;line-height:1.1;margin:16px 0 8px;font-variant-numeric:tabular-nums}#social-next .sn-ticket-top>span:last-of-type{display:block;font-size:10px;color:var(--sn-muted);line-height:1.5}#social-next .sn-ticket-top h3{font-size:21px;margin-top:20px}#social-next .sn-ticket-top p{margin-top:5px}
+#social-next .sn-ticket-tear{position:relative;height:1px;border-top:1px dashed var(--sn-muted);margin:0 12px}#social-next .sn-ticket-tear:before,#social-next .sn-ticket-tear:after{content:"";position:absolute;width:20px;height:20px;background:var(--sn-bg);border:1px solid var(--sn-line);border-radius:50%;top:-11px}#social-next .sn-ticket-tear:before{left:-23px}#social-next .sn-ticket-tear:after{right:-23px}
+#social-next .sn-ticket-bottom{padding:22px}#social-next .sn-lights{display:flex;justify-content:space-between;gap:7px;margin:0 0 17px}#social-next .sn-lights span{width:40px;height:40px;display:grid;place-items:center;border-radius:50%;background:var(--sn-wash);border:1px dashed var(--sn-muted);font-size:10px;color:var(--sn-muted)}#social-next .sn-lights .is-in{background:var(--sn-lime);color:var(--sn-dark);border:1px solid #b5cd85;box-shadow:inset 0 2px 2px #fff9,0 3px 0 #a4bd71}#social-next .sn-ticket-bottom p{font-size:12px;margin:0}
+#social-next .sn-primary{min-height:48px;width:100%;padding:13px 17px;border:0;border-radius:16px;background:var(--sn-ink);color:var(--sn-bg);font-size:13px;font-weight:500}
+@media(max-width:400px){#social-next .sn-stage{min-height:1110px;padding-inline:0}#social-next .sn-phone{padding-inline:17px;border-radius:27px}#social-next h2{font-size:27px}#social-next .sn-header>span+span{font-size:9px;max-width:100px}#social-next .sn-brand{font-size:17px}#social-next .sn-nav span{padding-inline:6px}#social-next .sn-nav{font-size:10px}#social-next .sn-peer-picker select{font-size:16px}#social-next .sn-result>div{gap:16px}#social-next .sn-ticket-top{padding-inline:18px}#social-next .sn-peer-actions{flex-wrap:wrap}#social-next .sn-peer-actions button{min-width:95px}}
+@media(prefers-reduced-motion:reduce){#social-next *,#social-next *:before{animation:none!important;transition:none!important}#social-next .sn-result,#social-next .sn-ticket{transform:none!important}}
+@media(prefers-reduced-transparency:reduce){#social-next .sn-glass{background:var(--sn-surface);backdrop-filter:none;-webkit-backdrop-filter:none}}
+</style>
+<script>
+(() => {
+  const root = document.getElementById('social-next');
+  const get = id => root.querySelector('#' + id);
+  const peers = {
+    maya: {name:'Maya Chen', initials:'MC', place:'1st', distance:'26.0'},
+    kit: {name:'Kit Park', initials:'KP', place:'2nd', distance:'24.8'},
+    sam: {name:'Sam Rivera', initials:'SR', place:'3rd', distance:'22.1'},
+    leo: {name:'Leo Santos', initials:'LS', place:'5th', distance:'17.8'},
+    rae: {name:'Rae Lee', initials:'RL', place:'6th', distance:'12.3'},
+  };
+  const saved = window.openai?.widgetState?.privateContent;
+  const prior = saved?.study === 'weekly-repeat' ? saved : {};
+  const state = {
+    study: 'weekly-repeat',
+    peer: Object.hasOwn(peers, prior.peer) ? prior.peer : 'maya',
+    scenario: ['one','mutual','unpaired'].includes(prior.scenario) ? prior.scenario : 'one',
+    congrats: {}, again: {}, joined: !!prior.joined,
+  };
+  function readSelections(source, target) {
+    for (const id of Object.keys(peers)) target[id] = source?.[id] === true;
+  }
+  readSelections(prior.congrats, state.congrats); readSelections(prior.again, state.again);
+  function save(concept) {
+    window.openai?.setWidgetState?.({modelContent:{concept, selectedPeer:state.peer, scenario:state.scenario}, privateContent:{...state}})?.catch(() => {});
+  }
+  function result() {
+    const person = peers[state.peer], interested = state.again[state.peer], congratulated = state.congrats[state.peer];
+    get('sn-peer-select').value = state.peer;
+    get('sn-avatar').textContent = person.initials; get('sn-peer-name').textContent = person.name;
+    get('sn-peer-result').textContent = person.place + ' place · ' + person.distance + ' km';
+    get('sn-congrats').textContent = congratulated ? 'Congratulated ✓' : 'Congrats';
+    get('sn-congrats').setAttribute('aria-pressed', String(congratulated));
+    get('sn-again').textContent = interested ? 'Race again ✓' : 'Race again';
+    get('sn-again').setAttribute('aria-pressed', String(interested));
+    let title = 'Another round?', copy = "Choose Race again to save your preference. If mutual, we'll try to pair you again.";
+    if (interested && state.scenario === 'one') {
+      title = 'Preference saved'; copy = "If you both choose this, we'll try to pair you again.";
+    } else if (interested && state.scenario === 'mutual') {
+      title = 'You both want another round'; copy = "We'll try to place you together again. Pairing isn't confirmed yet.";
+    } else if (interested && state.scenario === 'unpaired') {
+      title = "Couldn't pair you this time"; copy = 'You both wanted another round, but a compatible pairing was not available.';
+    }
+    get('sn-status-title').textContent = title; get('sn-status-copy').textContent = copy;
+    root.querySelectorAll('[data-scenario]').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.scenario === state.scenario)));
+  }
+  get('sn-peer-select').addEventListener('change', event => {
+    if (!Object.hasOwn(peers, event.target.value)) return;
+    state.peer = event.target.value; result(); save('Week Close');
+  });
+  get('sn-congrats').addEventListener('click', () => { state.congrats[state.peer] = !state.congrats[state.peer]; result(); save('Week Close'); });
+  get('sn-again').addEventListener('click', () => { state.again[state.peer] = !state.again[state.peer]; result(); save('Week Close'); });
+  root.querySelectorAll('[data-scenario]').forEach(button => button.addEventListener('click', () => {
+    state.scenario = button.dataset.scenario; result(); save('Week Close');
+  }));
+  function startLine() {
+    get('sn-you-light').classList.toggle('is-in', state.joined);
+    get('sn-start-count').textContent = state.joined ? '4 on the start list' : '3 on the start list';
+    get('sn-rsvp').textContent = state.joined ? 'Leave session' : 'Count me in ↗';
+    get('sn-rsvp').setAttribute('aria-pressed', String(state.joined));
+    get('sn-rsvp-status').textContent = state.joined ? "You're on the start list. Saturday, 08:00." : "A shared time, even when you're miles apart.";
+  }
+  get('sn-rsvp').addEventListener('click', () => { state.joined = !state.joined; startLine(); save('Start Line'); });
+  result(); startLine();
+})();
+</script>
