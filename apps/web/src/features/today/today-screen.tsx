@@ -269,7 +269,7 @@ export function TodayScreen() {
           </div>
         ))}
         <div
-          className={`focus-path-row is-start ${sessions.length % 2 === 0 ? "is-left" : "is-right"}`}
+          className={`focus-path-row is-start ${sessions.length % 2 === 0 ? "is-right" : "is-left"}`}
         >
           <button
             type="button"

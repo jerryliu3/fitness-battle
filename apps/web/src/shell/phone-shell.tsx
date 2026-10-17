@@ -21,7 +21,11 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState, type ReactNode } from "react";
 import { ReturnProgress } from "@/features/focus/return-progress";
 import { BootSplash } from "./boot-splash";
-import { isCompeteDataReady } from "./boot-gate";
+import {
+  hasSeenBootSplash,
+  isCompeteDataReady,
+  markBootSplashSeen,
+} from "./boot-gate";
 import "./shell.css";
 
 function renderTab(tabId: ShellTabId, accountKey: string): ReactNode {
@@ -36,24 +40,6 @@ function renderTab(tabId: ShellTabId, accountKey: string): ReactNode {
       // Remount Athlete on account switch so form/local UI cannot leak across users.
       return <YouRoute key={accountKey} />;
   }
-}
-
-const BOOT_SEEN_KEY = "fb-boot-splash-seen";
-
-function hasSeenBootSplash(): boolean {
-  if (typeof window === "undefined") return false;
-  try {
-    return sessionStorage.getItem(BOOT_SEEN_KEY) === "1";
-  } catch {
-    return false;
-  }
-}
-
-function markBootSplashSeen(): void {
-  if (typeof window === "undefined") return;
-  try {
-    sessionStorage.setItem(BOOT_SEEN_KEY, "1");
-  } catch {}
 }
 
 export function PhoneShell({

@@ -12,7 +12,10 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import {
   buildTodayRoute,
   competeNow,
+  competePeriodWindow,
   countsOnTrack,
+  distanceUnitLabel,
+  formatDistanceM,
   formatVolume,
   sportById,
   type Activity,
@@ -43,6 +46,52 @@ export default function Home() {
     .sort((a, b) => b.startedAt.localeCompare(a.startedAt))
     .slice(0, 10);
   const units = state.units;
+  const unitLabel = distanceUnitLabel(units);
+
+  const weekPeriod = competePeriodWindow(state, now);
+  const weekStart = weekPeriod.startsAt.getTime();
+  const weekEnd = weekPeriod.endsAt.getTime();
+  const weekActivities = state.activities.filter((a) => {
+    if (!countsOnTrack(a, "open")) return false;
+    const t = new Date(a.startedAt).getTime();
+    return t >= weekStart && t < weekEnd;
+  });
+  const weekDistanceM = weekActivities.reduce(
+    (acc, a) => acc + (a.distanceM || 0),
+    0,
+  );
+  const weekMovingSec = weekActivities.reduce(
+    (acc, a) => acc + (a.movingSec || 0),
+    0,
+  );
+  const nowDayIso = now.toISOString().slice(0, 10);
+  const dayLabels = ["M", "T", "W", "T", "F", "S", "S"];
+  const weekDays = Array.from({ length: 7 }, (_, i) => {
+    const d = new Date(weekStart + i * 86_400_000);
+    const dayIso = d.toISOString().slice(0, 10);
+    const dayActs = weekActivities.filter(
+      (a) => a.startedAt.slice(0, 10) === dayIso,
+    );
+    const dayVolume = dayActs.reduce(
+      (acc, a) => acc + (a.distanceM || a.movingSec || 0),
+      0,
+    );
+    return {
+      key: dayIso,
+      label: dayLabels[i],
+      isToday: dayIso === nowDayIso,
+      hasActivity: dayActs.length > 0,
+      volume: dayVolume,
+    };
+  });
+  const maxDayVolume = Math.max(1, ...weekDays.map((d) => d.volume));
+  const weekDaysWithPct = weekDays.map((d) => ({
+    ...d,
+    pct: d.hasActivity
+      ? Math.max(20, Math.round((d.volume / maxDayVolume) * 100))
+      : 0,
+  }));
+  const activeDaysCount = weekDays.filter((d) => d.hasActivity).length;
 
   function bounce() {
     void AccessibilityInfo.isReduceMotionEnabled().then((reduce) => {
@@ -128,45 +177,79 @@ export default function Home() {
           title="Just one good move."
           body="Small steps. A week that adds up."
         />
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel="Open today's exercise suggestion"
-          onPress={() => {
-            bounce();
-            setExpanded("suggestion");
-          }}
-          style={s.suggestion}
-        >
-          <View style={{ width: "74%", gap: 18, zIndex: 1 }}>
-            <Text style={f.kicker}>Today&apos;s suggestion</Text>
-            <Text style={s.suggestionTitle}>{route.suggestion.title}</Text>
-            <Text style={f.small}>
-              {route.suggestion.minutes
-                ? `${route.suggestion.minutes} min · `
-                : ""}
-              Your next move
-            </Text>
+        <View style={s.statsCard} accessibilityLabel="This week's progress">
+          <View style={s.statsHeader}>
+            <View>
+              <Text style={f.kicker}>This week</Text>
+              <Text style={s.statsMain}>
+                {sportById(state.primary).gps
+                  ? `${formatDistanceM(weekDistanceM, units)} ${unitLabel}`
+                  : `${Math.round(weekMovingSec / 60)} min`}
+              </Text>
+            </View>
+            <View style={s.statsSummary}>
+              <Text style={f.small}>
+                <Text style={{ fontWeight: "700", color: "#26382d" }}>
+                  {weekActivities.length}
+                </Text>{" "}
+                {weekActivities.length === 1 ? "session" : "sessions"}
+              </Text>
+              <Text style={f.small}>
+                <Text style={{ fontWeight: "700", color: "#26382d" }}>
+                  {activeDaysCount}
+                </Text>{" "}
+                of 7 days
+              </Text>
+            </View>
           </View>
-          <View style={s.heroEmber}>
-            <Ember size={135} expression="happy" />
+          <View style={s.miniChart} aria-hidden>
+            {weekDaysWithPct.map((d) => (
+              <View key={d.key} style={s.miniBarCol}>
+                <View style={s.miniBarTrack}>
+                  <View
+                    style={[
+                      s.miniBarFill,
+                      { height: `${d.pct}%` },
+                      d.isToday ? { backgroundColor: "#26382d" } : null,
+                    ]}
+                  />
+                </View>
+                <Text
+                  style={[
+                    s.miniBarDay,
+                    d.isToday ? { color: "#26382d", fontWeight: "700" } : null,
+                  ]}
+                >
+                  {d.label}
+                </Text>
+              </View>
+            ))}
           </View>
-        </Pressable>
+        </View>
         <View style={f.row}>
-          <Text style={f.h2}>Your recent rhythm</Text>
+          <Text style={f.h2}>Your fitness journey</Text>
           {sessions.length ? (
             <Text style={f.small}>Last {sessions.length} sessions</Text>
           ) : null}
         </View>
         <View style={s.journey}>
-          <View style={s.future}>
-            <Text style={{ fontSize: 36, color: "#b7c2af" }}>○</Text>
-            <Text style={f.small}>Tomorrow{"\n"}Room for what&apos;s next</Text>
-          </View>
           <View style={[s.stop, { paddingLeft: "12%" }]}>
             <Pressable
               accessibilityRole="button"
-              accessibilityLabel="Ember: open today's recommendation"
-              style={[s.tile, { backgroundColor: "#d4ee89", overflow: "visible" }]}
+              accessibilityLabel="Ember: open today's session"
+              style={[
+                s.tile,
+                {
+                  backgroundColor: "#d4ee89",
+                  borderColor: "#b5d55b",
+                  borderBottomColor: "#9ebf42",
+                  overflow: "visible",
+                  width: 82,
+                  height: 82,
+                  borderRadius: 41,
+                  transform: [],
+                },
+              ]}
               onPress={() => {
                 bounce();
                 setExpanded("suggestion");
@@ -175,19 +258,26 @@ export default function Home() {
               <Animated.View
                 style={{
                   position: "absolute",
-                  bottom: 6,
-                  left: -15,
+                  bottom: 22,
+                  left: "50%",
+                  marginLeft: -48,
                   transform: [{ translateY: lift }],
                 }}
               >
-                <Ember size={108} expression="happy" />
+                <Ember size={96} expression="happy" />
               </Animated.View>
             </Pressable>
-            <View style={s.stopCopy}>
+            <Pressable
+              accessibilityRole="button"
+              onPress={() => {
+                bounce();
+                setExpanded("suggestion");
+              }}
+              style={s.stopCopy}
+            >
               <Text style={f.kicker}>Today</Text>
-              <Text style={f.rowTitle}>You are here</Text>
-              <Text style={f.small}>Tap Ember for{"\n"}your next move</Text>
-            </View>
+              <Text style={f.rowTitle}>See today&apos;s session</Text>
+            </Pressable>
           </View>
           {sessions.map((a, i) => (
             <View
@@ -203,7 +293,7 @@ export default function Home() {
               <Pressable
                 accessibilityRole="button"
                 onPress={() => setExpanded(a)}
-                accessibilityLabel={`Open ${sportById(a.sport).name} session`}
+                accessibilityLabel={`Open ${sportById(a.sport).name} session ${formatVolume(a.sport, a.distanceM, a.movingSec, units)}`}
                 style={s.tile}
               >
                 <View style={s.check}>
@@ -234,6 +324,54 @@ export default function Home() {
               </View>
             </View>
           ))}
+          <View
+            style={[
+              s.stop,
+              {
+                paddingLeft: sessions.length % 2 === 0 ? "26%" : "5%",
+              },
+            ]}
+          >
+            <View
+              style={[
+                s.connector,
+                sessions.length % 2 === 0
+                  ? null
+                  : { transform: [{ scaleX: -1 }], left: "35%" },
+              ]}
+            />
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Starting line"
+              onPress={bounce}
+              style={[
+                s.tile,
+                {
+                  backgroundColor: "#f1f5ec",
+                  borderStyle: "dashed",
+                  borderColor: "#b7c9a4",
+                  borderBottomColor: "#a4b990",
+                  transform: [],
+                },
+              ]}
+            >
+              <Text style={{ fontSize: 18 }}>🏁</Text>
+              <Text
+                style={{
+                  fontFamily: "DMSans_700Bold",
+                  fontSize: 10,
+                  letterSpacing: 0.8,
+                  color: "#43543f",
+                }}
+              >
+                START
+              </Text>
+            </Pressable>
+            <View style={s.stopCopy}>
+              <Text style={f.kicker}>Baseline</Text>
+              <Text style={f.rowTitle}>Starting line</Text>
+            </View>
+          </View>
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -241,24 +379,64 @@ export default function Home() {
 }
 
 const s = StyleSheet.create({
-  suggestion: {
-    backgroundColor: "#fff",
+  statsCard: {
+    backgroundColor: "#edf2e8",
     borderWidth: 1,
     borderColor: "#e0e5dd",
-    borderRadius: 27,
-    padding: 26,
-    minHeight: 245,
-    position: "relative",
-    overflow: "hidden",
+    borderRadius: 20,
+    padding: 16,
+    gap: 12,
+    marginBottom: 8,
   },
-  suggestionTitle: {
-    fontFamily: "DMSans_400Regular",
-    fontSize: 29,
-    lineHeight: 34,
-    letterSpacing: -1,
+  statsHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-end",
+  },
+  statsMain: {
+    fontFamily: "DMSans_700Bold",
+    fontSize: 22,
     color: "#26382d",
   },
-  heroEmber: { position: "absolute", right: -5, bottom: 12 },
+  statsSummary: {
+    alignItems: "flex-end",
+    gap: 2,
+  },
+  miniChart: {
+    flexDirection: "row",
+    alignItems: "flex-end",
+    justifyContent: "space-between",
+    gap: 8,
+    height: 58,
+    paddingTop: 8,
+    borderTopWidth: 1,
+    borderTopColor: "#e0e5dd",
+  },
+  miniBarCol: {
+    flex: 1,
+    alignItems: "center",
+    gap: 6,
+    height: "100%",
+  },
+  miniBarTrack: {
+    flex: 1,
+    width: "100%",
+    maxWidth: 24,
+    backgroundColor: "#e0e6db",
+    borderRadius: 6,
+    justifyContent: "flex-end",
+    overflow: "hidden",
+  },
+  miniBarFill: {
+    width: "100%",
+    backgroundColor: "#a4be60",
+    borderRadius: 6,
+  },
+  miniBarDay: {
+    fontSize: 10,
+    fontFamily: "DMSans_500Medium",
+    color: "#768172",
+  },
   expandPanel: {
     backgroundColor: "#fff",
     borderWidth: 1,
@@ -280,14 +458,6 @@ const s = StyleSheet.create({
   },
   expandEmber: { position: "absolute", right: -10, bottom: 10 },
   journey: { gap: 0, paddingBottom: 20 },
-  future: {
-    alignItems: "center",
-    flexDirection: "row",
-    justifyContent: "center",
-    gap: 14,
-    padding: 15,
-    marginBottom: 20,
-  },
   stop: {
     height: 150,
     flexDirection: "row",
@@ -296,17 +466,16 @@ const s = StyleSheet.create({
     position: "relative",
   },
   tile: {
-    width: 83,
-    height: 74,
-    borderRadius: 19,
+    width: 80,
+    height: 80,
+    borderRadius: 40,
     borderWidth: 1,
     borderBottomWidth: 5,
     borderColor: "#cdd9c1",
     backgroundColor: "#fff",
     justifyContent: "center",
     alignItems: "center",
-    gap: 5,
-    transform: [{ rotate: "-6deg" }],
+    gap: 3,
   },
   tileValue: { fontFamily: "DMSans_500Medium", fontSize: 12, color: "#26382d" },
   check: {

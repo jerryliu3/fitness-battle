@@ -2,6 +2,7 @@
 import { useRef, useState } from "react";
 import { useCompete } from "@/components/compete-context";
 import {
+  competeNow,
   countsOnTrack,
   distanceUnitLabel,
   formatDistanceM,
@@ -102,7 +103,7 @@ export function AthleteOverview({
   }
 
   // 30-day fixed time-series Elo history
-  const today = new Date();
+  const today = competeNow(state);
   const thirtyDaysAgo = new Date(today.getTime() - 29 * 24 * 3600 * 1000);
 
   const history = state.periodResults
@@ -155,10 +156,12 @@ export function AthleteOverview({
   const startDateLabel = thirtyDaysAgo.toLocaleDateString("en-US", {
     month: "short",
     day: "numeric",
+    timeZone: "UTC",
   });
   const todayDateLabel = today.toLocaleDateString("en-US", {
     month: "short",
     day: "numeric",
+    timeZone: "UTC",
   });
 
   return (
