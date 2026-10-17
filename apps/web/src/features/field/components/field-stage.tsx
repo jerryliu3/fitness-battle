@@ -33,7 +33,7 @@ export function FieldStage({
   model: FieldModel;
   boardRows?: BoardRow[];
 }) {
-  const unit = model.gps ? "km" : "pts";
+  const unit = model.unit;
   const runners = useMemo<SceneRunner[]>(
     () =>
       model.runners.map((r) => ({
@@ -156,7 +156,7 @@ export function FieldStage({
                   setCamera(camera === "above" ? "follow" : "above")
                 }
               >
-                {camera === "above" ? "Follow camera ↗" : "Above camera ↗"}
+                {camera === "above" ? "Follow camera" : "Above camera"}
               </button>
             </div>
           </>

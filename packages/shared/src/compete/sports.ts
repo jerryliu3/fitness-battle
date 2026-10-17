@@ -219,10 +219,15 @@ export interface PeriodResult {
   acknowledgedAt?: string | null;
 }
 
+/** Display preference for distance. Default US customary (miles). */
+export type UnitSystem = "us" | "metric";
+
 export interface CompeteState {
   version: 1;
   name: string;
   city: string;
+  /** Miles (us) or kilometres (metric). Chosen in onboarding; changeable later. */
+  units: UnitSystem;
   primary: SportId;
   /** Which category My track and the field are showing. */
   focus: CategoryFocus;

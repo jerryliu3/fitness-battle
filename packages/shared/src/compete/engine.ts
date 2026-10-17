@@ -43,6 +43,7 @@ import {
   unitInterval,
   type Activity,
   type CompeteState,
+  type UnitSystem,
   type CrewBoardPin,
   type PeriodResult,
   type ProviderId,
@@ -70,6 +71,7 @@ export interface Action {
   type:
     | "rename"
     | "set-city"
+    | "set-units"
     | "set-primary"
     | "set-focus"
     | "opt-in"
@@ -97,6 +99,7 @@ export interface Action {
     | "debug-close-week";
   name?: string;
   city?: string;
+  units?: UnitSystem;
   sport?: SportId;
   metric?: HealthMetricId;
   focus?: CategoryFocus;
@@ -270,7 +273,12 @@ export function migrateCompeteState(parsed: CompeteState): CompeteState {
     crewBoard: isCrewBoardPin((parsed as CompeteState).crewBoard)
       ? (parsed as CompeteState).crewBoard
       : null,
+    units: parseUnitSystem((parsed as CompeteState).units),
   };
+}
+
+function parseUnitSystem(value: unknown): UnitSystem {
+  return value === "metric" ? "metric" : "us";
 }
 
 function isCrewBoardPin(value: unknown): value is CrewBoardPin {
@@ -296,6 +304,7 @@ export function freshState(now: Date = new Date()): CompeteState {
     version: 1,
     name: "You",
     city: "Toronto",
+    units: "us",
     primary: "running",
     focus: { family: "sport", id: "running" },
     clock: { kind: "weekly", periodStart },
@@ -903,6 +912,10 @@ export function reduceCompete(
       const city = action.city?.trim().slice(0, 40);
       return city ? { ...rolled, city } : rolled;
     }
+    case "set-units": {
+      if (action.units !== "us" && action.units !== "metric") return rolled;
+      return { ...rolled, units: action.units };
+    }
     case "set-primary": {
       if (!action.sport) return rolled;
       return {
@@ -1276,11 +1289,32 @@ export function daysLeft(bounds: PeriodBounds, now: Date): number {
   );
 }
 
-export function formatVolume(sport: SportId, distanceM: number, movingSec: number): string {
+export function formatVolume(
+  sport: SportId,
+  distanceM: number,
+  movingSec: number,
+  units: UnitSystem = "us",
+): string {
   if (sportById(sport).gps) {
-    return `${(distanceM / 1000).toFixed(1)} km`;
+    if (units === "metric") {
+      return `${(distanceM / 1000).toFixed(1)} km`;
+    }
+    return `${(distanceM / 1609.344).toFixed(1)} mi`;
   }
   return `${Math.round(movingSec / 60)} min`;
+}
+
+/** Short unit label for season totals and lane captions. */
+export function distanceUnitLabel(units: UnitSystem = "us"): string {
+  return units === "metric" ? "km" : "mi";
+}
+
+export function formatDistanceM(
+  distanceM: number,
+  units: UnitSystem = "us",
+): string {
+  if (units === "metric") return (distanceM / 1000).toFixed(1);
+  return (distanceM / 1609.344).toFixed(1);
 }
 
 export function formatEffort(value: number): string {

@@ -14,6 +14,7 @@ describe("embedded arena presentation bridge", () => {
       parseArenaSceneMessage({ ...message, view: { center: 500, span: 100 } })
         ?.view.center,
     ).toBe(500);
+    expect(parseArenaSceneMessage({ ...message, unit: "mi" })?.unit).toBe("mi");
   });
   it("rejects non-finite values, unbounded payloads and duplicate identities", () => {
     expect(

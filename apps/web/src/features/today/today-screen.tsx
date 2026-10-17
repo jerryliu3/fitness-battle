@@ -3,19 +3,18 @@ import { useState } from "react";
 import { useCompete } from "@/components/compete-context";
 import { AnimatedEmber } from "@/components/mascot/animated-ember";
 import type { EmberAction } from "@fitness-battle/shared/mascot";
-import { Sheet } from "@/ui/sheet";
 import {
   buildTodayRoute,
   competeNow,
-  countedPrimarySessionsInPeriod,
   countsOnTrack,
   formatVolume,
   sportById,
   type Activity,
 } from "@fitness-battle/shared";
+
 export function TodayScreen() {
   const { state } = useCompete();
-  const [detail, setDetail] = useState<{ title: string; body: string } | null>(
+  const [expanded, setExpanded] = useState<"suggestion" | Activity | null>(
     null,
   );
   const [reaction, setReaction] = useState<{
@@ -30,23 +29,76 @@ export function TodayScreen() {
   const counted = state.activities.filter(
     (a) => countsOnTrack(a, "open") && new Date(a.startedAt) <= now,
   );
-  const weekSessions = countedPrimarySessionsInPeriod(state, now);
   const sessions = counted
     .slice()
     .sort((a, b) => b.startedAt.localeCompare(a.startedAt))
     .slice(0, 10);
-  const openToday = () => {
-    react("hop");
-    setDetail({
-      title: route.suggestion.title,
-      body: `${route.suggestion.detail} ${route.suggestion.reason}`,
-    });
-  };
-  const openSession = (a: Activity) =>
-    setDetail({
-      title: `${sportById(a.sport).name} · ${formatVolume(a.sport, a.distanceM, a.movingSec)}`,
-      body: `${new Date(a.startedAt).toLocaleDateString("en-US", { month: "long", day: "numeric", timeZone: "UTC" })} · ${a.source} · ${a.verified ? "Verified" : "Open"} · counted toward your training.`,
-    });
+  const units = state.units;
+
+  if (expanded === "suggestion") {
+    return (
+      <div className="focus-home focus-home-expanded">
+        <button
+          type="button"
+          className="focus-expand-back"
+          onClick={() => setExpanded(null)}
+        >
+          ← Back
+        </button>
+        <section className="focus-expand-panel" aria-label="Today's suggestion">
+          <p className="fb-kicker">Today&apos;s suggestion</p>
+          <h1>{route.suggestion.title}</h1>
+          {route.suggestion.minutes ? (
+            <p className="fb-copy">{route.suggestion.minutes} min</p>
+          ) : null}
+          <p className="fb-copy">{route.suggestion.detail}</p>
+          <p className="fb-note">{route.suggestion.reason}</p>
+          <AnimatedEmber
+            className="focus-expand-ember"
+            expression="happy"
+            action={reaction.action}
+            restartKey={reaction.key}
+            loop={false}
+            playing={reaction.key > 0}
+          />
+        </section>
+      </div>
+    );
+  }
+
+  if (expanded && typeof expanded === "object") {
+    const a = expanded;
+    return (
+      <div className="focus-home focus-home-expanded">
+        <button
+          type="button"
+          className="focus-expand-back"
+          onClick={() => setExpanded(null)}
+        >
+          ← Back
+        </button>
+        <section className="focus-expand-panel" aria-label="Session detail">
+          <p className="fb-kicker">
+            {new Date(a.startedAt).toLocaleDateString("en-US", {
+              weekday: "long",
+              month: "long",
+              day: "numeric",
+              timeZone: "UTC",
+            })}
+          </p>
+          <h1>{sportById(a.sport).name}</h1>
+          <p className="fb-copy">
+            {formatVolume(a.sport, a.distanceM, a.movingSec, units)}
+          </p>
+          <p className="fb-note">
+            {a.source} · {a.verified ? "Verified" : "Open"} · counted toward
+            your training.
+          </p>
+        </section>
+      </div>
+    );
+  }
+
   return (
     <div className="focus-home">
       <header className="focus-heading">
@@ -56,17 +108,20 @@ export function TodayScreen() {
       </header>
       <button
         className="focus-suggestion"
-        onClick={openToday}
+        onClick={() => {
+          react("hop");
+          setExpanded("suggestion");
+        }}
         onMouseEnter={() => react("wave")}
       >
         <span>
-          <small>Today's suggestion</small>
+          <small>Today&apos;s suggestion</small>
           <strong>{route.suggestion.title}</strong>
           <em>
             {route.suggestion.minutes
               ? `${route.suggestion.minutes} min · `
               : ""}
-            Your next move ↗
+            Your next move
           </em>
         </span>
         <AnimatedEmber
@@ -78,28 +133,22 @@ export function TodayScreen() {
           playing={reaction.key > 0}
         />
       </button>
-      <details className="focus-disclosure">
-        <summary>
-          Your week at a glance <span>＋</span>
-        </summary>
-        <div className="focus-details-body">
-          <p className="fb-copy">
-            {weekSessions} counted sessions in this competition period. Open
-            Arena to see your competition totals.
-          </p>
-        </div>
-      </details>
       <div className="focus-row">
         <h2>Your recent rhythm</h2>
-        <span className="fb-note">Last {sessions.length} sessions</span>
+        {sessions.length ? (
+          <span className="fb-note">Last {sessions.length} sessions</span>
+        ) : null}
       </div>
       <section className="focus-journey" aria-label="Activity journey">
         <div className="focus-future" aria-label="Future day, not interactive">
-          ○ <small>Tomorrow · room for what's next</small>
+          ○ <small>Tomorrow · room for what&apos;s next</small>
         </div>
         <div className="focus-path-row is-current">
           <button
-            onClick={openToday}
+            onClick={() => {
+              react("hop");
+              setExpanded("suggestion");
+            }}
             onMouseEnter={() => react("wave")}
             aria-label="Ember: open today's recommendation"
           >
@@ -114,7 +163,7 @@ export function TodayScreen() {
           <span>
             <small>Today</small>
             <b>You are here</b>
-            <em>Tap Ember for your next move ↗</em>
+            <em>Tap Ember for your next move</em>
           </span>
         </div>
         {sessions.map((a, i) => (
@@ -123,11 +172,11 @@ export function TodayScreen() {
             key={a.id}
           >
             <button
-              onClick={() => openSession(a)}
-              aria-label={`Open ${sportById(a.sport).name} session ${formatVolume(a.sport, a.distanceM, a.movingSec)}`}
+              onClick={() => setExpanded(a)}
+              aria-label={`Open ${sportById(a.sport).name} session ${formatVolume(a.sport, a.distanceM, a.movingSec, units)}`}
             >
               <i>✓</i>
-              <b>{formatVolume(a.sport, a.distanceM, a.movingSec)}</b>
+              <b>{formatVolume(a.sport, a.distanceM, a.movingSec, units)}</b>
               <small>
                 {new Date(a.startedAt).toLocaleDateString("en-US", {
                   weekday: "short",
@@ -148,19 +197,7 @@ export function TodayScreen() {
             </span>
           </div>
         ))}
-        {!sessions.length && (
-          <p className="fb-copy focus-empty-copy">
-            Your first counted session will start the path. Connect a tracker
-            from Athlete.
-          </p>
-        )}
       </section>
-      <Sheet
-        open={!!detail}
-        title={detail?.title ?? "Details"}
-        body={detail?.body ?? ""}
-        onClose={() => setDetail(null)}
-      />
     </div>
   );
 }

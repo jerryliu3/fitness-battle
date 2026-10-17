@@ -6,6 +6,7 @@ import {
   initialsFromName,
   type BoardRow,
   type SportId,
+  type UnitSystem,
 } from "@fitness-battle/shared";
 
 export function AthleteCard({
@@ -39,16 +40,20 @@ export function AthleteCard({
 export function WeekRecords({
   sport,
   you,
+  units = "us",
 }: {
   sport: SportId;
   you: BoardRow | null;
+  units?: UnitSystem;
 }) {
   return (
     <div className="sp-records">
       <div>
         <span>Distance</span>
         <strong>
-          {you ? formatVolume(sport, you.distanceM, you.movingSec) : "—"}
+          {you
+            ? formatVolume(sport, you.distanceM, you.movingSec, units)
+            : "—"}
         </strong>
       </div>
       <div>

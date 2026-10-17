@@ -87,7 +87,8 @@ const styles = StyleSheet.create({
     gap: 5,
     alignItems: "center",
     justifyContent: "center",
-    borderRadius: SHELL_RADIUS.pill,
+    borderRadius: 16,
+    paddingVertical: 6,
   },
   tabOn: {
     backgroundColor: SHELL_COLORS.tennis,

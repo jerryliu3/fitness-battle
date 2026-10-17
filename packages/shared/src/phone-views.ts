@@ -85,10 +85,12 @@ export function stableFieldLanes(lanes: readonly ArenaLane[]): ArenaLane[] {
   return orderedArenaLanes(lanes);
 }
 
+export type ArenaDistanceUnit = "km" | "mi" | "pts";
+
 export interface ArenaModel {
   sportId: SportId;
   sportName: string;
-  unit: "km" | "pts";
+  unit: ArenaDistanceUnit;
   labels: [string, string, string];
   lanes: ArenaLane[];
   optedIn: boolean;
@@ -262,8 +264,16 @@ export function buildTodayRoute(
   };
 }
 
-function seriesValues(series: CheckpointSeries, gps: boolean): [number, number, number] {
-  const source = gps ? series.distanceM.map((meters) => meters / 1000) : series.effort;
+function seriesValues(
+  series: CheckpointSeries,
+  gps: boolean,
+  units: CompeteState["units"],
+): [number, number, number] {
+  if (!gps) {
+    return [series.effort[0] ?? 0, series.effort[1] ?? 0, series.effort[2] ?? 0];
+  }
+  const divisor = units === "metric" ? 1000 : 1609.344;
+  const source = series.distanceM.map((meters) => meters / divisor);
   return [source[0] ?? 0, source[1] ?? 0, source[2] ?? 0];
 }
 
@@ -304,7 +314,7 @@ export function buildArenaModel(
       name: row.you ? state.name : row.name,
       you: row.you,
       ghost: false,
-      values: seriesValues(series, spec.gps),
+      values: seriesValues(series, spec.gps, state.units),
     };
   });
 
@@ -323,14 +333,14 @@ export function buildArenaModel(
       name: ghost.name,
       you: false,
       ghost: true,
-      values: seriesValues(ghost.series, spec.gps),
+      values: seriesValues(ghost.series, spec.gps, state.units),
     });
   }
 
   return {
     sportId: sport,
     sportName: spec.name,
-    unit: spec.gps ? "km" : "pts",
+    unit: spec.gps ? (state.units === "metric" ? "km" : "mi") : "pts",
     labels: youSeries.labels,
     lanes,
     optedIn,

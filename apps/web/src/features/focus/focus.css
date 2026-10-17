@@ -57,14 +57,18 @@
   border-radius: 16px;
   display: flex;
   flex-direction: column;
+  align-items: center;
+  justify-content: center;
   gap: 5px;
   min-height: 56px;
   font-size: 10px;
   font-weight: 500;
+  position: relative;
 }
 .phone-shell .phone-pill {
   background: #d4ee89;
   border-radius: 16px;
+  inset: 4px;
 }
 .phone-shell .phone-tab[data-state="active"] {
   color: #26382d;
@@ -326,6 +330,7 @@
 .focus-suggestion-ember {
   position: absolute;
   width: 145px;
+  height: 145px;
   right: 12px;
   bottom: 10px;
   transition: transform 0.25s;
@@ -374,6 +379,41 @@
   text-align: center;
   margin: 12px 0 25px;
 }
+.focus-profile-card {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 18px;
+  align-items: center;
+  background: #fff;
+  border: 1px solid #e0e5dd;
+  border-radius: 22px;
+  padding: 22px 20px;
+  margin: 8px 0 22px;
+  text-align: left;
+}
+.focus-profile-card .focus-portrait {
+  margin: 0;
+  flex-shrink: 0;
+}
+.focus-profile-card-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+.focus-profile-card h1 {
+  margin: 0;
+  font-size: 28px;
+  font-weight: 400;
+  letter-spacing: -0.8px;
+  line-height: 1.15;
+}
+.focus-profile-email {
+  margin: 0;
+  font-size: 13px;
+  color: #768172;
+  word-break: break-word;
+}
 .focus-portrait {
   width: 86px;
   height: 86px;
@@ -388,6 +428,128 @@
 }
 .focus-profile h1 {
   margin: 8px 0;
+}
+.focus-home-expanded {
+  min-height: min(70dvh, 640px);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.focus-expand-back {
+  align-self: flex-start;
+  border: 0;
+  background: transparent;
+  color: #768172;
+  font: inherit;
+  font-size: 13px;
+  padding: 8px 0;
+  cursor: pointer;
+}
+.focus-expand-panel {
+  flex: 1;
+  background: #fff;
+  border: 1px solid #e0e5dd;
+  border-radius: 24px;
+  padding: 28px 24px 36px;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.focus-expand-panel h1 {
+  font-size: clamp(28px, 6vw, 40px);
+  font-weight: 400;
+  letter-spacing: -1.2px;
+  line-height: 1.15;
+  margin: 0;
+  max-width: 18ch;
+}
+.focus-expand-ember {
+  position: absolute;
+  width: 160px;
+  height: 160px;
+  right: -8px;
+  bottom: 8px;
+  pointer-events: none;
+}
+.focus-sport-options {
+  display: grid;
+  gap: 10px;
+  margin: 8px 0 18px;
+}
+.focus-sport-option {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  width: 100%;
+  text-align: left;
+  padding: 14px 16px;
+  border: 1px solid #e0e5dd;
+  border-radius: 14px;
+  background: #fff;
+  color: #26382d;
+  font: inherit;
+  cursor: pointer;
+}
+.focus-sport-option b {
+  font-size: 14px;
+  font-weight: 500;
+}
+.focus-sport-option small {
+  font-size: 11px;
+  color: #768172;
+}
+.focus-sport-option.is-on {
+  border-color: #26382d;
+  background: #edf2e8;
+}
+.focus-coming-soon {
+  opacity: 0.72;
+  margin-top: 8px;
+}
+.focus-coming-soon h2 {
+  margin: 4px 0 8px;
+  font-weight: 400;
+}
+.focus-coming-soon button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+.focus-crew-preview {
+  display: grid;
+  gap: 16px;
+}
+.focus-crew-preview-list {
+  list-style: none;
+  margin: 14px 0 0;
+  padding: 0;
+  display: grid;
+  gap: 14px;
+}
+.focus-crew-preview-list li {
+  display: grid;
+  gap: 4px;
+}
+.focus-crew-preview-list b {
+  font-size: 14px;
+  font-weight: 500;
+}
+.focus-crew-preview-list span {
+  font-size: 12px;
+  color: #768172;
+  line-height: 1.45;
+}
+@media (max-width: 520px) {
+  .focus-profile-card {
+    grid-template-columns: 1fr;
+    justify-items: center;
+    text-align: center;
+  }
+  .focus-profile-card-copy {
+    align-items: center;
+  }
 }
 .focus-elo strong {
   font-size: 54px;
@@ -453,9 +615,10 @@
   );
   margin: 25px 0;
   max-height: 900px;
-  overflow: auto;
+  overflow-x: visible;
+  overflow-y: auto;
   overscroll-behavior: contain;
-  padding: 0 12px 20px;
+  padding: 0 12px 28px;
 }
 .focus-path-row {
   position: relative;
@@ -557,11 +720,13 @@
 .focus-path-row.is-current > button {
   background: #d4ee89;
   margin-top: 28px;
+  overflow: visible;
 }
 .focus-path-row.is-current svg,
 .focus-path-row.is-current > button > div {
   position: absolute;
   width: 115px;
+  height: 115px;
   bottom: 7px;
   left: -13px;
   animation: focus-breathe 3s ease-in-out infinite;
@@ -1144,11 +1309,14 @@
 }
 .phone-shell .phone-pill {
   position: absolute;
-  inset: 0;
+  inset: 4px;
   z-index: 0;
 }
 .phone-shell .phone-tabs {
   margin-inline: auto;
+  flex-shrink: 0;
+  position: sticky;
+  bottom: 0;
 }
 .focus-return {
   flex-shrink: 0;

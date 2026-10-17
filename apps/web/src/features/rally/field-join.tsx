@@ -41,7 +41,7 @@ interface FieldJoinProps {
 }
 
 /**
- * Optional field registration: alone (density) or together with a crew.
+ * Optional field registration: density field or together with a crew.
  * Each mate opts in themselves — no group-approval step yet.
  */
 export function FieldJoinActions({
@@ -55,7 +55,7 @@ export function FieldJoinActions({
   const [busy, setBusy] = useState(false);
   const [note, setNote] = useState<string | null>(null);
 
-  function joinAlone() {
+  function joinField() {
     requireParticipate(`Sign in to join ${sportName} this week.`, () => {
       dispatch({ type: "set-primary", sport });
       dispatch({ type: "opt-in", sport, crewBoard: null });
@@ -70,7 +70,7 @@ export function FieldJoinActions({
       void seatCrewFieldPin({ crewId: crew.id, sport })
         .then((pin) => {
           if (!pin) {
-            setNote("Could not seat the crew field. Try again or join alone.");
+            setNote("Could not seat the crew field. Try joining again.");
             return;
           }
           dispatch({ type: "set-primary", sport });
@@ -85,16 +85,16 @@ export function FieldJoinActions({
     <div className="fb-stack">
       <p className="fb-note">
         {crews.length > 0
-          ? "Join alone for a normal density field, or together so your crew shares one individual leaderboard. Each person still opts in on their own."
+          ? "Join a density field, or register with a crew so you share one individual leaderboard. Each person still opts in on their own."
           : "Fields are density groups of eight. Create or join a private crew if you want the option to register together."}
       </p>
       <button
         type="button"
         className="fb-btn"
         disabled={busy}
-        onClick={joinAlone}
+        onClick={joinField}
       >
-        Join {sportName} alone
+        Join {sportName}
       </button>
       {crews.map((crew) => (
         <button
@@ -147,10 +147,10 @@ export function FieldCrewSwitch({ sport }: { sport: SportId }) {
           disabled={busy}
           onClick={() => {
             dispatch({ type: "clear-crew-board" });
-            setNote("Now competing alone on a density field.");
+            setNote("Now on a density field.");
           }}
         >
-          Switch to alone
+          Leave crew field
         </button>
         {note ? <p className="fb-note">{note}</p> : null}
       </div>

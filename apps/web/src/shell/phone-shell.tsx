@@ -148,7 +148,7 @@ export function PhoneShell({
     <div className="phone-frame">
       <div className="phone-shell">
         <header className="focus-shell-header">
-          <Link href="/today">overtaek®</Link>
+          <Link href="/today">OVERTAEK</Link>
           <span>A LITTLE FURTHER, TOGETHER.</span>
         </header>
         <ReturnProgress />

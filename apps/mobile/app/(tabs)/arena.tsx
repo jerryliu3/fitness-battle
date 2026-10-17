@@ -51,7 +51,8 @@ export default function ArenaScreen() {
       </SafeAreaView>
     );
   const arena = buildArenaModel(state, undefined, track);
-  const defaultSpan = arena.unit === "km" ? 6 : 20;
+  const defaultSpan =
+    arena.unit === "pts" ? 20 : arena.unit === "mi" ? 4 : 6;
   const viewSpan = span ?? defaultSpan;
   const me = arena.lanes.find((l) => l.you);
   const total = me?.values[2] ?? 0;
@@ -105,7 +106,8 @@ export default function ArenaScreen() {
       dispatch({ type: "set-primary", sport });
       dispatch({ type: "opt-in", sport, crewBoard: pin });
       setCenter(null);
-      setSpan(SPORTS.find((s) => s.id === sport)?.gps ? 6 : 20);
+      const gps = SPORTS.find((s) => s.id === sport)?.gps;
+      setSpan(gps ? (state?.units === "metric" ? 6 : 4) : 20);
       setRegister(false);
     } catch (e) {
       setJoinError(e instanceof Error ? e.message : "Could not join.");
@@ -352,15 +354,21 @@ export default function ArenaScreen() {
         ) : (
           <View style={f.card}>
             <Text style={f.title}>Your next chapter starts here.</Text>
-            <Text style={f.copy}>
-              Choose a sport and join your weekly field.
-            </Text>
+            <Text style={f.copy}>Pick a sport and join for the week.</Text>
             <FocusButton
-              label="Find an arena"
+              label="Find a field"
               onPress={() => setRegister(true)}
             />
           </View>
         )}
+        <View style={[f.card, { opacity: 0.72 }]}>
+          <Text style={f.kicker}>Coming soon</Text>
+          <Text style={f.title}>1v1</Text>
+          <Text style={f.copy}>
+            Challenge a friend head-to-head for the week. Not open yet.
+          </Text>
+          <FocusButton label="1v1 · Coming soon" disabled onPress={() => {}} />
+        </View>
         {state.periodResults.some((r) => !r.acknowledgedAt) && (
           <View style={f.card}>
             <Text style={f.h2}>Your week is complete.</Text>
@@ -382,7 +390,7 @@ export default function ArenaScreen() {
       </ScrollView>
       <FocusSheet
         open={register}
-        title="Find your next arena."
+        title="Find your next field."
         body="Choose a sport for your individual field. You can seat a private crew on the same field here, or manage membership from Crew."
         onClose={() => setRegister(false)}
       >
@@ -410,7 +418,10 @@ export default function ArenaScreen() {
           style={[f.chip, !crew && f.chipActive]}
           onPress={() => setCrew("")}
         >
-          <Text style={f.rowTitle}>Solo · find a similar field</Text>
+          <Text style={f.rowTitle}>
+            Join {SPORTS.find((s) => s.id === sport)?.name ?? sport}
+          </Text>
+          <Text style={f.small}>Density field of similar athletes</Text>
         </Pressable>
         {crewApi.data?.crews
           .flatMap((r) => (r.crews && r.crews.sport === sport ? [r.crews] : []))

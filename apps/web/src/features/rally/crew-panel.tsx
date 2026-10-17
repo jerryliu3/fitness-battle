@@ -98,20 +98,44 @@ export function CrewPanel() {
   return (
     <>
       {!user || demoMode ? (
-        <section className="focus-card focus-empty">
-          <h2>Make room for your people.</h2>
-          <p className="fb-copy">
-            Private crews need a live signed-in account. Your practice field is
-            kept separate.
-          </p>
-          <div className="focus-actions">
-            {!user && (
-              <Link className="fb-btn" href="/login?next=/field">
-                Sign in to join a crew
-              </Link>
-            )}
-          </div>
-        </section>
+        <div className="focus-crew-preview">
+          <section className="focus-card focus-empty">
+            <h2>Make room for your people.</h2>
+            <p className="fb-copy">
+              Private crews share a week of counted effort — invite codes,
+              member standings, and a shared field when you register together.
+            </p>
+            <div className="focus-actions">
+              {!user && (
+                <Link className="fb-btn" href="/login?next=/field">
+                  Sign in to join a crew
+                </Link>
+              )}
+              {!user && (
+                <Link className="fb-btn-line" href="/signup?next=/field">
+                  Create account
+                </Link>
+              )}
+            </div>
+          </section>
+          <section className="focus-card">
+            <p className="fb-kicker">What crews unlock</p>
+            <ul className="focus-crew-preview-list">
+              <li>
+                <b>Shared week</b>
+                <span>See who showed up and how the circle is pacing.</span>
+              </li>
+              <li>
+                <b>Invite codes</b>
+                <span>Bring friends in without a public board.</span>
+              </li>
+              <li>
+                <b>Crew field</b>
+                <span>Optional: register together on one individual leaderboard.</span>
+              </li>
+            </ul>
+          </section>
+        </div>
       ) : !data ? (
         <section className="focus-card">
           <p className="fb-copy">{note || "Loading your circle…"}</p>
@@ -330,7 +354,7 @@ export function CrewPanel() {
                     className="fb-btn-line"
                     onClick={() => setPanel("manage")}
                   >
-                    Crew settings ↗
+                    Crew settings
                   </button>
                   <button
                     className="fb-btn-line"

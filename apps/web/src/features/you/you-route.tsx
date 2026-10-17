@@ -314,15 +314,41 @@ function YouContent() {
     setSyncNote(`${providerId} disconnected on this account.`);
   }
 
+  if (!user) {
+    return (
+      <div className="focus-athlete">
+        <AthleteOverview state={state} />
+        <section className="focus-card fb-stack">
+          <p className="fb-kicker">Account</p>
+          <h2>Sign in to sync your athlete</h2>
+          <p className="fb-copy">
+            Create an account or sign in to connect trackers and keep progress
+            with you.
+          </p>
+          <Link href="/signup?next=/you" className="fb-btn">
+            Create account
+          </Link>
+          <Link href="/login?next=/you" className="fb-btn-line">
+            Sign in
+          </Link>
+        </section>
+      </div>
+    );
+  }
+
   return (
     <div className="focus-athlete">
-      <AthleteOverview state={state} />
+      <AthleteOverview state={state} email={user.email} demoMode={demoMode} />
       <details className="focus-disclosure">
         <summary>
-          Progress <span>Statistics, records & season history ↗</span>
+          Progress <span>Statistics, records & season history</span>
         </summary>
         <div className="focus-details-body">
-          <WeekRecords sport={state.primary} you={board.you} />
+          <WeekRecords
+            sport={state.primary}
+            you={board.you}
+            units={state.units}
+          />
           <SeasonHistory
             results={state.periodResults}
             primary={state.primary}
@@ -331,7 +357,7 @@ function YouContent() {
       </details>
       <details className="focus-disclosure" id="connections">
         <summary>
-          Connections <span>Trackers & history ↗</span>
+          Connections <span>Trackers & history</span>
         </summary>
         <div className="focus-details-body">
           <section className="fb-card">
@@ -430,7 +456,7 @@ function YouContent() {
       </details>
       <details className="focus-disclosure">
         <summary>
-          Preferences <span>Profile, sports & week freezes ↗</span>
+          Preferences <span>Profile, units, sports & freezes</span>
         </summary>
         <div className="focus-details-body">
           <section className="fb-card">
@@ -458,6 +484,31 @@ function YouContent() {
             >
               Save
             </button>
+          </section>
+
+          <section className="fb-card">
+            <h2>Units</h2>
+            <p className="fb-copy">
+              Distance display for Home, Arena, and Athlete.
+            </p>
+            <div className="focus-segments" role="group" aria-label="Units">
+              <button
+                type="button"
+                aria-pressed={state.units === "us"}
+                onClick={() => dispatch({ type: "set-units", units: "us" })}
+              >
+                Miles (US)
+              </button>
+              <button
+                type="button"
+                aria-pressed={state.units === "metric"}
+                onClick={() =>
+                  dispatch({ type: "set-units", units: "metric" })
+                }
+              >
+                Kilometres
+              </button>
+            </div>
           </section>
 
           <section className="fb-card">
@@ -512,7 +563,7 @@ function YouContent() {
       </details>
       <details className="focus-disclosure">
         <summary>
-          Notifications <span>Your updates, your choice ↗</span>
+          Notifications <span>Your updates, your choice</span>
         </summary>
         <div className="focus-details-body">
           <NotificationSettings />
@@ -520,7 +571,7 @@ function YouContent() {
       </details>
       <details className="focus-disclosure">
         <summary>
-          Health <span>Sleep and recovery ↗</span>
+          Health <span>Sleep and recovery</span>
         </summary>
         <div className="focus-details-body">
           <SleepPanel
@@ -536,11 +587,16 @@ function YouContent() {
       </details>
       <details className="focus-disclosure">
         <summary>
-          How scoring works <span>Levels & eligibility ↗</span>
+          How scoring works <span>Levels & eligibility</span>
         </summary>
         <div className="focus-details-body">
           <section className="fb-card">
             <h2>Levels</h2>
+            <p className="fb-copy">
+              Your level is a band on the weekly effort Elo ladder. It rises
+              when you accumulate counted volume against peers on your field,
+              and drifts down slightly after empty weeks.
+            </p>
             {RANK_BANDS.map((band) => (
               <div key={band.name} className="fb-row">
                 <span className="fb-grow">
@@ -553,8 +609,7 @@ function YouContent() {
             ))}
             <p className="fb-note">
               Score is mostly distance, or time when there is no GPS. Heart rate
-              can add a little. Pace adds less. An empty week decays rating
-              slightly, and it never falls below 500.
+              can add a little. Pace adds less. Rating never falls below 500.
             </p>
           </section>
         </div>
@@ -572,11 +627,11 @@ function YouContent() {
         </section>
       ) : null}
 
-      <p className="fb-note">
-        {user?.email}
-        {demoMode ? " · demo account" : ""}
-      </p>
-      <button className="fb-btn-line" onClick={() => void signOut()}>
+      <button
+        type="button"
+        className="fb-btn-line"
+        onClick={() => void signOut()}
+      >
         Sign out
       </button>
     </div>

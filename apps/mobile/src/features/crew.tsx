@@ -136,18 +136,33 @@ export function CrewHub() {
   return (
     <>
       {!api.live ? (
-        <View style={f.card}>
-          <Text style={f.title}>Make room for your people.</Text>
-          <Text style={f.copy}>
-            Private crews need a live signed-in account. Your practice field is
-            kept separate.
-          </Text>
-          {!user && (
-            <FocusButton
-              label="Sign in to participate"
-              onPress={() => router.navigate("/you")}
-            />
-          )}
+        <View style={{ gap: 14 }}>
+          <View style={f.card}>
+            <Text style={f.title}>Make room for your people.</Text>
+            <Text style={f.copy}>
+              Private crews share a week of counted effort — invite codes,
+              member standings, and a shared field when you register together.
+            </Text>
+            {!user && (
+              <FocusButton
+                label="Sign in to join a crew"
+                onPress={() => router.navigate("/you")}
+              />
+            )}
+          </View>
+          <View style={f.card}>
+            <Text style={f.kicker}>What crews unlock</Text>
+            <Text style={f.rowTitle}>Shared week</Text>
+            <Text style={f.small}>
+              See who showed up and how the circle is pacing.
+            </Text>
+            <Text style={[f.rowTitle, { marginTop: 12 }]}>Invite codes</Text>
+            <Text style={f.small}>Bring friends in without a public board.</Text>
+            <Text style={[f.rowTitle, { marginTop: 12 }]}>Crew field</Text>
+            <Text style={f.small}>
+              Optional: register together on one individual leaderboard.
+            </Text>
+          </View>
         </View>
       ) : !api.data ? (
         <View style={f.card}>

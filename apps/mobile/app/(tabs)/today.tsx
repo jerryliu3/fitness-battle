@@ -12,7 +12,6 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import {
   buildTodayRoute,
   competeNow,
-  countedPrimarySessionsInPeriod,
   countsOnTrack,
   formatVolume,
   sportById,
@@ -20,15 +19,11 @@ import {
 } from "@fitness-battle/shared";
 import { useCompeteStore } from "../../src/lib/compete-store";
 import { Ember } from "../../src/ui/mascot/ember";
-import {
-  FocusDisclosure,
-  FocusHeading,
-  FocusSheet,
-  f,
-} from "../../src/ui/focus";
+import { FocusHeading, f } from "../../src/ui/focus";
+
 export default function Home() {
   const { state } = useCompeteStore();
-  const [detail, setDetail] = useState<{ title: string; body: string } | null>(
+  const [expanded, setExpanded] = useState<"suggestion" | Activity | null>(
     null,
   );
   const lift = useRef(new Animated.Value(0)).current;
@@ -43,12 +38,13 @@ export default function Home() {
   const counted = state.activities.filter(
     (a) => countsOnTrack(a, "open") && new Date(a.startedAt) <= now,
   );
-  const weekSessions = countedPrimarySessionsInPeriod(state, now);
   const sessions = counted
     .slice()
     .sort((a, b) => b.startedAt.localeCompare(a.startedAt))
     .slice(0, 10);
-  function today() {
+  const units = state.units;
+
+  function bounce() {
     void AccessibilityInfo.isReduceMotionEnabled().then((reduce) => {
       if (!reduce)
         Animated.sequence([
@@ -60,17 +56,70 @@ export default function Home() {
           Animated.spring(lift, { toValue: 0, useNativeDriver: true }),
         ]).start();
     });
-    setDetail({
-      title: route.suggestion.title,
-      body: `${route.suggestion.detail} ${route.suggestion.reason}`,
-    });
   }
-  function receipt(a: Activity) {
-    setDetail({
-      title: `${sportById(a.sport).name} · ${formatVolume(a.sport, a.distanceM, a.movingSec)}`,
-      body: `${new Date(a.startedAt).toLocaleDateString()} · ${a.source} · ${a.verified ? "Verified" : "Open"} · Counted training.`,
-    });
+
+  if (expanded === "suggestion") {
+    return (
+      <SafeAreaView style={f.safe} edges={["top"]}>
+        <ScrollView contentContainerStyle={f.content}>
+          <Pressable
+            accessibilityRole="button"
+            onPress={() => setExpanded(null)}
+            style={{ paddingVertical: 8 }}
+          >
+            <Text style={f.small}>← Back</Text>
+          </Pressable>
+          <View style={s.expandPanel}>
+            <Text style={f.kicker}>Today&apos;s suggestion</Text>
+            <Text style={s.expandTitle}>{route.suggestion.title}</Text>
+            {route.suggestion.minutes ? (
+              <Text style={f.copy}>{route.suggestion.minutes} min</Text>
+            ) : null}
+            <Text style={f.copy}>{route.suggestion.detail}</Text>
+            <Text style={f.small}>{route.suggestion.reason}</Text>
+            <View style={s.expandEmber}>
+              <Ember size={150} expression="happy" />
+            </View>
+          </View>
+        </ScrollView>
+      </SafeAreaView>
+    );
   }
+
+  if (expanded && typeof expanded === "object") {
+    const a = expanded;
+    return (
+      <SafeAreaView style={f.safe} edges={["top"]}>
+        <ScrollView contentContainerStyle={f.content}>
+          <Pressable
+            accessibilityRole="button"
+            onPress={() => setExpanded(null)}
+            style={{ paddingVertical: 8 }}
+          >
+            <Text style={f.small}>← Back</Text>
+          </Pressable>
+          <View style={s.expandPanel}>
+            <Text style={f.kicker}>
+              {new Date(a.startedAt).toLocaleDateString("en-US", {
+                weekday: "long",
+                month: "long",
+                day: "numeric",
+                timeZone: "UTC",
+              })}
+            </Text>
+            <Text style={s.expandTitle}>{sportById(a.sport).name}</Text>
+            <Text style={f.copy}>
+              {formatVolume(a.sport, a.distanceM, a.movingSec, units)}
+            </Text>
+            <Text style={f.small}>
+              {a.source} · {a.verified ? "Verified" : "Open"} · Counted training.
+            </Text>
+          </View>
+        </ScrollView>
+      </SafeAreaView>
+    );
+  }
+
   return (
     <SafeAreaView style={f.safe} edges={["top"]}>
       <ScrollView contentContainerStyle={f.content}>
@@ -82,44 +131,46 @@ export default function Home() {
         <Pressable
           accessibilityRole="button"
           accessibilityLabel="Open today's exercise suggestion"
-          onPress={today}
+          onPress={() => {
+            bounce();
+            setExpanded("suggestion");
+          }}
           style={s.suggestion}
         >
           <View style={{ width: "74%", gap: 18, zIndex: 1 }}>
-            <Text style={f.kicker}>Today's suggestion</Text>
+            <Text style={f.kicker}>Today&apos;s suggestion</Text>
             <Text style={s.suggestionTitle}>{route.suggestion.title}</Text>
             <Text style={f.small}>
               {route.suggestion.minutes
                 ? `${route.suggestion.minutes} min · `
                 : ""}
-              Your next move ↗
+              Your next move
             </Text>
           </View>
           <View style={s.heroEmber}>
             <Ember size={135} expression="happy" />
           </View>
         </Pressable>
-        <FocusDisclosure title="Your week at a glance">
-          <Text style={f.copy}>
-            {weekSessions} counted sessions in this competition period. Explore
-            Arena for your competition totals.
-          </Text>
-        </FocusDisclosure>
         <View style={f.row}>
           <Text style={f.h2}>Your recent rhythm</Text>
-          <Text style={f.small}>Last {sessions.length} sessions</Text>
+          {sessions.length ? (
+            <Text style={f.small}>Last {sessions.length} sessions</Text>
+          ) : null}
         </View>
         <View style={s.journey}>
           <View style={s.future}>
             <Text style={{ fontSize: 36, color: "#b7c2af" }}>○</Text>
-            <Text style={f.small}>Tomorrow{"\n"}Room for what's next</Text>
+            <Text style={f.small}>Tomorrow{"\n"}Room for what&apos;s next</Text>
           </View>
           <View style={[s.stop, { paddingLeft: "12%" }]}>
             <Pressable
               accessibilityRole="button"
               accessibilityLabel="Ember: open today's recommendation"
-              style={[s.tile, { backgroundColor: "#d4ee89" }]}
-              onPress={today}
+              style={[s.tile, { backgroundColor: "#d4ee89", overflow: "visible" }]}
+              onPress={() => {
+                bounce();
+                setExpanded("suggestion");
+              }}
             >
               <Animated.View
                 style={{
@@ -135,7 +186,7 @@ export default function Home() {
             <View style={s.stopCopy}>
               <Text style={f.kicker}>Today</Text>
               <Text style={f.rowTitle}>You are here</Text>
-              <Text style={f.small}>Tap Ember for{"\n"}your next move ↗</Text>
+              <Text style={f.small}>Tap Ember for{"\n"}your next move</Text>
             </View>
           </View>
           {sessions.map((a, i) => (
@@ -151,7 +202,7 @@ export default function Home() {
               />
               <Pressable
                 accessibilityRole="button"
-                onPress={() => receipt(a)}
+                onPress={() => setExpanded(a)}
                 accessibilityLabel={`Open ${sportById(a.sport).name} session`}
                 style={s.tile}
               >
@@ -159,7 +210,7 @@ export default function Home() {
                   <Text style={{ fontSize: 9, color: "#26382d" }}>✓</Text>
                 </View>
                 <Text style={s.tileValue}>
-                  {formatVolume(a.sport, a.distanceM, a.movingSec)}
+                  {formatVolume(a.sport, a.distanceM, a.movingSec, units)}
                 </Text>
                 <Text style={f.small}>
                   {new Date(a.startedAt).toLocaleDateString("en-US", {
@@ -183,23 +234,12 @@ export default function Home() {
               </View>
             </View>
           ))}
-          {!sessions.length && (
-            <Text style={[f.copy, { textAlign: "center", padding: 24 }]}>
-              Your first counted session starts the path. Connect a tracker from
-              Athlete.
-            </Text>
-          )}
         </View>
       </ScrollView>
-      <FocusSheet
-        open={!!detail}
-        title={detail?.title ?? "Details"}
-        body={detail?.body}
-        onClose={() => setDetail(null)}
-      />
     </SafeAreaView>
   );
 }
+
 const s = StyleSheet.create({
   suggestion: {
     backgroundColor: "#fff",
@@ -219,6 +259,26 @@ const s = StyleSheet.create({
     color: "#26382d",
   },
   heroEmber: { position: "absolute", right: -5, bottom: 12 },
+  expandPanel: {
+    backgroundColor: "#fff",
+    borderWidth: 1,
+    borderColor: "#e0e5dd",
+    borderRadius: 24,
+    padding: 28,
+    minHeight: 420,
+    gap: 14,
+    position: "relative",
+    overflow: "hidden",
+  },
+  expandTitle: {
+    fontFamily: "DMSans_400Regular",
+    fontSize: 34,
+    lineHeight: 40,
+    letterSpacing: -1.2,
+    color: "#26382d",
+    maxWidth: "85%",
+  },
+  expandEmber: { position: "absolute", right: -10, bottom: 10 },
   journey: { gap: 0, paddingBottom: 20 },
   future: {
     alignItems: "center",
