@@ -41,12 +41,8 @@ export function isDemoAccount(input: {
   if (!email) return false;
   if (LOCAL_DEMO_EMAILS.has(email)) return true;
   if (email.endsWith("@example.com") || email.endsWith("@demo.local")) return true;
-  if (
-    email.startsWith("demo@") ||
-    email.startsWith("demo-") ||
-    email.includes("+demo@") ||
-    email.includes("demo")
-  ) {
+  const localPart = email.split("@")[0] || "";
+  if (/(?:^|[._+-])demo(?:[._+-]|$)/i.test(localPart)) {
     return true;
   }
   return false;
@@ -54,10 +50,18 @@ export function isDemoAccount(input: {
 
 /**
  * Checks whether a given pathname is scoped under /design or /ux.
+ * Normalizes leading slashes, path separators, query parameters, and URL encoding.
  */
 export function isDesignOrUxPath(pathname: string): boolean {
   if (!pathname) return false;
-  const normalized = pathname.toLowerCase().split("?")[0].split("#")[0];
+  let normalized = pathname.toLowerCase().split("?")[0].split("#")[0];
+  try {
+    normalized = decodeURIComponent(normalized);
+  } catch {
+    // Keep raw string if URI decoding fails
+  }
+  normalized = normalized.replace(/\/+/g, "/");
+
   return (
     normalized === "/design" ||
     normalized.startsWith("/design/") ||
@@ -97,15 +101,17 @@ export function isLocalHost(hostOrHostname?: string | null): boolean {
 
 /**
  * Determines whether the environment is local development/testing vs remote production.
- * If a hostname is provided, non-local hostnames are always treated as production.
+ * Any cloud deployment (e.g. Vercel) or remote domain is strictly non-local.
  */
 export function isLocalEnvironment(options?: {
   hostname?: string | null;
   nodeEnv?: string;
   vercelEnv?: string;
+  isVercel?: boolean | string;
 }): boolean {
+  const isVercel = options?.isVercel ?? process.env.VERCEL;
   const vercelEnv = options?.vercelEnv ?? process.env.VERCEL_ENV;
-  if (vercelEnv === "production") {
+  if (isVercel === "1" || isVercel === true || (vercelEnv && vercelEnv !== "development")) {
     return false;
   }
   if (options?.hostname) {
@@ -114,7 +120,6 @@ export function isLocalEnvironment(options?: {
   const nodeEnv = options?.nodeEnv ?? process.env.NODE_ENV;
   return nodeEnv === "development" || nodeEnv === "test";
 }
-
 
 /**
  * Authorizes a user for design / UX routes according to environment.
@@ -152,9 +157,13 @@ export function parseDemoUserFromCookie(cookieValue?: string | null): {
   mode: "demo";
 } | null {
   if (!cookieValue) return null;
+  let raw = cookieValue.trim();
+  if (raw.startsWith('"') && raw.endsWith('"') && raw.length >= 2) {
+    raw = raw.slice(1, -1);
+  }
   try {
-    const raw = decodeURIComponent(cookieValue);
-    const parsed = JSON.parse(raw);
+    raw = decodeURIComponent(raw);
+    const parsed = typeof raw === "string" ? JSON.parse(raw) : null;
     if (parsed && typeof parsed.email === "string" && parsed.email.trim()) {
       return {
         id: String(parsed.id || ""),
@@ -168,6 +177,7 @@ export function parseDemoUserFromCookie(cookieValue?: string | null): {
     return null;
   }
 }
+
 
 /**
  * Serializes demo user info to store in a cookie on client side.

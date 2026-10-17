@@ -49,7 +49,9 @@ describe("design-access", () => {
       expect(isDemoAccount({ email: "test+demo@domain.com" })).toBe(true);
     });
 
-    it("rejects non-demo normal emails", () => {
+    it("rejects non-demo normal emails even if they contain 'demo' as a substring", () => {
+      expect(isDemoAccount({ email: "pandemonium@gmail.com", mode: "supabase" })).toBe(false);
+      expect(isDemoAccount({ email: "academy@domain.com", mode: "supabase" })).toBe(false);
       expect(isDemoAccount({ email: "stranger@gmail.com", mode: "supabase" })).toBe(false);
       expect(isDemoAccount({ email: "runner@yahoo.com" })).toBe(false);
       expect(isDemoAccount({ email: "" })).toBe(false);
@@ -65,6 +67,14 @@ describe("design-access", () => {
       expect(isDesignOrUxPath("/design/rally")).toBe(true);
       expect(isDesignOrUxPath("/design/home")).toBe(true);
       expect(isDesignOrUxPath("/design/evolution?brand=volt")).toBe(true);
+    });
+
+    it("normalizes consecutive slashes and URL-encoded characters", () => {
+      expect(isDesignOrUxPath("//design")).toBe(true);
+      expect(isDesignOrUxPath("///design/worlds")).toBe(true);
+      expect(isDesignOrUxPath("/%64esign/rally")).toBe(true);
+      expect(isDesignOrUxPath("/DESIGN/HOME")).toBe(true);
+      expect(isDesignOrUxPath("//ux/test")).toBe(true);
     });
 
     it("matches /ux and its subpaths", () => {
@@ -96,6 +106,7 @@ describe("design-access", () => {
       expect(isLocalHost("127.0.0.1")).toBe(true);
       expect(isLocalHost("127.0.0.1:54321")).toBe(true);
       expect(isLocalHost("::1")).toBe(true);
+      expect(isLocalHost("[::1]:3000")).toBe(true);
       expect(isLocalHost("dev.local")).toBe(true);
     });
 
@@ -113,6 +124,21 @@ describe("design-access", () => {
         isLocalEnvironment({
           hostname: "localhost",
           vercelEnv: "production",
+        }),
+      ).toBe(false);
+    });
+
+    it("returns false when running on Vercel preview or production", () => {
+      expect(
+        isLocalEnvironment({
+          hostname: "localhost",
+          isVercel: "1",
+        }),
+      ).toBe(false);
+      expect(
+        isLocalEnvironment({
+          hostname: "fitness-battle-git-test.vercel.app",
+          vercelEnv: "preview",
         }),
       ).toBe(false);
     });
@@ -140,6 +166,7 @@ describe("design-access", () => {
           vercelEnv: undefined,
         }),
       ).toBe(false);
+
     });
   });
 

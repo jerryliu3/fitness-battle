@@ -137,5 +137,26 @@ describe("middleware", () => {
       const location = new URL(res.headers.get("location")!);
       expect(location.pathname).toBe("/login");
     });
+
+    it("intercepts and restricts design static asset requests from unauthenticated visitors", async () => {
+      const req = new NextRequest("https://fitness-battle-one.vercel.app/design/worlds/flip.png");
+      const res = await middleware(req);
+      expect(res.status).toBe(307);
+      const location = new URL(res.headers.get("location")!);
+      expect(location.pathname).toBe("/login");
+    });
+
+    it("intercepts obfuscated design paths like //design and /%64esign", async () => {
+      const req1 = new NextRequest("http://localhost:3000//design/home");
+      const res1 = await middleware(req1);
+      expect(res1.status).toBe(307);
+      expect(new URL(res1.headers.get("location")!).pathname).toBe("/login");
+
+      const req2 = new NextRequest("http://localhost:3000/%64esign/worlds");
+      const res2 = await middleware(req2);
+      expect(res2.status).toBe(307);
+      expect(new URL(res2.headers.get("location")!).pathname).toBe("/login");
+    });
   });
 });
+
