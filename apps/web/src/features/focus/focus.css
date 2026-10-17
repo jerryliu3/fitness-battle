@@ -768,7 +768,7 @@
   margin-top: 6px;
 }
 .focus-journey {
-  /* Shared lane centers — keep in sync with SVG path x coords (L/C/R). */
+  /* Stop circle lane centers only — the dashed route is derived from measured centers. */
   --path-l: 24%;
   --path-c: 50%;
   --path-r: 76%;
@@ -807,7 +807,7 @@
 }
 .focus-path-row > button {
   position: absolute;
-  left: var(--path-l);
+  left: var(--path-c);
   top: 50%;
   z-index: 1;
   width: 80px;
@@ -826,15 +826,14 @@
   cursor: pointer;
   transition: transform 0.15s ease;
 }
-.focus-path-row.is-left > button {
+.focus-path-row[data-lane="l"] > button {
   left: var(--path-l);
 }
-.focus-path-row.is-right > button {
-  left: var(--path-r);
-}
-.focus-path-row.is-current > button,
-.focus-path-row.is-start > button {
+.focus-path-row[data-lane="c"] > button {
   left: var(--path-c);
+}
+.focus-path-row[data-lane="r"] > button {
+  left: var(--path-r);
 }
 .focus-path-row > button:hover {
   transform: translate(-50%, calc(-50% - 2px));
@@ -875,14 +874,13 @@
   gap: 5px;
   max-width: 140px;
 }
-.focus-path-row.is-left > span,
-.focus-path-row.is-current > span {
+.focus-path-row[data-lane="l"] > span {
   left: calc(var(--path-l) + 48px);
 }
-.focus-path-row.is-current > span {
+.focus-path-row[data-lane="c"] > span {
   left: calc(var(--path-c) + 52px);
 }
-.focus-path-row.is-right > span {
+.focus-path-row[data-lane="r"] > span {
   right: calc(100% - var(--path-r) + 48px);
   left: auto;
   text-align: right;

@@ -1,5 +1,5 @@
 "use client";
-import { useLayoutEffect, useRef, useState } from "react";
+import { useState } from "react";
 import { useCompete } from "@/components/compete-context";
 import { AnimatedEmber } from "@/components/mascot/animated-ember";
 import type { EmberAction } from "@fitness-battle/shared/mascot";
@@ -14,34 +14,50 @@ import {
   sportById,
   type Activity,
 } from "@fitness-battle/shared";
+import {
+  JourneyTrail,
+  planJourneyLanes,
+  type JourneyLane,
+} from "./journey-trail";
 
-type Pt = { x: number; y: number };
+type JourneyStop =
+  | { key: "future"; kind: "future"; lane: JourneyLane }
+  | { key: "today"; kind: "today"; lane: JourneyLane }
+  | { key: string; kind: "session"; lane: JourneyLane; activity: Activity }
+  | { key: "start"; kind: "start"; lane: JourneyLane };
 
-/** Cubic segments through measured stop centers (SVG pixel space). */
-function journeyPathSegments(pts: Pt[], svgWidth: number): string[] {
-  if (pts.length < 2 || svgWidth < 1) return [];
-  const segs: string[] = [];
-  // Side bulge ≈ lane spacing (CSS --path-l/r ≈ 26–28% apart).
-  const bulge = Math.max(48, svgWidth * 0.26);
-  for (let i = 0; i < pts.length - 1; i++) {
-    const p0 = pts[i]!;
-    const p1 = pts[i + 1]!;
-    const midY = (p0.y + p1.y) / 2;
-    const rise = p1.y - p0.y;
-    if (Math.abs(p0.x - p1.x) < 4) {
-      const goRight = p0.x < svgWidth * 0.5;
-      const outer = goRight ? p0.x + bulge : p0.x - bulge;
-      const inner = goRight ? p0.x - bulge * 0.35 : p0.x + bulge * 0.35;
-      segs.push(
-        `M ${p0.x.toFixed(1)} ${p0.y.toFixed(1)} C ${outer.toFixed(1)} ${(p0.y + rise * 0.28).toFixed(1)}, ${inner.toFixed(1)} ${midY.toFixed(1)}, ${p1.x.toFixed(1)} ${p1.y.toFixed(1)}`,
-      );
-    } else {
-      segs.push(
-        `M ${p0.x.toFixed(1)} ${p0.y.toFixed(1)} C ${p0.x.toFixed(1)} ${(p0.y + rise * 0.28).toFixed(1)}, ${p1.x.toFixed(1)} ${midY.toFixed(1)}, ${p1.x.toFixed(1)} ${p1.y.toFixed(1)}`,
-      );
-    }
-  }
-  return segs;
+function buildJourneyStops(sessions: Activity[]): JourneyStop[] {
+  const lanes = planJourneyLanes(sessions.length);
+  const stops: JourneyStop[] = [
+    { key: "future", kind: "future", lane: lanes[0]! },
+    { key: "today", kind: "today", lane: lanes[1]! },
+  ];
+  sessions.forEach((activity, i) => {
+    stops.push({
+      key: activity.id,
+      kind: "session",
+      lane: lanes[2 + i]!,
+      activity,
+    });
+  });
+  stops.push({
+    key: "start",
+    kind: "start",
+    lane: lanes[2 + sessions.length]!,
+  });
+  return stops;
+}
+
+function stopRowClass(stop: JourneyStop): string {
+  const tone =
+    stop.kind === "future"
+      ? " is-future"
+      : stop.kind === "today"
+        ? " is-current"
+        : stop.kind === "start"
+          ? " is-start"
+          : "";
+  return `focus-path-row${tone}`;
 }
 
 export function TodayScreen() {
@@ -56,65 +72,20 @@ export function TodayScreen() {
   const react = (action: EmberAction) =>
     setReaction((value) => ({ action, key: value.key + 1 }));
 
-  const journeyRef = useRef<HTMLElement>(null);
-  const svgRef = useRef<SVGSVGElement>(null);
-  const stopRefs = useRef<(HTMLButtonElement | null)[]>([]);
-  const [pathSegs, setPathSegs] = useState<string[]>([]);
-  const [svgBox, setSvgBox] = useState({ w: 100, h: 100 });
+  if (!state) return <p className="fb-copy">Loading your week…</p>;
 
-  const now = state ? competeNow(state) : null;
-  const counted =
-    state && now
-      ? state.activities.filter(
-          (a) => countsOnTrack(a, "open") && new Date(a.startedAt) <= now,
-        )
-      : [];
+  const route = buildTodayRoute(state);
+  const now = competeNow(state);
+  const frozen = state.frozenPeriods.includes(primaryFreezePeriodStart(state));
+  const counted = state.activities.filter(
+    (a) => countsOnTrack(a, "open") && new Date(a.startedAt) <= now,
+  );
   const sessions = counted
     .slice()
     .sort((a, b) => b.startedAt.localeCompare(a.startedAt))
     .slice(0, 10);
-  // future + today + sessions + start
-  const stopCount = 2 + sessions.length + 1;
-
-  useLayoutEffect(() => {
-    if (!state || expanded) return;
-    const measure = () => {
-      const svg = svgRef.current;
-      if (!svg) return;
-      const svgRect = svg.getBoundingClientRect();
-      if (svgRect.width < 1 || svgRect.height < 1) return;
-      const pts: Pt[] = [];
-      for (let i = 0; i < stopCount; i++) {
-        const btn = stopRefs.current[i];
-        if (!btn) return;
-        const r = btn.getBoundingClientRect();
-        pts.push({
-          x: r.left + r.width / 2 - svgRect.left,
-          y: r.top + r.height / 2 - svgRect.top,
-        });
-      }
-      setSvgBox({ w: svgRect.width, h: svgRect.height });
-      setPathSegs(journeyPathSegments(pts, svgRect.width));
-    };
-    measure();
-    const ro = new ResizeObserver(measure);
-    if (journeyRef.current) ro.observe(journeyRef.current);
-    window.addEventListener("resize", measure);
-    return () => {
-      ro.disconnect();
-      window.removeEventListener("resize", measure);
-    };
-  }, [state, stopCount, expanded, sessions.length]);
-
-  const setStopRef = (index: number) => (el: HTMLButtonElement | null) => {
-    stopRefs.current[index] = el;
-  };
-
-  if (!state || !now) return <p className="fb-copy">Loading your week…</p>;
-
-  const route = buildTodayRoute(state);
-  const frozen = state.frozenPeriods.includes(primaryFreezePeriodStart(state));
   const units = state.units;
+  const journeyStops = buildJourneyStops(sessions);
 
   const weekPeriod = competePeriodWindow(state, now);
   const weekStart = weekPeriod.startsAt.getTime();
@@ -265,124 +236,124 @@ export function TodayScreen() {
           <span className="fb-note">Last {sessions.length} sessions</span>
         ) : null}
       </div>
-      <section
-        ref={journeyRef}
-        className="focus-journey"
-        aria-label="Activity journey"
-      >
-        <svg
-          ref={svgRef}
-          className="focus-journey-path"
-          viewBox={`0 0 ${svgBox.w} ${svgBox.h}`}
-          preserveAspectRatio="none"
-          aria-hidden="true"
-        >
-          {pathSegs.map((d, i) => (
-            <path key={i} d={d} />
-          ))}
-        </svg>
-        <div className="focus-path-row is-future is-right">
-          <button
-            ref={setStopRef(0)}
-            type="button"
-            disabled
-            aria-label="Upcoming session"
-          >
-            <span className="focus-path-hollow" aria-hidden="true" />
-          </button>
-          <span>
-            <small>Up next</small>
-            <b>Room for what&apos;s next</b>
-          </span>
-        </div>
-        <div className="focus-path-row is-current">
-          <button
-            ref={setStopRef(1)}
-            onClick={() => {
-              react("hop");
-              setExpanded("suggestion");
-            }}
-            aria-label="Ember: open today's session"
-          >
-            <AnimatedEmber
-              expression="happy"
-              action={reaction.action}
-              restartKey={reaction.key}
-              loop={false}
-              playing={reaction.key > 0}
-            />
-          </button>
-          <span
-            role="button"
-            tabIndex={0}
-            onClick={() => {
-              react("hop");
-              setExpanded("suggestion");
-            }}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" || e.key === " ") {
-                e.preventDefault();
-                react("hop");
-                setExpanded("suggestion");
-              }
-            }}
-            style={{ cursor: "pointer" }}
-          >
-            <small>Today</small>
-            <b>See today&apos;s session</b>
-          </span>
-        </div>
-        {sessions.map((a, i) => {
-          const toLeft = i % 2 === 0;
-          return (
+      <JourneyTrail stopCount={journeyStops.length} active={!expanded}>
+        {({ setStopRef }) =>
+          journeyStops.map((stop, index) => (
             <div
-              className={`focus-path-row ${toLeft ? "is-left" : "is-right"}`}
-              key={a.id}
+              key={stop.key}
+              className={stopRowClass(stop)}
+              data-lane={stop.lane}
             >
-              <button
-                ref={setStopRef(2 + i)}
-                onClick={() => setExpanded(a)}
-                aria-label={`Open ${sportById(a.sport).name} session ${formatVolume(a.sport, a.distanceM, a.movingSec, units)}`}
-              >
-                <i>✓</i>
-                <b>{formatVolume(a.sport, a.distanceM, a.movingSec, units)}</b>
-                <small>
-                  {new Date(a.startedAt).toLocaleDateString("en-US", {
-                    weekday: "short",
-                    timeZone: "UTC",
-                  })}
-                </small>
-              </button>
-              <span>
-                <small>
-                  {new Date(a.startedAt).toLocaleDateString("en-US", {
-                    month: "short",
-                    day: "numeric",
-                    timeZone: "UTC",
-                  })}
-                </small>
-                <b>{sportById(a.sport).name}</b>
-                <em>
-                  {a.disposition === "excluded" || isSampleActivity(a)
-                    ? `${a.source} · sample (excluded)`
-                    : `${a.verified ? "Verified" : "Open"} · ${a.disposition === "pending" ? "pending" : "counted"}`}
-                </em>
-              </span>
+              {stop.kind === "future" ? (
+                <>
+                  <button
+                    ref={setStopRef(index)}
+                    type="button"
+                    disabled
+                    aria-label="Upcoming session"
+                  >
+                    <span className="focus-path-hollow" aria-hidden="true" />
+                  </button>
+                  <span>
+                    <small>Up next</small>
+                    <b>Room for what&apos;s next</b>
+                  </span>
+                </>
+              ) : null}
+              {stop.kind === "today" ? (
+                <>
+                  <button
+                    ref={setStopRef(index)}
+                    onClick={() => {
+                      react("hop");
+                      setExpanded("suggestion");
+                    }}
+                    aria-label="Ember: open today's session"
+                  >
+                    <AnimatedEmber
+                      expression="happy"
+                      action={reaction.action}
+                      restartKey={reaction.key}
+                      loop={false}
+                      playing={reaction.key > 0}
+                    />
+                  </button>
+                  <span
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => {
+                      react("hop");
+                      setExpanded("suggestion");
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        react("hop");
+                        setExpanded("suggestion");
+                      }
+                    }}
+                    style={{ cursor: "pointer" }}
+                  >
+                    <small>Today</small>
+                    <b>See today&apos;s session</b>
+                  </span>
+                </>
+              ) : null}
+              {stop.kind === "session" ? (
+                <>
+                  <button
+                    ref={setStopRef(index)}
+                    onClick={() => setExpanded(stop.activity)}
+                    aria-label={`Open ${sportById(stop.activity.sport).name} session ${formatVolume(stop.activity.sport, stop.activity.distanceM, stop.activity.movingSec, units)}`}
+                  >
+                    <i>✓</i>
+                    <b>
+                      {formatVolume(
+                        stop.activity.sport,
+                        stop.activity.distanceM,
+                        stop.activity.movingSec,
+                        units,
+                      )}
+                    </b>
+                    <small>
+                      {new Date(stop.activity.startedAt).toLocaleDateString(
+                        "en-US",
+                        { weekday: "short", timeZone: "UTC" },
+                      )}
+                    </small>
+                  </button>
+                  <span>
+                    <small>
+                      {new Date(stop.activity.startedAt).toLocaleDateString(
+                        "en-US",
+                        { month: "short", day: "numeric", timeZone: "UTC" },
+                      )}
+                    </small>
+                    <b>{sportById(stop.activity.sport).name}</b>
+                    <em>
+                      {stop.activity.disposition === "excluded" ||
+                      isSampleActivity(stop.activity)
+                        ? `${stop.activity.source} · sample (excluded)`
+                        : `${stop.activity.verified ? "Verified" : "Open"} · ${stop.activity.disposition === "pending" ? "pending" : "counted"}`}
+                    </em>
+                  </span>
+                </>
+              ) : null}
+              {stop.kind === "start" ? (
+                <button
+                  ref={setStopRef(index)}
+                  type="button"
+                  aria-label="Start"
+                  onClick={() => react("hop")}
+                >
+                  <i>🏁</i>
+                  <b>START</b>
+                </button>
+              ) : null}
             </div>
-          );
-        })}
-        <div className="focus-path-row is-start">
-          <button
-            ref={setStopRef(2 + sessions.length)}
-            type="button"
-            aria-label="Start"
-            onClick={() => react("hop")}
-          >
-            <i>🏁</i>
-            <b>START</b>
-          </button>
-        </div>
-      </section>
+          ))
+        }
+      </JourneyTrail>
     </div>
   );
 }
