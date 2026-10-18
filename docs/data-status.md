@@ -6,8 +6,8 @@ What is loaded today versus what is still empty or synthetic.
 
 | Data | Source | Status |
 | --- | --- | --- |
-| Weekly effort board | Local compete engine + synthetic field athletes | Works offline in the browser (localStorage) |
-| Private crew shared field | `crew_week_fields` + compete `crewBoard` pin | Optional at join: alone (density) or together (shared individual board). No group-approval step yet; team-vs-team not built |
+| Weekly effort board | Compete engine + `week_fields` / `week_field_roster` for signed-in athletes | Shared real peers with synthetic fillers; guests/demo retain local boards |
+| Private crew shared field | `week_fields` + compete `crewBoard` pin | Crew and solo seating share one store and roster RPC. Crew scores still use sessions explicitly shared with that crew. No group-approval step yet; team-vs-team not built |
 | 1v1 rivals | Removed from product | Legacy `compete_duels` cleared on sanitize; action is a no-op |
 | Pace absolutes (5K–marathon, 20K/40K) | Your synced/history activities + synthetic field times from Elo | Works offline; empty for “you” until history/sync |
 | Lessons | Deterministic schedule in shared | Works offline |
@@ -18,7 +18,7 @@ What is loaded today versus what is still empty or synthetic.
 | Season history | `periodResults` on Athlete | Cap 104 rows; open + verified tracks |
 | Past-self ghost | Shared `GhostReference` via `resolvePastSelfGhost` | Same-cutoff overlay from activities in a prior window (default: previous equal-length period). Not ranked. Arbitrary bounds / N-periods-ago supported; UI defaults to last week |
 
-There is **no production athlete dataset** behind the weekly compete field yet — peers are generated for matching.
+Signed-in fields can seat real athletes and load their field totals. Synthetic athletes fill unoccupied seats; guest/demo fields stay local.
 
 ## Race rankings (`/rankings`)
 
@@ -41,7 +41,7 @@ Separate Supabase project from battles (`rankings-db/`, hosted `pzadctqmyekkydte
 | --- | --- |
 | Account compete | Relational only (`athlete_prefs` + related tables); `compete_snapshots` dropped |
 | Relational normalize | Full signed-in cutover — single table path, no compete jsonb |
-| Density matching | Still per-viewer (not global standings) |
+| Density matching | Signed-in open fields share persisted seating; guest/demo matching stays per-viewer |
 
 See [compete-persistence.md](compete-persistence.md).
 

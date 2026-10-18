@@ -10,7 +10,7 @@ import {
 } from "@fitness-battle/shared";
 import { resolveRequestUserId } from "@/lib/auth/request-user";
 import {
-  hydrateCrewBoard,
+  hydrateFieldBoard,
   loadCompeteAccount,
   persistCompeteAccount,
 } from "@/lib/compete-persist";
@@ -44,7 +44,7 @@ export async function GET(request: Request) {
   const rolled = withDerivedPendingReveals(rollClock(hydrated));
   let state = rolled;
   try {
-    state = await hydrateCrewBoard(supabase, userId, rolled);
+    state = await hydrateFieldBoard(supabase, userId, rolled);
   } catch {
     state = { ...rolled, crewBoard: null };
   }

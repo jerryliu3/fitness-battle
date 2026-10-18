@@ -9,7 +9,7 @@ import {
   type CompeteState,
   type SportId,
 } from "@fitness-battle/shared";
-import { hydrateCrewBoard, hydrateFieldBoard } from "./compete-persist";
+import { hydrateFieldBoard } from "./compete-persist";
 
 describe("Competition Lifecycle & Unified Multiplayer Standings", () => {
   it("seats solo athletes into open fields, shares real peers and tops up synthetics to capacity 8", async () => {

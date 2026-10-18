@@ -1,51 +1,9 @@
-import {
-  DEFAULT_GROUP_CAPACITY,
-  crewBoardPinFromPlan,
-  planCrewWeekField,
-  waveWindowAt,
-  type CrewBoardPin,
-  type SportId,
-} from "@fitness-battle/shared";
+import type { CrewBoardPin, SportId } from "@fitness-battle/shared";
 
 const SPORT_IDS = new Set<string>(["running", "cycling", "walking", "strength"]);
 
 export function asSportId(value: string): SportId | null {
   return SPORT_IDS.has(value) ? (value as SportId) : null;
-}
-
-export interface RosterRow {
-  user_id: string;
-  display_name: string;
-  open_elo: number | string;
-  distance_m?: number | string;
-  moving_sec?: number | string;
-}
-
-export function buildCrewBoardPin(input: {
-  crewId: string;
-  crewName: string;
-  sport: SportId;
-  roster: RosterRow[];
-  now?: Date;
-}): CrewBoardPin {
-  const plan = planCrewWeekField({
-    crewId: input.crewId,
-    sport: input.sport,
-    members: input.roster.map((row) => ({
-      id: row.user_id,
-      name: row.display_name || "Athlete",
-      elo: Number(row.open_elo) || 1000,
-      distanceM: row.distance_m == null ? undefined : Number(row.distance_m),
-      movingSec: row.moving_sec == null ? undefined : Number(row.moving_sec),
-    })),
-    capacity: DEFAULT_GROUP_CAPACITY,
-    now: input.now,
-  });
-  return crewBoardPinFromPlan(plan, input.crewName);
-}
-
-export function currentWaveStart(now: Date = new Date()): string {
-  return waveWindowAt(now).waveStart.toISOString();
 }
 
 /** Seat (or refresh) a crew week field and return the pin. */

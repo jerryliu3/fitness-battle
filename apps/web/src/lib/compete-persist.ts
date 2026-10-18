@@ -4,14 +4,12 @@ import {
   freshHealthRatings,
   freshState,
   periodResultId,
-  pickSynthetics,
   prepareCompeteStateForAccount,
   provenanceOf,
   PROVIDER_IDS,
   PROVIDERS,
   sanitizeCompeteStateForAccount,
   SPORT_IDS,
-  sumCrewWindow,
   withAccountEloBaseline,
   withDerivedPendingReveals,
   type Activity,
@@ -30,6 +28,7 @@ import {
   type SportId,
   type WaveEnrollment,
 } from "@fitness-battle/shared";
+import { loadCrewWeekFieldPin, seatWeekFieldPin } from "./week-field";
 
 type Db = SupabaseClient;
 
@@ -718,186 +717,50 @@ export async function loadCompeteAccount(
   };
 }
 
-/** Hydrate crewBoard/fieldBoard from shared fields for both crew and solo play. */
-export async function hydrateCrewBoard(
+/** Hydrate the active field from the same seating and roster path for crew/solo. */
+export async function hydrateFieldBoard(
   db: Db,
-  _userId: string,
+  userId: string,
   state: CompeteState,
 ): Promise<CompeteState> {
-  const pinned = state.enrollments.find(
-    (item) => item.crewId && item.crewId !== "solo" && !item.crewId.startsWith("field:"),
-  );
-  if (!pinned?.crewId) {
-    const solo =
-      state.enrollments.find((item) => item.sport === state.primary && !item.crewId) ??
-      state.enrollments.find((item) => !item.crewId);
-
-    if (solo) {
-      try {
-        const { data: fieldData, error: fieldError } = await db.rpc("seat_athlete_week_field", {
-          p_sport: solo.sport,
-          p_wave_start: solo.waveStart,
-          p_week_end: solo.weekEnd,
-          p_capacity: solo.capacity || 8,
-          p_crew_id: null,
-          p_crew_name: null,
-          p_synthetic_ids: solo.syntheticIds || [],
-        });
-        if (fieldData && !fieldError) {
-          const field = fieldData as {
-            id: string;
-            sport: string;
-            wave_start: string;
-            week_end: string;
-            capacity: number;
-            member_ids: string[];
-            synthetic_ids: string[];
-            name: string;
-          };
-          const { data: roster, error: rosterError } = await db.rpc("week_field_roster", {
-            p_field_id: field.id,
-          });
-          if (roster && !rosterError) {
-            const memberIds = (field.member_ids as string[]) ?? [];
-            const memberSet = new Set(memberIds);
-            const members = (
-              (roster ?? []) as {
-                user_id: string;
-                display_name: string;
-                open_elo: number;
-                distance_m: number;
-                moving_sec: number;
-              }[]
-            )
-              .filter((row) => memberSet.has(String(row.user_id)))
-              .map((row) => ({
-                id: String(row.user_id),
-                name: String(row.display_name || "Athlete"),
-                elo: Number(row.open_elo) || 1000,
-                distanceM: Number(row.distance_m) || 0,
-                movingSec: Number(row.moving_sec) || 0,
-              }))
-              .sort((a, b) => a.id.localeCompare(b.id));
-
-            const peerIds = memberIds.filter((id) => id !== _userId);
-            const capacity = Number(field.capacity) || 8;
-            const neededSynthetics = Math.max(0, capacity - memberIds.length);
-            let syntheticIds = (field.synthetic_ids as string[]) ?? [];
-            if (syntheticIds.length !== neededSynthetics) {
-              const elos = members.map((m) => m.elo).sort((a, b) => a - b);
-              const medianElo =
-                elos.length === 0 ? 1000 : elos[Math.floor((elos.length - 1) / 2)]!;
-              syntheticIds = pickSynthetics(
-                field.sport as SportId,
-                medianElo,
-                neededSynthetics,
-                memberIds,
-                `solo:${field.id}:${field.sport}:${field.wave_start}`,
-              ).map((s) => s.id);
-            }
-            return {
-              ...state,
-              crewBoard: {
-                crewId: "solo",
-                crewName: field.name || "Open Field",
-                sport: field.sport as SportId,
-                waveStart: String(field.wave_start),
-                weekEnd: String(field.week_end),
-                capacity,
-                memberIds,
-                members,
-                syntheticIds,
-              },
-              enrollments: state.enrollments.map((item) =>
-                item.sport === solo.sport
-                  ? { ...item, peerIds, syntheticIds }
-                  : item,
-              ),
-            };
-          }
-        }
-      } catch {
-        /* keep state as-is if solo field RPC not available */
-      }
-    }
-
+  const enrollment =
+    state.enrollments.find(
+      (item) => item.crewId && item.crewId !== "solo" && !item.crewId.startsWith("field:"),
+    ) ??
+    state.enrollments.find((item) => item.sport === state.primary) ??
+    state.enrollments[0];
+  if (!enrollment) {
     return state.crewBoard ? { ...state, crewBoard: null } : state;
   }
 
-  const [{ data: field }, { data: crew }, { data: roster, error: rosterError }, { data: entries, error: entriesError }] =
-    await Promise.all([
-      db
-        .from("crew_week_fields")
-        .select("*")
-        .eq("crew_id", pinned.crewId)
-        .eq("wave_start", pinned.waveStart)
-        .maybeSingle(),
-      db.from("crews").select("name").eq("id", pinned.crewId).maybeSingle(),
-      db.rpc("crew_field_roster", { p_crew_id: pinned.crewId }),
-      db
-        .from("crew_entries")
-        .select("user_id, distance_m, moving_sec, started_at, sport")
-        .eq("crew_id", pinned.crewId)
-        .eq("disposition", "counted"),
-    ]);
-  if (!field) {
-    return { ...state, crewBoard: null };
-  }
-  if (rosterError) {
-    throw new Error(rosterError.message);
-  }
-  if (entriesError) {
-    throw new Error(entriesError.message);
-  }
-
-  const memberIds = (field.member_ids as string[]) ?? [];
-  const memberSet = new Set(memberIds);
-  const volume = sumCrewWindow(
-    (entries ?? [])
-      .filter((entry) => String(entry.sport) === String(field.sport))
-      .map((entry) => ({
-        userId: String(entry.user_id),
-        distanceM: Number(entry.distance_m) || 0,
-        movingSec: Number(entry.moving_sec) || 0,
-        startedAt: String(entry.started_at),
-      })),
-    String(field.wave_start),
-    String(field.week_end),
+  const isCrew = Boolean(
+    enrollment.crewId &&
+      enrollment.crewId !== "solo" &&
+      !enrollment.crewId.startsWith("field:"),
   );
-  const members = (
-    (roster ?? []) as {
-      user_id: string;
-      display_name: string;
-      open_elo: number;
-    }[]
-  )
-    .filter((row) => memberSet.has(String(row.user_id)))
-    .map((row) => {
-      const week = volume.get(String(row.user_id));
-      return {
-        id: String(row.user_id),
-        name: String(row.display_name || "Athlete"),
-        elo: Number(row.open_elo) || 1000,
-        distanceM: week?.distanceM ?? 0,
-        movingSec: week?.movingSec ?? 0,
-      };
-    })
-    .sort((a, b) => a.id.localeCompare(b.id));
+  const pin = isCrew
+    ? await loadCrewWeekFieldPin(db, enrollment.crewId!, enrollment.waveStart)
+    : await seatWeekFieldPin(db, {
+        sport: enrollment.sport,
+        waveStart: enrollment.waveStart,
+        weekEnd: enrollment.weekEnd,
+        capacity: enrollment.capacity,
+        syntheticIds: enrollment.syntheticIds,
+      });
+  if (!pin) return { ...state, crewBoard: null };
 
   return {
     ...state,
-    crewBoard: {
-      crewId: pinned.crewId,
-      crewName: (crew?.name as string) ?? "Crew",
-      sport: field.sport as SportId,
-      waveStart: String(field.wave_start),
-      weekEnd: String(field.week_end),
-      capacity: Number(field.capacity),
-      memberIds,
-      members,
-      syntheticIds: (field.synthetic_ids as string[]) ?? [],
-    },
+    crewBoard: pin,
+    enrollments: state.enrollments.map((item) =>
+      item.sport === enrollment.sport
+        ? {
+            ...item,
+            capacity: pin.capacity,
+            peerIds: pin.memberIds.filter((id) => id !== userId),
+            syntheticIds: pin.syntheticIds,
+          }
+        : item,
+    ),
   };
 }
-
-export const hydrateFieldBoard = hydrateCrewBoard;

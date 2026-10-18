@@ -445,8 +445,9 @@ set
 -- ----------------------------------------------------------------------------
 -- 9. Crew Week Fields (Seating & shared field for current week)
 -- ----------------------------------------------------------------------------
-insert into public.crew_week_fields (
+insert into public.week_fields (
   crew_id,
+  name,
   wave_start,
   week_end,
   sport,
@@ -457,6 +458,7 @@ insert into public.crew_week_fields (
 values
   (
     'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+    'Weekday miles',
     (date_trunc('week', (now() at time zone 'America/New_York')) at time zone 'America/New_York'),
     (date_trunc('week', (now() at time zone 'America/New_York')) at time zone 'America/New_York') + interval '7 days',
     'running',
@@ -471,6 +473,7 @@ values
   ),
   (
     'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',
+    'Brooklyn Dawn Patrol',
     (date_trunc('week', (now() at time zone 'America/New_York')) at time zone 'America/New_York'),
     (date_trunc('week', (now() at time zone 'America/New_York')) at time zone 'America/New_York') + interval '7 days',
     'cycling',
@@ -482,8 +485,9 @@ values
     ],
     array['synth-cadence-1050']
   )
-on conflict (crew_id, wave_start) do update
+on conflict (crew_id, wave_start) where crew_id is not null do update
 set
+  name = excluded.name,
   week_end = excluded.week_end,
   member_ids = excluded.member_ids,
   synthetic_ids = excluded.synthetic_ids;
