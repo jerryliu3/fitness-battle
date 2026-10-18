@@ -121,3 +121,7 @@ All use the same gold head, four-echo silver wake and palette. In the final pose
 ## Locked: Shared Start
 
 The user selected **Shared Start** (six gold echoes) for the application. It replaces the earlier short gold wake in the canonical brand master and every generated web/mobile app icon. Gold reaches the endpoint of silver’s four-echo wake; rich gold/silver, hollow heads, white background, and slightly slower silver flow are retained. The study keeps the earlier mark and other densities as history. Regenerate production assets with `node scripts/generate-app-icons.mjs`. Native launcher updates require a new app binary.
+
+## Shared Start scale and background review
+
+`scale-study/index.html` compares the current composition with centered 120% and 135% versions on white and true black. Each has 64/32/16px samples and downloadable square SVG masters. Start with 120% as a candidate for more presence without crowding the faded wakes. These are comparisons; production scale stays at the selected original size. Explicit black/white web asset sets and a native black alternate are documented in `assets/brand/README.md`.

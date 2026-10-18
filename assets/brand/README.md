@@ -11,3 +11,9 @@ Run `node scripts/generate-app-icons.mjs` after installing workspace dependencie
 Android adaptive art is centered and scaled inside the safe circle; the launcher supplies its white background. Monochrome output preserves hollow centers. Native icon changes take effect in a new app binary; this does not submit or release an app.
 
 The design exploration remains in `docs/design-studies/the-pass`; Shared Start is now the selected production mark. Long Stride, Long Exposure and the earlier four-echo gold wake remain historical alternatives.
+
+## Background variants and scale review
+
+`overtaek-icon.svg` is white; `overtaek-icon-black.svg` is true black (#000000). Hollow centers match each background; rich gold and silver stay unchanged. Web-ready SVGs and PNGs (16, 32, 48, 64, 180, 192, 512, 1024px) are available under `apps/web/public/icons/white/` and `black/`. Native alternate artwork is `apps/mobile/assets/icon-black.png`, with a matching `adaptive-icon-black.png` foreground for a black launcher background; the existing `icon.png` stays white. Both web sets also include a padded maskable PNG. The generator handles both self-closing and paired SVG rectangle tags when removing adaptive backgrounds. These are explicit assets for future conditional use; no automatic theme switch is configured.
+
+The generated `docs/design-studies/the-pass/scale-study/index.html` compares the current composition with 120% and 135% scales in both backgrounds, including small-size and rounded-mask previews. Larger studies center the artwork around (128,152) before scaling into the tile center. Production sizing and Android adaptive safe-area padding remain unchanged pending selection. Rebuild everything with the existing icon generation script.
