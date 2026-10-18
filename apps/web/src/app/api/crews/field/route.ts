@@ -1,12 +1,12 @@
 import { NextResponse } from "next/server";
 import { resolveRequestUserId } from "@/lib/auth/request-user";
-import { sumCrewWindow } from "@fitness-battle/shared";
 import {
-  asSportId,
-  buildCrewBoardPin,
-  currentWaveStart,
-  type RosterRow,
-} from "@/lib/crew-field";
+  DEFAULT_GROUP_CAPACITY,
+  planCrewWeekField,
+  waveWindowAt,
+} from "@fitness-battle/shared";
+import { asSportId } from "@/lib/crew-field";
+import { loadCrewWeekFieldPin, seatWeekFieldPin } from "@/lib/week-field";
 import { createRequestClient } from "@/lib/supabase/request";
 
 type Supabase = Awaited<ReturnType<typeof createRequestClient>>;
@@ -30,94 +30,11 @@ async function loadCrew(
     .eq("status", "active")
     .maybeSingle();
   if (error || !data) return null;
-  const embed = data.crews as
-    | { id: string; name: string; sport: string }
-    | { id: string; name: string; sport: string }[]
-    | null;
-  const crew = Array.isArray(embed) ? embed[0] : embed;
-  return crew ? { id: crew.id, name: crew.name, sport: crew.sport } : null;
+  const embed = data.crews as CrewRow | CrewRow[] | null;
+  return Array.isArray(embed) ? (embed[0] ?? null) : embed;
 }
 
-async function rosterWithVolume(
-  supabase: Supabase,
-  crew: CrewRow,
-): Promise<RosterRow[] | { error: string }> {
-  const sport = asSportId(crew.sport);
-  if (!sport) return { error: "unsupported_sport" };
-
-  const [{ data: roster, error: rosterError }, { data: entries }] =
-    await Promise.all([
-      supabase.rpc("crew_field_roster", { p_crew_id: crew.id }),
-      supabase
-        .from("crew_entries")
-        .select("user_id, distance_m, moving_sec, disposition, sport, started_at")
-        .eq("crew_id", crew.id)
-        .eq("sport", sport)
-        .eq("disposition", "counted"),
-    ]);
-  if (rosterError) return { error: rosterError.message };
-
-  const waveStart = currentWaveStart();
-  const weekEnd = new Date(new Date(waveStart).getTime() + 7 * 86_400_000).toISOString();
-  const volume = sumCrewWindow(
-    (entries ?? []).map((entry) => ({
-      userId: entry.user_id,
-      distanceM: Number(entry.distance_m) || 0,
-      movingSec: Number(entry.moving_sec) || 0,
-      startedAt: entry.started_at,
-    })),
-    waveStart,
-    weekEnd,
-  );
-
-  return ((roster ?? []) as RosterRow[]).map((row) => {
-    const week = volume.get(row.user_id);
-    return {
-      ...row,
-      distance_m: week?.distanceM ?? 0,
-      moving_sec: week?.movingSec ?? 0,
-    };
-  });
-}
-
-function pinFromExisting(
-  crew: CrewRow,
-  sport: NonNullable<ReturnType<typeof asSportId>>,
-  existing: {
-    wave_start: string;
-    week_end: string;
-    capacity: number;
-    member_ids: string[];
-    synthetic_ids: string[];
-  },
-  roster: RosterRow[],
-) {
-  const memberSet = new Set(existing.member_ids);
-  return {
-    crewId: crew.id,
-    crewName: crew.name,
-    sport,
-    waveStart: existing.wave_start,
-    weekEnd: existing.week_end,
-    capacity: existing.capacity,
-    memberIds: existing.member_ids,
-    members: roster
-      .filter((row) => memberSet.has(row.user_id))
-      .map((row) => ({
-        id: row.user_id,
-        name: row.display_name || "Athlete",
-        elo: Number(row.open_elo) || 1000,
-        distanceM:
-          row.distance_m == null ? undefined : Number(row.distance_m),
-        movingSec:
-          row.moving_sec == null ? undefined : Number(row.moving_sec),
-      }))
-      .sort((a, b) => a.id.localeCompare(b.id)),
-    syntheticIds: existing.synthetic_ids,
-  };
-}
-
-/** Read an existing shared field for one crew this week (no write). */
+/** Read the crew's canonical field; never create seating on a refresh. */
 export async function GET(request: Request) {
   const userId = await resolveRequestUserId(request);
   if (!userId) {
@@ -130,28 +47,20 @@ export async function GET(request: Request) {
   const supabase = await createRequestClient(request);
   const crew = await loadCrew(supabase, userId, crewId);
   if (!crew) return NextResponse.json({ fields: [] });
-  const sport = asSportId(crew.sport);
-  if (!sport) return NextResponse.json({ fields: [] });
 
-  const roster = await rosterWithVolume(supabase, crew);
-  if ("error" in roster) return NextResponse.json({ fields: [] });
-
-  const { data: existing } = await supabase
-    .from("crew_week_fields")
-    .select(
-      "crew_id, wave_start, week_end, sport, capacity, member_ids, synthetic_ids",
-    )
-    .eq("crew_id", crew.id)
-    .eq("wave_start", currentWaveStart())
-    .maybeSingle();
-  if (!existing) return NextResponse.json({ fields: [] });
-
-  return NextResponse.json({
-    fields: [{ pin: pinFromExisting(crew, sport, existing, roster) }],
-  });
+  try {
+    const pin = await loadCrewWeekFieldPin(
+      supabase,
+      crew.id,
+      waveWindowAt().waveStart.toISOString(),
+    );
+    return NextResponse.json({ fields: pin ? [{ pin }] : [] });
+  } catch {
+    return NextResponse.json({ error: "field_unavailable" }, { status: 503 });
+  }
 }
 
-/** Seat one crew onto a shared individual field for this week. */
+/** Seat once in week_fields and return that field's authorized counted scores. */
 export async function POST(request: Request) {
   const userId = await resolveRequestUserId(request);
   if (!userId) {
@@ -171,46 +80,38 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "unsupported_sport" }, { status: 400 });
   }
 
-  const roster = await rosterWithVolume(supabase, crew);
-  if ("error" in roster) {
-    return NextResponse.json({ error: roster.error }, { status: 400 });
+  // Identity/Elo is used only to plan deterministic fillers. Scores come from
+  // week_field_roster after the database has accepted the seating.
+  const { data: roster, error } = await supabase.rpc("crew_field_roster", {
+    p_crew_id: crew.id,
+  });
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 400 });
   }
-  if (roster.length === 0) {
+  if (!roster?.length) {
     return NextResponse.json({ error: "empty_roster" }, { status: 400 });
   }
-
-  const pin = buildCrewBoardPin({
+  const plan = planCrewWeekField({
     crewId: crew.id,
-    crewName: crew.name,
     sport,
-    roster,
+    capacity: DEFAULT_GROUP_CAPACITY,
+    members: roster.map((row: { user_id: string; display_name: string; open_elo: number }) => ({
+      id: row.user_id,
+      name: row.display_name || "Athlete",
+      elo: Number(row.open_elo) || 1000,
+    })),
   });
-  const { error: saveError } = await supabase.rpc("upsert_crew_week_field", {
-    p_crew_id: crew.id,
-    p_wave_start: pin.waveStart,
-    p_week_end: pin.weekEnd,
-    p_sport: sport,
-    p_capacity: pin.capacity,
-    p_member_ids: pin.memberIds,
-    p_synthetic_ids: pin.syntheticIds,
-  });
-  if (saveError) {
-    return NextResponse.json({ error: saveError.message }, { status: 400 });
-  }
 
   try {
-    await supabase.rpc("seat_athlete_week_field", {
-      p_sport: sport,
-      p_wave_start: pin.waveStart,
-      p_week_end: pin.weekEnd,
-      p_capacity: pin.capacity,
-      p_crew_id: crew.id,
-      p_crew_name: crew.name,
-      p_synthetic_ids: pin.syntheticIds,
+    const pin = await seatWeekFieldPin(supabase, {
+      ...plan,
+      crewName: crew.name,
     });
-  } catch {
-    /* non-blocking backward compatibility */
+    return NextResponse.json({ pin });
+  } catch (error) {
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : "field_not_seated" },
+      { status: 400 },
+    );
   }
-
-  return NextResponse.json({ pin });
 }

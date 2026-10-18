@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { createClient } from "@supabase/supabase-js";
-import { loadCompeteAccount, hydrateCrewBoard } from "./compete-persist";
+import { loadCompeteAccount, hydrateFieldBoard } from "./compete-persist";
 
 const url = "http://127.0.0.1:54621";
 const anonKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0";
@@ -31,7 +31,7 @@ describe.skipIf(!process.env.SEED_DB_TESTS)("Seed accounts in Supabase (needs lo
     expect(state.enrollments.length).toBeGreaterThanOrEqual(1);
     expect(state.enrollments[0].crewId).toBe("aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa");
 
-    const hydratedState = await hydrateCrewBoard(supabase, aliceId, state);
+    const hydratedState = await hydrateFieldBoard(supabase, aliceId, state);
     expect(hydratedState.crewBoard).not.toBeNull();
     expect(hydratedState.crewBoard!.crewName).toBe("Weekday miles");
     expect(hydratedState.crewBoard!.members.length).toBe(4);

@@ -20,7 +20,7 @@ export function sanitizeCompeteStateForAccount(
   return withAccountEloBaseline(withoutDuels);
 }
 
-/** Drop durable crewBoard pin; hydrate from crew_week_fields at load. */
+/** Drop durable field pin; hydrate from week_fields at load. */
 export function stripDurableCrewBoard(state: CompeteState): CompeteState {
   if (state.crewBoard == null) return state;
   return { ...state, crewBoard: null };
