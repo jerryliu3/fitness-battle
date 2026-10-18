@@ -39,24 +39,27 @@ type JourneyStop =
   | { key: "start"; kind: "start"; lane: JourneyLane };
 
 function buildJourneyStops(days: JourneyDay[]): JourneyStop[] {
-  // One circle per activity-day. Lanes assigned bottom-up from Start so
-  // Oct 17 keeps its side when Oct 18 appears (see planJourneyTrail).
+  if (days.length === 0) {
+    // When no past sessions exist, wind cleanly: Today (r) -> Past (l) -> Start (c)
+    // Guarantee no consecutive stops share a lane.
+    return [
+      { key: "today", kind: "today", lane: "r" },
+      { key: "past", kind: "past", lane: "l" },
+      { key: "start", kind: "start", lane: "c" },
+    ];
+  }
   const plan = planJourneyTrail(days);
   const stops: JourneyStop[] = [
     { key: "today", kind: "today", lane: plan.today },
   ];
-  if (days.length === 0) {
-    stops.push({ key: "past", kind: "past", lane: "l" });
-  } else {
-    days.forEach((day, i) => {
-      stops.push({
-        key: day.id,
-        kind: "day",
-        lane: plan.days[i]!,
-        day,
-      });
+  days.forEach((day, i) => {
+    stops.push({
+      key: day.id,
+      kind: "day",
+      lane: plan.days[i]!,
+      day,
     });
-  }
+  });
   stops.push({ key: "start", kind: "start", lane: plan.start });
   return stops;
 }
@@ -64,7 +67,7 @@ function buildJourneyStops(days: JourneyDay[]): JourneyStop[] {
 function stopRowClass(stop: JourneyStop): string {
   const tone =
     stop.kind === "past"
-      ? " is-future"
+      ? " is-past"
       : stop.kind === "today"
         ? " is-current"
         : stop.kind === "start"
@@ -608,9 +611,7 @@ export function TodayScreen() {
                     type="button"
                     disabled
                     aria-label="Past sessions"
-                  >
-                    <span className="focus-path-hollow" aria-hidden="true" />
-                  </button>
+                  />
                   <span>
                     <small>Past</small>
                     <b>Past sessions will appear here</b>

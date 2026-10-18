@@ -129,7 +129,10 @@ export function AthleteMetrics({
         <View style={f.row}>
           <View>
             <Text style={f.kicker}>{rankForElo(elo).name} · Open Effort Score</Text>
-            <Text style={f.massive}>{elo}</Text>
+            <View style={{ flexDirection: "row", alignItems: "baseline", gap: 6 }}>
+              <Text style={f.massive}>{elo}</Text>
+              <Text style={f.copy}>effort score</Text>
+            </View>
           </View>
           <View>
             <Text style={[f.h2, { textAlign: "right" }]}>{verifiedElo}</Text>

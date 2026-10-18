@@ -502,6 +502,7 @@ export function AthleteOverview({
 
         <div className="focus-elo-score-row">
           <strong>{currentElo.toLocaleString()}</strong>
+          <span className="focus-elo-score-label">effort score</span>
         </div>
 
         <svg

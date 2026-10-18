@@ -632,7 +632,7 @@ function YouContent() {
               <section className="fb-card" aria-label="This week">
                 <h2>This week</h2>
                 {state.enrollments.length === 0 ? (
-                  <p className="fb-copy">You are not registered for a sport this week.</p>
+                  <p className="fb-copy">You are not registered for an event this week.</p>
                 ) : (
                   state.enrollments.map((enrollment) => {
                     const renewal = sportRenewal(state, enrollment.sport);

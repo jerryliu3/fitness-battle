@@ -40,7 +40,7 @@ import { FocusHeading, f } from "../../src/ui/focus";
 const PATH_L = "24%";
 const PATH_C = "50%";
 const PATH_R = "76%";
-const PATH_ROW = 120;
+const PATH_ROW = 96;
 
 function PathCurve({ d }: { d: string }) {
   return (
@@ -526,7 +526,7 @@ export default function Home() {
                 s.tile,
                 s.tileAbs,
                 {
-                  left: PATH_C,
+                  left: sessions.length === 0 ? PATH_R : PATH_C,
                   backgroundColor: "#d4ee89",
                   borderColor: "#b5d55b",
                   borderBottomColor: "#9ebf42",
@@ -561,7 +561,10 @@ export default function Home() {
                 bounce();
                 setExpanded("suggestion");
               }}
-              style={[s.stopCopy, s.copyCenter]}
+              style={[
+                s.stopCopy,
+                sessions.length === 0 ? s.copyRight : s.copyCenter,
+              ]}
             >
               <Text style={f.kicker}>Today</Text>
               <Text style={f.rowTitle}>See today&apos;s session</Text>
@@ -620,24 +623,21 @@ export default function Home() {
             );
           })}
           {sessions.length === 0 ? (
-            <View style={[s.stop, { opacity: 0.72 }]}>
-              <PathCurve d="M 50 0 C 50 28, 24 40, 24 100" />
+            <View style={[s.stop, { opacity: 0.85 }]}>
+              <PathCurve d="M 76 0 C 76 34, 24 58, 24 100" />
               <View
                 style={[
                   s.tile,
                   s.tileAbs,
                   {
                     left: PATH_L,
-                    backgroundColor: "#f4f7f0",
-                    borderStyle: "dashed",
-                    borderColor: "#c5d2bb",
-                    borderBottomColor: "#b7c4ad",
+                    backgroundColor: "#e4e8e1",
+                    borderColor: "#d0d7cb",
+                    borderBottomColor: "#bcc5b6",
                   },
                 ]}
                 accessibilityLabel="Past sessions"
-              >
-                <View style={s.hollow} />
-              </View>
+              />
               <View style={[s.stopCopy, s.copyLeft]}>
                 <Text style={f.kicker}>Past</Text>
                 <Text style={f.rowTitle}>Past sessions will appear here</Text>
