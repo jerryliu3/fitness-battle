@@ -544,7 +544,7 @@ describe("compete engine", () => {
   it("starts unsigned local state as Guest with unranked effort scores", () => {
     const state = freshState();
     expect(state.name).toBe("Guest");
-    expect(state.ratings.every((r) => r.openElo === 0 && r.verifiedElo === 0)).toBe(
+    expect(state.ratings.every((r) => r.openElo === 500 && r.verifiedElo === 500)).toBe(
       true,
     );
   });
@@ -582,7 +582,7 @@ describe("compete engine", () => {
     expect(migrateCompeteState(named).name).toBe("You");
   });
 
-  it("demotes empty guest baseline scores from 1000 to 0", () => {
+  it("demotes empty guest baseline scores from 1000 to 500", () => {
     const legacy = {
       ...freshState(),
       ratings: freshState().ratings.map((r) => ({
@@ -594,7 +594,7 @@ describe("compete engine", () => {
       })),
     };
     const migrated = migrateCompeteState(legacy);
-    expect(migrated.ratings.every((r) => r.openElo === 0 && r.verifiedElo === 0)).toBe(
+    expect(migrated.ratings.every((r) => r.openElo === 500 && r.verifiedElo === 500)).toBe(
       true,
     );
   });

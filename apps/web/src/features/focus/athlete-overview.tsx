@@ -136,7 +136,8 @@ export function AthleteOverview({
     .slice()
     .sort((a, b) => a.periodStart.localeCompare(b.periodStart));
 
-  const isGuest = (!user && !email) || currentElo === 0;
+  const isGuest = (!user && !email) || state.name === "Guest";
+  const effectiveElo = isGuest && currentElo === 0 ? 500 : currentElo;
 
   // Determine user's start anchor date (account creation or earliest activity/period)
   let earliestDate: Date;
@@ -166,7 +167,7 @@ export function AthleteOverview({
   const daysElapsed = isGuest
     ? 0
     : Math.max(0, Math.floor((today.getTime() - earliestDate.getTime()) / msPerDay));
-  const isRolling = daysElapsed >= 29;
+  const isRolling = daysElapsed >= 28;
 
   let windowStart: Date;
   let windowMid: Date;
@@ -179,17 +180,15 @@ export function AthleteOverview({
     windowEnd = today;
     activeDaysCount = 30;
   } else {
-    // New user or guest populating the 30-day window from left to right
-    windowStart = earliestDate;
-    windowMid = new Date(earliestDate.getTime() + 15 * msPerDay);
-    windowEnd = new Date(earliestDate.getTime() + 29 * msPerDay);
-    activeDaysCount = Math.min(30, daysElapsed + 1);
+    // 1-day gap before earliest activity date so the first point is not directly on the Y-axis
+    windowStart = new Date(earliestDate.getTime() - msPerDay);
+    windowMid = new Date(windowStart.getTime() + 15 * msPerDay);
+    windowEnd = new Date(windowStart.getTime() + 29 * msPerDay);
+    activeDaysCount = Math.min(30, daysElapsed + 2);
   }
 
   const dailyValues: number[] = [];
-  if (isGuest) {
-    dailyValues.push(0);
-  } else if (isRolling) {
+  if (isRolling) {
     for (let d = 29; d >= 0; d--) {
       const dayDate = new Date(today.getTime() - d * msPerDay);
       const dayIso = dayKey(dayDate);
@@ -201,13 +200,18 @@ export function AthleteOverview({
       } else if (history.length > 0) {
         dailyValues.push(history[0].eloBefore);
       } else {
-        dailyValues.push(currentElo);
+        dailyValues.push(effectiveElo);
       }
     }
-    dailyValues[29] = currentElo;
+    dailyValues[29] = effectiveElo;
   } else {
-    // Populating window: from day 0 (start date, 1000) up to today (currentElo)
-    for (let d = 0; d < activeDaysCount; d++) {
+    // Day 0 (at Y-axis): baseline / same as today if <30 days of activity without history
+    const baselineValue =
+      history.length > 0 ? history[0].eloBefore : effectiveElo;
+    dailyValues.push(baselineValue);
+
+    // Days 1 .. activeDaysCount - 1 (from earliestDate up to today)
+    for (let d = 1; d < activeDaysCount; d++) {
       const dayDate = new Date(windowStart.getTime() + d * msPerDay);
       const dayIso = dayKey(dayDate);
       const matching = history.filter(
@@ -215,13 +219,11 @@ export function AthleteOverview({
       );
       if (matching.length > 0) {
         dailyValues.push(matching[matching.length - 1].eloAfter);
-      } else if (d === 0) {
-        dailyValues.push(history[0]?.eloBefore ?? 1000);
       } else {
-        dailyValues.push(currentElo);
+        dailyValues.push(effectiveElo);
       }
     }
-    dailyValues[activeDaysCount - 1] = currentElo;
+    dailyValues[activeDaysCount - 1] = effectiveElo;
   }
 
   const minVal = Math.min(...dailyValues);
@@ -230,8 +232,8 @@ export function AthleteOverview({
   let yMid: number;
   let yMax: number;
 
-  if (currentElo === 0 && maxVal === 0) {
-    // Guest or 0 Elo: bottom is 0, never negative (+/- 20)
+  if (effectiveElo <= 0 && maxVal <= 0) {
+    // 0 Elo fallback: bottom is 0, never negative (+/- 20)
     yMin = 0;
     yMid = 20;
     yMax = 40;
@@ -496,12 +498,12 @@ export function AthleteOverview({
             </button>
           </div>
           <span className="focus-elo-rank-pill">
-            {rankForElo(currentElo).name}
+            {rankForElo(effectiveElo).name}
           </span>
         </div>
 
         <div className="focus-elo-score-row">
-          <strong>{currentElo.toLocaleString()}</strong>
+          <strong>{effectiveElo.toLocaleString()}</strong>
           <span className="focus-elo-score-label">effort score</span>
         </div>
 
@@ -509,7 +511,7 @@ export function AthleteOverview({
           viewBox="0 0 340 150"
           className="focus-trend"
           role="img"
-          aria-label={`30-day ${track === "open" ? "Open" : "GPS verified"} effort score history ending at ${currentElo}`}
+          aria-label={`30-day ${track === "open" ? "Open" : "GPS verified"} effort score history ending at ${effectiveElo}`}
         >
           <defs>
             <linearGradient id="focus-trend-grad" x1="0" y1="0" x2="0" y2="1">
@@ -655,7 +657,7 @@ export function AthleteOverview({
             fontSize="10"
             fontFamily="inherit"
           >
-            {daysElapsed === 0 ? `Today (${todayDateLabel})` : startDateLabel}
+            {startDateLabel}
           </text>
           <text
             x={xMid}

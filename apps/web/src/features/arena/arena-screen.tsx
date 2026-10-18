@@ -8,7 +8,7 @@ import { AuthPrompt } from "@/components/auth-gate";
 import { FieldStage } from "@/features/field/components/field-stage";
 import { buildFieldModel } from "@/features/field/model";
 import { buildSplitBoard } from "@/features/split/model";
-import { FieldCrewSwitch } from "@/features/rally/field-join";
+import { loadCrewJoinOptions, seatCrewFieldPin } from "@/lib/crew-field";
 import { AwardShelf } from "@/features/you/award-shelf";
 import { WeekReveal } from "@/features/split/components/week-reveal";
 import { SleepPanel } from "@/features/health/sleep-panel";
@@ -30,6 +30,7 @@ export function ArenaScreen() {
   const router = useRouter();
   const [authOpen, setAuthOpen] = useState(false);
   const [register, setRegister] = useState(false);
+  const [competeWithCrew, setCompeteWithCrew] = useState(false);
   const [sport, setSport] = useState<SportId | "sleep" | null>(null);
   const [track, setTrack] = useState<ScoreTrack>("open");
 
@@ -165,14 +166,6 @@ export function ArenaScreen() {
                   model={sportModel}
                   boardRows={sportBoard.rows}
                 />
-                <details className="focus-disclosure">
-                  <summary>
-                    Compete with your crew <span>＋</span>
-                  </summary>
-                  <div className="focus-details-body">
-                    <FieldCrewSwitch sport={r.sport} />
-                  </div>
-                </details>
               </section>
             );
           })}
@@ -267,6 +260,35 @@ export function ArenaScreen() {
           setSport(null);
         }}
       >
+        <div
+          className="fb-row"
+          style={{
+            justifyContent: "space-between",
+            alignItems: "center",
+            padding: "12px 0",
+            marginBottom: 12,
+            borderBottom: "1px solid var(--line, #e0e5dc)",
+          }}
+        >
+          <div>
+            <strong style={{ display: "block", fontSize: 14 }}>
+              Compete with your crew
+            </strong>
+            <small style={{ color: "var(--muted)", fontSize: 12 }}>
+              Share an individual field leaderboard with your crew
+            </small>
+          </div>
+          <button
+            type="button"
+            role="switch"
+            aria-checked={competeWithCrew}
+            className={competeWithCrew ? "fb-switch on" : "fb-switch"}
+            onClick={() => setCompeteWithCrew(!competeWithCrew)}
+          >
+            <span className="fb-switch-knob" />
+          </button>
+        </div>
+
         <p className="fb-kicker">Event / Category</p>
         <div className="focus-sport-options" aria-label="Sport or Category">
           {SPORTS.map((s) => {
@@ -291,9 +313,24 @@ export function ArenaScreen() {
                 onClick={() => {
                   if (isRegistered) return;
                   setSport(s.id);
-                  participate(`Sign in to join ${s.name} this week.`, () => {
+                  participate(`Sign in to join ${s.name} this week.`, async () => {
+                    let pin = null;
+                    if (competeWithCrew) {
+                      try {
+                        const options = await loadCrewJoinOptions();
+                        const matchingCrew = options.find((c) => c.sport === s.id);
+                        if (matchingCrew) {
+                          pin = await seatCrewFieldPin({
+                            crewId: matchingCrew.id,
+                            sport: s.id,
+                          });
+                        }
+                      } catch {
+                        // fallback to density field if crew seating fails
+                      }
+                    }
                     dispatch({ type: "set-primary", sport: s.id });
-                    dispatch({ type: "opt-in", sport: s.id, crewBoard: null });
+                    dispatch({ type: "opt-in", sport: s.id, crewBoard: pin });
                     setRegister(false);
                     setSport(null);
                   });

@@ -33,6 +33,7 @@ import {
 } from "./history";
 import {
   ELO_BASE,
+  ELO_FLOOR,
   ELO_UNRANKED,
   PROVIDERS,
   SPORT_IDS,
@@ -157,10 +158,17 @@ function withRating(
   };
 }
 
-/** Lift unranked (0) effort scores to the account baseline of 1000. */
+/** Lift unranked (<= 500) effort scores to the account baseline of 1000 for unstarted sports. */
 export function withAccountEloBaseline(state: CompeteState): CompeteState {
   let changed = false;
   const ratings = state.ratings.map((item) => {
+    const hasHistory =
+      item.optedIn ||
+      state.activities.some((act) => act.sport === item.sport) ||
+      state.periodResults.some((res) => res.sport === item.sport);
+    if (hasHistory && item.openElo >= ELO_FLOOR) {
+      return item;
+    }
     const openElo = item.openElo <= ELO_UNRANKED ? ELO_BASE : item.openElo;
     const verifiedElo =
       item.verifiedElo <= ELO_UNRANKED ? ELO_BASE : item.verifiedElo;
@@ -191,7 +199,7 @@ function isUnsignedEmptyCompete(state: CompeteState): boolean {
   );
 }
 
-/** Guest empty state that still carries the old 1000 baseline → unranked 0. */
+/** Guest empty state that still carries the old 1000 baseline → unranked 500. */
 function demoteGuestBaselineRatings(ratings: Rating[]): Rating[] {
   return ratings.map((item) => {
     if (

@@ -813,7 +813,9 @@
   max-height: 900px;
   overflow-x: visible;
   overflow-y: auto;
-  overscroll-behavior: contain;
+  overscroll-behavior: auto;
+  user-select: none;
+  -webkit-user-select: none;
   /* Ember's sprite rises ~55px above its row; keep room so overflow doesn't clip it. */
   padding: 56px 8px 12px;
   display: flex;
@@ -826,11 +828,15 @@
   flex: 1 1 auto;
   display: flex;
   flex-direction: column;
+  user-select: none;
+  -webkit-user-select: none;
 }
 .focus-path-row {
   position: relative;
   flex: 0 0 var(--path-row);
   z-index: 1;
+  user-select: none;
+  -webkit-user-select: none;
 }
 .focus-journey-path {
   position: absolute;
@@ -948,8 +954,8 @@
   color: #616c63;
   line-height: 1.6;
 }
-.focus-path-row.is-past,
-.focus-path-row.is-future {
+.focus-path-row.is-past > span,
+.focus-path-row.is-future > span {
   opacity: 0.85;
 }
 .focus-path-row.is-past > button,
@@ -959,6 +965,8 @@
   border-bottom: 5px solid #bcc5b6;
   box-shadow: none;
   cursor: default;
+  opacity: 1;
+  z-index: 1;
 }
 .focus-path-row.is-past > button:hover,
 .focus-path-row.is-past > button:active,
@@ -1475,6 +1483,8 @@
   overflow-x: auto;
   scrollbar-width: thin;
   overscroll-behavior-x: contain;
+  user-select: none;
+  -webkit-user-select: none;
 }
 .focus-lane-track {
   display: block;
@@ -1482,6 +1492,8 @@
   height: 540px;
   touch-action: none;
   cursor: grab;
+  user-select: none;
+  -webkit-user-select: none;
 }
 .focus-lane-track:active {
   cursor: grabbing;

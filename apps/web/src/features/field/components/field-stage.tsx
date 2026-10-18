@@ -298,19 +298,34 @@ export function FieldStage({
         </p>
       )}
       <div className="focus-segments" role="tablist" aria-label="Arena view">
-        {(["lanes", "pursuit", "standings"] as const).map((m) => (
-          <button
-            key={m}
-            role="tab"
-            aria-selected={mode === m}
-            onClick={() => {
-              setMode(m);
-              setUnavailable(false);
-            }}
-          >
-            {m === "lanes" ? "2D lanes" : m === "pursuit" ? "3D pursuit" : "Standings"}
-          </button>
-        ))}
+        {(["lanes", "pursuit", "standings"] as const).map((m) => {
+          const isPursuit = m === "pursuit";
+          return (
+            <button
+              key={m}
+              role="tab"
+              aria-selected={mode === m}
+              disabled={isPursuit}
+              title={isPursuit ? "3D pursuit (coming soon)" : undefined}
+              style={
+                isPursuit
+                  ? { opacity: 0.5, cursor: "not-allowed" }
+                  : undefined
+              }
+              onClick={() => {
+                if (isPursuit) return;
+                setMode(m);
+                setUnavailable(false);
+              }}
+            >
+              {m === "lanes"
+                ? "2D lanes"
+                : m === "pursuit"
+                  ? "3D pursuit (coming soon)"
+                  : "Standings"}
+            </button>
+          );
+        })}
       </div>
 
       {mode === "standings" ? (
