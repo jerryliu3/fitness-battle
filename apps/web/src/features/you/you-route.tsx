@@ -30,8 +30,9 @@ import {
   type ReadinessSample,
 } from "@fitness-battle/shared";
 import { AuthPrompt } from "@/components/auth-gate";
+import { Sheet } from "@/ui/sheet";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useRef, useState } from "react";
 
 const OAUTH_PROVIDERS = new Set<ProviderId>([
@@ -93,6 +94,93 @@ function YouContent() {
   const fileRef = useRef<HTMLInputElement>(null);
   const accountReady =
     loadStatus === "ready" || loadStatus === "local" || loadStatus === "failed";
+
+  const router = useRouter();
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [deletingAccount, setDeletingAccount] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+
+  function requireAuth(reason: string, action: () => void) {
+    if (!user) {
+      setAuthPrompt({ open: true, reason });
+      return;
+    }
+    action();
+  }
+
+  async function handleDeleteAccount() {
+    if (deletingAccount) return;
+    setDeletingAccount(true);
+    setDeleteError(null);
+    try {
+      const res = await fetch("/api/account", { method: "DELETE" });
+      if (!res.ok) {
+        const body = await res.json().catch(() => null);
+        throw new Error(
+          body?.error || "Could not delete account. Please try again.",
+        );
+      }
+      if (user?.id) {
+        try {
+          localStorage.removeItem(`fb-compete-v1:${user.id}`);
+          localStorage.removeItem(`fb-compete-v1:${user.id}:device-only`);
+          localStorage.removeItem(`fb:field-seen:v1:${user.id}`);
+        } catch {
+          // ignore
+        }
+      }
+      await signOut();
+      setDeleteConfirmOpen(false);
+      setPanel(null);
+      router.push("/");
+    } catch (err) {
+      setDeleteError(
+        err instanceof Error ? err.message : "Failed to delete account",
+      );
+    } finally {
+      setDeletingAccount(false);
+    }
+  }
+
+  const deleteAccountSheet = (
+    <Sheet
+      open={deleteConfirmOpen}
+      title="Delete account"
+      body="Are you sure you want to permanently delete your account? All of your saved workouts, effort scores, rankings, and profile data will be permanently removed. This action cannot be undone."
+      onClose={() => {
+        if (!deletingAccount) setDeleteConfirmOpen(false);
+      }}
+    >
+      <div style={{ display: "grid", gap: 12, marginTop: 16 }}>
+        {deleteError ? (
+          <p className="fb-error" role="alert">
+            {deleteError}
+          </p>
+        ) : null}
+        <button
+          type="button"
+          className="fb-btn"
+          style={{
+            background: "var(--red, #b83a38)",
+            borderColor: "var(--red, #b83a38)",
+            color: "#fff",
+          }}
+          disabled={deletingAccount}
+          onClick={() => void handleDeleteAccount()}
+        >
+          {deletingAccount ? "Deleting account…" : "Permanently delete account"}
+        </button>
+        <button
+          type="button"
+          className="fb-btn-ghost"
+          disabled={deletingAccount}
+          onClick={() => setDeleteConfirmOpen(false)}
+        >
+          Cancel
+        </button>
+      </div>
+    </Sheet>
+  );
 
   useEffect(() => {
     if (loadStatus === "loading" || !state) {
@@ -440,11 +528,9 @@ function YouContent() {
             <>
               <section className="fb-card">
                 <h2>Data Sync</h2>
-                <p className="fb-note">
-                  Cloud trackers open their own authorize page when API keys are
-                  set. Without keys the link stays a stub. Garmin files stay
-                  pending until you count them. Apple Health syncs from iOS;
-                  Health Connect from Android. Sleep syncs from connected wearables or sample data.
+                <p className="fb-copy" style={{ color: "var(--muted)", marginBottom: 16 }}>
+                  Connect fitness trackers and wearables to sync your activities automatically.
+                  Workouts and recovery data contribute directly to your weekly effort score.
                 </p>
                 {PROVIDERS.map((provider) => {
                   const link = state.links.find(
@@ -453,50 +539,90 @@ function YouContent() {
                   const status = link?.status ?? "disconnected";
                   const device = DEVICE_PROVIDERS.has(provider.id);
                   return (
-                    <div key={provider.id} className="fb-row">
-                      <span className="fb-grow">
-                        {provider.name}
-                        <small>
+                    <div
+                      key={provider.id}
+                      className="fb-row"
+                      style={{ alignItems: "center", gap: 12 }}
+                    >
+                      <div className="fb-grow">
+                        <strong style={{ fontSize: 14 }}>{provider.name}</strong>
+                        <small style={{ color: "var(--muted)", fontSize: 13, display: "block", marginTop: 2 }}>
                           {provider.blurb}
                           {link?.linked
                             ? ` · ${evidenceLabel(status === "stub" ? "stub" : status === "connected" ? "receiving_data" : "disconnected")}`
                             : ""}
                         </small>
-                      </span>
-                      <button
-                        type="button"
-                        className="fb-btn-ghost"
-                        disabled={connectingProvider === provider.id}
-                        onClick={() => void syncProvider(provider.id)}
+                      </div>
+                      <div
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 8,
+                          flexShrink: 0,
+                        }}
                       >
-                        {device ? "Phone" : link?.linked ? "Sync" : "Link"}
-                      </button>
-                      {link?.linked && !device ? (
                         <button
                           type="button"
-                          className="fb-btn-ghost"
-                          onClick={() => void disconnectProvider(provider.id)}
+                          className="fb-btn-line"
+                          style={{
+                            width: "auto",
+                            fontSize: 12,
+                            padding: "5px 12px",
+                            minHeight: "auto",
+                            borderRadius: 8,
+                          }}
+                          disabled={connectingProvider === provider.id}
+                          onClick={() => void syncProvider(provider.id)}
                         >
-                          Disconnect
+                          {device ? "Phone" : link?.linked ? "Sync" : "Link"}
                         </button>
-                      ) : null}
+                        {link?.linked && !device ? (
+                          <button
+                            type="button"
+                            className="fb-btn-ghost"
+                            style={{
+                              width: "auto",
+                              fontSize: 12,
+                              padding: "5px 8px",
+                              minHeight: "auto",
+                              color: "var(--red, #b83a38)",
+                            }}
+                            onClick={() => void disconnectProvider(provider.id)}
+                          >
+                            Disconnect
+                          </button>
+                        ) : null}
+                      </div>
                     </div>
                   );
                 })}
-                <div className="fb-row" style={{ marginTop: 12 }}>
-                  <span className="fb-grow">
-                    Sleep & recovery
-                    <small>Nightly recovery metrics and sleep score</small>
-                  </span>
+                <div
+                  className="fb-row"
+                  style={{ alignItems: "center", gap: 12, marginTop: 12 }}
+                >
+                  <div className="fb-grow">
+                    <strong style={{ fontSize: 14 }}>Sleep & recovery</strong>
+                    <small style={{ color: "var(--muted)", fontSize: 13, display: "block", marginTop: 2 }}>
+                      Nightly recovery metrics and sleep score
+                    </small>
+                  </div>
                   <button
                     type="button"
-                    className="fb-btn-ghost"
+                    className="fb-btn-line"
+                    style={{
+                      width: "auto",
+                      fontSize: 12,
+                      padding: "5px 12px",
+                      minHeight: "auto",
+                      borderRadius: 8,
+                      flexShrink: 0,
+                    }}
                     onClick={() => dispatch({ type: "log-sleep" })}
                   >
                     Sync sleep
                   </button>
                 </div>
-                <label className="fb-field">
+                <label className="fb-field" style={{ marginTop: 16 }}>
                   Garmin file (.fit, .gpx, .tcx, .zip)
                   <input
                     ref={fileRef}
@@ -594,8 +720,11 @@ function YouContent() {
 
               <section className="fb-card">
                 <h2>Sports</h2>
+                <p className="fb-copy" style={{ color: "var(--muted)", marginBottom: 16 }}>
+                  Choose your primary sport and toggle which events you actively compete in this week.
+                </p>
                 {primaryNote ? (
-                  <p className="fb-note" style={{ color: "var(--green, #2f6f4e)" }}>
+                  <p className="fb-note" style={{ color: "var(--green, #2f6f4e)", marginBottom: 12 }}>
                     {primaryNote}
                   </p>
                 ) : null}
@@ -604,27 +733,91 @@ function YouContent() {
                     (item) => item.sport === sport.id,
                   );
                   const primary = state.primary === sport.id;
+                  const isActive = Boolean(rating?.optedIn);
+                  const elo =
+                    rating?.openElo && rating.openElo > 0
+                      ? rating.openElo
+                      : user
+                        ? 1000
+                        : 500;
                   return (
-                    <div key={sport.id} className="fb-row">
-                      <span className="fb-grow">
-                        {sport.name}
-                        {primary ? " · primary" : ""}
-                        <small>
-                          Verified {rating?.verifiedElo} · Open {rating?.openElo} ·{" "}
-                          {rankForElo(rating?.openElo ?? 0).name}
+                    <div
+                      key={sport.id}
+                      className="fb-row"
+                      style={{ alignItems: "center", gap: 12 }}
+                    >
+                      <div className="fb-grow">
+                        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                          <strong style={{ fontSize: 14 }}>{sport.name}</strong>
+                          {primary ? (
+                            <span
+                              style={{
+                                fontSize: 11,
+                                padding: "2px 8px",
+                                borderRadius: 999,
+                                background: "var(--accent-soft, #eef4e6)",
+                                color: "var(--ink, #282f2c)",
+                                fontWeight: 600,
+                              }}
+                            >
+                              Primary
+                            </span>
+                          ) : null}
+                        </div>
+                        <small style={{ color: "var(--muted)", fontSize: 13, display: "block", marginTop: 2 }}>
+                          Effort Score {elo} · {rankForElo(elo).name}
                         </small>
-                      </span>
-                      <button
-                        type="button"
-                        className="fb-btn-ghost"
-                        onClick={() => {
-                          dispatch({ type: "set-primary", sport: sport.id });
-                          setPrimaryNote(`${sport.name} is now your primary sport.`);
-                          setTimeout(() => setPrimaryNote(null), 3000);
+                      </div>
+                      <div
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 12,
+                          flexShrink: 0,
                         }}
                       >
-                        {primary ? "Primary" : "Make primary"}
-                      </button>
+                        {!primary ? (
+                          <button
+                            type="button"
+                            className="fb-btn-line"
+                            style={{
+                              width: "auto",
+                              fontSize: 12,
+                              padding: "4px 10px",
+                              minHeight: "auto",
+                              borderRadius: 8,
+                            }}
+                            onClick={() => {
+                              dispatch({ type: "set-primary", sport: sport.id });
+                              setPrimaryNote(`${sport.name} is now your primary sport.`);
+                              setTimeout(() => setPrimaryNote(null), 3000);
+                            }}
+                          >
+                            Make primary
+                          </button>
+                        ) : null}
+                        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                          <span style={{ fontSize: 12, color: "var(--muted)" }}>Active</span>
+                          <button
+                            type="button"
+                            role="switch"
+                            aria-checked={isActive}
+                            aria-label={`Toggle ${sport.name} active status`}
+                            className={isActive ? "fb-switch on" : "fb-switch"}
+                            onClick={() => {
+                              if (isActive) {
+                                dispatch({ type: "opt-out", sport: sport.id });
+                              } else {
+                                requireAuth(`Sign in to activate ${sport.name}.`, () => {
+                                  dispatch({ type: "opt-in", sport: sport.id, crewBoard: null });
+                                });
+                              }
+                            }}
+                          >
+                            <span className="fb-switch-knob" />
+                          </button>
+                        </div>
+                      </div>
                     </div>
                   );
                 })}
@@ -645,6 +838,12 @@ function YouContent() {
                         <button
                           type="button"
                           className="fb-btn-line"
+                          style={{
+                            width: "auto",
+                            fontSize: 13,
+                            padding: "6px 14px",
+                            marginTop: 8,
+                          }}
                           onClick={() =>
                             dispatch({
                               type: renewal.renews ? "schedule-leave" : "resume-renewal",
@@ -666,6 +865,12 @@ function YouContent() {
                     <button
                       type="button"
                       className="fb-btn-line"
+                      style={{
+                        width: "auto",
+                        fontSize: 13,
+                        padding: "6px 14px",
+                        marginTop: 8,
+                      }}
                       onClick={() =>
                         dispatch({
                           type: sleep.renews ? "schedule-leave" : "resume-renewal",
@@ -735,6 +940,32 @@ function YouContent() {
                   </button>
                 )}
               </section>
+              {user ? (
+                <section className="fb-card" style={{ borderColor: "#f3d1cc" }}>
+                  <h2 style={{ color: "var(--red, #b83a38)" }}>Danger Zone</h2>
+                  <p className="fb-copy">
+                    Permanently delete your account and all associated workout history, rankings, and effort scores. This action cannot be undone.
+                  </p>
+                  <button
+                    type="button"
+                    className="fb-btn-ghost"
+                    style={{
+                      color: "var(--red, #b83a38)",
+                      border: "1px solid #f3d1cc",
+                      borderRadius: 8,
+                      padding: "8px 16px",
+                      width: "auto",
+                      fontWeight: 600,
+                    }}
+                    onClick={() => {
+                      setDeleteError(null);
+                      setDeleteConfirmOpen(true);
+                    }}
+                  >
+                    Delete account
+                  </button>
+                </section>
+              ) : null}
             </>
           ) : null}
           {panel === "notifications" ? <NotificationSettings /> : null}
@@ -773,6 +1004,7 @@ function YouContent() {
           reason={authPrompt?.reason ?? "Sign in to compete."}
           onClose={() => setAuthPrompt(null)}
         />
+        {deleteAccountSheet}
       </div>
     );
   }
@@ -821,17 +1053,39 @@ function YouContent() {
         </section>
       ) : null}
       {user ? (
-        <div className="fb-row" style={{ gap: 10, marginTop: 12 }}>
-          <button
-            type="button"
-            className="fb-btn-line"
-            style={{ flex: 1, justifyContent: "center" }}
-            onClick={() => void signOut()}
-          >
-            Sign out
-          </button>
-          <ReportIssue />
-        </div>
+        <>
+          <div className="fb-row" style={{ gap: 10, marginTop: 12 }}>
+            <button
+              type="button"
+              className="fb-btn-line"
+              style={{ flex: 1, justifyContent: "center" }}
+              onClick={() => void signOut()}
+            >
+              Sign out
+            </button>
+            <ReportIssue />
+          </div>
+          <div style={{ marginTop: 12, textAlign: "center" }}>
+            <button
+              type="button"
+              className="fb-btn-ghost"
+              style={{
+                width: "auto",
+                fontSize: 12,
+                color: "var(--muted)",
+                margin: "0 auto",
+                display: "inline-block",
+                padding: "4px 8px",
+              }}
+              onClick={() => {
+                setDeleteError(null);
+                setDeleteConfirmOpen(true);
+              }}
+            >
+              Delete account
+            </button>
+          </div>
+        </>
       ) : (
         <div className="fb-stack">
           <p className="fb-note">Browsing as a guest</p>
@@ -850,6 +1104,7 @@ function YouContent() {
         reason={authPrompt?.reason ?? "Sign in to compete."}
         onClose={() => setAuthPrompt(null)}
       />
+      {deleteAccountSheet}
     </div>
   );
 }
