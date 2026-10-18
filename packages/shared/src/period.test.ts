@@ -6,6 +6,7 @@ import {
   isWithinPeriod,
   monthlyPeriodBounds,
   startOfZonedDay,
+  formatWeeklyCompetitionRange,
   weeklyPeriodBounds,
   formatWeeklyCompetitionRange,
 } from "./period";

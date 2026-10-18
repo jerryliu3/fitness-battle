@@ -162,7 +162,8 @@ export function CrewHub() {
     setNote("");
     setCode(invite.toUpperCase());
     setPanel("add");
-  }, [params.invite, api.live]);
+    router.setParams({ invite: undefined });
+  }, [params.invite, api.live, router]);
   useFocusEffect(
     useCallback(() => {
       void api.reload();
