@@ -13,7 +13,7 @@ import {
   weeklyBoard,
   withAccountEloBaseline,
 } from "./engine";
-import { crewBoardPinFromPlan, planCrewWeekField } from "../matching";
+import { crewBoardPinFromPlan, planCrewWeekField, planWeekField } from "../matching";
 
 describe("compete engine", () => {
   it("allows one-time history import only", () => {
@@ -378,6 +378,52 @@ describe("compete engine", () => {
     });
     expect(left.crewBoard).toBeNull();
     expect(left.enrollments).toHaveLength(0);
+  });
+
+  it("renders real solo peers and their counted distance on the weekly board when seated in an open field", () => {
+    const now = "2026-10-12T12:00:00.000Z";
+    const base = freshState(new Date(now));
+
+    const aliceState = reduceCompete(base, {
+      type: "opt-in",
+      sport: "running",
+      accountId: "alice",
+      now,
+    });
+
+    const aliceEnrollment = aliceState.enrollments[0]!;
+    const openFieldPin = planWeekField({
+      sport: "running",
+      waveStart: aliceEnrollment.waveStart,
+      weekEnd: aliceEnrollment.weekEnd,
+      capacity: 8,
+      members: [
+        { id: "alice", name: "Alice", elo: 1000 },
+        { id: "bob", name: "Bob", elo: 1020, distanceM: 6500, movingSec: 2100 },
+      ],
+    });
+
+    const seatedState = {
+      ...aliceState,
+      crewBoard: openFieldPin,
+      enrollments: aliceState.enrollments.map((e) => ({
+        ...e,
+        peerIds: ["bob"],
+        syntheticIds: openFieldPin.syntheticIds,
+      })),
+    };
+
+    const board = weeklyBoard(seatedState, "running", "open", new Date(now));
+    expect(board).toHaveLength(8);
+    const bobRow = board.find((row) => row.id === "bob");
+    expect(bobRow).toBeDefined();
+    expect(bobRow?.name).toBe("Bob");
+    expect(bobRow?.distanceM).toBe(6500);
+    expect(bobRow?.movingSec).toBe(2100);
+    expect(bobRow?.you).toBe(false);
+
+    const synthetics = board.filter((row) => !row.you && row.id !== "bob");
+    expect(synthetics).toHaveLength(6);
   });
 
   it("drops a stale crew pin when the week rolls", () => {

@@ -4,6 +4,7 @@ import {
   enrollmentFromCrewPlan,
   planCrewWeekField,
 } from "./crew-field";
+import { planWeekField, fieldPinMatchesEnrollment } from "./field-plan";
 import { buildLocalBoard, clipFullWeekEstimate } from "./local-view";
 import { pickSynthetics, syntheticVolumeInWindow } from "./synthetic-bank";
 import type { PoolPlayer } from "./types";
@@ -330,5 +331,103 @@ describe("crew shared field", () => {
     expect(plan.memberIds).toHaveLength(8);
     expect(plan.syntheticIds).toHaveLength(0);
     expect(enrollmentFromCrewPlan(plan, "u0").peerIds).toHaveLength(7);
+  });
+});
+
+describe("planWeekField & fieldPinMatchesEnrollment", () => {
+  it("plans a solo open field with real athletes and synthetic fillers up to capacity", () => {
+    const field = planWeekField({
+      sport: "running",
+      waveStart: "2026-10-12T00:00:00.000Z",
+      weekEnd: "2026-10-19T00:00:00.000Z",
+      capacity: 8,
+      members: [
+        { id: "user-1", name: "Alice", elo: 1050, distanceM: 5000, movingSec: 1800 },
+        { id: "user-2", name: "Bob", elo: 980, distanceM: 3200, movingSec: 1200 },
+      ],
+    });
+
+    expect(field.crewId).toBe("solo");
+    expect(field.crewName).toBe("Open Field");
+    expect(field.sport).toBe("running");
+    expect(field.memberIds).toEqual(["user-1", "user-2"]);
+    expect(field.members).toHaveLength(2);
+    expect(field.syntheticIds).toHaveLength(6);
+    expect(field.members[0]?.distanceM).toBe(5000);
+    expect(field.members[1]?.distanceM).toBe(3200);
+  });
+
+  it("matches solo enrollment to open solo field pins and rejects private crew pins", () => {
+    const soloEnrollment = {
+      sport: "running" as const,
+      waveStart: "2026-10-12T00:00:00.000Z",
+      weekEnd: "2026-10-19T00:00:00.000Z",
+      capacity: 8,
+      peerIds: ["user-2"],
+      syntheticIds: ["syn-1", "syn-2"],
+      autoEnrollNext: true,
+      crewId: null,
+    };
+
+    const soloPin = {
+      crewId: "solo",
+      crewName: "Open Field",
+      sport: "running" as const,
+      waveStart: "2026-10-12T00:00:00.000Z",
+      weekEnd: "2026-10-19T00:00:00.000Z",
+      capacity: 8,
+      memberIds: ["user-1", "user-2"],
+      members: [],
+      syntheticIds: [],
+    };
+
+    const crewPin = {
+      crewId: "crew-abc",
+      crewName: "Sunrise Runners",
+      sport: "running" as const,
+      waveStart: "2026-10-12T00:00:00.000Z",
+      weekEnd: "2026-10-19T00:00:00.000Z",
+      capacity: 8,
+      memberIds: ["user-1", "user-2"],
+      members: [],
+      syntheticIds: [],
+    };
+
+    // Solo enrollment matches open solo pin
+    expect(fieldPinMatchesEnrollment(soloPin, soloEnrollment)).toBe(true);
+
+    // Solo enrollment rejects private crew pin
+    expect(fieldPinMatchesEnrollment(crewPin, soloEnrollment)).toBe(false);
+
+    // Crew enrollment matches its own crew pin
+    const crewEnrollment = { ...soloEnrollment, crewId: "crew-abc" };
+    expect(fieldPinMatchesEnrollment(crewPin, crewEnrollment)).toBe(true);
+
+    // Crew enrollment rejects different crew pin
+    const otherCrewPin = { ...crewPin, crewId: "crew-xyz" };
+    expect(fieldPinMatchesEnrollment(otherCrewPin, crewEnrollment)).toBe(false);
+
+    // Pin with different waveStart is rejected
+    const pastPin = { ...soloPin, waveStart: "2026-10-05T00:00:00.000Z" };
+    expect(fieldPinMatchesEnrollment(pastPin, soloEnrollment)).toBe(false);
+  });
+
+  it("does not set crewId on enrollment when plan crewId is 'solo'", () => {
+    const soloPlan = {
+      crewId: "solo",
+      sport: "running" as const,
+      waveStart: "2026-10-12T00:00:00.000Z",
+      weekEnd: "2026-10-19T00:00:00.000Z",
+      capacity: 8,
+      memberIds: ["you", "peer-1"],
+      members: [
+        { id: "you", name: "You", elo: 1000 },
+        { id: "peer-1", name: "Peer", elo: 1000 },
+      ],
+      syntheticIds: ["syn-1"],
+    };
+    const enrollment = enrollmentFromCrewPlan(soloPlan, "you");
+    expect(enrollment.crewId).toBeUndefined();
+    expect(enrollment.peerIds).toEqual(["peer-1"]);
   });
 });

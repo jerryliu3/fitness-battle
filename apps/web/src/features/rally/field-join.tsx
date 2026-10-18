@@ -134,12 +134,19 @@ export function FieldJoinActions({
 export function FieldCrewSwitch({ sport }: { sport: SportId }) {
   const { dispatch, state } = useCompete();
   const pin = state?.crewBoard?.sport === sport ? state.crewBoard : null;
-  const crews = useCrewOptions(sport, !pin);
+  const isCrewField = Boolean(
+    pin &&
+      pin.crewId &&
+      pin.crewId !== "solo" &&
+      !pin.crewId.startsWith("field:") &&
+      state?.enrollments.find((e) => e.sport === sport)?.crewId,
+  );
+  const crews = useCrewOptions(sport, !isCrewField);
   const [busy, setBusy] = useState(false);
   const [note, setNote] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!pin) return;
+    if (!pin || !isCrewField) return;
     const snapshot = pin;
     let cancelled = false;
     void loadCrewFieldPin(snapshot.crewId).then((fresh) => {
@@ -150,9 +157,9 @@ export function FieldCrewSwitch({ sport }: { sport: SportId }) {
       cancelled = true;
     };
     // Refresh seating when this sport's crew field is shown.
-  }, [dispatch, pin?.crewId, pin?.waveStart, sport]);
+  }, [dispatch, isCrewField, pin?.crewId, pin?.waveStart, sport]);
 
-  if (pin) {
+  if (isCrewField && pin) {
     return (
       <div className="fb-stack">
         <p className="fb-note">

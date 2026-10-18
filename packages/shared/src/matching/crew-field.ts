@@ -117,6 +117,9 @@ export function enrollmentFromCrewPlan(
   viewerId: string,
   autoEnrollNext = true,
 ): WaveEnrollment {
+  const isRealCrew = Boolean(
+    plan.crewId && plan.crewId !== "solo" && !plan.crewId.startsWith("field:"),
+  );
   return {
     sport: plan.sport,
     waveStart: plan.waveStart,
@@ -125,7 +128,7 @@ export function enrollmentFromCrewPlan(
     peerIds: plan.memberIds.filter((id) => id !== viewerId),
     syntheticIds: plan.syntheticIds,
     autoEnrollNext,
-    crewId: plan.crewId,
+    crewId: isRealCrew ? plan.crewId : undefined,
   };
 }
 

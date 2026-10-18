@@ -46,12 +46,25 @@ function mergeFreshRemote(local: CompeteState, remote: CompeteState): CompeteSta
   for (const mark of remote.readiness) {
     if (!readinessIds.has(mark.id)) readiness.push(mark);
   }
+  const enrollments = local.enrollments.map((localEnr) => {
+    const remoteEnr = remote.enrollments.find(
+      (r) => r.sport === localEnr.sport && r.waveStart === localEnr.waveStart,
+    );
+    if (!remoteEnr) return localEnr;
+    return {
+      ...localEnr,
+      peerIds: remoteEnr.peerIds,
+      syntheticIds: remoteEnr.syntheticIds,
+      crewId: remoteEnr.crewId !== undefined ? remoteEnr.crewId : localEnr.crewId,
+    };
+  });
   const merged = rollClock(
     {
       ...local,
       activities,
       sleepNights,
       readiness,
+      enrollments,
       crewBoard: remote.crewBoard,
     },
     competeNow(local),

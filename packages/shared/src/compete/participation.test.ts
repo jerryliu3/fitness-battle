@@ -97,6 +97,45 @@ describe("field change notice", () => {
       rival: true,
     });
   });
+
+  it("extracts real solo rivals from an open field pin via seenFieldFromState", async () => {
+    const { seenFieldFromState } = await import("./field-notice");
+    const state = freshState(new Date("2026-10-14T12:00:00.000Z"));
+    state.primary = "running";
+    state.enrollments = [
+      {
+        sport: "running",
+        waveStart: "2026-10-12T00:00:00.000Z",
+        weekEnd: "2026-10-19T00:00:00.000Z",
+        capacity: 8,
+        peerIds: ["bob"],
+        syntheticIds: ["syn-1"],
+        autoEnrollNext: true,
+        crewId: null,
+      },
+    ];
+    state.crewBoard = {
+      crewId: "solo",
+      crewName: "Open Field",
+      sport: "running",
+      waveStart: "2026-10-12T00:00:00.000Z",
+      weekEnd: "2026-10-19T00:00:00.000Z",
+      capacity: 8,
+      memberIds: ["you", "bob"],
+      members: [
+        { id: "you", name: "You", elo: 1000 },
+        { id: "bob", name: "Bob", elo: 1020, distanceM: 4000, movingSec: 1500 },
+      ],
+      syntheticIds: ["syn-1"],
+    };
+
+    const seen = seenFieldFromState(state, "you", new Date("2026-10-14T12:00:00.000Z"));
+    expect(seen).not.toBeNull();
+    expect(seen?.rivals).toHaveLength(1);
+    expect(seen?.rivals[0]?.id).toBe("bob");
+    expect(seen?.rivals[0]?.name).toBe("Bob");
+    expect(seen?.rivals[0]?.distanceM).toBe(4000);
+  });
 });
 
 describe("crew window totals", () => {

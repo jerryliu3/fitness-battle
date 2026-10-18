@@ -3,6 +3,7 @@ import {
   DensityMatcher,
   buildLocalBoard,
   enrollmentFromCrewPlan,
+  fieldPinMatchesEnrollment,
   planFromCrewBoardPin,
   poolFromCrewPlan,
   waveWindowAt,
@@ -550,7 +551,7 @@ function groupFor(
 ): { id: string; name: string; elo: number; effort: number; distanceM: number; movingSec: number; you: boolean }[] {
   const mine = rating(state, sport);
   const pin =
-    state.crewBoard?.sport === sport && enrollment.crewId === state.crewBoard.crewId
+    state.crewBoard && fieldPinMatchesEnrollment(state.crewBoard, enrollment)
       ? state.crewBoard
       : null;
   const fromPool = realPlayerPool.filter((player) =>
