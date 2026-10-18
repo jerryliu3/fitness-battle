@@ -215,7 +215,7 @@ export function ArenaLanes({
               x2={width - 52}
               y1={y(0)}
               y2={y(0)}
-              stroke="#26382d"
+              stroke="#282f2c"
               strokeWidth="2"
             />
             <text x="18" y={y(0) - 10} className="lane-distance">
@@ -262,7 +262,7 @@ export function ArenaLanes({
                 cx={xx}
                 cy={yy + 4}
                 r={l.you ? 24 : 19}
-                fill="#26382d18"
+                fill="#282f2c18"
               />
               <circle
                 cx={xx}

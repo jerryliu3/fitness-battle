@@ -600,7 +600,7 @@ export default function Home() {
                   ]}
                 >
                   <View style={s.check}>
-                    <Text style={{ fontSize: 9, color: "#26382d" }}>✓</Text>
+                    <Text style={{ fontSize: 9, color: "#282f2c" }}>✓</Text>
                   </View>
                   <Text style={s.tileValue}>
                     {formatVolume(a.sport, a.distanceM, a.movingSec, units)}
