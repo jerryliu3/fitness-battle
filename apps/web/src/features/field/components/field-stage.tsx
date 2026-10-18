@@ -247,6 +247,15 @@ export function FieldStage({
           : null
         : (runners.find((r) => r.id === selected) ?? null);
 
+  useEffect(() => {
+    if (!chosen || mode !== "lanes") return;
+    const target = valueAt(chosen, time);
+    setCenter((prev) => {
+      const next = clampArenaLaneCenter(target, span);
+      return prev === next ? prev : next;
+    });
+  }, [chosen, mode, time, span]);
+
   if (!you) return <p className="fb-copy">Join a field to see your lanes.</p>;
 
   return (
