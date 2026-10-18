@@ -17,7 +17,7 @@ export default function PrivacyPolicyPage() {
       <p className="fb-copy">Last updated {UPDATED}</p>
 
       <p>
-        overtaek (“we”, “us”, or “the app”, formerly Fitness Battle) helps you run fitness battles
+        overtaek (“we”, “us”, or “the app”) helps you run fitness battles
         with automatic tracking. This policy explains what we collect, why we
         use it, and the choices you have. It is written for ordinary use of the
         product, including when you connect a wearable or activity service such
@@ -106,7 +106,7 @@ export default function PrivacyPolicyPage() {
 
       <h2>5. WHOOP</h2>
       <p>
-        When you connect WHOOP, Fitness Battle requests the scopes shown in the
+        When you connect WHOOP, overtaek requests the scopes shown in the
         WHOOP authorization screen (currently offline access plus recovery,
         sleep, workout, and profile read access). We use that data to sync
         workouts and readiness into your battles. You can disconnect WHOOP in
@@ -159,7 +159,7 @@ export default function PrivacyPolicyPage() {
 
       <h2>9. Children</h2>
       <p>
-        Fitness Battle is not directed at children under 13, and we do not
+        overtaek is not directed at children under 13, and we do not
         knowingly collect personal information from children under 13. Public
         race rankings separately exclude under-18 finishers where our import
         rules apply.
@@ -189,7 +189,7 @@ export default function PrivacyPolicyPage() {
           target="_blank"
           rel="noopener noreferrer"
         >
-          Fitness Battle GitHub repository
+          overtaek GitHub repository
         </a>
         .
       </p>
