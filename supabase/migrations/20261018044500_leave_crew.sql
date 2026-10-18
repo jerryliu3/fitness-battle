@@ -32,7 +32,11 @@ begin
   set crew_id = null
   where user_id = uid and crew_id = p_crew_id;
 
-  -- Remove athlete from crew_week_fields member_ids
+  -- Remove athlete from week_fields and legacy crew_week_fields member_ids
+  update public.week_fields
+  set member_ids = array_remove(member_ids, uid)
+  where crew_id = p_crew_id;
+
   update public.crew_week_fields
   set member_ids = array_remove(member_ids, uid)
   where crew_id = p_crew_id;
