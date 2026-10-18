@@ -122,6 +122,7 @@ export interface ArenaOvertakeFrame {
 export interface ArenaBaselineSnapshot {
   version: 1;
   periodStart: string;
+  unit?: string;
   values: Record<string, number>;
 }
 
@@ -173,11 +174,21 @@ export function reconcileArenaOvertake(
   if (delta <= MIN_MOVEMENT) return null;
 
   const rivalLanes = lanes.filter((lane) => !lane.you && !lane.ghost);
+  const validBeforeById: Record<string, number> = {};
+  for (const rival of rivalLanes) {
+    const rawBefore = previousValues[rival.id];
+    validBeforeById[rival.id] =
+      typeof rawBefore === "number" && Number.isFinite(rawBefore)
+        ? rawBefore
+        : rival.value;
+  }
+
   const overtakenIds = rivalLanes
     .filter((rival) => {
-      const rBefore = previousValues[rival.id] ?? rival.value;
+      const rBefore = validBeforeById[rival.id] ?? rival.value;
       return (
-        (youBefore <= rBefore + EPSILON || youBefore <= rival.value + EPSILON) &&
+        rBefore > youBefore + EPSILON &&
+        rival.value >= youBefore - EPSILON &&
         youAfter > rival.value + EPSILON
       );
     })
@@ -188,11 +199,7 @@ export function reconcileArenaOvertake(
   let anyRivalMoved = false;
   const rivals: Record<string, ArenaOvertakeRival> = {};
   for (const rival of rivalLanes) {
-    const rawBefore = previousValues[rival.id];
-    const validBefore =
-      typeof rawBefore === "number" && Number.isFinite(rawBefore)
-        ? rawBefore
-        : rival.value;
+    const validBefore = validBeforeById[rival.id] ?? rival.value;
     const moved = hasOvertake && Math.abs(rival.value - validBefore) > MIN_MOVEMENT;
     if (moved) anyRivalMoved = true;
     rivals[rival.id] = {
@@ -290,19 +297,22 @@ export function stepArenaOvertake(
       rivalEffects[rival.id] = { isPassed: false, ripple: 0, impact: 0, joltX: 0 };
       continue;
     }
-    const isPassed = youValue > rival.endValue + EPSILON;
+    const passAt = Math.max(plan.youBefore, rival.endValue);
+    const isPassed = youValue > passAt + EPSILON;
     const ripple = isPassed
-      ? clamp01((youValue - rival.endValue) / passWindow)
+      ? clamp01((youValue - passAt) / passWindow)
       : 0;
     const impact =
-      cosinePulse(youValue, rival.endValue + passWindow * 0.2, passWindow * 0.65) *
+      cosinePulse(youValue, passAt + passWindow * 0.2, passWindow * 0.65) *
       (1 - finish);
     const joltX = Math.sin(impact * Math.PI * 3) * impact * 5;
     rivalEffects[rival.id] = { isPassed, ripple, impact, joltX };
   }
 
   const passedCount = plan.overtakenIds.filter(
-    (id) => youValue > (plan.rivals[id]?.endValue ?? Infinity) + EPSILON,
+    (id) =>
+      youValue >
+      Math.max(plan.youBefore, plan.rivals[id]?.endValue ?? Infinity) + EPSILON,
   ).length;
   const currentRank =
     1 +
@@ -328,6 +338,36 @@ export function stepArenaOvertake(
   };
 }
 
+export function formatArenaOvertakeStatus(
+  plan: ArenaOvertakePlan,
+  frame: ArenaOvertakeFrame | null,
+  unit: string,
+): { headline: string; detail: string | null } {
+  const gain = `+${(plan.youAfter - plan.youBefore).toFixed(1)} ${unit}`;
+  if (frame && frame.phase !== "done") {
+    if (frame.phase === "rival-slide") {
+      return { headline: "Updating field positions…", detail: null };
+    }
+    return { headline: `Making your move · ${gain}`, detail: null };
+  }
+  if (plan.hasOvertake) {
+    const count = plan.overtakenIds.length;
+    const noun = count === 1 ? "overtake" : "overtakes";
+    const rankLabel =
+      plan.rankBefore !== plan.rankAfter
+        ? `#${plan.rankBefore} → #${plan.rankAfter}`
+        : `#${plan.rankAfter}`;
+    return {
+      headline: rankLabel,
+      detail: `${count} ${noun}`,
+    };
+  }
+  return {
+    headline: gain,
+    detail: "moved forward",
+  };
+}
+
 export function arenaBaselineStorageKey(
   accountKey: string,
   sport: string,
@@ -339,6 +379,7 @@ export function arenaBaselineStorageKey(
 export function readArenaBaseline(
   raw: string | null,
   periodStart: string,
+  unit?: string,
 ): Record<string, number> | null {
   if (!raw) return null;
   try {
@@ -346,6 +387,7 @@ export function readArenaBaseline(
     if (
       parsed?.version !== 1 ||
       parsed.periodStart !== periodStart ||
+      (unit && parsed.unit && parsed.unit !== unit) ||
       !parsed.values ||
       typeof parsed.values !== "object"
     ) {
@@ -366,6 +408,7 @@ export function readArenaBaseline(
 export function serializeArenaBaseline(
   periodStart: string,
   lanes: readonly { id: string; value: number; ghost?: boolean }[],
+  unit?: string,
 ): string {
   const values: Record<string, number> = {};
   for (const lane of lanes) {
@@ -375,8 +418,10 @@ export function serializeArenaBaseline(
   const snapshot: ArenaBaselineSnapshot = {
     version: 1,
     periodStart,
+    ...(unit ? { unit } : {}),
     values,
   };
   return JSON.stringify(snapshot);
 }
+
 

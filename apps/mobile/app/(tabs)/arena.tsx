@@ -1,12 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Pressable, ScrollView, Switch, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import { useRouter } from "expo-router";
+import { usePathname, useRouter } from "expo-router";
 import {
   arenaBaselineStorageKey,
   buildArenaModel,
   competePeriodWindow,
+  formatArenaOvertakeStatus,
   SPORTS,
   initialsFromName,
   fitArenaWindow,
@@ -16,11 +16,13 @@ import {
   primaryRevealResults,
   selfLaneLabel,
   serializeArenaBaseline,
+  shellTabFromPath,
   sportById,
   sportRenewal,
   stepArenaOvertake,
   type Action,
   type ArenaOvertakePlan,
+  type ArenaSceneLane,
   type SportId,
   type ScoreTrack,
   type ArenaSceneMessage,
@@ -42,6 +44,9 @@ import { useAuth } from "../../src/lib/auth";
 export default function ArenaScreen() {
   const {
     state,
+    accountKey,
+    readBaselineItem,
+    writeBaselineItem,
     dispatch,
     returnGain,
     clearReturn,
@@ -51,6 +56,8 @@ export default function ArenaScreen() {
   } = useCompeteStore();
   const { user } = useAuth();
   const router = useRouter();
+  const pathname = usePathname();
+  const isFocused = shellTabFromPath(pathname)?.id === "arena";
   const [joinBusy, setJoinBusy] = useState(false);
   const [joinError, setJoinError] = useState("");
   const [track, setTrack] = useState<ScoreTrack>("open");
@@ -67,9 +74,7 @@ export default function ArenaScreen() {
   );
   const [overtakeProgress, setOvertakeProgress] = useState(1);
   const [replayEpoch, setReplayEpoch] = useState(0);
-  const committedRef = useRef<Record<string, Record<string, number>> | null>(
-    null,
-  );
+  const lastSignatureRef = useRef<string | null>(null);
 
   const arena = useMemo(
     () => (state ? buildArenaModel(state, undefined, track) : null),
@@ -80,54 +85,93 @@ export default function ArenaScreen() {
   const viewSpan = span ?? defaultSpan;
   const me = arena?.lanes.find((l) => l.you);
   const total = me?.values[2] ?? 0;
-  const lanes = useMemo(
+
+  const fieldLanes = useMemo<ArenaSceneLane[]>(
     () =>
       (arena?.lanes ?? [])
-        .filter((l) => ghost || !l.ghost)
+        .filter((l) => !l.ghost)
         .map((l) => ({
           id: l.id,
           name: l.name,
           initials: initialsFromName(l.name),
           value: l.values[2],
           you: l.you,
-          ghost: l.ghost,
+          ghost: false,
         })),
-    [arena?.lanes, ghost],
+    [arena?.lanes],
   );
 
-  useEffect(() => {
-    if (!state || !arena?.optedIn || lanes.length === 0) return;
-    let alive = true;
-    const accountKey = user?.id ?? "device";
-    const periodStart = competePeriodWindow(state).startsAt.toISOString();
-    const key = arenaBaselineStorageKey(accountKey, arena.sportId, track);
-    void (async () => {
-      let previous = committedRef.current?.[key] ?? null;
-      if (!previous) {
-        const raw = await AsyncStorage.getItem(key);
-        if (!alive) return;
-        previous = readArenaBaseline(raw, periodStart);
-      }
-      const plan = reconcileArenaOvertake(lanes, previous);
-      const nextValues: Record<string, number> = {};
-      for (const lane of lanes) {
-        if (!lane.ghost) nextValues[lane.id] = lane.value;
-      }
-      committedRef.current = { ...(committedRef.current ?? {}), [key]: nextValues };
-      void AsyncStorage.setItem(key, serializeArenaBaseline(periodStart, lanes));
-      if (!plan || !alive) return;
-      setCenter(null);
-      setOvertakePlan(plan);
-      setOvertakeProgress(0);
-      setReplayEpoch((n) => n + 1);
-    })();
-    return () => {
-      alive = false;
-    };
-  }, [arena?.optedIn, arena?.sportId, lanes, state, track, user?.id]);
+  const lanes = useMemo<ArenaSceneLane[]>(() => {
+    if (!ghost) return fieldLanes;
+    const ghostLane = arena?.lanes.find((l) => l.ghost);
+    if (!ghostLane) return fieldLanes;
+    return [
+      ...fieldLanes,
+      {
+        id: ghostLane.id,
+        name: ghostLane.name,
+        initials: initialsFromName(ghostLane.name),
+        value: ghostLane.values[2],
+        you: false,
+        ghost: true,
+      },
+    ];
+  }, [arena?.lanes, fieldLanes, ghost]);
 
   useEffect(() => {
-    if (!overtakePlan || overtakeProgress >= 1) return;
+    if (!isFocused) return;
+    if (!state || !arena?.optedIn || fieldLanes.length === 0) {
+      setOvertakePlan(null);
+      setOvertakeProgress(1);
+      return;
+    }
+    const periodStart = competePeriodWindow(
+      state,
+      undefined,
+      arena.sportId,
+    ).startsAt.toISOString();
+    const key = arenaBaselineStorageKey(accountKey, arena.sportId, track);
+    const scopeKey = `${key}:${periodStart}:${arena.unit}`;
+    const signature = `${scopeKey}|${fieldLanes
+      .map((lane) => `${lane.id}:${lane.value.toFixed(3)}`)
+      .join(",")}`;
+    if (lastSignatureRef.current === signature) return;
+    lastSignatureRef.current = signature;
+
+    const previous = readArenaBaseline(
+      readBaselineItem(key),
+      periodStart,
+      arena.unit,
+    );
+    const plan = reconcileArenaOvertake(fieldLanes, previous);
+    writeBaselineItem(
+      key,
+      serializeArenaBaseline(periodStart, fieldLanes, arena.unit),
+    );
+    if (!plan) {
+      setOvertakePlan(null);
+      setOvertakeProgress(1);
+      return;
+    }
+    setCenter(null);
+    setOvertakePlan(plan);
+    setOvertakeProgress(0);
+    setReplayEpoch((n) => n + 1);
+  }, [
+    accountKey,
+    arena?.optedIn,
+    arena?.sportId,
+    arena?.unit,
+    fieldLanes,
+    isFocused,
+    readBaselineItem,
+    state,
+    track,
+    writeBaselineItem,
+  ]);
+
+  useEffect(() => {
+    if (!overtakePlan || replayEpoch === 0) return;
     let raf = 0;
     const start = Date.now();
     const duration = overtakePlan.durationMs;
@@ -148,6 +192,14 @@ export default function ArenaScreen() {
         ? stepArenaOvertake(overtakePlan, overtakeProgress, viewSpan)
         : null,
     [overtakePlan, overtakeProgress, viewSpan],
+  );
+
+  const overtakeStatus = useMemo(
+    () =>
+      overtakePlan && arena
+        ? formatArenaOvertakeStatus(overtakePlan, overtakeFrame, arena.unit)
+        : null,
+    [arena, overtakeFrame, overtakePlan],
   );
 
   if (!state || !arena)
@@ -289,16 +341,11 @@ export default function ArenaScreen() {
                 {track === "open" ? "Open score" : "GPS verified"}
               </Text>
             </View>
-            {overtakePlan ? (
+            {overtakePlan && overtakeStatus ? (
               <View style={f.row}>
                 <Text style={f.rowTitle}>
-                  {overtakeFrame && overtakeFrame.phase === "rival-slide"
-                    ? "Updating field positions…"
-                    : overtakeFrame
-                      ? `Making your move · +${(overtakePlan.youAfter - overtakePlan.youBefore).toFixed(1)} ${arena.unit}`
-                      : overtakePlan.hasOvertake
-                        ? `#${overtakePlan.rankBefore} → #${overtakePlan.rankAfter} · ${overtakePlan.overtakenIds.length} ${overtakePlan.overtakenIds.length === 1 ? "overtake" : "overtakes"}`
-                        : `+${(overtakePlan.youAfter - overtakePlan.youBefore).toFixed(1)} ${arena.unit} · moved forward`}
+                  {overtakeStatus.headline}
+                  {overtakeStatus.detail ? ` · ${overtakeStatus.detail}` : ""}
                 </Text>
                 {!overtakeFrame ? (
                   <FocusButton

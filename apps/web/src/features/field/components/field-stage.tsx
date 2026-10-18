@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import {
   arenaBaselineStorageKey,
   clampArenaLaneCenter,
+  formatArenaOvertakeStatus,
   readArenaBaseline,
   reconcileArenaOvertake,
   resolveArenaSelectedId,
@@ -84,59 +85,94 @@ export function FieldStage({
   );
   const [overtakeProgress, setOvertakeProgress] = useState(1);
   const [replayEpoch, setReplayEpoch] = useState(0);
-  const committedRef = useRef<Record<string, number> | null>(null);
+  const committedRef = useRef<Record<string, Record<string, number>>>({});
+  const lastSignatureRef = useRef<string | null>(null);
 
   const toggleSelect = (id: string) =>
     setSelected((prev) => (prev === id ? null : id));
 
-  const sceneLanes: ArenaSceneLane[] = useMemo(
+  const fieldLanes: ArenaSceneLane[] = useMemo(
     () =>
-      [...runners, ...(showGhost && ghost ? [ghost] : [])].map((r) => ({
+      runners.map((r) => ({
         id: r.id,
         name: r.name,
         initials: r.initials,
         value: valueAt(r, time),
         you: r.you,
-        ghost: r.ghost,
       })),
-    [ghost, runners, showGhost, time],
+    [runners, time],
+  );
+
+  const sceneLanes: ArenaSceneLane[] = useMemo(
+    () =>
+      showGhost && ghost
+        ? [
+            ...fieldLanes,
+            {
+              id: ghost.id,
+              name: ghost.name,
+              initials: ghost.initials,
+              value: valueAt(ghost, time),
+              ghost: true,
+            },
+          ]
+        : fieldLanes,
+    [fieldLanes, ghost, showGhost, time],
   );
 
   useEffect(() => {
     const key = arenaBaselineStorageKey(accountKey, model.sport, model.track);
-    let previous = committedRef.current;
-    if (!previous) {
-      try {
-        previous = readArenaBaseline(localStorage.getItem(key), model.periodStart);
-      } catch {
-        previous = null;
-      }
+    const scopeKey = `${key}:${model.periodStart}:${unit}`;
+    const signature = `${scopeKey}|${fieldLanes
+      .map((lane) => `${lane.id}:${lane.value.toFixed(3)}`)
+      .join(",")}`;
+    if (lastSignatureRef.current === signature) return;
+    lastSignatureRef.current = signature;
+
+    let previous: Record<string, number> | null = null;
+    try {
+      previous = readArenaBaseline(
+        localStorage.getItem(key),
+        model.periodStart,
+        unit,
+      );
+    } catch {
+      previous = committedRef.current[scopeKey] ?? null;
     }
-    const plan = reconcileArenaOvertake(sceneLanes, previous);
-    const snapshot = serializeArenaBaseline(model.periodStart, sceneLanes);
+    const plan = reconcileArenaOvertake(fieldLanes, previous);
+    const snapshot = serializeArenaBaseline(model.periodStart, fieldLanes, unit);
     const nextCommitted: Record<string, number> = {};
-    for (const lane of sceneLanes) {
-      if (!lane.ghost) nextCommitted[lane.id] = lane.value;
+    for (const lane of fieldLanes) {
+      nextCommitted[lane.id] = lane.value;
     }
-    committedRef.current = nextCommitted;
+    committedRef.current[scopeKey] = nextCommitted;
     try {
       localStorage.setItem(key, snapshot);
     } catch {
       /* Storage optional */
     }
-    if (!plan) return;
+    if (!plan) {
+      setOvertakePlan(null);
+      setOvertakeProgress(1);
+      return;
+    }
     const reduced =
       typeof window !== "undefined" &&
       typeof window.matchMedia === "function" &&
       window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     setCenter(null);
     setOvertakePlan(plan);
-    setOvertakeProgress(reduced ? 1 : 0);
-    setReplayEpoch((n) => n + 1);
-  }, [accountKey, model.periodStart, model.sport, model.track, sceneLanes]);
+    if (reduced) {
+      setOvertakeProgress(1);
+      setReplayEpoch(0);
+    } else {
+      setOvertakeProgress(0);
+      setReplayEpoch((n) => n + 1);
+    }
+  }, [accountKey, fieldLanes, model.periodStart, model.sport, model.track, unit]);
 
   useEffect(() => {
-    if (!overtakePlan || overtakeProgress >= 1) return;
+    if (!overtakePlan || replayEpoch === 0) return;
     let raf = 0;
     const start = performance.now();
     const duration = overtakePlan.durationMs;
@@ -157,6 +193,14 @@ export function FieldStage({
         ? stepArenaOvertake(overtakePlan, overtakeProgress, span)
         : null,
     [overtakePlan, overtakeProgress, span],
+  );
+
+  const overtakeStatus = useMemo(
+    () =>
+      overtakePlan
+        ? formatArenaOvertakeStatus(overtakePlan, overtakeFrame, unit)
+        : null,
+    [overtakeFrame, overtakePlan, unit],
   );
 
   const displayTotal = overtakeFrame ? overtakeFrame.youValue : total;
@@ -207,7 +251,7 @@ export function FieldStage({
           <small>your place</small>
         </span>
       </div>
-      {overtakePlan && (
+      {overtakePlan && overtakeStatus && (
         <div
           className="focus-overtake-banner"
           role="status"
@@ -227,33 +271,8 @@ export function FieldStage({
           }}
         >
           <span>
-            {overtakeFrame && overtakeFrame.phase === "rival-slide" ? (
-              <b>Updating field positions…</b>
-            ) : overtakeFrame ? (
-              <b>
-                Making your move · +
-                {(overtakePlan.youAfter - overtakePlan.youBefore).toFixed(1)}{" "}
-                {unit}
-              </b>
-            ) : overtakePlan.hasOvertake ? (
-              <>
-                <b>
-                  #{overtakePlan.rankBefore} → #{overtakePlan.rankAfter}
-                </b>{" "}
-                · {overtakePlan.overtakenIds.length}{" "}
-                {overtakePlan.overtakenIds.length === 1
-                  ? "overtake"
-                  : "overtakes"}
-              </>
-            ) : (
-              <>
-                <b>
-                  +{(overtakePlan.youAfter - overtakePlan.youBefore).toFixed(1)}{" "}
-                  {unit}
-                </b>{" "}
-                · moved forward
-              </>
-            )}
+            <b>{overtakeStatus.headline}</b>
+            {overtakeStatus.detail ? ` · ${overtakeStatus.detail}` : null}
           </span>
           {!overtakeFrame && (
             <button

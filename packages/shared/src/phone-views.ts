@@ -368,10 +368,16 @@ export function seedArenaBaselinesFromState(
   for (const rating of state.ratings) {
     if (!rating.optedIn) continue;
     const sport = rating.sport;
+    const spec = sportById(sport);
+    const unit: ArenaDistanceUnit = spec.gps
+      ? state.units === "metric"
+        ? "km"
+        : "mi"
+      : "pts";
     const periodStart = competePeriodWindow(state, now, sport).startsAt.toISOString();
     for (const track of ["open", "verified"] as const) {
       const key = arenaBaselineStorageKey(accountKey, sport, track);
-      if (readArenaBaseline(readItem(key), periodStart)) continue;
+      if (readArenaBaseline(readItem(key), periodStart, unit)) continue;
       const arena = buildArenaModel(state, now, track, sport);
       const serialized = serializeArenaBaseline(
         periodStart,
@@ -380,6 +386,7 @@ export function seedArenaBaselinesFromState(
           value: lane.values[2],
           ghost: lane.ghost,
         })),
+        arena.unit,
       );
       writeItem(key, serialized);
     }

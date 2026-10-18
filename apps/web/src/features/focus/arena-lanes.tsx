@@ -249,7 +249,14 @@ export function ArenaLanes({
           const yy = y(l.value) + (l.you ? charging * 4 : 0);
           const xx = (i + 0.5) * laneWidth + 10 + (effect?.joltX ?? 0);
           const active = selected === l.id || l.you;
-          const wakeLen = 28 + speed * 88;
+          const maxTailY = Math.min(
+            482,
+            bounds.min <= 0 && bounds.max >= 0 ? y(0) + 4 : 482,
+          );
+          const wakeLen = Math.min(
+            28 + speed * 88,
+            Math.max(0, maxTailY - (yy + 14)),
+          );
           const rivalMovedInSlide =
             !l.you &&
             overtakeFrame?.phase === "rival-slide" &&
@@ -269,7 +276,7 @@ export function ArenaLanes({
                 }
               }}
             >
-              {l.you && speed > 0.01 && (
+              {l.you && speed > 0.01 && wakeLen > 6 && (
                 <g pointerEvents="none" data-overtake-afterburn="true">
                   <path
                     d={`M ${xx - 16} ${yy + 14} C ${xx - 22} ${yy + 14 + wakeLen * 0.45}, ${xx - 8} ${yy + 14 + wakeLen * 0.85}, ${xx} ${yy + 14 + wakeLen} C ${xx + 8} ${yy + 14 + wakeLen * 0.85}, ${xx + 22} ${yy + 14 + wakeLen * 0.45}, ${xx + 16} ${yy + 14} Z`}
@@ -278,7 +285,11 @@ export function ArenaLanes({
                   />
                   {[-14, -7, 0, 7, 14].map((dx, idx) => {
                     const isCenter = idx === 2;
-                    const streakLen = speed * (54 + (idx % 2 === 0 ? 34 : 18));
+                    const streakLen = Math.min(
+                      speed * (54 + (idx % 2 === 0 ? 34 : 18)),
+                      Math.max(0, maxTailY - (yy + 24)),
+                    );
+                    if (streakLen <= 2) return null;
                     return (
                       <line
                         key={idx}

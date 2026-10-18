@@ -469,13 +469,20 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
         }
         dirtyRef.current += 1;
         unsavedRef.current = true;
+        const accountKey = userIdRef.current ?? "guest";
         seedArenaBaselinesFromState(
           stateRef.current,
-          userIdRef.current ?? "guest",
+          accountKey,
           readStorageItem,
           writeStorageItem,
         );
         const next = reduceCompete(stateRef.current, withAccount);
+        seedArenaBaselinesFromState(
+          next,
+          accountKey,
+          readStorageItem,
+          writeStorageItem,
+        );
         const savedAt = new Date().toISOString();
         stateRef.current = next;
         setState(next);

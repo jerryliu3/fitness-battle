@@ -223,7 +223,14 @@ export function LaneTrack({
               const charging = l.you && animating ? (overtakeFrame?.charging ?? 0) : 0;
               const xx = (i + 0.5) * lw + 10 + (effect?.joltX ?? 0),
                 yy = y(value) + (l.you ? charging * 4 : 0);
-              const wakeLen = 28 + speed * 88;
+              const maxTailY = Math.min(
+                482,
+                bounds.min <= 0 && bounds.max >= 0 ? y(0) + 4 : 482,
+              );
+              const wakeLen = Math.min(
+                28 + speed * 88,
+                Math.max(0, maxTailY - (yy + 14)),
+              );
               const rivalMovedInSlide =
                 !l.you &&
                 overtakeFrame?.phase === "rival-slide" &&
@@ -235,7 +242,7 @@ export function LaneTrack({
                   accessible
                   accessibilityLabel={`${l.name}, ${value.toFixed(1)} ${unit}${edge ? `, ${edge} of view` : ""}`}
                 >
-                  {l.you && speed > 0.01 ? (
+                  {l.you && speed > 0.01 && wakeLen > 6 ? (
                     <G>
                       <Path
                         d={`M ${xx - 16} ${yy + 14} C ${xx - 22} ${yy + 14 + wakeLen * 0.45}, ${xx - 8} ${yy + 14 + wakeLen * 0.85}, ${xx} ${yy + 14 + wakeLen} C ${xx + 8} ${yy + 14 + wakeLen * 0.85}, ${xx + 22} ${yy + 14 + wakeLen * 0.45}, ${xx + 16} ${yy + 14} Z`}
@@ -244,7 +251,11 @@ export function LaneTrack({
                       />
                       {[-14, -7, 0, 7, 14].map((dx, idx) => {
                         const isCenter = idx === 2;
-                        const streakLen = speed * (54 + (idx % 2 === 0 ? 34 : 18));
+                        const streakLen = Math.min(
+                          speed * (54 + (idx % 2 === 0 ? 34 : 18)),
+                          Math.max(0, maxTailY - (yy + 24)),
+                        );
+                        if (streakLen <= 2) return null;
                         return (
                           <Line
                             key={idx}
@@ -260,6 +271,16 @@ export function LaneTrack({
                         );
                       })}
                     </G>
+                  ) : null}
+                  {l.you && charging > 0.02 ? (
+                    <Path
+                      d={`M ${xx - 30} ${yy - 4} l -8 6 l 5 2 l -5 7 M ${xx + 30} ${yy - 6} l 8 6 l -5 2 l 5 7`}
+                      fill="none"
+                      stroke="#d4ee89"
+                      strokeWidth={2}
+                      strokeLinecap="round"
+                      opacity={charging}
+                    />
                   ) : null}
                   {rivalMovedInSlide ? (
                     <Line

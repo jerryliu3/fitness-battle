@@ -7,11 +7,14 @@ import {
   fitArenaWindow,
   reconcileArenaOvertake,
   stepArenaOvertake,
+  formatArenaOvertakeStatus,
   arenaBaselineStorageKey,
   readArenaBaseline,
   serializeArenaBaseline,
   type ArenaSceneLane,
 } from "./arena-view";
+import { seedArenaBaselinesFromState } from "./phone-views";
+import { freshState, reduceCompete } from "./compete/engine";
 describe("distance viewport", () => {
   it("centers the athlete without compressing an extreme field", () => {
     const w = arenaWindow(23.4, 6);
@@ -104,6 +107,10 @@ describe("arena overtake reconciliation & motion", () => {
     expect(midSlide.youValue).toBeCloseTo(12.6);
     expect(midSlide.laneValues.mara).toBeGreaterThan(13.0);
     expect(midSlide.laneValues.mara).toBeLessThan(13.8);
+    expect(formatArenaOvertakeStatus(plan!, midSlide, "km")).toEqual({
+      headline: "Updating field positions…",
+      detail: null,
+    });
 
     // Beat 2: Rivals are settled at endValue and You surge past with afterburn speed
     const midRun = stepArenaOvertake(plan!, 0.6, 6);
@@ -113,6 +120,10 @@ describe("arena overtake reconciliation & motion", () => {
     expect(midRun.speed).toBeGreaterThan(0.5);
     expect(midRun.youValue).toBeGreaterThan(13.8);
     expect(midRun.rivalEffects.mara?.isPassed).toBe(true);
+    expect(formatArenaOvertakeStatus(plan!, midRun, "km")).toEqual({
+      headline: "Making your move · +2.6 km",
+      detail: null,
+    });
 
     // Final settle: You reach youAfter (#2)
     const done = stepArenaOvertake(plan!, 1, 6);
@@ -120,6 +131,32 @@ describe("arena overtake reconciliation & motion", () => {
     expect(done.youValue).toBeCloseTo(15.2);
     expect(done.currentRank).toBe(2);
     expect(done.passedCount).toBe(2);
+    expect(formatArenaOvertakeStatus(plan!, null, "km")).toEqual({
+      headline: "#4 → #2",
+      detail: "2 overtakes",
+    });
+  });
+
+  it("does not count a rival as overtaken when the user was already ahead of them before the sync", () => {
+    const plan = reconcileArenaOvertake(
+      [
+        { id: "you", name: "You", initials: "YO", value: 16.0, you: true },
+        { id: "mara", name: "Mara", initials: "MA", value: 15.0 },
+      ],
+      {
+        you: 14.0,
+        mara: 12.0, // Mara was behind You (12.0 < 14.0) and is still behind You (15.0 < 16.0)
+      },
+    );
+    expect(plan).not.toBeNull();
+    expect(plan!.hasOvertake).toBe(false);
+    expect(plan!.overtakenIds).toEqual([]);
+    expect(plan!.rivalSlideEnd).toBe(0);
+    expect(plan!.rivals.mara?.startValue).toBe(15.0);
+    expect(formatArenaOvertakeStatus(plan!, null, "km")).toEqual({
+      headline: "+2.0 km",
+      detail: "moved forward",
+    });
   });
 
   it("keeps rivals at their already updated positions when the user does not overtake anyone", () => {
@@ -150,12 +187,17 @@ describe("arena overtake reconciliation & motion", () => {
     expect(midFrame.speed).toBeGreaterThan(0.5);
   });
 
-  it("serializes and reads period-scoped arena baselines", () => {
+  it("serializes and reads period-and-unit-scoped arena baselines", () => {
     const key = arenaBaselineStorageKey("acct", "running", "open");
     expect(key).toBe("fb-arena-baseline:acct:running:open");
-    const raw = serializeArenaBaseline("2026-10-12T00:00:00.000Z", sampleLanes);
-    expect(readArenaBaseline(raw, "2026-10-05T00:00:00.000Z")).toBeNull();
-    const parsed = readArenaBaseline(raw, "2026-10-12T00:00:00.000Z");
+    const raw = serializeArenaBaseline(
+      "2026-10-12T00:00:00.000Z",
+      sampleLanes,
+      "km",
+    );
+    expect(readArenaBaseline(raw, "2026-10-05T00:00:00.000Z", "km")).toBeNull();
+    expect(readArenaBaseline(raw, "2026-10-12T00:00:00.000Z", "mi")).toBeNull();
+    const parsed = readArenaBaseline(raw, "2026-10-12T00:00:00.000Z", "km");
     expect(parsed).toEqual({
       you: 15.2,
       mara: 13.8,
@@ -163,5 +205,55 @@ describe("arena overtake reconciliation & motion", () => {
       noor: 19.2,
     });
   });
+
+  it("seeds baselines once per (periodStart, unit) and re-seeds when unit changes", () => {
+    const store = new Map<string, string>();
+    const base = freshState();
+    const state = reduceCompete(base, {
+      type: "opt-in",
+      sport: base.primary,
+    });
+    seedArenaBaselinesFromState(
+      state,
+      "guest",
+      (k) => store.get(k) ?? null,
+      (k, v) => store.set(k, v),
+    );
+    const key = arenaBaselineStorageKey("guest", state.primary, "open");
+    const first = store.get(key);
+    expect(first).toBeTruthy();
+
+    const parsedFirst = JSON.parse(first!) as {
+      periodStart: string;
+      unit: string;
+    };
+    expect(parsedFirst.unit).toBe("mi");
+
+    // Mutate stored value to verify second call for same unit does not overwrite
+    const custom = JSON.stringify({
+      version: 1,
+      periodStart: parsedFirst.periodStart,
+      unit: parsedFirst.unit,
+      values: { you: 1.5 },
+    });
+    store.set(key, custom);
+    seedArenaBaselinesFromState(
+      state,
+      "guest",
+      (k) => store.get(k) ?? null,
+      (k, v) => store.set(k, v),
+    );
+    expect(store.get(key)).toBe(custom);
+
+    // Changing units to metric ("metric") re-seeds with "km"
+    seedArenaBaselinesFromState(
+      { ...state, units: "metric" },
+      "guest",
+      (k) => store.get(k) ?? null,
+      (k, v) => store.set(k, v),
+    );
+    expect(JSON.parse(store.get(key)!).unit).toBe("km");
+  });
 });
+
 

@@ -1,8 +1,6 @@
 import {
   applyRemoteSnapshot,
   arenaBaselineStorageKey,
-  buildArenaModel,
-  competePeriodWindow,
   countedActivityIds,
   FIELD_REFRESH_MS,
   fieldChangeNotice,
@@ -12,12 +10,12 @@ import {
   migrateCompeteState,
   newCountedIds,
   primaryRevealResults,
-  readArenaBaseline,
   readSeenField,
   reduceCompete,
   rollClock,
+  seedArenaBaselinesFromState,
   seenFieldFromState,
-  serializeArenaBaseline,
+  SPORTS,
   type Action,
   type CompeteState,
   type FieldNotice,
@@ -43,6 +41,9 @@ const DIRTY_KEY = "fb-compete-dirty";
 
 interface CompeteContextValue {
   state: CompeteState | null;
+  accountKey: string;
+  readBaselineItem: (key: string) => string | null;
+  writeBaselineItem: (key: string, value: string) => void;
   dispatch: (action: Action) => void;
   returnGain: number;
   clearReturn: () => void;
@@ -75,32 +76,23 @@ function readIds(raw: string | null): string[] | null {
   }
 }
 
-async function seedMobileArenaBaselines(
-  state: CompeteState,
+async function preloadBaselineCache(
   accountKey: string,
+  cache: Map<string, string>,
 ): Promise<void> {
-  for (const rating of state.ratings) {
-    if (!rating.optedIn) continue;
-    const sport = rating.sport;
-    const periodStart = competePeriodWindow(state, undefined, sport).startsAt.toISOString();
+  const keys: string[] = [];
+  for (const sport of SPORTS) {
     for (const track of ["open", "verified"] as const) {
-      const key = arenaBaselineStorageKey(accountKey, sport, track);
-      const existing = await AsyncStorage.getItem(key);
-      if (readArenaBaseline(existing, periodStart)) continue;
-      const arena = buildArenaModel(state, undefined, track, sport);
-      await AsyncStorage.setItem(
-        key,
-        serializeArenaBaseline(
-          periodStart,
-          arena.lanes.map((lane) => ({
-            id: lane.id,
-            value: lane.values[2],
-            ghost: lane.ghost,
-          })),
-        ),
-      );
+      keys.push(arenaBaselineStorageKey(accountKey, sport.id, track));
     }
   }
+  await Promise.all(
+    keys.map(async (key) => {
+      if (cache.has(key)) return;
+      const value = await AsyncStorage.getItem(key);
+      if (value != null) cache.set(key, value);
+    }),
+  );
 }
 
 export function CompeteProvider({ children }: { children: ReactNode }) {
@@ -111,11 +103,21 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
   const [standingsStale, setStandingsStale] = useState(false);
   const stateRef = useRef<CompeteState | null>(null);
   const accountRef = useRef<string | null>(null);
+  const baselineCacheRef = useRef<Map<string, string>>(new Map());
   const dirtyRef = useRef(0);
   const unsavedRef = useRef(false);
   const refreshFlight = useRef<Promise<boolean> | null>(null);
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   stateRef.current = state;
+
+  const readBaselineItem = useCallback((key: string): string | null => {
+    return baselineCacheRef.current.get(key) ?? null;
+  }, []);
+
+  const writeBaselineItem = useCallback((key: string, value: string): void => {
+    baselineCacheRef.current.set(key, value);
+    void AsyncStorage.setItem(key, value);
+  }, []);
 
   useEffect(() => {
     let alive = true;
@@ -155,14 +157,22 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
         }
       }
       if (!alive) return;
-      await seedMobileArenaBaselines(next, accountRef.current ?? "device");
+      const accountKey = accountRef.current ?? "device";
+      await preloadBaselineCache(accountKey, baselineCacheRef.current);
+      if (!alive) return;
+      seedArenaBaselinesFromState(
+        next,
+        accountKey,
+        readBaselineItem,
+        writeBaselineItem,
+      );
       void AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(next));
       setState(next);
     })();
     return () => {
       alive = false;
     };
-  }, []);
+  }, [readBaselineItem, writeBaselineItem]);
 
   const seenRef = useRef<{ ids: string[] | null; ready: boolean; opened: boolean }>({
     ids: null,
@@ -237,6 +247,15 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
     const generation = dirtyRef.current;
     const task = (async () => {
       try {
+        await preloadBaselineCache(account.userId, baselineCacheRef.current);
+        if (stateRef.current) {
+          seedArenaBaselinesFromState(
+            stateRef.current,
+            account.userId,
+            readBaselineItem,
+            writeBaselineItem,
+          );
+        }
         const response = await fetch(`${mobileEnv.apiUrl}/api/compete`, {
           headers: { Authorization: `Bearer ${account.token}` },
         });
@@ -252,6 +271,12 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
           dirtyRef.current !== generation ||
           saveTimer.current != null;
         const next = applyRemoteSnapshot(stateRef.current, remote, dirty);
+        seedArenaBaselinesFromState(
+          next,
+          account.userId,
+          readBaselineItem,
+          writeBaselineItem,
+        );
         if (next !== stateRef.current) {
           stateRef.current = next;
           setState(next);
@@ -268,7 +293,7 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
     })();
     refreshFlight.current = task;
     return task;
-  }, []);
+  }, [readBaselineItem, writeBaselineItem]);
   refreshRef.current = refresh;
 
   useEffect(() => {
@@ -306,48 +331,66 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
     };
   }, [router, state]);
 
-  const dispatch = useCallback((action: Action) => {
-    dirtyRef.current += 1;
-    unsavedRef.current = true;
-    setState((prev) => {
-      if (!prev) return prev;
-      const next = reduceCompete(prev, {
-        ...action,
-        accountId: action.accountId ?? accountRef.current ?? undefined,
-      });
-      void AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(next));
-      void AsyncStorage.setItem(DIRTY_KEY, "1");
-      if (saveTimer.current) clearTimeout(saveTimer.current);
-      saveTimer.current = setTimeout(() => {
-        saveTimer.current = null;
-        const generation = dirtyRef.current;
-        void competeAccount().then((account) => {
-          if (!account) {
-            void AsyncStorage.removeItem(DIRTY_KEY);
-            return;
-          }
-          void fetch(`${mobileEnv.apiUrl}/api/compete`, {
-            method: "PUT",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${account.token}`,
-            },
-            body: JSON.stringify({ state: next, accountId: account.userId }),
-          }).then(async (response) => {
-            if (response.ok && dirtyRef.current === generation) {
-              unsavedRef.current = false;
+  const dispatch = useCallback(
+    (action: Action) => {
+      dirtyRef.current += 1;
+      unsavedRef.current = true;
+      setState((prev) => {
+        if (!prev) return prev;
+        const accountKey = accountRef.current ?? "device";
+        seedArenaBaselinesFromState(
+          prev,
+          accountKey,
+          readBaselineItem,
+          writeBaselineItem,
+        );
+        const next = reduceCompete(prev, {
+          ...action,
+          accountId: action.accountId ?? accountRef.current ?? undefined,
+        });
+        seedArenaBaselinesFromState(
+          next,
+          accountKey,
+          readBaselineItem,
+          writeBaselineItem,
+        );
+        void AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+        void AsyncStorage.setItem(DIRTY_KEY, "1");
+        if (saveTimer.current) clearTimeout(saveTimer.current);
+        saveTimer.current = setTimeout(() => {
+          saveTimer.current = null;
+          const generation = dirtyRef.current;
+          void competeAccount().then((account) => {
+            if (!account) {
               void AsyncStorage.removeItem(DIRTY_KEY);
               return;
             }
-            if (response.ok) return;
-            const body = (await response.json().catch(() => null)) as { error?: string } | null;
-            if (body?.error !== "week_still_open") setStandingsStale(true);
+            void fetch(`${mobileEnv.apiUrl}/api/compete`, {
+              method: "PUT",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${account.token}`,
+              },
+              body: JSON.stringify({ state: next, accountId: account.userId }),
+            }).then(async (response) => {
+              if (response.ok && dirtyRef.current === generation) {
+                unsavedRef.current = false;
+                void AsyncStorage.removeItem(DIRTY_KEY);
+                return;
+              }
+              if (response.ok) return;
+              const body = (await response.json().catch(() => null)) as {
+                error?: string;
+              } | null;
+              if (body?.error !== "week_still_open") setStandingsStale(true);
+            });
           });
-        });
-      }, 400);
-      return next;
-    });
-  }, []);
+        }, 400);
+        return next;
+      });
+    },
+    [readBaselineItem, writeBaselineItem],
+  );
 
   const clearReturn = useCallback(() => setReturnGain(0), []);
   const dismissFieldNotice = useCallback(() => {
@@ -366,6 +409,9 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
     <CompeteContext.Provider
       value={{
         state,
+        accountKey: accountRef.current ?? "device",
+        readBaselineItem,
+        writeBaselineItem,
         dispatch,
         returnGain,
         clearReturn,
