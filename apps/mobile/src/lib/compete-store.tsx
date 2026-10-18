@@ -80,19 +80,14 @@ async function preloadBaselineCache(
   accountKey: string,
   cache: Map<string, string>,
 ): Promise<void> {
-  const keys: string[] = [];
-  for (const sport of SPORTS) {
-    for (const track of ["open", "verified"] as const) {
-      keys.push(arenaBaselineStorageKey(accountKey, sport.id, track));
-    }
+  const keys = SPORTS.flatMap((sport) => [
+    arenaBaselineStorageKey(accountKey, sport.id, "open"),
+    arenaBaselineStorageKey(accountKey, sport.id, "verified"),
+  ]);
+  const pairs = await AsyncStorage.multiGet(keys);
+  for (const [key, value] of pairs) {
+    if (value != null && !cache.has(key)) cache.set(key, value);
   }
-  await Promise.all(
-    keys.map(async (key) => {
-      if (cache.has(key)) return;
-      const value = await AsyncStorage.getItem(key);
-      if (value != null) cache.set(key, value);
-    }),
-  );
 }
 
 export function CompeteProvider({ children }: { children: ReactNode }) {

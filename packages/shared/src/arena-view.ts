@@ -174,41 +174,39 @@ export function reconcileArenaOvertake(
   if (delta <= MIN_MOVEMENT) return null;
 
   const rivalLanes = lanes.filter((lane) => !lane.you && !lane.ghost);
-  const validBeforeById: Record<string, number> = {};
+  const rivals: Record<string, ArenaOvertakeRival> = {};
+  const overtakenIds: string[] = [];
+  let anyRivalMoved = false;
+
   for (const rival of rivalLanes) {
     const rawBefore = previousValues[rival.id];
-    validBeforeById[rival.id] =
+    const validBefore =
       typeof rawBefore === "number" && Number.isFinite(rawBefore)
         ? rawBefore
         : rival.value;
-  }
-
-  const overtakenIds = rivalLanes
-    .filter((rival) => {
-      const rBefore = validBeforeById[rival.id] ?? rival.value;
-      return (
-        rBefore > youBefore + EPSILON &&
-        rival.value >= youBefore - EPSILON &&
-        youAfter > rival.value + EPSILON
-      );
-    })
-    .map((rival) => rival.id);
-
-  const hasOvertake = overtakenIds.length > 0;
-
-  let anyRivalMoved = false;
-  const rivals: Record<string, ArenaOvertakeRival> = {};
-  for (const rival of rivalLanes) {
-    const validBefore = validBeforeById[rival.id] ?? rival.value;
-    const moved = hasOvertake && Math.abs(rival.value - validBefore) > MIN_MOVEMENT;
+    const overtaken =
+      validBefore > youBefore + EPSILON &&
+      rival.value >= youBefore - EPSILON &&
+      youAfter > rival.value + EPSILON;
+    if (overtaken) overtakenIds.push(rival.id);
+    const moved = Math.abs(rival.value - validBefore) > MIN_MOVEMENT;
     if (moved) anyRivalMoved = true;
     rivals[rival.id] = {
       id: rival.id,
-      startValue: hasOvertake ? validBefore : rival.value,
+      startValue: validBefore,
       endValue: rival.value,
       moved,
-      overtaken: overtakenIds.includes(rival.id),
+      overtaken,
     };
+  }
+
+  const hasOvertake = overtakenIds.length > 0;
+  if (!hasOvertake) {
+    anyRivalMoved = false;
+    for (const rival of Object.values(rivals)) {
+      rival.startValue = rival.endValue;
+      rival.moved = false;
+    }
   }
 
   const rivalSlideEnd = hasOvertake && anyRivalMoved ? 0.22 : 0;
@@ -217,11 +215,11 @@ export function reconcileArenaOvertake(
 
   const rankBefore =
     1 +
-    rivalLanes.filter(
-      (rival) => (rivals[rival.id]?.startValue ?? rival.value) > youBefore + EPSILON,
+    Object.values(rivals).filter(
+      (rival) => rival.startValue > youBefore + EPSILON,
     ).length;
   const rankAfter =
-    1 + rivalLanes.filter((rival) => rival.value > youAfter + EPSILON).length;
+    1 + Object.values(rivals).filter((rival) => rival.endValue > youAfter + EPSILON).length;
 
   return {
     youId: you.id,
@@ -282,26 +280,21 @@ export function stepArenaOvertake(
             : "settle";
   }
 
-  const laneValues: Record<string, number> = {
-    [plan.youId]: youValue,
-  };
+  const passWindow = Math.max(0.15, Math.min(delta * 0.65, safeSpan * 0.14));
+  const laneValues: Record<string, number> = { [plan.youId]: youValue };
+  const rivalEffects: Record<string, ArenaRivalPassEffect> = {};
+
   for (const rival of Object.values(plan.rivals)) {
     laneValues[rival.id] =
       rival.startValue + (rival.endValue - rival.startValue) * rivalT;
-  }
 
-  const passWindow = Math.max(0.15, Math.min(delta * 0.65, safeSpan * 0.14));
-  const rivalEffects: Record<string, ArenaRivalPassEffect> = {};
-  for (const rival of Object.values(plan.rivals)) {
     if (!rival.overtaken || p < plan.rivalSlideEnd) {
       rivalEffects[rival.id] = { isPassed: false, ripple: 0, impact: 0, joltX: 0 };
       continue;
     }
     const passAt = Math.max(plan.youBefore, rival.endValue);
     const isPassed = youValue > passAt + EPSILON;
-    const ripple = isPassed
-      ? clamp01((youValue - passAt) / passWindow)
-      : 0;
+    const ripple = isPassed ? clamp01((youValue - passAt) / passWindow) : 0;
     const impact =
       cosinePulse(youValue, passAt + passWindow * 0.2, passWindow * 0.65) *
       (1 - finish);
