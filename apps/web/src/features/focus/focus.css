@@ -74,6 +74,14 @@
 .phone-shell .phone-tab[data-state="active"] {
   color: #282f2c;
 }
+.phone-shell .phone-tab[data-state="active"]::before {
+  content: "";
+  position: absolute;
+  inset: 4px;
+  z-index: 0;
+  background: #f1c75b;
+  border-radius: 12px;
+}
 .phone-shell .phone-guest {
   background: #eef0e9;
   font-size: 12px;

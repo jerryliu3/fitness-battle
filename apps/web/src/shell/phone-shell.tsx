@@ -10,12 +10,12 @@ import {
   SHELL_TABS,
   SHELL_TAB_ICONS,
   isShellTabId,
+  shellTabById,
   shellTabFromPath,
   type ShellTabId,
 } from "@fitness-battle/shared";
 import * as ScrollArea from "@radix-ui/react-scroll-area";
 import * as Tabs from "@radix-ui/react-tabs";
-import { motion, useReducedMotion } from "motion/react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState, type ReactNode } from "react";
@@ -51,7 +51,6 @@ export function PhoneShell({
 }) {
   const path = usePathname();
   const router = useRouter();
-  const reduce = useReducedMotion();
   const { user, loading } = useAuth();
   const {
     state,
@@ -64,20 +63,18 @@ export function PhoneShell({
   } = useCompete();
   const tab = shellTabFromPath(path);
   useCompeteFieldRefresh(!hideTabs && (tab?.id === "arena" || tab?.id === "field"));
-  const [pressed, setPressed] = useState<ShellTabId | null>(null);
   const [bootAnimDone, setBootAnimDone] = useState(() => hasSeenBootSplash());
   const matched = tab?.id ?? null;
-  const active = pressed ?? matched;
   const accountKey = user?.id ?? "guest";
   const [visited, setVisited] = useState<Set<ShellTabId>>(() =>
     new Set(matched ? [matched] : ["today"]),
   );
 
   useEffect(() => {
-    if (active && isShellTabId(active)) {
-      setVisited((prev) => (prev.has(active) ? prev : new Set([...prev, active])));
+    if (matched && isShellTabId(matched)) {
+      setVisited((prev) => (prev.has(matched) ? prev : new Set([...prev, matched])));
     }
-  }, [active]);
+  }, [matched]);
 
   const dataReady = isCompeteDataReady(loadStatus, state);
   const routedNotice = useRef<string | null>(null);
@@ -143,12 +140,14 @@ export function PhoneShell({
   }
 
   useEffect(() => {
-    setPressed(null);
-  }, [path]);
-
-  useEffect(() => {
     for (const tab of SHELL_TABS) router.prefetch(tab.href);
   }, [router]);
+
+  function goToTab(tabId: ShellTabId) {
+    const href = shellTabById(tabId)?.href;
+    if (!href || href === path.split("?")[0]) return;
+    router.push(href);
+  }
 
   // Only play the full initial mascot boot splash on fresh browser boot.
   // Account creation, login, or page transitions don't reload the splash.
@@ -187,7 +186,7 @@ export function PhoneShell({
         ) : matched ? (
           <div className="phone-panels">
             {SHELL_TABS.map((tab) => {
-              const on = active === tab.id;
+              const on = matched === tab.id;
               return (
                 <div
                   key={tab.id}
@@ -205,53 +204,33 @@ export function PhoneShell({
         )}
         {hideTabs ? null : (
           <Tabs.Root
-            value={active ?? ""}
+            value={matched ?? ""}
             onValueChange={(value) => {
-              if (isShellTabId(value)) setPressed(value);
+              if (isShellTabId(value)) goToTab(value);
             }}
           >
             <Tabs.List className="phone-tabs" aria-label="Primary">
-              {SHELL_TABS.map((tab) => {
-                const on = active === tab.id;
-                return (
-                  <Tabs.Trigger key={tab.id} value={tab.id} asChild>
-                    <Link
-                      href={tab.href}
-                      className="phone-tab"
-                      onPointerDown={() => setPressed(tab.id)}
-                    >
-                      {on ? (
-                        <motion.span
-                          layoutId="shell-tab"
-                          className="phone-pill"
-                          transition={
-                            reduce
-                              ? { duration: 0 }
-                              : { type: "spring", bounce: 0.18, duration: 0.35 }
-                          }
-                        />
-                      ) : null}
-                      <svg
-                        width="22"
-                        height="22"
-                        viewBox="0 0 24 24"
-                        aria-hidden="true"
-                        style={{ position: "relative", zIndex: 1 }}
-                      >
-                        <path
-                          d={SHELL_TAB_ICONS[tab.id]}
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="1.6"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        />
-                      </svg>
-                      <span>{tab.label}</span>
-                    </Link>
-                  </Tabs.Trigger>
-                );
-              })}
+              {SHELL_TABS.map((tab) => (
+                <Tabs.Trigger key={tab.id} value={tab.id} className="phone-tab">
+                  <svg
+                    width="22"
+                    height="22"
+                    viewBox="0 0 24 24"
+                    aria-hidden="true"
+                    style={{ position: "relative", zIndex: 1 }}
+                  >
+                    <path
+                      d={SHELL_TAB_ICONS[tab.id]}
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="1.6"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                  <span style={{ position: "relative", zIndex: 1 }}>{tab.label}</span>
+                </Tabs.Trigger>
+              ))}
             </Tabs.List>
           </Tabs.Root>
         )}
