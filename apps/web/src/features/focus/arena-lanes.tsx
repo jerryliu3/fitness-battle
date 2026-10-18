@@ -57,6 +57,10 @@ export function ArenaLanes({
     height = 540,
     laneWidth = (width - 52) / Math.max(1, ordered.length);
   const y = (v: number) => 72 + arenaPosition(v, effectiveView).fraction * 400;
+  const maxTailY = Math.min(
+    482,
+    bounds.min <= 0 && bounds.max >= 0 ? y(0) + 4 : 482,
+  );
 
   const sortedByValue = [...ordered].sort((a, b) => b.value - a.value);
   const topRunner = sortedByValue[0];
@@ -249,10 +253,6 @@ export function ArenaLanes({
           const yy = y(l.value) + (l.you ? charging * 4 : 0);
           const xx = (i + 0.5) * laneWidth + 10 + (effect?.joltX ?? 0);
           const active = selected === l.id || l.you;
-          const maxTailY = Math.min(
-            482,
-            bounds.min <= 0 && bounds.max >= 0 ? y(0) + 4 : 482,
-          );
           const wakeLen = Math.min(
             28 + speed * 88,
             Math.max(0, maxTailY - (yy + 14)),

@@ -255,5 +255,3 @@ describe("arena overtake reconciliation & motion", () => {
     expect(JSON.parse(store.get(key)!).unit).toBe("km");
   });
 });
-
-

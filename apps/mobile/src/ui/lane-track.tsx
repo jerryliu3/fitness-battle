@@ -85,6 +85,10 @@ export function LaneTrack({
     lw = (w - 50) / Math.max(1, ordered.length);
   const bounds = arenaWindow(v.center, v.span);
   const y = (value: number) => 72 + arenaPosition(value, v).fraction * 400;
+  const maxTailY = Math.min(
+    482,
+    bounds.min <= 0 && bounds.max >= 0 ? y(0) + 4 : 482,
+  );
   useEffect(() => {
     scroll.current?.scrollTo({
       x: Math.max(0, (w - width) / 2),
@@ -223,10 +227,6 @@ export function LaneTrack({
               const charging = l.you && animating ? (overtakeFrame?.charging ?? 0) : 0;
               const xx = (i + 0.5) * lw + 10 + (effect?.joltX ?? 0),
                 yy = y(value) + (l.you ? charging * 4 : 0);
-              const maxTailY = Math.min(
-                482,
-                bounds.min <= 0 && bounds.max >= 0 ? y(0) + 4 : 482,
-              );
               const wakeLen = Math.min(
                 28 + speed * 88,
                 Math.max(0, maxTailY - (yy + 14)),

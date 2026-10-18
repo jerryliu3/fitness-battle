@@ -416,5 +416,3 @@ export function serializeArenaBaseline(
   };
   return JSON.stringify(snapshot);
 }
-
-
