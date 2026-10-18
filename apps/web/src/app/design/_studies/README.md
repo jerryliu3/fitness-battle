@@ -10,6 +10,7 @@ All presentation prototypes, sample data, study-only styles and prototype tests 
 - `home-lab`: five adaptive mobile home concepts
 - `mascot-studio`: Star Ember pose, expression and motion review at `/design/mascot`; reusable model/renderers stay in shared/components
 - `brand-lab`: ten brand territories, current Ember, three neutral systems, and a cosmetic-only sample locker at `/design/brand`; all fixtures, finish previews and scoped styles stay inside this study
+- `overtake-motion`: `/design/motion` — Round 2 combines every-pass Photo Finish + Combo, three staggered over/taek logo races, and three staggered afterimage/jetstream treatments. The original twelve concepts remain available. Fictional data; no scoring or tracker writes.
 
 Studies may reuse production modules under `src/features/`, `src/components/`, `src/theme/` and the platform-agnostic shared package. Production modules must not import study modules or sample fixtures from `src/app/design/_studies/`.
 
