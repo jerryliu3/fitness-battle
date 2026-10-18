@@ -205,8 +205,9 @@ function ContinuousWake({ word, x, y, width, lean, color, length, strength, jet,
 }
 
 function StaggeredLogoScene({ progress: p, concept, dark, reduced, lockup = "stacked" }: Pick<SceneProps, "progress" | "concept" | "dark" | "reduced" | "lockup">) {
-  const color = dark ? "#f7faef" : ink, accent = dark ? green : "#769d3e";
+  const color = dark ? "#f7faef" : ink, accent = dark ? green : "#769d3e", bg = dark ? ink : "#fafbf8";
   const { layout, ox, tx, overSpeed, taekSpeed } = staggeredLogoFrame(p, concept);
+  const outline = layout.bordered ? bg : undefined;
   const settle = ease(between(p, .7, 1));
   const resolve = lockup === "inline" ? ease(between(p, .79, .98)) : 0;
   const moving = reduced ? 0 : Math.sin(between(p, .06, .92) * Math.PI);
@@ -225,9 +226,8 @@ function StaggeredLogoScene({ progress: p, concept, dark, reduced, lockup = "sta
     <g opacity={enterTaek}>
       {[3, 2, 1].map(i => <Word key={`t-${i}`} word="taek" x={taekX - i * (19 + (reduced ? 0 : taekSpeed * 13))} y={ty} width={tw} size={size} color={accent} lean={taekLean} opacity={(.19 - i * .044) * (1 + (reduced ? 0 : taekSpeed * .65))} />)}
     </g>
-    <Word word="over" x={overX} y={oy} width={ow} size={size} color={color} lean={overLean} opacity={enterOver} />
-    <Word word="taek" x={taekX} y={ty} width={tw} size={size} color={color} lean={taekLean} opacity={enterTaek} />
-    <g opacity={pulse(p, .78, .11)}><Spark x={taekX + tw + 14} y={ty - 75} r={10} color={accent} /><Spark x={taekX + tw + 27} y={ty - 25} r={5} color={accent} /></g>
+    <Word word="over" x={overX} y={oy} width={ow} size={size} color={color} lean={overLean} outline={outline} opacity={enterOver} />
+    <Word word="taek" x={taekX} y={ty} width={tw} size={size} color={color} lean={taekLean} outline={outline} opacity={enterTaek} />
     <text x="380" y="350" fill={dark ? "#b2c0a9" : "#768172"} opacity={settle} fontSize="10" letterSpacing="3.4" textAnchor="middle">ALWAYS SURPASSING YOURSELF.</text>
   </Frame>;
 }
