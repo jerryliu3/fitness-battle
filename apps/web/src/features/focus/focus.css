@@ -195,7 +195,12 @@
 .focus-home {
   max-width: 620px;
   width: 100%;
-  margin: auto;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+}
+.phone-main:has(> .focus-home) {
+  grid-template-rows: minmax(min-content, 1fr);
 }
 .focus-arena {
   max-width: 880px;
@@ -809,15 +814,23 @@
   overflow-x: visible;
   overflow-y: auto;
   overscroll-behavior: contain;
-  padding: 0 8px 12px;
+  /* Ember's sprite rises ~55px above its row; keep room so overflow doesn't clip it. */
+  padding: 56px 8px 12px;
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
 }
 /* Full scroll height of all stops; path SVG covers this, not the scrollport. */
 .focus-journey-track {
   position: relative;
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
 }
 .focus-path-row {
   position: relative;
-  height: var(--path-row);
+  flex: 1 0 var(--path-row);
+  max-height: 150px;
   z-index: 1;
 }
 .focus-journey-path {
