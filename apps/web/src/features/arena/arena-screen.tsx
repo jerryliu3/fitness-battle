@@ -19,6 +19,7 @@ import {
   primaryFreezePeriodStart,
   sleepRenewal,
   SPORTS,
+  formatWeeklyCompetitionRange,
   weeklyPeriodBounds,
   type SportId,
   type ScoreTrack,
@@ -54,7 +55,7 @@ export function ArenaScreen() {
       : hoursLeft >= 1
         ? `${hoursLeft} hour${hoursLeft === 1 ? "" : "s"} left`
         : `${Math.max(1, minutesLeft)}m left`;
-  const dateRangeLabel = `${period.startsAt.toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" })} – ${period.endsAt.toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" })}`;
+  const dateRangeLabel = formatWeeklyCompetitionRange(now);
 
   function participate(_reason: string, action: () => void) {
     if (!user) {
@@ -82,9 +83,6 @@ export function ArenaScreen() {
         <div className="focus-competition-info">
           <p className="fb-kicker">Competition</p>
           <p className="focus-competition-dates">{dateRangeLabel}</p>
-          <p className="fb-note" style={{ margin: "4px 0 0", fontSize: 12 }}>
-            Week ends Monday 00:00 Eastern; the end date is not a full day.
-          </p>
         </div>
         <span className="focus-competition-pill">
           ⏱ <b>{badgeLabel}</b>

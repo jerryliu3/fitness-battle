@@ -7,6 +7,7 @@ import {
   monthlyPeriodBounds,
   startOfZonedDay,
   weeklyPeriodBounds,
+  formatWeeklyCompetitionRange,
 } from "./period";
 
 describe("period model (America/New_York source of truth)", () => {
@@ -86,5 +87,12 @@ describe("period model (America/New_York source of truth)", () => {
     const bounds = weeklyPeriodBounds(new Date("2026-10-07T00:00:00.000Z"));
     expect(isWithinPeriod(bounds.startsAt, bounds)).toBe(true);
     expect(isWithinPeriod(bounds.endsAt, bounds)).toBe(false);
+  });
+
+  it("formats an inclusive Mon–Sun label for the competition header", () => {
+    const label = formatWeeklyCompetitionRange(
+      new Date("2026-10-18T18:00:00.000Z"),
+    );
+    expect(label).toBe("Oct 12 – Oct 18");
   });
 });
