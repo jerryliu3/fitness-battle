@@ -8,7 +8,6 @@ import {
   startOfZonedDay,
   formatWeeklyCompetitionRange,
   weeklyPeriodBounds,
-  formatWeeklyCompetitionRange,
 } from "./period";
 
 describe("period model (America/New_York source of truth)", () => {
