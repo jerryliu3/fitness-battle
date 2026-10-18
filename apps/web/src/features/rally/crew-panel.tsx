@@ -11,6 +11,7 @@ import {
   formatMemberCount,
 } from "@fitness-battle/shared";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 interface Crew {
   id: string;
   name: string;
@@ -73,6 +74,7 @@ function isCrewErrorNote(note: string): boolean {
 export function CrewPanel() {
   const { user, demoMode } = useAuth();
   const { state } = useCompete();
+  const searchParams = useSearchParams();
   const [data, setData] = useState<CrewData | null>(null);
   const [selected, setSelected] = useState("");
   const [view, setView] = useState("Activity");
@@ -105,6 +107,13 @@ export function CrewPanel() {
     else setData(null);
   }, [user?.id, demoMode]);
 
+  useEffect(() => {
+    const invite = searchParams.get("invite")?.trim();
+    if (!invite || !user || demoMode) return;
+    setCode(invite.toUpperCase());
+    setPanel("add");
+  }, [searchParams, user, demoMode]);
+
   async function write(path: string, body: object) {
     setBusy(true);
     setNote("");
@@ -118,16 +127,25 @@ export function CrewPanel() {
       if (!res.ok || result.persisted === false)
         throw Error(humanCrewError(result.error));
       await reload();
-      setPanel(null);
-      setName("");
-      setCode("");
-      if (path === "/leave") {
-        setNote("You left the crew.");
+      if (path === "/entries") {
+        const saved = Number(result.saved ?? 0);
+        setNote(
+          saved > 0
+            ? `Shared ${saved} counted session${saved === 1 ? "" : "s"} with your crew.`
+            : "Your counted sessions are already shared for this week.",
+        );
       } else {
-        if (result.crew?.id) {
-          setSelected(result.crew.id);
+        setPanel(null);
+        setName("");
+        setCode("");
+        if (path === "/leave") {
+          setNote("You left the crew.");
+        } else {
+          if (result.crew?.id) {
+            setSelected(result.crew.id);
+          }
+          setNote("Saved. Your crew is up to date.");
         }
-        setNote("Saved. Your crew is up to date.");
       }
     } catch (e) {
       setNote(e instanceof Error ? e.message : "Could not reach your crew.");
@@ -644,6 +662,21 @@ export function CrewPanel() {
               <button
                 className="fb-btn"
                 onClick={() => {
+                  const link = `${window.location.origin}/field?invite=${encodeURIComponent(crew?.invite_code ?? "")}`;
+                  void navigator.clipboard
+                    .writeText(link)
+                    .then(
+                      () => setNote("Invite link copied."),
+                      () => setNote(`Invite link: ${link}`),
+                    );
+                }}
+              >
+                Copy invite link
+              </button>
+              <button
+                type="button"
+                className="fb-btn-line"
+                onClick={() => {
                   void navigator.clipboard
                     .writeText(crew?.invite_code ?? "")
                     .then(
@@ -652,7 +685,7 @@ export function CrewPanel() {
                     );
                 }}
               >
-                Copy invite code
+                Copy code only
               </button>
             </>
           )
