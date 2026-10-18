@@ -29,11 +29,19 @@ export function AuthGate({ reason, children, require = true }: AuthGateProps) {
       <p className="fb-kicker">Account</p>
       <h1 className="fb-title">Sign in to continue</h1>
       <p className="fb-copy">{reason}</p>
-      <div className="fb-stack">
-        <Link href={buildSignupHref(path)} className="fb-btn">
+      <div className="fb-row" style={{ width: "100%", gap: 10 }}>
+        <Link
+          href={buildSignupHref(path)}
+          className="fb-btn"
+          style={{ flex: 1, textAlign: "center" }}
+        >
           Create account
         </Link>
-        <Link href={buildLoginHref(path)} className="fb-btn-line">
+        <Link
+          href={buildLoginHref(path)}
+          className="fb-btn-line"
+          style={{ flex: 1, textAlign: "center" }}
+        >
           Sign in
         </Link>
       </div>
@@ -77,13 +85,28 @@ export function AuthPrompt({ open, reason, nextPath, onClose }: AuthPromptProps)
         <h2>Create an account to compete</h2>
         <p className="fb-copy">{reason}</p>
         <div className="fb-stack">
-          <Link href={buildSignupHref(next)} className="fb-btn">
-            Create account
-          </Link>
-          <Link href={buildLoginHref(next)} className="fb-btn-line">
-            Sign in
-          </Link>
-          <button type="button" className="fb-btn-ghost" onClick={onClose}>
+          <div className="fb-row" style={{ width: "100%", gap: 10 }}>
+            <Link
+              href={buildSignupHref(next)}
+              className="fb-btn"
+              style={{ flex: 1, textAlign: "center" }}
+            >
+              Create account
+            </Link>
+            <Link
+              href={buildLoginHref(next)}
+              className="fb-btn-line"
+              style={{ flex: 1, textAlign: "center" }}
+            >
+              Sign in
+            </Link>
+          </div>
+          <button
+            type="button"
+            className="fb-btn-ghost"
+            onClick={onClose}
+            style={{ width: "100%", textAlign: "center" }}
+          >
             Keep browsing
           </button>
         </div>

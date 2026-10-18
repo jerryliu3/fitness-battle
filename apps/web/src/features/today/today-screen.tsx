@@ -33,8 +33,8 @@ type JourneyDay = {
 };
 
 type JourneyStop =
-  | { key: "future"; kind: "future"; lane: JourneyLane }
   | { key: "today"; kind: "today"; lane: JourneyLane }
+  | { key: "past"; kind: "past"; lane: JourneyLane }
   | { key: string; kind: "day"; lane: JourneyLane; day: JourneyDay }
   | { key: "start"; kind: "start"; lane: JourneyLane };
 
@@ -43,24 +43,27 @@ function buildJourneyStops(days: JourneyDay[]): JourneyStop[] {
   // Oct 17 keeps its side when Oct 18 appears (see planJourneyTrail).
   const plan = planJourneyTrail(days);
   const stops: JourneyStop[] = [
-    { key: "future", kind: "future", lane: plan.future },
     { key: "today", kind: "today", lane: plan.today },
   ];
-  days.forEach((day, i) => {
-    stops.push({
-      key: day.id,
-      kind: "day",
-      lane: plan.days[i]!,
-      day,
+  if (days.length === 0) {
+    stops.push({ key: "past", kind: "past", lane: "l" });
+  } else {
+    days.forEach((day, i) => {
+      stops.push({
+        key: day.id,
+        kind: "day",
+        lane: plan.days[i]!,
+        day,
+      });
     });
-  });
+  }
   stops.push({ key: "start", kind: "start", lane: plan.start });
   return stops;
 }
 
 function stopRowClass(stop: JourneyStop): string {
   const tone =
-    stop.kind === "future"
+    stop.kind === "past"
       ? " is-future"
       : stop.kind === "today"
         ? " is-current"
@@ -272,6 +275,15 @@ export function TodayScreen() {
   const getX = (dayIdx: number) => xStart + ((dayIdx + 1) / 7) * (xEnd - xStart);
   const getDayCenterX = (dayIdx: number) => xStart + ((dayIdx + 0.5) / 7) * (xEnd - xStart);
 
+  const weekDurationMs = weekEnd - weekStart;
+  const weekProgress = Math.min(
+    1,
+    Math.max(0, (now.getTime() - weekStart) / (weekDurationMs || 1)),
+  );
+  // Continuous X coordinate reflecting exact progress through the week
+  const currPreciseX = Number((xStart + weekProgress * (xEnd - xStart)).toFixed(1));
+  const currLastY = getY(currTotalHours);
+
   const prevPoints = [
     `${xStart.toFixed(1)},${getY(0).toFixed(1)}`,
     ...prevCumulativeHours.map(
@@ -281,14 +293,20 @@ export function TodayScreen() {
 
   const currPointsList = [
     `${xStart.toFixed(1)},${getY(0).toFixed(1)}`,
-    ...currCumulativeHours.map(
-      (h, i) => `${getX(i).toFixed(1)},${getY(h).toFixed(1)}`,
-    ),
+    ...currCumulativeHours
+      .slice(0, nowDayIndex)
+      .map((h, i) => `${getX(i).toFixed(1)},${getY(h).toFixed(1)}`),
+    `${currPreciseX.toFixed(1)},${currLastY.toFixed(1)}`,
   ];
   const currLinePoints = currPointsList.join(" ");
-  const currLastX = getX(nowDayIndex);
-  const currLastY = getY(currCumulativeHours[nowDayIndex] ?? 0);
-  const currAreaPoints = `${currLinePoints} ${currLastX.toFixed(1)},${yBottom} ${xStart.toFixed(1)},${yBottom}`;
+  const currAreaPoints = `${currLinePoints} ${currPreciseX.toFixed(1)},${yBottom} ${xStart.toFixed(1)},${yBottom}`;
+
+  const paceText =
+    hoursDelta > 0
+      ? "Ahead of pace"
+      : hoursDelta === 0
+        ? "On pace"
+        : null;
 
   const weekDays = Array.from({ length: 7 }, (_, i) => {
     const d = new Date(weekStart + i * 86_400_000 + 43_200_000);
@@ -387,8 +405,15 @@ export function TodayScreen() {
       <section className="focus-stats-card" aria-label="This week's progress">
         <div className="focus-stats-header">
           <div>
-            <p className="fb-kicker">This week · Cumulative hours</p>
-            <strong>{currTotalHours.toFixed(1)} hrs</strong>
+            <p className="fb-kicker">This week</p>
+            <div className="focus-stats-numbers">
+              <strong>
+                {currTotalHours === 0 ? "0 hours" : `${currTotalHours.toFixed(1)} hrs`}
+              </strong>
+              <span className="focus-stats-session-count">
+                {weekActivities.length} {weekActivities.length === 1 ? "session" : "sessions"}
+              </span>
+            </div>
             {sportById(state.primary).gps && weekDistanceM > 0 ? (
               <span
                 className="fb-note"
@@ -398,54 +423,17 @@ export function TodayScreen() {
               </span>
             ) : null}
           </div>
-          <div className="focus-stats-summary">
-            <span>
-              <b>{weekActivities.length}</b>{" "}
-              {weekActivities.length === 1 ? "session" : "sessions"}
-            </span>
-            <span>
-              <b>{activeDaysCount}</b> of 7 days
-            </span>
-          </div>
         </div>
 
         <div
           className="focus-activity-chart-wrap"
           aria-label="Cumulative hours comparison chart"
         >
-          <div className="focus-activity-legend">
-            <div className="focus-activity-legend-items">
-              <span className="focus-activity-legend-item">
-                <i
-                  className="focus-activity-legend-swatch"
-                  aria-hidden="true"
-                />
-                <span>You ({currTotalHours.toFixed(1)}h)</span>
-              </span>
-              <span className="focus-activity-legend-item">
-                <i
-                  className="focus-activity-legend-swatch is-prev"
-                  aria-hidden="true"
-                />
-                <span>Last week ({prevTotalHours.toFixed(1)}h)</span>
-              </span>
-            </div>
-            {hoursDelta !== 0 ? (
-              <span className="focus-activity-delta">
-                {hoursDelta > 0
-                  ? `+${hoursDelta.toFixed(1)}h vs last week`
-                  : `${hoursDelta.toFixed(1)}h vs last week`}
-              </span>
-            ) : (
-              <span className="focus-activity-delta">On pace</span>
-            )}
-          </div>
-
           <svg
             viewBox={`0 0 ${chartW} ${chartH}`}
             className="focus-activity-svg"
             role="img"
-            aria-label={`Cumulative hours: ${currTotalHours.toFixed(1)} hrs this week compared to ${prevTotalHours.toFixed(1)} hrs last week`}
+            aria-label={`Cumulative hours: ${currTotalHours === 0 ? "0 hours" : `${currTotalHours.toFixed(1)} hrs`} this week compared to ${prevTotalHours.toFixed(1)} hrs last week`}
           >
             <defs>
               <linearGradient
@@ -533,9 +521,9 @@ export function TodayScreen() {
               className="focus-activity-line-curr"
             />
 
-            {/* Live pulsing dot indicator at current day */}
+            {/* Live pulsing dot indicator at exact time point */}
             <circle
-              cx={currLastX}
+              cx={currPreciseX}
               cy={currLastY}
               r="6.5"
               fill="none"
@@ -543,7 +531,7 @@ export function TodayScreen() {
               strokeWidth="2"
               className="focus-trend-pulse"
             />
-            <circle cx={currLastX} cy={currLastY} r="3" fill="#282f2c" />
+            <circle cx={currPreciseX} cy={currLastY} r="3.5" fill="#f1c75b" />
 
             {/* X-axis day labels */}
             {dayLabels.map((lbl, i) => {
@@ -564,6 +552,34 @@ export function TodayScreen() {
               );
             })}
           </svg>
+
+          <div className="focus-activity-legend">
+            <div className="focus-activity-legend-item">
+              <div className="focus-activity-legend-header">
+                <i
+                  className="focus-activity-legend-swatch"
+                  aria-hidden="true"
+                />
+                <span className="focus-activity-legend-label">
+                  You ({currTotalHours === 0 ? "0h" : `${currTotalHours.toFixed(1)}h`})
+                </span>
+              </div>
+              {paceText ? (
+                <span className="focus-activity-pace">{paceText}</span>
+              ) : null}
+            </div>
+            <div className="focus-activity-legend-item">
+              <div className="focus-activity-legend-header">
+                <i
+                  className="focus-activity-legend-swatch is-prev"
+                  aria-hidden="true"
+                />
+                <span className="focus-activity-legend-label">
+                  Last week ({prevTotalHours === 0 ? "0h" : `${prevTotalHours.toFixed(1)}h`})
+                </span>
+              </div>
+            </div>
+          </div>
         </div>
       </section>
       <div className="focus-row">
@@ -585,19 +601,19 @@ export function TodayScreen() {
               className={stopRowClass(stop)}
               data-lane={stop.lane}
             >
-              {stop.kind === "future" ? (
+              {stop.kind === "past" ? (
                 <>
                   <button
                     ref={setStopRef(index)}
                     type="button"
                     disabled
-                    aria-label="Upcoming session"
+                    aria-label="Past sessions"
                   >
                     <span className="focus-path-hollow" aria-hidden="true" />
                   </button>
                   <span>
-                    <small>Up next</small>
-                    <b>Room for what&apos;s next</b>
+                    <small>Past</small>
+                    <b>Past sessions will appear here</b>
                   </span>
                 </>
               ) : null}

@@ -27,6 +27,7 @@ export interface AuthUser {
   email: string;
   displayName: string;
   mode: "supabase" | "demo";
+  createdAt?: string;
 }
 
 interface AuthApi {
@@ -159,6 +160,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             sessionUser.email?.split("@")[0] ??
             "Athlete",
           mode: "supabase",
+          createdAt: sessionUser.created_at,
         });
       } else {
         setUser(null);
@@ -179,6 +181,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             next.email?.split("@")[0] ??
             "Athlete",
           mode: "supabase",
+          createdAt: next.created_at,
         });
       });
       return () => sub.subscription.unsubscribe();

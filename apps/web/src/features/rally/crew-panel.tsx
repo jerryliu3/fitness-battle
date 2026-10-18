@@ -130,22 +130,28 @@ export function CrewPanel() {
         <div className="focus-crew-preview">
           <section className="focus-card focus-empty">
             <h2>Make room for your people.</h2>
-            <p className="fb-copy">
+            <p className="fb-copy" style={{ marginBottom: 20 }}>
               Private crews share a week of counted effort — invite codes,
               member standings, and a shared field when you register together.
             </p>
-            <div className="focus-actions">
-              {!user && (
-                <Link className="fb-btn" href="/login?next=/field">
-                  Sign in to join a crew
-                </Link>
-              )}
-              {!user && (
-                <Link className="fb-btn-line" href="/signup?next=/field">
+            {!user ? (
+              <div className="fb-row" style={{ width: "100%", gap: 10 }}>
+                <Link
+                  className="fb-btn"
+                  href="/signup?next=/field"
+                  style={{ flex: 1, textAlign: "center" }}
+                >
                   Create account
                 </Link>
-              )}
-            </div>
+                <Link
+                  className="fb-btn-line"
+                  href="/login?next=/field"
+                  style={{ flex: 1, textAlign: "center" }}
+                >
+                  Sign in
+                </Link>
+              </div>
+            ) : null}
           </section>
           <section className="focus-card">
             <p className="fb-kicker">What crews unlock</p>

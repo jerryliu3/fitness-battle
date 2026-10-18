@@ -386,12 +386,22 @@ function YouContent() {
             Create an account or sign in to connect trackers and keep progress
             with you.
           </p>
-          <Link href="/signup?next=/you" className="fb-btn">
-            Create account
-          </Link>
-          <Link href="/login?next=/you" className="fb-btn-line">
-            Sign in
-          </Link>
+          <div className="fb-row" style={{ width: "100%", gap: 10 }}>
+            <Link
+              href="/signup?next=/you"
+              className="fb-btn"
+              style={{ flex: 1, textAlign: "center" }}
+            >
+              Create account
+            </Link>
+            <Link
+              href="/login?next=/you"
+              className="fb-btn-line"
+              style={{ flex: 1, textAlign: "center" }}
+            >
+              Sign in
+            </Link>
+          </div>
         </section>
       </div>
     );

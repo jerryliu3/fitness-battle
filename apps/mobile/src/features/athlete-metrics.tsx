@@ -42,8 +42,8 @@ export function AthleteMetrics({
     .sort((a, b) => a.periodStart.localeCompare(b.periodStart))
     .map((r) => r.eloAfter);
   if (!values.length || values.at(-1) !== elo) values.push(elo);
-  const low = Math.min(...values) - 20,
-    high = Math.max(...values) + 20;
+  const low = Math.max(0, Math.min(...values) - 20),
+    high = Math.max(values.length ? low + 40 : 40, Math.max(...values) + 20);
   const points = values
     .map(
       (v, i) =>

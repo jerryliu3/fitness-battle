@@ -192,12 +192,12 @@ export default function Home() {
   );
 
   // SVG chart geometry
-  const chartW = 320;
-  const chartH = 126;
-  const xStart = 32;
-  const xEnd = 308;
+  const chartW = 230;
+  const chartH = 120;
+  const xStart = 28;
+  const xEnd = 220;
   const yTop = 14;
-  const yBottom = 96;
+  const yBottom = 92;
   const yMidPos = Math.round((yTop + yBottom) / 2);
 
   const maxVal = Math.max(...currCumulativeHours, ...prevCumulativeHours, 0.5);
@@ -208,6 +208,15 @@ export default function Home() {
   const getX = (dayIdx: number) => xStart + ((dayIdx + 1) / 7) * (xEnd - xStart);
   const getDayCenterX = (dayIdx: number) => xStart + ((dayIdx + 0.5) / 7) * (xEnd - xStart);
 
+  const weekDurationMs = weekEnd - weekStart;
+  const weekProgress = Math.min(
+    1,
+    Math.max(0, (now.getTime() - weekStart) / (weekDurationMs || 1)),
+  );
+  // Continuous X coordinate reflecting exact progress through the week
+  const currPreciseX = Number((xStart + weekProgress * (xEnd - xStart)).toFixed(1));
+  const currLastY = getY(currTotalHours);
+
   const prevPoints = [
     `${xStart.toFixed(1)},${getY(0).toFixed(1)}`,
     ...prevCumulativeHours.map(
@@ -217,14 +226,20 @@ export default function Home() {
 
   const currPointsList = [
     `${xStart.toFixed(1)},${getY(0).toFixed(1)}`,
-    ...currCumulativeHours.map(
-      (h, i) => `${getX(i).toFixed(1)},${getY(h).toFixed(1)}`,
-    ),
+    ...currCumulativeHours
+      .slice(0, nowDayIndex)
+      .map((h, i) => `${getX(i).toFixed(1)},${getY(h).toFixed(1)}`),
+    `${currPreciseX.toFixed(1)},${currLastY.toFixed(1)}`,
   ];
   const currLinePoints = currPointsList.join(" ");
-  const currLastX = getX(nowDayIndex);
-  const currLastY = getY(currCumulativeHours[nowDayIndex] ?? 0);
-  const currAreaPoints = `${currLinePoints} ${currLastX.toFixed(1)},${yBottom} ${xStart.toFixed(1)},${yBottom}`;
+  const currAreaPoints = `${currLinePoints} ${currPreciseX.toFixed(1)},${yBottom} ${xStart.toFixed(1)},${yBottom}`;
+
+  const paceText =
+    hoursDelta > 0
+      ? "Ahead of pace"
+      : hoursDelta === 0
+        ? "On pace"
+        : null;
 
   const weekDays = Array.from({ length: 7 }, (_, i) => {
     const d = new Date(weekStart + i * 86_400_000 + 43_200_000);
@@ -328,176 +343,173 @@ export default function Home() {
         <View style={s.statsCard} accessibilityLabel="This week's progress">
           <View style={s.statsHeader}>
             <View>
-              <Text style={f.kicker}>This week · Cumulative hours</Text>
-              <Text style={s.statsMain}>{currTotalHours.toFixed(1)} hrs</Text>
+              <Text style={f.kicker}>This week</Text>
+              <View style={s.statsNumbers}>
+                <Text style={s.statsMain}>
+                  {currTotalHours === 0 ? "0 hours" : `${currTotalHours.toFixed(1)} hrs`}
+                </Text>
+                <Text style={s.statsSessionCount}>
+                  {weekActivities.length} {weekActivities.length === 1 ? "session" : "sessions"}
+                </Text>
+              </View>
               {sportById(state.primary).gps && weekDistanceM > 0 ? (
                 <Text style={[f.small, { marginTop: 2 }]}>
                   {formatDistanceM(weekDistanceM, units)} {unitLabel}
                 </Text>
               ) : null}
             </View>
-            <View style={s.statsSummary}>
-              <Text style={f.small}>
-                <Text style={{ fontWeight: "700", color: "#282f2c" }}>
-                  {weekActivities.length}
-                </Text>{" "}
-                {weekActivities.length === 1 ? "session" : "sessions"}
-              </Text>
-              <Text style={f.small}>
-                <Text style={{ fontWeight: "700", color: "#282f2c" }}>
-                  {activeDaysCount}
-                </Text>{" "}
-                of 7 days
-              </Text>
-            </View>
           </View>
 
-          <View style={s.chartLegend}>
-            <View style={s.legendItems}>
+          <View style={s.chartWrap}>
+            <Svg
+              style={{ flex: 1 }}
+              height={chartH}
+              viewBox={`0 0 ${chartW} ${chartH}`}
+              accessible
+              accessibilityLabel={`Cumulative hours: ${currTotalHours === 0 ? "0 hours" : `${currTotalHours.toFixed(1)} hrs`} this week compared to ${prevTotalHours.toFixed(1)} hrs last week`}
+            >
+              <Defs>
+                <LinearGradient id="mobile-act-grad" x1="0" y1="0" x2="0" y2="1">
+                  <Stop offset="0" stopColor="#f1c75b" stopOpacity="0.4" />
+                  <Stop offset="1" stopColor="#f1c75b" stopOpacity="0.0" />
+                </LinearGradient>
+              </Defs>
+
+              {/* Horizontal gridlines & Y labels */}
+              <SvgText
+                x="22"
+                y={yTop + 3}
+                textAnchor="end"
+                fontSize="9"
+                fill="#616c63"
+                fontWeight="500"
+              >
+                {`${yMax}h`}
+              </SvgText>
+              <Line
+                x1={xStart}
+                y1={yTop}
+                x2={xEnd}
+                y2={yTop}
+                stroke="#e0e5dc"
+                strokeDasharray="3 3"
+              />
+
+              <SvgText
+                x="22"
+                y={yMidPos + 3}
+                textAnchor="end"
+                fontSize="9"
+                fill="#616c63"
+                fontWeight="500"
+              >
+                {`${yMid}h`}
+              </SvgText>
+              <Line
+                x1={xStart}
+                y1={yMidPos}
+                x2={xEnd}
+                y2={yMidPos}
+                stroke="#e0e5dc"
+                strokeDasharray="3 3"
+              />
+
+              <SvgText
+                x="22"
+                y={yBottom + 3}
+                textAnchor="end"
+                fontSize="9"
+                fill="#616c63"
+                fontWeight="500"
+              >
+                0h
+              </SvgText>
+              <Line
+                x1={xStart}
+                y1={yBottom}
+                x2={xEnd}
+                y2={yBottom}
+                stroke="#e0e5dc"
+              />
+
+              {/* Previous week line */}
+              <Polyline
+                points={prevPoints}
+                fill="none"
+                stroke="#819486"
+                strokeWidth={1.8}
+                strokeDasharray="4 4"
+              />
+
+              {/* Current week area & line */}
+              <Polygon
+                points={currAreaPoints}
+                fill="url(#mobile-act-grad)"
+              />
+              <Polyline
+                points={currLinePoints}
+                fill="none"
+                stroke="#f1c75b"
+                strokeWidth={2.8}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+
+              {/* Live indicator dot */}
+              <Circle
+                cx={currPreciseX}
+                cy={currLastY}
+                r={6.5}
+                fill="none"
+                stroke="#f1c75b"
+                strokeWidth={2}
+              />
+              <Circle cx={currPreciseX} cy={currLastY} r={3.5} fill="#f1c75b" />
+
+              {/* Day labels */}
+              {dayLabels.map((lbl, i) => {
+                const cx = getDayCenterX(i);
+                const isToday = i === nowDayIndex;
+                return (
+                  <SvgText
+                    key={i}
+                    x={cx}
+                    y={yBottom + 16}
+                    textAnchor="middle"
+                    fontSize="10"
+                    fontWeight={isToday ? "700" : "500"}
+                    fill={isToday ? "#282f2c" : "#616c63"}
+                  >
+                    {lbl}
+                  </SvgText>
+                );
+              })}
+            </Svg>
+
+            <View style={s.chartLegend}>
               <View style={s.legendItem}>
-                <View style={s.legendSwatchCurr} />
-                <Text style={s.legendText}>You ({currTotalHours.toFixed(1)}h)</Text>
+                <View style={s.legendItemHeader}>
+                  <View style={s.legendSwatchCurr} />
+                  <Text style={s.legendText}>
+                    You ({currTotalHours === 0 ? "0h" : `${currTotalHours.toFixed(1)}h`})
+                  </Text>
+                </View>
+                {paceText ? (
+                  <View style={s.paceBadge}>
+                    <Text style={s.paceText}>{paceText}</Text>
+                  </View>
+                ) : null}
               </View>
               <View style={s.legendItem}>
-                <View style={s.legendSwatchPrev} />
-                <Text style={s.legendText}>Last week ({prevTotalHours.toFixed(1)}h)</Text>
+                <View style={s.legendItemHeader}>
+                  <View style={s.legendSwatchPrev} />
+                  <Text style={s.legendText}>
+                    Last week ({prevTotalHours === 0 ? "0h" : `${prevTotalHours.toFixed(1)}h`})
+                  </Text>
+                </View>
               </View>
-            </View>
-            <View style={s.deltaPill}>
-              <Text style={s.deltaText}>
-                {hoursDelta > 0
-                  ? `+${hoursDelta.toFixed(1)}h vs last week`
-                  : hoursDelta < 0
-                    ? `${hoursDelta.toFixed(1)}h vs last week`
-                    : "On pace"}
-              </Text>
             </View>
           </View>
-
-          <Svg
-            width="100%"
-            height={chartH}
-            viewBox={`0 0 ${chartW} ${chartH}`}
-            accessible
-            accessibilityLabel={`Cumulative hours: ${currTotalHours.toFixed(1)} hrs this week compared to ${prevTotalHours.toFixed(1)} hrs last week`}
-          >
-            <Defs>
-              <LinearGradient id="mobile-act-grad" x1="0" y1="0" x2="0" y2="1">
-                <Stop offset="0" stopColor="#f1c75b" stopOpacity="0.4" />
-                <Stop offset="1" stopColor="#f1c75b" stopOpacity="0.0" />
-              </LinearGradient>
-            </Defs>
-
-            {/* Horizontal gridlines & Y labels */}
-            <SvgText
-              x="24"
-              y={yTop + 3}
-              textAnchor="end"
-              fontSize="9"
-              fill="#616c63"
-              fontWeight="500"
-            >
-              {`${yMax}h`}
-            </SvgText>
-            <Line
-              x1={xStart}
-              y1={yTop}
-              x2={xEnd}
-              y2={yTop}
-              stroke="#e0e5dc"
-              strokeDasharray="3 3"
-            />
-
-            <SvgText
-              x="24"
-              y={yMidPos + 3}
-              textAnchor="end"
-              fontSize="9"
-              fill="#616c63"
-              fontWeight="500"
-            >
-              {`${yMid}h`}
-            </SvgText>
-            <Line
-              x1={xStart}
-              y1={yMidPos}
-              x2={xEnd}
-              y2={yMidPos}
-              stroke="#e0e5dc"
-              strokeDasharray="3 3"
-            />
-
-            <SvgText
-              x="24"
-              y={yBottom + 3}
-              textAnchor="end"
-              fontSize="9"
-              fill="#616c63"
-              fontWeight="500"
-            >
-              0h
-            </SvgText>
-            <Line
-              x1={xStart}
-              y1={yBottom}
-              x2={xEnd}
-              y2={yBottom}
-              stroke="#e0e5dc"
-            />
-
-            {/* Previous week line */}
-            <Polyline
-              points={prevPoints}
-              fill="none"
-              stroke="#819486"
-              strokeWidth={1.8}
-              strokeDasharray="4 4"
-            />
-
-            {/* Current week area & line */}
-            <Polygon
-              points={currAreaPoints}
-              fill="url(#mobile-act-grad)"
-            />
-            <Polyline
-              points={currLinePoints}
-              fill="none"
-              stroke="#282f2c"
-              strokeWidth={2.6}
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-
-            {/* Live indicator dot */}
-            <Circle
-              cx={currLastX}
-              cy={currLastY}
-              r={6.5}
-              fill="none"
-              stroke="#f1c75b"
-              strokeWidth={2}
-            />
-            <Circle cx={currLastX} cy={currLastY} r={3} fill="#282f2c" />
-
-            {/* Day labels */}
-            {dayLabels.map((lbl, i) => {
-              const cx = getDayCenterX(i);
-              const isToday = i === nowDayIndex;
-              return (
-                <SvgText
-                  key={i}
-                  x={cx}
-                  y={yBottom + 16}
-                  textAnchor="middle"
-                  fontSize="10"
-                  fontWeight={isToday ? "700" : "500"}
-                  fill={isToday ? "#282f2c" : "#616c63"}
-                >
-                  {lbl}
-                </SvgText>
-              );
-            })}
-          </Svg>
         </View>
         <View style={f.row}>
           <Text style={f.h2}>Your fitness journey</Text>
@@ -506,30 +518,7 @@ export default function Home() {
           ) : null}
         </View>
         <View style={s.journey}>
-          <View style={[s.stop, { opacity: 0.72 }]}>
-            <View
-              style={[
-                s.tile,
-                s.tileAbs,
-                {
-                  left: PATH_R,
-                  backgroundColor: "#f4f7f0",
-                  borderStyle: "dashed",
-                  borderColor: "#c5d2bb",
-                  borderBottomColor: "#b7c4ad",
-                },
-              ]}
-              accessibilityLabel="Upcoming session"
-            >
-              <View style={s.hollow} />
-            </View>
-            <View style={[s.stopCopy, s.copyRight]}>
-              <Text style={f.kicker}>Up next</Text>
-              <Text style={f.rowTitle}>Room for what&apos;s next</Text>
-            </View>
-          </View>
           <View style={s.stop}>
-            <PathCurve d="M 76 0 C 76 28, 24 36, 24 58 S 62 78, 50 100" />
             <Pressable
               accessibilityRole="button"
               accessibilityLabel="Ember: open today's session"
@@ -538,9 +527,9 @@ export default function Home() {
                 s.tileAbs,
                 {
                   left: PATH_C,
-                  backgroundColor: "#f1c75b",
-                  borderColor: "#dfb648",
-                  borderBottomColor: "#c99f36",
+                  backgroundColor: "#d4ee89",
+                  borderColor: "#b5d55b",
+                  borderBottomColor: "#9ebf42",
                   overflow: "visible",
                   width: 82,
                   height: 82,
@@ -630,11 +619,36 @@ export default function Home() {
               </View>
             );
           })}
+          {sessions.length === 0 ? (
+            <View style={[s.stop, { opacity: 0.72 }]}>
+              <PathCurve d="M 50 0 C 50 28, 24 40, 24 100" />
+              <View
+                style={[
+                  s.tile,
+                  s.tileAbs,
+                  {
+                    left: PATH_L,
+                    backgroundColor: "#f4f7f0",
+                    borderStyle: "dashed",
+                    borderColor: "#c5d2bb",
+                    borderBottomColor: "#b7c4ad",
+                  },
+                ]}
+                accessibilityLabel="Past sessions"
+              >
+                <View style={s.hollow} />
+              </View>
+              <View style={[s.stopCopy, s.copyLeft]}>
+                <Text style={f.kicker}>Past</Text>
+                <Text style={f.rowTitle}>Past sessions will appear here</Text>
+              </View>
+            </View>
+          ) : null}
           <View style={s.stop}>
             <PathCurve
               d={
                 sessions.length === 0
-                  ? "M 50 0 C 22 32, 78 64, 50 100"
+                  ? "M 24 0 C 24 34, 78 58, 50 100"
                   : sessions.length % 2 === 1
                     ? "M 24 0 C 24 34, 78 58, 50 100"
                     : "M 76 0 C 76 34, 22 58, 50 100"
@@ -705,24 +719,31 @@ const s = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "flex-end",
   },
-  statsSummary: {
-    alignItems: "flex-end",
-    gap: 2,
-  },
-  chartLegend: {
+  statsNumbers: {
     flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingTop: 10,
-    borderTopWidth: 1,
-    borderTopColor: "#e0e5dc",
+    alignItems: "baseline",
+    gap: 8,
   },
-  legendItems: {
+  statsSessionCount: {
+    fontFamily: "DMSans_500Medium",
+    fontSize: 13,
+    color: "#616c63",
+  },
+  chartWrap: {
     flexDirection: "row",
     alignItems: "center",
     gap: 12,
   },
+  chartLegend: {
+    flexDirection: "column",
+    gap: 10,
+    minWidth: 95,
+  },
   legendItem: {
+    flexDirection: "column",
+    gap: 3,
+  },
+  legendItemHeader: {
     flexDirection: "row",
     alignItems: "center",
     gap: 6,
@@ -731,7 +752,7 @@ const s = StyleSheet.create({
     width: 14,
     height: 3,
     borderRadius: 2,
-    backgroundColor: "#282f2c",
+    backgroundColor: "#f1c75b",
   },
   legendSwatchPrev: {
     width: 14,
@@ -741,19 +762,21 @@ const s = StyleSheet.create({
     borderStyle: "dashed",
   },
   legendText: {
-    fontFamily: "DMSans_400Regular",
+    fontFamily: "DMSans_500Medium",
     fontSize: 11,
     color: "#616c63",
   },
-  deltaPill: {
-    backgroundColor: "#eef0e9",
-    paddingHorizontal: 7,
-    paddingVertical: 2,
-    borderRadius: 6,
+  paceBadge: {
+    backgroundColor: "#e0e5dc",
+    paddingHorizontal: 5,
+    paddingVertical: 1,
+    borderRadius: 4,
+    alignSelf: "flex-start",
+    marginTop: 2,
   },
-  deltaText: {
+  paceText: {
     fontFamily: "DMSans_700Bold",
-    fontSize: 11,
+    fontSize: 10,
     color: "#282f2c",
   },
   expandPanel: {
