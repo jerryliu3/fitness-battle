@@ -1,10 +1,29 @@
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { hasSeenBootSplash, markBootSplashSeen } from "./boot-gate";
 
+function storageMock() {
+  const store = new Map<string, string>();
+  return {
+    getItem: (key: string) => store.get(key) ?? null,
+    setItem: (key: string, value: string) => {
+      store.set(key, value);
+    },
+    removeItem: (key: string) => {
+      store.delete(key);
+    },
+    clear: () => store.clear(),
+  };
+}
+
 describe("boot splash persistence", () => {
+  beforeEach(() => {
+    vi.stubGlobal("window", {});
+    vi.stubGlobal("localStorage", storageMock());
+    vi.stubGlobal("sessionStorage", storageMock());
+  });
+
   afterEach(() => {
-    localStorage.clear();
-    sessionStorage.clear();
+    vi.unstubAllGlobals();
   });
 
   it("remembers the splash across new sessions via localStorage", () => {
