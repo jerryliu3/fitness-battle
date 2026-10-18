@@ -26,8 +26,10 @@ import {
   competeNow,
   competePeriodWindow,
   countsOnTrack,
+  dayKey,
   formatDistanceM,
   formatVolume,
+  getZonedWeekday,
   sportById,
   type Activity,
 } from "@fitness-battle/shared";
@@ -123,29 +125,32 @@ export default function Home() {
   const prevPeriodResult = state.periodResults.find(
     (r) =>
       r.sport === state.primary &&
+      (r.track === "open" || !r.track) &&
       new Date(r.periodStart).getTime() >= prevWeekStart - 3600000 &&
       new Date(r.periodStart).getTime() <= prevWeekStart + 3600000,
   );
 
-  // Index of today (0 = Monday, 6 = Sunday)
-  const nowDayIndex = Math.min(
-    6,
-    Math.max(0, Math.floor((now.getTime() - weekStart) / 86_400_000)),
-  );
+  // Index of today (0 = Monday, 6 = Sunday) in America/New_York
+  const weekday = getZonedWeekday(now, APP_TIMEZONE);
+  const nowDayIndex = Math.min(6, Math.max(0, weekday === 0 ? 6 : weekday - 1));
 
   // Cumulative hours for current week up to now
   let currRunningSec = 0;
   const currCumulativeHours: number[] = [];
   for (let i = 0; i <= nowDayIndex; i++) {
-    const dayEnd = Math.min(weekStart + (i + 1) * 86_400_000, now.getTime() + 1000);
-    const dayActs = weekActivities.filter((a) => {
-      const t = new Date(a.startedAt).getTime();
-      const dayStart = weekStart + i * 86_400_000;
-      return t >= dayStart && t < dayEnd;
-    });
+    const d = new Date(weekStart + i * 86_400_000 + 43_200_000);
+    const dayIso = dayKey(d, APP_TIMEZONE);
+    const dayActs = weekActivities.filter(
+      (a) => dayKey(new Date(a.startedAt), APP_TIMEZONE) === dayIso,
+    );
     const daySec = dayActs.reduce((acc, a) => acc + (a.movingSec || 0), 0);
     currRunningSec += daySec;
     currCumulativeHours.push(Number((currRunningSec / 3600).toFixed(2)));
+  }
+  if (currCumulativeHours.length > 0) {
+    currCumulativeHours[currCumulativeHours.length - 1] = Number(
+      (weekMovingSec / 3600).toFixed(2),
+    );
   }
 
   // Cumulative hours for previous week (all 7 days)
@@ -153,12 +158,11 @@ export default function Home() {
   const prevCumulativeHours: number[] = [];
   if (prevWeekActivities.length > 0) {
     for (let i = 0; i < 7; i++) {
-      const dayStart = prevWeekStart + i * 86_400_000;
-      const dayEnd = dayStart + 86_400_000;
-      const dayActs = prevWeekActivities.filter((a) => {
-        const t = new Date(a.startedAt).getTime();
-        return t >= dayStart && t < dayEnd;
-      });
+      const d = new Date(prevWeekStart + i * 86_400_000 + 43_200_000);
+      const dayIso = dayKey(d, APP_TIMEZONE);
+      const dayActs = prevWeekActivities.filter(
+        (a) => dayKey(new Date(a.startedAt), APP_TIMEZONE) === dayIso,
+      );
       const daySec = dayActs.reduce((acc, a) => acc + (a.movingSec || 0), 0);
       prevRunningSec += daySec;
       prevCumulativeHours.push(Number((prevRunningSec / 3600).toFixed(2)));
@@ -166,7 +170,9 @@ export default function Home() {
   } else if (prevPeriodResult && prevPeriodResult.movingSec > 0) {
     const totalPrevHours = prevPeriodResult.movingSec / 3600;
     for (let i = 0; i < 7; i++) {
-      prevCumulativeHours.push(Number(((totalPrevHours * (i + 1)) / 7).toFixed(2)));
+      prevCumulativeHours.push(
+        Number(((totalPrevHours * (i + 1)) / 7).toFixed(2)),
+      );
     }
   } else {
     for (let i = 0; i < 7; i++) {
@@ -221,15 +227,15 @@ export default function Home() {
   const currAreaPoints = `${currLinePoints} ${currLastX.toFixed(1)},${yBottom} ${xStart.toFixed(1)},${yBottom}`;
 
   const weekDays = Array.from({ length: 7 }, (_, i) => {
-    const d = new Date(weekStart + i * 86_400_000);
-    const dayIso = d.toISOString().slice(0, 10);
+    const d = new Date(weekStart + i * 86_400_000 + 43_200_000);
+    const dayIso = dayKey(d, APP_TIMEZONE);
     const dayActs = weekActivities.filter(
-      (a) => a.startedAt.slice(0, 10) === dayIso,
+      (a) => dayKey(new Date(a.startedAt), APP_TIMEZONE) === dayIso,
     );
     return {
       key: dayIso,
       label: dayLabels[i],
-      isToday: dayIso === nowDayIso,
+      isToday: i === nowDayIndex,
       hasActivity: dayActs.length > 0,
     };
   });
