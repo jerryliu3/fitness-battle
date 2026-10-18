@@ -81,6 +81,7 @@ function YouContent() {
   const [authPrompt, setAuthPrompt] = useState<{ open: boolean; reason: string } | null>(null);
   const [connectingProvider, setConnectingProvider] = useState<ProviderId | null>(null);
   const [profileSaved, setProfileSaved] = useState(false);
+  const [profileError, setProfileError] = useState<string | null>(null);
   const [primaryNote, setPrimaryNote] = useState<string | null>(null);
   const [confirmFreeze, setConfirmFreeze] = useState(false);
   const searchParams = useSearchParams();
@@ -671,11 +672,21 @@ function YouContent() {
                     onChange={(event) => setCity(event.target.value)}
                   />
                 </label>
+                {profileError ? (
+                  <p className="fb-error" role="alert">{profileError}</p>
+                ) : null}
                 <button
                   type="button"
                   className="fb-btn"
                   onClick={() => {
-                    if (name.trim()) dispatch({ type: "rename", name });
+                    const trimmedName = name.trim();
+                    if (!trimmedName) {
+                      setProfileError("Display name cannot be empty.");
+                      setProfileSaved(false);
+                      return;
+                    }
+                    setProfileError(null);
+                    dispatch({ type: "rename", name: trimmedName });
                     if (city.trim()) dispatch({ type: "set-city", city });
                     setProfileSaved(true);
                     setTimeout(() => setProfileSaved(false), 3000);
