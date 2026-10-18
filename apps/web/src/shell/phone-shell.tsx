@@ -164,23 +164,15 @@ export function PhoneShell({
     );
   }
 
-  if (!dataReady) {
-    return (
-      <div className="phone-frame">
-        <div className="phone-shell">
-          <header className="focus-shell-header">
-            <Link href="/today">OVERTAEK</Link>
-            <span>A LITTLE FURTHER, TOGETHER.</span>
-          </header>
-          <div className="phone-main phone-main-solo">
-            <p className="fb-copy" style={{ margin: "auto", textAlign: "center" }}>
-              Loading…
-            </p>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  const accountLoadingBody = panel(
+    <p
+      className="fb-copy phone-account-loading"
+      style={{ margin: "48px auto", textAlign: "center", maxWidth: "28ch" }}
+      role="status"
+    >
+      Syncing your account…
+    </p>,
+  );
 
   return (
     <div className="phone-frame">
@@ -190,7 +182,9 @@ export function PhoneShell({
           <span>A LITTLE FURTHER, TOGETHER.</span>
         </header>
         {fieldNotice ? null : <ReturnProgress />}
-        {matched ? (
+        {!dataReady ? (
+          accountLoadingBody
+        ) : matched ? (
           <div className="phone-panels">
             {SHELL_TABS.map((tab) => {
               const on = active === tab.id;
