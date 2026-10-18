@@ -198,8 +198,12 @@ export function ArenaScreen() {
             <div style={{ margin: "20px 0 28px" }}>
               <button
                 type="button"
-                className="fb-btn-line"
-                style={{ width: "100%", justifyContent: "center" }}
+                className="fb-btn"
+                style={{
+                  width: "100%",
+                  justifyContent: "center",
+                  padding: "12px 20px",
+                }}
                 onClick={() => {
                   setSport(null);
                   setRegister(true);
