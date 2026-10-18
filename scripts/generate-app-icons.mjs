@@ -40,24 +40,28 @@ for (const [theme, svg] of [['white',normalized],['black',darkNormalized]]) {
   for (const size of [16,32,48,64,180,192,512,1024]) await png(`apps/web/public/icons/${theme}/icon-${size}.png`,size,svg);
 }
 
-// Review only: scale each racer around its fixed head center; allow wakes to crop.
+// Review only: preserve the horizontal gap-to-diameter ratio around the pair midpoint.
 const studies = [['current',1],['roomier',1.2],['bold',1.35]];
 await mkdir('docs/design-studies/the-pass/scale-study',{recursive:true});
 let cards = '';
 for (const [id,scale] of studies) {
   for (const [theme, original] of [['white',source],['black',darkSource]]) {
-    // Each local origin is the head center. The full racer grows around it,
-    // so neither head moves and the wakes can extend beyond the tile.
+    // Scale horizontal offsets around x=128 with the circle diameter. This
+    // preserves the gap ratio while keeping the pair centered and head y fixed.
     const svg = scale === 1 ? original : original.replace(
       /transform="translate\((88 145|168 93)\)" data-racer=/g,
-      `transform="translate($1) scale(${scale})" data-racer=`,
+      (_, center) => {
+        const [x,y] = center.split(' ').map(Number);
+        const spacedX = 128 + (x - 128) * scale;
+        return `transform="translate(${spacedX} ${y}) scale(${scale})" data-racer=`;
+      },
     );
     await save(`docs/design-studies/the-pass/scale-study/${id}-${theme}.svg`,svg);
     const label = id === 'current' ? 'Current · 100%' : id === 'roomier' ? 'Balanced · 120%' : 'Bold · 135%';
     cards += `<article><h2>${label}</h2><p>${theme === 'white' ? 'White' : 'Black'} background</p><img class="hero" src="${id}-${theme}.svg" alt="${label}, ${theme}"><div class="sizes">${[64,32,16].map(s=>`<figure><img src="${id}-${theme}.svg" width="${s}" height="${s}" alt="${s}px"><figcaption>${s}px</figcaption></figure>`).join('')}</div><a href="${id}-${theme}.svg" download>Download SVG</a></article>`;
   }
 }
-await save('docs/design-studies/the-pass/scale-study/index.html',`<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Overtaek · Shared Start scale study</title><style>*{box-sizing:border-box}body{margin:0;background:#f1f2ee;color:#252c28;font:15px/1.5 system-ui,sans-serif}main{max-width:1140px;margin:auto;padding:40px 24px}h1{font-size:40px;line-height:1.1;letter-spacing:-1.5px;margin:12px 0}header{max-width:800px;margin-bottom:32px}header small{letter-spacing:2px}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:24px}article{background:#fff;border:1px solid #d8dcd5;border-radius:24px;padding:24px}h2{font-size:21px;margin:0}article p{color:#68716b;margin:4px 0 20px}.hero{display:block;width:256px;max-width:100%;height:auto;border-radius:22.3%;border:1px solid #eee;margin:auto}.sizes{display:flex;align-items:center;justify-content:center;gap:24px;height:116px}figure{margin:0;text-align:center}figure img{border-radius:22.3%;display:block}figcaption{font-size:11px;color:#68716b}a{color:inherit;font-size:13px}@media(max-width:600px){.grid{grid-template-columns:1fr}h1{font-size:32px}}</style><main><header><small>OVERTAEK / SHARED START</small><h1>Bigger circles. Same centers.</h1><p>Current composition, plus 120% and 135% scales with each leading circle fixed at its original center. All keep the selected six gold echoes and four silver echoes. Rounded previews show typical icon masking; SVG downloads stay square.</p><p><b>Recommendation: compare 120% first.</b> It gives the circles more presence without shifting their positions. Wakes grow backward and may crop at the tile edge. 135% is the bolder option. Production scale remains unchanged pending review. Both black and white assets are now available.</p></header><div class="grid">${cards}</div></main></html>`);
+await save('docs/design-studies/the-pass/scale-study/index.html',`<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Overtaek · Shared Start scale study</title><style>*{box-sizing:border-box}body{margin:0;background:#f1f2ee;color:#252c28;font:15px/1.5 system-ui,sans-serif}main{max-width:1140px;margin:auto;padding:40px 24px}h1{font-size:40px;line-height:1.1;letter-spacing:-1.5px;margin:12px 0}header{max-width:800px;margin-bottom:32px}header small{letter-spacing:2px}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:24px}article{background:#fff;border:1px solid #d8dcd5;border-radius:24px;padding:24px}h2{font-size:21px;margin:0}article p{color:#68716b;margin:4px 0 20px}.hero{display:block;width:256px;max-width:100%;height:auto;border-radius:22.3%;border:1px solid #eee;margin:auto}.sizes{display:flex;align-items:center;justify-content:center;gap:24px;height:116px}figure{margin:0;text-align:center}figure img{border-radius:22.3%;display:block}figcaption{font-size:11px;color:#68716b}a{color:inherit;font-size:13px}@media(max-width:600px){.grid{grid-template-columns:1fr}h1{font-size:32px}}</style><main><header><small>OVERTAEK / SHARED START</small><h1>Bigger circles. Room to pass.</h1><p>Current composition, plus 120% and 135% scales with proportional spacing between the paths. All keep the selected six gold echoes and four silver echoes. Rounded previews show typical icon masking; SVG downloads stay square.</p><p><b>Recommendation: compare 120% first.</b> The pair stays centered and each circle keeps its vertical position. Horizontal spacing grows with diameter, keeping the clear gap at about 57% of the outer circle diameter. Wakes grow backward and may crop at the tile edge. 135% is the bolder option. Production scale remains unchanged pending review. Both black and white assets are now available.</p></header><div class="grid">${cards}</div></main></html>`);
 console.log('Generated explicit black/white assets and a three-scale review.');
 await png('apps/mobile/assets/adaptive-icon-black.png',1024,foreground.replaceAll('#ffffff','#000000'));
 for (const [theme, paint] of [['white','#ffffff'],['black','#000000']]) {
