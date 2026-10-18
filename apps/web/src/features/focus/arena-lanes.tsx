@@ -133,19 +133,19 @@ export function ArenaLanes({
             <stop offset="1" stopColor="#e4ecdc" />
           </linearGradient>
           <linearGradient id="focus-you-lane" x2="0" y2="1">
-            <stop stopColor="#d4ee8966" />
-            <stop offset="1" stopColor="#d4ee8920" />
+            <stop stopColor="#f1c75b66" />
+            <stop offset="1" stopColor="#f1c75b20" />
           </linearGradient>
           <radialGradient id="focus-you-glow" cx="50%" cy="50%" r="50%">
-            <stop stopColor="#d4ee89" stopOpacity="0.55" />
-            <stop offset="1" stopColor="#d4ee89" stopOpacity="0" />
+            <stop stopColor="#f1c75b" stopOpacity="0.55" />
+            <stop offset="1" stopColor="#f1c75b" stopOpacity="0" />
           </radialGradient>
           <filter id="focus-soft" x="-40%" y="-40%" width="180%" height="180%">
             <feDropShadow
               dx="0"
               dy="3"
               stdDeviation="3"
-              floodColor="#26382d"
+              floodColor="#282f2c"
               floodOpacity="0.18"
             />
           </filter>
@@ -268,8 +268,8 @@ export function ArenaLanes({
                 cx={xx}
                 cy={yy}
                 r={l.you ? 23 : 18}
-                fill={l.you ? "#26382d" : active ? "#d4ee89" : "#ffffff"}
-                stroke={l.you ? "#d4ee89" : active ? "#9bbf63" : "#c9d5bf"}
+                fill={l.you ? "#282f2c" : active ? "#f1c75b" : "#ffffff"}
+                stroke={l.you ? "#f1c75b" : active ? "#deb142" : "#c9d5bf"}
                 strokeWidth={l.you ? 4 : 2}
                 filter={active ? "url(#focus-soft)" : undefined}
               />
@@ -278,7 +278,7 @@ export function ArenaLanes({
                 y={yy + 4}
                 textAnchor="middle"
                 className="lane-initial"
-                fill={l.you ? "#f7fbef" : "#26382d"}
+                fill={l.you ? "#fafaf7" : "#282f2c"}
               >
                 {position.edge
                   ? position.edge === "ahead"
@@ -292,7 +292,7 @@ export function ArenaLanes({
                 width="52"
                 height="20"
                 rx="10"
-                fill={l.you ? "#26382d" : "#ffffffee"}
+                fill={l.you ? "#282f2c" : "#ffffffee"}
                 stroke="#d3ddcb"
               />
               <text
@@ -300,7 +300,7 @@ export function ArenaLanes({
                 y={yy + 42}
                 textAnchor="middle"
                 className="lane-total"
-                fill={l.you ? "#d4ee89" : "#26382d"}
+                fill={l.you ? "#f1c75b" : "#282f2c"}
                 style={{ fontSize: 10 }}
               >
                 {formatLastUpdated(l)}

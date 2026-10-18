@@ -1,16 +1,17 @@
 .phone-frame {
-  background: #fafbf8;
+  background: #fafaf7;
 }
 .phone-shell {
-  --ink: #26382d;
-  --muted: #768172;
-  --line: #e0e5dd;
-  --paper: #fafbf8;
-  --card: #fff;
-  --lime: #d4ee89;
-  --accent: #26382d;
-  --accent-soft: #edf2e8;
-  --green-soft: #edf4e6;
+  --ink: #282f2c;
+  --muted: #616c63;
+  --line: #e0e5dc;
+  --paper: #fafaf7;
+  --card: #ffffff;
+  --lime: #f1c75b;
+  --accent: #282f2c;
+  --accent-soft: #eef0e9;
+  --green-soft: #eef0e9;
+  --ot-secondary: #819486;
   --shell-pad-x: 24px;
   background: var(--paper);
   font-weight: 400;
@@ -33,7 +34,7 @@
   justify-content: space-between;
   padding: 0 max(24px, calc((100vw - 972px) / 2));
   border-bottom: 1px solid var(--line);
-  background: #fafbf8;
+  background: #fafaf7;
 }
 .focus-shell-header > a {
   text-decoration: none;
@@ -54,7 +55,7 @@
   gap: 6px;
 }
 .phone-shell .phone-tab {
-  border-radius: 16px;
+  border-radius: 12px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -66,15 +67,15 @@
   position: relative;
 }
 .phone-shell .phone-pill {
-  background: #d4ee89;
-  border-radius: 16px;
+  background: #f1c75b;
+  border-radius: 12px;
   inset: 4px;
 }
 .phone-shell .phone-tab[data-state="active"] {
-  color: #26382d;
+  color: #282f2c;
 }
 .phone-shell .phone-guest {
-  background: #edf2e8;
+  background: #eef0e9;
   font-size: 12px;
   border-radius: 10px;
 }
@@ -82,7 +83,7 @@
   font-size: 9px;
   letter-spacing: 1.5px;
   font-weight: 600;
-  color: #768172;
+  color: #616c63;
   margin: 0 0 10px;
   text-transform: uppercase;
 }
@@ -106,19 +107,21 @@
 .phone-shell .fb-copy {
   font-size: 13px;
   line-height: 1.8;
-  color: #768172;
+  color: #616c63;
 }
 .phone-shell .fb-note {
   font-size: 11px;
-  color: #768172;
+  color: #616c63;
   line-height: 1.7;
 }
 .phone-shell .fb-card,
 .phone-shell .sp-empty {
   background: #fff;
-  border: 1px solid #e0e5dd;
-  border-radius: 20px;
+  border: 1px solid #e0e5dc;
+  border-bottom: 3px solid #e0e5dc;
+  border-radius: 16px;
   padding: 23px;
+  box-shadow: 0 5px 18px #282f2c04;
 }
 .phone-shell .fb-btn,
 .phone-shell .fb-btn-line,
@@ -127,24 +130,31 @@
   font:
     500 12px var(--font-body),
     sans-serif;
-  border-radius: 11px;
+  border-radius: 12px;
   padding: 12px 17px;
   cursor: pointer;
+  transition: transform 0.1s ease, box-shadow 0.1s ease;
 }
 .phone-shell .fb-btn {
-  background: #26382d;
-  color: #f6faee;
-  border: 1px solid #26382d;
+  background: #282f2c;
+  color: #fafaf7;
+  border: 1px solid #282f2c;
+  border-bottom-width: 3px;
+  box-shadow: 0 2px 0 #00000012;
+}
+.phone-shell .fb-btn:active {
+  transform: translateY(1px);
+  box-shadow: none;
 }
 .phone-shell .fb-btn-line {
   background: transparent;
-  color: #26382d;
-  border: 1px solid #dce3d7;
+  color: #282f2c;
+  border: 1px solid #e0e5dc;
 }
 .phone-shell .fb-btn-ghost {
   background: transparent;
   border: 0;
-  color: #26382d;
+  color: #282f2c;
 }
 .phone-shell button:disabled {
   opacity: 0.45;
@@ -499,8 +509,8 @@
 .focus-portrait {
   width: 86px;
   height: 86px;
-  background: #26382d;
-  color: #d4ee89;
+  background: #282f2c;
+  color: #f1c75b;
   border-radius: 50%;
   display: grid;
   place-items: center;
@@ -859,19 +869,20 @@
   right: -4px;
   width: 20px;
   height: 20px;
-  background: #d4ee89;
+  background: #f1c75b;
+  color: #282f2c;
   border-radius: 50%;
   font: 10px sans-serif;
   display: grid;
   place-items: center;
-  border: 2px solid #fafbf8;
+  border: 2px solid #fafaf7;
 }
 .focus-path-row > span {
   position: absolute;
   top: 50%;
   z-index: 1;
   transform: translateY(-50%);
-  background: #fafbf8bb;
+  background: #fafaf7bb;
   display: flex;
   flex-direction: column;
   gap: 5px;
@@ -893,16 +904,17 @@
   font-size: 9px;
   text-transform: uppercase;
   letter-spacing: 1px;
-  color: #768172;
+  color: #616c63;
 }
 .focus-path-row > span b {
   font-size: 12px;
   font-weight: 500;
+  color: #282f2c;
 }
 .focus-path-row > span em {
   font-style: normal;
   font-size: 10px;
-  color: #768172;
+  color: #616c63;
   line-height: 1.6;
 }
 .focus-path-row.is-future {
@@ -929,12 +941,12 @@
   overflow: visible;
 }
 .focus-path-row.is-current > button {
-  background: #d4ee89;
+  background: #f1c75b;
   border-radius: 50%;
   width: 82px;
   height: 82px;
-  border: 2px solid #b5d55b;
-  border-bottom: 5px solid #9ebf42;
+  border: 2px solid #dfb648;
+  border-bottom: 5px solid #c99f36;
   overflow: visible;
   z-index: 1;
 }
@@ -943,7 +955,7 @@
   position: absolute;
   inset: -8px;
   border-radius: 50%;
-  border: 2px solid rgba(181, 213, 91, 0.85);
+  border: 2px solid rgba(241, 199, 91, 0.85);
   animation: fb-duo-pulse 2s cubic-bezier(0.25, 1, 0.5, 1) infinite;
   pointer-events: none;
   z-index: 0;
@@ -999,16 +1011,43 @@
   color: #43543f;
 }
 .focus-stats-card {
-  background: #edf2e8;
-  border: 1px solid #e0e5dd;
-  border-radius: 20px;
-  padding: 16px 20px;
+  background: #ffffff;
+  border: 1px solid #e0e5dc;
+  border-bottom: 3px solid #e0e5dc;
+  border-radius: 16px;
+  padding: 18px 20px 16px;
   margin: 6px 0 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  box-shadow: 0 5px 18px #282f2c04;
 }
 .focus-stats-body {
   display: flex;
   align-items: flex-end;
   gap: 18px;
+}
+.focus-stats-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+.focus-stats-header strong {
+  font-size: 24px;
+  font-weight: 600;
+  color: #282f2c;
+  letter-spacing: -0.02em;
+}
+.focus-stats-summary {
+  display: flex;
+  gap: 12px;
+  font-size: 12px;
+  color: #616c63;
+}
+.focus-stats-summary b {
+  color: #282f2c;
+  font-weight: 600;
 }
 .focus-stats-hours {
   flex: 0 0 auto;
@@ -1018,9 +1057,82 @@
   display: block;
   font-size: 28px;
   font-weight: 600;
-  color: #26382d;
+  color: #282f2c;
   letter-spacing: -0.6px;
   line-height: 1.1;
+}
+.focus-activity-chart-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-top: 12px;
+  border-top: 1px solid #e0e5dc;
+}
+.focus-activity-legend {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 11px;
+  color: #616c63;
+}
+.focus-activity-legend-items {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.focus-activity-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.focus-activity-legend-swatch {
+  width: 14px;
+  height: 3px;
+  border-radius: 2px;
+  background: #282f2c;
+}
+.focus-activity-legend-swatch.is-prev {
+  background: none;
+  border-top: 2px dashed #819486;
+  height: 0;
+}
+.focus-activity-delta {
+  font-size: 11px;
+  font-weight: 600;
+  color: #282f2c;
+  background: #eef0e9;
+  padding: 2px 7px;
+  border-radius: 6px;
+}
+.focus-activity-svg {
+  display: block;
+  width: 100%;
+  height: 128px;
+  overflow: visible;
+}
+.focus-activity-svg text {
+  font-family: var(--font-body), sans-serif;
+  fill: #616c63;
+}
+.focus-activity-gridline {
+  stroke: #e0e5dc;
+  stroke-width: 1;
+}
+.focus-activity-line-curr {
+  stroke: #282f2c;
+  stroke-width: 2.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  fill: none;
+}
+.focus-activity-line-prev {
+  stroke: #819486;
+  stroke-width: 1.8;
+  stroke-dasharray: 4 4;
+  fill: none;
+}
+.focus-activity-area {
+  fill: url(#focus-activity-grad);
 }
 .focus-mini-chart {
   flex: 1;
@@ -1030,6 +1142,8 @@
   gap: 6px;
   height: 58px;
   min-width: 0;
+  padding-top: 8px;
+  border-top: 1px solid #e0e5dc;
 }
 .focus-mini-bar-col {
   flex: 1;
@@ -1042,8 +1156,8 @@
 .focus-mini-bar-track {
   flex: 1;
   width: 100%;
-  max-width: 22px;
-  background: transparent;
+  max-width: 26px;
+  background: #eef0e9;
   border-radius: 6px;
   display: flex;
   align-items: flex-end;
@@ -1052,13 +1166,13 @@
 }
 .focus-mini-bar-fill {
   width: 100%;
-  background: #a4be60;
-  border-radius: 8px 8px 4px 4px;
+  background: #f1c75b;
+  border-radius: 6px;
   transition: height 0.3s ease;
   min-height: 8px;
 }
 .focus-mini-bar-col.is-today .focus-mini-bar-fill {
-  background: #26382d;
+  background: #282f2c;
 }
 .focus-mini-bar-col.is-empty .focus-mini-bar-track {
   align-items: flex-end;
@@ -1074,10 +1188,10 @@
 .focus-mini-bar-day {
   font-size: 10px;
   font-weight: 500;
-  color: #768172;
+  color: #616c63;
 }
 .focus-mini-bar-col.is-today .focus-mini-bar-day {
-  color: #26382d;
+  color: #282f2c;
   font-weight: 700;
 }
 .focus-mini-bar-col:not(.is-empty) .focus-mini-bar-day {
@@ -1398,22 +1512,25 @@
   color: #26382d;
 }
 .focus-crew-hero {
-  background: #26382d;
-  color: #fafbf8;
-  border-radius: 24px;
+  background: #282f2c;
+  color: #fafaf7;
+  border-radius: 20px;
+  border: 1px solid #282f2c;
+  border-bottom: 3px solid #1a1f1d;
+  box-shadow: 0 5px 18px #282f2c08;
   padding: 32px;
   margin: 24px 0;
 }
 .phone-shell .focus-crew-hero h2 {
   font-size: 43px;
   line-height: 1.08;
-  color: #fafbf8;
+  color: #fafaf7;
   max-width: 450px;
   font-weight: 400;
   letter-spacing: -1.5px;
 }
 .phone-shell .focus-crew-hero .fb-kicker {
-  color: #d4ee8999;
+  color: #f1c75bcc;
 }
 .focus-crew-hero p {
   font-size: 12px;
@@ -1423,7 +1540,7 @@
   border: 1px solid #ffffff70;
   background: transparent;
   border-radius: 30px;
-  color: #fafbf8;
+  color: #fafaf7;
   font-size: 11px;
   padding: 12px 16px;
   cursor: pointer;
@@ -1440,13 +1557,13 @@
   display: grid;
   place-items: center;
   font-size: 11px;
-  background: #d4ee89;
-  color: #26382d;
-  border: 2px solid #26382d;
+  background: #f1c75b;
+  color: #282f2c;
+  border: 2px solid #282f2c;
 }
 .focus-avatar-stack span + span {
   margin-left: -8px;
-  background: #b5c6a8;
+  background: #819486;
 }
 .focus-goal {
   font-size: 40px !important;
@@ -1475,7 +1592,7 @@
   display: flex;
   gap: 16px;
   padding: 20px 0;
-  border-bottom: 1px solid #e0e5dd;
+  border-bottom: 1px solid #e0e5dc;
   font-size: 13px;
 }
 .focus-feed-entry > div {
@@ -1487,41 +1604,41 @@
 .focus-feed-entry small {
   display: block;
   font-size: 10px;
-  color: #768172;
+  color: #616c63;
   margin-top: 6px;
 }
 .focus-feed-entry p {
   padding: 17px;
-  background: #f3f6ef;
+  background: #eef0e9;
   border-radius: 11px;
   font-size: 12px;
 }
 .focus-small-avatar {
   border: 0;
-  background: #edf2e8;
+  background: #eef0e9;
 }
 .focus-feedback {
   font-size: 12px;
-  color: #26382d;
-  background: #edf2e8;
+  color: #282f2c;
+  background: #eef0e9;
   padding: 16px;
   border-radius: 12px;
 }
 .focus-sheet {
-  --ink: #26382d;
-  --muted: #768172;
-  --line: #e0e5dd;
-  --paper: #fafbf8;
-  --card: #fff;
-  --lime: #d4ee89;
-  --accent: #26382d;
-  background: #fafbf8;
-  color: #26382d;
+  --ink: #282f2c;
+  --muted: #616c63;
+  --line: #e0e5dc;
+  --paper: #fafaf7;
+  --card: #ffffff;
+  --lime: #f1c75b;
+  --accent: #282f2c;
+  background: #fafaf7;
+  color: #282f2c;
   max-height: 90dvh;
   overflow-y: auto;
   padding: 30px;
   z-index: 100;
-  border: 1px solid #e0e5dd;
+  border: 1px solid #e0e5dc;
 }
 .sheet-overlay {
   z-index: 90;
@@ -1530,8 +1647,8 @@
 }
 .focus-sheet .sheet-close,
 .focus-sheet .fb-btn {
-  background: #26382d;
-  color: #f4fae9;
+  background: #282f2c;
+  color: #fafaf7;
   border: 0;
   border-radius: 10px;
   min-height: 46px;

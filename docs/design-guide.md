@@ -1,10 +1,10 @@
-# Product design guide — Focus
+# Product design guide — Open Field
 
-The selected production direction is **Focus**, with Trail's crew hierarchy and top-of-profile benchmarks/Elo (user decision, October 16, 2026). The older direction studies remain available for reference.
+The selected production direction is **Open Field** (with Everyday Club's warm neutral palette and Focus IA, user decision October 17, 2026).
 
 ## Brand and character exploration
 
-The [Brand & Ember study](brand-study/brand-and-ember-studio.md) is available at `/design/brand` under the existing design access gate. It preserves ten brand territories, adds the current Ember in a Chain Reaction-inspired setting, and explores Everyday Club, Open Field and Pocket Arena as calmer foundations for customizable star finishes. The October 17 review selects Open Field’s structure with Everyday Club’s warm white, charcoal and gold; it is the gallery default. Ember’s preferred art references are The Pass / Challenger, Marginal Gains and Higher Ground, with shared anatomy and adjustable finishes. These remain proposals: Focus is still the production UI. The study locker uses local fictional ownership and proposed unlock examples; it does not establish production rewards, entitlement, scoring or storage rules.
+The [Brand & Ember study](brand-study/brand-and-ember-studio.md) is available at `/design/brand` under the existing design access gate. It preserves ten brand territories, adds the current Ember in a Chain Reaction-inspired setting, and explores Everyday Club, Open Field and Pocket Arena as calmer foundations for customizable star finishes. The October 17 review selects Open Field’s structure with Everyday Club’s warm white, charcoal and gold. Ember’s preferred art references are The Pass / Challenger, Marginal Gains and Higher Ground, with shared anatomy and adjustable finishes. The study locker uses local fictional ownership and proposed unlock examples; it does not establish production rewards, entitlement, scoring or storage rules.
 
 ## Shared visual language
 
@@ -12,15 +12,17 @@ The palette lives in `packages/shared/src/shell.ts`, is exported to native `src/
 
 | Token | Value | Role |
 | --- | --- | --- |
-| ink / plum | `#26382d` | Typography and primary actions |
-| tennis | `#d4ee89` | Selected navigation, own lane, progress accents |
-| paper | `#fafbf8` | Page background |
+| ink / plum | `#282f2c` | Charcoal typography and primary actions |
+| tennis / gold | `#f1c75b` | Selected navigation, own lane, live indicator, and warm gold accents |
+| paper | `#fafaf7` | Warm white page background |
 | card | `#ffffff` | Controls, sheets, cards |
-| muted | `#768172` | Secondary labels |
-| line | `#e0e5dd` | Quiet borders and separators |
-| starEmber | `#f5c451` | Existing Ember artwork; unchanged |
+| muted | `#616c63` | Calmer secondary labels |
+| line | `#e0e5dc` | Quiet borders and separators |
+| starEmber | `#f1c75b` | Canonical warm gold Ember artwork |
+| secondary | `#819486` | Historical comparisons / baseline |
+| soft | `#eef0e9` | Subtle highlights, badges, and pill backgrounds |
 
-Use DM Sans for product UI, restrained display sizes, readable supporting copy, 44px+ touch controls, and generous spacing. Cards have soft 20–28px corners; the winding path and the lanes remain custom product components. Respect reduced motion. Browser dialogs use Radix focus management; native detail panels support back/dismiss and keyboard avoidance.
+Use DM Sans for product UI, restrained display sizes, readable supporting copy, 44px+ touch controls, and generous spacing. Cards have clean 16px corners with 3px bottom borders; primary buttons have a 3px tactile base. Respect reduced motion. Browser dialogs use Radix focus management; native detail panels support back/dismiss and keyboard avoidance.
 
 ## Information architecture
 
