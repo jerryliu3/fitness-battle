@@ -11,6 +11,7 @@ describe("crew share and invite", () => {
     expect(source).toMatch(/path === "\/entries"/);
     expect(source).toMatch(/already shared for this week/);
     expect(source).toMatch(/searchParams\.get\("invite"\)/);
+    expect(source).toMatch(/next\.delete\("invite"\)/);
     expect(source).toMatch(/Copy invite link/);
   });
 });

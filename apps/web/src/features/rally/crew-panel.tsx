@@ -11,7 +11,7 @@ import {
   formatMemberCount,
 } from "@fitness-battle/shared";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 interface Crew {
   id: string;
   name: string;
@@ -74,6 +74,7 @@ function isCrewErrorNote(note: string): boolean {
 export function CrewPanel() {
   const { user, demoMode } = useAuth();
   const { state } = useCompete();
+  const router = useRouter();
   const searchParams = useSearchParams();
   const [data, setData] = useState<CrewData | null>(null);
   const [selected, setSelected] = useState("");
@@ -112,7 +113,11 @@ export function CrewPanel() {
     if (!invite || !user || demoMode) return;
     setCode(invite.toUpperCase());
     setPanel("add");
-  }, [searchParams, user, demoMode]);
+    const next = new URLSearchParams(searchParams.toString());
+    next.delete("invite");
+    const qs = next.toString();
+    router.replace(qs ? `/field?${qs}` : "/field", { scroll: false });
+  }, [searchParams, user, demoMode, router]);
 
   async function write(path: string, body: object) {
     setBusy(true);
