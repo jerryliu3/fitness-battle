@@ -1,4 +1,4 @@
-const DEFAULT_POST_LOGIN_PATH = "/";
+const DEFAULT_POST_LOGIN_PATH = "/today";
 const LOGIN_PATH = "/login";
 const SENTINEL_BASE_URL = "http://fitness-battle.local";
 
@@ -34,7 +34,7 @@ export function resolveSafePostLoginPath(candidatePath?: string | null) {
   }
   const safePath = normalizeSafePath(normalized);
   const pathname = new URL(safePath, SENTINEL_BASE_URL).pathname;
-  if (isAuthPath(pathname)) return DEFAULT_POST_LOGIN_PATH;
+  if (pathname === "/" || isAuthPath(pathname)) return DEFAULT_POST_LOGIN_PATH;
   return safePath;
 }
 

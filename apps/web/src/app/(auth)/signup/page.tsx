@@ -6,12 +6,11 @@ import {
   resolveSafePostLoginPath,
 } from "@/lib/auth/login-redirect";
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { FormEvent, Suspense, useEffect, useState } from "react";
 
 function SignupForm() {
   const { signUp, user, loading, demoMode } = useAuth();
-  const router = useRouter();
   const searchParams = useSearchParams();
   const next = resolveSafePostLoginPath(searchParams.get("next"));
   const [email, setEmail] = useState("");
@@ -23,9 +22,9 @@ function SignupForm() {
 
   useEffect(() => {
     if (!loading && user) {
-      router.replace(next);
+      window.location.assign(next);
     }
-  }, [loading, user, next, router]);
+  }, [loading, user, next]);
 
   async function onSubmit(event: FormEvent) {
     event.preventDefault();
@@ -36,21 +35,21 @@ function SignupForm() {
       const result = await signUp({ email, password, displayName });
       if (result.error) {
         setError(result.error);
+        setBusy(false);
         return;
       }
       if (result.needsEmailConfirm) {
         setMessage("Account created. Check your email to confirm, then sign in.");
+        setBusy(false);
         return;
       }
       const dest =
-        next && next !== "/"
+        next && next !== "/today" && next !== "/"
           ? `/onboarding?next=${encodeURIComponent(next)}`
           : "/onboarding";
-      router.replace(dest);
-      router.refresh();
+      window.location.assign(dest);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not create the account.");
-    } finally {
       setBusy(false);
     }
   }
