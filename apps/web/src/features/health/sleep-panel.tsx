@@ -70,10 +70,10 @@ export function SleepPanel({
           kind: "weekly",
         })}
       </p>
-      <h2 className="sl-heading">
-        Last night
-        <span>not a distance.</span>
-      </h2>
+      <h2 className="sl-heading">Last night</h2>
+      <p className="fb-note" style={{ marginTop: -4 }}>
+        Sleep score — not distance.
+      </p>
       <p className="fb-copy">{metric.blurb}</p>
 
       {!view.optedIn ? (
@@ -141,7 +141,8 @@ export function SleepPanel({
               <strong>{view.nightsLogged ? view.contestScore.toFixed(0) : "—"}</strong>
               {view.nightsLogged ? (
                 <small style={{ display: "block", fontSize: "11px", color: "var(--fb-muted, #768375)" }}>
-                  Avg: {view.mean.toFixed(0)}
+                  Avg: {view.mean.toFixed(0)} · nights you miss count against this
+                  week&apos;s contest score
                 </small>
               ) : null}
             </div>
