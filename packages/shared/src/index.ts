@@ -18,3 +18,4 @@ export * from "./compete-demo-seed";
 export * from "./effort-history";
 export * from "./journey";
 export * from "./activity-age";
+export * from "./member-count";
