@@ -19,7 +19,12 @@ import {
   syntheticCheckpoints,
   type CheckpointSeries,
 } from "./compete/track";
-import { orderedArenaLanes } from "./arena-view";
+import {
+  arenaBaselineStorageKey,
+  orderedArenaLanes,
+  readArenaBaseline,
+  serializeArenaBaseline,
+} from "./arena-view";
 import { APP_TIMEZONE, currentPeriodBounds } from "./period";
 
 export const CHECKPOINT_FRAME = { width: 320, height: 570 } as const;
@@ -113,9 +118,10 @@ export interface AwardCardModel {
 export function competePeriodWindow(
   state: CompeteState,
   now: Date = competeNow(state),
+  sport: SportId = state.primary,
 ) {
   const enrollment = state.enrollments.find(
-    (item) => item.sport === state.primary,
+    (item) => item.sport === sport,
   );
   if (enrollment) {
     return {
@@ -281,10 +287,10 @@ export function buildArenaModel(
   state: CompeteState,
   now: Date = competeNow(state),
   track: ScoreTrack = "open",
+  sport: SportId = state.primary,
 ): ArenaModel {
-  const sport = state.primary;
   const spec = sportById(sport);
-  const period = competePeriodWindow(state, now);
+  const period = competePeriodWindow(state, now, sport);
   const optedIn = Boolean(
     state.ratings.find((row) => row.sport === sport)?.optedIn,
   );
@@ -345,6 +351,39 @@ export function buildArenaModel(
     lanes,
     optedIn,
   };
+}
+
+/**
+ * Seeds per-(sport, track) Arena lane baselines when none exist for the active period.
+ * Existing baselines for the same periodStart are left untouched until the Arena view
+ * consumes and advances them after playing any overtake/progress animation.
+ */
+export function seedArenaBaselinesFromState(
+  state: CompeteState,
+  accountKey: string,
+  readItem: (key: string) => string | null,
+  writeItem: (key: string, value: string) => void,
+  now: Date = competeNow(state),
+): void {
+  for (const rating of state.ratings) {
+    if (!rating.optedIn) continue;
+    const sport = rating.sport;
+    const periodStart = competePeriodWindow(state, now, sport).startsAt.toISOString();
+    for (const track of ["open", "verified"] as const) {
+      const key = arenaBaselineStorageKey(accountKey, sport, track);
+      if (readArenaBaseline(readItem(key), periodStart)) continue;
+      const arena = buildArenaModel(state, now, track, sport);
+      const serialized = serializeArenaBaseline(
+        periodStart,
+        arena.lanes.map((lane) => ({
+          id: lane.id,
+          value: lane.values[2],
+          ghost: lane.ghost,
+        })),
+      );
+      writeItem(key, serialized);
+    }
+  }
 }
 
 function weekLabel(periodStart: string, periodEnd: string): string {

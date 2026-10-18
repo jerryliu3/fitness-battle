@@ -1,5 +1,8 @@
 import {
   applyRemoteSnapshot,
+  arenaBaselineStorageKey,
+  buildArenaModel,
+  competePeriodWindow,
   countedActivityIds,
   FIELD_REFRESH_MS,
   fieldChangeNotice,
@@ -9,10 +12,12 @@ import {
   migrateCompeteState,
   newCountedIds,
   primaryRevealResults,
+  readArenaBaseline,
   readSeenField,
   reduceCompete,
   rollClock,
   seenFieldFromState,
+  serializeArenaBaseline,
   type Action,
   type CompeteState,
   type FieldNotice,
@@ -70,6 +75,34 @@ function readIds(raw: string | null): string[] | null {
   }
 }
 
+async function seedMobileArenaBaselines(
+  state: CompeteState,
+  accountKey: string,
+): Promise<void> {
+  for (const rating of state.ratings) {
+    if (!rating.optedIn) continue;
+    const sport = rating.sport;
+    const periodStart = competePeriodWindow(state, undefined, sport).startsAt.toISOString();
+    for (const track of ["open", "verified"] as const) {
+      const key = arenaBaselineStorageKey(accountKey, sport, track);
+      const existing = await AsyncStorage.getItem(key);
+      if (readArenaBaseline(existing, periodStart)) continue;
+      const arena = buildArenaModel(state, undefined, track, sport);
+      await AsyncStorage.setItem(
+        key,
+        serializeArenaBaseline(
+          periodStart,
+          arena.lanes.map((lane) => ({
+            id: lane.id,
+            value: lane.values[2],
+            ghost: lane.ghost,
+          })),
+        ),
+      );
+    }
+  }
+}
+
 export function CompeteProvider({ children }: { children: ReactNode }) {
   const router = useRouter();
   const [state, setState] = useState<CompeteState | null>(null);
@@ -122,6 +155,7 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
         }
       }
       if (!alive) return;
+      await seedMobileArenaBaselines(next, accountRef.current ?? "device");
       void AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(next));
       setState(next);
     })();

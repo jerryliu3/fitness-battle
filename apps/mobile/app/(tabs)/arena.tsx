@@ -1,18 +1,26 @@
-import { useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Pressable, ScrollView, Switch, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useRouter } from "expo-router";
 import {
+  arenaBaselineStorageKey,
   buildArenaModel,
+  competePeriodWindow,
   SPORTS,
   initialsFromName,
   fitArenaWindow,
+  readArenaBaseline,
+  reconcileArenaOvertake,
   resolveArenaSelectedId,
   primaryRevealResults,
   selfLaneLabel,
+  serializeArenaBaseline,
   sportById,
   sportRenewal,
+  stepArenaOvertake,
   type Action,
+  type ArenaOvertakePlan,
   type SportId,
   type ScoreTrack,
   type ArenaSceneMessage,
@@ -54,29 +62,106 @@ export default function ArenaScreen() {
   const [register, setRegister] = useState(false);
   const [sport, setSport] = useState<SportId | null>(null);
   const [failed, setFailed] = useState(false);
-  if (!state)
+  const [overtakePlan, setOvertakePlan] = useState<ArenaOvertakePlan | null>(
+    null,
+  );
+  const [overtakeProgress, setOvertakeProgress] = useState(1);
+  const [replayEpoch, setReplayEpoch] = useState(0);
+  const committedRef = useRef<Record<string, Record<string, number>> | null>(
+    null,
+  );
+
+  const arena = useMemo(
+    () => (state ? buildArenaModel(state, undefined, track) : null),
+    [state, track],
+  );
+  const defaultSpan =
+    arena?.unit === "pts" ? 20 : arena?.unit === "mi" ? 4 : 6;
+  const viewSpan = span ?? defaultSpan;
+  const me = arena?.lanes.find((l) => l.you);
+  const total = me?.values[2] ?? 0;
+  const lanes = useMemo(
+    () =>
+      (arena?.lanes ?? [])
+        .filter((l) => ghost || !l.ghost)
+        .map((l) => ({
+          id: l.id,
+          name: l.name,
+          initials: initialsFromName(l.name),
+          value: l.values[2],
+          you: l.you,
+          ghost: l.ghost,
+        })),
+    [arena?.lanes, ghost],
+  );
+
+  useEffect(() => {
+    if (!state || !arena?.optedIn || lanes.length === 0) return;
+    let alive = true;
+    const accountKey = user?.id ?? "device";
+    const periodStart = competePeriodWindow(state).startsAt.toISOString();
+    const key = arenaBaselineStorageKey(accountKey, arena.sportId, track);
+    void (async () => {
+      let previous = committedRef.current?.[key] ?? null;
+      if (!previous) {
+        const raw = await AsyncStorage.getItem(key);
+        if (!alive) return;
+        previous = readArenaBaseline(raw, periodStart);
+      }
+      const plan = reconcileArenaOvertake(lanes, previous);
+      const nextValues: Record<string, number> = {};
+      for (const lane of lanes) {
+        if (!lane.ghost) nextValues[lane.id] = lane.value;
+      }
+      committedRef.current = { ...(committedRef.current ?? {}), [key]: nextValues };
+      void AsyncStorage.setItem(key, serializeArenaBaseline(periodStart, lanes));
+      if (!plan || !alive) return;
+      setCenter(null);
+      setOvertakePlan(plan);
+      setOvertakeProgress(0);
+      setReplayEpoch((n) => n + 1);
+    })();
+    return () => {
+      alive = false;
+    };
+  }, [arena?.optedIn, arena?.sportId, lanes, state, track, user?.id]);
+
+  useEffect(() => {
+    if (!overtakePlan || overtakeProgress >= 1) return;
+    let raf = 0;
+    const start = Date.now();
+    const duration = overtakePlan.durationMs;
+    const tick = () => {
+      const next = Math.min(1, (Date.now() - start) / duration);
+      setOvertakeProgress(next);
+      if (next < 1) {
+        raf = requestAnimationFrame(tick);
+      }
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [overtakePlan, replayEpoch]);
+
+  const overtakeFrame = useMemo(
+    () =>
+      overtakePlan && overtakeProgress < 1
+        ? stepArenaOvertake(overtakePlan, overtakeProgress, viewSpan)
+        : null,
+    [overtakePlan, overtakeProgress, viewSpan],
+  );
+
+  if (!state || !arena)
     return (
       <SafeAreaView style={f.safe}>
         <Text style={f.copy}>Loading your arena…</Text>
       </SafeAreaView>
     );
-  const arena = buildArenaModel(state, undefined, track);
-  const defaultSpan =
-    arena.unit === "pts" ? 20 : arena.unit === "mi" ? 4 : 6;
-  const viewSpan = span ?? defaultSpan;
-  const me = arena.lanes.find((l) => l.you);
-  const total = me?.values[2] ?? 0;
-  const view = { center: center ?? total, span: viewSpan };
-  const lanes = arena.lanes
-    .filter((l) => ghost || !l.ghost)
-    .map((l) => ({
-      id: l.id,
-      name: l.name,
-      initials: initialsFromName(l.name),
-      value: l.values[2],
-      you: l.you,
-      ghost: l.ghost,
-    }));
+
+  const displayTotal = overtakeFrame ? overtakeFrame.youValue : total;
+  const view = {
+    center: center ?? (overtakeFrame ? overtakeFrame.viewCenter : total),
+    span: viewSpan,
+  };
   // Track/3D always need a concrete id (fall back to you). The detail sheet
   // must stay tied to the raw nullable selection or it cannot close.
   const trackSelectedId = resolveArenaSelectedId(
@@ -196,13 +281,38 @@ export default function ArenaScreen() {
               <View>
                 <Text style={f.kicker}>{arena.sportName} · This week</Text>
                 <Text style={f.massive}>
-                  {total.toFixed(1)} <Text style={f.copy}>{arena.unit}</Text>
+                  {displayTotal.toFixed(1)}{" "}
+                  <Text style={f.copy}>{arena.unit}</Text>
                 </Text>
               </View>
               <Text style={f.small}>
                 {track === "open" ? "Open score" : "GPS verified"}
               </Text>
             </View>
+            {overtakePlan ? (
+              <View style={f.row}>
+                <Text style={f.rowTitle}>
+                  {overtakeFrame && overtakeFrame.phase === "rival-slide"
+                    ? "Updating field positions…"
+                    : overtakeFrame
+                      ? `Making your move · +${(overtakePlan.youAfter - overtakePlan.youBefore).toFixed(1)} ${arena.unit}`
+                      : overtakePlan.hasOvertake
+                        ? `#${overtakePlan.rankBefore} → #${overtakePlan.rankAfter} · ${overtakePlan.overtakenIds.length} ${overtakePlan.overtakenIds.length === 1 ? "overtake" : "overtakes"}`
+                        : `+${(overtakePlan.youAfter - overtakePlan.youBefore).toFixed(1)} ${arena.unit} · moved forward`}
+                </Text>
+                {!overtakeFrame ? (
+                  <FocusButton
+                    label="↻ Replay"
+                    secondary
+                    onPress={() => {
+                      setCenter(null);
+                      setOvertakeProgress(0);
+                      setReplayEpoch((n) => n + 1);
+                    }}
+                  />
+                ) : null}
+              </View>
+            ) : null}
             <View style={f.chipRow}>
               {(["open", "verified"] as const).map((t) => (
                 <Pressable
@@ -254,6 +364,8 @@ export default function ArenaScreen() {
                 onSelect={(lane) => setSelectedId(lane.id)}
                 view={view}
                 onPan={(v) => setCenter(Math.max(0, v))}
+                overtakeFrame={overtakeFrame}
+                overtakePlan={overtakePlan}
               />
             )}
             {failed && (
