@@ -47,7 +47,8 @@
             ]
           }
         ]
-      }
+      },
+      "icon": "./assets/icon.png"
     },
     "android": {
       "package": "com.overtaek.app",
@@ -71,17 +72,24 @@
         "android.permission.health.READ_EXERCISE",
         "android.permission.health.READ_HEART_RATE",
         "android.permission.health.READ_SLEEP"
-      ]
+      ],
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#ffffff",
+        "monochromeImage": "./assets/monochrome-icon.png"
+      }
     },
     "web": {
       "bundler": "metro",
-      "output": "static"
+      "output": "static",
+      "favicon": "./assets/favicon.png"
     },
     "extra": {
       "eas": {
         "projectId": "30807072-a0b4-44cd-bd15-ec186e40ceed"
       },
       "supportEmail": "jerrry333x@gmail.com"
-    }
+    },
+    "icon": "./assets/icon.png"
   }
 }
