@@ -16,6 +16,7 @@ import {
   isSampleActivity,
   primaryFreezePeriodStart,
   sportById,
+  weeklyPeriodBounds,
   type Activity,
   type UnitSystem,
 } from "@fitness-battle/shared";
@@ -41,6 +42,7 @@ type JourneyStop =
 function buildJourneyStops(
   days: JourneyDay[],
   hasMorePast = false,
+  allDays = days,
 ): JourneyStop[] {
   if (days.length === 0) {
     // When no past sessions exist, wind cleanly: Today (r) -> Past (l) -> Start (c)
@@ -51,7 +53,7 @@ function buildJourneyStops(
       { key: "start", kind: "start", lane: "c" },
     ];
   }
-  const plan = planJourneyTrail(days);
+  const plan = planJourneyTrail(allDays);
   const stops: JourneyStop[] = [
     { key: "today", kind: "today", lane: plan.today },
   ];
@@ -166,7 +168,11 @@ export function TodayScreen() {
   const shownSessions = journeyDays.reduce((acc, d) => acc + d.items.length, 0);
   const hasMorePast = counted.length > shownSessions;
   const units = state.units;
-  const journeyStops = buildJourneyStops(journeyDays, hasMorePast);
+  const journeyStops = buildJourneyStops(
+    journeyDays,
+    hasMorePast,
+    groupActivitiesByDay(counted, Infinity),
+  );
 
   const weekPeriod = competePeriodWindow(state, now);
   const weekStart = weekPeriod.startsAt.getTime();
@@ -176,7 +182,10 @@ export function TodayScreen() {
     const t = new Date(a.startedAt).getTime();
     return t >= weekStart && t < weekEnd && t <= now.getTime();
   });
-  const weekMovingSec = weekActivities.reduce((acc, a) => acc + (a.movingSec || 0), 0);
+  const weekMovingSec = weekActivities.reduce(
+    (acc, a) => acc + (a.movingSec || 0),
+    0,
+  );
   const weekDistanceM = weekActivities.reduce(
     (acc, a) => acc + (a.distanceM || 0),
     0,
@@ -190,7 +199,9 @@ export function TodayScreen() {
   const nowDayIso = now.toISOString().slice(0, 10);
 
   // Previous week window (Mon 00:00 UTC to next Mon 00:00 UTC, 7 days earlier)
-  const prevWeekStart = weekStart - 7 * 86_400_000;
+  const prevWeekStart = weeklyPeriodBounds(
+    new Date(weekStart - 1),
+  ).startsAt.getTime();
   const prevWeekEnd = weekStart;
   const prevWeekActivities = state.activities.filter((a) => {
     if (!countsOnTrack(a, "open")) return false;
@@ -285,9 +296,12 @@ export function TodayScreen() {
   const yMax = Math.max(1, Math.ceil(maxVal * 1.15));
   const yMid = Math.round((yMax / 2) * 10) / 10;
 
-  const getY = (hrs: number) => yBottom - (Math.min(hrs, yMax) / yMax) * (yBottom - yTop);
-  const getX = (dayIdx: number) => xStart + ((dayIdx + 1) / 7) * (xEnd - xStart);
-  const getDayCenterX = (dayIdx: number) => xStart + ((dayIdx + 0.5) / 7) * (xEnd - xStart);
+  const getY = (hrs: number) =>
+    yBottom - (Math.min(hrs, yMax) / yMax) * (yBottom - yTop);
+  const getX = (dayIdx: number) =>
+    xStart + ((dayIdx + 1) / 7) * (xEnd - xStart);
+  const getDayCenterX = (dayIdx: number) =>
+    xStart + ((dayIdx + 0.5) / 7) * (xEnd - xStart);
 
   const weekDurationMs = weekEnd - weekStart;
   const weekProgress = Math.min(
@@ -295,7 +309,9 @@ export function TodayScreen() {
     Math.max(0, (now.getTime() - weekStart) / (weekDurationMs || 1)),
   );
   // Continuous X coordinate reflecting exact progress through the week
-  const currPreciseX = Number((xStart + weekProgress * (xEnd - xStart)).toFixed(1));
+  const currPreciseX = Number(
+    (xStart + weekProgress * (xEnd - xStart)).toFixed(1),
+  );
   const currLastY = getY(currTotalHours);
 
   const prevPoints = [
@@ -316,11 +332,7 @@ export function TodayScreen() {
   const currAreaPoints = `${currLinePoints} ${currPreciseX.toFixed(1)},${yBottom} ${xStart.toFixed(1)},${yBottom}`;
 
   const paceText =
-    hoursDelta > 0
-      ? "Ahead of pace"
-      : hoursDelta === 0
-        ? "On pace"
-        : null;
+    hoursDelta > 0 ? "Ahead of pace" : hoursDelta === 0 ? "On pace" : null;
 
   const weekDays = Array.from({ length: 7 }, (_, i) => {
     const d = new Date(weekStart + i * 86_400_000 + 43_200_000);
@@ -422,10 +434,13 @@ export function TodayScreen() {
             <p className="fb-kicker">This week</p>
             <div className="focus-stats-numbers">
               <strong>
-                {currTotalHours === 0 ? "0 hours" : `${currTotalHours.toFixed(1)} hrs`}
+                {currTotalHours === 0
+                  ? "0 hours"
+                  : `${currTotalHours.toFixed(1)} hrs`}
               </strong>
               <span className="focus-stats-session-count">
-                {weekActivities.length} {weekActivities.length === 1 ? "session" : "sessions"}
+                {weekActivities.length}{" "}
+                {weekActivities.length === 1 ? "session" : "sessions"}
               </span>
             </div>
             {sportById(state.primary).gps && weekDistanceM > 0 ? (
@@ -526,10 +541,7 @@ export function TodayScreen() {
             />
 
             {/* Current week area fill & line */}
-            <polygon
-              points={currAreaPoints}
-              className="focus-activity-area"
-            />
+            <polygon points={currAreaPoints} className="focus-activity-area" />
             <polyline
               points={currLinePoints}
               className="focus-activity-line-curr"
@@ -575,7 +587,11 @@ export function TodayScreen() {
                   aria-hidden="true"
                 />
                 <span className="focus-activity-legend-label">
-                  You ({currTotalHours === 0 ? "0h" : `${currTotalHours.toFixed(1)}h`})
+                  You (
+                  {currTotalHours === 0
+                    ? "0h"
+                    : `${currTotalHours.toFixed(1)}h`}
+                  )
                 </span>
               </div>
               {paceText ? (
@@ -589,7 +605,11 @@ export function TodayScreen() {
                   aria-hidden="true"
                 />
                 <span className="focus-activity-legend-label">
-                  Last week ({prevTotalHours === 0 ? "0h" : `${prevTotalHours.toFixed(1)}h`})
+                  Last week (
+                  {prevTotalHours === 0
+                    ? "0h"
+                    : `${prevTotalHours.toFixed(1)}h`}
+                  )
                 </span>
               </div>
             </div>

@@ -1,14 +1,26 @@
 import {
   SPORTS,
+  RANK_BANDS,
   primaryFreezePeriodStart,
+  sportRenewal,
   type ProviderId,
 } from "@fitness-battle/shared";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { Button } from "heroui-native/button";
 import { Input } from "heroui-native/input";
 import { useEffect, useRef, useState } from "react";
-import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import {
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Switch,
+  Text,
+  View,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { AccountActions } from "../../src/features/account-actions";
+import { AthleteMetrics } from "../../src/features/athlete-metrics";
+import { DataSyncActions } from "../../src/features/data-sync-actions";
 import { useAuth } from "../../src/lib/auth";
 import { useCompeteStore } from "../../src/lib/compete-store";
 import {
@@ -22,9 +34,8 @@ import {
   isCloudOAuthProvider,
   startCloudTrackerConnect,
 } from "../../src/lib/tracker-connect";
-import { AthleteMetrics } from "../../src/features/athlete-metrics";
-import { FocusButton, f } from "../../src/ui/focus";
 import { SHELL_COLORS, SHELL_RADIUS } from "../../src/theme";
+import { FocusButton, FocusSheet, f } from "../../src/ui/focus";
 
 function isDeviceProvider(
   id: ProviderId,
@@ -33,10 +44,10 @@ function isDeviceProvider(
 }
 
 type AuthMode = "signin" | "signup";
-type AthletePanel = "connections" | "preferences";
+type AthletePanel = "connections" | "preferences" | "scoring";
 
 export default function YouScreen() {
-  const { state, dispatch } = useCompeteStore();
+  const { state, dispatch, saveError, retrySave } = useCompeteStore();
   const {
     user,
     loading: authLoading,
@@ -46,6 +57,8 @@ export default function YouScreen() {
     signUp,
     signOut,
   } = useAuth();
+  const currentUser = useRef(user?.id);
+  currentUser.current = user?.id;
   const router = useRouter();
   const params = useLocalSearchParams<{
     tracker?: string;
@@ -62,6 +75,7 @@ export default function YouScreen() {
   const [displayName, setDisplayName] = useState("");
   const [authBusy, setAuthBusy] = useState(false);
   const [authNote, setAuthNote] = useState<string | null>(null);
+  const [confirmFreeze, setConfirmFreeze] = useState(false);
   const [panel, setPanel] = useState<AthletePanel | null>(null);
   const appliedTracker = useRef<string | null>(null);
 
@@ -91,11 +105,12 @@ export default function YouScreen() {
   }, [dispatch, params.provider, params.tracker, state]);
 
   useEffect(() => {
-    if (!user) return;
-    if (user.displayName) {
-      dispatch({ type: "rename", name: user.displayName });
-    }
-  }, [dispatch, user?.displayName, user?.id]);
+    setName(null);
+    setCity(null);
+    setPanel(null);
+    setNote(null);
+    setConfirmFreeze(false);
+  }, [user?.id]);
 
   if (!state || authLoading) {
     return (
@@ -169,12 +184,14 @@ export default function YouScreen() {
         providerId === "apple_health"
           ? await syncAppleHealth(createAppleHealthDeps(ingestAuth))
           : await syncHealthConnect(createHealthConnectDeps(ingestAuth));
+      if (currentUser.current !== user.id) return;
       // "Connected" means device permission (or a successful upload). Upload
       // failures keep Connected when already authorized, with a clear note.
       if (result.ok || result.authorized) {
         dispatch({
           type: "apply-sync",
           provider: providerId,
+          accountId: user.id,
           activities: [],
           linkStatus: "connected",
         });
@@ -216,6 +233,7 @@ export default function YouScreen() {
     setNote(null);
     try {
       const result = await startCloudTrackerConnect(providerId);
+      if (currentUser.current !== user.id) return;
       const linked = result.provider ?? providerId;
       if (result.tracker === "connected") {
         appliedTracker.current = `connected:${linked}`;
@@ -246,6 +264,7 @@ export default function YouScreen() {
           contentContainerStyle={styles.scroll}
           keyboardShouldPersistTaps="handled"
         >
+          <AthleteMetrics state={state} />
           <Text style={styles.kicker}>Account</Text>
 
           <Text style={styles.name}>Sign in to Overtaek</Text>
@@ -343,7 +362,7 @@ export default function YouScreen() {
             <Text style={f.small}>← Athlete</Text>
           </Pressable>
           <Text style={f.kicker}>Settings</Text>
-          <Text style={f.title}>Connections</Text>
+          <Text style={f.title}>Data Sync</Text>
           {providersForDevice().map((provider) => {
             const link = state.links.find(
               (row) => row.provider === provider.id,
@@ -407,6 +426,45 @@ export default function YouScreen() {
             );
           })}
           {note ? <Text style={styles.copy}>{note}</Text> : null}
+          <DataSyncActions />
+        </ScrollView>
+      </SafeAreaView>
+    );
+  }
+
+  if (panel === "scoring") {
+    return (
+      <SafeAreaView style={f.safe} edges={["top"]}>
+        <ScrollView contentContainerStyle={f.content}>
+          <FocusButton
+            label="Back to Athlete"
+            secondary
+            onPress={() => setPanel(null)}
+          />
+          <Text style={f.kicker}>Settings</Text>
+          <Text style={f.title}>How scoring works</Text>
+          <Text style={f.copy}>
+            Open score includes counted sessions. GPS verified includes verified
+            sessions. Sample workouts do not count toward competition.
+          </Text>
+          <Text style={f.copy}>
+            Each event has its own effort score. Scores settle when the
+            competition week closes. Stopping after this week keeps the current
+            week open and turns off renewal.
+          </Text>
+          <Text style={f.copy}>
+            A week freeze protects effort score during a rest week and can be
+            undone before the week ends. A crew rest marker does not freeze
+            effort score.
+          </Text>
+          {RANK_BANDS.map((band) => (
+            <View key={band.name} style={f.card}>
+              <Text style={f.h2}>
+                {band.name} · {band.min}+
+              </Text>
+              <Text style={f.copy}>{band.blurb}</Text>
+            </View>
+          ))}
         </ScrollView>
       </SafeAreaView>
     );
@@ -454,10 +512,26 @@ export default function YouScreen() {
                 });
                 setName(null);
                 setCity(null);
+                setNote("Profile saved.");
               }}
             >
               Save profile
             </Button>
+          ) : null}
+          {dirty ? (
+            <FocusButton
+              label="Cancel profile changes"
+              secondary
+              onPress={() => {
+                setName(null);
+                setCity(null);
+              }}
+            />
+          ) : null}
+          {note ? (
+            <Text style={f.copy} accessibilityLiveRegion="polite">
+              {note}
+            </Text>
           ) : null}
           <Text style={styles.section}>Units</Text>
           <View style={f.chipRow}>
@@ -478,28 +552,75 @@ export default function YouScreen() {
               <Text style={f.rowTitle}>Kilometres</Text>
             </Pressable>
           </View>
-          <View style={f.chipRow}>
-            {SPORTS.map((s) => (
-              <Pressable
-                accessibilityRole="button"
-                key={s.id}
-                style={[f.chip, state.primary === s.id && f.chipActive]}
-                onPress={() => dispatch({ type: "set-primary", sport: s.id })}
-              >
-                <Text style={f.rowTitle}>{s.name}</Text>
-              </Pressable>
-            ))}
-          </View>
+          <Text style={f.h2}>Events</Text>
+          {SPORTS.map((sport) => {
+            const active =
+              state.ratings.find((r) => r.sport === sport.id)?.optedIn ?? false;
+            const renewal = sportRenewal(state, sport.id);
+            return (
+              <View key={sport.id} style={f.card}>
+                <View style={f.row}>
+                  <Text style={[f.rowTitle, f.grow]}>{sport.name}</Text>
+                  <Switch
+                    accessibilityLabel={`${sport.name} active next week`}
+                    value={active && renewal.renews}
+                    onValueChange={(enabled) => {
+                      if (!signedIn) return;
+                      dispatch(
+                        enabled
+                          ? {
+                              type: active ? "resume-renewal" : "opt-in",
+                              sport: sport.id,
+                            }
+                          : { type: "schedule-leave", sport: sport.id },
+                      );
+                    }}
+                  />
+                </View>
+                <Text style={f.small}>{renewal.detail}</Text>
+                <FocusButton
+                  label={
+                    state.primary === sport.id
+                      ? "Primary event"
+                      : "Make primary"
+                  }
+                  secondary
+                  disabled={state.primary === sport.id}
+                  onPress={() => {
+                    dispatch({ type: "set-primary", sport: sport.id });
+                    setNote("Primary event updated.");
+                  }}
+                />
+              </View>
+            );
+          })}
           <Text style={f.copy}>
-            {state.freezesLeft} week freezes remaining. A freeze holds effort score
-            during a rest week.
+            {state.freezesLeft} week freezes remaining. A freeze holds effort
+            score during a rest week.
           </Text>
           <FocusButton
-            label={frozen ? "This week is frozen" : "Freeze this week"}
+            label={frozen ? "Undo freeze" : "Freeze this week"}
             secondary
-            disabled={frozen || state.freezesLeft <= 0}
-            onPress={() => dispatch({ type: "freeze" })}
+            disabled={!frozen && state.freezesLeft <= 0}
+            onPress={() =>
+              frozen ? dispatch({ type: "unfreeze" }) : setConfirmFreeze(true)
+            }
           />
+          {saveError ? <Text style={f.copy}>{saveError}</Text> : null}
+          <FocusSheet
+            open={confirmFreeze}
+            title="Freeze this week?"
+            body="Your effort score will be protected this week. This uses one freeze; you can undo it before the week ends."
+            onClose={() => setConfirmFreeze(false)}
+          >
+            <FocusButton
+              label="Confirm freeze"
+              onPress={() => {
+                dispatch({ type: "freeze" });
+                setConfirmFreeze(false);
+              }}
+            />
+          </FocusSheet>
         </ScrollView>
       </SafeAreaView>
     );
@@ -511,10 +632,17 @@ export default function YouScreen() {
         contentContainerStyle={f.content}
         keyboardShouldPersistTaps="handled"
       >
+        {saveError ? (
+          <View style={f.feedback}>
+            <Text style={f.copy}>{saveError}</Text>
+            <FocusButton label="Retry save" secondary onPress={retrySave} />
+          </View>
+        ) : null}
         <AthleteMetrics
           state={state}
           email={account.email}
           demoMode={demoMode}
+          onEdit={() => setPanel("preferences")}
         />
         <View style={styles.settingsList}>
           <Pressable
@@ -534,7 +662,7 @@ export default function YouScreen() {
             onPress={() => setPanel("connections")}
           >
             <View style={styles.settingsCopy}>
-              <Text style={styles.rowTitle}>Connections</Text>
+              <Text style={styles.rowTitle}>Data Sync</Text>
               <Text style={styles.copy}>Trackers & device health</Text>
             </View>
             <Text style={f.small}>→</Text>
@@ -563,10 +691,25 @@ export default function YouScreen() {
           </Pressable>
         </View>
         <FocusButton
+          label="How scoring works"
+          secondary
+          onPress={() => setPanel("scoring")}
+        />
+        <FocusButton
           label="Sign out"
           secondary
           onPress={() => void signOut()}
         />
+        {!state.onboardingCompleted ? (
+          <View style={f.card}>
+            <Text style={f.h2}>Finish setup</Text>
+            <FocusButton
+              label="Continue onboarding"
+              onPress={() => router.push("/onboarding")}
+            />
+          </View>
+        ) : null}
+        <AccountActions />
       </ScrollView>
     </SafeAreaView>
   );

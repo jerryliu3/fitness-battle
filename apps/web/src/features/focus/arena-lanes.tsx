@@ -2,6 +2,7 @@
 import { useRef, useEffect } from "react";
 import {
   arenaPosition,
+  formatActivityAge,
   arenaWindow,
   clampArenaLaneCenter,
   orderedArenaLanes,
@@ -39,12 +40,13 @@ export function ArenaLanes({
     id: string | null;
   } | null>(null);
   const animating = Boolean(overtakeFrame && overtakeFrame.phase !== "done");
-  const liveLanes = animating && overtakeFrame
-    ? lanes.map((l) => ({
-        ...l,
-        value: overtakeFrame.laneValues[l.id] ?? l.value,
-      }))
-    : lanes;
+  const liveLanes =
+    animating && overtakeFrame
+      ? lanes.map((l) => ({
+          ...l,
+          value: overtakeFrame.laneValues[l.id] ?? l.value,
+        }))
+      : lanes;
   const ordered = orderedArenaLanes(liveLanes);
   const ghost = liveLanes.find((l) => l.ghost);
   const effectiveCenter = clampArenaLaneCenter(view.center, view.span);
@@ -72,18 +74,11 @@ export function ArenaLanes({
       : null;
 
   function formatLastUpdated(lane: ArenaSceneLane): string {
-    if (lane.lastUpdated) return lane.lastUpdated;
-    if (lane.you) return lane.value > 0 ? "now" : "joined";
-    let hash = 0;
-    for (let i = 0; i < lane.id.length; i++) {
-      hash = (hash << 5) - hash + lane.id.charCodeAt(i);
-      hash |= 0;
-    }
-    const minutes = (Math.abs(hash) % 700) + 10;
-    if (minutes < 60) return `${minutes}m ago`;
-    const hours = Math.floor(minutes / 60);
-    return `${hours}h ago`;
+    return lane.you && lane.value === 0
+      ? "joined"
+      : formatActivityAge(lane.lastUpdated);
   }
+
   useEffect(() => {
     const el = host.current;
     if (el) el.scrollLeft = (el.scrollWidth - el.clientWidth) / 2;
@@ -249,7 +244,8 @@ export function ArenaLanes({
           const position = arenaPosition(l.value, effectiveView);
           const effect = !l.you ? overtakeFrame?.rivalEffects[l.id] : undefined;
           const speed = l.you && animating ? (overtakeFrame?.speed ?? 0) : 0;
-          const charging = l.you && animating ? (overtakeFrame?.charging ?? 0) : 0;
+          const charging =
+            l.you && animating ? (overtakeFrame?.charging ?? 0) : 0;
           const yy = y(l.value) + (l.you ? charging * 4 : 0);
           const xx = (i + 0.5) * laneWidth + 10 + (effect?.joltX ?? 0);
           const active = selected === l.id || l.you;

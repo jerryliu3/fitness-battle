@@ -1,17 +1,18 @@
+import {
+  BENCHMARKS,
+  formatClockTime,
+  paceBoard,
+  rankForElo,
+  type PaceScope,
+} from "@fitness-battle/shared";
+import { useRouter } from "expo-router";
+import * as WebBrowser from "expo-web-browser";
 import { useState } from "react";
 import { Pressable, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useRouter } from "expo-router";
-import * as WebBrowser from "expo-web-browser";
-import {
-  BENCHMARKS,
-  paceBoard,
-  formatClockTime,
-  type PaceScope,
-} from "@fitness-battle/shared";
 import { useCompeteStore } from "../src/lib/compete-store";
-import { FocusButton, FocusHeading, f } from "../src/ui/focus";
 import { mobileEnv } from "../src/lib/env";
+import { FocusButton, FocusHeading, f } from "../src/ui/focus";
 export default function Benchmarks() {
   const { state } = useCompeteStore();
   const router = useRouter();
@@ -68,10 +69,19 @@ export default function Benchmarks() {
               onPress={() => setScope(s)}
               style={[f.chip, scope === s && f.chipActive]}
             >
-              <Text style={f.rowTitle}>{s}</Text>
+              <Text style={f.rowTitle}>
+                {s === "category"
+                  ? `Your tier · ${rankForElo(state.ratings.find((r) => r.sport === sport)?.openElo ?? 500).name}`
+                  : s}
+              </Text>
             </Pressable>
           ))}
         </View>
+        {scope === "category" ? (
+          <Text style={f.copy}>
+            Compared with athletes in your current effort score tier.
+          </Text>
+        ) : null}
         <View style={f.card}>
           {rows.slice(0, 20).map((r) => (
             <View key={r.id} style={f.row}>

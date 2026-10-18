@@ -1,5 +1,5 @@
 import { shouldShowBootSplash } from "@fitness-battle/shared/boot";
-import { useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useCompeteStore } from "../lib/compete-store";
 import { BootSplash } from "./boot-splash";
 
@@ -11,8 +11,14 @@ export function BootGate({ children }: { children: ReactNode }) {
   const { state } = useCompeteStore();
   const [animationDone, setAnimationDone] = useState(false);
   const dataReady = state !== null;
+  const opened = useRef(false);
+  if (dataReady && animationDone) opened.current = true;
+  useEffect(() => {
+    const timer = setTimeout(() => setAnimationDone(true), 8000);
+    return () => clearTimeout(timer);
+  }, []);
 
-  if (shouldShowBootSplash(dataReady, animationDone)) {
+  if (!opened.current && shouldShowBootSplash(dataReady, animationDone)) {
     return (
       <BootSplash
         waiting={animationDone && !dataReady}

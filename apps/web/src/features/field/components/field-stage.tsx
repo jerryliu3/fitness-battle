@@ -98,9 +98,11 @@ export function FieldStage({
         name: r.name,
         initials: r.initials,
         value: valueAt(r, time),
+        lastUpdated: model.runners.find((runner) => runner.id === r.id)
+          ?.lastUpdated,
         you: r.you,
       })),
-    [runners, time],
+    [runners, time, model.runners],
   );
 
   const sceneLanes: ArenaSceneLane[] = useMemo(
@@ -140,7 +142,11 @@ export function FieldStage({
       previous = committedRef.current[scopeKey] ?? null;
     }
     const plan = reconcileArenaOvertake(fieldLanes, previous);
-    const snapshot = serializeArenaBaseline(model.periodStart, fieldLanes, unit);
+    const snapshot = serializeArenaBaseline(
+      model.periodStart,
+      fieldLanes,
+      unit,
+    );
     const nextCommitted: Record<string, number> = {};
     for (const lane of fieldLanes) {
       nextCommitted[lane.id] = lane.value;
@@ -169,7 +175,14 @@ export function FieldStage({
       setOvertakeProgress(0);
       setReplayEpoch((n) => n + 1);
     }
-  }, [accountKey, fieldLanes, model.periodStart, model.sport, model.track, unit]);
+  }, [
+    accountKey,
+    fieldLanes,
+    model.periodStart,
+    model.sport,
+    model.track,
+    unit,
+  ]);
 
   useEffect(() => {
     if (!overtakePlan || replayEpoch === 0) return;
@@ -308,9 +321,7 @@ export function FieldStage({
               disabled={isPursuit}
               title={isPursuit ? "3D pursuit (coming soon)" : undefined}
               style={
-                isPursuit
-                  ? { opacity: 0.5, cursor: "not-allowed" }
-                  : undefined
+                isPursuit ? { opacity: 0.5, cursor: "not-allowed" } : undefined
               }
               onClick={() => {
                 if (isPursuit) return;
@@ -341,7 +352,8 @@ export function FieldStage({
                 <span>{placeAt(runners, r.id, time, 0)}</span>
                 <b>{r.you ? selfLaneLabel(r.name) : r.name}</b>
                 <small>
-                  Effort Score {boardRows?.find((row) => row.id === r.id)?.elo ?? "—"}
+                  Effort Score{" "}
+                  {boardRows?.find((row) => row.id === r.id)?.elo ?? "—"}
                 </small>
                 <strong>
                   {valueAt(r, time).toFixed(1)} {unit}
@@ -393,7 +405,8 @@ export function FieldStage({
             )}
             {unavailable && (
               <p className="fb-note">
-                3D is unavailable on this device. Your 2D lanes remain interactive.
+                3D is unavailable on this device. Your 2D lanes remain
+                interactive.
               </p>
             )}
           </div>
@@ -452,7 +465,11 @@ export function FieldStage({
       )}
 
       {chosen && (
-        <div className="focus-athlete-popup" role="dialog" aria-label="Athlete details">
+        <div
+          className="focus-athlete-popup"
+          role="dialog"
+          aria-label="Athlete details"
+        >
           <div className="focus-athlete-popup-head">
             <b>{chosen.you ? selfLaneLabel(chosen.name) : chosen.name}</b>
             <button

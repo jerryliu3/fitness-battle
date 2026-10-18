@@ -1,5 +1,6 @@
 import {
   competeNow,
+  latestCountedActivityAt,
   sportById,
   distanceTrackMaxKm,
   ghostHasVolume,
@@ -14,6 +15,7 @@ import {
 import { buildSplitBoard } from "@/features/split/model";
 
 export interface FieldRunner {
+  lastUpdated?: string;
   id: string;
   name: string;
   initials: string;
@@ -82,12 +84,7 @@ export function buildFieldModel(
           board.periodEnd,
           now,
         );
-    const km = displaySeries(
-      series.distanceM,
-      series.effort,
-      gps,
-      state.units,
-    );
+    const km = displaySeries(series.distanceM, series.effort, gps, state.units);
     return {
       id: row.id,
       name: row.you ? state.name : row.name,
@@ -98,6 +95,16 @@ export function buildFieldModel(
       place: row.place,
       effort: row.effort,
       you: row.you,
+      lastUpdated: row.you
+        ? latestCountedActivityAt(
+            state.activities,
+            sport,
+            track,
+            board.periodStart,
+            board.periodEnd,
+            now,
+          )
+        : undefined,
     };
   });
 

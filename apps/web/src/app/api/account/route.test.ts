@@ -1,8 +1,10 @@
-import { beforeEach, describe, it, expect, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const stubs = vi.hoisted(() => ({
   user: vi.fn(),
   deleteUser: vi.fn(),
+  listPhotos: vi.fn(),
+  removePhotos: vi.fn(),
   createAdminClient: vi.fn(),
   webEnv: { useDemoData: false },
   serverEnv: { supabaseServiceRoleKey: "test-service-key" },
@@ -28,6 +30,9 @@ vi.mock("@supabase/supabase-js", () => ({
   createClient: (...args: unknown[]) => {
     stubs.createAdminClient(...args);
     return {
+      storage: {
+        from: () => ({ list: stubs.listPhotos, remove: stubs.removePhotos }),
+      },
       auth: {
         admin: {
           deleteUser: stubs.deleteUser,
@@ -45,6 +50,8 @@ describe("account deletion route", () => {
     stubs.webEnv.useDemoData = false;
     stubs.serverEnv.supabaseServiceRoleKey = "test-service-key";
     stubs.deleteUser.mockResolvedValue({ error: null });
+    stubs.listPhotos.mockResolvedValue({ data: [], error: null });
+    stubs.removePhotos.mockResolvedValue({ error: null });
   });
 
   it("rejects mismatched origin requests", async () => {
@@ -93,6 +100,56 @@ describe("account deletion route", () => {
     const body = await response.json();
     expect(body.ok).toBe(true);
     expect(body.demo).toBe(true);
+    expect(stubs.deleteUser).not.toHaveBeenCalled();
+  });
+
+  it("does not claim deletion succeeded when the server admin key is missing", async () => {
+    stubs.user.mockResolvedValue("user-123");
+    stubs.serverEnv.supabaseServiceRoleKey = "";
+    const response = await DELETE(
+      new Request("http://localhost:3000/api/account", { method: "DELETE" }),
+    );
+    expect(response.status).toBe(503);
+    expect(stubs.deleteUser).not.toHaveBeenCalled();
+  });
+
+  it("removes only the authenticated user's avatar objects before deleting auth", async () => {
+    stubs.user.mockResolvedValue("user-123");
+    stubs.listPhotos.mockResolvedValue({
+      data: [
+        { id: "photo", name: "avatar.jpg" },
+        { id: "old", name: "legacy.png" },
+      ],
+      error: null,
+    });
+    const response = await DELETE(
+      new Request("http://localhost:3000/api/account", {
+        method: "DELETE",
+        headers: { Authorization: "Bearer mobile-token" },
+      }),
+    );
+    expect(response.status).toBe(200);
+    expect(stubs.listPhotos).toHaveBeenCalledWith("user-123", { limit: 1000 });
+    expect(stubs.removePhotos).toHaveBeenCalledWith([
+      "user-123/avatar.jpg",
+      "user-123/legacy.png",
+    ]);
+    expect(stubs.removePhotos.mock.invocationCallOrder[0]).toBeLessThan(
+      stubs.deleteUser.mock.invocationCallOrder[0],
+    );
+  });
+
+  it("does not falsely report deletion if Storage cleanup fails", async () => {
+    stubs.user.mockResolvedValue("user-123");
+    stubs.listPhotos.mockResolvedValue({
+      data: [{ id: "photo", name: "avatar.jpg" }],
+      error: null,
+    });
+    stubs.removePhotos.mockResolvedValue({ error: new Error("offline") });
+    const response = await DELETE(
+      new Request("http://localhost:3000/api/account", { method: "DELETE" }),
+    );
+    expect(response.status).toBe(500);
     expect(stubs.deleteUser).not.toHaveBeenCalled();
   });
 

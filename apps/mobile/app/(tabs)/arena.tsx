@@ -1,19 +1,17 @@
-import { useEffect, useMemo, useRef, useState } from "react";
-import { Pressable, ScrollView, Switch, Text, View } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { usePathname, useRouter } from "expo-router";
+import type { CrewBoardPin } from "@fitness-battle/shared";
 import {
+  SPORTS,
   arenaBaselineStorageKey,
+  awardCards,
   buildArenaModel,
   competePeriodWindow,
-  formatArenaOvertakeStatus,
-  SPORTS,
-  initialsFromName,
   fitArenaWindow,
+  formatArenaOvertakeStatus,
+  initialsFromName,
+  primaryRevealResults,
   readArenaBaseline,
   reconcileArenaOvertake,
   resolveArenaSelectedId,
-  primaryRevealResults,
   selfLaneLabel,
   serializeArenaBaseline,
   shellTabFromPath,
@@ -23,24 +21,30 @@ import {
   type Action,
   type ArenaOvertakePlan,
   type ArenaSceneLane,
-  type SportId,
-  type ScoreTrack,
   type ArenaSceneMessage,
   type CompeteState,
+  type ScoreTrack,
+  type SportId,
 } from "@fitness-battle/shared";
+import { usePathname, useRouter } from "expo-router";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Pressable, ScrollView, Switch, Text, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { CompetitionSummary } from "../../src/features/competition-summary";
+import { useCrewApi } from "../../src/features/crew";
+import { SleepPanel } from "../../src/features/sleep-panel";
+import { useAuth } from "../../src/lib/auth";
 import { useCompeteStore } from "../../src/lib/compete-store";
-import { LaneTrack } from "../../src/ui/lane-track";
 import { Arena3D } from "../../src/ui/arena-3d";
+import { AwardShelf } from "../../src/ui/award-shelf";
 import {
   FocusButton,
   FocusDisclosure,
-  FocusHeading,
   FocusSheet,
   f,
 } from "../../src/ui/focus";
-import { AwardShelf } from "../../src/ui/award-shelf";
-import { awardCards } from "@fitness-battle/shared";
-import { useAuth } from "../../src/lib/auth";
+import { LaneTrack } from "../../src/ui/lane-track";
+import { ZoomControl } from "../../src/ui/zoom-control";
 export default function ArenaScreen() {
   const {
     state,
@@ -53,8 +57,15 @@ export default function ArenaScreen() {
     fieldNotice,
     dismissFieldNotice,
     standingsStale,
+    saveError,
+    retrySave,
   } = useCompeteStore();
-  const { user } = useAuth();
+  const { user, demoMode } = useAuth();
+  const crewApi = useCrewApi();
+  const [withCrew, setWithCrew] = useState(false);
+  const joinFlight = useRef(false);
+  const currentUser = useRef(user?.id);
+  currentUser.current = user?.id;
   const router = useRouter();
   const pathname = usePathname();
   const isFocused = shellTabFromPath(pathname)?.id === "arena";
@@ -80,8 +91,7 @@ export default function ArenaScreen() {
     () => (state ? buildArenaModel(state, undefined, track) : null),
     [state, track],
   );
-  const defaultSpan =
-    arena?.unit === "pts" ? 20 : arena?.unit === "mi" ? 4 : 6;
+  const defaultSpan = arena?.unit === "pts" ? 20 : arena?.unit === "mi" ? 4 : 6;
   const viewSpan = span ?? defaultSpan;
   const me = arena?.lanes.find((l) => l.you);
   const total = me?.values[2] ?? 0;
@@ -224,9 +234,8 @@ export default function ArenaScreen() {
   const selected =
     selectedId == null
       ? null
-      : (arena.lanes.find(
-          (l) => l.id === selectedId && (ghost || !l.ghost),
-        ) ?? null);
+      : (arena.lanes.find((l) => l.id === selectedId && (ghost || !l.ghost)) ??
+        null);
   const model: ArenaSceneMessage = {
     type: "arena-view",
     lanes,
@@ -234,18 +243,43 @@ export default function ArenaScreen() {
     unit: arena.unit,
     selected: trackSelectedId || me?.id || "",
   };
-  async function join(nextSport: SportId) {
+  async function join(nextSport: SportId, crewId?: string) {
     if (!user) {
       setRegister(false);
       setSport(null);
       router.navigate("/you");
       return;
     }
+    if (joinFlight.current) return;
+    if (!state?.onboardingCompleted) {
+      setRegister(false);
+      router.navigate("/onboarding");
+      return;
+    }
+    const joiningAccount = user.id;
+    joinFlight.current = true;
     setJoinBusy(true);
     setJoinError("");
     try {
-      dispatch({ type: "set-primary", sport: nextSport });
-      dispatch({ type: "opt-in", sport: nextSport, crewBoard: null });
+      let pin: CrewBoardPin | null = null;
+      if (crewId) {
+        const result = await crewApi.request("/field", { crewId });
+        pin = result.pin ?? null;
+        if (!pin || pin.sport !== nextSport)
+          throw new Error("Could not join that crew field. Please try again.");
+      }
+      if (currentUser.current !== joiningAccount) return;
+      dispatch({
+        type: "set-primary",
+        sport: nextSport,
+        accountId: joiningAccount,
+      });
+      dispatch({
+        type: "opt-in",
+        sport: nextSport,
+        crewBoard: pin,
+        accountId: joiningAccount,
+      });
       setCenter(null);
       const gps = SPORTS.find((s) => s.id === nextSport)?.gps;
       setSpan(gps ? (state?.units === "metric" ? 6 : 4) : 20);
@@ -254,6 +288,7 @@ export default function ArenaScreen() {
     } catch (e) {
       setJoinError(e instanceof Error ? e.message : "Could not join.");
     } finally {
+      joinFlight.current = false;
       setJoinBusy(false);
     }
   }
@@ -261,11 +296,13 @@ export default function ArenaScreen() {
   return (
     <SafeAreaView style={f.safe} edges={["top"]}>
       <ScrollView contentContainerStyle={f.content}>
-        <FocusHeading
-          kicker="Your week, your pace"
-          title="A little further than before."
-          body="Your effort. Your field. Your past self."
-        />
+        <CompetitionSummary state={state} />
+        {saveError ? (
+          <View style={f.feedback}>
+            <Text style={f.copy}>{saveError}</Text>
+            <FocusButton label="Retry save" secondary onPress={retrySave} />
+          </View>
+        ) : null}
         <View style={f.chipRow}>
           {state.ratings
             .filter((r) => r.optedIn)
@@ -288,14 +325,17 @@ export default function ArenaScreen() {
                 </Text>
               </Pressable>
             ))}
-          <FocusButton
-            label="Register ＋"
-            secondary
-            onPress={() => {
-              setSport(null);
-              setRegister(true);
-            }}
-          />
+          {state.ratings.some((r) => r.optedIn) ||
+          state.healthRatings.some((r) => r.optedIn) ? (
+            <FocusButton
+              label="Register ＋"
+              secondary
+              onPress={() => {
+                setSport(null);
+                setRegister(true);
+              }}
+            />
+          ) : null}
         </View>
         {standingsStale ? (
           <Text style={f.copy} accessibilityLiveRegion="polite">
@@ -305,7 +345,11 @@ export default function ArenaScreen() {
         {fieldNotice ? (
           <View style={f.card}>
             <Text style={f.h2}>{fieldNotice.title}</Text>
-            <FocusButton label="Got it" secondary onPress={dismissFieldNotice} />
+            <FocusButton
+              label="Got it"
+              secondary
+              onPress={dismissFieldNotice}
+            />
           </View>
         ) : null}
         <WeekRecap state={state} dispatch={dispatch} />
@@ -380,22 +424,62 @@ export default function ArenaScreen() {
               ))}
             </View>
             <View style={f.chipRow}>
-              {["2D lanes", "3D pursuit"].map((m) => (
+              {["2D lanes", "3D pursuit", "Standings"].map((m) => (
                 <Pressable
                   key={m}
                   accessibilityRole="tab"
-                  accessibilityState={{ selected: mode === m }}
+                  accessibilityState={{
+                    selected: mode === m,
+                    disabled: m === "3D pursuit",
+                  }}
+                  disabled={m === "3D pursuit"}
                   onPress={() => {
                     setMode(m);
                     setFailed(false);
                   }}
                   style={[f.chip, { flex: 1 }, mode === m && f.chipActive]}
                 >
-                  <Text style={f.rowTitle}>{m}</Text>
+                  <Text
+                    style={[
+                      f.rowTitle,
+                      m === "3D pursuit" && { opacity: 0.45 },
+                    ]}
+                  >
+                    {m === "3D pursuit" ? "3D pursuit (coming soon)" : m}
+                  </Text>
                 </Pressable>
               ))}
             </View>
-            {mode === "3D pursuit" && !failed ? (
+            {mode === "Standings" ? (
+              <View style={{ gap: 12 }}>
+                {arena.lanes
+                  .filter((l) => !l.ghost)
+                  .slice()
+                  .sort((a, b) => b.values[2] - a.values[2])
+                  .map((l, i) => (
+                    <Pressable
+                      key={l.id}
+                      accessibilityRole="button"
+                      onPress={() => setSelectedId(l.id)}
+                      style={f.row}
+                    >
+                      <Text style={f.small}>
+                        {1 +
+                          arena.lanes.filter(
+                            (peer) =>
+                              !peer.ghost && peer.values[2] > l.values[2],
+                          ).length}
+                      </Text>
+                      <Text style={[f.rowTitle, f.grow]}>
+                        {l.you ? selfLaneLabel(l.name) : l.name}
+                      </Text>
+                      <Text style={f.rowTitle}>
+                        {l.values[2].toFixed(1)} {arena.unit}
+                      </Text>
+                    </Pressable>
+                  ))}
+              </View>
+            ) : mode === "3D pursuit" && !failed ? (
               <Arena3D
                 model={model}
                 onPan={(v) => setCenter(Math.max(0, v))}
@@ -415,46 +499,39 @@ export default function ArenaScreen() {
                 overtakePlan={overtakePlan}
               />
             )}
+            {selected ? (
+              <View style={f.card} accessibilityLiveRegion="polite">
+                <View style={f.row}>
+                  <Text style={[f.rowTitle, f.grow]}>{selected.name}</Text>
+                  <FocusButton
+                    label="Close athlete details"
+                    secondary
+                    onPress={() => setSelectedId(null)}
+                  />
+                </View>
+                <Text style={f.copy}>
+                  {selected.values[2].toFixed(1)} {arena.unit}
+                  {selected.ghost
+                    ? " · past you, comparison only"
+                    : me && !selected.you
+                      ? ` · ${Math.abs(selected.values[2] - me.values[2]).toFixed(1)} ${arena.unit} ${selected.values[2] >= me.values[2] ? "ahead" : "behind"}`
+                      : " · you"}
+                </Text>
+              </View>
+            ) : null}
+            <ZoomControl
+              value={view.span}
+              maximum={arena.unit === "pts" ? 100 : 40}
+              onChange={(span) => {
+                setSpan(span);
+                setCenter(null);
+              }}
+            />
             {failed && (
               <Text style={f.small}>
                 3D needs WebGL on this device. Your 2D lanes remain interactive.
               </Text>
             )}
-            <View style={f.chipRow}>
-              {[
-                {
-                  label: "＋",
-                  a: () => setSpan(Math.max(1, viewSpan / 1.5)),
-                  name: "Zoom in",
-                },
-                {
-                  label: "−",
-                  a: () => setSpan(Math.min(5000, viewSpan * 1.5)),
-                  name: "Zoom out",
-                },
-                {
-                  label: "↓",
-                  a: () =>
-                    setCenter(Math.max(0, view.center - viewSpan / 3)),
-                  name: "Move window backward",
-                },
-                {
-                  label: "↑",
-                  a: () => setCenter(view.center + viewSpan / 3),
-                  name: "Move window forward",
-                },
-              ].map((b) => (
-                <Pressable
-                  key={b.name}
-                  accessibilityRole="button"
-                  accessibilityLabel={b.name}
-                  style={f.chip}
-                  onPress={b.a}
-                >
-                  <Text style={f.rowTitle}>{b.label}</Text>
-                </Pressable>
-              ))}
-            </View>
             <View style={f.chipRow}>
               <FocusButton
                 label="Center me"
@@ -487,9 +564,7 @@ export default function ArenaScreen() {
                     setGhost(next);
                     if (
                       !next &&
-                      arena.lanes.some(
-                        (l) => l.id === selectedId && l.ghost,
-                      )
+                      arena.lanes.some((l) => l.id === selectedId && l.ghost)
                     )
                       setSelectedId(null);
                   }}
@@ -497,39 +572,16 @@ export default function ArenaScreen() {
                 />
               </View>
             )}
-            <FocusDisclosure
-              title="Full standings"
-              detail="Every athlete, including outside this view"
-            >
-              {arena.lanes
-                .filter((l) => !l.ghost)
-                .slice()
-                .sort((a, b) => b.values[2] - a.values[2])
-                .map((l, i) => (
-                  <Pressable
-                    accessibilityRole="button"
-                    key={l.id}
-                    onPress={() => setSelectedId(l.id)}
-                    style={f.row}
-                  >
-                    <Text style={f.small}>{i + 1}</Text>
-                    <Text style={[f.rowTitle, f.grow]}>
-                      {l.you ? selfLaneLabel(l.name) : l.name}
-                    </Text>
-                    <Text style={f.rowTitle}>
-                      {l.values[2].toFixed(1)} {arena.unit}
-                    </Text>
-                  </Pressable>
-                ))}
-            </FocusDisclosure>
             <Text style={f.small}>
               Accumulated effort, not live GPS positions. Practice fields may
               contain synthetic athletes.
             </Text>
           </View>
-        ) : (
+        ) : !state.healthRatings.some((r) => r.optedIn) ? (
           <View style={f.card}>
-            <Text style={{ fontSize: 26, textAlign: "center", marginBottom: 10 }}>
+            <Text
+              style={{ fontSize: 26, textAlign: "center", marginBottom: 10 }}
+            >
               🏃 🚴 🚶 🏋️
             </Text>
             <Text style={f.title}>Your next chapter starts here.</Text>
@@ -542,7 +594,8 @@ export default function ArenaScreen() {
               }}
             />
           </View>
-        )}
+        ) : null}
+        <SleepPanel state={state} dispatch={dispatch} />
         <View style={[f.card, { opacity: 0.72 }]}>
           <Text style={f.kicker}>Coming soon</Text>
           <Text style={f.title}>1v1</Text>
@@ -551,19 +604,11 @@ export default function ArenaScreen() {
           </Text>
           <FocusButton label="1v1 · Coming soon" disabled onPress={() => {}} />
         </View>
-        {state.periodResults.some((r) => !r.acknowledgedAt) && (
-          <View style={f.card}>
-            <Text style={f.h2}>Your week is complete.</Text>
+        {awardCards(state).length > 0 ? (
+          <FocusDisclosure title="Past competitions & awards">
             <AwardShelf cards={awardCards(state)} />
-            <FocusButton
-              label="Continue to this week"
-              onPress={() => dispatch({ type: "acknowledge-reveal" })}
-            />
-          </View>
-        )}
-        <FocusDisclosure title="Past competitions & awards">
-          <AwardShelf cards={awardCards(state)} />
-        </FocusDisclosure>
+          </FocusDisclosure>
+        ) : null}
         <FocusButton
           label="Benchmarks & pace"
           secondary
@@ -573,54 +618,106 @@ export default function ArenaScreen() {
       <FocusSheet
         open={register}
         title="Register for this week."
-        body="Tap an event to join for the week."
+        body="Choose an event to join for the week."
         onClose={() => {
           setRegister(false);
           setSport(null);
         }}
       >
+        <View style={f.row}>
+          <Text style={[f.rowTitle, f.grow]}>Compete with your crew</Text>
+          <Switch
+            accessibilityLabel="Compete with your crew"
+            value={withCrew}
+            disabled={joinBusy}
+            onValueChange={setWithCrew}
+          />
+        </View>
+        {withCrew && !crewApi.live ? (
+          <Text style={f.copy}>
+            A live account and a matching crew are required.
+          </Text>
+        ) : null}
         {SPORTS.map((s) => {
-          const isRegistered = state.ratings.find((r) => r.sport === s.id)
-            ?.optedIn;
+          const isRegistered = state.ratings.find(
+            (r) => r.sport === s.id,
+          )?.optedIn;
+          const eligible = (crewApi.data?.crews ?? []).flatMap((r) =>
+            r.crews?.sport === s.id ? [r.crews] : [],
+          );
           return (
-            <Pressable
-              key={s.id}
-              accessibilityRole="button"
-              disabled={Boolean(isRegistered) || joinBusy}
-              onPress={() => {
-                if (isRegistered || joinBusy) return;
-                setSport(s.id);
-                void join(s.id);
-              }}
-              style={[f.chip, sport === s.id && f.chipActive]}
-            >
-              <Text style={f.rowTitle}>{s.name}</Text>
-              <Text style={f.small}>
-                {isRegistered
-                  ? "Registered this week"
-                  : s.gps
-                    ? "GPS distance & open effort"
-                    : "Open effort score"}
-              </Text>
-            </Pressable>
+            <View key={s.id} style={{ gap: 8 }}>
+              <Pressable
+                accessibilityRole="button"
+                disabled={Boolean(isRegistered) || joinBusy}
+                onPress={() => {
+                  if (isRegistered || joinBusy) return;
+                  setSport(s.id);
+                  if (!withCrew) void join(s.id);
+                }}
+                style={[f.chip, sport === s.id && f.chipActive]}
+              >
+                <Text style={f.rowTitle}>{s.name}</Text>
+                <Text style={f.small}>
+                  {isRegistered
+                    ? "Registered this week"
+                    : s.gps
+                      ? "GPS distance & open effort"
+                      : "Open effort score"}
+                </Text>
+              </Pressable>
+              {withCrew && sport === s.id && !isRegistered ? (
+                eligible.length ? (
+                  eligible.map((crew) => (
+                    <FocusButton
+                      key={crew.id}
+                      label={`Join ${s.name} with ${crew.name}`}
+                      disabled={joinBusy}
+                      onPress={() => void join(s.id, crew.id)}
+                    />
+                  ))
+                ) : (
+                  <Text style={f.copy}>
+                    {crewApi.error ||
+                      "No eligible crew for this event. Add a crew on Crew, or turn off crew competition."}
+                  </Text>
+                )
+              ) : null}
+            </View>
           );
         })}
+        <FocusButton
+          label={
+            state.healthRatings.some((r) => r.metric === "sleep" && r.optedIn)
+              ? "Sleep & Recovery · registered"
+              : "Join Sleep & Recovery"
+          }
+          secondary
+          disabled={
+            joinBusy ||
+            state.healthRatings.some((r) => r.metric === "sleep" && r.optedIn)
+          }
+          onPress={() => {
+            if (!user) {
+              setRegister(false);
+              router.navigate("/you");
+              return;
+            }
+            if (!state.onboardingCompleted) {
+              setRegister(false);
+              router.navigate("/onboarding");
+              return;
+            }
+            dispatch({ type: "opt-in-health", metric: "sleep" });
+            setRegister(false);
+          }}
+        />
         {joinError && (
           <Text style={f.copy} accessibilityLiveRegion="polite">
             {joinError}
           </Text>
         )}
       </FocusSheet>
-      <FocusSheet
-        open={!!selected}
-        title={selected?.name ?? "Athlete"}
-        body={
-          selected
-            ? `${selected.values[2].toFixed(1)} ${arena.unit}${selected.ghost ? " · past you, comparison only" : ""}`
-            : ""
-        }
-        onClose={() => setSelectedId(null)}
-      />
     </SafeAreaView>
   );
 }
@@ -632,32 +729,49 @@ function WeekRecap({
   state: CompeteState;
   dispatch: (action: Action) => void;
 }) {
-  const reveals = primaryRevealResults(state.periodResults, undefined, state.primary);
+  const reveals = primaryRevealResults(
+    state.periodResults,
+    undefined,
+    state.primary,
+  );
   if (reveals.length === 0) return null;
   const result = reveals[0]!;
   const renewal = sportRenewal(state, result.sport);
   return (
     <View style={f.card}>
       <Text style={f.h2}>Week complete · {sportById(result.sport).name}</Text>
+      <Text style={f.h2}>
+        Place {result.place} of {result.fieldSize}
+      </Text>
+      <Text style={f.copy}>
+        {result.effort.toFixed(1)} effort · effort score {result.eloBefore} →{" "}
+        {result.eloAfter}
+        {result.frozen ? " · frozen" : ""}
+      </Text>
       <Text style={f.copy}>{renewal.detail}</Text>
       {renewal.enrolled && renewal.renews ? (
         <FocusButton
           label="Stop after this week"
           secondary
-          onPress={() => dispatch({ type: "schedule-leave", sport: result.sport })}
+          onPress={() =>
+            dispatch({ type: "schedule-leave", sport: result.sport })
+          }
         />
       ) : null}
       {renewal.enrolled && !renewal.renews ? (
         <FocusButton
           label="Keep playing next week"
           secondary
-          onPress={() => dispatch({ type: "resume-renewal", sport: result.sport })}
+          onPress={() =>
+            dispatch({ type: "resume-renewal", sport: result.sport })
+          }
         />
       ) : null}
       <FocusButton
         label={renewal.enrolled ? "Continue" : "Play this week"}
         onPress={() => {
-          if (!renewal.enrolled) dispatch({ type: "opt-in", sport: result.sport });
+          if (!renewal.enrolled)
+            dispatch({ type: "opt-in", sport: result.sport });
           dispatch({ type: "acknowledge-reveal", revealIds: [result.id] });
         }}
       />

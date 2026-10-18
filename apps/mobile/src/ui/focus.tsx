@@ -1,4 +1,4 @@
-import { useState, useEffect, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import {
   AccessibilityInfo,
   KeyboardAvoidingView,
@@ -229,12 +229,15 @@ export const f = StyleSheet.create({
     backgroundColor: c.card,
     borderWidth: 1,
     borderColor: c.line,
-    borderRadius: 23,
+    borderRadius: 16,
+    borderBottomWidth: 3,
     padding: 23,
     gap: 13,
   },
   button: {
     backgroundColor: c.plum,
+    borderBottomWidth: 3,
+    borderBottomColor: "#1a201e",
     borderRadius: 11,
     minHeight: 48,
     padding: 15,
@@ -293,8 +296,8 @@ export const f = StyleSheet.create({
   },
   sheetBody: { padding: 24, paddingTop: 10, paddingBottom: 35, gap: 18 },
   close: {
-    height: 36,
-    width: 36,
+    height: 44,
+    width: 44,
     borderRadius: 18,
     backgroundColor: c.card,
     justifyContent: "center",
