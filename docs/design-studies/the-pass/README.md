@@ -4,11 +4,13 @@
 
 Locked for now: **Afterimage with hollow circles, a white background, no lane lines in the logo, and the subtly slower rival wake**. The leading racer stays yellow/gold. The gallery opens with **Gold / silver** (`#dfb451` / `#9fa5af`); **Rich gold / silver** (`#dfad3c` / `#9fa5af`) is the adjacent alternative. The user liked gold/violet before considering silver, so that pairing and the earlier studies remain documented rather than being deleted. The exact gold shade is not claimed as finally selected.
 
+[Selected icon and field](selected-afterimage.png) · [Gold / silver SVG](round-3-icons/afterimage-circle-outline-gold-silver-white-subtle.svg) · [Rich gold / silver SVG](round-3-icons/afterimage-circle-outline-rich-gold-silver-white-subtle.svg).
+
 The defaults are centralized in `AFTERIMAGE_SELECTION`. Both silver pairings are available on white, grey and black, bringing the color matrix to **30 studies**. Shape, background and cadence are settled for the current direction; retained controls allow historical comparisons. The selected form is an identity decision, not a change to the production competition screen or final app-store asset packaging.
 
 ## Round 3 — Afterimage selected
 
-The review now opens on **Afterimage · Round 3** (`?view=afterimage`). The user has selected Afterimage and removed lane rules from the logo. Earlier rounds and the saved shortlist remain available as history.
+The selected review is available under **Afterimage · Selected** (`?view=afterimage`). The user has selected Afterimage and removed lane rules from the logo. Earlier rounds and the saved shortlist remain available as history.
 
 - Four directly comparable head treatments: hollow circle, solid circle, filled canonical Ember with its existing eyes/smile, and outlined Ember without a face. Filled Ember never becomes a faceless star in this round; its contour echoes remain face-free.
 - Eight yellow/gold pairings: theme yellow/sage, lemon/cobalt, gold/violet, sunshine/sky, rich gold/coral, soft yellow/teal, champagne/silver, and yellow/burnished gold.
@@ -16,11 +18,11 @@ The review now opens on **Afterimage · Round 3** (`?view=afterimage`). The user
 - Two wakes, with four echoes each: equal length and cadence, or a rival wake 11% shorter with roughly 22% slower flow. Lengths scale with the head size in the field. This is intentionally much closer than the dense, slow rival from Round 2.
 - Shape, palette/background and rhythm are independent. Click a color tile, compare the four heads, choose a wake, and inspect the matching icon and field. The field reuses the selected background and racer palette. Continuous flow, pass replay, pause, manual progress and reduced motion remain available.
 
-[Four-head board](round-3-shapes.svg) · [24-color board](round-3-colors.svg) · [Gallery screenshot](round-3-review.png) · [Static SVG masters](round-3-icons/). The default saved color board uses hollow circles and the subtle wake; the live gallery can combine every color study with each head and either rhythm. Export the current choice from its large preview.
+[Four-head board](round-3-shapes.svg) · [30-color board](round-3-colors.svg) · [Gallery screenshot](round-3-review.png) · [Static SVG masters](round-3-icons/). The default saved color board uses hollow circles and the subtle wake; the live gallery can combine every color study with each head and either rhythm. Export the current choice from its large preview.
 
 ## Round 2 — Afterimage, Open Track and Twin trails
 
-The review now opens on **Round 2** (`?view=refinements`). The user shortlisted Twin trails, Afterimage and Open Track, leaning toward the latter two. The original fifteen concepts and browser-local shortlist remain available.
+The earlier review is retained under **Round 2** (`?view=refinements`). The user shortlisted Twin trails, Afterimage and Open Track, leaning toward the latter two. The original fifteen concepts and browser-local shortlist remain available.
 
 - **Eight Afterimage variations:** dense slower-racer echoes, no rival wake, gold/sage in daylight and charcoal, canonical Ember contours in daylight and charcoal, and open vertical lane rules in daylight and charcoal.
 - **Four Open Track variations:** three vertical lines with no bottom border, the same track with contour echoes, a charcoal/gold solid-token version, and a charcoal/gold version with echoes.
@@ -100,6 +102,6 @@ pnpm install --frozen-lockfile
 node apps/web/src/app/design/_studies/pass-lab/build-review.mjs
 ```
 
-The builder uses the existing Vite/esbuild installation and embeds DM Sans and Nunito Sans from the Next font cache, falling back to the existing portable motion review’s embedded subsets for offline rebuilds. It generates `review.html`, the original icon/lane boards, `round-2-board.svg`, 15 original masters under `icons/`, and 12 refinements under `round-2-icons/`. The PNG boards are captured browser previews.
+The builder uses the existing Vite/esbuild installation and embeds DM Sans and Nunito Sans from the Next font cache, falling back to the existing portable motion review’s embedded subsets for offline rebuilds. It generates `review.html`, the original icon/lane boards, `round-2-board.svg`, 15 original masters under `icons/`, 12 refinements under `round-2-icons/`, and 30 color studies plus four head studies under `round-3-icons/`. The selected direction is captured in `selected-afterimage.png`. The PNG boards are captured browser previews.
 
 Verification: monorepo typecheck, all workspace tests, production web build, and desktop/390 px browser review. Fixture tests cover fixed lanes, the ±3 km window, no/one/two passes, ties and catalog connections.
