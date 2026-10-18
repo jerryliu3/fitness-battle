@@ -68,8 +68,35 @@ Only production behavior is promoted. Design studios, documentation proposals, b
 - Crew uses real membership/data for live accounts; a one-person circle previews the full layout for guests/new athletes. Add/Join, invite, rest and leave use existing endpoints. All distances use athlete units.
 - Native Data Sync adds cloud sync/disconnect, Garmin import and pending review, honest sample-sleep/calibration controls. Native health permissions remain device-specific.
 - Athlete adds onboarding access, freeze confirmation/undo, issue reporting, confirmed account deletion, save failure/retry and account-name repair.
-- Native training, dirty drafts, seen activity and lane baselines are scoped to the current account. Old unscoped caches are not automatically uploaded into a newly signed-in account.
+- Native training, dirty drafts, seen activity and lane baselines are scoped to the current account. Old unscoped caches are not automatically uploaded into a newly signed-in account. An explicit review/RESTORE flow preserves both documents as backups before assigning older device history.
 
 ## Verification and review
 
 See the PR description for exact final check results and the post-implementation review findings/fixes. Native photo/document picker additions require a new development/production binary. Live email delivery needs Resend server credentials; actual provider OAuth, device health prompts and destructive live account/crew operations are not exercised against a real user during verification.
+
+## Deep review follow-up
+
+The implementation was reviewed again after PR creation. Findings fixed in the follow-up commit:
+
+1. Native `AbortSignal.timeout` is absent in React Native's bundled abort-controller. All new native API requests now use a timed AbortController; regression tests exercise a runtime with no static AbortSignal method.
+2. A failed initial account load must not permit a fresh device document to replace the server account. Editing/saving is blocked until a successful reload; cached drafts are retained and Retry reloads the account.
+3. Account switches and unmounts can race photo pickers, crew seating, syncs, refreshes and deletion. Operations are bound to the requesting account, stale actions are rejected, and local deletion accepts an explicit expected owner.
+4. Re-showing BootSplash while an account reloads unmounted the navigator and reset the current route. The navigator now stays mounted after initial launch; an eight-second deadline releases stalled splash animation while still waiting for initial data.
+5. Supabase Auth deletion can fail while the user owns avatar objects. The server removes only that authenticated user's avatar folder first, handles storage failures honestly, and rejects missing deletion configuration instead of pretending success.
+6. Native photo removal now removes the stored canonical/legacy avatar objects rather than merely hiding their public URL. Picker permission configuration is explicit and does not request camera/microphone access.
+7. Crew feeds refresh while focused; failed post-write refreshes stay visible. Cooperative progress and all distance labels retain their own units/format semantics. Tied native standings count only athletes strictly ahead.
+8. Calendar-day history uses Eastern date boundaries across midnight/DST; settled score changes appear at the closed-week boundary. Previous-week charts obtain actual period bounds instead of subtracting a fixed 168 hours. Journey lane assignment uses full history before applying its visible cap, keeping older stops stable.
+9. Activity-age badges now use actual counted timestamps on both platforms. Unknown rivals display an unavailable marker; the older web hash-generated “minutes ago” values are no longer manufactured.
+10. Remaining obsolete native Home/profile headings were removed; the Data Sync menu label, scoring explainer and conditional awards match the current product. Duplicate week-complete prompts were removed. Dead path/chart code and imports were removed after the shared-model extraction.
+
+Regression coverage includes real provider mount/update cycles for guest→Alice→Bob→guest, rapid sequential edits, open-week conflict/retry, stale refreshes, stale attributed actions, exact account-cache cleanup and failed initial loads. These are mocked native lifecycle tests, not destructive tests against real user data.
+
+## Final validation
+
+- Workspace `pnpm typecheck`: passed; final native edits also checked with the mobile TypeScript task.
+- `pnpm test`: 468 passed, 4 existing database seed integration tests skipped. Native lifecycle/transport regressions were rerun after the final cleanup guards.
+- Production Next.js web build: passed.
+- Expo iOS **and** Android Hermes exports: passed.
+- Expo-web smoke: Home/day history, guest Crew composition, demo sign-in hydration, Competition/standings/sleep, Open/GPS history, scoring explanation and the issue dialog. Actual native device permission prompts and live destructive operations were not exercised.
+
+![Native component rendered in the Expo-web preview; demo reports are explicitly not sent](mobile-parity-report-dialog.png)

@@ -1,24 +1,17 @@
-import { ZoomControl } from "../../src/ui/zoom-control";
-import { CompetitionSummary } from "../../src/features/competition-summary";
-import { SleepPanel } from "../../src/features/sleep-panel";
-import { useCrewApi } from "../../src/features/crew";
 import type { CrewBoardPin } from "@fitness-battle/shared";
-import { useEffect, useMemo, useRef, useState } from "react";
-import { Pressable, ScrollView, Switch, Text, View } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { usePathname, useRouter } from "expo-router";
 import {
+  SPORTS,
   arenaBaselineStorageKey,
+  awardCards,
   buildArenaModel,
   competePeriodWindow,
-  formatArenaOvertakeStatus,
-  SPORTS,
-  initialsFromName,
   fitArenaWindow,
+  formatArenaOvertakeStatus,
+  initialsFromName,
+  primaryRevealResults,
   readArenaBaseline,
   reconcileArenaOvertake,
   resolveArenaSelectedId,
-  primaryRevealResults,
   selfLaneLabel,
   serializeArenaBaseline,
   shellTabFromPath,
@@ -28,24 +21,30 @@ import {
   type Action,
   type ArenaOvertakePlan,
   type ArenaSceneLane,
-  type SportId,
-  type ScoreTrack,
   type ArenaSceneMessage,
   type CompeteState,
+  type ScoreTrack,
+  type SportId,
 } from "@fitness-battle/shared";
+import { usePathname, useRouter } from "expo-router";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Pressable, ScrollView, Switch, Text, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { CompetitionSummary } from "../../src/features/competition-summary";
+import { useCrewApi } from "../../src/features/crew";
+import { SleepPanel } from "../../src/features/sleep-panel";
+import { useAuth } from "../../src/lib/auth";
 import { useCompeteStore } from "../../src/lib/compete-store";
-import { LaneTrack } from "../../src/ui/lane-track";
 import { Arena3D } from "../../src/ui/arena-3d";
+import { AwardShelf } from "../../src/ui/award-shelf";
 import {
   FocusButton,
   FocusDisclosure,
-  FocusHeading,
   FocusSheet,
   f,
 } from "../../src/ui/focus";
-import { AwardShelf } from "../../src/ui/award-shelf";
-import { awardCards } from "@fitness-battle/shared";
-import { useAuth } from "../../src/lib/auth";
+import { LaneTrack } from "../../src/ui/lane-track";
+import { ZoomControl } from "../../src/ui/zoom-control";
 export default function ArenaScreen() {
   const {
     state,
@@ -65,6 +64,8 @@ export default function ArenaScreen() {
   const crewApi = useCrewApi();
   const [withCrew, setWithCrew] = useState(false);
   const joinFlight = useRef(false);
+  const currentUser = useRef(user?.id);
+  currentUser.current = user?.id;
   const router = useRouter();
   const pathname = usePathname();
   const isFocused = shellTabFromPath(pathname)?.id === "arena";
@@ -255,6 +256,7 @@ export default function ArenaScreen() {
       router.navigate("/onboarding");
       return;
     }
+    const joiningAccount = user.id;
     joinFlight.current = true;
     setJoinBusy(true);
     setJoinError("");
@@ -266,8 +268,18 @@ export default function ArenaScreen() {
         if (!pin || pin.sport !== nextSport)
           throw new Error("Could not join that crew field. Please try again.");
       }
-      dispatch({ type: "set-primary", sport: nextSport });
-      dispatch({ type: "opt-in", sport: nextSport, crewBoard: pin });
+      if (currentUser.current !== joiningAccount) return;
+      dispatch({
+        type: "set-primary",
+        sport: nextSport,
+        accountId: joiningAccount,
+      });
+      dispatch({
+        type: "opt-in",
+        sport: nextSport,
+        crewBoard: pin,
+        accountId: joiningAccount,
+      });
       setCenter(null);
       const gps = SPORTS.find((s) => s.id === nextSport)?.gps;
       setSpan(gps ? (state?.units === "metric" ? 6 : 4) : 20);
@@ -451,7 +463,13 @@ export default function ArenaScreen() {
                       onPress={() => setSelectedId(l.id)}
                       style={f.row}
                     >
-                      <Text style={f.small}>{i + 1}</Text>
+                      <Text style={f.small}>
+                        {1 +
+                          arena.lanes.filter(
+                            (peer) =>
+                              !peer.ghost && peer.values[2] > l.values[2],
+                          ).length}
+                      </Text>
                       <Text style={[f.rowTitle, f.grow]}>
                         {l.you ? selfLaneLabel(l.name) : l.name}
                       </Text>
@@ -586,19 +604,11 @@ export default function ArenaScreen() {
           </Text>
           <FocusButton label="1v1 · Coming soon" disabled onPress={() => {}} />
         </View>
-        {state.periodResults.some((r) => !r.acknowledgedAt) && (
-          <View style={f.card}>
-            <Text style={f.h2}>Your week is complete.</Text>
+        {awardCards(state).length > 0 ? (
+          <FocusDisclosure title="Past competitions & awards">
             <AwardShelf cards={awardCards(state)} />
-            <FocusButton
-              label="Continue to this week"
-              onPress={() => dispatch({ type: "acknowledge-reveal" })}
-            />
-          </View>
-        )}
-        <FocusDisclosure title="Past competitions & awards">
-          <AwardShelf cards={awardCards(state)} />
-        </FocusDisclosure>
+          </FocusDisclosure>
+        ) : null}
         <FocusButton
           label="Benchmarks & pace"
           secondary

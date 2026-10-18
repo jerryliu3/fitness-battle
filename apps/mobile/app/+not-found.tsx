@@ -1,6 +1,6 @@
+import { useRouter } from "expo-router";
 import { Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useRouter } from "expo-router";
 import { FocusButton, f } from "../src/ui/focus";
 export default function NotFound() {
   const router = useRouter();

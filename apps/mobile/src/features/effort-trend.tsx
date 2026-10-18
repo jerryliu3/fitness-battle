@@ -1,3 +1,8 @@
+import {
+  effortHistory,
+  rankForElo,
+  type CompeteState,
+} from "@fitness-battle/shared";
 import { useState } from "react";
 import { Pressable, Text, View } from "react-native";
 import Svg, {
@@ -7,14 +12,9 @@ import Svg, {
   Polyline,
   Text as SvgText,
 } from "react-native-svg";
-import {
-  effortHistory,
-  rankForElo,
-  type CompeteState,
-} from "@fitness-battle/shared";
 import { useAuth } from "../lib/auth";
-import { f } from "../ui/focus";
 import { SHELL_COLORS as c } from "../theme";
+import { f } from "../ui/focus";
 export function EffortTrend({ state }: { state: CompeteState }) {
   const [track, setTrack] = useState<"open" | "verified">("open");
   const { user } = useAuth();

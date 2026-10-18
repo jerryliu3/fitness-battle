@@ -1,7 +1,3 @@
-import { useCallback, useEffect, useRef, useState } from "react";
-import { Pressable, Text, TextInput, View } from "react-native";
-import { useAuth } from "../lib/auth";
-import { useCompeteStore } from "../lib/compete-store";
 import {
   APP_TIMEZONE,
   competeNow,
@@ -10,9 +6,14 @@ import {
   formatDistanceM,
   weeklyPeriodBounds,
 } from "@fitness-battle/shared";
+import { useFocusEffect, useRouter } from "expo-router";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { Pressable, Text, TextInput, View } from "react-native";
+import { useAuth } from "../lib/auth";
+import { useCompeteStore } from "../lib/compete-store";
 import { mobileEnv } from "../lib/env";
+import { fetchWithTimeout } from "../lib/fetch-with-timeout";
 import { FocusButton, FocusSheet, f } from "../ui/focus";
-import { useRouter } from "expo-router";
 export interface PrivateCrew {
   id: string;
   name: string;
@@ -57,14 +58,17 @@ export function useCrewApi() {
     async (path: string, body?: object) => {
       if (!user || demoMode || !accessToken)
         throw Error("Private crews need a live signed-in account.");
-      const response = await fetch(`${mobileEnv.apiUrl}/api/crews${path}`, {
-        method: body ? "POST" : "GET",
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-          ...(body ? { "Content-Type": "application/json" } : {}),
+      const response = await fetchWithTimeout(
+        `${mobileEnv.apiUrl}/api/crews${path}`,
+        {
+          method: body ? "POST" : "GET",
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            ...(body ? { "Content-Type": "application/json" } : {}),
+          },
+          ...(body ? { body: JSON.stringify(body) } : {}),
         },
-        ...(body ? { body: JSON.stringify(body) } : {}),
-      });
+      );
       const result = await response.json();
       if (!response.ok || result.persisted === false)
         throw Error(result.error ?? "Could not reach your crew.");
@@ -79,10 +83,15 @@ export function useCrewApi() {
     setError("");
     try {
       const result = await request("");
-      if (identity.current === owner) setData(result);
+      if (identity.current === owner) {
+        setData(result);
+        return true;
+      }
+      return false;
     } catch (e) {
       if (identity.current === owner)
         setError(e instanceof Error ? e.message : "Could not load crews.");
+      return false;
     } finally {
       if (identity.current === owner) setBusy(false);
     }
@@ -140,6 +149,15 @@ export function CrewHub() {
     setName("");
     setCode("");
   }, [user?.id]);
+  useFocusEffect(
+    useCallback(() => {
+      void api.reload();
+      const timer = setInterval(() => {
+        void api.reload();
+      }, 60000);
+      return () => clearInterval(timer);
+    }, [api.reload]),
+  );
   const rawCrews = (api.data?.crews ?? []).flatMap((r) =>
     r.crews ? [r.crews] : [],
   );
@@ -222,7 +240,7 @@ export function CrewHub() {
     try {
       const result = await api.request(path, body);
       if (owner.current !== id) return;
-      await api.reload();
+      const reloaded = await api.reload();
       if (owner.current !== id) return;
       if (result.crew?.id) setSelected(result.crew.id);
       if (path === "/leave") {
@@ -233,9 +251,11 @@ export function CrewHub() {
       setName("");
       setCode("");
       setNote(
-        path === "/leave"
-          ? "You left the crew."
-          : "Saved. Your crew is up to date.",
+        !reloaded
+          ? "Saved, but your crews could not refresh. Please refresh crews."
+          : path === "/leave"
+            ? "You left the crew."
+            : "Saved. Your crew is up to date.",
       );
     } catch (e) {
       if (owner.current === id) setNote(crewError(e));
@@ -257,6 +277,13 @@ export function CrewHub() {
     );
   return (
     <>
+      {api.error ? (
+        <FocusButton
+          label="Refresh crews"
+          secondary
+          onPress={() => void api.reload()}
+        />
+      ) : null}
       <View style={f.chipRow}>
         {crews.map((c) => (
           <Pressable
@@ -320,33 +347,39 @@ export function CrewHub() {
         <Text style={f.copy}>
           {crew.format === "personal_target"
             ? `sessions · ${crew.target_sessions} per member`
-            : `of ${distance(crew.journey_km * 1000)}`}
+            : crew.format === "cooperative"
+              ? `of ${distance(crew.journey_km * 1000)}`
+              : `${distanceUnitLabel(state?.units)} together`}
         </Text>
-        <View
-          accessibilityRole="progressbar"
-          accessibilityValue={{
-            min: 0,
-            max: 100,
-            now: Math.min(
-              100,
-              (totalM / Math.max(1, crew.journey_km * 1000)) * 100,
-            ),
-          }}
-          style={{
-            height: 9,
-            backgroundColor: "#eef0e9",
-            borderRadius: 5,
-            overflow: "hidden",
-          }}
-        >
-          <View
-            style={{
-              height: 9,
-              width: `${Math.min(100, (totalM / Math.max(1, crew.journey_km * 1000)) * 100)}%`,
-              backgroundColor: "#819486",
-            }}
-          />
-        </View>
+        {crew.format === "cooperative" ? (
+          <>
+            <View
+              accessibilityRole="progressbar"
+              accessibilityValue={{
+                min: 0,
+                max: 100,
+                now: Math.min(
+                  100,
+                  (totalM / Math.max(1, crew.journey_km * 1000)) * 100,
+                ),
+              }}
+              style={{
+                height: 9,
+                backgroundColor: "#eef0e9",
+                borderRadius: 5,
+                overflow: "hidden",
+              }}
+            >
+              <View
+                style={{
+                  height: 9,
+                  width: `${Math.min(100, (totalM / Math.max(1, crew.journey_km * 1000)) * 100)}%`,
+                  backgroundColor: "#819486",
+                }}
+              />
+            </View>
+          </>
+        ) : null}
         <Text style={f.copy}>Every pace belongs here.</Text>
         {!solo && api.data?.seasonWeeks ? (
           <Text style={f.small}>

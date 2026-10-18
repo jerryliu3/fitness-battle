@@ -1,5 +1,17 @@
-import { Ember } from "./mascot/ember";
-import { useMemo, useRef, useState, useEffect } from "react";
+import {
+  arenaPosition,
+  formatActivityAge,
+  arenaWindow,
+  clampArenaLaneCenter,
+  initialsFromName,
+  orderedArenaLanes,
+  selfLaneLabel,
+  type ArenaLane,
+  type ArenaOvertakeFrame,
+  type ArenaOvertakePlan,
+  type ArenaViewWindow,
+} from "@fitness-battle/shared";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { PanResponder, ScrollView, View } from "react-native";
 import Svg, {
   Circle,
@@ -13,18 +25,7 @@ import Svg, {
   Stop,
   Text as SvgText,
 } from "react-native-svg";
-import {
-  arenaPosition,
-  arenaWindow,
-  clampArenaLaneCenter,
-  orderedArenaLanes,
-  initialsFromName,
-  selfLaneLabel,
-  type ArenaLane,
-  type ArenaOvertakeFrame,
-  type ArenaOvertakePlan,
-  type ArenaViewWindow,
-} from "@fitness-battle/shared";
+import { Ember } from "./mascot/ember";
 export function LaneTrack({
   lanes,
   unit,
@@ -355,9 +356,9 @@ export function LaneTrack({
                       : initialsFromName(l.name)}
                   </SvgText>
                   <Rect
-                    x={xx - 24}
+                    x={xx - 32}
                     y={yy + 28}
-                    width={48}
+                    width={64}
                     height={20}
                     rx={10}
                     fill={l.you ? "#282f2c" : "#ffffffee"}
@@ -370,7 +371,9 @@ export function LaneTrack({
                     fontSize={10}
                     fill={l.you ? "#f1c75b" : "#282f2c"}
                   >
-                    {value.toFixed(1)}
+                    {l.you && value === 0
+                      ? "joined"
+                      : formatActivityAge(l.lastUpdated)}
                   </SvgText>
                 </G>
               );

@@ -1,3 +1,4 @@
+import { latestCountedActivityAt } from "./activity-age";
 /**
  * View models for the phone tabs. Plain data — no React, DOM, or native imports.
  * The checkpoint route and lane values stay here so Expo and the web column match.
@@ -78,6 +79,7 @@ export interface TodayRoute {
 }
 
 export interface ArenaLane {
+  lastUpdated?: string;
   id: string;
   name: string;
   you: boolean;
@@ -120,9 +122,7 @@ export function competePeriodWindow(
   now: Date = competeNow(state),
   sport: SportId = state.primary,
 ) {
-  const enrollment = state.enrollments.find(
-    (item) => item.sport === sport,
-  );
+  const enrollment = state.enrollments.find((item) => item.sport === sport);
   if (enrollment) {
     return {
       startsAt: new Date(enrollment.waveStart),
@@ -174,10 +174,7 @@ export function countedPrimarySessionsInPeriod(
   }).length;
 }
 
-function countedInPeriod(
-  state: CompeteState,
-  now: Date,
-): Activity[] {
+function countedInPeriod(state: CompeteState, now: Date): Activity[] {
   const period = competePeriodWindow(state, now);
   const start = period.startsAt.getTime();
   const end = period.endsAt.getTime();
@@ -245,7 +242,8 @@ export function buildTodayRoute(
     volume: null,
     title: suggestion.title,
     detail: suggestion.detail,
-    accessibilityLabel: "Ember at today’s checkpoint. Open recommendation and coaching",
+    accessibilityLabel:
+      "Ember at today’s checkpoint. Open recommendation and coaching",
   });
 
   CHECKPOINT_ANCHORS.future.forEach((anchor, index) => {
@@ -276,7 +274,11 @@ function seriesValues(
   units: CompeteState["units"],
 ): [number, number, number] {
   if (!gps) {
-    return [series.effort[0] ?? 0, series.effort[1] ?? 0, series.effort[2] ?? 0];
+    return [
+      series.effort[0] ?? 0,
+      series.effort[1] ?? 0,
+      series.effort[2] ?? 0,
+    ];
   }
   const divisor = units === "metric" ? 1000 : 1609.344;
   const source = series.distanceM.map((meters) => meters / divisor);
@@ -320,6 +322,16 @@ export function buildArenaModel(
       name: row.you ? state.name : row.name,
       you: row.you,
       ghost: false,
+      lastUpdated: row.you
+        ? latestCountedActivityAt(
+            state.activities,
+            sport,
+            track,
+            period.startsAt,
+            period.endsAt,
+            now,
+          )
+        : undefined,
       values: seriesValues(series, spec.gps, state.units),
     };
   });
@@ -374,7 +386,11 @@ export function seedArenaBaselinesFromState(
         ? "km"
         : "mi"
       : "pts";
-    const periodStart = competePeriodWindow(state, now, sport).startsAt.toISOString();
+    const periodStart = competePeriodWindow(
+      state,
+      now,
+      sport,
+    ).startsAt.toISOString();
     for (const track of ["open", "verified"] as const) {
       const key = arenaBaselineStorageKey(accountKey, sport, track);
       if (readArenaBaseline(readItem(key), periodStart, unit)) continue;
@@ -399,11 +415,14 @@ function weekLabel(periodStart: string, periodEnd: string): string {
     day: "numeric",
     timeZone: APP_TIMEZONE,
   });
-  const end = new Date(new Date(periodEnd).getTime() - 1).toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-    timeZone: APP_TIMEZONE,
-  });
+  const end = new Date(new Date(periodEnd).getTime() - 1).toLocaleDateString(
+    "en-US",
+    {
+      month: "short",
+      day: "numeric",
+      timeZone: APP_TIMEZONE,
+    },
+  );
   return `${start} – ${end}`;
 }
 

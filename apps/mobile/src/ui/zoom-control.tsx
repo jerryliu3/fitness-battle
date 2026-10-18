@@ -1,7 +1,7 @@
 import { useMemo, useRef, useState } from "react";
 import { PanResponder, Text, View } from "react-native";
-import { f } from "./focus";
 import { SHELL_COLORS as c } from "../theme";
+import { f } from "./focus";
 export function ZoomControl({
   value,
   maximum,

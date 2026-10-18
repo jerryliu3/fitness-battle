@@ -1,16 +1,16 @@
-import { useRef, useState } from "react";
-import { Platform, Text, View } from "react-native";
-import * as DocumentPicker from "expo-document-picker";
 import {
   activityFromSample,
   type ActivitySample,
-  type ReadinessSample,
   type ProviderId,
   type ReadinessMark,
+  type ReadinessSample,
 } from "@fitness-battle/shared";
+import * as DocumentPicker from "expo-document-picker";
+import { useEffect, useRef, useState } from "react";
+import { Platform, Text, View } from "react-native";
+import { requestApi } from "../lib/api";
 import { useAuth } from "../lib/auth";
 import { useCompeteStore } from "../lib/compete-store";
-import { requestApi } from "../lib/api";
 import { mobileEnv } from "../lib/env";
 import { FocusButton, f } from "../ui/focus";
 export function DataSyncActions() {
@@ -22,17 +22,26 @@ export function DataSyncActions() {
   const owner = useRef(user?.id);
   owner.current = user?.id;
   const live = !!user && !demoMode && user.mode !== "demo";
+  const mounted = useRef(true);
+  useEffect(() => {
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+    };
+  }, []);
   async function run(work: () => Promise<void>) {
     if (flight.current) return;
+    const id = user?.id;
     flight.current = true;
     setBusy(true);
     setNote("");
     try {
       await work();
     } catch (e) {
-      setNote(
-        e instanceof Error ? e.message : "Could not sync. Please try again.",
-      );
+      if (mounted.current && owner.current === id)
+        setNote(
+          e instanceof Error ? e.message : "Could not sync. Please try again.",
+        );
     } finally {
       flight.current = false;
       setBusy(false);
@@ -49,7 +58,7 @@ export function DataSyncActions() {
     id?: string,
     imported = false,
   ) {
-    if (id !== owner.current) return;
+    if (!mounted.current || id !== owner.current) return;
     const activities = (body.activities ?? [])
       .map((sample) =>
         activityFromSample(
@@ -137,7 +146,7 @@ export function DataSyncActions() {
                       "/api/fitness/disconnect",
                       { body: { provider: l.provider } },
                     );
-                  if (id === owner.current) {
+                  if (mounted.current && id === owner.current) {
                     dispatch({ type: "unlink", provider: l.provider });
                     setNote("Tracker disconnected.");
                   }
@@ -233,7 +242,7 @@ export function DataSyncActions() {
         ))}
       <Text style={f.h2}>Sleep & recovery</Text>
       <Text style={f.copy}>
-        Linked cloud trackers supply real sleep data. A sample night is entered
+        Sleep data appears here when supplied by a supported tracker. A sample night is entered
         on this device and labeled as a sample.
       </Text>
       <FocusButton

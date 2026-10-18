@@ -1,19 +1,20 @@
-export * from "./types";
-export * from "./period";
-export * from "./fitness";
-export * from "./compete";
-export * from "./matching";
-export * from "./brand";
-export * from "./shell";
-export * from "./phone-views";
-export * from "./notifications";
-export { DEMO_CATEGORIES, DEMO_BATTLES, demoStandings } from "./demo-data";
-export * from "./arena-view";
 export * from "./arena-bridge";
+export * from "./arena-view";
+export * from "./brand";
+export * from "./compete";
+export { DEMO_BATTLES, DEMO_CATEGORIES, demoStandings } from "./demo-data";
+export * from "./fitness";
+export * from "./matching";
+export * from "./notifications";
+export * from "./period";
+export * from "./phone-views";
+export * from "./shell";
+export * from "./types";
 
 export * from "./layout-concepts";
 export * from "./profile/avatar-paths";
 
-export * from "./journey";
-export * from "./effort-history";
 export * from "./compete-demo-seed";
+export * from "./effort-history";
+export * from "./journey";
+export * from "./activity-age";

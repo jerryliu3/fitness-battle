@@ -1,14 +1,14 @@
 export {
   groupActivitiesByDay,
-  nextLane,
-  planJourneyTrail,
-  planJourneyLanes,
   lanesHaveNoConsecutiveRepeats,
+  nextLane,
+  planJourneyLanes,
+  planJourneyTrail,
   routeThroughCenters,
 } from "@fitness-battle/shared";
 export type {
-  JourneyLane,
-  JourneyPt,
-  JourneyLanePlan,
   JourneyActivityDay,
+  JourneyLane,
+  JourneyLanePlan,
+  JourneyPt,
 } from "@fitness-battle/shared";

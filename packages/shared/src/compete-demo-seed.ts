@@ -1,4 +1,3 @@
-import { weeklyPeriodBounds } from "./period";
 import {
   freshHealthRatings,
   freshState,
@@ -6,6 +5,7 @@ import {
   type CompeteState,
   type SportId,
 } from "./compete";
+import { weeklyPeriodBounds } from "./period";
 
 function mondayOfCurrentWeek(): Date {
   return weeklyPeriodBounds(new Date()).startsAt;

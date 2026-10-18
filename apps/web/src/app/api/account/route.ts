@@ -1,8 +1,8 @@
-import { NextResponse } from "next/server";
 import { resolveRequestUserId } from "@/lib/auth/request-user";
 import { serverEnv, webEnv } from "@/lib/env";
 import { getSupabaseConfig } from "@/lib/supabase/config";
 import { createClient as createAdminClient } from "@supabase/supabase-js";
+import { NextResponse } from "next/server";
 
 export async function DELETE(request: Request) {
   const origin = request.headers.get("origin");
@@ -43,6 +43,29 @@ export async function DELETE(request: Request) {
       auth: { persistSession: false, autoRefreshToken: false },
     },
   );
+
+  // Supabase refuses to delete an auth user who still owns Storage objects.
+  // The app writes flat avatar files under the authenticated user's exact folder.
+  const avatars = admin.storage.from("avatars");
+  const { data: photos, error: listError } = await avatars.list(userId, {
+    limit: 1000,
+  });
+  if (listError)
+    return NextResponse.json(
+      { error: "Could not remove profile photos. Please try again." },
+      { status: 500 },
+    );
+  const paths = (photos ?? [])
+    .filter((photo) => photo.id && !photo.name.includes("/"))
+    .map((photo) => `${userId}/${photo.name}`);
+  if (paths.length) {
+    const { error: removeError } = await avatars.remove(paths);
+    if (removeError)
+      return NextResponse.json(
+        { error: "Could not remove profile photos. Please try again." },
+        { status: 500 },
+      );
+  }
 
   const { error } = await admin.auth.admin.deleteUser(userId);
   if (error) {

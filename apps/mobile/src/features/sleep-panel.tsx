@@ -1,12 +1,12 @@
-import { Text, View } from "react-native";
 import {
   buildSleepView,
   competeNow,
   formatSleepDuration,
   sleepRenewal,
-  type CompeteState,
   type Action,
+  type CompeteState,
 } from "@fitness-battle/shared";
+import { Text, View } from "react-native";
 import { FocusButton, f } from "../ui/focus";
 export function SleepPanel({
   state,

@@ -1,8 +1,8 @@
+import { SPORTS, type SportId, type UnitSystem } from "@fitness-battle/shared";
+import { useRouter } from "expo-router";
 import { useState } from "react";
 import { ScrollView, Switch, Text, TextInput, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useRouter } from "expo-router";
-import { SPORTS, type SportId, type UnitSystem } from "@fitness-battle/shared";
 import { useAuth } from "../src/lib/auth";
 import { useCompeteStore } from "../src/lib/compete-store";
 import { FocusButton, f } from "../src/ui/focus";

@@ -1,19 +1,19 @@
-import { useState } from "react";
-import { Pressable, Text, View } from "react-native";
-import Svg, { Path } from "react-native-svg";
 import {
+  formatVolume,
   groupActivitiesByDay,
   planJourneyTrail,
   routeThroughCenters,
-  formatVolume,
   sportById,
   type Activity,
-  type UnitSystem,
   type JourneyLane,
+  type UnitSystem,
 } from "@fitness-battle/shared";
-import { Ember } from "../ui/mascot/ember";
-import { FocusSheet, f } from "../ui/focus";
+import { useState } from "react";
+import { Pressable, Text, View } from "react-native";
+import Svg, { Path } from "react-native-svg";
 import { SHELL_COLORS as c } from "../theme";
+import { FocusSheet, f } from "../ui/focus";
+import { Ember } from "../ui/mascot/ember";
 
 const ROW = 192;
 const laneX = { l: 0.24, c: 0.5, r: 0.76 };
@@ -29,7 +29,7 @@ export function Journey({
   const [width, setWidth] = useState(320);
   const [selectedDay, setSelectedDay] = useState<string | null>(null);
   const days = groupActivitiesByDay(activities, 30);
-  const plan = planJourneyTrail(days);
+  const plan = planJourneyTrail(groupActivitiesByDay(activities, Infinity));
   const truncated =
     activities.length > days.reduce((n, d) => n + d.items.length, 0);
   const stops: {

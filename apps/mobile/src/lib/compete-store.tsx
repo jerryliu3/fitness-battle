@@ -1,9 +1,3 @@
-import { useAuth } from "./auth";
-import {
-  accountStorageKeys,
-  hydrateAccountIdentity,
-  saveFailure,
-} from "./account-state";
 import {
   applyRemoteSnapshot,
   arenaBaselineStorageKey,
@@ -39,7 +33,14 @@ import {
   type ReactNode,
 } from "react";
 import { AppState } from "react-native";
+import {
+  accountStorageKeys,
+  hydrateAccountIdentity,
+  saveFailure,
+} from "./account-state";
+import { useAuth } from "./auth";
 import { mobileEnv } from "./env";
+import { fetchWithTimeout } from "./fetch-with-timeout";
 import { supabase } from "./supabase";
 
 const STORAGE_KEY = "fb-compete-v1";
@@ -58,9 +59,11 @@ interface CompeteContextValue {
   dismissFieldNotice: () => void;
   standingsStale: boolean;
   refresh: () => Promise<boolean>;
+  legacyState: CompeteState | null;
+  recoverLegacy: (expectedId: string) => Promise<void>;
   saveError: string | null;
   retrySave: () => void;
-  clearAccountData: () => Promise<void>;
+  clearAccountData: (expectedId: string) => Promise<boolean>;
 }
 
 async function competeAccount(): Promise<{
@@ -110,7 +113,11 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
   authRef.current = auth;
   const owner = auth.user?.id ?? null;
   const keys = accountStorageKeys(owner);
+  const [legacyState, setLegacyState] = useState<CompeteState | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
+  const loadReady = useRef(false);
+  const lifecycle = useRef(0);
+  const [loadAttempt, setLoadAttempt] = useState(0);
   const saveChain = useRef<Promise<void>>(Promise.resolve());
 
   const [savedState, setState] = useState<CompeteState | null>(null);
@@ -141,6 +148,8 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (auth.loading) return;
     let alive = true;
+    lifecycle.current += 1;
+    loadReady.current = false;
     if (saveTimer.current) clearTimeout(saveTimer.current);
     saveTimer.current = null;
     refreshFlight.current = null;
@@ -155,6 +164,17 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
     setReturnGain(0);
     void (async () => {
       const raw = await AsyncStorage.getItem(keys.state);
+      const legacyRaw = await AsyncStorage.getItem("fb-compete-v1");
+      if (alive) {
+        try {
+          const legacy = legacyRaw ? JSON.parse(legacyRaw) : null;
+          setLegacyState(
+            isCompeteState(legacy) ? migrateCompeteState(legacy) : null,
+          );
+        } catch {
+          setLegacyState(null);
+        }
+      }
       let next = rollClock(freshState());
       if (raw) {
         try {
@@ -180,28 +200,42 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
           const account = await competeAccount();
           if (!account || account.userId !== owner)
             throw new Error("session_changed");
-          const response = await fetch(`${mobileEnv.apiUrl}/api/compete`, {
-            headers: { Authorization: `Bearer ${account.token}` },
-          });
+          const response = await fetchWithTimeout(
+            `${mobileEnv.apiUrl}/api/compete`,
+            {
+              headers: { Authorization: `Bearer ${account.token}` },
+            },
+          );
           if (!response.ok) throw new Error("load_failed");
           const body = await response.json();
+          if (body.state !== null && !isCompeteState(body.state))
+            throw new Error("invalid_snapshot");
           if (isCompeteState(body.state))
             next = applyRemoteSnapshot(
               next,
               rollClock(migrateCompeteState(body.state)),
               dirty,
             );
-          if (alive) setStandingsStale(false);
+          if (alive) {
+            loadReady.current = true;
+            setStandingsStale(false);
+          }
         } catch {
-          if (alive) setStandingsStale(true);
+          if (alive) {
+            setStandingsStale(true);
+            setSaveError(
+              "Your account could not load. Refresh your account before making changes.",
+            );
+          }
         }
       }
+      if (!live) loadReady.current = true;
       if (!alive || accountRef.current !== owner) return;
       next = hydrateAccountIdentity(next, currentAuth.user, live);
       await preloadBaselineCache(owner ?? "guest", baselineCacheRef.current);
       if (!alive || accountRef.current !== owner) return;
       unsavedRef.current = dirty;
-      if (dirty && live) setSaveError(saveFailure());
+      if (dirty && live && loadReady.current) setSaveError(saveFailure());
       seedArenaBaselinesFromState(
         next,
         owner ?? "guest",
@@ -226,7 +260,14 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
       alive = false;
       if (saveTimer.current) clearTimeout(saveTimer.current);
     };
-  }, [owner, auth.loading, auth.demoMode, readBaselineItem, writeBaselineItem]);
+  }, [
+    owner,
+    auth.loading,
+    auth.demoMode,
+    loadAttempt,
+    readBaselineItem,
+    writeBaselineItem,
+  ]);
 
   const seenRef = useRef<{
     ids: string[] | null;
@@ -294,7 +335,7 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
       alive = false;
       sub.remove();
     };
-  }, [remember, owner]);
+  }, [remember, owner, loadAttempt]);
 
   useEffect(() => {
     if (!state || !seenRef.current.ready || refreshingRef.current) return;
@@ -314,6 +355,7 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
     if (account.userId !== accountRef.current) return false;
     if (refreshFlight.current) return refreshFlight.current;
     const generation = dirtyRef.current;
+    const epoch = lifecycle.current;
     const task = (async () => {
       try {
         await preloadBaselineCache(account.userId, baselineCacheRef.current);
@@ -325,18 +367,32 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
             writeBaselineItem,
           );
         }
-        const response = await fetch(`${mobileEnv.apiUrl}/api/compete`, {
-          headers: { Authorization: `Bearer ${account.token}` },
-        });
+        const response = await fetchWithTimeout(
+          `${mobileEnv.apiUrl}/api/compete`,
+          {
+            headers: { Authorization: `Bearer ${account.token}` },
+          },
+        );
         if (!response.ok) {
           setStandingsStale(true);
           return false;
         }
         const body = (await response.json()) as { state?: unknown };
         if (
+          body.state === null &&
+          account.userId === accountRef.current &&
+          epoch === lifecycle.current
+        ) {
+          loadReady.current = true;
+          setStandingsStale(false);
+          setSaveError(null);
+          return true;
+        }
+        if (
           !isCompeteState(body.state) ||
           !stateRef.current ||
-          account.userId !== accountRef.current
+          account.userId !== accountRef.current ||
+          epoch !== lifecycle.current
         )
           return false;
         const remote = rollClock(migrateCompeteState(body.state));
@@ -359,6 +415,8 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
             JSON.stringify(next),
           );
         }
+        loadReady.current = true;
+        if (!unsavedRef.current) setSaveError(null);
         setStandingsStale(false);
         return true;
       } catch {
@@ -437,18 +495,27 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
             currentAuth.user.mode === "demo"
           )
             return;
+          if (!loadReady.current) {
+            setSaveError(
+              "Your account could not load. Refresh before saving changes.",
+            );
+            return;
+          }
           try {
             const account = await competeAccount();
             if (!account || account.userId !== id || id !== accountRef.current)
               return;
-            const response = await fetch(`${mobileEnv.apiUrl}/api/compete`, {
-              method: "PUT",
-              headers: {
-                "Content-Type": "application/json",
-                Authorization: `Bearer ${account.token}`,
+            const response = await fetchWithTimeout(
+              `${mobileEnv.apiUrl}/api/compete`,
+              {
+                method: "PUT",
+                headers: {
+                  "Content-Type": "application/json",
+                  Authorization: `Bearer ${account.token}`,
+                },
+                body: JSON.stringify({ state: next, accountId: id }),
               },
-              body: JSON.stringify({ state: next, accountId: id }),
-            });
+            );
             if (id !== accountRef.current || generation !== dirtyRef.current)
               return;
             if (!response.ok) {
@@ -470,7 +537,18 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
     (action: Action) => {
       const prev = stateRef.current;
       if (!prev) return;
+      if (
+        !loadReady.current &&
+        authRef.current.user &&
+        !authRef.current.demoMode
+      ) {
+        setSaveError(
+          "Your account could not load. Refresh your account before making changes.",
+        );
+        return;
+      }
       const id = accountRef.current;
+      if (action.accountId && action.accountId !== id) return;
       dirtyRef.current += 1;
       unsavedRef.current = true;
       seedArenaBaselinesFromState(
@@ -501,31 +579,91 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
     [readBaselineItem, writeBaselineItem, scheduleSave],
   );
 
+  const recoverLegacy = useCallback(
+    async (expectedId: string) => {
+      if (!loadReady.current || accountRef.current !== expectedId)
+        throw new Error(
+          "Refresh your account before recovering device history.",
+        );
+      const raw = await AsyncStorage.getItem("fb-compete-v1");
+      const parsed = raw ? JSON.parse(raw) : null;
+      if (accountRef.current !== expectedId)
+        throw new Error("Account changed. Please review the history again.");
+      if (!isCompeteState(parsed) || !raw || !stateRef.current)
+        throw new Error("No earlier device history is available.");
+      const scoped = accountStorageKeys(expectedId);
+      const next = hydrateAccountIdentity(
+        rollClock(migrateCompeteState(parsed)),
+        authRef.current.user,
+        !authRef.current.demoMode,
+      );
+      await AsyncStorage.multiSet([
+        [`fb-compete-legacy-backup:${expectedId}`, raw],
+        [
+          `fb-compete-before-recovery:${expectedId}`,
+          JSON.stringify(stateRef.current),
+        ],
+        [scoped.state, JSON.stringify(next)],
+        [scoped.dirty, "1"],
+      ]);
+      if (accountRef.current !== expectedId) return;
+      await AsyncStorage.removeItem("fb-compete-v1");
+      if (accountRef.current !== expectedId) return;
+      dirtyRef.current += 1;
+      unsavedRef.current = true;
+      stateRef.current = next;
+      setState(next);
+      setLegacyState(null);
+      scheduleSave(next);
+    },
+    [scheduleSave],
+  );
+
   const retrySave = useCallback(() => {
+    if (!loadReady.current) {
+      setLoadAttempt((value) => value + 1);
+      return;
+    }
     if (stateRef.current) scheduleSave(stateRef.current);
   }, [scheduleSave]);
-  const clearAccountData = useCallback(async () => {
-    if (saveTimer.current) clearTimeout(saveTimer.current);
-    dirtyRef.current += 1;
-    // Drain an already submitted save before clearing this account's local copy.
+  const clearAccountData = useCallback(async (expectedId: string) => {
+    if (accountRef.current === expectedId) {
+      if (saveTimer.current) clearTimeout(saveTimer.current);
+      dirtyRef.current += 1;
+      lifecycle.current += 1;
+      loadReady.current = false;
+    }
     await saveChain.current.catch(() => {});
-    const scoped = accountStorageKeys(accountRef.current);
+    const scoped = accountStorageKeys(expectedId);
     const all = await AsyncStorage.getAllKeys();
-    const id = accountRef.current;
+    // Capture exact owned keys before awaiting; never clear a newly selected account.
+    const owned = all.filter(
+      (key) =>
+        key === fieldSeenStorageKey(expectedId) ||
+        key === `fb-compete-legacy-backup:${expectedId}` ||
+        key === `fb-compete-before-recovery:${expectedId}` ||
+        key.startsWith(`fb-arena-baseline:${expectedId}:`),
+    );
     await AsyncStorage.multiRemove([
       scoped.state,
       scoped.dirty,
       scoped.seen,
-      "fb-compete-v1",
-      "fb-compete-dirty",
-      "fb-counted-seen",
-      "fb-notifications-v1",
-      ...all.filter((key) => !!id && key.includes(id)),
+      ...(accountRef.current === expectedId
+        ? [
+            "fb-compete-v1",
+            "fb-compete-dirty",
+            "fb-counted-seen",
+            "fb-notifications-v1",
+          ]
+        : []),
+      ...owned,
     ]);
+    if (accountRef.current !== expectedId) return false;
     loadedOwnerRef.current = undefined;
     stateRef.current = null;
     setState(null);
     baselineCacheRef.current.clear();
+    return true;
   }, []);
 
   const clearReturn = useCallback(() => setReturnGain(0), []);
@@ -558,6 +696,8 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
         dismissFieldNotice,
         standingsStale,
         refresh,
+        legacyState,
+        recoverLegacy,
         saveError,
         retrySave,
         clearAccountData,

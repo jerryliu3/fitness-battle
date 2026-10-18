@@ -1,7 +1,6 @@
-import { DataSyncActions } from "../../src/features/data-sync-actions";
-import { AccountActions } from "../../src/features/account-actions";
 import {
   SPORTS,
+  RANK_BANDS,
   primaryFreezePeriodStart,
   sportRenewal,
   type ProviderId,
@@ -19,6 +18,9 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { AccountActions } from "../../src/features/account-actions";
+import { AthleteMetrics } from "../../src/features/athlete-metrics";
+import { DataSyncActions } from "../../src/features/data-sync-actions";
 import { useAuth } from "../../src/lib/auth";
 import { useCompeteStore } from "../../src/lib/compete-store";
 import {
@@ -32,9 +34,8 @@ import {
   isCloudOAuthProvider,
   startCloudTrackerConnect,
 } from "../../src/lib/tracker-connect";
-import { AthleteMetrics } from "../../src/features/athlete-metrics";
-import { FocusButton, FocusSheet, f } from "../../src/ui/focus";
 import { SHELL_COLORS, SHELL_RADIUS } from "../../src/theme";
+import { FocusButton, FocusSheet, f } from "../../src/ui/focus";
 
 function isDeviceProvider(
   id: ProviderId,
@@ -43,7 +44,7 @@ function isDeviceProvider(
 }
 
 type AuthMode = "signin" | "signup";
-type AthletePanel = "connections" | "preferences";
+type AthletePanel = "connections" | "preferences" | "scoring";
 
 export default function YouScreen() {
   const { state, dispatch, saveError, retrySave } = useCompeteStore();
@@ -56,6 +57,8 @@ export default function YouScreen() {
     signUp,
     signOut,
   } = useAuth();
+  const currentUser = useRef(user?.id);
+  currentUser.current = user?.id;
   const router = useRouter();
   const params = useLocalSearchParams<{
     tracker?: string;
@@ -181,12 +184,14 @@ export default function YouScreen() {
         providerId === "apple_health"
           ? await syncAppleHealth(createAppleHealthDeps(ingestAuth))
           : await syncHealthConnect(createHealthConnectDeps(ingestAuth));
+      if (currentUser.current !== user.id) return;
       // "Connected" means device permission (or a successful upload). Upload
       // failures keep Connected when already authorized, with a clear note.
       if (result.ok || result.authorized) {
         dispatch({
           type: "apply-sync",
           provider: providerId,
+          accountId: user.id,
           activities: [],
           linkStatus: "connected",
         });
@@ -228,6 +233,7 @@ export default function YouScreen() {
     setNote(null);
     try {
       const result = await startCloudTrackerConnect(providerId);
+      if (currentUser.current !== user.id) return;
       const linked = result.provider ?? providerId;
       if (result.tracker === "connected") {
         appliedTracker.current = `connected:${linked}`;
@@ -426,6 +432,44 @@ export default function YouScreen() {
     );
   }
 
+  if (panel === "scoring") {
+    return (
+      <SafeAreaView style={f.safe} edges={["top"]}>
+        <ScrollView contentContainerStyle={f.content}>
+          <FocusButton
+            label="Back to Athlete"
+            secondary
+            onPress={() => setPanel(null)}
+          />
+          <Text style={f.kicker}>Settings</Text>
+          <Text style={f.title}>How scoring works</Text>
+          <Text style={f.copy}>
+            Open score includes counted sessions. GPS verified includes verified
+            sessions. Sample workouts do not count toward competition.
+          </Text>
+          <Text style={f.copy}>
+            Each event has its own effort score. Scores settle when the
+            competition week closes. Stopping after this week keeps the current
+            week open and turns off renewal.
+          </Text>
+          <Text style={f.copy}>
+            A week freeze protects effort score during a rest week and can be
+            undone before the week ends. A crew rest marker does not freeze
+            effort score.
+          </Text>
+          {RANK_BANDS.map((band) => (
+            <View key={band.name} style={f.card}>
+              <Text style={f.h2}>
+                {band.name} · {band.min}+
+              </Text>
+              <Text style={f.copy}>{band.blurb}</Text>
+            </View>
+          ))}
+        </ScrollView>
+      </SafeAreaView>
+    );
+  }
+
   if (panel === "preferences") {
     return (
       <SafeAreaView style={styles.safe} edges={["top"]}>
@@ -473,6 +517,21 @@ export default function YouScreen() {
             >
               Save profile
             </Button>
+          ) : null}
+          {dirty ? (
+            <FocusButton
+              label="Cancel profile changes"
+              secondary
+              onPress={() => {
+                setName(null);
+                setCity(null);
+              }}
+            />
+          ) : null}
+          {note ? (
+            <Text style={f.copy} accessibilityLiveRegion="polite">
+              {note}
+            </Text>
           ) : null}
           <Text style={styles.section}>Units</Text>
           <View style={f.chipRow}>
@@ -603,7 +662,7 @@ export default function YouScreen() {
             onPress={() => setPanel("connections")}
           >
             <View style={styles.settingsCopy}>
-              <Text style={styles.rowTitle}>Connections</Text>
+              <Text style={styles.rowTitle}>Data Sync</Text>
               <Text style={styles.copy}>Trackers & device health</Text>
             </View>
             <Text style={f.small}>→</Text>
@@ -631,6 +690,11 @@ export default function YouScreen() {
             <Text style={f.small}>→</Text>
           </Pressable>
         </View>
+        <FocusButton
+          label="How scoring works"
+          secondary
+          onPress={() => setPanel("scoring")}
+        />
         <FocusButton
           label="Sign out"
           secondary

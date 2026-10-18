@@ -1,25 +1,22 @@
 "use client";
-import { useRef, useState } from "react";
 import { useAuth } from "@/components/auth-context";
 import { useCompete } from "@/components/compete-context";
 import {
-  APP_TIMEZONE,
-  effortHistory,
-  competeNow,
+  removeWebProfileAvatar,
+  uploadWebProfileAvatar,
+} from "@/lib/profile/avatar-upload";
+import { createClient } from "@/lib/supabase/client";
+import {
   countsOnTrack,
-  dayKey,
   distanceUnitLabel,
+  effortHistory,
   ELO_UNRANKED,
   formatDistanceM,
   initialsFromName,
   rankForElo,
   type CompeteState,
 } from "@fitness-battle/shared";
-import {
-  removeWebProfileAvatar,
-  uploadWebProfileAvatar,
-} from "@/lib/profile/avatar-upload";
-import { createClient } from "@/lib/supabase/client";
+import { useRef, useState } from "react";
 
 function seasonSummary(state: CompeteState) {
   const counted = state.activities.filter((a) => countsOnTrack(a, "open"));

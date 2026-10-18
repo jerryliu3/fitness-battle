@@ -1,3 +1,4 @@
+import { fetchWithTimeout } from "./fetch-with-timeout";
 /** Bearer-authenticated transport shared by native account and crew flows. */
 export async function requestApi<T = Record<string, unknown>>(
   apiUrl: string,
@@ -6,19 +7,21 @@ export async function requestApi<T = Record<string, unknown>>(
   options: { method?: string; body?: unknown; allowUnpersisted?: boolean } = {},
 ): Promise<T> {
   if (!token) throw new Error("A live signed-in account is required.");
-  const response = await fetch(`${apiUrl.replace(/\/$/, "")}${path}`, {
-    method: options.method ?? (options.body === undefined ? "GET" : "POST"),
-    headers: {
-      Authorization: `Bearer ${token}`,
+  const response = await fetchWithTimeout(
+    `${apiUrl.replace(/\/$/, "")}${path}`,
+    {
+      method: options.method ?? (options.body === undefined ? "GET" : "POST"),
+      headers: {
+        Authorization: `Bearer ${token}`,
+        ...(options.body === undefined
+          ? {}
+          : { "Content-Type": "application/json" }),
+      },
       ...(options.body === undefined
         ? {}
-        : { "Content-Type": "application/json" }),
+        : { body: JSON.stringify(options.body) }),
     },
-    ...(options.body === undefined
-      ? {}
-      : { body: JSON.stringify(options.body) }),
-    signal: AbortSignal.timeout(15000),
-  });
+  );
   const body = await response.json().catch(() => null);
   if (!response.ok || (body?.persisted === false && !options.allowUnpersisted))
     throw new Error(

@@ -1,5 +1,5 @@
-import { describe, expect, it } from "vitest";
 import { freshState } from "@fitness-battle/shared";
+import { describe, expect, it } from "vitest";
 import {
   accountStorageKeys,
   hydrateAccountIdentity,

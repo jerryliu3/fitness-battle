@@ -12,10 +12,16 @@ export function effortHistory(
   const currentElo =
     (track === "open" ? rating?.openElo : rating?.verifiedElo) ?? ELO_UNRANKED;
   const today = competeNow(state);
-  const todayIso = dayKey(today);
+  const calendarToday = new Date(`${dayKey(today)}T12:00:00.000Z`);
 
   const history = state.periodResults
-    .filter((r) => r.sport === state.primary && r.track === track)
+    .filter(
+      (r) =>
+        r.sport === state.primary &&
+        r.track === track &&
+        Number.isFinite(Date.parse(r.periodStart)) &&
+        Number.isFinite(Date.parse(r.periodEnd)),
+    )
     .slice()
     .sort((a, b) => a.periodStart.localeCompare(b.periodStart));
 
@@ -25,7 +31,7 @@ export function effortHistory(
   // Determine user's start anchor date (account creation or earliest activity/period)
   let earliestDate: Date;
   if (isGuest) {
-    earliestDate = today;
+    earliestDate = calendarToday;
   } else {
     const candidateTimestamps: number[] = [];
     if (user?.createdAt) {
@@ -39,10 +45,11 @@ export function effortHistory(
         ...state.activities.map((a) => new Date(a.startedAt).getTime()),
       );
     }
-    earliestDate =
-      candidateTimestamps.length > 0
-        ? new Date(Math.min(...candidateTimestamps))
-        : today;
+    const valid = candidateTimestamps.filter(
+      (value) => Number.isFinite(value) && value <= today.getTime(),
+    );
+    const earliest = valid.length ? new Date(Math.min(...valid)) : today;
+    earliestDate = new Date(`${dayKey(earliest)}T12:00:00.000Z`);
   }
 
   // Days elapsed from account start to today
@@ -51,7 +58,9 @@ export function effortHistory(
     ? 0
     : Math.max(
         0,
-        Math.floor((today.getTime() - earliestDate.getTime()) / msPerDay),
+        Math.floor(
+          (calendarToday.getTime() - earliestDate.getTime()) / msPerDay,
+        ),
       );
   const isRolling = daysElapsed >= 28;
 
@@ -61,9 +70,9 @@ export function effortHistory(
   let activeDaysCount: number;
 
   if (isRolling) {
-    windowStart = new Date(today.getTime() - 29 * msPerDay);
-    windowMid = new Date(today.getTime() - 15 * msPerDay);
-    windowEnd = today;
+    windowStart = new Date(calendarToday.getTime() - 29 * msPerDay);
+    windowMid = new Date(calendarToday.getTime() - 15 * msPerDay);
+    windowEnd = calendarToday;
     activeDaysCount = 30;
   } else {
     // 1-day gap before earliest activity date so the first point is not directly on the Y-axis
@@ -76,10 +85,10 @@ export function effortHistory(
   const dailyValues: number[] = [];
   if (isRolling) {
     for (let d = 29; d >= 0; d--) {
-      const dayDate = new Date(today.getTime() - d * msPerDay);
+      const dayDate = new Date(calendarToday.getTime() - d * msPerDay);
       const dayIso = dayKey(dayDate);
       const matching = history.filter(
-        (r) => dayKey(new Date(r.periodStart)) <= dayIso,
+        (r) => dayKey(new Date(r.periodEnd)) <= dayIso,
       );
       if (matching.length > 0) {
         dailyValues.push(matching[matching.length - 1].eloAfter);
@@ -101,12 +110,12 @@ export function effortHistory(
       const dayDate = new Date(windowStart.getTime() + d * msPerDay);
       const dayIso = dayKey(dayDate);
       const matching = history.filter(
-        (r) => dayKey(new Date(r.periodStart)) <= dayIso,
+        (r) => dayKey(new Date(r.periodEnd)) <= dayIso,
       );
       if (matching.length > 0) {
         dailyValues.push(matching[matching.length - 1].eloAfter);
       } else {
-        dailyValues.push(effectiveElo);
+        dailyValues.push(history.length ? history[0].eloBefore : effectiveElo);
       }
     }
     dailyValues[activeDaysCount - 1] = effectiveElo;

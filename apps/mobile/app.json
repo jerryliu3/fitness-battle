@@ -27,7 +27,15 @@
         }
       ],
       "react-native-health-connect",
-      "expo-web-browser"
+      "expo-web-browser",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Overtaek uses the photo you choose for your athlete profile.",
+          "cameraPermission": false,
+          "microphonePermission": false
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true
@@ -42,9 +50,7 @@
         "ITSAppUsesNonExemptEncryption": false,
         "CFBundleURLTypes": [
           {
-            "CFBundleURLSchemes": [
-              "overtaek"
-            ]
+            "CFBundleURLSchemes": ["overtaek"]
           }
         ]
       },
@@ -61,10 +67,7 @@
               "scheme": "overtaek"
             }
           ],
-          "category": [
-            "BROWSABLE",
-            "DEFAULT"
-          ]
+          "category": ["BROWSABLE", "DEFAULT"]
         }
       ],
       "permissions": [

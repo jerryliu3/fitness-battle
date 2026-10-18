@@ -1,4 +1,3 @@
-import { Text, View } from "react-native";
 import {
   APP_TIMEZONE,
   competeNow,
@@ -6,6 +5,7 @@ import {
   weeklyPeriodBounds,
   type CompeteState,
 } from "@fitness-battle/shared";
+import { Text, View } from "react-native";
 import { f } from "../ui/focus";
 export function CompetitionSummary({ state }: { state: CompeteState }) {
   const now = competeNow(state);

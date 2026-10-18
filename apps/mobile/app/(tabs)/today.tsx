@@ -1,29 +1,5 @@
-import { Journey } from "../../src/features/journey";
-import { useRef, useState } from "react";
-import {
-  Animated,
-  Pressable,
-  ScrollView,
-  Text,
-  View,
-  StyleSheet,
-  AccessibilityInfo,
-} from "react-native";
-import Svg, {
-  Defs,
-  LinearGradient,
-  Stop,
-  Line,
-  Polyline,
-  Polygon,
-  Circle,
-  Text as SvgText,
-  Path,
-} from "react-native-svg";
-import { SafeAreaView } from "react-native-safe-area-context";
 import {
   APP_TIMEZONE,
-  primaryFreezePeriodStart,
   buildTodayRoute,
   competeNow,
   competePeriodWindow,
@@ -32,38 +8,36 @@ import {
   formatDistanceM,
   formatVolume,
   getZonedWeekday,
+  weeklyPeriodBounds,
+  primaryFreezePeriodStart,
   sportById,
   type Activity,
 } from "@fitness-battle/shared";
+import { useRef, useState } from "react";
+import {
+  AccessibilityInfo,
+  Animated,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import Svg, {
+  Circle,
+  Defs,
+  Line,
+  LinearGradient,
+  Polygon,
+  Polyline,
+  Stop,
+  Text as SvgText,
+} from "react-native-svg";
+import { Journey } from "../../src/features/journey";
 import { useCompeteStore } from "../../src/lib/compete-store";
+import { f } from "../../src/ui/focus";
 import { Ember } from "../../src/ui/mascot/ember";
-import { FocusHeading, f } from "../../src/ui/focus";
-
-const PATH_L = "24%";
-const PATH_C = "50%";
-const PATH_R = "76%";
-const PATH_ROW = 192;
-
-function PathCurve({ d }: { d: string }) {
-  return (
-    <Svg
-      style={s.pathCurve}
-      viewBox="0 0 100 100"
-      preserveAspectRatio="none"
-      pointerEvents="none"
-    >
-      <Path
-        d={d}
-        fill="none"
-        stroke="#c9d5bf"
-        strokeWidth={2.75}
-        strokeLinecap="round"
-        strokeDasharray="5 9"
-      />
-    </Svg>
-  );
-}
-
 export default function Home() {
   const { state } = useCompeteStore();
   const [expanded, setExpanded] = useState<"suggestion" | Activity | null>(
@@ -86,7 +60,6 @@ export default function Home() {
     .sort((a, b) => b.startedAt.localeCompare(a.startedAt))
     .slice(0, 10);
   const units = state.units;
-
   const weekPeriod = competePeriodWindow(state, now);
   const weekStart = weekPeriod.startsAt.getTime();
   const weekEnd = weekPeriod.endsAt.getTime();
@@ -111,9 +84,8 @@ export default function Home() {
       : `${(Math.round(weekHours * 10) / 10).toFixed(1).replace(/\.0$/, "")} hr`;
   const nowDayIso = now.toISOString().slice(0, 10);
   const dayLabels = ["M", "T", "W", "T", "F", "S", "S"];
-
   // Previous week window (Mon 00:00 UTC to next Mon 00:00 UTC, 7 days earlier)
-  const prevWeekStart = weekStart - 7 * 86_400_000;
+  const prevWeekStart = weekStart - 7 * 86400000;
   const prevWeekEnd = weekStart;
   const prevWeekActivities = state.activities.filter((a) => {
     if (!countsOnTrack(a, "open")) return false;
@@ -131,16 +103,14 @@ export default function Home() {
       new Date(r.periodStart).getTime() >= prevWeekStart - 3600000 &&
       new Date(r.periodStart).getTime() <= prevWeekStart + 3600000,
   );
-
   // Index of today (0 = Monday, 6 = Sunday) in America/New_York
   const weekday = getZonedWeekday(now, APP_TIMEZONE);
   const nowDayIndex = Math.min(6, Math.max(0, weekday === 0 ? 6 : weekday - 1));
-
   // Cumulative hours for current week up to now
   let currRunningSec = 0;
   const currCumulativeHours: number[] = [];
   for (let i = 0; i <= nowDayIndex; i++) {
-    const d = new Date(weekStart + i * 86_400_000 + 43_200_000);
+    const d = new Date(weekStart + i * 86400000 + 43200000);
     const dayIso = dayKey(d, APP_TIMEZONE);
     const dayActs = weekActivities.filter(
       (a) => dayKey(new Date(a.startedAt), APP_TIMEZONE) === dayIso,
@@ -154,13 +124,12 @@ export default function Home() {
       (weekMovingSec / 3600).toFixed(2),
     );
   }
-
   // Cumulative hours for previous week (all 7 days)
   let prevRunningSec = 0;
   const prevCumulativeHours: number[] = [];
   if (prevWeekActivities.length > 0) {
     for (let i = 0; i < 7; i++) {
-      const d = new Date(prevWeekStart + i * 86_400_000 + 43_200_000);
+      const d = new Date(prevWeekStart + i * 86400000 + 43200000);
       const dayIso = dayKey(d, APP_TIMEZONE);
       const dayActs = prevWeekActivities.filter(
         (a) => dayKey(new Date(a.startedAt), APP_TIMEZONE) === dayIso,
@@ -181,7 +150,6 @@ export default function Home() {
       prevCumulativeHours.push(0);
     }
   }
-
   const currTotalHours = Number((weekMovingSec / 3600).toFixed(1));
   const prevTotalHours = Number(
     (
@@ -192,7 +160,6 @@ export default function Home() {
   const hoursDelta = Number(
     (currTotalHours - (prevCumulativeHours[nowDayIndex] ?? 0)).toFixed(1),
   );
-
   // SVG chart geometry
   const chartW = 230;
   const chartH = 120;
@@ -201,18 +168,15 @@ export default function Home() {
   const yTop = 14;
   const yBottom = 92;
   const yMidPos = Math.round((yTop + yBottom) / 2);
-
   const maxVal = Math.max(...currCumulativeHours, ...prevCumulativeHours, 0.5);
   const yMax = Math.max(1, Math.ceil(maxVal * 1.15));
   const yMid = Math.round((yMax / 2) * 10) / 10;
-
   const getY = (hrs: number) =>
     yBottom - (Math.min(hrs, yMax) / yMax) * (yBottom - yTop);
   const getX = (dayIdx: number) =>
     xStart + ((dayIdx + 1) / 7) * (xEnd - xStart);
   const getDayCenterX = (dayIdx: number) =>
     xStart + ((dayIdx + 0.5) / 7) * (xEnd - xStart);
-
   const weekDurationMs = weekEnd - weekStart;
   const weekProgress = Math.min(
     1,
@@ -223,14 +187,12 @@ export default function Home() {
     (xStart + weekProgress * (xEnd - xStart)).toFixed(1),
   );
   const currLastY = getY(currTotalHours);
-
   const prevPoints = [
     `${xStart.toFixed(1)},${getY(0).toFixed(1)}`,
     ...prevCumulativeHours.map(
       (h, i) => `${getX(i).toFixed(1)},${getY(h).toFixed(1)}`,
     ),
   ].join(" ");
-
   const currPointsList = [
     `${xStart.toFixed(1)},${getY(0).toFixed(1)}`,
     ...currCumulativeHours
@@ -240,12 +202,10 @@ export default function Home() {
   ];
   const currLinePoints = currPointsList.join(" ");
   const currAreaPoints = `${currLinePoints} ${currPreciseX.toFixed(1)},${yBottom} ${xStart.toFixed(1)},${yBottom}`;
-
   const paceText =
     hoursDelta > 0 ? "Ahead of pace" : hoursDelta === 0 ? "On pace" : null;
-
   const weekDays = Array.from({ length: 7 }, (_, i) => {
-    const d = new Date(weekStart + i * 86_400_000 + 43_200_000);
+    const d = new Date(weekStart + i * 86400000 + 43200000);
     const dayIso = dayKey(d, APP_TIMEZONE);
     const dayActs = weekActivities.filter(
       (a) => dayKey(new Date(a.startedAt), APP_TIMEZONE) === dayIso,
@@ -258,7 +218,6 @@ export default function Home() {
     };
   });
   const activeDaysCount = weekDays.filter((d) => d.hasActivity).length;
-
   function bounce() {
     void AccessibilityInfo.isReduceMotionEnabled().then((reduce) => {
       if (!reduce)
@@ -272,7 +231,6 @@ export default function Home() {
         ]).start();
     });
   }
-
   if (expanded === "suggestion") {
     return (
       <SafeAreaView style={f.safe} edges={["top"]}>
@@ -306,7 +264,6 @@ export default function Home() {
       </SafeAreaView>
     );
   }
-
   if (expanded && typeof expanded === "object") {
     const a = expanded;
     return (
@@ -341,15 +298,14 @@ export default function Home() {
       </SafeAreaView>
     );
   }
-
   return (
     <SafeAreaView style={f.safe} edges={["top"]}>
       <ScrollView contentContainerStyle={f.content}>
-        <FocusHeading
-          kicker="Your daily starting point"
-          title="Just one good move."
-          body="Small steps. A week that adds up."
-        />
+        {state.frozenPeriods.includes(primaryFreezePeriodStart(state)) ? (
+          <Text style={f.copy}>
+            ❄ Week frozen · Your effort score is protected through next Monday.
+          </Text>
+        ) : null}
         <View style={s.statsCard} accessibilityLabel="This week's progress">
           <View style={s.statsHeader}>
             <View>
@@ -547,7 +503,6 @@ export default function Home() {
     </SafeAreaView>
   );
 }
-
 const s = StyleSheet.create({
   statsCard: {
     backgroundColor: "#ffffff",
@@ -558,14 +513,6 @@ const s = StyleSheet.create({
     padding: 18,
     gap: 12,
     marginBottom: 8,
-  },
-  statsBody: {
-    flexDirection: "row",
-    alignItems: "flex-end",
-    gap: 16,
-  },
-  statsHours: {
-    minWidth: 88,
   },
   statsMain: {
     fontFamily: "DMSans_700Bold",
@@ -659,68 +606,4 @@ const s = StyleSheet.create({
     maxWidth: "85%",
   },
   expandEmber: { position: "absolute", right: -10, bottom: 10 },
-  journey: { gap: 0, paddingBottom: 20 },
-  stop: {
-    height: PATH_ROW,
-    position: "relative",
-  },
-  pathCurve: {
-    position: "absolute",
-    left: 0,
-    width: "100%",
-    top: -PATH_ROW / 2,
-    height: PATH_ROW,
-    zIndex: 0,
-  },
-  hollow: {
-    width: 22,
-    height: 22,
-    borderRadius: 11,
-    borderWidth: 2.5,
-    borderColor: "#9eb090",
-  },
-  tile: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    borderWidth: 1,
-    borderBottomWidth: 5,
-    borderColor: "#cdd9c1",
-    backgroundColor: "#fff",
-    justifyContent: "center",
-    alignItems: "center",
-    gap: 3,
-  },
-  tileAbs: {
-    position: "absolute",
-    top: "50%",
-    marginTop: -40,
-    marginLeft: -40,
-    zIndex: 1,
-  },
-  tileValue: { fontFamily: "DMSans_500Medium", fontSize: 12, color: "#282f2c" },
-  check: {
-    position: "absolute",
-    right: -5,
-    top: -8,
-    width: 20,
-    height: 20,
-    borderRadius: 11,
-    backgroundColor: "#f1c75b",
-    justifyContent: "center",
-    alignItems: "center",
-    borderWidth: 2,
-    borderColor: "#fafaf7",
-  },
-  stopCopy: {
-    position: "absolute",
-    top: "50%",
-    marginTop: -22,
-    maxWidth: 120,
-    gap: 3,
-    zIndex: 1,
-  },
-  copyLeft: { left: "24%", marginLeft: 48 },
-  copyCenter: { left: "50%", marginLeft: 52 },
-  copyRight: { right: "24%", marginRight: 48, alignItems: "flex-end" },
 });

@@ -1,17 +1,14 @@
-import { EffortTrend } from "./effort-trend";
-import { ProfilePhoto } from "./profile-photo";
-import { Image, Text, View } from "react-native";
-import Svg, { Line, Polyline, Circle } from "react-native-svg";
 import {
   countsOnTrack,
   distanceUnitLabel,
   formatDistanceM,
-  initialsFromName,
-  rankForElo,
   type CompeteState,
 } from "@fitness-battle/shared";
-import { FocusButton, f } from "../ui/focus";
 import { useRouter } from "expo-router";
+import { Text, View } from "react-native";
+import { FocusButton, f } from "../ui/focus";
+import { EffortTrend } from "./effort-trend";
+import { ProfilePhoto } from "./profile-photo";
 
 function seasonSummary(state: CompeteState) {
   const counted = state.activities.filter((a) => countsOnTrack(a, "open"));
@@ -34,26 +31,8 @@ export function AthleteMetrics({
   onEdit?: () => void;
 }) {
   const router = useRouter();
-  const rating = state.ratings.find((r) => r.sport === state.primary);
-  const elo = rating?.openElo ?? 0;
-  const verifiedElo = rating?.verifiedElo ?? 0;
   const season = seasonSummary(state);
   const unit = distanceUnitLabel(state.units);
-  const settledWeeks = season.weeks;
-  const values = state.periodResults
-    .filter((r) => r.sport === state.primary && r.track === "open")
-    .slice()
-    .sort((a, b) => a.periodStart.localeCompare(b.periodStart))
-    .map((r) => r.eloAfter);
-  if (!values.length || values.at(-1) !== elo) values.push(elo);
-  const low = Math.max(0, Math.min(...values) - 20),
-    high = Math.max(values.length ? low + 40 : 40, Math.max(...values) + 20);
-  const points = values
-    .map(
-      (v, i) =>
-        `${values.length === 1 ? 160 : (i / (values.length - 1)) * 320},${105 - ((v - low) / (high - low)) * 85}`,
-    )
-    .join(" ");
   return (
     <>
       <View
@@ -69,9 +48,7 @@ export function AthleteMetrics({
       >
         <ProfilePhoto state={state} />
         <View style={{ flex: 1, gap: 4 }}>
-          <Text style={f.kicker}>
-            Athlete · {state.city || "Your own pace"}
-          </Text>
+          <Text style={f.kicker}>{state.city || "Your own pace"}</Text>
           <Text style={f.title}>{state.name}</Text>
           {email ? (
             <Text style={f.small}>
@@ -79,7 +56,6 @@ export function AthleteMetrics({
               {demoMode ? " · demo" : ""}
             </Text>
           ) : null}
-          <Text style={f.copy}>Your own kind of progress.</Text>
         </View>
       </View>
       <View

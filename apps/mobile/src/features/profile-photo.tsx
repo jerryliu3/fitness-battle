@@ -1,17 +1,18 @@
-import { useRef, useState } from "react";
-import { Image, Text, View } from "react-native";
-import * as ImagePicker from "expo-image-picker";
 import {
+  buildAvatarCleanupPathsForProfileChange,
   getCanonicalAvatarObjectPath,
   initialsFromName,
   type CompeteState,
 } from "@fitness-battle/shared";
+import * as ImagePicker from "expo-image-picker";
+import { useEffect, useRef, useState } from "react";
+import { Image, Text, View } from "react-native";
 import { useAuth } from "../lib/auth";
 import { useCompeteStore } from "../lib/compete-store";
-import { supabase } from "../lib/supabase";
-import { FocusButton, f } from "../ui/focus";
-import { SHELL_COLORS as c } from "../theme";
 import { decodePhoto } from "../lib/profile-photo";
+import { supabase } from "../lib/supabase";
+import { SHELL_COLORS as c } from "../theme";
+import { FocusButton, f } from "../ui/focus";
 
 export function ProfilePhoto({ state }: { state: CompeteState }) {
   const { user, demoMode } = useAuth();
@@ -21,6 +22,13 @@ export function ProfilePhoto({ state }: { state: CompeteState }) {
   const ownerRef = useRef(user?.id);
   ownerRef.current = user?.id;
   const [error, setError] = useState("");
+  const mounted = useRef(true);
+  useEffect(() => {
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+    };
+  }, []);
   async function change(remove = false) {
     if (!user || flight.current) return;
     flight.current = true;
@@ -46,7 +54,7 @@ export function ProfilePhoto({ state }: { state: CompeteState }) {
         const bytes = decodePhoto(asset.base64);
         if (bytes.byteLength > 5 * 1024 * 1024)
           throw new Error("Choose a photo smaller than 5 MB.");
-        if (ownerRef.current !== id) return;
+        if (!mounted.current || ownerRef.current !== id) return;
         if (demoMode || user.mode === "demo") {
           url = `data:image/jpeg;base64,${asset.base64}`;
         } else {
@@ -58,11 +66,20 @@ export function ProfilePhoto({ state }: { state: CompeteState }) {
           url = `${supabase.storage.from("avatars").getPublicUrl(path).data.publicUrl}?v=${Date.now()}`;
         }
       }
-      // Clear the profile reference first; the stable object can be overwritten by a later upload.
-      if (ownerRef.current === id)
-        dispatch({ type: "set-avatar", avatarUrl: url });
+      if (remove && !demoMode && user.mode !== "demo") {
+        const { error } = await supabase.storage.from("avatars").remove(
+          buildAvatarCleanupPathsForProfileChange({
+            userId: id,
+            previousAvatarUrl: state.avatarUrl,
+            nextAvatarUrl: null,
+          }),
+        );
+        if (error) throw error;
+      }
+      if (mounted.current && ownerRef.current === id)
+        dispatch({ type: "set-avatar", avatarUrl: url, accountId: id });
     } catch (e) {
-      if (ownerRef.current === id)
+      if (mounted.current && ownerRef.current === id)
         setError(
           e instanceof Error ? e.message : "Could not update your photo.",
         );
