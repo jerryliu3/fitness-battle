@@ -586,7 +586,7 @@ export function TodayScreen() {
         </div>
       </section>
       <div className="focus-row">
-        <h2>Your fitness journey</h2>
+        <h2>Your journey</h2>
         {journeyDays.length ? (
           <span className="fb-note">
             Last {journeyDays.length} active day{journeyDays.length === 1 ? "" : "s"}

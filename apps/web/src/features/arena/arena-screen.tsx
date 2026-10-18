@@ -110,23 +110,23 @@ export function ArenaScreen() {
 
       {!hasAnyRegistration ? (
         <div style={{ margin: "16px 0 24px" }}>
-          <button
-            type="button"
-            className="fb-btn"
-            style={{ width: "100%", justifyContent: "center", padding: "12px 20px" }}
-            onClick={() => {
-              setSport(null);
-              setRegister(true);
-            }}
-          >
-            ＋ Register for an event
-          </button>
           <section className="focus-card focus-empty" style={{ marginTop: 16 }}>
             <div className="focus-empty-sports-emojis" aria-hidden="true">
               🏃 🚴 🚶 🏋️
             </div>
             <h2>Your next chapter starts here.</h2>
             <p className="fb-copy">Pick an event and join for the week.</p>
+            <button
+              type="button"
+              className="fb-btn"
+              style={{ width: "100%", justifyContent: "center", padding: "12px 20px" }}
+              onClick={() => {
+                setSport(null);
+                setRegister(true);
+              }}
+            >
+              ＋ Register for an event
+            </button>
           </section>
         </div>
       ) : (

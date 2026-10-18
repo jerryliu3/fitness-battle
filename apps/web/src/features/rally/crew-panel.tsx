@@ -177,53 +177,6 @@ export function CrewPanel() {
         : `${memberNames.slice(0, 3).join(", ")} + ${memberNames.length - 3} more`;
   return (
     <>
-      {(!user || demoMode) && (
-        <div className="focus-crew-preview" style={{ marginBottom: 28 }}>
-          <section className="focus-card focus-empty">
-            <h2>Make room for your people.</h2>
-            <p className="fb-copy" style={{ marginBottom: 20 }}>
-              Private crews share a week of counted effort — invite codes,
-              member standings, and a shared field when you register together.
-            </p>
-            {!user ? (
-              <div className="fb-row" style={{ width: "100%", gap: 10 }}>
-                <Link
-                  className="fb-btn"
-                  href="/signup?next=/field"
-                  style={{ flex: 1, textAlign: "center" }}
-                >
-                  Create account
-                </Link>
-                <Link
-                  className="fb-btn-line"
-                  href="/login?next=/field"
-                  style={{ flex: 1, textAlign: "center" }}
-                >
-                  Sign in
-                </Link>
-              </div>
-            ) : null}
-          </section>
-          <section className="focus-card">
-            <p className="fb-kicker">What crews unlock</p>
-            <ul className="focus-crew-preview-list">
-              <li>
-                <b>Shared week</b>
-                <span>See who showed up and how the circle is pacing.</span>
-              </li>
-              <li>
-                <b>Invite codes</b>
-                <span>Bring friends in without a public board.</span>
-              </li>
-              <li>
-                <b>Crew field</b>
-                <span>Optional: register together on one individual leaderboard.</span>
-              </li>
-            </ul>
-          </section>
-        </div>
-      )}
-
       {user && !demoMode && !data && (
         <section className="focus-card">
           <p className="fb-copy">{note || "Loading your circle…"}</p>
@@ -447,12 +400,6 @@ export function CrewPanel() {
                   </button>
                   <button
                     className="fb-btn-line"
-                    onClick={() => setPanel("invite")}
-                  >
-                    Invite someone ＋
-                  </button>
-                  <button
-                    className="fb-btn-line"
                     onClick={() => setPanel("create")}
                   >
                     Create another crew
@@ -479,6 +426,52 @@ export function CrewPanel() {
           {n.body}
         </p>
       ))}
+      {(!user || demoMode) && (
+        <div className="focus-crew-preview" style={{ marginBottom: 28 }}>
+          <section className="focus-card">
+            <p className="fb-kicker">What crews unlock</p>
+            <ul className="focus-crew-preview-list">
+              <li>
+                <b>Shared week</b>
+                <span>See who showed up and how the circle is pacing.</span>
+              </li>
+              <li>
+                <b>Invite codes</b>
+                <span>Bring friends in without a public board.</span>
+              </li>
+              <li>
+                <b>Crew field</b>
+                <span>Optional: register together on one individual leaderboard.</span>
+              </li>
+            </ul>
+          </section>
+          <section className="focus-card focus-empty">
+            <h2>Make room for your people.</h2>
+            <p className="fb-copy" style={{ marginBottom: 20 }}>
+              Private crews share a week of counted effort — invite codes,
+              member standings, and a shared field when you register together.
+            </p>
+            {!user ? (
+              <div className="fb-row" style={{ width: "100%", gap: 10 }}>
+                <Link
+                  className="fb-btn"
+                  href="/signup?next=/field"
+                  style={{ flex: 1, textAlign: "center" }}
+                >
+                  Create account
+                </Link>
+                <Link
+                  className="fb-btn-line"
+                  href="/login?next=/field"
+                  style={{ flex: 1, textAlign: "center" }}
+                >
+                  Sign in
+                </Link>
+              </div>
+            ) : null}
+          </section>
+        </div>
+      )}
       <Sheet
         open={!!panel}
         title={
