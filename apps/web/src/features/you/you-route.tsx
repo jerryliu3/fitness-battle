@@ -170,14 +170,6 @@ function YouContent() {
         >
           {deletingAccount ? "Deleting account…" : "Permanently delete account"}
         </button>
-        <button
-          type="button"
-          className="fb-btn-ghost"
-          disabled={deletingAccount}
-          onClick={() => setDeleteConfirmOpen(false)}
-        >
-          Cancel
-        </button>
       </div>
     </Sheet>
   );

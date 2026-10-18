@@ -8,6 +8,7 @@ import {
   countsOnTrack,
   distanceUnitLabel,
   formatDistanceM,
+  formatMemberCount,
 } from "@fitness-battle/shared";
 import Link from "next/link";
 interface Crew {
