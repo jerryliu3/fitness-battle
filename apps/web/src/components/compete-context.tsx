@@ -13,6 +13,7 @@ import {
   readSeenField,
   reduceCompete,
   rollClock,
+  seedArenaBaselinesFromState,
   seenFieldFromState,
   withAccountEloBaseline,
   type Action,
@@ -102,6 +103,14 @@ function readStorageItem(key: string): string | null {
   } catch (error) {
     console.warn("Could not read compete state from local storage:", error);
     return null;
+  }
+}
+
+function writeStorageItem(key: string, value: string): void {
+  try {
+    localStorage.setItem(key, value);
+  } catch {
+    /* Progress remains available if device storage is disabled. */
   }
 }
 
@@ -307,6 +316,7 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!state || loadStatus === "loading" || loadStatus === "failed") return;
     const accountKey = userId ?? "guest";
+    seedArenaBaselinesFromState(state, accountKey, readStorageItem, writeStorageItem);
     const next = seenFieldFromState(state, accountKey);
     if (primaryRevealResults(state.periodResults, undefined, state.primary).length > 0) {
       if (next) {
@@ -459,7 +469,20 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
         }
         dirtyRef.current += 1;
         unsavedRef.current = true;
+        const accountKey = userIdRef.current ?? "guest";
+        seedArenaBaselinesFromState(
+          stateRef.current,
+          accountKey,
+          readStorageItem,
+          writeStorageItem,
+        );
         const next = reduceCompete(stateRef.current, withAccount);
+        seedArenaBaselinesFromState(
+          next,
+          accountKey,
+          readStorageItem,
+          writeStorageItem,
+        );
         const savedAt = new Date().toISOString();
         stateRef.current = next;
         setState(next);

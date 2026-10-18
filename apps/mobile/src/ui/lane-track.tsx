@@ -6,6 +6,7 @@ import Svg, {
   G,
   Line,
   LinearGradient,
+  Path,
   RadialGradient,
   Rect,
   Stop,
@@ -19,6 +20,8 @@ import {
   initialsFromName,
   selfLaneLabel,
   type ArenaLane,
+  type ArenaOvertakeFrame,
+  type ArenaOvertakePlan,
   type ArenaViewWindow,
 } from "@fitness-battle/shared";
 export function LaneTrack({
@@ -29,6 +32,8 @@ export function LaneTrack({
   onSelect,
   view,
   onPan,
+  overtakeFrame = null,
+  overtakePlan = null,
 }: {
   lanes: ArenaLane[];
   unit: string;
@@ -37,9 +42,12 @@ export function LaneTrack({
   onSelect: (lane: ArenaLane) => void;
   view?: ArenaViewWindow;
   onPan?: (center: number) => void;
+  overtakeFrame?: ArenaOvertakeFrame | null;
+  overtakePlan?: ArenaOvertakePlan | null;
 }) {
   const [width, setWidth] = useState(340);
   const scroll = useRef<ScrollView>(null);
+  const animating = Boolean(overtakeFrame && overtakeFrame.phase !== "done");
   const me = lanes.find((l) => l.you);
   const rawV = view ?? {
     center: me?.values[index] ?? 0,
@@ -77,6 +85,10 @@ export function LaneTrack({
     lw = (w - 50) / Math.max(1, ordered.length);
   const bounds = arenaWindow(v.center, v.span);
   const y = (value: number) => 72 + arenaPosition(value, v).fraction * 400;
+  const maxTailY = Math.min(
+    482,
+    bounds.min <= 0 && bounds.max >= 0 ? y(0) + 4 : 482,
+  );
   useEffect(() => {
     scroll.current?.scrollTo({
       x: Math.max(0, (w - width) / 2),
@@ -120,6 +132,11 @@ export function LaneTrack({
                 <Stop offset="0" stopColor="#f1c75b" stopOpacity="0.55" />
                 <Stop offset="1" stopColor="#f1c75b" stopOpacity="0" />
               </RadialGradient>
+              <LinearGradient id="afterburnWake" x1="0" y1="0" x2="0" y2="1">
+                <Stop offset="0" stopColor="#f1c75b" stopOpacity="0.65" />
+                <Stop offset="0.45" stopColor="#f1c75b" stopOpacity="0.28" />
+                <Stop offset="1" stopColor="#f1c75b" stopOpacity="0" />
+              </LinearGradient>
             </Defs>
             <Rect width={w} height={540} rx={24} fill="url(#road)" />
             <Rect
@@ -200,10 +217,24 @@ export function LaneTrack({
               </G>
             ) : null}
             {ordered.map((l, i) => {
-              const value = l.values[index] ?? 0;
+              const value =
+                animating && overtakeFrame
+                  ? (overtakeFrame.laneValues[l.id] ?? l.values[index] ?? 0)
+                  : (l.values[index] ?? 0);
               const edge = arenaPosition(value, v).edge;
-              const xx = (i + 0.5) * lw + 10,
-                yy = y(value);
+              const effect = !l.you ? overtakeFrame?.rivalEffects[l.id] : undefined;
+              const speed = l.you && animating ? (overtakeFrame?.speed ?? 0) : 0;
+              const charging = l.you && animating ? (overtakeFrame?.charging ?? 0) : 0;
+              const xx = (i + 0.5) * lw + 10 + (effect?.joltX ?? 0),
+                yy = y(value) + (l.you ? charging * 4 : 0);
+              const wakeLen = Math.min(
+                28 + speed * 88,
+                Math.max(0, maxTailY - (yy + 14)),
+              );
+              const rivalMovedInSlide =
+                !l.you &&
+                overtakeFrame?.phase === "rival-slide" &&
+                overtakePlan?.rivals[l.id]?.moved;
               return (
                 <G
                   key={l.id}
@@ -211,6 +242,69 @@ export function LaneTrack({
                   accessible
                   accessibilityLabel={`${l.name}, ${value.toFixed(1)} ${unit}${edge ? `, ${edge} of view` : ""}`}
                 >
+                  {l.you && speed > 0.01 && wakeLen > 6 ? (
+                    <G>
+                      <Path
+                        d={`M ${xx - 16} ${yy + 14} C ${xx - 22} ${yy + 14 + wakeLen * 0.45}, ${xx - 8} ${yy + 14 + wakeLen * 0.85}, ${xx} ${yy + 14 + wakeLen} C ${xx + 8} ${yy + 14 + wakeLen * 0.85}, ${xx + 22} ${yy + 14 + wakeLen * 0.45}, ${xx + 16} ${yy + 14} Z`}
+                        fill="url(#afterburnWake)"
+                        opacity={speed}
+                      />
+                      {[-14, -7, 0, 7, 14].map((dx, idx) => {
+                        const isCenter = idx === 2;
+                        const streakLen = Math.min(
+                          speed * (54 + (idx % 2 === 0 ? 34 : 18)),
+                          Math.max(0, maxTailY - (yy + 24)),
+                        );
+                        if (streakLen <= 2) return null;
+                        return (
+                          <Line
+                            key={idx}
+                            x1={xx + dx}
+                            x2={xx + dx}
+                            y1={yy + 24}
+                            y2={yy + 24 + streakLen}
+                            stroke="#f1c75b"
+                            strokeWidth={isCenter ? 6 : 2}
+                            strokeLinecap="round"
+                            opacity={speed * (isCenter ? 0.48 : 0.78)}
+                          />
+                        );
+                      })}
+                    </G>
+                  ) : null}
+                  {l.you && charging > 0.02 ? (
+                    <Path
+                      d={`M ${xx - 30} ${yy - 4} l -8 6 l 5 2 l -5 7 M ${xx + 30} ${yy - 6} l 8 6 l -5 2 l 5 7`}
+                      fill="none"
+                      stroke="#f1c75b"
+                      strokeWidth={2}
+                      strokeLinecap="round"
+                      opacity={charging}
+                    />
+                  ) : null}
+                  {rivalMovedInSlide ? (
+                    <Line
+                      x1={xx}
+                      x2={xx}
+                      y1={yy + 18}
+                      y2={yy + 46}
+                      stroke="#9bbf63"
+                      strokeWidth={3}
+                      strokeLinecap="round"
+                      opacity={0.45}
+                    />
+                  ) : null}
+                  {effect?.isPassed && effect.ripple < 1 ? (
+                    <Circle
+                      cx={xx}
+                      cy={yy}
+                      r={19 + effect.ripple * 24}
+                      fill="none"
+                      stroke="#f1c75b"
+                      strokeWidth={3 - effect.ripple * 2}
+                      opacity={1 - effect.ripple}
+                    />
+                  ) : null}
                   {l.you ? (
                     <Circle cx={xx} cy={yy} r={34} fill="url(#youGlow)" />
                   ) : null}
@@ -244,7 +338,7 @@ export function LaneTrack({
                     height={20}
                     rx={10}
                     fill={l.you ? "#282f2c" : "#ffffffee"}
-                    stroke="#e0e5dc"
+                    stroke={l.you && speed > 0.05 ? "#f1c75b" : "#e0e5dc"}
                   />
                   <SvgText
                     x={xx}

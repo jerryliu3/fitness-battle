@@ -1,14 +1,22 @@
 "use client";
 import dynamic from "next/dynamic";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
+  arenaBaselineStorageKey,
   clampArenaLaneCenter,
+  formatArenaOvertakeStatus,
+  readArenaBaseline,
+  reconcileArenaOvertake,
   resolveArenaSelectedId,
   selfLaneLabel,
+  serializeArenaBaseline,
+  stepArenaOvertake,
+  type ArenaOvertakePlan,
   type ArenaSceneLane,
   type ArenaViewWindow,
   type BoardRow,
 } from "@fitness-battle/shared";
+import { useAuth } from "@/components/auth-context";
 import { ArenaLanes } from "@/features/focus/arena-lanes";
 import { defaultLook } from "../avatar";
 import {
@@ -35,6 +43,8 @@ export function FieldStage({
   model: FieldModel;
   boardRows?: BoardRow[];
 }) {
+  const { user } = useAuth();
+  const accountKey = user?.id ?? "guest";
   const unit = model.unit;
   const runners = useMemo<SceneRunner[]>(
     () =>
@@ -70,24 +80,144 @@ export function FieldStage({
   const [showGhost, setShowGhost] = useState(true);
   const [selected, setSelected] = useState<string | null>(null);
   const [unavailable, setUnavailable] = useState(false);
+  const [overtakePlan, setOvertakePlan] = useState<ArenaOvertakePlan | null>(
+    null,
+  );
+  const [overtakeProgress, setOvertakeProgress] = useState(1);
+  const [replayEpoch, setReplayEpoch] = useState(0);
+  const committedRef = useRef<Record<string, Record<string, number>>>({});
+  const lastSignatureRef = useRef<string | null>(null);
+
   const toggleSelect = (id: string) =>
     setSelected((prev) => (prev === id ? null : id));
 
+  const fieldLanes: ArenaSceneLane[] = useMemo(
+    () =>
+      runners.map((r) => ({
+        id: r.id,
+        name: r.name,
+        initials: r.initials,
+        value: valueAt(r, time),
+        you: r.you,
+      })),
+    [runners, time],
+  );
+
+  const sceneLanes: ArenaSceneLane[] = useMemo(
+    () =>
+      showGhost && ghost
+        ? [
+            ...fieldLanes,
+            {
+              id: ghost.id,
+              name: ghost.name,
+              initials: ghost.initials,
+              value: valueAt(ghost, time),
+              ghost: true,
+            },
+          ]
+        : fieldLanes,
+    [fieldLanes, ghost, showGhost, time],
+  );
+
+  useEffect(() => {
+    const key = arenaBaselineStorageKey(accountKey, model.sport, model.track);
+    const scopeKey = `${key}:${model.periodStart}:${unit}`;
+    const signature = `${scopeKey}|${fieldLanes
+      .map((lane) => `${lane.id}:${lane.value.toFixed(3)}`)
+      .join(",")}`;
+    if (lastSignatureRef.current === signature) return;
+    lastSignatureRef.current = signature;
+
+    let previous: Record<string, number> | null = null;
+    try {
+      previous = readArenaBaseline(
+        localStorage.getItem(key),
+        model.periodStart,
+        unit,
+      );
+    } catch {
+      previous = committedRef.current[scopeKey] ?? null;
+    }
+    const plan = reconcileArenaOvertake(fieldLanes, previous);
+    const snapshot = serializeArenaBaseline(model.periodStart, fieldLanes, unit);
+    const nextCommitted: Record<string, number> = {};
+    for (const lane of fieldLanes) {
+      nextCommitted[lane.id] = lane.value;
+    }
+    committedRef.current[scopeKey] = nextCommitted;
+    try {
+      localStorage.setItem(key, snapshot);
+    } catch {
+      /* Storage optional */
+    }
+    if (!plan) {
+      setOvertakePlan(null);
+      setOvertakeProgress(1);
+      return;
+    }
+    const reduced =
+      typeof window !== "undefined" &&
+      typeof window.matchMedia === "function" &&
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    setCenter(null);
+    setOvertakePlan(plan);
+    if (reduced) {
+      setOvertakeProgress(1);
+      setReplayEpoch(0);
+    } else {
+      setOvertakeProgress(0);
+      setReplayEpoch((n) => n + 1);
+    }
+  }, [accountKey, fieldLanes, model.periodStart, model.sport, model.track, unit]);
+
+  useEffect(() => {
+    if (!overtakePlan || replayEpoch === 0) return;
+    let raf = 0;
+    const start = performance.now();
+    const duration = overtakePlan.durationMs;
+    const tick = (now: number) => {
+      const next = Math.min(1, (now - start) / duration);
+      setOvertakeProgress(next);
+      if (next < 1) {
+        raf = requestAnimationFrame(tick);
+      }
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [overtakePlan, replayEpoch]);
+
+  const overtakeFrame = useMemo(
+    () =>
+      overtakePlan && overtakeProgress < 1
+        ? stepArenaOvertake(overtakePlan, overtakeProgress, span)
+        : null,
+    [overtakePlan, overtakeProgress, span],
+  );
+
+  const overtakeStatus = useMemo(
+    () =>
+      overtakePlan
+        ? formatArenaOvertakeStatus(overtakePlan, overtakeFrame, unit)
+        : null,
+    [overtakeFrame, overtakePlan, unit],
+  );
+
+  const displayTotal = overtakeFrame ? overtakeFrame.youValue : total;
+  const displayPlace =
+    overtakeFrame && you
+      ? overtakeFrame.currentRank
+      : you
+        ? placeAt(runners, you.id, time, 0)
+        : 0;
+
   const view: ArenaViewWindow = {
-    center: clampArenaLaneCenter(center ?? total, span),
+    center: clampArenaLaneCenter(
+      center ?? (overtakeFrame ? overtakeFrame.viewCenter : total),
+      span,
+    ),
     span,
   };
-  const sceneLanes: ArenaSceneLane[] = [
-    ...runners,
-    ...(showGhost && ghost ? [ghost] : []),
-  ].map((r) => ({
-    id: r.id,
-    name: r.name,
-    initials: r.initials,
-    value: valueAt(r, time),
-    you: r.you,
-    ghost: r.ghost,
-  }));
 
   const trackSelected = resolveArenaSelectedId(
     selected,
@@ -112,15 +242,54 @@ export function FieldStage({
         <div>
           <p className="fb-kicker">Your week in motion</p>
           <strong>
-            {total.toFixed(1)}
+            {displayTotal.toFixed(1)}
             <small>{unit}</small>
           </strong>
         </div>
         <span className="focus-status">
-          {placeAt(runners, you.id, time, 0)} / {runners.length}
+          {displayPlace} / {runners.length}
           <small>your place</small>
         </span>
       </div>
+      {overtakePlan && overtakeStatus && (
+        <div
+          className="focus-overtake-banner"
+          role="status"
+          aria-live="polite"
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: 10,
+            padding: "8px 12px",
+            marginBottom: 10,
+            borderRadius: 12,
+            background: overtakePlan.hasOvertake ? "#d4ee8940" : "#eef3e8",
+            border: `1px solid ${overtakePlan.hasOvertake ? "#9bbf63" : "#d7e0cf"}`,
+            fontSize: 13,
+            color: "#26382d",
+          }}
+        >
+          <span>
+            <b>{overtakeStatus.headline}</b>
+            {overtakeStatus.detail ? ` · ${overtakeStatus.detail}` : null}
+          </span>
+          {!overtakeFrame && (
+            <button
+              type="button"
+              className="fb-btn-ghost"
+              style={{ padding: "2px 8px", fontSize: 12 }}
+              onClick={() => {
+                setCenter(null);
+                setOvertakeProgress(0);
+                setReplayEpoch((n) => n + 1);
+              }}
+            >
+              ↻ Replay
+            </button>
+          )}
+        </div>
+      )}
       {ghost && (
         <p className="focus-gain">
           {total - valueAt(ghost, time) >= 0 ? "+" : ""}
@@ -203,6 +372,8 @@ export function FieldStage({
                 selected={trackSelected || you.id}
                 onSelect={toggleSelect}
                 onPan={(v) => setCenter(clampArenaLaneCenter(v, span))}
+                overtakeFrame={overtakeFrame}
+                overtakePlan={overtakePlan}
               />
             )}
             {unavailable && (

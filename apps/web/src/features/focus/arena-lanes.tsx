@@ -6,6 +6,8 @@ import {
   clampArenaLaneCenter,
   orderedArenaLanes,
   selfLaneLabel,
+  type ArenaOvertakeFrame,
+  type ArenaOvertakePlan,
   type ArenaSceneLane,
   type ArenaViewWindow,
 } from "@fitness-battle/shared";
@@ -17,6 +19,8 @@ export function ArenaLanes({
   selected,
   onSelect,
   onPan,
+  overtakeFrame = null,
+  overtakePlan = null,
 }: {
   lanes: ArenaSceneLane[];
   view: ArenaViewWindow;
@@ -24,6 +28,8 @@ export function ArenaLanes({
   selected: string;
   onSelect: (id: string) => void;
   onPan: (center: number) => void;
+  overtakeFrame?: ArenaOvertakeFrame | null;
+  overtakePlan?: ArenaOvertakePlan | null;
 }) {
   const host = useRef<HTMLDivElement>(null);
   const drag = useRef<{
@@ -32,8 +38,15 @@ export function ArenaLanes({
     moved: boolean;
     id: string | null;
   } | null>(null);
-  const ordered = orderedArenaLanes(lanes);
-  const ghost = lanes.find((l) => l.ghost);
+  const animating = Boolean(overtakeFrame && overtakeFrame.phase !== "done");
+  const liveLanes = animating && overtakeFrame
+    ? lanes.map((l) => ({
+        ...l,
+        value: overtakeFrame.laneValues[l.id] ?? l.value,
+      }))
+    : lanes;
+  const ordered = orderedArenaLanes(liveLanes);
+  const ghost = liveLanes.find((l) => l.ghost);
   const effectiveCenter = clampArenaLaneCenter(view.center, view.span);
   const effectiveView: ArenaViewWindow =
     effectiveCenter === view.center
@@ -44,6 +57,10 @@ export function ArenaLanes({
     height = 540,
     laneWidth = (width - 52) / Math.max(1, ordered.length);
   const y = (v: number) => 72 + arenaPosition(v, effectiveView).fraction * 400;
+  const maxTailY = Math.min(
+    482,
+    bounds.min <= 0 && bounds.max >= 0 ? y(0) + 4 : 482,
+  );
 
   const sortedByValue = [...ordered].sort((a, b) => b.value - a.value);
   const topRunner = sortedByValue[0];
@@ -140,6 +157,11 @@ export function ArenaLanes({
             <stop stopColor="#f1c75b" stopOpacity="0.55" />
             <stop offset="1" stopColor="#f1c75b" stopOpacity="0" />
           </radialGradient>
+          <linearGradient id="focus-afterburn-wake" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stopColor="#f1c75b" stopOpacity="0.65" />
+            <stop offset="0.45" stopColor="#f1c75b" stopOpacity="0.28" />
+            <stop offset="1" stopColor="#f1c75b" stopOpacity="0" />
+          </linearGradient>
           <filter id="focus-soft" x="-40%" y="-40%" width="180%" height="180%">
             <feDropShadow
               dx="0"
@@ -224,10 +246,21 @@ export function ArenaLanes({
           </>
         )}
         {ordered.map((l, i) => {
-          const position = arenaPosition(l.value, view),
-            yy = y(l.value),
-            xx = (i + 0.5) * laneWidth + 10;
+          const position = arenaPosition(l.value, effectiveView);
+          const effect = !l.you ? overtakeFrame?.rivalEffects[l.id] : undefined;
+          const speed = l.you && animating ? (overtakeFrame?.speed ?? 0) : 0;
+          const charging = l.you && animating ? (overtakeFrame?.charging ?? 0) : 0;
+          const yy = y(l.value) + (l.you ? charging * 4 : 0);
+          const xx = (i + 0.5) * laneWidth + 10 + (effect?.joltX ?? 0);
           const active = selected === l.id || l.you;
+          const wakeLen = Math.min(
+            28 + speed * 88,
+            Math.max(0, maxTailY - (yy + 14)),
+          );
+          const rivalMovedInSlide =
+            !l.you &&
+            overtakeFrame?.phase === "rival-slide" &&
+            overtakePlan?.rivals[l.id]?.moved;
           return (
             <g
               key={l.id}
@@ -243,6 +276,76 @@ export function ArenaLanes({
                 }
               }}
             >
+              {l.you && speed > 0.01 && wakeLen > 6 && (
+                <g pointerEvents="none" data-overtake-afterburn="true">
+                  <path
+                    d={`M ${xx - 16} ${yy + 14} C ${xx - 22} ${yy + 14 + wakeLen * 0.45}, ${xx - 8} ${yy + 14 + wakeLen * 0.85}, ${xx} ${yy + 14 + wakeLen} C ${xx + 8} ${yy + 14 + wakeLen * 0.85}, ${xx + 22} ${yy + 14 + wakeLen * 0.45}, ${xx + 16} ${yy + 14} Z`}
+                    fill="url(#focus-afterburn-wake)"
+                    opacity={speed}
+                  />
+                  {[-14, -7, 0, 7, 14].map((dx, idx) => {
+                    const isCenter = idx === 2;
+                    const streakLen = Math.min(
+                      speed * (54 + (idx % 2 === 0 ? 34 : 18)),
+                      Math.max(0, maxTailY - (yy + 24)),
+                    );
+                    if (streakLen <= 2) return null;
+                    return (
+                      <line
+                        key={idx}
+                        x1={xx + dx}
+                        x2={xx + dx}
+                        y1={yy + 24}
+                        y2={yy + 24 + streakLen}
+                        stroke="#f1c75b"
+                        strokeWidth={isCenter ? 6 : 2}
+                        strokeLinecap="round"
+                        opacity={speed * (isCenter ? 0.48 : 0.78)}
+                      />
+                    );
+                  })}
+                </g>
+              )}
+              {l.you && charging > 0.02 && (
+                <g
+                  opacity={charging}
+                  stroke="#f1c75b"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  pointerEvents="none"
+                >
+                  <path
+                    d={`M ${xx - 30} ${yy - 4} l -8 6 l 5 2 l -5 7 M ${xx + 30} ${yy - 6} l 8 6 l -5 2 l 5 7`}
+                    fill="none"
+                  />
+                </g>
+              )}
+              {rivalMovedInSlide && (
+                <line
+                  x1={xx}
+                  x2={xx}
+                  y1={yy + 18}
+                  y2={yy + 46}
+                  stroke="#9bbf63"
+                  strokeWidth="3"
+                  strokeLinecap="round"
+                  opacity="0.45"
+                  pointerEvents="none"
+                />
+              )}
+              {effect?.isPassed && effect.ripple < 1 && (
+                <circle
+                  cx={xx}
+                  cy={yy}
+                  r={19 + effect.ripple * 24}
+                  fill="none"
+                  stroke="#f1c75b"
+                  strokeWidth={3 - effect.ripple * 2}
+                  opacity={1 - effect.ripple}
+                  pointerEvents="none"
+                  data-overtake-ripple="true"
+                />
+              )}
               {firstPlaceId === l.id && (
                 <foreignObject
                   x={xx - 16}
@@ -293,7 +396,7 @@ export function ArenaLanes({
                 height="20"
                 rx="10"
                 fill={l.you ? "#282f2c" : "#ffffffee"}
-                stroke="#d3ddcb"
+                stroke={l.you && speed > 0.05 ? "#f1c75b" : "#d3ddcb"}
               />
               <text
                 x={xx}
@@ -303,7 +406,9 @@ export function ArenaLanes({
                 fill={l.you ? "#f1c75b" : "#282f2c"}
                 style={{ fontSize: 10 }}
               >
-                {formatLastUpdated(l)}
+                {l.you && animating
+                  ? `${l.value.toFixed(1)} ${unit}`
+                  : formatLastUpdated(l)}
               </text>
             </g>
           );
