@@ -65,6 +65,7 @@ export function AthleteOverview({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [avatarBusy, setAvatarBusy] = useState(false);
   const [avatarError, setAvatarError] = useState<string | null>(null);
+  const [nameError, setNameError] = useState<string | null>(null);
 
   const rating = state.ratings.find((r) => r.sport === state.primary);
   const openElo =
@@ -234,14 +235,24 @@ export function AthleteOverview({
                 {avatarError}
               </p>
             )}
+            {nameError ? (
+              <p className="fb-error" role="alert" style={{ fontSize: 12 }}>
+                {nameError}
+              </p>
+            ) : null}
             <div className="fb-row" style={{ gap: 8 }}>
               <button
                 type="button"
                 className="fb-btn"
                 style={{ fontSize: 13, padding: "6px 14px" }}
                 onClick={() => {
-                  if (name.trim())
-                    dispatch({ type: "rename", name: name.trim() });
+                  const trimmed = name.trim();
+                  if (!trimmed) {
+                    setNameError("Display name cannot be empty.");
+                    return;
+                  }
+                  setNameError(null);
+                  dispatch({ type: "rename", name: trimmed });
                   dispatch({ type: "set-city", city: city.trim() });
                   setEditing(false);
                 }}
