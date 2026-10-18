@@ -314,25 +314,28 @@ export function ArenaScreen() {
                   if (isRegistered || sport !== null) return;
                   setSport(s.id);
                   participate(`Sign in to join ${s.name} this week.`, async () => {
-                    let pin = null;
-                    if (competeWithCrew) {
-                      try {
-                        const options = await loadCrewJoinOptions();
-                        const matchingCrew = options.find((c) => c.sport === s.id);
-                        if (matchingCrew) {
-                          pin = await seatCrewFieldPin({
-                            crewId: matchingCrew.id,
-                            sport: s.id,
-                          });
+                    try {
+                      let pin = null;
+                      if (competeWithCrew) {
+                        try {
+                          const options = await loadCrewJoinOptions();
+                          const matchingCrew = options.find((c) => c.sport === s.id);
+                          if (matchingCrew) {
+                            pin = await seatCrewFieldPin({
+                              crewId: matchingCrew.id,
+                              sport: s.id,
+                            });
+                          }
+                        } catch {
+                          // fallback to density field if crew seating fails
                         }
-                      } catch {
-                        // fallback to density field if crew seating fails
                       }
+                      dispatch({ type: "set-primary", sport: s.id });
+                      dispatch({ type: "opt-in", sport: s.id, crewBoard: pin });
+                    } finally {
+                      setRegister(false);
+                      setSport(null);
                     }
-                    dispatch({ type: "set-primary", sport: s.id });
-                    dispatch({ type: "opt-in", sport: s.id, crewBoard: pin });
-                    setRegister(false);
-                    setSport(null);
                   });
                 }}
               >
@@ -364,9 +367,12 @@ export function ArenaScreen() {
               if (sleepOptedIn || sport !== null) return;
               setSport("sleep");
               participate("join sleep", () => {
-                dispatch({ type: "opt-in-health", metric: "sleep" });
-                setRegister(false);
-                setSport(null);
+                try {
+                  dispatch({ type: "opt-in-health", metric: "sleep" });
+                } finally {
+                  setRegister(false);
+                  setSport(null);
+                }
               });
             }}
           >

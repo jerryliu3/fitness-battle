@@ -131,6 +131,7 @@ function YouContent() {
       }
       await signOut();
       setDeleteConfirmOpen(false);
+      setPanel(null);
       router.push("/");
     } catch (err) {
       setDeleteError(
