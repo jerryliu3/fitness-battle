@@ -14,8 +14,8 @@ export const FINALIST_BACKGROUNDS = [
 ] as const;
 export type FinalistBackground = typeof FINALIST_BACKGROUNDS[number]["id"];
 export const FINALIST_PALETTES = [
-  { id: "gold-silver", name: "Gold / silver", main: "#dfb451", peer: "#9fa5af", tag: "SELECTED FAMILY" },
-  { id: "rich-gold-silver", name: "Rich gold / silver", main: "#dfad3c", peer: "#9fa5af", tag: "RICHER ALTERNATIVE" },
+  { id: "gold-silver", name: "Gold / silver", main: "#dfb451", peer: "#9fa5af", tag: "SOFTER ALTERNATIVE" },
+  { id: "rich-gold-silver", name: "Rich gold / silver", main: "#dfad3c", peer: "#9fa5af", tag: "FINALIZED PALETTE" },
   { id: "club", name: "Theme yellow / sage", main: "#f1c75b", peer: "#819486", tag: "FAMILIAR" },
   { id: "cobalt", name: "Lemon / cobalt", main: "#f3d348", peer: "#547bc7", tag: "CRISP" },
   { id: "violet", name: "Gold / violet", main: "#dfb451", peer: "#9a80bc", tag: "EXPRESSIVE" },
@@ -28,7 +28,7 @@ export const FINALIST_PALETTES = [
 
 // Locked form/background/motion; gold/silver is the working palette, with rich gold/silver retained beside it.
 export const AFTERIMAGE_SELECTION = {
-  shape: "circle-outline", palette: "gold-silver", background: "white", trail: "subtle",
+  shape: "circle-outline", palette: "rich-gold-silver", background: "white", trail: "subtle",
 } as const;
 
 export function finalistSpec(shape: FinalistShape, paletteId: string, backgroundId: FinalistBackground, trail: "equal" | "subtle"): RefinedSpec {

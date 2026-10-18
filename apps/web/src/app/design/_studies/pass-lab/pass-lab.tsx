@@ -7,10 +7,11 @@ import { ICONS, LANES, laneFrame, type Appearance, type IconId, type Mask } from
 import { IconArt } from "./icon-art";
 import { LanePhone } from "./lane-art";
 import { RefinementRound } from "./refinement-round";
+import { WakeStudy } from "./wake-study";
 import { AfterimageRound } from "./afterimage-round";
 import "./pass-lab.css";
 
-type View = "afterimage" | "refinements" | "icons" | "lanes" | "shortlist" | "notes";
+type View = "wake-study" | "afterimage" | "refinements" | "icons" | "lanes" | "shortlist" | "notes";
 type Filter = "All 15" | "With trails" | "Character" | "Type";
 type Detail = { kind: "icon"; id: IconId } | { kind: "lane"; index: number } | null;
 const STORAGE = "overtaek-pass-study-shortlist-v1";
@@ -90,7 +91,7 @@ export function PassLab({ standalone = false }: { standalone?: boolean }) {
     setStorageReady(true);
     const restore = () => {
       const q = new URLSearchParams(window.location.search);
-      const v = q.get("view"); if (v === "afterimage" || v === "refinements" || v === "icons" || v === "lanes" || v === "shortlist" || v === "notes") setView(v);
+      const v = q.get("view"); if (v === "wake-study" || v === "afterimage" || v === "refinements" || v === "icons" || v === "lanes" || v === "shortlist" || v === "notes") setView(v);
       const id = q.get("icon"); if (ICONS.some(c => c.id === id)) setDetail({ kind: "icon", id: id as IconId });
       else if (/^[0-7]$/.test(q.get("lane") ?? "")) setDetail({ kind: "lane", index: Number(q.get("lane")) });
       else setDetail(null);
@@ -157,11 +158,12 @@ export function PassLab({ standalone = false }: { standalone?: boolean }) {
     return <article className="pass-lane-card" key={c.name}><div className="pass-lane-heading"><div><span className="pass-eyebrow">LANE {String(index + 1).padStart(2, "0")}</span><h3>{c.name}</h3></div><button className={`pass-save ${saved.includes(id) ? "is-saved" : ""}`} aria-pressed={saved.includes(id)} aria-label={`${saved.includes(id) ? "Remove" : "Shortlist"} ${c.name}`} onClick={() => toggleSaved(id)}><Glyph name="star" /></button></div><button className="pass-phone-button" onClick={() => select(view, { kind: "lane", index })} aria-label={`Inspect ${c.name} lane`}><LanePhone index={index} progress={motion.progress} gain={gain} ghost={ghost} flow={flow && visiblePage && !motion.reduced} /></button><p>{c.line}</p><div className="pass-lane-foot"><IconArt id={c.icon} appearance={appearance} mask={mask} size={30} /><span>One identity, from icon to field.</span><button onClick={() => select(view, { kind: "lane", index })} aria-label={`Read about ${c.name}`}><Glyph name="arrow" /></button></div></article>;
   }
 
-  return <main className={`pass-lab ${(view === "afterimage" || view === "refinements") ? "is-refining" : ""}`}>
+  return <main className={`pass-lab ${(view === "wake-study" || view === "afterimage" || view === "refinements") ? "is-refining" : ""}`}>
     <header className="pass-topbar">{standalone ? <a href="?view=icons" onClick={e => { e.preventDefault(); select("icons"); }} className="pass-wordmark">overtaek<span>®</span></a> : <Link href="/design/brand?concept=everyday-club&view=product" className="pass-wordmark">overtaek<span>®</span></Link>}<span>IDENTITY & FIELD STUDY <i /> 01</span>{standalone ? <span className="pass-local-tag">INTERACTIVE REVIEW</span> : <Link href="/design/motion?experience=overtake&concept=photo-combo&round=refined">Motion study <Glyph name="arrow" /></Link>}</header>
     <section className="pass-intro"><div><p className="pass-eyebrow">EXPLORING THE MOMENT YOU MOVE AHEAD</p><h1>The art<br />of the <em>pass.</em><span className="pass-heading-dot" /></h1><p className="pass-intro-copy">A split second on the field.<br />A symbol you recognize anywhere.</p></div><div className="pass-hero-art" aria-hidden="true"><div className="pass-hero-back"><IconArt id="ember-pursuit" size={142} /></div><div className="pass-hero-front"><IconArt id="twin-trails" size={205} /></div><div className="pass-hero-note"><span>↑ A LITTLE AHEAD.</span><small>15 icon directions · 8 vertical fields</small></div></div><aside className="pass-intro-aside"><span className="pass-eyebrow">THE QUESTION</span><p>Can two simple shapes make you <em>feel</em> an overtake?</p><span className="pass-aside-meta">12 symbols. 3 type experiments.<br />One everyday sporting club.</span></aside></section>
-    <nav className="pass-tabs" aria-label="Study views">{([["afterimage", "Afterimage · Selected", "30"], ["refinements", "Round 2", "12"], ["icons", "Original icons", "15"], ["lanes", "Race lanes", "08"], ["shortlist", "Your shortlist", String(saved.length).padStart(2, "0")], ["notes", "Design notes", "↗"]] as const).map(([key, name, n]) => <button key={key} onClick={() => select(key)} aria-current={view === key ? "page" : undefined} className={view === key ? "is-active" : ""}>{name}<span>{n}</span></button>)}</nav>
+    <nav className="pass-tabs" aria-label="Study views">{([["wake-study", "Longer wake · Followup", "03"], ["afterimage", "Afterimage · Selected", "30"], ["refinements", "Round 2", "12"], ["icons", "Original icons", "15"], ["lanes", "Race lanes", "08"], ["shortlist", "Your shortlist", String(saved.length).padStart(2, "0")], ["notes", "Design notes", "↗"]] as const).map(([key, name, n]) => <button key={key} onClick={() => select(key)} aria-current={view === key ? "page" : undefined} className={view === key ? "is-active" : ""}>{name}<span>{n}</span></button>)}</nav>
 
+    {view === "wake-study" && <WakeStudy player={motion} flow={flow && visiblePage && !motion.reduced} flowRequested={flow} setFlow={setFlow} />}
     {view === "afterimage" && <AfterimageRound player={motion} flow={flow && visiblePage && !motion.reduced} flowRequested={flow} setFlow={setFlow} gain={gain} setGain={setGain} />}
     {view === "refinements" && <RefinementRound player={motion} flow={flow && visiblePage && !motion.reduced} flowRequested={flow} setFlow={setFlow} gain={gain} setGain={setGain} />}
 

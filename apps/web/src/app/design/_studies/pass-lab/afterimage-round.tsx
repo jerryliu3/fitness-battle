@@ -25,7 +25,7 @@ export function AfterimageRound({ player, flow, flowRequested, setFlow, gain, se
     setNotice("Static 1024 px SVG exported, with no baked-in rounded mask.");
   }
   return <section className="pass-round pass-finalists">
-    <div className="pass-section-intro"><div><p className="pass-eyebrow">SELECTED / HOLLOW AFTERIMAGE</p><h2>A little ahead.<br />A clear identity.</h2></div><p>Locked for now: hollow circles, white background, no lane lines, and a slightly slower rival. Gold/silver is the working palette; rich gold/silver is the close alternative. Earlier treatments stay here as design history.</p></div>
+    <div className="pass-section-intro"><div><p className="pass-eyebrow">SELECTED / HOLLOW AFTERIMAGE</p><h2>A little ahead.<br />A clear identity.</h2></div><p>Locked for now: hollow circles, white background, no lane lines, and a slightly slower rival. Rich gold/silver is the finalized palette. Earlier treatments stay here as design history.</p></div>
     <div className="pass-round-summary"><span><b>04</b> Head studies</span><span><b>{FINALIST_PALETTES.length * FINALIST_BACKGROUNDS.length}</b> Color studies</span><span><b>02</b> Wake rhythms</span><a href="#pass-finalist-preview">Jump to matching field ↓</a></div>
 
     <div className="pass-ref-heading"><div><span className="pass-eyebrow">01 / HOLLOW, SOLID OR EMBER</span><h3>Change the head. Keep the wake.</h3></div><p>All four use the selected palette, background and trail rhythm. Filled Ember always has the canonical face; outline echoes stay face-free.</p></div>
