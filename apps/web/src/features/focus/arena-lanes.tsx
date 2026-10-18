@@ -105,6 +105,9 @@ export function ArenaLanes({
           }
         }}
         onPointerDown={(e) => {
+          if (e.pointerType === "touch" || e.pointerType === "pen") {
+            e.preventDefault();
+          }
           drag.current = {
             y: e.clientY,
             center: effectiveView.center,

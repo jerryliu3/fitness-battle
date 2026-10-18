@@ -9,10 +9,9 @@ const cssPath = join(
 );
 
 describe("arena lane scroll styles", () => {
-  it("allows horizontal pan on the scroll host while keeping vertical lane drag", () => {
+  it("reserves horizontal scroll for the host and custom vertical pan for the track", () => {
     const css = readFileSync(cssPath, "utf8");
-    expect(css).toMatch(/\.focus-lane-scroll[\s\S]*touch-action:\s*pan-x pan-y/);
-    expect(css).toMatch(/\.focus-lane-track[\s\S]*touch-action:\s*pan-y/);
-    expect(css).not.toMatch(/\.focus-lane-track[\s\S]*touch-action:\s*none/);
+    expect(css).toMatch(/\.focus-lane-scroll[\s\S]*touch-action:\s*pan-x/);
+    expect(css).toMatch(/\.focus-lane-track[\s\S]*touch-action:\s*none/);
   });
 });
