@@ -125,3 +125,7 @@ The user selected **Shared Start** (six gold echoes) for the application. It rep
 ## Shared Start scale and background review
 
 `scale-study/index.html` compares the current composition with 120% and 135% versions with proportional horizontal spacing on white and true black. Each has 64/32/16px samples and downloadable square SVG masters. The pair’s horizontal midpoint and the circles’ vertical positions remain fixed. Horizontal center spacing grows with circle diameter, preserving a clear gap of roughly 57% of the outlined head diameter. Diameters, outlines and wakes grow together. Bottom-edge wake cropping is allowed, with no extra whitespace reserved below. These are comparisons; production scale stays at the selected original size. Explicit black/white web asset sets and a native black alternate are documented in `assets/brand/README.md`.
+
+## Round 5: material objects
+
+[Eight new shape/material concepts](MATERIALS.md) use the bold 135% direction: glass lens, tinted capsule, frosted pebble, glass ring, anodized alloy, chromatic foil, glazed ceramic, and opal drop. Each pairs an icon with a matching lane treatment using one renderer. Open `review.html?view=materials` for black/white comparisons, shared light inspection, SVG export and pass/flow controls. Production Shared Start assets remain unchanged.

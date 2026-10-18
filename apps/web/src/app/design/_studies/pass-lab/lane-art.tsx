@@ -1,17 +1,19 @@
 import { useId } from "react";
 import { Ember } from "@/components/mascot/ember";
 import { LANES, laneFrame } from "./catalog";
+import { MaterialRacer } from "./material-art";
+import type { MaterialConcept } from "./material-concepts";
 import { RefinedRacer } from "./refinement-art";
 import { REFINEMENTS, TWIN_REFINEMENT, refinementColors, type RefinedSpec } from "./refinements";
 
-export function LaneArt({ index, progress, gain, ghost = true, labels = true, refinement, flow = true }: { index: number; progress: number; gain: number; ghost?: boolean; labels?: boolean; refinement?: RefinedSpec; flow?: boolean }) {
+export function LaneArt({ index, progress, gain, ghost = true, labels = true, refinement, flow = true, material, materialDark = false, materialLight = 0 }: { index: number; progress: number; gain: number; ghost?: boolean; labels?: boolean; refinement?: RefinedSpec; flow?: boolean; material?: MaterialConcept; materialDark?: boolean; materialLight?: number }) {
   const uid = useId().replace(/:/g, "");
   const lane = LANES[index] ?? LANES[0];
   const frame = laneFrame(progress, gain);
   const mode = lane.mode;
   const treatment = refinement ?? (index === 0 ? TWIN_REFINEMENT : index === 4 ? { ...REFINEMENTS[0], slow: "normal" as const } : index === 6 ? REFINEMENTS[9] : undefined);
-  const background = treatment ? refinementColors(treatment).bg : undefined;
-  const dark = treatment?.dark ?? mode === "photo";
+  const background = material ? (materialDark ? "#000000" : "#ffffff") : treatment ? refinementColors(treatment).bg : undefined;
+  const dark = material ? materialDark : treatment?.dark ?? mode === "photo";
   const ink = dark ? "#fafaf7" : "#282f2c";
   const muted = dark ? "#a6b3aa" : "#616c63";
   const rule = dark ? "#4c5750" : "#dfe5db";
@@ -50,8 +52,9 @@ export function LaneArt({ index, progress, gain, ghost = true, labels = true, re
         const edge = a.value > frame.max ? "↑" : a.value < frame.min ? "↓" : null;
         const after = a.value < frame.value && a.value > 12.4;
         return <g key={a.id}>
-          {treatment && <RefinedRacer spec={treatment} x={xx} y={yy} radius={you ? 17 : 14} fast={you} flow={flow && !edge} edge={edge} initials={treatment.ember && you ? undefined : a.initials} />}
-          <g display={treatment ? "none" : undefined}>
+          {material && <MaterialRacer concept={material} x={xx} y={yy} radius={you ? 17 : 14} fast={you} dark={materialDark} light={materialLight} flow={flow && !edge} edge={edge} label={a.initials} />}
+          {!material && treatment && <RefinedRacer spec={treatment} x={xx} y={yy} radius={you ? 17 : 14} fast={you} flow={flow && !edge} edge={edge} initials={treatment.ember && you ? undefined : a.initials} />}
+          <g display={material || treatment ? "none" : undefined}>
           {(mode === "trail" || mode === "ember" || mode === "photo") && <path d={`M${xx} ${yy + 8}v${you ? 44 + energy * 35 : 40}`} stroke={color} strokeWidth={you ? 5 : 3} opacity={you ? .65 : .3} strokeLinecap="round" />}
           {mode === "ribbon" && <path d={`M${xx - 13 - (you ? energy * 5 : 0)} ${yy}Q${xx - 18} ${yy + 43} ${xx - 4} ${yy + 97}Q${xx + 1} ${yy + 50} ${xx + 14 + (you ? energy * 5 : 0)} ${yy}Z`} fill={`url(#${uid}-${you ? "wake" : "peer"})`} />}
           {mode === "stitch" && [30, 44, 58, 72].map((dy, j) => <path key={dy} d={`M${xx} ${yy + dy * (you ? 1 + energy * .3 : 1)}v5`} stroke={color} strokeWidth={you ? 4 : 3} strokeLinecap="round" opacity={.65 - j * .12} />)}
@@ -73,14 +76,14 @@ export function LaneArt({ index, progress, gain, ghost = true, labels = true, re
   </svg>;
 }
 
-export function LanePhone({ index, progress, gain, ghost = true, refinement, flow = true }: { index: number; progress: number; gain: number; ghost?: boolean; refinement?: RefinedSpec; flow?: boolean }) {
+export function LanePhone({ index, progress, gain, ghost = true, refinement, flow = true, material, materialDark = false, materialLight = 0 }: { index: number; progress: number; gain: number; ghost?: boolean; refinement?: RefinedSpec; flow?: boolean; material?: MaterialConcept; materialDark?: boolean; materialLight?: number }) {
   const frame = laneFrame(progress, gain);
   return <div className="pass-phone">
     <div className="pass-phone-status"><b>9:41</b><span>▮▮▮ &nbsp; ▰</span></div>
     <div className="pass-phone-header"><span className="pass-wordmark">overtaek</span><span className="pass-avatar">JL</span></div>
     <div className="pass-phone-title"><div><span className="pass-eyebrow">YOUR WEEKLY FIELD</span><h3>Good company.<br />A little competition.</h3></div><span className="pass-sport">↗ Run</span></div>
     <div className="pass-phone-stats"><div><strong>{frame.value.toFixed(1)}<small> km</small></strong><span>Your distance</span></div><div><strong>#{frame.rank}<small> / 5</small></strong><span>{frame.passes ? `↑ ${frame.passes} ${frame.passes === 1 ? "place" : "places"}` : "In your field"}</span></div></div>
-    <LaneArt index={index} progress={progress} gain={gain} ghost={ghost} refinement={refinement} flow={flow} />
+    <LaneArt index={index} progress={progress} gain={gain} ghost={ghost} refinement={refinement} flow={flow} material={material} materialDark={materialDark} materialLight={materialLight} />
     <div className="pass-phone-note">{frame.passes ? `Nice move. You passed ${frame.passes === 1 ? "Mara" : "Mara and Jules"}.` : `${(13.8 - frame.value).toFixed(1)} km to Mara. Make your next move.`}</div>
     <div className="pass-phone-nav"><span>⌂<small>Home</small></span><span className="is-current">Ⅱ<small>Compete</small></span><span>◎<small>Crew</small></span><span>○<small>Athlete</small></span></div>
   </div>;
