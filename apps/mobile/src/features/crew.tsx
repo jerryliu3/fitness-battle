@@ -139,19 +139,6 @@ export function CrewHub() {
       {!api.live ? (
         <View style={{ gap: 14 }}>
           <View style={f.card}>
-            <Text style={f.title}>Make room for your people.</Text>
-            <Text style={[f.copy, { marginBottom: 20 }]}>
-              Private crews share a week of counted effort — invite codes,
-              member standings, and a shared field when you register together.
-            </Text>
-            {!user && (
-              <FocusButton
-                label="Sign in to join a crew"
-                onPress={() => router.navigate("/you")}
-              />
-            )}
-          </View>
-          <View style={f.card}>
             <Text style={f.kicker}>What crews unlock</Text>
             <Text style={f.rowTitle}>Shared week</Text>
             <Text style={f.small}>
@@ -163,6 +150,19 @@ export function CrewHub() {
             <Text style={f.small}>
               Optional: register together on one individual leaderboard.
             </Text>
+          </View>
+          <View style={f.card}>
+            <Text style={f.title}>Make room for your people.</Text>
+            <Text style={[f.copy, { marginBottom: 20 }]}>
+              Private crews share a week of counted effort — invite codes,
+              member standings, and a shared field when you register together.
+            </Text>
+            {!user && (
+              <FocusButton
+                label="Sign in to join a crew"
+                onPress={() => router.navigate("/you")}
+              />
+            )}
           </View>
         </View>
       ) : !api.data ? (
@@ -446,11 +446,6 @@ export function CrewHub() {
                 </Text>
               </View>
             ))}
-            <FocusButton
-              label="Invite someone ＋"
-              secondary
-              onPress={() => setPanel("invite")}
-            />
             <FocusButton
               label="Mark my rest week"
               secondary

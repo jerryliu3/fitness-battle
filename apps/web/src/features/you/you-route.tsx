@@ -1,5 +1,6 @@
 "use client";
 
+import { ReportIssue } from "@/components/report-issue";
 import { useAuth } from "@/components/auth-context";
 import { useCompete } from "@/components/compete-context";
 import { NotificationSettings } from "@/components/notification-settings";
@@ -829,13 +830,7 @@ function YouContent() {
           >
             Sign out
           </button>
-          <a
-            href="mailto:support@overtaek.com?subject=Overtaek%20Issue%20Report"
-            className="fb-btn-line"
-            style={{ flex: 1, justifyContent: "center", textDecoration: "none" }}
-          >
-            Report an issue
-          </a>
+          <ReportIssue />
         </div>
       ) : (
         <div className="fb-stack">

@@ -1,5 +1,7 @@
 "use client";
 
+import { accountName } from "@/lib/account-name";
+
 import { useAuth } from "@/components/auth-context";
 import { getDemoCompeteState } from "@/lib/compete-demo-seed";
 import {
@@ -261,6 +263,7 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
       // Signed-in documents always carry the account baseline (1000), even when
       // migrate demotes empty Guest-shaped local copies back to unranked 0.
       let next = signedIn ? withAccountEloBaseline(chosen) : chosen;
+      if (user) next = { ...next, name: accountName(next.name, user.displayName, user.email) };
       const pending = queue.current.splice(0);
       for (const action of pending) next = reduceCompete(next, action);
       if (signedIn) next = withAccountEloBaseline(next);
@@ -308,7 +311,7 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
         queue.current = [];
         publish(
           accountId,
-          withAccountEloBaseline(local.state),
+          { ...withAccountEloBaseline(local.state), name: accountName(local.state.name, user?.displayName ?? "", user?.email ?? "") },
           local.savedAt,
           "failed",
           false,

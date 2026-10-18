@@ -806,7 +806,7 @@
   --path-l: 24%;
   --path-c: 50%;
   --path-r: 76%;
-  --path-row: 96px;
+  --path-row: 192px;
   border-radius: 24px;
   background: transparent;
   margin: 8px 0 16px;
@@ -829,8 +829,7 @@
 }
 .focus-path-row {
   position: relative;
-  flex: 1 0 var(--path-row);
-  max-height: 150px;
+  flex: 0 0 var(--path-row);
   z-index: 1;
 }
 .focus-journey-path {

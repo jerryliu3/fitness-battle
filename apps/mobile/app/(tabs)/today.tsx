@@ -40,7 +40,7 @@ import { FocusHeading, f } from "../../src/ui/focus";
 const PATH_L = "24%";
 const PATH_C = "50%";
 const PATH_R = "76%";
-const PATH_ROW = 96;
+const PATH_ROW = 192;
 
 function PathCurve({ d }: { d: string }) {
   return (
@@ -512,7 +512,7 @@ export default function Home() {
           </View>
         </View>
         <View style={f.row}>
-          <Text style={f.h2}>Your fitness journey</Text>
+          <Text style={f.h2}>Your journey</Text>
           {sessions.length ? (
             <Text style={f.small}>Last {sessions.length} sessions</Text>
           ) : null}
