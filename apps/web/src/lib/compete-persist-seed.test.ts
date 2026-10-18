@@ -39,6 +39,17 @@ describe.skipIf(!process.env.SEED_DB_TESTS)("Seed accounts in Supabase (needs lo
     const aliceMember = hydratedState.crewBoard!.members.find(m => m.id === aliceId);
     expect(aliceMember).toBeDefined();
     expect(aliceMember!.distanceM).toBeGreaterThanOrEqual(30000);
+
+    const { weeklyBoard } = await import("@fitness-battle/shared");
+    const { buildFieldModel } = await import("../features/field/model");
+    const boardRows = weeklyBoard(hydratedState, "running", "open", new Date());
+    expect(boardRows.length).toBeGreaterThanOrEqual(4);
+    const competitorNames = boardRows.map(r => r.name);
+    expect(competitorNames).toContain("Carla Diaz");
+    expect(competitorNames).toContain("Bob Chen");
+
+    const fieldModel = buildFieldModel(hydratedState, "running", "open", new Date());
+    expect(fieldModel.runners.length).toBeGreaterThanOrEqual(4);
   });
 
   it("loads Bob with cycling focus after sign in", async () => {

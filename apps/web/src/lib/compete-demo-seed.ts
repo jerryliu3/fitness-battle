@@ -107,8 +107,13 @@ export function getDemoCompeteState(userId: string | null): CompeteState | null 
           waveStart: waveStartIso,
           weekEnd: weekEndIso,
           capacity: 8,
-          peerIds: ["33333333-3333-4333-8333-333333333333", "66666666-6666-4666-8666-666666666666"],
-          syntheticIds: ["synth-pace-1140", "synth-tempo-1130"],
+          peerIds: [
+            "22222222-2222-4222-8222-222222222222",
+            "33333333-3333-4333-8333-333333333333",
+            "55555555-5555-4555-8555-555555555555",
+            "66666666-6666-4666-8666-666666666666",
+          ],
+          syntheticIds: ["synth:running:0", "synth:running:1", "synth:running:2", "synth:running:3"],
           autoEnrollNext: true,
           crewId: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
         },
@@ -118,7 +123,7 @@ export function getDemoCompeteState(userId: string | null): CompeteState | null 
           weekEnd: weekEndIso,
           capacity: 8,
           peerIds: ["22222222-2222-4222-8222-222222222222"],
-          syntheticIds: ["synth-cadence-1050"],
+          syntheticIds: ["synth:cycling:0", "synth:cycling:1"],
           autoEnrollNext: true,
           crewId: null,
         },
@@ -136,7 +141,7 @@ export function getDemoCompeteState(userId: string | null): CompeteState | null 
           "33333333-3333-4333-8333-333333333333",
           "55555555-5555-4555-8555-555555555555",
         ],
-        syntheticIds: ["synth-pace-1140", "synth-tempo-1130"],
+        syntheticIds: ["synth:running:0", "synth:running:1", "synth:running:2", "synth:running:3"],
         members: [
           {
             id: "11111111-1111-4111-8111-111111111111",

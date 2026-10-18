@@ -469,7 +469,7 @@ values
       '33333333-3333-4333-8333-333333333333'::uuid,
       '55555555-5555-4555-8555-555555555555'::uuid
     ],
-    array['synth-pace-1140', 'synth-tempo-1130']
+    array['synth:running:0', 'synth:running:1', 'synth:running:2', 'synth:running:3']
   ),
   (
     'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',
@@ -483,7 +483,7 @@ values
       '11111111-1111-4111-8111-111111111111'::uuid,
       '77777777-7777-4777-8777-777777777777'::uuid
     ],
-    array['synth-cadence-1050']
+    array['synth:cycling:0', 'synth:cycling:1', 'synth:cycling:2']
   )
 on conflict (crew_id, wave_start) where crew_id is not null do update
 set
@@ -513,8 +513,8 @@ values
     (date_trunc('week', (now() at time zone 'America/New_York')) at time zone 'America/New_York'),
     (date_trunc('week', (now() at time zone 'America/New_York')) at time zone 'America/New_York') + interval '7 days',
     8,
-    array['33333333-3333-4333-8333-333333333333', '66666666-6666-4666-8666-666666666666'],
-    array['synth-pace-1140', 'synth-tempo-1130'],
+    array['22222222-2222-4222-8222-222222222222', '33333333-3333-4333-8333-333333333333', '55555555-5555-4555-8555-555555555555', '66666666-6666-4666-8666-666666666666'],
+    array['synth:running:0', 'synth:running:1', 'synth:running:2', 'synth:running:3'],
     true,
     'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'
   ),
@@ -524,10 +524,10 @@ values
     (date_trunc('week', (now() at time zone 'America/New_York')) at time zone 'America/New_York'),
     (date_trunc('week', (now() at time zone 'America/New_York')) at time zone 'America/New_York') + interval '7 days',
     8,
-    array['22222222-2222-4222-8222-222222222222'],
-    array['synth-cadence-1050'],
+    array['22222222-2222-4222-8222-222222222222', '77777777-7777-4777-8777-777777777777'],
+    array['synth:cycling:0', 'synth:cycling:1', 'synth:cycling:2'],
     true,
-    null
+    'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb'
   ),
   (
     '22222222-2222-4222-8222-222222222222',
@@ -535,8 +535,8 @@ values
     (date_trunc('week', (now() at time zone 'America/New_York')) at time zone 'America/New_York'),
     (date_trunc('week', (now() at time zone 'America/New_York')) at time zone 'America/New_York') + interval '7 days',
     8,
-    array['77777777-7777-4777-8777-777777777777'],
-    array['synth-peloton-1180'],
+    array['11111111-1111-4111-8111-111111111111', '77777777-7777-4777-8777-777777777777'],
+    array['synth:cycling:0', 'synth:cycling:1', 'synth:cycling:2'],
     true,
     'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb'
   ),
@@ -546,8 +546,8 @@ values
     (date_trunc('week', (now() at time zone 'America/New_York')) at time zone 'America/New_York'),
     (date_trunc('week', (now() at time zone 'America/New_York')) at time zone 'America/New_York') + interval '7 days',
     8,
-    array['11111111-1111-4111-8111-111111111111'],
-    array['synth-ultra-1220'],
+    array['11111111-1111-4111-8111-111111111111', '22222222-2222-4222-8222-222222222222', '55555555-5555-4555-8555-555555555555'],
+    array['synth:running:0', 'synth:running:1', 'synth:running:2', 'synth:running:3'],
     true,
     'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'
   )
