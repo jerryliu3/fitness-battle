@@ -19,6 +19,7 @@ export type AuthUser = {
   email: string;
   displayName: string;
   mode: "supabase" | "demo";
+  createdAt?: string;
 };
 
 type AuthApi = {
@@ -68,6 +69,7 @@ function userFromSession(sessionUser: {
   id: string;
   email?: string | null;
   user_metadata?: Record<string, unknown>;
+  created_at?: string;
 }): AuthUser {
   return {
     id: sessionUser.id,
@@ -77,6 +79,7 @@ function userFromSession(sessionUser: {
       sessionUser.email?.split("@")[0] ??
       "Athlete",
     mode: "supabase",
+    createdAt: sessionUser.created_at,
   };
 }
 
@@ -112,15 +115,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
       setLoading(false);
 
-      const { data: sub } = supabase.auth.onAuthStateChange((_event, nextSession) => {
-        if (!nextSession?.user) {
-          setUser(null);
-          setAccessToken(null);
-          return;
-        }
-        setUser(userFromSession(nextSession.user));
-        setAccessToken(nextSession.access_token);
-      });
+      const { data: sub } = supabase.auth.onAuthStateChange(
+        (_event, nextSession) => {
+          if (!nextSession?.user) {
+            setUser(null);
+            setAccessToken(null);
+            return;
+          }
+          setUser(userFromSession(nextSession.user));
+          setAccessToken(nextSession.access_token);
+        },
+      );
       return () => sub.subscription.unsubscribe();
     }
 

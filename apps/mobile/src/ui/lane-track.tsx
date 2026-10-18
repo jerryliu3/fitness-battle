@@ -1,3 +1,4 @@
+import { Ember } from "./mascot/ember";
 import { useMemo, useRef, useState, useEffect } from "react";
 import { PanResponder, ScrollView, View } from "react-native";
 import Svg, {
@@ -80,6 +81,12 @@ export function LaneTrack({
     [],
   );
   const ordered = orderedArenaLanes(lanes);
+  const ranked = [...ordered].sort((a, b) => b.values[index] - a.values[index]);
+  const leaderId =
+    ranked[0]?.values[index] > 0 &&
+    (!ranked[1] || ranked[0].values[index] > ranked[1].values[index])
+      ? ranked[0].id
+      : null;
   const ghost = showGhost ? lanes.find((l) => l.ghost) : null;
   const w = Math.max(width, ordered.length * 70 + 50),
     lw = (w - 50) / Math.max(1, ordered.length);
@@ -177,7 +184,9 @@ export function LaneTrack({
                   fontWeight={l.you ? "700" : "400"}
                   fill={l.you ? "#282f2c" : "#616c63"}
                 >
-                  {l.you ? selfLaneLabel(l.name, "caps") : initialsFromName(l.name)}
+                  {l.you
+                    ? selfLaneLabel(l.name, "caps")
+                    : initialsFromName(l.name)}
                 </SvgText>
               </G>
             ))}
@@ -222,9 +231,13 @@ export function LaneTrack({
                   ? (overtakeFrame.laneValues[l.id] ?? l.values[index] ?? 0)
                   : (l.values[index] ?? 0);
               const edge = arenaPosition(value, v).edge;
-              const effect = !l.you ? overtakeFrame?.rivalEffects[l.id] : undefined;
-              const speed = l.you && animating ? (overtakeFrame?.speed ?? 0) : 0;
-              const charging = l.you && animating ? (overtakeFrame?.charging ?? 0) : 0;
+              const effect = !l.you
+                ? overtakeFrame?.rivalEffects[l.id]
+                : undefined;
+              const speed =
+                l.you && animating ? (overtakeFrame?.speed ?? 0) : 0;
+              const charging =
+                l.you && animating ? (overtakeFrame?.charging ?? 0) : 0;
               const xx = (i + 0.5) * lw + 10 + (effect?.joltX ?? 0),
                 yy = y(value) + (l.you ? charging * 4 : 0);
               const wakeLen = Math.min(
@@ -242,6 +255,11 @@ export function LaneTrack({
                   accessible
                   accessibilityLabel={`${l.name}, ${value.toFixed(1)} ${unit}${edge ? `, ${edge} of view` : ""}`}
                 >
+                  {l.id === leaderId && !edge ? (
+                    <G transform={`translate(${xx - 24}, ${yy - 76})`}>
+                      <Ember size={48} expression="joy" />
+                    </G>
+                  ) : null}
                   {l.you && speed > 0.01 && wakeLen > 6 ? (
                     <G>
                       <Path
@@ -308,7 +326,12 @@ export function LaneTrack({
                   {l.you ? (
                     <Circle cx={xx} cy={yy} r={34} fill="url(#youGlow)" />
                   ) : null}
-                  <Circle cx={xx} cy={yy + 4} r={l.you ? 24 : 19} fill="#282f2c18" />
+                  <Circle
+                    cx={xx}
+                    cy={yy + 4}
+                    r={l.you ? 24 : 19}
+                    fill="#282f2c18"
+                  />
                   <Circle
                     cx={xx}
                     cy={yy}

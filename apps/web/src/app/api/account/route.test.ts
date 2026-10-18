@@ -96,6 +96,16 @@ describe("account deletion route", () => {
     expect(stubs.deleteUser).not.toHaveBeenCalled();
   });
 
+  it("does not claim deletion succeeded when the server admin key is missing", async () => {
+    stubs.user.mockResolvedValue("user-123");
+    stubs.serverEnv.supabaseServiceRoleKey = "";
+    const response = await DELETE(
+      new Request("http://localhost:3000/api/account", { method: "DELETE" }),
+    );
+    expect(response.status).toBe(503);
+    expect(stubs.deleteUser).not.toHaveBeenCalled();
+  });
+
   it("returns 500 when Supabase admin deletion fails", async () => {
     stubs.user.mockResolvedValue("user-123");
     stubs.deleteUser.mockResolvedValue({

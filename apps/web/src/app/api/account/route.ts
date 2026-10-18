@@ -21,8 +21,18 @@ export async function DELETE(request: Request) {
     );
   }
 
-  if (webEnv.useDemoData || !serverEnv.supabaseServiceRoleKey) {
+  if (webEnv.useDemoData) {
     return NextResponse.json({ ok: true, demo: true });
+  }
+
+  if (!serverEnv.supabaseServiceRoleKey) {
+    return NextResponse.json(
+      {
+        error:
+          "Account deletion is temporarily unavailable. Please try again later.",
+      },
+      { status: 503 },
+    );
   }
 
   const { supabaseUrl } = getSupabaseConfig();

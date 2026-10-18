@@ -1,3 +1,9 @@
+import { useAuth } from "./auth";
+import {
+  accountStorageKeys,
+  hydrateAccountIdentity,
+  saveFailure,
+} from "./account-state";
 import {
   applyRemoteSnapshot,
   arenaBaselineStorageKey,
@@ -6,6 +12,7 @@ import {
   fieldChangeNotice,
   fieldSeenStorageKey,
   freshState,
+  getDemoCompeteState,
   isCompeteState,
   migrateCompeteState,
   newCountedIds,
@@ -51,9 +58,15 @@ interface CompeteContextValue {
   dismissFieldNotice: () => void;
   standingsStale: boolean;
   refresh: () => Promise<boolean>;
+  saveError: string | null;
+  retrySave: () => void;
+  clearAccountData: () => Promise<void>;
 }
 
-async function competeAccount(): Promise<{ userId: string; token: string } | null> {
+async function competeAccount(): Promise<{
+  userId: string;
+  token: string;
+} | null> {
   if (mobileEnv.useDemoData) return null;
   const { data } = await supabase.auth.getSession();
   const userId = data.session?.user?.id;
@@ -92,12 +105,23 @@ async function preloadBaselineCache(
 
 export function CompeteProvider({ children }: { children: ReactNode }) {
   const router = useRouter();
-  const [state, setState] = useState<CompeteState | null>(null);
+  const auth = useAuth();
+  const authRef = useRef(auth);
+  authRef.current = auth;
+  const owner = auth.user?.id ?? null;
+  const keys = accountStorageKeys(owner);
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const saveChain = useRef<Promise<void>>(Promise.resolve());
+
+  const [savedState, setState] = useState<CompeteState | null>(null);
+  const loadedOwnerRef = useRef<string | null | undefined>(undefined);
+  const state = loadedOwnerRef.current === owner ? savedState : null;
   const [returnGain, setReturnGain] = useState(0);
   const [fieldNotice, setFieldNotice] = useState<FieldNotice | null>(null);
   const [standingsStale, setStandingsStale] = useState(false);
   const stateRef = useRef<CompeteState | null>(null);
-  const accountRef = useRef<string | null>(null);
+  const accountRef = useRef<string | null>(owner);
+  accountRef.current = owner;
   const baselineCacheRef = useRef<Map<string, string>>(new Map());
   const dirtyRef = useRef(0);
   const unsavedRef = useRef(false);
@@ -115,61 +139,100 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
+    if (auth.loading) return;
     let alive = true;
+    if (saveTimer.current) clearTimeout(saveTimer.current);
+    saveTimer.current = null;
+    refreshFlight.current = null;
+    unsavedRef.current = false;
+    dirtyRef.current += 1;
+    baselineCacheRef.current.clear();
+    seenRef.current = { ids: null, ready: false, opened: false };
+    setState(null);
+    stateRef.current = null;
+    setSaveError(null);
+    setFieldNotice(null);
+    setReturnGain(0);
     void (async () => {
-      const raw = await AsyncStorage.getItem(STORAGE_KEY);
+      const raw = await AsyncStorage.getItem(keys.state);
       let next = rollClock(freshState());
       if (raw) {
         try {
-          const parsed = JSON.parse(raw) as CompeteState;
-          if (parsed.version === 1) next = rollClock(migrateCompeteState(parsed));
+          const parsed = JSON.parse(raw);
+          if (isCompeteState(parsed))
+            next = rollClock(migrateCompeteState(parsed));
         } catch {
-          next = rollClock(freshState());
+          /* A corrupt local copy starts clean. */
         }
       }
-      const account = await competeAccount();
-      if (account) {
-        accountRef.current = account.userId;
-        const dirty = (await AsyncStorage.getItem(DIRTY_KEY)) === "1";
+      if (!raw && authRef.current.demoMode && authRef.current.user) {
+        next =
+          getDemoCompeteState(authRef.current.user.email.split("@")[0]) ?? next;
+      }
+      const dirty = (await AsyncStorage.getItem(keys.dirty)) === "1";
+      const currentAuth = authRef.current;
+      const live =
+        !!currentAuth.user &&
+        !currentAuth.demoMode &&
+        currentAuth.user.mode !== "demo";
+      if (live) {
         try {
+          const account = await competeAccount();
+          if (!account || account.userId !== owner)
+            throw new Error("session_changed");
           const response = await fetch(`${mobileEnv.apiUrl}/api/compete`, {
             headers: { Authorization: `Bearer ${account.token}` },
           });
-          if (response.ok) {
-            const body = (await response.json()) as { state?: unknown };
-            if (isCompeteState(body.state)) {
-              next = applyRemoteSnapshot(
-                next,
-                rollClock(migrateCompeteState(body.state)),
-                dirty,
-              );
-            }
-          } else {
-            setStandingsStale(true);
-          }
+          if (!response.ok) throw new Error("load_failed");
+          const body = await response.json();
+          if (isCompeteState(body.state))
+            next = applyRemoteSnapshot(
+              next,
+              rollClock(migrateCompeteState(body.state)),
+              dirty,
+            );
+          if (alive) setStandingsStale(false);
         } catch {
-          setStandingsStale(true);
+          if (alive) setStandingsStale(true);
         }
       }
-      if (!alive) return;
-      const accountKey = accountRef.current ?? "device";
-      await preloadBaselineCache(accountKey, baselineCacheRef.current);
-      if (!alive) return;
+      if (!alive || accountRef.current !== owner) return;
+      next = hydrateAccountIdentity(next, currentAuth.user, live);
+      await preloadBaselineCache(owner ?? "guest", baselineCacheRef.current);
+      if (!alive || accountRef.current !== owner) return;
+      unsavedRef.current = dirty;
+      if (dirty && live) setSaveError(saveFailure());
       seedArenaBaselinesFromState(
         next,
-        accountKey,
+        owner ?? "guest",
         readBaselineItem,
         writeBaselineItem,
       );
-      void AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+      await AsyncStorage.setItem(keys.state, JSON.stringify(next));
+      if (!alive) return;
+      loadedOwnerRef.current = owner;
+      stateRef.current = next;
       setState(next);
-    })();
+    })().catch(() => {
+      if (alive) {
+        loadedOwnerRef.current = owner;
+        setState(
+          hydrateAccountIdentity(freshState(), authRef.current.user, false),
+        );
+        setStandingsStale(true);
+      }
+    });
     return () => {
       alive = false;
+      if (saveTimer.current) clearTimeout(saveTimer.current);
     };
-  }, [readBaselineItem, writeBaselineItem]);
+  }, [owner, auth.loading, auth.demoMode, readBaselineItem, writeBaselineItem]);
 
-  const seenRef = useRef<{ ids: string[] | null; ready: boolean; opened: boolean }>({
+  const seenRef = useRef<{
+    ids: string[] | null;
+    ready: boolean;
+    opened: boolean;
+  }>({
     ids: null,
     ready: false,
     opened: false,
@@ -179,26 +242,36 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
   const refreshRef = useRef<() => Promise<boolean>>(async () => false);
   const announcedNotice = useRef<string | null>(null);
 
-  const remember = useCallback((current: string[], announce: boolean) => {
-    const seen = seenRef.current;
-    if (announce && seen.ids) {
-      const added = newCountedIds(seen.ids, current);
-      const onField =
-        stateRef.current != null &&
-        seenFieldFromState(stateRef.current, accountRef.current ?? "device") != null;
-      if (added.length > 0 && !onField) {
-        setReturnGain(added.length);
-        router.navigate("/arena");
+  const remember = useCallback(
+    (current: string[], announce: boolean) => {
+      const seen = seenRef.current;
+      if (announce && seen.ids) {
+        const added = newCountedIds(seen.ids, current);
+        const onField =
+          stateRef.current != null &&
+          seenFieldFromState(
+            stateRef.current,
+            accountRef.current ?? "device",
+          ) != null;
+        if (added.length > 0 && !onField) {
+          setReturnGain(added.length);
+          router.navigate("/arena");
+        }
       }
-    }
-    seen.ids = current;
-    void AsyncStorage.setItem(SEEN_KEY, JSON.stringify(current));
-  }, [router]);
+      seen.ids = current;
+      void AsyncStorage.setItem(
+        accountStorageKeys(accountRef.current).seen,
+        JSON.stringify(current),
+      );
+    },
+    [router],
+  );
 
   useEffect(() => {
     let alive = true;
-    void AsyncStorage.getItem(SEEN_KEY).then((raw) => {
-      if (!alive) return;
+    const id = owner;
+    void AsyncStorage.getItem(keys.seen).then((raw) => {
+      if (!alive || accountRef.current !== id) return;
       seenRef.current.ids = readIds(raw);
       seenRef.current.ready = true;
       const current = stateRef.current;
@@ -211,7 +284,8 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
       if (status !== "active" || !seenRef.current.ready) return;
       refreshingRef.current = true;
       void refreshRef.current().finally(() => {
-        if (stateRef.current) remember(countedActivityIds(stateRef.current), true);
+        if (stateRef.current)
+          remember(countedActivityIds(stateRef.current), true);
         refreshingRef.current = false;
       });
     });
@@ -220,7 +294,7 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
       alive = false;
       sub.remove();
     };
-  }, [remember]);
+  }, [remember, owner]);
 
   useEffect(() => {
     if (!state || !seenRef.current.ready || refreshingRef.current) return;
@@ -237,7 +311,7 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
     const account = await competeAccount();
     if (!stateRef.current) return false;
     if (!account) return true;
-    accountRef.current = account.userId;
+    if (account.userId !== accountRef.current) return false;
     if (refreshFlight.current) return refreshFlight.current;
     const generation = dirtyRef.current;
     const task = (async () => {
@@ -259,7 +333,12 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
           return false;
         }
         const body = (await response.json()) as { state?: unknown };
-        if (!isCompeteState(body.state) || !stateRef.current) return false;
+        if (
+          !isCompeteState(body.state) ||
+          !stateRef.current ||
+          account.userId !== accountRef.current
+        )
+          return false;
         const remote = rollClock(migrateCompeteState(body.state));
         const dirty =
           unsavedRef.current ||
@@ -275,15 +354,19 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
         if (next !== stateRef.current) {
           stateRef.current = next;
           setState(next);
-          void AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+          void AsyncStorage.setItem(
+            accountStorageKeys(account.userId).state,
+            JSON.stringify(next),
+          );
         }
         setStandingsStale(false);
         return true;
       } catch {
+        if (account.userId !== accountRef.current) return false;
         setStandingsStale(true);
         return false;
       } finally {
-        refreshFlight.current = null;
+        if (account.userId === accountRef.current) refreshFlight.current = null;
       }
     })();
     refreshFlight.current = task;
@@ -296,9 +379,15 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
     let alive = true;
     const accountKey = accountRef.current ?? "device";
     const next = seenFieldFromState(state, accountKey);
-    if (primaryRevealResults(state.periodResults, undefined, state.primary).length > 0) {
+    if (
+      primaryRevealResults(state.periodResults, undefined, state.primary)
+        .length > 0
+    ) {
       if (next) {
-        void AsyncStorage.setItem(fieldSeenStorageKey(accountKey), JSON.stringify(next));
+        void AsyncStorage.setItem(
+          fieldSeenStorageKey(accountKey),
+          JSON.stringify(next),
+        );
       }
       setFieldNotice(null);
       return;
@@ -311,7 +400,10 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
       if (!alive) return;
       const notice = fieldChangeNotice(readSeenField(raw), next);
       if (!notice) {
-        void AsyncStorage.setItem(fieldSeenStorageKey(accountKey), JSON.stringify(next));
+        void AsyncStorage.setItem(
+          fieldSeenStorageKey(accountKey),
+          JSON.stringify(next),
+        );
         setFieldNotice(null);
         return;
       }
@@ -326,66 +418,115 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
     };
   }, [router, state]);
 
-  const dispatch = useCallback(
-    (action: Action) => {
-      dirtyRef.current += 1;
-      unsavedRef.current = true;
-      setState((prev) => {
-        if (!prev) return prev;
-        const accountKey = accountRef.current ?? "device";
-        seedArenaBaselinesFromState(
-          prev,
-          accountKey,
-          readBaselineItem,
-          writeBaselineItem,
-        );
-        const next = reduceCompete(prev, {
-          ...action,
-          accountId: action.accountId ?? accountRef.current ?? undefined,
-        });
-        seedArenaBaselinesFromState(
-          next,
-          accountKey,
-          readBaselineItem,
-          writeBaselineItem,
-        );
-        void AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(next));
-        void AsyncStorage.setItem(DIRTY_KEY, "1");
-        if (saveTimer.current) clearTimeout(saveTimer.current);
-        saveTimer.current = setTimeout(() => {
-          saveTimer.current = null;
-          const generation = dirtyRef.current;
-          void competeAccount().then((account) => {
-            if (!account) {
-              void AsyncStorage.removeItem(DIRTY_KEY);
+  const scheduleSave = useCallback((next: CompeteState) => {
+    const id = accountRef.current;
+    const scoped = accountStorageKeys(id);
+    const generation = dirtyRef.current;
+    if (saveTimer.current) clearTimeout(saveTimer.current);
+    saveTimer.current = setTimeout(() => {
+      saveTimer.current = null;
+      saveChain.current = saveChain.current
+        .catch(() => {})
+        .then(async () => {
+          if (id !== accountRef.current || generation !== dirtyRef.current)
+            return;
+          const currentAuth = authRef.current;
+          if (
+            !currentAuth.user ||
+            currentAuth.demoMode ||
+            currentAuth.user.mode === "demo"
+          )
+            return;
+          try {
+            const account = await competeAccount();
+            if (!account || account.userId !== id || id !== accountRef.current)
               return;
-            }
-            void fetch(`${mobileEnv.apiUrl}/api/compete`, {
+            const response = await fetch(`${mobileEnv.apiUrl}/api/compete`, {
               method: "PUT",
               headers: {
                 "Content-Type": "application/json",
                 Authorization: `Bearer ${account.token}`,
               },
-              body: JSON.stringify({ state: next, accountId: account.userId }),
-            }).then(async (response) => {
-              if (response.ok && dirtyRef.current === generation) {
-                unsavedRef.current = false;
-                void AsyncStorage.removeItem(DIRTY_KEY);
-                return;
-              }
-              if (response.ok) return;
-              const body = (await response.json().catch(() => null)) as {
-                error?: string;
-              } | null;
-              if (body?.error !== "week_still_open") setStandingsStale(true);
+              body: JSON.stringify({ state: next, accountId: id }),
             });
-          });
-        }, 400);
-        return next;
+            if (id !== accountRef.current || generation !== dirtyRef.current)
+              return;
+            if (!response.ok) {
+              const body = await response.json().catch(() => null);
+              setSaveError(saveFailure(body?.error));
+              return;
+            }
+            unsavedRef.current = false;
+            setSaveError(null);
+            await AsyncStorage.removeItem(scoped.dirty);
+          } catch {
+            if (id === accountRef.current) setSaveError(saveFailure());
+          }
+        });
+    }, 400);
+  }, []);
+
+  const dispatch = useCallback(
+    (action: Action) => {
+      const prev = stateRef.current;
+      if (!prev) return;
+      const id = accountRef.current;
+      dirtyRef.current += 1;
+      unsavedRef.current = true;
+      seedArenaBaselinesFromState(
+        prev,
+        id ?? "guest",
+        readBaselineItem,
+        writeBaselineItem,
+      );
+      const next = reduceCompete(prev, {
+        ...action,
+        accountId: action.accountId ?? id ?? undefined,
       });
+      stateRef.current = next;
+      setState(next);
+      seedArenaBaselinesFromState(
+        next,
+        id ?? "guest",
+        readBaselineItem,
+        writeBaselineItem,
+      );
+      const scoped = accountStorageKeys(id);
+      void AsyncStorage.multiSet([
+        [scoped.state, JSON.stringify(next)],
+        [scoped.dirty, "1"],
+      ]).catch(() => setSaveError("Could not save on this device."));
+      scheduleSave(next);
     },
-    [readBaselineItem, writeBaselineItem],
+    [readBaselineItem, writeBaselineItem, scheduleSave],
   );
+
+  const retrySave = useCallback(() => {
+    if (stateRef.current) scheduleSave(stateRef.current);
+  }, [scheduleSave]);
+  const clearAccountData = useCallback(async () => {
+    if (saveTimer.current) clearTimeout(saveTimer.current);
+    dirtyRef.current += 1;
+    // Drain an already submitted save before clearing this account's local copy.
+    await saveChain.current.catch(() => {});
+    const scoped = accountStorageKeys(accountRef.current);
+    const all = await AsyncStorage.getAllKeys();
+    const id = accountRef.current;
+    await AsyncStorage.multiRemove([
+      scoped.state,
+      scoped.dirty,
+      scoped.seen,
+      "fb-compete-v1",
+      "fb-compete-dirty",
+      "fb-counted-seen",
+      "fb-notifications-v1",
+      ...all.filter((key) => !!id && key.includes(id)),
+    ]);
+    loadedOwnerRef.current = undefined;
+    stateRef.current = null;
+    setState(null);
+    baselineCacheRef.current.clear();
+  }, []);
 
   const clearReturn = useCallback(() => setReturnGain(0), []);
   const dismissFieldNotice = useCallback(() => {
@@ -394,7 +535,10 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
     if (current) {
       const seen = seenFieldFromState(current, accountKey);
       if (seen) {
-        void AsyncStorage.setItem(fieldSeenStorageKey(accountKey), JSON.stringify(seen));
+        void AsyncStorage.setItem(
+          fieldSeenStorageKey(accountKey),
+          JSON.stringify(seen),
+        );
       }
     }
     setFieldNotice(null);
@@ -414,6 +558,9 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
         dismissFieldNotice,
         standingsStale,
         refresh,
+        saveError,
+        retrySave,
+        clearAccountData,
       }}
     >
       {children}

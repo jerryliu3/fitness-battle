@@ -1,3 +1,4 @@
+import { Journey } from "../../src/features/journey";
 import { useRef, useState } from "react";
 import {
   Animated,
@@ -22,6 +23,7 @@ import Svg, {
 import { SafeAreaView } from "react-native-safe-area-context";
 import {
   APP_TIMEZONE,
+  primaryFreezePeriodStart,
   buildTodayRoute,
   competeNow,
   competePeriodWindow,
@@ -204,9 +206,12 @@ export default function Home() {
   const yMax = Math.max(1, Math.ceil(maxVal * 1.15));
   const yMid = Math.round((yMax / 2) * 10) / 10;
 
-  const getY = (hrs: number) => yBottom - (Math.min(hrs, yMax) / yMax) * (yBottom - yTop);
-  const getX = (dayIdx: number) => xStart + ((dayIdx + 1) / 7) * (xEnd - xStart);
-  const getDayCenterX = (dayIdx: number) => xStart + ((dayIdx + 0.5) / 7) * (xEnd - xStart);
+  const getY = (hrs: number) =>
+    yBottom - (Math.min(hrs, yMax) / yMax) * (yBottom - yTop);
+  const getX = (dayIdx: number) =>
+    xStart + ((dayIdx + 1) / 7) * (xEnd - xStart);
+  const getDayCenterX = (dayIdx: number) =>
+    xStart + ((dayIdx + 0.5) / 7) * (xEnd - xStart);
 
   const weekDurationMs = weekEnd - weekStart;
   const weekProgress = Math.min(
@@ -214,7 +219,9 @@ export default function Home() {
     Math.max(0, (now.getTime() - weekStart) / (weekDurationMs || 1)),
   );
   // Continuous X coordinate reflecting exact progress through the week
-  const currPreciseX = Number((xStart + weekProgress * (xEnd - xStart)).toFixed(1));
+  const currPreciseX = Number(
+    (xStart + weekProgress * (xEnd - xStart)).toFixed(1),
+  );
   const currLastY = getY(currTotalHours);
 
   const prevPoints = [
@@ -235,11 +242,7 @@ export default function Home() {
   const currAreaPoints = `${currLinePoints} ${currPreciseX.toFixed(1)},${yBottom} ${xStart.toFixed(1)},${yBottom}`;
 
   const paceText =
-    hoursDelta > 0
-      ? "Ahead of pace"
-      : hoursDelta === 0
-        ? "On pace"
-        : null;
+    hoursDelta > 0 ? "Ahead of pace" : hoursDelta === 0 ? "On pace" : null;
 
   const weekDays = Array.from({ length: 7 }, (_, i) => {
     const d = new Date(weekStart + i * 86_400_000 + 43_200_000);
@@ -274,6 +277,12 @@ export default function Home() {
     return (
       <SafeAreaView style={f.safe} edges={["top"]}>
         <ScrollView contentContainerStyle={f.content}>
+          {state.frozenPeriods.includes(primaryFreezePeriodStart(state)) ? (
+            <Text style={f.copy}>
+              ❄ Week frozen · Your effort score is protected through next
+              Monday.
+            </Text>
+          ) : null}
           <Pressable
             accessibilityRole="button"
             onPress={() => setExpanded(null)}
@@ -324,7 +333,8 @@ export default function Home() {
               {formatVolume(a.sport, a.distanceM, a.movingSec, units)}
             </Text>
             <Text style={f.small}>
-              {a.source} · {a.verified ? "Verified" : "Open"} · Counted training.
+              {a.source} · {a.verified ? "Verified" : "Open"} · Counted
+              training.
             </Text>
           </View>
         </ScrollView>
@@ -346,10 +356,13 @@ export default function Home() {
               <Text style={f.kicker}>This week</Text>
               <View style={s.statsNumbers}>
                 <Text style={s.statsMain}>
-                  {currTotalHours === 0 ? "0 hours" : `${currTotalHours.toFixed(1)} hrs`}
+                  {currTotalHours === 0
+                    ? "0 hours"
+                    : `${currTotalHours.toFixed(1)} hrs`}
                 </Text>
                 <Text style={s.statsSessionCount}>
-                  {weekActivities.length} {weekActivities.length === 1 ? "session" : "sessions"}
+                  {weekActivities.length}{" "}
+                  {weekActivities.length === 1 ? "session" : "sessions"}
                 </Text>
               </View>
               {sportById(state.primary).gps && weekDistanceM > 0 ? (
@@ -369,7 +382,13 @@ export default function Home() {
               accessibilityLabel={`Cumulative hours: ${currTotalHours === 0 ? "0 hours" : `${currTotalHours.toFixed(1)} hrs`} this week compared to ${prevTotalHours.toFixed(1)} hrs last week`}
             >
               <Defs>
-                <LinearGradient id="mobile-act-grad" x1="0" y1="0" x2="0" y2="1">
+                <LinearGradient
+                  id="mobile-act-grad"
+                  x1="0"
+                  y1="0"
+                  x2="0"
+                  y2="1"
+                >
                   <Stop offset="0" stopColor="#f1c75b" stopOpacity="0.4" />
                   <Stop offset="1" stopColor="#f1c75b" stopOpacity="0.0" />
                 </LinearGradient>
@@ -442,10 +461,7 @@ export default function Home() {
               />
 
               {/* Current week area & line */}
-              <Polygon
-                points={currAreaPoints}
-                fill="url(#mobile-act-grad)"
-              />
+              <Polygon points={currAreaPoints} fill="url(#mobile-act-grad)" />
               <Polyline
                 points={currLinePoints}
                 fill="none"
@@ -491,7 +507,11 @@ export default function Home() {
                 <View style={s.legendItemHeader}>
                   <View style={s.legendSwatchCurr} />
                   <Text style={s.legendText}>
-                    You ({currTotalHours === 0 ? "0h" : `${currTotalHours.toFixed(1)}h`})
+                    You (
+                    {currTotalHours === 0
+                      ? "0h"
+                      : `${currTotalHours.toFixed(1)}h`}
+                    )
                   </Text>
                 </View>
                 {paceText ? (
@@ -504,186 +524,25 @@ export default function Home() {
                 <View style={s.legendItemHeader}>
                   <View style={s.legendSwatchPrev} />
                   <Text style={s.legendText}>
-                    Last week ({prevTotalHours === 0 ? "0h" : `${prevTotalHours.toFixed(1)}h`})
+                    Last week (
+                    {prevTotalHours === 0
+                      ? "0h"
+                      : `${prevTotalHours.toFixed(1)}h`}
+                    )
                   </Text>
                 </View>
               </View>
             </View>
           </View>
         </View>
-        <View style={f.row}>
-          <Text style={f.h2}>Your journey</Text>
-          {sessions.length ? (
-            <Text style={f.small}>Last {sessions.length} sessions</Text>
-          ) : null}
-        </View>
-        <View style={s.journey}>
-          <View style={s.stop}>
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel="Ember: open today's session"
-              style={[
-                s.tile,
-                s.tileAbs,
-                {
-                  left: sessions.length === 0 ? PATH_R : PATH_C,
-                  backgroundColor: "#d4ee89",
-                  borderColor: "#b5d55b",
-                  borderBottomColor: "#9ebf42",
-                  overflow: "visible",
-                  width: 82,
-                  height: 82,
-                  borderRadius: 41,
-                  zIndex: 1,
-                },
-              ]}
-              onPress={() => {
-                bounce();
-                setExpanded("suggestion");
-              }}
-            >
-              <Animated.View
-                style={{
-                  position: "absolute",
-                  bottom: 18,
-                  left: "50%",
-                  marginLeft: -59,
-                  zIndex: 2,
-                  transform: [{ translateY: lift }],
-                }}
-              >
-                <Ember size={118} expression="happy" />
-              </Animated.View>
-            </Pressable>
-            <Pressable
-              accessibilityRole="button"
-              onPress={() => {
-                bounce();
-                setExpanded("suggestion");
-              }}
-              style={[
-                s.stopCopy,
-                sessions.length === 0 ? s.copyRight : s.copyCenter,
-              ]}
-            >
-              <Text style={f.kicker}>Today</Text>
-              <Text style={f.rowTitle}>See today&apos;s session</Text>
-            </Pressable>
-          </View>
-          {sessions.map((a, i) => {
-            const toLeft = i % 2 === 0;
-            const curve =
-              i === 0
-                ? "M 50 0 C 50 28, 24 40, 24 100"
-                : toLeft
-                  ? "M 76 0 C 76 30, 24 42, 24 100"
-                  : "M 24 0 C 24 30, 76 42, 76 100";
-            return (
-              <View key={a.id} style={s.stop}>
-                <PathCurve d={curve} />
-                <Pressable
-                  accessibilityRole="button"
-                  onPress={() => setExpanded(a)}
-                  accessibilityLabel={`Open ${sportById(a.sport).name} session ${formatVolume(a.sport, a.distanceM, a.movingSec, units)}`}
-                  style={[
-                    s.tile,
-                    s.tileAbs,
-                    { left: toLeft ? PATH_L : PATH_R },
-                  ]}
-                >
-                  <View style={s.check}>
-                    <Text style={{ fontSize: 9, color: "#282f2c" }}>✓</Text>
-                  </View>
-                  <Text style={s.tileValue}>
-                    {formatVolume(a.sport, a.distanceM, a.movingSec, units)}
-                  </Text>
-                  <Text style={f.small}>
-                    {new Date(a.startedAt).toLocaleDateString("en-US", {
-                      weekday: "short",
-                      timeZone: "UTC",
-                    })}
-                  </Text>
-                </Pressable>
-                <View
-                  style={[s.stopCopy, toLeft ? s.copyLeft : s.copyRight]}
-                >
-                  <Text style={f.kicker}>
-                    {new Date(a.startedAt).toLocaleDateString("en-US", {
-                      month: "short",
-                      day: "numeric",
-                      timeZone: "UTC",
-                    })}
-                  </Text>
-                  <Text style={f.rowTitle}>{sportById(a.sport).name}</Text>
-                  <Text style={f.small}>
-                    {a.verified ? "Verified" : "Open"} · counted
-                  </Text>
-                </View>
-              </View>
-            );
-          })}
-          {sessions.length === 0 ? (
-            <View style={[s.stop, { opacity: 0.85 }]}>
-              <PathCurve d="M 76 0 C 76 34, 24 58, 24 100" />
-              <View
-                style={[
-                  s.tile,
-                  s.tileAbs,
-                  {
-                    left: PATH_L,
-                    backgroundColor: "#e4e8e1",
-                    borderColor: "#d0d7cb",
-                    borderBottomColor: "#bcc5b6",
-                  },
-                ]}
-                accessibilityLabel="Past sessions"
-              />
-              <View style={[s.stopCopy, s.copyLeft]}>
-                <Text style={f.kicker}>Past</Text>
-                <Text style={f.rowTitle}>Past sessions will appear here</Text>
-              </View>
-            </View>
-          ) : null}
-          <View style={s.stop}>
-            <PathCurve
-              d={
-                sessions.length === 0
-                  ? "M 24 0 C 24 34, 78 58, 50 100"
-                  : sessions.length % 2 === 1
-                    ? "M 24 0 C 24 34, 78 58, 50 100"
-                    : "M 76 0 C 76 34, 22 58, 50 100"
-              }
-            />
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel="Start"
-              onPress={bounce}
-              style={[
-                s.tile,
-                s.tileAbs,
-                {
-                  left: PATH_C,
-                  backgroundColor: "#f1f5ec",
-                  borderStyle: "dashed",
-                  borderColor: "#b7c9a4",
-                  borderBottomColor: "#a4b990",
-                },
-              ]}
-            >
-              <Text style={{ fontSize: 18 }}>🏁</Text>
-              <Text
-                style={{
-                  fontFamily: "DMSans_700Bold",
-                  fontSize: 10,
-                  letterSpacing: 0.8,
-                  color: "#43543f",
-                }}
-              >
-                START
-              </Text>
-            </Pressable>
-          </View>
-        </View>
+        <Journey
+          activities={counted}
+          units={units}
+          onToday={() => {
+            bounce();
+            setExpanded("suggestion");
+          }}
+        />
       </ScrollView>
     </SafeAreaView>
   );
