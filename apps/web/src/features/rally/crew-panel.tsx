@@ -507,6 +507,7 @@ export function CrewPanel() {
       )}
       <Sheet
         open={!!panel}
+        preventAutoFocus={panel === "add"}
         title={
           panel === "add"
             ? "Add Crew"
