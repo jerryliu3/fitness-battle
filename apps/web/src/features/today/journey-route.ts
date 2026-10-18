@@ -29,7 +29,7 @@ export type JourneyActivityDay<T extends { startedAt: string } = { startedAt: st
  */
 export function groupActivitiesByDay<T extends { startedAt: string }>(
   activities: ReadonlyArray<T>,
-  limit = 10,
+  limit = 30,
 ): JourneyActivityDay<T>[] {
   const byDay = new Map<string, T[]>();
   const newestFirst = [...activities].sort((a, b) =>

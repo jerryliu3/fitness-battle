@@ -34,11 +34,14 @@ type JourneyDay = {
 
 type JourneyStop =
   | { key: "today"; kind: "today"; lane: JourneyLane }
-  | { key: "past"; kind: "past"; lane: JourneyLane }
+  | { key: "past" | "past-more"; kind: "past"; lane: JourneyLane }
   | { key: string; kind: "day"; lane: JourneyLane; day: JourneyDay }
   | { key: "start"; kind: "start"; lane: JourneyLane };
 
-function buildJourneyStops(days: JourneyDay[]): JourneyStop[] {
+function buildJourneyStops(
+  days: JourneyDay[],
+  hasMorePast = false,
+): JourneyStop[] {
   if (days.length === 0) {
     // When no past sessions exist, wind cleanly: Today (r) -> Past (l) -> Start (c)
     // Guarantee no consecutive stops share a lane.
@@ -60,7 +63,11 @@ function buildJourneyStops(days: JourneyDay[]): JourneyStop[] {
       day,
     });
   });
-  stops.push({ key: "start", kind: "start", lane: plan.start });
+  if (hasMorePast) {
+    stops.push({ key: "past-more", kind: "past", lane: plan.start });
+  } else {
+    stops.push({ key: "start", kind: "start", lane: plan.start });
+  }
   return stops;
 }
 
@@ -153,9 +160,11 @@ export function TodayScreen() {
   );
   // Days with activity (not empty calendar days). A new day with a workout
   // prepends one circle; earlier days keep the same lane.
-  const journeyDays = groupActivitiesByDay(counted, 10);
+  const journeyDays = groupActivitiesByDay(counted, 30);
+  const shownSessions = journeyDays.reduce((acc, d) => acc + d.items.length, 0);
+  const hasMorePast = counted.length > shownSessions;
   const units = state.units;
-  const journeyStops = buildJourneyStops(journeyDays);
+  const journeyStops = buildJourneyStops(journeyDays, hasMorePast);
 
   const weekPeriod = competePeriodWindow(state, now);
   const weekStart = weekPeriod.startsAt.getTime();
@@ -587,11 +596,6 @@ export function TodayScreen() {
       </section>
       <div className="focus-row">
         <h2>Your journey</h2>
-        {journeyDays.length ? (
-          <span className="fb-note">
-            Last {journeyDays.length} active day{journeyDays.length === 1 ? "" : "s"}
-          </span>
-        ) : null}
       </div>
       <JourneyTrail
         stopCount={journeyStops.length}
@@ -605,18 +609,36 @@ export function TodayScreen() {
               data-lane={stop.lane}
             >
               {stop.kind === "past" ? (
-                <>
-                  <button
-                    ref={setStopRef(index)}
-                    type="button"
-                    disabled
-                    aria-label="Past sessions"
-                  />
-                  <span>
-                    <small>Past</small>
-                    <b>Past sessions will appear here</b>
-                  </span>
-                </>
+                stop.key === "past-more" ? (
+                  <>
+                    <button
+                      ref={setStopRef(index)}
+                      type="button"
+                      aria-label="More past sessions"
+                      onClick={() => react("hop")}
+                    >
+                      <i>⋯</i>
+                      <b>Past</b>
+                    </button>
+                    <span>
+                      <small>Past</small>
+                      <b>More past sessions</b>
+                    </span>
+                  </>
+                ) : (
+                  <>
+                    <button
+                      ref={setStopRef(index)}
+                      type="button"
+                      disabled
+                      aria-label="Past sessions"
+                    />
+                    <span>
+                      <small>Past</small>
+                      <b>Past sessions will appear here</b>
+                    </span>
+                  </>
+                )
               ) : null}
               {stop.kind === "today" ? (
                 <>

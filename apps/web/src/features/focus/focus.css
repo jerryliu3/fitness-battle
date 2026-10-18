@@ -198,9 +198,22 @@
   margin: 0 auto;
   display: flex;
   flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  flex: 1 1 auto;
 }
 .phone-main:has(> .focus-home) {
-  grid-template-rows: minmax(min-content, 1fr);
+  height: 100%;
+  min-height: 0;
+  grid-template-rows: minmax(0, 1fr);
+  padding-bottom: 12px;
+}
+.focus-home > .focus-stats-card {
+  flex: 0 0 auto;
+}
+.focus-home > .focus-row {
+  flex: 0 0 auto;
+  margin: 14px 0 6px;
 }
 .focus-arena {
   max-width: 880px;
@@ -809,8 +822,9 @@
   --path-row: 192px;
   border-radius: 24px;
   background: transparent;
-  margin: 8px 0 16px;
-  max-height: 900px;
+  margin: 4px 0 0;
+  min-height: 160px;
+  max-height: none;
   overflow-x: visible;
   overflow-y: auto;
   overscroll-behavior: auto;
@@ -820,7 +834,7 @@
   padding: 56px 8px 12px;
   display: flex;
   flex-direction: column;
-  flex: 1 1 auto;
+  flex: 1 1 0;
 }
 /* Full scroll height of all stops; path SVG covers this, not the scrollport. */
 .focus-journey-track {
@@ -1653,6 +1667,72 @@
   font-size: 11px;
   padding: 12px 16px;
   cursor: pointer;
+}
+.focus-crew-hero-buttons {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.focus-crew-gear-btn {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 40px !important;
+  height: 40px !important;
+  padding: 0 !important;
+  border-radius: 50% !important;
+  border: 1px solid #ffffff70 !important;
+  background: transparent !important;
+  color: #fafaf7 !important;
+  transition: all 0.15s ease;
+}
+.focus-crew-gear-btn:hover {
+  background: #ffffff20 !important;
+  border-color: #ffffffaa !important;
+}
+.focus-crew-tabs {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.focus-crew-add-tab {
+  background: transparent !important;
+  border: 1.5px dashed #b8c5ad !important;
+  color: #616c63 !important;
+  border-radius: 11px !important;
+  font: 12px var(--font-body), sans-serif !important;
+  padding: 12px 16px !important;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  transition: all 0.15s ease;
+}
+.focus-crew-add-tab:hover {
+  border-color: #282f2c !important;
+  color: #282f2c !important;
+  background: #f0f3eb !important;
+}
+.focus-or-divider {
+  display: flex;
+  align-items: center;
+  text-align: center;
+  margin: 16px 0;
+  color: #819486;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.focus-or-divider::before,
+.focus-or-divider::after {
+  content: "";
+  flex: 1;
+  border-bottom: 1px solid #e0e5dc;
+}
+.focus-or-divider span {
+  padding: 0 10px;
 }
 .focus-avatar-stack {
   display: flex;

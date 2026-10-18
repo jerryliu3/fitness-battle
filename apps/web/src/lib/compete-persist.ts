@@ -749,9 +749,16 @@ export async function hydrateFieldBoard(
       });
   if (!pin) return { ...state, crewBoard: null };
 
+  const waveStartIso = new Date(pin.waveStart).toISOString();
+  const weekEndIso = new Date(pin.weekEnd).toISOString();
+
   return {
     ...state,
-    crewBoard: pin,
+    crewBoard: {
+      ...pin,
+      waveStart: waveStartIso,
+      weekEnd: weekEndIso,
+    },
     enrollments: state.enrollments.map((item) =>
       item.sport === enrollment.sport
         ? {
@@ -759,6 +766,8 @@ export async function hydrateFieldBoard(
             capacity: pin.capacity,
             peerIds: pin.memberIds.filter((id) => id !== userId),
             syntheticIds: pin.syntheticIds,
+            waveStart: waveStartIso,
+            weekEnd: weekEndIso,
           }
         : item,
     ),

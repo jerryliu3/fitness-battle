@@ -65,7 +65,11 @@ export function fieldPinMatchesEnrollment(
 ): boolean {
   if (!pin) return false;
   if (pin.sport !== enrollment.sport) return false;
-  if (pin.waveStart && enrollment.waveStart && pin.waveStart !== enrollment.waveStart) {
+  if (
+    pin.waveStart &&
+    enrollment.waveStart &&
+    new Date(pin.waveStart).getTime() !== new Date(enrollment.waveStart).getTime()
+  ) {
     return false;
   }
   if (enrollment.crewId) {

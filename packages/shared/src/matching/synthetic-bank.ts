@@ -119,7 +119,18 @@ export function findSynthetic(
   sport: SportId,
   id: string,
 ): SyntheticRival | null {
-  return syntheticBank(sport).find((rival) => rival.id === id) ?? null;
+  const bank = syntheticBank(sport);
+  const found = bank.find((rival) => rival.id === id);
+  if (found) return found;
+  if (id.startsWith("synth")) {
+    const idx = Math.abs(hashString(`${sport}:${id}`)) % bank.length;
+    const rival = bank[idx]!;
+    return {
+      ...rival,
+      id,
+    };
+  }
+  return null;
 }
 
 /**

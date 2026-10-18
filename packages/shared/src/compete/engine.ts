@@ -762,7 +762,10 @@ export function rollClock(state: CompeteState, now: Date = new Date()): CompeteS
   const liveStart = liveWave.waveStart.toISOString();
   let next = state;
   // Last week's crew pin must not stick after Monday settlement.
-  if (next.crewBoard && next.crewBoard.waveStart !== liveStart) {
+  if (
+    next.crewBoard &&
+    new Date(next.crewBoard.waveStart).getTime() !== liveWave.waveStart.getTime()
+  ) {
     next = { ...next, crewBoard: null };
   }
   next = ensureEnrollments(next, now);

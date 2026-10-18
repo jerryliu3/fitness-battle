@@ -49,6 +49,8 @@ function humanCrewError(code?: string): string {
     return "We couldn't find a crew with that invite code.";
   if (raw.includes("already_a_member"))
     return "You are already a member of this crew.";
+  if (raw.includes("not_a_member"))
+    return "You are not a member of this crew.";
   if (raw.includes("crew_not_found")) return "We couldn't find that crew.";
   if (raw.includes("name_required")) return "Please enter a crew name.";
   if (raw.includes("authentication_required"))
@@ -62,6 +64,7 @@ function isCrewErrorNote(note: string): boolean {
     note.startsWith("We couldn't") ||
     note.startsWith("Could not") ||
     note.startsWith("You are already") ||
+    note.startsWith("You are not") ||
     note.startsWith("Sign in")
   );
 }
@@ -73,7 +76,7 @@ export function CrewPanel() {
   const [selected, setSelected] = useState("");
   const [view, setView] = useState("Activity");
   const [panel, setPanel] = useState<
-    "create" | "join" | "invite" | "manage" | null
+    "invite" | "manage" | "add" | null
   >(null);
   const [name, setName] = useState("");
   const [code, setCode] = useState("");
@@ -84,7 +87,14 @@ export function CrewPanel() {
     try {
       const res = await fetch("/api/crews");
       if (!res.ok) throw Error("Could not load your crews. Try again.");
-      setData(await res.json());
+      const nextData: CrewData = await res.json();
+      setData(nextData);
+      const nextCrews = (nextData?.crews ?? []).flatMap((r) =>
+        r.crews ? [r.crews] : [],
+      );
+      if (selected && !nextCrews.some((c) => c.id === selected)) {
+        setSelected(nextCrews[0]?.id ?? "");
+      }
     } catch (e) {
       setNote(e instanceof Error ? e.message : "Could not load crews.");
     }
@@ -108,7 +118,16 @@ export function CrewPanel() {
         throw Error(humanCrewError(result.error));
       await reload();
       setPanel(null);
-      setNote("Saved. Your crew is up to date.");
+      setName("");
+      setCode("");
+      if (path === "/leave") {
+        setNote("You left the crew.");
+      } else {
+        if (result.crew?.id) {
+          setSelected(result.crew.id);
+        }
+        setNote("Saved. Your crew is up to date.");
+      }
     } catch (e) {
       setNote(e instanceof Error ? e.message : "Could not reach your crew.");
     } finally {
@@ -188,19 +207,29 @@ export function CrewPanel() {
 
       {(!user || demoMode || data) && (
         <>
-          {crews.length > 1 && (
-            <div className="focus-registration-tabs">
-              {crews.map((c) => (
-                <button
-                  key={c.id}
-                  aria-pressed={crew.id === c.id}
-                  onClick={() => setSelected(c.id)}
-                >
-                  {c.name}
-                </button>
-              ))}
-            </div>
-          )}
+          <div className="focus-registration-tabs focus-crew-tabs">
+            {crews.map((c) => (
+              <button
+                key={c.id}
+                type="button"
+                aria-pressed={crew.id === c.id}
+                onClick={() => setSelected(c.id)}
+              >
+                {c.name}
+              </button>
+            ))}
+            <button
+              type="button"
+              className="focus-crew-add-tab"
+              onClick={() => {
+                setName("");
+                setCode("");
+                setPanel("add");
+              }}
+            >
+              ＋ Add Crew
+            </button>
+          </div>
           <section className="focus-crew-hero">
             <p className="fb-kicker">
               {isSolo ? "Solo circle · 1 member" : `Your people · ${members.length} members`}
@@ -215,9 +244,32 @@ export function CrewPanel() {
                   </span>
                 ))}
               </div>
-              <button onClick={() => setPanel("invite")}>
-                Invite a friend ＋
-              </button>
+              <div className="focus-crew-hero-buttons">
+                <button type="button" onClick={() => setPanel("invite")}>
+                  Invite a friend ＋
+                </button>
+                <button
+                  type="button"
+                  className="focus-crew-gear-btn"
+                  title="Crew settings"
+                  aria-label="Crew settings"
+                  onClick={() => setPanel("manage")}
+                >
+                  <svg
+                    width="18"
+                    height="18"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <circle cx="12" cy="12" r="3" />
+                    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
+                  </svg>
+                </button>
+              </div>
             </div>
           </section>
           <div className="focus-crew-layout">
@@ -258,7 +310,7 @@ export function CrewPanel() {
                         return;
                       }
                       if (crew.id === "solo-preview") {
-                        setPanel("create");
+                        setPanel("add");
                         return;
                       }
                       void write("/entries", { crewId: crew.id });
@@ -391,26 +443,6 @@ export function CrewPanel() {
                     </li>
                   ))}
                 </ul>
-                <div className="focus-actions focus-actions-stack">
-                  <button
-                    className="fb-btn-line"
-                    onClick={() => setPanel("manage")}
-                  >
-                    Crew settings
-                  </button>
-                  <button
-                    className="fb-btn-line"
-                    onClick={() => setPanel("create")}
-                  >
-                    Create another crew
-                  </button>
-                  <button
-                    className="fb-btn-line"
-                    onClick={() => setPanel("join")}
-                  >
-                    Join with code
-                  </button>
-                </div>
               </section>
             </aside>
           </div>
@@ -475,13 +507,11 @@ export function CrewPanel() {
       <Sheet
         open={!!panel}
         title={
-          panel === "create"
-            ? "Start your circle."
-            : panel === "join"
-              ? "Find your people."
-              : panel === "invite"
-                ? "Better with your people."
-                : "Your crew, your rhythm."
+          panel === "add"
+            ? "Add Crew"
+            : panel === "invite"
+              ? "Better with your people."
+              : "Your crew, your rhythm."
         }
         body={
           !user || demoMode
@@ -524,8 +554,23 @@ export function CrewPanel() {
               </Link>
             </div>
           </div>
-        ) : panel === "create" ? (
+        ) : panel === "add" ? (
           <>
+            <label className="fb-field">
+              Invite code
+              <input
+                value={code}
+                onChange={(e) => {
+                  setCode(e.target.value);
+                  if (note) setNote("");
+                }}
+                autoCapitalize="characters"
+                placeholder="e.g. RALLY7"
+              />
+            </label>
+            <div className="focus-or-divider">
+              <span>or start a new crew</span>
+            </div>
             <label className="fb-field">
               Crew name
               <input
@@ -553,48 +598,26 @@ export function CrewPanel() {
             </label>
             <button
               className="fb-btn"
-              disabled={busy}
+              disabled={busy || (!code.trim() && !name.trim())}
               onClick={() => {
-                if (!name.trim()) {
-                  setNote("Please enter a crew name.");
-                  return;
+                if (code.trim()) {
+                  void write("/join", { code: code.trim().toUpperCase() });
+                } else if (name.trim()) {
+                  void write("", {
+                    name: name.trim(),
+                    sport: state?.primary ?? "running",
+                    format,
+                  });
+                } else {
+                  setNote("Enter an invite code to join or a crew name to create.");
                 }
-                void write("", {
-                  name: name.trim(),
-                  sport: state?.primary ?? "running",
-                  format,
-                });
               }}
             >
-              Create crew
-            </button>
-          </>
-        ) : panel === "join" ? (
-          <>
-            <label className="fb-field">
-              Invite code
-              <input
-                value={code}
-                onChange={(e) => {
-                  setCode(e.target.value);
-                  if (note) setNote("");
-                }}
-                autoCapitalize="characters"
-                placeholder="e.g. RALLY7"
-              />
-            </label>
-            <button
-              className="fb-btn"
-              disabled={busy}
-              onClick={() => {
-                if (!code.trim()) {
-                  setNote("Please enter an invite code.");
-                  return;
-                }
-                void write("/join", { code: code.trim().toUpperCase() });
-              }}
-            >
-              Join crew
+              {code.trim()
+                ? "Join crew"
+                : name.trim()
+                  ? "Create crew"
+                  : "Join or create crew"}
             </button>
           </>
         ) : panel === "invite" ? (
@@ -605,7 +628,7 @@ export function CrewPanel() {
               </p>
               <button
                 className="fb-btn"
-                onClick={() => setPanel("create")}
+                onClick={() => setPanel("add")}
               >
                 Create crew ＋
               </button>
@@ -641,7 +664,7 @@ export function CrewPanel() {
             </p>
             <button
               className="fb-btn"
-              onClick={() => setPanel("create")}
+              onClick={() => setPanel("add")}
             >
               Create shared crew ＋
             </button>
@@ -670,6 +693,37 @@ export function CrewPanel() {
               A crew rest marker does not freeze effort score. Week freezes live in
               Athlete → Preferences.
             </p>
+            {crew?.id && crew.id !== "solo-preview" && (
+              <div
+                style={{
+                  marginTop: 24,
+                  paddingTop: 16,
+                  borderTop: "1px solid #e0e5dc",
+                }}
+              >
+                <button
+                  type="button"
+                  className="fb-btn-line"
+                  style={{
+                    color: "#b94a48",
+                    borderColor: "#e0b4b4",
+                    width: "100%",
+                  }}
+                  disabled={busy}
+                  onClick={() => {
+                    if (
+                      window.confirm(
+                        `Leave ${crew.name}? You can rejoin anytime with an invite code.`,
+                      )
+                    ) {
+                      void write("/leave", { crewId: crew.id });
+                    }
+                  }}
+                >
+                  Leave crew
+                </button>
+              </div>
+            )}
           </>
         )}
       </Sheet>
