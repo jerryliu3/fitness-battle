@@ -50,14 +50,14 @@ export function Arena3D({
         width: "100%",
         borderRadius: 20,
         overflow: "hidden",
-        background: "#edf2e8",
+        background: "#eef0e9",
         position: "relative" as const,
       },
     },
     createElement(
       "style",
       null,
-      `.fb-arena-3d .fd-live-world{height:520px;min-height:520px}.fb-arena-3d .fd-world-label{background:#fffffff0;color:#26382d;border:1px solid #dce3d7;border-radius:10px}.fb-arena-3d canvas{touch-action:none;height:520px!important}`,
+      `.fb-arena-3d .fd-live-world{height:520px;min-height:520px}.fb-arena-3d .fd-world-label{background:#fffffff0;color:#282f2c;border:1px solid #e0e5dc;border-radius:10px}.fb-arena-3d canvas{touch-action:none;height:520px!important}`,
     ),
     createElement(LivePursuit, {
       runners,

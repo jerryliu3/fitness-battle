@@ -9,7 +9,10 @@ import {
   competeNow,
   competePeriodWindow,
   countsOnTrack,
+  dayKey,
+  formatDistanceM,
   formatVolume,
+  getZonedWeekday,
   isSampleActivity,
   primaryFreezePeriodStart,
   sportById,
@@ -154,9 +157,14 @@ export function TodayScreen() {
   const weekActivities = state.activities.filter((a) => {
     if (!countsOnTrack(a, "open")) return false;
     const t = new Date(a.startedAt).getTime();
-    return t >= weekStart && t < weekEnd;
+    return t >= weekStart && t < weekEnd && t <= now.getTime();
   });
   const weekMovingSec = weekActivities.reduce((acc, a) => acc + (a.movingSec || 0), 0);
+  const weekDistanceM = weekActivities.reduce(
+    (acc, a) => acc + (a.distanceM || 0),
+    0,
+  );
+  const unitLabel = units === "metric" ? "km" : "mi";
   const weekHours = weekMovingSec / 3600;
   const weekHoursLabel =
     weekHours >= 10
@@ -164,25 +172,138 @@ export function TodayScreen() {
       : `${(Math.round(weekHours * 10) / 10).toFixed(1).replace(/\.0$/, "")} hr`;
   const nowDayIso = now.toISOString().slice(0, 10);
 
+  // Previous week window (Mon 00:00 UTC to next Mon 00:00 UTC, 7 days earlier)
+  const prevWeekStart = weekStart - 7 * 86_400_000;
+  const prevWeekEnd = weekStart;
+  const prevWeekActivities = state.activities.filter((a) => {
+    if (!countsOnTrack(a, "open")) return false;
+    const t = new Date(a.startedAt).getTime();
+    return t >= prevWeekStart && t < prevWeekEnd;
+  });
+  const prevWeekMovingSec = prevWeekActivities.reduce(
+    (acc, a) => acc + (a.movingSec || 0),
+    0,
+  );
+  const prevPeriodResult = state.periodResults.find(
+    (r) =>
+      r.sport === state.primary &&
+      (r.track === "open" || !r.track) &&
+      new Date(r.periodStart).getTime() >= prevWeekStart - 3600000 &&
+      new Date(r.periodStart).getTime() <= prevWeekStart + 3600000,
+  );
+
   const dayLabels = ["M", "T", "W", "T", "F", "S", "S"];
+
+  // Index of today (0 = Monday, 6 = Sunday) in America/New_York
+  const weekday = getZonedWeekday(now, APP_TIMEZONE);
+  const nowDayIndex = Math.min(6, Math.max(0, weekday === 0 ? 6 : weekday - 1));
+
+  // Cumulative hours for current week up to now
+  let currRunningSec = 0;
+  const currCumulativeHours: number[] = [];
+  for (let i = 0; i <= nowDayIndex; i++) {
+    const d = new Date(weekStart + i * 86_400_000 + 43_200_000);
+    const dayIso = dayKey(d, APP_TIMEZONE);
+    const dayActs = weekActivities.filter(
+      (a) => dayKey(new Date(a.startedAt), APP_TIMEZONE) === dayIso,
+    );
+    const daySec = dayActs.reduce((acc, a) => acc + (a.movingSec || 0), 0);
+    currRunningSec += daySec;
+    currCumulativeHours.push(Number((currRunningSec / 3600).toFixed(2)));
+  }
+  if (currCumulativeHours.length > 0) {
+    currCumulativeHours[currCumulativeHours.length - 1] = Number(
+      (weekMovingSec / 3600).toFixed(2),
+    );
+  }
+
+  // Cumulative hours for previous week (all 7 days)
+  let prevRunningSec = 0;
+  const prevCumulativeHours: number[] = [];
+  if (prevWeekActivities.length > 0) {
+    for (let i = 0; i < 7; i++) {
+      const d = new Date(prevWeekStart + i * 86_400_000 + 43_200_000);
+      const dayIso = dayKey(d, APP_TIMEZONE);
+      const dayActs = prevWeekActivities.filter(
+        (a) => dayKey(new Date(a.startedAt), APP_TIMEZONE) === dayIso,
+      );
+      const daySec = dayActs.reduce((acc, a) => acc + (a.movingSec || 0), 0);
+      prevRunningSec += daySec;
+      prevCumulativeHours.push(Number((prevRunningSec / 3600).toFixed(2)));
+    }
+  } else if (prevPeriodResult && prevPeriodResult.movingSec > 0) {
+    const totalPrevHours = prevPeriodResult.movingSec / 3600;
+    for (let i = 0; i < 7; i++) {
+      prevCumulativeHours.push(
+        Number(((totalPrevHours * (i + 1)) / 7).toFixed(2)),
+      );
+    }
+  } else {
+    for (let i = 0; i < 7; i++) {
+      prevCumulativeHours.push(0);
+    }
+  }
+
+  const currTotalHours = Number((weekMovingSec / 3600).toFixed(1));
+  const prevTotalHours = Number(
+    (
+      prevCumulativeHours[prevCumulativeHours.length - 1] ??
+      prevWeekMovingSec / 3600
+    ).toFixed(1),
+  );
+  const hoursDelta = Number(
+    (currTotalHours - (prevCumulativeHours[nowDayIndex] ?? 0)).toFixed(1),
+  );
+
+  // SVG chart geometry
+  const chartW = 340;
+  const chartH = 132;
+  const xStart = 34;
+  const xEnd = 324;
+  const yTop = 14;
+  const yBottom = 100;
+  const yMidPos = Math.round((yTop + yBottom) / 2);
+
+  const maxVal = Math.max(...currCumulativeHours, ...prevCumulativeHours, 0.5);
+  const yMax = Math.max(1, Math.ceil(maxVal * 1.15));
+  const yMid = Math.round((yMax / 2) * 10) / 10;
+
+  const getY = (hrs: number) => yBottom - (Math.min(hrs, yMax) / yMax) * (yBottom - yTop);
+  const getX = (dayIdx: number) => xStart + ((dayIdx + 1) / 7) * (xEnd - xStart);
+  const getDayCenterX = (dayIdx: number) => xStart + ((dayIdx + 0.5) / 7) * (xEnd - xStart);
+
+  const prevPoints = [
+    `${xStart.toFixed(1)},${getY(0).toFixed(1)}`,
+    ...prevCumulativeHours.map(
+      (h, i) => `${getX(i).toFixed(1)},${getY(h).toFixed(1)}`,
+    ),
+  ].join(" ");
+
+  const currPointsList = [
+    `${xStart.toFixed(1)},${getY(0).toFixed(1)}`,
+    ...currCumulativeHours.map(
+      (h, i) => `${getX(i).toFixed(1)},${getY(h).toFixed(1)}`,
+    ),
+  ];
+  const currLinePoints = currPointsList.join(" ");
+  const currLastX = getX(nowDayIndex);
+  const currLastY = getY(currCumulativeHours[nowDayIndex] ?? 0);
+  const currAreaPoints = `${currLinePoints} ${currLastX.toFixed(1)},${yBottom} ${xStart.toFixed(1)},${yBottom}`;
+
   const weekDays = Array.from({ length: 7 }, (_, i) => {
-    const d = new Date(weekStart + i * 86_400_000);
-    const dayIso = d.toISOString().slice(0, 10);
-    const dayActs = weekActivities.filter((a) => a.startedAt.slice(0, 10) === dayIso);
-    const dayVolume = dayActs.reduce((acc, a) => acc + (a.movingSec || 0), 0);
+    const d = new Date(weekStart + i * 86_400_000 + 43_200_000);
+    const dayIso = dayKey(d, APP_TIMEZONE);
+    const dayActs = weekActivities.filter(
+      (a) => dayKey(new Date(a.startedAt), APP_TIMEZONE) === dayIso,
+    );
     return {
       key: dayIso,
       label: dayLabels[i],
-      isToday: dayIso === nowDayIso,
+      isToday: i === nowDayIndex,
       hasActivity: dayActs.length > 0,
-      volume: dayVolume,
     };
   });
-  const maxDayVolume = Math.max(1, ...weekDays.map((d) => d.volume));
-  const weekDaysWithPct = weekDays.map((d) => ({
-    ...d,
-    pct: d.hasActivity ? Math.max(20, Math.round((d.volume / maxDayVolume) * 100)) : 0,
-  }));
+  const activeDaysCount = weekDays.filter((d) => d.hasActivity).length;
 
   if (expanded === "suggestion") {
     return (
@@ -264,31 +385,185 @@ export function TodayScreen() {
         </div>
       )}
       <section className="focus-stats-card" aria-label="This week's progress">
-        <div className="focus-stats-body">
-          <div className="focus-stats-hours">
-            <p className="fb-kicker">This week</p>
-            <strong>{weekHoursLabel}</strong>
-          </div>
-          <div className="focus-mini-chart" aria-hidden="true">
-            {weekDaysWithPct.map((d) => (
-              <div
-                key={d.key}
-                className={`focus-mini-bar-col${d.isToday ? " is-today" : ""}${d.hasActivity ? "" : " is-empty"}`}
+        <div className="focus-stats-header">
+          <div>
+            <p className="fb-kicker">This week · Cumulative hours</p>
+            <strong>{currTotalHours.toFixed(1)} hrs</strong>
+            {sportById(state.primary).gps && weekDistanceM > 0 ? (
+              <span
+                className="fb-note"
+                style={{ display: "block", marginTop: 2, fontSize: 11 }}
               >
-                <div className="focus-mini-bar-track">
-                  {d.hasActivity ? (
-                    <div
-                      className="focus-mini-bar-fill"
-                      style={{ height: `${d.pct}%` }}
-                    />
-                  ) : (
-                    <span className="focus-mini-bar-flat" />
-                  )}
-                </div>
-                <span className="focus-mini-bar-day">{d.label}</span>
-              </div>
-            ))}
+                {formatDistanceM(weekDistanceM, units)} {unitLabel}
+              </span>
+            ) : null}
           </div>
+          <div className="focus-stats-summary">
+            <span>
+              <b>{weekActivities.length}</b>{" "}
+              {weekActivities.length === 1 ? "session" : "sessions"}
+            </span>
+            <span>
+              <b>{activeDaysCount}</b> of 7 days
+            </span>
+          </div>
+        </div>
+
+        <div
+          className="focus-activity-chart-wrap"
+          aria-label="Cumulative hours comparison chart"
+        >
+          <div className="focus-activity-legend">
+            <div className="focus-activity-legend-items">
+              <span className="focus-activity-legend-item">
+                <i
+                  className="focus-activity-legend-swatch"
+                  aria-hidden="true"
+                />
+                <span>You ({currTotalHours.toFixed(1)}h)</span>
+              </span>
+              <span className="focus-activity-legend-item">
+                <i
+                  className="focus-activity-legend-swatch is-prev"
+                  aria-hidden="true"
+                />
+                <span>Last week ({prevTotalHours.toFixed(1)}h)</span>
+              </span>
+            </div>
+            {hoursDelta !== 0 ? (
+              <span className="focus-activity-delta">
+                {hoursDelta > 0
+                  ? `+${hoursDelta.toFixed(1)}h vs last week`
+                  : `${hoursDelta.toFixed(1)}h vs last week`}
+              </span>
+            ) : (
+              <span className="focus-activity-delta">On pace</span>
+            )}
+          </div>
+
+          <svg
+            viewBox={`0 0 ${chartW} ${chartH}`}
+            className="focus-activity-svg"
+            role="img"
+            aria-label={`Cumulative hours: ${currTotalHours.toFixed(1)} hrs this week compared to ${prevTotalHours.toFixed(1)} hrs last week`}
+          >
+            <defs>
+              <linearGradient
+                id="focus-activity-grad"
+                x1="0"
+                y1="0"
+                x2="0"
+                y2="1"
+              >
+                <stop offset="0%" stopColor="#f1c75b" stopOpacity="0.4" />
+                <stop offset="100%" stopColor="#f1c75b" stopOpacity="0.0" />
+              </linearGradient>
+            </defs>
+
+            {/* Horizontal gridlines & Y-axis labels */}
+            <text
+              x="26"
+              y={yTop + 4}
+              textAnchor="end"
+              fontSize="9"
+              fill="#616c63"
+              fontWeight="500"
+            >
+              {yMax}h
+            </text>
+            <line
+              x1={xStart}
+              y1={yTop}
+              x2={xEnd}
+              y2={yTop}
+              className="focus-activity-gridline"
+              strokeDasharray="3 3"
+            />
+
+            <text
+              x="26"
+              y={yMidPos + 3}
+              textAnchor="end"
+              fontSize="9"
+              fill="#616c63"
+              fontWeight="500"
+            >
+              {yMid}h
+            </text>
+            <line
+              x1={xStart}
+              y1={yMidPos}
+              x2={xEnd}
+              y2={yMidPos}
+              className="focus-activity-gridline"
+              strokeDasharray="3 3"
+            />
+
+            <text
+              x="26"
+              y={yBottom + 3}
+              textAnchor="end"
+              fontSize="9"
+              fill="#616c63"
+              fontWeight="500"
+            >
+              0h
+            </text>
+            <line
+              x1={xStart}
+              y1={yBottom}
+              x2={xEnd}
+              y2={yBottom}
+              className="focus-activity-gridline"
+            />
+
+            {/* Previous week baseline (dashed line across the week) */}
+            <polyline
+              points={prevPoints}
+              className="focus-activity-line-prev"
+            />
+
+            {/* Current week area fill & line */}
+            <polygon
+              points={currAreaPoints}
+              className="focus-activity-area"
+            />
+            <polyline
+              points={currLinePoints}
+              className="focus-activity-line-curr"
+            />
+
+            {/* Live pulsing dot indicator at current day */}
+            <circle
+              cx={currLastX}
+              cy={currLastY}
+              r="6.5"
+              fill="none"
+              stroke="#f1c75b"
+              strokeWidth="2"
+              className="focus-trend-pulse"
+            />
+            <circle cx={currLastX} cy={currLastY} r="3" fill="#282f2c" />
+
+            {/* X-axis day labels */}
+            {dayLabels.map((lbl, i) => {
+              const cx = getDayCenterX(i);
+              const isToday = i === nowDayIndex;
+              return (
+                <text
+                  key={i}
+                  x={cx}
+                  y={yBottom + 18}
+                  textAnchor="middle"
+                  fontSize="10"
+                  fontWeight={isToday ? "700" : "500"}
+                  fill={isToday ? "#282f2c" : "#616c63"}
+                >
+                  {lbl}
+                </text>
+              );
+            })}
+          </svg>
         </div>
       </section>
       <div className="focus-row">

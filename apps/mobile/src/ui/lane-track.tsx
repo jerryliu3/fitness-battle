@@ -113,12 +113,12 @@ export function LaneTrack({
                 <Stop offset="1" stopColor="#e4ecdc" />
               </LinearGradient>
               <LinearGradient id="youLane" x1="0" y1="0" x2="0" y2="1">
-                <Stop offset="0" stopColor="#d4ee8966" />
-                <Stop offset="1" stopColor="#d4ee8920" />
+                <Stop offset="0" stopColor="#f1c75b66" />
+                <Stop offset="1" stopColor="#f1c75b20" />
               </LinearGradient>
               <RadialGradient id="youGlow" cx="50%" cy="50%" r="50%">
-                <Stop offset="0" stopColor="#d4ee89" stopOpacity="0.55" />
-                <Stop offset="1" stopColor="#d4ee89" stopOpacity="0" />
+                <Stop offset="0" stopColor="#f1c75b" stopOpacity="0.55" />
+                <Stop offset="1" stopColor="#f1c75b" stopOpacity="0" />
               </RadialGradient>
             </Defs>
             <Rect width={w} height={540} rx={24} fill="url(#road)" />
@@ -129,7 +129,7 @@ export function LaneTrack({
               height={430}
               rx={18}
               fill="#ffffff55"
-              stroke="#d7e0cf"
+              stroke="#e0e5dc"
             />
             {ordered.map((l, i) => (
               <G key={l.id}>
@@ -148,7 +148,7 @@ export function LaneTrack({
                   x2={i * lw + 10}
                   y1={64}
                   y2={476}
-                  stroke={l.you ? "#b7c9a4" : "#ccd8c3"}
+                  stroke={l.you ? "#819486" : "#e0e5dc"}
                   strokeWidth={l.you ? 1.5 : 1}
                   strokeDasharray={l.you ? undefined : "4 8"}
                 />
@@ -158,7 +158,7 @@ export function LaneTrack({
                   textAnchor="middle"
                   fontSize={10}
                   fontWeight={l.you ? "700" : "400"}
-                  fill={l.you ? "#26382d" : "#768172"}
+                  fill={l.you ? "#282f2c" : "#616c63"}
                 >
                   {l.you ? selfLaneLabel(l.name, "caps") : initialsFromName(l.name)}
                 </SvgText>
@@ -176,10 +176,10 @@ export function LaneTrack({
                     x2={w - 50}
                     y1={y(n)}
                     y2={y(n)}
-                    stroke="#c5d2bb"
+                    stroke="#e0e5dc"
                     strokeDasharray="2 7"
                   />
-                  <SvgText x={w - 42} y={y(n) + 4} fontSize={9} fill="#768172">
+                  <SvgText x={w - 42} y={y(n) + 4} fontSize={9} fill="#616c63">
                     {n.toFixed(v.span < 6 ? 1 : 0)}
                   </SvgText>
                 </G>
@@ -191,10 +191,10 @@ export function LaneTrack({
                   x2={w - 50}
                   y1={y(0)}
                   y2={y(0)}
-                  stroke="#26382d"
+                  stroke="#282f2c"
                   strokeWidth={2}
                 />
-                <SvgText x={18} y={y(0) - 10} fontSize={9} fill="#768172">
+                <SvgText x={18} y={y(0) - 10} fontSize={9} fill="#616c63">
                   START
                 </SvgText>
               </G>
@@ -214,13 +214,13 @@ export function LaneTrack({
                   {l.you ? (
                     <Circle cx={xx} cy={yy} r={34} fill="url(#youGlow)" />
                   ) : null}
-                  <Circle cx={xx} cy={yy + 4} r={l.you ? 24 : 19} fill="#26382d18" />
+                  <Circle cx={xx} cy={yy + 4} r={l.you ? 24 : 19} fill="#282f2c18" />
                   <Circle
                     cx={xx}
                     cy={yy}
                     r={l.you ? 23 : 18}
-                    fill={l.you ? "#26382d" : "#fff"}
-                    stroke={l.you ? "#d4ee89" : "#c9d5bf"}
+                    fill={l.you ? "#282f2c" : "#ffffff"}
+                    stroke={l.you ? "#f1c75b" : "#e0e5dc"}
                     strokeWidth={l.you ? 4 : 2}
                   />
                   <SvgText
@@ -229,7 +229,7 @@ export function LaneTrack({
                     textAnchor="middle"
                     fontSize={10}
                     fontWeight="bold"
-                    fill={l.you ? "#f7faef" : "#26382d"}
+                    fill={l.you ? "#fafaf7" : "#282f2c"}
                   >
                     {edge
                       ? edge === "ahead"
@@ -243,15 +243,15 @@ export function LaneTrack({
                     width={48}
                     height={20}
                     rx={10}
-                    fill={l.you ? "#26382d" : "#ffffffee"}
-                    stroke="#d3ddcb"
+                    fill={l.you ? "#282f2c" : "#ffffffee"}
+                    stroke="#e0e5dc"
                   />
                   <SvgText
                     x={xx}
                     y={yy + 42}
                     textAnchor="middle"
                     fontSize={10}
-                    fill={l.you ? "#d4ee89" : "#26382d"}
+                    fill={l.you ? "#f1c75b" : "#282f2c"}
                   >
                     {value.toFixed(1)}
                   </SvgText>
@@ -265,15 +265,15 @@ export function LaneTrack({
                   cy={y(ghost.values[index] ?? 0)}
                   r={13}
                   fill="#ffffffcc"
-                  stroke="#768172"
+                  stroke="#616c63"
                   strokeDasharray="3 3"
                 />
               </G>
             )}
-            <SvgText x={w - 42} y={36} fontSize={9} fill="#768172">
+            <SvgText x={w - 42} y={36} fontSize={9} fill="#616c63">
               {unit}
             </SvgText>
-            <SvgText x={18} y={522} fontSize={9} fill="#768172">
+            <SvgText x={18} y={522} fontSize={9} fill="#616c63">
               Drag ↕ to explore · zoom keeps you centered
             </SvgText>
           </Svg>

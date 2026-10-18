@@ -68,7 +68,7 @@ export function AthleteMetrics({
             width: 86,
             height: 86,
             borderRadius: 44,
-            backgroundColor: "#26382d",
+            backgroundColor: "#282f2c",
             justifyContent: "center",
             alignItems: "center",
             overflow: "hidden",
@@ -84,7 +84,7 @@ export function AthleteMetrics({
               style={{
                 fontFamily: "DMSans_400Regular",
                 fontSize: 29,
-                color: "#d4ee89",
+                color: "#f1c75b",
               }}
             >
               {initialsFromName(state.name)}
@@ -104,7 +104,7 @@ export function AthleteMetrics({
         </View>
       </View>
       <View
-        style={[f.card, { backgroundColor: "#edf2e8", borderColor: "#d7e0d0" }]}
+        style={[f.card, { backgroundColor: "#eef0e9", borderColor: "#e0e5dc" }]}
         accessibilityLabel="Your season so far"
       >
         <Text style={f.kicker}>Your season so far</Text>
@@ -147,15 +147,15 @@ export function AthleteMetrics({
               : "Current effort score; no closed weeks yet"
           }
         >
-          <Line x1={0} x2={320} y1={35} y2={35} stroke="#e0e5dd" />
-          <Line x1={0} x2={320} y1={75} y2={75} stroke="#e0e5dd" />
+          <Line x1={0} x2={320} y1={35} y2={35} stroke="#e0e5dc" />
+          <Line x1={0} x2={320} y1={75} y2={75} stroke="#e0e5dc" />
           {values.length === 1 ? (
-            <Circle cx={160} cy={62} r={5} fill="#26382d" />
+            <Circle cx={160} cy={62} r={5} fill="#282f2c" />
           ) : (
             <Polyline
               points={points}
               fill="none"
-              stroke="#26382d"
+              stroke="#282f2c"
               strokeWidth={3}
               strokeLinejoin="round"
             />

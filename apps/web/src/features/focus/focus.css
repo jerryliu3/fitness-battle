@@ -1,16 +1,17 @@
 .phone-frame {
-  background: #fafbf8;
+  background: #fafaf7;
 }
 .phone-shell {
-  --ink: #26382d;
-  --muted: #768172;
-  --line: #e0e5dd;
-  --paper: #fafbf8;
-  --card: #fff;
-  --lime: #d4ee89;
-  --accent: #26382d;
-  --accent-soft: #edf2e8;
-  --green-soft: #edf4e6;
+  --ink: #282f2c;
+  --muted: #616c63;
+  --line: #e0e5dc;
+  --paper: #fafaf7;
+  --card: #ffffff;
+  --lime: #f1c75b;
+  --accent: #282f2c;
+  --accent-soft: #eef0e9;
+  --green-soft: #eef0e9;
+  --ot-secondary: #819486;
   --shell-pad-x: 24px;
   background: var(--paper);
   font-weight: 400;
@@ -33,7 +34,7 @@
   justify-content: space-between;
   padding: 0 max(24px, calc((100vw - 972px) / 2));
   border-bottom: 1px solid var(--line);
-  background: #fafbf8;
+  background: #fafaf7;
 }
 .focus-shell-header > a {
   text-decoration: none;
@@ -54,7 +55,7 @@
   gap: 6px;
 }
 .phone-shell .phone-tab {
-  border-radius: 16px;
+  border-radius: 12px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -66,15 +67,15 @@
   position: relative;
 }
 .phone-shell .phone-pill {
-  background: #d4ee89;
-  border-radius: 16px;
+  background: #f1c75b;
+  border-radius: 12px;
   inset: 4px;
 }
 .phone-shell .phone-tab[data-state="active"] {
-  color: #26382d;
+  color: #282f2c;
 }
 .phone-shell .phone-guest {
-  background: #edf2e8;
+  background: #eef0e9;
   font-size: 12px;
   border-radius: 10px;
 }
@@ -82,7 +83,7 @@
   font-size: 9px;
   letter-spacing: 1.5px;
   font-weight: 600;
-  color: #768172;
+  color: #616c63;
   margin: 0 0 10px;
   text-transform: uppercase;
 }
@@ -106,19 +107,21 @@
 .phone-shell .fb-copy {
   font-size: 13px;
   line-height: 1.8;
-  color: #768172;
+  color: #616c63;
 }
 .phone-shell .fb-note {
   font-size: 11px;
-  color: #768172;
+  color: #616c63;
   line-height: 1.7;
 }
 .phone-shell .fb-card,
 .phone-shell .sp-empty {
   background: #fff;
-  border: 1px solid #e0e5dd;
-  border-radius: 20px;
+  border: 1px solid #e0e5dc;
+  border-bottom: 3px solid #e0e5dc;
+  border-radius: 16px;
   padding: 23px;
+  box-shadow: 0 5px 18px #282f2c04;
 }
 .phone-shell .fb-btn,
 .phone-shell .fb-btn-line,
@@ -127,24 +130,31 @@
   font:
     500 12px var(--font-body),
     sans-serif;
-  border-radius: 11px;
+  border-radius: 12px;
   padding: 12px 17px;
   cursor: pointer;
+  transition: transform 0.1s ease, box-shadow 0.1s ease;
 }
 .phone-shell .fb-btn {
-  background: #26382d;
-  color: #f6faee;
-  border: 1px solid #26382d;
+  background: #282f2c;
+  color: #fafaf7;
+  border: 1px solid #282f2c;
+  border-bottom-width: 3px;
+  box-shadow: 0 2px 0 #00000012;
+}
+.phone-shell .fb-btn:active {
+  transform: translateY(1px);
+  box-shadow: none;
 }
 .phone-shell .fb-btn-line {
   background: transparent;
-  color: #26382d;
-  border: 1px solid #dce3d7;
+  color: #282f2c;
+  border: 1px solid #e0e5dc;
 }
 .phone-shell .fb-btn-ghost {
   background: transparent;
   border: 0;
-  color: #26382d;
+  color: #282f2c;
 }
 .phone-shell button:disabled {
   opacity: 0.45;
@@ -153,15 +163,15 @@
 .phone-shell button:focus-visible,
 .phone-shell a:focus-visible,
 .focus-sheet :focus-visible {
-  outline: 3px solid #9bbf63;
+  outline: 3px solid #f1c75b;
   outline-offset: 3px;
 }
 .phone-shell select,
 .focus-sheet select {
   font: inherit;
   background: #fff;
-  color: #26382d;
-  border: 1px solid #dce3d7;
+  color: #282f2c;
+  border: 1px solid #e0e5dc;
   border-radius: 9px;
   padding: 10px;
   max-width: 100%;
@@ -189,7 +199,7 @@
   display: grid;
   gap: 0;
   background: #fff;
-  border: 1px solid #e0e5dd;
+  border: 1px solid #e0e5dc;
   border-radius: 18px;
   overflow: hidden;
   margin: 8px 0 20px;
@@ -205,7 +215,7 @@
   border: 0;
   border-bottom: 1px solid #e8eee3;
   background: #fff;
-  color: #26382d;
+  color: #282f2c;
   font: inherit;
   cursor: pointer;
 }
@@ -224,7 +234,7 @@
 }
 .focus-settings-row small {
   font-size: 12px;
-  color: #768172;
+  color: #616c63;
 }
 .focus-settings-row:hover {
   background: #f5f8f1;
@@ -278,7 +288,7 @@
   font-size: 13px;
 }
 .focus-member-list small {
-  color: #768172;
+  color: #616c63;
   font-size: 10px;
 }
 .focus-actions-stack {
@@ -291,7 +301,7 @@
   justify-content: center;
 }
 .focus-season-strip {
-  background: #edf2e8;
+  background: #eef0e9;
   border: 1px solid #d7e0d0;
   border-radius: 18px;
   padding: 20px 22px;
@@ -309,7 +319,7 @@
   font-size: 28px;
   font-weight: 400;
   letter-spacing: -1px;
-  color: #26382d;
+  color: #282f2c;
 }
 .focus-season-stats span {
   display: block;
@@ -317,7 +327,7 @@
   font-size: 10px;
   letter-spacing: 0.8px;
   text-transform: uppercase;
-  color: #768172;
+  color: #616c63;
 }
 .focus-row {
   display: flex;
@@ -329,15 +339,15 @@
 }
 .focus-card {
   background: #fff;
-  border: 1px solid #e0e5dd;
+  border: 1px solid #e0e5dc;
   border-radius: 22px;
   padding: 25px;
   margin: 20px 0;
 }
 .focus-suggestion {
-  border: 1px solid #e0e5dd;
+  border: 1px solid #e0e5dc;
   background: #fff;
-  color: #26382d;
+  color: #282f2c;
   border-radius: 28px;
   display: flex;
   align-items: center;
@@ -360,7 +370,7 @@
   font-size: 9px;
   letter-spacing: 1.3px;
   text-transform: uppercase;
-  color: #768172;
+  color: #616c63;
 }
 .focus-suggestion strong {
   font-size: 31px;
@@ -372,7 +382,7 @@
 .focus-suggestion em {
   font-style: normal;
   font-size: 11px;
-  color: #768172;
+  color: #616c63;
 }
 .focus-suggestion > svg,
 .focus-suggestion-ember {
@@ -389,7 +399,7 @@
 }
 .phone-shell .focus-disclosure {
   background: #fff;
-  border: 1px solid #e0e5dd;
+  border: 1px solid #e0e5dc;
   border-radius: 14px;
   margin: 18px 0;
   overflow: hidden;
@@ -410,7 +420,7 @@
 }
 .phone-shell .focus-disclosure > summary > span {
   font-size: 11px;
-  color: #768172;
+  color: #616c63;
   font-weight: 400;
 }
 .focus-details-body {
@@ -433,7 +443,7 @@
   gap: 16px;
   align-items: center;
   background: #fff;
-  border: 1px solid #e0e5dd;
+  border: 1px solid #e0e5dc;
   border-radius: 22px;
   padding: 18px 18px;
   margin: 8px 0 22px;
@@ -473,14 +483,14 @@
 .focus-profile-email {
   margin: 2px 0 0;
   font-size: 13px;
-  color: #768172;
+  color: #616c63;
   word-break: break-word;
 }
 .focus-profile-edit {
   flex-shrink: 0;
   width: 34px;
   height: 34px;
-  border: 1px solid #e0e5dd;
+  border: 1px solid #e0e5dc;
   border-radius: 50%;
   background: #f7f9f4;
   color: #43543f;
@@ -490,7 +500,7 @@
   padding: 0;
 }
 .focus-profile-edit:hover {
-  background: #edf2e8;
+  background: #eef0e9;
 }
 .focus-profile-edit svg {
   width: 15px;
@@ -499,8 +509,8 @@
 .focus-portrait {
   width: 86px;
   height: 86px;
-  background: #26382d;
-  color: #d4ee89;
+  background: #282f2c;
+  color: #f1c75b;
   border-radius: 50%;
   display: grid;
   place-items: center;
@@ -550,7 +560,7 @@
   align-self: flex-start;
   border: 0;
   background: transparent;
-  color: #768172;
+  color: #616c63;
   font: inherit;
   font-size: 13px;
   padding: 8px 0;
@@ -559,7 +569,7 @@
 .focus-expand-panel {
   flex: 1;
   background: #fff;
-  border: 1px solid #e0e5dd;
+  border: 1px solid #e0e5dc;
   border-radius: 24px;
   padding: 28px 24px 36px;
   position: relative;
@@ -597,10 +607,10 @@
   width: 100%;
   text-align: left;
   padding: 14px 16px;
-  border: 1px solid #e0e5dd;
+  border: 1px solid #e0e5dc;
   border-radius: 14px;
   background: #fff;
-  color: #26382d;
+  color: #282f2c;
   font: inherit;
   cursor: pointer;
 }
@@ -610,11 +620,11 @@
 }
 .focus-sport-option small {
   font-size: 11px;
-  color: #768172;
+  color: #616c63;
 }
 .focus-sport-option.is-on {
-  border-color: #26382d;
-  background: #edf2e8;
+  border-color: #282f2c;
+  background: #eef0e9;
 }
 .focus-coming-soon {
   opacity: 0.72;
@@ -649,7 +659,7 @@
 }
 .focus-crew-preview-list span {
   font-size: 12px;
-  color: #768172;
+  color: #616c63;
   line-height: 1.45;
 }
 @media (max-width: 520px) {
@@ -670,8 +680,8 @@
 }
 .focus-elo-track-toggle {
   display: inline-flex;
-  background: #edf2e8;
-  border: 1px solid #dce3d7;
+  background: #eef0e9;
+  border: 1px solid #e0e5dc;
   border-radius: 7px;
   padding: 2px;
   gap: 2px;
@@ -685,14 +695,14 @@
   text-transform: uppercase;
   letter-spacing: 0.8px;
   border-radius: 5px;
-  color: #768172;
+  color: #616c63;
   cursor: pointer;
   line-height: 1.4;
   transition: all 0.15s ease;
 }
 .focus-elo-track-toggle button[aria-pressed="true"] {
   background: #fff;
-  color: #26382d;
+  color: #282f2c;
   box-shadow: 0 1px 3px rgba(38, 56, 45, 0.08);
 }
 .focus-elo-rank-pill {
@@ -716,7 +726,7 @@
   line-height: 1;
   font-weight: 700;
   letter-spacing: -1.5px;
-  color: #26382d;
+  color: #282f2c;
 }
 .focus-status {
   text-align: right;
@@ -726,7 +736,7 @@
 .focus-status small {
   display: block;
   font-size: 10px;
-  color: #768172;
+  color: #616c63;
   margin-top: 5px;
   letter-spacing: 0;
 }
@@ -743,12 +753,12 @@
   align-items: center;
   gap: 18px;
   padding: 22px;
-  background: #edf2e8;
-  border: 1px solid #e0e5dd;
+  background: #eef0e9;
+  border: 1px solid #e0e5dc;
   border-radius: 16px;
   text-decoration: none;
   margin: 20px 0;
-  color: #26382d;
+  color: #282f2c;
 }
 .focus-benchmark > span:first-child {
   font-size: 28px;
@@ -764,7 +774,7 @@
 .focus-benchmark small {
   display: block;
   font-size: 11px;
-  color: #768172;
+  color: #616c63;
   margin-top: 6px;
 }
 .focus-journey {
@@ -817,7 +827,7 @@
   height: 80px;
   margin: 0;
   background: #fff;
-  border: 1px solid #e0e5dd;
+  border: 1px solid #e0e5dc;
   border-bottom: 5px solid #cdd9c1;
   border-radius: 50%;
   transform: translate(-50%, -50%);
@@ -851,7 +861,7 @@
 }
 .focus-path-row > button small {
   font-size: 9px;
-  color: #768172;
+  color: #616c63;
 }
 .focus-path-row > button i {
   position: absolute;
@@ -859,19 +869,20 @@
   right: -4px;
   width: 20px;
   height: 20px;
-  background: #d4ee89;
+  background: #f1c75b;
+  color: #282f2c;
   border-radius: 50%;
   font: 10px sans-serif;
   display: grid;
   place-items: center;
-  border: 2px solid #fafbf8;
+  border: 2px solid #fafaf7;
 }
 .focus-path-row > span {
   position: absolute;
   top: 50%;
   z-index: 1;
   transform: translateY(-50%);
-  background: #fafbf8bb;
+  background: #fafaf7bb;
   display: flex;
   flex-direction: column;
   gap: 5px;
@@ -893,16 +904,17 @@
   font-size: 9px;
   text-transform: uppercase;
   letter-spacing: 1px;
-  color: #768172;
+  color: #616c63;
 }
 .focus-path-row > span b {
   font-size: 12px;
   font-weight: 500;
+  color: #282f2c;
 }
 .focus-path-row > span em {
   font-style: normal;
   font-size: 10px;
-  color: #768172;
+  color: #616c63;
   line-height: 1.6;
 }
 .focus-path-row.is-future {
@@ -929,12 +941,12 @@
   overflow: visible;
 }
 .focus-path-row.is-current > button {
-  background: #d4ee89;
+  background: #f1c75b;
   border-radius: 50%;
   width: 82px;
   height: 82px;
-  border: 2px solid #b5d55b;
-  border-bottom: 5px solid #9ebf42;
+  border: 2px solid #dfb648;
+  border-bottom: 5px solid #c99f36;
   overflow: visible;
   z-index: 1;
 }
@@ -943,7 +955,7 @@
   position: absolute;
   inset: -8px;
   border-radius: 50%;
-  border: 2px solid rgba(181, 213, 91, 0.85);
+  border: 2px solid rgba(241, 199, 91, 0.85);
   animation: fb-duo-pulse 2s cubic-bezier(0.25, 1, 0.5, 1) infinite;
   pointer-events: none;
   z-index: 0;
@@ -983,7 +995,7 @@
   background: #f1f5ec;
   border: 2px dashed #b7c9a4;
   border-bottom: 4px solid #a4b990;
-  color: #26382d;
+  color: #282f2c;
 }
 .focus-path-row.is-start > button i {
   position: static;
@@ -999,16 +1011,43 @@
   color: #43543f;
 }
 .focus-stats-card {
-  background: #edf2e8;
-  border: 1px solid #e0e5dd;
-  border-radius: 20px;
-  padding: 16px 20px;
+  background: #ffffff;
+  border: 1px solid #e0e5dc;
+  border-bottom: 3px solid #e0e5dc;
+  border-radius: 16px;
+  padding: 18px 20px 16px;
   margin: 6px 0 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  box-shadow: 0 5px 18px #282f2c04;
 }
 .focus-stats-body {
   display: flex;
   align-items: flex-end;
   gap: 18px;
+}
+.focus-stats-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+.focus-stats-header strong {
+  font-size: 24px;
+  font-weight: 600;
+  color: #282f2c;
+  letter-spacing: -0.02em;
+}
+.focus-stats-summary {
+  display: flex;
+  gap: 12px;
+  font-size: 12px;
+  color: #616c63;
+}
+.focus-stats-summary b {
+  color: #282f2c;
+  font-weight: 600;
 }
 .focus-stats-hours {
   flex: 0 0 auto;
@@ -1018,9 +1057,82 @@
   display: block;
   font-size: 28px;
   font-weight: 600;
-  color: #26382d;
+  color: #282f2c;
   letter-spacing: -0.6px;
   line-height: 1.1;
+}
+.focus-activity-chart-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-top: 12px;
+  border-top: 1px solid #e0e5dc;
+}
+.focus-activity-legend {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 11px;
+  color: #616c63;
+}
+.focus-activity-legend-items {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.focus-activity-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.focus-activity-legend-swatch {
+  width: 14px;
+  height: 3px;
+  border-radius: 2px;
+  background: #282f2c;
+}
+.focus-activity-legend-swatch.is-prev {
+  background: none;
+  border-top: 2px dashed #819486;
+  height: 0;
+}
+.focus-activity-delta {
+  font-size: 11px;
+  font-weight: 600;
+  color: #282f2c;
+  background: #eef0e9;
+  padding: 2px 7px;
+  border-radius: 6px;
+}
+.focus-activity-svg {
+  display: block;
+  width: 100%;
+  height: 128px;
+  overflow: visible;
+}
+.focus-activity-svg text {
+  font-family: var(--font-body), sans-serif;
+  fill: #616c63;
+}
+.focus-activity-gridline {
+  stroke: #e0e5dc;
+  stroke-width: 1;
+}
+.focus-activity-line-curr {
+  stroke: #282f2c;
+  stroke-width: 2.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  fill: none;
+}
+.focus-activity-line-prev {
+  stroke: #819486;
+  stroke-width: 1.8;
+  stroke-dasharray: 4 4;
+  fill: none;
+}
+.focus-activity-area {
+  fill: url(#focus-activity-grad);
 }
 .focus-mini-chart {
   flex: 1;
@@ -1030,6 +1142,8 @@
   gap: 6px;
   height: 58px;
   min-width: 0;
+  padding-top: 8px;
+  border-top: 1px solid #e0e5dc;
 }
 .focus-mini-bar-col {
   flex: 1;
@@ -1042,8 +1156,8 @@
 .focus-mini-bar-track {
   flex: 1;
   width: 100%;
-  max-width: 22px;
-  background: transparent;
+  max-width: 26px;
+  background: #eef0e9;
   border-radius: 6px;
   display: flex;
   align-items: flex-end;
@@ -1052,13 +1166,13 @@
 }
 .focus-mini-bar-fill {
   width: 100%;
-  background: #a4be60;
-  border-radius: 8px 8px 4px 4px;
+  background: #f1c75b;
+  border-radius: 6px;
   transition: height 0.3s ease;
   min-height: 8px;
 }
 .focus-mini-bar-col.is-today .focus-mini-bar-fill {
-  background: #26382d;
+  background: #282f2c;
 }
 .focus-mini-bar-col.is-empty .focus-mini-bar-track {
   align-items: flex-end;
@@ -1074,10 +1188,10 @@
 .focus-mini-bar-day {
   font-size: 10px;
   font-weight: 500;
-  color: #768172;
+  color: #616c63;
 }
 .focus-mini-bar-col.is-today .focus-mini-bar-day {
-  color: #26382d;
+  color: #282f2c;
   font-weight: 700;
 }
 .focus-mini-bar-col:not(.is-empty) .focus-mini-bar-day {
@@ -1085,14 +1199,14 @@
   font-weight: 600;
 }
 .focus-mini-bar-col.is-today:not(.is-empty) .focus-mini-bar-day {
-  color: #26382d;
+  color: #282f2c;
 }
 .focus-athlete-popup {
   position: relative;
   margin-top: 10px;
   padding: 12px 14px;
   background: #ffffff;
-  border: 1px solid #e0e5dd;
+  border: 1px solid #e0e5dc;
   border-radius: 12px;
   box-shadow: 0 4px 14px rgba(38, 56, 45, 0.08);
   display: flex;
@@ -1107,26 +1221,26 @@
 .focus-athlete-popup-head b {
   font-size: 14px;
   font-weight: 600;
-  color: #26382d;
+  color: #282f2c;
 }
 .focus-athlete-popup-close {
   background: none;
   border: none;
   font-size: 18px;
   line-height: 1;
-  color: #768172;
+  color: #616c63;
   cursor: pointer;
   padding: 0 4px;
 }
 .focus-athlete-popup-close:hover {
-  color: #26382d;
+  color: #282f2c;
 }
 .focus-athlete-popup-body {
   display: flex;
   align-items: baseline;
   gap: 8px;
   font-size: 13px;
-  color: #26382d;
+  color: #282f2c;
 }
 @keyframes fb-stock-pulse {
   0% {
@@ -1168,18 +1282,18 @@
 }
 .focus-registration-tabs button {
   padding: 12px 16px;
-  border: 1px solid #e0e5dd;
+  border: 1px solid #e0e5dc;
   border-radius: 11px;
   background: #fff;
   font:
     12px var(--font-body),
     sans-serif;
   cursor: pointer;
-  color: #26382d;
+  color: #282f2c;
 }
 .focus-registration-tabs button[aria-pressed="true"] {
-  border-color: #26382d;
-  background: #edf2e8;
+  border-color: #282f2c;
+  background: #eef0e9;
 }
 .focus-registration-tabs > button:last-child {
   border-style: dashed;
@@ -1197,7 +1311,7 @@
 }
 .focus-arena-stage {
   background: #fff;
-  border: 1px solid #e0e5dd;
+  border: 1px solid #e0e5dc;
   border-radius: 24px;
   padding: 24px;
   margin: 20px 0;
@@ -1216,19 +1330,19 @@
 .focus-arena-total strong small {
   font-size: 16px;
   letter-spacing: 0;
-  color: #768172;
+  color: #616c63;
   margin-left: 7px;
 }
 .focus-gain {
   font-size: 12px;
-  color: #768172;
+  color: #616c63;
   margin: 0 0 24px;
 }
 .focus-segments {
   display: flex;
   padding: 4px;
-  border: 1px solid #e0e5dd;
-  background: #edf2e8;
+  border: 1px solid #e0e5dc;
+  background: #eef0e9;
   border-radius: 11px;
   gap: 4px;
 }
@@ -1241,13 +1355,13 @@
   border-radius: 8px;
   font-size: 12px;
   cursor: pointer;
-  color: #768172;
+  color: #616c63;
 }
 .focus-segments > button[aria-selected="true"],
 .focus-segments > button[aria-pressed="true"] {
   background: #fff;
-  color: #26382d;
-  box-shadow: 0 1px 4px #26382d0c;
+  color: #282f2c;
+  box-shadow: 0 1px 4px #282f2c0c;
 }
 .focus-track-frame {
   position: relative;
@@ -1279,18 +1393,18 @@
   font:
     10px var(--font-body),
     sans-serif;
-  fill: #768172;
+  fill: #616c63;
   letter-spacing: 1px;
 }
 .lane-title.is-you {
-  fill: #26382d;
+  fill: #282f2c;
   font-weight: 700;
 }
 .lane-distance {
   font:
     9px var(--font-body),
     sans-serif;
-  fill: #768172;
+  fill: #616c63;
 }
 .lane-initial {
   font:
@@ -1301,7 +1415,7 @@
   font:
     10px var(--font-body),
     sans-serif;
-  fill: #26382d;
+  fill: #282f2c;
 }
 .focus-track-controls {
   display: flex;
@@ -1311,10 +1425,10 @@
 .focus-track-controls > button {
   min-width: 36px;
   min-height: 38px;
-  border: 1px solid #e0e5dd;
+  border: 1px solid #e0e5dc;
   border-radius: 9px;
-  background: #fafbf8;
-  color: #26382d;
+  background: #fafaf7;
+  color: #282f2c;
   font:
     11px var(--font-body),
     sans-serif;
@@ -1328,7 +1442,7 @@
   gap: 12px;
   margin: 16px 0;
   font-size: 11px;
-  color: #768172;
+  color: #616c63;
 }
 .focus-track-caption label {
   display: flex;
@@ -1345,9 +1459,9 @@
   padding: 15px 0;
   width: 100%;
   border: 0;
-  border-bottom: 1px solid #e0e5dd;
+  border-bottom: 1px solid #e0e5dc;
   background: transparent;
-  color: #26382d;
+  color: #282f2c;
   text-align: left;
   cursor: pointer;
   font-size: 12px;
@@ -1358,7 +1472,7 @@
 }
 .focus-standings small {
   font-size: 10px;
-  color: #768172;
+  color: #616c63;
 }
 .focus-standings strong {
   font-size: 11px;
@@ -1373,10 +1487,10 @@
 .focus-camera button {
   font-size: 10px;
   background: #ffffffdd;
-  border: 1px solid #dce3d7;
+  border: 1px solid #e0e5dc;
   border-radius: 20px;
   padding: 9px 14px;
-  color: #26382d;
+  color: #282f2c;
   cursor: pointer;
 }
 .focus-track-frame .fd-live-world {
@@ -1385,35 +1499,38 @@
 }
 .focus-track-frame .fd-world-label {
   background: #fffffff0;
-  color: #26382d;
-  border: 1px solid #dce3d7;
+  color: #282f2c;
+  border: 1px solid #e0e5dc;
   border-radius: 10px;
-  box-shadow: 0 3px 15px #26382d12;
+  box-shadow: 0 3px 15px #282f2c12;
 }
 .focus-track-frame .fd-world-label span {
-  color: #768172;
+  color: #616c63;
 }
 .focus-track-frame .fd-loading {
-  background: #edf2e8;
-  color: #26382d;
+  background: #eef0e9;
+  color: #282f2c;
 }
 .focus-crew-hero {
-  background: #26382d;
-  color: #fafbf8;
-  border-radius: 24px;
+  background: #282f2c;
+  color: #fafaf7;
+  border-radius: 20px;
+  border: 1px solid #282f2c;
+  border-bottom: 3px solid #1a1f1d;
+  box-shadow: 0 5px 18px #282f2c08;
   padding: 32px;
   margin: 24px 0;
 }
 .phone-shell .focus-crew-hero h2 {
   font-size: 43px;
   line-height: 1.08;
-  color: #fafbf8;
+  color: #fafaf7;
   max-width: 450px;
   font-weight: 400;
   letter-spacing: -1.5px;
 }
 .phone-shell .focus-crew-hero .fb-kicker {
-  color: #d4ee8999;
+  color: #f1c75bcc;
 }
 .focus-crew-hero p {
   font-size: 12px;
@@ -1423,7 +1540,7 @@
   border: 1px solid #ffffff70;
   background: transparent;
   border-radius: 30px;
-  color: #fafbf8;
+  color: #fafaf7;
   font-size: 11px;
   padding: 12px 16px;
   cursor: pointer;
@@ -1440,13 +1557,13 @@
   display: grid;
   place-items: center;
   font-size: 11px;
-  background: #d4ee89;
-  color: #26382d;
-  border: 2px solid #26382d;
+  background: #f1c75b;
+  color: #282f2c;
+  border: 2px solid #282f2c;
 }
 .focus-avatar-stack span + span {
   margin-left: -8px;
-  background: #b5c6a8;
+  background: #819486;
 }
 .focus-goal {
   font-size: 40px !important;
@@ -1455,12 +1572,12 @@
 }
 .focus-goal small {
   font-size: 15px;
-  color: #768172;
+  color: #616c63;
 }
 .focus-card progress {
   height: 10px;
   width: 100%;
-  accent-color: #26382d;
+  accent-color: #282f2c;
   margin-top: 15px;
 }
 .focus-actions {
@@ -1475,7 +1592,7 @@
   display: flex;
   gap: 16px;
   padding: 20px 0;
-  border-bottom: 1px solid #e0e5dd;
+  border-bottom: 1px solid #e0e5dc;
   font-size: 13px;
 }
 .focus-feed-entry > div {
@@ -1487,41 +1604,41 @@
 .focus-feed-entry small {
   display: block;
   font-size: 10px;
-  color: #768172;
+  color: #616c63;
   margin-top: 6px;
 }
 .focus-feed-entry p {
   padding: 17px;
-  background: #f3f6ef;
+  background: #eef0e9;
   border-radius: 11px;
   font-size: 12px;
 }
 .focus-small-avatar {
   border: 0;
-  background: #edf2e8;
+  background: #eef0e9;
 }
 .focus-feedback {
   font-size: 12px;
-  color: #26382d;
-  background: #edf2e8;
+  color: #282f2c;
+  background: #eef0e9;
   padding: 16px;
   border-radius: 12px;
 }
 .focus-sheet {
-  --ink: #26382d;
-  --muted: #768172;
-  --line: #e0e5dd;
-  --paper: #fafbf8;
-  --card: #fff;
-  --lime: #d4ee89;
-  --accent: #26382d;
-  background: #fafbf8;
-  color: #26382d;
+  --ink: #282f2c;
+  --muted: #616c63;
+  --line: #e0e5dc;
+  --paper: #fafaf7;
+  --card: #ffffff;
+  --lime: #f1c75b;
+  --accent: #282f2c;
+  background: #fafaf7;
+  color: #282f2c;
   max-height: 90dvh;
   overflow-y: auto;
   padding: 30px;
   z-index: 100;
-  border: 1px solid #e0e5dd;
+  border: 1px solid #e0e5dc;
 }
 .sheet-overlay {
   z-index: 90;
@@ -1530,8 +1647,8 @@
 }
 .focus-sheet .sheet-close,
 .focus-sheet .fb-btn {
-  background: #26382d;
-  color: #f4fae9;
+  background: #282f2c;
+  color: #fafaf7;
   border: 0;
   border-radius: 10px;
   min-height: 46px;
@@ -1549,10 +1666,10 @@
 .focus-sheet input,
 .focus-sheet select {
   font: inherit;
-  color: #26382d;
+  color: #282f2c;
   background: #fff;
   padding: 13px;
-  border: 1px solid #dce3d7;
+  border: 1px solid #e0e5dc;
   border-radius: 9px;
   width: 100%;
 }
@@ -1562,8 +1679,8 @@
 .focus-sheet .fb-btn-line {
   min-height: 44px;
   background: #fff;
-  color: #26382d;
-  border: 1px solid #e0e5dd;
+  color: #282f2c;
+  border: 1px solid #e0e5dc;
   border-radius: 9px;
   padding: 12px;
   cursor: pointer;
@@ -1571,7 +1688,7 @@
 .focus-sheet .fb-note {
   font-size: 11px;
   line-height: 1.7;
-  color: #768172;
+  color: #616c63;
 }
 @media (max-width: 600px) {
   .focus-shell-header {
@@ -1740,8 +1857,8 @@
 }
 .focus-return {
   flex-shrink: 0;
-  background: #edf2e8;
-  border-bottom: 1px solid #dce3d7;
+  background: #eef0e9;
+  border-bottom: 1px solid #e0e5dc;
   padding: 16px max(24px, calc((100vw - 972px) / 2));
   display: flex;
   align-items: center;
@@ -1754,7 +1871,7 @@
 }
 .focus-return p {
   font-size: 11px;
-  color: #768172;
+  color: #616c63;
   margin: 6px 0 0;
 }
 .focus-return button {
@@ -1765,7 +1882,7 @@
   font:
     11px var(--font-body),
     sans-serif;
-  color: #26382d;
+  color: #282f2c;
   cursor: pointer;
 }
 @media (max-width: 600px) {
@@ -1778,6 +1895,6 @@
   }
 }
 .focus-track-frame .fd-world-label.is-selected {
-  border-color: #9bbf63;
-  box-shadow: 0 3px 15px #26382d15;
+  border-color: #f1c75b;
+  box-shadow: 0 3px 15px #282f2c15;
 }

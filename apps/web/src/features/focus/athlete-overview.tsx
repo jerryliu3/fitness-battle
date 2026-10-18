@@ -409,8 +409,8 @@ export function AthleteOverview({
         >
           <defs>
             <linearGradient id="focus-trend-grad" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#d4ee89" stopOpacity="0.5" />
-              <stop offset="100%" stopColor="#d4ee89" stopOpacity="0.0" />
+              <stop offset="0%" stopColor="#f1c75b" stopOpacity="0.45" />
+              <stop offset="100%" stopColor="#f1c75b" stopOpacity="0.0" />
             </linearGradient>
           </defs>
 
@@ -420,7 +420,7 @@ export function AthleteOverview({
             y={yTop}
             textAnchor="end"
             dominantBaseline="middle"
-            fill="#768172"
+            fill="#616c63"
             fontSize="10"
             fontFamily="inherit"
             fontWeight="500"
@@ -432,7 +432,7 @@ export function AthleteOverview({
             y1={yTop}
             x2={xEnd}
             y2={yTop}
-            stroke="#e4ebd9"
+            stroke="#e0e5dc"
             strokeDasharray="3 3"
           />
 
@@ -441,7 +441,7 @@ export function AthleteOverview({
             y={yMidPos}
             textAnchor="end"
             dominantBaseline="middle"
-            fill="#768172"
+            fill="#616c63"
             fontSize="10"
             fontFamily="inherit"
             fontWeight="500"
@@ -453,7 +453,7 @@ export function AthleteOverview({
             y1={yMidPos}
             x2={xEnd}
             y2={yMidPos}
-            stroke="#e4ebd9"
+            stroke="#e0e5dc"
             strokeDasharray="3 3"
           />
 
@@ -462,7 +462,7 @@ export function AthleteOverview({
             y={yBottom}
             textAnchor="end"
             dominantBaseline="middle"
-            fill="#768172"
+            fill="#616c63"
             fontSize="10"
             fontFamily="inherit"
             fontWeight="500"
@@ -492,7 +492,7 @@ export function AthleteOverview({
           <polygon points={areaPoints} fill="url(#focus-trend-grad)" />
           <polyline
             points={linePoints}
-            stroke="#26382d"
+            stroke="#282f2c"
             strokeWidth="2.5"
             strokeLinejoin="round"
             strokeLinecap="round"
@@ -506,11 +506,11 @@ export function AthleteOverview({
             cy={lastPoint.y}
             r="7"
             fill="none"
-            stroke="#2f6f4e"
+            stroke="#f1c75b"
             strokeWidth="2"
             className="focus-trend-pulse"
           />
-          <circle cx={lastPoint.x} cy={lastPoint.y} r="3.5" fill="#26382d" />
+          <circle cx={lastPoint.x} cy={lastPoint.y} r="3.5" fill="#282f2c" />
 
           {/* X-axis tick marks */}
           <line
@@ -543,7 +543,7 @@ export function AthleteOverview({
             x={xStart}
             y="136"
             textAnchor="start"
-            fill="#768172"
+            fill="#616c63"
             fontSize="10"
             fontFamily="inherit"
           >
@@ -553,7 +553,7 @@ export function AthleteOverview({
             x={xMid}
             y="136"
             textAnchor="middle"
-            fill="#768172"
+            fill="#616c63"
             fontSize="10"
             fontFamily="inherit"
           >
@@ -563,7 +563,7 @@ export function AthleteOverview({
             x={xEnd}
             y="136"
             textAnchor="end"
-            fill="#768172"
+            fill="#616c63"
             fontSize="10"
             fontFamily="inherit"
           >

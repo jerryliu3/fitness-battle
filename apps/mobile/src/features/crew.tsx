@@ -212,17 +212,17 @@ export function CrewHub() {
             style={{
               padding: 28,
               borderRadius: 24,
-              backgroundColor: "#26382d",
+              backgroundColor: "#282f2c",
               gap: 17,
             }}
           >
-            <Text style={[f.kicker, { color: "#d4ee8999" }]}>
+            <Text style={[f.kicker, { color: "#f1c75bcc" }]}>
               Your people · {members.length} members
             </Text>
             <Text
               style={[
                 f.title,
-                { fontSize: 39, lineHeight: 43, color: "#fafbf8" },
+                { fontSize: 39, lineHeight: 43, color: "#fafaf7" },
               ]}
             >
               {crew.name}
@@ -239,7 +239,7 @@ export function CrewHub() {
                       f.avatar,
                       {
                         borderWidth: 2,
-                        borderColor: "#26382d",
+                        borderColor: "#282f2c",
                         marginLeft: i ? -8 : 0,
                       },
                     ]}
@@ -260,7 +260,7 @@ export function CrewHub() {
                   borderRadius: 30,
                 }}
               >
-                <Text style={[f.small, { color: "#fafbf8" }]}>
+                <Text style={[f.small, { color: "#fafaf7" }]}>
                   Invite a friend ＋
                 </Text>
               </Pressable>
@@ -285,7 +285,7 @@ export function CrewHub() {
                 style={{
                   height: 9,
                   borderRadius: 5,
-                  backgroundColor: "#edf2e8",
+                  backgroundColor: "#eef0e9",
                   overflow: "hidden",
                 }}
               >
@@ -293,7 +293,7 @@ export function CrewHub() {
                   style={{
                     height: 9,
                     width: `${Math.min(100, (km / Math.max(1, crew.journey_km)) * 100)}%`,
-                    backgroundColor: "#26382d",
+                    backgroundColor: "#282f2c",
                   }}
                 />
               </View>
@@ -336,7 +336,7 @@ export function CrewHub() {
                         gap: 10,
                         paddingVertical: 14,
                         borderBottomWidth: 1,
-                        borderColor: "#e0e5dd",
+                        borderColor: "#e0e5dc",
                       }}
                     >
                       <View style={f.row}>

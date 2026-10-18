@@ -28,10 +28,10 @@ describe("phone shell", () => {
     expect(shellTabById("board")).toBeNull();
   });
 
-  it("keeps the Focus ink, lime, paper, and Star Ember tokens", () => {
-    expect(SHELL_COLORS.plum).toBe("#26382d");
-    expect(SHELL_COLORS.tennis).toBe("#d4ee89");
-    expect(SHELL_COLORS.paper).toBe("#fafbf8");
-    expect(SHELL_COLORS.starEmber).toBe("#f5c451");
+  it("keeps the Open Field ink, gold, paper, and Star Ember tokens", () => {
+    expect(SHELL_COLORS.plum).toBe("#282f2c");
+    expect(SHELL_COLORS.tennis).toBe("#f1c75b");
+    expect(SHELL_COLORS.paper).toBe("#fafaf7");
+    expect(SHELL_COLORS.starEmber).toBe("#f1c75b");
   });
 });

@@ -3,22 +3,22 @@
 .phone-frame {
   height: 100dvh;
   width: 100%;
-  background: #fff9e9;
+  background: #fafaf7;
 }
 
 .phone-shell {
-  --ink: #40234e;
-  --muted: #726377;
-  --line: #e4d7c4;
-  --paper: #fff9e9;
-  --card: #fffdf7;
-  --lime: #f6f253;
-  --lime-deep: #f6f253;
-  --accent: #40234e;
-  --accent-soft: #fff4d4;
+  --ink: #282f2c;
+  --muted: #616c63;
+  --line: #e0e5dc;
+  --paper: #fafaf7;
+  --card: #ffffff;
+  --lime: #f1c75b;
+  --lime-deep: #deb142;
+  --accent: #282f2c;
+  --accent-soft: #eef0e9;
   --green: #2f6f4e;
-  --green-soft: #e7f3ec;
-  --fb-radius: 22px;
+  --green-soft: #eef0e9;
+  --fb-radius: 16px;
   --shell-pad-x: clamp(16px, 4vw, 48px);
   width: 100%;
   max-width: none;
