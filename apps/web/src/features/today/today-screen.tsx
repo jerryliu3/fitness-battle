@@ -74,7 +74,9 @@ function buildJourneyStops(
 function stopRowClass(stop: JourneyStop): string {
   const tone =
     stop.kind === "past"
-      ? " is-past"
+      ? stop.key === "past-more"
+        ? " is-past-more"
+        : " is-past"
       : stop.kind === "today"
         ? " is-current"
         : stop.kind === "start"
@@ -618,7 +620,7 @@ export function TodayScreen() {
                       onClick={() => react("hop")}
                     >
                       <i>⋯</i>
-                      <b>Past</b>
+                      <b>PAST</b>
                     </button>
                     <span>
                       <small>Past</small>

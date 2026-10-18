@@ -1042,21 +1042,27 @@
   width: 100%;
   height: 100%;
 }
-.focus-path-row.is-start > button {
+.focus-path-row.is-start > button,
+.focus-path-row.is-past-more > button {
   background: #f1f5ec;
   border: 2px dashed #b7c9a4;
   border-bottom: 4px solid #a4b990;
   color: #282f2c;
+  cursor: pointer;
 }
-.focus-path-row.is-start > button i {
+.focus-path-row.is-start > button i,
+.focus-path-row.is-past-more > button i {
   position: static;
   width: auto;
   height: auto;
   background: none;
   border: none;
   font-size: 18px;
+  font-style: normal;
+  line-height: 1;
 }
-.focus-path-row.is-start > button b {
+.focus-path-row.is-start > button b,
+.focus-path-row.is-past-more > button b {
   font-size: 11px;
   letter-spacing: 0.08em;
   color: #43543f;
