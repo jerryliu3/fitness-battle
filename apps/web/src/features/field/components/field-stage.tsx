@@ -247,14 +247,25 @@ export function FieldStage({
           : null
         : (runners.find((r) => r.id === selected) ?? null);
 
+  const recentreForSelection = useRef<string | null>(null);
   useEffect(() => {
-    if (!chosen || mode !== "lanes") return;
-    const target = valueAt(chosen, time);
+    if (!selected || mode !== "lanes") {
+      recentreForSelection.current = null;
+      return;
+    }
+    if (recentreForSelection.current === selected) return;
+    recentreForSelection.current = selected;
+    const runner =
+      selected === ghost?.id && showGhost && ghost
+        ? ghost
+        : runners.find((r) => r.id === selected) ?? null;
+    if (!runner) return;
+    const target = valueAt(runner, time);
     setCenter((prev) => {
       const next = clampArenaLaneCenter(target, span);
       return prev === next ? prev : next;
     });
-  }, [chosen, mode, time, span]);
+  }, [selected, mode, span, showGhost, ghost, runners, time]);
 
   if (!you) return <p className="fb-copy">Join a field to see your lanes.</p>;
 
