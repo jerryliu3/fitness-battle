@@ -186,7 +186,7 @@ export function TypeScene({ progress: p, concept, dark, reduced }: Omit<ScenePro
     <Word word="overtaek" x={x + moving * 11} y={y} width={width} color={color} lean={lean} />
     {concept === "echo" && <rect x="73" y="277" width="535" height="2" fill={`url(#${uid}-fade)`} opacity={t * .45} />}
     {!reduced && [0, 1, 2, 3, 4].map(i => <line key={i} x1={95 + (i * 143 + 900 - p * 900) % 570} x2={125 + (i * 143 + 900 - p * 900) % 570} y1={150 + i * 37} y2={150 + i * 37} stroke={accent} strokeWidth="1.5" opacity={moving * .25} />)}
-    <text x="380" y="349" textAnchor="middle" fontSize="10" letterSpacing="3.4" fill={dark ? "#b2c0a9" : "#768172"} opacity={ease(between(p, .7, 1))}>ALWAYS SURPASSING YOURSELF.</text>
+    <text x="380" y="349" textAnchor="middle" fontSize="10" letterSpacing="3.4" fill={dark ? "#b2c0a9" : "#768172"} opacity={ease(between(p, .7, 1))}>A LITTLE FURTHER.</text>
   </Frame>;
 }
 
@@ -228,7 +228,7 @@ function StaggeredLogoScene({ progress: p, concept, dark, reduced, lockup = "sta
     </g>
     <Word word="over" x={overX} y={oy} width={ow} size={size} color={color} lean={overLean} outline={outline} opacity={enterOver} />
     <Word word="taek" x={taekX} y={ty} width={tw} size={size} color={color} lean={taekLean} outline={outline} opacity={enterTaek} />
-    <text x="380" y="350" fill={dark ? "#b2c0a9" : "#768172"} opacity={settle} fontSize="10" letterSpacing="3.4" textAnchor="middle">ALWAYS SURPASSING YOURSELF.</text>
+    <text x="380" y="350" fill={dark ? "#b2c0a9" : "#768172"} opacity={settle} fontSize="10" letterSpacing="3.4" textAnchor="middle">A LITTLE FURTHER.</text>
   </Frame>;
 }
 
@@ -247,7 +247,7 @@ function StaggeredTypeScene({ progress: p, concept, dark, reduced }: Pick<SceneP
     </g>)}
     <Word {...rows[0]} size={124} lean={lean} color={color} />
     <Word {...rows[1]} size={124} lean={lean} color={color} />
-    <text x="380" y="350" textAnchor="middle" fontSize="10" letterSpacing="3.4" fill={dark ? "#b2c0a9" : "#768172"} opacity={ease(between(p, .7, 1))}>ALWAYS SURPASSING YOURSELF.</text>
+    <text x="380" y="350" textAnchor="middle" fontSize="10" letterSpacing="3.4" fill={dark ? "#b2c0a9" : "#768172"} opacity={ease(between(p, .7, 1))}>A LITTLE FURTHER.</text>
   </Frame>;
 }
 
