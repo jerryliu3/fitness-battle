@@ -124,4 +124,4 @@ The user selected **Shared Start** (six gold echoes) for the application. It rep
 
 ## Shared Start scale and background review
 
-`scale-study/index.html` compares the current composition with centered 120% and 135% versions on white and true black. Each has 64/32/16px samples and downloadable square SVG masters. Start with 120% as a candidate for more presence without crowding the faded wakes. These are comparisons; production scale stays at the selected original size. Explicit black/white web asset sets and a native black alternate are documented in `assets/brand/README.md`.
+`scale-study/index.html` compares the current composition with 120% and 135% versions anchored at each original head center on white and true black. Each has 64/32/16px samples and downloadable square SVG masters. The circle centers remain fixed across all three sizes; diameters, outlines and wakes grow. Bottom-edge wake cropping is allowed, with no extra whitespace reserved below. These are comparisons; production scale stays at the selected original size. Explicit black/white web asset sets and a native black alternate are documented in `assets/brand/README.md`.
