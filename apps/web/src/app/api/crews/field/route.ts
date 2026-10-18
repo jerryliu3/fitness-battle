@@ -197,5 +197,20 @@ export async function POST(request: Request) {
   if (saveError) {
     return NextResponse.json({ error: saveError.message }, { status: 400 });
   }
+
+  try {
+    await supabase.rpc("seat_athlete_week_field", {
+      p_sport: sport,
+      p_wave_start: pin.waveStart,
+      p_week_end: pin.weekEnd,
+      p_capacity: pin.capacity,
+      p_crew_id: crew.id,
+      p_crew_name: crew.name,
+      p_synthetic_ids: pin.syntheticIds,
+    });
+  } catch {
+    /* non-blocking backward compatibility */
+  }
+
   return NextResponse.json({ pin });
 }

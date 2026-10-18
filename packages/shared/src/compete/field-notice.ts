@@ -1,4 +1,5 @@
 import { competeNow, formatVolume, weeklyBoard } from "./engine";
+import { fieldPinMatchesEnrollment } from "../matching/field-plan";
 import type { CompeteState, SportId, UnitSystem } from "./sports";
 
 export interface SeenRival {
@@ -41,7 +42,10 @@ export function seenFieldFromState(
   const board = weeklyBoard(state, sport, "open", now);
   const you = board.find((row) => row.you);
   if (!you) return null;
-  const pin = state.crewBoard?.sport === sport ? state.crewBoard : null;
+  const pin =
+    state.crewBoard && fieldPinMatchesEnrollment(state.crewBoard, enrollment)
+      ? state.crewBoard
+      : null;
   const rivals = (pin?.members ?? [])
     .filter((member) => member.id !== accountKey)
     .map((member) => ({

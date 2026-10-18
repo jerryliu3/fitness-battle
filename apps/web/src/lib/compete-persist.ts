@@ -4,6 +4,7 @@ import {
   freshHealthRatings,
   freshState,
   periodResultId,
+  pickSynthetics,
   prepareCompeteStateForAccount,
   provenanceOf,
   PROVIDER_IDS,
@@ -717,14 +718,109 @@ export async function loadCompeteAccount(
   };
 }
 
-/** Hydrate crewBoard from shared crew_week_fields when enrollment has crew_id. */
+/** Hydrate crewBoard/fieldBoard from shared fields for both crew and solo play. */
 export async function hydrateCrewBoard(
   db: Db,
   _userId: string,
   state: CompeteState,
 ): Promise<CompeteState> {
-  const pinned = state.enrollments.find((item) => item.crewId);
+  const pinned = state.enrollments.find(
+    (item) => item.crewId && item.crewId !== "solo" && !item.crewId.startsWith("field:"),
+  );
   if (!pinned?.crewId) {
+    const solo =
+      state.enrollments.find((item) => item.sport === state.primary && !item.crewId) ??
+      state.enrollments.find((item) => !item.crewId);
+
+    if (solo) {
+      try {
+        const { data: fieldData, error: fieldError } = await db.rpc("seat_athlete_week_field", {
+          p_sport: solo.sport,
+          p_wave_start: solo.waveStart,
+          p_week_end: solo.weekEnd,
+          p_capacity: solo.capacity || 8,
+          p_crew_id: null,
+          p_crew_name: null,
+          p_synthetic_ids: solo.syntheticIds || [],
+        });
+        if (fieldData && !fieldError) {
+          const field = fieldData as {
+            id: string;
+            sport: string;
+            wave_start: string;
+            week_end: string;
+            capacity: number;
+            member_ids: string[];
+            synthetic_ids: string[];
+            name: string;
+          };
+          const { data: roster, error: rosterError } = await db.rpc("week_field_roster", {
+            p_field_id: field.id,
+          });
+          if (roster && !rosterError) {
+            const memberIds = (field.member_ids as string[]) ?? [];
+            const memberSet = new Set(memberIds);
+            const members = (
+              (roster ?? []) as {
+                user_id: string;
+                display_name: string;
+                open_elo: number;
+                distance_m: number;
+                moving_sec: number;
+              }[]
+            )
+              .filter((row) => memberSet.has(String(row.user_id)))
+              .map((row) => ({
+                id: String(row.user_id),
+                name: String(row.display_name || "Athlete"),
+                elo: Number(row.open_elo) || 1000,
+                distanceM: Number(row.distance_m) || 0,
+                movingSec: Number(row.moving_sec) || 0,
+              }))
+              .sort((a, b) => a.id.localeCompare(b.id));
+
+            const peerIds = memberIds.filter((id) => id !== _userId);
+            const capacity = Number(field.capacity) || 8;
+            const neededSynthetics = Math.max(0, capacity - memberIds.length);
+            let syntheticIds = (field.synthetic_ids as string[]) ?? [];
+            if (syntheticIds.length !== neededSynthetics) {
+              const elos = members.map((m) => m.elo).sort((a, b) => a - b);
+              const medianElo =
+                elos.length === 0 ? 1000 : elos[Math.floor((elos.length - 1) / 2)]!;
+              syntheticIds = pickSynthetics(
+                field.sport as SportId,
+                medianElo,
+                neededSynthetics,
+                memberIds,
+                `solo:${field.id}:${field.sport}:${field.wave_start}`,
+              ).map((s) => s.id);
+            }
+            return {
+              ...state,
+              crewBoard: {
+                crewId: "solo",
+                crewName: field.name || "Open Field",
+                sport: field.sport as SportId,
+                waveStart: String(field.wave_start),
+                weekEnd: String(field.week_end),
+                capacity,
+                memberIds,
+                members,
+                syntheticIds,
+              },
+              enrollments: state.enrollments.map((item) =>
+                item.sport === solo.sport
+                  ? { ...item, peerIds, syntheticIds }
+                  : item,
+              ),
+            };
+          }
+        }
+      } catch {
+        /* keep state as-is if solo field RPC not available */
+      }
+    }
+
     return state.crewBoard ? { ...state, crewBoard: null } : state;
   }
 
@@ -803,3 +899,5 @@ export async function hydrateCrewBoard(
     },
   };
 }
+
+export const hydrateFieldBoard = hydrateCrewBoard;
