@@ -105,3 +105,15 @@ node apps/web/src/app/design/_studies/pass-lab/build-review.mjs
 The builder uses the existing Vite/esbuild installation and embeds DM Sans and Nunito Sans from the Next font cache, falling back to the existing portable motion review’s embedded subsets for offline rebuilds. It generates `review.html`, the original icon/lane boards, `round-2-board.svg`, 15 original masters under `icons/`, 12 refinements under `round-2-icons/`, and 30 color studies plus four head studies under `round-3-icons/`. The selected direction is captured in `selected-afterimage.png`. The PNG boards are captured browser previews.
 
 Verification: monorepo typecheck, all workspace tests, production web build, and desktop/390 px browser review. Fixture tests cover fixed lanes, the ±3 km window, no/one/two passes, ties and catalog connections.
+
+## Followup: longer gold wake
+
+Rich gold/silver is now finalized for the production icon (hollow circles, white, subtle rival). The independent **Longer wake · Followup** tab at `?view=wake-study` tests three alternatives without replacing the production icon:
+
+1. **Long stride**: four gold echoes stretched to the silver wake endpoint.
+2. **Shared start**: six echoes over that same distance, close to the original spacing.
+3. **Long exposure**: eight echoes for a fuller, continuous contour.
+
+All use the same gold head, four-echo silver wake and palette. In the final pose, the gold wake grows from 73.6 to 117.55 viewBox units, reaching silver's final echo center at y=210.55. During the pass, gold's head moves from y=171 to y=93 and its wake length adjusts to keep that endpoint. Both contours share the same radius and fade; the endpoint is geometric, not a hard visible border. Motion and static export remain independent, with reduced motion and manual scrubbing supported.
+
+`wake-study-board.svg` compares all three; `wake-study-icons/` contains unmasked 1024px SVGs. The portable review includes the same comparisons, small-size samples, downloads and motion controls. Production packaging is handled in the separate app-icon PR; this followup changes only the design study.

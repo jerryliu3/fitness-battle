@@ -25,7 +25,7 @@ function Shape({ ember, radius, fill = "none", stroke, width = 2 }: { ember?: bo
 }
 
 /** Same head and wake geometry in the icon and the field. Only scale changes. */
-export function RefinedRacer({ spec, x, y, radius, fast, flow = false, edge, initials }: { spec: RefinedSpec; x: number; y: number; radius: number; fast: boolean; flow?: boolean; edge?: string | null; initials?: string }) {
+export function RefinedRacer({ spec, x, y, radius, fast, flow = false, edge, initials, wakeLength, echoCount }: { spec: RefinedSpec; x: number; y: number; radius: number; fast: boolean; flow?: boolean; edge?: string | null; initials?: string; wakeLength?: number; echoCount?: number }) {
   const uid = useId();
   const colors = refinementColors(spec);
   const color = fast ? colors.main : colors.peer;
@@ -33,8 +33,8 @@ export function RefinedRacer({ spec, x, y, radius, fast, flow = false, edge, ini
   const subtle = !fast && spec.slow === "subtle";
   const ember = spec.ember || spec.shape?.startsWith("ember");
   const hasEchoes = (spec.family === "afterimage" || spec.echoes) && (fast || spec.slow !== "none");
-  const length = radius * (dense ? 1.35 : subtle ? 2.85 : 3.2);
-  const count = dense ? 6 : 4;
+  const length = wakeLength ?? radius * (dense ? 1.35 : subtle ? 2.85 : 3.2);
+  const count = echoCount ?? (dense ? 6 : 4);
   const filled = spec.shape ? spec.shape === "circle-solid" || spec.shape === "ember-face" : spec.family !== "afterimage" || spec.ember;
   const duration = fast || spec.slow === "equal" ? 1.15 : subtle ? 1.32 : dense ? 2.3 : 1.8;
   return <g transform={`translate(${x} ${y})`} data-racer={fast ? "fast" : "slow"}>
@@ -48,14 +48,16 @@ export function RefinedRacer({ spec, x, y, radius, fast, flow = false, edge, ini
   </g>;
 }
 
-export function RefinementIcon({ spec, size = 160, flow = false, unmasked = false }: { spec: RefinedSpec; size?: number; flow?: boolean; unmasked?: boolean }) {
+export function RefinementIcon({ spec, size = 160, flow = false, unmasked = false, wake, passProgress = 1 }: { spec: RefinedSpec; size?: number; flow?: boolean; unmasked?: boolean; wake?: "stretched" | "balanced" | "dense"; passProgress?: number }) {
   const uid = useId();
   const colors = refinementColors(spec);
+  const fastY = wake ? 171 - 78 * Math.min(1, Math.max(0, passProgress)) : 93;
+  const sharedEnd = 145 + 23 * 2.85;
   return <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 256 256" role="img" aria-label={`${spec.name} app icon`}>
     <defs><clipPath id={`${uid}-tile`}><rect width="256" height="256" rx="57" /></clipPath></defs>
     <g clipPath={unmasked ? undefined : `url(#${uid}-tile)`}><rect width="256" height="256" fill={colors.bg} />{spec.lanes && <path d="M49 49V210M128 49V210M207 49V210" stroke={colors.rule} strokeWidth="3" fill="none" />}
       <RefinedRacer spec={spec} x={88} y={145} radius={23} fast={false} flow={flow} />
-      <RefinedRacer spec={spec} x={168} y={93} radius={23} fast flow={flow} />
+      <RefinedRacer spec={spec} x={168} y={fastY} radius={23} fast flow={flow} wakeLength={wake ? sharedEnd - fastY : undefined} echoCount={wake ? { stretched: 4, balanced: 6, dense: 8 }[wake] : undefined} />
     </g>
   </svg>;
 }
