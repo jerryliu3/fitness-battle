@@ -694,12 +694,15 @@
 }
 @media (max-width: 520px) {
   .focus-profile-card {
-    grid-template-columns: 1fr;
-    justify-items: center;
-    text-align: center;
+    grid-template-columns: auto 1fr;
+    align-items: center;
+    text-align: left;
   }
   .focus-profile-card-copy {
-    align-items: center;
+    align-items: stretch;
+  }
+  .focus-profile-identity {
+    width: 100%;
   }
 }
 .focus-elo-top {
