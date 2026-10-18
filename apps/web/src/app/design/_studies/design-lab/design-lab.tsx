@@ -581,6 +581,7 @@ export function DesignLab() {
         <span>Presentation prototype · Local sample actions</span>
         <Link href="/design/evolution">Beyond Bounce / next track ↗</Link>
         <Link href="/design/brand">Brand & Ember studio / ten territories ↗</Link>
+        <Link href="/design/pass">The art of the pass / 15 icons + 8 lane studies ↗</Link>
         <Link href="/design/spatial">Explore five spatial leaderboards ↗</Link>
         <Link href="/rankings">Existing published race rankings ↗</Link>
       </footer>

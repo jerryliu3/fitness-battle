@@ -11,6 +11,7 @@ All presentation prototypes, sample data, study-only styles and prototype tests 
 - `mascot-studio`: Star Ember pose, expression and motion review at `/design/mascot`; reusable model/renderers stay in shared/components
 - `brand-lab`: ten brand territories, current Ember, three neutral systems, and a cosmetic-only sample locker at `/design/brand`; all fixtures, finish previews and scoped styles stay inside this study
 - `overtake-motion`: `/design/motion` — Round 2 combines every-pass Photo Finish + Combo, three staggered over/taek logo races, and three staggered afterimage/jetstream treatments. The original twelve concepts remain available. Fictional data; no scoring or tracker writes.
+- `pass-lab`: `/design/pass` — 15 app icons (12 vertical symbol concepts + 3 type experiments), 8 lane fields, lead-swap previews, small-size/mask checks, local shortlisting and SVG exports. A portable review and outlined vector masters live in `docs/design-studies/the-pass/`. Fictional data; no production identity or competition changes.
 
 Studies may reuse production modules under `src/features/`, `src/components/`, `src/theme/` and the platform-agnostic shared package. Production modules must not import study modules or sample fixtures from `src/app/design/_studies/`.
 
