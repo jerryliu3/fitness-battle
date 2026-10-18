@@ -11,7 +11,7 @@ const stagePath = join(
 describe("field stage athlete selection", () => {
   it("recenters the lane window when an athlete is selected", () => {
     const source = readFileSync(stagePath, "utf8");
-    expect(source).toMatch(/if \(!chosen \|\| mode !== "lanes"\)/);
+    expect(source).toMatch(/if \(!selected \|\| mode !== "lanes"\)/);
     expect(source).toMatch(/clampArenaLaneCenter\(target, span\)/);
   });
 });
