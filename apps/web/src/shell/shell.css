@@ -72,8 +72,9 @@
 
 .phone-main {
   display: grid;
-  gap: 20px;
-  padding: 24px var(--shell-pad-x) 32px;
+  gap: 16px;
+  align-content: start;
+  padding: 20px var(--shell-pad-x) 24px;
   min-height: 100%;
   width: 100%;
   box-sizing: border-box;
@@ -300,10 +301,18 @@ button.checkpoint-disc:active { box-shadow: 0 0 0 7px color-mix(in srgb, var(--l
 .phone-shell .sheet-close {
   min-height: 48px;
   border-radius: 14px;
-  width: min(100%, 28rem);
+  width: 100%;
+  box-sizing: border-box;
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  text-align: center;
+}
+
+.phone-shell .fb-row > .fb-btn,
+.phone-shell .fb-row > .fb-btn-line {
+  flex: 1;
+  width: auto;
 }
 
 .phone-shell .fb-row {

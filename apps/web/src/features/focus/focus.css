@@ -134,6 +134,18 @@
   padding: 12px 17px;
   cursor: pointer;
   transition: transform 0.1s ease, box-shadow 0.1s ease;
+  width: 100%;
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  text-decoration: none;
+}
+.phone-shell .fb-row > .fb-btn,
+.phone-shell .fb-row > .fb-btn-line {
+  flex: 1;
+  width: auto;
 }
 .phone-shell .fb-btn {
   background: #282f2c;
@@ -183,7 +195,12 @@
 .focus-home {
   max-width: 620px;
   width: 100%;
-  margin: auto;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+}
+.phone-main:has(> .focus-home) {
+  grid-template-rows: minmax(min-content, 1fr);
 }
 .focus-arena {
   max-width: 880px;
@@ -728,6 +745,13 @@
   letter-spacing: -1.5px;
   color: #282f2c;
 }
+.focus-elo-score-label {
+  font-family: var(--font-dm-sans), sans-serif;
+  font-size: 15px;
+  font-weight: 500;
+  color: #616c63;
+  letter-spacing: -0.2px;
+}
 .focus-status {
   text-align: right;
   font-size: 21px;
@@ -782,23 +806,31 @@
   --path-l: 24%;
   --path-c: 50%;
   --path-r: 76%;
-  --path-row: 120px;
+  --path-row: 96px;
   border-radius: 24px;
   background: transparent;
-  margin: 12px 0 20px;
+  margin: 8px 0 16px;
   max-height: 900px;
   overflow-x: visible;
   overflow-y: auto;
   overscroll-behavior: contain;
-  padding: 0 8px 20px;
+  /* Ember's sprite rises ~55px above its row; keep room so overflow doesn't clip it. */
+  padding: 56px 8px 12px;
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
 }
 /* Full scroll height of all stops; path SVG covers this, not the scrollport. */
 .focus-journey-track {
   position: relative;
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
 }
 .focus-path-row {
   position: relative;
-  height: var(--path-row);
+  flex: 1 0 var(--path-row);
+  max-height: 150px;
   z-index: 1;
 }
 .focus-journey-path {
@@ -917,36 +949,34 @@
   color: #616c63;
   line-height: 1.6;
 }
+.focus-path-row.is-past,
 .focus-path-row.is-future {
-  opacity: 0.72;
+  opacity: 0.85;
 }
+.focus-path-row.is-past > button,
 .focus-path-row.is-future > button {
-  background: #f4f7f0;
-  border: 2px dashed #c5d2bb;
-  border-bottom: 4px solid #b7c4ad;
+  background: #e4e8e1;
+  border: 1px solid #d0d7cb;
+  border-bottom: 5px solid #bcc5b6;
+  box-shadow: none;
   cursor: default;
 }
+.focus-path-row.is-past > button:hover,
+.focus-path-row.is-past > button:active,
 .focus-path-row.is-future > button:hover,
 .focus-path-row.is-future > button:active {
   transform: translate(-50%, -50%);
-}
-.focus-path-hollow {
-  width: 22px;
-  height: 22px;
-  border: 2.5px solid #9eb090;
-  border-radius: 50%;
-  display: block;
 }
 .focus-path-row.is-current {
   overflow: visible;
 }
 .focus-path-row.is-current > button {
-  background: #f1c75b;
+  background: #d4ee89;
   border-radius: 50%;
   width: 82px;
   height: 82px;
-  border: 2px solid #dfb648;
-  border-bottom: 5px solid #c99f36;
+  border: 2px solid #b5d55b;
+  border-bottom: 5px solid #9ebf42;
   overflow: visible;
   z-index: 1;
 }
@@ -955,7 +985,7 @@
   position: absolute;
   inset: -8px;
   border-radius: 50%;
-  border: 2px solid rgba(241, 199, 91, 0.85);
+  border: 2px solid rgba(212, 238, 137, 0.85);
   animation: fb-duo-pulse 2s cubic-bezier(0.25, 1, 0.5, 1) infinite;
   pointer-events: none;
   z-index: 0;
@@ -1053,61 +1083,36 @@
   flex: 0 0 auto;
   min-width: 88px;
 }
-.focus-stats-hours strong {
-  display: block;
+.focus-stats-numbers {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  margin-top: 4px;
+}
+.focus-stats-numbers strong {
   font-size: 28px;
   font-weight: 600;
   color: #282f2c;
   letter-spacing: -0.6px;
   line-height: 1.1;
 }
-.focus-activity-chart-wrap {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  padding-top: 12px;
-  border-top: 1px solid #e0e5dc;
-}
-.focus-activity-legend {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  font-size: 11px;
+.focus-stats-session-count {
+  font-size: 14px;
+  font-weight: 500;
   color: #616c63;
 }
-.focus-activity-legend-items {
+.focus-activity-chart-wrap {
   display: flex;
   align-items: center;
-  gap: 14px;
-}
-.focus-activity-legend-item {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-}
-.focus-activity-legend-swatch {
-  width: 14px;
-  height: 3px;
-  border-radius: 2px;
-  background: #282f2c;
-}
-.focus-activity-legend-swatch.is-prev {
-  background: none;
-  border-top: 2px dashed #819486;
-  height: 0;
-}
-.focus-activity-delta {
-  font-size: 11px;
-  font-weight: 600;
-  color: #282f2c;
-  background: #eef0e9;
-  padding: 2px 7px;
-  border-radius: 6px;
+  gap: 16px;
+  padding-top: 14px;
+  border-top: 1px solid #e0e5dc;
 }
 .focus-activity-svg {
+  flex: 1;
+  min-width: 0;
+  height: 132px;
   display: block;
-  width: 100%;
-  height: 128px;
   overflow: visible;
 }
 .focus-activity-svg text {
@@ -1118,9 +1123,52 @@
   stroke: #e0e5dc;
   stroke-width: 1;
 }
+.focus-activity-legend {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  flex-shrink: 0;
+  min-width: 110px;
+}
+.focus-activity-legend-item {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.focus-activity-legend-header {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+.focus-activity-legend-swatch {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #f1c75b;
+  flex-shrink: 0;
+}
+.focus-activity-legend-swatch.is-prev {
+  width: 12px;
+  height: 0;
+  background: none;
+  border-top: 2.5px dashed #819486;
+  border-radius: 0;
+}
+.focus-activity-legend-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: #282f2c;
+  white-space: nowrap;
+}
+.focus-activity-pace {
+  font-size: 10px;
+  font-weight: 600;
+  color: #2f6f4e;
+  padding-left: 19px;
+}
 .focus-activity-line-curr {
-  stroke: #282f2c;
-  stroke-width: 2.6;
+  stroke: #f1c75b;
+  stroke-width: 2.8;
   stroke-linecap: round;
   stroke-linejoin: round;
   fill: none;
@@ -1306,8 +1354,58 @@
   font-size: 65px;
   color: #9ab85c;
 }
+.focus-empty-sports-emojis {
+  font-size: 32px;
+  letter-spacing: 6px;
+  margin-bottom: 12px;
+  display: block;
+  text-align: center;
+}
 .focus-empty h2 {
   font-size: 30px;
+}
+.focus-competition-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #ffffff;
+  border: 1px solid #e0e5dc;
+  border-radius: 18px;
+  padding: 14px 18px;
+  margin-bottom: 20px;
+  box-shadow: 0 1px 3px rgba(40, 47, 44, 0.04);
+}
+.focus-competition-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.focus-competition-info .fb-kicker {
+  margin: 0;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #7a867b;
+  font-weight: 700;
+}
+.focus-competition-dates {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 700;
+  color: #282f2c;
+  letter-spacing: -0.01em;
+}
+.focus-competition-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: #f1f4ee;
+  border: 1px solid #e0e5dc;
+  color: #282f2c;
+  font-size: 13px;
+  font-weight: 600;
 }
 .focus-arena-stage {
   background: #fff;

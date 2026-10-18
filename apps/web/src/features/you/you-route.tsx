@@ -386,12 +386,22 @@ function YouContent() {
             Create an account or sign in to connect trackers and keep progress
             with you.
           </p>
-          <Link href="/signup?next=/you" className="fb-btn">
-            Create account
-          </Link>
-          <Link href="/login?next=/you" className="fb-btn-line">
-            Sign in
-          </Link>
+          <div className="fb-row" style={{ width: "100%", gap: 10 }}>
+            <Link
+              href="/signup?next=/you"
+              className="fb-btn"
+              style={{ flex: 1, textAlign: "center" }}
+            >
+              Create account
+            </Link>
+            <Link
+              href="/login?next=/you"
+              className="fb-btn-line"
+              style={{ flex: 1, textAlign: "center" }}
+            >
+              Sign in
+            </Link>
+          </div>
         </section>
       </div>
     );
@@ -622,7 +632,7 @@ function YouContent() {
               <section className="fb-card" aria-label="This week">
                 <h2>This week</h2>
                 {state.enrollments.length === 0 ? (
-                  <p className="fb-copy">You are not registered for a sport this week.</p>
+                  <p className="fb-copy">You are not registered for an event this week.</p>
                 ) : (
                   state.enrollments.map((enrollment) => {
                     const renewal = sportRenewal(state, enrollment.sport);

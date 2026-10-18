@@ -183,7 +183,7 @@ export default function SettingsScreen() {
               );
             })
           ) : (
-            <Text style={styles.copy}>You are not registered for a sport this week.</Text>
+            <Text style={styles.copy}>You are not registered for an event this week.</Text>
           )}
           {state && sleepRenewal(state).enrolled ? (
             <Pressable

@@ -42,8 +42,8 @@ export function AthleteMetrics({
     .sort((a, b) => a.periodStart.localeCompare(b.periodStart))
     .map((r) => r.eloAfter);
   if (!values.length || values.at(-1) !== elo) values.push(elo);
-  const low = Math.min(...values) - 20,
-    high = Math.max(...values) + 20;
+  const low = Math.max(0, Math.min(...values) - 20),
+    high = Math.max(values.length ? low + 40 : 40, Math.max(...values) + 20);
   const points = values
     .map(
       (v, i) =>
@@ -129,7 +129,10 @@ export function AthleteMetrics({
         <View style={f.row}>
           <View>
             <Text style={f.kicker}>{rankForElo(elo).name} · Open Effort Score</Text>
-            <Text style={f.massive}>{elo}</Text>
+            <View style={{ flexDirection: "row", alignItems: "baseline", gap: 6 }}>
+              <Text style={f.massive}>{elo}</Text>
+              <Text style={f.copy}>effort score</Text>
+            </View>
           </View>
           <View>
             <Text style={[f.h2, { textAlign: "right" }]}>{verifiedElo}</Text>

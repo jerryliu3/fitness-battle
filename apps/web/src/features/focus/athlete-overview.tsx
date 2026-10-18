@@ -1,5 +1,6 @@
 "use client";
 import { useRef, useState } from "react";
+import { useAuth } from "@/components/auth-context";
 import { useCompete } from "@/components/compete-context";
 import {
   APP_TIMEZONE,
@@ -55,6 +56,7 @@ export function AthleteOverview({
   email?: string | null;
   demoMode?: boolean;
 }) {
+  const { user } = useAuth();
   const { dispatch } = useCompete();
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState(state.name);
@@ -125,9 +127,8 @@ export function AthleteOverview({
     }
   }
 
-  // 30-day fixed time-series Elo history
+  // Elo chart calculation
   const today = competeNow(state);
-  const thirtyDaysAgo = new Date(today.getTime() - 29 * 24 * 3600 * 1000);
   const todayIso = dayKey(today);
 
   const history = state.periodResults
@@ -135,42 +136,120 @@ export function AthleteOverview({
     .slice()
     .sort((a, b) => a.periodStart.localeCompare(b.periodStart));
 
-  // With settled history, days before the first week stay at 0. With no
-  // history yet, hold the current score (0 for guests, 1000 after account)
-  // so new accounts do not fake a jump from 0 → baseline on "today".
-  const startIso =
-    history.length > 0 ? dayKey(new Date(history[0].periodStart)) : todayIso;
+  const isGuest = (!user && !email) || currentElo === 0;
+
+  // Determine user's start anchor date (account creation or earliest activity/period)
+  let earliestDate: Date;
+  if (isGuest) {
+    earliestDate = today;
+  } else {
+    const candidateTimestamps: number[] = [];
+    if (user?.createdAt) {
+      candidateTimestamps.push(new Date(user.createdAt).getTime());
+    }
+    if (history.length > 0) {
+      candidateTimestamps.push(new Date(history[0].periodStart).getTime());
+    }
+    if (state.activities.length > 0) {
+      candidateTimestamps.push(
+        ...state.activities.map((a) => new Date(a.startedAt).getTime()),
+      );
+    }
+    earliestDate =
+      candidateTimestamps.length > 0
+        ? new Date(Math.min(...candidateTimestamps))
+        : today;
+  }
+
+  // Days elapsed from account start to today
+  const msPerDay = 24 * 3600 * 1000;
+  const daysElapsed = isGuest
+    ? 0
+    : Math.max(0, Math.floor((today.getTime() - earliestDate.getTime()) / msPerDay));
+  const isRolling = daysElapsed >= 29;
+
+  let windowStart: Date;
+  let windowMid: Date;
+  let windowEnd: Date;
+  let activeDaysCount: number;
+
+  if (isRolling) {
+    windowStart = new Date(today.getTime() - 29 * msPerDay);
+    windowMid = new Date(today.getTime() - 15 * msPerDay);
+    windowEnd = today;
+    activeDaysCount = 30;
+  } else {
+    // New user or guest populating the 30-day window from left to right
+    windowStart = earliestDate;
+    windowMid = new Date(earliestDate.getTime() + 15 * msPerDay);
+    windowEnd = new Date(earliestDate.getTime() + 29 * msPerDay);
+    activeDaysCount = Math.min(30, daysElapsed + 1);
+  }
 
   const dailyValues: number[] = [];
-  for (let d = 29; d >= 0; d--) {
-    const dayDate = new Date(today.getTime() - d * 24 * 3600 * 1000);
-    const dayIso = dayKey(dayDate);
-    if (dayIso < startIso) {
-      dailyValues.push(history.length === 0 ? currentElo : 0);
-      continue;
+  if (isGuest) {
+    dailyValues.push(0);
+  } else if (isRolling) {
+    for (let d = 29; d >= 0; d--) {
+      const dayDate = new Date(today.getTime() - d * msPerDay);
+      const dayIso = dayKey(dayDate);
+      const matching = history.filter(
+        (r) => dayKey(new Date(r.periodStart)) <= dayIso,
+      );
+      if (matching.length > 0) {
+        dailyValues.push(matching[matching.length - 1].eloAfter);
+      } else if (history.length > 0) {
+        dailyValues.push(history[0].eloBefore);
+      } else {
+        dailyValues.push(currentElo);
+      }
     }
-    const matching = history.filter(
-      (r) => dayKey(new Date(r.periodStart)) <= dayIso,
-    );
-    if (matching.length > 0) {
-      dailyValues.push(matching[matching.length - 1].eloAfter);
-    } else if (history.length > 0) {
-      dailyValues.push(history[0].eloBefore);
-    } else {
-      dailyValues.push(currentElo);
+    dailyValues[29] = currentElo;
+  } else {
+    // Populating window: from day 0 (start date, 1000) up to today (currentElo)
+    for (let d = 0; d < activeDaysCount; d++) {
+      const dayDate = new Date(windowStart.getTime() + d * msPerDay);
+      const dayIso = dayKey(dayDate);
+      const matching = history.filter(
+        (r) => dayKey(new Date(r.periodStart)) <= dayIso,
+      );
+      if (matching.length > 0) {
+        dailyValues.push(matching[matching.length - 1].eloAfter);
+      } else if (d === 0) {
+        dailyValues.push(history[0]?.eloBefore ?? 1000);
+      } else {
+        dailyValues.push(currentElo);
+      }
     }
+    dailyValues[activeDaysCount - 1] = currentElo;
   }
-  // Ensure the rightmost day matches currentElo
-  dailyValues[29] = currentElo;
 
   const minVal = Math.min(...dailyValues);
   const maxVal = Math.max(...dailyValues);
-  const rawMid = (minVal + maxVal) / 2;
-  const halfSpread = Math.max(15, (maxVal - minVal) / 2);
-  const step = Math.max(10, Math.ceil((halfSpread * 1.25) / 10) * 10);
-  const yMid = Math.round(rawMid / 10) * 10;
-  const yMin = yMid - step;
-  const yMax = yMid + step;
+  let yMin: number;
+  let yMid: number;
+  let yMax: number;
+
+  if (currentElo === 0 && maxVal === 0) {
+    // Guest or 0 Elo: bottom is 0, never negative (+/- 20)
+    yMin = 0;
+    yMid = 20;
+    yMax = 40;
+  } else {
+    const rawMid = (minVal + maxVal) / 2;
+    const halfSpread = Math.max(15, (maxVal - minVal) / 2);
+    const step = Math.max(10, Math.ceil((halfSpread * 1.25) / 10) * 10);
+    const tentativeMid = Math.round(rawMid / 10) * 10;
+    if (tentativeMid - step < 0) {
+      yMin = 0;
+      yMid = step;
+      yMax = step * 2;
+    } else {
+      yMid = tentativeMid;
+      yMin = yMid - step;
+      yMax = yMid + step;
+    }
+  }
 
   // SVG plot area layout (viewBox 0 0 340 150)
   const xStart = 44;
@@ -180,15 +259,32 @@ export function AthleteOverview({
   const yBottom = 116;
   const yMidPos = Math.round((yTop + yBottom) / 2);
 
-  const pts = dailyValues.map((v, i) => ({
-    x: xStart + (i / 29) * (xEnd - xStart),
-    y: yBottom - ((v - yMin) / (yMax - yMin)) * (yBottom - yTop),
-  }));
-  const linePoints = pts.map((p) => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(" ");
-  const areaPoints = `${linePoints} ${xEnd},${yBottom} ${xStart},${yBottom}`;
-  const lastPoint = pts[pts.length - 1];
+  const pts = dailyValues.map((v, i) => {
+    const xPos = isRolling
+      ? xStart + (i / 29) * (xEnd - xStart)
+      : xStart + (i / 29) * (xEnd - xStart);
+    return {
+      x: xPos,
+      y: yBottom - ((v - yMin) / (yMax - yMin || 1)) * (yBottom - yTop),
+    };
+  });
 
-  const startDateLabel = thirtyDaysAgo.toLocaleDateString("en-US", {
+  const lastPoint = pts[pts.length - 1];
+  const linePoints =
+    pts.length > 1
+      ? pts.map((p) => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(" ")
+      : "";
+  const areaPoints =
+    pts.length > 1
+      ? `${linePoints} ${lastPoint.x.toFixed(1)},${yBottom} ${pts[0].x.toFixed(1)},${yBottom}`
+      : "";
+
+  const startDateLabel = windowStart.toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    timeZone: APP_TIMEZONE,
+  });
+  const midDateLabel = windowMid.toLocaleDateString("en-US", {
     month: "short",
     day: "numeric",
     timeZone: APP_TIMEZONE,
@@ -198,6 +294,13 @@ export function AthleteOverview({
     day: "numeric",
     timeZone: APP_TIMEZONE,
   });
+  const endDateLabel = isRolling
+    ? `Today (${todayDateLabel})`
+    : windowEnd.toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
+        timeZone: APP_TIMEZONE,
+      });
 
   return (
     <>
@@ -399,6 +502,7 @@ export function AthleteOverview({
 
         <div className="focus-elo-score-row">
           <strong>{currentElo.toLocaleString()}</strong>
+          <span className="focus-elo-score-label">effort score</span>
         </div>
 
         <svg
@@ -489,15 +593,19 @@ export function AthleteOverview({
           />
 
           {/* Area under curve & trend polyline */}
-          <polygon points={areaPoints} fill="url(#focus-trend-grad)" />
-          <polyline
-            points={linePoints}
-            stroke="#282f2c"
-            strokeWidth="2.5"
-            strokeLinejoin="round"
-            strokeLinecap="round"
-            fill="none"
-          />
+          {areaPoints ? (
+            <polygon points={areaPoints} fill="url(#focus-trend-grad)" />
+          ) : null}
+          {linePoints ? (
+            <polyline
+              points={linePoints}
+              stroke="#282f2c"
+              strokeWidth="2.5"
+              strokeLinejoin="round"
+              strokeLinecap="round"
+              fill="none"
+            />
+          ) : null}
 
           {/* Live pulsing dot at current day — drawn before the solid point so
               the pulse stays behind the marker when they overlap. */}
@@ -547,7 +655,7 @@ export function AthleteOverview({
             fontSize="10"
             fontFamily="inherit"
           >
-            {startDateLabel}
+            {daysElapsed === 0 ? `Today (${todayDateLabel})` : startDateLabel}
           </text>
           <text
             x={xMid}
@@ -557,7 +665,7 @@ export function AthleteOverview({
             fontSize="10"
             fontFamily="inherit"
           >
-            15d ago
+            {midDateLabel}
           </text>
           <text
             x={xEnd}
@@ -567,7 +675,7 @@ export function AthleteOverview({
             fontSize="10"
             fontFamily="inherit"
           >
-            Today ({todayDateLabel})
+            {endDateLabel}
           </text>
         </svg>
       </section>

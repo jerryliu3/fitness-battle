@@ -370,10 +370,13 @@ export default function ArenaScreen() {
           </View>
         ) : (
           <View style={f.card}>
+            <Text style={{ fontSize: 26, textAlign: "center", marginBottom: 10 }}>
+              🏃 🚴 🚶 🏋️
+            </Text>
             <Text style={f.title}>Your next chapter starts here.</Text>
-            <Text style={f.copy}>Pick a sport and join for the week.</Text>
+            <Text style={f.copy}>Pick an event and join for the week.</Text>
             <FocusButton
-              label="Find a field"
+              label="Register for an event"
               onPress={() => {
                 setSport(null);
                 setRegister(true);
@@ -411,7 +414,7 @@ export default function ArenaScreen() {
       <FocusSheet
         open={register}
         title="Register for this week."
-        body="Tap a sport to join for the week."
+        body="Tap an event to join for the week."
         onClose={() => {
           setRegister(false);
           setSport(null);

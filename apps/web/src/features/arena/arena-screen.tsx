@@ -41,18 +41,19 @@ export function ArenaScreen() {
   const sleepRating = state.healthRatings.find((item) => item.metric === "sleep");
   const sleepOptedIn = Boolean(sleepRating?.optedIn);
 
-  // Time left countdown badge
+  // Time left countdown badge & competition dates
   const period = weeklyPeriodBounds(now);
   const msLeft = Math.max(0, period.endsAt.getTime() - now.getTime());
   const daysLeft = Math.floor(msLeft / (24 * 3600 * 1000));
   const hoursLeft = Math.floor((msLeft % (24 * 3600 * 1000)) / (3600 * 1000));
   const minutesLeft = Math.floor((msLeft % (3600 * 1000)) / (60 * 1000));
-  const countdownLabel =
+  const badgeLabel =
     daysLeft >= 1
-      ? `${daysLeft} day${daysLeft === 1 ? "" : "s"} left this week`
+      ? `${daysLeft} day${daysLeft === 1 ? "" : "s"} left`
       : hoursLeft >= 1
-        ? `${hoursLeft} hour${hoursLeft === 1 ? "" : "s"} left this week`
-        : `${Math.max(1, minutesLeft)} min left this week`;
+        ? `${hoursLeft} hour${hoursLeft === 1 ? "" : "s"} left`
+        : `${Math.max(1, minutesLeft)}m left`;
+  const dateRangeLabel = `${period.startsAt.toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" })} – ${period.endsAt.toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" })}`;
 
   function participate(_reason: string, action: () => void) {
     if (!user) {
@@ -76,18 +77,15 @@ export function ArenaScreen() {
 
   return (
     <div className="focus-arena">
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          marginBottom: 16,
-        }}
-      >
-        <span className="fb-pill">
-          ⏱ <b>{countdownLabel}</b>
+      <header className="focus-competition-card">
+        <div className="focus-competition-info">
+          <p className="fb-kicker">Competition</p>
+          <p className="focus-competition-dates">{dateRangeLabel}</p>
+        </div>
+        <span className="focus-competition-pill">
+          ⏱ <b>{badgeLabel}</b>
         </span>
-      </div>
+      </header>
 
       {frozen && (
         <div className="fb-pill" style={{ marginBottom: "16px" }}>
@@ -121,12 +119,14 @@ export function ArenaScreen() {
               setRegister(true);
             }}
           >
-            ＋ Register for a sport
+            ＋ Register for an event
           </button>
           <section className="focus-card focus-empty" style={{ marginTop: 16 }}>
-            <span className="focus-empty-mark">◎</span>
+            <div className="focus-empty-sports-emojis" aria-hidden="true">
+              🏃 🚴 🚶 🏋️
+            </div>
             <h2>Your next chapter starts here.</h2>
-            <p className="fb-copy">Pick a sport and join for the week.</p>
+            <p className="fb-copy">Pick an event and join for the week.</p>
           </section>
         </div>
       ) : (
@@ -212,7 +212,7 @@ export function ArenaScreen() {
                   setRegister(true);
                 }}
               >
-                ＋ Register for another sport
+                ＋ Register for another event
               </button>
             </div>
           )}
@@ -261,13 +261,13 @@ export function ArenaScreen() {
       <Sheet
         open={register}
         title="Register for this week."
-        body="Tap a sport or recovery category to join for the week."
+        body="Select an event or recovery category to join for the week."
         onClose={() => {
           setRegister(false);
           setSport(null);
         }}
       >
-        <p className="fb-kicker">Category</p>
+        <p className="fb-kicker">Event / Category</p>
         <div className="focus-sport-options" aria-label="Sport or Category">
           {SPORTS.map((s) => {
             const isRegistered = state.ratings.find(

@@ -140,7 +140,7 @@ export function CrewHub() {
         <View style={{ gap: 14 }}>
           <View style={f.card}>
             <Text style={f.title}>Make room for your people.</Text>
-            <Text style={f.copy}>
+            <Text style={[f.copy, { marginBottom: 20 }]}>
               Private crews share a week of counted effort — invite codes,
               member standings, and a shared field when you register together.
             </Text>

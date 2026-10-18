@@ -3,7 +3,12 @@ import { useEffect, useState } from "react";
 import { useAuth } from "@/components/auth-context";
 import { useCompete } from "@/components/compete-context";
 import { Sheet } from "@/ui/sheet";
-import { APP_TIMEZONE, distanceUnitLabel, formatDistanceM } from "@fitness-battle/shared";
+import {
+  APP_TIMEZONE,
+  countsOnTrack,
+  distanceUnitLabel,
+  formatDistanceM,
+} from "@fitness-battle/shared";
 import Link from "next/link";
 interface Crew {
   id: string;
@@ -110,42 +115,94 @@ export function CrewPanel() {
       setBusy(false);
     }
   }
-  const crews = (data?.crews ?? []).flatMap((r) => (r.crews ? [r.crews] : []));
+  const rawCrews = (data?.crews ?? []).flatMap((r) => (r.crews ? [r.crews] : []));
+  const isSolo = !user || demoMode || rawCrews.length === 0;
+
+  const athleteName = state?.name || "You";
+  const athleteSport = state?.primary
+    ? state.primary.charAt(0).toUpperCase() + state.primary.slice(1)
+    : "Running";
+
+  const soloCrew: Crew = {
+    id: "solo-preview",
+    name: state?.name ? `${state.name}’s Circle` : "Your Circle",
+    invite_code: "SOLO",
+    sport: athleteSport,
+    format: "cooperative",
+    target_sessions: 4,
+    journey_km: 40,
+  };
+
+  const soloMember: Member = {
+    crew_id: "solo-preview",
+    user_id: user?.id ?? "solo-guest",
+    display_name: athleteName,
+    rest_week: null,
+  };
+
+  const soloEntries: Entry[] = (state?.activities ?? [])
+    .filter((a) => countsOnTrack(a, "open"))
+    .map((a) => ({
+      crew_id: "solo-preview",
+      user_id: user?.id ?? "solo-guest",
+      activity_id: a.id,
+      distance_m: a.distanceM ?? 0,
+      moving_sec: a.movingSec ?? 0,
+      started_at: a.startedAt,
+      sport: a.sport,
+      disposition: "counted",
+    }));
+
+  const crews = rawCrews.length > 0 ? rawCrews : [soloCrew];
   const crew = crews.find((c) => c.id === selected) ?? crews[0];
-  const members = (data?.members ?? []).filter((m) => m.crew_id === crew?.id);
-  const entries = (data?.entries ?? []).filter(
-    (e) => e.crew_id === crew?.id && e.disposition === "counted",
-  );
+  const members =
+    rawCrews.length > 0
+      ? (data?.members ?? []).filter((m) => m.crew_id === crew?.id)
+      : [soloMember];
+  const entries =
+    rawCrews.length > 0
+      ? (data?.entries ?? []).filter(
+          (e) => e.crew_id === crew?.id && e.disposition === "counted",
+        )
+      : soloEntries;
   const unitLabel = distanceUnitLabel(state?.units);
   const totalM = entries.reduce((t, e) => t + Number(e.distance_m), 0);
   const targetM = (crew?.journey_km ?? 40) * 1000;
   const memberNames = members.map((m) => m.display_name);
   const memberCaption =
-    memberNames.length <= 3
-      ? memberNames.join(", ") || "No members yet"
-      : `${memberNames.slice(0, 3).join(", ")} + ${memberNames.length - 3} more`;
+    members.length === 1
+      ? "1 member · Solo circle"
+      : memberNames.length <= 3
+        ? memberNames.join(", ") || "No members yet"
+        : `${memberNames.slice(0, 3).join(", ")} + ${memberNames.length - 3} more`;
   return (
     <>
-      {!user || demoMode ? (
-        <div className="focus-crew-preview">
+      {(!user || demoMode) && (
+        <div className="focus-crew-preview" style={{ marginBottom: 28 }}>
           <section className="focus-card focus-empty">
             <h2>Make room for your people.</h2>
-            <p className="fb-copy">
+            <p className="fb-copy" style={{ marginBottom: 20 }}>
               Private crews share a week of counted effort — invite codes,
               member standings, and a shared field when you register together.
             </p>
-            <div className="focus-actions">
-              {!user && (
-                <Link className="fb-btn" href="/login?next=/field">
-                  Sign in to join a crew
-                </Link>
-              )}
-              {!user && (
-                <Link className="fb-btn-line" href="/signup?next=/field">
+            {!user ? (
+              <div className="fb-row" style={{ width: "100%", gap: 10 }}>
+                <Link
+                  className="fb-btn"
+                  href="/signup?next=/field"
+                  style={{ flex: 1, textAlign: "center" }}
+                >
                   Create account
                 </Link>
-              )}
-            </div>
+                <Link
+                  className="fb-btn-line"
+                  href="/login?next=/field"
+                  style={{ flex: 1, textAlign: "center" }}
+                >
+                  Sign in
+                </Link>
+              </div>
+            ) : null}
           </section>
           <section className="focus-card">
             <p className="fb-kicker">What crews unlock</p>
@@ -165,30 +222,18 @@ export function CrewPanel() {
             </ul>
           </section>
         </div>
-      ) : !data ? (
+      )}
+
+      {user && !demoMode && !data && (
         <section className="focus-card">
           <p className="fb-copy">{note || "Loading your circle…"}</p>
           <button className="fb-btn-line" onClick={() => void reload()}>
             Refresh crews
           </button>
         </section>
-      ) : !crew ? (
-        <section className="focus-card focus-empty">
-          <h2>Your circle starts here.</h2>
-          <p className="fb-copy">
-            Create a private crew or use an invite code. Shared goals make
-            showing up feel a little easier.
-          </p>
-          <div className="focus-actions">
-            <button className="fb-btn-line" onClick={() => setPanel("join")}>
-              Join with code
-            </button>
-            <button className="fb-btn" onClick={() => setPanel("create")}>
-              Create crew ＋
-            </button>
-          </div>
-        </section>
-      ) : (
+      )}
+
+      {(!user || demoMode || data) && (
         <>
           {crews.length > 1 && (
             <div className="focus-registration-tabs">
@@ -205,7 +250,7 @@ export function CrewPanel() {
           )}
           <section className="focus-crew-hero">
             <p className="fb-kicker">
-              Your people · {members.length} members
+              {isSolo ? "Solo circle · 1 member" : `Your people · ${members.length} members`}
             </p>
             <h2>{crew.name}</h2>
             <p>Different paces. Same direction.</p>
@@ -254,7 +299,17 @@ export function CrewPanel() {
                   <button
                     className="fb-btn"
                     disabled={busy}
-                    onClick={() => void write("/entries", { crewId: crew.id })}
+                    onClick={() => {
+                      if (!user || demoMode) {
+                        setPanel("manage");
+                        return;
+                      }
+                      if (crew.id === "solo-preview") {
+                        setPanel("create");
+                        return;
+                      }
+                      void write("/entries", { crewId: crew.id });
+                    }}
                   >
                     Share my counted sessions
                   </button>
@@ -455,9 +510,27 @@ export function CrewPanel() {
           </p>
         ) : null}
         {!user || demoMode ? (
-          <p className="fb-copy">
-            Sign in with a configured account to use private crews.
-          </p>
+          <div style={{ marginTop: 8 }}>
+            <p className="fb-copy" style={{ marginBottom: 16 }}>
+              A live account is required to invite friends, join circles, or sync shared crew sessions.
+            </p>
+            <div className="fb-row" style={{ width: "100%", gap: 10 }}>
+              <Link
+                className="fb-btn"
+                href="/signup?next=/field"
+                style={{ flex: 1, textAlign: "center" }}
+              >
+                Create account
+              </Link>
+              <Link
+                className="fb-btn-line"
+                href="/login?next=/field"
+                style={{ flex: 1, textAlign: "center" }}
+              >
+                Sign in
+              </Link>
+            </div>
+          </div>
         ) : panel === "create" ? (
           <>
             <label className="fb-field">
@@ -532,25 +605,54 @@ export function CrewPanel() {
             </button>
           </>
         ) : panel === "invite" ? (
-          <>
-            <label className="fb-field">
-              Invite code
-              <input readOnly value={crew?.invite_code ?? ""} />
-            </label>
+          crew?.id === "solo-preview" ? (
+            <div>
+              <p className="fb-copy" style={{ marginBottom: 16 }}>
+                Create a crew first to generate an invite code and bring your friends together.
+              </p>
+              <button
+                className="fb-btn"
+                onClick={() => setPanel("create")}
+              >
+                Create crew ＋
+              </button>
+            </div>
+          ) : (
+            <>
+              <label className="fb-field">
+                Invite code
+                <input readOnly value={crew?.invite_code ?? ""} />
+              </label>
+              <button
+                className="fb-btn"
+                onClick={() => {
+                  void navigator.clipboard
+                    .writeText(crew?.invite_code ?? "")
+                    .then(
+                      () => setNote("Invite code copied."),
+                      () => setNote(`Invite code: ${crew?.invite_code}`),
+                    );
+                }}
+              >
+                Copy invite code
+              </button>
+            </>
+          )
+        ) : crew?.id === "solo-preview" ? (
+          <div>
+            <p className="fb-copy" style={{ marginBottom: 16 }}>
+              {crew?.name} · {crew?.sport} · 1 member
+            </p>
+            <p className="fb-note" style={{ marginBottom: 16 }}>
+              You are currently in a solo circle. Create a shared crew to set weekly group goals with friends.
+            </p>
             <button
               className="fb-btn"
-              onClick={() => {
-                void navigator.clipboard
-                  .writeText(crew?.invite_code ?? "")
-                  .then(
-                    () => setNote("Invite code copied."),
-                    () => setNote(`Invite code: ${crew?.invite_code}`),
-                  );
-              }}
+              onClick={() => setPanel("create")}
             >
-              Copy invite code
+              Create shared crew ＋
             </button>
-          </>
+          </div>
         ) : (
           <>
             <p className="fb-copy">
