@@ -106,8 +106,8 @@ const styles = StyleSheet.create({
     height: 520,
     borderRadius: 20,
     overflow: "hidden",
-    backgroundColor: "#edf2e8",
+    backgroundColor: "#eef0e9",
   },
-  web: { flex: 1, backgroundColor: "#edf2e8" },
-  caption: { fontSize: 10, color: "#768172", padding: 9, textAlign: "center" },
+  web: { flex: 1, backgroundColor: "#eef0e9" },
+  caption: { fontSize: 10, color: "#616c63", padding: 9, textAlign: "center" },
 });

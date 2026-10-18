@@ -51,27 +51,30 @@ export function shellTabFromPath(
 }
 
 /**
- * Focus product palette. Legacy plum/tennis keys remain for component compatibility.
- * Quiet ink, lime, white paper, and the unchanged Star Ember artwork.
+ * Open Field product palette (Everyday Club warm neutral + charcoal + gold).
+ * Legacy plum/tennis keys remain for component compatibility.
  */
 export const SHELL_COLORS = {
-  plum: "#26382d",
-  plumDeep: "#1b291f",
-  tennis: "#d4ee89",
-  paper: "#fafbf8",
+  plum: "#282f2c",
+  plumDeep: "#1a1f1d",
+  tennis: "#f1c75b",
+  paper: "#fafaf7",
   card: "#ffffff",
-  starEmber: "#f5c451",
-  ink: "#26382d",
-  muted: "#768172",
-  line: "#e0e5dd",
+  starEmber: "#f1c75b",
+  ink: "#282f2c",
+  muted: "#616c63",
+  line: "#e0e5dc",
   green: "#2f6f4e",
-  greenSoft: "#e7f3ec",
+  greenSoft: "#eef0e9",
+  soft: "#eef0e9",
+  secondary: "#819486",
+  gold: "#f1c75b",
 } as const;
 
 export const SHELL_RADIUS = {
-  control: 14,
-  card: 22,
-  sheet: 28,
+  control: 12,
+  card: 16,
+  sheet: 24,
   pill: 999,
 } as const;
 

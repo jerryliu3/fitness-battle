@@ -65,10 +65,10 @@ export function ArenaScene() {
 
   return (
     <div
-      style={{ height: "100dvh", background: "#edf2e8", overflow: "hidden" }}
+      style={{ height: "100dvh", background: "#eef0e9", overflow: "hidden" }}
       className="embedded-arena"
     >
-      <style>{`.embedded-arena .fd-live-world{height:100dvh;min-height:100dvh}.embedded-arena .fd-world-label{background:#fffffff0;color:#26382d;border:1px solid #dce3d7;border-radius:10px}.embedded-arena canvas{touch-action:none}`}</style>
+      <style>{`.embedded-arena .fd-live-world{height:100dvh;min-height:100dvh}.embedded-arena .fd-world-label{background:#fffffff0;color:#282f2c;border:1px solid #e0e5dc;border-radius:10px}.embedded-arena canvas{touch-action:none}`}</style>
       {error ? (
         <p>3D is unavailable. Switch to 2D lanes.</p>
       ) : model ? (
@@ -96,7 +96,7 @@ export function ArenaScene() {
           }}
         />
       ) : (
-        <p style={{ padding: 24, color: "#768172", fontFamily: "sans-serif" }}>
+        <p style={{ padding: 24, color: "#616c63", fontFamily: "sans-serif" }}>
           Preparing your lanes…
         </p>
       )}

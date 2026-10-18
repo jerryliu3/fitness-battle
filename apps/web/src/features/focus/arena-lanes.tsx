@@ -150,24 +150,24 @@ export function ArenaLanes({
             <stop offset="1" stopColor="#e4ecdc" />
           </linearGradient>
           <linearGradient id="focus-you-lane" x2="0" y2="1">
-            <stop stopColor="#d4ee8966" />
-            <stop offset="1" stopColor="#d4ee8920" />
+            <stop stopColor="#f1c75b66" />
+            <stop offset="1" stopColor="#f1c75b20" />
           </linearGradient>
           <radialGradient id="focus-you-glow" cx="50%" cy="50%" r="50%">
-            <stop stopColor="#d4ee89" stopOpacity="0.55" />
-            <stop offset="1" stopColor="#d4ee89" stopOpacity="0" />
+            <stop stopColor="#f1c75b" stopOpacity="0.55" />
+            <stop offset="1" stopColor="#f1c75b" stopOpacity="0" />
           </radialGradient>
           <linearGradient id="focus-afterburn-wake" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0" stopColor="#d4ee89" stopOpacity="0.65" />
-            <stop offset="0.45" stopColor="#d4ee89" stopOpacity="0.28" />
-            <stop offset="1" stopColor="#d4ee89" stopOpacity="0" />
+            <stop offset="0" stopColor="#f1c75b" stopOpacity="0.65" />
+            <stop offset="0.45" stopColor="#f1c75b" stopOpacity="0.28" />
+            <stop offset="1" stopColor="#f1c75b" stopOpacity="0" />
           </linearGradient>
           <filter id="focus-soft" x="-40%" y="-40%" width="180%" height="180%">
             <feDropShadow
               dx="0"
               dy="3"
               stdDeviation="3"
-              floodColor="#26382d"
+              floodColor="#282f2c"
               floodOpacity="0.18"
             />
           </filter>
@@ -237,7 +237,7 @@ export function ArenaLanes({
               x2={width - 52}
               y1={y(0)}
               y2={y(0)}
-              stroke="#26382d"
+              stroke="#282f2c"
               strokeWidth="2"
             />
             <text x="18" y={y(0) - 10} className="lane-distance">
@@ -297,7 +297,7 @@ export function ArenaLanes({
                         x2={xx + dx}
                         y1={yy + 24}
                         y2={yy + 24 + streakLen}
-                        stroke="#d4ee89"
+                        stroke="#f1c75b"
                         strokeWidth={isCenter ? 6 : 2}
                         strokeLinecap="round"
                         opacity={speed * (isCenter ? 0.48 : 0.78)}
@@ -309,7 +309,7 @@ export function ArenaLanes({
               {l.you && charging > 0.02 && (
                 <g
                   opacity={charging}
-                  stroke="#d4ee89"
+                  stroke="#f1c75b"
                   strokeWidth="2"
                   strokeLinecap="round"
                   pointerEvents="none"
@@ -339,7 +339,7 @@ export function ArenaLanes({
                   cy={yy}
                   r={19 + effect.ripple * 24}
                   fill="none"
-                  stroke="#d4ee89"
+                  stroke="#f1c75b"
                   strokeWidth={3 - effect.ripple * 2}
                   opacity={1 - effect.ripple}
                   pointerEvents="none"
@@ -365,14 +365,14 @@ export function ArenaLanes({
                 cx={xx}
                 cy={yy + 4}
                 r={l.you ? 24 : 19}
-                fill="#26382d18"
+                fill="#282f2c18"
               />
               <circle
                 cx={xx}
                 cy={yy}
                 r={l.you ? 23 : 18}
-                fill={l.you ? "#26382d" : active ? "#d4ee89" : "#ffffff"}
-                stroke={l.you ? "#d4ee89" : active ? "#9bbf63" : "#c9d5bf"}
+                fill={l.you ? "#282f2c" : active ? "#f1c75b" : "#ffffff"}
+                stroke={l.you ? "#f1c75b" : active ? "#deb142" : "#c9d5bf"}
                 strokeWidth={l.you ? 4 : 2}
                 filter={active ? "url(#focus-soft)" : undefined}
               />
@@ -381,7 +381,7 @@ export function ArenaLanes({
                 y={yy + 4}
                 textAnchor="middle"
                 className="lane-initial"
-                fill={l.you ? "#f7fbef" : "#26382d"}
+                fill={l.you ? "#fafaf7" : "#282f2c"}
               >
                 {position.edge
                   ? position.edge === "ahead"
@@ -395,15 +395,15 @@ export function ArenaLanes({
                 width="52"
                 height="20"
                 rx="10"
-                fill={l.you ? "#26382d" : "#ffffffee"}
-                stroke={l.you && speed > 0.05 ? "#d4ee89" : "#d3ddcb"}
+                fill={l.you ? "#282f2c" : "#ffffffee"}
+                stroke={l.you && speed > 0.05 ? "#f1c75b" : "#d3ddcb"}
               />
               <text
                 x={xx}
                 y={yy + 42}
                 textAnchor="middle"
                 className="lane-total"
-                fill={l.you ? "#d4ee89" : "#26382d"}
+                fill={l.you ? "#f1c75b" : "#282f2c"}
                 style={{ fontSize: 10 }}
               >
                 {l.you && animating
@@ -433,7 +433,7 @@ export function ArenaLanes({
                   cy={gy}
                   r="13"
                   fill="#ffffffcc"
-                  stroke="#768172"
+                  stroke="#616c63"
                   strokeDasharray="3 3"
                 />
                 <text
