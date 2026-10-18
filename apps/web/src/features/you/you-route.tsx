@@ -120,10 +120,14 @@ function YouContent() {
           body?.error || "Could not delete account. Please try again.",
         );
       }
-      try {
-        localStorage.removeItem("fitness_battle_compete_v1");
-      } catch {
-        // ignore
+      if (user?.id) {
+        try {
+          localStorage.removeItem(`fb-compete-v1:${user.id}`);
+          localStorage.removeItem(`fb-compete-v1:${user.id}:device-only`);
+          localStorage.removeItem(`fb:field-seen:v1:${user.id}`);
+        } catch {
+          // ignore
+        }
       }
       await signOut();
       setDeleteConfirmOpen(false);
@@ -729,7 +733,12 @@ function YouContent() {
                   );
                   const primary = state.primary === sport.id;
                   const isActive = Boolean(rating?.optedIn);
-                  const elo = rating?.openElo ?? 1000;
+                  const elo =
+                    rating?.openElo && rating.openElo > 0
+                      ? rating.openElo
+                      : user
+                        ? 1000
+                        : 500;
                   return (
                     <div
                       key={sport.id}

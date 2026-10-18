@@ -299,7 +299,7 @@ export function ArenaScreen() {
               <button
                 key={s.id}
                 type="button"
-                disabled={Boolean(isRegistered)}
+                disabled={Boolean(isRegistered) || sport !== null}
                 aria-label={
                   isRegistered
                     ? `${s.name}, already registered this week`
@@ -311,7 +311,7 @@ export function ArenaScreen() {
                     : "focus-sport-option"
                 }
                 onClick={() => {
-                  if (isRegistered) return;
+                  if (isRegistered || sport !== null) return;
                   setSport(s.id);
                   participate(`Sign in to join ${s.name} this week.`, async () => {
                     let pin = null;
@@ -336,7 +336,7 @@ export function ArenaScreen() {
                   });
                 }}
               >
-                <b>{s.name}</b>
+                <b>{sport === s.id ? "Joining…" : s.name}</b>
                 <small>
                   {isRegistered
                     ? "Registered this week"
@@ -349,7 +349,7 @@ export function ArenaScreen() {
           })}
           <button
             type="button"
-            disabled={sleepOptedIn}
+            disabled={sleepOptedIn || sport !== null}
             aria-label={
               sleepOptedIn
                 ? "Sleep and Recovery, already registered this week"
@@ -361,7 +361,7 @@ export function ArenaScreen() {
                 : "focus-sport-option"
             }
             onClick={() => {
-              if (sleepOptedIn) return;
+              if (sleepOptedIn || sport !== null) return;
               setSport("sleep");
               participate("join sleep", () => {
                 dispatch({ type: "opt-in-health", metric: "sleep" });
@@ -370,7 +370,7 @@ export function ArenaScreen() {
               });
             }}
           >
-            <b>Sleep & Recovery</b>
+            <b>{sport === "sleep" ? "Joining…" : "Sleep & Recovery"}</b>
             <small>
               {sleepOptedIn
                 ? "Registered this week"

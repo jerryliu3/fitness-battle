@@ -8,6 +8,7 @@ import {
   countsOnTrack,
   dayKey,
   distanceUnitLabel,
+  ELO_UNRANKED,
   formatDistanceM,
   initialsFromName,
   rankForElo,
@@ -68,8 +69,12 @@ export function AthleteOverview({
   const [avatarError, setAvatarError] = useState<string | null>(null);
 
   const rating = state.ratings.find((r) => r.sport === state.primary);
-  const openElo = rating?.openElo ?? 0;
-  const verifiedElo = rating?.verifiedElo ?? 0;
+  const openElo =
+    rating?.openElo && rating.openElo > 0 ? rating.openElo : ELO_UNRANKED;
+  const verifiedElo =
+    rating?.verifiedElo && rating.verifiedElo > 0
+      ? rating.verifiedElo
+      : ELO_UNRANKED;
   const currentElo = track === "open" ? openElo : verifiedElo;
 
   const season = seasonSummary(state);
@@ -137,7 +142,7 @@ export function AthleteOverview({
     .sort((a, b) => a.periodStart.localeCompare(b.periodStart));
 
   const isGuest = (!user && !email) || state.name === "Guest";
-  const effectiveElo = isGuest && currentElo === 0 ? 500 : currentElo;
+  const effectiveElo = currentElo <= 0 ? ELO_UNRANKED : currentElo;
 
   // Determine user's start anchor date (account creation or earliest activity/period)
   let earliestDate: Date;
@@ -262,9 +267,7 @@ export function AthleteOverview({
   const yMidPos = Math.round((yTop + yBottom) / 2);
 
   const pts = dailyValues.map((v, i) => {
-    const xPos = isRolling
-      ? xStart + (i / 29) * (xEnd - xStart)
-      : xStart + (i / 29) * (xEnd - xStart);
+    const xPos = xStart + (i / 29) * (xEnd - xStart);
     return {
       x: xPos,
       y: yBottom - ((v - yMin) / (yMax - yMin || 1)) * (yBottom - yTop),
