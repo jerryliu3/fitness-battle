@@ -309,7 +309,7 @@ export const f = StyleSheet.create({
     backgroundColor: c.card,
     minHeight: 46,
   },
-  chipActive: { borderColor: c.plum, backgroundColor: "#edf2e8" },
+  chipActive: { borderColor: c.plum, backgroundColor: c.soft },
   chipRow: { flexDirection: "row", gap: 9, flexWrap: "wrap" },
   input: {
     fontFamily: "DMSans_400Regular",
@@ -331,7 +331,7 @@ export const f = StyleSheet.create({
     justifyContent: "center",
   },
   divider: { height: 1, backgroundColor: c.line },
-  feedback: { padding: 14, backgroundColor: "#edf2e8", borderRadius: 10 },
+  feedback: { padding: 14, backgroundColor: c.soft, borderRadius: 10 },
   massive: {
     fontFamily: "DMSans_400Regular",
     fontSize: 48,

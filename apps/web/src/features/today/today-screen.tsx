@@ -157,7 +157,7 @@ export function TodayScreen() {
   const weekActivities = state.activities.filter((a) => {
     if (!countsOnTrack(a, "open")) return false;
     const t = new Date(a.startedAt).getTime();
-    return t >= weekStart && t < weekEnd;
+    return t >= weekStart && t < weekEnd && t <= now.getTime();
   });
   const weekMovingSec = weekActivities.reduce((acc, a) => acc + (a.movingSec || 0), 0);
   const weekDistanceM = weekActivities.reduce(

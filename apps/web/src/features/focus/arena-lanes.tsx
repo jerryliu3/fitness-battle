@@ -328,7 +328,7 @@ export function ArenaLanes({
                   cy={gy}
                   r="13"
                   fill="#ffffffcc"
-                  stroke="#768172"
+                  stroke="#616c63"
                   strokeDasharray="3 3"
                 />
                 <text

@@ -543,7 +543,7 @@ export function AthleteOverview({
             x={xStart}
             y="136"
             textAnchor="start"
-            fill="#768172"
+            fill="#616c63"
             fontSize="10"
             fontFamily="inherit"
           >
@@ -553,7 +553,7 @@ export function AthleteOverview({
             x={xMid}
             y="136"
             textAnchor="middle"
-            fill="#768172"
+            fill="#616c63"
             fontSize="10"
             fontFamily="inherit"
           >
@@ -563,7 +563,7 @@ export function AthleteOverview({
             x={xEnd}
             y="136"
             textAnchor="end"
-            fill="#768172"
+            fill="#616c63"
             fontSize="10"
             fontFamily="inherit"
           >
