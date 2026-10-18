@@ -1506,14 +1506,16 @@
   overflow-x: auto;
   scrollbar-width: thin;
   overscroll-behavior-x: contain;
+  -webkit-overflow-scrolling: touch;
   user-select: none;
   -webkit-user-select: none;
+  touch-action: pan-x pan-y;
 }
 .focus-lane-track {
   display: block;
   width: 100%;
   height: 540px;
-  touch-action: none;
+  touch-action: pan-y;
   cursor: grab;
   user-select: none;
   -webkit-user-select: none;
