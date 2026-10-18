@@ -1,6 +1,7 @@
 "use client";
 
 import { useAuth } from "@/components/auth-context";
+import { getDemoCompeteState } from "@/lib/compete-demo-seed";
 import {
   applyRemoteSnapshot,
   FIELD_REFRESH_MS,
@@ -115,12 +116,19 @@ function writeStorageItem(key: string, value: string): void {
 }
 
 function readLocal(userId: string | null): { savedAt: string; state: CompeteState } {
-  return (
-    parseStored(readStorageItem(storageKey(userId))) ?? {
+  const existing = parseStored(readStorageItem(storageKey(userId)));
+  if (existing) return existing;
+  const demoSeed = getDemoCompeteState(userId);
+  if (demoSeed) {
+    return {
       savedAt: new Date(0).toISOString(),
-      state: rollClock(freshState()),
-    }
-  );
+      state: rollClock(demoSeed),
+    };
+  }
+  return {
+    savedAt: new Date(0).toISOString(),
+    state: rollClock(freshState()),
+  };
 }
 
 function writeLocal(userId: string | null, state: CompeteState, savedAt: string) {

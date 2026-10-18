@@ -6,12 +6,11 @@ import {
   resolveSafePostLoginPath,
 } from "@/lib/auth/login-redirect";
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { FormEvent, Suspense, useEffect, useState } from "react";
 
 function LoginForm() {
   const { signIn, user, loading, demoMode } = useAuth();
-  const router = useRouter();
   const searchParams = useSearchParams();
   const next = resolveSafePostLoginPath(searchParams.get("next"));
   const [email, setEmail] = useState("");
@@ -21,9 +20,9 @@ function LoginForm() {
 
   useEffect(() => {
     if (!loading && user) {
-      router.replace(next);
+      window.location.assign(next);
     }
-  }, [loading, user, next, router]);
+  }, [loading, user, next]);
 
   async function onSubmit(event: FormEvent) {
     event.preventDefault();
@@ -33,13 +32,12 @@ function LoginForm() {
       const result = await signIn(email, password);
       if (result.error) {
         setError(result.error);
+        setBusy(false);
         return;
       }
-      router.replace(next);
-      router.refresh();
+      window.location.assign(next);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not sign in.");
-    } finally {
       setBusy(false);
     }
   }

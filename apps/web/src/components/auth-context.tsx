@@ -119,12 +119,21 @@ function writeDemoUser(user: AuthUser | null) {
 }
 
 
+const DEMO_NAMES: Record<string, string> = {
+  "alice@example.com": "Alice Park",
+  "bob@example.com": "Bob Chen",
+  "carla@example.com": "Carla Diaz",
+  "dana@example.com": "Dana Brooks",
+};
+
 function demoUserFromEmail(email: string, displayName?: string): AuthUser {
-  const local = email.split("@")[0] || "Athlete";
+  const normalized = email.trim().toLowerCase();
+  const local = normalized.split("@")[0] || "Athlete";
+  const fallback = DEMO_NAMES[normalized] ?? local;
   return {
-    id: `demo-${hashString(email).toString(16)}`,
-    email,
-    displayName: displayName?.trim() || local,
+    id: `demo-${hashString(normalized).toString(16)}`,
+    email: normalized,
+    displayName: displayName?.trim() || fallback,
     mode: "demo",
   };
 }

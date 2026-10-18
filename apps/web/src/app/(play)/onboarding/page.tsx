@@ -46,7 +46,7 @@ function OnboardingFlow() {
             ? `Preferences and the one-time ${BACKFILL_DAYS}-day calibration cannot be run again.`
             : "Onboarding is complete. You can update preferences and run your one-time calibration anytime from Athlete."}
         </p>
-        <button type="button" className="fb-btn" onClick={() => router.replace("/")}>
+        <button type="button" className="fb-btn" onClick={() => router.replace("/today")}>
           Back to Today
         </button>
       </section>
