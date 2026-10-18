@@ -117,3 +117,7 @@ Rich gold/silver is now finalized for the production icon (hollow circles, white
 All use the same gold head, four-echo silver wake and palette. In the final pose, the gold wake grows from 73.6 to 117.55 viewBox units, reaching silver's final echo center at y=210.55. During the pass, gold's head moves from y=171 to y=93 and its wake length adjusts to keep that endpoint. Both contours share the same radius and fade; the endpoint is geometric, not a hard visible border. Motion and static export remain independent, with reduced motion and manual scrubbing supported.
 
 `wake-study-board.svg` compares all three; `wake-study-icons/` contains unmasked 1024px SVGs. The portable review includes the same comparisons, small-size samples, downloads and motion controls. Production packaging is handled in the separate app-icon PR; this followup changes only the design study.
+
+## Locked: Shared Start
+
+The user selected **Shared Start** (six gold echoes) for the application. It replaces the earlier short gold wake in the canonical brand master and every generated web/mobile app icon. Gold reaches the endpoint of silver’s four-echo wake; rich gold/silver, hollow heads, white background, and slightly slower silver flow are retained. The study keeps the earlier mark and other densities as history. Regenerate production assets with `node scripts/generate-app-icons.mjs`. Native launcher updates require a new app binary.
