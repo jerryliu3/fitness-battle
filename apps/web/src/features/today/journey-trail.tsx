@@ -47,11 +47,13 @@ export function JourneyTrail({
   /** Changes when stop identity/order changes (not only count) so the route remeasures. */
   layoutKey,
   active = true,
+  intro = false,
   children,
 }: {
   stopCount: number;
   layoutKey: string;
   active?: boolean;
+  intro?: boolean;
   children: (api: {
     setStopRef: (index: number) => Ref<HTMLButtonElement>;
   }) => ReactNode;
@@ -98,7 +100,10 @@ export function JourneyTrail({
     };
 
   return (
-    <section className="focus-journey" aria-label="Activity journey">
+    <section
+      className={`focus-journey${intro ? " is-day-intro" : ""}`}
+      aria-label="Activity journey"
+    >
       {/* Track grows with all stops; section scrolls. SVG must cover the
           full track — not the 900px scrollport — or lower days clip. */}
       <div ref={rootRef} className="focus-journey-track">
