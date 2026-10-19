@@ -8,6 +8,7 @@ import { useEffect, useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { SHELL_COLORS, SHELL_RADIUS } from "../theme";
+import { playCue } from "../lib/haptics";
 
 interface PhoneTabBarProps {
   state: {
@@ -46,6 +47,7 @@ export function PhoneTabBar({ state, navigation }: PhoneTabBarProps) {
             accessibilityState={{ selected }}
             accessibilityLabel={tab.label}
             onPress={() => {
+              if (!selected) void playCue("selection");
               setOptimistic(index);
               navigation.navigate(route.name);
             }}
