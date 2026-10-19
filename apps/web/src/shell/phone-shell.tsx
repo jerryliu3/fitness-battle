@@ -13,6 +13,7 @@ import {
   shellTabFromPath,
   type ShellTabId,
 } from "@fitness-battle/shared";
+import { playCue } from "@/lib/haptics";
 import * as ScrollArea from "@radix-ui/react-scroll-area";
 import * as Tabs from "@radix-ui/react-tabs";
 import { motion, useReducedMotion } from "motion/react";
@@ -61,10 +62,11 @@ export function PhoneShell({
   } = useCompete();
   const tab = shellTabFromPath(path);
   useCompeteFieldRefresh(!hideTabs && (tab?.id === "arena" || tab?.id === "field"));
-  const [pressed, setPressed] = useState<ShellTabId | null>(null);
+  const [intent, setIntent] = useState<ShellTabId | null>(null);
+  const lastTabRef = useRef<ShellTabId | null>(null);
   const [bootAnimDone, setBootAnimDone] = useState(false);
   const matched = tab?.id ?? null;
-  const active = pressed ?? matched;
+  const active = intent ?? matched;
   const accountKey = user?.id ?? "guest";
   const [visited, setVisited] = useState<Set<ShellTabId>>(
     () => new Set(["today"]),
@@ -131,8 +133,19 @@ export function PhoneShell({
   }
 
   useEffect(() => {
-    setPressed(null);
-  }, [path]);
+    if (matched && matched === intent) setIntent(null);
+  }, [path, matched, intent]);
+
+  function goTab(tabId: ShellTabId) {
+    setIntent(tabId);
+    const href = SHELL_TABS.find((t) => t.id === tabId)?.href;
+    if (!href) return;
+    if (lastTabRef.current !== tabId) {
+      lastTabRef.current = tabId;
+      void playCue("selection");
+    }
+    router.push(href);
+  }
 
   useEffect(() => {
     for (const tab of SHELL_TABS) router.prefetch(tab.href);
@@ -195,7 +208,7 @@ export function PhoneShell({
           <Tabs.Root
             value={active ?? ""}
             onValueChange={(value) => {
-              if (isShellTabId(value)) setPressed(value);
+              if (isShellTabId(value)) goTab(value);
             }}
           >
             <Tabs.List className="phone-tabs" aria-label="Primary">
@@ -206,7 +219,10 @@ export function PhoneShell({
                     <Link
                       href={tab.href}
                       className="phone-tab"
-                      onPointerDown={() => setPressed(tab.id)}
+                      onPointerDown={(e) => {
+                        e.preventDefault();
+                        goTab(tab.id);
+                      }}
                     >
                       {on ? (
                         <motion.span

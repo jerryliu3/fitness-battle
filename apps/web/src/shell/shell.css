@@ -148,8 +148,8 @@
   position: fixed;
   left: 50%;
   bottom: 0;
-  transform: translateX(-50%);
   width: min(720px, 100%);
+  will-change: transform;
   background: var(--card, #fffdf7);
   color: var(--ink, #40234e);
   border-radius: 28px 28px 0 0;
