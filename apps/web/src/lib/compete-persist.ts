@@ -254,6 +254,7 @@ export async function persistCompeteAccount(
     clock_period_start: clean.clock.periodStart,
     focus_family: focusFamily,
     focus_id: focusId,
+    units: clean.units === "metric" ? "metric" : "us",
     updated_at: updatedAt,
   });
   if (prefsError) throw new Error(prefsError.message);
@@ -509,6 +510,7 @@ export async function loadCompeteAccount(
         ? { family: "health", id: focusId as HealthMetricId }
         : { family: "sport", id: (asSport(focusId) ?? state.primary) },
     frozenPeriods: (freezeRows ?? []).map((row) => String(row.period_start)),
+    units: prefs.units === "metric" ? "metric" : "us",
   };
 
   if (ratingRows && ratingRows.length > 0) {
