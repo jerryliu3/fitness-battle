@@ -99,6 +99,7 @@ describe("arena lanes", () => {
     let state = reduceCompete(freshState(now), {
       type: "opt-in",
       sport: "running",
+      now: now.toISOString(),
     });
     state = {
       ...state,
@@ -149,7 +150,11 @@ describe("arena lanes", () => {
 
   it("keeps open and verified activity separate in the Arena presentation", () => {
     const state = {
-      ...reduceCompete(freshState(now), { type: "opt-in", sport: "running" }),
+      ...reduceCompete(freshState(now), {
+        type: "opt-in",
+        sport: "running",
+        now: now.toISOString(),
+      }),
       units: "metric" as const,
       activities: [
         run({

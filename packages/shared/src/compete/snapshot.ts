@@ -30,7 +30,11 @@ function sameDocument(left: CompeteState, right: CompeteState): boolean {
 }
 
 /** Fold server activities and the hydrated crew board into an unsaved device copy. */
-function mergeFreshRemote(local: CompeteState, remote: CompeteState): CompeteState {
+function mergeFreshRemote(
+  local: CompeteState,
+  remote: CompeteState,
+  holdLocalUnits: boolean,
+): CompeteState {
   const activityIds = new Set(local.activities.map((activity) => activity.id));
   const activities = [...local.activities];
   for (const activity of remote.activities) {
@@ -47,9 +51,12 @@ function mergeFreshRemote(local: CompeteState, remote: CompeteState): CompeteSta
     if (!readinessIds.has(mark.id)) readiness.push(mark);
   }
   const enrollments = local.enrollments.map((localEnr) => {
-    const remoteEnr = remote.enrollments.find(
-      (r) => r.sport === localEnr.sport && r.waveStart === localEnr.waveStart,
-    );
+    const remoteEnr =
+      remote.enrollments.find(
+        (r) =>
+          r.sport === localEnr.sport && r.waveStart === localEnr.waveStart,
+      ) ??
+      remote.enrollments.find((r) => r.sport === localEnr.sport);
     if (!remoteEnr) return localEnr;
     return {
       ...localEnr,
@@ -61,6 +68,10 @@ function mergeFreshRemote(local: CompeteState, remote: CompeteState): CompeteSta
   const merged = rollClock(
     {
       ...local,
+      units:
+        holdLocalUnits && local.units !== remote.units
+          ? local.units
+          : remote.units,
       activities,
       sleepNights,
       readiness,
@@ -81,7 +92,10 @@ export function applyRemoteSnapshot(
   local: CompeteState,
   remote: CompeteState,
   dirty: boolean,
+  holdLocalUnits = false,
 ): CompeteState {
-  const next = dirty ? mergeFreshRemote(local, remote) : remote;
+  const next = dirty
+    ? mergeFreshRemote(local, remote, holdLocalUnits)
+    : remote;
   return sameDocument(local, next) ? local : next;
 }

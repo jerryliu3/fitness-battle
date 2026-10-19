@@ -14,16 +14,31 @@ import { WeekReveal } from "@/features/split/components/week-reveal";
 import { SleepPanel } from "@/features/health/sleep-panel";
 import { Sheet } from "@/ui/sheet";
 import {
+  APP_TIMEZONE,
   awardCards,
   competeNow,
+  competePeriodWindow,
   primaryFreezePeriodStart,
   sleepRenewal,
   SPORTS,
-  formatWeeklyCompetitionRange,
+  weeklyCompetitionLastDay,
   weeklyPeriodBounds,
   type SportId,
   type ScoreTrack,
 } from "@fitness-battle/shared";
+
+const SCORE_TRACK_TOOLTIP =
+  "Open score counts all logged effort. GPS verified counts only activities with GPS proof from a connected tracker.";
+
+function formatCompetitionDateRange(startsAt: Date, endsAt: Date): string {
+  const lastDay = weeklyCompetitionLastDay(endsAt);
+  const opts: Intl.DateTimeFormatOptions = {
+    month: "short",
+    day: "numeric",
+    timeZone: APP_TIMEZONE,
+  };
+  return `${startsAt.toLocaleDateString("en-US", opts)} – ${lastDay.toLocaleDateString("en-US", opts)}`;
+}
 
 export function ArenaScreen() {
   const { state, dispatch, fieldNotice, dismissFieldNotice, standingsStale } = useCompete();
@@ -43,8 +58,12 @@ export function ArenaScreen() {
   const sleepRating = state.healthRatings.find((item) => item.metric === "sleep");
   const sleepOptedIn = Boolean(sleepRating?.optedIn);
 
-  // Time left countdown badge & competition dates
-  const period = weeklyPeriodBounds(now);
+  const headerSport =
+    active.find((row) => row.sport === state.primary)?.sport ??
+    active[0]?.sport;
+  const period = headerSport
+    ? competePeriodWindow(state, now, headerSport)
+    : weeklyPeriodBounds(now);
   const msLeft = Math.max(0, period.endsAt.getTime() - now.getTime());
   const daysLeft = Math.floor(msLeft / (24 * 3600 * 1000));
   const hoursLeft = Math.floor((msLeft % (24 * 3600 * 1000)) / (3600 * 1000));
@@ -55,7 +74,7 @@ export function ArenaScreen() {
       : hoursLeft >= 1
         ? `${hoursLeft} hour${hoursLeft === 1 ? "" : "s"} left`
         : `${Math.max(1, minutesLeft)}m left`;
-  const dateRangeLabel = formatWeeklyCompetitionRange(now);
+  const dateRangeLabel = formatCompetitionDateRange(period.startsAt, period.endsAt);
 
   function participate(_reason: string, action: () => void) {
     if (!user) {
@@ -81,12 +100,44 @@ export function ArenaScreen() {
     <div className="focus-arena">
       <header className="focus-competition-card">
         <div className="focus-competition-info">
-          <p className="fb-kicker">Competition</p>
-          <p className="focus-competition-dates">{dateRangeLabel}</p>
+          <p className="fb-kicker focus-competition-kicker">
+            Competition
+            <button
+              type="button"
+              className="focus-competition-tip"
+              title={SCORE_TRACK_TOOLTIP}
+              aria-label={SCORE_TRACK_TOOLTIP}
+            >
+              ⓘ
+            </button>
+          </p>
+          <p className="focus-competition-dates">
+            {dateRangeLabel}
+            <span className="focus-competition-pill">{badgeLabel}</span>
+          </p>
         </div>
-        <span className="focus-competition-pill">
-          ⏱ <b>{badgeLabel}</b>
-        </span>
+        {hasAnyRegistration ? (
+          <div
+            className="focus-segments focus-competition-tracks"
+            role="group"
+            aria-label="Score track"
+          >
+            <button
+              type="button"
+              aria-pressed={track === "open"}
+              onClick={() => setTrack("open")}
+            >
+              Open score
+            </button>
+            <button
+              type="button"
+              aria-pressed={track === "verified"}
+              onClick={() => setTrack("verified")}
+            >
+              GPS verified
+            </button>
+          </div>
+        ) : null}
       </header>
 
       {frozen && (
@@ -139,31 +190,9 @@ export function ArenaScreen() {
             const sportModel = buildFieldModel(state, r.sport, track, now);
             return (
               <section key={r.sport} style={{ marginBottom: 36 }}>
-                <div className="focus-row" style={{ alignItems: "center" }}>
-                  <h2>{sportSpec?.name ?? r.sport}</h2>
-                  <div
-                    className="focus-segments"
-                    role="group"
-                    aria-label="Score track"
-                  >
-                    <button
-                      type="button"
-                      aria-pressed={track === "open"}
-                      onClick={() => setTrack("open")}
-                    >
-                      Open score
-                    </button>
-                    <button
-                      type="button"
-                      aria-pressed={track === "verified"}
-                      onClick={() => setTrack("verified")}
-                    >
-                      GPS verified
-                    </button>
-                  </div>
-                </div>
                 <FieldStage
-                  key={`${r.sport}-${track}`}
+                  key={`${r.sport}-${track}-${state.units}`}
+                  sportTitle={sportSpec?.name ?? r.sport}
                   model={sportModel}
                   boardRows={sportBoard.rows}
                 />

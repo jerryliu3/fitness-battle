@@ -33,8 +33,8 @@ describe("mobile account state", () => {
       ).ratings[0].openElo,
     ).toBe(1000);
   });
-  it("explains an open-week save conflict rather than hiding it", () => {
-    expect(saveFailure("week_still_open")).toContain("still open");
+  it("suppresses week_still_open sync noise while surfacing other save failures", () => {
+    expect(saveFailure("week_still_open")).toBeNull();
     expect(saveFailure()).toContain("this device");
   });
 });

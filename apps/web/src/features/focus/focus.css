@@ -1398,12 +1398,37 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
   background: #ffffff;
   border: 1px solid #e0e5dc;
   border-radius: 18px;
   padding: 14px 18px;
   margin-bottom: 20px;
   box-shadow: 0 1px 3px rgba(40, 47, 44, 0.04);
+}
+.focus-competition-kicker {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.focus-competition-tip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  border: none;
+  border-radius: 999px;
+  background: #eef3e8;
+  color: #5a6b5c;
+  font-size: 11px;
+  line-height: 1;
+  cursor: help;
+}
+.focus-competition-tracks {
+  flex-shrink: 0;
 }
 .focus-competition-info {
   display: flex;
@@ -1420,6 +1445,10 @@
 }
 .focus-competition-dates {
   margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
   font-size: 15px;
   font-weight: 700;
   color: #282f2c;
@@ -1428,14 +1457,21 @@
 .focus-competition-pill {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 6px 12px;
+  padding: 3px 8px;
   border-radius: 999px;
   background: #f1f4ee;
   border: 1px solid #e0e5dc;
-  color: #282f2c;
+  color: #5a6b5c;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+.focus-arena-sport {
   font-size: 13px;
-  font-weight: 600;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
 }
 .focus-arena-stage {
   background: #fff;

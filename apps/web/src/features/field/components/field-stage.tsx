@@ -39,9 +39,11 @@ const LivePursuit = dynamic(
 export function FieldStage({
   model,
   boardRows,
+  sportTitle,
 }: {
   model: FieldModel;
   boardRows?: BoardRow[];
+  sportTitle?: string;
 }) {
   const { user } = useAuth();
   const accountKey = user?.id ?? "guest";
@@ -273,7 +275,9 @@ export function FieldStage({
     <section className="focus-arena-stage">
       <div className="focus-arena-total">
         <div>
-          <p className="fb-kicker">Your week in motion</p>
+          <p className="fb-kicker focus-arena-sport">
+            {sportTitle ?? "Your week"}
+          </p>
           <strong>
             {displayTotal.toFixed(1)}
             <small>{unit}</small>

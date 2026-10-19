@@ -33,8 +33,7 @@ export function hydrateAccountIdentity(
     ? { ...next, name: nameForAccount(next.name, user.displayName, user.email) }
     : next;
 }
-export function saveFailure(code?: string): string {
-  return code === "week_still_open"
-    ? "This week is still open. Your registration stays active until the week ends. Refresh and try again."
-    : "Your changes are saved on this device but haven't reached your account. Please try again.";
+export function saveFailure(code?: string): string | null {
+  if (code === "week_still_open") return null;
+  return "Your changes are saved on this device but haven't reached your account. Please try again.";
 }

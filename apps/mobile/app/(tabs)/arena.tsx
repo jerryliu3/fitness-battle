@@ -739,16 +739,15 @@ function WeekRecap({
   const renewal = sportRenewal(state, result.sport);
   return (
     <View style={f.card}>
-      <Text style={f.h2}>Week complete · {sportById(result.sport).name}</Text>
       <Text style={f.h2}>
-        Place {result.place} of {result.fieldSize}
+        {sportById(result.sport).name} · Place {result.place} of{" "}
+        {result.fieldSize}
       </Text>
       <Text style={f.copy}>
         {result.effort.toFixed(1)} effort · effort score {result.eloBefore} →{" "}
         {result.eloAfter}
         {result.frozen ? " · frozen" : ""}
       </Text>
-      <Text style={f.copy}>{renewal.detail}</Text>
       {renewal.enrolled && renewal.renews ? (
         <FocusButton
           label="Stop after this week"

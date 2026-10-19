@@ -18,7 +18,7 @@ import * as Tabs from "@radix-ui/react-tabs";
 import { motion, useReducedMotion } from "motion/react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { ReturnProgress } from "@/features/focus/return-progress";
 import { BootSplash } from "./boot-splash";
 import {
@@ -55,7 +55,6 @@ export function PhoneShell({
   const { user, loading } = useAuth();
   const {
     state,
-    saveError,
     legacyOffer,
     loadStatus,
     recoverLegacy,
@@ -65,13 +64,17 @@ export function PhoneShell({
   const tab = shellTabFromPath(path);
   useCompeteFieldRefresh(!hideTabs && (tab?.id === "arena" || tab?.id === "field"));
   const [pressed, setPressed] = useState<ShellTabId | null>(null);
-  const [bootAnimDone, setBootAnimDone] = useState(() => hasSeenBootSplash());
+  const [bootAnimDone, setBootAnimDone] = useState(false);
   const matched = tab?.id ?? null;
   const active = pressed ?? matched;
   const accountKey = user?.id ?? "guest";
-  const [visited, setVisited] = useState<Set<ShellTabId>>(() =>
-    new Set(matched ? [matched] : ["today"]),
+  const [visited, setVisited] = useState<Set<ShellTabId>>(
+    () => new Set(["today"]),
   );
+
+  useLayoutEffect(() => {
+    if (hasSeenBootSplash()) setBootAnimDone(true);
+  }, []);
 
   useEffect(() => {
     if (active && isShellTabId(active)) {
@@ -93,7 +96,6 @@ export function PhoneShell({
     if (hideTabs) return null;
     return (
       <>
-        {saveError ? <p className="phone-guest">{saveError}</p> : null}
         {legacyOffer ? (
           <p className="phone-guest">
             This browser still has history from before accounts.{" "}

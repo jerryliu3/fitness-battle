@@ -163,6 +163,7 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
   const queue = useRef<Action[]>([]);
   const dirtyRef = useRef(0);
   const unsavedRef = useRef(false);
+  const unitsUnsavedRef = useRef(false);
   const refreshFlight = useRef<Promise<boolean> | null>(null);
   userIdRef.current = userId;
   demoRef.current = demoMode || user?.mode === "demo";
@@ -178,6 +179,7 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
     queue.current = [];
     dirtyRef.current = 0;
     unsavedRef.current = false;
+    unitsUnsavedRef.current = false;
     setFieldNotice(null);
     setStandingsStale(false);
     if (timer.current) {
@@ -186,13 +188,9 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
     }
   }
 
-  const scheduleSave = useCallback((accountId: string | null, next: CompeteState) => {
-    if (!accountId || demoRef.current || statusRef.current !== "ready") return;
-    if (timer.current) clearTimeout(timer.current);
-    timer.current = setTimeout(() => {
-      timer.current = null;
-      if (userIdRef.current !== accountId || statusRef.current !== "ready") return;
-      const generation = dirtyRef.current;
+  const runSave = useCallback(
+    (accountId: string | null, next: CompeteState, generation: number) => {
+      if (!accountId || demoRef.current || statusRef.current !== "ready") return;
       void fetch("/api/compete", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
@@ -205,16 +203,15 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
             const body = (await response.json().catch(() => null)) as {
               error?: string;
             } | null;
-            setSaveError(
-              body?.error === "week_still_open"
-                ? "This week stays active until it closes. Stop after this week from You."
-                : "This device updated. The account copy did not save.",
-            );
+            if (body?.error !== "week_still_open") {
+              setSaveError("This device updated. The account copy did not save.");
+            }
             return;
           }
           if (dirtyRef.current === generation) {
             localStorage.removeItem(deviceOnlyKey(accountId));
             unsavedRef.current = false;
+            unitsUnsavedRef.current = false;
           }
           setSaveError(null);
         })
@@ -223,8 +220,26 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
           localStorage.setItem(deviceOnlyKey(accountId), "1");
           setSaveError("This device updated. The account copy did not save.");
         });
-    }, 400);
-  }, []);
+    },
+    [],
+  );
+
+  const scheduleSave = useCallback(
+    (accountId: string | null, next: CompeteState, immediate = false) => {
+      if (!accountId || demoRef.current || statusRef.current !== "ready") return;
+      if (timer.current) clearTimeout(timer.current);
+      const generation = dirtyRef.current;
+      if (immediate) {
+        runSave(accountId, next, generation);
+        return;
+      }
+      timer.current = setTimeout(() => {
+        timer.current = null;
+        runSave(accountId, next, generation);
+      }, 400);
+    },
+    [runSave],
+  );
 
   const publish = useCallback(
     (
@@ -404,7 +419,12 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
           unsavedRef.current ||
           dirtyRef.current !== generation ||
           timer.current != null;
-        const next = applyRemoteSnapshot(local, remote, dirty);
+        const next = applyRemoteSnapshot(
+          local,
+          remote,
+          dirty,
+          unitsUnsavedRef.current,
+        );
         if (next !== local) {
           const savedAt = dirty
             ? new Date().toISOString()
@@ -480,6 +500,7 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
         }
         dirtyRef.current += 1;
         unsavedRef.current = true;
+        if (withAccount.type === "set-units") unitsUnsavedRef.current = true;
         const accountKey = userIdRef.current ?? "guest";
         seedArenaBaselinesFromState(
           stateRef.current,
@@ -498,7 +519,13 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
         stateRef.current = next;
         setState(next);
         writeLocal(userIdRef.current, next, savedAt);
-        if (statusRef.current === "ready") scheduleSave(userIdRef.current, next);
+        if (statusRef.current === "ready") {
+          scheduleSave(
+            userIdRef.current,
+            next,
+            withAccount.type === "set-units",
+          );
+        }
       },
     }),
     [
