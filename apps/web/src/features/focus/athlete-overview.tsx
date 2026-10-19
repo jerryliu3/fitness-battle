@@ -344,7 +344,10 @@ export function AthleteOverview({
             <button
               type="button"
               aria-pressed={track === "verified"}
-              onClick={() => setTrack("verified")}
+              onClick={() => {
+                if (track !== "verified") void playCue("selection");
+                setTrack("verified");
+              }}
             >
               GPS verified
             </button>
