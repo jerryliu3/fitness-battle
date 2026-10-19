@@ -688,7 +688,8 @@ function YouContent() {
               <section className="fb-card">
                 <h2>Units</h2>
                 <p className="fb-copy">
-                  Distance display for Home, Arena, and Athlete.
+                  Distance display for Arena, Crew, and Athlete. Today shows
+                  hours, not distance.
                 </p>
                 <div className="focus-segments" role="group" aria-label="Units">
                   <button
