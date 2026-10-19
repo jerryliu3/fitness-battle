@@ -212,6 +212,8 @@ export function CrewPanel() {
   const totalM = entries.reduce((t, e) => t + Number(e.distance_m), 0);
   const targetM = (crew?.journey_km ?? 40) * 1000;
   const memberNames = members.map((m) => m.display_name);
+  const memberCountLabel =
+    members.length === 1 ? "1 member" : `${members.length} members`;
   const memberCaption =
     members.length === 1
       ? "1 member · Solo circle"
@@ -256,7 +258,9 @@ export function CrewPanel() {
           </div>
           <section className="focus-crew-hero">
             <p className="fb-kicker">
-              {isSolo ? "Solo circle · 1 member" : `Your people · ${members.length} members`}
+              {isSolo
+                ? "Solo circle · 1 member"
+                : `Your people · ${memberCountLabel}`}
             </p>
             <h2>{crew.name}</h2>
             <p>Different paces. Same direction.</p>

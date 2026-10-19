@@ -57,24 +57,16 @@ export function dedupePeriodResults(results: PeriodResult[]): PeriodResult[] {
       byId.set(row.id, row);
       continue;
     }
-    const keep =
-      (existing.settledAt ?? "") >= (row.settledAt ?? "") ? existing : row;
-    if (
-      isPeriodResultPending(keep) &&
-      !isPeriodResultPending(row) &&
-      (row.settledAt ?? "") >= (keep.settledAt ?? "")
-    ) {
+    const existingAt = existing.settledAt ?? "";
+    const rowAt = row.settledAt ?? "";
+    if (rowAt > existingAt) {
       byId.set(row.id, row);
       continue;
     }
-    if (
-      !isPeriodResultPending(keep) &&
-      isPeriodResultPending(row) &&
-      (existing.settledAt ?? "") >= (row.settledAt ?? "")
-    ) {
-      continue;
+    if (rowAt < existingAt) continue;
+    if (isPeriodResultPending(row) && !isPeriodResultPending(existing)) {
+      byId.set(row.id, row);
     }
-    byId.set(row.id, keep);
   }
   return [...byId.values()].sort(
     (a, b) =>
@@ -92,23 +84,57 @@ export function reconcileStalePeriodReveals(
   state: CompeteState,
   now: Date,
 ): PeriodResult[] {
-  return state.periodResults.map((row) => {
-    if (!isPeriodResultPending(row)) return row;
-    const enrollment = state.enrollments.find((item) => item.sport === row.sport);
-    if (!enrollment) return normalizePeriodResult(row);
-    const canonicalEnrollment = canonicalWaveEnrollment(enrollment);
+  let changed = false;
+  const next = state.periodResults.map((row) => {
     const canonical = normalizePeriodResult(row);
+    if (!isPeriodResultPending(canonical)) {
+      if (canonical !== row) changed = true;
+      return canonical;
+    }
+    const enrollment = state.enrollments.find((item) => item.sport === row.sport);
+    if (!enrollment) {
+      if (canonical !== row) changed = true;
+      return canonical;
+    }
+    const seat = canonicalWaveEnrollment(enrollment);
     if (
-      canonical.periodStart === canonicalEnrollment.waveStart &&
-      now.getTime() < new Date(canonicalEnrollment.weekEnd).getTime()
+      canonical.periodStart === seat.waveStart &&
+      now.getTime() < new Date(seat.weekEnd).getTime()
     ) {
+      changed = true;
       return {
         ...canonical,
         acknowledgedAt: canonical.settledAt ?? now.toISOString(),
       };
     }
+    if (canonical !== row) changed = true;
     return canonical;
   });
+  return changed ? next : state.periodResults;
+}
+
+function alignCrewBoardPin(state: CompeteState): CompeteState["crewBoard"] {
+  if (!state.crewBoard) return null;
+  const aligned = canonicalWaveEnrollment({
+    sport: state.crewBoard.sport,
+    waveStart: state.crewBoard.waveStart,
+    weekEnd: state.crewBoard.weekEnd,
+    capacity: state.crewBoard.capacity,
+    peerIds: [],
+    syntheticIds: state.crewBoard.syntheticIds,
+    autoEnrollNext: true,
+  });
+  if (
+    aligned.waveStart === state.crewBoard.waveStart &&
+    aligned.weekEnd === state.crewBoard.weekEnd
+  ) {
+    return state.crewBoard;
+  }
+  return {
+    ...state.crewBoard,
+    waveStart: aligned.waveStart,
+    weekEnd: aligned.weekEnd,
+  };
 }
 
 export function alignCompeteWaves(
@@ -125,53 +151,26 @@ export function alignCompeteWaves(
   ];
   const ratings = state.ratings.map((rating) => {
     if (!rating.lockPeriod) return rating;
-    const waveStart = waveWindowAt(
-      enrollmentWaveMidpoint({
-        waveStart: rating.lockPeriod,
-        weekEnd: rating.lockPeriod,
-      }),
-    ).waveStart.toISOString();
-    return rating.lockPeriod === waveStart ? rating : { ...rating, lockPeriod: waveStart };
+    const waveStart = waveWindowAt(new Date(rating.lockPeriod)).waveStart.toISOString();
+    return rating.lockPeriod === waveStart
+      ? rating
+      : { ...rating, lockPeriod: waveStart };
   });
-  const crewBoard =
-    state.crewBoard == null
-      ? null
-      : (() => {
-          const aligned = canonicalWaveEnrollment({
-            sport: state.crewBoard.sport,
-            waveStart: state.crewBoard.waveStart,
-            weekEnd: state.crewBoard.weekEnd,
-            capacity: state.crewBoard.capacity,
-            peerIds: [],
-            syntheticIds: state.crewBoard.syntheticIds,
-            autoEnrollNext: true,
-          });
-          if (
-            aligned.waveStart === state.crewBoard.waveStart &&
-            aligned.weekEnd === state.crewBoard.weekEnd
-          ) {
-            return state.crewBoard;
-          }
-          return {
-            ...state.crewBoard,
-            waveStart: aligned.waveStart,
-            weekEnd: aligned.weekEnd,
-          };
-        })();
-
+  const crewBoard = alignCrewBoardPin(state);
   let periodResults = dedupePeriodResults(state.periodResults);
-  const next: CompeteState = {
+  periodResults = reconcileStalePeriodReveals(
+    { ...state, enrollments, periodResults },
+    now,
+  );
+  const pendingRevealIds = pendingRevealIdsFromResults(periodResults);
+
+  return {
     ...state,
     enrollments,
     frozenPeriods,
     ratings,
     crewBoard,
     periodResults,
+    pendingRevealIds,
   };
-  periodResults = reconcileStalePeriodReveals(
-    { ...next, periodResults },
-    now,
-  );
-  const pendingRevealIds = pendingRevealIdsFromResults(periodResults);
-  return { ...next, periodResults, pendingRevealIds };
 }

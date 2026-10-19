@@ -186,13 +186,9 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
     }
   }
 
-  const scheduleSave = useCallback((accountId: string | null, next: CompeteState) => {
-    if (!accountId || demoRef.current || statusRef.current !== "ready") return;
-    if (timer.current) clearTimeout(timer.current);
-    timer.current = setTimeout(() => {
-      timer.current = null;
-      if (userIdRef.current !== accountId || statusRef.current !== "ready") return;
-      const generation = dirtyRef.current;
+  const runSave = useCallback(
+    (accountId: string | null, next: CompeteState, generation: number) => {
+      if (!accountId || demoRef.current || statusRef.current !== "ready") return;
       void fetch("/api/compete", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
@@ -221,8 +217,26 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
           localStorage.setItem(deviceOnlyKey(accountId), "1");
           setSaveError("This device updated. The account copy did not save.");
         });
-    }, 400);
-  }, []);
+    },
+    [],
+  );
+
+  const scheduleSave = useCallback(
+    (accountId: string | null, next: CompeteState, immediate = false) => {
+      if (!accountId || demoRef.current || statusRef.current !== "ready") return;
+      if (timer.current) clearTimeout(timer.current);
+      const generation = dirtyRef.current;
+      if (immediate) {
+        runSave(accountId, next, generation);
+        return;
+      }
+      timer.current = setTimeout(() => {
+        timer.current = null;
+        runSave(accountId, next, generation);
+      }, 400);
+    },
+    [runSave],
+  );
 
   const publish = useCallback(
     (
@@ -402,7 +416,12 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
           unsavedRef.current ||
           dirtyRef.current !== generation ||
           timer.current != null;
-        const next = applyRemoteSnapshot(local, remote, dirty);
+        const next = applyRemoteSnapshot(
+          local,
+          remote,
+          dirty,
+          unsavedRef.current,
+        );
         if (next !== local) {
           const savedAt = dirty
             ? new Date().toISOString()
@@ -496,7 +515,13 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
         stateRef.current = next;
         setState(next);
         writeLocal(userIdRef.current, next, savedAt);
-        if (statusRef.current === "ready") scheduleSave(userIdRef.current, next);
+        if (statusRef.current === "ready") {
+          scheduleSave(
+            userIdRef.current,
+            next,
+            withAccount.type === "set-units",
+          );
+        }
       },
     }),
     [

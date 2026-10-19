@@ -215,6 +215,7 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
               next,
               rollClock(migrateCompeteState(body.state)),
               dirty,
+              unsavedRef.current,
             );
           if (alive) {
             loadReady.current = true;

@@ -189,7 +189,7 @@ export function ArenaScreen() {
             return (
               <section key={r.sport} style={{ marginBottom: 36 }}>
                 <FieldStage
-                  key={`${r.sport}-${track}`}
+                  key={`${r.sport}-${track}-${state.units}`}
                   sportTitle={sportSpec?.name ?? r.sport}
                   model={sportModel}
                   boardRows={sportBoard.rows}

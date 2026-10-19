@@ -77,4 +77,11 @@ describe("applyRemoteSnapshot", () => {
     // Local user's preference to stop after this week was preserved
     expect(merged.enrollments[0]?.autoEnrollNext).toBe(false);
   });
+
+  it("keeps athlete_prefs units from the server when folding a dirty local copy", () => {
+    const local = { ...freshState(), units: "us" as const };
+    const remote = { ...freshState(), units: "metric" as const };
+    const merged = applyRemoteSnapshot(local, remote, true);
+    expect(merged.units).toBe("metric");
+  });
 });

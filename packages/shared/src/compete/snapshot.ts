@@ -30,7 +30,11 @@ function sameDocument(left: CompeteState, right: CompeteState): boolean {
 }
 
 /** Fold server activities and the hydrated crew board into an unsaved device copy. */
-function mergeFreshRemote(local: CompeteState, remote: CompeteState): CompeteState {
+function mergeFreshRemote(
+  local: CompeteState,
+  remote: CompeteState,
+  preferLocalUnits: boolean,
+): CompeteState {
   const activityIds = new Set(local.activities.map((activity) => activity.id));
   const activities = [...local.activities];
   for (const activity of remote.activities) {
@@ -61,6 +65,10 @@ function mergeFreshRemote(local: CompeteState, remote: CompeteState): CompeteSta
   const merged = rollClock(
     {
       ...local,
+      units:
+        preferLocalUnits && local.units !== remote.units
+          ? local.units
+          : remote.units,
       activities,
       sleepNights,
       readiness,
@@ -81,7 +89,10 @@ export function applyRemoteSnapshot(
   local: CompeteState,
   remote: CompeteState,
   dirty: boolean,
+  preferLocalUnits = false,
 ): CompeteState {
-  const next = dirty ? mergeFreshRemote(local, remote) : remote;
+  const next = dirty
+    ? mergeFreshRemote(local, remote, preferLocalUnits)
+    : remote;
   return sameDocument(local, next) ? local : next;
 }
