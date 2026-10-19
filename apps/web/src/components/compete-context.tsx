@@ -110,8 +110,14 @@ function writeStorageItem(key: string, value: string): void {
 
 function readLocal(userId: string | null): { savedAt: string; state: CompeteState } {
   const existing = parseStored(readStorageItem(storageKey(userId)));
-  if (existing) return existing;
   const demoSeed = getDemoCompeteState(userId);
+  if (demoSeed && (!existing || existing.state.activities.length === 0)) {
+    return {
+      savedAt: new Date(0).toISOString(),
+      state: rollClock(demoSeed),
+    };
+  }
+  if (existing) return existing;
   if (demoSeed) {
     return {
       savedAt: new Date(0).toISOString(),
