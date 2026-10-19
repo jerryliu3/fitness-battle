@@ -139,3 +139,5 @@ The [focused shape/finish comparison](GLASS.md#focused-comparison-shape--finish)
 The latest active review locks the **standard capsule** and keeps all four finishes. Uniform opacity is now **26/38/50%**, and 10 independent golds plus 10 silver/platinum tones create 100 color pairings. Wakes are clipped below the capsule instead of showing through its face. Open `review.html?view=finishes`; palette boards are `capsule-colors-white.png` / `capsule-colors-black.png`.
 
 October 19 refinement: the capsule color lab now preserves all four finishes and adds Rolled glass, Polished glass and Liquid edge. Every material shares the satin wake and a curved silhouette exclusion mask. See [GLASS.md](GLASS.md) for details and updated seven-finish boards.
+
+Latest shortlist: the active review and finish boards now compare only Satin glass, Fired glaze, Rolled glass and Polished glass. Rolled/Polished opacity options are 26%, 38%, 50%, 60%, 70%, 80% and 90%.

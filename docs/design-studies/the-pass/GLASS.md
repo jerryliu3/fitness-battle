@@ -1,6 +1,6 @@
 # Uniform tinted glass — Round 6
 
-**Current review:** capsule shape locked; seven finishes (four original + three rim studies); 26/38/50% uniform opacity; independent 10-gold and 10-silver/platinum selectors at `review.html?view=finishes`. The earlier sections below record the exploration history.
+**Current review:** capsule shape locked; four finalists — Satin glass, Fired glaze, Rolled glass and Polished glass. Rolled/Polished opacity options: 26/38/50/60/70/80/90%. Independent 10-gold and 10-silver/platinum selectors at `review.html?view=finishes`. The earlier sections below record the exploration history.
 
 The user retained Amber Capsule and Glazed Ceramic, with Frosted Pebble as a third comparison. The new direction follows the supplied Photos icon reference more literally: one smooth translucent material, consistent across the face, with darker areas caused by overlap rather than painted texture or decorative reflections.
 
@@ -74,7 +74,7 @@ Verification: workspace typecheck, 168 web tests (four existing skips), and prod
 
 All study material renderers now use one `SatinWake`: the original satin filled echo, .55 paint opacity, .6 decaying group opacity, the same vertical fade, six leading / four rival echoes, shared-start lengths of 117.55 / 65.55, and 1.15 / 1.32 second flow cycles. Finish, opacity and rim choices cannot alter the wake. The selected gold/silver palette still colors it. Icon and athlete markers share the renderer and curved exclusion mask.
 
-The original Uniform glass, Tinted glass (Amber Capsule), Satin glass (Frosted Pebble) and Fired glaze (Glazed Ceramic) remain. Three additional uniform glass versions explore the white, shaded perimeter of **one individual capsule** in the Photos reference:
+In this round, the original Uniform glass, Tinted glass (Amber Capsule), Satin glass (Frosted Pebble) and Fired glaze (Glazed Ceramic) remained. Three additional uniform glass versions explored the white, shaded perimeter of **one individual capsule** in the Photos reference:
 
 - **Rolled glass:** broad soft white crest and shaded lower edge.
 - **Polished glass:** narrower bevel with a fine inner light ridge.
@@ -83,3 +83,9 @@ The original Uniform glass, Tinted glass (Amber Capsule), Satin glass (Frosted P
 The face remains a constant-alpha color layer; gradients are confined to inset perimeter strokes. All three use the existing 26 / 38 / 50% settings, independent 10 × 10 color choices, both backgrounds, field selection, and SVG export. `finish-board-white.png` / `finish-board-black.png` now document all seven, with per-finish masters and field SVGs in `finish-icons/`.
 
 Validation: `pnpm typecheck`, full `pnpm test` (481 passed, four existing skips), and `pnpm build:web` passed. A raster comparison across seven finishes, both backgrounds and two echo poses (28 cases) found **zero changed pixels inside the live capsule**, while confirming visible echoes beside its rounded lower corners. The CI failure was two Arena fixtures opting in against the real wall clock while asserting against October 15; all opt-in fixtures in that suite now pass their explicit fixture time, without changing product enrollment behavior.
+
+## Four finalists and wider opacity comparison
+
+The active comparison now contains only **Satin glass, Fired glaze, Rolled glass and Polished glass**. Uniform glass, Amber tinted glass and Liquid edge are removed from the finalist grid; earlier exported studies remain as history. Rolled glass is selected initially at 50%.
+
+Rolled and Polished glass share seven matched face-opacity options: **26%, 38%, 50%, 60%, 70%, 80% and 90%**. These update both colors, small-size previews, the selected lane field, transmission check and SVG exports. Satin glass and Fired glaze retain their original material shading. All four retain the common satin wake, curved exclusion mask, independent palette choices and white/black backdrops.
