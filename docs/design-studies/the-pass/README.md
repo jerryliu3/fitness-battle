@@ -133,3 +133,5 @@ The user selected **Shared Start** (six gold echoes) for the application. It rep
 ## Round 6: uniform tinted glass
 
 The [focused glass exploration](GLASS.md) adds eight variations using capsules and open loops. Faces are a single even tint; overlap creates the darker areas and only thin boundaries catch light. Amber Capsule, Glazed Ceramic and Frosted Pebble remain available for comparison. Open `review.html?view=glass` for overlap inspection, white/black views, small-size samples, SVG exports and matching animated lane previews.
+
+The [focused shape/finish comparison](GLASS.md#focused-comparison-shape--finish) at `review.html?view=finishes` pairs capsule and fine loop with uniform glass, original Amber tinted glass, satin glass, and fired glaze. Uniform opacity is simplified to 38/50/64%, defaulting to equal 50% for gold and silver. Original favorites and all prior study rounds remain available.

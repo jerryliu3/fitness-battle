@@ -3,6 +3,11 @@ import { UniformGlassRacer } from "./glass-art";
 import type { MaterialConcept } from "./material-concepts";
 
 function Form({ concept, ...paint }: { concept: MaterialConcept; fill?: string; stroke?: string; strokeWidth?: number; opacity?: number }) {
+  if (concept.shape === "circle" && "loopBand" in concept && concept.loopBand) {
+    const r = 23, inner = r - concept.loopBand;
+    const circle = (v: number) => `M${v} 0a${v} ${v} 0 1 0 ${-2*v} 0a${v} ${v} 0 1 0 ${2*v} 0Z`;
+    return <path d={circle(r)+circle(inner)} fillRule="evenodd" clipRule="evenodd" {...paint}/>;
+  }
   if (concept.shape === "pill") return <rect x={-20} y={-29} width={40} height={58} rx={20} {...paint}/>;
   if (concept.shape === "squircle") return <path d="M0-24C18-24 24-18 24 0S18 24 0 24-24 18-24 0-18-24 0-24Z" {...paint}/>;
   if (concept.shape === "lozenge") return <path d="M-7-25Q0-32 7-25L25-7Q32 0 25 7L7 25Q0 32-7 25L-25 7Q-32 0-25-7Z" {...paint}/>;

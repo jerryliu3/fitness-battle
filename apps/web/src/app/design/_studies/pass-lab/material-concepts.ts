@@ -9,5 +9,7 @@ export const MATERIAL_CONCEPTS = [
   { id: "ceramic", name: "Glazed ceramic", material: "FIRED GLAZE", shape: "pill", line: "A smooth glazed capsule with a colored enamel body, rolled edge and a small porcelain reflection.", field: "Readable, friendly and substantial. A useful opaque counterpart to the glass pill.", tradeoff: "Feels more playful and less weightless; avoid heavy shadows in dense lanes." },
   { id: "opal", name: "Opal drop", material: "PEARLESCENT RESIN", shape: "drop", line: "A soft upward-pointing drop with a translucent pearl body and gold or silver edging. Light pools inside instead of flashing across it.", field: "A directional head that stays rounded and approachable, with pearl echoes following behind.", tradeoff: "The drop is less familiar than the circle; test whether it reads as an athlete or a map pin." },
 ] as const;
-export type MaterialConcept = typeof MATERIAL_CONCEPTS[number] | GlassConcept;
+export type MaterialConcept = (Omit<typeof MATERIAL_CONCEPTS[number], "name" | "shape"> & {
+  name: string; shape: typeof MATERIAL_CONCEPTS[number]["shape"]; loopBand?: number;
+}) | GlassConcept;
 export type MaterialId = MaterialConcept["id"];
