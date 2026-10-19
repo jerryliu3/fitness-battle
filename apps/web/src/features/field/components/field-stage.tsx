@@ -76,9 +76,18 @@ export function FieldStage({
     : null;
 
   const [mode, setMode] = useState<"lanes" | "pursuit" | "standings">("lanes");
+  const [lanesImmersive, setLanesImmersive] = useState(false);
   const [camera, setCamera] = useState<"above" | "follow">("above");
   const [span, setSpan] = useState(model.gps ? 6 : 20);
   const [center, setCenter] = useState<number | null>(null);
+  const [centerTween, setCenterTween] = useState<number | null>(null);
+  const centerTweenRef = useRef<{
+    from: number;
+    to: number;
+    start: number;
+    raf: number;
+  } | null>(null);
+  const liveCenterRef = useRef(0);
   const [showGhost, setShowGhost] = useState(true);
   const [selected, setSelected] = useState<string | null>(null);
   const [unavailable, setUnavailable] = useState(false);
@@ -168,6 +177,11 @@ export function FieldStage({
       typeof window !== "undefined" &&
       typeof window.matchMedia === "function" &&
       window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (centerTweenRef.current?.raf) {
+      cancelAnimationFrame(centerTweenRef.current.raf);
+    }
+    centerTweenRef.current = null;
+    setCenterTween(null);
     setCenter(null);
     setOvertakePlan(plan);
     if (reduced) {
@@ -226,13 +240,70 @@ export function FieldStage({
         ? placeAt(runners, you.id, time, 0)
         : 0;
 
+  const followCenter = overtakeFrame ? overtakeFrame.viewCenter : total;
+  const resolvedCenter = clampArenaLaneCenter(center ?? followCenter, span);
+  const displayCenter =
+    centerTween !== null && centerTweenRef.current
+      ? clampArenaLaneCenter(
+          centerTweenRef.current.from +
+            (centerTweenRef.current.to - centerTweenRef.current.from) *
+              centerTween,
+          span,
+        )
+      : resolvedCenter;
+  liveCenterRef.current = displayCenter;
+
   const view: ArenaViewWindow = {
-    center: clampArenaLaneCenter(
-      center ?? (overtakeFrame ? overtakeFrame.viewCenter : total),
-      span,
-    ),
+    center: displayCenter,
     span,
   };
+
+  const cancelCenterTween = () => {
+    if (centerTweenRef.current?.raf) {
+      cancelAnimationFrame(centerTweenRef.current.raf);
+    }
+    centerTweenRef.current = null;
+    setCenterTween(null);
+  };
+
+  const tweenCenterTo = (target: number) => {
+    const clamped = clampArenaLaneCenter(target, span);
+    const from = liveCenterRef.current;
+    if (Math.abs(from - clamped) < 0.05) {
+      cancelCenterTween();
+      setCenter(clamped);
+      return;
+    }
+    cancelCenterTween();
+    const reduced =
+      typeof window !== "undefined" &&
+      typeof window.matchMedia === "function" &&
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (reduced) {
+      setCenter(clamped);
+      return;
+    }
+    const start = performance.now();
+    const duration = 420;
+    const tick = (now: number) => {
+      const t = Math.min(1, (now - start) / duration);
+      const eased = 1 - Math.pow(1 - t, 3);
+      setCenterTween(eased);
+      if (t < 1) {
+        const raf = requestAnimationFrame(tick);
+        if (centerTweenRef.current) centerTweenRef.current.raf = raf;
+      } else {
+        centerTweenRef.current = null;
+        setCenterTween(null);
+        setCenter(clamped);
+      }
+    };
+    centerTweenRef.current = { from, to: clamped, start, raf: 0 };
+    setCenterTween(0);
+    centerTweenRef.current.raf = requestAnimationFrame(tick);
+  };
+
+  useEffect(() => () => cancelCenterTween(), []);
 
   const trackSelected = resolveArenaSelectedId(
     selected,
@@ -263,11 +334,17 @@ export function FieldStage({
         : runners.find((r) => r.id === selected) ?? null;
     if (!runner) return;
     const target = valueAt(runner, time);
-    setCenter((prev) => {
-      const next = clampArenaLaneCenter(target, span);
-      return prev === next ? prev : next;
-    });
+    tweenCenterTo(target);
   }, [selected, mode, span, showGhost, ghost, runners, time]);
+
+  useEffect(() => {
+    if (!lanesImmersive) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setLanesImmersive(false);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [lanesImmersive]);
 
   if (!you) return <p className="fb-copy">Join a field to see your lanes.</p>;
 
@@ -387,7 +464,22 @@ export function FieldStage({
         </div>
       ) : (
         <>
-          <div className="focus-track-frame">
+          <div
+            className={
+              lanesImmersive && mode === "lanes"
+                ? "focus-track-frame is-lanes-immersive"
+                : "focus-track-frame"
+            }
+          >
+            {lanesImmersive && mode === "lanes" && (
+              <button
+                type="button"
+                className="focus-lanes-immersive-back"
+                onClick={() => setLanesImmersive(false)}
+              >
+                ← Back
+              </button>
+            )}
             {mode === "pursuit" && !unavailable ? (
               <>
                 <LivePursuit
@@ -422,7 +514,11 @@ export function FieldStage({
                 unit={unit}
                 selected={trackSelected || you.id}
                 onSelect={toggleSelect}
-                onPan={(v) => setCenter(clampArenaLaneCenter(v, span))}
+                onBackgroundTap={() => setLanesImmersive(true)}
+                onPan={(v) => {
+                  cancelCenterTween();
+                  setCenter(clampArenaLaneCenter(v, span));
+                }}
                 overtakeFrame={overtakeFrame}
                 overtakePlan={overtakePlan}
               />
