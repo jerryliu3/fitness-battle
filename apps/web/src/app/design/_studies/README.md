@@ -2,6 +2,7 @@
 
 All presentation prototypes, sample data, study-only styles and prototype tests live under `src/app/design/_studies/`, alongside the thin route wrappers in `src/app/design/`. Next treats `_studies` as a private folder, so it creates no routes and existing `/design/*` links keep working. New studies should follow this boundary rather than adding prototype modules to `src/features/`.
 
+- `smoothness-lab`: `/ux` — 18 interactive continuity prototypes with a visual mobile-haptic event monitor; fictional local state, no native vibration or backend writes.
 - `design-lab`: the first interaction/layout study
 - `spatial-lab`: spatial layouts and sample worlds
 - `evolution-lab`: identity and field exploration

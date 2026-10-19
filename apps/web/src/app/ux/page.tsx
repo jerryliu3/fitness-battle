@@ -1,5 +1,11 @@
-import { redirect } from "next/navigation";
+import type { Metadata } from "next";
+import { SmoothnessLab } from "@/app/design/_studies/smoothness-lab/lab";
+
+export const metadata: Metadata = {
+  title: "Motion & touch · Overtaek",
+  description: "Eighteen interactive continuity and mobile haptic prototypes.",
+};
 
 export default function UxPage() {
-  redirect("/design");
+  return <SmoothnessLab />;
 }
