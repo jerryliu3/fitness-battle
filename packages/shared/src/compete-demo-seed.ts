@@ -1,3 +1,4 @@
+import { findDemoAccount } from "./demo-data";
 import {
   freshHealthRatings,
   freshState,
@@ -15,42 +16,25 @@ export function getDemoCompeteState(
   userId: string | null,
 ): CompeteState | null {
   if (!userId) return null;
-  const id = userId.toLowerCase();
-  const isAlice =
-    id === "11111111-1111-4111-8111-111111111111" ||
-    id === "alice" ||
-    id.startsWith("alice");
-  const isBob =
-    id === "22222222-2222-4222-8222-222222222222" ||
-    id === "bob" ||
-    id.startsWith("bob");
-  const isCarla =
-    id === "33333333-3333-4333-8333-333333333333" ||
-    id === "carla" ||
-    id.startsWith("carla");
-  const isDana =
-    id === "44444444-4444-4444-8444-444444444444" ||
-    id === "dana" ||
-    id.startsWith("dana");
-
-  if (!isAlice && !isBob && !isCarla && !isDana) return null;
+  const demo = findDemoAccount(userId);
+  if (!demo) return null;
 
   const monday = mondayOfCurrentWeek();
   const waveStartIso = monday.toISOString();
   const weekEndIso = weeklyPeriodBounds(monday).endsAt.toISOString();
   const base = freshState(monday);
 
-  if (isDana) {
+  if (demo.email === "dana@example.com") {
     return {
       ...base,
-      name: "Dana Singh",
-      city: "Manhattan",
+      name: demo.displayName,
+      city: demo.city,
       calibrated: false,
       onboardingCompleted: false,
     };
   }
 
-  if (isAlice) {
+  if (demo.email === "alice@example.com") {
     const today = new Date().toISOString().slice(0, 10);
     return {
       ...base,
@@ -201,11 +185,25 @@ export function getDemoCompeteState(
           id: "strava-act-alice-w0-mon",
           sport: "running",
           startedAt: new Date(
-            monday.getTime() + 1 * 86400000 + 7 * 3600000,
+            monday.getTime() + 7 * 3600000,
           ).toISOString(),
           distanceM: 8200,
           movingSec: 2640,
-          avgHr: 152,
+          avgHr: 154,
+          verified: true,
+          source: "strava",
+          provenance: "recorded",
+          disposition: "counted",
+        },
+        {
+          id: "strava-act-alice-w0-tue",
+          sport: "running",
+          startedAt: new Date(
+            monday.getTime() + 1 * 86400000 + 6 * 3600000 + 45 * 60000,
+          ).toISOString(),
+          distanceM: 4800,
+          movingSec: 1720,
+          avgHr: 138,
           verified: true,
           source: "strava",
           provenance: "recorded",
@@ -215,11 +213,25 @@ export function getDemoCompeteState(
           id: "strava-act-alice-w0-wed",
           sport: "running",
           startedAt: new Date(
-            monday.getTime() + 3 * 86400000 + 18 * 3600000,
+            monday.getTime() + 2 * 86400000 + 18 * 3600000 + 15 * 60000,
           ).toISOString(),
           distanceM: 10500,
           movingSec: 3240,
-          avgHr: 161,
+          avgHr: 168,
+          verified: true,
+          source: "strava",
+          provenance: "recorded",
+          disposition: "counted",
+        },
+        {
+          id: "strava-act-alice-w0-thu",
+          sport: "running",
+          startedAt: new Date(
+            monday.getTime() + 3 * 86400000 + 7 * 3600000 + 30 * 60000,
+          ).toISOString(),
+          distanceM: 5600,
+          movingSec: 1980,
+          avgHr: 142,
           verified: true,
           source: "strava",
           provenance: "recorded",
@@ -229,11 +241,11 @@ export function getDemoCompeteState(
           id: "strava-act-alice-w0-fri",
           sport: "cycling",
           startedAt: new Date(
-            monday.getTime() + 5 * 86400000 + 17 * 3600000,
+            monday.getTime() + 4 * 86400000 + 17 * 3600000,
           ).toISOString(),
           distanceM: 24000,
           movingSec: 3900,
-          avgHr: 142,
+          avgHr: 135,
           verified: true,
           source: "strava",
           provenance: "recorded",
@@ -243,11 +255,168 @@ export function getDemoCompeteState(
           id: "strava-act-alice-w0-sat",
           sport: "running",
           startedAt: new Date(
-            monday.getTime() + 6 * 86400000 + 8 * 3600000,
+            monday.getTime() + 5 * 86400000 + 8 * 3600000 + 30 * 60000,
           ).toISOString(),
           distanceM: 16800,
           movingSec: 5400,
           avgHr: 158,
+          verified: true,
+          source: "strava",
+          provenance: "recorded",
+          disposition: "counted",
+        },
+        // Historical sessions across previous weeks so journey has a rich path
+        {
+          id: "strava-act-alice-w1-sat",
+          sport: "running",
+          startedAt: new Date(monday.getTime() - 2 * 86400000 + 10 * 3600000).toISOString(),
+          distanceM: 18500,
+          movingSec: 5940,
+          avgHr: 156,
+          verified: true,
+          source: "strava",
+          provenance: "recorded",
+          disposition: "counted",
+        },
+        {
+          id: "strava-act-alice-w1-thu",
+          sport: "running",
+          startedAt: new Date(monday.getTime() - 4 * 86400000 + 18 * 3600000).toISOString(),
+          distanceM: 6200,
+          movingSec: 2160,
+          avgHr: 148,
+          verified: true,
+          source: "strava",
+          provenance: "recorded",
+          disposition: "counted",
+        },
+        {
+          id: "strava-act-alice-w1-tue",
+          sport: "running",
+          startedAt: new Date(monday.getTime() - 6 * 86400000 + 7 * 3600000).toISOString(),
+          distanceM: 10000,
+          movingSec: 3120,
+          avgHr: 164,
+          verified: true,
+          source: "strava",
+          provenance: "recorded",
+          disposition: "counted",
+        },
+        {
+          id: "strava-act-alice-w2-sun",
+          sport: "running",
+          startedAt: new Date(monday.getTime() - 8 * 86400000 + 9 * 3600000).toISOString(),
+          distanceM: 16000,
+          movingSec: 5100,
+          avgHr: 155,
+          verified: true,
+          source: "strava",
+          provenance: "recorded",
+          disposition: "counted",
+        },
+        {
+          id: "strava-act-alice-w2-fri",
+          sport: "cycling",
+          startedAt: new Date(monday.getTime() - 10 * 86400000 + 17 * 3600000).toISOString(),
+          distanceM: 22000,
+          movingSec: 3600,
+          avgHr: 138,
+          verified: true,
+          source: "strava",
+          provenance: "recorded",
+          disposition: "counted",
+        },
+        {
+          id: "strava-act-alice-w2-wed",
+          sport: "running",
+          startedAt: new Date(monday.getTime() - 12 * 86400000 + 18 * 3600000).toISOString(),
+          distanceM: 8500,
+          movingSec: 2700,
+          avgHr: 153,
+          verified: true,
+          source: "strava",
+          provenance: "recorded",
+          disposition: "counted",
+        },
+        {
+          id: "strava-act-alice-w2-mon",
+          sport: "running",
+          startedAt: new Date(monday.getTime() - 14 * 86400000 + 7 * 3600000).toISOString(),
+          distanceM: 7200,
+          movingSec: 2340,
+          avgHr: 149,
+          verified: true,
+          source: "strava",
+          provenance: "recorded",
+          disposition: "counted",
+        },
+        {
+          id: "strava-act-alice-w3-sat",
+          sport: "running",
+          startedAt: new Date(monday.getTime() - 16 * 86400000 + 10 * 3600000).toISOString(),
+          distanceM: 15000,
+          movingSec: 4800,
+          avgHr: 157,
+          verified: true,
+          source: "strava",
+          provenance: "recorded",
+          disposition: "counted",
+        },
+        {
+          id: "strava-act-alice-w3-thu",
+          sport: "running",
+          startedAt: new Date(monday.getTime() - 18 * 86400000 + 18 * 3600000).toISOString(),
+          distanceM: 9200,
+          movingSec: 2940,
+          avgHr: 154,
+          verified: true,
+          source: "strava",
+          provenance: "recorded",
+          disposition: "counted",
+        },
+        {
+          id: "strava-act-alice-w3-tue",
+          sport: "running",
+          startedAt: new Date(monday.getTime() - 20 * 86400000 + 7 * 3600000).toISOString(),
+          distanceM: 6800,
+          movingSec: 2220,
+          avgHr: 150,
+          verified: true,
+          source: "strava",
+          provenance: "recorded",
+          disposition: "counted",
+        },
+        {
+          id: "strava-act-alice-w4-sun",
+          sport: "running",
+          startedAt: new Date(monday.getTime() - 22 * 86400000 + 9 * 3600000).toISOString(),
+          distanceM: 14000,
+          movingSec: 4500,
+          avgHr: 156,
+          verified: true,
+          source: "strava",
+          provenance: "recorded",
+          disposition: "counted",
+        },
+        {
+          id: "strava-act-alice-w4-fri",
+          sport: "running",
+          startedAt: new Date(monday.getTime() - 24 * 86400000 + 17 * 3600000).toISOString(),
+          distanceM: 8000,
+          movingSec: 2580,
+          avgHr: 151,
+          verified: true,
+          source: "strava",
+          provenance: "recorded",
+          disposition: "counted",
+        },
+        {
+          id: "strava-act-alice-w4-wed",
+          sport: "running",
+          startedAt: new Date(monday.getTime() - 26 * 86400000 + 18 * 3600000).toISOString(),
+          distanceM: 5000,
+          movingSec: 1620,
+          avgHr: 145,
           verified: true,
           source: "strava",
           provenance: "recorded",
@@ -348,7 +517,7 @@ export function getDemoCompeteState(
     };
   }
 
-  if (isBob) {
+  if (demo.email === "bob@example.com") {
     return {
       ...base,
       name: "Bob Chen",
@@ -401,7 +570,7 @@ export function getDemoCompeteState(
           id: "strava-act-bob-w0-mon",
           sport: "cycling",
           startedAt: new Date(
-            monday.getTime() + 1 * 86400000 + 6 * 3600000,
+            monday.getTime() + 6 * 3600000,
           ).toISOString(),
           distanceM: 28000,
           movingSec: 3600,
@@ -415,7 +584,7 @@ export function getDemoCompeteState(
           id: "strava-act-bob-w0-wed",
           sport: "cycling",
           startedAt: new Date(
-            monday.getTime() + 3 * 86400000 + 6 * 3600000,
+            monday.getTime() + 2 * 86400000 + 6 * 3600000,
           ).toISOString(),
           distanceM: 42000,
           movingSec: 5200,
@@ -425,11 +594,47 @@ export function getDemoCompeteState(
           provenance: "recorded",
           disposition: "counted",
         },
+        {
+          id: "strava-act-bob-w1-sat",
+          sport: "cycling",
+          startedAt: new Date(monday.getTime() - 2 * 86400000 + 8 * 3600000).toISOString(),
+          distanceM: 52000,
+          movingSec: 6400,
+          avgHr: 150,
+          verified: true,
+          source: "strava",
+          provenance: "recorded",
+          disposition: "counted",
+        },
+        {
+          id: "strava-act-bob-w1-wed",
+          sport: "cycling",
+          startedAt: new Date(monday.getTime() - 5 * 86400000 + 6 * 3600000).toISOString(),
+          distanceM: 35000,
+          movingSec: 4400,
+          avgHr: 145,
+          verified: true,
+          source: "strava",
+          provenance: "recorded",
+          disposition: "counted",
+        },
+        {
+          id: "strava-act-bob-w2-sat",
+          sport: "cycling",
+          startedAt: new Date(monday.getTime() - 9 * 86400000 + 8 * 3600000).toISOString(),
+          distanceM: 45000,
+          movingSec: 5600,
+          avgHr: 148,
+          verified: true,
+          source: "strava",
+          provenance: "recorded",
+          disposition: "counted",
+        },
       ],
     };
   }
 
-  if (isCarla) {
+  if (demo.email === "carla@example.com") {
     return {
       ...base,
       name: "Carla Diaz",
@@ -487,7 +692,7 @@ export function getDemoCompeteState(
           id: "strava-act-carla-w0-mon",
           sport: "running",
           startedAt: new Date(
-            monday.getTime() + 1 * 86400000 + 18 * 3600000,
+            monday.getTime() + 7 * 3600000,
           ).toISOString(),
           distanceM: 10400,
           movingSec: 3180,
@@ -501,7 +706,7 @@ export function getDemoCompeteState(
           id: "strava-act-carla-w0-sat",
           sport: "running",
           startedAt: new Date(
-            monday.getTime() + 6 * 86400000 + 9 * 3600000,
+            monday.getTime() + 5 * 86400000 + 9 * 3600000,
           ).toISOString(),
           distanceM: 21100,
           movingSec: 6120,
@@ -510,6 +715,294 @@ export function getDemoCompeteState(
           source: "strava",
           provenance: "recorded",
           disposition: "counted",
+        },
+        {
+          id: "strava-act-carla-w1-sat",
+          sport: "running",
+          startedAt: new Date(monday.getTime() - 2 * 86400000 + 9 * 3600000).toISOString(),
+          distanceM: 19000,
+          movingSec: 5600,
+          avgHr: 164,
+          verified: true,
+          source: "strava",
+          provenance: "recorded",
+          disposition: "counted",
+        },
+        {
+          id: "strava-act-carla-w1-tue",
+          sport: "running",
+          startedAt: new Date(monday.getTime() - 6 * 86400000 + 7 * 3600000).toISOString(),
+          distanceM: 12000,
+          movingSec: 3600,
+          avgHr: 165,
+          verified: true,
+          source: "strava",
+          provenance: "recorded",
+          disposition: "counted",
+        },
+        {
+          id: "strava-act-carla-w2-sat",
+          sport: "running",
+          startedAt: new Date(monday.getTime() - 9 * 86400000 + 9 * 3600000).toISOString(),
+          distanceM: 16000,
+          movingSec: 4800,
+          avgHr: 160,
+          verified: true,
+          source: "strava",
+          provenance: "recorded",
+          disposition: "counted",
+        },
+      ],
+    };
+  }
+
+  if (demo.email === "test@test.com") {
+    const today = new Date().toISOString().slice(0, 10);
+    return {
+      ...base,
+      name: "Test Athlete",
+      city: "New York",
+      primary: "running",
+      focus: { family: "sport", id: "running" },
+      calibrated: true,
+      onboardingCompleted: true,
+      lessonDoneOn: today,
+      freezesLeft: 3,
+      trainingGoal: {
+        distance: "half",
+        deadline: new Date(Date.now() + 60 * 86400000)
+          .toISOString()
+          .slice(0, 10),
+      },
+      ratings: SPORT_IDS.map((sport: SportId) => {
+        if (sport === "running") {
+          return {
+            sport,
+            verifiedElo: 1150,
+            openElo: 1165,
+            optedIn: true,
+            lockVerified: 1130,
+            lockOpen: 1145,
+            lockPeriod: waveStartIso,
+          };
+        }
+        if (sport === "cycling") {
+          return {
+            sport,
+            verifiedElo: 1060,
+            openElo: 1075,
+            optedIn: true,
+            lockVerified: 1040,
+            lockOpen: 1055,
+            lockPeriod: waveStartIso,
+          };
+        }
+        return {
+          sport,
+          verifiedElo: 1000,
+          openElo: 1000,
+          optedIn: false,
+          lockVerified: 1000,
+          lockOpen: 1000,
+          lockPeriod: waveStartIso,
+        };
+      }),
+      healthRatings: freshHealthRatings(waveStartIso).map((hr) => ({
+        ...hr,
+        verifiedElo: 1090,
+        openElo: 1090,
+        optedIn: true,
+      })),
+      links: [
+        { provider: "strava", linked: true, status: "connected" },
+        { provider: "whoop", linked: true, status: "connected" },
+      ],
+      enrollments: [
+        {
+          sport: "running",
+          waveStart: waveStartIso,
+          weekEnd: weekEndIso,
+          capacity: 8,
+          peerIds: [
+            "11111111-1111-4111-8111-111111111111",
+            "22222222-2222-4222-8222-222222222222",
+            "33333333-3333-4333-8333-333333333333",
+            "55555555-5555-4555-8555-555555555555",
+          ],
+          syntheticIds: ["synth:running:0", "synth:running:1"],
+          autoEnrollNext: true,
+          crewId: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+        },
+      ],
+      crewBoard: {
+        crewId: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+        crewName: "Weekday miles",
+        sport: "running",
+        waveStart: waveStartIso,
+        weekEnd: weekEndIso,
+        capacity: 8,
+        memberIds: [
+          "00000000-0000-4000-8000-000000000001",
+          "11111111-1111-4111-8111-111111111111",
+          "22222222-2222-4222-8222-222222222222",
+          "33333333-3333-4333-8333-333333333333",
+        ],
+        syntheticIds: ["synth:running:0", "synth:running:1"],
+        members: [
+          {
+            id: "00000000-0000-4000-8000-000000000001",
+            name: "Test Athlete",
+            elo: 1165,
+            distanceM: 38200,
+            movingSec: 11900,
+          },
+          {
+            id: "11111111-1111-4111-8111-111111111111",
+            name: "Alice Park",
+            elo: 1140,
+            distanceM: 35500,
+            movingSec: 11280,
+          },
+          {
+            id: "22222222-2222-4222-8222-222222222222",
+            name: "Bob Chen",
+            elo: 1060,
+            distanceM: 6000,
+            movingSec: 2100,
+          },
+          {
+            id: "33333333-3333-4333-8333-333333333333",
+            name: "Carla Diaz",
+            elo: 1190,
+            distanceM: 31500,
+            movingSec: 9300,
+          },
+        ],
+      },
+      activities: [
+        {
+          id: "strava-act-test-w0-mon",
+          sport: "running",
+          startedAt: new Date(monday.getTime() + 7 * 3600000).toISOString(),
+          distanceM: 9000,
+          movingSec: 2700,
+          avgHr: 155,
+          verified: true,
+          source: "strava",
+          provenance: "recorded",
+          disposition: "counted",
+        },
+        {
+          id: "strava-act-test-w0-tue",
+          sport: "running",
+          startedAt: new Date(monday.getTime() + 1 * 86400000 + 6 * 3600000 + 30 * 60000).toISOString(),
+          distanceM: 5200,
+          movingSec: 1800,
+          avgHr: 138,
+          verified: true,
+          source: "strava",
+          provenance: "recorded",
+          disposition: "counted",
+        },
+        {
+          id: "strava-act-test-w0-wed",
+          sport: "running",
+          startedAt: new Date(monday.getTime() + 2 * 86400000 + 18 * 3600000).toISOString(),
+          distanceM: 11200,
+          movingSec: 3400,
+          avgHr: 168,
+          verified: true,
+          source: "strava",
+          provenance: "recorded",
+          disposition: "counted",
+        },
+        {
+          id: "strava-act-test-w1-sat",
+          sport: "running",
+          startedAt: new Date(monday.getTime() - 2 * 86400000 + 10 * 3600000).toISOString(),
+          distanceM: 20000,
+          movingSec: 6200,
+          avgHr: 158,
+          verified: true,
+          source: "strava",
+          provenance: "recorded",
+          disposition: "counted",
+        },
+        {
+          id: "strava-act-test-w1-thu",
+          sport: "running",
+          startedAt: new Date(monday.getTime() - 4 * 86400000 + 18 * 3600000).toISOString(),
+          distanceM: 8000,
+          movingSec: 2500,
+          avgHr: 145,
+          verified: true,
+          source: "strava",
+          provenance: "recorded",
+          disposition: "counted",
+        },
+        {
+          id: "strava-act-test-w1-tue",
+          sport: "running",
+          startedAt: new Date(monday.getTime() - 6 * 86400000 + 7 * 3600000).toISOString(),
+          distanceM: 10500,
+          movingSec: 3200,
+          avgHr: 165,
+          verified: true,
+          source: "strava",
+          provenance: "recorded",
+          disposition: "counted",
+        },
+        {
+          id: "strava-act-test-w2-sat",
+          sport: "running",
+          startedAt: new Date(monday.getTime() - 8 * 86400000 + 9 * 3600000).toISOString(),
+          distanceM: 16000,
+          movingSec: 5100,
+          avgHr: 154,
+          verified: true,
+          source: "strava",
+          provenance: "recorded",
+          disposition: "counted",
+        },
+        {
+          id: "strava-act-test-w2-wed",
+          sport: "running",
+          startedAt: new Date(monday.getTime() - 11 * 86400000 + 18 * 3600000).toISOString(),
+          distanceM: 12000,
+          movingSec: 3700,
+          avgHr: 172,
+          verified: true,
+          source: "strava",
+          provenance: "recorded",
+          disposition: "counted",
+        },
+        {
+          id: "strava-act-test-w2-mon",
+          sport: "running",
+          startedAt: new Date(monday.getTime() - 13 * 86400000 + 7 * 3600000).toISOString(),
+          distanceM: 7500,
+          movingSec: 2400,
+          avgHr: 136,
+          verified: true,
+          source: "strava",
+          provenance: "recorded",
+          disposition: "counted",
+        },
+      ],
+      sleepNights: [
+        {
+          id: "slp-test-d0",
+          metric: "sleep",
+          day: today,
+          score: 87,
+          durationMin: 470,
+          efficiency: 93,
+          deepMin: 85,
+          remMin: 100,
+          lightMin: 255,
+          awakeMin: 30,
+          source: "whoop",
+          verified: true,
         },
       ],
     };

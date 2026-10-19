@@ -3,7 +3,7 @@
 import { createClient } from "@/lib/supabase/client";
 import { getSupabaseConfig } from "@/lib/supabase/config";
 import { webEnv } from "@/lib/env";
-import { hashString } from "@fitness-battle/shared";
+import { hashString, findDemoAccount } from "@fitness-battle/shared";
 import { markBootSplashSeen } from "@/shell/boot-gate";
 import {
   DEMO_USER_COOKIE,
@@ -119,19 +119,13 @@ function writeDemoUser(user: AuthUser | null) {
 }
 
 
-const DEMO_NAMES: Record<string, string> = {
-  "alice@example.com": "Alice Park",
-  "bob@example.com": "Bob Chen",
-  "carla@example.com": "Carla Diaz",
-  "dana@example.com": "Dana Brooks",
-};
-
 function demoUserFromEmail(email: string, displayName?: string): AuthUser {
   const normalized = email.trim().toLowerCase();
+  const demo = findDemoAccount(normalized);
   const local = normalized.split("@")[0] || "Athlete";
-  const fallback = DEMO_NAMES[normalized] ?? local;
+  const fallback = demo?.name ?? local;
   return {
-    id: `demo-${hashString(normalized).toString(16)}`,
+    id: demo?.id ?? `demo-${hashString(normalized).toString(16)}`,
     email: normalized,
     displayName: displayName?.trim() || fallback,
     mode: "demo",
