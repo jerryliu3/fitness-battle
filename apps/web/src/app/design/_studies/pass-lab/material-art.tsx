@@ -58,13 +58,14 @@ function LegacyMaterialRacer({ concept, x, y, radius = 23, fast, dark = false, f
   </g>;
 }
 
-export function MaterialIcon({concept,dark=false,size=256,light=0,flow=false,unmasked=false}: {concept:MaterialConcept;dark?:boolean;size?:number;light?:number;flow?:boolean;unmasked?:boolean}) {
+export function MaterialIcon({concept,dark=false,size=256,light=0,flow=false,unmasked=false,objectScale=1.35,showCenters=false}: {concept:MaterialConcept;dark?:boolean;size?:number;light?:number;flow?:boolean;unmasked?:boolean;objectScale?:number;showCenters?:boolean}) {
   const id=useId();
   return <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 256 256" role="img" aria-label={`${concept.name} · ${dark ? "black" : "white"} app icon`}>
     <defs><clipPath id={`${id}-tile`}><rect width="256" height="256" rx="57"/></clipPath></defs><g clipPath={unmasked?undefined:`url(#${id}-tile)`}>
       <rect width="256" height="256" fill={dark?"#000000":"#ffffff"}/>
-      <MaterialRacer concept={concept} x={74} y={145} radius={31.05} fast={false} dark={dark} light={light} flow={flow}/>
-      <MaterialRacer concept={concept} x={182} y={93} radius={31.05} fast dark={dark} light={light} flow={flow}/>
+      <MaterialRacer concept={concept} x={74} y={145} radius={23*objectScale} fast={false} dark={dark} light={light} flow={flow}/>
+      <MaterialRacer concept={concept} x={182} y={93} radius={23*objectScale} fast dark={dark} light={light} flow={flow}/>
+      {showCenters&&<g data-center-guides="true" fill="none" stroke={dark?"#fff":"#282f2c"} strokeWidth=".6" opacity=".7">{[[74,145],[182,93]].map(([x,y])=><path key={x} d={`M${x-7} ${y}h14M${x} ${y-7}v14`}/>)}</g>}
     </g>
   </svg>;
 }

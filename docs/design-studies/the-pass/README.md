@@ -141,3 +141,5 @@ The latest active review locks the **standard capsule** and keeps all four finis
 October 19 refinement: the capsule color lab now preserves all four finishes and adds Rolled glass, Polished glass and Liquid edge. Every material shares the satin wake and a curved silhouette exclusion mask. See [GLASS.md](GLASS.md) for details and updated seven-finish boards.
 
 Latest shortlist: the active review and finish boards now compare only Satin glass, Fired glaze, Rolled glass and Polished glass. Rolled/Polished opacity options are 26%, 38%, 50%, 60%, 70%, 80% and 90%.
+
+Material is selected: Polished glass at 80%, Solar Gold and Cool Platinum. The followup [fixed-center size study](CAPSULE-SCALE.md) is at `review.html?view=capsule-scale`, comparing 135%, 150%, 175% and 200% without moving either capsule center.
