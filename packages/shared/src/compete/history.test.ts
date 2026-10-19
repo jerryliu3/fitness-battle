@@ -7,8 +7,6 @@ import {
   pendingPeriodResults,
   pendingRevealIdsFromResults,
   primaryRevealResults,
-  shouldSyncLegacyPendingReveals,
-  syncPeriodResultAcknowledgements,
 } from "./history";
 import type { PeriodResult } from "./sports";
 
@@ -91,24 +89,6 @@ describe("period history helpers", () => {
     );
     expect(pendingRevealIdsFromResults(cleared)).toEqual([]);
     expect(cleared[0]?.acknowledgedAt).toBe("2026-10-12T02:00:00.000Z");
-  });
-
-  it("syncs legacy pendingRevealIds onto acknowledgedAt", () => {
-    const rows = [
-      result({ id: "keep", sport: "running", track: "open" }),
-      result({ id: "done", sport: "cycling", track: "open" }),
-    ];
-    const synced = syncPeriodResultAcknowledgements(rows, ["keep"]);
-    expect(synced[0]?.acknowledgedAt).toBeNull();
-    expect(synced[1]?.acknowledgedAt).toBeTruthy();
-  });
-
-  it("does not treat empty pendingRevealIds as legacy dismiss when ack exists", () => {
-    const rows = [result({ id: "a", sport: "running", track: "open" })];
-    expect(shouldSyncLegacyPendingReveals(rows, [])).toBe(false);
-    expect(shouldSyncLegacyPendingReveals(rows, ["a"])).toBe(true);
-    const preAck = [{ id: "a", sport: "running", track: "open" }] as PeriodResult[];
-    expect(shouldSyncLegacyPendingReveals(preAck, [])).toBe(true);
   });
 
   it("formats elo deltas", () => {

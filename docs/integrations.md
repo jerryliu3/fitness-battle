@@ -90,9 +90,9 @@ Mobile can start Strava / Garmin / WHOOP / Oura connect itself: `POST /api/fitne
 | Route | Auth | Role |
 | --- | --- | --- |
 | `POST /api/fitness/connect` | Required. Body `provider` | Start OAuth or stub |
-| `GET /api/fitness/strava/callback` | Signed `state` (or session + raw user id) | Strava token exchange |
-| `GET /api/fitness/whoop/callback` | Signed `state` (or session + raw user id) | WHOOP token exchange |
-| `GET /api/fitness/oura/callback` | Signed `state` (or session + raw user id) | Oura token exchange |
+| `GET /api/fitness/strava/callback` | Signed `state` + session match | Strava token exchange |
+| `GET /api/fitness/whoop/callback` | Signed `state` + session match | WHOOP token exchange |
+| `GET /api/fitness/oura/callback` | Signed `state` + session match | Oura token exchange |
 | `GET /api/fitness/garmin/callback` | Request token must belong to a user | Garmin access token |
 | `POST /api/fitness/garmin/ping` | Garmin server. Callback host must be `apis.garmin.com` | Pull summaries after a ping |
 | `POST /api/fitness/sync` | Required. Body `provider` | Pull a window |

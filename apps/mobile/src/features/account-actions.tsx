@@ -8,10 +8,8 @@ import { FocusButton, FocusSheet, f } from "../ui/focus";
 
 export function AccountActions() {
   const { user, demoMode, accessToken, signOut } = useAuth();
-  const { clearAccountData, legacyState, recoverLegacy } = useCompeteStore();
-  const [panel, setPanel] = useState<"report" | "delete" | "legacy" | null>(
-    null,
-  );
+  const { clearAccountData } = useCompeteStore();
+  const [panel, setPanel] = useState<"report" | "delete" | null>(null);
   const [message, setMessage] = useState("");
   const [confirmation, setConfirmation] = useState("");
   const [busy, setBusy] = useState(false);
@@ -35,10 +33,7 @@ export function AccountActions() {
     setBusy(true);
     setError("");
     try {
-      if (panel === "legacy") {
-        await recoverLegacy(id);
-        if (mounted.current && ownerRef.current === id) setPanel(null);
-      } else if (panel === "report") {
+      if (panel === "report") {
         const result = await requestApi<{ sent?: boolean }>(
           mobileEnv.apiUrl,
           accessToken,
@@ -77,24 +72,6 @@ export function AccountActions() {
   }
   return (
     <>
-      {legacyState ? (
-        <View style={f.card}>
-          <Text style={f.h2}>Earlier device history found</Text>
-          <Text style={f.copy}>
-            Review this device's older training before assigning it to your
-            account.
-          </Text>
-          <FocusButton
-            label="Review earlier device history"
-            secondary
-            onPress={() => {
-              setError("");
-              setConfirmation("");
-              setPanel("legacy");
-            }}
-          />
-        </View>
-      ) : null}
       <FocusButton
         label="Report an issue"
         secondary
@@ -116,41 +93,13 @@ export function AccountActions() {
       <FocusSheet
         open={!!panel}
         title={
-          panel === "legacy"
-            ? "Recover device history?"
-            : panel === "delete"
-              ? "Delete your account?"
-              : "Report an issue"
+          panel === "delete" ? "Delete your account?" : "Report an issue"
         }
         onClose={() => {
           if (!busy) setPanel(null);
         }}
       >
-        {panel === "legacy" ? (
-          <>
-            <Text style={f.copy}>
-              Earlier profile: {legacyState?.name}.{" "}
-              {legacyState?.activities.length ?? 0} stored sessions. The old
-              cache has no reliable account identity. Only import it if this
-              training belongs to you. This replaces the training document for
-              your current account; both copies are backed up on this device.
-              Type RESTORE to confirm.
-            </Text>
-            <TextInput
-              accessibilityLabel="Type RESTORE to confirm"
-              style={f.input}
-              value={confirmation}
-              onChangeText={setConfirmation}
-              editable={!busy}
-              autoCapitalize="characters"
-            />
-            <FocusButton
-              label={busy ? "Recovering…" : "Recover my device history"}
-              disabled={busy || confirmation !== "RESTORE"}
-              onPress={() => void submit()}
-            />
-          </>
-        ) : panel === "report" ? (
+        {panel === "report" ? (
           sent ? (
             <Text style={f.copy} accessibilityLiveRegion="polite">
               Report sent. Thanks for helping us improve Overtaek.

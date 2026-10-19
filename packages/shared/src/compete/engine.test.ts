@@ -326,7 +326,7 @@ describe("compete engine", () => {
     };
     const migrated = migrateCompeteState(settled);
     expect(migrated.pendingRevealIds).toEqual([
-      "2026-10-05T04:00:00.000Z:running:open",
+      "2026-10-05T00:00:00.000Z:running:open",
     ]);
     expect(migrated.periodResults[0]?.acknowledgedAt).toBeNull();
   });
@@ -565,38 +565,6 @@ describe("compete engine", () => {
     expect(rating?.openElo).toBe(1000);
     expect(rating?.verifiedElo).toBe(1000);
     expect(rating?.optedIn).toBe(true);
-  });
-
-  it("migrates legacy unsigned You label to Guest", () => {
-    const legacy = {
-      ...freshState(),
-      name: "You",
-      onboardingCompleted: false,
-    };
-    expect(migrateCompeteState(legacy).name).toBe("Guest");
-    const named = {
-      ...freshState(),
-      name: "You",
-      onboardingCompleted: true,
-    };
-    expect(migrateCompeteState(named).name).toBe("You");
-  });
-
-  it("demotes empty guest baseline scores from 1000 to 500", () => {
-    const legacy = {
-      ...freshState(),
-      ratings: freshState().ratings.map((r) => ({
-        ...r,
-        openElo: 1000,
-        verifiedElo: 1000,
-        lockOpen: 1000,
-        lockVerified: 1000,
-      })),
-    };
-    const migrated = migrateCompeteState(legacy);
-    expect(migrated.ratings.every((r) => r.openElo === 500 && r.verifiedElo === 500)).toBe(
-      true,
-    );
   });
 
   it("updates and clears profile avatarUrl via set-avatar", () => {

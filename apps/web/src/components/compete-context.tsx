@@ -34,10 +34,6 @@ import {
   type ReactNode,
 } from "react";
 
-const LEGACY_KEY = "fb-compete-v1";
-/** Copy of the unscoped blob after the signed-in user chooses to recover it. */
-const RECOVERY_KEY = "fb-compete-v1:recovered";
-
 /** One account-load state. Failed loads are read-only until retry succeeds. */
 type LoadStatus = "local" | "loading" | "ready" | "failed";
 
@@ -46,14 +42,11 @@ interface CompeteApi {
   dispatch: (action: Action) => void;
   /** True when the last account save failed. */
   saveError: string | null;
-  /** Unscoped pre-account history is still on this browser. */
-  legacyOffer: boolean;
   loadStatus: LoadStatus;
   /** Real crew or personal movement since this browser last acknowledged the field. */
   fieldNotice: FieldNotice | null;
   /** The last field refresh failed. Lanes may be behind the server. */
   standingsStale: boolean;
-  recoverLegacy: () => void;
   retryLoad: () => void;
   dismissFieldNotice: () => void;
   refresh: () => Promise<boolean>;
@@ -63,11 +56,9 @@ const CompeteContext = createContext<CompeteApi>({
   state: null,
   dispatch: () => {},
   saveError: null,
-  legacyOffer: false,
   loadStatus: "loading",
   fieldNotice: null,
   standingsStale: false,
-  recoverLegacy: () => {},
   retryLoad: () => {},
   dismissFieldNotice: () => {},
   refresh: async () => false,
@@ -146,7 +137,6 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
   const userId = user?.id ?? null;
   const [state, setState] = useState<CompeteState | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
-  const [legacyOffer, setLegacyOffer] = useState(false);
   const [loadStatus, setLoadStatus] = useState<LoadStatus>("loading");
   const [attempt, setAttempt] = useState(0);
   /** Account the current `state`/`loadStatus` belong to — cleared synchronously on switch. */
@@ -270,13 +260,10 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
     const accountId = userId;
     let cancelled = false;
     const signedIn = Boolean(accountId) && !(demoMode || user?.mode === "demo");
-    setLegacyOffer(signedIn && parseStored(readStorageItem(LEGACY_KEY)) != null);
     const local = readLocal(accountId);
 
     const settle = (chosen: CompeteState, savedAt: string, status: LoadStatus) => {
       if (cancelled || userIdRef.current !== accountId) return;
-      // Signed-in documents always carry the account baseline (1000), even when
-      // migrate demotes empty Guest-shaped local copies back to unranked 0.
       let next = signedIn ? withAccountEloBaseline(chosen) : chosen;
       if (user) next = { ...next, name: accountName(next.name, user.displayName, user.email) };
       const pending = queue.current.splice(0);
@@ -373,26 +360,6 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
     setFieldNotice(notice);
   }, [loadStatus, state, userId]);
 
-  const recoverLegacy = useCallback(() => {
-    const accountId = userIdRef.current;
-    const raw = readStorageItem(LEGACY_KEY);
-    const parsed = parseStored(raw);
-    if (!accountId || !raw || !parsed) return;
-    const stamped = new Date().toISOString();
-    const recovered = withAccountEloBaseline(parsed.state);
-    writeLocal(accountId, recovered, stamped);
-    try {
-      localStorage.setItem(RECOVERY_KEY, raw);
-      localStorage.removeItem(LEGACY_KEY);
-    } catch (error) {
-      console.warn("Could not update legacy recovery keys:", error);
-    }
-    setLegacyOffer(false);
-    stateRef.current = recovered;
-    setState(recovered);
-    if (statusRef.current === "ready") scheduleSave(accountId, recovered);
-  }, [scheduleSave]);
-
   const retryLoad = useCallback(() => {
     setAttempt((value) => value + 1);
   }, []);
@@ -478,11 +445,9 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
     () => ({
       state,
       saveError,
-      legacyOffer,
       loadStatus,
       fieldNotice,
       standingsStale,
-      recoverLegacy,
       retryLoad,
       dismissFieldNotice,
       refresh,
@@ -531,9 +496,7 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
     [
       dismissFieldNotice,
       fieldNotice,
-      legacyOffer,
       loadStatus,
-      recoverLegacy,
       refresh,
       retryLoad,
       saveError,
