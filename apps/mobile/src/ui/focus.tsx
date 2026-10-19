@@ -12,6 +12,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { SHELL_COLORS as c } from "../theme";
+import { playCue } from "../lib/haptics";
 export function FocusSheet({
   open,
   title,
@@ -34,6 +35,10 @@ export function FocusSheet({
     );
     return () => sub.remove();
   }, []);
+  useEffect(() => {
+    if (open) void playCue("light");
+  }, [open]);
+
   return (
     <Modal
       visible={open}

@@ -1,4 +1,5 @@
 "use client";
+import { playCue } from "@/lib/haptics";
 import { useAuth } from "@/components/auth-context";
 import { useCompete } from "@/components/compete-context";
 import {
@@ -333,7 +334,10 @@ export function AthleteOverview({
             <button
               type="button"
               aria-pressed={track === "open"}
-              onClick={() => setTrack("open")}
+              onClick={() => {
+                if (track !== "open") void playCue("selection");
+                setTrack("open");
+              }}
             >
               Open
             </button>
