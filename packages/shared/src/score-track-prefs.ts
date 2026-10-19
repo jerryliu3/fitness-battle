@@ -6,9 +6,12 @@ export type ScoreTrackLens = Record<"open" | "verified", ScoreTrack>;
 
 const DEFAULT_LENS: ScoreTrackLens = { open: "open", verified: "verified" };
 
+type KeyValueRead = { getItem(key: string): string | null };
+type KeyValueWrite = { setItem(key: string, value: string): void };
+
 /** Persist Open vs GPS verified lens (not per-sport until sport switching is wired). */
 export function readScoreTrackLens(
-  storage: Pick<Storage, "getItem"> | null,
+  storage: KeyValueRead | null,
 ): ScoreTrackLens {
   if (!storage) return DEFAULT_LENS;
   try {
@@ -25,7 +28,7 @@ export function readScoreTrackLens(
 }
 
 export function writeScoreTrackLens(
-  storage: Pick<Storage, "setItem"> | null,
+  storage: KeyValueWrite | null,
   lens: ScoreTrackLens,
 ): void {
   if (!storage) return;
