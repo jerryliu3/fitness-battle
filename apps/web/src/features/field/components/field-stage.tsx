@@ -1,7 +1,7 @@
 "use client";
 import dynamic from "next/dynamic";
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { motion, useReducedMotion } from "motion/react";
+import { AnimatePresence, LayoutGroup, motion, useReducedMotion } from "motion/react";
 import { playCue } from "@/lib/haptics";
 import {
   arenaBaselineStorageKey,
@@ -472,16 +472,18 @@ export function FieldStage({
         })}
       </div>
 
+      <LayoutGroup id={`field-stage-${sportTitle ?? "field"}`}>
       <motion.div initial={false} animate={{ height: modeHeight ?? "auto" }}
         transition={{ duration: reduced ? 0 : 0.26, ease: [0.22, 1, 0.36, 1] }} style={{ overflow: "hidden" }}>
       <div ref={modeRoot} style={{ display: "flow-root" }}>
-      <div hidden={mode !== "standings"}>
+      <AnimatePresence initial={false} mode="popLayout">
+      {mode === "standings" ? (
           <motion.div
             key="standings"
             className="focus-standings"
             style={{ margin: "14px 0" }}
             initial={reduced ? false : { opacity: 0, y: 14 }}
-            animate={{ opacity: mode === "standings" ? 1 : 0, y: 0 }}
+            animate={{ opacity: 1, y: 0 }}
             exit={reduced ? { opacity: 0 } : { opacity: 0, y: -10 }}
             transition={
               reduced
@@ -494,6 +496,7 @@ export function FieldStage({
               .map((r, i) => (
                 <motion.button
                   key={r.id}
+                  layoutId={`athlete-${r.id}`}
                   initial={reduced ? false : { opacity: 0, x: -8 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={
@@ -524,22 +527,17 @@ export function FieldStage({
                 </motion.button>
               ))}
           </motion.div>
-      </div>
-      <div hidden={mode === "standings"}>
+      ) : (
           <motion.div
             key="lanes"
             initial={reduced ? false : { opacity: 0 }}
-            animate={{ opacity: mode === "standings" ? 0 : 1 }}
+            animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: reduced ? 0 : 0.2 }}
           >
         <ExpandingField open={lanesImmersive} onClose={() => setLanesImmersive(false)}>
           <div className="focus-field-toolbar">
-            <button type="button" className="fb-btn-ghost" onClick={() => {
-              void playCue(lanesImmersive ? "soft" : "light");
-              setLanesImmersive(!lanesImmersive);
-            }}>{lanesImmersive ? "← Back to Compete" : "⤢ Explore lanes"}</button>
-            <span className="fb-note">{lanesImmersive ? "Drag to pan · swipe across peers" : "Swipe across peers · expand to pan"}</span>
+            <span className="fb-note">{lanesImmersive ? "Drag to pan · swipe across peers" : "Click the field to expand · swipe across peers"}</span>
           </div>
           <div className="focus-track-frame">
             {mode === "pursuit" && !unavailable ? (
@@ -688,13 +686,15 @@ export function FieldStage({
               </label>
             )}
           </div>
-      {mode !== "standings" && athleteDetails}
+      {athleteDetails}
         </ExpandingField>
           </motion.div>
-      </div>
+      )}
       {mode === "standings" && athleteDetails}
+      </AnimatePresence>
       </div>
       </motion.div>
+      </LayoutGroup>
     </section>
   );
 }

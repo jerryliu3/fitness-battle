@@ -109,13 +109,13 @@ export function JourneyTrail({
       <div ref={rootRef} className="focus-journey-track">
         <svg
           ref={svgRef}
-          className="focus-journey-path"
+          className={`focus-journey-path${intro ? " is-intro" : ""}`}
           viewBox={`0 0 ${svgBox.w} ${svgBox.h}`}
           preserveAspectRatio="none"
           aria-hidden="true"
         >
           {pathSegs.map((d, i) => (
-            <path key={i} d={d} />
+            <path key={i} d={d} pathLength={1} />
           ))}
         </svg>
         {children({ setStopRef })}

@@ -45,8 +45,8 @@ export function ExpandingField({ open, onClose, children }: {
     host.appendChild(mount);
     const source = origin.current;
     const destination = slot.current?.getBoundingClientRect();
-    const bounds = (rect: DOMRect) => ({ left: `${rect.left}px`, top: `${rect.top}px`, width: `${rect.width}px`, height: `${rect.height}px`, borderRadius: "24px" });
-    const full = { left: "0px", top: "0px", width: "100%", height: "100%", borderRadius: "0px" };
+    const clip = (rect: DOMRect) => `inset(${rect.top}px ${window.innerWidth - rect.right}px ${window.innerHeight - rect.bottom}px ${rect.left}px round 24px)`;
+    const full = "inset(0px 0px 0px 0px round 0px)";
     const visible = destination && destination.bottom > 0 && destination.top < window.innerHeight;
     const finish = () => {
       if (open) return;
@@ -58,7 +58,7 @@ export function ExpandingField({ open, onClose, children }: {
     interruptedBounds.current = null;
     animation.current?.cancel();
     // Geometry, rather than scale, preserves readable labels and usable hit targets.
-    const frames = open && source ? [bounds(interrupted ?? source), full] : visible ? [interrupted ? bounds(interrupted) : full, bounds(destination)] : [{ opacity: 1 }, { opacity: 0 }];
+    const frames = open && source ? [{ clipPath: clip(interrupted ?? source) }, { clipPath: full }] : visible ? [{ clipPath: interrupted ? clip(interrupted) : full }, { clipPath: clip(destination) }] : [{ opacity: 1 }, { opacity: 0 }];
     const player = host.animate(frames, { duration: reduce ? 0 : 340, easing: "cubic-bezier(.22,1,.36,1)", fill: "both" });
     animation.current = player;
     player.onfinish = finish;

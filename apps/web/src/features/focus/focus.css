@@ -259,6 +259,20 @@
   transform: translateY(-50%);
   animation: focus-session-peek-in 0.32s cubic-bezier(0.22, 1, 0.36, 1);
 }
+.focus-stop-peek-close {
+  position: absolute;
+  top: 5px;
+  right: 7px;
+  width: 28px;
+  height: 28px;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: #616c63;
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+}
 .focus-stop-peek h3,
 .focus-stop-peek strong {
   display: block;
@@ -284,7 +298,12 @@
 }
 .focus-settings-stack-panel {
   position: absolute;
-  inset: 0;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  width: min(720px, 100%);
+  margin-inline: auto;
   z-index: 8;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
@@ -307,6 +326,23 @@
 }
 .focus-journey.is-day-intro .focus-path-row.is-current {
   animation: focus-journey-today-pop 0.55s cubic-bezier(0.22, 1, 0.36, 1) 0.35s both;
+}
+.focus-journey.is-day-intro .focus-journey-path.is-intro path {
+  stroke-dasharray: 0.01 0.02;
+  stroke-dashoffset: 1;
+  animation: focus-journey-path-draw 0.72s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.focus-journey.is-day-intro .focus-path-row > button,
+.focus-journey.is-day-intro .focus-path-row > span {
+  opacity: 0;
+  animation: focus-journey-node-in 0.34s ease-out 0.72s both;
+}
+@keyframes focus-journey-path-draw {
+  to { stroke-dashoffset: 0; }
+}
+@keyframes focus-journey-node-in {
+  from { opacity: 0; transform: translateY(5px) scale(0.96); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
 }
 @keyframes focus-journey-row-settle {
   from {
@@ -1554,6 +1590,27 @@
 }
 .focus-competition-tracks {
   flex-shrink: 0;
+}
+.focus-score-track-button {
+  position: relative;
+  isolation: isolate;
+}
+.focus-score-track-button > * {
+  position: relative;
+  z-index: 1;
+}
+.focus-score-track-indicator {
+  position: absolute !important;
+  inset: 3px;
+  z-index: 0 !important;
+  border-radius: inherit;
+  background: #fff;
+  box-shadow: 0 1px 4px #282f2c0c;
+}
+.focus-competition-tracks > button[aria-pressed="true"] {
+  background: transparent;
+  box-shadow: none;
+  color: #282f2c;
 }
 .focus-competition-info {
   display: flex;

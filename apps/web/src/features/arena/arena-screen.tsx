@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import { motion } from "motion/react";
 import { playCue } from "@/lib/haptics";
 import { useScoreTrackLens } from "@/lib/score-track-lens";
 import { useRouter } from "next/navigation";
@@ -132,16 +133,20 @@ export function ArenaScreen() {
           >
             <button
               type="button"
+              className="focus-score-track-button"
               aria-pressed={track === "open"}
               onClick={() => chooseTrack("open")}
             >
+              {track === "open" ? <motion.span layoutId="score-track-indicator" className="focus-score-track-indicator" /> : null}
               Open score
             </button>
             <button
               type="button"
+              className="focus-score-track-button"
               aria-pressed={track === "verified"}
               onClick={() => chooseTrack("verified")}
             >
+              {track === "verified" ? <motion.span layoutId="score-track-indicator" className="focus-score-track-indicator" /> : null}
               GPS verified
             </button>
           </div>
@@ -199,7 +204,7 @@ export function ArenaScreen() {
             return (
               <section key={r.sport} style={{ marginBottom: 36 }}>
                 <FieldStage
-                  key={`${r.sport}-${track}-${state.units}`}
+                  key={`${r.sport}-${state.units}`}
                   sportTitle={sportSpec?.name ?? r.sport}
                   model={sportModel}
                   boardRows={sportBoard.rows}

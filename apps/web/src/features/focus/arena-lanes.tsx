@@ -1,5 +1,6 @@
 "use client";
 import { useRef, useLayoutEffect, useState, useId } from "react";
+import { motion } from "motion/react";
 import {
   arenaPosition,
   formatActivityAge,
@@ -341,8 +342,9 @@ export function ArenaLanes({
             overtakeFrame?.phase === "rival-slide" &&
             overtakePlan?.rivals[l.id]?.moved;
           return (
-            <g
+            <motion.g
               key={l.id}
+              layoutId={`athlete-${l.id}`}
               data-athlete={l.id}
               role="button"
               tabIndex={0}
@@ -490,7 +492,7 @@ export function ArenaLanes({
                   ? `${l.value.toFixed(1)} ${unit}`
                   : formatLastUpdated(l)}
               </text>
-            </g>
+            </motion.g>
           );
         })}
         {ghost &&

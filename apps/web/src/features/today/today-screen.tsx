@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState, type Ref } from "react";
+import { useEffect, useRef, useState, type Ref } from "react";
 import { motion, useReducedMotion } from "motion/react";
 import { playCue } from "@/lib/haptics";
 import { AnimatedPolygon, AnimatedPolyline } from "./activity-chart";
@@ -152,23 +152,25 @@ function SessionStopPeek({
   detail,
   onOpen,
   onClose,
+  peekRef,
 }: {
   title: string;
   kicker: string;
   detail?: string;
   onOpen: () => void;
   onClose: () => void;
+  peekRef?: Ref<HTMLDivElement>;
 }) {
   return (
-    <div className="focus-stop-peek" role="dialog" aria-label="Session preview">
+    <div ref={peekRef} className="focus-stop-peek" role="dialog" aria-label="Session preview">
+      <button type="button" className="focus-stop-peek-close" aria-label="Close preview" onClick={onClose}>
+        ×
+      </button>
       <p className="fb-kicker">{kicker}</p>
       <strong>{title}</strong>
       {detail ? <p className="fb-note">{detail}</p> : null}
       <button type="button" className="fb-btn" onClick={onOpen}>
         See session
-      </button>
-      <button type="button" className="fb-btn-ghost" onClick={onClose}>
-        Not now
       </button>
     </div>
   );
@@ -185,12 +187,25 @@ export function TodayScreen() {
   const reduced = useReducedMotion();
   const [session, setSession] = useState<SessionPhase>({ kind: "closed" });
   const [journeyIntro, setJourneyIntro] = useState(false);
+  const peekRef = useRef<HTMLDivElement>(null);
   const [reaction, setReaction] = useState<{
     action: EmberAction;
     key: number;
   }>({ action: "wave", key: 0 });
   const react = (action: EmberAction) =>
     setReaction((value) => ({ action, key: value.key + 1 }));
+
+  useEffect(() => {
+    if (session.kind !== "peek") return;
+    const dismissOutside = (event: PointerEvent) => {
+      const target = event.target;
+      if (target instanceof Node && !peekRef.current?.contains(target)) {
+        setSession({ kind: "closed" });
+      }
+    };
+    document.addEventListener("pointerdown", dismissOutside);
+    return () => document.removeEventListener("pointerdown", dismissOutside);
+  }, [session.kind]);
 
   if (!state) return <p className="fb-copy">Loading your week…</p>;
 
@@ -216,12 +231,12 @@ export function TodayScreen() {
   useEffect(() => {
     const topDay = latestJourneyDay;
     if (!topDay || reduced) { setJourneyIntro(false); return; }
-    const key = `fb:journey-day:${user?.id ?? state.name ?? "guest"}`;
+    const key = `fb:journey-intro-seen:${user?.id ?? state.name ?? "guest"}`;
     try {
       const last = localStorage.getItem(key);
-      if (last !== topDay) {
+      if (last !== "1") {
         setJourneyIntro(true);
-        localStorage.setItem(key, topDay);
+        localStorage.setItem(key, "1");
         const t = window.setTimeout(() => setJourneyIntro(false), 1200);
         return () => window.clearTimeout(t);
       }
@@ -760,6 +775,7 @@ export function TodayScreen() {
                       title={route.suggestion.title}
                       onOpen={() => openSession("suggestion", "full")}
                       onClose={closeSession}
+                      peekRef={peekRef}
                     />
                   ) : null}
                   <button
@@ -818,6 +834,7 @@ export function TodayScreen() {
                         }
                       }}
                       onClose={closeSession}
+                      peekRef={peekRef}
                     />
                   ) : null}
                   <JourneyDayStop
