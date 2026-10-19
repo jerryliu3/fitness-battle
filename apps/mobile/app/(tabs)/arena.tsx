@@ -26,8 +26,11 @@ import {
   type ScoreTrack,
   type SportId,
 } from "@fitness-battle/shared";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { usePathname, useRouter } from "expo-router";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { playCue } from "../../src/lib/haptics";
+import { readArenaScoreTrack, writeArenaScoreTrack } from "@fitness-battle/shared";
 import { Pressable, ScrollView, Switch, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { CompetitionSummary } from "../../src/features/competition-summary";
