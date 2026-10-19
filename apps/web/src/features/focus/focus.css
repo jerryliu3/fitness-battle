@@ -1562,17 +1562,30 @@
   margin: 0;
   border-radius: 0;
   border: none;
-  animation: focus-lanes-expand 0.38s cubic-bezier(0.22, 1, 0.36, 1);
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: center;
+  background: #fafaf7;
+  animation: focus-lanes-window-open 0.42s cubic-bezier(0.22, 1, 0.36, 1);
 }
-@keyframes focus-lanes-expand {
+@keyframes focus-lanes-window-open {
   from {
-    opacity: 0.92;
-    transform: scale(0.96);
+    clip-path: inset(8% 6% 28% 6% round 24px);
+    opacity: 0.94;
   }
   to {
+    clip-path: inset(0% 0% 0% 0% round 0px);
     opacity: 1;
-    transform: scale(1);
   }
+}
+.focus-track-frame.is-lanes-immersive .focus-lane-scroll {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 0;
+  overflow: hidden;
 }
 .focus-lanes-immersive-back {
   position: absolute;
@@ -1595,7 +1608,8 @@
   box-shadow: 0 4px 16px #282f2c14;
 }
 .focus-track-frame.is-lanes-immersive .focus-lane-track {
-  height: min(540px, calc(100vh - 120px));
+  height: 540px;
+  flex-shrink: 0;
 }
 .focus-lane-track:active {
   cursor: grabbing;
@@ -1627,6 +1641,26 @@
     10px var(--font-body),
     sans-serif;
   fill: #282f2c;
+}
+.focus-viewport-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  padding: 0 4px 8px;
+}
+.focus-viewport-btn {
+  min-width: 40px;
+  min-height: 40px;
+  border: 1px solid #e0e5dc;
+  border-radius: 12px;
+  background: #fff;
+  color: #282f2c;
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+}
+.focus-viewport-btn:hover {
+  background: #f3f6f0;
 }
 .focus-track-controls {
   display: flex;

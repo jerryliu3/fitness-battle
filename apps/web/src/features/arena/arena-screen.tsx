@@ -1,5 +1,10 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { playCue } from "@/lib/haptics";
+import {
+  readArenaScoreTrack,
+  writeArenaScoreTrack,
+} from "@fitness-battle/shared";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/components/auth-context";
@@ -49,6 +54,17 @@ export function ArenaScreen() {
   const [competeWithCrew, setCompeteWithCrew] = useState(false);
   const [sport, setSport] = useState<SportId | "sleep" | null>(null);
   const [track, setTrack] = useState<ScoreTrack>("open");
+
+  useEffect(() => {
+    setTrack(readArenaScoreTrack(localStorage));
+  }, []);
+
+  function chooseTrack(next: ScoreTrack) {
+    if (next === track) return;
+    setTrack(next);
+    writeArenaScoreTrack(localStorage, next);
+    void playCue("selection");
+  }
 
   if (!state) return <p className="fb-copy">Loading your lanes…</p>;
 
@@ -125,14 +141,14 @@ export function ArenaScreen() {
             <button
               type="button"
               aria-pressed={track === "open"}
-              onClick={() => setTrack("open")}
+              onClick={() => chooseTrack("open")}
             >
               Open score
             </button>
             <button
               type="button"
               aria-pressed={track === "verified"}
-              onClick={() => setTrack("verified")}
+              onClick={() => chooseTrack("verified")}
             >
               GPS verified
             </button>
