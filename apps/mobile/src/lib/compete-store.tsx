@@ -404,7 +404,12 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
           unsavedRef.current ||
           dirtyRef.current !== generation ||
           saveTimer.current != null;
-        const next = applyRemoteSnapshot(stateRef.current, remote, dirty);
+        const next = applyRemoteSnapshot(
+          stateRef.current,
+          remote,
+          dirty,
+          unsavedRef.current,
+        );
         seedArenaBaselinesFromState(
           next,
           account.userId,
