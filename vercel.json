@@ -3,10 +3,13 @@
   "framework": "nextjs",
   "installCommand": "pnpm install",
   "buildCommand": "pnpm --filter @fitness-battle/web build",
+  "ignoreCommand": "if [ \"$VERCEL_ENV\" == \"production\" ]; then exit 1; else exit 0; fi",
   "git": {
     "deploymentEnabled": {
       "main": true,
-      "*": false
+      "*": false,
+      "**/*": false,
+      "**": false
     }
   }
 }
