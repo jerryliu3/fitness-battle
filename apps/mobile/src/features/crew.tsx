@@ -422,12 +422,32 @@ export function CrewHub() {
             {api.data.seasonWeeks[crew.id] ?? 0} weeks together
           </Text>
         ) : null}
+        <Text style={f.small}>
+          {solo
+            ? api.live
+              ? "Publishes this week's counted workouts to your crew's shared feed."
+              : "Demo circle: counted workouts from this device already show in the feed below."}
+            : "Syncs new counted workouts to your crew for this week."}
+        </Text>
         <FocusButton
           label="Share my counted sessions"
           disabled={busy}
-          onPress={() =>
-            solo ? open("add") : void write("/entries", { crewId: crew.id })
-          }
+          onPress={() => {
+            if (solo) {
+              if (!api.live) {
+                const n = entries.length;
+                setNote(
+                  n > 0
+                    ? `Demo preview: your ${n} counted session${n === 1 ? "" : "s"} already appear below. Use a live account to sync with a real crew.`
+                    : "No counted sessions yet this week. Log a workout first.",
+                );
+                return;
+              }
+              open("add");
+              return;
+            }
+            void write("/entries", { crewId: crew.id });
+          }}
         />
       </View>
       <Text style={f.h2}>The latest, together.</Text>
@@ -529,7 +549,7 @@ export function CrewHub() {
           {n.body}
         </Text>
       ))}
-      {!api.live ? (
+      {!user ? (
         <>
           <View style={f.card}>
             <Text style={f.kicker}>What crews unlock</Text>
@@ -550,9 +570,7 @@ export function CrewHub() {
               Private crews share a week of counted effort.
             </Text>
             <FocusButton
-              label={
-                user ? "Live account required" : "Sign in or create account"
-              }
+              label="Sign in or create account"
               onPress={() => router.navigate("/you")}
             />
           </View>
@@ -578,10 +596,10 @@ export function CrewHub() {
           }
         }}
       >
-        {!api.live ? (
+        {!user ? (
           <>
             <Text style={f.copy}>
-              A live account is needed to create or join a private crew.
+              Sign in to create or join a private crew.
             </Text>
             <FocusButton
               label="Go to Athlete"
@@ -590,6 +608,13 @@ export function CrewHub() {
                 router.navigate("/you");
               }}
             />
+          </>
+        ) : !api.live ? (
+          <>
+            <Text style={f.copy}>
+              Demo mode is local only. Crew create, join, and sync need a live
+              account.
+            </Text>
           </>
         ) : panel === "add" ? (
           <>
