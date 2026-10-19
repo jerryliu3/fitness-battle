@@ -714,16 +714,10 @@ export function TodayScreen() {
       >
         {({ setStopRef }) =>
           journeyStops.map((stop, index) => (
-            <motion.div
-              layout="position"
+            <div
               key={stop.key}
               className={stopRowClass(stop)}
               data-lane={stop.lane}
-              transition={
-                reduced
-                  ? { duration: 0 }
-                  : { type: "spring", stiffness: 420, damping: 36 }
-              }
             >
               {stop.kind === "past" ? (
                 stop.key === "past-more" ? (
@@ -763,11 +757,6 @@ export function TodayScreen() {
                     <SessionStopPeek
                       kicker="Today"
                       title={route.suggestion.title}
-                      detail={
-                        route.suggestion.minutes
-                          ? `${route.suggestion.minutes} min`
-                          : undefined
-                      }
                       onOpen={() => openSession("suggestion", "full")}
                       onClose={closeSession}
                     />
@@ -849,7 +838,7 @@ export function TodayScreen() {
                   <b>START</b>
                 </button>
               ) : null}
-            </motion.div>
+            </div>
           ))
         }
       </JourneyTrail>

@@ -33,7 +33,8 @@ import { AuthPrompt } from "@/components/auth-gate";
 import { Sheet } from "@/ui/sheet";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Suspense, useEffect, useRef, useState } from "react";
+import { Suspense, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { playCue } from "@/lib/haptics";
 
@@ -76,15 +77,11 @@ function YouContent() {
   const { user, signOut, demoMode } = useAuth();
   const { state, dispatch, loadStatus } = useCompete();
   const [panel, setPanel] = useState<AthletePanel | null>(null);
-  const [name, setName] = useState("");
-  const [city, setCity] = useState("");
-  /** Tracks which account the form fields were seeded from (resets on switch). */
-  const seededFor = useRef<string | null>(null);
+  const [settingsScrollRoot, setSettingsScrollRoot] =
+    useState<HTMLElement | null>(null);
   const [syncNote, setSyncNote] = useState<string | null>(null);
   const [authPrompt, setAuthPrompt] = useState<{ open: boolean; reason: string } | null>(null);
   const [connectingProvider, setConnectingProvider] = useState<ProviderId | null>(null);
-  const [profileSaved, setProfileSaved] = useState(false);
-  const [profileError, setProfileError] = useState<string | null>(null);
   const [primaryNote, setPrimaryNote] = useState<string | null>(null);
   const [confirmFreeze, setConfirmFreeze] = useState(false);
   const searchParams = useSearchParams();
@@ -95,6 +92,7 @@ function YouContent() {
   const tracker = searchParams.get("tracker");
   const trackerProvider = searchParams.get("provider");
   const appliedTracker = useRef<string | null>(null);
+  const accountBound = useRef<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const accountReady =
     loadStatus === "ready" || loadStatus === "local" || loadStatus === "failed";
@@ -181,17 +179,31 @@ function YouContent() {
   useEffect(() => {
     if (loadStatus === "loading" || !state) {
       if (loadStatus === "loading") {
-        seededFor.current = null;
+        accountBound.current = null;
         appliedTracker.current = null;
       }
       return;
     }
-    if (seededFor.current === accountKey) return;
-    seededFor.current = accountKey;
+    if (accountBound.current === accountKey) return;
+    accountBound.current = accountKey;
     appliedTracker.current = null;
-    setName(state.name);
-    setCity(state.city);
   }, [accountKey, loadStatus, state]);
+
+  useLayoutEffect(() => {
+    setSettingsScrollRoot(
+      document.querySelector<HTMLElement>(
+        ".phone-panel.is-active .phone-scroll",
+      ),
+    );
+  }, [panel, loadStatus]);
+
+  useLayoutEffect(() => {
+    if (!panel) return;
+    const viewport = document.querySelector<HTMLElement>(
+      ".phone-panel.is-active .phone-scroll [data-radix-scroll-area-viewport]",
+    );
+    if (viewport) viewport.scrollTop = 0;
+  }, [panel]);
 
   useEffect(() => {
     // Only apply OAuth return params after this account's compete load settled.
@@ -498,7 +510,14 @@ function YouContent() {
         className="focus-settings-stack-panel"
         initial={reduced ? false : { x: "100%" }}
         animate={{ x: 0 }}
-        exit={reduced ? { x: "100%" } : { x: "100%" }}
+        exit={
+          reduced
+            ? { x: "100%" }
+            : {
+                x: "100%",
+                transition: { duration: 0.26, ease: [0.4, 0, 1, 1] },
+              }
+        }
         transition={
           reduced
             ? { duration: 0 }
@@ -670,45 +689,6 @@ function YouContent() {
           ) : null}
           {panel === "preferences" ? (
             <>
-              <section className="fb-card">
-                <label className="fb-field">
-                  Name
-                  <input
-                    value={name}
-                    onChange={(event) => setName(event.target.value)}
-                  />
-                </label>
-                <label className="fb-field">
-                  City
-                  <input
-                    value={city}
-                    onChange={(event) => setCity(event.target.value)}
-                  />
-                </label>
-                {profileError ? (
-                  <p className="fb-error" role="alert">{profileError}</p>
-                ) : null}
-                <button
-                  type="button"
-                  className="fb-btn"
-                  onClick={() => {
-                    const trimmedName = name.trim();
-                    if (!trimmedName) {
-                      setProfileError("Display name cannot be empty.");
-                      setProfileSaved(false);
-                      return;
-                    }
-                    setProfileError(null);
-                    dispatch({ type: "rename", name: trimmedName });
-                    if (city.trim()) dispatch({ type: "set-city", city });
-                    setProfileSaved(true);
-                    setTimeout(() => setProfileSaved(false), 3000);
-                  }}
-                >
-                  {profileSaved ? "Saved ✓" : "Save"}
-                </button>
-              </section>
-
               <section className="fb-card">
                 <h2>Units</h2>
                 <p className="fb-copy">
@@ -1025,8 +1005,15 @@ function YouContent() {
       </motion.aside>
   ) : null;
 
+  const settingsPortal = settingsScrollRoot
+    ? createPortal(
+        <AnimatePresence mode="wait">{settingsPanel}</AnimatePresence>,
+        settingsScrollRoot,
+      )
+    : null;
+
   return (
-    <div className="focus-athlete-stack">
+    <>
     <div className="focus-athlete">
       <AthleteOverview state={state} email={user.email} demoMode={demoMode} />
       <nav className="focus-settings-list" aria-label="Athlete settings">
@@ -1034,7 +1021,7 @@ function YouContent() {
           [
             ["progress", "Statistics, records & season history"],
             ["connections", "Trackers & history"],
-            ["preferences", "Profile, units, sports & freezes"],
+            ["preferences", "Units, sports & freezes"],
             ["notifications", "Your updates, your choice"],
             ["scoring", "Levels & eligibility"],
           ] as const
@@ -1126,8 +1113,8 @@ function YouContent() {
       />
       {deleteAccountSheet}
     </div>
-    <AnimatePresence>{settingsPanel}</AnimatePresence>
-    </div>
+    {settingsPortal}
+    </>
   );
 }
 
