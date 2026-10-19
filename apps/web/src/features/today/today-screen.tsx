@@ -1,5 +1,9 @@
 "use client";
-import { useState, type Ref } from "react";
+import { useEffect, useState, type Ref } from "react";
+import { motion, useReducedMotion } from "motion/react";
+import { playCue } from "@/lib/haptics";
+import { AnimatedPolygon, AnimatedPolyline } from "./activity-chart";
+import { useAuth } from "@/components/auth-context";
 import { useCompete } from "@/components/compete-context";
 import { AnimatedEmber } from "@/components/mascot/animated-ember";
 import type { EmberAction } from "@fitness-battle/shared/mascot";
@@ -142,11 +146,45 @@ function JourneyDayStop({
   );
 }
 
-export function TodayScreen() {
-  const { state } = useCompete();
-  const [expanded, setExpanded] = useState<"suggestion" | Activity | null>(
-    null,
+function SessionStopPeek({
+  title,
+  kicker,
+  detail,
+  onOpen,
+  onClose,
+}: {
+  title: string;
+  kicker: string;
+  detail?: string;
+  onOpen: () => void;
+  onClose: () => void;
+}) {
+  return (
+    <div className="focus-stop-peek" role="dialog" aria-label="Session preview">
+      <p className="fb-kicker">{kicker}</p>
+      <strong>{title}</strong>
+      {detail ? <p className="fb-note">{detail}</p> : null}
+      <button type="button" className="fb-btn" onClick={onOpen}>
+        See session
+      </button>
+      <button type="button" className="fb-btn-ghost" onClick={onClose}>
+        Not now
+      </button>
+    </div>
   );
+}
+
+type SessionPhase =
+  | { kind: "closed" }
+  | { kind: "peek"; target: "suggestion" | Activity }
+  | { kind: "full"; target: "suggestion" | Activity };
+
+export function TodayScreen() {
+  const { user } = useAuth();
+  const { state } = useCompete();
+  const reduced = useReducedMotion();
+  const [session, setSession] = useState<SessionPhase>({ kind: "closed" });
+  const [journeyIntro, setJourneyIntro] = useState(false);
   const [reaction, setReaction] = useState<{
     action: EmberAction;
     key: number;
@@ -173,6 +211,23 @@ export function TodayScreen() {
     hasMorePast,
     groupActivitiesByDay(counted, Infinity),
   );
+
+  useEffect(() => {
+    const topDay = journeyDays[0]?.id;
+    if (!topDay) return;
+    const key = `fb:journey-day:${user?.id ?? state.name ?? "guest"}`;
+    try {
+      const last = localStorage.getItem(key);
+      if (last !== topDay && journeyDays.length >= 1) {
+        setJourneyIntro(true);
+        localStorage.setItem(key, topDay);
+        const t = window.setTimeout(() => setJourneyIntro(false), 1200);
+        return () => window.clearTimeout(t);
+      }
+    } catch {
+      /* optional */
+    }
+  }, [journeyDays, state.name, user?.id]);
 
   const weekPeriod = competePeriodWindow(state, now);
   const weekStart = weekPeriod.startsAt.getTime();
@@ -349,49 +404,65 @@ export function TodayScreen() {
   });
   const activeDaysCount = weekDays.filter((d) => d.hasActivity).length;
 
-  if (expanded === "suggestion") {
-    return (
-      <div className="focus-home focus-home-expanded">
-        <button
-          type="button"
-          className="focus-expand-back"
-          onClick={() => setExpanded(null)}
-        >
-          ← Back
-        </button>
-        <section className="focus-expand-panel" aria-label="Today's suggestion">
-          <p className="fb-kicker">Today&apos;s suggestion</p>
-          <h1>{route.suggestion.title}</h1>
-          {route.suggestion.minutes ? (
-            <p className="fb-copy">{route.suggestion.minutes} min</p>
-          ) : null}
-          <p className="fb-copy">{route.suggestion.detail}</p>
-          <p className="fb-note">{route.suggestion.reason}</p>
-          <AnimatedEmber
-            className="focus-expand-ember"
-            expression="happy"
-            action={reaction.action}
-            restartKey={reaction.key}
-            loop={false}
-            playing={reaction.key > 0}
-          />
-        </section>
-      </div>
-    );
+  function openSession(target: "suggestion" | Activity, phase: "peek" | "full") {
+    void playCue(phase === "peek" ? "light" : "light");
+    setSession({ kind: phase, target });
   }
 
-  if (expanded) {
-    const a = expanded;
+  function closeSession() {
+    void playCue("soft");
+    setSession({ kind: "closed" });
+  }
+
+  if (session.kind === "full") {
+    const target = session.target;
+    if (target === "suggestion") {
+      return (
+        <div className="focus-home focus-home-expanded">
+          <button type="button" className="focus-expand-back" onClick={closeSession}>
+            ← Back
+          </button>
+          <motion.section
+            layout
+            className="focus-expand-panel"
+            aria-label="Today's suggestion"
+            initial={reduced ? false : { opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ type: "spring", bounce: 0.12, duration: 0.45 }}
+          >
+            <p className="fb-kicker">Today&apos;s suggestion</p>
+            <h1>{route.suggestion.title}</h1>
+            {route.suggestion.minutes ? (
+              <p className="fb-copy">{route.suggestion.minutes} min</p>
+            ) : null}
+            <p className="fb-copy">{route.suggestion.detail}</p>
+            <p className="fb-note">{route.suggestion.reason}</p>
+            <AnimatedEmber
+              className="focus-expand-ember"
+              expression="happy"
+              action={reaction.action}
+              restartKey={reaction.key}
+              loop={false}
+              playing={reaction.key > 0}
+            />
+          </motion.section>
+        </div>
+      );
+    }
+    const a = target;
     return (
       <div className="focus-home focus-home-expanded">
-        <button
-          type="button"
-          className="focus-expand-back"
-          onClick={() => setExpanded(null)}
-        >
+        <button type="button" className="focus-expand-back" onClick={closeSession}>
           ← Back
         </button>
-        <section className="focus-expand-panel" aria-label="Activity details">
+        <motion.section
+          layout
+          className="focus-expand-panel"
+          aria-label="Activity details"
+          initial={reduced ? false : { opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ type: "spring", bounce: 0.12, duration: 0.45 }}
+        >
           <p className="fb-kicker">
             {sportById(a.sport).name} ·{" "}
             {new Date(a.startedAt).toLocaleDateString("en-US", {
@@ -415,13 +486,26 @@ export function TodayScreen() {
                 ? "Pending file import"
                 : "Counted toward your training."}
           </p>
-        </section>
+        </motion.section>
       </div>
     );
   }
 
+  const peekStopKey =
+    session.kind === "peek"
+      ? session.target === "suggestion"
+        ? "today"
+        : journeyDays.find((d) =>
+            d.items.some(
+              (a) =>
+                typeof session.target !== "string" && a.id === session.target.id,
+            ),
+          )?.id ?? null
+      : null;
+
   return (
-    <div className="focus-home">
+    <div className="focus-home-stage">
+      <div className="focus-home-overlay">
       {frozen && (
         <div className="fb-pill" style={{ marginBottom: "16px" }}>
           <b>❄ Week frozen</b>
@@ -541,10 +625,15 @@ export function TodayScreen() {
             />
 
             {/* Current week area fill & line */}
-            <polygon points={currAreaPoints} className="focus-activity-area" />
-            <polyline
+            <AnimatedPolygon
+              points={currAreaPoints}
+              className="focus-activity-area"
+              reduced={Boolean(reduced)}
+            />
+            <AnimatedPolyline
               points={currLinePoints}
               className="focus-activity-line-curr"
+              reduced={Boolean(reduced)}
             />
 
             {/* Live pulsing dot indicator at exact time point */}
@@ -616,12 +705,12 @@ export function TodayScreen() {
           </div>
         </div>
       </section>
-      <div className="focus-row">
-        <h2>Your journey</h2>
       </div>
+      <div className="focus-home-journey-layer">
       <JourneyTrail
         stopCount={journeyStops.length}
         layoutKey={journeyStops.map((s) => `${s.key}:${s.lane}`).join("|")}
+        intro={journeyIntro}
       >
         {({ setStopRef }) =>
           journeyStops.map((stop, index) => (
@@ -664,11 +753,19 @@ export function TodayScreen() {
               ) : null}
               {stop.kind === "today" ? (
                 <>
+                  {peekStopKey === "today" ? (
+                    <SessionStopPeek
+                      kicker="Today"
+                      title={route.suggestion.title}
+                      onOpen={() => openSession("suggestion", "full")}
+                      onClose={closeSession}
+                    />
+                  ) : null}
                   <button
                     ref={setStopRef(index)}
                     onClick={() => {
                       react("hop");
-                      setExpanded("suggestion");
+                      openSession("suggestion", "peek");
                     }}
                     aria-label="Ember: open today's session"
                   >
@@ -685,13 +782,13 @@ export function TodayScreen() {
                     tabIndex={0}
                     onClick={() => {
                       react("hop");
-                      setExpanded("suggestion");
+                      openSession("suggestion", "peek");
                     }}
                     onKeyDown={(e) => {
                       if (e.key === "Enter" || e.key === " ") {
                         e.preventDefault();
                         react("hop");
-                        setExpanded("suggestion");
+                        openSession("suggestion", "peek");
                       }
                     }}
                     style={{ cursor: "pointer" }}
@@ -702,12 +799,33 @@ export function TodayScreen() {
                 </>
               ) : null}
               {stop.kind === "day" ? (
-                <JourneyDayStop
-                  day={stop.day}
-                  units={units}
-                  stopRef={setStopRef(index)}
-                  onOpen={(activity) => setExpanded(activity)}
-                />
+                <>
+                  {peekStopKey === stop.day.id &&
+                  session.kind === "peek" &&
+                  session.target !== "suggestion" ? (
+                    <SessionStopPeek
+                      kicker={sportById(session.target.sport).name}
+                      title={formatVolume(
+                        session.target.sport,
+                        session.target.distanceM,
+                        session.target.movingSec,
+                        units,
+                      )}
+                      onOpen={() => {
+                        if (session.kind === "peek" && session.target !== "suggestion") {
+                          openSession(session.target, "full");
+                        }
+                      }}
+                      onClose={closeSession}
+                    />
+                  ) : null}
+                  <JourneyDayStop
+                    day={stop.day}
+                    units={units}
+                    stopRef={setStopRef(index)}
+                    onOpen={(activity) => openSession(activity, "peek")}
+                  />
+                </>
               ) : null}
               {stop.kind === "start" ? (
                 <button
@@ -724,6 +842,7 @@ export function TodayScreen() {
           ))
         }
       </JourneyTrail>
+      </div>
     </div>
   );
 }

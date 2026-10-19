@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { useAuth } from "@/components/auth-context";
 import { useCompete } from "@/components/compete-context";
 import { Sheet } from "@/ui/sheet";
+import { playCue } from "@/lib/haptics";
 import {
   APP_TIMEZONE,
   countsOnTrack,
@@ -273,7 +274,27 @@ export function CrewPanel() {
                 ))}
               </div>
               <div className="focus-crew-hero-buttons">
-                <button type="button" onClick={() => setPanel("invite")}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (!crew || crew.id === "solo-preview") {
+                      setPanel("invite");
+                      return;
+                    }
+                    const link = `${window.location.origin}/field?invite=${encodeURIComponent(crew.invite_code)}`;
+                    void navigator.clipboard
+                      .writeText(link)
+                      .then(
+                        () => {
+                          void playCue("success");
+                          setNote("Invite link copied.");
+                        },
+                        () => {
+                          setNote(`Invite link: ${link}`);
+                        },
+                      );
+                  }}
+                >
                   Invite a friend ＋
                 </button>
                 <button
@@ -333,7 +354,7 @@ export function CrewPanel() {
                     className="fb-btn"
                     disabled={busy}
                     onClick={() => {
-                      if (!user || demoMode) {
+                      if (!user) {
                         setPanel("manage");
                         return;
                       }

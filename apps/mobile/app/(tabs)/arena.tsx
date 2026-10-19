@@ -28,6 +28,8 @@ import {
 } from "@fitness-battle/shared";
 import { usePathname, useRouter } from "expo-router";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { playCue } from "../../src/lib/haptics";
+import { useScoreTrackLens } from "../../src/lib/score-track-lens";
 import { Pressable, ScrollView, Switch, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { CompetitionSummary } from "../../src/features/competition-summary";
@@ -71,7 +73,7 @@ export default function ArenaScreen() {
   const isFocused = shellTabFromPath(pathname)?.id === "arena";
   const [joinBusy, setJoinBusy] = useState(false);
   const [joinError, setJoinError] = useState("");
-  const [track, setTrack] = useState<ScoreTrack>("open");
+  const [track, setTrack] = useScoreTrackLens();
   const [mode, setMode] = useState("2D lanes");
   const [center, setCenter] = useState<number | null>(null);
   const [span, setSpan] = useState<number | null>(null);
@@ -412,6 +414,7 @@ export default function ArenaScreen() {
                   accessibilityState={{ checked: track === t }}
                   style={[f.chip, { flex: 1 }, track === t && f.chipActive]}
                   onPress={() => {
+                    if (t !== track) void playCue("selection");
                     setTrack(t);
                     setCenter(null);
                     setSelectedId(null);
@@ -660,7 +663,7 @@ export default function ArenaScreen() {
                 <Text style={f.rowTitle}>{s.name}</Text>
                 <Text style={f.small}>
                   {isRegistered
-                    ? "Registered this week"
+                    ? "Already registered"
                     : s.gps
                       ? "GPS distance & open effort"
                       : "Open effort score"}

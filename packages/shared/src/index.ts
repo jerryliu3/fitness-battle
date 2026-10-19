@@ -17,5 +17,7 @@ export * from "./profile/avatar-paths";
 export * from "./compete-demo-seed";
 export * from "./effort-history";
 export * from "./journey";
+export * from "./haptics";
+export * from "./score-track-prefs";
 export * from "./activity-age";
 export * from "./member-count";

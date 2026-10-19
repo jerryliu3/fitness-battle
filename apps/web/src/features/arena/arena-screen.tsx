@@ -1,5 +1,7 @@
 "use client";
 import { useState } from "react";
+import { playCue } from "@/lib/haptics";
+import { useScoreTrackLens } from "@/lib/score-track-lens";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/components/auth-context";
@@ -48,7 +50,13 @@ export function ArenaScreen() {
   const [register, setRegister] = useState(false);
   const [competeWithCrew, setCompeteWithCrew] = useState(false);
   const [sport, setSport] = useState<SportId | "sleep" | null>(null);
-  const [track, setTrack] = useState<ScoreTrack>("open");
+  const [track, setTrack] = useScoreTrackLens();
+
+  function chooseTrack(next: ScoreTrack) {
+    if (next === track) return;
+    setTrack(next);
+    void playCue("selection");
+  }
 
   if (!state) return <p className="fb-copy">Loading your lanes…</p>;
 
@@ -125,14 +133,14 @@ export function ArenaScreen() {
             <button
               type="button"
               aria-pressed={track === "open"}
-              onClick={() => setTrack("open")}
+              onClick={() => chooseTrack("open")}
             >
               Open score
             </button>
             <button
               type="button"
               aria-pressed={track === "verified"}
-              onClick={() => setTrack("verified")}
+              onClick={() => chooseTrack("verified")}
             >
               GPS verified
             </button>
@@ -346,6 +354,7 @@ export function ArenaScreen() {
                 }
                 onClick={() => {
                   if (isRegistered || sport !== null) return;
+                  void playCue("selection");
                   setSport(s.id);
                   participate(`Sign in to join ${s.name} this week.`, async () => {
                     try {
@@ -367,6 +376,7 @@ export function ArenaScreen() {
                       dispatch({ type: "set-primary", sport: s.id });
                       dispatch({ type: "opt-in", sport: s.id, crewBoard: pin });
                     } finally {
+                      void playCue("success");
                       setRegister(false);
                       setSport(null);
                     }
@@ -376,7 +386,7 @@ export function ArenaScreen() {
                 <b>{sport === s.id ? "Joining…" : s.name}</b>
                 <small>
                   {isRegistered
-                    ? "Registered this week"
+                    ? "Already registered"
                     : s.gps
                       ? "GPS distance & open effort"
                       : "Open effort score"}
@@ -413,7 +423,7 @@ export function ArenaScreen() {
             <b>{sport === "sleep" ? "Joining…" : "Sleep & Recovery"}</b>
             <small>
               {sleepOptedIn
-                ? "Registered this week"
+                ? "Already registered"
                 : "Weekly recovery & sleep duration score"}
             </small>
           </button>

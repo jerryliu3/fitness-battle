@@ -13,6 +13,7 @@ import { useAuth } from "../lib/auth";
 import { useCompeteStore } from "../lib/compete-store";
 import { mobileEnv } from "../lib/env";
 import { fetchWithTimeout } from "../lib/fetch-with-timeout";
+import { playCue } from "../lib/haptics";
 import { FocusButton, FocusSheet, f } from "../ui/focus";
 export interface PrivateCrew {
   id: string;
@@ -351,7 +352,16 @@ export function CrewHub() {
           </View>
           <FocusButton
             label="Invite a friend ＋"
-            onPress={() => open("invite")}
+            onPress={() => {
+              if (solo) {
+                open("invite");
+                return;
+              }
+              void Share.share({
+                message: `Join my crew on overtaek: ${inviteLink(crew.invite_code)}`,
+              });
+              void playCue("success");
+            }}
           />
           <Pressable
             accessibilityRole="button"

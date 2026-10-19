@@ -1,6 +1,8 @@
 "use client";
 import dynamic from "next/dynamic";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
+import { playCue } from "@/lib/haptics";
 import {
   arenaBaselineStorageKey,
   clampArenaLaneCenter,
@@ -46,6 +48,7 @@ export function FieldStage({
   sportTitle?: string;
 }) {
   const { user } = useAuth();
+  const reduced = useReducedMotion();
   const accountKey = user?.id ?? "guest";
   const unit = model.unit;
   const runners = useMemo<SceneRunner[]>(
@@ -320,23 +323,6 @@ export function FieldStage({
           : null
         : (runners.find((r) => r.id === selected) ?? null);
 
-  const recentreForSelection = useRef<string | null>(null);
-  useEffect(() => {
-    if (!selected || mode !== "lanes") {
-      recentreForSelection.current = null;
-      return;
-    }
-    if (recentreForSelection.current === selected) return;
-    recentreForSelection.current = selected;
-    const runner =
-      selected === ghost?.id && showGhost && ghost
-        ? ghost
-        : runners.find((r) => r.id === selected) ?? null;
-    if (!runner) return;
-    const target = valueAt(runner, time);
-    tweenCenterTo(target);
-  }, [selected, mode, span, showGhost, ghost, runners, time]);
-
   useEffect(() => {
     if (!lanesImmersive) return;
     const onKey = (e: KeyboardEvent) => {
@@ -426,6 +412,7 @@ export function FieldStage({
               }
               onClick={() => {
                 if (isPursuit) return;
+                if (m !== mode) void playCue("selection");
                 setMode(m);
                 setUnavailable(false);
               }}
@@ -440,29 +427,64 @@ export function FieldStage({
         })}
       </div>
 
-      {mode === "standings" ? (
-        <div className="focus-standings" style={{ margin: "14px 0" }}>
-          {[...runners]
-            .sort((a, b) => valueAt(b, time) - valueAt(a, time))
-            .map((r) => (
-              <button
-                key={r.id}
-                onClick={() => toggleSelect(r.id)}
-                aria-pressed={selected === r.id}
-              >
-                <span>{placeAt(runners, r.id, time, 0)}</span>
-                <b>{r.you ? selfLaneLabel(r.name) : r.name}</b>
-                <small>
-                  Effort Score{" "}
-                  {boardRows?.find((row) => row.id === r.id)?.elo ?? "—"}
-                </small>
-                <strong>
-                  {valueAt(r, time).toFixed(1)} {unit}
-                </strong>
-              </button>
-            ))}
-        </div>
-      ) : (
+      <AnimatePresence mode="wait" initial={false}>
+        {mode === "standings" ? (
+          <motion.div
+            key="standings"
+            className="focus-standings"
+            style={{ margin: "14px 0" }}
+            initial={reduced ? false : { opacity: 0, y: 14 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={reduced ? { opacity: 0 } : { opacity: 0, y: -10 }}
+            transition={
+              reduced
+                ? { duration: 0 }
+                : { type: "spring", stiffness: 420, damping: 36 }
+            }
+          >
+            {[...runners]
+              .sort((a, b) => valueAt(b, time) - valueAt(a, time))
+              .map((r, i) => (
+                <motion.button
+                  key={r.id}
+                  initial={reduced ? false : { opacity: 0, x: -8 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={
+                    reduced
+                      ? { duration: 0 }
+                      : {
+                          type: "spring",
+                          stiffness: 420,
+                          damping: 34,
+                          delay: i * 0.04,
+                        }
+                  }
+                  onClick={() => {
+                    if (selected !== r.id) void playCue("light");
+                    toggleSelect(r.id);
+                  }}
+                  aria-pressed={selected === r.id}
+                >
+                  <span>{i + 1}</span>
+                  <b>{r.you ? selfLaneLabel(r.name) : r.name}</b>
+                  <small>
+                    Effort Score{" "}
+                    {boardRows?.find((row) => row.id === r.id)?.elo ?? "—"}
+                  </small>
+                  <strong>
+                    {valueAt(r, time).toFixed(1)} {unit}
+                  </strong>
+                </motion.button>
+              ))}
+          </motion.div>
+        ) : (
+          <motion.div
+            key="lanes"
+            initial={reduced ? false : { opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: reduced ? 0 : 0.2 }}
+          >
         <>
           <div
             className={
@@ -475,7 +497,10 @@ export function FieldStage({
               <button
                 type="button"
                 className="focus-lanes-immersive-back"
-                onClick={() => setLanesImmersive(false)}
+                onClick={() => {
+                  void playCue("soft");
+                  setLanesImmersive(false);
+                }}
               >
                 ← Back
               </button>
@@ -514,7 +539,10 @@ export function FieldStage({
                 unit={unit}
                 selected={trackSelected || you.id}
                 onSelect={toggleSelect}
-                onBackgroundTap={() => setLanesImmersive(true)}
+                onBackgroundTap={() => {
+                  void playCue("light");
+                  setLanesImmersive(true);
+                }}
                 onPan={(v) => {
                   cancelCenterTween();
                   setCenter(clampArenaLaneCenter(v, span));
@@ -550,6 +578,10 @@ export function FieldStage({
               step="1"
               value={span}
               onChange={(e) => setSpan(Number(e.target.value))}
+              onPointerUp={() => void playCue("selection")}
+              onKeyUp={(e) => {
+                if (e.key.startsWith("Arrow")) void playCue("selection");
+              }}
               aria-label="Field zoom"
               style={{ flex: 1, accentColor: "#26382d" }}
             />
@@ -559,6 +591,38 @@ export function FieldStage({
             >
               ±{(span / 2).toFixed(0)} {unit}
             </span>
+          </div>
+          <div className="focus-viewport-actions" aria-label="Field viewport">
+            <button
+              type="button"
+              className="focus-viewport-btn"
+              title="Center on you"
+              aria-label="Center me"
+              onClick={() => {
+                void playCue("light");
+                tweenCenterTo(total);
+              }}
+            >
+              ⊙
+            </button>
+            <button
+              type="button"
+              className="focus-viewport-btn"
+              title="Fit full field"
+              aria-label="Fit field"
+              onClick={() => {
+                void playCue("light");
+                const values = runners.map((r) => valueAt(r, time));
+                const min = Math.min(...values);
+                const max = Math.max(...values);
+                const mid = (min + max) / 2;
+                const spread = Math.max(4, max - min + 2);
+                tweenCenterTo(mid);
+                setSpan(Math.min(model.gps ? 40 : 100, spread * 1.2));
+              }}
+            >
+              ⤢
+            </button>
           </div>
 
           <div className="focus-track-caption">
@@ -582,7 +646,9 @@ export function FieldStage({
             )}
           </div>
         </>
-      )}
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {chosen && (
         <div

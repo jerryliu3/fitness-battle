@@ -1,4 +1,6 @@
 "use client";
+import { playCue } from "@/lib/haptics";
+import { useScoreTrackLens } from "@/lib/score-track-lens";
 import { useAuth } from "@/components/auth-context";
 import { useCompete } from "@/components/compete-context";
 import {
@@ -60,11 +62,12 @@ export function AthleteOverview({
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState(state.name);
   const [city, setCity] = useState(state.city);
-  const [track, setTrack] = useState<"open" | "verified">("open");
+  const [track, setTrack] = useScoreTrackLens();
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [avatarBusy, setAvatarBusy] = useState(false);
   const [avatarError, setAvatarError] = useState<string | null>(null);
+  const [profileError, setProfileError] = useState<string | null>(null);
 
   const rating = state.ratings.find((r) => r.sport === state.primary);
   const openElo =
@@ -234,14 +237,24 @@ export function AthleteOverview({
                 {avatarError}
               </p>
             )}
+            {profileError ? (
+              <p className="fb-error" role="alert" style={{ fontSize: 11, marginBottom: 8 }}>
+                {profileError}
+              </p>
+            ) : null}
             <div className="fb-row" style={{ gap: 8 }}>
               <button
                 type="button"
                 className="fb-btn"
                 style={{ fontSize: 13, padding: "6px 14px" }}
                 onClick={() => {
-                  if (name.trim())
-                    dispatch({ type: "rename", name: name.trim() });
+                  const trimmedName = name.trim();
+                  if (!trimmedName) {
+                    setProfileError("Display name cannot be empty.");
+                    return;
+                  }
+                  setProfileError(null);
+                  dispatch({ type: "rename", name: trimmedName });
                   dispatch({ type: "set-city", city: city.trim() });
                   setEditing(false);
                 }}
@@ -255,6 +268,7 @@ export function AthleteOverview({
                 onClick={() => {
                   setName(state.name);
                   setCity(state.city);
+                  setProfileError(null);
                   setEditing(false);
                 }}
               >
@@ -333,14 +347,20 @@ export function AthleteOverview({
             <button
               type="button"
               aria-pressed={track === "open"}
-              onClick={() => setTrack("open")}
+              onClick={() => {
+                if (track !== "open") void playCue("selection");
+                setTrack("open");
+              }}
             >
               Open
             </button>
             <button
               type="button"
               aria-pressed={track === "verified"}
-              onClick={() => setTrack("verified")}
+              onClick={() => {
+                if (track !== "verified") void playCue("selection");
+                setTrack("verified");
+              }}
             >
               GPS verified
             </button>

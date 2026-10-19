@@ -2,6 +2,7 @@
 
 import { useState, type FormEvent } from "react";
 import { Sheet } from "@/ui/sheet";
+import { playCue } from "@/lib/haptics";
 
 export function ReportIssue() {
   const [open, setOpen] = useState(false);
@@ -25,8 +26,10 @@ export function ReportIssue() {
       if (!response.ok) throw new Error(result.error || "We couldn't send your report. Please try again.");
       setSent(true);
       setMessage("");
+      void playCue("success");
     } catch (e) {
       setError(e instanceof Error ? e.message : "We couldn't send your report. Please try again.");
+      void playCue("error");
     } finally {
       setBusy(false);
     }
