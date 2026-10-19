@@ -20,6 +20,7 @@ export function ArenaLanes({
   selected,
   onSelect,
   onPan,
+  onBackgroundTap,
   overtakeFrame = null,
   overtakePlan = null,
 }: {
@@ -29,15 +30,20 @@ export function ArenaLanes({
   selected: string;
   onSelect: (id: string) => void;
   onPan: (center: number) => void;
+  onBackgroundTap?: () => void;
   overtakeFrame?: ArenaOvertakeFrame | null;
   overtakePlan?: ArenaOvertakePlan | null;
 }) {
   const host = useRef<HTMLDivElement>(null);
   const drag = useRef<{
+    x: number;
     y: number;
+    scrollLeft: number;
     center: number;
     moved: boolean;
+    mode: "undecided" | "vertical" | "horizontal";
     id: string | null;
+    captured: boolean;
   } | null>(null);
   const animating = Boolean(overtakeFrame && overtakeFrame.phase !== "done");
   const liveLanes =
@@ -106,36 +112,85 @@ export function ArenaLanes({
         }}
         onPointerDown={(e) => {
           drag.current = {
+            x: e.clientX,
             y: e.clientY,
+            scrollLeft: host.current?.scrollLeft ?? 0,
             center: effectiveView.center,
             moved: false,
+            mode: "undecided",
+            captured: false,
             id:
               (e.target as Element)
                 .closest("[data-athlete]")
                 ?.getAttribute("data-athlete") ?? null,
           };
-          e.currentTarget.setPointerCapture(e.pointerId);
         }}
         onPointerMove={(e) => {
-          if (!drag.current) return;
-          const delta = e.clientY - drag.current.y;
-          if (Math.abs(delta) > 5) {
-            drag.current.moved = true;
-            onPan(
-              clampArenaLaneCenter(
-                drag.current.center + (delta / 400) * effectiveView.span,
-                effectiveView.span,
-              ),
-            );
+          const press = drag.current;
+          if (!press) return;
+          const dx = e.clientX - press.x;
+          const dy = e.clientY - press.y;
+          if (press.mode === "undecided") {
+            if (Math.abs(dx) < 6 && Math.abs(dy) < 6) return;
+            if (Math.abs(dx) > Math.abs(dy)) {
+              press.mode = "horizontal";
+            } else {
+              press.mode = "vertical";
+              if (!press.captured) {
+                press.captured = true;
+                e.currentTarget.setPointerCapture(e.pointerId);
+              }
+            }
+          }
+          if (press.mode === "horizontal") {
+            press.moved = true;
+            const el = host.current;
+            if (el) el.scrollLeft = press.scrollLeft - dx;
+            return;
+          }
+          if (press.mode === "vertical") {
+            if (!press.captured) {
+              press.captured = true;
+              e.currentTarget.setPointerCapture(e.pointerId);
+            }
+            if (Math.abs(dy) > 5) {
+              press.moved = true;
+              onPan(
+                clampArenaLaneCenter(
+                  press.center + (dy / 400) * effectiveView.span,
+                  effectiveView.span,
+                ),
+              );
+            }
           }
         }}
         onPointerUp={(e) => {
           const press = drag.current;
           drag.current = null;
-          if (press && !press.moved && press.id) onSelect(press.id);
+          if (!press) return;
+          if (press.captured) {
+            try {
+              e.currentTarget.releasePointerCapture(e.pointerId);
+            } catch {
+              /* already released */
+            }
+          }
+          if (!press.moved && press.id) {
+            onSelect(press.id);
+            return;
+          }
+          if (!press.moved && !press.id) onBackgroundTap?.();
         }}
-        onPointerCancel={() => {
+        onPointerCancel={(e) => {
+          const press = drag.current;
           drag.current = null;
+          if (press?.captured) {
+            try {
+              e.currentTarget.releasePointerCapture(e.pointerId);
+            } catch {
+              /* already released */
+            }
+          }
         }}
       >
         <defs>
@@ -447,7 +502,7 @@ export function ArenaLanes({
           {unit}
         </text>
         <text x="18" y="522" className="lane-distance">
-          Drag ↕ to explore · zoom keeps you centered
+          Drag ↕ distance · ↔ lanes · tap track to expand
         </text>
       </svg>
     </div>
