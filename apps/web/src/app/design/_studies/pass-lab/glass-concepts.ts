@@ -12,5 +12,5 @@ export type GlassId = typeof GLASS_CONCEPTS[number]["id"];
 export type GlassConcept = {
   id: GlassId; name: string; material: string; shape: "pill" | "circle";
   line: string; field: string; tradeoff: string;
-  glass: { opacity: number; gold: string; silver: string; echo: number; rim: number; edge: number; ring: number; tall: boolean };
+  glass: { opacity: number; gold: string; silver: string; echo: number; rim: number; edge: number; ring: number; tall: boolean; rimStyle?: "rolled" | "bevel" | "meniscus" };
 };

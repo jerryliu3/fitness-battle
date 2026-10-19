@@ -137,3 +137,5 @@ The [focused glass exploration](GLASS.md) adds eight variations using capsules a
 The [focused shape/finish comparison](GLASS.md#focused-comparison-shape--finish) at `review.html?view=finishes` pairs capsule and fine loop with uniform glass, original Amber tinted glass, satin glass, and fired glaze. Uniform opacity is simplified to 38/50/64%, defaulting to equal 50% for gold and silver. Original favorites and all prior study rounds remain available.
 
 The latest active review locks the **standard capsule** and keeps all four finishes. Uniform opacity is now **26/38/50%**, and 10 independent golds plus 10 silver/platinum tones create 100 color pairings. Wakes are clipped below the capsule instead of showing through its face. Open `review.html?view=finishes`; palette boards are `capsule-colors-white.png` / `capsule-colors-black.png`.
+
+October 19 refinement: the capsule color lab now preserves all four finishes and adds Rolled glass, Polished glass and Liquid edge. Every material shares the satin wake and a curved silhouette exclusion mask. See [GLASS.md](GLASS.md) for details and updated seven-finish boards.

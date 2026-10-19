@@ -1,6 +1,6 @@
 # Uniform tinted glass — Round 6
 
-**Current review:** capsule shape locked; four finishes; 26/38/50% uniform opacity; independent 10-gold and 10-silver/platinum selectors at `review.html?view=finishes`. The earlier sections below record the exploration history.
+**Current review:** capsule shape locked; seven finishes (four original + three rim studies); 26/38/50% uniform opacity; independent 10-gold and 10-silver/platinum selectors at `review.html?view=finishes`. The earlier sections below record the exploration history.
 
 The user retained Amber Capsule and Glazed Ceramic, with Frosted Pebble as a third comparison. The new direction follows the supplied Photos icon reference more literally: one smooth translucent material, consistent across the face, with darker areas caused by overlap rather than painted texture or decorative reflections.
 
@@ -63,8 +63,23 @@ The active review now locks the standard **40 × 58 capsule** and drops rings fr
 
 Independent selectors offer **10 golds × 10 silver/platinum tones**. They include bright yellow/gold, warm amber/champagne, neutral silver, bright/cool/warm platinum, white, blue silver and smoke. Palette changes update the head, rim, shading and wake for all four finishes and the selected lane preview. Full-strength swatches distinguish the chosen base color from its translucent result. Export filenames include both color IDs and the uniform-glass opacity. Defaults retain rich gold / current silver; colors remain under review. `capsule-colors-white.png` and `capsule-colors-black.png`, with editable SVG originals, compare each family while holding the other color fixed.
 
-Every wake is clipped **below the capsule's bottom edge**, in the object's local coordinate space, outside animated transforms. No wake can show through a translucent live capsule in a still frame, flow, or pass replay. The clip begins at y=30.2 for a capsule ending at y=29. The export removes only the outer icon display mask and preserves these internal clips. The original Amber face's two curved internal marks were also removed because they resembled afterimages. Remaining optical highlights belong to the material surface.
+The initial flat bottom-edge clip has been replaced by a **curved silhouette exclusion mask**. Its black capsule path follows the exact rounded head geometry, with 1.1 units of rim clearance; the surrounding white region allows echoes to remain visible beside the curved lower corners. The mask stays fixed outside the animated transforms, so neither static nor flowing echoes can tint the live face. SVG downloads preserve these internal masks. The original Amber face's two curved internal marks remain removed because they resembled afterimages.
 
 The reference screenshot is flattened and cannot uniquely determine the original alpha. A visual estimate for its stronger colored pieces is about **60–80% opacity (20–40% transparency)**, not a measurement. The 26–50% presets deliberately explore the lighter treatment requested by the user.
 
 Verification: workspace typecheck, 168 web tests (four existing skips), and production web build passed. Browser checks confirmed 10 independent choices per color, four capsule cards, 26/38% matched alpha, both selected colors in every finish, white/black switching, replay, and wake clipping on the selected field. A raster check compared each icon with and without wakes on white and black, at rest and at an overlapping echo pose: zero pixels changed inside either live capsule across all four finishes. `capsule-color-lab-preview.png` records the working color controls.
+
+
+## Shared satin wake and Photos-inspired rims — October 19
+
+All study material renderers now use one `SatinWake`: the original satin filled echo, .55 paint opacity, .6 decaying group opacity, the same vertical fade, six leading / four rival echoes, shared-start lengths of 117.55 / 65.55, and 1.15 / 1.32 second flow cycles. Finish, opacity and rim choices cannot alter the wake. The selected gold/silver palette still colors it. Icon and athlete markers share the renderer and curved exclusion mask.
+
+The original Uniform glass, Tinted glass (Amber Capsule), Satin glass (Frosted Pebble) and Fired glaze (Glazed Ceramic) remain. Three additional uniform glass versions explore the white, shaded perimeter of **one individual capsule** in the Photos reference:
+
+- **Rolled glass:** broad soft white crest and shaded lower edge.
+- **Polished glass:** narrower bevel with a fine inner light ridge.
+- **Liquid edge:** thicker rounded lip and a quiet inner meniscus reflection.
+
+The face remains a constant-alpha color layer; gradients are confined to inset perimeter strokes. All three use the existing 26 / 38 / 50% settings, independent 10 × 10 color choices, both backgrounds, field selection, and SVG export. `finish-board-white.png` / `finish-board-black.png` now document all seven, with per-finish masters and field SVGs in `finish-icons/`.
+
+Validation: `pnpm typecheck`, full `pnpm test` (481 passed, four existing skips), and `pnpm build:web` passed. A raster comparison across seven finishes, both backgrounds and two echo poses (28 cases) found **zero changed pixels inside the live capsule**, while confirming visible echoes beside its rounded lower corners. The CI failure was two Arena fixtures opting in against the real wall clock while asserting against October 15; all opt-in fixtures in that suite now pass their explicit fixture time, without changing product enrollment behavior.

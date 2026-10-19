@@ -1,10 +1,11 @@
-import { useId, type CSSProperties } from "react";
+import { useId } from "react";
+import {mixColor} from "./finish-colors";
+import {capsuleOutline,SatinWake,wakeOutline} from "./satin-wake";
 import type { GlassConcept } from "./glass-concepts";
 
 function outline(concept:GlassConcept,inset=0){
   if(concept.shape==="circle")return `M${23-inset} 0a${23-inset} ${23-inset} 0 1 0 ${-2*(23-inset)} 0a${23-inset} ${23-inset} 0 1 0 ${2*(23-inset)} 0Z`;
-  const w=(concept.glass.tall?18:20)-inset,h=(concept.glass.tall?33:29)-inset;
-  return `M${-w} ${-h+w}a${w} ${w} 0 0 1 ${2*w} 0V${h-w}a${w} ${w} 0 0 1 ${-2*w} 0Z`;
+  return capsuleOutline(inset,concept.glass.tall);
 }
 
 /** A constant-opacity sheet. Only the narrow boundary is lit; the face has no texture or gradient. */
@@ -18,16 +19,33 @@ export function UniformGlassHead({concept,fast,light=0,echo=false}: {concept:Gla
     <path d={`${outer}${inner}`} fill={color} fillOpacity={g.opacity} fillRule="evenodd" data-glass-face="uniform"/>
     <path d={outer} fill="none" stroke={color} strokeWidth={edgeWidth} strokeOpacity=".65"/>
     <path d={outline(concept,.7)} fill="none" stroke={`url(#${id}-edge)`} strokeWidth={edgeWidth} opacity={echo ? .45 : 1}/>
+    {g.rimStyle&&<GlassRim concept={concept} color={color} light={light}/>}
     {g.ring>0&&<path d={inner} fill="none" stroke={color} strokeWidth={edgeWidth*.7} strokeOpacity=".5"/>}
   </g>;
 }
 
+function GlassRim({concept,color,light}: {concept:GlassConcept;color:string;light:number}){
+  const id=useId(),style=concept.glass.rimStyle;
+  const width=style==="rolled"?2.8:style==="bevel"?2.1:3.4;
+  return <g data-glass-rim={style}>
+    <defs>
+      <linearGradient id={`${id}-bevel`} x1={.12+light*.1} y1="0" x2=".84" y2="1">
+        <stop stopColor="white" stopOpacity=".94"/><stop offset=".24" stopColor="white" stopOpacity={style==="rolled"?.56:.8}/>
+        <stop offset=".48" stopColor={color} stopOpacity=".08"/><stop offset=".74" stopColor={mixColor(color,"#000000",.38)} stopOpacity=".44"/>
+        <stop offset="1" stopColor="white" stopOpacity={style==="meniscus"?.8:.4}/>
+      </linearGradient>
+      <linearGradient id={`${id}-crest`} x1="0" y1="0" x2=".65" y2="1"><stop stopColor="white" stopOpacity=".95"/><stop offset=".4" stopColor="white" stopOpacity=".45"/><stop offset=".7" stopColor="white" stopOpacity="0"/><stop offset="1" stopColor="white" stopOpacity=".5"/></linearGradient>
+    </defs>
+    <path d={outline(concept,.25)} fill="none" stroke={color} strokeOpacity=".35" strokeWidth=".8"/>
+    <path d={outline(concept,width/2+.2)} fill="none" stroke={`url(#${id}-bevel)`} strokeWidth={width}/>
+    <path d={outline(concept,style==="bevel"?2:1)} fill="none" stroke={`url(#${id}-crest)`} strokeWidth={style==="rolled"?.65:.85}/>
+    {style==="meniscus"&&<path d={outline(concept,3.5)} fill="none" stroke={color} strokeWidth=".6" strokeOpacity=".23"/>}
+  </g>;
+}
+
 export function UniformGlassRacer({concept,x,y,radius=23,fast,dark=false,flow=false,light=0,edge,label}: {concept:GlassConcept;x:number;y:number;radius?:number;fast:boolean;dark?:boolean;flow?:boolean;light?:number;edge?:string|null;label?:string}){
-  const count=fast?6:4,length=fast?117.55:65.55,duration=fast?1.15:1.32;
-  const id=useId(),headBottom=concept.shape==="circle"?23:concept.glass.tall?33:29;
   return <g transform={`translate(${x} ${y}) scale(${radius/23})`} data-material-racer={fast?"gold":"silver"}>
-    <defs><clipPath id={`${id}-after-head`} clipPathUnits="userSpaceOnUse"><rect x="-40" y={headBottom+1.2} width="80" height={length+80}/></clipPath></defs>
-    <g clipPath={`url(#${id}-after-head)`} data-wake-start={headBottom+1.2}>{Array.from({length:count},(_,i)=><g key={i} className={flow?"pass-flow-echo glass-flow-echo":undefined} style={{transform:`translateY(${length*(i+1)/count}px)`,opacity:concept.glass.echo*(1-i/(count+1)),"--echo-distance":`${length}px`,"--glass-opacity":concept.glass.echo,animationDuration:`${duration}s`,animationDelay:`${-duration*i/count}s`} as CSSProperties}><UniformGlassHead concept={concept} fast={fast} light={light} echo/></g>)}</g>
+    <SatinWake color={fast?concept.glass.gold:concept.glass.silver} fast={fast} flow={flow} outline={wakeOutline(concept.shape,concept.glass.tall)}/>
     <UniformGlassHead concept={concept} fast={fast} light={light}/>
     {(edge||label)&&<text x="0" y="3" textAnchor="middle" fill={dark?"#f4f5f6":"#343d40"} stroke={dark?"#000":"#fff"} strokeWidth="1.8" paintOrder="stroke" fontSize="9" fontWeight="800">{edge||label}</text>}
   </g>;
