@@ -235,7 +235,10 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
       await preloadBaselineCache(owner ?? "guest", baselineCacheRef.current);
       if (!alive || accountRef.current !== owner) return;
       unsavedRef.current = dirty;
-      if (dirty && live && loadReady.current) setSaveError(saveFailure());
+      if (dirty && live && loadReady.current) {
+        const message = saveFailure();
+        if (message) setSaveError(message);
+      }
       seedArenaBaselinesFromState(
         next,
         owner ?? "guest",
@@ -520,14 +523,18 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
               return;
             if (!response.ok) {
               const body = await response.json().catch(() => null);
-              setSaveError(saveFailure(body?.error));
+              const message = saveFailure(body?.error);
+              if (message) setSaveError(message);
               return;
             }
             unsavedRef.current = false;
             setSaveError(null);
             await AsyncStorage.removeItem(scoped.dirty);
           } catch {
-            if (id === accountRef.current) setSaveError(saveFailure());
+            if (id === accountRef.current) {
+              const message = saveFailure();
+              if (message) setSaveError(message);
+            }
           }
         });
     }, 400);

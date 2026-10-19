@@ -326,7 +326,7 @@ describe("compete engine", () => {
     };
     const migrated = migrateCompeteState(settled);
     expect(migrated.pendingRevealIds).toEqual([
-      "2026-10-05T00:00:00.000Z:running:open",
+      "2026-10-05T04:00:00.000Z:running:open",
     ]);
     expect(migrated.periodResults[0]?.acknowledgedAt).toBeNull();
   });

@@ -55,7 +55,6 @@ export function PhoneShell({
   const { user, loading } = useAuth();
   const {
     state,
-    saveError,
     legacyOffer,
     loadStatus,
     recoverLegacy,
@@ -93,7 +92,6 @@ export function PhoneShell({
     if (hideTabs) return null;
     return (
       <>
-        {saveError ? <p className="phone-guest">{saveError}</p> : null}
         {legacyOffer ? (
           <p className="phone-guest">
             This browser still has history from before accounts.{" "}

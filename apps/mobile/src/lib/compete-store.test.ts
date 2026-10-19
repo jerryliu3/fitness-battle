@@ -195,7 +195,7 @@ describe("mobile account lifecycle", () => {
       api.dispatch({ type: "set-city", city: "Toronto" });
     });
     await save();
-    expect(api.saveError).toContain("still open");
+    expect(api.saveError).toBeNull();
     expect(mock.values.get(accountStorageKeys("Alice").dirty)).toBe("1");
     fetcher.mockResolvedValue(Response.json({ ok: true }));
     await act(async () => {

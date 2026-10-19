@@ -42,7 +42,6 @@ export function WeekReveal({
   onKeep: (sport: SportId) => void;
   onJoin: (sport: SportId) => void;
 }) {
-  // Derive from acknowledgedAt; ignore any stale pendingRevealIds blob.
   const reveals = primaryRevealResults(
     state.periodResults,
     undefined,
@@ -71,12 +70,10 @@ export function WeekReveal({
       aria-labelledby="week-reveal-title"
       aria-modal="false"
     >
-      <p className="sp-reveal-kicker">Week complete · Eastern Time</p>
-      <h2 id="week-reveal-title">{headline}</h2>
-      <p className="sp-reveal-week">
-        {sport.name} · {weekLabel(result.periodStart, result.periodEnd)}
-        {result.track === "verified" ? " · verified" : " · all efforts"}
-      </p>
+      <h2 id="week-reveal-title" className="sp-reveal-week">
+        {sport.name} · {weekLabel(result.periodStart, result.periodEnd)} ·{" "}
+        {headline}
+      </h2>
 
       <div className="sp-reveal-grid">
         <div>
@@ -104,32 +101,6 @@ export function WeekReveal({
         </div>
       </div>
 
-      {result.frozen ? (
-        <p className="fb-note">
-          This week was frozen. Your effort score did not move.
-        </p>
-      ) : result.effort <= 0 ? (
-        <p className="fb-note">
-          No counted effort this week, so effort score decayed slightly.
-        </p>
-      ) : (
-        <p className="fb-note">
-          Final place in your matched group sets next week’s starting effort score.
-          The new week is already open. A crew keeps the same invite code.
-        </p>
-      )}
-      <p className="fb-note">{renewal.detail}</p>
-
-      <button
-        type="button"
-        className="fb-btn-line"
-        onClick={() => {
-          const text = `${headline} ${sport.name} ${formatPlace(result.place, result.fieldSize)}, ${formatEffort(result.effort)} effort.`;
-          void navigator.clipboard?.writeText(text);
-        }}
-      >
-        Copy recap
-      </button>
       {renewal.enrolled && renewal.renews ? (
         <button type="button" className="fb-btn-line" onClick={() => onStop(result.sport)}>
           Stop after this week

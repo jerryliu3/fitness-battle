@@ -205,11 +205,9 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
             const body = (await response.json().catch(() => null)) as {
               error?: string;
             } | null;
-            setSaveError(
-              body?.error === "week_still_open"
-                ? "This week stays active until it closes. Stop after this week from You."
-                : "This device updated. The account copy did not save.",
-            );
+            if (body?.error !== "week_still_open") {
+              setSaveError("This device updated. The account copy did not save.");
+            }
             return;
           }
           if (dirtyRef.current === generation) {

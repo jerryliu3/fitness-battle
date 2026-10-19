@@ -14,6 +14,7 @@ import { eloFromWeeklyEffort, periodEffort } from "./effort";
 import { mergeActivities, normalizeSampleActivity, provenanceOf } from "./ledger";
 import { isTrainingGoal } from "./suggestion";
 import { settleElo } from "./elo";
+import { alignCompeteWaves } from "./wave-align";
 import {
   demoSleepNight,
   freshHealthRatings,
@@ -362,10 +363,11 @@ export function migrateCompeteState(parsed: CompeteState): CompeteState {
   };
 
   // Older guests stored the account baseline (1000) before they had a score.
-  if (isUnsignedEmptyCompete(migrated)) {
-    return { ...migrated, ratings: demoteGuestBaselineRatings(migrated.ratings) };
+  const aligned = alignCompeteWaves(migrated);
+  if (isUnsignedEmptyCompete(aligned)) {
+    return { ...aligned, ratings: demoteGuestBaselineRatings(aligned.ratings) };
   }
-  return migrated;
+  return aligned;
 }
 
 function parseUnitSystem(value: unknown): UnitSystem {
@@ -760,7 +762,7 @@ function settleEnrollment(
 export function rollClock(state: CompeteState, now: Date = new Date()): CompeteState {
   const liveWave = waveWindowAt(now);
   const liveStart = liveWave.waveStart.toISOString();
-  let next = state;
+  let next = alignCompeteWaves(state, now);
   // Last week's crew pin must not stick after Monday settlement.
   if (
     next.crewBoard &&
