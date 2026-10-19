@@ -10,6 +10,6 @@ export const MATERIAL_CONCEPTS = [
   { id: "opal", name: "Opal drop", material: "PEARLESCENT RESIN", shape: "drop", line: "A soft upward-pointing drop with a translucent pearl body and gold or silver edging. Light pools inside instead of flashing across it.", field: "A directional head that stays rounded and approachable, with pearl echoes following behind.", tradeoff: "The drop is less familiar than the circle; test whether it reads as an athlete or a map pin." },
 ] as const;
 export type MaterialConcept = (Omit<typeof MATERIAL_CONCEPTS[number], "name" | "shape"> & {
-  name: string; shape: typeof MATERIAL_CONCEPTS[number]["shape"]; loopBand?: number;
+  name: string; shape: typeof MATERIAL_CONCEPTS[number]["shape"]; loopBand?: number; palette?: {gold:string;silver:string};
 }) | GlassConcept;
 export type MaterialId = MaterialConcept["id"];

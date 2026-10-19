@@ -1,5 +1,7 @@
 # Uniform tinted glass — Round 6
 
+**Current review:** capsule shape locked; four finishes; 26/38/50% uniform opacity; independent 10-gold and 10-silver/platinum selectors at `review.html?view=finishes`. The earlier sections below record the exploration history.
+
 The user retained Amber Capsule and Glazed Ceramic, with Frosted Pebble as a third comparison. The new direction follows the supplied Photos icon reference more literally: one smooth translucent material, consistent across the face, with darker areas caused by overlap rather than painted texture or decorative reflections.
 
 Eight additions explore five capsule treatments and three open loops. All prior Round 5 concepts remain in the history tab; the three retained options are also selectable in this round's field preview. Both parent PRs (#154 and #156) have merged, so this continuation starts from main containing that work. Production app icons are unchanged.
@@ -53,3 +55,16 @@ The standard capsule is **40 × 58 units**, identical to both the original Amber
 `finish-board-white.png` / `finish-board-black.png` and their SVG originals compare all eight combinations. `finish-icons/white/` and `finish-icons/black/` each contain eight icon masters and eight matching field snapshots; uniform-glass static exports use 50%. `transmission-white.svg` and `transmission-black.svg` preserve the backdrop check. Browser exports include the selected opacity in the filename. These assets use the existing review rebuild command.
 
 Focused-review verification: both 38% and 64% presets were checked in the browser and all rendered gold/silver face paths had the same selected alpha. The 50% default, backdrop changes, restored fired-glaze loop, and run scrubbing were verified. `finish-opacity-preview.png` captures the common-backdrop diagnostic. Workspace typecheck, web tests and web build passed after adding the focused comparison.
+
+
+## Capsule locked: independent color lab
+
+The active review now locks the standard **40 × 58 capsule** and drops rings from the active comparison. The earlier ring explorations remain archival. Uniform glass uses **26%, 38%, or 50% face opacity** for both colors; 64% is removed from the active controls. Fifty percent remains the initial default. The four retained finishes are uniform glass, original Amber tinted glass, satin glass and fired glaze.
+
+Independent selectors offer **10 golds × 10 silver/platinum tones**. They include bright yellow/gold, warm amber/champagne, neutral silver, bright/cool/warm platinum, white, blue silver and smoke. Palette changes update the head, rim, shading and wake for all four finishes and the selected lane preview. Full-strength swatches distinguish the chosen base color from its translucent result. Export filenames include both color IDs and the uniform-glass opacity. Defaults retain rich gold / current silver; colors remain under review. `capsule-colors-white.png` and `capsule-colors-black.png`, with editable SVG originals, compare each family while holding the other color fixed.
+
+Every wake is clipped **below the capsule's bottom edge**, in the object's local coordinate space, outside animated transforms. No wake can show through a translucent live capsule in a still frame, flow, or pass replay. The clip begins at y=30.2 for a capsule ending at y=29. The export removes only the outer icon display mask and preserves these internal clips. The original Amber face's two curved internal marks were also removed because they resembled afterimages. Remaining optical highlights belong to the material surface.
+
+The reference screenshot is flattened and cannot uniquely determine the original alpha. A visual estimate for its stronger colored pieces is about **60–80% opacity (20–40% transparency)**, not a measurement. The 26–50% presets deliberately explore the lighter treatment requested by the user.
+
+Verification: workspace typecheck, 168 web tests (four existing skips), and production web build passed. Browser checks confirmed 10 independent choices per color, four capsule cards, 26/38% matched alpha, both selected colors in every finish, white/black switching, replay, and wake clipping on the selected field. A raster check compared each icon with and without wakes on white and black, at rest and at an overlapping echo pose: zero pixels changed inside either live capsule across all four finishes. `capsule-color-lab-preview.png` records the working color controls.

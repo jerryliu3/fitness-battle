@@ -24,8 +24,10 @@ export function UniformGlassHead({concept,fast,light=0,echo=false}: {concept:Gla
 
 export function UniformGlassRacer({concept,x,y,radius=23,fast,dark=false,flow=false,light=0,edge,label}: {concept:GlassConcept;x:number;y:number;radius?:number;fast:boolean;dark?:boolean;flow?:boolean;light?:number;edge?:string|null;label?:string}){
   const count=fast?6:4,length=fast?117.55:65.55,duration=fast?1.15:1.32;
+  const id=useId(),headBottom=concept.shape==="circle"?23:concept.glass.tall?33:29;
   return <g transform={`translate(${x} ${y}) scale(${radius/23})`} data-material-racer={fast?"gold":"silver"}>
-    {Array.from({length:count},(_,i)=><g key={i} className={flow?"pass-flow-echo glass-flow-echo":undefined} style={{transform:`translateY(${length*(i+1)/count}px)`,opacity:concept.glass.echo*(1-i/(count+1)),"--echo-distance":`${length}px`,"--glass-opacity":concept.glass.echo,animationDuration:`${duration}s`,animationDelay:`${-duration*i/count}s`} as CSSProperties}><UniformGlassHead concept={concept} fast={fast} light={light} echo/></g>)}
+    <defs><clipPath id={`${id}-after-head`} clipPathUnits="userSpaceOnUse"><rect x="-40" y={headBottom+1.2} width="80" height={length+80}/></clipPath></defs>
+    <g clipPath={`url(#${id}-after-head)`} data-wake-start={headBottom+1.2}>{Array.from({length:count},(_,i)=><g key={i} className={flow?"pass-flow-echo glass-flow-echo":undefined} style={{transform:`translateY(${length*(i+1)/count}px)`,opacity:concept.glass.echo*(1-i/(count+1)),"--echo-distance":`${length}px`,"--glass-opacity":concept.glass.echo,animationDuration:`${duration}s`,animationDelay:`${-duration*i/count}s`} as CSSProperties}><UniformGlassHead concept={concept} fast={fast} light={light} echo/></g>)}</g>
     <UniformGlassHead concept={concept} fast={fast} light={light}/>
     {(edge||label)&&<text x="0" y="3" textAnchor="middle" fill={dark?"#f4f5f6":"#343d40"} stroke={dark?"#000":"#fff"} strokeWidth="1.8" paintOrder="stroke" fontSize="9" fontWeight="800">{edge||label}</text>}
   </g>;
