@@ -77,6 +77,9 @@ function YouContent() {
   const { user, signOut, demoMode } = useAuth();
   const { state, dispatch, loadStatus } = useCompete();
   const [panel, setPanel] = useState<AthletePanel | null>(null);
+  const overviewRef = useRef<HTMLDivElement>(null);
+  const settingsFocus = useRef<HTMLElement | null>(null);
+  const [settingsPresent, setSettingsPresent] = useState(false);
   const [settingsScrollRoot, setSettingsScrollRoot] =
     useState<HTMLElement | null>(null);
   const [syncNote, setSyncNote] = useState<string | null>(null);
@@ -190,20 +193,20 @@ function YouContent() {
   }, [accountKey, loadStatus, state]);
 
   useLayoutEffect(() => {
-    setSettingsScrollRoot(
-      document.querySelector<HTMLElement>(
-        ".phone-panel.is-active .phone-scroll",
-      ),
-    );
-  }, [panel, loadStatus]);
+    setSettingsScrollRoot(overviewRef.current?.closest<HTMLElement>(".phone-scroll") ?? null);
+  }, [loadStatus, user]);
 
   useLayoutEffect(() => {
-    if (!panel) return;
-    const viewport = document.querySelector<HTMLElement>(
-      ".phone-panel.is-active .phone-scroll [data-radix-scroll-area-viewport]",
-    );
-    if (viewport) viewport.scrollTop = 0;
-  }, [panel]);
+    if (!panel || !settingsScrollRoot) return;
+    setSettingsPresent(true);
+    settingsScrollRoot.querySelector<HTMLButtonElement>(".focus-settings-stack-panel button")?.focus({ preventScroll: true });
+  }, [panel, settingsScrollRoot]);
+
+  useLayoutEffect(() => {
+    if (panel || settingsPresent) return;
+    settingsFocus.current?.focus({ preventScroll: true });
+    settingsFocus.current = null;
+  }, [panel, settingsPresent]);
 
   useEffect(() => {
     // Only apply OAuth return params after this account's compete load settled.
@@ -508,6 +511,10 @@ function YouContent() {
       <motion.aside
         key={panel}
         className="focus-settings-stack-panel"
+        aria-label={PANEL_TITLES[panel]}
+        onKeyDown={(event) => {
+          if (event.key === "Escape" && !event.defaultPrevented) { event.preventDefault(); setPanel(null); }
+        }}
         initial={reduced ? false : { x: "100%" }}
         animate={{ x: 0 }}
         exit={
@@ -1007,14 +1014,16 @@ function YouContent() {
 
   const settingsPortal = settingsScrollRoot
     ? createPortal(
-        <AnimatePresence mode="wait">{settingsPanel}</AnimatePresence>,
+        <AnimatePresence mode="wait" onExitComplete={() => {
+          setSettingsPresent(false);
+        }}>{settingsPanel}</AnimatePresence>,
         settingsScrollRoot,
       )
     : null;
 
   return (
     <>
-    <div className="focus-athlete">
+    <div className="focus-athlete" ref={overviewRef} inert={Boolean(panel) || settingsPresent}>
       <AthleteOverview state={state} email={user.email} demoMode={demoMode} />
       <nav className="focus-settings-list" aria-label="Athlete settings">
         {(
@@ -1030,7 +1039,8 @@ function YouContent() {
             key={id}
             type="button"
             className="focus-settings-row"
-            onClick={() => {
+            onClick={(event) => {
+              settingsFocus.current = event.currentTarget;
               void playCue("selection");
               setPanel(id);
             }}

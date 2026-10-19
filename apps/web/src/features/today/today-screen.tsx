@@ -212,13 +212,14 @@ export function TodayScreen() {
     groupActivitiesByDay(counted, Infinity),
   );
 
+  const latestJourneyDay = journeyDays[0]?.id;
   useEffect(() => {
-    const topDay = journeyDays[0]?.id;
-    if (!topDay) return;
+    const topDay = latestJourneyDay;
+    if (!topDay || reduced) { setJourneyIntro(false); return; }
     const key = `fb:journey-day:${user?.id ?? state.name ?? "guest"}`;
     try {
       const last = localStorage.getItem(key);
-      if (last !== topDay && journeyDays.length >= 1) {
+      if (last !== topDay) {
         setJourneyIntro(true);
         localStorage.setItem(key, topDay);
         const t = window.setTimeout(() => setJourneyIntro(false), 1200);
@@ -227,7 +228,7 @@ export function TodayScreen() {
     } catch {
       /* optional */
     }
-  }, [journeyDays, state.name, user?.id]);
+  }, [latestJourneyDay, reduced, state.name, user?.id]);
 
   const weekPeriod = competePeriodWindow(state, now);
   const weekStart = weekPeriod.startsAt.getTime();

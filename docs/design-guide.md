@@ -41,6 +41,12 @@ Web retains the real Three.js renderer. Native 2D is SVG; native 3D embeds the s
 
 Account data, periods, scoring, and backend eligibility rules are not replaced by prototype fixtures. Existing live-connection and synthetic-peer disclosures must remain accurate.
 
+## Production motion implementation
+
+One live lane canvas should change bounds when expanding, retaining its selection, zoom and horizontal anchor. Expanded web lanes live in a root dialog with attached controls, Escape, scroll locking and focus return. Embedded touch lanes allow page scrolling; vertical field exploration requires fullscreen web lanes or native's explicit Explore mode. Programmatic viewport changes interpolate center and span together; direct manipulation interrupts immediately. Center me restores following.
+
+Give each transform one animation owner. Fade sheet scrims independently, retain surfaces through exit, preserve parent scroll behind settings, and respect reduced motion. Haptics follow deliberate actions or confirmed outcomes, not decorative animation callbacks. The [production repair review](reviews/motion-regressions-2026-10-19.md) tracks remaining gaps against the 18-flow prototype, including native fullscreen expansion and medal detail.
+
 ## Selected material and interaction exploration
 
 The [material and motion study](material-and-motion-concepts.md) records the October 16 user review: Glass Track, dimensional weekly results, PR history, cooperative crew goals, weekly training history, a conditional daily clock, and a return moment integrated into Compete. Its [standalone review](design-studies/material-motion/review.html) uses fictional data. These are candidates for later implementation; Focus remains the production direction. Personal Home targets are a separate optional feature proposal and do not define competition completion or alter scoring.

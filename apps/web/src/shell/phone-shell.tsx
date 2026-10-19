@@ -15,7 +15,6 @@ import {
 } from "@fitness-battle/shared";
 import { playCue } from "@/lib/haptics";
 import * as ScrollArea from "@radix-ui/react-scroll-area";
-import * as Tabs from "@radix-ui/react-tabs";
 import { motion, useReducedMotion } from "motion/react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
@@ -63,7 +62,6 @@ export function PhoneShell({
   const tab = shellTabFromPath(path);
   useCompeteFieldRefresh(!hideTabs && (tab?.id === "arena" || tab?.id === "field"));
   const [intent, setIntent] = useState<ShellTabId | null>(null);
-  const lastTabRef = useRef<ShellTabId | null>(null);
   const [bootAnimDone, setBootAnimDone] = useState(false);
   const matched = tab?.id ?? null;
   const active = intent ?? matched;
@@ -137,13 +135,11 @@ export function PhoneShell({
   }, [path, matched, intent]);
 
   function goTab(tabId: ShellTabId) {
+    if (tabId === active) return;
     setIntent(tabId);
     const href = SHELL_TABS.find((t) => t.id === tabId)?.href;
     if (!href) return;
-    if (lastTabRef.current !== tabId) {
-      lastTabRef.current = tabId;
-      void playCue("selection");
-    }
+    void playCue("selection");
     router.push(href);
   }
 
@@ -205,21 +201,17 @@ export function PhoneShell({
           panel(children)
         )}
         {hideTabs ? null : (
-          <Tabs.Root
-            value={active ?? ""}
-            onValueChange={(value) => {
-              if (isShellTabId(value)) goTab(value);
-            }}
-          >
-            <Tabs.List className="phone-tabs" aria-label="Primary">
+          <nav className="phone-tabs" aria-label="Primary">
               {SHELL_TABS.map((tab) => {
                 const on = active === tab.id;
                 return (
-                  <Tabs.Trigger key={tab.id} value={tab.id} asChild>
                     <Link
+                      key={tab.id}
+                      aria-current={on ? "page" : undefined}
                       href={tab.href}
                       className="phone-tab"
-                      onPointerDown={(e) => {
+                      onClick={(e) => {
+                        if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return;
                         e.preventDefault();
                         goTab(tab.id);
                       }}
@@ -253,11 +245,9 @@ export function PhoneShell({
                       </svg>
                       <span>{tab.label}</span>
                     </Link>
-                  </Tabs.Trigger>
                 );
               })}
-            </Tabs.List>
-          </Tabs.Root>
+          </nav>
         )}
       </div>
     </div>

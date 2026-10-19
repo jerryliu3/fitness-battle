@@ -2,7 +2,6 @@
 
 import { awardCards, type CompeteState } from "@fitness-battle/shared";
 import { motion, useReducedMotion } from "motion/react";
-import { playCue } from "@/lib/haptics";
 
 export function AwardShelf({ state }: { state: CompeteState }) {
   const reduced = useReducedMotion();
@@ -14,12 +13,9 @@ export function AwardShelf({ state }: { state: CompeteState }) {
     <div className="award-row" aria-label="Week awards">
       {cards.map((card) => (
         <motion.article
-          layout
+          layout={!reduced}
           key={card.id}
           className="award-card"
-          whileTap={reduced ? undefined : { scale: 0.98 }}
-          onClick={() => void playCue("light")}
-          style={{ cursor: "pointer" }}
         >
           <p className="fb-kicker">{card.sportName}</p>
           <h2>{card.headline}</h2>

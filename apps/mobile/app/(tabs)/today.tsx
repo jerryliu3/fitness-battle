@@ -301,16 +301,6 @@ export default function Home() {
   return (
     <SafeAreaView style={f.safe} edges={["top"]}>
       <View style={s.homeStage}>
-        <View style={s.homeJourneyLayer} pointerEvents="box-none">
-          <Journey
-            activities={counted}
-            units={units}
-            onToday={() => {
-              bounce();
-              setExpanded("suggestion");
-            }}
-          />
-        </View>
         <ScrollView
           style={s.homeOverlayScroll}
           contentContainerStyle={s.homeOverlayContent}
@@ -506,6 +496,16 @@ export default function Home() {
             </View>
           </View>
         </View>
+        <View style={s.homeJourneyLayer} pointerEvents="box-none">
+          <Journey
+            activities={counted}
+            units={units}
+            onToday={() => {
+              bounce();
+              setExpanded("suggestion");
+            }}
+          />
+        </View>
         </ScrollView>
       </View>
     </SafeAreaView>
@@ -517,13 +517,10 @@ const s = StyleSheet.create({
     position: "relative",
   },
   homeJourneyLayer: {
-    ...StyleSheet.absoluteFillObject,
-    zIndex: 0,
-    paddingTop: 200,
+    width: "100%",
   },
   homeOverlayScroll: {
     flex: 1,
-    zIndex: 2,
   },
   homeOverlayContent: {
     paddingHorizontal: 22,

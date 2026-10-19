@@ -1,5 +1,5 @@
 "use client";
-import { useRef, useEffect } from "react";
+import { useRef, useLayoutEffect, useState, useId } from "react";
 import {
   arenaPosition,
   formatActivityAge,
@@ -12,9 +12,11 @@ import {
   type ArenaSceneLane,
   type ArenaViewWindow,
 } from "@fitness-battle/shared";
+import { laneGeometry, centeredLaneScroll } from "@/features/field/components/lane-geometry";
 import { Ember } from "@/components/mascot/ember";
 export function ArenaLanes({
   lanes,
+  immersive = false,
   view,
   unit,
   selected,
@@ -25,6 +27,7 @@ export function ArenaLanes({
   overtakePlan = null,
 }: {
   lanes: ArenaSceneLane[];
+  immersive?: boolean;
   view: ArenaViewWindow;
   unit: string;
   selected: string;
@@ -35,7 +38,11 @@ export function ArenaLanes({
   overtakePlan?: ArenaOvertakePlan | null;
 }) {
   const host = useRef<HTMLDivElement>(null);
+  const prefix = useId();
+  const [size, setSize] = useState({ width: 360, height: 540 });
+  const previousGeometry = useRef<{ width: number; laneWidth: number; count: number } | null>(null);
   const drag = useRef<{
+    pointerId: number;
     x: number;
     y: number;
     scrollLeft: number;
@@ -61,14 +68,9 @@ export function ArenaLanes({
       ? view
       : { center: effectiveCenter, span: view.span };
   const bounds = arenaWindow(effectiveView.center, effectiveView.span);
-  const width = Math.max(360, ordered.length * 72 + 52),
-    height = 540,
-    laneWidth = (width - 52) / Math.max(1, ordered.length);
-  const y = (v: number) => 72 + arenaPosition(v, effectiveView).fraction * 400;
-  const maxTailY = Math.min(
-    482,
-    bounds.min <= 0 && bounds.max >= 0 ? y(0) + 4 : 482,
-  );
+  const { width, height, laneWidth, plotHeight } = laneGeometry(size.width, size.height, ordered.length);
+  const y = (v: number) => 72 + arenaPosition(v, effectiveView).fraction * plotHeight;
+  const maxTailY = Math.min(height - 58, bounds.min <= 0 && bounds.max >= 0 ? y(0) + 4 : height - 58);
 
   const sortedByValue = [...ordered].sort((a, b) => b.value - a.value);
   const topRunner = sortedByValue[0];
@@ -85,20 +87,40 @@ export function ArenaLanes({
       : formatActivityAge(lane.lastUpdated);
   }
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const el = host.current;
-    if (el) el.scrollLeft = (el.scrollWidth - el.clientWidth) / 2;
-  }, [lanes.length]);
+    if (!el) return;
+    const observer = new ResizeObserver(() => {
+      if (el.clientWidth > 0 && el.clientHeight > 0) setSize({ width: el.clientWidth, height: el.clientHeight });
+    });
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+  useLayoutEffect(() => {
+    const el = host.current;
+    if (!el || el.clientWidth === 0) return;
+    const previous = previousGeometry.current;
+    const laneIndex = previous
+      ? (el.scrollLeft + previous.width / 2 - 10) / previous.laneWidth - 0.5
+      : Math.max(0, ordered.findIndex((lane) => lane.you));
+    el.scrollLeft = centeredLaneScroll(laneIndex, laneWidth, size.width, width);
+    previousGeometry.current = { width: size.width, laneWidth, count: ordered.length };
+  }, [width, laneWidth, size.width]);
   return (
-    <div className="focus-lane-scroll" ref={host}>
+    <div className="focus-lane-scroll" ref={host} data-immersive={immersive}>
       <svg
         className="focus-lane-track"
         viewBox={`0 0 ${width} ${height}`}
-        style={{ minWidth: width }}
+        width={width}
+        height={height}
+        style={{ width, height, touchAction: immersive ? "none" : "pan-y pinch-zoom" }}
         role="group"
         aria-label={`Vertical athlete lanes, ${bounds.min.toFixed(1)} to ${bounds.max.toFixed(1)} ${unit}. Drag to explore.`}
         tabIndex={0}
         onKeyDown={(e) => {
+          if (e.target === e.currentTarget && (e.key === "Enter" || e.key === " ")) {
+            e.preventDefault(); onBackgroundTap?.();
+          }
           if (e.key === "ArrowUp" || e.key === "ArrowDown") {
             e.preventDefault();
             onPan(
@@ -111,7 +133,9 @@ export function ArenaLanes({
           }
         }}
         onPointerDown={(e) => {
+          if (!e.isPrimary || e.button !== 0) return;
           drag.current = {
+            pointerId: e.pointerId,
             x: e.clientX,
             y: e.clientY,
             scrollLeft: host.current?.scrollLeft ?? 0,
@@ -127,14 +151,17 @@ export function ArenaLanes({
         }}
         onPointerMove={(e) => {
           const press = drag.current;
-          if (!press) return;
+          if (!press || press.pointerId !== e.pointerId) return;
           const dx = e.clientX - press.x;
           const dy = e.clientY - press.y;
           if (press.mode === "undecided") {
             if (Math.abs(dx) < 6 && Math.abs(dy) < 6) return;
             if (Math.abs(dx) > Math.abs(dy)) {
               press.mode = "horizontal";
+              press.captured = true;
+              e.currentTarget.setPointerCapture(e.pointerId);
             } else {
+              if (!immersive && e.pointerType === "touch") { drag.current = null; return; }
               press.mode = "vertical";
               if (!press.captured) {
                 press.captured = true;
@@ -157,7 +184,7 @@ export function ArenaLanes({
               press.moved = true;
               onPan(
                 clampArenaLaneCenter(
-                  press.center + (dy / 400) * effectiveView.span,
+                  press.center + (dy / plotHeight) * effectiveView.span,
                   effectiveView.span,
                 ),
               );
@@ -167,7 +194,7 @@ export function ArenaLanes({
         onPointerUp={(e) => {
           const press = drag.current;
           drag.current = null;
-          if (!press) return;
+          if (!press || press.pointerId !== e.pointerId) return;
           if (press.captured) {
             try {
               e.currentTarget.releasePointerCapture(e.pointerId);
@@ -181,6 +208,7 @@ export function ArenaLanes({
           }
           if (!press.moved && !press.id) onBackgroundTap?.();
         }}
+        onLostPointerCapture={() => { drag.current = null; }}
         onPointerCancel={(e) => {
           const press = drag.current;
           drag.current = null;
@@ -194,25 +222,25 @@ export function ArenaLanes({
         }}
       >
         <defs>
-          <linearGradient id="focus-road" x2="0" y2="1">
+          <linearGradient id={`${prefix}-road`} x2="0" y2="1">
             <stop stopColor="#f7faf3" />
             <stop offset="0.45" stopColor="#eef3e8" />
             <stop offset="1" stopColor="#e4ecdc" />
           </linearGradient>
-          <linearGradient id="focus-you-lane" x2="0" y2="1">
+          <linearGradient id={`${prefix}-you-lane`} x2="0" y2="1">
             <stop stopColor="#f1c75b66" />
             <stop offset="1" stopColor="#f1c75b20" />
           </linearGradient>
-          <radialGradient id="focus-you-glow" cx="50%" cy="50%" r="50%">
+          <radialGradient id={`${prefix}-you-glow`} cx="50%" cy="50%" r="50%">
             <stop stopColor="#f1c75b" stopOpacity="0.55" />
             <stop offset="1" stopColor="#f1c75b" stopOpacity="0" />
           </radialGradient>
-          <linearGradient id="focus-afterburn-wake" x1="0" y1="0" x2="0" y2="1">
+          <linearGradient id={`${prefix}-afterburn-wake`} x1="0" y1="0" x2="0" y2="1">
             <stop offset="0" stopColor="#f1c75b" stopOpacity="0.65" />
             <stop offset="0.45" stopColor="#f1c75b" stopOpacity="0.28" />
             <stop offset="1" stopColor="#f1c75b" stopOpacity="0" />
           </linearGradient>
-          <filter id="focus-soft" x="-40%" y="-40%" width="180%" height="180%">
+          <filter id={`${prefix}-soft`} x="-40%" y="-40%" width="180%" height="180%">
             <feDropShadow
               dx="0"
               dy="3"
@@ -222,12 +250,12 @@ export function ArenaLanes({
             />
           </filter>
         </defs>
-        <rect width={width} height={height} rx="24" fill="url(#focus-road)" />
+        <rect width={width} height={height} rx="24" fill={`url(#${prefix}-road)`} />
         <rect
           x="10"
           y="56"
           width={width - 62}
-          height="430"
+          height={height - 110}
           rx="18"
           fill="#ffffff55"
           stroke="#d7e0cf"
@@ -239,8 +267,8 @@ export function ArenaLanes({
                 x={i * laneWidth + 10}
                 y="56"
                 width={laneWidth}
-                height="430"
-                fill="url(#focus-you-lane)"
+                height={height - 110}
+                fill={`url(#${prefix}-you-lane)`}
                 rx="14"
               />
             )}
@@ -248,7 +276,7 @@ export function ArenaLanes({
               x1={i * laneWidth + 10}
               x2={i * laneWidth + 10}
               y1="64"
-              y2="476"
+              y2={height - 64}
               stroke={l.you ? "#b7c9a4" : "#d3ddcb"}
               strokeWidth={l.you ? 1.5 : 1}
               strokeDasharray={l.you ? "0" : "5 9"}
@@ -327,11 +355,12 @@ export function ArenaLanes({
                 }
               }}
             >
+              <circle cx={xx} cy={yy} r="24" fill="transparent" />
               {l.you && speed > 0.01 && wakeLen > 6 && (
                 <g pointerEvents="none" data-overtake-afterburn="true">
                   <path
                     d={`M ${xx - 16} ${yy + 14} C ${xx - 22} ${yy + 14 + wakeLen * 0.45}, ${xx - 8} ${yy + 14 + wakeLen * 0.85}, ${xx} ${yy + 14 + wakeLen} C ${xx + 8} ${yy + 14 + wakeLen * 0.85}, ${xx + 22} ${yy + 14 + wakeLen * 0.45}, ${xx + 16} ${yy + 14} Z`}
-                    fill="url(#focus-afterburn-wake)"
+                    fill={`url(#${prefix}-afterburn-wake)`}
                     opacity={speed}
                   />
                   {[-14, -7, 0, 7, 14].map((dx, idx) => {
@@ -410,7 +439,7 @@ export function ArenaLanes({
                 </foreignObject>
               )}
               {l.you && (
-                <circle cx={xx} cy={yy} r="34" fill="url(#focus-you-glow)" />
+                <circle cx={xx} cy={yy} r="34" fill={`url(#${prefix}-you-glow)`} />
               )}
               <circle
                 cx={xx}
@@ -425,7 +454,7 @@ export function ArenaLanes({
                 fill={l.you ? "#282f2c" : active ? "#f1c75b" : "#ffffff"}
                 stroke={l.you ? "#f1c75b" : active ? "#deb142" : "#c9d5bf"}
                 strokeWidth={l.you ? 4 : 2}
-                filter={active ? "url(#focus-soft)" : undefined}
+                filter={active ? `url(#${prefix}-soft)` : undefined}
               />
               <text
                 x={xx}
@@ -457,7 +486,7 @@ export function ArenaLanes({
                 fill={l.you ? "#f1c75b" : "#282f2c"}
                 style={{ fontSize: 10 }}
               >
-                {l.you && animating
+                {position.edge || (l.you && animating)
                   ? `${l.value.toFixed(1)} ${unit}`
                   : formatLastUpdated(l)}
               </text>
@@ -501,7 +530,7 @@ export function ArenaLanes({
         <text x={width - 42} y="36" className="lane-distance">
           {unit}
         </text>
-        <text x="18" y="522" className="lane-distance">
+        <text x="18" y={height - 18} className="lane-distance">
           Drag ↕ distance · ↔ lanes · tap track to expand
         </text>
       </svg>

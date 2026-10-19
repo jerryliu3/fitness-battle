@@ -71,7 +71,8 @@
   border-radius: 12px;
   inset: 4px;
 }
-.phone-shell .phone-tab[data-state="active"] {
+.phone-shell .phone-tab[data-state="active"],
+.phone-shell .phone-tab[aria-current="page"] {
   color: #282f2c;
 }
 .phone-shell .phone-guest {
@@ -309,7 +310,6 @@
 }
 @keyframes focus-journey-row-settle {
   from {
-    transform: translateY(-18px);
     opacity: 0.7;
   }
   to {
@@ -319,7 +319,6 @@
 }
 @keyframes focus-journey-today-pop {
   from {
-    transform: scale(0.82);
     opacity: 0;
   }
   to {
@@ -1665,78 +1664,37 @@
   box-shadow: inset 0 1px 0 #ffffffaa;
 }
 .focus-lane-scroll {
+  height: 540px;
   overflow-x: auto;
   overflow-y: hidden;
   scrollbar-width: thin;
   overscroll-behavior-x: contain;
-  touch-action: pan-x;
+  touch-action: pan-y pinch-zoom;
   user-select: none;
   -webkit-user-select: none;
 }
 .focus-lane-track {
   display: block;
   height: 540px;
-  touch-action: none;
+  touch-action: pan-y pinch-zoom;
   cursor: grab;
   user-select: none;
   -webkit-user-select: none;
 }
-.focus-track-frame.is-lanes-immersive {
-  position: fixed;
-  inset: 0;
-  z-index: 120;
-  margin: 0;
-  border-radius: 0;
-  border: none;
-  display: flex;
-  flex-direction: column;
-  align-items: stretch;
-  justify-content: center;
-  background: #fafaf7;
-  animation: focus-lanes-window-open 0.42s cubic-bezier(0.22, 1, 0.36, 1);
-}
-@keyframes focus-lanes-window-open {
-  from {
-    clip-path: inset(8% 6% 28% 6% round 24px);
-    opacity: 0.94;
-  }
-  to {
-    clip-path: inset(0% 0% 0% 0% round 0px);
-    opacity: 1;
-  }
-}
-.focus-track-frame.is-lanes-immersive .focus-lane-scroll {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 0;
-  overflow: hidden;
-}
-.focus-lanes-immersive-back {
-  position: absolute;
-  top: 12px;
-  left: 12px;
-  z-index: 2;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  min-height: 40px;
-  padding: 8px 14px;
-  border: 1px solid #d7e0cf;
-  border-radius: 999px;
-  background: #fafaf7ee;
-  color: #282f2c;
-  font:
-    600 13px var(--font-body),
-    sans-serif;
-  cursor: pointer;
-  box-shadow: 0 4px 16px #282f2c14;
-}
-.focus-track-frame.is-lanes-immersive .focus-lane-track {
-  height: 540px;
-  flex-shrink: 0;
-}
+/* The same content node lives in the inline slot and the root dialog. */
+.focus-field-slot:empty { height: 740px; }
+.focus-field-content { display: flex; flex-direction: column; height: 100%; min-height: 0; }
+.focus-field-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 8px; }
+.focus-field-toolbar button { min-height: 44px; flex-shrink: 0; }
+.focus-field-toolbar .fb-note { font-size: 11px; }
+.focus-field-backdrop { position: fixed; inset: 0; z-index: 119; background: #282f2c40; }
+.focus-field-expanded { position: fixed; inset: 0; z-index: 120; overflow: hidden; background: var(--paper, #fafaf7); box-sizing: border-box; outline: none; }
+.focus-field-expanded .focus-field-content { padding: env(safe-area-inset-top) max(8px, env(safe-area-inset-right)) env(safe-area-inset-bottom) max(8px, env(safe-area-inset-left)); box-sizing: border-box; }
+.focus-field-expanded .focus-track-frame { flex: 1; min-height: 280px; margin: 0; }
+.focus-field-expanded .focus-lane-scroll { height: 100%; }
+.focus-field-expanded .focus-field-content { overflow-y: auto; }
+.focus-field-expanded .focus-track-caption { padding: 8px; }
+.focus-field-expanded .focus-athlete-popup { flex-shrink: 0; margin: 4px 0; }
 .focus-lane-track:active {
   cursor: grabbing;
 }
@@ -2176,7 +2134,7 @@
     height: 500px;
     min-height: 500px;
   }
-  .focus-lane-track {
+  .focus-lane-scroll {
     height: 500px;
   }
   .focus-track-controls {
@@ -2334,4 +2292,10 @@
 .focus-track-frame .fd-world-label.is-selected {
   border-color: #f1c75b;
   box-shadow: 0 3px 15px #282f2c15;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .focus-stop-peek,
+  .focus-journey.is-day-intro .focus-path-row,
+  .focus-journey.is-day-intro .focus-path-row.is-current { animation: none; }
 }

@@ -379,15 +379,6 @@ button.checkpoint-disc:active { box-shadow: 0 0 0 7px color-mix(in srgb, var(--l
   }
 }
 
-.sheet-content {
-  animation: sheet-up 220ms ease-out;
-}
-
-@keyframes sheet-up {
-  from { transform: translateX(-50%) translateY(16px); }
-  to { transform: translateX(-50%) translateY(0); }
-}
-
 @media (prefers-reduced-motion: reduce) {
   .phone-pill,
   .sheet-content {

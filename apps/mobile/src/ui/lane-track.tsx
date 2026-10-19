@@ -12,7 +12,7 @@ import {
   type ArenaViewWindow,
 } from "@fitness-battle/shared";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { PanResponder, ScrollView, View } from "react-native";
+import { PanResponder, Pressable, ScrollView, Text, View } from "react-native";
 import Svg, {
   Circle,
   Defs,
@@ -25,6 +25,7 @@ import Svg, {
   Stop,
   Text as SvgText,
 } from "react-native-svg";
+import { playCue } from "../lib/haptics";
 import { Ember } from "./mascot/ember";
 export function LaneTrack({
   lanes,
@@ -47,6 +48,7 @@ export function LaneTrack({
   overtakeFrame?: ArenaOvertakeFrame | null;
   overtakePlan?: ArenaOvertakePlan | null;
 }) {
+  const [exploring, setExploring] = useState(false);
   const [width, setWidth] = useState(340);
   const scroll = useRef<ScrollView>(null);
   const animating = Boolean(overtakeFrame && overtakeFrame.phase !== "done");
@@ -60,14 +62,14 @@ export function LaneTrack({
     effectiveCenter === rawV.center
       ? rawV
       : { center: effectiveCenter, span: rawV.span };
-  const latest = useRef({ v, onPan });
-  latest.current = { v, onPan };
+  const latest = useRef({ v, onPan, exploring });
+  latest.current = { v, onPan, exploring };
   const start = useRef(v.center);
   const pan = useMemo(
     () =>
       PanResponder.create({
         onMoveShouldSetPanResponder: (_, g) =>
-          Math.abs(g.dy) > 7 && Math.abs(g.dy) > Math.abs(g.dx),
+          latest.current.exploring && Math.abs(g.dy) > 7 && Math.abs(g.dy) > Math.abs(g.dx),
         onPanResponderGrant: () => {
           start.current = latest.current.v.center;
         },
@@ -99,7 +101,7 @@ export function LaneTrack({
   );
   useEffect(() => {
     scroll.current?.scrollTo({
-      x: Math.max(0, (w - width) / 2),
+      x: Math.max(0, Math.min(w - width, 10 + (Math.max(0, ordered.findIndex((lane) => lane.you)) + 0.5) * lw - width / 2)),
       animated: false,
     });
   }, [w, width]);
@@ -114,6 +116,15 @@ export function LaneTrack({
         borderColor: "#d7e0cf",
       }}
     >
+      <Pressable
+        accessibilityRole="button"
+        accessibilityState={{ selected: exploring }}
+        accessibilityLabel={exploring ? "Finish panning lanes" : "Enable vertical lane panning"}
+        onPress={() => { void playCue("selection"); setExploring((value) => !value); }}
+        style={{ minHeight: 44, justifyContent: "center", paddingHorizontal: 16 }}
+      >
+        <Text style={{ color: "#282f2c", fontWeight: "600" }}>{exploring ? "Done panning · drag vertically to explore" : "Explore lanes · swipe across peers"}</Text>
+      </Pressable>
       <ScrollView
         horizontal
         ref={scroll}
@@ -254,8 +265,10 @@ export function LaneTrack({
                   key={l.id}
                   onPress={() => onSelect(l)}
                   accessible
+                  accessibilityRole="button"
                   accessibilityLabel={`${l.name}, ${value.toFixed(1)} ${unit}${edge ? `, ${edge} of view` : ""}`}
                 >
+                  <Circle cx={xx} cy={yy} r={24} fill="transparent" />
                   {l.id === leaderId && !edge ? (
                     <G transform={`translate(${xx - 24}, ${yy - 76})`}>
                       <Ember size={48} expression="joy" />
@@ -371,7 +384,7 @@ export function LaneTrack({
                     fontSize={10}
                     fill={l.you ? "#f1c75b" : "#282f2c"}
                   >
-                    {l.you && value === 0
+                    {edge ? `${value.toFixed(1)} ${unit}` : l.you && value === 0
                       ? "joined"
                       : formatActivityAge(l.lastUpdated)}
                   </SvgText>
