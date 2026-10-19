@@ -75,6 +75,12 @@ export default function ArenaScreen() {
   const [joinBusy, setJoinBusy] = useState(false);
   const [joinError, setJoinError] = useState("");
   const [track, setTrack] = useState<ScoreTrack>("open");
+
+  useEffect(() => {
+    void AsyncStorage.getItem("fb:arena-score-track").then((raw) => {
+      setTrack(readArenaScoreTrack({ getItem: () => raw }));
+    });
+  }, []);
   const [mode, setMode] = useState("2D lanes");
   const [center, setCenter] = useState<number | null>(null);
   const [span, setSpan] = useState<number | null>(null);
@@ -415,7 +421,13 @@ export default function ArenaScreen() {
                   accessibilityState={{ checked: track === t }}
                   style={[f.chip, { flex: 1 }, track === t && f.chipActive]}
                   onPress={() => {
+                    if (t !== track) void playCue("selection");
                     setTrack(t);
+                    void AsyncStorage.setItem("fb:arena-score-track", t);
+                    writeArenaScoreTrack(
+                      { setItem: (k, v) => void AsyncStorage.setItem(k, v) },
+                      t,
+                    );
                     setCenter(null);
                     setSelectedId(null);
                   }}
