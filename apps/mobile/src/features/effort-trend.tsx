@@ -3,7 +3,8 @@ import {
   rankForElo,
   type CompeteState,
 } from "@fitness-battle/shared";
-import { useState } from "react";
+import { playCue } from "../lib/haptics";
+import { useScoreTrackLens } from "../lib/score-track-lens";
 import { Pressable, Text, View } from "react-native";
 import Svg, {
   Circle,
@@ -16,7 +17,7 @@ import { useAuth } from "../lib/auth";
 import { SHELL_COLORS as c } from "../theme";
 import { f } from "../ui/focus";
 export function EffortTrend({ state }: { state: CompeteState }) {
-  const [track, setTrack] = useState<"open" | "verified">("open");
+  const [track, setTrack] = useScoreTrackLens();
   const { user } = useAuth();
   const model = effortHistory(state, track, user, user?.email);
   const {
@@ -40,7 +41,10 @@ export function EffortTrend({ state }: { state: CompeteState }) {
             key={t}
             accessibilityRole="radio"
             accessibilityState={{ checked: t === track }}
-            onPress={() => setTrack(t)}
+            onPress={() => {
+              if (t !== track) void playCue("selection");
+              setTrack(t);
+            }}
             style={[f.chip, t === track && f.chipActive]}
           >
             <Text style={f.rowTitle}>

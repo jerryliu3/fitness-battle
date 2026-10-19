@@ -354,7 +354,7 @@ export function CrewPanel() {
                     className="fb-btn"
                     disabled={busy}
                     onClick={() => {
-                      if (!user || demoMode) {
+                      if (!user) {
                         setPanel("manage");
                         return;
                       }

@@ -146,6 +146,34 @@ function JourneyDayStop({
   );
 }
 
+function SessionStopPeek({
+  title,
+  kicker,
+  detail,
+  onOpen,
+  onClose,
+}: {
+  title: string;
+  kicker: string;
+  detail?: string;
+  onOpen: () => void;
+  onClose: () => void;
+}) {
+  return (
+    <div className="focus-stop-peek" role="dialog" aria-label="Session preview">
+      <p className="fb-kicker">{kicker}</p>
+      <strong>{title}</strong>
+      {detail ? <p className="fb-note">{detail}</p> : null}
+      <button type="button" className="fb-btn" onClick={onOpen}>
+        See session
+      </button>
+      <button type="button" className="fb-btn-ghost" onClick={onClose}>
+        Not now
+      </button>
+    </div>
+  );
+}
+
 type SessionPhase =
   | { kind: "closed" }
   | { kind: "peek"; target: "suggestion" | Activity }
@@ -463,14 +491,21 @@ export function TodayScreen() {
     );
   }
 
-  const peek =
+  const peekStopKey =
     session.kind === "peek"
-      ? session.target
+      ? session.target === "suggestion"
+        ? "today"
+        : journeyDays.find((d) =>
+            d.items.some(
+              (a) =>
+                typeof session.target !== "string" && a.id === session.target.id,
+            ),
+          )?.id ?? null
       : null;
 
   return (
-    <div className="focus-home-bleed">
-      <div className="focus-home-foreground focus-home">
+    <div className="focus-home-stage">
+      <div className="focus-home-overlay">
       {frozen && (
         <div className="fb-pill" style={{ marginBottom: "16px" }}>
           <b>❄ Week frozen</b>
@@ -670,45 +705,8 @@ export function TodayScreen() {
           </div>
         </div>
       </section>
-      {peek === "suggestion" ? (
-        <section className="focus-session-peek" aria-label="Today's session preview">
-          <p className="fb-kicker">Today</p>
-          <strong>{route.suggestion.title}</strong>
-          <p className="fb-note">{route.suggestion.minutes ?? 0} min · tap through for detail</p>
-          <button
-            type="button"
-            className="fb-btn"
-            style={{ marginTop: 10, width: "100%" }}
-            onClick={() => openSession("suggestion", "full")}
-          >
-            See session
-          </button>
-          <button type="button" className="fb-btn-ghost" onClick={closeSession}>
-            Not now
-          </button>
-        </section>
-      ) : peek && typeof peek !== "string" ? (
-        <section className="focus-session-peek" aria-label="Activity preview">
-          <p className="fb-kicker">{sportById(peek.sport).name}</p>
-          <strong>{formatVolume(peek.sport, peek.distanceM, peek.movingSec, units)}</strong>
-          <button
-            type="button"
-            className="fb-btn"
-            style={{ marginTop: 10, width: "100%" }}
-            onClick={() => openSession(peek, "full")}
-          >
-            See session
-          </button>
-          <button type="button" className="fb-btn-ghost" onClick={closeSession}>
-            Not now
-          </button>
-        </section>
-      ) : null}
-      <div className="focus-row">
-        <h2>Your journey</h2>
       </div>
-      </div>
-      <div className="focus-journey-bleed">
+      <div className="focus-home-journey-layer">
       <JourneyTrail
         stopCount={journeyStops.length}
         layoutKey={journeyStops.map((s) => `${s.key}:${s.lane}`).join("|")}
@@ -761,6 +759,19 @@ export function TodayScreen() {
               ) : null}
               {stop.kind === "today" ? (
                 <>
+                  {peekStopKey === "today" ? (
+                    <SessionStopPeek
+                      kicker="Today"
+                      title={route.suggestion.title}
+                      detail={
+                        route.suggestion.minutes
+                          ? `${route.suggestion.minutes} min`
+                          : undefined
+                      }
+                      onOpen={() => openSession("suggestion", "full")}
+                      onClose={closeSession}
+                    />
+                  ) : null}
                   <button
                     ref={setStopRef(index)}
                     onClick={() => {
@@ -799,12 +810,33 @@ export function TodayScreen() {
                 </>
               ) : null}
               {stop.kind === "day" ? (
-                <JourneyDayStop
-                  day={stop.day}
-                  units={units}
-                  stopRef={setStopRef(index)}
-                  onOpen={(activity) => openSession(activity, "peek")}
-                />
+                <>
+                  {peekStopKey === stop.day.id &&
+                  session.kind === "peek" &&
+                  session.target !== "suggestion" ? (
+                    <SessionStopPeek
+                      kicker={sportById(session.target.sport).name}
+                      title={formatVolume(
+                        session.target.sport,
+                        session.target.distanceM,
+                        session.target.movingSec,
+                        units,
+                      )}
+                      onOpen={() => {
+                        if (session.kind === "peek" && session.target !== "suggestion") {
+                          openSession(session.target, "full");
+                        }
+                      }}
+                      onClose={closeSession}
+                    />
+                  ) : null}
+                  <JourneyDayStop
+                    day={stop.day}
+                    units={units}
+                    stopRef={setStopRef(index)}
+                    onOpen={(activity) => openSession(activity, "peek")}
+                  />
+                </>
               ) : null}
               {stop.kind === "start" ? (
                 <button

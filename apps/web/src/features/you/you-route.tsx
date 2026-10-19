@@ -34,7 +34,7 @@ import { Sheet } from "@/ui/sheet";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useRef, useState } from "react";
-import { motion, useReducedMotion } from "motion/react";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { playCue } from "@/lib/haptics";
 
 const OAUTH_PROVIDERS = new Set<ProviderId>([
@@ -492,12 +492,13 @@ function YouContent() {
     );
   }
 
-  if (panel) {
-    return (
-      <motion.div
-        className="focus-athlete"
-        initial={reduced ? false : { x: "100%", opacity: 0.96 }}
-        animate={{ x: 0, opacity: 1 }}
+  const settingsPanel = panel ? (
+      <motion.aside
+        key={panel}
+        className="focus-settings-stack-panel"
+        initial={reduced ? false : { x: "100%" }}
+        animate={{ x: 0 }}
+        exit={reduced ? { x: "100%" } : { x: "100%" }}
         transition={
           reduced
             ? { duration: 0 }
@@ -1021,11 +1022,11 @@ function YouContent() {
           onClose={() => setAuthPrompt(null)}
         />
         {deleteAccountSheet}
-      </motion.div>
-    );
-  }
+      </motion.aside>
+  ) : null;
 
   return (
+    <div className="focus-athlete-stack">
     <div className="focus-athlete">
       <AthleteOverview state={state} email={user.email} demoMode={demoMode} />
       <nav className="focus-settings-list" aria-label="Athlete settings">
@@ -1124,6 +1125,8 @@ function YouContent() {
         onClose={() => setAuthPrompt(null)}
       />
       {deleteAccountSheet}
+    </div>
+    <AnimatePresence>{settingsPanel}</AnimatePresence>
     </div>
   );
 }
