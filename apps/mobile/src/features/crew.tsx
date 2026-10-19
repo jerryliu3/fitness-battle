@@ -426,7 +426,7 @@ export function CrewHub() {
           {solo
             ? api.live
               ? "Publishes this week's counted workouts to your crew's shared feed."
-              : "Demo circle: counted workouts from this device already show in the feed below."}
+              : "Demo circle: counted workouts from this device already show in the feed below."
             : "Syncs new counted workouts to your crew for this week."}
         </Text>
         <FocusButton
