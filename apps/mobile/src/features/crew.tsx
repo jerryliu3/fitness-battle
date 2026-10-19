@@ -6,9 +6,9 @@ import {
   formatDistanceM,
   weeklyPeriodBounds,
 } from "@fitness-battle/shared";
-import { useFocusEffect, useRouter } from "expo-router";
+import { useFocusEffect, useGlobalSearchParams, useRouter } from "expo-router";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Pressable, Text, TextInput, View } from "react-native";
+import { Pressable, Share, Text, TextInput, View } from "react-native";
 import { useAuth } from "../lib/auth";
 import { useCompeteStore } from "../lib/compete-store";
 import { mobileEnv } from "../lib/env";
@@ -124,10 +124,16 @@ function crewError(error: unknown): string {
     return "You are no longer a member of this crew. Refresh your crews.";
   return raw;
 }
+function inviteLink(code: string): string {
+  const base = mobileEnv.apiUrl.replace(/\/$/, "");
+  return `${base}/field?invite=${encodeURIComponent(code)}`;
+}
+
 export function CrewHub() {
   const { state, refresh } = useCompeteStore();
   const { user } = useAuth();
   const router = useRouter();
+  const params = useGlobalSearchParams<{ invite?: string | string[] }>();
   const api = useCrewApi();
   const [selected, setSelected] = useState("");
   const [tab, setTab] = useState("Activity");
@@ -149,6 +155,15 @@ export function CrewHub() {
     setName("");
     setCode("");
   }, [user?.id]);
+  useEffect(() => {
+    const raw = params.invite;
+    const invite = (Array.isArray(raw) ? raw[0] : raw)?.trim();
+    if (!invite || !api.live) return;
+    setNote("");
+    setCode(invite.toUpperCase());
+    setPanel("add");
+    router.setParams({ invite: undefined });
+  }, [params.invite, api.live, router]);
   useFocusEffect(
     useCallback(() => {
       void api.reload();
@@ -247,16 +262,27 @@ export function CrewHub() {
         setSelected("");
         await refresh();
       }
-      setPanel(null);
-      setName("");
-      setCode("");
-      setNote(
-        !reloaded
-          ? "Saved, but your crews could not refresh. Please refresh crews."
-          : path === "/leave"
-            ? "You left the crew."
-            : "Saved. Your crew is up to date.",
-      );
+      if (path === "/entries") {
+        const saved = Number(result.saved ?? 0);
+        setNote(
+          !reloaded
+            ? "Shared, but your crews could not refresh. Please refresh crews."
+            : saved > 0
+              ? `Shared ${saved} counted session${saved === 1 ? "" : "s"} with your crew.`
+              : "Your counted sessions are already shared for this week.",
+        );
+      } else {
+        setPanel(null);
+        setName("");
+        setCode("");
+        setNote(
+          !reloaded
+            ? "Saved, but your crews could not refresh. Please refresh crews."
+            : path === "/leave"
+              ? "You left the crew."
+              : "Saved. Your crew is up to date.",
+        );
+      }
     } catch (e) {
       if (owner.current === id) setNote(crewError(e));
     } finally {
@@ -564,6 +590,7 @@ export function CrewHub() {
               value={code}
               onChangeText={setCode}
               autoCapitalize="characters"
+              autoFocus={false}
               editable={!busy}
             />
             <Text style={f.kicker}>or start a new crew</Text>
@@ -573,6 +600,7 @@ export function CrewHub() {
               value={name}
               onChangeText={setName}
               maxLength={60}
+              autoFocus={false}
               editable={!busy}
             />
             {[
@@ -622,10 +650,20 @@ export function CrewHub() {
           </>
         ) : panel === "invite" ? (
           <>
-            <Text style={f.copy}>Select and copy your crew’s invite code.</Text>
+            <Text style={f.copy}>Share this link so friends join your crew.</Text>
+            <Text selectable style={f.small}>{inviteLink(crew.invite_code)}</Text>
+            <FocusButton
+              label="Share invite link"
+              onPress={() =>
+                void Share.share({
+                  message: `Join my crew on overtaek: ${inviteLink(crew.invite_code)}`,
+                })
+              }
+            />
             <Text selectable style={f.massive}>
               {crew.invite_code}
             </Text>
+            <Text style={f.small}>Or share the code only</Text>
           </>
         ) : panel === "leave" ? (
           <>

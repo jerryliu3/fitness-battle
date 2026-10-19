@@ -9,12 +9,15 @@ export function Sheet({
   body,
   onClose,
   children,
+  preventAutoFocus = false,
 }: {
   open: boolean;
   title: string;
   body: string;
   onClose: () => void;
   children?: ReactNode;
+  /** Stops mobile browsers from focusing the first field when the sheet opens. */
+  preventAutoFocus?: boolean;
 }) {
   return (
     <Dialog.Root
@@ -25,7 +28,10 @@ export function Sheet({
     >
       <Dialog.Portal>
         <Dialog.Overlay className="sheet-overlay" />
-        <Dialog.Content className="sheet-content focus-sheet">
+        <Dialog.Content
+          className="sheet-content focus-sheet"
+          onOpenAutoFocus={preventAutoFocus ? (event) => event.preventDefault() : undefined}
+        >
           <Dialog.Title>{title}</Dialog.Title>
           <Dialog.Description>{body}</Dialog.Description>
           {children}

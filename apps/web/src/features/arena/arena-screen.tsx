@@ -19,6 +19,7 @@ import {
   primaryFreezePeriodStart,
   sleepRenewal,
   SPORTS,
+  formatWeeklyCompetitionRange,
   weeklyPeriodBounds,
   type SportId,
   type ScoreTrack,
@@ -54,7 +55,7 @@ export function ArenaScreen() {
       : hoursLeft >= 1
         ? `${hoursLeft} hour${hoursLeft === 1 ? "" : "s"} left`
         : `${Math.max(1, minutesLeft)}m left`;
-  const dateRangeLabel = `${period.startsAt.toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" })} – ${period.endsAt.toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" })}`;
+  const dateRangeLabel = formatWeeklyCompetitionRange(now);
 
   function participate(_reason: string, action: () => void) {
     if (!user) {
@@ -198,8 +199,12 @@ export function ArenaScreen() {
             <div style={{ margin: "20px 0 28px" }}>
               <button
                 type="button"
-                className="fb-btn-line"
-                style={{ width: "100%", justifyContent: "center" }}
+                className="fb-btn"
+                style={{
+                  width: "100%",
+                  justifyContent: "center",
+                  padding: "12px 20px",
+                }}
                 onClick={() => {
                   setSport(null);
                   setRegister(true);

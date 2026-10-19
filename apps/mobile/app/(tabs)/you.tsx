@@ -502,14 +502,15 @@ export default function YouScreen() {
           {dirty ? (
             <Button
               onPress={() => {
-                dispatch({
-                  type: "rename",
-                  name: draftName.trim() || state.name,
-                });
-                dispatch({
-                  type: "set-city",
-                  city: draftCity.trim() || state.city,
-                });
+                const trimmed = draftName.trim();
+                if (!trimmed) {
+                  setNote("Display name cannot be empty.");
+                  return;
+                }
+                dispatch({ type: "rename", name: trimmed });
+                if (draftCity.trim()) {
+                  dispatch({ type: "set-city", city: draftCity.trim() });
+                }
                 setName(null);
                 setCity(null);
                 setNote("Profile saved.");
@@ -534,6 +535,10 @@ export default function YouScreen() {
             </Text>
           ) : null}
           <Text style={styles.section}>Units</Text>
+          <Text style={f.copy}>
+            Distance display for Arena, Crew, and Athlete. Today shows hours,
+            not distance.
+          </Text>
           <View style={f.chipRow}>
             <Pressable
               accessibilityRole="button"

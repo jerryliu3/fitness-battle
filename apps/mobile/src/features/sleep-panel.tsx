@@ -31,6 +31,7 @@ export function SleepPanel({
       <Text style={f.h2}>
         {view.lastNight ? "Last night" : "No night recorded yet"}
       </Text>
+      <Text style={f.small}>Sleep score — not distance.</Text>
       {view.lastNight ? (
         <>
           <Text style={f.massive}>{view.lastNight.score}</Text>
@@ -58,6 +59,12 @@ export function SleepPanel({
           {view.nightsLogged ? view.contestScore.toFixed(0) : "—"}
         </Text>
       </View>
+      {view.nightsLogged ? (
+        <Text style={f.small}>
+          Avg: {view.mean.toFixed(0)} · nights you miss count against this
+          week&apos;s contest score
+        </Text>
+      ) : null}
       <View style={f.row}>
         <Text style={f.copy}>Nights so far</Text>
         <Text style={f.rowTitle}>

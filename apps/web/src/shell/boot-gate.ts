@@ -6,7 +6,12 @@ const BOOT_SEEN_KEY = "fb-boot-splash-seen";
 export function hasSeenBootSplash(): boolean {
   if (typeof window === "undefined") return false;
   try {
-    return sessionStorage.getItem(BOOT_SEEN_KEY) === "1";
+    if (localStorage.getItem(BOOT_SEEN_KEY) === "1") return true;
+    if (sessionStorage.getItem(BOOT_SEEN_KEY) === "1") {
+      localStorage.setItem(BOOT_SEEN_KEY, "1");
+      return true;
+    }
+    return false;
   } catch {
     return false;
   }
@@ -15,6 +20,7 @@ export function hasSeenBootSplash(): boolean {
 export function markBootSplashSeen(): void {
   if (typeof window === "undefined") return;
   try {
+    localStorage.setItem(BOOT_SEEN_KEY, "1");
     sessionStorage.setItem(BOOT_SEEN_KEY, "1");
   } catch {}
 }

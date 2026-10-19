@@ -47,6 +47,30 @@ export function weeklyPeriodBounds(
   return { kind: "weekly", startsAt, endsAt };
 }
 
+/** Last calendar day included in a weekly competition (Sunday before exclusive `endsAt`). */
+export function weeklyCompetitionLastDay(
+  endsAt: Date,
+  timeZone: string = APP_TIMEZONE,
+): Date {
+  const day = dayKey(new Date(endsAt.getTime() - 1), timeZone);
+  return new Date(`${day}T12:00:00.000Z`);
+}
+
+/** Human Mon–Sun range for the active weekly competition (inclusive end date). */
+export function formatWeeklyCompetitionRange(
+  anchor: Date = new Date(),
+  timeZone: string = APP_TIMEZONE,
+): string {
+  const { startsAt, endsAt } = weeklyPeriodBounds(anchor, timeZone);
+  const lastDay = weeklyCompetitionLastDay(endsAt, timeZone);
+  const opts: Intl.DateTimeFormatOptions = {
+    month: "short",
+    day: "numeric",
+    timeZone,
+  };
+  return `${startsAt.toLocaleDateString("en-US", opts)} – ${lastDay.toLocaleDateString("en-US", opts)}`;
+}
+
 export function dailyPeriodBounds(
   anchor: Date = new Date(),
   timeZone: string = APP_TIMEZONE,
