@@ -2,7 +2,7 @@ export * from "./arena-bridge";
 export * from "./arena-view";
 export * from "./brand";
 export * from "./compete";
-export { DEMO_BATTLES, DEMO_CATEGORIES, demoStandings } from "./demo-data";
+export * from "./demo-data";
 export * from "./fitness";
 export * from "./matching";
 export * from "./notifications";
