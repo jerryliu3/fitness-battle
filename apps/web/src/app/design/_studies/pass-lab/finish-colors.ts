@@ -23,7 +23,7 @@ export const SILVER_COLORS = [
   {id:"ice",name:"Ice platinum",hex:"#d5ecf4"},
 ] as const;
 export type FinishPalette={gold:string;silver:string};
-export const DEFAULT_FINISH_PALETTE:FinishPalette={gold:GOLD_COLORS[0].hex,silver:SILVER_COLORS[0].hex};
+export const DEFAULT_FINISH_PALETTE:FinishPalette={gold:GOLD_COLORS.find(c=>c.id==="solar")!.hex,silver:SILVER_COLORS.find(c=>c.id==="cool")!.hex};
 export function mixColor(color:string,target:string,amount:number){
   return '#'+[1,3,5].map(i=>Math.round(parseInt(color.slice(i,i+2),16)*(1-amount)+parseInt(target.slice(i,i+2),16)*amount).toString(16).padStart(2,'0')).join('');
 }

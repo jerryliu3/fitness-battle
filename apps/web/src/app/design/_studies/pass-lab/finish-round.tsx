@@ -1,12 +1,12 @@
 import {useState} from "react";
-import {FINISHES,FINISH_OPACITIES,finishSpec,type FinishId,type CompareShape} from "./finish-comparison";
+import {FINISHES,FINISH_OPACITIES,FINISH_SELECTION,finishSpec,type FinishId,type CompareShape} from "./finish-comparison";
 import {GOLD_COLORS,SILVER_COLORS,DEFAULT_FINISH_PALETTE,type FinishPalette} from "./finish-colors";
 import {UniformGlassHead} from "./glass-art";
 import {MaterialIcon} from "./material-art";
 import {LanePhone} from "./lane-art";
 
 type Props={player:{progress:number;playing:boolean;reduced:boolean;replay:()=>void;setPlaying:(v:boolean)=>void;seek:(v:number)=>void};flow:boolean;flowRequested:boolean;setFlow:(v:boolean)=>void};
-export function TransmissionCheck({opacity=.5,shape="pill",dark=false,palette=DEFAULT_FINISH_PALETTE}: {opacity?:number;shape?:CompareShape;dark?:boolean;palette?:FinishPalette}){
+export function TransmissionCheck({opacity=.8,shape="pill",dark=false,palette=DEFAULT_FINISH_PALETTE}: {opacity?:number;shape?:CompareShape;dark?:boolean;palette?:FinishPalette}){
   const spec=finishSpec("rolled",shape,opacity,palette);if(!("glass" in spec))return null;
   return <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 175" width="300" height="175" role="img" aria-label={`Gold and silver both ${Math.round(opacity*100)} percent opacity over the same contrasting backdrop`}>
     <rect width="300" height="175" rx="14" fill={dark?"#000":"#fff"}/><path d="M15 84H285" stroke={dark?"#d8e2e8":"#526575"} strokeWidth="24"/><path d="M15 60H285M15 108H285" stroke={dark?"#56616a":"#e4e9eb"} strokeWidth="12"/>
@@ -22,18 +22,18 @@ function download(svg:SVGSVGElement|null,id:string){
   const url=URL.createObjectURL(new Blob([new XMLSerializer().serializeToString(copy)],{type:"image/svg+xml"}));const a=document.createElement("a");a.href=url;a.download=`shared-start-${id}-1024.svg`;a.click();window.setTimeout(()=>URL.revokeObjectURL(url),1500);
 }
 export function FinishRound({player,flow,flowRequested,setFlow}:Props){
-  const [finish,setFinish]=useState<FinishId>("rolled"),[opacity,setOpacity]=useState(.5),[dark,setDark]=useState(false);
-  const [goldId,setGoldId]=useState<string>(GOLD_COLORS[0].id),[silverId,setSilverId]=useState<string>(SILVER_COLORS[0].id);
+  const [finish,setFinish]=useState<FinishId>(FINISH_SELECTION.id),[opacity,setOpacity]=useState<number>(FINISH_SELECTION.opacity),[dark,setDark]=useState(false);
+  const [goldId,setGoldId]=useState<string>(FINISH_SELECTION.goldId),[silverId,setSilverId]=useState<string>(FINISH_SELECTION.silverId);
   const gold=GOLD_COLORS.find(c=>c.id===goldId)!,silver=SILVER_COLORS.find(c=>c.id===silverId)!;
   const palette={gold:gold.hex,silver:silver.hex},spec=finishSpec(finish,"pill",opacity,palette);
   const exportId=(id:FinishId)=>`${id}-capsule-${goldId}-${silverId}-${["rolled","bevel"].includes(id)?Math.round(opacity*100)+"pct-":""}${dark?"black":"white"}`;
   return <section className="pass-round mat-round finish-round">
-    <div className="pass-section-intro"><div><p className="pass-eyebrow">CAPSULE LOCKED / FOUR FINALISTS · 100 COLOR PAIRS</p><h2>One shape.<br/>Four final finishes.</h2></div><p>Compare Satin glass, Fired glaze, Rolled glass and Polished glass with independent gold and silver/platinum colors. Rolled and Polished glass offer 26–90% opacity. Every finish uses the same satin-glass wake, masked around the rounded capsule.</p></div>
+    <div className="pass-section-intro"><div><p className="pass-eyebrow">MATERIAL SELECTED / POLISHED GLASS · 80% ALPHA</p><h2>Polished glass.<br/>Solar gold + cool platinum.</h2></div><p>Selected: Polished glass at 80% alpha, Solar Gold (#ffc400) and Cool Platinum (#c9d6e3). The other finishes remain for comparison. Rolled and Polished glass offer 26–90% opacity. Every finish uses the same satin-glass wake, masked around the rounded capsule.</p></div>
     <div className="mat-toolbar"><fieldset><legend>Backdrop</legend><button aria-pressed={!dark} onClick={()=>setDark(false)}>White</button><button aria-pressed={dark} onClick={()=>setDark(true)}>Black</button></fieldset><fieldset><legend>Rolled / Polished opacity · both racers</legend>{FINISH_OPACITIES.map(v=><button key={v} aria-pressed={opacity===v} onClick={()=>setOpacity(v)}>{Math.round(v*100)}%</button>)}</fieldset><span>Opacity adjusts Rolled and Polished glass. Satin glass and Fired glaze retain their material finishes. All four share your selected colors.</span><a href="#finish-field">Jump to matching field ↓</a></div>
     <section className="finish-palette" aria-label="Independent capsule colors">
       <fieldset><legend>Gold · leading racer <small>{gold.name} · {gold.hex}</small></legend><div className="finish-swatches">{GOLD_COLORS.map(c=><button key={c.id} aria-label={`Gold: ${c.name}`} aria-pressed={goldId===c.id} onClick={()=>setGoldId(c.id)}><i style={{background:c.hex}}/><span>{c.name}</span><small>{c.hex}</small></button>)}</div></fieldset>
       <fieldset><legend>Silver / platinum · rival <small>{silver.name} · {silver.hex}</small></legend><div className="finish-swatches">{SILVER_COLORS.map(c=><button key={c.id} aria-label={`Silver: ${c.name}`} aria-pressed={silverId===c.id} onClick={()=>setSilverId(c.id)}><i style={{background:c.hex}}/><span>{c.name}</span><small>{c.hex}</small></button>)}</div></fieldset>
-      <p>Swatches show the base colors. Materials and opacity change their appearance in the icon. Try Solar Gold with Bright Platinum for a brighter pairing.</p><button className="pass-button pass-button-light" onClick={()=>{setGoldId("rich");setSilverId("silver");}}>Reset colors</button>
+      <p>Swatches show the base colors. Materials and opacity change their appearance in the icon. The selected pairing is Solar Gold with Cool Platinum.</p><button className="pass-button pass-button-light" onClick={()=>{setGoldId(FINISH_SELECTION.goldId);setSilverId(FINISH_SELECTION.silverId);}}>Selected colors</button>
     </section>
     <div className="finish-capsule-grid">{FINISHES.map(f=>{const c=finishSpec(f.id,"pill",opacity,palette);return <article key={f.id} className={`mat-card ${finish===f.id?"is-selected":""}`}>
       <div className={`finish-tile ${dark?"is-dark":""}`}><MaterialIcon concept={c} dark={dark} size={256}/></div>

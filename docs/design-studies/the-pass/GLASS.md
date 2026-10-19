@@ -1,6 +1,6 @@
 # Uniform tinted glass — Round 6
 
-**Current review:** capsule shape locked; four finalists — Satin glass, Fired glaze, Rolled glass and Polished glass. Rolled/Polished opacity options: 26/38/50/60/70/80/90%. Independent 10-gold and 10-silver/platinum selectors at `review.html?view=finishes`. The earlier sections below record the exploration history.
+**Selected material:** Polished glass, **80% face alpha**, **Solar Gold #ffc400** and **Cool Platinum #c9d6e3**, with the standard capsule and shared satin wake. The review opens on this selection; comparison controls remain available. Size is the next study, before an application rollout. The earlier sections below record the exploration history.
 
 The user retained Amber Capsule and Glazed Ceramic, with Frosted Pebble as a third comparison. The new direction follows the supplied Photos icon reference more literally: one smooth translucent material, consistent across the face, with darker areas caused by overlap rather than painted texture or decorative reflections.
 

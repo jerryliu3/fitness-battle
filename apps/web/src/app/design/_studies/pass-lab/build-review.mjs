@@ -165,12 +165,13 @@ for(const dark of [false,true]) {
  const samples=mod.exports.finishes.filter(f=>f.dark===dark),tiles=[];
  for(const [i,f] of samples.entries()) {
   await writeFile(join(output,"finish-icons",theme,`${f.id}.svg`),f.master);
+  if(f.id==="bevel-pill")await writeFile(join(output,`selected-finish-${theme}.svg`),f.master);
   await writeFile(join(output,"finish-icons",theme,`${f.id}-field.svg`),f.field);
   const x=30+i%2*290,y=125+Math.floor(i/2)*280;
   tiles.push(f.tile.replace("<svg ",`<svg x="${x}" y="${y}" `)+`<text x="${x}" y="${y+228}" font-size="14" font-weight="600">${f.name}</text>`);
  }
  const boardHeight=140+Math.ceil(samples.length/2)*280;
- const board=`<svg xmlns="http://www.w3.org/2000/svg" width="600" height="${boardHeight}" viewBox="0 0 600 ${boardHeight}"><rect width="600" height="${boardHeight}" fill="${bg}"/><g font-family="Arial,sans-serif" fill="${ink}"><text x="30" y="35" font-size="10" letter-spacing="1.5">OVERTAEK / FOCUSED SHAPE AND MATERIAL REVIEW</text><text x="30" y="78" font-size="26" font-weight="600">One capsule. Four finalists.</text><text x="30" y="102" font-size="11">ROLLED / POLISHED: BOTH COLORS AT 50% · STANDARD CAPSULE: 40 × 58</text>${tiles.join("")}<text x="30" y="${boardHeight-16}" font-size="9">CAPSULE LOCKED · 26–90% GLASS · 10 GOLDS × 10 SILVERS IN THE REVIEW</text></g></svg>`;
+ const board=`<svg xmlns="http://www.w3.org/2000/svg" width="600" height="${boardHeight}" viewBox="0 0 600 ${boardHeight}"><rect width="600" height="${boardHeight}" fill="${bg}"/><g font-family="Arial,sans-serif" fill="${ink}"><text x="30" y="35" font-size="10" letter-spacing="1.5">OVERTAEK / FOCUSED SHAPE AND MATERIAL REVIEW</text><text x="30" y="78" font-size="26" font-weight="600">One capsule. Four finalists.</text><text x="30" y="102" font-size="11">SELECTED: POLISHED GLASS · SOLAR / COOL PLATINUM · 80% · STANDARD CAPSULE: 40 × 58</text>${tiles.join("")}<text x="30" y="${boardHeight-16}" font-size="9">CAPSULE LOCKED · 26–90% GLASS · 10 GOLDS × 10 SILVERS IN THE REVIEW</text></g></svg>`;
  await writeFile(join(output,`finish-board-${theme}.svg`),board);
  await sharp(Buffer.from(board.replace(/style="transform:translateY\(([^p]+)px\);opacity:([^;]+);[^"]*"/g,'transform="translate(0 $1)" opacity="$2"'))).png().toFile(join(output,`finish-board-${theme}.png`));
  await writeFile(join(output,`transmission-${theme}.svg`),mod.exports.transmission.find(t=>t.dark===dark).svg);
