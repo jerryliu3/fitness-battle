@@ -1,3 +1,4 @@
+import { findDemoAccount } from "./demo-data";
 import {
   freshHealthRatings,
   freshState,
@@ -15,57 +16,25 @@ export function getDemoCompeteState(
   userId: string | null,
 ): CompeteState | null {
   if (!userId) return null;
-  const id = userId.toLowerCase();
-  const isAlice =
-    id === "11111111-1111-4111-8111-111111111111" ||
-    id === "alice" ||
-    id === "alice@example.com" ||
-    id.startsWith("alice") ||
-    id.includes("alice") ||
-    id === "demo-94a4b546";
-  const isBob =
-    id === "22222222-2222-4222-8222-222222222222" ||
-    id === "bob" ||
-    id === "bob@example.com" ||
-    id.startsWith("bob") ||
-    id.includes("bob");
-  const isCarla =
-    id === "33333333-3333-4333-8333-333333333333" ||
-    id === "carla" ||
-    id === "carla@example.com" ||
-    id.startsWith("carla") ||
-    id.includes("carla");
-  const isDana =
-    id === "44444444-4444-4444-8444-444444444444" ||
-    id === "dana" ||
-    id === "dana@example.com" ||
-    id.startsWith("dana") ||
-    id.includes("dana");
-  const isTest =
-    id === "00000000-0000-4000-8000-000000000001" ||
-    id === "test" ||
-    id === "test@test.com" ||
-    id.startsWith("test") ||
-    id.includes("test");
-
-  if (!isAlice && !isBob && !isCarla && !isDana && !isTest) return null;
+  const demo = findDemoAccount(userId);
+  if (!demo) return null;
 
   const monday = mondayOfCurrentWeek();
   const waveStartIso = monday.toISOString();
   const weekEndIso = weeklyPeriodBounds(monday).endsAt.toISOString();
   const base = freshState(monday);
 
-  if (isDana) {
+  if (demo.email === "dana@example.com") {
     return {
       ...base,
-      name: "Dana Singh",
-      city: "Manhattan",
+      name: demo.displayName,
+      city: demo.city,
       calibrated: false,
       onboardingCompleted: false,
     };
   }
 
-  if (isAlice) {
+  if (demo.email === "alice@example.com") {
     const today = new Date().toISOString().slice(0, 10);
     return {
       ...base,
@@ -548,7 +517,7 @@ export function getDemoCompeteState(
     };
   }
 
-  if (isBob) {
+  if (demo.email === "bob@example.com") {
     return {
       ...base,
       name: "Bob Chen",
@@ -665,7 +634,7 @@ export function getDemoCompeteState(
     };
   }
 
-  if (isCarla) {
+  if (demo.email === "carla@example.com") {
     return {
       ...base,
       name: "Carla Diaz",
@@ -787,7 +756,7 @@ export function getDemoCompeteState(
     };
   }
 
-  if (isTest) {
+  if (demo.email === "test@test.com") {
     const today = new Date().toISOString().slice(0, 10);
     return {
       ...base,

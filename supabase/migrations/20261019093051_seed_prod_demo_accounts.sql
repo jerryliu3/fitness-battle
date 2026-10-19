@@ -89,7 +89,7 @@ begin
       now(),
       '', '', '', '', '', '',
       '{"provider":"email","providers":["email"]}'::jsonb,
-      '{"display_name":"Test User"}'::jsonb,
+      '{"display_name":"Test Athlete"}'::jsonb,
       now(),
       now()
     );
@@ -103,7 +103,7 @@ begin
       email_change_token_current = coalesce(email_change_token_current, ''),
       reauthentication_token = coalesce(reauthentication_token, ''),
       email_change = coalesce(email_change, ''),
-      raw_user_meta_data = coalesce(raw_user_meta_data, '{}'::jsonb) || '{"display_name":"Test User"}'::jsonb,
+      raw_user_meta_data = coalesce(raw_user_meta_data, '{}'::jsonb) || '{"display_name":"Test Athlete"}'::jsonb,
       updated_at = now()
     where id = v_test_uid;
   end if;
@@ -547,12 +547,17 @@ begin
     (v_alice_uid, 'slp-alice-d0', current_date, 88, 465, 94, 85, 105, 250, 25, 'whoop', true),
     (v_alice_uid, 'slp-alice-d1', current_date - 1, 91, 480, 96, 95, 110, 255, 20, 'whoop', true),
     (v_alice_uid, 'slp-alice-d2', current_date - 2, 82, 440, 91, 75, 95, 240, 30, 'whoop', true),
+    (v_alice_uid, 'slp-alice-d3', current_date - 3, 76, 410, 88, 65, 80, 235, 30, 'whoop', true),
+    (v_alice_uid, 'slp-alice-d4', current_date - 4, 85, 455, 93, 80, 100, 250, 25, 'whoop', true),
+    (v_alice_uid, 'slp-alice-d5', current_date - 5, 89, 470, 95, 90, 105, 255, 20, 'whoop', true),
+    (v_alice_uid, 'slp-alice-d6', current_date - 6, 84, 450, 92, 78, 98, 246, 28, 'whoop', true),
     -- Bob
     (v_bob_uid, 'slp-bob-d0', current_date, 80, 430, 90, 70, 85, 245, 30, 'garmin', true),
     (v_bob_uid, 'slp-bob-d1', current_date - 1, 84, 455, 92, 75, 95, 255, 30, 'garmin', true),
     -- Carla
     (v_carla_uid, 'slp-carla-d0', current_date, 92, 490, 97, 100, 120, 250, 20, 'oura', true),
-    (v_carla_uid, 'slp-carla-d1', current_date - 1, 89, 475, 95, 92, 110, 253, 20, 'oura', true)
+    (v_carla_uid, 'slp-carla-d1', current_date - 1, 89, 475, 95, 92, 110, 253, 20, 'oura', true),
+    (v_carla_uid, 'slp-carla-d2', current_date - 2, 86, 460, 94, 88, 105, 248, 24, 'oura', true)
   on conflict (user_id, night_id) do update set
     score = excluded.score,
     duration_min = excluded.duration_min;
