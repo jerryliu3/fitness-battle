@@ -34,6 +34,8 @@ import { Sheet } from "@/ui/sheet";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useRef, useState } from "react";
+import { motion, useReducedMotion } from "motion/react";
+import { playCue } from "@/lib/haptics";
 
 const OAUTH_PROVIDERS = new Set<ProviderId>([
   "strava",
@@ -70,6 +72,7 @@ function humanError(code?: string): string {
 }
 
 function YouContent() {
+  const reduced = useReducedMotion();
   const { user, signOut, demoMode } = useAuth();
   const { state, dispatch, loadStatus } = useCompete();
   const [panel, setPanel] = useState<AthletePanel | null>(null);
@@ -491,7 +494,16 @@ function YouContent() {
 
   if (panel) {
     return (
-      <div className="focus-athlete">
+      <motion.div
+        className="focus-athlete"
+        initial={reduced ? false : { x: "100%", opacity: 0.96 }}
+        animate={{ x: 0, opacity: 1 }}
+        transition={
+          reduced
+            ? { duration: 0 }
+            : { type: "spring", stiffness: 380, damping: 34 }
+        }
+      >
         <button
           type="button"
           className="focus-expand-back"
@@ -1009,7 +1021,7 @@ function YouContent() {
           onClose={() => setAuthPrompt(null)}
         />
         {deleteAccountSheet}
-      </div>
+      </motion.div>
     );
   }
 
@@ -1030,7 +1042,10 @@ function YouContent() {
             key={id}
             type="button"
             className="focus-settings-row"
-            onClick={() => setPanel(id)}
+            onClick={() => {
+              void playCue("selection");
+              setPanel(id);
+            }}
           >
             <span>
               <b>{PANEL_TITLES[id]}</b>

@@ -362,6 +362,7 @@ export function ArenaScreen() {
                 }
                 onClick={() => {
                   if (isRegistered || sport !== null) return;
+                  void playCue("selection");
                   setSport(s.id);
                   participate(`Sign in to join ${s.name} this week.`, async () => {
                     try {
@@ -383,6 +384,7 @@ export function ArenaScreen() {
                       dispatch({ type: "set-primary", sport: s.id });
                       dispatch({ type: "opt-in", sport: s.id, crewBoard: pin });
                     } finally {
+                      void playCue("success");
                       setRegister(false);
                       setSport(null);
                     }

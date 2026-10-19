@@ -3,6 +3,7 @@ import { useEffect, useState, type Ref } from "react";
 import { motion, useReducedMotion } from "motion/react";
 import { playCue } from "@/lib/haptics";
 import { AnimatedPolygon, AnimatedPolyline } from "./activity-chart";
+import { useAuth } from "@/components/auth-context";
 import { useCompete } from "@/components/compete-context";
 import { AnimatedEmber } from "@/components/mascot/animated-ember";
 import type { EmberAction } from "@fitness-battle/shared/mascot";
@@ -151,6 +152,7 @@ type SessionPhase =
   | { kind: "full"; target: "suggestion" | Activity };
 
 export function TodayScreen() {
+  const { user } = useAuth();
   const { state } = useCompete();
   const reduced = useReducedMotion();
   const [session, setSession] = useState<SessionPhase>({ kind: "closed" });
@@ -185,7 +187,7 @@ export function TodayScreen() {
   useEffect(() => {
     const topDay = journeyDays[0]?.id;
     if (!topDay) return;
-    const key = `fb:journey-day:${state.id ?? "guest"}`;
+    const key = `fb:journey-day:${user?.id ?? state.name ?? "guest"}`;
     try {
       const last = localStorage.getItem(key);
       if (last !== topDay && journeyDays.length >= 1) {
@@ -197,7 +199,7 @@ export function TodayScreen() {
     } catch {
       /* optional */
     }
-  }, [journeyDays, state.id]);
+  }, [journeyDays, user?.id, state.name]);
 
   const weekPeriod = competePeriodWindow(state, now);
   const weekStart = weekPeriod.startsAt.getTime();
