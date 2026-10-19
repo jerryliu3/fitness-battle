@@ -1,4 +1,5 @@
 import { useId, type CSSProperties } from "react";
+import { UniformGlassRacer } from "./glass-art";
 import type { MaterialConcept } from "./material-concepts";
 
 function Form({ concept, ...paint }: { concept: MaterialConcept; fill?: string; stroke?: string; strokeWidth?: number; opacity?: number }) {
@@ -10,7 +11,7 @@ function Form({ concept, ...paint }: { concept: MaterialConcept; fill?: string; 
 }
 
 /** Study-only vector optics: shared by icon and lane, with no native-glass dependency. */
-export function MaterialRacer({ concept, x, y, radius = 23, fast, dark = false, flow = false, light = 0, edge, label }: { concept: MaterialConcept; x: number; y: number; radius?: number; fast: boolean; dark?: boolean; flow?: boolean; light?: number; edge?: string | null; label?: string }) {
+function LegacyMaterialRacer({ concept, x, y, radius = 23, fast, dark = false, flow = false, light = 0, edge, label }: { concept: MaterialConcept; x: number; y: number; radius?: number; fast: boolean; dark?: boolean; flow?: boolean; light?: number; edge?: string | null; label?: string }) {
   const id = useId().replaceAll(":", "");
   const gold = fast;
   const color = gold ? "#dfad3c" : "#9fa5af";
@@ -67,4 +68,9 @@ export function MaterialIcon({concept,dark=false,size=256,light=0,flow=false,unm
       <MaterialRacer concept={concept} x={182} y={93} radius={31.05} fast dark={dark} light={light} flow={flow}/>
     </g>
   </svg>;
+}
+
+export function MaterialRacer(props: Parameters<typeof LegacyMaterialRacer>[0]) {
+  if ("glass" in props.concept) return <UniformGlassRacer {...props} concept={props.concept}/>;
+  return <LegacyMaterialRacer {...props}/>;
 }

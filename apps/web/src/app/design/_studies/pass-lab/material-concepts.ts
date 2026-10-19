@@ -1,3 +1,4 @@
+import type { GlassConcept } from "./glass-concepts";
 export const MATERIAL_CONCEPTS = [
   { id: "lucent", name: "Lucent lens", material: "CLEAR GLASS", shape: "circle", line: "Color held inside a clear lens. The wake remains visible through the face; a bright rim gives it thickness.", field: "The most direct evolution of the circle. Keep names and values outside the lens.", tradeoff: "Needs a strong silhouette at 16 px; clear faces depend on their backdrop." },
   { id: "capsule", name: "Amber capsule", material: "TINTED GLASS", shape: "pill", line: "Vertical glass pills with honey-gold and smoke-silver cores. Overlapping echoes behave like translucent colored layers.", field: "The tall head and rounded echo stack make forward movement unmistakable.", tradeoff: "A longer silhouette occupies more of each lane; avoid covering distance labels." },
@@ -8,5 +9,5 @@ export const MATERIAL_CONCEPTS = [
   { id: "ceramic", name: "Glazed ceramic", material: "FIRED GLAZE", shape: "pill", line: "A smooth glazed capsule with a colored enamel body, rolled edge and a small porcelain reflection.", field: "Readable, friendly and substantial. A useful opaque counterpart to the glass pill.", tradeoff: "Feels more playful and less weightless; avoid heavy shadows in dense lanes." },
   { id: "opal", name: "Opal drop", material: "PEARLESCENT RESIN", shape: "drop", line: "A soft upward-pointing drop with a translucent pearl body and gold or silver edging. Light pools inside instead of flashing across it.", field: "A directional head that stays rounded and approachable, with pearl echoes following behind.", tradeoff: "The drop is less familiar than the circle; test whether it reads as an athlete or a map pin." },
 ] as const;
-export type MaterialConcept = typeof MATERIAL_CONCEPTS[number];
+export type MaterialConcept = typeof MATERIAL_CONCEPTS[number] | GlassConcept;
 export type MaterialId = MaterialConcept["id"];

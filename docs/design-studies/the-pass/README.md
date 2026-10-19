@@ -129,3 +129,7 @@ The user selected **Shared Start** (six gold echoes) for the application. It rep
 ## Round 5: material objects
 
 [Eight new shape/material concepts](MATERIALS.md) use the bold 135% direction: glass lens, tinted capsule, frosted pebble, glass ring, anodized alloy, chromatic foil, glazed ceramic, and opal drop. Each pairs an icon with a matching lane treatment using one renderer. Open `review.html?view=materials` for black/white comparisons, shared light inspection, SVG export and pass/flow controls. Production Shared Start assets remain unchanged.
+
+## Round 6: uniform tinted glass
+
+The [focused glass exploration](GLASS.md) adds eight variations using capsules and open loops. Faces are a single even tint; overlap creates the darker areas and only thin boundaries catch light. Amber Capsule, Glazed Ceramic and Frosted Pebble remain available for comparison. Open `review.html?view=glass` for overlap inspection, white/black views, small-size samples, SVG exports and matching animated lane previews.
