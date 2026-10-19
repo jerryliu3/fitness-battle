@@ -4,7 +4,7 @@ import Link from "next/link";
 import { LayoutGroup, MotionConfig, motion, useReducedMotion } from "motion/react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Demo } from "./demos";
-import { HAPTICS, STUDIES, type Haptic, type StudyId } from "./catalog";
+import { HAPTICS, MOBILE_NOTES, STUDIES, type Haptic, type StudyId } from "./catalog";
 import "./smoothness.css";
 
 export function SmoothnessLab() {
@@ -57,7 +57,7 @@ export function SmoothnessLab() {
           <LayoutGroup id={`${id}-${reset}`}><div key={`${id}-${reset}`} className={`sl-stage sl-stage-${id}`} data-testid="motion-stage"><Demo id={id} cue={cue} reduced={reduced} speed={speed} /></div></LayoutGroup>
           <section className="sl-touch-monitor" aria-label="Visual haptic cue"><div className="sl-touch-heading"><span className="sl-eyebrow">Mobile touch cue · visual only</span><span className="sl-cue-name">{pulse.kind === "none" ? "Silent" : pulse.kind}</span></div><div className="sl-touch-event"><div className="sl-beats" aria-hidden="true" key={pulse.sequence}>{haptic.beats.length ? haptic.beats.map((size, i) => <motion.i key={i} style={{ height: 6 + size * 4 }} initial={{ opacity: .25, scaleY: 1 }} animate={{ opacity: 1, scaleY: reduced ? 1 : [1, 1.7, 1] }} transition={{ duration: reduced ? 0 : .3, delay: reduced ? 0 : i * .09 }} />) : <span>—</span>}</div><p aria-live="polite">{pulse.event}</p></div><p className="sl-muted">{haptic.feel}</p></section>
         </MotionConfig>
-        <div className="sl-review-notes"><section><p className="sl-eyebrow">The movement</p><p>{study.motion}</p><code>{study.recipe}</code></section><section><p className="sl-eyebrow">The mobile feel</p><p>{study.haptics}</p><details><summary>Native haptic mapping</summary>{study.cues.map(kind => <p key={kind}><b>{kind}</b><code>{HAPTICS[kind].api}</code></p>)}<p className="sl-muted">Proposed Expo Haptics mapping. Respect user/system haptic settings; avoid duplicate cues from native controls. Device tuning is required.</p></details></section></div>
+        <div className="sl-review-notes"><section><p className="sl-eyebrow">The movement</p><p>{study.motion}</p><code>{study.recipe}</code></section><section><p className="sl-eyebrow">The mobile feel</p><p>{study.haptics}</p>{MOBILE_NOTES[id] && <p><strong>Mobile adaptation:</strong> {MOBILE_NOTES[id]}</p>}<details><summary>Native haptic mapping</summary>{study.cues.map(kind => <p key={kind}><b>{kind}</b><code>{HAPTICS[kind].api}</code></p>)}<p className="sl-muted">Proposed Expo Haptics mapping. Respect user/system haptic settings; avoid duplicate cues from native controls. Device tuning is required.</p></details></section></div>
       </section>
     </div>
     <footer className="sl-footer">Motion preserves identity. Touch confirms intent. Passive updates stay quiet.<br /><Link href="/ux#awards" onClick={() => select("awards")}>Jump to medals ↗</Link></footer>

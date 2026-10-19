@@ -36,6 +36,12 @@ This is one isolated prototype PR based on `origin/main` at `100f178`, which alr
 | 17 | `recap` | Positive/frozen result, explicit reveal, file into history, silent replay |
 | 18 | `setup` | Forward/back with retained name; finish into benchmark filters |
 
+## Mobile exceptions only
+
+The gallery shows a **Mobile adaptation** note only for flows requiring a different small-screen/native treatment: arena expansion, Today detail, sheets, settings Back, viewport gestures, lanes-to-rows, athlete inspection, registration handoff, medals and profile editing. `MOBILE_NOTES` in `catalog.ts` is the source. Other scenes reuse the existing choreography; no duplicate mobile demos are necessary.
+
+The important differences are safe-area/root-overlay ownership, keyboard and sheet gestures, interactive Back cancellation, gesture arbitration with page scrolling, bottom docks instead of side inspectors, and offscreen source/destination handling. In particular, phone medals lift into a scrollable detail sheet and reverse on swipe dismissal; the current inline web detail demonstrates the shared medal motion rather than implementing that native sheet. Native rollout should use local Reanimated/gesture primitives, keep direct manipulation on the UI thread, provide 44px+ effective touch targets, and verify iOS/Android Back, rotation, keyboard and reduced-motion behavior on devices. Phone-width browser checks alone do not validate those native interactions.
+
 ## Haptics: proposed native contract
 
 The visual pulse marks event meaning and rough emphasis; it is **not** an accurate waveform or device haptic preview. `catalog.ts` describes every scene's trigger, feel and Expo mapping. A `none` event is intentional silence. Passive refresh, camera motion, chart frames and scrolling should not vibrate.

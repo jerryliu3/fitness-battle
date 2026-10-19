@@ -31,3 +31,17 @@ export const STUDIES = [
   { id: "setup", title: "Forward feels like forward", area: "Setup · Benchmarks", action: "Advance setup, go back, then explore benchmark filters.", motion: "Directional setup steps retain entries. Completion becomes a stable benchmark panel whose results change inside its shell.", haptics: "Selection for a committed step/filter; success only on setup completion. Back and returning from external OAuth stay silent.", recipe: "directional steps + stable filter results", cues: ["selection", "success", "none"] },
 ] as const satisfies ReadonlyArray<{ id: string; title: string; area: string; action: string; motion: string; haptics: string; recipe: string; cues: readonly Haptic[] }>;
 export type StudyId = (typeof STUDIES)[number]["id"];
+
+// Only exceptions: unlisted flows keep the existing choreography at phone sizes.
+export const MOBILE_NOTES: Partial<Record<StudyId, string>> = {
+  arena: "Native: expand in a root overlay inside safe areas, retaining the same field. Hide tab chrome only after expansion; Back reverses it. Rotation remeasures bounds without resetting zoom or the selected athlete.",
+  session: "Phone: keep the Today stop visible as its detail opens. If the detail cannot fit comfortably, use the source-linked sheet alternative rather than pushing the whole journey offscreen; collapse returns to the same stop and scroll position.",
+  sheets: "Native: use a gesture-driven bottom sheet with content-sized detents, a separate scrim and keyboard avoidance. Drag-to-dismiss follows the finger and can cancel; Back dismisses the sheet before navigating. Do not add a second haptic if the native control already supplies one.",
+  settings: "Native: use the navigation stack's interactive Back gesture, including cancellation. Preserve parent scroll and form state while revealing the previous screen; avoid layering a second custom slide over the system transition.",
+  viewport: "Phone: an embedded field must coexist with page scrolling. Reserve vertical exploration for an explicit Explore mode or the expanded field, and direction-lock horizontal peer browsing. Keep pinch/zoom anchored to the gesture and provide accessible zoom/Center me controls.",
+  standings: "Phone: carry only You and the selected athlete into their rows; fade the other markers inside the stable stage. This limits crossing paths on a narrow screen while preserving fixed lane identity when returning.",
+  selection: "Phone: use a bottom detail dock above the home indicator, not a desktop side inspector. Keep the selected marker visible; if the dock reduces the field's height, remeasure its plot without changing the athlete's distance anchor.",
+  registration: "Phone: a newly joined field may be far below the sheet. Prefer a confirmed Joined state with a View field action over a long automatic scroll; close the sheet before moving focus to the new card.",
+  awards: "Phone: lift the medal into a compact, scrollable detail sheet while its shelf remains behind it. Swipe dismissal reverses the lift; if the source scrolled away, fade into the shelf instead of flying to stale coordinates. The detail uses one deliberate shine, not tilt tied to device movement.",
+  profile: "Phone: coordinate the editor with keyboard appearance and safe areas so Save/Cancel remain reachable. Keep the portrait mounted; dismiss the keyboard before the reverse collapse and restore the profile's previous scroll position.",
+};
