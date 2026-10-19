@@ -119,11 +119,20 @@ function writeDemoUser(user: AuthUser | null) {
 }
 
 
+const DEMO_IDS: Record<string, string> = {
+  "alice@example.com": "11111111-1111-4111-8111-111111111111",
+  "bob@example.com": "22222222-2222-4222-8222-222222222222",
+  "carla@example.com": "33333333-3333-4333-8333-333333333333",
+  "dana@example.com": "44444444-4444-4444-8444-444444444444",
+  "test@test.com": "00000000-0000-4000-8000-000000000001",
+};
+
 const DEMO_NAMES: Record<string, string> = {
   "alice@example.com": "Alice Park",
   "bob@example.com": "Bob Chen",
   "carla@example.com": "Carla Diaz",
   "dana@example.com": "Dana Brooks",
+  "test@test.com": "Test Athlete",
 };
 
 function demoUserFromEmail(email: string, displayName?: string): AuthUser {
@@ -131,7 +140,7 @@ function demoUserFromEmail(email: string, displayName?: string): AuthUser {
   const local = normalized.split("@")[0] || "Athlete";
   const fallback = DEMO_NAMES[normalized] ?? local;
   return {
-    id: `demo-${hashString(normalized).toString(16)}`,
+    id: DEMO_IDS[normalized] ?? `demo-${hashString(normalized).toString(16)}`,
     email: normalized,
     displayName: displayName?.trim() || fallback,
     mode: "demo",
