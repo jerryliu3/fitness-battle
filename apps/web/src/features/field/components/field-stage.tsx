@@ -1,7 +1,7 @@
 "use client";
 import dynamic from "next/dynamic";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { LayoutGroup, motion, useReducedMotion } from "motion/react";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { playCue } from "@/lib/haptics";
 import {
   arenaBaselineStorageKey,
@@ -323,23 +323,6 @@ export function FieldStage({
           : null
         : (runners.find((r) => r.id === selected) ?? null);
 
-  const recentreForSelection = useRef<string | null>(null);
-  useEffect(() => {
-    if (!selected || mode !== "lanes") {
-      recentreForSelection.current = null;
-      return;
-    }
-    if (recentreForSelection.current === selected) return;
-    recentreForSelection.current = selected;
-    const runner =
-      selected === ghost?.id && showGhost && ghost
-        ? ghost
-        : runners.find((r) => r.id === selected) ?? null;
-    if (!runner) return;
-    const target = valueAt(runner, time);
-    tweenCenterTo(target);
-  }, [selected, mode, span, showGhost, ghost, runners, time]);
-
   useEffect(() => {
     if (!lanesImmersive) return;
     const onKey = (e: KeyboardEvent) => {
@@ -444,29 +427,37 @@ export function FieldStage({
         })}
       </div>
 
-      {mode === "standings" ? (
-        <LayoutGroup id="arena-standings">
+      <AnimatePresence mode="wait" initial={false}>
+        {mode === "standings" ? (
           <motion.div
-            layout
+            key="standings"
             className="focus-standings"
             style={{ margin: "14px 0" }}
+            initial={reduced ? false : { opacity: 0, y: 14 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={reduced ? { opacity: 0 } : { opacity: 0, y: -10 }}
             transition={
               reduced
                 ? { duration: 0 }
-                : { type: "spring", stiffness: 380, damping: 34 }
+                : { type: "spring", stiffness: 420, damping: 36 }
             }
           >
             {[...runners]
               .sort((a, b) => valueAt(b, time) - valueAt(a, time))
               .map((r, i) => (
                 <motion.button
-                  layout="position"
-                  layoutId={`arena-athlete-${r.id}`}
                   key={r.id}
+                  initial={reduced ? false : { opacity: 0, x: -8 }}
+                  animate={{ opacity: 1, x: 0 }}
                   transition={
                     reduced
                       ? { duration: 0 }
-                      : { type: "spring", stiffness: 380, damping: 34 }
+                      : {
+                          type: "spring",
+                          stiffness: 420,
+                          damping: 34,
+                          delay: i * 0.04,
+                        }
                   }
                   onClick={() => {
                     if (selected !== r.id) void playCue("light");
@@ -486,8 +477,14 @@ export function FieldStage({
                 </motion.button>
               ))}
           </motion.div>
-        </LayoutGroup>
-      ) : (
+        ) : (
+          <motion.div
+            key="lanes"
+            initial={reduced ? false : { opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: reduced ? 0 : 0.2 }}
+          >
         <>
           <div
             className={
@@ -649,7 +646,9 @@ export function FieldStage({
             )}
           </div>
         </>
-      )}
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {chosen && (
         <div

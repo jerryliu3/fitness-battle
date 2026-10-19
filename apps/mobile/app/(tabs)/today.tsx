@@ -300,7 +300,22 @@ export default function Home() {
   }
   return (
     <SafeAreaView style={f.safe} edges={["top"]}>
-      <ScrollView contentContainerStyle={f.content}>
+      <View style={s.homeStage}>
+        <View style={s.homeJourneyLayer} pointerEvents="box-none">
+          <Journey
+            activities={counted}
+            units={units}
+            onToday={() => {
+              bounce();
+              setExpanded("suggestion");
+            }}
+          />
+        </View>
+        <ScrollView
+          style={s.homeOverlayScroll}
+          contentContainerStyle={s.homeOverlayContent}
+          showsVerticalScrollIndicator={false}
+        >
         {state.frozenPeriods.includes(primaryFreezePeriodStart(state)) ? (
           <Text style={f.copy}>
             ❄ Week frozen · Your effort score is protected through next Monday.
@@ -491,19 +506,31 @@ export default function Home() {
             </View>
           </View>
         </View>
-        <Journey
-          activities={counted}
-          units={units}
-          onToday={() => {
-            bounce();
-            setExpanded("suggestion");
-          }}
-        />
-      </ScrollView>
+        </ScrollView>
+      </View>
     </SafeAreaView>
   );
 }
 const s = StyleSheet.create({
+  homeStage: {
+    flex: 1,
+    position: "relative",
+  },
+  homeJourneyLayer: {
+    ...StyleSheet.absoluteFillObject,
+    zIndex: 0,
+    paddingTop: 200,
+  },
+  homeOverlayScroll: {
+    flex: 1,
+    zIndex: 2,
+  },
+  homeOverlayContent: {
+    paddingHorizontal: 22,
+    paddingTop: 4,
+    paddingBottom: 120,
+    gap: 18,
+  },
   statsCard: {
     backgroundColor: "#ffffff",
     borderWidth: 1,

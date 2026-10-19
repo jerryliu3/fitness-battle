@@ -1,10 +1,7 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { playCue } from "@/lib/haptics";
-import {
-  readArenaScoreTrack,
-  writeArenaScoreTrack,
-} from "@fitness-battle/shared";
+import { useScoreTrackLens } from "@/lib/score-track-lens";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/components/auth-context";
@@ -53,16 +50,11 @@ export function ArenaScreen() {
   const [register, setRegister] = useState(false);
   const [competeWithCrew, setCompeteWithCrew] = useState(false);
   const [sport, setSport] = useState<SportId | "sleep" | null>(null);
-  const [track, setTrack] = useState<ScoreTrack>("open");
-
-  useEffect(() => {
-    setTrack(readArenaScoreTrack(localStorage));
-  }, []);
+  const [track, setTrack] = useScoreTrackLens();
 
   function chooseTrack(next: ScoreTrack) {
     if (next === track) return;
     setTrack(next);
-    writeArenaScoreTrack(localStorage, next);
     void playCue("selection");
   }
 
@@ -394,7 +386,7 @@ export function ArenaScreen() {
                 <b>{sport === s.id ? "Joining…" : s.name}</b>
                 <small>
                   {isRegistered
-                    ? "Registered this week"
+                    ? "Already registered"
                     : s.gps
                       ? "GPS distance & open effort"
                       : "Open effort score"}
@@ -431,7 +423,7 @@ export function ArenaScreen() {
             <b>{sport === "sleep" ? "Joining…" : "Sleep & Recovery"}</b>
             <small>
               {sleepOptedIn
-                ? "Registered this week"
+                ? "Already registered"
                 : "Weekly recovery & sleep duration score"}
             </small>
           </button>

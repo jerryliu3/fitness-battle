@@ -202,41 +202,92 @@
   min-height: 0;
   flex: 1 1 auto;
 }
-.focus-home-bleed {
+.focus-home-stage {
   position: relative;
-  max-width: 620px;
   width: 100%;
+  max-width: 620px;
   margin: 0 auto;
   flex: 1 1 auto;
-  min-height: 100%;
+  min-height: min(100%, 72vh);
 }
-.focus-home-foreground {
+.phone-main:has(> .focus-home-stage) {
+  padding-bottom: 0;
+  display: block;
+}
+.focus-home-journey-layer {
   position: relative;
-  z-index: 2;
-}
-.focus-journey-bleed {
-  position: absolute;
-  inset: 0;
-  z-index: 1;
-  padding-top: clamp(220px, 42vh, 360px);
-  display: flex;
-  flex-direction: column;
+  z-index: 0;
   min-height: 100%;
-  pointer-events: none;
+  margin: 0 -4px;
+  padding-bottom: 88px;
 }
-.focus-journey-bleed .focus-journey {
-  pointer-events: auto;
-  flex: 1 1 auto;
+.focus-home-journey-layer .focus-journey {
+  min-height: calc(100vh - 140px);
   margin-top: 0;
+  padding-top: 48vh;
 }
-.focus-session-peek {
-  margin: 10px 0 0;
-  padding: 14px 16px;
-  border-radius: 18px;
+.focus-home-overlay {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  pointer-events: none;
+  margin-bottom: -32vh;
+  padding-bottom: 4px;
+  background: linear-gradient(
+    180deg,
+    #fafaf7 0%,
+    #fafaf7 72%,
+    #fafaf700 100%
+  );
+}
+.focus-home-overlay > * {
+  pointer-events: auto;
+}
+.focus-stop-peek {
+  position: absolute;
+  right: 4px;
+  top: 50%;
+  z-index: 4;
+  width: min(200px, 52vw);
+  padding: 10px 12px;
+  border-radius: 16px;
   border: 1px solid #e0e5dc;
   background: #fff;
-  box-shadow: 0 10px 28px #282f2c12;
+  box-shadow: 0 8px 24px #282f2c18;
+  transform: translateY(-50%);
   animation: focus-session-peek-in 0.32s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.focus-stop-peek h3,
+.focus-stop-peek strong {
+  display: block;
+  font-size: 14px;
+  margin: 0 0 4px;
+}
+.focus-stop-peek .fb-kicker {
+  margin-bottom: 2px;
+}
+.focus-stop-peek .fb-btn {
+  width: 100%;
+  margin-top: 8px;
+  padding: 8px 12px;
+  font-size: 13px;
+}
+.focus-stop-peek .fb-btn-ghost {
+  width: 100%;
+  margin-top: 4px;
+  font-size: 12px;
+}
+.focus-athlete-stack {
+  position: relative;
+}
+.focus-settings-stack-panel {
+  position: absolute;
+  inset: 0;
+  z-index: 8;
+  overflow-y: auto;
+  background: #fafaf7;
+  border-left: 1px solid #e0e5dc;
+  box-shadow: -12px 0 32px #282f2c12;
 }
 @keyframes focus-session-peek-in {
   from {
@@ -274,11 +325,12 @@
     opacity: 1;
   }
 }
+.phone-main:has(> .focus-home-stage),
 .phone-main:has(> .focus-home) {
   height: 100%;
   min-height: 0;
   grid-template-rows: minmax(0, 1fr);
-  padding-bottom: 12px;
+  padding-bottom: 0;
 }
 .focus-home > .focus-stats-card {
   flex: 0 0 auto;

@@ -26,11 +26,10 @@ import {
   type ScoreTrack,
   type SportId,
 } from "@fitness-battle/shared";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { usePathname, useRouter } from "expo-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { playCue } from "../../src/lib/haptics";
-import { readArenaScoreTrack, writeArenaScoreTrack } from "@fitness-battle/shared";
+import { useScoreTrackLens } from "../../src/lib/score-track-lens";
 import { Pressable, ScrollView, Switch, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { CompetitionSummary } from "../../src/features/competition-summary";
@@ -74,13 +73,7 @@ export default function ArenaScreen() {
   const isFocused = shellTabFromPath(pathname)?.id === "arena";
   const [joinBusy, setJoinBusy] = useState(false);
   const [joinError, setJoinError] = useState("");
-  const [track, setTrack] = useState<ScoreTrack>("open");
-
-  useEffect(() => {
-    void AsyncStorage.getItem("fb:arena-score-track").then((raw) => {
-      setTrack(readArenaScoreTrack({ getItem: () => raw }));
-    });
-  }, []);
+  const [track, setTrack] = useScoreTrackLens();
   const [mode, setMode] = useState("2D lanes");
   const [center, setCenter] = useState<number | null>(null);
   const [span, setSpan] = useState<number | null>(null);
@@ -423,11 +416,6 @@ export default function ArenaScreen() {
                   onPress={() => {
                     if (t !== track) void playCue("selection");
                     setTrack(t);
-                    void AsyncStorage.setItem("fb:arena-score-track", t);
-                    writeArenaScoreTrack(
-                      { setItem: (k, v) => void AsyncStorage.setItem(k, v) },
-                      t,
-                    );
                     setCenter(null);
                     setSelectedId(null);
                   }}
@@ -675,7 +663,7 @@ export default function ArenaScreen() {
                 <Text style={f.rowTitle}>{s.name}</Text>
                 <Text style={f.small}>
                   {isRegistered
-                    ? "Registered this week"
+                    ? "Already registered"
                     : s.gps
                       ? "GPS distance & open effort"
                       : "Open effort score"}

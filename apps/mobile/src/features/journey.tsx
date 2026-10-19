@@ -62,7 +62,6 @@ export function Journey({
   const selected = days.find((d) => d.id === selectedDay);
   return (
     <>
-      <Text style={f.h2}>Your journey</Text>
       <View
         onLayout={(event) => setWidth(event.nativeEvent.layout.width)}
         style={{ paddingTop: 56 }}

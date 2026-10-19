@@ -1,5 +1,6 @@
 "use client";
 import { playCue } from "@/lib/haptics";
+import { useScoreTrackLens } from "@/lib/score-track-lens";
 import { useAuth } from "@/components/auth-context";
 import { useCompete } from "@/components/compete-context";
 import {
@@ -61,7 +62,7 @@ export function AthleteOverview({
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState(state.name);
   const [city, setCity] = useState(state.city);
-  const [track, setTrack] = useState<"open" | "verified">("open");
+  const [track, setTrack] = useScoreTrackLens();
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [avatarBusy, setAvatarBusy] = useState(false);
