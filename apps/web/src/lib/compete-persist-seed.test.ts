@@ -34,7 +34,7 @@ describe.skipIf(!process.env.SEED_DB_TESTS)("Seed accounts in Supabase (needs lo
     const hydratedState = await hydrateFieldBoard(supabase, aliceId, state);
     expect(hydratedState.crewBoard).not.toBeNull();
     expect(hydratedState.crewBoard!.crewName).toBe("Weekday miles");
-    expect(hydratedState.crewBoard!.members.length).toBe(4);
+    expect(hydratedState.crewBoard!.members.length).toBeGreaterThanOrEqual(4);
     expect(hydratedState.crewBoard!.sport).toBe("running");
     const aliceMember = hydratedState.crewBoard!.members.find(m => m.id === aliceId);
     expect(aliceMember).toBeDefined();
@@ -102,5 +102,35 @@ describe.skipIf(!process.env.SEED_DB_TESTS)("Seed accounts in Supabase (needs lo
     expect(state.city).toBe("Manhattan");
     expect(state.calibrated).toBe(false);
     expect(state.onboardingCompleted).toBe(false);
+  });
+
+  it("loads test@test.com with rich data across all tables after sign in", async () => {
+    const supabase = createClient(url, anonKey);
+    const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+      email: "test@test.com",
+      password: "password123",
+    });
+    expect(authError).toBeNull();
+    expect(authData.user).not.toBeNull();
+    const testId = authData.user!.id;
+
+    const res = await loadCompeteAccount(supabase, testId);
+    expect(res).not.toBeNull();
+    const state = res!.state;
+    expect(state.name).toBe("Test Athlete");
+    expect(state.city).toBe("New York");
+    expect(state.calibrated).toBe(true);
+    expect(state.onboardingCompleted).toBe(true);
+    expect(state.activities.length).toBeGreaterThanOrEqual(15);
+    expect(state.sleepNights.length).toBeGreaterThanOrEqual(5);
+    expect(state.periodResults.length).toBeGreaterThanOrEqual(4);
+    expect(state.ratings.find(r => r.sport === "running")?.verifiedElo).toBe(1150);
+    expect(state.ratings.find(r => r.sport === "cycling")?.verifiedElo).toBe(1060);
+    expect(state.enrollments.length).toBeGreaterThanOrEqual(1);
+
+    const hydratedState = await hydrateFieldBoard(supabase, testId, state);
+    expect(hydratedState.crewBoard).not.toBeNull();
+    expect(hydratedState.crewBoard!.crewName).toBe("Weekday miles");
+    expect(hydratedState.crewBoard!.sport).toBe("running");
   });
 });

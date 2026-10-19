@@ -430,10 +430,12 @@ set
 
 insert into public.crew_members (crew_id, user_id, display_name, status)
 values
+  ('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', '00000000-0000-4000-8000-000000000001', 'Test Athlete', 'active'),
   ('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', '11111111-1111-4111-8111-111111111111', 'Alice Park', 'active'),
   ('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', '22222222-2222-4222-8222-222222222222', 'Bob Chen', 'active'),
   ('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', '33333333-3333-4333-8333-333333333333', 'Carla Diaz', 'active'),
   ('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', '55555555-5555-4555-8555-555555555555', 'Elena Rostova', 'active'),
+  ('bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb', '00000000-0000-4000-8000-000000000001', 'Test Athlete', 'active'),
   ('bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb', '22222222-2222-4222-8222-222222222222', 'Bob Chen', 'active'),
   ('bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb', '11111111-1111-4111-8111-111111111111', 'Alice Park', 'active'),
   ('bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb', '77777777-7777-4777-8777-777777777777', 'Priya Patel', 'active')
@@ -464,12 +466,13 @@ values
     'running',
     8,
     array[
+      '00000000-0000-4000-8000-000000000001'::uuid,
       '11111111-1111-4111-8111-111111111111'::uuid,
       '22222222-2222-4222-8222-222222222222'::uuid,
       '33333333-3333-4333-8333-333333333333'::uuid,
       '55555555-5555-4555-8555-555555555555'::uuid
     ],
-    array['synth:running:0', 'synth:running:1', 'synth:running:2', 'synth:running:3']
+    array['synth:running:0', 'synth:running:1', 'synth:running:2']
   ),
   (
     'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',
@@ -479,11 +482,12 @@ values
     'cycling',
     8,
     array[
+      '00000000-0000-4000-8000-000000000001'::uuid,
       '22222222-2222-4222-8222-222222222222'::uuid,
       '11111111-1111-4111-8111-111111111111'::uuid,
       '77777777-7777-4777-8777-777777777777'::uuid
     ],
-    array['synth:cycling:0', 'synth:cycling:1', 'synth:cycling:2']
+    array['synth:cycling:0', 'synth:cycling:1', 'synth:cycling:2', 'synth:cycling:3']
   )
 on conflict (crew_id, wave_start) where crew_id is not null do update
 set
