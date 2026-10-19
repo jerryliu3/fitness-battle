@@ -7,6 +7,16 @@ import {
 } from "./history";
 import type { CompeteState, PeriodResult } from "./sports";
 
+function canonicalWaveBounds(waveStart: string, weekEnd: string) {
+  const window = waveWindowAt(
+    enrollmentWaveMidpoint({ waveStart, weekEnd }),
+  );
+  return {
+    waveStart: window.waveStart.toISOString(),
+    weekEnd: window.weekEnd.toISOString(),
+  };
+}
+
 export function enrollmentWaveMidpoint(
   enrollment: Pick<WaveEnrollment, "waveStart" | "weekEnd">,
 ): Date {
@@ -20,9 +30,10 @@ export function enrollmentWaveMidpoint(
 
 /** Map legacy UTC-midnight windows onto America/New_York Monday weeks. */
 export function canonicalWaveEnrollment<T extends WaveEnrollment>(enrollment: T): T {
-  const window = waveWindowAt(enrollmentWaveMidpoint(enrollment));
-  const waveStart = window.waveStart.toISOString();
-  const weekEnd = window.weekEnd.toISOString();
+  const { waveStart, weekEnd } = canonicalWaveBounds(
+    enrollment.waveStart,
+    enrollment.weekEnd,
+  );
   if (enrollment.waveStart === waveStart && enrollment.weekEnd === weekEnd) {
     return enrollment;
   }
@@ -30,14 +41,10 @@ export function canonicalWaveEnrollment<T extends WaveEnrollment>(enrollment: T)
 }
 
 export function normalizePeriodResult(row: PeriodResult): PeriodResult {
-  const window = waveWindowAt(
-    enrollmentWaveMidpoint({
-      waveStart: row.periodStart,
-      weekEnd: row.periodEnd,
-    }),
+  const { waveStart: periodStart, weekEnd: periodEnd } = canonicalWaveBounds(
+    row.periodStart,
+    row.periodEnd,
   );
-  const periodStart = window.waveStart.toISOString();
-  const periodEnd = window.weekEnd.toISOString();
   const id = periodResultId(periodStart, row.sport, row.track);
   if (
     row.periodStart === periodStart &&
@@ -49,31 +56,41 @@ export function normalizePeriodResult(row: PeriodResult): PeriodResult {
   return { ...row, id, periodStart, periodEnd };
 }
 
-export function dedupePeriodResults(results: PeriodResult[]): PeriodResult[] {
-  const byId = new Map<string, PeriodResult>();
-  for (const row of results.map(normalizePeriodResult)) {
-    const existing = byId.get(row.id);
-    if (!existing) {
-      byId.set(row.id, row);
-      continue;
-    }
-    const existingAt = existing.settledAt ?? "";
-    const rowAt = row.settledAt ?? "";
-    if (rowAt > existingAt) {
-      byId.set(row.id, row);
-      continue;
-    }
-    if (rowAt < existingAt) continue;
-    if (isPeriodResultPending(row) && !isPeriodResultPending(existing)) {
-      byId.set(row.id, row);
-    }
-  }
-  return [...byId.values()].sort(
+function sortPeriodResults(results: PeriodResult[]): PeriodResult[] {
+  return [...results].sort(
     (a, b) =>
       b.periodStart.localeCompare(a.periodStart) ||
       a.sport.localeCompare(b.sport) ||
       a.track.localeCompare(b.track),
   );
+}
+
+export function dedupePeriodResults(results: PeriodResult[]): PeriodResult[] {
+  if (results.length === 0) return results;
+  const byId = new Map<string, PeriodResult>();
+  let changed = false;
+  for (const row of results) {
+    const normalized = normalizePeriodResult(row);
+    if (normalized !== row) changed = true;
+    const existing = byId.get(normalized.id);
+    if (!existing) {
+      byId.set(normalized.id, normalized);
+      continue;
+    }
+    changed = true;
+    const existingAt = existing.settledAt ?? "";
+    const rowAt = normalized.settledAt ?? "";
+    if (rowAt > existingAt) {
+      byId.set(normalized.id, normalized);
+      continue;
+    }
+    if (rowAt < existingAt) continue;
+    if (isPeriodResultPending(normalized) && !isPeriodResultPending(existing)) {
+      byId.set(normalized.id, normalized);
+    }
+  }
+  if (!changed) return results;
+  return sortPeriodResults([...byId.values()]);
 }
 
 /**
@@ -91,7 +108,9 @@ export function reconcileStalePeriodReveals(
       if (canonical !== row) changed = true;
       return canonical;
     }
-    const enrollment = state.enrollments.find((item) => item.sport === row.sport);
+    const enrollment = state.enrollments.find(
+      (item) => item.sport === canonical.sport,
+    );
     if (!enrollment) {
       if (canonical !== row) changed = true;
       return canonical;
@@ -114,27 +133,15 @@ export function reconcileStalePeriodReveals(
 }
 
 function alignCrewBoardPin(state: CompeteState): CompeteState["crewBoard"] {
-  if (!state.crewBoard) return null;
-  const aligned = canonicalWaveEnrollment({
-    sport: state.crewBoard.sport,
-    waveStart: state.crewBoard.waveStart,
-    weekEnd: state.crewBoard.weekEnd,
-    capacity: state.crewBoard.capacity,
-    peerIds: [],
-    syntheticIds: state.crewBoard.syntheticIds,
-    autoEnrollNext: true,
-  });
-  if (
-    aligned.waveStart === state.crewBoard.waveStart &&
-    aligned.weekEnd === state.crewBoard.weekEnd
-  ) {
-    return state.crewBoard;
-  }
-  return {
-    ...state.crewBoard,
-    waveStart: aligned.waveStart,
-    weekEnd: aligned.weekEnd,
-  };
+  const pin = state.crewBoard;
+  if (!pin) return null;
+  const { waveStart, weekEnd } = canonicalWaveBounds(pin.waveStart, pin.weekEnd);
+  if (pin.waveStart === waveStart && pin.weekEnd === weekEnd) return pin;
+  return { ...pin, waveStart, weekEnd };
+}
+
+function sameStringArray(left: string[], right: string[]): boolean {
+  return left.length === right.length && left.every((value, index) => value === right[index]);
 }
 
 export function alignCompeteWaves(
@@ -163,6 +170,17 @@ export function alignCompeteWaves(
     now,
   );
   const pendingRevealIds = pendingRevealIdsFromResults(periodResults);
+
+  if (
+    enrollments.every((row, index) => row === state.enrollments[index]) &&
+    ratings.every((row, index) => row === state.ratings[index]) &&
+    crewBoard === state.crewBoard &&
+    periodResults === state.periodResults &&
+    sameStringArray(frozenPeriods, state.frozenPeriods ?? []) &&
+    sameStringArray(pendingRevealIds, state.pendingRevealIds)
+  ) {
+    return state;
+  }
 
   return {
     ...state,

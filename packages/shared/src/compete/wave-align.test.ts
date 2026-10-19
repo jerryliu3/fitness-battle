@@ -1,10 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { reduceCompete, freshState } from "./engine";
-import {
-  alignCompeteWaves,
-  canonicalWaveEnrollment,
-  reconcileStalePeriodReveals,
-} from "./wave-align";
+import { alignCompeteWaves, canonicalWaveEnrollment } from "./wave-align";
 import { periodResultId } from "./history";
 
 describe("wave alignment", () => {
@@ -94,6 +90,16 @@ describe("wave alignment", () => {
     const open = state.periodResults.find((row) => row.track === "open");
     expect(open?.acknowledgedAt).not.toBeNull();
     expect(state.pendingRevealIds).toHaveLength(0);
+  });
+
+  it("returns the same state reference when waves are already canonical", () => {
+    const joined = reduceCompete(freshState(), {
+      type: "opt-in",
+      sport: "running",
+      now: "2026-10-12T12:00:00.000Z",
+    });
+    const again = alignCompeteWaves(joined, new Date("2026-10-14T12:00:00.000Z"));
+    expect(again).toBe(joined);
   });
 
   it("settles only once after Eastern close when legacy bounds are normalized", () => {

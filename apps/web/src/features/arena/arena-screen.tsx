@@ -58,10 +58,12 @@ export function ArenaScreen() {
   const sleepRating = state.healthRatings.find((item) => item.metric === "sleep");
   const sleepOptedIn = Boolean(sleepRating?.optedIn);
 
-  const period =
-    active.length > 0
-      ? competePeriodWindow(state, now, active[0]!.sport)
-      : weeklyPeriodBounds(now);
+  const headerSport =
+    active.find((row) => row.sport === state.primary)?.sport ??
+    active[0]?.sport;
+  const period = headerSport
+    ? competePeriodWindow(state, now, headerSport)
+    : weeklyPeriodBounds(now);
   const msLeft = Math.max(0, period.endsAt.getTime() - now.getTime());
   const daysLeft = Math.floor(msLeft / (24 * 3600 * 1000));
   const hoursLeft = Math.floor((msLeft % (24 * 3600 * 1000)) / (3600 * 1000));

@@ -163,6 +163,7 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
   const queue = useRef<Action[]>([]);
   const dirtyRef = useRef(0);
   const unsavedRef = useRef(false);
+  const unitsUnsavedRef = useRef(false);
   const refreshFlight = useRef<Promise<boolean> | null>(null);
   userIdRef.current = userId;
   demoRef.current = demoMode || user?.mode === "demo";
@@ -178,6 +179,7 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
     queue.current = [];
     dirtyRef.current = 0;
     unsavedRef.current = false;
+    unitsUnsavedRef.current = false;
     setFieldNotice(null);
     setStandingsStale(false);
     if (timer.current) {
@@ -209,6 +211,7 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
           if (dirtyRef.current === generation) {
             localStorage.removeItem(deviceOnlyKey(accountId));
             unsavedRef.current = false;
+            unitsUnsavedRef.current = false;
           }
           setSaveError(null);
         })
@@ -420,7 +423,7 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
           local,
           remote,
           dirty,
-          unsavedRef.current,
+          unitsUnsavedRef.current,
         );
         if (next !== local) {
           const savedAt = dirty
@@ -497,6 +500,7 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
         }
         dirtyRef.current += 1;
         unsavedRef.current = true;
+        if (withAccount.type === "set-units") unitsUnsavedRef.current = true;
         const accountKey = userIdRef.current ?? "guest";
         seedArenaBaselinesFromState(
           stateRef.current,

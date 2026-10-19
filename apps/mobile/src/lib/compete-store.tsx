@@ -132,6 +132,7 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
   const baselineCacheRef = useRef<Map<string, string>>(new Map());
   const dirtyRef = useRef(0);
   const unsavedRef = useRef(false);
+  const unitsUnsavedRef = useRef(false);
   const refreshFlight = useRef<Promise<boolean> | null>(null);
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   stateRef.current = state;
@@ -154,6 +155,7 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
     saveTimer.current = null;
     refreshFlight.current = null;
     unsavedRef.current = false;
+    unitsUnsavedRef.current = false;
     dirtyRef.current += 1;
     baselineCacheRef.current.clear();
     seenRef.current = { ids: null, ready: false, opened: false };
@@ -215,7 +217,7 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
               next,
               rollClock(migrateCompeteState(body.state)),
               dirty,
-              unsavedRef.current,
+              unitsUnsavedRef.current,
             );
           if (alive) {
             loadReady.current = true;
@@ -408,7 +410,7 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
           stateRef.current,
           remote,
           dirty,
-          unsavedRef.current,
+          unitsUnsavedRef.current,
         );
         seedArenaBaselinesFromState(
           next,
@@ -534,6 +536,7 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
               return;
             }
             unsavedRef.current = false;
+            unitsUnsavedRef.current = false;
             setSaveError(null);
             await AsyncStorage.removeItem(scoped.dirty);
           } catch {
@@ -564,6 +567,7 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
       if (action.accountId && action.accountId !== id) return;
       dirtyRef.current += 1;
       unsavedRef.current = true;
+      if (action.type === "set-units") unitsUnsavedRef.current = true;
       seedArenaBaselinesFromState(
         prev,
         id ?? "guest",

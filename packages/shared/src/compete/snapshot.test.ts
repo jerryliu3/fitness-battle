@@ -84,4 +84,11 @@ describe("applyRemoteSnapshot", () => {
     const merged = applyRemoteSnapshot(local, remote, true);
     expect(merged.units).toBe("metric");
   });
+
+  it("holds local units only while a units edit is still unsaved", () => {
+    const local = { ...freshState(), units: "metric" as const };
+    const remote = { ...freshState(), units: "us" as const };
+    expect(applyRemoteSnapshot(local, remote, true, true).units).toBe("metric");
+    expect(applyRemoteSnapshot(local, remote, true, false).units).toBe("us");
+  });
 });

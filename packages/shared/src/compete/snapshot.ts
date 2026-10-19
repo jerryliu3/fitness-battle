@@ -33,7 +33,7 @@ function sameDocument(left: CompeteState, right: CompeteState): boolean {
 function mergeFreshRemote(
   local: CompeteState,
   remote: CompeteState,
-  preferLocalUnits: boolean,
+  holdLocalUnits: boolean,
 ): CompeteState {
   const activityIds = new Set(local.activities.map((activity) => activity.id));
   const activities = [...local.activities];
@@ -51,9 +51,12 @@ function mergeFreshRemote(
     if (!readinessIds.has(mark.id)) readiness.push(mark);
   }
   const enrollments = local.enrollments.map((localEnr) => {
-    const remoteEnr = remote.enrollments.find(
-      (r) => r.sport === localEnr.sport && r.waveStart === localEnr.waveStart,
-    );
+    const remoteEnr =
+      remote.enrollments.find(
+        (r) =>
+          r.sport === localEnr.sport && r.waveStart === localEnr.waveStart,
+      ) ??
+      remote.enrollments.find((r) => r.sport === localEnr.sport);
     if (!remoteEnr) return localEnr;
     return {
       ...localEnr,
@@ -66,7 +69,7 @@ function mergeFreshRemote(
     {
       ...local,
       units:
-        preferLocalUnits && local.units !== remote.units
+        holdLocalUnits && local.units !== remote.units
           ? local.units
           : remote.units,
       activities,
@@ -89,10 +92,10 @@ export function applyRemoteSnapshot(
   local: CompeteState,
   remote: CompeteState,
   dirty: boolean,
-  preferLocalUnits = false,
+  holdLocalUnits = false,
 ): CompeteState {
   const next = dirty
-    ? mergeFreshRemote(local, remote, preferLocalUnits)
+    ? mergeFreshRemote(local, remote, holdLocalUnits)
     : remote;
   return sameDocument(local, next) ? local : next;
 }
