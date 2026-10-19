@@ -55,9 +55,7 @@ export function PhoneShell({
   const { user, loading } = useAuth();
   const {
     state,
-    legacyOffer,
     loadStatus,
-    recoverLegacy,
     retryLoad,
     fieldNotice,
   } = useCompete();
@@ -96,18 +94,6 @@ export function PhoneShell({
     if (hideTabs) return null;
     return (
       <>
-        {legacyOffer ? (
-          <p className="phone-guest">
-            This browser still has history from before accounts.{" "}
-            <button
-              type="button"
-              className="fb-btn-ghost"
-              onClick={recoverLegacy}
-            >
-              Use it on this account
-            </button>
-          </p>
-        ) : null}
         {loadStatus === "failed" ? (
           <p className="phone-guest">
             Could not load the account copy. This screen is read-only.{" "}

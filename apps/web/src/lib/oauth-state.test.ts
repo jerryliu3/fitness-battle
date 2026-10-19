@@ -107,20 +107,4 @@ describe("oauth-state", () => {
     ).toBe("web-user");
   });
 
-  it("falls back to session + raw user id state", () => {
-    expect(
-      resolveOAuthCallbackUserId({
-        state: "user-raw",
-        provider: "strava",
-        sessionUserId: "user-raw",
-      }),
-    ).toBe("user-raw");
-    expect(
-      resolveOAuthCallbackUserId({
-        state: "user-raw",
-        provider: "strava",
-        sessionUserId: null,
-      }),
-    ).toBeNull();
-  });
 });

@@ -295,20 +295,4 @@ describe("mobile account lifecycle", () => {
     );
     expect(mock.values.has("fb-arena-baseline:Alice:running:open")).toBe(false);
   });
-  it("keeps unscoped history unassigned until explicitly recovered into the current account", async () => {
-    const legacy = freshState();
-    legacy.name = "Earlier athlete";
-    mock.values.set("fb-compete-v1", JSON.stringify(legacy));
-    login("Alice");
-    await mount();
-    expect(api.state?.name).toBe("Alice");
-    expect(api.legacyState?.name).toBe("Earlier athlete");
-    await act(async () => {
-      await api.recoverLegacy("Alice");
-    });
-    expect(api.state?.name).toBe("Earlier athlete");
-    expect(mock.values.has("fb-compete-before-recovery:Alice")).toBe(true);
-    expect(mock.values.has("fb-compete-legacy-backup:Alice")).toBe(true);
-    expect(mock.values.has("fb-compete-v1")).toBe(false);
-  });
 });

@@ -59,8 +59,6 @@ interface CompeteContextValue {
   dismissFieldNotice: () => void;
   standingsStale: boolean;
   refresh: () => Promise<boolean>;
-  legacyState: CompeteState | null;
-  recoverLegacy: (expectedId: string) => Promise<void>;
   saveError: string | null;
   retrySave: () => void;
   clearAccountData: (expectedId: string) => Promise<boolean>;
@@ -113,7 +111,6 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
   authRef.current = auth;
   const owner = auth.user?.id ?? null;
   const keys = accountStorageKeys(owner);
-  const [legacyState, setLegacyState] = useState<CompeteState | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
   const loadReady = useRef(false);
   const lifecycle = useRef(0);
@@ -166,17 +163,6 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
     setReturnGain(0);
     void (async () => {
       const raw = await AsyncStorage.getItem(keys.state);
-      const legacyRaw = await AsyncStorage.getItem("fb-compete-v1");
-      if (alive) {
-        try {
-          const legacy = legacyRaw ? JSON.parse(legacyRaw) : null;
-          setLegacyState(
-            isCompeteState(legacy) ? migrateCompeteState(legacy) : null,
-          );
-        } catch {
-          setLegacyState(null);
-        }
-      }
       let next = rollClock(freshState());
       if (raw) {
         try {
@@ -596,46 +582,6 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
     [readBaselineItem, writeBaselineItem, scheduleSave],
   );
 
-  const recoverLegacy = useCallback(
-    async (expectedId: string) => {
-      if (!loadReady.current || accountRef.current !== expectedId)
-        throw new Error(
-          "Refresh your account before recovering device history.",
-        );
-      const raw = await AsyncStorage.getItem("fb-compete-v1");
-      const parsed = raw ? JSON.parse(raw) : null;
-      if (accountRef.current !== expectedId)
-        throw new Error("Account changed. Please review the history again.");
-      if (!isCompeteState(parsed) || !raw || !stateRef.current)
-        throw new Error("No earlier device history is available.");
-      const scoped = accountStorageKeys(expectedId);
-      const next = hydrateAccountIdentity(
-        rollClock(migrateCompeteState(parsed)),
-        authRef.current.user,
-        !authRef.current.demoMode,
-      );
-      await AsyncStorage.multiSet([
-        [`fb-compete-legacy-backup:${expectedId}`, raw],
-        [
-          `fb-compete-before-recovery:${expectedId}`,
-          JSON.stringify(stateRef.current),
-        ],
-        [scoped.state, JSON.stringify(next)],
-        [scoped.dirty, "1"],
-      ]);
-      if (accountRef.current !== expectedId) return;
-      await AsyncStorage.removeItem("fb-compete-v1");
-      if (accountRef.current !== expectedId) return;
-      dirtyRef.current += 1;
-      unsavedRef.current = true;
-      stateRef.current = next;
-      setState(next);
-      setLegacyState(null);
-      scheduleSave(next);
-    },
-    [scheduleSave],
-  );
-
   const retrySave = useCallback(() => {
     if (!loadReady.current) {
       setLoadAttempt((value) => value + 1);
@@ -657,8 +603,6 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
     const owned = all.filter(
       (key) =>
         key === fieldSeenStorageKey(expectedId) ||
-        key === `fb-compete-legacy-backup:${expectedId}` ||
-        key === `fb-compete-before-recovery:${expectedId}` ||
         key.startsWith(`fb-arena-baseline:${expectedId}:`),
     );
     await AsyncStorage.multiRemove([
@@ -713,8 +657,6 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
         dismissFieldNotice,
         standingsStale,
         refresh,
-        legacyState,
-        recoverLegacy,
         saveError,
         retrySave,
         clearAccountData,

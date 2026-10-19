@@ -14,7 +14,6 @@ import { eloFromWeeklyEffort, periodEffort } from "./effort";
 import { mergeActivities, normalizeSampleActivity, provenanceOf } from "./ledger";
 import { isTrainingGoal } from "./suggestion";
 import { settleElo } from "./elo";
-import { alignCompeteWaves } from "./wave-align";
 import {
   demoSleepNight,
   freshHealthRatings,
@@ -29,8 +28,6 @@ import {
   appendPeriodResults,
   pendingRevealIdsFromResults,
   periodResultId,
-  shouldSyncLegacyPendingReveals,
-  syncPeriodResultAcknowledgements,
 } from "./history";
 import {
   ELO_BASE,
@@ -190,38 +187,7 @@ export function withAccountEloBaseline(state: CompeteState): CompeteState {
   return changed ? { ...state, ratings } : state;
 }
 
-function isUnsignedEmptyCompete(state: CompeteState): boolean {
-  return (
-    (state.name === "Guest" || state.name === "You") &&
-    !state.onboardingCompleted &&
-    state.activities.length === 0 &&
-    state.periodResults.length === 0 &&
-    state.ratings.every((item) => !item.optedIn)
-  );
-}
-
-/** Guest empty state that still carries the old 1000 baseline → unranked 500. */
-function demoteGuestBaselineRatings(ratings: Rating[]): Rating[] {
-  return ratings.map((item) => {
-    if (
-      item.openElo === ELO_BASE &&
-      item.verifiedElo === ELO_BASE &&
-      item.lockOpen === ELO_BASE &&
-      item.lockVerified === ELO_BASE
-    ) {
-      return {
-        ...item,
-        openElo: ELO_UNRANKED,
-        verifiedElo: ELO_UNRANKED,
-        lockOpen: ELO_UNRANKED,
-        lockVerified: ELO_UNRANKED,
-      };
-    }
-    return item;
-  });
-}
-
-/** Normalize persisted JSON from older clients (missing link status / onboarding). */
+/** Fill defaults on parsed compete JSON before use. */
 export function migrateCompeteState(parsed: CompeteState): CompeteState {
   const wave = waveWindowAt(new Date());
   const fallbackPeriodStart = wave.waveStart.toISOString();
@@ -293,17 +259,7 @@ export function migrateCompeteState(parsed: CompeteState): CompeteState {
   )
     ? (parsed as CompeteState).periodResults
     : [];
-  const legacyPending = Array.isArray(
-    (parsed as CompeteState).pendingRevealIds,
-  )
-    ? (parsed as CompeteState).pendingRevealIds
-    : undefined;
-  const periodResults = shouldSyncLegacyPendingReveals(
-    rawPeriodResults,
-    legacyPending,
-  )
-    ? syncPeriodResultAcknowledgements(rawPeriodResults, legacyPending)
-    : rawPeriodResults;
+  const periodResults = rawPeriodResults;
   const pendingRevealIds = pendingRevealIdsFromResults(periodResults);
   const enrollments = Array.isArray((parsed as CompeteState).enrollments)
     ? (parsed as CompeteState).enrollments
@@ -350,24 +306,13 @@ export function migrateCompeteState(parsed: CompeteState): CompeteState {
       (parsed as CompeteState).avatarUrl!.trim().length > 0
         ? (parsed as CompeteState).avatarUrl!.trim()
         : null,
-    // Legacy guest label was "You"; keep unsigned local state on Guest.
     name:
-      typeof parsed.name === "string" &&
-      parsed.name.trim().length > 0 &&
-      !(
-        parsed.name.trim() === "You" &&
-        !Boolean((parsed as CompeteState).onboardingCompleted)
-      )
+      typeof parsed.name === "string" && parsed.name.trim().length > 0
         ? parsed.name.trim()
         : "Guest",
   };
 
-  // Older guests stored the account baseline (1000) before they had a score.
-  const aligned = alignCompeteWaves(migrated);
-  if (isUnsignedEmptyCompete(aligned)) {
-    return { ...aligned, ratings: demoteGuestBaselineRatings(aligned.ratings) };
-  }
-  return aligned;
+  return migrated;
 }
 
 function parseUnitSystem(value: unknown): UnitSystem {
@@ -762,7 +707,7 @@ function settleEnrollment(
 export function rollClock(state: CompeteState, now: Date = new Date()): CompeteState {
   const liveWave = waveWindowAt(now);
   const liveStart = liveWave.waveStart.toISOString();
-  let next = alignCompeteWaves(state, now);
+  let next = state;
   // Last week's crew pin must not stick after Monday settlement.
   if (
     next.crewBoard &&

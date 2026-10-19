@@ -22,47 +22,6 @@ export function pendingRevealIdsFromResults(
   return results.filter(isPeriodResultPending).map((row) => row.id);
 }
 
-/**
- * Align legacy pendingRevealIds with acknowledgedAt on each result.
- * Only runs when a legacy pending list is present on the document.
- */
-export function syncPeriodResultAcknowledgements(
-  results: PeriodResult[],
-  pendingIds: string[] | undefined,
-): PeriodResult[] {
-  if (!Array.isArray(results) || results.length === 0) return results ?? [];
-  if (pendingIds === undefined) return results;
-  const pending = new Set(pendingIds);
-  return results.map((row) => {
-    if (pending.has(row.id)) {
-      return { ...row, acknowledgedAt: null };
-    }
-    if (isPeriodResultPending(row)) {
-      return {
-        ...row,
-        acknowledgedAt: row.settledAt ?? new Date(0).toISOString(),
-      };
-    }
-    return row;
-  });
-}
-
-/**
- * Account writes store `pendingRevealIds: []` and use `acknowledgedAt` as SoT.
- * An empty array must NOT run legacy sync — that would auto-ack every pending
- * week and wipe the week-complete reveal. Sync only when:
- * - legacy list has ids to keep pending, or
- * - results predate the acknowledgedAt field (missing key).
- */
-export function shouldSyncLegacyPendingReveals(
-  results: PeriodResult[],
-  pendingIds: string[] | undefined,
-): boolean {
-  if (pendingIds === undefined) return false;
-  if (pendingIds.length > 0) return true;
-  return results.some((row) => !("acknowledgedAt" in row));
-}
-
 export function acknowledgePeriodResults(
   results: PeriodResult[],
   revealIds: string[] | null,

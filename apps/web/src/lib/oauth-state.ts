@@ -111,7 +111,6 @@ export function verifyOAuthState(
  * Resolve the user for an OAuth2 callback.
  * - `bearer` channel (mobile): trust signed state; Safari often has no / wrong cookie.
  * - `session` channel (web): require the browser session to match (CSRF bind).
- * - Raw user-id state: legacy web links; session must match.
  */
 export function resolveOAuthCallbackUserId(options: {
   state: string | null;
@@ -127,7 +126,6 @@ export function resolveOAuthCallbackUserId(options: {
     if (sessionUserId && sessionUserId === signed.u) return signed.u;
     return null;
   }
-  if (sessionUserId && state === sessionUserId) return sessionUserId;
   return null;
 }
 
