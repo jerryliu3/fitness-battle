@@ -13,7 +13,5 @@ describe("crew share and invite", () => {
     expect(source).toMatch(/searchParams\.get\("invite"\)/);
     expect(source).toMatch(/next\.delete\("invite"\)/);
     expect(source).toMatch(/Copy invite link/);
-    expect(source).toMatch(/function shareCountedSessions/);
-    expect(source).not.toMatch(/\(!user \|\| demoMode\) && \(\s*<div className="focus-crew-preview"/);
   });
 });

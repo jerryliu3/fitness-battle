@@ -160,7 +160,7 @@ export function CrewPanel() {
     }
   }
   const rawCrews = (data?.crews ?? []).flatMap((r) => (r.crews ? [r.crews] : []));
-  const isSolo = !user || rawCrews.length === 0;
+  const isSolo = !user || demoMode || rawCrews.length === 0;
 
   const athleteName = state?.name || "You";
   const athleteSport = state?.primary
@@ -221,30 +221,6 @@ export function CrewPanel() {
       : memberNames.length <= 3
         ? memberNames.join(", ") || "No members yet"
         : `${memberNames.slice(0, 3).join(", ")} + ${memberNames.length - 3} more`;
-  const countedThisWeek = (state?.activities ?? []).filter((a) =>
-    countsOnTrack(a, "open"),
-  );
-
-  function shareCountedSessions() {
-    if (!user) {
-      setPanel("manage");
-      return;
-    }
-    if (crew.id === "solo-preview") {
-      if (demoMode) {
-        setNote(
-          countedThisWeek.length > 0
-            ? `Demo preview: your ${countedThisWeek.length} counted session${countedThisWeek.length === 1 ? "" : "s"} already appear in the activity feed below. Connect a live account to sync with a real crew.`
-            : "No counted sessions yet this week. Log a workout first — in demo it will show in your circle feed automatically.",
-        );
-        return;
-      }
-      setPanel("add");
-      return;
-    }
-    void write("/entries", { crewId: crew.id });
-  }
-
   return (
     <>
       {user && !demoMode && !data && (
@@ -373,18 +349,21 @@ export function CrewPanel() {
                     ? `Each member aims for ${crew.target_sessions} sessions.`
                     : "Every pace belongs here."}
                 </p>
-                <p className="fb-note">
-                  {crew.id === "solo-preview"
-                    ? demoMode
-                      ? "Demo circle: counted workouts from this device already show in the feed below."
-                      : "Creates or joins a crew, then publishes this week's counted workouts to the shared feed."
-                    : "Publishes any new counted workouts from this week to your crew's shared feed."}
-                </p>
                 <div className="focus-actions">
                   <button
                     className="fb-btn"
                     disabled={busy}
-                    onClick={() => shareCountedSessions()}
+                    onClick={() => {
+                      if (!user) {
+                        setPanel("manage");
+                        return;
+                      }
+                      if (crew.id === "solo-preview") {
+                        setPanel("add");
+                        return;
+                      }
+                      void write("/entries", { crewId: crew.id });
+                    }}
                   >
                     Share my counted sessions
                   </button>
@@ -528,7 +507,7 @@ export function CrewPanel() {
           {n.body}
         </p>
       ))}
-      {!user && (
+      {(!user || demoMode) && (
         <div className="focus-crew-preview" style={{ marginBottom: 28 }}>
           <section className="focus-card">
             <p className="fb-kicker">What crews unlock</p>
@@ -585,11 +564,9 @@ export function CrewPanel() {
               : "Your crew, your rhythm."
         }
         body={
-          !user
-            ? "Sign in to create or join a private crew."
-            : demoMode
-              ? "Demo mode uses local data only — private crews need a live account."
-              : "Private crew activity stays with your members."
+          !user || demoMode
+            ? "A live account is needed to create or join a private crew."
+            : "Private crew activity stays with your members."
         }
         onClose={() => {
           setPanel(null);
@@ -605,10 +582,10 @@ export function CrewPanel() {
             {note}
           </p>
         ) : null}
-        {!user ? (
+        {!user || demoMode ? (
           <div style={{ marginTop: 8 }}>
             <p className="fb-copy" style={{ marginBottom: 16 }}>
-              Sign in to invite friends, join circles, and sync shared crew sessions.
+              A live account is required to invite friends, join circles, or sync shared crew sessions.
             </p>
             <div className="fb-row" style={{ width: "100%", gap: 10 }}>
               <Link
@@ -626,19 +603,6 @@ export function CrewPanel() {
                 Sign in
               </Link>
             </div>
-          </div>
-        ) : demoMode ? (
-          <div style={{ marginTop: 8 }}>
-            <p className="fb-copy" style={{ marginBottom: 12 }}>
-              You are signed in to the local demo as{" "}
-              <strong>{user.displayName || user.email}</strong>. Crew create,
-              join, and server sync need a live Fitness Battle account (not
-              demo data mode).
-            </p>
-            <p className="fb-note">
-              Your solo circle preview still reflects counted sessions stored on
-              this device.
-            </p>
           </div>
         ) : panel === "add" ? (
           <>
