@@ -9,9 +9,10 @@ const stagePath = join(
 );
 
 describe("field stage athlete selection", () => {
-  it("recenters the lane window when an athlete is selected", () => {
+  it("keeps lane pan manual (center controls) without auto-recenter on select", () => {
     const source = readFileSync(stagePath, "utf8");
-    expect(source).toMatch(/if \(!selected \|\| mode !== "lanes"\)/);
+    expect(source).not.toMatch(/if \(!selected \|\| mode !== "lanes"\)/);
+    expect(source).toMatch(/tweenCenterTo\(total\)/);
     expect(source).toMatch(/clampArenaLaneCenter\(target, span\)/);
   });
 });
