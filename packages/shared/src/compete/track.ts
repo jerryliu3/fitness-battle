@@ -1,4 +1,4 @@
-import { APP_TIMEZONE, endOfZonedDay } from "../period";
+import { APP_TIMEZONE, endOfZonedDay, shiftAppDay } from "../period";
 import { periodEffort } from "./effort";
 import { athleteWeekEffort, type FieldAthlete } from "./field";
 import {
@@ -27,8 +27,6 @@ export interface CheckpointSeries {
   liveAt: Date;
 }
 
-const DAY_MS = 86_400_000;
-
 function endOfPeriodDay(dayStart: Date): Date {
   return endOfZonedDay(dayStart, APP_TIMEZONE);
 }
@@ -41,7 +39,7 @@ function labelDay(date: Date): string {
 }
 
 /**
- * Weekday names collapse early in a wave (the three cutoffs can share one UTC
+ * Weekday names collapse early in a wave (the three cutoffs can share one Eastern
  * day). Name the scrub positions so the control still has three distinct stops.
  */
 export function checkpointLabels(
@@ -74,7 +72,7 @@ export function checkpointInstants(
   const early = new Date(
     Math.min(endOfPeriodDay(periodStart).getTime(), live.getTime()),
   );
-  const midCandidate = new Date(periodStart.getTime() + 3 * DAY_MS);
+  const midCandidate = shiftAppDay(periodStart, 3);
   const mid = new Date(
     Math.min(
       Math.max(midCandidate.getTime(), early.getTime()),

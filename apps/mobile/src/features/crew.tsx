@@ -35,6 +35,7 @@ interface Entry {
   crew_id: string;
   user_id: string;
   activity_id: string;
+  session_count?: number;
   distance_m: number;
   moving_sec: number;
   started_at: string;
@@ -45,6 +46,7 @@ export interface CrewData {
   crews: { crew_id: string; crews: PrivateCrew | null }[];
   members: Member[];
   entries: Entry[];
+  progress?: Entry[];
   notices: { id: string; body: string }[];
   seasonWeeks?: Record<string, number>;
 }
@@ -137,7 +139,6 @@ export function CrewHub() {
   const params = useGlobalSearchParams<{ invite?: string | string[] }>();
   const api = useCrewApi();
   const [selected, setSelected] = useState("");
-  const [tab, setTab] = useState("Activity");
   const [panel, setPanel] = useState<
     "add" | "invite" | "manage" | "leave" | null
   >(null);
@@ -227,7 +228,7 @@ export function CrewHub() {
           sport: a.sport,
           disposition: "counted",
         }))
-    : (api.data?.entries ?? []).filter(
+    : (api.data?.progress ?? api.data?.entries ?? []).filter(
         (e) => e.crew_id === crew.id && e.disposition === "counted",
       );
   const totalM = entries.reduce((n, e) => n + Number(e.distance_m), 0);
@@ -377,7 +378,7 @@ export function CrewHub() {
         <Text style={f.kicker}>Our shared week · {crew.sport}</Text>
         <Text style={f.massive}>
           {crew.format === "personal_target"
-            ? entries.length
+            ? entries.reduce((total, entry) => total + Number(entry.session_count ?? 1), 0)
             : formatDistanceM(totalM, state?.units)}
         </Text>
         <Text style={f.copy}>
@@ -417,85 +418,11 @@ export function CrewHub() {
           </>
         ) : null}
         <Text style={f.copy}>Every pace belongs here.</Text>
-        {!solo && api.data?.seasonWeeks ? (
-          <Text style={f.small}>
-            {api.data.seasonWeeks[crew.id] ?? 0} weeks together
-          </Text>
-        ) : null}
-        <FocusButton
-          label="Share my counted sessions"
-          disabled={busy}
-          onPress={() =>
-            solo ? open("add") : void write("/entries", { crewId: crew.id })
-          }
-        />
+
       </View>
-      <Text style={f.h2}>The latest, together.</Text>
-      <View style={f.chipRow}>
-        {["Activity", "Leaderboard"].map((t) => (
-          <Pressable
-            key={t}
-            accessibilityRole="tab"
-            accessibilityState={{ selected: t === tab }}
-            style={[f.chip, tab === t && f.chipActive]}
-            onPress={() => setTab(t)}
-          >
-            <Text style={f.rowTitle}>{t}</Text>
-          </Pressable>
-        ))}
-      </View>
+      <Text style={f.h2}>Crew standings</Text>
       <View style={f.card}>
-        {tab === "Activity" ? (
-          entries.length ? (
-            [...entries]
-              .sort((a, b) => b.started_at.localeCompare(a.started_at))
-              .map((e) => (
-                <View
-                  key={`${e.user_id}:${e.activity_id}`}
-                  style={{
-                    gap: 10,
-                    borderBottomWidth: 1,
-                    borderColor: "#e0e5dc",
-                    paddingBottom: 14,
-                  }}
-                >
-                  <Text style={f.rowTitle}>
-                    {members.find((m) => m.user_id === e.user_id)
-                      ?.display_name ?? "Athlete"}
-                  </Text>
-                  <Text style={f.small}>
-                    {new Date(e.started_at).toLocaleDateString("en-US", {
-                      month: "short",
-                      day: "numeric",
-                      timeZone: APP_TIMEZONE,
-                    })}
-                  </Text>
-                  <Text style={f.copy}>
-                    {e.sport} · {distance(Number(e.distance_m))} ·{" "}
-                    {Math.round(e.moving_sec / 60)} min
-                  </Text>
-                  {e.user_id !== selfId ? (
-                    <FocusButton
-                      label="♡ Cheer this session"
-                      secondary
-                      disabled={busy}
-                      onPress={() =>
-                        void write("/cheer", {
-                          crewId: crew.id,
-                          activityId: e.activity_id,
-                          ownerId: e.user_id,
-                        })
-                      }
-                    />
-                  ) : null}
-                </View>
-              ))
-          ) : (
-            <Text style={f.copy}>
-              No shared sessions this week yet. Share yours to start the feed.
-            </Text>
-          )
-        ) : (
+        {
           [...members]
             .sort((a, b) => memberTotal(b.user_id) - memberTotal(a.user_id))
             .map((m, i) => (
@@ -506,8 +433,7 @@ export function CrewHub() {
                   {distance(memberTotal(m.user_id))}
                 </Text>
               </View>
-            ))
-        )}
+            ))}
       </View>
       <View style={f.card}>
         <Text style={f.kicker}>A little accountability</Text>

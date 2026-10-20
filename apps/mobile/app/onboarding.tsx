@@ -7,13 +7,13 @@ import { useAuth } from "../src/lib/auth";
 import { useCompeteStore } from "../src/lib/compete-store";
 import { FocusButton, f } from "../src/ui/focus";
 export default function Onboarding() {
-  const { state, dispatch } = useCompeteStore();
+  const { state, canWrite, dispatch, saveError, retrySave } = useCompeteStore();
   const { user } = useAuth();
   const router = useRouter();
   const [name, setName] = useState<string | null>(null);
   const [city, setCity] = useState<string | null>(null);
   const [units, setUnits] = useState<UnitSystem | null>(null);
-  const [sport, setSport] = useState<SportId | null>(null);
+  const [sports, setSports] = useState<SportId[]>(["running"]);
   const [sleep, setSleep] = useState(false);
   if (!state)
     return (
@@ -56,13 +56,13 @@ export default function Onboarding() {
             onPress={() => setUnits(u)}
           />
         ))}
-        <Text style={f.h2}>Primary event</Text>
+        <Text style={f.h2}>Sports to join now</Text>
         {SPORTS.map((s) => (
           <FocusButton
             key={s.id}
             secondary
-            label={`${(sport ?? state.primary) === s.id ? "✓ " : ""}${s.name}`}
-            onPress={() => setSport(s.id)}
+            label={`${sports.includes(s.id) ? "✓ " : ""}${s.name}`}
+            onPress={() => setSports((current) => current.includes(s.id) ? current.length > 1 ? current.filter((id) => id !== s.id) : current : [...current, s.id])}
           />
         ))}
         <View style={f.row}>
@@ -73,20 +73,24 @@ export default function Onboarding() {
             onValueChange={setSleep}
           />
         </View>
+        {saveError && <><Text style={f.copy}>{saveError}</Text><FocusButton label="Retry account loading" secondary onPress={retrySave}/></>}
         <FocusButton
+          disabled={Boolean(user) && !canWrite}
           label={user ? "Finish setup" : "Sign in to finish setup"}
           onPress={() => {
             if (!user) {
               router.replace("/you");
               return;
             }
+            if (!canWrite) return;
             dispatch({
               type: "rename",
               name: (name ?? state.name).trim() || user.displayName,
             });
             dispatch({ type: "set-city", city: (city ?? state.city).trim() });
             dispatch({ type: "set-units", units: units ?? state.units });
-            dispatch({ type: "set-primary", sport: sport ?? state.primary });
+            for (const sport of sports) dispatch({ type: "opt-in", sport, accountId: user.id });
+            dispatch({ type: "set-primary", sport: sports[0]! });
             if (sleep) dispatch({ type: "opt-in-health", metric: "sleep" });
             dispatch({ type: "complete-onboarding" });
             router.replace("/arena");

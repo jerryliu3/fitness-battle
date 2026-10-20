@@ -148,3 +148,8 @@ describe("selfLaneLabel", () => {
     expect(selfLaneLabel("Maya", "caps")).toBe("YOU");
   });
 });
+
+it("keeps custom checkpoint days at Eastern midnight across spring DST", () => {
+  const checkpoints = checkpointInstants(new Date("2026-03-07T05:00:00Z"), new Date("2026-03-14T04:00:00Z"), new Date("2026-03-12T12:00:00Z"));
+  expect(checkpoints[1].toISOString()).toBe("2026-03-10T04:00:00.000Z");
+});

@@ -1,5 +1,6 @@
 "use client";
 
+import { isOwnerEmail } from "@/lib/auth/design-access";
 import { ReportIssue } from "@/components/report-issue";
 import { useAuth } from "@/components/auth-context";
 import { useCompete } from "@/components/compete-context";
@@ -94,6 +95,10 @@ function YouContent() {
   const pushIdentity: SyncIdentity | null = user
     ? { userId: user.id, localOnly: demoMode || user.mode === "demo" }
     : null;
+  const requestedPanel = searchParams.get("panel");
+  useEffect(() => {
+    if (requestedPanel && requestedPanel in PANEL_TITLES) setPanel(requestedPanel as AthletePanel);
+  }, [requestedPanel]);
   const tracker = searchParams.get("tracker");
   const trackerProvider = searchParams.get("provider");
   const appliedTracker = useRef<string | null>(null);
@@ -1032,6 +1037,7 @@ function YouContent() {
     <>
     <div className="focus-athlete" ref={overviewRef} inert={Boolean(panel) || settingsPresent}>
       <AthleteOverview state={state} email={user.email} demoMode={demoMode} />
+      {isOwnerEmail(user.email) && <Link href="/admin" className="fb-btn-line">Round lab</Link>}
       <nav className="focus-settings-list" aria-label="Athlete settings">
         {(
           [

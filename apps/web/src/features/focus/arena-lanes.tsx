@@ -49,6 +49,7 @@ export function ArenaLanes({
   const standings = presentation === "standings";
   const prefix = useId();
   const wakeTime = usePolishedWakeTime(host);
+  const [measured, setMeasured] = useState(false);
   const [size, setSize] = useState({ width: 360, height: 540 });
   const previousGeometry = useRef<{ width: number; laneWidth: number; count: number } | null>(null);
   const laneScroll = useRef<number | null>(null);
@@ -86,6 +87,9 @@ export function ArenaLanes({
   const y = (v: number) => 72 + arenaPosition(v, effectiveView).fraction * plotHeight;
   const maxTailY = Math.min(height - 58, bounds.min <= 0 && bounds.max >= 0 ? y(0) + 4 : height - 58);
 
+  const yourValue = liveLanes.find((lane) => lane.you)?.value ?? 0;
+  const relativeDistance = (value: number) => `${value - yourValue > 0 ? "+" : ""}${(value - yourValue).toFixed(1)} ${unit}`;
+
   const sortedByValue = [...ordered].sort((a, b) => b.value - a.value);
   const topRunner = sortedByValue[0];
   const firstPlaceId =
@@ -105,7 +109,7 @@ export function ArenaLanes({
     const el = host.current;
     if (!el) return;
     const measure = () => {
-      if (el.clientWidth > 0 && el.clientHeight > 0) setSize({ width: el.clientWidth, height: el.clientHeight });
+      if (el.clientWidth > 0 && el.clientHeight > 0) { setSize({ width: el.clientWidth, height: el.clientHeight }); setMeasured(true); }
     };
     // Measure before the first painted frame. Waiting for the first observer
     // notification lets the SVG render once at its fallback 360px width, then
@@ -129,7 +133,7 @@ export function ArenaLanes({
   return (
     <div className="focus-lane-scroll" ref={host} data-immersive={immersive}
       onScroll={(event) => { if (!standings) laneScroll.current = event.currentTarget.scrollLeft; }}
-      style={{ height: standings ? height : undefined, transition: reduced ? "none" : "height .48s cubic-bezier(.22,1,.36,1)" }}>
+      style={{ visibility: measured ? "visible" : "hidden", height: standings ? height : undefined, transition: reduced ? "none" : "height .48s cubic-bezier(.22,1,.36,1)" }}>
       <svg
         className="focus-lane-track"
         viewBox={`0 0 ${width} ${height}`}
@@ -367,12 +371,12 @@ export function ArenaLanes({
               key={l.id}
               initial={false}
               animate={{ x: targetX, y: targetY }}
-              transition={{ duration: reduced || drag.current || animating ? 0 : 0.48, ease: [0.22, 1, 0.36, 1] }}
+              transition={{ duration: reduced || drag.current || animating || previousGeometry.current?.width !== size.width ? 0 : 0.48, ease: [0.22, 1, 0.36, 1] }}
               data-athlete={l.id}
               role="button"
               aria-pressed={selected === l.id}
               tabIndex={0}
-              aria-label={`${l.name}, ${standings ? `place ${rank}, ` : ""}${formatLastUpdated(l)}, ${l.value.toFixed(1)} ${unit}${!standings && position.edge ? `, ${position.edge} of visible range` : ""}`}
+              aria-label={`${l.name}, ${standings ? `place ${rank}, ` : ""}${formatLastUpdated(l)}, ${relativeDistance(l.value)} relative to you${!standings && position.edge ? `, ${position.edge} of visible range` : ""}`}
               onKeyDown={(e) => {
                 if (e.key === "Enter" || e.key === " ") {
                   e.preventDefault();
@@ -422,9 +426,10 @@ export function ArenaLanes({
               )}
               {/* Clip only the wake, in racer-local coordinates; the head must stay
                   visible at field edges and throughout the standings transition. */}
-              <PolishedRacer x={xx} y={yy} you={Boolean(l.you)} active={active}
-                showWake={!standings} wakeBottom={maxTailY-targetY}
-                time={position.edge ? undefined : wakeTime}/>
+              {standings || !position.edge ? (
+                <PolishedRacer x={xx} y={yy} you={Boolean(l.you)} gold={rank === 1} active={active}
+                  showWake={!standings} wakeBottom={maxTailY-targetY} time={wakeTime}/>
+              ) : <circle r={18} fill="white" stroke="#616c63" strokeDasharray="3 3"/>}
               <rect className="focus-racer-focus-ring" x={-23} y={-headHalf-3} width={46} height={headHalf*2+6} rx={23} fill="none" stroke="#f1c75b" strokeWidth={2}/>
               <rect x={xx - 24} y={yy - headHalf - 4} width="48" height={headHalf * 2 + 8} rx="24" fill="transparent"/>
               <text
@@ -458,9 +463,7 @@ export function ArenaLanes({
                 fill={l.you ? "#f1c75b" : "#282f2c"}
                 style={{ fontSize: 10, fill: l.you ? "#f1c75b" : "#282f2c" }}
               >
-                {!standings && position.edge
-                  ? `${l.value.toFixed(1)} ${unit}`
-                  : formatLastUpdated(l)}
+                {relativeDistance(l.value)}
               </text>
               </motion.g>
               <g aria-hidden={!standings} display={standings ? "inline" : "none"}>
@@ -469,8 +472,8 @@ export function ArenaLanes({
                 <line x1={-22} x2={width - 52} y1={38} y2={38} stroke="#e0e5dc" />
                 <text x={40} y={4} fill="#616c63" fontSize={12}>{rank}</text>
                 <text x={64} y={-5} fill="#282f2c" fontSize={13} fontWeight={600}>{l.you ? selfLaneLabel(l.name) : l.name}</text>
-                <text x={64} y={15} fill="#616c63" fontSize={10}>Effort score {scores[l.id] ?? "—"}</text>
-                <text x={width - 58} y={5} textAnchor="end" fill="#282f2c" fontSize={13} fontWeight={700}>{l.value.toFixed(1)} {unit}</text>
+                <text x={64} y={15} fill="#a67c00" fontSize={10}>Effort score {scores[l.id] ?? "—"}</text>
+                <text x={width - 58} y={5} textAnchor="end" fill="#282f2c" fontSize={13} fontWeight={700}>{relativeDistance(l.value)}</text>
               </motion.g>
               </g>
             </motion.g>

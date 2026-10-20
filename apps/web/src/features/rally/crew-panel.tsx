@@ -32,6 +32,7 @@ interface Entry {
   crew_id: string;
   user_id: string;
   activity_id: string;
+  session_count?: number;
   distance_m: number;
   moving_sec: number;
   started_at: string;
@@ -42,6 +43,7 @@ interface CrewData {
   crews: { crew_id: string; crews: Crew | null }[];
   members: Member[];
   entries: Entry[];
+  progress?: Entry[];
   notices: { id: string; body: string }[];
 }
 
@@ -79,7 +81,6 @@ export function CrewPanel() {
   const searchParams = useSearchParams();
   const [data, setData] = useState<CrewData | null>(null);
   const [selected, setSelected] = useState("");
-  const [view, setView] = useState("Activity");
   const [panel, setPanel] = useState<
     "invite" | "manage" | "add" | null
   >(null);
@@ -150,25 +151,14 @@ export function CrewPanel() {
       if (!res.ok || result.persisted === false)
         throw Error(humanCrewError(result.error));
       await reload();
-      if (path === "/entries") {
-        const saved = Number(result.saved ?? 0);
-        setNote(
-          saved > 0
-            ? `Shared ${saved} counted session${saved === 1 ? "" : "s"} with your crew.`
-            : "Your counted sessions are already shared for this week.",
-        );
+      setPanel(null);
+      setName("");
+      setCode("");
+      if (path === "/leave") {
+        setNote("You left the crew.");
       } else {
-        setPanel(null);
-        setName("");
-        setCode("");
-        if (path === "/leave") {
-          setNote("You left the crew.");
-        } else {
-          if (result.crew?.id) {
-            setSelected(result.crew.id);
-          }
-          setNote("Saved. Your crew is up to date.");
-        }
+        if (result.crew?.id) setSelected(result.crew.id);
+        setNote("Saved. Your crew is up to date.");
       }
     } catch (e) {
       setNote(e instanceof Error ? e.message : "Could not reach your crew.");
@@ -275,7 +265,7 @@ export function CrewPanel() {
         : [soloMember];
   const entries =
     rawCrews.length > 0
-      ? (data?.entries ?? []).filter(
+      ? (data?.progress ?? data?.entries ?? []).filter(
           (e) => e.crew_id === crew?.id && e.disposition === "counted",
         )
       : demoCrew && crew?.id === demoCrew.id
@@ -398,7 +388,7 @@ export function CrewPanel() {
               <section className="focus-card">
                 <p className="fb-kicker">Our shared week · {crew.sport}</p>
                 {crew.format === "personal_target" ? (
-                  <h2>{entries.length} counted sessions</h2>
+                  <h2>{entries.reduce((total, entry) => total + Number(entry.session_count ?? 1), 0)} counted sessions</h2>
                 ) : (
                   <h2 className="focus-goal">
                     {formatDistanceM(totalM, state?.units)}{" "}
@@ -421,101 +411,10 @@ export function CrewPanel() {
                     ? `Each member aims for ${crew.target_sessions} sessions.`
                     : "Every pace belongs here."}
                 </p>
-                <div className="focus-actions">
-                  <button
-                    className="fb-btn"
-                    disabled={busy}
-                    onClick={() => {
-                      if (!user) {
-                        setPanel("manage");
-                        return;
-                      }
-                      if (crew.id === "solo-preview") {
-                        setPanel("add");
-                        return;
-                      }
-                      void write("/entries", { crewId: crew.id });
-                    }}
-                  >
-                    Share my counted sessions
-                  </button>
-                </div>
               </section>
-              <div className="focus-row">
-                <h2>The latest, together.</h2>
-                <div className="focus-segments">
-                  {["Activity", "Leaderboard"].map((v) => (
-                    <button
-                      key={v}
-                      aria-pressed={view === v}
-                      onClick={() => setView(v)}
-                    >
-                      {v}
-                    </button>
-                  ))}
-                </div>
-              </div>
+              <h2>Crew standings</h2>
               <section className="focus-card">
-                {view === "Activity" ? (
-                  entries.length ? (
-                    entries
-                      .slice()
-                      .sort((a, b) => b.started_at.localeCompare(a.started_at))
-                      .map((e) => (
-                        <article
-                          className="focus-feed-entry"
-                          key={`${e.user_id}:${e.activity_id}`}
-                        >
-                          <span className="focus-small-avatar">
-                            {members
-                              .find((m) => m.user_id === e.user_id)
-                              ?.display_name.slice(0, 2)
-                              .toUpperCase() ?? "AT"}
-                          </span>
-                          <div>
-                            <b>
-                              {members.find((m) => m.user_id === e.user_id)
-                                ?.display_name ?? "Athlete"}
-                            </b>
-                            <small>
-                              {new Date(e.started_at).toLocaleDateString("en-US", {
-                                month: "short",
-                                day: "numeric",
-                                timeZone: APP_TIMEZONE,
-                              })}
-                            </small>
-                            <p>
-                              {e.sport} ·{" "}
-                              {formatDistanceM(Number(e.distance_m), state?.units)}{" "}
-                              {unitLabel} ·{" "}
-                              {Math.round(e.moving_sec / 60)} min
-                            </p>
-                            {e.user_id !== user?.id && (
-                              <button
-                                className="fb-btn-line"
-                                disabled={busy}
-                                onClick={() =>
-                                  void write("/cheer", {
-                                    crewId: crew.id,
-                                    activityId: e.activity_id,
-                                    ownerId: e.user_id,
-                                  })
-                                }
-                              >
-                                ♡ Cheer this session
-                              </button>
-                            )}
-                          </div>
-                        </article>
-                      ))
-                  ) : (
-                    <p className="fb-copy">
-                      No shared sessions this week yet. Share yours to start the
-                      feed.
-                    </p>
-                  )
-                ) : (
-                  members
+                {members
                     .slice()
                     .sort(
                       (a, b) =>
@@ -540,8 +439,7 @@ export function CrewPanel() {
                           {unitLabel}
                         </span>
                       </div>
-                    ))
-                )}
+                    ))}
               </section>
             </div>
             <aside className="focus-crew-rail" aria-label="Crew members">
@@ -655,7 +553,7 @@ export function CrewPanel() {
         {!user ? (
           <div style={{ marginTop: 8 }}>
             <p className="fb-copy" style={{ marginBottom: 16 }}>
-              A live account is required to invite friends, join circles, or sync shared crew sessions.
+              A live account is required to invite friends, join circles, or manage crew membership.
             </p>
             <div className="fb-row" style={{ width: "100%", gap: 10 }}>
               <Link

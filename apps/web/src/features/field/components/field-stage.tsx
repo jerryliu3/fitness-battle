@@ -1,5 +1,4 @@
 "use client";
-import dynamic from "next/dynamic";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useReducedMotion } from "motion/react";
 import { playCue } from "@/lib/haptics";
@@ -10,7 +9,6 @@ import {
   readArenaBaseline,
   reconcileArenaOvertake,
   resolveArenaSelectedId,
-  selfLaneLabel,
   serializeArenaBaseline,
   stepArenaOvertake,
   type ArenaOvertakePlan,
@@ -21,23 +19,12 @@ import {
 import { useAuth } from "@/components/auth-context";
 import { ExpandingField } from "./expanding-field";
 import { ArenaLanes } from "@/features/focus/arena-lanes";
-import { defaultLook } from "../avatar";
 import {
-  gapLabel,
   placeAt,
-  stableLanes,
   valueAt,
   type SceneRunner,
 } from "../geometry";
 import type { FieldModel } from "../model";
-
-const LivePursuit = dynamic(
-  () => import("./live-pursuit").then((m) => m.LivePursuit),
-  {
-    ssr: false,
-    loading: () => <div className="fd-loading">Preparing your lanes…</div>,
-  },
-);
 
 export function FieldStage({
   model,
@@ -79,9 +66,8 @@ export function FieldStage({
       }
     : null;
 
-  const [mode, setMode] = useState<"lanes" | "pursuit" | "standings">("lanes");
+  const [mode, setMode] = useState<"lanes" | "standings">("lanes");
   const [lanesImmersive, setLanesImmersive] = useState(false);
-  const [camera, setCamera] = useState<"above" | "follow">("above");
   const [span, setSpan] = useState(model.gps ? (unit === "mi" ? 4 : 6) : 20);
   const [center, setCenter] = useState<number | null>(null);
   const [centerTween, setCenterTween] = useState<number | null>(null);
@@ -96,7 +82,6 @@ export function FieldStage({
   const liveCenterRef = useRef(0);
   const [showGhost, setShowGhost] = useState(true);
   const [selected, setSelected] = useState<string | null>(null);
-  const [unavailable, setUnavailable] = useState(false);
   const [overtakePlan, setOvertakePlan] = useState<ArenaOvertakePlan | null>(
     null,
   );
@@ -105,8 +90,12 @@ export function FieldStage({
   const committedRef = useRef<Record<string, Record<string, number>>>({});
   const lastSignatureRef = useRef<string | null>(null);
 
-  const toggleSelect = (id: string) =>
-    setSelected((prev) => (prev === id ? null : id));
+  const toggleSelect = (id: string) => {
+    const runner = runners.find((item) => item.id === id) ?? (ghost?.id === id ? ghost : null);
+    if (!runner) return;
+    setSelected(id);
+    tweenCenterTo(valueAt(runner, time));
+  };
 
   const fieldLanes: ArenaSceneLane[] = useMemo(
     () =>
@@ -327,45 +316,7 @@ export function FieldStage({
     showGhost,
   );
 
-  const chosen =
-    selected == null
-      ? null
-      : selected === ghost?.id
-        ? showGhost
-          ? ghost
-          : null
-        : (runners.find((r) => r.id === selected) ?? null);
-
   if (!you) return <p className="fb-copy">Join a field to see your lanes.</p>;
-
-  const athleteDetails = (chosen && (
-        <div
-          className="focus-athlete-popup"
-          role="region"
-          aria-label="Athlete details"
-        >
-          <div className="focus-athlete-popup-head">
-            <b>{chosen.you ? selfLaneLabel(chosen.name) : chosen.name}</b>
-            <button
-              type="button"
-              aria-label="Close"
-              onClick={() => setSelected(null)}
-              className="focus-athlete-popup-close"
-            >
-              ×
-            </button>
-          </div>
-          <div className="focus-athlete-popup-body">
-            <strong>
-              {valueAt(chosen, time).toFixed(1)} {unit}
-            </strong>
-            <span className="fb-note">
-              · {gapLabel(chosen, you, time, 0, unit)}
-            </span>
-            {chosen.ghost && <span className="fb-note">· past you</span>}
-          </div>
-        </div>
-      ));
 
   return (
     <section className="focus-arena-stage">
@@ -407,20 +358,6 @@ export function FieldStage({
             <b>{overtakeStatus.headline}</b>
             {overtakeStatus.detail ? ` · ${overtakeStatus.detail}` : null}
           </span>
-          {!overtakeFrame && !reduced && (
-            <button
-              type="button"
-              className="fb-btn-ghost"
-              style={{ padding: "2px 8px", fontSize: 12 }}
-              onClick={() => {
-                setCenter(null);
-                setOvertakeProgress(0);
-                setReplayEpoch((n) => n + 1);
-              }}
-            >
-              ↻ Replay
-            </button>
-          )}
         </div>
       )}
       {ghost && (
@@ -431,35 +368,17 @@ export function FieldStage({
         </p>
       )}
       <div className="focus-segments" role="tablist" aria-label="Arena view">
-        {(["lanes", "pursuit", "standings"] as const).map((m) => {
-          const isPursuit = m === "pursuit";
-          return (
-            <button
-              key={m}
-              role="tab"
-              aria-selected={mode === m}
-              disabled={isPursuit}
-              title={isPursuit ? "3D pursuit (coming soon)" : undefined}
-              style={
-                isPursuit ? { opacity: 0.5, cursor: "not-allowed" } : undefined
-              }
-              onClick={() => {
-                if (isPursuit) return;
-                if (m !== mode) void playCue("selection");
-                setReplayEpoch(0);
-                setOvertakeProgress(1);
-                setMode(m);
-                setUnavailable(false);
-              }}
-            >
-              {m === "lanes"
-                ? "2D lanes"
-                : m === "pursuit"
-                  ? "3D pursuit (coming soon)"
-                  : "Standings"}
-            </button>
-          );
-        })}
+        {(["lanes", "standings"] as const).map((m) => (
+          <button key={m} role="tab" aria-selected={mode === m}
+            onClick={() => {
+              if (m !== mode) void playCue("selection");
+              setReplayEpoch(0);
+              setOvertakeProgress(1);
+              setMode(m);
+            }}>
+            {m === "lanes" ? "Lanes" : "Standings"}
+          </button>
+        ))}
       </div>
 
       <div>
@@ -469,34 +388,6 @@ export function FieldStage({
             <span className="fb-note">{mode === "standings" ? "Ranked by this week's effort" : lanesImmersive ? "Drag to pan · swipe across peers" : "Click the field to expand · swipe across peers"}</span>
           </div>
           <div className="focus-track-frame">
-            {mode === "pursuit" && !unavailable ? (
-              <>
-                <LivePursuit
-                  runners={stableLanes(runners)}
-                  ghost={ghost}
-                  time={time}
-                  extra={0}
-                  selected={trackSelected || you.id}
-                  showGhost={showGhost}
-                  camera={camera}
-                  look={defaultLook}
-                  unit={unit}
-                  view={view}
-                  onPan={(v) => setCenter(Math.max(0, v))}
-                  onSelect={toggleSelect}
-                  onUnavailable={() => setUnavailable(true)}
-                />
-                <div className="focus-camera">
-                  <button
-                    onClick={() =>
-                      setCamera(camera === "above" ? "follow" : "above")
-                    }
-                  >
-                    {camera === "above" ? "Follow camera" : "Above camera"}
-                  </button>
-                </div>
-              </>
-            ) : (
               <ArenaLanes
                 presentation={mode === "standings" ? "standings" : "lanes"}
                 scores={Object.fromEntries((boardRows ?? []).map((row) => [row.id, row.elo]))}
@@ -518,13 +409,6 @@ export function FieldStage({
                 overtakeFrame={overtakeFrame}
                 overtakePlan={overtakePlan}
               />
-            )}
-            {unavailable && (
-              <p className="fb-note">
-                3D is unavailable on this device. Your 2D lanes remain
-                interactive.
-              </p>
-            )}
           </div>
 
           <div hidden={mode === "standings"}>
@@ -619,7 +503,6 @@ export function FieldStage({
             )}
           </div>
           </div>
-      {athleteDetails}
         </ExpandingField>
       </div>
       </div>

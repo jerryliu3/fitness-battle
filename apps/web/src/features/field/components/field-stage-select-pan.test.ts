@@ -9,9 +9,9 @@ const stagePath = join(
 );
 
 describe("field stage athlete selection", () => {
-  it("keeps lane pan manual (center controls) without auto-recenter on select", () => {
+  it("centers a selected athlete while preserving explicit follow controls", () => {
     const source = readFileSync(stagePath, "utf8");
-    expect(source).not.toMatch(/if \(!selected \|\| mode !== "lanes"\)/);
+    expect(source).toContain("tweenCenterTo(valueAt(runner, time))");
     expect(source).toMatch(/tweenCenterTo\(total, view.span, true\)/);
     expect(source).toMatch(/clampArenaLaneCenter\(target, nextSpan\)/);
   });
