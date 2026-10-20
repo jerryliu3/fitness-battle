@@ -1,5 +1,7 @@
 import {useId, type CSSProperties} from "react";
 
+export type WakeProfile={goldCount:number;silverCount:number;goldLength:number;silverLength:number};
+
 /** Capsule geometry shared by the glass face and the wake exclusion boundary. */
 export function capsuleOutline(inset=0,tall=false){
   const w=(tall?18:20)-inset,h=(tall?33:29)-inset;
@@ -14,11 +16,11 @@ export function wakeOutline(shape:string,tall=false){
 }
 /** One satin wake for every finish. The stationary mask follows the live curved outline,
  * including its rim, while the echoes flow underneath it. */
-export function SatinWake({color,fast,flow=false,outline}: {color:string;fast:boolean;flow?:boolean;outline:string}){
-  const id=useId(),count=fast?6:4,length=fast?117.55:65.55,duration=fast?1.15:1.32;
+export function SatinWake({color,fast,flow=false,outline,profile}: {color:string;fast:boolean;flow?:boolean;outline:string;profile?:WakeProfile}){
+  const id=useId(),count=profile?(fast?profile.goldCount:profile.silverCount):fast?6:4,length=profile?(fast?profile.goldLength:profile.silverLength):fast?117.55:65.55,duration=fast?1.15:1.32;
   return <g data-satin-wake={fast?"gold":"silver"}>
     <defs>
-      <linearGradient id={`${id}-fade`} x1="0" y1="0" x2="0" y2="1"><stop stopColor="white"/><stop offset="1" stopColor="white" stopOpacity="0"/></linearGradient>
+      <linearGradient id={`${id}-fade`} x1="0" y1="0" x2="0" y2="1"><stop stopColor="white"/><stop offset="1" stopColor="white" stopOpacity={profile ? .35 : 0}/></linearGradient>
       <mask id={`${id}-outside`} maskUnits="userSpaceOnUse" x="-40" y="-40" width="80" height={length+90} style={{maskType:"luminance"}}>
         <rect x="-40" y="-40" width="80" height={length+90} fill="white"/>
         <path d={outline} fill="black" stroke="black" strokeWidth="2.2"/>

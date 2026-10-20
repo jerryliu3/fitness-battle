@@ -8,9 +8,10 @@ export const GLASS_CONCEPTS = [
   { id: "glass-loop-wide", name: "Broad glass loop", material: "UNIFORM GLASS", shape: "circle", line: "A thicker glass band with the same uniform tint. Overlapping rings reveal the material without filling the center.", field: "A bolder hollow head, with enough material to feel translucent rather than merely outlined.", tradeoff: "The thicker band reduces the open center; keep identifiers small and readable.", glass: { opacity: .62, gold: "#ffb900", silver: "#96a6bd", echo: .22, rim: 1.5, edge: .75, ring: 10, tall: false } },
   { id: "glass-loop-pill", name: "Capsule loop", material: "UNIFORM GLASS", shape: "pill", line: "The capsule outline becomes a transparent glass band. An open pill that bridges the two preferred silhouettes.", field: "Vertical motion with the breathing room of a hollow head.", tradeoff: "The elongated opening may be less legible than a circle at favicon scale.", glass: { opacity: .72, gold: "#f5b51c", silver: "#99a7ba", echo: .23, rim: 1.3, edge: .7, ring: 7, tall: false } },
 ] as const;
+import type {WakeProfile} from "./satin-wake";
 export type GlassId = typeof GLASS_CONCEPTS[number]["id"];
 export type GlassConcept = {
   id: GlassId; name: string; material: string; shape: "pill" | "circle";
   line: string; field: string; tradeoff: string;
-  glass: { opacity: number; gold: string; silver: string; echo: number; rim: number; edge: number; ring: number; tall: boolean; rimStyle?: "rolled" | "bevel" | "meniscus" };
+  glass: { opacity: number; gold: string; silver: string; echo: number; rim: number; edge: number; ring: number; tall: boolean; rimStyle?: "rolled" | "bevel" | "meniscus"; wakeProfile?:WakeProfile };
 };

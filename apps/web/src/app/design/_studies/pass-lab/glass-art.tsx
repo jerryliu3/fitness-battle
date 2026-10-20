@@ -45,7 +45,7 @@ function GlassRim({concept,color,light}: {concept:GlassConcept;color:string;ligh
 
 export function UniformGlassRacer({concept,x,y,radius=23,fast,dark=false,flow=false,light=0,edge,label}: {concept:GlassConcept;x:number;y:number;radius?:number;fast:boolean;dark?:boolean;flow?:boolean;light?:number;edge?:string|null;label?:string}){
   return <g transform={`translate(${x} ${y}) scale(${radius/23})`} data-material-racer={fast?"gold":"silver"}>
-    <SatinWake color={fast?concept.glass.gold:concept.glass.silver} fast={fast} flow={flow} outline={wakeOutline(concept.shape,concept.glass.tall)}/>
+    <SatinWake color={fast?concept.glass.gold:concept.glass.silver} fast={fast} flow={flow} outline={wakeOutline(concept.shape,concept.glass.tall)} profile={concept.glass.wakeProfile}/>
     <UniformGlassHead concept={concept} fast={fast} light={light}/>
     {(edge||label)&&<text x="0" y="3" textAnchor="middle" fill={dark?"#f4f5f6":"#343d40"} stroke={dark?"#000":"#fff"} strokeWidth="1.8" paintOrder="stroke" fontSize="9" fontWeight="800">{edge||label}</text>}
   </g>;

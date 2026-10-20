@@ -64,7 +64,7 @@ mod.paths = Module._nodeModulePaths(web);
 mod._compile(vectors.outputFiles[0].text, join(web, "pass-vector-export.cjs"));
 const scaleVectors=await build({...options,platform:"node",format:"cjs",stdin:{resolveDir:web,loader:"tsx",contents:`
   import {renderToStaticMarkup} from "react-dom/server";
-  import {CAPSULE_SCALES,selectedCapsule} from "./src/app/design/_studies/pass-lab/capsule-scale-study";
+  import {CAPSULE_SCALES,CAPSULE_WAKES,selectedCapsule} from "./src/app/design/_studies/pass-lab/capsule-scale-study";
   import {MaterialIcon} from "./src/app/design/_studies/pass-lab/material-art";
   import {LaneArt} from "./src/app/design/_studies/pass-lab/lane-art";
   export const samples=[false,true].flatMap(dark=>CAPSULE_SCALES.map(s=>({...s,dark,
@@ -72,6 +72,10 @@ const scaleVectors=await build({...options,platform:"node",format:"cjs",stdin:{r
     master:renderToStaticMarkup(<MaterialIcon concept={selectedCapsule()} objectScale={s.scale} dark={dark} unmasked size={1024}/>,{identifierPrefix:s.id+dark+"master"}),
     field:renderToStaticMarkup(<LaneArt index={4} progress={1} gain={2} material={selectedCapsule()} materialDark={dark} materialScale={s.scale/1.35} flow={false}/>,{identifierPrefix:s.id+dark+"field"})
   })));
+  export const wakeSamples=[false,true].flatMap(dark=>[1.625,1.75].flatMap(scale=>CAPSULE_WAKES.map(w=>({...w,dark,scale,
+    tile:renderToStaticMarkup(<MaterialIcon concept={selectedCapsule(w.id,scale)} objectScale={scale} dark={dark} size={236}/>,{identifierPrefix:w.id+scale+dark+"tile"}),
+    master:renderToStaticMarkup(<MaterialIcon concept={selectedCapsule(w.id,scale)} objectScale={scale} dark={dark} unmasked size={1024}/>,{identifierPrefix:w.id+scale+dark+"master"})
+  }))));
 `}});
 const scaleMod=new Module(join(web,"capsule-scale-export.cjs"));
 scaleMod.paths=Module._nodeModulePaths(web);
@@ -85,9 +89,20 @@ for(const dark of [false,true]){
     const x=24+i*270;
     tiles.push(s.tile.replace("<svg ",`<svg x="${x}" y="125" `)+`<text x="${x}" y="393" font-size="16" font-weight="600">${s.name}</text><text x="${x}" y="419" font-size="11">${Math.round(40*s.scale)} × ${Math.round(58*s.scale)} capsule / gap ${108-40*s.scale}</text>`);
   }
-  const board=`<svg xmlns="http://www.w3.org/2000/svg" width="1100" height="475" viewBox="0 0 1100 475"><rect width="1100" height="475" fill="${bg}"/><g font-family="Arial,sans-serif" fill="${ink}"><text x="24" y="35" font-size="11" letter-spacing="2">OVERTAEK / FIXED-CENTER CAPSULE SCALE STUDY</text><text x="24" y="77" font-size="30" font-weight="600">Same centers. More presence.</text><text x="24" y="103" font-size="11">POLISHED GLASS · 80% ALPHA · SOLAR GOLD / COOL PLATINUM · BOTH HEAD CENTERS FIXED</text>${tiles.join("")}<text x="24" y="456" font-size="10">CENTERS (74,145) / (182,93) · SCALE IS UNDER REVIEW · WAKES MAY CROP AT THE TILE EDGE</text></g></svg>`;
+  const boardWidth=24+scaleMod.exports.samples.filter(s=>s.dark===dark).length*270;
+  const board=`<svg xmlns="http://www.w3.org/2000/svg" width="${boardWidth}" height="475" viewBox="0 0 ${boardWidth} 475"><rect width="${boardWidth}" height="475" fill="${bg}"/><g font-family="Arial,sans-serif" fill="${ink}"><text x="24" y="35" font-size="11" letter-spacing="2">OVERTAEK / FIXED-CENTER CAPSULE SCALE STUDY</text><text x="24" y="77" font-size="30" font-weight="600">Same centers. More presence.</text><text x="24" y="103" font-size="11">POLISHED GLASS · 80% ALPHA · SOLAR GOLD / COOL PLATINUM · BOTH HEAD CENTERS FIXED</text>${tiles.join("")}<text x="24" y="456" font-size="10">CENTERS (74,145) / (182,93) · SCALE IS UNDER REVIEW · WAKES MAY CROP AT THE TILE EDGE</text></g></svg>`;
   await writeFile(join(output,`capsule-scale-board-${theme}.svg`),board);
   await sharp(Buffer.from(board.replace(/style="transform:translateY\(([^p]+)px\);opacity:([^;]+);[^"]*"/g,'transform="translate(0 $1)" opacity="$2"'))).png().toFile(join(output,`capsule-scale-board-${theme}.png`));
+  const wakeTiles=[];
+  await mkdir(join(output,"capsule-wake-icons",theme),{recursive:true});
+  for(const [i,s]of scaleMod.exports.wakeSamples.filter(s=>s.dark===dark).entries()){
+    await writeFile(join(output,"capsule-wake-icons",theme,`${s.scale*100}-${s.id}.svg`),s.master);
+    const x=24+i%3*270,y=125+Math.floor(i/3)*300;
+    wakeTiles.push(s.tile.replace("<svg ",`<svg x="${x}" y="${y}" `)+`<text x="${x}" y="${y+260}" font-size="14" font-weight="600">${s.scale*100}% · ${s.name}</text>`);
+  }
+  const wakeBoard=`<svg xmlns="http://www.w3.org/2000/svg" width="830" height="760" viewBox="0 0 830 760"><rect width="830" height="760" fill="${bg}"/><g font-family="Arial,sans-serif" fill="${ink}"><text x="24" y="35" font-size="11" letter-spacing="2">OVERTAEK / AFTERIMAGE DENSITY EXPERIMENT</text><text x="24" y="77" font-size="30" font-weight="600">A larger capsule. More of the fade.</text><text x="24" y="103" font-size="11">POLISHED GLASS · 80% · SOLAR / COOL PLATINUM · HEAD CENTERS FIXED</text>${wakeTiles.join("")}<text x="24" y="745" font-size="10">ORIGINAL WAKE VS FOUR / FIVE CLOSER ECHOES · EXPERIMENT ONLY</text></g></svg>`;
+  await writeFile(join(output,`capsule-wake-board-${theme}.svg`),wakeBoard);
+  await sharp(Buffer.from(wakeBoard.replace(/style="transform:translateY\(([^p]+)px\);opacity:([^;]+);[^"]*"/g,'transform="translate(0 $1)" opacity="$2"'))).png().toFile(join(output,`capsule-wake-board-${theme}.png`));
 }
 const tiles = [];
 for (const [i, icon] of mod.exports.icons.entries()) {

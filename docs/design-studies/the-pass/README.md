@@ -143,3 +143,5 @@ October 19 refinement: the capsule color lab now preserves all four finishes and
 Latest shortlist: the active review and finish boards now compare only Satin glass, Fired glaze, Rolled glass and Polished glass. Rolled/Polished opacity options are 26%, 38%, 50%, 60%, 70%, 80% and 90%.
 
 Material is selected: Polished glass at 80%, Solar Gold and Cool Platinum. The followup [fixed-center size study](CAPSULE-SCALE.md) is at `review.html?view=capsule-scale`, comparing 135%, 150%, 175% and 200% without moving either capsule center.
+
+The size study now adds 162.5% and an afterimage experiment: Original wake, 4 fading echoes, or 5 fading echoes. Compact profiles keep the final echo inside the icon at every size; the original remains available. See `capsule-wake-board-white.png` / `capsule-wake-board-black.png` for comparisons at 162.5% and 175%.
