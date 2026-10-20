@@ -1,11 +1,14 @@
 "use client";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useReducedMotion } from "motion/react";
 import { playCue } from "@/lib/haptics";
+import { usePathname } from "next/navigation";
 import {
   arenaBaselineStorageKey,
-  clampArenaLaneCenter,
+  arenaFieldHigh,
+  clampArenaLaneCenterToField,
   formatArenaOvertakeStatus,
+  shellTabFromPath,
   readArenaBaseline,
   reconcileArenaOvertake,
   resolveArenaSelectedId,
@@ -36,6 +39,7 @@ export function FieldStage({
   sportTitle?: string;
 }) {
   const { user } = useAuth();
+  const pathname = usePathname();
   const reduced = useReducedMotion();
   const accountKey = user?.id ?? "guest";
   const unit = model.unit;
@@ -68,6 +72,12 @@ export function FieldStage({
 
   const [mode, setMode] = useState<"lanes" | "standings">("lanes");
   const [lanesImmersive, setLanesImmersive] = useState(false);
+
+  useEffect(() => {
+    if (shellTabFromPath(pathname)?.id === "arena") return;
+    setLanesImmersive(false);
+    setMode("lanes");
+  }, [pathname]);
   const [span, setSpan] = useState(model.gps ? (unit === "mi" ? 4 : 6) : 20);
   const [center, setCenter] = useState<number | null>(null);
   const [centerTween, setCenterTween] = useState<number | null>(null);
@@ -109,6 +119,17 @@ export function FieldStage({
         you: r.you,
       })),
     [runners, time, model.runners],
+  );
+  const fieldHigh = useMemo(() => arenaFieldHigh(fieldLanes), [fieldLanes]);
+  const clampViewCenter = useCallback(
+    (value: number, viewSpan: number) =>
+      clampArenaLaneCenterToField(
+        value,
+        viewSpan,
+        fieldHigh,
+        unit === "pts" ? 20 : 8,
+      ),
+    [fieldHigh, unit],
   );
 
   const sceneLanes: ArenaSceneLane[] = useMemo(
@@ -237,13 +258,13 @@ export function FieldStage({
         : 0;
 
   const followCenter = overtakeFrame ? overtakeFrame.viewCenter : total;
-  const resolvedCenter = clampArenaLaneCenter(center ?? followCenter, span);
+  const resolvedCenter = clampViewCenter(center ?? followCenter, span);
   const displaySpan = centerTween !== null && centerTweenRef.current
     ? centerTweenRef.current.fromSpan + (centerTweenRef.current.toSpan - centerTweenRef.current.fromSpan) * centerTween
     : span;
   const displayCenter =
     centerTween !== null && centerTweenRef.current
-      ? clampArenaLaneCenter(
+      ? clampViewCenter(
           centerTweenRef.current.from +
             (centerTweenRef.current.to - centerTweenRef.current.from) *
               centerTween,
@@ -266,7 +287,7 @@ export function FieldStage({
   };
 
   const tweenCenterTo = (target: number, nextSpan = view.span, follow = false) => {
-    const clamped = clampArenaLaneCenter(target, nextSpan);
+    const clamped = clampViewCenter(target, nextSpan);
     const fromSpan = view.span;
     const from = liveCenterRef.current;
     if (Math.abs(from - clamped) < 0.05 && Math.abs(fromSpan - nextSpan) < 0.05) {
@@ -404,7 +425,7 @@ export function FieldStage({
                 onPan={(v) => {
                   cancelCenterTween();
                   setSpan(view.span);
-                  setCenter(clampArenaLaneCenter(v, view.span));
+                  setCenter(clampViewCenter(v, view.span));
                 }}
                 overtakeFrame={overtakeFrame}
                 overtakePlan={overtakePlan}

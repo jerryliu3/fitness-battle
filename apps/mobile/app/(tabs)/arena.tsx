@@ -109,7 +109,10 @@ export default function ArenaScreen() {
   );
 
   useEffect(() => {
-    if (!isFocused) return;
+    if (!isFocused) {
+      setMode("Lanes");
+      return;
+    }
     if (!state || !arena?.optedIn || fieldLanes.length === 0) {
       setOvertakePlan(null);
       setOvertakeProgress(1);

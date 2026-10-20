@@ -1,7 +1,9 @@
 import {
   arenaPosition,
   arenaWindow,
+  arenaFieldHigh,
   clampArenaLaneCenter,
+  clampArenaLaneCenterToField,
   initialsFromName,
   orderedArenaLanes,
   polishedLaneScale,
@@ -61,13 +63,20 @@ export function LaneTrack({
     center: me?.values[index] ?? 0,
     span: unit === "pts" ? 20 : unit === "mi" ? 4 : 6,
   };
-  const effectiveCenter = clampArenaLaneCenter(rawV.center, rawV.span);
+  const ordered = orderedArenaLanes(lanes);
+  const fieldHigh = arenaFieldHigh(
+    ordered.map((lane) => ({ value: lane.values[index], ghost: lane.ghost })),
+  );
+  const aheadPad = unit === "pts" ? 20 : 8;
+  const clampCenter = (value: number, span: number) =>
+    clampArenaLaneCenterToField(value, span, fieldHigh, aheadPad);
+  const effectiveCenter = clampCenter(rawV.center, rawV.span);
   const v =
     effectiveCenter === rawV.center
       ? rawV
       : { center: effectiveCenter, span: rawV.span };
-  const latest = useRef({ v, onPan, exploring });
-  latest.current = { v, onPan, exploring };
+  const latest = useRef({ v, onPan, exploring, clampCenter });
+  latest.current = { v, onPan, exploring, clampCenter };
   const start = useRef(v.center);
   const pan = useMemo(
     () =>
@@ -79,7 +88,7 @@ export function LaneTrack({
         },
         onPanResponderMove: (_, g) =>
           latest.current.onPan?.(
-            clampArenaLaneCenter(
+            latest.current.clampCenter(
               start.current + (g.dy / 400) * latest.current.v.span,
               latest.current.v.span,
             ),
@@ -87,7 +96,6 @@ export function LaneTrack({
       }),
     [],
   );
-  const ordered = orderedArenaLanes(lanes);
   const ranked = [...ordered].sort((a, b) => b.values[index] - a.values[index]);
   const leaderId =
     ranked[0]?.values[index] > 0 &&
