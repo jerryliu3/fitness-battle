@@ -50,10 +50,10 @@ function RoundTakeover({ results, onDismiss, state }: { results: PeriodResult[];
   </Dialog.Root>;
 }
 
-export function WeekReveal({ state, ready, onDismiss }: { state: CompeteState; ready: boolean; onDismiss: (revealIds: string[]) => void }) {
+export function WeekReveal({ state, ready, preview = false, onDismiss }: { state: CompeteState; ready: boolean; preview?: boolean; onDismiss: (revealIds: string[]) => void }) {
   const path = usePathname();
   const pending = pendingPeriodResults(state.periodResults);
-  if (!ready || path !== "/arena" || !pending.length) return null;
+  if (!ready || (!preview && path !== "/arena") || !pending.length) return null;
   const periodStart = pending[0]!.periodStart;
   const round = pending.filter((result) => result.periodStart === periodStart);
   const results = round.filter((result) => result.track === "open" || !round.some((other) => other.sport === result.sport && other.track === "open"));

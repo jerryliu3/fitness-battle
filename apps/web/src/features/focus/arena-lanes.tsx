@@ -376,7 +376,7 @@ export function ArenaLanes({
               role="button"
               aria-pressed={selected === l.id}
               tabIndex={0}
-              aria-label={`${l.name}, ${standings ? `place ${rank}, ` : ""}${formatLastUpdated(l)}, ${l.value.toFixed(1)} ${unit}${!standings && position.edge ? `, ${position.edge} of visible range` : ""}`}
+              aria-label={`${l.name}, ${standings ? `place ${rank}, ` : ""}${formatLastUpdated(l)}, ${relativeDistance(l.value)} relative to you${!standings && position.edge ? `, ${position.edge} of visible range` : ""}`}
               onKeyDown={(e) => {
                 if (e.key === "Enter" || e.key === " ") {
                   e.preventDefault();
