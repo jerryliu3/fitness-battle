@@ -78,7 +78,7 @@ export function ActivityActions({ compact = false }: { compact?: boolean }) {
       </button>
       {!user && !compact && <Link href="/login?next=/today">Sign in to add or sync</Link>}
     </div>
-    {note && <p role="status" className="fb-note">{note} <Link href="/you?panel=connections">Tracker settings</Link></p>}
+    {note && <p role="status" className="fb-note">{note} <Link href="/athlete?panel=connections">Tracker settings</Link></p>}
     {saveError && <p role="alert" className="fb-note">Your activity has not saved to your account yet. {saveError}</p>}
     <Sheet open={open} onClose={() => setOpen(false)} title="Add today’s activity" body="Manual activities count in Open standings only.">
       <form style={{ display: "grid", gap: 16 }} onSubmit={(event) => {

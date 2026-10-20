@@ -309,6 +309,11 @@ export function migrateCompeteState(parsed: CompeteState): CompeteState {
       (parsed as CompeteState).avatarUrl!.trim().length > 0
         ? (parsed as CompeteState).avatarUrl!.trim()
         : null,
+    lifetimeOvertakes:
+      typeof (parsed as CompeteState).lifetimeOvertakes === "number" &&
+      Number.isFinite((parsed as CompeteState).lifetimeOvertakes)
+        ? Math.max(0, Math.floor((parsed as CompeteState).lifetimeOvertakes!))
+        : 0,
     name:
       typeof parsed.name === "string" && parsed.name.trim().length > 0
         ? parsed.name.trim()
@@ -374,6 +379,7 @@ export function freshState(now: Date = new Date()): CompeteState {
     lessonDoneOn: null,
     calibrated: false,
     onboardingCompleted: false,
+    lifetimeOvertakes: 0,
     periodResults: [],
     pendingRevealIds: [],
     trainingGoal: null,

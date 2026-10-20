@@ -36,16 +36,19 @@
   border-bottom: 1px solid var(--line);
   background: #fafaf7;
 }
-.focus-shell-header > a {
+.focus-shell-brand > a {
   text-decoration: none;
   font-family: var(--font-overtaek), sans-serif;
-  font-size: 24px;
-  letter-spacing: -1.4px;
+  font-size: 22px;
+  letter-spacing: -1px;
+  line-height: 1.05;
 }
-.focus-shell-header > span {
+.focus-shell-brand .focus-shell-tagline {
   font-size: 10px;
-  letter-spacing: 1.4px;
+  letter-spacing: 0.02em;
   color: var(--muted);
+  font-family: var(--font-body), sans-serif;
+  text-transform: none;
 }
 .phone-shell .phone-tabs {
   max-width: 1020px;
@@ -519,7 +522,7 @@
 }
 .focus-season-stats {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(2, 1fr);
   gap: 12px;
   margin-top: 14px;
   text-align: center;
@@ -1325,8 +1328,9 @@
 }
 .focus-activity-chart-wrap {
   display: flex;
-  align-items: center;
-  gap: 16px;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 12px;
   padding-top: 14px;
   border-top: 1px solid #e0e5dc;
 }
@@ -1626,6 +1630,27 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
+}
+.focus-competition-tip-wrap {
+  position: relative;
+  display: inline-flex;
+}
+.focus-competition-tip-popover {
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + 8px);
+  transform: translateX(-50%);
+  width: max-content;
+  max-width: min(240px, 70vw);
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid #e0e5dc;
+  background: #fff;
+  box-shadow: 0 8px 24px #282f2c18;
+  font-size: 12px;
+  line-height: 1.45;
+  color: #616c63;
+  z-index: 2;
 }
 .focus-competition-tip {
   display: inline-flex;
@@ -2212,9 +2237,11 @@
     height: 55px;
     padding: 0 22px;
   }
-  .focus-shell-header > span {
+  .focus-shell-brand .focus-shell-tagline {
     font-size: 8px;
-    letter-spacing: 0.7px;
+  }
+  .focus-shell-brand > a {
+    font-size: 18px;
   }
   .phone-shell .phone-main {
     padding: 22px 20px 30px;

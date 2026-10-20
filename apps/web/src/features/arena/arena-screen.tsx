@@ -112,21 +112,23 @@ export function ArenaScreen({ tabActive = true }: { tabActive?: boolean }) {
         <div className="focus-competition-info">
           <p className="fb-kicker focus-competition-kicker">
             Competition
-            <button
-              type="button"
-              className="focus-competition-tip"
-              aria-label="About competition scoring"
-              aria-expanded={competitionTipOpen}
-              onClick={() => setCompetitionTipOpen((open) => !open)}
-            >
-              ⓘ
-            </button>
+            <span className="focus-competition-tip-wrap">
+              <button
+                type="button"
+                className="focus-competition-tip"
+                aria-label="About competition scoring"
+                aria-expanded={competitionTipOpen}
+                onClick={() => setCompetitionTipOpen((open) => !open)}
+              >
+                ⓘ
+              </button>
+              {competitionTipOpen ? (
+                <span className="focus-competition-tip-popover" role="tooltip">
+                  {SCORE_TRACK_TOOLTIP}
+                </span>
+              ) : null}
+            </span>
           </p>
-          {competitionTipOpen ? (
-            <p className="focus-competition-tip-body" role="note">
-              {SCORE_TRACK_TOOLTIP}
-            </p>
-          ) : null}
           <p className="focus-competition-dates">
             {dateRangeLabel}
             <span className="focus-competition-pill">{badgeLabel}</span>

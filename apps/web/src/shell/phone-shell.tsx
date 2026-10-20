@@ -5,7 +5,8 @@ import { useCompete, useCompeteFieldRefresh } from "@/components/compete-context
 import { ArenaScreen } from "@/features/arena/arena-screen";
 import { FieldScreen } from "@/features/field/field-screen";
 import { TodayScreen } from "@/features/today/today-screen";
-import YouRoute from "@/features/you/you-route";
+import { AthletePage, ProgressPage } from "@/features/you/you-route";
+import { Ember } from "@/components/mascot/ember";
 import {
   initialsFromName,
   SHELL_TABS,
@@ -42,8 +43,7 @@ function renderTab(
     case "field":
       return <FieldScreen />;
     case "you":
-      // Remount Athlete on account switch so form/local UI cannot leak across users.
-      return <YouRoute key={accountKey} />;
+      return <ProgressPage key={accountKey} />;
   }
 }
 
@@ -66,12 +66,13 @@ export function PhoneShell({
   } = useCompete();
   const profileLabel = state?.name ?? user?.email ?? "You";
   const tab = shellTabFromPath(path);
+  const onAthlete = path?.startsWith("/athlete") ?? false;
   useCompeteFieldRefresh(!hideTabs && (tab?.id === "arena" || tab?.id === "field"));
   const [intent, setIntent] = useState<ShellTabId | null>(null);
   const [bootAnimDone, setBootAnimDone] = useState(false);
   const [bootChecked, setBootChecked] = useState(false);
   const matched = tab?.id ?? null;
-  const active = intent ?? matched;
+  const active = onAthlete ? null : intent ?? matched;
   const accountKey = user?.id ?? "guest";
   const [visited, setVisited] = useState<Set<ShellTabId>>(
     () => new Set(["today"]),
@@ -184,23 +185,30 @@ export function PhoneShell({
     <div className="phone-frame">
       <div className="phone-shell">
         <header className="focus-shell-header">
-          <Link href="/today">OVERTAEK</Link>
-          <span className="focus-shell-tagline">A LITTLE FURTHER, TOGETHER.</span>
+          <div className="focus-shell-brand">
+            <Link href="/today">OVERTAEK</Link>
+            <span className="focus-shell-tagline">A little further, together.</span>
+          </div>
           <Link
-            href="/you?edit=profile"
-            className="focus-shell-profile"
-            aria-label="Open your profile"
+            href="/athlete?edit=profile"
+            className={`focus-shell-profile${onAthlete ? " is-selected" : ""}`}
+            aria-label="Open athlete settings"
+            aria-current={onAthlete ? "page" : undefined}
           >
-            {state?.avatarUrl ? (
+            {user && state?.avatarUrl ? (
               <img src={state.avatarUrl} alt="" className="focus-shell-profile-img" />
-            ) : (
+            ) : user ? (
               <span>{initialsFromName(profileLabel)}</span>
+            ) : (
+              <Ember className="focus-shell-ember" morph={1} shadow={false} />
             )}
           </Link>
         </header>
         {fieldNotice ? null : <ReturnProgress />}
         {!dataReady ? (
           accountLoadingBody
+        ) : onAthlete ? (
+          panel(<AthletePage key={accountKey} />)
         ) : matched ? (
           <div className="phone-panels">
             {SHELL_TABS.map((tab) => {
