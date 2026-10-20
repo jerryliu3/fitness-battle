@@ -151,25 +151,14 @@ export function CrewPanel() {
       if (!res.ok || result.persisted === false)
         throw Error(humanCrewError(result.error));
       await reload();
-      if (path === "/entries") {
-        const saved = Number(result.saved ?? 0);
-        setNote(
-          saved > 0
-            ? `Shared ${saved} counted session${saved === 1 ? "" : "s"} with your crew.`
-            : "Your counted sessions are already shared for this week.",
-        );
+      setPanel(null);
+      setName("");
+      setCode("");
+      if (path === "/leave") {
+        setNote("You left the crew.");
       } else {
-        setPanel(null);
-        setName("");
-        setCode("");
-        if (path === "/leave") {
-          setNote("You left the crew.");
-        } else {
-          if (result.crew?.id) {
-            setSelected(result.crew.id);
-          }
-          setNote("Saved. Your crew is up to date.");
-        }
+        if (result.crew?.id) setSelected(result.crew.id);
+        setNote("Saved. Your crew is up to date.");
       }
     } catch (e) {
       setNote(e instanceof Error ? e.message : "Could not reach your crew.");

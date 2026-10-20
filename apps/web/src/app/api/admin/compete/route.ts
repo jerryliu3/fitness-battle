@@ -1,11 +1,12 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
-import { prepareCompeteStateForAccount, reduceCompete, rollClock } from "@fitness-battle/shared";
+import { prepareCompeteStateForAccount, rollClock, competeNow, weeklyPeriodBounds } from "@fitness-battle/shared";
 import { serverEnv, webEnv } from "@/lib/env";
 import { isOwnerEmail } from "@/lib/auth/design-access";
 import { createRequestClient } from "@/lib/supabase/request";
 import { getSupabaseConfig } from "@/lib/supabase/config";
-import { hydrateFieldBoard, loadCompeteAccount, persistCompeteAccount } from "@/lib/compete-persist";
+import { readAdminSettlementFields } from "@/lib/admin-settlement";
+import { loadCompeteAccount } from "@/lib/compete-persist";
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 async function authorize(request: Request) {
   const config = getSupabaseConfig();
@@ -50,21 +51,20 @@ export async function POST(request: Request) {
     const loaded = await loadCompeteAccount(db, target);
     if (!loaded) return NextResponse.json({ error: "account_not_found" }, { status: 404 });
     if (loaded.updatedAt !== body.updatedAt) return NextResponse.json({ error: "account_changed_reload_preview" }, { status: 409 });
-    // Hydrate real peer values before settling; never substitute sandbox fixtures.
-    const state = await hydrateFieldBoard(db, target, { ...loaded.state, demoNow: null });
-    const after = prepareCompeteStateForAccount(body.action === "close-round"
-      ? reduceCompete(state, { type: "debug-close-week", now: new Date().toISOString() })
-      : rollClock(state, new Date()));
-    const { error: auditError } = await db.from("admin_compete_actions").insert({ id: body.actionId, actor_id: actorId, target_id: target, action: body.action, reason: body.reason.trim(), before_state: loaded.state, after_state: after });
-    if (auditError) return NextResponse.json({ error: "audit_not_saved_or_action_already_started" }, { status: 409 });
-    try {
-      const updatedAt = await persistCompeteAccount(db, target, after);
-      const { error: completionError } = await db.from("admin_compete_actions").update({ outcome: "succeeded", completed_at: new Date().toISOString() }).eq("id", body.actionId);
-      if (completionError) return NextResponse.json({ error: "saved_but_audit_completion_failed_reload", persisted: true }, { status: 500 });
-      return NextResponse.json({ persisted: true, updatedAt, actionId: body.actionId, results: after.periodResults.slice(0, 8) });
-    } catch {
-      await db.from("admin_compete_actions").update({ outcome: "failed", completed_at: new Date().toISOString() }).eq("id", body.actionId);
-      return NextResponse.json({ error: "settlement_failed_reload_before_retry" }, { status: 500 });
+    const state = { ...loaded.state, demoNow: null };
+    const fields = await readAdminSettlementFields(db, target, state);
+    const now = new Date();
+    const closeAt = Math.max(...state.enrollments.map((row) => Date.parse(row.weekEnd)), weeklyPeriodBounds(competeNow(state, now)).endsAt.getTime());
+    const settlementTime = body.action === "close-round" ? new Date(closeAt) : now;
+    const after = prepareCompeteStateForAccount(rollClock(state, settlementTime, fields));
+    const { data: updatedAt, error: commitError } = await db.rpc("admin_commit_round", {
+      p_action_id: body.actionId, p_actor_id: actorId, p_target_id: target, p_action: body.action,
+      p_reason: body.reason.trim(), p_expected_updated_at: body.updatedAt, p_before: loaded.state, p_after: after,
+    });
+    if (commitError) {
+      const conflict = commitError.message.includes("account_changed_reload_preview") || commitError.code === "23505";
+      return NextResponse.json({ error: conflict ? "account_changed_or_action_used_reload_preview" : "settlement_not_committed" }, { status: conflict ? 409 : 500 });
     }
+    return NextResponse.json({ persisted: true, updatedAt, actionId: body.actionId, results: after.periodResults.slice(0, 8) });
   } catch { return NextResponse.json({ error: "account_unavailable" }, { status: 500 }); }
 }

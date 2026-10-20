@@ -5,7 +5,7 @@ import { animate, useReducedMotion } from "motion/react";
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
-import { APP_TIMEZONE, competeNow, pendingPeriodResults, sportById, type CompeteState, type PeriodResult } from "@fitness-battle/shared";
+import { APP_TIMEZONE, roundReveal, roundEnrollment, sportById, type CompeteState, type PeriodResult } from "@fitness-battle/shared";
 
 function AnimatedNumber({ value, from = 0, decimals = 0 }: { value: number; from?: number; decimals?: number }) {
   const reduced = useReducedMotion();
@@ -20,8 +20,6 @@ function AnimatedNumber({ value, from = 0, decimals = 0 }: { value: number; from
 
 function RoundTakeover({ results, onDismiss, state }: { results: PeriodResult[]; onDismiss: () => void; state: CompeteState }) {
   const [stage, setStage] = useState<"results" | "next">("results");
-  const started = new Date(results[0]!.periodEnd);
-  const date = started.toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit", timeZone: APP_TIMEZONE, timeZoneName: "short" });
   return <Dialog.Root open onOpenChange={(open) => { if (!open) onDismiss(); }}>
     <Dialog.Portal>
       <Dialog.Overlay className="focus-round-overlay" />
@@ -40,8 +38,12 @@ function RoundTakeover({ results, onDismiss, state }: { results: PeriodResult[];
           </section>)}
           <button type="button" className="fb-btn" onClick={() => setStage("next")}>Next round →</button>
         </> : <>
-          <p>{started <= competeNow(state) ? "The next round started" : "The next round starts"} {date}.</p>
-          <p className="fb-note">Sport settings control whether you renew after the current round.</p>
+          {results.map((result) => {
+            const enrollment = roundEnrollment(state, result);
+            return <p key={result.id}><b>{sportById(result.sport).name}</b>: {enrollment.startsAt
+              ? `Your current round ${enrollment.status === "upcoming" ? "starts" : "started"} ${enrollment.startsAt.toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit", timeZone: APP_TIMEZONE, timeZoneName: "short" })}. ${enrollment.renews ? "Renews after this round." : "Stops after this round."}`
+              : "You’re not registered for another round. Update sport settings to join again."}</p>;
+          })}
           <Link href="/you?panel=preferences" className="fb-btn-line" onClick={onDismiss}>Update sport settings</Link>
           <button type="button" className="fb-btn" onClick={onDismiss}>Back to Compete</button>
         </>}
@@ -52,10 +54,7 @@ function RoundTakeover({ results, onDismiss, state }: { results: PeriodResult[];
 
 export function WeekReveal({ state, ready, preview = false, onDismiss }: { state: CompeteState; ready: boolean; preview?: boolean; onDismiss: (revealIds: string[]) => void }) {
   const path = usePathname();
-  const pending = pendingPeriodResults(state.periodResults);
-  if (!ready || (!preview && path !== "/arena") || !pending.length) return null;
-  const periodStart = pending[0]!.periodStart;
-  const round = pending.filter((result) => result.periodStart === periodStart);
-  const results = round.filter((result) => result.track === "open" || !round.some((other) => other.sport === result.sport && other.track === "open"));
-  return <RoundTakeover key={periodStart} state={state} results={results} onDismiss={() => onDismiss(round.map((result) => result.id))}/>;
+  const reveal = roundReveal(state);
+  if (!ready || (!preview && path !== "/arena") || !reveal) return null;
+  return <RoundTakeover key={reveal.key} state={state} results={reveal.results} onDismiss={() => onDismiss(reveal.ids)}/>;
 }

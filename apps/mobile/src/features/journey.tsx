@@ -1,5 +1,4 @@
 import {
-  dayKey,
   formatVolume,
   groupActivitiesByDay,
   planJourneyTrail,

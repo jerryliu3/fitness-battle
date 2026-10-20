@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { competeNow, freshState, reduceCompete, rollClock, type CompeteState } from "@fitness-battle/shared";
 import { useCompete } from "@/components/compete-context";
 import { useAuth } from "@/components/auth-context";
@@ -16,18 +16,22 @@ export default function AdminLab() {
   const [confirmation, setConfirmation] = useState("");
   const [action, setAction] = useState("settle-due");
   const [busy, setBusy] = useState(false), [note, setNote] = useState("");
-  useEffect(() => { setSandbox(null); setPreview(null); setTarget(""); setConfirmation(""); setNote(""); }, [user?.id]);
+  const owner = useRef(user?.id); owner.current = user?.id;
+  useEffect(() => { setBusy(false); setSandbox(null); setPreview(null); setTarget(""); setConfirmation(""); setNote(""); }, [user?.id]);
   const local = sandbox ?? state ?? freshState();
   function change(action: Parameters<typeof reduceCompete>[1]) { setSandbox(reduceCompete(local, action)); }
   async function load() {
+    const accountId = user?.id;
+    const targetId = target || accountId || "";
     setBusy(true); setNote(""); setPreview(null);
     try {
-      const response = await fetch(`/api/admin/compete?target=${encodeURIComponent(target || user?.id || "")}`, { cache: "no-store" });
+      const response = await fetch(`/api/admin/compete?target=${encodeURIComponent(targetId)}`, { cache: "no-store" });
       const body = await response.json();
       if (!response.ok) throw new Error(body.error);
-      setTarget(target || user!.id); setPreview(body);
-    } catch (error) { setNote(error instanceof Error ? error.message : "Could not load account."); }
-    finally { setBusy(false); }
+      if (owner.current !== accountId) return;
+      setTarget(targetId); setPreview(body);
+    } catch (error) { if (owner.current === accountId) setNote(error instanceof Error ? error.message : "Could not load account."); }
+    finally { if (owner.current === accountId) setBusy(false); }
   }
   return <main className="fb-card" style={{ padding: 24, maxWidth: 800, margin: "auto" }}>
     <h1>Round lab</h1>
@@ -49,24 +53,26 @@ export default function AdminLab() {
     {user?.mode === "supabase" && isOwnerEmail(user.email) && <section>
       <h2>Production settlement</h2>
       <p>Load an athlete first. Closing an open round early records real results and advances their enrollment to the next round. Other athletes are not modified.</p>
-      <label>Athlete account ID<input className="fb-input" value={target} placeholder={user.id} onChange={(event) => { setTarget(event.target.value); setPreview(null); }}/></label>
+      <label>Athlete account ID<input className="fb-input" disabled={busy} value={target} placeholder={user.id} onChange={(event) => { setTarget(event.target.value); setPreview(null); }}/></label>
       <button className="fb-btn-line" disabled={busy} onClick={() => void load()}>Load account preview</button>
       {preview && <>
         <h3>{preview.name}</h3><pre style={{ overflow: "auto" }}>{JSON.stringify(preview.enrollments, null, 2)}</pre>
-        <label>Action<select value={action} onChange={(event) => setAction(event.target.value)}><option value="settle-due">Settle only rounds already due</option><option value="close-round">Close current round early</option></select></label>
-        <label>Reason<input className="fb-input" minLength={8} maxLength={1000} value={reason} onChange={(event) => setReason(event.target.value)}/></label>
-        <label>Type SETTLE {target}<input className="fb-input" value={confirmation} onChange={(event) => setConfirmation(event.target.value)}/></label>
+        <label>Action<select disabled={busy} value={action} onChange={(event) => setAction(event.target.value)}><option value="settle-due">Settle only rounds already due</option><option value="close-round">Close current round early</option></select></label>
+        <label>Reason<input className="fb-input" disabled={busy} minLength={8} maxLength={1000} value={reason} onChange={(event) => setReason(event.target.value)}/></label>
+        <label>Type SETTLE {target}<input className="fb-input" disabled={busy} value={confirmation} onChange={(event) => setConfirmation(event.target.value)}/></label>
         <button className="fb-btn" disabled={busy || confirmation !== `SETTLE ${target}` || reason.trim().length < 8} onClick={async () => {
+          const accountId = user.id;
           setBusy(true); setNote("");
           try {
             const response = await fetch("/api/admin/compete", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ target, action, reason, confirmation, updatedAt: preview.updatedAt, actionId: crypto.randomUUID() }) });
             const body = await response.json();
             if (!response.ok) throw new Error(body.error);
+            if (owner.current !== accountId) return;
             setNote(`Saved real settlement. Audit ID: ${body.actionId}`);
             setPreview(null); setConfirmation("");
             if (target === user.id) await refresh();
-          } catch (error) { setNote(error instanceof Error ? error.message : "Settlement failed. Reload before retrying."); setPreview(null); }
-          finally { setBusy(false); }
+          } catch (error) { if (owner.current === accountId) { setNote(error instanceof Error ? error.message : "Settlement failed. Reload before retrying."); setPreview(null); } }
+          finally { if (owner.current === accountId) setBusy(false); }
         }}>Run production settlement</button>
       </>}
     </section>}

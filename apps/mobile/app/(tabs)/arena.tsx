@@ -8,20 +8,15 @@ import {
   fitArenaWindow,
   formatArenaOvertakeStatus,
   initialsFromName,
-  primaryRevealResults,
   readArenaBaseline,
   reconcileArenaOvertake,
-  resolveArenaSelectedId,
   selfLaneLabel,
   serializeArenaBaseline,
   shellTabFromPath,
   sportById,
-  sportRenewal,
   stepArenaOvertake,
-  type Action,
   type ArenaOvertakePlan,
   type ArenaSceneLane,
-  type ArenaSceneMessage,
   type CompeteState,
   type ScoreTrack,
   type SportId,
@@ -38,7 +33,6 @@ import { useCrewApi } from "../../src/features/crew";
 import { SleepPanel } from "../../src/features/sleep-panel";
 import { useAuth } from "../../src/lib/auth";
 import { useCompeteStore } from "../../src/lib/compete-store";
-import { Arena3D } from "../../src/ui/arena-3d";
 import { AwardShelf } from "../../src/ui/award-shelf";
 import {
   FocusButton,
@@ -62,6 +56,7 @@ export default function ArenaScreen() {
     standingsStale,
     saveError,
     retrySave,
+    canWrite,
   } = useCompeteStore();
   const { user, demoMode } = useAuth();
   const crewApi = useCrewApi();
@@ -82,7 +77,6 @@ export default function ArenaScreen() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [register, setRegister] = useState(false);
   const [sport, setSport] = useState<SportId | null>(null);
-  const [failed, setFailed] = useState(false);
   const [overtakePlan, setOvertakePlan] = useState<ArenaOvertakePlan | null>(
     null,
   );
@@ -113,23 +107,6 @@ export default function ArenaScreen() {
         })),
     [arena?.lanes],
   );
-
-  const lanes = useMemo<ArenaSceneLane[]>(() => {
-    if (!ghost) return fieldLanes;
-    const ghostLane = arena?.lanes.find((l) => l.ghost);
-    if (!ghostLane) return fieldLanes;
-    return [
-      ...fieldLanes,
-      {
-        id: ghostLane.id,
-        name: ghostLane.name,
-        initials: initialsFromName(ghostLane.name),
-        value: ghostLane.values[2],
-        you: false,
-        ghost: true,
-      },
-    ];
-  }, [arena?.lanes, fieldLanes, ghost]);
 
   useEffect(() => {
     if (!isFocused) return;
@@ -227,25 +204,11 @@ export default function ArenaScreen() {
     center: center ?? (overtakeFrame ? overtakeFrame.viewCenter : total),
     span: viewSpan,
   };
-  // Track/3D always need a concrete id (fall back to you). The detail sheet
-  // must stay tied to the raw nullable selection or it cannot close.
-  const trackSelectedId = resolveArenaSelectedId(
-    selectedId,
-    arena.lanes,
-    ghost,
-  );
   const selectAthlete = (id: string) => {
     const lane = arena.lanes.find((item) => item.id === id);
     if (!lane) return;
     setSelectedId(id);
     setCenter(lane.values[2]);
-  };
-  const model: ArenaSceneMessage = {
-    type: "arena-view",
-    lanes,
-    view,
-    unit: arena.unit,
-    selected: trackSelectedId || me?.id || "",
   };
   async function join(nextSport: SportId, crewId?: string) {
     if (!user) {
@@ -320,7 +283,6 @@ export default function ArenaScreen() {
                   setCenter(null);
                   setSpan(null);
                   setSelectedId(null);
-                  setFailed(false);
                 }}
                 style={[f.chip, r.sport === state.primary && f.chipActive]}
               >
@@ -356,7 +318,7 @@ export default function ArenaScreen() {
             />
           </View>
         ) : null}
-        <RoundTakeover state={state} dispatch={dispatch} />
+        <RoundTakeover state={state} ready={canWrite} dispatch={dispatch} />
         {returnGain > 0 && !fieldNotice ? (
           <View style={f.card}>
             <Text style={f.h2}>
@@ -379,7 +341,7 @@ export default function ArenaScreen() {
           <View style={f.card}>
             <View style={f.row}>
               <View>
-                <Text style={f.h2}>{arena.sportName}</Text>
+                <Text style={[f.h2, { fontSize: 28 }]}>{arena.sportName}</Text>
                 <Text style={f.massive}>
                   {displayTotal.toFixed(1)}{" "}
                   <Text style={f.copy}>{arena.unit}</Text>
@@ -424,22 +386,18 @@ export default function ArenaScreen() {
                   accessibilityRole="tab"
                   accessibilityState={{
                     selected: mode === m,
-                    disabled: m === "3D pursuit",
                   }}
-                  disabled={m === "3D pursuit"}
                   onPress={() => {
                     setMode(m);
-                    setFailed(false);
                   }}
                   style={[f.chip, { flex: 1 }, mode === m && f.chipActive]}
                 >
                   <Text
                     style={[
                       f.rowTitle,
-                      m === "3D pursuit" && { opacity: 0.45 },
                     ]}
                   >
-                    {m === "3D pursuit" ? "3D pursuit (coming soon)" : m}
+                    {m}
                   </Text>
                 </Pressable>
               ))}
@@ -473,15 +431,9 @@ export default function ArenaScreen() {
                     </Pressable>
                   ))}
               </View>
-            ) : mode === "3D pursuit" && !failed ? (
-              <Arena3D
-                model={model}
-                onPan={(v) => setCenter(Math.max(0, v))}
-                onSelect={selectAthlete}
-                onUnavailable={() => setFailed(true)}
-              />
             ) : (
               <LaneTrack
+                selectedId={selectedId ?? me?.id}
                 lanes={arena.lanes}
                 unit={arena.unit}
                 showGhost={ghost}
@@ -500,11 +452,7 @@ export default function ArenaScreen() {
                 setSpan(span);
               }}
             />
-            {failed && (
-              <Text style={f.small}>
-                3D needs WebGL on this device. Your 2D lanes remain interactive.
-              </Text>
-            )}
+
             <View style={f.chipRow}>
               <FocusButton
                 label="Center me"
@@ -518,7 +466,7 @@ export default function ArenaScreen() {
                 label="Fit field"
                 secondary
                 onPress={() => {
-                  const fit = fitArenaWindow(lanes);
+                  const fit = fitArenaWindow(fieldLanes);
                   setCenter(fit.center);
                   setSpan(fit.span);
                 }}

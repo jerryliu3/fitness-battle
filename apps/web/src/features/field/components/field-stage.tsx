@@ -1,5 +1,4 @@
 "use client";
-import dynamic from "next/dynamic";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useReducedMotion } from "motion/react";
 import { playCue } from "@/lib/haptics";
@@ -20,22 +19,12 @@ import {
 import { useAuth } from "@/components/auth-context";
 import { ExpandingField } from "./expanding-field";
 import { ArenaLanes } from "@/features/focus/arena-lanes";
-import { defaultLook } from "../avatar";
 import {
   placeAt,
-  stableLanes,
   valueAt,
   type SceneRunner,
 } from "../geometry";
 import type { FieldModel } from "../model";
-
-const LivePursuit = dynamic(
-  () => import("./live-pursuit").then((m) => m.LivePursuit),
-  {
-    ssr: false,
-    loading: () => <div className="fd-loading">Preparing your lanes…</div>,
-  },
-);
 
 export function FieldStage({
   model,
@@ -77,9 +66,8 @@ export function FieldStage({
       }
     : null;
 
-  const [mode, setMode] = useState<"lanes" | "pursuit" | "standings">("lanes");
+  const [mode, setMode] = useState<"lanes" | "standings">("lanes");
   const [lanesImmersive, setLanesImmersive] = useState(false);
-  const [camera, setCamera] = useState<"above" | "follow">("above");
   const [span, setSpan] = useState(model.gps ? (unit === "mi" ? 4 : 6) : 20);
   const [center, setCenter] = useState<number | null>(null);
   const [centerTween, setCenterTween] = useState<number | null>(null);
@@ -94,7 +82,6 @@ export function FieldStage({
   const liveCenterRef = useRef(0);
   const [showGhost, setShowGhost] = useState(true);
   const [selected, setSelected] = useState<string | null>(null);
-  const [unavailable, setUnavailable] = useState(false);
   const [overtakePlan, setOvertakePlan] = useState<ArenaOvertakePlan | null>(
     null,
   );
@@ -388,7 +375,6 @@ export function FieldStage({
               setReplayEpoch(0);
               setOvertakeProgress(1);
               setMode(m);
-              setUnavailable(false);
             }}>
             {m === "lanes" ? "Lanes" : "Standings"}
           </button>
@@ -402,34 +388,6 @@ export function FieldStage({
             <span className="fb-note">{mode === "standings" ? "Ranked by this week's effort" : lanesImmersive ? "Drag to pan · swipe across peers" : "Click the field to expand · swipe across peers"}</span>
           </div>
           <div className="focus-track-frame">
-            {mode === "pursuit" && !unavailable ? (
-              <>
-                <LivePursuit
-                  runners={stableLanes(runners)}
-                  ghost={ghost}
-                  time={time}
-                  extra={0}
-                  selected={trackSelected || you.id}
-                  showGhost={showGhost}
-                  camera={camera}
-                  look={defaultLook}
-                  unit={unit}
-                  view={view}
-                  onPan={(v) => setCenter(Math.max(0, v))}
-                  onSelect={toggleSelect}
-                  onUnavailable={() => setUnavailable(true)}
-                />
-                <div className="focus-camera">
-                  <button
-                    onClick={() =>
-                      setCamera(camera === "above" ? "follow" : "above")
-                    }
-                  >
-                    {camera === "above" ? "Follow camera" : "Above camera"}
-                  </button>
-                </div>
-              </>
-            ) : (
               <ArenaLanes
                 presentation={mode === "standings" ? "standings" : "lanes"}
                 scores={Object.fromEntries((boardRows ?? []).map((row) => [row.id, row.elo]))}
@@ -451,13 +409,6 @@ export function FieldStage({
                 overtakeFrame={overtakeFrame}
                 overtakePlan={overtakePlan}
               />
-            )}
-            {unavailable && (
-              <p className="fb-note">
-                3D is unavailable on this device. Your 2D lanes remain
-                interactive.
-              </p>
-            )}
           </div>
 
           <div hidden={mode === "standings"}>

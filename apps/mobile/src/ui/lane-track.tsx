@@ -1,6 +1,5 @@
 import {
   arenaPosition,
-  formatActivityAge,
   arenaWindow,
   clampArenaLaneCenter,
   initialsFromName,
@@ -12,12 +11,11 @@ import {
   type ArenaOvertakePlan,
   type ArenaViewWindow,
 } from "@fitness-battle/shared";
-import { useEffect, useMemo, useRef, useState, useId } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { PanResponder, Pressable, ScrollView, Text, View } from "react-native";
 import Svg, {
   Circle,
   Defs,
-  ClipPath,
   G,
   Line,
   LinearGradient,
@@ -34,6 +32,7 @@ export function LaneTrack({
   lanes,
   unit,
   showGhost,
+  selectedId,
   index,
   onSelect,
   view,
@@ -44,6 +43,7 @@ export function LaneTrack({
   lanes: ArenaLane[];
   unit: string;
   showGhost: boolean;
+  selectedId?: string;
   index: number;
   onSelect: (lane: ArenaLane) => void;
   view?: ArenaViewWindow;
@@ -53,7 +53,7 @@ export function LaneTrack({
 }) {
   const [exploring, setExploring] = useState(false);
   const [width, setWidth] = useState(340);
-  const wakeTime = usePolishedWakeTime(), clipId = useId();
+  const wakeTime = usePolishedWakeTime();
   const scroll = useRef<ScrollView>(null);
   const animating = Boolean(overtakeFrame && overtakeFrame.phase !== "done");
   const me = lanes.find((l) => l.you);
@@ -120,6 +120,7 @@ export function LaneTrack({
         borderColor: "#d7e0cf",
       }}
     >
+      <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
       <Pressable
         accessibilityRole="button"
         accessibilityState={{ selected: exploring }}
@@ -129,7 +130,8 @@ export function LaneTrack({
       >
         <Text style={{ color: "#282f2c", fontWeight: "600" }}>{exploring ? "← Back" : "Explore lanes · swipe across peers"}</Text>
       </Pressable>
-      {exploring && <Text style={{ color: "#616c63", padding: 12 }}>3D pursuit · Coming soon</Text>}
+      {exploring && <Pressable disabled accessibilityRole="button" accessibilityLabel="3D pursuit coming soon" style={{ opacity: .5, padding: 12 }}><Text>3D pursuit · Coming soon</Text></Pressable>}
+      </View>
       <ScrollView
         horizontal
         ref={scroll}
@@ -143,7 +145,6 @@ export function LaneTrack({
             accessibilityLabel={`Vertical lanes in ${unit}, centered on your distance`}
           >
             <Defs>
-              <ClipPath id={`${clipId}-field`}><Rect x={10} y={56} width={w-60} height={Math.max(0,maxTailY-56)}/></ClipPath>
               <LinearGradient id="road" x1="0" y1="0" x2="0" y2="1">
                 <Stop offset="0" stopColor="#f7faf3" />
                 <Stop offset="0.5" stopColor="#eef3e8" />
@@ -262,7 +263,9 @@ export function LaneTrack({
                   key={l.id}
                   onPress={() => onSelect(l)}
                   accessible
-                  accessibilityLabel={`${l.name}, ${value.toFixed(1)} ${unit}${edge ? `, ${edge} of view` : ""}`}
+                  accessibilityRole="button"
+                  accessibilityState={{ selected: selectedId === l.id }}
+                  accessibilityLabel={`${l.name}, ${(value - (overtakeFrame?.youValue ?? me?.values[index] ?? 0)).toFixed(1)} ${unit} relative to you${edge ? `, ${edge} of view` : ""}`}
                 >
                   {l.id === leaderId && !edge ? (
                     <G transform={`translate(${xx - 24}, ${yy - 104})`}>

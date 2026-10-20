@@ -7,7 +7,7 @@ import { useAuth } from "../src/lib/auth";
 import { useCompeteStore } from "../src/lib/compete-store";
 import { FocusButton, f } from "../src/ui/focus";
 export default function Onboarding() {
-  const { state, dispatch } = useCompeteStore();
+  const { state, canWrite, dispatch, saveError, retrySave } = useCompeteStore();
   const { user } = useAuth();
   const router = useRouter();
   const [name, setName] = useState<string | null>(null);
@@ -73,13 +73,16 @@ export default function Onboarding() {
             onValueChange={setSleep}
           />
         </View>
+        {saveError && <><Text style={f.copy}>{saveError}</Text><FocusButton label="Retry account loading" secondary onPress={retrySave}/></>}
         <FocusButton
+          disabled={Boolean(user) && !canWrite}
           label={user ? "Finish setup" : "Sign in to finish setup"}
           onPress={() => {
             if (!user) {
               router.replace("/you");
               return;
             }
+            if (!canWrite) return;
             dispatch({
               type: "rename",
               name: (name ?? state.name).trim() || user.displayName,

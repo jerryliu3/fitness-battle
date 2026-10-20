@@ -48,6 +48,7 @@ const SEEN_KEY = "fb-counted-seen";
 const DIRTY_KEY = "fb-compete-dirty";
 
 interface CompeteContextValue {
+  canWrite: boolean;
   state: CompeteState | null;
   accountKey: string;
   readBaselineItem: (key: string) => string | null;
@@ -646,6 +647,7 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
   return (
     <CompeteContext.Provider
       value={{
+        canWrite: Boolean(state) && loadReady.current && !auth.loading,
         state,
         accountKey: accountRef.current ?? "device",
         readBaselineItem,

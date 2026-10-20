@@ -2,7 +2,7 @@
 
 import { useRef, useState } from "react";
 import Link from "next/link";
-import { activityFromSample, SPORTS, sportById, type ActivitySample, type ReadinessSample, type SportId } from "@fitness-battle/shared";
+import { activityFromSample, parseManualActivity, SPORTS, sportById, type ActivitySample, type ReadinessSample, type SportId } from "@fitness-battle/shared";
 import { useAuth } from "@/components/auth-context";
 import { useCompete } from "@/components/compete-context";
 import { Sheet } from "@/ui/sheet";
@@ -18,6 +18,7 @@ export function ActivityActions() {
   const [minutes, setMinutes] = useState("");
   const [busy, setBusy] = useState(false);
   const [note, setNote] = useState("");
+  const [formError, setFormError] = useState("");
   if (!state) return null;
   const ready = Boolean(user) && loadStatus !== "loading" && loadStatus !== "failed";
 
@@ -31,6 +32,7 @@ export function ActivityActions() {
     const messages: string[] = [];
     try {
       for (const link of providers) {
+        if (owner.current !== accountId) return;
         const response = await fetch("/api/fitness/sync", {
           method: "POST", headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ provider: link.provider, userId: user!.id }),
@@ -53,7 +55,7 @@ export function ActivityActions() {
   return <>
     <div className="focus-actions" aria-label="Activity actions">
       <button type="button" className="fb-btn-line" disabled={!ready || busy} onClick={() => void sync()}>{busy ? "Syncing…" : "Sync activities"}</button>
-      <button type="button" className="fb-btn" disabled={!ready || busy} onClick={() => setOpen(true)}>Add activity</button>
+      <button type="button" className="fb-btn" disabled={!ready || busy} onClick={() => { setFormError(""); setOpen(true); }}>Add activity</button>
       {!user && <Link href="/login?next=/today">Sign in to add or sync</Link>}
     </div>
     {note && <p role="status" className="fb-note">{note} <Link href="/you?panel=connections">Tracker settings</Link></p>}
@@ -62,16 +64,17 @@ export function ActivityActions() {
       <form style={{ display: "grid", gap: 16 }} onSubmit={(event) => {
         event.preventDefault();
         if (!ready) return;
-        const movingSec = Number(minutes) * 60;
-        const distanceM = sportById(sport).gps ? Number(miles) * 1609.344 : 0;
-        if (!Number.isFinite(movingSec) || movingSec <= 0 || movingSec > 86400 || !Number.isFinite(distanceM) || distanceM < 0 || distanceM > 2_000_000) return;
+        const parsed = parseManualActivity(sport, miles, minutes);
+        if (parsed.error !== null) { setFormError(parsed.error); return; }
+        const { movingSec, distanceM } = parsed;
         dispatch({ type: "log-manual", sport, movingSec, distanceM, activityId: `manual-${crypto.randomUUID()}` });
         setOpen(false); setMiles(""); setMinutes(""); setNote("Activity added for today · Open standings only.");
       }}>
         <label>Sport<select className="fb-input" value={sport} onChange={(event) => setSport(event.target.value as SportId)}>{SPORTS.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label>
         {sportById(sport).gps && <label>Mileage<input className="fb-input" required type="number" min="0" max="1242" step="0.01" value={miles} onChange={(event) => setMiles(event.target.value)}/></label>}
         <label>Duration (minutes)<input className="fb-input" required type="number" min="0.1" max="1440" step="0.1" value={minutes} onChange={(event) => setMinutes(event.target.value)}/></label>
-        <button type="submit" className="fb-btn">Add activity</button>
+        {formError && <p role="alert" className="fb-note">{formError}</p>}
+        <button disabled={!ready} type="submit" className="fb-btn">Add activity</button>
       </form>
     </Sheet>
   </>;

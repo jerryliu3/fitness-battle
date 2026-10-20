@@ -418,11 +418,7 @@ export function CrewHub() {
           </>
         ) : null}
         <Text style={f.copy}>Every pace belongs here.</Text>
-        {!solo && api.data?.seasonWeeks ? (
-          <Text style={f.small}>
-            {api.data.seasonWeeks[crew.id] ?? 0} weeks together
-          </Text>
-        ) : null}
+
       </View>
       <Text style={f.h2}>Crew standings</Text>
       <View style={f.card}>

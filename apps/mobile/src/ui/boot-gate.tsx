@@ -16,7 +16,7 @@ export function BootGate({ children }: { children: ReactNode }) {
   const opened = useRef(false);
   if (dataReady && animationDone) opened.current = true;
   useEffect(() => {
-    const timer = setTimeout(() => setAnimationDone(true), 8000);
+    const timer = setTimeout(() => { bootAnimationCompleted = true; setAnimationDone(true); }, 8000);
     return () => clearTimeout(timer);
   }, []);
 

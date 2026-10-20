@@ -57,24 +57,25 @@ export async function GET(request: Request) {
   );
   const crewIds = [...sportByCrew.keys()];
   const progress: Array<Record<string, unknown>> = [];
-  for (const crewId of crewIds) {
-    const { data: totals, error: totalsError } = await supabase.rpc("crew_week_totals", { p_crew_id: crewId });
+  const summaries = await Promise.all(crewIds.map((crewId) => supabase.rpc("crew_week_totals", { p_crew_id: crewId })));
+  for (const [index, crewId] of crewIds.entries()) {
+    const { data: totals, error: totalsError } = summaries[index]!;
     if (totalsError) return NextResponse.json({ error: "crew_progress_unavailable" }, { status: 500 });
     progress.push(...(totals ?? []).map((row: Record<string, unknown>) => ({
       ...row, crew_id: crewId, activity_id: `total:${row.user_id}`, sport: sportByCrew.get(crewId),
       started_at: new Date().toISOString(), disposition: "counted",
     })));
   }
-  const [{ data: members }, { data: entries }, { data: notices }] = await Promise.all([
+  const [memberResult, entryResult, noticeResult] = await Promise.all([
     crewIds.length
       ? supabase.from("crew_members").select("crew_id, user_id, display_name, rest_week, status").in("crew_id", crewIds)
-      : Promise.resolve({ data: [] }),
+      : Promise.resolve({ data: [], error: null }),
     crewIds.length
       ? supabase
           .from("crew_entries")
           .select("crew_id, user_id, activity_id, started_at, sport, distance_m, moving_sec, disposition")
           .in("crew_id", crewIds)
-      : Promise.resolve({ data: [] }),
+      : Promise.resolve({ data: [], error: null }),
     supabase
       .from("crew_notices")
       .select("id, crew_id, kind, body, created_at, read_at")
@@ -83,6 +84,8 @@ export async function GET(request: Request) {
       .order("created_at", { ascending: false })
       .limit(20),
   ]);
+  if (memberResult.error || entryResult.error || noticeResult.error) return NextResponse.json({ error: "crews_unavailable" }, { status: 500 });
+  const { data: members } = memberResult, { data: entries } = entryResult, { data: notices } = noticeResult;
   const week = waveWindowAt();
   const allEntries = (entries ?? []) as EntryRow[];
   const seasonWeeks: Record<string, number> = {};

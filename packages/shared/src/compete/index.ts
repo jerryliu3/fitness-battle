@@ -204,3 +204,5 @@ export {
   type SuggestionKind,
 } from "./suggestion";
 export type { GoalDistance, TrainingGoal } from "./sports";
+export { parseManualActivity } from "./manual-input";
+export { roundReveal, roundEnrollment } from "./round-reveal";

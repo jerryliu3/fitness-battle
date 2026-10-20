@@ -1,6 +1,6 @@
 # October 19 bug-fix stack
 
-Merge in order; each PR targets the branch immediately below it. All are drafts for review. Deploy all additive SQL migrations in the final stack before the new Crew/admin APIs.
+Merge in order; each PR targets the branch immediately below it. All nine PRs are ready for review. Deploy all additive SQL migrations in the final stack before the new Crew/admin APIs.
 
 | Layer | Scope |
 | --- | --- |
@@ -12,7 +12,7 @@ Merge in order; each PR targets the branch immediately below it. All are drafts 
 | [#211](https://github.com/jerryliu3/fitness-battle/pull/211) | Native lane, Home, round-results and splash parity |
 | [#212](https://github.com/jerryliu3/fitness-battle/pull/212) | Isolated round lab, owner-only audited production settlement, browser-review corrections |
 | [#213](https://github.com/jerryliu3/fitness-battle/pull/213) | Eastern/DST consistency, calendar offsets and corrected charter/docs |
-| Final polish | Gold effort-score badge on web/native, final regression/SQL access checks and this review |
+| [#215](https://github.com/jerryliu3/fitness-battle/pull/215) | Gold effort badges, stack review corrections, atomic admin settlement, mobile regression coverage and cleanup |
 
 ## Product decisions
 
@@ -33,5 +33,15 @@ Primary currently selects suggestions, displayed boards, demo-sync sport, and th
 - Production web build passes.
 - Browser walkthrough: isolated sandbox close → animated results → next-round details → Athlete sport preferences; offscreen racer → centered capsule; heading computed at 28px; expanded Back/disabled 3D controls; Home activity form and one Today activity circle.
 - Local PostgreSQL checks run inside rolled-back transactions: Crew totals include multiple manual activities and exclude samples/excluded rows; anonymous/nonmember access rejected; audit snapshots inaccessible to client roles; Eastern Sunday/Monday and spring/fall DST bounds verified.
-- Native typecheck/tests pass; no simulator or physical-device runtime check was performed.
-- No production migration or settlement was executed. Admin uses the existing multi-write relational account writer; audit snapshots do not make it transactional or prevent concurrent athlete saves. Operational limitations and setup are in `docs/setup-plan.md`.
+- Native typecheck/tests pass, including Home form validation, decimal keyboard input, failed-hydration gating and unsupported-device tracker handling. iOS and Android bundle exports are checked separately; no simulator or physical-device runtime check was performed.
+- No production migration or settlement was executed. Admin commits now use a service-only SQL transaction; rollback, stale-preview rejection and client-role denial were tested locally. Ordinary later stale athlete saves remain a limitation; see `docs/setup-plan.md`.
+
+## October 20 review pass
+
+- **P1 — production settlement:** the service client previously reached athlete-scoped seating RPCs, which require an authenticated athlete. Added an explicit read-only service roster loader, per-sport settlement fields and refusal on roster-read failure. The old multi-write account writer could partially persist admin actions; a new additive RPC commits only settlement tables and its successful audit snapshot atomically, rechecking the preview version under lock.
+- **P2 — mobile manual entry:** blank mileage silently became zero and validation feedback appeared behind the sheet. Web/native now share explicit input validation, support decimal commas and show form errors in place. Native writes and acknowledgements wait for successful hydration; sync filters unsupported device trackers.
+- **P2 — results:** next-round copy previously assumed auto-renewal. Both platforms now share reveal grouping/acknowledgement logic and report the actual enrollment status for every displayed sport. Native results include score deltas and freeze status.
+- **P2 — admin UI:** late requests can no longer restore another account’s preview after an account switch; production inputs are locked during requests.
+- **Cleanup:** removed unreachable 3D rendering branches while retaining the requested coming-soon controls, obsolete Crew sharing code and stale native season counts. Crew queries surface partial failures and read independent summaries concurrently. Native lane selection exposes accessibility state and relative gaps. The splash timeout now remembers completion across remounts.
+
+Remaining limits: device interaction/animation QA still needs a simulator or physical device. The existing ordinary athlete save protocol can overwrite admin changes from a stale client after the admin transaction; this pass does not replace that broader persistence protocol.
