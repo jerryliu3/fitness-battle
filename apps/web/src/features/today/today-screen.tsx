@@ -286,9 +286,8 @@ export function TodayScreen() {
     weekHours >= 10
       ? `${Math.round(weekHours)} hr`
       : `${(Math.round(weekHours * 10) / 10).toFixed(1).replace(/\.0$/, "")} hr`;
-  const nowDayIso = now.toISOString().slice(0, 10);
 
-  // Previous week window (Mon 00:00 UTC to next Mon 00:00 UTC, 7 days earlier)
+  // Previous calendar week in Eastern time, including DST changes.
   const prevWeekStart = weeklyPeriodBounds(
     new Date(weekStart - 1),
   ).startsAt.getTime();

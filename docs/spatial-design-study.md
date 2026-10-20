@@ -60,7 +60,7 @@ The working frame is **FIELD**: forest ink, acid lime for you, apricot for the s
 
 Every concept supports the same useful evidence: a selected person's total and signed gap; the same-cutoff weekly context; km/mi; a previous-week ghost; milestone rewind; a distance receipt; a hypothetical extra-distance preview; and a full selectable field. The ghost is never included in standings. Tied totals share a competition rank. The what-if control is clearly marked and never logs a workout or edits a recorded total.
 
-The UI uses the **weekly running-distance** comparison for this study. It does not turn production effort points or Elo into invented kilometers. Fictional athletes are presentation fixtures, and no provider is claimed to be connected. Weekly bounds remain Monday 00:00 to the next Monday 00:00 UTC.
+The UI uses the **weekly running-distance** comparison for this study. It does not turn production effort points or Elo into invented kilometers. Fictional athletes are presentation fixtures, and no provider is claimed to be connected. Weekly bounds remain Monday 00:00 to the next Monday 00:00 Eastern.
 
 ## What Zwift contributes
 

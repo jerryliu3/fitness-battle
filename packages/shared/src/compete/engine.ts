@@ -1,4 +1,4 @@
-import { APP_TIMEZONE, type PeriodBounds } from "../period";
+import { APP_TIMEZONE, shiftAppDay, type PeriodBounds } from "../period";
 import {
   DensityMatcher,
   buildLocalBoard,
@@ -814,9 +814,7 @@ function historyFor(level: "light" | "steady" | "heavy", now: Date): Activity[] 
   const runDays = level === "light" ? 3 : level === "heavy" ? 6 : 4;
   const activities: Activity[] = [];
   for (let day = 1; day <= 90; day += 1) {
-    const at = new Date(now);
-    at.setUTCDate(at.getUTCDate() - day);
-    at.setUTCHours(13, 0, 0, 0);
+    const at = new Date(shiftAppDay(now, -day).getTime() + 12 * 3600000);
     const key = dayKey(at);
     if (hashString(`run:${key}`) % 7 < runDays) {
       const km = (4 + unitInterval(`run-km:${key}`) * 7) * volume;
@@ -863,10 +861,8 @@ function calibrate(state: CompeteState, now: Date): CompeteState {
     let verifiedSum = 0;
     let weeks = 0;
     for (let back = 0; back < 90; back += 7) {
-      const end = new Date(now);
-      end.setUTCDate(end.getUTCDate() - back);
-      const start = new Date(end);
-      start.setUTCDate(start.getUTCDate() - 7);
+      const end = shiftAppDay(now, -back);
+      const start = shiftAppDay(now, -back - 7);
       const open = periodEffort(state.activities, sport, start, end, "open").effort;
       const verified = periodEffort(
         state.activities,

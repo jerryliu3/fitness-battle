@@ -83,10 +83,9 @@ export default function Home() {
     weekHours >= 10
       ? `${Math.round(weekHours)} hr`
       : `${(Math.round(weekHours * 10) / 10).toFixed(1).replace(/\.0$/, "")} hr`;
-  const nowDayIso = now.toISOString().slice(0, 10);
   const dayLabels = ["M", "T", "W", "T", "F", "S", "S"];
-  // Previous week window (Mon 00:00 UTC to next Mon 00:00 UTC, 7 days earlier)
-  const prevWeekStart = weekStart - 7 * 86400000;
+  // Previous calendar week in Eastern time, including DST changes.
+  const prevWeekStart = weeklyPeriodBounds(new Date(weekStart - 1)).startsAt.getTime();
   const prevWeekEnd = weekStart;
   const prevWeekActivities = state.activities.filter((a) => {
     if (!countsOnTrack(a, "open")) return false;

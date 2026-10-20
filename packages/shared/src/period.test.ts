@@ -96,3 +96,13 @@ describe("period model (America/New_York source of truth)", () => {
     expect(label).toBe("Oct 12 – Oct 18");
   });
 });
+
+// Calendar offsets are used by calibration and checkpoint windows too.
+describe("Eastern calendar offsets", () => {
+  it("uses 23/25-hour days across DST and preserves the Eastern date near UTC midnight", async () => {
+    const { shiftAppDay } = await import("./timezone");
+    expect(shiftAppDay(new Date("2026-03-08T12:00:00Z"), 1).toISOString()).toBe("2026-03-09T04:00:00.000Z");
+    expect(shiftAppDay(new Date("2026-11-01T12:00:00Z"), 1).toISOString()).toBe("2026-11-02T05:00:00.000Z");
+    expect(dayKey(shiftAppDay(new Date("2026-10-20T02:00:00Z"), -1))).toBe("2026-10-18");
+  });
+});

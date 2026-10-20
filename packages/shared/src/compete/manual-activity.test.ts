@@ -23,3 +23,10 @@ describe("manual activities", () => {
     expect(reduceCompete(state, { ...action, movingSec }).activities).toEqual(state.activities);
   });
 });
+
+it("calibrates sample history using completed Eastern days near UTC midnight", () => {
+  const now = "2026-10-20T02:00:00.000Z"; // Still Monday evening in New York.
+  const state = reduceCompete(freshState(new Date(now)), { type: "import-history", level: "steady", now });
+  const latest = Math.max(...state.activities.filter((activity) => activity.source === "history").map((activity) => Date.parse(activity.startedAt)));
+  expect(latest).toBeLessThan(Date.parse("2026-10-19T04:00:00Z"));
+});

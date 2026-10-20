@@ -16,7 +16,7 @@
    - `@fitness-battle/pursuit` is web-DOM only (not for React Native native modules).
 
 3. **Period & Settlement Model**:
-   - Default periods run weekly from Monday 00:00:00 UTC to next Monday 00:00:00 UTC (half-open: `[start, end)`).
+   - Default periods run weekly from Monday 00:00:00 America/New_York to next Monday 00:00:00 America/New_York (half-open: `[start, end)`).
    - Settlement occurs on week close, archiving place and Elo rating updates.
    - Standings and places are 1-indexed (`place >= 1`).
 

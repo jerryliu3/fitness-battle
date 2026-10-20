@@ -5,7 +5,7 @@
 **Fitness Battle** (product name: **Overtaek**) is a mobile-first athletic competition platform combining weekly asynchronous workout competition with road race leaderboards.
 
 The core product features:
-- **Weekly Compete Engine**: Monday-to-Monday UTC weekly periods where athletes log workouts (running, cycling, walking, strength) to accumulate points/effort, adjust Elo ratings, and climb division standings.
+- **Weekly Compete Engine**: Monday-to-Monday Eastern weekly periods where athletes log workouts (running, cycling, walking, strength) to accumulate points/effort, adjust Elo ratings, and climb division standings.
 - **Focus shell**: Home / Arena / Crew / Athlete (route IDs `/today`, `/arena`, `/field`, `/you`). Vertical Arena lanes + 3D pursuit; private crew shared fields; Athlete Elo/benchmarks.
 - **Race Rankings**: Public road race leaderboards (5K, 10K, half, marathon) backed by verified open-data results.
 - **Multi-tracker Ingestion**: Strava OAuth sync, Apple HealthKit sync, Garmin FIT/TCX/GPX imports, and manual logging with synthetic demo fallback.

@@ -18,7 +18,7 @@ If those paths are not in this checkout, they live in the Fitness Battle Project
 
 1. **pnpm monorepo** — `apps/mobile` (Expo Router), `apps/web` (Next App Router + API), `packages/shared`, `packages/pursuit` (DOM Three.js Arena 3D), `supabase/`.
 2. **`@fitness-battle/shared` is platform-agnostic** — no Expo, React Native, Next, or DOM imports. `@fitness-battle/pursuit` is web-DOM (Next + Expo web); native embeds it via `/arena-scene` WebView only.
-3. **Period model** — default weekly UTC Mon–Mon half-open bounds; keep `daily|weekly|monthly|custom` extendable; one `is_current` period per battle.
+3. **Period model** — default weekly America/New_York (Eastern) Mon–Mon half-open bounds; keep `daily|weekly|monthly|custom` extendable; one `is_current` period per battle.
 4. **Tracker** — Strava via web OAuth routes; stub/mock when secrets missing; never claim stub is fully connected.
 5. **Join / standings writes** — prefer SQL RPCs + RLS; harden `SECURITY DEFINER` (`search_path = ''`, auth checks).
 6. **UI** — follow the design guide tokens (`theme.ts` / CSS vars). No Cadence Gazetteer cream/terracotta; no Coaching indigo shadcn defaults for product chrome.
