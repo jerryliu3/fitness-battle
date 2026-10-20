@@ -5,17 +5,19 @@ import {
   clampArenaLaneCenter,
   initialsFromName,
   orderedArenaLanes,
+  polishedLaneScale,
   selfLaneLabel,
   type ArenaLane,
   type ArenaOvertakeFrame,
   type ArenaOvertakePlan,
   type ArenaViewWindow,
 } from "@fitness-battle/shared";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, useId } from "react";
 import { PanResponder, Pressable, ScrollView, Text, View } from "react-native";
 import Svg, {
   Circle,
   Defs,
+  ClipPath,
   G,
   Line,
   LinearGradient,
@@ -27,6 +29,7 @@ import Svg, {
 } from "react-native-svg";
 import { playCue } from "../lib/haptics";
 import { Ember } from "./mascot/ember";
+import { PolishedRacer, usePolishedWakeTime } from "./polished-racer";
 export function LaneTrack({
   lanes,
   unit,
@@ -50,6 +53,7 @@ export function LaneTrack({
 }) {
   const [exploring, setExploring] = useState(false);
   const [width, setWidth] = useState(340);
+  const wakeTime = usePolishedWakeTime(), clipId = useId();
   const scroll = useRef<ScrollView>(null);
   const animating = Boolean(overtakeFrame && overtakeFrame.phase !== "done");
   const me = lanes.find((l) => l.you);
@@ -138,6 +142,7 @@ export function LaneTrack({
             accessibilityLabel={`Vertical lanes in ${unit}, centered on your distance`}
           >
             <Defs>
+              <ClipPath id={`${clipId}-field`}><Rect x={10} y={56} width={w-60} height={Math.max(0,maxTailY-56)}/></ClipPath>
               <LinearGradient id="road" x1="0" y1="0" x2="0" y2="1">
                 <Stop offset="0" stopColor="#f7faf3" />
                 <Stop offset="0.5" stopColor="#eef3e8" />
@@ -165,7 +170,7 @@ export function LaneTrack({
               height={430}
               rx={18}
               fill="#ffffff55"
-              stroke="#e0e5dc"
+              stroke="#d7e0cf"
             />
             {ordered.map((l, i) => (
               <G key={l.id}>
@@ -175,8 +180,8 @@ export function LaneTrack({
                     y={56}
                     width={lw}
                     height={430}
-                    rx={14}
                     fill="url(#youLane)"
+                    rx={14}
                   />
                 ) : null}
                 <Line
@@ -184,21 +189,19 @@ export function LaneTrack({
                   x2={i * lw + 10}
                   y1={64}
                   y2={476}
-                  stroke={l.you ? "#819486" : "#e0e5dc"}
+                  stroke={l.you ? "#b7c9a4" : "#d3ddcb"}
                   strokeWidth={l.you ? 1.5 : 1}
-                  strokeDasharray={l.you ? undefined : "4 8"}
+                  strokeDasharray={l.you ? "0" : "5 9"}
                 />
                 <SvgText
                   x={(i + 0.5) * lw + 10}
                   y={36}
                   textAnchor="middle"
-                  fontSize={10}
-                  fontWeight={l.you ? "700" : "400"}
+                  fontSize={11}
+                  fontWeight={l.you ? "bold" : "600"}
                   fill={l.you ? "#282f2c" : "#616c63"}
                 >
-                  {l.you
-                    ? selfLaneLabel(l.name, "caps")
-                    : initialsFromName(l.name)}
+                  {l.you ? selfLaneLabel(l.name, "caps") : initialsFromName(l.name)}
                 </SvgText>
               </G>
             ))}
@@ -206,19 +209,19 @@ export function LaneTrack({
               { length: 7 },
               (_, i) => bounds.min + (bounds.span * i) / 6,
             )
-              .filter((n) => n >= 0)
-              .map((n) => (
-                <G key={n}>
+              .filter((v) => v >= 0)
+              .map((v) => (
+                <G key={v}>
                   <Line
                     x1={18}
                     x2={w - 50}
-                    y1={y(n)}
-                    y2={y(n)}
-                    stroke="#e0e5dc"
+                    y1={y(v)}
+                    y2={y(v)}
+                    stroke="#c5d2bb"
                     strokeDasharray="2 7"
                   />
-                  <SvgText x={w - 42} y={y(n) + 4} fontSize={9} fill="#616c63">
-                    {n.toFixed(v.span < 6 ? 1 : 0)}
+                  <SvgText x={w - 42} y={y(v) + 4} fontSize={9} fill="#616c63">
+                    {v.toFixed(unit === "pts" ? 0 : 1)}
                   </SvgText>
                 </G>
               ))}
@@ -252,56 +255,17 @@ export function LaneTrack({
                 l.you && animating ? (overtakeFrame?.charging ?? 0) : 0;
               const xx = (i + 0.5) * lw + 10 + (effect?.joltX ?? 0),
                 yy = y(value) + (l.you ? charging * 4 : 0);
-              const wakeLen = Math.min(
-                28 + speed * 88,
-                Math.max(0, maxTailY - (yy + 14)),
-              );
-              const rivalMovedInSlide =
-                !l.you &&
-                overtakeFrame?.phase === "rival-slide" &&
-                overtakePlan?.rivals[l.id]?.moved;
+              const headHalf = 29 * polishedLaneScale(l.you);
               return (
                 <G
                   key={l.id}
                   onPress={() => onSelect(l)}
                   accessible
-                  accessibilityRole="button"
                   accessibilityLabel={`${l.name}, ${value.toFixed(1)} ${unit}${edge ? `, ${edge} of view` : ""}`}
                 >
-                  <Circle cx={xx} cy={yy} r={24} fill="transparent" />
                   {l.id === leaderId && !edge ? (
-                    <G transform={`translate(${xx - 24}, ${yy - 76})`}>
+                    <G transform={`translate(${xx - 24}, ${yy - 104})`}>
                       <Ember size={48} expression="joy" />
-                    </G>
-                  ) : null}
-                  {l.you && speed > 0.01 && wakeLen > 6 ? (
-                    <G>
-                      <Path
-                        d={`M ${xx - 16} ${yy + 14} C ${xx - 22} ${yy + 14 + wakeLen * 0.45}, ${xx - 8} ${yy + 14 + wakeLen * 0.85}, ${xx} ${yy + 14 + wakeLen} C ${xx + 8} ${yy + 14 + wakeLen * 0.85}, ${xx + 22} ${yy + 14 + wakeLen * 0.45}, ${xx + 16} ${yy + 14} Z`}
-                        fill="url(#afterburnWake)"
-                        opacity={speed}
-                      />
-                      {[-14, -7, 0, 7, 14].map((dx, idx) => {
-                        const isCenter = idx === 2;
-                        const streakLen = Math.min(
-                          speed * (54 + (idx % 2 === 0 ? 34 : 18)),
-                          Math.max(0, maxTailY - (yy + 24)),
-                        );
-                        if (streakLen <= 2) return null;
-                        return (
-                          <Line
-                            key={idx}
-                            x1={xx + dx}
-                            x2={xx + dx}
-                            y1={yy + 24}
-                            y2={yy + 24 + streakLen}
-                            stroke="#f1c75b"
-                            strokeWidth={isCenter ? 6 : 2}
-                            strokeLinecap="round"
-                            opacity={speed * (isCenter ? 0.48 : 0.78)}
-                          />
-                        );
-                      })}
                     </G>
                   ) : null}
                   {l.you && charging > 0.02 ? (
@@ -312,18 +276,6 @@ export function LaneTrack({
                       strokeWidth={2}
                       strokeLinecap="round"
                       opacity={charging}
-                    />
-                  ) : null}
-                  {rivalMovedInSlide ? (
-                    <Line
-                      x1={xx}
-                      x2={xx}
-                      y1={yy + 18}
-                      y2={yy + 46}
-                      stroke="#9bbf63"
-                      strokeWidth={3}
-                      strokeLinecap="round"
-                      opacity={0.45}
                     />
                   ) : null}
                   {effect?.isPassed && effect.ripple < 1 ? (
@@ -337,30 +289,15 @@ export function LaneTrack({
                       opacity={1 - effect.ripple}
                     />
                   ) : null}
-                  {l.you ? (
-                    <Circle cx={xx} cy={yy} r={34} fill="url(#youGlow)" />
-                  ) : null}
-                  <Circle
-                    cx={xx}
-                    cy={yy + 4}
-                    r={l.you ? 24 : 19}
-                    fill="#282f2c18"
-                  />
-                  <Circle
-                    cx={xx}
-                    cy={yy}
-                    r={l.you ? 23 : 18}
-                    fill={l.you ? "#282f2c" : "#ffffff"}
-                    stroke={l.you ? "#f1c75b" : "#e0e5dc"}
-                    strokeWidth={l.you ? 4 : 2}
-                  />
+                  <G clipPath={`url(#${clipId}-field)`}><PolishedRacer x={xx} y={yy} you={l.you} time={edge ? undefined : wakeTime}/></G>
+                  <Rect x={xx - 24} y={yy - headHalf - 4} width={48} height={headHalf * 2 + 8} rx={24} fill="transparent"/>
                   <SvgText
                     x={xx}
                     y={yy + 4}
                     textAnchor="middle"
                     fontSize={10}
                     fontWeight="bold"
-                    fill={l.you ? "#fafaf7" : "#282f2c"}
+                    fill="#282f2c"
                   >
                     {edge
                       ? edge === "ahead"
@@ -370,7 +307,7 @@ export function LaneTrack({
                   </SvgText>
                   <Rect
                     x={xx - 32}
-                    y={yy + 28}
+                    y={yy - headHalf - 26}
                     width={64}
                     height={20}
                     rx={10}
@@ -379,7 +316,7 @@ export function LaneTrack({
                   />
                   <SvgText
                     x={xx}
-                    y={yy + 42}
+                    y={yy - headHalf - 12}
                     textAnchor="middle"
                     fontSize={10}
                     fill={l.you ? "#f1c75b" : "#282f2c"}
