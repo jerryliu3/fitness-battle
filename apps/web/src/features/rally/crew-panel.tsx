@@ -82,7 +82,7 @@ export function CrewPanel() {
   const [data, setData] = useState<CrewData | null>(null);
   const [selected, setSelected] = useState("");
   const [panel, setPanel] = useState<
-    "invite" | "manage" | "add" | null
+    "invite" | "manage" | "add" | "members" | null
   >(null);
   const [name, setName] = useState("");
   const [code, setCode] = useState("");
@@ -319,7 +319,18 @@ export function CrewPanel() {
               ＋ Add Crew
             </button>
           </div>
-          <section className="focus-crew-hero">
+          <section
+            className="focus-crew-hero"
+            role="button"
+            tabIndex={0}
+            onClick={() => setPanel("members")}
+            onKeyDown={(event) => {
+              if (event.key === "Enter" || event.key === " ") {
+                event.preventDefault();
+                setPanel("members");
+              }
+            }}
+          >
             <p className="fb-kicker">
               {isSolo
                 ? "Solo circle · 1 member"
@@ -338,11 +349,10 @@ export function CrewPanel() {
               <div className="focus-crew-hero-buttons">
                 <button
                   type="button"
-                  onClick={() => {
-                    if (!crew || crew.id === "solo-preview") {
-                      setPanel("invite");
-                      return;
-                    }
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    setPanel("invite");
+                    if (!crew || crew.id === "solo-preview") return;
                     const link = `${window.location.origin}/field?invite=${encodeURIComponent(crew.invite_code)}`;
                     void navigator.clipboard
                       .writeText(link)
@@ -357,14 +367,17 @@ export function CrewPanel() {
                       );
                   }}
                 >
-                  Invite a friend ＋
+                  Invite
                 </button>
                 <button
                   type="button"
                   className="focus-crew-gear-btn"
                   title="Crew settings"
                   aria-label="Crew settings"
-                  onClick={() => setPanel("manage")}
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    setPanel("manage");
+                  }}
                 >
                   <svg
                     width="18"
@@ -412,58 +425,40 @@ export function CrewPanel() {
                     : "Every pace belongs here."}
                 </p>
               </section>
-              <h2>Crew standings</h2>
-              <section className="focus-card">
-                {members
-                    .slice()
-                    .sort(
-                      (a, b) =>
-                        entries
-                          .filter((e) => e.user_id === b.user_id)
-                          .reduce((t, e) => t + Number(e.distance_m), 0) -
-                        entries
-                          .filter((e) => e.user_id === a.user_id)
-                          .reduce((t, e) => t + Number(e.distance_m), 0),
-                    )
-                    .map((m, i) => (
-                      <div className="fb-row" key={m.user_id}>
-                        <span>{i + 1}</span>
-                        <b className="fb-grow">{m.display_name}</b>
-                        <span>
-                          {formatDistanceM(
-                            entries
-                              .filter((e) => e.user_id === m.user_id)
-                              .reduce((t, e) => t + Number(e.distance_m), 0),
-                            state?.units,
-                          )}{" "}
-                          {unitLabel}
-                        </span>
-                      </div>
-                    ))}
-              </section>
+              {user ? (
+                <>
+                  <h2>Crew standings</h2>
+                  <section className="focus-card">
+                    {members
+                      .slice()
+                      .sort(
+                        (a, b) =>
+                          entries
+                            .filter((e) => e.user_id === b.user_id)
+                            .reduce((t, e) => t + Number(e.distance_m), 0) -
+                          entries
+                            .filter((e) => e.user_id === a.user_id)
+                            .reduce((t, e) => t + Number(e.distance_m), 0),
+                      )
+                      .map((m, i) => (
+                        <div className="fb-row" key={m.user_id}>
+                          <span>{i + 1}</span>
+                          <b className="fb-grow">{m.display_name}</b>
+                          <span>
+                            {formatDistanceM(
+                              entries
+                                .filter((e) => e.user_id === m.user_id)
+                                .reduce((t, e) => t + Number(e.distance_m), 0),
+                              state?.units,
+                            )}{" "}
+                            {unitLabel}
+                          </span>
+                        </div>
+                      ))}
+                  </section>
+                </>
+              ) : null}
             </div>
-            <aside className="focus-crew-rail" aria-label="Crew members">
-              <section className="focus-card">
-                <p className="fb-kicker">A little accountability</p>
-                <h3>We go further together.</h3>
-                <div className="focus-avatar-stack focus-avatar-stack-rail">
-                  {members.slice(0, 8).map((m) => (
-                    <span key={m.user_id} title={m.display_name}>
-                      {m.display_name.slice(0, 2).toUpperCase()}
-                    </span>
-                  ))}
-                </div>
-                <p className="fb-copy">{memberCaption}</p>
-                <ul className="focus-member-list">
-                  {members.map((m) => (
-                    <li key={m.user_id}>
-                      <b>{m.display_name}</b>
-                      <small>{m.rest_week ? "Rest week" : "Active"}</small>
-                    </li>
-                  ))}
-                </ul>
-              </section>
-            </aside>
           </div>
         </>
       )}
@@ -528,8 +523,10 @@ export function CrewPanel() {
           panel === "add"
             ? "Add Crew"
             : panel === "invite"
-              ? "Better with your people."
-              : "Your crew, your rhythm."
+              ? "Invite to crew"
+              : panel === "members"
+                ? crew?.name ?? "Crew members"
+                : "Your crew, your rhythm."
         }
         body={
           !user
@@ -638,6 +635,15 @@ export function CrewPanel() {
                   : "Join or create crew"}
             </button>
           </>
+        ) : panel === "members" ? (
+          <ul className="focus-member-list">
+            {members.map((m) => (
+              <li key={m.user_id}>
+                <b>{m.display_name}</b>
+                <small>{m.rest_week ? "Rest week" : "Active"}</small>
+              </li>
+            ))}
+          </ul>
         ) : panel === "invite" ? (
           crew?.id === "solo-preview" ? (
             <div>
@@ -653,6 +659,14 @@ export function CrewPanel() {
             </div>
           ) : (
             <>
+              <p className="fb-copy">Share this link with friends.</p>
+              <label className="fb-field">
+                Invite link
+                <input
+                  readOnly
+                  value={`${typeof window !== "undefined" ? window.location.origin : ""}/field?invite=${encodeURIComponent(crew?.invite_code ?? "")}`}
+                />
+              </label>
               <label className="fb-field">
                 Invite code
                 <input readOnly value={crew?.invite_code ?? ""} />

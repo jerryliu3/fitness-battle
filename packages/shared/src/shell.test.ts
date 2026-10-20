@@ -13,8 +13,8 @@ describe("phone shell", () => {
     expect(SHELL_TABS.map((tab) => tab.label)).toEqual([
       "Home",
       "Compete",
+      "Progress",
       "Crew",
-      "Athlete",
     ]);
     expect(new Set(SHELL_TABS.map((tab) => tab.href)).size).toBe(4);
   });

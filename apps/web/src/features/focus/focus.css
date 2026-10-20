@@ -1640,7 +1640,14 @@
   color: #5a6b5c;
   font-size: 11px;
   line-height: 1;
-  cursor: help;
+  cursor: pointer;
+}
+.focus-competition-tip-body {
+  margin: 8px 0 0;
+  font-size: 12px;
+  line-height: 1.45;
+  color: #616c63;
+  max-width: 36ch;
 }
 .focus-competition-tracks {
   flex-shrink: 0;

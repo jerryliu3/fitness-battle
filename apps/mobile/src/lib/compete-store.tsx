@@ -16,13 +16,14 @@ import {
   rollClock,
   seedArenaBaselinesFromState,
   seenFieldFromState,
+  shellTabFromPath,
   SPORTS,
   type Action,
   type CompeteState,
   type FieldNotice,
 } from "@fitness-battle/shared";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { useRouter } from "expo-router";
+import { usePathname, useRouter } from "expo-router";
 import {
   createContext,
   useCallback,
@@ -106,6 +107,7 @@ async function preloadBaselineCache(
 }
 
 export function CompeteProvider({ children }: { children: ReactNode }) {
+  const pathname = usePathname();
   const router = useRouter();
   const auth = useAuth();
   const authRef = useRef(auth);
@@ -466,13 +468,15 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
       setFieldNotice(notice);
       if (notice.personal && announcedNotice.current !== notice.title) {
         announcedNotice.current = notice.title;
-        router.navigate("/arena");
+        if (shellTabFromPath(pathname)?.id !== "you") {
+          router.navigate("/arena");
+        }
       }
     });
     return () => {
       alive = false;
     };
-  }, [router, state]);
+  }, [pathname, router, state]);
 
   const scheduleSave = useCallback((next: CompeteState) => {
     const id = accountRef.current;

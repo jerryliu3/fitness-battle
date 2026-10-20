@@ -96,6 +96,7 @@ function YouContent() {
     ? { userId: user.id, localOnly: demoMode || user.mode === "demo" }
     : null;
   const requestedPanel = searchParams.get("panel");
+  const requestedEdit = searchParams.get("edit");
   useEffect(() => {
     if (requestedPanel && requestedPanel in PANEL_TITLES) setPanel(requestedPanel as AthletePanel);
   }, [requestedPanel]);
@@ -706,16 +707,16 @@ function YouContent() {
               <section className="fb-card">
                 <h2>Units</h2>
                 <p className="fb-copy">
-                  Distance display for Arena, Crew, and Athlete. Today shows
-                  hours, not distance.
+                  Imperial vs metric for distances across Compete, Crew, and
+                  Progress. Home shows hours only.
                 </p>
-                <div className="focus-segments" role="group" aria-label="Units">
+                <div className="focus-segments" role="group" aria-label="Unit system">
                   <button
                     type="button"
                     aria-pressed={state.units === "us"}
                     onClick={() => dispatch({ type: "set-units", units: "us" })}
                   >
-                    Miles (US)
+                    Imperial
                   </button>
                   <button
                     type="button"
@@ -724,7 +725,7 @@ function YouContent() {
                       dispatch({ type: "set-units", units: "metric" })
                     }
                   >
-                    Kilometres
+                    Metric
                   </button>
                 </div>
               </section>
@@ -832,67 +833,6 @@ function YouContent() {
                     </div>
                   );
                 })}
-              </section>
-
-              <section className="fb-card" aria-label="This week">
-                <h2>This week</h2>
-                {state.enrollments.length === 0 ? (
-                  <p className="fb-copy">You are not registered for an event this week.</p>
-                ) : (
-                  state.enrollments.map((enrollment) => {
-                    const renewal = sportRenewal(state, enrollment.sport);
-                    return (
-                      <div key={enrollment.sport}>
-                        <p className="fb-copy">
-                          {sportById(enrollment.sport).name}. {renewal.detail}
-                        </p>
-                        <button
-                          type="button"
-                          className="fb-btn-line"
-                          style={{
-                            width: "auto",
-                            fontSize: 13,
-                            padding: "6px 14px",
-                            marginTop: 8,
-                          }}
-                          onClick={() =>
-                            dispatch({
-                              type: renewal.renews ? "schedule-leave" : "resume-renewal",
-                              sport: enrollment.sport,
-                            })
-                          }
-                        >
-                          {renewal.renews
-                            ? `Stop ${sportById(enrollment.sport).name} after this week`
-                            : `Keep ${sportById(enrollment.sport).name} next week`}
-                        </button>
-                      </div>
-                    );
-                  })
-                )}
-                {sleep.enrolled ? (
-                  <div>
-                    <p className="fb-copy">{sleep.detail}</p>
-                    <button
-                      type="button"
-                      className="fb-btn-line"
-                      style={{
-                        width: "auto",
-                        fontSize: 13,
-                        padding: "6px 14px",
-                        marginTop: 8,
-                      }}
-                      onClick={() =>
-                        dispatch({
-                          type: sleep.renews ? "schedule-leave" : "resume-renewal",
-                          metric: "sleep",
-                        })
-                      }
-                    >
-                      {sleep.renews ? "Stop sleep after this week" : "Keep sleep next week"}
-                    </button>
-                  </div>
-                ) : null}
               </section>
 
               <section className="fb-card">
@@ -1036,7 +976,12 @@ function YouContent() {
   return (
     <>
     <div className="focus-athlete" ref={overviewRef} inert={Boolean(panel) || settingsPresent}>
-      <AthleteOverview state={state} email={user.email} demoMode={demoMode} />
+      <AthleteOverview
+        state={state}
+        email={user.email}
+        demoMode={demoMode}
+        openProfileEdit={requestedEdit === "profile"}
+      />
       {isOwnerEmail(user.email) && <Link href="/admin" className="fb-btn-line">Round lab</Link>}
       <nav className="focus-settings-list" aria-label="Athlete settings">
         {(

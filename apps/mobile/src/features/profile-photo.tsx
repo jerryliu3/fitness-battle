@@ -6,7 +6,7 @@ import {
 } from "@fitness-battle/shared";
 import * as ImagePicker from "expo-image-picker";
 import { useEffect, useRef, useState } from "react";
-import { Image, Text, View } from "react-native";
+import { Image, Pressable, Text, View } from "react-native";
 import { useAuth } from "../lib/auth";
 import { useCompeteStore } from "../lib/compete-store";
 import { decodePhoto } from "../lib/profile-photo";
@@ -90,7 +90,11 @@ export function ProfilePhoto({ state }: { state: CompeteState }) {
   }
   return (
     <View style={{ alignItems: "center", gap: 8, maxWidth: 130 }}>
-      <View
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel="Change profile photo"
+        disabled={!user || busy}
+        onPress={() => void change()}
         style={{
           width: 86,
           height: 86,
@@ -112,15 +116,7 @@ export function ProfilePhoto({ state }: { state: CompeteState }) {
             {initialsFromName(state.name)}
           </Text>
         )}
-      </View>
-      {user ? (
-        <FocusButton
-          label={busy ? "Updating…" : "Change photo"}
-          secondary
-          disabled={busy}
-          onPress={() => void change()}
-        />
-      ) : null}
+      </Pressable>
       {user && state.avatarUrl ? (
         <FocusButton
           label="Remove photo"

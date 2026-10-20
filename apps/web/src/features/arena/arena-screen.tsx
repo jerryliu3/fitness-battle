@@ -52,6 +52,7 @@ export function ArenaScreen() {
   const [competeWithCrew, setCompeteWithCrew] = useState(false);
   const [sport, setSport] = useState<SportId | "sleep" | null>(null);
   const [track, setTrack] = useScoreTrackLens();
+  const [competitionTipOpen, setCompetitionTipOpen] = useState(false);
 
   function chooseTrack(next: ScoreTrack) {
     if (next === track) return;
@@ -114,12 +115,18 @@ export function ArenaScreen() {
             <button
               type="button"
               className="focus-competition-tip"
-              title={SCORE_TRACK_TOOLTIP}
-              aria-label={SCORE_TRACK_TOOLTIP}
+              aria-label="About competition scoring"
+              aria-expanded={competitionTipOpen}
+              onClick={() => setCompetitionTipOpen((open) => !open)}
             >
               ⓘ
             </button>
           </p>
+          {competitionTipOpen ? (
+            <p className="focus-competition-tip-body" role="note">
+              {SCORE_TRACK_TOOLTIP}
+            </p>
+          ) : null}
           <p className="focus-competition-dates">
             {dateRangeLabel}
             <span className="focus-competition-pill">{badgeLabel}</span>

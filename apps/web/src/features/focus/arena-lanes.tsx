@@ -470,9 +470,9 @@ export function ArenaLanes({
               <motion.g initial={false} animate={{ opacity: standings ? 1 : 0 }}>
                 <rect x={-30} y={-33} width={Math.max(200, width - 16)} height={70} rx={14} fill="transparent" />
                 <line x1={-22} x2={width - 52} y1={38} y2={38} stroke="#e0e5dc" />
-                <text x={40} y={4} fill="#616c63" fontSize={12}>{rank}</text>
+                <text x={40} y={4} fill="#616c63" fontSize={12}>#{rank}</text>
                 <text x={64} y={-5} fill="#282f2c" fontSize={13} fontWeight={600}>{l.you ? selfLaneLabel(l.name) : l.name}</text>
-                <text x={64} y={15} fill="#a67c00" fontSize={10}>Effort score {scores[l.id] ?? "—"}</text>
+                <text x={64} y={15} fill="#a67c00" fontSize={10}>{scores[l.id] ?? "—"} effort score</text>
                 <text x={width - 58} y={5} textAnchor="end" fill="#282f2c" fontSize={13} fontWeight={700}>{relativeDistance(l.value)}</text>
               </motion.g>
               </g>

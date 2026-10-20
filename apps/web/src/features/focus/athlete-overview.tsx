@@ -18,7 +18,7 @@ import {
   rankForElo,
   type CompeteState,
 } from "@fitness-battle/shared";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 function seasonSummary(state: CompeteState) {
   const counted = state.activities.filter((a) => countsOnTrack(a, "open"));
@@ -52,10 +52,12 @@ export function AthleteOverview({
   state,
   email,
   demoMode,
+  openProfileEdit = false,
 }: {
   state: CompeteState;
   email?: string | null;
   demoMode?: boolean;
+  openProfileEdit?: boolean;
 }) {
   const { user } = useAuth();
   const { dispatch } = useCompete();
@@ -68,6 +70,13 @@ export function AthleteOverview({
   const [avatarBusy, setAvatarBusy] = useState(false);
   const [avatarError, setAvatarError] = useState<string | null>(null);
   const [profileError, setProfileError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!openProfileEdit) return;
+    setName(state.name);
+    setCity(state.city);
+    setEditing(true);
+  }, [openProfileEdit, state.name, state.city]);
 
   const rating = state.ratings.find((r) => r.sport === state.primary);
   const openElo =
@@ -279,7 +288,29 @@ export function AthleteOverview({
         </section>
       ) : (
         <section className="focus-profile-card" aria-label="Athlete profile">
-          <div className="focus-portrait">
+          <div
+            className="focus-portrait"
+            role="button"
+            tabIndex={avatarBusy ? -1 : 0}
+            aria-label={state.avatarUrl ? "Change photo" : "Upload photo"}
+            onClick={() => {
+              if (avatarBusy) return;
+              setName(state.name);
+              setCity(state.city);
+              setEditing(true);
+              fileInputRef.current?.click();
+            }}
+            onKeyDown={(e) => {
+              if (avatarBusy) return;
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                setName(state.name);
+                setCity(state.city);
+                setEditing(true);
+                fileInputRef.current?.click();
+              }
+            }}
+          >
             {state.avatarUrl ? (
               <img
                 src={state.avatarUrl}
@@ -321,6 +352,10 @@ export function AthleteOverview({
 
       <section className="focus-season-strip" aria-label="Your season so far">
         <p className="fb-kicker">Your season so far</p>
+        <p className="fb-note" style={{ marginTop: 4 }}>
+          All counted Open-track sessions on this account; weeks tally closed
+          competition periods for your primary sport.
+        </p>
         <div className="focus-season-stats">
           <div>
             <strong>{formatDistanceM(season.meters, state.units)}</strong>

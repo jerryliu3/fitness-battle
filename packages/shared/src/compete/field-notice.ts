@@ -109,6 +109,24 @@ export function fieldChangeNotice(
     return null;
   }
 
+  if (previous.units !== next.units) {
+    const rivalsUnchanged = next.rivals.every((rival) => {
+      const before = previous.rivals.find((item) => item.id === rival.id);
+      return (
+        before &&
+        before.distanceM === rival.distanceM &&
+        before.movingSec === rival.movingSec
+      );
+    });
+    if (
+      previous.youDistanceM === next.youDistanceM &&
+      previous.youMovingSec === next.youMovingSec &&
+      rivalsUnchanged
+    ) {
+      return null;
+    }
+  }
+
   const personal =
     gained(previous.youDistanceM, next.youDistanceM) ||
     gained(previous.youMovingSec, next.youMovingSec);
