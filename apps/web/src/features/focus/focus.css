@@ -1330,6 +1330,29 @@
   padding-top: 14px;
   border-top: 1px solid #e0e5dc;
 }
+.focus-chart-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex-shrink: 0;
+  min-width: 88px;
+}
+.focus-chart-action {
+  min-height: 34px;
+  padding: 6px 10px;
+  border-radius: 10px;
+  border: 1px solid #e0e5dc;
+  background: #fff;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 700;
+  color: #282f2c;
+  cursor: pointer;
+}
+.focus-chart-action:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
 .focus-activity-svg {
   flex: 1;
   min-width: 0;
@@ -1617,7 +1640,14 @@
   color: #5a6b5c;
   font-size: 11px;
   line-height: 1;
-  cursor: help;
+  cursor: pointer;
+}
+.focus-competition-tip-body {
+  margin: 8px 0 0;
+  font-size: 12px;
+  line-height: 1.45;
+  color: #616c63;
+  max-width: 36ch;
 }
 .focus-competition-tracks {
   flex-shrink: 0;

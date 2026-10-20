@@ -7,6 +7,7 @@ import { FieldScreen } from "@/features/field/field-screen";
 import { TodayScreen } from "@/features/today/today-screen";
 import YouRoute from "@/features/you/you-route";
 import {
+  initialsFromName,
   SHELL_TABS,
   SHELL_TAB_ICONS,
   isShellTabId,
@@ -28,12 +29,16 @@ import {
 } from "./boot-gate";
 import "./shell.css";
 
-function renderTab(tabId: ShellTabId, accountKey: string): ReactNode {
+function renderTab(
+  tabId: ShellTabId,
+  accountKey: string,
+  tabActive: boolean,
+): ReactNode {
   switch (tabId) {
     case "today":
       return <TodayScreen />;
     case "arena":
-      return <ArenaScreen />;
+      return <ArenaScreen tabActive={tabActive} />;
     case "field":
       return <FieldScreen />;
     case "you":
@@ -59,6 +64,7 @@ export function PhoneShell({
     retryLoad,
     fieldNotice,
   } = useCompete();
+  const profileLabel = state?.name ?? user?.email ?? "You";
   const tab = shellTabFromPath(path);
   useCompeteFieldRefresh(!hideTabs && (tab?.id === "arena" || tab?.id === "field"));
   const [intent, setIntent] = useState<ShellTabId | null>(null);
@@ -179,7 +185,18 @@ export function PhoneShell({
       <div className="phone-shell">
         <header className="focus-shell-header">
           <Link href="/today">OVERTAEK</Link>
-          <span>A LITTLE FURTHER, TOGETHER.</span>
+          <span className="focus-shell-tagline">A LITTLE FURTHER, TOGETHER.</span>
+          <Link
+            href="/you?edit=profile"
+            className="focus-shell-profile"
+            aria-label="Open your profile"
+          >
+            {state?.avatarUrl ? (
+              <img src={state.avatarUrl} alt="" className="focus-shell-profile-img" />
+            ) : (
+              <span>{initialsFromName(profileLabel)}</span>
+            )}
+          </Link>
         </header>
         {fieldNotice ? null : <ReturnProgress />}
         {!dataReady ? (
@@ -195,7 +212,9 @@ export function PhoneShell({
                   inert={!on}
                   aria-hidden={!on}
                 >
-                  {visited.has(tab.id) ? panel(renderTab(tab.id, accountKey)) : null}
+                  {visited.has(tab.id)
+                    ? panel(renderTab(tab.id, accountKey, on))
+                    : null}
                 </div>
               );
             })}

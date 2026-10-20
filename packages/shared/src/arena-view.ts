@@ -38,6 +38,32 @@ export function clampArenaLaneCenter(center: number, span: number): number {
   const safeCenter = Number.isFinite(center) ? center : 0;
   return Math.max(minCenter, safeCenter);
 }
+
+/** Keep the viewport from scrolling far past the current field leader. */
+export function clampArenaLaneCenterToField(
+  center: number,
+  span: number,
+  fieldHigh: number,
+  aheadPadding = 8,
+): number {
+  const safeSpan = Number.isFinite(span)
+    ? Math.max(0.5, Math.min(5000, span))
+    : 6;
+  const minCenter = safeSpan * 0.43;
+  const safeCenter = Number.isFinite(center) ? center : 0;
+  const safeHigh = Number.isFinite(fieldHigh) ? Math.max(0, fieldHigh) : 0;
+  const pad = Number.isFinite(aheadPadding) ? Math.max(0, aheadPadding) : 8;
+  const maxCenter = Math.max(minCenter, safeHigh + pad - safeSpan / 2);
+  const clamped = Math.max(minCenter, safeCenter);
+  return Math.min(clamped, maxCenter);
+}
+
+export function arenaFieldHigh(
+  lanes: readonly { value: number; ghost?: boolean }[],
+): number {
+  const values = lanes.filter((lane) => !lane.ghost).map((lane) => lane.value);
+  return values.length ? Math.max(...values) : 0;
+}
 export function arenaPosition(value: number, view: ArenaViewWindow) {
   const bounds = arenaWindow(view.center, view.span);
   return {

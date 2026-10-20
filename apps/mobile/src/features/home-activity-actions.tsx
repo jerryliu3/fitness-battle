@@ -1,7 +1,7 @@
 import { activityFromSample, parseManualActivity, SPORTS, sportById, type ActivitySample, type ReadinessSample, type SportId } from "@fitness-battle/shared";
 import { Link } from "expo-router";
 import { useRef, useState } from "react";
-import { Text, TextInput, View } from "react-native";
+import { Pressable, Text, TextInput, View } from "react-native";
 import { requestApi } from "../lib/api";
 import { useAuth } from "../lib/auth";
 import { useCompeteStore } from "../lib/compete-store";
@@ -10,7 +10,11 @@ import { mobileEnv } from "../lib/env";
 import { createAppleHealthDeps, createHealthConnectDeps, syncAppleHealth, syncHealthConnect } from "../lib/device-health";
 import { FocusButton, FocusSheet, f } from "../ui/focus";
 
-export function HomeActivityActions({ onSuggestion }: { onSuggestion: () => void }) {
+export function HomeActivityActions({
+  compact = false,
+}: {
+  compact?: boolean;
+}) {
   const { state, canWrite, dispatch, refresh, saveError } = useCompeteStore();
   const { user, accessToken, demoMode } = useAuth();
   const owner = useRef(user?.id); owner.current = user?.id;
@@ -53,11 +57,62 @@ export function HomeActivityActions({ onSuggestion }: { onSuggestion: () => void
     } catch { if (owner.current === id) setNote("Sync could not finish. Retry from Athlete."); }
     finally { flight.current = false; setBusy(false); }
   }
+  const actionRow = compact ? (
+    <View style={{ flexDirection: "row", gap: 8, marginTop: 8 }}>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel="Sync activities"
+        disabled={!user || !canWrite || busy}
+        onPress={() => void sync()}
+        style={{
+          flex: 1,
+          minHeight: 36,
+          borderRadius: 10,
+          borderWidth: 1,
+          borderColor: "#e0e5dc",
+          backgroundColor: "#fff",
+          alignItems: "center",
+          justifyContent: "center",
+          paddingHorizontal: 8,
+        }}
+      >
+        <Text style={[f.small, { fontFamily: "DMSans_700Bold" }]}>
+          {busy ? "…" : "↻ Sync"}
+        </Text>
+      </Pressable>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel="Add manual activity"
+        disabled={!user || !canWrite || busy}
+        onPress={() => {
+          setFormError("");
+          setOpen(true);
+        }}
+        style={{
+          flex: 1,
+          minHeight: 36,
+          borderRadius: 10,
+          borderWidth: 1,
+          borderColor: "#e0e5dc",
+          backgroundColor: "#fff",
+          alignItems: "center",
+          justifyContent: "center",
+          paddingHorizontal: 8,
+        }}
+      >
+        <Text style={[f.small, { fontFamily: "DMSans_700Bold" }]}>＋ Manual</Text>
+      </Pressable>
+    </View>
+  ) : (
+    <>
+      <FocusButton label={busy ? "Syncing…" : "Sync activities"} secondary disabled={!user || !canWrite || busy} onPress={() => void sync()}/>
+      <FocusButton label="Add activity" disabled={!user || !canWrite || busy} onPress={() => { setFormError(""); setOpen(true); }}/>
+    </>
+  );
+
   return <View style={{ gap: 10 }}>
-    <FocusButton label={busy ? "Syncing…" : "Sync activities"} secondary disabled={!user || !canWrite || busy} onPress={() => void sync()}/>
-    <FocusButton label="Add activity" disabled={!user || !canWrite || busy} onPress={() => { setFormError(""); setOpen(true); }}/>
-    <FocusButton label="Today’s suggested session" secondary onPress={onSuggestion}/>
-    {!user && <Link href="/you">Sign in to add or sync activities</Link>}
+    {actionRow}
+    {!user && !compact && <Link href="/you">Sign in to add or sync activities</Link>}
     {note ? <Text style={f.small} accessibilityLiveRegion="polite">{note}</Text> : null}
     {saveError ? <Text style={f.small}>{saveError}</Text> : null}
     <FocusSheet open={open} onClose={() => setOpen(false)} title="Add today’s activity" body="Manual activities count in Open standings only.">

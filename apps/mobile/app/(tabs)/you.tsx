@@ -560,7 +560,7 @@ export default function YouScreen() {
               style={[f.chip, state.units === "us" && f.chipActive]}
               onPress={() => dispatch({ type: "set-units", units: "us" })}
             >
-              <Text style={f.rowTitle}>Miles (US)</Text>
+              <Text style={f.rowTitle}>Imperial</Text>
             </Pressable>
             <Pressable
               accessibilityRole="button"
@@ -568,7 +568,7 @@ export default function YouScreen() {
               style={[f.chip, state.units === "metric" && f.chipActive]}
               onPress={() => dispatch({ type: "set-units", units: "metric" })}
             >
-              <Text style={f.rowTitle}>Kilometres</Text>
+              <Text style={f.rowTitle}>Metric</Text>
             </Pressable>
           </View>
           <Text style={f.h2}>Events</Text>

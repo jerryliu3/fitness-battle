@@ -109,7 +109,10 @@ export default function ArenaScreen() {
   );
 
   useEffect(() => {
-    if (!isFocused) return;
+    if (!isFocused) {
+      setMode("Lanes");
+      return;
+    }
     if (!state || !arena?.optedIn || fieldLanes.length === 0) {
       setOvertakePlan(null);
       setOvertakeProgress(1);
@@ -506,7 +509,6 @@ export default function ArenaScreen() {
               🏃 🚴 🚶 🏋️
             </Text>
             <Text style={f.title}>Your next chapter starts here.</Text>
-            <Text style={f.copy}>Pick an event and join for the week.</Text>
             <FocusButton
               label="Register for an event"
               onPress={() => {

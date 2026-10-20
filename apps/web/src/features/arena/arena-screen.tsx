@@ -43,7 +43,7 @@ function formatCompetitionDateRange(startsAt: Date, endsAt: Date): string {
   return `${startsAt.toLocaleDateString("en-US", opts)} – ${lastDay.toLocaleDateString("en-US", opts)}`;
 }
 
-export function ArenaScreen() {
+export function ArenaScreen({ tabActive = true }: { tabActive?: boolean }) {
   const { state, dispatch, loadStatus, fieldNotice, dismissFieldNotice, standingsStale } = useCompete();
   const { user } = useAuth();
   const router = useRouter();
@@ -52,6 +52,7 @@ export function ArenaScreen() {
   const [competeWithCrew, setCompeteWithCrew] = useState(false);
   const [sport, setSport] = useState<SportId | "sleep" | null>(null);
   const [track, setTrack] = useScoreTrackLens();
+  const [competitionTipOpen, setCompetitionTipOpen] = useState(false);
 
   function chooseTrack(next: ScoreTrack) {
     if (next === track) return;
@@ -114,12 +115,18 @@ export function ArenaScreen() {
             <button
               type="button"
               className="focus-competition-tip"
-              title={SCORE_TRACK_TOOLTIP}
-              aria-label={SCORE_TRACK_TOOLTIP}
+              aria-label="About competition scoring"
+              aria-expanded={competitionTipOpen}
+              onClick={() => setCompetitionTipOpen((open) => !open)}
             >
               ⓘ
             </button>
           </p>
+          {competitionTipOpen ? (
+            <p className="focus-competition-tip-body" role="note">
+              {SCORE_TRACK_TOOLTIP}
+            </p>
+          ) : null}
           <p className="focus-competition-dates">
             {dateRangeLabel}
             <span className="focus-competition-pill">{badgeLabel}</span>
@@ -181,7 +188,6 @@ export function ArenaScreen() {
               🏃 🚴 🚶 🏋️
             </div>
             <h2>Your next chapter starts here.</h2>
-            <p className="fb-copy">Pick an event and join for the week.</p>
             <button
               type="button"
               className="fb-btn"
@@ -205,6 +211,7 @@ export function ArenaScreen() {
               <section key={r.sport} style={{ marginBottom: 36 }}>
                 <FieldStage
                   key={`${r.sport}-${state.units}`}
+                  tabActive={tabActive}
                   sportTitle={sportSpec?.name ?? r.sport}
                   model={sportModel}
                   boardRows={sportBoard.rows}

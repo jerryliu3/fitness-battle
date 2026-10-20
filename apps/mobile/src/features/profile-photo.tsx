@@ -6,18 +6,19 @@ import {
 } from "@fitness-battle/shared";
 import * as ImagePicker from "expo-image-picker";
 import { useEffect, useRef, useState } from "react";
-import { Image, Text, View } from "react-native";
+import { Image, Pressable, Text, View } from "react-native";
 import { useAuth } from "../lib/auth";
 import { useCompeteStore } from "../lib/compete-store";
 import { decodePhoto } from "../lib/profile-photo";
 import { supabase } from "../lib/supabase";
 import { SHELL_COLORS as c } from "../theme";
-import { FocusButton, f } from "../ui/focus";
+import { FocusButton, FocusSheet, f } from "../ui/focus";
 
 export function ProfilePhoto({ state }: { state: CompeteState }) {
   const { user, demoMode } = useAuth();
   const { dispatch } = useCompeteStore();
   const [busy, setBusy] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
   const flight = useRef(false);
   const ownerRef = useRef(user?.id);
   ownerRef.current = user?.id;
@@ -59,22 +60,22 @@ export function ProfilePhoto({ state }: { state: CompeteState }) {
           url = `data:image/jpeg;base64,${asset.base64}`;
         } else {
           const path = getCanonicalAvatarObjectPath(id);
-          const { error } = await supabase.storage
+          const { error: uploadError } = await supabase.storage
             .from("avatars")
             .upload(path, bytes, { upsert: true, contentType: "image/jpeg" });
-          if (error) throw error;
+          if (uploadError) throw uploadError;
           url = `${supabase.storage.from("avatars").getPublicUrl(path).data.publicUrl}?v=${Date.now()}`;
         }
       }
       if (remove && !demoMode && user.mode !== "demo") {
-        const { error } = await supabase.storage.from("avatars").remove(
+        const { error: removeError } = await supabase.storage.from("avatars").remove(
           buildAvatarCleanupPathsForProfileChange({
             userId: id,
             previousAvatarUrl: state.avatarUrl,
             nextAvatarUrl: null,
           }),
         );
-        if (error) throw error;
+        if (removeError) throw removeError;
       }
       if (mounted.current && ownerRef.current === id)
         dispatch({ type: "set-avatar", avatarUrl: url, accountId: id });
@@ -90,7 +91,14 @@ export function ProfilePhoto({ state }: { state: CompeteState }) {
   }
   return (
     <View style={{ alignItems: "center", gap: 8, maxWidth: 130 }}>
-      <View
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel="Profile photo options"
+        disabled={!user || busy}
+        onPress={() => {
+          if (!user || busy) return;
+          setMenuOpen(true);
+        }}
         style={{
           width: 86,
           height: 86,
@@ -112,23 +120,34 @@ export function ProfilePhoto({ state }: { state: CompeteState }) {
             {initialsFromName(state.name)}
           </Text>
         )}
-      </View>
-      {user ? (
+      </Pressable>
+      <FocusSheet
+        open={menuOpen}
+        title="Profile photo"
+        onClose={() => {
+          if (!busy) setMenuOpen(false);
+        }}
+      >
         <FocusButton
           label={busy ? "Updating…" : "Change photo"}
-          secondary
           disabled={busy}
-          onPress={() => void change()}
+          onPress={() => {
+            setMenuOpen(false);
+            void change();
+          }}
         />
-      ) : null}
-      {user && state.avatarUrl ? (
-        <FocusButton
-          label="Remove photo"
-          secondary
-          disabled={busy}
-          onPress={() => void change(true)}
-        />
-      ) : null}
+        {state.avatarUrl ? (
+          <FocusButton
+            label="Remove photo"
+            secondary
+            disabled={busy}
+            onPress={() => {
+              setMenuOpen(false);
+              void change(true);
+            }}
+          />
+        ) : null}
+      </FocusSheet>
       {error ? (
         <Text style={f.small} accessibilityLiveRegion="polite">
           {error}

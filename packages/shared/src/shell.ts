@@ -3,7 +3,7 @@
  * Plain data only — no React, DOM, or native imports.
  */
 
-export const SHELL_TAB_IDS = ["today", "arena", "field", "you"] as const;
+export const SHELL_TAB_IDS = ["today", "arena", "you", "field"] as const;
 
 export type ShellTabId = (typeof SHELL_TAB_IDS)[number];
 
@@ -17,8 +17,8 @@ export interface ShellTab {
 export const SHELL_TABS: readonly ShellTab[] = [
   { id: "today", label: "Home", href: "/today" },
   { id: "arena", label: "Compete", href: "/arena" },
+  { id: "you", label: "Progress", href: "/you" },
   { id: "field", label: "Crew", href: "/field" },
-  { id: "you", label: "Athlete", href: "/you" },
 ];
 
 export function isShellTabId(

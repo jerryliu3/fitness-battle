@@ -140,7 +140,7 @@ export function CrewHub() {
   const api = useCrewApi();
   const [selected, setSelected] = useState("");
   const [panel, setPanel] = useState<
-    "add" | "invite" | "manage" | "leave" | null
+    "add" | "invite" | "manage" | "leave" | "members" | null
   >(null);
   const [name, setName] = useState("");
   const [code, setCode] = useState("");
@@ -332,7 +332,12 @@ export function CrewHub() {
           <Text style={f.rowTitle}>＋ Add Crew</Text>
         </Pressable>
       </View>
-      <View style={[f.card, { backgroundColor: "#282f2c", gap: 18 }]}>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel="View crew members"
+        onPress={() => open("members")}
+        style={[f.card, { backgroundColor: "#282f2c", gap: 18 }]}
+      >
         <Text style={[f.kicker, { color: "#f1c75b" }]}>
           {solo ? "Solo circle" : "Your people"} · {members.length} member
           {members.length === 1 ? "" : "s"}
@@ -352,16 +357,18 @@ export function CrewHub() {
             ))}
           </View>
           <FocusButton
-            label="Invite a friend ＋"
+            label="Invite"
             onPress={() => {
-              if (solo) {
-                open("invite");
-                return;
+              open("invite");
+              if (!solo && crew.invite_code) {
+                const link = inviteLink(crew.invite_code);
+                void Share.share({
+                  message: `Join my crew on overtaek: ${link}`,
+                }).then(() => {
+                  setNote("Invite link ready — copied to the share sheet.");
+                  void playCue("success");
+                });
               }
-              void Share.share({
-                message: `Join my crew on overtaek: ${inviteLink(crew.invite_code)}`,
-              });
-              void playCue("success");
             }}
           />
           <Pressable
@@ -373,7 +380,7 @@ export function CrewHub() {
             <Text style={f.h2}>⚙</Text>
           </Pressable>
         </View>
-      </View>
+      </Pressable>
       <View style={f.card}>
         <Text style={f.kicker}>Our shared week · {crew.sport}</Text>
         <Text style={f.massive}>
@@ -420,31 +427,24 @@ export function CrewHub() {
         <Text style={f.copy}>Every pace belongs here.</Text>
 
       </View>
-      <Text style={f.h2}>Crew standings</Text>
-      <View style={f.card}>
-        {
-          [...members]
-            .sort((a, b) => memberTotal(b.user_id) - memberTotal(a.user_id))
-            .map((m, i) => (
-              <View key={m.user_id} style={f.row}>
-                <Text style={f.small}>{i + 1}</Text>
-                <Text style={[f.rowTitle, f.grow]}>{m.display_name}</Text>
-                <Text style={f.rowTitle}>
-                  {distance(memberTotal(m.user_id))}
-                </Text>
-              </View>
-            ))}
-      </View>
-      <View style={f.card}>
-        <Text style={f.kicker}>A little accountability</Text>
-        <Text style={f.h2}>We go further together.</Text>
-        {members.map((m) => (
-          <View key={m.user_id} style={f.row}>
-            <Text style={[f.rowTitle, f.grow]}>{m.display_name}</Text>
-            <Text style={f.small}>{m.rest_week ? "Rest week" : "Active"}</Text>
+      {user ? (
+        <>
+          <Text style={f.h2}>Crew standings</Text>
+          <View style={f.card}>
+            {[...members]
+              .sort((a, b) => memberTotal(b.user_id) - memberTotal(a.user_id))
+              .map((m, i) => (
+                <View key={m.user_id} style={f.row}>
+                  <Text style={f.small}>{i + 1}</Text>
+                  <Text style={[f.rowTitle, f.grow]}>{m.display_name}</Text>
+                  <Text style={f.rowTitle}>
+                    {distance(memberTotal(m.user_id))}
+                  </Text>
+                </View>
+              ))}
           </View>
-        ))}
-      </View>
+        </>
+      ) : null}
       {!panel && (note || api.error) ? (
         <Text style={f.copy} accessibilityLiveRegion="polite">
           {note || api.error}
@@ -490,8 +490,10 @@ export function CrewHub() {
           panel === "add"
             ? "Add Crew"
             : panel === "invite"
-              ? "Better with your people."
-              : panel === "leave"
+              ? "Invite to crew"
+              : panel === "members"
+                ? crew.name
+                : panel === "leave"
                 ? `Leave ${crew.name}?`
                 : "Your crew, your rhythm."
         }
@@ -583,6 +585,15 @@ export function CrewHub() {
               Create a crew first to invite your friends and share settings.
             </Text>
             <FocusButton label="Create crew ＋" onPress={() => open("add")} />
+          </>
+        ) : panel === "members" ? (
+          <>
+            {members.map((m) => (
+              <View key={m.user_id} style={f.row}>
+                <Text style={[f.rowTitle, f.grow]}>{m.display_name}</Text>
+                <Text style={f.small}>{m.rest_week ? "Rest week" : "Active"}</Text>
+              </View>
+            ))}
           </>
         ) : panel === "invite" ? (
           <>

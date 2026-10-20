@@ -5,11 +5,18 @@ import { useReducedMotion } from "motion/react";
 import { createPortal } from "react-dom";
 import { useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { expandedFieldScale } from "./expanded-field-geometry";
+import { collapseExpandingFieldImmediate } from "./expanding-field-teardown";
 
 /** One portal target for the entire lifetime: moving it never remounts the lane canvas. */
-export function ExpandingField({ open, onClose, children }: {
+export function ExpandingField({
+  open,
+  onClose,
+  tabActive = true,
+  children,
+}: {
   open: boolean;
   onClose: () => void;
+  tabActive?: boolean;
   children: ReactNode;
 }) {
   const reduce = useReducedMotion();
@@ -43,17 +50,30 @@ export function ExpandingField({ open, onClose, children }: {
   }, []);
 
   useLayoutEffect(() => {
+    if (!tabActive) {
+      if (present || open) {
+        collapseExpandingFieldImmediate(dialog, mount, slot.current, {
+          host: animation.current,
+          content: contentAnimation.current,
+        });
+        animation.current = null;
+        contentAnimation.current = null;
+        setPresent(false);
+        if (open) onClose();
+      }
+      return;
+    }
     if (!open || present || !slot.current) return;
     origin.current = slot.current.getBoundingClientRect();
     returnFocus.current = document.activeElement instanceof HTMLElement || document.activeElement instanceof SVGElement ? document.activeElement : null;
     // Reserve the inline layout throughout the round trip.
     slot.current.style.height = `${slot.current.offsetHeight}px`;
     setPresent(true);
-  }, [open, present]);
+  }, [open, present, tabActive, dialog, mount, onClose]);
 
   useLayoutEffect(() => {
     const host = dialog;
-    if (!present || !host || !mount) return;
+    if (!tabActive || !present || !host || !mount) return;
     host.appendChild(mount);
     const source = origin.current;
     const destination = slot.current?.getBoundingClientRect();
@@ -103,7 +123,7 @@ export function ExpandingField({ open, onClose, children }: {
       contentAnimation.current?.cancel();
       player.cancel();
     };
-  }, [open, present, mount, reduce, dialog, viewport]);
+  }, [open, present, mount, reduce, dialog, viewport, tabActive]);
 
   useLayoutEffect(() => {
     if (!dialog) return;
@@ -128,10 +148,15 @@ export function ExpandingField({ open, onClose, children }: {
   }, [dialog]);
 
   return <>
-    <div ref={slot} className="focus-field-slot" />
-    {mount && createPortal(children, mount)}
-    <Dialog.Root open={present} onOpenChange={(next) => { if (!next) onClose(); }}>
-      {present && <Dialog.Portal>
+    <div
+      ref={slot}
+      className="focus-field-slot"
+      hidden={!tabActive}
+      aria-hidden={!tabActive}
+    />
+    {tabActive && mount && createPortal(children, mount)}
+    <Dialog.Root open={present && tabActive} onOpenChange={(next) => { if (!next) onClose(); }}>
+      {present && tabActive && <Dialog.Portal>
         <Dialog.Overlay className="focus-field-backdrop" />
         <Dialog.Content ref={setDialog} className="focus-field-expanded" aria-describedby={undefined}
           onPointerDownOutside={(event) => {

@@ -463,6 +463,9 @@ export default function Home() {
               })}
             </Svg>
 
+            <View style={{ flex: 1, minWidth: 95 }}>
+              <HomeActivityActions compact />
+            </View>
             <View style={s.chartLegend}>
               <View style={s.legendItem}>
                 <View style={s.legendItemHeader}>
@@ -496,7 +499,6 @@ export default function Home() {
             </View>
           </View>
         </View>
-        <HomeActivityActions onSuggestion={() => setExpanded("suggestion")}/>
         <View style={s.homeJourneyLayer} pointerEvents="box-none">
           <Journey
           today={dayKey(now, APP_TIMEZONE)}

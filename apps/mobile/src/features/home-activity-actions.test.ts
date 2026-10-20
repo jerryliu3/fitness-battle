@@ -19,7 +19,7 @@ beforeEach(async () => {
  vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
  mock.dispatch.mockClear(); mock.device.mockClear(); mock.canWrite = true; mock.supported = ["strava"];
  mock.user = { id: "athlete", mode: "demo" }; mock.state = freshState();
- await act(async () => { renderer = create(createElement(HomeActivityActions, { onSuggestion: vi.fn() })); });
+ await act(async () => { renderer = create(createElement(HomeActivityActions, {})); });
 });
 afterEach(async () => { await act(async () => renderer.unmount()); vi.unstubAllGlobals(); });
 describe("native Home actions", () => {
@@ -38,14 +38,14 @@ describe("native Home actions", () => {
  it("disables writing and syncing while account hydration has failed", async () => {
   mock.canWrite = false;
   await act(async () => {
-   renderer.update(createElement(HomeActivityActions, { onSuggestion: vi.fn() }));
+   renderer.update(createElement(HomeActivityActions, {}));
   });
    expect(button("Add activity").props.disabled).toBe(true);
    expect(button("Sync activities").props.disabled).toBe(true);
  });
  it("does not invoke another platform’s device tracker", async () => {
   mock.state = { ...mock.state, links: mock.state.links.map((link: any) => ({ ...link, linked: link.provider === "apple_health" })) };
-  await act(async () => renderer.update(createElement(HomeActivityActions, { onSuggestion: vi.fn() })));
+  await act(async () => renderer.update(createElement(HomeActivityActions, {})));
   await act(async () => button("Sync activities").props.onPress());
   expect(mock.device).not.toHaveBeenCalled();
   expect(mock.dispatch).not.toHaveBeenCalled();
