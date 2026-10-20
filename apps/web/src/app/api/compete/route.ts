@@ -56,6 +56,7 @@ export async function GET(request: Request) {
         supabase,
         userId,
         prepareCompeteStateForAccount(state),
+        loaded.updatedAt,
       );
       return NextResponse.json({ state, updatedAt, settled: true });
     } catch {
@@ -78,6 +79,7 @@ export async function PUT(request: Request) {
   const body = (await request.json().catch(() => null)) as {
     state?: unknown;
     accountId?: unknown;
+    updatedAt?: unknown;
   } | null;
   const userId = await resolveRequestUserId(request);
   if (!userId) {
@@ -88,6 +90,10 @@ export async function PUT(request: Request) {
   }
   if (!body || !isCompeteState(body.state)) {
     return NextResponse.json({ error: "invalid_state" }, { status: 400 });
+  }
+
+  if (body.updatedAt !== null && typeof body.updatedAt !== "string") {
+    return NextResponse.json({ error: "account_version_required" }, { status: 409 });
   }
 
   const live = prepareCompeteStateForAccount(
@@ -115,13 +121,16 @@ export async function PUT(request: Request) {
   }
 
   try {
-    const updatedAt = await persistCompeteAccount(supabase, userId, live);
+    const updatedAt = await persistCompeteAccount(supabase, userId, live, body.updatedAt as string | null);
     return NextResponse.json({
       ok: true,
       persisted: true,
       updatedAt,
     });
   } catch (error) {
+    if (error instanceof Error && error.message.includes("account_changed_reload")) {
+      return NextResponse.json({ error: "account_changed_reload", persisted: false }, { status: 409 });
+    }
     console.error("PUT /api/compete save failed:", error);
     return NextResponse.json(
       { error: "account_not_saved", persisted: false },

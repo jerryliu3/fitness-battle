@@ -149,6 +149,8 @@ function YouContent({ surface }: { surface: "progress" | "athlete" }) {
         try {
           localStorage.removeItem(`fb-compete-v1:${user.id}`);
           localStorage.removeItem(`fb-compete-v1:${user.id}:device-only`);
+          localStorage.removeItem(`fb-compete-v1:${user.id}:revision`);
+          localStorage.removeItem(`fb-compete-v1:${user.id}:recovery`);
           localStorage.removeItem(`fb:field-seen:v1:${user.id}`);
         } catch {
           // ignore

@@ -44,6 +44,7 @@ vi.mock("expo-router", () => ({
   usePathname: () => "/arena",
 }));
 vi.mock("react-native", () => ({
+  Text: "Text", View: "View", Pressable: "Pressable",
   AppState: {
     currentState: "active",
     addEventListener: () => ({ remove() {} }),
@@ -109,7 +110,7 @@ beforeEach(() => {
     .fn()
     .mockImplementation(async (_url: string, init: RequestInit) =>
       init.method === "PUT"
-        ? Response.json({ ok: true })
+        ? Response.json({ ok: true, updatedAt: "2026-10-20T13:00:00Z" })
         : Response.json({ state: accountState(mock.auth.user?.id ?? "guest") }),
     );
   vi.stubGlobal("fetch", fetcher);
@@ -200,13 +201,30 @@ describe("mobile account lifecycle", () => {
     await save();
     expect(api.saveError).toBeNull();
     expect(mock.values.get(accountStorageKeys("Alice").dirty)).toBe("1");
-    fetcher.mockResolvedValue(Response.json({ ok: true }));
+    fetcher.mockResolvedValue(Response.json({ ok: true, updatedAt: "2026-10-20T13:00:00Z" }));
     await act(async () => {
       api.retrySave();
     });
     await save();
     expect(api.saveError).toBeNull();
     expect(mock.values.get(accountStorageKeys("Alice").dirty)).toBeUndefined();
+  });
+  it("sends the loaded revision and blocks stale retries until explicit account reload", async () => {
+    login("Alice");
+    fetcher.mockImplementation(async (_url: string, init: RequestInit) => init.method === "PUT"
+      ? Response.json({ error: "account_changed_reload" }, { status: 409 })
+      : Response.json({ state: accountState("Alice"), updatedAt: "revision-1" }));
+    await mount();
+    await act(async () => api.dispatch({ type: "set-city", city: "Local draft" }));
+    await save();
+    const writes = () => fetcher.mock.calls.filter(([, options]) => options.method === "PUT");
+    expect(JSON.parse(writes()[0]![1].body as string).updatedAt).toBe("revision-1");
+    await act(async () => api.dispatch({ type: "set-city", city: "Still local" }));
+    await save();
+    expect(writes()).toHaveLength(1);
+    await act(async () => { api.retrySave(); await flush(); });
+    expect(mock.values.has(`${accountStorageKeys("Alice").state}:recovery`)).toBe(true);
+    expect(api.state?.city).toBe(accountState("Alice").city);
   });
   it("does not apply a delayed Alice refresh after switching to Bob", async () => {
     login("Alice");
