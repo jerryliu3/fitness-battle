@@ -40,6 +40,25 @@ describe("round settlement and reveal", () => {
     expect(after.periodResults.find((row) => row.sport === "cycling" && row.track === "open")?.place).toBe(1);
     expect(after.crewBoard).toBeNull();
   });
+  it("ordinary rollover retains the closing roster and separates Verified from Open", () => {
+    let state = enrolled();
+    state = { ...state, enrollments: state.enrollments.filter((row) => row.sport === "running"),
+      activities: state.activities.map((activity) => ({ ...activity, verified: true, provenance: "recorded" as const })) };
+    const enrollment = state.enrollments[0]!;
+    const crewBoard: CrewBoardPin = {
+      crewId: "solo", crewName: "Field", sport: "running", waveStart: enrollment.waveStart, weekEnd: enrollment.weekEnd,
+      capacity: 2, memberIds: ["athlete", "peer-running"], syntheticIds: [],
+      members: [{ id: "peer-running", name: "Peer", elo: 1200, verifiedElo: 900,
+        distanceM: 50000, movingSec: 18000, verifiedDistanceM: 10000, verifiedMovingSec: 3600 }],
+    };
+    const settled = rollClock({ ...state, crewBoard }, new Date("2026-10-26T04:00:00Z"));
+    expect(settled.periodResults.find((row) => row.sport === "running" && row.track === "verified")?.place).toBe(2);
+    expect(settled.periodResults.find((row) => row.sport === "running" && row.track === "open")?.place).toBe(2);
+    expect(settled.crewBoard).toBeNull();
+    const manualOnly = rollClock({ ...state, crewBoard: { ...crewBoard, members: crewBoard.members.map((member) => ({ ...member, verifiedDistanceM: 0, verifiedMovingSec: 0 })) } }, new Date("2026-10-26T04:00:00Z"));
+    expect(manualOnly.periodResults.find((row) => row.sport === "running" && row.track === "verified")?.place).toBe(1);
+    expect(manualOnly.periodResults.find((row) => row.sport === "running" && row.track === "open")?.place).toBe(2);
+  });
   it("acknowledges both tracks together and describes stopped sports accurately", () => {
     let state = reduceCompete(enrolled(), { type: "schedule-leave", sport: "running", now });
     state = rollClock(state, new Date("2026-10-26T04:00:00Z"));

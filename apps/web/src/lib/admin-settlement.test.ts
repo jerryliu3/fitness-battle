@@ -8,8 +8,9 @@ function fixture(failActivities = false) {
  const enrollment = state.enrollments[0]!;
  const tables: Record<string, unknown[]> = {
   week_fields: [{ id: "field", sport: "running", wave_start: enrollment.waveStart, week_end: enrollment.weekEnd, member_ids: ["athlete", "peer"], synthetic_ids: [], capacity: 2, crew_id: null, name: "Open Field" }],
-  profiles: [{ id: "peer", display_name: "Peer" }], sport_ratings: [{ user_id: "peer", open_elo: 1100 }],
+  profiles: [{ id: "peer", display_name: "Peer" }], sport_ratings: [{ user_id: "peer", open_elo: 1100, verified_elo: 900 }],
   activities: [
+   { user_id: "peer", sport: "running", started_at: now, distance_m: 10000, moving_sec: 3600, provenance: "recorded", verified: true, disposition: "counted", source_label: "strava", compete_key: "gps-1" },
    { user_id: "peer", sport: "running", started_at: now, distance_m: 5000, moving_sec: 1800, provenance: "manual", disposition: "counted", source_label: "manual", compete_key: "manual-1" },
    { user_id: "peer", sport: "running", started_at: now, distance_m: 50000, moving_sec: 1800, provenance: "demo", disposition: "counted", source_label: "strava", compete_key: "strava-stub-1" },
   ],
@@ -28,7 +29,8 @@ describe("admin field reads", () => {
   const [pin] = await readAdminSettlementFields(db as never, "athlete", state);
   expect(db.rpc).not.toHaveBeenCalled();
   expect(filters).toContainEqual(["week_fields", "contains", "member_ids", ["athlete"]]);
-  expect(pin!.members.find((member) => member.id === "peer")?.distanceM).toBe(5000);
+  expect(pin!.members.find((member) => member.id === "peer")?.distanceM).toBe(15000);
+  expect(pin!.members.find((member) => member.id === "peer")).toMatchObject({ verifiedDistanceM: 10000, verifiedMovingSec: 3600, verifiedElo: 900, elo: 1100 });
  });
  it("refuses settlement if roster data is incomplete", async () => {
   const { state, db } = fixture(true);

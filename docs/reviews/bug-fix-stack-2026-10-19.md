@@ -45,3 +45,7 @@ Primary currently selects suggestions, displayed boards, demo-sync sport, and th
 - **Cleanup:** removed unreachable 3D rendering branches while retaining the requested coming-soon controls, obsolete Crew sharing code and stale native season counts. Crew queries surface partial failures and read independent summaries concurrently. Native lane selection exposes accessibility state and relative gaps. The splash timeout now remembers completion across remounts.
 
 Remaining limits: device interaction/animation QA still needs a simulator or physical device. The existing ordinary athlete save protocol can overwrite admin changes from a stale client after the admin transaction; this pass does not replace that broader persistence protocol.
+
+## Follow-up scoring corrections
+
+Admin field reads now preserve Verified GPS volume and ratings separately from Open totals. Shared settlement selects the appropriate track without making manual volume verified. Ordinary web/native rollover retains the closing field pin until settlement completes, then clears it. Regression coverage exercises the ordinary two-argument rollover path and mixed manual/GPS opponent totals. Mobile device animation QA remains a manual follow-up; web interaction walkthroughs were completed earlier.

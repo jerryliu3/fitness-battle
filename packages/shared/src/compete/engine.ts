@@ -463,6 +463,7 @@ function enrollSport(
 function crewPeerActivities(
   pin: CrewBoardPin,
   peerIds: readonly string[],
+  track: ScoreTrack,
 ): Map<string, Activity[]> {
   const allowed = new Set(peerIds);
   const map = new Map<string, Activity[]>();
@@ -473,10 +474,10 @@ function crewPeerActivities(
         id: `crew-week:${pin.crewId}:${member.id}`,
         sport: pin.sport,
         startedAt: pin.waveStart,
-        distanceM: member.distanceM ?? 0,
-        movingSec: member.movingSec ?? 0,
+        distanceM: track === "verified" ? member.verifiedDistanceM ?? 0 : member.distanceM ?? 0,
+        movingSec: track === "verified" ? member.verifiedMovingSec ?? 0 : member.movingSec ?? 0,
         avgHr: null,
-        verified: false,
+        verified: track === "verified",
         source: "manual",
         provenance: "recorded",
         disposition: "counted",
@@ -518,7 +519,12 @@ function groupFor(
   const fromCrew = pin
     ? poolFromCrewPlan(planFromCrewBoardPin(pin), "you").filter((player) =>
         enrollment.peerIds.includes(player.id),
-      )
+      ).map((player) => ({
+        ...player,
+        elo: track === "verified"
+          ? pin.members.find((member) => member.id === player.id)?.verifiedElo ?? player.elo
+          : player.elo,
+      }))
     : [];
   const seen = new Set(fromPool.map((peer) => peer.id));
   const peers = [...fromPool, ...fromCrew.filter((peer) => !seen.has(peer.id))];
@@ -533,7 +539,7 @@ function groupFor(
       primarySport: state.primary,
     },
     peers,
-    peerActivities: pin ? crewPeerActivities(pin, enrollment.peerIds) : undefined,
+    peerActivities: pin ? crewPeerActivities(pin, enrollment.peerIds, track) : undefined,
     track,
     asOf,
   });
@@ -710,15 +716,8 @@ function settleEnrollment(
 export function rollClock(state: CompeteState, now: Date = new Date(), settlementFields: readonly CrewBoardPin[] = []): CompeteState {
   const liveWave = waveWindowAt(now);
   const liveStart = liveWave.waveStart.toISOString();
-  let next = state;
-  // Last week's crew pin must not stick after Monday settlement.
-  if (
-    next.crewBoard &&
-    new Date(next.crewBoard.waveStart).getTime() !== liveWave.waveStart.getTime()
-  ) {
-    next = { ...next, crewBoard: null };
-  }
-  next = ensureEnrollments(next, now);
+  // Preserve the closing roster until all matching enrollments have settled.
+  let next = ensureEnrollments(state, now);
   let guard = 0;
 
   while (guard < 12) {

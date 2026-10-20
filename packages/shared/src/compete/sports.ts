@@ -296,9 +296,12 @@ export interface CrewBoardMember {
   id: string;
   name: string;
   elo: number;
-  /** Counted crew-week distance when known (shared entries). */
+  /** Counted Open volume; Verified volume is kept separately. */
   distanceM?: number;
   movingSec?: number;
+  verifiedDistanceM?: number;
+  verifiedMovingSec?: number;
+  verifiedElo?: number;
 }
 
 export function hashString(value: string): number {
