@@ -7,6 +7,7 @@ import {
   arenaWindow,
   clampArenaLaneCenter,
   orderedArenaLanes,
+  polishedLaneScale,
   selfLaneLabel,
   type ArenaOvertakeFrame,
   type ArenaOvertakePlan,
@@ -15,6 +16,7 @@ import {
 } from "@fitness-battle/shared";
 import { laneGeometry, centeredLaneScroll } from "@/features/field/components/lane-geometry";
 import { Ember } from "@/components/mascot/ember";
+import { PolishedRacer, usePolishedWakeTime } from "@/features/brand/polished-racer";
 export function ArenaLanes({
   lanes,
   presentation = "lanes",
@@ -46,6 +48,8 @@ export function ArenaLanes({
   const reduced = useReducedMotion();
   const standings = presentation === "standings";
   const prefix = useId();
+  const wakeTime = usePolishedWakeTime(host);
+  const clipId = useId();
   const [size, setSize] = useState({ width: 360, height: 540 });
   const previousGeometry = useRef<{ width: number; laneWidth: number; count: number } | null>(null);
   const laneScroll = useRef<number | null>(null);
@@ -57,8 +61,8 @@ export function ArenaLanes({
     center: number;
     moved: boolean;
     mode: "undecided" | "vertical" | "horizontal";
-    id: string | null;
     captured: boolean;
+    id: string | null;
   } | null>(null);
   const animating = Boolean(overtakeFrame && overtakeFrame.phase !== "done");
   const liveLanes =
@@ -243,6 +247,7 @@ export function ArenaLanes({
         }}
       >
         <defs>
+          <clipPath id={`${clipId}-field`}><rect x="10" y="56" width={width-62} height={Math.max(0,maxTailY-56)}/></clipPath>
           <linearGradient id={`${prefix}-road`} x2="0" y2="1">
             <stop stopColor="#f7faf3" />
             <stop offset="0.45" stopColor="#eef3e8" />
@@ -358,14 +363,7 @@ export function ArenaLanes({
           const targetX = standings ? 38 : (i + 0.5) * laneWidth + 10 + (effect?.joltX ?? 0);
           const xx = 0, yy = 0;
           const active = selected === l.id || l.you;
-          const wakeLen = Math.min(
-            28 + speed * 88,
-            Math.max(0, maxTailY - (targetY + 14)),
-          );
-          const rivalMovedInSlide =
-            !l.you &&
-            overtakeFrame?.phase === "rival-slide" &&
-            overtakePlan?.rivals[l.id]?.moved;
+          const headHalf = 29 * polishedLaneScale(Boolean(l.you));
           return (
             <motion.g
               key={l.id}
@@ -385,38 +383,6 @@ export function ArenaLanes({
                 }
               }}
             >
-              <circle cx={xx} cy={yy} r="24" fill="transparent" />
-              <circle className="focus-racer-focus-ring" cx={xx} cy={yy} r="29" fill="none" stroke="#f1c75b" strokeWidth="2" />
-              {l.you && speed > 0.01 && wakeLen > 6 && (
-                <g pointerEvents="none" data-overtake-afterburn="true">
-                  <path
-                    d={`M ${xx - 16} ${yy + 14} C ${xx - 22} ${yy + 14 + wakeLen * 0.45}, ${xx - 8} ${yy + 14 + wakeLen * 0.85}, ${xx} ${yy + 14 + wakeLen} C ${xx + 8} ${yy + 14 + wakeLen * 0.85}, ${xx + 22} ${yy + 14 + wakeLen * 0.45}, ${xx + 16} ${yy + 14} Z`}
-                    fill={`url(#${prefix}-afterburn-wake)`}
-                    opacity={speed}
-                  />
-                  {[-14, -7, 0, 7, 14].map((dx, idx) => {
-                    const isCenter = idx === 2;
-                    const streakLen = Math.min(
-                      speed * (54 + (idx % 2 === 0 ? 34 : 18)),
-                      Math.max(0, maxTailY - (targetY + 24)),
-                    );
-                    if (streakLen <= 2) return null;
-                    return (
-                      <line
-                        key={idx}
-                        x1={xx + dx}
-                        x2={xx + dx}
-                        y1={yy + 24}
-                        y2={yy + 24 + streakLen}
-                        stroke="#f1c75b"
-                        strokeWidth={isCenter ? 6 : 2}
-                        strokeLinecap="round"
-                        opacity={speed * (isCenter ? 0.48 : 0.78)}
-                      />
-                    );
-                  })}
-                </g>
-              )}
               {l.you && charging > 0.02 && (
                 <g
                   opacity={charging}
@@ -431,19 +397,6 @@ export function ArenaLanes({
                   />
                 </g>
               )}
-              {rivalMovedInSlide && (
-                <line
-                  x1={xx}
-                  x2={xx}
-                  y1={yy + 18}
-                  y2={yy + 46}
-                  stroke="#9bbf63"
-                  strokeWidth="3"
-                  strokeLinecap="round"
-                  opacity="0.45"
-                  pointerEvents="none"
-                />
-              )}
               {effect?.isPassed && effect.ripple < 1 && (
                 <circle
                   cx={xx}
@@ -457,10 +410,10 @@ export function ArenaLanes({
                   data-overtake-ripple="true"
                 />
               )}
-              {firstPlaceId === l.id && !standings && (
+              {firstPlaceId === l.id && !standings && !position.edge && (
                 <foreignObject
                   x={xx - 16}
-                  y={yy - 44}
+                  y={yy - headHalf - 64}
                   width="32"
                   height="32"
                   style={{ overflow: "visible", pointerEvents: "none" }}
@@ -469,30 +422,14 @@ export function ArenaLanes({
                   <Ember expression="joy" shadow={false} />
                 </foreignObject>
               )}
-              {l.you && (
-                <circle cx={xx} cy={yy} r="34" fill={`url(#${prefix}-you-glow)`} />
-              )}
-              <circle
-                cx={xx}
-                cy={yy + 4}
-                r={l.you ? 24 : 19}
-                fill="#282f2c18"
-              />
-              <circle
-                cx={xx}
-                cy={yy}
-                r={l.you ? 23 : 18}
-                fill={l.you ? "#282f2c" : active ? "#f1c75b" : "#ffffff"}
-                stroke={l.you ? "#f1c75b" : active ? "#deb142" : "#c9d5bf"}
-                strokeWidth={l.you ? 4 : 2}
-                filter={active ? `url(#${prefix}-soft)` : undefined}
-              />
+              <g clipPath={`url(#${clipId}-field)`}><PolishedRacer x={xx} y={yy} you={Boolean(l.you)} active={active} time={position.edge ? undefined : wakeTime}/></g>
+              <rect x={xx - 24} y={yy - headHalf - 4} width="48" height={headHalf * 2 + 8} rx="24" fill="transparent"/>
               <text
                 x={xx}
                 y={yy + 4}
                 textAnchor="middle"
                 className="lane-initial"
-                fill={l.you ? "#fafaf7" : "#282f2c"}
+                fill="#282f2c"
               >
                 {!standings && position.edge
                   ? position.edge === "ahead"
@@ -503,7 +440,7 @@ export function ArenaLanes({
               <motion.g aria-hidden={standings} initial={false} animate={{ opacity: standings ? 0 : 1 }} style={{ pointerEvents: "none" }}>
               <rect
                 x={xx - 26}
-                y={yy + 28}
+                y={yy - headHalf - 26}
                 width="52"
                 height="20"
                 rx="10"
@@ -512,13 +449,13 @@ export function ArenaLanes({
               />
               <text
                 x={xx}
-                y={yy + 42}
+                y={yy - headHalf - 12}
                 textAnchor="middle"
                 className="lane-total"
                 fill={l.you ? "#f1c75b" : "#282f2c"}
                 style={{ fontSize: 10, fill: l.you ? "#f1c75b" : "#282f2c" }}
               >
-                {position.edge || (l.you && animating)
+                {!standings && position.edge
                   ? `${l.value.toFixed(1)} ${unit}`
                   : formatLastUpdated(l)}
               </text>
