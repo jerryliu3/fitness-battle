@@ -44,7 +44,7 @@ function isDeviceProvider(
 }
 
 type AuthMode = "signin" | "signup";
-type AthletePanel = "connections" | "preferences" | "scoring";
+type AthletePanel = "connections" | "preferences" | "scoring" | "account";
 
 export default function YouScreen() {
   const { state, dispatch, saveError, retrySave } = useCompeteStore();
@@ -346,6 +346,20 @@ export default function YouScreen() {
 
   if (!user) return null;
   const account = user;
+
+  if (panel === "account") {
+    return (
+      <SafeAreaView style={styles.safe} edges={["top"]}>
+        <ScrollView contentContainerStyle={f.content} showsVerticalScrollIndicator={false}>
+          <FocusButton label="← Athlete" secondary onPress={() => setPanel(null)} />
+          <Text style={f.kicker}>Settings</Text>
+          <Text style={f.title}>Account</Text>
+          <FocusButton label="Sign out" secondary onPress={() => void signOut()} />
+          <AccountActions />
+        </ScrollView>
+      </SafeAreaView>
+    );
+  }
 
   if (panel === "connections") {
     return (
@@ -700,11 +714,7 @@ export default function YouScreen() {
           secondary
           onPress={() => setPanel("scoring")}
         />
-        <FocusButton
-          label="Sign out"
-          secondary
-          onPress={() => void signOut()}
-        />
+        <FocusButton label="Account" secondary onPress={() => setPanel("account")} />
         {!state.onboardingCompleted ? (
           <View style={f.card}>
             <Text style={f.h2}>Finish setup</Text>
@@ -714,7 +724,6 @@ export default function YouScreen() {
             />
           </View>
         ) : null}
-        <AccountActions />
       </ScrollView>
     </SafeAreaView>
   );

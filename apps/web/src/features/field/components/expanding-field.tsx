@@ -4,6 +4,7 @@ import * as Dialog from "@radix-ui/react-dialog";
 import { useReducedMotion } from "motion/react";
 import { createPortal } from "react-dom";
 import { useLayoutEffect, useRef, useState, type ReactNode } from "react";
+import { expandedFieldScale } from "./expanded-field-geometry";
 
 /** One portal target for the entire lifetime: moving it never remounts the lane canvas. */
 export function ExpandingField({ open, onClose, children }: {
@@ -23,6 +24,15 @@ export function ExpandingField({ open, onClose, children }: {
   const animation = useRef<Animation | null>(null);
   const contentAnimation = useRef<Animation | null>(null);
   const contentTransform = useRef<string | null>(null);
+  const lastClip = useRef<string | null>(null);
+  const [viewport, setViewport] = useState({ width: 0, height: 0 });
+
+  useLayoutEffect(() => {
+    const resize = () => setViewport({ width: window.innerWidth, height: window.innerHeight });
+    resize();
+    window.addEventListener("resize", resize);
+    return () => window.removeEventListener("resize", resize);
+  }, []);
 
   useLayoutEffect(() => {
     const node = document.createElement("div");
@@ -69,7 +79,7 @@ export function ExpandingField({ open, onClose, children }: {
     mount.style.width = `${source.width}px`;
     mount.style.height = `${source.height}px`;
     mount.style.transformOrigin = "0 0";
-    const scale = Math.max(1, Math.min(1.2, (window.innerWidth - 24) / source.width, (window.innerHeight - 72) / source.height));
+    const scale = expandedFieldScale(source.width, source.height, window.innerWidth, window.innerHeight);
     const landing = `translate(${(window.innerWidth - source.width * scale) / 2}px, ${Math.max(56, (window.innerHeight - source.height * scale) / 2)}px) scale(${scale})`;
     const home = `translate(${(destination ?? source).left}px, ${(destination ?? source).top}px) scale(1)`;
     const fromTransform = contentTransform.current ?? (open ? home : landing);
@@ -77,17 +87,18 @@ export function ExpandingField({ open, onClose, children }: {
     contentAnimation.current?.cancel();
     const timing = { duration: reduce ? 0 : 420, easing: "cubic-bezier(.22,1,.36,1)", fill: "both" as const };
     contentAnimation.current = mount.animate([{ transform: fromTransform }, { transform: open ? landing : home }], timing);
-    const frames = open && source ? [{ clipPath: clip(interrupted ?? source) }, { clipPath: full }] : visible ? [{ clipPath: interrupted ? clip(interrupted) : full }, { clipPath: clip(destination) }] : [{ opacity: 1 }, { opacity: 0 }];
+    const frames = open && source ? [{ clipPath: lastClip.current ?? clip(interrupted ?? source) }, { clipPath: full }] : visible ? [{ clipPath: lastClip.current ?? full }, { clipPath: clip(destination) }] : [{ opacity: 1 }, { opacity: 0 }];
     const player = host.animate(frames, timing);
     animation.current = player;
     player.onfinish = finish;
     return () => {
       if (player.playState === "running") interruptedBounds.current = host.getBoundingClientRect();
       contentTransform.current = mount.parentElement === host ? getComputedStyle(mount).transform : null;
+      lastClip.current = mount.parentElement === host ? getComputedStyle(host).clipPath : null;
       contentAnimation.current?.cancel();
       player.cancel();
     };
-  }, [open, present, mount, reduce, dialog]);
+  }, [open, present, mount, reduce, dialog, viewport]);
 
   useLayoutEffect(() => {
     if (!dialog) return;

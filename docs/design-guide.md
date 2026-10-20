@@ -41,6 +41,8 @@ Web retains the real Three.js renderer. Native 2D is SVG; native 3D embeds the s
 
 Account data, periods, scoring, and backend eligibility rules are not replaced by prototype fixtures. Existing live-connection and synthetic-peer disclosures must remain accurate.
 
+Athlete's Account settings destination contains Sign out, Report an issue and Delete account on web and native. These actions belong inside Account rather than on the Athlete overview or in Preferences.
+
 ## Production motion implementation
 
 One live lane canvas should change bounds when expanding, retaining its selection, zoom and horizontal anchor. Expanded web lanes live in a root dialog with attached controls, Escape, scroll locking and focus return. Embedded touch lanes allow page scrolling; vertical field exploration requires fullscreen web lanes or native's explicit Explore mode. Programmatic viewport changes interpolate center and span together; direct manipulation interrupts immediately. Center me restores following.

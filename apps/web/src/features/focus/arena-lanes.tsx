@@ -369,6 +369,7 @@ export function ArenaLanes({
               transition={{ duration: reduced || drag.current || animating ? 0 : 0.48, ease: [0.22, 1, 0.36, 1] }}
               data-athlete={l.id}
               role="button"
+              aria-pressed={selected === l.id}
               tabIndex={0}
               aria-label={`${l.name}, ${standings ? `place ${rank}, ` : ""}${formatLastUpdated(l)}, ${l.value.toFixed(1)} ${unit}${!standings && position.edge ? `, ${position.edge} of visible range` : ""}`}
               onKeyDown={(e) => {
@@ -380,6 +381,7 @@ export function ArenaLanes({
               }}
             >
               <circle cx={xx} cy={yy} r="24" fill="transparent" />
+              <circle className="focus-racer-focus-ring" cx={xx} cy={yy} r="29" fill="none" stroke="#f1c75b" strokeWidth="2" />
               {l.you && speed > 0.01 && wakeLen > 6 && (
                 <g pointerEvents="none" data-overtake-afterburn="true">
                   <path
@@ -517,7 +519,7 @@ export function ArenaLanes({
               </text>
               </motion.g>
               <motion.g aria-hidden={!standings} initial={false} animate={{ opacity: standings ? 1 : 0 }}
-                style={{ pointerEvents: standings ? "auto" : "none" }}>
+                style={{ display: standings ? undefined : "none", pointerEvents: standings ? "auto" : "none" }}>
                 <rect x={-30} y={-33} width={Math.max(200, width - 16)} height={70} rx={14} fill="transparent" />
                 <line x1={-22} x2={width - 52} y1={38} y2={38} stroke="#e0e5dc" />
                 <text x={40} y={4} fill="#616c63" fontSize={12}>{rank}</text>

@@ -51,6 +51,7 @@ type AthletePanel =
   | "connections"
   | "preferences"
   | "notifications"
+  | "account"
   | "scoring";
 
 const PANEL_TITLES: Record<AthletePanel, string> = {
@@ -58,6 +59,7 @@ const PANEL_TITLES: Record<AthletePanel, string> = {
   connections: "Data Sync",
   preferences: "Preferences",
   notifications: "Notifications",
+  account: "Account",
   scoring: "How scoring works",
 };
 
@@ -944,6 +946,15 @@ function YouContent() {
                   </button>
                 )}
               </section>
+            </>
+          ) : null}
+          {panel === "account" ? (
+            <>
+              <section className="fb-card fb-stack">
+                <h2>Your account</h2>
+                <button type="button" className="fb-btn-line" onClick={() => void signOut()}>Sign out</button>
+                <ReportIssue />
+              </section>
               {user ? (
                 <section className="fb-card" style={{ borderColor: "#f3d1cc" }}>
                   <h2 style={{ color: "var(--red, #b83a38)" }}>Danger Zone</h2>
@@ -1003,20 +1014,16 @@ function YouContent() {
             </section>
           ) : null}
         </div>
-        <AuthPrompt
-          open={Boolean(authPrompt?.open)}
-          reason={authPrompt?.reason ?? "Sign in to compete."}
-          onClose={() => setAuthPrompt(null)}
-        />
-        {deleteAccountSheet}
       </motion.aside>
   ) : null;
 
   const settingsPortal = settingsScrollRoot
     ? createPortal(
+        (panel || settingsPresent) ? <div className="focus-settings-stack">
         <AnimatePresence mode="wait" onExitComplete={() => {
           setSettingsPresent(false);
-        }}>{settingsPanel}</AnimatePresence>,
+        }}>{settingsPanel}</AnimatePresence>
+        </div> : null,
         settingsScrollRoot,
       )
     : null;
@@ -1033,6 +1040,7 @@ function YouContent() {
             ["preferences", "Units, sports & freezes"],
             ["notifications", "Your updates, your choice"],
             ["scoring", "Levels & eligibility"],
+            ["account", "Sign out, report an issue & delete account"],
           ] as const
         ).map(([id, detail]) => (
           <button
@@ -1069,41 +1077,7 @@ function YouContent() {
           </Link>
         </section>
       ) : null}
-      {user ? (
-        <>
-          <div className="fb-row" style={{ gap: 10, marginTop: 12 }}>
-            <button
-              type="button"
-              className="fb-btn-line"
-              style={{ flex: 1, justifyContent: "center" }}
-              onClick={() => void signOut()}
-            >
-              Sign out
-            </button>
-            <ReportIssue />
-          </div>
-          <div style={{ marginTop: 12, textAlign: "center" }}>
-            <button
-              type="button"
-              className="fb-btn-ghost"
-              style={{
-                width: "auto",
-                fontSize: 12,
-                color: "var(--muted)",
-                margin: "0 auto",
-                display: "inline-block",
-                padding: "4px 8px",
-              }}
-              onClick={() => {
-                setDeleteError(null);
-                setDeleteConfirmOpen(true);
-              }}
-            >
-              Delete account
-            </button>
-          </div>
-        </>
-      ) : (
+      {!user ? (
         <div className="fb-stack">
           <p className="fb-note">Browsing as a guest</p>
           <div className="fb-row" style={{ gap: 10 }}>
@@ -1115,7 +1089,7 @@ function YouContent() {
             </Link>
           </div>
         </div>
-      )}
+      ) : null}
       <AuthPrompt
         open={Boolean(authPrompt?.open)}
         reason={authPrompt?.reason ?? "Sign in to compete."}
