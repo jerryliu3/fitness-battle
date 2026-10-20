@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
-import { prepareCompeteStateForAccount, rollClock, competeNow, weeklyPeriodBounds } from "@fitness-battle/shared";
+import { prepareCompeteStateForAccount, settleCompetition, competeNow, weeklyPeriodBounds } from "@fitness-battle/shared";
 import { serverEnv, webEnv } from "@/lib/env";
 import { isOwnerEmail } from "@/lib/auth/design-access";
 import { createRequestClient } from "@/lib/supabase/request";
@@ -56,7 +56,7 @@ export async function POST(request: Request) {
     const now = new Date();
     const closeAt = Math.max(...state.enrollments.map((row) => Date.parse(row.weekEnd)), weeklyPeriodBounds(competeNow(state, now)).endsAt.getTime());
     const settlementTime = body.action === "close-round" ? new Date(closeAt) : now;
-    const after = prepareCompeteStateForAccount(rollClock(state, settlementTime, fields));
+    const after = prepareCompeteStateForAccount(settleCompetition(state, settlementTime, fields));
     const { data: updatedAt, error: commitError } = await db.rpc("admin_commit_round", {
       p_action_id: body.actionId, p_actor_id: actorId, p_target_id: target, p_action: body.action,
       p_reason: body.reason.trim(), p_expected_updated_at: body.updatedAt, p_before: loaded.state, p_after: after,

@@ -95,6 +95,7 @@ export {
   placeOrLast,
   reduceCompete,
   rollClock,
+  settleCompetition,
   competeNow,
   weeklyBoard,
   projectedElo,

@@ -713,7 +713,16 @@ function settleEnrollment(
  * After a long gap we settle at most 12 waves for Elo continuity, then
  * jump remaining enrollments to the live daily wave.
  */
-export function rollClock(state: CompeteState, now: Date = new Date(), settlementFields: readonly CrewBoardPin[] = []): CompeteState {
+export function rollClock(state: CompeteState, now: Date = new Date()): CompeteState {
+  return settleCompetition(state, now);
+}
+
+/** Shared settlement operation. Fields supply real rosters; callers own loading and persistence. */
+export function settleCompetition(
+  state: CompeteState,
+  now: Date,
+  fields: readonly CrewBoardPin[] = [],
+): CompeteState {
   const liveWave = waveWindowAt(now);
   const liveStart = liveWave.waveStart.toISOString();
   // Preserve the closing roster until all matching enrollments have settled.
@@ -726,7 +735,7 @@ export function rollClock(state: CompeteState, now: Date = new Date(), settlemen
       .sort((a, b) => a.weekEnd.localeCompare(b.weekEnd));
     if (due.length === 0) break;
     const enrollment = due[0]!;
-    const board = settlementFields.find((pin) => pin.sport === enrollment.sport &&
+    const board = fields.find((pin) => pin.sport === enrollment.sport &&
       pin.waveStart === enrollment.waveStart && pin.weekEnd === enrollment.weekEnd);
     next = settleEnrollment(board ? { ...next, crewBoard: board } : next, enrollment);
     guard += 1;

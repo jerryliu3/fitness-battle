@@ -1,5 +1,5 @@
-import { describe, expect, it } from "vitest";
-import { freshState, reduceCompete, rollClock } from "./engine";
+import { describe, expect, it, vi } from "vitest";
+import { freshState, reduceCompete, rollClock, settleCompetition } from "./engine";
 import { parseManualActivity } from "./manual-input";
 import { roundEnrollment, roundReveal } from "./round-reveal";
 import type { CrewBoardPin } from "./sports";
@@ -26,6 +26,17 @@ function enrolled() {
   return state;
 }
 describe("round settlement and reveal", () => {
+  it("normal clock rolling delegates to the same settlement operation", () => {
+    vi.useFakeTimers();
+    try {
+      vi.setSystemTime(new Date("2026-10-26T04:00:00Z"));
+      const state = enrolled();
+      const asOf = new Date();
+      expect(rollClock(state, asOf)).toEqual(settleCompetition(state, asOf));
+    } finally {
+      vi.useRealTimers();
+    }
+  });
   it("settles each sport against its own field instead of losing the old pin at rollover", () => {
     const state = enrolled();
     const pins: CrewBoardPin[] = state.enrollments.map((row) => ({
@@ -35,7 +46,7 @@ describe("round settlement and reveal", () => {
         { id: `peer-${row.sport}`, name: "Peer", elo: 1000, distanceM: row.sport === "running" ? 50000 : 0, movingSec: 1800 },
       ],
     }));
-    const after = rollClock(state, new Date("2026-10-26T04:00:00Z"), pins);
+    const after = settleCompetition(state, new Date("2026-10-26T04:00:00Z"), pins);
     expect(after.periodResults.find((row) => row.sport === "running" && row.track === "open")?.place).toBe(2);
     expect(after.periodResults.find((row) => row.sport === "cycling" && row.track === "open")?.place).toBe(1);
     expect(after.crewBoard).toBeNull();
