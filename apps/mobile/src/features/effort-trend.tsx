@@ -55,7 +55,7 @@ export function EffortTrend({ state }: { state: CompeteState }) {
       </View>
       <Text style={f.kicker}>{rankForElo(effectiveElo).name}</Text>
       <View style={f.row}>
-        <Text style={f.massive}>{effectiveElo.toLocaleString()}</Text>
+        <Text style={[f.massive, { backgroundColor: c.tennis, color: c.ink, borderRadius: 12, paddingHorizontal: 12 }]}>{effectiveElo.toLocaleString()}</Text>
         <Text style={f.copy}>effort score</Text>
       </View>
       <Svg

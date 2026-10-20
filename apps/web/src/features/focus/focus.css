@@ -2412,3 +2412,5 @@
 .focus-round-result strong { font-size: 32px; font-variant-numeric: tabular-nums; }
 .focus-round-score { color: #a67c00; }
 .focus-round-takeover > .fb-btn, .focus-round-takeover > .fb-btn-line { margin: 12px 12px 12px 0; }
+
+.phone-shell .focus-elo-score-row strong { background: #f1c75b; color: #282f2c; border-radius: 12px; padding: 6px 12px; }

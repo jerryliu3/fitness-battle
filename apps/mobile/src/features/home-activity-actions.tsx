@@ -1,4 +1,4 @@
-import { activityFromSample, SPORTS, sportById, type ActivitySample, type SportId } from "@fitness-battle/shared";
+import { activityFromSample, SPORTS, sportById, type ActivitySample, type ReadinessSample, type SportId } from "@fitness-battle/shared";
 import { useRef, useState } from "react";
 import { Text, TextInput, View } from "react-native";
 import { useRouter } from "expo-router";
@@ -39,9 +39,9 @@ export function HomeActivityActions({ onSuggestion }: { onSuggestion: () => void
           dispatch({ type: "sync", provider: link.provider, allowSample: true });
           messages.push("Demo sample sync only. Samples do not count.");
         } else {
-          const body = await requestApi<{ activities?: ActivitySample[]; usedMock?: boolean }>(mobileEnv.apiUrl, accessToken, "/api/fitness/sync", { allowUnpersisted: true, body: { provider: link.provider } });
+          const body = await requestApi<{ activities?: ActivitySample[]; readiness?: ReadinessSample[]; usedMock?: boolean }>(mobileEnv.apiUrl, accessToken, "/api/fitness/sync", { allowUnpersisted: true, body: { provider: link.provider } });
           if (owner.current !== id) return;
-          dispatch({ type: "apply-sync", provider: link.provider, activities: (body.activities ?? []).flatMap((sample) => { const activity = activityFromSample(sample, body.usedMock ? "demo" : "recorded"); return activity ? [activity] : []; }), linkStatus: body.usedMock ? "stub" : "connected" });
+          dispatch({ type: "apply-sync", provider: link.provider, readiness: (body.readiness ?? []).flatMap((sample) => sample.provider === link.provider ? [{ id: sample.id, provider: link.provider, day: sample.day, score: sample.score }] : []), activities: (body.activities ?? []).flatMap((sample) => { const activity = activityFromSample(sample, body.usedMock ? "demo" : "recorded"); return activity ? [activity] : []; }), linkStatus: body.usedMock ? "stub" : "connected" });
           messages.push(body.usedMock ? "Sample data only; not a live connection." : `${link.provider}: sync complete.`);
         }
       }

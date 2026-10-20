@@ -2,7 +2,7 @@
 
 import { useRef, useState } from "react";
 import Link from "next/link";
-import { activityFromSample, SPORTS, sportById, type ActivitySample, type SportId } from "@fitness-battle/shared";
+import { activityFromSample, SPORTS, sportById, type ActivitySample, type ReadinessSample, type SportId } from "@fitness-battle/shared";
 import { useAuth } from "@/components/auth-context";
 import { useCompete } from "@/components/compete-context";
 import { Sheet } from "@/ui/sheet";
@@ -35,14 +35,14 @@ export function ActivityActions() {
           method: "POST", headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ provider: link.provider, userId: user!.id }),
         });
-        const body = await response.json() as { activities?: ActivitySample[]; usedMock?: boolean; persisted?: boolean; error?: string };
+        const body = await response.json() as { activities?: ActivitySample[]; readiness?: ReadinessSample[]; usedMock?: boolean; persisted?: boolean; error?: string };
         if (owner.current !== accountId) return;
         if (!response.ok) { messages.push(`${link.provider}: sync failed. Try again in Athlete.`); continue; }
         const activities = (body.activities ?? []).flatMap((sample) => {
           const activity = activityFromSample(sample, body.usedMock ? "demo" : "recorded");
           return activity ? [activity] : [];
         });
-        dispatch({ type: "apply-sync", provider: link.provider, activities, linkStatus: body.usedMock ? "stub" : "connected" });
+        dispatch({ type: "apply-sync", provider: link.provider, activities, readiness: (body.readiness ?? []).flatMap((sample) => sample.provider === link.provider ? [{ id: sample.id, provider: link.provider, day: sample.day, score: sample.score }] : []), linkStatus: body.usedMock ? "stub" : "connected" });
         messages.push(body.usedMock ? `${link.provider}: sample data only; not a live connection.` : `${link.provider}: sync complete.`);
       }
       if (owner.current === accountId) setNote(messages.join(" "));
