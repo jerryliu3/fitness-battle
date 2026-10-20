@@ -2789,7 +2789,7 @@ function createStyles(c: Concept) {
     },
     modalRoot: { flex: 1, justifyContent: "flex-end" },
     modalBackdrop: {
-      ...StyleSheet.absoluteFillObject,
+      ...StyleSheet.absoluteFill,
       backgroundColor: "#10182180",
     },
     sheet: {

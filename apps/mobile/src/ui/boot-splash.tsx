@@ -287,7 +287,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#1a0f22",
   },
   glow: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     backgroundColor: "#4a2a5c",
     opacity: 0.35,
     top: "18%",

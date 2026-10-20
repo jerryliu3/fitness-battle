@@ -72,7 +72,7 @@ export function FocusSheet({
         behavior={Platform.OS === "ios" ? "padding" : undefined}
         style={f.modal}
       >
-        <Animated.View style={[StyleSheet.absoluteFillObject, { opacity: progress }]} pointerEvents={open ? "auto" : "none"}>
+        <Animated.View style={[StyleSheet.absoluteFill, { opacity: progress }]} pointerEvents={open ? "auto" : "none"}>
         <Pressable
           accessibilityRole="button"
           accessibilityLabel="Close details"
@@ -302,7 +302,7 @@ export const f = StyleSheet.create({
   },
   disclosureBody: { paddingHorizontal: 20, paddingBottom: 23, gap: 15 },
   modal: { flex: 1, justifyContent: "flex-end" },
-  backdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: "#14211b80" },
+  backdrop: { ...StyleSheet.absoluteFill, backgroundColor: "#14211b80" },
   sheet: {
     maxHeight: "92%",
     borderTopLeftRadius: 27,
