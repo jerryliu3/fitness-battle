@@ -53,11 +53,14 @@ export function AthleteOverview({
   email,
   demoMode,
   openProfileEdit = false,
+  sections = "profile",
 }: {
   state: CompeteState;
   email?: string | null;
   demoMode?: boolean;
   openProfileEdit?: boolean;
+  /** Profile card on Athlete; lifetime totals + effort chart on Progress. */
+  sections?: "profile" | "progress";
 }) {
   const { user } = useAuth();
   const { dispatch } = useCompete();
@@ -142,6 +145,12 @@ export function AthleteOverview({
     }
   }
 
+  const showProfile = sections === "profile";
+  const showProgress = sections === "progress";
+
+  const effort = showProgress
+    ? effortHistory(state, track, user, email)
+    : null;
   const {
     effectiveElo,
     dailyValues,
@@ -161,10 +170,30 @@ export function AthleteOverview({
     startDateLabel,
     midDateLabel,
     endDateLabel,
-  } = effortHistory(state, track, user, email);
+  } = effort ?? {
+    effectiveElo: 0,
+    dailyValues: [],
+    pts: [],
+    lastPoint: { x: 0, y: 0 },
+    linePoints: "",
+    areaPoints: "",
+    yMin: 0,
+    yMid: 0,
+    yMax: 0,
+    xStart: 0,
+    xMid: 0,
+    xEnd: 0,
+    yTop: 0,
+    yBottom: 0,
+    yMidPos: 0,
+    startDateLabel: "",
+    midDateLabel: "",
+    endDateLabel: "",
+  };
 
   return (
     <>
+      {showProfile ? (
       <input
         ref={fileInputRef}
         type="file"
@@ -172,8 +201,9 @@ export function AthleteOverview({
         style={{ display: "none" }}
         onChange={onAvatarChosen}
       />
+      ) : null}
 
-      {editing ? (
+      {showProfile && editing ? (
         <section
           className="focus-profile-card is-editing"
           aria-label="Edit athlete profile"
@@ -286,7 +316,7 @@ export function AthleteOverview({
             </div>
           </div>
         </section>
-      ) : (
+      ) : showProfile ? (
         <section className="focus-profile-card" aria-label="Athlete profile">
           <div
             className="focus-portrait"
@@ -348,14 +378,11 @@ export function AthleteOverview({
             </div>
           </div>
         </section>
-      )}
+      ) : null}
 
-      <section className="focus-season-strip" aria-label="Your season so far">
-        <p className="fb-kicker">Your season so far</p>
-        <p className="fb-note" style={{ marginTop: 4 }}>
-          All counted Open-track sessions on this account; weeks tally closed
-          competition periods for your primary sport.
-        </p>
+      {showProgress ? (
+      <section className="focus-season-strip" aria-label="Lifetime totals">
+        <p className="fb-kicker">Lifetime totals</p>
         <div className="focus-season-stats">
           <div>
             <strong>{formatDistanceM(season.meters, state.units)}</strong>
@@ -369,9 +396,15 @@ export function AthleteOverview({
             <strong>{season.weeks}</strong>
             <span>settled weeks</span>
           </div>
+          <div>
+            <strong>{state.lifetimeOvertakes}</strong>
+            <span>overtakes</span>
+          </div>
         </div>
       </section>
+      ) : null}
 
+      {showProgress ? (
       <section className="focus-card focus-elo">
         <div className="focus-elo-top">
           <div
@@ -584,6 +617,7 @@ export function AthleteOverview({
           </text>
         </svg>
       </section>
+      ) : null}
     </>
   );
 }

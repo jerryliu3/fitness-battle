@@ -1,5 +1,24 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { countsOnTrack, type Activity, type CompeteState, type CrewBoardPin } from "@fitness-battle/shared";
+import {
+  countsOnTrack,
+  dispositionOf,
+  type Activity,
+  type CompeteState,
+  type CrewBoardPin,
+} from "@fitness-battle/shared";
+
+/** Match `week_field_roster` activity filters so admin settlement agrees with live fields. */
+function rosterEligible(activity: Activity, nowMs: number): boolean {
+  if (dispositionOf(activity) !== "counted") return false;
+  if (activity.provenance === "demo") return false;
+  if ((activity.source ?? "") === "history") return false;
+  if (/^(strava-stub-|garmin-stub-|whoop-stub-|oura-stub-|mock-)/.test(activity.id)) {
+    return false;
+  }
+  const started = Date.parse(activity.startedAt);
+  if (Number.isNaN(started) || started > nowMs) return false;
+  return true;
+}
 
 /** Server service-client read path; caller must authorize the owner first. Never seats an athlete. */
 export async function readAdminSettlementFields(db: SupabaseClient, target: string, state: CompeteState): Promise<CrewBoardPin[]> {
@@ -24,11 +43,12 @@ export async function readAdminSettlementFields(db: SupabaseClient, target: stri
     ]);
     if (profiles.error || ratings.error || activities.error) throw new Error("field_roster_unavailable");
     const totals = new Map<string, { distanceM: number; movingSec: number; verifiedDistanceM: number; verifiedMovingSec: number }>();
+    const nowMs = Date.now();
     for (const row of activities.data ?? []) {
       const activity: Activity = { id: row.compete_key ?? "", sport: row.sport, startedAt: row.started_at,
         distanceM: Number(row.distance_m ?? 0), movingSec: Number(row.moving_sec ?? 0), avgHr: null,
         provenance: row.provenance, disposition: row.disposition, source: row.source_label ?? "manual", verified: row.verified };
-      if (!countsOnTrack(activity, "open") || Date.parse(activity.startedAt) > Date.now()) continue;
+      if (!rosterEligible(activity, nowMs) || !countsOnTrack(activity, "open")) continue;
       const sum = totals.get(row.user_id) ?? { distanceM: 0, movingSec: 0, verifiedDistanceM: 0, verifiedMovingSec: 0 };
       totals.set(row.user_id, { distanceM: sum.distanceM + activity.distanceM, movingSec: sum.movingSec + activity.movingSec,
         verifiedDistanceM: sum.verifiedDistanceM + (countsOnTrack(activity, "verified") ? activity.distanceM : 0),

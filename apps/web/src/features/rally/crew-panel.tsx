@@ -76,7 +76,7 @@ function isCrewErrorNote(note: string): boolean {
 
 export function CrewPanel() {
   const { user, demoMode } = useAuth();
-  const { state } = useCompete();
+  const { state, dispatch } = useCompete();
   const router = useRouter();
   const searchParams = useSearchParams();
   const [data, setData] = useState<CrewData | null>(null);
@@ -89,6 +89,7 @@ export function CrewPanel() {
   const [format, setFormat] = useState("volume");
   const [busy, setBusy] = useState(false);
   const [note, setNote] = useState("");
+  const [leaveConfirmOpen, setLeaveConfirmOpen] = useState(false);
   async function reload() {
     try {
       const res = await fetch("/api/crews");
@@ -121,13 +122,14 @@ export function CrewPanel() {
     router.replace(qs ? `/field?${qs}` : "/field", { scroll: false });
   }, [searchParams, user, demoMode, router]);
 
-  async function write(path: string, body: object) {
+  async function write(path: string, body: object): Promise<boolean> {
     setBusy(true);
     setNote("");
     if (demoMode) {
       setBusy(false);
       setPanel(null);
       if (path === "/leave") {
+        dispatch({ type: "clear-crew-board" });
         setSelected("");
         setNote("You left the crew.");
       } else if (path === "/join") {
@@ -139,7 +141,7 @@ export function CrewPanel() {
         setName("");
         setNote("Saved. Your crew is up to date.");
       }
-      return;
+      return true;
     }
     try {
       const res = await fetch(`/api/crews${path}`, {
@@ -160,8 +162,10 @@ export function CrewPanel() {
         if (result.crew?.id) setSelected(result.crew.id);
         setNote("Saved. Your crew is up to date.");
       }
+      return true;
     } catch (e) {
       setNote(e instanceof Error ? e.message : "Could not reach your crew.");
+      return false;
     } finally {
       setBusy(false);
     }
@@ -463,7 +467,10 @@ export function CrewPanel() {
         </>
       )}
       {!panel && note && (
-        <p className="focus-feedback" role="status">
+        <p
+          className={isCrewErrorNote(note) ? "fb-error" : "focus-feedback"}
+          role={isCrewErrorNote(note) ? "alert" : "status"}
+        >
           {note}
         </p>
       )}
@@ -685,20 +692,6 @@ export function CrewPanel() {
               >
                 Copy invite link
               </button>
-              <button
-                type="button"
-                className="fb-btn-line"
-                onClick={() => {
-                  void navigator.clipboard
-                    .writeText(crew?.invite_code ?? "")
-                    .then(
-                      () => setNote("Invite code copied."),
-                      () => setNote(`Invite code: ${crew?.invite_code}`),
-                    );
-                }}
-              >
-                Copy code only
-              </button>
             </>
           )
         ) : crew?.id === "solo-preview" ? (
@@ -757,15 +750,7 @@ export function CrewPanel() {
                     width: "100%",
                   }}
                   disabled={busy}
-                  onClick={() => {
-                    if (
-                      window.confirm(
-                        `Leave ${crew.name}? You can rejoin anytime with an invite code.`,
-                      )
-                    ) {
-                      void write("/leave", { crewId: crew.id });
-                    }
-                  }}
+                  onClick={() => setLeaveConfirmOpen(true)}
                 >
                   Leave crew
                 </button>
@@ -773,6 +758,43 @@ export function CrewPanel() {
             )}
           </>
         )}
+      </Sheet>
+      <Sheet
+        open={leaveConfirmOpen}
+        title={`Leave ${crew?.name ?? "crew"}?`}
+        body="You can rejoin anytime with an invite code."
+        onClose={() => {
+          if (!busy) setLeaveConfirmOpen(false);
+        }}
+      >
+        <div style={{ display: "grid", gap: 12, marginTop: 16 }}>
+          <button
+            type="button"
+            className="fb-btn"
+            style={{
+              background: "var(--red, #b83a38)",
+              borderColor: "var(--red, #b83a38)",
+              color: "#fff",
+            }}
+            disabled={busy || !crew?.id}
+            onClick={() => {
+              if (!crew?.id) return;
+              void write("/leave", { crewId: crew.id }).then((ok) => {
+                if (ok) setLeaveConfirmOpen(false);
+              });
+            }}
+          >
+            {busy ? "Leaving…" : "Leave crew"}
+          </button>
+          <button
+            type="button"
+            className="fb-btn-line"
+            disabled={busy}
+            onClick={() => setLeaveConfirmOpen(false)}
+          >
+            Stay in crew
+          </button>
+        </div>
       </Sheet>
     </>
   );

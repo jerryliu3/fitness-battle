@@ -48,7 +48,6 @@ const OAUTH_PROVIDERS = new Set<ProviderId>([
 const DEVICE_PROVIDERS = new Set<ProviderId>(["apple_health", "google_health"]);
 
 type AthletePanel =
-  | "progress"
   | "connections"
   | "preferences"
   | "notifications"
@@ -56,7 +55,6 @@ type AthletePanel =
   | "scoring";
 
 const PANEL_TITLES: Record<AthletePanel, string> = {
-  progress: "Progress",
   connections: "Data Sync",
   preferences: "Preferences",
   notifications: "Notifications",
@@ -75,7 +73,7 @@ function humanError(code?: string): string {
   return code;
 }
 
-function YouContent() {
+function YouContent({ surface }: { surface: "progress" | "athlete" }) {
   const reduced = useReducedMotion();
   const { user, signOut, demoMode } = useAuth();
   const { state, dispatch, loadStatus } = useCompete();
@@ -95,11 +93,26 @@ function YouContent() {
   const pushIdentity: SyncIdentity | null = user
     ? { userId: user.id, localOnly: demoMode || user.mode === "demo" }
     : null;
+  const router = useRouter();
   const requestedPanel = searchParams.get("panel");
   const requestedEdit = searchParams.get("edit");
   useEffect(() => {
-    if (requestedPanel && requestedPanel in PANEL_TITLES) setPanel(requestedPanel as AthletePanel);
-  }, [requestedPanel]);
+    if (requestedPanel === "progress") {
+      router.replace("/you");
+      return;
+    }
+    if (
+      surface === "progress" &&
+      requestedPanel &&
+      requestedPanel in PANEL_TITLES
+    ) {
+      router.replace(`/athlete?panel=${encodeURIComponent(requestedPanel)}`);
+      return;
+    }
+    if (requestedPanel && requestedPanel in PANEL_TITLES) {
+      setPanel(requestedPanel as AthletePanel);
+    }
+  }, [requestedPanel, router, surface]);
   const tracker = searchParams.get("tracker");
   const trackerProvider = searchParams.get("provider");
   const appliedTracker = useRef<string | null>(null);
@@ -108,7 +121,6 @@ function YouContent() {
   const accountReady =
     loadStatus === "ready" || loadStatus === "local" || loadStatus === "failed";
 
-  const router = useRouter();
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [deletingAccount, setDeletingAccount] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
@@ -483,10 +495,52 @@ function YouContent() {
     setSyncNote(`${providerId} disconnected on this account.`);
   }
 
-  if (!user) {
+  if (!user && surface === "progress") {
+    const guestBoard = buildSplitBoard(state, state.primary, "open", now);
     return (
       <div className="focus-athlete">
-        <AthleteOverview state={state} />
+        <AthleteOverview state={state} sections="progress" />
+        <WeekRecords
+          sport={state.primary}
+          you={guestBoard.you}
+          units={state.units}
+        />
+        <SeasonHistory
+          results={state.periodResults}
+          primary={state.primary}
+        />
+        <section className="focus-card fb-stack">
+          <p className="fb-kicker">Account</p>
+          <h2>Sign in to save progress</h2>
+          <p className="fb-copy">
+            Create an account or sign in to keep lifetime totals and season
+            history with you.
+          </p>
+          <div className="fb-row" style={{ width: "100%", gap: 10 }}>
+            <Link
+              href="/signup?next=/you"
+              className="fb-btn"
+              style={{ flex: 1, textAlign: "center" }}
+            >
+              Create account
+            </Link>
+            <Link
+              href="/login?next=/you"
+              className="fb-btn-line"
+              style={{ flex: 1, textAlign: "center" }}
+            >
+              Sign in
+            </Link>
+          </div>
+        </section>
+      </div>
+    );
+  }
+
+  if (!user && surface === "athlete") {
+    return (
+      <div className="focus-athlete">
+        <AthleteOverview state={state} sections="profile" />
         <section className="focus-card fb-stack">
           <p className="fb-kicker">Account</p>
           <h2>Sign in to sync your athlete</h2>
@@ -515,7 +569,7 @@ function YouContent() {
     );
   }
 
-  const settingsPanel = panel ? (
+  const settingsPanel = surface === "athlete" && panel ? (
       <motion.aside
         key={panel}
         className="focus-settings-stack-panel"
@@ -551,19 +605,6 @@ function YouContent() {
           <h1>{PANEL_TITLES[panel]}</h1>
         </header>
         <div className="focus-settings-panel">
-          {panel === "progress" ? (
-            <>
-              <WeekRecords
-                sport={state.primary}
-                you={board.you}
-                units={state.units}
-              />
-              <SeasonHistory
-                results={state.periodResults}
-                primary={state.primary}
-              />
-            </>
-          ) : null}
           {panel === "connections" ? (
             <>
               <section className="fb-card">
@@ -976,17 +1017,37 @@ function YouContent() {
   return (
     <>
     <div className="focus-athlete" ref={overviewRef} inert={Boolean(panel) || settingsPresent}>
+      {surface === "progress" ? (
+        <>
+          <AthleteOverview
+            state={state}
+            email={user?.email}
+            demoMode={demoMode}
+            sections="progress"
+          />
+          <WeekRecords
+            sport={state.primary}
+            you={board.you}
+            units={state.units}
+          />
+          <SeasonHistory
+            results={state.periodResults}
+            primary={state.primary}
+          />
+        </>
+      ) : user ? (
+        <>
       <AthleteOverview
         state={state}
         email={user.email}
         demoMode={demoMode}
         openProfileEdit={requestedEdit === "profile"}
+        sections="profile"
       />
       {isOwnerEmail(user.email) && <Link href="/admin" className="fb-btn-line">Round lab</Link>}
       <nav className="focus-settings-list" aria-label="Athlete settings">
         {(
           [
-            ["progress", "Statistics, records & season history"],
             ["connections", "Trackers & history"],
             ["preferences", "Units, sports & freezes"],
             ["notifications", "Your updates, your choice"],
@@ -1012,6 +1073,8 @@ function YouContent() {
           </button>
         ))}
       </nav>
+        </>
+      ) : null}
       {!state.onboardingCompleted ? (
         <section className="fb-card">
           <h2>Finish setup</h2>
@@ -1048,15 +1111,27 @@ function YouContent() {
       />
       {deleteAccountSheet}
     </div>
-    {settingsPortal}
+    {surface === "athlete" ? settingsPortal : null}
     </>
   );
 }
 
-export default function YouPage() {
+export function ProgressPage() {
   return (
     <Suspense fallback={<p className="fb-copy">Loading…</p>}>
-      <YouContent />
+      <YouContent surface="progress" />
     </Suspense>
   );
+}
+
+export function AthletePage() {
+  return (
+    <Suspense fallback={<p className="fb-copy">Loading…</p>}>
+      <YouContent surface="athlete" />
+    </Suspense>
+  );
+}
+
+export default function YouPage() {
+  return <ProgressPage />;
 }

@@ -101,6 +101,29 @@ export function FieldStage({
   const [replayEpoch, setReplayEpoch] = useState(0);
   const committedRef = useRef<Record<string, Record<string, number>>>({});
   const lastSignatureRef = useRef<string | null>(null);
+  const pendingBaselineRef = useRef<{
+    key: string;
+    snapshot: string;
+    scopeKey: string;
+    nextCommitted: Record<string, number>;
+  } | null>(null);
+
+  const persistArenaBaseline = useCallback(
+    (
+      key: string,
+      snapshot: string,
+      scopeKey: string,
+      nextCommitted: Record<string, number>,
+    ) => {
+      committedRef.current[scopeKey] = nextCommitted;
+      try {
+        localStorage.setItem(key, snapshot);
+      } catch {
+        /* Storage optional */
+      }
+    },
+    [],
+  );
 
   const toggleSelect = (id: string) => {
     const runner = runners.find((item) => item.id === id) ?? (ghost?.id === id ? ghost : null);
@@ -180,13 +203,18 @@ export function FieldStage({
     for (const lane of fieldLanes) {
       nextCommitted[lane.id] = lane.value;
     }
-    committedRef.current[scopeKey] = nextCommitted;
-    try {
-      localStorage.setItem(key, snapshot);
-    } catch {
-      /* Storage optional */
+    if (pendingBaselineRef.current) {
+      const pending = pendingBaselineRef.current;
+      persistArenaBaseline(
+        pending.key,
+        pending.snapshot,
+        pending.scopeKey,
+        pending.nextCommitted,
+      );
+      pendingBaselineRef.current = null;
     }
     if (!plan) {
+      persistArenaBaseline(key, snapshot, scopeKey, nextCommitted);
       setOvertakePlan(null);
       setOvertakeProgress(1);
       return;
@@ -203,9 +231,16 @@ export function FieldStage({
     setCenter(null);
     setOvertakePlan(plan);
     if (reduced) {
+      persistArenaBaseline(key, snapshot, scopeKey, nextCommitted);
       setOvertakeProgress(1);
       setReplayEpoch(0);
     } else {
+      pendingBaselineRef.current = {
+        key,
+        snapshot,
+        scopeKey,
+        nextCommitted,
+      };
       setOvertakeProgress(0);
       setReplayEpoch((n) => n + 1);
     }
@@ -216,6 +251,7 @@ export function FieldStage({
     model.sport,
     model.track,
     unit,
+    persistArenaBaseline,
   ]);
 
   useEffect(() => {
@@ -227,13 +263,23 @@ export function FieldStage({
     const tick = (now: number) => {
       const next = Math.min(1, (now - start) / duration);
       setOvertakeProgress(next);
+      if (next >= 1 && pendingBaselineRef.current) {
+        const pending = pendingBaselineRef.current;
+        persistArenaBaseline(
+          pending.key,
+          pending.snapshot,
+          pending.scopeKey,
+          pending.nextCommitted,
+        );
+        pendingBaselineRef.current = null;
+      }
       if (next < 1) {
         raf = requestAnimationFrame(tick);
       }
     };
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
-  }, [overtakePlan, replayEpoch, reduced]);
+  }, [overtakePlan, replayEpoch, reduced, persistArenaBaseline]);
 
   const overtakeFrame = useMemo(
     () =>

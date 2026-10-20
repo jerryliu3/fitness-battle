@@ -25,7 +25,14 @@ import { usePathname, useRouter } from "expo-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { playCue } from "../../src/lib/haptics";
 import { useScoreTrackLens } from "../../src/lib/score-track-lens";
-import { Pressable, ScrollView, Switch, Text, View } from "react-native";
+import {
+  AccessibilityInfo,
+  Pressable,
+  ScrollView,
+  Switch,
+  Text,
+  View,
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { RoundTakeover } from "../../src/features/round-takeover";
 import { CompetitionSummary } from "../../src/features/competition-summary";
@@ -83,6 +90,22 @@ export default function ArenaScreen() {
   const [overtakeProgress, setOvertakeProgress] = useState(1);
   const [replayEpoch, setReplayEpoch] = useState(0);
   const lastSignatureRef = useRef<string | null>(null);
+  const pendingBaselineRef = useRef<{ key: string; snapshot: string } | null>(
+    null,
+  );
+  const [reduceMotion, setReduceMotion] = useState(false);
+
+  useEffect(() => {
+    let changed = false;
+    void AccessibilityInfo.isReduceMotionEnabled().then((value) => {
+      if (!changed) setReduceMotion(value);
+    });
+    const sub = AccessibilityInfo.addEventListener(
+      "reduceMotionChanged",
+      setReduceMotion,
+    );
+    return () => sub.remove();
+  }, []);
 
   const arena = useMemo(
     () => (state ? buildArenaModel(state, undefined, track) : null),
@@ -136,18 +159,34 @@ export default function ArenaScreen() {
       periodStart,
       arena.unit,
     );
-    const plan = reconcileArenaOvertake(fieldLanes, previous);
-    writeBaselineItem(
-      key,
-      serializeArenaBaseline(periodStart, fieldLanes, arena.unit),
+    const snapshot = serializeArenaBaseline(
+      periodStart,
+      fieldLanes,
+      arena.unit,
     );
+    const plan = reconcileArenaOvertake(fieldLanes, previous);
+    if (pendingBaselineRef.current) {
+      writeBaselineItem(
+        pendingBaselineRef.current.key,
+        pendingBaselineRef.current.snapshot,
+      );
+      pendingBaselineRef.current = null;
+    }
     if (!plan) {
+      writeBaselineItem(key, snapshot);
       setOvertakePlan(null);
       setOvertakeProgress(1);
       return;
     }
     setCenter(null);
     setOvertakePlan(plan);
+    if (reduceMotion) {
+      writeBaselineItem(key, snapshot);
+      setOvertakeProgress(1);
+      setReplayEpoch(0);
+      return;
+    }
+    pendingBaselineRef.current = { key, snapshot };
     setOvertakeProgress(0);
     setReplayEpoch((n) => n + 1);
   }, [
@@ -161,23 +200,35 @@ export default function ArenaScreen() {
     state,
     track,
     writeBaselineItem,
+    reduceMotion,
   ]);
 
   useEffect(() => {
     if (!overtakePlan || replayEpoch === 0) return;
+    if (reduceMotion) {
+      setOvertakeProgress(1);
+      return;
+    }
     let raf = 0;
     const start = Date.now();
     const duration = overtakePlan.durationMs;
     const tick = () => {
       const next = Math.min(1, (Date.now() - start) / duration);
       setOvertakeProgress(next);
+      if (next >= 1 && pendingBaselineRef.current) {
+        writeBaselineItem(
+          pendingBaselineRef.current.key,
+          pendingBaselineRef.current.snapshot,
+        );
+        pendingBaselineRef.current = null;
+      }
       if (next < 1) {
         raf = requestAnimationFrame(tick);
       }
     };
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
-  }, [overtakePlan, replayEpoch]);
+  }, [overtakePlan, replayEpoch, reduceMotion, writeBaselineItem]);
 
   const overtakeFrame = useMemo(
     () =>

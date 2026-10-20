@@ -561,15 +561,8 @@ export function TodayScreen() {
                 {weekActivities.length === 1 ? "session" : "sessions"}
               </span>
             </div>
-            {sportById(state.primary).gps && weekDistanceM > 0 ? (
-              <span
-                className="fb-note"
-                style={{ display: "block", marginTop: 2, fontSize: 11 }}
-              >
-                {formatDistanceM(weekDistanceM, units)} {unitLabel}
-              </span>
-            ) : null}
           </div>
+          <ActivityActions compact />
         </div>
 
         <div
@@ -702,8 +695,6 @@ export function TodayScreen() {
             })}
           </svg>
 
-          <ActivityActions compact />
-
           <div className="focus-activity-legend">
             <div className="focus-activity-legend-item">
               <div className="focus-activity-legend-header">
@@ -712,7 +703,7 @@ export function TodayScreen() {
                   aria-hidden="true"
                 />
                 <span className="focus-activity-legend-label">
-                  You (
+                  This week (
                   {currTotalHours === 0
                     ? "0h"
                     : `${currTotalHours.toFixed(1)}h`}

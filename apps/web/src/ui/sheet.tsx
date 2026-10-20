@@ -71,10 +71,10 @@ export function Sheet({
                       : { type: "spring", bounce: 0.12, duration: 0.42 }
                   }
                 >
+                  <div className="sheet-grab" aria-hidden="true" />
                   <Dialog.Title>{title}</Dialog.Title>
                   <Dialog.Description>{body}</Dialog.Description>
                   {children}
-                  <Dialog.Close className="sheet-close">Close</Dialog.Close>
                 </motion.div>
               </Dialog.Content>
             </>

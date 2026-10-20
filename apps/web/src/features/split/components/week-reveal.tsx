@@ -44,7 +44,7 @@ function RoundTakeover({ results, onDismiss, state }: { results: PeriodResult[];
               ? `Your current round ${enrollment.status === "upcoming" ? "starts" : "started"} ${enrollment.startsAt.toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit", timeZone: APP_TIMEZONE, timeZoneName: "short" })}. ${enrollment.renews ? "Renews after this round." : "Stops after this round."}`
               : "You’re not registered for another round. Update sport settings to join again."}</p>;
           })}
-          <Link href="/you?panel=preferences" className="fb-btn-line" onClick={onDismiss}>Update sport settings</Link>
+          <Link href="/athlete?panel=preferences" className="fb-btn-line" onClick={onDismiss}>Update sport settings</Link>
           <button type="button" className="fb-btn" onClick={onDismiss}>Back to Compete</button>
         </>}
       </Dialog.Content>

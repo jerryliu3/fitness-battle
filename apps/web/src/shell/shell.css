@@ -7,17 +7,32 @@
 }
 
 .focus-shell-header {
-  display: grid;
-  grid-template-columns: auto 1fr auto;
+  display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 12px;
-  padding: 12px var(--shell-pad-x) 8px;
+  padding: 10px var(--shell-pad-x) 8px;
+}
+.focus-shell-brand {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.focus-shell-brand > a {
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: var(--ink);
+  text-decoration: none;
+  line-height: 1.1;
 }
 .focus-shell-tagline {
   font-size: 9px;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.04em;
   color: var(--muted);
-  text-align: center;
+  line-height: 1.2;
+  text-transform: none;
 }
 .focus-shell-profile {
   width: 36px;
@@ -32,6 +47,23 @@
   font-weight: 700;
   color: var(--ink);
   text-decoration: none;
+  flex-shrink: 0;
+  box-sizing: border-box;
+}
+.focus-shell-profile.is-selected {
+  border: 2px solid var(--lime);
+  box-shadow: 0 0 0 2px #f1c75b44;
+}
+.focus-shell-ember {
+  width: 28px;
+  height: auto;
+}
+.sheet-grab {
+  width: 40px;
+  height: 4px;
+  border-radius: 999px;
+  background: #d7e0d0;
+  margin: 0 auto 14px;
 }
 .focus-shell-profile-img {
   width: 100%;

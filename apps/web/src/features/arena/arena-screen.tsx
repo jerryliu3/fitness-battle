@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { motion } from "motion/react";
 import { playCue } from "@/lib/haptics";
 import { useScoreTrackLens } from "@/lib/score-track-lens";
@@ -53,6 +53,17 @@ export function ArenaScreen({ tabActive = true }: { tabActive?: boolean }) {
   const [sport, setSport] = useState<SportId | "sleep" | null>(null);
   const [track, setTrack] = useScoreTrackLens();
   const [competitionTipOpen, setCompetitionTipOpen] = useState(false);
+
+  useEffect(() => {
+    if (!competitionTipOpen) return;
+    const close = (event: MouseEvent) => {
+      if (!(event.target as Element).closest(".focus-competition-tip-wrap")) {
+        setCompetitionTipOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", close);
+    return () => document.removeEventListener("mousedown", close);
+  }, [competitionTipOpen]);
 
   function chooseTrack(next: ScoreTrack) {
     if (next === track) return;
@@ -112,21 +123,23 @@ export function ArenaScreen({ tabActive = true }: { tabActive?: boolean }) {
         <div className="focus-competition-info">
           <p className="fb-kicker focus-competition-kicker">
             Competition
-            <button
-              type="button"
-              className="focus-competition-tip"
-              aria-label="About competition scoring"
-              aria-expanded={competitionTipOpen}
-              onClick={() => setCompetitionTipOpen((open) => !open)}
-            >
-              ⓘ
-            </button>
+            <span className="focus-competition-tip-wrap">
+              <button
+                type="button"
+                className="focus-competition-tip"
+                aria-label="About competition scoring"
+                aria-expanded={competitionTipOpen}
+                onClick={() => setCompetitionTipOpen((open) => !open)}
+              >
+                ⓘ
+              </button>
+              {competitionTipOpen ? (
+                <span className="focus-competition-tip-popover" role="tooltip">
+                  {SCORE_TRACK_TOOLTIP}
+                </span>
+              ) : null}
+            </span>
           </p>
-          {competitionTipOpen ? (
-            <p className="focus-competition-tip-body" role="note">
-              {SCORE_TRACK_TOOLTIP}
-            </p>
-          ) : null}
           <p className="focus-competition-dates">
             {dateRangeLabel}
             <span className="focus-competition-pill">{badgeLabel}</span>

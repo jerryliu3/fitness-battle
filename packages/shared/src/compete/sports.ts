@@ -254,6 +254,8 @@ export interface CompeteState {
   calibrated: boolean;
   /** Onboarding preferences finished (name/city/sport + optional connect/backfill). */
   onboardingCompleted: boolean;
+  /** Lifetime count of field overtakes (server-owned; read from profile). */
+  lifetimeOvertakes: number;
   /** Closed-week placements and Elo transitions (newest first, capped). */
   periodResults: PeriodResult[];
   /** Result ids waiting for the week-complete reveal UI. */
