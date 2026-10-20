@@ -39,7 +39,10 @@ vi.mock("./supabase", () => ({
     },
   },
 }));
-vi.mock("expo-router", () => ({ useRouter: () => mock.router }));
+vi.mock("expo-router", () => ({
+  useRouter: () => mock.router,
+  usePathname: () => "/arena",
+}));
 vi.mock("react-native", () => ({
   AppState: {
     currentState: "active",

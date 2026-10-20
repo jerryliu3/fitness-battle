@@ -13,6 +13,6 @@ describe("field stage athlete selection", () => {
     const source = readFileSync(stagePath, "utf8");
     expect(source).toContain("tweenCenterTo(valueAt(runner, time))");
     expect(source).toMatch(/tweenCenterTo\(total, view.span, true\)/);
-    expect(source).toMatch(/clampArenaLaneCenter\(target, nextSpan\)/);
+    expect(source).toMatch(/clampViewCenter\(target, nextSpan\)/);
   });
 });

@@ -43,7 +43,7 @@ function formatCompetitionDateRange(startsAt: Date, endsAt: Date): string {
   return `${startsAt.toLocaleDateString("en-US", opts)} – ${lastDay.toLocaleDateString("en-US", opts)}`;
 }
 
-export function ArenaScreen() {
+export function ArenaScreen({ tabActive = true }: { tabActive?: boolean }) {
   const { state, dispatch, loadStatus, fieldNotice, dismissFieldNotice, standingsStale } = useCompete();
   const { user } = useAuth();
   const router = useRouter();
@@ -211,6 +211,7 @@ export function ArenaScreen() {
               <section key={r.sport} style={{ marginBottom: 36 }}>
                 <FieldStage
                   key={`${r.sport}-${state.units}`}
+                  tabActive={tabActive}
                   sportTitle={sportSpec?.name ?? r.sport}
                   model={sportModel}
                   boardRows={sportBoard.rows}

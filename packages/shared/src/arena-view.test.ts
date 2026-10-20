@@ -3,6 +3,8 @@ import {
   arenaWindow,
   arenaPosition,
   clampArenaLaneCenter,
+  clampArenaLaneCenterToField,
+  arenaFieldHigh,
   orderedArenaLanes,
   fitArenaWindow,
   reconcileArenaOvertake,
@@ -62,6 +64,16 @@ describe("distance viewport", () => {
 
     // When athlete has progressed well forward (e.g. 30 km), athlete remains centered
     expect(clampArenaLaneCenter(30, 20)).toBe(30);
+  });
+  it("caps panning ahead of the current field leader", () => {
+    const lanes = [
+      { value: 2, ghost: false },
+      { value: 18, ghost: false },
+      { value: 99, ghost: true },
+    ];
+    expect(arenaFieldHigh(lanes)).toBe(18);
+    expect(clampArenaLaneCenterToField(40, 10, 18, 8)).toBeCloseTo(21);
+    expect(clampArenaLaneCenterToField(40, 10, 18, 8)).toBeLessThan(40);
   });
 });
 

@@ -3,7 +3,7 @@
  * Plain data only — no React, DOM, or native imports.
  */
 
-export const SHELL_TAB_IDS = ["today", "arena", "field", "you"] as const;
+export const SHELL_TAB_IDS = ["today", "arena", "you", "field"] as const;
 
 export type ShellTabId = (typeof SHELL_TAB_IDS)[number];
 

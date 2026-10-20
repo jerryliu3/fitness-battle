@@ -33,10 +33,12 @@ export function FieldStage({
   model,
   boardRows,
   sportTitle,
+  tabActive = true,
 }: {
   model: FieldModel;
   boardRows?: BoardRow[];
   sportTitle?: string;
+  tabActive?: boolean;
 }) {
   const { user } = useAuth();
   const pathname = usePathname();
@@ -74,10 +76,10 @@ export function FieldStage({
   const [lanesImmersive, setLanesImmersive] = useState(false);
 
   useEffect(() => {
-    if (shellTabFromPath(pathname)?.id === "arena") return;
+    if (tabActive && shellTabFromPath(pathname)?.id === "arena") return;
     setLanesImmersive(false);
     setMode("lanes");
-  }, [pathname]);
+  }, [pathname, tabActive]);
   const [span, setSpan] = useState(model.gps ? (unit === "mi" ? 4 : 6) : 20);
   const [center, setCenter] = useState<number | null>(null);
   const [centerTween, setCenterTween] = useState<number | null>(null);
@@ -340,7 +342,7 @@ export function FieldStage({
   if (!you) return <p className="fb-copy">Join a field to see your lanes.</p>;
 
   return (
-    <section className="focus-arena-stage">
+    <section className="focus-arena-stage" hidden={!tabActive} aria-hidden={!tabActive}>
       <div className="focus-arena-total">
         <div>
           <p className="fb-kicker focus-arena-sport">
@@ -404,7 +406,11 @@ export function FieldStage({
 
       <div>
       <div style={{ display: "flow-root" }}>
-        <ExpandingField open={lanesImmersive} onClose={() => setLanesImmersive(false)}>
+        <ExpandingField
+          open={lanesImmersive && tabActive}
+          tabActive={tabActive}
+          onClose={() => setLanesImmersive(false)}
+        >
           <div className="focus-field-toolbar">
             <span className="fb-note">{mode === "standings" ? "Ranked by this week's effort" : lanesImmersive ? "Drag to pan · swipe across peers" : "Click the field to expand · swipe across peers"}</span>
           </div>

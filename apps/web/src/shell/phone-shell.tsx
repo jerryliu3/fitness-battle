@@ -29,12 +29,16 @@ import {
 } from "./boot-gate";
 import "./shell.css";
 
-function renderTab(tabId: ShellTabId, accountKey: string): ReactNode {
+function renderTab(
+  tabId: ShellTabId,
+  accountKey: string,
+  tabActive: boolean,
+): ReactNode {
   switch (tabId) {
     case "today":
       return <TodayScreen />;
     case "arena":
-      return <ArenaScreen />;
+      return <ArenaScreen tabActive={tabActive} />;
     case "field":
       return <FieldScreen />;
     case "you":
@@ -208,7 +212,9 @@ export function PhoneShell({
                   inert={!on}
                   aria-hidden={!on}
                 >
-                  {visited.has(tab.id) ? panel(renderTab(tab.id, accountKey)) : null}
+                  {visited.has(tab.id)
+                    ? panel(renderTab(tab.id, accountKey, on))
+                    : null}
                 </div>
               );
             })}

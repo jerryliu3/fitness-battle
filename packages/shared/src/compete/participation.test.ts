@@ -75,6 +75,15 @@ describe("field change notice", () => {
     rivals: [{ id: "maya", name: "Maya", distanceM: 10000, movingSec: 3000 }],
   };
 
+  it("ignores a units-only label change when distances are unchanged", () => {
+    expect(
+      fieldChangeNotice(
+        { ...base, units: "us" },
+        { ...base, units: "metric" },
+      ),
+    ).toBeNull();
+  });
+
   it("stays quiet on the first visit, a new period, and an unchanged poll", () => {
     const next = { ...base, youDistanceM: 12900, youPlace: 2 };
     expect(fieldChangeNotice(null, next)).toBeNull();
