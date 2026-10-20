@@ -1,6 +1,9 @@
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import {
   AccessibilityInfo,
+  Animated,
+  Easing,
+  useWindowDimensions,
   KeyboardAvoidingView,
   Modal,
   Platform,
@@ -13,6 +16,8 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { SHELL_COLORS as c } from "../theme";
 import { playCue } from "../lib/haptics";
+const AnimatedSafeAreaView = Animated.createAnimatedComponent(SafeAreaView);
+
 export function FocusSheet({
   open,
   title,
@@ -27,6 +32,10 @@ export function FocusSheet({
   children?: ReactNode;
 }) {
   const [reduce, setReduce] = useState(false);
+  const [present, setPresent] = useState(open);
+  const progress = useRef(new Animated.Value(0)).current;
+  const { height: windowHeight } = useWindowDimensions();
+  const [sheetHeight, setSheetHeight] = useState(windowHeight);
   useEffect(() => {
     void AccessibilityInfo.isReduceMotionEnabled().then(setReduce);
     const sub = AccessibilityInfo.addEventListener(
@@ -39,26 +48,42 @@ export function FocusSheet({
     if (open) void playCue("light");
   }, [open]);
 
+  useEffect(() => {
+    if (open && !present) { setPresent(true); return; }
+    if (!present) return;
+    const animation = Animated.timing(progress, {
+      toValue: open ? 1 : 0,
+      duration: reduce ? 0 : open ? 300 : 220,
+      easing: open ? Easing.out(Easing.cubic) : Easing.in(Easing.cubic),
+      useNativeDriver: true,
+    });
+    animation.start(({ finished }) => { if (finished && !open) setPresent(false); });
+    return () => animation.stop();
+  }, [open, present, progress, reduce]);
+
   return (
     <Modal
-      visible={open}
+      visible={present}
       transparent
-      animationType={reduce ? "none" : "slide"}
+      animationType="none"
       onRequestClose={onClose}
     >
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : undefined}
         style={f.modal}
       >
+        <Animated.View style={[StyleSheet.absoluteFillObject, { opacity: progress }]} pointerEvents={open ? "auto" : "none"}>
         <Pressable
           accessibilityRole="button"
           accessibilityLabel="Close details"
           style={f.backdrop}
           onPress={onClose}
         />
-        <SafeAreaView
+        </Animated.View>
+        <AnimatedSafeAreaView
           edges={["bottom"]}
-          style={f.sheet}
+          onLayout={(event) => setSheetHeight(event.nativeEvent.layout.height)}
+          style={[f.sheet, { transform: [{ translateY: progress.interpolate({ inputRange: [0, 1], outputRange: [sheetHeight, 0] }) }] }]}
           accessibilityViewIsModal
         >
           <View style={f.handle} />
@@ -83,7 +108,7 @@ export function FocusSheet({
             {body && <Text style={f.copy}>{body}</Text>}
             {children}
           </ScrollView>
-        </SafeAreaView>
+        </AnimatedSafeAreaView>
       </KeyboardAvoidingView>
     </Modal>
   );

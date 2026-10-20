@@ -2,7 +2,7 @@
 
 import * as Dialog from "@radix-ui/react-dialog";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
-import type { ReactNode } from "react";
+import { useEffect, useRef, type ReactNode } from "react";
 import { playCue } from "@/lib/haptics";
 
 export function Sheet({
@@ -22,6 +22,8 @@ export function Sheet({
   preventAutoFocus?: boolean;
 }) {
   const reduced = useReducedMotion();
+  const returnFocus = useRef<HTMLElement | null>(null);
+  useEffect(() => { if (open) void playCue("light"); }, [open]);
   return (
     <Dialog.Root
       open={open}
@@ -49,25 +51,25 @@ export function Sheet({
               <Dialog.Content
                 forceMount
                 asChild
-                onOpenAutoFocus={
-                  preventAutoFocus
-                    ? (event) => event.preventDefault()
-                    : undefined
-                }
+                onOpenAutoFocus={(event) => {
+                  returnFocus.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+                  if (preventAutoFocus) event.preventDefault();
+                }}
+                onCloseAutoFocus={(event) => {
+                  event.preventDefault();
+                  returnFocus.current?.focus({ preventScroll: true });
+                }}
               >
                 <motion.div
                   className="sheet-content focus-sheet"
-                  initial={{ y: "100%", x: "-50%", opacity: reduced ? 1 : 0.98 }}
+                  initial={reduced ? false : { y: "100%", x: "-50%", opacity: 0.98 }}
                   animate={{ y: 0, x: "-50%", opacity: 1 }}
-                  exit={{ y: "100%", x: "-50%", opacity: reduced ? 1 : 0.98 }}
+                  exit={{ y: reduced ? 0 : "100%", x: "-50%", opacity: reduced ? 1 : 0.98 }}
                   transition={
                     reduced
                       ? { duration: 0 }
                       : { type: "spring", bounce: 0.12, duration: 0.42 }
                   }
-                  onAnimationStart={() => {
-                    void playCue("light");
-                  }}
                 >
                   <Dialog.Title>{title}</Dialog.Title>
                   <Dialog.Description>{body}</Dialog.Description>

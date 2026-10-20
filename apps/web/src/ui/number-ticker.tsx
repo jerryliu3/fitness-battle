@@ -22,6 +22,7 @@ export function NumberTicker({ value, digits = 0 }: { value: number; digits?: nu
     const tick = (now: number) => {
       const t = Math.min(1, (now - started) / 420);
       const next = Math.round((startValue + (value - startValue) * t) * factor) / factor;
+      from.current = next;
       setShown(next);
       if (t < 1) frame = requestAnimationFrame(tick);
       else from.current = value;

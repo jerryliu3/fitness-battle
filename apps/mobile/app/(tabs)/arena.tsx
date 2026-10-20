@@ -527,7 +527,6 @@ export default function ArenaScreen() {
               maximum={arena.unit === "pts" ? 100 : 40}
               onChange={(span) => {
                 setSpan(span);
-                setCenter(null);
               }}
             />
             {failed && (

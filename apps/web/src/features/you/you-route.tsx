@@ -51,6 +51,7 @@ type AthletePanel =
   | "connections"
   | "preferences"
   | "notifications"
+  | "account"
   | "scoring";
 
 const PANEL_TITLES: Record<AthletePanel, string> = {
@@ -58,6 +59,7 @@ const PANEL_TITLES: Record<AthletePanel, string> = {
   connections: "Data Sync",
   preferences: "Preferences",
   notifications: "Notifications",
+  account: "Account",
   scoring: "How scoring works",
 };
 
@@ -77,6 +79,9 @@ function YouContent() {
   const { user, signOut, demoMode } = useAuth();
   const { state, dispatch, loadStatus } = useCompete();
   const [panel, setPanel] = useState<AthletePanel | null>(null);
+  const overviewRef = useRef<HTMLDivElement>(null);
+  const settingsFocus = useRef<HTMLElement | null>(null);
+  const [settingsPresent, setSettingsPresent] = useState(false);
   const [settingsScrollRoot, setSettingsScrollRoot] =
     useState<HTMLElement | null>(null);
   const [syncNote, setSyncNote] = useState<string | null>(null);
@@ -190,20 +195,20 @@ function YouContent() {
   }, [accountKey, loadStatus, state]);
 
   useLayoutEffect(() => {
-    setSettingsScrollRoot(
-      document.querySelector<HTMLElement>(
-        ".phone-panel.is-active .phone-scroll",
-      ),
-    );
-  }, [panel, loadStatus]);
+    setSettingsScrollRoot(overviewRef.current?.closest<HTMLElement>(".phone-scroll") ?? null);
+  }, [loadStatus, user]);
 
   useLayoutEffect(() => {
-    if (!panel) return;
-    const viewport = document.querySelector<HTMLElement>(
-      ".phone-panel.is-active .phone-scroll [data-radix-scroll-area-viewport]",
-    );
-    if (viewport) viewport.scrollTop = 0;
-  }, [panel]);
+    if (!panel || !settingsScrollRoot) return;
+    setSettingsPresent(true);
+    settingsScrollRoot.querySelector<HTMLButtonElement>(".focus-settings-stack-panel button")?.focus({ preventScroll: true });
+  }, [panel, settingsScrollRoot]);
+
+  useLayoutEffect(() => {
+    if (panel || settingsPresent) return;
+    settingsFocus.current?.focus({ preventScroll: true });
+    settingsFocus.current = null;
+  }, [panel, settingsPresent]);
 
   useEffect(() => {
     // Only apply OAuth return params after this account's compete load settled.
@@ -508,6 +513,10 @@ function YouContent() {
       <motion.aside
         key={panel}
         className="focus-settings-stack-panel"
+        aria-label={PANEL_TITLES[panel]}
+        onKeyDown={(event) => {
+          if (event.key === "Escape" && !event.defaultPrevented) { event.preventDefault(); setPanel(null); }
+        }}
         initial={reduced ? false : { x: "100%" }}
         animate={{ x: 0 }}
         exit={
@@ -529,7 +538,7 @@ function YouContent() {
           className="focus-expand-back"
           onClick={() => setPanel(null)}
         >
-          ← Athlete
+          ← Back
         </button>
         <header className="focus-heading">
           <p className="fb-kicker">Settings</p>
@@ -937,6 +946,15 @@ function YouContent() {
                   </button>
                 )}
               </section>
+            </>
+          ) : null}
+          {panel === "account" ? (
+            <>
+              <section className="fb-card fb-stack">
+                <h2>Your account</h2>
+                <button type="button" className="fb-btn-line" onClick={() => void signOut()}>Sign out</button>
+                <ReportIssue />
+              </section>
               {user ? (
                 <section className="fb-card" style={{ borderColor: "#f3d1cc" }}>
                   <h2 style={{ color: "var(--red, #b83a38)" }}>Danger Zone</h2>
@@ -996,25 +1014,23 @@ function YouContent() {
             </section>
           ) : null}
         </div>
-        <AuthPrompt
-          open={Boolean(authPrompt?.open)}
-          reason={authPrompt?.reason ?? "Sign in to compete."}
-          onClose={() => setAuthPrompt(null)}
-        />
-        {deleteAccountSheet}
       </motion.aside>
   ) : null;
 
   const settingsPortal = settingsScrollRoot
     ? createPortal(
-        <AnimatePresence mode="wait">{settingsPanel}</AnimatePresence>,
+        (panel || settingsPresent) ? <div className="focus-settings-stack">
+        <AnimatePresence mode="wait" onExitComplete={() => {
+          setSettingsPresent(false);
+        }}>{settingsPanel}</AnimatePresence>
+        </div> : null,
         settingsScrollRoot,
       )
     : null;
 
   return (
     <>
-    <div className="focus-athlete">
+    <div className="focus-athlete" ref={overviewRef} inert={Boolean(panel) || settingsPresent}>
       <AthleteOverview state={state} email={user.email} demoMode={demoMode} />
       <nav className="focus-settings-list" aria-label="Athlete settings">
         {(
@@ -1024,13 +1040,15 @@ function YouContent() {
             ["preferences", "Units, sports & freezes"],
             ["notifications", "Your updates, your choice"],
             ["scoring", "Levels & eligibility"],
+            ["account", "Sign out, report an issue & delete account"],
           ] as const
         ).map(([id, detail]) => (
           <button
             key={id}
             type="button"
             className="focus-settings-row"
-            onClick={() => {
+            onClick={(event) => {
+              settingsFocus.current = event.currentTarget;
               void playCue("selection");
               setPanel(id);
             }}
@@ -1059,41 +1077,7 @@ function YouContent() {
           </Link>
         </section>
       ) : null}
-      {user ? (
-        <>
-          <div className="fb-row" style={{ gap: 10, marginTop: 12 }}>
-            <button
-              type="button"
-              className="fb-btn-line"
-              style={{ flex: 1, justifyContent: "center" }}
-              onClick={() => void signOut()}
-            >
-              Sign out
-            </button>
-            <ReportIssue />
-          </div>
-          <div style={{ marginTop: 12, textAlign: "center" }}>
-            <button
-              type="button"
-              className="fb-btn-ghost"
-              style={{
-                width: "auto",
-                fontSize: 12,
-                color: "var(--muted)",
-                margin: "0 auto",
-                display: "inline-block",
-                padding: "4px 8px",
-              }}
-              onClick={() => {
-                setDeleteError(null);
-                setDeleteConfirmOpen(true);
-              }}
-            >
-              Delete account
-            </button>
-          </div>
-        </>
-      ) : (
+      {!user ? (
         <div className="fb-stack">
           <p className="fb-note">Browsing as a guest</p>
           <div className="fb-row" style={{ gap: 10 }}>
@@ -1105,7 +1089,7 @@ function YouContent() {
             </Link>
           </div>
         </div>
-      )}
+      ) : null}
       <AuthPrompt
         open={Boolean(authPrompt?.open)}
         reason={authPrompt?.reason ?? "Sign in to compete."}

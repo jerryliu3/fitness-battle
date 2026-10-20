@@ -2,6 +2,7 @@
 
 import {
   useLayoutEffect,
+  useId,
   useRef,
   useState,
   type ReactNode,
@@ -48,17 +49,20 @@ export function JourneyTrail({
   layoutKey,
   active = true,
   intro = false,
+  revealing = [],
   children,
 }: {
   stopCount: number;
   layoutKey: string;
   active?: boolean;
   intro?: boolean;
+  revealing?: readonly number[];
   children: (api: {
     setStopRef: (index: number) => Ref<HTMLButtonElement>;
   }) => ReactNode;
 }) {
   const rootRef = useRef<HTMLDivElement>(null);
+  const maskId = useId();
   const svgRef = useRef<SVGSVGElement>(null);
   const stopEls = useRef<(HTMLButtonElement | null)[]>([]);
   const [pathSegs, setPathSegs] = useState<string[]>([]);
@@ -109,13 +113,20 @@ export function JourneyTrail({
       <div ref={rootRef} className="focus-journey-track">
         <svg
           ref={svgRef}
-          className="focus-journey-path"
+          className={`focus-journey-path${intro ? " is-intro" : ""}`}
           viewBox={`0 0 ${svgBox.w} ${svgBox.h}`}
           preserveAspectRatio="none"
           aria-hidden="true"
         >
+          <defs>
+            {pathSegs.map((d, i) => revealing.includes(i) ? (
+              <mask key={i} id={`${maskId}-${i}`} maskUnits="userSpaceOnUse" x={0} y={0} width={svgBox.w} height={svgBox.h}>
+                <path d={d} pathLength={1} className="focus-journey-reveal-mask" />
+              </mask>
+            ) : null)}
+          </defs>
           {pathSegs.map((d, i) => (
-            <path key={i} d={d} />
+            <path key={i} d={d} mask={revealing.includes(i) ? `url(#${maskId}-${i})` : undefined} />
           ))}
         </svg>
         {children({ setStopRef })}

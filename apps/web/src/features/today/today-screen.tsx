@@ -1,5 +1,7 @@
 "use client";
-import { useEffect, useState, type Ref } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, type Ref } from "react";
+import { newJourneyStops } from "./journey-reveal";
+import { usePathname } from "next/navigation";
 import { motion, useReducedMotion } from "motion/react";
 import { playCue } from "@/lib/haptics";
 import { AnimatedPolygon, AnimatedPolyline } from "./activity-chart";
@@ -152,23 +154,25 @@ function SessionStopPeek({
   detail,
   onOpen,
   onClose,
+  peekRef,
 }: {
   title: string;
   kicker: string;
   detail?: string;
   onOpen: () => void;
   onClose: () => void;
+  peekRef?: Ref<HTMLDivElement>;
 }) {
   return (
-    <div className="focus-stop-peek" role="dialog" aria-label="Session preview">
+    <div ref={peekRef} className="focus-stop-peek" role="dialog" aria-label="Session preview">
+      <button type="button" className="focus-stop-peek-close" aria-label="Close preview" onClick={onClose}>
+        ×
+      </button>
       <p className="fb-kicker">{kicker}</p>
       <strong>{title}</strong>
       {detail ? <p className="fb-note">{detail}</p> : null}
       <button type="button" className="fb-btn" onClick={onOpen}>
         See session
-      </button>
-      <button type="button" className="fb-btn-ghost" onClick={onClose}>
-        Not now
       </button>
     </div>
   );
@@ -180,17 +184,37 @@ type SessionPhase =
   | { kind: "full"; target: "suggestion" | Activity };
 
 export function TodayScreen() {
+  const onHome = usePathname() === "/today";
   const { user } = useAuth();
   const { state } = useCompete();
   const reduced = useReducedMotion();
   const [session, setSession] = useState<SessionPhase>({ kind: "closed" });
-  const [journeyIntro, setJourneyIntro] = useState(false);
+  const [revealingStops, setRevealingStops] = useState<string[]>([]);
+  const peekRef = useRef<HTMLDivElement>(null);
   const [reaction, setReaction] = useState<{
     action: EmberAction;
     key: number;
   }>({ action: "wave", key: 0 });
   const react = (action: EmberAction) =>
     setReaction((value) => ({ action, key: value.key + 1 }));
+
+  useEffect(() => {
+    if (!revealingStops.length) return;
+    const timer = window.setTimeout(() => setRevealingStops([]), 1050);
+    return () => window.clearTimeout(timer);
+  }, [revealingStops]);
+
+  useEffect(() => {
+    if (session.kind !== "peek") return;
+    const dismissOutside = (event: PointerEvent) => {
+      const target = event.target;
+      if (target instanceof Node && !peekRef.current?.contains(target)) {
+        setSession({ kind: "closed" });
+      }
+    };
+    document.addEventListener("pointerdown", dismissOutside);
+    return () => document.removeEventListener("pointerdown", dismissOutside);
+  }, [session.kind]);
 
   if (!state) return <p className="fb-copy">Loading your week…</p>;
 
@@ -212,22 +236,24 @@ export function TodayScreen() {
     groupActivitiesByDay(counted, Infinity),
   );
 
-  useEffect(() => {
-    const topDay = journeyDays[0]?.id;
-    if (!topDay) return;
-    const key = `fb:journey-day:${user?.id ?? state.name ?? "guest"}`;
+  const todayStop = `today:${dayKey(now, APP_TIMEZONE)}`;
+  const revealIdentity = JSON.stringify([todayStop, ...journeyDays.map((day) => day.id)]);
+  useLayoutEffect(() => {
+    if (!onHome) return;
+    const key = `fb:journey-seen-stops:${user?.id ?? state.name ?? "guest"}`;
     try {
-      const last = localStorage.getItem(key);
-      if (last !== topDay && journeyDays.length >= 1) {
-        setJourneyIntro(true);
-        localStorage.setItem(key, topDay);
-        const t = window.setTimeout(() => setJourneyIntro(false), 1200);
-        return () => window.clearTimeout(t);
-      }
+      const raw = localStorage.getItem(key);
+      const parsed: unknown = raw ? JSON.parse(raw) : null;
+      const seen = Array.isArray(parsed) && parsed.every((id) => typeof id === "string") ? parsed as string[] : null;
+      const current = JSON.parse(revealIdentity) as string[];
+      const fresh = newJourneyStops(seen, current);
+      if (fresh.length) setRevealingStops(reduced ? [] : fresh);
+      localStorage.setItem(key, JSON.stringify([...new Set([...(seen ?? []), ...current])].slice(-400)));
     } catch {
-      /* optional */
+      // Blocked storage must not turn every mount into another entrance.
+      setRevealingStops([]);
     }
-  }, [journeyDays, state.name, user?.id]);
+  }, [onHome, revealIdentity, reduced, state.name, user?.id]);
 
   const weekPeriod = competePeriodWindow(state, now);
   const weekStart = weekPeriod.startsAt.getTime();
@@ -405,6 +431,7 @@ export function TodayScreen() {
   const activeDaysCount = weekDays.filter((d) => d.hasActivity).length;
 
   function openSession(target: "suggestion" | Activity, phase: "peek" | "full") {
+    setRevealingStops([]);
     void playCue(phase === "peek" ? "light" : "light");
     setSession({ kind: phase, target });
   }
@@ -710,13 +737,13 @@ export function TodayScreen() {
       <JourneyTrail
         stopCount={journeyStops.length}
         layoutKey={journeyStops.map((s) => `${s.key}:${s.lane}`).join("|")}
-        intro={journeyIntro}
+        revealing={journeyStops.flatMap((stop, index) => revealingStops.includes(stop.kind === "today" ? todayStop : stop.key) ? [index] : [])}
       >
         {({ setStopRef }) =>
           journeyStops.map((stop, index) => (
             <div
               key={stop.key}
-              className={stopRowClass(stop)}
+              className={`${stopRowClass(stop)}${revealingStops.includes(stop.kind === "today" ? todayStop : stop.key) ? " is-new-stop" : ""}`}
               data-lane={stop.lane}
             >
               {stop.kind === "past" ? (
@@ -759,6 +786,7 @@ export function TodayScreen() {
                       title={route.suggestion.title}
                       onOpen={() => openSession("suggestion", "full")}
                       onClose={closeSession}
+                      peekRef={peekRef}
                     />
                   ) : null}
                   <button
@@ -817,6 +845,7 @@ export function TodayScreen() {
                         }
                       }}
                       onClose={closeSession}
+                      peekRef={peekRef}
                     />
                   ) : null}
                   <JourneyDayStop

@@ -71,7 +71,8 @@
   border-radius: 12px;
   inset: 4px;
 }
-.phone-shell .phone-tab[data-state="active"] {
+.phone-shell .phone-tab[data-state="active"],
+.phone-shell .phone-tab[aria-current="page"] {
   color: #282f2c;
 }
 .phone-shell .phone-guest {
@@ -258,6 +259,20 @@
   transform: translateY(-50%);
   animation: focus-session-peek-in 0.32s cubic-bezier(0.22, 1, 0.36, 1);
 }
+.focus-stop-peek-close {
+  position: absolute;
+  top: 5px;
+  right: 7px;
+  width: 28px;
+  height: 28px;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: #616c63;
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+}
 .focus-stop-peek h3,
 .focus-stop-peek strong {
   display: block;
@@ -281,9 +296,25 @@
 .phone-panel.is-active .phone-scroll {
   position: relative;
 }
-.focus-settings-stack-panel {
+.focus-settings-stack {
   position: absolute;
   inset: 0;
+  z-index: 8;
+  width: min(720px, 100%);
+  margin-inline: auto;
+  overflow: hidden;
+  pointer-events: none;
+}
+.focus-settings-stack-panel {
+  pointer-events: auto;
+  scrollbar-width: none;
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  width: 100%;
+  margin: 0;
   z-index: 8;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
@@ -291,6 +322,7 @@
   padding: 26px var(--shell-pad-x, 24px) 32px;
   box-sizing: border-box;
 }
+.focus-settings-stack-panel::-webkit-scrollbar { display: none; }
 @keyframes focus-session-peek-in {
   from {
     opacity: 0;
@@ -307,9 +339,25 @@
 .focus-journey.is-day-intro .focus-path-row.is-current {
   animation: focus-journey-today-pop 0.55s cubic-bezier(0.22, 1, 0.36, 1) 0.35s both;
 }
+.focus-journey.is-day-intro .focus-journey-path.is-intro path {
+  stroke-dasharray: 0.01 0.02;
+  stroke-dashoffset: 1;
+  animation: focus-journey-path-draw 0.72s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.focus-journey.is-day-intro .focus-path-row > button,
+.focus-journey.is-day-intro .focus-path-row > span {
+  opacity: 0;
+  animation: focus-journey-node-in 0.34s ease-out 0.72s both;
+}
+@keyframes focus-journey-path-draw {
+  to { stroke-dashoffset: 0; }
+}
+@keyframes focus-journey-node-in {
+  from { opacity: 0; transform: translateY(5px) scale(0.96); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
 @keyframes focus-journey-row-settle {
   from {
-    transform: translateY(-18px);
     opacity: 0.7;
   }
   to {
@@ -319,7 +367,6 @@
 }
 @keyframes focus-journey-today-pop {
   from {
-    transform: scale(0.82);
     opacity: 0;
   }
   to {
@@ -395,6 +442,13 @@
 .focus-settings-row:hover {
   background: #f5f8f1;
 }
+.phone-shell .focus-settings-row:focus-visible {
+  outline: none;
+  box-shadow: inset 0 0 0 2px #282f2c;
+}
+.focus-lane-track [data-athlete]:focus { outline: none; }
+.focus-racer-focus-ring { opacity: 0; pointer-events: none; }
+.focus-lane-track [data-athlete]:focus-visible .focus-racer-focus-ring { opacity: 1; }
 .focus-settings-panel {
   display: grid;
   gap: 16px;
@@ -998,6 +1052,18 @@
   stroke-dasharray: 4 7;
   vector-effect: non-scaling-stroke;
 }
+.focus-journey-path .focus-journey-reveal-mask {
+  stroke: white;
+  stroke-width: 8;
+  stroke-dasharray: 1;
+  stroke-dashoffset: -1;
+  animation: focus-journey-path-draw .65s cubic-bezier(.22,1,.36,1) both;
+}
+.focus-path-row.is-new-stop > button,
+.focus-path-row.is-new-stop > span {
+  animation: focus-new-stop .3s ease-out .65s both;
+}
+@keyframes focus-new-stop { from { opacity: 0; } to { opacity: 1; } }
 .focus-path-row > button {
   position: absolute;
   left: var(--path-c);
@@ -1556,6 +1622,27 @@
 .focus-competition-tracks {
   flex-shrink: 0;
 }
+.focus-score-track-button {
+  position: relative;
+  isolation: isolate;
+}
+.focus-score-track-button > * {
+  position: relative;
+  z-index: 1;
+}
+.focus-score-track-indicator {
+  position: absolute !important;
+  inset: 3px;
+  z-index: -1 !important;
+  border-radius: inherit;
+  background: #f1c75b;
+  box-shadow: 0 1px 4px #282f2c0c;
+}
+.focus-competition-tracks > button[aria-pressed="true"] {
+  background: transparent;
+  box-shadow: none;
+  color: #282f2c;
+}
 .focus-competition-info {
   display: flex;
   flex-direction: column;
@@ -1653,6 +1740,12 @@
   color: #282f2c;
   box-shadow: 0 1px 4px #282f2c0c;
 }
+.focus-segments.focus-competition-tracks > .focus-score-track-button[aria-pressed="true"] {
+  background: transparent;
+  box-shadow: none;
+  color: #282f2c;
+}
+.focus-score-track-indicator { background: #f1c75bcc; }
 .focus-track-frame {
   position: relative;
   border: 1px solid #d7e0cf;
@@ -1665,78 +1758,35 @@
   box-shadow: inset 0 1px 0 #ffffffaa;
 }
 .focus-lane-scroll {
+  height: 540px;
   overflow-x: auto;
   overflow-y: hidden;
   scrollbar-width: thin;
   overscroll-behavior-x: contain;
-  touch-action: pan-x;
+  touch-action: pan-y pinch-zoom;
   user-select: none;
   -webkit-user-select: none;
 }
 .focus-lane-track {
   display: block;
   height: 540px;
-  touch-action: none;
+  touch-action: pan-y pinch-zoom;
   cursor: grab;
   user-select: none;
   -webkit-user-select: none;
 }
-.focus-track-frame.is-lanes-immersive {
-  position: fixed;
-  inset: 0;
-  z-index: 120;
-  margin: 0;
-  border-radius: 0;
-  border: none;
-  display: flex;
-  flex-direction: column;
-  align-items: stretch;
-  justify-content: center;
-  background: #fafaf7;
-  animation: focus-lanes-window-open 0.42s cubic-bezier(0.22, 1, 0.36, 1);
-}
-@keyframes focus-lanes-window-open {
-  from {
-    clip-path: inset(8% 6% 28% 6% round 24px);
-    opacity: 0.94;
-  }
-  to {
-    clip-path: inset(0% 0% 0% 0% round 0px);
-    opacity: 1;
-  }
-}
-.focus-track-frame.is-lanes-immersive .focus-lane-scroll {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 0;
-  overflow: hidden;
-}
-.focus-lanes-immersive-back {
-  position: absolute;
-  top: 12px;
-  left: 12px;
-  z-index: 2;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  min-height: 40px;
-  padding: 8px 14px;
-  border: 1px solid #d7e0cf;
-  border-radius: 999px;
-  background: #fafaf7ee;
-  color: #282f2c;
-  font:
-    600 13px var(--font-body),
-    sans-serif;
-  cursor: pointer;
-  box-shadow: 0 4px 16px #282f2c14;
-}
-.focus-track-frame.is-lanes-immersive .focus-lane-track {
-  height: 540px;
-  flex-shrink: 0;
-}
+/* The same content node lives in the inline slot and the root dialog. */
+.focus-field-slot:empty { height: 740px; }
+.focus-field-content { display: flex; flex-direction: column; height: 100%; min-height: 0; }
+.focus-field-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 8px; }
+.focus-field-toolbar button { min-height: 44px; flex-shrink: 0; }
+.focus-field-toolbar .fb-note { font-size: 11px; }
+.focus-field-backdrop { position: fixed; inset: 0; z-index: 119; background: transparent; }
+.focus-field-expanded { position: fixed; inset: 0; z-index: 120; overflow: hidden; background: var(--paper, #fafaf7); box-sizing: border-box; outline: none; }
+.focus-field-expanded .focus-field-content { padding: env(safe-area-inset-top) max(8px, env(safe-area-inset-right)) env(safe-area-inset-bottom) max(8px, env(safe-area-inset-left)); box-sizing: border-box; }
+.focus-field-expanded { overflow-y: auto; }
+.focus-field-expanded .focus-field-content { padding: 0; }
+.focus-field-close { position: sticky; top: max(8px, env(safe-area-inset-top)); left: max(12px, env(safe-area-inset-left)); z-index: 3; min-height: 44px; margin: 8px 12px; border: 1px solid #e0e5dc; border-radius: 14px; padding: 10px 16px; background: #f1c75b; color: #282f2c; font: inherit; cursor: pointer; }
 .focus-lane-track:active {
   cursor: grabbing;
 }
@@ -2176,7 +2226,7 @@
     height: 500px;
     min-height: 500px;
   }
-  .focus-lane-track {
+  .focus-lane-scroll {
     height: 500px;
   }
   .focus-track-controls {
@@ -2334,4 +2384,15 @@
 .focus-track-frame .fd-world-label.is-selected {
   border-color: #f1c75b;
   box-shadow: 0 3px 15px #282f2c15;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .focus-stop-peek,
+  .focus-journey.is-day-intro .focus-path-row,
+  .focus-journey.is-day-intro .focus-path-row.is-current { animation: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .focus-path-row.is-new-stop > button,
+  .focus-path-row.is-new-stop > span { animation: none; }
+  .focus-journey-path .focus-journey-reveal-mask { animation: none; stroke-dashoffset: 0; }
 }

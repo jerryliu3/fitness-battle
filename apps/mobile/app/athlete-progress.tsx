@@ -13,7 +13,7 @@ export default function Progress() {
     <SafeAreaView style={f.safe}>
       <ScrollView contentContainerStyle={f.content}>
         <FocusButton
-          label="Back to Athlete"
+          label="Back"
           secondary
           onPress={() => router.back()}
         />

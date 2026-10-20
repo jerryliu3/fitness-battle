@@ -34,6 +34,16 @@ describe("field geometry", () => {
     expect(worldZ(12)).toBeLessThan(0);
   });
 
+  it("shares tied places and excludes the past-self comparison", () => {
+    const tied = { ...maya, series: you.series };
+    const ahead = { ...maya, id: "leader", series: [0, 15, 20, 30] };
+    const ghost = { ...ahead, id: "past", ghost: true };
+    const runners = [you, tied, ahead, ghost];
+    expect(placeAt(runners, you.id, 3, 0)).toBe(2);
+    expect(placeAt(runners, tied.id, 3, 0)).toBe(2);
+    expect(placeAt(runners, ghost.id, 3, 0)).toBe(0);
+  });
+
   it("ranks by value without moving lanes", () => {
     expect(placeAt([you, maya], "you", 1, 0)).toBe(2);
     expect(placeAt([you, maya], "you", 3, 0)).toBe(1);
