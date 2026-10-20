@@ -93,10 +93,11 @@ function YouContent({ surface }: { surface: "progress" | "athlete" }) {
   const pushIdentity: SyncIdentity | null = user
     ? { userId: user.id, localOnly: demoMode || user.mode === "demo" }
     : null;
+  const router = useRouter();
   const requestedPanel = searchParams.get("panel");
   const requestedEdit = searchParams.get("edit");
   useEffect(() => {
-    if (requestedPanel === "progress" && surface === "athlete") {
+    if (requestedPanel === "progress") {
       router.replace("/you");
       return;
     }
@@ -120,7 +121,6 @@ function YouContent({ surface }: { surface: "progress" | "athlete" }) {
   const accountReady =
     loadStatus === "ready" || loadStatus === "local" || loadStatus === "failed";
 
-  const router = useRouter();
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [deletingAccount, setDeletingAccount] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
@@ -1002,10 +1002,6 @@ function YouContent({ surface }: { surface: "progress" | "athlete" }) {
         </div>
       </motion.aside>
   ) : null;
-
-  if (surface === "athlete" && !user) {
-    return null;
-  }
 
   const settingsPortal = settingsScrollRoot
     ? createPortal(

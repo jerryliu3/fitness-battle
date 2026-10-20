@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { motion } from "motion/react";
 import { playCue } from "@/lib/haptics";
 import { useScoreTrackLens } from "@/lib/score-track-lens";
@@ -53,6 +53,17 @@ export function ArenaScreen({ tabActive = true }: { tabActive?: boolean }) {
   const [sport, setSport] = useState<SportId | "sleep" | null>(null);
   const [track, setTrack] = useScoreTrackLens();
   const [competitionTipOpen, setCompetitionTipOpen] = useState(false);
+
+  useEffect(() => {
+    if (!competitionTipOpen) return;
+    const close = (event: MouseEvent) => {
+      if (!(event.target as Element).closest(".focus-competition-tip-wrap")) {
+        setCompetitionTipOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", close);
+    return () => document.removeEventListener("mousedown", close);
+  }, [competitionTipOpen]);
 
   function chooseTrack(next: ScoreTrack) {
     if (next === track) return;

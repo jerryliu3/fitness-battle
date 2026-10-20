@@ -122,7 +122,7 @@ export function CrewPanel() {
     router.replace(qs ? `/field?${qs}` : "/field", { scroll: false });
   }, [searchParams, user, demoMode, router]);
 
-  async function write(path: string, body: object) {
+  async function write(path: string, body: object): Promise<boolean> {
     setBusy(true);
     setNote("");
     if (demoMode) {
@@ -140,7 +140,7 @@ export function CrewPanel() {
         setName("");
         setNote("Saved. Your crew is up to date.");
       }
-      return;
+      return true;
     }
     try {
       const res = await fetch(`/api/crews${path}`, {
@@ -161,8 +161,10 @@ export function CrewPanel() {
         if (result.crew?.id) setSelected(result.crew.id);
         setNote("Saved. Your crew is up to date.");
       }
+      return true;
     } catch (e) {
       setNote(e instanceof Error ? e.message : "Could not reach your crew.");
+      return false;
     } finally {
       setBusy(false);
     }
@@ -776,9 +778,9 @@ export function CrewPanel() {
             disabled={busy || !crew?.id}
             onClick={() => {
               if (!crew?.id) return;
-              void write("/leave", { crewId: crew.id }).then(() =>
-                setLeaveConfirmOpen(false),
-              );
+              void write("/leave", { crewId: crew.id }).then((ok) => {
+                if (ok) setLeaveConfirmOpen(false);
+              });
             }}
           >
             {busy ? "Leaving…" : "Leave crew"}

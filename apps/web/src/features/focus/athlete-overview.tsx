@@ -145,6 +145,12 @@ export function AthleteOverview({
     }
   }
 
+  const showProfile = sections === "profile";
+  const showProgress = sections === "progress";
+
+  const effort = showProgress
+    ? effortHistory(state, track, user, email)
+    : null;
   const {
     effectiveElo,
     dailyValues,
@@ -164,10 +170,26 @@ export function AthleteOverview({
     startDateLabel,
     midDateLabel,
     endDateLabel,
-  } = effortHistory(state, track, user, email);
-
-  const showProfile = sections === "profile";
-  const showProgress = sections === "progress";
+  } = effort ?? {
+    effectiveElo: 0,
+    dailyValues: [],
+    pts: [],
+    lastPoint: { x: 0, y: 0 },
+    linePoints: "",
+    areaPoints: "",
+    yMin: 0,
+    yMid: 0,
+    yMax: 0,
+    xStart: 0,
+    xMid: 0,
+    xEnd: 0,
+    yTop: 0,
+    yBottom: 0,
+    yMidPos: 0,
+    startDateLabel: "",
+    midDateLabel: "",
+    endDateLabel: "",
+  };
 
   return (
     <>
