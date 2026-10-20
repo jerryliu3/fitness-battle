@@ -29,3 +29,5 @@
 5. **Testing & Quality**:
    - Every semantic change to scoring, Elo calculations, period bounds, or database models must ship with unit tests in Vitest.
    - All workspace packages must pass `pnpm typecheck` without `--skipLibCheck` on local application code.
+
+Crew’s visible shared-week progress and standings read aggregate counted activities through `crew_week_totals`, authorized by active membership. Exclude sample/demo, history, pending/excluded and future activities. The feed and manual share action are retired; legacy entry endpoints remain for older clients. Apply the additive totals migration before deploying the corresponding API.

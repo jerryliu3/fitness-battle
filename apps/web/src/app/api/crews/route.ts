@@ -56,6 +56,15 @@ export async function GET(request: Request) {
     }),
   );
   const crewIds = [...sportByCrew.keys()];
+  const progress: Array<Record<string, unknown>> = [];
+  for (const crewId of crewIds) {
+    const { data: totals, error: totalsError } = await supabase.rpc("crew_week_totals", { p_crew_id: crewId });
+    if (totalsError) return NextResponse.json({ error: "crew_progress_unavailable" }, { status: 500 });
+    progress.push(...(totals ?? []).map((row: Record<string, unknown>) => ({
+      ...row, crew_id: crewId, activity_id: `total:${row.user_id}`, sport: sportByCrew.get(crewId),
+      started_at: new Date().toISOString(), disposition: "counted",
+    })));
+  }
   const [{ data: members }, { data: entries }, { data: notices }] = await Promise.all([
     crewIds.length
       ? supabase.from("crew_members").select("crew_id, user_id, display_name, rest_week, status").in("crew_id", crewIds)
@@ -96,6 +105,7 @@ export async function GET(request: Request) {
     crews: memberships ?? [],
     members: members ?? [],
     entries: currentEntries,
+    progress,
     seasonWeeks,
     notices: notices ?? [],
   });

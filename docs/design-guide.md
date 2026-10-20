@@ -30,7 +30,7 @@ The visible tabs are **Home / Compete / Crew / Athlete**. Stable route IDs remai
 
 - Home: one recommendation (expands in-place for detail), then the winding recent counted-session path. Each activity day has one circle, including today. Multiple sessions on a day remain individually accessible from that day. When today has activity, the suggestion stays available above the journey without a second today circle. Empty paths stay quiet — no invented activity and no “connect/sync” empty copy on the path itself.
 - Compete (`/arena`): active sports, registration panel (join / eligible crew — never “solo” wording), separate score tracks, current vertical lanes, prior-self ghost, awards, and benchmark links. A disabled **1v1 · Coming soon** teaser is allowed; no live 1v1 yet.
-- Crew: Trail-style club identity, shared week progress, activity/standings, members, invites and existing supported crew actions. Signed-out/demo states preview what crews unlock. Empty/live states remain honest.
+- Crew: Trail-style club identity, shared week progress, standings, members, invites and existing supported crew actions. The activity feed and manual session-sharing controls are removed. Signed-out/demo states preview what crews unlock. Empty/live states remain honest.
 - Athlete: profile card with portrait, name, city, and email; **season summary, Elo, and benchmarks near the top**. Account controls follow Strava/Duolingo-style IA: a short list on Athlete that opens a Settings hub and separate screens (not a wall of expanders).
 
 ## Lane viewport contract
