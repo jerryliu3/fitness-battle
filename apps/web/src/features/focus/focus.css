@@ -2398,7 +2398,7 @@
 }
 
 /* Compete card: a single type family and a clear sport heading. */
-.focus-arena-sport { font-family: inherit; font-size: 28px; line-height: 1.15; letter-spacing: -.7px; text-transform: none; }
-.focus-arena-total strong { font-family: inherit; font-weight: 700; }
-.focus-arena-total .focus-status { font-family: inherit; font-weight: 700; }
+.rally-focus[data-product="on"] .focus-arena-sport { font-family: inherit; font-size: 28px; line-height: 1.15; letter-spacing: -.7px; text-transform: none; }
+.rally-focus[data-product="on"] .focus-arena-total strong { font-family: inherit; font-weight: 700; }
+.rally-focus[data-product="on"] .focus-arena-total .focus-status { font-family: inherit; font-weight: 700; }
 .focus-field-pursuit { position: absolute; top: 12px; right: 16px; min-height: 44px; border: 1px solid var(--line, #e0e5dc); border-radius: 12px; padding: 8px 12px; background: white; color: #616c63; opacity: .6; }

@@ -63,6 +63,7 @@ export function PhoneShell({
   useCompeteFieldRefresh(!hideTabs && (tab?.id === "arena" || tab?.id === "field"));
   const [intent, setIntent] = useState<ShellTabId | null>(null);
   const [bootAnimDone, setBootAnimDone] = useState(false);
+  const [bootChecked, setBootChecked] = useState(false);
   const matched = tab?.id ?? null;
   const active = intent ?? matched;
   const accountKey = user?.id ?? "guest";
@@ -71,7 +72,8 @@ export function PhoneShell({
   );
 
   useLayoutEffect(() => {
-    if (hasSeenBootSplash()) setBootAnimDone(true);
+    setBootAnimDone(hasSeenBootSplash());
+    setBootChecked(true);
   }, []);
 
   useEffect(() => {
@@ -149,6 +151,7 @@ export function PhoneShell({
 
   // Only play the full initial mascot boot splash on fresh browser boot.
   // Account creation, login, or page transitions don't reload the splash.
+  if (!bootChecked) return null;
   if (!bootAnimDone) {
     return (
       <BootSplash

@@ -143,6 +143,12 @@ function JourneyDayStop({
         <small>{monthDay}</small>
         <b>{sportById(primary.sport).name}</b>
         <em>{detail}</em>
+        {day.items.length > 1 && day.items.map((activity) => (
+          <button key={activity.id} type="button" className="fb-btn-ghost"
+            onClick={() => onOpen(activity)}>
+            {sportById(activity.sport).name} · {formatVolume(activity.sport, activity.distanceM, activity.movingSec, units)}
+          </button>
+        ))}
       </span>
     </>
   );
@@ -230,11 +236,13 @@ export function TodayScreen() {
   const shownSessions = journeyDays.reduce((acc, d) => acc + d.items.length, 0);
   const hasMorePast = counted.length > shownSessions;
   const units = state.units;
+  const todayKey = dayKey(now, APP_TIMEZONE);
+  const hasTodayActivity = journeyDays.some((day) => day.day === todayKey);
   const journeyStops = buildJourneyStops(
     journeyDays,
     hasMorePast,
     groupActivitiesByDay(counted, Infinity),
-  );
+  ).filter((stop) => stop.kind !== "today" || !hasTodayActivity);
 
   const todayStop = `today:${dayKey(now, APP_TIMEZONE)}`;
   const revealIdentity = JSON.stringify([todayStop, ...journeyDays.map((day) => day.id)]);
@@ -539,6 +547,7 @@ export function TodayScreen() {
           <span>Your effort score is protected through next Monday.</span>
         </div>
       )}
+      {hasTodayActivity && <button type="button" className="fb-btn-line" onClick={() => openSession("suggestion", "full")}>Today’s suggested session</button>}
       <section className="focus-stats-card" aria-label="This week's progress">
         <div className="focus-stats-header">
           <div>
