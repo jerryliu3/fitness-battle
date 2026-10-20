@@ -226,9 +226,15 @@ importers:
       '@types/react-dom':
         specifier: ~19.2.3
         version: 19.2.7(@types/react@19.2.18)
+      '@types/react-test-renderer':
+        specifier: 19.1.0
+        version: 19.1.0
       '@types/three':
         specifier: 0.186.0
         version: 0.186.0
+      react-test-renderer:
+        specifier: 19.2.3
+        version: 19.2.3(react@19.2.3)
       typescript:
         specifier: ^5.9.2
         version: 5.9.3

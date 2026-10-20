@@ -160,12 +160,17 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
   const dirtyRef = useRef(0);
   const unsavedRef = useRef(false);
   const unitsUnsavedRef = useRef(false);
+  const revisionRef = useRef<string | null>(null);
+  const conflictRef = useRef(false);
+  const [saveConflict, setSaveConflict] = useState(false);
+  const saveChain = useRef<Promise<void>>(Promise.resolve());
   const refreshFlight = useRef<Promise<boolean> | null>(null);
   userIdRef.current = userId;
   demoRef.current = demoMode || user?.mode === "demo";
 
   // Drop prior-account state before children render with the new userId.
   if (!loading && loadedFor !== userId) {
+    revisionRef.current = null; conflictRef.current = false; setSaveConflict(false);
     setLoadedFor(userId);
     setState(null);
     setLoadStatus("loading");
@@ -186,38 +191,39 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
 
   const runSave = useCallback(
     (accountId: string | null, next: CompeteState, generation: number) => {
-      if (!accountId || demoRef.current || statusRef.current !== "ready") return;
-      void fetch("/api/compete", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ state: next, accountId }),
-      })
-        .then(async (response) => {
+      if (!accountId || demoRef.current || statusRef.current !== "ready" || conflictRef.current) return;
+      saveChain.current = saveChain.current.catch(() => {}).then(async () => {
+        if (accountId !== userIdRef.current || generation !== dirtyRef.current || conflictRef.current) return;
+        try {
+          const response = await fetch("/api/compete", {
+            method: "PUT", headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ state: next, accountId, updatedAt: revisionRef.current }),
+          });
           if (userIdRef.current !== accountId) return;
+          const body = await response.json().catch(() => null);
           if (!response.ok) {
             localStorage.setItem(deviceOnlyKey(accountId), "1");
-            const body = (await response.json().catch(() => null)) as {
-              error?: string;
-            } | null;
-            if (body?.error !== "week_still_open") {
-              setSaveError("This device updated. The account copy did not save.");
-            }
+            if (body?.error === "account_changed_reload" || body?.error === "account_version_required") {
+              conflictRef.current = true; setSaveConflict(true);
+              setSaveError("Your account changed elsewhere. Reload the account before saving again.");
+            } else if (body?.error !== "week_still_open") setSaveError("This device updated. The account copy did not save.");
             return;
           }
+          if (typeof body?.updatedAt !== "string") throw new Error("missing_revision");
+          revisionRef.current = body.updatedAt;
+          localStorage.setItem(`${storageKey(accountId)}:revision`, body.updatedAt);
           if (dirtyRef.current === generation) {
             localStorage.removeItem(deviceOnlyKey(accountId));
-            unsavedRef.current = false;
-            unitsUnsavedRef.current = false;
+            unsavedRef.current = false; unitsUnsavedRef.current = false;
           }
           setSaveError(null);
-        })
-        .catch(() => {
+        } catch {
           if (userIdRef.current !== accountId) return;
           localStorage.setItem(deviceOnlyKey(accountId), "1");
           setSaveError("This device updated. The account copy did not save.");
-        });
-    },
-    [],
+        }
+      });
+    }, [],
   );
 
   const scheduleSave = useCallback(
@@ -298,6 +304,13 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
       .then((body) => {
         if (cancelled || userIdRef.current !== accountId || !accountId) return;
         const staleDeviceDraft = readStorageItem(deviceOnlyKey(accountId)) === "1";
+        const cachedRevision = readStorageItem(`${storageKey(accountId)}:revision`);
+        revisionRef.current = staleDeviceDraft ? cachedRevision : body.updatedAt ?? null;
+        if (staleDeviceDraft && cachedRevision !== (body.updatedAt ?? null)) {
+          conflictRef.current = true; setSaveConflict(true);
+          setSaveError("Your account changed elsewhere. Reload the account before saving again.");
+        }
+        if (!staleDeviceDraft && body.updatedAt) localStorage.setItem(`${storageKey(accountId)}:revision`, body.updatedAt);
         const remote = isCompeteState(body.state)
           ? rollClock(migrateCompeteState(body.state))
           : null;
@@ -367,6 +380,14 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
   }, [loadStatus, state, userId]);
 
   const retryLoad = useCallback(() => {
+    const accountId = userIdRef.current;
+    if (conflictRef.current && accountId) {
+      localStorage.setItem(`${storageKey(accountId)}:recovery`, JSON.stringify(stateRef.current));
+      localStorage.removeItem(deviceOnlyKey(accountId));
+      conflictRef.current = false; setSaveConflict(false);
+      unsavedRef.current = false; unitsUnsavedRef.current = false;
+      dirtyRef.current += 1;
+    }
     setAttempt((value) => value + 1);
   }, []);
 
@@ -392,6 +413,10 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
           unsavedRef.current ||
           dirtyRef.current !== generation ||
           timer.current != null;
+        if (!dirty && !conflictRef.current) {
+          revisionRef.current = body.updatedAt ?? null;
+          if (body.updatedAt) localStorage.setItem(`${storageKey(accountId)}:revision`, body.updatedAt);
+        }
         const next = applyRemoteSnapshot(
           local,
           remote,
@@ -512,7 +537,13 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
     ],
   );
 
-  return <CompeteContext.Provider value={api}>{children}</CompeteContext.Provider>;
+  return <CompeteContext.Provider value={api}>
+    {saveConflict && <div role="alert" className="fb-card" style={{ padding: 16 }}>
+      Your account changed elsewhere. Reload to use the current account. Your local draft will be kept on this device as a recovery copy.
+      <button className="fb-btn-line" onClick={retryLoad}>Reload account</button>
+    </div>}
+    {children}
+  </CompeteContext.Provider>;
 }
 
 export function useCompete(): CompeteApi {
