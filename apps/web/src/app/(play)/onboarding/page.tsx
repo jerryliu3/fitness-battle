@@ -25,7 +25,8 @@ function OnboardingFlow() {
   const [step, setStep] = useState<Step>("prefs");
   const [name, setName] = useState(user?.displayName ?? "");
   const [city, setCity] = useState("Toronto");
-  const [sport, setSport] = useState<SportId>("running");
+  const [sports, setSports] = useState<SportId[]>(["running"]);
+  const sport = sports[0]!;
   const [units, setUnits] = useState<UnitSystem>("us");
   const [trackSleep, setTrackSleep] = useState(false);
   const [connectMessage, setConnectMessage] = useState<string | null>(null);
@@ -57,6 +58,8 @@ function OnboardingFlow() {
     if (name.trim()) dispatch({ type: "rename", name });
     if (city.trim()) dispatch({ type: "set-city", city });
     dispatch({ type: "set-units", units });
+    if (!sports.length) return;
+    for (const selected of sports) dispatch({ type: "opt-in", sport: selected, accountId: user?.id });
     dispatch({ type: "set-primary", sport });
     if (trackSleep) dispatch({ type: "opt-in-health", metric: "sleep" });
     if (trackSleep) dispatch({ type: "set-focus", focus: { family: "sport", id: sport } });
@@ -123,7 +126,7 @@ function OnboardingFlow() {
         </h1>
         <p className="fb-copy">
           {step === "prefs" &&
-            "Name, city, units, and primary sport. You can change these later on Athlete."}
+            "Name, city, units, and sports to join immediately. You can change these later on Athlete."}
           {step === "connect" &&
             "Strava is the cloud default. Garmin, WHOOP, and Oura connect the same way on You once their keys are set. A Garmin file import works without API approval. Without keys this step stays an honest stub."}
           {step === "backfill" &&
@@ -167,8 +170,9 @@ function OnboardingFlow() {
               <button
                 key={item.id}
                 type="button"
-                className={sport === item.id ? "fb-chip on" : "fb-chip"}
-                onClick={() => setSport(item.id)}
+                className={sports.includes(item.id) ? "fb-chip on" : "fb-chip"}
+                aria-pressed={sports.includes(item.id)}
+                onClick={() => setSports((current) => current.includes(item.id) ? current.length > 1 ? current.filter((id) => id !== item.id) : current : [...current, item.id])}
               >
                 {item.name}
               </button>

@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useLayoutEffect, useRef, useState, type Ref } from "react";
+import { ActivityActions } from "./activity-actions";
 import { newJourneyStops } from "./journey-reveal";
 import { usePathname } from "next/navigation";
 import { motion, useReducedMotion } from "motion/react";
@@ -541,6 +542,7 @@ export function TodayScreen() {
   return (
     <div className="focus-home-stage">
       <div className="focus-home-overlay">
+      <ActivityActions />
       {frozen && (
         <div className="fb-pill" style={{ marginBottom: "16px" }}>
           <b>❄ Week frozen</b>

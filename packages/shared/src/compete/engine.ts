@@ -71,6 +71,7 @@ export function getRealPlayerPool(): readonly PoolPlayer[] {
 export interface Action {
   type:
     | "rename"
+    | "log-manual"
     | "set-city"
     | "set-avatar"
     | "set-units"
@@ -102,6 +103,8 @@ export interface Action {
     | "clear-crew-board"
     /** Demo/dev: settle the open week as if Monday already arrived. */
     | "debug-close-week";
+  distanceM?: number;
+  movingSec?: number;
   name?: string;
   city?: string;
   avatarUrl?: string | null;
@@ -968,6 +971,20 @@ export function reduceCompete(
     case "rename": {
       const name = action.name?.trim().slice(0, 32);
       return name ? { ...rolled, name } : rolled;
+    }
+    case "log-manual": {
+      if (!action.sport || !SPORT_IDS.includes(action.sport) || !action.activityId) return rolled;
+      const movingSec = action.movingSec ?? NaN;
+      const distanceM = sportById(action.sport).gps ? action.distanceM ?? NaN : 0;
+      if (!Number.isFinite(movingSec) || movingSec <= 0 || movingSec > 86400 ||
+          !Number.isFinite(distanceM) || distanceM < 0 || distanceM > 2_000_000) return rolled;
+      if (rolled.activities.some((item) => item.id === action.activityId)) return rolled;
+      const activity: Activity = {
+        id: action.activityId, sport: action.sport, startedAt: now.toISOString(),
+        distanceM, movingSec, avgHr: null, source: "manual", provenance: "manual",
+        verified: false, disposition: "counted", dispositionReason: "Manually logged · Open standings only.",
+      };
+      return { ...rolled, activities: [...rolled.activities, activity] };
     }
     case "set-city": {
       const city = action.city?.trim().slice(0, 40);
