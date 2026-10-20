@@ -1,0 +1,18 @@
+{
+  "combinations": 120,
+  "results": [
+    "120 combinations pass at 1440/390/320px: independent choices, stable SVG, whole-km marks, wake exclusion, no horizontal overflow",
+    "Map lens shrinks x spacing, y spacing and capsule scale by the same zoom ratio",
+    "Atlas lens keeps a larger readable capsule while sharing the world scale",
+    "Distance-only baseline changes vertical range without shrinking lane spacing",
+    "Fit field reveals all distances with substantial whitespace around the scaled field",
+    "Panning beyond the field keeps totals unchanged and the bottom overview bounded",
+    "The same absolute kilometer marker moves through the viewport on pan",
+    "Session inspection and persistent expansion/focus return survive the new renderers",
+    "Reduced-motion gain preview reaches 21.4 km directly",
+    "Background, progress and lens restore from shareable URLs",
+    "Horizon remains available and falls back to the selected 2D environment on context loss",
+    "No browser runtime errors"
+  ],
+  "errors": []
+}

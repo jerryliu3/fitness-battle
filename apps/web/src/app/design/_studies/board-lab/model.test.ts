@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { boardFraction, boardTicks, defaultBoardView, fitBoardView, visibleSessions } from "./model";
+import { boardFraction, boardTicks, defaultBoardView, fieldSamples, fieldZoom, fitBoardView, overviewWindow, progressClearance, visibleSessions } from "./model";
+import { isBackgroundId, isProgressId, isZoomId } from "./field-directions";
 import { boardFixture } from "./fixtures";
 
 describe("board presentation geometry", () => {
@@ -33,5 +34,38 @@ describe("board presentation geometry", () => {
       for (const lane of data.lanes.filter(l => !l.ghost)) expect(visibleSessions(data.sessions, lane).at(-1)?.end).toBeCloseTo(lane.value);
       expect(data.gps).toBe(data.unit !== "pts");
     }
+  });
+  it("never subdivides the new kilometer axis below one kilometer", () => {
+    for (const span of [2, 3, 6, 8.4, 28, 120]) {
+      const ticks = boardTicks({ center: 19.2, span }, 6, 1);
+      expect(ticks.step).toBeGreaterThanOrEqual(1);
+      expect(ticks.values.every(Number.isInteger)).toBe(true);
+    }
+  });
+  it("zooms the world in both axes and gives Atlas a readable marker minimum", () => {
+    const close = fieldZoom(6, "map"), far = fieldZoom(12, "map");
+    expect(far.worldScale / close.worldScale).toBe(.5);
+    expect(far.markerScale).toBe(.5);
+    expect(fieldZoom(60, "atlas").markerScale).toBeGreaterThan(fieldZoom(60, "atlas").worldScale);
+    expect(fieldZoom(12, "distance").worldScale).toBe(1);
+    expect(progressClearance(far.markerScale) / progressClearance(close.markerScale)).toBe(.5);
+  });
+  it("keeps scenery samples anchored and bounds their detail for wide views", () => {
+    const a = fieldSamples({ center: 19.2, span: 6 }, .5), b = fieldSamples({ center: 20.2, span: 6 }, .5);
+    expect(a).toContain(20); expect(b).toContain(20);
+    expect(fieldSamples({ center: 2500, span: 5000 }, .5).length).toBeLessThan(83);
+  });
+  it("rejects prototype keys in restorable design choices", () => {
+    expect(isBackgroundId("parkland")).toBe(true); expect(isProgressId("rails")).toBe(true); expect(isZoomId("map")).toBe(true);
+    for (const key of ["__proto__", "constructor", "toString", "missing"]) {
+      expect(isBackgroundId(key)).toBe(false); expect(isProgressId(key)).toBe(false); expect(isZoomId(key)).toBe(false);
+    }
+  });
+  it("keeps the bottom map window inside the true field when panned past either end", () => {
+    expect(overviewWindow({ center: 80, span: 6 }, 25.2)).toEqual({ left: 100, width: 0 });
+    const all = overviewWindow({ center: 12, span: 40 }, 25.2);
+    expect(all.left).toBe(0); expect(all.width).toBe(100);
+    const part = overviewWindow({ center: 19.2, span: 6 }, 25.2);
+    expect(part.left).toBeGreaterThan(0); expect(part.left + part.width).toBeLessThanOrEqual(100);
   });
 });

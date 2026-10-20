@@ -1,4 +1,5 @@
 import { arenaWindow, clampArenaLaneCenter, type ArenaSceneLane, type ArenaViewWindow } from "@fitness-battle/shared";
+import type { ZoomId } from "./field-directions";
 
 export type BoardConcept = "tapestry" | "ribbon" | "horizon";
 export type BoardOrientation = "vertical" | "horizontal";
@@ -27,15 +28,42 @@ export const concepts = {
 } as const;
 
 /** Absolute 1/2/5 marks. Panning changes their screen positions, never their identity. */
-export function boardTicks(view: ArenaViewWindow, target = 6) {
+export function boardTicks(view: ArenaViewWindow, target = 6, minimumStep = 0) {
   const { min, max, span } = arenaWindow(view.center, view.span);
   const rough = span / target;
   const base = 10 ** Math.floor(Math.log10(rough));
-  const step = [1, 2, 5, 10].map(n => n * base).find(n => n >= rough) ?? base * 10;
+  const step = Math.max(minimumStep, [1, 2, 5, 10].map(n => n * base).find(n => n >= rough) ?? base * 10);
   const first = Math.max(0, Math.ceil((min - step * 1e-6) / step) * step);
   const values: number[] = [];
   for (let value = first; value <= max + step * 1e-6 && values.length < 80; value += step) values.push(Number(value.toFixed(6)));
   return { values, step };
+}
+
+/** Both map lenses share one geometric scale in x/y. Atlas changes only marker legibility. */
+export function fieldZoom(span: number, mode: ZoomId) {
+  const worldScale = mode === "distance" ? 1 : 6 / Math.max(.5, span);
+  return { worldScale, markerScale: mode === "atlas" ? Math.max(.34, worldScale ** .72) : worldScale };
+}
+
+/** Small repeats may be decorative objects, never fractional cross-track distance rules. */
+export function fieldSamples(view: ArenaViewWindow, spacing = 1, budget = 80) {
+  const { min, max, span } = arenaWindow(view.center, view.span);
+  const stride = 2 ** Math.max(0, Math.ceil(Math.log2(span / spacing / budget)));
+  const step = spacing * stride;
+  const values: number[] = [];
+  for (let d = Math.max(0, Math.floor(min / step) * step); d <= max + step && values.length <= budget + 2; d += step) values.push(Number(d.toFixed(5)));
+  return values;
+}
+
+export function progressClearance(markerScale: number) {
+  // Canonical fast capsule + all four echoes end within ~86 px at scale 1.
+  return 104 * markerScale;
+}
+
+export function overviewWindow(view: ArenaViewWindow, highest: number) {
+  const total = Math.max(1, highest), bounds = arenaWindow(view.center, view.span);
+  const low = Math.max(0, Math.min(total, bounds.min)), high = Math.max(low, Math.min(total, bounds.max));
+  return { left: low / total * 100, width: (high - low) / total * 100 };
 }
 
 export function boardFraction(value: number, view: ArenaViewWindow) {

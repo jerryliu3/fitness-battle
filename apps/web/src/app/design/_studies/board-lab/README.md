@@ -1,68 +1,83 @@
-# Ground for your effort
+# Compete field lab
 
 October 20, 2026 · Coded presentation prototypes, not a production replacement
 
-Open `/design/boards`. The existing design access gate applies: owner access in production, owner or supported demo account locally. The design index links to this study. All people, activity receipts and totals here are fictional local fixtures; the study does not connect a tracker, log a workout, change an enrollment or write a score.
+Open `/design/boards` through the existing design access gate. The design index links to it. All athletes, sessions and gain previews are fictional local data. The study does not connect trackers, log activity or write scores.
 
-Direct comparisons:
+## Round 2: independent ground, progress and lens
 
-- `/design/boards?concept=tapestry&orientation=vertical&metric=distance&unit=km`
-- `/design/boards?concept=ribbon&orientation=horizontal&metric=distance&unit=km`
-- `/design/boards?concept=horizon&metric=distance&unit=km`
-- `/design/boards?concept=tapestry&orientation=vertical&metric=effort`
+The user selects **vertical** and asks to focus this round on **kilometers**. Tapestry and Ribbon established the material/viewport groundwork; the next question is the track environment independently of the earned trace. The first reviewed prototype is preserved in commit `7e0f710` on PR #216. Its horizontal, miles and effort comparisons remain history rather than cluttering this round's controls. The platform-agnostic unit helpers and their tests remain intact; no production unit/scoring behavior changed.
 
-## Decisions being explored
+### Eight environments
 
-Session Tapestry and Distance Ribbon are the two 2D candidates. Both support **horizontal and vertical** layouts, so orientation can be compared independently of material. Their initial orientations are vertical and horizontal respectively. Both support kilometers, equivalent miles, and real effort points. An outdoor route metaphor is deliberately absent from non-GPS effort.
+| Environment | Spatial/material idea |
+| --- | --- |
+| Personal track | Individual mineral-blue athletics lanes, solid painted sidelines and whole-kilometer stencils |
+| Road ribbons | Separate charcoal road surfaces with green shoulders and longitudinal markings; no vehicles |
+| Parkland Passage | One shared promenade, trees, benches and small distance-fixed garden islands between athletes |
+| Pool Deck | Aquatic light, lane ropes and floor T marks at whole kilometers; an illustrative unfolded surface, not actual swimming lengths |
+| Boardwalk | Long timber grain and plank seams running with travel, without transverse striping |
+| Meadow Trail | A softly winding shared field; racers and traces follow the same curve |
+| Contour Atlas | Open topographic ground, contours and cairns without a road or rigid lane pavement |
+| Night Meet | Charcoal athletics lanes, restrained light pools and kilometer beacons |
 
-Horizon Pursuit is the **3D candidate**, reserved for the running-distance sample. It uses real Three.js geometry: a pale athletics course, sculpted trees, shrubs, benches, split signs, warm shadows, glass capsule meshes and quiet ground wakes. It is an illustrative course, not a map or live athlete location. Follow and overhead cameras share the athlete values and controlled viewport. Fit field chooses overhead so the full longitudinal range can be seen.
+No environment draws a sub-kilometer horizontal distance rule. Most draw no cross-track rules at all. The fixed side axis uses integer kilometer posts; the only shared start line is at zero. Pool T marks are whole-kilometer surface references, not an inferred lap model. Decorative road dashes, water floats, wood grain and trees are distance-fixed objects, not additional distance gridlines.
 
-All three inherit Open Field's warm white/charcoal/gold identity. The 2D boards use the actual production `PolishedRacer` component and canonical capsule geometry, rather than re-drawing an approximation. The Three.js capsule material uses the canonical gold/platinum palette and a simple physical glass interpretation; it is not a pixel-identical SVG material.
+### Five progress treatments
 
-## What to try
+| Treatment | What stays behind |
+| --- | --- |
+| Edge lights | Twin rounded border rails; open middle for the capsule and echoes |
+| Session thread | One offset thin line with knots from real counted-session boundaries |
+| Kilometer stamps | Discrete paired steps at completed whole kilometers; no connecting bar |
+| Banked trail | A slender taper that begins beyond the last afterimage, leaving an explicit clear gap |
+| Session tokens | Detached contribution chips beside the visible portion of each sourced session interval |
 
-1. Pan the field: absolute marks move through the view instead of remaining screen-stationary with changing numbers. The vertical ruler stays pinned when scrolling sideways between lanes on a phone.
-2. Select an athlete in the board or the complete field list. Lane identity never becomes rank; the list intentionally stays in stable lane order and labels its measure as distance or effort.
-3. Select a woven session segment to inspect its actual fixture contribution. Use Fit field to see the week's whole construction from zero.
-4. Preview +2.2 km or +8 points. The world moves under a following camera, the total changes, and a new proportional session strip remains. No official standing or Elo gain is claimed from a distance pass.
-5. Expand and collapse: one persistent DOM/SVG/WebGL scene moves between its embedded host and a Radix dialog. Selection, camera and the existing renderer survive. Escape closes and restores focus; the background scroll is locked while open.
-6. Compare both orientations and distance/effort units. Miles convert distance and contribution values together. Strength never becomes invented kilometers.
-7. Compare Horizon Follow, From above and Fit field. If WebGL fails or loses its context, the same data and view fall back to Tapestry.
+No treatment fills the entire lane or draws a transverse progress cap through the capsule. All progress paint shares a curved exclusion mask around the displayed capsule and its full wake corridor, including viewport-edge markers. The mask reserves the maximum canonical echo envelope rather than tracking only one animation frame. Source-session hit regions are transparent and separate from visual paint, so inspection remains available without a colored bar.
 
-The sample gain is a finite 2.4-second presentation, not measured running speed. Reduced motion applies the end state directly. There is no decorative idle world animation or perpetual running. Programmatic 2D viewport changes interpolate center and span together; direct manipulation cancels interpolation. Compact vertical touch gestures preserve normal page scrolling; deliberate field exploration uses buttons or the expanded scene. Horizontal field dragging uses the horizontal axis and leaves page scrolling available.
+The production `PolishedRacer` and wake clock are reused. Only the racer layer runs that clock; the background and earned traces stay still until values/camera change. Reduced motion, visibility and offscreen behavior follow the production clock. The bottom overview remains part of the persistent field, with a window clipped to actual field bounds even after exploring beyond the last athlete.
 
-## Files and data boundary
+### Two map lenses, plus a comparison baseline
+
+- **Map lens:** a single geometric zoom factor changes both longitudinal and lateral scale. Lane spacing, ground details and capsules shrink together; side whitespace appears as the field fits.
+- **Atlas lens:** the world uses the same zoom in both axes, while capsules retain a small readable minimum size, like map pins. Header detail reduces when lane spacing becomes too narrow.
+- **Distance only:** the previous vertical-range-only behavior remains explicitly labeled as a comparison, rather than being confused with map zoom.
+
+Zoom is presentation-only. The same totals, stable athlete ordering, selected athlete and unranked past-you reference remain. Hit targets keep a usable minimum even when the drawn capsules shrink; the exact field list is always available. No rank or score improvement is inferred from a distance pass.
+
+## Review links
+
+- `/design/boards?concept=field&background=athletics&progress=rails&zoom=map`
+- `/design/boards?concept=field&background=parkland&progress=thread&zoom=atlas`
+- `/design/boards?concept=field&background=pool&progress=footsteps&zoom=map`
+- `/design/boards?concept=horizon`
+
+Choices restore from the URL and can be mixed independently. Desktop uses named visual catalogs; phones and expanded fields expose compact native selectors. Controls stay attached to the one persistent scene. Try a sample gain, pan, Center me, Fit field, expand/collapse and a session inspection. Reduced motion applies the gain directly; normal playback is finite and never claims live GPS speed.
+
+Horizon remains a real, on-demand Three.js course with trees, benches, fixed signs, warm shadows and glass capsules. It is an illustrative distance world, not actual athlete location. Its existing overhead fit and 2D fallback are retained. In this distance-only review the fallback uses the selected 2D environment and trace.
+
+## Code boundary and integration
 
 | File | Responsibility |
 | --- | --- |
-| `board-lab.tsx` | Study controls, local gain preview, viewport ownership and product-context frame |
-| `board-2d.tsx` | Controlled SVG renderer for Tapestry/Ribbon and both orientations |
-| `horizon.tsx` | Controlled, on-demand Three.js scene and projected athlete labels |
+| `board-lab.tsx` | Local study controls, sample gain, camera ownership and product-context shell |
+| `field-directions.ts` | Independent environment, progress and zoom catalogs and validated URL IDs |
+| `board-2d.tsx` | Controlled vertical SVG field, geometry, wake-safe mask, interactions and racer layer |
+| `track-background.tsx` | Eight distance-fixed environments; no account or fixture dependency |
+| `progress-traces.tsx` | Five earned traces and separate source-session inspection regions |
+| `horizon.tsx` | On-demand Three.js scene; unchanged scenic 3D direction |
 | `persistent-field.tsx` | Stable portal target, Radix expansion and focus return |
-| `model.ts` | Presentation-only units, absolute ticks, camera geometry and interval clipping |
+| `model.ts` | Absolute marks, zoom scales, bounded samples, interval clipping and overview geometry |
 | `fixtures.ts` | Fictional athletes and session intervals; never import into production |
-| `model.test.ts` | Moving absolute marks, equivalent unit spans, true interval clipping and outlier/ghost behavior |
-| `board-lab.css` | Scoped study/product styling; no global shell overrides |
 
-`Board2D` consumes `ArenaSceneLane[]`, `ArenaViewWindow`, a display unit, presentation state and optional `BoardSession[]`. Its callbacks return athlete selection, session selection and a camera center. `Horizon` consumes the same lane/view values and selection state. Neither renderer imports fixtures, auth, competition providers or storage, and neither makes network requests. They can be evaluated with an application data adapter without modifying backend rules.
+The renderers receive `ArenaSceneLane[]`, `ArenaViewWindow`, optional sourced `BoardSession[]` and callbacks. They import no auth, competition provider, storage or network client. Session values must use the lane's display unit and canonical counted contributions from the matching period/score track. Missing or unauthorized peer history stays unsegmented; never manufacture sessions from an aggregate total.
 
-Session intervals are expressed in the **same unit as the lane total**: an ID, athlete ID, label, timestamp, start and end value. An adapter must supply counted contributions from the canonical ledger in the matching period/score track. The renderer clips a known interval to the displayed total during replay. If a peer's session history is unavailable or not permitted, pass no intervals; their total still renders as a continuous band. Never infer session seams by dividing an aggregate total. This study has no new activity-read permission or production API.
+After selecting a direction, move approved renderers/helpers out of `_studies` into production field modules. Production must not import study files. Adapt `FieldStage`'s existing lane/view/selection state and established overtake controller; this study's independent preview controller stays here. Port approved SVG geometry to native's existing lane view, while keeping shared modules free of DOM/native imports. Move approved Horizon scenery into `packages/pursuit` and preserve the established `/arena-scene` WebView bridge. This PR does not ship those production/native integrations.
 
-The default running range is ±3 km, equivalently converted for miles; effort is ±10 points. Pan and zoom do not edit totals. The zero origin remains near the lower edge at the start, and out-of-window markers display arrows plus true totals. Past you is unranked. The global distance strip gives context when the start is offscreen. There is no arbitrary finish distance or completion percentage.
-
-## Integration path
-
-1. Review material and orientation at `/design/boards` before selecting a production default. No default has been chosen here.
-2. Move the selected 2D renderer and pure presentation helpers into the existing production field modules; retain the fixture/control wrapper in `_studies`. Production must not import a study module. Adapt `FieldStage`'s existing `sceneLanes`, `view`, unit, selection and camera callbacks.
-3. Feed real, authorized counted-session intervals only where canonical contribution data exists. Total-only peers remain supported. Wire session selection to the existing activity detail. Use the established overtake/reveal state instead of shipping this study's independent sample-gain controller.
-4. Port the selected SVG material to native's existing lane component; keep the shared package platform-agnostic. This PR implements the web study, not native 2D parity.
-5. For 3D adoption, move the approved scenery/camera treatment into `packages/pursuit`, retaining its existing lifecycle and presentation bridge. Native continues to host that DOM renderer through `/arena-scene`; this study does not introduce another native Three.js runtime or change WebView deployment requirements.
-6. Integrate the persistent field with the existing production expansion owner rather than adding a second dialog or competing transform animation.
-
-Remaining review questions: whether texture improves emotional appeal at small sizes; horizontal ribbon readability with narrow windows; how much peer activity history is available; final 3D capsule art; real-device rendering cost and native gesture parity. Browser software WebGL checks do not establish mobile GPU performance.
+The default window remains ±3 km, with a fixed zero origin, stable lane identity, true offscreen totals and no arbitrary finish. The Trail's small lateral meander is illustrative: the vertical axis encodes accumulated distance, not a recorded geographic route or elevation. The existing production bounds/scoring/period rules are unchanged.
 
 ## Framework and verification
 
-The installed Next.js is 15.5.27 and does not ship `node_modules/next/dist/docs/`. Before authoring, the official version-15 [server/client boundary guide](https://nextjs.org/docs/15/app/getting-started/server-and-client-components) and [lazy loading guide](https://nextjs.org/docs/15/app/guides/lazy-loading) were read. The route is a thin server wrapper; the interactive study is a client boundary; Three.js is loaded dynamically only when needed. No dependency or lockfile changes are required.
+Installed Next.js 15.5.27 does not ship `node_modules/next/dist/docs/`. The official version-15 [server/client boundary](https://nextjs.org/docs/15/app/getting-started/server-and-client-components) and [lazy-loading](https://nextjs.org/docs/15/app/guides/lazy-loading) guidance were read before this study. The route remains a thin server wrapper with a client study and lazy Three.js boundary. No new package is needed.
 
-Verification results are recorded in `docs/design-studies/boards/README.md` after the final browser/build pass.
+See `docs/design-studies/boards/README.md` for captures and final verification. Browser software WebGL does not establish native gesture parity, mobile GPU performance or motivation outcomes from user testing.

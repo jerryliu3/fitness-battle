@@ -2,9 +2,59 @@
 
 October 20, 2026
 
-Open `/design/boards` through the existing design access gate. The design index links to it. Detailed component contracts, direct comparison URLs and the route to production adoption are in [the study README](../../../apps/web/src/app/design/_studies/board-lab/README.md).
+Open `/design/boards` through the existing design access gate. The design index links to it. Component contracts, shareable URLs and the production adoption boundary are in [the study README](../../../apps/web/src/app/design/_studies/board-lab/README.md).
 
-Selected scope: Session Tapestry and Distance Ribbon as 2D candidates, each in horizontal and vertical orientations; Horizon Pursuit as the GPS-distance 3D candidate with fixed scenery. The running and strength fixtures, counted sessions and gain previews are local fictional data. Production Compete, backend scoring, activity privacy and native surfaces are unchanged.
+## Round 2: vertical field exploration
+
+This round locks the 2D board to vertical kilometers and separates three independent decisions: the ground, the progress trace and the camera lens. All athletes, sessions and previews remain local fictional data. Production Compete, backend scoring and native surfaces are unchanged. The first reviewed baseline is preserved in commit `7e0f710` and in the historical captures below.
+
+### Eight backgrounds
+
+| Direction | Capture | Spatial idea |
+| --- | --- | --- |
+| Personal track | [View](round-2/bg-athletics.png) | Separate mineral-blue running lanes and painted sidelines |
+| Road ribbons | [View](round-2/bg-road.png) | An individual charcoal road for each athlete, with green shoulders |
+| Parkland Passage | [View](round-2/bg-parkland.png) | Shared promenade with trees, benches and garden landmarks |
+| Pool Deck | [View](round-2/bg-pool.png) | Aqua light, ropes and sparse pool-floor marks |
+| Boardwalk | [View](round-2/bg-boardwalk.png) | Long timber grain and longitudinal plank seams |
+| Meadow Trail | [View](round-2/bg-trail.png) | A shared winding trail; racers follow the same curve |
+| Contour Atlas | [View](round-2/bg-contour.png) | Open topographic ground without pavement |
+| Night Meet | [View](round-2/bg-night.png) | Dark athletics lanes, light pools and edge beacons |
+
+Ground objects move with the camera. No background draws horizontal distance rules below one kilometer. Pool marks illustrate an unfolded surface, not literal pool lengths; Trail/Contour scenery does not imply recorded GPS locations.
+
+### Five progress traces
+
+| Direction | Capture | Difference |
+| --- | --- | --- |
+| Edge lights | [View](round-2/progress-rails.png) | Twin narrow borders with an open center |
+| Session thread | [View](round-2/progress-thread.png) | An offset line with sourced session knots |
+| Kilometer stamps | [View](round-2/progress-footsteps.png) | Discrete paired steps at whole kilometers |
+| Banked trail | [View](round-2/progress-deposit.png) | A slender taper beginning beyond the full echo corridor |
+| Session tokens | [View](round-2/progress-receipts.png) | Detached contribution chips, without a connecting bar |
+
+All five preserve a clear capsule and afterimage corridor. None fills the lane or cuts a transverse cap through the racer. Transparent source-session hit regions keep inspection available independently of the visible trace.
+
+### Camera and product context
+
+- [Map lens overview](round-2/map-overview.png): ground, lane spacing and racers scale together in both axes.
+- [Atlas lens overview](round-2/atlas-overview.png): the same world zoom with a readable minimum capsule size.
+- Distance only remains a labeled comparison for the previous vertical-only behavior.
+- [Full desktop](round-2/desktop.png) and [phone](round-2/phone.png) retain the bottom 2D overview, selection, gain preview and persistent expanded field.
+- Horizon remains available with the existing scenic Three.js course and overhead fit. Context loss uses the selected 2D environment as fallback.
+
+### Round 2 verification
+
+- `pnpm typecheck` passes across the monorepo.
+- `pnpm test`: 506 tests pass; five existing optional database tests remain skipped. The study has ten geometry/fixture/URL tests, including integer kilometer marks, map scaling, bounded scenery and overview clipping.
+- `pnpm build:web` passes with the protected `/design/boards` route and lazy Three.js boundary.
+- [Recorded browser assertions](round-2/browser-verification.json) cover 120 background/trace/viewport combinations at 1440, 390 and 320 px: independent choices, stable SVG scene, whole-kilometer marks, wake masks and no page-level horizontal overflow.
+- Interaction checks cover isotropic Map zoom, Atlas marker legibility, the distance-only baseline, Fit field, world-fixed landmarks moving on pan, unchanged totals, bounded bottom overview, session inspection, persistent expansion/focus return, reduced-motion gain, shareable URLs and Horizon context-loss fallback. No browser runtime errors were reported.
+- No dependencies, lockfile changes, database writes or tracker connections are added. Browser verification does not establish native gesture parity, mobile GPU performance or motivation outcomes from user testing.
+
+## Round 1 history
+
+The original Tapestry/Ribbon orientation, unit and effort comparisons are historical captures, not the current Round 2 control set.
 
 ## Review captures
 

@@ -2,148 +2,139 @@
 
 import dynamic from "next/dynamic";
 import Link from "next/link";
-import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { clampArenaLaneCenter, orderedArenaLanes, type ArenaViewWindow } from "@fitness-battle/shared";
 import { Board2D } from "./board-2d";
 import { PersistentField } from "./persistent-field";
 import { boardFixture } from "./fixtures";
-import { boardGap, concepts, defaultBoardView, fitBoardView, formatBoardValue, type BoardConcept, type BoardOrientation, type BoardSession } from "./model";
+import { boardGap, defaultBoardView, fitBoardView, overviewWindow, type BoardSession } from "./model";
+import { backgrounds, progressTreatments, zoomTreatments, isBackgroundId, isProgressId, isZoomId, type BackgroundId, type ProgressId, type ZoomId } from "./field-directions";
 import "./board-lab.css";
 
 const Horizon = dynamic(() => import("./horizon").then(m => m.Horizon), { ssr: false, loading: () => <div className="bl-world-loading">Preparing the field…</div> });
-
-function subscribeReducedMotion(update: () => void) {
-  const media = window.matchMedia("(prefers-reduced-motion: reduce)");
-  media.addEventListener("change", update);
-  return () => media.removeEventListener("change", update);
-}
+const fixture = boardFixture(false, "km");
+function subscribeReducedMotion(update: () => void) { const media = window.matchMedia("(prefers-reduced-motion: reduce)"); media.addEventListener("change", update); return () => media.removeEventListener("change", update); }
 const reducedMotionSnapshot = () => window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
+function DesignControls({ background, progress, zoom, onBackground, onProgress, onZoom }: {
+  background: BackgroundId; progress: ProgressId; zoom: ZoomId;
+  onBackground: (v: BackgroundId) => void; onProgress: (v: ProgressId) => void; onZoom: (v: ZoomId) => void;
+}) {
+  return <div className="bl-inline-design-controls" aria-label="Field design controls">
+    <label>Background<select aria-label="Background" value={background} onChange={e => onBackground(e.target.value as BackgroundId)}>{Object.entries(backgrounds).map(([id, b]) => <option key={id} value={id}>{b.name}</option>)}</select></label>
+    <label>Progress<select aria-label="Progress" value={progress} onChange={e => onProgress(e.target.value as ProgressId)}>{Object.entries(progressTreatments).map(([id, p]) => <option key={id} value={id}>{p.name}</option>)}</select></label>
+    <label>Zoom lens<select aria-label="Zoom lens" value={zoom} onChange={e => onZoom(e.target.value as ZoomId)}>{Object.entries(zoomTreatments).map(([id, z]) => <option key={id} value={id}>{z.name}</option>)}</select></label>
+  </div>;
+}
+
 export function BoardLab() {
-  const [concept, setConcept] = useState<BoardConcept>("tapestry");
-  const [orientation, setOrientation] = useState<BoardOrientation>("vertical");
-  const [effort, setEffort] = useState(false);
-  const [distanceUnit, setDistanceUnit] = useState<"km" | "mi">("km");
-  const [expanded, setExpanded] = useState(false);
-  const [selected, setSelected] = useState("you");
+  const [mode, setMode] = useState<"field" | "horizon">("field");
+  const [background, setBackground] = useState<BackgroundId>("athletics");
+  const [progressStyle, setProgressStyle] = useState<ProgressId>("rails");
+  const [zoomStyle, setZoomStyle] = useState<ZoomId>("map");
+  const [expanded, setExpanded] = useState(false), [selected, setSelected] = useState("you");
   const [session, setSession] = useState<BoardSession | null>(null);
-  const [progress, setProgress] = useState(0);
-  const [playing, setPlaying] = useState(false);
+  const [progress, setProgress] = useState(0), [playing, setPlaying] = useState(false);
   const [camera, setCamera] = useState<ArenaViewWindow | null>(null);
-  const [showGhost, setShowGhost] = useState(true);
-  const [above, setAbove] = useState(false);
-  const [unavailable, setUnavailable] = useState(false);
-  const [initialized, setInitialized] = useState(false);
-  const [notice, setNotice] = useState("");
-  const frame = useRef(0);
-  const cameraFrame = useRef(0);
+  const [showGhost, setShowGhost] = useState(true), [above, setAbove] = useState(false);
+  const [unavailable, setUnavailable] = useState(false), [initialized, setInitialized] = useState(false), [notice, setNotice] = useState("");
+  const frame = useRef(0), cameraFrame = useRef(0);
   const reduced = useSyncExternalStore(subscribeReducedMotion, reducedMotionSnapshot, () => true);
-  const fixture = useMemo(() => boardFixture(effort, distanceUnit), [effort, distanceUnit]);
-  const baseYou = fixture.lanes.find(l => l.you)!;
-  const total = baseYou.value + fixture.gain * progress;
+  const baseYou = fixture.lanes.find(l => l.you)!, total = baseYou.value + fixture.gain * progress;
   const lanes = fixture.lanes.map(l => l.you ? { ...l, value: total } : l);
-  const sessions = progress > 0 ? [...fixture.sessions, { id: "preview-session", athleteId: baseYou.id, title: effort ? "New strength session" : "A little further", recordedAt: "2026-10-20T20:00:00Z", start: baseYou.value, end: total }] : fixture.sessions;
-  const view = camera ?? defaultBoardView(total, fixture.unit);
+  const sessions = progress > 0 ? [...fixture.sessions, { id: "preview-session", athleteId: baseYou.id, title: "A little further", recordedAt: "2026-10-20T20:00:00Z", start: baseYou.value, end: total }] : fixture.sessions;
+  const view = camera ?? defaultBoardView(total, "km");
   const person = lanes.find(l => l.id === selected) ?? lanes.find(l => l.you)!;
   const nearest = lanes.filter(l => !l.you && !l.ghost).sort((a, b) => Math.abs(a.value - total) - Math.abs(b.value - total))[0]!;
-  const fieldHigh = Math.max(1, ...lanes.filter(l => !l.ghost).map(l => l.value));
-  const ordered = orderedArenaLanes(lanes);
-  const direction = concepts[concept];
+  const fieldHigh = Math.max(1, ...lanes.filter(l => !l.ghost).map(l => l.value)), ordered = orderedArenaLanes(lanes);
+  const overview = overviewWindow(view, fieldHigh);
+  const title = mode === "horizon" ? "Horizon Pursuit" : backgrounds[background].name;
 
   useEffect(() => {
     const q = new URLSearchParams(window.location.search);
-    const c = q.get("concept"), o = q.get("orientation");
-    const metric = q.get("metric") === "effort";
-    if (c === "tapestry" || c === "ribbon" || c === "horizon") setConcept(metric && c === "horizon" ? "tapestry" : c);
-    setOrientation(o === "horizontal" || o === "vertical" ? o : c === "ribbon" ? "horizontal" : "vertical");
-    setEffort(metric); setDistanceUnit(q.get("unit") === "mi" ? "mi" : "km"); setInitialized(true);
+    if (q.get("concept") === "horizon") setMode("horizon");
+    const bg = q.get("background"), pr = q.get("progress"), zm = q.get("zoom");
+    if (isBackgroundId(bg)) setBackground(bg); if (isProgressId(pr)) setProgressStyle(pr); if (isZoomId(zm)) setZoomStyle(zm);
+    setInitialized(true);
     return () => { cancelAnimationFrame(frame.current); cancelAnimationFrame(cameraFrame.current); };
   }, []);
   useEffect(() => {
     if (!initialized) return;
-    const q = new URLSearchParams({ concept, orientation, metric: effort ? "effort" : "distance", unit: distanceUnit });
+    const q = new URLSearchParams({ concept: mode, background, progress: progressStyle, zoom: zoomStyle });
     window.history.replaceState(null, "", `${window.location.pathname}?${q}`);
-  }, [concept, orientation, effort, distanceUnit, initialized]);
+  }, [mode, background, progressStyle, zoomStyle, initialized]);
   useEffect(() => {
     if (!playing) return;
-    if (reduced) { setProgress(1); setPlaying(false); setNotice(`Preview added ${formatBoardValue(fixture.gain, fixture.unit)} ${fixture.unit}.`); return; }
+    if (reduced) { setProgress(1); setPlaying(false); setNotice("Preview added 2.2 km."); return; }
     const start = performance.now();
     const tick = (now: number) => {
-      const p = Math.min(1, (now - start) / 2400);
-      setProgress(p < .5 ? 4 * p ** 3 : 1 - (-2 * p + 2) ** 3 / 2);
-      if (p < 1) frame.current = requestAnimationFrame(tick);
-      else { setPlaying(false); setNotice(`Preview added ${formatBoardValue(fixture.gain, fixture.unit)} ${fixture.unit}. Your effort stays on the field.`); }
+      const p = Math.min(1, (now - start) / 2400); setProgress(p < .5 ? 4 * p ** 3 : 1 - (-2 * p + 2) ** 3 / 2);
+      if (p < 1) frame.current = requestAnimationFrame(tick); else { setPlaying(false); setNotice("Preview added 2.2 km. Your effort stays on the field."); }
     };
-    frame.current = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(frame.current);
-  }, [playing, reduced, fixture]);
+    frame.current = requestAnimationFrame(tick); return () => cancelAnimationFrame(frame.current);
+  }, [playing, reduced]);
 
   function stop() { cancelAnimationFrame(frame.current); cancelAnimationFrame(cameraFrame.current); setPlaying(false); }
   function reset() { stop(); setProgress(0); setCamera(null); setSession(null); setNotice(""); }
-  function choose(next: BoardConcept) {
-    stop(); setConcept(next); setSession(null); setUnavailable(false); setNotice("");
-    if (next !== "horizon") setOrientation(next === "ribbon" ? "horizontal" : "vertical");
-  }
   function pan(center: number) { stop(); setCamera({ center: clampArenaLaneCenter(center, view.span), span: view.span }); }
   function moveView(next: ArenaViewWindow, follow = false) {
-    stop();
-    const target = { ...next, center: clampArenaLaneCenter(next.center, next.span) };
+    stop(); const target = { ...next, center: clampArenaLaneCenter(next.center, next.span) };
     if (reduced) { setCamera(follow ? null : target); return; }
     const from = view, start = performance.now();
     const tick = (now: number) => {
       if (reducedMotionSnapshot()) { setCamera(follow ? null : target); return; }
       const t = Math.min(1, (now - start) / 380), ease = 1 - (1 - t) ** 3;
       setCamera({ center: from.center + (target.center - from.center) * ease, span: from.span + (target.span - from.span) * ease });
-      if (t < 1) cameraFrame.current = requestAnimationFrame(tick);
-      else if (follow) setCamera(null);
+      if (t < 1) cameraFrame.current = requestAnimationFrame(tick); else if (follow) setCamera(null);
     };
     cameraFrame.current = requestAnimationFrame(tick);
   }
-  function zoom(multiplier: number) {
-    const span = Math.max(fixture.unit === "pts" ? 4 : .8, Math.min(500, view.span * multiplier));
-    moveView({ center: clampArenaLaneCenter(view.center, span), span });
-  }
-  function changeMetric(next: boolean) {
-    reset(); setEffort(next); setSelected("you"); if (next && concept === "horizon") setConcept("tapestry");
-  }
+  function zoom(multiplier: number) { const span = Math.max(2, Math.min(120, view.span * multiplier)); moveView({ center: clampArenaLaneCenter(view.center, span), span }); }
+  function select(id: string) { setSelected(id); setSession(null); }
+  const controls = { background, progress: progressStyle, zoom: zoomStyle, onBackground: setBackground, onProgress: setProgressStyle, onZoom: setZoomStyle };
 
   return <main className="board-lab">
-    <div className="bl-review-bar"><Link href="/design">← Design studies</Link><span>COMPETE / FIELD STUDY</span><span className="bl-study-tag">Interactive prototypes</span></div>
-    <header className="bl-intro"><div><p className="bl-eyebrow">A little further, made visible</p><h1>Give your effort<br/>some ground.</h1></div><p>Three ways to feel the week taking shape. Same glass racers. Same effort. A field worth coming back to.</p></header>
-    <nav className="bl-concepts" aria-label="Board concept">{(Object.keys(concepts) as BoardConcept[]).map(id => <button key={id} type="button" disabled={id === "horizon" && effort} aria-pressed={concept === id} onClick={() => choose(id)}><span>{concepts[id].medium}<i>{id === "horizon" ? "GPS distance" : "Distance + effort"}</i></span><strong>{concepts[id].name}</strong><small>{concepts[id].line}</small></button>)}</nav>
-    <div className="bl-review-controls"><div className="bl-segment" aria-label="Preview metric"><button type="button" aria-pressed={!effort} onClick={() => changeMetric(false)}>Running · distance</button><button type="button" aria-pressed={effort} onClick={() => changeMetric(true)}>Strength · effort</button></div><div className="bl-control-tail">{!effort && <div className="bl-segment" aria-label="Distance unit"><button type="button" aria-pressed={distanceUnit === "km"} onClick={() => { reset(); setDistanceUnit("km"); }}>km</button><button type="button" aria-pressed={distanceUnit === "mi"} onClick={() => { reset(); setDistanceUnit("mi"); }}>mi</button></div>}<span>Fictional athletes & sessions</span></div></div>
+    <div className="bl-review-bar"><Link href="/design">← Design studies</Link><span>COMPETE / FIELD STUDY · ROUND 2</span><span className="bl-study-tag">Vertical · kilometers</span></div>
+    <header className="bl-intro"><div><p className="bl-eyebrow">A field with room to move</p><h1>Find your ground.<br/>Leave your trace.</h1></div><p>Eight places to move through. Five ways to see what you’ve earned. Mix the surface, the trace and the lens.</p></header>
+    <nav className="bl-mode-tabs" aria-label="Field view"><button type="button" aria-pressed={mode === "field"} onClick={() => setMode("field")}><strong>2D Track lab</strong><span>8 backgrounds · 5 progress treatments</span></button><button type="button" aria-pressed={mode === "horizon"} onClick={() => { setMode("horizon"); setUnavailable(false); }}><strong>3D Horizon</strong><span>The scenic distance course</span></button></nav>
+    <div className="bl-round-note"><span>Same athletes. Same distance. Independent design choices.</span><span>Fictional athletes & sessions</span></div>
     <div className="bl-workspace">
-      <section className="bl-app" aria-label={`${direction.name} product preview`}>
+      <section className="bl-app" aria-label={`${title} product preview`}>
         <header className="bl-app-header"><span className="bl-brand">overtaek</span><span className="bl-profile">JL</span></header>
-        <div className="bl-week-heading"><div><p className="bl-eyebrow">{fixture.sport} / Your weekly field</p><h2>{direction.line}</h2></div><span className="bl-week-chip">19–26 Oct · UTC</span></div>
-        <div className="bl-score"><div><strong data-testid="board-total">{formatBoardValue(total, fixture.unit)}<small>{fixture.unit}</small></strong><span>Your counted {fixture.unit === "pts" ? "effort" : "distance"}</span></div><div className="bl-nearest"><span>In good company</span><strong>{nearest.name.split(" ")[0]}</strong><small>{boardGap(nearest.value, total, fixture.unit)}</small></div></div>
+        <div className="bl-week-heading"><div><p className="bl-eyebrow">Running / Your weekly field</p><h2>Your week, taking shape.</h2></div><span className="bl-week-chip">19–26 Oct · UTC</span></div>
+        <div className="bl-score"><div><strong data-testid="board-total">{total.toFixed(1)}<small>km</small></strong><span>Your counted distance</span></div><div className="bl-nearest"><span>In good company</span><strong>{nearest.name.split(" ")[0]}</strong><small>{boardGap(nearest.value, total, "km")}</small></div></div>
         <PersistentField expanded={expanded} onClose={() => setExpanded(false)}>
-          <section className={`bl-field-shell ${expanded ? "is-expanded" : ""}`} data-concept={concept}>
-            <div className="bl-field-top"><div><span className="bl-field-title">{direction.name}</span><span className="bl-field-mode">{concept === "horizon" ? "3D / GPS distance" : `${orientation === "vertical" ? "Vertical" : "Horizontal"} / ${fixture.unit === "pts" ? "Effort" : "Distance"}`}</span></div><button type="button" className="bl-icon-button" onClick={() => setExpanded(v => !v)} aria-label={expanded ? "Close expanded field" : "Expand field"} aria-expanded={expanded}>{expanded ? "↙ Close" : "↗ Expand"}</button></div>
+          <section className={`bl-field-shell ${expanded ? "is-expanded" : ""}`} data-concept={mode}>
+            <div className="bl-field-top"><div><span className="bl-field-title">{title}</span><span className="bl-field-mode">{mode === "horizon" ? "3D / GPS distance" : `${progressTreatments[progressStyle].name} · ${zoomTreatments[zoomStyle].name}`}</span></div><button type="button" className="bl-icon-button" onClick={() => setExpanded(v => !v)} aria-label={expanded ? "Close expanded field" : "Expand field"} aria-expanded={expanded}>{expanded ? "↙ Close" : "↗ Expand"}</button></div>
+            {(mode === "field" || unavailable) && <DesignControls {...controls}/>}
             <div className="bl-scene" data-testid="board-scene">
-              {concept === "horizon" && fixture.unit !== "pts" && !unavailable
-                ? <Horizon lanes={lanes} view={view} unit={fixture.unit} selected={selected} showGhost={showGhost} above={above} onSelect={id => { setSelected(id); setSession(null); }} onUnavailable={() => setUnavailable(true)}/>
-                : <Board2D lanes={lanes} sessions={sessions} material={concept === "ribbon" ? "ribbon" : "tapestry"} orientation={orientation} view={view} unit={fixture.unit} selected={selected} showGhost={showGhost} expanded={expanded} onSelect={id => { setSelected(id); setSession(null); }} onSession={item => { stop(); setSession(item); }} onPan={pan}/>}
+              {mode === "horizon" && !unavailable ? <Horizon lanes={lanes} view={view} unit="km" selected={selected} showGhost={showGhost} above={above} onSelect={select} onUnavailable={() => setUnavailable(true)}/>
+                : <Board2D lanes={lanes} sessions={sessions} background={background} progress={progressStyle} zoom={zoomStyle} view={view} selected={selected} showGhost={showGhost} expanded={expanded} onSelect={select} onSession={s => { stop(); setSession(s); }} onPan={pan}/>}
             </div>
-            <div className="bl-field-tools"><div className="bl-tool-group"><button type="button" aria-label="Explore earlier distance" onClick={() => moveView({ ...view, center: view.center - view.span / 3 })}>{orientation === "horizontal" && concept !== "horizon" ? "←" : "↓"}</button><button type="button" onClick={() => moveView(defaultBoardView(total, fixture.unit), true)}>Center me</button><button type="button" aria-label="Explore further distance" onClick={() => moveView({ ...view, center: view.center + view.span / 3 })}>{orientation === "horizontal" && concept !== "horizon" ? "→" : "↑"}</button></div><div className="bl-tool-group"><button type="button" aria-label="Zoom in" onClick={() => zoom(.7)}>＋</button><button type="button" aria-label="Zoom out" onClick={() => zoom(1.4)}>−</button><button type="button" onClick={() => { if (concept === "horizon") setAbove(true); moveView(fitBoardView(lanes, fixture.unit)); }}>Fit field</button></div></div>
-            <div className="bl-overview" aria-label={`Distance from zero to ${formatBoardValue(fieldHigh, fixture.unit)} ${fixture.unit}`}><span>0</span><div className="bl-overview-track"><span className="bl-overview-window" style={{ left: `${Math.max(0, (view.center - view.span / 2) / fieldHigh * 100)}%`, width: `${Math.min(100, view.span / fieldHigh * 100)}%`, maxWidth: `${100 - Math.max(0, (view.center - view.span / 2) / fieldHigh * 100)}%` }}/>{lanes.filter(l => !l.ghost).map(l => <i key={l.id} className={l.you ? "is-you" : ""} style={{ left: `${l.value / fieldHigh * 100}%` }}/>)}</div><span>{formatBoardValue(fieldHigh, fixture.unit)} {fixture.unit}</span></div>
-            {unavailable && concept === "horizon" && <p className="bl-fallback" role="status">3D is unavailable here. Your field is shown in 2D with the same values and view.</p>}
-            <div className="bl-field-selection" aria-label="Selected athlete or counted session"><span className={`bl-mini-capsule ${person.you ? "is-you" : ""}`}/><div><strong>{session ? session.title : person.you ? "Your week, taking shape" : person.name}</strong><span>{session ? `${formatBoardValue(session.end - session.start, fixture.unit)} ${fixture.unit} · ${new Date(session.recordedAt).toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" })} · counted session` : person.you ? `${formatBoardValue(total - (lanes.find(l => l.ghost)?.value ?? total), fixture.unit)} ${fixture.unit} ahead of past you · same cutoff` : boardGap(person.value, total, fixture.unit)}</span></div><strong>{formatBoardValue(session ? session.end - session.start : person.value, fixture.unit)}<small>{fixture.unit}</small></strong></div>
+            <div className="bl-field-tools"><div className="bl-tool-group"><button type="button" aria-label="Explore earlier distance" onClick={() => moveView({ ...view, center: view.center - view.span / 3 })}>↓</button><button type="button" onClick={() => moveView(defaultBoardView(total, "km"), true)}>Center me</button><button type="button" aria-label="Explore further distance" onClick={() => moveView({ ...view, center: view.center + view.span / 3 })}>↑</button></div><div className="bl-tool-group"><button type="button" aria-label="Zoom in" onClick={() => zoom(.7)}>＋</button><button type="button" aria-label="Zoom out" onClick={() => zoom(1.4)}>−</button><button type="button" onClick={() => { if (mode === "horizon") setAbove(true); moveView(fitBoardView(lanes, "km")); }}>Fit field</button></div></div>
+            <div className="bl-overview" aria-label={`Distance from zero to ${fieldHigh.toFixed(1)} km`}><span>0</span><div className="bl-overview-track"><span className="bl-overview-window" style={{ left: `${overview.left}%`, width: `${overview.width}%` }}/>{lanes.filter(l => !l.ghost).map(l => <i key={l.id} className={l.you ? "is-you" : ""} style={{ left: `${l.value / fieldHigh * 100}%` }}/>)}</div><span>{fieldHigh.toFixed(1)} km</span></div>
+            {unavailable && mode === "horizon" && <p className="bl-fallback" role="status">3D is unavailable here. The same field is shown in 2D.</p>}
+            <div className="bl-field-selection" aria-label="Selected athlete or counted session"><span className={`bl-mini-capsule ${person.you ? "is-you" : ""}`}/><div><strong>{session ? session.title : person.you ? "Your week, taking shape" : person.name}</strong><span>{session ? `${(session.end - session.start).toFixed(1)} km · counted session` : person.you ? `${(total - (lanes.find(l => l.ghost)?.value ?? total)).toFixed(1)} km ahead of past you · same cutoff` : boardGap(person.value, total, "km")}</span></div><strong>{(session ? session.end - session.start : person.value).toFixed(1)}<small>km</small></strong></div>
           </section>
         </PersistentField>
-        <div className="bl-return"><span className="bl-return-symbol">↗</span><div><strong>{progress >= 1 ? "That effort is part of your week." : "Make room for a little more."}</strong><p>{progress > 0 ? `+${formatBoardValue(fixture.gain * progress, fixture.unit)} ${fixture.unit} in this preview. Recorded sessions stay visible.` : "Preview a counted session and watch the ground move."}</p></div><button type="button" disabled={playing} onClick={() => { if (progress > 0) reset(); else { stop(); setCamera(null); setNotice(""); setPlaying(true); } }}>{playing ? "Adding…" : progress > 0 ? "Reset" : `Preview +${formatBoardValue(fixture.gain, fixture.unit)}`}</button></div>
+        <div className="bl-return"><span className="bl-return-symbol">↗</span><div><strong>{progress >= 1 ? "That effort is part of your week." : "Make room for a little more."}</strong><p>{progress > 0 ? `+${(fixture.gain * progress).toFixed(1)} km in this preview.` : "Preview a counted session and watch the ground move."}</p></div><button type="button" disabled={playing} onClick={() => { if (progress > 0) reset(); else { stop(); setCamera(null); setNotice(""); setPlaying(true); } }}>{playing ? "Adding…" : progress > 0 ? "Reset" : "Preview +2.2"}</button></div>
         <p className="bl-sr-only" role="status">{notice}</p>
         <nav className="bl-app-nav" aria-label="Product context"><span>⌂<small>Home</small></span><span className="is-current">Ⅱ<small>Compete</small></span><span>♧<small>Crew</small></span><span>◉<small>Athlete</small></span></nav>
       </section>
       <aside className="bl-sidebar">
-        <div className="bl-side-heading"><span className="bl-eyebrow">Study controls</span><h3>Find the right feel.</h3><p>{direction.detail}</p></div>
-        {concept !== "horizon" ? <fieldset><legend>Direction of travel</legend><div className="bl-segment"><button type="button" aria-pressed={orientation === "vertical"} onClick={() => setOrientation("vertical")}>↑ Vertical</button><button type="button" aria-pressed={orientation === "horizontal"} onClick={() => setOrientation("horizontal")}>→ Horizontal</button></div></fieldset> : <fieldset><legend>Camera</legend><div className="bl-segment"><button type="button" aria-pressed={!above} onClick={() => setAbove(false)}>Follow</button><button type="button" aria-pressed={above} onClick={() => setAbove(true)}>From above</button></div></fieldset>}
+        {mode === "field" ? <>
+          <div className="bl-side-heading"><p className="bl-eyebrow">Independent choices</p><h3>Make the field yours.</h3></div>
+          <fieldset className="bl-desktop-design"><legend>01 / The ground</legend><div className="bl-background-catalog">{Object.entries(backgrounds).map(([key, b]) => <button type="button" key={key} aria-pressed={background === key} onClick={() => setBackground(key as BackgroundId)}><span className="bl-surface-swatch" data-surface={key}/><strong>{b.name}</strong><small>{b.short}</small></button>)}</div></fieldset>
+          <p className="bl-choice-description">{backgrounds[background].description}</p>
+          <fieldset className="bl-desktop-design"><legend>02 / The progress</legend><div className="bl-progress-catalog">{Object.entries(progressTreatments).map(([key, p]) => <button type="button" key={key} aria-pressed={progressStyle === key} onClick={() => setProgressStyle(key as ProgressId)}><span className="bl-trace-swatch" data-trace={key}><i/><i/><i/></span><span><strong>{p.name}</strong><small>{p.short}</small></span></button>)}</div></fieldset>
+          <p className="bl-choice-description">{progressTreatments[progressStyle].description}</p>
+          <fieldset className="bl-desktop-design"><legend>03 / The lens</legend><div className="bl-zoom-catalog">{Object.entries(zoomTreatments).map(([key, z]) => <button type="button" key={key} aria-pressed={zoomStyle === key} onClick={() => setZoomStyle(key as ZoomId)}>{z.name}</button>)}</div></fieldset>
+          <p className="bl-choice-description">{zoomTreatments[zoomStyle].description}</p>
+        </> : <><div className="bl-side-heading"><p className="bl-eyebrow">The 3D direction</p><h3>Room to move.</h3><p>Trees, benches and fixed distance signs give forward travel a physical setting.</p></div><fieldset><legend>Camera</legend><div className="bl-segment"><button type="button" aria-pressed={!above} onClick={() => setAbove(false)}>Follow</button><button type="button" aria-pressed={above} onClick={() => setAbove(true)}>From above</button></div></fieldset></>}
         <label className="bl-checkbox"><input type="checkbox" checked={showGhost} onChange={e => setShowGhost(e.target.checked)}/><span>Show past you<small>Same cutoff · never ranked</small></span></label>
-        <div className="bl-field-list"><div className="bl-list-title"><h3>In your field</h3><span>{fixture.unit === "pts" ? "Effort" : "Distance"}</span></div>{ordered.map(l => <button type="button" key={l.id} aria-pressed={selected === l.id} onClick={() => { setSelected(l.id); setSession(null); }}><span className={`bl-mini-capsule ${l.you ? "is-you" : ""}`}/><span><strong>{l.you ? "You" : l.name}</strong><small>{l.you ? "Your counted total" : boardGap(l.value, total, fixture.unit)}</small></span><b>{formatBoardValue(l.value, fixture.unit)}<small>{fixture.unit}</small></b></button>)}</div>
-        <p className="bl-study-note">{concept === "horizon" ? "Scenery belongs to fixed distances. The camera travels through it. This is an illustrative course, not actual locations." : concept === "tapestry" ? "Tap a woven segment to inspect its counted contribution. No session history means no invented seams." : "Distance marks stay fixed to the ribbon. Pan the field to feel them travel past."}</p>
-        {effort && <p className="bl-study-note">Effort is shown in points. Horizon’s outdoor course is reserved for GPS distance.</p>}
+        <div className="bl-field-list"><div className="bl-list-title"><h3>In your field</h3><span>Distance</span></div>{ordered.map(l => <button type="button" key={l.id} aria-pressed={selected === l.id} onClick={() => select(l.id)}><span className={`bl-mini-capsule ${l.you ? "is-you" : ""}`}/><span><strong>{l.you ? "You" : l.name}</strong><small>{l.you ? "Your counted total" : boardGap(l.value, total, "km")}</small></span><b>{l.value.toFixed(1)}<small>km</small></b></button>)}</div>
       </aside>
     </div>
-    <footer className="bl-review-footer"><span>Presentation study · no activity or score writes</span><span>Compact ↔ expanded · km / mi / effort · reduced motion</span></footer>
+    <footer className="bl-review-footer"><span>Presentation study · no activity or score writes</span><span>Vertical · kilometers · independent surfaces, traces and lenses</span></footer>
   </main>;
 }
