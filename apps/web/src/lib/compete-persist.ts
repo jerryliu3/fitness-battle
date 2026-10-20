@@ -111,31 +111,17 @@ function splitCompeteKey(activity: Activity): {
   };
 }
 
-/** Replace compete-owned rows for a user (document SoT for that table). */
-async function replaceRows(
-  db: Db,
-  table: string,
-  userId: string,
-  rows: Record<string, unknown>[],
-): Promise<void> {
-  const { error: clearError } = await db.from(table).delete().eq("user_id", userId);
-  if (clearError) throw new Error(clearError.message);
-  if (rows.length === 0) return;
-  const { error } = await db.from(table).insert(rows);
-  if (error) throw new Error(error.message);
-}
-
 /**
  * Activities SoT write — `public.activities` only.
  * Never deletes rows (live sync can race ahead of the compete document).
  */
-async function persistCompeteActivities(
+async function accountActivityRows(
   db: Db,
   userId: string,
   state: CompeteState,
-): Promise<void> {
+): Promise<Record<string, unknown>[]> {
   const clean = prepareCompeteStateForAccount(state);
-  if (clean.activities.length === 0) return;
+  if (clean.activities.length === 0) return [];
 
   const { data: categories, error: categoryError } = await db
     .from("categories")
@@ -173,40 +159,19 @@ async function persistCompeteActivities(
     ];
   });
 
-  if (activityRows.length === 0) return;
-  const { error } = await db.from("activities").upsert(activityRows, {
-    onConflict: "user_id,provider,external_id",
-  });
-  if (error) throw new Error(error.message);
+  return activityRows;
 }
 
 /**
  * Readiness is shared with fitness sync — upsert only, never delete-all.
  * Sync can race ahead of the compete document the same way activities do.
  */
-async function persistCompeteReadiness(
-  db: Db,
-  userId: string,
-  marks: ReadinessMark[],
-): Promise<void> {
-  const rows = marks.flatMap((mark) => {
+function accountReadinessRows(userId: string, marks: ReadinessMark[]) {
+  return marks.flatMap((mark) => {
     const provider = asProvider(String(mark.provider));
-    if (!provider) return [];
-    return [
-      {
-        user_id: userId,
-        provider,
-        external_id: mark.id,
-        day: mark.day,
-        score: mark.score,
-      },
-    ];
+    return provider ? [{ user_id: userId, provider, external_id: mark.id, day: mark.day, score: mark.score }] : [];
   });
-  if (rows.length === 0) return;
-  const { error } = await db.from("readiness_marks").upsert(rows, {
-    onConflict: "user_id,provider,external_id",
-  });
-  if (error) throw new Error(error.message);
+
 }
 
 /** Persist the full signed-in compete account to relational tables only. */
@@ -214,192 +179,19 @@ export async function persistCompeteAccount(
   db: Db,
   userId: string,
   state: CompeteState,
+  expectedUpdatedAt: string | null,
 ): Promise<string> {
   const clean = prepareCompeteStateForAccount(state);
-  const updatedAt = new Date().toISOString();
-
-  const { error: profileError, data } = await db
-    .from("profiles")
-    .update({
-      display_name: clean.name.slice(0, 80) || "Athlete",
-      city: clean.city.slice(0, 80),
-      primary_sport: clean.primary,
-      avatar_url: clean.avatarUrl ?? null,
-      updated_at: updatedAt,
-    })
-    .eq("id", userId)
-    .select("id");
-  if (profileError || !data || data.length === 0) {
-    const { error: upsertError } = await db.from("profiles").upsert({
-      id: userId,
-      display_name: clean.name.slice(0, 80) || "Athlete",
-      city: clean.city.slice(0, 80),
-      primary_sport: clean.primary,
-      avatar_url: clean.avatarUrl ?? null,
-      updated_at: updatedAt,
-    });
-    if (upsertError) throw new Error(upsertError.message || profileError?.message);
-  }
-
-  const focusFamily = clean.focus.family;
-  const focusId = clean.focus.id;
-  const { error: prefsError } = await db.from("athlete_prefs").upsert({
-    user_id: userId,
-    freezes_left: clean.freezesLeft,
-    calibrated: clean.calibrated,
-    onboarding_completed: clean.onboardingCompleted,
-    lesson_done_on: clean.lessonDoneOn,
-    training_goal_distance: clean.trainingGoal?.distance ?? null,
-    training_goal_deadline: clean.trainingGoal?.deadline ?? null,
-    clock_period_start: clean.clock.periodStart,
-    focus_family: focusFamily,
-    focus_id: focusId,
-    units: clean.units === "metric" ? "metric" : "us",
-    updated_at: updatedAt,
+  const activities = await accountActivityRows(db, userId, clean);
+  const { data, error } = await db.rpc("save_compete_account", {
+    p_state: clean,
+    p_activities: activities,
+    p_readiness: accountReadinessRows(userId, clean.readiness),
+    p_expected_updated_at: expectedUpdatedAt,
   });
-  if (prefsError) throw new Error(prefsError.message);
-
-  if (clean.ratings.length > 0) {
-    const { error } = await db.from("sport_ratings").upsert(
-      clean.ratings.map((rating) => ({
-        user_id: userId,
-        sport: rating.sport,
-        verified_elo: rating.verifiedElo,
-        open_elo: rating.openElo,
-        opted_in: rating.optedIn,
-        lock_verified: rating.lockVerified,
-        lock_open: rating.lockOpen,
-        lock_period: rating.lockPeriod,
-      })),
-    );
-    if (error) throw new Error(error.message);
-  }
-
-  if (clean.periodResults.length > 0) {
-    const { error } = await db.from("period_results").upsert(
-      clean.periodResults.map((row) => ({
-        user_id: userId,
-        period_start: row.periodStart,
-        sport: row.sport,
-        track: row.track,
-        period_end: row.periodEnd,
-        place: row.place,
-        field_size: row.fieldSize,
-        effort: row.effort,
-        distance_m: row.distanceM,
-        moving_sec: row.movingSec,
-        elo_before: row.eloBefore,
-        elo_after: row.eloAfter,
-        frozen: row.frozen,
-        settled_at: row.settledAt,
-        acknowledged_at: row.acknowledgedAt ?? null,
-      })),
-    );
-    if (error) throw new Error(error.message);
-  }
-
-  await replaceRows(
-    db,
-    "period_freezes",
-    userId,
-    clean.frozenPeriods.map((periodStart) => ({
-      user_id: userId,
-      period_start: periodStart,
-    })),
-  );
-
-  await persistCompeteActivities(db, userId, clean);
-
-  await replaceRows(
-    db,
-    "wave_enrollments",
-    userId,
-    clean.enrollments.map((enrollment) => ({
-      user_id: userId,
-      sport: enrollment.sport,
-      wave_start: enrollment.waveStart,
-      week_end: enrollment.weekEnd,
-      capacity: enrollment.capacity,
-      peer_ids: enrollment.peerIds,
-      synthetic_ids: enrollment.syntheticIds,
-      auto_enroll_next: enrollment.autoEnrollNext,
-      crew_id: enrollment.crewId ?? null,
-    })),
-  );
-
-  await replaceRows(
-    db,
-    "sleep_nights",
-    userId,
-    clean.sleepNights.map((night) => ({
-      user_id: userId,
-      night_id: night.id,
-      day: night.day,
-      score: night.score,
-      duration_min: night.durationMin,
-      efficiency: night.efficiency,
-      deep_min: night.deepMin,
-      rem_min: night.remMin,
-      light_min: night.lightMin,
-      awake_min: night.awakeMin,
-      source: night.source,
-      verified: night.verified,
-    })),
-  );
-
-  await replaceRows(
-    db,
-    "health_ratings",
-    userId,
-    clean.healthRatings.map((rating) => ({
-      user_id: userId,
-      metric: rating.metric,
-      elo: rating.elo,
-      opted_in: rating.optedIn,
-      lock_elo: rating.lockElo,
-      lock_period: rating.lockPeriod,
-      auto_enroll_next: rating.autoEnrollNext,
-    })),
-  );
-
-  await replaceRows(
-    db,
-    "health_period_results",
-    userId,
-    clean.healthResults.map((row) => ({
-      user_id: userId,
-      result_id: row.id,
-      metric: row.metric,
-      period_start: row.periodStart,
-      period_end: row.periodEnd,
-      place: row.place,
-      field_size: row.fieldSize,
-      score: row.score,
-      elo_before: row.eloBefore,
-      elo_after: row.eloAfter,
-      settled_at: row.settledAt,
-    })),
-  );
-
-  await replaceRows(
-    db,
-    "compete_duels",
-    userId,
-    clean.duels.map((duel) => ({
-      user_id: userId,
-      duel_id: duel.id,
-      sport: duel.sport,
-      period_start: duel.periodStart,
-      rival_id: duel.rivalId,
-      rival_name: duel.rivalName,
-      rival_elo: duel.rivalElo,
-      source: duel.source,
-    })),
-  );
-
-  await persistCompeteReadiness(db, userId, clean.readiness);
-
-  return updatedAt;
+  if (error) throw new Error(error.message);
+  if (typeof data !== "string") throw new Error("account_not_saved");
+  return data;
 }
 
 /** Load signed-in compete state entirely from relational tables. */
