@@ -15,11 +15,34 @@ import { useEffect, useState } from "react";
 
 function useCrewOptions(sport: SportId, enabled: boolean) {
   const { user, demoMode } = useAuth();
+  const { state } = useCompete();
   const [crews, setCrews] = useState<CrewJoinOption[]>([]);
 
   useEffect(() => {
-    if (!enabled || !user || demoMode) {
+    if (!enabled || !user) {
       setCrews([]);
+      return;
+    }
+    if (demoMode) {
+      const pin = state?.crewBoard;
+      if (
+        pin &&
+        pin.sport === sport &&
+        pin.crewId &&
+        pin.crewId !== "solo" &&
+        !pin.crewId.startsWith("field:")
+      ) {
+        setCrews([
+          {
+            id: pin.crewId,
+            name: pin.crewName,
+            sport: pin.sport,
+            memberCount: pin.memberIds.length,
+          },
+        ]);
+      } else {
+        setCrews([]);
+      }
       return;
     }
     let cancelled = false;
@@ -29,7 +52,7 @@ function useCrewOptions(sport: SportId, enabled: boolean) {
     return () => {
       cancelled = true;
     };
-  }, [demoMode, enabled, sport, user]);
+  }, [demoMode, enabled, sport, state?.crewBoard, user]);
 
   return crews;
 }

@@ -122,6 +122,23 @@ export function CrewPanel() {
   async function write(path: string, body: object) {
     setBusy(true);
     setNote("");
+    if (demoMode) {
+      setBusy(false);
+      setPanel(null);
+      if (path === "/leave") {
+        setSelected("");
+        setNote("You left the crew.");
+      } else if (path === "/join") {
+        setCode("");
+        setNote("Joined crew.");
+      } else if (path === "/rest") {
+        setNote("Marked rest week for this crew.");
+      } else {
+        setName("");
+        setNote("Saved. Your crew is up to date.");
+      }
+      return;
+    }
     try {
       const res = await fetch(`/api/crews${path}`, {
         method: "POST",
@@ -388,7 +405,7 @@ export function CrewPanel() {
                     className="fb-btn"
                     disabled={busy}
                     onClick={() => {
-                      if (!user || demoMode) {
+                      if (!user) {
                         setPanel("manage");
                         return;
                       }
@@ -541,7 +558,7 @@ export function CrewPanel() {
           {n.body}
         </p>
       ))}
-      {(!user || demoMode) && (
+      {!user && (
         <div className="focus-crew-preview" style={{ marginBottom: 28 }}>
           <section className="focus-card">
             <p className="fb-kicker">What crews unlock</p>
@@ -566,24 +583,22 @@ export function CrewPanel() {
               Private crews share a week of counted effort — invite codes,
               member standings, and a shared field when you register together.
             </p>
-            {!user ? (
-              <div className="fb-row" style={{ width: "100%", gap: 10 }}>
-                <Link
-                  className="fb-btn"
-                  href="/signup?next=/field"
-                  style={{ flex: 1, textAlign: "center" }}
-                >
-                  Create account
-                </Link>
-                <Link
-                  className="fb-btn-line"
-                  href="/login?next=/field"
-                  style={{ flex: 1, textAlign: "center" }}
-                >
-                  Sign in
-                </Link>
-              </div>
-            ) : null}
+            <div className="fb-row" style={{ width: "100%", gap: 10 }}>
+              <Link
+                className="fb-btn"
+                href="/signup?next=/field"
+                style={{ flex: 1, textAlign: "center" }}
+              >
+                Create account
+              </Link>
+              <Link
+                className="fb-btn-line"
+                href="/login?next=/field"
+                style={{ flex: 1, textAlign: "center" }}
+              >
+                Sign in
+              </Link>
+            </div>
           </section>
         </div>
       )}
@@ -598,7 +613,7 @@ export function CrewPanel() {
               : "Your crew, your rhythm."
         }
         body={
-          !user || demoMode
+          !user
             ? "A live account is needed to create or join a private crew."
             : "Private crew activity stays with your members."
         }
@@ -616,7 +631,7 @@ export function CrewPanel() {
             {note}
           </p>
         ) : null}
-        {!user || demoMode ? (
+        {!user ? (
           <div style={{ marginTop: 8 }}>
             <p className="fb-copy" style={{ marginBottom: 16 }}>
               A live account is required to invite friends, join circles, or sync shared crew sessions.
