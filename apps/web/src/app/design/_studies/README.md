@@ -5,6 +5,7 @@ All presentation prototypes, sample data, study-only styles and prototype tests 
 - `smoothness-lab`: `/ux` — 18 interactive continuity prototypes with a visual mobile-haptic event monitor; fictional local state, no native vibration or backend writes.
 - `design-lab`: the first interaction/layout study
 - `spatial-lab`: spatial layouts and sample worlds
+- `board-lab`: `/design/boards` — Session Tapestry and Distance Ribbon in both orientations and distance/effort units, plus a real Three.js Horizon Pursuit with fixed scenery. Controlled renderers, sample session intervals, persistent compact/expanded scene and local-only gain previews. See its README for integration boundaries.
 - `evolution-lab`: identity and field exploration
 - `worlds-lab`: five product worlds
 - `rally-lab`: the focused Rally study
