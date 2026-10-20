@@ -538,7 +538,7 @@ function YouContent() {
           className="focus-expand-back"
           onClick={() => setPanel(null)}
         >
-          ← Athlete
+          ← Back
         </button>
         <header className="focus-heading">
           <p className="fb-kicker">Settings</p>

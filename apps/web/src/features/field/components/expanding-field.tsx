@@ -62,6 +62,11 @@ export function ExpandingField({ open, onClose, children }: {
     const visible = destination && destination.bottom > 0 && destination.top < window.innerHeight;
     const finish = () => {
       if (open) return;
+      // Remove the viewport transform before returning the persistent canvas to
+      // normal flow. A filled WAAPI animation otherwise survives for one frame.
+      contentAnimation.current?.cancel();
+      contentAnimation.current = null;
+      host.style.visibility = "hidden";
       slot.current?.appendChild(mount);
       mount.style.cssText = "";
       if (slot.current) slot.current.style.height = "";

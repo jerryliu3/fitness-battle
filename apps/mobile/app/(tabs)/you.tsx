@@ -351,7 +351,7 @@ export default function YouScreen() {
     return (
       <SafeAreaView style={styles.safe} edges={["top"]}>
         <ScrollView contentContainerStyle={f.content} showsVerticalScrollIndicator={false}>
-          <FocusButton label="← Athlete" secondary onPress={() => setPanel(null)} />
+          <FocusButton label="← Back" secondary onPress={() => setPanel(null)} />
           <Text style={f.kicker}>Settings</Text>
           <Text style={f.title}>Account</Text>
           <FocusButton label="Sign out" secondary onPress={() => void signOut()} />
@@ -373,7 +373,7 @@ export default function YouScreen() {
             onPress={() => setPanel(null)}
             style={{ paddingVertical: 8 }}
           >
-            <Text style={f.small}>← Athlete</Text>
+            <Text style={f.small}>← Back</Text>
           </Pressable>
           <Text style={f.kicker}>Settings</Text>
           <Text style={f.title}>Data Sync</Text>
@@ -496,7 +496,7 @@ export default function YouScreen() {
             onPress={() => setPanel(null)}
             style={{ paddingVertical: 8 }}
           >
-            <Text style={f.small}>← Athlete</Text>
+            <Text style={f.small}>← Back</Text>
           </Pressable>
           <Text style={f.kicker}>Settings</Text>
           <Text style={f.title}>Preferences</Text>

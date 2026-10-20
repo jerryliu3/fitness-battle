@@ -518,8 +518,8 @@ export function ArenaLanes({
                   : formatLastUpdated(l)}
               </text>
               </motion.g>
-              <motion.g aria-hidden={!standings} initial={false} animate={{ opacity: standings ? 1 : 0 }}
-                style={{ display: standings ? undefined : "none", pointerEvents: standings ? "auto" : "none" }}>
+              <g aria-hidden={!standings} display={standings ? "inline" : "none"}>
+              <motion.g initial={false} animate={{ opacity: standings ? 1 : 0 }}>
                 <rect x={-30} y={-33} width={Math.max(200, width - 16)} height={70} rx={14} fill="transparent" />
                 <line x1={-22} x2={width - 52} y1={38} y2={38} stroke="#e0e5dc" />
                 <text x={40} y={4} fill="#616c63" fontSize={12}>{rank}</text>
@@ -527,6 +527,7 @@ export function ArenaLanes({
                 <text x={64} y={15} fill="#616c63" fontSize={10}>Effort score {scores[l.id] ?? "—"}</text>
                 <text x={width - 58} y={5} textAnchor="end" fill="#282f2c" fontSize={13} fontWeight={700}>{l.value.toFixed(1)} {unit}</text>
               </motion.g>
+              </g>
             </motion.g>
           );
         })}

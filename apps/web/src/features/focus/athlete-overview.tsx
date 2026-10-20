@@ -263,7 +263,7 @@ export function AthleteOverview({
               </button>
               <button
                 type="button"
-                className="fb-btn-ghost"
+                className="fb-btn-line"
                 style={{ fontSize: 13, padding: "6px 14px" }}
                 onClick={() => {
                   setName(state.name);
