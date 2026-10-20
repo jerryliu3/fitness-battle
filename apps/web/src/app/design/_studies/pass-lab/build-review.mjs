@@ -13,6 +13,8 @@ const webRequire = createRequire(join(web, "package.json"));
 const vitestRequire = createRequire(webRequire.resolve("vitest/package.json"));
 const viteRequire = createRequire(vitestRequire.resolve("vite/package.json"));
 const { build } = viteRequire("esbuild");
+const nextRequire=createRequire(webRequire.resolve("next/package.json"));
+const sharp=nextRequire("sharp");
 const options = { bundle: true, write: false, minify: true, jsx: "automatic", target: "es2020", alias: { "@": join(web, "src") }, define: { "process.env.NODE_ENV": '"production"' } };
 const result = await build({
   ...options,
@@ -54,12 +56,55 @@ await mkdir(join(output, "icons"), { recursive: true });
 await writeFile(join(output, "review.html"), `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow"><title>Overtaek · The art of the pass</title><style>${[...faces.values()].join("\n")}\n:root{--font-body:'DM Sans',sans-serif;--font-overtaek:'Nunito Sans',sans-serif}*{box-sizing:border-box}body{margin:0;background:#fafaf7;color:#282f2c}button,input,select{font:inherit}${css}</style></head><body><div id="root"></div><script>${js}</script></body></html>`);
 
 const vectors = await build({ ...options, platform: "node", format: "cjs", stdin: {
-  resolveDir: web, loader: "tsx", contents: `import {renderToStaticMarkup} from "react-dom/server"; import {IconArt} from "./src/app/design/_studies/pass-lab/icon-art"; import {LaneArt} from "./src/app/design/_studies/pass-lab/lane-art"; import {RefinementIcon} from "./src/app/design/_studies/pass-lab/refinement-art"; import {REFINEMENTS} from "./src/app/design/_studies/pass-lab/refinements"; import {FINALIST_BOARD,FINALIST_SHAPES,finalistSpec} from "./src/app/design/_studies/pass-lab/afterimage-finalists"; import {MaterialIcon} from "./src/app/design/_studies/pass-lab/material-art"; import {MATERIAL_CONCEPTS} from "./src/app/design/_studies/pass-lab/material-concepts"; import {WAKE_CONCEPTS,wakeSpec} from "./src/app/design/_studies/pass-lab/wake-study"; import {ICONS,LANES} from "./src/app/design/_studies/pass-lab/catalog"; export const materials=MATERIAL_CONCEPTS.flatMap((c,i)=>[false,true].map(dark=>({id:c.id,name:c.name,material:c.material,dark,master:renderToStaticMarkup(<MaterialIcon concept={c} dark={dark} unmasked size={1024}/>,{identifierPrefix:"material-master-"+i+dark}),tile:renderToStaticMarkup(<MaterialIcon concept={c} dark={dark} size={200}/>,{identifierPrefix:"material-tile-"+i+dark}),field:renderToStaticMarkup(<LaneArt index={4} progress={1} gain={2} flow={false} material={c} materialDark={dark}/>,{identifierPrefix:"material-field-"+i+dark})}))); export const wakes=WAKE_CONCEPTS.map((c,i)=>({id:c.id,name:c.name,master:renderToStaticMarkup(<RefinementIcon spec={wakeSpec()} wake={c.id} unmasked size={1024}/>,{identifierPrefix:"wake-master-"+i}),tile:renderToStaticMarkup(<RefinementIcon spec={wakeSpec()} wake={c.id} size={256}/>,{identifierPrefix:"wake-tile-"+i})})); export const icons=ICONS.map((c,i)=>({id:c.id,name:c.name,master:renderToStaticMarkup(<IconArt id={c.id} unmasked size={1024}/>,{identifierPrefix:'master-'+i}),tile:renderToStaticMarkup(<IconArt id={c.id} size={160}/>,{identifierPrefix:'tile-'+i})})); export const lanes=LANES.map((l,i)=>({name:l.name,svg:renderToStaticMarkup(<LaneArt index={i} progress={1} gain={4.2} flow={false}/>,{identifierPrefix:'field-'+i})})); export const refinements=REFINEMENTS.map((s,i)=>({id:s.id,name:s.name,master:renderToStaticMarkup(<RefinementIcon spec={s} unmasked size={1024}/>,{identifierPrefix:'ref-master-'+i}),tile:renderToStaticMarkup(<RefinementIcon spec={s} size={180}/>,{identifierPrefix:'ref-tile-'+i})})); export const finalists=FINALIST_BOARD.map((s,i)=>({id:s.id,name:s.name,master:renderToStaticMarkup(<RefinementIcon spec={s} unmasked size={1024}/>,{identifierPrefix:'final-master-'+i}),tile:renderToStaticMarkup(<RefinementIcon spec={s} size={160}/>,{identifierPrefix:'final-tile-'+i})})); export const shapes=FINALIST_SHAPES.map((s,i)=>({id:s.id,name:s.name,master:renderToStaticMarkup(<RefinementIcon spec={finalistSpec(s.id,'club','black','subtle')} unmasked size={1024}/>,{identifierPrefix:'shape-master-'+i}),tile:renderToStaticMarkup(<RefinementIcon spec={finalistSpec(s.id,'club','black','subtle')} size={180}/>,{identifierPrefix:'shape-tile-'+i})}));` },
+  resolveDir: web, loader: "tsx", contents: `import {renderToStaticMarkup} from "react-dom/server"; import {IconArt} from "./src/app/design/_studies/pass-lab/icon-art"; import {LaneArt} from "./src/app/design/_studies/pass-lab/lane-art"; import {RefinementIcon} from "./src/app/design/_studies/pass-lab/refinement-art"; import {REFINEMENTS} from "./src/app/design/_studies/pass-lab/refinements"; import {FINALIST_BOARD,FINALIST_SHAPES,finalistSpec} from "./src/app/design/_studies/pass-lab/afterimage-finalists"; import {GOLD_COLORS,SILVER_COLORS} from "./src/app/design/_studies/pass-lab/finish-colors"; import {finishSpec} from "./src/app/design/_studies/pass-lab/finish-comparison"; import {FINISH_BOARD} from "./src/app/design/_studies/pass-lab/finish-comparison"; import {TransmissionCheck} from "./src/app/design/_studies/pass-lab/finish-round"; import {GLASS_CONCEPTS} from "./src/app/design/_studies/pass-lab/glass-concepts"; import {GlassOverlap} from "./src/app/design/_studies/pass-lab/glass-art"; import {MaterialIcon} from "./src/app/design/_studies/pass-lab/material-art"; import {MATERIAL_CONCEPTS} from "./src/app/design/_studies/pass-lab/material-concepts"; import {WAKE_CONCEPTS,wakeSpec} from "./src/app/design/_studies/pass-lab/wake-study"; import {ICONS,LANES} from "./src/app/design/_studies/pass-lab/catalog"; export const colorSamples=[false,true].flatMap(dark=>[...GOLD_COLORS.map(c=>({group:"gold",color:c,palette:{gold:c.hex,silver:SILVER_COLORS[0].hex}})),...SILVER_COLORS.map(c=>({group:"silver",color:c,palette:{gold:GOLD_COLORS[0].hex,silver:c.hex}}))].map((c,i)=>({...c,dark,tile:renderToStaticMarkup(<MaterialIcon concept={finishSpec("tinted","pill",.5,c.palette)} dark={dark} size={140}/>,{identifierPrefix:"color-sample-"+i+dark})}))); export const finishes=FINISH_BOARD.flatMap((c,i)=>[false,true].map(dark=>({id:c.id,name:c.name,dark,master:renderToStaticMarkup(<MaterialIcon concept={c.spec} dark={dark} unmasked size={1024}/>,{identifierPrefix:"finish-master-"+i+dark}),tile:renderToStaticMarkup(<MaterialIcon concept={c.spec} dark={dark} size={200}/>,{identifierPrefix:"finish-tile-"+i+dark}),field:renderToStaticMarkup(<LaneArt index={4} progress={1} gain={2} flow={false} material={c.spec} materialDark={dark}/>,{identifierPrefix:"finish-field-"+i+dark})}))); export const transmission=[false,true].map(dark=>({dark,svg:renderToStaticMarkup(<TransmissionCheck dark={dark}/>,{identifierPrefix:"transmission-"+dark})})); export const glasses=GLASS_CONCEPTS.flatMap((c,i)=>[false,true].map(dark=>({id:c.id,name:c.name,opacity:c.glass.opacity,dark,master:renderToStaticMarkup(<MaterialIcon concept={c} dark={dark} unmasked size={1024}/>,{identifierPrefix:"glass-master-"+i+dark}),tile:renderToStaticMarkup(<MaterialIcon concept={c} dark={dark} size={200}/>,{identifierPrefix:"glass-tile-"+i+dark}),overlap:renderToStaticMarkup(<GlassOverlap concept={c} dark={dark} size={180}/>,{identifierPrefix:"glass-overlap-"+i+dark}),field:renderToStaticMarkup(<LaneArt index={4} progress={1} gain={2} flow={false} material={c} materialDark={dark}/>,{identifierPrefix:"glass-field-"+i+dark})}))); export const materials=MATERIAL_CONCEPTS.flatMap((c,i)=>[false,true].map(dark=>({id:c.id,name:c.name,material:c.material,dark,master:renderToStaticMarkup(<MaterialIcon concept={c} dark={dark} unmasked size={1024}/>,{identifierPrefix:"material-master-"+i+dark}),tile:renderToStaticMarkup(<MaterialIcon concept={c} dark={dark} size={200}/>,{identifierPrefix:"material-tile-"+i+dark}),field:renderToStaticMarkup(<LaneArt index={4} progress={1} gain={2} flow={false} material={c} materialDark={dark}/>,{identifierPrefix:"material-field-"+i+dark})}))); export const wakes=WAKE_CONCEPTS.map((c,i)=>({id:c.id,name:c.name,master:renderToStaticMarkup(<RefinementIcon spec={wakeSpec()} wake={c.id} unmasked size={1024}/>,{identifierPrefix:"wake-master-"+i}),tile:renderToStaticMarkup(<RefinementIcon spec={wakeSpec()} wake={c.id} size={256}/>,{identifierPrefix:"wake-tile-"+i})})); export const icons=ICONS.map((c,i)=>({id:c.id,name:c.name,master:renderToStaticMarkup(<IconArt id={c.id} unmasked size={1024}/>,{identifierPrefix:'master-'+i}),tile:renderToStaticMarkup(<IconArt id={c.id} size={160}/>,{identifierPrefix:'tile-'+i})})); export const lanes=LANES.map((l,i)=>({name:l.name,svg:renderToStaticMarkup(<LaneArt index={i} progress={1} gain={4.2} flow={false}/>,{identifierPrefix:'field-'+i})})); export const refinements=REFINEMENTS.map((s,i)=>({id:s.id,name:s.name,master:renderToStaticMarkup(<RefinementIcon spec={s} unmasked size={1024}/>,{identifierPrefix:'ref-master-'+i}),tile:renderToStaticMarkup(<RefinementIcon spec={s} size={180}/>,{identifierPrefix:'ref-tile-'+i})})); export const finalists=FINALIST_BOARD.map((s,i)=>({id:s.id,name:s.name,master:renderToStaticMarkup(<RefinementIcon spec={s} unmasked size={1024}/>,{identifierPrefix:'final-master-'+i}),tile:renderToStaticMarkup(<RefinementIcon spec={s} size={160}/>,{identifierPrefix:'final-tile-'+i})})); export const shapes=FINALIST_SHAPES.map((s,i)=>({id:s.id,name:s.name,master:renderToStaticMarkup(<RefinementIcon spec={finalistSpec(s.id,'club','black','subtle')} unmasked size={1024}/>,{identifierPrefix:'shape-master-'+i}),tile:renderToStaticMarkup(<RefinementIcon spec={finalistSpec(s.id,'club','black','subtle')} size={180}/>,{identifierPrefix:'shape-tile-'+i})}));` },
 });
 const Module = webRequire("node:module");
 const mod = new Module(join(web, "pass-vector-export.cjs"));
 mod.paths = Module._nodeModulePaths(web);
 mod._compile(vectors.outputFiles[0].text, join(web, "pass-vector-export.cjs"));
+const scaleVectors=await build({...options,platform:"node",format:"cjs",stdin:{resolveDir:web,loader:"tsx",contents:`
+  import {renderToStaticMarkup} from "react-dom/server";
+  import {CAPSULE_SCALES,CAPSULE_WAKES,selectedCapsule} from "./src/app/design/_studies/pass-lab/capsule-scale-study";
+  import {MaterialIcon} from "./src/app/design/_studies/pass-lab/material-art";
+  import {LaneArt} from "./src/app/design/_studies/pass-lab/lane-art";
+  export const samples=[false,true].flatMap(dark=>CAPSULE_SCALES.map(s=>({...s,dark,
+    tile:renderToStaticMarkup(<MaterialIcon concept={selectedCapsule()} objectScale={s.scale} dark={dark} size={236}/>,{identifierPrefix:s.id+dark+"tile"}),
+    master:renderToStaticMarkup(<MaterialIcon concept={selectedCapsule()} objectScale={s.scale} dark={dark} unmasked size={1024}/>,{identifierPrefix:s.id+dark+"master"}),
+    field:renderToStaticMarkup(<LaneArt index={4} progress={1} gain={2} material={selectedCapsule()} materialDark={dark} materialScale={s.scale/1.35} flow={false}/>,{identifierPrefix:s.id+dark+"field"})
+  })));
+  export const wakeSamples=[false,true].flatMap(dark=>[1.625,1.75].flatMap(scale=>CAPSULE_WAKES.map(w=>({...w,dark,scale,
+    tile:renderToStaticMarkup(<MaterialIcon concept={selectedCapsule(w.id,scale)} objectScale={scale} dark={dark} size={236}/>,{identifierPrefix:w.id+scale+dark+"tile"}),
+    master:renderToStaticMarkup(<MaterialIcon concept={selectedCapsule(w.id,scale)} objectScale={scale} dark={dark} unmasked size={1024}/>,{identifierPrefix:w.id+scale+dark+"master"})
+  }))));
+`}});
+const scaleMod=new Module(join(web,"capsule-scale-export.cjs"));
+scaleMod.paths=Module._nodeModulePaths(web);
+scaleMod._compile(scaleVectors.outputFiles[0].text,join(web,"capsule-scale-export.cjs"));
+for(const dark of [false,true]){
+  const theme=dark?"black":"white",ink=dark?"#eef2ef":"#282f2c",bg=dark?"#182025":"#eef1eb",tiles=[];
+  await mkdir(join(output,"capsule-scale-icons",theme),{recursive:true});
+  for(const [i,s]of scaleMod.exports.samples.filter(s=>s.dark===dark).entries()){
+    await writeFile(join(output,"capsule-scale-icons",theme,`${s.id}.svg`),s.master);
+    await writeFile(join(output,"capsule-scale-icons",theme,`${s.id}-field.svg`),s.field);
+    const x=24+i*270;
+    tiles.push(s.tile.replace("<svg ",`<svg x="${x}" y="125" `)+`<text x="${x}" y="393" font-size="16" font-weight="600">${s.name}</text><text x="${x}" y="419" font-size="11">${Math.round(40*s.scale)} × ${Math.round(58*s.scale)} capsule / gap ${108-40*s.scale}</text>`);
+  }
+  const boardWidth=24+scaleMod.exports.samples.filter(s=>s.dark===dark).length*270;
+  const board=`<svg xmlns="http://www.w3.org/2000/svg" width="${boardWidth}" height="475" viewBox="0 0 ${boardWidth} 475"><rect width="${boardWidth}" height="475" fill="${bg}"/><g font-family="Arial,sans-serif" fill="${ink}"><text x="24" y="35" font-size="11" letter-spacing="2">OVERTAEK / FIXED-CENTER CAPSULE SCALE STUDY</text><text x="24" y="77" font-size="30" font-weight="600">Same centers. More presence.</text><text x="24" y="103" font-size="11">POLISHED GLASS · 80% ALPHA · SOLAR GOLD / COOL PLATINUM · BOTH HEAD CENTERS FIXED</text>${tiles.join("")}<text x="24" y="456" font-size="10">CENTERS (74,145) / (182,93) · SCALE IS UNDER REVIEW · WAKES MAY CROP AT THE TILE EDGE</text></g></svg>`;
+  await writeFile(join(output,`capsule-scale-board-${theme}.svg`),board);
+  await sharp(Buffer.from(board.replace(/style="transform:translateY\(([^p]+)px\);opacity:([^;]+);[^"]*"/g,'transform="translate(0 $1)" opacity="$2"'))).png().toFile(join(output,`capsule-scale-board-${theme}.png`));
+  const wakeTiles=[];
+  await mkdir(join(output,"capsule-wake-icons",theme),{recursive:true});
+  for(const [i,s]of scaleMod.exports.wakeSamples.filter(s=>s.dark===dark).entries()){
+    await writeFile(join(output,"capsule-wake-icons",theme,`${s.scale*100}-${s.id}.svg`),s.master);
+    if(s.scale===1.625&&s.id==="four")await writeFile(join(output,`selected-capsule-${theme}.svg`),s.master);
+    const x=24+i%3*270,y=125+Math.floor(i/3)*300;
+    wakeTiles.push(s.tile.replace("<svg ",`<svg x="${x}" y="${y}" `)+`<text x="${x}" y="${y+260}" font-size="14" font-weight="600">${s.scale*100}% · ${s.name}</text>`);
+  }
+  const wakeBoard=`<svg xmlns="http://www.w3.org/2000/svg" width="830" height="760" viewBox="0 0 830 760"><rect width="830" height="760" fill="${bg}"/><g font-family="Arial,sans-serif" fill="${ink}"><text x="24" y="35" font-size="11" letter-spacing="2">OVERTAEK / AFTERIMAGE DENSITY EXPERIMENT</text><text x="24" y="77" font-size="30" font-weight="600">A larger capsule. More of the fade.</text><text x="24" y="103" font-size="11">POLISHED GLASS · 80% · SOLAR / COOL PLATINUM · HEAD CENTERS FIXED</text>${wakeTiles.join("")}<text x="24" y="745" font-size="10">ORIGINAL WAKE VS FOUR / FIVE CLOSER ECHOES · EXPERIMENT ONLY</text></g></svg>`;
+  await writeFile(join(output,`capsule-wake-board-${theme}.svg`),wakeBoard);
+  await sharp(Buffer.from(wakeBoard.replace(/style="transform:translateY\(([^p]+)px\);opacity:([^;]+);[^"]*"/g,'transform="translate(0 $1)" opacity="$2"'))).png().toFile(join(output,`capsule-wake-board-${theme}.png`));
+}
 const tiles = [];
 for (const [i, icon] of mod.exports.icons.entries()) {
   await writeFile(join(output, "icons", `${String(i + 1).padStart(2, "0")}-${icon.id}.svg`), icon.master);
@@ -97,7 +142,7 @@ for (const [i, icon] of mod.exports.shapes.entries()) {
   shapeTiles.push(icon.tile.replace("<svg ", `<svg x="${x}" y="110" `) + `<text x="${x}" y="320" font-size="13">${icon.name}</text>`);
 }
 await writeFile(join(output, "round-3-shapes.svg"), `<svg xmlns="http://www.w3.org/2000/svg" width="930" height="370" viewBox="0 0 930 370"><rect width="930" height="370" fill="#eef0e9"/><g fill="#282f2c" font-family="Arial,sans-serif"><text x="35" y="35" font-size="11" letter-spacing="2">OVERTAEK / AFTERIMAGE / ROUND 3</text><text x="35" y="77" font-size="27">One idea. Four characters.</text>${shapeTiles.join("")}<text x="35" y="353" font-size="10">SAME PALETTE · SAME BACKGROUND · SAME WAKE RHYTHM</text></g></svg>`);
-console.log(`Portable review, original/refinement boards and Round 3 color/shape masters written to ${output}`);
+
 
 await mkdir(join(output, "wake-study-icons"), {recursive:true});
 const wakes = [];
@@ -108,8 +153,6 @@ for (const [i, icon] of mod.exports.wakes.entries()) {
 }
 await writeFile(join(output,"wake-study-board.svg"), `<svg xmlns="http://www.w3.org/2000/svg" width="900" height="450" viewBox="0 0 900 450"><rect width="900" height="450" fill="#eef0e9"/><g font-family="Arial,sans-serif" fill="#282f2c"><text x="30" y="40" font-size="12">OVERTAEK / FOLLOWUP / SHARED TRAIL ENDPOINT</text><text x="30" y="80" font-size="27">A longer history. A clearer pass?</text>${wakes.join("")}<text x="30" y="432" font-size="11">FOUR / SIX / EIGHT GOLD ECHOES · SHARED START (SIX) IS THE SELECTED APP ICON</text></g></svg>`);
 
-const nextRequire=createRequire(webRequire.resolve("next/package.json"));
-const sharp=nextRequire("sharp");
 for(const dark of [false,true]) {
   const theme=dark?"black":"white";
   await mkdir(join(output,"material-icons",theme),{recursive:true});
@@ -135,4 +178,55 @@ for(const dark of [false,true]) {
   await writeFile(join(output,`material-fields-${theme}.svg`),svg);
   const raster=svg.replace(/style="transform:translateY\(([^p]+)px\);opacity:([^;]+);[^"]*"/g,'transform="translate(0 $1)" opacity="$2"');
   await sharp(Buffer.from(raster)).png().toFile(join(output,`material-fields-${theme}.png`));
+}
+
+for(const dark of [false,true]) {
+  const theme=dark?"black":"white";
+  await mkdir(join(output,"glass-icons",theme),{recursive:true});
+  const samples=mod.exports.glasses.filter(g=>g.dark===dark),tiles=[];
+  for(const [i,glass] of samples.entries()) {
+    for(const [suffix,art] of [["",glass.master],["-field",glass.field],["-overlap",glass.overlap]]) await writeFile(join(output,"glass-icons",theme,`${glass.id}${suffix}.svg`),art);
+    const x=30+(i%4)*265,y=125+Math.floor(i/4)*395;
+    tiles.push(glass.tile.replace("<svg ",`<svg x="${x}" y="${y}" `)+`<text x="${x}" y="${y+227}" font-size="16" font-weight="600">${glass.name}</text><text x="${x}" y="${y+249}" font-size="10" letter-spacing="1">${Math.round(glass.opacity*100)}% UNIFORM TINT</text>`+glass.overlap.replace("<svg ",`<svg x="${x}" y="${y+262}" `));
+  }
+  const ink=dark?"#eaf0ee":"#282f2c",bg=dark?"#182025":"#eef1eb";
+  const board=`<svg xmlns="http://www.w3.org/2000/svg" width="1090" height="925" viewBox="0 0 1090 925"><rect width="1090" height="925" fill="${bg}"/><g font-family="Arial,sans-serif" fill="${ink}"><text x="30" y="38" font-size="11" letter-spacing="2">OVERTAEK / ROUND 6 / UNIFORM TINTED GLASS</text><text x="30" y="84" font-size="31" font-weight="600">Smooth faces. Overlapping color.</text>${tiles.join("")}<text x="30" y="908" font-size="10">EIGHT NEW GLASS STUDIES / CAPSULES AND LOOPS / SMALL PAIRS SHOW ALPHA OVERLAP / CONCEPTS ONLY</text></g></svg>`;
+  await writeFile(join(output,`glass-board-${theme}.svg`),board);
+  const raster=board.replace(/style="transform:translateY\(([^p]+)px\);opacity:([^;]+);[^"]*"/g,'transform="translate(0 $1)" opacity="$2"');
+  await sharp(Buffer.from(raster)).png().toFile(join(output,`glass-board-${theme}.png`));
+  const figures=samples.map((g,i)=>{const x=24+(i%4)*268,y=105+Math.floor(i/4)*380;return `<text x="${x}" y="${y-13}" font-size="15" font-weight="600">${g.name}</text>`+g.field.replace("<svg ",`<svg x="${x}" y="${y}" width="238" height="330" `);});
+  const field=`<svg xmlns="http://www.w3.org/2000/svg" width="1100" height="865" viewBox="0 0 1100 865"><rect width="1100" height="865" fill="${bg}"/><g font-family="Arial,sans-serif" fill="${ink}"><text x="24" y="32" font-size="11" letter-spacing="2">OVERTAEK / UNIFORM GLASS IN THE FIELD</text><text x="24" y="66" font-size="27" font-weight="600">Same movement. One smooth material.</text>${figures.join("")}<text x="24" y="850" font-size="10">FICTIONAL +2KM RUN / FIXED LANES / ±3KM / PAST YOU IS UNRANKED / PRESENTATION STUDY</text></g></svg>`;
+  await writeFile(join(output,`glass-fields-${theme}.svg`),field);
+  await sharp(Buffer.from(field.replace(/style="transform:translateY\(([^p]+)px\);opacity:([^;]+);[^"]*"/g,'transform="translate(0 $1)" opacity="$2"'))).png().toFile(join(output,`glass-fields-${theme}.png`));
+}
+
+console.log(`Portable review, icon/field boards and study SVG masters written to ${output}`);
+
+for(const dark of [false,true]) {
+ const theme=dark?"black":"white",bg=dark?"#182025":"#eef1eb",ink=dark?"#eaf0ee":"#282f2c";
+ await mkdir(join(output,"finish-icons",theme),{recursive:true});
+ const samples=mod.exports.finishes.filter(f=>f.dark===dark),tiles=[];
+ for(const [i,f] of samples.entries()) {
+  await writeFile(join(output,"finish-icons",theme,`${f.id}.svg`),f.master);
+  if(f.id==="bevel-pill")await writeFile(join(output,`selected-finish-${theme}.svg`),f.master);
+  await writeFile(join(output,"finish-icons",theme,`${f.id}-field.svg`),f.field);
+  const x=30+i%2*290,y=125+Math.floor(i/2)*280;
+  tiles.push(f.tile.replace("<svg ",`<svg x="${x}" y="${y}" `)+`<text x="${x}" y="${y+228}" font-size="14" font-weight="600">${f.name}</text>`);
+ }
+ const boardHeight=140+Math.ceil(samples.length/2)*280;
+ const board=`<svg xmlns="http://www.w3.org/2000/svg" width="600" height="${boardHeight}" viewBox="0 0 600 ${boardHeight}"><rect width="600" height="${boardHeight}" fill="${bg}"/><g font-family="Arial,sans-serif" fill="${ink}"><text x="30" y="35" font-size="10" letter-spacing="1.5">OVERTAEK / FOCUSED SHAPE AND MATERIAL REVIEW</text><text x="30" y="78" font-size="26" font-weight="600">One capsule. Four finalists.</text><text x="30" y="102" font-size="11">SELECTED: POLISHED GLASS · SOLAR / COOL PLATINUM · 80% · STANDARD CAPSULE: 40 × 58</text>${tiles.join("")}<text x="30" y="${boardHeight-16}" font-size="9">CAPSULE LOCKED · 26–90% GLASS · 10 GOLDS × 10 SILVERS IN THE REVIEW</text></g></svg>`;
+ await writeFile(join(output,`finish-board-${theme}.svg`),board);
+ await sharp(Buffer.from(board.replace(/style="transform:translateY\(([^p]+)px\);opacity:([^;]+);[^"]*"/g,'transform="translate(0 $1)" opacity="$2"'))).png().toFile(join(output,`finish-board-${theme}.png`));
+ await writeFile(join(output,`transmission-${theme}.svg`),mod.exports.transmission.find(t=>t.dark===dark).svg);
+}
+
+for(const dark of [false,true]) {
+ const theme=dark?"black":"white",bg=dark?"#182025":"#eef1eb",ink=dark?"#eaf0ee":"#282f2c";
+ const tiles=mod.exports.colorSamples.filter(c=>c.dark===dark).map((c,i)=>{
+  const x=24+i%5*180,y=125+Math.floor(i/5)*220+(i>=10?50:0);
+  return c.tile.replace("<svg ",`<svg x="${x}" y="${y}" `)+`<rect x="${x}" y="${y+155}" width="12" height="12" rx="3" fill="${c.color.hex}"/><text x="${x+20}" y="${y+166}" font-size="11" font-weight="600">${c.color.name}</text><text x="${x}" y="${y+185}" font-size="10">${c.color.hex}</text>`;
+ });
+ const svg=`<svg xmlns="http://www.w3.org/2000/svg" width="930" height="1070" viewBox="0 0 930 1070"><rect width="930" height="1070" fill="${bg}"/><g font-family="Arial,sans-serif" fill="${ink}"><text x="24" y="35" font-size="11" letter-spacing="1.5">OVERTAEK / CAPSULE COLOR LAB</text><text x="24" y="75" font-size="28" font-weight="600">Ten golds. Ten silvers and platinums.</text><text x="24" y="108" font-size="10">GOLD VARIATIONS / RIVAL COLOR HELD AT CURRENT SILVER</text><text x="24" y="590" font-size="10">SILVER VARIATIONS / LEADING COLOR HELD AT RICH GOLD</text>${tiles.join("")}<text x="24" y="1050" font-size="10">UNIFORM GLASS AT 50% / COLORS CHANGE INDEPENDENTLY / ALL FOUR FINISHES IN THE INTERACTIVE REVIEW</text></g></svg>`;
+ await writeFile(join(output,`capsule-colors-${theme}.svg`),svg);
+ await sharp(Buffer.from(svg.replace(/style="transform:translateY\(([^p]+)px\);opacity:([^;]+);[^"]*"/g,'transform="translate(0 $1)" opacity="$2"'))).png().toFile(join(output,`capsule-colors-${theme}.png`));
 }

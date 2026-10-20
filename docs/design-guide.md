@@ -66,3 +66,15 @@ The October 18 decision settles **hollow circles on white, no lane rules in the 
 The finalized production icon is **rich gold (#dfad3c) / silver (#9fa5af)** on white with hollow circles and the subtly slower rival. The production mark is now **Shared Start**: six gold echoes extending to the endpoint of the silver racer’s four-echo wake. Both circles stay hollow. The canonical master and platform packaging are documented in `assets/brand/README.md`; the other wake treatments remain exploration history.
 
 The followup [material objects study](design-studies/the-pass/MATERIALS.md) explores eight finishes and five silhouettes on the bold 135% geometry, paired with matching animated fields. It is a presentation study stacked on the background/scale comparisons; Shared Start remains the production icon and no material has been selected for rollout.
+
+The [Round 6 glass exploration](design-studies/the-pass/GLASS.md) narrows the new forms to capsules and open loops and follows the supplied Photos reference through uniform tinted faces, polished edges and alpha overlap. Eight variations retain Amber Capsule, Glazed Ceramic and Frosted Pebble as comparison options. This remains a study; production Shared Start assets are unchanged.
+
+The focused followup at `/design/pass?view=finishes` compares standard capsule and fine loop across uniform glass, original Amber tinted glass, satin glass and fired glaze. Uniform glass defaults to matched 50% alpha for gold/silver, with 38% and 64% presets on a fixed palette. Earlier favorites and study rounds remain available; this does not change production icon selection.
+
+The identity exploration now selects the standard 40×58 capsule as its form. The active color lab retains all four finishes, offers 26/38/50% uniform glass, excludes wakes from live heads, and provides 10 independent gold and silver/platinum choices each. Material and color selection remain open; production app-icon packaging follows that final selection.
+
+The Pass capsule study (`?view=finishes`, October 19) adds three Photos-inspired perimeter-lighting options alongside its four existing finishes. All use the satin wake and curved head exclusion in icon and lane previews. Materials and palette remain exploratory; see `docs/design-studies/the-pass/GLASS.md`.
+
+The active finalist comparison is now Satin glass, Fired glaze, Rolled glass and Polished glass. Rolled/Polished face opacity spans 26%, 38%, 50%, 60%, 70%, 80% and 90%; their shared satin wake is independent of face opacity.
+
+Selected material: **Polished glass at 80% alpha**, Solar Gold `#ffc400` and Cool Platinum `#c9d6e3`, with capsule geometry and the shared satin wake. A further centered size study precedes production rollout.

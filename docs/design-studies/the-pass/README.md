@@ -129,3 +129,19 @@ The user selected **Shared Start** (six gold echoes) for the application. It rep
 ## Round 5: material objects
 
 [Eight new shape/material concepts](MATERIALS.md) use the bold 135% direction: glass lens, tinted capsule, frosted pebble, glass ring, anodized alloy, chromatic foil, glazed ceramic, and opal drop. Each pairs an icon with a matching lane treatment using one renderer. Open `review.html?view=materials` for black/white comparisons, shared light inspection, SVG export and pass/flow controls. Production Shared Start assets remain unchanged.
+
+## Round 6: uniform tinted glass
+
+The [focused glass exploration](GLASS.md) adds eight variations using capsules and open loops. Faces are a single even tint; overlap creates the darker areas and only thin boundaries catch light. Amber Capsule, Glazed Ceramic and Frosted Pebble remain available for comparison. Open `review.html?view=glass` for overlap inspection, white/black views, small-size samples, SVG exports and matching animated lane previews.
+
+The [focused shape/finish comparison](GLASS.md#focused-comparison-shape--finish) at `review.html?view=finishes` pairs capsule and fine loop with uniform glass, original Amber tinted glass, satin glass, and fired glaze. Uniform opacity is simplified to 38/50/64%, defaulting to equal 50% for gold and silver. Original favorites and all prior study rounds remain available.
+
+The latest active review locks the **standard capsule** and keeps all four finishes. Uniform opacity is now **26/38/50%**, and 10 independent golds plus 10 silver/platinum tones create 100 color pairings. Wakes are clipped below the capsule instead of showing through its face. Open `review.html?view=finishes`; palette boards are `capsule-colors-white.png` / `capsule-colors-black.png`.
+
+October 19 refinement: the capsule color lab now preserves all four finishes and adds Rolled glass, Polished glass and Liquid edge. Every material shares the satin wake and a curved silhouette exclusion mask. See [GLASS.md](GLASS.md) for details and updated seven-finish boards.
+
+Latest shortlist: the active review and finish boards now compare only Satin glass, Fired glaze, Rolled glass and Polished glass. Rolled/Polished opacity options are 26%, 38%, 50%, 60%, 70%, 80% and 90%.
+
+Material is selected: Polished glass at 80%, Solar Gold and Cool Platinum. The followup [fixed-center size study](CAPSULE-SCALE.md) is at `review.html?view=capsule-scale`, comparing 135%, 150%, 175% and 200% without moving either capsule center.
+
+The size study now adds 162.5% and an afterimage experiment: Original wake, 4 fading echoes, or 5 fading echoes. Compact profiles keep the final echo inside the icon at every size; the original remains available. See `capsule-wake-board-white.png` / `capsule-wake-board-black.png` for comparisons at 162.5% and 175%.

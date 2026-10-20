@@ -6,7 +6,7 @@ import type { MaterialConcept } from "./material-concepts";
 import { RefinedRacer } from "./refinement-art";
 import { REFINEMENTS, TWIN_REFINEMENT, refinementColors, type RefinedSpec } from "./refinements";
 
-export function LaneArt({ index, progress, gain, ghost = true, labels = true, refinement, flow = true, material, materialDark = false, materialLight = 0 }: { index: number; progress: number; gain: number; ghost?: boolean; labels?: boolean; refinement?: RefinedSpec; flow?: boolean; material?: MaterialConcept; materialDark?: boolean; materialLight?: number }) {
+export function LaneArt({ index, progress, gain, ghost = true, labels = true, refinement, flow = true, material, materialDark = false, materialLight = 0, materialScale = 1 }: { index: number; progress: number; gain: number; ghost?: boolean; labels?: boolean; refinement?: RefinedSpec; flow?: boolean; material?: MaterialConcept; materialDark?: boolean; materialLight?: number; materialScale?: number }) {
   const uid = useId().replace(/:/g, "");
   const lane = LANES[index] ?? LANES[0];
   const frame = laneFrame(progress, gain);
@@ -51,8 +51,11 @@ export function LaneArt({ index, progress, gain, ghost = true, labels = true, re
         const color = you ? "#f1c75b" : mode === "photo" ? "#a6b3aa" : "#819486";
         const edge = a.value > frame.max ? "↑" : a.value < frame.min ? "↓" : null;
         const after = a.value < frame.value && a.value > 12.4;
+        const headHalf=material?(you?17:14)*materialScale/23*29:0;
+        const labelAbove=material&&materialScale>1?Math.max(35,headHalf+20):(you && mode==="ember"?40:35);
+        const labelBelow=material&&materialScale>1?Math.max(22,headHalf+7):22;
         return <g key={a.id}>
-          {material && <MaterialRacer concept={material} x={xx} y={yy} radius={you ? 17 : 14} fast={you} dark={materialDark} light={materialLight} flow={flow && !edge} edge={edge} label={a.initials} />}
+          {material && <MaterialRacer concept={material} x={xx} y={yy} radius={(you ? 17 : 14)*materialScale} fast={you} dark={materialDark} light={materialLight} flow={flow && !edge} edge={edge} label={a.initials} />}
           {!material && treatment && <RefinedRacer spec={treatment} x={xx} y={yy} radius={you ? 17 : 14} fast={you} flow={flow && !edge} edge={edge} initials={treatment.ember && you ? undefined : a.initials} />}
           <g display={material || treatment ? "none" : undefined}>
           {(mode === "trail" || mode === "ember" || mode === "photo") && <path d={`M${xx} ${yy + 8}v${you ? 44 + energy * 35 : 40}`} stroke={color} strokeWidth={you ? 5 : 3} opacity={you ? .65 : .3} strokeLinecap="round" />}
@@ -64,7 +67,7 @@ export function LaneArt({ index, progress, gain, ghost = true, labels = true, re
           {!(mode === "ember" && you && !edge) && mode !== "toy" && <text x={xx} y={yy + 3} textAnchor="middle" fontSize={you ? 8 : 8.5} fontWeight="700" fill={you ? "#282f2c" : mode === "ledger" || dark ? "#fafaf7" : "#616c63"}>{edge || (you ? "YOU" : a.initials)}</text>}
           {mode === "toy" && edge && <text x={xx} y={yy + 16} textAnchor="middle" fontSize="9" fill="#282f2c">{edge}</text>}
           </g>
-          {labels && <><rect x={xx - 22} y={edge === "↑" ? yy + 22 : yy - (you && mode === "ember" ? 40 : 35)} width="44" height="17" rx="8" fill={background ?? (dark ? "#282f2c" : "#fafaf7")} /><text x={xx} y={edge === "↑" ? yy + 34 : yy - (you && mode === "ember" ? 28 : 23)} textAnchor="middle" fontSize="10" fontWeight="700" fill={ink}>{edge ? `${edge} ` : ""}{a.value.toFixed(1)}</text></>}
+          {labels && <><rect x={xx - 22} y={edge === "↑" ? yy + labelBelow : yy - labelAbove} width="44" height="17" rx="8" fill={background ?? (dark ? "#282f2c" : "#fafaf7")} /><text x={xx} y={edge === "↑" ? yy + labelBelow + 12 : yy - labelAbove + 12} textAnchor="middle" fontSize="10" fontWeight="700" fill={ink}>{edge ? `${edge} ` : ""}{a.value.toFixed(1)}</text></>}
           {after && crossing && Math.abs(crossing.value - a.value) < .01 && <circle cx={xx} cy={yy} r={20 + Math.max(0, frame.value - a.value) * 45} fill="none" stroke="#b39a51" strokeWidth="1.3" opacity={1 - Math.max(0, frame.value - a.value) * 4} />}
         </g>;
       })}
@@ -76,14 +79,14 @@ export function LaneArt({ index, progress, gain, ghost = true, labels = true, re
   </svg>;
 }
 
-export function LanePhone({ index, progress, gain, ghost = true, refinement, flow = true, material, materialDark = false, materialLight = 0 }: { index: number; progress: number; gain: number; ghost?: boolean; refinement?: RefinedSpec; flow?: boolean; material?: MaterialConcept; materialDark?: boolean; materialLight?: number }) {
+export function LanePhone({ index, progress, gain, ghost = true, refinement, flow = true, material, materialDark = false, materialLight = 0, materialScale = 1 }: { index: number; progress: number; gain: number; ghost?: boolean; refinement?: RefinedSpec; flow?: boolean; material?: MaterialConcept; materialDark?: boolean; materialLight?: number; materialScale?: number }) {
   const frame = laneFrame(progress, gain);
   return <div className="pass-phone">
     <div className="pass-phone-status"><b>9:41</b><span>▮▮▮ &nbsp; ▰</span></div>
     <div className="pass-phone-header"><span className="pass-wordmark">overtaek</span><span className="pass-avatar">JL</span></div>
     <div className="pass-phone-title"><div><span className="pass-eyebrow">YOUR WEEKLY FIELD</span><h3>Good company.<br />A little competition.</h3></div><span className="pass-sport">↗ Run</span></div>
     <div className="pass-phone-stats"><div><strong>{frame.value.toFixed(1)}<small> km</small></strong><span>Your distance</span></div><div><strong>#{frame.rank}<small> / 5</small></strong><span>{frame.passes ? `↑ ${frame.passes} ${frame.passes === 1 ? "place" : "places"}` : "In your field"}</span></div></div>
-    <LaneArt index={index} progress={progress} gain={gain} ghost={ghost} refinement={refinement} flow={flow} material={material} materialDark={materialDark} materialLight={materialLight} />
+    <LaneArt index={index} progress={progress} gain={gain} ghost={ghost} refinement={refinement} flow={flow} material={material} materialDark={materialDark} materialLight={materialLight} materialScale={materialScale} />
     <div className="pass-phone-note">{frame.passes ? `Nice move. You passed ${frame.passes === 1 ? "Mara" : "Mara and Jules"}.` : `${(13.8 - frame.value).toFixed(1)} km to Mara. Make your next move.`}</div>
     <div className="pass-phone-nav"><span>⌂<small>Home</small></span><span className="is-current">Ⅱ<small>Compete</small></span><span>◎<small>Crew</small></span><span>○<small>Athlete</small></span></div>
   </div>;
