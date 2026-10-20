@@ -101,9 +101,14 @@ export function ArenaLanes({
   useLayoutEffect(() => {
     const el = host.current;
     if (!el) return;
-    const observer = new ResizeObserver(() => {
+    const measure = () => {
       if (el.clientWidth > 0 && el.clientHeight > 0) setSize({ width: el.clientWidth, height: el.clientHeight });
-    });
+    };
+    // Measure before the first painted frame. Waiting for the first observer
+    // notification lets the SVG render once at its fallback 360px width, then
+    // visibly stretch and recenter as soon as the real container size arrives.
+    measure();
+    const observer = new ResizeObserver(measure);
     observer.observe(el);
     return () => observer.disconnect();
   }, []);
