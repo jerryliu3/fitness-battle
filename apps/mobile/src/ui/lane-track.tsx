@@ -127,8 +127,9 @@ export function LaneTrack({
         onPress={() => { void playCue("selection"); setExploring((value) => !value); }}
         style={{ minHeight: 44, justifyContent: "center", paddingHorizontal: 16 }}
       >
-        <Text style={{ color: "#282f2c", fontWeight: "600" }}>{exploring ? "Done panning · drag vertically to explore" : "Explore lanes · swipe across peers"}</Text>
+        <Text style={{ color: "#282f2c", fontWeight: "600" }}>{exploring ? "← Back" : "Explore lanes · swipe across peers"}</Text>
       </Pressable>
+      {exploring && <Text style={{ color: "#616c63", padding: 12 }}>3D pursuit · Coming soon</Text>}
       <ScrollView
         horizontal
         ref={scroll}
@@ -289,7 +290,9 @@ export function LaneTrack({
                       opacity={1 - effect.ripple}
                     />
                   ) : null}
-                  <G clipPath={`url(#${clipId}-field)`}><PolishedRacer x={xx} y={yy} you={l.you} time={edge ? undefined : wakeTime}/></G>
+                  {edge ? <Circle cx={xx} cy={yy} r={18} fill="white" stroke="#616c63" strokeDasharray="3 3"/> :
+                    <PolishedRacer x={xx} y={yy} you={l.you} wakeBottom={maxTailY-yy} gold={!ordered.some((peer) => (overtakeFrame?.laneValues[peer.id] ?? peer.values[index]) > value)} time={wakeTime}/>}
+
                   <Rect x={xx - 24} y={yy - headHalf - 4} width={48} height={headHalf * 2 + 8} rx={24} fill="transparent"/>
                   <SvgText
                     x={xx}
@@ -321,9 +324,7 @@ export function LaneTrack({
                     fontSize={10}
                     fill={l.you ? "#f1c75b" : "#282f2c"}
                   >
-                    {edge ? `${value.toFixed(1)} ${unit}` : l.you && value === 0
-                      ? "joined"
-                      : formatActivityAge(l.lastUpdated)}
+                    {`${value - (overtakeFrame?.youValue ?? ordered.find((peer) => peer.you)?.values[index] ?? 0) > 0 ? "+" : ""}${(value - (overtakeFrame?.youValue ?? ordered.find((peer) => peer.you)?.values[index] ?? 0)).toFixed(1)} ${unit}`}
                   </SvgText>
                 </G>
               );

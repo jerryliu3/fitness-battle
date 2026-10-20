@@ -32,6 +32,7 @@ import { playCue } from "../../src/lib/haptics";
 import { useScoreTrackLens } from "../../src/lib/score-track-lens";
 import { Pressable, ScrollView, Switch, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { RoundTakeover } from "../../src/features/round-takeover";
 import { CompetitionSummary } from "../../src/features/competition-summary";
 import { useCrewApi } from "../../src/features/crew";
 import { SleepPanel } from "../../src/features/sleep-panel";
@@ -74,7 +75,7 @@ export default function ArenaScreen() {
   const [joinBusy, setJoinBusy] = useState(false);
   const [joinError, setJoinError] = useState("");
   const [track, setTrack] = useScoreTrackLens();
-  const [mode, setMode] = useState("2D lanes");
+  const [mode, setMode] = useState("Lanes");
   const [center, setCenter] = useState<number | null>(null);
   const [span, setSpan] = useState<number | null>(null);
   const [ghost, setGhost] = useState(true);
@@ -233,11 +234,12 @@ export default function ArenaScreen() {
     arena.lanes,
     ghost,
   );
-  const selected =
-    selectedId == null
-      ? null
-      : (arena.lanes.find((l) => l.id === selectedId && (ghost || !l.ghost)) ??
-        null);
+  const selectAthlete = (id: string) => {
+    const lane = arena.lanes.find((item) => item.id === id);
+    if (!lane) return;
+    setSelectedId(id);
+    setCenter(lane.values[2]);
+  };
   const model: ArenaSceneMessage = {
     type: "arena-view",
     lanes,
@@ -354,7 +356,7 @@ export default function ArenaScreen() {
             />
           </View>
         ) : null}
-        <WeekRecap state={state} dispatch={dispatch} />
+        <RoundTakeover state={state} dispatch={dispatch} />
         {returnGain > 0 && !fieldNotice ? (
           <View style={f.card}>
             <Text style={f.h2}>
@@ -377,7 +379,7 @@ export default function ArenaScreen() {
           <View style={f.card}>
             <View style={f.row}>
               <View>
-                <Text style={f.kicker}>{arena.sportName} · This week</Text>
+                <Text style={f.h2}>{arena.sportName}</Text>
                 <Text style={f.massive}>
                   {displayTotal.toFixed(1)}{" "}
                   <Text style={f.copy}>{arena.unit}</Text>
@@ -393,17 +395,6 @@ export default function ArenaScreen() {
                   {overtakeStatus.headline}
                   {overtakeStatus.detail ? ` · ${overtakeStatus.detail}` : ""}
                 </Text>
-                {!overtakeFrame ? (
-                  <FocusButton
-                    label="↻ Replay"
-                    secondary
-                    onPress={() => {
-                      setCenter(null);
-                      setOvertakeProgress(0);
-                      setReplayEpoch((n) => n + 1);
-                    }}
-                  />
-                ) : null}
               </View>
             ) : null}
             <View style={f.chipRow}>
@@ -427,7 +418,7 @@ export default function ArenaScreen() {
               ))}
             </View>
             <View style={f.chipRow}>
-              {["2D lanes", "3D pursuit", "Standings"].map((m) => (
+              {["Lanes", "Standings"].map((m) => (
                 <Pressable
                   key={m}
                   accessibilityRole="tab"
@@ -463,7 +454,7 @@ export default function ArenaScreen() {
                     <Pressable
                       key={l.id}
                       accessibilityRole="button"
-                      onPress={() => setSelectedId(l.id)}
+                      onPress={() => selectAthlete(l.id)}
                       style={f.row}
                     >
                       <Text style={f.small}>
@@ -477,7 +468,7 @@ export default function ArenaScreen() {
                         {l.you ? selfLaneLabel(l.name) : l.name}
                       </Text>
                       <Text style={f.rowTitle}>
-                        {l.values[2].toFixed(1)} {arena.unit}
+                        {l.values[2] - total > 0 ? "+" : ""}{(l.values[2] - total).toFixed(1)} {arena.unit}
                       </Text>
                     </Pressable>
                   ))}
@@ -486,7 +477,7 @@ export default function ArenaScreen() {
               <Arena3D
                 model={model}
                 onPan={(v) => setCenter(Math.max(0, v))}
-                onSelect={(id) => setSelectedId(id)}
+                onSelect={selectAthlete}
                 onUnavailable={() => setFailed(true)}
               />
             ) : (
@@ -495,33 +486,13 @@ export default function ArenaScreen() {
                 unit={arena.unit}
                 showGhost={ghost}
                 index={2}
-                onSelect={(lane) => setSelectedId(lane.id)}
+                onSelect={(lane) => selectAthlete(lane.id)}
                 view={view}
                 onPan={(v) => setCenter(Math.max(0, v))}
                 overtakeFrame={overtakeFrame}
                 overtakePlan={overtakePlan}
               />
             )}
-            {selected ? (
-              <View style={f.card} accessibilityLiveRegion="polite">
-                <View style={f.row}>
-                  <Text style={[f.rowTitle, f.grow]}>{selected.name}</Text>
-                  <FocusButton
-                    label="Close athlete details"
-                    secondary
-                    onPress={() => setSelectedId(null)}
-                  />
-                </View>
-                <Text style={f.copy}>
-                  {selected.values[2].toFixed(1)} {arena.unit}
-                  {selected.ghost
-                    ? " · past you, comparison only"
-                    : me && !selected.you
-                      ? ` · ${Math.abs(selected.values[2] - me.values[2]).toFixed(1)} ${arena.unit} ${selected.values[2] >= me.values[2] ? "ahead" : "behind"}`
-                      : " · you"}
-                </Text>
-              </View>
-            ) : null}
             <ZoomControl
               value={view.span}
               maximum={arena.unit === "pts" ? 100 : 40}
@@ -721,61 +692,5 @@ export default function ArenaScreen() {
         )}
       </FocusSheet>
     </SafeAreaView>
-  );
-}
-
-function WeekRecap({
-  state,
-  dispatch,
-}: {
-  state: CompeteState;
-  dispatch: (action: Action) => void;
-}) {
-  const reveals = primaryRevealResults(
-    state.periodResults,
-    undefined,
-    state.primary,
-  );
-  if (reveals.length === 0) return null;
-  const result = reveals[0]!;
-  const renewal = sportRenewal(state, result.sport);
-  return (
-    <View style={f.card}>
-      <Text style={f.h2}>
-        {sportById(result.sport).name} · Place {result.place} of{" "}
-        {result.fieldSize}
-      </Text>
-      <Text style={f.copy}>
-        {result.effort.toFixed(1)} effort · effort score {result.eloBefore} →{" "}
-        {result.eloAfter}
-        {result.frozen ? " · frozen" : ""}
-      </Text>
-      {renewal.enrolled && renewal.renews ? (
-        <FocusButton
-          label="Stop after this week"
-          secondary
-          onPress={() =>
-            dispatch({ type: "schedule-leave", sport: result.sport })
-          }
-        />
-      ) : null}
-      {renewal.enrolled && !renewal.renews ? (
-        <FocusButton
-          label="Keep playing next week"
-          secondary
-          onPress={() =>
-            dispatch({ type: "resume-renewal", sport: result.sport })
-          }
-        />
-      ) : null}
-      <FocusButton
-        label={renewal.enrolled ? "Continue" : "Play this week"}
-        onPress={() => {
-          if (!renewal.enrolled)
-            dispatch({ type: "opt-in", sport: result.sport });
-          dispatch({ type: "acknowledge-reveal", revealIds: [result.id] });
-        }}
-      />
-    </View>
   );
 }

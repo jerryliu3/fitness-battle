@@ -34,6 +34,7 @@ import Svg, {
   Stop,
   Text as SvgText,
 } from "react-native-svg";
+import { HomeActivityActions } from "../../src/features/home-activity-actions";
 import { Journey } from "../../src/features/journey";
 import { useCompeteStore } from "../../src/lib/compete-store";
 import { f } from "../../src/ui/focus";
@@ -496,8 +497,10 @@ export default function Home() {
             </View>
           </View>
         </View>
+        <HomeActivityActions onSuggestion={() => setExpanded("suggestion")}/>
         <View style={s.homeJourneyLayer} pointerEvents="box-none">
           <Journey
+          today={dayKey(now, APP_TIMEZONE)}
             activities={counted}
             units={units}
             onToday={() => {
