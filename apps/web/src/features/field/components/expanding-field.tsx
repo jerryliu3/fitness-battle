@@ -21,13 +21,15 @@ export function ExpandingField({ open, onClose, children }: {
   const returnFocus = useRef<HTMLElement | SVGElement | null>(null);
   const interruptedBounds = useRef<DOMRect | null>(null);
   const animation = useRef<Animation | null>(null);
+  const contentAnimation = useRef<Animation | null>(null);
+  const contentTransform = useRef<string | null>(null);
 
   useLayoutEffect(() => {
     const node = document.createElement("div");
     node.className = "focus-field-content";
     slot.current?.appendChild(node);
     setMount(node);
-    return () => { animation.current?.cancel(); node.remove(); };
+    return () => { animation.current?.cancel(); contentAnimation.current?.cancel(); node.remove(); };
   }, []);
 
   useLayoutEffect(() => {
@@ -51,19 +53,38 @@ export function ExpandingField({ open, onClose, children }: {
     const finish = () => {
       if (open) return;
       slot.current?.appendChild(mount);
+      mount.style.cssText = "";
       if (slot.current) slot.current.style.height = "";
       setPresent(false);
     };
     const interrupted = interruptedBounds.current;
     interruptedBounds.current = null;
     animation.current?.cancel();
-    // Geometry, rather than scale, preserves readable labels and usable hit targets.
+    if (!source) return;
+    // Freeze layout for the whole round trip. Only a uniform transform moves
+    // the live content; resizing the viewport must not reflow every marker.
+    mount.style.position = "absolute";
+    mount.style.left = "0";
+    mount.style.top = "0";
+    mount.style.width = `${source.width}px`;
+    mount.style.height = `${source.height}px`;
+    mount.style.transformOrigin = "0 0";
+    const scale = Math.max(1, Math.min(1.2, (window.innerWidth - 24) / source.width, (window.innerHeight - 72) / source.height));
+    const landing = `translate(${(window.innerWidth - source.width * scale) / 2}px, ${Math.max(56, (window.innerHeight - source.height * scale) / 2)}px) scale(${scale})`;
+    const home = `translate(${(destination ?? source).left}px, ${(destination ?? source).top}px) scale(1)`;
+    const fromTransform = contentTransform.current ?? (open ? home : landing);
+    contentTransform.current = null;
+    contentAnimation.current?.cancel();
+    const timing = { duration: reduce ? 0 : 420, easing: "cubic-bezier(.22,1,.36,1)", fill: "both" as const };
+    contentAnimation.current = mount.animate([{ transform: fromTransform }, { transform: open ? landing : home }], timing);
     const frames = open && source ? [{ clipPath: clip(interrupted ?? source) }, { clipPath: full }] : visible ? [{ clipPath: interrupted ? clip(interrupted) : full }, { clipPath: clip(destination) }] : [{ opacity: 1 }, { opacity: 0 }];
-    const player = host.animate(frames, { duration: reduce ? 0 : 340, easing: "cubic-bezier(.22,1,.36,1)", fill: "both" });
+    const player = host.animate(frames, timing);
     animation.current = player;
     player.onfinish = finish;
     return () => {
       if (player.playState === "running") interruptedBounds.current = host.getBoundingClientRect();
+      contentTransform.current = mount.parentElement === host ? getComputedStyle(mount).transform : null;
+      contentAnimation.current?.cancel();
       player.cancel();
     };
   }, [open, present, mount, reduce, dialog]);
@@ -104,6 +125,7 @@ export function ExpandingField({ open, onClose, children }: {
           }}
           onCloseAutoFocus={(event) => { event.preventDefault(); returnFocus.current?.focus({ preventScroll: true }); }}>
           <Dialog.Title className="fb-sr-only">Explore athlete lanes</Dialog.Title>
+          <button type="button" className="focus-field-close" onClick={onClose} aria-label="Close expanded lanes">← Back to Compete</button>
         </Dialog.Content>
       </Dialog.Portal>}
     </Dialog.Root>

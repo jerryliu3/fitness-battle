@@ -1,5 +1,7 @@
 "use client";
-import { useEffect, useRef, useState, type Ref } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, type Ref } from "react";
+import { newJourneyStops } from "./journey-reveal";
+import { usePathname } from "next/navigation";
 import { motion, useReducedMotion } from "motion/react";
 import { playCue } from "@/lib/haptics";
 import { AnimatedPolygon, AnimatedPolyline } from "./activity-chart";
@@ -182,11 +184,12 @@ type SessionPhase =
   | { kind: "full"; target: "suggestion" | Activity };
 
 export function TodayScreen() {
+  const onHome = usePathname() === "/today";
   const { user } = useAuth();
   const { state } = useCompete();
   const reduced = useReducedMotion();
   const [session, setSession] = useState<SessionPhase>({ kind: "closed" });
-  const [journeyIntro, setJourneyIntro] = useState(false);
+  const [revealingStops, setRevealingStops] = useState<string[]>([]);
   const peekRef = useRef<HTMLDivElement>(null);
   const [reaction, setReaction] = useState<{
     action: EmberAction;
@@ -194,6 +197,12 @@ export function TodayScreen() {
   }>({ action: "wave", key: 0 });
   const react = (action: EmberAction) =>
     setReaction((value) => ({ action, key: value.key + 1 }));
+
+  useEffect(() => {
+    if (!revealingStops.length) return;
+    const timer = window.setTimeout(() => setRevealingStops([]), 1050);
+    return () => window.clearTimeout(timer);
+  }, [revealingStops]);
 
   useEffect(() => {
     if (session.kind !== "peek") return;
@@ -227,23 +236,24 @@ export function TodayScreen() {
     groupActivitiesByDay(counted, Infinity),
   );
 
-  const latestJourneyDay = journeyDays[0]?.id;
-  useEffect(() => {
-    const topDay = latestJourneyDay;
-    if (!topDay || reduced) { setJourneyIntro(false); return; }
-    const key = `fb:journey-intro-seen:${user?.id ?? state.name ?? "guest"}`;
+  const todayStop = `today:${dayKey(now, APP_TIMEZONE)}`;
+  const revealIdentity = JSON.stringify([todayStop, ...journeyDays.map((day) => day.id)]);
+  useLayoutEffect(() => {
+    if (!onHome) return;
+    const key = `fb:journey-seen-stops:${user?.id ?? state.name ?? "guest"}`;
     try {
-      const last = localStorage.getItem(key);
-      if (last !== "1") {
-        setJourneyIntro(true);
-        localStorage.setItem(key, "1");
-        const t = window.setTimeout(() => setJourneyIntro(false), 1200);
-        return () => window.clearTimeout(t);
-      }
+      const raw = localStorage.getItem(key);
+      const parsed: unknown = raw ? JSON.parse(raw) : null;
+      const seen = Array.isArray(parsed) && parsed.every((id) => typeof id === "string") ? parsed as string[] : null;
+      const current = JSON.parse(revealIdentity) as string[];
+      const fresh = newJourneyStops(seen, current);
+      if (fresh.length) setRevealingStops(reduced ? [] : fresh);
+      localStorage.setItem(key, JSON.stringify([...new Set([...(seen ?? []), ...current])].slice(-400)));
     } catch {
-      /* optional */
+      // Blocked storage must not turn every mount into another entrance.
+      setRevealingStops([]);
     }
-  }, [latestJourneyDay, reduced, state.name, user?.id]);
+  }, [onHome, revealIdentity, reduced, state.name, user?.id]);
 
   const weekPeriod = competePeriodWindow(state, now);
   const weekStart = weekPeriod.startsAt.getTime();
@@ -421,6 +431,7 @@ export function TodayScreen() {
   const activeDaysCount = weekDays.filter((d) => d.hasActivity).length;
 
   function openSession(target: "suggestion" | Activity, phase: "peek" | "full") {
+    setRevealingStops([]);
     void playCue(phase === "peek" ? "light" : "light");
     setSession({ kind: phase, target });
   }
@@ -726,13 +737,13 @@ export function TodayScreen() {
       <JourneyTrail
         stopCount={journeyStops.length}
         layoutKey={journeyStops.map((s) => `${s.key}:${s.lane}`).join("|")}
-        intro={journeyIntro}
+        revealing={journeyStops.flatMap((stop, index) => revealingStops.includes(stop.kind === "today" ? todayStop : stop.key) ? [index] : [])}
       >
         {({ setStopRef }) =>
           journeyStops.map((stop, index) => (
             <div
               key={stop.key}
-              className={stopRowClass(stop)}
+              className={`${stopRowClass(stop)}${revealingStops.includes(stop.kind === "today" ? todayStop : stop.key) ? " is-new-stop" : ""}`}
               data-lane={stop.lane}
             >
               {stop.kind === "past" ? (

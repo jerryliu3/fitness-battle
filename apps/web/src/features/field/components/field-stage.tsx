@@ -1,7 +1,7 @@
 "use client";
 import dynamic from "next/dynamic";
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { AnimatePresence, LayoutGroup, motion, useReducedMotion } from "motion/react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useReducedMotion } from "motion/react";
 import { playCue } from "@/lib/haptics";
 import {
   arenaBaselineStorageKey,
@@ -79,8 +79,6 @@ export function FieldStage({
       }
     : null;
 
-  const modeRoot = useRef<HTMLDivElement>(null);
-  const [modeHeight, setModeHeight] = useState<number | null>(null);
   const [mode, setMode] = useState<"lanes" | "pursuit" | "standings">("lanes");
   const [lanesImmersive, setLanesImmersive] = useState(false);
   const [camera, setCamera] = useState<"above" | "follow">("above");
@@ -338,16 +336,6 @@ export function FieldStage({
           : null
         : (runners.find((r) => r.id === selected) ?? null);
 
-  useLayoutEffect(() => {
-    const node = modeRoot.current;
-    if (!node) return;
-    const measure = () => { if (node.offsetHeight > 0) setModeHeight(node.offsetHeight); };
-    measure();
-    const observer = new ResizeObserver(measure);
-    observer.observe(node);
-    return () => observer.disconnect();
-  }, [Boolean(you)]);
-
   if (!you) return <p className="fb-copy">Join a field to see your lanes.</p>;
 
   const athleteDetails = (chosen && (
@@ -458,6 +446,8 @@ export function FieldStage({
               onClick={() => {
                 if (isPursuit) return;
                 if (m !== mode) void playCue("selection");
+                setReplayEpoch(0);
+                setOvertakeProgress(1);
                 setMode(m);
                 setUnavailable(false);
               }}
@@ -472,72 +462,11 @@ export function FieldStage({
         })}
       </div>
 
-      <LayoutGroup id={`field-stage-${sportTitle ?? "field"}`}>
-      <motion.div initial={false} animate={{ height: modeHeight ?? "auto" }}
-        transition={{ duration: reduced ? 0 : 0.26, ease: [0.22, 1, 0.36, 1] }} style={{ overflow: "hidden" }}>
-      <div ref={modeRoot} style={{ display: "flow-root" }}>
-      <AnimatePresence initial={false} mode="popLayout">
-      {mode === "standings" ? (
-          <motion.div
-            key="standings"
-            className="focus-standings"
-            style={{ margin: "14px 0" }}
-            initial={reduced ? false : { opacity: 0, y: 14 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={reduced ? { opacity: 0 } : { opacity: 0, y: -10 }}
-            transition={
-              reduced
-                ? { duration: 0 }
-                : { type: "spring", stiffness: 420, damping: 36 }
-            }
-          >
-            {[...runners]
-              .sort((a, b) => valueAt(b, time) - valueAt(a, time))
-              .map((r, i) => (
-                <motion.button
-                  key={r.id}
-                  layoutId={`athlete-${r.id}`}
-                  initial={reduced ? false : { opacity: 0, x: -8 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={
-                    reduced
-                      ? { duration: 0 }
-                      : {
-                          type: "spring",
-                          stiffness: 420,
-                          damping: 34,
-                          delay: Math.min(i, 5) * 0.025,
-                        }
-                  }
-                  onClick={() => {
-                    if (selected !== r.id) void playCue("light");
-                    toggleSelect(r.id);
-                  }}
-                  aria-pressed={selected === r.id}
-                >
-                  <span>{placeAt(runners, r.id, time, 0)}</span>
-                  <b>{r.you ? selfLaneLabel(r.name) : r.name}</b>
-                  <small>
-                    Effort Score{" "}
-                    {boardRows?.find((row) => row.id === r.id)?.elo ?? "—"}
-                  </small>
-                  <strong>
-                    {valueAt(r, time).toFixed(1)} {unit}
-                  </strong>
-                </motion.button>
-              ))}
-          </motion.div>
-      ) : (
-          <motion.div
-            key="lanes"
-            initial={reduced ? false : { opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: reduced ? 0 : 0.2 }}
-          >
+      <div>
+      <div style={{ display: "flow-root" }}>
         <ExpandingField open={lanesImmersive} onClose={() => setLanesImmersive(false)}>
           <div className="focus-field-toolbar">
-            <span className="fb-note">{lanesImmersive ? "Drag to pan · swipe across peers" : "Click the field to expand · swipe across peers"}</span>
+            <span className="fb-note">{mode === "standings" ? "Ranked by this week's effort" : lanesImmersive ? "Drag to pan · swipe across peers" : "Click the field to expand · swipe across peers"}</span>
           </div>
           <div className="focus-track-frame">
             {mode === "pursuit" && !unavailable ? (
@@ -569,6 +498,8 @@ export function FieldStage({
               </>
             ) : (
               <ArenaLanes
+                presentation={mode === "standings" ? "standings" : "lanes"}
+                scores={Object.fromEntries((boardRows ?? []).map((row) => [row.id, row.elo]))}
                 immersive={lanesImmersive}
                 lanes={sceneLanes}
                 view={view}
@@ -596,6 +527,7 @@ export function FieldStage({
             )}
           </div>
 
+          <div hidden={mode === "standings"}>
           <div
             className="focus-zoom-slider"
             style={{
@@ -686,15 +618,11 @@ export function FieldStage({
               </label>
             )}
           </div>
+          </div>
       {athleteDetails}
         </ExpandingField>
-          </motion.div>
-      )}
-      {mode === "standings" && athleteDetails}
-      </AnimatePresence>
       </div>
-      </motion.div>
-      </LayoutGroup>
+      </div>
     </section>
   );
 }

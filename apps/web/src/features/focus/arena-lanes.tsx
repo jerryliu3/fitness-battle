@@ -1,6 +1,6 @@
 "use client";
 import { useRef, useLayoutEffect, useState, useId } from "react";
-import { motion } from "motion/react";
+import { motion, useReducedMotion } from "motion/react";
 import {
   arenaPosition,
   formatActivityAge,
@@ -17,6 +17,8 @@ import { laneGeometry, centeredLaneScroll } from "@/features/field/components/la
 import { Ember } from "@/components/mascot/ember";
 export function ArenaLanes({
   lanes,
+  presentation = "lanes",
+  scores = {},
   immersive = false,
   view,
   unit,
@@ -28,6 +30,8 @@ export function ArenaLanes({
   overtakePlan = null,
 }: {
   lanes: ArenaSceneLane[];
+  presentation?: "lanes" | "standings";
+  scores?: Record<string, number>;
   immersive?: boolean;
   view: ArenaViewWindow;
   unit: string;
@@ -39,9 +43,12 @@ export function ArenaLanes({
   overtakePlan?: ArenaOvertakePlan | null;
 }) {
   const host = useRef<HTMLDivElement>(null);
+  const reduced = useReducedMotion();
+  const standings = presentation === "standings";
   const prefix = useId();
   const [size, setSize] = useState({ width: 360, height: 540 });
   const previousGeometry = useRef<{ width: number; laneWidth: number; count: number } | null>(null);
+  const laneScroll = useRef<number | null>(null);
   const drag = useRef<{
     pointerId: number;
     x: number;
@@ -69,7 +76,10 @@ export function ArenaLanes({
       ? view
       : { center: effectiveCenter, span: view.span };
   const bounds = arenaWindow(effectiveView.center, effectiveView.span);
-  const { width, height, laneWidth, plotHeight } = laneGeometry(size.width, size.height, ordered.length);
+  const geometry = laneGeometry(size.width, size.height, ordered.length);
+  const width = standings ? size.width : geometry.width;
+  const height = standings ? Math.max(160, ordered.length * 76 + 24) : geometry.height;
+  const { laneWidth, plotHeight } = geometry;
   const y = (v: number) => 72 + arenaPosition(v, effectiveView).fraction * plotHeight;
   const maxTailY = Math.min(height - 58, bounds.min <= 0 && bounds.max >= 0 ? y(0) + 4 : height - 58);
 
@@ -99,16 +109,19 @@ export function ArenaLanes({
   }, []);
   useLayoutEffect(() => {
     const el = host.current;
-    if (!el || el.clientWidth === 0) return;
+    if (!el || el.clientWidth === 0 || standings) return;
     const previous = previousGeometry.current;
     const laneIndex = previous
-      ? (el.scrollLeft + previous.width / 2 - 10) / previous.laneWidth - 0.5
+      ? ((laneScroll.current ?? el.scrollLeft) + previous.width / 2 - 10) / previous.laneWidth - 0.5
       : Math.max(0, ordered.findIndex((lane) => lane.you));
     el.scrollLeft = centeredLaneScroll(laneIndex, laneWidth, size.width, width);
+    laneScroll.current = el.scrollLeft;
     previousGeometry.current = { width: size.width, laneWidth, count: ordered.length };
-  }, [width, laneWidth, size.width]);
+  }, [width, laneWidth, size.width, standings]);
   return (
-    <div className="focus-lane-scroll" ref={host} data-immersive={immersive}>
+    <div className="focus-lane-scroll" ref={host} data-immersive={immersive}
+      onScroll={(event) => { if (!standings) laneScroll.current = event.currentTarget.scrollLeft; }}
+      style={{ height: standings ? height : undefined, transition: reduced ? "none" : "height .48s cubic-bezier(.22,1,.36,1)" }}>
       <svg
         className="focus-lane-track"
         viewBox={`0 0 ${width} ${height}`}
@@ -116,10 +129,10 @@ export function ArenaLanes({
         height={height}
         style={{ width, height, touchAction: immersive ? "none" : "pan-y pinch-zoom" }}
         role="group"
-        aria-label={`Vertical athlete lanes, ${bounds.min.toFixed(1)} to ${bounds.max.toFixed(1)} ${unit}. Drag to explore.`}
+        aria-label={standings ? "Athlete standings, ranked by weekly effort" : `Vertical athlete lanes, ${bounds.min.toFixed(1)} to ${bounds.max.toFixed(1)} ${unit}. Drag to explore.`}
         tabIndex={0}
         onKeyDown={(e) => {
-          if (e.target === e.currentTarget && (e.key === "Enter" || e.key === " ")) {
+          if (!standings && e.target === e.currentTarget && (e.key === "Enter" || e.key === " ")) {
             e.preventDefault(); onBackgroundTap?.();
           }
           if (e.key === "ArrowUp" || e.key === "ArrowDown") {
@@ -151,10 +164,12 @@ export function ArenaLanes({
           };
         }}
         onPointerMove={(e) => {
+          if (standings) return;
           const press = drag.current;
           if (!press || press.pointerId !== e.pointerId) return;
-          const dx = e.clientX - press.x;
-          const dy = e.clientY - press.y;
+          const scale = e.currentTarget.getBoundingClientRect().height / height || 1;
+          const dx = (e.clientX - press.x) / scale;
+          const dy = (e.clientY - press.y) / scale;
           if (press.mode === "undecided") {
             if (Math.abs(dx) < 6 && Math.abs(dy) < 6) return;
             if (Math.abs(dx) > Math.abs(dy)) {
@@ -207,7 +222,7 @@ export function ArenaLanes({
             onSelect(press.id);
             return;
           }
-          if (!press.moved && !press.id) onBackgroundTap?.();
+          if (!press.moved && !press.id && !standings) onBackgroundTap?.();
         }}
         onLostPointerCapture={() => { drag.current = null; }}
         onPointerCancel={(e) => {
@@ -251,6 +266,7 @@ export function ArenaLanes({
             />
           </filter>
         </defs>
+        <motion.g aria-hidden={standings} initial={false} animate={{ opacity: standings ? 0 : 1 }} style={{ pointerEvents: "none" }}>
         <rect width={width} height={height} rx="24" fill={`url(#${prefix}-road)`} />
         <rect
           x="10"
@@ -324,18 +340,22 @@ export function ArenaLanes({
             </text>
           </>
         )}
+        </motion.g>
         {ordered.map((l, i) => {
           const position = arenaPosition(l.value, effectiveView);
           const effect = !l.you ? overtakeFrame?.rivalEffects[l.id] : undefined;
           const speed = l.you && animating ? (overtakeFrame?.speed ?? 0) : 0;
           const charging =
             l.you && animating ? (overtakeFrame?.charging ?? 0) : 0;
-          const yy = y(l.value) + (l.you ? charging * 4 : 0);
-          const xx = (i + 0.5) * laneWidth + 10 + (effect?.joltX ?? 0);
+          const row = sortedByValue.findIndex((lane) => lane.id === l.id);
+          const rank = 1 + sortedByValue.filter((lane) => lane.value > l.value + 0.000001).length;
+          const targetY = standings ? 48 + row * 76 : y(l.value) + (l.you ? charging * 4 : 0);
+          const targetX = standings ? 38 : (i + 0.5) * laneWidth + 10 + (effect?.joltX ?? 0);
+          const xx = 0, yy = 0;
           const active = selected === l.id || l.you;
           const wakeLen = Math.min(
             28 + speed * 88,
-            Math.max(0, maxTailY - (yy + 14)),
+            Math.max(0, maxTailY - (targetY + 14)),
           );
           const rivalMovedInSlide =
             !l.you &&
@@ -344,11 +364,13 @@ export function ArenaLanes({
           return (
             <motion.g
               key={l.id}
-              layoutId={`athlete-${l.id}`}
+              initial={false}
+              animate={{ x: targetX, y: targetY }}
+              transition={{ duration: reduced || drag.current || animating ? 0 : 0.48, ease: [0.22, 1, 0.36, 1] }}
               data-athlete={l.id}
               role="button"
               tabIndex={0}
-              aria-label={`${l.name}, ${formatLastUpdated(l)}, ${l.value.toFixed(1)} ${unit}${position.edge ? `, ${position.edge} of visible range` : ""}`}
+              aria-label={`${l.name}, ${standings ? `place ${rank}, ` : ""}${formatLastUpdated(l)}, ${l.value.toFixed(1)} ${unit}${!standings && position.edge ? `, ${position.edge} of visible range` : ""}`}
               onKeyDown={(e) => {
                 if (e.key === "Enter" || e.key === " ") {
                   e.preventDefault();
@@ -369,7 +391,7 @@ export function ArenaLanes({
                     const isCenter = idx === 2;
                     const streakLen = Math.min(
                       speed * (54 + (idx % 2 === 0 ? 34 : 18)),
-                      Math.max(0, maxTailY - (yy + 24)),
+                      Math.max(0, maxTailY - (targetY + 24)),
                     );
                     if (streakLen <= 2) return null;
                     return (
@@ -428,7 +450,7 @@ export function ArenaLanes({
                   data-overtake-ripple="true"
                 />
               )}
-              {firstPlaceId === l.id && (
+              {firstPlaceId === l.id && !standings && (
                 <foreignObject
                   x={xx - 16}
                   y={yy - 44}
@@ -465,12 +487,13 @@ export function ArenaLanes({
                 className="lane-initial"
                 fill={l.you ? "#fafaf7" : "#282f2c"}
               >
-                {position.edge
+                {!standings && position.edge
                   ? position.edge === "ahead"
                     ? "↑"
                     : "↓"
                   : l.initials}
               </text>
+              <motion.g aria-hidden={standings} initial={false} animate={{ opacity: standings ? 0 : 1 }} style={{ pointerEvents: "none" }}>
               <rect
                 x={xx - 26}
                 y={yy + 28}
@@ -486,16 +509,26 @@ export function ArenaLanes({
                 textAnchor="middle"
                 className="lane-total"
                 fill={l.you ? "#f1c75b" : "#282f2c"}
-                style={{ fontSize: 10 }}
+                style={{ fontSize: 10, fill: l.you ? "#f1c75b" : "#282f2c" }}
               >
                 {position.edge || (l.you && animating)
                   ? `${l.value.toFixed(1)} ${unit}`
                   : formatLastUpdated(l)}
               </text>
+              </motion.g>
+              <motion.g aria-hidden={!standings} initial={false} animate={{ opacity: standings ? 1 : 0 }}
+                style={{ pointerEvents: standings ? "auto" : "none" }}>
+                <rect x={-30} y={-33} width={Math.max(200, width - 16)} height={70} rx={14} fill="transparent" />
+                <line x1={-22} x2={width - 52} y1={38} y2={38} stroke="#e0e5dc" />
+                <text x={40} y={4} fill="#616c63" fontSize={12}>{rank}</text>
+                <text x={64} y={-5} fill="#282f2c" fontSize={13} fontWeight={600}>{l.you ? selfLaneLabel(l.name) : l.name}</text>
+                <text x={64} y={15} fill="#616c63" fontSize={10}>Effort score {scores[l.id] ?? "—"}</text>
+                <text x={width - 58} y={5} textAnchor="end" fill="#282f2c" fontSize={13} fontWeight={700}>{l.value.toFixed(1)} {unit}</text>
+              </motion.g>
             </motion.g>
           );
         })}
-        {ghost &&
+        {ghost && !standings &&
           (() => {
             const i = ordered.findIndex((l) => l.you);
             const gx = (i + 0.5) * laneWidth + 28;
@@ -529,10 +562,10 @@ export function ArenaLanes({
               </g>
             );
           })()}
-        <text x={width - 42} y="36" className="lane-distance">
+        <text opacity={standings ? 0 : 1} x={width - 42} y="36" className="lane-distance">
           {unit}
         </text>
-        <text x="18" y={height - 18} className="lane-distance">
+        <text opacity={standings ? 0 : 1} x="18" y={height - 18} className="lane-distance">
           Drag ↕ distance · ↔ lanes · tap track to expand
         </text>
       </svg>

@@ -297,6 +297,7 @@
   position: relative;
 }
 .focus-settings-stack-panel {
+  scrollbar-width: none;
   position: absolute;
   top: 0;
   bottom: 0;
@@ -311,6 +312,7 @@
   padding: 26px var(--shell-pad-x, 24px) 32px;
   box-sizing: border-box;
 }
+.focus-settings-stack-panel::-webkit-scrollbar { display: none; }
 @keyframes focus-session-peek-in {
   from {
     opacity: 0;
@@ -1033,6 +1035,18 @@
   stroke-dasharray: 4 7;
   vector-effect: non-scaling-stroke;
 }
+.focus-journey-path .focus-journey-reveal-mask {
+  stroke: white;
+  stroke-width: 8;
+  stroke-dasharray: 1;
+  stroke-dashoffset: -1;
+  animation: focus-journey-path-draw .65s cubic-bezier(.22,1,.36,1) both;
+}
+.focus-path-row.is-new-stop > button,
+.focus-path-row.is-new-stop > span {
+  animation: focus-new-stop .3s ease-out .65s both;
+}
+@keyframes focus-new-stop { from { opacity: 0; } to { opacity: 1; } }
 .focus-path-row > button {
   position: absolute;
   left: var(--path-c);
@@ -1602,9 +1616,9 @@
 .focus-score-track-indicator {
   position: absolute !important;
   inset: 3px;
-  z-index: 0 !important;
+  z-index: -1 !important;
   border-radius: inherit;
-  background: #fff;
+  background: #f1c75b;
   box-shadow: 0 1px 4px #282f2c0c;
 }
 .focus-competition-tracks > button[aria-pressed="true"] {
@@ -1709,6 +1723,12 @@
   color: #282f2c;
   box-shadow: 0 1px 4px #282f2c0c;
 }
+.focus-segments.focus-competition-tracks > .focus-score-track-button[aria-pressed="true"] {
+  background: transparent;
+  box-shadow: none;
+  color: #282f2c;
+}
+.focus-score-track-indicator { background: #f1c75bcc; }
 .focus-track-frame {
   position: relative;
   border: 1px solid #d7e0cf;
@@ -1747,11 +1767,9 @@
 .focus-field-backdrop { position: fixed; inset: 0; z-index: 119; background: #282f2c40; }
 .focus-field-expanded { position: fixed; inset: 0; z-index: 120; overflow: hidden; background: var(--paper, #fafaf7); box-sizing: border-box; outline: none; }
 .focus-field-expanded .focus-field-content { padding: env(safe-area-inset-top) max(8px, env(safe-area-inset-right)) env(safe-area-inset-bottom) max(8px, env(safe-area-inset-left)); box-sizing: border-box; }
-.focus-field-expanded .focus-track-frame { flex: 1; min-height: 280px; margin: 0; }
-.focus-field-expanded .focus-lane-scroll { height: 100%; }
-.focus-field-expanded .focus-field-content { overflow-y: auto; }
-.focus-field-expanded .focus-track-caption { padding: 8px; }
-.focus-field-expanded .focus-athlete-popup { flex-shrink: 0; margin: 4px 0; }
+.focus-field-expanded { overflow-y: auto; }
+.focus-field-expanded .focus-field-content { padding: 0; }
+.focus-field-close { position: sticky; top: max(8px, env(safe-area-inset-top)); left: max(12px, env(safe-area-inset-left)); z-index: 3; min-height: 44px; margin: 8px 12px; border: 1px solid #e0e5dc; border-radius: 14px; padding: 10px 16px; background: #f1c75b; color: #282f2c; font: inherit; cursor: pointer; }
 .focus-lane-track:active {
   cursor: grabbing;
 }
@@ -2355,4 +2373,9 @@
   .focus-stop-peek,
   .focus-journey.is-day-intro .focus-path-row,
   .focus-journey.is-day-intro .focus-path-row.is-current { animation: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .focus-path-row.is-new-stop > button,
+  .focus-path-row.is-new-stop > span { animation: none; }
+  .focus-journey-path .focus-journey-reveal-mask { animation: none; stroke-dashoffset: 0; }
 }

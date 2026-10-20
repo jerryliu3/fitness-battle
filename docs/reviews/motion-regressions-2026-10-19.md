@@ -1,6 +1,6 @@
 # Production motion repair — October 19, 2026
 
-Code review of #188 → #189 → #191 → #190, through `9e013da`. The stack was merged into main as `04cec47` during this pass; repairs target main directly. The `/ux` gallery remains the reference, not evidence that production flows match it. This pass uses code inspection and automated checks; browser and device validation are deliberately deferred.
+Code review of #188 → #189 → #191 → #190, through `9e013da`. The stack was merged into main as `04cec47` during this pass; repairs target main directly. The `/ux` gallery remains the reference, not evidence that production flows match it. The initial pass used code inspection and automated checks; the browser follow-up below records subsequent verification. Native device validation remains outstanding.
 
 ## Repaired causes
 
@@ -27,7 +27,7 @@ Code review of #188 → #189 → #191 → #190, through `9e013da`. The stack was
 | 5 | Primary tabs | Duplicate navigation repaired; retained state and indicator remain. Directional body handoff/rapid-navigation behavior needs browser validation. |
 | 6 | Scope/lens | Hydration repaired. Production deliberately uses one global score lens, unlike the prototype's per-sport memory; do not silently change that decision. |
 | 7 | Field manipulation | Web commands and gesture arbitration repaired; native scroll arbitration/zoom anchor repaired. Native command interpolation and anchored pinch are still absent. |
-| 8 | Lanes → standings | Retention, size continuity and tie ranking repaired. Shared marker-to-row choreography remains absent. |
+| 8 | Lanes → standings | The persistent racer circles now animate into ranked rows, with retained selection and existing tie semantics. Verified intermediate coordinates in the browser. Native choreography remains outstanding. |
 | 9 | Athlete inspector | Available inside expanded field and both modes. Still inserts/removes a dock rather than retaining a fixed inspector footprint. |
 | 10 | Journey | Broken native layering and web path/intro mismatch repaired. Coordinated insertion/reflow and retained day expansion remain. |
 | 11 | Registration | Existing confirmed join flow retained; source-to-new-sport identity transition remains incomplete. |
@@ -40,6 +40,14 @@ Code review of #188 → #189 → #191 → #190, through `9e013da`. The stack was
 | 18 | Setup/secondary routes | Not redesigned in this repair. Directional step retention and native route transitions still need implementation review. |
 
 ## Next validation pass
+
+### Browser follow-up corrections
+
+The follow-up replaces the unsuccessful SVG-to-HTML shared-layout handoff with one persistent SVG racer per athlete. Lane mode, ranked rows, and score-lens changes now animate those same racers' coordinates. The standings layout includes each racer's circle, tied rank, name, effort score and total. Browser sampling confirmed intermediate positions on both lane/standings and Open/GPS switches, rather than only opacity changes.
+
+Expansion freezes the content's intrinsic width/height and uses a uniform transform while the window opens; it no longer reflows lane geometry during travel. The root dialog has an explicit Back button. Browser checks verified identical 830 × 743 content dimensions before/after expansion at the tested desktop size, working Back dismissal, readable translucent gold score selection, and a 720px scrollable settings panel with its scrollbar hidden.
+
+Journey reveal state is now keyed by each counted day plus the current day's Today identity. Reload/return preserves seen nodes; a new day or newly counted day can reveal once. A mask draws the new incoming dotted segment before its node appears. Existing history is kept visible. The daily/new-session policy has regression tests; browser checks also confirmed preview click-away dismissal and no same-day replay.
 
 1. Desktop and narrow web: expand/collapse from different scroll positions; resize/rotate while expanded; repeat quickly; Escape and keyboard focus return; offscreen origin return.
 2. Few and many peers: inspect You and ghost, pan horizontally beyond both edges, pan vertically only when exploring, switch standings/back, verify ties and scroll retention.
