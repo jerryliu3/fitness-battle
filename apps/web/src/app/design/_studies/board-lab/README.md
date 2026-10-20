@@ -4,7 +4,30 @@ October 20, 2026 · Coded presentation prototypes, not a production replacement
 
 Open `/design/boards` through the existing design access gate. The design index links to it. All athletes, sessions and gain previews are fictional local data. The study does not connect trackers, log activity or write scores.
 
-## Round 2: independent ground, progress and lens
+## Current selection: Round 3
+
+The user accepts all seven non-Contour grounds as the multi-field direction, with **Meadow Trail**, **Banked trail** and **Map lens** as the default review combination. Contour Atlas is removed from the registry and URL validation; its old captures remain historical. Distance-only zoom stays available. Custom fields are a future product direction: the typed ground registry and separate geometry/renderers remain the extension boundary, not a shipped custom-field editor or account preference system.
+
+Two additional athletics grounds bring the catalog to nine:
+
+- **Club Straightaway**: red rubber surface, fine grain, continuous white lane boundaries, horizontal splits only at whole kilometers and a numbered zero-origin start. `Start line` exposes the origin without changing athlete totals. Choose Open edges or green Club grounds with benches.
+- **Club Oval**: a real closed stadium-shaped circuit, white concentric lanes, numbered start, optional green infield and benches. Choose a **1-kilometer or 1-mile loop**. Athlete totals remain in kilometers; circuit position derives from total / loop length. Completed laps and the remaining portion are explicit for the selected athlete and in every marker's accessible label. Each lane uses a normalized equal-distance circuit: this is an illustrative distance board, not a regulation 400m track or a literal GPS route.
+
+The oval draws a trace for the current circuit, while completed laps remain in the count and accumulated total. Canonical capsule/wake geometry follows the local tangent; progress paint excludes the whole rotated wake. Its wake clock runs only in the racer layer. Map zoom scales both axes and Fit field restores the complete oval. Drag with a mouse, use arrow keys, or pan by touch in the expanded view; embedded touch retains page scrolling. Distance-only zoom explicitly unfolds the oval into straight distance lanes. The bottom accumulated-distance overview remains unchanged and is separate from the repeating lap position.
+
+The current view/total/selection/session contracts are unchanged. `oval-track.tsx` supplies the closed presentation and `oval-geometry.ts` supplies arc-length position and tangent math. Switching between different field geometries may replace the renderer; expansion within either geometry retains its SVG. Mile-loop selection changes presentation only, never scoring, period bounds or canonical totals. No custom authoring, production field picker, persistence/backend or native rollout is introduced in this follow-up.
+
+Review links:
+
+- `/design/boards?background=trail&progress=deposit&zoom=map`
+- `/design/boards?background=straight&progress=deposit&zoom=map&edges=club`
+- `/design/boards?background=oval&progress=deposit&zoom=map&edges=club&loop=km`
+- `/design/boards?background=oval&progress=deposit&zoom=map&edges=open&loop=mi`
+
+The original PR #216 targets `main`; the running-track follow-up is stacked on it for a focused review and can target `main` after #216 merges. See [Round 3 captures and verification](../../../../../../../docs/design-studies/boards/round-3/README.md).
+
+## Round 2 history
+
 
 The user selects **vertical** and asks to focus this round on **kilometers**. Tapestry and Ribbon established the material/viewport groundwork; the next question is the track environment independently of the earned trace. The first reviewed prototype is preserved in commit `7e0f710` on PR #216. Its horizontal, miles and effort comparisons remain history rather than cluttering this round's controls. The platform-agnostic unit helpers and their tests remain intact; no production unit/scoring behavior changed.
 

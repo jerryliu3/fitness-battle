@@ -3,14 +3,14 @@
 import { useId, useLayoutEffect, useRef, useState, type RefObject } from "react";
 import { arenaWindow, orderedArenaLanes, polishedLaneScale, type ArenaSceneLane, type ArenaViewWindow } from "@fitness-battle/shared";
 import { PolishedRacer, usePolishedWakeTime } from "@/features/brand/polished-racer";
-import { backgrounds, progressTreatments, type BackgroundId, type ProgressId, type ZoomId } from "./field-directions";
+import { backgrounds, progressTreatments, type BackgroundId, type ProgressId, type ZoomId, type TrackEdgeId } from "./field-directions";
 import { boardFraction, boardGap, boardTicks, fieldZoom, formatBoardValue, progressClearance, type BoardSession } from "./model";
 import { TrackBackground, type FieldGeometry } from "./track-background";
 import { ProgressTraces } from "./progress-traces";
 
 export interface Board2DProps {
   lanes: ArenaSceneLane[]; sessions: BoardSession[]; view: ArenaViewWindow;
-  background: BackgroundId; progress: ProgressId; zoom: ZoomId;
+  background: BackgroundId; edges?: TrackEdgeId; loopUnit?: "km" | "mi"; progress: ProgressId; zoom: ZoomId;
   selected: string; showGhost: boolean; expanded: boolean;
   onSelect: (id: string) => void; onSession: (session: BoardSession) => void; onPan: (center: number) => void;
 }
@@ -43,7 +43,7 @@ function Racers({ host, lanes, view, geometry: g, selected, onSelect }: {
 }
 
 /** One controlled vertical-kilometer field; surface, earned progress and camera are independent. */
-export function Board2D({ lanes, sessions, view, background, progress, zoom, selected, showGhost, expanded, onSelect, onSession, onPan }: Board2DProps) {
+export function Board2D({ lanes, sessions, view, background, edges, progress, zoom, selected, showGhost, expanded, onSelect, onSession, onPan }: Board2DProps) {
   const host = useRef<HTMLDivElement>(null), id = useId().replaceAll(":", "");
   const [size, setSize] = useState({ width: 720, height: 510 });
   const gesture = useRef<{ x: number; y: number; center: number; moved: boolean } | null>(null);
@@ -103,9 +103,9 @@ export function Board2D({ lanes, sessions, view, background, progress, zoom, sel
         </defs>
         <rect width={width} height={height} fill="#f6f7f2"/>
         <g clipPath={`url(#${id}-plot)`}>
-          <TrackBackground background={background} geometry={g} count={count} view={view} prefix={id}/>
+          <TrackBackground background={background} geometry={g} count={count} view={view} prefix={id} edges={edges}/>
           <ProgressTraces treatment={progress} lanes={ordered} sessions={sessions} geometry={g} view={view} mask={`${id}-progress-clear`} dark={background === "night"} selected={selected} onSelect={onSelect} onSession={onSession}/>
-          {bounds.min <= 0 && bounds.max >= 0 && <g className="bl-start-origin" pointerEvents="none"><line x1={left} x2={left + fieldWidth} y1={along(0)} y2={along(0)} stroke={palette.rule} strokeWidth={2 * worldScale}/><text x={left + 6} y={along(0) - 8} fontSize="10" fill={palette.ink}>START</text></g>}
+          {background !== "straight" && background !== "oval" && bounds.min <= 0 && bounds.max >= 0 && <g className="bl-start-origin" pointerEvents="none"><line x1={left} x2={left + fieldWidth} y1={along(0)} y2={along(0)} stroke={palette.rule} strokeWidth={2 * worldScale}/><text x={left + 6} y={along(0) - 8} fontSize="10" fill={palette.ink}>START</text></g>}
         </g>
         {laneWidth >= 63 && ordered.map((lane, i) => <g key={lane.id} pointerEvents="none"><text className={`bl-lane-name ${lane.you ? "is-you" : ""}`} x={cross(i)} y="33" textAnchor="middle">{lane.you ? "YOU" : lane.name.split(" ")[0]}</text><text className="bl-lane-total" x={cross(i)} y="53" textAnchor="middle">{lane.value.toFixed(1)} <tspan>km</tspan></text></g>)}
         {laneWidth < 63 && <text x={width / 2 - 21} y="38" textAnchor="middle" className="bl-axis-label">Your field · {view.span.toFixed(1)} km in view</text>}

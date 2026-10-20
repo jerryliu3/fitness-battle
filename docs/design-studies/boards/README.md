@@ -4,6 +4,10 @@ October 20, 2026
 
 Open `/design/boards` through the existing design access gate. The design index links to it. Component contracts, shareable URLs and the production adoption boundary are in [the study README](../../../apps/web/src/app/design/_studies/board-lab/README.md).
 
+## Current review: Round 3
+
+The accepted multi-field direction, selected defaults and two additional red running-track prototypes are in [the Round 3 review](round-3/README.md). The comparisons below preserve the earlier exploration, including the now-retired Contour Atlas.
+
 ## Round 2: vertical field exploration
 
 This round locks the 2D board to vertical kilometers and separates three independent decisions: the ground, the progress trace and the camera lens. All athletes, sessions and previews remain local fictional data. Production Compete, backend scoring and native surfaces are unchanged. The first reviewed baseline is preserved in commit `7e0f710` and in the historical captures below.

@@ -245,7 +245,6 @@ main.board-lab { min-height:100vh; padding:0 max(24px,calc((100vw - 1200px)/2)) 
 .board-lab [data-surface=pool] { background:repeating-linear-gradient(90deg,#c6e3e5 0 28px,#faf9e8 28px 31px,#c6e3e5 31px 32px); }
 .board-lab [data-surface=boardwalk] { background:repeating-linear-gradient(90deg,#e2decd 0 9px,#c7c3ae 9px 10px,#e2decd 10px 12px); }
 .board-lab [data-surface=trail] { background:linear-gradient(105deg,#d7e2c7 0 21%,#ede9d5 22% 71%,#d7e2c7 72%); }
-.board-lab [data-surface=contour] { background:repeating-radial-gradient(ellipse at 75% 60%,#edf0e6 0 10px,#c3cfb8 11px 12px,#edf0e6 13px 20px); }
 .board-lab [data-surface=night] { background:repeating-linear-gradient(90deg,#2e4037 0 29px,#637c60 29px 30px); }
 .board-lab .bl-choice-description { font-size:10px; line-height:1.7; color:var(--bl-muted); margin:11px 0 23px; }
 .board-lab .bl-progress-catalog { display:grid; gap:5px; }
@@ -287,3 +286,20 @@ main.board-lab { min-height:100vh; padding:0 max(24px,calc((100vw - 1200px)/2)) 
   .board-lab.bl-expanded .bl-field-shell[data-concept=field] .bl-scene { height:calc(100dvh - 475px); min-height:250px; }
   .board-lab .bl-mode-tabs { gap:7px; }.board-lab .bl-mode-tabs span { font-size:9px; line-height:1.5; }
 }
+
+/* Club tracks are red sports surfaces; the product shell retains Open Field tokens. */
+.board-lab [data-surface=straight] { background:repeating-linear-gradient(90deg,#a94d44 0 28px,#fff7e9 28px 30px); }
+.board-lab [data-surface=oval] { background:radial-gradient(ellipse at center,#b6c99e 0 39%,#a94d44 40% 49%,#fff7e9 50% 51%,#a94d44 52% 61%,#fff7e9 62% 63%,#a94d44 64% 73%,#cad5b0 74%); }
+.board-lab .bl-track-options { display:flex; align-items:center; gap:8px; padding:8px 16px; background:#fafaf7; border-bottom:1px solid var(--bl-line); font-size:11px; }
+.board-lab .bl-track-options>span { margin-right:auto; color:var(--bl-muted); }
+.board-lab .bl-track-options button { min-height:44px; border:1px solid var(--bl-line); border-radius:10px; padding:6px 12px; background:#fff; color:var(--bl-ink); font:inherit; cursor:pointer; }
+.board-lab .bl-track-options button[aria-pressed=true] { background:#e8eddf; border-color:#9bac8c; }
+.board-lab .bl-circuit-caption { margin:0; padding:8px 16px; background:#f0f3e9; color:#526147; font-size:10px; line-height:1.5; }
+.board-lab .bl-oval-svg { display:block; max-width:100%; }
+.board-lab .bl-oval-note { position:absolute; bottom:8px; left:12px; right:12px; display:flex; gap:8px; align-items:center; justify-content:space-between; font-size:10px; color:#64715a; pointer-events:none; }
+.board-lab .bl-oval-note button { pointer-events:auto; min-height:44px; padding:7px 10px; border:1px solid var(--bl-line); border-radius:10px; background:#fafaf7; color:var(--bl-ink); font:inherit; cursor:pointer; }
+@media(max-width:480px) { .board-lab .bl-oval-note { font-size:9px; } .board-lab .bl-track-options { padding:6px 10px; gap:5px; } }
+
+.board-lab .bl-track-options { flex-wrap:wrap; }
+.board-lab .bl-track-options label { display:flex; align-items:center; gap:10px; }
+.board-lab .bl-track-options select { min-height:44px; border:1px solid var(--bl-line); border-radius:9px; padding:6px 10px; color:var(--bl-ink); background:#fff; font:inherit; }

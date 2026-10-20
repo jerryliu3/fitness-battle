@@ -6,7 +6,8 @@ export const backgrounds = {
   pool: { name: "Pool Deck", short: "Water, ropes, light", description: "Soft aquatic light, colored lane ropes and a quiet pool-floor spine. An unfolded surface study, not a claim about actual swimming lengths.", surface: "#deeff0", lane: "#c4e2e5", ink: "#2c5359", muted: "#4d777b", rule: "#ffffff" },
   boardwalk: { name: "Boardwalk", short: "Long grain underfoot", description: "Pale longitudinal planks, satin grain and a sheltered timber edge. The grain moves with the ground, without transverse grid stripes.", surface: "#e7e4d7", lane: "#e0ddce", ink: "#514d3b", muted: "#7b7661", rule: "#bcb9a5" },
   trail: { name: "Meadow Trail", short: "A gently winding field", description: "A soft shared trail bends through meadow planting. Racers and progress traces follow the same curve while the vertical distance scale stays exact.", surface: "#e4ead9", lane: "#f0eddd", ink: "#435139", muted: "#6a7c59", rule: "#c8ceb5" },
-  contour: { name: "Contour Atlas", short: "Distance without a road", description: "Quiet topographic rings and occasional cairns on an open field. No lane pavement or cross-track rules; position and progress provide the structure.", surface: "#edf0e6", lane: "#edf0e6", ink: "#3e503f", muted: "#738471", rule: "#c1cdbb" },
+  straight: { name: "Club Straightaway", short: "Red track, open distance", description: "A continuous red rubber running track with white lane lines, a numbered start and whole-kilometer splits. Choose open edges or a green field with benches.", surface: "#ad5149", lane: "#a44942", ink: "#fff8ed", muted: "#f2d9c9", rule: "#fff7e9" },
+  oval: { name: "Club Oval", short: "One loop, one kilometer", description: "A closed red athletics oval with numbered lanes. Every normalized circuit represents 1 km or 1 mile; lap counts and true totals distinguish athletes on different laps. Distance-only zoom unfolds it into a straight track.", surface: "#ad5149", lane: "#a44942", ink: "#fff8ed", muted: "#f2d9c9", rule: "#fff7e9" },
   night: { name: "Night Meet", short: "A floodlit athletics field", description: "Charcoal running lanes, perimeter light pools and restrained illuminated sidelines. Bright capsules have room to breathe.", surface: "#26352f", lane: "#2e4037", ink: "#f7f7ec", muted: "#c8d4c4", rule: "#8eaa8c" },
 } as const;
 export type BackgroundId = keyof typeof backgrounds;
@@ -30,3 +31,10 @@ export type ZoomId = keyof typeof zoomTreatments;
 export function isBackgroundId(value: string | null): value is BackgroundId { return value !== null && Object.hasOwn(backgrounds, value); }
 export function isProgressId(value: string | null): value is ProgressId { return value !== null && Object.hasOwn(progressTreatments, value); }
 export function isZoomId(value: string | null): value is ZoomId { return value !== null && Object.hasOwn(zoomTreatments, value); }
+
+export const trackEdges = {
+  open: { name: "Open edges", description: "A clean track with quiet paper around it." },
+  club: { name: "Club grounds", description: "Green turf, a field and trackside benches." },
+} as const;
+export type TrackEdgeId = keyof typeof trackEdges;
+export function isTrackEdgeId(value: string | null): value is TrackEdgeId { return value !== null && Object.hasOwn(trackEdges, value); }

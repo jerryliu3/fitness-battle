@@ -4,11 +4,12 @@ import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { clampArenaLaneCenter, orderedArenaLanes, type ArenaViewWindow } from "@fitness-battle/shared";
+import { OvalTrack } from "./oval-track";
 import { Board2D } from "./board-2d";
 import { PersistentField } from "./persistent-field";
 import { boardFixture } from "./fixtures";
 import { boardGap, defaultBoardView, fitBoardView, overviewWindow, type BoardSession } from "./model";
-import { backgrounds, progressTreatments, zoomTreatments, isBackgroundId, isProgressId, isZoomId, type BackgroundId, type ProgressId, type ZoomId } from "./field-directions";
+import { backgrounds, progressTreatments, zoomTreatments, isBackgroundId, isProgressId, isZoomId, type BackgroundId, type ProgressId, type ZoomId, trackEdges, isTrackEdgeId, type TrackEdgeId } from "./field-directions";
 import "./board-lab.css";
 
 const Horizon = dynamic(() => import("./horizon").then(m => m.Horizon), { ssr: false, loading: () => <div className="bl-world-loading">Preparing the field…</div> });
@@ -29,8 +30,10 @@ function DesignControls({ background, progress, zoom, onBackground, onProgress, 
 
 export function BoardLab() {
   const [mode, setMode] = useState<"field" | "horizon">("field");
-  const [background, setBackground] = useState<BackgroundId>("athletics");
-  const [progressStyle, setProgressStyle] = useState<ProgressId>("rails");
+  const [background, setBackground] = useState<BackgroundId>("trail");
+  const [progressStyle, setProgressStyle] = useState<ProgressId>("deposit");
+  const [loopUnit, setLoopUnit] = useState<"km" | "mi">("km");
+  const [edges, setEdges] = useState<TrackEdgeId>("club");
   const [zoomStyle, setZoomStyle] = useState<ZoomId>("map");
   const [expanded, setExpanded] = useState(false), [selected, setSelected] = useState("you");
   const [session, setSession] = useState<BoardSession | null>(null);
@@ -53,16 +56,18 @@ export function BoardLab() {
   useEffect(() => {
     const q = new URLSearchParams(window.location.search);
     if (q.get("concept") === "horizon") setMode("horizon");
-    const bg = q.get("background"), pr = q.get("progress"), zm = q.get("zoom");
+    const bg = q.get("background"), pr = q.get("progress"), zm = q.get("zoom"), edge = q.get("edges");
+    if (q.get("loop") === "mi") setLoopUnit("mi");
+    if (isTrackEdgeId(edge)) setEdges(edge);
     if (isBackgroundId(bg)) setBackground(bg); if (isProgressId(pr)) setProgressStyle(pr); if (isZoomId(zm)) setZoomStyle(zm);
     setInitialized(true);
     return () => { cancelAnimationFrame(frame.current); cancelAnimationFrame(cameraFrame.current); };
   }, []);
   useEffect(() => {
     if (!initialized) return;
-    const q = new URLSearchParams({ concept: mode, background, progress: progressStyle, zoom: zoomStyle });
+    const q = new URLSearchParams({ concept: mode, background, progress: progressStyle, zoom: zoomStyle, edges, loop: loopUnit });
     window.history.replaceState(null, "", `${window.location.pathname}?${q}`);
-  }, [mode, background, progressStyle, zoomStyle, initialized]);
+  }, [mode, background, progressStyle, zoomStyle, edges, loopUnit, initialized]);
   useEffect(() => {
     if (!playing) return;
     if (reduced) { setProgress(1); setPlaying(false); setNotice("Preview added 2.2 km."); return; }
@@ -91,27 +96,34 @@ export function BoardLab() {
   }
   function zoom(multiplier: number) { const span = Math.max(2, Math.min(120, view.span * multiplier)); moveView({ center: clampArenaLaneCenter(view.center, span), span }); }
   function select(id: string) { setSelected(id); setSession(null); }
-  const controls = { background, progress: progressStyle, zoom: zoomStyle, onBackground: setBackground, onProgress: setProgressStyle, onZoom: setZoomStyle };
+  function chooseBackground(next: BackgroundId) { stop(); setBackground(next); if (next === "oval" || background === "oval") setCamera(null); }
+  const isClubTrack = background === "straight" || background === "oval";
+  const isOval = background === "oval" && zoomStyle !== "distance";
+  const FieldRenderer = isOval ? OvalTrack : Board2D;
+  const controls = { background, progress: progressStyle, zoom: zoomStyle, onBackground: chooseBackground, onProgress: setProgressStyle, onZoom: setZoomStyle };
 
   return <main className="board-lab">
-    <div className="bl-review-bar"><Link href="/design">← Design studies</Link><span>COMPETE / FIELD STUDY · ROUND 2</span><span className="bl-study-tag">Vertical · kilometers</span></div>
-    <header className="bl-intro"><div><p className="bl-eyebrow">A field with room to move</p><h1>Find your ground.<br/>Leave your trace.</h1></div><p>Eight places to move through. Five ways to see what you’ve earned. Mix the surface, the trace and the lens.</p></header>
-    <nav className="bl-mode-tabs" aria-label="Field view"><button type="button" aria-pressed={mode === "field"} onClick={() => setMode("field")}><strong>2D Track lab</strong><span>8 backgrounds · 5 progress treatments</span></button><button type="button" aria-pressed={mode === "horizon"} onClick={() => { setMode("horizon"); setUnavailable(false); }}><strong>3D Horizon</strong><span>The scenic distance course</span></button></nav>
+    <div className="bl-review-bar"><Link href="/design">← Design studies</Link><span>COMPETE / FIELD STUDY · ROUND 3</span><span className="bl-study-tag">Vertical · kilometers</span></div>
+    <header className="bl-intro"><div><p className="bl-eyebrow">A field with room to move</p><h1>Find your ground.<br/>Leave your trace.</h1></div><p>Nine places to move through. Five ways to see what you’ve earned. Mix the surface, the trace and the lens.</p></header>
+    <nav className="bl-mode-tabs" aria-label="Field view"><button type="button" aria-pressed={mode === "field"} onClick={() => setMode("field")}><strong>2D Track lab</strong><span>{Object.keys(backgrounds).length} fields · 5 progress treatments</span></button><button type="button" aria-pressed={mode === "horizon"} onClick={() => { setMode("horizon"); setUnavailable(false); }}><strong>3D Horizon</strong><span>The scenic distance course</span></button></nav>
     <div className="bl-round-note"><span>Same athletes. Same distance. Independent design choices.</span><span>Fictional athletes & sessions</span></div>
     <div className="bl-workspace">
       <section className="bl-app" aria-label={`${title} product preview`}>
         <header className="bl-app-header"><span className="bl-brand">overtaek</span><span className="bl-profile">JL</span></header>
-        <div className="bl-week-heading"><div><p className="bl-eyebrow">Running / Your weekly field</p><h2>Your week, taking shape.</h2></div><span className="bl-week-chip">19–26 Oct · UTC</span></div>
+        <div className="bl-week-heading"><div><p className="bl-eyebrow">Running / Your weekly field</p><h2>Your week, taking shape.</h2></div><span className="bl-week-chip">19–26 Oct · ET</span></div>
         <div className="bl-score"><div><strong data-testid="board-total">{total.toFixed(1)}<small>km</small></strong><span>Your counted distance</span></div><div className="bl-nearest"><span>In good company</span><strong>{nearest.name.split(" ")[0]}</strong><small>{boardGap(nearest.value, total, "km")}</small></div></div>
         <PersistentField expanded={expanded} onClose={() => setExpanded(false)}>
           <section className={`bl-field-shell ${expanded ? "is-expanded" : ""}`} data-concept={mode}>
             <div className="bl-field-top"><div><span className="bl-field-title">{title}</span><span className="bl-field-mode">{mode === "horizon" ? "3D / GPS distance" : `${progressTreatments[progressStyle].name} · ${zoomTreatments[zoomStyle].name}`}</span></div><button type="button" className="bl-icon-button" onClick={() => setExpanded(v => !v)} aria-label={expanded ? "Close expanded field" : "Expand field"} aria-expanded={expanded}>{expanded ? "↙ Close" : "↗ Expand"}</button></div>
             {(mode === "field" || unavailable) && <DesignControls {...controls}/>}
+            {(mode === "field" || unavailable) && isClubTrack && <div className="bl-track-options" aria-label="Track surroundings"><span>Trackside</span>{background === "straight" && <button type="button" onClick={() => moveView({ center: 2, span: 6 })}>Start line</button>}{Object.entries(trackEdges).map(([key, option]) => <button type="button" key={key} aria-pressed={edges === key} onClick={() => setEdges(key as TrackEdgeId)}>{option.name}</button>)}</div>}
+            {(mode === "field" || unavailable) && background === "oval" && <div className="bl-track-options"><label>Loop length <select aria-label="Loop length" value={loopUnit} onChange={e => setLoopUnit(e.target.value as "km" | "mi")}><option value="km">1 kilometer</option><option value="mi">1 mile</option></select></label><span>Totals stay in kilometers</span></div>}
+            {(mode === "field" || unavailable) && background === "oval" && <p className="bl-circuit-caption">{isOval ? `1 ${loopUnit} per loop · compare total distance and completed laps. Each lane uses the same normalized circuit.` : "Distance lens unfolds the oval into continuous kilometer lanes."}</p>}
             <div className="bl-scene" data-testid="board-scene">
               {mode === "horizon" && !unavailable ? <Horizon lanes={lanes} view={view} unit="km" selected={selected} showGhost={showGhost} above={above} onSelect={select} onUnavailable={() => setUnavailable(true)}/>
-                : <Board2D lanes={lanes} sessions={sessions} background={background} progress={progressStyle} zoom={zoomStyle} view={view} selected={selected} showGhost={showGhost} expanded={expanded} onSelect={select} onSession={s => { stop(); setSession(s); }} onPan={pan}/>}
+                : <FieldRenderer loopUnit={loopUnit} edges={edges} lanes={lanes} sessions={sessions} background={background === "oval" && !isOval ? "straight" : background} progress={progressStyle} zoom={zoomStyle} view={view} selected={selected} showGhost={showGhost} expanded={expanded} onSelect={select} onSession={s => { stop(); setSession(s); }} onPan={pan}/>}
             </div>
-            <div className="bl-field-tools"><div className="bl-tool-group"><button type="button" aria-label="Explore earlier distance" onClick={() => moveView({ ...view, center: view.center - view.span / 3 })}>↓</button><button type="button" onClick={() => moveView(defaultBoardView(total, "km"), true)}>Center me</button><button type="button" aria-label="Explore further distance" onClick={() => moveView({ ...view, center: view.center + view.span / 3 })}>↑</button></div><div className="bl-tool-group"><button type="button" aria-label="Zoom in" onClick={() => zoom(.7)}>＋</button><button type="button" aria-label="Zoom out" onClick={() => zoom(1.4)}>−</button><button type="button" onClick={() => { if (mode === "horizon") setAbove(true); moveView(fitBoardView(lanes, "km")); }}>Fit field</button></div></div>
+            <div className="bl-field-tools"><div className="bl-tool-group"><button type="button" aria-label="Explore earlier distance" onClick={() => moveView({ ...view, center: view.center - view.span / 3 })}>↓</button><button type="button" onClick={() => moveView(defaultBoardView(total, "km"), true)}>Center me</button><button type="button" aria-label="Explore further distance" onClick={() => moveView({ ...view, center: view.center + view.span / 3 })}>↑</button></div><div className="bl-tool-group"><button type="button" aria-label="Zoom in" onClick={() => zoom(.7)}>＋</button><button type="button" aria-label="Zoom out" onClick={() => zoom(1.4)}>−</button><button type="button" onClick={() => { if (mode === "horizon") setAbove(true); moveView(mode === "field" && isOval ? defaultBoardView(total, "km") : fitBoardView(lanes, "km")); }}>Fit field</button></div></div>
             <div className="bl-overview" aria-label={`Distance from zero to ${fieldHigh.toFixed(1)} km`}><span>0</span><div className="bl-overview-track"><span className="bl-overview-window" style={{ left: `${overview.left}%`, width: `${overview.width}%` }}/>{lanes.filter(l => !l.ghost).map(l => <i key={l.id} className={l.you ? "is-you" : ""} style={{ left: `${l.value / fieldHigh * 100}%` }}/>)}</div><span>{fieldHigh.toFixed(1)} km</span></div>
             {unavailable && mode === "horizon" && <p className="bl-fallback" role="status">3D is unavailable here. The same field is shown in 2D.</p>}
             <div className="bl-field-selection" aria-label="Selected athlete or counted session"><span className={`bl-mini-capsule ${person.you ? "is-you" : ""}`}/><div><strong>{session ? session.title : person.you ? "Your week, taking shape" : person.name}</strong><span>{session ? `${(session.end - session.start).toFixed(1)} km · counted session` : person.you ? `${(total - (lanes.find(l => l.ghost)?.value ?? total)).toFixed(1)} km ahead of past you · same cutoff` : boardGap(person.value, total, "km")}</span></div><strong>{(session ? session.end - session.start : person.value).toFixed(1)}<small>km</small></strong></div>
@@ -124,7 +136,7 @@ export function BoardLab() {
       <aside className="bl-sidebar">
         {mode === "field" ? <>
           <div className="bl-side-heading"><p className="bl-eyebrow">Independent choices</p><h3>Make the field yours.</h3></div>
-          <fieldset className="bl-desktop-design"><legend>01 / The ground</legend><div className="bl-background-catalog">{Object.entries(backgrounds).map(([key, b]) => <button type="button" key={key} aria-pressed={background === key} onClick={() => setBackground(key as BackgroundId)}><span className="bl-surface-swatch" data-surface={key}/><strong>{b.name}</strong><small>{b.short}</small></button>)}</div></fieldset>
+          <fieldset className="bl-desktop-design"><legend>01 / The ground</legend><div className="bl-background-catalog">{Object.entries(backgrounds).map(([key, b]) => <button type="button" key={key} aria-pressed={background === key} onClick={() => chooseBackground(key as BackgroundId)}><span className="bl-surface-swatch" data-surface={key}/><strong>{b.name}</strong><small>{b.short}</small></button>)}</div></fieldset>
           <p className="bl-choice-description">{backgrounds[background].description}</p>
           <fieldset className="bl-desktop-design"><legend>02 / The progress</legend><div className="bl-progress-catalog">{Object.entries(progressTreatments).map(([key, p]) => <button type="button" key={key} aria-pressed={progressStyle === key} onClick={() => setProgressStyle(key as ProgressId)}><span className="bl-trace-swatch" data-trace={key}><i/><i/><i/></span><span><strong>{p.name}</strong><small>{p.short}</small></span></button>)}</div></fieldset>
           <p className="bl-choice-description">{progressTreatments[progressStyle].description}</p>

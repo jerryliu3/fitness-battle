@@ -1,4 +1,4 @@
-import { backgrounds, type BackgroundId } from "./field-directions";
+import { backgrounds, type BackgroundId, type TrackEdgeId } from "./field-directions";
 import { fieldSamples } from "./model";
 import type { ArenaViewWindow } from "@fitness-battle/shared";
 
@@ -13,23 +13,25 @@ export interface FieldGeometry {
 }
 
 /** Distance-fixed scenery only. No viewport-relative grid and no fractional horizontal rules. */
-export function TrackBackground({ background, geometry: g, count, view, prefix }: {
-  background: BackgroundId; geometry: FieldGeometry; count: number; view: ArenaViewWindow; prefix: string;
+export function TrackBackground({ background, geometry: g, count, view, prefix, edges = "club" }: {
+  background: BackgroundId; geometry: FieldGeometry; count: number; view: ArenaViewWindow; prefix: string; edges?: TrackEdgeId;
 }) {
   const palette = backgrounds[background], z = g.worldScale;
   const samples = fieldSamples(view, .5, 60), whole = fieldSamples(view, 1, 45);
   const indices = Array.from({ length: count }, (_, i) => i);
   const rand = (d: number) => { const x = Math.sin(d * 91.7 + 7.3) * 4353.1; return x - Math.floor(x); };
   const middle = g.left + g.fieldWidth / 2;
+  const isTrack = background === "straight" || background === "oval";
   const isScenic = background === "parkland" || background === "trail";
   return <g className="bl-world-ground" pointerEvents="none" data-background={background}>
     <defs>
       <linearGradient id={`${prefix}-surface`} x2="1" y2="1"><stop stopColor={palette.surface}/><stop offset="1" stopColor={palette.lane}/></linearGradient>
+      <pattern id={`${prefix}-rubber`} width={11 * z} height={13 * z} patternUnits="userSpaceOnUse" y={g.along(0)}><circle cx={3 * z} cy={4 * z} r={.6 * z} fill="#713e36" opacity=".22"/><circle cx={8 * z} cy={10 * z} r={.5 * z} fill="#f5ad8f" opacity=".22"/></pattern>
       <radialGradient id={`${prefix}-lamp`}><stop stopColor="#e5d698" stopOpacity=".24"/><stop offset="1" stopColor="#e5d698" stopOpacity="0"/></radialGradient>
     </defs>
-    <rect x={g.left - 30 * z} y={g.top} width={g.fieldWidth + 60 * z} height={g.length} rx={12 * z} fill={isScenic ? "#dfe7d2" : background === "road" ? "#dce3d4" : palette.surface}/>
+    <rect x={g.left - 30 * z} y={g.top} width={g.fieldWidth + 60 * z} height={g.length} rx={12 * z} fill={isScenic ? "#dfe7d2" : background === "road" ? "#dce3d4" : isTrack ? edges === "club" ? "#b7c79b" : "#f6f7f2" : palette.surface}/>
     {isScenic ? <path d={g.path(view.center - view.span / 2 - 1, view.center + view.span / 2 + 1, (count - 1) / 2)} fill="none" stroke={palette.lane} strokeWidth={g.fieldWidth - 14 * z}/>
-      : background !== "contour" && <rect x={g.left} y={g.top} width={g.fieldWidth} height={g.length} fill={`url(#${prefix}-surface)`}/>}
+      : <rect x={g.left} y={g.top} width={g.fieldWidth} height={g.length} fill={`url(#${prefix}-surface)`}/>}
     {indices.map(i => {
       const x = g.cross(i), half = g.laneWidth / 2;
       return <g key={i}>
@@ -37,6 +39,16 @@ export function TrackBackground({ background, geometry: g, count, view, prefix }
           <rect x={x - half + 4 * z} y={g.top} width={g.laneWidth - 8 * z} height={g.length} fill={i % 2 ? "#95a5a5" : "#819798"} opacity=".6"/>
           <line x1={x - half + 3 * z} x2={x - half + 3 * z} y1={g.top} y2={g.top + g.length} stroke="#f7f8ec" strokeWidth={1.5 * z}/>
           {whole.map(d => <text key={d} x={x - half + 12 * z} y={g.along(d) - 7 * z} fill="#f0f3e9" opacity=".7" fontSize={11 * z}>{d}</text>)}
+        </>}
+        {isTrack && <>
+          <rect x={x - half} y={g.top} width={g.laneWidth} height={g.length} fill={i % 2 ? "#af544b" : "#a84c44"}/>
+          <rect x={x - half} y={g.top} width={g.laneWidth} height={g.length} fill={`url(#${prefix}-rubber)`}/>
+          <line x1={x - half} x2={x - half} y1={g.top} y2={g.top + g.length} stroke="#fff7e9" strokeWidth={2 * z}/>
+          {whole.map(d => <g key={d} data-track-split={d}>
+            <line x1={x - half} x2={x + half} y1={g.along(d)} y2={g.along(d)} stroke="#fff7e9" strokeWidth={(d === 0 ? 4 : 1) * z} opacity={d === 0 ? 1 : .4}/>
+            <text x={x - half + 10 * z} y={g.along(d) - 8 * z} fill="#fff7e9" fontSize={10 * z} opacity=".75">{d === 0 ? "START" : `${d} km`}</text>
+            {d === 0 && <text x={x} y={g.along(d) - 23 * z} textAnchor="middle" fontSize={30 * z} fontWeight="650" fill="#fff7e9">{i + 1}</text>}
+          </g>)}
         </>}
         {background === "road" && <>
           <rect x={x - half + 7 * z} y={g.top} width={g.laneWidth - 14 * z} height={g.length} rx={5 * z} fill="#4f5f58"/>
@@ -59,6 +71,10 @@ export function TrackBackground({ background, geometry: g, count, view, prefix }
         </>}
       </g>;
     })}
+    {isTrack && <line x1={g.left + g.fieldWidth} x2={g.left + g.fieldWidth} y1={g.top} y2={g.top + g.length} stroke="#fff7e9" strokeWidth={2 * z}/>}
+    {isTrack && edges === "club" && whole.filter(d => d % 2 === 0).map(d => <g key={`bench-${d}`} transform={`translate(${g.left + g.fieldWidth + 16 * z} ${g.along(d)}) scale(${z})`}>
+      <ellipse cx="2" cy="4" rx="9" ry="18" fill="#718663" opacity=".18"/><rect x="-5" y="-15" width="10" height="30" rx="2" fill="#8c805e"/><path d="M-2-12V12M2-12V12" stroke="#d4c5a2" strokeWidth="2"/>
+    </g>)}
     {isScenic && samples.map(d => {
       const y = g.along(d), r = (8 + rand(d) * 5) * z;
       return <g key={d}>{[-1, 1].map(side => {
@@ -73,10 +89,6 @@ export function TrackBackground({ background, geometry: g, count, view, prefix }
       <text x="0" y="25" textAnchor="middle" fontSize="10" fill="#7c896c">{d}</text>
     </g>)}
     {background === "trail" && samples.map(d => <g key={d}><circle cx={g.left + 12 * z + g.drift(d)} cy={g.along(d)} r={2 * z} fill="#bdc8a7"/><circle cx={g.left + g.fieldWidth - 14 * z + g.drift(d)} cy={g.along(d) + 7 * z} r={3 * z} fill="#c2ccab"/></g>)}
-    {background === "contour" && whole.filter(d => d % 2 === 0).map(d => <g key={d} transform={`translate(${middle + (rand(d) - .5) * g.fieldWidth * .8} ${g.along(d)}) scale(${z})`}>
-      {[24, 43, 64, 88].map((r, i) => <ellipse key={r} rx={r * (1 + rand(d))} ry={r * .63} transform={`rotate(${18 + i * 3})`} fill="none" stroke="#a7b89e" strokeWidth=".9" opacity=".35"/>)}
-      <ellipse rx="5" ry="3" fill="#a7b69c" opacity=".7"/>
-    </g>)}
     {background === "night" && whole.filter(d => d % 2 === 0).map(d => <g key={d}>{[-1, 1].map(side => <g key={side}><ellipse cx={middle + side * (g.fieldWidth / 2 + 10 * z)} cy={g.along(d)} rx={80 * z} ry={65 * z} fill={`url(#${prefix}-lamp)`}/><circle cx={middle + side * (g.fieldWidth / 2 + 8 * z)} cy={g.along(d)} r={3 * z} fill="#f8edbe"/></g>)}</g>)}
   </g>;
 }
