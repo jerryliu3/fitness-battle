@@ -94,6 +94,10 @@ function YouContent() {
   const pushIdentity: SyncIdentity | null = user
     ? { userId: user.id, localOnly: demoMode || user.mode === "demo" }
     : null;
+  const requestedPanel = searchParams.get("panel");
+  useEffect(() => {
+    if (requestedPanel && requestedPanel in PANEL_TITLES) setPanel(requestedPanel as AthletePanel);
+  }, [requestedPanel]);
   const tracker = searchParams.get("tracker");
   const trackerProvider = searchParams.get("provider");
   const appliedTracker = useRef<string | null>(null);

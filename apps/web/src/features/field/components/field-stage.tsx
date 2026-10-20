@@ -371,20 +371,6 @@ export function FieldStage({
             <b>{overtakeStatus.headline}</b>
             {overtakeStatus.detail ? ` · ${overtakeStatus.detail}` : null}
           </span>
-          {!overtakeFrame && !reduced && (
-            <button
-              type="button"
-              className="fb-btn-ghost"
-              style={{ padding: "2px 8px", fontSize: 12 }}
-              onClick={() => {
-                setCenter(null);
-                setOvertakeProgress(0);
-                setReplayEpoch((n) => n + 1);
-              }}
-            >
-              ↻ Replay
-            </button>
-          )}
         </div>
       )}
       {ghost && (

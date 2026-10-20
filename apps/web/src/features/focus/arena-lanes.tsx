@@ -371,7 +371,7 @@ export function ArenaLanes({
               key={l.id}
               initial={false}
               animate={{ x: targetX, y: targetY }}
-              transition={{ duration: reduced || drag.current || animating ? 0 : 0.48, ease: [0.22, 1, 0.36, 1] }}
+              transition={{ duration: reduced || drag.current || animating || previousGeometry.current?.width !== size.width ? 0 : 0.48, ease: [0.22, 1, 0.36, 1] }}
               data-athlete={l.id}
               role="button"
               aria-pressed={selected === l.id}
