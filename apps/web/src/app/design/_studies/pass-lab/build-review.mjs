@@ -97,6 +97,7 @@ for(const dark of [false,true]){
   await mkdir(join(output,"capsule-wake-icons",theme),{recursive:true});
   for(const [i,s]of scaleMod.exports.wakeSamples.filter(s=>s.dark===dark).entries()){
     await writeFile(join(output,"capsule-wake-icons",theme,`${s.scale*100}-${s.id}.svg`),s.master);
+    if(s.scale===1.625&&s.id==="four")await writeFile(join(output,`selected-capsule-${theme}.svg`),s.master);
     const x=24+i%3*270,y=125+Math.floor(i/3)*300;
     wakeTiles.push(s.tile.replace("<svg ",`<svg x="${x}" y="${y}" `)+`<text x="${x}" y="${y+260}" font-size="14" font-weight="600">${s.scale*100}% · ${s.name}</text>`);
   }

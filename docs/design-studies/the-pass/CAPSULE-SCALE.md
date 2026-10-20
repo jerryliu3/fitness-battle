@@ -1,5 +1,7 @@
 # Fixed-center capsule scale study
 
+**Selected:** 162.5% with four closer fading echoes on each path, Polished glass at 80% alpha, Solar Gold and Cool Platinum. `selected-capsule-{white,black}.svg` records the finalized icon. The review opens on this selection; other variants remain as design history. A stacked production PR applies it across web/mobile.
+
 Material is locked to **Polished glass, 80% face alpha, Solar Gold #ffc400 and Cool Platinum #c9d6e3**. This followup studies size only, before production rollout.
 
 Open `review.html?view=capsule-scale` or `/design/pass?view=capsule-scale`.

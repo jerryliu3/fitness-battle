@@ -17,6 +17,7 @@ export const CAPSULE_WAKES=[
   {id:"five",name:"5 fading echoes",line:"Five closer echoes on each path. A denser, more gradual fade to compare."},
 ] as const;
 export type CapsuleWake=typeof CAPSULE_WAKES[number]["id"];
+export const CAPSULE_SELECTION={scale:1.625,wake:"four"} as const;
 export function selectedCapsule(wake:CapsuleWake="original",scale=1.35){
   const concept=finishSpec(FINISH_SELECTION.id,"pill");
   if(wake==="original"||!("glass" in concept))return concept;
@@ -30,7 +31,7 @@ type Props={player:{progress:number;playing:boolean;reduced:boolean;replay:()=>v
 
 export function CapsuleScaleStudy({player,flow,flowRequested,setFlow}:Props){
   const [dark,setDark]=useState(false),[centers,setCenters]=useState(false);
-  const [scale,setScale]=useState<number>(1.75),[wake,setWake]=useState<CapsuleWake>("five");
+  const [scale,setScale]=useState<number>(CAPSULE_SELECTION.scale),[wake,setWake]=useState<CapsuleWake>(CAPSULE_SELECTION.wake);
   const concept=selectedCapsule(wake,scale);
   const exportIcon=(svg:SVGSVGElement|null,value:number)=>{
     const clean=svg?.cloneNode(true) as SVGSVGElement|undefined;
@@ -38,9 +39,9 @@ export function CapsuleScaleStudy({player,flow,flowRequested,setFlow}:Props){
     downloadFinishIcon(clean??null,`polished-glass-80pct-solar-cool-${value*100}pct-${wake}-${dark?"black":"white"}`);
   };
   return <section className="pass-round mat-round capsule-scale-round">
-    <div className="pass-section-intro"><div><p className="pass-eyebrow">MATERIAL LOCKED / SIZE + WAKE EXPERIMENT</p><h2>A larger capsule.<br/>More of the fade.</h2></div><p>Polished glass · 80% alpha · Solar Gold + Cool Platinum. Compare the original wake with four or five closer afterimages that fit inside the icon. Try 162.5% or 175%. Each capsule stays centered in the same place; the material and colors stay locked.</p></div>
+    <div className="pass-section-intro"><div><p className="pass-eyebrow">SELECTED / 162.5% · FOUR FADING ECHOES</p><h2>A larger capsule.<br/>More of the fade.</h2></div><p>Selected: 162.5%, four fading echoes, Polished glass at 80% alpha, Solar Gold + Cool Platinum. The head centers stay fixed. Earlier sizes and wakes remain available for comparison.</p></div>
     <div className="mat-toolbar"><fieldset><legend>Backdrop</legend><button aria-pressed={!dark} onClick={()=>setDark(false)}>White</button><button aria-pressed={dark} onClick={()=>setDark(true)}>Black</button></fieldset><fieldset><legend>Afterimage experiment</legend>{CAPSULE_WAKES.map(w=><button key={w.id} aria-pressed={wake===w.id} onClick={()=>setWake(w.id)}>{w.name}</button>)}</fieldset><label className="pass-check"><input type="checkbox" checked={centers} onChange={e=>setCenters(e.target.checked)}/> Show fixed centers</label><a href="#capsule-scale-field">Compare in the field ↓</a></div>
-    <p className="pass-round-status">{CAPSULE_WAKES.find(w=>w.id===wake)!.line} This is an experiment; Original wake is always available for comparison.</p>
+    <p className="pass-round-status">{CAPSULE_WAKES.find(w=>w.id===wake)!.line} Selected identity: 162.5% with four echoes.</p>
     <div className="finish-capsule-grid">{CAPSULE_SCALES.map(s=><article key={s.id} className={`mat-card ${scale===s.scale?"is-selected":""}`}>
       <div className={`finish-tile ${dark?"is-dark":""}`}><MaterialIcon concept={selectedCapsule(wake,s.scale)} objectScale={s.scale} showCenters={centers} dark={dark}/></div>
       <div className="mat-card-copy"><span className="pass-eyebrow">{Math.round(40*s.scale)} × {Math.round(58*s.scale)} CAPSULE · {Math.round((s.scale/1.35-1)*100)}% LARGER THAN CURRENT</span><h3>{s.name}</h3><p>Both head centers stay at (74, 145) and (182, 93). Clear horizontal gap: {108-40*s.scale} units.</p><div className="mat-small">{[64,32,16].map(size=><MaterialIcon key={size} concept={selectedCapsule(wake,s.scale)} objectScale={s.scale} dark={dark} size={size}/>)}<span>64 / 32 / 16 px</span></div><div className="mat-card-actions"><button aria-pressed={scale===s.scale} onClick={()=>setScale(s.scale)}>{scale===s.scale?"In the field ✓":"Compare in field"}</button><button onClick={e=>exportIcon(e.currentTarget.closest("article")?.querySelector("svg")??null,s.scale)}>SVG ↗</button></div></div>
