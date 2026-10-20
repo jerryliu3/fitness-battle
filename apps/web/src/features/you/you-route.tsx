@@ -1035,7 +1035,7 @@ function YouContent({ surface }: { surface: "progress" | "athlete" }) {
             primary={state.primary}
           />
         </>
-      ) : (
+      ) : user ? (
         <>
       <AthleteOverview
         state={state}
@@ -1074,7 +1074,7 @@ function YouContent({ surface }: { surface: "progress" | "athlete" }) {
         ))}
       </nav>
         </>
-      )}
+      ) : null}
       {!state.onboardingCompleted ? (
         <section className="fb-card">
           <h2>Finish setup</h2>
