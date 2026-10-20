@@ -708,6 +708,13 @@ function settleEnrollment(
   return next;
 }
 
+/** Settle one due sport round using the ordinary scoring and renewal rules. */
+export function settleSportRound(state: CompeteState, sport: SportId, asOf: Date): CompeteState {
+  const enrollment = enrollmentFor(state, sport);
+  if (!enrollment || Date.parse(enrollment.weekEnd) > asOf.getTime()) return state;
+  return settleEnrollment(state, enrollment);
+}
+
 /**
  * Close any finished wave enrollments. Safe to call on every load.
  * After a long gap we settle at most 12 waves for Elo continuity, then
@@ -737,11 +744,11 @@ export function settleCompetition(
     const enrollment = due[0]!;
     const board = fields.find((pin) => pin.sport === enrollment.sport &&
       pin.waveStart === enrollment.waveStart && pin.weekEnd === enrollment.weekEnd);
-    next = settleEnrollment(board ? { ...next, crewBoard: board } : next, enrollment);
+    next = settleSportRound(board ? { ...next, crewBoard: board } : next, enrollment.sport, now);
     guard += 1;
   }
 
-  if (next.crewBoard && new Date(next.crewBoard.waveStart).getTime() !== liveWave.waveStart.getTime()) {
+  if (next.crewBoard && Date.parse(next.crewBoard.weekEnd) <= now.getTime()) {
     next = { ...next, crewBoard: null };
   }
 
