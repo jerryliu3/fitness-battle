@@ -15,14 +15,6 @@ name: EAS iOS → TestFlight
 
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - main
-    paths:
-      - "apps/mobile/**"
-      - "packages/shared/**"
-      - "pnpm-lock.yaml"
-      - ".github/workflows/eas-ios-testflight.yml"
 
 concurrency:
   group: eas-ios-testflight-${{ github.ref }}
