@@ -49,7 +49,6 @@ export function ArenaLanes({
   const standings = presentation === "standings";
   const prefix = useId();
   const wakeTime = usePolishedWakeTime(host);
-  const clipId = useId();
   const [size, setSize] = useState({ width: 360, height: 540 });
   const previousGeometry = useRef<{ width: number; laneWidth: number; count: number } | null>(null);
   const laneScroll = useRef<number | null>(null);
@@ -247,7 +246,6 @@ export function ArenaLanes({
         }}
       >
         <defs>
-          <clipPath id={`${clipId}-field`}><rect x="10" y="56" width={width-62} height={Math.max(0,maxTailY-56)}/></clipPath>
           <linearGradient id={`${prefix}-road`} x2="0" y2="1">
             <stop stopColor="#f7faf3" />
             <stop offset="0.45" stopColor="#eef3e8" />
@@ -422,7 +420,12 @@ export function ArenaLanes({
                   <Ember expression="joy" shadow={false} />
                 </foreignObject>
               )}
-              <g clipPath={`url(#${clipId}-field)`}><PolishedRacer x={xx} y={yy} you={Boolean(l.you)} active={active} time={position.edge ? undefined : wakeTime}/></g>
+              {/* Clip only the wake, in racer-local coordinates; the head must stay
+                  visible at field edges and throughout the standings transition. */}
+              <PolishedRacer x={xx} y={yy} you={Boolean(l.you)} active={active}
+                showWake={!standings} wakeBottom={maxTailY-targetY}
+                time={position.edge ? undefined : wakeTime}/>
+              <rect className="focus-racer-focus-ring" x={-23} y={-headHalf-3} width={46} height={headHalf*2+6} rx={23} fill="none" stroke="#f1c75b" strokeWidth={2}/>
               <rect x={xx - 24} y={yy - headHalf - 4} width="48" height={headHalf * 2 + 8} rx="24" fill="transparent"/>
               <text
                 x={xx}

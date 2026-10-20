@@ -6,11 +6,33 @@ function draw(node:CapsuleNode,key:number):React.ReactNode{
   const {maskType,...attrs}=node.attrs;
   return createElement(node.tag,{...attrs,...(maskType?{style:{maskType}}:{}),key},node.children?.map(draw));
 }
-export function PolishedRacer({x,y,you,time,active=false}: {x:number;y:number;you:boolean;time?:number;active?:boolean}){
-  const id=useId();
-  return <g transform={`translate(${x} ${y}) scale(${polishedLaneScale(you)})`} pointerEvents="none" data-polished-racer={you?"gold":"platinum"}>
-    {polishedCapsuleScene(id,you,time).map(draw)}
-    {active&&!you&&<path d={polishedCapsulePath(-3)} fill="none" stroke="#282f2c" strokeWidth="1.5"/>}
+export function PolishedRacer({
+  x, y, you, time, active = false, showWake = true, wakeBottom,
+}: {
+  x: number;
+  y: number;
+  you: boolean;
+  time?: number;
+  active?: boolean;
+  showWake?: boolean;
+  /** Distance from the head to the field's lower wake boundary, in field pixels. */
+  wakeBottom?: number;
+}) {
+  const id = useId();
+  const scale = polishedLaneScale(you);
+  const [defs, wake, ...head] = polishedCapsuleScene(id, you, time);
+  return <g transform={`translate(${x} ${y}) scale(${scale})`} pointerEvents="none" data-polished-racer={you ? "gold" : "platinum"}>
+    {draw(defs, 0)}
+    {showWake && <g clipPath={wakeBottom === undefined ? undefined : `url(#${id}-wake-clip)`}>
+      {wakeBottom !== undefined && <defs>
+        <clipPath id={`${id}-wake-clip`}>
+          <rect x={-40} y={-35} width={80} height={Math.max(0, wakeBottom / scale + 35)} />
+        </clipPath>
+      </defs>}
+      {draw(wake, 1)}
+    </g>}
+    {head.map(draw)}
+    {active && !you && <path d={polishedCapsulePath(-3)} fill="none" stroke="#282f2c" strokeWidth="1.5" />}
   </g>;
 }
 
