@@ -29,8 +29,14 @@ async function goldPixels(svg: string, top: number, bottom: number) {
 }
 
 describe("production capsule visibility", () => {
-  it.each([0, 3, 8])("renders the gold head at value %s, including field edges", async value => {
+  it.each([0, 3, 6])("renders the gold head at value %s, including field edges", async value => {
     expect(await goldPixels(render("lanes", value), 0, 540)).toBeGreaterThan(500);
+  });
+  it("replaces an out-of-range capsule with a dotted arrow", () => {
+    const svg = render("lanes", 8);
+    expect(svg).not.toContain('data-polished-racer=');
+    expect(svg).toContain('stroke-dasharray="3 3"');
+    expect(svg).toContain("↑");
   });
   it("renders the standings capsule without a wake extending into the next row", async () => {
     const svg = render("standings");

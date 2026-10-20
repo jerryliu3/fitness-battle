@@ -7,11 +7,12 @@ function draw(node:CapsuleNode,key:number):React.ReactNode{
   return createElement(node.tag,{...attrs,...(maskType?{style:{maskType}}:{}),key},node.children?.map(draw));
 }
 export function PolishedRacer({
-  x, y, you, time, active = false, showWake = true, wakeBottom,
+  x, y, you, gold = you, time, active = false, showWake = true, wakeBottom,
 }: {
   x: number;
   y: number;
   you: boolean;
+  gold?: boolean;
   time?: number;
   active?: boolean;
   showWake?: boolean;
@@ -20,8 +21,8 @@ export function PolishedRacer({
 }) {
   const id = useId();
   const scale = polishedLaneScale(you);
-  const [defs, wake, ...head] = polishedCapsuleScene(id, you, time);
-  return <g transform={`translate(${x} ${y}) scale(${scale})`} pointerEvents="none" data-polished-racer={you ? "gold" : "platinum"}>
+  const [defs, wake, ...head] = polishedCapsuleScene(id, gold, time);
+  return <g transform={`translate(${x} ${y}) scale(${scale})`} pointerEvents="none" data-polished-racer={gold ? "gold" : "platinum"}>
     {draw(defs, 0)}
     {showWake && <g clipPath={wakeBottom === undefined ? undefined : `url(#${id}-wake-clip)`}>
       {wakeBottom !== undefined && <defs>

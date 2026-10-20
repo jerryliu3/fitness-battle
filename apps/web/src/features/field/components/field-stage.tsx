@@ -10,7 +10,6 @@ import {
   readArenaBaseline,
   reconcileArenaOvertake,
   resolveArenaSelectedId,
-  selfLaneLabel,
   serializeArenaBaseline,
   stepArenaOvertake,
   type ArenaOvertakePlan,
@@ -23,7 +22,6 @@ import { ExpandingField } from "./expanding-field";
 import { ArenaLanes } from "@/features/focus/arena-lanes";
 import { defaultLook } from "../avatar";
 import {
-  gapLabel,
   placeAt,
   stableLanes,
   valueAt,
@@ -105,8 +103,12 @@ export function FieldStage({
   const committedRef = useRef<Record<string, Record<string, number>>>({});
   const lastSignatureRef = useRef<string | null>(null);
 
-  const toggleSelect = (id: string) =>
-    setSelected((prev) => (prev === id ? null : id));
+  const toggleSelect = (id: string) => {
+    const runner = runners.find((item) => item.id === id) ?? (ghost?.id === id ? ghost : null);
+    if (!runner) return;
+    setSelected(id);
+    tweenCenterTo(valueAt(runner, time));
+  };
 
   const fieldLanes: ArenaSceneLane[] = useMemo(
     () =>
@@ -327,45 +329,7 @@ export function FieldStage({
     showGhost,
   );
 
-  const chosen =
-    selected == null
-      ? null
-      : selected === ghost?.id
-        ? showGhost
-          ? ghost
-          : null
-        : (runners.find((r) => r.id === selected) ?? null);
-
   if (!you) return <p className="fb-copy">Join a field to see your lanes.</p>;
-
-  const athleteDetails = (chosen && (
-        <div
-          className="focus-athlete-popup"
-          role="region"
-          aria-label="Athlete details"
-        >
-          <div className="focus-athlete-popup-head">
-            <b>{chosen.you ? selfLaneLabel(chosen.name) : chosen.name}</b>
-            <button
-              type="button"
-              aria-label="Close"
-              onClick={() => setSelected(null)}
-              className="focus-athlete-popup-close"
-            >
-              ×
-            </button>
-          </div>
-          <div className="focus-athlete-popup-body">
-            <strong>
-              {valueAt(chosen, time).toFixed(1)} {unit}
-            </strong>
-            <span className="fb-note">
-              · {gapLabel(chosen, you, time, 0, unit)}
-            </span>
-            {chosen.ghost && <span className="fb-note">· past you</span>}
-          </div>
-        </div>
-      ));
 
   return (
     <section className="focus-arena-stage">
@@ -431,35 +395,18 @@ export function FieldStage({
         </p>
       )}
       <div className="focus-segments" role="tablist" aria-label="Arena view">
-        {(["lanes", "pursuit", "standings"] as const).map((m) => {
-          const isPursuit = m === "pursuit";
-          return (
-            <button
-              key={m}
-              role="tab"
-              aria-selected={mode === m}
-              disabled={isPursuit}
-              title={isPursuit ? "3D pursuit (coming soon)" : undefined}
-              style={
-                isPursuit ? { opacity: 0.5, cursor: "not-allowed" } : undefined
-              }
-              onClick={() => {
-                if (isPursuit) return;
-                if (m !== mode) void playCue("selection");
-                setReplayEpoch(0);
-                setOvertakeProgress(1);
-                setMode(m);
-                setUnavailable(false);
-              }}
-            >
-              {m === "lanes"
-                ? "2D lanes"
-                : m === "pursuit"
-                  ? "3D pursuit (coming soon)"
-                  : "Standings"}
-            </button>
-          );
-        })}
+        {(["lanes", "standings"] as const).map((m) => (
+          <button key={m} role="tab" aria-selected={mode === m}
+            onClick={() => {
+              if (m !== mode) void playCue("selection");
+              setReplayEpoch(0);
+              setOvertakeProgress(1);
+              setMode(m);
+              setUnavailable(false);
+            }}>
+            {m === "lanes" ? "Lanes" : "Standings"}
+          </button>
+        ))}
       </div>
 
       <div>
@@ -619,7 +566,6 @@ export function FieldStage({
             )}
           </div>
           </div>
-      {athleteDetails}
         </ExpandingField>
       </div>
       </div>
