@@ -76,7 +76,7 @@ function isCrewErrorNote(note: string): boolean {
 
 export function CrewPanel() {
   const { user, demoMode } = useAuth();
-  const { state } = useCompete();
+  const { state, dispatch } = useCompete();
   const router = useRouter();
   const searchParams = useSearchParams();
   const [data, setData] = useState<CrewData | null>(null);
@@ -129,6 +129,7 @@ export function CrewPanel() {
       setBusy(false);
       setPanel(null);
       if (path === "/leave") {
+        dispatch({ type: "clear-crew-board" });
         setSelected("");
         setNote("You left the crew.");
       } else if (path === "/join") {
