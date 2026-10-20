@@ -123,6 +123,23 @@ export function CrewPanel() {
   async function write(path: string, body: object) {
     setBusy(true);
     setNote("");
+    if (demoMode) {
+      setBusy(false);
+      setPanel(null);
+      if (path === "/leave") {
+        setSelected("");
+        setNote("You left the crew.");
+      } else if (path === "/join") {
+        setCode("");
+        setNote("Joined crew.");
+      } else if (path === "/rest") {
+        setNote("Marked rest week for this crew.");
+      } else {
+        setName("");
+        setNote("Saved. Your crew is up to date.");
+      }
+      return;
+    }
     try {
       const res = await fetch(`/api/crews${path}`, {
         method: "POST",
@@ -160,12 +177,58 @@ export function CrewPanel() {
     }
   }
   const rawCrews = (data?.crews ?? []).flatMap((r) => (r.crews ? [r.crews] : []));
-  const isSolo = !user || demoMode || rawCrews.length === 0;
+  const crewBoard = state?.crewBoard;
+  const hasDemoCrew = Boolean(
+    crewBoard &&
+      crewBoard.crewId &&
+      crewBoard.crewId !== "solo" &&
+      !crewBoard.crewId.startsWith("field:"),
+  );
 
   const athleteName = state?.name || "You";
   const athleteSport = state?.primary
     ? state.primary.charAt(0).toUpperCase() + state.primary.slice(1)
     : "Running";
+
+  const demoCrew: Crew | null =
+    hasDemoCrew && crewBoard
+      ? {
+          id: crewBoard.crewId,
+          name: crewBoard.crewName,
+          invite_code: "WEEKLY",
+          sport: crewBoard.sport,
+          format: "volume",
+          target_sessions: 4,
+          journey_km: 60,
+        }
+      : null;
+
+  const demoMembers: Member[] =
+    hasDemoCrew && crewBoard
+      ? crewBoard.members.map((m) => ({
+          crew_id: crewBoard.crewId,
+          user_id: m.id,
+          display_name: m.name,
+          rest_week: null,
+        }))
+      : [];
+
+  const demoEntries: Entry[] =
+    hasDemoCrew && crewBoard
+      ? crewBoard.members.map((m) => ({
+          crew_id: crewBoard.crewId,
+          user_id: m.id,
+          activity_id: `act-${m.id}`,
+          distance_m: m.distanceM ?? 0,
+          moving_sec: m.movingSec ?? 0,
+          started_at: crewBoard.waveStart,
+          sport: crewBoard.sport,
+          disposition: "counted",
+        }))
+      : [];
+
+  const isSolo =
+    rawCrews.length === 0 && !hasDemoCrew ? true : false;
 
   const soloCrew: Crew = {
     id: "solo-preview",
@@ -197,18 +260,27 @@ export function CrewPanel() {
       disposition: "counted",
     }));
 
-  const crews = rawCrews.length > 0 ? rawCrews : [soloCrew];
+  const crews =
+    rawCrews.length > 0
+      ? rawCrews
+      : demoCrew
+        ? [demoCrew]
+        : [soloCrew];
   const crew = crews.find((c) => c.id === selected) ?? crews[0];
   const members =
     rawCrews.length > 0
       ? (data?.members ?? []).filter((m) => m.crew_id === crew?.id)
-      : [soloMember];
+      : demoCrew && crew?.id === demoCrew.id
+        ? demoMembers
+        : [soloMember];
   const entries =
     rawCrews.length > 0
       ? (data?.entries ?? []).filter(
           (e) => e.crew_id === crew?.id && e.disposition === "counted",
         )
-      : soloEntries;
+      : demoCrew && crew?.id === demoCrew.id
+        ? demoEntries
+        : soloEntries;
   const unitLabel = distanceUnitLabel(state?.units);
   const totalM = entries.reduce((t, e) => t + Number(e.distance_m), 0);
   const targetM = (crew?.journey_km ?? 40) * 1000;
@@ -507,7 +579,7 @@ export function CrewPanel() {
           {n.body}
         </p>
       ))}
-      {(!user || demoMode) && (
+      {!user && (
         <div className="focus-crew-preview" style={{ marginBottom: 28 }}>
           <section className="focus-card">
             <p className="fb-kicker">What crews unlock</p>
@@ -532,24 +604,22 @@ export function CrewPanel() {
               Private crews share a week of counted effort — invite codes,
               member standings, and a shared field when you register together.
             </p>
-            {!user ? (
-              <div className="fb-row" style={{ width: "100%", gap: 10 }}>
-                <Link
-                  className="fb-btn"
-                  href="/signup?next=/field"
-                  style={{ flex: 1, textAlign: "center" }}
-                >
-                  Create account
-                </Link>
-                <Link
-                  className="fb-btn-line"
-                  href="/login?next=/field"
-                  style={{ flex: 1, textAlign: "center" }}
-                >
-                  Sign in
-                </Link>
-              </div>
-            ) : null}
+            <div className="fb-row" style={{ width: "100%", gap: 10 }}>
+              <Link
+                className="fb-btn"
+                href="/signup?next=/field"
+                style={{ flex: 1, textAlign: "center" }}
+              >
+                Create account
+              </Link>
+              <Link
+                className="fb-btn-line"
+                href="/login?next=/field"
+                style={{ flex: 1, textAlign: "center" }}
+              >
+                Sign in
+              </Link>
+            </div>
           </section>
         </div>
       )}
@@ -564,7 +634,7 @@ export function CrewPanel() {
               : "Your crew, your rhythm."
         }
         body={
-          !user || demoMode
+          !user
             ? "A live account is needed to create or join a private crew."
             : "Private crew activity stays with your members."
         }
@@ -582,7 +652,7 @@ export function CrewPanel() {
             {note}
           </p>
         ) : null}
-        {!user || demoMode ? (
+        {!user ? (
           <div style={{ marginTop: 8 }}>
             <p className="fb-copy" style={{ marginBottom: 16 }}>
               A live account is required to invite friends, join circles, or sync shared crew sessions.
