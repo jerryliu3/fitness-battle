@@ -57,7 +57,7 @@ export function Journey({
         { id: "past", lane: "l", kind: "past" },
         { id: "start", lane: "c", kind: "start" },
       ];
-  const visibleStops = stops.filter((stop) => stop.kind !== "today" || !days.some((day) => day.day === today));
+  const visibleStops = stops;
   const paths = routeThroughCenters(
     visibleStops.map((s, i) => ({ x: laneX[s.lane] * width, y: i * ROW + ROW / 2 })),
     width,

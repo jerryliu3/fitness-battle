@@ -509,7 +509,6 @@ export default function ArenaScreen() {
               🏃 🚴 🚶 🏋️
             </Text>
             <Text style={f.title}>Your next chapter starts here.</Text>
-            <Text style={f.copy}>Pick an event and join for the week.</Text>
             <FocusButton
               label="Register for an event"
               onPress={() => {

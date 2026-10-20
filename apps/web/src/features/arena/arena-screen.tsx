@@ -181,7 +181,6 @@ export function ArenaScreen() {
               🏃 🚴 🚶 🏋️
             </div>
             <h2>Your next chapter starts here.</h2>
-            <p className="fb-copy">Pick an event and join for the week.</p>
             <button
               type="button"
               className="fb-btn"

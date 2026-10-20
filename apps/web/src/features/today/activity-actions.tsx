@@ -7,7 +7,7 @@ import { useAuth } from "@/components/auth-context";
 import { useCompete } from "@/components/compete-context";
 import { Sheet } from "@/ui/sheet";
 
-export function ActivityActions() {
+export function ActivityActions({ compact = false }: { compact?: boolean }) {
   const { user } = useAuth();
   const owner = useRef(user?.id);
   owner.current = user?.id;
@@ -53,10 +53,30 @@ export function ActivityActions() {
   }
 
   return <>
-    <div className="focus-actions" aria-label="Activity actions">
-      <button type="button" className="fb-btn-line" disabled={!ready || busy} onClick={() => void sync()}>{busy ? "Syncing…" : "Sync activities"}</button>
-      <button type="button" className="fb-btn" disabled={!ready || busy} onClick={() => { setFormError(""); setOpen(true); }}>Add activity</button>
-      {!user && <Link href="/login?next=/today">Sign in to add or sync</Link>}
+    <div
+      className={compact ? "focus-chart-actions" : "focus-actions"}
+      aria-label="Activity actions"
+    >
+      <button
+        type="button"
+        className={compact ? "focus-chart-action" : "fb-btn-line"}
+        disabled={!ready || busy}
+        onClick={() => void sync()}
+      >
+        {compact ? (busy ? "…" : "↻ Sync") : busy ? "Syncing…" : "Sync activities"}
+      </button>
+      <button
+        type="button"
+        className={compact ? "focus-chart-action" : "fb-btn"}
+        disabled={!ready || busy}
+        onClick={() => {
+          setFormError("");
+          setOpen(true);
+        }}
+      >
+        {compact ? "＋ Manual" : "Add activity"}
+      </button>
+      {!user && !compact && <Link href="/login?next=/today">Sign in to add or sync</Link>}
     </div>
     {note && <p role="status" className="fb-note">{note} <Link href="/you?panel=connections">Tracker settings</Link></p>}
     {saveError && <p role="alert" className="fb-note">Your activity has not saved to your account yet. {saveError}</p>}
