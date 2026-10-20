@@ -57,3 +57,7 @@ Admin boundary follow-up: `rollClock(state, now)` retains its ordinary two-argum
 ## Versioned account saves
 
 Normal web/native saves now send the base server revision and use an atomic `save_compete_account` RPC. The transaction and admin settlement lock the same account row and reject stale versions before writing. Clients serialize saves, keep the old base while merging background refreshes into dirty drafts, stop retries after a conflict and offer explicit reload while preserving a local recovery copy. The previous multi-request account writer was removed. Old builds without a revision are rejected rather than allowed to overwrite current state.
+
+## Selected-field wave controls
+
+Admin can select an active field/Crew field associated with an athlete ID, end it for all seated accounts, and either start immediately until next Monday Eastern or schedule the next normal Monday wave. The admin planner calls the ordinary per-sport settlement primitive; field orchestration and privileged SQL remain in admin files. Field metadata, all member account changes and audit records are atomic, with field/account revision checks. Tests cover shared cutoff time, disjoint windows, DST, opt-outs, other-sport preservation, confirmation controls, stale previews and second-athlete rollback. A live field pin now expires at its actual end instead of at a daily calendar boundary, preserving immediate custom wave starts on both platforms.

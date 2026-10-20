@@ -1,31 +1,14 @@
+import { authorizeAdmin, adminDatabase } from "@/lib/admin-auth";
 import { NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
 import { prepareCompeteStateForAccount, settleCompetition, competeNow, weeklyPeriodBounds } from "@fitness-battle/shared";
-import { serverEnv, webEnv } from "@/lib/env";
-import { isOwnerEmail } from "@/lib/auth/design-access";
-import { createRequestClient } from "@/lib/supabase/request";
-import { getSupabaseConfig } from "@/lib/supabase/config";
 import { readAdminSettlementFields } from "@/lib/admin-settlement";
 import { loadCompeteAccount } from "@/lib/compete-persist";
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-async function authorize(request: Request) {
-  const config = getSupabaseConfig();
-  if (!config.configured || webEnv.useDemoData) return null;
-  const client = await createRequestClient(request);
-  const { data, error } = await client.auth.getUser();
-  if (error || !data.user || !data.user.email_confirmed_at || !isOwnerEmail(data.user.email)) return null;
-  return data.user.id;
-}
-function database() {
-  const config = getSupabaseConfig();
-  if (!serverEnv.supabaseServiceRoleKey) return null;
-  return createClient(config.supabaseUrl, serverEnv.supabaseServiceRoleKey, { auth: { persistSession: false, autoRefreshToken: false } });
-}
 export async function GET(request: Request) {
-  if (!await authorize(request)) return NextResponse.json({ error: "admin_required" }, { status: 403 });
+  if (!await authorizeAdmin(request)) return NextResponse.json({ error: "admin_required" }, { status: 403 });
   const target = new URL(request.url).searchParams.get("target") ?? "";
   if (!UUID.test(target)) return NextResponse.json({ error: "invalid_target" }, { status: 400 });
-  const db = database();
+  const db = adminDatabase();
   if (!db) return NextResponse.json({ error: "admin_not_configured" }, { status: 503 });
   try {
     const loaded = await loadCompeteAccount(db, target);
@@ -36,7 +19,7 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   const origin = request.headers.get("origin");
   if (origin && origin !== new URL(request.url).origin) return NextResponse.json({ error: "invalid_origin" }, { status: 403 });
-  const actorId = await authorize(request);
+  const actorId = await authorizeAdmin(request);
   if (!actorId) return NextResponse.json({ error: "admin_required" }, { status: 403 });
   const body = await request.json().catch(() => null) as { target?: string; action?: string; reason?: string; confirmation?: string; updatedAt?: string; actionId?: string } | null;
   if (!body || typeof body.target !== "string" || typeof body.actionId !== "string" || !UUID.test(body.target) || !UUID.test(body.actionId) ||
@@ -44,7 +27,7 @@ export async function POST(request: Request) {
       body.confirmation !== `SETTLE ${body.target}` || typeof body.updatedAt !== "string") {
     return NextResponse.json({ error: "invalid_request" }, { status: 400 });
   }
-  const db = database();
+  const db = adminDatabase();
   if (!db) return NextResponse.json({ error: "admin_not_configured" }, { status: 503 });
   const target = body.target!;
   try {

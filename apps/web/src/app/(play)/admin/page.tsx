@@ -5,6 +5,7 @@ import { useCompete } from "@/components/compete-context";
 import { useAuth } from "@/components/auth-context";
 import { WeekReveal } from "@/features/split/components/week-reveal";
 import { isOwnerEmail } from "@/lib/auth/design-access";
+import { AdminFieldControls } from "@/features/you/admin-field-controls";
 export default function AdminLab() {
   const { state, refresh } = useCompete();
   const { user } = useAuth();
@@ -76,6 +77,7 @@ export default function AdminLab() {
         }}>Run production settlement</button>
       </>}
     </section>}
+    {user?.mode === "supabase" && isOwnerEmail(user.email) && <AdminFieldControls target={target} owner={user.id}/>}
     {note && <p role="status">{note}</p>}
   </main>;
 }
