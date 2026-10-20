@@ -24,6 +24,9 @@ interface FieldRosterRow {
   open_elo: number | string;
   distance_m: number | string;
   moving_sec: number | string;
+  verified_elo?: number | string;
+  verified_distance_m?: number | string;
+  verified_moving_sec?: number | string;
 }
 
 /** All field readers use the same authorized roster and counted-volume RPC. */
@@ -43,6 +46,9 @@ export async function readWeekFieldPin(
       elo: Number(row.open_elo) || 1000,
       distanceM: Number(row.distance_m) || 0,
       movingSec: Number(row.moving_sec) || 0,
+      verifiedElo: Number(row.verified_elo ?? 1000),
+      verifiedDistanceM: Number(row.verified_distance_m) || 0,
+      verifiedMovingSec: Number(row.verified_moving_sec) || 0,
     }))
     .sort((a, b) => a.id.localeCompare(b.id));
 

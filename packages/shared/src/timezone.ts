@@ -83,3 +83,9 @@ export function endOfZonedDay(
   const nextDayAnchor = new Date(Date.UTC(y!, m! - 1, d! + 1, 12, 0, 0));
   return startOfZonedDay(nextDayAnchor, timeZone);
 }
+
+/** Midnight Eastern, offset by calendar days rather than fixed 24-hour durations. */
+export function shiftAppDay(date: Date, offset: number): Date {
+  const [year, month, day] = dayKey(date).split("-").map(Number);
+  return startOfZonedDay(new Date(Date.UTC(year!, month! - 1, day! + offset, 12)));
+}

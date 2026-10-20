@@ -934,7 +934,7 @@ export default function StructureLab() {
           <>
             {title("COMPETITION INDEX", "The weekly standings.")}
             <View style={s.indexSummary}>
-              {eyebrow("12—19 OCT / CLOSES MONDAY 00:00 UTC")}
+              {eyebrow("12—19 OCT / CLOSES MONDAY 00:00 ET")}
               {registerStrip}
             </View>
             {content}
@@ -1281,7 +1281,7 @@ export default function StructureLab() {
               </>
             )}
             {copy(
-              "Monday—Monday · closes 00:00 UTC. Crew scores remain individual. Health uses its own score, not mileage.",
+              "Monday—Monday · closes 00:00 ET. Crew scores remain individual. Health uses its own score, not mileage.",
             )}
             {button(
               `Join ${PROTOTYPE_SPORTS.find((s) => s.id === sport)?.name}`,
@@ -1316,7 +1316,7 @@ export default function StructureLab() {
               {pill("+24 Effort Score")}
             </View>
             {copy(
-              "Completed weeks keep their final place and rating change. New weeks begin Monday 00:00 UTC.",
+              "Completed weeks keep their final place and rating change. New weeks begin Monday 00:00 ET.",
             )}
             {row("Previous week · Running", "3rd place · +18 Effort Score", () =>
               announce("Previous result: 3rd of 8, 21.2 km, +18 Effort Score."),

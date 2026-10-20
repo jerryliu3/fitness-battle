@@ -51,7 +51,7 @@ Browsing My track / The field / Splits / Pace is open. **Join / compete / Athlet
 
 The live product follows **Focus**: **Home** (daily suggestion and counted-session path), **Arena** (vertical 2D/3D lanes, registration, ghosts, and awards), **Crew** (shared activity and members), and **Athlete** (Elo and benchmarks first, then progress and settings). Stable routes remain `/today`, `/arena`, `/field`, and `/you`. See [the design guide](docs/design-guide.md) and [Focus implementation notes](docs/focus-implementation.md).
 
-Weekly periods settle on app load via `rollClock` (UTC Monday boundary) — there is no server cron for the local compete engine. Closed weeks write place/Elo snapshots, show a one-shot week-complete reveal on My track, and accumulate a Strava-style season history on Athlete.
+Weekly periods settle on app load via `rollClock` (Monday midnight Eastern boundary) — there is no server cron for the local compete engine. Closed weeks write place/Elo snapshots, show a automatic two-stage round results on Compete, and accumulate a Strava-style season history on Athlete.
 
 - `/signup` → `/onboarding` (preferences → tracker link → one-time 90-day calibration)
 - `/login` with safe `?next=` return

@@ -64,3 +64,13 @@ Copy `.env.example` to `.env.local` in `apps/web` and `apps/mobile`:
 ### In-app issue reports
 
 Set `RESEND_API_KEY` and `ISSUE_REPORT_FROM` (a sender on a verified Resend domain) in the web server environment. `ISSUE_REPORT_TO` defaults to `support@overtaek.com`. Athlete → Report an issue opens an in-app dialog and sends through the server; no mail app is required. Live sign-in is required. Missing configuration or delivery failures stay visible in the dialog and preserve the report for retry.
+
+### Round lab and production settlement
+
+Open `/admin` (the owner’s Athlete screen links to Round lab). The sandbox copies the current account into isolated React state; Join running, Add 5 km, Advance one day, Close round and Preview results do not dispatch account writes or change the live clock. Reset discards the sandbox.
+
+Production preview/settlement requires a real verified owner session (`3jerryliu@gmail.com`) and server-only `SUPABASE_SERVICE_ROLE_KEY`. Demo sessions cannot use the API. Apply the additive `admin_compete_actions` and `20261020041008_atomic_admin_round_commit.sql` migrations before deployment. Load an athlete UUID, choose due-only settlement or early close, enter a reason and the exact target confirmation. The API checks the preview version, reads existing field membership and real peer totals without invoking athlete-scoped seating RPCs, and calls the service-only `admin_commit_round` transaction. The transaction rechecks the locked account version and commits settlement rows and the before/after audit snapshot together. Activities, sleep nights and unrelated preferences are not rewritten. Early close affects only the selected athlete and records real results; no production clock pin is persisted. No production settlement was executed during implementation.
+
+Failed admin commits roll back the entire settlement and audit insert. A stale preview is rejected under the account row lock. The ordinary athlete account writer still has no optimistic version check: a later stale client save can overwrite settled state. Avoid settling while the target is actively editing their account; reload the preview after a conflict or failure. No production migration or settlement was executed during verification.
+
+Regular field rosters require `20261020132114_field_roster_verified_totals.sql` before deploying the roster mapper. It extends the existing RPC response with Verified totals/rating while retaining authorization and older response columns. Private Crew fields now total activities directly, matching the removal of manual sharing.

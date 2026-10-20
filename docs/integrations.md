@@ -36,7 +36,7 @@ Product hooks (web play shell):
 | --- | --- |
 | `week_summary` | New `periodResults` row after week settlement |
 | `rival_moves` | Your open-board place worsens |
-| `lesson_reminder` | Once per UTC day if today’s lesson is still open |
+| `lesson_reminder` | Once per Eastern day if today’s lesson is still open |
 | `connection_alerts` | Tracker sync/connect failure on You |
 
 ## Keys

@@ -264,6 +264,7 @@ describe("mobile account lifecycle", () => {
       fetcher.mock.calls.filter(([, options]) => options.method === "PUT"),
     ).toHaveLength(0);
     expect(api.saveError).toContain("could not load");
+    expect(api.canWrite).toBe(false);
     fetcher.mockImplementation(async () =>
       Response.json({ state: accountState("Alice recovered") }),
     );

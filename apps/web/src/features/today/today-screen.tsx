@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useLayoutEffect, useRef, useState, type Ref } from "react";
+import { ActivityActions } from "./activity-actions";
 import { newJourneyStops } from "./journey-reveal";
 import { usePathname } from "next/navigation";
 import { motion, useReducedMotion } from "motion/react";
@@ -143,6 +144,12 @@ function JourneyDayStop({
         <small>{monthDay}</small>
         <b>{sportById(primary.sport).name}</b>
         <em>{detail}</em>
+        {day.items.length > 1 && day.items.map((activity) => (
+          <button key={activity.id} type="button" className="fb-btn-ghost"
+            onClick={() => onOpen(activity)}>
+            {sportById(activity.sport).name} · {formatVolume(activity.sport, activity.distanceM, activity.movingSec, units)}
+          </button>
+        ))}
       </span>
     </>
   );
@@ -230,11 +237,13 @@ export function TodayScreen() {
   const shownSessions = journeyDays.reduce((acc, d) => acc + d.items.length, 0);
   const hasMorePast = counted.length > shownSessions;
   const units = state.units;
+  const todayKey = dayKey(now, APP_TIMEZONE);
+  const hasTodayActivity = journeyDays.some((day) => day.day === todayKey);
   const journeyStops = buildJourneyStops(
     journeyDays,
     hasMorePast,
     groupActivitiesByDay(counted, Infinity),
-  );
+  ).filter((stop) => stop.kind !== "today" || !hasTodayActivity);
 
   const todayStop = `today:${dayKey(now, APP_TIMEZONE)}`;
   const revealIdentity = JSON.stringify([todayStop, ...journeyDays.map((day) => day.id)]);
@@ -277,9 +286,8 @@ export function TodayScreen() {
     weekHours >= 10
       ? `${Math.round(weekHours)} hr`
       : `${(Math.round(weekHours * 10) / 10).toFixed(1).replace(/\.0$/, "")} hr`;
-  const nowDayIso = now.toISOString().slice(0, 10);
 
-  // Previous week window (Mon 00:00 UTC to next Mon 00:00 UTC, 7 days earlier)
+  // Previous calendar week in Eastern time, including DST changes.
   const prevWeekStart = weeklyPeriodBounds(
     new Date(weekStart - 1),
   ).startsAt.getTime();
@@ -533,12 +541,14 @@ export function TodayScreen() {
   return (
     <div className="focus-home-stage">
       <div className="focus-home-overlay">
+      <ActivityActions />
       {frozen && (
         <div className="fb-pill" style={{ marginBottom: "16px" }}>
           <b>❄ Week frozen</b>
           <span>Your effort score is protected through next Monday.</span>
         </div>
       )}
+      {hasTodayActivity && <button type="button" className="fb-btn-line" onClick={() => openSession("suggestion", "full")}>Today’s suggested session</button>}
       <section className="focus-stats-card" aria-label="This week's progress">
         <div className="focus-stats-header">
           <div>

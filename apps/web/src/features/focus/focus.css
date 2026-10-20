@@ -2396,3 +2396,21 @@
   .focus-path-row.is-new-stop > span { animation: none; }
   .focus-journey-path .focus-journey-reveal-mask { animation: none; stroke-dashoffset: 0; }
 }
+
+/* Compete card: a single type family and a clear sport heading. */
+.phone-shell .focus-arena-stage .focus-arena-sport { font-family: inherit; font-size: 28px; line-height: 1.15; letter-spacing: -.7px; text-transform: none; }
+.phone-shell .focus-arena-stage .focus-arena-total strong { font-family: inherit; font-weight: 700; }
+.phone-shell .focus-arena-stage .focus-arena-total .focus-status { font-family: inherit; font-weight: 700; }
+.focus-field-pursuit { position: absolute; top: 12px; right: 16px; min-height: 44px; border: 1px solid var(--line, #e0e5dc); border-radius: 12px; padding: 8px 12px; background: white; color: #616c63; opacity: .6; }
+
+.focus-round-overlay { position: fixed; inset: 0; background: #282f2c99; z-index: 100; }
+.focus-round-takeover { position: fixed; inset: 0; z-index: 101; overflow-y: auto; background: var(--paper, #fafaf7); padding: max(24px, env(safe-area-inset-top)) max(24px, calc((100vw - 680px) / 2)); font-family: inherit; color: #282f2c; }
+.focus-round-takeover > button[aria-label] { float: right; min-width: 44px; min-height: 44px; }
+.focus-round-takeover h2 { font-size: 32px; line-height: 1.1; }
+.focus-round-result { margin: 24px 0; padding: 20px; border: 1px solid #e0e5dc; border-radius: 20px; background: white; }
+.focus-round-result p { display: flex; gap: 12px; align-items: baseline; }
+.focus-round-result strong { font-size: 32px; font-variant-numeric: tabular-nums; }
+.focus-round-score { color: #a67c00; }
+.focus-round-takeover > .fb-btn, .focus-round-takeover > .fb-btn-line { margin: 12px 12px 12px 0; }
+
+.phone-shell .focus-elo-score-row strong { background: #f1c75b; color: #282f2c; border-radius: 12px; padding: 6px 12px; }

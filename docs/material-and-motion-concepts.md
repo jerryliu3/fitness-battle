@@ -67,7 +67,7 @@ The sketch opens on a settled medal. “Home goal · optional” separately expl
 
 **Placement:** Athlete → Progress; optionally a compact recent-history preview on Home. **Object:** weekly training totals. **Interaction:** select a week and inspect its counted sessions in place.
 
-Replace the daily ribbed ribbon with a clean 8–12-week history in the eventual product. The sketch uses seven weeks for phone readability. Start with one sport and distance; duration or session count can follow. Use the same source/eligibility rules as the matching detail. Training-history buckets use half-open Mon–Mon UTC bounds. Competition keeps its canonical period helper, including a seated enrollment window when applicable; the chart must not silently redefine it as a calendar or rolling-seven-day contest.
+Replace the daily ribbed ribbon with a clean 8–12-week history in the eventual product. The sketch uses seven weeks for phone readability. Start with one sport and distance; duration or session count can follow. Use the same source/eligibility rules as the matching detail. Training-history buckets use half-open Mon–Mon Eastern bounds. Competition keeps its canonical period helper, including a seated enrollment window when applicable; the chart must not silently redefine it as a calendar or rolling-seven-day contest.
 
 **Bars are the leading choice for weekly volume.** Each mark represents a discrete period total. Use a zero baseline, one quiet selected state and a gap for genuinely missing data. Remove the raised rubber styling and ornamental selected card.
 

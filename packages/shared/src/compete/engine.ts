@@ -1,4 +1,4 @@
-import { APP_TIMEZONE, type PeriodBounds } from "../period";
+import { APP_TIMEZONE, shiftAppDay, type PeriodBounds } from "../period";
 import {
   DensityMatcher,
   buildLocalBoard,
@@ -71,6 +71,7 @@ export function getRealPlayerPool(): readonly PoolPlayer[] {
 export interface Action {
   type:
     | "rename"
+    | "log-manual"
     | "set-city"
     | "set-avatar"
     | "set-units"
@@ -102,6 +103,8 @@ export interface Action {
     | "clear-crew-board"
     /** Demo/dev: settle the open week as if Monday already arrived. */
     | "debug-close-week";
+  distanceM?: number;
+  movingSec?: number;
   name?: string;
   city?: string;
   avatarUrl?: string | null;
@@ -460,6 +463,7 @@ function enrollSport(
 function crewPeerActivities(
   pin: CrewBoardPin,
   peerIds: readonly string[],
+  track: ScoreTrack,
 ): Map<string, Activity[]> {
   const allowed = new Set(peerIds);
   const map = new Map<string, Activity[]>();
@@ -470,10 +474,10 @@ function crewPeerActivities(
         id: `crew-week:${pin.crewId}:${member.id}`,
         sport: pin.sport,
         startedAt: pin.waveStart,
-        distanceM: member.distanceM ?? 0,
-        movingSec: member.movingSec ?? 0,
+        distanceM: track === "verified" ? member.verifiedDistanceM ?? 0 : member.distanceM ?? 0,
+        movingSec: track === "verified" ? member.verifiedMovingSec ?? 0 : member.movingSec ?? 0,
         avgHr: null,
-        verified: false,
+        verified: track === "verified",
         source: "manual",
         provenance: "recorded",
         disposition: "counted",
@@ -515,7 +519,12 @@ function groupFor(
   const fromCrew = pin
     ? poolFromCrewPlan(planFromCrewBoardPin(pin), "you").filter((player) =>
         enrollment.peerIds.includes(player.id),
-      )
+      ).map((player) => ({
+        ...player,
+        elo: track === "verified"
+          ? pin.members.find((member) => member.id === player.id)?.verifiedElo ?? player.elo
+          : player.elo,
+      }))
     : [];
   const seen = new Set(fromPool.map((peer) => peer.id));
   const peers = [...fromPool, ...fromCrew.filter((peer) => !seen.has(peer.id))];
@@ -530,7 +539,7 @@ function groupFor(
       primarySport: state.primary,
     },
     peers,
-    peerActivities: pin ? crewPeerActivities(pin, enrollment.peerIds) : undefined,
+    peerActivities: pin ? crewPeerActivities(pin, enrollment.peerIds, track) : undefined,
     track,
     asOf,
   });
@@ -705,17 +714,19 @@ function settleEnrollment(
  * jump remaining enrollments to the live daily wave.
  */
 export function rollClock(state: CompeteState, now: Date = new Date()): CompeteState {
+  return settleCompetition(state, now);
+}
+
+/** Shared settlement operation. Fields supply real rosters; callers own loading and persistence. */
+export function settleCompetition(
+  state: CompeteState,
+  now: Date,
+  fields: readonly CrewBoardPin[] = [],
+): CompeteState {
   const liveWave = waveWindowAt(now);
   const liveStart = liveWave.waveStart.toISOString();
-  let next = state;
-  // Last week's crew pin must not stick after Monday settlement.
-  if (
-    next.crewBoard &&
-    new Date(next.crewBoard.waveStart).getTime() !== liveWave.waveStart.getTime()
-  ) {
-    next = { ...next, crewBoard: null };
-  }
-  next = ensureEnrollments(next, now);
+  // Preserve the closing roster until all matching enrollments have settled.
+  let next = ensureEnrollments(state, now);
   let guard = 0;
 
   while (guard < 12) {
@@ -723,8 +734,15 @@ export function rollClock(state: CompeteState, now: Date = new Date()): CompeteS
       .filter((item) => item.weekEnd <= now.toISOString())
       .sort((a, b) => a.weekEnd.localeCompare(b.weekEnd));
     if (due.length === 0) break;
-    next = settleEnrollment(next, due[0]!);
+    const enrollment = due[0]!;
+    const board = fields.find((pin) => pin.sport === enrollment.sport &&
+      pin.waveStart === enrollment.waveStart && pin.weekEnd === enrollment.weekEnd);
+    next = settleEnrollment(board ? { ...next, crewBoard: board } : next, enrollment);
     guard += 1;
+  }
+
+  if (next.crewBoard && new Date(next.crewBoard.waveStart).getTime() !== liveWave.waveStart.getTime()) {
+    next = { ...next, crewBoard: null };
   }
 
   // Long gap: drop stale enrollments and re-seat on the live wave.
@@ -811,9 +829,7 @@ function historyFor(level: "light" | "steady" | "heavy", now: Date): Activity[] 
   const runDays = level === "light" ? 3 : level === "heavy" ? 6 : 4;
   const activities: Activity[] = [];
   for (let day = 1; day <= 90; day += 1) {
-    const at = new Date(now);
-    at.setUTCDate(at.getUTCDate() - day);
-    at.setUTCHours(13, 0, 0, 0);
+    const at = new Date(shiftAppDay(now, -day).getTime() + 12 * 3600000);
     const key = dayKey(at);
     if (hashString(`run:${key}`) % 7 < runDays) {
       const km = (4 + unitInterval(`run-km:${key}`) * 7) * volume;
@@ -860,10 +876,8 @@ function calibrate(state: CompeteState, now: Date): CompeteState {
     let verifiedSum = 0;
     let weeks = 0;
     for (let back = 0; back < 90; back += 7) {
-      const end = new Date(now);
-      end.setUTCDate(end.getUTCDate() - back);
-      const start = new Date(end);
-      start.setUTCDate(start.getUTCDate() - 7);
+      const end = shiftAppDay(now, -back);
+      const start = shiftAppDay(now, -back - 7);
       const open = periodEffort(state.activities, sport, start, end, "open").effort;
       const verified = periodEffort(
         state.activities,
@@ -968,6 +982,20 @@ export function reduceCompete(
     case "rename": {
       const name = action.name?.trim().slice(0, 32);
       return name ? { ...rolled, name } : rolled;
+    }
+    case "log-manual": {
+      if (!action.sport || !SPORT_IDS.includes(action.sport) || !action.activityId) return rolled;
+      const movingSec = action.movingSec ?? NaN;
+      const distanceM = sportById(action.sport).gps ? action.distanceM ?? NaN : 0;
+      if (!Number.isFinite(movingSec) || movingSec <= 0 || movingSec > 86400 ||
+          !Number.isFinite(distanceM) || distanceM < 0 || distanceM > 2_000_000) return rolled;
+      if (rolled.activities.some((item) => item.id === action.activityId)) return rolled;
+      const activity: Activity = {
+        id: action.activityId, sport: action.sport, startedAt: now.toISOString(),
+        distanceM, movingSec, avgHr: null, source: "manual", provenance: "manual",
+        verified: false, disposition: "counted", dispositionReason: "Manually logged · Open standings only.",
+      };
+      return { ...rolled, activities: [...rolled.activities, activity] };
     }
     case "set-city": {
       const city = action.city?.trim().slice(0, 40);

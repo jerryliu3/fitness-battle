@@ -21,10 +21,12 @@ export function Journey({
   activities,
   units,
   onToday,
+  today,
 }: {
   activities: Activity[];
   units: UnitSystem;
   onToday: () => void;
+  today: string;
 }) {
   const [width, setWidth] = useState(320);
   const [selectedDay, setSelectedDay] = useState<string | null>(null);
@@ -55,8 +57,9 @@ export function Journey({
         { id: "past", lane: "l", kind: "past" },
         { id: "start", lane: "c", kind: "start" },
       ];
+  const visibleStops = stops.filter((stop) => stop.kind !== "today" || !days.some((day) => day.day === today));
   const paths = routeThroughCenters(
-    stops.map((s, i) => ({ x: laneX[s.lane] * width, y: i * ROW + ROW / 2 })),
+    visibleStops.map((s, i) => ({ x: laneX[s.lane] * width, y: i * ROW + ROW / 2 })),
     width,
   );
   const selected = days.find((d) => d.id === selectedDay);
@@ -66,10 +69,10 @@ export function Journey({
         onLayout={(event) => setWidth(event.nativeEvent.layout.width)}
         style={{ paddingTop: 56 }}
       >
-        <View style={{ height: ROW * stops.length }}>
+        <View style={{ height: ROW * visibleStops.length }}>
           <Svg
             width={width}
-            height={ROW * stops.length}
+            height={ROW * visibleStops.length}
             style={{ position: "absolute" }}
             pointerEvents="none"
           >
@@ -84,7 +87,7 @@ export function Journey({
               />
             ))}
           </Svg>
-          {stops.map((stop) => {
+          {visibleStops.map((stop) => {
             const day = days.find((d) => d.id === stop.id);
             const primary = day?.items[0];
             const label = primary
