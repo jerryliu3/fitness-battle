@@ -6,7 +6,7 @@ export default function NotFound() {
       <div className="phone-shell">
         <header className="focus-shell-header">
           <Link href="/today">OVERTAEK</Link>
-          <span>A LITTLE FURTHER, TOGETHER.</span>
+          <span>A LITTLE FURTHER</span>
         </header>
         <div className="phone-main phone-main-solo">
           <section className="fb-card focus-empty" style={{ margin: "auto 0" }}>

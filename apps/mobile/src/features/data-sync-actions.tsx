@@ -39,9 +39,7 @@ export function DataSyncActions() {
       await work();
     } catch (e) {
       if (mounted.current && owner.current === id)
-        setNote(
-          e instanceof Error ? e.message : "Could not sync. Please try again.",
-        );
+        setNote("Sync failed");
     } finally {
       flight.current = false;
       setBusy(false);
@@ -87,11 +85,7 @@ export function DataSyncActions() {
       readiness,
       linkStatus: body.usedMock ? "stub" : "connected",
     });
-    setNote(
-      body.usedMock
-        ? "Sample data only. This is not a live tracker connection and sample workouts do not count."
-        : `${imported ? "File imported. Review pending activities before counting them." : "Sync complete."}${body.persisted === false ? " Fetched on this device only; your account has not saved them yet." : ""}`,
-    );
+    setNote("");
   }
   if (!state) return null;
   return (
@@ -116,7 +110,7 @@ export function DataSyncActions() {
                       provider: l.provider,
                       allowSample: true,
                     });
-                    setNote("Demo sample sync only. Samples do not count.");
+                    setNote("");
                     return;
                   }
                   const id = user?.id;

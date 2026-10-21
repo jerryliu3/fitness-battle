@@ -10,6 +10,7 @@ import {
   distanceUnitLabel,
   formatDistanceM,
   formatMemberCount,
+  formatNoticeUnits,
 } from "@fitness-battle/shared";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -476,7 +477,7 @@ export function CrewPanel() {
       )}
       {data?.notices?.map((n) => (
         <p className="fb-note" key={n.id}>
-          {n.body}
+          {formatNoticeUnits(n.body, state?.units)}
         </p>
       ))}
       {!user && (

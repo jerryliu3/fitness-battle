@@ -187,7 +187,7 @@ export function PhoneShell({
         <header className="focus-shell-header">
           <div className="focus-shell-brand">
             <Link href="/today">OVERTAEK</Link>
-            <span className="focus-shell-tagline">A little further, together.</span>
+            <span className="focus-shell-tagline">A little further</span>
           </div>
           <Link
             href="/athlete?edit=profile"
@@ -197,8 +197,6 @@ export function PhoneShell({
           >
             {user && state?.avatarUrl ? (
               <img src={state.avatarUrl} alt="" className="focus-shell-profile-img" />
-            ) : user ? (
-              <span>{initialsFromName(profileLabel)}</span>
             ) : (
               <Ember className="focus-shell-ember" morph={1} shadow={false} />
             )}

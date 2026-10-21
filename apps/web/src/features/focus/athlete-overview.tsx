@@ -8,6 +8,7 @@ import {
   uploadWebProfileAvatar,
 } from "@/lib/profile/avatar-upload";
 import { createClient } from "@/lib/supabase/client";
+import { Ember } from "@/components/mascot/ember";
 import {
   countsOnTrack,
   distanceUnitLabel,
@@ -234,7 +235,11 @@ export function AthleteOverview({
                 className="focus-portrait-img"
               />
             ) : (
-              initialsFromName(name || state.name)
+              <Ember
+                shadow={false}
+                expression="happy"
+                style={{ width: "68%", height: "68%", pointerEvents: "none" }}
+              />
             )}
           </div>
           <div className="focus-profile-card-copy" style={{ flex: 1 }}>
@@ -348,7 +353,11 @@ export function AthleteOverview({
                 className="focus-portrait-img"
               />
             ) : (
-              initialsFromName(state.name)
+              <Ember
+                shadow={false}
+                expression="happy"
+                style={{ width: "68%", height: "68%", pointerEvents: "none" }}
+              />
             )}
           </div>
           <div className="focus-profile-card-copy">
