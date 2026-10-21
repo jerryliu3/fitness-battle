@@ -1,0 +1,11 @@
+{
+  "combinations": 36,
+  "checks": [
+    "9 grounds × 2 surroundings × 2 phone widths",
+    "native component tree: valid SVG racer targets",
+    "tap overview navigation",
+    "saved and independent event settings",
+    "no runtime errors"
+  ],
+  "errors": []
+}

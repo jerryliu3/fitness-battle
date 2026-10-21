@@ -13,7 +13,15 @@ function render(presentation: "lanes" | "standings", value = 3) {
     presentation, view: { center: 3, span: 6 }, unit: "km", selected: "self",
     onSelect() {}, onPan() {},
   }));
-  return markup.slice(markup.indexOf("<svg"), markup.lastIndexOf("</svg>")+6).replace("<svg ", '<svg xmlns="http://www.w3.org/2000/svg" ');
+  // The fixed distance scale is a sibling SVG. Extract the first complete tree,
+  // retaining any nested Ember SVG instead of combining two root documents.
+  const start = markup.indexOf("<svg");
+  let depth = 0, end = start;
+  for (const tag of markup.slice(start).matchAll(/<\/?svg\b[^>]*>/g)) {
+    depth += tag[0].startsWith("</") ? -1 : 1;
+    if (depth === 0) { end = start + tag.index! + tag[0].length; break; }
+  }
+  return markup.slice(start, end).replace("<svg ", '<svg xmlns="http://www.w3.org/2000/svg" ');
 }
 
 async function goldPixels(svg: string, top: number, bottom: number) {

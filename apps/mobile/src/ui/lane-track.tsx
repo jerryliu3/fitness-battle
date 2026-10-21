@@ -1,9 +1,9 @@
 import {
+  fieldCourse, fieldCourseScene, fieldScaleScene, fieldLap, defaultFieldAppearance, type FieldAppearance,
   arenaPosition,
   arenaWindow,
   arenaFieldHigh,
-  clampArenaLaneCenter,
-  clampArenaLaneCenterToField,
+  clampCourseCenter,
   initialsFromName,
   orderedArenaLanes,
   polishedLaneScale,
@@ -13,26 +13,24 @@ import {
   type ArenaOvertakePlan,
   type ArenaViewWindow,
 } from "@fitness-battle/shared";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { PanResponder, Pressable, ScrollView, Text, View } from "react-native";
 import Svg, {
   Circle,
-  Defs,
   G,
-  Line,
-  LinearGradient,
   Path,
-  RadialGradient,
   Rect,
-  Stop,
   Text as SvgText,
 } from "react-native-svg";
 import { SHELL_COLORS as c } from "../theme";
 import { playCue } from "../lib/haptics";
+import { drawFieldNode } from "./field-course";
+import { LaneRacerTarget } from "./lane-racer-target";
 import { Ember } from "./mascot/ember";
 import { PolishedRacer, usePolishedWakeTime } from "./polished-racer";
 export function LaneTrack({
   lanes,
+  appearance = defaultFieldAppearance,
   unit,
   showGhost,
   selectedId,
@@ -44,6 +42,7 @@ export function LaneTrack({
   overtakePlan = null,
   active = true,
 }: {
+  appearance?: FieldAppearance;
   active?: boolean;
   lanes: ArenaLane[];
   unit: string;
@@ -56,6 +55,7 @@ export function LaneTrack({
   overtakeFrame?: ArenaOvertakeFrame | null;
   overtakePlan?: ArenaOvertakePlan | null;
 }) {
+  const prefix = useId();
   const [exploring, setExploring] = useState(false);
   const [width, setWidth] = useState(340);
   const wakeTime = usePolishedWakeTime(active);
@@ -70,16 +70,16 @@ export function LaneTrack({
   const fieldHigh = arenaFieldHigh(
     ordered.map((lane) => ({ value: lane.values[index], ghost: lane.ghost })),
   );
-  const aheadPad = unit === "pts" ? 20 : 8;
   const clampCenter = (value: number, span: number) =>
-    clampArenaLaneCenterToField(value, span, fieldHigh, aheadPad);
+    clampCourseCenter(value, span, fieldHigh, unit, appearance.ground);
   const effectiveCenter = clampCenter(rawV.center, rawV.span);
   const v =
     effectiveCenter === rawV.center
       ? rawV
       : { center: effectiveCenter, span: rawV.span };
-  const latest = useRef({ v, onPan, exploring, clampCenter });
-  latest.current = { v, onPan, exploring, clampCenter };
+  const course = useMemo(() => fieldCourse(width, 540, ordered.length, v, unit, appearance), [width, ordered.length, v.center, v.span, unit, appearance]);
+  const latest = useRef({ v, onPan, exploring, clampCenter, length: course.length });
+  latest.current = { v, onPan, exploring, clampCenter, length: course.length };
   const start = useRef(v.center);
   const pan = useMemo(
     () =>
@@ -94,7 +94,7 @@ export function LaneTrack({
         onPanResponderMove: (_, g) =>
           latest.current.onPan?.(
             latest.current.clampCenter(
-              start.current + (g.dy / 400) * latest.current.v.span,
+              start.current + (g.dy / latest.current.length) * latest.current.v.span,
               latest.current.v.span,
             ),
           ),
@@ -108,33 +108,19 @@ export function LaneTrack({
       ? ranked[0].id
       : null;
   const ghost = showGhost ? lanes.find((l) => l.ghost) : null;
-  const w = Math.max(width, ordered.length * 70 + 50),
-    lw = (w - 50) / Math.max(1, ordered.length);
+  const w = course.width, lw = course.laneWidth;
+  const live = ordered.map(l => ({ ...l, value: animating ? overtakeFrame?.laneValues[l.id] ?? l.values[index] ?? 0 : l.values[index] ?? 0, initials: initialsFromName(l.name) }));
+  const groundPaint = useMemo(() => fieldCourseScene(course, appearance, live, unit, prefix).map(drawFieldNode), [course, appearance, lanes, index, overtakeFrame, unit, prefix]);
   const bounds = arenaWindow(v.center, v.span);
-  const y = (value: number) => 72 + arenaPosition(value, v).fraction * 400;
-  const maxTailY = Math.min(
-    482,
-    bounds.min <= 0 && bounds.max >= 0 ? y(0) + 4 : 482,
-  );
+  const maxTailY = Math.min(482, bounds.min <= 0 && bounds.max >= 0 ? course.along(0) + 4 : 482);
+  const previous = useRef<{ left: number; laneWidth: number; width: number; scroll: number; oval: boolean; count: number } | null>(null);
   useEffect(() => {
-    scroll.current?.scrollTo({
-      x: Math.max(
-        0,
-        Math.min(
-          w - width,
-          10 +
-            (Math.max(
-              0,
-              ordered.findIndex((lane) => lane.you),
-            ) +
-              0.5) *
-              lw -
-            width / 2,
-        ),
-      ),
-      animated: false,
-    });
-  }, [w, width]);
+    const old = previous.current;
+    const laneIndex = old && !old.oval && !course.oval && old.count === ordered.length ? (old.scroll + old.width / 2 - old.left) / old.laneWidth - .5 : Math.max(0, ordered.findIndex(l => l.you));
+    const x = course.oval ? 0 : Math.max(0, Math.min(w - width, course.left + (laneIndex + .5) * lw - width / 2));
+    scroll.current?.scrollTo({ x, animated: false });
+    previous.current = { left: course.left, laneWidth: lw, width, scroll: x, oval: course.oval, count: ordered.length };
+  }, [w, lw, width, course.left, course.oval]);
   return (
     <View
       onLayout={(e) => {
@@ -204,6 +190,8 @@ export function LaneTrack({
         ref={scroll}
         nestedScrollEnabled
         showsHorizontalScrollIndicator
+        onScroll={e => { if (previous.current) previous.current.scroll = e.nativeEvent.contentOffset.x; }}
+        scrollEventThrottle={16}
       >
         <View {...pan.panHandlers}>
           <Svg
@@ -211,112 +199,14 @@ export function LaneTrack({
             height={540}
             accessibilityLabel={`Vertical lanes in ${unit}, centered on your distance`}
           >
-            <Defs>
-              <LinearGradient id="road" x1="0" y1="0" x2="0" y2="1">
-                <Stop offset="0" stopColor="#f7faf3" />
-                <Stop offset="0.5" stopColor="#eef3e8" />
-                <Stop offset="1" stopColor="#e4ecdc" />
-              </LinearGradient>
-              <LinearGradient id="youLane" x1="0" y1="0" x2="0" y2="1">
-                <Stop offset="0" stopColor="#f1c75b66" />
-                <Stop offset="1" stopColor="#f1c75b20" />
-              </LinearGradient>
-              <RadialGradient id="youGlow" cx="50%" cy="50%" r="50%">
-                <Stop offset="0" stopColor="#f1c75b" stopOpacity="0.55" />
-                <Stop offset="1" stopColor="#f1c75b" stopOpacity="0" />
-              </RadialGradient>
-              <LinearGradient id="afterburnWake" x1="0" y1="0" x2="0" y2="1">
-                <Stop offset="0" stopColor="#f1c75b" stopOpacity="0.65" />
-                <Stop offset="0.45" stopColor="#f1c75b" stopOpacity="0.28" />
-                <Stop offset="1" stopColor="#f1c75b" stopOpacity="0" />
-              </LinearGradient>
-            </Defs>
-            <Rect width={w} height={540} rx={24} fill="url(#road)" />
-            <Rect
-              x={10}
-              y={56}
-              width={w - 60}
-              height={430}
-              rx={18}
-              fill="#ffffff55"
-              stroke="#d7e0cf"
-            />
-            {ordered.map((l, i) => (
-              <G key={l.id}>
-                {l.you ? (
-                  <Rect
-                    x={i * lw + 10}
-                    y={56}
-                    width={lw}
-                    height={430}
-                    fill="url(#youLane)"
-                    rx={14}
-                  />
-                ) : null}
-                <Line
-                  x1={i * lw + 10}
-                  x2={i * lw + 10}
-                  y1={64}
-                  y2={476}
-                  stroke={l.you ? "#b7c9a4" : "#d3ddcb"}
-                  strokeWidth={l.you ? 1.5 : 1}
-                  strokeDasharray={l.you ? "0" : "5 9"}
-                />
-                <SvgText
-                  x={(i + 0.5) * lw + 10}
-                  y={36}
-                  textAnchor="middle"
-                  fontSize={11}
-                  fontWeight={l.you ? "bold" : "600"}
-                  fill={l.you ? "#282f2c" : "#616c63"}
-                >
-                  {l.you
-                    ? selfLaneLabel(l.name, "caps")
-                    : initialsFromName(l.name)}
-                </SvgText>
-              </G>
-            ))}
-            {Array.from(
-              { length: 7 },
-              (_, i) => bounds.min + (bounds.span * i) / 6,
-            )
-              .filter((v) => v >= 0)
-              .map((v) => (
-                <G key={v}>
-                  <Line
-                    x1={18}
-                    x2={w - 50}
-                    y1={y(v)}
-                    y2={y(v)}
-                    stroke="#c5d2bb"
-                    strokeDasharray="2 7"
-                  />
-                  <SvgText x={w - 42} y={y(v) + 4} fontSize={9} fill="#616c63">
-                    {v.toFixed(unit === "pts" ? 0 : 1)}
-                  </SvgText>
-                </G>
-              ))}
-            {bounds.min <= 0 && bounds.max >= 0 ? (
-              <G>
-                <Line
-                  x1={18}
-                  x2={w - 50}
-                  y1={y(0)}
-                  y2={y(0)}
-                  stroke="#282f2c"
-                  strokeWidth={2}
-                />
-                <SvgText x={18} y={y(0) - 10} fontSize={9} fill="#616c63">
-                  START
-                </SvgText>
-              </G>
-            ) : null}
+            {groundPaint}
+            {!course.oval && lw >= 48 && ordered.map((l, i) => <SvgText key={l.id} x={course.point(v.center, i).x} y={36} textAnchor="middle" fontSize={11} fontWeight={l.you ? "bold" : "600"} fill={l.you ? "#282f2c" : "#616c63"}>{l.you ? selfLaneLabel(l.name, "caps") : initialsFromName(l.name)}</SvgText>)}
             {ordered.map((l, i) => {
               const value =
                 animating && overtakeFrame
                   ? (overtakeFrame.laneValues[l.id] ?? l.values[index] ?? 0)
                   : (l.values[index] ?? 0);
-              const edge = arenaPosition(value, v).edge;
+              const edge = !course.oval && arenaPosition(value, v).edge;
               const effect = !l.you
                 ? overtakeFrame?.rivalEffects[l.id]
                 : undefined;
@@ -324,26 +214,27 @@ export function LaneTrack({
                 l.you && animating ? (overtakeFrame?.speed ?? 0) : 0;
               const charging =
                 l.you && animating ? (overtakeFrame?.charging ?? 0) : 0;
-              const xx = (i + 0.5) * lw + 10 + (effect?.joltX ?? 0),
-                yy = y(value) + (l.you ? charging * 4 : 0);
+              const point = course.point(value, i, 0, true), scale = course.markerScale;
+              const xx = point.x + (effect?.joltX ?? 0) * scale, yy = point.y + (l.you ? charging * 4 * scale : 0);
               const headHalf = 29 * polishedLaneScale(l.you);
               return (
-                <G
+                <LaneRacerTarget
                   key={l.id}
                   onPress={() => onSelect(l)}
                   accessible
                   accessibilityRole="button"
                   accessibilityState={{ selected: selectedId === l.id }}
-                  accessibilityLabel={`${l.name}, ${(value - (overtakeFrame?.youValue ?? me?.values[index] ?? 0)).toFixed(1)} ${unit} relative to you${edge ? `, ${edge} of view` : ""}`}
+                  accessibilityLabel={`${course.oval ? `${fieldLap(value, unit).laps} completed laps, ` : ""}${l.name}, ${(value - (overtakeFrame?.youValue ?? me?.values[index] ?? 0)).toFixed(1)} ${unit} relative to you${edge ? `, ${edge} of view` : ""}`}
                 >
+                  <G transform={`translate(${xx} ${yy}) rotate(${point.angle}) scale(${scale})`}>
                   {l.id === leaderId && !edge ? (
-                    <G transform={`translate(${xx - 24}, ${yy - 104})`}>
+                    <G transform={`translate(-24, -104)`}>
                       <Ember size={48} expression="joy" />
                     </G>
                   ) : null}
                   {l.you && charging > 0.02 ? (
                     <Path
-                      d={`M ${xx - 30} ${yy - 4} l -8 6 l 5 2 l -5 7 M ${xx + 30} ${yy - 6} l 8 6 l -5 2 l 5 7`}
+                      d={`M ${-30} ${-4} l -8 6 l 5 2 l -5 7 M ${30} ${-6} l 8 6 l -5 2 l 5 7`}
                       fill="none"
                       stroke="#f1c75b"
                       strokeWidth={2}
@@ -353,8 +244,8 @@ export function LaneTrack({
                   ) : null}
                   {effect?.isPassed && effect.ripple < 1 ? (
                     <Circle
-                      cx={xx}
-                      cy={yy}
+                      cx={0}
+                      cy={0}
                       r={19 + effect.ripple * 24}
                       fill="none"
                       stroke="#f1c75b"
@@ -364,8 +255,8 @@ export function LaneTrack({
                   ) : null}
                   {edge ? (
                     <Circle
-                      cx={xx}
-                      cy={yy}
+                      cx={0}
+                      cy={0}
                       r={18}
                       fill="white"
                       stroke="#616c63"
@@ -373,10 +264,10 @@ export function LaneTrack({
                     />
                   ) : (
                     <PolishedRacer
-                      x={xx}
-                      y={yy}
+                      x={0}
+                      y={0}
                       you={l.you}
-                      wakeBottom={maxTailY - yy}
+                      wakeBottom={course.oval ? undefined : (maxTailY - yy) / scale}
                       gold={
                         !ordered.some(
                           (peer) =>
@@ -389,16 +280,16 @@ export function LaneTrack({
                   )}
 
                   <Rect
-                    x={xx - 24}
-                    y={yy - headHalf - 4}
-                    width={48}
-                    height={headHalf * 2 + 8}
+                    x={-24 / scale}
+                    y={-Math.max(22 / scale, headHalf + 4)}
+                    width={48 / scale}
+                    height={Math.max(44 / scale, headHalf * 2 + 8)}
                     rx={24}
                     fill="transparent"
                   />
                   <SvgText
-                    x={xx}
-                    y={yy + 4}
+                    x={0}
+                    y={4}
                     textAnchor="middle"
                     fontSize={10}
                     fontWeight="bold"
@@ -413,8 +304,8 @@ export function LaneTrack({
                   {!l.you && (
                     <>
                       <Rect
-                        x={xx - 32}
-                        y={yy - headHalf - 26}
+                        x={-32}
+                        y={-headHalf - 26}
                         width={64}
                         height={20}
                         rx={10}
@@ -422,8 +313,8 @@ export function LaneTrack({
                         stroke="#e0e5dc"
                       />
                       <SvgText
-                        x={xx}
-                        y={yy - headHalf - 12}
+                        x={0}
+                        y={-headHalf - 12}
                         textAnchor="middle"
                         fontSize={10}
                         fill="#282f2c"
@@ -432,32 +323,20 @@ export function LaneTrack({
                       </SvgText>
                     </>
                   )}
-                </G>
+                  </G>
+                </LaneRacerTarget>
               );
             })}
-            {ghost && (
-              <G onPress={() => onSelect(ghost)}>
-                <Circle
-                  cx={(ordered.findIndex((l) => l.you) + 0.5) * lw + 28}
-                  cy={y(ghost.values[index] ?? 0)}
-                  r={13}
-                  fill="#ffffffcc"
-                  stroke="#616c63"
-                  strokeDasharray="3 3"
-                />
-              </G>
-            )}
-            <SvgText x={w - 42} y={36} fontSize={9} fill="#616c63">
-              {unit}
-            </SvgText>
+            {ghost && (() => { const p = course.point(ghost.values[index] ?? 0, ordered.findIndex(l => l.you), 18 * course.markerScale, true); return <G onPress={() => onSelect(ghost)}><Circle cx={p.x} cy={p.y} r={13} fill="#ffffffcc" stroke="#616c63" strokeDasharray="3 3"/></G>; })()}
             <SvgText x={18} y={522} fontSize={9} fill="#616c63">
-              {exploring
+              {course.oval ? `${fieldLap(overtakeFrame?.youValue ?? me?.values[index] ?? 0, unit).laps} laps · ${(overtakeFrame?.youValue ?? me?.values[index] ?? 0).toFixed(1)} ${unit} total` : exploring
                 ? "Drag vertically to explore · Done to scroll page"
-                : "Swipe across peers · tap an athlete for details"}
+                : "Swipe across peers · tap an athlete to center"}
             </SvgText>
           </Svg>
         </View>
       </ScrollView>
+      {!course.oval && <Svg width={42} height={540} pointerEvents="none" style={{ position: "absolute", top: 52, right: 0 }}>{fieldScaleScene(course, unit).map(drawFieldNode)}</Svg>}
     </View>
   );
 }

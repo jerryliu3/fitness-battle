@@ -85,6 +85,14 @@ vi.mock("./lane-track", async () => {
     },
   };
 });
+vi.mock("./field-course", async () => {
+  const { createElement, useState } = await import("react");
+  return {
+    useFieldAppearance: () => useState({ ground: "trail", edges: "club" }),
+    FieldGroundPicker: (props: object) => createElement("FieldGroundPicker", props),
+    FieldOverview: (props: object) => createElement("FieldOverview", props),
+  };
+});
 import ArenaScreen from "../../app/(tabs)/arena";
 let renderer: ReactTestRenderer;
 afterEach(async () => {
@@ -137,6 +145,13 @@ describe("native competition interactions", () => {
       (node) => node.props.label === "Cycling field view",
     )!;
     expect(renderer.root.findAllByType("LaneTrack" as never)).toHaveLength(2);
+    const pickers = renderer.root.findAllByType("FieldGroundPicker" as never);
+    await act(async () => pickers[0].props.onChange({ ground: "pool", edges: "open" }));
+    expect(renderer.root.findAllByType("LaneTrack" as never).map(node => node.props.appearance)).toEqual([{ ground: "pool", edges: "open" }, { ground: "trail", edges: "club" }]);
+    const maps = renderer.root.findAllByType("FieldOverview" as never);
+    const cyclingCenter = maps[1].props.view.center;
+    await act(async () => maps[0].props.onNavigate(1));
+    expect(renderer.root.findAllByType("FieldOverview" as never)[1].props.view.center).toBe(cyclingCenter);
     await act(async () => running.props.onChange("standings"));
     expect(cycling.props.value).toBe("lanes");
     expect(

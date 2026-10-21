@@ -1,0 +1,11 @@
+{
+  "combinations": 54,
+  "checks": [
+    "9 grounds × 2 surroundings × 3 widths",
+    "device persistence and independent events",
+    "overview keyboard and click navigation without total changes",
+    "persistent standings and expansion",
+    "no runtime errors"
+  ],
+  "errors": []
+}

@@ -22,3 +22,5 @@ export * from "./haptics";
 export * from "./score-track-prefs";
 export * from "./activity-age";
 export * from "./member-count";
+export * from "./field-appearance";
+export * from "./field-course";
