@@ -9,7 +9,7 @@ export interface RankBand {
 /**
  * Fitness-style ladder from weekly effort Elo (not gaming metals).
  * Score moves mainly with counted distance (or time when there is no GPS).
- * Activity milestones and weekly bonuses only add; floor is 500. Names describe training level.
+ * Activity milestones only add; empty weeks decay slightly via weekly settlement. Floor is 500.
  */
 export const RANK_BANDS: RankBand[] = [
   {

@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { freshState, reduceCompete, rollClock } from "./engine";
 import { milestoneStep } from "./milestones";
 import { settleElo } from "./elo";
+import { INACTIVITY_DECAY } from "./sports";
 const now = new Date("2026-10-21T12:00:00Z");
 const joined = () =>
   reduceCompete(freshState(now), {
@@ -71,10 +72,12 @@ describe("activity score growth", () => {
     };
     expect(rollClock(future, now).ratings).toEqual(start.ratings);
   });
-  it("holds inactivity and losing placements; bonuses can only add", () => {
-    expect(settleElo(1200, [1200], 1, 2, 10, false)).toBe(1200);
-    expect(settleElo(1200, [1200], 1, 2, 0, false)).toBe(1200);
+  it("decays idle weeks without blocking milestone growth or winning placements", () => {
+    expect(settleElo(1200, [1200], 1, 2, 0, false)).toBe(
+      1200 - INACTIVITY_DECAY,
+    );
     expect(settleElo(1200, [1200], 0, 2, 10, false)).toBeGreaterThan(1200);
+    expect(settleElo(1200, [1200], 1, 2, 10, false)).toBeLessThan(1200);
   });
 });
 
