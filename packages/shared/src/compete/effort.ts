@@ -47,7 +47,7 @@ export function periodEffort(
   for (const activity of activities) {
     if (activity.sport !== sport) continue;
     const at = new Date(activity.startedAt);
-    if (at < periodStart || at >= periodEnd) continue;
+    if (!Number.isFinite(at.getTime()) || at < periodStart || at >= periodEnd) continue;
     if (!countsOnTrack(activity, track)) continue;
     effort += activityEffort(activity);
     distanceM += activity.distanceM;
@@ -64,7 +64,7 @@ export function readinessBonus(
   let bonus = 0;
   for (const mark of marks) {
     const at = new Date(`${mark.day}T12:00:00.000Z`);
-    if (at < periodStart || at >= periodEnd) continue;
+    if (!Number.isFinite(at.getTime()) || at < periodStart || at >= periodEnd) continue;
     bonus += clamp(0, 100, mark.score) / 100 * READINESS_WEIGHT;
   }
   return bonus;

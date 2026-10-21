@@ -1,5 +1,7 @@
 import {
   effortHistory,
+  currentEffortMilestone,
+  formatVolume,
   rankForElo,
   type CompeteState,
 } from "@fitness-battle/shared";
@@ -19,6 +21,7 @@ import { FocusSegments, f } from "../ui/focus";
 export function EffortTrend({ state }: { state: CompeteState }) {
   const [track, setTrack] = useScoreTrackLens();
   const { user } = useAuth();
+  const milestone = currentEffortMilestone(state, state.primary, track);
   const model = effortHistory(state, track, user, user?.email);
   const {
     effectiveElo,
@@ -64,6 +67,7 @@ export function EffortTrend({ state }: { state: CompeteState }) {
         </Text>
         <Text style={f.copy}>effort score</Text>
       </View>
+      {milestone ? <Text style={f.small}>+1 per {formatVolume(state.primary, state.primary === "strength" ? 0 : milestone.step, state.primary === "strength" ? milestone.step : 0, state.units)} this week · +{milestone.earned} from activity</Text> : null}
       <Svg
         width="100%"
         height={170}

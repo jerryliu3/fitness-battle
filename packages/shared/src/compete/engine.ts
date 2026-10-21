@@ -887,6 +887,7 @@ function historyFor(level: "light" | "steady" | "heavy", now: Date): Activity[] 
 function calibrate(state: CompeteState, now: Date): CompeteState {
   let next = state;
   for (const sport of SPORT_IDS) {
+    if (!rating(state, sport).optedIn) continue;
     let openSum = 0;
     let verifiedSum = 0;
     let weeks = 0;
