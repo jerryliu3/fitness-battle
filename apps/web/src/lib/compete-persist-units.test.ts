@@ -11,6 +11,7 @@ function thenableQuery<T>(data: T) {
     eq: () => builder,
     order: () => builder,
     limit: () => builder,
+    range: () => builder,
     not: () => builder,
     maybeSingle: () => Promise.resolve(response),
     then: (
