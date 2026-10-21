@@ -16,7 +16,11 @@ interface PhoneTabBarProps {
   };
   navigation: {
     navigate: (name: string) => void;
-    emit: (event: { type: "tabPress" | "tabLongPress"; target: string; canPreventDefault?: boolean }) => { type: string; defaultPrevented?: boolean };
+    emit: (event: {
+      type: "tabPress" | "tabLongPress";
+      target: string;
+      canPreventDefault?: boolean;
+    }) => { type: string; defaultPrevented?: boolean };
   };
 }
 
@@ -40,16 +44,27 @@ export function PhoneTabBar({ state, navigation }: PhoneTabBarProps) {
             accessibilityState={{ selected }}
             accessibilityLabel={tab.label}
             onPress={() => {
-              const event = navigation.emit({ type: "tabPress", target: route.key, canPreventDefault: true });
+              const event = navigation.emit({
+                type: "tabPress",
+                target: route.key,
+                canPreventDefault: true,
+              });
               if (!selected && !event.defaultPrevented) {
                 void playCue("selection");
                 navigation.navigate(route.name);
               }
             }}
-            onLongPress={() => { navigation.emit({ type: "tabLongPress", target: route.key }); }}
+            onLongPress={() => {
+              navigation.emit({ type: "tabLongPress", target: route.key });
+            }}
             style={[styles.tab, selected ? styles.tabOn : null]}
           >
-            <Svg width={22} height={22} viewBox="0 0 24 24" accessible={Platform.OS === "web" ? undefined : false}>
+            <Svg
+              width={22}
+              height={22}
+              viewBox="0 0 24 24"
+              accessible={Platform.OS === "web" ? undefined : false}
+            >
               <Path
                 d={SHELL_TAB_ICONS[tab.id]}
                 fill="none"

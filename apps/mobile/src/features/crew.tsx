@@ -1,5 +1,4 @@
 import {
-  APP_TIMEZONE,
   competeNow,
   countsOnTrack,
   distanceUnitLabel,
@@ -176,9 +175,26 @@ export function CrewHub() {
       return () => clearInterval(timer);
     }, [api.reload]),
   );
+  const pin =
+    !api.live &&
+    state?.crewBoard &&
+    state.crewBoard.crewId !== "solo" &&
+    !state.crewBoard.crewId.startsWith("field:")
+      ? state.crewBoard
+      : null;
   const rawCrews = (api.data?.crews ?? []).flatMap((r) =>
     r.crews ? [r.crews] : [],
   );
+  if (pin)
+    rawCrews.push({
+      id: pin.crewId,
+      name: pin.crewName,
+      invite_code: "",
+      sport: pin.sport,
+      format: "volume",
+      target_sessions: 4,
+      journey_km: 0,
+    });
   const solo = rawCrews.length === 0;
   const selfId = user?.id ?? "guest";
   const now = state ? competeNow(state) : new Date();
@@ -206,7 +222,17 @@ export function CrewHub() {
           rest_week: null,
         },
       ]
-    : (api.data?.members ?? []).filter(
+    : (pin
+        ? pin.members.map(
+            (member): Member => ({
+              crew_id: pin.crewId,
+              user_id: member.id,
+              display_name: member.name,
+              rest_week: null,
+            }),
+          )
+        : (api.data?.members ?? [])
+      ).filter(
         (m) => m.crew_id === crew.id && (!m.status || m.status === "active"),
       );
   const entries: Entry[] = solo
@@ -229,9 +255,19 @@ export function CrewHub() {
           sport: a.sport,
           disposition: "counted",
         }))
-    : (api.data?.progress ?? api.data?.entries ?? []).filter(
-        (e) => e.crew_id === crew.id && e.disposition === "counted",
-      );
+    : (pin
+        ? pin.members.map((member) => ({
+            crew_id: pin.crewId,
+            user_id: member.id,
+            activity_id: `preview-${member.id}`,
+            distance_m: member.distanceM ?? 0,
+            moving_sec: member.movingSec ?? 0,
+            started_at: pin.waveStart,
+            sport: pin.sport,
+            disposition: "counted",
+          }))
+        : (api.data?.progress ?? api.data?.entries ?? [])
+      ).filter((e) => e.crew_id === crew.id && e.disposition === "counted");
   const totalM = entries.reduce((n, e) => n + Number(e.distance_m), 0);
   const distance = (meters: number) =>
     `${formatDistanceM(meters, state?.units)} ${distanceUnitLabel(state?.units)}`;
@@ -313,139 +349,175 @@ export function CrewHub() {
           onPress={() => void api.reload()}
         />
       ) : null}
-      <View style={f.chipRow}>
-        {crews.map((c) => (
-          <Pressable
-            key={c.id}
-            accessibilityRole="tab"
-            accessibilityState={{ selected: crew.id === c.id }}
-            onPress={() => setSelected(c.id)}
-            style={[f.chip, crew.id === c.id && f.chipActive]}
-          >
-            <Text style={f.rowTitle}>{c.name}</Text>
-          </Pressable>
-        ))}
-        <Pressable
-          accessibilityRole="button"
-          onPress={() => open("add")}
-          style={[f.chip, { borderStyle: "dashed" }]}
-        >
-          <Text style={f.rowTitle}>＋ Add Crew</Text>
-        </Pressable>
-      </View>
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel="View crew members"
-        onPress={() => open("members")}
-        style={[f.card, { backgroundColor: "#282f2c", gap: 18 }]}
-      >
-        <Text style={[f.kicker, { color: "#f1c75b" }]}>
-          {solo ? "Solo circle" : "Your people"} · {members.length} member
-          {members.length === 1 ? "" : "s"}
-        </Text>
-        <Text style={[f.title, { color: "#fafaf7" }]}>{crew.name}</Text>
-        <Text style={[f.copy, { color: "#e0e5dc" }]}>
-          Different paces. Same direction.
-        </Text>
-        <View style={[f.row, { flexWrap: "wrap" }]}>
-          <View style={f.chipRow}>
-            {members.slice(0, 5).map((m) => (
-              <View key={m.user_id} style={f.avatar}>
-                <Text style={f.rowTitle}>
-                  {m.display_name.slice(0, 2).toUpperCase()}
-                </Text>
-              </View>
-            ))}
-          </View>
+      {solo ? (
+        <View style={f.card}>
+          <Text style={f.kicker}>Your people</Text>
+          <Text style={f.title}>Make room for your people.</Text>
+          <Text style={f.copy}>
+            Private crews share a week of counted effort, member standings and
+            an optional shared field.
+          </Text>
           <FocusButton
-            label="Invite"
-            onPress={() => {
-              open("invite");
-              if (!solo && crew.invite_code) {
-                const link = inviteLink(crew.invite_code);
-                void Share.share({
-                  message: `Join my crew on overtaek: ${link}`,
-                }).then(() => {
-                  setNote("Invite link ready — copied to the share sheet.");
-                  void playCue("success");
-                });
-              }
-            }}
+            label={api.live ? "Create or join a crew" : "View account"}
+            onPress={() =>
+              api.live ? open("add") : router.navigate("/athlete")
+            }
           />
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="Crew settings"
-            onPress={() => open("manage")}
-            style={[f.chip, { minWidth: 48 }]}
-          >
-            <Text style={f.h2}>⚙</Text>
-          </Pressable>
+          {!api.live ? (
+            <Text style={f.small}>
+              A live account is needed to create or join a private crew.
+            </Text>
+          ) : null}
         </View>
-      </Pressable>
-      <View style={f.card}>
-        <Text style={f.kicker}>Our shared week · {crew.sport}</Text>
-        <Text style={f.massive}>
-          {crew.format === "personal_target"
-            ? entries.reduce((total, entry) => total + Number(entry.session_count ?? 1), 0)
-            : formatDistanceM(totalM, state?.units)}
-        </Text>
-        <Text style={f.copy}>
-          {crew.format === "personal_target"
-            ? `sessions · ${crew.target_sessions} per member`
-            : crew.format === "cooperative"
-              ? `of ${distance(crew.journey_km * 1000)}`
-              : `${distanceUnitLabel(state?.units)} together`}
-        </Text>
-        {crew.format === "cooperative" ? (
-          <>
-            <View
-              accessibilityRole="progressbar"
-              accessibilityValue={{
-                min: 0,
-                max: 100,
-                now: Math.min(
-                  100,
-                  (totalM / Math.max(1, crew.journey_km * 1000)) * 100,
-                ),
-              }}
-              style={{
-                height: 9,
-                backgroundColor: "#eef0e9",
-                borderRadius: 5,
-                overflow: "hidden",
-              }}
-            >
-              <View
-                style={{
-                  height: 9,
-                  width: `${Math.min(100, (totalM / Math.max(1, crew.journey_km * 1000)) * 100)}%`,
-                  backgroundColor: "#819486",
-                }}
-              />
-            </View>
-          </>
-        ) : null}
-        <Text style={f.copy}>Every pace belongs here.</Text>
-
-      </View>
-      {user ? (
+      ) : (
         <>
-          <Text style={f.h2}>Crew standings</Text>
-          <View style={f.card}>
-            {[...members]
-              .sort((a, b) => memberTotal(b.user_id) - memberTotal(a.user_id))
-              .map((m, i) => (
-                <View key={m.user_id} style={f.row}>
-                  <Text style={f.small}>{i + 1}</Text>
-                  <Text style={[f.rowTitle, f.grow]}>{m.display_name}</Text>
-                  <Text style={f.rowTitle}>
-                    {distance(memberTotal(m.user_id))}
-                  </Text>
-                </View>
-              ))}
+          <View style={f.chipRow}>
+            {crews.map((c) => (
+              <Pressable
+                key={c.id}
+                accessibilityRole="tab"
+                accessibilityState={{ selected: crew.id === c.id }}
+                onPress={() => setSelected(c.id)}
+                style={[f.chip, crew.id === c.id && f.chipActive]}
+              >
+                <Text style={f.rowTitle}>{c.name}</Text>
+              </Pressable>
+            ))}
+            <Pressable
+              accessibilityRole="button"
+              onPress={() => open("add")}
+              style={[f.chip, { borderStyle: "dashed" }]}
+            >
+              <Text style={f.rowTitle}>＋ Add Crew</Text>
+            </Pressable>
           </View>
+          <View style={[f.card, { backgroundColor: "#282f2c", gap: 18 }]}>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="View crew members"
+              onPress={() => open("members")}
+              style={{ gap: 12, minHeight: 44 }}
+            >
+              <Text style={[f.kicker, { color: "#f1c75b" }]}>
+                {solo ? "Solo circle" : "Your people"} · {members.length} member
+                {members.length === 1 ? "" : "s"}
+              </Text>
+              <Text style={[f.title, { color: "#fafaf7" }]}>{crew.name}</Text>
+              <Text style={[f.copy, { color: "#e0e5dc" }]}>
+                Different paces. Same direction.
+              </Text>
+            </Pressable>
+            <View style={[f.row, { flexWrap: "wrap" }]}>
+              <View style={f.chipRow}>
+                {members.slice(0, 5).map((m) => (
+                  <View key={m.user_id} style={f.avatar}>
+                    <Text style={f.rowTitle}>
+                      {m.display_name.slice(0, 2).toUpperCase()}
+                    </Text>
+                  </View>
+                ))}
+              </View>
+              {api.live ? (
+                <FocusButton
+                  label="Invite"
+                  onPress={() => {
+                    open("invite");
+                    if (!solo && crew.invite_code) {
+                      const link = inviteLink(crew.invite_code);
+                      void Share.share({
+                        message: `Join my crew on overtaek: ${link}`,
+                      }).then(() => {
+                        setNote(
+                          "Invite link ready — copied to the share sheet.",
+                        );
+                        void playCue("success");
+                      });
+                    }
+                  }}
+                />
+              ) : null}
+              {api.live ? (
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel="Crew settings"
+                  onPress={() => open("manage")}
+                  style={[f.chip, { minWidth: 48 }]}
+                >
+                  <Text style={f.h2}>⚙</Text>
+                </Pressable>
+              ) : null}
+            </View>
+          </View>
+          <View style={f.card}>
+            <Text style={f.kicker}>Our shared week · {crew.sport}</Text>
+            <Text style={f.massive}>
+              {crew.format === "personal_target"
+                ? entries.reduce(
+                    (total, entry) => total + Number(entry.session_count ?? 1),
+                    0,
+                  )
+                : formatDistanceM(totalM, state?.units)}
+            </Text>
+            <Text style={f.copy}>
+              {crew.format === "personal_target"
+                ? `sessions · ${crew.target_sessions} per member`
+                : crew.format === "cooperative"
+                  ? `of ${distance(crew.journey_km * 1000)}`
+                  : `${distanceUnitLabel(state?.units)} together`}
+            </Text>
+            {crew.format === "cooperative" ? (
+              <>
+                <View
+                  accessibilityRole="progressbar"
+                  accessibilityValue={{
+                    min: 0,
+                    max: 100,
+                    now: Math.min(
+                      100,
+                      (totalM / Math.max(1, crew.journey_km * 1000)) * 100,
+                    ),
+                  }}
+                  style={{
+                    height: 9,
+                    backgroundColor: "#eef0e9",
+                    borderRadius: 5,
+                    overflow: "hidden",
+                  }}
+                >
+                  <View
+                    style={{
+                      height: 9,
+                      width: `${Math.min(100, (totalM / Math.max(1, crew.journey_km * 1000)) * 100)}%`,
+                      backgroundColor: "#819486",
+                    }}
+                  />
+                </View>
+              </>
+            ) : null}
+            <Text style={f.copy}>Every pace belongs here.</Text>
+          </View>
+          {user ? (
+            <>
+              <Text style={f.h2}>Crew standings</Text>
+              <View style={f.card}>
+                {[...members]
+                  .sort(
+                    (a, b) => memberTotal(b.user_id) - memberTotal(a.user_id),
+                  )
+                  .map((m, i) => (
+                    <View key={m.user_id} style={f.row}>
+                      <Text style={f.small}>{i + 1}</Text>
+                      <Text style={[f.rowTitle, f.grow]}>{m.display_name}</Text>
+                      <Text style={f.rowTitle}>
+                        {distance(memberTotal(m.user_id))}
+                      </Text>
+                    </View>
+                  ))}
+              </View>
+            </>
+          ) : null}
         </>
-      ) : null}
+      )}
       {!panel && (note || api.error) ? (
         <Text style={f.copy} accessibilityLiveRegion="polite">
           {note || api.error}
@@ -471,18 +543,6 @@ export function CrewHub() {
               Register together on one individual leaderboard.
             </Text>
           </View>
-          <View style={f.card}>
-            <Text style={f.title}>Make room for your people.</Text>
-            <Text style={f.copy}>
-              Private crews share a week of counted effort.
-            </Text>
-            <FocusButton
-              label={
-                user ? "Live account required" : "Sign in or create account"
-              }
-              onPress={() => router.navigate("/you")}
-            />
-          </View>
         </>
       ) : null}
       <FocusSheet
@@ -495,8 +555,8 @@ export function CrewHub() {
               : panel === "members"
                 ? crew.name
                 : panel === "leave"
-                ? `Leave ${crew.name}?`
-                : "Your crew, your rhythm."
+                  ? `Leave ${crew.name}?`
+                  : "Your crew, your rhythm."
         }
         onClose={() => {
           if (!busy) {
@@ -507,7 +567,7 @@ export function CrewHub() {
           }
         }}
       >
-        {!api.live ? (
+        {!api.live && panel !== "members" ? (
           <>
             <Text style={f.copy}>
               A live account is needed to create or join a private crew.
@@ -516,7 +576,7 @@ export function CrewHub() {
               label="Go to Athlete"
               onPress={() => {
                 setPanel(null);
-                router.navigate("/you");
+                router.navigate("/athlete");
               }}
             />
           </>
@@ -592,14 +652,20 @@ export function CrewHub() {
             {members.map((m) => (
               <View key={m.user_id} style={f.row}>
                 <Text style={[f.rowTitle, f.grow]}>{m.display_name}</Text>
-                <Text style={f.small}>{m.rest_week ? "Rest week" : "Active"}</Text>
+                <Text style={f.small}>
+                  {m.rest_week ? "Rest week" : "Active"}
+                </Text>
               </View>
             ))}
           </>
         ) : panel === "invite" ? (
           <>
-            <Text style={f.copy}>Share this link so friends join your crew.</Text>
-            <Text selectable style={f.small}>{inviteLink(crew.invite_code)}</Text>
+            <Text style={f.copy}>
+              Share this link so friends join your crew.
+            </Text>
+            <Text selectable style={f.small}>
+              {inviteLink(crew.invite_code)}
+            </Text>
             <FocusButton
               label="Share invite link"
               onPress={() =>

@@ -5,7 +5,7 @@ import { FocusButton, f } from "../src/ui/focus";
 export default function NotFound() {
   const router = useRouter();
   return (
-    <SafeAreaView style={f.safe}>
+    <SafeAreaView style={f.safe} edges={["bottom"]}>
       <View style={f.content}>
         <Text style={f.kicker}>OVERTAEK</Text>
         <Text style={f.title}>A little off course.</Text>

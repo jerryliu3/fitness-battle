@@ -4,7 +4,10 @@ import {
   DMSans_700Bold,
   useFonts as useDmSans,
 } from "@expo-google-fonts/dm-sans";
-import { NunitoSans_900Black, useFonts as useNunito } from "@expo-google-fonts/nunito-sans";
+import {
+  NunitoSans_900Black,
+  useFonts as useNunito,
+} from "@expo-google-fonts/nunito-sans";
 import * as Notifications from "expo-notifications";
 import { router, Stack, usePathname } from "expo-router";
 import { StatusBar } from "expo-status-bar";
@@ -17,10 +20,14 @@ import "../global.css";
 // Registers the foreground notification handler.
 import "../src/lib/expo-push-register";
 import { AuthProvider } from "../src/lib/auth";
-import { CompeteProvider, useCompeteFieldRefresh } from "../src/lib/compete-store";
+import {
+  CompeteProvider,
+  useCompeteFieldRefresh,
+} from "../src/lib/compete-store";
 import { shellTabFromPath } from "@fitness-battle/shared";
 import { SHELL_COLORS } from "../src/theme";
 import { BootGate } from "../src/ui/boot-gate";
+import { AppHeader } from "../src/ui/app-header";
 
 function LiveFieldRefresh() {
   const tab = shellTabFromPath(usePathname());
@@ -88,18 +95,22 @@ export default function RootLayout() {
   }
 
   return (
-    <GestureHandlerRootView style={{ flex: 1, backgroundColor: SHELL_COLORS.paper }}>
+    <GestureHandlerRootView
+      style={{ flex: 1, backgroundColor: SHELL_COLORS.paper }}
+    >
       <HeroUINativeProvider>
         <AuthProvider>
           <CompeteProvider>
             <LiveFieldRefresh />
             <BootGate>
               <StatusBar style="dark" />
+              <AppHeader />
               <Stack
                 screenOptions={{
                   headerShown: false,
                   contentStyle: { backgroundColor: SHELL_COLORS.paper },
-                  animation: Platform.OS === "ios" ? "default" : "slide_from_right",
+                  animation:
+                    Platform.OS === "ios" ? "default" : "slide_from_right",
                 }}
               />
             </BootGate>

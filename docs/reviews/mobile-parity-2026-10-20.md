@@ -1,5 +1,7 @@
 # Mobile parity audit — October 20, 2026
 
+This records the initial pass against the pre-#206 interface. The follow-up [alignment through #232](mobile-parity-main-232.md) supersedes its navigation, Home, Compete controls and local-tooling descriptions.
+
 ## Scope and evidence
 
 Compared the Expo routes and features with the production web routes, `docs/design-guide.md`, and the October 19 motion repair review. Ran Expo in its browser preview and subsequently exported its normal static production build. Browser checks used a local demo account, including empty Home, setup, registration, an active running field, and Athlete settings. These checks do not establish native-device or live-service correctness.

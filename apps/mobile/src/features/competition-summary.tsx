@@ -1,18 +1,39 @@
 import {
   competeNow,
+  APP_TIMEZONE,
+  competePeriodWindow,
   primaryFreezePeriodStart,
-  formatWeeklyCompetitionRange,
+  weeklyCompetitionLastDay,
   weeklyPeriodBounds,
   type CompeteState,
 } from "@fitness-battle/shared";
-import type { ReactNode } from "react";
-import { Text, View, StyleSheet } from "react-native";
+import { useState, type ReactNode } from "react";
+import { Pressable, Text, View, StyleSheet } from "react-native";
 import { SHELL_COLORS as c } from "../theme";
-import { f } from "../ui/focus";
-export function CompetitionSummary({ state, children }: { state: CompeteState; children?: ReactNode }) {
+import { FocusSheet, f } from "../ui/focus";
+export function CompetitionSummary({
+  state,
+  children,
+}: {
+  state: CompeteState;
+  children?: ReactNode;
+}) {
   const now = competeNow(state);
-  const weekLabel = formatWeeklyCompetitionRange(now);
-  const weekEnd = weeklyPeriodBounds(now).endsAt;
+  const [infoOpen, setInfoOpen] = useState(false);
+  const active = state.ratings.filter((rating) => rating.optedIn);
+  const sport =
+    active.find((rating) => rating.sport === state.primary)?.sport ??
+    active[0]?.sport;
+  const period = sport
+    ? competePeriodWindow(state, now, sport)
+    : weeklyPeriodBounds(now);
+  const dateOptions = {
+    month: "short",
+    day: "numeric",
+    timeZone: APP_TIMEZONE,
+  } as const;
+  const weekLabel = `${period.startsAt.toLocaleDateString("en-US", dateOptions)} – ${weeklyCompetitionLastDay(period.endsAt).toLocaleDateString("en-US", dateOptions)}`;
+  const weekEnd = period.endsAt;
   const left = Math.max(
     1,
     Math.ceil((weekEnd.getTime() - now.getTime()) / 60000),
@@ -24,7 +45,24 @@ export function CompetitionSummary({ state, children }: { state: CompeteState; c
       <View style={s.card}>
         <View style={f.row}>
           <View style={f.grow}>
-            <Text style={f.kicker}>Competition</Text>
+            <View
+              style={{ flexDirection: "row", alignItems: "center", gap: 6 }}
+            >
+              <Text style={f.kicker}>Competition</Text>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="About competition scoring"
+                onPress={() => setInfoOpen(true)}
+                style={{
+                  minWidth: 44,
+                  minHeight: 44,
+                  justifyContent: "center",
+                  alignItems: "center",
+                }}
+              >
+                <Text style={f.copy}>ⓘ</Text>
+              </Pressable>
+            </View>
             <Text style={s.dates}>{weekLabel}</Text>
           </View>
           <Text style={s.pill}>
@@ -43,12 +81,43 @@ export function CompetitionSummary({ state, children }: { state: CompeteState; c
           ❄ Week frozen · Your effort score is protected through next Monday.
         </Text>
       ) : null}
+      <FocusSheet
+        open={infoOpen}
+        title="About competition scoring"
+        onClose={() => setInfoOpen(false)}
+      >
+        <Text style={f.copy}>
+          Open score counts all logged effort. GPS verified counts only
+          activities with GPS proof from a connected tracker.
+        </Text>
+      </FocusSheet>
     </>
   );
 }
 
 const s = StyleSheet.create({
-  card: { backgroundColor: c.card, borderWidth: 1, borderColor: c.line, borderRadius: 18, padding: 16, gap: 14 },
-  dates: { fontFamily: "DMSans_700Bold", fontSize: 16, lineHeight: 24, color: c.ink },
-  pill: { overflow: "hidden", borderRadius: 12, backgroundColor: c.soft, paddingHorizontal: 10, paddingVertical: 5, fontFamily: "DMSans_500Medium", fontSize: 11, color: c.muted },
+  card: {
+    backgroundColor: c.card,
+    borderWidth: 1,
+    borderColor: c.line,
+    borderRadius: 18,
+    padding: 16,
+    gap: 14,
+  },
+  dates: {
+    fontFamily: "DMSans_700Bold",
+    fontSize: 16,
+    lineHeight: 24,
+    color: c.ink,
+  },
+  pill: {
+    overflow: "hidden",
+    borderRadius: 12,
+    backgroundColor: c.soft,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    fontFamily: "DMSans_500Medium",
+    fontSize: 11,
+    color: c.muted,
+  },
 });

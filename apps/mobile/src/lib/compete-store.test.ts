@@ -18,6 +18,7 @@ const mock = vi.hoisted(() => ({
     demoMode: false,
   },
   values: new Map<string, string>(),
+  pathname: "/arena",
   router: { navigate: vi.fn() },
 }));
 vi.mock("./auth", () => ({ useAuth: () => mock.auth }));
@@ -42,10 +43,12 @@ vi.mock("./supabase", () => ({
 }));
 vi.mock("expo-router", () => ({
   useRouter: () => mock.router,
-  usePathname: () => "/arena",
+  usePathname: () => mock.pathname,
 }));
 vi.mock("react-native", () => ({
-  Text: "Text", View: "View", Pressable: "Pressable",
+  Text: "Text",
+  View: "View",
+  Pressable: "Pressable",
   AppState: {
     currentState: "active",
     addEventListener: () => ({ remove() {} }),
@@ -104,6 +107,8 @@ beforeEach(() => {
   vi.useFakeTimers();
   vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
   mock.values.clear();
+  mock.pathname = "/arena";
+  mock.router.navigate.mockClear();
   mock.auth.user = null;
   mock.auth.loading = false;
   seenNames.length = 0;
@@ -147,23 +152,66 @@ async function save() {
 }
 
 describe("mobile account lifecycle", () => {
+  it.each([
+    "/athlete",
+    "/athlete-settings",
+    "/settings",
+    "/notifications",
+    "/onboarding",
+  ])("keeps %s open when a field update arrives", async (path) => {
+    login("Alice");
+    mock.pathname = path;
+    await mount();
+    await act(async () => {
+      api.dispatch({ type: "opt-in", sport: "running" });
+    });
+    await act(async () => {
+      api.dispatch({
+        type: "log-manual",
+        sport: "running",
+        distanceM: 1000,
+        movingSec: 600,
+        activityId: "local-notice-test",
+        now: new Date(Date.now() - 3600000).toISOString(),
+      });
+      await flush();
+    });
+    await act(flush);
+    expect(api.state?.activities).toHaveLength(1);
+    expect(api.fieldNotice?.personal).toBe(true);
+    expect(mock.router.navigate).not.toHaveBeenCalled();
+  });
   it("preserves an edit dispatched while refresh persists its revision", async () => {
     login("Alice");
     await mount();
     let release!: () => void;
-    const pending = new Promise<void>((resolve) => { release = resolve; });
+    const pending = new Promise<void>((resolve) => {
+      release = resolve;
+    });
     const original = AsyncStorage.setItem;
     vi.spyOn(AsyncStorage, "setItem").mockImplementation(async (key, value) => {
       if (key.endsWith(":revision")) await pending;
       return original(key, value);
     });
-    fetcher.mockResolvedValueOnce(Response.json({ state: accountState("Alice"), updatedAt: "revision-2" }));
+    fetcher.mockResolvedValueOnce(
+      Response.json({ state: accountState("Alice"), updatedAt: "revision-2" }),
+    );
     let refreshing!: Promise<boolean>;
-    await act(async () => { refreshing = api.refresh(); await flush(); });
-    await act(async () => { api.dispatch({ type: "set-city", city: "New edit" }); });
-    await act(async () => { release(); await refreshing; });
+    await act(async () => {
+      refreshing = api.refresh();
+      await flush();
+    });
+    await act(async () => {
+      api.dispatch({ type: "set-city", city: "New edit" });
+    });
+    await act(async () => {
+      release();
+      await refreshing;
+    });
     expect(api.state?.city).toBe("New edit");
-    expect(JSON.parse(mock.values.get(accountStorageKeys("Alice").state)!).city).toBe("New edit");
+    expect(
+      JSON.parse(mock.values.get(accountStorageKeys("Alice").state)!).city,
+    ).toBe("New edit");
   });
 
   it("never displays or uploads guest training into a newly signed-in account", async () => {
@@ -222,7 +270,9 @@ describe("mobile account lifecycle", () => {
     await save();
     expect(api.saveError).toBeNull();
     expect(mock.values.get(accountStorageKeys("Alice").dirty)).toBe("1");
-    fetcher.mockResolvedValue(Response.json({ ok: true, updatedAt: "2026-10-20T13:00:00Z" }));
+    fetcher.mockResolvedValue(
+      Response.json({ ok: true, updatedAt: "2026-10-20T13:00:00Z" }),
+    );
     await act(async () => {
       api.retrySave();
     });
@@ -232,19 +282,36 @@ describe("mobile account lifecycle", () => {
   });
   it("sends the loaded revision and blocks stale retries until explicit account reload", async () => {
     login("Alice");
-    fetcher.mockImplementation(async (_url: string, init: RequestInit) => init.method === "PUT"
-      ? Response.json({ error: "account_changed_reload" }, { status: 409 })
-      : Response.json({ state: accountState("Alice"), updatedAt: "revision-1" }));
+    fetcher.mockImplementation(async (_url: string, init: RequestInit) =>
+      init.method === "PUT"
+        ? Response.json({ error: "account_changed_reload" }, { status: 409 })
+        : Response.json({
+            state: accountState("Alice"),
+            updatedAt: "revision-1",
+          }),
+    );
     await mount();
-    await act(async () => api.dispatch({ type: "set-city", city: "Local draft" }));
+    await act(async () =>
+      api.dispatch({ type: "set-city", city: "Local draft" }),
+    );
     await save();
-    const writes = () => fetcher.mock.calls.filter(([, options]) => options.method === "PUT");
-    expect(JSON.parse(writes()[0]![1].body as string).updatedAt).toBe("revision-1");
-    await act(async () => api.dispatch({ type: "set-city", city: "Still local" }));
+    const writes = () =>
+      fetcher.mock.calls.filter(([, options]) => options.method === "PUT");
+    expect(JSON.parse(writes()[0]![1].body as string).updatedAt).toBe(
+      "revision-1",
+    );
+    await act(async () =>
+      api.dispatch({ type: "set-city", city: "Still local" }),
+    );
     await save();
     expect(writes()).toHaveLength(1);
-    await act(async () => { api.retrySave(); await flush(); });
-    expect(mock.values.has(`${accountStorageKeys("Alice").state}:recovery`)).toBe(true);
+    await act(async () => {
+      api.retrySave();
+      await flush();
+    });
+    expect(
+      mock.values.has(`${accountStorageKeys("Alice").state}:recovery`),
+    ).toBe(true);
     expect(api.state?.city).toBe(accountState("Alice").city);
   });
   it("does not apply a delayed Alice refresh after switching to Bob", async () => {

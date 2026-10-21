@@ -24,71 +24,115 @@ export function AthleteMetrics({
   email,
   demoMode,
   onEdit,
+  sections = "progress",
 }: {
   state: CompeteState;
   email?: string | null;
   demoMode?: boolean;
   onEdit?: () => void;
+  sections?: "profile" | "progress";
 }) {
   const router = useRouter();
   const season = seasonSummary(state);
   const unit = distanceUnitLabel(state.units);
   return (
     <>
-      <View
-        style={[
-          f.card,
-          {
-            flexDirection: "row",
-            alignItems: "center",
-            gap: 16,
-            marginVertical: 8,
-          },
-        ]}
-      >
-        <ProfilePhoto state={state} />
-        <View style={{ flex: 1, gap: 4 }}>
-          <Text style={f.kicker}>{state.city || "Your own pace"}</Text>
-          <Text style={f.title}>{state.name}</Text>
-          {email ? (
-            <Text style={f.small}>
-              {email}
-              {demoMode ? " · demo" : ""}
-            </Text>
+      {sections === "profile" ? (
+        <>
+          <View
+            style={[
+              f.card,
+              {
+                flexDirection: "row",
+                alignItems: "center",
+                gap: 16,
+                marginVertical: 8,
+              },
+            ]}
+          >
+            <ProfilePhoto state={state} />
+            <View style={{ flex: 1, gap: 4 }}>
+              <Text style={f.kicker}>{state.city || "Your own pace"}</Text>
+              <Text style={f.title}>{state.name}</Text>
+              {email ? (
+                <Text style={f.small}>
+                  {email}
+                  {demoMode ? " · demo" : ""}
+                </Text>
+              ) : null}
+            </View>
+          </View>
+          {onEdit ? (
+            <FocusButton label="Edit profile" secondary onPress={onEdit} />
           ) : null}
-        </View>
-      </View>
-      <View
-        style={[f.card, { backgroundColor: "#eef0e9", borderColor: "#e0e5dc" }]}
-        accessibilityLabel="Your season so far"
-      >
-        <Text style={f.kicker}>Your season so far</Text>
-        <View style={[f.row, { marginTop: 12 }]}>
-          <View style={{ flex: 1, alignItems: "center", gap: 4 }}>
-            <Text style={f.h2}>
-              {formatDistanceM(season.meters, state.units)}
-            </Text>
-            <Text style={f.small}>{unit} counted</Text>
+        </>
+      ) : (
+        <>
+          <View
+            style={[
+              f.card,
+              { backgroundColor: "#eef0e9", borderColor: "#e0e5dc" },
+            ]}
+            accessibilityLabel="Lifetime totals"
+          >
+            <Text style={f.kicker}>Lifetime totals</Text>
+            <View style={[f.row, { marginTop: 12, flexWrap: "wrap" }]}>
+              <View
+                style={{
+                  flex: 1,
+                  flexBasis: "40%",
+                  alignItems: "center",
+                  gap: 4,
+                }}
+              >
+                <Text style={f.h2}>
+                  {formatDistanceM(season.meters, state.units)}
+                </Text>
+                <Text style={f.small}>{unit} counted</Text>
+              </View>
+              <View
+                style={{
+                  flex: 1,
+                  flexBasis: "40%",
+                  alignItems: "center",
+                  gap: 4,
+                }}
+              >
+                <Text style={f.h2}>{season.sessions}</Text>
+                <Text style={f.small}>sessions</Text>
+              </View>
+              <View
+                style={{
+                  flex: 1,
+                  flexBasis: "40%",
+                  alignItems: "center",
+                  gap: 4,
+                }}
+              >
+                <Text style={f.h2}>{season.weeks}</Text>
+                <Text style={f.small}>settled weeks</Text>
+              </View>
+              <View
+                style={{
+                  flex: 1,
+                  flexBasis: "40%",
+                  alignItems: "center",
+                  gap: 4,
+                }}
+              >
+                <Text style={f.h2}>{state.lifetimeOvertakes}</Text>
+                <Text style={f.small}>overtakes</Text>
+              </View>
+            </View>
           </View>
-          <View style={{ flex: 1, alignItems: "center", gap: 4 }}>
-            <Text style={f.h2}>{season.sessions}</Text>
-            <Text style={f.small}>sessions</Text>
-          </View>
-          <View style={{ flex: 1, alignItems: "center", gap: 4 }}>
-            <Text style={f.h2}>{season.weeks}</Text>
-            <Text style={f.small}>settled weeks</Text>
-          </View>
-        </View>
-      </View>
-      {onEdit ? (
-        <FocusButton label="Edit profile" secondary onPress={onEdit} />
-      ) : null}
-      <EffortTrend state={state} />
-      <FocusButton
-        label="Your benchmarks · pace & rankings"
-        secondary
-        onPress={() => router.push("/benchmarks")}
-      />
+          <EffortTrend state={state} />
+          <FocusButton
+            label="Your benchmarks · pace & rankings"
+            secondary
+            onPress={() => router.push("/benchmarks")}
+          />
+        </>
+      )}
     </>
   );
 }

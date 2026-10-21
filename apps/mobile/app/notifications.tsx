@@ -58,7 +58,8 @@ export default function NotificationsScreen() {
       const next = await hydrateNotificationPreferences(nextIdentity);
       if (alive) setPrefs(next);
     })().catch(() => {
-      if (alive) setNote("Could not load notification settings. Please try again.");
+      if (alive)
+        setNote("Could not load notification settings. Please try again.");
     });
     return () => {
       alive = false;
@@ -91,7 +92,11 @@ export default function NotificationsScreen() {
           : `${result.detail ?? "Using a stub token."}${synced}`,
       );
     } catch (error) {
-      setNote(error instanceof Error ? error.message : "Could not save notification settings. Please try again.");
+      setNote(
+        error instanceof Error
+          ? error.message
+          : "Could not save notification settings. Please try again.",
+      );
     } finally {
       setBusy(false);
     }
@@ -106,7 +111,11 @@ export default function NotificationsScreen() {
       const next = await updateNativeCategory(id, enabled, identity);
       setPrefs(next);
     } catch (error) {
-      setNote(error instanceof Error ? error.message : "Could not save notification settings. Please try again.");
+      setNote(
+        error instanceof Error
+          ? error.message
+          : "Could not save notification settings. Please try again.",
+      );
     } finally {
       setBusy(false);
     }
@@ -116,38 +125,42 @@ export default function NotificationsScreen() {
     setBusy(true);
     setNote(null);
     try {
-    const result = await deliverNativeNotification(
-      {
-        category: "week_summary",
-        title: "Overtaek",
-        body: "Your Overtaek test notification.",
-        path: "/notifications",
-      },
-      identity,
-    );
-    if (!result.ok) {
-      setNote(
-        "Could not deliver. Turn notifications on, allow permission, and use a live Expo token on a physical device when testing remote push.",
+      const result = await deliverNativeNotification(
+        {
+          category: "week_summary",
+          title: "Overtaek",
+          body: "Your Overtaek test notification.",
+          path: "/notifications",
+        },
+        identity,
       );
-      return;
-    }
-    Alert.alert(result.payload.title, result.payload.body);
-    if (result.mode === "expo") {
+      if (!result.ok) {
+        setNote(
+          "Could not deliver. Turn notifications on, allow permission, and use a live Expo token on a physical device when testing remote push.",
+        );
+        return;
+      }
+      Alert.alert(result.payload.title, result.payload.body);
+      if (result.mode === "expo") {
+        setNote(
+          result.persisted
+            ? "Sent via Expo Push Service and recorded in the outbox."
+            : "Sent via Expo Push Service.",
+        );
+        return;
+      }
       setNote(
-        result.persisted
-          ? "Sent via Expo Push Service and recorded in the outbox."
-          : "Sent via Expo Push Service.",
+        result.message ??
+          (result.persisted
+            ? "Stub delivery recorded in the outbox (no live Expo token yet)."
+            : "Local stub delivery — use a physical device + live auth for Expo Push."),
       );
-      return;
-    }
-    setNote(
-      result.message ??
-        (result.persisted
-          ? "Stub delivery recorded in the outbox (no live Expo token yet)."
-          : "Local stub delivery — use a physical device + live auth for Expo Push."),
-    );
     } catch (error) {
-      setNote(error instanceof Error ? error.message : "Could not send a test notification. Please try again.");
+      setNote(
+        error instanceof Error
+          ? error.message
+          : "Could not send a test notification. Please try again.",
+      );
     } finally {
       setBusy(false);
     }
@@ -155,27 +168,49 @@ export default function NotificationsScreen() {
 
   if (!prefs) {
     return (
-      <SafeAreaView style={styles.safe}>
+      <SafeAreaView style={styles.safe} edges={["bottom"]}>
         <View style={f.content}>
-          <FocusButton label="← Back" secondary onPress={() => router.canGoBack() ? router.back() : router.replace("/settings")} />
-          <Text style={styles.copy}>{note ?? "Loading notification settings…"}</Text>
-          {note ? <FocusButton label="Try again" onPress={() => setLoadAttempt((n) => n + 1)} /> : null}
+          <FocusButton
+            label="← Back"
+            secondary
+            onPress={() =>
+              router.canGoBack() ? router.back() : router.replace("/settings")
+            }
+          />
+          <Text style={styles.copy}>
+            {note ?? "Loading notification settings…"}
+          </Text>
+          {note ? (
+            <FocusButton
+              label="Try again"
+              onPress={() => setLoadAttempt((n) => n + 1)}
+            />
+          ) : null}
         </View>
       </SafeAreaView>
     );
   }
 
   return (
-    <SafeAreaView style={styles.safe}>
+    <SafeAreaView style={styles.safe} edges={["bottom"]}>
       <ScrollView contentContainerStyle={styles.scroll}>
-        <Pressable accessibilityRole="button" style={{ minHeight: 44, justifyContent: "center" }} onPress={() => router.canGoBack() ? router.back() : router.replace("/settings")}>
+        <Pressable
+          accessibilityRole="button"
+          style={{ minHeight: 44, justifyContent: "center" }}
+          onPress={() =>
+            router.canGoBack() ? router.back() : router.replace("/settings")
+          }
+        >
           <Text style={styles.back}>← Back</Text>
         </Pressable>
         <Text style={styles.kicker}>Settings</Text>
-        <Text accessibilityRole="header" style={styles.title}>Notifications</Text>
+        <Text accessibilityRole="header" style={styles.title}>
+          Notifications
+        </Text>
         <Text style={styles.copy}>
           Choose which updates you receive. Enabling notifications asks for
-          permission on this device. {identity && !identity.localOnly
+          permission on this device.{" "}
+          {identity && !identity.localOnly
             ? "Your choices sync to your account."
             : "Your choices stay on this device."}
         </Text>
@@ -211,9 +246,13 @@ export default function NotificationsScreen() {
                 accessibilityLabel={category.label}
                 value={prefs.categories[category.id]}
                 disabled={!prefs.enabled || busy}
-                onValueChange={(value) => void toggleCategory(category.id, value)}
+                onValueChange={(value) =>
+                  void toggleCategory(category.id, value)
+                }
                 trackColor={{ false: colors.line, true: colors.ink }}
-                thumbColor={prefs.categories[category.id] ? colors.lime : "#f4f4f5"}
+                thumbColor={
+                  prefs.categories[category.id] ? colors.lime : "#f4f4f5"
+                }
               />
             </View>
           ))}

@@ -45,7 +45,10 @@ export function FocusSheet({
   }, [open]);
 
   useEffect(() => {
-    if (open && !present) { setPresent(true); return; }
+    if (open && !present) {
+      setPresent(true);
+      return;
+    }
     if (!present) return;
     const animation = Animated.timing(progress, {
       toValue: open ? 1 : 0,
@@ -53,7 +56,9 @@ export function FocusSheet({
       easing: open ? Easing.out(Easing.cubic) : Easing.in(Easing.cubic),
       useNativeDriver: true,
     });
-    animation.start(({ finished }) => { if (finished && !open) setPresent(false); });
+    animation.start(({ finished }) => {
+      if (finished && !open) setPresent(false);
+    });
     return () => animation.stop();
   }, [open, present, progress, reduce]);
 
@@ -68,18 +73,33 @@ export function FocusSheet({
         behavior={Platform.OS === "ios" ? "padding" : undefined}
         style={f.modal}
       >
-        <Animated.View style={[StyleSheet.absoluteFill, { opacity: progress }]} pointerEvents={open ? "auto" : "none"}>
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel="Close details"
-          style={f.backdrop}
-          onPress={onClose}
-        />
+        <Animated.View
+          style={[StyleSheet.absoluteFill, { opacity: progress }]}
+          pointerEvents={open ? "auto" : "none"}
+        >
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Close details"
+            style={f.backdrop}
+            onPress={onClose}
+          />
         </Animated.View>
         <AnimatedSafeAreaView
           edges={["bottom"]}
           onLayout={(event) => setSheetHeight(event.nativeEvent.layout.height)}
-          style={[f.sheet, { transform: [{ translateY: progress.interpolate({ inputRange: [0, 1], outputRange: [sheetHeight, 0] }) }] }]}
+          style={[
+            f.sheet,
+            {
+              transform: [
+                {
+                  translateY: progress.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: [sheetHeight, 0],
+                  }),
+                },
+              ],
+            },
+          ]}
           accessibilityViewIsModal
         >
           <View style={f.handle} />
@@ -101,7 +121,9 @@ export function FocusSheet({
             <Text accessibilityRole="header" style={f.title}>
               {content.current.title}
             </Text>
-            {Boolean(content.current.body) && <Text style={f.copy}>{content.current.body}</Text>}
+            {Boolean(content.current.body) && (
+              <Text style={f.copy}>{content.current.body}</Text>
+            )}
             {content.current.children}
           </ScrollView>
         </AnimatedSafeAreaView>
@@ -127,7 +149,9 @@ export function FocusHeading({
       >
         {title}
       </Text>
-      {Boolean(body) && <Text style={[f.copy, { textAlign: "center" }]}>{body}</Text>}
+      {Boolean(body) && (
+        <Text style={[f.copy, { textAlign: "center" }]}>{body}</Text>
+      )}
     </View>
   );
 }
@@ -162,7 +186,13 @@ export function FocusButton({
   );
 }
 /** One grouped control for mutually exclusive views, rather than separate action buttons. */
-export function FocusSegments<T extends string>({ label, options, value, onChange, accent = false }: {
+export function FocusSegments<T extends string>({
+  label,
+  options,
+  value,
+  onChange,
+  accent = false,
+}: {
   label: string;
   options: readonly { value: T; label: string }[];
   value: T;
@@ -170,26 +200,53 @@ export function FocusSegments<T extends string>({ label, options, value, onChang
   accent?: boolean;
 }) {
   return (
-    <View accessibilityRole="tablist" accessibilityLabel={label} style={f.segments}>
+    <View
+      accessibilityRole="tablist"
+      accessibilityLabel={label}
+      style={f.segments}
+    >
       {options.map((option) => (
-        <Pressable key={option.value} accessibilityRole="tab"
+        <Pressable
+          key={option.value}
+          accessibilityRole="tab"
           accessibilityState={{ selected: value === option.value }}
-          onPress={() => { if (value !== option.value) onChange(option.value); }}
-          style={({ pressed }) => [f.segment, value === option.value && f.segmentSelected,
-            value === option.value && accent && { backgroundColor: c.tennis }, pressed && { opacity: 0.7 }]}>
-          <Text style={[f.segmentText, value === option.value && { color: c.ink }]}>{option.label}</Text>
+          onPress={() => {
+            if (value !== option.value) onChange(option.value);
+          }}
+          style={({ pressed }) => [
+            f.segment,
+            value === option.value && f.segmentSelected,
+            value === option.value && accent && { backgroundColor: c.tennis },
+            pressed && { opacity: 0.7 },
+          ]}
+        >
+          <Text
+            style={[f.segmentText, value === option.value && { color: c.ink }]}
+          >
+            {option.label}
+          </Text>
         </Pressable>
       ))}
     </View>
   );
 }
 
-export function FocusTextButton({ label, accessibilityLabel, onPress }: {
-  label: string; accessibilityLabel?: string; onPress: () => void;
+export function FocusTextButton({
+  label,
+  accessibilityLabel,
+  onPress,
+}: {
+  label: string;
+  accessibilityLabel?: string;
+  onPress: () => void;
 }) {
   return (
-    <Pressable accessibilityRole="button" accessibilityLabel={accessibilityLabel ?? label}
-      onPress={onPress} style={({ pressed }) => [f.textButton, pressed && { opacity: 0.5 }]}>
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={accessibilityLabel ?? label}
+      onPress={onPress}
+      style={({ pressed }) => [f.textButton, pressed && { opacity: 0.5 }]}
+    >
       <Text style={f.textButtonText}>{label}</Text>
     </Pressable>
   );
@@ -223,7 +280,11 @@ export function FocusDisclosure({
         </View>
         <Text style={f.h2}>{open ? "−" : "＋"}</Text>
       </Pressable>
-      {open && <View style={[f.disclosureBody, compact && f.disclosureBodyCompact]}>{children}</View>}
+      {open && (
+        <View style={[f.disclosureBody, compact && f.disclosureBodyCompact]}>
+          {children}
+        </View>
+      )}
     </View>
   );
 }
@@ -323,13 +384,49 @@ export const f = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: c.line,
   },
-  segments: { flexDirection: "row", padding: 4, gap: 4, borderRadius: 12, backgroundColor: c.soft, borderWidth: 1, borderColor: c.line },
-  segment: { flex: 1, minWidth: 0, minHeight: 44, paddingHorizontal: 8, paddingVertical: 10, borderRadius: 8, justifyContent: "center", alignItems: "center" },
+  segments: {
+    flexDirection: "row",
+    padding: 4,
+    gap: 4,
+    borderRadius: 12,
+    backgroundColor: c.soft,
+    borderWidth: 1,
+    borderColor: c.line,
+  },
+  segment: {
+    flex: 1,
+    minWidth: 0,
+    minHeight: 44,
+    paddingHorizontal: 8,
+    paddingVertical: 10,
+    borderRadius: 8,
+    justifyContent: "center",
+    alignItems: "center",
+  },
   segmentSelected: { backgroundColor: c.card },
-  segmentText: { fontFamily: "DMSans_500Medium", fontSize: 12, color: c.muted, textAlign: "center" },
-  textButton: { minHeight: 44, paddingHorizontal: 8, justifyContent: "center", alignItems: "center", flexShrink: 0 },
-  textButtonText: { fontFamily: "DMSans_500Medium", fontSize: 13, color: c.ink },
-  disclosureCompact: { borderWidth: 0, borderRadius: 12, backgroundColor: c.soft },
+  segmentText: {
+    fontFamily: "DMSans_500Medium",
+    fontSize: 12,
+    color: c.muted,
+    textAlign: "center",
+  },
+  textButton: {
+    minHeight: 44,
+    paddingHorizontal: 8,
+    justifyContent: "center",
+    alignItems: "center",
+    flexShrink: 0,
+  },
+  textButtonText: {
+    fontFamily: "DMSans_500Medium",
+    fontSize: 13,
+    color: c.ink,
+  },
+  disclosureCompact: {
+    borderWidth: 0,
+    borderRadius: 12,
+    backgroundColor: c.soft,
+  },
   disclosureHeadCompact: { minHeight: 48, padding: 12 },
   disclosureBodyCompact: { paddingHorizontal: 12, paddingBottom: 12, gap: 10 },
   disclosure: {

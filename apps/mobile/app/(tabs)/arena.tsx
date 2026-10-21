@@ -1,60 +1,37 @@
-import type { CrewBoardPin } from "@fitness-battle/shared";
 import {
   SPORTS,
-  arenaBaselineStorageKey,
   awardCards,
-  buildArenaModel,
-  competePeriodWindow,
-  fitArenaWindow,
-  formatArenaOvertakeStatus,
-  initialsFromName,
-  readArenaBaseline,
-  reconcileArenaOvertake,
-  selfLaneLabel,
-  serializeArenaBaseline,
-  shellTabFromPath,
-  sportById,
-  stepArenaOvertake,
-  type ArenaOvertakePlan,
-  type ArenaSceneLane,
-  type CompeteState,
-  type ScoreTrack,
+  type CrewBoardPin,
   type SportId,
 } from "@fitness-battle/shared";
-import { usePathname, useRouter } from "expo-router";
-import { useEffect, useMemo, useRef, useState } from "react";
-import { playCue } from "../../src/lib/haptics";
-import { useScoreTrackLens } from "../../src/lib/score-track-lens";
-import {
-  AccessibilityInfo,
-  Pressable,
-  ScrollView,
-  Switch,
-  Text,
-  View,
-} from "react-native";
+import { useRouter } from "expo-router";
+import { useRef, useState } from "react";
+import { Pressable, ScrollView, Switch, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { RoundTakeover } from "../../src/features/round-takeover";
+import { CompetitionField } from "../../src/features/competition-field";
 import { CompetitionSummary } from "../../src/features/competition-summary";
 import { useCrewApi } from "../../src/features/crew";
+import { RoundTakeover } from "../../src/features/round-takeover";
 import { SleepPanel } from "../../src/features/sleep-panel";
 import { useAuth } from "../../src/lib/auth";
 import { useCompeteStore } from "../../src/lib/compete-store";
+import { useScoreTrackLens } from "../../src/lib/score-track-lens";
+import { playCue } from "../../src/lib/haptics";
 import { AwardShelf } from "../../src/ui/award-shelf";
 import {
   FocusButton,
   FocusDisclosure,
+  FocusSegments,
   FocusSheet,
+  FocusTextButton,
   f,
 } from "../../src/ui/focus";
-import { LaneTrack } from "../../src/ui/lane-track";
-import { ZoomControl } from "../../src/ui/zoom-control";
+import { SettingsRow } from "../../src/ui/settings-row";
+
 export default function ArenaScreen() {
   const {
     state,
     accountKey,
-    readBaselineItem,
-    writeBaselineItem,
     dispatch,
     returnGain,
     clearReturn,
@@ -65,210 +42,32 @@ export default function ArenaScreen() {
     retrySave,
     canWrite,
   } = useCompeteStore();
-  const { user, demoMode } = useAuth();
+  const { user } = useAuth();
+  const router = useRouter();
   const crewApi = useCrewApi();
+  const [track, setTrack] = useScoreTrackLens();
+  const [register, setRegister] = useState(false);
+  const [sport, setSport] = useState<SportId | null>(null);
   const [withCrew, setWithCrew] = useState(false);
+  const [joinBusy, setJoinBusy] = useState(false);
+  const [joinError, setJoinError] = useState("");
   const joinFlight = useRef(false);
   const currentUser = useRef(user?.id);
   currentUser.current = user?.id;
-  const router = useRouter();
-  const pathname = usePathname();
-  const isFocused = shellTabFromPath(pathname)?.id === "arena";
-  const [joinBusy, setJoinBusy] = useState(false);
-  const [joinError, setJoinError] = useState("");
-  const [track, setTrack] = useScoreTrackLens();
-  const [mode, setMode] = useState("Lanes");
-  const [center, setCenter] = useState<number | null>(null);
-  const [span, setSpan] = useState<number | null>(null);
-  const [ghost, setGhost] = useState(true);
-  const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [register, setRegister] = useState(false);
-  const [sport, setSport] = useState<SportId | null>(null);
-  const [overtakePlan, setOvertakePlan] = useState<ArenaOvertakePlan | null>(
-    null,
-  );
-  const [overtakeProgress, setOvertakeProgress] = useState(1);
-  const [replayEpoch, setReplayEpoch] = useState(0);
-  const lastSignatureRef = useRef<string | null>(null);
-  const pendingBaselineRef = useRef<{ key: string; snapshot: string } | null>(
-    null,
-  );
-  const [reduceMotion, setReduceMotion] = useState(false);
-
-  useEffect(() => {
-    let changed = false;
-    void AccessibilityInfo.isReduceMotionEnabled().then((value) => {
-      if (!changed) setReduceMotion(value);
-    });
-    const sub = AccessibilityInfo.addEventListener(
-      "reduceMotionChanged",
-      setReduceMotion,
-    );
-    return () => sub.remove();
-  }, []);
-
-  const arena = useMemo(
-    () => (state ? buildArenaModel(state, undefined, track) : null),
-    [state, track],
-  );
-  const defaultSpan = arena?.unit === "pts" ? 20 : arena?.unit === "mi" ? 4 : 6;
-  const viewSpan = span ?? defaultSpan;
-  const me = arena?.lanes.find((l) => l.you);
-  const total = me?.values[2] ?? 0;
-
-  const fieldLanes = useMemo<ArenaSceneLane[]>(
-    () =>
-      (arena?.lanes ?? [])
-        .filter((l) => !l.ghost)
-        .map((l) => ({
-          id: l.id,
-          name: l.name,
-          initials: initialsFromName(l.name),
-          value: l.values[2],
-          you: l.you,
-          ghost: false,
-        })),
-    [arena?.lanes],
-  );
-
-  useEffect(() => {
-    if (!isFocused) {
-      setMode("Lanes");
-      return;
-    }
-    if (!state || !arena?.optedIn || fieldLanes.length === 0) {
-      setOvertakePlan(null);
-      setOvertakeProgress(1);
-      return;
-    }
-    const periodStart = competePeriodWindow(
-      state,
-      undefined,
-      arena.sportId,
-    ).startsAt.toISOString();
-    const key = arenaBaselineStorageKey(accountKey, arena.sportId, track);
-    const scopeKey = `${key}:${periodStart}:${arena.unit}`;
-    const signature = `${scopeKey}|${fieldLanes
-      .map((lane) => `${lane.id}:${lane.value.toFixed(3)}`)
-      .join(",")}`;
-    if (lastSignatureRef.current === signature) return;
-    lastSignatureRef.current = signature;
-
-    const previous = readArenaBaseline(
-      readBaselineItem(key),
-      periodStart,
-      arena.unit,
-    );
-    const snapshot = serializeArenaBaseline(
-      periodStart,
-      fieldLanes,
-      arena.unit,
-    );
-    const plan = reconcileArenaOvertake(fieldLanes, previous);
-    if (pendingBaselineRef.current) {
-      writeBaselineItem(
-        pendingBaselineRef.current.key,
-        pendingBaselineRef.current.snapshot,
-      );
-      pendingBaselineRef.current = null;
-    }
-    if (!plan) {
-      writeBaselineItem(key, snapshot);
-      setOvertakePlan(null);
-      setOvertakeProgress(1);
-      return;
-    }
-    setCenter(null);
-    setOvertakePlan(plan);
-    if (reduceMotion) {
-      writeBaselineItem(key, snapshot);
-      setOvertakeProgress(1);
-      setReplayEpoch(0);
-      return;
-    }
-    pendingBaselineRef.current = { key, snapshot };
-    setOvertakeProgress(0);
-    setReplayEpoch((n) => n + 1);
-  }, [
-    accountKey,
-    arena?.optedIn,
-    arena?.sportId,
-    arena?.unit,
-    fieldLanes,
-    isFocused,
-    readBaselineItem,
-    state,
-    track,
-    writeBaselineItem,
-    reduceMotion,
-  ]);
-
-  useEffect(() => {
-    if (!overtakePlan || replayEpoch === 0) return;
-    if (reduceMotion) {
-      setOvertakeProgress(1);
-      return;
-    }
-    let raf = 0;
-    const start = Date.now();
-    const duration = overtakePlan.durationMs;
-    const tick = () => {
-      const next = Math.min(1, (Date.now() - start) / duration);
-      setOvertakeProgress(next);
-      if (next >= 1 && pendingBaselineRef.current) {
-        writeBaselineItem(
-          pendingBaselineRef.current.key,
-          pendingBaselineRef.current.snapshot,
-        );
-        pendingBaselineRef.current = null;
-      }
-      if (next < 1) {
-        raf = requestAnimationFrame(tick);
-      }
-    };
-    raf = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(raf);
-  }, [overtakePlan, replayEpoch, reduceMotion, writeBaselineItem]);
-
-  const overtakeFrame = useMemo(
-    () =>
-      overtakePlan && overtakeProgress < 1
-        ? stepArenaOvertake(overtakePlan, overtakeProgress, viewSpan)
-        : null,
-    [overtakePlan, overtakeProgress, viewSpan],
-  );
-
-  const overtakeStatus = useMemo(
-    () =>
-      overtakePlan && arena
-        ? formatArenaOvertakeStatus(overtakePlan, overtakeFrame, arena.unit)
-        : null,
-    [arena, overtakeFrame, overtakePlan],
-  );
-
-  if (!state || !arena)
-    return (
-      <SafeAreaView style={f.safe}>
-        <Text style={f.copy}>Loading your arena…</Text>
-      </SafeAreaView>
-    );
-
-  const displayTotal = overtakeFrame ? overtakeFrame.youValue : total;
-  const view = {
-    center: center ?? (overtakeFrame ? overtakeFrame.viewCenter : total),
-    span: viewSpan,
-  };
-  const selectAthlete = (id: string) => {
-    const lane = arena.lanes.find((item) => item.id === id);
-    if (!lane) return;
-    setSelectedId(id);
-    setCenter(lane.values[2]);
-  };
+  if (!state) return null;
+  const active = state.ratings.filter((rating) => rating.optedIn);
+  const hasRegistration =
+    active.length > 0 || state.healthRatings.some((rating) => rating.optedIn);
+  function openRegistration() {
+    setSport(null);
+    setJoinError("");
+    setRegister(true);
+  }
   async function join(nextSport: SportId, crewId?: string) {
     if (!user) {
       setRegister(false);
       setSport(null);
-      router.navigate("/you");
+      router.navigate("/athlete");
       return;
     }
     if (joinFlight.current) return;
@@ -301,9 +100,6 @@ export default function ArenaScreen() {
         crewBoard: pin,
         accountId: joiningAccount,
       });
-      setCenter(null);
-      const gps = SPORTS.find((s) => s.id === nextSport)?.gps;
-      setSpan(gps ? (state?.units === "metric" ? 6 : 4) : 20);
       setRegister(false);
       setSport(null);
     } catch (e) {
@@ -315,61 +111,40 @@ export default function ArenaScreen() {
   }
 
   return (
-    <SafeAreaView style={f.safe} edges={["top"]}>
+    <SafeAreaView style={f.safe} edges={[]}>
       <ScrollView contentContainerStyle={f.content}>
-        <CompetitionSummary state={state} />
+        <CompetitionSummary state={state}>
+          {hasRegistration ? (
+            <FocusSegments
+              label="Score track"
+              value={track}
+              accent
+              options={[
+                { value: "open", label: "Open score" },
+                { value: "verified", label: "GPS verified" },
+              ]}
+              onChange={(next) => {
+                void playCue("selection");
+                setTrack(next);
+              }}
+            />
+          ) : null}
+        </CompetitionSummary>
         {saveError ? (
           <View style={f.feedback}>
             <Text style={f.copy}>{saveError}</Text>
             <FocusButton label="Retry save" secondary onPress={retrySave} />
           </View>
         ) : null}
-        <View style={f.chipRow}>
-          {state.ratings
-            .filter((r) => r.optedIn)
-            .map((r) => (
-              <Pressable
-                accessibilityRole="button"
-                accessibilityState={{ selected: r.sport === state.primary }}
-                key={r.sport}
-                onPress={() => {
-                  dispatch({ type: "set-primary", sport: r.sport });
-                  setCenter(null);
-                  setSpan(null);
-                  setSelectedId(null);
-                }}
-                style={[f.chip, r.sport === state.primary && f.chipActive]}
-              >
-                <Text style={f.rowTitle}>
-                  {SPORTS.find((s) => s.id === r.sport)?.name}
-                </Text>
-              </Pressable>
-            ))}
-          {state.ratings.some((r) => r.optedIn) ||
-          state.healthRatings.some((r) => r.optedIn) ? (
-            <FocusButton
-              label="Register ＋"
-              secondary
-              onPress={() => {
-                setSport(null);
-                setRegister(true);
-              }}
-            />
-          ) : null}
-        </View>
         {standingsStale ? (
           <Text style={f.copy} accessibilityLiveRegion="polite">
             Standings may be out of date until the next refresh.
           </Text>
         ) : null}
         {fieldNotice ? (
-          <View style={f.card}>
+          <View style={f.feedback}>
             <Text style={f.h2}>{fieldNotice.title}</Text>
-            <FocusButton
-              label="Got it"
-              secondary
-              onPress={dismissFieldNotice}
-            />
+            <FocusTextButton label="Got it" onPress={dismissFieldNotice} />
           </View>
         ) : null}
         <RoundTakeover state={state} ready={canWrite} dispatch={dispatch} />
@@ -378,9 +153,6 @@ export default function ArenaScreen() {
             <Text style={f.h2}>
               {returnGain} new counted{" "}
               {returnGain === 1 ? "session" : "sessions"}
-            </Text>
-            <Text style={f.copy}>
-              Your effort went somewhere. Explore your updated lanes.
             </Text>
             <FocusButton
               label="Continue to Home"
@@ -391,178 +163,47 @@ export default function ArenaScreen() {
             />
           </View>
         ) : null}
-        {arena.optedIn && me ? (
+        {active.map((rating) => (
+          <CompetitionField
+            key={`${accountKey}:${rating.sport}:${state.units}:${track}`}
+            sport={rating.sport}
+            track={track}
+          />
+        ))}
+        <SleepPanel state={state} dispatch={dispatch} />
+        {!hasRegistration ? (
           <View style={f.card}>
-            <View style={f.row}>
-              <View>
-                <Text style={[f.h2, { fontSize: 28 }]}>{arena.sportName}</Text>
-                <Text style={f.massive}>
-                  {displayTotal.toFixed(1)}{" "}
-                  <Text style={f.copy}>{arena.unit}</Text>
-                </Text>
-              </View>
-              <Text style={f.small}>
-                {track === "open" ? "Open score" : "GPS verified"}
-              </Text>
-            </View>
-            {overtakePlan && overtakeStatus ? (
-              <View style={f.row}>
-                <Text style={f.rowTitle}>
-                  {overtakeStatus.headline}
-                  {overtakeStatus.detail ? ` · ${overtakeStatus.detail}` : ""}
-                </Text>
-              </View>
-            ) : null}
-            <View style={f.chipRow}>
-              {(["open", "verified"] as const).map((t) => (
-                <Pressable
-                  key={t}
-                  accessibilityRole="radio"
-                  accessibilityState={{ checked: track === t }}
-                  style={[f.chip, { flex: 1 }, track === t && f.chipActive]}
-                  onPress={() => {
-                    if (t !== track) void playCue("selection");
-                    setTrack(t);
-                    setCenter(null);
-                    setSelectedId(null);
-                  }}
-                >
-                  <Text style={f.rowTitle}>
-                    {t === "open" ? "Open score" : "GPS verified"}
-                  </Text>
-                </Pressable>
-              ))}
-            </View>
-            <View style={f.chipRow}>
-              {["Lanes", "Standings"].map((m) => (
-                <Pressable
-                  key={m}
-                  accessibilityRole="tab"
-                  accessibilityState={{
-                    selected: mode === m,
-                  }}
-                  onPress={() => {
-                    setMode(m);
-                  }}
-                  style={[f.chip, { flex: 1 }, mode === m && f.chipActive]}
-                >
-                  <Text
-                    style={[
-                      f.rowTitle,
-                    ]}
-                  >
-                    {m}
-                  </Text>
-                </Pressable>
-              ))}
-            </View>
-            {mode === "Standings" ? (
-              <View style={{ gap: 12 }}>
-                {arena.lanes
-                  .filter((l) => !l.ghost)
-                  .slice()
-                  .sort((a, b) => b.values[2] - a.values[2])
-                  .map((l, i) => (
-                    <Pressable
-                      key={l.id}
-                      accessibilityRole="button"
-                      onPress={() => selectAthlete(l.id)}
-                      style={f.row}
-                    >
-                      <Text style={f.small}>
-                        {1 +
-                          arena.lanes.filter(
-                            (peer) =>
-                              !peer.ghost && peer.values[2] > l.values[2],
-                          ).length}
-                      </Text>
-                      <Text style={[f.rowTitle, f.grow]}>
-                        {l.you ? selfLaneLabel(l.name) : l.name}
-                      </Text>
-                      <Text style={f.rowTitle}>
-                        {l.values[2].toFixed(1)} {arena.unit}
-                      </Text>
-                    </Pressable>
-                  ))}
-              </View>
-            ) : (
-              <LaneTrack
-                selectedId={selectedId ?? me?.id}
-                lanes={arena.lanes}
-                unit={arena.unit}
-                showGhost={ghost}
-                index={2}
-                onSelect={(lane) => selectAthlete(lane.id)}
-                view={view}
-                onPan={(v) => setCenter(Math.max(0, v))}
-                overtakeFrame={overtakeFrame}
-                overtakePlan={overtakePlan}
-              />
-            )}
-            <ZoomControl
-              value={view.span}
-              maximum={arena.unit === "pts" ? 100 : 40}
-              onChange={(span) => {
-                setSpan(span);
-              }}
-            />
-
-            {arena.lanes.some((l) => l.ghost) && (
-              <View style={f.row}>
-                <Text style={f.copy}>Show past you</Text>
-                <Switch
-                  value={ghost}
-                  onValueChange={(next) => {
-                    setGhost(next);
-                    if (
-                      !next &&
-                      arena.lanes.some((l) => l.id === selectedId && l.ghost)
-                    )
-                      setSelectedId(null);
-                  }}
-                  accessibilityLabel="Show past you"
-                />
-              </View>
-            )}
-            <Text style={f.small}>
-              Accumulated effort, not live GPS positions. Practice fields may
-              contain synthetic athletes.
-            </Text>
-          </View>
-        ) : !state.healthRatings.some((r) => r.optedIn) ? (
-          <View style={f.card}>
-            <Text
-              style={{ fontSize: 26, textAlign: "center", marginBottom: 10 }}
-            >
+            <Text style={{ fontSize: 26, textAlign: "center" }}>
               🏃 🚴 🚶 🏋️
             </Text>
             <Text style={f.title}>Your next chapter starts here.</Text>
             <FocusButton
-              label="Register for an event"
-              onPress={() => {
-                setSport(null);
-                setRegister(true);
-              }}
+              label="＋ Register for an event"
+              onPress={openRegistration}
             />
           </View>
+        ) : active.length < SPORTS.length ||
+          !state.healthRatings.some((rating) => rating.optedIn) ? (
+          <FocusButton
+            label="＋ Register for another event"
+            onPress={openRegistration}
+          />
         ) : null}
-        <SleepPanel state={state} dispatch={dispatch} />
         <View style={[f.card, { opacity: 0.72 }]}>
           <Text style={f.kicker}>Coming soon</Text>
-          <Text style={f.title}>1v1</Text>
+          <Text style={f.h2}>1v1 Head-to-Head</Text>
           <Text style={f.copy}>
             Challenge a friend head-to-head for the week. Not open yet.
           </Text>
-          <FocusButton label="1v1 · Coming soon" disabled onPress={() => {}} />
         </View>
         {awardCards(state).length > 0 ? (
           <FocusDisclosure title="Past competitions & awards">
             <AwardShelf cards={awardCards(state)} />
           </FocusDisclosure>
         ) : null}
-        <FocusButton
-          label="Benchmarks & pace"
-          secondary
+        <SettingsRow
+          title="Beyond this week"
+          detail="All-time pace & race rankings"
           onPress={() => router.push("/benchmarks")}
         />
       </ScrollView>
@@ -651,7 +292,7 @@ export default function ArenaScreen() {
           onPress={() => {
             if (!user) {
               setRegister(false);
-              router.navigate("/you");
+              router.navigate("/athlete");
               return;
             }
             if (!state.onboardingCompleted) {
@@ -663,7 +304,7 @@ export default function ArenaScreen() {
             setRegister(false);
           }}
         />
-        {joinError && (
+        {Boolean(joinError) && (
           <Text style={f.copy} accessibilityLiveRegion="polite">
             {joinError}
           </Text>

@@ -22,12 +22,10 @@ export function Journey({
   activities,
   units,
   onToday,
-  today,
 }: {
   activities: Activity[];
   units: UnitSystem;
   onToday: () => void;
-  today: string;
 }) {
   const { dispatch } = useCompeteStore();
   const [width, setWidth] = useState(320);
@@ -61,7 +59,10 @@ export function Journey({
       ];
   const visibleStops = stops;
   const paths = routeThroughCenters(
-    visibleStops.map((s, i) => ({ x: laneX[s.lane] * width, y: i * ROW + ROW / 2 })),
+    visibleStops.map((s, i) => ({
+      x: laneX[s.lane] * width,
+      y: i * ROW + ROW / 2,
+    })),
     width,
   );
   const selected = days.find((d) => d.id === selectedDay);

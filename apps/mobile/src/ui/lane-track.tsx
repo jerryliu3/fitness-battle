@@ -58,7 +58,7 @@ export function LaneTrack({
 }) {
   const [exploring, setExploring] = useState(false);
   const [width, setWidth] = useState(340);
-  const wakeTime = usePolishedWakeTime();
+  const wakeTime = usePolishedWakeTime(active);
   const scroll = useRef<ScrollView>(null);
   const animating = Boolean(overtakeFrame && overtakeFrame.phase !== "done");
   const me = lanes.find((l) => l.you);
@@ -85,7 +85,9 @@ export function LaneTrack({
     () =>
       PanResponder.create({
         onMoveShouldSetPanResponder: (_, g) =>
-          latest.current.exploring && Math.abs(g.dy) > 7 && Math.abs(g.dy) > Math.abs(g.dx),
+          latest.current.exploring &&
+          Math.abs(g.dy) > 7 &&
+          Math.abs(g.dy) > Math.abs(g.dx),
         onPanResponderGrant: () => {
           start.current = latest.current.v.center;
         },
@@ -116,13 +118,29 @@ export function LaneTrack({
   );
   useEffect(() => {
     scroll.current?.scrollTo({
-      x: Math.max(0, Math.min(w - width, 10 + (Math.max(0, ordered.findIndex((lane) => lane.you)) + 0.5) * lw - width / 2)),
+      x: Math.max(
+        0,
+        Math.min(
+          w - width,
+          10 +
+            (Math.max(
+              0,
+              ordered.findIndex((lane) => lane.you),
+            ) +
+              0.5) *
+              lw -
+            width / 2,
+        ),
+      ),
       animated: false,
     });
   }, [w, width]);
   return (
     <View
-      onLayout={(e) => { if (e.nativeEvent.layout.width > 0) setWidth(e.nativeEvent.layout.width); }}
+      onLayout={(e) => {
+        if (e.nativeEvent.layout.width > 0)
+          setWidth(e.nativeEvent.layout.width);
+      }}
       style={{
         borderRadius: 24,
         overflow: "hidden",
@@ -131,15 +149,54 @@ export function LaneTrack({
         borderColor: "#d7e0cf",
       }}
     >
-      <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 8, paddingHorizontal: 12, paddingVertical: 4 }}>
-        <Text style={{ flex: 1, fontFamily: "DMSans_400Regular", fontSize: 11, lineHeight: 16, color: c.muted }}>
+      <View
+        style={{
+          flexDirection: "row",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: 8,
+          paddingHorizontal: 12,
+          paddingVertical: 4,
+        }}
+      >
+        <Text
+          style={{
+            flex: 1,
+            fontFamily: "DMSans_400Regular",
+            fontSize: 11,
+            lineHeight: 16,
+            color: c.muted,
+          }}
+        >
           {exploring ? "Drag vertically to explore" : "Swipe across peers"}
         </Text>
-        <Pressable accessibilityRole="button" accessibilityState={{ selected: exploring }}
-          accessibilityLabel={exploring ? "Finish panning lanes" : "Enable vertical lane panning"}
-          onPress={() => { void playCue("selection"); setExploring((value) => !value); }}
-          style={{ minHeight: 44, paddingHorizontal: 12, justifyContent: "center", borderRadius: 10, backgroundColor: exploring ? c.tennis : "#ffffff99" }}>
-          <Text style={{ fontFamily: "DMSans_500Medium", fontSize: 12, color: c.ink }}>{exploring ? "Done" : "Explore"}</Text>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityState={{ selected: exploring }}
+          accessibilityLabel={
+            exploring ? "Finish panning lanes" : "Enable vertical lane panning"
+          }
+          onPress={() => {
+            void playCue("selection");
+            setExploring((value) => !value);
+          }}
+          style={{
+            minHeight: 44,
+            paddingHorizontal: 12,
+            justifyContent: "center",
+            borderRadius: 10,
+            backgroundColor: exploring ? c.tennis : "#ffffff99",
+          }}
+        >
+          <Text
+            style={{
+              fontFamily: "DMSans_500Medium",
+              fontSize: 12,
+              color: c.ink,
+            }}
+          >
+            {exploring ? "Done" : "Explore"}
+          </Text>
         </Pressable>
       </View>
       <ScrollView
@@ -213,7 +270,9 @@ export function LaneTrack({
                   fontWeight={l.you ? "bold" : "600"}
                   fill={l.you ? "#282f2c" : "#616c63"}
                 >
-                  {l.you ? selfLaneLabel(l.name, "caps") : initialsFromName(l.name)}
+                  {l.you
+                    ? selfLaneLabel(l.name, "caps")
+                    : initialsFromName(l.name)}
                 </SvgText>
               </G>
             ))}
@@ -303,10 +362,40 @@ export function LaneTrack({
                       opacity={1 - effect.ripple}
                     />
                   ) : null}
-                  {edge ? <Circle cx={xx} cy={yy} r={18} fill="white" stroke="#616c63" strokeDasharray="3 3"/> :
-                    <PolishedRacer x={xx} y={yy} you={l.you} wakeBottom={maxTailY-yy} gold={!ordered.some((peer) => (overtakeFrame?.laneValues[peer.id] ?? peer.values[index]) > value)} time={wakeTime}/>}
+                  {edge ? (
+                    <Circle
+                      cx={xx}
+                      cy={yy}
+                      r={18}
+                      fill="white"
+                      stroke="#616c63"
+                      strokeDasharray="3 3"
+                    />
+                  ) : (
+                    <PolishedRacer
+                      x={xx}
+                      y={yy}
+                      you={l.you}
+                      wakeBottom={maxTailY - yy}
+                      gold={
+                        !ordered.some(
+                          (peer) =>
+                            (overtakeFrame?.laneValues[peer.id] ??
+                              peer.values[index]) > value,
+                        )
+                      }
+                      time={wakeTime}
+                    />
+                  )}
 
-                  <Rect x={xx - 24} y={yy - headHalf - 4} width={48} height={headHalf * 2 + 8} rx={24} fill="transparent"/>
+                  <Rect
+                    x={xx - 24}
+                    y={yy - headHalf - 4}
+                    width={48}
+                    height={headHalf * 2 + 8}
+                    rx={24}
+                    fill="transparent"
+                  />
                   <SvgText
                     x={xx}
                     y={yy + 4}
@@ -358,7 +447,9 @@ export function LaneTrack({
               {unit}
             </SvgText>
             <SvgText x={18} y={522} fontSize={9} fill="#616c63">
-              {exploring ? "Drag vertically to explore · Done to scroll page" : "Swipe across peers · tap an athlete for details"}
+              {exploring
+                ? "Drag vertically to explore · Done to scroll page"
+                : "Swipe across peers · tap an athlete for details"}
             </SvgText>
           </Svg>
         </View>
