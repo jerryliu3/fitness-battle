@@ -213,3 +213,4 @@ export { roundReveal, roundEnrollment } from "./round-reveal";
 export { applyEffortMilestones, milestoneStep, type EffortMilestone } from "./milestones";
 
 export { RECORD_DISTANCES, recordAttemptsForActivity, personalRecordHistory, weeklyTraining, recordStepPath, type RecordAttempt, type TrainingWeek } from "./progress";
+export { crewRelay, RELAY_COLORS } from './crew-relay';

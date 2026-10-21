@@ -1,4 +1,6 @@
+import { CrewRelay } from "./crew-relay";
 import {
+  type SportId,
   competeNow,
   countsOnTrack,
   distanceUnitLabel,
@@ -465,36 +467,7 @@ export function CrewHub() {
                   ? `of ${distance(crew.journey_km * 1000)}`
                   : `${distanceUnitLabel(state?.units)} together`}
             </Text>
-            {crew.format === "cooperative" ? (
-              <>
-                <View
-                  accessibilityRole="progressbar"
-                  accessibilityValue={{
-                    min: 0,
-                    max: 100,
-                    now: Math.min(
-                      100,
-                      (totalM / Math.max(1, crew.journey_km * 1000)) * 100,
-                    ),
-                  }}
-                  style={{
-                    height: 9,
-                    backgroundColor: "#eef0e9",
-                    borderRadius: 5,
-                    overflow: "hidden",
-                  }}
-                >
-                  <View
-                    style={{
-                      height: 9,
-                      width: `${Math.min(100, (totalM / Math.max(1, crew.journey_km * 1000)) * 100)}%`,
-                      backgroundColor: "#819486",
-                    }}
-                  />
-                </View>
-              </>
-            ) : null}
-            <Text style={f.copy}>Every pace belongs here.</Text>
+            <CrewRelay key={crew.id} members={members} entries={entries} sport={crew.sport as SportId} format={crew.format} targetM={crew.journey_km * 1000} targetSessions={crew.target_sessions} units={state?.units} />
           </View>
           {user ? (
             <>
