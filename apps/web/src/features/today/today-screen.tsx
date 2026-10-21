@@ -158,12 +158,6 @@ function JourneyDayStop({
         <small>{monthDay}</small>
         <b>{sportById(primary.sport).name}</b>
         <em>{detail}</em>
-        {day.items.length > 1 && day.items.map((activity) => (
-          <button key={activity.id} type="button" className="fb-btn-ghost"
-            onClick={() => onOpen(activity)}>
-            {sportById(activity.sport).name} · {formatVolume(activity.sport, activity.distanceM, activity.movingSec, units)}
-          </button>
-        ))}
       </span>
     </>
   );

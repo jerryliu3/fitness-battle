@@ -15,7 +15,6 @@ import {
   effortHistory,
   ELO_UNRANKED,
   formatDistanceM,
-  initialsFromName,
   rankForElo,
   type CompeteState,
 } from "@fitness-battle/shared";

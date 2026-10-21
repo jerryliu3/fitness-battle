@@ -48,7 +48,7 @@ export default function Progress() {
                   {formatVolume(
                     r.sport,
                     r.distanceM > 0 ? r.distanceM : r.effort,
-                    r.movingSec,
+                    r.movingSec > 0 ? r.movingSec : r.effort,
                     state.units,
                   )}
                 </Text>

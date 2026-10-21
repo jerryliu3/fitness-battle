@@ -142,7 +142,7 @@ export function SeasonHistory({
                   {formatVolume(
                     row.sport,
                     row.distanceM > 0 ? row.distanceM : row.effort,
-                    row.movingSec,
+                    row.movingSec > 0 ? row.movingSec : row.effort,
                     units,
                   )}
                 </span>

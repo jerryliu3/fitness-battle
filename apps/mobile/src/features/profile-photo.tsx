@@ -1,7 +1,6 @@
 import {
   buildAvatarCleanupPathsForProfileChange,
   getCanonicalAvatarObjectPath,
-  initialsFromName,
   type CompeteState,
 } from "@fitness-battle/shared";
 import * as ImagePicker from "expo-image-picker";
