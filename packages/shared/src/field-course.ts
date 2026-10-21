@@ -170,12 +170,26 @@ export function fieldCourseScene(g: FieldCourse, appearance: FieldAppearance, la
     const to = g.oval ? l.value : Math.min(l.value, g.bounds.max);
     if (to <= from) continue;
     const clearance = g.oval ? fieldLoopLength(unit) * .08 : 104 * g.markerScale / g.length * g.bounds.span;
-    const half = 4 * (g.oval ? g.markerScale : Math.max(.5, z));
-    const values = Array.from({ length: 81 }, (_, j) => from + (to - from) * j / 80);
-    const side = (d: number, sign: number) => { const p = g.point(d, i, sign * half * Math.min(1, Math.max(0, l.value - d) / Math.max(1e-6, clearance * .75))); return `${p.x.toFixed(3)} ${p.y.toFixed(3)}`; };
-    const ribbon = `M${values.map(d => side(d, -1)).join("L")}L${[...values].reverse().map(d => side(d, 1)).join("L")}Z`;
-    const core = l.you ? "#ffbf12" : "#9cddf2", edge = l.you ? "#a46a00" : "#4d91b1", highlight = l.you ? "#fff9db" : "#effdff";
-    traces.push(n("g", { opacity: .22 }, [path(ribbon, edge, { opacity: .23, transform: `translate(0 ${1.2 * g.markerScale})` }), path(ribbon, core, { stroke: edge, strokeWidth: 1.1 * g.markerScale, strokeLinejoin: "round" }), path(g.curve(from, to, i), "none", { stroke: highlight, strokeWidth: 1.2 * g.markerScale, opacity: .9 })]));
+    const half = g.oval ? 7 * g.markerScale : Math.min(g.laneWidth * .34, 30 * z);
+    const color = l.you ? "#f1c75b" : "#819486";
+    // Short gradient segments follow winding/oval courses without a straight-axis wash.
+    // Alpha is continuous at segment boundaries; the existing mask keeps heads clear.
+    const segments: FieldNode[] = [];
+    const count = g.oval ? 24 : 1;
+    for (let j = 0; j < count; j++) {
+      const a = from + (to - from) * j / count, b = from + (to - from) * (j + 1) / count;
+      const side = (d: number, sign: number) => {
+        const taper = Math.min(1, Math.max(0, l.value - d) / Math.max(1e-6, clearance * .75));
+        const p = g.point(d, i, sign * half * taper);
+        return `${p.x.toFixed(3)} ${p.y.toFixed(3)}`;
+      };
+      const values = Array.from({ length: g.oval ? 5 : 81 }, (_, k) => a + (b - a) * k / ((g.oval ? 5 : 81) - 1));
+      const ribbon = `M${values.map(d => side(d, -1)).join("L")}L${[...values].reverse().map(d => side(d, 1)).join("L")}Z`;
+      const start = g.point(a, i), end = g.point(b, i), id = `${prefix}-progress-${i}-${j}`;
+      const alpha = (fraction: number) => .23 * fraction;
+      segments.push(n("defs", {}, [n("linearGradient", { id, gradientUnits: "userSpaceOnUse", x1: g.oval ? start.x : 0, y1: start.y, x2: g.oval ? end.x : 0, y2: end.y }, [n("stop", { offset: 0, stopColor: color, stopOpacity: alpha(j / count) }), n("stop", { offset: 1, stopColor: color, stopOpacity: alpha((j + 1) / count) })])]), path(ribbon, `url(#${id})`));
+    }
+    traces.push(n("g", { pointerEvents: "none" }, segments));
   }
   const content = [n("g", {}, surface), n("g", { mask: `url(#${mask})` }, traces)];
   out.push(n("g", { clipPath: `url(#${clip})` }, content));

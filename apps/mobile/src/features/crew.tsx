@@ -1,4 +1,7 @@
+import { CrewSessions } from "./crew-sessions";
+import { CrewRelay } from "./crew-relay";
 import {
+  type SportId,
   competeNow,
   countsOnTrack,
   distanceUnitLabel,
@@ -268,13 +271,14 @@ export function CrewHub() {
           }))
         : (api.data?.progress ?? api.data?.entries ?? [])
       ).filter((e) => e.crew_id === crew.id && e.disposition === "counted");
+  const sessionsMetric = crew.format === "personal_target" || crew.sport === "strength";
   const totalM = entries.reduce((n, e) => n + Number(e.distance_m), 0);
   const distance = (meters: number) =>
     `${formatDistanceM(meters, state?.units)} ${distanceUnitLabel(state?.units)}`;
   const memberTotal = (id: string) =>
     entries
       .filter((e) => e.user_id === id)
-      .reduce((n, e) => n + Number(e.distance_m), 0);
+      .reduce((n, e) => n + Number(sessionsMetric ? e.session_count ?? 1 : e.distance_m), 0);
   function open(next: typeof panel) {
     setNote("");
     setName("");
@@ -451,7 +455,7 @@ export function CrewHub() {
           <View style={f.card}>
             <Text style={f.kicker}>Our shared week · {crew.sport}</Text>
             <Text style={f.massive}>
-              {crew.format === "personal_target"
+              {sessionsMetric
                 ? entries.reduce(
                     (total, entry) => total + Number(entry.session_count ?? 1),
                     0,
@@ -459,45 +463,17 @@ export function CrewHub() {
                 : formatDistanceM(totalM, state?.units)}
             </Text>
             <Text style={f.copy}>
-              {crew.format === "personal_target"
+              {sessionsMetric
                 ? `sessions · ${crew.target_sessions} per member`
                 : crew.format === "cooperative"
                   ? `of ${distance(crew.journey_km * 1000)}`
                   : `${distanceUnitLabel(state?.units)} together`}
             </Text>
-            {crew.format === "cooperative" ? (
-              <>
-                <View
-                  accessibilityRole="progressbar"
-                  accessibilityValue={{
-                    min: 0,
-                    max: 100,
-                    now: Math.min(
-                      100,
-                      (totalM / Math.max(1, crew.journey_km * 1000)) * 100,
-                    ),
-                  }}
-                  style={{
-                    height: 9,
-                    backgroundColor: "#eef0e9",
-                    borderRadius: 5,
-                    overflow: "hidden",
-                  }}
-                >
-                  <View
-                    style={{
-                      height: 9,
-                      width: `${Math.min(100, (totalM / Math.max(1, crew.journey_km * 1000)) * 100)}%`,
-                      backgroundColor: "#819486",
-                    }}
-                  />
-                </View>
-              </>
-            ) : null}
-            <Text style={f.copy}>Every pace belongs here.</Text>
+            <CrewRelay key={crew.id} members={members} entries={entries} sport={crew.sport as SportId} format={crew.format} targetM={crew.journey_km * 1000} targetSessions={crew.target_sessions} units={state?.units} />
           </View>
           {user ? (
             <>
+              {api.live ? <CrewSessions key={`${user?.id}:${crew.id}`} crewId={crew.id} /> : null}
               <Text style={f.h2}>Crew standings</Text>
               <View style={f.card}>
                 {[...members]
@@ -509,7 +485,7 @@ export function CrewHub() {
                       <Text style={f.small}>{i + 1}</Text>
                       <Text style={[f.rowTitle, f.grow]}>{m.display_name}</Text>
                       <Text style={f.rowTitle}>
-                        {distance(memberTotal(m.user_id))}
+                        {sessionsMetric ? `${memberTotal(m.user_id)} sessions` : distance(memberTotal(m.user_id))}
                       </Text>
                     </View>
                   ))}

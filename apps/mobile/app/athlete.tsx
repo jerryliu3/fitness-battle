@@ -528,14 +528,14 @@ export default function AthleteScreen() {
             sessions. Sample workouts do not count toward competition.
           </Text>
           <Text style={f.copy}>
-            Each event has its own effort score. Scores settle when the
-            competition week closes. Stopping after this week keeps the current
+            Each active sport has its own effort score. Rank-priced activity
+            milestones add points immediately. Weekly placement can add a bonus;
+            effort score never goes down. Stopping after this week keeps the current
             week open and turns off renewal.
           </Text>
           <Text style={f.copy}>
-            A week freeze protects effort score during a rest week and can be
-            undone before the week ends. A crew rest marker does not freeze
-            effort score.
+            A week freeze holds the weekly placement bonus and can be undone
+            before the week ends. Activity milestones can still grow your score.
           </Text>
           {RANK_BANDS.map((band) => (
             <View key={band.name} style={f.card}>
@@ -687,7 +687,7 @@ export default function AthleteScreen() {
               })}
               <Text style={f.copy}>
                 {state.freezesLeft} week freezes remaining. A freeze holds
-                effort score during a rest week.
+                the weekly placement bonus. Activity milestones still count.
               </Text>
               <FocusButton
                 label={frozen ? "Undo freeze" : "Freeze this week"}
@@ -703,7 +703,7 @@ export default function AthleteScreen() {
               <FocusSheet
                 open={confirmFreeze}
                 title="Freeze this week?"
-                body="Your effort score will be protected this week. This uses one freeze; you can undo it before the week ends."
+                body="Your weekly placement bonus is held this week. Activity milestones still count. You can undo this before the week ends."
                 onClose={() => setConfirmFreeze(false)}
               >
                 <FocusButton

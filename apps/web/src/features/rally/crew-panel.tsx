@@ -2,10 +2,15 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "@/components/auth-context";
 import { useCompete } from "@/components/compete-context";
+import { CrewSessions } from "./crew-sessions";
+import { CrewRelay } from "./crew-relay";
 import { Sheet } from "@/ui/sheet";
 import { playCue } from "@/lib/haptics";
 import {
   APP_TIMEZONE,
+  competeNow,
+  weeklyPeriodBounds,
+  type SportId,
   countsOnTrack,
   distanceUnitLabel,
   formatDistanceM,
@@ -28,6 +33,7 @@ interface Member {
   user_id: string;
   display_name: string;
   rest_week: string | null;
+  status?: string;
 }
 interface Entry {
   crew_id: string;
@@ -243,7 +249,7 @@ export function CrewPanel() {
   };
 
   const soloEntries: Entry[] = (state?.activities ?? [])
-    .filter((a) => countsOnTrack(a, "open"))
+    .filter((a) => { const now = state ? competeNow(state) : new Date(); const week = weeklyPeriodBounds(now); return countsOnTrack(a, "open") && a.sport === state?.primary && new Date(a.startedAt) >= week.startsAt && new Date(a.startedAt) < week.endsAt && new Date(a.startedAt) <= now; })
     .map((a) => ({
       crew_id: "solo-preview",
       user_id: user?.id ?? "solo-guest",
@@ -264,7 +270,7 @@ export function CrewPanel() {
   const crew = crews.find((c) => c.id === selected) ?? crews[0];
   const members =
     rawCrews.length > 0
-      ? (data?.members ?? []).filter((m) => m.crew_id === crew?.id)
+      ? (data?.members ?? []).filter((m) => m.crew_id === crew?.id && (!m.status || m.status === "active"))
       : demoCrew && crew?.id === demoCrew.id
         ? demoMembers
         : [soloMember];
@@ -277,6 +283,8 @@ export function CrewPanel() {
         ? demoEntries
         : soloEntries;
   const unitLabel = distanceUnitLabel(state?.units);
+  const sessionsMetric = crew?.format === "personal_target" || crew?.sport === "strength";
+  const memberTotal = (id: string) => entries.filter(e => e.user_id === id).reduce((sum, e) => sum + Number(sessionsMetric ? e.session_count ?? 1 : e.distance_m), 0);
   const totalM = entries.reduce((t, e) => t + Number(e.distance_m), 0);
   const targetM = (crew?.journey_km ?? 40) * 1000;
   const memberNames = members.map((m) => m.display_name);
@@ -405,7 +413,7 @@ export function CrewPanel() {
             <div className="focus-crew-main">
               <section className="focus-card">
                 <p className="fb-kicker">Our shared week · {crew.sport}</p>
-                {crew.format === "personal_target" ? (
+                {sessionsMetric ? (
                   <h2>{entries.reduce((total, entry) => total + Number(entry.session_count ?? 1), 0)} counted sessions</h2>
                 ) : (
                   <h2 className="focus-goal">
@@ -417,46 +425,27 @@ export function CrewPanel() {
                     </small>
                   </h2>
                 )}
-                {crew.format === "cooperative" && (
-                  <progress
-                    value={totalM}
-                    max={Math.max(1, targetM)}
-                    aria-label="Crew distance goal"
-                  />
-                )}
+                <CrewRelay key={crew.id} members={members} entries={entries} sport={crew.sport as SportId} format={crew.format} targetM={targetM} targetSessions={crew.target_sessions} units={state?.units} />
                 <p className="fb-copy">
-                  {crew.format === "personal_target"
+                  {sessionsMetric
                     ? `Each member aims for ${crew.target_sessions} sessions.`
                     : "Every pace belongs here."}
                 </p>
               </section>
+              {user && !demoMode && !isSolo ? <CrewSessions key={`${user.id}:${crew.id}`} crewId={crew.id} userId={user.id} /> : null}
               {user ? (
                 <>
                   <h2>Crew standings</h2>
                   <section className="focus-card">
                     {members
                       .slice()
-                      .sort(
-                        (a, b) =>
-                          entries
-                            .filter((e) => e.user_id === b.user_id)
-                            .reduce((t, e) => t + Number(e.distance_m), 0) -
-                          entries
-                            .filter((e) => e.user_id === a.user_id)
-                            .reduce((t, e) => t + Number(e.distance_m), 0),
-                      )
+                      .sort((a, b) => memberTotal(b.user_id) - memberTotal(a.user_id))
                       .map((m, i) => (
                         <div className="fb-row" key={m.user_id}>
                           <span>{i + 1}</span>
                           <b className="fb-grow">{m.display_name}</b>
                           <span>
-                            {formatDistanceM(
-                              entries
-                                .filter((e) => e.user_id === m.user_id)
-                                .reduce((t, e) => t + Number(e.distance_m), 0),
-                              state?.units,
-                            )}{" "}
-                            {unitLabel}
+                            {sessionsMetric ? `${memberTotal(m.user_id)} sessions` : `${formatDistanceM(memberTotal(m.user_id), state?.units)} ${unitLabel}`}
                           </span>
                         </div>
                       ))}

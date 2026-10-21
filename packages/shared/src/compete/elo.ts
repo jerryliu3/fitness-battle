@@ -7,7 +7,7 @@ export function expectedScore(own: number, opponent: number): number {
 /**
  * Chess-style update against the rest of a small weekly group.
  * `place` is 0 for first. A week with no effort decays toward the floor
- * instead of being scored as a last-place loss.
+ * instead of being scored as a last-place loss. Activity milestones are separate.
  */
 export function settleElo(
   own: number,
