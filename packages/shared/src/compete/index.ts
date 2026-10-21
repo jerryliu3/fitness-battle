@@ -209,3 +209,5 @@ export {
 export type { GoalDistance, TrainingGoal } from "./sports";
 export { parseManualActivity } from "./manual-input";
 export { roundReveal, roundEnrollment } from "./round-reveal";
+
+export { applyEffortMilestones, milestoneStep, type EffortMilestone } from "./milestones";
