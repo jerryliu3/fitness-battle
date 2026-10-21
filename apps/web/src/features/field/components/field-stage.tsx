@@ -375,6 +375,11 @@ export function FieldStage({
     centerTweenRef.current.raf = requestAnimationFrame(tick);
   };
 
+  const centerOnYou = () => {
+    tweenCenterTo(total, view.span, true);
+  };
+  void centerOnYou;
+
   useEffect(() => () => {
     if (centerTweenRef.current) cancelAnimationFrame(centerTweenRef.current.raf);
   }, []);

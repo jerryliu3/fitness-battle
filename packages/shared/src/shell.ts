@@ -89,10 +89,13 @@ export const SHELL_TOKENS = {
   type: SHELL_TYPE,
 } as const;
 
+export const PERSON_ICON_PATH =
+  "M20 21v-2a6 6 0 0 0-6-6h-4a6 6 0 0 0-6 6v2M16 7a4 4 0 1 1-8 0 4 4 0 0 1 8 0";
+
 export const SHELL_TAB_ICONS: Record<ShellTabId, string> = {
   today: "M3 10 12 3l9 7v10H15v-7H9v7H3Z",
   arena: "M4 21V4m0 2c5-5 11 5 16 0v9c-5 5-11-5-16 0",
   field:
     "M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2m20 0v-2a4 4 0 0 0-3-3.9M16 3a4 4 0 0 1 0 8M13 7a4 4 0 1 1-8 0 4 4 0 0 1 8 0",
-  you: "M20 21v-2a6 6 0 0 0-6-6h-4a6 6 0 0 0-6 6v2M16 6a4 4 0 1 1-8 0 4 4 0 0 1 8 0",
+  you: "M3 20h18M3 16l6-6 4 4 8-8M17 6h4v4",
 };

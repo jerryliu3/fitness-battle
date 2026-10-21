@@ -15,6 +15,7 @@ import {
   effortHistory,
   ELO_UNRANKED,
   formatDistanceM,
+  PERSON_ICON_PATH,
   rankForElo,
   type CompeteState,
 } from "@fitness-battle/shared";
@@ -234,11 +235,20 @@ export function AthleteOverview({
                 className="focus-portrait-img"
               />
             ) : (
-              <Ember
-                shadow={false}
-                expression="happy"
-                style={{ width: "92%", height: "92%", pointerEvents: "none" }}
-              />
+              <svg
+                width="54"
+                height="54"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.6"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                style={{ color: "var(--muted)", pointerEvents: "none" }}
+                aria-hidden="true"
+              >
+                <path d={PERSON_ICON_PATH} />
+              </svg>
             )}
           </div>
           <div className="focus-profile-card-copy" style={{ flex: 1 }}>
@@ -352,11 +362,20 @@ export function AthleteOverview({
                 className="focus-portrait-img"
               />
             ) : (
-              <Ember
-                shadow={false}
-                expression="happy"
-                style={{ width: "92%", height: "92%", pointerEvents: "none" }}
-              />
+              <svg
+                width="54"
+                height="54"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.6"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                style={{ color: "var(--muted)", pointerEvents: "none" }}
+                aria-hidden="true"
+              >
+                <path d={PERSON_ICON_PATH} />
+              </svg>
             )}
           </div>
           <div className="focus-profile-card-copy">
@@ -545,7 +564,7 @@ export function AthleteOverview({
           {linePoints ? (
             <polyline
               points={linePoints}
-              stroke="#282f2c"
+              stroke="#f1c75b"
               strokeWidth="2.5"
               strokeLinejoin="round"
               strokeLinecap="round"
@@ -564,7 +583,7 @@ export function AthleteOverview({
             strokeWidth="2"
             className="focus-trend-pulse"
           />
-          <circle cx={lastPoint.x} cy={lastPoint.y} r="3.5" fill="#282f2c" />
+          <circle cx={lastPoint.x} cy={lastPoint.y} r="3.5" fill="#f1c75b" />
 
           {/* X-axis tick marks */}
           <line

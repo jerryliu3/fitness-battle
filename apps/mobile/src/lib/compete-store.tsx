@@ -181,9 +181,19 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
           /* A corrupt local copy starts clean. */
         }
       }
-      if (!raw && authRef.current.demoMode && authRef.current.user) {
-        next =
-          getDemoCompeteState(authRef.current.user.email.split("@")[0]) ?? next;
+      if (authRef.current.demoMode && authRef.current.user) {
+        const seed = getDemoCompeteState(authRef.current.user.email.split("@")[0]);
+        if (seed) {
+          if (!raw) {
+            next = seed;
+          } else {
+            const existingIds = new Set(next.activities.map((a) => a.id));
+            const missing = seed.activities.filter((a) => !existingIds.has(a.id));
+            if (missing.length > 0) {
+              next = { ...next, activities: [...next.activities, ...missing] };
+            }
+          }
+        }
       }
       const dirty = (await AsyncStorage.getItem(keys.dirty)) === "1";
       const currentAuth = authRef.current;

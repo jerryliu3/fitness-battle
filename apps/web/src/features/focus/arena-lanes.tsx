@@ -445,27 +445,29 @@ export function ArenaLanes({
                     : "↓"
                   : l.initials}
               </text>
-              <motion.g aria-hidden={standings} initial={false} animate={{ opacity: standings ? 0 : 1 }} style={{ pointerEvents: "none" }}>
-              <rect
-                x={xx - 26}
-                y={yy - headHalf - 26}
-                width="52"
-                height="20"
-                rx="10"
-                fill={l.you ? "#282f2c" : "#ffffffee"}
-                stroke={l.you && speed > 0.05 ? "#f1c75b" : "#d3ddcb"}
-              />
-              <text
-                x={xx}
-                y={yy - headHalf - 12}
-                textAnchor="middle"
-                className="lane-total"
-                fill={l.you ? "#f1c75b" : "#282f2c"}
-                style={{ fontSize: 10, fill: l.you ? "#f1c75b" : "#282f2c" }}
-              >
-                {relativeDistance(l.value)}
-              </text>
-              </motion.g>
+              {!l.you && (
+                <motion.g aria-hidden={standings} initial={false} animate={{ opacity: standings ? 0 : 1 }} style={{ pointerEvents: "none" }}>
+                <rect
+                  x={xx - 26}
+                  y={yy - headHalf - 26}
+                  width="52"
+                  height="20"
+                  rx="10"
+                  fill="#ffffffee"
+                  stroke="#d3ddcb"
+                />
+                <text
+                  x={xx}
+                  y={yy - headHalf - 12}
+                  textAnchor="middle"
+                  className="lane-total"
+                  fill="#282f2c"
+                  style={{ fontSize: 10, fill: "#282f2c" }}
+                >
+                  {relativeDistance(l.value)}
+                </text>
+                </motion.g>
+              )}
               <g aria-hidden={!standings} display={standings ? "inline" : "none"}>
               <motion.g initial={false} animate={{ opacity: standings ? 1 : 0 }}>
                 <rect x={-30} y={-33} width={Math.max(200, width - 16)} height={70} rx={14} fill="transparent" />

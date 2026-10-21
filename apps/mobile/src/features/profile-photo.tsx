@@ -1,11 +1,13 @@
 import {
   buildAvatarCleanupPathsForProfileChange,
   getCanonicalAvatarObjectPath,
+  PERSON_ICON_PATH,
   type CompeteState,
 } from "@fitness-battle/shared";
 import * as ImagePicker from "expo-image-picker";
 import { useEffect, useRef, useState } from "react";
 import { Image, Pressable, Text, View } from "react-native";
+import Svg, { Path } from "react-native-svg";
 import { useAuth } from "../lib/auth";
 import { useCompeteStore } from "../lib/compete-store";
 import { decodePhoto } from "../lib/profile-photo";
@@ -116,7 +118,16 @@ export function ProfilePhoto({ state }: { state: CompeteState }) {
             style={{ width: 86, height: 86 }}
           />
         ) : (
-          <Ember size={84} expression="happy" shadow={false} />
+          <Svg width={54} height={54} viewBox="0 0 24 24">
+            <Path
+              d={PERSON_ICON_PATH}
+              fill="none"
+              stroke={c.muted}
+              strokeWidth={1.6}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </Svg>
         )}
       </Pressable>
       <FocusSheet
