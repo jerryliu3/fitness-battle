@@ -1,0 +1,15 @@
+{
+  "combinations": 135,
+  "results": [
+    "135 field/progress/viewport combinations pass; no repeated lane distance labels or page overflow",
+    "All straight-track numbers sit behind the zero start line",
+    "All four new treatments terminate at the true racer distance beside the wake; Banked trail remains the comparison",
+    "Breadcrumbs keep world identities while moving with camera pan",
+    "Source-session inspection and persistent expansion survive the new paint",
+    "Gain extends the earned path to 21.4 km without a trailing endpoint offset",
+    "Oval numbers stay behind the start; new paths support mile conversion and lap rollover",
+    "New progress choices restore from shareable URLs",
+    "No browser runtime errors"
+  ],
+  "errors": []
+}
