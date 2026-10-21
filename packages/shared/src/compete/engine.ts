@@ -1,3 +1,4 @@
+import { applyEffortMilestones } from "./milestones";
 import { APP_TIMEZONE, shiftAppDay, type PeriodBounds } from "../period";
 import {
   DensityMatcher,
@@ -609,6 +610,7 @@ function settleEnrollment(
   state: CompeteState,
   enrollment: WaveEnrollment,
 ): CompeteState {
+  state = applyEffortMilestones(state, new Date(enrollment.weekEnd));
   const periodStart = enrollment.waveStart;
   const end = new Date(enrollment.weekEnd);
   const frozen = state.frozenPeriods.includes(periodStart);
@@ -739,7 +741,7 @@ export function settleCompetition(
   const liveWave = waveWindowAt(now);
   const liveStart = liveWave.waveStart.toISOString();
   // Preserve the closing roster until all matching enrollments have settled.
-  let next = ensureEnrollments(state, now);
+  let next = applyEffortMilestones(ensureEnrollments(state, now), now);
   let guard = 0;
 
   while (guard < 12) {
@@ -905,10 +907,10 @@ function calibrate(state: CompeteState, now: Date): CompeteState {
       weeks += 1;
     }
     if (weeks === 0) continue;
-    const openElo = eloFromWeeklyEffort(openSum / weeks);
+    const openElo = Math.max(rating(state, sport).openElo, eloFromWeeklyEffort(openSum / weeks));
     const verifiedElo = sportById(sport).gps
-      ? eloFromWeeklyEffort(verifiedSum / weeks)
-      : ELO_BASE;
+      ? Math.max(rating(state, sport).verifiedElo, eloFromWeeklyEffort(verifiedSum / weeks))
+      : rating(state, sport).verifiedElo;
     next = withRating(next, sport, {
       openElo,
       verifiedElo,
@@ -985,7 +987,7 @@ function mergeSleepNights(state: CompeteState, incoming: SleepNight[]): CompeteS
   return { ...state, sleepNights: [...state.sleepNights, ...added] };
 }
 
-export function reduceCompete(
+function reduceCompeteAction(
   state: CompeteState,
   action: Action,
 ): CompeteState {
@@ -1519,3 +1521,9 @@ export function formatNoticeUnits(
 }
 
 export { SPORTS };
+
+/** Apply activity growth immediately after every mutation, through the same path on web/native. */
+export function reduceCompete(state: CompeteState, action: Action): CompeteState {
+  const next = reduceCompeteAction(state, action);
+  return applyEffortMilestones(next, effectiveNow(next, action.now));
+}

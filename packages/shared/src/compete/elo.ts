@@ -1,4 +1,4 @@
-import { ELO_CAP, ELO_FLOOR, ELO_K, INACTIVITY_DECAY, clamp } from "./sports";
+import { ELO_CAP, ELO_FLOOR, ELO_K, clamp } from "./sports";
 
 export function expectedScore(own: number, opponent: number): number {
   return 1 / (1 + 10 ** ((opponent - own) / 400));
@@ -6,8 +6,7 @@ export function expectedScore(own: number, opponent: number): number {
 
 /**
  * Chess-style update against the rest of a small weekly group.
- * `place` is 0 for first. A week with no effort decays toward the floor
- * instead of being scored as a last-place loss.
+ * `place` is 0 for first. Weekly placement adds a nonnegative bonus. Inactivity holds the score.
  */
 export function settleElo(
   own: number,
@@ -19,7 +18,7 @@ export function settleElo(
 ): number {
   if (frozen) return clamp(ELO_FLOOR, ELO_CAP, Math.round(own));
   if (effort <= 0) {
-    return clamp(ELO_FLOOR, ELO_CAP, Math.round(own - INACTIVITY_DECAY));
+    return clamp(ELO_FLOOR, ELO_CAP, Math.round(own));
   }
   if (fieldSize <= 1 || opponentElos.length === 0) {
     return clamp(ELO_FLOOR, ELO_CAP, Math.round(own));
@@ -31,6 +30,6 @@ export function settleElo(
   return clamp(
     ELO_FLOOR,
     ELO_CAP,
-    Math.round(own + ELO_K * (actual - expected)),
+    Math.max(Math.round(own), Math.round(own + ELO_K * (actual - expected))),
   );
 }

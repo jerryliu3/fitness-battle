@@ -221,6 +221,7 @@ export async function loadCompeteAccount(
     { data: duelRows },
     { data: readinessRows },
     { data: connectionRows },
+    milestoneResult,
   ] = await Promise.all([
     db
       .from("profiles")
@@ -256,8 +257,10 @@ export async function loadCompeteAccount(
     db.from("compete_duels").select("*").eq("user_id", userId),
     db.from("readiness_marks").select("*").eq("user_id", userId),
     db.from("fitness_connections").select("provider, status").eq("user_id", userId),
+    db.from("effort_milestones").select("*").eq("user_id", userId),
   ]);
 
+  if (milestoneResult.error) throw new Error("milestones_unavailable");
   const periodStart =
     prefs.clock_period_start != null
       ? String(prefs.clock_period_start)
@@ -496,6 +499,7 @@ export async function loadCompeteAccount(
   state = withDerivedPendingReveals({
     ...state,
     periodResults,
+    effortMilestones: (milestoneResult.data ?? []).map((r) => ({ sport: r.sport, track: r.track, periodStart: new Date(r.period_start).toISOString(), periodEnd: new Date(r.period_end).toISOString(), step: Number(r.step), earned: Number(r.earned) })),
     enrollments,
     activities,
     sleepNights,
