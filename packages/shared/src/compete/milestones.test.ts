@@ -77,3 +77,10 @@ describe("activity score growth", () => {
     expect(settleElo(1200, [1200], 0, 2, 10, false)).toBeGreaterThan(1200);
   });
 });
+
+ it("does not calibrate an inactive sport from real historical activity", () => {
+  const state = { ...joined(), activities: [{ id: "prior-ride", sport: "cycling" as const, startedAt: "2026-10-20T12:00:00Z", distanceM: 60000, movingSec: 7200, avgHr: null, source: "strava" as const, provenance: "recorded" as const, verified: true }] };
+  const before = state.ratings.find(r => r.sport === "cycling");
+  const next = reduceCompete(state, { type: "import-history", now: now.toISOString() });
+  expect(next.ratings.find(r => r.sport === "cycling")).toEqual(before);
+ });

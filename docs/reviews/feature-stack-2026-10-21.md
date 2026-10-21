@@ -11,7 +11,7 @@ Implemented October 21, 2026 as an ordered stack. Each PR targets its predecesso
 | 5 | [#242](https://github.com/jerryliu3/fitness-battle/pull/242) | Scheduled Crew Start Line tickets, cancellation and RSVP persistence |
 | 6 | [#243](https://github.com/jerryliu3/fitness-battle/pull/243) | Dimensional weekly result cards and settled receipts |
 | 7 | [#244](https://github.com/jerryliu3/fitness-battle/pull/244) | Independent congratulations and mutual repeat-field seating |
-| 8 | Final integration PR | Additive compatibility hardening, scoring copy, account isolation, API tests and validation evidence |
+| 8 | [#245](https://github.com/jerryliu3/fitness-battle/pull/245) | Additive compatibility hardening, scoring copy, account isolation, API tests and validation evidence |
 
 ## Product decisions
 
@@ -41,7 +41,7 @@ No production migration, activity, session, congratulation, preference or settle
 Validation began only after all requested features were implemented.
 
 - `pnpm typecheck`: all five workspaces passed.
-- `pnpm test`: 642 passed, 5 existing skips (rankings 16, shared 284, pursuit 2, native 96, web 244).
+- `pnpm test`: 643 passed, 5 existing skips (rankings 16, shared 285, pursuit 2, native 96, web 244).
 - `pnpm build`: production Next build passed. Network access was needed for existing Google Fonts imports.
 - All 14 repository SQL suites passed in the isolated database, including the 18 pgTAP seating assertions. The older sharing-based fixture was updated to the already-selected counted-account-activity rule and extended with exclusion/sport/window samples.
 - Catalog review confirmed RLS on all five new tables, empty search paths on the eight public RPCs and denied anonymous execution. New SQL coverage includes receipt replay/reset, immutable score floors, corrected/excluded records, session authorization/idempotency/cancellation and private mutual seating.
