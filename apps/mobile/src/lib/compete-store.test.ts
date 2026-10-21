@@ -1,3 +1,4 @@
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { freshState } from "@fitness-battle/shared";
 import { createElement } from "react";
 import { act, create, type ReactTestRenderer } from "react-test-renderer";
@@ -120,6 +121,7 @@ afterEach(async () => {
     await act(async () => {
       renderer.unmount();
     });
+  vi.restoreAllMocks();
   vi.useRealTimers();
   vi.unstubAllGlobals();
 });
@@ -145,6 +147,25 @@ async function save() {
 }
 
 describe("mobile account lifecycle", () => {
+  it("preserves an edit dispatched while refresh persists its revision", async () => {
+    login("Alice");
+    await mount();
+    let release!: () => void;
+    const pending = new Promise<void>((resolve) => { release = resolve; });
+    const original = AsyncStorage.setItem;
+    vi.spyOn(AsyncStorage, "setItem").mockImplementation(async (key, value) => {
+      if (key.endsWith(":revision")) await pending;
+      return original(key, value);
+    });
+    fetcher.mockResolvedValueOnce(Response.json({ state: accountState("Alice"), updatedAt: "revision-2" }));
+    let refreshing!: Promise<boolean>;
+    await act(async () => { refreshing = api.refresh(); await flush(); });
+    await act(async () => { api.dispatch({ type: "set-city", city: "New edit" }); });
+    await act(async () => { release(); await refreshing; });
+    expect(api.state?.city).toBe("New edit");
+    expect(JSON.parse(mock.values.get(accountStorageKeys("Alice").state)!).city).toBe("New edit");
+  });
+
   it("never displays or uploads guest training into a newly signed-in account", async () => {
     await mount();
     await act(async () => {

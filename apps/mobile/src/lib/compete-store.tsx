@@ -404,7 +404,7 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
         )
           return false;
         const remote = rollClock(migrateCompeteState(body.state));
-        const dirty =
+        let dirty =
           unsavedRef.current ||
           dirtyRef.current !== generation ||
           saveTimer.current != null;
@@ -412,6 +412,8 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
           revisionRef.current = body.updatedAt ?? null;
           if (body.updatedAt) await AsyncStorage.setItem(`${accountStorageKeys(account.userId).state}:revision`, body.updatedAt);
           if (account.userId !== accountRef.current || epoch !== lifecycle.current) return false;
+          // Storage yields to user edits; preserve anything dispatched while it was pending.
+          dirty = unsavedRef.current || dirtyRef.current !== generation || saveTimer.current != null;
         }
         const next = applyRemoteSnapshot(
           stateRef.current,
