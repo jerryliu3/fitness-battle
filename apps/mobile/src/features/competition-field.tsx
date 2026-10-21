@@ -23,7 +23,7 @@ import Svg from "react-native-svg";
 import { useCompeteStore } from "../lib/compete-store";
 import { playCue } from "../lib/haptics";
 import { SHELL_COLORS as c } from "../theme";
-import { FocusSegments, FocusTextButton, f } from "../ui/focus";
+import { FocusSegments, f } from "../ui/focus";
 import { LaneTrack } from "../ui/lane-track";
 import { PolishedRacer } from "../ui/polished-racer";
 import { ZoomControl } from "../ui/zoom-control";
@@ -242,7 +242,7 @@ export function CompetitionField({
         </View>
         <View style={{ alignItems: "center", gap: 2 }}>
           <Text style={f.h2}>
-            {place(displayTotal)} / {ranked.length}
+            {overtakeFrame?.currentRank ?? place(total)} / {ranked.length}
           </Text>
           <Text style={f.small}>your place</Text>
         </View>
@@ -345,24 +345,6 @@ export function CompetitionField({
           ) : null}
         </>
       )}
-      {selected ? (
-        <View style={f.feedback}>
-          <View style={f.row}>
-            <Text style={[f.rowTitle, f.grow]}>{selected.name}</Text>
-            <FocusTextButton
-              label="Close"
-              accessibilityLabel={`Close ${arena.sportName} athlete details`}
-              onPress={() => setSelectedId(null)}
-            />
-          </View>
-          <Text style={f.copy}>
-            {selected.values[2].toFixed(1)} {arena.unit}
-            {selected.ghost
-              ? " · Past you is not ranked"
-              : ` · Place ${place(selected.values[2])}`}
-          </Text>
-        </View>
-      ) : null}
       <Text style={f.small}>
         Accumulated effort, not live GPS positions. Practice fields may contain
         synthetic athletes.
