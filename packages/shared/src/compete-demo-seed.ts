@@ -211,7 +211,7 @@ export function getDemoCompeteState(
         },
         {
           id: "strava-act-alice-w0-tue-2",
-          sport: "gym",
+          sport: "strength",
           startedAt: new Date(
             monday.getTime() + 1 * 86400000 + 17 * 3600000 + 30 * 60000,
           ).toISOString(),
@@ -746,7 +746,7 @@ export function getDemoCompeteState(
         },
         {
           id: "strava-act-carla-w0-mon-2",
-          sport: "gym",
+          sport: "strength",
           startedAt: new Date(
             monday.getTime() + 17 * 3600000 + 30 * 60000,
           ).toISOString(),
