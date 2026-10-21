@@ -11,11 +11,11 @@ Implemented October 21, 2026 as an ordered stack. Each PR targets its predecesso
 | 5 | [#242](https://github.com/jerryliu3/fitness-battle/pull/242) | Scheduled Crew Start Line tickets, cancellation and RSVP persistence |
 | 6 | [#243](https://github.com/jerryliu3/fitness-battle/pull/243) | Dimensional weekly result cards and settled receipts |
 | 7 | [#244](https://github.com/jerryliu3/fitness-battle/pull/244) | Independent congratulations and mutual repeat-field seating |
-| 8 | Final integration PR | Additive compatibility hardening, scoring copy, account isolation, API tests and validation evidence |
+| 8 | [#245](https://github.com/jerryliu3/fitness-battle/pull/245) | Additive compatibility hardening, scoring copy, account isolation, API tests and validation evidence |
 
 ## Product decisions
 
-- The existing entry-rank bands price activity milestones: 1/1.5/2/2.5/3/4/5 times a base of one mile running/walking, five miles cycling or thirty minutes strength. Prices stay fixed for a round. Only active sports earn; Open and GPS receipts are separate. Sample, pending, excluded and future sessions do not earn. A weekly placement can add a nonnegative bonus; inactivity holds the score. A freeze holds the weekly bonus while activity still earns.
+- The existing entry-rank bands price activity milestones: 1/1.5/2/2.5/3/4/5 times a base of one mile running/walking, five miles cycling or thirty minutes strength. Prices stay fixed for a round. Only active sports earn; Open and GPS receipts are separate. Sample, pending, excluded and future sessions do not earn. Weekly placement uses normal Elo when you competed; a zero-effort week decays toward the floor. Milestone receipts from activity only add. A freeze holds the weekly placement update while activity milestones still earn.
 - Record history uses whole-session moving time at the supported distance, with up to 2% GPS overrun. It never scales a longer session into an invented best split. Supported distances are running 5K/10K/half/marathon and cycling 50K/100K/150K/180K. Records carry their source and are corrected or removed when the activity changes. One record shows a receipt; multiple improvements show the staircase.
 - Crew relay uses existing authorized counted totals. Session-target and strength crews use session counts. All active members remain inspectable, including zero contributors. Over-goal distance retains the true finish marker.
 - Any active Crew member can schedule a one-off session. The organizer joins automatically and can cancel; time changes require a new ticket. RSVP is never an activity or scoring input. Times are explicit Eastern wall times resolved to UTC; nonexistent DST times are rejected and repeated times choose the earlier occurrence. No automatic reminders are sent.
@@ -41,7 +41,7 @@ No production migration, activity, session, congratulation, preference or settle
 Validation began only after all requested features were implemented.
 
 - `pnpm typecheck`: all five workspaces passed.
-- `pnpm test`: 642 passed, 5 existing skips (rankings 16, shared 284, pursuit 2, native 96, web 244).
+- `pnpm test`: 643 passed, 5 existing skips (rankings 16, shared 285, pursuit 2, native 96, web 244).
 - `pnpm build`: production Next build passed. Network access was needed for existing Google Fonts imports.
 - All 14 repository SQL suites passed in the isolated database, including the 18 pgTAP seating assertions. The older sharing-based fixture was updated to the already-selected counted-account-activity rule and extended with exclusion/sport/window samples.
 - Catalog review confirmed RLS on all five new tables, empty search paths on the eight public RPCs and denied anonymous execution. New SQL coverage includes receipt replay/reset, immutable score floors, corrected/excluded records, session authorization/idempotency/cancellation and private mutual seating.
