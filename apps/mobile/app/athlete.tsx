@@ -113,6 +113,13 @@ export default function AthleteScreen() {
     if (!state || !tracker || appliedTracker.current === key) return;
     appliedTracker.current = key;
     if (!isCloudOAuthProvider(trackerProvider)) return;
+    if (!params.panel) {
+      router.replace({
+        pathname: "/athlete-settings",
+        params: { panel: "connections", tracker, provider: trackerProvider },
+      });
+      return;
+    }
     if (tracker === "connected") {
       dispatch({
         type: "apply-sync",
@@ -127,11 +134,7 @@ export default function AthleteScreen() {
     } else if (tracker === "error") {
       setNote("That tracker did not connect. Try again from the app.");
     }
-    if (!params.panel)
-      router.replace({
-        pathname: "/athlete-settings",
-        params: { panel: "connections", tracker, provider: trackerProvider },
-      });
+    router.setParams({ tracker: undefined, provider: undefined });
   }, [dispatch, params.panel, params.provider, params.tracker, router, state]);
 
   if (!state || authLoading) {

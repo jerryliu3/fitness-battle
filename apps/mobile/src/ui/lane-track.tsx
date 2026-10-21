@@ -453,7 +453,7 @@ export function LaneTrack({
             <SvgText x={18} y={522} fontSize={9} fill="#616c63">
               {exploring
                 ? "Drag vertically to explore · Done to scroll page"
-                : "Swipe across peers · tap an athlete for details"}
+                : "Swipe across peers · tap an athlete to center"}
             </SvgText>
           </Svg>
         </View>
