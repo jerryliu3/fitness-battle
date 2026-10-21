@@ -9,7 +9,7 @@ import { visibleSessions } from "./model";
 import { ProgressMark } from "./progress-mark";
 
 /** Closed-circuit alternative. Accumulated totals remain authoritative; position is modulo 1 km. */
-export function OvalTrack({ lanes, sessions, view, selected, showGhost, progress, zoom: lens, wake = "blend", expanded, loopUnit = "km", edges = "club", onSelect, onSession }: Board2DProps) {
+export function OvalTrack({ lanes, sessions, view, selected, showGhost, progress, zoom: lens, wake = "blend", material = "enamel", expanded, loopUnit = "km", edges = "club", onSelect, onSession }: Board2DProps) {
   const host = useRef<HTMLDivElement>(null), id = useId().replaceAll(":", "");
   const [size, setSize] = useState({ width: 720, height: 510 });
   const [offset, setOffset] = useState({ x: 0, y: 0 });
@@ -71,12 +71,12 @@ export function OvalTrack({ lanes, sessions, view, selected, showGhost, progress
         </g>
         <g className="bl-oval-progress" mask={`url(#${id}-clear)`} pointerEvents="none">
           {ordered.map((l, i) => {
-            const r = radius(i), lap = position(l.value), color = l.you ? "#ffdf75" : "#d9e6e9";
+            const r = radius(i), lap = position(l.value);
             const perimeter = 2 * straight + 2 * Math.PI * r;
             const known = visibleSessions(sessions, l).filter(s => s.end > lap.laps * lapLength && s.start < l.value);
             return <g key={l.id} data-oval-progress-athlete={l.id}>
-              <ProgressMark treatment={progress} from={lap.laps * lapLength} to={l.value} total={l.value} clearance={104 * markerScale / perimeter * lapLength}
-                scale={markerScale} spacing={lapLength / 50} color={color} pale={true} wake={wake}
+              <ProgressMark treatment={progress} material={material} you={Boolean(l.you)} from={lap.laps * lapLength} to={l.value} total={l.value} clearance={104 * markerScale / perimeter * lapLength}
+                scale={markerScale} spacing={lapLength / 50} wake={wake}
                 point={(d, offset = 0) => ovalOffsetPoint(d / lapLength, r, offset, straight)}
                 path={(a, b, offset = 0) => ovalArc(a / lapLength, b / lapLength, r, straight, offset)}
                 sessions={known}/>

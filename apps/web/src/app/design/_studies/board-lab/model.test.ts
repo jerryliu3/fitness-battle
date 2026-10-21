@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { boardFraction, boardTicks, defaultBoardView, fieldSamples, fieldZoom, fitBoardView, overviewWindow, progressClearance, visibleSessions } from "./model";
 import { isBackgroundId, isProgressId, isZoomId } from "./field-directions";
 import { boardFixture } from "./fixtures";
+import { isTrailMaterialId } from "./trail-materials";
 
 describe("board presentation geometry", () => {
   it("keeps absolute marks while the camera moves", () => {
@@ -57,8 +58,10 @@ describe("board presentation geometry", () => {
   });
   it("rejects prototype keys in restorable design choices", () => {
     expect(isBackgroundId("parkland")).toBe(true); expect(isProgressId("dots")).toBe(true); expect(isZoomId("map")).toBe(true);
+    expect(isTrailMaterialId("glass")).toBe(true);
     for (const key of ["__proto__", "constructor", "toString", "missing"]) {
       expect(isBackgroundId(key)).toBe(false); expect(isProgressId(key)).toBe(false); expect(isZoomId(key)).toBe(false);
+      expect(isTrailMaterialId(key)).toBe(false);
     }
   });
   it("keeps the bottom map window inside the true field when panned past either end", () => {

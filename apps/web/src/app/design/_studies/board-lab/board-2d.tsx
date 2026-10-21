@@ -7,10 +7,11 @@ import { backgrounds, progressTreatments, type BackgroundId, type ProgressId, ty
 import { boardFraction, boardGap, boardTicks, fieldZoom, formatBoardValue, type BoardSession } from "./model";
 import { TrackBackground, type FieldGeometry } from "./track-background";
 import { ProgressTraces } from "./progress-traces";
+import type { TrailMaterialId } from "./trail-materials";
 
 export interface Board2DProps {
   lanes: ArenaSceneLane[]; sessions: BoardSession[]; view: ArenaViewWindow;
-  background: BackgroundId; edges?: TrackEdgeId; loopUnit?: "km" | "mi"; progress: ProgressId; zoom: ZoomId; wake?: WakeId;
+  background: BackgroundId; edges?: TrackEdgeId; loopUnit?: "km" | "mi"; progress: ProgressId; zoom: ZoomId; wake?: WakeId; material?: TrailMaterialId;
   selected: string; showGhost: boolean; expanded: boolean;
   onSelect: (id: string) => void; onSession: (session: BoardSession) => void; onPan: (center: number) => void;
 }
@@ -43,7 +44,7 @@ function Racers({ host, lanes, view, geometry: g, selected, onSelect }: {
 }
 
 /** One controlled vertical-kilometer field; surface, earned progress and camera are independent. */
-export function Board2D({ lanes, sessions, view, background, edges, progress, zoom, wake = "blend", selected, showGhost, expanded, onSelect, onSession, onPan }: Board2DProps) {
+export function Board2D({ lanes, sessions, view, background, edges, progress, zoom, wake = "blend", material = "enamel", selected, showGhost, expanded, onSelect, onSession, onPan }: Board2DProps) {
   const host = useRef<HTMLDivElement>(null), id = useId().replaceAll(":", "");
   const [size, setSize] = useState({ width: 720, height: 510 });
   const gesture = useRef<{ x: number; y: number; center: number; moved: boolean } | null>(null);
@@ -104,7 +105,7 @@ export function Board2D({ lanes, sessions, view, background, edges, progress, zo
         <rect width={width} height={height} fill="#f6f7f2"/>
         <g clipPath={`url(#${id}-plot)`}>
           <TrackBackground background={background} geometry={g} count={count} view={view} prefix={id} edges={edges}/>
-          <ProgressTraces treatment={progress} lanes={ordered} sessions={sessions} geometry={g} view={view} mask={`${id}-progress-clear`} lightInk={["night", "road", "athletics", "straight"].includes(background)} wake={wake} onSelect={onSelect} onSession={onSession}/>
+          <ProgressTraces material={material} treatment={progress} lanes={ordered} sessions={sessions} geometry={g} view={view} mask={`${id}-progress-clear`} wake={wake} onSelect={onSelect} onSession={onSession}/>
           {background !== "straight" && background !== "oval" && bounds.min <= 0 && bounds.max >= 0 && <g className="bl-start-origin" pointerEvents="none"><line x1={left} x2={left + fieldWidth} y1={along(0)} y2={along(0)} stroke={palette.rule} strokeWidth={2 * worldScale}/><text x={left + 6} y={along(0) - 8} fontSize="10" fill={palette.ink}>START</text></g>}
         </g>
         {laneWidth >= 63 && ordered.map((lane, i) => <g key={lane.id} pointerEvents="none"><text className={`bl-lane-name ${lane.you ? "is-you" : ""}`} x={cross(i)} y="33" textAnchor="middle">{lane.you ? "YOU" : lane.name.split(" ")[0]}</text><text className="bl-lane-total" x={cross(i)} y="53" textAnchor="middle">{lane.value.toFixed(1)} <tspan>km</tspan></text></g>)}

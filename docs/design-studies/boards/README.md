@@ -4,9 +4,9 @@ October 20, 2026
 
 Open `/design/boards` through the existing design access gate. The design index links to it. Component contracts, shareable URLs and the production adoption boundary are in [the study README](../../../apps/web/src/app/design/_studies/board-lab/README.md).
 
-## Current review: Round 5
+## Current review: Round 6
 
-The three retained trails now run directly behind the racer, with faint-underlay and soft-blend comparisons under its afterimages; see [Round 5](round-5/README.md). Consumer research and the earlier side-path exploration are preserved in [Round 4](round-4/README.md). The accepted fields and two red running-track prototypes are in [Round 3](round-3/README.md). Earlier captures include retired fields and progress treatments.
+The three centered trails now offer five independent materials: Route Enamel, Pop Rubber, Signal Neon, Porcelain Inlay and Liquid Glass. Stronger color farther back softens beneath the afterimages; see [Round 6](round-6/README.md) for references, all fifteen combinations and phone captures. The centered geometry and wake comparisons are documented in [Round 5](round-5/README.md). Consumer research and the earlier side-path exploration are preserved in [Round 4](round-4/README.md). The accepted fields and two red running-track prototypes are in [Round 3](round-3/README.md). Earlier captures include retired fields and progress treatments.
 
 ## Round 2: vertical field exploration
 

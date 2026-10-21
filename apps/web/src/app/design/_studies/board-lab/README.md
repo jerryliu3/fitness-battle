@@ -4,7 +4,15 @@ October 20, 2026 · Coded presentation prototypes, not a production replacement
 
 Open `/design/boards` through the existing design access gate. The design index links to it. All athletes, sessions and gain previews are fictional local data. The study does not connect trackers, log activity or write scores.
 
-## Current review: Round 5 — directly behind the racer
+## Current review: Round 6 — five trail materials
+
+Material is now independent of the three retained trace shapes. **Route Enamel** (default), **Pop Rubber**, **Signal Neon**, **Porcelain Inlay** and **Liquid Glass** compare solid outlined color, raised matte pieces, electric light, white inlay and reflected gloss. Every finish works with Banked trail, Dotted route and Session tiles, including the closed oval. The Material catalog and phone/expanded selectors share the same state; `material=enamel|rubber|neon|inlay|glass` restores from the URL.
+
+Soft blend now keeps almost opaque color farther back, then fades the complete material stack beneath the canonical afterimages. Faint underlay retains its previous quiet opacity. A shared continuous radial mask quiets borders, highlights and glow together; the actual capsule head remains excluded. No new wake clock or animation is introduced. These are trail-only study palettes, not a change to capsule identity, rank colors or production tokens. The default finish is a review starting point, not a final product selection.
+
+The [Round 6 review](../../../../../../../docs/design-studies/boards/round-6/README.md) records the Strava/Duolingo references, all fifteen shape/finish captures, phone examples and verification. Try `/design/boards?background=trail&progress=dots&material=rubber&wake=blend&zoom=map`.
+
+## Round 5 history — directly behind the racer
 
 Only **Banked trail, Dotted route and Session tiles** remain in the active catalog. All three now follow the racer’s centerline, underneath the canonical afterimages. Waypoint cord and Revealed ground are retired. The head mask uses `polishedCapsulePath` with the racer’s actual scale/rotation; the echo corridor is no longer excluded.
 

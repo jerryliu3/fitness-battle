@@ -9,6 +9,7 @@ import { Board2D } from "./board-2d";
 import { PersistentField } from "./persistent-field";
 import { boardFixture } from "./fixtures";
 import { boardGap, defaultBoardView, fitBoardView, overviewWindow, type BoardSession } from "./model";
+import { trailMaterials, isTrailMaterialId, type TrailMaterialId } from "./trail-materials";
 import { backgrounds, progressTreatments, zoomTreatments, isBackgroundId, isProgressId, isZoomId, type BackgroundId, type ProgressId, type ZoomId, trackEdges, isTrackEdgeId, type TrackEdgeId, wakeTreatments, isWakeId, type WakeId } from "./field-directions";
 import "./board-lab.css";
 
@@ -17,13 +18,14 @@ const fixture = boardFixture(false, "km");
 function subscribeReducedMotion(update: () => void) { const media = window.matchMedia("(prefers-reduced-motion: reduce)"); media.addEventListener("change", update); return () => media.removeEventListener("change", update); }
 const reducedMotionSnapshot = () => window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-function DesignControls({ background, progress, zoom, onBackground, onProgress, onZoom }: {
-  background: BackgroundId; progress: ProgressId; zoom: ZoomId;
-  onBackground: (v: BackgroundId) => void; onProgress: (v: ProgressId) => void; onZoom: (v: ZoomId) => void;
+function DesignControls({ background, progress, zoom, material, onBackground, onProgress, onZoom, onMaterial }: {
+  background: BackgroundId; progress: ProgressId; zoom: ZoomId; material: TrailMaterialId;
+  onBackground: (v: BackgroundId) => void; onProgress: (v: ProgressId) => void; onZoom: (v: ZoomId) => void; onMaterial: (v: TrailMaterialId) => void;
 }) {
   return <div className="bl-inline-design-controls" aria-label="Field design controls">
     <label>Background<select aria-label="Background" value={background} onChange={e => onBackground(e.target.value as BackgroundId)}>{Object.entries(backgrounds).map(([id, b]) => <option key={id} value={id}>{b.name}</option>)}</select></label>
     <label>Progress<select aria-label="Progress" value={progress} onChange={e => onProgress(e.target.value as ProgressId)}>{Object.entries(progressTreatments).map(([id, p]) => <option key={id} value={id}>{p.name}</option>)}</select></label>
+    <label>Material<select aria-label="Material" value={material} onChange={e => onMaterial(e.target.value as TrailMaterialId)}>{Object.entries(trailMaterials).map(([id, m]) => <option key={id} value={id}>{m.name}</option>)}</select></label>
     <label>Zoom lens<select aria-label="Zoom lens" value={zoom} onChange={e => onZoom(e.target.value as ZoomId)}>{Object.entries(zoomTreatments).map(([id, z]) => <option key={id} value={id}>{z.name}</option>)}</select></label>
   </div>;
 }
@@ -33,6 +35,7 @@ export function BoardLab() {
   const [background, setBackground] = useState<BackgroundId>("trail");
   const [progressStyle, setProgressStyle] = useState<ProgressId>("deposit");
   const [wakeStyle, setWakeStyle] = useState<WakeId>("blend");
+  const [material, setMaterial] = useState<TrailMaterialId>("enamel");
   const [loopUnit, setLoopUnit] = useState<"km" | "mi">("km");
   const [edges, setEdges] = useState<TrackEdgeId>("club");
   const [zoomStyle, setZoomStyle] = useState<ZoomId>("map");
@@ -59,6 +62,7 @@ export function BoardLab() {
     if (q.get("concept") === "horizon") setMode("horizon");
     const bg = q.get("background"), pr = q.get("progress"), zm = q.get("zoom"), edge = q.get("edges");
     const wake = q.get("wake"); if (isWakeId(wake)) setWakeStyle(wake);
+    const finish = q.get("material"); if (isTrailMaterialId(finish)) setMaterial(finish);
     if (q.get("loop") === "mi") setLoopUnit("mi");
     if (isTrackEdgeId(edge)) setEdges(edge);
     if (isBackgroundId(bg)) setBackground(bg); if (isProgressId(pr)) setProgressStyle(pr); if (isZoomId(zm)) setZoomStyle(zm);
@@ -67,9 +71,9 @@ export function BoardLab() {
   }, []);
   useEffect(() => {
     if (!initialized) return;
-    const q = new URLSearchParams({ concept: mode, background, progress: progressStyle, zoom: zoomStyle, edges, loop: loopUnit, wake: wakeStyle });
+    const q = new URLSearchParams({ concept: mode, background, progress: progressStyle, zoom: zoomStyle, edges, loop: loopUnit, wake: wakeStyle, material });
     window.history.replaceState(null, "", `${window.location.pathname}?${q}`);
-  }, [mode, background, progressStyle, zoomStyle, edges, loopUnit, wakeStyle, initialized]);
+  }, [mode, background, progressStyle, zoomStyle, edges, loopUnit, wakeStyle, material, initialized]);
   useEffect(() => {
     if (!playing) return;
     if (reduced) { setProgress(1); setPlaying(false); setNotice("Preview added 2.2 km."); return; }
@@ -102,11 +106,11 @@ export function BoardLab() {
   const isClubTrack = background === "straight" || background === "oval";
   const isOval = background === "oval" && zoomStyle !== "distance";
   const FieldRenderer = isOval ? OvalTrack : Board2D;
-  const controls = { background, progress: progressStyle, zoom: zoomStyle, onBackground: chooseBackground, onProgress: setProgressStyle, onZoom: setZoomStyle };
+  const controls = { background, progress: progressStyle, zoom: zoomStyle, material, onBackground: chooseBackground, onProgress: setProgressStyle, onZoom: setZoomStyle, onMaterial: setMaterial };
 
   return <main className="board-lab">
-    <div className="bl-review-bar"><Link href="/design">← Design studies</Link><span>COMPETE / FIELD STUDY · ROUND 5</span><span className="bl-study-tag">Vertical · kilometers</span></div>
-    <header className="bl-intro"><div><p className="bl-eyebrow">A field with room to move</p><h1>Find your ground.<br/>Leave your trace.</h1></div><p>Nine places to move through. Three trails directly behind you. Compare a faint underlay with a soft blend into the afterimages.</p></header>
+    <div className="bl-review-bar"><Link href="/design">← Design studies</Link><span>COMPETE / FIELD STUDY · ROUND 6</span><span className="bl-study-tag">Vertical · kilometers</span></div>
+    <header className="bl-intro"><div><p className="bl-eyebrow">A field with room to move</p><h1>Find your ground.<br/>Leave your trace.</h1></div><p>Three trails. Five distinct finishes. Solid color, crisp edges and a little more personality, still directly beneath your afterimages.</p></header>
     <nav className="bl-mode-tabs" aria-label="Field view"><button type="button" aria-pressed={mode === "field"} onClick={() => setMode("field")}><strong>2D Track lab</strong><span>{Object.keys(backgrounds).length} fields · {Object.keys(progressTreatments).length} progress treatments</span></button><button type="button" aria-pressed={mode === "horizon"} onClick={() => { setMode("horizon"); setUnavailable(false); }}><strong>3D Horizon</strong><span>The scenic distance course</span></button></nav>
     <div className="bl-round-note"><span>Same athletes. Same distance. Independent design choices.</span><span>Fictional athletes & sessions</span></div>
     <div className="bl-workspace">
@@ -116,7 +120,7 @@ export function BoardLab() {
         <div className="bl-score"><div><strong data-testid="board-total">{total.toFixed(1)}<small>km</small></strong><span>Your counted distance</span></div><div className="bl-nearest"><span>In good company</span><strong>{nearest.name.split(" ")[0]}</strong><small>{boardGap(nearest.value, total, "km")}</small></div></div>
         <PersistentField expanded={expanded} onClose={() => setExpanded(false)}>
           <section className={`bl-field-shell ${expanded ? "is-expanded" : ""}`} data-concept={mode}>
-            <div className="bl-field-top"><div><span className="bl-field-title">{title}</span><span className="bl-field-mode">{mode === "horizon" ? "3D / GPS distance" : `${progressTreatments[progressStyle].name} · ${zoomTreatments[zoomStyle].name}`}</span></div><button type="button" className="bl-icon-button" onClick={() => setExpanded(v => !v)} aria-label={expanded ? "Close expanded field" : "Expand field"} aria-expanded={expanded}>{expanded ? "↙ Close" : "↗ Expand"}</button></div>
+            <div className="bl-field-top"><div><span className="bl-field-title">{title}</span><span className="bl-field-mode">{mode === "horizon" ? "3D / GPS distance" : `${progressTreatments[progressStyle].name} · ${trailMaterials[material].name}`}</span></div><button type="button" className="bl-icon-button" onClick={() => setExpanded(v => !v)} aria-label={expanded ? "Close expanded field" : "Expand field"} aria-expanded={expanded}>{expanded ? "↙ Close" : "↗ Expand"}</button></div>
             {(mode === "field" || unavailable) && <DesignControls {...controls}/>}
             {(mode === "field" || unavailable) && <div className="bl-track-options bl-wake-options" aria-label="Trail and afterimages"><span>Trail / afterimages</span>{Object.entries(wakeTreatments).map(([key, option]) => <button type="button" key={key} aria-pressed={wakeStyle === key} title={option.description} onClick={() => setWakeStyle(key as WakeId)}>{option.name}</button>)}</div>}
             {(mode === "field" || unavailable) && isClubTrack && <div className="bl-track-options" aria-label="Track surroundings"><span>Trackside</span>{background === "straight" && <button type="button" onClick={() => moveView({ center: 2, span: 6 })}>Start line</button>}{Object.entries(trackEdges).map(([key, option]) => <button type="button" key={key} aria-pressed={edges === key} onClick={() => setEdges(key as TrackEdgeId)}>{option.name}</button>)}</div>}
@@ -124,7 +128,7 @@ export function BoardLab() {
             {(mode === "field" || unavailable) && background === "oval" && <p className="bl-circuit-caption">{isOval ? `1 ${loopUnit} per loop · compare total distance and completed laps. Each lane uses the same normalized circuit.` : "Distance lens unfolds the oval into continuous kilometer lanes."}</p>}
             <div className="bl-scene" data-testid="board-scene">
               {mode === "horizon" && !unavailable ? <Horizon lanes={lanes} view={view} unit="km" selected={selected} showGhost={showGhost} above={above} onSelect={select} onUnavailable={() => setUnavailable(true)}/>
-                : <FieldRenderer wake={wakeStyle} loopUnit={loopUnit} edges={edges} lanes={lanes} sessions={sessions} background={background === "oval" && !isOval ? "straight" : background} progress={progressStyle} zoom={zoomStyle} view={view} selected={selected} showGhost={showGhost} expanded={expanded} onSelect={select} onSession={s => { stop(); setSession(s); }} onPan={pan}/>}
+                : <FieldRenderer material={material} wake={wakeStyle} loopUnit={loopUnit} edges={edges} lanes={lanes} sessions={sessions} background={background === "oval" && !isOval ? "straight" : background} progress={progressStyle} zoom={zoomStyle} view={view} selected={selected} showGhost={showGhost} expanded={expanded} onSelect={select} onSession={s => { stop(); setSession(s); }} onPan={pan}/>}
             </div>
             <div className="bl-field-tools"><div className="bl-tool-group"><button type="button" aria-label="Explore earlier distance" onClick={() => moveView({ ...view, center: view.center - view.span / 3 })}>↓</button><button type="button" onClick={() => moveView(defaultBoardView(total, "km"), true)}>Center me</button><button type="button" aria-label="Explore further distance" onClick={() => moveView({ ...view, center: view.center + view.span / 3 })}>↑</button></div><div className="bl-tool-group"><button type="button" aria-label="Zoom in" onClick={() => zoom(.7)}>＋</button><button type="button" aria-label="Zoom out" onClick={() => zoom(1.4)}>−</button><button type="button" onClick={() => { if (mode === "horizon") setAbove(true); moveView(mode === "field" && isOval ? defaultBoardView(total, "km") : fitBoardView(lanes, "km")); }}>Fit field</button></div></div>
             <div className="bl-overview" aria-label={`Distance from zero to ${fieldHigh.toFixed(1)} km`}><span>0</span><div className="bl-overview-track"><span className="bl-overview-window" style={{ left: `${overview.left}%`, width: `${overview.width}%` }}/>{lanes.filter(l => !l.ghost).map(l => <i key={l.id} className={l.you ? "is-you" : ""} style={{ left: `${l.value / fieldHigh * 100}%` }}/>)}</div><span>{fieldHigh.toFixed(1)} km</span></div>
@@ -143,7 +147,9 @@ export function BoardLab() {
           <p className="bl-choice-description">{backgrounds[background].description}</p>
           <fieldset className="bl-desktop-design"><legend>02 / The progress</legend><div className="bl-progress-catalog">{Object.entries(progressTreatments).map(([key, p]) => <button type="button" key={key} aria-pressed={progressStyle === key} onClick={() => setProgressStyle(key as ProgressId)}><span className="bl-trace-swatch" data-trace={key}><i/><i/><i/></span><span><strong>{p.name}</strong><small>{p.short}</small></span></button>)}</div></fieldset>
           <p className="bl-choice-description">{progressTreatments[progressStyle].description}</p>
-          <fieldset className="bl-desktop-design"><legend>03 / The lens</legend><div className="bl-zoom-catalog">{Object.entries(zoomTreatments).map(([key, z]) => <button type="button" key={key} aria-pressed={zoomStyle === key} onClick={() => setZoomStyle(key as ZoomId)}>{z.name}</button>)}</div></fieldset>
+          <fieldset className="bl-desktop-design"><legend>03 / The material</legend><div className="bl-material-catalog">{Object.entries(trailMaterials).map(([key, finish]) => <button type="button" key={key} aria-pressed={material === key} onClick={() => setMaterial(key as TrailMaterialId)}><span className="bl-material-swatch" data-material={key}><i/></span><span><strong>{finish.name}</strong><small>{finish.short}</small></span></button>)}</div></fieldset>
+          <p className="bl-choice-description">{trailMaterials[material].description}</p>
+          <fieldset className="bl-desktop-design"><legend>04 / The lens</legend><div className="bl-zoom-catalog">{Object.entries(zoomTreatments).map(([key, z]) => <button type="button" key={key} aria-pressed={zoomStyle === key} onClick={() => setZoomStyle(key as ZoomId)}>{z.name}</button>)}</div></fieldset>
           <p className="bl-choice-description">{zoomTreatments[zoomStyle].description}</p>
         </> : <><div className="bl-side-heading"><p className="bl-eyebrow">The 3D direction</p><h3>Room to move.</h3><p>Trees, benches and fixed distance signs give forward travel a physical setting.</p></div><fieldset><legend>Camera</legend><div className="bl-segment"><button type="button" aria-pressed={!above} onClick={() => setAbove(false)}>Follow</button><button type="button" aria-pressed={above} onClick={() => setAbove(true)}>From above</button></div></fieldset></>}
         <label className="bl-checkbox"><input type="checkbox" checked={showGhost} onChange={e => setShowGhost(e.target.checked)}/><span>Show past you<small>Same cutoff · never ranked</small></span></label>

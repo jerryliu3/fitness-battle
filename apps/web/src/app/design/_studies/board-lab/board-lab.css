@@ -263,7 +263,7 @@ main.board-lab { min-height:100vh; padding:0 max(24px,calc((100vw - 1200px)/2)) 
 .board-lab .bl-inline-design-controls { display:none; }
 .board-lab .bl-inline-design-controls label { display:flex; flex-direction:column; gap:6px; min-width:0; font-size:9px; font-weight:550; color:var(--bl-muted); }
 .board-lab .bl-inline-design-controls select { min-height:44px; width:100%; min-width:0; background:#fff; border:1px solid var(--bl-line); border-radius:9px; padding:8px; color:var(--bl-ink); font:inherit; font-size:12px; }
-.board-lab.bl-expanded .bl-inline-design-controls { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px; padding:12px 20px; background:#fafbf7; border-bottom:1px solid var(--bl-line); }
+.board-lab.bl-expanded .bl-inline-design-controls { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:10px; padding:12px 20px; background:#fafbf7; border-bottom:1px solid var(--bl-line); }
 .board-lab.bl-expanded .bl-field-shell[data-concept=field] .bl-scene { height:calc(100dvh - 395px); }
 @media(max-width:1000px) { .board-lab .bl-workspace { grid-template-columns:minmax(0,1fr) 250px; gap:20px; } }
 @media(max-width:760px) {
@@ -271,7 +271,7 @@ main.board-lab { min-height:100vh; padding:0 max(24px,calc((100vw - 1200px)/2)) 
   .board-lab .bl-desktop-design { display:none; }
   .board-lab .bl-sidebar { display:block; padding:20px 12px; }
   .board-lab .bl-side-heading { margin-bottom:15px; }
-  .board-lab .bl-inline-design-controls { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:7px; padding:11px 12px; border-bottom:1px solid var(--bl-line); background:#fafbf7; }
+  .board-lab .bl-inline-design-controls,.board-lab.bl-expanded .bl-inline-design-controls { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:7px; padding:11px 12px; border-bottom:1px solid var(--bl-line); background:#fafbf7; }
   .board-lab .bl-mode-tabs>button { padding:14px; }
   .board-lab .bl-mode-tabs strong { font-size:14px; }
   .board-lab .bl-round-note { font-size:9px; flex-wrap:wrap; line-height:1.5; }
@@ -279,7 +279,7 @@ main.board-lab { min-height:100vh; padding:0 max(24px,calc((100vw - 1200px)/2)) 
 }
 @media(max-width:400px) {
   .board-lab .bl-inline-design-controls,.board-lab.bl-expanded .bl-inline-design-controls { grid-template-columns:1fr 1fr; }
-  .board-lab .bl-inline-design-controls label:last-child { grid-column:1/-1; }
+  .board-lab .bl-inline-design-controls label:last-child { grid-column:auto; }
   .board-lab.bl-expanded .bl-field-shell[data-concept=field] .bl-scene { height:calc(100dvh - 475px); min-height:250px; }
   .board-lab .bl-mode-tabs { gap:7px; }.board-lab .bl-mode-tabs span { font-size:9px; line-height:1.5; }
 }
@@ -300,3 +300,17 @@ main.board-lab { min-height:100vh; padding:0 max(24px,calc((100vw - 1200px)/2)) 
 .board-lab .bl-track-options { flex-wrap:wrap; }
 .board-lab .bl-track-options label { display:flex; align-items:center; gap:10px; }
 .board-lab .bl-track-options select { min-height:44px; border:1px solid var(--bl-line); border-radius:9px; padding:6px 10px; color:var(--bl-ink); background:#fff; font:inherit; }
+
+.board-lab .bl-material-catalog { display:grid; gap:5px; }
+.board-lab .bl-material-catalog button { display:flex; align-items:center; gap:10px; min-height:55px; text-align:left; padding:9px; border:1px solid transparent; border-radius:10px; background:transparent; color:var(--bl-ink); cursor:pointer; font:inherit; }
+.board-lab .bl-material-catalog button[aria-pressed=true] { background:#fff; border-color:#cbd3bd; box-shadow:0 2px 0 #e5e9dc; }
+.board-lab .bl-material-catalog strong { display:block; font-size:11px; font-weight:550; }
+.board-lab .bl-material-catalog small { display:block; font-size:9px; color:var(--bl-muted); margin-top:4px; }
+.board-lab .bl-material-swatch { display:block; position:relative; width:38px; height:34px; border-radius:8px; background:#e8eddf; flex:none; }
+.board-lab .bl-material-swatch i { display:block; position:absolute; left:16px; top:5px; width:7px; height:24px; border-radius:5px; }
+.board-lab [data-material=enamel] i { background:#ffc400; border:1px solid #815816; }
+.board-lab [data-material=rubber] i { background:#ffd336; border:1px solid #d09a08; box-shadow:0 3px 0 #a57600,inset 2px 0 0 #ffed9177; width:9px; left:15px; }
+.board-lab [data-material=neon] { background:#334838; }
+.board-lab [data-material=neon] i { background:#dcff36; border:1px solid #52651a; box-shadow:0 0 6px #dcff36aa,inset 2px 0 0 #fbffe6; }
+.board-lab [data-material=inlay] i { background:#fffdf3; border:2px solid #edb500; box-shadow:0 0 0 1px #78601f; }
+.board-lab [data-material=glass] i { background:linear-gradient(90deg,#a46a00,#ffbf12 35%,#fff9db 48%,#ffbf12 62%); border:1px solid #a46a00; box-shadow:0 2px 2px #8e6b2140; }
