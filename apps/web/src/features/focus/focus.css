@@ -2518,3 +2518,6 @@
 .week-result-heading { font-size:28px; }
 .week-next-row { padding:16px 0; border-bottom:1px solid var(--line,#e0e5dc); line-height:1.6; }
 @media(prefers-reduced-motion:reduce) { .week-result-card { transition:none; transform:none; } }
+.week-social { margin:12px 0 28px; }
+.week-social .fb-field { max-width:100%; }
+.week-social .fb-btn-line[aria-pressed=true] { background:var(--soft,#eef0e9); border-color:var(--ink,#282f2c); }

@@ -216,3 +216,4 @@ export { RECORD_DISTANCES, recordAttemptsForActivity, personalRecordHistory, wee
 export { crewRelay, RELAY_COLORS } from './crew-relay';
 export { crewSessionInstant, crewSessionError, type CrewSession } from './crew-sessions';
 export { crewSessionDraftId } from './crew-sessions';
+export { repeatStatus, type WeeklySocial, type WeeklyPeer } from './weekly-social';

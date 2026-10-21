@@ -1,8 +1,9 @@
 import { APP_TIMEZONE, roundReveal, roundEnrollment, sportById, type Action, type CompeteState, type PeriodResult } from "@fitness-battle/shared";
-import { usePathname, useRouter } from "expo-router";
+import { usePathname, useRouter, useGlobalSearchParams } from "expo-router";
 import { useState } from "react";
 import { Modal, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { WeeklySocialActions } from "./weekly-social";
 import { ResultCard } from "./result-card";
 import { FocusButton, f } from "../ui/focus";
 function Round({ state, rows, onClose }: { state: CompeteState; rows: PeriodResult[]; onClose: () => void }) {
@@ -14,7 +15,7 @@ function Round({ state, rows, onClose }: { state: CompeteState; rows: PeriodResu
       <Text style={f.kicker}>Round complete · {next ? "2 / 2" : "1 / 2"}</Text>
       <Text style={f.title}>{next ? "Keep it going." : "Your week, settled."}</Text>
       {!next ? <>
-        {rows.map(result => <ResultCard key={result.id} result={result} units={state.units} />)}
+        {rows.map(result => <View key={result.id}><ResultCard result={result} units={state.units} /><WeeklySocialActions result={result} units={state.units} /></View>)}
         <FocusButton label="Next round →" onPress={() => setNext(true)}/>
       </> : <>
         {rows.map((result) => {
@@ -31,7 +32,9 @@ function Round({ state, rows, onClose }: { state: CompeteState; rows: PeriodResu
 }
 export function RoundTakeover({ state, ready, dispatch }: { state: CompeteState; ready: boolean; dispatch: (action: Action) => void }) {
   const path = usePathname();
-  const reveal = roundReveal(state);
+  const router = useRouter();
+  const replay = useGlobalSearchParams().results === "latest";
+  const reveal = roundReveal(replay ? { ...state, periodResults: state.periodResults.map(row => ({ ...row, acknowledgedAt: null })) } : state);
   if (!ready || path !== "/arena" || !reveal) return null;
-  return <Round key={reveal.key} state={state} rows={reveal.results} onClose={() => dispatch({ type: "acknowledge-reveal", revealIds: reveal.ids })}/>;
+  return <Round key={reveal.key} state={state} rows={reveal.results} onClose={() => { dispatch({ type: "acknowledge-reveal", revealIds: reveal.ids }); if (replay) router.replace("/arena"); }}/>;
 }
