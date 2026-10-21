@@ -7,6 +7,7 @@ import { useCompete } from "@/components/compete-context";
 import { NotificationSettings } from "@/components/notification-settings";
 import { requestAccountPush } from "@/lib/request-push";
 import type { SyncIdentity } from "@/lib/push-notifications";
+import { TrainingHistory } from "@/features/progress/training-history";
 import { WeekRecords } from "@/features/split/components/athlete-card";
 import { AthleteOverview } from "@/features/focus/athlete-overview";
 import { SeasonHistory } from "@/features/split/components/season-history";
@@ -1024,6 +1025,7 @@ function YouContent({ surface }: { surface: "progress" | "athlete" }) {
             you={board.you}
             units={state.units}
           />
+          <TrainingHistory state={state} />
           <SeasonHistory
             results={state.periodResults}
             primary={state.primary}

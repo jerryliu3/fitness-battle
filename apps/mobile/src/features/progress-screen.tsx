@@ -11,6 +11,7 @@ import {
   type ScoreTrack,
   type SportId,
 } from "@fitness-battle/shared";
+import { TrainingHistory } from "./training-history";
 import { AthleteMetrics } from "./athlete-metrics";
 import { useState } from "react";
 import { useScoreTrackLens } from "../lib/score-track-lens";
@@ -69,6 +70,7 @@ export function ProgressScreen() {
             </View>
           </View>
         </View>
+        <TrainingHistory state={state} />
         <Text style={f.h2}>Season history</Text>
         {state.periodResults.length ? (
           <>

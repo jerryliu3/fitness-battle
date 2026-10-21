@@ -222,6 +222,7 @@ export async function loadCompeteAccount(
     { data: readinessRows },
     { data: connectionRows },
     milestoneResult,
+    attempts,
   ] = await Promise.all([
     db
       .from("profiles")
@@ -258,6 +259,7 @@ export async function loadCompeteAccount(
     db.from("readiness_marks").select("*").eq("user_id", userId),
     db.from("fitness_connections").select("provider, status").eq("user_id", userId),
     db.from("effort_milestones").select("*").eq("user_id", userId),
+    loadAllRecordAttempts(db, userId),
   ]);
 
   if (milestoneResult.error) throw new Error("milestones_unavailable");
@@ -499,6 +501,7 @@ export async function loadCompeteAccount(
   state = withDerivedPendingReveals({
     ...state,
     periodResults,
+    recordAttempts: attempts,
     effortMilestones: (milestoneResult.data ?? []).map((r) => ({ sport: r.sport, track: r.track, periodStart: new Date(r.period_start).toISOString(), periodEnd: new Date(r.period_end).toISOString(), step: Number(r.step), earned: Number(r.earned) })),
     enrollments,
     activities,
@@ -574,4 +577,15 @@ export async function hydrateFieldBoard(
         : item,
     ),
   };
+}
+
+/** Keyset-independent stable pagination retains old records beyond the activity window. */
+async function loadAllRecordAttempts(db: Db, userId: string): Promise<NonNullable<CompeteState["recordAttempts"]>> {
+  const attempts: NonNullable<CompeteState["recordAttempts"]> = [];
+  for (let offset = 0; ; offset += 1000) {
+    const { data, error } = await db.from("personal_record_attempts").select("*").eq("user_id", userId).order("started_at").order("activity_id").order("distance_id").range(offset, offset + 999);
+    if (error) throw new Error("record_history_unavailable");
+    attempts.push(...(data ?? []).map(r => ({activityId:r.activity_key,sport:r.sport,distanceId:r.distance_id,startedAt:r.started_at,seconds:Number(r.seconds),source:r.source,verified:r.verified})));
+    if ((data?.length ?? 0) < 1000) return attempts;
+  }
 }
