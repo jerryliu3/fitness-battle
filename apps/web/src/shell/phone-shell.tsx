@@ -190,12 +190,12 @@ export function PhoneShell({
             <span className="focus-shell-tagline">A little further</span>
           </div>
           <Link
-            href="/athlete?edit=profile"
+            href="/athlete"
             className={`focus-shell-profile${onAthlete ? " is-selected" : ""}`}
             aria-label="Open athlete settings"
             aria-current={onAthlete ? "page" : undefined}
           >
-            {user && state?.avatarUrl ? (
+            {state?.avatarUrl ? (
               <img src={state.avatarUrl} alt="" className="focus-shell-profile-img" />
             ) : (
               <Ember className="focus-shell-ember" morph={1} shadow={false} />

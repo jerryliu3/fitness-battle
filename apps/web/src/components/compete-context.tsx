@@ -262,6 +262,10 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
     [scheduleSave],
   );
 
+  const userDisplayName = user?.displayName ?? "";
+  const userEmail = user?.email ?? "";
+  const userMode = user?.mode;
+
   useEffect(() => {
     if (loading) return;
     if (timer.current) {
@@ -271,13 +275,13 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
     queue.current = [];
     const accountId = userId;
     let cancelled = false;
-    const signedIn = Boolean(accountId) && !(demoMode || user?.mode === "demo");
+    const signedIn = Boolean(accountId) && !(demoMode || userMode === "demo");
     const local = readLocal(accountId);
 
     const settle = (chosen: CompeteState, savedAt: string, status: LoadStatus) => {
       if (cancelled || userIdRef.current !== accountId) return;
       let next = signedIn ? withAccountEloBaseline(chosen) : chosen;
-      if (user) next = { ...next, name: accountName(next.name, user.displayName, user.email) };
+      if (userDisplayName || userEmail) next = { ...next, name: accountName(next.name, userDisplayName, userEmail) };
       const pending = queue.current.splice(0);
       for (const action of pending) next = reduceCompete(next, action);
       if (signedIn) next = withAccountEloBaseline(next);
@@ -292,10 +296,11 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
       };
     }
 
-    statusRef.current = "loading";
-    setLoadStatus("loading");
-    setState(null);
-    stateRef.current = null;
+    if (!stateRef.current) {
+      statusRef.current = "loading";
+      setLoadStatus("loading");
+      setState(null);
+    }
     void fetch("/api/compete")
       .then(async (response) => {
         if (!response.ok) throw new Error("load failed");
@@ -306,7 +311,7 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
         const staleDeviceDraft = readStorageItem(deviceOnlyKey(accountId)) === "1";
         const cachedRevision = readStorageItem(`${storageKey(accountId)}:revision`);
         revisionRef.current = staleDeviceDraft ? cachedRevision : body.updatedAt ?? null;
-        if (staleDeviceDraft && cachedRevision !== (body.updatedAt ?? null)) {
+        if (staleDeviceDraft && cachedRevision && body.updatedAt && cachedRevision !== body.updatedAt) {
           conflictRef.current = true; setSaveConflict(true);
           setSaveError("Your account changed elsewhere. Reload the account before saving again.");
         }
@@ -332,7 +337,7 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
         queue.current = [];
         publish(
           accountId,
-          { ...withAccountEloBaseline(local.state), name: accountName(local.state.name, user?.displayName ?? "", user?.email ?? "") },
+          { ...withAccountEloBaseline(local.state), name: accountName(local.state.name, userDisplayName, userEmail) },
           local.savedAt,
           "failed",
           false,
@@ -343,7 +348,7 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
     return () => {
       cancelled = true;
     };
-  }, [attempt, demoMode, loading, publish, user, userId]);
+  }, [attempt, demoMode, loading, publish, userId, userDisplayName, userEmail, userMode]);
 
   useEffect(() => {
     if (!state || loadStatus === "loading" || loadStatus === "failed") return;

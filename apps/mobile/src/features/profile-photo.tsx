@@ -116,7 +116,7 @@ export function ProfilePhoto({ state }: { state: CompeteState }) {
             style={{ width: 86, height: 86 }}
           />
         ) : (
-          <Ember size={64} expression="happy" shadow={false} />
+          <Ember size={84} expression="happy" shadow={false} />
         )}
       </Pressable>
       <FocusSheet

@@ -208,7 +208,7 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
           const cachedRevision = await AsyncStorage.getItem(`${keys.state}:revision`);
           if (!alive || accountRef.current !== owner) return;
           revisionRef.current = dirty ? cachedRevision : body.updatedAt ?? null;
-          if (dirty && cachedRevision !== (body.updatedAt ?? null)) {
+          if (dirty && cachedRevision && body.updatedAt && cachedRevision !== body.updatedAt) {
             conflictRef.current = true; setSaveConflict(true);
           }
           if (!dirty && body.updatedAt) await AsyncStorage.setItem(`${keys.state}:revision`, body.updatedAt);

@@ -237,7 +237,7 @@ export function AthleteOverview({
               <Ember
                 shadow={false}
                 expression="happy"
-                style={{ width: "68%", height: "68%", pointerEvents: "none" }}
+                style={{ width: "92%", height: "92%", pointerEvents: "none" }}
               />
             )}
           </div>
@@ -355,7 +355,7 @@ export function AthleteOverview({
               <Ember
                 shadow={false}
                 expression="happy"
-                style={{ width: "68%", height: "68%", pointerEvents: "none" }}
+                style={{ width: "92%", height: "92%", pointerEvents: "none" }}
               />
             )}
           </div>

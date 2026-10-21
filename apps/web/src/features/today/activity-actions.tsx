@@ -11,7 +11,7 @@ export function ActivityActions({ compact = false }: { compact?: boolean }) {
   const { user } = useAuth();
   const owner = useRef(user?.id);
   owner.current = user?.id;
-  const { state, dispatch, loadStatus, saveError } = useCompete();
+  const { state, dispatch, loadStatus } = useCompete();
   const [open, setOpen] = useState(false);
   const [sport, setSport] = useState<SportId>("running");
   const [miles, setMiles] = useState("");
@@ -78,8 +78,7 @@ export function ActivityActions({ compact = false }: { compact?: boolean }) {
       </button>
       {!user && !compact && <Link href="/login?next=/today">Sign in to add or sync</Link>}
     </div>
-    {note && <p role="status" className="fb-note">{note} <Link href="/athlete?panel=connections">Tracker settings</Link></p>}
-    {saveError && <p role="alert" className="fb-note">Your activity has not saved to your account yet. {saveError}</p>}
+    {!compact && note && <p role="status" className="fb-note">{note} <Link href="/athlete?panel=connections">Tracker settings</Link></p>}
     <Sheet open={open} onClose={() => setOpen(false)} title="Add today’s activity" body="Manual activities count in Open standings only.">
       <form style={{ display: "grid", gap: 16 }} onSubmit={(event) => {
         event.preventDefault();
