@@ -9,6 +9,7 @@ import { AthletePage, ProgressPage } from "@/features/you/you-route";
 import { Ember } from "@/components/mascot/ember";
 import {
   initialsFromName,
+  PERSON_ICON_PATH,
   SHELL_TABS,
   SHELL_TAB_ICONS,
   isShellTabId,
@@ -198,7 +199,9 @@ export function PhoneShell({
             {state?.avatarUrl ? (
               <img src={state.avatarUrl} alt="" className="focus-shell-profile-img" />
             ) : (
-              <Ember className="focus-shell-ember" morph={1} shadow={false} />
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d={PERSON_ICON_PATH} />
+              </svg>
             )}
           </Link>
         </header>

@@ -117,7 +117,19 @@ function readLocal(userId: string | null): { savedAt: string; state: CompeteStat
       state: rollClock(demoSeed),
     };
   }
-  if (existing) return existing;
+  if (existing) {
+    if (demoSeed) {
+      const existingIds = new Set(existing.state.activities.map((a) => a.id));
+      const missing = demoSeed.activities.filter((a) => !existingIds.has(a.id));
+      if (missing.length > 0) {
+        existing.state = {
+          ...existing.state,
+          activities: [...existing.state.activities, ...missing],
+        };
+      }
+    }
+    return existing;
+  }
   if (demoSeed) {
     return {
       savedAt: new Date(0).toISOString(),

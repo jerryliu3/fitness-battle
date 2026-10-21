@@ -319,24 +319,28 @@ export function LaneTrack({
                         : "↓"
                       : initialsFromName(l.name)}
                   </SvgText>
-                  <Rect
-                    x={xx - 32}
-                    y={yy - headHalf - 26}
-                    width={64}
-                    height={20}
-                    rx={10}
-                    fill={l.you ? "#282f2c" : "#ffffffee"}
-                    stroke={l.you && speed > 0.05 ? "#f1c75b" : "#e0e5dc"}
-                  />
-                  <SvgText
-                    x={xx}
-                    y={yy - headHalf - 12}
-                    textAnchor="middle"
-                    fontSize={10}
-                    fill={l.you ? "#f1c75b" : "#282f2c"}
-                  >
-                    {`${value - (overtakeFrame?.youValue ?? ordered.find((peer) => peer.you)?.values[index] ?? 0) > 0 ? "+" : ""}${(value - (overtakeFrame?.youValue ?? ordered.find((peer) => peer.you)?.values[index] ?? 0)).toFixed(1)} ${unit}`}
-                  </SvgText>
+                  {!l.you && (
+                    <>
+                      <Rect
+                        x={xx - 32}
+                        y={yy - headHalf - 26}
+                        width={64}
+                        height={20}
+                        rx={10}
+                        fill="#ffffffee"
+                        stroke="#e0e5dc"
+                      />
+                      <SvgText
+                        x={xx}
+                        y={yy - headHalf - 12}
+                        textAnchor="middle"
+                        fontSize={10}
+                        fill="#282f2c"
+                      >
+                        {`${value - (overtakeFrame?.youValue ?? ordered.find((peer) => peer.you)?.values[index] ?? 0) > 0 ? "+" : ""}${(value - (overtakeFrame?.youValue ?? ordered.find((peer) => peer.you)?.values[index] ?? 0)).toFixed(1)} ${unit}`}
+                      </SvgText>
+                    </>
+                  )}
                 </G>
               );
             })}
