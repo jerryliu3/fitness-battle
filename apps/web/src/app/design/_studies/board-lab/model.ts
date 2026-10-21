@@ -56,7 +56,7 @@ export function fieldSamples(view: ArenaViewWindow, spacing = 1, budget = 80) {
 }
 
 export function progressClearance(markerScale: number) {
-  // Canonical fast capsule + all four echoes end within ~86 px at scale 1.
+  // Blend envelope for the canonical echoes (~86 px at scale 1), not a trail cutoff.
   return 104 * markerScale;
 }
 

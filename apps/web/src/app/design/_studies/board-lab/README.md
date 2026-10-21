@@ -4,7 +4,15 @@ October 20, 2026 · Coded presentation prototypes, not a production replacement
 
 Open `/design/boards` through the existing design access gate. The design index links to it. All athletes, sessions and gain previews are fictional local data. The study does not connect trackers, log activity or write scores.
 
-## Current review: Round 4
+## Current review: Round 5 — directly behind the racer
+
+Only **Banked trail, Dotted route and Session tiles** remain in the active catalog. All three now follow the racer’s centerline, underneath the canonical afterimages. Waypoint cord and Revealed ground are retired. The head mask uses `polishedCapsulePath` with the racer’s actual scale/rotation; the echo corridor is no longer excluded.
+
+Compare **Faint underlay** (`wake=underlay`) with **Soft blend** (`wake=blend`, default). Underlay holds the whole trail at a low opacity. Blend keeps more definition farther back, then gradually softens through the wake, without moving the trail to the side or ending it early. Banked trail retains its taper but joins the echoes instead of reserving a cutoff gap. Dots stay world-anchored; tiles still represent real sourced intervals. The shared renderer handles all three on straight, winding and oval courses; only the racer layer runs the wake clock.
+
+The previous rule reserving the complete afterimage corridor is superseded by the user’s explicit request to allow faint progress paint under the afterimages. Live heads remain clear, with no straight cap through the capsule. See the [Round 5 review](../../../../../../../docs/design-studies/boards/round-5/README.md).
+
+## Round 4 history
 
 The selected multi-field catalog, Meadow Trail / Banked trail / Map defaults and both club tracks are retained. Straightaway numbers now sit **behind** the zero start line, matching the oval. All ground surfaces use the shared side distance axis rather than repeated numeric distance labels in lanes; athlete totals remain visible.
 

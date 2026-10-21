@@ -4,9 +4,9 @@ October 20, 2026
 
 Open `/design/boards` through the existing design access gate. The design index links to it. Component contracts, shareable URLs and the production adoption boundary are in [the study README](../../../apps/web/src/app/design/_studies/board-lab/README.md).
 
-## Current review: Round 4
+## Current review: Round 5
 
-The final track-label adjustments and four new consumer-inspired progress paths are in [the Round 4 review](round-4/README.md). The accepted multi-field direction, selected defaults and two red running-track prototypes are preserved in [the Round 3 review](round-3/README.md). Earlier captures include the retired Contour Atlas and retired progress treatments.
+The three retained trails now run directly behind the racer, with faint-underlay and soft-blend comparisons under its afterimages; see [Round 5](round-5/README.md). Consumer research and the earlier side-path exploration are preserved in [Round 4](round-4/README.md). The accepted fields and two red running-track prototypes are in [Round 3](round-3/README.md). Earlier captures include retired fields and progress treatments.
 
 ## Round 2: vertical field exploration
 

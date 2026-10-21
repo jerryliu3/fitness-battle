@@ -7,8 +7,16 @@ export function progressSamples(from: number, to: number, spacing: number, budge
   return values;
 }
 
-/** Bend around the entire wake rather than shortening the amount of distance drawn. */
-export function wakeBypass(distance: number, total: number, clearance: number, shoulder: number) {
-  const t = Math.max(0, Math.min(1, 2 - (total - distance) / Math.max(.000001, clearance)));
-  return shoulder * t * t * (3 - 2 * t);
+/** Paint remains on the centerline; only its strength changes through the wake. */
+export function traceOpacity(distance: number, total: number, clearance: number, mode: "underlay" | "blend") {
+  if (mode === "underlay") return .22;
+  const t = Math.max(0, Math.min(1, (total - distance) / Math.max(.000001, clearance)));
+  return .07 + .51 * t * t * (3 - 2 * t);
+}
+
+/** Bounded vertices for a continuous ribbon on a straight, winding or oval path. */
+export function traceSegments(from: number, to: number, spacing: number) {
+  if (to <= from) return [];
+  const count = Math.min(120, Math.max(1, Math.ceil((to - from) / spacing)));
+  return Array.from({ length: count }, (_, i) => ({ from: from + (to - from) * i / count, to: from + (to - from) * (i + 1) / count }));
 }

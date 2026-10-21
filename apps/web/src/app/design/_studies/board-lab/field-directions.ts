@@ -13,13 +13,18 @@ export const backgrounds = {
 export type BackgroundId = keyof typeof backgrounds;
 
 export const progressTreatments = {
-  dots: { name: "Dotted route", short: "A growing breadcrumb path", description: "A distance-anchored trail of round dots grows from the start, bends around the echoes and docks beside the capsule at its exact distance. White on darker grounds; ink or gold on light grounds." },
-  cord: { name: "Waypoint cord", short: "One line, an exact endpoint", description: "A fine continuous cord runs beside the wake and ends in an open waypoint at the capsule’s true distance. A short connector makes the relationship explicit without painting through the racer." },
-  tiles: { name: "Session tiles", short: "Each effort lays a piece", description: "Each sourced counted session becomes one rounded, proportional tile beside the lane. Visible seams represent real activity boundaries, and the final piece reaches the capsule’s distance. Unavailable history remains empty." },
-  reveal: { name: "Revealed ground", short: "Leave the ground changed", description: "A narrow textured shoulder changes from quiet unexplored hatching to clear, softly colored ground behind the capsule. Progress lives in the surface rather than a line or a bar beneath the echoes." },
-  deposit: { name: "Banked trail", short: "Leave the wake clear", description: "A slender, softly tapered deposit begins beyond the last afterimage. There is a deliberate clear gap behind the live racer, with no straight cap through its body." },
+  dots: { name: "Dotted route", short: "Breadcrumbs directly behind you", description: "Distance-anchored dots follow the racer’s centerline, underneath its afterimages. A faint connecting trace lets the dotted path flow into the wake without moving to the side." },
+  tiles: { name: "Session tiles", short: "Your efforts make the trail", description: "Sourced counted activities become narrow rounded pieces directly behind the racer. Real session seams stay visible farther back; the latest piece quietly joins the afterimages." },
+  deposit: { name: "Banked trail", short: "A taper into the afterimages", description: "A slender centered trail narrows into the wake, extending to the racer rather than stopping at a clearance gap. Compare a uniformly faint underlay with a soft blend near the echoes." },
 } as const;
 export type ProgressId = keyof typeof progressTreatments;
+
+export const wakeTreatments = {
+  underlay: { name: "Faint underlay", description: "The whole trail stays quiet beneath the afterimages." },
+  blend: { name: "Soft blend", description: "The trail is clearer farther back and softens as it joins the afterimages." },
+} as const;
+export type WakeId = keyof typeof wakeTreatments;
+export function isWakeId(value: string | null): value is WakeId { return value !== null && Object.hasOwn(wakeTreatments, value); }
 
 export const zoomTreatments = {
   map: { name: "Map lens", description: "The ground, lane spacing and capsules shrink together in both dimensions. Zooming out reveals the whole field and side margins." },

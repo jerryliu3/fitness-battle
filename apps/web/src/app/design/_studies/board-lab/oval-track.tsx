@@ -1,7 +1,7 @@
 "use client";
 
 import { useId, useLayoutEffect, useRef, useState, type RefObject } from "react";
-import { orderedArenaLanes, type ArenaSceneLane } from "@fitness-battle/shared";
+import { orderedArenaLanes, polishedCapsulePath, polishedLaneScale, type ArenaSceneLane } from "@fitness-battle/shared";
 import { PolishedRacer, usePolishedWakeTime } from "@/features/brand/polished-racer";
 import type { Board2DProps } from "./board-2d";
 import { lapPosition, ovalArc, ovalPath, ovalPoint, ovalOffsetPoint } from "./oval-geometry";
@@ -9,7 +9,7 @@ import { visibleSessions } from "./model";
 import { ProgressMark } from "./progress-mark";
 
 /** Closed-circuit alternative. Accumulated totals remain authoritative; position is modulo 1 km. */
-export function OvalTrack({ lanes, sessions, view, selected, showGhost, progress, zoom: lens, expanded, loopUnit = "km", edges = "club", onSelect, onSession }: Board2DProps) {
+export function OvalTrack({ lanes, sessions, view, selected, showGhost, progress, zoom: lens, wake = "blend", expanded, loopUnit = "km", edges = "club", onSelect, onSession }: Board2DProps) {
   const host = useRef<HTMLDivElement>(null), id = useId().replaceAll(":", "");
   const [size, setSize] = useState({ width: 720, height: 510 });
   const [offset, setOffset] = useState({ x: 0, y: 0 });
@@ -51,9 +51,9 @@ export function OvalTrack({ lanes, sessions, view, selected, showGhost, progress
       <g transform={`translate(${tx} ${ty}) scale(${scale})`} data-oval-world="" data-world-scale={scale}>
         <defs>
           <pattern id={`${id}-rubber`} width="9" height="11" patternUnits="userSpaceOnUse"><rect width="9" height="11" fill="#ac5147"/><circle cx="2" cy="3" r=".7" fill="#713e36" opacity=".22"/><circle cx="6" cy="8" r=".6" fill="#e58e76" opacity=".3"/></pattern>
-          <mask id={`${id}-clear`} maskUnits="userSpaceOnUse" x={-outer - 50} y={-outer - straight / 2 - 50} width={outer * 2 + 100} height={outer * 2 + straight + 100} style={{ maskType: "luminance" }}>
+          <mask id={`${id}-clear`} data-progress-mask="heads-only" maskUnits="userSpaceOnUse" x={-outer - 50} y={-outer - straight / 2 - 50} width={outer * 2 + 100} height={outer * 2 + straight + 100} style={{ maskType: "luminance" }}>
             <rect x={-outer - 50} y={-outer - straight / 2 - 50} width={outer * 2 + 100} height={outer * 2 + straight + 100} fill="white"/>
-            {ordered.map((l, i) => { const p = ovalPoint(position(l.value).fraction, radius(i), straight); return <rect key={l.id} data-wake-exclusion={l.id} transform={`translate(${p.x} ${p.y}) rotate(${p.angle}) scale(${markerScale})`} x="-25" y="-35" width="50" height="139" rx="25" fill="black"/>; })}
+            {ordered.map((l, i) => { const p = ovalPoint(position(l.value).fraction, radius(i), straight); return <path key={l.id} data-head-exclusion={l.id} d={polishedCapsulePath(-1.5)} transform={`translate(${p.x} ${p.y}) rotate(${p.angle}) scale(${markerScale * polishedLaneScale(Boolean(l.you))})`} fill="black"/>; })}
           </mask>
         </defs>
         <path d={ovalPath(outer + 35, straight)} fill={edges === "club" ? "#cad5b0" : "#eeeee5"}/>
@@ -73,15 +73,13 @@ export function OvalTrack({ lanes, sessions, view, selected, showGhost, progress
           {ordered.map((l, i) => {
             const r = radius(i), lap = position(l.value), color = l.you ? "#ffdf75" : "#d9e6e9";
             const perimeter = 2 * straight + 2 * Math.PI * r;
-            const end = Math.max(0, lap.fraction - 104 * markerScale / perimeter);
             const known = visibleSessions(sessions, l).filter(s => s.end > lap.laps * lapLength && s.start < l.value);
             return <g key={l.id} data-oval-progress-athlete={l.id}>
-              {progress === "deposit" && Array.from({ length: 36 }, (_, n) => <path key={n} d={ovalArc(end * n / 36, end * (n + 1) / 36, r, straight)} fill="none" stroke={color} strokeWidth={5 * Math.min(1, (36 - n) / 9)} opacity=".64"/>)}
-              {progress !== "deposit" && <ProgressMark treatment={progress} from={lap.laps * lapLength} to={l.value} total={l.value} clearance={104 * markerScale / perimeter * lapLength}
-                shoulder={20 * markerScale / .62} scale={markerScale} spacing={lapLength / 50} color={color} pale={true}
+              <ProgressMark treatment={progress} from={lap.laps * lapLength} to={l.value} total={l.value} clearance={104 * markerScale / perimeter * lapLength}
+                scale={markerScale} spacing={lapLength / 50} color={color} pale={true} wake={wake}
                 point={(d, offset = 0) => ovalOffsetPoint(d / lapLength, r, offset, straight)}
                 path={(a, b, offset = 0) => ovalArc(a / lapLength, b / lapLength, r, straight, offset)}
-                sessions={known} prefix={`${id}-${i}`} futureTo={(lap.laps + 1) * lapLength}/>}
+                sessions={known}/>
             </g>;
           })}
         </g>
