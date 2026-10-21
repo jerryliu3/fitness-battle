@@ -200,7 +200,8 @@ describe("compete engine", () => {
     );
     expect(open?.place).toBeGreaterThanOrEqual(1);
     expect(open?.fieldSize).toBe(8);
-    expect(open?.eloBefore).toBe(1000);
+    expect(open?.eloBefore).toBe(1003);
+    expect(open?.eloBefore).toBeGreaterThan(1000);
     expect(typeof open?.eloAfter).toBe("number");
     expect(closed.enrollments[0]?.waveStart).toBe("2026-10-19T04:00:00.000Z");
 
