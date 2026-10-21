@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "@/components/auth-context";
 import { useCompete } from "@/components/compete-context";
+import { CrewSessions } from "./crew-sessions";
 import { CrewRelay } from "./crew-relay";
 import { Sheet } from "@/ui/sheet";
 import { playCue } from "@/lib/haptics";
@@ -429,6 +430,7 @@ export function CrewPanel() {
                     : "Every pace belongs here."}
                 </p>
               </section>
+              {user && !demoMode && !isSolo ? <CrewSessions key={`${user.id}:${crew.id}`} crewId={crew.id} userId={user.id} /> : null}
               {user ? (
                 <>
                   <h2>Crew standings</h2>

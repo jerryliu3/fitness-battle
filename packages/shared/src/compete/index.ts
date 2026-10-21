@@ -214,3 +214,5 @@ export { applyEffortMilestones, milestoneStep, type EffortMilestone } from "./mi
 
 export { RECORD_DISTANCES, recordAttemptsForActivity, personalRecordHistory, weeklyTraining, recordStepPath, type RecordAttempt, type TrainingWeek } from "./progress";
 export { crewRelay, RELAY_COLORS } from './crew-relay';
+export { crewSessionInstant, crewSessionError, type CrewSession } from './crew-sessions';
+export { crewSessionDraftId } from './crew-sessions';

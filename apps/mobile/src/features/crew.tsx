@@ -1,3 +1,4 @@
+import { CrewSessions } from "./crew-sessions";
 import { CrewRelay } from "./crew-relay";
 import {
   type SportId,
@@ -471,6 +472,7 @@ export function CrewHub() {
           </View>
           {user ? (
             <>
+              {api.live ? <CrewSessions key={`${user?.id}:${crew.id}`} crewId={crew.id} /> : null}
               <Text style={f.h2}>Crew standings</Text>
               <View style={f.card}>
                 {[...members]
