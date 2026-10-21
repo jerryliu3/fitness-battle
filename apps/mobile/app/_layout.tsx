@@ -77,12 +77,12 @@ export default function RootLayout() {
       <View
         style={{
           flex: 1,
-          backgroundColor: "#1a0f22",
+          backgroundColor: SHELL_COLORS.paper,
           alignItems: "center",
           justifyContent: "center",
         }}
       >
-        <ActivityIndicator color="#ffcf47" />
+        <ActivityIndicator color={SHELL_COLORS.tennis} />
       </View>
     );
   }
@@ -99,7 +99,7 @@ export default function RootLayout() {
                 screenOptions={{
                   headerShown: false,
                   contentStyle: { backgroundColor: SHELL_COLORS.paper },
-                  animation: "fade",
+                  animation: Platform.OS === "ios" ? "default" : "slide_from_right",
                 }}
               />
             </BootGate>

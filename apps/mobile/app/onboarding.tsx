@@ -24,14 +24,17 @@ export default function Onboarding() {
   return (
     <SafeAreaView style={f.safe}>
       <ScrollView
+        automaticallyAdjustKeyboardInsets
         keyboardShouldPersistTaps="handled"
         contentContainerStyle={f.content}
       >
+        <FocusButton label="← Back" secondary onPress={() =>
+          router.canGoBack() ? router.back() : router.replace("/you")} />
         <Text style={f.kicker}>Setup</Text>
         <Text style={f.title}>Your own pace.</Text>
         <Text style={f.copy}>
           Choose your preferences. Trackers and optional history calibration
-          live in Athlete → Data Sync.
+          live in Athlete → Settings → Data Sync.
         </Text>
         <TextInput
           accessibilityLabel="Display name"

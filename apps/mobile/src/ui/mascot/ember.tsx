@@ -1,4 +1,5 @@
 import { createElement, useId, type ComponentType } from "react";
+import { Platform } from "react-native";
 import Svg, { G, Path, Ellipse, Circle, Defs, ClipPath, LinearGradient, Stop } from "react-native-svg";
 import { createEmberScene, EMBER_MODEL, type EmberExpression, type EmberNode, type EmberPose, type EmberMorphConcept } from "@fitness-battle/shared/mascot";
 
@@ -13,7 +14,7 @@ export function Ember({ pose, expression, size = 160, shadow = true, morph = 0, 
   pose?: Partial<EmberPose>; expression?: EmberExpression; size?: number; shadow?: boolean; label?: string; morph?: number; morphConcept?: EmberMorphConcept; launchFlight?: number; launchCrouch?: number; launchSkid?: number; skidSpray?: number; landingDust?: number;
 }) {
   const id = useId();
-  return <Svg width={size} height={size * EMBER_MODEL.height / EMBER_MODEL.width} viewBox={EMBER_MODEL.viewBox} accessible={Boolean(label)} accessibilityRole={label ? "image" : undefined} accessibilityLabel={label}>
+  return <Svg width={size} height={size * EMBER_MODEL.height / EMBER_MODEL.width} viewBox={EMBER_MODEL.viewBox} accessible={Platform.OS === "web" ? undefined : Boolean(label)} accessibilityRole={label ? "image" : undefined} accessibilityLabel={label}>
     {createEmberScene({ id, pose, expression, shadow, morph, morphConcept, launchFlight, launchCrouch, launchSkid, skidSpray, landingDust }).map(renderNode)}
   </Svg>;
 }

@@ -6,17 +6,13 @@ import {
   countsOnTrack,
   dayKey,
   formatDistanceM,
-  formatVolume,
   getZonedWeekday,
-  weeklyPeriodBounds,
   primaryFreezePeriodStart,
   sportById,
-  type Activity,
+  weeklyPeriodBounds,
 } from "@fitness-battle/shared";
 import { useRef, useState } from "react";
 import {
-  AccessibilityInfo,
-  Animated,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -38,13 +34,11 @@ import { HomeActivityActions } from "../../src/features/home-activity-actions";
 import { Journey } from "../../src/features/journey";
 import { useCompeteStore } from "../../src/lib/compete-store";
 import { f } from "../../src/ui/focus";
-import { Ember } from "../../src/ui/mascot/ember";
 export default function Home() {
   const { state } = useCompeteStore();
-  const [expanded, setExpanded] = useState<"suggestion" | Activity | null>(
-    null,
-  );
-  const lift = useRef(new Animated.Value(0)).current;
+  const [expanded, setExpanded] = useState<"suggestion" | null>(null);
+  const scroll = useRef<ScrollView>(null);
+  const recommendationY = useRef(0);
   if (!state)
     return (
       <SafeAreaView style={f.safe}>
@@ -56,10 +50,6 @@ export default function Home() {
   const counted = state.activities.filter(
     (a) => countsOnTrack(a, "open") && new Date(a.startedAt) <= now,
   );
-  const sessions = counted
-    .slice()
-    .sort((a, b) => b.startedAt.localeCompare(a.startedAt))
-    .slice(0, 10);
   const units = state.units;
   const weekPeriod = competePeriodWindow(state, now);
   const weekStart = weekPeriod.startsAt.getTime();
@@ -203,104 +193,11 @@ export default function Home() {
   const currLinePoints = currPointsList.join(" ");
   const currAreaPoints = `${currLinePoints} ${currPreciseX.toFixed(1)},${yBottom} ${xStart.toFixed(1)},${yBottom}`;
   const prevLastY = getY(prevTotalHours);
-  const weekDays = Array.from({ length: 7 }, (_, i) => {
-    const d = new Date(weekStart + i * 86400000 + 43200000);
-    const dayIso = dayKey(d, APP_TIMEZONE);
-    const dayActs = weekActivities.filter(
-      (a) => dayKey(new Date(a.startedAt), APP_TIMEZONE) === dayIso,
-    );
-    return {
-      key: dayIso,
-      label: dayLabels[i],
-      isToday: i === nowDayIndex,
-      hasActivity: dayActs.length > 0,
-    };
-  });
-  const activeDaysCount = weekDays.filter((d) => d.hasActivity).length;
-  function bounce() {
-    void AccessibilityInfo.isReduceMotionEnabled().then((reduce) => {
-      if (!reduce)
-        Animated.sequence([
-          Animated.timing(lift, {
-            toValue: -12,
-            duration: 130,
-            useNativeDriver: true,
-          }),
-          Animated.spring(lift, { toValue: 0, useNativeDriver: true }),
-        ]).start();
-    });
-  }
-  if (expanded === "suggestion") {
-    return (
-      <SafeAreaView style={f.safe} edges={["top"]}>
-        <ScrollView contentContainerStyle={f.content}>
-          {state.frozenPeriods.includes(primaryFreezePeriodStart(state)) ? (
-            <Text style={f.copy}>
-              ❄ Week frozen · Your effort score is protected through next
-              Monday.
-            </Text>
-          ) : null}
-          <Pressable
-            accessibilityRole="button"
-            onPress={() => setExpanded(null)}
-            style={{ paddingVertical: 8 }}
-          >
-            <Text style={f.small}>← Back</Text>
-          </Pressable>
-          <View style={s.expandPanel}>
-            <Text style={f.kicker}>Today&apos;s suggestion</Text>
-            <Text style={s.expandTitle}>{route.suggestion.title}</Text>
-            {route.suggestion.minutes ? (
-              <Text style={f.copy}>{route.suggestion.minutes} min</Text>
-            ) : null}
-            <Text style={f.copy}>{route.suggestion.detail}</Text>
-            <Text style={f.small}>{route.suggestion.reason}</Text>
-            <View style={s.expandEmber}>
-              <Ember size={150} expression="happy" />
-            </View>
-          </View>
-        </ScrollView>
-      </SafeAreaView>
-    );
-  }
-  if (expanded && typeof expanded === "object") {
-    const a = expanded;
-    return (
-      <SafeAreaView style={f.safe} edges={["top"]}>
-        <ScrollView contentContainerStyle={f.content}>
-          <Pressable
-            accessibilityRole="button"
-            onPress={() => setExpanded(null)}
-            style={{ paddingVertical: 8 }}
-          >
-            <Text style={f.small}>← Back</Text>
-          </Pressable>
-          <View style={s.expandPanel}>
-            <Text style={f.kicker}>
-              {new Date(a.startedAt).toLocaleDateString("en-US", {
-                weekday: "long",
-                month: "long",
-                day: "numeric",
-                timeZone: APP_TIMEZONE,
-              })}
-            </Text>
-            <Text style={s.expandTitle}>{sportById(a.sport).name}</Text>
-            <Text style={f.copy}>
-              {formatVolume(a.sport, a.distanceM, a.movingSec, units)}
-            </Text>
-            <Text style={f.small}>
-              {a.source} · {a.verified ? "Verified" : "Open"} · Counted
-              training.
-            </Text>
-          </View>
-        </ScrollView>
-      </SafeAreaView>
-    );
-  }
   return (
     <SafeAreaView style={f.safe} edges={["top"]}>
       <View style={s.homeStage}>
         <ScrollView
+          ref={scroll}
           style={s.homeOverlayScroll}
           contentContainerStyle={s.homeOverlayContent}
           showsVerticalScrollIndicator={false}
@@ -495,14 +392,27 @@ export default function Home() {
             </View>
           </View>
         </View>
+        <View onLayout={(event) => { recommendationY.current = event.nativeEvent.layout.y; }} style={s.statsCard}>
+          <Pressable accessibilityRole="button" accessibilityState={{ expanded: expanded === "suggestion" }}
+            onPress={() => setExpanded(expanded ? null : "suggestion")}
+            style={{ minHeight: 64, gap: 8 }}>
+            <Text style={f.kicker}>Today's suggestion</Text>
+            <Text style={f.h2}>{route.suggestion.title}</Text>
+            <Text style={f.small}>{route.suggestion.minutes ? `${route.suggestion.minutes} min · ` : ""}{expanded ? "Hide details −" : "See details +"}</Text>
+          </Pressable>
+          {expanded === "suggestion" ? <View style={{ gap: 10 }}>
+            <Text style={f.copy}>{route.suggestion.detail}</Text>
+            <Text style={f.small}>{route.suggestion.reason}</Text>
+          </View> : null}
+        </View>
         <View style={s.homeJourneyLayer} pointerEvents="box-none">
           <Journey
           today={dayKey(now, APP_TIMEZONE)}
             activities={counted}
             units={units}
             onToday={() => {
-              bounce();
               setExpanded("suggestion");
+              scroll.current?.scrollTo({ y: recommendationY.current, animated: false });
             }}
           />
         </View>
@@ -609,25 +519,4 @@ const s = StyleSheet.create({
     fontSize: 10,
     color: "#282f2c",
   },
-  expandPanel: {
-    backgroundColor: "#fff",
-    borderWidth: 1,
-    borderColor: "#e0e5dc",
-    borderBottomWidth: 3,
-    borderRadius: 20,
-    padding: 28,
-    minHeight: 420,
-    gap: 14,
-    position: "relative",
-    overflow: "hidden",
-  },
-  expandTitle: {
-    fontFamily: "DMSans_400Regular",
-    fontSize: 34,
-    lineHeight: 40,
-    letterSpacing: -1.2,
-    color: "#282f2c",
-    maxWidth: "85%",
-  },
-  expandEmber: { position: "absolute", right: -10, bottom: 10 },
 });

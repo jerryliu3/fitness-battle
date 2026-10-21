@@ -37,7 +37,7 @@ pnpm --filter @fitness-battle/web dev
 
 ```bash
 # Start Expo development server
-pnpm --filter @fitness-battle/mobile start
+pnpm dev:mobile
 
 # Open on iOS Simulator: press 'i'
 # Open on Android Emulator: press 'a'

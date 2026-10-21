@@ -27,6 +27,7 @@ import Svg, {
   Stop,
   Text as SvgText,
 } from "react-native-svg";
+import { SHELL_COLORS as c } from "../theme";
 import { playCue } from "../lib/haptics";
 import { Ember } from "./mascot/ember";
 import { PolishedRacer, usePolishedWakeTime } from "./polished-racer";
@@ -41,7 +42,9 @@ export function LaneTrack({
   onPan,
   overtakeFrame = null,
   overtakePlan = null,
+  active = true,
 }: {
+  active?: boolean;
   lanes: ArenaLane[];
   unit: string;
   showGhost: boolean;
@@ -119,7 +122,7 @@ export function LaneTrack({
   }, [w, width]);
   return (
     <View
-      onLayout={(e) => setWidth(e.nativeEvent.layout.width)}
+      onLayout={(e) => { if (e.nativeEvent.layout.width > 0) setWidth(e.nativeEvent.layout.width); }}
       style={{
         borderRadius: 24,
         overflow: "hidden",
@@ -128,17 +131,16 @@ export function LaneTrack({
         borderColor: "#d7e0cf",
       }}
     >
-      <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
-      <Pressable
-        accessibilityRole="button"
-        accessibilityState={{ selected: exploring }}
-        accessibilityLabel={exploring ? "Finish panning lanes" : "Enable vertical lane panning"}
-        onPress={() => { void playCue("selection"); setExploring((value) => !value); }}
-        style={{ minHeight: 44, justifyContent: "center", paddingHorizontal: 16 }}
-      >
-        <Text style={{ color: "#282f2c", fontWeight: "600" }}>{exploring ? "← Back" : "Explore lanes · swipe across peers"}</Text>
-      </Pressable>
-      {exploring && <Pressable disabled accessibilityRole="button" accessibilityLabel="3D pursuit coming soon" style={{ opacity: .5, padding: 12 }}><Text>3D pursuit · Coming soon</Text></Pressable>}
+      <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 8, paddingHorizontal: 12, paddingVertical: 4 }}>
+        <Text style={{ flex: 1, fontFamily: "DMSans_400Regular", fontSize: 11, lineHeight: 16, color: c.muted }}>
+          {exploring ? "Drag vertically to explore" : "Swipe across peers"}
+        </Text>
+        <Pressable accessibilityRole="button" accessibilityState={{ selected: exploring }}
+          accessibilityLabel={exploring ? "Finish panning lanes" : "Enable vertical lane panning"}
+          onPress={() => { void playCue("selection"); setExploring((value) => !value); }}
+          style={{ minHeight: 44, paddingHorizontal: 12, justifyContent: "center", borderRadius: 10, backgroundColor: exploring ? c.tennis : "#ffffff99" }}>
+          <Text style={{ fontFamily: "DMSans_500Medium", fontSize: 12, color: c.ink }}>{exploring ? "Done" : "Explore"}</Text>
+        </Pressable>
       </View>
       <ScrollView
         horizontal
@@ -356,7 +358,7 @@ export function LaneTrack({
               {unit}
             </SvgText>
             <SvgText x={18} y={522} fontSize={9} fill="#616c63">
-              Drag ↕ to explore · zoom keeps you centered
+              {exploring ? "Drag vertically to explore · Done to scroll page" : "Swipe across peers · tap an athlete for details"}
             </SvgText>
           </Svg>
         </View>

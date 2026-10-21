@@ -22,7 +22,7 @@ The palette lives in `packages/shared/src/shell.ts`, is exported to native `src/
 | secondary | `#819486` | Historical comparisons / baseline |
 | soft | `#eef0e9` | Subtle highlights, badges, and pill backgrounds |
 
-Use DM Sans for product UI, restrained display sizes, readable supporting copy, 44px+ touch controls, and generous spacing. Cards have clean 16px corners with 3px bottom borders; primary buttons have a 3px tactile base. Respect reduced motion. Browser dialogs use Radix focus management; native detail panels support back/dismiss and keyboard avoidance.
+Use DM Sans for product UI, restrained display sizes, readable supporting copy, 44px+ touch controls, and generous spacing. Cards have clean 16px corners with 3px bottom borders; primary buttons have a 3px tactile base. Secondary buttons use a flat one-pixel border, tertiary actions use quiet text controls, and mutually exclusive score/view choices share a segmented container rather than separate outlined action buttons. Respect reduced motion. Browser dialogs use Radix focus management; native detail panels support back/dismiss and keyboard avoidance.
 
 ## Information architecture
 
@@ -41,7 +41,7 @@ Web retains the real Three.js renderer. Native 2D is SVG; native 3D embeds the s
 
 Account data, periods, scoring, and backend eligibility rules are not replaced by prototype fixtures. Existing live-connection and synthetic-peer disclosures must remain accurate.
 
-Athlete's Account settings destination contains Sign out, Report an issue and Delete account on web and native. These actions belong inside Account rather than on the Athlete overview or in Preferences.
+Athlete's Account settings destination contains Sign out, Report an issue and Delete account on web and native. These actions belong inside Account rather than on the Athlete overview or in Preferences. Native Athlete keeps Progress and Settings as the overview destinations. Settings opens a hub with separate Edit profile, Data Sync, Preferences, Notifications, How scoring works and Account screens, using the native navigation stack so Back returns to the preserved parent. Field zoom/centering/comparison tools sit in a Field controls disclosure and are hidden in standings. The [mobile parity audit](reviews/mobile-parity-2026-10-20.md) records verified repairs and remaining device-only checks.
 
 ## Production motion implementation
 

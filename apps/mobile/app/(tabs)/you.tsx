@@ -44,7 +44,7 @@ function isDeviceProvider(
 }
 
 type AuthMode = "signin" | "signup";
-type AthletePanel = "connections" | "preferences" | "scoring" | "account";
+type AthletePanel = "profile" | "connections" | "preferences" | "scoring" | "account";
 
 export default function YouScreen() {
   const { state, dispatch, saveError, retrySave } = useCompeteStore();
@@ -63,6 +63,7 @@ export default function YouScreen() {
   const params = useLocalSearchParams<{
     tracker?: string;
     provider?: string;
+    panel?: AthletePanel;
   }>();
   const [name, setName] = useState<string | null>(null);
   const [city, setCity] = useState<string | null>(null);
@@ -76,8 +77,20 @@ export default function YouScreen() {
   const [authBusy, setAuthBusy] = useState(false);
   const [authNote, setAuthNote] = useState<string | null>(null);
   const [confirmFreeze, setConfirmFreeze] = useState(false);
-  const [panel, setPanel] = useState<AthletePanel | null>(null);
+  const panel = params.panel ?? null;
+  function setPanel(next: AthletePanel | null) {
+    if (next) router.push({ pathname: "/athlete-settings", params: { panel: next } });
+    else if (router.canGoBack()) router.back();
+    else router.replace("/settings");
+  }
   const appliedTracker = useRef<string | null>(null);
+
+  useEffect(() => {
+    setName(null);
+    setCity(null);
+    setNote(null);
+    setConfirmFreeze(false);
+  }, [user?.id]);
 
   useEffect(() => {
     const tracker = typeof params.tracker === "string" ? params.tracker : null;
@@ -101,16 +114,11 @@ export default function YouScreen() {
     } else if (tracker === "error") {
       setNote("That tracker did not connect. Try again from the app.");
     }
-    setPanel("connections");
-  }, [dispatch, params.provider, params.tracker, state]);
-
-  useEffect(() => {
-    setName(null);
-    setCity(null);
-    setPanel(null);
-    setNote(null);
-    setConfirmFreeze(false);
-  }, [user?.id]);
+    if (!params.panel) router.replace({
+      pathname: "/athlete-settings",
+      params: { panel: "connections", tracker, provider: trackerProvider },
+    });
+  }, [dispatch, params.panel, params.provider, params.tracker, router, state]);
 
   if (!state || authLoading) {
     return (
@@ -256,6 +264,7 @@ export default function YouScreen() {
     return (
       <SafeAreaView style={styles.safe} edges={["top"]}>
         <ScrollView
+        automaticallyAdjustKeyboardInsets
           contentContainerStyle={styles.scroll}
           keyboardShouldPersistTaps="handled"
         >
@@ -360,13 +369,14 @@ export default function YouScreen() {
     return (
       <SafeAreaView style={styles.safe} edges={["top"]}>
         <ScrollView
+        automaticallyAdjustKeyboardInsets
           contentContainerStyle={f.content}
           keyboardShouldPersistTaps="handled"
         >
           <Pressable
             accessibilityRole="button"
             onPress={() => setPanel(null)}
-            style={{ paddingVertical: 8 }}
+            style={{ minHeight: 44, justifyContent: "center" }}
           >
             <Text style={f.small}>← Back</Text>
           </Pressable>
@@ -463,7 +473,7 @@ export default function YouScreen() {
       <SafeAreaView style={f.safe} edges={["top"]}>
         <ScrollView contentContainerStyle={f.content}>
           <FocusButton
-            label="Back to Athlete"
+            label="← Back"
             secondary
             onPress={() => setPanel(null)}
           />
@@ -496,33 +506,37 @@ export default function YouScreen() {
     );
   }
 
-  if (panel === "preferences") {
+  if (panel === "preferences" || panel === "profile") {
     return (
       <SafeAreaView style={styles.safe} edges={["top"]}>
         <ScrollView
+        automaticallyAdjustKeyboardInsets
           contentContainerStyle={f.content}
           keyboardShouldPersistTaps="handled"
         >
           <Pressable
             accessibilityRole="button"
             onPress={() => setPanel(null)}
-            style={{ paddingVertical: 8 }}
+            style={{ minHeight: 44, justifyContent: "center" }}
           >
             <Text style={f.small}>← Back</Text>
           </Pressable>
           <Text style={f.kicker}>Settings</Text>
-          <Text style={f.title}>Preferences</Text>
-          <Text style={styles.section}>Profile</Text>
+          <Text style={f.title}>{panel === "profile" ? "Edit profile" : "Preferences"}</Text>
+          {panel === "profile" ? (
+            <>
           <Input
             value={draftName}
             onChangeText={setName}
             accessibilityLabel="Name"
+            maxLength={80}
             placeholder="Name"
           />
           <Input
             value={draftCity}
             onChangeText={setCity}
             accessibilityLabel="City"
+            maxLength={40}
             placeholder="City"
           />
           {dirty ? (
@@ -534,9 +548,7 @@ export default function YouScreen() {
                   return;
                 }
                 dispatch({ type: "rename", name: trimmed });
-                if (draftCity.trim()) {
-                  dispatch({ type: "set-city", city: draftCity.trim() });
-                }
+                if (draftCity.trim()) dispatch({ type: "set-city", city: draftCity.trim() });
                 setName(null);
                 setCity(null);
                 setNote("Profile saved.");
@@ -560,9 +572,12 @@ export default function YouScreen() {
               {note}
             </Text>
           ) : null}
+            </>
+          ) : (
+            <>
           <Text style={styles.section}>Units</Text>
           <Text style={f.copy}>
-            Distance display for Arena, Crew, and Athlete. Today shows hours,
+            Distance display for Compete, Crew, and Athlete. Home shows hours,
             not distance.
           </Text>
           <View style={f.chipRow}>
@@ -652,6 +667,8 @@ export default function YouScreen() {
               }}
             />
           </FocusSheet>
+            </>
+          )}
         </ScrollView>
       </SafeAreaView>
     );
@@ -660,6 +677,7 @@ export default function YouScreen() {
   return (
     <SafeAreaView style={styles.safe} edges={["top"]}>
       <ScrollView
+        automaticallyAdjustKeyboardInsets
         contentContainerStyle={f.content}
         keyboardShouldPersistTaps="handled"
       >
@@ -673,7 +691,7 @@ export default function YouScreen() {
           state={state}
           email={account.email}
           demoMode={demoMode}
-          onEdit={() => setPanel("preferences")}
+          onEdit={() => setPanel("profile")}
         />
         <View style={styles.settingsList}>
           <Pressable
@@ -689,44 +707,16 @@ export default function YouScreen() {
           </Pressable>
           <Pressable
             accessibilityRole="button"
-            style={styles.settingsRow}
-            onPress={() => setPanel("connections")}
-          >
-            <View style={styles.settingsCopy}>
-              <Text style={styles.rowTitle}>Data Sync</Text>
-              <Text style={styles.copy}>Trackers & device health</Text>
-            </View>
-            <Text style={f.small}>→</Text>
-          </Pressable>
-          <Pressable
-            accessibilityRole="button"
-            style={styles.settingsRow}
-            onPress={() => setPanel("preferences")}
-          >
-            <View style={styles.settingsCopy}>
-              <Text style={styles.rowTitle}>Preferences</Text>
-              <Text style={styles.copy}>Profile, units & sport</Text>
-            </View>
-            <Text style={f.small}>→</Text>
-          </Pressable>
-          <Pressable
-            accessibilityRole="button"
             style={[styles.settingsRow, styles.settingsRowLast]}
             onPress={() => router.push("/settings")}
           >
             <View style={styles.settingsCopy}>
-              <Text style={styles.rowTitle}>Notifications</Text>
-              <Text style={styles.copy}>Your updates, your choice</Text>
+              <Text style={styles.rowTitle}>Settings</Text>
+              <Text style={styles.copy}>Data sync, preferences, notifications & account</Text>
             </View>
             <Text style={f.small}>→</Text>
           </Pressable>
         </View>
-        <FocusButton
-          label="How scoring works"
-          secondary
-          onPress={() => setPanel("scoring")}
-        />
-        <FocusButton label="Account" secondary onPress={() => setPanel("account")} />
         {!state.onboardingCompleted ? (
           <View style={f.card}>
             <Text style={f.h2}>Finish setup</Text>

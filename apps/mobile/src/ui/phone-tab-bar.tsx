@@ -4,8 +4,7 @@ import {
   SHELL_TABS,
   type ShellTabId,
 } from "@fitness-battle/shared";
-import { useEffect, useState } from "react";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { Platform, Pressable, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { SHELL_COLORS, SHELL_RADIUS } from "../theme";
 import { playCue } from "../lib/haptics";
@@ -17,18 +16,12 @@ interface PhoneTabBarProps {
   };
   navigation: {
     navigate: (name: string) => void;
+    emit: (event: { type: "tabPress" | "tabLongPress"; target: string; canPreventDefault?: boolean }) => { type: string; defaultPrevented?: boolean };
   };
 }
 
 export function PhoneTabBar({ state, navigation }: PhoneTabBarProps) {
   const insets = useSafeAreaInsets();
-  const [optimistic, setOptimistic] = useState<number | null>(null);
-  const active = optimistic ?? state.index;
-
-  useEffect(() => {
-    setOptimistic(null);
-  }, [state.index]);
-
   return (
     <View
       accessibilityRole="tablist"
@@ -39,7 +32,7 @@ export function PhoneTabBar({ state, navigation }: PhoneTabBarProps) {
           (item) => item.id === (route.name as ShellTabId),
         );
         if (!tab) return null;
-        const selected = active === index;
+        const selected = state.index === index;
         return (
           <Pressable
             key={route.key}
@@ -47,13 +40,16 @@ export function PhoneTabBar({ state, navigation }: PhoneTabBarProps) {
             accessibilityState={{ selected }}
             accessibilityLabel={tab.label}
             onPress={() => {
-              if (!selected) void playCue("selection");
-              setOptimistic(index);
-              navigation.navigate(route.name);
+              const event = navigation.emit({ type: "tabPress", target: route.key, canPreventDefault: true });
+              if (!selected && !event.defaultPrevented) {
+                void playCue("selection");
+                navigation.navigate(route.name);
+              }
             }}
+            onLongPress={() => { navigation.emit({ type: "tabLongPress", target: route.key }); }}
             style={[styles.tab, selected ? styles.tabOn : null]}
           >
-            <Svg width={22} height={22} viewBox="0 0 24 24" accessible={false}>
+            <Svg width={22} height={22} viewBox="0 0 24 24" accessible={Platform.OS === "web" ? undefined : false}>
               <Path
                 d={SHELL_TAB_ICONS[tab.id]}
                 fill="none"
