@@ -122,9 +122,14 @@ function readLocal(userId: string | null): { savedAt: string; state: CompeteStat
       const existingIds = new Set(existing.state.activities.map((a) => a.id));
       const missing = demoSeed.activities.filter((a) => !existingIds.has(a.id));
       if (missing.length > 0) {
-        existing.state = {
+        const nextState = {
           ...existing.state,
           activities: [...existing.state.activities, ...missing],
+        };
+        writeLocal(userId, nextState, existing.savedAt);
+        return {
+          savedAt: existing.savedAt,
+          state: nextState,
         };
       }
     }

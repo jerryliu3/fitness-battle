@@ -8,7 +8,6 @@ import {
   uploadWebProfileAvatar,
 } from "@/lib/profile/avatar-upload";
 import { createClient } from "@/lib/supabase/client";
-import { Ember } from "@/components/mascot/ember";
 import {
   countsOnTrack,
   distanceUnitLabel,
