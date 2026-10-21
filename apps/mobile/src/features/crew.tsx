@@ -453,7 +453,7 @@ export function CrewHub() {
       ) : null}
       {api.data?.notices?.map((n) => (
         <Text style={f.small} key={n.id}>
-          {formatNoticeUnits(n.body, state.units)}
+          {formatNoticeUnits(n.body, state?.units)}
         </Text>
       ))}
       {!api.live ? (
