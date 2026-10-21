@@ -31,6 +31,19 @@ insert into public.activities (
   (select id from public.categories where slug = 'running'),
   '2026-10-20T12:00:00Z', 5100, 'running', 5100, 1800, 'codex-unshared'
 );
+-- Legacy shared rows below are intentionally not the scoring source. These
+-- account rows exercise the same sport/disposition/window exclusions as solo.
+insert into public.activities(user_id,provider,external_id,category_id,started_at,metric_value,sport,distance_m,moving_sec,compete_key,provenance,disposition)
+select 'f1000000-0000-4000-8000-000000000002','strava',id,
+  (select id from public.categories where slug=fixture.sport),started_at::timestamptz,distance_m,sport,distance_m,600,id,provenance,disposition
+from (values
+  ('sql-field-excluded','2026-10-20T12:00:00Z','running',9000,'recorded','excluded'),
+  ('sql-field-pending','2026-10-20T12:00:00Z','running',8000,'recorded','pending'),
+  ('sql-field-other-sport','2026-10-20T12:00:00Z','cycling',7000,'recorded','counted'),
+  ('sql-field-before','2026-10-19T03:59:59Z','running',6000,'recorded','counted'),
+  ('sql-field-end','2026-10-26T04:00:00Z','running',5000,'recorded','counted'),
+  ('sql-field-sample','2026-10-20T12:00:00Z','running',4000,'demo','counted')
+) fixture(id,started_at,sport,distance_m,provenance,disposition);
 insert into public.crew_entries (
   crew_id, user_id, activity_id, started_at, sport, distance_m, moving_sec, disposition
 )
@@ -58,11 +71,11 @@ select is((select count(*) from public.week_fields where crew_id = 'fc000000-000
 select is((select distance_m from public.week_field_roster(
   (select id from public.week_fields where crew_id = 'fc000000-0000-4000-8000-000000000001')
 ) where user_id = 'f1000000-0000-4000-8000-000000000002'),
-  1200::numeric, 'crew totals honor sharing, sport, disposition and half-open week bounds');
+  5100::numeric, 'crew totals use counted account activity instead of legacy shared rows');
 select is((select distance_m from public.week_field_roster(
   (select id from public.week_fields where crew_id = 'fc000000-0000-4000-8000-000000000001')
 ) where user_id = 'f1000000-0000-4000-8000-000000000001'),
-  0::numeric, 'members without shared sessions have zero volume');
+  0::numeric, 'members without counted account sessions have zero volume');
 select throws_ok($$select public.seat_athlete_week_field(
   'cycling', '2026-10-19T04:00:00Z', '2026-10-26T04:00:00Z', 8,
   'fc000000-0000-4000-8000-000000000001', null, '{}'

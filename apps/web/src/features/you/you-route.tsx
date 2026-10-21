@@ -874,13 +874,13 @@ function YouContent({ surface }: { surface: "progress" | "athlete" }) {
               <section className="fb-card">
                 <h2>Week freezes</h2>
                 <p className="fb-copy">
-                  {state.freezesLeft} of {STARTING_FREEZES} left. A freeze holds
-                  effort score for a taper or a vacation. It does not pause the lesson.
+                  {state.freezesLeft} of {STARTING_FREEZES} left. A freeze holds the weekly placement bonus. Activity milestones
+                  can still grow your score.
                 </p>
                 {frozen ? (
                   <div className="fb-stack">
                     <p className="fb-note" style={{ color: "var(--green, #2f6f4e)" }}>
-                      ❄ This week is frozen. Your effort score will hold through next Monday.
+                      ❄ This week is frozen. Your weekly placement bonus is held through next Monday.
                     </p>
                     <button
                       type="button"
@@ -894,7 +894,7 @@ function YouContent({ surface }: { surface: "progress" | "athlete" }) {
                   <div className="fb-stack">
                     <p className="fb-note">
                       Freeze this week? You will have {state.freezesLeft - 1} freezes left.
-                      Your effort score will hold steady until next Monday.
+                      Your weekly placement bonus is held until next Monday.
                     </p>
                     <div className="fb-row">
                       <button
@@ -970,8 +970,9 @@ function YouContent({ surface }: { surface: "progress" | "athlete" }) {
               <h2>Levels</h2>
               <p className="fb-copy">
                 Your level is a band on the weekly effort score ladder. It rises
-                when you accumulate counted volume against peers on your field,
-                and drifts down slightly after empty weeks.
+                immediately at weekly activity milestones in active sports.
+                Your rank sets the milestone size. Weekly placement can add a bonus;
+                effort score never goes down.
               </p>
               {RANK_BANDS.map((band) => (
                 <div key={band.name} className="fb-row">

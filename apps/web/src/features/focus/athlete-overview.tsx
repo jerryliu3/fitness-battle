@@ -1,4 +1,5 @@
 "use client";
+import { currentEffortMilestone, formatVolume } from "@fitness-battle/shared";
 import { playCue } from "@/lib/haptics";
 import { useScoreTrackLens } from "@/lib/score-track-lens";
 import { useAuth } from "@/components/auth-context";
@@ -145,6 +146,7 @@ export function AthleteOverview({
     }
   }
 
+  const milestone = currentEffortMilestone(state, state.primary, track);
   const showProfile = sections === "profile";
   const showProgress = sections === "progress";
 
@@ -469,6 +471,7 @@ export function AthleteOverview({
           <span className="focus-elo-score-label">effort score</span>
         </div>
 
+        {milestone ? <p className="fb-copy">+1 per {formatVolume(state.primary, state.primary === "strength" ? 0 : milestone.step, state.primary === "strength" ? milestone.step : 0, state.units)} this week · +{milestone.earned} from activity</p> : null}
         <svg
           viewBox="0 0 340 150"
           className="focus-trend"

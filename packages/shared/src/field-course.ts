@@ -175,18 +175,19 @@ export function fieldCourseScene(g: FieldCourse, appearance: FieldAppearance, la
     // Short gradient segments follow winding/oval courses without a straight-axis wash.
     // Alpha is continuous at segment boundaries; the existing mask keeps heads clear.
     const segments: FieldNode[] = [];
-    for (let j = 0; j < 32; j++) {
-      const a = from + (to - from) * j / 32, b = from + (to - from) * (j + 1) / 32;
+    const count = g.oval ? 24 : 1;
+    for (let j = 0; j < count; j++) {
+      const a = from + (to - from) * j / count, b = from + (to - from) * (j + 1) / count;
       const side = (d: number, sign: number) => {
         const taper = Math.min(1, Math.max(0, l.value - d) / Math.max(1e-6, clearance * .75));
         const p = g.point(d, i, sign * half * taper);
         return `${p.x.toFixed(3)} ${p.y.toFixed(3)}`;
       };
-      const mid = (a + b) / 2;
-      const ribbon = `M${side(a, -1)}L${side(mid, -1)}L${side(b, -1)}L${side(b, 1)}L${side(mid, 1)}L${side(a, 1)}Z`;
+      const values = Array.from({ length: g.oval ? 5 : 81 }, (_, k) => a + (b - a) * k / ((g.oval ? 5 : 81) - 1));
+      const ribbon = `M${values.map(d => side(d, -1)).join("L")}L${[...values].reverse().map(d => side(d, 1)).join("L")}Z`;
       const start = g.point(a, i), end = g.point(b, i), id = `${prefix}-progress-${i}-${j}`;
       const alpha = (fraction: number) => .23 * fraction;
-      segments.push(n("defs", {}, [n("linearGradient", { id, gradientUnits: "userSpaceOnUse", x1: start.x, y1: start.y, x2: end.x, y2: end.y }, [n("stop", { offset: 0, stopColor: color, stopOpacity: alpha(j / 32) }), n("stop", { offset: 1, stopColor: color, stopOpacity: alpha((j + 1) / 32) })])]), path(ribbon, `url(#${id})`));
+      segments.push(n("defs", {}, [n("linearGradient", { id, gradientUnits: "userSpaceOnUse", x1: g.oval ? start.x : 0, y1: start.y, x2: g.oval ? end.x : 0, y2: end.y }, [n("stop", { offset: 0, stopColor: color, stopOpacity: alpha(j / count) }), n("stop", { offset: 1, stopColor: color, stopOpacity: alpha((j + 1) / count) })])]), path(ribbon, `url(#${id})`));
     }
     traces.push(n("g", { pointerEvents: "none" }, segments));
   }

@@ -271,13 +271,14 @@ export function CrewHub() {
           }))
         : (api.data?.progress ?? api.data?.entries ?? [])
       ).filter((e) => e.crew_id === crew.id && e.disposition === "counted");
+  const sessionsMetric = crew.format === "personal_target" || crew.sport === "strength";
   const totalM = entries.reduce((n, e) => n + Number(e.distance_m), 0);
   const distance = (meters: number) =>
     `${formatDistanceM(meters, state?.units)} ${distanceUnitLabel(state?.units)}`;
   const memberTotal = (id: string) =>
     entries
       .filter((e) => e.user_id === id)
-      .reduce((n, e) => n + Number(e.distance_m), 0);
+      .reduce((n, e) => n + Number(sessionsMetric ? e.session_count ?? 1 : e.distance_m), 0);
   function open(next: typeof panel) {
     setNote("");
     setName("");
@@ -454,7 +455,7 @@ export function CrewHub() {
           <View style={f.card}>
             <Text style={f.kicker}>Our shared week · {crew.sport}</Text>
             <Text style={f.massive}>
-              {crew.format === "personal_target"
+              {sessionsMetric
                 ? entries.reduce(
                     (total, entry) => total + Number(entry.session_count ?? 1),
                     0,
@@ -462,7 +463,7 @@ export function CrewHub() {
                 : formatDistanceM(totalM, state?.units)}
             </Text>
             <Text style={f.copy}>
-              {crew.format === "personal_target"
+              {sessionsMetric
                 ? `sessions · ${crew.target_sessions} per member`
                 : crew.format === "cooperative"
                   ? `of ${distance(crew.journey_km * 1000)}`
@@ -484,7 +485,7 @@ export function CrewHub() {
                       <Text style={f.small}>{i + 1}</Text>
                       <Text style={[f.rowTitle, f.grow]}>{m.display_name}</Text>
                       <Text style={f.rowTitle}>
-                        {distance(memberTotal(m.user_id))}
+                        {sessionsMetric ? `${memberTotal(m.user_id)} sessions` : distance(memberTotal(m.user_id))}
                       </Text>
                     </View>
                   ))}
