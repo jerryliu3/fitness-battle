@@ -248,7 +248,7 @@ export function CrewPanel() {
   };
 
   const soloEntries: Entry[] = (state?.activities ?? [])
-    .filter((a) => { const now = competeNow(state); const week = weeklyPeriodBounds(now); return countsOnTrack(a, "open") && a.sport === state.primary && new Date(a.startedAt) >= week.startsAt && new Date(a.startedAt) < week.endsAt && new Date(a.startedAt) <= now; })
+    .filter((a) => { const now = state ? competeNow(state) : new Date(); const week = weeklyPeriodBounds(now); return countsOnTrack(a, "open") && a.sport === state?.primary && new Date(a.startedAt) >= week.startsAt && new Date(a.startedAt) < week.endsAt && new Date(a.startedAt) <= now; })
     .map((a) => ({
       crew_id: "solo-preview",
       user_id: user?.id ?? "solo-guest",
@@ -422,7 +422,7 @@ export function CrewPanel() {
                     </small>
                   </h2>
                 )}
-                <CrewRelay key={crew.id} members={members} entries={entries} sport={crew.sport as SportId} format={crew.format} targetM={targetM} targetSessions={crew.target_sessions} units={state.units} />
+                <CrewRelay key={crew.id} members={members} entries={entries} sport={crew.sport as SportId} format={crew.format} targetM={targetM} targetSessions={crew.target_sessions} units={state?.units} />
                 <p className="fb-copy">
                   {crew.format === "personal_target"
                     ? `Each member aims for ${crew.target_sessions} sessions.`
