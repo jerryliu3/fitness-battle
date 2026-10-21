@@ -56,6 +56,7 @@ describe("compete account units preference", () => {
     }
 
     const db = {
+      rpc: vi.fn(async (_name: string, args: any) => { storedUnits = args.p_state.units; return { data: "2026-10-20T13:00:00Z", error: null }; }),
       from: vi.fn((table: string) => {
         if (table === "profiles") {
           return {
@@ -91,7 +92,7 @@ describe("compete account units preference", () => {
       }),
     };
 
-    await persistCompeteAccount(db as never, userId, state);
+    await persistCompeteAccount(db as never, userId, state, null);
     expect(storedUnits).toBe("metric");
 
     const loaded = await loadCompeteAccount(db as never, userId);

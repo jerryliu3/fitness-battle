@@ -96,6 +96,7 @@ export {
   reduceCompete,
   rollClock,
   settleCompetition,
+  settleSportRound,
   competeNow,
   weeklyBoard,
   projectedElo,

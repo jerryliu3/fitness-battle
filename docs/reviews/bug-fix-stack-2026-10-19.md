@@ -34,7 +34,7 @@ Primary currently selects suggestions, displayed boards, demo-sync sport, and th
 - Browser walkthrough: isolated sandbox close → animated results → next-round details → Athlete sport preferences; offscreen racer → centered capsule; heading computed at 28px; expanded Back/disabled 3D controls; Home activity form and one Today activity circle.
 - Local PostgreSQL checks run inside rolled-back transactions: Crew totals include multiple manual activities and exclude samples/excluded rows; anonymous/nonmember access rejected; audit snapshots inaccessible to client roles; Eastern Sunday/Monday and spring/fall DST bounds verified.
 - Native typecheck/tests pass, including Home form validation, decimal keyboard input, failed-hydration gating and unsupported-device tracker handling. iOS and Android bundle exports are checked separately; no simulator or physical-device runtime check was performed.
-- No production migration or settlement was executed. Admin commits now use a service-only SQL transaction; rollback, stale-preview rejection and client-role denial were tested locally. Ordinary later stale athlete saves remain a limitation; see `docs/setup-plan.md`.
+- No production migration or settlement was executed. Admin commits now use a service-only SQL transaction; rollback, stale-preview rejection and client-role denial were tested locally. Ordinary stale saves are now rejected by the versioned account transaction; see `docs/setup-plan.md`.
 
 ## October 20 review pass
 
@@ -44,7 +44,7 @@ Primary currently selects suggestions, displayed boards, demo-sync sport, and th
 - **P2 — admin UI:** late requests can no longer restore another account’s preview after an account switch; production inputs are locked during requests.
 - **Cleanup:** removed unreachable 3D rendering branches while retaining the requested coming-soon controls, obsolete Crew sharing code and stale native season counts. Crew queries surface partial failures and read independent summaries concurrently. Native lane selection exposes accessibility state and relative gaps. The splash timeout now remembers completion across remounts.
 
-Remaining limits: device interaction/animation QA still needs a simulator or physical device. The existing ordinary athlete save protocol can overwrite admin changes from a stale client after the admin transaction; this pass does not replace that broader persistence protocol.
+Remaining limits: device interaction/animation QA still needs a simulator or physical device. The later versioned-save layer closes the previously noted stale-client overwrite risk.
 
 ## Follow-up scoring corrections
 
@@ -53,3 +53,13 @@ Admin field reads now preserve Verified GPS volume and ratings separately from O
 Regular roster follow-up: `week_field_roster` and its shared web/mobile API mapper now return separate Verified volume and ratings. Private Crew fields read counted activities directly, replacing the retired manual-share ledger. Apply `20261020132114_field_roster_verified_totals.sql` before deployment. Loader-to-rollover regression coverage and rolled-back SQL checks verify separate tracks, private/open parity, sample/future exclusion and membership authorization. A further light review found no additional concrete issues in this change.
 
 Admin boundary follow-up: `rollClock(state, now)` retains its ordinary two-argument interface. It delegates to the shared `settleCompetition` operation, which can accept already-loaded field rosters. Admin invokes that operation directly; service reads, permissions, persistence and simulation UI remain isolated. No separate admin scoring rules or duplicate settlement loop were introduced.
+
+## Versioned account saves
+
+Normal web/native saves now send the base server revision and use an atomic `save_compete_account` RPC. The transaction and admin settlement lock the same account row and reject stale versions before writing. Clients serialize saves, keep the old base while merging background refreshes into dirty drafts, stop retries after a conflict and offer explicit reload while preserving a local recovery copy. The previous multi-request account writer was removed. Old builds without a revision are rejected rather than allowed to overwrite current state.
+
+## Selected-field wave controls
+
+Admin can select an active field/Crew field associated with an athlete ID, end it for all seated accounts, and either start immediately until next Monday Eastern or schedule the next normal Monday wave. The admin planner calls the ordinary per-sport settlement primitive; field orchestration and privileged SQL remain in admin files. Field metadata, all member account changes and audit records are atomic, with field/account revision checks. Tests cover shared cutoff time, disjoint windows, DST, opt-outs, other-sport preservation, confirmation controls, stale previews and second-athlete rollback. A live field pin now expires at its actual end instead of at a daily calendar boundary, preserving immediate custom wave starts on both platforms.
+
+PR #228 review follow-up: mobile refresh rechecks dirty state after asynchronous revision storage, preserving edits dispatched during that wait. An additive seating migration excludes closed solo fields, preserves their membership history, and redirects Crew re-seating to the replacement wave while refusing to reopen closed boundaries. Regression tests cover the mobile race, existing/new solo athletes, immediate Crew replacements and future scheduled replacements. Typecheck, the full workspace tests and rolled-back SQL regressions passed.

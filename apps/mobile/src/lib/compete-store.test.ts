@@ -1,3 +1,4 @@
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { freshState } from "@fitness-battle/shared";
 import { createElement } from "react";
 import { act, create, type ReactTestRenderer } from "react-test-renderer";
@@ -44,6 +45,7 @@ vi.mock("expo-router", () => ({
   usePathname: () => "/arena",
 }));
 vi.mock("react-native", () => ({
+  Text: "Text", View: "View", Pressable: "Pressable",
   AppState: {
     currentState: "active",
     addEventListener: () => ({ remove() {} }),
@@ -109,7 +111,7 @@ beforeEach(() => {
     .fn()
     .mockImplementation(async (_url: string, init: RequestInit) =>
       init.method === "PUT"
-        ? Response.json({ ok: true })
+        ? Response.json({ ok: true, updatedAt: "2026-10-20T13:00:00Z" })
         : Response.json({ state: accountState(mock.auth.user?.id ?? "guest") }),
     );
   vi.stubGlobal("fetch", fetcher);
@@ -119,6 +121,7 @@ afterEach(async () => {
     await act(async () => {
       renderer.unmount();
     });
+  vi.restoreAllMocks();
   vi.useRealTimers();
   vi.unstubAllGlobals();
 });
@@ -144,6 +147,25 @@ async function save() {
 }
 
 describe("mobile account lifecycle", () => {
+  it("preserves an edit dispatched while refresh persists its revision", async () => {
+    login("Alice");
+    await mount();
+    let release!: () => void;
+    const pending = new Promise<void>((resolve) => { release = resolve; });
+    const original = AsyncStorage.setItem;
+    vi.spyOn(AsyncStorage, "setItem").mockImplementation(async (key, value) => {
+      if (key.endsWith(":revision")) await pending;
+      return original(key, value);
+    });
+    fetcher.mockResolvedValueOnce(Response.json({ state: accountState("Alice"), updatedAt: "revision-2" }));
+    let refreshing!: Promise<boolean>;
+    await act(async () => { refreshing = api.refresh(); await flush(); });
+    await act(async () => { api.dispatch({ type: "set-city", city: "New edit" }); });
+    await act(async () => { release(); await refreshing; });
+    expect(api.state?.city).toBe("New edit");
+    expect(JSON.parse(mock.values.get(accountStorageKeys("Alice").state)!).city).toBe("New edit");
+  });
+
   it("never displays or uploads guest training into a newly signed-in account", async () => {
     await mount();
     await act(async () => {
@@ -200,13 +222,30 @@ describe("mobile account lifecycle", () => {
     await save();
     expect(api.saveError).toBeNull();
     expect(mock.values.get(accountStorageKeys("Alice").dirty)).toBe("1");
-    fetcher.mockResolvedValue(Response.json({ ok: true }));
+    fetcher.mockResolvedValue(Response.json({ ok: true, updatedAt: "2026-10-20T13:00:00Z" }));
     await act(async () => {
       api.retrySave();
     });
     await save();
     expect(api.saveError).toBeNull();
     expect(mock.values.get(accountStorageKeys("Alice").dirty)).toBeUndefined();
+  });
+  it("sends the loaded revision and blocks stale retries until explicit account reload", async () => {
+    login("Alice");
+    fetcher.mockImplementation(async (_url: string, init: RequestInit) => init.method === "PUT"
+      ? Response.json({ error: "account_changed_reload" }, { status: 409 })
+      : Response.json({ state: accountState("Alice"), updatedAt: "revision-1" }));
+    await mount();
+    await act(async () => api.dispatch({ type: "set-city", city: "Local draft" }));
+    await save();
+    const writes = () => fetcher.mock.calls.filter(([, options]) => options.method === "PUT");
+    expect(JSON.parse(writes()[0]![1].body as string).updatedAt).toBe("revision-1");
+    await act(async () => api.dispatch({ type: "set-city", city: "Still local" }));
+    await save();
+    expect(writes()).toHaveLength(1);
+    await act(async () => { api.retrySave(); await flush(); });
+    expect(mock.values.has(`${accountStorageKeys("Alice").state}:recovery`)).toBe(true);
+    expect(api.state?.city).toBe(accountState("Alice").city);
   });
   it("does not apply a delayed Alice refresh after switching to Bob", async () => {
     login("Alice");
