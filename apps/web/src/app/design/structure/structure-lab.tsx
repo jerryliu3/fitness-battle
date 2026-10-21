@@ -1821,7 +1821,7 @@ function DesignSurface({
         <div className="s-logo">
           overtaek<span>®</span>
         </div>
-        <p className="s-eyebrow">A LITTLE FURTHER, TOGETHER.</p>
+        <p className="s-eyebrow">A LITTLE FURTHER</p>
         <nav aria-label="Application tabs">
           {PROTOTYPE_TABS.map((t) => (
             <button

@@ -105,6 +105,7 @@ export {
   formatDistanceM,
   distanceUnitLabel,
   formatEffort,
+  formatNoticeUnits,
   setRealPlayerPool,
   getRealPlayerPool,
   type Action,

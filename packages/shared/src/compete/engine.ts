@@ -1474,4 +1474,41 @@ export function formatEffort(value: number): string {
   return value.toFixed(1);
 }
 
+export function formatNoticeUnits(
+  text: string,
+  units: UnitSystem = "us",
+): string {
+  if (!text) return "";
+  if (units === "us") {
+    return text.replace(
+      /(\d+(?:\.\d+)?)\s*(\+)?\s*(?:km|kilometres|kilometers)\b/gi,
+      (_, num: string, plus: string | undefined) => {
+        const km = parseFloat(num);
+        if (Number.isNaN(km)) return `${num} km`;
+        const mi = km / 1.609344;
+        const formatted = num.includes(".")
+          ? mi.toFixed(1)
+          : Math.round(mi * 10) % 10 === 0
+            ? Math.round(mi).toString()
+            : mi.toFixed(1);
+        return `${formatted}${plus ?? ""} mi`;
+      },
+    );
+  }
+  return text.replace(
+    /(\d+(?:\.\d+)?)\s*(\+)?\s*(?:mi|miles)\b/gi,
+    (_, num: string, plus: string | undefined) => {
+      const mi = parseFloat(num);
+      if (Number.isNaN(mi)) return `${num} mi`;
+      const km = mi * 1.609344;
+      const formatted = num.includes(".")
+        ? km.toFixed(1)
+        : Math.round(km * 10) % 10 === 0
+          ? Math.round(km).toString()
+          : km.toFixed(1);
+      return `${formatted}${plus ?? ""} km`;
+    },
+  );
+}
+
 export { SPORTS };

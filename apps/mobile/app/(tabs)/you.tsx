@@ -196,18 +196,13 @@ export default function YouScreen() {
           linkStatus: "connected",
         });
       }
-      if (!result.ok && result.authorized) {
-        const prefix = "Connected on this phone.";
-        setNote(
-          result.message.startsWith(prefix)
-            ? result.message
-            : `${prefix} ${result.message}`,
-        );
+      if (!result.ok) {
+        setNote("Sync failed");
       } else {
-        setNote(result.message);
+        setNote(null);
       }
-    } catch (error) {
-      setNote(error instanceof Error ? error.message : "Sync failed");
+    } catch {
+      setNote("Sync failed");
     } finally {
       setSyncBusy(false);
     }
@@ -439,7 +434,24 @@ export default function YouScreen() {
               </View>
             );
           })}
-          {note ? <Text style={styles.copy}>{note}</Text> : null}
+          {note === "Sync failed" ? (
+            <Pressable
+              onPress={() => setPanel("connections")}
+              accessibilityRole="button"
+              style={{ paddingVertical: 4 }}
+            >
+              <Text
+                style={[
+                  styles.copy,
+                  { color: "#b83a38", textDecorationLine: "underline" },
+                ]}
+              >
+                Sync failed · check Data Sync
+              </Text>
+            </Pressable>
+          ) : note ? (
+            <Text style={styles.copy}>{note}</Text>
+          ) : null}
           <DataSyncActions />
         </ScrollView>
       </SafeAreaView>

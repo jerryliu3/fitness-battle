@@ -86,7 +86,6 @@ function YouContent({ surface }: { surface: "progress" | "athlete" }) {
   const [syncNote, setSyncNote] = useState<string | null>(null);
   const [authPrompt, setAuthPrompt] = useState<{ open: boolean; reason: string } | null>(null);
   const [connectingProvider, setConnectingProvider] = useState<ProviderId | null>(null);
-  const [primaryNote, setPrimaryNote] = useState<string | null>(null);
   const [confirmFreeze, setConfirmFreeze] = useState(false);
   const searchParams = useSearchParams();
   const accountKey = user?.id ?? "guest";
@@ -313,24 +312,7 @@ function YouContent({ surface }: { surface: "progress" | "athlete" }) {
       readiness,
       linkStatus: body.usedMock ? "stub" : "connected",
     });
-    if (body.usedMock) {
-      setSyncNote(
-        `Stub sync (${body.windowKind ?? "recent"}): ${activities.length} sample activities. Not a live connection.`,
-      );
-      return;
-    }
-    const ready = readiness.length
-      ? `, ${readiness.length} readiness marks`
-      : "";
-    const saved =
-      body.persisted === false
-        ? " Fetched on this device only — they were not saved to your account."
-        : "";
-    setSyncNote(
-      body.source === "file"
-        ? `Imported ${activities.length} activities. File imports stay pending until you count them.${saved}`
-        : `Synced ${activities.length} activities${ready}.${saved}`,
-    );
+    setSyncNote(null);
   }
 
   async function syncProvider(providerId: ProviderId) {
@@ -409,7 +391,7 @@ function YouContent({ surface }: { surface: "progress" | "athlete" }) {
         windowKind?: string;
       };
       if (!response.ok) {
-        setSyncNote(humanError(body.error) ?? "Sync failed. Nothing new was counted.");
+        setSyncNote("Sync failed");
         void requestAccountPush("connection_alerts", pushIdentity, {
           provider: providerId,
         });
@@ -419,12 +401,10 @@ function YouContent({ surface }: { surface: "progress" | "athlete" }) {
     } catch {
       if (demoMode) {
         dispatch({ type: "sync", provider: providerId, allowSample: true });
-        setSyncNote(
-          "Offline demo sync applied locally. These are sample sessions.",
-        );
+        setSyncNote(null);
         return;
       }
-      setSyncNote("Sync failed. No sample session was added.");
+      setSyncNote("Sync failed");
       void requestAccountPush("connection_alerts", pushIdentity, {
         provider: providerId,
       });
@@ -716,7 +696,26 @@ function YouContent({ surface }: { surface: "progress" | "athlete" }) {
                     }}
                   />
                 </label>
-                {syncNote ? <p className="fb-note">{syncNote}</p> : null}
+                {syncNote === "Sync failed" ? (
+                  <button
+                    type="button"
+                    className="fb-btn-ghost"
+                    style={{
+                      width: "auto",
+                      padding: 0,
+                      color: "var(--red, #b83a38)",
+                      textDecoration: "underline",
+                      fontSize: 13,
+                      cursor: "pointer",
+                      textAlign: "left",
+                    }}
+                    onClick={() => setPanel("connections")}
+                  >
+                    Sync failed · check Data Sync
+                  </button>
+                ) : syncNote ? (
+                  <p className="fb-note">{syncNote}</p>
+                ) : null}
               </section>
               <section className="fb-card">
                 <h2>Import fitness history</h2>
@@ -776,11 +775,6 @@ function YouContent({ surface }: { surface: "progress" | "athlete" }) {
                 <p className="fb-copy" style={{ color: "var(--muted)", marginBottom: 16 }}>
                   Choose your primary sport and toggle which events you actively compete in this week.
                 </p>
-                {primaryNote ? (
-                  <p className="fb-note" style={{ color: "var(--green, #2f6f4e)", marginBottom: 12 }}>
-                    {primaryNote}
-                  </p>
-                ) : null}
                 {SPORTS.map((sport) => {
                   const rating = state.ratings.find(
                     (item) => item.sport === sport.id,
@@ -842,8 +836,6 @@ function YouContent({ surface }: { surface: "progress" | "athlete" }) {
                             }}
                             onClick={() => {
                               dispatch({ type: "set-primary", sport: sport.id });
-                              setPrimaryNote(`${sport.name} is now your primary sport.`);
-                              setTimeout(() => setPrimaryNote(null), 3000);
                             }}
                           >
                             Make primary
@@ -1033,6 +1025,7 @@ function YouContent({ surface }: { surface: "progress" | "athlete" }) {
           <SeasonHistory
             results={state.periodResults}
             primary={state.primary}
+            units={state.units}
           />
         </>
       ) : user ? (

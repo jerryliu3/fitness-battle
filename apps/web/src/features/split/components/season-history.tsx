@@ -5,9 +5,11 @@ import {
   formatEloDelta,
   formatEffort,
   formatPlace,
+  formatVolume,
   sportById,
   type PeriodResult,
   type SportId,
+  type UnitSystem,
 } from "@fitness-battle/shared";
 import { useMemo, useState } from "react";
 
@@ -31,9 +33,11 @@ function weekLabel(periodStart: string, periodEnd: string): string {
 export function SeasonHistory({
   results,
   primary,
+  units = "us",
 }: {
   results: PeriodResult[];
   primary: SportId;
+  units?: UnitSystem;
 }) {
   const [sportFilter, setSportFilter] = useState<SportId | "all">(primary);
   const [trackFilter, setTrackFilter] = useState<"open" | "verified" | "all">(
@@ -135,7 +139,12 @@ export function SeasonHistory({
                 </span>
                 <span>
                   <em>Effort</em>
-                  {formatEffort(row.effort)}
+                  {formatVolume(
+                    row.sport,
+                    row.distanceM > 0 ? row.distanceM : row.effort,
+                    row.movingSec > 0 ? row.movingSec : row.effort,
+                    units,
+                  )}
                 </span>
                 <span>
                   <em>Effort Score</em>

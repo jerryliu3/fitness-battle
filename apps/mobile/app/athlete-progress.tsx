@@ -3,7 +3,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useCompeteStore } from "../src/lib/compete-store";
 import { FocusButton, FocusHeading, f } from "../src/ui/focus";
-import { APP_TIMEZONE } from "@fitness-battle/shared";
+import { APP_TIMEZONE, formatVolume } from "@fitness-battle/shared";
 import { AthleteMetrics } from "../src/features/athlete-metrics";
 export default function Progress() {
   const { state } = useCompeteStore();
@@ -45,7 +45,12 @@ export default function Progress() {
                     day: "numeric",
                     timeZone: APP_TIMEZONE,
                   })} ·{" "}
-                  {r.effort.toFixed(1)} effort
+                  {formatVolume(
+                    r.sport,
+                    r.distanceM > 0 ? r.distanceM : r.effort,
+                    r.movingSec > 0 ? r.movingSec : r.effort,
+                    state.units,
+                  )}
                 </Text>
                 <Text style={f.rowTitle}>
                   {r.eloBefore} → {r.eloAfter} Effort Score{r.frozen ? " · frozen" : ""}

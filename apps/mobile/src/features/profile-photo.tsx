@@ -1,7 +1,6 @@
 import {
   buildAvatarCleanupPathsForProfileChange,
   getCanonicalAvatarObjectPath,
-  initialsFromName,
   type CompeteState,
 } from "@fitness-battle/shared";
 import * as ImagePicker from "expo-image-picker";
@@ -13,6 +12,7 @@ import { decodePhoto } from "../lib/profile-photo";
 import { supabase } from "../lib/supabase";
 import { SHELL_COLORS as c } from "../theme";
 import { FocusButton, FocusSheet, f } from "../ui/focus";
+import { Ember } from "../ui/mascot/ember";
 
 export function ProfilePhoto({ state }: { state: CompeteState }) {
   const { user, demoMode } = useAuth();
@@ -116,9 +116,7 @@ export function ProfilePhoto({ state }: { state: CompeteState }) {
             style={{ width: 86, height: 86 }}
           />
         ) : (
-          <Text style={[f.h2, { color: c.tennis }]}>
-            {initialsFromName(state.name)}
-          </Text>
+          <Ember size={64} expression="happy" shadow={false} />
         )}
       </Pressable>
       <FocusSheet

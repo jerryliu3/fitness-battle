@@ -103,15 +103,18 @@ function JourneyDayStop({
   day: JourneyDay;
   units: UnitSystem;
   stopRef: Ref<HTMLButtonElement>;
-  onOpen: (activity: Activity) => void;
+  onOpen: (day: JourneyDay) => void;
 }) {
   const primary = day.items[0]!;
-  const volume = formatVolume(
-    primary.sport,
-    primary.distanceM,
-    primary.movingSec,
-    units,
-  );
+  const volume =
+    day.items.length > 1
+      ? `${day.items.length} sessions`
+      : formatVolume(
+          primary.sport,
+          primary.distanceM,
+          primary.movingSec,
+          units,
+        );
   const dayDate = new Date(`${day.day}T12:00:00.000Z`);
   const weekday = dayDate.toLocaleDateString("en-US", {
     weekday: "short",
@@ -124,7 +127,7 @@ function JourneyDayStop({
   });
   const detail =
     day.items.length > 1
-      ? `${day.items.length} sessions`
+      ? `${day.items.length} sessions recorded`
       : primary.disposition === "excluded" || isSampleActivity(primary)
         ? `${primary.source} · sample (excluded)`
         : `${primary.verified ? "Verified" : "Open"} · ${primary.disposition === "pending" ? "pending" : "counted"}`;
@@ -133,23 +136,28 @@ function JourneyDayStop({
     <>
       <button
         ref={stopRef}
-        onClick={() => onOpen(primary)}
-        aria-label={`Open ${sportById(primary.sport).name} from ${day.day} ${volume}`}
+        onClick={() => onOpen(day)}
+        aria-label={`Open sessions from ${day.day}`}
       >
         <i>✓</i>
         <b>{volume}</b>
         <small>{weekday}</small>
       </button>
-      <span>
+      <span
+        role="button"
+        tabIndex={0}
+        onClick={() => onOpen(day)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            onOpen(day);
+          }
+        }}
+        style={{ cursor: "pointer" }}
+      >
         <small>{monthDay}</small>
         <b>{sportById(primary.sport).name}</b>
         <em>{detail}</em>
-        {day.items.length > 1 && day.items.map((activity) => (
-          <button key={activity.id} type="button" className="fb-btn-ghost"
-            onClick={() => onOpen(activity)}>
-            {sportById(activity.sport).name} · {formatVolume(activity.sport, activity.distanceM, activity.movingSec, units)}
-          </button>
-        ))}
       </span>
     </>
   );
@@ -185,15 +193,17 @@ function SessionStopPeek({
   );
 }
 
+type SessionTarget = "suggestion" | Activity | JourneyDay;
+
 type SessionPhase =
   | { kind: "closed" }
-  | { kind: "peek"; target: "suggestion" | Activity }
-  | { kind: "full"; target: "suggestion" | Activity };
+  | { kind: "peek"; target: SessionTarget }
+  | { kind: "full"; target: SessionTarget };
 
 export function TodayScreen() {
   const onHome = usePathname() === "/today";
   const { user } = useAuth();
-  const { state } = useCompete();
+  const { state, dispatch } = useCompete();
   const reduced = useReducedMotion();
   const [session, setSession] = useState<SessionPhase>({ kind: "closed" });
   const [revealingStops, setRevealingStops] = useState<string[]>([]);
@@ -419,8 +429,7 @@ export function TodayScreen() {
   const currLinePoints = currPointsList.join(" ");
   const currAreaPoints = `${currLinePoints} ${currPreciseX.toFixed(1)},${yBottom} ${xStart.toFixed(1)},${yBottom}`;
 
-  const paceText =
-    hoursDelta > 0 ? "Ahead of pace" : hoursDelta === 0 ? "On pace" : null;
+  const prevLastY = getY(prevTotalHours);
 
   const weekDays = Array.from({ length: 7 }, (_, i) => {
     const d = new Date(weekStart + i * 86_400_000 + 43_200_000);
@@ -437,9 +446,9 @@ export function TodayScreen() {
   });
   const activeDaysCount = weekDays.filter((d) => d.hasActivity).length;
 
-  function openSession(target: "suggestion" | Activity, phase: "peek" | "full") {
+  function openSession(target: SessionTarget, phase: "peek" | "full") {
     setRevealingStops([]);
-    void playCue(phase === "peek" ? "light" : "light");
+    void playCue("light");
     setSession({ kind: phase, target });
   }
 
@@ -483,6 +492,87 @@ export function TodayScreen() {
         </div>
       );
     }
+    if ("items" in target) {
+      const day = target;
+      const dayDate = new Date(`${day.day}T12:00:00.000Z`);
+      const dateTitle = dayDate.toLocaleDateString("en-US", {
+        weekday: "long",
+        month: "short",
+        day: "numeric",
+        timeZone: APP_TIMEZONE,
+      });
+      return (
+        <div className="focus-home focus-home-expanded">
+          <button type="button" className="focus-expand-back" onClick={closeSession}>
+            ← Back
+          </button>
+          <motion.section
+            layout
+            className="focus-expand-panel"
+            aria-label="Recorded sessions"
+            initial={reduced ? false : { opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ type: "spring", bounce: 0.12, duration: 0.45 }}
+          >
+            <p className="fb-kicker">{dateTitle}</p>
+            <h1>
+              {day.items.length}{" "}
+              {day.items.length === 1 ? "Session" : "Sessions"}
+            </h1>
+            <div style={{ display: "flex", flexDirection: "column", gap: 12, marginTop: 16 }}>
+              {day.items.map((a) => (
+                <div
+                  key={a.id}
+                  className="fb-card"
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    padding: "16px 18px",
+                    background: "var(--paper, #fafaf7)",
+                    borderRadius: 14,
+                    border: "1px solid #e0e5dc",
+                  }}
+                >
+                  <div>
+                    <strong style={{ fontSize: 16, display: "block" }}>
+                      {sportById(a.sport).name} · {formatVolume(a.sport, a.distanceM, a.movingSec, units)}
+                    </strong>
+                    <small style={{ color: "var(--muted)", fontSize: 12, marginTop: 4, display: "block" }}>
+                      {a.source} · {a.verified ? "GPS verified" : "Open effort"}
+                      {a.avgHr ? ` · ${a.avgHr} bpm` : ""}
+                    </small>
+                  </div>
+                  <button
+                    type="button"
+                    className="fb-btn-ghost"
+                    style={{
+                      color: "var(--red, #b83a38)",
+                      fontSize: 12,
+                      padding: "6px 12px",
+                      width: "auto",
+                      minHeight: "auto",
+                      borderRadius: 8,
+                      border: "1px solid rgba(184, 58, 56, 0.2)",
+                    }}
+                    onClick={() => {
+                      dispatch({
+                        type: "set-disposition",
+                        activityId: a.id,
+                        disposition: "excluded",
+                      });
+                      closeSession();
+                    }}
+                  >
+                    Delete
+                  </button>
+                </div>
+              ))}
+            </div>
+          </motion.section>
+        </div>
+      );
+    }
     const a = target;
     return (
       <div className="focus-home focus-home-expanded">
@@ -520,6 +610,30 @@ export function TodayScreen() {
                 ? "Pending file import"
                 : "Counted toward your training."}
           </p>
+          <div style={{ marginTop: 20 }}>
+            <button
+              type="button"
+              className="fb-btn-ghost"
+              style={{
+                color: "var(--red, #b83a38)",
+                fontSize: 13,
+                width: "auto",
+                padding: "8px 14px",
+                borderRadius: 8,
+                border: "1px solid rgba(184, 58, 56, 0.2)",
+              }}
+              onClick={() => {
+                dispatch({
+                  type: "set-disposition",
+                  activityId: a.id,
+                  disposition: "excluded",
+                });
+                closeSession();
+              }}
+            >
+              Delete session
+            </button>
+          </div>
         </motion.section>
       </div>
     );
@@ -529,12 +643,16 @@ export function TodayScreen() {
     session.kind === "peek"
       ? session.target === "suggestion"
         ? "today"
-        : journeyDays.find((d) =>
-            d.items.some(
-              (a) =>
-                typeof session.target !== "string" && a.id === session.target.id,
-            ),
-          )?.id ?? null
+        : "items" in session.target
+          ? session.target.id
+          : journeyDays.find((d) =>
+              d.items.some(
+                (a) =>
+                  typeof session.target !== "string" &&
+                  "id" in session.target &&
+                  a.id === session.target.id,
+              ),
+            )?.id ?? null
       : null;
 
   return (
@@ -675,6 +793,34 @@ export function TodayScreen() {
             />
             <circle cx={currPreciseX} cy={currLastY} r="3.5" fill="#f1c75b" />
 
+            {/* Direct on-chart label: This week over the indicator */}
+            <text
+              x={Math.max(xStart + 30, Math.min(xEnd - 30, currPreciseX))}
+              y={Math.max(yTop + 10, currLastY - 10)}
+              textAnchor="middle"
+              fontSize="9"
+              fontWeight="700"
+              fill="#282f2c"
+            >
+              This week
+            </text>
+
+            {/* Direct on-chart label: Last week at the end of the baseline */}
+            <text
+              x={xEnd}
+              y={
+                Math.abs(currPreciseX - xEnd) < 55 && Math.abs(currLastY - prevLastY) < 18
+                  ? Math.min(yBottom - 6, prevLastY + 12)
+                  : Math.max(yTop + 10, prevLastY - 6)
+              }
+              textAnchor="end"
+              fontSize="9"
+              fontWeight="600"
+              fill="#616c63"
+            >
+              Last week
+            </text>
+
             {/* X-axis day labels */}
             {dayLabels.map((lbl, i) => {
               const cx = getDayCenterX(i);
@@ -694,42 +840,6 @@ export function TodayScreen() {
               );
             })}
           </svg>
-
-          <div className="focus-activity-legend">
-            <div className="focus-activity-legend-item">
-              <div className="focus-activity-legend-header">
-                <i
-                  className="focus-activity-legend-swatch"
-                  aria-hidden="true"
-                />
-                <span className="focus-activity-legend-label">
-                  This week (
-                  {currTotalHours === 0
-                    ? "0h"
-                    : `${currTotalHours.toFixed(1)}h`}
-                  )
-                </span>
-              </div>
-              {paceText ? (
-                <span className="focus-activity-pace">{paceText}</span>
-              ) : null}
-            </div>
-            <div className="focus-activity-legend-item">
-              <div className="focus-activity-legend-header">
-                <i
-                  className="focus-activity-legend-swatch is-prev"
-                  aria-hidden="true"
-                />
-                <span className="focus-activity-legend-label">
-                  Last week (
-                  {prevTotalHours === 0
-                    ? "0h"
-                    : `${prevTotalHours.toFixed(1)}h`}
-                  )
-                </span>
-              </div>
-            </div>
-          </div>
         </div>
       </section>
       </div>
@@ -832,13 +942,28 @@ export function TodayScreen() {
                   session.kind === "peek" &&
                   session.target !== "suggestion" ? (
                     <SessionStopPeek
-                      kicker={sportById(session.target.sport).name}
-                      title={formatVolume(
-                        session.target.sport,
-                        session.target.distanceM,
-                        session.target.movingSec,
-                        units,
-                      )}
+                      kicker={
+                        "items" in session.target
+                          ? `${new Date(`${session.target.day}T12:00:00Z`).toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric", timeZone: "UTC" })}`
+                          : sportById(session.target.sport).name
+                      }
+                      title={
+                        "items" in session.target
+                          ? session.target.items.length === 1
+                            ? `${sportById(session.target.items[0].sport).name} · ${formatVolume(
+                                session.target.items[0].sport,
+                                session.target.items[0].distanceM,
+                                session.target.items[0].movingSec,
+                                units,
+                              )}`
+                            : `${session.target.items.length} sessions recorded`
+                          : formatVolume(
+                              session.target.sport,
+                              session.target.distanceM,
+                              session.target.movingSec,
+                              units,
+                            )
+                      }
                       onOpen={() => {
                         if (session.kind === "peek" && session.target !== "suggestion") {
                           openSession(session.target, "full");
@@ -852,7 +977,7 @@ export function TodayScreen() {
                     day={stop.day}
                     units={units}
                     stopRef={setStopRef(index)}
-                    onOpen={(activity) => openSession(activity, "peek")}
+                    onOpen={(day) => openSession(day, "peek")}
                   />
                 </>
               ) : null}

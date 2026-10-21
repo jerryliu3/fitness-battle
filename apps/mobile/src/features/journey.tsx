@@ -12,8 +12,9 @@ import { useState } from "react";
 import { Pressable, Text, View } from "react-native";
 import Svg, { Path } from "react-native-svg";
 import { SHELL_COLORS as c } from "../theme";
-import { FocusSheet, f } from "../ui/focus";
+import { FocusButton, FocusSheet, f } from "../ui/focus";
 import { Ember } from "../ui/mascot/ember";
+import { useCompeteStore } from "../lib/compete-store";
 
 const ROW = 192;
 const laneX = { l: 0.24, c: 0.5, r: 0.76 };
@@ -28,6 +29,7 @@ export function Journey({
   onToday: () => void;
   today: string;
 }) {
+  const { dispatch } = useCompeteStore();
   const [width, setWidth] = useState(320);
   const [selectedDay, setSelectedDay] = useState<string | null>(null);
   const days = groupActivitiesByDay(activities, 30);
@@ -209,6 +211,22 @@ export function Journey({
             <Text style={f.copy}>
               {a.verified ? "Verified" : "Open"} · counted · {a.source}
             </Text>
+            <View style={{ marginTop: 8 }}>
+              <FocusButton
+                label="Delete session"
+                secondary
+                onPress={() => {
+                  dispatch({
+                    type: "set-disposition",
+                    activityId: a.id,
+                    disposition: "excluded",
+                  });
+                  if (selected.items.length <= 1) {
+                    setSelectedDay(null);
+                  }
+                }}
+              />
+            </View>
           </View>
         ))}
       </FocusSheet>

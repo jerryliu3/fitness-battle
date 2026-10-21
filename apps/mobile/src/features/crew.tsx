@@ -4,6 +4,7 @@ import {
   countsOnTrack,
   distanceUnitLabel,
   formatDistanceM,
+  formatNoticeUnits,
   weeklyPeriodBounds,
 } from "@fitness-battle/shared";
 import { useFocusEffect, useGlobalSearchParams, useRouter } from "expo-router";
@@ -452,7 +453,7 @@ export function CrewHub() {
       ) : null}
       {api.data?.notices?.map((n) => (
         <Text style={f.small} key={n.id}>
-          {n.body}
+          {formatNoticeUnits(n.body, state?.units)}
         </Text>
       ))}
       {!api.live ? (

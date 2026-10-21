@@ -202,8 +202,7 @@ export default function Home() {
   ];
   const currLinePoints = currPointsList.join(" ");
   const currAreaPoints = `${currLinePoints} ${currPreciseX.toFixed(1)},${yBottom} ${xStart.toFixed(1)},${yBottom}`;
-  const paceText =
-    hoursDelta > 0 ? "Ahead of pace" : hoursDelta === 0 ? "On pace" : null;
+  const prevLastY = getY(prevTotalHours);
   const weekDays = Array.from({ length: 7 }, (_, i) => {
     const d = new Date(weekStart + i * 86400000 + 43200000);
     const dayIso = dayKey(d, APP_TIMEZONE);
@@ -443,6 +442,34 @@ export default function Home() {
               />
               <Circle cx={currPreciseX} cy={currLastY} r={3.5} fill="#f1c75b" />
 
+              {/* Direct on-chart label: This week over indicator */}
+              <SvgText
+                x={Math.max(xStart + 26, Math.min(xEnd - 26, currPreciseX))}
+                y={Math.max(yTop + 10, currLastY - 10)}
+                textAnchor="middle"
+                fontSize="9"
+                fontWeight="700"
+                fill="#282f2c"
+              >
+                This week
+              </SvgText>
+
+              {/* Direct on-chart label: Last week at end */}
+              <SvgText
+                x={xEnd}
+                y={
+                  Math.abs(currPreciseX - xEnd) < 50 && Math.abs(currLastY - prevLastY) < 18
+                    ? Math.min(yBottom - 6, prevLastY + 12)
+                    : Math.max(yTop + 10, prevLastY - 6)
+                }
+                textAnchor="end"
+                fontSize="9"
+                fontWeight="600"
+                fill="#616c63"
+              >
+                Last week
+              </SvgText>
+
               {/* Day labels */}
               {dayLabels.map((lbl, i) => {
                 const cx = getDayCenterX(i);
@@ -463,39 +490,8 @@ export default function Home() {
               })}
             </Svg>
 
-            <View style={{ flex: 1, minWidth: 95 }}>
+            <View style={{ minWidth: 95 }}>
               <HomeActivityActions compact />
-            </View>
-            <View style={s.chartLegend}>
-              <View style={s.legendItem}>
-                <View style={s.legendItemHeader}>
-                  <View style={s.legendSwatchCurr} />
-                  <Text style={s.legendText}>
-                    You (
-                    {currTotalHours === 0
-                      ? "0h"
-                      : `${currTotalHours.toFixed(1)}h`}
-                    )
-                  </Text>
-                </View>
-                {paceText ? (
-                  <View style={s.paceBadge}>
-                    <Text style={s.paceText}>{paceText}</Text>
-                  </View>
-                ) : null}
-              </View>
-              <View style={s.legendItem}>
-                <View style={s.legendItemHeader}>
-                  <View style={s.legendSwatchPrev} />
-                  <Text style={s.legendText}>
-                    Last week (
-                    {prevTotalHours === 0
-                      ? "0h"
-                      : `${prevTotalHours.toFixed(1)}h`}
-                    )
-                  </Text>
-                </View>
-              </View>
             </View>
           </View>
         </View>
