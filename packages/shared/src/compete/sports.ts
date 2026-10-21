@@ -226,6 +226,8 @@ export interface PeriodResult {
 export type UnitSystem = "us" | "metric";
 
 export interface CompeteState {
+  /** Durable qualifying session receipts, including sessions beyond the activity load window. */
+  recordAttempts?: import("./progress").RecordAttempt[];
   /** Rank-priced weekly activity awards; persisted independently of capped result history. */
   effortMilestones?: import("./milestones").EffortMilestone[];
   version: 1;

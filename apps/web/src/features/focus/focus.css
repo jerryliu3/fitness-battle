@@ -2482,3 +2482,17 @@
 .focus-round-takeover > .fb-btn, .focus-round-takeover > .fb-btn-line { margin: 12px 12px 12px 0; }
 
 .phone-shell .focus-elo-score-row strong { background: #f1c75b; color: #282f2c; border-radius: 12px; padding: 6px 12px; }
+
+/* Progress history: direct week inspection and a standing-record staircase. */
+.training-history h2,.record-history h2 { margin: 0 0 12px; }
+.training-bars { display:flex; align-items:stretch; height:150px; gap:5px; margin:16px 0 35px; padding-top:10px; border-bottom:1px solid var(--line,#e0e5dc); }
+.training-bars button { position:relative; flex:1; min-width:0; min-height:44px; padding:0; border:0; background:transparent; display:flex; align-items:flex-end; cursor:pointer; }
+.training-bars button>span { width:100%; border-radius:5px 5px 0 0; background:var(--secondary,#819486); }
+.training-bars button[aria-pressed=true]>span { background:var(--gold,#f1c75b); }
+.training-bars .is-partial { background-image:repeating-linear-gradient(135deg,transparent 0 5px,#ffffff70 5px 7px); }
+.training-bars small { position:absolute; top:calc(100% + 8px); left:0; font-size:9px; white-space:nowrap; }
+.record-time { display:block; font-size:42px; line-height:1.2; letter-spacing:-1px; font-variant-numeric:tabular-nums; }
+.record-distance-tabs { display:flex; gap:6px; overflow-x:auto; padding:6px 0; }
+.record-distance-tabs button { flex-shrink:0; min-height:44px; }
+.record-distance-tabs button[aria-pressed=true] { background:var(--soft,#eef0e9); border-radius:12px; }
+.record-history svg { display:block; width:100%; margin:20px 0 6px; overflow:visible; }
