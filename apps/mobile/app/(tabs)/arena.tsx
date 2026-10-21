@@ -480,7 +480,7 @@ export default function ArenaScreen() {
                         {l.you ? selfLaneLabel(l.name) : l.name}
                       </Text>
                       <Text style={f.rowTitle}>
-                        {l.values[2] - total > 0 ? "+" : ""}{(l.values[2] - total).toFixed(1)} {arena.unit}
+                        {l.values[2].toFixed(1)} {arena.unit}
                       </Text>
                     </Pressable>
                   ))}
@@ -507,29 +507,6 @@ export default function ArenaScreen() {
               }}
             />
 
-            <View style={f.chipRow}>
-              <FocusButton
-                label="Center me"
-                secondary
-                onPress={() => {
-                  setCenter(null);
-                  setSpan(null);
-                }}
-              />
-              <FocusButton
-                label="Fit field"
-                secondary
-                onPress={() => {
-                  const fit = fitArenaWindow(fieldLanes);
-                  setCenter(fit.center);
-                  setSpan(fit.span);
-                }}
-              />
-            </View>
-            <Text style={f.small}>
-              ± {(viewSpan / 2).toFixed(1)} {arena.unit} around{" "}
-              {center === null ? "you" : view.center.toFixed(1)}
-            </Text>
             {arena.lanes.some((l) => l.ghost) && (
               <View style={f.row}>
                 <Text style={f.copy}>Show past you</Text>

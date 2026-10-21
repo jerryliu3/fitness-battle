@@ -113,8 +113,7 @@ export function HomeActivityActions({
   return <View style={{ gap: 10 }}>
     {actionRow}
     {!user && !compact && <Link href="/you">Sign in to add or sync activities</Link>}
-    {note ? <Text style={f.small} accessibilityLiveRegion="polite">{note}</Text> : null}
-    {saveError ? <Text style={f.small}>{saveError}</Text> : null}
+    {!compact && note ? <Text style={f.small} accessibilityLiveRegion="polite">{note}</Text> : null}
     <FocusSheet open={open} onClose={() => setOpen(false)} title="Add today’s activity" body="Manual activities count in Open standings only.">
       {SPORTS.map((item) => <FocusButton key={item.id} secondary label={`${sport === item.id ? "✓ " : ""}${item.name}`} onPress={() => setSport(item.id)}/>)}
       {sportById(sport).gps && <TextInput accessibilityLabel="Mileage" placeholder="Mileage" keyboardType="decimal-pad" style={f.input} value={miles} onChangeText={setMiles}/>}

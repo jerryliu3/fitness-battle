@@ -523,44 +523,9 @@ export function FieldStage({
               ±{(view.span / 2).toFixed(0)} {unit}
             </span>
           </div>
-          <div className="focus-viewport-actions" aria-label="Field viewport">
-            <button
-              type="button"
-              className="focus-viewport-btn"
-              title="Center on you"
-              aria-label="Center me"
-              onClick={() => {
-                void playCue("light");
-                tweenCenterTo(total, view.span, true);
-              }}
-            >
-              ⊙
-            </button>
-            <button
-              type="button"
-              className="focus-viewport-btn"
-              title="Fit full field"
-              aria-label="Fit field"
-              onClick={() => {
-                void playCue("light");
-                const values = runners.map((r) => valueAt(r, time));
-                const min = Math.min(...values);
-                const max = Math.max(...values);
-                const mid = (min + max) / 2;
-                const spread = Math.max(4, max - min + 2);
-                tweenCenterTo(mid, spread * 1.2);
-              }}
-            >
-              ⤢
-            </button>
-          </div>
 
-          <div className="focus-track-caption">
-            <span>
-              ± {(view.span / 2).toFixed(1)} {unit} around{" "}
-              {center === null ? "you" : view.center.toFixed(1)}
-            </span>
-            {ghost && (
+          {ghost && (
+            <div className="focus-track-caption">
               <label>
                 <input
                   type="checkbox"
@@ -573,8 +538,8 @@ export function FieldStage({
                 />{" "}
                 Past you
               </label>
-            )}
-          </div>
+            </div>
+          )}
           </div>
         </ExpandingField>
       </div>

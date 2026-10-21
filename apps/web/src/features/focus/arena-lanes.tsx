@@ -473,7 +473,7 @@ export function ArenaLanes({
                 <text x={40} y={4} fill="#616c63" fontSize={12}>{rank}</text>
                 <text x={64} y={-5} fill="#282f2c" fontSize={13} fontWeight={600}>{l.you ? selfLaneLabel(l.name) : l.name}</text>
                 <text x={64} y={15} fill="#a67c00" fontSize={10}>{scores[l.id] ?? "—"} effort score</text>
-                <text x={width - 58} y={5} textAnchor="end" fill="#282f2c" fontSize={13} fontWeight={700}>{relativeDistance(l.value)}</text>
+                <text x={width - 58} y={5} textAnchor="end" fill="#282f2c" fontSize={13} fontWeight={700}>{l.value.toFixed(1)} {unit}</text>
               </motion.g>
               </g>
             </motion.g>

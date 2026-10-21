@@ -176,15 +176,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setUser(null);
           return;
         }
-        setUser({
-          id: next.id,
-          email: next.email ?? "",
-          displayName:
+        setUser((prev) => {
+          const nextDisplayName =
             (next.user_metadata?.display_name as string | undefined) ??
             next.email?.split("@")[0] ??
-            "Athlete",
-          mode: "supabase",
-          createdAt: next.created_at,
+            "Athlete";
+          if (
+            prev &&
+            prev.id === next.id &&
+            prev.email === (next.email ?? "") &&
+            prev.displayName === nextDisplayName &&
+            prev.mode === "supabase"
+          ) {
+            return prev;
+          }
+          return {
+            id: next.id,
+            email: next.email ?? "",
+            displayName: nextDisplayName,
+            mode: "supabase",
+            createdAt: next.created_at,
+          };
         });
       });
       return () => sub.subscription.unsubscribe();

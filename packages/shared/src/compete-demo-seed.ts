@@ -210,6 +210,20 @@ export function getDemoCompeteState(
           disposition: "counted",
         },
         {
+          id: "strava-act-alice-w0-tue-2",
+          sport: "gym",
+          startedAt: new Date(
+            monday.getTime() + 1 * 86400000 + 17 * 3600000 + 30 * 60000,
+          ).toISOString(),
+          distanceM: 0,
+          movingSec: 2700,
+          avgHr: 132,
+          verified: false,
+          source: "whoop",
+          provenance: "recorded",
+          disposition: "counted",
+        },
+        {
           id: "strava-act-alice-w0-wed",
           sport: "running",
           startedAt: new Date(
@@ -232,6 +246,20 @@ export function getDemoCompeteState(
           distanceM: 5600,
           movingSec: 1980,
           avgHr: 142,
+          verified: true,
+          source: "strava",
+          provenance: "recorded",
+          disposition: "counted",
+        },
+        {
+          id: "strava-act-alice-w0-thu-2",
+          sport: "running",
+          startedAt: new Date(
+            monday.getTime() + 3 * 86400000 + 18 * 3600000 + 15 * 60000,
+          ).toISOString(),
+          distanceM: 3200,
+          movingSec: 1140,
+          avgHr: 130,
           verified: true,
           source: "strava",
           provenance: "recorded",
@@ -581,6 +609,20 @@ export function getDemoCompeteState(
           disposition: "counted",
         },
         {
+          id: "strava-act-bob-w0-mon-2",
+          sport: "running",
+          startedAt: new Date(
+            monday.getTime() + 18 * 3600000,
+          ).toISOString(),
+          distanceM: 4000,
+          movingSec: 1440,
+          avgHr: 135,
+          verified: true,
+          source: "garmin",
+          provenance: "recorded",
+          disposition: "counted",
+        },
+        {
           id: "strava-act-bob-w0-wed",
           sport: "cycling",
           startedAt: new Date(
@@ -699,6 +741,20 @@ export function getDemoCompeteState(
           avgHr: 162,
           verified: true,
           source: "strava",
+          provenance: "recorded",
+          disposition: "counted",
+        },
+        {
+          id: "strava-act-carla-w0-mon-2",
+          sport: "gym",
+          startedAt: new Date(
+            monday.getTime() + 17 * 3600000 + 30 * 60000,
+          ).toISOString(),
+          distanceM: 0,
+          movingSec: 3000,
+          avgHr: 128,
+          verified: false,
+          source: "whoop",
           provenance: "recorded",
           disposition: "counted",
         },
