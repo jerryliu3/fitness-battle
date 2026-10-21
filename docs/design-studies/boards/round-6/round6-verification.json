@@ -1,0 +1,11 @@
+{
+  "combinations": 180,
+  "results": [
+    "180 material/shape/field/viewport combinations pass at 1440, 390 and 320px; centered geometry, clear heads and no page overflow",
+    "All finishes retain faint underlay; Soft blend is almost opaque farther back and quiet under the wake",
+    "Inspection, persistent expansion/material changes and gain preserve canonical racer/trace alignment",
+    "Oval/mile loops, phone controls and shareable material URLs pass",
+    "No browser runtime errors"
+  ],
+  "errors": []
+}

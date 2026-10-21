@@ -210,8 +210,6 @@ export function LaneTrack({
               const effect = !l.you
                 ? overtakeFrame?.rivalEffects[l.id]
                 : undefined;
-              const speed =
-                l.you && animating ? (overtakeFrame?.speed ?? 0) : 0;
               const charging =
                 l.you && animating ? (overtakeFrame?.charging ?? 0) : 0;
               const point = course.point(value, i, 0, true), scale = course.markerScale;
@@ -327,7 +325,7 @@ export function LaneTrack({
                 </LaneRacerTarget>
               );
             })}
-            {ghost && (() => { const p = course.point(ghost.values[index] ?? 0, ordered.findIndex(l => l.you), 18 * course.markerScale, true); return <G onPress={() => onSelect(ghost)}><Circle cx={p.x} cy={p.y} r={13} fill="#ffffffcc" stroke="#616c63" strokeDasharray="3 3"/></G>; })()}
+            {ghost && (() => { const p = course.point(ghost.values[index] ?? 0, ordered.findIndex(l => l.you), 18 * course.markerScale, true); return <G onPress={() => onSelect(ghost)}><Circle cx={p.x} cy={p.y} r={13 * course.markerScale} fill="#ffffffcc" stroke="#616c63" strokeDasharray="3 3"/></G>; })()}
             <SvgText x={18} y={522} fontSize={9} fill="#616c63">
               {course.oval ? `${fieldLap(overtakeFrame?.youValue ?? me?.values[index] ?? 0, unit).laps} laps · ${(overtakeFrame?.youValue ?? me?.values[index] ?? 0).toFixed(1)} ${unit} total` : exploring
                 ? "Drag vertically to explore · Done to scroll page"

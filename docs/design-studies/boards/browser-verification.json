@@ -1,0 +1,16 @@
+{
+  "results": [
+    "Absolute ground moves during pan; athlete total is unchanged",
+    "Counted-session selection opens the contribution inspector",
+    "Expansion preserves one SVG, selected session, and Escape focus return",
+    "Finite gain preview adds a lasting session segment and reaches the correct total",
+    "Both 2D treatments and both orientations fit 320/390/768/1440px; vertical ruler stays pinned",
+    "Effort remains points; outdoor 3D is unavailable for effort; reduced-motion gain finishes immediately",
+    "Miles display the same physical distance",
+    "Horizon retains the same WebGL canvas through expansion",
+    "Horizon Fit field uses overhead view and displays all five athletes",
+    "WebGL context loss falls back to 2D with preserved data",
+    "No browser runtime errors"
+  ],
+  "errors": []
+}

@@ -4,6 +4,8 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 const mock = vi.hoisted(() => ({
   params: {} as Record<string, string | undefined>,
   navigate: vi.fn(),
+  push: vi.fn(),
+  setParams: vi.fn(),
 }));
 vi.mock("react-native", () => ({
   StyleSheet: { create: (styles: unknown) => styles },
@@ -15,11 +17,15 @@ vi.mock("react-native", () => ({
 vi.mock("react-native-safe-area-context", () => ({
   SafeAreaView: "SafeAreaView",
 }));
-vi.mock("expo-router", () => ({
-  Redirect: "Redirect",
+vi.mock("expo-router", async () => ({
+  useFocusEffect: (await import("react")).useEffect,
   useLocalSearchParams: () => mock.params,
   usePathname: () => "/today",
-  useRouter: () => ({ navigate: mock.navigate }),
+  useRouter: () => ({
+    navigate: mock.navigate,
+    push: mock.push,
+    setParams: mock.setParams,
+  }),
 }));
 vi.mock("../lib/compete-store", () => ({
   useCompeteStore: () => ({ state: null }),
@@ -27,7 +33,7 @@ vi.mock("../lib/compete-store", () => ({
 vi.mock("../features/progress-screen", () => ({
   ProgressScreen: "ProgressScreen",
 }));
-vi.mock("./mascot/ember", () => ({ Ember: "Ember" }));
+vi.mock("react-native-svg", () => ({ default: "Svg", Path: "Path" }));
 import ProgressTab from "../../app/(tabs)/you";
 import { AppHeader } from "./app-header";
 let renderer: ReactTestRenderer;
@@ -64,9 +70,23 @@ describe("mobile navigation parity", () => {
     await act(async () => {
       renderer = create(createElement(ProgressTab));
     });
-    expect(renderer.root.findByType("Redirect" as never).props.href).toEqual({
-      pathname: "/athlete",
-      params,
+    expect(mock.setParams).toHaveBeenCalledWith({
+      panel: undefined,
+      tracker: undefined,
+      provider: undefined,
     });
+    expect(mock.push).toHaveBeenCalledWith({
+      pathname: "/athlete",
+      params: {
+        panel: undefined,
+        tracker: undefined,
+        provider: undefined,
+        ...params,
+      },
+    });
+    mock.params = {};
+    await act(async () => renderer.update(createElement(ProgressTab)));
+    expect(renderer.root.findByType("ProgressScreen" as never)).toBeTruthy();
+    expect(mock.push).toHaveBeenCalledTimes(1);
   });
 });

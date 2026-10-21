@@ -14,7 +14,6 @@ import { decodePhoto } from "../lib/profile-photo";
 import { supabase } from "../lib/supabase";
 import { SHELL_COLORS as c } from "../theme";
 import { FocusButton, FocusSheet, f } from "../ui/focus";
-import { Ember } from "../ui/mascot/ember";
 
 export function ProfilePhoto({ state }: { state: CompeteState }) {
   const { user, demoMode } = useAuth();

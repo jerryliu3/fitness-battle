@@ -1,0 +1,15 @@
+{
+  "combinations": 135,
+  "results": [
+    "Defaults select Meadow Trail, Banked trail and Map; Contour Atlas is removed",
+    "135 background/progress/viewport combinations pass at 1440, 390 and 320px without page overflow",
+    "Straight track exposes five numbered starts and whole-kilometer splits",
+    "Oval Map zoom scales both axes; Fit field restores the entire closed circuit",
+    "Oval expansion retains its SVG and returns focus on Escape",
+    "Gain crosses lap boundaries honestly: 19.2 km becomes 21 laps + 400m",
+    "One-mile circuits convert lap position without changing km totals; unit and surroundings restore from URL",
+    "Distance-only lens unfolds the oval into straight distance lanes",
+    "No browser runtime errors"
+  ],
+  "errors": []
+}

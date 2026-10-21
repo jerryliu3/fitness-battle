@@ -49,3 +49,15 @@ No unresolved blocking findings were identified in the changed code. Native full
 Browser checks use disposable local demo state and no live account or tracker writes. Normal native exports establish bundling; an installed iOS/Android binary, device gestures and mobile GPU performance were not exercised. This limitation does not imply device verification from Expo web.
 
 Review captures: [web 390px](compete-grounds/web-390.png), [web 320px](compete-grounds/web-320.png), [native component tree 390px](compete-grounds/native-390.png), [native component tree 320px](compete-grounds/native-320.png).
+
+## Latest-main reconciliation and light review
+
+October 21, 2026: merged `origin/main` at `a77aa45` into this PR, retaining #218's study history, #236's native review fixes and #235's self-review fixes. The only textual conflict was the design guide; it now preserves the earlier exploration under an explicit history heading and keeps the production selection authoritative.
+
+Confirmed that the integrated field retains animated rank from the shared frame and selection without the retired athlete card. Tracker ownership checks, one-time callback consumption, retained Progress navigation, demo seed persistence and the orange native effort trend remain the upstream implementations. Their regressions pass alongside the field tests. No tracker, account or database implementation was rewritten in this reconciliation.
+
+The light pass corrected two remaining native parity details: the header's no-photo fallback now uses the same muted shared person icon on white as web/profile settings, and the past-self marker scales with the Map lens like its web counterpart. The 44px native header press target is retained.
+
+Post-merge workspace typecheck and tests pass: shared 270, rankings 16, pursuit 2, mobile 96 and web 238, totaling **622 passed**, with five existing database-dependent tests skipped. The mobile suite was repeated after the two small parity adjustments and passes all 96 tests. The installed-device limitations above still apply.
+
+The merged production web build and normal Expo web/iOS/Android exports also pass after the parity adjustments.

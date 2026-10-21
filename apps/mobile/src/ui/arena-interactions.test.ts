@@ -10,6 +10,12 @@ const mock = vi.hoisted(() => ({
   state: null as CompeteState | null,
   mounts: 0,
   dispatch: vi.fn(),
+  reducedMotion: true,
+  baselines: new Map<string, string>(),
+  readBaseline: (key: string): string | null => mock.baselines.get(key) ?? null,
+  writeBaseline: (key: string, value: string) => {
+    mock.baselines.set(key, value);
+  },
 }));
 vi.mock("react-native", async () => {
   const { createElement } = await import("react");
@@ -46,8 +52,8 @@ vi.mock("../lib/compete-store", () => ({
     state: mock.state,
     dispatch: mock.dispatch,
     accountKey: "audit",
-    readBaselineItem: () => null,
-    writeBaselineItem() {},
+    readBaselineItem: mock.readBaseline,
+    writeBaselineItem: mock.writeBaseline,
   }),
 }));
 vi.mock("../lib/haptics", () => ({ playCue: vi.fn() }));
@@ -65,7 +71,9 @@ vi.mock("./award-shelf", () => ({ AwardShelf: () => null }));
 vi.mock("react-native-svg", () => ({ default: "Svg" }));
 vi.mock("./polished-racer", () => ({ PolishedRacer: "PolishedRacer" }));
 vi.mock("./zoom-control", () => ({ ZoomControl: "ZoomControl" }));
-vi.mock("./use-reduced-motion", () => ({ useReducedMotion: () => true }));
+vi.mock("./use-reduced-motion", () => ({
+  useReducedMotion: () => mock.reducedMotion,
+}));
 vi.mock("./focus", () => ({
   FocusButton: "FocusButton",
   FocusSegments: "Segments",
@@ -98,6 +106,8 @@ let renderer: ReactTestRenderer;
 afterEach(async () => {
   if (renderer) await act(async () => renderer.unmount());
   vi.unstubAllGlobals();
+  mock.baselines.clear();
+  mock.reducedMotion = true;
 });
 describe("native competition interactions", () => {
   it("renders registration without bare error text and retains the lane instance across standings", async () => {
@@ -116,6 +126,13 @@ describe("native competition interactions", () => {
         .findAllByType("Segments" as never)
         .find((node) => node.props.label === "Running field view")!;
     expect(mock.mounts).toBe(1);
+    const rival = lane().props.lanes.find(
+      (item: { you: boolean; ghost: boolean }) => !item.you && !item.ghost,
+    );
+    await act(async () => lane().props.onSelect(rival));
+    expect(lane().props.view.center).toBe(rival.values[2]);
+    expect(JSON.stringify(renderer.toJSON())).not.toContain("athlete details");
+    expect(JSON.stringify(renderer.toJSON())).not.toContain(" · Place ");
     await act(async () => viewControl().props.onChange("standings"));
     expect(lane().props.active).toBe(false);
     await act(async () => viewControl().props.onChange("lanes"));
@@ -126,6 +143,38 @@ describe("native competition interactions", () => {
       .find((node) => node.props.label === "＋ Register for another event")!;
     await act(async () => register.props.onPress());
     expect(renderer.root.findByType("Sheet" as never).props.open).toBe(true);
+  });
+
+  it("uses the animated field rank instead of counting the athlete's final position as a rival", async () => {
+    vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
+    vi.stubGlobal("requestAnimationFrame", () => 1);
+    vi.stubGlobal("cancelAnimationFrame", vi.fn());
+    mock.reducedMotion = false;
+    mock.state = reduceCompete(freshState(), {
+      type: "opt-in",
+      sport: "running",
+    });
+    await act(async () => {
+      renderer = create(createElement(ArenaScreen));
+    });
+    mock.state = reduceCompete(mock.state, {
+      type: "log-manual",
+      activityId: "review-run",
+      sport: "running",
+      distanceM: 1609.344,
+      movingSec: 600,
+    });
+    await act(async () => renderer.update(createElement(ArenaScreen)));
+    const lane = renderer.root.findByType("LaneTrack" as never);
+    const frame = lane.props.overtakeFrame;
+    expect(frame).not.toBeNull();
+    const rankText = renderer.root
+      .findAllByType("Text" as never)
+      .find((node) => node.props.children?.[1] === " / ")!;
+    expect(rankText.props.children[0]).toBe(frame.currentRank);
+    expect(frame.currentRank).toBeLessThanOrEqual(
+      lane.props.lanes.filter((item: { ghost: boolean }) => !item.ghost).length,
+    );
   });
 
   it("renders each registered sport with independent field controls", async () => {

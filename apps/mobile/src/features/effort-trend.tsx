@@ -85,7 +85,7 @@ export function EffortTrend({ state }: { state: CompeteState }) {
         {model.linePoints ? (
           <Polyline
             points={model.linePoints}
-            stroke={c.ink}
+            stroke={c.tennis}
             strokeWidth={2.5}
             fill="none"
           />

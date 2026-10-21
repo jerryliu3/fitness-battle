@@ -19,8 +19,8 @@ export function DataSyncActions({ provider }: { provider?: ProviderId }) {
   const [busy, setBusy] = useState(false),
     [note, setNote] = useState("");
   const flight = useRef(false);
-  const owner = useRef(user?.id);
-  owner.current = user?.id;
+  const owner = useRef({ id: user?.id });
+  if (owner.current.id !== user?.id) owner.current = { id: user?.id };
   const live = !!user && !demoMode && user.mode !== "demo";
   const mounted = useRef(true);
   useEffect(() => {
@@ -29,19 +29,21 @@ export function DataSyncActions({ provider }: { provider?: ProviderId }) {
       mounted.current = false;
     };
   }, []);
-  async function run(work: () => Promise<void>) {
+  useEffect(() => setNote(""), [user?.id]);
+  async function run(work: (isCurrent: () => boolean) => Promise<void>) {
     if (flight.current) return;
-    const id = user?.id;
+    const account = owner.current;
+    const isCurrent = () => mounted.current && owner.current === account;
     flight.current = true;
     setBusy(true);
     setNote("");
     try {
-      await work();
+      await work(isCurrent);
     } catch (e) {
-      if (mounted.current && owner.current === id) setNote("Sync failed");
+      if (isCurrent()) setNote(e instanceof Error ? e.message : "Sync failed");
     } finally {
       flight.current = false;
-      setBusy(false);
+      if (mounted.current) setBusy(false);
     }
   }
   function apply(
@@ -55,7 +57,7 @@ export function DataSyncActions({ provider }: { provider?: ProviderId }) {
     id?: string,
     imported = false,
   ) {
-    if (!mounted.current || id !== owner.current) return;
+    if (!mounted.current || id !== owner.current.id) return;
     const activities = (body.activities ?? [])
       .map((sample) =>
         activityFromSample(
@@ -79,6 +81,7 @@ export function DataSyncActions({ provider }: { provider?: ProviderId }) {
     );
     dispatch({
       type: "apply-sync",
+      accountId: id,
       provider,
       activities,
       readiness,
@@ -102,7 +105,7 @@ export function DataSyncActions({ provider }: { provider?: ProviderId }) {
               disabled={busy}
               secondary
               onPress={() =>
-                void run(async () => {
+                void run(async (isCurrent) => {
                   if (!live) {
                     dispatch({
                       type: "sync",
@@ -121,7 +124,7 @@ export function DataSyncActions({ provider }: { provider?: ProviderId }) {
                     allowUnpersisted: true,
                     body: { provider: l.provider },
                   });
-                  apply(l.provider, body, id);
+                  if (isCurrent()) apply(l.provider, body, id);
                 })
               }
             />
@@ -131,7 +134,7 @@ export function DataSyncActions({ provider }: { provider?: ProviderId }) {
               disabled={busy}
               secondary
               onPress={() =>
-                void run(async () => {
+                void run(async (isCurrent) => {
                   const id = user?.id;
                   if (live)
                     await requestApi(
@@ -140,8 +143,12 @@ export function DataSyncActions({ provider }: { provider?: ProviderId }) {
                       "/api/fitness/disconnect",
                       { body: { provider: l.provider } },
                     );
-                  if (mounted.current && id === owner.current) {
-                    dispatch({ type: "unlink", provider: l.provider });
+                  if (isCurrent()) {
+                    dispatch({
+                      type: "unlink",
+                      provider: l.provider,
+                      accountId: id,
+                    });
                     setNote("Tracker disconnected.");
                   }
                 })
@@ -156,7 +163,7 @@ export function DataSyncActions({ provider }: { provider?: ProviderId }) {
             disabled={busy}
             secondary
             onPress={() =>
-              void run(async () => {
+              void run(async (isCurrent) => {
                 if (!live || !accessToken)
                   throw new Error(
                     "A live account is required to import an activity file.",
@@ -166,7 +173,7 @@ export function DataSyncActions({ provider }: { provider?: ProviderId }) {
                   type: "*/*",
                   copyToCacheDirectory: true,
                 });
-                if (picked.canceled) return;
+                if (!isCurrent() || picked.canceled) return;
                 const file = picked.assets[0];
                 if (!/\.(fit|gpx|tcx|zip)$/i.test(file.name))
                   throw new Error("Choose a .fit, .gpx, .tcx, or .zip file.");
@@ -185,6 +192,9 @@ export function DataSyncActions({ provider }: { provider?: ProviderId }) {
                     name: file.name,
                     type: file.mimeType ?? "application/octet-stream",
                   } as unknown as Blob);
+                // The picker and reading a web file can outlive this account
+                // or screen. Check again before sending a persisted upload.
+                if (!isCurrent()) return;
                 const response = await fetch(
                   `${mobileEnv.apiUrl}/api/fitness/import`,
                   {
@@ -200,7 +210,7 @@ export function DataSyncActions({ provider }: { provider?: ProviderId }) {
                       ? "No valid activities found in that file."
                       : "Could not import that file. Please check the file and try again.",
                   );
-                apply("garmin", body, id, true);
+                if (isCurrent()) apply("garmin", body, id, true);
               })
             }
           />

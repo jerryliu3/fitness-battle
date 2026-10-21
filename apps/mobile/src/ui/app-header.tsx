@@ -1,10 +1,11 @@
 import { usePathname, useRouter } from "expo-router";
 import { Image, Pressable, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import Svg, { Path } from "react-native-svg";
+import { PERSON_ICON_PATH } from "@fitness-battle/shared";
 import { useCompeteStore } from "../lib/compete-store";
 import { isAthleteSettingsPath } from "../lib/navigation";
 import { SHELL_COLORS as c } from "../theme";
-import { Ember } from "./mascot/ember";
 
 export function AppHeader() {
   const { state } = useCompeteStore();
@@ -33,7 +34,9 @@ export function AppHeader() {
           {state?.avatarUrl ? (
             <Image source={{ uri: state.avatarUrl }} style={s.photo} />
           ) : (
-            <Ember size={42} expression="happy" shadow={false} />
+            <Svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke={c.muted} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" accessible={false}>
+              <Path d={PERSON_ICON_PATH}/>
+            </Svg>
           )}
         </Pressable>
       </View>
@@ -63,7 +66,7 @@ const s = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: c.ink,
+    backgroundColor: c.card,
     alignItems: "center",
     justifyContent: "center",
     overflow: "hidden",
