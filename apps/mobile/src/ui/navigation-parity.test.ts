@@ -33,7 +33,7 @@ vi.mock("../lib/compete-store", () => ({
 vi.mock("../features/progress-screen", () => ({
   ProgressScreen: "ProgressScreen",
 }));
-vi.mock("./mascot/ember", () => ({ Ember: "Ember" }));
+vi.mock("react-native-svg", () => ({ default: "Svg", Path: "Path" }));
 import ProgressTab from "../../app/(tabs)/you";
 import { AppHeader } from "./app-header";
 let renderer: ReactTestRenderer;

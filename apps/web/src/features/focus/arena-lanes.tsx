@@ -1,5 +1,5 @@
 "use client";
-import { useRef, useLayoutEffect, useState, useId } from "react";
+import { useRef, useLayoutEffect, useState, useId, useMemo } from "react";
 import { motion, useReducedMotion } from "motion/react";
 import {
   arenaPosition,
@@ -8,17 +8,19 @@ import {
   clampArenaLaneCenter,
   orderedArenaLanes,
   polishedLaneScale,
+  fieldCourse, fieldCourseScene, fieldScaleScene, fieldLap, defaultFieldAppearance, type FieldAppearance,
   selfLaneLabel,
   type ArenaOvertakeFrame,
   type ArenaOvertakePlan,
   type ArenaSceneLane,
   type ArenaViewWindow,
 } from "@fitness-battle/shared";
-import { laneGeometry, centeredLaneScroll } from "@/features/field/components/lane-geometry";
+import { drawFieldNode } from "@/features/field/components/field-course";
 import { Ember } from "@/components/mascot/ember";
 import { PolishedRacer, usePolishedWakeTime } from "@/features/brand/polished-racer";
 export function ArenaLanes({
   lanes,
+  appearance = defaultFieldAppearance,
   presentation = "lanes",
   scores = {},
   immersive = false,
@@ -32,6 +34,7 @@ export function ArenaLanes({
   overtakePlan = null,
 }: {
   lanes: ArenaSceneLane[];
+  appearance?: FieldAppearance;
   presentation?: "lanes" | "standings";
   scores?: Record<string, number>;
   immersive?: boolean;
@@ -51,7 +54,7 @@ export function ArenaLanes({
   const wakeTime = usePolishedWakeTime(host);
   const [measured, setMeasured] = useState(false);
   const [size, setSize] = useState({ width: 360, height: 540 });
-  const previousGeometry = useRef<{ width: number; laneWidth: number; count: number } | null>(null);
+  const previousGeometry = useRef<{ width: number; laneWidth: number; count: number; left: number; oval: boolean } | null>(null);
   const laneScroll = useRef<number | null>(null);
   const drag = useRef<{
     pointerId: number;
@@ -74,18 +77,22 @@ export function ArenaLanes({
       : lanes;
   const ordered = orderedArenaLanes(liveLanes);
   const ghost = liveLanes.find((l) => l.ghost);
-  const effectiveCenter = clampArenaLaneCenter(view.center, view.span);
+  const effectiveCenter = appearance.ground === "oval" ? Math.max(0, view.center) : clampArenaLaneCenter(view.center, view.span);
+  const clampPanCenter = (value: number, span: number) => appearance.ground === "oval" ? Math.max(0, value) : clampArenaLaneCenter(value, span);
   const effectiveView: ArenaViewWindow =
     effectiveCenter === view.center
       ? view
       : { center: effectiveCenter, span: view.span };
   const bounds = arenaWindow(effectiveView.center, effectiveView.span);
-  const geometry = laneGeometry(size.width, size.height, ordered.length);
-  const width = standings ? size.width : geometry.width;
-  const height = standings ? Math.max(160, ordered.length * 76 + 24) : geometry.height;
-  const { laneWidth, plotHeight } = geometry;
-  const y = (v: number) => 72 + arenaPosition(v, effectiveView).fraction * plotHeight;
-  const maxTailY = Math.min(height - 58, bounds.min <= 0 && bounds.max >= 0 ? y(0) + 4 : height - 58);
+  const previousCamera = useRef({ center: effectiveView.center, span: effectiveView.span, ground: appearance.ground });
+  const cameraChanged = previousCamera.current.center !== effectiveView.center || previousCamera.current.span !== effectiveView.span || previousCamera.current.ground !== appearance.ground;
+  useLayoutEffect(() => { previousCamera.current = { center: effectiveView.center, span: effectiveView.span, ground: appearance.ground }; });
+  const course = useMemo(() => fieldCourse(size.width, size.height, ordered.length, effectiveView, unit, appearance), [size.width, size.height, ordered.length, effectiveView.center, effectiveView.span, unit, appearance]);
+  const groundPaint = useMemo(() => fieldCourseScene(course, appearance, ordered, unit, prefix).map(drawFieldNode), [course, appearance, lanes, overtakeFrame, unit, prefix]);
+  const width = standings ? size.width : course.width;
+  const height = standings ? Math.max(160, ordered.length * 76 + 24) : course.height;
+  const laneWidth = course.laneWidth, plotHeight = course.length;
+  const maxTailY = Math.min(height - 58, bounds.min <= 0 && bounds.max >= 0 ? course.along(0) + 4 : height - 58);
 
   const yourValue = liveLanes.find((lane) => lane.you)?.value ?? 0;
   const relativeDistance = (value: number) => `${value - yourValue > 0 ? "+" : ""}${(value - yourValue).toFixed(1)} ${unit}`;
@@ -123,14 +130,15 @@ export function ArenaLanes({
     const el = host.current;
     if (!el || el.clientWidth === 0 || standings) return;
     const previous = previousGeometry.current;
-    const laneIndex = previous
-      ? ((laneScroll.current ?? el.scrollLeft) + previous.width / 2 - 10) / previous.laneWidth - 0.5
+    const laneIndex = previous && !previous.oval && !course.oval && previous.count === ordered.length
+      ? ((laneScroll.current ?? el.scrollLeft) + previous.width / 2 - previous.left) / previous.laneWidth - 0.5
       : Math.max(0, ordered.findIndex((lane) => lane.you));
-    el.scrollLeft = centeredLaneScroll(laneIndex, laneWidth, size.width, width);
+    el.scrollLeft = course.oval ? 0 : Math.max(0, Math.min(width - size.width, course.left + (laneIndex + .5) * laneWidth - size.width / 2));
     laneScroll.current = el.scrollLeft;
-    previousGeometry.current = { width: size.width, laneWidth, count: ordered.length };
-  }, [width, laneWidth, size.width, standings]);
+    previousGeometry.current = { width: size.width, laneWidth, count: ordered.length, left: course.left, oval: course.oval };
+  }, [width, laneWidth, size.width, standings, course.oval, course.left]);
   return (
+    <div style={{ position: "relative", minWidth: 0 }}>
     <div className="focus-lane-scroll" ref={host} data-immersive={immersive}
       onScroll={(event) => { if (!standings) laneScroll.current = event.currentTarget.scrollLeft; }}
       style={{ visibility: measured ? "visible" : "hidden", height: standings ? height : undefined, transition: reduced ? "none" : "height .48s cubic-bezier(.22,1,.36,1)" }}>
@@ -150,7 +158,7 @@ export function ArenaLanes({
           if (e.key === "ArrowUp" || e.key === "ArrowDown") {
             e.preventDefault();
             onPan(
-              clampArenaLaneCenter(
+              clampPanCenter(
                 effectiveView.center +
                   ((e.key === "ArrowUp" ? 1 : -1) * effectiveView.span) / 4,
                 effectiveView.span,
@@ -211,7 +219,7 @@ export function ArenaLanes({
             if (Math.abs(dy) > 5) {
               press.moved = true;
               onPan(
-                clampArenaLaneCenter(
+                clampPanCenter(
                   press.center + (dy / plotHeight) * effectiveView.span,
                   effectiveView.span,
                 ),
@@ -249,109 +257,9 @@ export function ArenaLanes({
           }
         }}
       >
-        <defs>
-          <linearGradient id={`${prefix}-road`} x2="0" y2="1">
-            <stop stopColor="#f7faf3" />
-            <stop offset="0.45" stopColor="#eef3e8" />
-            <stop offset="1" stopColor="#e4ecdc" />
-          </linearGradient>
-          <linearGradient id={`${prefix}-you-lane`} x2="0" y2="1">
-            <stop stopColor="#f1c75b66" />
-            <stop offset="1" stopColor="#f1c75b20" />
-          </linearGradient>
-          <radialGradient id={`${prefix}-you-glow`} cx="50%" cy="50%" r="50%">
-            <stop stopColor="#f1c75b" stopOpacity="0.55" />
-            <stop offset="1" stopColor="#f1c75b" stopOpacity="0" />
-          </radialGradient>
-          <linearGradient id={`${prefix}-afterburn-wake`} x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0" stopColor="#f1c75b" stopOpacity="0.65" />
-            <stop offset="0.45" stopColor="#f1c75b" stopOpacity="0.28" />
-            <stop offset="1" stopColor="#f1c75b" stopOpacity="0" />
-          </linearGradient>
-          <filter id={`${prefix}-soft`} x="-40%" y="-40%" width="180%" height="180%">
-            <feDropShadow
-              dx="0"
-              dy="3"
-              stdDeviation="3"
-              floodColor="#282f2c"
-              floodOpacity="0.18"
-            />
-          </filter>
-        </defs>
         <motion.g aria-hidden={standings} initial={false} animate={{ opacity: standings ? 0 : 1 }} style={{ pointerEvents: "none" }}>
-        <rect width={width} height={height} rx="24" fill={`url(#${prefix}-road)`} />
-        <rect
-          x="10"
-          y="56"
-          width={width - 62}
-          height={height - 110}
-          rx="18"
-          fill="#ffffff55"
-          stroke="#d7e0cf"
-        />
-        {ordered.map((l, i) => (
-          <g key={l.id}>
-            {l.you && (
-              <rect
-                x={i * laneWidth + 10}
-                y="56"
-                width={laneWidth}
-                height={height - 110}
-                fill={`url(#${prefix}-you-lane)`}
-                rx="14"
-              />
-            )}
-            <line
-              x1={i * laneWidth + 10}
-              x2={i * laneWidth + 10}
-              y1="64"
-              y2={height - 64}
-              stroke={l.you ? "#b7c9a4" : "#d3ddcb"}
-              strokeWidth={l.you ? 1.5 : 1}
-              strokeDasharray={l.you ? "0" : "5 9"}
-            />
-            <text
-              x={(i + 0.5) * laneWidth + 10}
-              y="36"
-              textAnchor="middle"
-              className={l.you ? "lane-title is-you" : "lane-title"}
-            >
-              {l.you ? selfLaneLabel(l.name, "caps") : l.initials}
-            </text>
-          </g>
-        ))}
-        {Array.from({ length: 7 }, (_, i) => bounds.min + (bounds.span * i) / 6)
-          .filter((v) => v >= 0)
-          .map((v) => (
-            <g key={v}>
-              <line
-                x1="18"
-                x2={width - 52}
-                y1={y(v)}
-                y2={y(v)}
-                stroke="#c5d2bb"
-                strokeDasharray="2 7"
-              />
-              <text x={width - 42} y={y(v) + 4} className="lane-distance">
-                {v.toFixed(view.span < 6 ? 1 : 0)}
-              </text>
-            </g>
-          ))}
-        {bounds.min <= 0 && bounds.max >= 0 && (
-          <>
-            <line
-              x1="18"
-              x2={width - 52}
-              y1={y(0)}
-              y2={y(0)}
-              stroke="#282f2c"
-              strokeWidth="2"
-            />
-            <text x="18" y={y(0) - 10} className="lane-distance">
-              START
-            </text>
-          </>
-        )}
+          {groundPaint}
+          {!course.oval && course.laneWidth >= 48 && ordered.map((lane, i) => <text key={lane.id} x={course.point(effectiveView.center, i).x} y={36} textAnchor="middle" className={lane.you ? "lane-title is-you" : "lane-title"}>{lane.you ? selfLaneLabel(lane.name, "caps") : lane.initials}</text>)}
         </motion.g>
         {ordered.map((l, i) => {
           const position = arenaPosition(l.value, effectiveView);
@@ -360,8 +268,11 @@ export function ArenaLanes({
             l.you && animating ? (overtakeFrame?.charging ?? 0) : 0;
           const row = sortedByValue.findIndex((lane) => lane.id === l.id);
           const rank = 1 + sortedByValue.filter((lane) => lane.value > l.value + 0.000001).length;
-          const targetY = standings ? 48 + row * 76 : y(l.value) + (l.you ? charging * 4 : 0);
-          const targetX = standings ? 38 : (i + 0.5) * laneWidth + 10 + (effect?.joltX ?? 0);
+          const point = course.point(l.value, i, 0, true);
+          const targetY = standings ? 48 + row * 76 : point.y + (l.you ? charging * 4 * course.markerScale : 0);
+          const targetX = standings ? 38 : point.x + (effect?.joltX ?? 0) * course.markerScale;
+          const markerScale = standings ? 1 : course.markerScale;
+          const edge = !course.oval && position.edge;
           const xx = 0, yy = 0;
           const active = selected === l.id || l.you;
           const headHalf = 29 * polishedLaneScale(Boolean(l.you));
@@ -370,12 +281,12 @@ export function ArenaLanes({
               key={l.id}
               initial={false}
               animate={{ x: targetX, y: targetY }}
-              transition={{ duration: reduced || drag.current || animating || previousGeometry.current?.width !== size.width ? 0 : 0.48, ease: [0.22, 1, 0.36, 1] }}
+              transition={{ duration: reduced || cameraChanged || drag.current || animating || previousGeometry.current?.width !== size.width ? 0 : 0.48, ease: [0.22, 1, 0.36, 1] }}
               data-athlete={l.id}
               role="button"
               aria-pressed={selected === l.id}
               tabIndex={0}
-              aria-label={`${l.name}, ${standings ? `place ${rank}, ` : ""}${formatLastUpdated(l)}, ${relativeDistance(l.value)} relative to you${!standings && position.edge ? `, ${position.edge} of visible range` : ""}`}
+              aria-label={`${course.oval && !standings ? `${fieldLap(l.value, unit).laps} completed laps, ` : ""}${l.name}, ${standings ? `place ${rank}, ` : ""}${formatLastUpdated(l)}, ${relativeDistance(l.value)} relative to you${!standings && edge ? `, ${position.edge} of visible range` : ""}`}
               onKeyDown={(e) => {
                 if (e.key === "Enter" || e.key === " ") {
                   e.preventDefault();
@@ -384,6 +295,7 @@ export function ArenaLanes({
                 }
               }}
             >
+              <g transform={`rotate(${standings ? 0 : point.angle}) scale(${markerScale})`}>
               {l.you && charging > 0.02 && (
                 <g
                   opacity={charging}
@@ -411,7 +323,7 @@ export function ArenaLanes({
                   data-overtake-ripple="true"
                 />
               )}
-              {firstPlaceId === l.id && !standings && !position.edge && (
+              {firstPlaceId === l.id && !standings && !edge && (
                 <foreignObject
                   x={xx - 16}
                   y={yy - headHalf - 64}
@@ -425,12 +337,12 @@ export function ArenaLanes({
               )}
               {/* Clip only the wake, in racer-local coordinates; the head must stay
                   visible at field edges and throughout the standings transition. */}
-              {standings || !position.edge ? (
+              {standings || !edge ? (
                 <PolishedRacer x={xx} y={yy} you={Boolean(l.you)} gold={rank === 1} active={active}
-                  showWake={!standings} wakeBottom={maxTailY-targetY} time={wakeTime}/>
+                  showWake={!standings} wakeBottom={course.oval ? undefined : (maxTailY-targetY)/markerScale} time={wakeTime}/>
               ) : <circle r={18} fill="white" stroke="#616c63" strokeDasharray="3 3"/>}
               <rect className="focus-racer-focus-ring" x={-23} y={-headHalf-3} width={46} height={headHalf*2+6} rx={23} fill="none" stroke="#f1c75b" strokeWidth={2}/>
-              <rect x={xx - 24} y={yy - headHalf - 4} width="48" height={headHalf * 2 + 8} rx="24" fill="transparent"/>
+              <rect x={xx - 24 / markerScale} y={yy - Math.max(22 / markerScale, headHalf + 4)} width={48 / markerScale} height={Math.max(44 / markerScale, headHalf * 2 + 8)} rx="24" fill="transparent"/>
               <text
                 x={xx}
                 y={yy + 4}
@@ -438,8 +350,8 @@ export function ArenaLanes({
                 className="lane-initial"
                 fill="#282f2c"
               >
-                {!standings && position.edge
-                  ? position.edge === "ahead"
+                {!standings && edge
+                  ? edge === "ahead"
                     ? "↑"
                     : "↓"
                   : l.initials}
@@ -467,6 +379,7 @@ export function ArenaLanes({
                 </text>
                 </motion.g>
               )}
+              </g>
               <g aria-hidden={!standings} display={standings ? "inline" : "none"}>
               <motion.g initial={false} animate={{ opacity: standings ? 1 : 0 }}>
                 <rect x={-30} y={-33} width={Math.max(200, width - 16)} height={70} rx={14} fill="transparent" />
@@ -483,8 +396,8 @@ export function ArenaLanes({
         {ghost && !standings &&
           (() => {
             const i = ordered.findIndex((l) => l.you);
-            const gx = (i + 0.5) * laneWidth + 28;
-            const gy = y(ghost.value);
+            const gp = course.point(ghost.value, i, 18 * course.markerScale, true);
+            const gx = gp.x, gy = gp.y;
             return (
               <g
                 role="button"
@@ -498,7 +411,7 @@ export function ArenaLanes({
                 <circle
                   cx={gx}
                   cy={gy}
-                  r="13"
+                  r={13 * course.markerScale}
                   fill="#ffffffcc"
                   stroke="#616c63"
                   strokeDasharray="3 3"
@@ -514,13 +427,13 @@ export function ArenaLanes({
               </g>
             );
           })()}
-        <text opacity={standings ? 0 : 1} x={width - 42} y="36" className="lane-distance">
-          {unit}
-        </text>
+
         <text opacity={standings ? 0 : 1} x="18" y={height - 18} className="lane-distance">
-          Drag ↕ distance · ↔ lanes · tap track to expand
+          {course.oval ? `${fieldLap(yourValue, unit).laps} laps + ${(yourValue % (unit === "pts" ? 20 : 1)).toFixed(1)} ${unit} · ${yourValue.toFixed(1)} ${unit} total` : "Drag ↕ distance · ↔ lanes · tap track to expand"}
         </text>
       </svg>
+    </div>
+    {!standings && !course.oval && <svg aria-hidden="true" width={42} height={height} style={{ position: "absolute", right: 0, top: 0, pointerEvents: "none" }}>{fieldScaleScene(course, unit).map(drawFieldNode)}</svg>}
     </div>
   );
 }

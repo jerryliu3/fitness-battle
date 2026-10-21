@@ -6,7 +6,8 @@ import { usePathname } from "next/navigation";
 import {
   arenaBaselineStorageKey,
   arenaFieldHigh,
-  clampArenaLaneCenterToField,
+  fieldDefaultSpan,
+  clampCourseCenter,
   formatArenaOvertakeStatus,
   shellTabFromPath,
   readArenaBaseline,
@@ -22,6 +23,7 @@ import {
 import { useAuth } from "@/components/auth-context";
 import { ExpandingField } from "./expanding-field";
 import { ArenaLanes } from "@/features/focus/arena-lanes";
+import { FieldGroundPicker, FieldOverview, useFieldAppearance } from "./field-course";
 import {
   placeAt,
   valueAt,
@@ -44,6 +46,7 @@ export function FieldStage({
   const pathname = usePathname();
   const reduced = useReducedMotion();
   const accountKey = user?.id ?? "guest";
+  const [appearance, setAppearance] = useFieldAppearance(accountKey, model.sport);
   const unit = model.unit;
   const runners = useMemo<SceneRunner[]>(
     () =>
@@ -148,13 +151,14 @@ export function FieldStage({
   const fieldHigh = useMemo(() => arenaFieldHigh(fieldLanes), [fieldLanes]);
   const clampViewCenter = useCallback(
     (value: number, viewSpan: number) =>
-      clampArenaLaneCenterToField(
+      clampCourseCenter(
         value,
         viewSpan,
         fieldHigh,
-        unit === "pts" ? 20 : 8,
+        unit,
+        appearance.ground,
       ),
-    [fieldHigh, unit],
+    [fieldHigh, unit, appearance.ground],
   );
 
   const sceneLanes: ArenaSceneLane[] = useMemo(
@@ -466,7 +470,9 @@ export function FieldStage({
             <span className="fb-note">{mode === "standings" ? "Ranked by this week's effort" : lanesImmersive ? "Drag to pan · swipe across peers" : "Click the field to expand · swipe across peers"}</span>
           </div>
           <div className="focus-track-frame">
+              {mode === "lanes" && <FieldGroundPicker appearance={appearance} onChange={setAppearance}/>}
               <ArenaLanes
+                appearance={appearance}
                 presentation={mode === "standings" ? "standings" : "lanes"}
                 scores={Object.fromEntries((boardRows ?? []).map((row) => [row.id, row.elo]))}
                 immersive={lanesImmersive}
@@ -490,6 +496,7 @@ export function FieldStage({
           </div>
 
           <div hidden={mode === "standings"}>
+          <FieldOverview lanes={overtakeFrame ? sceneLanes.map(l => ({ ...l, value: overtakeFrame.laneValues[l.id] ?? l.value })) : sceneLanes} view={view} unit={unit} onNavigate={value => tweenCenterTo(value, appearance.ground === "oval" ? Math.min(view.span, fieldDefaultSpan(unit) / 2) : view.span)}/>
           <div
             className="focus-zoom-slider"
             style={{

@@ -1,5 +1,6 @@
 import {
   arenaBaselineStorageKey,
+  arenaFieldHigh, clampCourseCenter, fieldDefaultSpan,
   buildArenaModel,
   competePeriodWindow,
   formatArenaOvertakeStatus,
@@ -25,6 +26,7 @@ import { playCue } from "../lib/haptics";
 import { SHELL_COLORS as c } from "../theme";
 import { FocusSegments, f } from "../ui/focus";
 import { LaneTrack } from "../ui/lane-track";
+import { FieldGroundPicker, FieldOverview, useFieldAppearance } from "../ui/field-course";
 import { PolishedRacer } from "../ui/polished-racer";
 import { ZoomControl } from "../ui/zoom-control";
 import { useReducedMotion } from "../ui/use-reduced-motion";
@@ -39,6 +41,7 @@ export function CompetitionField({
   const { state, accountKey, readBaselineItem, writeBaselineItem } =
     useCompeteStore();
   const pathname = usePathname();
+  const [appearance, setAppearance] = useFieldAppearance(accountKey, sport);
   const isFocused = shellTabFromPath(pathname)?.id === "arena";
   const [mode, setMode] = useState<"lanes" | "standings">("lanes");
   const [center, setCenter] = useState<number | null>(null);
@@ -213,7 +216,7 @@ export function CompetitionField({
 
   const displayTotal = overtakeFrame ? overtakeFrame.youValue : total;
   const view = {
-    center: center ?? (overtakeFrame ? overtakeFrame.viewCenter : total),
+    center: clampCourseCenter(center ?? (overtakeFrame ? overtakeFrame.viewCenter : total), viewSpan, arenaFieldHigh(fieldLanes), arena.unit, appearance.ground),
     span: viewSpan,
   };
   const selectAthlete = (id: string) => {
@@ -273,7 +276,9 @@ export function CompetitionField({
         }}
       />
       <View style={{ display: mode === "lanes" ? "flex" : "none" }}>
+        <FieldGroundPicker appearance={appearance} onChange={setAppearance}/>
         <LaneTrack
+          appearance={appearance}
           active={isFocused && mode === "lanes"}
           selectedId={selectedId ?? me?.id}
           lanes={arena.lanes}
@@ -286,6 +291,7 @@ export function CompetitionField({
           overtakeFrame={overtakeFrame}
           overtakePlan={overtakePlan}
         />
+        <FieldOverview lanes={fieldLanes.map(l => ({ ...l, value: overtakeFrame?.laneValues[l.id] ?? l.value }))} view={view} unit={arena.unit} onNavigate={value => { setCenter(value); if (appearance.ground === "oval") setSpan(Math.min(view.span, fieldDefaultSpan(arena.unit) / 2)); }}/>
       </View>
       {mode === "standings" ? (
         <View style={f.card}>

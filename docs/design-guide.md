@@ -26,7 +26,7 @@ Use DM Sans for product UI, restrained display sizes, readable supporting copy, 
 
 ## Information architecture
 
-The visible tabs are **Home / Compete / Progress / Crew**. Stable route IDs are `/today`, `/arena`, `/you`, and `/field`. The header profile circle opens **Athlete** at `/athlete`, with canonical Ember filling the circle when no custom photo exists. Existing mobile tracker and settings links through `/you` redirect to Athlete.
+The visible tabs are **Home / Compete / Progress / Crew**. Stable route IDs are `/today`, `/arena`, `/you`, and `/field`. The header profile circle opens **Athlete** at `/athlete`, with the shared muted person icon on white when no custom photo exists, matching web and native profile settings. Existing mobile tracker and settings links through `/you` redirect to Athlete.
 
 - Home: an hours-only weekly chart, with Sync and Manual actions in its header, followed by the winding recent counted-session path. The Today recommendation opens detail without unmounting the parent screen (a sheet on native). Each activity day has one circle; multiple sessions on a day remain individually accessible and removable. The recommendation remains separate from recorded activity. Empty paths stay quiet — no invented activity and no “connect/sync” empty copy on the path itself.
 - Compete (`/arena`): one field per registered sport, one shared Open/GPS score control, registration panel (join / eligible crew — never “solo” wording), current vertical lanes, prior-self ghost, awards, and benchmark links. Each field has independent lanes/standings controls. Standings shows full totals and effort scores; lanes shows relative distances. The **1v1 · Coming soon** teaser has no redundant disabled action; no live 1v1 yet.
@@ -89,6 +89,17 @@ Closed rounds automatically open a full-screen, two-stage Compete takeover only 
 Native parity: Lanes selection centers the chosen racer and no longer opens an athlete detail card. Out-of-range markers are dotted arrows; only first place is gold and gaps are relative to the athlete. The automatic two-stage round takeover is a full-screen native modal. Home adds today-only manual entry and tracker sync, shares the single-circle-per-day rule, and retains a separate suggestion action. Native Explore keeps its explicit pan mode; its Back control exits exploration and the disabled 3D teaser is only visible there.
 
 Athlete’s main effort score uses the same gold badge treatment as Home accents on web and native, with charcoal numerals for legibility. Competition and training-history boundaries use America/New_York (Eastern, EST/EDT); earlier UTC wording in exploration history is superseded.
+
+## Compete grounds and earned distance
+
+The October 21 selection promotes **Liquid Glass / faint underlay / Banked trail** into the web and native 2D field, with **Map lens** zoom: world details, lane spacing and capsules scale together. Meadow Trail and Club grounds are the defaults. Each event offers Personal track, Road ribbons, Parkland Passage, Pool Deck, Boardwalk, Meadow Trail, Club Straightaway, Club Oval and Night Meet. Open edges and Club grounds apply to every surface. Choices are local to the account/event on that device; they do not change units, scores, rankings or tracker data.
+
+The narrow earned trace follows each racer directly beneath its canonical afterimages. Only live heads are excluded. One fixed side scale replaces repeated lane labels; red straightaway splits use whole displayed units, with lane numbers behind the start. Scenery stays anchored to accumulated distance. Grounds are illustrative rather than GPS locations. The oval normalizes a loop to 1 km, 1 mile or 20 effort points, with completed laps and accumulated totals explicit.
+
+A clickable/tappable overview sits beneath the field. Its window shows the visible accumulated-distance interval; click, drag or use accessibility adjustments to navigate without changing the zoom on unfolded grounds. On the oval, navigation focuses the corresponding circuit position at a closer scale. The shared course scene is platform-agnostic and painted by DOM SVG / native SVG adapters; production never imports study fixtures. PR #234’s event composition, score controls, standings and native navigation remain in place. See the [implementation and review record](reviews/compete-configurable-grounds.md).
+## Earlier board exploration (history)
+
+These entries preserve the earlier study decisions. The production selection above supersedes their unselected material defaults and study-only rollout boundaries.
 
 The October 20 board exploration narrows the next prototypes to **Session Tapestry** and **Distance Ribbon** for 2D, and **Horizon Pursuit** for 3D. Both 2D treatments compare horizontal and vertical orientations with distance or actual effort-point units. Outdoor scenery belongs to the GPS-distance exploration, not the non-GPS effort field. `/design/boards` contains the coded study with fictional athletes, counted-session segments, fixed world marks, persistent expansion and a scenic Three.js course. These are review candidates; they do not replace production Compete or select a final orientation. See [the integration notes](../apps/web/src/app/design/_studies/board-lab/README.md).
 
