@@ -1026,6 +1026,7 @@ function YouContent({ surface }: { surface: "progress" | "athlete" }) {
             units={state.units}
           />
           <TrainingHistory state={state} />
+          {state.periodResults.length ? <Link className="fb-btn-line" href="/arena?results=latest">Latest week results ↗</Link> : null}
           <SeasonHistory
             results={state.periodResults}
             primary={state.primary}

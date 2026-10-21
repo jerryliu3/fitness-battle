@@ -2,12 +2,13 @@
 
 import * as Dialog from "@radix-ui/react-dialog";
 import { useState } from "react";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
+import { WeeklySocialActions } from "./weekly-social";
 import { ResultCard } from "./result-card";
 import { APP_TIMEZONE, roundReveal, roundEnrollment, sportById, type CompeteState, type PeriodResult } from "@fitness-battle/shared";
 
-function RoundTakeover({ results, onDismiss, state }: { results: PeriodResult[]; onDismiss: () => void; state: CompeteState }) {
+function RoundTakeover({ results, onDismiss, state, social }: { results: PeriodResult[]; onDismiss: () => void; state: CompeteState; social: boolean }) {
   const [stage, setStage] = useState<"results" | "next">("results");
   return <Dialog.Root open onOpenChange={(open) => { if (!open) onDismiss(); }}>
     <Dialog.Portal>
@@ -18,7 +19,7 @@ function RoundTakeover({ results, onDismiss, state }: { results: PeriodResult[];
         <Dialog.Title>{stage === "results" ? "Your week, settled." : "Keep it going."}</Dialog.Title>
         <Dialog.Description id="round-description">{stage === "results" ? "Here’s where your training took you." : "Your next round."}</Dialog.Description>
         {stage === "results" ? <>
-          {results.map(result => <ResultCard key={result.id} result={result} units={state.units} />)}
+          {results.map(result => <div key={result.id}><ResultCard result={result} units={state.units} />{social ? <WeeklySocialActions result={result} units={state.units} /> : null}</div>)}
           <button type="button" className="fb-btn" onClick={() => setStage("next")}>Next round →</button>
         </> : <>
           {results.map((result) => {
@@ -37,7 +38,9 @@ function RoundTakeover({ results, onDismiss, state }: { results: PeriodResult[];
 
 export function WeekReveal({ state, ready, preview = false, onDismiss }: { state: CompeteState; ready: boolean; preview?: boolean; onDismiss: (revealIds: string[]) => void }) {
   const path = usePathname();
-  const reveal = roundReveal(state);
+  const router = useRouter();
+  const replay = useSearchParams().get("results") === "latest" && !preview;
+  const reveal = roundReveal(replay ? { ...state, periodResults: state.periodResults.map(row => ({ ...row, acknowledgedAt: null })) } : state);
   if (!ready || (!preview && path !== "/arena") || !reveal) return null;
-  return <RoundTakeover key={reveal.key} state={state} results={reveal.results} onDismiss={() => onDismiss(reveal.ids)}/>;
+  return <RoundTakeover key={reveal.key} state={state} social={!preview} results={reveal.results} onDismiss={() => { onDismiss(reveal.ids); if (replay) router.replace("/arena"); }}/>;
 }

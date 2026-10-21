@@ -1,3 +1,4 @@
+import { useRouter } from "expo-router";
 import { Pressable, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useCompeteStore } from "../lib/compete-store";
@@ -17,6 +18,7 @@ import { useState } from "react";
 import { useScoreTrackLens } from "../lib/score-track-lens";
 export function ProgressScreen() {
   const { state } = useCompeteStore();
+  const router = useRouter();
   const [track] = useScoreTrackLens();
   const [sportFilter, setSportFilter] = useState<SportId | "all" | null>(null);
   const [trackFilter, setTrackFilter] = useState<ScoreTrack | "all">("open");
@@ -71,6 +73,7 @@ export function ProgressScreen() {
           </View>
         </View>
         <TrainingHistory state={state} />
+        {state.periodResults.length ? <Pressable accessibilityRole="button" style={f.card} onPress={() => router.push("/arena?results=latest")}><Text style={f.rowTitle}>Latest week results ↗</Text></Pressable> : null}
         <Text style={f.h2}>Season history</Text>
         {state.periodResults.length ? (
           <>
