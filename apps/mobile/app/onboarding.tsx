@@ -17,16 +17,24 @@ export default function Onboarding() {
   const [sleep, setSleep] = useState(false);
   if (!state)
     return (
-      <SafeAreaView style={f.safe}>
+      <SafeAreaView style={f.safe} edges={["bottom"]}>
         <Text style={f.copy}>Loading setup…</Text>
       </SafeAreaView>
     );
   return (
-    <SafeAreaView style={f.safe}>
+    <SafeAreaView style={f.safe} edges={["bottom"]}>
       <ScrollView
+        automaticallyAdjustKeyboardInsets
         keyboardShouldPersistTaps="handled"
         contentContainerStyle={f.content}
       >
+        <FocusButton
+          label="← Back"
+          secondary
+          onPress={() =>
+            router.canGoBack() ? router.back() : router.replace("/athlete")
+          }
+        />
         <Text style={f.kicker}>Setup</Text>
         <Text style={f.title}>Your own pace.</Text>
         <Text style={f.copy}>
@@ -62,7 +70,15 @@ export default function Onboarding() {
             key={s.id}
             secondary
             label={`${sports.includes(s.id) ? "✓ " : ""}${s.name}`}
-            onPress={() => setSports((current) => current.includes(s.id) ? current.length > 1 ? current.filter((id) => id !== s.id) : current : [...current, s.id])}
+            onPress={() =>
+              setSports((current) =>
+                current.includes(s.id)
+                  ? current.length > 1
+                    ? current.filter((id) => id !== s.id)
+                    : current
+                  : [...current, s.id],
+              )
+            }
           />
         ))}
         <View style={f.row}>
@@ -73,13 +89,22 @@ export default function Onboarding() {
             onValueChange={setSleep}
           />
         </View>
-        {saveError && <><Text style={f.copy}>{saveError}</Text><FocusButton label="Retry account loading" secondary onPress={retrySave}/></>}
+        {saveError && (
+          <>
+            <Text style={f.copy}>{saveError}</Text>
+            <FocusButton
+              label="Retry account loading"
+              secondary
+              onPress={retrySave}
+            />
+          </>
+        )}
         <FocusButton
           disabled={Boolean(user) && !canWrite}
           label={user ? "Finish setup" : "Sign in to finish setup"}
           onPress={() => {
             if (!user) {
-              router.replace("/you");
+              router.replace("/athlete");
               return;
             }
             if (!canWrite) return;
@@ -89,7 +114,8 @@ export default function Onboarding() {
             });
             dispatch({ type: "set-city", city: (city ?? state.city).trim() });
             dispatch({ type: "set-units", units: units ?? state.units });
-            for (const sport of sports) dispatch({ type: "opt-in", sport, accountId: user.id });
+            for (const sport of sports)
+              dispatch({ type: "opt-in", sport, accountId: user.id });
             dispatch({ type: "set-primary", sport: sports[0]! });
             if (sleep) dispatch({ type: "opt-in-health", metric: "sleep" });
             dispatch({ type: "complete-onboarding" });

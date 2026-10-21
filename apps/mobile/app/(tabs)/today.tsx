@@ -5,24 +5,12 @@ import {
   competePeriodWindow,
   countsOnTrack,
   dayKey,
-  formatDistanceM,
-  formatVolume,
   getZonedWeekday,
-  weeklyPeriodBounds,
   primaryFreezePeriodStart,
-  sportById,
-  type Activity,
+  weeklyPeriodBounds,
 } from "@fitness-battle/shared";
-import { useRef, useState } from "react";
-import {
-  AccessibilityInfo,
-  Animated,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
-} from "react-native";
+import { useState } from "react";
+import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Svg, {
   Circle,
@@ -37,14 +25,10 @@ import Svg, {
 import { HomeActivityActions } from "../../src/features/home-activity-actions";
 import { Journey } from "../../src/features/journey";
 import { useCompeteStore } from "../../src/lib/compete-store";
-import { f } from "../../src/ui/focus";
-import { Ember } from "../../src/ui/mascot/ember";
+import { FocusSheet, f } from "../../src/ui/focus";
 export default function Home() {
   const { state } = useCompeteStore();
-  const [expanded, setExpanded] = useState<"suggestion" | Activity | null>(
-    null,
-  );
-  const lift = useRef(new Animated.Value(0)).current;
+  const [expanded, setExpanded] = useState<"suggestion" | null>(null);
   if (!state)
     return (
       <SafeAreaView style={f.safe}>
@@ -56,10 +40,6 @@ export default function Home() {
   const counted = state.activities.filter(
     (a) => countsOnTrack(a, "open") && new Date(a.startedAt) <= now,
   );
-  const sessions = counted
-    .slice()
-    .sort((a, b) => b.startedAt.localeCompare(a.startedAt))
-    .slice(0, 10);
   const units = state.units;
   const weekPeriod = competePeriodWindow(state, now);
   const weekStart = weekPeriod.startsAt.getTime();
@@ -73,19 +53,11 @@ export default function Home() {
     (acc, a) => acc + (a.movingSec || 0),
     0,
   );
-  const weekDistanceM = weekActivities.reduce(
-    (acc, a) => acc + (a.distanceM || 0),
-    0,
-  );
-  const unitLabel = units === "metric" ? "km" : "mi";
-  const weekHours = weekMovingSec / 3600;
-  const weekHoursLabel =
-    weekHours >= 10
-      ? `${Math.round(weekHours)} hr`
-      : `${(Math.round(weekHours * 10) / 10).toFixed(1).replace(/\.0$/, "")} hr`;
   const dayLabels = ["M", "T", "W", "T", "F", "S", "S"];
   // Previous calendar week in Eastern time, including DST changes.
-  const prevWeekStart = weeklyPeriodBounds(new Date(weekStart - 1)).startsAt.getTime();
+  const prevWeekStart = weeklyPeriodBounds(
+    new Date(weekStart - 1),
+  ).startsAt.getTime();
   const prevWeekEnd = weekStart;
   const prevWeekActivities = state.activities.filter((a) => {
     if (!countsOnTrack(a, "open")) return false;
@@ -162,7 +134,6 @@ export default function Home() {
   );
   // SVG chart geometry
   const chartW = 230;
-  const chartH = 120;
   const xStart = 28;
   const xEnd = 220;
   const yTop = 14;
@@ -203,311 +174,227 @@ export default function Home() {
   const currLinePoints = currPointsList.join(" ");
   const currAreaPoints = `${currLinePoints} ${currPreciseX.toFixed(1)},${yBottom} ${xStart.toFixed(1)},${yBottom}`;
   const prevLastY = getY(prevTotalHours);
-  const weekDays = Array.from({ length: 7 }, (_, i) => {
-    const d = new Date(weekStart + i * 86400000 + 43200000);
-    const dayIso = dayKey(d, APP_TIMEZONE);
-    const dayActs = weekActivities.filter(
-      (a) => dayKey(new Date(a.startedAt), APP_TIMEZONE) === dayIso,
-    );
-    return {
-      key: dayIso,
-      label: dayLabels[i],
-      isToday: i === nowDayIndex,
-      hasActivity: dayActs.length > 0,
-    };
-  });
-  const activeDaysCount = weekDays.filter((d) => d.hasActivity).length;
-  function bounce() {
-    void AccessibilityInfo.isReduceMotionEnabled().then((reduce) => {
-      if (!reduce)
-        Animated.sequence([
-          Animated.timing(lift, {
-            toValue: -12,
-            duration: 130,
-            useNativeDriver: true,
-          }),
-          Animated.spring(lift, { toValue: 0, useNativeDriver: true }),
-        ]).start();
-    });
-  }
-  if (expanded === "suggestion") {
-    return (
-      <SafeAreaView style={f.safe} edges={["top"]}>
-        <ScrollView contentContainerStyle={f.content}>
-          {state.frozenPeriods.includes(primaryFreezePeriodStart(state)) ? (
-            <Text style={f.copy}>
-              ❄ Week frozen · Your effort score is protected through next
-              Monday.
-            </Text>
-          ) : null}
-          <Pressable
-            accessibilityRole="button"
-            onPress={() => setExpanded(null)}
-            style={{ paddingVertical: 8 }}
-          >
-            <Text style={f.small}>← Back</Text>
-          </Pressable>
-          <View style={s.expandPanel}>
-            <Text style={f.kicker}>Today&apos;s suggestion</Text>
-            <Text style={s.expandTitle}>{route.suggestion.title}</Text>
-            {route.suggestion.minutes ? (
-              <Text style={f.copy}>{route.suggestion.minutes} min</Text>
-            ) : null}
-            <Text style={f.copy}>{route.suggestion.detail}</Text>
-            <Text style={f.small}>{route.suggestion.reason}</Text>
-            <View style={s.expandEmber}>
-              <Ember size={150} expression="happy" />
-            </View>
-          </View>
-        </ScrollView>
-      </SafeAreaView>
-    );
-  }
-  if (expanded && typeof expanded === "object") {
-    const a = expanded;
-    return (
-      <SafeAreaView style={f.safe} edges={["top"]}>
-        <ScrollView contentContainerStyle={f.content}>
-          <Pressable
-            accessibilityRole="button"
-            onPress={() => setExpanded(null)}
-            style={{ paddingVertical: 8 }}
-          >
-            <Text style={f.small}>← Back</Text>
-          </Pressable>
-          <View style={s.expandPanel}>
-            <Text style={f.kicker}>
-              {new Date(a.startedAt).toLocaleDateString("en-US", {
-                weekday: "long",
-                month: "long",
-                day: "numeric",
-                timeZone: APP_TIMEZONE,
-              })}
-            </Text>
-            <Text style={s.expandTitle}>{sportById(a.sport).name}</Text>
-            <Text style={f.copy}>
-              {formatVolume(a.sport, a.distanceM, a.movingSec, units)}
-            </Text>
-            <Text style={f.small}>
-              {a.source} · {a.verified ? "Verified" : "Open"} · Counted
-              training.
-            </Text>
-          </View>
-        </ScrollView>
-      </SafeAreaView>
-    );
-  }
   return (
-    <SafeAreaView style={f.safe} edges={["top"]}>
+    <SafeAreaView style={f.safe} edges={[]}>
       <View style={s.homeStage}>
         <ScrollView
           style={s.homeOverlayScroll}
           contentContainerStyle={s.homeOverlayContent}
           showsVerticalScrollIndicator={false}
         >
-        {state.frozenPeriods.includes(primaryFreezePeriodStart(state)) ? (
-          <Text style={f.copy}>
-            ❄ Week frozen · Your effort score is protected through next Monday.
-          </Text>
-        ) : null}
-        <View style={s.statsCard} accessibilityLabel="This week's progress">
-          <View style={s.statsHeader}>
-            <View>
-              <Text style={f.kicker}>This week</Text>
-              <View style={s.statsNumbers}>
-                <Text style={s.statsMain}>
-                  {currTotalHours === 0
-                    ? "0 hours"
-                    : `${currTotalHours.toFixed(1)} hrs`}
-                </Text>
-                <Text style={s.statsSessionCount}>
-                  {weekActivities.length}{" "}
-                  {weekActivities.length === 1 ? "session" : "sessions"}
-                </Text>
+          {state.frozenPeriods.includes(primaryFreezePeriodStart(state)) ? (
+            <Text style={f.copy}>
+              ❄ Week frozen · Your effort score is protected through next
+              Monday.
+            </Text>
+          ) : null}
+          <View style={s.statsCard} accessibilityLabel="This week's progress">
+            <View style={s.statsHeader}>
+              <View>
+                <Text style={f.kicker}>This week</Text>
+                <View style={s.statsNumbers}>
+                  <Text style={s.statsMain}>
+                    {currTotalHours === 0
+                      ? "0 hours"
+                      : `${currTotalHours.toFixed(1)} hrs`}
+                  </Text>
+                  <Text style={s.statsSessionCount}>
+                    {weekActivities.length}{" "}
+                    {weekActivities.length === 1 ? "session" : "sessions"}
+                  </Text>
+                </View>
               </View>
-              {sportById(state.primary).gps && weekDistanceM > 0 ? (
-                <Text style={[f.small, { marginTop: 2 }]}>
-                  {formatDistanceM(weekDistanceM, units)} {unitLabel}
-                </Text>
-              ) : null}
+              <View style={{ width: 88 }}>
+                <HomeActivityActions compact />
+              </View>
             </View>
-          </View>
 
-          <View style={s.chartWrap}>
-            <Svg
-              style={{ flex: 1 }}
-              height={chartH}
-              viewBox={`0 0 ${chartW} ${chartH}`}
-              accessible
-              accessibilityLabel={`Cumulative hours: ${currTotalHours === 0 ? "0 hours" : `${currTotalHours.toFixed(1)} hrs`} this week compared to ${prevTotalHours.toFixed(1)} hrs last week`}
-            >
-              <Defs>
-                <LinearGradient
-                  id="mobile-act-grad"
-                  x1="0"
-                  y1="0"
-                  x2="0"
-                  y2="1"
-                >
-                  <Stop offset="0" stopColor="#f1c75b" stopOpacity="0.4" />
-                  <Stop offset="1" stopColor="#f1c75b" stopOpacity="0.0" />
-                </LinearGradient>
-              </Defs>
-
-              {/* Horizontal gridlines & Y labels */}
-              <SvgText
-                x="22"
-                y={yTop + 3}
-                textAnchor="end"
-                fontSize="9"
-                fill="#616c63"
-                fontWeight="500"
+            <View style={s.chartWrap}>
+              <Svg
+                width="100%"
+                height={180}
+                viewBox={`0 0 ${chartW} 120`}
+                accessible
+                accessibilityLabel={`Cumulative hours: ${currTotalHours === 0 ? "0 hours" : `${currTotalHours.toFixed(1)} hrs`} this week compared to ${prevTotalHours.toFixed(1)} hrs last week`}
               >
-                {`${yMax}h`}
-              </SvgText>
-              <Line
-                x1={xStart}
-                y1={yTop}
-                x2={xEnd}
-                y2={yTop}
-                stroke="#e0e5dc"
-                strokeDasharray="3 3"
-              />
-
-              <SvgText
-                x="22"
-                y={yMidPos + 3}
-                textAnchor="end"
-                fontSize="9"
-                fill="#616c63"
-                fontWeight="500"
-              >
-                {`${yMid}h`}
-              </SvgText>
-              <Line
-                x1={xStart}
-                y1={yMidPos}
-                x2={xEnd}
-                y2={yMidPos}
-                stroke="#e0e5dc"
-                strokeDasharray="3 3"
-              />
-
-              <SvgText
-                x="22"
-                y={yBottom + 3}
-                textAnchor="end"
-                fontSize="9"
-                fill="#616c63"
-                fontWeight="500"
-              >
-                0h
-              </SvgText>
-              <Line
-                x1={xStart}
-                y1={yBottom}
-                x2={xEnd}
-                y2={yBottom}
-                stroke="#e0e5dc"
-              />
-
-              {/* Previous week line */}
-              <Polyline
-                points={prevPoints}
-                fill="none"
-                stroke="#819486"
-                strokeWidth={1.8}
-                strokeDasharray="4 4"
-              />
-
-              {/* Current week area & line */}
-              <Polygon points={currAreaPoints} fill="url(#mobile-act-grad)" />
-              <Polyline
-                points={currLinePoints}
-                fill="none"
-                stroke="#f1c75b"
-                strokeWidth={2.8}
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-
-              {/* Live indicator dot */}
-              <Circle
-                cx={currPreciseX}
-                cy={currLastY}
-                r={6.5}
-                fill="none"
-                stroke="#f1c75b"
-                strokeWidth={2}
-              />
-              <Circle cx={currPreciseX} cy={currLastY} r={3.5} fill="#f1c75b" />
-
-              {/* Direct on-chart label: This week over indicator */}
-              <SvgText
-                x={Math.max(xStart + 26, Math.min(xEnd - 26, currPreciseX))}
-                y={Math.max(yTop + 10, currLastY - 10)}
-                textAnchor="middle"
-                fontSize="9"
-                fontWeight="700"
-                fill="#282f2c"
-              >
-                This week
-              </SvgText>
-
-              {/* Direct on-chart label: Last week at end */}
-              <SvgText
-                x={xEnd}
-                y={
-                  Math.abs(currPreciseX - xEnd) < 50 && Math.abs(currLastY - prevLastY) < 18
-                    ? Math.min(yBottom - 6, prevLastY + 12)
-                    : Math.max(yTop + 10, prevLastY - 6)
-                }
-                textAnchor="end"
-                fontSize="9"
-                fontWeight="600"
-                fill="#616c63"
-              >
-                Last week
-              </SvgText>
-
-              {/* Day labels */}
-              {dayLabels.map((lbl, i) => {
-                const cx = getDayCenterX(i);
-                const isToday = i === nowDayIndex;
-                return (
-                  <SvgText
-                    key={i}
-                    x={cx}
-                    y={yBottom + 16}
-                    textAnchor="middle"
-                    fontSize="10"
-                    fontWeight={isToday ? "700" : "500"}
-                    fill={isToday ? "#282f2c" : "#616c63"}
+                <Defs>
+                  <LinearGradient
+                    id="mobile-act-grad"
+                    x1="0"
+                    y1="0"
+                    x2="0"
+                    y2="1"
                   >
-                    {lbl}
-                  </SvgText>
-                );
-              })}
-            </Svg>
+                    <Stop offset="0" stopColor="#f1c75b" stopOpacity="0.4" />
+                    <Stop offset="1" stopColor="#f1c75b" stopOpacity="0.0" />
+                  </LinearGradient>
+                </Defs>
 
-            <View style={{ minWidth: 95 }}>
-              <HomeActivityActions compact />
+                {/* Horizontal gridlines & Y labels */}
+                <SvgText
+                  x="22"
+                  y={yTop + 3}
+                  textAnchor="end"
+                  fontSize="9"
+                  fill="#616c63"
+                  fontWeight="500"
+                >
+                  {`${yMax}h`}
+                </SvgText>
+                <Line
+                  x1={xStart}
+                  y1={yTop}
+                  x2={xEnd}
+                  y2={yTop}
+                  stroke="#e0e5dc"
+                  strokeDasharray="3 3"
+                />
+
+                <SvgText
+                  x="22"
+                  y={yMidPos + 3}
+                  textAnchor="end"
+                  fontSize="9"
+                  fill="#616c63"
+                  fontWeight="500"
+                >
+                  {`${yMid}h`}
+                </SvgText>
+                <Line
+                  x1={xStart}
+                  y1={yMidPos}
+                  x2={xEnd}
+                  y2={yMidPos}
+                  stroke="#e0e5dc"
+                  strokeDasharray="3 3"
+                />
+
+                <SvgText
+                  x="22"
+                  y={yBottom + 3}
+                  textAnchor="end"
+                  fontSize="9"
+                  fill="#616c63"
+                  fontWeight="500"
+                >
+                  0h
+                </SvgText>
+                <Line
+                  x1={xStart}
+                  y1={yBottom}
+                  x2={xEnd}
+                  y2={yBottom}
+                  stroke="#e0e5dc"
+                />
+
+                {/* Previous week line */}
+                <Polyline
+                  points={prevPoints}
+                  fill="none"
+                  stroke="#819486"
+                  strokeWidth={1.8}
+                  strokeDasharray="4 4"
+                />
+
+                {/* Current week area & line */}
+                <Polygon points={currAreaPoints} fill="url(#mobile-act-grad)" />
+                <Polyline
+                  points={currLinePoints}
+                  fill="none"
+                  stroke="#f1c75b"
+                  strokeWidth={2.8}
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+
+                {/* Live indicator dot */}
+                <Circle
+                  cx={currPreciseX}
+                  cy={currLastY}
+                  r={6.5}
+                  fill="none"
+                  stroke="#f1c75b"
+                  strokeWidth={2}
+                />
+                <Circle
+                  cx={currPreciseX}
+                  cy={currLastY}
+                  r={3.5}
+                  fill="#f1c75b"
+                />
+
+                {/* Direct on-chart label: This week over indicator */}
+                <SvgText
+                  x={Math.max(xStart + 26, Math.min(xEnd - 26, currPreciseX))}
+                  y={Math.max(yTop + 10, currLastY - 10)}
+                  textAnchor="middle"
+                  fontSize="9"
+                  fontWeight="700"
+                  fill="#282f2c"
+                >
+                  This week
+                </SvgText>
+
+                {/* Direct on-chart label: Last week at end */}
+                <SvgText
+                  x={xEnd}
+                  y={
+                    Math.abs(currPreciseX - xEnd) < 50 &&
+                    Math.abs(currLastY - prevLastY) < 18
+                      ? Math.min(yBottom - 6, prevLastY + 12)
+                      : Math.max(yTop + 10, prevLastY - 6)
+                  }
+                  textAnchor="end"
+                  fontSize="9"
+                  fontWeight="600"
+                  fill="#616c63"
+                >
+                  Last week
+                </SvgText>
+
+                {/* Day labels */}
+                {dayLabels.map((lbl, i) => {
+                  const cx = getDayCenterX(i);
+                  const isToday = i === nowDayIndex;
+                  return (
+                    <SvgText
+                      key={i}
+                      x={cx}
+                      y={yBottom + 16}
+                      textAnchor="middle"
+                      fontSize="10"
+                      fontWeight={isToday ? "700" : "500"}
+                      fill={isToday ? "#282f2c" : "#616c63"}
+                    >
+                      {lbl}
+                    </SvgText>
+                  );
+                })}
+              </Svg>
             </View>
           </View>
-        </View>
-        <View style={s.homeJourneyLayer} pointerEvents="box-none">
-          <Journey
-          today={dayKey(now, APP_TIMEZONE)}
-            activities={counted}
-            units={units}
-            onToday={() => {
-              bounce();
-              setExpanded("suggestion");
-            }}
-          />
-        </View>
+          <View style={s.homeJourneyLayer} pointerEvents="box-none">
+            <Journey
+              activities={counted}
+              units={units}
+              onToday={() => setExpanded("suggestion")}
+            />
+          </View>
         </ScrollView>
       </View>
+      <FocusSheet
+        open={expanded === "suggestion"}
+        title={route.suggestion.title}
+        body={
+          route.suggestion.minutes
+            ? `${route.suggestion.minutes} min`
+            : undefined
+        }
+        onClose={() => setExpanded(null)}
+      >
+        <Text style={f.copy}>{route.suggestion.detail}</Text>
+        <Text style={f.small}>{route.suggestion.reason}</Text>
+      </FocusSheet>
     </SafeAreaView>
   );
 }
@@ -551,6 +438,7 @@ const s = StyleSheet.create({
   },
   statsNumbers: {
     flexDirection: "row",
+    flexWrap: "wrap",
     alignItems: "baseline",
     gap: 8,
   },
@@ -560,74 +448,9 @@ const s = StyleSheet.create({
     color: "#616c63",
   },
   chartWrap: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
+    width: "100%",
+    borderTopWidth: 1,
+    borderTopColor: "#e0e5dc",
+    paddingTop: 12,
   },
-  chartLegend: {
-    flexDirection: "column",
-    gap: 10,
-    minWidth: 95,
-  },
-  legendItem: {
-    flexDirection: "column",
-    gap: 3,
-  },
-  legendItemHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-  },
-  legendSwatchCurr: {
-    width: 14,
-    height: 3,
-    borderRadius: 2,
-    backgroundColor: "#f1c75b",
-  },
-  legendSwatchPrev: {
-    width: 14,
-    height: 0,
-    borderTopWidth: 2,
-    borderTopColor: "#819486",
-    borderStyle: "dashed",
-  },
-  legendText: {
-    fontFamily: "DMSans_500Medium",
-    fontSize: 11,
-    color: "#616c63",
-  },
-  paceBadge: {
-    backgroundColor: "#e0e5dc",
-    paddingHorizontal: 5,
-    paddingVertical: 1,
-    borderRadius: 4,
-    alignSelf: "flex-start",
-    marginTop: 2,
-  },
-  paceText: {
-    fontFamily: "DMSans_700Bold",
-    fontSize: 10,
-    color: "#282f2c",
-  },
-  expandPanel: {
-    backgroundColor: "#fff",
-    borderWidth: 1,
-    borderColor: "#e0e5dc",
-    borderBottomWidth: 3,
-    borderRadius: 20,
-    padding: 28,
-    minHeight: 420,
-    gap: 14,
-    position: "relative",
-    overflow: "hidden",
-  },
-  expandTitle: {
-    fontFamily: "DMSans_400Regular",
-    fontSize: 34,
-    lineHeight: 40,
-    letterSpacing: -1.2,
-    color: "#282f2c",
-    maxWidth: "85%",
-  },
-  expandEmber: { position: "absolute", right: -10, bottom: 10 },
 });

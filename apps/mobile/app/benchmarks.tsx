@@ -24,7 +24,7 @@ export default function Benchmarks() {
   const benchmark = options.find((b) => b.id === distance) ?? options[0]!;
   const rows = paceBoard(state, sport, benchmark, scope);
   return (
-    <SafeAreaView style={f.safe}>
+    <SafeAreaView style={f.safe} edges={["bottom"]}>
       <ScrollView contentContainerStyle={f.content}>
         <FocusButton label="Back" secondary onPress={() => router.back()} />
         <FocusHeading

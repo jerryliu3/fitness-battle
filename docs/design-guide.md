@@ -22,26 +22,27 @@ The palette lives in `packages/shared/src/shell.ts`, is exported to native `src/
 | secondary | `#819486` | Historical comparisons / baseline |
 | soft | `#eef0e9` | Subtle highlights, badges, and pill backgrounds |
 
-Use DM Sans for product UI, restrained display sizes, readable supporting copy, 44px+ touch controls, and generous spacing. Cards have clean 16px corners with 3px bottom borders; primary buttons have a 3px tactile base. Respect reduced motion. Browser dialogs use Radix focus management; native detail panels support back/dismiss and keyboard avoidance.
+Use DM Sans for product UI, restrained display sizes, readable supporting copy, 44px+ touch controls, and generous spacing. Cards have clean 16px corners with 3px bottom borders; primary buttons have a 3px tactile base. Secondary buttons use a flat one-pixel border, tertiary actions use quiet text controls, and mutually exclusive score/view choices share a segmented container rather than separate outlined action buttons. Respect reduced motion. Browser dialogs use Radix focus management; native detail panels support back/dismiss and keyboard avoidance.
 
 ## Information architecture
 
-The visible tabs are **Home / Compete / Crew / Athlete**. Stable route IDs remain `/today`, `/arena`, `/field`, and `/you` so existing deep links continue to work. Tab label is **Compete** (not Arena).
+The visible tabs are **Home / Compete / Progress / Crew**. Stable route IDs are `/today`, `/arena`, `/you`, and `/field`. The header profile circle opens **Athlete** at `/athlete`, with canonical Ember filling the circle when no custom photo exists. Existing mobile tracker and settings links through `/you` redirect to Athlete.
 
-- Home: one recommendation (expands in-place for detail), then the winding recent counted-session path. Each activity day has one circle, including today. Multiple sessions on a day remain individually accessible from that day. When today has activity, the suggestion stays available above the journey without a second today circle. Empty paths stay quiet — no invented activity and no “connect/sync” empty copy on the path itself.
-- Compete (`/arena`): active sports, registration panel (join / eligible crew — never “solo” wording), separate score tracks, current vertical lanes, prior-self ghost, awards, and benchmark links. A disabled **1v1 · Coming soon** teaser is allowed; no live 1v1 yet.
+- Home: an hours-only weekly chart, with Sync and Manual actions in its header, followed by the winding recent counted-session path. The Today recommendation opens detail without unmounting the parent screen (a sheet on native). Each activity day has one circle; multiple sessions on a day remain individually accessible and removable. The recommendation remains separate from recorded activity. Empty paths stay quiet — no invented activity and no “connect/sync” empty copy on the path itself.
+- Compete (`/arena`): one field per registered sport, one shared Open/GPS score control, registration panel (join / eligible crew — never “solo” wording), current vertical lanes, prior-self ghost, awards, and benchmark links. Each field has independent lanes/standings controls. Standings shows full totals and effort scores; lanes shows relative distances. The **1v1 · Coming soon** teaser has no redundant disabled action; no live 1v1 yet.
 - Crew: Trail-style club identity, shared week progress, standings, members, invites and existing supported crew actions. The activity feed and manual session-sharing controls are removed. Signed-out/demo states preview what crews unlock. Empty/live states remain honest.
-- Athlete: profile card with portrait, name, city, and email; **season summary, Elo, and benchmarks near the top**. Account controls follow Strava/Duolingo-style IA: a short list on Athlete that opens a Settings hub and separate screens (not a wall of expanders).
+- Progress: lifetime distance, sessions, settled weeks and overtakes; effort history with Open/GPS lenses, weekly records, benchmarks and season history with sport/track filters.
+- Athlete: profile card with portrait, name, city and email, Edit profile, then Data Sync, Preferences, Notifications, How scoring works and Account destinations. Native uses the navigation stack to preserve the parent screen and normal Back behavior.
 
 ## Lane viewport contract
 
-2D and 3D use the same athlete values and viewport. Lane identity stays fixed when standings change; the user's lane is centered among peers. Default longitudinal range is ±3 km (±10 effort points for non-GPS) around the user, independently of the most distant competitor. Zoom and pan only change presentation. Center me restores the athlete-following window; Fit field explicitly widens to include everyone. Out-of-range 2D markers show dotted arrow indicators and distances relative to the athlete rather than pretending those athletes sit at the edge distance. Past you is never ranked.
+2D and 3D use the same athlete values and viewport. Lane identity stays fixed when standings change; the user's lane is centered among peers. Default longitudinal range is ±3 km (±10 effort points for non-GPS) around the user, independently of the most distant competitor. Zoom and pan only change presentation. Center/Fit APIs remain available internally; their visible buttons and the redundant viewport caption were removed in #232. Out-of-range 2D markers show dotted arrow indicators and distances relative to the athlete rather than pretending those athletes sit at the edge distance. Past you is never ranked.
 
 Web retains the real Three.js renderer. Native 2D is SVG; native 3D embeds the same web renderer and receives bounded, credential-free presentation messages. It requires the corresponding web deployment and a configured `EXPO_PUBLIC_API_URL`. An unavailable renderer falls back to native 2D. New native binaries must include the Expo-supported `react-native-webview` dependency.
 
 Account data, periods, scoring, and backend eligibility rules are not replaced by prototype fixtures. Existing live-connection and synthetic-peer disclosures must remain accurate.
 
-Athlete's Account settings destination contains Sign out, Report an issue and Delete account on web and native. These actions belong inside Account rather than on the Athlete overview or in Preferences.
+Athlete's Account settings destination contains Sign out, Report an issue and Delete account on web and native. These actions belong inside Account rather than on the Athlete overview or in Preferences. Native's legacy Settings hub remains a compatible deep-link destination. Field zoom and past-self controls are hidden in standings. The [current mobile parity audit](reviews/mobile-parity-main-232.md) records the alignment through #232 and remaining native checks; the [initial audit](reviews/mobile-parity-2026-10-20.md) preserves the earlier repair evidence.
 
 ## Production motion implementation
 

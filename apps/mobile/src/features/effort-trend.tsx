@@ -5,7 +5,7 @@ import {
 } from "@fitness-battle/shared";
 import { playCue } from "../lib/haptics";
 import { useScoreTrackLens } from "../lib/score-track-lens";
-import { Pressable, Text, View } from "react-native";
+import { Text, View } from "react-native";
 import Svg, {
   Circle,
   Line,
@@ -15,7 +15,7 @@ import Svg, {
 } from "react-native-svg";
 import { useAuth } from "../lib/auth";
 import { SHELL_COLORS as c } from "../theme";
-import { f } from "../ui/focus";
+import { FocusSegments, f } from "../ui/focus";
 export function EffortTrend({ state }: { state: CompeteState }) {
   const [track, setTrack] = useScoreTrackLens();
   const { user } = useAuth();
@@ -35,27 +35,33 @@ export function EffortTrend({ state }: { state: CompeteState }) {
   } = model;
   return (
     <View style={f.card}>
-      <View style={f.chipRow}>
-        {(["open", "verified"] as const).map((t) => (
-          <Pressable
-            key={t}
-            accessibilityRole="radio"
-            accessibilityState={{ checked: t === track }}
-            onPress={() => {
-              if (t !== track) void playCue("selection");
-              setTrack(t);
-            }}
-            style={[f.chip, t === track && f.chipActive]}
-          >
-            <Text style={f.rowTitle}>
-              {t === "open" ? "Open" : "GPS verified"}
-            </Text>
-          </Pressable>
-        ))}
-      </View>
+      <FocusSegments
+        label="Progress score track"
+        value={track}
+        options={[
+          { value: "open", label: "Open score" },
+          { value: "verified", label: "GPS verified" },
+        ]}
+        onChange={(next) => {
+          void playCue("selection");
+          setTrack(next);
+        }}
+      />
       <Text style={f.kicker}>{rankForElo(effectiveElo).name}</Text>
       <View style={f.row}>
-        <Text style={[f.massive, { backgroundColor: c.tennis, color: c.ink, borderRadius: 12, paddingHorizontal: 12 }]}>{effectiveElo.toLocaleString()}</Text>
+        <Text
+          style={[
+            f.massive,
+            {
+              backgroundColor: c.tennis,
+              color: c.ink,
+              borderRadius: 12,
+              paddingHorizontal: 12,
+            },
+          ]}
+        >
+          {effectiveElo.toLocaleString()}
+        </Text>
         <Text style={f.copy}>effort score</Text>
       </View>
       <Svg

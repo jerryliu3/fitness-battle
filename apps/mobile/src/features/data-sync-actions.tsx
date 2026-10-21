@@ -13,7 +13,7 @@ import { useAuth } from "../lib/auth";
 import { useCompeteStore } from "../lib/compete-store";
 import { mobileEnv } from "../lib/env";
 import { FocusButton, f } from "../ui/focus";
-export function DataSyncActions() {
+export function DataSyncActions({ provider }: { provider?: ProviderId }) {
   const { user, accessToken, demoMode } = useAuth();
   const { state, dispatch } = useCompeteStore();
   const [busy, setBusy] = useState(false),
@@ -38,8 +38,7 @@ export function DataSyncActions() {
     try {
       await work();
     } catch (e) {
-      if (mounted.current && owner.current === id)
-        setNote("Sync failed");
+      if (mounted.current && owner.current === id) setNote("Sync failed");
     } finally {
       flight.current = false;
       setBusy(false);
@@ -90,16 +89,16 @@ export function DataSyncActions() {
   if (!state) return null;
   return (
     <View style={{ gap: 12 }}>
-      {state.links
-        .filter(
-          (l) =>
-            l.linked && !["apple_health", "google_health"].includes(l.provider),
-        )
+      {(provider ? state.links : [])
+        .filter((l) => l.linked && l.provider === provider)
         .map((l) => (
-          <View key={l.provider} style={f.card}>
-            <Text style={f.rowTitle}>{l.provider}</Text>
+          <View
+            key={l.provider}
+            style={[f.row, { flexWrap: "wrap", justifyContent: "flex-start" }]}
+          >
             <FocusButton
-              label={`Sync ${l.provider}`}
+              label="Sync"
+              accessibilityLabel={`Sync ${l.provider}`}
               disabled={busy}
               secondary
               onPress={() =>
@@ -127,7 +126,8 @@ export function DataSyncActions() {
               }
             />
             <FocusButton
-              label={`Disconnect ${l.provider}`}
+              label="Disconnect"
+              accessibilityLabel={`Disconnect ${l.provider}`}
               disabled={busy}
               secondary
               onPress={() =>
@@ -149,117 +149,121 @@ export function DataSyncActions() {
             />
           </View>
         ))}
-      <FocusButton
-        label="Import Garmin file (.fit, .gpx, .tcx, .zip)"
-        disabled={busy}
-        secondary
-        onPress={() =>
-          void run(async () => {
-            if (!live || !accessToken)
-              throw new Error(
-                "A live account is required to import an activity file.",
-              );
-            const id = user?.id;
-            const picked = await DocumentPicker.getDocumentAsync({
-              type: "*/*",
-              copyToCacheDirectory: true,
-            });
-            if (picked.canceled) return;
-            const file = picked.assets[0];
-            if (!/\.(fit|gpx|tcx|zip)$/i.test(file.name))
-              throw new Error("Choose a .fit, .gpx, .tcx, or .zip file.");
-            if ((file.size ?? 0) > 8 * 1024 * 1024)
-              throw new Error("That file exceeds the maximum 8 MB limit.");
-            const form = new FormData();
-            if (Platform.OS === "web")
-              form.append(
-                "file",
-                await (await fetch(file.uri)).blob(),
-                file.name,
-              );
-            else
-              form.append("file", {
-                uri: file.uri,
-                name: file.name,
-                type: file.mimeType ?? "application/octet-stream",
-              } as unknown as Blob);
-            const response = await fetch(
-              `${mobileEnv.apiUrl}/api/fitness/import`,
-              {
-                method: "POST",
-                headers: { Authorization: `Bearer ${accessToken}` },
-                body: form,
-              },
-            );
-            const body = await response.json();
-            if (!response.ok)
-              throw new Error(
-                body.error === "no_activities"
-                  ? "No valid activities found in that file."
-                  : "Could not import that file. Please check the file and try again.",
-              );
-            apply("garmin", body, id, true);
-          })
-        }
-      />
-      {state.activities
-        .filter((a) => a.disposition === "pending")
-        .map((a) => (
-          <View key={a.id} style={f.card}>
-            <Text style={f.rowTitle}>
-              {a.sport} · {new Date(a.startedAt).toLocaleDateString()}
-            </Text>
-            <Text style={f.copy}>Imported activity · pending review</Text>
-            <FocusButton
-              label="Count this activity"
-              secondary
-              onPress={() =>
-                dispatch({
-                  type: "set-disposition",
-                  activityId: a.id,
-                  disposition: "counted",
-                })
-              }
-            />
-            <FocusButton
-              label="Exclude this activity"
-              secondary
-              onPress={() =>
-                dispatch({
-                  type: "set-disposition",
-                  activityId: a.id,
-                  disposition: "excluded",
-                })
-              }
-            />
-          </View>
-        ))}
-      <Text style={f.h2}>Sleep & recovery</Text>
-      <Text style={f.copy}>
-        Sleep data appears here when supplied by a supported tracker. A sample night is entered
-        on this device and labeled as a sample.
-      </Text>
-      <FocusButton
-        label="Add a sample sleep night"
-        secondary
-        disabled={busy}
-        onPress={() => dispatch({ type: "log-sleep" })}
-      />
-      <Text style={f.h2}>Import fitness history</Text>
-      <Text style={f.copy}>
-        {state.calibrated
-          ? "History is locked in. This one-time calibration cannot run again."
-          : "Calibrate your starting effort score from the shared sample history. Imported sample sessions remain excluded from competition."}
-      </Text>
-      <FocusButton
-        label={
-          state.calibrated
-            ? "History calibrated"
-            : "Import fitness history (sample calibration)"
-        }
-        disabled={busy || state.calibrated}
-        onPress={() => dispatch({ type: "import-history" })}
-      />
+      {!provider ? (
+        <>
+          <FocusButton
+            label="Import Garmin file (.fit, .gpx, .tcx, .zip)"
+            disabled={busy}
+            secondary
+            onPress={() =>
+              void run(async () => {
+                if (!live || !accessToken)
+                  throw new Error(
+                    "A live account is required to import an activity file.",
+                  );
+                const id = user?.id;
+                const picked = await DocumentPicker.getDocumentAsync({
+                  type: "*/*",
+                  copyToCacheDirectory: true,
+                });
+                if (picked.canceled) return;
+                const file = picked.assets[0];
+                if (!/\.(fit|gpx|tcx|zip)$/i.test(file.name))
+                  throw new Error("Choose a .fit, .gpx, .tcx, or .zip file.");
+                if ((file.size ?? 0) > 8 * 1024 * 1024)
+                  throw new Error("That file exceeds the maximum 8 MB limit.");
+                const form = new FormData();
+                if (Platform.OS === "web")
+                  form.append(
+                    "file",
+                    await (await fetch(file.uri)).blob(),
+                    file.name,
+                  );
+                else
+                  form.append("file", {
+                    uri: file.uri,
+                    name: file.name,
+                    type: file.mimeType ?? "application/octet-stream",
+                  } as unknown as Blob);
+                const response = await fetch(
+                  `${mobileEnv.apiUrl}/api/fitness/import`,
+                  {
+                    method: "POST",
+                    headers: { Authorization: `Bearer ${accessToken}` },
+                    body: form,
+                  },
+                );
+                const body = await response.json();
+                if (!response.ok)
+                  throw new Error(
+                    body.error === "no_activities"
+                      ? "No valid activities found in that file."
+                      : "Could not import that file. Please check the file and try again.",
+                  );
+                apply("garmin", body, id, true);
+              })
+            }
+          />
+          {state.activities
+            .filter((a) => a.disposition === "pending")
+            .map((a) => (
+              <View key={a.id} style={f.card}>
+                <Text style={f.rowTitle}>
+                  {a.sport} · {new Date(a.startedAt).toLocaleDateString()}
+                </Text>
+                <Text style={f.copy}>Imported activity · pending review</Text>
+                <FocusButton
+                  label="Count this activity"
+                  secondary
+                  onPress={() =>
+                    dispatch({
+                      type: "set-disposition",
+                      activityId: a.id,
+                      disposition: "counted",
+                    })
+                  }
+                />
+                <FocusButton
+                  label="Exclude this activity"
+                  secondary
+                  onPress={() =>
+                    dispatch({
+                      type: "set-disposition",
+                      activityId: a.id,
+                      disposition: "excluded",
+                    })
+                  }
+                />
+              </View>
+            ))}
+          <Text style={f.h2}>Sleep & recovery</Text>
+          <Text style={f.copy}>
+            Sleep data appears here when supplied by a supported tracker. A
+            sample night is entered on this device and labeled as a sample.
+          </Text>
+          <FocusButton
+            label="Add a sample sleep night"
+            secondary
+            disabled={busy}
+            onPress={() => dispatch({ type: "log-sleep" })}
+          />
+          <Text style={f.h2}>Import fitness history</Text>
+          <Text style={f.copy}>
+            {state.calibrated
+              ? "History is locked in. This one-time calibration cannot run again."
+              : "Calibrate your starting effort score from the shared sample history. Imported sample sessions remain excluded from competition."}
+          </Text>
+          <FocusButton
+            label={
+              state.calibrated
+                ? "History calibrated"
+                : "Import fitness history (sample calibration)"
+            }
+            disabled={busy || state.calibrated}
+            onPress={() => dispatch({ type: "import-history" })}
+          />
+        </>
+      ) : null}
       {note ? (
         <Text style={f.copy} accessibilityLiveRegion="polite">
           {note}

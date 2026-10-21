@@ -16,7 +16,6 @@ import {
   rollClock,
   seedArenaBaselinesFromState,
   seenFieldFromState,
-  shellTabFromPath,
   SPORTS,
   type Action,
   type CompeteState,
@@ -43,6 +42,7 @@ import { SHELL_COLORS } from "../theme";
 import { useAuth } from "./auth";
 import { mobileEnv } from "./env";
 import { fetchWithTimeout } from "./fetch-with-timeout";
+import { canOpenCompeteNotice } from "./navigation";
 import { supabase } from "./supabase";
 
 const STORAGE_KEY = "fb-compete-v1";
@@ -109,6 +109,8 @@ async function preloadBaselineCache(
 
 export function CompeteProvider({ children }: { children: ReactNode }) {
   const pathname = usePathname();
+  const pathnameRef = useRef(pathname);
+  pathnameRef.current = pathname;
   const router = useRouter();
   const auth = useAuth();
   const authRef = useRef(auth);
@@ -154,7 +156,9 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
     if (auth.loading) return;
     let alive = true;
     lifecycle.current += 1;
-    revisionRef.current = null; conflictRef.current = false; setSaveConflict(false);
+    revisionRef.current = null;
+    conflictRef.current = false;
+    setSaveConflict(false);
     loadReady.current = false;
     if (saveTimer.current) clearTimeout(saveTimer.current);
     saveTimer.current = null;
@@ -215,13 +219,27 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
           if (!response.ok) throw new Error("load_failed");
           const body = await response.json();
           if (!alive || accountRef.current !== owner) return;
-          const cachedRevision = await AsyncStorage.getItem(`${keys.state}:revision`);
+          const cachedRevision = await AsyncStorage.getItem(
+            `${keys.state}:revision`,
+          );
           if (!alive || accountRef.current !== owner) return;
-          revisionRef.current = dirty ? cachedRevision : body.updatedAt ?? null;
-          if (dirty && cachedRevision && body.updatedAt && cachedRevision !== body.updatedAt) {
-            conflictRef.current = true; setSaveConflict(true);
+          revisionRef.current = dirty
+            ? cachedRevision
+            : (body.updatedAt ?? null);
+          if (
+            dirty &&
+            cachedRevision &&
+            body.updatedAt &&
+            cachedRevision !== body.updatedAt
+          ) {
+            conflictRef.current = true;
+            setSaveConflict(true);
           }
-          if (!dirty && body.updatedAt) await AsyncStorage.setItem(`${keys.state}:revision`, body.updatedAt);
+          if (!dirty && body.updatedAt)
+            await AsyncStorage.setItem(
+              `${keys.state}:revision`,
+              body.updatedAt,
+            );
           if (body.state !== null && !isCompeteState(body.state))
             throw new Error("invalid_snapshot");
           if (isCompeteState(body.state))
@@ -314,7 +332,8 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
           ) != null;
         if (added.length > 0 && !onField) {
           setReturnGain(added.length);
-          router.navigate("/arena");
+          if (canOpenCompeteNotice(pathnameRef.current))
+            router.navigate("/arena");
         }
       }
       seen.ids = current;
@@ -395,7 +414,10 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
           setStandingsStale(true);
           return false;
         }
-        const body = (await response.json()) as { state?: unknown; updatedAt?: string | null };
+        const body = (await response.json()) as {
+          state?: unknown;
+          updatedAt?: string | null;
+        };
         if (
           body.state === null &&
           account.userId === accountRef.current &&
@@ -420,10 +442,21 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
           saveTimer.current != null;
         if (!dirty && !conflictRef.current) {
           revisionRef.current = body.updatedAt ?? null;
-          if (body.updatedAt) await AsyncStorage.setItem(`${accountStorageKeys(account.userId).state}:revision`, body.updatedAt);
-          if (account.userId !== accountRef.current || epoch !== lifecycle.current) return false;
+          if (body.updatedAt)
+            await AsyncStorage.setItem(
+              `${accountStorageKeys(account.userId).state}:revision`,
+              body.updatedAt,
+            );
+          if (
+            account.userId !== accountRef.current ||
+            epoch !== lifecycle.current
+          )
+            return false;
           // Storage yields to user edits; preserve anything dispatched while it was pending.
-          dirty = unsavedRef.current || dirtyRef.current !== generation || saveTimer.current != null;
+          dirty =
+            unsavedRef.current ||
+            dirtyRef.current !== generation ||
+            saveTimer.current != null;
         }
         const next = applyRemoteSnapshot(
           stateRef.current,
@@ -498,7 +531,7 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
       setFieldNotice(notice);
       if (notice.personal && announcedNotice.current !== notice.title) {
         announcedNotice.current = notice.title;
-        if (shellTabFromPath(pathname)?.id !== "you") {
+        if (canOpenCompeteNotice(pathname)) {
           router.navigate("/arena");
         }
       }
@@ -518,7 +551,11 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
       saveChain.current = saveChain.current
         .catch(() => {})
         .then(async () => {
-          if (id !== accountRef.current || generation !== dirtyRef.current || conflictRef.current)
+          if (
+            id !== accountRef.current ||
+            generation !== dirtyRef.current ||
+            conflictRef.current
+          )
             return;
           const currentAuth = authRef.current;
           if (
@@ -545,14 +582,22 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
                   "Content-Type": "application/json",
                   Authorization: `Bearer ${account.token}`,
                 },
-                body: JSON.stringify({ state: next, accountId: id, updatedAt: revisionRef.current }),
+                body: JSON.stringify({
+                  state: next,
+                  accountId: id,
+                  updatedAt: revisionRef.current,
+                }),
               },
             );
             if (id !== accountRef.current) return;
             if (!response.ok) {
               const body = await response.json().catch(() => null);
-              if (body?.error === "account_changed_reload" || body?.error === "account_version_required") {
-                conflictRef.current = true; setSaveConflict(true);
+              if (
+                body?.error === "account_changed_reload" ||
+                body?.error === "account_version_required"
+              ) {
+                conflictRef.current = true;
+                setSaveConflict(true);
               }
               const message = saveFailure(body?.error);
               if (message) setSaveError(message);
@@ -560,10 +605,15 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
             }
             const body = await response.json();
             if (id !== accountRef.current) return;
-            if (typeof body.updatedAt !== "string") throw new Error("missing_revision");
+            if (typeof body.updatedAt !== "string")
+              throw new Error("missing_revision");
             revisionRef.current = body.updatedAt;
-            await AsyncStorage.setItem(`${scoped.state}:revision`, body.updatedAt);
-            if (id !== accountRef.current || generation !== dirtyRef.current) return;
+            await AsyncStorage.setItem(
+              `${scoped.state}:revision`,
+              body.updatedAt,
+            );
+            if (id !== accountRef.current || generation !== dirtyRef.current)
+              return;
             unsavedRef.current = false;
             unitsUnsavedRef.current = false;
             setSaveError(null);
@@ -629,12 +679,22 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
     if (conflictRef.current) {
       const id = accountRef.current;
       const scoped = accountStorageKeys(id);
-      void AsyncStorage.setItem(`${scoped.state}:recovery`, JSON.stringify(stateRef.current)).then(() => AsyncStorage.removeItem(scoped.dirty)).then(() => {
-        if (accountRef.current !== id) return;
-        conflictRef.current = false; setSaveConflict(false);
-        unsavedRef.current = false; dirtyRef.current += 1;
-        setLoadAttempt((value) => value + 1);
-      }).catch(() => setSaveError("Could not preserve the local draft. Try again."));
+      void AsyncStorage.setItem(
+        `${scoped.state}:recovery`,
+        JSON.stringify(stateRef.current),
+      )
+        .then(() => AsyncStorage.removeItem(scoped.dirty))
+        .then(() => {
+          if (accountRef.current !== id) return;
+          conflictRef.current = false;
+          setSaveConflict(false);
+          unsavedRef.current = false;
+          dirtyRef.current += 1;
+          setLoadAttempt((value) => value + 1);
+        })
+        .catch(() =>
+          setSaveError("Could not preserve the local draft. Try again."),
+        );
       return;
     }
     if (!loadReady.current) {
@@ -719,10 +779,20 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
         clearAccountData,
       }}
     >
-      {saveConflict && <View accessibilityRole="alert" style={{ padding: 16, backgroundColor: SHELL_COLORS.tennis }}>
-        <Text>Your account changed elsewhere. Reload to use the current account. Your local draft will be kept on this device as a recovery copy.</Text>
-        <Pressable accessibilityRole="button" onPress={retrySave}><Text>Reload account</Text></Pressable>
-      </View>}
+      {saveConflict && (
+        <View
+          accessibilityRole="alert"
+          style={{ padding: 16, backgroundColor: SHELL_COLORS.tennis }}
+        >
+          <Text>
+            Your account changed elsewhere. Reload to use the current account.
+            Your local draft will be kept on this device as a recovery copy.
+          </Text>
+          <Pressable accessibilityRole="button" onPress={retrySave}>
+            <Text>Reload account</Text>
+          </Pressable>
+        </View>
+      )}
       {children}
     </CompeteContext.Provider>
   );

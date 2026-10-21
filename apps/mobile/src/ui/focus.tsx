@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import {
-  AccessibilityInfo,
   Animated,
   Easing,
   useWindowDimensions,
@@ -15,6 +14,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { SHELL_COLORS as c } from "../theme";
+import { useReducedMotion } from "./use-reduced-motion";
 import { playCue } from "../lib/haptics";
 const AnimatedSafeAreaView = Animated.createAnimatedComponent(SafeAreaView);
 
@@ -31,25 +31,24 @@ export function FocusSheet({
   onClose: () => void;
   children?: ReactNode;
 }) {
-  const [reduce, setReduce] = useState(false);
+  // Keep the last open content during exit; callers often clear their selection
+  // in onClose, which must not flash a different panel while the sheet slides away.
+  const content = useRef({ title, body, children });
+  if (open) content.current = { title, body, children };
+  const reduce = useReducedMotion();
   const [present, setPresent] = useState(open);
   const progress = useRef(new Animated.Value(0)).current;
   const { height: windowHeight } = useWindowDimensions();
   const [sheetHeight, setSheetHeight] = useState(windowHeight);
   useEffect(() => {
-    void AccessibilityInfo.isReduceMotionEnabled().then(setReduce);
-    const sub = AccessibilityInfo.addEventListener(
-      "reduceMotionChanged",
-      setReduce,
-    );
-    return () => sub.remove();
-  }, []);
-  useEffect(() => {
     if (open) void playCue("light");
   }, [open]);
 
   useEffect(() => {
-    if (open && !present) { setPresent(true); return; }
+    if (open && !present) {
+      setPresent(true);
+      return;
+    }
     if (!present) return;
     const animation = Animated.timing(progress, {
       toValue: open ? 1 : 0,
@@ -57,7 +56,9 @@ export function FocusSheet({
       easing: open ? Easing.out(Easing.cubic) : Easing.in(Easing.cubic),
       useNativeDriver: true,
     });
-    animation.start(({ finished }) => { if (finished && !open) setPresent(false); });
+    animation.start(({ finished }) => {
+      if (finished && !open) setPresent(false);
+    });
     return () => animation.stop();
   }, [open, present, progress, reduce]);
 
@@ -72,18 +73,33 @@ export function FocusSheet({
         behavior={Platform.OS === "ios" ? "padding" : undefined}
         style={f.modal}
       >
-        <Animated.View style={[StyleSheet.absoluteFill, { opacity: progress }]} pointerEvents={open ? "auto" : "none"}>
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel="Close details"
-          style={f.backdrop}
-          onPress={onClose}
-        />
+        <Animated.View
+          style={[StyleSheet.absoluteFill, { opacity: progress }]}
+          pointerEvents={open ? "auto" : "none"}
+        >
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Close details"
+            style={f.backdrop}
+            onPress={onClose}
+          />
         </Animated.View>
         <AnimatedSafeAreaView
           edges={["bottom"]}
           onLayout={(event) => setSheetHeight(event.nativeEvent.layout.height)}
-          style={[f.sheet, { transform: [{ translateY: progress.interpolate({ inputRange: [0, 1], outputRange: [sheetHeight, 0] }) }] }]}
+          style={[
+            f.sheet,
+            {
+              transform: [
+                {
+                  translateY: progress.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: [sheetHeight, 0],
+                  }),
+                },
+              ],
+            },
+          ]}
           accessibilityViewIsModal
         >
           <View style={f.handle} />
@@ -103,10 +119,12 @@ export function FocusSheet({
             contentContainerStyle={f.sheetBody}
           >
             <Text accessibilityRole="header" style={f.title}>
-              {title}
+              {content.current.title}
             </Text>
-            {body && <Text style={f.copy}>{body}</Text>}
-            {children}
+            {Boolean(content.current.body) && (
+              <Text style={f.copy}>{content.current.body}</Text>
+            )}
+            {content.current.children}
           </ScrollView>
         </AnimatedSafeAreaView>
       </KeyboardAvoidingView>
@@ -131,17 +149,21 @@ export function FocusHeading({
       >
         {title}
       </Text>
-      {body && <Text style={[f.copy, { textAlign: "center" }]}>{body}</Text>}
+      {Boolean(body) && (
+        <Text style={[f.copy, { textAlign: "center" }]}>{body}</Text>
+      )}
     </View>
   );
 }
 export function FocusButton({
   label,
+  accessibilityLabel,
   onPress,
   secondary = false,
   disabled = false,
 }: {
   label: string;
+  accessibilityLabel?: string;
   onPress: () => void;
   secondary?: boolean;
   disabled?: boolean;
@@ -149,6 +171,7 @@ export function FocusButton({
   return (
     <Pressable
       accessibilityRole="button"
+      accessibilityLabel={accessibilityLabel ?? label}
       disabled={disabled}
       accessibilityState={{ disabled }}
       onPress={onPress}
@@ -162,33 +185,106 @@ export function FocusButton({
     </Pressable>
   );
 }
+/** One grouped control for mutually exclusive views, rather than separate action buttons. */
+export function FocusSegments<T extends string>({
+  label,
+  options,
+  value,
+  onChange,
+  accent = false,
+}: {
+  label: string;
+  options: readonly { value: T; label: string }[];
+  value: T;
+  onChange: (value: T) => void;
+  accent?: boolean;
+}) {
+  return (
+    <View
+      accessibilityRole="tablist"
+      accessibilityLabel={label}
+      style={f.segments}
+    >
+      {options.map((option) => (
+        <Pressable
+          key={option.value}
+          accessibilityRole="tab"
+          accessibilityState={{ selected: value === option.value }}
+          onPress={() => {
+            if (value !== option.value) onChange(option.value);
+          }}
+          style={({ pressed }) => [
+            f.segment,
+            value === option.value && f.segmentSelected,
+            value === option.value && accent && { backgroundColor: c.tennis },
+            pressed && { opacity: 0.7 },
+          ]}
+        >
+          <Text
+            style={[f.segmentText, value === option.value && { color: c.ink }]}
+          >
+            {option.label}
+          </Text>
+        </Pressable>
+      ))}
+    </View>
+  );
+}
+
+export function FocusTextButton({
+  label,
+  accessibilityLabel,
+  onPress,
+}: {
+  label: string;
+  accessibilityLabel?: string;
+  onPress: () => void;
+}) {
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={accessibilityLabel ?? label}
+      onPress={onPress}
+      style={({ pressed }) => [f.textButton, pressed && { opacity: 0.5 }]}
+    >
+      <Text style={f.textButtonText}>{label}</Text>
+    </Pressable>
+  );
+}
+
 export function FocusDisclosure({
   title,
   detail,
   children,
   initialOpen = false,
+  compact = false,
 }: {
   title: string;
   detail?: string;
   children: ReactNode;
   initialOpen?: boolean;
+  compact?: boolean;
 }) {
   const [open, setOpen] = useState(initialOpen);
   return (
-    <View style={f.disclosure}>
+    <View style={[f.disclosure, compact && f.disclosureCompact]}>
       <Pressable
         accessibilityRole="button"
         accessibilityState={{ expanded: open }}
         onPress={() => setOpen(!open)}
-        style={f.disclosureHead}
+        style={[f.disclosureHead, compact && f.disclosureHeadCompact]}
       >
         <View style={f.grow}>
           <Text style={f.rowTitle}>{title}</Text>
-          {detail && <Text style={f.small}>{detail}</Text>}
+          {Boolean(detail) && <Text style={f.small}>{detail}</Text>}
         </View>
         <Text style={f.h2}>{open ? "−" : "＋"}</Text>
       </Pressable>
-      {open && <View style={f.disclosureBody}>{children}</View>}
+      {open && (
+        <View style={[f.disclosureBody, compact && f.disclosureBodyCompact]}>
+          {children}
+        </View>
+      )}
     </View>
   );
 }
@@ -278,14 +374,61 @@ export const f = StyleSheet.create({
   },
   buttonText: {
     fontFamily: "DMSans_500Medium",
-    fontSize: 12,
+    fontSize: 14,
     color: "#f5faed",
   },
   secondary: {
-    backgroundColor: "transparent",
+    backgroundColor: c.card,
+    borderWidth: 1,
+    borderColor: c.line,
+    borderBottomWidth: 1,
+    borderBottomColor: c.line,
+  },
+  segments: {
+    flexDirection: "row",
+    padding: 4,
+    gap: 4,
+    borderRadius: 12,
+    backgroundColor: c.soft,
     borderWidth: 1,
     borderColor: c.line,
   },
+  segment: {
+    flex: 1,
+    minWidth: 0,
+    minHeight: 44,
+    paddingHorizontal: 8,
+    paddingVertical: 10,
+    borderRadius: 8,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  segmentSelected: { backgroundColor: c.card },
+  segmentText: {
+    fontFamily: "DMSans_500Medium",
+    fontSize: 12,
+    color: c.muted,
+    textAlign: "center",
+  },
+  textButton: {
+    minHeight: 44,
+    paddingHorizontal: 8,
+    justifyContent: "center",
+    alignItems: "center",
+    flexShrink: 0,
+  },
+  textButtonText: {
+    fontFamily: "DMSans_500Medium",
+    fontSize: 13,
+    color: c.ink,
+  },
+  disclosureCompact: {
+    borderWidth: 0,
+    borderRadius: 12,
+    backgroundColor: c.soft,
+  },
+  disclosureHeadCompact: { minHeight: 48, padding: 12 },
+  disclosureBodyCompact: { paddingHorizontal: 12, paddingBottom: 12, gap: 10 },
   disclosure: {
     backgroundColor: c.card,
     borderWidth: 1,
