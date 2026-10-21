@@ -58,10 +58,9 @@ describe("production course contract", () => {
       const nodes = flatten(fieldCourseScene(g, appearance, lanes, unit, `${ground}-${edges}-${unit}`));
       expect(JSON.stringify(nodes)).not.toMatch(/NaN|Infinity|undefined/);
       expect(nodes.filter(n => n.tag === "mask")).toHaveLength(1);
-      const paths = nodes.filter(n => n.tag === "path");
-      expect(paths.some(n => n.attrs.fill === "#ffbf12")).toBe(true);
-      expect(nodes.filter(n => n.tag === "g" && n.attrs.opacity === .22).length).toBeGreaterThanOrEqual(1);
-      expect(nodes.filter(n => n.tag === "g" && n.attrs.opacity === .22).length).toBeLessThanOrEqual(2);
+      const stops = nodes.filter(n => n.tag === "stop");
+      expect(stops.some(n => n.attrs.stopOpacity === 0)).toBe(true);
+      expect(stops.every(n => Number(n.attrs.stopOpacity) <= .23)).toBe(true);
       expect(nodes.length).toBeLessThan(1500);
     }
   });
