@@ -95,16 +95,17 @@ export function Board2D({ lanes, sessions, view, background, edges, progress, zo
           <mask id={`${id}-progress-clear`} maskUnits="userSpaceOnUse" x="0" y={top} width={width} height={length} style={{ maskType: "luminance" }}>
             <rect x="0" y={top} width={width} height={length} fill="white"/>
             {ordered.map((lane, i) => {
-              const p = point(displayValue(lane.value, view, Math.max(22, 34 * markerScale), length).value, i);
+              const position = displayValue(lane.value, view, Math.max(22, 34 * markerScale), length);
+              const p = point(position.value, i);
               const head = 23 * polishedLaneScale(Boolean(lane.you)) * markerScale + 2;
-              return <rect key={lane.id} data-wake-exclusion={lane.id} x={p.x - head} y={p.y - 31 * markerScale - 3} width={head * 2} height={progressClearance(markerScale) + 31 * markerScale + 3} rx={head} fill="black"/>;
+              return <rect key={lane.id} data-wake-exclusion={lane.id} data-excludes-wake={!position.edge} x={p.x - head} y={p.y - 31 * markerScale - 3} width={head * 2} height={position.edge ? 62 * markerScale + 6 : progressClearance(markerScale) + 31 * markerScale + 3} rx={head} fill="black"/>;
             })}
           </mask>
         </defs>
         <rect width={width} height={height} fill="#f6f7f2"/>
         <g clipPath={`url(#${id}-plot)`}>
           <TrackBackground background={background} geometry={g} count={count} view={view} prefix={id} edges={edges}/>
-          <ProgressTraces treatment={progress} lanes={ordered} sessions={sessions} geometry={g} view={view} mask={`${id}-progress-clear`} dark={background === "night"} selected={selected} onSelect={onSelect} onSession={onSession}/>
+          <ProgressTraces treatment={progress} lanes={ordered} sessions={sessions} geometry={g} view={view} mask={`${id}-progress-clear`} lightInk={["night", "road", "athletics", "straight"].includes(background)} prefix={id} onSelect={onSelect} onSession={onSession}/>
           {background !== "straight" && background !== "oval" && bounds.min <= 0 && bounds.max >= 0 && <g className="bl-start-origin" pointerEvents="none"><line x1={left} x2={left + fieldWidth} y1={along(0)} y2={along(0)} stroke={palette.rule} strokeWidth={2 * worldScale}/><text x={left + 6} y={along(0) - 8} fontSize="10" fill={palette.ink}>START</text></g>}
         </g>
         {laneWidth >= 63 && ordered.map((lane, i) => <g key={lane.id} pointerEvents="none"><text className={`bl-lane-name ${lane.you ? "is-you" : ""}`} x={cross(i)} y="33" textAnchor="middle">{lane.you ? "YOU" : lane.name.split(" ")[0]}</text><text className="bl-lane-total" x={cross(i)} y="53" textAnchor="middle">{lane.value.toFixed(1)} <tspan>km</tspan></text></g>)}

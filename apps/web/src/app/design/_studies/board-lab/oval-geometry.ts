@@ -27,10 +27,16 @@ export function ovalPath(radius: number, straight = 270) {
   const h = straight / 2;
   return `M${radius} ${h}V${-h}A${radius} ${radius} 0 0 0 ${-radius} ${-h}V${h}A${radius} ${radius} 0 0 0 ${radius} ${h}Z`;
 }
-export function ovalArc(from: number, to: number, radius: number, straight = 270) {
+/** Offset along the local normal, keeping the endpoint aligned with the actual athlete. */
+export function ovalOffsetPoint(fraction: number, radius: number, offset: number, straight = 270) {
+  const p = ovalPoint(fraction, radius, straight), angle = p.angle * Math.PI / 180;
+  return { ...p, x: p.x + offset * Math.cos(angle), y: p.y + offset * Math.sin(angle) };
+}
+
+export function ovalArc(from: number, to: number, radius: number, straight = 270, offset = 0) {
   const steps = Math.max(1, Math.ceil(Math.abs(to - from) * 180));
   return Array.from({ length: steps + 1 }, (_, i) => {
-    const p = ovalPoint(from + (to - from) * i / steps, radius, straight);
+    const p = ovalOffsetPoint(from + (to - from) * i / steps, radius, offset, straight);
     return `${i ? "L" : "M"}${p.x.toFixed(3)} ${p.y.toFixed(3)}`;
   }).join(" ");
 }

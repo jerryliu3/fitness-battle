@@ -1,8 +1,16 @@
 import { describe, expect, it } from "vitest";
 import { backgrounds, isBackgroundId, isTrackEdgeId } from "./field-directions";
-import { lapPosition, ovalPoint } from "./oval-geometry";
+import { lapPosition, ovalPoint, ovalOffsetPoint } from "./oval-geometry";
 
 describe("normalized club circuit", () => {
+  it("keeps shoulder endpoints beside the athlete on straights and bends", () => {
+    for (const f of [.05, .25, .4, .6, .9]) {
+      const center = ovalPoint(f, 190), side = ovalOffsetPoint(f, 190, 20);
+      const angle = center.angle * Math.PI / 180;
+      expect(Math.hypot(side.x - center.x, side.y - center.y)).toBeCloseTo(20);
+      expect((side.x - center.x) * Math.sin(angle) - (side.y - center.y) * Math.cos(angle)).toBeCloseTo(0);
+    }
+  });
   it("retains total laps across the one-kilometer boundary", () => {
     expect(lapPosition(0)).toEqual({ laps: 0, fraction: 0 });
     expect(lapPosition(20)).toEqual({ laps: 20, fraction: 0 });

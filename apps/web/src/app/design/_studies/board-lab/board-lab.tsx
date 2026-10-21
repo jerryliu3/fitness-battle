@@ -103,7 +103,7 @@ export function BoardLab() {
   const controls = { background, progress: progressStyle, zoom: zoomStyle, onBackground: chooseBackground, onProgress: setProgressStyle, onZoom: setZoomStyle };
 
   return <main className="board-lab">
-    <div className="bl-review-bar"><Link href="/design">← Design studies</Link><span>COMPETE / FIELD STUDY · ROUND 3</span><span className="bl-study-tag">Vertical · kilometers</span></div>
+    <div className="bl-review-bar"><Link href="/design">← Design studies</Link><span>COMPETE / FIELD STUDY · ROUND 4</span><span className="bl-study-tag">Vertical · kilometers</span></div>
     <header className="bl-intro"><div><p className="bl-eyebrow">A field with room to move</p><h1>Find your ground.<br/>Leave your trace.</h1></div><p>Nine places to move through. Five ways to see what you’ve earned. Mix the surface, the trace and the lens.</p></header>
     <nav className="bl-mode-tabs" aria-label="Field view"><button type="button" aria-pressed={mode === "field"} onClick={() => setMode("field")}><strong>2D Track lab</strong><span>{Object.keys(backgrounds).length} fields · 5 progress treatments</span></button><button type="button" aria-pressed={mode === "horizon"} onClick={() => { setMode("horizon"); setUnavailable(false); }}><strong>3D Horizon</strong><span>The scenic distance course</span></button></nav>
     <div className="bl-round-note"><span>Same athletes. Same distance. Independent design choices.</span><span>Fictional athletes & sessions</span></div>

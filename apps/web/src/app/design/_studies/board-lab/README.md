@@ -4,7 +4,15 @@ October 20, 2026 · Coded presentation prototypes, not a production replacement
 
 Open `/design/boards` through the existing design access gate. The design index links to it. All athletes, sessions and gain previews are fictional local data. The study does not connect trackers, log activity or write scores.
 
-## Current selection: Round 3
+## Current review: Round 4
+
+The selected multi-field catalog, Meadow Trail / Banked trail / Map defaults and both club tracks are retained. Straightaway numbers now sit **behind** the zero start line, matching the oval. All ground surfaces use the shared side distance axis rather than repeated numeric distance labels in lanes; athlete totals remain visible.
+
+The active trace catalog is now **Dotted route, Waypoint cord, Session tiles, Revealed ground and Banked trail**. The first four replace the previous Edge lights, Session thread, Kilometer stamps and Session tokens. They reach the actual athlete coordinate beside the complete wake rather than shortening the earned trace to reserve a gap. `progress-mark.tsx` paints these four on both the unfolded fields and oval; `progress-path.ts` supplies bounded world samples and a smooth wake bypass. Banked trail remains the comparison with its deliberate gap. Old progress URL IDs fall back to the default.
+
+The [consumer reference review](../../../../../../../docs/design-studies/boards/round-4/README.md) links first-party Strava, Relive, Duolingo, Fog of World and Forza sources, distinguishes observed patterns from our adaptations, and explains all four directions. Dotted spacing is decorative, not a fractional kilometer grid. Session tiles use only sourced activity boundaries. A missing session history stays empty.
+
+## Round 3 selection and track history
 
 The user accepts all seven non-Contour grounds as the multi-field direction, with **Meadow Trail**, **Banked trail** and **Map lens** as the default review combination. Contour Atlas is removed from the registry and URL validation; its old captures remain historical. Distance-only zoom stays available. Custom fields are a future product direction: the typed ground registry and separate geometry/renderers remain the extension boundary, not a shipped custom-field editor or account preference system.
 

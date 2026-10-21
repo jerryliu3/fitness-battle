@@ -56,7 +56,7 @@ describe("board presentation geometry", () => {
     expect(fieldSamples({ center: 2500, span: 5000 }, .5).length).toBeLessThan(83);
   });
   it("rejects prototype keys in restorable design choices", () => {
-    expect(isBackgroundId("parkland")).toBe(true); expect(isProgressId("rails")).toBe(true); expect(isZoomId("map")).toBe(true);
+    expect(isBackgroundId("parkland")).toBe(true); expect(isProgressId("dots")).toBe(true); expect(isZoomId("map")).toBe(true);
     for (const key of ["__proto__", "constructor", "toString", "missing"]) {
       expect(isBackgroundId(key)).toBe(false); expect(isProgressId(key)).toBe(false); expect(isZoomId(key)).toBe(false);
     }

@@ -38,7 +38,6 @@ export function TrackBackground({ background, geometry: g, count, view, prefix, 
         {background === "athletics" && <>
           <rect x={x - half + 4 * z} y={g.top} width={g.laneWidth - 8 * z} height={g.length} fill={i % 2 ? "#95a5a5" : "#819798"} opacity=".6"/>
           <line x1={x - half + 3 * z} x2={x - half + 3 * z} y1={g.top} y2={g.top + g.length} stroke="#f7f8ec" strokeWidth={1.5 * z}/>
-          {whole.map(d => <text key={d} x={x - half + 12 * z} y={g.along(d) - 7 * z} fill="#f0f3e9" opacity=".7" fontSize={11 * z}>{d}</text>)}
         </>}
         {isTrack && <>
           <rect x={x - half} y={g.top} width={g.laneWidth} height={g.length} fill={i % 2 ? "#af544b" : "#a84c44"}/>
@@ -46,8 +45,7 @@ export function TrackBackground({ background, geometry: g, count, view, prefix, 
           <line x1={x - half} x2={x - half} y1={g.top} y2={g.top + g.length} stroke="#fff7e9" strokeWidth={2 * z}/>
           {whole.map(d => <g key={d} data-track-split={d}>
             <line x1={x - half} x2={x + half} y1={g.along(d)} y2={g.along(d)} stroke="#fff7e9" strokeWidth={(d === 0 ? 4 : 1) * z} opacity={d === 0 ? 1 : .4}/>
-            <text x={x - half + 10 * z} y={g.along(d) - 8 * z} fill="#fff7e9" fontSize={10 * z} opacity=".75">{d === 0 ? "START" : `${d} km`}</text>
-            {d === 0 && <text x={x} y={g.along(d) - 23 * z} textAnchor="middle" fontSize={30 * z} fontWeight="650" fill="#fff7e9">{i + 1}</text>}
+            {d === 0 && <text data-start-number={i + 1} x={x} y={g.along(d) + 13 * z} dominantBaseline="middle" textAnchor="middle" fontSize={18 * z} fontWeight="650" fill="#fff7e9">{i + 1}</text>}
           </g>)}
         </>}
         {background === "road" && <>
@@ -86,7 +84,6 @@ export function TrackBackground({ background, geometry: g, count, view, prefix, 
     {background === "parkland" && whole.filter(d => d % 2 === 0).map(d => <g key={`garden-${d}`} transform={`translate(${middle + (d % 4 === 0 ? 1 : -1) * g.laneWidth / 2} ${g.along(d)}) scale(${z})`}>
       <rect x="-9" y="-13" width="18" height="26" rx="9" fill="#d5ddc2"/>
       <circle cx="-2" cy="-5" r="4" fill="#a7b995"/><circle cx="3" cy="2" r="4.5" fill="#b5c69f"/>
-      <text x="0" y="25" textAnchor="middle" fontSize="10" fill="#7c896c">{d}</text>
     </g>)}
     {background === "trail" && samples.map(d => <g key={d}><circle cx={g.left + 12 * z + g.drift(d)} cy={g.along(d)} r={2 * z} fill="#bdc8a7"/><circle cx={g.left + g.fieldWidth - 14 * z + g.drift(d)} cy={g.along(d) + 7 * z} r={3 * z} fill="#c2ccab"/></g>)}
     {background === "night" && whole.filter(d => d % 2 === 0).map(d => <g key={d}>{[-1, 1].map(side => <g key={side}><ellipse cx={middle + side * (g.fieldWidth / 2 + 10 * z)} cy={g.along(d)} rx={80 * z} ry={65 * z} fill={`url(#${prefix}-lamp)`}/><circle cx={middle + side * (g.fieldWidth / 2 + 8 * z)} cy={g.along(d)} r={3 * z} fill="#f8edbe"/></g>)}</g>)}

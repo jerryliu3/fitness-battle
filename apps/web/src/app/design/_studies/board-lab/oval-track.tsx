@@ -4,8 +4,9 @@ import { useId, useLayoutEffect, useRef, useState, type RefObject } from "react"
 import { orderedArenaLanes, type ArenaSceneLane } from "@fitness-battle/shared";
 import { PolishedRacer, usePolishedWakeTime } from "@/features/brand/polished-racer";
 import type { Board2DProps } from "./board-2d";
-import { lapPosition, ovalArc, ovalPath, ovalPoint } from "./oval-geometry";
+import { lapPosition, ovalArc, ovalPath, ovalPoint, ovalOffsetPoint } from "./oval-geometry";
 import { visibleSessions } from "./model";
+import { ProgressMark } from "./progress-mark";
 
 /** Closed-circuit alternative. Accumulated totals remain authoritative; position is modulo 1 km. */
 export function OvalTrack({ lanes, sessions, view, selected, showGhost, progress, zoom: lens, expanded, loopUnit = "km", edges = "club", onSelect, onSession }: Board2DProps) {
@@ -65,7 +66,7 @@ export function OvalTrack({ lanes, sessions, view, selected, showGhost, progress
         </g>}
         {Array.from({ length: count + 1 }, (_, i) => <path key={i} d={ovalPath(inner + i * laneWidth, straight)} fill="none" stroke="#fff7e9" strokeWidth="2"/>)}
         <g data-oval-start=""><path d={`M${inner} ${straight / 2}H${outer}`} stroke="#fff7e9" strokeWidth="5"/>
-          {ordered.map((l, i) => <text key={l.id} x={radius(i)} y={straight / 2 + 27} textAnchor="middle" fill="#fff7e9" fontSize="23" fontWeight="650">{i + 1}</text>)}
+          {ordered.map((l, i) => <text data-start-number={i + 1} key={l.id} x={radius(i)} y={straight / 2 + 27} textAnchor="middle" fill="#fff7e9" fontSize="23" fontWeight="650">{i + 1}</text>)}
           <text x={outer + 12} y={straight / 2 + 7} fill="#536048" fontSize="12" transform={`rotate(90 ${outer + 12} ${straight / 2 + 7})`}>START / 1 {loopUnit.toUpperCase()} LOOP</text>
         </g>
         <g className="bl-oval-progress" mask={`url(#${id}-clear)`} pointerEvents="none">
@@ -76,10 +77,11 @@ export function OvalTrack({ lanes, sessions, view, selected, showGhost, progress
             const known = visibleSessions(sessions, l).filter(s => s.end > lap.laps * lapLength && s.start < l.value);
             return <g key={l.id} data-oval-progress-athlete={l.id}>
               {progress === "deposit" && Array.from({ length: 36 }, (_, n) => <path key={n} d={ovalArc(end * n / 36, end * (n + 1) / 36, r, straight)} fill="none" stroke={color} strokeWidth={5 * Math.min(1, (36 - n) / 9)} opacity=".64"/>)}
-              {progress === "rails" && [-1, 1].map(side => <path key={side} d={ovalArc(0, lap.fraction, r + side * 10, straight)} fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" opacity=".8"/>)}
-              {progress === "thread" && <><path d={ovalArc(0, lap.fraction, r - 10, straight)} fill="none" stroke={color} strokeWidth="1.5"/>{known.map(s => { const p = ovalPoint(Math.min(s.end, l.value) / lapLength - lap.laps, r - 10, straight); return <circle key={s.id} cx={p.x} cy={p.y} r="3" fill={color}/>; })}</>}
-              {progress === "receipts" && known.map(s => { const fraction = (Math.max(lap.laps * lapLength, s.start) + Math.min(s.end, l.value)) / (2 * lapLength) - lap.laps, p = ovalPoint(fraction, r, straight); return <g key={s.id} transform={`translate(${p.x} ${p.y})`}><rect x="-14" y="-8" width="28" height="16" rx="5" fill={color}/><text textAnchor="middle" y="3" fontSize="8" fill="#534c37">+{(s.end - s.start).toFixed(1)}</text></g>; })}
-              {progress === "footsteps" && lap.laps > 0 && <g transform={`translate(${r + 9} ${straight / 2 - 16})`}><ellipse cx="-2" cy="-3" rx="2" ry="4" fill={color}/><ellipse cx="3" cy="4" rx="2" ry="4" fill={color}/></g>}
+              {progress !== "deposit" && <ProgressMark treatment={progress} from={lap.laps * lapLength} to={l.value} total={l.value} clearance={104 * markerScale / perimeter * lapLength}
+                shoulder={20 * markerScale / .62} scale={markerScale} spacing={lapLength / 50} color={color} pale={true}
+                point={(d, offset = 0) => ovalOffsetPoint(d / lapLength, r, offset, straight)}
+                path={(a, b, offset = 0) => ovalArc(a / lapLength, b / lapLength, r, straight, offset)}
+                sessions={known} prefix={`${id}-${i}`} futureTo={(lap.laps + 1) * lapLength}/>}
             </g>;
           })}
         </g>

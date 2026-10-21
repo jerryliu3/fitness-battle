@@ -1,6 +1,6 @@
 /** Independent surface, progress and camera decisions for the vertical-kilometer review. */
 export const backgrounds = {
-  athletics: { name: "Personal track", short: "Your own running lane", description: "Individual mineral-blue running lanes, painted sidelines and whole-kilometer split stencils.", surface: "#899b9d", lane: "#819496", ink: "#f6f8f3", muted: "#e1e8df", rule: "#eaf0e6" },
+  athletics: { name: "Personal track", short: "Your own running lane", description: "Individual mineral-blue running lanes and painted sidelines, with one shared distance scale beside the field.", surface: "#899b9d", lane: "#819496", ink: "#f6f8f3", muted: "#e1e8df", rule: "#eaf0e6" },
   road: { name: "Road ribbons", short: "A road for each athlete", description: "Separate charcoal road lanes with soft green shoulders and longitudinal road markings. Human-powered, with no vehicles.", surface: "#78817b", lane: "#596660", ink: "#fbfcf7", muted: "#e2e8dd", rule: "#e6e9d6" },
   parkland: { name: "Parkland Passage", short: "One shared promenade", description: "A broad shared path with trees, benches and distance-fixed garden landmarks. No rigid lane boxes.", surface: "#eff0e5", lane: "#f3f2e9", ink: "#3d4b36", muted: "#6e7c61", rule: "#c5ccb7" },
   pool: { name: "Pool Deck", short: "Water, ropes, light", description: "Soft aquatic light, colored lane ropes and a quiet pool-floor spine. An unfolded surface study, not a claim about actual swimming lengths.", surface: "#deeff0", lane: "#c4e2e5", ink: "#2c5359", muted: "#4d777b", rule: "#ffffff" },
@@ -13,11 +13,11 @@ export const backgrounds = {
 export type BackgroundId = keyof typeof backgrounds;
 
 export const progressTreatments = {
-  rails: { name: "Edge lights", short: "Light the borders", description: "Twin rounded rails show earned distance at the sides of the lane. The middle stays open for the capsule and its afterimages." },
-  thread: { name: "Session thread", short: "One line, real knots", description: "An offset thread carries a knot for each counted session. It records the work without coloring the ground beneath the racer." },
-  footsteps: { name: "Kilometer stamps", short: "Ground you have crossed", description: "Discrete paired steps mark completed whole kilometers. No continuous bar; each crossed distance leaves a small imprint beside the wake." },
+  dots: { name: "Dotted route", short: "A growing breadcrumb path", description: "A distance-anchored trail of round dots grows from the start, bends around the echoes and docks beside the capsule at its exact distance. White on darker grounds; ink or gold on light grounds." },
+  cord: { name: "Waypoint cord", short: "One line, an exact endpoint", description: "A fine continuous cord runs beside the wake and ends in an open waypoint at the capsule’s true distance. A short connector makes the relationship explicit without painting through the racer." },
+  tiles: { name: "Session tiles", short: "Each effort lays a piece", description: "Each sourced counted session becomes one rounded, proportional tile beside the lane. Visible seams represent real activity boundaries, and the final piece reaches the capsule’s distance. Unavailable history remains empty." },
+  reveal: { name: "Revealed ground", short: "Leave the ground changed", description: "A narrow textured shoulder changes from quiet unexplored hatching to clear, softly colored ground behind the capsule. Progress lives in the surface rather than a line or a bar beneath the echoes." },
   deposit: { name: "Banked trail", short: "Leave the wake clear", description: "A slender, softly tapered deposit begins beyond the last afterimage. There is a deliberate clear gap behind the live racer, with no straight cap through its body." },
-  receipts: { name: "Session tokens", short: "Efforts, not an area fill", description: "Detached little contribution tokens sit beside the lane at their session positions. Tap one to inspect the recorded amount; there is no connecting bar." },
 } as const;
 export type ProgressId = keyof typeof progressTreatments;
 
