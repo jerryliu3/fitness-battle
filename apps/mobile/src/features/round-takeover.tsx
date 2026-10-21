@@ -1,24 +1,10 @@
 import { APP_TIMEZONE, roundReveal, roundEnrollment, sportById, type Action, type CompeteState, type PeriodResult } from "@fitness-battle/shared";
 import { usePathname, useRouter } from "expo-router";
-import { useEffect, useState } from "react";
-import { AccessibilityInfo, Animated, Modal, ScrollView, Text, View } from "react-native";
+import { useState } from "react";
+import { Modal, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { ResultCard } from "./result-card";
 import { FocusButton, f } from "../ui/focus";
-function NumberReveal({ value, from = 0, decimals = 0 }: { value: number; from?: number; decimals?: number }) {
-  const [display, setDisplay] = useState(from);
-  useEffect(() => {
-    let cancelled = false;
-    const progress = new Animated.Value(from);
-    const subscription = progress.addListener(({ value }) => setDisplay(value));
-    void AccessibilityInfo.isReduceMotionEnabled().then((reduced) => {
-      if (cancelled) return;
-      if (reduced) setDisplay(value);
-      else Animated.timing(progress, { toValue: value, duration: 900, useNativeDriver: false }).start();
-    }).catch(() => { if (!cancelled) setDisplay(value); });
-    return () => { cancelled = true; progress.stopAnimation(); progress.removeListener(subscription); };
-  }, [value, from]);
-  return <Text accessibilityLabel={String(value)}>{display.toFixed(decimals)}</Text>;
-}
 function Round({ state, rows, onClose }: { state: CompeteState; rows: PeriodResult[]; onClose: () => void }) {
   const [next, setNext] = useState(false);
   const router = useRouter();
@@ -26,15 +12,9 @@ function Round({ state, rows, onClose }: { state: CompeteState; rows: PeriodResu
     <SafeAreaView style={f.safe}><ScrollView contentContainerStyle={f.content}>
       <FocusButton label="Close results" secondary onPress={onClose}/>
       <Text style={f.kicker}>Round complete · {next ? "2 / 2" : "1 / 2"}</Text>
-      <Text style={f.title}>{next ? "A fresh field awaits." : "Your week, settled."}</Text>
+      <Text style={f.title}>{next ? "Keep it going." : "Your week, settled."}</Text>
       {!next ? <>
-        {rows.map((result) => <View key={result.id} style={f.card}>
-          <Text style={f.h2}>{sportById(result.sport).name}</Text>
-          <Text style={f.copy}>Place <NumberReveal value={result.place}/> / {result.fieldSize}</Text>
-          <Text style={f.copy}>Effort <NumberReveal value={result.effort} decimals={1}/></Text>
-          <Text style={f.copy}>Effort score <NumberReveal from={result.eloBefore} value={result.eloAfter}/> ({result.eloAfter - result.eloBefore >= 0 ? "+" : ""}{result.eloAfter - result.eloBefore})</Text>
-          {result.frozen && <Text style={f.small}>Your score was protected by a freeze.</Text>}
-        </View>)}
+        {rows.map(result => <ResultCard key={result.id} result={result} units={state.units} />)}
         <FocusButton label="Next round →" onPress={() => setNext(true)}/>
       </> : <>
         {rows.map((result) => {
