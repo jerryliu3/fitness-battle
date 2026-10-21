@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { freshState, reduceCompete, rollClock } from "./engine";
 import { milestoneStep } from "./milestones";
 import { settleElo } from "./elo";
+import { INACTIVITY_DECAY } from "./sports";
 const now = new Date('2026-10-21T12:00:00Z');
 const joined = () => reduceCompete(freshState(now), { type: 'opt-in', sport: 'running', now: now.toISOString() });
 const log = (s: ReturnType<typeof joined>) => reduceCompete(s, { type: 'log-manual', sport: 'running', distanceM: 16093.44, movingSec: 3600, activityId: 'manual-test', now: now.toISOString() });
@@ -32,9 +33,9 @@ describe('activity score growth', () => {
     const future={...start, activities:[{ id:'future', sport:'running' as const, startedAt:'2026-10-22T12:00:00Z',distanceM:50000,movingSec:6000,avgHr:null,source:'strava' as const,verified:true }]};
     expect(rollClock(future,now).ratings).toEqual(start.ratings);
   });
-  it('holds inactivity and losing placements; bonuses can only add', () => {
-    expect(settleElo(1200,[1200],1,2,10,false)).toBe(1200);
-    expect(settleElo(1200,[1200],1,2,0,false)).toBe(1200);
-    expect(settleElo(1200,[1200],0,2,10,false)).toBeGreaterThan(1200);
+  it('decays idle weeks without blocking milestone growth or winning placements', () => {
+    expect(settleElo(1200, [1200], 1, 2, 0, false)).toBe(1200 - INACTIVITY_DECAY);
+    expect(settleElo(1200, [1200], 0, 2, 10, false)).toBeGreaterThan(1200);
+    expect(settleElo(1200, [1200], 1, 2, 10, false)).toBeLessThan(1200);
   });
 });
