@@ -6,9 +6,7 @@ import { ArenaScreen } from "@/features/arena/arena-screen";
 import { FieldScreen } from "@/features/field/field-screen";
 import { TodayScreen } from "@/features/today/today-screen";
 import { AthletePage, ProgressPage } from "@/features/you/you-route";
-import { Ember } from "@/components/mascot/ember";
 import {
-  initialsFromName,
   PERSON_ICON_PATH,
   SHELL_TABS,
   SHELL_TAB_ICONS,
@@ -65,7 +63,6 @@ export function PhoneShell({
     retryLoad,
     fieldNotice,
   } = useCompete();
-  const profileLabel = state?.name ?? user?.email ?? "You";
   const tab = shellTabFromPath(path);
   const onAthlete = path?.startsWith("/athlete") ?? false;
   useCompeteFieldRefresh(!hideTabs && (tab?.id === "arena" || tab?.id === "field"));
@@ -199,7 +196,7 @@ export function PhoneShell({
             {state?.avatarUrl ? (
               <img src={state.avatarUrl} alt="" className="focus-shell-profile-img" />
             ) : (
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ color: "var(--muted)" }}>
                 <path d={PERSON_ICON_PATH} />
               </svg>
             )}

@@ -181,7 +181,10 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
           /* A corrupt local copy starts clean. */
         }
       }
-      if (authRef.current.demoMode && authRef.current.user) {
+      if (
+        (authRef.current.demoMode || authRef.current.user?.mode === "demo") &&
+        authRef.current.user
+      ) {
         const seed = getDemoCompeteState(authRef.current.user.email.split("@")[0]);
         if (seed) {
           if (!raw) {
@@ -191,6 +194,7 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
             const missing = seed.activities.filter((a) => !existingIds.has(a.id));
             if (missing.length > 0) {
               next = { ...next, activities: [...next.activities, ...missing] };
+              void AsyncStorage.setItem(keys.state, JSON.stringify(next));
             }
           }
         }

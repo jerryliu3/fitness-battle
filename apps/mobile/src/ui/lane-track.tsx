@@ -259,8 +259,6 @@ export function LaneTrack({
               const effect = !l.you
                 ? overtakeFrame?.rivalEffects[l.id]
                 : undefined;
-              const speed =
-                l.you && animating ? (overtakeFrame?.speed ?? 0) : 0;
               const charging =
                 l.you && animating ? (overtakeFrame?.charging ?? 0) : 0;
               const xx = (i + 0.5) * lw + 10 + (effect?.joltX ?? 0),
