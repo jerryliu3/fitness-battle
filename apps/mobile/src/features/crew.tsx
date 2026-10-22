@@ -1,3 +1,4 @@
+import { alpineTrail } from "../ui/club-art";
 import { SHELL_COLORS as c } from "../theme";
 import { CrewSessions } from "./crew-sessions";
 import { CrewRelay } from "./crew-relay";
@@ -375,7 +376,7 @@ export function CrewHub() {
       ) : null}
       {solo ? (
         <View style={{gap:18}}>
-        <ImageBackground source={require("../../assets/club/alpine-trail.jpg")} style={{height:200,justifyContent:"flex-end",padding:22,borderRadius:20,overflow:"hidden",backgroundColor:c.fieldDeep}}><View style={[StyleSheet.absoluteFill,{backgroundColor:"#081f3670"}]}/><Text style={[f.title,{color:c.card,fontSize:28}]}>Stronger together.</Text><Text style={[f.copy,{color:c.card}]}>A place for every pace.</Text></ImageBackground>
+        <ImageBackground source={alpineTrail} style={{height:200,justifyContent:"flex-end",padding:22,borderRadius:20,overflow:"hidden",backgroundColor:c.fieldDeep}}><View style={[StyleSheet.absoluteFill,{backgroundColor:"#081f3670"}]}/><Text style={[f.title,{color:c.card,fontSize:28}]}>Stronger together.</Text><Text style={[f.copy,{color:c.card}]}>A place for every pace.</Text></ImageBackground>
         <View style={f.card}>
           <Text style={f.kicker}>Your people</Text>
           <Text style={f.title}>Make room for your people.</Text>
@@ -418,7 +419,7 @@ export function CrewHub() {
               <Text style={f.rowTitle}>＋ Add Crew</Text>
             </Pressable>
           </View>
-          <ImageBackground source={require("../../assets/club/alpine-trail.jpg")} style={[f.card,{backgroundColor:c.fieldDeep,gap:18,minHeight:260,overflow:"hidden",justifyContent:"space-between"}]} imageStyle={{borderRadius:20}}><View pointerEvents="none" style={[StyleSheet.absoluteFill,{backgroundColor:"#081f3680"}]}/>
+          <ImageBackground source={alpineTrail} style={[f.card,{backgroundColor:c.fieldDeep,gap:18,minHeight:260,overflow:"hidden",justifyContent:"space-between"}]} imageStyle={{borderRadius:20}}><View pointerEvents="none" style={[StyleSheet.absoluteFill,{backgroundColor:"#081f3680"}]}/>
             <Pressable
               accessibilityRole="button"
               accessibilityLabel="View crew members"
