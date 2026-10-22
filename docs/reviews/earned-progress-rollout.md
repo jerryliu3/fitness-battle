@@ -28,7 +28,7 @@ Milestone receipts remain aggregate high-water receipts. Session impact therefor
 - Native interaction tests cover hydration versus subsequent score growth, account changes, reduced motion, session hours and removal confirmation, chart ranges, and zero-contribution roster selection.
 - Web production build. The installed locked Next 15.5 package has no `dist/docs` folder; matching official Next 15 client-component and Route Handler documentation was consulted instead. The existing font fetch requires network access for a cold build.
 - Browser checks against the actual web app: two-session day, empty-day suggestion, removal cancel, impact disclosure, week/month/year, selected atlas day, chapter expansion, photo pennant propagation and rank headers. No page overflow at 320, 390 or 1024 px and no browser JavaScript errors in those flows. Archived-result and portrait review fixtures were injected only into an isolated demo browser; production code/data are not fixtures.
-- `expo export --platform ios` produces the native Hermes bundle. No booted iOS simulator was available, so physical-device rendering, VoiceOver and device haptics remain a device QA pass; the bundle check is not a native binary build.
+- `expo export --platform ios` produces the native Hermes bundle. Expo Go SDK 57 was installed on the running iPhone 17 Pro / iOS 26.5 simulator. Guest empty-session rendering and the seeded local Alice account were checked: persistent score rail, two-session 1.23 hr stage, expanded source/GPS/heart-rate details, removal confirmation and Keep, return to Home, atlas year switching, disabled future months and selected-day session rows. The calendar fit all seven columns. Device Hub then stopped responding to automation, so Compete/Crew simulator interaction and native chapter expansion remain unverified there; their automated/browser checks still pass. Full VoiceOver, device haptics, HealthKit and physical-device testing remain outstanding. Expo Go is not a native binary build or a HealthKit integration test.
 - The crew migration and SQL fixture assertions ran successfully inside a transaction rolled back afterward in the local Fitness Battle database. Coverage includes two members, wrong sport, exact week boundaries, demo/excluded/history/stub rows, former members, outsider and anonymous calls. Local security advisor reported no errors. No remote migration was applied.
 
 ## References consulted
@@ -37,3 +37,18 @@ Milestone receipts remain aggregate high-water receipts. Session impact therefor
 - [Next 15 — Server and Client Components](https://nextjs.org/docs/15/app/getting-started/server-and-client-components)
 - [Next 15 — Route Handlers](https://nextjs.org/docs/15/app/api-reference/file-conventions/route)
 - [Supabase — Database functions](https://supabase.com/docs/guides/database/functions)
+
+## Review order
+
+The prototype is independent of the implementation stack. Merge the UX PRs in the following order. After each merge, retarget its successor to `main`; if squashing, restack the descendants first so already merged commits are not reintroduced.
+
+| Review | PR | Initial base |
+| --- | --- | --- |
+| Interactive prototypes | [#253](https://github.com/jerryliu3/fitness-battle/pull/253) | `main` |
+| 1. Shared score rail and presentation selectors | [#254](https://github.com/jerryliu3/fitness-battle/pull/254) | `main` |
+| 2. Home session stage | [#255](https://github.com/jerryliu3/fitness-battle/pull/255) | `codex/ux-effort-rail` |
+| 3. Compete pennants and map scale | [#256](https://github.com/jerryliu3/fitness-battle/pull/256) | `codex/ux-session-stage` |
+| 4. Progress chapters and atlas | [#257](https://github.com/jerryliu3/fitness-battle/pull/257) | `codex/ux-compete-pennants` |
+| 5. Crew dimensional relay and comparison RPC | [#258](https://github.com/jerryliu3/fitness-battle/pull/258) | `codex/ux-progress-atlas` |
+
+Each committed stack step separately passed monorepo typecheck and its applicable native interaction tests. The combined stack passes 677 tests, with 5 existing skipped tests, the web production build and iOS bundle export. It starts from `626cab8` and preserves the newer session Undo, sheet heading focus, Crew self-selection, Progress awards and personal-record charts. No PR has been merged and no remote migration has been applied.
