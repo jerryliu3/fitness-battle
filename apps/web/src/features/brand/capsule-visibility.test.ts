@@ -7,10 +7,10 @@ import { ArenaLanes } from "@/features/focus/arena-lanes";
 const require = createRequire(import.meta.url);
 const sharp = createRequire(require.resolve("next/package.json"))("sharp");
 
-function render(presentation: "lanes" | "standings", value = 3) {
+function render(presentation: "lanes" | "standings", value = 3, span = 6) {
   const markup = renderToStaticMarkup(createElement(ArenaLanes, {
     lanes: [{ id: "self", name: "Test athlete", initials: "TA", value, you: true }],
-    presentation, view: { center: 3, span: 6 }, unit: "km", selected: "self",
+    presentation, view: { center: 3, span }, unit: "km", selected: "self",
     onSelect() {}, onPan() {},
   }));
   // The fixed distance scale is a sibling SVG. Extract the first complete tree,
@@ -38,8 +38,12 @@ async function goldPixels(svg: string, top: number, bottom: number) {
 
 describe("production capsule visibility", () => {
   it.each([0, 3, 6])("renders the gold head at value %s, including field edges", async value => {
-    expect(await goldPixels(render("lanes", value), 0, 540)).toBeGreaterThan(500);
+    // A 300 m head is compact in a 6 km overview, but remains painted at either edge.
+    const pixels=await goldPixels(render("lanes", value), 0, 540);
+    expect(pixels).toBeGreaterThan(100);
+    expect(pixels).toBeLessThan(2000);
   });
+  it("keeps the same world-size capsule legible at chase scale",async()=>{expect(await goldPixels(render("lanes",3,1.2),0,540)).toBeGreaterThan(500);});
   it("replaces an out-of-range capsule with a dotted arrow", () => {
     const svg = render("lanes", 8);
     expect(svg).not.toContain('data-polished-racer=');

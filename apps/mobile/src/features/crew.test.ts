@@ -75,6 +75,7 @@ vi.mock("../ui/focus", () => ({
   FocusSheet: "Sheet",
   f: {},
 }));
+vi.mock("./crew-relay",()=>({CrewRelay:"CrewRelay"}));
 import { CrewHub } from "./crew";
 let renderer: ReactTestRenderer;
 afterEach(async () => {

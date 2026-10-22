@@ -3,6 +3,7 @@ import { useState } from "react";
 import { useReducedMotion } from "motion/react";
 import {
   APP_TIMEZONE,
+  formatEloDelta,
   formatVolume,
   formatEffort,
   sportById,
@@ -19,7 +20,6 @@ export function ResultCard({
   const [receipt, setReceipt] = useState(false),
     reduced = useReducedMotion();
   const range = `${new Date(result.periodStart).toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: APP_TIMEZONE })} – ${new Date(Date.parse(result.periodEnd) - 1).toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: APP_TIMEZONE })}`;
-  const bonus = Math.max(0, result.eloAfter - result.eloBefore);
   return (
     <button
       type="button"
@@ -85,7 +85,7 @@ export function ResultCard({
             )}
           </span>
           <span className="week-result-score">
-            <b>{result.eloAfter}</b> effort score <em>+{bonus}</em>
+            <b>{result.eloAfter}</b> effort score <em>{formatEloDelta(result.eloBefore,result.eloAfter)}</em>
           </span>
         </>
       )}

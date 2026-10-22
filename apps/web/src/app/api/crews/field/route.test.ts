@@ -45,6 +45,7 @@ function database() {
     throw new Error(`Unexpected RPC: ${name}`);
   });
   const from = vi.fn((table: string) => {
+    if(table==="profiles")return {select:()=>({in:async()=>({data:field.member_ids.map(id=>({id,avatar_url:null})),error:null})})};
     const result = table === "crew_members"
       ? { crews: { id: "crew-1", name: "Morning crew", sport: "running" } }
       : table === "week_fields" ? field : undefined;

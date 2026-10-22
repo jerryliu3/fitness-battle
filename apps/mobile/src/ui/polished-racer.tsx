@@ -50,6 +50,7 @@ export function PolishedRacer({
   time,
   wakeBottom,
   showWake = true,
+  sizeScale,
 }: {
   x: number;
   y: number;
@@ -58,9 +59,10 @@ export function PolishedRacer({
   time?: number;
   wakeBottom?: number;
   showWake?: boolean;
+  sizeScale?: number;
 }) {
   const id = useId(),
-    scale = polishedLaneScale(you);
+    scale = sizeScale ?? polishedLaneScale(you);
   const [defs, wake, ...head] = polishedCapsuleScene(id, gold, time);
   return (
     <G transform={`translate(${x} ${y}) scale(${scale})`} pointerEvents="none">

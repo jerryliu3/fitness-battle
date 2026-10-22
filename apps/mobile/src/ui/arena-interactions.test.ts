@@ -140,7 +140,7 @@ describe("native competition interactions", () => {
     expect(mock.mounts).toBe(1);
     const register = renderer.root
       .findAllByType("FocusButton" as never)
-      .find((node) => node.props.label === "＋ Register for another event")!;
+      .find((node) => node.props.label === "＋ Register")!;
     await act(async () => register.props.onPress());
     expect(renderer.root.findByType("Sheet" as never).props.open).toBe(true);
   });
@@ -177,38 +177,23 @@ describe("native competition interactions", () => {
     );
   });
 
-  it("renders each registered sport with independent field controls", async () => {
-    vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
-    mock.state = reduceCompete(
-      reduceCompete(freshState(), { type: "opt-in", sport: "running" }),
-      { type: "opt-in", sport: "cycling" },
-    );
-    await act(async () => {
-      renderer = create(createElement(ArenaScreen));
-    });
-    const controls = renderer.root.findAllByType("Segments" as never);
-    const running = controls.find(
-      (node) => node.props.label === "Running field view",
-    )!;
-    const cycling = controls.find(
-      (node) => node.props.label === "Cycling field view",
-    )!;
-    expect(renderer.root.findAllByType("LaneTrack" as never)).toHaveLength(2);
-    const pickers = renderer.root.findAllByType("FieldGroundPicker" as never);
-    await act(async () => pickers[0].props.onChange({ ground: "pool", edges: "open" }));
-    expect(renderer.root.findAllByType("LaneTrack" as never).map(node => node.props.appearance)).toEqual([{ ground: "pool", edges: "open" }, { ground: "trail", edges: "club" }]);
-    const maps = renderer.root.findAllByType("FieldOverview" as never);
-    const cyclingCenter = maps[1].props.view.center;
-    await act(async () => maps[0].props.onNavigate(1));
-    expect(renderer.root.findAllByType("FieldOverview" as never)[1].props.view.center).toBe(cyclingCenter);
-    await act(async () => running.props.onChange("standings"));
-    expect(cycling.props.value).toBe("lanes");
-    expect(
-      renderer.root
-        .findAllByType("LaneTrack" as never)
-        .map((node) => node.props.active),
-    ).toEqual([false, true]);
-    expect(JSON.stringify(renderer.toJSON())).not.toContain("Center me");
-    expect(JSON.stringify(renderer.toJSON())).not.toContain("Fit field");
-  });
+
+});
+
+it("mounts only one registered sport and replaces it when switching",async()=>{
+ vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT",true);
+ mock.dispatch.mockClear();
+ mock.state=reduceCompete(reduceCompete(freshState(),{type:"opt-in",sport:"running"}),{type:"opt-in",sport:"cycling"});
+ await act(async()=>{renderer=create(createElement(ArenaScreen));});
+ expect(renderer.root.findAllByType("LaneTrack" as never)).toHaveLength(1);
+ const choice=renderer.root.findAllByType("Pressable" as never).find(n=>n.props.accessibilityLabel==="Show Cycling")!;
+ await act(async()=>choice.props.onPress());
+ expect(renderer.root.findAllByType("LaneTrack" as never)).toHaveLength(1);
+ expect(renderer.root.findAllByType("Segments" as never).some(n=>n.props.label==="Cycling field view")).toBe(true);
+ expect(renderer.root.findAllByType("Segments" as never).some(n=>n.props.label==="Running field view")).toBe(false);
+ expect(mock.dispatch).not.toHaveBeenCalledWith(expect.objectContaining({type:"set-primary"}));
+ mock.state={...mock.state!,ratings:mock.state!.ratings.map(r=>r.sport==="cycling"?{...r,optedIn:false}:r)};
+ await act(async()=>renderer.update(createElement(ArenaScreen)));
+ expect(renderer.root.findAllByType("LaneTrack" as never)).toHaveLength(1);
+ expect(renderer.root.findAllByType("Segments" as never).some(n=>n.props.label==="Running field view")).toBe(true);
 });

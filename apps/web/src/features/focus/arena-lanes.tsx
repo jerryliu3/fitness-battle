@@ -3,6 +3,9 @@ import { useRef, useLayoutEffect, useState, useId, useMemo } from "react";
 import { motion, useReducedMotion } from "motion/react";
 import {
   arenaPosition,
+  ordinalPlace,
+  athletePennantOffset,
+  PERSON_ICON_PATH,
   formatActivityAge,
   arenaWindow,
   clampArenaLaneCenter,
@@ -16,7 +19,6 @@ import {
   type ArenaViewWindow,
 } from "@fitness-battle/shared";
 import { drawFieldNode } from "@/features/field/components/field-course";
-import { Ember } from "@/components/mascot/ember";
 import { PolishedRacer, usePolishedWakeTime } from "@/features/brand/polished-racer";
 export function ArenaLanes({
   lanes,
@@ -98,13 +100,6 @@ export function ArenaLanes({
   const relativeDistance = (value: number) => `${value - yourValue > 0 ? "+" : ""}${(value - yourValue).toFixed(1)} ${unit}`;
 
   const sortedByValue = [...ordered].sort((a, b) => b.value - a.value);
-  const topRunner = sortedByValue[0];
-  const firstPlaceId =
-    topRunner &&
-    topRunner.value > 0 &&
-    (sortedByValue.length === 1 || topRunner.value > sortedByValue[1].value)
-      ? topRunner.id
-      : null;
 
   function formatLastUpdated(lane: ArenaSceneLane): string {
     return lane.you && lane.value === 0
@@ -259,7 +254,7 @@ export function ArenaLanes({
       >
         <motion.g aria-hidden={standings} initial={false} animate={{ opacity: standings ? 0 : 1 }} style={{ pointerEvents: "none" }}>
           {groundPaint}
-          {!course.oval && course.laneWidth >= 48 && ordered.map((lane, i) => <text key={lane.id} x={course.point(effectiveView.center, i).x} y={36} textAnchor="middle" className={lane.you ? "lane-title is-you" : "lane-title"}>{lane.you ? selfLaneLabel(lane.name, "caps") : lane.initials}</text>)}
+          {!course.oval && course.laneWidth >= 48 && ordered.map((lane, i) => <text key={lane.id} x={course.point(effectiveView.center, i).x} y={36} textAnchor="middle" className={lane.you ? "lane-title is-you" : "lane-title"}>{`${ordinalPlace(1 + ordered.filter(peer=>peer.value>lane.value+0.000001).length)}${lane.you?" · You":""}`}</text>)}
         </motion.g>
         {ordered.map((l, i) => {
           const position = arenaPosition(l.value, effectiveView);
@@ -271,11 +266,15 @@ export function ArenaLanes({
           const point = course.point(l.value, i, 0, true);
           const targetY = standings ? 48 + row * 76 : point.y + (l.you ? charging * 4 * course.markerScale : 0);
           const targetX = standings ? 38 : point.x + (effect?.joltX ?? 0) * course.markerScale;
-          const markerScale = standings ? 1 : course.markerScale;
           const edge = !course.oval && position.edge;
+          const markerScale = standings || edge ? 1 : course.markerScale;
           const xx = 0, yy = 0;
           const active = selected === l.id || l.you;
-          const headHalf = 29 * polishedLaneScale(Boolean(l.you));
+          const headHalf = 29 * (standings ? polishedLaneScale(Boolean(l.you)) : 1);
+          const pennantWidth=146;
+          const visibleLeft=host.current?.scrollLeft??0;
+          const pennantX=Math.max(visibleLeft-targetX+8,Math.min(visibleLeft+size.width-targetX-pennantWidth-8,l.you?-pennantWidth-12:12));
+          const pennantY=athletePennantOffset(targetY,course.point(yourValue,Math.max(0,ordered.findIndex(peer=>peer.you)),0,true).y,Boolean(l.you),height);
           return (
             <motion.g
               key={l.id}
@@ -323,63 +322,26 @@ export function ArenaLanes({
                   data-overtake-ripple="true"
                 />
               )}
-              {firstPlaceId === l.id && !standings && !edge && (
-                <foreignObject
-                  x={xx - 16}
-                  y={yy - headHalf - 64}
-                  width="32"
-                  height="32"
-                  style={{ overflow: "visible", pointerEvents: "none" }}
-                  className="lane-first-ember"
-                >
-                  <Ember expression="joy" shadow={false} />
-                </foreignObject>
-              )}
               {/* Clip only the wake, in racer-local coordinates; the head must stay
                   visible at field edges and throughout the standings transition. */}
               {standings || !edge ? (
-                <PolishedRacer x={xx} y={yy} you={Boolean(l.you)} gold={rank === 1} active={active}
+                <PolishedRacer sizeScale={standings ? undefined : 1} x={xx} y={yy} you={Boolean(l.you)} gold={rank === 1} active={active}
                   showWake={!standings} wakeBottom={course.oval ? undefined : (maxTailY-targetY)/markerScale} time={wakeTime}/>
               ) : <circle r={18} fill="white" stroke="#616c63" strokeDasharray="3 3"/>}
               <rect className="focus-racer-focus-ring" x={-23} y={-headHalf-3} width={46} height={headHalf*2+6} rx={23} fill="none" stroke="#f1c75b" strokeWidth={2}/>
               <rect x={xx - 24 / markerScale} y={yy - Math.max(22 / markerScale, headHalf + 4)} width={48 / markerScale} height={Math.max(44 / markerScale, headHalf * 2 + 8)} rx="24" fill="transparent"/>
-              <text
-                x={xx}
-                y={yy + 4}
-                textAnchor="middle"
-                className="lane-initial"
-                fill="#282f2c"
-              >
-                {!standings && edge
-                  ? edge === "ahead"
-                    ? "↑"
-                    : "↓"
-                  : l.initials}
-              </text>
-              {!l.you && (
-                <motion.g aria-hidden={standings} initial={false} animate={{ opacity: standings ? 0 : 1 }} style={{ pointerEvents: "none" }}>
-                <rect
-                  x={xx - 26}
-                  y={yy - headHalf - 26}
-                  width="52"
-                  height="20"
-                  rx="10"
-                  fill="#ffffffee"
-                  stroke="#d3ddcb"
-                />
-                <text
-                  x={xx}
-                  y={yy - headHalf - 12}
-                  textAnchor="middle"
-                  className="lane-total"
-                  fill="#282f2c"
-                  style={{ fontSize: 10, fill: "#282f2c" }}
-                >
-                  {relativeDistance(l.value)}
-                </text>
-                </motion.g>
-              )}
+              {(standings || edge) && <text x={xx} y={yy+4} textAnchor="middle" className="lane-initial" fill="#282f2c">{!standings&&edge?(edge==="ahead"?"↑":"↓"):l.initials}</text>}
               </g>
+              {!standings&&edge&&<g pointerEvents="none"><rect x={-34} y={edge==="ahead"?27:-42} width={68} height={20} rx={8} fill="#ffffffee"/><text x={0} y={edge==="ahead"?41:-28} textAnchor="middle" fontSize={10} fill="#616c63">{relativeDistance(l.value)}</text></g>}
+              {!standings && !edge && (l.you || selected===l.id) && <g className="athlete-pennant" pointerEvents="none">
+                <path d={`M0 0 L${pennantX+pennantWidth/2} ${pennantY>0?pennantY:pennantY+46}`} fill="none" stroke="#819486" strokeWidth="1.2"/>
+                <rect x={pennantX} y={pennantY+2} width={pennantWidth} height={46} rx={12} fill="#282f2c" opacity={.1}/>
+                <rect x={pennantX} y={pennantY} width={pennantWidth} height={46} rx={12} fill="#ffffff" stroke={l.you?"#f1c75b":"#e0e5dc"}/>
+                <circle cx={pennantX+24} cy={pennantY+23} r={16} fill="#eef0e9"/>
+                {l.avatarUrl ? <><defs><clipPath id={`${prefix}-portrait-${i}`}><circle cx={pennantX+24} cy={pennantY+23} r={16}/></clipPath></defs><image href={l.avatarUrl} x={pennantX+8} y={pennantY+7} width={32} height={32} preserveAspectRatio="xMidYMid slice" clipPath={`url(#${prefix}-portrait-${i})`}/></> : <path d={PERSON_ICON_PATH} transform={`translate(${pennantX+14} ${pennantY+13}) scale(.83)`} fill="none" stroke="#616c63" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round"/>}
+                <text x={pennantX+47} y={pennantY+20} fontSize={12} fill="#282f2c" fontWeight={600}>{l.you?"You":l.name.length>13?`${l.name.slice(0,12)}…`:l.name}</text>
+                <text x={pennantX+47} y={pennantY+35} fontSize={10} fill="#616c63">{ordinalPlace(rank)} · {l.you?`${l.value.toFixed(1)} ${unit}`:relativeDistance(l.value)}</text>
+              </g>}
               <g aria-hidden={!standings} display={standings ? "inline" : "none"}>
               <motion.g initial={false} animate={{ opacity: standings ? 1 : 0 }}>
                 <rect x={-30} y={-33} width={Math.max(200, width - 16)} height={70} rx={14} fill="transparent" />

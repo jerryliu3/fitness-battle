@@ -1,13 +1,15 @@
 import {
   fieldCourse, fieldCourseScene, fieldScaleScene, fieldLap, defaultFieldAppearance, type FieldAppearance,
   arenaPosition,
+  fieldDefaultSpan,
+  ordinalPlace,
+  athletePennantOffset,
+  PERSON_ICON_PATH,
   arenaWindow,
   arenaFieldHigh,
   clampCourseCenter,
   initialsFromName,
   orderedArenaLanes,
-  polishedLaneScale,
-  selfLaneLabel,
   type ArenaLane,
   type ArenaOvertakeFrame,
   type ArenaOvertakePlan,
@@ -17,6 +19,9 @@ import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { PanResponder, Pressable, ScrollView, Text, View } from "react-native";
 import Svg, {
   Circle,
+  Defs,
+  ClipPath,
+  Image as SvgImage,
   G,
   Path,
   Rect,
@@ -26,7 +31,6 @@ import { SHELL_COLORS as c } from "../theme";
 import { playCue } from "../lib/haptics";
 import { drawFieldNode } from "./field-course";
 import { LaneRacerTarget } from "./lane-racer-target";
-import { Ember } from "./mascot/ember";
 import { PolishedRacer, usePolishedWakeTime } from "./polished-racer";
 export function LaneTrack({
   lanes,
@@ -64,7 +68,7 @@ export function LaneTrack({
   const me = lanes.find((l) => l.you);
   const rawV = view ?? {
     center: me?.values[index] ?? 0,
-    span: unit === "pts" ? 20 : unit === "mi" ? 4 : 6,
+    span: fieldDefaultSpan(unit),
   };
   const ordered = orderedArenaLanes(lanes);
   const fieldHigh = arenaFieldHigh(
@@ -101,12 +105,6 @@ export function LaneTrack({
       }),
     [],
   );
-  const ranked = [...ordered].sort((a, b) => b.values[index] - a.values[index]);
-  const leaderId =
-    ranked[0]?.values[index] > 0 &&
-    (!ranked[1] || ranked[0].values[index] > ranked[1].values[index])
-      ? ranked[0].id
-      : null;
   const ghost = showGhost ? lanes.find((l) => l.ghost) : null;
   const w = course.width, lw = course.laneWidth;
   const live = ordered.map(l => ({ ...l, value: animating ? overtakeFrame?.laneValues[l.id] ?? l.values[index] ?? 0 : l.values[index] ?? 0, initials: initialsFromName(l.name) }));
@@ -200,7 +198,7 @@ export function LaneTrack({
             accessibilityLabel={`Vertical lanes in ${unit}, centered on your distance`}
           >
             {groundPaint}
-            {!course.oval && lw >= 48 && ordered.map((l, i) => <SvgText key={l.id} x={course.point(v.center, i).x} y={36} textAnchor="middle" fontSize={11} fontWeight={l.you ? "bold" : "600"} fill={l.you ? "#282f2c" : "#616c63"}>{l.you ? selfLaneLabel(l.name, "caps") : initialsFromName(l.name)}</SvgText>)}
+            {!course.oval && lw >= 48 && ordered.map((l, i) => <SvgText key={l.id} x={course.point(v.center, i).x} y={36} textAnchor="middle" fontSize={11} fontWeight={l.you ? "bold" : "600"} fill={l.you ? "#282f2c" : "#616c63"}>{`${ordinalPlace(1+live.filter(peer=>peer.value>(live.find(peer=>peer.id===l.id)?.value??0)+.000001).length)}${l.you?" · You":""}`}</SvgText>)}
             {ordered.map((l, i) => {
               const value =
                 animating && overtakeFrame
@@ -212,9 +210,13 @@ export function LaneTrack({
                 : undefined;
               const charging =
                 l.you && animating ? (overtakeFrame?.charging ?? 0) : 0;
-              const point = course.point(value, i, 0, true), scale = course.markerScale;
+              const point = course.point(value, i, 0, true), scale = edge?1:course.markerScale;
               const xx = point.x + (effect?.joltX ?? 0) * scale, yy = point.y + (l.you ? charging * 4 * scale : 0);
-              const headHalf = 29 * polishedLaneScale(l.you);
+              const headHalf = 29;
+              const rank=1+live.filter(peer=>peer.value>value+.000001).length;
+              const pennantWidth=146, visibleLeft=previous.current?.scroll??0;
+              const pennantX=Math.max(visibleLeft-xx+8,Math.min(visibleLeft+width-xx-pennantWidth-8,l.you?-pennantWidth-12:12));
+              const pennantY=athletePennantOffset(yy,course.point(overtakeFrame?.youValue??me?.values[index]??0,Math.max(0,ordered.findIndex(peer=>peer.you)),0,true).y,l.you,540);
               return (
                 <LaneRacerTarget
                   key={l.id}
@@ -225,11 +227,6 @@ export function LaneTrack({
                   accessibilityLabel={`${course.oval ? `${fieldLap(value, unit).laps} completed laps, ` : ""}${l.name}, ${(value - (overtakeFrame?.youValue ?? me?.values[index] ?? 0)).toFixed(1)} ${unit} relative to you${edge ? `, ${edge} of view` : ""}`}
                 >
                   <G transform={`translate(${xx} ${yy}) rotate(${point.angle}) scale(${scale})`}>
-                  {l.id === leaderId && !edge ? (
-                    <G transform={`translate(-24, -104)`}>
-                      <Ember size={48} expression="joy" />
-                    </G>
-                  ) : null}
                   {l.you && charging > 0.02 ? (
                     <Path
                       d={`M ${-30} ${-4} l -8 6 l 5 2 l -5 7 M ${30} ${-6} l 8 6 l -5 2 l 5 7`}
@@ -262,6 +259,7 @@ export function LaneTrack({
                     />
                   ) : (
                     <PolishedRacer
+                      sizeScale={1}
                       x={0}
                       y={0}
                       you={l.you}
@@ -285,43 +283,18 @@ export function LaneTrack({
                     rx={24}
                     fill="transparent"
                   />
-                  <SvgText
-                    x={0}
-                    y={4}
-                    textAnchor="middle"
-                    fontSize={10}
-                    fontWeight="bold"
-                    fill="#282f2c"
-                  >
-                    {edge
-                      ? edge === "ahead"
-                        ? "↑"
-                        : "↓"
-                      : initialsFromName(l.name)}
-                  </SvgText>
-                  {!l.you && (
-                    <>
-                      <Rect
-                        x={-32}
-                        y={-headHalf - 26}
-                        width={64}
-                        height={20}
-                        rx={10}
-                        fill="#ffffffee"
-                        stroke="#e0e5dc"
-                      />
-                      <SvgText
-                        x={0}
-                        y={-headHalf - 12}
-                        textAnchor="middle"
-                        fontSize={10}
-                        fill="#282f2c"
-                      >
-                        {`${value - (overtakeFrame?.youValue ?? ordered.find((peer) => peer.you)?.values[index] ?? 0) > 0 ? "+" : ""}${(value - (overtakeFrame?.youValue ?? ordered.find((peer) => peer.you)?.values[index] ?? 0)).toFixed(1)} ${unit}`}
-                      </SvgText>
-                    </>
-                  )}
+                  {edge?<SvgText x={0} y={4} textAnchor="middle" fontSize={12} fill={c.ink}>{edge==="ahead"?"↑":"↓"}</SvgText>:null}
                   </G>
+                  {edge?<G transform={`translate(${xx} ${yy})`} pointerEvents="none"><Rect x={-34} y={edge==="ahead"?27:-42} width={68} height={20} rx={8} fill="#ffffffee"/><SvgText x={0} y={edge==="ahead"?41:-28} textAnchor="middle" fontSize={10} fill={c.muted}>{`${value-(overtakeFrame?.youValue??me?.values[index]??0)>0?"+":""}${(value-(overtakeFrame?.youValue??me?.values[index]??0)).toFixed(1)} ${unit}`}</SvgText></G>:null}
+                  {!edge&&(l.you||selectedId===l.id)?<G transform={`translate(${xx} ${yy})`} pointerEvents="none">
+                    <Path d={`M0 0 L${pennantX+pennantWidth/2} ${pennantY>0?pennantY:pennantY+46}`} fill="none" stroke={c.secondary} strokeWidth={1.2}/>
+                    <Rect x={pennantX} y={pennantY+2} width={pennantWidth} height={46} rx={12} fill={c.ink} opacity={.1}/>
+                    <Rect x={pennantX} y={pennantY} width={pennantWidth} height={46} rx={12} fill={c.card} stroke={l.you?c.tennis:c.line}/>
+                    <Circle cx={pennantX+24} cy={pennantY+23} r={16} fill={c.soft}/>
+                    {l.avatarUrl?<><Defs><ClipPath id={`${prefix}-portrait-${i}`}><Circle cx={pennantX+24} cy={pennantY+23} r={16}/></ClipPath></Defs><SvgImage href={{uri:l.avatarUrl}} x={pennantX+8} y={pennantY+7} width={32} height={32} preserveAspectRatio="xMidYMid slice" clipPath={`url(#${prefix}-portrait-${i})`}/></>:<Path d={PERSON_ICON_PATH} transform={`translate(${pennantX+14} ${pennantY+13}) scale(.83)`} fill="none" stroke={c.muted} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round"/>}
+                    <SvgText x={pennantX+47} y={pennantY+20} fontSize={12} fill={c.ink} fontWeight="600">{l.you?"You":l.name.length>13?`${l.name.slice(0,12)}…`:l.name}</SvgText>
+                    <SvgText x={pennantX+47} y={pennantY+35} fontSize={10} fill={c.muted}>{ordinalPlace(rank)} · {l.you?`${value.toFixed(1)} ${unit}`:`${value-(overtakeFrame?.youValue??me?.values[index]??0)>0?"+":""}${(value-(overtakeFrame?.youValue??me?.values[index]??0)).toFixed(1)} ${unit}`}</SvgText>
+                  </G>:null}
                 </LaneRacerTarget>
               );
             })}

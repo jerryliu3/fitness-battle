@@ -1,6 +1,6 @@
 import { arenaPosition, arenaWindow, clampArenaLaneCenterToField, type ArenaSceneLane, type ArenaViewWindow } from "./arena-view";
 import { fieldGrounds, type FieldAppearance } from "./field-appearance";
-import { polishedCapsulePath, polishedLaneScale } from "./polished-identity";
+import { polishedCapsulePath } from "./polished-identity";
 
 /** Small SVG scene contract, painted by DOM SVG and react-native-svg adapters. */
 export interface FieldNode {
@@ -16,7 +16,8 @@ const circle = (cx: number, cy: number, r: number, fill: string, extra: FieldNod
 const text = (x: number, y: number, value: string, fill: string, size = 10, extra: FieldNode["attrs"] = {}) => n("text", { x, y, fill, fontSize: size, ...extra }, undefined, value);
 const path = (d: string, fill: string, extra: FieldNode["attrs"] = {}) => n("path", { d, fill, ...extra });
 
-export function fieldDefaultSpan(unit: string) { return unit === "pts" ? 20 : unit === "mi" ? 4 : 6; }
+/** A local chase window; the existing overview retains the whole accumulated course. */
+export function fieldDefaultSpan(unit: string) { return unit === "pts" ? 20 : unit === "mi" ? 1200 / 1609.344 : 1.2; }
 export function clampCourseCenter(value: number, span: number, high: number, unit: string, ground: FieldAppearance["ground"]) {
   return ground === "oval" ? Math.max(0, Math.min(high, value)) : clampArenaLaneCenterToField(value, span, high, unit === "pts" ? 20 : 8);
 }
@@ -39,7 +40,7 @@ function ovalPoint(f: number, r: number) {
 }
 
 export function fieldCourse(viewportWidth: number, height: number, count: number, view: ArenaViewWindow, unit: string, appearance: FieldAppearance) {
-  const zoom = fieldDefaultSpan(unit) / arenaWindow(view.center, view.span).span;
+  const zoom = (appearance.ground === "oval" ? (unit === "pts" ? 20 : unit === "mi" ? 4 : 6) : fieldDefaultSpan(unit)) / arenaWindow(view.center, view.span).span;
   const oval = appearance.ground === "oval";
   const fieldWidth = Math.max(viewportWidth - 60, count * 74) * zoom;
   const width = oval ? viewportWidth : Math.max(viewportWidth, fieldWidth + 60);
@@ -65,7 +66,8 @@ export function fieldCourse(viewportWidth: number, height: number, count: number
     return Array.from({ length: steps + 1 }, (_, j) => { const p = point(a + (b - a) * j / steps, i, offset); return `${j ? "L" : "M"}${p.x.toFixed(3)} ${p.y.toFixed(3)}`; }).join(" ");
   }
   return { width, height, left, fieldWidth, top, bottom, length, laneWidth, bounds, zoom, oval, ovalScale, outerRadius, midX, midY, along, drift, point, curve,
-    markerScale: oval ? Math.min(1.5, ovalScale * 1.3) : zoom };
+    markerScale: unit === "pts" ? (oval ? Math.min(1.5, ovalScale * 1.3) : zoom)
+      : (oval ? (540 + 2 * Math.PI * (140 + Math.floor(count / 2) * 18 + 9)) * ovalScale : length / bounds.span) * .3 / 58 };
 }
 export type FieldCourse = ReturnType<typeof fieldCourse>;
 /** Integer labels, bounded scenery; no work proportional to lifetime distance. */
@@ -90,7 +92,7 @@ export function fieldCourseScene(g: FieldCourse, appearance: FieldAppearance, la
   const clip = `${prefix}-ground-clip`, mask = `${prefix}-head-clear`;
   const masks: FieldNode[] = [rect(0, 0, g.width, g.height, "white")];
   for (let i = 0; i < lanes.length; i++) {
-    const l = lanes[i], p = g.point(l.value, i, 0, true), s = polishedLaneScale(Boolean(l.you)) * g.markerScale;
+    const l = lanes[i], p = g.point(l.value, i, 0, true), s = g.markerScale;
     masks.push(path(polishedCapsulePath(-1.5), "black", { transform: `translate(${p.x} ${p.y}) rotate(${p.angle}) scale(${s})` }));
   }
   out.push(n("defs", {}, [n("clipPath", { id: clip }, [rect(0, g.top, g.width, g.length, "white")]), n("mask", { id: mask, x: 0, y: 0, width: g.width, height: g.height, maskUnits: "userSpaceOnUse" }, masks)]));
@@ -199,5 +201,5 @@ export function fieldCourseScene(g: FieldCourse, appearance: FieldAppearance, la
 /** Separate overlay keeps the one scale visible when swiping a crowded field. */
 export function fieldScaleScene(g: FieldCourse, unit: string): FieldNode[] {
   if (g.oval) return [];
-  return [rect(0, g.top, 42, g.length, "#f6f7f2"), text(12, 36, unit, "#616c63", 9), ...fieldMarks(g.bounds.min, g.bounds.max).map(d => text(12, g.along(d) + 3, String(d), "#616c63", 9))];
+  return [rect(0, 0, 42, g.height, "#f6f7f2"), text(9, 36, unit, "#616c63", 11), ...fieldMarks(g.bounds.min, g.bounds.max).map(d => text(9, g.along(d) + 3, String(d), "#616c63", 11))];
 }

@@ -4,6 +4,7 @@ export interface ArenaViewWindow {
   span: number;
 }
 export interface ArenaSceneLane {
+  avatarUrl?: string | null;
   id: string;
   name: string;
   initials: string;
@@ -11,6 +12,16 @@ export interface ArenaSceneLane {
   you?: boolean;
   ghost?: boolean;
   lastUpdated?: string;
+}
+export function ordinalPlace(place: number): string {
+  const lastTwo=place%100;
+  return `${place}${lastTwo>=11&&lastTwo<=13?"th":place%10===1?"st":place%10===2?"nd":place%10===3?"rd":"th"}`;
+}
+/** Keep the selected rival's nameplate opposite yours when the two positions are close. */
+export function athletePennantOffset(y:number,selfY:number,you:boolean,height:number):number {
+  const own=selfY<112?24:-64;
+  const proposed=!you&&Math.abs(y-selfY)<90?(own>0?-64:24):(y<112?24:-64);
+  return Math.max(60-y,Math.min(height-60-y,proposed));
 }
 export function arenaWindow(center: number, span: number) {
   const safeCenter = Number.isFinite(center) ? Math.max(0, center) : 0;

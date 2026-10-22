@@ -1,5 +1,9 @@
 import { expect, it } from "vitest";
 import { crewRelay } from "./crew-relay";
+it("keeps member identity and ribbon colors stable when API row order changes",()=>{
+ const a={id:"a",name:"A",value:10,sessions:1},b={id:"b",name:"B",value:20,sessions:2};
+ expect(crewRelay([b,a],100)).toEqual(crewRelay([a,b],100));
+});
 it("represents over-goal distance and zero contributors without overflow", () => {
   const relay = crewRelay(
     [

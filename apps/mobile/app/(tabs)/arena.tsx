@@ -18,7 +18,6 @@ import { useScoreTrackLens } from "../../src/lib/score-track-lens";
 import { playCue } from "../../src/lib/haptics";
 import {
   FocusButton,
-  FocusDisclosure,
   FocusSegments,
   FocusSheet,
   f,
@@ -40,6 +39,7 @@ export default function ArenaScreen() {
   const crewApi = useCrewApi();
   const [track, setTrack] = useScoreTrackLens();
   const [register, setRegister] = useState(false);
+  const [selection,setSelection]=useState<{account:string;sport:SportId|"sleep"}|null>(null);
   const [sport, setSport] = useState<SportId | null>(null);
   const [withCrew, setWithCrew] = useState(false);
   const [joinBusy, setJoinBusy] = useState(false);
@@ -51,6 +51,10 @@ export default function ArenaScreen() {
   const active = state.ratings.filter((rating) => rating.optedIn);
   const hasRegistration =
     active.length > 0 || state.healthRatings.some((rating) => rating.optedIn);
+  const sleepOptedIn=state.healthRatings.some(r=>r.metric==="sleep"&&r.optedIn);
+  const requested=selection?.account===accountKey?selection.sport:null;
+  const selectedSport=requested&&(requested==="sleep"?sleepOptedIn:active.some(r=>r.sport===requested))
+    ? requested : active.find(r=>r.sport===state.primary)?.sport??active[0]?.sport??(sleepOptedIn?"sleep":null);
   function openRegistration() {
     setSport(null);
     setJoinError("");
@@ -93,6 +97,7 @@ export default function ArenaScreen() {
         crewBoard: pin,
         accountId: joiningAccount,
       });
+      setSelection({account:accountKey,sport:nextSport});
       setRegister(false);
       setSport(null);
     } catch (e) {
@@ -106,7 +111,7 @@ export default function ArenaScreen() {
   return (
     <SafeAreaView style={f.safe} edges={[]}>
       <ScrollView contentContainerStyle={f.content}>
-        <CompetitionSummary state={state}>
+        <CompetitionSummary state={state} selectedSport={selectedSport??undefined}>
           {hasRegistration ? (
             <FocusSegments
               label="Score track"
@@ -136,32 +141,12 @@ export default function ArenaScreen() {
         ) : null}
         <RoundTakeover state={state} ready={canWrite} dispatch={dispatch} />
         {state.periodResults.length ? <FocusButton label="Latest week results ↗" secondary onPress={() => router.push("/arena?results=latest")} /> : null}
-        {active.map((rating) => (
-          <CompetitionField
-            key={`${accountKey}:${rating.sport}:${state.units}:${track}`}
-            sport={rating.sport}
-            track={track}
-          />
-        ))}
-        <SleepPanel state={state} dispatch={dispatch} />
-        {!hasRegistration ? (
-          <View style={f.card}>
-            <Text style={{ fontSize: 26, textAlign: "center" }}>
-              🏃 🚴 🚶 🏋️
-            </Text>
-            <Text style={f.title}>Your next chapter starts here.</Text>
-            <FocusButton
-              label="＋ Register for an event"
-              onPress={openRegistration}
-            />
-          </View>
-        ) : active.length < SPORTS.length ||
-          !state.healthRatings.some((rating) => rating.optedIn) ? (
-          <FocusButton
-            label="＋ Register for another event"
-            onPress={openRegistration}
-          />
-        ) : null}
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{gap:8}} accessibilityLabel="Registered sports">
+          {active.map(r=><Pressable key={r.sport} accessibilityRole="button" accessibilityLabel={`Show ${SPORTS.find(s=>s.id===r.sport)?.name}`} accessibilityState={{selected:selectedSport===r.sport}} style={[f.chip,selectedSport===r.sport&&f.chipActive]} onPress={()=>{setSelection({account:accountKey,sport:r.sport});void playCue("selection");}}><Text style={f.rowTitle}>{SPORTS.find(s=>s.id===r.sport)?.name}</Text></Pressable>)}
+          {sleepOptedIn?<Pressable accessibilityRole="button" accessibilityLabel="Show Sleep & Recovery" accessibilityState={{selected:selectedSport==="sleep"}} style={[f.chip,selectedSport==="sleep"&&f.chipActive]} onPress={()=>setSelection({account:accountKey,sport:"sleep"})}><Text style={f.rowTitle}>Sleep & Recovery</Text></Pressable>:null}
+          <FocusButton label="＋ Register" secondary onPress={openRegistration}/>
+        </ScrollView>
+        {selectedSport&&selectedSport!=="sleep"?<CompetitionField key={`${accountKey}:${selectedSport}:${state.units}:${track}`} sport={selectedSport} track={track}/>:selectedSport==="sleep"?<SleepPanel state={state} dispatch={dispatch}/>:<View style={f.card}><Text style={f.title}>Your next chapter starts here.</Text><Text style={f.copy}>Register for an event to open your field.</Text></View>}
         <View style={[f.card, { opacity: 0.72 }]}>
           <Text style={f.kicker}>Coming soon</Text>
           <Text style={f.h2}>1v1 Head-to-Head</Text>
@@ -268,6 +253,7 @@ export default function ArenaScreen() {
               router.navigate("/onboarding");
               return;
             }
+            setSelection({account:accountKey,sport:"sleep"});
             dispatch({ type: "opt-in-health", metric: "sleep" });
             setRegister(false);
           }}

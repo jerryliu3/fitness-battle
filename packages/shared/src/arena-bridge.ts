@@ -3,6 +3,7 @@ import {
   type ArenaSceneLane,
   type ArenaViewWindow,
 } from "./arena-view";
+import { presentationAvatarUrl } from "./profile/avatar-paths";
 
 export type ArenaSceneUnit = "km" | "mi" | "pts";
 
@@ -63,6 +64,7 @@ export function parseArenaSceneMessage(
       id: l.id,
       name: l.name,
       initials: l.initials,
+      avatarUrl: presentationAvatarUrl(l.avatarUrl),
       value: l.value,
       you: !!l.you,
       ghost: !!l.ghost,

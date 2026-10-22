@@ -6,6 +6,7 @@ import {
   weeklyCompetitionLastDay,
   weeklyPeriodBounds,
   type CompeteState,
+  type SportId,
 } from "@fitness-battle/shared";
 import { useState, type ReactNode } from "react";
 import { Pressable, Text, View, StyleSheet } from "react-native";
@@ -14,14 +15,16 @@ import { FocusSheet, f } from "../ui/focus";
 export function CompetitionSummary({
   state,
   children,
+  selectedSport,
 }: {
   state: CompeteState;
   children?: ReactNode;
+  selectedSport?: SportId | "sleep";
 }) {
   const now = competeNow(state);
   const [infoOpen, setInfoOpen] = useState(false);
   const active = state.ratings.filter((rating) => rating.optedIn);
-  const sport =
+  const sport = selectedSport === "sleep" ? undefined : selectedSport ??
     active.find((rating) => rating.sport === state.primary)?.sport ??
     active[0]?.sport;
   const period = sport

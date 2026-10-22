@@ -34,6 +34,7 @@ vi.mock("../features/progress-screen", () => ({
   ProgressScreen: "ProgressScreen",
 }));
 vi.mock("react-native-svg", () => ({ default: "Svg", Path: "Path" }));
+vi.mock("../features/effort-rail",()=>({EffortRail:"EffortRail"}));
 import ProgressTab from "../../app/(tabs)/you";
 import { AppHeader } from "./app-header";
 let renderer: ReactTestRenderer;

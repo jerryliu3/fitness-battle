@@ -1,10 +1,16 @@
 import { describe, expect, it } from "vitest";
 import { defaultFieldAppearance, fieldAppearanceKey, fieldGrounds, readFieldAppearance } from "./field-appearance";
-import { fieldCourse, fieldCourseScene, fieldLap, fieldMarks, fieldOverview, overviewTarget, clampCourseCenter, type FieldNode } from "./field-course";
+import { fieldCourse, fieldCourseScene, fieldLap, fieldMarks, fieldScaleScene, fieldOverview, overviewTarget, clampCourseCenter, type FieldNode } from "./field-course";
 
 const lanes = [{ id: "a", name: "A", initials: "A", value: 12 }, { id: "me", name: "Me", initials: "ME", value: 19.2, you: true }];
 const flatten = (nodes: FieldNode[]): FieldNode[] => nodes.flatMap(n => [n, ...flatten(n.children ?? [])]);
 describe("production course contract", () => {
+  it("represents capsules as 300 m or 0.3 mi independently of zoom",()=>{
+    for(const [unit,metersPerUnit] of [["km",1000],["mi",1609.344]] as const)for(const span of [.75,1.2,6,12]){
+      const course=fieldCourse(390,540,4,{center:18,span},unit,defaultFieldAppearance);
+      expect(58*course.markerScale/course.length*span*metersPerUnit).toBeCloseTo(.3*metersPerUnit);
+    }
+  });
   it("defaults safely and isolates per-account/per-event device preferences", () => {
     for (const raw of [null, "bad", "[]", "null", '{"ground":"__proto__","edges":"bad"}', '{"ground":"constructor"}']) expect(readFieldAppearance(raw)).toEqual(defaultFieldAppearance);
     expect(readFieldAppearance('{"ground":"pool","edges":"open"}')).toEqual({ ground: "pool", edges: "open" });
@@ -73,3 +79,5 @@ it("fades earned distance toward the athlete and darkens back toward the start",
  expect(gradient.children?.[0].attrs.stopOpacity).toBe(.23);
  expect(gradient.children?.[1].attrs.stopOpacity).toBe(0);
 });
+
+it("uses whole-unit ruler marks even at close chase scales",()=>{for(const unit of ["km","mi"]){const g=fieldCourse(390,540,4,{center:18.2,span:1.2},unit,defaultFieldAppearance);const labels=fieldScaleScene(g,unit).filter(n=>n.tag==="text").slice(1);expect(labels.length).toBeGreaterThan(0);expect(labels.every(n=>Number.isInteger(Number(n.text)))).toBe(true);}});

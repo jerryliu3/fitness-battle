@@ -9,7 +9,8 @@ import {
   primaryFreezePeriodStart,
   weeklyPeriodBounds,
 } from "@fitness-battle/shared";
-import { useState } from "react";
+import { useState, useCallback } from "react";
+import { useFocusEffect } from "expo-router";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Svg, {
@@ -22,13 +23,15 @@ import Svg, {
   Stop,
   Text as SvgText,
 } from "react-native-svg";
+import { SessionStage } from "../../src/features/session-stage";
 import { HomeActivityActions } from "../../src/features/home-activity-actions";
 import { Journey } from "../../src/features/journey";
 import { useCompeteStore } from "../../src/lib/compete-store";
 import { FocusSheet, f } from "../../src/ui/focus";
 export default function Home() {
-  const { state } = useCompeteStore();
+  const { state, dispatch } = useCompeteStore();
   const [expanded, setExpanded] = useState<"suggestion" | null>(null);
+  useFocusEffect(useCallback(()=>()=>setExpanded(null),[]));
   if (!state)
     return (
       <SafeAreaView style={f.safe}>
@@ -384,16 +387,10 @@ export default function Home() {
       </View>
       <FocusSheet
         open={expanded === "suggestion"}
-        title={route.suggestion.title}
-        body={
-          route.suggestion.minutes
-            ? `${route.suggestion.minutes} min`
-            : undefined
-        }
+        title="Today"
         onClose={() => setExpanded(null)}
       >
-        <Text style={f.copy}>{route.suggestion.detail}</Text>
-        <Text style={f.small}>{route.suggestion.reason}</Text>
+        <SessionStage state={state} activities={counted.filter(a=>dayKey(new Date(a.startedAt),APP_TIMEZONE)===dayKey(now,APP_TIMEZONE))} suggestion={route.suggestion} actions={<HomeActivityActions/>} onRemove={activityId=>dispatch({type:"set-disposition",activityId,disposition:"excluded"})}/>
       </FocusSheet>
     </SafeAreaView>
   );

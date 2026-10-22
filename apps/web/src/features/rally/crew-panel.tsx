@@ -30,6 +30,7 @@ interface Crew {
   journey_km: number;
 }
 interface Member {
+  avatar_url?: string | null;
   crew_id: string;
   user_id: string;
   display_name: string;
@@ -52,6 +53,8 @@ interface CrewData {
   members: Member[];
   entries: Entry[];
   progress?: Entry[];
+  previousProgress?: {crew_id:string;user_id:string;distance_m:number;moving_sec:number;session_count:number}[];
+  previousProgressAvailable?: Record<string,boolean>;
   notices: { id: string; body: string }[];
 }
 
@@ -212,6 +215,7 @@ export function CrewPanel() {
           crew_id: crewBoard.crewId,
           user_id: demoMode && m.name === athleteName && user ? user.id : m.id,
           display_name: m.name,
+          avatar_url: m.id === user?.id ? state?.avatarUrl : m.avatarUrl,
           rest_week: null,
         }))
       : [];
@@ -291,7 +295,9 @@ export function CrewPanel() {
   const sessionsMetric = crew?.format === "personal_target" || crew?.sport === "strength";
   const memberTotal = (id: string) => entries.filter(e => e.user_id === id).reduce((sum, e) => sum + Number(sessionsMetric ? e.session_count ?? 1 : e.distance_m), 0);
   const totalM = entries.reduce((t, e) => t + Number(e.distance_m), 0);
-  const targetM = (crew?.journey_km ?? 40) * 1000;
+  const previousDistanceM = data?.previousProgressAvailable?.[crew.id]
+    ? (data.previousProgress??[]).filter(row=>row.crew_id===crew.id && members.some(m=>m.user_id===row.user_id)).reduce((sum,row)=>sum+Number(row.distance_m),0)
+    : null;
   const memberNames = members.map((m) => m.display_name);
   const memberCountLabel =
     members.length === 1 ? "1 member" : `${members.length} members`;
@@ -424,13 +430,11 @@ export function CrewPanel() {
                   <h2 className="focus-goal">
                     {formatDistanceM(totalM, state?.units)}{" "}
                     <small>
-                      {crew.format === "cooperative"
-                        ? `/ ${formatDistanceM(targetM, state?.units)} ${unitLabel}`
-                        : `${unitLabel} together`}
+                      {`${unitLabel} together`}
                     </small>
                   </h2>
                 )}
-                <CrewRelay userId={user?.id} key={crew.id} members={members} entries={entries} sport={crew.sport as SportId} format={crew.format} targetM={targetM} targetSessions={crew.target_sessions} units={state?.units} />
+                <CrewRelay userId={user?.id} key={crew.id} members={members} entries={entries} sport={crew.sport as SportId} format={crew.format} previousDistanceM={previousDistanceM} targetSessions={crew.target_sessions} units={state?.units} />
                 <p className="fb-copy">
                   {sessionsMetric
                     ? `Each member aims for ${crew.target_sessions} sessions.`

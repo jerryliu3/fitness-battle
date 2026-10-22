@@ -30,6 +30,7 @@ export interface PrivateCrew {
   journey_km: number;
 }
 interface Member {
+  avatar_url?: string | null;
   crew_id: string;
   user_id: string;
   display_name: string;
@@ -52,6 +53,8 @@ export interface CrewData {
   members: Member[];
   entries: Entry[];
   progress?: Entry[];
+  previousProgress?: {crew_id:string;user_id:string;distance_m:number;moving_sec:number;session_count:number}[];
+  previousProgressAvailable?: Record<string,boolean>;
   notices: { id: string; body: string }[];
   seasonWeeks?: Record<string, number>;
 }
@@ -235,6 +238,7 @@ export function CrewHub() {
               crew_id: pin.crewId,
               user_id: !api.live && member.name === state?.name && user ? user.id : member.id,
               display_name: member.name,
+              avatar_url: member.id === selfId ? state?.avatarUrl : member.avatarUrl,
               rest_week: null,
             }),
           )
@@ -278,6 +282,9 @@ export function CrewHub() {
   const weekKey = dayKey(week.startsAt, APP_TIMEZONE);
   const restKey = `${user?.id}:${crew.id}`;
   const resting = api.live ? members.find(m => m.user_id === user?.id)?.rest_week === weekKey : demoRest[restKey] === weekKey;
+  const previousDistanceM = api.data?.previousProgressAvailable?.[crew.id]
+    ? (api.data.previousProgress??[]).filter(row=>row.crew_id===crew.id && members.some(m=>m.user_id===row.user_id)).reduce((sum,row)=>sum+Number(row.distance_m),0)
+    : null;
   const sessionsMetric = crew.format === "personal_target" || crew.sport === "strength";
   const totalM = entries.reduce((n, e) => n + Number(e.distance_m), 0);
   const distance = (meters: number) =>
@@ -474,11 +481,9 @@ export function CrewHub() {
             <Text style={f.copy}>
               {sessionsMetric
                 ? `sessions · ${crew.target_sessions} per member`
-                : crew.format === "cooperative"
-                  ? `of ${distance(crew.journey_km * 1000)}`
-                  : `${distanceUnitLabel(state?.units)} together`}
+                : `${distanceUnitLabel(state?.units)} together`}
             </Text>
-            <CrewRelay userId={user?.id} key={crew.id} members={members} entries={entries} sport={crew.sport as SportId} format={crew.format} targetM={crew.journey_km * 1000} targetSessions={crew.target_sessions} units={state?.units} />
+            <CrewRelay userId={user?.id} key={crew.id} members={members} entries={entries} sport={crew.sport as SportId} format={crew.format} previousDistanceM={previousDistanceM} targetSessions={crew.target_sessions} units={state?.units} />
           </View>
           {user ? (
             <>

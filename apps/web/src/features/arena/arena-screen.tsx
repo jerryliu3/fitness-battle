@@ -47,6 +47,7 @@ export function ArenaScreen({ tabActive = true }: { tabActive?: boolean }) {
   const router = useRouter();
   const [authOpen, setAuthOpen] = useState(false);
   const [register, setRegister] = useState(false);
+  const [selection, setSelection] = useState<{account:string; sport:SportId|"sleep"}|null>(null);
   const [competeWithCrew, setCompeteWithCrew] = useState(false);
   const [sport, setSport] = useState<SportId | "sleep" | null>(null);
   const [track, setTrack] = useScoreTrackLens();
@@ -77,9 +78,11 @@ export function ArenaScreen({ tabActive = true }: { tabActive?: boolean }) {
   const sleepRating = state.healthRatings.find((item) => item.metric === "sleep");
   const sleepOptedIn = Boolean(sleepRating?.optedIn);
 
-  const headerSport =
-    active.find((row) => row.sport === state.primary)?.sport ??
-    active[0]?.sport;
+  const account = user?.id ?? "guest";
+  const requested = selection?.account === account ? selection.sport : null;
+  const selectedSport = requested && (requested === "sleep" ? sleepOptedIn : active.some(r=>r.sport===requested))
+    ? requested : active.find(r=>r.sport===state.primary)?.sport ?? active[0]?.sport ?? (sleepOptedIn ? "sleep" : null);
+  const headerSport = selectedSport === "sleep" ? undefined : selectedSport;
   const period = headerSport
     ? competePeriodWindow(state, now, headerSport)
     : weeklyPeriodBounds(now);
@@ -189,90 +192,23 @@ export function ArenaScreen({ tabActive = true }: { tabActive?: boolean }) {
           Latest week results ↗
         </Link>
       ) : null}
-      {!hasAnyRegistration ? (
-        <div style={{ margin: "16px 0 24px" }}>
-          <section className="focus-card focus-empty" style={{ marginTop: 16 }}>
-            <div className="focus-empty-sports-emojis" aria-hidden="true">
-              🏃 🚴 🚶 🏋️
-            </div>
-            <h2>Your next chapter starts here.</h2>
-            <button
-              type="button"
-              className="fb-btn"
-              style={{ width: "100%", justifyContent: "center", padding: "12px 20px" }}
-              onClick={() => {
-                setSport(null);
-                setRegister(true);
-              }}
-            >
-              ＋ Register for an event
-            </button>
-          </section>
-        </div>
-      ) : (
-        <div className="focus-registered-list">
-          {active.map((r) => {
-            const sportSpec = SPORTS.find((s) => s.id === r.sport);
-            const sportBoard = buildSplitBoard(state, r.sport, track, now);
-            const sportModel = buildFieldModel(state, r.sport, track, now);
-            return (
-              <section key={r.sport} style={{ marginBottom: 36 }}>
-                <FieldStage
-                  key={`${r.sport}-${state.units}`}
-                  tabActive={tabActive}
-                  sportTitle={sportSpec?.name ?? r.sport}
-                  model={sportModel}
-                  boardRows={sportBoard.rows}
-                />
-              </section>
-            );
-          })}
-
-          {sleepOptedIn && (
-            <section style={{ marginBottom: 36 }}>
-              <SleepPanel
-                state={state}
-                now={now}
-                onJoin={() => {
-                  participate("join sleep", () => {
-                    dispatch({ type: "opt-in-health", metric: "sleep" });
-                  });
-                }}
-                onSample={() => dispatch({ type: "log-sleep" })}
-                onLeave={() =>
-                  dispatch({
-                    type: sleep.renews ? "schedule-leave" : "resume-renewal",
-                    metric: "sleep",
-                  })
-                }
-                leaveLabel={
-                  sleep.renews ? "Stop after this week" : "Keep playing next week"
-                }
-              />
-            </section>
-          )}
-
-          {active.length < SPORTS.length && (
-            <div style={{ margin: "20px 0 28px" }}>
-              <button
-                type="button"
-                className="fb-btn"
-                style={{
-                  width: "100%",
-                  justifyContent: "center",
-                  padding: "12px 20px",
-                }}
-                onClick={() => {
-                  setSport(null);
-                  setRegister(true);
-                }}
-              >
-                ＋ Register for another event
-              </button>
-            </div>
-          )}
-        </div>
-      )}
+      <div className="focus-registration-tabs focus-crew-tabs" role="group" aria-label="Registered sports" style={{display:"flex",gap:8,overflowX:"auto",padding:"12px 0"}}>
+        {active.map(r=><button type="button" key={r.sport} className="fb-btn-ghost" aria-pressed={selectedSport===r.sport} style={{flexShrink:0,background:selectedSport===r.sport?"var(--accent-soft)":undefined}} onClick={()=>{setSelection({account,sport:r.sport});void playCue("selection");}}>{SPORTS.find(s=>s.id===r.sport)?.name}</button>)}
+        {sleepOptedIn?<button type="button" className="fb-btn-ghost" aria-pressed={selectedSport==="sleep"} style={{flexShrink:0}} onClick={()=>setSelection({account,sport:"sleep"})}>Sleep & Recovery</button>:null}
+        <button type="button" className="fb-btn-ghost" style={{flexShrink:0}} onClick={()=>{setSport(null);setRegister(true);}}>＋ Register</button>
+      </div>
+      {selectedSport && selectedSport !== "sleep" ? (
+        <FieldStage key={`${account}:${selectedSport}:${state.units}`} tabActive={tabActive}
+          sportTitle={SPORTS.find(s=>s.id===selectedSport)?.name}
+          model={buildFieldModel(state,selectedSport,track,now)}
+          boardRows={buildSplitBoard(state,selectedSport,track,now).rows}/>
+      ) : selectedSport === "sleep" ? (
+        <SleepPanel state={state} now={now}
+          onJoin={()=>participate("join sleep",()=>dispatch({type:"opt-in-health",metric:"sleep"}))}
+          onSample={()=>dispatch({type:"log-sleep"})}
+          onLeave={()=>dispatch({type:sleep.renews?"schedule-leave":"resume-renewal",metric:"sleep"})}
+          leaveLabel={sleep.renews?"Stop after this week":"Keep playing next week"}/>
+      ) : <section className="focus-card focus-empty"><h2>Your next chapter starts here.</h2><p className="fb-copy">Register for an event to open your field.</p></section>}
 
       <section className="focus-card focus-coming-soon">
         <p className="fb-kicker">Coming soon</p>
@@ -378,6 +314,7 @@ export function ArenaScreen({ tabActive = true }: { tabActive?: boolean }) {
                           // fallback to density field if crew seating fails
                         }
                       }
+                      setSelection({account,sport:s.id});
                       dispatch({ type: "set-primary", sport: s.id });
                       dispatch({ type: "opt-in", sport: s.id, crewBoard: pin });
                     } finally {
@@ -417,6 +354,7 @@ export function ArenaScreen({ tabActive = true }: { tabActive?: boolean }) {
               setSport("sleep");
               participate("join sleep", () => {
                 try {
+                  setSelection({account,sport:"sleep"});
                   dispatch({ type: "opt-in-health", metric: "sleep" });
                 } finally {
                   setRegister(false);

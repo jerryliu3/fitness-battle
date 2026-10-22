@@ -3,14 +3,12 @@
 import {
   APP_TIMEZONE,
   formatEloDelta,
-  formatEffort,
-  formatPlace,
-  formatVolume,
   sportById,
   type PeriodResult,
   type SportId,
   type UnitSystem,
 } from "@fitness-battle/shared";
+import { ResultCard } from "./result-card";
 import { useMemo, useState } from "react";
 
 function weekLabel(periodStart: string, periodEnd: string): string {
@@ -54,20 +52,19 @@ export function SeasonHistory({
       if (sportFilter !== "all" && row.sport !== sportFilter) return false;
       if (trackFilter !== "all" && row.track !== trackFilter) return false;
       return true;
-    });
+    }).sort((a,b)=>b.periodStart.localeCompare(a.periodStart));
   }, [results, sportFilter, trackFilter]);
 
   if (results.length === 0) {
     return (
       <section className="sp-history" id="season-history">
         <div className="fd-roster-head">
-          <h3>Season history</h3>
+          <h3>Past weeks</h3>
         </div>
         <div className="sp-empty">
           <h2>No closed weeks yet</h2>
           <p className="fb-copy">
-            When a competition week ends, your place and effort score change land here — a
-            Strava-style ledger of how the field treated you.
+            When a competition week ends, your place and effort score change land here — your weekly result.
           </p>
         </div>
       </section>
@@ -77,8 +74,8 @@ export function SeasonHistory({
   return (
     <section className="sp-history" id="season-history">
       <div className="fd-roster-head">
-        <h3>Season history</h3>
-        <span>{rows.length} weeks</span>
+        <h3>Past weeks</h3>
+        <span>{new Set(rows.map(row=>row.periodStart)).size} weeks</span>
       </div>
 
       <div className="fb-chips">
@@ -103,9 +100,9 @@ export function SeasonHistory({
       <div className="fb-chips">
         {(
           [
-            ["open", "All efforts"],
-            ["verified", "Verified"],
-            ["all", "Both tracks"],
+            ["open", "Open"],
+            ["verified", "GPS"],
+            ["all", "Both"],
           ] as const
         ).map(([id, label]) => (
           <button
@@ -119,44 +116,13 @@ export function SeasonHistory({
         ))}
       </div>
 
-      <div className="sp-history-list">
-        {rows.map((row) => {
-          const delta = row.eloAfter - row.eloBefore;
-          return (
-            <article key={row.id} className="sp-history-row">
-              <div className="sp-history-main">
-                <strong>{weekLabel(row.periodStart, row.periodEnd)}</strong>
-                <small>
-                  {sportById(row.sport).name}
-                  {row.track === "verified" ? " · verified" : " · open"}
-                  {row.frozen ? " · frozen" : ""}
-                </small>
-              </div>
-              <div className="sp-history-stats">
-                <span>
-                  <em>Place</em>
-                  {formatPlace(row.place, row.fieldSize)}
-                </span>
-                <span>
-                  <em>Effort</em>
-                  {formatVolume(
-                    row.sport,
-                    row.distanceM > 0 ? row.distanceM : row.effort,
-                    row.movingSec > 0 ? row.movingSec : row.effort,
-                    units,
-                  )}
-                </span>
-                <span>
-                  <em>Effort Score</em>
-                  {row.eloBefore}→{row.eloAfter}
-                </span>
-                <span data-delta={delta > 0 ? "up" : delta < 0 ? "down" : "flat"}>
-                  <em>Δ</em>
-                  {formatEloDelta(row.eloBefore, row.eloAfter)}
-                </span>
-              </div>
-            </article>
-          );
+      <div className="weekly-chapters">
+        {!rows.length?<p className="fb-note">No closed weeks match this selection.</p>:null}
+        {rows.map((row,index)=>{
+          const month=new Date(Date.parse(row.periodEnd)-1).toLocaleDateString("en-US",{month:"long",year:"numeric",timeZone:APP_TIMEZONE});
+          const previous=rows[index-1];
+          const previousMonth=previous?new Date(Date.parse(previous.periodEnd)-1).toLocaleDateString("en-US",{month:"long",year:"numeric",timeZone:APP_TIMEZONE}):null;
+          return <div key={row.id}>{month!==previousMonth?<h4 className="fb-kicker chapter-month">{month}</h4>:null}<details className="weekly-chapter"><summary><span className={`chapter-place${row.place===1?" is-first":""}`}>#{row.place}</span><span className="chapter-label"><b>{weekLabel(row.periodStart,row.periodEnd)}</b><small>{sportById(row.sport).name} · {row.track==="verified"?"GPS":"Open"} · {row.place} of {row.fieldSize}{row.frozen?" · frozen":""}</small></span><span className="chapter-delta">{formatEloDelta(row.eloBefore,row.eloAfter)}<small>score</small></span></summary><ResultCard result={row} units={units}/></details></div>;
         })}
       </div>
     </section>

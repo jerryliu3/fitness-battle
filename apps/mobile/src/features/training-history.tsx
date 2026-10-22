@@ -1,17 +1,14 @@
+import { TrainingAtlas } from "./training-atlas";
 import { useState } from "react";
 import { RecordChart } from "./record-chart";
 import { Pressable, ScrollView, Text, View } from "react-native";
 import {
   APP_TIMEZONE,
-  SPORTS,
   RECORD_DISTANCES,
   competeNow,
   formatClockTime,
-  formatVolume,
   personalRecordHistory,
-  weeklyTraining,
   type CompeteState,
-  type SportId,
 } from "@fitness-battle/shared";
 import { f } from "../ui/focus";
 import { SHELL_COLORS as c } from "../theme";
@@ -22,16 +19,8 @@ const date = (v: string) =>
     timeZone: APP_TIMEZONE,
   });
 export function TrainingHistory({ state }: { state: CompeteState }) {
-  const [sport, setSport] = useState<SportId>(state.primary),
-    [selected, setSelected] = useState(11),
-    [distance, setDistance] = useState(""),
-    [receipt, setReceipt] = useState<string | null>(null);
-  const now = competeNow(state),
-    weeks = weeklyTraining(state.activities, sport, now),
-    week = weeks[selected] ?? weeks.at(-1)!;
-  const value = (w: typeof week) =>
-      sport === "strength" ? w.movingSec : w.distanceM,
-    max = Math.max(1, ...weeks.map(value));
+  const [distance,setDistance]=useState(""),[receipt,setReceipt]=useState<string|null>(null);
+  const now=competeNow(state);
   const records = personalRecordHistory(state, now),
     available = (["running", "cycling"] as const).flatMap((s) =>
       RECORD_DISTANCES[s]
@@ -51,61 +40,7 @@ export function TrainingHistory({ state }: { state: CompeteState }) {
     inspected = rows.find((r) => r.activityId === receipt) ?? latest;
   return (
     <>
-      <View style={f.card}>
-        <Text style={f.h2}>Weekly training</Text>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-          <View style={f.row}>
-            {SPORTS.map((s) => (
-              <Pressable
-                key={s.id}
-                accessibilityRole="button"
-                accessibilityState={{ selected: sport === s.id }}
-                style={[f.chip, sport === s.id && f.chipActive]}
-                onPress={() => setSport(s.id)}
-              >
-                <Text>{s.name}</Text>
-              </Pressable>
-            ))}
-          </View>
-        </ScrollView>
-        <View
-          style={{
-            height: 150,
-            flexDirection: "row",
-            gap: 4,
-            marginVertical: 14,
-          }}
-        >
-          {weeks.map((w, i) => (
-            <Pressable
-              key={w.start}
-              accessibilityRole="button"
-              accessibilityState={{ selected: selected === i }}
-              accessibilityLabel={`${date(w.start)}, ${formatVolume(sport, w.distanceM, w.movingSec, state.units)}${w.partial ? ", partial week" : ""}`}
-              onPress={() => setSelected(i)}
-              style={{ flex: 1, justifyContent: "flex-end", minHeight: 44 }}
-            >
-              <View
-                style={{
-                  height: Math.max(2, (value(w) / max) * 135),
-                  backgroundColor: selected === i ? c.tennis : c.secondary,
-                  borderTopLeftRadius: 4,
-                  borderTopRightRadius: 4,
-                  opacity: w.partial ? 0.65 : 1,
-                }}
-              />
-            </Pressable>
-          ))}
-        </View>
-        <Text style={f.h2}>
-          {formatVolume(sport, week.distanceM, week.movingSec, state.units)}
-        </Text>
-        <Text style={f.small}>
-          {date(week.start)} ·{" "}
-          {week.partial ? "This week so far" : "Complete week"} ·{" "}
-          {week.sessions} sessions
-        </Text>
-      </View>
+      <TrainingAtlas state={state} />
       {active && latest && inspected ? (
         <View style={f.card}>
           <Text style={f.h2}>Personal records</Text>

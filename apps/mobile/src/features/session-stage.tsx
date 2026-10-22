@@ -1,0 +1,25 @@
+import { useState, type ReactNode } from "react";
+import { Pressable, StyleSheet, Text, View } from "react-native";
+import { APP_TIMEZONE, effortPointProgress, formatTrainingHours, formatVolume, sessionStageModel, sportById, type Activity, type CompeteState } from "@fitness-battle/shared";
+import { AnimatedEmber } from "../ui/mascot/animated-ember";
+import { FocusButton, f } from "../ui/focus";
+import { SHELL_COLORS as c } from "../theme";
+export function SessionStage({state,activities,suggestion,onRemove,actions}:{state:CompeteState;activities:Activity[];suggestion?:{title:string;minutes?:number|null;detail:string};onRemove:(id:string)=>void;actions?:ReactNode}){
+  const model=sessionStageModel(activities), sport=model.rows[0]?.sport??state.primary;
+  const [stageWidth,setStageWidth]=useState(320);
+  const [expanded,setExpanded]=useState<string|null>(null),[removing,setRemoving]=useState<string|null>(null),[impact,setImpact]=useState(false);
+  const seconds=model.sessions?model.movingSec:(suggestion?.minutes??0)*60, point=effortPointProgress(state,sport);
+  return <View style={{gap:18}}>
+    <Text style={f.kicker}>{model.sessions?`${model.sessions} recorded session${model.sessions===1?"":"s"}`:"Today's suggestion"}</Text>
+    <Text style={[f.h2,{fontSize:30,lineHeight:34,letterSpacing:-1}]}>{model.sessions?"Time well spent.":suggestion?.title??"Make room to move."}</Text>
+    <View onLayout={e=>setStageWidth(e.nativeEvent.layout.width)} style={[s.stage,stageWidth<300&&{padding:18}]}><View style={s.inner} pointerEvents="none"/><View><Text style={[s.hours,{fontSize:stageWidth<300?36:stageWidth<340?42:48}]}>{formatTrainingHours(seconds)}<Text style={[f.copy,{fontSize:20}]}> hr</Text></Text><Text style={f.small}>{model.sessions?"Moving time":"Suggested time"}</Text></View><AnimatedEmber size={stageWidth<300?78:100} expression="happy" action={model.sessions?"celebrate":"idle"} loop={false}/></View>
+    {!model.sessions?<><Text style={f.copy}>{suggestion?.detail??"Nothing recorded today."}</Text>{actions}</>:<>
+      <View>{model.rows.map(a=><View key={a.id} style={s.row}>
+        <Pressable accessibilityRole="button" accessibilityState={{expanded:expanded===a.id}} onPress={()=>setExpanded(expanded===a.id?null:a.id)} style={s.summary}><View style={{gap:3}}><Text style={f.rowTitle}>{sportById(a.sport).name}</Text><Text style={f.small}>{new Date(a.startedAt).toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit",timeZone:APP_TIMEZONE})}</Text></View><Text style={f.rowTitle}>{formatTrainingHours(a.movingSec)} hr</Text></Pressable>
+        {expanded===a.id?<View style={{gap:10,paddingBottom:12}}><Text style={f.small}>{a.source} · {a.verified?"GPS verified":"Open"}{sportById(a.sport).gps?` · ${formatVolume(a.sport,a.distanceM,a.movingSec,state.units)}`:""}{a.avgHr?` · ${a.avgHr} bpm`:""}</Text>{removing===a.id?<><Text style={f.copy}>Remove this session from counted activity?</Text><FocusButton label="Remove session" secondary onPress={()=>{onRemove(a.id);setRemoving(null);}}/><FocusButton label="Keep session" secondary onPress={()=>setRemoving(null)}/></>:<Pressable accessibilityRole="button" style={{minHeight:44,justifyContent:"center"}} onPress={()=>setRemoving(a.id)}><Text style={f.small}>Remove session</Text></Pressable>}</View>:null}
+      </View>)}</View>
+      <View style={s.impact}><Pressable accessibilityRole="button" accessibilityState={{expanded:impact}} onPress={()=>setImpact(!impact)} style={s.summary}><Text style={f.copy}>What this added</Text><Text style={f.copy}>{impact?"−":"↗"}</Text></Pressable>{impact?<View style={{gap:8,paddingBottom:14}}><Text style={f.copy}>{formatTrainingHours(model.movingSec)} hr of recorded activity</Text>{point?<><Text style={f.small}>{sportById(sport).name} · Open · +{point.earned} from activity this week</Text><Text style={f.small}>{point.capped?"Maximum score reached":`${formatVolume(sport,sport==="strength"?0:point.remaining,sport==="strength"?point.remaining:0,state.units)} to the next Effort Score point`}</Text>{point.retained?<Text style={f.small}>Previously earned points are kept when a session is removed.</Text>:null}</>:null}</View>:null}</View>
+    </>}
+  </View>;
+}
+const s=StyleSheet.create({stage:{position:"relative",minHeight:180,padding:24,backgroundColor:c.soft,borderTopLeftRadius:80,borderTopRightRadius:80,borderBottomLeftRadius:24,borderBottomRightRadius:24,flexDirection:"row",alignItems:"center",justifyContent:"space-between",gap:12},inner:{position:"absolute",top:12,bottom:12,left:12,right:12,borderWidth:1,borderColor:c.line,borderTopLeftRadius:70,borderTopRightRadius:70,borderBottomLeftRadius:17,borderBottomRightRadius:17},hours:{fontFamily:"DMSans_500Medium",fontSize:48,lineHeight:54,letterSpacing:-2,color:c.ink,fontVariant:["tabular-nums"]},row:{borderBottomWidth:1,borderBottomColor:c.line},summary:{minHeight:58,flexDirection:"row",justifyContent:"space-between",alignItems:"center",gap:12},impact:{borderWidth:1,borderColor:c.line,borderRadius:14,paddingHorizontal:14}});

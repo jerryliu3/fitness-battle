@@ -63,7 +63,7 @@ export function CompetitionField({
     () => (state ? buildArenaModel(state, undefined, track, sport) : null),
     [state, track, sport],
   );
-  const defaultSpan = arena?.unit === "pts" ? 20 : arena?.unit === "mi" ? 4 : 6;
+  const defaultSpan = fieldDefaultSpan(arena?.unit ?? "km");
   const viewSpan = span ?? defaultSpan;
   const me = arena?.lanes.find((l) => l.you);
   const total = me?.values[2] ?? 0;
@@ -75,6 +75,7 @@ export function CompetitionField({
         .map((l) => ({
           id: l.id,
           name: l.name,
+          avatarUrl: l.avatarUrl,
           initials: initialsFromName(l.name),
           value: l.values[2],
           you: l.you,

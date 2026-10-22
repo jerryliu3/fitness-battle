@@ -433,7 +433,7 @@ export function AthleteOverview({
       ) : null}
 
       {showProgress ? (
-      <section className="focus-card focus-elo">
+      <section className="focus-card focus-elo" id="effort-score">
         <div className="focus-elo-top">
           <div
             className="focus-elo-track-toggle"

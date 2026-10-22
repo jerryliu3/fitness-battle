@@ -36,3 +36,4 @@
 .fd-world-label.is-selected {
   outline: 2px solid #ef6635;
 }
+.fd-world-label{display:flex;align-items:center;gap:8px}.fd-world-label>span:last-child{display:grid;gap:3px;text-align:left}.pursuit-portrait{width:32px;height:32px;border-radius:50%;overflow:hidden;display:grid;place-items:center;flex:none;background:#eef0e9;color:#616c63}.pursuit-portrait img{width:100%;height:100%;object-fit:cover}.fd-world-label:after{content:"";position:absolute;left:50%;top:100%;width:1px;height:16px;background:#819486}
