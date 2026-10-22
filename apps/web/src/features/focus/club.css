@@ -51,3 +51,14 @@
 @media (hover:hover) { .phone-shell .fb-btn:hover { background:var(--lime-deep); } .phone-shell .fb-btn-line:hover { background:var(--accent-soft); } }
 @media(max-width:600px) { .phone-shell .phone-main { padding:14px 20px 28px; gap:20px; } .focus-shell-header { height:64px; padding:0 20px; } .phone-shell .phone-tabs { padding-inline:10px; } }
 @media(prefers-reduced-motion:reduce) { .phone-shell *, .focus-sheet * { scroll-behavior:auto; } }
+.club-welcome { display:flex; align-items:center; justify-content:space-between; gap:16px; padding:8px 0 4px; }
+.club-welcome h1 { margin:3px 0 8px; font-size:clamp(24px,4vw,32px); }
+.club-welcome .fb-kicker { margin:0; }
+.club-welcome-ember { width:72px; flex:none; }
+.phone-shell .focus-home-stage { max-width:760px; }
+.phone-shell .focus-home-overlay { gap:22px; }
+.phone-shell .focus-stats-card { padding:20px; margin:0; }
+.phone-shell .focus-activity-svg { max-height:170px; }
+.phone-shell .focus-stats-numbers strong { font-size:30px; font-weight:700; }
+.focus-home-stage .effort-rail { margin:0; width:100%; }
+@media(min-width:900px) { .club-welcome { padding-block:12px; } }

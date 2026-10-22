@@ -2,6 +2,8 @@
 import { useEffect, useLayoutEffect, useRef, useState, type Ref } from "react";
 import { Sheet } from "@/ui/sheet";
 import { SessionStage } from "./session-stage";
+import { ClubWelcome } from "@/features/club/welcome";
+import { EffortRail } from "@/features/progress/effort-rail";
 import { ActivityActions } from "./activity-actions";
 import { newJourneyStops } from "./journey-reveal";
 import { usePathname } from "next/navigation";
@@ -503,6 +505,7 @@ export function TodayScreen() {
         <SessionStage state={state} activities={detailActivities} suggestion={route.suggestion} actions={<ActivityActions />} onRemove={activityId => { setRemoved(detailActivities.find(a=>a.id===activityId)??null); dispatch({type:"set-disposition",activityId,disposition:"excluded"}); if(detailActivities.length <= 1)closeSession(); }}/>
       </Sheet>
       <div className="focus-home-overlay">
+      <ClubWelcome state={state} />
       {removed ? <div className="fb-note" role="status">Session removed. <button type="button" className="fb-btn-ghost" onClick={() => { dispatch({type:"set-disposition", activityId:removed.id, disposition:removed.disposition}); setRemoved(null); }}>Undo</button></div> : null}
       {frozen && (
         <div className="fb-pill" style={{ marginBottom: "16px" }}>
@@ -689,6 +692,7 @@ export function TodayScreen() {
         </div>
       </section>
       </div>
+      <EffortRail />
       <div className="focus-home-journey-layer">
       <JourneyTrail
         stopCount={journeyStops.length}
