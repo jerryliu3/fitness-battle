@@ -15,12 +15,15 @@ export function crewRelay(
   }[],
   target: number | null,
 ) {
-  const rows = [...members].sort((a,b)=>a.id.localeCompare(b.id)).map((m) => ({
-    ...m,
-    value: Number.isFinite(m.value) ? Math.max(0, m.value) : 0,
-  }));
+  const rows = [...members]
+    .sort((a, b) => a.id.localeCompare(b.id))
+    .map((m) => ({
+      ...m,
+      value: Number.isFinite(m.value) ? Math.max(0, m.value) : 0,
+    }));
   const total = rows.reduce((sum, m) => sum + m.value, 0),
-    scale = Math.max(1, total, target ?? 0);
+    // Leave runway after both the finish and the current crew, including over-goal weeks.
+    scale = Math.max(1, total, target ?? 0) * 1.2;
   let offset = 0;
   return {
     total,

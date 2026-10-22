@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { freshState, reduceCompete } from "./compete/engine";
 import { dayKey } from "./period";
-import { effortPointProgress, sessionStageModel, trainingAtlas, trainingBuckets } from "./training-view";
+import { effortPointProgress, sessionStageModel, trainingAtlas, trainingBuckets, trainingComparison } from "./training-view";
 import type { Activity } from "./compete/sports";
 const activity=(id:string,startedAt:string,extra:Partial<Activity>={}):Activity=>({id,startedAt,sport:"running",distanceM:1609.344,movingSec:1800,avgHr:null,source:"strava",verified:true,provenance:"recorded",disposition:"counted",...extra});
 describe("training calendar presentation",()=>{
@@ -52,4 +52,18 @@ describe("next Effort Score point",()=>{
   const state=joined();expect(effortPointProgress(state,"running","open",new Date(state.enrollments[0]!.weekEnd))).toBeNull();
   expect(effortPointProgress(state,"running","open",new Date("2026-10-18T12:00:00Z"))).toBeNull();
  });
+});
+
+it("labels partial comparisons against full prior periods and never invents a zero baseline percentage",()=>{
+ const now=new Date("2026-10-22T12:00:00Z");
+ expect(trainingComparison([],"all","week",now,now).percent).toBeNull();
+ expect(trainingComparison([],"all","week",now,now).label).toBe("No activity in previous week");
+});
+
+it("compares actual eligible hours and keeps the selected sport and prior timeframe",()=>{
+ const now=new Date("2026-10-22T12:00:00Z");
+ const rows=[activity("current","2026-10-20T12:00:00Z",{movingSec:3600}),activity("prior","2026-10-18T12:00:00Z"),activity("sample","2026-10-20T12:00:00Z",{provenance:"demo"}),activity("future","2026-10-25T12:00:00Z")];
+ const comparison=trainingComparison(rows,"running","week",now,now);
+ expect(comparison.total).toBe(3600);expect(comparison.prior).toBe(1800);expect(comparison.percent).toBe(100);expect(comparison.label).toBe("↑ 100% vs all of previous week");
+ expect(trainingComparison(rows,"cycling","week",now,now).percent).toBeNull();
 });

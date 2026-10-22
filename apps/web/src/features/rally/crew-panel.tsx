@@ -426,7 +426,7 @@ export function CrewPanel() {
                     </small>
                   </h2>
                 )}
-                <CrewRelay userId={user?.id} key={crew.id} members={members} entries={entries} sport={crew.sport as SportId} format={crew.format} previousDistanceM={previousDistanceM} targetSessions={crew.target_sessions} units={state?.units} />
+                <CrewRelay userId={user?.id} key={crew.id} members={members} entries={entries} sport={crew.sport as SportId} format={crew.format} previousDistanceM={previousDistanceM} targetDistanceM={crew.journey_km*1000} targetSessions={crew.target_sessions} units={state?.units} />
                 <p className="fb-copy">
                   {sessionsMetric
                     ? `Each member aims for ${crew.target_sessions} sessions.`

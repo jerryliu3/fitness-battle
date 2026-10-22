@@ -42,7 +42,7 @@ function ovalPoint(f: number, r: number) {
 export function fieldCourse(viewportWidth: number, height: number, count: number, view: ArenaViewWindow, unit: string, appearance: FieldAppearance) {
   const zoom = (appearance.ground === "oval" ? (unit === "pts" ? 20 : unit === "mi" ? 4 : 6) : fieldDefaultSpan(unit)) / arenaWindow(view.center, view.span).span;
   const oval = appearance.ground === "oval";
-  const fieldWidth = Math.max(viewportWidth - 60, count * 74) * zoom;
+  const fieldWidth = Math.max(viewportWidth - 60, count * 74) * 3 * zoom;
   const width = oval ? viewportWidth : Math.max(viewportWidth, fieldWidth + 60);
   const left = (width - 42 - fieldWidth) / 2, top = 72, bottom = height - 64, length = bottom - top;
   const laneWidth = fieldWidth / Math.max(1, count), bounds = arenaWindow(view.center, view.span);

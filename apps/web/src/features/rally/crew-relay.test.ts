@@ -17,3 +17,8 @@ describe("dimensional crew ribbon",()=>{
   expect(html).toContain("Last-week comparison unavailable");expect(html).not.toContain("to match last week");
  });
 });
+
+it("uses the configured cooperative journey as its finish even without prior-week history",()=>{
+ const html=renderToStaticMarkup(createElement(CrewRelay,{...props,format:"cooperative",previousDistanceM:null,targetDistanceM:100000}));
+ expect(html).toContain("Shared distance target");expect(html).toContain("24.0 km to the target");expect(html).not.toContain("comparison unavailable");expect(html).toContain("stroke-dasharray");
+});

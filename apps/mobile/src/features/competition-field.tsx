@@ -1,8 +1,11 @@
-import { Arena3D } from "../ui/arena-3d";
+import { PortraitField } from "../ui/portrait-field";
 import {
+  portraitField,
+  portraitFieldGap,
   arenaBaselineStorageKey,
-  parseArenaSceneMessage,
-  arenaFieldHigh, clampCourseCenter, fieldDefaultSpan,
+  arenaFieldHigh,
+  clampCourseCenter,
+  fieldDefaultSpan,
   buildArenaModel,
   competePeriodWindow,
   formatArenaOvertakeStatus,
@@ -28,9 +31,12 @@ import { playCue } from "../lib/haptics";
 import { SHELL_COLORS as c } from "../theme";
 import { FocusSegments, f } from "../ui/focus";
 import { LaneTrack } from "../ui/lane-track";
-import { FieldGroundPicker, FieldOverview, useFieldAppearance } from "../ui/field-course";
+import {
+  FieldGroundPicker,
+  FieldOverview,
+  useFieldAppearance,
+} from "../ui/field-course";
 import { PolishedRacer } from "../ui/polished-racer";
-import { ZoomControl } from "../ui/zoom-control";
 import { useReducedMotion } from "../ui/use-reduced-motion";
 
 export function CompetitionField({
@@ -45,8 +51,7 @@ export function CompetitionField({
   const pathname = usePathname();
   const [appearance, setAppearance] = useFieldAppearance(accountKey, sport);
   const isFocused = shellTabFromPath(pathname)?.id === "arena";
-  const [dimension,setDimension]=useState<"2d"|"3d">("2d");
-  const [sceneUnavailable,setSceneUnavailable]=useState(false);
+  const [dimension, setDimension] = useState<"2d" | "3d">("2d");
   const [mode, setMode] = useState<"lanes" | "standings">("lanes");
   const [center, setCenter] = useState<number | null>(null);
   const [span, setSpan] = useState<number | null>(null);
@@ -221,7 +226,13 @@ export function CompetitionField({
 
   const displayTotal = overtakeFrame ? overtakeFrame.youValue : total;
   const view = {
-    center: clampCourseCenter(center ?? (overtakeFrame ? overtakeFrame.viewCenter : total), viewSpan, arenaFieldHigh(fieldLanes), arena.unit, appearance.ground),
+    center: clampCourseCenter(
+      center ?? (overtakeFrame ? overtakeFrame.viewCenter : total),
+      viewSpan,
+      arenaFieldHigh(fieldLanes),
+      arena.unit,
+      appearance.ground,
+    ),
     span: viewSpan,
   };
   const selectAthlete = (id: string) => {
@@ -244,7 +255,9 @@ export function CompetitionField({
       <View style={f.row}>
         <View style={f.grow}>
           <Text style={f.kicker}>Accumulated this week</Text>
-          <Text style={[f.massive,{fontSize:34,fontFamily:"DMSans_700Bold"}]}>
+          <Text
+            style={[f.massive, { fontSize: 34, fontFamily: "DMSans_700Bold" }]}
+          >
             {displayTotal.toFixed(1)} <Text style={f.copy}>{arena.unit}</Text>
           </Text>
         </View>
@@ -263,7 +276,7 @@ export function CompetitionField({
       ) : null}
       <FocusSegments
         label={`${arena.sportName} field view`}
-        value={mode==="lanes"&&dimension==="3d"?"3d":mode}
+        value={mode === "lanes" && dimension === "3d" ? "3d" : mode}
         options={[
           { value: "lanes", label: "2D map" },
           { value: "standings", label: "Standings" },
@@ -273,29 +286,131 @@ export function CompetitionField({
           void playCue("selection");
           setMode(next === "3d" ? "lanes" : next);
           setDimension(next === "3d" ? "3d" : "2d");
-          setSceneUnavailable(false);
         }}
       />
 
-      {sceneUnavailable?<Text style={f.small} accessibilityLiveRegion="polite">3D isn’t available here. Your 2D map is ready.</Text>:null}
-      {dimension==="3d"&&mode==="lanes"&&isFocused?(()=>{const model=parseArenaSceneMessage({type:"arena-view",lanes:arena.lanes.filter(l=>ghost||!l.ghost).map(l=>({id:l.id,name:l.name,initials:initialsFromName(l.name),avatarUrl:l.avatarUrl,value:overtakeFrame?.laneValues[l.id]??l.values[2],you:l.you,ghost:l.ghost})),view,unit:arena.unit,selected:selectedId??me?.id});return model?<Arena3D model={model} onSelect={selectAthlete} onPan={setCenter} onUnavailable={()=>{setSceneUnavailable(true);setDimension("2d");}}/>:null;})():null}
-      <View style={{ display: mode === "lanes"&&dimension==="2d" ? "flex" : "none" }}>
-        <FieldGroundPicker appearance={appearance} onChange={setAppearance}/>
-        <LaneTrack
-          appearance={appearance}
-          active={isFocused && mode === "lanes"}
-          selectedId={selectedId ?? me?.id}
-          lanes={arena.lanes}
-          unit={arena.unit}
-          showGhost={ghost}
-          index={2}
-          onSelect={(lane) => selectAthlete(lane.id)}
+      {dimension === "3d" && mode === "lanes" && isFocused ? (
+        <PortraitField
+          lanes={fieldLanes.map((l) => ({
+            ...l,
+            value: overtakeFrame?.laneValues[l.id] ?? l.value,
+          }))}
           view={view}
-          onPan={setCenter}
-          overtakeFrame={overtakeFrame}
-          overtakePlan={overtakePlan}
+          unit={arena.unit}
+          onZoom={setSpan}
+          onSelect={selectAthlete}
         />
-        <FieldOverview lanes={fieldLanes.map(l => ({ ...l, value: overtakeFrame?.laneValues[l.id] ?? l.value }))} view={view} unit={arena.unit} onNavigate={value => { setCenter(value); if (appearance.ground === "oval") setSpan(Math.min(view.span, fieldDefaultSpan(arena.unit) / 2)); }}/>
+      ) : null}
+      <View
+        style={{
+          display: mode === "lanes" && dimension === "2d" ? "flex" : "none",
+        }}
+      >
+        <FieldGroundPicker appearance={appearance} onChange={setAppearance} />
+        <View style={{ position: "relative" }}>
+          <LaneTrack
+            appearance={appearance}
+            active={isFocused && mode === "lanes" && dimension === "2d"}
+            selectedId={selectedId ?? me?.id}
+            lanes={arena.lanes}
+            unit={arena.unit}
+            showGhost={ghost}
+            index={2}
+            onSelect={(lane) => selectAthlete(lane.id)}
+            view={view}
+            onPan={setCenter}
+            overtakeFrame={overtakeFrame}
+            overtakePlan={overtakePlan}
+          />
+          <View
+            pointerEvents="none"
+            style={{
+              position: "absolute",
+              top: 54,
+              left: 12,
+              right: 12,
+              flexDirection: "row",
+              justifyContent: "space-between",
+              gap: 8,
+              padding: 10,
+              borderRadius: 12,
+              backgroundColor: "#102e38ed",
+            }}
+          >
+            <Text style={[f.small, { color: "white" }]}>
+              {overtakeFrame?.currentRank ?? place(total)} / {ranked.length}{" "}
+              PLACE
+            </Text>
+            <Text
+              style={[f.small, { color: "white", fontSize: 10, flexShrink: 1 }]}
+            >
+              {portraitFieldGap(
+                portraitField(fieldLanes, view).nextGap,
+                arena.unit,
+              )}
+            </Text>
+          </View>
+          <View
+            style={{
+              position: "absolute",
+              bottom: 18,
+              alignSelf: "center",
+              flexDirection: "row",
+              alignItems: "center",
+              gap: 20,
+              borderRadius: 28,
+              backgroundColor: "#102e38ed",
+              paddingHorizontal: 8,
+            }}
+          >
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Zoom out"
+              disabled={view.span >= (arena.unit === "pts" ? 100 : 40)}
+              onPress={() =>
+                setSpan(
+                  Math.min(arena.unit === "pts" ? 100 : 40, view.span * 1.5),
+                )
+              }
+              style={{
+                minWidth: 44,
+                minHeight: 44,
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <Text style={{ color: "white", fontSize: 24 }}>−</Text>
+            </Pressable>
+            <Text style={[f.small, { color: "white" }]}>Zoom</Text>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Zoom in"
+              disabled={view.span <= 0.5}
+              onPress={() => setSpan(Math.max(0.5, view.span / 1.5))}
+              style={{
+                minWidth: 44,
+                minHeight: 44,
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <Text style={{ color: "white", fontSize: 24 }}>＋</Text>
+            </Pressable>
+          </View>
+        </View>
+        <FieldOverview
+          lanes={fieldLanes.map((l) => ({
+            ...l,
+            value: overtakeFrame?.laneValues[l.id] ?? l.value,
+          }))}
+          view={view}
+          unit={arena.unit}
+          onNavigate={(value) => {
+            setCenter(value);
+            if (appearance.ground === "oval")
+              setSpan(Math.min(view.span, fieldDefaultSpan(arena.unit) / 2));
+          }}
+        />
       </View>
       {mode === "standings" ? (
         <View style={f.card}>
@@ -335,11 +450,6 @@ export function CompetitionField({
         </View>
       ) : (
         <>
-          <ZoomControl
-            value={view.span}
-            maximum={arena.unit === "pts" ? 100 : 40}
-            onChange={setSpan}
-          />
           {pastYou ? (
             <View style={f.row}>
               <Text style={f.copy}>Past you</Text>

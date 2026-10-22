@@ -1,0 +1,221 @@
+"use client";
+import { useId, useState } from "react";
+import {
+  portraitField,
+  portraitFieldGap,
+  type ArenaSceneLane,
+  type ArenaViewWindow,
+} from "@fitness-battle/shared";
+import { drawFieldNode } from "../field/components/field-course";
+
+/** Separate portrait renderer; the Three.js pursuit remains available independently. */
+export function PortraitField({
+  lanes,
+  view,
+  unit,
+  onZoom,
+  onSelect,
+}: {
+  lanes: ArenaSceneLane[];
+  view: ArenaViewWindow;
+  unit: string;
+  onZoom: (span: number) => void;
+  onSelect: (id: string) => void;
+}) {
+  const [focusId, setFocusId] = useState<string>();
+  const prefix = useId().replace(/:/g, "");
+  const scene = portraitField(lanes, view, focusId);
+  const shift = (direction: number) =>
+    setFocusId(
+      scene.ordered[
+        Math.max(0, Math.min(scene.ordered.length - 1, scene.focus + direction))
+      ]?.id,
+    );
+  return (
+    <div className="club-perspective-board">
+      <img
+        className="club-perspective-scenery"
+        src="/club/alpine-trail.jpg"
+        alt=""
+      />
+      <svg
+        className="club-perspective-svg"
+        viewBox="0 0 420 600"
+        aria-label="Fixed perspective competition field"
+        role="group"
+      >
+        <defs>
+          <linearGradient id={`${prefix}-shade`} x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#0b3038" stopOpacity="0" />
+            <stop offset="100%" stopColor="#0b3038" />
+          </linearGradient>
+        </defs>
+        <rect y={80} width={420} height={520} fill={`url(#${prefix}-shade)`} />
+        {scene.ground.map(drawFieldNode)}
+        {scene.markers
+          .filter((m) => m.x > 28 && m.x < 392)
+          .sort((a, b) => a.y - b.y)
+          .map((m, i) => {
+            const id = `${prefix}-portrait-${i}`;
+            return (
+              <g
+                key={m.id}
+                transform={`translate(${m.x} ${m.y}) scale(${m.scale})`}
+                role="button"
+                tabIndex={0}
+                aria-label={`${m.name}${m.you ? ", you" : ""}, ${m.gap > 0 ? "+" : ""}${m.gap.toFixed(1)} ${unit}${m.outside ? ", outside visible distance range" : ""}`}
+                onClick={() => onSelect(m.id)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    onSelect(m.id);
+                  }
+                }}
+              >
+                <ellipse cy={19} rx={23} ry={7} fill="#071f27" opacity={0.5} />
+                <path
+                  d="M-9 12 L0 27 L9 12"
+                  fill={m.you ? "#f7c948" : "#f8f9f6"}
+                />
+                <rect
+                  x={-23}
+                  y={-43}
+                  width={46}
+                  height={58}
+                  rx={12}
+                  fill="#f8f9f6"
+                  stroke={m.you ? "#f7c948" : "#b3c9c5"}
+                  strokeWidth={m.you ? 3 : 1.5}
+                />
+                <defs>
+                  <clipPath id={id}>
+                    <rect x={-19} y={-39} width={38} height={50} rx={9} />
+                  </clipPath>
+                </defs>
+                {m.avatarUrl ? (
+                  <image
+                    href={m.avatarUrl}
+                    x={-19}
+                    y={-39}
+                    width={38}
+                    height={50}
+                    preserveAspectRatio="xMidYMid slice"
+                    clipPath={`url(#${id})`}
+                  />
+                ) : (
+                  <>
+                    <rect
+                      x={-19}
+                      y={-39}
+                      width={38}
+                      height={50}
+                      rx={9}
+                      fill={m.you ? "#f7c948" : "#d8e5df"}
+                    />
+                    <text
+                      y={-8}
+                      textAnchor="middle"
+                      fill="#142b3b"
+                      fontWeight={700}
+                      fontSize={15}
+                    >
+                      {m.initials}
+                    </text>
+                  </>
+                )}
+                {m.you ? (
+                  <>
+                    <rect
+                      x={-22}
+                      y={-66}
+                      width={44}
+                      height={18}
+                      rx={9}
+                      fill="#f7c948"
+                    />
+                    <text
+                      y={-53}
+                      textAnchor="middle"
+                      fill="#142b3b"
+                      fontSize={11}
+                      fontWeight={800}
+                    >
+                      YOU
+                    </text>
+                  </>
+                ) : null}
+                <text
+                  y={45}
+                  textAnchor="middle"
+                  fill="white"
+                  fontSize={12}
+                  fontWeight={700}
+                >
+                  {m.you ? "You" : m.name.split(" ")[0]}
+                </text>
+                {!m.you ? (
+                  <text y={61} textAnchor="middle" fill="#e5eee5" fontSize={11}>
+                    {m.outside ? `${m.direction} ` : ""}
+                    {m.gap > 0 ? "+" : ""}
+                    {m.gap.toFixed(unit === "pts" ? 0 : 2)} {unit}
+                  </text>
+                ) : null}
+              </g>
+            );
+          })}
+      </svg>
+      <div className="club-board-status">
+        <b>
+          {scene.place} / {scene.fieldSize} <small>PLACE</small>
+        </b>
+        <span>{portraitFieldGap(scene.nextGap, unit)}</span>
+      </div>
+      <div className="club-board-controls">
+        <div className="club-board-zoom">
+          <button
+            type="button"
+            aria-label="Zoom out"
+            disabled={view.span >= (unit === "pts" ? 100 : 40)}
+            onClick={() =>
+              onZoom(Math.min(unit === "pts" ? 100 : 40, view.span * 1.5))
+            }
+          >
+            −
+          </button>
+          <span>Zoom</span>
+          <button
+            type="button"
+            aria-label="Zoom in"
+            disabled={view.span <= (unit === "pts" ? 2 : 0.5)}
+            onClick={() =>
+              onZoom(Math.max(unit === "pts" ? 2 : 0.5, view.span / 1.5))
+            }
+          >
+            ＋
+          </button>
+        </div>
+        <div className="club-board-peers">
+          <button
+            type="button"
+            aria-label="Previous lane"
+            disabled={scene.focus === 0}
+            onClick={() => shift(-1)}
+          >
+            ←
+          </button>
+          <button type="button" onClick={() => setFocusId(undefined)}>
+            Your lane
+          </button>
+          <button
+            type="button"
+            aria-label="Next lane"
+            disabled={scene.focus === scene.ordered.length - 1}
+            onClick={() => shift(1)}
+          >
+            →
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}

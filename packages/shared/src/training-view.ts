@@ -63,3 +63,15 @@ export function sessionStageModel(activities: Activity[]) {
   const rows=[...activities].sort((a,b)=>a.startedAt.localeCompare(b.startedAt));
   return { rows, movingSec:rows.reduce((sum,a)=>sum+Math.max(0,a.movingSec),0), sessions:rows.length };
 }
+
+/** Honest full-period comparison; partial selections explicitly say so in the UI. */
+export function trainingComparison(activities: Activity[], sport: SportId | "all", range: TrainingRange, anchor: Date, now = new Date()) {
+  const current=trainingBuckets(activities,sport,range,anchor,now);
+  const priorAnchor=range==="week"?shiftAppDay(anchor,-7):shiftTrainingMonth(anchor,range==="year"?-12:-1);
+  const previous=trainingBuckets(activities,sport,range,priorAnchor,now);
+  const sum=(rows:TrainingBucket[])=>rows.reduce((n,b)=>n+b.movingSec,0);
+  const total=sum(current),prior=sum(previous),partial=current.some(b=>b.partial);
+  const percent=prior>0?(total-prior)/prior*100:null;
+  const label=percent===null?`No activity in previous ${range}`:`${percent>0?"↑ ":percent<0?"↓ ":""}${Math.abs(percent).toLocaleString("en-US",{maximumFractionDigits:0})}% vs ${partial?"all of ":""}previous ${range}`;
+  return {total,prior,partial,percent,label};
+}

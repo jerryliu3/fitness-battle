@@ -27,3 +27,5 @@ export * from "./field-course";
 export * from "./training-view";
 export * from "./crew-relay-scene";
 export * from "./club-summary";
+
+export * from "./portrait-field";

@@ -488,7 +488,7 @@ export function CrewHub() {
                 ? `sessions · ${crew.target_sessions} per member`
                 : `${distanceUnitLabel(state?.units)} together`}
             </Text>
-            <CrewRelay userId={user?.id} key={crew.id} members={members} entries={entries} sport={crew.sport as SportId} format={crew.format} previousDistanceM={previousDistanceM} targetSessions={crew.target_sessions} units={state?.units} />
+            <CrewRelay userId={user?.id} key={crew.id} members={members} entries={entries} sport={crew.sport as SportId} format={crew.format} previousDistanceM={previousDistanceM} targetDistanceM={crew.journey_km*1000} targetSessions={crew.target_sessions} units={state?.units} />
           </View>
           {user ? (
             <>
