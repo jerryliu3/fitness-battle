@@ -1,3 +1,5 @@
+import { LatestActivity } from "../../src/features/club-latest-activity";
+import type { Activity } from "@fitness-battle/shared";
 import { WeekRecap } from "../../src/features/club-week-recap";
 import { RivalCard } from "../../src/features/club-rival-card";
 import { EffortRail } from "../../src/features/effort-rail";
@@ -32,9 +34,11 @@ import { SessionStage } from "../../src/features/session-stage";
 import { HomeActivityActions } from "../../src/features/home-activity-actions";
 import { Journey } from "../../src/features/journey";
 import { useCompeteStore } from "../../src/lib/compete-store";
-import { FocusSheet, f } from "../../src/ui/focus";
+import { FocusDisclosure, FocusSheet, f } from "../../src/ui/focus";
 export default function Home() {
   const { state, dispatch } = useCompeteStore();
+  const [removed,setRemoved]=useState<Activity|null>(null);
+  const [latest,setLatest]=useState<Activity|null>(null);
   const [expanded, setExpanded] = useState<"suggestion" | null>(null);
   useFocusEffect(useCallback(()=>()=>setExpanded(null),[]));
   if (!state)
@@ -191,6 +195,7 @@ export default function Home() {
           showsVerticalScrollIndicator={false}
         >
           <ClubWelcome state={state} />
+          {removed?<View style={f.row}><Text accessibilityLiveRegion="polite" style={f.copy}>Session removed.</Text><Pressable accessibilityRole="button" onPress={()=>{dispatch({type:"set-disposition",activityId:removed.id,disposition:removed.disposition});setRemoved(null);}} style={{minHeight:44,justifyContent:"center"}}><Text style={f.rowTitle}>Undo</Text></Pressable></View>:null}
           {state.frozenPeriods.includes(primaryFreezePeriodStart(state)) ? (
             <Text style={f.copy}>
               ❄ Week frozen · Your effort score is protected through next
@@ -383,8 +388,10 @@ export default function Home() {
             </View>
           </View>
           <RivalCard state={state} />
+          <LatestActivity state={state} onOpen={setLatest} />
           <EffortRail />
           <WeekRecap state={state} />
+          <FocusDisclosure title="Your activity journey">
           <View style={s.homeJourneyLayer} pointerEvents="box-none">
             <Journey
               activities={counted}
@@ -392,8 +399,10 @@ export default function Home() {
               onToday={() => setExpanded("suggestion")}
             />
           </View>
+          </FocusDisclosure>
         </ScrollView>
       </View>
+      <FocusSheet open={Boolean(latest)} title="Your activity" onClose={()=>setLatest(null)}>{latest?<SessionStage state={state} activities={[latest]} onRemove={id=>{setRemoved(latest);dispatch({type:"set-disposition",activityId:id,disposition:"excluded"});setLatest(null);}}/>:null}</FocusSheet>
       <FocusSheet
         open={expanded === "suggestion"}
         title="Today"

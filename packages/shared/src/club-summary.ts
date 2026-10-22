@@ -1,5 +1,8 @@
 import { countsOnTrack } from "./compete/ledger";
 import { weeklyPeriodBounds, APP_TIMEZONE } from "./period";
+import { sportById } from "./compete/sports";
+import { formatClockTime } from "./compete/pace";
+import { formatVolume } from "./compete/engine";
 import { competeNow } from "./compete/engine";
 import { trainingBuckets } from "./training-view";
 import type { CompeteState } from "./compete/sports";
@@ -60,4 +63,16 @@ export function clubAchievements(state: CompeteState, now = competeNow(state)): 
 }
 export function featuredClubAchievements(rows: ClubAchievement[]) {
   return [rows.find(r=>r.id===(rows[1]?.earned?"ten-sessions":"first-session")), [...rows].reverse().find(r=>r.category==="effort"&&r.earned)??rows[3], rows[2]].filter((row,index,items):row is ClubAchievement=>Boolean(row)&&items.findIndex(item=>item?.id===row?.id)===index);
+}
+
+export function clubSessionMetrics(activities: import("./compete/sports").Activity[], units: import("./compete/sports").UnitSystem) {
+  const single=activities.length===1?activities[0]:undefined;
+  if(!single)return [];
+  const distance=single.distanceM/(units==="metric"?1000:1609.344);
+  const pace=distance>0&&single.movingSec>0?Math.round(single.movingSec/distance):0;
+  return [
+    ...(sportById(single.sport).gps?[{label:"Distance",value:formatVolume(single.sport,single.distanceM,single.movingSec,units)}]:[]),
+    {label:"Moving time",value:formatClockTime(single.movingSec)},
+    ...(sportById(single.sport).gps&&pace>0?[{label:single.sport==="cycling"?"Time / unit":"Pace",value:`${formatClockTime(pace)}/${units==="metric"?"km":"mi"}`}]:[]),
+  ];
 }

@@ -1,6 +1,6 @@
 import { useState, type ReactNode } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
-import { APP_TIMEZONE, effortPointProgress, formatTrainingHours, formatVolume, sessionStageModel, sportById, type Activity, type CompeteState } from "@fitness-battle/shared";
+import { APP_TIMEZONE, clubSessionMetrics, countsOnTrack, isVerifiedActivity, effortPointProgress, formatTrainingHours, formatVolume, sessionStageModel, sportById, type Activity, type CompeteState } from "@fitness-battle/shared";
 import { AnimatedEmber } from "../ui/mascot/animated-ember";
 import { FocusButton, f } from "../ui/focus";
 import { SHELL_COLORS as c } from "../theme";
@@ -10,9 +10,11 @@ export function SessionStage({state,activities,suggestion,onRemove,actions}:{sta
   const [expanded,setExpanded]=useState<string|null>(null),[removing,setRemoving]=useState<string|null>(null),[impact,setImpact]=useState(false);
   const seconds=model.sessions?model.movingSec:(suggestion?.minutes??0)*60, point=effortPointProgress(state,sport);
   return <View style={{gap:18}}>
+    {model.sessions?<View style={{gap:8}}><Text style={{alignSelf:"flex-start",padding:8,borderRadius:10,backgroundColor:c.statusSuccessSoft,color:c.green,fontFamily:"DMSans_700Bold",fontSize:12}}>{model.rows.every(a=>isVerifiedActivity(a))?"✓ GPS verified":"Open activity"} · {model.rows.every(a=>countsOnTrack(a,"open"))?"Counted":"Not counted"}</Text><Text style={f.small}>{new Date(model.rows[0]!.startedAt).toLocaleDateString("en-US",{weekday:"short",month:"short",day:"numeric",timeZone:APP_TIMEZONE})}</Text></View>:null}
     <Text style={f.kicker}>{model.sessions?`${model.sessions} recorded session${model.sessions===1?"":"s"}`:"Today's suggestion"}</Text>
     <Text style={[f.h2,{fontSize:30,lineHeight:34,letterSpacing:-1}]}>{model.sessions?"Time well spent.":suggestion?.title??"Make room to move."}</Text>
     <View onLayout={e=>setStageWidth(e.nativeEvent.layout.width)} style={[s.stage,stageWidth<300&&{padding:18}]}><View style={s.inner} pointerEvents="none"/><View><Text style={[s.hours,{fontSize:stageWidth<300?36:stageWidth<340?42:48}]}>{formatTrainingHours(seconds)}<Text style={[f.copy,{fontSize:20}]}> hr</Text></Text><Text style={f.small}>{model.sessions?"Moving time":"Suggested time"}</Text></View><AnimatedEmber size={stageWidth<300?78:100} expression="happy" action={model.sessions?"celebrate":"idle"} loop={false}/></View>
+    {model.sessions?<View style={[f.row,{paddingVertical:16,borderBottomWidth:1,borderBottomColor:c.line,alignItems:"flex-start"}]}>{clubSessionMetrics(model.rows,state.units).map(metric=><View key={metric.label} style={{flex:1,gap:4}}><Text style={[f.rowTitle,{fontFamily:"DMSans_700Bold",fontSize:17}]}>{metric.value}</Text><Text style={f.small}>{metric.label}</Text></View>)}</View>:null}
     {!model.sessions?<><Text style={f.copy}>{suggestion?.detail??"Nothing recorded today."}</Text>{actions}</>:<>
       <View>{model.rows.map(a=><View key={a.id} style={s.row}>
         <Pressable accessibilityRole="button" accessibilityState={{expanded:expanded===a.id}} onPress={()=>setExpanded(expanded===a.id?null:a.id)} style={s.summary}><View style={{gap:3}}><Text style={f.rowTitle}>{sportById(a.sport).name}</Text><Text style={f.small}>{new Date(a.startedAt).toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit",timeZone:APP_TIMEZONE})}</Text></View><Text style={f.rowTitle}>{formatTrainingHours(a.movingSec)} hr</Text></Pressable>
@@ -22,4 +24,4 @@ export function SessionStage({state,activities,suggestion,onRemove,actions}:{sta
     </>}
   </View>;
 }
-const s=StyleSheet.create({stage:{position:"relative",minHeight:180,padding:24,backgroundColor:c.soft,borderTopLeftRadius:80,borderTopRightRadius:80,borderBottomLeftRadius:24,borderBottomRightRadius:24,flexDirection:"row",alignItems:"center",justifyContent:"space-between",gap:12},inner:{position:"absolute",top:12,bottom:12,left:12,right:12,borderWidth:1,borderColor:c.line,borderTopLeftRadius:70,borderTopRightRadius:70,borderBottomLeftRadius:17,borderBottomRightRadius:17},hours:{fontFamily:"DMSans_500Medium",fontSize:48,lineHeight:54,letterSpacing:-2,color:c.ink,fontVariant:["tabular-nums"]},row:{borderBottomWidth:1,borderBottomColor:c.line},summary:{minHeight:58,flexDirection:"row",justifyContent:"space-between",alignItems:"center",gap:12},impact:{borderWidth:1,borderColor:c.line,borderRadius:14,paddingHorizontal:14}});
+const s=StyleSheet.create({stage:{position:"relative",minHeight:180,padding:24,backgroundColor:c.soft,borderRadius:20,flexDirection:"row",alignItems:"center",justifyContent:"space-between",gap:12},inner:{position:"absolute",top:12,bottom:12,left:12,right:12,borderWidth:1,borderColor:c.line,borderRadius:14},hours:{fontFamily:"DMSans_500Medium",fontSize:48,lineHeight:54,letterSpacing:-2,color:c.ink,fontVariant:["tabular-nums"]},row:{borderBottomWidth:1,borderBottomColor:c.line},summary:{minHeight:58,flexDirection:"row",justifyContent:"space-between",alignItems:"center",gap:12},impact:{borderWidth:1,borderColor:c.line,borderRadius:14,paddingHorizontal:14}});

@@ -1,4 +1,5 @@
 "use client";
+import { LatestActivity } from "@/features/club/latest-activity";
 import { WeekRecap } from "@/features/club/week-recap";
 import { useEffect, useLayoutEffect, useRef, useState, type Ref } from "react";
 import { Sheet } from "@/ui/sheet";
@@ -695,8 +696,10 @@ export function TodayScreen() {
       </section>
       </div>
       <RivalCard state={state} />
+      <LatestActivity state={state} onOpen={activity=>openSession(activity,"full")} />
       <EffortRail />
       <WeekRecap state={state} />
+      <details className="club-home-journey"><summary>Your activity journey <span>＋</span></summary>
       <div className="focus-home-journey-layer">
       <JourneyTrail
         stopCount={journeyStops.length}
@@ -951,6 +954,7 @@ export function TodayScreen() {
         }
       </JourneyTrail>
       </div>
+      </details>
     </div>
   );
 }

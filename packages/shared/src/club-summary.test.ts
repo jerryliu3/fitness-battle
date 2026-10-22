@@ -29,3 +29,12 @@ it("derives achievements without counting samples, future or excluded sessions",
  expect(rows[1]).toMatchObject({current:1,earned:false,fraction:.1});
  expect(rows.find(row=>row.id==="effort-750")?.earned).toBe(false);
 });
+
+import { clubSessionMetrics } from "./club-summary";
+it("uses athlete units for pace and avoids made-up pace for zero distance or multi-session days",()=>{
+ const run=activity("a","2026-11-02T12:00:00Z",{movingSec:1500,distanceM:5000});
+ expect(clubSessionMetrics([run],"metric").find(m=>m.label==="Pace")?.value).toBe("5:00/km");
+ expect(clubSessionMetrics([run],"us").find(m=>m.label==="Pace")?.value).toBe("8:03/mi");
+ expect(clubSessionMetrics([{...run,distanceM:0}],"us").some(m=>m.label==="Pace")).toBe(false);
+ expect(clubSessionMetrics([run,run],"us")).toEqual([]);
+});
