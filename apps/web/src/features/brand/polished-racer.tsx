@@ -7,7 +7,7 @@ function draw(node:CapsuleNode,key:number):React.ReactNode{
   return createElement(node.tag,{...attrs,...(maskType?{style:{maskType}}:{}),key},node.children?.map(draw));
 }
 export function PolishedRacer({
-  x, y, you, gold = you, time, active = false, showWake = true, wakeBottom,
+  x, y, you, gold = you, time, active = false, showWake = true, wakeBottom, sizeScale,
 }: {
   x: number;
   y: number;
@@ -18,9 +18,10 @@ export function PolishedRacer({
   showWake?: boolean;
   /** Distance from the head to the field's lower wake boundary, in field pixels. */
   wakeBottom?: number;
+  sizeScale?: number;
 }) {
   const id = useId();
-  const scale = polishedLaneScale(you);
+  const scale = sizeScale ?? polishedLaneScale(you);
   const [defs, wake, ...head] = polishedCapsuleScene(id, gold, time);
   return <g transform={`translate(${x} ${y}) scale(${scale})`} pointerEvents="none" data-polished-racer={gold ? "gold" : "platinum"}>
     {draw(defs, 0)}

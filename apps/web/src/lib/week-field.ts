@@ -38,11 +38,14 @@ export async function readWeekFieldPin(
   if (error) throw new Error(error.message);
   if (!data) throw new Error("field_roster_unavailable");
   const memberSet = new Set(field.member_ids);
+  const {data:portraits}=field.member_ids.length?await db.from("profiles").select("id, avatar_url").in("id",field.member_ids):{data:[]};
+  const photos=new Map((portraits??[]).map(row=>[row.id,row.avatar_url]));
   const members = (data as FieldRosterRow[])
     .filter((row) => memberSet.has(row.user_id))
     .map((row) => ({
       id: row.user_id,
       name: row.display_name || "Athlete",
+      avatarUrl: photos.get(row.user_id) ?? null,
       elo: Number(row.open_elo) || 1000,
       distanceM: Number(row.distance_m) || 0,
       movingSec: Number(row.moving_sec) || 0,

@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import {
+  athletePennantOffset,
   arenaWindow,
   arenaPosition,
   clampArenaLaneCenter,
@@ -266,4 +267,10 @@ describe("arena overtake reconciliation & motion", () => {
     );
     expect(JSON.parse(store.get(key)!).unit).toBe("km");
   });
+});
+
+it("places nearby self/rival pennants on opposite sides and stays in the viewport",()=>{
+  expect(athletePennantOffset(270,270,true,540)).toBeLessThan(0);
+  expect(athletePennantOffset(275,270,false,540)).toBeGreaterThan(0);
+  expect(athletePennantOffset(480,478,false,540)+480+46).toBeLessThanOrEqual(540);
 });

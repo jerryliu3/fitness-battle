@@ -1,5 +1,10 @@
 export const AVATAR_OBJECT_FILE_NAME = "avatar.jpg";
 const AVATAR_PUBLIC_PATH_PREFIX = "/storage/v1/object/public/avatars/";
+/** Only public HTTP(S) image URLs may cross a presentation bridge. Credentials never do. */
+export function presentationAvatarUrl(value: unknown): string | null {
+  if(typeof value!=="string"||value.length>2048)return null;
+  try{const url=new URL(value);return (url.protocol==="https:"||url.protocol==="http:")&&!url.username&&!url.password?url.toString():null;}catch{return null;}
+}
 
 export function getCanonicalAvatarObjectPath(userId: string): string {
   return `${userId}/${AVATAR_OBJECT_FILE_NAME}`;

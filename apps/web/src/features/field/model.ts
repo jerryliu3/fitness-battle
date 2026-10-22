@@ -15,6 +15,7 @@ import {
 import { buildSplitBoard } from "@/features/split/model";
 
 export interface FieldRunner {
+  avatarUrl?: string | null;
   lastUpdated?: string;
   id: string;
   name: string;
@@ -88,6 +89,7 @@ export function buildFieldModel(
     return {
       id: row.id,
       name: row.you ? state.name : row.name,
+      avatarUrl: row.you ? state.avatarUrl : state.crewBoard?.members.find(m=>m.id===row.id)?.avatarUrl,
       initials: row.you
         ? initialsFromName(state.name)
         : initialsFromName(row.name),

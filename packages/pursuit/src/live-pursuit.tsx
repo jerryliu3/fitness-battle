@@ -1,5 +1,5 @@
 "use client";
-import { selfLaneLabel, type ArenaViewWindow } from "@fitness-battle/shared";
+import { selfLaneLabel, PERSON_ICON_PATH, type ArenaViewWindow } from "@fitness-battle/shared";
 import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
@@ -25,6 +25,7 @@ export interface PursuitProps {
   onUnavailable: () => void;
 }
 interface Label {
+  avatarUrl?: string | null;
   id: string;
   name: string;
   gap: string;
@@ -358,6 +359,7 @@ export function LivePursuit(props: PursuitProps) {
         )
           continue;
         const label = {
+          avatarUrl: r.avatarUrl,
           id,
           name: r.you
             ? selfLaneLabel(r.name, "caps")
@@ -632,8 +634,8 @@ export function LivePursuit(props: PursuitProps) {
           style={{ left: label.x, top: label.y }}
           onClick={() => props.onSelect(label.id)}
         >
-          <strong>{label.name}</strong>
-          <small>{label.gap}</small>
+          <span className="pursuit-portrait">{label.avatarUrl?<img src={label.avatarUrl} alt=""/>:<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true"><path d={PERSON_ICON_PATH}/></svg>}</span>
+          <span><strong>{label.name}</strong><small>{label.gap}</small></span>
         </button>
       ))}
     </div>

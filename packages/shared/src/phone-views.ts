@@ -79,6 +79,7 @@ export interface TodayRoute {
 }
 
 export interface ArenaLane {
+  avatarUrl?: string | null;
   lastUpdated?: string;
   id: string;
   name: string;
@@ -320,6 +321,7 @@ export function buildArenaModel(
     return {
       id: row.id,
       name: row.you ? state.name : row.name,
+      avatarUrl: row.you ? state.avatarUrl : state.crewBoard?.members.find(m=>m.id===row.id)?.avatarUrl,
       you: row.you,
       ghost: false,
       lastUpdated: row.you

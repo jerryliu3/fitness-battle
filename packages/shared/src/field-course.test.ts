@@ -5,6 +5,12 @@ import { fieldCourse, fieldCourseScene, fieldLap, fieldMarks, fieldOverview, ove
 const lanes = [{ id: "a", name: "A", initials: "A", value: 12 }, { id: "me", name: "Me", initials: "ME", value: 19.2, you: true }];
 const flatten = (nodes: FieldNode[]): FieldNode[] => nodes.flatMap(n => [n, ...flatten(n.children ?? [])]);
 describe("production course contract", () => {
+  it("represents a capsule as 100 meters in both unit systems, independently of zoom",()=>{
+    for(const [unit,metersPerUnit] of [["km",1000],["mi",1609.344]] as const)for(const span of [.75,1.2,6,12]){
+      const course=fieldCourse(390,540,4,{center:18,span},unit,defaultFieldAppearance);
+      expect(58*course.markerScale/course.length*span*metersPerUnit).toBeCloseTo(100);
+    }
+  });
   it("defaults safely and isolates per-account/per-event device preferences", () => {
     for (const raw of [null, "bad", "[]", "null", '{"ground":"__proto__","edges":"bad"}', '{"ground":"constructor"}']) expect(readFieldAppearance(raw)).toEqual(defaultFieldAppearance);
     expect(readFieldAppearance('{"ground":"pool","edges":"open"}')).toEqual({ ground: "pool", edges: "open" });

@@ -299,6 +299,7 @@ export interface CrewBoardPin {
 }
 
 export interface CrewBoardMember {
+  avatarUrl?: string | null;
   id: string;
   name: string;
   elo: number;

@@ -22,6 +22,7 @@ export function Arena3D({
     .map((lane) => ({
       id: lane.id,
       name: lane.name,
+      avatarUrl: lane.avatarUrl,
       initials: lane.initials,
       series: [0, lane.value],
       you: lane.you,

@@ -22,6 +22,7 @@ describe("Competition Lifecycle & Unified Multiplayer Standings", () => {
 
     // Mock DB RPC responses for Athlete A
     const mockDbA = {
+      from: vi.fn().mockReturnValue({select:()=>({in:async()=>({data:[],error:null})})}),
       rpc: vi.fn().mockImplementation((name: string) => {
         if (name === "seat_athlete_week_field") {
           return Promise.resolve({
@@ -69,6 +70,7 @@ describe("Competition Lifecycle & Unified Multiplayer Standings", () => {
     stateB = reduceCompete(stateB, { type: "opt-in", sport: "running", now: waveStart });
 
     const mockDbB = {
+      from: vi.fn().mockReturnValue({select:()=>({in:async()=>({data:[],error:null})})}),
       rpc: vi.fn().mockImplementation((name: string) => {
         if (name === "seat_athlete_week_field") {
           return Promise.resolve({

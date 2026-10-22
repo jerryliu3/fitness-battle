@@ -53,6 +53,7 @@ export function FieldStage({
       model.runners.map((r) => ({
         id: r.id,
         name: r.name,
+        avatarUrl: r.avatarUrl,
         initials: r.initials,
         series: [0, ...r.km],
         you: r.you,
@@ -83,7 +84,7 @@ export function FieldStage({
     setLanesImmersive(false);
     setMode("lanes");
   }, [pathname, tabActive]);
-  const [span, setSpan] = useState(model.gps ? (unit === "mi" ? 4 : 6) : 20);
+  const [span, setSpan] = useState(fieldDefaultSpan(unit));
   const [center, setCenter] = useState<number | null>(null);
   const [centerTween, setCenterTween] = useState<number | null>(null);
   const centerTweenRef = useRef<{
@@ -142,6 +143,7 @@ export function FieldStage({
         name: r.name,
         initials: r.initials,
         value: valueAt(r, time),
+        avatarUrl: r.avatarUrl,
         lastUpdated: model.runners.find((runner) => runner.id === r.id)
           ?.lastUpdated,
         you: r.you,
@@ -504,9 +506,9 @@ export function FieldStage({
             </span>
             <input
               type="range"
-              min="2"
+              min={model.gps ? .5 : 2}
               max={Math.max(model.gps ? 40 : 100, Math.ceil(view.span))}
-              step="1"
+              step={model.gps ? "any" : 1}
               value={view.span}
               onChange={(e) => {
                 const current = view.center;
@@ -525,7 +527,7 @@ export function FieldStage({
               className="fb-note"
               style={{ fontSize: 11, minWidth: 44, textAlign: "right" }}
             >
-              ±{(view.span / 2).toFixed(0)} {unit}
+              ±{(view.span / 2).toLocaleString("en-US",{maximumFractionDigits:unit==="pts"?0:2})} {unit}
             </span>
           </div>
 

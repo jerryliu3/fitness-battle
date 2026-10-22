@@ -8,6 +8,11 @@ const message = {
   unit: "km",
 };
 describe("embedded arena presentation bridge", () => {
+  it("carries public portrait URLs without accepting credentials or script URLs",()=>{
+    const withPortrait=(avatarUrl:string)=>parseArenaSceneMessage({...message,lanes:[{...message.lanes[0],avatarUrl}]})?.lanes[0]?.avatarUrl;
+    expect(withPortrait("https://example.com/avatar.jpg")).toBe("https://example.com/avatar.jpg");
+    expect(withPortrait("javascript:alert(1)")).toBeNull();expect(withPortrait("https://user:secret@example.com/a.jpg")).toBeNull();
+  });
   it("keeps real distances and independent viewport bounds", () => {
     expect(parseArenaSceneMessage(message)?.lanes[0]?.value).toBe(12);
     expect(
