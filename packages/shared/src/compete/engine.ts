@@ -1481,7 +1481,7 @@ export function formatDistanceM(
 }
 
 export function formatEffort(value: number): string {
-  return value.toFixed(1);
+  return Number.isFinite(value) ? value.toLocaleString("en-US", { maximumFractionDigits: 1 }) : "—";
 }
 
 export function formatNoticeUnits(

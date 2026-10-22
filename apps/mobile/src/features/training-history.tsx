@@ -1,6 +1,6 @@
 import { useState } from "react";
+import { RecordChart } from "./record-chart";
 import { Pressable, ScrollView, Text, View } from "react-native";
-import Svg, { Circle, Path } from "react-native-svg";
 import {
   APP_TIMEZONE,
   SPORTS,
@@ -9,7 +9,6 @@ import {
   formatClockTime,
   formatVolume,
   personalRecordHistory,
-  recordStepPath,
   weeklyTraining,
   type CompeteState,
   type SportId,
@@ -136,24 +135,7 @@ export function TrainingHistory({ state }: { state: CompeteState }) {
           </Text>
           <Text style={f.massive}>{formatClockTime(latest.seconds)}</Text>
           <Text style={f.small}>Whole-session moving time</Text>
-          {rows.length > 1 ? (
-            <Svg
-              viewBox="0 0 300 100"
-              width="100%"
-              height={120}
-              accessibilityLabel={`${rows.length} record improvements`}
-            >
-              <Path
-                d={recordStepPath(rows)}
-                fill="none"
-                stroke={c.ink}
-                strokeWidth={3}
-              />
-              {rows.length === 1 ? (
-                <Circle cx={8} cy={8} r={4} fill={c.tennis} />
-              ) : null}
-            </Svg>
-          ) : null}
+          <RecordChart rows={rows} selected={inspected.activityId} now={now} onSelect={setReceipt} />
           <ScrollView horizontal showsHorizontalScrollIndicator={false}>
             <View style={f.row}>
               {rows.map((r) => (

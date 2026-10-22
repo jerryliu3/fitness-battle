@@ -186,7 +186,7 @@ export function fieldCourseScene(g: FieldCourse, appearance: FieldAppearance, la
       const values = Array.from({ length: g.oval ? 5 : 81 }, (_, k) => a + (b - a) * k / ((g.oval ? 5 : 81) - 1));
       const ribbon = `M${values.map(d => side(d, -1)).join("L")}L${[...values].reverse().map(d => side(d, 1)).join("L")}Z`;
       const start = g.point(a, i), end = g.point(b, i), id = `${prefix}-progress-${i}-${j}`;
-      const alpha = (fraction: number) => .23 * fraction;
+      const alpha = (fraction: number) => .23 * (1 - fraction);
       segments.push(n("defs", {}, [n("linearGradient", { id, gradientUnits: "userSpaceOnUse", x1: g.oval ? start.x : 0, y1: start.y, x2: g.oval ? end.x : 0, y2: end.y }, [n("stop", { offset: 0, stopColor: color, stopOpacity: alpha(j / count) }), n("stop", { offset: 1, stopColor: color, stopOpacity: alpha((j + 1) / count) })])]), path(ribbon, `url(#${id})`));
     }
     traces.push(n("g", { pointerEvents: "none" }, segments));

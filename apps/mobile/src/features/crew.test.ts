@@ -7,6 +7,7 @@ const mock = vi.hoisted(() => ({
   navigate: vi.fn(),
   state: null as unknown,
 }));
+vi.mock("react-native-svg", () => ({ default:"Svg", ClipPath:"ClipPath", Defs:"Defs", G:"G", Path:"Path", Pattern:"Pattern", Rect:"Rect", Text:"SvgText" }));
 vi.mock("react-native", () => ({
   Pressable: "Pressable",
   Text: "Text",

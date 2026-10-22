@@ -65,3 +65,11 @@ describe("production course contract", () => {
     }
   });
 });
+
+it("fades earned distance toward the athlete and darkens back toward the start", () => {
+ const g=fieldCourse(390,540,1,{center:2,span:6},"km",defaultFieldAppearance);
+ const nodes=flatten(fieldCourseScene(g,defaultFieldAppearance,[{id:"me",name:"Me",initials:"ME",value:2,you:true}],"km","fade"));
+ const gradient=nodes.find(n=>n.tag==="linearGradient"&&String(n.attrs.id).includes("-progress-"))!;
+ expect(gradient.children?.[0].attrs.stopOpacity).toBe(.23);
+ expect(gradient.children?.[1].attrs.stopOpacity).toBe(0);
+});

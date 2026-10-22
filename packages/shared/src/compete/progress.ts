@@ -132,3 +132,63 @@ export function recordStepPath(
     .map((r, i) => (i === 0 ? `M ${x(r)} ${y(r)}` : `H ${x(r)} V ${y(r)}`))
     .join(" ");
 }
+
+/** Prototype's dated standing-record chart. A record holds until the next real improvement. */
+export function personalRecordChart(
+  rows: readonly RecordAttempt[],
+  now: Date,
+  width = 340,
+  height = 170,
+) {
+  if (!rows.length) return null;
+  const left = 54,
+    right = width - 14,
+    top = 16,
+    bottom = height - 34;
+  const values = rows.map((row) => row.seconds);
+  const low = Math.min(...values),
+    high = Math.max(...values),
+    padding = Math.max(15, (high - low) * 0.15);
+  const min = Math.max(0, low - padding),
+    max = high + padding;
+  const start = Date.parse(rows[0]!.startedAt);
+  const end = Math.max(
+    start + 86400000,
+    Date.parse(rows.at(-1)!.startedAt),
+    now.getTime(),
+  );
+  const x = (at: string) =>
+    left + ((Date.parse(at) - start) / (end - start)) * (right - left);
+  // Lower elapsed time is lower on the chart, as in the reviewed prototype.
+  const y = (seconds: number) =>
+    top + ((max - seconds) / (max - min)) * (bottom - top);
+  const points = rows.map((row) => ({
+    ...row,
+    x: x(row.startedAt),
+    y: y(row.seconds),
+  }));
+  const path =
+    points
+      .map((point, i) =>
+        i ? `H ${point.x} V ${point.y}` : `M ${point.x} ${point.y}`,
+      )
+      .join(" ") + ` H ${right}`;
+  const ticks = [max, (min + max) / 2, min].map((seconds) => ({
+    seconds,
+    y: y(seconds),
+  }));
+  return {
+    left,
+    right,
+    top,
+    bottom,
+    width,
+    height,
+    path,
+    points,
+    ticks,
+    start: rows[0]!.startedAt,
+    end: new Date(end).toISOString(),
+    gain: high - low,
+  };
+}
