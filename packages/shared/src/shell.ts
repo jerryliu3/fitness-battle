@@ -51,29 +51,40 @@ export function shellTabFromPath(
 }
 
 /**
- * Open Field product palette (Everyday Club warm neutral + charcoal + gold).
+ * Everyday Club palette: warm canvas, navy typography, solar yellow and alpine teal.
  * Legacy plum/tennis keys remain for component compatibility.
  */
 export const SHELL_COLORS = {
-  plum: "#282f2c",
-  plumDeep: "#1a1f1d",
-  tennis: "#f1c75b",
-  paper: "#fafaf7",
+  plum: "#142b3b",
+  plumDeep: "#0c1d29",
+  tennis: "#f7c948",
+  paper: "#f8f9f6",
   card: "#ffffff",
-  starEmber: "#f1c75b",
-  ink: "#282f2c",
-  muted: "#616c63",
-  line: "#e0e5dc",
-  green: "#2f6f4e",
-  greenSoft: "#eef0e9",
-  soft: "#eef0e9",
-  secondary: "#819486",
-  gold: "#f1c75b",
+  starEmber: "#f7c948",
+  ink: "#142b3b",
+  muted: "#637482",
+  line: "#e3e9e7",
+  green: "#24765c",
+  greenSoft: "#eef3f1",
+  soft: "#eef3f1",
+  secondary: "#668e91",
+  gold: "#f7c948",
+  actionPrimary: "#f7c948",
+  actionPressed: "#dfb237",
+  actionSoft: "#fff5d1",
+  textPrimary: "#142b3b",
+  surfaceCanvas: "#f8f9f6",
+  surfaceCard: "#ffffff",
+  fieldDeep: "#103e46",
+  fieldTeal: "#176c75",
+  statusSuccess: "#24765c",
+  statusSuccessSoft: "#e9f5ee",
+  statusError: "#b93c3c",
 } as const;
 
 export const SHELL_RADIUS = {
   control: 12,
-  card: 16,
+  card: 20,
   sheet: 24,
   pill: 999,
 } as const;
@@ -83,7 +94,12 @@ export const SHELL_TYPE = {
   body: "DM Sans",
 } as const;
 
+export const SHELL_SPACING = { xs: 4, sm: 8, md: 12, lg: 16, xl: 24, page: 20, section: 28 } as const;
+export const SHELL_MOTION = { feedback: 120, transition: 220, reveal: 420 } as const;
+
 export const SHELL_TOKENS = {
+  spacing: SHELL_SPACING,
+  motion: SHELL_MOTION,
   colors: SHELL_COLORS,
   radius: SHELL_RADIUS,
   type: SHELL_TYPE,

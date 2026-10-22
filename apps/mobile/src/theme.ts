@@ -1,17 +1,18 @@
+import { SHELL_COLORS as c } from "@fitness-battle/shared";
 export const colors = {
-  ink: "#282f2c",
-  paper: "#fafaf7",
-  card: "#ffffff",
-  muted: "#616c63",
-  line: "#e0e5dc",
-  lime: "#f1c75b",
-  limeDeep: "#deb142",
-  accent: "#282f2c",
-  accentSoft: "#eef0e9",
-  greenSoft: "#eef0e9",
+  ink: c.ink,
+  paper: c.paper,
+  card: c.card,
+  muted: c.muted,
+  line: c.line,
+  lime: c.tennis,
+  limeDeep: c.actionPressed,
+  accent: c.ink,
+  accentSoft: c.soft,
+  greenSoft: c.soft,
   /** @deprecated use accent — kept for older style refs */
-  blue: "#282f2c",
-  blueSoft: "#eef0e9",
+  blue: c.ink,
+  blueSoft: c.soft,
 };
 
 export const fonts = {

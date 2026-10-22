@@ -1,6 +1,8 @@
-# Product design guide — Open Field
+# Product design guide — Everyday Club
 
-The selected production direction is **Open Field** (with Everyday Club's warm neutral palette and Focus IA, user decision October 17, 2026).
+The selected production direction is **Everyday Club**, following the owner’s October 22 reference and implementation request. Retain yellow and Ember, Home / Compete / Progress / Crew, existing data behavior, 2D default competition, no recording action and no social feed. See [audit](design/ui-audit.md) and [component decisions](design/component-guidelines.md).
+
+Use semantic shared tokens: navy `#142b3b`, yellow `#f7c948`, canvas `#f8f9f6`, white cards, muted `#637482`, border `#e3e9e7`, teal `#176c75`. Cards use quiet 20px corners. Yellow primary controls use dark labels. Historical decisions below describe earlier iterations; this selection supersedes their presentation rules.
 
 ## Brand and character exploration
 
