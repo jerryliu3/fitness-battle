@@ -1,5 +1,7 @@
 "use client";
 import { useEffect, useLayoutEffect, useRef, useState, type Ref } from "react";
+import { Sheet } from "@/ui/sheet";
+import { SessionStage } from "./session-stage";
 import { ActivityActions } from "./activity-actions";
 import { newJourneyStops } from "./journey-reveal";
 import { usePathname } from "next/navigation";
@@ -208,6 +210,7 @@ export function TodayScreen() {
   const [session, setSession] = useState<SessionPhase>({ kind: "closed" });
   const [revealingStops, setRevealingStops] = useState<string[]>([]);
   const peekRef = useRef<HTMLDivElement>(null);
+  const sessionReturnFocus = useRef<HTMLElement | null>(null);
   const [reaction, setReaction] = useState<{
     action: EmberAction;
     key: number;
@@ -232,6 +235,8 @@ export function TodayScreen() {
     document.addEventListener("pointerdown", dismissOutside);
     return () => document.removeEventListener("pointerdown", dismissOutside);
   }, [session.kind]);
+
+  useEffect(()=>{if(!onHome)setSession({kind:"closed"});},[onHome]);
 
   if (!state) return <p className="fb-copy">Loading your week…</p>;
 
@@ -458,6 +463,7 @@ export function TodayScreen() {
   const activeDaysCount = weekDays.filter((d) => d.hasActivity).length;
 
   function openSession(target: SessionTarget, phase: "peek" | "full") {
+    if(phase==="peek" && document.activeElement instanceof HTMLElement)sessionReturnFocus.current=document.activeElement;
     setRevealingStops([]);
     void playCue("light");
     setSession({ kind: phase, target });
@@ -468,199 +474,12 @@ export function TodayScreen() {
     setSession({ kind: "closed" });
   }
 
-  if (session.kind === "full") {
-    const target = session.target;
-    if (target === "suggestion") {
-      return (
-        <div className="focus-home focus-home-expanded">
-          <button type="button" className="focus-expand-back" onClick={closeSession}>
-            ← Back
-          </button>
-          <motion.section
-            layout
-            className="focus-expand-panel"
-            aria-label="Today's suggestion"
-            initial={reduced ? false : { opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ type: "spring", bounce: 0.12, duration: 0.45 }}
-          >
-            <p className="fb-kicker">Today&apos;s suggestion</p>
-            <h1>{route.suggestion.title}</h1>
-            {route.suggestion.minutes ? (
-              <p className="fb-copy">{route.suggestion.minutes} min</p>
-            ) : null}
-            <p className="fb-copy">{route.suggestion.detail}</p>
-            <p className="fb-note">{route.suggestion.reason}</p>
-            <AnimatedEmber
-              className="focus-expand-ember"
-              expression="happy"
-              action={reaction.action}
-              restartKey={reaction.key}
-              loop={false}
-              playing={reaction.key > 0}
-            />
-          </motion.section>
-        </div>
-      );
-    }
-    if ("items" in target) {
-      const day = target;
-      const dayDate = new Date(`${day.day}T12:00:00.000Z`);
-      const dateTitle = dayDate.toLocaleDateString("en-US", {
-        weekday: "long",
-        month: "short",
-        day: "numeric",
-        timeZone: APP_TIMEZONE,
-      });
-      return (
-        <div className="focus-home focus-home-expanded">
-          <button type="button" className="focus-expand-back" onClick={closeSession}>
-            ← Back
-          </button>
-          <motion.section
-            layout
-            className="focus-expand-panel"
-            aria-label="Recorded sessions"
-            initial={reduced ? false : { opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ type: "spring", bounce: 0.12, duration: 0.45 }}
-          >
-            <p className="fb-kicker">{dateTitle}</p>
-            <h1>
-              {day.items.length}{" "}
-              {day.items.length === 1 ? "Session" : "Sessions"}
-            </h1>
-            {day.day === todayKey ? (
-              <AnimatedEmber
-                className="focus-expand-ember"
-                expression="happy"
-                action={reaction.action}
-                restartKey={reaction.key}
-                loop={false}
-                playing={reaction.key > 0}
-              />
-            ) : null}
-            <div style={{ display: "flex", flexDirection: "column", gap: 12, marginTop: 16 }}>
-              {day.items.map((a) => (
-                <div
-                  key={a.id}
-                  className="fb-card"
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                    padding: "16px 18px",
-                    background: "var(--paper, #fafaf7)",
-                    borderRadius: 14,
-                    border: "1px solid #e0e5dc",
-                  }}
-                >
-                  <div>
-                    <strong style={{ fontSize: 16, display: "block" }}>
-                      {sportById(a.sport).name} · {formatVolume(a.sport, a.distanceM, a.movingSec, units)}
-                    </strong>
-                    <small style={{ color: "var(--muted)", fontSize: 12, marginTop: 4, display: "block" }}>
-                      {a.source} · {a.verified ? "GPS verified" : "Open effort"}
-                      {a.avgHr ? ` · ${a.avgHr} bpm` : ""}
-                    </small>
-                  </div>
-                  <button
-                    type="button"
-                    className="fb-btn-ghost"
-                    style={{
-                      color: "var(--red, #b83a38)",
-                      fontSize: 12,
-                      padding: "6px 12px",
-                      width: "auto",
-                      minHeight: "auto",
-                      borderRadius: 8,
-                      border: "1px solid rgba(184, 58, 56, 0.2)",
-                    }}
-                    onClick={() => {
-                      setRemoved(a);
-                      dispatch({
-                        type: "set-disposition",
-                        activityId: a.id,
-                        disposition: "excluded",
-                      });
-                      closeSession();
-                    }}
-                  >
-                    Remove
-                  </button>
-                </div>
-              ))}
-            </div>
-          </motion.section>
-        </div>
-      );
-    }
-    const a = target;
-    return (
-      <div className="focus-home focus-home-expanded">
-        <button type="button" className="focus-expand-back" onClick={closeSession}>
-          ← Back
-        </button>
-        <motion.section
-          layout
-          className="focus-expand-panel"
-          aria-label="Activity details"
-          initial={reduced ? false : { opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ type: "spring", bounce: 0.12, duration: 0.45 }}
-        >
-          <p className="fb-kicker">
-            {sportById(a.sport).name} ·{" "}
-            {new Date(a.startedAt).toLocaleDateString("en-US", {
-              weekday: "long",
-              month: "short",
-              day: "numeric",
-              timeZone: APP_TIMEZONE,
-            })}
-          </p>
-          <h1>{formatVolume(a.sport, a.distanceM, a.movingSec, units)}</h1>
-          <p className="fb-copy">
-            Source: {a.source} · {a.verified ? "GPS verified" : "Open effort"}
-          </p>
-          {a.avgHr ? (
-            <p className="fb-copy">Avg heart rate: {a.avgHr} bpm</p>
-          ) : null}
-          <p className="fb-note">
-            {a.disposition === "excluded"
-              ? "Sample activity. Not counted toward rankings."
-              : a.disposition === "pending"
-                ? "Pending file import"
-                : "Counted toward your training."}
-          </p>
-          <div style={{ marginTop: 20 }}>
-            <button
-              type="button"
-              className="fb-btn-ghost"
-              style={{
-                color: "var(--red, #b83a38)",
-                fontSize: 13,
-                width: "auto",
-                padding: "8px 14px",
-                borderRadius: 8,
-                border: "1px solid rgba(184, 58, 56, 0.2)",
-              }}
-              onClick={() => {
-                setRemoved(a);
-                dispatch({
-                  type: "set-disposition",
-                  activityId: a.id,
-                  disposition: "excluded",
-                });
-                closeSession();
-              }}
-            >
-              Remove session
-            </button>
-          </div>
-        </motion.section>
-      </div>
-    );
-  }
+  const detailTarget = session.kind === "full" ? session.target : null;
+  const detailActivities = detailTarget === "suggestion"
+    ? counted.filter(a => dayKey(new Date(a.startedAt), APP_TIMEZONE) === todayKey)
+    : detailTarget && typeof detailTarget !== "string"
+      ? "items" in detailTarget ? detailTarget.items : [detailTarget]
+      : [];
 
   const peekStopKey =
     session.kind === "peek"
@@ -680,6 +499,9 @@ export function TodayScreen() {
 
   return (
     <div className="focus-home-stage">
+      <Sheet body="" returnFocusTo={sessionReturnFocus} open={session.kind === "full"} title={detailTarget === "suggestion" ? "Today" : "Your session"} onClose={closeSession}>
+        <SessionStage state={state} activities={detailActivities} suggestion={route.suggestion} actions={<ActivityActions />} onRemove={activityId => { setRemoved(detailActivities.find(a=>a.id===activityId)??null); dispatch({type:"set-disposition",activityId,disposition:"excluded"}); if(detailActivities.length <= 1)closeSession(); }}/>
+      </Sheet>
       <div className="focus-home-overlay">
       {removed ? <div className="fb-note" role="status">Session removed. <button type="button" className="fb-btn-ghost" onClick={() => { dispatch({type:"set-disposition", activityId:removed.id, disposition:removed.disposition}); setRemoved(null); }}>Undo</button></div> : null}
       {frozen && (

@@ -2,7 +2,7 @@
 
 import * as Dialog from "@radix-ui/react-dialog";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
-import { useEffect, useRef, type ReactNode } from "react";
+import { useEffect, useRef, type ReactNode, type RefObject } from "react";
 import { playCue } from "@/lib/haptics";
 
 export function Sheet({
@@ -12,6 +12,7 @@ export function Sheet({
   onClose,
   children,
   preventAutoFocus = true,
+  returnFocusTo,
 }: {
   open: boolean;
   title: string;
@@ -20,6 +21,8 @@ export function Sheet({
   children?: ReactNode;
   /** Stops mobile browsers from focusing the first field when the sheet opens. */
   preventAutoFocus?: boolean;
+  /** Preserve the original opener when an intermediate preview unmounts. */
+  returnFocusTo?: RefObject<HTMLElement | null>;
 }) {
   const reduced = useReducedMotion();
   const returnFocus = useRef<HTMLElement | null>(null);
@@ -66,7 +69,8 @@ export function Sheet({
                 }}
                 onCloseAutoFocus={(event) => {
                   event.preventDefault();
-                  returnFocus.current?.focus({ preventScroll: true });
+                  const target=returnFocusTo?.current??returnFocus.current;
+                  if(target?.isConnected)target.focus({ preventScroll: true });
                 }}
               >
                 <motion.div

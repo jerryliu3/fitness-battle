@@ -10,12 +10,14 @@ import {
   type JourneyLane,
   type UnitSystem,
 } from "@fitness-battle/shared";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
+import { useFocusEffect } from "expo-router";
 import { Pressable, Text, View } from "react-native";
 import Svg, { Path } from "react-native-svg";
 import { SHELL_COLORS as c } from "../theme";
 import { FocusButton, FocusSheet, f } from "../ui/focus";
 import { Ember } from "../ui/mascot/ember";
+import { SessionStage } from "./session-stage";
 import { useCompeteStore } from "../lib/compete-store";
 
 function formatDayHours(seconds: number): string {
@@ -40,7 +42,7 @@ export function Journey({
   units: UnitSystem;
   onToday: () => void;
 }) {
-  const { dispatch, accountKey } = useCompeteStore();
+  const { state, dispatch, accountKey } = useCompeteStore();
   const [removed, setRemoved] = useState<Activity | null>(null);
   useEffect(() => {
     setRemoved(null);
@@ -49,6 +51,7 @@ export function Journey({
   const [width, setWidth] = useState(320);
   const [selectedDay, setSelectedDay] = useState<string | null>(null);
   const todayKey = dayKey(new Date(), APP_TIMEZONE);
+  useFocusEffect(useCallback(()=>()=>setSelectedDay(null),[]));
   const days = groupActivitiesByDay(activities, 30);
   const todayDay = days.find((d) => d.day === todayKey);
   const pastDays = days.filter((d) => d.day !== todayKey);
@@ -270,40 +273,7 @@ export function Journey({
         }
         onClose={() => setSelectedDay(null)}
       >
-        {selected?.day === todayKey ? (
-          <View style={{ alignItems: "center", marginBottom: 12 }}>
-            <Ember size={80} expression="happy" />
-          </View>
-        ) : null}
-        {selected?.items.map((a) => (
-          <View key={a.id} style={f.card}>
-            <Text style={f.h2}>{sportById(a.sport).name}</Text>
-            <Text style={f.rowTitle}>
-              {formatVolume(a.sport, a.distanceM, a.movingSec, units)}
-            </Text>
-            <Text style={f.copy}>
-              {a.verified ? "Verified" : "Open"} · counted · {a.source}
-            </Text>
-            <View style={{ marginTop: 8 }}>
-              <FocusButton
-                label="Remove session"
-                secondary
-                onPress={() => {
-                  setRemoved(a);
-                  setSelectedDay(null);
-                  dispatch({
-                    type: "set-disposition",
-                    activityId: a.id,
-                    disposition: "excluded",
-                  });
-                  if (selected.items.length <= 1) {
-                    setSelectedDay(null);
-                  }
-                }}
-              />
-            </View>
-          </View>
-        ))}
+        {selected && state ? <SessionStage state={state} activities={selected.items} onRemove={activityId=>{setRemoved(selected.items.find(a=>a.id===activityId)??null);dispatch({type:"set-disposition",activityId,disposition:"excluded"});if(selected.items.length<=1)setSelectedDay(null);}}/> : null}
       </FocusSheet>
     </>
   );
