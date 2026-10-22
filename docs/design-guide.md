@@ -130,3 +130,9 @@ Compete opens directly to lanes. Activity progress stays in the lane presentatio
 Sheets initially focus their heading, keeping keyboards and select menus closed until requested. Start Line uses an empty, clearly named session field, duration chips, and inline validation for name, valid Eastern date/time, future start, and 15–240 minutes. Demo scheduling is explicitly local to the account and crew; RSVP never logs training.
 
 Crew rest status follows the current Eastern week and offers a clear action in the same sheet. Home exposes sync progress and outcomes; session removal has an immediate Undo that restores the original disposition. Progress shows the real field size, invite copy/share confirms success, and renewal state is stated beside its reversible control. The legacy /compete route redirects to /arena. Race tables indicate horizontal overflow on small screens.
+
+## October 22 — earned progress and personal representation
+
+Selected directions from the [earned-and-personal exploration](https://github.com/jerryliu3/fitness-battle/pull/253), implemented on web and native. Brand/app-icon geometry is unchanged.
+
+- **Score rail:** A compact persistent rail under the app header shows the primary sport's existing **Open Effort Score**, current rank and progress to the next +1 activity milestone. It is one existing score point per step, not a separate XP/level currency. Positive observed score changes animate with a brief star burst; first hydration, account/sport changes and decreases do not celebrate. Reduced motion uses a static change label. The rail links to Progress for trends, and save failures retain their disclosure. Durable previously earned points are explained when activity removal reduces the volume below its award high-water mark.

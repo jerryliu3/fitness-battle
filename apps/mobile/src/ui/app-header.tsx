@@ -3,6 +3,7 @@ import { Image, Pressable, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Svg, { Path } from "react-native-svg";
 import { PERSON_ICON_PATH } from "@fitness-battle/shared";
+import { EffortRail } from "../features/effort-rail";
 import { useCompeteStore } from "../lib/compete-store";
 import { isAthleteSettingsPath } from "../lib/navigation";
 import { SHELL_COLORS as c } from "../theme";
@@ -40,6 +41,7 @@ export function AppHeader() {
           )}
         </Pressable>
       </View>
+      <EffortRail />
     </SafeAreaView>
   );
 }

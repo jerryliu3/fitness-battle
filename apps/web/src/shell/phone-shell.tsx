@@ -20,6 +20,7 @@ import { motion, useReducedMotion } from "motion/react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useLayoutEffect, useState, type ReactNode } from "react";
+import { EffortRail } from "@/features/progress/effort-rail";
 import { BootSplash } from "./boot-splash";
 import {
   hasSeenBootSplash,
@@ -191,6 +192,7 @@ export function PhoneShell({
             )}
           </Link>
         </header>
+        {dataReady && !hideTabs ? <EffortRail key={accountKey} /> : null}
         {!dataReady ? (
           accountLoadingBody
         ) : onAthlete ? (

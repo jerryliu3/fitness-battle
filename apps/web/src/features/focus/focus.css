@@ -2541,3 +2541,13 @@
 .start-duration legend { margin-bottom: 8px; }
 .start-duration button[aria-pressed="true"] { background: var(--tennis); color: var(--ink); border-color: var(--ink); }
 .phone-shell .record-distance-tabs button { width:auto; flex:0 0 auto; padding:10px 16px; }
+/* Earned progress: one quiet score rail, shared by the persistent shell. */
+.effort-rail{display:grid;gap:5px;position:relative;margin:0 auto 12px;width:calc(100% - 44px);max-width:972px;padding:10px 12px;color:var(--ink);background:var(--card);border:1px solid var(--line);border-radius:12px;text-decoration:none;flex-shrink:0}
+.effort-rail-top,.effort-rail-caption{display:flex;justify-content:space-between;align-items:center;gap:12px;font-size:11px;color:var(--muted)}
+.effort-rail-top strong{font-size:15px;color:var(--ink);font-variant-numeric:tabular-nums;white-space:nowrap}.effort-rail-top small{font-size:10px;font-weight:400;color:var(--muted)}
+.effort-rail-track{height:5px;border-radius:8px;background:var(--accent-soft);overflow:visible}.effort-rail-track>span{display:block;background:var(--lime);height:100%;border-radius:8px;transform-origin:left}
+.effort-rail-gain{position:absolute;right:8px;top:0;padding:3px 8px;border-radius:8px;background:var(--lime);color:var(--ink);font-size:12px;pointer-events:none;animation:effort-gain 1.5s ease both}
+.effort-stars{display:inline-block;margin-left:5px;animation:effort-stars 1.2s ease-out both}
+@keyframes effort-gain{0%{opacity:0;transform:translateY(8px)}20%,70%{opacity:1;transform:translateY(-9px)}100%{opacity:0;transform:translateY(-15px)}}
+@keyframes effort-stars{from{transform:scale(.5);opacity:0}30%{opacity:1;transform:scale(1.15)}to{transform:scale(1.4) translateY(-5px);opacity:0}}
+@media(prefers-reduced-motion:reduce){.effort-rail-gain,.effort-stars{animation:none}}
