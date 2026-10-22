@@ -97,3 +97,8 @@
 .phone-shell .focus-coming-soon { background:var(--accent-soft); padding:18px; border:0; }.phone-shell .focus-coming-soon h2 { font-size:18px; }
 @media(max-width:600px) { .phone-shell .focus-arena-stage { padding:12px; }.phone-shell .focus-competition-tracks { width:100%; max-width:none; }.club-event-toolbar { padding-bottom:12px; } }
 .club-event-page .focus-field-toolbar { display:none; }.club-event-page .focus-track-frame { margin-top:12px; }
+.club-page-heading h1 { margin:3px 0 8px; }.club-page-heading .fb-kicker { margin:0; }.club-page-heading { margin-bottom:8px; }
+.club-progress { display:grid; gap:22px; }.club-progress-section { display:grid; gap:22px; }.club-progress-section[hidden] { display:none; }
+.club-training-total { display:grid; gap:4px; }.club-training-total .fb-kicker { margin:0; }.club-training-total>strong { font-size:40px; line-height:1.15; letter-spacing:-1.5px; font-variant-numeric:tabular-nums; }.club-training-total strong small { font-size:18px; color:var(--muted); font-weight:400; letter-spacing:0; }
+.phone-shell .atlas-bars>button>span { background:var(--field-teal); border-radius:6px 6px 0 0; }.phone-shell .atlas-bars>button[aria-pressed=true]>span { background:var(--lime); }.atlas-bars>button:focus-visible { outline-offset:-2px; }
+.club-calendar { border-top:1px solid var(--line); padding-top:8px; }.club-calendar>summary { display:flex; align-items:center; justify-content:space-between; min-height:48px; font-size:14px; font-weight:600; list-style:none; cursor:pointer; }.club-calendar>summary::-webkit-details-marker { display:none; }.club-calendar[open] { display:grid; gap:12px; }

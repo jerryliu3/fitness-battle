@@ -27,7 +27,7 @@ export function EffortRail(){
   },[scope,model?.score,model?.fraction,canWrite,saveError,reduced,fill,burst]);
   if(!state||!model||!canWrite)return null;
   const remaining=formatVolume(model.sport,model.sport==="strength"?0:model.remaining,model.sport==="strength"?model.remaining:0,state.units);
-  return <Pressable style={s.rail} accessibilityRole="button" accessibilityLabel={`${sportById(model.sport).name} Open Effort Score ${model.score}. ${remaining} to next point. Open Progress`} onPress={()=>router.navigate("/you")}>
+  return <Pressable style={s.rail} accessibilityRole="button" accessibilityLabel={`${sportById(model.sport).name} Open Effort Score ${model.score}. ${remaining} to next point. Open Progress`} onPress={()=>router.navigate("/you?view=effort")}>
     <View style={s.row}><Text style={s.caption}>{sportById(model.sport).name} · {rankForElo(model.score).name}</Text><Text style={s.score}>{model.score.toLocaleString()} <Text style={s.caption}>Effort Score</Text></Text></View>
     <View accessible accessibilityRole="progressbar" accessibilityLabel="Progress to next Effort Score point" accessibilityValue={{min:0,max:100,now:Math.round(model.fraction*100)}} style={s.track}><Animated.View style={[s.fill,{width:fill.interpolate({inputRange:[0,1],outputRange:["0%","100%"]})}]}/></View>
     <View style={s.row}><Text style={s.caption}>{model.capped?"Maximum score reached":`${remaining} to +1`}</Text><Text style={s.caption}>{saveError?"Changes not saved":model.earned?`Open · +${model.earned} this week`:"Open score"}</Text></View>
