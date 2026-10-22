@@ -25,3 +25,4 @@ export * from "./member-count";
 export * from "./field-appearance";
 export * from "./field-course";
 export * from "./training-view";
+export * from "./crew-relay-scene";

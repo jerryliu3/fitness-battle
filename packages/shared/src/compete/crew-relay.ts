@@ -15,7 +15,7 @@ export function crewRelay(
   }[],
   target: number | null,
 ) {
-  const rows = members.map((m) => ({
+  const rows = [...members].sort((a,b)=>a.id.localeCompare(b.id)).map((m) => ({
     ...m,
     value: Number.isFinite(m.value) ? Math.max(0, m.value) : 0,
   }));

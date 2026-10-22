@@ -17,6 +17,7 @@ vi.mock("../ui/field-course",()=>({drawFieldNode:()=>null}));
 import { EffortRail } from "./effort-rail";
 import { SessionStage } from "./session-stage";
 import { TrainingAtlas } from "./training-atlas";
+import { CrewRelay } from "./crew-relay";
 let renderer:ReactTestRenderer;
 const text=()=>renderer.root.findAllByType("Text" as never).map(n=>n.children.filter(c=>typeof c==="string").join("")).join(" ");
 const now=new Date("2026-10-21T12:00:00Z");
@@ -53,4 +54,8 @@ describe("native earned progress flows",()=>{
   const months=renderer.root.findAllByType("Pressable" as never).filter(n=>/^(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec),/.test(n.props.accessibilityLabel??""));expect(months).toHaveLength(12);expect(months[10]!.props.disabled).toBe(true);
   await act(async()=>segments().props.onChange("week"));expect(renderer.root.findAllByType("Pressable" as never).filter(n=>/^(Mon|Tue|Wed|Thu|Fri|Sat|Sun),/.test(n.props.accessibilityLabel??""))).toHaveLength(7);
  });
-});
+ it("links member cards to the dimensional relay's contribution receipt, including zero contributors",async()=>{
+  await act(async()=>{renderer=create(createElement(CrewRelay,{members:[{user_id:"a",display_name:"Maya"},{user_id:"b",display_name:"Leo"}],entries:[{user_id:"a",distance_m:5000,moving_sec:1200,session_count:1}],sport:"running",format:"volume",previousDistanceM:10000,targetSessions:3}));});
+  const peer=renderer.root.findAllByType("Pressable" as never).find(n=>n.props.accessibilityLabel?.startsWith("Leo,"))!;
+  await act(async()=>peer.props.onPress());expect(peer.props.accessibilityState.selected).toBe(true);expect(text()).toContain("0.0%");expect(JSON.stringify(renderer.toJSON())).toContain("Last week’s distance");
+ });});

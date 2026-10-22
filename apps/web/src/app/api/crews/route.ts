@@ -57,8 +57,16 @@ export async function GET(request: Request) {
   );
   const crewIds = [...sportByCrew.keys()];
   const progress: Array<Record<string, unknown>> = [];
-  const summaries = await Promise.all(crewIds.map((crewId) => supabase.rpc("crew_week_totals", { p_crew_id: crewId })));
+  const previousProgress: Array<Record<string, unknown>> = [];
+  const previousProgressAvailable: Record<string,boolean> = {};
+  const [summaries,previousSummaries] = await Promise.all([
+    Promise.all(crewIds.map(crewId=>supabase.rpc("crew_week_totals",{p_crew_id:crewId}))),
+    Promise.all(crewIds.map(crewId=>supabase.rpc("crew_previous_week_totals",{p_crew_id:crewId}))),
+  ]);
   for (const [index, crewId] of crewIds.entries()) {
+    const previous=previousSummaries[index]!;
+    previousProgressAvailable[crewId]=!previous.error;
+    if(!previous.error)previousProgress.push(...(previous.data??[]).map((row:Record<string,unknown>)=>({...row,crew_id:crewId})));
     const { data: totals, error: totalsError } = summaries[index]!;
     if (totalsError) return NextResponse.json({ error: "crew_progress_unavailable" }, { status: 500 });
     progress.push(...(totals ?? []).map((row: Record<string, unknown>) => ({
@@ -86,6 +94,9 @@ export async function GET(request: Request) {
   ]);
   if (memberResult.error || entryResult.error || noticeResult.error) return NextResponse.json({ error: "crews_unavailable" }, { status: 500 });
   const { data: members } = memberResult, { data: entries } = entryResult, { data: notices } = noticeResult;
+  const memberIds=[...new Set((members??[]).filter(m=>m.status==="active").map(m=>m.user_id))];
+  const {data:portraits}=memberIds.length?await supabase.from("profiles").select("id, avatar_url").in("id",memberIds):{data:[]};
+  const photos=new Map((portraits??[]).map(p=>[p.id,p.avatar_url]));
   const week = waveWindowAt();
   const allEntries = (entries ?? []) as EntryRow[];
   const seasonWeeks: Record<string, number> = {};
@@ -106,9 +117,11 @@ export async function GET(request: Request) {
   });
   return NextResponse.json({
     crews: memberships ?? [],
-    members: members ?? [],
+    members: (members??[]).map(m=>({...m,avatar_url:photos.get(m.user_id)??null})),
     entries: currentEntries,
     progress,
+    previousProgress,
+    previousProgressAvailable,
     seasonWeeks,
     notices: notices ?? [],
   });
