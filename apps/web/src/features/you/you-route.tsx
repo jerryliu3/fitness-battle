@@ -11,9 +11,11 @@ import { TrainingHistory } from "@/features/progress/training-history";
 import { WeekRecords } from "@/features/split/components/athlete-card";
 import { AthleteOverview } from "@/features/focus/athlete-overview";
 import { SeasonHistory } from "@/features/split/components/season-history";
+import { AwardShelf } from "./award-shelf";
 import { buildSplitBoard } from "@/features/split/model";
 import {
   activityFromSample,
+  awardCards,
   BACKFILL_DAYS,
   competeNow,
   evidenceLabel,
@@ -1035,6 +1037,16 @@ function YouContent({ surface }: { surface: "progress" | "athlete" }) {
             primary={state.primary}
             units={state.units}
           />
+          {awardCards(state).length > 0 && (
+            <details className="focus-disclosure" style={{ marginTop: 24 }}>
+              <summary>
+                Past competitions & awards <span>＋</span>
+              </summary>
+              <div className="focus-details-body">
+                <AwardShelf state={state} />
+              </div>
+            </details>
+          )}
         </>
       ) : user ? (
         <>

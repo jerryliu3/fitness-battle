@@ -2,7 +2,6 @@ import {
   buildSleepView,
   competeNow,
   formatSleepDuration,
-  sleepRenewal,
   type Action,
   type CompeteState,
 } from "@fitness-battle/shared";
@@ -24,14 +23,12 @@ export function SleepPanel({
     results: state.healthResults,
     now: competeNow(state),
   });
-  const renewal = sleepRenewal(state);
   return (
     <View style={f.card}>
       <Text style={f.kicker}>Sleep & Recovery</Text>
       <Text style={f.h2}>
         {view.lastNight ? "Last night" : "No night recorded yet"}
       </Text>
-      <Text style={f.small}>Sleep score — not distance.</Text>
       {view.lastNight ? (
         <>
           <Text style={f.massive}>{view.lastNight.score}</Text>
@@ -89,29 +86,6 @@ export function SleepPanel({
           <Text style={f.rowTitle}>{r.score.toFixed(0)}</Text>
         </View>
       ))}
-      <Text style={f.small}>
-        Missing nights count. A single great night does not cover a blank week.
-      </Text>
-      {view.latestResult ? (
-        <Text style={f.small}>
-          Last closed week: place {view.latestResult.place} of{" "}
-          {view.latestResult.fieldSize}. Effort score{" "}
-          {view.latestResult.eloBefore} → {view.latestResult.eloAfter}.
-        </Text>
-      ) : null}
-      <Text style={f.small} accessibilityLiveRegion="polite">{renewal.renews ? "Renews next week" : "Stops after this week"}</Text>
-      <FocusButton
-        label={
-          renewal.renews ? "Stop after this week" : "Keep playing next week"
-        }
-        secondary
-        onPress={() =>
-          dispatch({
-            type: renewal.renews ? "schedule-leave" : "resume-renewal",
-            metric: "sleep",
-          })
-        }
-      />
     </View>
   );
 }

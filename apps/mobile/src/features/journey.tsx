@@ -1,4 +1,6 @@
 import {
+  APP_TIMEZONE,
+  dayKey,
   formatVolume,
   groupActivitiesByDay,
   planJourneyTrail,
@@ -15,6 +17,17 @@ import { SHELL_COLORS as c } from "../theme";
 import { FocusButton, FocusSheet, f } from "../ui/focus";
 import { Ember } from "../ui/mascot/ember";
 import { useCompeteStore } from "../lib/compete-store";
+
+function formatDayHours(seconds: number): string {
+  const hours = seconds / 3600;
+  if (hours <= 0) return "0 hr";
+  const rounded = Math.round(hours * 10) / 10;
+  if (rounded >= 10) {
+    return `${Math.round(rounded)} hr`;
+  }
+  const display = rounded < 0.1 ? "0.1" : rounded.toFixed(1).replace(/\.0$/, "");
+  return `${display} hr`;
+}
 
 const ROW = 192;
 const laneX = { l: 0.24, c: 0.5, r: 0.76 };
@@ -35,21 +48,34 @@ export function Journey({
   }, [accountKey]);
   const [width, setWidth] = useState(320);
   const [selectedDay, setSelectedDay] = useState<string | null>(null);
+  const todayKey = dayKey(new Date(), APP_TIMEZONE);
   const days = groupActivitiesByDay(activities, 30);
-  const plan = planJourneyTrail(groupActivitiesByDay(activities, Infinity));
+  const todayDay = days.find((d) => d.day === todayKey);
+  const pastDays = days.filter((d) => d.day !== todayKey);
+  const allPastDays = groupActivitiesByDay(
+    activities.filter(
+      (a) => dayKey(new Date(a.startedAt), APP_TIMEZONE) !== todayKey,
+    ),
+    Infinity,
+  );
+  const plan = planJourneyTrail(allPastDays);
   const truncated =
-    activities.length > days.reduce((n, d) => n + d.items.length, 0);
+    activities.length >
+    pastDays.reduce((n, d) => n + d.items.length, 0) +
+      (todayDay ? todayDay.items.length : 0);
   const stops: {
     id: string;
     lane: JourneyLane;
     kind: "today" | "day" | "past" | "start";
-  }[] = days.length
+    day?: typeof todayDay;
+  }[] = pastDays.length || todayDay
     ? [
-        { id: "today", lane: plan.today, kind: "today" },
-        ...days.map((day, i) => ({
+        { id: "today", lane: plan.today, kind: "today", day: todayDay },
+        ...pastDays.map((day, i) => ({
           id: day.id,
           lane: plan.days[i]!,
           kind: "day" as const,
+          day,
         })),
         {
           id: truncated ? "past-more" : "start",
@@ -113,17 +139,20 @@ export function Journey({
             ))}
           </Svg>
           {visibleStops.map((stop) => {
-            const day = days.find((d) => d.id === stop.id);
+            const day = stop.day;
             const primary = day?.items[0];
-            const label = primary
-              ? sportById(primary.sport).name
-              : stop.kind === "today"
-                ? "Today"
-                : stop.kind === "start"
-                  ? "Start"
-                  : "Past";
-            const detail = day
-              ? `${new Date(`${day.day}T12:00:00Z`).toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" })} · ${day.items.length} session${day.items.length === 1 ? "" : "s"}`
+            const dateWithWeekday = day
+              ? new Date(`${day.day}T12:00:00Z`).toLocaleDateString("en-US", {
+                  weekday: "short",
+                  month: "short",
+                  day: "numeric",
+                  timeZone: "UTC",
+                })
+              : null;
+            const titleLabel = day
+              ? day.items.length > 1
+                ? `${day.items.length} sessions`
+                : sportById(primary!.sport).name
               : stop.kind === "today"
                 ? "See today's session"
                 : stop.id === "past-more"
@@ -131,14 +160,25 @@ export function Journey({
                   : stop.kind === "past"
                     ? "Past sessions will appear here"
                     : "Your journey begins here";
+            const dayHours = day
+              ? formatDayHours(
+                  day.items.reduce((acc, a) => acc + (a.movingSec || 0), 0),
+                )
+              : null;
             return (
               <View key={stop.id} style={{ height: ROW }}>
                 <Pressable
                   accessibilityRole="button"
-                  accessibilityLabel={`${label}. ${detail}`}
+                  accessibilityLabel={
+                    day
+                      ? `${dateWithWeekday}, ${titleLabel}, ${dayHours}`
+                      : titleLabel
+                  }
                   disabled={stop.kind === "past" || stop.kind === "start"}
                   onPress={() =>
-                    stop.kind === "today" ? onToday() : setSelectedDay(stop.id)
+                    stop.kind === "today" && !stop.day
+                      ? onToday()
+                      : setSelectedDay(stop.day ? stop.day.id : stop.id)
                   }
                   style={{
                     position: "absolute",
@@ -168,22 +208,16 @@ export function Journey({
                     >
                       <Ember size={118} expression="happy" />
                     </View>
-                  ) : (
+                  ) : null}
+                  {day ? (
                     <>
-                      <Text style={f.rowTitle}>
-                        {primary ? "✓" : stop.kind === "start" ? "START" : "⋯"}
-                      </Text>
-                      {primary ? (
-                        <Text style={f.small}>
-                          {formatVolume(
-                            primary.sport,
-                            primary.distanceM,
-                            primary.movingSec,
-                            units,
-                          )}
-                        </Text>
-                      ) : null}
+                      <Text style={f.rowTitle}>✓</Text>
+                      <Text style={f.small}>{dayHours}</Text>
                     </>
+                  ) : stop.kind === "today" ? null : (
+                    <Text style={f.rowTitle}>
+                      {stop.kind === "start" ? "START" : "⋯"}
+                    </Text>
                   )}
                 </Pressable>
                 <View
@@ -205,14 +239,16 @@ export function Journey({
                           : "flex-start",
                   }}
                 >
-                  <Text style={f.kicker}>{label}</Text>
+                  {dateWithWeekday ? (
+                    <Text style={f.small}>{dateWithWeekday}</Text>
+                  ) : null}
                   <Text
                     style={[
-                      f.small,
-                      { textAlign: stop.lane === "r" ? "right" : "center" },
+                      f.kicker,
+                      { textAlign: stop.lane === "r" ? "right" : "left" },
                     ]}
                   >
-                    {detail}
+                    {titleLabel}
                   </Text>
                 </View>
               </View>

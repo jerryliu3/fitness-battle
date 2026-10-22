@@ -171,11 +171,6 @@ export default function ArenaScreen() {
             Challenge a friend head-to-head for the week. Not open yet.
           </Text>
         </View>
-        {awardCards(state).length > 0 ? (
-          <FocusDisclosure title="Past competitions & awards">
-            <AwardShelf cards={awardCards(state)} />
-          </FocusDisclosure>
-        ) : null}
         <SettingsRow
           title="Beyond this week"
           detail="All-time pace & race rankings"

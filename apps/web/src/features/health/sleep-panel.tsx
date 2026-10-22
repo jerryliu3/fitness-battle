@@ -71,10 +71,6 @@ export function SleepPanel({
         })}
       </p>
       <h2 className="sl-heading">Last night</h2>
-      <p className="fb-note" style={{ marginTop: -4 }}>
-        Sleep score — not distance.
-      </p>
-      <p className="fb-copy">{metric.blurb}</p>
 
       {!view.optedIn ? (
         <div className="sp-empty">
@@ -184,23 +180,6 @@ export function SleepPanel({
               ))}
             </ol>
           ) : null}
-
-          {view.latestResult ? (
-            <p className="fb-note">
-              Last closed week: place {view.latestResult.place} of {view.latestResult.fieldSize},
-              score {view.latestResult.score.toFixed(0)}. Effort Score {view.latestResult.eloBefore} →{" "}
-              {view.latestResult.eloAfter}.
-            </p>
-          ) : (
-            <p className="fb-note">
-              Missing nights count. A single great night does not cover a blank week.
-            </p>
-          )}
-
-          <p className="fb-note" role="status">{leaveLabel === "Stop after this week" ? "Renews next week" : "Stops after this week"}</p>
-          <button type="button" className="fb-btn-ghost" onClick={onLeave}>
-            {leaveLabel}
-          </button>
         </>
       ) : (
         <div className="sp-empty">

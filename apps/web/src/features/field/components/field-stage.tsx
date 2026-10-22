@@ -438,13 +438,6 @@ export function FieldStage({
           </span>
         </div>
       )}
-      {ghost && (
-        <p className="focus-gain">
-          {total - valueAt(ghost, time) >= 0 ? "+" : ""}
-          {(total - valueAt(ghost, time)).toFixed(1)} {unit} vs past you · same
-          cutoff
-        </p>
-      )}
       <div className="focus-segments" role="tablist" aria-label="Arena view">
         {(["lanes", "standings"] as const).map((m) => (
           <button key={m} role="tab" aria-selected={mode === m}
@@ -467,7 +460,7 @@ export function FieldStage({
           onClose={() => setLanesImmersive(false)}
         >
           <div className="focus-field-toolbar">
-            <span className="fb-note">{mode === "standings" ? "Ranked by this week's effort" : lanesImmersive ? "Drag to pan · swipe across peers" : "Click the field to expand · swipe across peers"}</span>
+            <span className="fb-note">{mode === "standings" ? "Ranked by this week's effort" : lanesImmersive ? "Drag to pan · swipe across peers" : null}</span>
           </div>
           <div className="focus-track-frame">
               {mode === "lanes" && <FieldGroundPicker appearance={appearance} onChange={setAppearance}/>}

@@ -256,13 +256,6 @@ export function CompetitionField({
           {overtakeStatus.detail ? ` · ${overtakeStatus.detail}` : ""}
         </Text>
       ) : null}
-      {pastYou ? (
-        <Text style={f.small}>
-          {total >= pastYou.values[2] ? "+" : ""}
-          {(total - pastYou.values[2]).toFixed(1)} {arena.unit} vs past you ·
-          same cutoff
-        </Text>
-      ) : null}
       <FocusSegments
         label={`${arena.sportName} field view`}
         value={mode}
