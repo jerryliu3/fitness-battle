@@ -1,5 +1,7 @@
+import { Arena3D } from "../ui/arena-3d";
 import {
   arenaBaselineStorageKey,
+  parseArenaSceneMessage,
   arenaFieldHigh, clampCourseCenter, fieldDefaultSpan,
   buildArenaModel,
   competePeriodWindow,
@@ -43,6 +45,8 @@ export function CompetitionField({
   const pathname = usePathname();
   const [appearance, setAppearance] = useFieldAppearance(accountKey, sport);
   const isFocused = shellTabFromPath(pathname)?.id === "arena";
+  const [dimension,setDimension]=useState<"2d"|"3d">("2d");
+  const [sceneUnavailable,setSceneUnavailable]=useState(false);
   const [mode, setMode] = useState<"lanes" | "standings">("lanes");
   const [center, setCenter] = useState<number | null>(null);
   const [span, setSpan] = useState<number | null>(null);
@@ -239,8 +243,8 @@ export function CompetitionField({
     <View style={{ gap: 14 }}>
       <View style={f.row}>
         <View style={f.grow}>
-          <Text style={f.kicker}>{arena.sportName}</Text>
-          <Text style={f.massive}>
+          <Text style={f.kicker}>Accumulated this week</Text>
+          <Text style={[f.massive,{fontSize:34,fontFamily:"DMSans_700Bold"}]}>
             {displayTotal.toFixed(1)} <Text style={f.copy}>{arena.unit}</Text>
           </Text>
         </View>
@@ -259,17 +263,23 @@ export function CompetitionField({
       ) : null}
       <FocusSegments
         label={`${arena.sportName} field view`}
-        value={mode}
+        value={mode==="lanes"&&dimension==="3d"?"3d":mode}
         options={[
-          { value: "lanes", label: "Lanes" },
+          { value: "lanes", label: "2D map" },
           { value: "standings", label: "Standings" },
+          { value: "3d", label: "3D field" },
         ]}
         onChange={(next) => {
           void playCue("selection");
-          setMode(next);
+          setMode(next === "3d" ? "lanes" : next);
+          setDimension(next === "3d" ? "3d" : "2d");
+          setSceneUnavailable(false);
         }}
       />
-      <View style={{ display: mode === "lanes" ? "flex" : "none" }}>
+
+      {sceneUnavailable?<Text style={f.small} accessibilityLiveRegion="polite">3D isn’t available here. Your 2D map is ready.</Text>:null}
+      {dimension==="3d"&&mode==="lanes"&&isFocused?(()=>{const model=parseArenaSceneMessage({type:"arena-view",lanes:arena.lanes.filter(l=>ghost||!l.ghost).map(l=>({id:l.id,name:l.name,initials:initialsFromName(l.name),avatarUrl:l.avatarUrl,value:overtakeFrame?.laneValues[l.id]??l.values[2],you:l.you,ghost:l.ghost})),view,unit:arena.unit,selected:selectedId??me?.id});return model?<Arena3D model={model} onSelect={selectAthlete} onPan={setCenter} onUnavailable={()=>{setSceneUnavailable(true);setDimension("2d");}}/>:null;})():null}
+      <View style={{ display: mode === "lanes"&&dimension==="2d" ? "flex" : "none" }}>
         <FieldGroundPicker appearance={appearance} onChange={setAppearance}/>
         <LaneTrack
           appearance={appearance}

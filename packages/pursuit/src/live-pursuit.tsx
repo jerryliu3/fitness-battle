@@ -1,5 +1,5 @@
 "use client";
-import { selfLaneLabel, PERSON_ICON_PATH, type ArenaViewWindow } from "@fitness-battle/shared";
+import { selfLaneLabel, SHELL_COLORS as c, PERSON_ICON_PATH, type ArenaViewWindow } from "@fitness-battle/shared";
 import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
@@ -77,9 +77,9 @@ export function LivePursuit(props: PursuitProps) {
     renderer.domElement.setAttribute("aria-hidden", "true");
     host.prepend(renderer.domElement);
     const scene = new THREE.Scene();
-    scene.background = new THREE.Color("#eef3e8");
-    scene.fog = new THREE.Fog("#e8efdf", 48, 190);
-    scene.add(new THREE.HemisphereLight("#f7fbef", "#6a7a63", 2.35));
+    scene.background = new THREE.Color("#f7edce");
+    scene.fog = new THREE.Fog("#b0c7c6", 48, 190);
+    scene.add(new THREE.HemisphereLight("#fff7df", c.fieldDeep, 2.35));
     const sun = new THREE.DirectionalLight("#ffe3c2", 3.2);
     sun.position.set(-14, 26, 15);
     sun.castShadow = true;
@@ -105,11 +105,11 @@ export function LivePursuit(props: PursuitProps) {
       : "pan-y";
     const mat = (color: string) =>
       new THREE.MeshStandardMaterial({ color, roughness: 0.9 });
-    const roadMat = mat("#cfdcc5"),
-      grassMat = mat("#e8efdf"),
-      stripeMat = mat("#f7fbef"),
-      woodMat = mat("#26382d"),
-      leafMat = mat("#9bb086"),
+    const roadMat = mat(c.fieldDeep),
+      grassMat = mat("#567b6f"),
+      stripeMat = mat("#c2d8cc"),
+      woodMat = mat(c.ink),
+      leafMat = mat(c.fieldTeal),
       whiteMat = mat("#f7faf3");
     const mesh = (
       parent: THREE.Scene | THREE.Group,
@@ -149,7 +149,7 @@ export function LivePursuit(props: PursuitProps) {
       scene,
       new THREE.BoxGeometry(2.35, 0.018, 420),
       new THREE.MeshStandardMaterial({
-        color: "#d4ee89",
+        color: c.tennis,
         roughness: 1,
         transparent: true,
         opacity: 0.5,
@@ -259,7 +259,7 @@ export function LivePursuit(props: PursuitProps) {
       for (const [j, size] of [1.4, 1.1, 0.8].entries()) {
         const canopy = mesh(
           group,
-          new THREE.IcosahedronGeometry(size, 1),
+          new THREE.ConeGeometry(size, size * 2.1, 6),
           leafMat,
           j % 2 ? 0.4 : -0.2,
           3.3 + j * 0.8,
@@ -269,16 +269,16 @@ export function LivePursuit(props: PursuitProps) {
       }
       return group;
     });
+    // Recycled alpine scenery is illustrative, never a GPS location.
     const buildings = Array.from({ length: 12 }, (_, i) => {
-      const building = mesh(
-        scene,
-        new THREE.BoxGeometry(8 + (i % 3) * 4, 10 + (i % 4) * 7, 12),
-        mat(["#b0b7cb", "#bac4d6", "#9dabca"][i % 3]!),
-        i % 2 ? -37 : 35,
-        5 + (i % 4) * 3,
-        0,
-      );
-      return building;
+      const group = new THREE.Group();
+      const height = 16 + (i % 4) * 8;
+      const radius = 14 + (i % 3) * 4;
+      mesh(group,new THREE.ConeGeometry(radius,height,5),mat(["#6e899b","#8e9ba8","#557d86"][i%3]!),0,height/2,0);
+      mesh(group,new THREE.ConeGeometry(radius*.27,height*.27,5),mat("#ecebdc"),0,height*.87,0);
+      group.position.x = i%2 ? -42 : 42;
+      scene.add(group);
+      return group;
     });
     const avatars = new Map<string, RunnerAvatar>();
     const lanes = stableLanes(latest.current.runners);

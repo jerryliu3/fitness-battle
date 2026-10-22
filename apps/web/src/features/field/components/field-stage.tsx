@@ -1,5 +1,5 @@
 "use client";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useReducedMotion } from "motion/react";
 import { playCue } from "@/lib/haptics";
 import { usePathname } from "next/navigation";
@@ -30,6 +30,8 @@ import {
   type SceneRunner,
 } from "../geometry";
 import type { FieldModel } from "../model";
+
+const PursuitPreview = lazy(() => import("@/features/club/pursuit-preview").then(module => ({default:module.PursuitPreview})));
 
 export function FieldStage({
   model,
@@ -76,6 +78,8 @@ export function FieldStage({
       }
     : null;
 
+  const [dimension,setDimension]=useState<"2d"|"3d">("2d");
+  const [sceneUnavailable,setSceneUnavailable]=useState(false);
   const [mode, setMode] = useState<"lanes" | "standings">("lanes");
   const [lanesImmersive, setLanesImmersive] = useState(false);
 
@@ -402,9 +406,7 @@ export function FieldStage({
     <section className="focus-arena-stage" hidden={!tabActive} aria-hidden={!tabActive}>
       <div className="focus-arena-total">
         <div>
-          <p className="fb-kicker focus-arena-sport">
-            {sportTitle ?? "Your week"}
-          </p>
+          <p className="fb-kicker">Accumulated this week</p>
           <strong>
             {displayTotal.toFixed(1)}
             <small>{unit}</small>
@@ -441,20 +443,25 @@ export function FieldStage({
         </div>
       )}
       <div className="focus-segments" role="tablist" aria-label="Arena view">
-        {(["lanes", "standings"] as const).map((m) => (
-          <button key={m} role="tab" aria-selected={mode === m}
+        {(["lanes", "standings", "3d"] as const).map((m) => (
+          <button key={m} role="tab" aria-selected={m === "3d" ? mode === "lanes" && dimension === "3d" : mode === m && (m === "standings" || dimension === "2d")}
             onClick={() => {
               if (m !== mode) void playCue("selection");
               setReplayEpoch(0);
               setOvertakeProgress(1);
-              setMode(m);
+              setMode(m === "3d" ? "lanes" : m);
+              setDimension(m === "3d" ? "3d" : "2d");
+              setSceneUnavailable(false);
             }}>
-            {m === "lanes" ? "Lanes" : "Standings"}
+            {m === "lanes" ? "2D map" : m === "3d" ? "3D field" : "Standings"}
           </button>
         ))}
       </div>
 
-      <div>
+
+      {sceneUnavailable ? <p className="fb-note" role="status">3D isn’t available here. Your 2D map is ready.</p> : null}
+      {dimension==="3d"&&mode==="lanes"&&tabActive?<Suspense fallback={<p className="fb-copy" role="status">Opening your field…</p>}><PursuitPreview runners={runners} ghost={ghost} time={time} extra={0} selected={trackSelected||you.id} showGhost={showGhost} unit={unit} view={view} onPan={v=>{cancelCenterTween();setCenter(clampViewCenter(v,view.span));}} onSelect={toggleSelect} onUnavailable={()=>{setDimension("2d");setSceneUnavailable(true);}}/></Suspense>:null}
+      <div hidden={dimension==="3d"&&mode==="lanes"}>
       <div style={{ display: "flow-root" }}>
         <ExpandingField
           open={lanesImmersive && tabActive}

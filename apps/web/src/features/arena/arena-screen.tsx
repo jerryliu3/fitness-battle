@@ -188,11 +188,6 @@ export function ArenaScreen({ tabActive = true }: { tabActive?: boolean }) {
         </p>
       ) : null}
 
-      {state.periodResults.length ? (
-        <Link className="fb-btn-ghost" href="/arena?results=latest">
-          Latest week results ↗
-        </Link>
-      ) : null}
       {hasAnyRegistration ? <EventCarousel key={account} events={[...active.map(r=>({id:r.sport,label:SPORTS.find(s=>s.id===r.sport)!.name})),...(sleepOptedIn?[{id:"sleep",label:"Sleep & Recovery"}]:[])]} value={selectedSport!} onChange={id=>{setSelection({account,sport:id as SportId|"sleep"});void playCue("selection");}} onRegister={()=>{setSport(null);setRegister(true);}}>
       {selectedSport && selectedSport !== "sleep" ? (
         <FieldStage key={`${account}:${selectedSport}:${state.units}`} tabActive={tabActive}
@@ -209,6 +204,11 @@ export function ArenaScreen({ tabActive = true }: { tabActive?: boolean }) {
 
       </EventCarousel> : <section className="focus-card focus-empty"><h2>Your next chapter starts here.</h2><p className="fb-copy">Register for an event to open your field.</p><button type="button" className="fb-btn" onClick={()=>setRegister(true)}>Explore events</button></section>}
 
+      {state.periodResults.length ? (
+        <Link className="fb-btn-ghost" href="/arena?results=latest">
+          Latest week results ↗
+        </Link>
+      ) : null}
       <section className="focus-card focus-coming-soon">
         <p className="fb-kicker">Coming soon</p>
         <h2>1v1 Head-to-Head</h2>

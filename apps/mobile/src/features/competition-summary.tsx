@@ -100,12 +100,9 @@ export function CompetitionSummary({
 
 const s = StyleSheet.create({
   card: {
-    backgroundColor: c.card,
-    borderWidth: 1,
-    borderColor: c.line,
-    borderRadius: 18,
-    padding: 16,
-    gap: 14,
+    backgroundColor: c.paper,
+    padding: 0,
+    gap: 10,
   },
   dates: {
     fontFamily: "DMSans_700Bold",
