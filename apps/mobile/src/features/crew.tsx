@@ -1,3 +1,4 @@
+import { SHELL_COLORS as c } from "../theme";
 import { CrewSessions } from "./crew-sessions";
 import { CrewRelay } from "./crew-relay";
 import {
@@ -13,7 +14,7 @@ import {
 } from "@fitness-battle/shared";
 import { useFocusEffect, useGlobalSearchParams, useRouter } from "expo-router";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Pressable, Share, Text, TextInput, View } from "react-native";
+import { ImageBackground, Pressable, Share, StyleSheet, Text, TextInput, View } from "react-native";
 import { useAuth } from "../lib/auth";
 import { useCompeteStore } from "../lib/compete-store";
 import { mobileEnv } from "../lib/env";
@@ -373,6 +374,8 @@ export function CrewHub() {
         />
       ) : null}
       {solo ? (
+        <View style={{gap:18}}>
+        <ImageBackground source={require("../../assets/club/alpine-trail.jpg")} style={{height:200,justifyContent:"flex-end",padding:22,borderRadius:20,overflow:"hidden",backgroundColor:c.fieldDeep}}><View style={[StyleSheet.absoluteFill,{backgroundColor:"#081f3670"}]}/><Text style={[f.title,{color:c.card,fontSize:28}]}>Stronger together.</Text><Text style={[f.copy,{color:c.card}]}>A place for every pace.</Text></ImageBackground>
         <View style={f.card}>
           <Text style={f.kicker}>Your people</Text>
           <Text style={f.title}>Make room for your people.</Text>
@@ -391,6 +394,7 @@ export function CrewHub() {
               A live account is needed to create or join a private crew.
             </Text>
           ) : null}
+        </View>
         </View>
       ) : (
         <>
@@ -414,19 +418,19 @@ export function CrewHub() {
               <Text style={f.rowTitle}>＋ Add Crew</Text>
             </Pressable>
           </View>
-          <View style={[f.card, { backgroundColor: "#282f2c", gap: 18 }]}>
+          <ImageBackground source={require("../../assets/club/alpine-trail.jpg")} style={[f.card,{backgroundColor:c.fieldDeep,gap:18,minHeight:260,overflow:"hidden",justifyContent:"space-between"}]} imageStyle={{borderRadius:20}}><View pointerEvents="none" style={[StyleSheet.absoluteFill,{backgroundColor:"#081f3680"}]}/>
             <Pressable
               accessibilityRole="button"
               accessibilityLabel="View crew members"
               onPress={() => open("members")}
               style={{ gap: 12, minHeight: 44 }}
             >
-              <Text style={[f.kicker, { color: "#f1c75b" }]}>
+              <Text style={[f.kicker, { color: c.tennis }]}>
                 {solo ? "Solo circle" : "Your people"} · {members.length} member
                 {members.length === 1 ? "" : "s"}
               </Text>
-              <Text style={[f.title, { color: "#fafaf7" }]}>{crew.name}</Text>
-              <Text style={[f.copy, { color: "#e0e5dc" }]}>
+              <Text style={[f.title, { color: c.paper }]}>{crew.name}</Text>
+              <Text style={[f.copy, { color: c.line }]}>
                 Different paces. Same direction.
               </Text>
             </Pressable>
@@ -467,7 +471,7 @@ export function CrewHub() {
                 </Pressable>
               ) : null}
             </View>
-          </View>
+          </ImageBackground>
           <View style={f.card}>
             <Text style={f.kicker}>Our shared week · {crew.sport}</Text>
             <Text style={f.massive}>
