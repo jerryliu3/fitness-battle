@@ -42,6 +42,7 @@ vi.mock("react-native-safe-area-context", () => ({
 }));
 vi.mock("expo-router", () => ({
   usePathname: () => "/arena",
+  useGlobalSearchParams:()=>({}),
   useRouter: () => ({ navigate: vi.fn() }),
 }));
 vi.mock("../lib/auth", () => ({
@@ -103,6 +104,11 @@ vi.mock("./field-course", async () => {
 });
 import ArenaScreen from "../../app/(tabs)/arena";
 let renderer: ReactTestRenderer;
+async function layoutCarousel() {
+ const host=renderer.root.findAllByType("View" as never).find(node=>typeof node.props.onLayout==="function");
+ if(host)await act(async()=>host.props.onLayout({nativeEvent:{layout:{width:346}}}));
+}
+
 afterEach(async () => {
   if (renderer) await act(async () => renderer.unmount());
   vi.unstubAllGlobals();
@@ -120,6 +126,7 @@ describe("native competition interactions", () => {
     await act(async () => {
       renderer = create(createElement(ArenaScreen));
     });
+    await layoutCarousel();
     const lane = () => renderer.root.findByType("LaneTrack" as never);
     const viewControl = () =>
       renderer.root
@@ -138,11 +145,11 @@ describe("native competition interactions", () => {
     await act(async () => viewControl().props.onChange("lanes"));
     expect(lane().props.active).toBe(true);
     expect(mock.mounts).toBe(1);
-    const register = renderer.root
-      .findAllByType("FocusButton" as never)
-      .find((node) => node.props.label === "＋ Register")!;
-    await act(async () => register.props.onPress());
-    expect(renderer.root.findByType("Sheet" as never).props.open).toBe(true);
+    const choose = renderer.root.findAllByType("Pressable" as never).find(node=>node.props.accessibilityLabel?.startsWith("Choose event."))!;
+    await act(async()=>choose.props.onPress());
+    const register=renderer.root.findAllByType("FocusButton" as never).find(node=>node.props.label==="Register for another event")!;
+    await act(async()=>register.props.onPress());
+    expect(renderer.root.findAllByType("Sheet" as never).some(node=>node.props.title==="Register for this week."&&node.props.open)).toBe(true);
   });
 
   it("uses the animated field rank instead of counting the athlete's final position as a rival", async () => {
@@ -157,6 +164,7 @@ describe("native competition interactions", () => {
     await act(async () => {
       renderer = create(createElement(ArenaScreen));
     });
+    await layoutCarousel();
     mock.state = reduceCompete(mock.state, {
       type: "log-manual",
       activityId: "review-run",
@@ -165,6 +173,7 @@ describe("native competition interactions", () => {
       movingSec: 600,
     });
     await act(async () => renderer.update(createElement(ArenaScreen)));
+    await layoutCarousel();
     const lane = renderer.root.findByType("LaneTrack" as never);
     const frame = lane.props.overtakeFrame;
     expect(frame).not.toBeNull();
@@ -185,6 +194,7 @@ it("mounts only one registered sport and replaces it when switching",async()=>{
  mock.dispatch.mockClear();
  mock.state=reduceCompete(reduceCompete(freshState(),{type:"opt-in",sport:"running"}),{type:"opt-in",sport:"cycling"});
  await act(async()=>{renderer=create(createElement(ArenaScreen));});
+ await layoutCarousel();
  expect(renderer.root.findAllByType("LaneTrack" as never)).toHaveLength(1);
  const choice=renderer.root.findAllByType("Pressable" as never).find(n=>n.props.accessibilityLabel==="Show Cycling")!;
  await act(async()=>choice.props.onPress());

@@ -5,7 +5,7 @@ import { freshState, reduceCompete, type CompeteState } from "@fitness-battle/sh
 const mock=vi.hoisted(()=>({state:null as CompeteState|null}));
 vi.mock("@/components/compete-context",()=>({useCompete:()=>({state:mock.state,dispatch:vi.fn(),loadStatus:"local"})}));
 vi.mock("@/components/auth-context",()=>({useAuth:()=>({user:{id:"demo"}})}));
-vi.mock("next/navigation",()=>({useRouter:()=>({push:vi.fn()})}));
+vi.mock("next/navigation",()=>({useSearchParams:()=>new URLSearchParams(),useRouter:()=>({push:vi.fn()})}));
 vi.mock("@/lib/score-track-lens",()=>({useScoreTrackLens:()=>["open",vi.fn()]}));
 vi.mock("@/lib/haptics",()=>({playCue:vi.fn()}));
 vi.mock("@/features/field/components/field-stage",()=>({FieldStage:({sportTitle}:{sportTitle:string})=>createElement("div",{"data-active-field":sportTitle})}));
@@ -20,7 +20,7 @@ describe("single-sport competition",()=>{
   const html=renderToStaticMarkup(createElement(ArenaScreen));
   expect(html.match(/data-active-field=/g)).toHaveLength(1);
   expect(html).toContain('data-active-field="Running"');
-  expect(html).toContain("Cycling");expect(html).toContain("＋ Register");
+  expect(html).toContain("Cycling");expect(html).toContain('aria-label="Next event"');expect(html).toContain("Your events");
  });
  it("shows recovery alone when it is the only registration",()=>{
   mock.state=reduceCompete(freshState(),{type:"opt-in-health",metric:"sleep"});
