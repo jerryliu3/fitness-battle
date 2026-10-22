@@ -258,9 +258,23 @@ export function Journey({
       </View>
       <FocusSheet
         open={!!selected}
-        title={selected?.day ?? "Sessions"}
+        title={
+          selected
+            ? new Date(`${selected.day}T12:00:00Z`).toLocaleDateString("en-US", {
+                weekday: "long",
+                month: "short",
+                day: "numeric",
+                timeZone: "UTC",
+              })
+            : "Sessions"
+        }
         onClose={() => setSelectedDay(null)}
       >
+        {selected?.day === todayKey ? (
+          <View style={{ alignItems: "center", marginBottom: 12 }}>
+            <Ember size={80} expression="happy" />
+          </View>
+        ) : null}
         {selected?.items.map((a) => (
           <View key={a.id} style={f.card}>
             <Text style={f.h2}>{sportById(a.sport).name}</Text>

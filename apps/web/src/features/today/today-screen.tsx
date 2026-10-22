@@ -530,6 +530,16 @@ export function TodayScreen() {
               {day.items.length}{" "}
               {day.items.length === 1 ? "Session" : "Sessions"}
             </h1>
+            {day.day === todayKey ? (
+              <AnimatedEmber
+                className="focus-expand-ember"
+                expression="happy"
+                action={reaction.action}
+                restartKey={reaction.key}
+                loop={false}
+                playing={reaction.key > 0}
+              />
+            ) : null}
             <div style={{ display: "flex", flexDirection: "column", gap: 12, marginTop: 16 }}>
               {day.items.map((a) => (
                 <div

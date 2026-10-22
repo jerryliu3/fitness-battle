@@ -1,6 +1,5 @@
 import {
   SPORTS,
-  awardCards,
   type CrewBoardPin,
   type SportId,
 } from "@fitness-battle/shared";
@@ -17,7 +16,6 @@ import { useAuth } from "../../src/lib/auth";
 import { useCompeteStore } from "../../src/lib/compete-store";
 import { useScoreTrackLens } from "../../src/lib/score-track-lens";
 import { playCue } from "../../src/lib/haptics";
-import { AwardShelf } from "../../src/ui/award-shelf";
 import {
   FocusButton,
   FocusDisclosure,
