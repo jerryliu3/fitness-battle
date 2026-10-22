@@ -1,3 +1,5 @@
+import { Achievements } from "./club-achievements";
+import { WeekRecap } from "./club-week-recap";
 import { useEffect, useState } from "react";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { Pressable, ScrollView, Text, View } from "react-native";
@@ -66,7 +68,7 @@ export function ProgressScreen() {
           </View>
         </View>
         </View>
-        <View style={{display:section==="overview"?"flex":"none",gap:18}}><TrainingHistory state={state} /></View>
+        <View style={{display:section==="overview"?"flex":"none",gap:18}}><TrainingHistory state={state}><Achievements state={state}/></TrainingHistory><WeekRecap state={state}/></View>
         <View style={{display:section==="history"?"flex":"none",gap:18}}>
         {state.periodResults.length ? <Pressable accessibilityRole="button" style={f.card} onPress={() => router.push("/arena?results=latest")}><Text style={f.rowTitle}>Latest week results ↗</Text></Pressable> : null}
         <WeeklyChapters state={state} />

@@ -7,6 +7,7 @@ import { useCompete } from "@/components/compete-context";
 import { NotificationSettings } from "@/components/notification-settings";
 import { requestAccountPush } from "@/lib/request-push";
 import type { SyncIdentity } from "@/lib/push-notifications";
+import { Achievements } from "@/features/club/achievements";
 import { ProgressHub } from "@/features/club/progress-hub";
 import { WeekRecap } from "@/features/club/week-recap";
 import { TrainingHistory } from "@/features/progress/training-history";
@@ -1019,7 +1020,7 @@ function YouContent({ surface }: { surface: "progress" | "athlete" }) {
     <>
     <div className="focus-athlete" ref={overviewRef} inert={Boolean(panel) || settingsPresent}>
       {surface === "progress" ? (
-        <ProgressHub overview={<><TrainingHistory state={state}/><WeekRecap state={state}/></>} effort={<>
+        <ProgressHub overview={<><TrainingHistory state={state}><Achievements state={state}/></TrainingHistory><WeekRecap state={state}/></>} effort={<>
           <AthleteOverview
             state={state}
             email={user?.email}

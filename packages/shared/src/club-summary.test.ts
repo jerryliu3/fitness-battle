@@ -20,3 +20,12 @@ it("selects the immediate higher place through ties and handles leading/empty fi
   expect(nextClubRival([row("you",1,true),row("behind",2)]).rival).toBeUndefined();
   expect(nextClubRival([]).you).toBeUndefined();
 });
+
+import { clubAchievements } from "./club-summary";
+it("derives achievements without counting samples, future or excluded sessions",()=>{
+ const state={...freshState(now),activities:[activity("a","2026-11-02T12:00:00Z"),activity("mock-b","2026-11-02T12:00:00Z"),activity("future","2026-11-04T12:00:00Z"),activity("removed","2026-11-02T12:00:00Z",{disposition:"excluded"})]};
+ const rows=clubAchievements(state,now);
+ expect(rows[0]).toMatchObject({current:1,earned:true,fraction:1});
+ expect(rows[1]).toMatchObject({current:1,earned:false,fraction:.1});
+ expect(rows.find(row=>row.id==="effort-750")?.earned).toBe(false);
+});

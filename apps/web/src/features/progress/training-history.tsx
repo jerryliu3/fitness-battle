@@ -1,6 +1,6 @@
 "use client";
 import { TrainingAtlas } from "./training-atlas";
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { RecordChart } from "./record-chart";
 import {
   APP_TIMEZONE,
@@ -16,7 +16,7 @@ const date = (v: string) =>
     day: "numeric",
     timeZone: APP_TIMEZONE,
   });
-export function TrainingHistory({ state }: { state: CompeteState }) {
+export function TrainingHistory({ state, children }: { state: CompeteState; children?: ReactNode }) {
   const [distance, setDistance] = useState("");
   const now=competeNow(state);
   const records = personalRecordHistory(state, now);
@@ -40,6 +40,7 @@ export function TrainingHistory({ state }: { state: CompeteState }) {
   return (
     <>
       <TrainingAtlas state={state} />
+      {children}
       {active && latest && inspected ? (
         <section className="focus-card record-history">
           <h2>Personal records</h2>

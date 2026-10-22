@@ -1,3 +1,4 @@
+import { countsOnTrack } from "./compete/ledger";
 import { weeklyPeriodBounds, APP_TIMEZONE } from "./period";
 import { competeNow } from "./compete/engine";
 import { trainingBuckets } from "./training-view";
@@ -33,4 +34,30 @@ export function nextClubRival(rows: readonly import("./compete/engine").BoardRow
 export function latestClubRecap(state: CompeteState, now = competeNow(state)) {
   return state.periodResults.filter(row => row.track === "open" && Date.parse(row.periodEnd) <= now.getTime())
     .sort((a,b) => Date.parse(b.periodEnd)-Date.parse(a.periodEnd) || Number(b.sport===state.primary)-Number(a.sport===state.primary))[0];
+}
+
+export interface ClubAchievement {
+  id: string;
+  title: string;
+  category: "sessions" | "effort";
+  target: number;
+  current: number;
+  earned: boolean;
+  fraction: number;
+}
+/** Read-only milestones from available counted activity and the primary sport's Open rating. */
+export function clubAchievements(state: CompeteState, now = competeNow(state)): ClubAchievement[] {
+  const sessions=state.activities.filter(a=>countsOnTrack(a,"open")&&Number.isFinite(Date.parse(a.startedAt))&&Date.parse(a.startedAt)<=now.getTime()).length;
+  const score=state.ratings.find(r=>r.sport===state.primary)?.openElo??0;
+  return [
+    {id:"first-session",title:"First of many",category:"sessions" as const,target:1},
+    {id:"ten-sessions",title:"Finding your rhythm",category:"sessions" as const,target:10},
+    {id:"fifty-sessions",title:"Showing up",category:"sessions" as const,target:50},
+    {id:"effort-750",title:"Building momentum",category:"effort" as const,target:750},
+    {id:"effort-1000",title:"A thousand strong",category:"effort" as const,target:1000},
+    {id:"effort-1500",title:"Raising the bar",category:"effort" as const,target:1500},
+  ].map(item=>{const current=item.category==="sessions"?sessions:score;return {...item,current,earned:current>=item.target,fraction:Math.max(0,Math.min(1,current/item.target))};});
+}
+export function featuredClubAchievements(rows: ClubAchievement[]) {
+  return [rows.find(r=>r.id===(rows[1]?.earned?"ten-sessions":"first-session")), [...rows].reverse().find(r=>r.category==="effort"&&r.earned)??rows[3], rows[2]].filter((row,index,items):row is ClubAchievement=>Boolean(row)&&items.findIndex(item=>item?.id===row?.id)===index);
 }
