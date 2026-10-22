@@ -2,6 +2,7 @@ import { useRef, useState } from "react";
 import { Animated, Pressable, Text, View } from "react-native";
 import {
   APP_TIMEZONE,
+  formatEloDelta,
   formatVolume,
   formatEffort,
   sportById,
@@ -111,8 +112,7 @@ export function ResultCard({
               )}
             </Text>
             <Text style={f.rowTitle}>
-              {result.eloAfter} effort score · +
-              {Math.max(0, result.eloAfter - result.eloBefore)}
+              {result.eloAfter} effort score · {formatEloDelta(result.eloBefore,result.eloAfter)}
             </Text>
           </>
         )}

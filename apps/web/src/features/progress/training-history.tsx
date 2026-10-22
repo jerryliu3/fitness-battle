@@ -1,17 +1,14 @@
 "use client";
+import { TrainingAtlas } from "./training-atlas";
 import { useState } from "react";
 import { RecordChart } from "./record-chart";
 import {
   APP_TIMEZONE,
-  SPORTS,
   RECORD_DISTANCES,
   competeNow,
   formatClockTime,
-  formatVolume,
   personalRecordHistory,
-  weeklyTraining,
   type CompeteState,
-  type SportId,
 } from "@fitness-battle/shared";
 const date = (v: string) =>
   new Date(v).toLocaleDateString("en-US", {
@@ -20,15 +17,8 @@ const date = (v: string) =>
     timeZone: APP_TIMEZONE,
   });
 export function TrainingHistory({ state }: { state: CompeteState }) {
-  const [sport, setSport] = useState<SportId>(state.primary);
-  const [selected, setSelected] = useState(11);
   const [distance, setDistance] = useState("");
-  const now = competeNow(state),
-    weeks = weeklyTraining(state.activities, sport, now);
-  const week = weeks[selected] ?? weeks.at(-1)!;
-  const value = (w: typeof week) =>
-    sport === "strength" ? w.movingSec : w.distanceM;
-  const max = Math.max(1, ...weeks.map(value));
+  const now=competeNow(state);
   const records = personalRecordHistory(state, now);
   const available = (["running", "cycling"] as const).flatMap((s) =>
     RECORD_DISTANCES[s]
@@ -49,57 +39,7 @@ export function TrainingHistory({ state }: { state: CompeteState }) {
     inspected = rows.find((r) => r.activityId === receipt) ?? latest;
   return (
     <>
-      <section className="focus-card training-history">
-        <div className="focus-row">
-          <h2>Weekly training</h2>
-          <label className="fb-field">
-            <span className="sr-only">Training sport</span>
-            <select
-              value={sport}
-              onChange={(e) => setSport(e.target.value as SportId)}
-            >
-              {SPORTS.map((s) => (
-                <option key={s.id} value={s.id}>
-                  {s.name}
-                </option>
-              ))}
-            </select>
-          </label>
-        </div>
-        <div
-          className="training-bars"
-          role="group"
-          aria-label="Weekly training totals"
-        >
-          {weeks.map((w, i) => (
-            <button
-              key={w.start}
-              type="button"
-              aria-pressed={selected === i}
-              aria-label={`${date(w.start)}: ${formatVolume(sport, w.distanceM, w.movingSec, state.units)}${w.partial ? ", partial week" : ""}`}
-              onClick={() => setSelected(i)}
-            >
-              <span
-                className={w.partial ? "is-partial" : ""}
-                style={{ height: `${Math.max(2, (value(w) / max) * 100)}%` }}
-              />
-              <small>{i % 3 === 0 || i === 11 ? date(w.start) : ""}</small>
-            </button>
-          ))}
-        </div>
-        <div className="focus-row" aria-live="polite">
-          <div>
-            <strong>
-              {formatVolume(sport, week.distanceM, week.movingSec, state.units)}
-            </strong>
-            <p className="fb-copy">
-              {date(week.start)} ·{" "}
-              {week.partial ? "This week so far" : "Complete week"}
-            </p>
-          </div>
-          <span>{week.sessions} sessions</span>
-        </div>
-      </section>
+      <TrainingAtlas state={state} />
       {active && latest && inspected ? (
         <section className="focus-card record-history">
           <h2>Personal records</h2>

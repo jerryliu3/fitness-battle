@@ -16,6 +16,7 @@ vi.mock("../ui/use-reduced-motion",()=>({useReducedMotion:()=>true}));
 vi.mock("../ui/field-course",()=>({drawFieldNode:()=>null}));
 import { EffortRail } from "./effort-rail";
 import { SessionStage } from "./session-stage";
+import { TrainingAtlas } from "./training-atlas";
 let renderer:ReactTestRenderer;
 const text=()=>renderer.root.findAllByType("Text" as never).map(n=>n.children.filter(c=>typeof c==="string").join("")).join(" ");
 const now=new Date("2026-10-21T12:00:00Z");
@@ -43,5 +44,13 @@ describe("native earned progress flows",()=>{
  it("keeps an unrecorded suggestion separate from completion",async()=>{
   await act(async()=>{renderer=create(createElement(SessionStage,{state:mock.state!,activities:[],suggestion:{title:"Easy movement",minutes:30,detail:"Keep it comfortable."},onRemove:vi.fn()}));});
   const json=JSON.stringify(renderer.toJSON());expect(json).toContain("Suggested time");expect(json).toContain('"0.5"');expect(json).not.toContain("recorded session");
+ });
+ it("switches the chart between week, month and year without manufacturing future sessions",async()=>{
+  const state={...mock.state!,activities:[recorded("today",3600)]};
+  await act(async()=>{renderer=create(createElement(TrainingAtlas,{state}));});
+  const segments=()=>renderer.root.findByType("FocusSegments" as never);
+  await act(async()=>segments().props.onChange("year"));
+  const months=renderer.root.findAllByType("Pressable" as never).filter(n=>/^(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec),/.test(n.props.accessibilityLabel??""));expect(months).toHaveLength(12);expect(months[10]!.props.disabled).toBe(true);
+  await act(async()=>segments().props.onChange("week"));expect(renderer.root.findAllByType("Pressable" as never).filter(n=>/^(Mon|Tue|Wed|Thu|Fri|Sat|Sun),/.test(n.props.accessibilityLabel??""))).toHaveLength(7);
  });
 });
