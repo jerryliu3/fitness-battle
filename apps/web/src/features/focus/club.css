@@ -1,0 +1,53 @@
+/* Everyday Club. Semantic roles are mirrored in shared/shell.ts. */
+:root, .phone-shell, .focus-sheet, .sheet-content {
+  --ink: #142b3b;
+  --muted: #637482;
+  --paper: #f8f9f6;
+  --card: #ffffff;
+  --line: #e3e9e7;
+  --lime: #f7c948;
+  --lime-deep: #dfb237;
+  --accent: #142b3b;
+  --accent-soft: #eef3f1;
+  --green: #24765c;
+  --green-soft: #e9f5ee;
+  --gold: #f7c948;
+  --soft: #eef3f1;
+  --ot-secondary: #668e91;
+  --action-primary: #f7c948;
+  --action-soft: #fff5d1;
+  --field-deep: #103e46;
+  --field-teal: #176c75;
+  --fb-radius: 20px;
+}
+.phone-frame, .phone-shell { background: var(--paper); }
+.phone-shell .phone-main { max-width: 1080px; padding: 24px 24px 36px; gap: 24px; }
+.focus-shell-header { height: 72px; padding: 0 max(24px, calc((100vw - 1032px)/2)); background: var(--paper); border: 0; }
+.focus-shell-brand > a { display:flex; align-items:center; gap:9px; font-family:var(--font-body),sans-serif; font-size:22px; font-weight:750; letter-spacing:-.9px; min-height:44px; }
+.club-brand-mark { width:32px; height:32px; border-radius:9px; }
+.focus-shell-brand .focus-shell-tagline { display:none; }
+.focus-shell-profile { width:44px; height:44px; border:1px solid var(--line); }
+.phone-shell .phone-tabs { max-width:1080px; border-radius:0; padding:8px 20px max(12px,env(safe-area-inset-bottom)); }
+.phone-shell .phone-tab { font-size:11px; font-weight:600; min-height:52px; gap:5px; }
+.phone-shell .phone-pill { inset:0 18%; border-radius:16px; background:var(--action-soft); }
+.phone-shell .phone-tab[aria-current=page] { color:var(--ink); }
+.phone-shell .fb-card, .phone-shell .focus-card, .phone-shell .focus-stats-card, .phone-shell .sp-empty {
+  border:1px solid var(--line); border-radius:20px; box-shadow:0 3px 14px #142b3b03;
+}
+.phone-shell .fb-btn, .sheet-close { background:var(--action-primary); color:var(--ink); border:1px solid transparent; border-bottom-width:1px; box-shadow:none; font-weight:700; }
+.phone-shell .fb-btn-line { background:var(--card); border-color:var(--line); color:var(--ink); }
+.phone-shell .fb-btn-ghost { color:var(--ink); }
+.phone-shell .fb-btn, .phone-shell .fb-btn-line, .phone-shell .fb-btn-ghost { font-size:13px; min-height:44px; }
+.phone-shell :is(button,a,input,select,textarea):focus-visible, .focus-sheet :focus-visible { outline:3px solid var(--field-teal); outline-offset:3px; }
+.phone-shell .fb-copy { color:var(--muted); font-size:14px; line-height:1.65; }
+.phone-shell .fb-note { color:var(--muted); font-size:12px; }
+.phone-shell .fb-kicker { color:var(--muted); font-size:10px; letter-spacing:1px; }
+.phone-shell h1 { font-size:30px; font-weight:700; letter-spacing:-1px; }
+.phone-shell h2 { font-weight:650; letter-spacing:-.5px; }
+.phone-shell .focus-heading { text-align:left; margin:4px 0 20px; }
+.focus-segments { background:var(--accent-soft); border-color:var(--line); }
+.focus-segments button[aria-pressed=true], .focus-elo-track-toggle button[aria-pressed=true] { background:var(--ink); color:var(--card); }
+.focus-sheet { color:var(--ink); background:var(--paper); }
+@media (hover:hover) { .phone-shell .fb-btn:hover { background:var(--lime-deep); } .phone-shell .fb-btn-line:hover { background:var(--accent-soft); } }
+@media(max-width:600px) { .phone-shell .phone-main { padding:14px 20px 28px; gap:20px; } .focus-shell-header { height:64px; padding:0 20px; } .phone-shell .phone-tabs { padding-inline:10px; } }
+@media(prefers-reduced-motion:reduce) { .phone-shell *, .focus-sheet * { scroll-behavior:auto; } }

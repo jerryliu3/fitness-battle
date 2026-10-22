@@ -20,7 +20,6 @@ import { motion, useReducedMotion } from "motion/react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useLayoutEffect, useState, type ReactNode } from "react";
-import { EffortRail } from "@/features/progress/effort-rail";
 import { BootSplash } from "./boot-splash";
 import {
   hasSeenBootSplash,
@@ -174,7 +173,7 @@ export function PhoneShell({
       <div className="phone-shell">
         <header className="focus-shell-header">
           <div className="focus-shell-brand">
-            <Link href="/today">OVERTAEK</Link>
+            <Link href="/today"><img className="club-brand-mark" src="/icons/icon-192.png" alt="" />Overtaek</Link>
             <span className="focus-shell-tagline">A little further</span>
           </div>
           <Link
@@ -192,7 +191,6 @@ export function PhoneShell({
             )}
           </Link>
         </header>
-        {dataReady && !hideTabs ? <EffortRail key={accountKey} /> : null}
         {!dataReady ? (
           accountLoadingBody
         ) : onAthlete ? (

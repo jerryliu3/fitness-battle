@@ -10,6 +10,7 @@ import "@/features/field/field.css";
 import "@/features/rally/rally-shell.css";
 import "@/features/rally/product.css";
 import "@/features/focus/focus.css";
+import "@/features/focus/club.css";
 
 function PlayChrome({ children }: { children: ReactNode }) {
   const path = usePathname();

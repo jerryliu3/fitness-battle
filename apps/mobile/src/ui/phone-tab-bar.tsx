@@ -104,11 +104,11 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
   },
   tabOn: {
-    backgroundColor: SHELL_COLORS.tennis,
+    backgroundColor: SHELL_COLORS.actionSoft,
   },
   label: {
     fontFamily: "DMSans_700Bold",
-    fontSize: 10,
+    fontSize: 11,
     color: SHELL_COLORS.muted,
   },
   labelOn: {

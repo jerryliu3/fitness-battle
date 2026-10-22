@@ -145,12 +145,12 @@ export function FocusHeading({
       <Text style={f.kicker}>{kicker}</Text>
       <Text
         accessibilityRole="header"
-        style={[f.title, { textAlign: "center" }]}
+        style={f.title}
       >
         {title}
       </Text>
       {Boolean(body) && (
-        <Text style={[f.copy, { textAlign: "center" }]}>{body}</Text>
+        <Text style={f.copy}>{body}</Text>
       )}
     </View>
   );
@@ -221,7 +221,7 @@ export function FocusSegments<T extends string>({
           ]}
         >
           <Text
-            style={[f.segmentText, value === option.value && { color: c.ink }]}
+            style={[f.segmentText, value === option.value && { color: accent ? c.ink : c.card }]}
           >
             {option.label}
           </Text>
@@ -299,23 +299,23 @@ export const f = StyleSheet.create({
     alignSelf: "center",
   },
   heading: {
-    alignItems: "center",
-    gap: 9,
-    marginVertical: 15,
-    marginBottom: 17,
+    alignItems: "flex-start",
+    gap: 8,
+    marginVertical: 4,
+    marginBottom: 8,
   },
   kicker: {
     fontFamily: "DMSans_700Bold",
-    fontSize: 9,
+    fontSize: 10,
     letterSpacing: 1.5,
     lineHeight: 16,
     textTransform: "uppercase",
     color: c.muted,
   },
   title: {
-    fontFamily: "DMSans_400Regular",
-    fontSize: 34,
-    lineHeight: 39,
+    fontFamily: "DMSans_700Bold",
+    fontSize: 30,
+    lineHeight: 36,
     letterSpacing: -1.3,
     color: c.ink,
   },
@@ -328,19 +328,19 @@ export const f = StyleSheet.create({
   },
   copy: {
     fontFamily: "DMSans_400Regular",
-    fontSize: 13,
+    fontSize: 14,
     lineHeight: 22,
     color: c.muted,
   },
   small: {
     fontFamily: "DMSans_400Regular",
-    fontSize: 11,
+    fontSize: 12,
     lineHeight: 18,
     color: c.muted,
   },
   rowTitle: {
     fontFamily: "DMSans_500Medium",
-    fontSize: 13,
+    fontSize: 14,
     lineHeight: 20,
     color: c.ink,
   },
@@ -355,15 +355,15 @@ export const f = StyleSheet.create({
     backgroundColor: c.card,
     borderWidth: 1,
     borderColor: c.line,
-    borderRadius: 16,
-    borderBottomWidth: 3,
-    padding: 23,
+    borderRadius: 20,
+    borderBottomWidth: 1,
+    padding: 20,
     gap: 13,
   },
   button: {
-    backgroundColor: c.plum,
-    borderBottomWidth: 3,
-    borderBottomColor: "#1a201e",
+    backgroundColor: c.actionPrimary,
+    borderBottomWidth: 1,
+    borderBottomColor: c.actionPrimary,
     borderRadius: 11,
     minHeight: 48,
     padding: 15,
@@ -375,7 +375,7 @@ export const f = StyleSheet.create({
   buttonText: {
     fontFamily: "DMSans_500Medium",
     fontSize: 14,
-    color: "#f5faed",
+    color: c.ink,
   },
   secondary: {
     backgroundColor: c.card,
@@ -403,7 +403,7 @@ export const f = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
-  segmentSelected: { backgroundColor: c.card },
+  segmentSelected: { backgroundColor: c.ink },
   segmentText: {
     fontFamily: "DMSans_500Medium",
     fontSize: 12,
@@ -419,7 +419,7 @@ export const f = StyleSheet.create({
   },
   textButtonText: {
     fontFamily: "DMSans_500Medium",
-    fontSize: 13,
+    fontSize: 14,
     color: c.ink,
   },
   disclosureCompact: {
