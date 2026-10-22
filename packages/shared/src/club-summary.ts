@@ -22,3 +22,10 @@ export function clubDuration(seconds: number): string {
   const minutes = Math.round(Math.max(0, seconds) / 60);
   return minutes >= 60 ? `${Math.floor(minutes / 60)}h ${minutes % 60}m` : `${minutes}m`;
 }
+
+/** Immediate higher-place athlete, including tied totals. No past-self row is ranked. */
+export function nextClubRival(rows: readonly import("./compete/engine").BoardRow[]) {
+  const you = rows.find(row => row.you);
+  const rival = you ? rows.filter(row => !row.you && row.place < you.place).sort((a,b) => b.place-a.place)[0] : undefined;
+  return { you, rival, fieldSize: rows.length };
+}

@@ -2,6 +2,7 @@
 import { useEffect, useLayoutEffect, useRef, useState, type Ref } from "react";
 import { Sheet } from "@/ui/sheet";
 import { SessionStage } from "./session-stage";
+import { RivalCard } from "@/features/club/rival-card";
 import { ClubWelcome } from "@/features/club/welcome";
 import { EffortRail } from "@/features/progress/effort-rail";
 import { ActivityActions } from "./activity-actions";
@@ -692,6 +693,7 @@ export function TodayScreen() {
         </div>
       </section>
       </div>
+      <RivalCard state={state} />
       <EffortRail />
       <div className="focus-home-journey-layer">
       <JourneyTrail

@@ -1,3 +1,5 @@
+import { RivalCard } from "../../src/features/club-rival-card";
+import { EffortRail } from "../../src/features/effort-rail";
 import { ClubWelcome } from "../../src/features/club-welcome";
 import { SHELL_COLORS as c } from "../../src/theme";
 import {
@@ -379,6 +381,8 @@ export default function Home() {
               </Svg>
             </View>
           </View>
+          <RivalCard state={state} />
+          <EffortRail />
           <View style={s.homeJourneyLayer} pointerEvents="box-none">
             <Journey
               activities={counted}

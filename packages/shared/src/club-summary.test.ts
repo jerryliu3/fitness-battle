@@ -11,3 +11,12 @@ describe("club calendar summary",()=>{
   });
   it("formats clear hours and minutes",()=>{expect(clubDuration(3720)).toBe("1h 2m");expect(clubDuration(0)).toBe("0m");});
 });
+
+import { nextClubRival } from "./club-summary";
+import type { BoardRow } from "./compete/engine";
+const row=(id:string,place:number,you=false):BoardRow=>({id,place,you,name:id,elo:1000,effort:0,distanceM:0,movingSec:0});
+it("selects the immediate higher place through ties and handles leading/empty fields",()=>{
+  expect(nextClubRival([row("leader",1),row("near",2),row("you",3,true)]).rival?.id).toBe("near");
+  expect(nextClubRival([row("you",1,true),row("behind",2)]).rival).toBeUndefined();
+  expect(nextClubRival([]).you).toBeUndefined();
+});
