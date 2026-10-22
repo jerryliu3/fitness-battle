@@ -205,7 +205,7 @@ export function CrewHub() {
       sport: pin.sport,
       format: "volume",
       target_sessions: 4,
-      journey_km: 0,
+      journey_km: 60,
     });
   const solo = rawCrews.length === 0;
   const selfId = user?.id ?? "guest";

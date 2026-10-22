@@ -6,114 +6,90 @@ const path = (
   fill: string,
   extra: FieldNode["attrs"] = {},
 ): FieldNode => ({ tag: "path", attrs: { d, fill, ...extra } });
-/** Projected extruded ribbon, shared by native SVG and DOM SVG. Width encodes the same canonical fractions. */
 export function crewRelayScene(model: Relay, width: number, prefix: string) {
   const length = Math.max(180, width - 52),
     left = 16;
   const p = (fraction: number, back = false, bottom = false) =>
-    `${(left + fraction * length + (back ? 14 : 0)).toFixed(2)} ${(74 - fraction * 18 + (back ? -18 : 0) + (bottom ? 23 : 0)).toFixed(2)}`;
+    `${left + fraction * length + (back ? 24 : 0)} ${174 - fraction * 30 + (back ? -46 : 0) + (bottom ? 18 : 0)}`;
   const top = (a: number, b: number) =>
-    `M${p(a)} L${p(b)} L${p(b, true)} L${p(a, true)} Z`;
+    `M${p(a)} L${p(b)} L${p(b, true)} L${p(a, true)}Z`;
   const face = (a: number, b: number) =>
-    `M${p(a)} L${p(b)} L${p(b, false, true)} L${p(a, false, true)} Z`;
+    `M${p(a)} L${p(b)} L${p(b, false, true)} L${p(a, false, true)}Z`;
   const ground: FieldNode[] = [
-    path(
-      `M${p(0, false, true)} L${p(1, false, true)} l16 9 L24 111 Z`,
-      "#282f2c",
-      { opacity: 0.08 },
-    ),
-    path(top(0, 1), "#eef0e9"),
-    path(face(0, 1), "#d9e0d4"),
-    path(`M${p(1)} L${p(1, true)} l0 23 L${p(1, false, true)} Z`, "#b9c5b5"),
+    path(top(0, 1), "#e4ece8"),
+    path(face(0, 1), "#c7d5cf"),
+    path(`M${p(0)} L${p(1)}`, "none", { stroke: "#d3dfd9", strokeWidth: 2 }),
   ];
   const segments = model.segments
     .filter((s) => s.fraction > 0)
-    .map((s, i) => {
-      const id = `${prefix}-relay-${i}`;
-      const nodes: FieldNode[] = [
+    .map((s, i) => ({
+      id: s.id,
+      nodes: [
         {
           tag: "defs",
           attrs: {},
           children: [
             {
               tag: "linearGradient",
-              attrs: { id, x1: "0%", y1: "0%", x2: "0%", y2: "100%" },
+              attrs: {
+                id: `${prefix}-${i}`,
+                x1: "0",
+                y1: "0",
+                x2: "0",
+                y2: "1",
+              },
               children: [
+                { tag: "stop", attrs: { offset: 0, stopColor: s.color } },
                 {
                   tag: "stop",
-                  attrs: {
-                    offset: "0%",
-                    stopColor: "#ffffff",
-                    stopOpacity: 0.5,
-                  },
+                  attrs: { offset: 1, stopColor: s.color, stopOpacity: 0.7 },
                 },
-                {
-                  tag: "stop",
-                  attrs: {
-                    offset: "40%",
-                    stopColor: s.color,
-                    stopOpacity: 0.9,
-                  },
-                },
-                { tag: "stop", attrs: { offset: "100%", stopColor: s.color } },
               ],
             },
           ],
         },
         path(face(s.start, s.start + s.fraction), s.color),
-        path(face(s.start, s.start + s.fraction), "#282f2c", { opacity: 0.16 }),
-        path(top(s.start, s.start + s.fraction), `url(#${id})`),
-        {
-          tag: "line",
-          attrs: {
-            x1: left + s.start * length,
-            y1: 74 - s.start * 18,
-            x2: left + (s.start + s.fraction) * length,
-            y2: 74 - (s.start + s.fraction) * 18,
-            stroke: "#ffffff",
-            strokeOpacity: 0.65,
-            strokeWidth: 1.3,
-          },
-        },
-      ];
-      return { id: s.id, nodes };
-    });
+        path(top(s.start, s.start + s.fraction), `url(#${prefix}-${i})`),
+        path(`M${p(s.start)} L${p(s.start, true)}`, "none", {
+          stroke: "white",
+          strokeWidth: 1,
+          opacity: 0.7,
+        }),
+      ] as FieldNode[],
+    }));
   const finish: FieldNode[] = [];
   if (model.finish !== null) {
     const x = left + model.finish * length,
-      y = 74 - model.finish * 18;
-    // A checkered stripe crosses the full track; contributions can visibly pass it.
+      y = 174 - model.finish * 30;
     finish.push(
       path(`M${p(model.finish)} L${p(model.finish, true)}`, "none", {
         stroke: "#142b3b",
-        strokeWidth: 7,
+        strokeWidth: 12,
       }),
       path(`M${p(model.finish)} L${p(model.finish, true)}`, "none", {
         stroke: "#ffffff",
-        strokeWidth: 7,
-        strokeDasharray: "4 4",
+        strokeWidth: 12,
+        strokeDasharray: "6 6",
       }),
-    );
-    finish.push(
       {
         tag: "line",
         attrs: {
           x1: x,
-          y1: y - 31,
+          y1: y - 2,
           x2: x,
           y2: y + 28,
-          stroke: "#282f2c",
+          stroke: "#142b3b",
           strokeWidth: 2,
         },
       },
       {
         tag: "line",
         attrs: {
-          x1: x + 14,
-          y1: y - 49,
-          x2: x + 14,
-          y2: y + 5,
-          stroke: "#282f2c",
+          x1: x + 24,
+          y1: y - 47,
+          x2: x + 24,
+          y2: y - 65,
+          stroke: "#142b3b",
           strokeWidth: 2,
         },
       },
@@ -121,10 +97,37 @@ export function crewRelayScene(model: Relay, width: number, prefix: string) {
     for (let i = 0; i < 6; i++)
       finish.push(
         path(
-          `M${x + (i * 14) / 6} ${y - 31 - i * 3} l${14 / 6} -3 v8 l${-14 / 6} 3 Z`,
-          i % 2 ? "#ffffff" : "#282f2c",
+          `M${x + 24 + i * 4} ${y - 65}h4v10h-4Z`,
+          i % 2 ? "#ffffff" : "#142b3b",
         ),
       );
   }
-  return { ground, segments, finish };
+  const people = model.segments.map((s, i) => {
+    const x = left + ((i + 0.5) * length) / Math.max(1, model.segments.length),
+      fraction = s.start + s.fraction / 2;
+    return {
+      id: s.id,
+      x,
+      y: 20,
+      anchorX: left + fraction * length + 12,
+      anchorY: 151 - fraction * 30,
+      color: s.color,
+    };
+  });
+  for (const person of people)
+    ground.push(
+      path(
+        `M${person.x} 94 Q${person.x} 116 ${person.anchorX} ${person.anchorY}`,
+        "none",
+        { stroke: person.color, strokeWidth: 1.5, strokeDasharray: "3 4" },
+      ),
+    );
+  return {
+    ground,
+    segments,
+    finish,
+    people,
+    finishX: model.finish === null ? null : left + model.finish * length,
+    height: 250,
+  };
 }

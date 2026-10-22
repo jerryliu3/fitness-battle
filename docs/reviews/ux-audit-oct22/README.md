@@ -35,3 +35,17 @@ Field evidence: [native perspective](ios-field.jpg), [native direct swipe](ios-l
 - Focused PR chart/model checks pass; full suites/typecheck/build intentionally skipped.
 
 Screens: [native Progress](ios-progress.jpg), [web Progress](web-progress.jpg).
+
+## Crew pass — actual product verification
+
+The missing finish was reproducible: volume crews with unavailable prior-week history had no finish at all. The visual now labels the existing configured distance goal separately from last-week history, for all distance crews. A positive prior-week baseline remains the fallback when there is no configured goal. Unknown values remain unknown; no fake prior-week data or backend target write is introduced.
+
+The shared track is 250px tall with member portraits/initials on the visual, linked to their real contribution segments. A large checkered finish, numeric target, remaining runway and over-goal contributions use the same portable scene on both platforms. Many-member visuals scroll horizontally instead of compressing targets.
+
+- Actual web and native Weekday miles: 50.0 mi together, target 37.3 mi, 12.7 mi beyond target. Both visibly show the finish inside the contributed distance and unfilled runway beyond the crew. Screens captured below.
+- Native and web: tapped Bob's on-track marker; selection and receipt changed to 3.7 mi / 7.5% while crew totals and goal stayed fixed.
+- Removed the separate shelf of member cards. Member information remains directly accessible and keyboard/tap selectable.
+- Visual inspection found and fixed a web inline-SVG baseline causing both scrollbars (final client/scroll width 553/553; height 250/250) and duplicate native SVG child keys.
+- Seven focused shared goal/scene checks and four web rendering checks pass, covering below/at/over-goal and absent-baseline states. Full validation intentionally skipped.
+
+Screens: [actual native Crew](ios-crew.jpg), [actual web Crew](web-crew.jpg).

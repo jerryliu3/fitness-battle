@@ -1,5 +1,5 @@
 import { expect, it } from "vitest";
-import { crewRelay } from "./crew-relay";
+import { crewRelay, crewWeekRelay } from "./crew-relay";
 it("keeps member identity and ribbon colors stable when API row order changes",()=>{
  const a={id:"a",name:"A",value:10,sessions:1},b={id:"b",name:"B",value:20,sessions:2};
  expect(crewRelay([b,a],100)).toEqual(crewRelay([a,b],100));
@@ -24,4 +24,9 @@ it("keeps empty weeks finite and everyone inspectable", () => {
   expect(relay.segments[0]!.share).toBe(0);
   expect(relay.segments).toHaveLength(1);
   expect(relay.finish).toBeCloseTo(1 / 1.2);
+});
+
+it("labels a configured volume goal separately from missing prior-week history",()=>{
+ const result=crewWeekRelay({members:[{user_id:"a",display_name:"A"}],entries:[{user_id:"a",distance_m:120000,moving_sec:3600}],format:"volume",sport:"running",targetSessions:4,targetDistanceM:100000,previousDistanceM:null});
+ expect(result.kind).toBe("distance");expect(result.target).toBe(100000);expect(result.model.finish).toBeLessThan(result.model.segments[0]!.fraction);
 });
