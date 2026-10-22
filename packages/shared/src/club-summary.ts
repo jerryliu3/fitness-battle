@@ -29,3 +29,8 @@ export function nextClubRival(rows: readonly import("./compete/engine").BoardRow
   const rival = you ? rows.filter(row => !row.you && row.place < you.place).sort((a,b) => b.place-a.place)[0] : undefined;
   return { you, rival, fieldSize: rows.length };
 }
+
+export function latestClubRecap(state: CompeteState, now = competeNow(state)) {
+  return state.periodResults.filter(row => row.track === "open" && Date.parse(row.periodEnd) <= now.getTime())
+    .sort((a,b) => Date.parse(b.periodEnd)-Date.parse(a.periodEnd) || Number(b.sport===state.primary)-Number(a.sport===state.primary))[0];
+}

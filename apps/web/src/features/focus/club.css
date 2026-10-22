@@ -73,3 +73,8 @@
 .club-rival-bottom strong { font-size:18px; }.club-rival-bottom p { font-size:12px; color:#ffffffe0; margin:6px 0 0; }
 .club-round-arrow { display:grid; place-items:center; width:42px; height:42px; flex:none; border-radius:50%; background:var(--lime); color:var(--ink); font-size:23px; }
 .club-rival-markers { position:absolute; width:220px; height:140px; left:50%; top:55px; transform:translateX(-50%); opacity:.95; }
+.club-week-recap { display:grid; gap:18px; padding:22px; border-radius:20px; border:1px solid var(--line); background:var(--card); }
+.club-section-heading { display:flex; align-items:center; justify-content:space-between; gap:12px; }
+.club-week-metrics { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:12px; }
+.club-week-metrics>div { display:grid; gap:5px; }.club-week-metrics strong { font-size:23px; letter-spacing:-.7px; font-variant-numeric:tabular-nums; }.club-week-metrics small { font-size:12px; color:var(--muted); font-weight:400; }
+.club-recap-link { display:flex; gap:14px; align-items:center; padding-top:18px; border-top:1px solid var(--line); text-decoration:none; }.club-recap-link>span:nth-child(2) { display:grid; gap:5px; flex:1; }.club-recap-link b { font-size:14px; }.club-recap-link small { font-size:12px; color:var(--muted); }.club-recap-stamp { width:46px; height:54px; flex:none; border-radius:14px; background:var(--action-soft); display:grid; place-items:center; font-size:23px; font-weight:700; }

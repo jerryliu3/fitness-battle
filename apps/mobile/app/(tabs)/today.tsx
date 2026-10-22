@@ -1,3 +1,4 @@
+import { WeekRecap } from "../../src/features/club-week-recap";
 import { RivalCard } from "../../src/features/club-rival-card";
 import { EffortRail } from "../../src/features/effort-rail";
 import { ClubWelcome } from "../../src/features/club-welcome";
@@ -383,6 +384,7 @@ export default function Home() {
           </View>
           <RivalCard state={state} />
           <EffortRail />
+          <WeekRecap state={state} />
           <View style={s.homeJourneyLayer} pointerEvents="box-none">
             <Journey
               activities={counted}
