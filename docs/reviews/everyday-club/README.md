@@ -17,8 +17,8 @@ The owner selected the supplied Everyday Club reference and authorized the compl
 | [269](https://github.com/jerryliu3/fitness-battle/pull/269) | Session and effort achievements | 268 |
 | [270](https://github.com/jerryliu3/fitness-battle/pull/270) | Latest activity and activity detail | 269 |
 | [271](https://github.com/jerryliu3/fitness-battle/pull/271) | Crew identity and shared week | 270 |
-| Final polish | Token migration, secondary flows, accessibility and review evidence | 271 |
-| Native compatibility | Locked dependency patches required by the local iOS build | Final polish |
+| [272](https://github.com/jerryliu3/fitness-battle/pull/272) | Token migration, secondary flows, accessibility and review evidence | 271 |
+| [273](https://github.com/jerryliu3/fitness-battle/pull/273) | Locked dependency patches required by the local iOS build | 272 |
 
 The tip contains the complete redesign. Each PR is based on the preceding branch; none are merged automatically.
 
@@ -48,3 +48,5 @@ See [UI audit](../../design/ui-audit.md), [component rules](../../design/compone
 ![Web phone](web-home-390.jpg)
 
 ![iOS simulator](ios-home.jpg)
+
+Native build details and patch rationale: [compatibility verification](native-build.md).

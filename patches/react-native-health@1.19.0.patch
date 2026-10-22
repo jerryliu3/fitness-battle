@@ -1,0 +1,29 @@
+diff --git a/RCTAppleHealthKit/RCTAppleHealthKit.m b/RCTAppleHealthKit/RCTAppleHealthKit.m
+index e8ddce176f6beda986e80244adafacc5e9a2808f..59a12ecf779afb0b2f0672d081b65626e6d8d288 100644
+--- a/RCTAppleHealthKit/RCTAppleHealthKit.m
++++ b/RCTAppleHealthKit/RCTAppleHealthKit.m
+@@ -44,15 +44,6 @@ + (id)allocWithZone:(NSZone *)zone {
+     return sharedInstance;
+ }
+ 
+-+ (RCTCallableJSModules *)sharedJsModule {
+-    static RCTCallableJSModules *sharedJsModule = nil;
+-    static dispatch_once_t onceToken;
+-    dispatch_once(&onceToken, ^{
+-        sharedJsModule = [RCTCallableJSModules new];
+-    });
+-    return sharedJsModule;
+-}
+-
+ - (id) init
+ {
+     return [super init];
+@@ -840,8 +831,6 @@ -(void)startObserving {
+ 
+ - (void)emitEventInternal:(NSNotification *)notification {
+   if (self.hasListeners) {
+-    self.callableJSModules = [RCTAppleHealthKit sharedJsModule];
+-    [self.callableJSModules setBridge:self.bridge];
+     [self sendEventWithName:notification.name
+                    body:notification.userInfo];
+   }
