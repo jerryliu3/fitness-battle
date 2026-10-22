@@ -16,9 +16,9 @@ import {
   primaryFreezePeriodStart,
   weeklyPeriodBounds,
 } from "@fitness-battle/shared";
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useFocusEffect } from "expo-router";
-import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Platform, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Svg, {
   Circle,
@@ -36,11 +36,12 @@ import { Journey } from "../../src/features/journey";
 import { useCompeteStore } from "../../src/lib/compete-store";
 import { FocusDisclosure, FocusSheet, f } from "../../src/ui/focus";
 export default function Home() {
-  const { state, dispatch } = useCompeteStore();
+  const { state, dispatch, accountKey } = useCompeteStore();
   const [removed,setRemoved]=useState<Activity|null>(null);
   const [latest,setLatest]=useState<Activity|null>(null);
   const [expanded, setExpanded] = useState<"suggestion" | null>(null);
-  useFocusEffect(useCallback(()=>()=>setExpanded(null),[]));
+  useEffect(()=>{setLatest(null);setRemoved(null);},[accountKey]);
+  useFocusEffect(useCallback(()=>()=>{setExpanded(null);setLatest(null);},[]));
   if (!state)
     return (
       <SafeAreaView style={f.safe}>
@@ -121,13 +122,6 @@ export default function Home() {
       const daySec = dayActs.reduce((acc, a) => acc + (a.movingSec || 0), 0);
       prevRunningSec += daySec;
       prevCumulativeHours.push(Number((prevRunningSec / 3600).toFixed(2)));
-    }
-  } else if (prevPeriodResult && prevPeriodResult.movingSec > 0) {
-    const totalPrevHours = prevPeriodResult.movingSec / 3600;
-    for (let i = 0; i < 7; i++) {
-      prevCumulativeHours.push(
-        Number(((totalPrevHours * (i + 1)) / 7).toFixed(2)),
-      );
     }
   } else {
     for (let i = 0; i < 7; i++) {
@@ -228,7 +222,7 @@ export default function Home() {
                 width="100%"
                 height={130}
                 viewBox={`0 0 ${chartW} 120`}
-                accessible
+                accessible={Platform.OS==="web"?undefined:true}
                 accessibilityLabel={`Cumulative hours: ${currTotalHours === 0 ? "0 hours" : `${currTotalHours.toFixed(1)} hrs`} this week compared to ${prevTotalHours.toFixed(1)} hrs last week`}
               >
                 <Defs>

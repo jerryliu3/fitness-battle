@@ -6,7 +6,7 @@ import {
   useState,
   type ComponentType,
 } from "react";
-import { AppState } from "react-native";
+import { AppState, Platform } from "react-native";
 import { useFocusEffect } from "expo-router";
 import {
   G,
@@ -36,9 +36,11 @@ const elements = {
 };
 function draw(node: CapsuleNode, key: number): React.ReactNode {
   const Element = elements[node.tag] as ComponentType<Record<string, unknown>>;
+  const {maskType,...attrs}=node.attrs;
+  const attributes=Platform.OS==="web"&&maskType?{...attrs,style:{maskType}}:node.attrs;
   return createElement(
     Element,
-    { ...node.attrs, key },
+    { ...attributes, key },
     node.children?.map(draw),
   );
 }

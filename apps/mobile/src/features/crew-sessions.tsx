@@ -1,3 +1,4 @@
+import { SHELL_COLORS as clubColors } from "@fitness-battle/shared";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Pressable, Text, TextInput, View } from "react-native";
 import {
@@ -167,7 +168,7 @@ export function CrewSessions({
                     f.avatar,
                     {
                       backgroundColor:
-                        p.user_id === user?.id ? "#f1c75b" : "#e0e5dc",
+                        p.user_id === user?.id ? clubColors.tennis : clubColors.line,
                     },
                   ]}
                 >

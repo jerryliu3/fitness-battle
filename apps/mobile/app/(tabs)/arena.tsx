@@ -4,8 +4,8 @@ import {
   type CrewBoardPin,
   type SportId,
 } from "@fitness-battle/shared";
-import { useRouter } from "expo-router";
-import { useRef, useState } from "react";
+import { useGlobalSearchParams, useRouter } from "expo-router";
+import { useEffect, useRef, useState } from "react";
 import { Pressable, ScrollView, Switch, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { CompetitionField } from "../../src/features/competition-field";
@@ -37,10 +37,12 @@ export default function ArenaScreen() {
   } = useCompeteStore();
   const { user } = useAuth();
   const router = useRouter();
+  const requestedEvent=useGlobalSearchParams<{event?:string}>().event;
   const crewApi = useCrewApi();
   const [track, setTrack] = useScoreTrackLens();
   const [register, setRegister] = useState(false);
   const [selection,setSelection]=useState<{account:string;sport:SportId|"sleep"}|null>(null);
+  useEffect(()=>{if(requestedEvent&&SPORTS.some(s=>s.id===requestedEvent))setSelection({account:accountKey,sport:requestedEvent as SportId});},[requestedEvent,accountKey]);
   const [sport, setSport] = useState<SportId | null>(null);
   const [withCrew, setWithCrew] = useState(false);
   const [joinBusy, setJoinBusy] = useState(false);

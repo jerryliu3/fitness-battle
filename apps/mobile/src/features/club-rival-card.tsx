@@ -1,16 +1,156 @@
-import { ImageBackground, Pressable, StyleSheet, Text, View } from "react-native";
+import { alpineTrail } from "../ui/club-art";
+import {
+  ImageBackground,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 import { useRouter } from "expo-router";
 import Svg from "react-native-svg";
-import { competeNow, formatEffort, formatVolume, nextClubRival, sportById, weeklyBoard, type CompeteState } from "@fitness-battle/shared";
+import {
+  competeNow,
+  formatEffort,
+  formatVolume,
+  nextClubRival,
+  sportById,
+  weeklyBoard,
+  type CompeteState,
+} from "@fitness-battle/shared";
 import { PolishedRacer } from "../ui/polished-racer";
 import { SHELL_COLORS as c } from "../theme";
-export function RivalCard({state}:{state:CompeteState}) {
-  const router=useRouter();
-  const sport=state.ratings.find(r=>r.sport===state.primary&&r.optedIn)?.sport??state.ratings.find(r=>r.optedIn)?.sport;
-  const {you,rival,fieldSize}=nextClubRival(sport?weeklyBoard(state,sport,"open",competeNow(state)):[]);
-  const synthetic=Boolean(rival&&state.enrollments.find(e=>e.sport===sport)?.syntheticIds.includes(rival.id));
-  const gap=rival&&you&&sport?(sportById(sport).gps?formatVolume(sport,Math.max(0,rival.distanceM-you.distanceM),0,state.units):`${formatEffort(Math.max(0,rival.effort-you.effort))} pts`):null;
-  const headline=rival?`${gap} to ${rival.name.split(" ")[0]}`:you?"You’re leading the way.":"Your next chapter starts here.";
-  return <Pressable accessibilityRole="button" accessibilityLabel={`${sport?sportById(sport).name:"Find your field"}. ${you?`Place ${you.place} of ${fieldSize}. `:""}${headline}. ${synthetic?"Simulated athlete. ":""}Open Compete`} onPress={()=>router.navigate("/arena")} style={s.card}><ImageBackground source={require("../../assets/club/alpine-trail.jpg")} style={s.background} imageStyle={{borderRadius:20}}><View style={s.scrim}/><View style={s.top}><View><Text style={s.eyebrow}>YOUR COMPETITION · OPEN</Text><Text style={s.title}>{sport?sportById(sport).name:"Find your field"}</Text></View>{you?<Text style={s.place}>{you.place} / {fieldSize}<Text style={s.eyebrow}> PLACE</Text></Text>:null}</View><View style={s.markers} pointerEvents="none" accessible={false}><Svg width={160} height={110} viewBox="0 0 220 140"><PolishedRacer x={70} y={90} you gold={you?.place===1} sizeScale={.75}/>{rival?<PolishedRacer x={150} y={45} you={false} gold={rival.place===1} sizeScale={.7}/>:null}</Svg></View><View style={s.bottom}><View style={{flex:1,gap:5}}><Text style={s.headline}>{headline}</Text><Text style={s.caption}>{rival?(synthetic?"Next rival · simulated athlete":"Next rival in your field"):you?"Keep showing up. Every effort counts.":"Register for a weekly event."}</Text></View><Text style={s.arrow}>↗</Text></View></ImageBackground></Pressable>;
+export function RivalCard({ state }: { state: CompeteState }) {
+  const router = useRouter();
+  const sport =
+    state.ratings.find((r) => r.sport === state.primary && r.optedIn)?.sport ??
+    state.ratings.find((r) => r.optedIn)?.sport;
+  const { you, rival, fieldSize } = nextClubRival(
+    sport ? weeklyBoard(state, sport, "open", competeNow(state)) : [],
+  );
+  const synthetic = Boolean(
+    rival &&
+      state.enrollments
+        .find((e) => e.sport === sport)
+        ?.syntheticIds.includes(rival.id),
+  );
+  const gap =
+    rival && you && sport
+      ? sportById(sport).gps
+        ? formatVolume(
+            sport,
+            Math.max(0, rival.distanceM - you.distanceM),
+            0,
+            state.units,
+          )
+        : `${formatEffort(Math.max(0, rival.effort - you.effort))} pts`
+      : null;
+  const headline = rival
+    ? `${gap} to ${rival.name.split(" ")[0]}`
+    : you
+      ? "You’re leading the way."
+      : "Your next chapter starts here.";
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={`${sport ? sportById(sport).name : "Find your field"}. ${you ? `Place ${you.place} of ${fieldSize}. ` : ""}${headline}. ${synthetic ? "Simulated athlete. " : ""}Open Compete`}
+      onPress={() =>
+        router.navigate(sport ? `/arena?event=${sport}` : "/arena")
+      }
+      style={s.card}
+    >
+      <ImageBackground
+        source={alpineTrail}
+        style={s.background}
+        imageStyle={{ borderRadius: 20 }}
+      >
+        <View style={s.scrim} />
+        <View style={s.top}>
+          <View>
+            <Text style={s.eyebrow}>YOUR COMPETITION · OPEN</Text>
+            <Text style={s.title}>
+              {sport ? sportById(sport).name : "Find your field"}
+            </Text>
+          </View>
+          {you ? (
+            <Text style={s.place}>
+              {you.place} / {fieldSize}
+              <Text style={s.eyebrow}> PLACE</Text>
+            </Text>
+          ) : null}
+        </View>
+        <View style={s.markers} pointerEvents="none" accessible={false}>
+          <Svg width={160} height={110} viewBox="0 0 220 140">
+            <PolishedRacer
+              x={70}
+              y={90}
+              you
+              gold={you?.place === 1}
+              sizeScale={0.75}
+            />
+            {rival ? (
+              <PolishedRacer
+                x={150}
+                y={45}
+                you={false}
+                gold={rival.place === 1}
+                sizeScale={0.7}
+              />
+            ) : null}
+          </Svg>
+        </View>
+        <View style={s.bottom}>
+          <View style={{ flex: 1, gap: 5 }}>
+            <Text style={s.headline}>{headline}</Text>
+            <Text style={s.caption}>
+              {rival
+                ? synthetic
+                  ? "Next rival · simulated athlete"
+                  : "Next rival in your field"
+                : you
+                  ? "Keep showing up. Every effort counts."
+                  : "Register for a weekly event."}
+            </Text>
+          </View>
+          <Text style={s.arrow}>↗</Text>
+        </View>
+      </ImageBackground>
+    </Pressable>
+  );
 }
-const s=StyleSheet.create({card:{borderRadius:20,overflow:"hidden",backgroundColor:c.fieldDeep},background:{minHeight:250,justifyContent:"space-between",padding:20},scrim:{...StyleSheet.absoluteFill,backgroundColor:"#081f3670"},top:{flexDirection:"row",justifyContent:"space-between",gap:10},eyebrow:{fontFamily:"DMSans_700Bold",fontSize:10,letterSpacing:.7,color:"#ffffffdd"},title:{fontFamily:"DMSans_700Bold",fontSize:24,color:c.card,marginTop:5},place:{fontFamily:"DMSans_700Bold",fontSize:22,color:c.card},markers:{alignSelf:"center",height:110},bottom:{flexDirection:"row",alignItems:"center",gap:12},headline:{fontFamily:"DMSans_700Bold",fontSize:17,color:c.card},caption:{fontFamily:"DMSans_400Regular",fontSize:12,color:"#ffffffdd"},arrow:{color:c.ink,backgroundColor:c.tennis,borderRadius:22,width:40,height:40,textAlign:"center",lineHeight:40,fontSize:22}});
+const s = StyleSheet.create({
+  card: { borderRadius: 20, overflow: "hidden", backgroundColor: c.fieldDeep },
+  background: { minHeight: 250, justifyContent: "space-between", padding: 20 },
+  scrim: { ...StyleSheet.absoluteFill, backgroundColor: "#081f3670" },
+  top: { flexDirection: "row", justifyContent: "space-between", gap: 10 },
+  eyebrow: {
+    fontFamily: "DMSans_700Bold",
+    fontSize: 10,
+    letterSpacing: 0.7,
+    color: "#ffffffdd",
+  },
+  title: {
+    fontFamily: "DMSans_700Bold",
+    fontSize: 24,
+    color: c.card,
+    marginTop: 5,
+  },
+  place: { fontFamily: "DMSans_700Bold", fontSize: 22, color: c.card },
+  markers: { alignSelf: "center", height: 110 },
+  bottom: { flexDirection: "row", alignItems: "center", gap: 12 },
+  headline: { fontFamily: "DMSans_700Bold", fontSize: 17, color: c.card },
+  caption: {
+    fontFamily: "DMSans_400Regular",
+    fontSize: 12,
+    color: "#ffffffdd",
+  },
+  arrow: {
+    color: c.ink,
+    backgroundColor: c.tennis,
+    borderRadius: 22,
+    width: 40,
+    height: 40,
+    textAlign: "center",
+    lineHeight: 40,
+    fontSize: 22,
+  },
+});

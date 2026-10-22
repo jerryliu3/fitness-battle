@@ -1,3 +1,4 @@
+import { SHELL_COLORS as clubColors } from "@fitness-battle/shared";
 import {
   activityFromSample,
   parseManualActivity,
@@ -150,7 +151,7 @@ export function HomeActivityActions({
           minHeight: 44,
           borderRadius: 10,
           borderWidth: 1,
-          borderColor: "#e0e5dc",
+          borderColor: clubColors.line,
           backgroundColor: "#fff",
           alignItems: "center",
           justifyContent: "center",
@@ -174,7 +175,7 @@ export function HomeActivityActions({
           minHeight: 44,
           borderRadius: 10,
           borderWidth: 1,
-          borderColor: "#e0e5dc",
+          borderColor: clubColors.line,
           backgroundColor: "#fff",
           alignItems: "center",
           justifyContent: "center",

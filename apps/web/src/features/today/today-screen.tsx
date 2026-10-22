@@ -378,13 +378,6 @@ export function TodayScreen() {
       prevRunningSec += daySec;
       prevCumulativeHours.push(Number((prevRunningSec / 3600).toFixed(2)));
     }
-  } else if (prevPeriodResult && prevPeriodResult.movingSec > 0) {
-    const totalPrevHours = prevPeriodResult.movingSec / 3600;
-    for (let i = 0; i < 7; i++) {
-      prevCumulativeHours.push(
-        Number(((totalPrevHours * (i + 1)) / 7).toFixed(2)),
-      );
-    }
   } else {
     for (let i = 0; i < 7; i++) {
       prevCumulativeHours.push(0);

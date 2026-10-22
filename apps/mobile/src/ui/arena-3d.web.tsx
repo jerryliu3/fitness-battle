@@ -1,3 +1,4 @@
+import { SHELL_COLORS as clubColors } from "@fitness-battle/shared";
 import { createElement } from "react";
 import { resolveArenaSelectedId } from "@fitness-battle/shared";
 import {
@@ -51,7 +52,7 @@ export function Arena3D({
         width: "100%",
         borderRadius: 20,
         overflow: "hidden",
-        background: "#eef0e9",
+        background: clubColors.soft,
         position: "relative" as const,
       },
     },
@@ -67,7 +68,7 @@ export function Arena3D({
       extra: 0,
       selected,
       showGhost: true,
-      camera: "above" as const,
+      camera: "follow" as const,
       look: defaultLook,
       unit: model.unit,
       view: model.view,

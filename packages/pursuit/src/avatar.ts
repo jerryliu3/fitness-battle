@@ -15,9 +15,9 @@ export const skins: Record<SkinId, string> = {
   rose: "#e0ad92",
 };
 export const kits: Record<KitId, string> = {
-  electric: "#ef6635",
+  electric: "#f7c948",
   midnight: "#3a3d42",
-  coral: "#e9d076",
+  coral: "#668e91",
 };
 export const defaultLook: AvatarLook = {
   skin: "amber",

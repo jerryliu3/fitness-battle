@@ -1,5 +1,6 @@
+import { clubIcon } from "./club-art";
 import { usePathname, useRouter } from "expo-router";
-import { Image, Pressable, StyleSheet, Text, View } from "react-native";
+import { Image, Platform, Pressable, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Svg, { Path } from "react-native-svg";
 import { PERSON_ICON_PATH } from "@fitness-battle/shared";
@@ -21,7 +22,7 @@ export function AppHeader() {
           onPress={() => router.navigate("/today")}
           style={s.brand}
         >
-          <Text style={s.wordmark}>Overtaek</Text>
+          <View style={{flexDirection:"row",alignItems:"center",gap:8}}><Image source={clubIcon} style={{width:30,height:30,borderRadius:8}}/><Text style={s.wordmark}>Overtaek</Text></View>
         </Pressable>
         <Pressable
           accessibilityRole="button"
@@ -33,7 +34,7 @@ export function AppHeader() {
           {state?.avatarUrl ? (
             <Image source={{ uri: state.avatarUrl }} style={s.photo} />
           ) : (
-            <Svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke={c.muted} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" accessible={false}>
+            <Svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke={c.muted} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" accessible={Platform.OS==="web"?undefined:false}>
               <Path d={PERSON_ICON_PATH}/>
             </Svg>
           )}
