@@ -1,4 +1,5 @@
 "use client";
+import { EventCarousel } from "@/features/club/event-carousel";
 import { useEffect, useState } from "react";
 import { motion } from "motion/react";
 import { playCue } from "@/lib/haptics";
@@ -192,11 +193,7 @@ export function ArenaScreen({ tabActive = true }: { tabActive?: boolean }) {
           Latest week results ↗
         </Link>
       ) : null}
-      <div className="focus-registration-tabs focus-crew-tabs" role="group" aria-label="Registered sports" style={{display:"flex",gap:8,overflowX:"auto",padding:"12px 0"}}>
-        {active.map(r=><button type="button" key={r.sport} className="fb-btn-ghost" aria-pressed={selectedSport===r.sport} style={{flexShrink:0,background:selectedSport===r.sport?"var(--accent-soft)":undefined}} onClick={()=>{setSelection({account,sport:r.sport});void playCue("selection");}}>{SPORTS.find(s=>s.id===r.sport)?.name}</button>)}
-        {sleepOptedIn?<button type="button" className="fb-btn-ghost" aria-pressed={selectedSport==="sleep"} style={{flexShrink:0}} onClick={()=>setSelection({account,sport:"sleep"})}>Sleep & Recovery</button>:null}
-        <button type="button" className="fb-btn-ghost" style={{flexShrink:0}} onClick={()=>{setSport(null);setRegister(true);}}>＋ Register</button>
-      </div>
+      {hasAnyRegistration ? <EventCarousel key={account} events={[...active.map(r=>({id:r.sport,label:SPORTS.find(s=>s.id===r.sport)!.name})),...(sleepOptedIn?[{id:"sleep",label:"Sleep & Recovery"}]:[])]} value={selectedSport!} onChange={id=>{setSelection({account,sport:id as SportId|"sleep"});void playCue("selection");}} onRegister={()=>{setSport(null);setRegister(true);}}>
       {selectedSport && selectedSport !== "sleep" ? (
         <FieldStage key={`${account}:${selectedSport}:${state.units}`} tabActive={tabActive}
           sportTitle={SPORTS.find(s=>s.id===selectedSport)?.name}
@@ -209,6 +206,8 @@ export function ArenaScreen({ tabActive = true }: { tabActive?: boolean }) {
           onLeave={()=>dispatch({type:sleep.renews?"schedule-leave":"resume-renewal",metric:"sleep"})}
           leaveLabel={sleep.renews?"Stop after this week":"Keep playing next week"}/>
       ) : <section className="focus-card focus-empty"><h2>Your next chapter starts here.</h2><p className="fb-copy">Register for an event to open your field.</p></section>}
+
+      </EventCarousel> : <section className="focus-card focus-empty"><h2>Your next chapter starts here.</h2><p className="fb-copy">Register for an event to open your field.</p><button type="button" className="fb-btn" onClick={()=>setRegister(true)}>Explore events</button></section>}
 
       <section className="focus-card focus-coming-soon">
         <p className="fb-kicker">Coming soon</p>
