@@ -2,9 +2,11 @@ import { useRouter } from "expo-router";
 import { Pressable, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useCompeteStore } from "../lib/compete-store";
-import { FocusHeading, FocusSegments, f } from "../ui/focus";
+import { FocusDisclosure, FocusHeading, FocusSegments, f } from "../ui/focus";
+import { AwardShelf } from "../ui/award-shelf";
 import {
   APP_TIMEZONE,
+  awardCards,
   formatVolume,
   formatEffort,
   sportById,
@@ -147,6 +149,11 @@ export function ProgressScreen() {
             Complete your first competition week to start your season history.
           </Text>
         )}
+        {awardCards(state).length > 0 ? (
+          <FocusDisclosure title="Past competitions & awards">
+            <AwardShelf cards={awardCards(state)} />
+          </FocusDisclosure>
+        ) : null}
       </ScrollView>
     </SafeAreaView>
   );

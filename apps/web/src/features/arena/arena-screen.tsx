@@ -12,13 +12,11 @@ import { FieldStage } from "@/features/field/components/field-stage";
 import { buildFieldModel } from "@/features/field/model";
 import { buildSplitBoard } from "@/features/split/model";
 import { loadCrewJoinOptions, seatCrewFieldPin } from "@/lib/crew-field";
-import { AwardShelf } from "@/features/you/award-shelf";
 import { WeekReveal } from "@/features/split/components/week-reveal";
 import { SleepPanel } from "@/features/health/sleep-panel";
 import { Sheet } from "@/ui/sheet";
 import {
   APP_TIMEZONE,
-  awardCards,
   competeNow,
   competePeriodWindow,
   primaryFreezePeriodStart,
@@ -290,17 +288,6 @@ export function ArenaScreen({ tabActive = true }: { tabActive?: boolean }) {
         ready={loadStatus === "ready" || loadStatus === "local"}
         onDismiss={(revealIds) => dispatch({ type: "acknowledge-reveal", revealIds })}
       />
-
-      {awardCards(state).length > 0 && (
-        <details className="focus-disclosure">
-          <summary>
-            Past competitions & awards <span>＋</span>
-          </summary>
-          <div className="focus-details-body">
-            <AwardShelf state={state} />
-          </div>
-        </details>
-      )}
 
       <Link href="/pace" className="focus-benchmark">
         <span aria-hidden="true">→</span>

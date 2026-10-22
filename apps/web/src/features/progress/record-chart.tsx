@@ -26,7 +26,6 @@ export function RecordChart({
   if (!chart) return null;
   return (
     <div className="record-chart">
-      <p className="record-chart-caption">Standing record · moving time</p>
       <svg
         viewBox={`0 0 ${chart.width} ${chart.height}`}
         role="group"
@@ -96,7 +95,7 @@ export function RecordChart({
           fill="#616c63"
           fontSize={10}
         >
-          Now · lower is faster
+          {date(now.toISOString())}
         </text>
       </svg>
     </div>

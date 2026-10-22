@@ -28,7 +28,6 @@ export function RecordChart({
   if (!chart) return null;
   return (
     <View style={{ marginVertical: 16 }}>
-      <Text style={f.small}>Standing record · moving time</Text>
       <Svg
         viewBox={`0 0 ${chart.width} ${chart.height}`}
         width="100%"
@@ -88,7 +87,7 @@ export function RecordChart({
           fill="#616c63"
           fontSize={10}
         >
-          Now · lower is faster
+          {date(now.toISOString())}
         </SvgText>
       </Svg>
     </View>

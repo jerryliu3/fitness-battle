@@ -41,7 +41,7 @@ type JourneyDay = {
 };
 
 type JourneyStop =
-  | { key: "today"; kind: "today"; lane: JourneyLane }
+  | { key: "today"; kind: "today"; lane: JourneyLane; day?: JourneyDay }
   | { key: "past" | "past-more"; kind: "past"; lane: JourneyLane }
   | { key: string; kind: "day"; lane: JourneyLane; day: JourneyDay }
   | { key: "start"; kind: "start"; lane: JourneyLane };
@@ -50,8 +50,9 @@ function buildJourneyStops(
   days: JourneyDay[],
   hasMorePast = false,
   allDays = days,
+  todayDay?: JourneyDay,
 ): JourneyStop[] {
-  if (days.length === 0) {
+  if (days.length === 0 && !todayDay) {
     // When no past sessions exist, wind cleanly: Today (r) -> Past (l) -> Start (c)
     // Guarantee no consecutive stops share a lane.
     return [
@@ -62,7 +63,7 @@ function buildJourneyStops(
   }
   const plan = planJourneyTrail(allDays);
   const stops: JourneyStop[] = [
-    { key: "today", kind: "today", lane: plan.today },
+    { key: "today", kind: "today", lane: plan.today, day: todayDay },
   ];
   days.forEach((day, i) => {
     stops.push({
@@ -94,43 +95,43 @@ function stopRowClass(stop: JourneyStop): string {
   return `focus-path-row${tone}`;
 }
 
+function formatDayHours(seconds: number): string {
+  const hours = seconds / 3600;
+  if (hours <= 0) return "0 hr";
+  const rounded = Math.round(hours * 10) / 10;
+  if (rounded >= 10) {
+    return `${Math.round(rounded)} hr`;
+  }
+  const display = rounded < 0.1 ? "0.1" : rounded.toFixed(1).replace(/\.0$/, "");
+  return `${display} hr`;
+}
+
 function JourneyDayStop({
   day,
-  units,
   stopRef,
   onOpen,
 }: {
   day: JourneyDay;
-  units: UnitSystem;
   stopRef: Ref<HTMLButtonElement>;
   onOpen: (day: JourneyDay) => void;
 }) {
   const primary = day.items[0]!;
-  const volume =
-    day.items.length > 1
-      ? `${day.items.length} sessions`
-      : formatVolume(
-          primary.sport,
-          primary.distanceM,
-          primary.movingSec,
-          units,
-        );
+  const totalMovingSec = day.items.reduce(
+    (acc, a) => acc + (a.movingSec || 0),
+    0,
+  );
+  const hoursLabel = formatDayHours(totalMovingSec);
   const dayDate = new Date(`${day.day}T12:00:00.000Z`);
-  const weekday = dayDate.toLocaleDateString("en-US", {
+  const dateWithWeekday = dayDate.toLocaleDateString("en-US", {
     weekday: "short",
-    timeZone: "UTC",
-  });
-  const monthDay = dayDate.toLocaleDateString("en-US", {
     month: "short",
     day: "numeric",
     timeZone: "UTC",
   });
-  const detail =
+  const sessionTitle =
     day.items.length > 1
-      ? `${day.items.length} sessions recorded`
-      : primary.disposition === "excluded" || isSampleActivity(primary)
-        ? `${primary.source} · sample (excluded)`
-        : `${primary.verified ? "Verified" : "Open"} · ${primary.disposition === "pending" ? "pending" : "counted"}`;
+      ? `${day.items.length} sessions`
+      : sportById(primary.sport).name;
 
   return (
     <>
@@ -140,8 +141,7 @@ function JourneyDayStop({
         aria-label={`Open sessions from ${day.day}`}
       >
         <i>✓</i>
-        <b>{volume}</b>
-        <small>{weekday}</small>
+        <b>{hoursLabel}</b>
       </button>
       <span
         role="button"
@@ -155,9 +155,8 @@ function JourneyDayStop({
         }}
         style={{ cursor: "pointer" }}
       >
-        <small>{monthDay}</small>
-        <b>{sportById(primary.sport).name}</b>
-        <em>{detail}</em>
+        <small>{dateWithWeekday}</small>
+        <b>{sessionTitle}</b>
       </span>
     </>
   );
@@ -245,17 +244,28 @@ export function TodayScreen() {
   // Days with activity (not empty calendar days). A new day with a workout
   // prepends one circle; earlier days keep the same lane.
   const journeyDays = groupActivitiesByDay(counted, 30);
-  const shownSessions = journeyDays.reduce((acc, d) => acc + d.items.length, 0);
+  const todayKey = dayKey(now, APP_TIMEZONE);
+  const todayDay = journeyDays.find((d) => d.day === todayKey);
+  const pastDays = journeyDays.filter((d) => d.day !== todayKey);
+  const allPastDays = groupActivitiesByDay(
+    counted.filter(
+      (a) => dayKey(new Date(a.startedAt), APP_TIMEZONE) !== todayKey,
+    ),
+    Infinity,
+  );
+  const shownSessions =
+    pastDays.reduce((acc, d) => acc + d.items.length, 0) +
+    (todayDay ? todayDay.items.length : 0);
   const hasMorePast = counted.length > shownSessions;
   const units = state.units;
-  const todayKey = dayKey(now, APP_TIMEZONE);
   const journeyStops = buildJourneyStops(
-    journeyDays,
+    pastDays,
     hasMorePast,
-    groupActivitiesByDay(counted, Infinity),
+    allPastDays,
+    todayDay,
   );
 
-  const todayStop = `today:${dayKey(now, APP_TIMEZONE)}`;
+  const todayStop = `today:${todayKey}`;
   const revealIdentity = JSON.stringify([todayStop, ...journeyDays.map((day) => day.id)]);
   useLayoutEffect(() => {
     if (!onHome) return;
@@ -520,6 +530,16 @@ export function TodayScreen() {
               {day.items.length}{" "}
               {day.items.length === 1 ? "Session" : "Sessions"}
             </h1>
+            {day.day === todayKey ? (
+              <AnimatedEmber
+                className="focus-expand-ember"
+                expression="happy"
+                action={reaction.action}
+                restartKey={reaction.key}
+                loop={false}
+                playing={reaction.key > 0}
+              />
+            ) : null}
             <div style={{ display: "flex", flexDirection: "column", gap: 12, marginTop: 16 }}>
               {day.items.map((a) => (
                 <div
@@ -893,52 +913,153 @@ export function TodayScreen() {
                 )
               ) : null}
               {stop.kind === "today" ? (
-                <>
-                  {peekStopKey === "today" ? (
-                    <SessionStopPeek
-                      kicker="Today"
-                      title={route.suggestion.title}
-                      onOpen={() => openSession("suggestion", "full")}
-                      onClose={closeSession}
-                      peekRef={peekRef}
-                    />
-                  ) : null}
-                  <button
-                    ref={setStopRef(index)}
-                    onClick={() => {
-                      react("hop");
-                      openSession("suggestion", "peek");
-                    }}
-                    aria-label="Ember: open today's session"
-                  >
-                    <AnimatedEmber
-                      expression="happy"
-                      action={reaction.action}
-                      restartKey={reaction.key}
-                      loop={false}
-                      playing={reaction.key > 0}
-                    />
-                  </button>
-                  <span
-                    role="button"
-                    tabIndex={0}
-                    onClick={() => {
-                      react("hop");
-                      openSession("suggestion", "peek");
-                    }}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter" || e.key === " ") {
-                        e.preventDefault();
+                stop.day ? (
+                  <>
+                    {peekStopKey === "today" && session.kind === "peek" && session.target !== "suggestion" ? (
+                      <SessionStopPeek
+                        kicker={
+                          "items" in session.target
+                            ? `${new Date(`${session.target.day}T12:00:00Z`).toLocaleDateString("en-US", {
+                                weekday: "short",
+                                month: "short",
+                                day: "numeric",
+                                timeZone: "UTC",
+                              })}`
+                            : sportById(session.target.sport).name
+                        }
+                        title={
+                          "items" in session.target
+                            ? session.target.items.length === 1
+                              ? `${sportById(session.target.items[0].sport).name} · ${formatVolume(
+                                  session.target.items[0].sport,
+                                  session.target.items[0].distanceM,
+                                  session.target.items[0].movingSec,
+                                  units,
+                                )}`
+                              : `${session.target.items.length} sessions recorded`
+                            : formatVolume(
+                                session.target.sport,
+                                session.target.distanceM,
+                                session.target.movingSec,
+                                units,
+                              )
+                        }
+                        onOpen={() => {
+                          if (session.kind === "peek" && session.target !== "suggestion") {
+                            openSession(session.target, "full");
+                          }
+                        }}
+                        onClose={closeSession}
+                        peekRef={peekRef}
+                      />
+                    ) : null}
+                    <button
+                      ref={setStopRef(index)}
+                      onClick={() => {
+                        react("hop");
+                        openSession(stop.day!, "peek");
+                      }}
+                      aria-label={`Open today's sessions from ${stop.day.day}`}
+                    >
+                      <AnimatedEmber
+                        expression="happy"
+                        action={reaction.action}
+                        restartKey={reaction.key}
+                        loop={false}
+                        playing={reaction.key > 0}
+                      />
+                      <i>✓</i>
+                      <b>
+                        {formatDayHours(
+                          stop.day.items.reduce(
+                            (acc, a) => acc + (a.movingSec || 0),
+                            0,
+                          ),
+                        )}
+                      </b>
+                    </button>
+                    <span
+                      role="button"
+                      tabIndex={0}
+                      onClick={() => {
+                        react("hop");
+                        openSession(stop.day!, "peek");
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" || e.key === " ") {
+                          e.preventDefault();
+                          react("hop");
+                          openSession(stop.day!, "peek");
+                        }
+                      }}
+                      style={{ cursor: "pointer" }}
+                    >
+                      <small>
+                        {new Date(`${stop.day.day}T12:00:00.000Z`).toLocaleDateString(
+                          "en-US",
+                          {
+                            weekday: "short",
+                            month: "short",
+                            day: "numeric",
+                            timeZone: "UTC",
+                          },
+                        )}
+                      </small>
+                      <b>
+                        {stop.day.items.length > 1
+                          ? `${stop.day.items.length} sessions`
+                          : sportById(stop.day.items[0].sport).name}
+                      </b>
+                    </span>
+                  </>
+                ) : (
+                  <>
+                    {peekStopKey === "today" ? (
+                      <SessionStopPeek
+                        kicker="Today"
+                        title={route.suggestion.title}
+                        onOpen={() => openSession("suggestion", "full")}
+                        onClose={closeSession}
+                        peekRef={peekRef}
+                      />
+                    ) : null}
+                    <button
+                      ref={setStopRef(index)}
+                      onClick={() => {
                         react("hop");
                         openSession("suggestion", "peek");
-                      }
-                    }}
-                    style={{ cursor: "pointer" }}
-                  >
-                    <small>Today</small>
-                    <b>See today&apos;s session</b>
-                  </span>
-                </>
+                      }}
+                      aria-label="Ember: open today's session"
+                    >
+                      <AnimatedEmber
+                        expression="happy"
+                        action={reaction.action}
+                        restartKey={reaction.key}
+                        loop={false}
+                        playing={reaction.key > 0}
+                      />
+                    </button>
+                    <span
+                      role="button"
+                      tabIndex={0}
+                      onClick={() => {
+                        react("hop");
+                        openSession("suggestion", "peek");
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" || e.key === " ") {
+                          e.preventDefault();
+                          react("hop");
+                          openSession("suggestion", "peek");
+                        }
+                      }}
+                      style={{ cursor: "pointer" }}
+                    >
+                      <small>Today</small>
+                      <b>See today&apos;s session</b>
+                    </span>
+                  </>
+                )
               ) : null}
               {stop.kind === "day" ? (
                 <>
@@ -979,7 +1100,6 @@ export function TodayScreen() {
                   ) : null}
                   <JourneyDayStop
                     day={stop.day}
-                    units={units}
                     stopRef={setStopRef(index)}
                     onOpen={(day) => openSession(day, "peek")}
                   />

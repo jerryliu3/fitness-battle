@@ -130,7 +130,6 @@ export function TrainingHistory({ state }: { state: CompeteState }) {
           <strong className="record-time">
             {formatClockTime(latest.seconds)}
           </strong>
-          <p className="fb-copy">Whole-session moving time</p>
           <RecordChart rows={rows} selected={inspected.activityId} now={now} onSelect={setReceipt} />
           <div
             className="record-distance-tabs"

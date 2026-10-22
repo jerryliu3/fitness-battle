@@ -134,7 +134,6 @@ export function TrainingHistory({ state }: { state: CompeteState }) {
             {active.label} · {active.sport}
           </Text>
           <Text style={f.massive}>{formatClockTime(latest.seconds)}</Text>
-          <Text style={f.small}>Whole-session moving time</Text>
           <RecordChart rows={rows} selected={inspected.activityId} now={now} onSelect={setReceipt} />
           <ScrollView horizontal showsHorizontalScrollIndicator={false}>
             <View style={f.row}>
