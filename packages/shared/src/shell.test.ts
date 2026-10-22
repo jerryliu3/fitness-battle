@@ -28,10 +28,10 @@ describe("phone shell", () => {
     expect(shellTabById("board")).toBeNull();
   });
 
-  it("keeps the Open Field ink, gold, paper, and Star Ember tokens", () => {
-    expect(SHELL_COLORS.plum).toBe("#282f2c");
-    expect(SHELL_COLORS.tennis).toBe("#f1c75b");
-    expect(SHELL_COLORS.paper).toBe("#fafaf7");
-    expect(SHELL_COLORS.starEmber).toBe("#f1c75b");
+  it("keeps the Everyday Club navy, yellow, canvas, and Ember tokens", () => {
+    expect(SHELL_COLORS.plum).toBe("#142b3b");
+    expect(SHELL_COLORS.tennis).toBe("#f7c948");
+    expect(SHELL_COLORS.paper).toBe("#f8f9f6");
+    expect(SHELL_COLORS.starEmber).toBe("#f7c948");
   });
 });
