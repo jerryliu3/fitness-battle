@@ -201,7 +201,7 @@ export function TrainingAtlas({ state }: { state: CompeteState }) {
                 ))}
                 <View
                   style={{
-                    width: 12,
+                    width: "42%",
                     height: b.movingSec
                       ? Math.max(2, (b.movingSec / max) * 118)
                       : 0,

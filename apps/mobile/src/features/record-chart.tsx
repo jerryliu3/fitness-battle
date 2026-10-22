@@ -74,7 +74,8 @@ export function RecordChart({
           </G>
         ))}
         <SvgText
-          x={chart.left}
+          x={chart.points.length===1?(chart.left+chart.right)/2:chart.left}
+          textAnchor={chart.points.length===1?"middle":"start"}
           y={chart.height - 8}
           fill={clubColors.muted}
           fontSize={10}
@@ -88,7 +89,7 @@ export function RecordChart({
           fill={clubColors.muted}
           fontSize={10}
         >
-          {date(now.toISOString())}
+          {chart.points.length>1?date(chart.end):""}
         </SvgText>
       </Svg>
     </View>

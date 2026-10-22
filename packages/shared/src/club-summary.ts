@@ -198,3 +198,9 @@ export function clubSessionMetrics(
       : []),
   ];
 }
+
+/** Available lifetime activity only; future sessions are never completed effort. */
+export function clubLifetimeTotals(state:CompeteState,now=competeNow(state)) {
+ const counted=state.activities.filter(a=>countsOnTrack(a,"open")&&Number.isFinite(Date.parse(a.startedAt))&&Date.parse(a.startedAt)<=now.getTime());
+ return {meters:counted.reduce((n,a)=>n+Math.max(0,a.distanceM),0),sessions:counted.length,weeks:state.periodResults.filter(r=>r.sport===state.primary&&r.track==="open"&&Date.parse(r.periodEnd)<=now.getTime()).length};
+}

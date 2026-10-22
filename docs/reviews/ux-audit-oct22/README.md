@@ -24,3 +24,14 @@ Scope: the complete Everyday Club stack through #275, web and actual iPhone 17 P
 - Progress, Crew, sync recap, secondary destinations and second sweep: recorded in subsequent stack entries below.
 
 Field evidence: [native perspective](ios-field.jpg), [native direct swipe](ios-lane-swipe.jpg).
+
+## Progress pass
+
+- Fixed chart columns proportionally on web and native. Actual web layout measured 33.3px bars in 85.3px columns, rather than fixed 12px bars. Desktop chart height grows with available space.
+- Personal records connect only real improving achievements, end at the last actual date, and show one centered point for a single record. Slower/future attempts are not chart milestones. Web inspected the Sep 23 single record without an Oct 22 extension; native 5K/10K switching retained the correct Sep 23 / Oct 13 milestones.
+- Found another inconsistency: native lifetime totals showed 21 sessions while achievements correctly showed 18 because lifetime totals included future sessions. Both platforms now use one shared available-lifetime summary, excluding future/excluded activity.
+- Native: Week → Month → Year → Week, Previous week (Oct 12–18), future Nov/Dec disabled, achievement list → detail → Close, 5K → 10K, and Effort score: exercised. Closing achievements retained the selected prior week.
+- Web: previous-week dates/totals, single-record geometry, proportion measurement and screenshot: exercised.
+- Focused PR chart/model checks pass; full suites/typecheck/build intentionally skipped.
+
+Screens: [native Progress](ios-progress.jpg), [web Progress](web-progress.jpg).

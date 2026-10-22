@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { freshState } from "./compete/engine";
-import { clubDuration, clubWeekSummary } from "./club-summary";
+import { clubLifetimeTotals, clubDuration, clubWeekSummary } from "./club-summary";
 import type { Activity } from "./compete/sports";
 const now = new Date("2026-11-02T16:00:00Z");
 const activity = (
@@ -106,4 +106,9 @@ it("uses athlete units for pace and avoids made-up pace for zero distance or mul
     ),
   ).toBe(false);
   expect(clubSessionMetrics([run, run], "us")).toEqual([]);
+});
+
+it("keeps lifetime totals consistent with completed achievement sessions",()=>{
+ const state={...freshState(now),activities:[activity("real","2026-11-01T12:00:00Z",{disposition:"counted"}),activity("future","2026-11-03T12:00:00Z",{disposition:"counted"}),activity("excluded","2026-11-01T12:00:00Z",{disposition:"excluded"})]};
+ expect(clubLifetimeTotals(state,now).sessions).toBe(1);expect(clubLifetimeTotals(state,now).meters).toBe(5000);
 });

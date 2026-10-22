@@ -85,7 +85,7 @@ export function RecordChart({
             />
           </g>
         ))}
-        <text x={chart.left} y={chart.height - 8} fill="#616c63" fontSize={10}>
+        <text x={chart.points.length===1?(chart.left+chart.right)/2:chart.left} textAnchor={chart.points.length===1?"middle":"start"} y={chart.height - 8} fill="#616c63" fontSize={10}>
           {date(chart.start)}
         </text>
         <text
@@ -95,7 +95,7 @@ export function RecordChart({
           fill="#616c63"
           fontSize={10}
         >
-          {date(now.toISOString())}
+          {chart.points.length>1?date(chart.end):""}
         </text>
       </svg>
     </div>
