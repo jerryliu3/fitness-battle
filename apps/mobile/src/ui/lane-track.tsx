@@ -62,7 +62,7 @@ export function LaneTrack({
   const prefix = useId();
   const [exploring, setExploring] = useState(false);
   const [width, setWidth] = useState(340);
-  const wakeTime = usePolishedWakeTime(active);
+  const wakeTime = usePolishedWakeTime(active && exploring);
   const scroll = useRef<ScrollView>(null);
   const animating = Boolean(overtakeFrame && overtakeFrame.phase !== "done");
   const me = lanes.find((l) => l.you);

@@ -71,6 +71,12 @@ export function fieldCourse(viewportWidth: number, height: number, count: number
 }
 export type FieldCourse = ReturnType<typeof fieldCourse>;
 /** Integer labels, bounded scenery; no work proportional to lifetime distance. */
+/** At most five readable ruler marks; spacing grows with the visible range. */
+export function fieldScaleMarks(min:number,max:number) {
+  const raw=Math.max(1,(max-Math.max(0,min))/4),power=10**Math.floor(Math.log10(raw));
+  const step=[1,2,2.5,5,10].map(v=>v*power).find(v=>v>=raw)??10*power;
+  return fieldMarks(min,max,step,4);
+}
 export function fieldMarks(min: number, max: number, step = 1, cap = 60) {
   const stride = Math.max(step, Math.ceil((max - min) / cap / step) * step);
   const first = Math.max(0, Math.ceil(min / stride) * stride);
@@ -173,7 +179,7 @@ export function fieldCourseScene(g: FieldCourse, appearance: FieldAppearance, la
     if (to <= from) continue;
     const clearance = g.oval ? fieldLoopLength(unit) * .08 : 104 * g.markerScale / g.length * g.bounds.span;
     const half = g.oval ? 7 * g.markerScale : Math.min(g.laneWidth * .34, 30 * z);
-    const color = l.you ? "#f1c75b" : "#819486";
+    const color = l.you ? "#f7c948" : "#3f817c";
     // Short gradient segments follow winding/oval courses without a straight-axis wash.
     // Alpha is continuous at segment boundaries; the existing mask keeps heads clear.
     const segments: FieldNode[] = [];
@@ -188,8 +194,10 @@ export function fieldCourseScene(g: FieldCourse, appearance: FieldAppearance, la
       const values = Array.from({ length: g.oval ? 5 : 81 }, (_, k) => a + (b - a) * k / ((g.oval ? 5 : 81) - 1));
       const ribbon = `M${values.map(d => side(d, -1)).join("L")}L${[...values].reverse().map(d => side(d, 1)).join("L")}Z`;
       const start = g.point(a, i), end = g.point(b, i), id = `${prefix}-progress-${i}-${j}`;
-      const alpha = (fraction: number) => .23 * (1 - fraction);
-      segments.push(n("defs", {}, [n("linearGradient", { id, gradientUnits: "userSpaceOnUse", x1: g.oval ? start.x : 0, y1: start.y, x2: g.oval ? end.x : 0, y2: end.y }, [n("stop", { offset: 0, stopColor: color, stopOpacity: alpha(j / count) }), n("stop", { offset: 1, stopColor: color, stopOpacity: alpha((j + 1) / count) })])]), path(ribbon, `url(#${id})`));
+      const fadeDistance=unit==="pts"?20:1.5;
+      const alpha = (value:number)=>.9*Math.max(0,Math.min(1,(l.value-value)/fadeDistance));
+      const stops=[n("stop",{offset:0,stopColor:color,stopOpacity:alpha(a)}),...(l.value-fadeDistance>a&&l.value-fadeDistance<b?[n("stop",{offset:(l.value-fadeDistance-a)/(b-a),stopColor:color,stopOpacity:.9})]:[]),n("stop",{offset:1,stopColor:color,stopOpacity:alpha(b)})];
+      segments.push(n("defs", {}, [n("linearGradient", { id, gradientUnits: "userSpaceOnUse", x1: g.oval ? start.x : 0, y1: start.y, x2: g.oval ? end.x : 0, y2: end.y }, stops)]), path(ribbon, `url(#${id})`));
     }
     traces.push(n("g", { pointerEvents: "none" }, segments));
   }
@@ -201,5 +209,5 @@ export function fieldCourseScene(g: FieldCourse, appearance: FieldAppearance, la
 /** Separate overlay keeps the one scale visible when swiping a crowded field. */
 export function fieldScaleScene(g: FieldCourse, unit: string): FieldNode[] {
   if (g.oval) return [];
-  return [rect(0, 0, 42, g.height, "#f6f7f2"), text(9, 36, unit, "#616c63", 11), ...fieldMarks(g.bounds.min, g.bounds.max).map(d => text(9, g.along(d) + 3, String(d), "#616c63", 11))];
+  return [rect(0, 0, 42, g.height, "#f6f7f2"), text(9, 36, unit, "#616c63", 11), ...fieldScaleMarks(g.bounds.min, g.bounds.max).map(d => text(9, g.along(d) + 3, String(d), "#616c63", 11))];
 }

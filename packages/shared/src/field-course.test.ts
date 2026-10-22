@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { defaultFieldAppearance, fieldAppearanceKey, fieldGrounds, readFieldAppearance } from "./field-appearance";
-import { fieldCourse, fieldCourseScene, fieldLap, fieldMarks, fieldScaleScene, fieldOverview, overviewTarget, clampCourseCenter, type FieldNode } from "./field-course";
+import { fieldScaleMarks, fieldCourse, fieldCourseScene, fieldLap, fieldMarks, fieldScaleScene, fieldOverview, overviewTarget, clampCourseCenter, type FieldNode } from "./field-course";
 
 const lanes = [{ id: "a", name: "A", initials: "A", value: 12 }, { id: "me", name: "Me", initials: "ME", value: 19.2, you: true }];
 const flatten = (nodes: FieldNode[]): FieldNode[] => nodes.flatMap(n => [n, ...flatten(n.children ?? [])]);
@@ -66,7 +66,7 @@ describe("production course contract", () => {
       expect(nodes.filter(n => n.tag === "mask")).toHaveLength(1);
       const stops = nodes.filter(n => n.tag === "stop");
       expect(stops.some(n => n.attrs.stopOpacity === 0)).toBe(true);
-      expect(stops.every(n => Number(n.attrs.stopOpacity) <= .23)).toBe(true);
+      expect(stops.every(n => Number(n.attrs.stopOpacity) <= .9)).toBe(true);
       expect(nodes.length).toBeLessThan(1500);
     }
   });
@@ -76,8 +76,14 @@ it("fades earned distance toward the athlete and darkens back toward the start",
  const g=fieldCourse(390,540,1,{center:2,span:6},"km",defaultFieldAppearance);
  const nodes=flatten(fieldCourseScene(g,defaultFieldAppearance,[{id:"me",name:"Me",initials:"ME",value:2,you:true}],"km","fade"));
  const gradient=nodes.find(n=>n.tag==="linearGradient"&&String(n.attrs.id).includes("-progress-"))!;
- expect(gradient.children?.[0].attrs.stopOpacity).toBe(.23);
- expect(gradient.children?.[1].attrs.stopOpacity).toBe(0);
+ expect(gradient.children?.[0].attrs.stopOpacity).toBe(.9);
+ expect(gradient.children?.at(-1)?.attrs.stopOpacity).toBe(0);
 });
 
 it("uses whole-unit ruler marks even at close chase scales",()=>{for(const unit of ["km","mi"]){const g=fieldCourse(390,540,4,{center:18.2,span:1.2},unit,defaultFieldAppearance);const labels=fieldScaleScene(g,unit).filter(n=>n.tag==="text").slice(1);expect(labels.length).toBeGreaterThan(0);expect(labels.every(n=>Number.isInteger(Number(n.text)))).toBe(true);}});
+
+it("bounds the ruler to five marks across chase and very wide windows",()=>{
+ for(const [min,max] of [[0,40],[12,52],[0,500],[1,3],[18,18.8]]){
+  const marks=fieldScaleMarks(min!,max!);expect(marks.length).toBeLessThanOrEqual(5);expect(marks.every(v=>v>=Math.max(0,min!)&&v<=max!)).toBe(true);
+ }
+});

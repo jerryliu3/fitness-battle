@@ -1,5 +1,5 @@
 "use client";
-import { useId, useState } from "react";
+import { useId, useMemo, useRef, useState } from "react";
 import {
   portraitField,
   portraitFieldGap,
@@ -22,15 +22,21 @@ export function PortraitField({
   onZoom: (span: number) => void;
   onSelect: (id: string) => void;
 }) {
-  const [focusId, setFocusId] = useState<string>();
+  const [laneOffset, setLaneOffset] = useState(0);
   const prefix = useId().replace(/:/g, "");
-  const scene = portraitField(lanes, view, focusId);
-  const shift = (direction: number) =>
-    setFocusId(
-      scene.ordered[
-        Math.max(0, Math.min(scene.ordered.length - 1, scene.focus + direction))
-      ]?.id,
+  const scene = portraitField(lanes, view, undefined, laneOffset,prefix);
+  const shift = (d: number) =>
+    setLaneOffset(
+      Math.max(0, Math.min(scene.ordered.length - 1, scene.focus + d)) -
+        scene.baseFocus,
     );
+  const drag = useRef<{
+    x: number;
+    y: number;
+    focus: number;
+    moved: boolean;
+  } | null>(null);
+  const moved = useRef(false);
   return (
     <div className="club-perspective-board">
       <img
@@ -43,6 +49,52 @@ export function PortraitField({
         viewBox="0 0 420 600"
         aria-label="Fixed perspective competition field"
         role="group"
+        onPointerDown={(e) => {
+          if (e.button !== 0) return;
+          drag.current = {
+            x: e.clientX,
+            y: e.clientY,
+            focus: scene.focus,
+            moved: false,
+          };
+          moved.current = false;
+        }}
+        onPointerMove={(e) => {
+          const d = drag.current;
+          if (!d) return;
+          const dx = e.clientX - d.x,
+            dy = e.clientY - d.y;
+          if (
+            !d.moved &&
+            Math.abs(dx) > 8 &&
+            Math.abs(dx) > Math.abs(dy) * 1.3
+          ) {
+            d.moved = true;
+            e.currentTarget.setPointerCapture(e.pointerId);
+          }
+          if (d.moved) {
+            moved.current = true;
+            setLaneOffset(
+              Math.max(
+                0,
+                Math.min(scene.ordered.length - 1, d.focus - dx / 110),
+              ) - scene.baseFocus,
+            );
+          }
+        }}
+        onPointerUp={() => {
+          drag.current = null;
+        }}
+        onPointerCancel={() => {
+          drag.current = null;
+        }}
+        onClickCapture={(e) => {
+          if (moved.current) {
+            e.preventDefault();
+            e.stopPropagation();
+            moved.current = false;
+          }
+        }}
       >
         <defs>
           <linearGradient id={`${prefix}-shade`} x1="0" y1="0" x2="0" y2="1">
@@ -52,6 +104,38 @@ export function PortraitField({
         </defs>
         <rect y={80} width={420} height={520} fill={`url(#${prefix}-shade)`} />
         {scene.ground.map(drawFieldNode)}
+        <defs>
+          <linearGradient id={`${prefix}-horizon`} x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#b4d3cd" stopOpacity={0} />
+            <stop offset="55%" stopColor="#b4d3cd" stopOpacity={0.2} />
+            <stop offset="100%" stopColor="#b4d3cd" stopOpacity={0} />
+          </linearGradient>
+        </defs>
+        <rect
+          y={126}
+          width={420}
+          height={110}
+          fill={`url(#${prefix}-horizon)`}
+        />
+        {scene.markers.map((m) => (
+          <g key={`trail-${m.id}`} pointerEvents="none">
+            <path
+              d={m.trail}
+              stroke={m.color}
+              strokeWidth={12}
+              opacity={0.12}
+              fill="none"
+            />
+            <path
+              d={m.trail}
+              stroke={m.color}
+              strokeWidth={5}
+              opacity={m.ghost ? 0.4 : 0.8}
+              strokeDasharray={m.ghost ? "5 6" : undefined}
+              fill="none"
+            />
+          </g>
+        ))}
         {scene.markers
           .filter((m) => m.x > 28 && m.x < 392)
           .sort((a, b) => a.y - b.y)
@@ -72,7 +156,22 @@ export function PortraitField({
                   }
                 }}
               >
-                <ellipse cy={19} rx={23} ry={7} fill="#071f27" opacity={0.5} />
+                <ellipse
+                  cy={27}
+                  rx={24}
+                  ry={10}
+                  fill={m.color}
+                  opacity={0.16}
+                />
+                <ellipse
+                  cy={27}
+                  rx={16}
+                  ry={6}
+                  fill="#143c43"
+                  stroke={m.color}
+                  strokeWidth={2.5}
+                />
+                <ellipse cy={27} rx={5} ry={2} fill={m.color} />
                 <path
                   d="M-9 12 L0 27 L9 12"
                   fill={m.you ? "#f7c948" : "#f8f9f6"}
@@ -151,7 +250,7 @@ export function PortraitField({
                   fontSize={12}
                   fontWeight={700}
                 >
-                  {m.you ? "You" : m.name.split(" ")[0]}
+                  {m.ghost ? "Past you" : m.you ? "You" : m.name.split(" ")[0]}
                 </text>
                 {!m.you ? (
                   <text y={61} textAnchor="middle" fill="#e5eee5" fontSize={11}>
@@ -198,18 +297,18 @@ export function PortraitField({
           <button
             type="button"
             aria-label="Previous lane"
-            disabled={scene.focus === 0}
+            disabled={scene.focus <= 0}
             onClick={() => shift(-1)}
           >
             ←
           </button>
-          <button type="button" onClick={() => setFocusId(undefined)}>
+          <button type="button" onClick={() => setLaneOffset(0)}>
             Your lane
           </button>
           <button
             type="button"
             aria-label="Next lane"
-            disabled={scene.focus === scene.ordered.length - 1}
+            disabled={scene.focus >= scene.ordered.length - 1}
             onClick={() => shift(1)}
           >
             →

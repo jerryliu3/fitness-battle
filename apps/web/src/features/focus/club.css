@@ -1131,3 +1131,5 @@
 
 .focus-track-frame{position:relative}.club-map-status{position:absolute;top:14px;left:14px;right:14px;z-index:3;display:flex;justify-content:space-between;gap:8px;pointer-events:none;background:#102e38ed;color:white;border-radius:12px;padding:12px;font-size:11px}
 .focus-track-frame>.focus-zoom-slider{position:absolute;bottom:18px;left:24px;right:24px;z-index:3;border-radius:28px;padding:8px 16px!important;background:#f8f9f6ee;box-shadow:0 4px 20px #103e4620}.focus-track-frame>.focus-ground-button{margin-bottom:8px}.focus-track-frame:has(>.focus-ground-button)>.club-map-status{top:56px}
+
+.club-perspective-svg{touch-action:pan-y;cursor:grab}.club-perspective-svg:active{cursor:grabbing}

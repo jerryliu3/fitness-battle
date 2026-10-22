@@ -24,7 +24,7 @@ import {
 } from "@fitness-battle/shared";
 import { usePathname } from "expo-router";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Pressable, Switch, Text, View } from "react-native";
+import { Pressable, Text, View } from "react-native";
 import Svg from "react-native-svg";
 import { useCompeteStore } from "../lib/compete-store";
 import { playCue } from "../lib/haptics";
@@ -55,7 +55,7 @@ export function CompetitionField({
   const [mode, setMode] = useState<"lanes" | "standings">("lanes");
   const [center, setCenter] = useState<number | null>(null);
   const [span, setSpan] = useState<number | null>(null);
-  const [ghost, setGhost] = useState(true);
+  const ghost = true;
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [overtakePlan, setOvertakePlan] = useState<ArenaOvertakePlan | null>(
     null,
@@ -291,9 +291,10 @@ export function CompetitionField({
 
       {dimension === "3d" && mode === "lanes" && isFocused ? (
         <PortraitField
-          lanes={fieldLanes.map((l) => ({
+          lanes={arena.lanes.map((l) => ({
             ...l,
-            value: overtakeFrame?.laneValues[l.id] ?? l.value,
+            initials: initialsFromName(l.name),
+            value: overtakeFrame?.laneValues[l.id] ?? l.values[2],
           }))}
           view={view}
           unit={arena.unit}
@@ -399,9 +400,10 @@ export function CompetitionField({
           </View>
         </View>
         <FieldOverview
-          lanes={fieldLanes.map((l) => ({
+          lanes={arena.lanes.map((l) => ({
             ...l,
-            value: overtakeFrame?.laneValues[l.id] ?? l.value,
+            initials: initialsFromName(l.name),
+            value: overtakeFrame?.laneValues[l.id] ?? l.values[2],
           }))}
           view={view}
           unit={arena.unit}
@@ -448,23 +450,7 @@ export function CompetitionField({
             </Pressable>
           ))}
         </View>
-      ) : (
-        <>
-          {pastYou ? (
-            <View style={f.row}>
-              <Text style={f.copy}>Past you</Text>
-              <Switch
-                value={ghost}
-                accessibilityLabel={`Show past you in ${arena.sportName}`}
-                onValueChange={(next) => {
-                  setGhost(next);
-                  if (!next && selected?.ghost) setSelectedId(null);
-                }}
-              />
-            </View>
-          ) : null}
-        </>
-      )}
+      ) : null}
       <Text style={f.small}>
         Accumulated effort, not live GPS positions. Practice fields may contain
         synthetic athletes.

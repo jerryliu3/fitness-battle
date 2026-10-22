@@ -1,5 +1,12 @@
-import { useId, useState } from "react";
-import { Image, Pressable, StyleSheet, Text, View } from "react-native";
+import { useEffect, useId, useRef, useState } from "react";
+import {
+  Image,
+  ScrollView,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 import Svg, {
   ClipPath,
   Defs,
@@ -33,144 +40,252 @@ export function PortraitField({
   onZoom: (span: number) => void;
   onSelect: (id: string) => void;
 }) {
-  const [focusId, setFocusId] = useState<string>();
+  const [laneOffset, setLaneOffset] = useState(0);
   const prefix = useId().replace(/:/g, "");
-  const scene = portraitField(lanes, view, focusId);
-  const shift = (d: number) =>
-    setFocusId(
-      scene.ordered[
-        Math.max(0, Math.min(scene.ordered.length - 1, scene.focus + d))
-      ]?.id,
+  const scene = portraitField(lanes, view, undefined, laneOffset, prefix);
+  const [width, setWidth] = useState(340);
+  const scroll = useRef<ScrollView>(null);
+  const moveTo = (offset: number) => {
+    const focus = Math.max(
+      0,
+      Math.min(scene.ordered.length - 1, scene.baseFocus + offset),
     );
+    setLaneOffset(focus - scene.baseFocus);
+    scroll.current?.scrollTo({ x: focus * 110, animated: true });
+  };
+  const shift = (d: number) => moveTo(laneOffset + d);
+  useEffect(() => {
+    setLaneOffset(0);
+    scroll.current?.scrollTo({ x: scene.baseFocus * 110, animated: false });
+  }, [width, scene.baseFocus, scene.ordered.length]);
   return (
-    <View style={s.board}>
+    <View
+      style={s.board}
+      onLayout={(e) => {
+        if (e.nativeEvent.layout.width > 0)
+          setWidth(e.nativeEvent.layout.width);
+      }}
+    >
       <Image source={alpineTrail} style={s.scenery} />
-      <Svg
-        width="100%"
-        height="100%"
-        viewBox="0 0 420 600"
-        preserveAspectRatio="none"
-        accessibilityLabel="Fixed perspective competition field"
+      <ScrollView
+        ref={scroll}
+        horizontal
+        nestedScrollEnabled
+        directionalLockEnabled
+        bounces={false}
+        showsHorizontalScrollIndicator={false}
+        scrollEventThrottle={16}
+        style={StyleSheet.absoluteFill}
+        onScroll={(e) =>
+          setLaneOffset(e.nativeEvent.contentOffset.x / 110 - scene.baseFocus)
+        }
       >
-        <Defs>
-          <LinearGradient id={`${prefix}-shade`} x1="0" y1="0" x2="0" y2="1">
-            <Stop offset="0%" stopColor="#0b3038" stopOpacity={0} />
-            <Stop offset="100%" stopColor="#0b3038" />
-          </LinearGradient>
-        </Defs>
-        <Rect y={80} width={420} height={520} fill={`url(#${prefix}-shade)`} />
-        {scene.ground.map(drawFieldNode)}
-        {scene.markers
-          .filter((m) => m.x > 28 && m.x < 392)
-          .sort((a, b) => a.y - b.y)
-          .map((m, i) => {
-            const id = `${prefix}-portrait-${i}`;
-            return (
-              <G
-                key={m.id}
-                transform={`translate(${m.x} ${m.y}) scale(${m.scale})`}
-                onPress={() => onSelect(m.id)}
-                accessible
-                accessibilityRole="button"
-                accessibilityLabel={`${m.name}${m.you ? ", you" : ""}, ${m.gap.toFixed(1)} ${unit}${m.outside ? ", outside visible distance range" : ""}`}
+        <View
+          style={{
+            width: width + Math.max(0, scene.ordered.length - 1) * 110,
+            height: 560,
+          }}
+        >
+          <Svg
+            style={{
+              position: "absolute",
+              left: (scene.baseFocus + laneOffset) * 110,
+            }}
+            width={width}
+            height="100%"
+            viewBox="0 0 420 600"
+            preserveAspectRatio="none"
+            accessibilityLabel="Fixed perspective competition field"
+          >
+            <Defs>
+              <LinearGradient
+                id={`${prefix}-shade`}
+                x1="0"
+                y1="0"
+                x2="0"
+                y2="1"
               >
-                <Ellipse cy={19} rx={23} ry={7} fill="#071f27" opacity={0.5} />
+                <Stop offset="0%" stopColor="#0b3038" stopOpacity={0} />
+                <Stop offset="100%" stopColor="#0b3038" />
+              </LinearGradient>
+            </Defs>
+            <Rect
+              y={80}
+              width={420}
+              height={520}
+              fill={`url(#${prefix}-shade)`}
+            />
+            {scene.ground.map(drawFieldNode)}
+            <Defs>
+              <LinearGradient
+                id={`${prefix}-horizon`}
+                x1="0"
+                y1="0"
+                x2="0"
+                y2="1"
+              >
+                <Stop offset="0%" stopColor="#b4d3cd" stopOpacity={0} />
+                <Stop offset="55%" stopColor="#b4d3cd" stopOpacity={0.2} />
+                <Stop offset="100%" stopColor="#b4d3cd" stopOpacity={0} />
+              </LinearGradient>
+            </Defs>
+            <Rect
+              y={126}
+              width={420}
+              height={110}
+              fill={`url(#${prefix}-horizon)`}
+            />
+            {scene.markers.map((m) => (
+              <G key={`trail-${m.id}`} pointerEvents="none">
                 <Path
-                  d="M-9 12 L0 27 L9 12"
-                  fill={m.you ? "#f7c948" : "#f8f9f6"}
+                  d={m.trail}
+                  stroke={m.color}
+                  strokeWidth={12}
+                  opacity={0.12}
+                  fill="none"
                 />
-                <Rect
-                  x={-23}
-                  y={-43}
-                  width={46}
-                  height={58}
-                  rx={12}
-                  fill="#f8f9f6"
-                  stroke={m.you ? "#f7c948" : "#b3c9c5"}
-                  strokeWidth={m.you ? 3 : 1.5}
+                <Path
+                  d={m.trail}
+                  stroke={m.color}
+                  strokeWidth={5}
+                  opacity={m.ghost ? 0.4 : 0.8}
+                  strokeDasharray={m.ghost ? "5 6" : undefined}
+                  fill="none"
                 />
-                <Defs>
-                  <ClipPath id={id}>
-                    <Rect x={-19} y={-39} width={38} height={50} rx={9} />
-                  </ClipPath>
-                </Defs>
-                {m.avatarUrl ? (
-                  <SvgImage
-                    href={{ uri: m.avatarUrl }}
-                    x={-19}
-                    y={-39}
-                    width={38}
-                    height={50}
-                    preserveAspectRatio="xMidYMid slice"
-                    clipPath={`url(#${id})`}
-                  />
-                ) : (
-                  <>
-                    <Rect
-                      x={-19}
-                      y={-39}
-                      width={38}
-                      height={50}
-                      rx={9}
-                      fill={m.you ? "#f7c948" : "#d8e5df"}
-                    />
-                    <SvgText
-                      y={-8}
-                      textAnchor="middle"
-                      fill="#142b3b"
-                      fontWeight="700"
-                      fontSize={15}
-                    >
-                      {m.initials}
-                    </SvgText>
-                  </>
-                )}
-                {m.you ? (
-                  <>
-                    <Rect
-                      x={-22}
-                      y={-66}
-                      width={44}
-                      height={18}
-                      rx={9}
-                      fill="#f7c948"
-                    />
-                    <SvgText
-                      y={-53}
-                      textAnchor="middle"
-                      fill="#142b3b"
-                      fontSize={11}
-                      fontWeight="800"
-                    >
-                      YOU
-                    </SvgText>
-                  </>
-                ) : null}
-                <SvgText
-                  y={45}
-                  textAnchor="middle"
-                  fill="white"
-                  fontSize={12}
-                  fontWeight="700"
-                >
-                  {m.you ? "You" : m.name.split(" ")[0]}
-                </SvgText>
-                {!m.you ? (
-                  <SvgText
-                    y={61}
-                    textAnchor="middle"
-                    fill="#e5eee5"
-                    fontSize={11}
-                  >
-                    {m.outside ? `${m.direction} ` : ""}
-                    {m.gap > 0 ? "+" : ""}
-                    {m.gap.toFixed(unit === "pts" ? 0 : 2)} {unit}
-                  </SvgText>
-                ) : null}
               </G>
-            );
-          })}
-      </Svg>
+            ))}
+            {scene.markers
+              .filter((m) => m.x > 28 && m.x < 392)
+              .sort((a, b) => a.y - b.y)
+              .map((m, i) => {
+                const id = `${prefix}-portrait-${i}`;
+                return (
+                  <G
+                    key={m.id}
+                    transform={`translate(${m.x} ${m.y}) scale(${m.scale})`}
+                    onPress={() => onSelect(m.id)}
+                    accessible
+                    accessibilityRole="button"
+                    accessibilityLabel={`${m.name}${m.you ? ", you" : ""}, ${m.gap.toFixed(1)} ${unit}${m.outside ? ", outside visible distance range" : ""}`}
+                  >
+                    <Ellipse
+                      cy={27}
+                      rx={24}
+                      ry={10}
+                      fill={m.color}
+                      opacity={0.16}
+                    />
+                    <Ellipse
+                      cy={27}
+                      rx={16}
+                      ry={6}
+                      fill="#143c43"
+                      stroke={m.color}
+                      strokeWidth={2.5}
+                    />
+                    <Ellipse cy={27} rx={5} ry={2} fill={m.color} />
+                    <Path
+                      d="M-9 12 L0 27 L9 12"
+                      fill={m.you ? "#f7c948" : "#f8f9f6"}
+                    />
+                    <Rect
+                      x={-23}
+                      y={-43}
+                      width={46}
+                      height={58}
+                      rx={12}
+                      fill="#f8f9f6"
+                      stroke={m.you ? "#f7c948" : "#b3c9c5"}
+                      strokeWidth={m.you ? 3 : 1.5}
+                    />
+                    <Defs>
+                      <ClipPath id={id}>
+                        <Rect x={-19} y={-39} width={38} height={50} rx={9} />
+                      </ClipPath>
+                    </Defs>
+                    {m.avatarUrl ? (
+                      <SvgImage
+                        href={{ uri: m.avatarUrl }}
+                        x={-19}
+                        y={-39}
+                        width={38}
+                        height={50}
+                        preserveAspectRatio="xMidYMid slice"
+                        clipPath={`url(#${id})`}
+                      />
+                    ) : (
+                      <>
+                        <Rect
+                          x={-19}
+                          y={-39}
+                          width={38}
+                          height={50}
+                          rx={9}
+                          fill={m.you ? "#f7c948" : "#d8e5df"}
+                        />
+                        <SvgText
+                          y={-8}
+                          textAnchor="middle"
+                          fill="#142b3b"
+                          fontWeight="700"
+                          fontSize={15}
+                        >
+                          {m.initials}
+                        </SvgText>
+                      </>
+                    )}
+                    {m.you ? (
+                      <>
+                        <Rect
+                          x={-22}
+                          y={-66}
+                          width={44}
+                          height={18}
+                          rx={9}
+                          fill="#f7c948"
+                        />
+                        <SvgText
+                          y={-53}
+                          textAnchor="middle"
+                          fill="#142b3b"
+                          fontSize={11}
+                          fontWeight="800"
+                        >
+                          YOU
+                        </SvgText>
+                      </>
+                    ) : null}
+                    <SvgText
+                      y={45}
+                      textAnchor="middle"
+                      fill="white"
+                      fontSize={12}
+                      fontWeight="700"
+                    >
+                      {m.ghost
+                        ? "Past you"
+                        : m.you
+                          ? "You"
+                          : m.name.split(" ")[0]}
+                    </SvgText>
+                    {!m.you ? (
+                      <SvgText
+                        y={61}
+                        textAnchor="middle"
+                        fill="#e5eee5"
+                        fontSize={11}
+                      >
+                        {m.outside ? `${m.direction} ` : ""}
+                        {m.gap > 0 ? "+" : ""}
+                        {m.gap.toFixed(unit === "pts" ? 0 : 2)} {unit}
+                      </SvgText>
+                    ) : null}
+                  </G>
+                );
+              })}
+          </Svg>
+        </View>
+      </ScrollView>
       <View style={s.status} pointerEvents="none">
         <Text style={s.white}>
           {scene.place} / {scene.fieldSize} PLACE
@@ -212,7 +327,7 @@ export function PortraitField({
             style={s.button}
             accessibilityRole="button"
             accessibilityLabel="Previous lane"
-            disabled={scene.focus === 0}
+            disabled={scene.focus <= 0}
             onPress={() => shift(-1)}
           >
             <Text style={s.white}>←</Text>
@@ -220,7 +335,7 @@ export function PortraitField({
           <Pressable
             style={s.button}
             accessibilityRole="button"
-            onPress={() => setFocusId(undefined)}
+            onPress={() => moveTo(0)}
           >
             <Text style={s.white}>Your lane</Text>
           </Pressable>
@@ -228,7 +343,7 @@ export function PortraitField({
             style={s.button}
             accessibilityRole="button"
             accessibilityLabel="Next lane"
-            disabled={scene.focus === scene.ordered.length - 1}
+            disabled={scene.focus >= scene.ordered.length - 1}
             onPress={() => shift(1)}
           >
             <Text style={s.white}>→</Text>

@@ -4,6 +4,8 @@ import { afterEach, expect, it, vi } from "vitest";
 vi.mock("./club-art", () => ({ alpineTrail: 1 }));
 vi.mock("./field-course", () => ({ drawFieldNode: () => null }));
 vi.mock("react-native", () => ({
+  PanResponder:{create:(handlers:object)=>({panHandlers:handlers})},
+  ScrollView:"ScrollView",
   Image: "Image",
   Pressable: "Pressable",
   Text: "Text",

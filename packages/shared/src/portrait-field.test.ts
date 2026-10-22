@@ -46,3 +46,9 @@ it("triples underlying horizontal lane spacing while retaining distance and race
   expect(course.laneWidth).toBeCloseTo((Math.max(390 - 60, 4 * 74) / 4) * 3);
   expect(((58 * course.markerScale) / course.length) * 1.2).toBeCloseTo(0.3);
 });
+
+it("keeps past you visible without ranking it and supports continuous horizontal exploration",()=>{
+ const s=portraitField(lanes,{center:10,span:20},undefined,.4);
+ expect(s.markers.some(m=>m.ghost)).toBe(true);expect(s.fieldSize).toBe(3);expect(s.focus-s.baseFocus).toBeCloseTo(.4);
+ expect(s.markers.every(m=>m.trail.includes("Q"))).toBe(true);expect(JSON.stringify(s.ground)).toContain("Q");
+});

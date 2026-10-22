@@ -103,7 +103,7 @@ export function FieldStage({
     toSpan: number;
   } | null>(null);
   const liveCenterRef = useRef(0);
-  const [showGhost, setShowGhost] = useState(true);
+  const showGhost = true;
   const [selected, setSelected] = useState<string | null>(null);
   const [overtakePlan, setOvertakePlan] = useState<ArenaOvertakePlan | null>(
     null,
@@ -637,23 +637,6 @@ export function FieldStage({
                   )
                 }
               />
-
-              {ghost && (
-                <div className="focus-track-caption">
-                  <label>
-                    <input
-                      type="checkbox"
-                      checked={showGhost}
-                      onChange={(e) => {
-                        const next = e.target.checked;
-                        setShowGhost(next);
-                        if (!next && selected === ghost?.id) setSelected(null);
-                      }}
-                    />{" "}
-                    Past you
-                  </label>
-                </div>
-              )}
             </div>
           </ExpandingField>
         </div>
