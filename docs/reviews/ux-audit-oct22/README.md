@@ -49,3 +49,17 @@ The shared track is 250px tall with member portraits/initials on the visual, lin
 - Seven focused shared goal/scene checks and four web rendering checks pass, covering below/at/over-goal and absent-baseline states. Full validation intentionally skipped.
 
 Screens: [actual native Crew](ios-crew.jpg), [actual web Crew](web-crew.jpg).
+
+
+## Today-only sync confirmation
+
+Newly changed, eligible activities from the current Eastern day appear together in an optional global receipt. Older activity, sleep and readiness apply immediately through the existing reducer. Confirmation applies the held presentation and opens the matching registered event; skip/close applies without navigation. Historical imports seed field baselines quietly, preventing a backlog of old overtake reveals. Server ingest remains durable before this local presentation step.
+
+The queue is memory-only, account-scoped and once-only. Refresh cannot overwrite a pending receipt. Switching accounts discards its UI; a day rollover applies it quietly. Home multi-provider sync batches one receipt. Demo samples remain explicit previews with no new score writes; Data Sync has a demo-only preview for inspection.
+
+- Actual iOS: full right swipe closes the preview; short swipe resets to 0%; Close preview returns Data Sync. An early scroll-based implementation failed the real gesture check and was replaced with an explicitly claimed native responder. The button and accessibility action provide equivalent confirmation.
+- Actual web: receipt heading receives focus; keyboard End on the slider confirms and dismisses it. Closing/skip remains available.
+- Focused checks: five pure sync plans (including Eastern midnight, deduplication, sample generation and exact split/final-state equivalence), two account/batch hook checks and one native confirmation check pass.
+- Live OAuth, provider imports and HealthKit permissions were not exercised. Their existing ingestion remains authoritative; local demo previews do not claim live connectivity. Android hardware was unavailable.
+
+Screens: [native sync preview](ios-sync-recap.jpg), [web sync preview](web-sync-recap.jpg).

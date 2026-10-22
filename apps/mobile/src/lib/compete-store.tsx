@@ -1,3 +1,4 @@
+import { useSyncReviewGate } from "./use-sync-review";
 import {
   applyRemoteSnapshot,
   arenaBaselineStorageKey,
@@ -24,6 +25,8 @@ import {
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { usePathname, useRouter } from "expo-router";
 import {
+  lazy,
+  Suspense,
   createContext,
   useCallback,
   useContext,
@@ -45,6 +48,10 @@ import { fetchWithTimeout } from "./fetch-with-timeout";
 import { canOpenCompeteNotice } from "./navigation";
 import { supabase } from "./supabase";
 
+const SyncReview = lazy(() =>
+  import("../features/sync-review").then((m) => ({ default: m.SyncReview })),
+);
+
 const STORAGE_KEY = "fb-compete-v1";
 const SEEN_KEY = "fb-counted-seen";
 const DIRTY_KEY = "fb-compete-dirty";
@@ -56,6 +63,9 @@ interface CompeteContextValue {
   readBaselineItem: (key: string) => string | null;
   writeBaselineItem: (key: string, value: string) => void;
   dispatch: (action: Action) => void;
+  previewSyncReview?: () => void;
+  beginSyncReviewBatch?: (accountId?: string) => void;
+  endSyncReviewBatch?: (accountId?: string) => void;
   returnGain: number;
   clearReturn: () => void;
   fieldNotice: FieldNotice | null;
@@ -124,6 +134,7 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
   const saveChain = useRef<Promise<void>>(Promise.resolve());
 
   const [savedState, setState] = useState<CompeteState | null>(null);
+  const syncReviewBlocked = useRef(false);
   const loadedOwnerRef = useRef<string | null | undefined>(undefined);
   const state = loadedOwnerRef.current === owner ? savedState : null;
   const [returnGain, setReturnGain] = useState(0);
@@ -390,6 +401,7 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
   }, [remember, state]);
 
   const refresh = useCallback(async (): Promise<boolean> => {
+    if (syncReviewBlocked.current) return false;
     const account = await competeAccount();
     if (!stateRef.current) return false;
     if (!account) return true;
@@ -409,11 +421,11 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
           );
         }
         const response = await fetchWithTimeout(
-          `${mobileEnv.apiUrl}/api/compete`,
-          {
-            headers: { Authorization: `Bearer ${account.token}` },
-          },
-        );
+            `${mobileEnv.apiUrl}/api/compete`,
+            {
+              headers: { Authorization: `Bearer ${account.token}` },
+            },
+          );
         if (!response.ok) {
           setStandingsStale(true);
           return false;
@@ -437,6 +449,9 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
           !stateRef.current ||
           account.userId !== accountRef.current ||
           epoch !== lifecycle.current
+        )
+          return false;
+        if (syncReviewBlocked.current
         )
           return false;
         const remote = rollClock(migrateCompeteState(body.state));
@@ -668,7 +683,11 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
         id ?? "guest",
         readBaselineItem,
         writeBaselineItem,
+        undefined,
+        action.syncPresentation === "quiet",
       );
+      if (action.syncPresentation === "quiet")
+        remember(countedActivityIds(next), true);
       const scoped = accountStorageKeys(id);
       void AsyncStorage.multiSet([
         [scoped.state, JSON.stringify(next)],
@@ -676,7 +695,14 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
       ]).catch(() => setSaveError("Could not save on this device."));
       scheduleSave(next);
     },
-    [readBaselineItem, writeBaselineItem, scheduleSave],
+    [readBaselineItem, writeBaselineItem, scheduleSave, remember],
+  );
+
+  const syncReview = useSyncReviewGate(
+    dispatch,
+    loadReady.current ? state : null,
+    accountRef.current ?? null,
+    syncReviewBlocked,
   );
 
   const retrySave = useCallback(() => {
@@ -771,7 +797,10 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
         accountKey: accountRef.current ?? "device",
         readBaselineItem,
         writeBaselineItem,
-        dispatch,
+        dispatch: syncReview.dispatch,
+        previewSyncReview: syncReview.preview,
+        beginSyncReviewBatch: syncReview.begin,
+        endSyncReviewBatch: syncReview.end,
         returnGain,
         clearReturn,
         fieldNotice,
@@ -798,6 +827,20 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
         </View>
       )}
       {children}
+      {syncReview.receipt && state ? (
+        <Suspense
+          fallback={
+            <Text accessibilityLiveRegion="polite">Opening today’s recap…</Text>
+          }
+        >
+          <SyncReview
+            key={`${syncReview.receipt.account}:${syncReview.receipt.day}`}
+            receipt={syncReview.receipt}
+            state={state}
+            onComplete={syncReview.finish}
+          />
+        </Suspense>
+      ) : null}
     </CompeteContext.Provider>
   );
 }

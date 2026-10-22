@@ -82,7 +82,7 @@ function humanError(code?: string): string {
 function YouContent({ surface }: { surface: "progress" | "athlete" }) {
   const reduced = useReducedMotion();
   const { user, signOut, demoMode } = useAuth();
-  const { state, dispatch, loadStatus } = useCompete();
+  const { state, dispatch, loadStatus, previewSyncReview } = useCompete();
   const [panel, setPanel] = useState<AthletePanel | null>(null);
   const overviewRef = useRef<HTMLDivElement>(null);
   const settingsFocus = useRef<HTMLElement | null>(null);
@@ -727,6 +727,11 @@ function YouContent({ surface }: { surface: "progress" | "athlete" }) {
                 ) : null}
               </section>
               <section className="fb-card">
+                {(demoMode || user?.mode === "demo") && previewSyncReview ? (
+                  <button className="fb-btn-line" onClick={previewSyncReview}>
+                    Preview today’s sync recap
+                  </button>
+                ) : null}
                 <h2>Import fitness history</h2>
                 {state.calibrated ? (
                   <p className="fb-copy">
@@ -899,7 +904,7 @@ function YouContent({ surface }: { surface: "progress" | "athlete" }) {
                 ) : confirmFreeze ? (
                   <div className="fb-stack">
                     <p className="fb-note">
-                      Freeze this week? You will have {state.freezesLeft - 1} freezes left.
+                      Freeze this week? You will have {state.freezesLeft - 1}{" "} freezes left.
                       Your weekly placement bonus is held until next Monday.
                     </p>
                     <div className="fb-row">
@@ -1007,11 +1012,13 @@ function YouContent({ surface }: { surface: "progress" | "athlete" }) {
 
   const settingsPortal = settingsScrollRoot
     ? createPortal(
-        (panel || settingsPresent) ? <div className="focus-settings-stack">
+        panel || settingsPresent ? (
+          <div className="focus-settings-stack">
         <AnimatePresence mode="wait" onExitComplete={() => {
           setSettingsPresent(false);
         }}>{settingsPanel}</AnimatePresence>
-        </div> : null,
+        </div>
+        ) : null,
         settingsScrollRoot,
       )
     : null;
@@ -1059,7 +1066,9 @@ function YouContent({ surface }: { surface: "progress" | "athlete" }) {
         openProfileEdit={requestedEdit === "profile"}
         sections="profile"
       />
-      {isOwnerEmail(user.email) && <Link href="/admin" className="fb-btn-line">Round lab</Link>}
+      {isOwnerEmail(user.email) && (
+              <Link href="/admin" className="fb-btn-line">Round lab</Link>
+            )}
       <nav className="focus-settings-list" aria-label="Athlete settings">
         {(
           [

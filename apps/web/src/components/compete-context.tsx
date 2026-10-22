@@ -1,5 +1,7 @@
 "use client";
 
+import { useSyncReviewGate } from "@/lib/use-sync-review";
+
 import { accountName } from "@/lib/account-name";
 
 import { useAuth } from "@/components/auth-context";
@@ -24,6 +26,8 @@ import {
   type FieldNotice,
 } from "@fitness-battle/shared";
 import {
+  lazy,
+  Suspense,
   createContext,
   useCallback,
   useContext,
@@ -34,12 +38,21 @@ import {
   type ReactNode,
 } from "react";
 
+const SyncReview = lazy(() =>
+  import("@/features/club/sync-review").then((m) => ({
+    default: m.SyncReview,
+  })),
+);
+
 /** One account-load state. Failed loads are read-only until retry succeeds. */
 type LoadStatus = "local" | "loading" | "ready" | "failed";
 
 interface CompeteApi {
   state: CompeteState | null;
   dispatch: (action: Action) => void;
+  previewSyncReview?: () => void;
+  beginSyncReviewBatch?: (accountId?: string) => void;
+  endSyncReviewBatch?: (accountId?: string) => void;
   /** True when the last account save failed. */
   saveError: string | null;
   loadStatus: LoadStatus;
@@ -159,6 +172,7 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
   const { user, loading, demoMode } = useAuth();
   const userId = user?.id ?? null;
   const [state, setState] = useState<CompeteState | null>(null);
+  const syncReviewBlocked = useRef(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [loadStatus, setLoadStatus] = useState<LoadStatus>("loading");
   const [attempt, setAttempt] = useState(0);
@@ -309,8 +323,8 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
     if (!signedIn) {
       settle(local.state, local.savedAt, "local");
       return () => {
-        cancelled = true;
-      };
+      cancelled = true;
+    };
     }
 
     if (!stateRef.current) {
@@ -414,6 +428,7 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const refresh = useCallback(async (): Promise<boolean> => {
+    if (syncReviewBlocked.current) return false;
     const accountId = userIdRef.current;
     if (!accountId || demoRef.current || statusRef.current !== "ready") return true;
     if (refreshFlight.current) return refreshFlight.current;
@@ -426,7 +441,9 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
           return false;
         }
         const body = (await response.json()) as { state?: unknown; updatedAt?: string | null };
-        if (userIdRef.current !== accountId || statusRef.current !== "ready") return false;
+        if (
+          syncReviewBlocked.current ||
+          userIdRef.current !== accountId || statusRef.current !== "ready") return false;
         if (!isCompeteState(body.state)) return false;
         const remote = rollClock(migrateCompeteState(body.state));
         const local = stateRef.current;
@@ -532,6 +549,8 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
           accountKey,
           readStorageItem,
           writeStorageItem,
+          undefined,
+          withAccount.syncPresentation === "quiet",
         );
         const savedAt = new Date().toISOString();
         stateRef.current = next;
@@ -559,13 +578,39 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
     ],
   );
 
-  return <CompeteContext.Provider value={api}>
-    {saveConflict && <div role="alert" className="fb-card" style={{ padding: 16 }}>
+  const syncReview = useSyncReviewGate(
+    api.dispatch,
+    loadStatus === "failed" || loadStatus === "loading" ? null : state,
+    userId ?? null,
+    syncReviewBlocked,
+  );
+  return (
+    <CompeteContext.Provider value={{
+        ...api,
+        dispatch: syncReview.dispatch,
+        previewSyncReview: syncReview.preview,
+        beginSyncReviewBatch: syncReview.begin,
+        endSyncReviewBatch: syncReview.end,
+      }}>
+    {saveConflict && (
+        <div role="alert" className="fb-card" style={{ padding: 16 }}>
       Your account changed elsewhere. Reload to use the current account. Your local draft will be kept on this device as a recovery copy.
       <button className="fb-btn-line" onClick={retryLoad}>Reload account</button>
-    </div>}
+    </div>
+      )}
     {children}
-  </CompeteContext.Provider>;
+      {syncReview.receipt && state ? (
+        <Suspense fallback={<p role="status">Opening today’s recap…</p>}>
+          <SyncReview
+            key={`${syncReview.receipt.account}:${syncReview.receipt.day}`}
+            receipt={syncReview.receipt}
+            state={state}
+            onComplete={syncReview.finish}
+          />
+        </Suspense>
+      ) : null}
+  </CompeteContext.Provider>
+  );
 }
 
 export function useCompete(): CompeteApi {

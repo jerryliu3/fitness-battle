@@ -1,3 +1,4 @@
+import { activityFromSample } from "@fitness-battle/shared";
 import {
   SPORTS,
   RANK_BANDS,
@@ -217,7 +218,10 @@ export default function AthleteScreen() {
           type: "apply-sync",
           provider: providerId,
           accountId: user.id,
-          activities: [],
+          activities: (result.activities ?? []).flatMap((sample) => {
+            const activity = activityFromSample(sample, "recorded");
+            return activity ? [activity] : [];
+          }),
           linkStatus: "connected",
         });
       }

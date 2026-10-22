@@ -11,7 +11,10 @@ export function ActivityActions({ compact = false }: { compact?: boolean }) {
   const { user } = useAuth();
   const owner = useRef(user?.id);
   owner.current = user?.id;
-  const { state, dispatch, loadStatus } = useCompete();
+  const { state, dispatch, loadStatus,
+    beginSyncReviewBatch,
+    endSyncReviewBatch,
+  } = useCompete();
   const [open, setOpen] = useState(false);
   const [sport, setSport] = useState<SportId>("running");
   const [miles, setMiles] = useState("");
@@ -28,6 +31,7 @@ export function ActivityActions({ compact = false }: { compact?: boolean }) {
     const providers = state!.links.filter((link) => link.linked && ["strava", "garmin", "whoop", "oura"].includes(link.provider));
     if (!providers.length) { setNote("Connect a tracker in Athlete to sync activities."); return; }
     setBusy(true);
+    beginSyncReviewBatch?.(accountId);
     setNote("");
     const messages: string[] = [];
     try {
@@ -37,7 +41,7 @@ export function ActivityActions({ compact = false }: { compact?: boolean }) {
           method: "POST", headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ provider: link.provider, userId: user!.id }),
         });
-        const body = await response.json() as { activities?: ActivitySample[]; readiness?: ReadinessSample[]; usedMock?: boolean; persisted?: boolean; error?: string };
+        const body = (await response.json()) as { activities?: ActivitySample[]; readiness?: ReadinessSample[]; usedMock?: boolean; persisted?: boolean; error?: string };
         if (owner.current !== accountId) return;
         if (!response.ok) { messages.push(`${link.provider}: sync failed. Try again in Athlete.`); continue; }
         const activities = (body.activities ?? []).flatMap((sample) => {
@@ -49,10 +53,13 @@ export function ActivityActions({ compact = false }: { compact?: boolean }) {
       }
       if (owner.current === accountId) setNote(messages.join(" "));
     } catch { if (owner.current === accountId) setNote("Sync could not finish. Retry from Athlete → Connections."); }
-    finally { setBusy(false); }
+    finally {
+      endSyncReviewBatch?.(accountId);
+      setBusy(false); }
   }
 
-  return <>
+  return (
+    <>
     <div
       className={compact ? "focus-chart-actions" : "focus-actions"}
       aria-label="Activity actions"
@@ -63,7 +70,8 @@ export function ActivityActions({ compact = false }: { compact?: boolean }) {
         disabled={!ready || busy}
         onClick={() => void sync()}
       >
-        {compact ? (busy ? "Syncing…" : "↻ Sync") : busy ? "Syncing…" : "Sync activities"}
+        {compact ? busy ? "Syncing…" : "↻ Sync"
+            : busy ? "Syncing…" : "Sync activities"}
       </button>
       <button
         type="button"
@@ -76,9 +84,13 @@ export function ActivityActions({ compact = false }: { compact?: boolean }) {
       >
         {compact ? "＋ Manual" : "Add activity"}
       </button>
-      {!user && !compact && <Link href="/login?next=/today">Sign in to add or sync</Link>}
+      {!user && !compact && (
+          <Link href="/login?next=/today">Sign in to add or sync</Link>
+        )}
     </div>
-    {note && <p role="status" className={compact ? "fb-note focus-sync-status" : "fb-note"}>{note} <Link href="/athlete?panel=connections">Tracker settings</Link></p>}
+    {note && (
+        <p role="status" className={compact ? "fb-note focus-sync-status" : "fb-note"}>{note} <Link href="/athlete?panel=connections">Tracker settings</Link></p>
+      )}
     <Sheet open={open} onClose={() => setOpen(false)} title="Add today’s activity" body="Manual activities count in Open standings only.">
       <form style={{ display: "grid", gap: 16 }} onSubmit={(event) => {
         event.preventDefault();
@@ -89,12 +101,18 @@ export function ActivityActions({ compact = false }: { compact?: boolean }) {
         dispatch({ type: "log-manual", sport, movingSec, distanceM, activityId: `manual-${crypto.randomUUID()}` });
         setOpen(false); setMiles(""); setMinutes(""); setNote("Activity added for today · Open standings only.");
       }}>
-        <label>Sport<select className="fb-input" value={sport} onChange={(event) => setSport(event.target.value as SportId)}>{SPORTS.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label>
-        {sportById(sport).gps && <label>Mileage<input className="fb-input" required type="number" min="0" max="1242" step="0.01" value={miles} onChange={(event) => setMiles(event.target.value)}/></label>}
+        <label>Sport<select className="fb-input" value={sport} onChange={(event) => setSport(event.target.value as SportId)}>{SPORTS.map((item) => (
+                <option key={item.id} value={item.id}>{item.name}</option>))}</select></label>
+        {sportById(sport).gps && (
+            <label>Mileage<input className="fb-input" required type="number" min="0" max="1242" step="0.01" value={miles} onChange={(event) => setMiles(event.target.value)}/></label>
+          )}
         <label>Duration (minutes)<input className="fb-input" required type="number" min="0.1" max="1440" step="0.1" value={minutes} onChange={(event) => setMinutes(event.target.value)}/></label>
-        {formError && <p role="alert" className="fb-note">{formError}</p>}
+        {formError && (
+            <p role="alert" className="fb-note">{formError}</p>
+          )}
         <button disabled={!ready} type="submit" className="fb-btn">Add activity</button>
       </form>
     </Sheet>
-  </>;
+  </>
+  );
 }
