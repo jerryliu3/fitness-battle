@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import { RecordChart } from "./record-chart";
 import {
   APP_TIMEZONE,
   SPORTS,
@@ -8,7 +9,6 @@ import {
   formatClockTime,
   formatVolume,
   personalRecordHistory,
-  recordStepPath,
   weeklyTraining,
   type CompeteState,
   type SportId,
@@ -131,24 +131,7 @@ export function TrainingHistory({ state }: { state: CompeteState }) {
             {formatClockTime(latest.seconds)}
           </strong>
           <p className="fb-copy">Whole-session moving time</p>
-          {rows.length > 1 ? (
-            <svg
-              viewBox="0 0 300 100"
-              role="img"
-              aria-label={`${rows.length} personal record improvements; current ${formatClockTime(latest.seconds)}`}
-            >
-              <path
-                d={recordStepPath(rows)}
-                fill="none"
-                stroke="var(--ink, #282f2c)"
-                strokeWidth="3"
-                strokeLinejoin="round"
-              />
-              {rows.length === 1 ? (
-                <circle cx="8" cy="8" r="4" fill="var(--gold,#f1c75b)" />
-              ) : null}
-            </svg>
-          ) : null}
+          <RecordChart rows={rows} selected={inspected.activityId} now={now} onSelect={setReceipt} />
           <div
             className="record-distance-tabs"
             role="group"

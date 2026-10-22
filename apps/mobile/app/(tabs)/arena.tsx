@@ -23,7 +23,6 @@ import {
   FocusDisclosure,
   FocusSegments,
   FocusSheet,
-  FocusTextButton,
   f,
 } from "../../src/ui/focus";
 import { SettingsRow } from "../../src/ui/settings-row";
@@ -33,10 +32,6 @@ export default function ArenaScreen() {
     state,
     accountKey,
     dispatch,
-    returnGain,
-    clearReturn,
-    fieldNotice,
-    dismissFieldNotice,
     standingsStale,
     saveError,
     retrySave,
@@ -141,28 +136,8 @@ export default function ArenaScreen() {
             Standings may be out of date until the next refresh.
           </Text>
         ) : null}
-        {fieldNotice ? (
-          <View style={f.feedback}>
-            <Text style={f.h2}>{fieldNotice.title}</Text>
-            <FocusTextButton label="Got it" onPress={dismissFieldNotice} />
-          </View>
-        ) : null}
         <RoundTakeover state={state} ready={canWrite} dispatch={dispatch} />
-        {returnGain > 0 && !fieldNotice ? (
-          <View style={f.card}>
-            <Text style={f.h2}>
-              {returnGain} new counted{" "}
-              {returnGain === 1 ? "session" : "sessions"}
-            </Text>
-            <FocusButton
-              label="Continue to Home"
-              onPress={() => {
-                clearReturn();
-                router.navigate("/today");
-              }}
-            />
-          </View>
-        ) : null}
+        {state.periodResults.length ? <FocusButton label="Latest week results ↗" secondary onPress={() => router.push("/arena?results=latest")} /> : null}
         {active.map((rating) => (
           <CompetitionField
             key={`${accountKey}:${rating.sport}:${state.units}:${track}`}

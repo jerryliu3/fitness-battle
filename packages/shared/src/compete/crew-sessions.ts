@@ -63,3 +63,76 @@ export function crewSessionDraftId(): string {
     return (c === "x" ? n : (n & 3) | 8).toString(16);
   });
 }
+
+export type CrewSessionMutation =
+  | {
+      action: "create";
+      id: string;
+      crewId: string;
+      title: string;
+      startsAt: string;
+      durationMin: number;
+      timeZone: string;
+    }
+  | { action: "rsvp"; id: string; join: boolean }
+  | { action: "cancel"; id: string };
+
+export function validateCrewSessionDraft(
+  title: string,
+  day: string,
+  time: string,
+  duration: number,
+  now = new Date(),
+): string {
+  if (!title.trim()) throw new Error("Give the session a name.");
+  if (!Number.isInteger(duration) || duration < 15 || duration > 240)
+    throw new Error("Choose 15–240 minutes.");
+  const instant = crewSessionInstant(day, time);
+  if (
+    Date.parse(instant) <= now.getTime() ||
+    Date.parse(instant) > now.getTime() + 180 * 86400000
+  )
+    throw new Error("Choose a future start within 180 days.");
+  return instant;
+}
+/** Local demo adapter. Never sends an RSVP or creates a workout. */
+export function demoCrewSessionMutation(
+  rows: CrewSession[],
+  mutation: CrewSessionMutation,
+  userId: string,
+  sport: string,
+): CrewSession[] {
+  if (mutation.action === "create") {
+    if (rows.some((row) => row.id === mutation.id)) return rows;
+    return [
+      ...rows,
+      {
+        id: mutation.id,
+        crew_id: mutation.crewId,
+        created_by: userId,
+        title: mutation.title.trim(),
+        sport,
+        starts_at: mutation.startsAt,
+        duration_min: mutation.durationMin,
+        time_zone: mutation.timeZone,
+        cancelled_at: null,
+        participants: [{ user_id: userId, display_name: "You" }],
+      },
+    ].sort((a, b) => Date.parse(a.starts_at) - Date.parse(b.starts_at));
+  }
+  return rows.map((row) => {
+    if (row.id !== mutation.id) return row;
+    if (mutation.action === "cancel")
+      return row.created_by === userId
+        ? { ...row, cancelled_at: new Date().toISOString() }
+        : row;
+    if (row.cancelled_at || Date.parse(row.starts_at) <= Date.now()) return row;
+    const others = row.participants.filter((p) => p.user_id !== userId);
+    return {
+      ...row,
+      participants: mutation.join
+        ? [...others, { user_id: userId, display_name: "You" }]
+        : others,
+    };
+  });
+}

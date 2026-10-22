@@ -44,7 +44,7 @@ function formatCompetitionDateRange(startsAt: Date, endsAt: Date): string {
 }
 
 export function ArenaScreen({ tabActive = true }: { tabActive?: boolean }) {
-  const { state, dispatch, loadStatus, fieldNotice, dismissFieldNotice, standingsStale } = useCompete();
+  const { state, dispatch, loadStatus, standingsStale } = useCompete();
   const { user } = useAuth();
   const router = useRouter();
   const [authOpen, setAuthOpen] = useState(false);
@@ -185,15 +185,12 @@ export function ArenaScreen({ tabActive = true }: { tabActive?: boolean }) {
           Standings may be out of date. They'll refresh when the connection returns.
         </p>
       ) : null}
-      {fieldNotice ? (
-        <p className="fb-note" role="status">
-          {fieldNotice.title}{" "}
-          <button type="button" className="fb-btn-ghost" onClick={dismissFieldNotice}>
-            Got it
-          </button>
-        </p>
-      ) : null}
 
+      {state.periodResults.length ? (
+        <Link className="fb-btn-ghost" href="/arena?results=latest">
+          Latest week results ↗
+        </Link>
+      ) : null}
       {!hasAnyRegistration ? (
         <div style={{ margin: "16px 0 24px" }}>
           <section className="focus-card focus-empty" style={{ marginTop: 16 }}>

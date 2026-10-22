@@ -4,16 +4,22 @@ import {
   APP_TIMEZONE,
   crewSessionDraftId,
   crewSessionError,
-  crewSessionInstant,
+  validateCrewSessionDraft,
+  demoCrewSessionMutation,
+  type CrewSessionMutation,
   type CrewSession,
 } from "@fitness-battle/shared";
 import { Sheet } from "@/ui/sheet";
 export function CrewSessions({
   crewId,
   userId,
+  demo = false,
+  sport = "running",
 }: {
   crewId: string;
   userId: string;
+  demo?: boolean;
+  sport?: string;
 }) {
   const [sessions, setSessions] = useState<CrewSession[]>([]),
     [open, setOpen] = useState(false),
@@ -27,6 +33,13 @@ export function CrewSessions({
     id = useRef(crewSessionDraftId());
   const reload = useCallback(
     async (signal?: AbortSignal) => {
+      if (demo) {
+        const stored = localStorage.getItem(
+          `fb-demo-start-line:${userId}:${crewId}`,
+        );
+        setSessions(stored ? JSON.parse(stored) : []);
+        return;
+      }
       const r = await fetch(
         `/api/crews/sessions?crewId=${encodeURIComponent(crewId)}`,
         { signal },
@@ -35,7 +48,7 @@ export function CrewSessions({
       const body = await r.json();
       setSessions(body.sessions);
     },
-    [crewId],
+    [crewId, demo, userId],
   );
   useEffect(() => {
     const controller = new AbortController();
@@ -44,12 +57,24 @@ export function CrewSessions({
     });
     return () => controller.abort();
   }, [reload]);
-  async function write(body: object) {
+  async function write(body: CrewSessionMutation) {
     if (flight.current) return;
     flight.current = true;
     setBusy(true);
     setError("");
     try {
+      if (demo) {
+        const next = demoCrewSessionMutation(sessions, body, userId, sport);
+        localStorage.setItem(
+          `fb-demo-start-line:${userId}:${crewId}`,
+          JSON.stringify(next),
+        );
+        setSessions(next);
+        setOpen(false);
+        setTitle("");
+        id.current = crewSessionDraftId();
+        return;
+      }
       const r = await fetch("/api/crews/sessions", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -86,6 +111,7 @@ export function CrewSessions({
           ＋ Schedule
         </button>
       </div>
+      {demo ? <p className="fb-note">Demo · saved on this device</p> : null}
       {sessions.map((s) => {
         const joined = s.participants.some((p) => p.user_id === userId),
           closed = !!s.cancelled_at || Date.parse(s.starts_at) <= Date.now();
@@ -188,10 +214,10 @@ export function CrewSessions({
         }}
       >
         <label className="fb-field">
-          Session
+          Session name
           <input
             maxLength={80}
-            placeholder="Easy run, together"
+            placeholder="Name this session"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
           />
@@ -212,26 +238,34 @@ export function CrewSessions({
             onChange={(e) => setTime(e.target.value)}
           />
         </label>
-        <label className="fb-field">
-          Minutes
-          <select
-            value={duration}
-            onChange={(e) => setDuration(Number(e.target.value))}
-          >
+        <fieldset className="start-duration">
+          <legend>Duration</legend>
+          <div className="crew-relay-members">
             {[15, 30, 45, 60, 90, 120, 180, 240].map((n) => (
-              <option key={n} value={n}>
-                {n}
-              </option>
+              <button
+                key={n}
+                type="button"
+                className="fb-btn-line"
+                aria-pressed={duration === n}
+                onClick={() => setDuration(n)}
+              >
+                {n} min
+              </button>
             ))}
-          </select>
-        </label>
+          </div>
+        </fieldset>
         {error ? <p role="alert">{error}</p> : null}
         <button
           className="fb-btn"
-          disabled={busy || !title.trim() || !day}
+          disabled={busy}
           onClick={() => {
             try {
-              const startsAt = crewSessionInstant(day, time);
+              const startsAt = validateCrewSessionDraft(
+                title,
+                day,
+                time,
+                duration,
+              );
               void write({
                 action: "create",
                 id: id.current,

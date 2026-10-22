@@ -19,8 +19,7 @@ import * as ScrollArea from "@radix-ui/react-scroll-area";
 import { motion, useReducedMotion } from "motion/react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
-import { ReturnProgress } from "@/features/focus/return-progress";
+import { useEffect, useLayoutEffect, useState, type ReactNode } from "react";
 import { BootSplash } from "./boot-splash";
 import {
   hasSeenBootSplash,
@@ -61,7 +60,6 @@ export function PhoneShell({
     state,
     loadStatus,
     retryLoad,
-    fieldNotice,
   } = useCompete();
   const tab = shellTabFromPath(path);
   const onAthlete = path?.startsWith("/athlete") ?? false;
@@ -88,15 +86,6 @@ export function PhoneShell({
   }, [active]);
 
   const dataReady = isCompeteDataReady(loadStatus, state);
-  const routedNotice = useRef<string | null>(null);
-
-  useEffect(() => {
-    if (!fieldNotice?.personal || tab?.id === "arena") return;
-    if (routedNotice.current === fieldNotice.title) return;
-    routedNotice.current = fieldNotice.title;
-    router.push("/arena");
-  }, [fieldNotice, router, tab?.id]);
-
   function notices() {
     if (hideTabs) return null;
     return (
@@ -202,7 +191,6 @@ export function PhoneShell({
             )}
           </Link>
         </header>
-        {fieldNotice ? null : <ReturnProgress />}
         {!dataReady ? (
           accountLoadingBody
         ) : onAthlete ? (
@@ -213,7 +201,7 @@ export function PhoneShell({
               const on = active === tab.id;
               return (
                 <div
-                  key={tab.id}
+                  key={`${accountKey}:${tab.id}`}
                   className={on ? "phone-panel is-active" : "phone-panel"}
                   inert={!on}
                   aria-hidden={!on}
@@ -234,7 +222,7 @@ export function PhoneShell({
                 const on = active === tab.id;
                 return (
                     <Link
-                      key={tab.id}
+                      key={`${accountKey}:${tab.id}`}
                       aria-current={on ? "page" : undefined}
                       href={tab.href}
                       className="phone-tab"

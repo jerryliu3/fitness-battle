@@ -1,7 +1,9 @@
+import { formatEffort } from "./engine";
 import { describe, expect, it } from "vitest";
 import { freshState } from "./engine";
 import {
   personalRecordHistory,
+  personalRecordChart,
   recordAttemptsForActivity,
   weeklyTraining,
   recordStepPath,
@@ -90,4 +92,29 @@ describe("progress history", () => {
     expect(weeks[0]!.end).toBe("2026-11-02T05:00:00.000Z");
     expect(weeks.map((w) => w.partial)).toEqual([false, true]);
   });
+});
+
+it("renders a real standing line for one record and descending dated improvements", () => {
+  const a = recordAttemptsForActivity(
+    run("first", "2026-10-01T12:00:00Z", 1600),
+    now,
+  )[0]!;
+  const single = personalRecordChart([a], now)!;
+  expect(single.points).toHaveLength(1);
+  expect(single.path).toContain(" H 326");
+  const b = {
+    ...a,
+    activityId: "second",
+    startedAt: "2026-10-20T12:00:00Z",
+    seconds: 1500,
+  };
+  const chart = personalRecordChart([a, b], now)!;
+  expect(chart.points[1]!.x).toBeGreaterThan(chart.points[0]!.x);
+  expect(chart.points[1]!.y).toBeGreaterThan(chart.points[0]!.y);
+  expect(chart.points.map((p) => p.seconds)).toEqual([1600, 1500]);
+});
+
+it("formats large effort scores without raw decimals", () => {
+  expect(formatEffort(54000)).toBe("54,000");
+  expect(formatEffort(1400.55)).toBe("1,400.6");
 });

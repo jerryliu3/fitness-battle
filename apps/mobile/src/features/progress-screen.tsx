@@ -23,7 +23,8 @@ export function ProgressScreen() {
   const [sportFilter, setSportFilter] = useState<SportId | "all" | null>(null);
   const [trackFilter, setTrackFilter] = useState<ScoreTrack | "all">("open");
   if (!state) return null;
-  const you = weeklyBoard(state, state.primary, track).find((row) => row.you);
+  const board = weeklyBoard(state, state.primary, track);
+  const you = board.find((row) => row.you);
   const sports = [
     ...new Set(state.periodResults.map((row) => row.sport)),
   ].sort();
@@ -67,7 +68,7 @@ export function ProgressScreen() {
             <View>
               <Text style={f.small}>Place</Text>
               <Text style={f.rowTitle}>
-                {you ? `${you.place} / field` : "—"}
+                {you ? `${you.place} / ${board.length}` : "—"}
               </Text>
             </View>
           </View>

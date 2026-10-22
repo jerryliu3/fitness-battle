@@ -4,6 +4,7 @@ import { useReducedMotion } from "motion/react";
 import {
   APP_TIMEZONE,
   formatVolume,
+  formatEffort,
   sportById,
   type PeriodResult,
   type UnitSystem,
@@ -57,7 +58,7 @@ export function ResultCard({
               result.movingSec,
               units,
             )}{" "}
-            · {result.effort.toFixed(1)} effort
+            · {formatEffort(result.effort)} effort
           </span>
           <span>
             {result.eloBefore} → {result.eloAfter} effort score

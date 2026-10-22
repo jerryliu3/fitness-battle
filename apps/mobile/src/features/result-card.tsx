@@ -3,6 +3,7 @@ import { Animated, Pressable, Text, View } from "react-native";
 import {
   APP_TIMEZONE,
   formatVolume,
+  formatEffort,
   sportById,
   type PeriodResult,
   type UnitSystem,
@@ -83,7 +84,7 @@ export function ResultCard({
                 result.movingSec,
                 units,
               )}{" "}
-              · {result.effort.toFixed(1)} effort
+              · {formatEffort(result.effort)} effort
             </Text>
             <Text style={f.copy}>
               {result.eloBefore} → {result.eloAfter} effort score

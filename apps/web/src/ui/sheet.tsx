@@ -11,7 +11,7 @@ export function Sheet({
   body,
   onClose,
   children,
-  preventAutoFocus = false,
+  preventAutoFocus = true,
 }: {
   open: boolean;
   title: string;
@@ -23,7 +23,10 @@ export function Sheet({
 }) {
   const reduced = useReducedMotion();
   const returnFocus = useRef<HTMLElement | null>(null);
-  useEffect(() => { if (open) void playCue("light"); }, [open]);
+  const heading = useRef<HTMLHeadingElement | null>(null);
+  useEffect(() => {
+    if (open) void playCue("light");
+  }, [open]);
   return (
     <Dialog.Root
       open={open}
@@ -52,8 +55,14 @@ export function Sheet({
                 forceMount
                 asChild
                 onOpenAutoFocus={(event) => {
-                  returnFocus.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
-                  if (preventAutoFocus) event.preventDefault();
+                  returnFocus.current =
+                    document.activeElement instanceof HTMLElement
+                      ? document.activeElement
+                      : null;
+                  if (preventAutoFocus) {
+                    event.preventDefault();
+                    heading.current?.focus({ preventScroll: true });
+                  }
                 }}
                 onCloseAutoFocus={(event) => {
                   event.preventDefault();
@@ -62,9 +71,15 @@ export function Sheet({
               >
                 <motion.div
                   className="sheet-content focus-sheet"
-                  initial={reduced ? false : { y: "100%", x: "-50%", opacity: 0.98 }}
+                  initial={
+                    reduced ? false : { y: "100%", x: "-50%", opacity: 0.98 }
+                  }
                   animate={{ y: 0, x: "-50%", opacity: 1 }}
-                  exit={{ y: reduced ? 0 : "100%", x: "-50%", opacity: reduced ? 1 : 0.98 }}
+                  exit={{
+                    y: reduced ? 0 : "100%",
+                    x: "-50%",
+                    opacity: reduced ? 1 : 0.98,
+                  }}
                   transition={
                     reduced
                       ? { duration: 0 }
@@ -72,7 +87,9 @@ export function Sheet({
                   }
                 >
                   <div className="sheet-grab" aria-hidden="true" />
-                  <Dialog.Title>{title}</Dialog.Title>
+                  <Dialog.Title ref={heading} tabIndex={-1}>
+                    {title}
+                  </Dialog.Title>
                   <Dialog.Description>{body}</Dialog.Description>
                   {children}
                 </motion.div>

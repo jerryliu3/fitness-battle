@@ -2497,9 +2497,6 @@
 .record-distance-tabs button[aria-pressed=true] { background:var(--soft,#eef0e9); border-radius:12px; }
 .record-history svg { display:block; width:100%; margin:20px 0 6px; overflow:visible; }
 .crew-relay { margin-top:16px; }
-.crew-relay-tape { height:48px; display:flex; position:relative; background:var(--soft,#eef0e9); border-radius:12px; overflow:hidden; margin-bottom:12px; }
-.crew-relay-tape>span { display:grid; place-items:center; font-size:11px; font-weight:700; color:var(--ink,#282f2c); overflow:hidden; }
-.crew-relay-tape>i { position:absolute; top:0; bottom:0; width:3px; background:repeating-linear-gradient(0deg,#282f2c 0 5px,#fff 5px 10px); transform:translateX(-3px); }
 .start-line h2 { margin:0; }
 .start-ticket { padding:22px; margin:16px 0; background:radial-gradient(ellipse at 0 0,#f1c75b35,transparent 75%),var(--paper,#fafaf7); border:1px solid var(--line,#e0e5dc); border-bottom-width:3px; border-radius:18px; }
 .start-ticket h3 { margin:16px 0; }
@@ -2521,3 +2518,26 @@
 .week-social { margin:12px 0 28px; }
 .week-social .fb-field { max-width:100%; }
 .week-social .fb-btn-line[aria-pressed=true] { background:var(--soft,#eef0e9); border-color:var(--ink,#282f2c); }
+/* Material relay: the contribution graphic is the primary control, not a select. */
+.crew-relay-graphic { display:block; width:100%; height:auto; min-height:120px; overflow:visible; }
+.relay-contribution { cursor:pointer; }
+.relay-contribution:focus-visible { outline:2px solid #282f2c; outline-offset:2px; }
+.crew-relay-members { display:flex; gap:6px; overflow-x:auto; padding:4px 0 12px; }
+.crew-relay-members button { display:flex; align-items:center; gap:6px; min-height:44px; flex-shrink:0; padding:5px 10px 5px 5px; border:1px solid transparent; border-radius:24px; background:transparent; color:#282f2c; font:inherit; font-size:12px; cursor:pointer; }
+.crew-relay-members button[aria-pressed=true] { border-color:#282f2c; background:#eef0e9; }
+.crew-relay-members button>span,.crew-relay-avatar { width:30px; height:30px; border-radius:50%; display:grid; place-items:center; font-size:10px; font-weight:700; flex-shrink:0; }
+.crew-relay-receipt { display:flex; align-items:center; gap:12px; border-radius:16px; padding:16px; background:linear-gradient(120deg,#fff9,#ffffff20),#eef0e9; border:1px solid #e0e5dc; }
+.crew-relay-receipt p { margin:4px 0; }
+.crew-relay-receipt small { color:#616c63; }
+.record-chart { margin:18px 0 8px; }
+.record-chart .record-chart-caption { font-size:11px; color:#616c63; margin:0; }
+.record-chart svg { min-height:150px; max-height:240px; margin:8px 0; }
+.record-chart-point { cursor:pointer; }
+.record-chart-point:focus-visible { outline:2px solid #a67c00; }
+
+.focus-sync-status { position: absolute; top: 100%; right: 0; z-index: 5; width: min(280px, 75vw); background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 12px; box-shadow: 0 5px 16px #0001; }
+.focus-chart-actions { position: relative; }
+.start-duration { margin: 0; padding: 0; border: 0; }
+.start-duration legend { margin-bottom: 8px; }
+.start-duration button[aria-pressed="true"] { background: var(--tennis); color: var(--ink); border-color: var(--ink); }
+.phone-shell .record-distance-tabs button { width:auto; flex:0 0 auto; padding:10px 16px; }

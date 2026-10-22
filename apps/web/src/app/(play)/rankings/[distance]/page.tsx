@@ -75,7 +75,8 @@ function Board({ title, rows }: { title: string; rows: LeaderboardRow[] }) {
       {rows.length === 0 ? (
         <p className="rankings-note">No results yet.</p>
       ) : (
-        <div className="rankings-table-wrap">
+        <div className="rankings-table-wrap" tabIndex={0} role="region" aria-label={`${title} results, scroll for race details`}>
+          <p className="rankings-overflow-hint">Swipe for race details ↔</p>
           <table className="rankings-table">
             <caption className="rankings-kicker">
               {title}, fastest official time first

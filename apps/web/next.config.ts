@@ -10,6 +10,7 @@ const nextConfig: NextConfig = {
   outputFileTracingRoot: path.join(__dirname, "../.."),
   async redirects() {
     return [
+      { source: "/compete", destination: "/arena", permanent: true },
       {
         source: "/signin",
         destination: "/login",

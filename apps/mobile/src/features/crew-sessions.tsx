@@ -4,15 +4,24 @@ import {
   APP_TIMEZONE,
   crewSessionDraftId,
   crewSessionError,
-  crewSessionInstant,
+  validateCrewSessionDraft,
+  demoCrewSessionMutation,
+  type CrewSessionMutation,
   type CrewSession,
 } from "@fitness-battle/shared";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useAuth } from "../lib/auth";
 import { mobileEnv } from "../lib/env";
 import { requestApi } from "../lib/api";
 import { FocusButton, FocusSheet, f } from "../ui/focus";
-export function CrewSessions({ crewId }: { crewId: string }) {
-  const { user, accessToken } = useAuth();
+export function CrewSessions({
+  crewId,
+  sport = "running",
+}: {
+  crewId: string;
+  sport?: string;
+}) {
+  const { user, accessToken, demoMode } = useAuth();
   const [sessions, setSessions] = useState<CrewSession[]>([]),
     [open, setOpen] = useState(false),
     [title, setTitle] = useState(""),
@@ -25,13 +34,20 @@ export function CrewSessions({ crewId }: { crewId: string }) {
     id = useRef(crewSessionDraftId()),
     mounted = useRef(true);
   const reload = useCallback(async () => {
+    if (demoMode) {
+      const stored = await AsyncStorage.getItem(
+        `fb-demo-start-line:${user?.id}:${crewId}`,
+      );
+      if (mounted.current) setSessions(stored ? JSON.parse(stored) : []);
+      return;
+    }
     const body = await requestApi<{ sessions: CrewSession[] }>(
       mobileEnv.apiUrl,
       accessToken,
       `/api/crews/sessions?crewId=${encodeURIComponent(crewId)}`,
     );
     if (mounted.current) setSessions(body.sessions);
-  }, [crewId, accessToken]);
+  }, [crewId, accessToken, demoMode, user?.id]);
   useEffect(() => {
     mounted.current = true;
     void reload().catch(() => {
@@ -41,12 +57,26 @@ export function CrewSessions({ crewId }: { crewId: string }) {
       mounted.current = false;
     };
   }, [reload]);
-  async function write(body: object) {
+  async function write(body: CrewSessionMutation) {
     if (flight.current) return;
     flight.current = true;
     setBusy(true);
     setError("");
     try {
+      if (demoMode && user) {
+        const next = demoCrewSessionMutation(sessions, body, user.id, sport);
+        await AsyncStorage.setItem(
+          `fb-demo-start-line:${user.id}:${crewId}`,
+          JSON.stringify(next),
+        );
+        if (mounted.current) {
+          setSessions(next);
+          setOpen(false);
+          setTitle("");
+          id.current = crewSessionDraftId();
+        }
+        return;
+      }
       await requestApi(mobileEnv.apiUrl, accessToken, "/api/crews/sessions", {
         body,
       });
@@ -79,6 +109,9 @@ export function CrewSessions({ crewId }: { crewId: string }) {
           }}
         />
       </View>
+      {demoMode ? (
+        <Text style={f.small}>Demo · saved on this device</Text>
+      ) : null}
       {sessions.map((s) => {
         const joined = s.participants.some((p) => p.user_id === user?.id),
           closed = !!s.cancelled_at || Date.parse(s.starts_at) <= Date.now();
@@ -202,12 +235,12 @@ export function CrewSessions({ crewId }: { crewId: string }) {
           if (!busy) setOpen(false);
         }}
       >
-        <Text style={f.small}>Session</Text>
+        <Text style={f.small}>Session name</Text>
         <TextInput
           accessibilityLabel="Session title"
           style={f.input}
           maxLength={80}
-          placeholder="Easy run, together"
+          placeholder="Name this session"
           value={title}
           onChangeText={setTitle}
         />
@@ -215,7 +248,7 @@ export function CrewSessions({ crewId }: { crewId: string }) {
         <TextInput
           accessibilityLabel="Session date YYYY-MM-DD"
           style={f.input}
-          placeholder="2026-10-24"
+          placeholder="YYYY-MM-DD"
           value={day}
           onChangeText={setDay}
         />
@@ -226,14 +259,20 @@ export function CrewSessions({ crewId }: { crewId: string }) {
           value={time}
           onChangeText={setTime}
         />
-        <Text style={f.small}>Minutes</Text>
-        <TextInput
-          accessibilityLabel="Duration in minutes"
-          keyboardType="number-pad"
-          style={f.input}
-          value={duration}
-          onChangeText={setDuration}
-        />
+        <Text style={f.small}>Duration</Text>
+        <View style={f.chipRow}>
+          {[15, 30, 45, 60, 90, 120, 180, 240].map((n) => (
+            <Pressable
+              key={n}
+              accessibilityRole="button"
+              accessibilityState={{ selected: duration === String(n) }}
+              style={[f.chip, duration === String(n) && f.chipActive]}
+              onPress={() => setDuration(String(n))}
+            >
+              <Text>{n} min</Text>
+            </Pressable>
+          ))}
+        </View>
         {error ? (
           <Text accessibilityRole="alert" style={f.copy}>
             {error}
@@ -241,10 +280,15 @@ export function CrewSessions({ crewId }: { crewId: string }) {
         ) : null}
         <FocusButton
           label={busy ? "Saving…" : "Set the start line"}
-          disabled={busy || !title.trim() || !day}
+          disabled={busy}
           onPress={() => {
             try {
-              const startsAt = crewSessionInstant(day, time);
+              const startsAt = validateCrewSessionDraft(
+                title,
+                day,
+                time,
+                Number(duration),
+              );
               void write({
                 action: "create",
                 id: id.current,

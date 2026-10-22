@@ -1,17 +1,37 @@
 import { createElement } from "react";
 import { act, create, type ReactTestRenderer } from "react-test-renderer";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { freshState } from "@fitness-battle/shared";
+import {
+  freshState,
+  dayKey,
+  weeklyPeriodBounds,
+  APP_TIMEZONE,
+} from "@fitness-battle/shared";
 const mock = vi.hoisted(() => ({
   live: false,
   navigate: vi.fn(),
   state: null as unknown,
+  data: null as unknown,
+}));
+vi.mock("@react-native-async-storage/async-storage", () => ({
+  default: { getItem: vi.fn(async () => null), setItem: vi.fn(async () => {}) },
+}));
+vi.mock("react-native-svg", () => ({
+  default: "Svg",
+  ClipPath: "ClipPath",
+  Defs: "Defs",
+  G: "G",
+  Path: "Path",
+  Pattern: "Pattern",
+  Rect: "Rect",
+  Text: "SvgText",
 }));
 vi.mock("react-native", () => ({
   Pressable: "Pressable",
   Text: "Text",
   TextInput: "TextInput",
   View: "View",
+  ScrollView: "ScrollView",
   Share: { share: vi.fn() },
 }));
 vi.mock("expo-router", () => ({
@@ -31,10 +51,23 @@ vi.mock("../lib/compete-store", () => ({
 }));
 vi.mock("../lib/env", () => ({ mobileEnv: { apiUrl: "https://test.local" } }));
 vi.mock("../lib/fetch-with-timeout", () => ({
-  fetchWithTimeout: async () => ({
-    ok: true,
-    json: async () => ({ crews: [], members: [], entries: [], notices: [] }),
-  }),
+  fetchWithTimeout: async (url: string, options: { body?: string }) => {
+    if (url.includes("/crews/sessions"))
+      return { ok: true, json: async () => ({ sessions: [] }) };
+    if (url.endsWith("/rest") && mock.data && options.body) {
+      const body = JSON.parse(options.body);
+      (
+        mock.data as { members: { rest_week: string | null }[] }
+      ).members[0]!.rest_week = body.rest
+        ? dayKey(weeklyPeriodBounds(new Date()).startsAt, APP_TIMEZONE)
+        : null;
+    }
+    return {
+      ok: true,
+      json: async () =>
+        mock.data ?? { crews: [], members: [], entries: [], notices: [] },
+    };
+  },
 }));
 vi.mock("../lib/haptics", () => ({ playCue: vi.fn() }));
 vi.mock("../ui/focus", () => ({
@@ -46,6 +79,7 @@ import { CrewHub } from "./crew";
 let renderer: ReactTestRenderer;
 afterEach(async () => {
   if (renderer) await act(async () => renderer.unmount());
+  mock.data = null;
   vi.unstubAllGlobals();
 });
 describe("crew empty states", () => {
@@ -81,4 +115,60 @@ describe("crew empty states", () => {
       else expect(mock.navigate).toHaveBeenCalledWith("/athlete");
     },
   );
+});
+
+it("keeps crew settings open while setting and clearing the current rest week", async () => {
+  vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
+  mock.live = true;
+  mock.state = freshState();
+  mock.data = {
+    crews: [
+      {
+        crews: {
+          id: "crew",
+          name: "Runners",
+          sport: "running",
+          format: "volume",
+          journey_km: 0,
+          target_sessions: 4,
+          invite_code: "ABC",
+        },
+      },
+    ],
+    members: [
+      {
+        crew_id: "crew",
+        user_id: "audit",
+        display_name: "You",
+        status: "active",
+        rest_week: null,
+      },
+    ],
+    entries: [],
+    notices: [],
+  };
+  await act(async () => {
+    renderer = create(createElement(CrewHub));
+  });
+  await act(async () =>
+    renderer.root
+      .findByProps({ accessibilityLabel: "Crew settings" })
+      .props.onPress(),
+  );
+  const button = (label: string) =>
+    renderer.root
+      .findAllByType("FocusButton" as never)
+      .find((node) => node.props.label === label)!;
+  await act(async () => button("Mark my rest week").props.onPress());
+  expect(button("Clear rest week")).toBeTruthy();
+  expect(
+    renderer.root
+      .findAllByType("Sheet" as never)
+      .some(
+        (node) =>
+          node.props.open && node.props.title === "Your crew, your rhythm.",
+      ),
+  ).toBe(true);
+  await act(async () => button("Clear rest week").props.onPress());
+  expect(button("Mark my rest week")).toBeTruthy();
 });

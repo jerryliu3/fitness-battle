@@ -486,6 +486,7 @@ function YouContent({ surface }: { surface: "progress" | "athlete" }) {
         <WeekRecords
           sport={state.primary}
           you={guestBoard.you}
+          fieldSize={guestBoard.rows.length}
           units={state.units}
         />
         <SeasonHistory
@@ -1024,6 +1025,7 @@ function YouContent({ surface }: { surface: "progress" | "athlete" }) {
           <WeekRecords
             sport={state.primary}
             you={board.you}
+            fieldSize={board.rows.length}
             units={state.units}
           />
           <TrainingHistory state={state} />
