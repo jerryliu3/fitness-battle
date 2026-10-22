@@ -98,14 +98,18 @@ export function WeeklySocialActions({
         </p>
       ) : null}
       <label className="fb-field">
-        Your field
-        <select value={peer.id} onChange={(e) => setSelected(e.target.value)}>
-          {data!.peers.map((p) => (
-            <option key={p.id} value={p.id}>
-              {p.name}
-            </option>
-          ))}
-        </select>
+        Athlete
+        {data!.peers.length > 1 ? (
+          <select value={peer.id} onChange={(e) => setSelected(e.target.value)}>
+            {data!.peers.map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.name}
+              </option>
+            ))}
+          </select>
+        ) : (
+          <span>{peer.name}</span>
+        )}
       </label>
       <p>
         <b>{peer.name}</b> · #{peer.place} ·{" "}

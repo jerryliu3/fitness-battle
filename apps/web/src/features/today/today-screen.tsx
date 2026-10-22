@@ -205,6 +205,7 @@ export function TodayScreen() {
   const { user } = useAuth();
   const { state, dispatch } = useCompete();
   const reduced = useReducedMotion();
+  const [removed, setRemoved] = useState<Activity | null>(null);
   const [session, setSession] = useState<SessionPhase>({ kind: "closed" });
   const [revealingStops, setRevealingStops] = useState<string[]>([]);
   const peekRef = useRef<HTMLDivElement>(null);
@@ -556,6 +557,7 @@ export function TodayScreen() {
                       border: "1px solid rgba(184, 58, 56, 0.2)",
                     }}
                     onClick={() => {
+                      setRemoved(a);
                       dispatch({
                         type: "set-disposition",
                         activityId: a.id,
@@ -564,7 +566,7 @@ export function TodayScreen() {
                       closeSession();
                     }}
                   >
-                    Delete
+                    Remove
                   </button>
                 </div>
               ))}
@@ -623,6 +625,7 @@ export function TodayScreen() {
                 border: "1px solid rgba(184, 58, 56, 0.2)",
               }}
               onClick={() => {
+                setRemoved(a);
                 dispatch({
                   type: "set-disposition",
                   activityId: a.id,
@@ -631,7 +634,7 @@ export function TodayScreen() {
                 closeSession();
               }}
             >
-              Delete session
+              Remove session
             </button>
           </div>
         </motion.section>
@@ -658,6 +661,7 @@ export function TodayScreen() {
   return (
     <div className="focus-home-stage">
       <div className="focus-home-overlay">
+      {removed ? <div className="fb-note" role="status">Session removed. <button type="button" className="fb-btn-ghost" onClick={() => { dispatch({type:"set-disposition", activityId:removed.id, disposition:removed.disposition}); setRemoved(null); }}>Undo</button></div> : null}
       {frozen && (
         <div className="fb-pill" style={{ marginBottom: "16px" }}>
           <b>❄ Week frozen</b>

@@ -143,3 +143,9 @@
   margin: 0 0 10px;
   color: var(--ink);
 }
+
+.rankings-table-wrap { position: relative; overflow-x: auto; }
+.rankings-table td { white-space: nowrap; }
+.rankings-table td:nth-child(2), .rankings-table td:last-child { white-space: normal; min-width: 160px; max-width: 260px; overflow-wrap: anywhere; }
+.rankings-overflow-hint { display: none; }
+@media(max-width:600px) { .rankings-overflow-hint { display:block; position:sticky; left:0; color:var(--muted); font-size:12px; } }

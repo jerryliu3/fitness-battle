@@ -158,7 +158,7 @@ export function HomeActivityActions({
         }}
       >
         <Text style={[f.small, { fontFamily: "DMSans_700Bold" }]}>
-          {busy ? "…" : "↻ Sync"}
+          {busy ? "Syncing…" : "↻ Sync"}
         </Text>
       </Pressable>
       <Pressable
@@ -211,7 +211,7 @@ export function HomeActivityActions({
       {!user && !compact && (
         <Link href="/athlete">Sign in to add or sync activities</Link>
       )}
-      {!compact && note ? (
+      {note ? (
         <Text style={f.small} accessibilityLiveRegion="polite">
           {note}
         </Text>

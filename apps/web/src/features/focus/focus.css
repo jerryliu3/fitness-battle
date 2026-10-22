@@ -2535,4 +2535,9 @@
 .record-chart-point { cursor:pointer; }
 .record-chart-point:focus-visible { outline:2px solid #a67c00; }
 
+.focus-sync-status { position: absolute; top: 100%; right: 0; z-index: 5; width: min(280px, 75vw); background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 12px; box-shadow: 0 5px 16px #0001; }
+.focus-chart-actions { position: relative; }
+.start-duration { margin: 0; padding: 0; border: 0; }
+.start-duration legend { margin-bottom: 8px; }
+.start-duration button[aria-pressed="true"] { background: var(--tennis); color: var(--ink); border-color: var(--ink); }
 .phone-shell .record-distance-tabs button { width:auto; flex:0 0 auto; padding:10px 16px; }

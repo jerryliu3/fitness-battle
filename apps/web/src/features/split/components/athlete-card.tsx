@@ -41,10 +41,12 @@ export function WeekRecords({
   sport,
   you,
   units = "us",
+  fieldSize,
 }: {
   sport: SportId;
   you: BoardRow | null;
   units?: UnitSystem;
+  fieldSize: number;
 }) {
   return (
     <div className="sp-records">
@@ -62,7 +64,7 @@ export function WeekRecords({
       </div>
       <div>
         <span>Place</span>
-        <strong>{you ? `${you.place} / field` : "—"}</strong>
+        <strong>{you ? `${you.place} / ${fieldSize}` : "—"}</strong>
       </div>
     </div>
   );

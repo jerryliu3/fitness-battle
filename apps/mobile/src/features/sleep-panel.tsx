@@ -99,6 +99,7 @@ export function SleepPanel({
           {view.latestResult.eloBefore} → {view.latestResult.eloAfter}.
         </Text>
       ) : null}
+      <Text style={f.small} accessibilityLiveRegion="polite">{renewal.renews ? "Renews next week" : "Stops after this week"}</Text>
       <FocusButton
         label={
           renewal.renews ? "Stop after this week" : "Keep playing next week"

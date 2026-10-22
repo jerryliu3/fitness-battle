@@ -8,6 +8,8 @@ import {
   formatDistanceM,
   formatNoticeUnits,
   weeklyPeriodBounds,
+  dayKey,
+  APP_TIMEZONE,
 } from "@fitness-battle/shared";
 import { useFocusEffect, useGlobalSearchParams, useRouter } from "expo-router";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -149,12 +151,14 @@ export function CrewHub() {
   const [code, setCode] = useState("");
   const [format, setFormat] = useState("volume");
   const [note, setNote] = useState("");
+  const [demoRest, setDemoRest] = useState<Record<string, string | null>>({});
   const [busy, setBusy] = useState(false);
   const flight = useRef(false);
   const owner = useRef(user?.id);
   owner.current = user?.id;
   useEffect(() => {
     setSelected("");
+    setDemoRest({});
     setPanel(null);
     setNote("");
     setName("");
@@ -229,7 +233,7 @@ export function CrewHub() {
         ? pin.members.map(
             (member): Member => ({
               crew_id: pin.crewId,
-              user_id: member.id,
+              user_id: !api.live && member.name === state?.name && user ? user.id : member.id,
               display_name: member.name,
               rest_week: null,
             }),
@@ -261,7 +265,7 @@ export function CrewHub() {
     : (pin
         ? pin.members.map((member) => ({
             crew_id: pin.crewId,
-            user_id: member.id,
+            user_id: !api.live && member.name === state?.name && user ? user.id : member.id,
             activity_id: `preview-${member.id}`,
             distance_m: member.distanceM ?? 0,
             moving_sec: member.movingSec ?? 0,
@@ -271,6 +275,9 @@ export function CrewHub() {
           }))
         : (api.data?.progress ?? api.data?.entries ?? [])
       ).filter((e) => e.crew_id === crew.id && e.disposition === "counted");
+  const weekKey = dayKey(week.startsAt, APP_TIMEZONE);
+  const restKey = `${user?.id}:${crew.id}`;
+  const resting = api.live ? members.find(m => m.user_id === user?.id)?.rest_week === weekKey : demoRest[restKey] === weekKey;
   const sessionsMetric = crew.format === "personal_target" || crew.sport === "strength";
   const totalM = entries.reduce((n, e) => n + Number(e.distance_m), 0);
   const distance = (meters: number) =>
@@ -296,6 +303,11 @@ export function CrewHub() {
     setNote("");
     const id = user?.id;
     try {
+      if (!api.live && path === "/rest") {
+        setDemoRest(old => ({...old, [restKey]: resting ? null : weekKey}));
+        setNote(resting ? "Rest week cleared." : "Rest week set. You can clear it here.");
+        return;
+      }
       const result = await api.request(path, body);
       if (owner.current !== id) return;
       const reloaded = await api.reload();
@@ -315,7 +327,7 @@ export function CrewHub() {
               : "Your counted sessions are already shared for this week.",
         );
       } else {
-        setPanel(null);
+        if (path !== "/rest") setPanel(null);
         setName("");
         setCode("");
         setNote(
@@ -430,12 +442,9 @@ export function CrewHub() {
                       const link = inviteLink(crew.invite_code);
                       void Share.share({
                         message: `Join my crew on overtaek: ${link}`,
-                      }).then(() => {
-                        setNote(
-                          "Invite link ready — copied to the share sheet.",
-                        );
-                        void playCue("success");
-                      });
+                      }).then(result => {
+                        if (result.action === Share.sharedAction) { setNote("Invite shared."); void playCue("success"); }
+                      }).catch(() => setNote("Could not share the invite. Try again."));
                     }
                   }}
                 />
@@ -469,11 +478,11 @@ export function CrewHub() {
                   ? `of ${distance(crew.journey_km * 1000)}`
                   : `${distanceUnitLabel(state?.units)} together`}
             </Text>
-            <CrewRelay key={crew.id} members={members} entries={entries} sport={crew.sport as SportId} format={crew.format} targetM={crew.journey_km * 1000} targetSessions={crew.target_sessions} units={state?.units} />
+            <CrewRelay userId={user?.id} key={crew.id} members={members} entries={entries} sport={crew.sport as SportId} format={crew.format} targetM={crew.journey_km * 1000} targetSessions={crew.target_sessions} units={state?.units} />
           </View>
           {user ? (
             <>
-              {api.live ? <CrewSessions key={`${user?.id}:${crew.id}`} crewId={crew.id} /> : null}
+              {user && !solo ? <CrewSessions key={`${user?.id}:${crew.id}`} crewId={crew.id} sport={crew.sport} /> : null}
               <Text style={f.h2}>Crew standings</Text>
               <View style={f.card}>
                 {[...members]
@@ -629,7 +638,7 @@ export function CrewHub() {
               <View key={m.user_id} style={f.row}>
                 <Text style={[f.rowTitle, f.grow]}>{m.display_name}</Text>
                 <Text style={f.small}>
-                  {m.rest_week ? "Rest week" : "Active"}
+                  {(m.user_id === user?.id ? resting : m.rest_week === weekKey) ? "Rest week" : "Active"}
                 </Text>
               </View>
             ))}
@@ -647,7 +656,7 @@ export function CrewHub() {
               onPress={() =>
                 void Share.share({
                   message: `Join my crew on overtaek: ${inviteLink(crew.invite_code)}`,
-                })
+                }).then(result => { if (result.action === Share.sharedAction) setNote("Invite shared."); }).catch(() => setNote("Could not share the invite. Try again."))
               }
             />
             <Text selectable style={f.massive}>
@@ -672,11 +681,11 @@ export function CrewHub() {
               {crew.sport} · {crew.format.replaceAll("_", " ")}
             </Text>
             <FocusButton
-              label="Mark my rest week"
+              label={resting ? "Clear rest week" : "Mark my rest week"}
               secondary
               disabled={busy}
               onPress={() =>
-                void write("/rest", { crewId: crew.id, rest: true })
+                void write("/rest", { crewId: crew.id, rest: !resting })
               }
             />
             <Text style={f.small}>

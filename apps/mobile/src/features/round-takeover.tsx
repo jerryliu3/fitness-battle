@@ -105,7 +105,7 @@ export function RoundTakeover({
         }
       : state,
   );
-  if (!ready || path !== "/arena" || !reveal) return null;
+  if (!ready || path !== "/arena" || !replay || !reveal) return null;
   return (
     <Round
       key={`${user?.id ?? "guest"}:${reveal.key}`}

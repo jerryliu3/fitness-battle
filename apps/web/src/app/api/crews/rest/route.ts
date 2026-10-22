@@ -11,13 +11,13 @@ export async function POST(request: Request) {
     crewId?: string;
     rest?: boolean;
   };
-  if (!body.crewId) {
-    return NextResponse.json({ error: "crew_required" }, { status: 400 });
+  if (!body.crewId || typeof body.rest !== "boolean") {
+    return NextResponse.json({ error: "crew_and_rest_required" }, { status: 400 });
   }
   const supabase = await createRequestClient(request);
   const { error } = await supabase.rpc("set_crew_rest", {
     p_crew_id: body.crewId,
-    p_rest: Boolean(body.rest),
+    p_rest: body.rest,
   });
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 400 });

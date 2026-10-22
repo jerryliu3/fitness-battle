@@ -197,6 +197,7 @@ export function SleepPanel({
             </p>
           )}
 
+          <p className="fb-note" role="status">{leaveLabel === "Stop after this week" ? "Renews next week" : "Stops after this week"}</p>
           <button type="button" className="fb-btn-ghost" onClick={onLeave}>
             {leaveLabel}
           </button>

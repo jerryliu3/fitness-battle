@@ -136,7 +136,7 @@ export function WeekReveal({
         }
       : state,
   );
-  if (!ready || (!preview && path !== "/arena") || !reveal) return null;
+  if (!ready || (!preview && (path !== "/arena" || !replay)) || !reveal) return null;
   return (
     <RoundTakeover
       key={`${user?.id ?? "guest"}:${reveal.key}`}

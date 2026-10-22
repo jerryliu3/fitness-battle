@@ -95,20 +95,22 @@ export function WeeklySocialActions({
           {data.receivedCongrats} congrats from your field
         </Text>
       ) : null}
-      <Text style={f.kicker}>Your field</Text>
+      <Text style={f.kicker}>Athlete</Text>
       <ScrollView horizontal showsHorizontalScrollIndicator={false}>
         <View style={f.row}>
-          {data!.peers.map((p) => (
-            <Pressable
-              key={p.id}
-              accessibilityRole="button"
-              accessibilityState={{ selected: p.id === peer.id }}
-              style={[f.chip, p.id === peer.id && f.chipActive]}
-              onPress={() => setSelected(p.id)}
-            >
-              <Text>{p.name}</Text>
-            </Pressable>
-          ))}
+          {data!.peers.length > 1
+            ? data!.peers.map((p) => (
+                <Pressable
+                  key={p.id}
+                  accessibilityRole="button"
+                  accessibilityState={{ selected: p.id === peer.id }}
+                  style={[f.chip, p.id === peer.id && f.chipActive]}
+                  onPress={() => setSelected(p.id)}
+                >
+                  <Text>{p.name}</Text>
+                </Pressable>
+              ))
+            : null}
         </View>
       </ScrollView>
       <Text style={f.rowTitle}>

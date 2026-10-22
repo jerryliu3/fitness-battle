@@ -10,6 +10,7 @@ import {
   APP_TIMEZONE,
   competeNow,
   weeklyPeriodBounds,
+  dayKey,
   type SportId,
   countsOnTrack,
   distanceUnitLabel,
@@ -96,7 +97,9 @@ export function CrewPanel() {
   const [format, setFormat] = useState("volume");
   const [busy, setBusy] = useState(false);
   const [note, setNote] = useState("");
+  const [demoRest, setDemoRest] = useState<Record<string, string | null>>({});
   const [leaveConfirmOpen, setLeaveConfirmOpen] = useState(false);
+  useEffect(() => { setDemoRest({}); setPanel(null); setNote(""); }, [user?.id]);
   async function reload() {
     try {
       const res = await fetch("/api/crews");
@@ -134,7 +137,7 @@ export function CrewPanel() {
     setNote("");
     if (demoMode) {
       setBusy(false);
-      setPanel(null);
+      if (path !== "/rest") setPanel(null);
       if (path === "/leave") {
         dispatch({ type: "clear-crew-board" });
         setSelected("");
@@ -143,7 +146,8 @@ export function CrewPanel() {
         setCode("");
         setNote("Joined crew.");
       } else if (path === "/rest") {
-        setNote("Marked rest week for this crew.");
+        setDemoRest(old => ({...old, [restKey]: resting ? null : weekKey}));
+        setNote(resting ? "Rest week cleared." : "Rest week set. You can clear it here.");
       } else {
         setName("");
         setNote("Saved. Your crew is up to date.");
@@ -160,7 +164,7 @@ export function CrewPanel() {
       if (!res.ok || result.persisted === false)
         throw Error(humanCrewError(result.error));
       await reload();
-      setPanel(null);
+      if (path !== "/rest") setPanel(null);
       setName("");
       setCode("");
       if (path === "/leave") {
@@ -187,9 +191,7 @@ export function CrewPanel() {
   );
 
   const athleteName = state?.name || "You";
-  const athleteSport = state?.primary
-    ? state.primary.charAt(0).toUpperCase() + state.primary.slice(1)
-    : "Running";
+  const athleteSport = state?.primary ?? "running";
 
   const demoCrew: Crew | null =
     hasDemoCrew && crewBoard
@@ -208,7 +210,7 @@ export function CrewPanel() {
     hasDemoCrew && crewBoard
       ? crewBoard.members.map((m) => ({
           crew_id: crewBoard.crewId,
-          user_id: m.id,
+          user_id: demoMode && m.name === athleteName && user ? user.id : m.id,
           display_name: m.name,
           rest_week: null,
         }))
@@ -218,7 +220,7 @@ export function CrewPanel() {
     hasDemoCrew && crewBoard
       ? crewBoard.members.map((m) => ({
           crew_id: crewBoard.crewId,
-          user_id: m.id,
+          user_id: demoMode && m.name === athleteName && user ? user.id : m.id,
           activity_id: `act-${m.id}`,
           distance_m: m.distanceM ?? 0,
           moving_sec: m.movingSec ?? 0,
@@ -282,6 +284,9 @@ export function CrewPanel() {
       : demoCrew && crew?.id === demoCrew.id
         ? demoEntries
         : soloEntries;
+  const weekKey = dayKey(weeklyPeriodBounds(state ? competeNow(state) : new Date()).startsAt, APP_TIMEZONE);
+  const restKey = `${user?.id}:${crew.id}`;
+  const resting = demoMode ? demoRest[restKey] === weekKey : members.find(m => m.user_id === user?.id)?.rest_week === weekKey;
   const unitLabel = distanceUnitLabel(state?.units);
   const sessionsMetric = crew?.format === "personal_target" || crew?.sport === "strength";
   const memberTotal = (id: string) => entries.filter(e => e.user_id === id).reduce((sum, e) => sum + Number(sessionsMetric ? e.session_count ?? 1 : e.distance_m), 0);
@@ -425,14 +430,14 @@ export function CrewPanel() {
                     </small>
                   </h2>
                 )}
-                <CrewRelay key={crew.id} members={members} entries={entries} sport={crew.sport as SportId} format={crew.format} targetM={targetM} targetSessions={crew.target_sessions} units={state?.units} />
+                <CrewRelay userId={user?.id} key={crew.id} members={members} entries={entries} sport={crew.sport as SportId} format={crew.format} targetM={targetM} targetSessions={crew.target_sessions} units={state?.units} />
                 <p className="fb-copy">
                   {sessionsMetric
                     ? `Each member aims for ${crew.target_sessions} sessions.`
                     : "Every pace belongs here."}
                 </p>
               </section>
-              {user && !demoMode && !isSolo ? <CrewSessions key={`${user.id}:${crew.id}`} crewId={crew.id} userId={user.id} /> : null}
+              {user && !isSolo ? <CrewSessions key={`${user.id}:${crew.id}`} crewId={crew.id} userId={user.id} demo={demoMode} sport={crew.sport} /> : null}
               {user ? (
                 <>
                   <h2>Crew standings</h2>
@@ -515,7 +520,6 @@ export function CrewPanel() {
       )}
       <Sheet
         open={!!panel}
-        preventAutoFocus={panel === "add"}
         title={
           panel === "add"
             ? "Add Crew"
@@ -637,7 +641,7 @@ export function CrewPanel() {
             {members.map((m) => (
               <li key={m.user_id}>
                 <b>{m.display_name}</b>
-                <small>{m.rest_week ? "Rest week" : "Active"}</small>
+                <small>{(m.user_id === user?.id ? resting : m.rest_week === weekKey) ? "Rest week" : "Active"}</small>
               </li>
             ))}
           </ul>
@@ -680,7 +684,7 @@ export function CrewPanel() {
                     );
                 }}
               >
-                Copy invite link
+                {note === "Invite link copied." ? "Copied ✓" : "Copy invite link"}
               </button>
             </>
           )
@@ -707,17 +711,17 @@ export function CrewPanel() {
             {members.map((m) => (
               <div className="fb-row" key={m.user_id}>
                 <b className="fb-grow">{m.display_name}</b>
-                <small>{m.rest_week ? "Rest week" : "Active"}</small>
+                <small>{(m.user_id === user?.id ? resting : m.rest_week === weekKey) ? "Rest week" : "Active"}</small>
               </div>
             ))}
             <button
               className="fb-btn-line"
               disabled={busy}
               onClick={() =>
-                void write("/rest", { crewId: crew?.id, rest: true })
+                void write("/rest", { crewId: crew?.id, rest: !resting })
               }
             >
-              Mark my rest week
+              {resting ? "Clear rest week" : "Mark my rest week"}
             </button>
             <p className="fb-note">
               A crew rest marker does not freeze effort score. Week freezes live in

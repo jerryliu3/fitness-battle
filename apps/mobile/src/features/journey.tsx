@@ -8,7 +8,7 @@ import {
   type JourneyLane,
   type UnitSystem,
 } from "@fitness-battle/shared";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Pressable, Text, View } from "react-native";
 import Svg, { Path } from "react-native-svg";
 import { SHELL_COLORS as c } from "../theme";
@@ -27,7 +27,12 @@ export function Journey({
   units: UnitSystem;
   onToday: () => void;
 }) {
-  const { dispatch } = useCompeteStore();
+  const { dispatch, accountKey } = useCompeteStore();
+  const [removed, setRemoved] = useState<Activity | null>(null);
+  useEffect(() => {
+    setRemoved(null);
+    setSelectedDay(null);
+  }, [accountKey]);
   const [width, setWidth] = useState(320);
   const [selectedDay, setSelectedDay] = useState<string | null>(null);
   const days = groupActivitiesByDay(activities, 30);
@@ -68,6 +73,23 @@ export function Journey({
   const selected = days.find((d) => d.id === selectedDay);
   return (
     <>
+      {removed ? (
+        <View style={f.feedback} accessibilityLiveRegion="polite">
+          <Text style={f.copy}>Session removed.</Text>
+          <FocusButton
+            label="Undo"
+            secondary
+            onPress={() => {
+              dispatch({
+                type: "set-disposition",
+                activityId: removed.id,
+                disposition: removed.disposition,
+              });
+              setRemoved(null);
+            }}
+          />
+        </View>
+      ) : null}
       <View
         onLayout={(event) => setWidth(event.nativeEvent.layout.width)}
         style={{ paddingTop: 56 }}
@@ -214,9 +236,11 @@ export function Journey({
             </Text>
             <View style={{ marginTop: 8 }}>
               <FocusButton
-                label="Delete session"
+                label="Remove session"
                 secondary
                 onPress={() => {
+                  setRemoved(a);
+                  setSelectedDay(null);
                   dispatch({
                     type: "set-disposition",
                     activityId: a.id,

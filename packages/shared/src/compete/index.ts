@@ -218,5 +218,6 @@ export { crewSessionInstant, crewSessionError, type CrewSession } from './crew-s
 export { crewSessionDraftId } from './crew-sessions';
 export { repeatStatus, type WeeklySocial, type WeeklyPeer } from './weekly-social';
 export { currentEffortMilestone } from './milestones';
-
 export { personalRecordChart } from "./progress";
+
+export { validateCrewSessionDraft, demoCrewSessionMutation, type CrewSessionMutation } from "./crew-sessions";
