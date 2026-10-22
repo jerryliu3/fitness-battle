@@ -5,7 +5,7 @@ Selected October 22, 2026, following the [six-part exploration](https://github.c
 ## Delivered
 
 - Hours-first Session stage on web/native, for suggestions and single/multiple recorded sessions. Existing Home stays mounted; detail closes on navigation. Individual sessions expand to source/eligibility/secondary metrics and confirm before removal. Impact is a disclosure, not another permanent dashboard.
-- Photo/name pennants attached to self and the selected rival, stable place headers, a 1.2 km chase window, a 100 m distance capsule footprint and the existing course overview. Independent hit regions remain large. Standings uses its existing compact heads. The web 3D label and native bridge also carry bounded public portrait URLs.
+- Photo/name pennants attached to self and the selected rival, stable place headers, a 1.2 km chase window, a 300 m metric / 0.3 mi imperial distance capsule footprint and the existing course overview. Independent hit regions remain large. Standings uses its existing compact heads. The web 3D label and native bridge also carry bounded public portrait URLs.
 - Monthly chapters for settled results, with signed score changes and the existing dimensional receipt. Distinct-week counts survive multi-sport/track filters.
 - A selectable training atlas inspired by the local Goalmaxxing Atlas reference. The hours chart switches among daily week, clipped-week month and monthly year buckets. The month grid and selected-day sessions use real counted activity. Existing sourced PR history remains below it.
 - A shared, portable SVG projection of an extruded crew ribbon, with material highlights, depth, finish gate, proportional contributions and selectable portrait cards. Current members' actual last-week total is the distance reference; zero/unavailable history stays honest. This is dimensional SVG presentation matching the original material direction, not a new Three.js runtime on native.
@@ -52,3 +52,9 @@ The prototype is independent of the implementation stack. Merge the UX PRs in th
 | 5. Crew dimensional relay and comparison RPC | [#258](https://github.com/jerryliu3/fitness-battle/pull/258) | `codex/ux-progress-atlas` |
 
 Each committed stack step separately passed monorepo typecheck and its applicable native interaction tests. The combined stack passes 677 tests, with 5 existing skipped tests, the web production build and iOS bundle export. It starts from `626cab8` and preserves the newer session Undo, sheet heading focus, Crew self-selection, Progress awards and personal-record charts. No PR has been merged and no remote migration has been applied.
+
+## Single-sport Compete follow-up
+
+Compete now offers one button per registered sport plus “＋ Register,” including Sleep & Recovery when registered. Only the selected field is built and mounted; switching unmounts the previous field. The selection is account-scoped, falls back when registration changes and does not change the primary sport. Supporting controls stay inline and the competition dates follow the selected sport. Capsules now use 300 m in metric and 0.3 mi in imperial; side rulers use whole-unit marks at all chase zooms.
+
+Focused tests verify one mounted field, switching, fallback after removing a registration, recovery-only rendering, world footprint and capsule visibility. A brief follow-up simulator attempt reconnected to the running app, but Device Hub again returned `noWindowsAvailable` on the Compete tap. No simulator performance improvement is claimed; Compete/Crew device interaction remains a QA follow-up.

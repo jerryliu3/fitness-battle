@@ -67,7 +67,7 @@ export function fieldCourse(viewportWidth: number, height: number, count: number
   }
   return { width, height, left, fieldWidth, top, bottom, length, laneWidth, bounds, zoom, oval, ovalScale, outerRadius, midX, midY, along, drift, point, curve,
     markerScale: unit === "pts" ? (oval ? Math.min(1.5, ovalScale * 1.3) : zoom)
-      : (oval ? (540 + 2 * Math.PI * (140 + Math.floor(count / 2) * 18 + 9)) * ovalScale : length / bounds.span) * (unit === "mi" ? 100 / 1609.344 : .1) / 58 };
+      : (oval ? (540 + 2 * Math.PI * (140 + Math.floor(count / 2) * 18 + 9)) * ovalScale : length / bounds.span) * .3 / 58 };
 }
 export type FieldCourse = ReturnType<typeof fieldCourse>;
 /** Integer labels, bounded scenery; no work proportional to lifetime distance. */
@@ -201,6 +201,5 @@ export function fieldCourseScene(g: FieldCourse, appearance: FieldAppearance, la
 /** Separate overlay keeps the one scale visible when swiping a crowded field. */
 export function fieldScaleScene(g: FieldCourse, unit: string): FieldNode[] {
   if (g.oval) return [];
-  const step=unit==="pts"?1:g.bounds.span<=2?(unit==="mi"?.1:.2):1;
-  return [rect(0, 0, 42, g.height, "#f6f7f2"), text(9, 36, unit, "#616c63", 11), ...fieldMarks(g.bounds.min, g.bounds.max,step).map(d => text(9, g.along(d) + 3, step<1?d.toFixed(1):String(d), "#616c63", 11))];
+  return [rect(0, 0, 42, g.height, "#f6f7f2"), text(9, 36, unit, "#616c63", 11), ...fieldMarks(g.bounds.min, g.bounds.max).map(d => text(9, g.along(d) + 3, String(d), "#616c63", 11))];
 }
