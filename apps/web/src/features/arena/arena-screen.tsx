@@ -1,9 +1,9 @@
 "use client";
 import { EventCarousel } from "@/features/club/event-carousel";
 import { useEffect, useState } from "react";
-import { motion } from "motion/react";
+
 import { playCue } from "@/lib/haptics";
-import { useScoreTrackLens } from "@/lib/score-track-lens";
+
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/components/auth-context";
@@ -16,21 +16,10 @@ import { loadCrewJoinOptions, seatCrewFieldPin } from "@/lib/crew-field";
 import { WeekReveal } from "@/features/split/components/week-reveal";
 import { SleepPanel } from "@/features/health/sleep-panel";
 import { Sheet } from "@/ui/sheet";
-import {
-  APP_TIMEZONE,
-  competeNow,
-  competePeriodWindow,
-  primaryFreezePeriodStart,
-  sleepRenewal,
-  SPORTS,
-  weeklyCompetitionLastDay,
-  weeklyPeriodBounds,
-  type SportId,
-  type ScoreTrack,
-} from "@fitness-battle/shared";
+import { APP_TIMEZONE, competitionTrack, competitionTrackLabel, competeNow, competePeriodWindow, primaryFreezePeriodStart, sleepRenewal, SPORTS, weeklyCompetitionLastDay, weeklyPeriodBounds, type SportId } from "@fitness-battle/shared";
 
 const SCORE_TRACK_TOOLTIP =
-  "Open score counts all logged effort. GPS verified counts only activities with GPS proof from a connected tracker.";
+  "Running and cycling use GPS Tracked activities from a connected tracker. Walking and strength include manual activity.";
 
 function formatCompetitionDateRange(startsAt: Date, endsAt: Date): string {
   const lastDay = weeklyCompetitionLastDay(endsAt);
@@ -53,7 +42,6 @@ export function ArenaScreen({ tabActive = true }: { tabActive?: boolean }) {
   useEffect(()=>{if(tabActive&&requestedEvent&&SPORTS.some(s=>s.id===requestedEvent))setSelection({account:user?.id??"guest",sport:requestedEvent as SportId});},[requestedEvent,user?.id,tabActive]);
   const [competeWithCrew, setCompeteWithCrew] = useState(false);
   const [sport, setSport] = useState<SportId | "sleep" | null>(null);
-  const [track, setTrack] = useScoreTrackLens();
   const [competitionTipOpen, setCompetitionTipOpen] = useState(false);
 
   useEffect(() => {
@@ -67,12 +55,6 @@ export function ArenaScreen({ tabActive = true }: { tabActive?: boolean }) {
     return () => document.removeEventListener("mousedown", close);
   }, [competitionTipOpen]);
 
-  function chooseTrack(next: ScoreTrack) {
-    if (next === track) return;
-    setTrack(next);
-    void playCue("selection");
-  }
-
   if (!state) return <p className="fb-copy">Loading your lanes…</p>;
 
   const now = competeNow(state);
@@ -85,6 +67,7 @@ export function ArenaScreen({ tabActive = true }: { tabActive?: boolean }) {
   const requested = selection?.account === account ? selection.sport : null;
   const selectedSport = requested && (requested === "sleep" ? sleepOptedIn : active.some(r=>r.sport===requested))
     ? requested : active.find(r=>r.sport===state.primary)?.sport ?? active[0]?.sport ?? (sleepOptedIn ? "sleep" : null);
+  const track = competitionTrack(selectedSport && selectedSport !== "sleep" ? selectedSport : state.primary);
   const headerSport = selectedSport === "sleep" ? undefined : selectedSport;
   const period = headerSport
     ? competePeriodWindow(state, now, headerSport)
@@ -149,32 +132,7 @@ export function ArenaScreen({ tabActive = true }: { tabActive?: boolean }) {
             <span className="focus-competition-pill">{badgeLabel}</span>
           </p>
         </div>
-        {hasAnyRegistration ? (
-          <div
-            className="focus-segments focus-competition-tracks"
-            role="group"
-            aria-label="Score track"
-          >
-            <button
-              type="button"
-              className="focus-score-track-button"
-              aria-pressed={track === "open"}
-              onClick={() => chooseTrack("open")}
-            >
-              {track === "open" ? <motion.span layoutId="score-track-indicator" className="focus-score-track-indicator" /> : null}
-              Open score
-            </button>
-            <button
-              type="button"
-              className="focus-score-track-button"
-              aria-pressed={track === "verified"}
-              onClick={() => chooseTrack("verified")}
-            >
-              {track === "verified" ? <motion.span layoutId="score-track-indicator" className="focus-score-track-indicator" /> : null}
-              GPS verified
-            </button>
-          </div>
-        ) : null}
+
       </header>
 
       {frozen && (
@@ -190,7 +148,7 @@ export function ArenaScreen({ tabActive = true }: { tabActive?: boolean }) {
         </p>
       ) : null}
 
-      {hasAnyRegistration ? <EventCarousel key={account} events={[...active.map(r=>({id:r.sport,label:SPORTS.find(s=>s.id===r.sport)!.name})),...(sleepOptedIn?[{id:"sleep",label:"Sleep & Recovery"}]:[])]} value={selectedSport!} onChange={id=>{setSelection({account,sport:id as SportId|"sleep"});void playCue("selection");}} onRegister={()=>{setSport(null);setRegister(true);}}>
+      {hasAnyRegistration ? <EventCarousel key={account} events={[...active.map(r=>({id:r.sport,label:SPORTS.find(s=>s.id===r.sport)!.name,badge:competitionTrackLabel(r.sport)})),...(sleepOptedIn?[{id:"sleep",label:"Sleep & Recovery"}]:[])]} value={selectedSport!} onChange={id=>{setSelection({account,sport:id as SportId|"sleep"});void playCue("selection");}} onRegister={()=>{setSport(null);setRegister(true);}}>
       {selectedSport && selectedSport !== "sleep" ? (
         <FieldStage key={`${account}:${selectedSport}:${state.units}`} tabActive={tabActive}
           sportTitle={SPORTS.find(s=>s.id===selectedSport)?.name}
@@ -199,7 +157,6 @@ export function ArenaScreen({ tabActive = true }: { tabActive?: boolean }) {
       ) : selectedSport === "sleep" ? (
         <SleepPanel state={state} now={now}
           onJoin={()=>participate("join sleep",()=>dispatch({type:"opt-in-health",metric:"sleep"}))}
-          onSample={()=>dispatch({type:"log-sleep"})}
           onLeave={()=>dispatch({type:sleep.renews?"schedule-leave":"resume-renewal",metric:"sleep"})}
           leaveLabel={sleep.renews?"Stop after this week":"Keep playing next week"}/>
       ) : <section className="focus-card focus-empty"><h2>Your next chapter starts here.</h2><p className="fb-copy">Register for an event to open your field.</p></section>}
@@ -211,6 +168,7 @@ export function ArenaScreen({ tabActive = true }: { tabActive?: boolean }) {
           Latest week results ↗
         </Link>
       ) : null}
+      <div className="club-competition-extras">
       <section className="focus-card focus-coming-soon">
         <p className="fb-kicker">Coming soon</p>
         <h2>1v1 Head-to-Head</h2>
@@ -235,6 +193,7 @@ export function ArenaScreen({ tabActive = true }: { tabActive?: boolean }) {
         <span aria-hidden="true">→</span>
       </Link>
 
+      </div>
       <Sheet
         open={register}
         title="Register for this week."
@@ -326,13 +285,11 @@ export function ArenaScreen({ tabActive = true }: { tabActive?: boolean }) {
                   });
                 }}
               >
-                <b>{sport === s.id ? "Joining…" : s.name}</b>
+                <b>{sport === s.id ? "Joining…" : s.name} <span className="club-track-badge">{competitionTrackLabel(s.id)}</span></b>
                 <small>
                   {isRegistered
                     ? "Already registered"
-                    : s.gps
-                      ? "GPS distance & open effort"
-                      : "Open effort score"}
+                    : competitionTrackLabel(s.id)}
                 </small>
               </button>
             );

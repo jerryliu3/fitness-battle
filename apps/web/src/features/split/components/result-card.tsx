@@ -51,7 +51,7 @@ export function ResultCard({
       {receipt ? (
         <>
           <strong className="week-result-heading">The receipt</strong>
-          <span>
+          <span className="week-result-volume">
             {formatVolume(
               result.sport,
               result.distanceM,
@@ -72,11 +72,12 @@ export function ResultCard({
         </>
       ) : (
         <>
+          <span className="week-result-bento">
           <span className="week-result-place">
             <strong>#{result.place}</strong>
             <span>of {result.fieldSize}</span>
           </span>
-          <span>
+          <span className="week-result-volume">
             {formatVolume(
               result.sport,
               result.distanceM,
@@ -86,6 +87,7 @@ export function ResultCard({
           </span>
           <span className="week-result-score">
             <b>{result.eloAfter}</b> effort score <em>{formatEloDelta(result.eloBefore,result.eloAfter)}</em>
+          </span>
           </span>
         </>
       )}

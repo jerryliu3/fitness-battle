@@ -2,7 +2,7 @@ import { useRef, useState, type ReactNode } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { FocusButton, FocusSheet, f } from "../ui/focus";
 import { SHELL_COLORS as c } from "../theme";
-type ClubEvent = { id: string; label: string };
+type ClubEvent = { id: string; label: string; badge?: string };
 export function EventCarousel({
   events,
   value,
@@ -62,6 +62,7 @@ export function EventCarousel({
           </Text>
           <Text style={[f.h2, { fontFamily: "DMSans_700Bold" }]}>
             {events[index]?.label} ⌄
+            {events[index]?.badge ? <Text style={[f.small, { color: c.muted }]}>  {events[index]?.badge}</Text> : null}
           </Text>
         </View>
         <Pressable
@@ -86,7 +87,7 @@ export function EventCarousel({
         </Pressable>
       </View>
       {/* Event title owns event swipes; the board owns lane swipes. Avoid nested horizontal pagers trapping vertical page gestures. */}
-      <View key={value}>{children}</View>
+      <View key={value} style={{ borderTopWidth: 1, borderBottomWidth: 1, borderColor: c.line, paddingVertical: 14 }}>{children}</View>
       <View style={{ flexDirection: "row", justifyContent: "center" }}>
         {events.map((event, i) => (
           <Pressable

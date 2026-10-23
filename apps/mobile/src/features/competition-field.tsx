@@ -249,7 +249,7 @@ export function CompetitionField({
   const place = (value: number) =>
     1 + ranked.filter((lane) => lane.values[2] > value).length;
   const scores = weeklyBoard(state, sport, track);
-  const pastYou = arena.lanes.find((lane) => lane.ghost);
+  const pastYou = arena.lanes.find(lane => lane.ghost);
   const selected = arena.lanes.find((lane) => lane.id === selectedId);
   return (
     <View style={{ gap: 14 }}>
@@ -451,6 +451,7 @@ export function CompetitionField({
               </View>
             </Pressable>
           ))}
+          {pastYou && <View style={[f.row, { minHeight: 48, borderTopWidth: 1, borderTopColor: c.line }]}><Text style={f.copy}>Past you · unranked</Text><Text style={f.rowTitle}>{pastYou.values[2].toFixed(1)} {arena.unit}</Text></View>}
         </View>
       ) : null}
       <Text style={f.small}>

@@ -99,21 +99,16 @@ export function ResultCard({
           </>
         ) : (
           <>
-            <View style={[f.row, { alignItems: "baseline" }]}>
-              <Text style={[f.massive, { fontSize: 64 }]}>#{result.place}</Text>
-              <Text style={f.copy}>of {result.fieldSize}</Text>
+            <View style={{ flexDirection: "row", gap: 10, alignItems: "stretch" }}>
+              <View style={{ flex: 1.1, backgroundColor: "#ffffff88", borderRadius: 16, padding: 16, justifyContent: "center" }}>
+                <Text style={[f.massive, { fontSize: 64 }]}>#{result.place}</Text>
+                <Text style={f.copy}>of {result.fieldSize}</Text>
+              </View>
+              <View style={{ flex: 1, gap: 10 }}>
+                <Text style={[f.copy, { padding: 12, backgroundColor: "#ffffffbb", borderRadius: 14 }]}>{formatVolume(result.sport, result.distanceM, result.movingSec, units)}</Text>
+                <Text style={[f.rowTitle, { padding: 12, backgroundColor: "#fff5d1", borderRadius: 14 }]}>{result.eloAfter} effort score · {formatEloDelta(result.eloBefore,result.eloAfter)}</Text>
+              </View>
             </View>
-            <Text style={f.copy}>
-              {formatVolume(
-                result.sport,
-                result.distanceM,
-                result.movingSec,
-                units,
-              )}
-            </Text>
-            <Text style={f.rowTitle}>
-              {result.eloAfter} effort score · {formatEloDelta(result.eloBefore,result.eloAfter)}
-            </Text>
           </>
         )}
         <Text style={[f.small, { textAlign: "right" }]}>

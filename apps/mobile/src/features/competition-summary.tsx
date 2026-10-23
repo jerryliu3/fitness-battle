@@ -90,8 +90,7 @@ export function CompetitionSummary({
         onClose={() => setInfoOpen(false)}
       >
         <Text style={f.copy}>
-          Open score counts all logged effort. GPS verified counts only
-          activities with GPS proof from a connected tracker.
+          Running and cycling use GPS Tracked activities from a connected tracker. Walking and strength include manual activity.
         </Text>
       </FocusSheet>
     </>

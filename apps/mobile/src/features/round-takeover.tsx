@@ -1,3 +1,4 @@
+import { MotionStep } from "../ui/motion-step";
 import { useAuth } from "../lib/auth";
 import {
   APP_TIMEZONE,
@@ -30,13 +31,13 @@ function Round({
     <Modal
       visible
       presentationStyle="fullScreen"
-      animationType="none"
-      onRequestClose={onClose}
+      animationType="slide"
+      onRequestClose={() => { /* Complete both stages before acknowledging results. */ }}
     >
       <SafeAreaProvider>
       <SafeAreaView style={f.safe}>
         <ScrollView contentContainerStyle={f.content}>
-          <FocusButton label="Close results" secondary onPress={onClose} />
+          <MotionStep identity={next ? "next" : "results"}>
           <Text style={f.kicker}>
             Round complete · {next ? "2 / 2" : "1 / 2"}
           </Text>
@@ -71,12 +72,13 @@ function Round({
                 secondary
                 onPress={() => {
                   onClose();
-                  router.push("/settings");
+                  router.push("/athlete-settings?panel=preferences");
                 }}
               />
               <FocusButton label="Back to Compete" onPress={onClose} />
             </>
           )}
+          </MotionStep>
         </ScrollView>
       </SafeAreaView>
       </SafeAreaProvider>

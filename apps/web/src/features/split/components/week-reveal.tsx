@@ -2,6 +2,7 @@
 
 import { useAuth } from "@/components/auth-context";
 import * as Dialog from "@radix-ui/react-dialog";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
@@ -27,29 +28,22 @@ function RoundTakeover({
   state: CompeteState;
   social: boolean;
 }) {
+  const reduced = useReducedMotion();
   const [stage, setStage] = useState<"results" | "next">("results");
   return (
     <Dialog.Root
       open
-      onOpenChange={(open) => {
-        if (!open) onDismiss();
-      }}
+
     >
       <Dialog.Portal>
         <Dialog.Overlay className="focus-round-overlay" />
         <Dialog.Content
           className="focus-round-takeover"
           aria-describedby="round-description"
+          onEscapeKeyDown={event => event.preventDefault()}
           onPointerDownOutside={(event) => event.preventDefault()}
         >
-          <button
-            type="button"
-            className="fb-btn-ghost"
-            aria-label="Close round results"
-            onClick={onDismiss}
-          >
-            ×
-          </button>
+          <AnimatePresence mode="wait" initial={false}><motion.div key={stage} initial={reduced ? false : { x: 28, opacity: 0 }} animate={{ x: 0, opacity: 1 }} exit={{ x: reduced ? 0 : -28, opacity: 0 }} transition={{ duration: reduced ? 0 : 0.2 }}>
           <p className="fb-kicker">
             Round complete · {stage === "results" ? "1" : "2"} / 2
           </p>
@@ -104,6 +98,7 @@ function RoundTakeover({
               </button>
             </>
           )}
+          </motion.div></AnimatePresence>
         </Dialog.Content>
       </Dialog.Portal>
     </Dialog.Root>
