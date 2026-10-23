@@ -1220,6 +1220,10 @@
 .club-week-detail .effort-rail { width: 100%; box-sizing: border-box; }
 .club-detail-heading { display: grid; grid-template-columns: 44px 1fr 44px; align-items: center; gap: 12px; min-height: 52px; }
 .club-detail-heading h1 { text-align: center; font-size: 20px; margin: 0; }
+.club-detail-page { display: grid; gap: 18px; padding: 0 0 40px; animation: club-detail-enter .28s ease-out; }
+@keyframes club-detail-enter { from { opacity: 0; transform: translateX(12px); } to { opacity: 1; transform: none; } }
+.club-history-preview { text-decoration: none; color: inherit; }
+.club-achievements-catalog { display: grid; gap: 18px; }
 .club-icon-button { display: inline-flex; width: 44px; height: 44px; flex: none; align-items: center; justify-content: center; border-radius: 50%; border: 1px solid var(--line); background: #ffffffd9; color: var(--ink); text-decoration: none; font-size: 24px; backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); }
 .club-icon-button:disabled { opacity: .4; }
 .club-preferences { display: grid; gap: 0; }

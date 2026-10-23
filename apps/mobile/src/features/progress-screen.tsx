@@ -6,7 +6,7 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { Pressable, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useCompeteStore } from "../lib/compete-store";
-import { FocusDisclosure, FocusSegments, f } from "../ui/focus";
+import { FocusSegments, f } from "../ui/focus";
 import { AwardShelf } from "../ui/award-shelf";
 import {
   awardCards,
@@ -15,7 +15,6 @@ import {
   sportById,
   weeklyBoard,
 } from "@fitness-battle/shared";
-import { WeeklyChapters } from "./weekly-chapters";
 import { TrainingHistory } from "./training-history";
 import { AthleteMetrics } from "./athlete-metrics";
 import { useScoreTrackLens } from "../lib/score-track-lens";
@@ -71,12 +70,11 @@ export function ProgressScreen() {
         </View>
         <View style={{display:section==="overview"?"flex":"none",gap:18}}><TrainingHistory state={state}><Achievements state={state}/></TrainingHistory><WeekRecap state={state}/>
         {state.periodResults.length ? <Pressable accessibilityRole="button" style={f.card} onPress={() => router.push("/arena?results=latest")}><Text style={f.rowTitle}>Latest week results ↗</Text></Pressable> : null}
-        <WeeklyChapters state={state} />
-        {awardCards(state).length > 0 ? (
-          <FocusDisclosure title="Past competitions & awards">
-            <AwardShelf cards={awardCards(state)} />
-          </FocusDisclosure>
-        ) : null}
+        <Pressable accessibilityRole="button" style={f.card} onPress={() => router.push("/progress-history")}>
+          <Text style={f.sectionTitle}>Past weeks & awards</Text>
+          <Text style={f.copy}>Closed competition weeks, chapter history, and your award shelf.</Text>
+          {awardCards(state).length > 0 ? <AwardShelf cards={awardCards(state).slice(0, 3)} /> : null}
+        </Pressable>
         </View>
         </MotionStep>
       </ScrollView>

@@ -798,7 +798,11 @@ function YouContent({ surface }: { surface: "progress" | "athlete" }) {
     <>
     <div className="focus-athlete" ref={overviewRef} inert={Boolean(panel) || settingsPresent}>
       {surface === "progress" ? (
-        <ProgressHub overview={<><TrainingHistory state={state}><Achievements state={state}/></TrainingHistory><WeekRecap state={state}/></>} effort={<>
+        <ProgressHub overview={<><TrainingHistory state={state}><Achievements state={state}/></TrainingHistory><WeekRecap state={state}/>
+        <Link href="/you/history" className="fb-card club-history-preview">
+          <h2 className="fb-section-title">Past weeks & awards</h2>
+          <p className="fb-copy">Closed competition weeks, chapter history, and your award shelf.</p>
+        </Link></>} effort={<>
           <AthleteOverview
             state={state}
             email={user?.email}
@@ -811,23 +815,7 @@ function YouContent({ surface }: { surface: "progress" | "athlete" }) {
             fieldSize={board.rows.length}
             units={state.units}
           />
-        </>} history={<>
-          <SeasonHistory
-            results={state.periodResults}
-            primary={state.primary}
-            units={state.units}
-          />
-          {awardCards(state).length > 0 && (
-            <details className="focus-disclosure" style={{ marginTop: 24 }}>
-              <summary>
-                Past competitions & awards <span>＋</span>
-              </summary>
-              <div className="focus-details-body">
-                <AwardShelf state={state} />
-              </div>
-            </details>
-          )}
-        </>}/>
+        </>} history={null}/>
       ) : user ? (
         <>
       <header className="club-detail-heading"><Link href="/today" className="club-icon-button" aria-label="Return to Home">‹</Link><h1>Athlete</h1></header>

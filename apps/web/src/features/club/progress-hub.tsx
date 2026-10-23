@@ -35,7 +35,6 @@ export function ProgressHub({
       </div>
       <div className="club-progress-section" hidden={view !== "overview"}>
         {overview}
-        {history}
       </div>
       <div className="club-progress-section" hidden={view !== "effort"}>
         {effort}
