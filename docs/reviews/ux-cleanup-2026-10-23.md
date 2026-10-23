@@ -21,21 +21,21 @@ These findings are based on source inspection. They are not a measured claim of 
 
 ### 1. 2D field performance — propose two focused PRs
 
-Evidence:
+Evidence after reconciling merged PRs #275–280 and #283:
 
-- Native `src/ui/lane-track.tsx` owns a 30fps wake clock; that state update renders the lane tree. Both adapters build capsule definitions, masks, wakes and heads in React. Web's `usePolishedWakeTime` also publishes React state at 30fps.
-- Web `features/focus/arena-lanes.tsx` builds ground paint using `lanes` and `overtakeFrame` dependencies, while the stage can supply new arrays as motion progresses. `fieldCourseScene` creates repeated scenery per lane and distance sample. Native ground and capsule adapters similarly map scene nodes during rendering.
-- Native tabs currently initialize screens eagerly; Crew and Compete each own crew loading. First paint, roster fetch time, scenic geometry, and steady-state motion need separate measurements.
+- The merged native lane code already disables ordinary idle decorative redraws and limits animation to explicit exploration. Preserve this improvement rather than implementing it twice.
+- Active SVG scenery, capsule definitions and web wake updates still need profiling. Separate field mount, roster completion, model/geometry work and interactive frame cost; no measured tenfold claim has been established.
+- The merged portrait renderer, field-header clearance, adaptive rulers and lane gestures are preserved. Account for native system tabs and the web/fallback tabs separately when measuring offscreen work.
 
-Proposal A: instrument field mount, roster completion, model calculation, SVG commit, and frame work using the same roster/grounds/zoom on both platforms. Preserve the existing viewport and score contract. Make the static scenery and static capsule heads independently memoized, with small animated wake layers and stable keys.
+Proposal A: instrument the current combined renderer using representative rosters/grounds/zoom on both platforms. If measurements support it, isolate static scenery and capsule heads from small animated wake layers, with stable keys.
 
-Proposal B: after measuring A, cap/reuse repeated scenery geometry and move purely decorative wake updates outside whole-field React renders. Load real rosters independently of painting the initial field; consolidate duplicate crew reads. Acceptance: report before/after timings on representative devices, no idle offscreen loops, and identical totals/selection/pan behavior. A tenfold target is a hypothesis until profiled.
+Proposal B: after measuring A, cap/reuse repeated scenery geometry and consolidate duplicate reads where the trace shows avoidable work. Acceptance remains before/after device timings, no idle offscreen loops, and identical totals/selection/pan behavior. These performance changes remain on hold.
 
-### 2. Native 3D / Expo Go — propose one diagnostic PR
+### 2. Native portrait field / Expo Go — revised diagnostic proposal
 
-The current code already exposes `3D field` in `features/competition-field.tsx`; it embeds `ui/arena-3d.tsx`, which needs a reachable `${EXPO_PUBLIC_API_URL}/arena-scene`, its ready handshake, and `react-native-webview`. It falls back after 12 seconds or a navigation/renderer error. The package already declares WebView. The source does not establish why the owner's particular installed Expo build omits the option.
+Merged #275 replaced the visible optional 3D field with platform-native SVG `PortraitField` adapters. The prior Three.js renderer and WebView bridge remain in code but are not the current product renderer. The earlier proposal to diagnose `/arena-scene` reachability does not apply to the newly merged portrait option.
 
-Proposal: show an actionable renderer status and test the exact Expo Go/build version, device-reachable API origin and deployed `/arena-scene` route. Retain 2D fallback. Do not reinstall or change deployment configuration without evidence from the actual device.
+If the installed app still lacks the option, first identify its bundle/build and compare it with current source. Only then investigate a renderer-specific issue. Do not reinstall, rebuild or change deployment configuration without a reproduced need. The current reconciliation preserves the merged portrait controls and does not introduce another renderer.
 
 ### 3. Authenticated synthetic accounts — approved and implemented
 
@@ -57,15 +57,52 @@ The same endpoint supports a specific Crew and timestamp/ID cursor pagination fo
 
 Keep the weekly chart, race positions and primary actions visually consistent. Use varied cards for secondary content: a preview of earned records linking to record detail; compact latest settled-week summary linking to its existing reveal; Crew roster preview linking to Members; upcoming Crew session preview linking to full session/RSVP detail. Avoid a separate page for a single short status. The explicitly requested Home week destination, Members destination and Compete extras are implemented; a wider redesign awaits review.
 
-The Crew shared-week visualization is intentionally unchanged for follow-up, as requested.
+The reconciliation retains the already-merged Crew finish, configured-goal semantics and integrated member markers. A further shared-week redesign remains on hold.
 
 ## Verification record
 
-The owner requested no typecheck/build or expensive verification. Focused runs passed: 41 shared semantic tests, 42 web API/auth/sleep-copy/arena/avatar tests, and 14 native manual-entry/import/ownership/arena tests. Syntax/JSX parsing and whitespace checks also passed. The SQL authorization/cursor regression script is included but unexecuted because no local PostgreSQL service is available.
+The original, pre-reconciliation pass requested no typecheck/build or expensive verification. Its focused runs passed: 41 shared semantic tests, 42 web API/auth/sleep-copy/arena/avatar tests, and 14 native manual-entry/import/ownership/arena tests. Syntax/JSX parsing and whitespace checks also passed. The SQL authorization/cursor regression script is included but unexecuted because no local PostgreSQL service is available.
 
-At a 390×844 browser viewport, Home rendered the new header/chart/controls and simplified competition card; saving a local-preview 30-minute Strength session updated the activity list, hours and count. Opening the chart reached the dedicated weekly detail screen with chart, effort meter and perspective. Progress showed underline navigation, range segments, chips and history under Overview. Athlete covered the shell header/navigation; Preferences showed compact Units/Primary/Freeze/Sports rows. This was an offline preview, not proof of a live backend write.
+At a 390×844 browser viewport, Home rendered the new header/chart/controls and simplified competition card; saving a local-preview 30-minute Strength session updated the activity list, hours and count. Opening the chart reached the dedicated weekly detail screen with chart, effort meter and perspective. Progress showed underline navigation, range segments, chips and history under Overview. Athlete covered the shell header/navigation; Preferences showed compact Units/Primary/Freeze/Sports rows. Compete showed its fixed GPS Tracked label and unranked past self; the two-stage weekly result flow exposed only the next-stage action before completion and returned to Compete after the final action. This was an offline preview, not proof of a live backend write.
 
-The Expo preview server starts, but the additional Expo browser action was rejected by automatic approval review because of an account usage limit. Native simulator visual verification is incomplete. No production deployment or migration was performed. Chart navigation uses route entrance motion and a larger reused chart, rather than a shared-element morph.
+The original Expo browser action was blocked by an account usage limit. The subsequent reconciliation verification below supersedes that limitation for the Expo web preview; native simulator visual verification remains incomplete. No production deployment or migration was performed. Chart navigation uses route entrance motion and a larger reused chart, rather than a shared-element morph.
+
+## Reconciliation with merged PRs
+
+Replayed the six existing draft PRs onto main `0df58f6`, which includes #275–280 and #283. Preserve the merged portrait renderer, native header swipe ownership, `FocusSheet.onClosed` modal handoff, responsive chart/record geometry, Crew finish/member markers, sync-review gate/batching/device sample path, result accessibility summaries and modal safe-area provider. Apply the new controls and navigation around those implementations.
+
+Use the existing `clubLifetimeTotals` helper on both platforms, excluding invalid/future activity and counting each completed primary-sport round once across historical tracks. The latest recap prefers the configured sport track within the newest settled period and falls back to the available historical track, so Open-only history remains visible. No duplicate summary helper remains.
+
+The debug menu sits beside the effort meter. Native previews block refresh, reject an in-flight refresh result and reset on account changes. Debug target selection uses the displayed sport track; both stored track baselines remain compatible. A direct ledger import in `activity-age.ts` removes the barrel-import cycle exposed by the merged debug module.
+
+### Combined verification
+
+114 distinct focused tests passed across shared, web and native. Coverage includes historical recap fallback, lifetime totals, mixed today/history sync receipts, stale-account responses, device samples entering the receipt gate, debug preview/reset and in-flight refresh, field gestures/modal handoff, portrait controls, Crew relay goals, records and chart periods. No typecheck, production build or native rebuild was run.
+
+At 390×844, the combined Next preview showed the effort meter and Debug menu together. Debug sync updated the weekly chart/activity and opened the journey; Reset restored the previous score, hours and session count. The preserved portrait renderer remained available with the fixed GPS Tracked event label.
+
+The current Expo source rendered Home, the new header/control layout, a local debug overtake with GPS Tracked, portrait controls, and reset to the original guest state. A temporary Metro watch path was needed to reuse this checkout's external dependency installation; the config was restored afterward. The Expo web adapter logged SVG/native responder and Animated attribute warnings, so this is a rendering/navigation smoke check, not an assertion of warning-free web-native parity. The installed iOS simulator bundle still showed the older track toggle; it was not treated as verification of this source. A native iOS visual pass needs an updated bundle and remains unperformed.
+
+The SQL authorization/cursor regression script remains unexecuted without a local PostgreSQL service. No migration, deployment or production account change was performed.
+
+## CI follow-up on latest main
+
+Rebased the same six-PR stack onto main `37708d8`, including #293's Expo SDK 58 / React 19.3 upgrade and #294's Garmin privacy disclosure. Preserve those changes; no CI workflow or test command was disabled.
+
+Run the exact CI commands, `pnpm typecheck` and `pnpm test`, independently at every PR boundary with the frozen SDK 58 dependency lockfile:
+
+| PR | Typecheck | Tests passed | Existing skips |
+| --- | --- | ---: | ---: |
+| #286 Foundations | Pass | 738 | 5 |
+| #287 Crew | Pass | 742 | 5 |
+| #288 Home | Pass | 743 | 5 |
+| #289 Compete | Pass | 743 | 5 |
+| #290 Progress | Pass | 743 | 5 |
+| #291 Athlete | Pass | 742 | 5 |
+
+Fixes are placed in the earliest affected PR: isolate the sheet test from unrelated SVG/native internals in #286; update the score-animation fixture to Running's configured GPS rating in #288; move web sleep-panel sample-prop removal into #289 alongside its caller; restore the still-used benchmark action-button import in #291. The final test count is one lower because the earlier Athlete cleanup removes the obsolete integration-row Sync action and its corresponding parameterized case; Home's sync ownership/batching checks remain in place.
+
+These full CI checks supersede the earlier no-typecheck/focused-test validation record for this follow-up. Production builds, native rebuilds and database migration application remain outside this CI repair.
 
 ## Review stack
 
