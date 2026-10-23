@@ -1,4 +1,5 @@
 import {
+  applyDebugEvent,
   applyRemoteSnapshot,
   arenaBaselineStorageKey,
   countedActivityIds,
@@ -19,6 +20,8 @@ import {
   SPORTS,
   type Action,
   type CompeteState,
+  type DebugEventId,
+  type DebugEventResult,
   type FieldNotice,
 } from "@fitness-battle/shared";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -65,6 +68,9 @@ interface CompeteContextValue {
   saveError: string | null;
   retrySave: () => void;
   clearAccountData: (expectedId: string) => Promise<boolean>;
+  debugActive?: boolean;
+  triggerDebugEvent?: (event: DebugEventId) => DebugEventResult | null;
+  resetDebugState?: () => void;
 }
 
 async function competeAccount(): Promise<{
@@ -141,6 +147,10 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
   const [saveConflict, setSaveConflict] = useState(false);
   const refreshFlight = useRef<Promise<boolean> | null>(null);
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [debugActive, setDebugActive] = useState(false);
+  const debugActiveRef = useRef(false);
+  const debugStepRef = useRef(0);
+  const preDebugStateRef = useRef<CompeteState | null>(null);
   stateRef.current = state;
 
   const readBaselineItem = useCallback((key: string): string | null => {
@@ -546,6 +556,7 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
   }, [pathname, router, state]);
 
   const scheduleSave = useCallback((next: CompeteState) => {
+    if (debugActiveRef.current) return;
     const id = accountRef.current;
     const scoped = accountStorageKeys(id);
     const generation = dirtyRef.current;
@@ -648,6 +659,15 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
       }
       const id = accountRef.current;
       if (action.accountId && action.accountId !== id) return;
+      if (debugActiveRef.current) {
+        const next = reduceCompete(prev, {
+          ...action,
+          accountId: action.accountId ?? id ?? undefined,
+        });
+        stateRef.current = next;
+        setState(next);
+        return;
+      }
       dirtyRef.current += 1;
       unsavedRef.current = true;
       if (action.type === "set-units") unitsUnsavedRef.current = true;
@@ -763,10 +783,38 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
     setFieldNotice(null);
   }, []);
 
+  const triggerDebugEvent = useCallback(
+    (event: DebugEventId): DebugEventResult | null => {
+      const accountKey = accountRef.current ?? "device";
+      const current = stateRef.current ?? rollClock(freshState());
+      if (!preDebugStateRef.current) preDebugStateRef.current = stateRef.current;
+      debugActiveRef.current = true;
+      setDebugActive(true);
+      const result = applyDebugEvent(current, event, accountKey, (debugStepRef.current += 1));
+      for (const [key, val] of Object.entries(result.baselines)) writeBaselineItem(key, val);
+      loadedOwnerRef.current = owner;
+      loadReady.current = true;
+      stateRef.current = result.state;
+      setState(result.state);
+      return result;
+    },
+    [owner, writeBaselineItem],
+  );
+
+  const resetDebugState = useCallback(() => {
+    const prior = preDebugStateRef.current;
+    preDebugStateRef.current = null;
+    debugActiveRef.current = false;
+    setDebugActive(false);
+    if (!prior) return;
+    stateRef.current = prior;
+    setState(prior);
+  }, []);
+
   return (
     <CompeteContext.Provider
       value={{
-        canWrite: Boolean(state) && loadReady.current && !auth.loading,
+        canWrite: Boolean(state) && (loadReady.current || debugActive) && !auth.loading,
         state,
         accountKey: accountRef.current ?? "device",
         readBaselineItem,
@@ -781,6 +829,9 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
         saveError,
         retrySave,
         clearAccountData,
+        debugActive,
+        triggerDebugEvent,
+        resetDebugState,
       }}
     >
       {saveConflict && (

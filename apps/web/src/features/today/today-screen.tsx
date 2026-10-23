@@ -209,12 +209,15 @@ type SessionPhase =
 export function TodayScreen() {
   const onHome = usePathname() === "/today";
   const { user } = useAuth();
-  const { state, dispatch } = useCompete();
+  const { state, dispatch, lastDebugEvent } = useCompete();
   const reduced = useReducedMotion();
   const [removed, setRemoved] = useState<Activity | null>(null);
+  const [syncNotice, setSyncNotice] = useState<string | null>(null);
   const [session, setSession] = useState<SessionPhase>({ kind: "closed" });
   const [revealingStops, setRevealingStops] = useState<string[]>([]);
   const peekRef = useRef<HTMLDivElement>(null);
+  const journeyDetailsRef = useRef<HTMLDetailsElement>(null);
+  const lastSyncNonceRef = useRef<number>(0);
   const sessionReturnFocus = useRef<HTMLElement | null>(null);
   const [reaction, setReaction] = useState<{
     action: EmberAction;
@@ -293,6 +296,22 @@ export function TodayScreen() {
       setRevealingStops([]);
     }
   }, [onHome, revealIdentity, reduced, state.name, user?.id]);
+
+  useEffect(() => {
+    if (!lastDebugEvent || lastDebugEvent.id !== "sync-activity" || lastDebugEvent.nonce === lastSyncNonceRef.current) return;
+    lastSyncNonceRef.current = lastDebugEvent.nonce;
+    if (journeyDetailsRef.current) journeyDetailsRef.current.open = true;
+    setRevealingStops(reduced ? [] : [todayStop]);
+    react("hop");
+    const newest = counted[counted.length - 1];
+    if (newest) setSyncNotice(`↻ Synced ${sportById(newest.sport).name} · ${formatVolume(newest.sport, newest.distanceM, newest.movingSec, units)} counted`);
+  }, [counted, lastDebugEvent, reduced, todayStop, units]);
+
+  useEffect(() => {
+    if (!syncNotice) return;
+    const timer = window.setTimeout(() => setSyncNotice(null), 4500);
+    return () => window.clearTimeout(timer);
+  }, [syncNotice]);
 
   const weekPeriod = competePeriodWindow(state, now);
   const weekStart = weekPeriod.startsAt.getTime();
@@ -502,6 +521,7 @@ export function TodayScreen() {
       </Sheet>
       <div className="focus-home-overlay">
       <ClubWelcome state={state} />
+      {syncNotice ? <div className="fb-note" role="status" aria-live="polite"><b>{syncNotice}</b></div> : null}
       {removed ? <div className="fb-note" role="status">Session removed. <button type="button" className="fb-btn-ghost" onClick={() => { dispatch({type:"set-disposition", activityId:removed.id, disposition:removed.disposition}); setRemoved(null); }}>Undo</button></div> : null}
       {frozen && (
         <div className="fb-pill" style={{ marginBottom: "16px" }}>
@@ -692,7 +712,7 @@ export function TodayScreen() {
       <LatestActivity state={state} onOpen={activity=>openSession(activity,"full")} />
       <EffortRail />
       <WeekRecap state={state} />
-      <details className="club-home-journey"><summary>Your activity journey <span>＋</span></summary>
+      <details ref={journeyDetailsRef} className="club-home-journey"><summary>Your activity journey <span>＋</span></summary>
       <div className="focus-home-journey-layer">
       <JourneyTrail
         stopCount={journeyStops.length}

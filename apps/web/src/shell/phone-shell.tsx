@@ -21,6 +21,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useLayoutEffect, useState, type ReactNode } from "react";
 import { BootSplash } from "./boot-splash";
+import { DebugEventMenu } from "./debug-event-menu";
 import {
   hasSeenBootSplash,
   isCompeteDataReady,
@@ -139,6 +140,14 @@ export function PhoneShell({
     router.push(href);
   }
 
+  function navigateDebugTarget(href: string, tabId: ShellTabId) {
+    setVisited((prev) => (prev.has(tabId) ? prev : new Set([...prev, tabId])));
+    if (tabId !== active) {
+      setIntent(tabId);
+    }
+    router.push(href);
+  }
+
   useEffect(() => {
     for (const tab of SHELL_TABS) router.prefetch(tab.href);
   }, [router]);
@@ -176,6 +185,7 @@ export function PhoneShell({
             <Link href="/today"><img className="club-brand-mark" src="/icons/icon-192.png" alt="" />Overtaek</Link>
             <span className="focus-shell-tagline">A little further</span>
           </div>
+          <DebugEventMenu activeTab={active} onNavigate={navigateDebugTarget} />
           <Link
             href="/athlete"
             className={`focus-shell-profile${onAthlete ? " is-selected" : ""}`}

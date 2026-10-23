@@ -205,9 +205,7 @@ export function LaneTrack({
                   ? (overtakeFrame.laneValues[l.id] ?? l.values[index] ?? 0)
                   : (l.values[index] ?? 0);
               const edge = !course.oval && arenaPosition(value, v).edge;
-              const effect = !l.you
-                ? overtakeFrame?.rivalEffects[l.id]
-                : undefined;
+              const effect = overtakeFrame?.rivalEffects[l.id];
               const charging =
                 l.you && animating ? (overtakeFrame?.charging ?? 0) : 0;
               const point = course.point(value, i, 0, true), scale = edge?1:course.markerScale;

@@ -221,3 +221,10 @@ export { currentEffortMilestone } from './milestones';
 export { personalRecordChart } from "./progress";
 
 export { validateCrewSessionDraft, demoCrewSessionMutation, type CrewSessionMutation } from "./crew-sessions";
+export {
+  DEBUG_EVENT_OPTIONS,
+  applyDebugEvent,
+  type DebugEventId,
+  type DebugEventOption,
+  type DebugEventResult,
+} from "./debug-events";

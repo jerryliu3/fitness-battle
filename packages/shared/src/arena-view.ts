@@ -111,10 +111,12 @@ export function fitArenaWindow(
 
 export interface ArenaOvertakeRival {
   id: string;
+  name?: string;
   startValue: number;
   endValue: number;
   moved: boolean;
   overtaken: boolean;
+  passedYou?: boolean;
 }
 
 export interface ArenaOvertakePlan {
@@ -126,6 +128,8 @@ export interface ArenaOvertakePlan {
   hasOvertake: boolean;
   anyRivalMoved: boolean;
   overtakenIds: string[];
+  passedByIds?: string[];
+  passedByNames?: string[];
   /**
    * Normalized progress [0, 1] where Beat 1 (rival slide) ends and Beat 2
    * (your move) begins. 0 when no overtake occurs or no rivals moved.
@@ -208,11 +212,12 @@ export function reconcileArenaOvertake(
   if (typeof youBefore !== "number" || !Number.isFinite(youBefore)) return null;
   const youAfter = you.value;
   const delta = youAfter - youBefore;
-  if (delta <= MIN_MOVEMENT) return null;
 
   const rivalLanes = lanes.filter((lane) => !lane.you && !lane.ghost);
   const rivals: Record<string, ArenaOvertakeRival> = {};
   const overtakenIds: string[] = [];
+  const passedByIds: string[] = [];
+  const passedByNames: string[] = [];
   let anyRivalMoved = false;
 
   for (const rival of rivalLanes) {
@@ -222,23 +227,37 @@ export function reconcileArenaOvertake(
         ? rawBefore
         : rival.value;
     const overtaken =
+      delta > MIN_MOVEMENT &&
       validBefore > youBefore + EPSILON &&
       rival.value >= youBefore - EPSILON &&
       youAfter > rival.value + EPSILON;
+    const passedYou =
+      validBefore < youBefore - EPSILON &&
+      rival.value > youAfter + EPSILON &&
+      rival.value - validBefore > MIN_MOVEMENT;
     if (overtaken) overtakenIds.push(rival.id);
+    if (passedYou) {
+      passedByIds.push(rival.id);
+      passedByNames.push(rival.name);
+    }
     const moved = Math.abs(rival.value - validBefore) > MIN_MOVEMENT;
     if (moved) anyRivalMoved = true;
     rivals[rival.id] = {
       id: rival.id,
+      name: rival.name,
       startValue: validBefore,
       endValue: rival.value,
       moved,
       overtaken,
+      passedYou,
     };
   }
 
   const hasOvertake = overtakenIds.length > 0;
-  if (!hasOvertake) {
+  const hasPassedBy = !hasOvertake && passedByIds.length > 0;
+  if (delta <= MIN_MOVEMENT && !hasPassedBy) return null;
+
+  if (!hasOvertake && !hasPassedBy) {
     anyRivalMoved = false;
     for (const rival of Object.values(rivals)) {
       rival.startValue = rival.endValue;
@@ -246,9 +265,8 @@ export function reconcileArenaOvertake(
     }
   }
 
-  const rivalSlideEnd = hasOvertake && anyRivalMoved ? 0.22 : 0;
-  const durationMs =
-    hasOvertake && anyRivalMoved ? 2400 : hasOvertake ? 2000 : 1500;
+  const rivalSlideEnd = hasPassedBy ? (delta > MIN_MOVEMENT ? 0.55 : 1) : hasOvertake && anyRivalMoved ? 0.22 : 0;
+  const durationMs = hasPassedBy ? 2000 : hasOvertake && anyRivalMoved ? 2400 : hasOvertake ? 2000 : 1500;
 
   const rankBefore =
     1 +
@@ -267,6 +285,7 @@ export function reconcileArenaOvertake(
     hasOvertake,
     anyRivalMoved,
     overtakenIds,
+    ...(passedByIds.length > 0 ? { passedByIds, passedByNames } : {}),
     rivalSlideEnd,
     durationMs,
     rivals,
@@ -284,6 +303,7 @@ export function stepArenaOvertake(
   const p = clamp01(progress);
   const safeSpan = Number.isFinite(span) ? Math.max(0.5, span) : 6;
   const delta = plan.youAfter - plan.youBefore;
+  const hasPassedBy = !plan.hasOvertake && (plan.passedByIds?.length ?? 0) > 0;
 
   let rivalT = 1;
   let travelT = 0;
@@ -295,9 +315,11 @@ export function stepArenaOvertake(
 
   if (p < plan.rivalSlideEnd) {
     rivalT = easeInOutCubic(p / plan.rivalSlideEnd);
-    charging =
-      Math.sin(between01(p, plan.rivalSlideEnd * 0.45, plan.rivalSlideEnd) * Math.PI) *
-      0.55;
+    charging = plan.hasOvertake ? Math.sin(between01(p, plan.rivalSlideEnd * 0.45, plan.rivalSlideEnd) * Math.PI) * 0.55 : 0;
+    if (hasPassedBy) {
+      speed = Math.sin((p / plan.rivalSlideEnd) * Math.PI);
+      finish = easeOutCubic(between01(p / plan.rivalSlideEnd, 0.85, 1));
+    }
     phase = "rival-slide";
   } else {
     const runP = between01(p, plan.rivalSlideEnd, 1);
@@ -317,13 +339,26 @@ export function stepArenaOvertake(
             : "settle";
   }
 
-  const passWindow = Math.max(0.15, Math.min(delta * 0.65, safeSpan * 0.14));
+  const passWindow = Math.max(0.15, Math.min(Math.max(Math.abs(delta) * 0.65, safeSpan * 0.12), safeSpan * 0.14));
   const laneValues: Record<string, number> = { [plan.youId]: youValue };
   const rivalEffects: Record<string, ArenaRivalPassEffect> = {};
 
   for (const rival of Object.values(plan.rivals)) {
-    laneValues[rival.id] =
-      rival.startValue + (rival.endValue - rival.startValue) * rivalT;
+    const rVal = rival.startValue + (rival.endValue - rival.startValue) * rivalT;
+    laneValues[rival.id] = rVal;
+
+    if (hasPassedBy && rival.passedYou) {
+      const isPassed = rVal > youValue + EPSILON;
+      const ripple = isPassed ? clamp01((rVal - youValue) / passWindow) : 0;
+      const impact = cosinePulse(rVal, youValue + passWindow * 0.2, passWindow * 0.65) * (1 - finish);
+      const joltX = Math.sin(impact * Math.PI * 3) * impact * 5;
+      rivalEffects[rival.id] = { isPassed, ripple, impact: 0, joltX: 0 };
+      const existingYou = rivalEffects[plan.youId];
+      if (!existingYou || impact > existingYou.impact || ripple > existingYou.ripple) {
+        rivalEffects[plan.youId] = { isPassed, ripple, impact, joltX };
+      }
+      continue;
+    }
 
     if (!rival.overtaken || p < plan.rivalSlideEnd) {
       rivalEffects[rival.id] = { isPassed: false, ripple: 0, impact: 0, joltX: 0 };
@@ -350,7 +385,7 @@ export function stepArenaOvertake(
       (rival) => (laneValues[rival.id] ?? rival.endValue) > youValue + EPSILON,
     ).length;
 
-  const leadOffset = Math.min(delta, safeSpan * 0.33) * (1 - travelT);
+  const leadOffset = hasPassedBy ? 0 : Math.min(delta, safeSpan * 0.33) * (1 - travelT);
   const viewCenter = clampArenaLaneCenter(youValue + leadOffset, safeSpan);
 
   return {
@@ -373,6 +408,13 @@ export function formatArenaOvertakeStatus(
   frame: ArenaOvertakeFrame | null,
   unit: string,
 ): { headline: string; detail: string | null } {
+  if (!plan.hasOvertake && (plan.passedByIds?.length ?? 0) > 0) {
+    if (frame && frame.phase !== "done") return { headline: `${plan.passedByNames?.[0] ?? "Rival"} making a move…`, detail: null };
+    const count = plan.passedByIds?.length ?? 1;
+    const headline = plan.rankBefore !== plan.rankAfter ? `#${plan.rankBefore} → #${plan.rankAfter}` : `#${plan.rankAfter}`;
+    const detail = count === 1 && plan.passedByNames?.[0] ? `passed by ${plan.passedByNames[0]}` : `${count} ${count === 1 ? "rival" : "rivals"} passed you`;
+    return { headline, detail };
+  }
   const gain = `+${(plan.youAfter - plan.youBefore).toFixed(1)} ${unit}`;
   if (frame && frame.phase !== "done") {
     if (frame.phase === "rival-slide") {
