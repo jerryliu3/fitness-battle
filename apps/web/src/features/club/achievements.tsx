@@ -115,7 +115,7 @@ export function Achievements({ state }: { state: CompeteState }) {
               </strong>
               <p>
                 {item.category === "sessions"
-                  ? "Counted sessions currently in your activity history."
+                  ? "Sessions currently in your activity history."
                   : `${sportById(state.primary).name} · Open Effort Score.`}
               </p>
               <p>
@@ -130,7 +130,7 @@ export function Achievements({ state }: { state: CompeteState }) {
               />
             </div>
             <p className="fb-note">
-              Milestones reflect your current counted history and score. They do
+              Milestones reflect your current activity history and score. They do
               not grant rewards or change competition points.
             </p>
             <div className="club-all-achievements">

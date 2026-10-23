@@ -1,4 +1,4 @@
-import { serverEnv, webEnv } from "@/lib/env";
+import { serverEnv } from "@/lib/env";
 import { trackerRedirect } from "@/lib/oauth-callback";
 import { getServerFitnessProvider } from "@/lib/fitness";
 import { userIdForAccessToken } from "@/lib/fitness-store";
@@ -16,7 +16,7 @@ export async function GET(request: Request) {
       serverEnv.garminRedirectUri,
   );
   const { configured } = getSupabaseConfig();
-  const liveAuth = configured && !webEnv.useDemoData;
+  const liveAuth = configured;
 
   if (!hasCreds || !liveAuth || denied) {
     return trackerRedirect(url.origin, "garmin", denied ? "error" : "stub");

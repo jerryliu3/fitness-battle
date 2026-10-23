@@ -1,5 +1,5 @@
 import { resolveRequestUserId } from "@/lib/auth/request-user";
-import { serverEnv, webEnv } from "@/lib/env";
+import { serverEnv } from "@/lib/env";
 import { getSupabaseConfig } from "@/lib/supabase/config";
 import { createClient as createAdminClient } from "@supabase/supabase-js";
 import { NextResponse } from "next/server";
@@ -21,7 +21,7 @@ export async function DELETE(request: Request) {
     );
   }
 
-  if (webEnv.useDemoData) {
+  if (!getSupabaseConfig().configured) {
     return NextResponse.json({ ok: true, demo: true });
   }
 

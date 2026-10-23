@@ -77,26 +77,15 @@ export function TrainingAtlas({ state }: { state: CompeteState }) {
     <section className="focus-card training-atlas" aria-label="Training atlas">
       <div className="focus-row">
         <h2>Your training</h2>
-        <label className="atlas-sport">
-          <span className="sr-only">Atlas sport</span>
-          <select
-            value={sport}
-            onChange={(e) => {
-              setSport(e.target.value as SportId | "all");
-              setSelected(null);
-            }}
-          >
-            <option value="all">All sports</option>
-            {SPORTS.map((s) => (
-              <option key={s.id} value={s.id}>
-                {s.name}
-              </option>
-            ))}
-          </select>
-        </label>
+
+      </div>
+      <div className="fb-chips" role="group" aria-label="Atlas sport">
+        {[{ id: "all", name: "All sports" }, ...SPORTS].map(item => <button key={item.id} type="button"
+          className={sport === item.id ? "fb-chip on" : "fb-chip"} aria-pressed={sport === item.id}
+          onClick={() => { setSport(item.id as SportId | "all"); setSelected(null); }}>{item.name}</button>)}
       </div>
       <div
-        className="focus-elo-track-toggle"
+        className="focus-segments"
         role="group"
         aria-label="Training chart range"
       >
@@ -247,7 +236,7 @@ export function TrainingAtlas({ state }: { state: CompeteState }) {
                         <span>{formatTrainingHours(a.movingSec)} hr</span>
                       </summary>
                       <p className="fb-note">
-                        {a.source} · {a.verified ? "GPS verified" : "Open"}
+                        {a.source} · {a.verified ? "GPS Tracked" : "Open"}
                       </p>
                     </details>
                   );
@@ -262,7 +251,7 @@ export function TrainingAtlas({ state }: { state: CompeteState }) {
         </div>
       </details>
       <p className="atlas-legend">
-        <span>Moving time · Open activity</span>
+        <span>Moving time</span>
         <span>
           Less <i data-intensity="0" />
           <i data-intensity="1" />

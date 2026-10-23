@@ -1,23 +1,16 @@
+import { ScreenHeader } from "../src/ui/screen-header";
+
 import { router } from "expo-router";
-import { ScrollView, Text, View } from "react-native";
+import { ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { FocusButton, f } from "../src/ui/focus";
+import { f } from "../src/ui/focus";
 import { SettingsRow } from "../src/ui/settings-row";
 
 export default function SettingsScreen() {
   return (
-    <SafeAreaView style={f.safe} edges={[]}>
+    <SafeAreaView style={f.safe} edges={["top"]}>
       <ScrollView contentContainerStyle={f.content}>
-        <FocusButton
-          label="← Back to Athlete"
-          secondary
-          onPress={() =>
-            router.canGoBack() ? router.back() : router.replace("/athlete")
-          }
-        />
-        <Text accessibilityRole="header" style={f.title}>
-          Settings
-        </Text>
+        <ScreenHeader title="Settings" onBack={() => router.canGoBack() ? router.back() : router.replace("/athlete")} />
         <View style={{ gap: 8 }}>
           <SettingsRow
             title="Edit profile"

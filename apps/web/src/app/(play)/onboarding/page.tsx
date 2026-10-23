@@ -1,5 +1,7 @@
 "use client";
 
+import { ProfilePhoto } from "@/features/you/profile-photo";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { AuthGate } from "@/components/auth-gate";
 import { useAuth } from "@/components/auth-context";
 import { useCompete } from "@/components/compete-context";
@@ -18,6 +20,7 @@ import { Suspense, useState } from "react";
 type Step = "prefs" | "connect" | "backfill" | "done";
 
 function OnboardingFlow() {
+  const reduced = useReducedMotion();
   const { user } = useAuth();
   const { state, dispatch } = useCompete();
   const router = useRouter();
@@ -111,7 +114,7 @@ function OnboardingFlow() {
   }
 
   return (
-    <>
+    <AnimatePresence mode="wait" initial={false}><motion.div key={step} initial={reduced ? false : { x: 28, opacity: 0 }} animate={{ x: 0, opacity: 1 }} exit={{ x: reduced ? 0 : -28, opacity: 0 }} transition={{ duration: reduced ? 0 : 0.2 }}>
       <header>
         <p className="fb-kicker">
           Setup · step{" "}
@@ -138,6 +141,7 @@ function OnboardingFlow() {
 
       {step === "prefs" ? (
         <section className="fb-card fb-stack">
+          <ProfilePhoto state={state} email={user?.email} />
           <label className="fb-field">
             Display name
             <input value={name} onChange={(e) => setName(e.target.value)} maxLength={32} />
@@ -286,7 +290,7 @@ function OnboardingFlow() {
           ) : null}
         </section>
       ) : null}
-    </>
+    </motion.div></AnimatePresence>
   );
 }
 

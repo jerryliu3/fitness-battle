@@ -5,7 +5,7 @@ import {
   rankForElo,
   type CompeteState,
 } from "@fitness-battle/shared";
-import { playCue } from "../lib/haptics";
+
 import { useScoreTrackLens } from "../lib/score-track-lens";
 import { Text, View } from "react-native";
 import Svg, {
@@ -17,9 +17,9 @@ import Svg, {
 } from "react-native-svg";
 import { useAuth } from "../lib/auth";
 import { SHELL_COLORS as c } from "../theme";
-import { FocusSegments, f } from "../ui/focus";
+import { f } from "../ui/focus";
 export function EffortTrend({ state }: { state: CompeteState }) {
-  const [track, setTrack] = useScoreTrackLens();
+  const [track] = useScoreTrackLens();
   const { user } = useAuth();
   const milestone = currentEffortMilestone(state, state.primary, track);
   const model = effortHistory(state, track, user, user?.email);
@@ -38,18 +38,7 @@ export function EffortTrend({ state }: { state: CompeteState }) {
   } = model;
   return (
     <View style={f.card}>
-      <FocusSegments
-        label="Progress score track"
-        value={track}
-        options={[
-          { value: "open", label: "Open score" },
-          { value: "verified", label: "GPS verified" },
-        ]}
-        onChange={(next) => {
-          void playCue("selection");
-          setTrack(next);
-        }}
-      />
+
       <Text style={f.kicker}>{rankForElo(effectiveElo).name}</Text>
       <View style={f.row}>
         <Text
@@ -73,7 +62,7 @@ export function EffortTrend({ state }: { state: CompeteState }) {
         height={170}
         viewBox="0 0 340 150"
         accessible
-        accessibilityLabel={`30-day ${track === "open" ? "Open" : "GPS verified"} effort score history ending at ${effectiveElo}`}
+        accessibilityLabel={`30-day ${track === "open" ? "Open" : "GPS Tracked"} effort score history ending at ${effectiveElo}`}
       >
         {[
           [yTop, yMax],

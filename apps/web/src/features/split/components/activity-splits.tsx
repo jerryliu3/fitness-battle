@@ -37,7 +37,7 @@ export function ActivitySplits({
       <div className="sp-empty">
         <h2>No splits yet</h2>
         <p className="fb-copy">
-          Sync a tracker or log work this week. Counted sessions appear here as
+          Sync a tracker or log work this week. Sessions appear here as
           numbered splits.
         </p>
       </div>
@@ -67,7 +67,7 @@ export function ActivitySplits({
                     activity.movingSec,
                     units,
                   )}
-                  {activity.verified ? " · verified" : " · open"}
+                  {activity.verified ? " · GPS Tracked" : " · activity"}
                   {" · "}
                   {activity.source}
                 </small>
@@ -76,7 +76,7 @@ export function ActivitySplits({
             </button>
             {open ? (
               <p className="fb-note" style={{ padding: "0 4px 8px" }}>
-                Counted toward this week’s effort.{" "}
+                Contributes to this week’s effort.{" "}
                 {activity.avgHr != null
                   ? `Avg HR ${activity.avgHr}. `
                   : "No heart-rate mark. "}
@@ -89,7 +89,6 @@ export function ActivitySplits({
       <div className="sp-split-total">
         <span>
           {activities.length} session{activities.length === 1 ? "" : "s"}.
-          Counted.
         </span>
         <strong>{formatEffort(total)}</strong>
       </div>

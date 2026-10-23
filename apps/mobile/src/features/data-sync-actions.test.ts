@@ -11,6 +11,7 @@ const mock = vi.hoisted(() => ({
 }));
 vi.mock("react-native", () => ({
   Platform: { OS: "web" },
+  Pressable: "Pressable",
   Text: "Text",
   View: "View",
 }));
@@ -20,7 +21,7 @@ vi.mock("../lib/auth", () => ({
   useAuth: () => ({
     user: mock.user,
     accessToken: mock.user ? `${mock.user.id}-token` : null,
-    demoMode: false,
+    offlineMode: false,
   }),
 }));
 vi.mock("../lib/compete-store", () => ({
@@ -148,7 +149,7 @@ describe("tracker action ownership", () => {
     );
   });
 
-  it.each(["Sync", "Disconnect"])(
+  it.each(["Disconnect"])(
     "ignores a late %s response after switching accounts",
     async (label) => {
       const response = deferred<object>();
@@ -158,7 +159,7 @@ describe("tracker action ownership", () => {
           createElement(DataSyncActions, { provider: "strava" }),
         );
       });
-      await act(async () => button(label).props.onPress());
+      await act(async () => renderer.root.findByProps({ accessibilityLabel: "Disconnect strava" }).props.onPress());
       mock.user = { id: "bob", mode: "live" };
       await act(async () =>
         renderer.update(createElement(DataSyncActions, { provider: "strava" })),

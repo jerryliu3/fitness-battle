@@ -5,7 +5,7 @@
 | Primary button | Execute the page's principal action, yellow with dark label | Navigation everywhere / recording | 44px minimum, focused, pressed, loading, disabled |
 | Secondary button | Optional or reversible action, quiet border | Competing primaries | Same hit target and focus |
 | Link / row | Navigate to detail, chevron and descriptive label | Fake action button semantics | Keyboard link behavior, focus return |
-| Segments | 2–3 related views, visible selected state | Long lists of sports | Group + pressed buttons on web; native tabs |
+| Segments | Short mutually exclusive options in a rounded group; use underline tabs for top-level section navigation | Long lists of sports | Group + pressed buttons on web; native tabs |
 | Choice / radio | Mutually exclusive settings | Independent selections | Name, selected and disabled state |
 | Checkbox | Independent filters or selections | Immediate settings | Explicit checked state |
 | Switch | Immediate binary preference | Submitting a form or choosing a sport | Named checked state; native Switch |
@@ -18,3 +18,5 @@
 | Milestone | Derived personal progress | Invented medals, unlocks or rewards | Threshold, source and earned/next text |
 
 Use DM Sans, dark navy text, pale neutral canvas, white surfaces, yellow actions and teal chart/landscape accents. Never use yellow for small text on white. Minimum web controls and native touch regions are 44px; maintain contrast and visible keyboard focus. Selected states also have shape/text/weight. Pending and errors preserve input; successes describe the actual outcome. Native sheets retain the parent and support system Back; web sheets use Radix focus management. Respect reduced motion and do not trigger haptics from decorative animation. No recording destination or social feed is introduced.
+
+October 23: use the shared icon-only Back control, compact picker, photo commands and step-motion primitives. Full-screen Members and Athlete destinations cover the shell header. Floating navigation reserves content clearance and retains reduced-motion support.

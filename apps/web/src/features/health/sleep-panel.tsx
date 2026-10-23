@@ -35,14 +35,12 @@ export function SleepPanel({
   state,
   now,
   onJoin,
-  onSample,
   onLeave,
   leaveLabel = "Stop after this week",
 }: {
   state: CompeteState;
   now: Date;
   onJoin: () => void;
-  onSample: () => void;
   onLeave: () => void;
   leaveLabel?: string;
 }) {
@@ -185,12 +183,9 @@ export function SleepPanel({
         <div className="sp-empty">
           <h2>No night recorded yet</h2>
           <p className="fb-copy">
-            Sync a sleep tracker from Athlete, or drop in a sample night to see the
-            week.
+            Connect a supported sleep tracker in Athlete → Data Sync.
           </p>
-          <button type="button" className="fb-btn" onClick={onSample}>
-            Use a sample night
-          </button>
+
         </div>
       )}
     </section>

@@ -7,7 +7,7 @@ import { mobileEnv } from "../lib/env";
 import { FocusButton, FocusSheet, f } from "../ui/focus";
 
 export function AccountActions() {
-  const { user, demoMode, accessToken, signOut } = useAuth();
+  const { user, offlineMode, accessToken, signOut } = useAuth();
   const { clearAccountData } = useCompeteStore();
   const [panel, setPanel] = useState<"report" | "delete" | null>(null);
   const [message, setMessage] = useState("");
@@ -18,7 +18,7 @@ export function AccountActions() {
   const [sent, setSent] = useState(false);
   const ownerRef = useRef(user?.id);
   ownerRef.current = user?.id;
-  const live = !!user && !demoMode && user.mode !== "demo";
+  const live = !!user && !offlineMode && user.mode !== "demo";
   const mounted = useRef(true);
   useEffect(() => {
     mounted.current = true;

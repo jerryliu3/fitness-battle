@@ -1,3 +1,4 @@
+import { MotionStep } from "../ui/motion-step";
 import { Achievements } from "./club-achievements";
 import { WeekRecap } from "./club-week-recap";
 import { useEffect, useState } from "react";
@@ -5,7 +6,7 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { Pressable, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useCompeteStore } from "../lib/compete-store";
-import { FocusDisclosure, FocusHeading, FocusSegments, f } from "../ui/focus";
+import { FocusDisclosure, FocusSegments, f } from "../ui/focus";
 import { AwardShelf } from "../ui/award-shelf";
 import {
   awardCards,
@@ -22,7 +23,7 @@ export function ProgressScreen() {
   const { state } = useCompeteStore();
   const router = useRouter();
   const params=useLocalSearchParams<{view?:string}>();
-  const [section,setSection]=useState<"overview"|"effort"|"history">("overview");
+  const [section,setSection]=useState<"overview"|"effort">("overview");
   useEffect(()=>{if(params.view==="effort")setSection("effort");},[params.view]);
   const [track] = useScoreTrackLens();
   if (!state) return null;
@@ -31,8 +32,8 @@ export function ProgressScreen() {
   return (
     <SafeAreaView style={f.safe} edges={[]}>
       <ScrollView contentContainerStyle={f.content}>
-        <FocusHeading kicker="Every effort adds up" title="Progress" body="A little further. A little more you." />
-        <FocusSegments label="Progress view" value={section} options={[{value:"overview",label:"Overview"},{value:"effort",label:"Effort score"},{value:"history",label:"History"}]} onChange={setSection}/>
+        <FocusSegments variant="tabs" label="Progress view" value={section} options={[{value:"overview",label:"Overview"},{value:"effort",label:"Effort score"}]} onChange={setSection}/>
+        <MotionStep identity={section}>
         <View style={{display:section==="effort"?"flex":"none",gap:18}}>
         <AthleteMetrics state={state} />
         <View style={f.card}>
@@ -68,8 +69,7 @@ export function ProgressScreen() {
           </View>
         </View>
         </View>
-        <View style={{display:section==="overview"?"flex":"none",gap:18}}><TrainingHistory state={state}><Achievements state={state}/></TrainingHistory><WeekRecap state={state}/></View>
-        <View style={{display:section==="history"?"flex":"none",gap:18}}>
+        <View style={{display:section==="overview"?"flex":"none",gap:18}}><TrainingHistory state={state}><Achievements state={state}/></TrainingHistory><WeekRecap state={state}/>
         {state.periodResults.length ? <Pressable accessibilityRole="button" style={f.card} onPress={() => router.push("/arena?results=latest")}><Text style={f.rowTitle}>Latest week results ↗</Text></Pressable> : null}
         <WeeklyChapters state={state} />
         {awardCards(state).length > 0 ? (
@@ -78,6 +78,7 @@ export function ProgressScreen() {
           </FocusDisclosure>
         ) : null}
         </View>
+        </MotionStep>
       </ScrollView>
     </SafeAreaView>
   );

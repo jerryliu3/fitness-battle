@@ -1,4 +1,7 @@
+import { ScreenHeader } from "../src/ui/screen-header";
+import { IconButton } from "../src/ui/icon-button";
 import {
+  isSupabaseConfigured,
   NOTIFICATION_CATEGORIES,
   permissionLabel,
   type NotificationPreferences,
@@ -42,7 +45,7 @@ export default function NotificationsScreen() {
     setNote(null);
     void (async () => {
       let nextIdentity: SyncIdentity | null = null;
-      if (!mobileEnv.useDemoData) {
+      if (isSupabaseConfigured(mobileEnv.supabaseUrl, mobileEnv.supabaseAnonKey)) {
         const { data } = await supabase.auth.getSession();
         const userId = data.session?.user?.id;
         if (userId) {
@@ -168,11 +171,9 @@ export default function NotificationsScreen() {
 
   if (!prefs) {
     return (
-      <SafeAreaView style={styles.safe} edges={["bottom"]}>
+      <SafeAreaView style={styles.safe} edges={["top", "bottom"]}>
         <View style={f.content}>
-          <FocusButton
-            label="← Back"
-            secondary
+          <IconButton icon="back" label="Return to previous screen"
             onPress={() =>
               router.canGoBack() ? router.back() : router.replace("/settings")
             }
@@ -192,21 +193,9 @@ export default function NotificationsScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.safe} edges={["bottom"]}>
+    <SafeAreaView style={styles.safe} edges={["top", "bottom"]}>
       <ScrollView contentContainerStyle={styles.scroll}>
-        <Pressable
-          accessibilityRole="button"
-          style={{ minHeight: 44, justifyContent: "center" }}
-          onPress={() =>
-            router.canGoBack() ? router.back() : router.replace("/settings")
-          }
-        >
-          <Text style={styles.back}>← Back</Text>
-        </Pressable>
-        <Text style={styles.kicker}>Settings</Text>
-        <Text accessibilityRole="header" style={styles.title}>
-          Notifications
-        </Text>
+        <ScreenHeader title="Notifications" onBack={() => router.canGoBack() ? router.back() : router.replace("/athlete")} />
         <Text style={styles.copy}>
           Choose which updates you receive. Enabling notifications asks for
           permission on this device.{" "}

@@ -116,12 +116,22 @@ it("keeps lifetime totals consistent with completed achievement sessions",()=>{
 
 import { latestClubRecap } from "./club-summary";
 import type { PeriodResult } from "./compete/sports";
-it("shows the latest closed GPS recap when Open is absent, preferring Open for the same round", () => {
+it("shows the latest closed recap, preferring the sport default without hiding historical tracks", () => {
  const state = freshState(now);
  const gps: PeriodResult = {id:"gps",sport:state.primary,track:"verified",periodStart:"2026-10-19T04:00:00Z",periodEnd:"2026-10-26T04:00:00Z",settledAt:"2026-10-26T04:00:00Z",place:2,fieldSize:8,effort:1,distanceM:5000,movingSec:1800,eloBefore:1000,eloAfter:1020,frozen:false};
  const future={...gps,id:"future",periodEnd:"2026-11-09T05:00:00Z"};
  expect(latestClubRecap({...state,periodResults:[future,gps]},now)?.id).toBe("gps");
  const open={...gps,id:"open",track:"open" as const};
- expect(latestClubRecap({...state,periodResults:[gps,open]},now)?.id).toBe("open");
+ expect(latestClubRecap({...state,periodResults:[gps,open]},now)?.id).toBe("gps");
  expect(latestClubRecap({...state,periodResults:[{...open,id:"older",periodEnd:"2026-10-19T04:00:00Z"},gps]},now)?.id).toBe("gps");
+});
+
+it("keeps a newer Open-only running recap ahead of an older GPS recap", () => {
+  const state = freshState(now);
+  const result: PeriodResult = { id: "latest-open", sport: "running", track: "open", periodStart: "2026-10-19T04:00:00Z", periodEnd: "2026-10-26T04:00:00Z", settledAt: "2026-10-26T04:00:00Z", place: 2, fieldSize: 8, effort: 1, distanceM: 5000, movingSec: 1800, eloBefore: 1000, eloAfter: 1020, frozen: false };
+  const older = { ...result, id: "older-gps", track: "verified" as const, periodStart: "2026-10-12T04:00:00Z", periodEnd: "2026-10-19T04:00:00Z" };
+  const next = { ...state, periodResults: [older, result, { ...result, id: "same-week-gps", track: "verified" as const }] };
+  expect(latestClubRecap({ ...state, periodResults: [older, result] }, now)?.id).toBe("latest-open");
+  expect(clubLifetimeTotals(next, now).weeks).toBe(2);
+  expect(clubLifetimeTotals({ ...next, periodResults: [...next.periodResults, { ...result, id: "future", periodEnd: "2026-11-09T05:00:00Z" }] }, now).weeks).toBe(2);
 });

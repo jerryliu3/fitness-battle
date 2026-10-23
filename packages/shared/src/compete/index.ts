@@ -31,6 +31,8 @@ export {
   type ProviderLink,
   type PeriodResult,
   type UnitSystem,
+  competitionTrack,
+  competitionTrackLabel,
 } from "./sports";
 export {
   HEALTH_METRIC_IDS,
@@ -207,7 +209,7 @@ export {
   type SuggestionKind,
 } from "./suggestion";
 export type { GoalDistance, TrainingGoal } from "./sports";
-export { parseManualActivity } from "./manual-input";
+export { parseManualActivity, manualActivityInstant } from "./manual-input";
 export { roundReveal, roundEnrollment } from "./round-reveal";
 
 export { applyEffortMilestones, milestoneStep, type EffortMilestone } from "./milestones";

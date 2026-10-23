@@ -570,6 +570,7 @@ export function FieldStage({
                 overtakeFrame={overtakeFrame}
                 overtakePlan={overtakePlan}
               />
+              {mode === "standings" && ghost && <div className="club-past-self"><span>Past you · unranked</span><strong>{valueAt(ghost, time).toFixed(1)} {unit}</strong></div>}
               {mode === "lanes" ? (
                 <>
                   <div

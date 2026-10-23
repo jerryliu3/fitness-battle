@@ -15,7 +15,7 @@ export function WeeklySocialActions({
   result: PeriodResult;
   units: UnitSystem;
 }) {
-  const { user, demoMode } = useAuth(),
+  const { user, offlineMode } = useAuth(),
     [data, setData] = useState<WeeklySocial | null>(null),
     [selected, setSelected] = useState(""),
     [error, setError] = useState(""),
@@ -36,13 +36,13 @@ export function WeeklySocialActions({
     [query],
   );
   useEffect(() => {
-    if (!user || demoMode) return;
+    if (!user || offlineMode) return;
     const c = new AbortController();
     void load(c.signal).catch(() => {
       if (!c.signal.aborted) setError("Could not load the settled field.");
     });
     return () => c.abort();
-  }, [load, user?.id, demoMode]);
+  }, [load, user?.id, offlineMode]);
   const peer = data?.peers.find((p) => p.id === selected) ?? data?.peers[0];
   async function toggle(kind: "congrats" | "repeat") {
     if (!peer || !data?.fieldId || flight.current) return;
@@ -72,7 +72,7 @@ export function WeeklySocialActions({
       setBusy(false);
     }
   }
-  if (!user || demoMode) return null;
+  if (!user || offlineMode) return null;
   if (error && !data)
     return (
       <p role="alert">

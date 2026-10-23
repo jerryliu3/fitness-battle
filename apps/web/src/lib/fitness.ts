@@ -8,7 +8,8 @@ import {
   type OAuth2Env,
   type StravaEnv,
 } from "@fitness-battle/shared";
-import { serverEnv, webEnv } from "./env";
+import { getSupabaseConfig } from "./supabase/config";
+import { serverEnv } from "./env";
 import { createProviderStore } from "./fitness-store";
 
 export const OAUTH_PROVIDER_IDS = ["strava", "garmin", "whoop", "oura"] as const;
@@ -31,7 +32,7 @@ export function isFitnessProviderId(id: string): id is FitnessProviderId {
 }
 
 function liveEnv<T>(value: T): T | Record<string, never> {
-  return webEnv.useDemoData ? {} : value;
+  return getSupabaseConfig().configured ? value : {};
 }
 
 type ServerFitnessProvider =

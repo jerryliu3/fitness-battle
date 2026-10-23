@@ -1,28 +1,23 @@
+import { clubLifetimeTotals } from "@fitness-battle/shared";
 import { SHELL_COLORS as clubColors } from "@fitness-battle/shared";
-import {
-  clubLifetimeTotals,
-  distanceUnitLabel,
-  formatDistanceM,
-  type CompeteState,
-} from "@fitness-battle/shared";
+import { distanceUnitLabel, formatDistanceM, type CompeteState } from "@fitness-battle/shared";
 import { useRouter } from "expo-router";
 import { Text, View } from "react-native";
+import { IconButton } from "../ui/icon-button";
 import { FocusButton, f } from "../ui/focus";
 import { EffortTrend } from "./effort-trend";
 import { ProfilePhoto } from "./profile-photo";
 
-
-
 export function AthleteMetrics({
   state,
   email,
-  demoMode,
+  offlineMode,
   onEdit,
   sections = "progress",
 }: {
   state: CompeteState;
   email?: string | null;
-  demoMode?: boolean;
+  offlineMode?: boolean;
   onEdit?: () => void;
   sections?: "profile" | "progress";
 }) {
@@ -51,14 +46,12 @@ export function AthleteMetrics({
               {email ? (
                 <Text style={f.small}>
                   {email}
-                  {demoMode ? " · demo" : ""}
+                  {offlineMode ? " · demo" : ""}
                 </Text>
               ) : null}
             </View>
+            {onEdit ? <IconButton icon="edit" label="Edit profile" onPress={onEdit} /> : null}
           </View>
-          {onEdit ? (
-            <FocusButton label="Edit profile" secondary onPress={onEdit} />
-          ) : null}
         </>
       ) : (
         <>
@@ -82,7 +75,7 @@ export function AthleteMetrics({
                 <Text style={f.h2}>
                   {formatDistanceM(season.meters, state.units)}
                 </Text>
-                <Text style={f.small}>{unit} counted</Text>
+                <Text style={f.small}>{unit} total</Text>
               </View>
               <View
                 style={{

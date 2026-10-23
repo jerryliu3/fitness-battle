@@ -86,7 +86,7 @@ export const PROTOTYPE_DAYS = [
     day: "Thu",
     date: "15 OCT",
     value: "6.2 km",
-    detail: "Morning run · 36 min · GPS verified",
+    detail: "Morning run · 36 min · GPS Tracked",
     kind: "past",
   },
   {
@@ -100,21 +100,21 @@ export const PROTOTYPE_DAYS = [
     day: "Tue",
     date: "13 OCT",
     value: "8.4 km",
-    detail: "Riverside run · 48 min · GPS verified",
+    detail: "Riverside run · 48 min · GPS Tracked",
     kind: "past",
   },
   {
     day: "Mon",
     date: "12 OCT",
     value: "4.0 km",
-    detail: "Lunch walk · 42 min · GPS verified",
+    detail: "Lunch walk · 42 min · GPS Tracked",
     kind: "past",
   },
   {
     day: "Sun",
     date: "11 OCT",
     value: "12.0 km",
-    detail: "Long easy run · 72 min · GPS verified",
+    detail: "Long easy run · 72 min · GPS Tracked",
     kind: "past",
   },
   {
@@ -128,7 +128,7 @@ export const PROTOTYPE_DAYS = [
     day: "Fri",
     date: "09 OCT",
     value: "5.1 km",
-    detail: "Easy run · 31 min · GPS verified",
+    detail: "Easy run · 31 min · GPS Tracked",
     kind: "past",
   },
   {
@@ -142,14 +142,14 @@ export const PROTOTYPE_DAYS = [
     day: "Wed",
     date: "07 OCT",
     value: "7.0 km",
-    detail: "Park loop · 42 min · GPS verified",
+    detail: "Park loop · 42 min · GPS Tracked",
     kind: "past",
   },
   {
     day: "Tue",
     date: "06 OCT",
     value: "3.2 km",
-    detail: "Evening walk · 32 min · GPS verified",
+    detail: "Evening walk · 32 min · GPS Tracked",
     kind: "past",
   },
 ] as const;
@@ -243,7 +243,7 @@ export function prototypeContest(sport: string) {
       total: 23.4,
       previous: 19.6,
       values: [28.6, 25.1, 23.4, 21.8],
-      score: "GPS verified",
+      score: "GPS Tracked",
     },
     cycling: {
       label: "Cycling",
@@ -251,7 +251,7 @@ export function prototypeContest(sport: string) {
       total: 84.2,
       previous: 76.5,
       values: [102.6, 91.3, 84.2, 78.1],
-      score: "GPS verified",
+      score: "GPS Tracked",
     },
     walking: {
       label: "Walking",
@@ -259,7 +259,7 @@ export function prototypeContest(sport: string) {
       total: 18.6,
       previous: 15.2,
       values: [24.4, 21.2, 18.6, 17.4],
-      score: "GPS verified",
+      score: "GPS Tracked",
     },
     strength: {
       label: "Strength",

@@ -6,7 +6,7 @@ import {
   type CompeteState,
 } from "@fitness-battle/shared";
 import { Text, View } from "react-native";
-import { FocusButton, f } from "../ui/focus";
+import { f } from "../ui/focus";
 export function SleepPanel({
   state,
   dispatch,
@@ -40,14 +40,9 @@ export function SleepPanel({
       ) : (
         <>
           <Text style={f.copy}>
-            Sync a sleep tracker from Athlete, or use a clearly labeled sample
-            night.
+            Connect a supported sleep tracker in Athlete → Data Sync.
           </Text>
-          <FocusButton
-            label="Use a sample night"
-            secondary
-            onPress={() => dispatch({ type: "log-sleep" })}
-          />
+
         </>
       )}
       <View style={f.row}>

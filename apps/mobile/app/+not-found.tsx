@@ -1,6 +1,7 @@
 import { useRouter } from "expo-router";
 import { Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { IconButton } from "../src/ui/icon-button";
 import { FocusButton, f } from "../src/ui/focus";
 export default function NotFound() {
   const router = useRouter();
@@ -10,8 +11,8 @@ export default function NotFound() {
         <Text style={f.kicker}>OVERTAEK</Text>
         <Text style={f.title}>A little off course.</Text>
         <Text style={f.copy}>We couldn't find that page.</Text>
-        <FocusButton
-          label="Back to Home"
+        <IconButton icon="back"
+          label="Return to Home"
           onPress={() => router.replace("/today")}
         />
         <FocusButton

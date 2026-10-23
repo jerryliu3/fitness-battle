@@ -45,7 +45,7 @@ vi.mock("expo-router", () => ({
 vi.mock("../lib/auth", () => ({
   useAuth: () => ({
     user: { id: "audit" },
-    demoMode: !mock.live,
+    offlineMode: !mock.live,
     accessToken: mock.live ? "test-token" : null,
   }),
 }));

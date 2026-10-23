@@ -1,4 +1,5 @@
-import { hashString } from "@fitness-battle/shared";
+import { archiveLegacyDemo } from "./legacy-demo";
+import { accountDataOrigin, isSupabaseConfigured, hashString } from "@fitness-battle/shared";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
   createContext,
@@ -20,12 +21,14 @@ export type AuthUser = {
   displayName: string;
   mode: "supabase" | "demo";
   createdAt?: string;
+  dataOrigin?: "synthetic" | "recorded";
 };
 
 type AuthApi = {
   user: AuthUser | null;
   loading: boolean;
-  demoMode: boolean;
+  offlineMode: boolean;
+  legacyBackup: string | null;
   accessToken: string | null;
   signIn: (email: string, password: string) => Promise<{ error?: string }>;
   signUp: (input: {
@@ -45,6 +48,7 @@ function demoUserFromEmail(email: string, displayName?: string): AuthUser {
     email,
     displayName: displayName?.trim() || local,
     mode: "demo",
+    dataOrigin: "synthetic",
   };
 }
 
@@ -79,21 +83,23 @@ function userFromSession(sessionUser: {
       sessionUser.email?.split("@")[0] ??
       "Athlete",
     mode: "supabase",
+    dataOrigin: accountDataOrigin(sessionUser.id),
     createdAt: sessionUser.created_at,
   };
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const demoMode = mobileEnv.useDemoData;
+  const offlineMode = !isSupabaseConfigured(mobileEnv.supabaseUrl, mobileEnv.supabaseAnonKey);
   const [user, setUser] = useState<AuthUser | null>(null);
   const [accessToken, setAccessToken] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [legacyBackup, setLegacyBackup] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
 
     async function boot() {
-      if (demoMode) {
+      if (offlineMode) {
         const demo = await readDemoUser();
         if (!cancelled) {
           setUser(demo);
@@ -103,6 +109,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return;
       }
 
+      try { setLegacyBackup(await archiveLegacyDemo()); }
+      catch { setLegacyBackup(null); setLoading(false); return; }
       const { data } = await supabase.auth.getSession();
       if (cancelled) return;
       const session = data.session;
@@ -134,11 +142,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       cancelled = true;
       void cleanup.then((fn) => fn?.());
     };
-  }, [demoMode]);
+  }, [offlineMode]);
 
   const signIn = useCallback(
     async (email: string, password: string) => {
-      if (demoMode) {
+      if (offlineMode) {
         if (!email.trim() || password.length < 4) {
           return { error: "Enter an email and a password (4+ characters)." };
         }
@@ -153,6 +161,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setAccessToken(null);
         return {};
       }
+      try { setLegacyBackup(await archiveLegacyDemo()); }
+      catch { return { error: "Your local demo backup could not be saved. Free device storage and try again; your existing data is intact." }; }
       const { error } = await supabase.auth.signInWithPassword({
         email: email.trim().toLowerCase(),
         password,
@@ -160,12 +170,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (error) return { error: error.message };
       return {};
     },
-    [demoMode],
+    [offlineMode],
   );
 
   const signUp = useCallback(
     async (input: { email: string; password: string; displayName: string }) => {
-      if (demoMode) {
+      if (offlineMode) {
         if (!input.email.trim() || input.password.length < 6) {
           return { error: "Enter an email and a password (6+ characters)." };
         }
@@ -178,6 +188,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setAccessToken(null);
         return {};
       }
+      try { setLegacyBackup(await archiveLegacyDemo()); }
+      catch { return { error: "Your local demo backup could not be saved. Free device storage and try again; your existing data is intact." }; }
       const { data, error } = await supabase.auth.signUp({
         email: input.email.trim().toLowerCase(),
         password: input.password,
@@ -192,11 +204,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (!data.session) return { needsEmailConfirm: true };
       return {};
     },
-    [demoMode],
+    [offlineMode],
   );
 
   const signOut = useCallback(async () => {
-    if (demoMode) {
+    if (offlineMode) {
       await writeDemoUser(null);
       setUser(null);
       setAccessToken(null);
@@ -205,19 +217,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await supabase.auth.signOut();
     setUser(null);
     setAccessToken(null);
-  }, [demoMode]);
+  }, [offlineMode]);
 
   const api = useMemo<AuthApi>(
     () => ({
       user,
       loading,
-      demoMode,
+      offlineMode,
+      legacyBackup,
       accessToken,
       signIn,
       signUp,
       signOut,
     }),
-    [user, loading, demoMode, accessToken, signIn, signUp, signOut],
+    [user, loading, offlineMode, legacyBackup, accessToken, signIn, signUp, signOut],
   );
 
   return <AuthContext.Provider value={api}>{children}</AuthContext.Provider>;

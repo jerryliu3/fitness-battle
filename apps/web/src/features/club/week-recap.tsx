@@ -38,7 +38,7 @@ export function WeekRecap({ state }: { state: CompeteState }) {
       <p className="fb-note">
         {week.previousSec
           ? `${difference >= 0 ? "+" : "−"}${clubDuration(Math.abs(difference))} compared with all of last week.`
-          : "Each counted session builds your story."}
+          : "Each session builds your story."}
       </p>
       {recap ? (
         <Link className="club-recap-link" href="/arena?results=latest">

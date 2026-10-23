@@ -1,9 +1,10 @@
 "use client";
+import { archiveLegacyDemo } from "@/lib/auth/legacy-demo";
 
 import { createClient } from "@/lib/supabase/client";
 import { getSupabaseConfig } from "@/lib/supabase/config";
-import { webEnv } from "@/lib/env";
-import { hashString, findDemoAccount } from "@fitness-battle/shared";
+
+import { accountDataOrigin, hashString, findDemoAccount } from "@fitness-battle/shared";
 import { markBootSplashSeen } from "@/shell/boot-gate";
 import {
   DEMO_USER_COOKIE,
@@ -28,12 +29,14 @@ export interface AuthUser {
   displayName: string;
   mode: "supabase" | "demo";
   createdAt?: string;
+  dataOrigin?: "synthetic" | "recorded";
 }
 
 interface AuthApi {
   user: AuthUser | null;
   loading: boolean;
-  demoMode: boolean;
+  offlineMode: boolean;
+  legacyBackup: string | null;
   signIn: (email: string, password: string) => Promise<{ error?: string }>;
   signUp: (input: {
     email: string;
@@ -71,6 +74,7 @@ function readDemoCookie(): AuthUser | null {
     email: parsed.email,
     displayName: parsed.displayName ?? parsed.email.split("@")[0] ?? "Athlete",
     mode: "demo",
+    dataOrigin: "synthetic",
   };
 }
 
@@ -118,7 +122,6 @@ function writeDemoUser(user: AuthUser | null) {
   writeDemoCookie(user);
 }
 
-
 function demoUserFromEmail(email: string, displayName?: string): AuthUser {
   const normalized = email.trim().toLowerCase();
   const demo = findDemoAccount(normalized);
@@ -129,20 +132,22 @@ function demoUserFromEmail(email: string, displayName?: string): AuthUser {
     email: normalized,
     displayName: displayName?.trim() || fallback,
     mode: "demo",
+    dataOrigin: "synthetic",
   };
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const { configured } = getSupabaseConfig();
-  const demoMode = webEnv.useDemoData || !configured;
+  const offlineMode = !configured;
   const [user, setUser] = useState<AuthUser | null>(null);
   const [loading, setLoading] = useState(true);
+  const [legacyBackup, setLegacyBackup] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
 
     async function boot() {
-      if (demoMode) {
+      if (offlineMode) {
         if (!cancelled) {
           setUser(readDemoUser());
           setLoading(false);
@@ -150,6 +155,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return;
       }
 
+      // Finish archiving before account state can hydrate under the same seeded UUID.
+      try { setLegacyBackup(archiveLegacyDemo()); writeDemoCookie(null); }
+      catch { setLegacyBackup(null); setLoading(false); return; }
       const supabase = createClient();
       const { data } = await supabase.auth.getUser();
       if (cancelled) return;
@@ -163,6 +171,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             sessionUser.email?.split("@")[0] ??
             "Athlete",
           mode: "supabase",
+          dataOrigin: accountDataOrigin(sessionUser.id),
           createdAt: sessionUser.created_at,
         });
       } else {
@@ -195,6 +204,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             email: next.email ?? "",
             displayName: nextDisplayName,
             mode: "supabase",
+            dataOrigin: accountDataOrigin(next.id),
             createdAt: next.created_at,
           };
         });
@@ -207,11 +217,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       cancelled = true;
       void cleanup.then((fn) => fn?.());
     };
-  }, [demoMode]);
+  }, [offlineMode]);
 
   const signIn = useCallback(
     async (email: string, password: string) => {
-      if (demoMode) {
+      if (offlineMode) {
         if (!email.trim() || password.length < 4) {
           return { error: "Enter an email and a password (4+ characters)." };
         }
@@ -221,6 +231,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         markBootSplashSeen();
         return {};
       }
+      try { setLegacyBackup(archiveLegacyDemo()); }
+      catch { return { error: "Your local demo backup could not be saved. Free device storage and try again; your existing data is intact." }; }
       const supabase = createClient();
       const { error } = await supabase.auth.signInWithPassword({
         email,
@@ -230,12 +242,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       markBootSplashSeen();
       return {};
     },
-    [demoMode],
+    [offlineMode],
   );
 
   const signUp = useCallback(
     async (input: { email: string; password: string; displayName: string }) => {
-      if (demoMode) {
+      if (offlineMode) {
         if (!input.email.trim() || input.password.length < 6) {
           return {
             error: "Enter an email and a password (6+ characters).",
@@ -250,6 +262,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         markBootSplashSeen();
         return {};
       }
+      try { setLegacyBackup(archiveLegacyDemo()); }
+      catch { return { error: "Your local demo backup could not be saved. Free device storage and try again; your existing data is intact." }; }
       const supabase = createClient();
       const { data, error } = await supabase.auth.signUp({
         email: input.email,
@@ -265,11 +279,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (!data.session) return { needsEmailConfirm: true };
       return {};
     },
-    [demoMode],
+    [offlineMode],
   );
 
   const signOut = useCallback(async () => {
-    if (demoMode) {
+    if (offlineMode) {
       writeDemoUser(null);
       setUser(null);
       return;
@@ -277,7 +291,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const supabase = createClient();
     await supabase.auth.signOut();
     setUser(null);
-  }, [demoMode]);
+  }, [offlineMode]);
 
   const requireAuth = useCallback(() => Boolean(user), [user]);
 
@@ -285,13 +299,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     () => ({
       user,
       loading,
-      demoMode,
+      offlineMode,
+      legacyBackup,
       signIn,
       signUp,
       signOut,
       requireAuth,
     }),
-    [user, loading, demoMode, signIn, signUp, signOut, requireAuth],
+    [user, loading, offlineMode, legacyBackup, signIn, signUp, signOut, requireAuth],
   );
 
   return <AuthContext.Provider value={api}>{children}</AuthContext.Provider>;

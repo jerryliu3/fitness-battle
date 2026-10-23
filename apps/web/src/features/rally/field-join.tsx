@@ -14,7 +14,7 @@ import type { SportId } from "@fitness-battle/shared";
 import { useEffect, useState } from "react";
 
 function useCrewOptions(sport: SportId, enabled: boolean) {
-  const { user, demoMode } = useAuth();
+  const { user, offlineMode } = useAuth();
   const { state } = useCompete();
   const [crews, setCrews] = useState<CrewJoinOption[]>([]);
 
@@ -23,7 +23,7 @@ function useCrewOptions(sport: SportId, enabled: boolean) {
       setCrews([]);
       return;
     }
-    if (demoMode) {
+    if (offlineMode) {
       const pin = state?.crewBoard;
       if (
         pin &&
@@ -52,7 +52,7 @@ function useCrewOptions(sport: SportId, enabled: boolean) {
     return () => {
       cancelled = true;
     };
-  }, [demoMode, enabled, sport, state?.crewBoard, user]);
+  }, [offlineMode, enabled, sport, state?.crewBoard, user]);
 
   return crews;
 }

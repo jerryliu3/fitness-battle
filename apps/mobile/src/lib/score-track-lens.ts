@@ -1,26 +1,8 @@
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import {
-  readArenaScoreTrack,
-  writeArenaScoreTrack,
-  type ScoreTrack,
-} from "@fitness-battle/shared";
-import { useCallback, useEffect, useState } from "react";
+import { competitionTrack, type ScoreTrack } from "@fitness-battle/shared";
+import { useCompeteStore } from "./compete-store";
 
-const KEY = "fb:arena-score-track";
-
-export function useScoreTrackLens(): [ScoreTrack, (next: ScoreTrack) => void] {
-  const [track, setTrack] = useState<ScoreTrack>("open");
-
-  useEffect(() => {
-    void AsyncStorage.getItem(KEY).then((raw) => {
-      setTrack(readArenaScoreTrack({ getItem: () => raw }));
-    });
-  }, []);
-
-  const choose = useCallback((next: ScoreTrack) => {
-    setTrack(next);
-    void AsyncStorage.setItem(KEY, next);
-  }, []);
-
-  return [track, choose];
+/** The primary sport controls the score lens; it is no longer a device preference. */
+export function useScoreTrackLens(): [ScoreTrack] {
+  const { state } = useCompeteStore();
+  return [competitionTrack(state?.primary ?? "running")];
 }

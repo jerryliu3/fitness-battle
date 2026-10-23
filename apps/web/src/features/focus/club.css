@@ -144,6 +144,8 @@
   margin: 4px 0 20px;
 }
 .focus-segments {
+  border-radius: 24px;
+  padding: 4px;
   background: var(--accent-soft);
   border-color: var(--line);
 }
@@ -310,15 +312,7 @@
   color: var(--ink);
   font-size: 23px;
 }
-.club-rival-markers {
-  position: absolute;
-  width: 220px;
-  height: 140px;
-  left: 50%;
-  top: 55px;
-  transform: translateX(-50%);
-  opacity: 0.95;
-}
+
 .club-week-recap {
   display: grid;
   gap: 18px;
@@ -435,6 +429,9 @@
   display: none;
 }
 .club-event-page {
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  padding-block: 14px;
   flex: 0 0 100%;
   min-width: 0;
   scroll-snap-align: start;
@@ -534,6 +531,7 @@
   font-size: 11px;
 }
 .phone-shell .focus-segments > button {
+  border-radius: 20px;
   min-height: 44px;
 }
 .phone-shell .focus-segments > button[aria-selected="true"] {
@@ -1205,3 +1203,66 @@
 /* Keep status legible over bright scenery and clear of the 2D lane headers. */
 .club-board-status{padding:12px;border-radius:12px;background:#102e38ed;text-shadow:none}
 .focus-track-frame:has(>.club-map-status)>.focus-lane-surface{margin-top:44px}
+
+/* Destination and control patterns adapted from Goalmaxxing's shared tab chrome. */
+.club-text-tabs { display: flex; gap: 24px; border-bottom: 1px solid var(--line); }
+.club-text-tabs button { min-height: 48px; background: none; border: 0; border-bottom: 2px solid transparent; color: var(--muted); font: inherit; font-weight: 600; }
+.club-text-tabs button[aria-pressed="true"] { border-bottom-color: var(--ink); color: var(--ink); }
+.club-header-effort { flex: 1; max-width: 280px; min-width: 0; }
+.effort-rail.effort-rail-compact { border: 0; padding: 0; margin: 0; width: 100%; background: transparent; min-height: 44px; align-content: center; }
+.effort-rail-compact .effort-rail-top > span, .effort-rail-compact .effort-rail-caption > span { display: none; }
+.effort-rail-compact .effort-rail-top { justify-content: flex-start; }
+.club-week-detail { display: grid; gap: 20px; width: 100%; max-width: 880px; margin-inline: auto; }
+.club-week-detail .effort-rail { width: 100%; box-sizing: border-box; }
+.club-detail-heading { display: grid; grid-template-columns: 44px 1fr 44px; align-items: center; gap: 12px; min-height: 52px; }
+.club-detail-heading h1 { text-align: center; font-size: 20px; margin: 0; }
+.club-icon-button { display: inline-flex; width: 44px; height: 44px; flex: none; align-items: center; justify-content: center; border-radius: 50%; border: 1px solid var(--line); background: #ffffffd9; color: var(--ink); text-decoration: none; font-size: 24px; backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); }
+.club-icon-button:disabled { opacity: .4; }
+.club-preferences { display: grid; gap: 0; }
+.club-preference-row { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; min-height: 64px; padding-block: 10px; border-bottom: 1px solid var(--line); }
+.club-preference-row > .fb-input { width: auto; max-width: 65%; }
+.club-preference-row small { display: block; color: var(--muted); }
+.club-integration-icon { display: grid; place-items: center; width: 38px; height: 38px; flex: none; border-radius: 12px; }
+.club-profile-photo { flex: none; }
+.club-profile-photo .focus-portrait { padding: 0; border: 1px solid var(--line); color: var(--muted); }
+.club-fullscreen-sheet.sheet-content { width: min(880px, 100%); max-height: 100dvh; height: 100dvh; top: 0; bottom: auto; border-radius: 0; padding-top: max(20px, env(safe-area-inset-top)); }
+.club-member-photo { width: 56px; height: 56px; border-radius: 50%; object-fit: cover; flex: none; }
+.club-member-initials { display: grid; place-items: center; background: var(--accent-soft); font-weight: 700; }
+.club-fullscreen-sheet .focus-member-list li { display: flex; align-items: center; gap: 16px; padding: 20px 0; }
+.club-fullscreen-sheet .focus-member-list li > div { flex: 1; }
+.club-track-badge { display: inline-block; border: 1px solid var(--line); padding: 3px 8px; border-radius: 999px; color: var(--muted); font-size: 11px; font-weight: 500; }
+.club-competition-extras { display: grid; grid-template-columns: 1.2fr 1fr; gap: 14px; align-items: stretch; }
+.club-competition-extras > * { margin: 0; min-width: 0; }
+.club-competition-extras .focus-coming-soon { background: var(--accent-soft); }
+.club-competition-extras .focus-beyond-week { display: flex; flex-direction: column; align-items: flex-start; justify-content: space-between; padding: 20px; border: 1px solid var(--line); border-radius: 20px; background: var(--card); text-decoration: none; color: var(--ink); }
+.club-competition-extras .focus-beyond-week > svg { width: 48px; height: 48px; }
+.focus-round-takeover > div { display: grid; gap: 18px; }
+.focus-round-takeover .week-next-row { padding: 20px; border-radius: 20px; background: var(--accent-soft); }
+.phone-shell .fb-chip, .phone-shell .focus-chip { border-radius: 999px; }
+.phone-shell .phone-tabs { position: absolute; width: calc(100% - 28px); max-width: 560px; left: 50%; transform: translateX(-50%); bottom: max(10px, env(safe-area-inset-bottom)); padding: 8px; border: 1px solid #ffffffcc; border-radius: 28px; background: #ffffffa6; box-shadow: 0 8px 32px #142b3b1a; backdrop-filter: blur(24px) saturate(1.5); -webkit-backdrop-filter: blur(24px) saturate(1.5); }
+.phone-shell .phone-tab, .phone-shell .phone-pill { border-radius: 22px; }
+.phone-shell .phone-main { padding-bottom: calc(112px + env(safe-area-inset-bottom)); }
+.phone-shell .focus-settings-stack-panel { padding-top: max(18px, env(safe-area-inset-top)); }
+.phone-shell .focus-settings-stack-panel > .club-icon-button { position: absolute; top: max(18px, env(safe-area-inset-top)); left: 22px; }
+.phone-shell .focus-settings-stack-panel > .focus-heading { min-height: 44px; display: grid; place-items: center; padding-inline: 52px; }
+.phone-shell .focus-settings-stack-panel > .focus-heading h1 { font-size: 20px; text-align: center; }
+@media (max-width: 360px) { .club-competition-extras { grid-template-columns: 1fr; } }
+
+.club-past-self { display: flex; justify-content: space-between; gap: 12px; padding: 14px; border-top: 1px solid var(--line); color: var(--muted); font-size: 13px; }
+.week-result-bento { display: grid; grid-template-columns: 1.2fr 1fr; grid-template-rows: auto auto; gap: 10px; }
+.week-result-bento .week-result-place { grid-row: span 2; display: flex; flex-direction: column; justify-content: center; padding: 16px; background: #ffffff88; border-radius: 16px; }
+.week-result-bento .week-result-volume, .week-result-bento .week-result-score { padding: 14px; border-radius: 14px; background: #ffffffbb; }
+.week-result-bento .week-result-score { background: var(--action-soft, #fff5d1); }
+.club-progress-section:not([hidden]) { animation: club-section-enter 220ms ease-out; }
+@keyframes club-section-enter { from { opacity: 0; transform: translateX(18px); } to { opacity: 1; transform: translateX(0); } }
+@media (prefers-reduced-motion: reduce) { .club-progress-section:not([hidden]) { animation: none; } }
+
+.phone-panel.is-active.is-route-entering { animation: club-section-enter 260ms ease-out; }
+.club-week-detail .focus-activity-svg { height: 200px; }
+@media (prefers-reduced-motion: reduce) { .phone-panel.is-active.is-route-entering { animation: none; } }
+
+.phone-shell .focus-crew-hero .club-crew-name::after { content: ""; position: absolute; inset: 0; cursor: pointer; }
+.phone-shell .focus-crew-hero-buttons { position: relative; z-index: 1; }
+.club-fullscreen-sheet .club-sheet-heading { display: grid; grid-template-columns: 44px 1fr 44px; }
+.club-fullscreen-sheet .club-sheet-heading h2 { grid-column: 2; grid-row: 1; text-align: center; }
+.club-fullscreen-sheet .club-sheet-dismiss { grid-column: 1; grid-row: 1; }

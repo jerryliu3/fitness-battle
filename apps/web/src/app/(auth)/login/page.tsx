@@ -10,7 +10,7 @@ import { useSearchParams } from "next/navigation";
 import { FormEvent, Suspense, useEffect, useState } from "react";
 
 function LoginForm() {
-  const { signIn, user, loading, demoMode } = useAuth();
+  const { signIn, user, loading, offlineMode } = useAuth();
   const searchParams = useSearchParams();
   const next = resolveSafePostLoginPath(searchParams.get("next"));
   const [email, setEmail] = useState("");
@@ -48,7 +48,7 @@ function LoginForm() {
       <h1 className="fb-title">Sign in</h1>
       <p className="fb-copy">
         Your weekly fields, training progress and crew are waiting.
-        {demoMode ? " Demo mode stores your session on this device." : ""}
+        {offlineMode ? " Demo mode stores your session on this device." : ""}
       </p>
       <form className="fb-stack" onSubmit={onSubmit}>
         <label className="fb-field">

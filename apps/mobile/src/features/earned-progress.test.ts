@@ -28,7 +28,7 @@ describe("native earned progress flows",()=>{
  it("shows score changes once after hydration, keeps reduced motion still and resets across accounts",async()=>{
   await act(async()=>{renderer=create(createElement(EffortRail));});
   expect(JSON.stringify(renderer.toJSON())).not.toContain("✦");
-  mock.state={...mock.state!,ratings:mock.state!.ratings.map(r=>r.sport==="running"?{...r,openElo:r.openElo+2}:r)};
+  mock.state={...mock.state!,ratings:mock.state!.ratings.map(r=>r.sport==="running"?{...r,verifiedElo:r.verifiedElo+2}:r)};
   await act(async()=>renderer.update(createElement(EffortRail)));
   expect(text()).toContain("+2");expect(JSON.stringify(renderer.toJSON())).not.toContain("✦");
   mock.account="two";await act(async()=>renderer.update(createElement(EffortRail)));expect(text()).not.toContain("+2");

@@ -15,7 +15,7 @@ import {
 } from "@fitness-battle/shared";
 import { useFocusEffect, useGlobalSearchParams, useRouter } from "expo-router";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ImageBackground, Pressable, Share, StyleSheet, Text, TextInput, View } from "react-native";
+import { Image, ImageBackground, Pressable, Share, StyleSheet, Text, TextInput, View } from "react-native";
 import { useAuth } from "../lib/auth";
 import { useCompeteStore } from "../lib/compete-store";
 import { mobileEnv } from "../lib/env";
@@ -61,7 +61,7 @@ export interface CrewData {
   seasonWeeks?: Record<string, number>;
 }
 export function useCrewApi() {
-  const { user, accessToken, demoMode } = useAuth();
+  const { user, accessToken, offlineMode } = useAuth();
   const [data, setData] = useState<CrewData | null>(null);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
@@ -69,7 +69,7 @@ export function useCrewApi() {
   identity.current = user?.id;
   const request = useCallback(
     async (path: string, body?: object) => {
-      if (!user || demoMode || !accessToken)
+      if (!user || offlineMode || !accessToken)
         throw Error("Private crews need a live signed-in account.");
       const response = await fetchWithTimeout(
         `${mobileEnv.apiUrl}/api/crews${path}`,
@@ -87,11 +87,11 @@ export function useCrewApi() {
         throw Error(result.error ?? "Could not reach your crew.");
       return result;
     },
-    [user?.id, accessToken, demoMode],
+    [user?.id, accessToken, offlineMode],
   );
   const reload = useCallback(async () => {
     const owner = user?.id;
-    if (!owner || demoMode || !accessToken) return;
+    if (!owner || offlineMode || !accessToken) return;
     setBusy(true);
     setError("");
     try {
@@ -108,7 +108,7 @@ export function useCrewApi() {
     } finally {
       if (identity.current === owner) setBusy(false);
     }
-  }, [user?.id, accessToken, demoMode, request]);
+  }, [user?.id, accessToken, offlineMode, request]);
   useEffect(() => {
     void reload();
   }, [reload]);
@@ -122,7 +122,7 @@ export function useCrewApi() {
     busy,
     reload,
     request,
-    live: !!user && !demoMode && !!accessToken,
+    live: !!user && !offlineMode && !!accessToken,
   };
 }
 
@@ -332,8 +332,8 @@ export function CrewHub() {
           !reloaded
             ? "Shared, but your crews could not refresh. Please refresh crews."
             : saved > 0
-              ? `Shared ${saved} counted session${saved === 1 ? "" : "s"} with your crew.`
-              : "Your counted sessions are already shared for this week.",
+              ? `Shared ${saved} session${saved === 1 ? "" : "s"} with your crew.`
+              : "Your sessions are already shared for this week.",
         );
       } else {
         if (path !== "/rest") setPanel(null);
@@ -381,7 +381,7 @@ export function CrewHub() {
           <Text style={f.kicker}>Your people</Text>
           <Text style={f.title}>Make room for your people.</Text>
           <Text style={f.copy}>
-            Private crews share a week of counted effort, member standings and
+            Private crews share a week of effort, member standings and
             an optional shared field.
           </Text>
           <FocusButton
@@ -424,16 +424,13 @@ export function CrewHub() {
               accessibilityRole="button"
               accessibilityLabel="View crew members"
               onPress={() => open("members")}
-              style={{ gap: 12, minHeight: 44 }}
+              style={{ gap: 12, minHeight: 44, flex: 1 }}
             >
               <Text style={[f.kicker, { color: c.tennis }]}>
                 {solo ? "Solo circle" : "Your people"} · {members.length} member
                 {members.length === 1 ? "" : "s"}
               </Text>
               <Text style={[f.title, { color: c.paper }]}>{crew.name}</Text>
-              <Text style={[f.copy, { color: c.line }]}>
-                Different paces. Same direction.
-              </Text>
             </Pressable>
             <View style={[f.row, { flexWrap: "wrap" }]}>
               <View style={f.chipRow}>
@@ -445,7 +442,7 @@ export function CrewHub() {
                   </View>
                 ))}
               </View>
-              {api.live ? (
+              {user ? (
                 <FocusButton
                   label="Invite"
                   onPress={() => {
@@ -461,7 +458,7 @@ export function CrewHub() {
                   }}
                 />
               ) : null}
-              {api.live ? (
+              {user ? (
                 <Pressable
                   accessibilityRole="button"
                   accessibilityLabel="Crew settings"
@@ -523,7 +520,7 @@ export function CrewHub() {
           {formatNoticeUnits(n.body, state?.units)}
         </Text>
       ))}
-      {!api.live ? (
+      {!user ? (
         <>
           <View style={f.card}>
             <Text style={f.kicker}>What crews unlock</Text>
@@ -542,13 +539,14 @@ export function CrewHub() {
       ) : null}
       <FocusSheet
         open={!!panel}
+        fullScreen={panel === "members"}
         title={
           panel === "add"
             ? "Add Crew"
             : panel === "invite"
               ? "Invite to crew"
               : panel === "members"
-                ? crew.name
+                ? "Members"
                 : panel === "leave"
                   ? `Leave ${crew.name}?`
                   : "Your crew, your rhythm."
@@ -643,16 +641,15 @@ export function CrewHub() {
             <FocusButton label="Create crew ＋" onPress={() => open("add")} />
           </>
         ) : panel === "members" ? (
-          <>
-            {members.map((m) => (
-              <View key={m.user_id} style={f.row}>
-                <Text style={[f.rowTitle, f.grow]}>{m.display_name}</Text>
-                <Text style={f.small}>
-                  {(m.user_id === user?.id ? resting : m.rest_week === weekKey) ? "Rest week" : "Active"}
-                </Text>
+          <View style={{ gap: 16 }}>
+            <Text style={f.copy}>{crew.name}</Text>
+            {members.map(m => <View key={m.user_id} style={[f.card, f.row]}>
+              {m.avatar_url ? <Image source={{ uri: m.avatar_url }} style={{ width: 56, height: 56, borderRadius: 28 }} /> : <View style={[f.avatar, { width: 56, height: 56, borderRadius: 28 }]}><Text style={f.h2}>{m.display_name.slice(0, 2).toUpperCase()}</Text></View>}
+              <View style={f.grow}><Text style={f.h2}>{m.display_name}</Text><Text style={f.small}>{(m.user_id === user?.id ? resting : m.rest_week === weekKey) ? "Rest week" : "Active"}</Text>
+                <Text style={f.small}>{sessionsMetric ? `${memberTotal(m.user_id)} sessions` : distance(memberTotal(m.user_id))} this week</Text>
               </View>
-            ))}
-          </>
+            </View>)}
+          </View>
         ) : panel === "invite" ? (
           <>
             <Text style={f.copy}>

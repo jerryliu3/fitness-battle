@@ -310,7 +310,7 @@ export function TrainingAtlas({ state }: { state: CompeteState }) {
         </View>
       </FocusDisclosure>
       <View style={s.row}>
-        <Text style={f.small}>Moving time · Open activity</Text>
+        <Text style={f.small}>Moving time</Text>
         <View style={{ flexDirection: "row", gap: 3 }}>
           {colors.map((color) => (
             <View

@@ -79,14 +79,14 @@ export default function StructureLab() {
     PROTOTYPE_DAYS[1],
   );
   const [registrations, setRegistrations] = useState<Registration[]>([
-    { sport: "running", mode: "Solo", track: "GPS verified" },
+    { sport: "running", mode: "Solo", track: "GPS Tracked" },
     { sport: "strength", mode: "Sunday people", track: "Open" },
   ]);
   const [activeSport, setActiveSport] = useState("running");
   const [sport, setSport] = useState("running");
   const [family, setFamily] = useState("GPS");
   const [mode, setMode] = useState("Solo");
-  const [scoreTrack, setScoreTrack] = useState("GPS verified");
+  const [scoreTrack, setScoreTrack] = useState("GPS Tracked");
   const [ghost, setGhost] = useState(true);
   const [crewView, setCrewView] = useState("Activity");
   const [cheers, setCheers] = useState<string[]>([]);
@@ -684,7 +684,7 @@ export default function StructureLab() {
                   <Text style={s.h3}>
                     ↗ {["6.2 km", "4.5 km", "8.1 km"][i]}
                   </Text>
-                  <Text style={s.small}>Easy run · GPS verified</Text>
+                  <Text style={s.small}>Easy run · GPS Tracked</Text>
                 </View>
                 <Pressable
                   accessibilityRole="button"
@@ -1225,7 +1225,7 @@ export default function StructureLab() {
                   PROTOTYPE_SPORTS.find((s) => s.family === f && s.available)!
                     .id,
                 );
-                setScoreTrack(f === "GPS" ? "GPS verified" : "Open");
+                setScoreTrack(f === "GPS" ? "GPS Tracked" : "Open");
               }}
             />
             {PROTOTYPE_SPORTS.filter((s) => s.family === family).map(
@@ -1273,7 +1273,7 @@ export default function StructureLab() {
               <>
                 {eyebrow("YOUR SCORE TRACK")}
                 <Segments
-                  values={["GPS verified", "Open"]}
+                  values={["GPS Tracked", "Open"]}
                   selected={scoreTrack}
                   onSelect={setScoreTrack}
                   c={c}
@@ -1430,11 +1430,11 @@ export default function StructureLab() {
             <NativeChart c={c} range={range} />
             {summary}
             <View style={s.leaderRow}>
-              <Text style={[s.rowTitle, s.grow]}>GPS-verified running effort score</Text>
+              <Text style={[s.rowTitle, s.grow]}>GPS Tracked running effort score</Text>
               <Text style={s.rowTitle}>1,216</Text>
             </View>
             {copy(
-              "Open and GPS-verified ratings are separate. Health has its own score. History here is illustrative.",
+              "Open and GPS Tracked ratings are separate. Health has its own score. History here is illustrative.",
             )}
           </>
         );

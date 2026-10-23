@@ -38,6 +38,7 @@ vi.mock("react-native", () => ({
 vi.mock("react-native-safe-area-context", () => ({
   SafeAreaView: "SafeAreaView",
 }));
+vi.mock("./icon-button", () => ({ IconButton: "IconButton" }));
 vi.mock("./use-reduced-motion", () => ({ useReducedMotion: () => false }));
 vi.mock("../lib/haptics", () => ({ playCue: vi.fn() }));
 import { FocusSheet } from "./focus";

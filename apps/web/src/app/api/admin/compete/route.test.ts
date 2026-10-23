@@ -31,14 +31,16 @@ beforeEach(() => {
  vi.mocked(readAdminSettlementFields).mockResolvedValue([]);
 });
 describe("admin settlement", () => {
- it("rejects demo mode, non-owner and unconfirmed users before constructing privileged client", async () => {
+ it("rejects non-owner and unconfirmed users before constructing privileged client", async () => {
   for (const user of [null, { id: target, email: "other@example.com", email_confirmed_at: "yes" }, { id: target, email: "3jerryliu@gmail.com" }]) {
    getUser.mockResolvedValue({ data: { user }, error: null });
    expect((await POST(request())).status).toBe(403);
   }
-  webEnv.useDemoData = true;
-  expect((await POST(request())).status).toBe(403);
   expect(createClient).not.toHaveBeenCalled();
+ });
+ it("uses verified identity even when the legacy fixture flag is enabled", async () => {
+  webEnv.useDemoData = true;
+  expect((await POST(request())).status).toBe(200);
  });
  it("requires same origin, target confirmation, reason and a UUID action id", async () => {
   expect((await POST(request({}, "https://other.example"))).status).toBe(403);

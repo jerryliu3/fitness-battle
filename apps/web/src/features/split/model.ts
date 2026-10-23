@@ -204,7 +204,7 @@ export function deltaCopy(
     return {
       delta,
       headline: "Your line this week.",
-      detail: `No counted work in ${ghostLabel} at this cutoff.`,
+      detail: `No activity in ${ghostLabel} at this cutoff.`,
     };
   }
   if (Math.abs(delta) < 0.05) {

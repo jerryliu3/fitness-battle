@@ -12,7 +12,7 @@ import { useEffect, useMemo, useRef } from "react";
  * Mount inside CompeteProvider.
  */
 export function NotificationTriggers() {
-  const { user, demoMode } = useAuth();
+  const { user, offlineMode } = useAuth();
   const { state } = useCompete();
   const resultsBaseline = useRef<number | null>(null);
   const placeBaseline = useRef<number | null>(null);
@@ -22,9 +22,9 @@ export function NotificationTriggers() {
   const identity = useMemo<SyncIdentity | null>(
     () =>
       user
-        ? { userId: user.id, localOnly: demoMode || user.mode === "demo" }
+        ? { userId: user.id, localOnly: offlineMode || user.mode === "demo" }
         : null,
-    [user, demoMode],
+    [user, offlineMode],
   );
 
   useEffect(() => {

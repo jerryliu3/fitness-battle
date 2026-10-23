@@ -7,21 +7,21 @@ import {
 } from "@fitness-battle/shared";
 import * as DocumentPicker from "expo-document-picker";
 import { useEffect, useRef, useState } from "react";
-import { Platform, Text, View } from "react-native";
+import { Platform, Pressable, Text, View } from "react-native";
 import { requestApi } from "../lib/api";
 import { useAuth } from "../lib/auth";
 import { useCompeteStore } from "../lib/compete-store";
 import { mobileEnv } from "../lib/env";
 import { FocusButton, f } from "../ui/focus";
 export function DataSyncActions({ provider }: { provider?: ProviderId }) {
-  const { user, accessToken, demoMode } = useAuth();
+  const { user, accessToken, offlineMode } = useAuth();
   const { state, dispatch, previewSyncReview } = useCompeteStore();
   const [busy, setBusy] = useState(false),
     [note, setNote] = useState("");
   const flight = useRef(false);
   const owner = useRef({ id: user?.id });
   if (owner.current.id !== user?.id) owner.current = { id: user?.id };
-  const live = !!user && !demoMode && user.mode !== "demo";
+  const live = !!user && !offlineMode && user.mode !== "demo";
   const mounted = useRef(true);
   useEffect(() => {
     mounted.current = true;
@@ -99,40 +99,11 @@ export function DataSyncActions({ provider }: { provider?: ProviderId }) {
             key={l.provider}
             style={[f.row, { flexWrap: "wrap", justifyContent: "flex-start" }]}
           >
-            <FocusButton
-              label="Sync"
-              accessibilityLabel={`Sync ${l.provider}`}
-              disabled={busy}
-              secondary
-              onPress={() =>
-                void run(async (isCurrent) => {
-                  if (!live) {
-                    dispatch({
-                      type: "sync",
-                      provider: l.provider,
-                      allowSample: true,
-                    });
-                    setNote("");
-                    return;
-                  }
-                  const id = user?.id;
-                  const body = await requestApi<{
-                    activities?: ActivitySample[];
-                    readiness?: ReadinessSample[];
-                    usedMock?: boolean;
-                  }>(mobileEnv.apiUrl, accessToken, "/api/fitness/sync", {
-                    allowUnpersisted: true,
-                    body: { provider: l.provider },
-                  });
-                  if (isCurrent()) apply(l.provider, body, id);
-                })
-              }
-            />
-            <FocusButton
-              label="Disconnect"
+            <Pressable
+              accessibilityRole="button"
+              style={{ minHeight: 44, justifyContent: "center" }}
               accessibilityLabel={`Disconnect ${l.provider}`}
               disabled={busy}
-              secondary
               onPress={() =>
                 void run(async (isCurrent) => {
                   const id = user?.id;
@@ -153,7 +124,7 @@ export function DataSyncActions({ provider }: { provider?: ProviderId }) {
                   }
                 })
               }
-            />
+            ><Text style={[f.rowTitle, { color: "#b83a38" }]}>{busy ? "Disconnecting…" : "Disconnect"}</Text></Pressable>
           </View>
         ))}
       {!live && !provider && previewSyncReview ? (
@@ -254,16 +225,7 @@ export function DataSyncActions({ provider }: { provider?: ProviderId }) {
               </View>
             ))}
           <Text style={f.h2}>Sleep & recovery</Text>
-          <Text style={f.copy}>
-            Sleep data appears here when supplied by a supported tracker. A
-            sample night is entered on this device and labeled as a sample.
-          </Text>
-          <FocusButton
-            label="Add a sample sleep night"
-            secondary
-            disabled={busy}
-            onPress={() => dispatch({ type: "log-sleep" })}
-          />
+          <Text style={f.copy}>Sleep data appears when supplied by a connected tracker.</Text>
           <Text style={f.h2}>Import fitness history</Text>
           <Text style={f.copy}>
             {state.calibrated

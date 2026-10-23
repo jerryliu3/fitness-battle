@@ -27,7 +27,7 @@ vi.mock("expo-router", () => ({
 vi.mock("heroui-native/button", () => ({ Button: "Button" }));
 vi.mock("heroui-native/input", () => ({ Input: "Input" }));
 vi.mock("../lib/auth", () => ({
-  useAuth: () => ({ user: { id: "alice" }, demoMode: true }),
+  useAuth: () => ({ user: { id: "alice" }, offlineMode: true }),
 }));
 vi.mock("../lib/compete-store", () => ({
   useCompeteStore: () => ({ state: freshState(), dispatch: mock.dispatch }),
@@ -46,6 +46,8 @@ vi.mock("../lib/tracker-connect", () => ({
 vi.mock("./account-actions", () => ({ AccountActions: "AccountActions" }));
 vi.mock("./athlete-metrics", () => ({ AthleteMetrics: "AthleteMetrics" }));
 vi.mock("./data-sync-actions", () => ({ DataSyncActions: "DataSyncActions" }));
+vi.mock("../ui/screen-header", () => ({ ScreenHeader: "ScreenHeader" }));
+vi.mock("../ui/integration-icon", () => ({ IntegrationIcon: "IntegrationIcon" }));
 vi.mock("../ui/settings-row", () => ({ SettingsRow: "SettingsRow" }));
 vi.mock("../ui/focus", () => ({
   FocusButton: "Button",

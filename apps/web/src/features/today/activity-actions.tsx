@@ -2,7 +2,7 @@
 
 import { useRef, useState } from "react";
 import Link from "next/link";
-import { activityFromSample, parseManualActivity, SPORTS, sportById, type ActivitySample, type ReadinessSample, type SportId } from "@fitness-battle/shared";
+import { activityFromSample, competeNow, manualActivityInstant, parseManualActivity, SPORTS, sportById, type ActivitySample, type ReadinessSample, type SportId } from "@fitness-battle/shared";
 import { useAuth } from "@/components/auth-context";
 import { useCompete } from "@/components/compete-context";
 import { Sheet } from "@/ui/sheet";
@@ -16,7 +16,8 @@ export function ActivityActions({ compact = false }: { compact?: boolean }) {
     endSyncReviewBatch,
   } = useCompete();
   const [open, setOpen] = useState(false);
-  const [sport, setSport] = useState<SportId>("running");
+  const [sport, setSport] = useState<SportId | "">("");
+  const [time, setTime] = useState("");
   const [miles, setMiles] = useState("");
   const [minutes, setMinutes] = useState("");
   const [busy, setBusy] = useState(false);
@@ -66,51 +67,50 @@ export function ActivityActions({ compact = false }: { compact?: boolean }) {
     >
       <button
         type="button"
-        className={compact ? "focus-chart-action" : "fb-btn-line"}
+        className={compact ? "club-icon-button" : "fb-btn-line"}
+        aria-label={busy ? "Syncing activities" : "Sync activities"}
         disabled={!ready || busy}
         onClick={() => void sync()}
       >
-        {compact ? busy ? "Syncing…" : "↻ Sync"
-            : busy ? "Syncing…" : "Sync activities"}
+        {compact ? (busy ? "…" : "↻") : busy ? "Syncing…" : "Sync activities"}
       </button>
       <button
         type="button"
-        className={compact ? "focus-chart-action" : "fb-btn"}
+        className={compact ? "club-icon-button" : "fb-btn"}
+        aria-label="Add activity"
         disabled={!ready || busy}
         onClick={() => {
           setFormError("");
           setOpen(true);
         }}
       >
-        {compact ? "＋ Manual" : "Add activity"}
+        {compact ? "＋" : "Add activity"}
       </button>
       {!user && !compact && (
           <Link href="/login?next=/today">Sign in to add or sync</Link>
         )}
     </div>
-    {note && (
-        <p role="status" className={compact ? "fb-note focus-sync-status" : "fb-note"}>{note} <Link href="/athlete?panel=connections">Tracker settings</Link></p>
-      )}
-    <Sheet open={open} onClose={() => setOpen(false)} title="Add today’s activity" body="Manual activities count in Open standings only.">
+    {note && <p role="status" className={compact ? "fb-note focus-sync-status" : "fb-note"}>{note} <Link href="/athlete?panel=connections">Tracker settings</Link></p>}
+    <Sheet open={open} onClose={() => setOpen(false)} title="Add activity" body="" minimal>
       <form style={{ display: "grid", gap: 16 }} onSubmit={(event) => {
         event.preventDefault();
-        if (!ready) return;
-        const parsed = parseManualActivity(sport, miles, minutes);
+        if (!ready || !sport) return;
+        const parsed = parseManualActivity(sport, miles, minutes, state.units);
         if (parsed.error !== null) { setFormError(parsed.error); return; }
+        const when = manualActivityInstant(time, competeNow(state));
+        if (when.error !== null) { setFormError(when.error); return; }
         const { movingSec, distanceM } = parsed;
-        dispatch({ type: "log-manual", sport, movingSec, distanceM, activityId: `manual-${crypto.randomUUID()}` });
-        setOpen(false); setMiles(""); setMinutes(""); setNote("Activity added for today · Open standings only.");
+        dispatch({ type: "log-manual", sport, movingSec, distanceM, startedAt: when.startedAt, activityId: `manual-${crypto.randomUUID()}` });
+        setOpen(false); setMiles(""); setMinutes(""); setTime(""); setSport(""); setNote("Activity added for today.");
       }}>
-        <label>Sport<select className="fb-input" value={sport} onChange={(event) => setSport(event.target.value as SportId)}>{SPORTS.map((item) => (
-                <option key={item.id} value={item.id}>{item.name}</option>))}</select></label>
-        {sportById(sport).gps && (
-            <label>Mileage<input className="fb-input" required type="number" min="0" max="1242" step="0.01" value={miles} onChange={(event) => setMiles(event.target.value)}/></label>
-          )}
+        <label>Sport<select required className="fb-input" value={sport} onChange={(event) => { setSport(event.target.value as SportId); setMiles(""); }}><option value="" disabled>Choose a sport</option>{SPORTS.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label>
+        {sport && <>
         <label>Duration (minutes)<input className="fb-input" required type="number" min="0.1" max="1440" step="0.1" value={minutes} onChange={(event) => setMinutes(event.target.value)}/></label>
-        {formError && (
-            <p role="alert" className="fb-note">{formError}</p>
-          )}
-        <button disabled={!ready} type="submit" className="fb-btn">Add activity</button>
+        {sport && sportById(sport).gps && <label>Distance ({state.units === "metric" ? "km" : "mi"})<input className="fb-input" required type="number" min="0" max={state.units === "metric" ? "2000" : "1242"} step="0.01" value={miles} onChange={(event) => setMiles(event.target.value)}/></label>}
+        <label>Time of day (optional · Eastern)<input className="fb-input" type="time" value={time} onChange={event => setTime(event.target.value)} /></label>
+        </>}
+        {formError && <p role="alert" className="fb-note">{formError}</p>}
+        <button disabled={!ready || !sport} type="submit" className="fb-btn">Add activity</button>
       </form>
     </Sheet>
   </>

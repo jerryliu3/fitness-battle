@@ -6,18 +6,7 @@ import { CrewSessions } from "./crew-sessions";
 import { CrewRelay } from "./crew-relay";
 import { Sheet } from "@/ui/sheet";
 import { playCue } from "@/lib/haptics";
-import {
-  APP_TIMEZONE,
-  competeNow,
-  weeklyPeriodBounds,
-  dayKey,
-  type SportId,
-  countsOnTrack,
-  distanceUnitLabel,
-  formatDistanceM,
-  formatMemberCount,
-  formatNoticeUnits,
-} from "@fitness-battle/shared";
+import { APP_TIMEZONE, competeNow, weeklyPeriodBounds, dayKey, type SportId, countsOnTrack, distanceUnitLabel, formatDistanceM, formatNoticeUnits } from "@fitness-battle/shared";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 interface Crew {
@@ -86,7 +75,7 @@ function isCrewErrorNote(note: string): boolean {
 }
 
 export function CrewPanel() {
-  const { user, demoMode } = useAuth();
+  const { user, offlineMode } = useAuth();
   const { state, dispatch } = useCompete();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -120,25 +109,25 @@ export function CrewPanel() {
     }
   }
   useEffect(() => {
-    if (user && !demoMode) void reload();
+    if (user && !offlineMode) void reload();
     else setData(null);
-  }, [user?.id, demoMode]);
+  }, [user?.id, offlineMode]);
 
   useEffect(() => {
     const invite = searchParams.get("invite")?.trim();
-    if (!invite || !user || demoMode) return;
+    if (!invite || !user || offlineMode) return;
     setCode(invite.toUpperCase());
     setPanel("add");
     const next = new URLSearchParams(searchParams.toString());
     next.delete("invite");
     const qs = next.toString();
     router.replace(qs ? `/field?${qs}` : "/field", { scroll: false });
-  }, [searchParams, user, demoMode, router]);
+  }, [searchParams, user, offlineMode, router]);
 
   async function write(path: string, body: object): Promise<boolean> {
     setBusy(true);
     setNote("");
-    if (demoMode) {
+    if (offlineMode) {
       setBusy(false);
       if (path !== "/rest") setPanel(null);
       if (path === "/leave") {
@@ -213,7 +202,7 @@ export function CrewPanel() {
     hasDemoCrew && crewBoard
       ? crewBoard.members.map((m) => ({
           crew_id: crewBoard.crewId,
-          user_id: demoMode && m.name === athleteName && user ? user.id : m.id,
+          user_id: offlineMode && m.name === athleteName && user ? user.id : m.id,
           display_name: m.name,
           avatar_url: m.id === user?.id ? state?.avatarUrl : m.avatarUrl,
           rest_week: null,
@@ -224,7 +213,7 @@ export function CrewPanel() {
     hasDemoCrew && crewBoard
       ? crewBoard.members.map((m) => ({
           crew_id: crewBoard.crewId,
-          user_id: demoMode && m.name === athleteName && user ? user.id : m.id,
+          user_id: offlineMode && m.name === athleteName && user ? user.id : m.id,
           activity_id: `act-${m.id}`,
           distance_m: m.distanceM ?? 0,
           moving_sec: m.movingSec ?? 0,
@@ -290,7 +279,7 @@ export function CrewPanel() {
         : soloEntries;
   const weekKey = dayKey(weeklyPeriodBounds(state ? competeNow(state) : new Date()).startsAt, APP_TIMEZONE);
   const restKey = `${user?.id}:${crew.id}`;
-  const resting = demoMode ? demoRest[restKey] === weekKey : members.find(m => m.user_id === user?.id)?.rest_week === weekKey;
+  const resting = offlineMode ? demoRest[restKey] === weekKey : members.find(m => m.user_id === user?.id)?.rest_week === weekKey;
   const unitLabel = distanceUnitLabel(state?.units);
   const sessionsMetric = crew?.format === "personal_target" || crew?.sport === "strength";
   const memberTotal = (id: string) => entries.filter(e => e.user_id === id).reduce((sum, e) => sum + Number(sessionsMetric ? e.session_count ?? 1 : e.distance_m), 0);
@@ -309,7 +298,7 @@ export function CrewPanel() {
         : `${memberNames.slice(0, 3).join(", ")} + ${memberNames.length - 3} more`;
   return (
     <>
-      {user && !demoMode && !data && (
+      {user && !offlineMode && !data && (
         <section className="focus-card">
           <p className="fb-copy">{note || "Loading your circle…"}</p>
           <button className="fb-btn-line" onClick={() => void reload()}>
@@ -318,7 +307,7 @@ export function CrewPanel() {
         </section>
       )}
 
-      {(!user || demoMode || data) && (
+      {(!user || offlineMode || data) && (
         <>
           <div className="focus-registration-tabs focus-crew-tabs">
             {crews.map((c) => (
@@ -353,7 +342,6 @@ export function CrewPanel() {
                 : `Your people · ${memberCountLabel}`}
             </p>
             <h2><button type="button" className="club-crew-name" onClick={()=>setPanel("members")} aria-label={`View ${crew.name} members`}>{crew.name}</button></h2>
-            <p>Different paces. Same direction.</p>
             <div className="focus-row">
               <div className="focus-avatar-stack">
                 {members.slice(0, 5).map((m) => (
@@ -417,7 +405,7 @@ export function CrewPanel() {
               <section className="focus-card">
                 <p className="fb-kicker">Our shared week · {crew.sport}</p>
                 {sessionsMetric ? (
-                  <h2>{entries.reduce((total, entry) => total + Number(entry.session_count ?? 1), 0)} counted sessions</h2>
+                  <h2>{entries.reduce((total, entry) => total + Number(entry.session_count ?? 1), 0)} sessions</h2>
                 ) : (
                   <h2 className="focus-goal">
                     {formatDistanceM(totalM, state?.units)}{" "}
@@ -433,7 +421,7 @@ export function CrewPanel() {
                     : "Every pace belongs here."}
                 </p>
               </section>
-              {user && !isSolo ? <CrewSessions key={`${user.id}:${crew.id}`} crewId={crew.id} userId={user.id} demo={demoMode} sport={crew.sport} /> : null}
+              {user && !isSolo ? <CrewSessions key={`${user.id}:${crew.id}`} crewId={crew.id} userId={user.id} demo={offlineMode} sport={crew.sport} /> : null}
               {user ? (
                 <>
                   <h2>Crew standings</h2>
@@ -492,7 +480,7 @@ export function CrewPanel() {
           <section className="focus-card focus-empty">
             <h2>Make room for your people.</h2>
             <p className="fb-copy" style={{ marginBottom: 20 }}>
-              Private crews share a week of counted effort — invite codes,
+              Private crews share a week of effort — invite codes,
               member standings, and a shared field when you register together.
             </p>
             <div className="fb-row" style={{ width: "100%", gap: 10 }}>
@@ -516,13 +504,14 @@ export function CrewPanel() {
       )}
       <Sheet
         open={!!panel}
+        fullScreen={panel === "members"}
         title={
           panel === "add"
             ? "Add Crew"
             : panel === "invite"
               ? "Invite to crew"
               : panel === "members"
-                ? crew?.name ?? "Crew members"
+                ? "Members"
                 : "Your crew, your rhythm."
         }
         body={
@@ -636,7 +625,8 @@ export function CrewPanel() {
           <ul className="focus-member-list">
             {members.map((m) => (
               <li key={m.user_id}>
-                <b>{m.display_name}</b>
+                {m.avatar_url ? <img src={m.avatar_url} alt="" className="club-member-photo" /> : <span className="club-member-photo club-member-initials">{m.display_name.slice(0, 2).toUpperCase()}</span>}
+                <div><b>{m.display_name}</b><p className="fb-note">{sessionsMetric ? `${memberTotal(m.user_id)} sessions` : `${formatDistanceM(memberTotal(m.user_id), state?.units)} ${unitLabel}`} this week</p></div>
                 <small>{(m.user_id === user?.id ? resting : m.rest_week === weekKey) ? "Rest week" : "Active"}</small>
               </li>
             ))}

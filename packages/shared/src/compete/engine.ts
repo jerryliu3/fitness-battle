@@ -138,6 +138,8 @@ export interface Action {
   /** Result ids to clear from the pending reveal queue. */
   revealIds?: string[];
   activityId?: string;
+  /** Manual activity time; must be on the current Eastern date and no later than now. */
+  startedAt?: string;
   disposition?: "counted" | "pending" | "excluded";
   goalDistance?: "5k" | "10k" | "half" | "marathon";
   deadline?: string;
@@ -1008,8 +1010,11 @@ function reduceCompeteAction(
       if (!Number.isFinite(movingSec) || movingSec <= 0 || movingSec > 86400 ||
           !Number.isFinite(distanceM) || distanceM < 0 || distanceM > 2_000_000) return rolled;
       if (rolled.activities.some((item) => item.id === action.activityId)) return rolled;
+      const startedAt = action.startedAt ?? now.toISOString();
+      const timestamp = Date.parse(startedAt);
+      if (!Number.isFinite(timestamp) || timestamp > now.getTime() || dayKey(new Date(timestamp)) !== dayKey(now)) return rolled;
       const activity: Activity = {
-        id: action.activityId, sport: action.sport, startedAt: now.toISOString(),
+        id: action.activityId, sport: action.sport, startedAt: new Date(timestamp).toISOString(),
         distanceM, movingSec, avgHr: null, source: "manual", provenance: "manual",
         verified: false, disposition: "counted", dispositionReason: "Manually logged · Open standings only.",
       };

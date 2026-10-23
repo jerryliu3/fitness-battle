@@ -18,7 +18,7 @@ export function WeeklySocialActions({
   result: PeriodResult;
   units: UnitSystem;
 }) {
-  const { user, accessToken, demoMode } = useAuth(),
+  const { user, accessToken, offlineMode } = useAuth(),
     [data, setData] = useState<WeeklySocial | null>(null),
     [selected, setSelected] = useState(""),
     [busy, setBusy] = useState(false),
@@ -36,14 +36,14 @@ export function WeeklySocialActions({
   }, [accessToken, query]);
   useEffect(() => {
     mounted.current = true;
-    if (user && !demoMode)
+    if (user && !offlineMode)
       void load().catch(() => {
         if (mounted.current) setError("Could not load the settled field.");
       });
     return () => {
       mounted.current = false;
     };
-  }, [load, user?.id, demoMode]);
+  }, [load, user?.id, offlineMode]);
   const peer = data?.peers.find((p) => p.id === selected) ?? data?.peers[0];
   async function toggle(kind: "congrats" | "repeat") {
     if (!peer || !data?.fieldId || flight.current) return;
@@ -71,7 +71,7 @@ export function WeeklySocialActions({
       if (mounted.current) setBusy(false);
     }
   }
-  if (!user || demoMode) return null;
+  if (!user || offlineMode) return null;
   if (error && !data)
     return (
       <View>

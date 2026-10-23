@@ -1338,7 +1338,7 @@
 }
 .focus-chart-actions {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   gap: 8px;
   flex-shrink: 0;
   min-width: 88px;

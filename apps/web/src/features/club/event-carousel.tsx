@@ -2,7 +2,7 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useReducedMotion } from "motion/react";
 import { Sheet } from "@/ui/sheet";
-export type ClubEvent = { id: string; label: string };
+export type ClubEvent = { id: string; label: string; badge?: string };
 export function EventCarousel({
   events,
   value,
@@ -73,7 +73,7 @@ export function EventCarousel({
             Your events · {index + 1} of {events.length}
           </span>
           <strong>
-            {events[index]?.label} <span aria-hidden="true">⌄</span>
+            {events[index]?.label} {events[index]?.badge && <span className="club-track-badge">{events[index]?.badge}</span>} <span aria-hidden="true">⌄</span>
           </strong>
         </button>
         <button

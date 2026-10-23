@@ -166,7 +166,7 @@ export function ExpandingField({
           }}
           onCloseAutoFocus={(event) => { event.preventDefault(); returnFocus.current?.focus({ preventScroll: true }); }}>
           <Dialog.Title className="fb-sr-only">Explore athlete lanes</Dialog.Title>
-          <button type="button" className="focus-field-close" onClick={onClose} aria-label="Back">← Back</button>
+          <button type="button" className="focus-field-close club-icon-button" onClick={onClose} aria-label="Return to field">‹</button>
         <button type="button" className="focus-field-pursuit" disabled>3D pursuit · Coming soon</button>
         </Dialog.Content>
       </Dialog.Portal>}

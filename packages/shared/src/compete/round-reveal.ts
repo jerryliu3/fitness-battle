@@ -1,14 +1,15 @@
 import { competeNow } from "./engine";
 import { pendingPeriodResults } from "./history";
+import { competitionTrack } from "./sports";
 import type { CompeteState, PeriodResult } from "./sports";
 
-/** One round, all pending tracks acknowledged together, Open preferred for display. */
+/** One round, all pending tracks acknowledged together, the sport default preferred for display. */
 export function roundReveal(state: CompeteState) {
   const pending = pendingPeriodResults(state.periodResults);
   const latest = pending[0];
   if (!latest) return null;
   const round = pending.filter((row) => row.periodStart === latest.periodStart && row.periodEnd === latest.periodEnd);
-  const results = round.filter((row) => row.track === "open" || !round.some((other) => other.sport === row.sport && other.track === "open"));
+  const results = round.filter((row) => row.track === competitionTrack(row.sport) || !round.some((other) => other.sport === row.sport && other.track === competitionTrack(row.sport)));
   return { key: `${latest.periodStart}:${latest.periodEnd}`, results, ids: round.map((row) => row.id) };
 }
 

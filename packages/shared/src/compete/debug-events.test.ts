@@ -10,12 +10,13 @@ import {
 import { buildArenaModel, competePeriodWindow } from "../phone-views";
 import { applyDebugEvent, DEBUG_EVENT_OPTIONS } from "./debug-events";
 import { competeNow, freshState } from "./engine";
+import { competitionTrack } from "./sports";
 import { roundReveal } from "./round-reveal";
 import { initialsFromName } from "./track";
 
 function sceneLanesFromState(state: ReturnType<typeof freshState>) {
   const now = competeNow(state);
-  const arena = buildArenaModel(state, now, "open", state.primary);
+  const arena = buildArenaModel(state, now, competitionTrack(state.primary), state.primary);
   const periodStart = competePeriodWindow(state, now, state.primary).startsAt.toISOString();
   const lanes: ArenaSceneLane[] = arena.lanes.filter((l) => !l.ghost).map((l) => ({
     id: l.id,
@@ -38,7 +39,7 @@ describe("applyDebugEvent", () => {
     expect(result.revealStopKey).toMatch(/^today:/);
     expect(result.state.activities[0]?.verified).toBe(true);
     const { lanes, periodStart, unit } = sceneLanesFromState(result.state);
-    const prev = readArenaBaseline(result.baselines[arenaBaselineStorageKey("guest", result.state.primary, "open")] ?? null, periodStart, unit);
+    const prev = readArenaBaseline(result.baselines[arenaBaselineStorageKey("guest", result.state.primary, competitionTrack(result.state.primary))] ?? null, periodStart, unit);
     const plan = reconcileArenaOvertake(lanes, prev);
     expect(plan?.hasOvertake).toBe(false);
     expect(plan!.youAfter).toBeGreaterThan(plan!.youBefore);
@@ -49,7 +50,7 @@ describe("applyDebugEvent", () => {
     for (let step = 1; step <= 4; step += 1) {
       const result = applyDebugEvent(current, "overtake", "guest", step);
       const { lanes, periodStart, unit } = sceneLanesFromState(result.state);
-      const prev = readArenaBaseline(result.baselines[arenaBaselineStorageKey("guest", result.state.primary, "open")] ?? null, periodStart, unit);
+      const prev = readArenaBaseline(result.baselines[arenaBaselineStorageKey("guest", result.state.primary, competitionTrack(result.state.primary))] ?? null, periodStart, unit);
       const plan = reconcileArenaOvertake(lanes, prev);
       expect(plan?.hasOvertake).toBe(true);
       expect(plan!.rankAfter).toBeLessThan(plan!.rankBefore);
@@ -59,7 +60,7 @@ describe("applyDebugEvent", () => {
     for (let step = 1; step <= 4; step += 1) {
       const result = applyDebugEvent(current, "overtaken", "guest", step);
       const { lanes, periodStart, unit } = sceneLanesFromState(result.state);
-      const prev = readArenaBaseline(result.baselines[arenaBaselineStorageKey("guest", result.state.primary, "open")] ?? null, periodStart, unit);
+      const prev = readArenaBaseline(result.baselines[arenaBaselineStorageKey("guest", result.state.primary, competitionTrack(result.state.primary))] ?? null, periodStart, unit);
       const plan = reconcileArenaOvertake(lanes, prev);
       expect(plan?.passedByIds?.length).toBeGreaterThanOrEqual(1);
       expect(plan!.rankAfter).toBeGreaterThan(plan!.rankBefore);

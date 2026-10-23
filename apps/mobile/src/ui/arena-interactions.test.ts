@@ -47,7 +47,7 @@ vi.mock("expo-router", () => ({
   useRouter: () => ({ navigate: vi.fn() }),
 }));
 vi.mock("../lib/auth", () => ({
-  useAuth: () => ({ user: { id: "audit" }, demoMode: true }),
+  useAuth: () => ({ user: { id: "audit" }, offlineMode: true }),
 }));
 vi.mock("../lib/compete-store", () => ({
   useCompeteStore: () => ({
@@ -184,6 +184,9 @@ describe("native competition interactions", () => {
       distanceM: 1609.344,
       movingSec: 600,
     });
+    // Running now uses GPS Tracked; animate a recorded GPS session, not manual Open volume.
+    mock.state = { ...mock.state, activities: mock.state.activities.map(activity =>
+      activity.id === "review-run" ? { ...activity, source: "strava", provenance: "recorded", verified: true } : activity) };
     await act(async () => renderer.update(createElement(ArenaScreen)));
     await layoutCarousel();
     const lane = renderer.root.findByType("LaneTrack" as never);

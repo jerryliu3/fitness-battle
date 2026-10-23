@@ -1,27 +1,14 @@
 "use client";
+import { clubLifetimeTotals } from "@fitness-battle/shared";
+import { ProfilePhoto } from "@/features/you/profile-photo";
 import { currentEffortMilestone, formatVolume } from "@fitness-battle/shared";
-import { playCue } from "@/lib/haptics";
+
 import { useScoreTrackLens } from "@/lib/score-track-lens";
 import { useAuth } from "@/components/auth-context";
 import { useCompete } from "@/components/compete-context";
-import {
-  removeWebProfileAvatar,
-  uploadWebProfileAvatar,
-} from "@/lib/profile/avatar-upload";
-import { createClient } from "@/lib/supabase/client";
-import {
-  clubLifetimeTotals,
-  distanceUnitLabel,
-  effortHistory,
-  ELO_UNRANKED,
-  formatDistanceM,
-  PERSON_ICON_PATH,
-  rankForElo,
-  type CompeteState,
-} from "@fitness-battle/shared";
-import { useEffect, useRef, useState } from "react";
 
-
+import { distanceUnitLabel, effortHistory, ELO_UNRANKED, formatDistanceM, rankForElo, type CompeteState } from "@fitness-battle/shared";
+import { useEffect, useState } from "react";
 
 function EditIcon() {
   return (
@@ -45,13 +32,13 @@ function EditIcon() {
 export function AthleteOverview({
   state,
   email,
-  demoMode,
+  offlineMode,
   openProfileEdit = false,
   sections = "profile",
 }: {
   state: CompeteState;
   email?: string | null;
-  demoMode?: boolean;
+  offlineMode?: boolean;
   openProfileEdit?: boolean;
   /** Profile card on Athlete; lifetime totals + effort chart on Progress. */
   sections?: "profile" | "progress";
@@ -61,11 +48,8 @@ export function AthleteOverview({
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState(state.name);
   const [city, setCity] = useState(state.city);
-  const [track, setTrack] = useScoreTrackLens();
+  const [track] = useScoreTrackLens();
 
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const [avatarBusy, setAvatarBusy] = useState(false);
-  const [avatarError, setAvatarError] = useState<string | null>(null);
   const [profileError, setProfileError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -86,58 +70,6 @@ export function AthleteOverview({
 
   const season = clubLifetimeTotals(state);
   const unit = distanceUnitLabel(state.units);
-
-  async function onAvatarChosen(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setAvatarBusy(true);
-    setAvatarError(null);
-    try {
-      const supabase = createClient();
-      const {
-        data: { user },
-      } = await supabase.auth.getUser().catch(() => ({ data: { user: null } }));
-      const newUrl = await uploadWebProfileAvatar({
-        file,
-        userId: user?.id,
-        previousAvatarUrl: state.avatarUrl,
-        supabase,
-        // Signed-in athletes (email present) must use storage — never data URLs.
-        requireStorage: Boolean(email),
-      });
-      dispatch({ type: "set-avatar", avatarUrl: newUrl });
-    } catch (err) {
-      setAvatarError(
-        err instanceof Error ? err.message : "Failed to upload photo.",
-      );
-    } finally {
-      setAvatarBusy(false);
-      if (fileInputRef.current) fileInputRef.current.value = "";
-    }
-  }
-
-  async function onRemovePhoto() {
-    setAvatarBusy(true);
-    setAvatarError(null);
-    try {
-      const supabase = createClient();
-      const {
-        data: { user },
-      } = await supabase.auth.getUser().catch(() => ({ data: { user: null } }));
-      await removeWebProfileAvatar({
-        userId: user?.id,
-        previousAvatarUrl: state.avatarUrl,
-        supabase,
-      });
-      dispatch({ type: "set-avatar", avatarUrl: null });
-    } catch (err) {
-      setAvatarError(
-        err instanceof Error ? err.message : "Failed to remove photo.",
-      );
-    } finally {
-      setAvatarBusy(false);
-    }
-  }
 
   const milestone = currentEffortMilestone(state, state.primary, track);
   const showProfile = sections === "profile";
@@ -188,63 +120,12 @@ export function AthleteOverview({
 
   return (
     <>
-      {showProfile ? (
-      <input
-        ref={fileInputRef}
-        type="file"
-        accept="image/png,image/jpeg,image/webp"
-        style={{ display: "none" }}
-        onChange={onAvatarChosen}
-      />
-      ) : null}
-
       {showProfile && editing ? (
         <section
           className="focus-profile-card is-editing"
           aria-label="Edit athlete profile"
         >
-          <div
-            className="focus-portrait"
-            role="button"
-            tabIndex={avatarBusy ? -1 : 0}
-            aria-busy={avatarBusy || undefined}
-            aria-disabled={avatarBusy || undefined}
-            aria-label={state.avatarUrl ? "Change photo" : "Upload photo"}
-            title={state.avatarUrl ? "Change photo" : "Upload photo"}
-            onClick={() => {
-              if (!avatarBusy) fileInputRef.current?.click();
-            }}
-            onKeyDown={(e) => {
-              if (avatarBusy) return;
-              if (e.key === "Enter" || e.key === " ") {
-                e.preventDefault();
-                fileInputRef.current?.click();
-              }
-            }}
-          >
-            {state.avatarUrl ? (
-              <img
-                src={state.avatarUrl}
-                alt=""
-                className="focus-portrait-img"
-              />
-            ) : (
-              <svg
-                width="54"
-                height="54"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.6"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                style={{ color: "var(--muted)", pointerEvents: "none" }}
-                aria-hidden="true"
-              >
-                <path d={PERSON_ICON_PATH} />
-              </svg>
-            )}
-          </div>
+          <ProfilePhoto state={state} email={email} />
           <div className="focus-profile-card-copy" style={{ flex: 1 }}>
             <label className="fb-field" style={{ marginBottom: 8 }}>
               Display name
@@ -264,26 +145,6 @@ export function AthleteOverview({
                 maxLength={48}
               />
             </label>
-            {state.avatarUrl ? (
-              <div
-                className="focus-avatar-actions"
-                style={{ marginBottom: 12 }}
-              >
-                <button
-                  type="button"
-                  className="fb-btn-ghost focus-avatar-btn is-danger"
-                  disabled={avatarBusy}
-                  onClick={onRemovePhoto}
-                >
-                  Remove photo
-                </button>
-              </div>
-            ) : null}
-            {avatarError && (
-              <p className="fb-error" style={{ fontSize: 11, marginBottom: 8 }}>
-                {avatarError}
-              </p>
-            )}
             {profileError ? (
               <p className="fb-error" role="alert" style={{ fontSize: 11, marginBottom: 8 }}>
                 {profileError}
@@ -326,52 +187,7 @@ export function AthleteOverview({
         </section>
       ) : showProfile ? (
         <section className="focus-profile-card" aria-label="Athlete profile">
-          <div
-            className="focus-portrait"
-            role="button"
-            tabIndex={avatarBusy ? -1 : 0}
-            aria-label={state.avatarUrl ? "Change photo" : "Upload photo"}
-            onClick={() => {
-              if (avatarBusy) return;
-              setName(state.name);
-              setCity(state.city);
-              setEditing(true);
-              fileInputRef.current?.click();
-            }}
-            onKeyDown={(e) => {
-              if (avatarBusy) return;
-              if (e.key === "Enter" || e.key === " ") {
-                e.preventDefault();
-                setName(state.name);
-                setCity(state.city);
-                setEditing(true);
-                fileInputRef.current?.click();
-              }
-            }}
-          >
-            {state.avatarUrl ? (
-              <img
-                src={state.avatarUrl}
-                alt={state.name}
-                className="focus-portrait-img"
-              />
-            ) : (
-              <svg
-                width="54"
-                height="54"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.6"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                style={{ color: "var(--muted)", pointerEvents: "none" }}
-                aria-hidden="true"
-              >
-                <path d={PERSON_ICON_PATH} />
-              </svg>
-            )}
-          </div>
+          <ProfilePhoto state={state} email={email} />
           <div className="focus-profile-card-copy">
             <div className="focus-profile-identity">
               <div className="focus-profile-identity-text">
@@ -380,7 +196,7 @@ export function AthleteOverview({
                 {email ? (
                   <p className="focus-profile-email">
                     {email}
-                    {demoMode ? " · demo" : ""}
+                    {offlineMode ? " · demo" : ""}
                   </p>
                 ) : null}
               </div>
@@ -407,7 +223,7 @@ export function AthleteOverview({
         <div className="focus-season-stats">
           <div>
             <strong>{formatDistanceM(season.meters, state.units)}</strong>
-            <span>{unit} counted</span>
+            <span>{unit} total</span>
           </div>
           <div>
             <strong>{season.sessions}</strong>
@@ -428,32 +244,7 @@ export function AthleteOverview({
       {showProgress ? (
       <section className="focus-card focus-elo" id="effort-score">
         <div className="focus-elo-top">
-          <div
-            className="focus-elo-track-toggle"
-            role="group"
-            aria-label="Effort score track"
-          >
-            <button
-              type="button"
-              aria-pressed={track === "open"}
-              onClick={() => {
-                if (track !== "open") void playCue("selection");
-                setTrack("open");
-              }}
-            >
-              Open
-            </button>
-            <button
-              type="button"
-              aria-pressed={track === "verified"}
-              onClick={() => {
-                if (track !== "verified") void playCue("selection");
-                setTrack("verified");
-              }}
-            >
-              GPS verified
-            </button>
-          </div>
+
           <span className="focus-elo-rank-pill">
             {rankForElo(effectiveElo).name}
           </span>
@@ -469,7 +260,7 @@ export function AthleteOverview({
           viewBox="0 0 340 150"
           className="focus-trend"
           role="img"
-          aria-label={`30-day ${track === "open" ? "Open" : "GPS verified"} effort score history ending at ${effectiveElo}`}
+          aria-label={`30-day ${track === "open" ? "Open" : "GPS Tracked"} effort score history ending at ${effectiveElo}`}
         >
           <defs>
             <linearGradient id="focus-trend-grad" x1="0" y1="0" x2="0" y2="1">

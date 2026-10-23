@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const stubs = vi.hoisted(() => ({
+  configured: true,
   user: vi.fn(),
   deleteUser: vi.fn(),
   listPhotos: vi.fn(),
@@ -21,6 +22,7 @@ vi.mock("@/lib/env", () => ({
 
 vi.mock("@/lib/supabase/config", () => ({
   getSupabaseConfig: () => ({
+    configured: stubs.configured,
     supabaseUrl: "https://test.supabase.co",
     supabaseAnonKey: "anon-key",
   }),
@@ -48,6 +50,7 @@ describe("account deletion route", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     stubs.webEnv.useDemoData = false;
+    stubs.configured = true;
     stubs.serverEnv.supabaseServiceRoleKey = "test-service-key";
     stubs.deleteUser.mockResolvedValue({ error: null });
     stubs.listPhotos.mockResolvedValue({ data: [], error: null });
@@ -88,8 +91,8 @@ describe("account deletion route", () => {
     expect(stubs.deleteUser).toHaveBeenCalledWith("user-123");
   });
 
-  it("handles demo mode without reaching admin client", async () => {
-    stubs.webEnv.useDemoData = true;
+  it("handles an offline preview without reaching admin client", async () => {
+    stubs.configured = false;
     stubs.user.mockResolvedValue("user-demo");
     const request = new Request("http://localhost:3000/api/account", {
       method: "DELETE",

@@ -1,5 +1,5 @@
 import { createClient as createSupabaseClient, type SupabaseClient } from "@supabase/supabase-js";
-import { webEnv } from "@/lib/env";
+
 import { getSupabaseConfig } from "@/lib/supabase/config";
 import { createClient } from "@/lib/supabase/server";
 
@@ -14,7 +14,7 @@ export async function createRequestClient(
   const match = /^Bearer\s+(\S+)/i.exec(header);
   const { configured, supabaseUrl, supabaseAnonKey } = getSupabaseConfig();
 
-  if (match?.[1] && configured && !webEnv.useDemoData) {
+  if (match?.[1] && configured) {
     return createSupabaseClient(supabaseUrl, supabaseAnonKey, {
       global: {
         headers: { Authorization: `Bearer ${match[1]}` },
