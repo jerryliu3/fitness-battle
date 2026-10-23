@@ -47,11 +47,9 @@ export function CompetitionSummary({
     <>
       <View style={s.card}>
         <View style={f.row}>
-          <View style={f.grow}>
-            <View
-              style={{ flexDirection: "row", alignItems: "center", gap: 6 }}
-            >
-              <Text style={f.kicker}>Competition</Text>
+          <View style={[f.grow, { gap: 6 }]}>
+            <View style={{ flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: 8 }}>
+              <Text style={f.sectionTitle}>Competition · {weekLabel}</Text>
               <Pressable
                 accessibilityRole="button"
                 accessibilityLabel="About competition scoring"
@@ -66,7 +64,6 @@ export function CompetitionSummary({
                 <Text style={f.copy}>ⓘ</Text>
               </Pressable>
             </View>
-            <Text style={s.dates}>{weekLabel}</Text>
           </View>
           <Text style={s.pill}>
             {days
@@ -102,12 +99,6 @@ const s = StyleSheet.create({
     backgroundColor: c.paper,
     padding: 0,
     gap: 10,
-  },
-  dates: {
-    fontFamily: "DMSans_700Bold",
-    fontSize: 16,
-    lineHeight: 24,
-    color: c.ink,
   },
   pill: {
     overflow: "hidden",

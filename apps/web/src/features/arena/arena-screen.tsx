@@ -43,6 +43,7 @@ export function ArenaScreen({ tabActive = true }: { tabActive?: boolean }) {
   const [competeWithCrew, setCompeteWithCrew] = useState(false);
   const [sport, setSport] = useState<SportId | "sleep" | null>(null);
   const [competitionTipOpen, setCompetitionTipOpen] = useState(false);
+  const [fieldView, setFieldView] = useState<"lanes2d" | "standings" | "3d">("lanes2d");
 
   useEffect(() => {
     if (!competitionTipOpen) return;
@@ -55,6 +56,11 @@ export function ArenaScreen({ tabActive = true }: { tabActive?: boolean }) {
     return () => document.removeEventListener("mousedown", close);
   }, [competitionTipOpen]);
 
+  const account = user?.id ?? "guest";
+  useEffect(() => {
+    setFieldView("lanes2d");
+  }, [selection?.sport, account, tabActive]);
+
   if (!state) return <p className="fb-copy">Loading your lanes…</p>;
 
   const now = competeNow(state);
@@ -63,7 +69,6 @@ export function ArenaScreen({ tabActive = true }: { tabActive?: boolean }) {
   const sleepRating = state.healthRatings.find((item) => item.metric === "sleep");
   const sleepOptedIn = Boolean(sleepRating?.optedIn);
 
-  const account = user?.id ?? "guest";
   const requested = selection?.account === account ? selection.sport : null;
   const selectedSport = requested && (requested === "sleep" ? sleepOptedIn : active.some(r=>r.sport===requested))
     ? requested : active.find(r=>r.sport===state.primary)?.sport ?? active[0]?.sport ?? (sleepOptedIn ? "sleep" : null);
@@ -108,8 +113,9 @@ export function ArenaScreen({ tabActive = true }: { tabActive?: boolean }) {
     <div className="focus-arena">
       <header className="focus-competition-card">
         <div className="focus-competition-info">
-          <p className="fb-kicker focus-competition-kicker">
-            Competition
+          <p className="focus-competition-title">
+            <span>Competition · {dateRangeLabel}</span>
+            <span className="focus-competition-pill">{badgeLabel}</span>
             <span className="focus-competition-tip-wrap">
               <button
                 type="button"
@@ -127,12 +133,25 @@ export function ArenaScreen({ tabActive = true }: { tabActive?: boolean }) {
               ) : null}
             </span>
           </p>
-          <p className="focus-competition-dates">
-            {dateRangeLabel}
-            <span className="focus-competition-pill">{badgeLabel}</span>
-          </p>
         </div>
-
+        {selectedSport && selectedSport !== "sleep" ? (
+          <div className="focus-competition-field-tabs" role="tablist" aria-label="Arena view">
+            {(["lanes", "standings", "3d"] as const).map((m) => (
+              <button
+                key={m}
+                type="button"
+                role="tab"
+                aria-selected={fieldView === (m === "lanes" ? "lanes2d" : m)}
+                onClick={() => {
+                  void playCue("selection");
+                  setFieldView(m === "3d" ? "3d" : m === "standings" ? "standings" : "lanes2d");
+                }}
+              >
+                {m === "lanes" ? "2D map" : m === "3d" ? "3D field" : "Standings"}
+              </button>
+            ))}
+          </div>
+        ) : null}
       </header>
 
       {frozen && (
@@ -153,7 +172,10 @@ export function ArenaScreen({ tabActive = true }: { tabActive?: boolean }) {
         <FieldStage key={`${account}:${selectedSport}:${state.units}`} tabActive={tabActive}
           sportTitle={SPORTS.find(s=>s.id===selectedSport)?.name}
           model={buildFieldModel(state,selectedSport,track,now)}
-          boardRows={buildSplitBoard(state,selectedSport,track,now).rows}/>
+          boardRows={buildSplitBoard(state,selectedSport,track,now).rows}
+          arenaView={fieldView}
+          onArenaViewChange={setFieldView}
+          chromeInHeader/>
       ) : selectedSport === "sleep" ? (
         <SleepPanel state={state} now={now}
           onJoin={()=>participate("join sleep",()=>dispatch({type:"opt-in-health",metric:"sleep"}))}
@@ -190,7 +212,6 @@ export function ArenaScreen({ tabActive = true }: { tabActive?: boolean }) {
           <b>Beyond this week</b>
           <small>All-time pace & race rankings</small>
         </div>
-        <span aria-hidden="true">→</span>
       </Link>
 
       </div>
