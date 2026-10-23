@@ -2,6 +2,7 @@
 import Link from "next/link";
 import {
   competeNow,
+  competitionTrack,
   formatEffort,
   formatVolume,
   nextClubRival,
@@ -9,13 +10,13 @@ import {
   weeklyBoard,
   type CompeteState,
 } from "@fitness-battle/shared";
-import { PolishedRacer } from "@/features/brand/polished-racer";
+
 export function RivalCard({ state }: { state: CompeteState }) {
   const sport =
     state.ratings.find((r) => r.sport === state.primary && r.optedIn)?.sport ??
     state.ratings.find((r) => r.optedIn)?.sport;
   const { you, rival, fieldSize } = nextClubRival(
-    sport ? weeklyBoard(state, sport, "open", competeNow(state)) : [],
+    sport ? weeklyBoard(state, sport, competitionTrack(sport), competeNow(state)) : [],
   );
   const synthetic = Boolean(
     rival &&
@@ -42,7 +43,6 @@ export function RivalCard({ state }: { state: CompeteState }) {
       <img className="club-landscape" src="/club/alpine-trail.jpg" alt="" />
       <div className="club-rival-top">
         <div>
-          <span className="club-eyebrow">Your competition · Open</span>
           <h2>{sport ? sportById(sport).name : "Find your field"}</h2>
         </div>
         {you ? (
@@ -75,28 +75,6 @@ export function RivalCard({ state }: { state: CompeteState }) {
           ↗
         </span>
       </div>
-      <svg
-        className="club-rival-markers"
-        viewBox="0 0 220 140"
-        aria-hidden="true"
-      >
-        <PolishedRacer
-          x={70}
-          y={90}
-          you
-          gold={you?.place === 1}
-          sizeScale={0.75}
-        />
-        {rival ? (
-          <PolishedRacer
-            x={150}
-            y={45}
-            you={false}
-            gold={rival.place === 1}
-            sizeScale={0.7}
-          />
-        ) : null}
-      </svg>
     </Link>
   );
 }

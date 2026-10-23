@@ -14,7 +14,7 @@ import { StatusBar } from "expo-status-bar";
 import * as WebBrowser from "expo-web-browser";
 import { HeroUINativeProvider } from "heroui-native/provider";
 import { useEffect } from "react";
-import { ActivityIndicator, Platform, Text, View } from "react-native";
+import { ActivityIndicator, Platform, View } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import "../global.css";
 // Registers the foreground notification handler.
@@ -27,7 +27,6 @@ import {
 import { shellTabFromPath } from "@fitness-battle/shared";
 import { SHELL_COLORS } from "../src/theme";
 import { BootGate } from "../src/ui/boot-gate";
-import { AppHeader } from "../src/ui/app-header";
 
 function LiveFieldRefresh() {
   const tab = shellTabFromPath(usePathname());
@@ -104,7 +103,6 @@ export default function RootLayout() {
             <LiveFieldRefresh />
             <BootGate>
               <StatusBar style="dark" />
-              <AppHeader />
               <Stack
                 screenOptions={{
                   headerShown: false,

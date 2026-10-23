@@ -1,7 +1,11 @@
-import { SHELL_COLORS as clubColors } from "@fitness-battle/shared";
+import { IconButton } from "../ui/icon-button";
+import { ChoicePicker } from "../ui/choice-picker";
+
 import {
   activityFromSample,
   parseManualActivity,
+  manualActivityInstant,
+  competeNow,
   SPORTS,
   sportById,
   type ActivitySample,
@@ -10,7 +14,7 @@ import {
 } from "@fitness-battle/shared";
 import { Link } from "expo-router";
 import { useRef, useState } from "react";
-import { Pressable, Text, TextInput, View } from "react-native";
+import { Text, TextInput, View } from "react-native";
 import { requestApi } from "../lib/api";
 import { useAuth } from "../lib/auth";
 import { useCompeteStore } from "../lib/compete-store";
@@ -40,7 +44,8 @@ export function HomeActivityActions({
     [busy, setBusy] = useState(false),
     [note, setNote] = useState("");
   const [formError, setFormError] = useState("");
-  const [sport, setSport] = useState<SportId>("running");
+  const [sport, setSport] = useState<SportId | "">("");
+  const [time, setTime] = useState("");
   const [miles, setMiles] = useState(""),
     [minutes, setMinutes] = useState("");
   const flight = useRef(false);
@@ -156,52 +161,9 @@ export function HomeActivityActions({
     }
   }
   const actionRow = compact ? (
-    <View style={{ gap: 8 }}>
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel="Sync activities"
-        disabled={!user || !canWrite || busy}
-        onPress={() => void sync()}
-        style={{
-          flex: 1,
-          minHeight: 44,
-          borderRadius: 10,
-          borderWidth: 1,
-          borderColor: clubColors.line,
-          backgroundColor: "#fff",
-          alignItems: "center",
-          justifyContent: "center",
-          paddingHorizontal: 8,
-        }}
-      >
-        <Text style={[f.small, { fontFamily: "DMSans_700Bold" }]}>
-          {busy ? "Syncing…" : "↻ Sync"}
-        </Text>
-      </Pressable>
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel="Add manual activity"
-        disabled={!user || !canWrite || busy}
-        onPress={() => {
-          setFormError("");
-          setOpen(true);
-        }}
-        style={{
-          flex: 1,
-          minHeight: 44,
-          borderRadius: 10,
-          borderWidth: 1,
-          borderColor: clubColors.line,
-          backgroundColor: "#fff",
-          alignItems: "center",
-          justifyContent: "center",
-          paddingHorizontal: 8,
-        }}
-      >
-        <Text style={[f.small, { fontFamily: "DMSans_700Bold" }]}>
-          ＋ Manual
-        </Text>
-      </Pressable>
+    <View style={{ flexDirection: "row", gap: 8 }}>
+      <IconButton icon="sync" label={busy ? "Syncing activities" : "Sync activities"} disabled={!user || !canWrite || busy} onPress={() => void sync()} />
+      <IconButton icon="plus" label="Add activity" disabled={!user || !canWrite || busy} onPress={() => { setSport(""); setFormError(""); setOpen(true); }} />
     </View>
   ) : (
     <>
@@ -236,62 +198,51 @@ export function HomeActivityActions({
       <FocusSheet
         open={open}
         onClose={() => setOpen(false)}
-        title="Add today’s activity"
-        body="Manual activities count in Open standings only."
+        title="Add activity"
+        minimal
       >
-        {SPORTS.map((item) => (
-          <FocusButton
-            key={item.id}
-            secondary
-            label={`${sport === item.id ? "✓ " : ""}${item.name}`}
-            onPress={() => setSport(item.id)}
-          />
-        ))}
-        {sportById(sport).gps && (
-          <TextInput
-            accessibilityLabel="Mileage"
-            placeholder="Mileage"
-            keyboardType="decimal-pad"
-            style={f.input}
-            value={miles}
-            onChangeText={setMiles}
-          />
-        )}
-        <TextInput
-          accessibilityLabel="Duration in minutes"
-          placeholder="Duration (minutes)"
-          keyboardType="decimal-pad"
-          style={f.input}
-          value={minutes}
-          onChangeText={setMinutes}
-        />
+        <Text style={f.rowTitle}>Sport</Text>
+        <ChoicePicker label="Sport" placeholder="Choose a sport" value={sport} options={SPORTS.map(item => ({ value: item.id, label: item.name }))} onChange={value => { setSport(value); setMiles(""); }} />
+        {sport && <>
+          <Text style={f.rowTitle}>Duration</Text>
+          <TextInput accessibilityLabel="Duration in minutes" placeholder="Minutes" keyboardType="decimal-pad" style={f.input} value={minutes} onChangeText={setMinutes} />
+          {sportById(sport).gps && <><Text style={f.rowTitle}>Distance ({state.units === "metric" ? "km" : "mi"})</Text>
+            <TextInput accessibilityLabel={`Distance in ${state.units === "metric" ? "kilometres" : "miles"}`} placeholder={state.units === "metric" ? "Kilometres" : "Miles"} keyboardType="decimal-pad" style={f.input} value={miles} onChangeText={setMiles} /></>}
+          <Text style={f.rowTitle}>Time of day (optional · Eastern)</Text>
+          <TextInput accessibilityLabel="Time of day in Eastern time, HH:MM" placeholder="HH:MM" keyboardType="numbers-and-punctuation" style={f.input} value={time} onChangeText={setTime} maxLength={5} />
+        </>}
         {formError ? (
           <Text style={f.copy} accessibilityRole="alert">
             {formError}
           </Text>
         ) : null}
         <FocusButton
-          disabled={!user || !canWrite}
+          disabled={!user || !canWrite || !sport}
           label="Save activity"
           onPress={() => {
-            if (!user || !canWrite) return;
-            const parsed = parseManualActivity(sport, miles, minutes);
+            if (!user || !canWrite || !sport) return;
+            const parsed = parseManualActivity(sport, miles, minutes, state.units);
             if (parsed.error !== null) {
               setFormError(parsed.error);
               return;
             }
+            const when = manualActivityInstant(time, competeNow(state));
+            if (when.error !== null) { setFormError(when.error); return; }
             const { movingSec, distanceM } = parsed;
             dispatch({
               type: "log-manual",
               sport,
               movingSec,
               distanceM,
+              startedAt: when.startedAt,
               activityId: `manual-${Date.now()}-${Math.random().toString(36).slice(2)}`,
             });
             setOpen(false);
             setMiles("");
             setMinutes("");
-            setNote("Activity added for today · Open standings only.");
+            setTime("");
+            setSport("");
+            setNote("Activity added for today.");
           }}
         />
       </FocusSheet>

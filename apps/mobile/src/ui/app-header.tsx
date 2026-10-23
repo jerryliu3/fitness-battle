@@ -1,4 +1,5 @@
-import { clubIcon } from "./club-art";
+import { EffortRail } from "../features/effort-rail";
+
 import { usePathname, useRouter } from "expo-router";
 import { useState } from "react";
 import { Image, Platform, Pressable, StyleSheet, Text, View } from "react-native";
@@ -30,10 +31,7 @@ export function AppHeader() {
   return (
     <SafeAreaView edges={["top"]} style={s.safe}>
       <View style={s.header}>
-        <View style={s.brandGroup}>
-          <Pressable accessibilityRole="button" accessibilityLabel="Go to Home" onPress={() => router.navigate("/today")} style={s.brand}>
-            <View style={{flexDirection:"row",alignItems:"center",gap:8}}><Image source={clubIcon} style={{width:30,height:30,borderRadius:8}}/><Text style={s.wordmark}>Overtaek</Text></View>
-          </Pressable>
+        <View style={{ flex: 1, maxWidth: 260 }}><EffortRail compact /></View>
           <Pressable
             accessibilityRole="button"
             accessibilityLabel="Debug event triggers"
@@ -43,7 +41,6 @@ export function AppHeader() {
           >
             <Text style={s.debugBtnText}>Debug {debugOpen ? "▴" : "▾"}</Text>
           </Pressable>
-        </View>
         <Pressable
           accessibilityRole="button"
           accessibilityLabel="Open athlete settings"
@@ -90,16 +87,7 @@ const s = StyleSheet.create({
     justifyContent: "space-between",
     gap: 12,
   },
-  brandGroup: { flexDirection: "row", alignItems: "center", gap: 10 },
-  brand: { minHeight: 44, justifyContent: "center" },
-  wordmark: {
-    fontFamily: "DMSans_700Bold",
-    fontSize: 22,
-    letterSpacing: -0.6,
-    color: c.ink,
-  },
-  tagline: { fontFamily: "DMSans_400Regular", fontSize: 11, color: c.muted },
-  debugBtn: { paddingHorizontal: 10, paddingVertical: 5, borderRadius: 999, borderWidth: 1, borderColor: c.line, backgroundColor: c.card },
+  debugBtn: { minHeight: 44, justifyContent: "center", paddingHorizontal: 10, paddingVertical: 5, borderRadius: 999, borderWidth: 1, borderColor: c.line, backgroundColor: c.card },
   debugBtnActive: { borderColor: c.tennis, backgroundColor: "#fff5d1" },
   debugBtnText: { fontFamily: "DMSans_700Bold", fontSize: 11, color: c.ink },
   debugMenu: { marginHorizontal: 22, marginBottom: 10, padding: 10, borderRadius: 16, borderWidth: 1, borderColor: c.line, backgroundColor: c.card, gap: 6 },

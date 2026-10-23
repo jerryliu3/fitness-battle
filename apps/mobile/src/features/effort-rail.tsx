@@ -1,17 +1,17 @@
 import { useEffect, useRef, useState } from "react";
 import { Animated, Pressable, StyleSheet, Text, View } from "react-native";
 import { useRouter } from "expo-router";
-import { effortPointProgress, formatVolume, rankForElo, sportById } from "@fitness-battle/shared";
+import { competitionTrack, competitionTrackLabel, effortPointProgress, formatVolume, rankForElo, sportById } from "@fitness-battle/shared";
 import { useCompeteStore } from "../lib/compete-store";
 import { useReducedMotion } from "../ui/use-reduced-motion";
 import { SHELL_COLORS as c } from "../theme";
-export function EffortRail(){
+export function EffortRail({ compact = false }: { compact?: boolean }){
   const {state,accountKey,canWrite,saveError}=useCompeteStore();
   const router=useRouter(), reduced=useReducedMotion();
-  const model=state?effortPointProgress(state):null;
+  const model=state?effortPointProgress(state,state.primary,competitionTrack(state.primary)):null;
   const previous=useRef<{scope:string;score:number}|null>(null), fill=useRef(new Animated.Value(0)).current, burst=useRef(new Animated.Value(0)).current;
   const [gain,setGain]=useState(0);
-  const scope=`${accountKey}:${state?.primary}:open`;
+  const scope=`${accountKey}:${state?.primary}:${state ? competitionTrack(state.primary) : "open"}`;
   useEffect(()=>{
     if(!model||!canWrite){previous.current=null;setGain(0);return;}
     const last=previous.current, changed=last?.scope===scope;
@@ -27,10 +27,10 @@ export function EffortRail(){
   },[scope,model?.score,model?.fraction,canWrite,saveError,reduced,fill,burst]);
   if(!state||!model||!canWrite)return null;
   const remaining=formatVolume(model.sport,model.sport==="strength"?0:model.remaining,model.sport==="strength"?model.remaining:0,state.units);
-  return <Pressable style={s.rail} accessibilityRole="button" accessibilityLabel={`${sportById(model.sport).name} Open Effort Score ${model.score}. ${remaining} to next point. Open Progress`} onPress={()=>router.navigate("/you?view=effort")}>
-    <View style={s.row}><Text style={s.caption}>{sportById(model.sport).name} · {rankForElo(model.score).name}</Text><Text style={s.score}>{model.score.toLocaleString()} <Text style={s.caption}>Effort Score</Text></Text></View>
+  return <Pressable style={[s.rail, compact && { borderWidth: 0, backgroundColor: "transparent", padding: 0, minHeight: 44, justifyContent: "center" }]} accessibilityRole="button" accessibilityLabel={`${sportById(model.sport).name} ${competitionTrackLabel(model.sport)} Effort Score ${model.score}. ${remaining} to next point. Open Progress`} onPress={()=>router.navigate("/you?view=effort")}>
+    <View style={s.row}>{!compact && <Text style={s.caption}>{sportById(model.sport).name} · {rankForElo(model.score).name}</Text>}<Text style={s.score}>{model.score.toLocaleString()} <Text style={s.caption}>Effort Score</Text></Text></View>
     <View accessible accessibilityRole="progressbar" accessibilityLabel="Progress to next Effort Score point" accessibilityValue={{min:0,max:100,now:Math.round(model.fraction*100)}} style={s.track}><Animated.View style={[s.fill,{width:fill.interpolate({inputRange:[0,1],outputRange:["0%","100%"]})}]}/></View>
-    <View style={s.row}><Text style={s.caption}>{model.capped?"Maximum score reached":`${remaining} to +1`}</Text><Text style={s.caption}>{saveError?"Changes not saved":model.earned?`Open · +${model.earned} this week`:"Open score"}</Text></View>
+    <View style={s.row}><Text style={s.caption}>{model.capped?"Maximum score reached":`${remaining} to +1`}</Text>{!compact && <Text style={s.caption}>{saveError?"Changes not saved":model.earned?`${competitionTrackLabel(model.sport)} · +${model.earned} this week`:competitionTrackLabel(model.sport)}</Text>}</View>
     {gain>0?<Animated.View accessibilityLiveRegion="polite" style={[s.gain,{opacity:reduced?1:burst.interpolate({inputRange:[0,.2,.8,1],outputRange:[0,1,1,0]}),transform:[{translateY:reduced?0:burst.interpolate({inputRange:[0,1],outputRange:[4,-18]})}]}]}><Text style={s.gainText}>+{gain}{reduced?"":"  ✦ ✧ ✦"}</Text></Animated.View>:null}
   </Pressable>;
 }

@@ -6,7 +6,7 @@ import {
 } from "@fitness-battle/shared";
 import { Platform, Pressable, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { SHELL_COLORS, SHELL_RADIUS } from "../theme";
+import { SHELL_COLORS } from "../theme";
 import { playCue } from "../lib/haptics";
 
 export interface PhoneTabBarProps {
@@ -42,7 +42,7 @@ export function PhoneTabBar({
   return (
     <View
       accessibilityRole="tablist"
-      style={[styles.bar, { paddingBottom: Math.max(insets.bottom, 10) }]}
+      style={[styles.bar, { bottom: Math.max(insets.bottom, 10) }]}
     >
       {state.routes.map((route, index) => {
         const tab = SHELL_TABS.find(
@@ -115,9 +115,20 @@ const styles = StyleSheet.create({
   bar: {
     flexDirection: "row",
     gap: 6,
-    paddingTop: 8,
+    position: "absolute",
+    left: 14,
+    right: 14,
+    borderRadius: 28,
+    paddingVertical: 8,
+    borderWidth: 1,
+    borderColor: "#ffffffcc",
+    shadowColor: SHELL_COLORS.ink,
+    shadowOpacity: 0.12,
+    shadowRadius: 20,
+    shadowOffset: { width: 0, height: 6 },
+    elevation: 6,
     paddingHorizontal: 12,
-    backgroundColor: SHELL_COLORS.card,
+    backgroundColor: "#ffffffed",
     borderTopWidth: 1,
     borderTopColor: SHELL_COLORS.line,
   },

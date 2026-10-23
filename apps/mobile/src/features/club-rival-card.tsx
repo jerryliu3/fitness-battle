@@ -7,9 +7,10 @@ import {
   View,
 } from "react-native";
 import { useRouter } from "expo-router";
-import Svg from "react-native-svg";
+
 import {
   competeNow,
+  competitionTrack,
   formatEffort,
   formatVolume,
   nextClubRival,
@@ -17,7 +18,7 @@ import {
   weeklyBoard,
   type CompeteState,
 } from "@fitness-battle/shared";
-import { PolishedRacer } from "../ui/polished-racer";
+
 import { SHELL_COLORS as c } from "../theme";
 export function RivalCard({ state }: { state: CompeteState }) {
   const router = useRouter();
@@ -25,7 +26,7 @@ export function RivalCard({ state }: { state: CompeteState }) {
     state.ratings.find((r) => r.sport === state.primary && r.optedIn)?.sport ??
     state.ratings.find((r) => r.optedIn)?.sport;
   const { you, rival, fieldSize } = nextClubRival(
-    sport ? weeklyBoard(state, sport, "open", competeNow(state)) : [],
+    sport ? weeklyBoard(state, sport, competitionTrack(sport), competeNow(state)) : [],
   );
   const synthetic = Boolean(
     rival &&
@@ -66,7 +67,6 @@ export function RivalCard({ state }: { state: CompeteState }) {
         <View style={s.scrim} />
         <View style={s.top}>
           <View>
-            <Text style={s.eyebrow}>YOUR COMPETITION · OPEN</Text>
             <Text style={s.title}>
               {sport ? sportById(sport).name : "Find your field"}
             </Text>
@@ -77,26 +77,6 @@ export function RivalCard({ state }: { state: CompeteState }) {
               <Text style={s.eyebrow}> PLACE</Text>
             </Text>
           ) : null}
-        </View>
-        <View style={s.markers} pointerEvents="none" accessible={false}>
-          <Svg width={160} height={110} viewBox="0 0 220 140">
-            <PolishedRacer
-              x={70}
-              y={90}
-              you
-              gold={you?.place === 1}
-              sizeScale={0.75}
-            />
-            {rival ? (
-              <PolishedRacer
-                x={150}
-                y={45}
-                you={false}
-                gold={rival.place === 1}
-                sizeScale={0.7}
-              />
-            ) : null}
-          </Svg>
         </View>
         <View style={s.bottom}>
           <View style={{ flex: 1, gap: 5 }}>
@@ -119,7 +99,7 @@ export function RivalCard({ state }: { state: CompeteState }) {
 }
 const s = StyleSheet.create({
   card: { borderRadius: 20, overflow: "hidden", backgroundColor: c.fieldDeep },
-  background: { minHeight: 250, justifyContent: "space-between", padding: 20 },
+  background: { minHeight: 180, justifyContent: "space-between", padding: 20 },
   scrim: { ...StyleSheet.absoluteFill, backgroundColor: "#081f3670" },
   top: { flexDirection: "row", justifyContent: "space-between", gap: 10 },
   eyebrow: {

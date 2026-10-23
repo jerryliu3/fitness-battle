@@ -19,7 +19,8 @@ import * as ScrollArea from "@radix-ui/react-scroll-area";
 import { motion, useReducedMotion } from "motion/react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useLayoutEffect, useState, type ReactNode } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
+import { EffortRail } from "@/features/progress/effort-rail";
 import { BootSplash } from "./boot-splash";
 import { DebugEventMenu } from "./debug-event-menu";
 import {
@@ -65,6 +66,9 @@ export function PhoneShell({
   const tab = shellTabFromPath(path);
   const onAthlete = path?.startsWith("/athlete") ?? false;
   useCompeteFieldRefresh(!hideTabs && (tab?.id === "arena" || tab?.id === "field"));
+  const bottomNavigation = useRef(false);
+  const [animateDestination, setAnimateDestination] = useState(false);
+  useLayoutEffect(() => { setAnimateDestination(!bottomNavigation.current); bottomNavigation.current = false; }, [path]);
   const [intent, setIntent] = useState<ShellTabId | null>(null);
   const [bootAnimDone, setBootAnimDone] = useState(false);
   const [bootChecked, setBootChecked] = useState(false);
@@ -133,6 +137,8 @@ export function PhoneShell({
 
   function goTab(tabId: ShellTabId) {
     if (tabId === active) return;
+    bottomNavigation.current = true;
+    setAnimateDestination(false);
     setIntent(tabId);
     const href = SHELL_TABS.find((t) => t.id === tabId)?.href;
     if (!href) return;
@@ -180,11 +186,8 @@ export function PhoneShell({
   return (
     <div className="phone-frame">
       <div className="phone-shell">
-        <header className="focus-shell-header">
-          <div className="focus-shell-brand">
-            <Link href="/today"><img className="club-brand-mark" src="/icons/icon-192.png" alt="" />Overtaek</Link>
-            <span className="focus-shell-tagline">A little further</span>
-          </div>
+        {!onAthlete && path !== "/week" && <header className="focus-shell-header">
+          <div className="club-header-effort"><EffortRail compact /></div>
           <DebugEventMenu activeTab={active} onNavigate={navigateDebugTarget} />
           <Link
             href="/athlete"
@@ -200,11 +203,11 @@ export function PhoneShell({
               </svg>
             )}
           </Link>
-        </header>
+        </header>}
         {!dataReady ? (
           accountLoadingBody
         ) : onAthlete ? (
-          panel(<AthletePage key={accountKey} />)
+          panel(<motion.div key={accountKey} initial={reduce ? false : { x: 40, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ duration: reduce ? 0 : 0.26 }}><AthletePage /></motion.div>)
         ) : matched ? (
           <div className="phone-panels">
             {SHELL_TABS.map((tab) => {
@@ -212,7 +215,7 @@ export function PhoneShell({
               return (
                 <div
                   key={`${accountKey}:${tab.id}`}
-                  className={on ? "phone-panel is-active" : "phone-panel"}
+                  className={on ? `phone-panel is-active${animateDestination ? " is-route-entering" : ""}` : "phone-panel"}
                   inert={!on}
                   aria-hidden={!on}
                 >
@@ -224,9 +227,9 @@ export function PhoneShell({
             })}
           </div>
         ) : (
-          panel(children)
+          panel(<motion.div key={path} initial={reduce ? false : { x: 40, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ duration: reduce ? 0 : 0.26 }}>{children}</motion.div>)
         )}
-        {hideTabs ? null : (
+        {hideTabs || onAthlete || path === "/week" ? null : (
           <nav className="phone-tabs" aria-label="Primary">
               {SHELL_TABS.map((tab) => {
                 const on = active === tab.id;
