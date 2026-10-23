@@ -7,6 +7,7 @@ import { accountName } from "@/lib/account-name";
 import { useAuth } from "@/components/auth-context";
 import { getDemoCompeteState } from "@/lib/compete-demo-seed";
 import {
+  applyDebugEvent,
   applyRemoteSnapshot,
   FIELD_REFRESH_MS,
   fieldChangeNotice,
@@ -23,6 +24,8 @@ import {
   withAccountEloBaseline,
   type Action,
   type CompeteState,
+  type DebugEventId,
+  type DebugEventResult,
   type FieldNotice,
 } from "@fitness-battle/shared";
 import {
@@ -63,6 +66,10 @@ interface CompeteApi {
   retryLoad: () => void;
   dismissFieldNotice: () => void;
   refresh: () => Promise<boolean>;
+  debugActive?: boolean;
+  lastDebugEvent?: { id: DebugEventId; nonce: number } | null;
+  triggerDebugEvent?: (event: DebugEventId) => DebugEventResult | null;
+  resetDebugState?: () => void;
 }
 
 const CompeteContext = createContext<CompeteApi>({
@@ -75,6 +82,10 @@ const CompeteContext = createContext<CompeteApi>({
   retryLoad: () => {},
   dismissFieldNotice: () => {},
   refresh: async () => false,
+  debugActive: false,
+  lastDebugEvent: null,
+  triggerDebugEvent: () => null,
+  resetDebugState: () => {},
 });
 
 function storageKey(userId: string | null): string {
@@ -196,6 +207,11 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
   const [saveConflict, setSaveConflict] = useState(false);
   const saveChain = useRef<Promise<void>>(Promise.resolve());
   const refreshFlight = useRef<Promise<boolean> | null>(null);
+  const [debugActive, setDebugActive] = useState(false);
+  const [lastDebugEvent, setLastDebugEvent] = useState<{ id: DebugEventId; nonce: number } | null>(null);
+  const debugActiveRef = useRef(false);
+  const debugStepRef = useRef(0);
+  const preDebugRef = useRef<{ state: CompeteState | null; status: LoadStatus } | null>(null);
   userIdRef.current = userId;
   demoRef.current = demoMode || user?.mode === "demo";
 
@@ -212,6 +228,10 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
     dirtyRef.current = 0;
     unsavedRef.current = false;
     unitsUnsavedRef.current = false;
+    debugActiveRef.current = false;
+    preDebugRef.current = null;
+    setDebugActive(false);
+    setLastDebugEvent(null);
     setFieldNotice(null);
     setStandingsStale(false);
     if (timer.current) {
@@ -222,7 +242,7 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
 
   const runSave = useCallback(
     (accountId: string | null, next: CompeteState, generation: number) => {
-      if (!accountId || demoRef.current || statusRef.current !== "ready" || conflictRef.current) return;
+      if (!accountId || demoRef.current || debugActiveRef.current || statusRef.current !== "ready" || conflictRef.current) return;
       saveChain.current = saveChain.current.catch(() => {}).then(async () => {
         if (accountId !== userIdRef.current || generation !== dirtyRef.current || conflictRef.current) return;
         try {
@@ -430,7 +450,7 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
   const refresh = useCallback(async (): Promise<boolean> => {
     if (syncReviewBlocked.current) return false;
     const accountId = userIdRef.current;
-    if (!accountId || demoRef.current || statusRef.current !== "ready") return true;
+    if (!accountId || demoRef.current || debugActiveRef.current || statusRef.current !== "ready") return true;
     if (refreshFlight.current) return refreshFlight.current;
     const generation = dirtyRef.current;
     const task = (async () => {
@@ -511,6 +531,38 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
     setFieldNotice(null);
   }, []);
 
+  const triggerDebugEvent = useCallback((event: DebugEventId): DebugEventResult | null => {
+    const accountKey = userIdRef.current ?? "guest";
+    const current = stateRef.current ?? rollClock(freshState());
+    if (!preDebugRef.current) preDebugRef.current = { state: stateRef.current, status: statusRef.current };
+    debugActiveRef.current = true;
+    setDebugActive(true);
+    const step = (debugStepRef.current += 1);
+    const result = applyDebugEvent(current, event, accountKey, step);
+    for (const [key, val] of Object.entries(result.baselines)) writeStorageItem(key, val);
+    if (statusRef.current === "loading" || statusRef.current === "failed") {
+      statusRef.current = "local";
+      setLoadStatus("local");
+    }
+    stateRef.current = result.state;
+    setState(result.state);
+    setLastDebugEvent({ id: event, nonce: step });
+    return result;
+  }, []);
+
+  const resetDebugState = useCallback(() => {
+    const snapshot = preDebugRef.current;
+    preDebugRef.current = null;
+    debugActiveRef.current = false;
+    setDebugActive(false);
+    setLastDebugEvent(null);
+    if (!snapshot) return;
+    statusRef.current = snapshot.status;
+    stateRef.current = snapshot.state;
+    setLoadStatus(snapshot.status);
+    setState(snapshot.state);
+  }, []);
+
   const api = useMemo<CompeteApi>(
     () => ({
       state,
@@ -521,8 +573,12 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
       retryLoad,
       dismissFieldNotice,
       refresh,
+      debugActive,
+      lastDebugEvent,
+      triggerDebugEvent,
+      resetDebugState,
       dispatch: (action: Action) => {
-        if (statusRef.current === "failed") return;
+        if (statusRef.current === "failed" && !debugActiveRef.current) return;
         const withAccount: Action =
           userIdRef.current && !action.accountId
             ? { ...action, accountId: userIdRef.current }
@@ -533,10 +589,16 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
           unsavedRef.current = true;
           return;
         }
+        const accountKey = userIdRef.current ?? "guest";
+        if (debugActiveRef.current) {
+          const next = reduceCompete(stateRef.current, withAccount);
+          stateRef.current = next;
+          setState(next);
+          return;
+        }
         dirtyRef.current += 1;
         unsavedRef.current = true;
         if (withAccount.type === "set-units") unitsUnsavedRef.current = true;
-        const accountKey = userIdRef.current ?? "guest";
         seedArenaBaselinesFromState(
           stateRef.current,
           accountKey,
@@ -566,15 +628,19 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
       },
     }),
     [
+      debugActive,
       dismissFieldNotice,
       fieldNotice,
+      lastDebugEvent,
       loadStatus,
       refresh,
+      resetDebugState,
       retryLoad,
       saveError,
       scheduleSave,
       standingsStale,
       state,
+      triggerDebugEvent,
     ],
   );
 

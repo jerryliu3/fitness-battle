@@ -258,7 +258,7 @@ export function ArenaLanes({
         </motion.g>
         {ordered.map((l, i) => {
           const position = arenaPosition(l.value, effectiveView);
-          const effect = !l.you ? overtakeFrame?.rivalEffects[l.id] : undefined;
+          const effect = overtakeFrame?.rivalEffects[l.id];
           const charging =
             l.you && animating ? (overtakeFrame?.charging ?? 0) : 0;
           const row = sortedByValue.findIndex((lane) => lane.id === l.id);

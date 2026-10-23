@@ -141,6 +141,7 @@ export function CompetitionField({
       return;
     }
     setCenter(null);
+    setMode("lanes");
     setOvertakePlan(plan);
     if (reduceMotion) {
       writeBaselineItem(key, snapshot);

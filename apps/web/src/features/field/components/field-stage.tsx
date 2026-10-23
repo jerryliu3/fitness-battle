@@ -184,6 +184,7 @@ export function FieldStage({
   );
 
   useEffect(() => {
+    if (!tabActive) return;
     const key = arenaBaselineStorageKey(accountKey, model.sport, model.track);
     const scopeKey = `${key}:${model.periodStart}:${unit}`;
     const signature = `${scopeKey}|${fieldLanes
@@ -238,6 +239,7 @@ export function FieldStage({
     centerTweenRef.current = null;
     setCenterTween(null);
     setCenter(null);
+    setMode("lanes");
     setOvertakePlan(plan);
     if (reduced) {
       persistArenaBaseline(key, snapshot, scopeKey, nextCommitted);
@@ -259,6 +261,7 @@ export function FieldStage({
     model.periodStart,
     model.sport,
     model.track,
+    tabActive,
     unit,
     persistArenaBaseline,
   ]);
@@ -457,8 +460,8 @@ export function FieldStage({
             padding: "8px 12px",
             marginBottom: 10,
             borderRadius: 12,
-            background: overtakePlan.hasOvertake ? "#d4ee8940" : "#eef3e8",
-            border: `1px solid ${overtakePlan.hasOvertake ? "#9bbf63" : "#d7e0cf"}`,
+            background: overtakePlan.hasOvertake ? "#d4ee8940" : overtakePlan.passedByIds?.length ? "#fff3d6" : "#eef3e8",
+            border: `1px solid ${overtakePlan.hasOvertake ? "#9bbf63" : overtakePlan.passedByIds?.length ? "#e6c36a" : "#d7e0cf"}`,
             fontSize: 13,
             color: "#26382d",
           }}

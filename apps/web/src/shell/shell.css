@@ -54,6 +54,19 @@
   border: 2px solid var(--lime);
   box-shadow: 0 0 0 2px #f1c75b44;
 }
+.focus-shell-debug { position: relative; margin-right: auto; display: flex; align-items: center; z-index: 35; }
+.focus-shell-debug-btn { display: inline-flex; align-items: center; gap: 6px; min-height: 32px; padding: 4px 10px; border-radius: 999px; border: 1px dashed var(--line); background: var(--card); color: var(--ink); font: inherit; font-size: 11px; font-weight: 700; cursor: pointer; }
+.focus-shell-debug-btn.is-active { border-style: solid; border-color: var(--lime-deep, #dfb237); background: var(--action-soft, #fff5d1); }
+.focus-shell-debug-dot { width: 6px; height: 6px; border-radius: 999px; background: var(--muted); }
+.focus-shell-debug-btn.is-active .focus-shell-debug-dot { background: var(--green, #24765c); }
+.focus-shell-debug-menu { position: absolute; top: calc(100% + 8px); left: 0; width: 268px; padding: 10px; border-radius: 16px; border: 1px solid var(--line); background: var(--card); box-shadow: 0 12px 28px rgba(20, 43, 59, 0.14); display: grid; gap: 6px; }
+.focus-shell-debug-kicker { margin: 2px 6px 4px; font-size: 9px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
+.focus-shell-debug-item { width: 100%; text-align: left; padding: 8px 10px; border-radius: 11px; border: 1px solid transparent; background: var(--paper); color: var(--ink); font: inherit; display: grid; gap: 2px; cursor: pointer; }
+.focus-shell-debug-item:hover { border-color: var(--line); background: var(--action-soft, #fff5d1); }
+.focus-shell-debug-item b { font-size: 12px; font-weight: 700; line-height: 1.25; }
+.focus-shell-debug-item small { font-size: 11px; color: var(--muted); line-height: 1.3; }
+.focus-shell-debug-reset { width: 100%; min-height: 34px; margin-top: 2px; padding: 6px 10px; border-radius: 10px; border: 1px solid var(--line); background: var(--card); color: var(--muted); font: inherit; font-size: 11px; font-weight: 600; cursor: pointer; }
+.focus-shell-debug-reset:hover { color: var(--ink); background: var(--paper); }
 .sheet-grab {
   width: 40px;
   height: 4px;
