@@ -13,8 +13,8 @@ import { router, Stack, usePathname } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import * as WebBrowser from "expo-web-browser";
 import { HeroUINativeProvider } from "heroui-native/provider";
-import { useEffect } from "react";
-import { ActivityIndicator, Platform, View } from "react-native";
+import { useEffect, useState } from "react";
+import { ActivityIndicator, Platform, Text, View } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import "../global.css";
 // Registers the foreground notification handler.
@@ -49,13 +49,30 @@ function pathFromNotificationResponse(
 }
 
 export default function RootLayout() {
-  const [dmLoaded] = useDmSans({
+  const [dmLoaded, dmError] = useDmSans({
     DMSans_400Regular,
     DMSans_500Medium,
     DMSans_700Bold,
   });
-  const [nunitoLoaded] = useNunito({ NunitoSans_900Black });
+  const [nunitoLoaded, nunitoError] = useNunito({ NunitoSans_900Black });
   const fontsLoaded = dmLoaded && nunitoLoaded;
+  const [fontLoadTimedOut, setFontLoadTimedOut] = useState(false);
+  const fontError = dmError ?? nunitoError;
+
+  useEffect(() => {
+    if (fontsLoaded || fontError) return;
+    const timer = setTimeout(() => setFontLoadTimedOut(true), 15000);
+    return () => clearTimeout(timer);
+  }, [fontsLoaded, fontError]);
+
+  useEffect(() => {
+    if (fontError) console.error("Overtaek startup: font loading failed", fontError);
+    else if (fontLoadTimedOut && !fontsLoaded)
+      console.warn("Overtaek startup: still waiting for bundled fonts", {
+        dmLoaded,
+        nunitoLoaded,
+      });
+  }, [fontError, fontLoadTimedOut, fontsLoaded, dmLoaded, nunitoLoaded]);
 
   useEffect(() => {
     // Browser study previews do not have a native notification response API.
@@ -88,7 +105,23 @@ export default function RootLayout() {
           justifyContent: "center",
         }}
       >
-        <ActivityIndicator color={SHELL_COLORS.tennis} />
+        {fontError || fontLoadTimedOut ? (
+          <View style={{ paddingHorizontal: 28, gap: 12, maxWidth: 420 }}>
+            <Text style={{ fontSize: 20, fontWeight: "700", textAlign: "center", color: SHELL_COLORS.ink }}>
+              Fonts couldn’t load
+            </Text>
+            <Text style={{ fontSize: 15, textAlign: "center", color: SHELL_COLORS.ink }}>
+              Reload the app in Expo Go. If this continues, check the Expo server logs for the font-loading error.
+            </Text>
+            {__DEV__ && fontError ? (
+              <Text selectable style={{ fontSize: 12, color: SHELL_COLORS.ink }}>
+                {fontError.message}
+              </Text>
+            ) : null}
+          </View>
+        ) : (
+          <ActivityIndicator color={SHELL_COLORS.tennis} />
+        )}
       </View>
     );
   }

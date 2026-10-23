@@ -51,11 +51,12 @@ describe("native detail sheet", () => {
   it("retains report content through exit when its parent clears the selected panel", async () => {
     vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
     const onClose = vi.fn();
+    const onClosed = vi.fn();
     await act(async () => {
       renderer = create(
         createElement(
           FocusSheet,
-          { open: true, title: "Report an issue", onClose },
+          { open: true, title: "Report an issue", onClose, onClosed },
           "Report form",
         ),
       );
@@ -64,7 +65,7 @@ describe("native detail sheet", () => {
       renderer.update(
         createElement(
           FocusSheet,
-          { open: false, title: "Delete account", onClose },
+          { open: false, title: "Delete account", onClose, onClosed },
           "Type DELETE",
         ),
       );
@@ -76,5 +77,8 @@ describe("native detail sheet", () => {
     expect(renderer.root.findByType("Modal" as never).props.visible).toBe(
       false,
     );
+    expect(onClosed).not.toHaveBeenCalled();
+    await act(async () => renderer.root.findByType("Modal" as never).props.onDismiss());
+    expect(onClosed).toHaveBeenCalledTimes(1);
   });
 });
