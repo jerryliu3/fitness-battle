@@ -23,18 +23,23 @@ export function FocusSheet({
   title,
   body,
   onClose,
+  onClosed,
   children,
 }: {
   open: boolean;
   title: string;
   body?: string;
   onClose: () => void;
+  /** Run a sheet handoff only after the native modal has dismissed. */
+  onClosed?: () => void;
   children?: ReactNode;
 }) {
   // Keep the last open content during exit; callers often clear their selection
   // in onClose, which must not flash a different panel while the sheet slides away.
   const content = useRef({ title, body, children });
   if (open) content.current = { title, body, children };
+  const closedCallback = useRef(onClosed);
+  closedCallback.current = onClosed;
   const reduce = useReducedMotion();
   const [present, setPresent] = useState(open);
   const progress = useRef(new Animated.Value(0)).current;
@@ -57,7 +62,10 @@ export function FocusSheet({
       useNativeDriver: true,
     });
     animation.start(({ finished }) => {
-      if (finished && !open) setPresent(false);
+      if (finished && !open) {
+        setPresent(false);
+        if (Platform.OS !== "ios") closedCallback.current?.();
+      }
     });
     return () => animation.stop();
   }, [open, present, progress, reduce]);
@@ -68,6 +76,7 @@ export function FocusSheet({
       transparent
       animationType="none"
       onRequestClose={onClose}
+      onDismiss={Platform.OS === "ios" ? () => closedCallback.current?.() : undefined}
     >
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : undefined}

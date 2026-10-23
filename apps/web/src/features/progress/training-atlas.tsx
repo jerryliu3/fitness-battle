@@ -138,7 +138,7 @@ export function TrainingAtlas({ state }: { state: CompeteState }) {
           {clubDuration(buckets.reduce((sum, b) => sum + b.movingSec, 0))}
         </strong>
         <span className="fb-note">
-          {buckets.reduce((sum, b) => sum + b.sessions, 0)} sessions ·{" "}
+          {buckets.reduce((sum, b) => sum + b.sessions, 0)} {buckets.reduce((sum, b) => sum + b.sessions, 0) === 1 ? "session" : "sessions"} ·{" "}
           {sport === "all" ? "All sports" : sportById(sport).name}
         </span>
       </div>
@@ -161,7 +161,7 @@ export function TrainingAtlas({ state }: { state: CompeteState }) {
               type="button"
               disabled={Date.parse(b.start) > now.getTime()}
               aria-pressed={bucket.start === b.start}
-              aria-label={`${b.label}: ${formatTrainingHours(b.movingSec)} hours, ${b.sessions} sessions${b.partial ? ", partial period" : ""}`}
+              aria-label={`${b.label}: ${formatTrainingHours(b.movingSec)} hours, ${b.sessions} ${b.sessions === 1 ? "session" : "sessions"}${b.partial ? ", partial period" : ""}`}
               onClick={() => setSelected(b.start)}
             >
               <span
@@ -216,7 +216,7 @@ export function TrainingAtlas({ state }: { state: CompeteState }) {
                   key={d.day}
                   disabled={!d.inMonth || d.future}
                   data-intensity={d.intensity}
-                  aria-label={`${d.day}: ${formatTrainingHours(d.movingSec)} hours, ${d.sessions} sessions`}
+                  aria-label={`${d.day}: ${formatTrainingHours(d.movingSec)} hours, ${d.sessions} ${d.sessions === 1 ? "session" : "sessions"}`}
                   aria-pressed={day?.day === d.day}
                   onClick={() => setSelectedDay(d.day)}
                 >

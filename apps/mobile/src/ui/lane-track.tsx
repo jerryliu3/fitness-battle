@@ -45,9 +45,12 @@ export function LaneTrack({
   overtakeFrame = null,
   overtakePlan = null,
   active = true,
+  topInset = 0,
 }: {
   appearance?: FieldAppearance;
   active?: boolean;
+  /** Reserve room for an overlaid field status without covering lane headers. */
+  topInset?: number;
   lanes: ArenaLane[];
   unit: string;
   showGhost: boolean;
@@ -188,6 +191,7 @@ export function LaneTrack({
         ref={scroll}
         nestedScrollEnabled
         showsHorizontalScrollIndicator
+        contentContainerStyle={{ paddingTop: topInset }}
         onScroll={e => { if (previous.current) previous.current.scroll = e.nativeEvent.contentOffset.x; }}
         scrollEventThrottle={16}
       >

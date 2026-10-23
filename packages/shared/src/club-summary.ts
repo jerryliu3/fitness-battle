@@ -70,12 +70,14 @@ export function latestClubRecap(state: CompeteState, now = competeNow(state)) {
   return state.periodResults
     .filter(
       (row) =>
-        row.track === "open" && Date.parse(row.periodEnd) <= now.getTime(),
+        Date.parse(row.periodEnd) <= now.getTime(),
     )
     .sort(
       (a, b) =>
         Date.parse(b.periodEnd) - Date.parse(a.periodEnd) ||
-        Number(b.sport === state.primary) - Number(a.sport === state.primary),
+        Number(b.sport === state.primary) - Number(a.sport === state.primary) ||
+        Number(b.track === "open") - Number(a.track === "open") ||
+        a.id.localeCompare(b.id),
     )[0];
 }
 

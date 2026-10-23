@@ -1201,3 +1201,7 @@
   outline: 2px solid var(--field-teal);
   outline-offset: 3px;
 }
+
+/* Keep status legible over bright scenery and clear of the 2D lane headers. */
+.club-board-status{padding:12px;border-radius:12px;background:#102e38ed;text-shadow:none}
+.focus-track-frame:has(>.club-map-status)>.focus-lane-surface{margin-top:44px}

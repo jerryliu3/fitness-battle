@@ -72,6 +72,7 @@ export function PortraitField({
         horizontal
         nestedScrollEnabled
         directionalLockEnabled
+        alwaysBounceVertical={false}
         bounces={false}
         showsHorizontalScrollIndicator={false}
         scrollEventThrottle={16}
@@ -335,6 +336,7 @@ export function PortraitField({
           <Pressable
             style={s.button}
             accessibilityRole="button"
+            accessibilityLabel="Your lane"
             onPress={() => moveTo(0)}
           >
             <Text style={s.white}>Your lane</Text>
@@ -369,9 +371,12 @@ const s = StyleSheet.create({
   },
   status: {
     position: "absolute",
-    top: 20,
-    left: 16,
-    right: 16,
+    top: 16,
+    left: 12,
+    right: 12,
+    padding: 12,
+    borderRadius: 12,
+    backgroundColor: "#102e38ed",
     flexDirection: "row",
     justifyContent: "space-between",
     gap: 12,

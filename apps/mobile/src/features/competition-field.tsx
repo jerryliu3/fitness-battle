@@ -310,6 +310,7 @@ export function CompetitionField({
         <FieldGroundPicker appearance={appearance} onChange={setAppearance} />
         <View style={{ position: "relative" }}>
           <LaneTrack
+            topInset={44}
             appearance={appearance}
             active={isFocused && mode === "lanes" && dimension === "2d"}
             selectedId={selectedId ?? me?.id}

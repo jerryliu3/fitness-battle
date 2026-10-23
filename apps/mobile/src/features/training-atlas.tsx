@@ -147,7 +147,7 @@ export function TrainingAtlas({ state }: { state: CompeteState }) {
           {clubDuration(buckets.reduce((sum, b) => sum + b.movingSec, 0))}
         </Text>
         <Text style={f.small}>
-          {buckets.reduce((sum, b) => sum + b.sessions, 0)} sessions ·{" "}
+          {buckets.reduce((sum, b) => sum + b.sessions, 0)} {buckets.reduce((sum, b) => sum + b.sessions, 0) === 1 ? "session" : "sessions"} ·{" "}
           {sport === "all" ? "All sports" : sportById(sport).name}
         </Text>
       </View>
@@ -173,7 +173,7 @@ export function TrainingAtlas({ state }: { state: CompeteState }) {
               disabled={Date.parse(b.start) > now.getTime()}
               accessibilityRole="button"
               accessibilityState={{ selected: bucket.start === b.start }}
-              accessibilityLabel={`${b.label}, ${formatTrainingHours(b.movingSec)} hours, ${b.sessions} sessions${b.partial ? ", partial period" : ""}`}
+              accessibilityLabel={`${b.label}, ${formatTrainingHours(b.movingSec)} hours, ${b.sessions} ${b.sessions === 1 ? "session" : "sessions"}${b.partial ? ", partial period" : ""}`}
               onPress={() => setSelected(b.start)}
             >
               <View
@@ -221,7 +221,7 @@ export function TrainingAtlas({ state }: { state: CompeteState }) {
       <View style={s.row} accessibilityLiveRegion="polite">
         <Text style={f.h2}>{formatTrainingHours(bucket.movingSec)} hr</Text>
         <Text style={f.small}>
-          {bucket.sessions} sessions{bucket.partial ? " · so far" : ""}
+          {bucket.sessions} {bucket.sessions === 1 ? "session" : "sessions"}{bucket.partial ? " · so far" : ""}
         </Text>
       </View>
       <FocusDisclosure title="Daily activity">
@@ -256,7 +256,7 @@ export function TrainingAtlas({ state }: { state: CompeteState }) {
                 disabled={!d.inMonth || d.future}
                 accessibilityRole="button"
                 accessibilityState={{ selected: day?.day === d.day }}
-                accessibilityLabel={`${d.day}, ${formatTrainingHours(d.movingSec)} hours, ${d.sessions} sessions`}
+                accessibilityLabel={`${d.day}, ${formatTrainingHours(d.movingSec)} hours, ${d.sessions} ${d.sessions === 1 ? "session" : "sessions"}`}
                 onPress={() => setSelectedDay(d.day)}
                 style={[
                   s.cell,

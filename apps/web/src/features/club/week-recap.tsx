@@ -46,9 +46,9 @@ export function WeekRecap({ state }: { state: CompeteState }) {
             {recap.place}
           </span>
           <span>
-            <b>Last week, well earned.</b>
+            <b>Your latest settled week.</b>
             <small>
-              {sportById(recap.sport).name} ·{" "}
+              {sportById(recap.sport).name} · {recap.track === "verified" ? "GPS" : "Open"} ·{" "}
               {new Date(recap.periodStart).toLocaleDateString("en-US", {
                 month: "short",
                 day: "numeric",

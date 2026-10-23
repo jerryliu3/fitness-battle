@@ -1,6 +1,6 @@
 # Everyday Club UX audit — October 22
 
-Scope: the complete Everyday Club stack through #275, web and actual iPhone 17 Pro / iOS 26.5 native app. Prioritize direct interaction and visual checks; the owner explicitly waived expensive suites, typechecks and builds for this pass. Small pure-model/renderer checks support the changed behavior. Demo activity stays on this device; no production account, live tracker or health permission is changed.
+Scope: the complete Everyday Club stack, with follow-ups 15–19 stacked above #275, web and actual iPhone 17 Pro / iOS 26.5 native app. Prioritize direct interaction and visual checks; the owner explicitly waived expensive suites, typechecks and builds for this pass. Small pure-model/renderer checks support the changed behavior. Demo activity stays on this device; no production account, live tracker or health permission is changed.
 
 ## Findings and first-pass fixes
 
@@ -21,7 +21,7 @@ Scope: the complete Everyday Club stack through #275, web and actual iPhone 17 P
 - Native perspective: direct lane drag, edge bounds, Your lane, zoom, always-visible past-self: pass.
 - Native chooser → Cycling: selected; further carousel/registration checks in final sweep.
 - Web: default 2D, past-self without checkbox, keyboard zoom, sparse ruler, 3D selection: pass.
-- Progress, Crew, sync recap, secondary destinations and second sweep: recorded in subsequent stack entries below.
+- Progress, Crew, sync recap, secondary destinations and second sweep: recorded below.
 
 Field evidence: [native perspective](ios-field.jpg), [native direct swipe](ios-lane-swipe.jpg).
 
@@ -63,3 +63,44 @@ The queue is memory-only, account-scoped and once-only. Refresh cannot overwrite
 - Live OAuth, provider imports and HealthKit permissions were not exercised. Their existing ingestion remains authoritative; local demo previews do not claim live connectivity. Android hardware was unavailable.
 
 Screens: [native sync preview](ios-sync-recap.jpg), [web sync preview](web-sync-recap.jpg).
+
+
+## Second audit sweep and additional fixes
+
+The second pass deliberately revisited the main journeys after the first fixes and exercised secondary navigation. Findings below are fixed in follow-up 19.
+
+| Additional issue | Applied fix and recheck |
+| --- | --- |
+| Nested native horizontal event paging trapped vertical gestures on the field | Keep one horizontal lane ScrollView. Switch event by swiping the title, choosing it, arrows or dots; render only its content. Actual final native vertical drags scrolled the page in both directions, horizontal field drag exposed Noah/Ava while Running stayed selected, and Your lane restored Alice. |
+| Native chooser → registration closed both sheets | Added an optional sheet-closed callback; wait for the native iOS dismissal before opening registration. Opened, closed and repeated the exact chooser → Register journey; the registration sheet appeared both times with existing registrations disabled. |
+| White status text disappeared against the bright 3D sky | Dark inset status plate on both platforms; actual native screenshot and web computed background `rgba(16,46,56,.93)` confirmed. |
+| 2D place overlay covered the lane's ordinal header | Reserved clearance between status and lane labels on both platforms; native inspection showed the label below the plate; web measurement confirmed 31.7px clearance at desktop and 390px widths. |
+| Native replay Close results sat underneath the notch | Modal gets its own safe-area provider. Actual replay screenshot showed Close results fully below the status bar; receipt → Next round → Back to Compete worked. |
+| Native result button hid all result data from accessibility | Label now reads dates, lens, place/field size, volume, before/after score and signed delta. Actual AX tree confirmed the complete summary. |
+| Demo trackers claimed Connected/Syncing | Both settings screens explicitly say Demo · sample data; real stubs retain sample evidence labels. Sample sleep action now says Add sample night. |
+| Scoring guide promised score never decreases | Copy matches the existing Elo model: weekly movement may be signed; inactive weeks decay; earned milestone receipts persist. Freeze holds the weekly adjustment. No scoring implementation changed. |
+| Home claimed no settled recap while GPS results existed | Latest closed result now falls back to GPS, preferring Open for the same primary-sport round. The card labels its lens and actual latest week. Actual Home on web/native showed the GPS recap instead of the empty state. |
+| Small web sync controls, singular-session grammar | Minimum 44px targets verified by rendered button measurement; training labels use session/sessions correctly on both platforms. |
+
+### Final interaction matrix
+
+| Journey | iOS native | Web |
+| --- | --- | --- |
+| Home summary → activity receipt → impact disclosure → close | Exercised; blank manual form also rejected with duration guidance; remove → Keep session canceled safely | Home/Compete cross-links and existing summary inspected |
+| Compete event switch and chooser | Header left/right swipes changed Running ↔ Cycling; accessible chooser and registration handoff exercised | Next event changed Running → Cycling; existing chooser inspected |
+| 2D/Standings/3D, past-self and field controls | All three views exercised; past-self always present in field; direct final lane drag and Your lane; zoom | Default 2D, three view tabs, Enter on lane controls, zoom and adaptive ruler exercised |
+| Training Week/Month/Year, previous period, future disable | First pass exercised all ranges and prior week; selected period survived achievement dismissal | Desktop plus actual 390px CSS layout, ranges and disabled future navigation checked |
+| Personal records | 5K/10K and actual end date checked | Single Sep 23 milestone has no synthetic extension |
+| History and weekly reveal | All sports/Both filters, latest replay, receipt flip, next-round and return exercised | Both exposed two GPS weeks after the expected empty Open filter |
+| Crew shared week and members | Target/finish/overflow verified; Bob selection and members sheet exercised | Keyboard Enter selected Bob and updated 3.7 mi/7.5% receipt; finish and runway inspected |
+| Start Line schedule | Form opened and empty submission retained the form; no invitation or session was sent | Empty submission showed Give the session a name; Escape dismissed the sheet |
+| Sync confirmation | Full swipe, short reset, Close preview and Finish preview exercised | Focused heading, End-key confirmation and dismissal, including narrow screen |
+| Athlete settings | Data Sync labels, Metric → Imperial restoration, scoring, Notifications and Account visited; no OS permission or destructive action invoked | Data Sync targets measured 44px; narrow layout and explicit sample status checked |
+
+Responsive web checks measured the actual DOM width rather than assuming the browser viewport override: 390px and the host's minimum 342px CSS width, plus normal desktop. Crew and Data Sync had no document overflow at the checked widths; the 390px training bars measured 14px in 39px columns. Temporary viewport overrides were reset. Desktop charts were also measured in the first pass (33px bars / 85px columns).
+
+The existing persistence path was reviewed read-only with the Supabase skill: activity and readiness saves are upsert-only, and account loading hydrates relational activities, so a receipt does not delete server-ingested work. No database, RLS, auth or provider implementation changed in this audit. Live sync/OAuth and permissions still require testing with a real account/device; Android hardware was unavailable. Full suites/typecheck/build remain intentionally skipped. Focused native event-swipe/modal-handoff and portrait-control checks plus a latest-recap fallback check support the final fixes.
+
+Navigation inventory, overlap findings and prioritized grouping recommendations: [navigation audit](navigation-audit.md). No primary destination was consolidated or removed.
+
+Final evidence: [native field after second sweep](ios-field-final.jpg), [web Home with repaired recap](web-home-final.jpg). Earlier progress, Crew and sync screenshots remain linked above.
