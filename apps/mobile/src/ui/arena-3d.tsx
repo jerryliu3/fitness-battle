@@ -1,7 +1,7 @@
 import { SHELL_COLORS as clubColors } from "@fitness-battle/shared";
 import { useRef, useEffect } from "react";
 import { View, Text, StyleSheet } from "react-native";
-import WebView from "react-native-webview";
+import WebView, { type WebViewMessageEvent } from "react-native-webview";
 import type { ArenaSceneMessage } from "@fitness-battle/shared";
 import { mobileEnv } from "../lib/env";
 
@@ -20,7 +20,7 @@ export function Arena3D({
   onPan,
   onUnavailable,
 }: Arena3DProps) {
-  const ref = useRef<WebView>(null);
+  const ref = useRef<WebView<object>>(null);
   const ready = useRef(false);
   const fail = useRef(onUnavailable);
   fail.current = onUnavailable;
@@ -68,7 +68,7 @@ export function Arena3D({
         javaScriptEnabled
         scrollEnabled={false}
         style={styles.web}
-        onShouldStartLoadWithRequest={(r) =>
+        onShouldStartLoadWithRequest={(r: { url: string }) =>
           r.url === "about:blank" || r.url.startsWith(`${origin}/arena-scene`)
         }
         onLoadEnd={() => {
@@ -76,7 +76,7 @@ export function Arena3D({
         }}
         onError={onUnavailable}
         onHttpError={onUnavailable}
-        onMessage={(event) => {
+        onMessage={(event: WebViewMessageEvent) => {
           try {
             const msg = JSON.parse(event.nativeEvent.data);
             if (msg.type === "arena-ready") {
