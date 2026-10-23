@@ -94,7 +94,7 @@ function RoundTakeover({
                 Update sport settings
               </Link>
               <button type="button" className="fb-btn" onClick={onDismiss}>
-                Back to Compete
+                Done
               </button>
             </>
           )}

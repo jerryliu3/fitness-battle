@@ -75,7 +75,7 @@ export function AthleteMetrics({
                 <Text style={f.h2}>
                   {formatDistanceM(season.meters, state.units)}
                 </Text>
-                <Text style={f.small}>{unit} counted</Text>
+                <Text style={f.small}>{unit} total</Text>
               </View>
               <View
                 style={{

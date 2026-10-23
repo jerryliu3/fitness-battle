@@ -1,5 +1,5 @@
 "use client";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { PERSON_ICON_PATH, type CompeteState } from "@fitness-battle/shared";
 import { useAuth } from "@/components/auth-context";
 import { useCompete } from "@/components/compete-context";
@@ -16,14 +16,17 @@ export function ProfilePhoto({ state, email }: { state: CompeteState; email?: st
   const [avatarError, setAvatarError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const flight = useRef(false);
-  const owner = useRef(user?.id);
-  owner.current = user?.id;
+  const owner = useRef({ id: user?.id });
+  if (owner.current.id !== user?.id) owner.current = { id: user?.id };
+  const mounted = useRef(true);
+  useEffect(() => { mounted.current = true; return () => { mounted.current = false; }; }, []);
   async function onAvatarChosen(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
     if (flight.current) return;
     flight.current = true;
     const account = owner.current;
+    const isCurrent = () => mounted.current && owner.current === account;
     setAvatarBusy(true);
     setAvatarError(null);
     try {
@@ -31,6 +34,7 @@ export function ProfilePhoto({ state, email }: { state: CompeteState; email?: st
       const {
         data: { user },
       } = await supabase.auth.getUser().catch(() => ({ data: { user: null } }));
+      if (!isCurrent() || (user && user.id !== account.id)) return;
       const newUrl = await uploadWebProfileAvatar({
         file,
         userId: user?.id,
@@ -39,15 +43,15 @@ export function ProfilePhoto({ state, email }: { state: CompeteState; email?: st
         // Signed-in athletes (email present) must use storage — never data URLs.
         requireStorage: Boolean(email),
       });
-      if (owner.current === account) dispatch({ type: "set-avatar", avatarUrl: newUrl, accountId: account });
+      if (isCurrent()) dispatch({ type: "set-avatar", avatarUrl: newUrl, accountId: account.id });
     } catch (err) {
-      setAvatarError(
+      if (isCurrent()) setAvatarError(
         err instanceof Error ? err.message : "Failed to upload photo.",
       );
     } finally {
       flight.current = false;
-      setAvatarBusy(false);
-      if (fileInputRef.current) fileInputRef.current.value = "";
+      if (isCurrent()) setAvatarBusy(false);
+      if (isCurrent() && fileInputRef.current) fileInputRef.current.value = "";
     }
   }
 
@@ -55,6 +59,7 @@ export function ProfilePhoto({ state, email }: { state: CompeteState; email?: st
     if (flight.current) return;
     flight.current = true;
     const account = owner.current;
+    const isCurrent = () => mounted.current && owner.current === account;
     setAvatarBusy(true);
     setAvatarError(null);
     try {
@@ -62,19 +67,20 @@ export function ProfilePhoto({ state, email }: { state: CompeteState; email?: st
       const {
         data: { user },
       } = await supabase.auth.getUser().catch(() => ({ data: { user: null } }));
+      if (!isCurrent() || (user && user.id !== account.id)) return;
       await removeWebProfileAvatar({
         userId: user?.id,
         previousAvatarUrl: state.avatarUrl,
         supabase,
       });
-      if (owner.current === account) dispatch({ type: "set-avatar", avatarUrl: null, accountId: account });
+      if (isCurrent()) dispatch({ type: "set-avatar", avatarUrl: null, accountId: account.id });
     } catch (err) {
-      setAvatarError(
+      if (isCurrent()) setAvatarError(
         err instanceof Error ? err.message : "Failed to remove photo.",
       );
     } finally {
       flight.current = false;
-      setAvatarBusy(false);
+      if (isCurrent()) setAvatarBusy(false);
     }
   }
 

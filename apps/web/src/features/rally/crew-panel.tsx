@@ -405,7 +405,7 @@ export function CrewPanel() {
               <section className="focus-card">
                 <p className="fb-kicker">Our shared week · {crew.sport}</p>
                 {sessionsMetric ? (
-                  <h2>{entries.reduce((total, entry) => total + Number(entry.session_count ?? 1), 0)} counted sessions</h2>
+                  <h2>{entries.reduce((total, entry) => total + Number(entry.session_count ?? 1), 0)} sessions</h2>
                 ) : (
                   <h2 className="focus-goal">
                     {formatDistanceM(totalM, state?.units)}{" "}
@@ -480,7 +480,7 @@ export function CrewPanel() {
           <section className="focus-card focus-empty">
             <h2>Make room for your people.</h2>
             <p className="fb-copy" style={{ marginBottom: 20 }}>
-              Private crews share a week of counted effort — invite codes,
+              Private crews share a week of effort — invite codes,
               member standings, and a shared field when you register together.
             </p>
             <div className="fb-row" style={{ width: "100%", gap: 10 }}>

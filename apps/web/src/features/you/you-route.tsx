@@ -16,26 +16,7 @@ import { AthleteOverview } from "@/features/focus/athlete-overview";
 import { SeasonHistory } from "@/features/split/components/season-history";
 import { AwardShelf } from "./award-shelf";
 import { buildSplitBoard } from "@/features/split/model";
-import {
-  activityFromSample,
-  awardCards,
-  BACKFILL_DAYS,
-  competeNow,
-  evidenceLabel,
-  primaryFreezePeriodStart,
-  PROVIDERS,
-  RANK_BANDS,
-  rankForElo,
-  sleepRenewal,
-  sportById,
-  sportRenewal,
-  SPORTS,
-  STARTING_FREEZES,
-  type ActivitySample,
-  type ProviderId,
-  type ReadinessMark,
-  type ReadinessSample,
-} from "@fitness-battle/shared";
+import { activityFromSample, INTEGRATION_ICONS, awardCards, BACKFILL_DAYS, competeNow, competitionTrack, evidenceLabel, primaryFreezePeriodStart, PROVIDERS, RANK_BANDS, sleepRenewal, SPORTS, type SportId, type ActivitySample, type ProviderId, type ReadinessMark, type ReadinessSample } from "@fitness-battle/shared";
 import { AuthPrompt } from "@/components/auth-gate";
 import { Sheet } from "@/ui/sheet";
 import Link from "next/link";
@@ -81,7 +62,7 @@ function humanError(code?: string): string {
 
 function YouContent({ surface }: { surface: "progress" | "athlete" }) {
   const reduced = useReducedMotion();
-  const { user, signOut, offlineMode } = useAuth();
+  const { user, signOut, offlineMode, legacyBackup } = useAuth();
   const { state, dispatch, loadStatus, previewSyncReview } = useCompete();
   const [panel, setPanel] = useState<AthletePanel | null>(null);
   const overviewRef = useRef<HTMLDivElement>(null);
@@ -274,7 +255,7 @@ function YouContent({ surface }: { surface: "progress" | "athlete" }) {
 
   const now = competeNow(state);
   const sleep = sleepRenewal(state);
-  const board = buildSplitBoard(state, state.primary, "open", now);
+  const board = buildSplitBoard(state, state.primary, competitionTrack(state.primary), now);
   const frozen = state.frozenPeriods.includes(primaryFreezePeriodStart(state));
 
   function applyRemote(body: {
@@ -484,7 +465,7 @@ function YouContent({ surface }: { surface: "progress" | "athlete" }) {
   }
 
   if (!user && surface === "progress") {
-    const guestBoard = buildSplitBoard(state, state.primary, "open", now);
+    const guestBoard = buildSplitBoard(state, state.primary, competitionTrack(state.primary), now);
     return (
       <div className="focus-athlete">
         <AthleteOverview state={state} sections="progress" />
@@ -584,14 +565,14 @@ function YouContent({ surface }: { surface: "progress" | "athlete" }) {
       >
         <button
           type="button"
-          className="focus-expand-back"
+          className="club-icon-button"
+          aria-label="Return to Athlete"
           onClick={() => setPanel(null)}
         >
-          ← Back
+          ‹
         </button>
         <header className="focus-heading">
-          <p className="fb-kicker">Settings</p>
-          <h1>{PANEL_TITLES[panel]}</h1>
+                    <h1>{PANEL_TITLES[panel]}</h1>
         </header>
         <div className="focus-settings-panel">
           {panel === "connections" ? (
@@ -614,6 +595,7 @@ function YouContent({ surface }: { surface: "progress" | "athlete" }) {
                       className="fb-row"
                       style={{ alignItems: "center", gap: 12 }}
                     >
+                      <span className="club-integration-icon" style={{ background: INTEGRATION_ICONS[provider.id].background }}><svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><path d={INTEGRATION_ICONS[provider.id].path} fill={INTEGRATION_ICONS[provider.id].color} fillRule="evenodd" /></svg></span>
                       <div className="fb-grow">
                         <strong style={{ fontSize: 14 }}>{provider.name}</strong>
                         <small style={{ color: "var(--muted)", fontSize: 13, display: "block", marginTop: 2 }}>
@@ -631,67 +613,16 @@ function YouContent({ surface }: { surface: "progress" | "athlete" }) {
                           flexShrink: 0,
                         }}
                       >
-                        <button
-                          type="button"
-                          className="fb-btn-line"
-                          style={{
-                            width: "auto",
-                            fontSize: 12,
-                            padding: "5px 12px",
-                            minHeight: 44,
-                            borderRadius: 8,
-                          }}
-                          disabled={connectingProvider === provider.id}
-                          onClick={() => void syncProvider(provider.id)}
-                        >
-                          {device ? "Phone" : link?.linked ? "Sync" : "Link"}
+                        <button type="button" className="fb-btn-ghost" disabled={connectingProvider === provider.id}
+                          style={{ width: "auto", minHeight: 44, color: link?.linked && !device ? "#b83a38" : "var(--ink)" }}
+                          onClick={() => void (link?.linked && !device ? disconnectProvider(provider.id) : syncProvider(provider.id))}>
+                          {device ? "Phone" : link?.linked ? "Disconnect" : "Connect"}
                         </button>
-                        {link?.linked && !device ? (
-                          <button
-                            type="button"
-                            className="fb-btn-ghost"
-                            style={{
-                              width: "auto",
-                              fontSize: 12,
-                              padding: "5px 8px",
-                              minHeight: 44,
-                              color: "var(--red, #b83a38)",
-                            }}
-                            onClick={() => void disconnectProvider(provider.id)}
-                          >
-                            Disconnect
-                          </button>
-                        ) : null}
                       </div>
                     </div>
                   );
                 })}
-                <div
-                  className="fb-row"
-                  style={{ alignItems: "center", gap: 12, marginTop: 12 }}
-                >
-                  <div className="fb-grow">
-                    <strong style={{ fontSize: 14 }}>Sleep & recovery</strong>
-                    <small style={{ color: "var(--muted)", fontSize: 13, display: "block", marginTop: 2 }}>
-                      Tracker sleep appears when available. Add a sample night to preview sleep views.
-                    </small>
-                  </div>
-                  <button
-                    type="button"
-                    className="fb-btn-line"
-                    style={{
-                      width: "auto",
-                      fontSize: 12,
-                      padding: "5px 12px",
-                      minHeight: 44,
-                      borderRadius: 8,
-                      flexShrink: 0,
-                    }}
-                    onClick={() => dispatch({ type: "log-sleep" })}
-                  >
-                    Add sample night
-                  </button>
-                </div>
+
                 <label className="fb-field" style={{ marginTop: 16 }}>
                   Garmin file (.fit, .gpx, .tcx, .zip)
                   <input
@@ -756,196 +687,37 @@ function YouContent({ surface }: { surface: "progress" | "athlete" }) {
               </section>
             </>
           ) : null}
-          {panel === "preferences" ? (
-            <>
-              <section className="fb-card">
-                <h2>Units</h2>
-                <p className="fb-copy">
-                  Imperial vs metric for distances across Compete, Crew, and
-                  Progress. Home shows hours only.
-                </p>
-                <div className="focus-segments" role="group" aria-label="Unit system">
-                  <button
-                    type="button"
-                    aria-pressed={state.units === "us"}
-                    onClick={() => dispatch({ type: "set-units", units: "us" })}
-                  >
-                    Imperial
-                  </button>
-                  <button
-                    type="button"
-                    aria-pressed={state.units === "metric"}
-                    onClick={() =>
-                      dispatch({ type: "set-units", units: "metric" })
-                    }
-                  >
-                    Metric
-                  </button>
-                </div>
-              </section>
-
-              <section className="fb-card">
-                <h2>Sports</h2>
-                <p className="fb-copy" style={{ color: "var(--muted)", marginBottom: 16 }}>
-                  Choose your primary sport and toggle which events you actively compete in this week.
-                </p>
-                {SPORTS.map((sport) => {
-                  const rating = state.ratings.find(
-                    (item) => item.sport === sport.id,
-                  );
-                  const primary = state.primary === sport.id;
-                  const isActive = Boolean(rating?.optedIn);
-                  const elo =
-                    rating?.openElo && rating.openElo > 0
-                      ? rating.openElo
-                      : user
-                        ? 1000
-                        : 500;
-                  return (
-                    <div
-                      key={sport.id}
-                      className="fb-row"
-                      style={{ alignItems: "center", gap: 12 }}
-                    >
-                      <div className="fb-grow">
-                        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                          <strong style={{ fontSize: 14 }}>{sport.name}</strong>
-                          {primary ? (
-                            <span
-                              style={{
-                                fontSize: 11,
-                                padding: "2px 8px",
-                                borderRadius: 999,
-                                background: "var(--accent-soft, #eef4e6)",
-                                color: "var(--ink, #282f2c)",
-                                fontWeight: 600,
-                              }}
-                            >
-                              Primary
-                            </span>
-                          ) : null}
-                        </div>
-                        <small style={{ color: "var(--muted)", fontSize: 13, display: "block", marginTop: 2 }}>
-                          Effort Score {elo} · {rankForElo(elo).name}
-                        </small>
-                      </div>
-                      <div
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: 12,
-                          flexShrink: 0,
-                        }}
-                      >
-                        {!primary ? (
-                          <button
-                            type="button"
-                            className="fb-btn-line"
-                            style={{
-                              width: "auto",
-                              fontSize: 12,
-                              padding: "4px 10px",
-                              minHeight: 44,
-                              borderRadius: 8,
-                            }}
-                            onClick={() => {
-                              dispatch({ type: "set-primary", sport: sport.id });
-                            }}
-                          >
-                            Make primary
-                          </button>
-                        ) : null}
-                        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                          <span style={{ fontSize: 12, color: "var(--muted)" }}>Active</span>
-                          <button
-                            type="button"
-                            role="switch"
-                            aria-checked={isActive}
-                            aria-label={`Toggle ${sport.name} active status`}
-                            className={isActive ? "fb-switch on" : "fb-switch"}
-                            onClick={() => {
-                              if (isActive) {
-                                dispatch({ type: "opt-out", sport: sport.id });
-                              } else {
-                                requireAuth(`Sign in to activate ${sport.name}.`, () => {
-                                  dispatch({ type: "opt-in", sport: sport.id, crewBoard: null });
-                                });
-                              }
-                            }}
-                          >
-                            <span className="fb-switch-knob" />
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </section>
-
-              <section className="fb-card">
-                <h2>Week freezes</h2>
-                <p className="fb-copy">
-                  {state.freezesLeft} of {STARTING_FREEZES} left. A freeze holds the weekly score adjustment. Activity milestones
-                  can still grow your score.
-                </p>
-                {frozen ? (
-                  <div className="fb-stack">
-                    <p className="fb-note" style={{ color: "var(--green, #2f6f4e)" }}>
-                      ❄ This week is frozen. Your weekly score adjustment is held through next Monday.
-                    </p>
-                    <button
-                      type="button"
-                      className="fb-btn-ghost"
-                      onClick={() => dispatch({ type: "unfreeze" })}
-                    >
-                      Undo freeze
-                    </button>
-                  </div>
-                ) : confirmFreeze ? (
-                  <div className="fb-stack">
-                    <p className="fb-note">
-                      Freeze this week? You will have {state.freezesLeft - 1}{" "} freezes left.
-                      Your weekly score adjustment is held until next Monday.
-                    </p>
-                    <div className="fb-row">
-                      <button
-                        type="button"
-                        className="fb-btn"
-                        onClick={() => {
-                          dispatch({ type: "freeze" });
-                          setConfirmFreeze(false);
-                        }}
-                      >
-                        Confirm freeze
-                      </button>
-                      <button
-                        type="button"
-                        className="fb-btn-ghost"
-                        onClick={() => setConfirmFreeze(false)}
-                      >
-                        Cancel
-                      </button>
-                    </div>
-                  </div>
-                ) : (
-                  <button
-                    type="button"
-                    className="fb-btn"
-                    disabled={state.freezesLeft <= 0}
-                    onClick={() => setConfirmFreeze(true)}
-                  >
-                    {state.freezesLeft <= 0 ? "No freezes left" : "Freeze this week"}
-                  </button>
-                )}
-              </section>
-            </>
-          ) : null}
+          {panel === "preferences" ? <section className="fb-card club-preferences">
+            <div className="club-preference-row"><strong>Units</strong><div className="focus-segments" role="group" aria-label="Unit system">
+              {(["us", "metric"] as const).map(units => <button key={units} type="button" aria-pressed={state.units === units} onClick={() => dispatch({ type: "set-units", units })}>{units === "us" ? "Imperial" : "Metric"}</button>)}
+            </div></div>
+            <label className="club-preference-row"><strong>Primary sport</strong><select className="fb-input" value={state.primary} onChange={event => dispatch({ type: "set-primary", sport: event.target.value as SportId })}>
+              {SPORTS.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+            </select></label>
+            <div className="club-preference-row"><span><strong>Freeze this week</strong><small>{state.freezesLeft} remaining</small></span>
+              <button type="button" role="switch" aria-label="Freeze this week" aria-checked={frozen} className={frozen ? "fb-switch on" : "fb-switch"} disabled={!frozen && state.freezesLeft <= 0}
+                onClick={() => frozen ? dispatch({ type: "unfreeze" }) : setConfirmFreeze(true)}><span className="fb-switch-knob" /></button>
+            </div>
+            {confirmFreeze && !frozen && <div className="fb-stack"><p className="fb-note">A freeze holds this week's placement bonus. Activity milestones still count.</p>
+              <button type="button" className="fb-btn" onClick={() => { dispatch({ type: "freeze" }); setConfirmFreeze(false); }}>Confirm freeze</button>
+              <button type="button" className="fb-btn-ghost" onClick={() => setConfirmFreeze(false)}>Cancel</button></div>}
+            <h2>Sports</h2>
+            {SPORTS.map(sport => { const active = Boolean(state.ratings.find(r => r.sport === sport.id)?.optedIn); return <div key={sport.id} className="club-preference-row">
+              <strong>{sport.name}</strong><button type="button" role="switch" aria-label={`Toggle ${sport.name} active status`} aria-checked={active} className={active ? "fb-switch on" : "fb-switch"}
+                onClick={() => requireAuth(`Sign in to activate ${sport.name}.`, () => dispatch(active ? { type: "opt-out", sport: sport.id } : { type: "opt-in", sport: sport.id, crewBoard: null }))}><span className="fb-switch-knob" /></button>
+            </div>; })}
+          </section> : null}
           {panel === "account" ? (
             <>
               <section className="fb-card fb-stack">
                 <h2>Your account</h2>
                 <button type="button" className="fb-btn-line" onClick={() => void signOut()}>Sign out</button>
                 <ReportIssue />
+                {legacyBackup && <button type="button" className="fb-btn-line" onClick={() => {
+                  const url = URL.createObjectURL(new Blob([legacyBackup], { type: "application/json" }));
+                  const link = document.createElement("a"); link.href = url; link.download = "overtaek-local-demo-backup.json"; link.click();
+                  setTimeout(() => URL.revokeObjectURL(url), 1000);
+                }}>Download local demo backup</button>}
               </section>
               {user ? (
                 <section className="fb-card" style={{ borderColor: "#f3d1cc" }}>
@@ -1058,6 +830,7 @@ function YouContent({ surface }: { surface: "progress" | "athlete" }) {
         </>}/>
       ) : user ? (
         <>
+      <header className="club-detail-heading"><Link href="/today" className="club-icon-button" aria-label="Return to Home">‹</Link><h1>Athlete</h1></header>
       <AthleteOverview
         state={state}
         email={user.email}

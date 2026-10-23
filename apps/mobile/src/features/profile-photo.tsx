@@ -104,7 +104,9 @@ export function ProfilePhoto({ state }: { state: CompeteState }) {
           width: 86,
           height: 86,
           borderRadius: 43,
-          backgroundColor: c.ink,
+          backgroundColor: c.card,
+          borderWidth: 1,
+          borderColor: c.line,
           alignItems: "center",
           justifyContent: "center",
           overflow: "hidden",
@@ -137,7 +139,7 @@ export function ProfilePhoto({ state }: { state: CompeteState }) {
         }}
       >
         <FocusButton
-          label={busy ? "Updating…" : "Change photo"}
+          label={busy ? "Updating…" : "Choose photo"}
           disabled={busy}
           onPress={() => {
             setMenuOpen(false);
@@ -146,7 +148,7 @@ export function ProfilePhoto({ state }: { state: CompeteState }) {
         />
         {state.avatarUrl ? (
           <FocusButton
-            label="Remove photo"
+            label="Delete photo"
             secondary
             disabled={busy}
             onPress={() => {
@@ -155,6 +157,7 @@ export function ProfilePhoto({ state }: { state: CompeteState }) {
             }}
           />
         ) : null}
+        <FocusButton label="Cancel" secondary onPress={() => setMenuOpen(false)} />
       </FocusSheet>
       {error ? (
         <Text style={f.small} accessibilityLiveRegion="polite">

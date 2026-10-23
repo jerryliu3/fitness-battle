@@ -75,7 +75,7 @@ function Round({
                   router.push("/athlete-settings?panel=preferences");
                 }}
               />
-              <FocusButton label="Back to Compete" onPress={onClose} />
+              <FocusButton label="Done" onPress={onClose} />
             </>
           )}
           </MotionStep>

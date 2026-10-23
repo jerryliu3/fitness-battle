@@ -1,11 +1,9 @@
 import { activityFromSample } from "@fitness-battle/shared";
-import {
-  SPORTS,
-  RANK_BANDS,
-  primaryFreezePeriodStart,
-  rankForElo,
-  type ProviderId,
-} from "@fitness-battle/shared";
+import { ScreenHeader } from "../src/ui/screen-header";
+import { IntegrationIcon } from "../src/ui/integration-icon";
+
+import { ChoicePicker } from "../src/ui/choice-picker";
+import { SPORTS, RANK_BANDS, primaryFreezePeriodStart, type ProviderId } from "@fitness-battle/shared";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { Button } from "heroui-native/button";
 import { Input } from "heroui-native/input";
@@ -13,6 +11,7 @@ import { useEffect, useRef, useState } from "react";
 import {
   Pressable,
   ScrollView,
+  Share,
   StyleSheet,
   Switch,
   Text,
@@ -37,13 +36,7 @@ import {
   startCloudTrackerConnect,
 } from "../src/lib/tracker-connect";
 import { SHELL_COLORS, SHELL_RADIUS } from "../src/theme";
-import {
-  FocusButton,
-  FocusSegments,
-  FocusSheet,
-  FocusTextButton,
-  f,
-} from "../src/ui/focus";
+import { FocusButton, FocusSegments, FocusSheet, f } from "../src/ui/focus";
 
 function isDeviceProvider(
   id: ProviderId,
@@ -69,6 +62,7 @@ export default function AthleteScreen() {
     signIn,
     signUp,
     signOut,
+    legacyBackup,
   } = useAuth();
   const currentUser = useRef(user?.id);
   currentUser.current = user?.id;
@@ -153,6 +147,9 @@ export default function AthleteScreen() {
 
   const rowBusy = syncBusy || Boolean(busyProvider);
   const signedIn = Boolean(user);
+
+  const titles = { profile: "Edit profile", connections: "Data Sync", preferences: "Preferences", scoring: "How scoring works", account: "Account" };
+  const pageHeader = <ScreenHeader title={panel ? titles[panel] : "Athlete"} onBack={() => panel ? setPanel(null) : router.canGoBack() ? router.back() : router.replace("/today")} />;
 
   async function submitAuth() {
     setAuthBusy(true);
@@ -283,18 +280,13 @@ export default function AthleteScreen() {
 
   if (!signedIn) {
     return (
-      <SafeAreaView style={styles.safe} edges={[]}>
+      <SafeAreaView style={styles.safe} edges={["top"]}>
+        {pageHeader}
         <ScrollView
           automaticallyAdjustKeyboardInsets
           contentContainerStyle={styles.scroll}
           keyboardShouldPersistTaps="handled"
         >
-          <FocusTextButton
-            label="← Back"
-            onPress={() =>
-              router.canGoBack() ? router.back() : router.replace("/today")
-            }
-          />
           <AthleteMetrics state={state} sections="profile" />
           <Text style={styles.kicker}>Account</Text>
 
@@ -380,24 +372,19 @@ export default function AthleteScreen() {
 
   if (panel === "account") {
     return (
-      <SafeAreaView style={styles.safe} edges={[]}>
+      <SafeAreaView style={styles.safe} edges={["top"]}>
+        {pageHeader}
         <ScrollView
           contentContainerStyle={f.content}
           showsVerticalScrollIndicator={false}
         >
-          <FocusButton
-            label="← Back"
-            secondary
-            onPress={() => setPanel(null)}
-          />
-          <Text style={f.kicker}>Settings</Text>
-          <Text style={f.title}>Account</Text>
           <FocusButton
             label="Sign out"
             secondary
             onPress={() => void signOut()}
           />
           <AccountActions />
+          {legacyBackup && <FocusButton label="Export local demo backup" secondary onPress={() => { void Share.share({ message: legacyBackup, title: "Overtaek local demo backup" }); }} />}
         </ScrollView>
       </SafeAreaView>
     );
@@ -405,21 +392,13 @@ export default function AthleteScreen() {
 
   if (panel === "connections") {
     return (
-      <SafeAreaView style={styles.safe} edges={[]}>
+      <SafeAreaView style={styles.safe} edges={["top"]}>
+        {pageHeader}
         <ScrollView
           automaticallyAdjustKeyboardInsets
           contentContainerStyle={f.content}
           keyboardShouldPersistTaps="handled"
         >
-          <Pressable
-            accessibilityRole="button"
-            onPress={() => setPanel(null)}
-            style={{ minHeight: 44, justifyContent: "center" }}
-          >
-            <Text style={f.small}>← Back</Text>
-          </Pressable>
-          <Text style={f.kicker}>Settings</Text>
-          <Text style={f.title}>Data Sync</Text>
           {providersForDevice().map((provider) => {
             const link = state.links.find(
               (row) => row.provider === provider.id,
@@ -445,11 +424,14 @@ export default function AthleteScreen() {
                 : "";
             const copy = (
               <>
+                <IntegrationIcon provider={provider.id} />
+                <View style={{ flex: 1, gap: 3 }}>
                 <Text style={styles.rowTitle}>{provider.name}</Text>
                 <Text style={styles.copy}>
                   {status}
                   {hint}
                 </Text>
+                </View>
               </>
             );
             if (isDeviceProvider(provider.id)) {
@@ -520,18 +502,12 @@ export default function AthleteScreen() {
 
   if (panel === "scoring") {
     return (
-      <SafeAreaView style={f.safe} edges={[]}>
+      <SafeAreaView style={f.safe} edges={["top"]}>
+        {pageHeader}
         <ScrollView contentContainerStyle={f.content}>
-          <FocusButton
-            label="← Back"
-            secondary
-            onPress={() => setPanel(null)}
-          />
-          <Text style={f.kicker}>Settings</Text>
-          <Text style={f.title}>How scoring works</Text>
           <Text style={f.copy}>
-            Open score includes counted sessions. GPS verified includes verified
-            sessions. Sample workouts do not count toward competition.
+            Open includes your eligible sessions. GPS Tracked uses sessions recorded
+            by a GPS tracker. Sample workouts do not count toward competition.
           </Text>
           <Text style={f.copy}>
             Each active sport has its own effort score. Rank-priced activity
@@ -559,23 +535,13 @@ export default function AthleteScreen() {
 
   if (panel === "preferences" || panel === "profile") {
     return (
-      <SafeAreaView style={styles.safe} edges={[]}>
+      <SafeAreaView style={styles.safe} edges={["top"]}>
+        {pageHeader}
         <ScrollView
           automaticallyAdjustKeyboardInsets
           contentContainerStyle={f.content}
           keyboardShouldPersistTaps="handled"
         >
-          <Pressable
-            accessibilityRole="button"
-            onPress={() => setPanel(null)}
-            style={{ minHeight: 44, justifyContent: "center" }}
-          >
-            <Text style={f.small}>← Back</Text>
-          </Pressable>
-          <Text style={f.kicker}>Settings</Text>
-          <Text style={f.title}>
-            {panel === "profile" ? "Edit profile" : "Preferences"}
-          </Text>
           {panel === "profile" ? (
             <>
               <Input
@@ -629,83 +595,28 @@ export default function AthleteScreen() {
             </>
           ) : (
             <>
-              <Text style={styles.section}>Units</Text>
-              <Text style={f.copy}>
-                Distance display for Compete, Crew, and Progress. Home shows
-                hours, not distance.
-              </Text>
-              <FocusSegments
-                label="Unit system"
-                value={state.units}
-                options={[
-                  { value: "us", label: "Imperial" },
-                  { value: "metric", label: "Metric" },
-                ]}
-                onChange={(units) => dispatch({ type: "set-units", units })}
-              />
-              <Text style={f.h2}>Events</Text>
-              {SPORTS.map((sport) => {
-                const active =
-                  state.ratings.find((r) => r.sport === sport.id)?.optedIn ??
-                  false;
-                const rating = state.ratings.find((r) => r.sport === sport.id);
-                const score = rating?.openElo || 1000;
-                return (
-                  <View key={sport.id} style={f.card}>
-                    <View style={f.row}>
-                      <View style={f.grow}>
-                        <Text style={f.rowTitle}>
-                          {sport.name}
-                          {state.primary === sport.id ? " · Primary" : ""}
-                        </Text>
-                        <Text style={f.small}>
-                          Effort Score {score} · {rankForElo(score).name}
-                        </Text>
-                      </View>
-                      <Switch
-                        accessibilityLabel={`Toggle ${sport.name} active status`}
-                        value={active}
-                        onValueChange={(enabled) => {
-                          if (!signedIn) return;
-                          dispatch(
-                            enabled
-                              ? {
-                                  type: "opt-in",
-                                  sport: sport.id,
-                                  crewBoard: null,
-                                }
-                              : { type: "opt-out", sport: sport.id },
-                          );
-                        }}
-                      />
-                    </View>
-                    {state.primary !== sport.id ? (
-                      <FocusTextButton
-                        label="Make primary"
-                        accessibilityLabel={`Make ${sport.name} primary`}
-                        onPress={() => {
-                          dispatch({ type: "set-primary", sport: sport.id });
-                          setNote("Primary event updated.");
-                        }}
-                      />
-                    ) : null}
-                  </View>
-                );
-              })}
-              <Text style={f.copy}>
-                {state.freezesLeft} week freezes remaining. A freeze holds
-                the weekly score adjustment. Activity milestones still count.
-              </Text>
-              <FocusButton
-                label={frozen ? "Undo freeze" : "Freeze this week"}
-                secondary
-                disabled={!frozen && state.freezesLeft <= 0}
-                onPress={() =>
-                  frozen
-                    ? dispatch({ type: "unfreeze" })
-                    : setConfirmFreeze(true)
-                }
-              />
+              <View style={[f.row, { flexWrap: "wrap" }]}>
+                <Text style={f.rowTitle}>Units</Text>
+                <FocusSegments label="Unit system" value={state.units} options={[{ value: "us", label: "Imperial" }, { value: "metric", label: "Metric" }]}
+                  onChange={units => dispatch({ type: "set-units", units })} />
+              </View>
+              <View style={[f.row, { flexWrap: "wrap" }]}>
+                <Text style={f.rowTitle}>Primary sport</Text>
+                <ChoicePicker label="Primary sport" value={state.primary} options={SPORTS.map(s => ({ value: s.id, label: s.name }))}
+                  onChange={sport => dispatch({ type: "set-primary", sport })} />
+              </View>
+              <View style={[f.row, { flexWrap: "wrap" }]}>
+                <View style={f.grow}><Text style={f.rowTitle}>Freeze this week</Text><Text style={f.small}>{state.freezesLeft} remaining</Text></View>
+                <Switch accessibilityLabel="Freeze this week" value={frozen} disabled={!frozen && state.freezesLeft <= 0}
+                  onValueChange={enabled => enabled ? setConfirmFreeze(true) : dispatch({ type: "unfreeze" })} />
+              </View>
+              <Text style={f.h2}>Sports</Text>
+              {SPORTS.map(sport => <View key={sport.id} style={[f.row, { minHeight: 56, borderBottomWidth: 1, borderBottomColor: SHELL_COLORS.line }]}>
+                <Text style={f.rowTitle}>{sport.name}</Text>
+                <Switch accessibilityLabel={`Toggle ${sport.name} active status`}
+                  value={Boolean(state.ratings.find(r => r.sport === sport.id)?.optedIn)}
+                  onValueChange={enabled => dispatch(enabled ? { type: "opt-in", sport: sport.id, crewBoard: null } : { type: "opt-out", sport: sport.id })} />
+              </View>)}
               {saveError ? <Text style={f.copy}>{saveError}</Text> : null}
               <FocusSheet
                 open={confirmFreeze}
@@ -729,18 +640,13 @@ export default function AthleteScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.safe} edges={[]}>
+    <SafeAreaView style={styles.safe} edges={["top"]}>
+        {pageHeader}
       <ScrollView
         automaticallyAdjustKeyboardInsets
         contentContainerStyle={f.content}
         keyboardShouldPersistTaps="handled"
       >
-        <FocusTextButton
-          label="← Back"
-          onPress={() =>
-            router.canGoBack() ? router.back() : router.replace("/today")
-          }
-        />
         {saveError ? (
           <View style={f.feedback}>
             <Text style={f.copy}>{saveError}</Text>
@@ -817,15 +723,17 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   row: {
-    minHeight: 52,
-    justifyContent: "center",
+    minHeight: 60,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     paddingHorizontal: 14,
     paddingVertical: 10,
     borderRadius: SHELL_RADIUS.control,
     backgroundColor: SHELL_COLORS.card,
     borderWidth: 1,
     borderColor: SHELL_COLORS.line,
-    gap: 2,
+    gap: 12,
   },
   rowTitle: {
     fontFamily: "DMSans_700Bold",

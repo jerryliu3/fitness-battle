@@ -332,8 +332,8 @@ export function CrewHub() {
           !reloaded
             ? "Shared, but your crews could not refresh. Please refresh crews."
             : saved > 0
-              ? `Shared ${saved} counted session${saved === 1 ? "" : "s"} with your crew.`
-              : "Your counted sessions are already shared for this week.",
+              ? `Shared ${saved} session${saved === 1 ? "" : "s"} with your crew.`
+              : "Your sessions are already shared for this week.",
         );
       } else {
         if (path !== "/rest") setPanel(null);
@@ -381,7 +381,7 @@ export function CrewHub() {
           <Text style={f.kicker}>Your people</Text>
           <Text style={f.title}>Make room for your people.</Text>
           <Text style={f.copy}>
-            Private crews share a week of counted effort, member standings and
+            Private crews share a week of effort, member standings and
             an optional shared field.
           </Text>
           <FocusButton

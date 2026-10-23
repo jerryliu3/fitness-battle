@@ -112,7 +112,7 @@ export function ResultCard({
           </>
         )}
         <Text style={[f.small, { textAlign: "right" }]}>
-          {receipt ? "Back to result ↻" : "View receipt ↻"}
+          {receipt ? "View result ↻" : "View receipt ↻"}
         </Text>
       </Pressable>
     </Animated.View>

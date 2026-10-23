@@ -12,6 +12,7 @@ import { Pressable, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useCompeteStore } from "../src/lib/compete-store";
 import { mobileEnv } from "../src/lib/env";
+import { IconButton } from "../src/ui/icon-button";
 import { FocusButton, FocusHeading, f } from "../src/ui/focus";
 export default function Benchmarks() {
   const { state } = useCompeteStore();
@@ -26,7 +27,7 @@ export default function Benchmarks() {
   return (
     <SafeAreaView style={f.safe} edges={["bottom"]}>
       <ScrollView contentContainerStyle={f.content}>
-        <FocusButton label="Back" secondary onPress={() => router.back()} />
+        <IconButton icon="back" label="Return to previous screen" onPress={() => router.back()} />
         <FocusHeading
           kicker="Beyond this week"
           title="Your benchmarks."

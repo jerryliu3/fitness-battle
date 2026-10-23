@@ -223,7 +223,7 @@ export function AthleteOverview({
         <div className="focus-season-stats">
           <div>
             <strong>{formatDistanceM(season.meters, state.units)}</strong>
-            <span>{unit} counted</span>
+            <span>{unit} total</span>
           </div>
           <div>
             <strong>{season.sessions}</strong>

@@ -42,7 +42,7 @@ export function WeekRecap({ state }: { state: CompeteState }) {
       <Text style={f.small}>
         {week.previousSec
           ? `${difference >= 0 ? "+" : "−"}${clubDuration(Math.abs(difference))} compared with all of last week.`
-          : "Each counted session builds your story."}
+          : "Each session builds your story."}
       </Text>
       {recap ? (
         <Pressable

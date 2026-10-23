@@ -92,7 +92,7 @@ export function ResultCard({
         </>
       )}
       <span className="week-result-turn">
-        {receipt ? "Back to result ↻" : "View receipt ↻"}
+        {receipt ? "View result ↻" : "View receipt ↻"}
       </span>
     </button>
   );

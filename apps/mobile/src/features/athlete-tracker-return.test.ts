@@ -46,6 +46,8 @@ vi.mock("../lib/tracker-connect", () => ({
 vi.mock("./account-actions", () => ({ AccountActions: "AccountActions" }));
 vi.mock("./athlete-metrics", () => ({ AthleteMetrics: "AthleteMetrics" }));
 vi.mock("./data-sync-actions", () => ({ DataSyncActions: "DataSyncActions" }));
+vi.mock("../ui/screen-header", () => ({ ScreenHeader: "ScreenHeader" }));
+vi.mock("../ui/integration-icon", () => ({ IntegrationIcon: "IntegrationIcon" }));
 vi.mock("../ui/settings-row", () => ({ SettingsRow: "SettingsRow" }));
 vi.mock("../ui/focus", () => ({
   FocusButton: "Button",

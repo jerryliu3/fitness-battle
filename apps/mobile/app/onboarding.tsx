@@ -1,3 +1,5 @@
+import { IconButton } from "../src/ui/icon-button";
+import { ProfilePhoto } from "../src/features/profile-photo";
 import { SPORTS, type SportId, type UnitSystem } from "@fitness-battle/shared";
 import { useRouter } from "expo-router";
 import { useState } from "react";
@@ -28,9 +30,7 @@ export default function Onboarding() {
         keyboardShouldPersistTaps="handled"
         contentContainerStyle={f.content}
       >
-        <FocusButton
-          label="← Back"
-          secondary
+        <IconButton icon="back" label="Return to previous screen"
           onPress={() =>
             router.canGoBack() ? router.back() : router.replace("/athlete")
           }
@@ -41,6 +41,8 @@ export default function Onboarding() {
           Choose your preferences. Trackers and optional history calibration
           live in Athlete → Data Sync.
         </Text>
+        <ProfilePhoto state={state} />
+        <Text style={f.rowTitle}>Name</Text>
         <TextInput
           accessibilityLabel="Display name"
           style={f.input}
