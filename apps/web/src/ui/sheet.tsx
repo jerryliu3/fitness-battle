@@ -91,9 +91,10 @@ export function Sheet({
                   }
                 >
                   <div className="sheet-grab" aria-hidden="true" />
-                  <Dialog.Title ref={heading} tabIndex={-1}>
-                    {title}
-                  </Dialog.Title>
+                  <div className="club-sheet-heading">
+                    <Dialog.Title ref={heading} tabIndex={-1}>{title}</Dialog.Title>
+                    <Dialog.Close asChild><button type="button" className="club-sheet-dismiss" aria-label="Close dialog">×</button></Dialog.Close>
+                  </div>
                   <Dialog.Description>{body}</Dialog.Description>
                   {children}
                 </motion.div>

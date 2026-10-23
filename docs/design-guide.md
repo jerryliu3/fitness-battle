@@ -10,21 +10,24 @@ The [Brand & Ember study](brand-study/brand-and-ember-studio.md) is available at
 
 ## Shared visual language
 
-The palette lives in `packages/shared/src/shell.ts`, is exported to native `src/theme.ts`, and is mirrored in web Focus CSS and native HeroUI variables. Legacy token keys remain compatible with existing components:
+The palette is defined in `packages/shared/src/shell.ts`, consumed by native `src/theme.ts` and mirrored in web `features/focus/club.css` and HeroUI variables. Legacy plum/tennis keys remain compatibility aliases.
 
-| Token | Value | Role |
+| Semantic role | Value | Usage |
 | --- | --- | --- |
-| ink / plum | `#282f2c` | Charcoal typography and primary actions |
-| tennis / gold | `#f1c75b` | Selected navigation, own lane, live indicator, and warm gold accents |
-| paper | `#fafaf7` | Warm white page background |
-| card | `#ffffff` | Controls, sheets, cards |
-| muted | `#616c63` | Calmer secondary labels |
-| line | `#e0e5dc` | Quiet borders and separators |
-| starEmber | `#f1c75b` | Canonical warm gold Ember artwork |
-| secondary | `#819486` | Historical comparisons / baseline |
-| soft | `#eef0e9` | Subtle highlights, badges, and pill backgrounds |
+| Text primary / ink | `#142b3b` | Navy typography and selected segments |
+| Action primary / tennis | `#f7c948` | Yellow primary buttons and personal progress |
+| Canvas / paper | `#f8f9f6` | Neutral page canvas |
+| Card | `#ffffff` | Grouped surfaces and sheets |
+| Text secondary | `#637482` | Supporting copy |
+| Border subtle | `#e3e9e7` | Quiet borders and dividers |
+| Action soft | `#fff5d1` | Selected navigation and milestone backgrounds |
+| Field teal / deep | `#176c75` / `#103e46` | Charts and alpine competition scenery |
 
-Use DM Sans for product UI, restrained display sizes, readable supporting copy, 44px+ touch controls, and generous spacing. Cards have clean 16px corners with 3px bottom borders; primary buttons have a 3px tactile base. Secondary buttons use a flat one-pixel border, tertiary actions use quiet text controls, and mutually exclusive score/view choices share a segmented container rather than separate outlined action buttons. Respect reduced motion. Browser dialogs use Radix focus management; native detail panels support back/dismiss and keyboard avoidance.
+DM Sans, bold readable page titles, 20px cards, 12px controls, 24px sheets, 44px minimum controls, teal keyboard focus and reduced-motion support. Primary actions use yellow with dark labels; navigation rows use quiet text and a directional affordance. Radix manages web dialogs; native sheets preserve the parent and system Back. Full component decisions are in [component guidelines](design/component-guidelines.md).
+
+Home leads with a personal greeting, weekly chart and real next-rival preview, then latest activity, effort progress and a weekly recap. The activity journey expands on demand. Progress leads with week/month/year training, then basic session/effort achievements and records; effort score and season history have separate views. Achievements are read-only milestones derived from currently available counted activity and the primary sport's Open rating, without reward entitlements or new scoring writes.
+
+Compete presents one registration at a time in a horizontal carousel with previous/next buttons, page indicators and an explicit event chooser. 2D is the default. Standings and optional alpine 3D use the same totals and viewport; native 3D remains the credential-free web renderer. Scenery is illustrative. Crew retains shared progress, standings, members, invitations and existing sessions; no feed or recording flow is added.
 
 ## Information architecture
 

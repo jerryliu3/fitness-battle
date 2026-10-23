@@ -1,3 +1,4 @@
+import { SHELL_COLORS as clubColors } from "@fitness-battle/shared";
 import { useRef, useEffect } from "react";
 import { View, Text, StyleSheet } from "react-native";
 import WebView from "react-native-webview";
@@ -106,8 +107,8 @@ const styles = StyleSheet.create({
     height: 520,
     borderRadius: 20,
     overflow: "hidden",
-    backgroundColor: "#eef0e9",
+    backgroundColor: clubColors.soft,
   },
-  web: { flex: 1, backgroundColor: "#eef0e9" },
-  caption: { fontSize: 10, color: "#616c63", padding: 9, textAlign: "center" },
+  web: { flex: 1, backgroundColor: clubColors.soft },
+  caption: { fontSize: 10, color: clubColors.muted, padding: 9, textAlign: "center" },
 });

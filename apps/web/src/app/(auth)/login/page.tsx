@@ -47,7 +47,7 @@ function LoginForm() {
       <p className="fb-kicker">overtaek</p>
       <h1 className="fb-title">Sign in</h1>
       <p className="fb-copy">
-        Browse freely. Sign in when you are ready to join a board or open You.
+        Your weekly fields, training progress and crew are waiting.
         {demoMode ? " Demo mode stores your session on this device." : ""}
       </p>
       <form className="fb-stack" onSubmit={onSubmit}>

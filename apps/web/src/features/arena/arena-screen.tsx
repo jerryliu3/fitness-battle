@@ -1,9 +1,10 @@
 "use client";
+import { EventCarousel } from "@/features/club/event-carousel";
 import { useEffect, useState } from "react";
 import { motion } from "motion/react";
 import { playCue } from "@/lib/haptics";
 import { useScoreTrackLens } from "@/lib/score-track-lens";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/components/auth-context";
 import { useCompete } from "@/components/compete-context";
@@ -45,9 +46,11 @@ export function ArenaScreen({ tabActive = true }: { tabActive?: boolean }) {
   const { state, dispatch, loadStatus, standingsStale } = useCompete();
   const { user } = useAuth();
   const router = useRouter();
+  const requestedEvent=useSearchParams().get("event");
   const [authOpen, setAuthOpen] = useState(false);
   const [register, setRegister] = useState(false);
   const [selection, setSelection] = useState<{account:string; sport:SportId|"sleep"}|null>(null);
+  useEffect(()=>{if(tabActive&&requestedEvent&&SPORTS.some(s=>s.id===requestedEvent))setSelection({account:user?.id??"guest",sport:requestedEvent as SportId});},[requestedEvent,user?.id,tabActive]);
   const [competeWithCrew, setCompeteWithCrew] = useState(false);
   const [sport, setSport] = useState<SportId | "sleep" | null>(null);
   const [track, setTrack] = useScoreTrackLens();
@@ -187,16 +190,7 @@ export function ArenaScreen({ tabActive = true }: { tabActive?: boolean }) {
         </p>
       ) : null}
 
-      {state.periodResults.length ? (
-        <Link className="fb-btn-ghost" href="/arena?results=latest">
-          Latest week results ↗
-        </Link>
-      ) : null}
-      <div className="focus-registration-tabs focus-crew-tabs" role="group" aria-label="Registered sports" style={{display:"flex",gap:8,overflowX:"auto",padding:"12px 0"}}>
-        {active.map(r=><button type="button" key={r.sport} className="fb-btn-ghost" aria-pressed={selectedSport===r.sport} style={{flexShrink:0,background:selectedSport===r.sport?"var(--accent-soft)":undefined}} onClick={()=>{setSelection({account,sport:r.sport});void playCue("selection");}}>{SPORTS.find(s=>s.id===r.sport)?.name}</button>)}
-        {sleepOptedIn?<button type="button" className="fb-btn-ghost" aria-pressed={selectedSport==="sleep"} style={{flexShrink:0}} onClick={()=>setSelection({account,sport:"sleep"})}>Sleep & Recovery</button>:null}
-        <button type="button" className="fb-btn-ghost" style={{flexShrink:0}} onClick={()=>{setSport(null);setRegister(true);}}>＋ Register</button>
-      </div>
+      {hasAnyRegistration ? <EventCarousel key={account} events={[...active.map(r=>({id:r.sport,label:SPORTS.find(s=>s.id===r.sport)!.name})),...(sleepOptedIn?[{id:"sleep",label:"Sleep & Recovery"}]:[])]} value={selectedSport!} onChange={id=>{setSelection({account,sport:id as SportId|"sleep"});void playCue("selection");}} onRegister={()=>{setSport(null);setRegister(true);}}>
       {selectedSport && selectedSport !== "sleep" ? (
         <FieldStage key={`${account}:${selectedSport}:${state.units}`} tabActive={tabActive}
           sportTitle={SPORTS.find(s=>s.id===selectedSport)?.name}
@@ -210,6 +204,13 @@ export function ArenaScreen({ tabActive = true }: { tabActive?: boolean }) {
           leaveLabel={sleep.renews?"Stop after this week":"Keep playing next week"}/>
       ) : <section className="focus-card focus-empty"><h2>Your next chapter starts here.</h2><p className="fb-copy">Register for an event to open your field.</p></section>}
 
+      </EventCarousel> : <section className="focus-card focus-empty"><h2>Your next chapter starts here.</h2><p className="fb-copy">Register for an event to open your field.</p><button type="button" className="fb-btn" onClick={()=>setRegister(true)}>Explore events</button></section>}
+
+      {state.periodResults.length ? (
+        <Link className="fb-btn-ghost" href="/arena?results=latest">
+          Latest week results ↗
+        </Link>
+      ) : null}
       <section className="focus-card focus-coming-soon">
         <p className="fb-kicker">Coming soon</p>
         <h2>1v1 Head-to-Head</h2>

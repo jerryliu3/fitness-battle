@@ -345,22 +345,14 @@ export function CrewPanel() {
           </div>
           <section
             className="focus-crew-hero"
-            role="button"
-            tabIndex={0}
-            onClick={() => setPanel("members")}
-            onKeyDown={(event) => {
-              if (event.key === "Enter" || event.key === " ") {
-                event.preventDefault();
-                setPanel("members");
-              }
-            }}
           >
+            <img className="club-landscape" src="/club/alpine-trail.jpg" alt=""/>
             <p className="fb-kicker">
               {isSolo
                 ? "Solo circle · 1 member"
                 : `Your people · ${memberCountLabel}`}
             </p>
-            <h2>{crew.name}</h2>
+            <h2><button type="button" className="club-crew-name" onClick={()=>setPanel("members")} aria-label={`View ${crew.name} members`}>{crew.name}</button></h2>
             <p>Different paces. Same direction.</p>
             <div className="focus-row">
               <div className="focus-avatar-stack">

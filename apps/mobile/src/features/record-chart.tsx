@@ -1,3 +1,4 @@
+import { SHELL_COLORS as clubColors } from "@fitness-battle/shared";
 import { View, Text } from "react-native";
 import Svg, { Circle, G, Line, Path, Text as SvgText } from "react-native-svg";
 import {
@@ -41,20 +42,20 @@ export function RecordChart({
               x2={chart.right}
               y1={t.y}
               y2={t.y}
-              stroke="#e0e5dc"
+              stroke={clubColors.line}
             />
             <SvgText
               x={chart.left - 8}
               y={t.y + 4}
               textAnchor="end"
-              fill="#616c63"
+              fill={clubColors.muted}
               fontSize={10}
             >
               {formatClockTime(t.seconds)}
             </SvgText>
           </G>
         ))}
-        <Path d={chart.path} fill="none" stroke="#282f2c" strokeWidth={2} />
+        <Path d={chart.path} fill="none" stroke={clubColors.ink} strokeWidth={2} />
         {chart.points.map((p) => (
           <G
             key={p.activityId}
@@ -66,8 +67,8 @@ export function RecordChart({
               cx={p.x}
               cy={p.y}
               r={selected === p.activityId ? 6 : 4}
-              fill={selected === p.activityId ? "#282f2c" : "#fff"}
-              stroke="#282f2c"
+              fill={selected === p.activityId ? clubColors.ink : "#fff"}
+              stroke={clubColors.ink}
               strokeWidth={2}
             />
           </G>
@@ -75,7 +76,7 @@ export function RecordChart({
         <SvgText
           x={chart.left}
           y={chart.height - 8}
-          fill="#616c63"
+          fill={clubColors.muted}
           fontSize={10}
         >
           {date(chart.start)}
@@ -84,7 +85,7 @@ export function RecordChart({
           x={chart.right}
           y={chart.height - 8}
           textAnchor="end"
-          fill="#616c63"
+          fill={clubColors.muted}
           fontSize={10}
         >
           {date(now.toISOString())}

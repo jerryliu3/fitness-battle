@@ -7,6 +7,9 @@ import { useCompete } from "@/components/compete-context";
 import { NotificationSettings } from "@/components/notification-settings";
 import { requestAccountPush } from "@/lib/request-push";
 import type { SyncIdentity } from "@/lib/push-notifications";
+import { Achievements } from "@/features/club/achievements";
+import { ProgressHub } from "@/features/club/progress-hub";
+import { WeekRecap } from "@/features/club/week-recap";
 import { TrainingHistory } from "@/features/progress/training-history";
 import { WeekRecords } from "@/features/split/components/athlete-card";
 import { AthleteOverview } from "@/features/focus/athlete-overview";
@@ -1017,7 +1020,7 @@ function YouContent({ surface }: { surface: "progress" | "athlete" }) {
     <>
     <div className="focus-athlete" ref={overviewRef} inert={Boolean(panel) || settingsPresent}>
       {surface === "progress" ? (
-        <>
+        <ProgressHub overview={<><TrainingHistory state={state}><Achievements state={state}/></TrainingHistory><WeekRecap state={state}/></>} effort={<>
           <AthleteOverview
             state={state}
             email={user?.email}
@@ -1030,8 +1033,7 @@ function YouContent({ surface }: { surface: "progress" | "athlete" }) {
             fieldSize={board.rows.length}
             units={state.units}
           />
-          <TrainingHistory state={state} />
-          {state.periodResults.length ? <Link className="fb-btn-line" href="/arena?results=latest">Latest week results ↗</Link> : null}
+        </>} history={<>
           <SeasonHistory
             results={state.periodResults}
             primary={state.primary}
@@ -1047,7 +1049,7 @@ function YouContent({ surface }: { surface: "progress" | "athlete" }) {
               </div>
             </details>
           )}
-        </>
+        </>}/>
       ) : user ? (
         <>
       <AthleteOverview

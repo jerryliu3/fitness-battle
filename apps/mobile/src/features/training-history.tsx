@@ -1,5 +1,5 @@
 import { TrainingAtlas } from "./training-atlas";
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { RecordChart } from "./record-chart";
 import { Pressable, ScrollView, Text, View } from "react-native";
 import {
@@ -18,7 +18,7 @@ const date = (v: string) =>
     day: "numeric",
     timeZone: APP_TIMEZONE,
   });
-export function TrainingHistory({ state }: { state: CompeteState }) {
+export function TrainingHistory({ state, children }: { state: CompeteState; children?: ReactNode }) {
   const [distance,setDistance]=useState(""),[receipt,setReceipt]=useState<string|null>(null);
   const now=competeNow(state);
   const records = personalRecordHistory(state, now),
@@ -41,6 +41,7 @@ export function TrainingHistory({ state }: { state: CompeteState }) {
   return (
     <>
       <TrainingAtlas state={state} />
+      {children}
       {active && latest && inspected ? (
         <View style={f.card}>
           <Text style={f.h2}>Personal records</Text>

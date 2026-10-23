@@ -1,3 +1,10 @@
+import { LatestActivity } from "../../src/features/club-latest-activity";
+import type { Activity } from "@fitness-battle/shared";
+import { WeekRecap } from "../../src/features/club-week-recap";
+import { RivalCard } from "../../src/features/club-rival-card";
+import { EffortRail } from "../../src/features/effort-rail";
+import { ClubWelcome } from "../../src/features/club-welcome";
+import { SHELL_COLORS as c } from "../../src/theme";
 import {
   APP_TIMEZONE,
   buildTodayRoute,
@@ -9,9 +16,9 @@ import {
   primaryFreezePeriodStart,
   weeklyPeriodBounds,
 } from "@fitness-battle/shared";
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useFocusEffect } from "expo-router";
-import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Platform, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Svg, {
   Circle,
@@ -27,11 +34,14 @@ import { SessionStage } from "../../src/features/session-stage";
 import { HomeActivityActions } from "../../src/features/home-activity-actions";
 import { Journey } from "../../src/features/journey";
 import { useCompeteStore } from "../../src/lib/compete-store";
-import { FocusSheet, f } from "../../src/ui/focus";
+import { FocusDisclosure, FocusSheet, f } from "../../src/ui/focus";
 export default function Home() {
-  const { state, dispatch } = useCompeteStore();
+  const { state, dispatch, accountKey } = useCompeteStore();
+  const [removed,setRemoved]=useState<Activity|null>(null);
+  const [latest,setLatest]=useState<Activity|null>(null);
   const [expanded, setExpanded] = useState<"suggestion" | null>(null);
-  useFocusEffect(useCallback(()=>()=>setExpanded(null),[]));
+  useEffect(()=>{setLatest(null);setRemoved(null);},[accountKey]);
+  useFocusEffect(useCallback(()=>()=>{setExpanded(null);setLatest(null);},[]));
   if (!state)
     return (
       <SafeAreaView style={f.safe}>
@@ -113,13 +123,6 @@ export default function Home() {
       prevRunningSec += daySec;
       prevCumulativeHours.push(Number((prevRunningSec / 3600).toFixed(2)));
     }
-  } else if (prevPeriodResult && prevPeriodResult.movingSec > 0) {
-    const totalPrevHours = prevPeriodResult.movingSec / 3600;
-    for (let i = 0; i < 7; i++) {
-      prevCumulativeHours.push(
-        Number(((totalPrevHours * (i + 1)) / 7).toFixed(2)),
-      );
-    }
   } else {
     for (let i = 0; i < 7; i++) {
       prevCumulativeHours.push(0);
@@ -185,6 +188,8 @@ export default function Home() {
           contentContainerStyle={s.homeOverlayContent}
           showsVerticalScrollIndicator={false}
         >
+          <ClubWelcome state={state} />
+          {removed?<View style={f.row}><Text accessibilityLiveRegion="polite" style={f.copy}>Session removed.</Text><Pressable accessibilityRole="button" onPress={()=>{dispatch({type:"set-disposition",activityId:removed.id,disposition:removed.disposition});setRemoved(null);}} style={{minHeight:44,justifyContent:"center"}}><Text style={f.rowTitle}>Undo</Text></Pressable></View>:null}
           {state.frozenPeriods.includes(primaryFreezePeriodStart(state)) ? (
             <Text style={f.copy}>
               ❄ Week frozen · Your effort score is protected through next
@@ -215,9 +220,9 @@ export default function Home() {
             <View style={s.chartWrap}>
               <Svg
                 width="100%"
-                height={180}
+                height={130}
                 viewBox={`0 0 ${chartW} 120`}
-                accessible
+                accessible={Platform.OS==="web"?undefined:true}
                 accessibilityLabel={`Cumulative hours: ${currTotalHours === 0 ? "0 hours" : `${currTotalHours.toFixed(1)} hrs`} this week compared to ${prevTotalHours.toFixed(1)} hrs last week`}
               >
                 <Defs>
@@ -228,8 +233,8 @@ export default function Home() {
                     x2="0"
                     y2="1"
                   >
-                    <Stop offset="0" stopColor="#f1c75b" stopOpacity="0.4" />
-                    <Stop offset="1" stopColor="#f1c75b" stopOpacity="0.0" />
+                    <Stop offset="0" stopColor={c.tennis} stopOpacity="0.4" />
+                    <Stop offset="1" stopColor={c.tennis} stopOpacity="0.0" />
                   </LinearGradient>
                 </Defs>
 
@@ -239,7 +244,7 @@ export default function Home() {
                   y={yTop + 3}
                   textAnchor="end"
                   fontSize="9"
-                  fill="#616c63"
+                  fill={c.muted}
                   fontWeight="500"
                 >
                   {`${yMax}h`}
@@ -249,7 +254,7 @@ export default function Home() {
                   y1={yTop}
                   x2={xEnd}
                   y2={yTop}
-                  stroke="#e0e5dc"
+                  stroke={c.line}
                   strokeDasharray="3 3"
                 />
 
@@ -258,7 +263,7 @@ export default function Home() {
                   y={yMidPos + 3}
                   textAnchor="end"
                   fontSize="9"
-                  fill="#616c63"
+                  fill={c.muted}
                   fontWeight="500"
                 >
                   {`${yMid}h`}
@@ -268,7 +273,7 @@ export default function Home() {
                   y1={yMidPos}
                   x2={xEnd}
                   y2={yMidPos}
-                  stroke="#e0e5dc"
+                  stroke={c.line}
                   strokeDasharray="3 3"
                 />
 
@@ -277,7 +282,7 @@ export default function Home() {
                   y={yBottom + 3}
                   textAnchor="end"
                   fontSize="9"
-                  fill="#616c63"
+                  fill={c.muted}
                   fontWeight="500"
                 >
                   0h
@@ -287,14 +292,14 @@ export default function Home() {
                   y1={yBottom}
                   x2={xEnd}
                   y2={yBottom}
-                  stroke="#e0e5dc"
+                  stroke={c.line}
                 />
 
                 {/* Previous week line */}
                 <Polyline
                   points={prevPoints}
                   fill="none"
-                  stroke="#819486"
+                  stroke={c.secondary}
                   strokeWidth={1.8}
                   strokeDasharray="4 4"
                 />
@@ -304,7 +309,7 @@ export default function Home() {
                 <Polyline
                   points={currLinePoints}
                   fill="none"
-                  stroke="#f1c75b"
+                  stroke={c.tennis}
                   strokeWidth={2.8}
                   strokeLinecap="round"
                   strokeLinejoin="round"
@@ -316,14 +321,14 @@ export default function Home() {
                   cy={currLastY}
                   r={6.5}
                   fill="none"
-                  stroke="#f1c75b"
+                  stroke={c.tennis}
                   strokeWidth={2}
                 />
                 <Circle
                   cx={currPreciseX}
                   cy={currLastY}
                   r={3.5}
-                  fill="#f1c75b"
+                  fill={c.tennis}
                 />
 
                 {/* Direct on-chart label: This week over indicator */}
@@ -333,7 +338,7 @@ export default function Home() {
                   textAnchor="middle"
                   fontSize="9"
                   fontWeight="700"
-                  fill="#282f2c"
+                  fill={c.ink}
                 >
                   This week
                 </SvgText>
@@ -350,7 +355,7 @@ export default function Home() {
                   textAnchor="end"
                   fontSize="9"
                   fontWeight="600"
-                  fill="#616c63"
+                  fill={c.muted}
                 >
                   Last week
                 </SvgText>
@@ -367,7 +372,7 @@ export default function Home() {
                       textAnchor="middle"
                       fontSize="10"
                       fontWeight={isToday ? "700" : "500"}
-                      fill={isToday ? "#282f2c" : "#616c63"}
+                      fill={isToday ? c.ink : c.muted}
                     >
                       {lbl}
                     </SvgText>
@@ -376,6 +381,11 @@ export default function Home() {
               </Svg>
             </View>
           </View>
+          <RivalCard state={state} />
+          <LatestActivity state={state} onOpen={setLatest} />
+          <EffortRail />
+          <WeekRecap state={state} />
+          <FocusDisclosure title="Your activity journey">
           <View style={s.homeJourneyLayer} pointerEvents="box-none">
             <Journey
               activities={counted}
@@ -383,8 +393,10 @@ export default function Home() {
               onToday={() => setExpanded("suggestion")}
             />
           </View>
+          </FocusDisclosure>
         </ScrollView>
       </View>
+      <FocusSheet open={Boolean(latest)} title="Your activity" onClose={()=>setLatest(null)}>{latest?<SessionStage state={state} activities={[latest]} onRemove={id=>{setRemoved(latest);dispatch({type:"set-disposition",activityId:id,disposition:"excluded"});setLatest(null);}}/>:null}</FocusSheet>
       <FocusSheet
         open={expanded === "suggestion"}
         title="Today"
@@ -413,11 +425,11 @@ const s = StyleSheet.create({
     gap: 18,
   },
   statsCard: {
-    backgroundColor: "#ffffff",
+    backgroundColor: c.card,
     borderWidth: 1,
-    borderColor: "#e0e5dc",
-    borderBottomWidth: 3,
-    borderRadius: 16,
+    borderColor: c.line,
+    borderBottomWidth: 1,
+    borderRadius: 20,
     padding: 18,
     gap: 12,
     marginBottom: 8,
@@ -425,7 +437,7 @@ const s = StyleSheet.create({
   statsMain: {
     fontFamily: "DMSans_700Bold",
     fontSize: 24,
-    color: "#282f2c",
+    color: c.ink,
     letterSpacing: -0.4,
   },
   statsHeader: {
@@ -442,12 +454,12 @@ const s = StyleSheet.create({
   statsSessionCount: {
     fontFamily: "DMSans_500Medium",
     fontSize: 13,
-    color: "#616c63",
+    color: c.muted,
   },
   chartWrap: {
     width: "100%",
     borderTopWidth: 1,
-    borderTopColor: "#e0e5dc",
+    borderTopColor: c.line,
     paddingTop: 12,
   },
 });

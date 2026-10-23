@@ -198,7 +198,7 @@ export function LaneTrack({
             accessibilityLabel={`Vertical lanes in ${unit}, centered on your distance`}
           >
             {groundPaint}
-            {!course.oval && lw >= 48 && ordered.map((l, i) => <SvgText key={l.id} x={course.point(v.center, i).x} y={36} textAnchor="middle" fontSize={11} fontWeight={l.you ? "bold" : "600"} fill={l.you ? "#282f2c" : "#616c63"}>{`${ordinalPlace(1+live.filter(peer=>peer.value>(live.find(peer=>peer.id===l.id)?.value??0)+.000001).length)}${l.you?" · You":""}`}</SvgText>)}
+            {!course.oval && lw >= 48 && ordered.map((l, i) => <SvgText key={l.id} x={course.point(v.center, i).x} y={36} textAnchor="middle" fontSize={11} fontWeight={l.you ? "bold" : "600"} fill={l.you ? c.ink : c.muted}>{`${ordinalPlace(1+live.filter(peer=>peer.value>(live.find(peer=>peer.id===l.id)?.value??0)+.000001).length)}${l.you?" · You":""}`}</SvgText>)}
             {ordered.map((l, i) => {
               const value =
                 animating && overtakeFrame
@@ -231,7 +231,7 @@ export function LaneTrack({
                     <Path
                       d={`M ${-30} ${-4} l -8 6 l 5 2 l -5 7 M ${30} ${-6} l 8 6 l -5 2 l 5 7`}
                       fill="none"
-                      stroke="#f1c75b"
+                      stroke={c.tennis}
                       strokeWidth={2}
                       strokeLinecap="round"
                       opacity={charging}
@@ -243,7 +243,7 @@ export function LaneTrack({
                       cy={0}
                       r={19 + effect.ripple * 24}
                       fill="none"
-                      stroke="#f1c75b"
+                      stroke={c.tennis}
                       strokeWidth={3 - effect.ripple * 2}
                       opacity={1 - effect.ripple}
                     />
@@ -254,7 +254,7 @@ export function LaneTrack({
                       cy={0}
                       r={18}
                       fill="white"
-                      stroke="#616c63"
+                      stroke={c.muted}
                       strokeDasharray="3 3"
                     />
                   ) : (
@@ -298,8 +298,8 @@ export function LaneTrack({
                 </LaneRacerTarget>
               );
             })}
-            {ghost && (() => { const p = course.point(ghost.values[index] ?? 0, ordered.findIndex(l => l.you), 18 * course.markerScale, true); return <G onPress={() => onSelect(ghost)}><Circle cx={p.x} cy={p.y} r={13 * course.markerScale} fill="#ffffffcc" stroke="#616c63" strokeDasharray="3 3"/></G>; })()}
-            <SvgText x={18} y={522} fontSize={9} fill="#616c63">
+            {ghost && (() => { const p = course.point(ghost.values[index] ?? 0, ordered.findIndex(l => l.you), 18 * course.markerScale, true); return <G onPress={() => onSelect(ghost)}><Circle cx={p.x} cy={p.y} r={13 * course.markerScale} fill="#ffffffcc" stroke={c.muted} strokeDasharray="3 3"/></G>; })()}
+            <SvgText x={18} y={522} fontSize={9} fill={c.muted}>
               {course.oval ? `${fieldLap(overtakeFrame?.youValue ?? me?.values[index] ?? 0, unit).laps} laps · ${(overtakeFrame?.youValue ?? me?.values[index] ?? 0).toFixed(1)} ${unit} total` : exploring
                 ? "Drag vertically to explore · Done to scroll page"
                 : "Swipe across peers · tap an athlete to center"}

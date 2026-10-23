@@ -1,3 +1,4 @@
+vi.mock("./club-art",()=>({clubIcon:1}));
 import { createElement } from "react";
 import { act, create, type ReactTestRenderer } from "react-test-renderer";
 import { afterEach, describe, expect, it, vi } from "vitest";
@@ -10,6 +11,7 @@ const mock = vi.hoisted(() => ({
 vi.mock("react-native", () => ({
   StyleSheet: { create: (styles: unknown) => styles },
   Image: "Image",
+  Platform:{OS:"ios"},
   Pressable: "Pressable",
   Text: "Text",
   View: "View",

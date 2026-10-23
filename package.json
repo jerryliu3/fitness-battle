@@ -22,5 +22,11 @@
   },
   "devDependencies": {
     "typescript": "^5.9.2"
+  },
+  "pnpm": {
+    "patchedDependencies": {
+      "react-native-health@1.19.0": "patches/react-native-health@1.19.0.patch",
+      "expo-modules-jsi@57.1.2": "patches/expo-modules-jsi@57.1.2.patch"
+    }
   }
 }

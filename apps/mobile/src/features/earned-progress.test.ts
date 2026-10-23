@@ -10,7 +10,7 @@ vi.mock("react-native",()=>({
 vi.mock("react-native-svg",()=>({default:"Svg",G:"G",Path:"Path",Text:"SvgText"}));
 vi.mock("expo-router",()=>({useRouter:()=>({navigate:mock.navigate})}));
 vi.mock("../lib/compete-store",()=>({useCompeteStore:()=>({state:mock.state,accountKey:mock.account,canWrite:true,saveError:null})}));
-vi.mock("../ui/focus",()=>({FocusButton:"FocusButton",FocusSegments:"FocusSegments",f:{}}));
+vi.mock("../ui/focus",()=>({FocusButton:"FocusButton",FocusDisclosure:"Disclosure",FocusSegments:"FocusSegments",f:{}}));
 vi.mock("../ui/mascot/animated-ember",()=>({AnimatedEmber:"Ember"}));
 vi.mock("../ui/use-reduced-motion",()=>({useReducedMotion:()=>true}));
 vi.mock("../ui/field-course",()=>({drawFieldNode:()=>null}));
@@ -32,7 +32,7 @@ describe("native earned progress flows",()=>{
   await act(async()=>renderer.update(createElement(EffortRail)));
   expect(text()).toContain("+2");expect(JSON.stringify(renderer.toJSON())).not.toContain("✦");
   mock.account="two";await act(async()=>renderer.update(createElement(EffortRail)));expect(text()).not.toContain("+2");
-  await act(async()=>renderer.root.findByType("Pressable" as never).props.onPress());expect(mock.navigate).toHaveBeenCalledWith("/you");
+  await act(async()=>renderer.root.findByType("Pressable" as never).props.onPress());expect(mock.navigate).toHaveBeenCalledWith("/you?view=effort");
  });
  it("leads with hours across multiple sports and requires confirmation before removing one session",async()=>{
   const remove=vi.fn();await act(async()=>{renderer=create(createElement(SessionStage,{state:mock.state!,activities:[recorded("run",3600),recorded("strength",1800,"strength")],onRemove:remove}));});

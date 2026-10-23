@@ -3,7 +3,7 @@
 .phone-frame {
   height: 100dvh;
   width: 100%;
-  background: #fafaf7;
+  background: var(--paper);
 }
 
 .focus-shell-header {
@@ -68,17 +68,17 @@
 }
 
 .phone-shell {
-  --ink: #282f2c;
-  --muted: #616c63;
-  --line: #e0e5dc;
-  --paper: #fafaf7;
+  --ink: #142b3b;
+  --muted: #637482;
+  --line: #e3e9e7;
+  --paper: #f8f9f6;
   --card: #ffffff;
-  --lime: #f1c75b;
-  --lime-deep: #deb142;
-  --accent: #282f2c;
-  --accent-soft: #eef0e9;
+  --lime: #f7c948;
+  --lime-deep: #dfb237;
+  --accent: #142b3b;
+  --accent-soft: #eef3f1;
   --green: #2f6f4e;
-  --green-soft: #eef0e9;
+  --green-soft: #eef3f1;
   --fb-radius: 16px;
   --shell-pad-x: clamp(16px, 4vw, 48px);
   width: 100%;

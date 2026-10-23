@@ -1,10 +1,11 @@
+import { EventCarousel } from "../../src/features/event-carousel";
 import {
   SPORTS,
   type CrewBoardPin,
   type SportId,
 } from "@fitness-battle/shared";
-import { useRouter } from "expo-router";
-import { useRef, useState } from "react";
+import { useGlobalSearchParams, useRouter } from "expo-router";
+import { useEffect, useRef, useState } from "react";
 import { Pressable, ScrollView, Switch, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { CompetitionField } from "../../src/features/competition-field";
@@ -36,10 +37,12 @@ export default function ArenaScreen() {
   } = useCompeteStore();
   const { user } = useAuth();
   const router = useRouter();
+  const requestedEvent=useGlobalSearchParams<{event?:string}>().event;
   const crewApi = useCrewApi();
   const [track, setTrack] = useScoreTrackLens();
   const [register, setRegister] = useState(false);
   const [selection,setSelection]=useState<{account:string;sport:SportId|"sleep"}|null>(null);
+  useEffect(()=>{if(requestedEvent&&SPORTS.some(s=>s.id===requestedEvent))setSelection({account:accountKey,sport:requestedEvent as SportId});},[requestedEvent,accountKey]);
   const [sport, setSport] = useState<SportId | null>(null);
   const [withCrew, setWithCrew] = useState(false);
   const [joinBusy, setJoinBusy] = useState(false);
@@ -140,13 +143,10 @@ export default function ArenaScreen() {
           </Text>
         ) : null}
         <RoundTakeover state={state} ready={canWrite} dispatch={dispatch} />
-        {state.periodResults.length ? <FocusButton label="Latest week results ↗" secondary onPress={() => router.push("/arena?results=latest")} /> : null}
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{gap:8}} accessibilityLabel="Registered sports">
-          {active.map(r=><Pressable key={r.sport} accessibilityRole="button" accessibilityLabel={`Show ${SPORTS.find(s=>s.id===r.sport)?.name}`} accessibilityState={{selected:selectedSport===r.sport}} style={[f.chip,selectedSport===r.sport&&f.chipActive]} onPress={()=>{setSelection({account:accountKey,sport:r.sport});void playCue("selection");}}><Text style={f.rowTitle}>{SPORTS.find(s=>s.id===r.sport)?.name}</Text></Pressable>)}
-          {sleepOptedIn?<Pressable accessibilityRole="button" accessibilityLabel="Show Sleep & Recovery" accessibilityState={{selected:selectedSport==="sleep"}} style={[f.chip,selectedSport==="sleep"&&f.chipActive]} onPress={()=>setSelection({account:accountKey,sport:"sleep"})}><Text style={f.rowTitle}>Sleep & Recovery</Text></Pressable>:null}
-          <FocusButton label="＋ Register" secondary onPress={openRegistration}/>
-        </ScrollView>
+        {hasRegistration?<EventCarousel key={accountKey} events={[...active.map(r=>({id:r.sport,label:SPORTS.find(s=>s.id===r.sport)!.name})),...(sleepOptedIn?[{id:"sleep",label:"Sleep & Recovery"}]:[])]} value={selectedSport!} onChange={id=>{setSelection({account:accountKey,sport:id as SportId|"sleep"});void playCue("selection");}} onRegister={openRegistration}>
         {selectedSport&&selectedSport!=="sleep"?<CompetitionField key={`${accountKey}:${selectedSport}:${state.units}:${track}`} sport={selectedSport} track={track}/>:selectedSport==="sleep"?<SleepPanel state={state} dispatch={dispatch}/>:<View style={f.card}><Text style={f.title}>Your next chapter starts here.</Text><Text style={f.copy}>Register for an event to open your field.</Text></View>}
+        </EventCarousel>:<View style={f.card}><Text style={f.title}>Your next chapter starts here.</Text><Text style={f.copy}>Register for an event to open your field.</Text><FocusButton label="Explore events" onPress={openRegistration}/></View>}
+        {state.periodResults.length ? <FocusButton label="Latest week results ↗" secondary onPress={() => router.push("/arena?results=latest")} /> : null}
         <View style={[f.card, { opacity: 0.72 }]}>
           <Text style={f.kicker}>Coming soon</Text>
           <Text style={f.h2}>1v1 Head-to-Head</Text>

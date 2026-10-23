@@ -1,7 +1,12 @@
 "use client";
+import { LatestActivity } from "@/features/club/latest-activity";
+import { WeekRecap } from "@/features/club/week-recap";
 import { useEffect, useLayoutEffect, useRef, useState, type Ref } from "react";
 import { Sheet } from "@/ui/sheet";
 import { SessionStage } from "./session-stage";
+import { RivalCard } from "@/features/club/rival-card";
+import { ClubWelcome } from "@/features/club/welcome";
+import { EffortRail } from "@/features/progress/effort-rail";
 import { ActivityActions } from "./activity-actions";
 import { newJourneyStops } from "./journey-reveal";
 import { usePathname } from "next/navigation";
@@ -373,13 +378,6 @@ export function TodayScreen() {
       prevRunningSec += daySec;
       prevCumulativeHours.push(Number((prevRunningSec / 3600).toFixed(2)));
     }
-  } else if (prevPeriodResult && prevPeriodResult.movingSec > 0) {
-    const totalPrevHours = prevPeriodResult.movingSec / 3600;
-    for (let i = 0; i < 7; i++) {
-      prevCumulativeHours.push(
-        Number(((totalPrevHours * (i + 1)) / 7).toFixed(2)),
-      );
-    }
   } else {
     for (let i = 0; i < 7; i++) {
       prevCumulativeHours.push(0);
@@ -503,6 +501,7 @@ export function TodayScreen() {
         <SessionStage state={state} activities={detailActivities} suggestion={route.suggestion} actions={<ActivityActions />} onRemove={activityId => { setRemoved(detailActivities.find(a=>a.id===activityId)??null); dispatch({type:"set-disposition",activityId,disposition:"excluded"}); if(detailActivities.length <= 1)closeSession(); }}/>
       </Sheet>
       <div className="focus-home-overlay">
+      <ClubWelcome state={state} />
       {removed ? <div className="fb-note" role="status">Session removed. <button type="button" className="fb-btn-ghost" onClick={() => { dispatch({type:"set-disposition", activityId:removed.id, disposition:removed.disposition}); setRemoved(null); }}>Undo</button></div> : null}
       {frozen && (
         <div className="fb-pill" style={{ marginBottom: "16px" }}>
@@ -689,6 +688,11 @@ export function TodayScreen() {
         </div>
       </section>
       </div>
+      <RivalCard state={state} />
+      <LatestActivity state={state} onOpen={activity=>openSession(activity,"full")} />
+      <EffortRail />
+      <WeekRecap state={state} />
+      <details className="club-home-journey"><summary>Your activity journey <span>＋</span></summary>
       <div className="focus-home-journey-layer">
       <JourneyTrail
         stopCount={journeyStops.length}
@@ -943,6 +947,7 @@ export function TodayScreen() {
         }
       </JourneyTrail>
       </div>
+      </details>
     </div>
   );
 }

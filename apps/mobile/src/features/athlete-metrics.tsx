@@ -1,3 +1,4 @@
+import { SHELL_COLORS as clubColors } from "@fitness-battle/shared";
 import {
   countsOnTrack,
   distanceUnitLabel,
@@ -71,7 +72,7 @@ export function AthleteMetrics({
           <View
             style={[
               f.card,
-              { backgroundColor: "#eef0e9", borderColor: "#e0e5dc" },
+              { backgroundColor: clubColors.soft, borderColor: clubColors.line },
             ]}
             accessibilityLabel="Lifetime totals"
           >
