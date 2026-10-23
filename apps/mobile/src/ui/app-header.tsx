@@ -3,7 +3,6 @@ import { Image, Pressable, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Svg, { Path } from "react-native-svg";
 import { PERSON_ICON_PATH } from "@fitness-battle/shared";
-import { EffortRail } from "../features/effort-rail";
 import { useCompeteStore } from "../lib/compete-store";
 import { isAthleteSettingsPath } from "../lib/navigation";
 import { SHELL_COLORS as c } from "../theme";
@@ -22,8 +21,7 @@ export function AppHeader() {
           onPress={() => router.navigate("/today")}
           style={s.brand}
         >
-          <Text style={s.wordmark}>OVERTAEK</Text>
-          <Text style={s.tagline}>A little further</Text>
+          <Text style={s.wordmark}>Overtaek</Text>
         </Pressable>
         <Pressable
           accessibilityRole="button"
@@ -41,7 +39,6 @@ export function AppHeader() {
           )}
         </Pressable>
       </View>
-      <EffortRail />
     </SafeAreaView>
   );
 }
@@ -59,7 +56,7 @@ const s = StyleSheet.create({
   brand: { minHeight: 44, justifyContent: "center" },
   wordmark: {
     fontFamily: "DMSans_700Bold",
-    fontSize: 19,
+    fontSize: 22,
     letterSpacing: -0.6,
     color: c.ink,
   },
