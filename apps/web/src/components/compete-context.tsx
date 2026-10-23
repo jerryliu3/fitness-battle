@@ -180,7 +180,7 @@ function writeLocal(userId: string | null, state: CompeteState, savedAt: string)
 }
 
 export function CompeteProvider({ children }: { children: ReactNode }) {
-  const { user, loading, demoMode } = useAuth();
+  const { user, loading, offlineMode } = useAuth();
   const userId = user?.id ?? null;
   const [state, setState] = useState<CompeteState | null>(null);
   const syncReviewBlocked = useRef(false);
@@ -194,7 +194,7 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
   const [fieldNotice, setFieldNotice] = useState<FieldNotice | null>(null);
   const [standingsStale, setStandingsStale] = useState(false);
   const userIdRef = useRef(userId);
-  const demoRef = useRef(demoMode || user?.mode === "demo");
+  const demoRef = useRef(offlineMode || user?.mode === "demo");
   const statusRef = useRef<LoadStatus>("loading");
   const stateRef = useRef<CompeteState | null>(null);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -213,7 +213,7 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
   const debugStepRef = useRef(0);
   const preDebugRef = useRef<{ state: CompeteState | null; status: LoadStatus } | null>(null);
   userIdRef.current = userId;
-  demoRef.current = demoMode || user?.mode === "demo";
+  demoRef.current = offlineMode || user?.mode === "demo";
 
   // Drop prior-account state before children render with the new userId.
   if (!loading && loadedFor !== userId) {
@@ -326,7 +326,7 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
     queue.current = [];
     const accountId = userId;
     let cancelled = false;
-    const signedIn = Boolean(accountId) && !(demoMode || userMode === "demo");
+    const signedIn = Boolean(accountId) && !(offlineMode || userMode === "demo");
     const local = readLocal(accountId);
 
     const settle = (chosen: CompeteState, savedAt: string, status: LoadStatus) => {
@@ -399,7 +399,7 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
     return () => {
       cancelled = true;
     };
-  }, [attempt, demoMode, loading, publish, userId, userDisplayName, userEmail, userMode]);
+  }, [attempt, offlineMode, loading, publish, userId, userDisplayName, userEmail, userMode]);
 
   useEffect(() => {
     if (!state || loadStatus === "loading" || loadStatus === "failed") return;
@@ -502,7 +502,7 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
   }, [publish]);
 
   useEffect(() => {
-    if (loading || !userId || demoMode || user?.mode === "demo") return;
+    if (loading || !userId || offlineMode || user?.mode === "demo") return;
     const kick = () => {
       if (document.visibilityState === "hidden") return;
       void refresh();
@@ -513,7 +513,7 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
       document.removeEventListener("visibilitychange", kick);
       window.removeEventListener("online", kick);
     };
-  }, [demoMode, loading, refresh, user?.mode, userId]);
+  }, [offlineMode, loading, refresh, user?.mode, userId]);
 
   const dismissFieldNotice = useCallback(() => {
     const accountKey = userIdRef.current ?? "guest";

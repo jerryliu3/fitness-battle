@@ -1,4 +1,4 @@
-import { serverEnv, webEnv } from "@/lib/env";
+import { serverEnv } from "@/lib/env";
 import { trackerRedirect } from "@/lib/oauth-callback";
 import { resolveSessionUserId } from "@/lib/auth/request-user";
 import { getServerFitnessProvider, type OAuthProviderId } from "@/lib/fitness";
@@ -22,7 +22,7 @@ export function oauthCodeCallback(providerId: OAuthProviderId) {
     const code = url.searchParams.get("code");
     const state = url.searchParams.get("state");
     const { configured } = getSupabaseConfig();
-    const liveAuth = configured && !webEnv.useDemoData;
+    const liveAuth = configured;
     if (providerId !== "whoop" && providerId !== "oura") {
       return trackerRedirect(url.origin, providerId, "error");
     }

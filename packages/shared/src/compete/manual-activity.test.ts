@@ -30,3 +30,12 @@ it("calibrates sample history using completed Eastern days near UTC midnight", (
   const latest = Math.max(...state.activities.filter((activity) => activity.source === "history").map((activity) => Date.parse(activity.startedAt)));
   expect(latest).toBeLessThan(Date.parse("2026-10-19T04:00:00Z"));
 });
+
+it("records an optional time today without advancing the account clock", () => {
+  const state = reduceCompete(freshState(new Date(now)), { ...action, startedAt: "2026-10-19T12:30:00Z" });
+  expect(state.activities.find(a => a.id === action.activityId)?.startedAt).toBe("2026-10-19T12:30:00.000Z");
+});
+it.each(["2026-10-19T16:00:00Z", "2026-10-18T12:00:00Z", "bad-date"])("rejects future or other-day manual activity time %s", startedAt => {
+  const state = freshState(new Date(now));
+  expect(reduceCompete(state, { ...action, startedAt }).activities).toEqual(state.activities);
+});

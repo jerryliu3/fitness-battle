@@ -14,14 +14,14 @@ import { useCompeteStore } from "../lib/compete-store";
 import { mobileEnv } from "../lib/env";
 import { FocusButton, f } from "../ui/focus";
 export function DataSyncActions({ provider }: { provider?: ProviderId }) {
-  const { user, accessToken, demoMode } = useAuth();
+  const { user, accessToken, offlineMode } = useAuth();
   const { state, dispatch, previewSyncReview } = useCompeteStore();
   const [busy, setBusy] = useState(false),
     [note, setNote] = useState("");
   const flight = useRef(false);
   const owner = useRef({ id: user?.id });
   if (owner.current.id !== user?.id) owner.current = { id: user?.id };
-  const live = !!user && !demoMode && user.mode !== "demo";
+  const live = !!user && !offlineMode && user.mode !== "demo";
   const mounted = useRef(true);
   useEffect(() => {
     mounted.current = true;

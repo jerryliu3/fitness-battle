@@ -64,7 +64,7 @@ export default function AthleteScreen() {
   const {
     user,
     loading: authLoading,
-    demoMode,
+    offlineMode,
     accessToken,
     signIn,
     signUp,
@@ -198,7 +198,7 @@ export default function AthleteScreen() {
     setSyncBusy(true);
     setNote(null);
     try {
-      const localOnly = user.mode === "demo" || demoMode;
+      const localOnly = user.mode === "demo" || offlineMode;
       const ingestAuth = {
         localOnly,
         getAccessToken: async () => ({
@@ -243,10 +243,10 @@ export default function AthleteScreen() {
       setNote("Sign in above to connect cloud trackers.");
       return;
     }
-    if (user.mode === "demo" || demoMode || !accessToken) {
+    if (user.mode === "demo" || offlineMode || !accessToken) {
       dispatch({ type: "link", provider: providerId });
       setNote(
-        user.mode === "demo" || demoMode
+        user.mode === "demo" || offlineMode
           ? "Demo account — cloud trackers need a live signed-in account."
           : "Session expired. Sign out and sign in again to connect trackers.",
       );
@@ -302,7 +302,7 @@ export default function AthleteScreen() {
           <Text style={styles.copy}>
             Create an account or sign in to sync Apple Health, connect trackers,
             and keep your battles on this device.
-            {demoMode ? " Demo mode stores a local account on this phone." : ""}
+            {offlineMode ? " Demo mode stores a local account on this phone." : ""}
           </Text>
 
           <View style={styles.authToggle}>
@@ -425,7 +425,7 @@ export default function AthleteScreen() {
               (row) => row.provider === provider.id,
             );
             const status =
-              link?.linked && (demoMode || user?.mode === "demo")
+              link?.linked && (offlineMode || user?.mode === "demo")
                 ? "Demo · sample data"
                 : link?.status === "connected"
                 ? "Connected"
@@ -751,7 +751,7 @@ export default function AthleteScreen() {
           state={state}
           sections="profile"
           email={account.email}
-          demoMode={demoMode}
+          offlineMode={offlineMode}
           onEdit={() => setPanel("profile")}
         />
         <View style={{ gap: 8 }}>

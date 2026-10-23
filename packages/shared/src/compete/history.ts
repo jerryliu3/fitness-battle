@@ -1,3 +1,4 @@
+import { competitionTrack } from "./sports";
 import type { PeriodResult, SportId } from "./sports";
 
 /** Keep about a year of weekly open+verified rows without unbounded growth. */
@@ -74,7 +75,7 @@ export function pendingPeriodResults(
     );
 }
 
-/** Prefer open-track rows for the primary sport in the week-complete reveal. */
+/** Prefer the configured track for the primary sport in the week-complete reveal. */
 export function primaryRevealResults(
   results: PeriodResult[],
   pendingIds: string[] | undefined,
@@ -84,13 +85,13 @@ export function primaryRevealResults(
   if (pending.length === 0) return [];
   const latestStart = pending[0]!.periodStart;
   const latestWeek = pending.filter((row) => row.periodStart === latestStart);
-  const primaryOpen = latestWeek.filter(
-    (row) => row.sport === primary && row.track === "open",
+  const primaryDefault = latestWeek.filter(
+    (row) => row.sport === primary && row.track === competitionTrack(primary),
   );
-  if (primaryOpen.length) return primaryOpen;
+  if (primaryDefault.length) return primaryDefault;
   const primaryAny = latestWeek.filter((row) => row.sport === primary);
   if (primaryAny.length) return primaryAny;
-  return latestWeek.filter((row) => row.track === "open");
+  return latestWeek.filter((row) => row.track === competitionTrack(row.sport));
 }
 
 export function formatEloDelta(before: number, after: number): string {

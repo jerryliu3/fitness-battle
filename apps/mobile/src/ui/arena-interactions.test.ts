@@ -47,7 +47,7 @@ vi.mock("expo-router", () => ({
   useRouter: () => ({ navigate: vi.fn() }),
 }));
 vi.mock("../lib/auth", () => ({
-  useAuth: () => ({ user: { id: "audit" }, demoMode: true }),
+  useAuth: () => ({ user: { id: "audit" }, offlineMode: true }),
 }));
 vi.mock("../lib/compete-store", () => ({
   useCompeteStore: () => ({

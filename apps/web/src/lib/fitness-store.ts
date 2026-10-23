@@ -7,7 +7,7 @@ import type {
   StravaStore,
   StravaTokenSet,
 } from "@fitness-battle/shared";
-import { serverEnv, webEnv } from "./env";
+import { serverEnv } from "./env";
 import { getSupabaseConfig } from "./supabase/config";
 
 const UUID_RE =
@@ -29,7 +29,7 @@ function isUuid(value: string): boolean {
 
 function serviceDb(): SupabaseClient | null {
   const { configured, supabaseUrl } = getSupabaseConfig();
-  if (!configured || webEnv.useDemoData || !serverEnv.supabaseServiceRoleKey) {
+  if (!configured || !serverEnv.supabaseServiceRoleKey) {
     return null;
   }
   return createClient(supabaseUrl, serverEnv.supabaseServiceRoleKey, {

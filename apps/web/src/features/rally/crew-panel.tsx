@@ -86,7 +86,7 @@ function isCrewErrorNote(note: string): boolean {
 }
 
 export function CrewPanel() {
-  const { user, demoMode } = useAuth();
+  const { user, offlineMode } = useAuth();
   const { state, dispatch } = useCompete();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -120,25 +120,25 @@ export function CrewPanel() {
     }
   }
   useEffect(() => {
-    if (user && !demoMode) void reload();
+    if (user && !offlineMode) void reload();
     else setData(null);
-  }, [user?.id, demoMode]);
+  }, [user?.id, offlineMode]);
 
   useEffect(() => {
     const invite = searchParams.get("invite")?.trim();
-    if (!invite || !user || demoMode) return;
+    if (!invite || !user || offlineMode) return;
     setCode(invite.toUpperCase());
     setPanel("add");
     const next = new URLSearchParams(searchParams.toString());
     next.delete("invite");
     const qs = next.toString();
     router.replace(qs ? `/field?${qs}` : "/field", { scroll: false });
-  }, [searchParams, user, demoMode, router]);
+  }, [searchParams, user, offlineMode, router]);
 
   async function write(path: string, body: object): Promise<boolean> {
     setBusy(true);
     setNote("");
-    if (demoMode) {
+    if (offlineMode) {
       setBusy(false);
       if (path !== "/rest") setPanel(null);
       if (path === "/leave") {
@@ -213,7 +213,7 @@ export function CrewPanel() {
     hasDemoCrew && crewBoard
       ? crewBoard.members.map((m) => ({
           crew_id: crewBoard.crewId,
-          user_id: demoMode && m.name === athleteName && user ? user.id : m.id,
+          user_id: offlineMode && m.name === athleteName && user ? user.id : m.id,
           display_name: m.name,
           avatar_url: m.id === user?.id ? state?.avatarUrl : m.avatarUrl,
           rest_week: null,
@@ -224,7 +224,7 @@ export function CrewPanel() {
     hasDemoCrew && crewBoard
       ? crewBoard.members.map((m) => ({
           crew_id: crewBoard.crewId,
-          user_id: demoMode && m.name === athleteName && user ? user.id : m.id,
+          user_id: offlineMode && m.name === athleteName && user ? user.id : m.id,
           activity_id: `act-${m.id}`,
           distance_m: m.distanceM ?? 0,
           moving_sec: m.movingSec ?? 0,
@@ -290,7 +290,7 @@ export function CrewPanel() {
         : soloEntries;
   const weekKey = dayKey(weeklyPeriodBounds(state ? competeNow(state) : new Date()).startsAt, APP_TIMEZONE);
   const restKey = `${user?.id}:${crew.id}`;
-  const resting = demoMode ? demoRest[restKey] === weekKey : members.find(m => m.user_id === user?.id)?.rest_week === weekKey;
+  const resting = offlineMode ? demoRest[restKey] === weekKey : members.find(m => m.user_id === user?.id)?.rest_week === weekKey;
   const unitLabel = distanceUnitLabel(state?.units);
   const sessionsMetric = crew?.format === "personal_target" || crew?.sport === "strength";
   const memberTotal = (id: string) => entries.filter(e => e.user_id === id).reduce((sum, e) => sum + Number(sessionsMetric ? e.session_count ?? 1 : e.distance_m), 0);
@@ -309,7 +309,7 @@ export function CrewPanel() {
         : `${memberNames.slice(0, 3).join(", ")} + ${memberNames.length - 3} more`;
   return (
     <>
-      {user && !demoMode && !data && (
+      {user && !offlineMode && !data && (
         <section className="focus-card">
           <p className="fb-copy">{note || "Loading your circle…"}</p>
           <button className="fb-btn-line" onClick={() => void reload()}>
@@ -318,7 +318,7 @@ export function CrewPanel() {
         </section>
       )}
 
-      {(!user || demoMode || data) && (
+      {(!user || offlineMode || data) && (
         <>
           <div className="focus-registration-tabs focus-crew-tabs">
             {crews.map((c) => (
@@ -433,7 +433,7 @@ export function CrewPanel() {
                     : "Every pace belongs here."}
                 </p>
               </section>
-              {user && !isSolo ? <CrewSessions key={`${user.id}:${crew.id}`} crewId={crew.id} userId={user.id} demo={demoMode} sport={crew.sport} /> : null}
+              {user && !isSolo ? <CrewSessions key={`${user.id}:${crew.id}`} crewId={crew.id} userId={user.id} demo={offlineMode} sport={crew.sport} /> : null}
               {user ? (
                 <>
                   <h2>Crew standings</h2>

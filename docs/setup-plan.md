@@ -80,3 +80,9 @@ Field-wide production controls require `20261020134920_admin_field_wave_controls
 The follow-up Compete scenario lab requires `20261021014247_admin_compete_scenarios.sql` and is documented in [admin-scenario-lab.md](admin-scenario-lab.md). It adds configurable activity, registration/renewal, field assignment, overtake direction, latest-results replay and generated-activity cleanup for selected database-backed athletes. Actions use service-only atomic SQL with account/field revision checks; no product clock or animation switches are introduced.
 
 The October 21 feature stack adds immediate activity score milestones, durable personal records, scheduled Crew sessions and weekly field choices. Apply all five additive migrations listed in [feature-stack-2026-10-21.md](reviews/feature-stack-2026-10-21.md) before deploying the combined web/native clients. The same document records thresholds, qualifying-record rules, RSVP/rematch behavior and final local validation. No production migration or action was executed during implementation.
+
+### October 2026 UX cleanup rollout
+
+Apply additive migration `20261023043826_crew_activity_reads.sql` before rolling out Home Crew activity reads. The endpoint reuses active membership authorization and supports both latest-per-member previews and cursor pagination. Run `supabase/tests/crew-activity-reads.sql` against a disposable migrated database to verify authorization and cursor behavior before deployment.
+
+Backend configuration now determines offline preview mode; the legacy demo-data flag does not bypass authentication in configured environments. Seeded synthetic accounts use real Supabase sessions and existing policies. Legacy local caches are backed up before account hydration and can be exported from Account. A backup error blocks the transition rather than discarding local data. Never use production sample-sync or sleep fixtures to claim a live tracker connection.

@@ -1,6 +1,6 @@
 import { countsOnTrack } from "./compete/ledger";
 import { weeklyPeriodBounds, APP_TIMEZONE } from "./period";
-import { sportById } from "./compete/sports";
+import { competitionTrack, sportById } from "./compete/sports";
 import { formatClockTime } from "./compete/pace";
 import { formatVolume } from "./compete/engine";
 import { competeNow } from "./compete/engine";
@@ -76,7 +76,7 @@ export function latestClubRecap(state: CompeteState, now = competeNow(state)) {
       (a, b) =>
         Date.parse(b.periodEnd) - Date.parse(a.periodEnd) ||
         Number(b.sport === state.primary) - Number(a.sport === state.primary) ||
-        Number(b.track === "open") - Number(a.track === "open") ||
+        Number(b.track === competitionTrack(b.sport)) - Number(a.track === competitionTrack(a.sport)) ||
         a.id.localeCompare(b.id),
     )[0];
 }
@@ -201,8 +201,12 @@ export function clubSessionMetrics(
   ];
 }
 
-/** Available lifetime activity only; future sessions are never completed effort. */
-export function clubLifetimeTotals(state:CompeteState,now=competeNow(state)) {
- const counted=state.activities.filter(a=>countsOnTrack(a,"open")&&Number.isFinite(Date.parse(a.startedAt))&&Date.parse(a.startedAt)<=now.getTime());
- return {meters:counted.reduce((n,a)=>n+Math.max(0,a.distanceM),0),sessions:counted.length,weeks:state.periodResults.filter(r=>r.sport===state.primary&&r.track==="open"&&Date.parse(r.periodEnd)<=now.getTime()).length};
+/** Available lifetime activity only; count each completed primary-sport round once across historical tracks. */
+export function clubLifetimeTotals(state: CompeteState, now = competeNow(state)) {
+  const counted = state.activities.filter(a => countsOnTrack(a, "open") &&
+    Number.isFinite(Date.parse(a.startedAt)) && Date.parse(a.startedAt) <= now.getTime());
+  const rounds = new Set(state.periodResults.filter(r => r.sport === state.primary &&
+    Number.isFinite(Date.parse(r.periodStart)) && Date.parse(r.periodEnd) <= now.getTime())
+    .map(r => `${r.periodStart}:${r.periodEnd}`));
+  return { meters: counted.reduce((n, a) => n + Math.max(0, a.distanceM), 0), sessions: counted.length, weeks: rounds.size };
 }

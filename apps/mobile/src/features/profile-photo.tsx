@@ -16,7 +16,7 @@ import { SHELL_COLORS as c } from "../theme";
 import { FocusButton, FocusSheet, f } from "../ui/focus";
 
 export function ProfilePhoto({ state }: { state: CompeteState }) {
-  const { user, demoMode } = useAuth();
+  const { user, offlineMode } = useAuth();
   const { dispatch } = useCompeteStore();
   const [busy, setBusy] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -57,7 +57,7 @@ export function ProfilePhoto({ state }: { state: CompeteState }) {
         if (bytes.byteLength > 5 * 1024 * 1024)
           throw new Error("Choose a photo smaller than 5 MB.");
         if (!mounted.current || ownerRef.current !== id) return;
-        if (demoMode || user.mode === "demo") {
+        if (offlineMode || user.mode === "demo") {
           url = `data:image/jpeg;base64,${asset.base64}`;
         } else {
           const path = getCanonicalAvatarObjectPath(id);
@@ -68,7 +68,7 @@ export function ProfilePhoto({ state }: { state: CompeteState }) {
           url = `${supabase.storage.from("avatars").getPublicUrl(path).data.publicUrl}?v=${Date.now()}`;
         }
       }
-      if (remove && !demoMode && user.mode !== "demo") {
+      if (remove && !offlineMode && user.mode !== "demo") {
         const { error: removeError } = await supabase.storage.from("avatars").remove(
           buildAvatarCleanupPathsForProfileChange({
             userId: id,

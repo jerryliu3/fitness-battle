@@ -1,6 +1,7 @@
 import { useSyncReviewGate } from "./use-sync-review";
 import {
   applyDebugEvent,
+  isSupabaseConfigured,
   applyRemoteSnapshot,
   arenaBaselineStorageKey,
   countedActivityIds,
@@ -87,7 +88,7 @@ async function competeAccount(): Promise<{
   userId: string;
   token: string;
 } | null> {
-  if (mobileEnv.useDemoData) return null;
+  if (!isSupabaseConfigured(mobileEnv.supabaseUrl, mobileEnv.supabaseAnonKey)) return null;
   const { data } = await supabase.auth.getSession();
   const userId = data.session?.user?.id;
   const token = data.session?.access_token;
@@ -177,6 +178,9 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
     if (auth.loading) return;
     let alive = true;
     lifecycle.current += 1;
+    debugActiveRef.current = false;
+    preDebugStateRef.current = null;
+    setDebugActive(false);
     revisionRef.current = null;
     conflictRef.current = false;
     setSaveConflict(false);
@@ -207,7 +211,7 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
         }
       }
       if (
-        (authRef.current.demoMode || authRef.current.user?.mode === "demo") &&
+        (authRef.current.user?.dataOrigin === "synthetic" || authRef.current.user?.mode === "demo") &&
         authRef.current.user
       ) {
         const seed = getDemoCompeteState(authRef.current.user.email.split("@")[0]);
@@ -228,7 +232,7 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
       const currentAuth = authRef.current;
       const live =
         !!currentAuth.user &&
-        !currentAuth.demoMode &&
+        !currentAuth.offlineMode &&
         currentAuth.user.mode !== "demo";
       if (live) {
         try {
@@ -324,7 +328,7 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
   }, [
     owner,
     auth.loading,
-    auth.demoMode,
+    auth.offlineMode,
     loadAttempt,
     readBaselineItem,
     writeBaselineItem,
@@ -412,7 +416,9 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
 
   const refresh = useCallback(async (): Promise<boolean> => {
     if (syncReviewBlocked.current) return false;
+    if (debugActiveRef.current) return true;
     const account = await competeAccount();
+    if (debugActiveRef.current) return true;
     if (!stateRef.current) return false;
     if (!account) return true;
     if (account.userId !== accountRef.current) return false;
@@ -444,6 +450,7 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
           state?: unknown;
           updatedAt?: string | null;
         };
+        if (debugActiveRef.current || syncReviewBlocked.current) return false;
         if (
           body.state === null &&
           account.userId === accountRef.current &&
@@ -461,8 +468,7 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
           epoch !== lifecycle.current
         )
           return false;
-        if (syncReviewBlocked.current
-        )
+        if (syncReviewBlocked.current || debugActiveRef.current)
           return false;
         const remote = rollClock(migrateCompeteState(body.state));
         let dirty =
@@ -478,7 +484,7 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
             );
           if (
             account.userId !== accountRef.current ||
-            epoch !== lifecycle.current
+            epoch !== lifecycle.current || debugActiveRef.current
           )
             return false;
           // Storage yields to user edits; preserve anything dispatched while it was pending.
@@ -590,7 +596,7 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
           const currentAuth = authRef.current;
           if (
             !currentAuth.user ||
-            currentAuth.demoMode ||
+            currentAuth.offlineMode ||
             currentAuth.user.mode === "demo"
           )
             return;
@@ -665,7 +671,7 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
       if (
         !loadReady.current &&
         authRef.current.user &&
-        !authRef.current.demoMode
+        !authRef.current.offlineMode
       ) {
         setSaveError(
           "Your account could not load. Refresh your account before making changes.",

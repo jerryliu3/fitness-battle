@@ -22,7 +22,7 @@ export function CrewSessions({
   crewId: string;
   sport?: string;
 }) {
-  const { user, accessToken, demoMode } = useAuth();
+  const { user, accessToken, offlineMode } = useAuth();
   const [sessions, setSessions] = useState<CrewSession[]>([]),
     [open, setOpen] = useState(false),
     [title, setTitle] = useState(""),
@@ -35,7 +35,7 @@ export function CrewSessions({
     id = useRef(crewSessionDraftId()),
     mounted = useRef(true);
   const reload = useCallback(async () => {
-    if (demoMode) {
+    if (offlineMode) {
       const stored = await AsyncStorage.getItem(
         `fb-demo-start-line:${user?.id}:${crewId}`,
       );
@@ -48,7 +48,7 @@ export function CrewSessions({
       `/api/crews/sessions?crewId=${encodeURIComponent(crewId)}`,
     );
     if (mounted.current) setSessions(body.sessions);
-  }, [crewId, accessToken, demoMode, user?.id]);
+  }, [crewId, accessToken, offlineMode, user?.id]);
   useEffect(() => {
     mounted.current = true;
     void reload().catch(() => {
@@ -64,7 +64,7 @@ export function CrewSessions({
     setBusy(true);
     setError("");
     try {
-      if (demoMode && user) {
+      if (offlineMode && user) {
         const next = demoCrewSessionMutation(sessions, body, user.id, sport);
         await AsyncStorage.setItem(
           `fb-demo-start-line:${user.id}:${crewId}`,
@@ -110,7 +110,7 @@ export function CrewSessions({
           }}
         />
       </View>
-      {demoMode ? (
+      {offlineMode ? (
         <Text style={f.small}>Demo · saved on this device</Text>
       ) : null}
       {sessions.map((s) => {

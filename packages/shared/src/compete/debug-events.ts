@@ -4,6 +4,7 @@ import { buildArenaModel, competePeriodWindow } from "../phone-views";
 import { competeNow, reduceCompete } from "./engine";
 import { countsOnTrack } from "./ledger";
 import {
+  competitionTrack,
   dayKey,
   sportById,
   type Activity,
@@ -108,9 +109,9 @@ export function applyDebugEvent(
 
   if (event === "overtake" || event === "overtaken") {
     const tracks: readonly ScoreTrack[] = gps ? ["open", "verified"] : ["open"];
-    const baseOpen = buildArenaModel(base, now, "open", sport);
-    const youCurrent = baseOpen.lanes.find((l) => l.you && !l.ghost)?.values[2] ?? 0;
-    const rivalsAsc = baseOpen.lanes.filter((l) => !l.you && !l.ghost).slice().sort((a, b) => a.values[2] - b.values[2]);
+    const displayed = buildArenaModel(base, now, competitionTrack(sport), sport);
+    const youCurrent = displayed.lanes.find((l) => l.you && !l.ghost)?.values[2] ?? 0;
+    const rivalsAsc = displayed.lanes.filter((l) => !l.you && !l.ghost).slice().sort((a, b) => a.values[2] - b.values[2]);
 
     let youAfterTarget: number;
     if (event === "overtake") {
@@ -167,7 +168,7 @@ export function applyDebugEvent(
   // week-closing
   const hasWeekActivity = base.activities.some((a) => {
     const t = Date.parse(a.startedAt);
-    return a.sport === sport && countsOnTrack(a, "open") && t >= period.startsAt.getTime() && t < period.endsAt.getTime() && t <= now.getTime();
+    return a.sport === sport && countsOnTrack(a, competitionTrack(sport)) && t >= period.startsAt.getTime() && t < period.endsAt.getTime() && t <= now.getTime();
   });
   const seeded = hasWeekActivity
     ? base

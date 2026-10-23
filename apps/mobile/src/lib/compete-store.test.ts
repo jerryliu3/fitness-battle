@@ -15,7 +15,7 @@ const mock = vi.hoisted(() => ({
       mode: string;
     },
     loading: false,
-    demoMode: false,
+    offlineMode: false,
   },
   values: new Map<string, string>(),
   pathname: "/arena",
@@ -23,7 +23,7 @@ const mock = vi.hoisted(() => ({
 }));
 vi.mock("./auth", () => ({ useAuth: () => mock.auth }));
 vi.mock("./env", () => ({
-  mobileEnv: { useDemoData: false, apiUrl: "https://test.local" },
+  mobileEnv: { useDemoData: false, apiUrl: "https://test.local", supabaseUrl: "https://test.supabase.co", supabaseAnonKey: "a".repeat(30) },
 }));
 vi.mock("./supabase", () => ({
   supabase: {
@@ -405,4 +405,42 @@ describe("mobile account lifecycle", () => {
     );
     expect(mock.values.has("fb-arena-baseline:Alice:running:open")).toBe(false);
   });
+});
+
+it("keeps native debug previews local, blocks refresh and clears them across accounts", async () => {
+  login("alice");
+  await mount();
+  const original = api.state;
+  await act(async () => { api.triggerDebugEvent?.("sync-activity"); });
+  expect(api.debugActive).toBe(true);
+  expect(api.state).not.toBe(original);
+  const calls = fetcher.mock.calls.length;
+  await act(async () => { await api.refresh(); });
+  expect(fetcher).toHaveBeenCalledTimes(calls);
+  await act(async () => { api.resetDebugState?.(); });
+  expect(api.state).toBe(original);
+  await act(async () => { api.triggerDebugEvent?.("overtake"); });
+  await switchTo("bob");
+  expect(api.debugActive).toBe(false);
+  const bob = api.state;
+  await act(async () => { api.resetDebugState?.(); });
+  expect(api.state).toBe(bob);
+  expect(api.state?.name).toBe("bob");
+});
+
+it("does not let an in-flight refresh replace a native debug preview", async () => {
+  login("alice");
+  await mount();
+  let resolve!: (response: Response) => void;
+  fetcher.mockImplementationOnce(() => new Promise<Response>(done => { resolve = done; }));
+  let refreshing!: Promise<boolean>;
+  await act(async () => { refreshing = api.refresh(); await flush(); });
+  await act(async () => { api.triggerDebugEvent?.("sync-activity"); });
+  const preview = api.state;
+  await act(async () => {
+    resolve(Response.json({ state: accountState("Remote"), updatedAt: "late" }));
+    expect(await refreshing).toBe(false);
+  });
+  expect(api.state).toBe(preview);
+  expect(api.debugActive).toBe(true);
 });

@@ -4,7 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { freshState } from "@fitness-battle/shared";
 vi.mock("@/components/auth-context", () => {
  const user = { id: "athlete", mode: "supabase", displayName: "Athlete", email: "test@example.com" };
- return { useAuth: () => ({ user, loading: false, demoMode: false }) };
+ return { useAuth: () => ({ user, loading: false, offlineMode: false }) };
 });
 vi.mock("@/lib/compete-demo-seed", () => ({ getDemoCompeteState: () => null }));
 import { CompeteProvider, useCompete } from "./compete-context";

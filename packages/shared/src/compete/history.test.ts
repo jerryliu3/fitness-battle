@@ -44,7 +44,7 @@ describe("period history helpers", () => {
     expect(next[0]?.eloAfter).toBe(1020);
   });
 
-  it("filters pending reveals and prefers primary open track", () => {
+  it("filters pending reveals and prefers the primary sport default track", () => {
     const rows = [
       result({
         id: "w1:running:open",
@@ -68,7 +68,7 @@ describe("period history helpers", () => {
     expect(pendingPeriodResults(rows)).toHaveLength(3);
     const primary = primaryRevealResults(rows, undefined, "running");
     expect(primary).toHaveLength(1);
-    expect(primary[0]?.id).toBe("w1:running:open");
+    expect(primary[0]?.id).toBe("w1:running:verified");
   });
 
   it("derives pending ids from acknowledged_at and clears on acknowledge", () => {

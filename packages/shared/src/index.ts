@@ -19,7 +19,6 @@ export * from "./compete-demo-seed";
 export * from "./effort-history";
 export * from "./journey";
 export * from "./haptics";
-export * from "./score-track-prefs";
 export * from "./activity-age";
 export * from "./member-count";
 export * from "./field-appearance";
@@ -31,3 +30,13 @@ export * from "./club-summary";
 export * from "./portrait-field";
 
 export * from "./sync-review";
+
+export * from "./integration-icons";
+
+export * from "./week-chart";
+
+export * from "./account-runtime";
+
+export * from "./legacy-demo";
+export * from "./crew-activity";
+export * from "./score-track-prefs";

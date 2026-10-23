@@ -1,4 +1,4 @@
-import { serverEnv, webEnv } from "@/lib/env";
+import { serverEnv } from "@/lib/env";
 import { trackerRedirect } from "@/lib/oauth-callback";
 import { resolveSessionUserId } from "@/lib/auth/request-user";
 import { getServerFitnessProvider } from "@/lib/fitness";
@@ -20,7 +20,7 @@ export async function GET(request: Request) {
       serverEnv.stravaRedirectUri,
   );
   const { configured } = getSupabaseConfig();
-  const liveAuth = configured && !webEnv.useDemoData;
+  const liveAuth = configured;
 
   if (!hasCreds || !code) {
     return trackerRedirect(url.origin, "strava", "stub");

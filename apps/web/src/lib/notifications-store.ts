@@ -9,14 +9,13 @@ import {
 } from "@fitness-battle/shared";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { getSupabaseConfig } from "@/lib/supabase/config";
-import { webEnv } from "@/lib/env";
 
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 export function canPersistNotifications(userId: string): boolean {
   const { configured } = getSupabaseConfig();
-  if (!configured || webEnv.useDemoData) return false;
+  if (!configured) return false;
   return UUID_RE.test(userId);
 }
 

@@ -20,7 +20,7 @@ vi.mock("../lib/auth", () => ({
   useAuth: () => ({
     user: mock.user,
     accessToken: mock.user ? `${mock.user.id}-token` : null,
-    demoMode: false,
+    offlineMode: false,
   }),
 }));
 vi.mock("../lib/compete-store", () => ({

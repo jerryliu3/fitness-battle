@@ -45,13 +45,13 @@ function EditIcon() {
 export function AthleteOverview({
   state,
   email,
-  demoMode,
+  offlineMode,
   openProfileEdit = false,
   sections = "profile",
 }: {
   state: CompeteState;
   email?: string | null;
-  demoMode?: boolean;
+  offlineMode?: boolean;
   openProfileEdit?: boolean;
   /** Profile card on Athlete; lifetime totals + effort chart on Progress. */
   sections?: "profile" | "progress";
@@ -380,7 +380,7 @@ export function AthleteOverview({
                 {email ? (
                   <p className="focus-profile-email">
                     {email}
-                    {demoMode ? " · demo" : ""}
+                    {offlineMode ? " · demo" : ""}
                   </p>
                 ) : null}
               </div>

@@ -27,7 +27,7 @@ vi.mock("expo-router", () => ({
 vi.mock("heroui-native/button", () => ({ Button: "Button" }));
 vi.mock("heroui-native/input", () => ({ Input: "Input" }));
 vi.mock("../lib/auth", () => ({
-  useAuth: () => ({ user: { id: "alice" }, demoMode: true }),
+  useAuth: () => ({ user: { id: "alice" }, offlineMode: true }),
 }));
 vi.mock("../lib/compete-store", () => ({
   useCompeteStore: () => ({ state: freshState(), dispatch: mock.dispatch }),

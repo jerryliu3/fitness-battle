@@ -7,7 +7,7 @@ vi.mock("react-native", () => ({ Text: "Text", TextInput: "TextInput", View: "Vi
 vi.mock("expo-router", () => ({ Link: "Link" }));
 vi.mock("../lib/api", () => ({ requestApi: vi.fn() }));
 vi.mock("../lib/env", () => ({ mobileEnv: { apiUrl: "http://localhost" } }));
-vi.mock("../lib/auth", () => ({ useAuth: () => ({ user: mock.user, demoMode: true, accessToken: null }) }));
+vi.mock("../lib/auth", () => ({ useAuth: () => ({ user: mock.user, offlineMode: true, accessToken: null }) }));
 vi.mock("../lib/compete-store", () => ({ useCompeteStore: () => ({ state: mock.state, canWrite: mock.canWrite, dispatch: mock.dispatch, refresh: vi.fn() }) }));
 vi.mock("../lib/platform-providers", () => ({ providersForDevice: () => mock.supported.map((id) => ({ id })) }));
 vi.mock("../lib/device-health", () => ({ syncAppleHealth: mock.device, syncHealthConnect: mock.device, createAppleHealthDeps: vi.fn(), createHealthConnectDeps: vi.fn() }));

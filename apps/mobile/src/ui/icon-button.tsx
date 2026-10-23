@@ -1,0 +1,24 @@
+import { Platform, Pressable } from "react-native";
+import Svg, { Path } from "react-native-svg";
+import { SHELL_COLORS as c } from "../theme";
+
+const paths = {
+  back: "m14 6-6 6 6 6",
+  plus: "M12 5v14M5 12h14",
+  sync: "M20 7v5h-5M4 17v-5h5M6.1 7a7 7 0 0 1 11.6-1L20 9M4 15l2.3 3A7 7 0 0 0 17.9 17",
+  edit: "m15 5 4 4M4 20l4-1L20 7l-4-4L4 15v5Z",
+} as const;
+export function IconButton({ icon, label, onPress, disabled = false }: {
+  icon: keyof typeof paths; label: string; onPress: () => void; disabled?: boolean;
+}) {
+  return <Pressable accessibilityRole="button" accessibilityLabel={label} disabled={disabled}
+    accessibilityState={{ disabled }} onPress={onPress}
+    style={({ pressed }) => ({ width: 44, height: 44, borderRadius: 22, borderWidth: 1,
+      borderColor: c.line, backgroundColor: "#ffffffdc", alignItems: "center", justifyContent: "center",
+      opacity: disabled ? 0.4 : pressed ? 0.65 : 1 })}>
+    <Svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke={c.ink} strokeWidth={1.8}
+      strokeLinecap="round" strokeLinejoin="round" accessible={Platform.OS === "web" ? undefined : false}>
+      <Path d={paths[icon]} />
+    </Svg>
+  </Pressable>;
+}

@@ -125,6 +125,14 @@ export const PROVIDERS: Provider[] = [
 
 export type ScoreTrack = "verified" | "open";
 
+/** Product competition lens. Both ledgers remain available for historical compatibility. */
+export function competitionTrack(sport: SportId): ScoreTrack {
+  return sport === "running" || sport === "cycling" ? "verified" : "open";
+}
+export function competitionTrackLabel(sport: SportId): string {
+  return competitionTrack(sport) === "verified" ? "GPS Tracked" : "Open";
+}
+
 export interface SeasonClock {
   /** Weekly for now. Daily, monthly, and custom already exist on the period helper. */
   kind: PeriodKind;

@@ -81,7 +81,7 @@ function humanError(code?: string): string {
 
 function YouContent({ surface }: { surface: "progress" | "athlete" }) {
   const reduced = useReducedMotion();
-  const { user, signOut, demoMode } = useAuth();
+  const { user, signOut, offlineMode } = useAuth();
   const { state, dispatch, loadStatus, previewSyncReview } = useCompete();
   const [panel, setPanel] = useState<AthletePanel | null>(null);
   const overviewRef = useRef<HTMLDivElement>(null);
@@ -96,7 +96,7 @@ function YouContent({ surface }: { surface: "progress" | "athlete" }) {
   const searchParams = useSearchParams();
   const accountKey = user?.id ?? "guest";
   const pushIdentity: SyncIdentity | null = user
-    ? { userId: user.id, localOnly: demoMode || user.mode === "demo" }
+    ? { userId: user.id, localOnly: offlineMode || user.mode === "demo" }
     : null;
   const router = useRouter();
   const requestedPanel = searchParams.get("panel");
@@ -372,7 +372,7 @@ function YouContent({ surface }: { surface: "progress" | "athlete" }) {
           body.message ?? "Demo tracker linked. This is not a live connection.",
         );
       } catch {
-        if (demoMode) {
+        if (offlineMode) {
           dispatch({ type: "link", provider: providerId });
           setSyncNote("Offline demo link only.");
           return;
@@ -407,7 +407,7 @@ function YouContent({ surface }: { surface: "progress" | "athlete" }) {
       }
       applyRemote({ ...body, provider: providerId });
     } catch {
-      if (demoMode) {
+      if (offlineMode) {
         dispatch({ type: "sync", provider: providerId, allowSample: true });
         setSyncNote(null);
         return;
@@ -469,12 +469,12 @@ function YouContent({ surface }: { surface: "progress" | "athlete" }) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ userId: user?.id, provider: providerId }),
       });
-      if (!response.ok && !demoMode) {
+      if (!response.ok && !offlineMode) {
         setSyncNote("Could not disconnect that tracker.");
         return;
       }
     } catch {
-      if (!demoMode) {
+      if (!offlineMode) {
         setSyncNote("Could not reach disconnect.");
         return;
       }
@@ -619,7 +619,7 @@ function YouContent({ surface }: { surface: "progress" | "athlete" }) {
                         <small style={{ color: "var(--muted)", fontSize: 13, display: "block", marginTop: 2 }}>
                           {provider.blurb}
                           {link?.linked
-                            ? ` · ${demoMode || user?.mode === "demo" ? "Demo · sample data" : evidenceLabel(status === "stub" ? "stub" : status === "connected" ? "receiving_data" : "disconnected")}`
+                            ? ` · ${offlineMode || user?.mode === "demo" ? "Demo · sample data" : evidenceLabel(status === "stub" ? "stub" : status === "connected" ? "receiving_data" : "disconnected")}`
                             : ""}
                         </small>
                       </div>
@@ -727,7 +727,7 @@ function YouContent({ surface }: { surface: "progress" | "athlete" }) {
                 ) : null}
               </section>
               <section className="fb-card">
-                {(demoMode || user?.mode === "demo") && previewSyncReview ? (
+                {(offlineMode || user?.mode === "demo") && previewSyncReview ? (
                   <button className="fb-btn-line" onClick={previewSyncReview}>
                     Preview today’s sync recap
                   </button>
@@ -1030,7 +1030,7 @@ function YouContent({ surface }: { surface: "progress" | "athlete" }) {
           <AthleteOverview
             state={state}
             email={user?.email}
-            demoMode={demoMode}
+            offlineMode={offlineMode}
             sections="progress"
           />
           <WeekRecords
@@ -1061,7 +1061,7 @@ function YouContent({ surface }: { surface: "progress" | "athlete" }) {
       <AthleteOverview
         state={state}
         email={user.email}
-        demoMode={demoMode}
+        offlineMode={offlineMode}
         openProfileEdit={requestedEdit === "profile"}
         sections="profile"
       />

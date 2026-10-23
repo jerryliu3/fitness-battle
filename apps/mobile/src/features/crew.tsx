@@ -61,7 +61,7 @@ export interface CrewData {
   seasonWeeks?: Record<string, number>;
 }
 export function useCrewApi() {
-  const { user, accessToken, demoMode } = useAuth();
+  const { user, accessToken, offlineMode } = useAuth();
   const [data, setData] = useState<CrewData | null>(null);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
@@ -69,7 +69,7 @@ export function useCrewApi() {
   identity.current = user?.id;
   const request = useCallback(
     async (path: string, body?: object) => {
-      if (!user || demoMode || !accessToken)
+      if (!user || offlineMode || !accessToken)
         throw Error("Private crews need a live signed-in account.");
       const response = await fetchWithTimeout(
         `${mobileEnv.apiUrl}/api/crews${path}`,
@@ -87,11 +87,11 @@ export function useCrewApi() {
         throw Error(result.error ?? "Could not reach your crew.");
       return result;
     },
-    [user?.id, accessToken, demoMode],
+    [user?.id, accessToken, offlineMode],
   );
   const reload = useCallback(async () => {
     const owner = user?.id;
-    if (!owner || demoMode || !accessToken) return;
+    if (!owner || offlineMode || !accessToken) return;
     setBusy(true);
     setError("");
     try {
@@ -108,7 +108,7 @@ export function useCrewApi() {
     } finally {
       if (identity.current === owner) setBusy(false);
     }
-  }, [user?.id, accessToken, demoMode, request]);
+  }, [user?.id, accessToken, offlineMode, request]);
   useEffect(() => {
     void reload();
   }, [reload]);
@@ -122,7 +122,7 @@ export function useCrewApi() {
     busy,
     reload,
     request,
-    live: !!user && !demoMode && !!accessToken,
+    live: !!user && !offlineMode && !!accessToken,
   };
 }
 

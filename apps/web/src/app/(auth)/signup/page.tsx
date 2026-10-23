@@ -10,7 +10,7 @@ import { useSearchParams } from "next/navigation";
 import { FormEvent, Suspense, useEffect, useState } from "react";
 
 function SignupForm() {
-  const { signUp, user, loading, demoMode } = useAuth();
+  const { signUp, user, loading, offlineMode } = useAuth();
   const searchParams = useSearchParams();
   const next = resolveSafePostLoginPath(searchParams.get("next"));
   const [email, setEmail] = useState("");
@@ -61,7 +61,7 @@ function SignupForm() {
       <p className="fb-copy">
         After signup you will set preferences and run a one-time 90-day
         calibration.
-        {demoMode ? " Demo mode keeps everything on this device." : ""}
+        {offlineMode ? " Demo mode keeps everything on this device." : ""}
       </p>
       <form className="fb-stack" onSubmit={onSubmit}>
         <label className="fb-field">

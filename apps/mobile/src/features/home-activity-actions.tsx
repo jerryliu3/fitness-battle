@@ -33,7 +33,7 @@ export function HomeActivityActions({
     beginSyncReviewBatch,
     endSyncReviewBatch,
   } = useCompeteStore();
-  const { user, accessToken, demoMode } = useAuth();
+  const { user, accessToken, offlineMode } = useAuth();
   const owner = useRef(user?.id);
   owner.current = user?.id;
   const [open, setOpen] = useState(false),
@@ -71,7 +71,7 @@ export function HomeActivityActions({
           link.provider === "google_health"
         ) {
           const auth = {
-            localOnly: demoMode || user.mode === "demo",
+            localOnly: offlineMode || user.mode === "demo",
             getAccessToken: async () => ({
               token: accessToken ?? undefined,
               userId: id,
@@ -96,7 +96,7 @@ export function HomeActivityActions({
           } else if (result.ok) await refresh();
           if (owner.current !== id) return;
           messages.push(result.message);
-        } else if (demoMode || user.mode === "demo") {
+        } else if (offlineMode || user.mode === "demo") {
           if (owner.current !== id) return;
           dispatch({
             type: "sync",

@@ -15,6 +15,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { SHELL_COLORS as c } from "../theme";
 import { useReducedMotion } from "./use-reduced-motion";
+import { IconButton } from "./icon-button";
 import { playCue } from "../lib/haptics";
 const AnimatedSafeAreaView = Animated.createAnimatedComponent(SafeAreaView);
 
@@ -25,6 +26,8 @@ export function FocusSheet({
   onClose,
   onClosed,
   children,
+  minimal = false,
+  fullScreen = false,
 }: {
   open: boolean;
   title: string;
@@ -33,6 +36,8 @@ export function FocusSheet({
   /** Run a sheet handoff only after the native modal has dismissed. */
   onClosed?: () => void;
   children?: ReactNode;
+  minimal?: boolean;
+  fullScreen?: boolean;
 }) {
   // Keep the last open content during exit; callers often clear their selection
   // in onClose, which must not flash a different panel while the sheet slides away.
@@ -94,10 +99,11 @@ export function FocusSheet({
           />
         </Animated.View>
         <AnimatedSafeAreaView
-          edges={["bottom"]}
+          edges={fullScreen ? ["top", "bottom"] : ["bottom"]}
           onLayout={(event) => setSheetHeight(event.nativeEvent.layout.height)}
           style={[
             f.sheet,
+            fullScreen && { flex: 1, maxHeight: "100%", borderTopLeftRadius: 0, borderTopRightRadius: 0 },
             {
               transform: [
                 {
@@ -111,25 +117,24 @@ export function FocusSheet({
           ]}
           accessibilityViewIsModal
         >
-          <View style={f.handle} />
-          <View style={f.sheetHead}>
-            <Text style={f.kicker}>OVERTAEK</Text>
-            <Pressable
-              onPress={onClose}
-              accessibilityRole="button"
-              accessibilityLabel="Close dialog"
-              style={f.close}
-            >
+          {!fullScreen && <View style={f.handle} />}
+          {fullScreen ? <View style={[f.row, { paddingHorizontal: 22, paddingVertical: 8 }]}>
+            <IconButton icon="back" label="Return to previous screen" onPress={onClose} />
+            <Text accessibilityRole="header" style={[f.h2, { flex: 1, textAlign: "center" }]}>{content.current.title}</Text>
+            <View style={{ width: 44 }} />
+          </View> : !minimal && <View style={f.sheetHead}>
+            <View />
+            <Pressable onPress={onClose} accessibilityRole="button" accessibilityLabel="Close dialog" style={f.close}>
               <Text style={f.h2}>×</Text>
             </Pressable>
-          </View>
+          </View>}
           <ScrollView
             keyboardShouldPersistTaps="handled"
             contentContainerStyle={f.sheetBody}
           >
-            <Text accessibilityRole="header" style={f.title}>
+            {!fullScreen && <Text accessibilityRole="header" style={f.title}>
               {content.current.title}
-            </Text>
+            </Text>}
             {Boolean(content.current.body) && (
               <Text style={f.copy}>{content.current.body}</Text>
             )}
@@ -201,18 +206,20 @@ export function FocusSegments<T extends string>({
   value,
   onChange,
   accent = false,
+  variant = "segments",
 }: {
   label: string;
   options: readonly { value: T; label: string }[];
   value: T;
   onChange: (value: T) => void;
   accent?: boolean;
+  variant?: "segments" | "tabs";
 }) {
   return (
     <View
       accessibilityRole="tablist"
       accessibilityLabel={label}
-      style={f.segments}
+      style={[f.segments, variant === "tabs" && { backgroundColor: "transparent", borderWidth: 0, borderRadius: 0, padding: 0, borderBottomWidth: 1 }]}
     >
       {options.map((option) => (
         <Pressable
@@ -225,12 +232,13 @@ export function FocusSegments<T extends string>({
           style={({ pressed }) => [
             f.segment,
             value === option.value && f.segmentSelected,
+            variant === "tabs" && { backgroundColor: "transparent", borderRadius: 0, borderBottomWidth: value === option.value ? 2 : 0, borderBottomColor: c.ink },
             value === option.value && accent && { backgroundColor: c.tennis },
             pressed && { opacity: 0.7 },
           ]}
         >
           <Text
-            style={[f.segmentText, value === option.value && { color: accent ? c.ink : c.card }]}
+            style={[f.segmentText, value === option.value && { color: variant === "tabs" || accent ? c.ink : c.card }]}
           >
             {option.label}
           </Text>
@@ -301,7 +309,7 @@ export const f = StyleSheet.create({
   safe: { flex: 1, backgroundColor: c.paper },
   content: {
     padding: 22,
-    paddingBottom: 34,
+    paddingBottom: 120,
     gap: 18,
     maxWidth: 880,
     width: "100%",
@@ -397,7 +405,7 @@ export const f = StyleSheet.create({
     flexDirection: "row",
     padding: 4,
     gap: 4,
-    borderRadius: 12,
+    borderRadius: 24,
     backgroundColor: c.soft,
     borderWidth: 1,
     borderColor: c.line,
@@ -408,7 +416,7 @@ export const f = StyleSheet.create({
     minHeight: 44,
     paddingHorizontal: 8,
     paddingVertical: 10,
-    borderRadius: 8,
+    borderRadius: 20,
     justifyContent: "center",
     alignItems: "center",
   },
@@ -433,7 +441,7 @@ export const f = StyleSheet.create({
   },
   disclosureCompact: {
     borderWidth: 0,
-    borderRadius: 12,
+    borderRadius: 24,
     backgroundColor: c.soft,
   },
   disclosureHeadCompact: { minHeight: 48, padding: 12 },
@@ -488,7 +496,7 @@ export const f = StyleSheet.create({
   chip: {
     paddingVertical: 12,
     paddingHorizontal: 16,
-    borderRadius: 11,
+    borderRadius: 24,
     borderWidth: 1,
     borderColor: c.line,
     backgroundColor: c.card,

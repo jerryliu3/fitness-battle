@@ -16,13 +16,13 @@ import { ProfilePhoto } from "./profile-photo";
 export function AthleteMetrics({
   state,
   email,
-  demoMode,
+  offlineMode,
   onEdit,
   sections = "progress",
 }: {
   state: CompeteState;
   email?: string | null;
-  demoMode?: boolean;
+  offlineMode?: boolean;
   onEdit?: () => void;
   sections?: "profile" | "progress";
 }) {
@@ -51,7 +51,7 @@ export function AthleteMetrics({
               {email ? (
                 <Text style={f.small}>
                   {email}
-                  {demoMode ? " · demo" : ""}
+                  {offlineMode ? " · demo" : ""}
                 </Text>
               ) : null}
             </View>

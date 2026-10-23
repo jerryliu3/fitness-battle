@@ -1,9 +1,5 @@
-import {
-  countsOnTrack,
-  type Activity,
-  type ScoreTrack,
-  type SportId,
-} from "./compete";
+import { countsOnTrack } from "./compete/ledger";
+import type { Activity, ScoreTrack, SportId } from "./compete/sports";
 
 /** Only report an update when an actual counted activity timestamp is available. */
 export function latestCountedActivityAt(
