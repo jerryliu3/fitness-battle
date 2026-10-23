@@ -1260,3 +1260,9 @@
 .phone-panel.is-active.is-route-entering { animation: club-section-enter 260ms ease-out; }
 .club-week-detail .focus-activity-svg { height: 200px; }
 @media (prefers-reduced-motion: reduce) { .phone-panel.is-active.is-route-entering { animation: none; } }
+
+.phone-shell .focus-crew-hero .club-crew-name::after { content: ""; position: absolute; inset: 0; cursor: pointer; }
+.phone-shell .focus-crew-hero-buttons { position: relative; z-index: 1; }
+.club-fullscreen-sheet .club-sheet-heading { display: grid; grid-template-columns: 44px 1fr 44px; }
+.club-fullscreen-sheet .club-sheet-heading h2 { grid-column: 2; grid-row: 1; text-align: center; }
+.club-fullscreen-sheet .club-sheet-dismiss { grid-column: 1; grid-row: 1; }

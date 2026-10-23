@@ -6,18 +6,7 @@ import { CrewSessions } from "./crew-sessions";
 import { CrewRelay } from "./crew-relay";
 import { Sheet } from "@/ui/sheet";
 import { playCue } from "@/lib/haptics";
-import {
-  APP_TIMEZONE,
-  competeNow,
-  weeklyPeriodBounds,
-  dayKey,
-  type SportId,
-  countsOnTrack,
-  distanceUnitLabel,
-  formatDistanceM,
-  formatMemberCount,
-  formatNoticeUnits,
-} from "@fitness-battle/shared";
+import { APP_TIMEZONE, competeNow, weeklyPeriodBounds, dayKey, type SportId, countsOnTrack, distanceUnitLabel, formatDistanceM, formatNoticeUnits } from "@fitness-battle/shared";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 interface Crew {
@@ -353,7 +342,6 @@ export function CrewPanel() {
                 : `Your people · ${memberCountLabel}`}
             </p>
             <h2><button type="button" className="club-crew-name" onClick={()=>setPanel("members")} aria-label={`View ${crew.name} members`}>{crew.name}</button></h2>
-            <p>Different paces. Same direction.</p>
             <div className="focus-row">
               <div className="focus-avatar-stack">
                 {members.slice(0, 5).map((m) => (
@@ -516,13 +504,14 @@ export function CrewPanel() {
       )}
       <Sheet
         open={!!panel}
+        fullScreen={panel === "members"}
         title={
           panel === "add"
             ? "Add Crew"
             : panel === "invite"
               ? "Invite to crew"
               : panel === "members"
-                ? crew?.name ?? "Crew members"
+                ? "Members"
                 : "Your crew, your rhythm."
         }
         body={
@@ -636,7 +625,8 @@ export function CrewPanel() {
           <ul className="focus-member-list">
             {members.map((m) => (
               <li key={m.user_id}>
-                <b>{m.display_name}</b>
+                {m.avatar_url ? <img src={m.avatar_url} alt="" className="club-member-photo" /> : <span className="club-member-photo club-member-initials">{m.display_name.slice(0, 2).toUpperCase()}</span>}
+                <div><b>{m.display_name}</b><p className="fb-note">{sessionsMetric ? `${memberTotal(m.user_id)} sessions` : `${formatDistanceM(memberTotal(m.user_id), state?.units)} ${unitLabel}`} this week</p></div>
                 <small>{(m.user_id === user?.id ? resting : m.rest_week === weekKey) ? "Rest week" : "Active"}</small>
               </li>
             ))}
