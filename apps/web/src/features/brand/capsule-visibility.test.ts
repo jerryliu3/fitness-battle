@@ -42,10 +42,11 @@ describe("production capsule visibility", () => {
     // A 300 m head is compact in a 6 km overview, but remains painted at either edge.
     const course = fieldCourse(360, 540, 1, { center: 3, span: 6 }, "km", defaultFieldAppearance);
     const head = course.point(value, 0, 0, true);
-    // Inspect the local head bounds, excluding the earned trail far behind it.
+    // A fixed pixel window around the head retains the upper size bound,
+    // while excluding the earned trail far behind it.
     // A solid gold trail may legitimately fill thousands of pixels at the far edge.
-    const pixels=await goldPixels(render("lanes", value), head.y - 35 * course.markerScale, head.y + 35 * course.markerScale,
-      head.x - 32 * course.markerScale, head.x + 32 * course.markerScale);
+    const pixels=await goldPixels(render("lanes", value), head.y - 50, head.y + 50,
+      head.x - 50, head.x + 50);
     expect(pixels).toBeGreaterThan(100);
     expect(pixels).toBeLessThan(2000);
   });
