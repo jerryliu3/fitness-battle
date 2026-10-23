@@ -4,7 +4,8 @@ import { motion, useReducedMotion } from "motion/react";
 import Link from "next/link";
 import { ActivityActions } from "./activity-actions";
 import { AnimatedPolygon, AnimatedPolyline } from "./activity-chart";
-export function WeekChart({ state, detail = false }: { state: CompeteState; detail?: boolean }) {
+import { ChartFrame } from "@/ui/chart-frame";
+export function WeekChart({ state, detail = false, ready = true }: { state: CompeteState; detail?: boolean; ready?: boolean }) {
   const { nowDayIndex, currCumulativeHours, prevCumulativeHours, currTotalHours, prevTotalHours, sessionCount, weekProgress } = weeklyHoursComparison(state);
   const dayLabels = ["M", "T", "W", "T", "F", "S", "S"];
   const reduced = useReducedMotion();
@@ -54,6 +55,7 @@ export function WeekChart({ state, detail = false }: { state: CompeteState; deta
   const prevLastY = getY(prevTotalHours);
 
   return (
+    <ChartFrame ready={ready}>
       <motion.section initial={detail && !reduced ? { scale: .94, y: 16, opacity: .8 } : false} animate={{ scale: 1, y: 0, opacity: 1 }} transition={{ duration: reduced ? 0 : .3 }} className="focus-stats-card" aria-label="This week's progress">
         <div className="focus-stats-header">
           <div>
@@ -218,5 +220,6 @@ export function WeekChart({ state, detail = false }: { state: CompeteState; deta
           {!detail && <Link href="/week" aria-label="Explore your week" style={{ position: "absolute", inset: 0, borderRadius: 14 }} />}
         </div>
       </motion.section>
+    </ChartFrame>
   );
 }

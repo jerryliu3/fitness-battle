@@ -95,6 +95,58 @@ a {
   font-weight: 650;
 }
 
+.fb-section-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 0;
+}
+
+.fb-section-heading-text {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.fb-section-title {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 650;
+  letter-spacing: -0.5px;
+  line-height: 1.2;
+  color: var(--ink);
+}
+
+.fb-section-detail {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--muted);
+}
+
+.fb-chart-frame {
+  position: relative;
+}
+
+.fb-chart-frame-placeholder {
+  min-height: 160px;
+  border-radius: 16px;
+  background: var(--accent-soft);
+  border: 1px solid var(--line);
+  animation: fb-chart-pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes fb-chart-pulse {
+  0%,
+  100% {
+    opacity: 0.55;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
 .fb-title {
   margin: 0;
   font-family: var(--font-display), "Bebas Neue", sans-serif;

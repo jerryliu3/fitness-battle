@@ -193,7 +193,7 @@ type SessionPhase =
 export function TodayScreen() {
   const onHome = usePathname() === "/today";
   const { user } = useAuth();
-  const { state, dispatch, lastDebugEvent } = useCompete();
+  const { state, dispatch, lastDebugEvent, loadStatus } = useCompete();
   const reduced = useReducedMotion();
   const [removed, setRemoved] = useState<Activity | null>(null);
   const [syncNotice, setSyncNotice] = useState<string | null>(null);
@@ -346,7 +346,7 @@ export function TodayScreen() {
           <span>Your effort score is protected through next Monday.</span>
         </div>
       )}
-      <WeekChart state={state} />
+      <WeekChart state={state} ready={loadStatus === "ready" || loadStatus === "local"} />
       </div>
       <RivalCard state={state} />
       <LatestActivity state={state} onOpen={activity=>openSession(activity,"full")} />
