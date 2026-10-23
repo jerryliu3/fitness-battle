@@ -70,11 +70,14 @@ export function ProgressScreen() {
         </View>
         <View style={{display:section==="overview"?"flex":"none",gap:18}}><TrainingHistory state={state}><Achievements state={state}/></TrainingHistory><WeekRecap state={state}/>
         {state.periodResults.length ? <Pressable accessibilityRole="button" style={f.card} onPress={() => router.push("/arena?results=latest")}><Text style={f.rowTitle}>Latest week results ↗</Text></Pressable> : null}
-        <Pressable accessibilityRole="button" style={f.card} onPress={() => router.push("/progress-history")}>
-          <Text style={f.sectionTitle}>Past weeks & awards</Text>
-          <Text style={f.copy}>Closed competition weeks, chapter history, and your award shelf.</Text>
+        <View style={f.card}>
+          <Pressable accessibilityRole="button" onPress={() => router.push("/progress-history")}>
+            <Text style={f.sectionTitle}>Past weeks & awards</Text>
+            <Text style={f.copy}>Closed competition weeks, chapter history, and your award shelf.</Text>
+            <Text style={f.rowTitle}>View all →</Text>
+          </Pressable>
           {awardCards(state).length > 0 ? <AwardShelf cards={awardCards(state).slice(0, 3)} /> : null}
-        </Pressable>
+        </View>
         </View>
         </MotionStep>
       </ScrollView>

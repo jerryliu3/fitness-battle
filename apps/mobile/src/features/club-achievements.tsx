@@ -54,7 +54,7 @@ export function Achievements({ state }: { state: CompeteState }) {
             key={row.id}
             accessibilityRole="button"
             accessibilityLabel={`${row.title}. ${row.target} ${row.category === "sessions" ? "sessions" : "Open effort score"}. ${row.earned ? "Earned" : "In progress"}`}
-            onPress={() => router.push("/progress-achievements")}
+            onPress={() => router.push(`/progress-achievements?milestone=${row.id}`)}
             style={achievementTileStyle.tile}
           >
             <Badge item={row} />
