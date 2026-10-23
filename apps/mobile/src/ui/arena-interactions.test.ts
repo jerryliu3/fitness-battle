@@ -1,7 +1,7 @@
 vi.mock("./club-art",()=>({alpineTrail:1}));
 import { createElement } from "react";
 import { act, create, type ReactTestRenderer } from "react-test-renderer";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   freshState,
   reduceCompete,
@@ -110,9 +110,15 @@ async function layoutCarousel() {
  if(host)await act(async()=>host.props.onLayout({nativeEvent:{layout:{width:346}}}));
 }
 
+beforeEach(() => {
+  vi.useFakeTimers({ toFake: ["Date"] });
+  vi.setSystemTime(new Date("2026-10-22T16:00:00Z"));
+});
+
 afterEach(async () => {
   if (renderer) await act(async () => renderer.unmount());
   vi.unstubAllGlobals();
+  vi.useRealTimers();
   mock.baselines.clear();
   mock.reducedMotion = true;
 });
@@ -169,6 +175,7 @@ describe("native competition interactions", () => {
     mock.state = reduceCompete(mock.state, {
       type: "log-manual",
       activityId: "review-run",
+      now: "2026-10-22T15:59:00Z",
       sport: "running",
       distanceM: 1609.344,
       movingSec: 600,
