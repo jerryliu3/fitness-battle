@@ -21,6 +21,7 @@ export function ProfilePhoto({ state }: { state: CompeteState }) {
   const [busy, setBusy] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const flight = useRef(false);
+  const pendingPickerOwner = useRef<string | null>(null);
   const ownerRef = useRef(user?.id);
   ownerRef.current = user?.id;
   const [error, setError] = useState("");
@@ -134,6 +135,11 @@ export function ProfilePhoto({ state }: { state: CompeteState }) {
       <FocusSheet
         open={menuOpen}
         title="Profile photo"
+        onClosed={() => {
+          const id = pendingPickerOwner.current;
+          pendingPickerOwner.current = null;
+          if (id && mounted.current && ownerRef.current === id) void change();
+        }}
         onClose={() => {
           if (!busy) setMenuOpen(false);
         }}
@@ -142,8 +148,10 @@ export function ProfilePhoto({ state }: { state: CompeteState }) {
           label={busy ? "Updating…" : "Choose photo"}
           disabled={busy}
           onPress={() => {
+            if (!user || flight.current || pendingPickerOwner.current) return;
+            // UIKit must finish dismissing our sheet before presenting the picker.
+            pendingPickerOwner.current = user.id;
             setMenuOpen(false);
-            void change();
           }}
         />
         {state.avatarUrl ? (
