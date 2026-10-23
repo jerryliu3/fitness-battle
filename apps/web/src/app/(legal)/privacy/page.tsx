@@ -4,10 +4,10 @@ import Link from "next/link";
 export const metadata: Metadata = {
   title: "Privacy Policy · overtaek",
   description:
-    "How overtaek collects, uses, and shares account and fitness data, including WHOOP and other trackers.",
+    "How overtaek collects, uses, and shares account and fitness data, including Garmin, WHOOP, and other trackers.",
 };
 
-const UPDATED = "October 16, 2026";
+const UPDATED = "October 23, 2026";
 
 export default function PrivacyPolicyPage() {
   return (
@@ -26,7 +26,7 @@ export default function PrivacyPolicyPage() {
 
       <h2>1. Who this applies to</h2>
       <p>
-        This policy covers the overtaek web app and related APIs. If you
+        This policy covers the overtaek web and mobile apps and related APIs. If you
         use a third-party service through us (for example WHOOP, Strava, Oura,
         or Garmin), that provider’s own privacy policy also applies to data they
         hold.
@@ -90,7 +90,7 @@ export default function PrivacyPolicyPage() {
         </li>
         <li>
           <strong>Service providers.</strong> Infrastructure such as hosting
-          (for example Vercel) and database/auth (Supabase) process data on our
+          (Vercel) and database/auth (Supabase) process data on our
           instructions.
         </li>
         <li>
@@ -126,7 +126,61 @@ export default function PrivacyPolicyPage() {
         .
       </p>
 
-      <h2>6. Storage and retention</h2>
+      <h2>6. Garmin data</h2>
+      <p>
+        Connecting Garmin is optional. With your authorization, we receive
+        activity data made available through the permissions you grant, such as
+        activity type, start time, duration, distance, and available heart rate
+        information. We use this data to sync your workout history, calculate
+        effort scores and weekly standings, and show your progress and activity
+        summaries. We do not use Garmin data for advertising or sell it.
+      </p>
+      <p>
+        The third-party infrastructure providers that process Garmin data on our
+        behalf are Vercel (hosting and backend API processing) and Supabase
+        (database storage and account authentication). Garmin receives the
+        authorization and API requests needed to maintain your connection. We
+        do not forward Garmin activity data to other connected fitness providers,
+        integration partners, third-party analytics services, or AI services.
+      </p>
+      <p>
+        Other athletes in competitions you join can see your display name,
+        Garmin-derived effort totals, and standings. Members of crews you join
+        can see your contribution to shared progress. This information is used
+        for in-app competition and group progress. Your Garmin authorization
+        tokens and raw heart rate data are not shown to other participants.
+        Apart from these product features, our infrastructure providers, and
+        the legal disclosures described above, we do not share Garmin data
+        with third parties for their own use.
+      </p>
+      <h3>AI transparency</h3>
+      <p>
+        We do not send Garmin data or information derived from it to AI or
+        machine learning systems. Garmin data and anything derived from it are
+        not used to train, evaluate, or improve AI models. Any future permitted
+        AI processing would require an updated disclosure, your explicit opt-in
+        consent, and an easy way to withdraw that consent before it begins.
+      </p>
+      <h3>Access, correction, export, deletion, and consent</h3>
+      <p>
+        You can view synced activity history and progress in the app. To request
+        a copy or export of your Garmin data, correct inaccurate stored data,
+        or delete Garmin data and associated personal progress records, email{" "}
+        <a href="mailto:3jerryliu@gmail.com">3jerryliu@gmail.com</a>
+        {" "}from your account email address. We verify account ownership before
+        fulfilling requests. You can also request account deletion through the
+        app or by email, subject to the limited retention exceptions below.
+      </p>
+      <p>
+        You can withdraw consent for future Garmin syncing by disconnecting
+        Garmin in the app’s tracker settings, or by revoking overtaek’s access
+        in Garmin Connect. Disconnecting through the app removes stored Garmin
+        authorization tokens and stops future syncing. Disconnecting does not
+        automatically delete previously imported activities; contact us to
+        request deletion of those activities and associated personal records.
+      </p>
+
+      <h2>7. Storage and retention</h2>
       <p>
         Account and battle data live in our application database. Fitness OAuth
         tokens are stored server-side in a private token store, not in the
@@ -141,7 +195,7 @@ export default function PrivacyPolicyPage() {
         a live cloud connection.
       </p>
 
-      <h2>7. Security</h2>
+      <h2>8. Security</h2>
       <p>
         We use industry-standard protections appropriate for an early consumer
         app: encrypted transport (HTTPS), access controls, and server-side
@@ -149,15 +203,15 @@ export default function PrivacyPolicyPage() {
         storage is perfectly secure.
       </p>
 
-      <h2>8. Your choices</h2>
+      <h2>9. Your choices</h2>
       <ul>
         <li>Update display name and preferences in the app</li>
         <li>Connect or disconnect trackers from Athlete / onboarding</li>
         <li>Revoke provider access in that provider’s own settings</li>
-        <li>Request access, correction, or deletion by contacting us</li>
+        <li>Request access, correction, export, or deletion by contacting us</li>
       </ul>
 
-      <h2>9. Children</h2>
+      <h2>10. Children</h2>
       <p>
         overtaek is not directed at children under 13, and we do not
         knowingly collect personal information from children under 13. Public
@@ -165,21 +219,21 @@ export default function PrivacyPolicyPage() {
         rules apply.
       </p>
 
-      <h2>10. International users</h2>
+      <h2>11. International users</h2>
       <p>
         We may process data in the United States or other countries where our
         providers operate. If you use the app from elsewhere, you understand
         your information may be transferred to those locations.
       </p>
 
-      <h2>11. Changes</h2>
+      <h2>12. Changes</h2>
       <p>
         We may update this policy as the product changes. We will revise the
         “Last updated” date above and, when changes are material, provide
         additional notice in the app when practical.
       </p>
 
-      <h2>12. Contact</h2>
+      <h2>13. Contact</h2>
       <p>
         Privacy questions:{" "}
         <a href="mailto:3jerryliu@gmail.com">3jerryliu@gmail.com</a>
