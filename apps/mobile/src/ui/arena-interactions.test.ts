@@ -1,6 +1,7 @@
+vi.mock("./club-art",()=>({alpineTrail:1}));
 import { createElement } from "react";
 import { act, create, type ReactTestRenderer } from "react-test-renderer";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   freshState,
   reduceCompete,
@@ -109,9 +110,15 @@ async function layoutCarousel() {
  if(host)await act(async()=>host.props.onLayout({nativeEvent:{layout:{width:346}}}));
 }
 
+beforeEach(() => {
+  vi.useFakeTimers({ toFake: ["Date"] });
+  vi.setSystemTime(new Date("2026-10-22T16:00:00Z"));
+});
+
 afterEach(async () => {
   if (renderer) await act(async () => renderer.unmount());
   vi.unstubAllGlobals();
+  vi.useRealTimers();
   mock.baselines.clear();
   mock.reducedMotion = true;
 });
@@ -145,11 +152,15 @@ describe("native competition interactions", () => {
     await act(async () => viewControl().props.onChange("lanes"));
     expect(lane().props.active).toBe(true);
     expect(mock.mounts).toBe(1);
-    const choose = renderer.root.findAllByType("Pressable" as never).find(node=>node.props.accessibilityLabel?.startsWith("Choose event."))!;
-    await act(async()=>choose.props.onPress());
+    const choose = renderer.root.findAll(node=>typeof node.props.onAccessibilityTap === "function" && node.props.accessibilityLabel?.startsWith("Choose event."))[0]!;
+    await act(async()=>choose.props.onAccessibilityTap());
     const register=renderer.root.findAllByType("FocusButton" as never).find(node=>node.props.label==="Register for another event")!;
     await act(async()=>register.props.onPress());
-    expect(renderer.root.findAllByType("Sheet" as never).some(node=>node.props.title==="Register for this week."&&node.props.open)).toBe(true);
+    const registrationOpen = () => renderer.root.findAllByType("Sheet" as never).some(node=>node.props.title==="Register for this week."&&node.props.open);
+    expect(registrationOpen()).toBe(false);
+    const chooser=renderer.root.findAllByType("Sheet" as never).find(node=>node.props.title==="Choose your event")!;
+    await act(async()=>chooser.props.onClosed());
+    expect(registrationOpen()).toBe(true);
   });
 
   it("uses the animated field rank instead of counting the athlete's final position as a rival", async () => {
@@ -168,6 +179,7 @@ describe("native competition interactions", () => {
     mock.state = reduceCompete(mock.state, {
       type: "log-manual",
       activityId: "review-run",
+      now: "2026-10-22T15:59:00Z",
       sport: "running",
       distanceM: 1609.344,
       movingSec: 600,

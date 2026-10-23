@@ -6,13 +6,13 @@
 
 The core product features:
 - **Weekly Compete Engine**: Monday-to-Monday Eastern weekly periods where athletes log workouts (running, cycling, walking, strength) to accumulate points/effort, adjust Elo ratings, and climb division standings.
-- **Focus shell**: Home / Arena / Crew / Athlete (route IDs `/today`, `/arena`, `/field`, `/you`). Vertical Arena lanes + 3D pursuit; private crew shared fields; Athlete Elo/benchmarks.
+- **Focus shell**: Home / Compete / Progress / Crew (route IDs `/today`, `/arena`, `/you`, `/field`), with Athlete settings behind the profile entry (`/athlete`). Vertical competition lanes and optional portrait perspective; private crew shared fields; Progress training, effort scores, records and history.
 - **Race Rankings**: Public road race leaderboards (5K, 10K, half, marathon) backed by verified open-data results.
 - **Multi-tracker Ingestion**: Strava OAuth sync, Apple HealthKit sync, Garmin FIT/TCX/GPX imports, and manual logging with synthetic demo fallback.
 
 ## Architecture
 
-- **`apps/mobile`**: React Native & Expo Router application targeting iOS and Android with HealthKit sync, SecureStore auth token handling, native 2D lanes, and WebView-hosted 3D pursuit.
+- **`apps/mobile`**: React Native & Expo Router application targeting iOS and Android with HealthKit sync, SecureStore auth token handling, native 2D lanes and portrait perspective. The earlier WebView-hosted Three.js pursuit remains available in code.
 - **`apps/web`**: Next.js App Router application delivering the mobile phone shell, PWA support, OAuth callbacks, API endpoints, and rankings explorer.
 - **`packages/shared`**: Pure TypeScript library containing:
   - Compete engine (`engine.ts`, `ledger.ts`, `effort.ts`, `sports.ts`, `elo.ts`)

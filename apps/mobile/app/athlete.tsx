@@ -1,3 +1,4 @@
+import { activityFromSample } from "@fitness-battle/shared";
 import {
   SPORTS,
   RANK_BANDS,
@@ -217,7 +218,10 @@ export default function AthleteScreen() {
           type: "apply-sync",
           provider: providerId,
           accountId: user.id,
-          activities: [],
+          activities: (result.activities ?? []).flatMap((sample) => {
+            const activity = activityFromSample(sample, "recorded");
+            return activity ? [activity] : [];
+          }),
           linkStatus: "connected",
         });
       }
@@ -421,10 +425,12 @@ export default function AthleteScreen() {
               (row) => row.provider === provider.id,
             );
             const status =
-              link?.status === "connected"
+              link?.linked && (demoMode || user?.mode === "demo")
+                ? "Demo · sample data"
+                : link?.status === "connected"
                 ? "Connected"
                 : link?.status === "stub"
-                  ? "Demo link"
+                  ? "Sample connection"
                   : "Not connected";
             const onPhone = isDeviceProvider(provider.id);
             const cloud = isCloudOAuthProvider(provider.id);
@@ -529,12 +535,13 @@ export default function AthleteScreen() {
           </Text>
           <Text style={f.copy}>
             Each active sport has its own effort score. Rank-priced activity
-            milestones add points immediately. Weekly placement can add a bonus;
-            effort score never goes down. Stopping after this week keeps the current
+            milestones add points immediately. Weekly placement can raise or lower your score.
+            A week without counted activity decays toward the score floor.
+            Activity milestone points already earned are kept. Stopping after this week keeps the current
             week open and turns off renewal.
           </Text>
           <Text style={f.copy}>
-            A week freeze holds the weekly placement bonus and can be undone
+            A week freeze holds the weekly score adjustment and can be undone
             before the week ends. Activity milestones can still grow your score.
           </Text>
           {RANK_BANDS.map((band) => (
@@ -687,7 +694,7 @@ export default function AthleteScreen() {
               })}
               <Text style={f.copy}>
                 {state.freezesLeft} week freezes remaining. A freeze holds
-                the weekly placement bonus. Activity milestones still count.
+                the weekly score adjustment. Activity milestones still count.
               </Text>
               <FocusButton
                 label={frozen ? "Undo freeze" : "Freeze this week"}
@@ -703,7 +710,7 @@ export default function AthleteScreen() {
               <FocusSheet
                 open={confirmFreeze}
                 title="Freeze this week?"
-                body="Your weekly placement bonus is held this week. Activity milestones still count. You can undo this before the week ends."
+                body="Your weekly score adjustment is held this week. Activity milestones still count. You can undo this before the week ends."
                 onClose={() => setConfirmFreeze(false)}
               >
                 <FocusButton

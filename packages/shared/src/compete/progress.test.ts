@@ -94,14 +94,16 @@ describe("progress history", () => {
   });
 });
 
-it("renders a real standing line for one record and descending dated improvements", () => {
+it("connects only real record improvements without extending to today", () => {
   const a = recordAttemptsForActivity(
     run("first", "2026-10-01T12:00:00Z", 1600),
     now,
   )[0]!;
   const single = personalRecordChart([a], now)!;
   expect(single.points).toHaveLength(1);
-  expect(single.path).toContain(" H 326");
+  expect(single.path).not.toContain("H");
+  expect(Date.parse(single.end)).toBe(Date.parse(a.startedAt));
+  expect(single.points[0]!.x).toBe((single.left+single.right)/2);
   const b = {
     ...a,
     activityId: "second",
@@ -117,4 +119,12 @@ it("renders a real standing line for one record and descending dated improvement
 it("formats large effort scores without raw decimals", () => {
   expect(formatEffort(54000)).toBe("54,000");
   expect(formatEffort(1400.55)).toBe("1,400.6");
+});
+
+it("ignores slower attempts and future records in the milestone chart",()=>{
+ const a=recordAttemptsForActivity(run("a","2026-10-01T12:00:00Z",1600),now)[0]!;
+ const b={...a,activityId:"b",seconds:1700,startedAt:"2026-10-05T12:00:00Z"};
+ const c={...a,activityId:"c",seconds:1500,startedAt:"2026-10-20T12:00:00Z"};
+ const chart=personalRecordChart([c,b,a],now)!;
+ expect(chart.points.map(p=>p.activityId)).toEqual(["a","c"]);expect(Date.parse(chart.end)).toBe(Date.parse(c.startedAt));expect(chart.path.endsWith(`${chart.points[1]!.x} ${chart.points[1]!.y}`)).toBe(true);
 });

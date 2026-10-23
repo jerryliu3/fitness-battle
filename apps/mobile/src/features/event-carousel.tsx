@@ -1,8 +1,7 @@
-import { useEffect, useRef, useState, type ReactNode } from "react";
-import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { useRef, useState, type ReactNode } from "react";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 import { FocusButton, FocusSheet, f } from "../ui/focus";
 import { SHELL_COLORS as c } from "../theme";
-import { useReducedMotion } from "../ui/use-reduced-motion";
 type ClubEvent = { id: string; label: string };
 export function EventCarousel({
   events,
@@ -17,44 +16,54 @@ export function EventCarousel({
   onRegister: () => void;
   children: ReactNode;
 }) {
-  const [width, setWidth] = useState(0),
-    [choosing, setChoosing] = useState(false);
-  const scroller = useRef<ScrollView>(null),
-    fromScroll = useRef(false),
-    reduced = useReducedMotion();
+  const [choosing, setChoosing] = useState(false);
+  const headerStart = useRef({ x: 0, y: 0 });
+  const registerAfterClose = useRef(false);
   const index = Math.max(
     0,
     events.findIndex((event) => event.id === value),
   );
-  useEffect(() => {
-    if (fromScroll.current) {
-      fromScroll.current = false;
-      return;
-    }
-    scroller.current?.scrollTo({ x: index * width, animated: !reduced });
-  }, [index, width, reduced]);
   function select(id: string) {
     onChange(id);
   }
   return (
-    <View
-      style={{ gap: 10 }}
-      onLayout={(e) => setWidth(e.nativeEvent.layout.width)}
-    >
+    <View style={{ gap: 10 }}>
       <View style={f.row}>
-        <Pressable
+        <View
+          accessible
           accessibilityRole="button"
+          accessibilityHint="Swipe left or right to switch events, or tap to choose."
           accessibilityLabel={`Choose event. ${events[index]?.label}, ${index + 1} of ${events.length}`}
-          onPress={() => setChoosing(true)}
+          onAccessibilityTap={() => setChoosing(true)}
+          accessibilityActions={[{ name: "activate", label: "Choose event" }]}
+          onAccessibilityAction={() => setChoosing(true)}
+          onStartShouldSetResponder={() => true}
+          onResponderGrant={(e) => {
+            headerStart.current = {
+              x: e.nativeEvent.pageX,
+              y: e.nativeEvent.pageY,
+            };
+          }}
+          onResponderRelease={(e) => {
+            const dx = e.nativeEvent.pageX - headerStart.current.x;
+            const dy = e.nativeEvent.pageY - headerStart.current.y;
+            if (Math.abs(dx) >= 40 && Math.abs(dx) > Math.abs(dy)) {
+              const next = Math.max(
+                0,
+                Math.min(events.length - 1, index + (dx < 0 ? 1 : -1)),
+              );
+              if (next !== index) select(events[next]!.id);
+            } else if (Math.hypot(dx, dy) < 12) setChoosing(true);
+          }}
           style={{ flex: 1, minHeight: 54, gap: 4, justifyContent: "center" }}
         >
           <Text style={f.kicker}>
-            Your events · {index + 1} of {events.length}
+            Your events · {index + 1} of {events.length} · ↔
           </Text>
           <Text style={[f.h2, { fontFamily: "DMSans_700Bold" }]}>
             {events[index]?.label} ⌄
           </Text>
-        </Pressable>
+        </View>
         <Pressable
           accessibilityRole="button"
           accessibilityLabel="Previous event"
@@ -76,57 +85,8 @@ export function EventCarousel({
           <Text style={f.h2}>→</Text>
         </Pressable>
       </View>
-      {width > 0 ? (
-        <ScrollView
-          ref={scroller}
-          horizontal
-          pagingEnabled
-          nestedScrollEnabled
-          showsHorizontalScrollIndicator={false}
-          directionalLockEnabled
-          onMomentumScrollEnd={(event) => {
-            const next = Math.max(
-              0,
-              Math.min(
-                events.length - 1,
-                Math.round(event.nativeEvent.contentOffset.x / width),
-              ),
-            );
-            if (next !== index) {
-              fromScroll.current = true;
-              onChange(events[next]!.id);
-            }
-          }}
-        >
-          {events.map((event, i) => (
-            <View
-              key={event.id}
-              style={{ width }}
-              accessibilityElementsHidden={i !== index}
-              importantForAccessibility={
-                i === index ? "auto" : "no-hide-descendants"
-              }
-            >
-              {i === index ? (
-                children
-              ) : (
-                <View
-                  style={{
-                    minHeight: 400,
-                    alignItems: "center",
-                    justifyContent: "center",
-                    backgroundColor: c.soft,
-                    borderRadius: 20,
-                  }}
-                >
-                  <Text style={f.h2}>{event.label}</Text>
-                  <Text style={f.copy}>Swipe to open this event</Text>
-                </View>
-              )}
-            </View>
-          ))}
-        </ScrollView>
-      ) : null}
+      {/* Event title owns event swipes; the board owns lane swipes. Avoid nested horizontal pagers trapping vertical page gestures. */}
+      <View key={value}>{children}</View>
       <View style={{ flexDirection: "row", justifyContent: "center" }}>
         {events.map((event, i) => (
           <Pressable
@@ -157,7 +117,15 @@ export function EventCarousel({
         open={choosing}
         title="Choose your event"
         body="Each registration has its own competition field."
-        onClose={() => setChoosing(false)}
+        onClose={() => {
+          registerAfterClose.current = false;
+          setChoosing(false);
+        }}
+        onClosed={() => {
+          if (!registerAfterClose.current) return;
+          registerAfterClose.current = false;
+          onRegister();
+        }}
       >
         {events.map((event) => (
           <Pressable
@@ -184,8 +152,8 @@ export function EventCarousel({
         <FocusButton
           label="Register for another event"
           onPress={() => {
+            registerAfterClose.current = true;
             setChoosing(false);
-            onRegister();
           }}
         />
       </FocusSheet>

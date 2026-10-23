@@ -11,7 +11,7 @@ import {
 import { usePathname, useRouter, useGlobalSearchParams } from "expo-router";
 import { useState } from "react";
 import { Modal, ScrollView, Text, View } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 import { WeeklySocialActions } from "./weekly-social";
 import { ResultCard } from "./result-card";
 import { FocusButton, f } from "../ui/focus";
@@ -33,6 +33,7 @@ function Round({
       animationType="none"
       onRequestClose={onClose}
     >
+      <SafeAreaProvider>
       <SafeAreaView style={f.safe}>
         <ScrollView contentContainerStyle={f.content}>
           <FocusButton label="Close results" secondary onPress={onClose} />
@@ -78,6 +79,7 @@ function Round({
           )}
         </ScrollView>
       </SafeAreaView>
+      </SafeAreaProvider>
     </Modal>
   );
 }

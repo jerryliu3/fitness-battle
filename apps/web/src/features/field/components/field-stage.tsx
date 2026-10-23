@@ -1,9 +1,12 @@
 "use client";
-import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { PortraitField } from "@/features/club/portrait-field";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useReducedMotion } from "motion/react";
 import { playCue } from "@/lib/haptics";
 import { usePathname } from "next/navigation";
 import {
+  portraitField,
+  portraitFieldGap,
   arenaBaselineStorageKey,
   arenaFieldHigh,
   fieldDefaultSpan,
@@ -23,15 +26,13 @@ import {
 import { useAuth } from "@/components/auth-context";
 import { ExpandingField } from "./expanding-field";
 import { ArenaLanes } from "@/features/focus/arena-lanes";
-import { FieldGroundPicker, FieldOverview, useFieldAppearance } from "./field-course";
 import {
-  placeAt,
-  valueAt,
-  type SceneRunner,
-} from "../geometry";
+  FieldGroundPicker,
+  FieldOverview,
+  useFieldAppearance,
+} from "./field-course";
+import { placeAt, valueAt, type SceneRunner } from "../geometry";
 import type { FieldModel } from "../model";
-
-const PursuitPreview = lazy(() => import("@/features/club/pursuit-preview").then(module => ({default:module.PursuitPreview})));
 
 export function FieldStage({
   model,
@@ -48,7 +49,10 @@ export function FieldStage({
   const pathname = usePathname();
   const reduced = useReducedMotion();
   const accountKey = user?.id ?? "guest";
-  const [appearance, setAppearance] = useFieldAppearance(accountKey, model.sport);
+  const [appearance, setAppearance] = useFieldAppearance(
+    accountKey,
+    model.sport,
+  );
   const unit = model.unit;
   const runners = useMemo<SceneRunner[]>(
     () =>
@@ -78,8 +82,7 @@ export function FieldStage({
       }
     : null;
 
-  const [dimension,setDimension]=useState<"2d"|"3d">("2d");
-  const [sceneUnavailable,setSceneUnavailable]=useState(false);
+  const [dimension, setDimension] = useState<"2d" | "3d">("2d");
   const [mode, setMode] = useState<"lanes" | "standings">("lanes");
   const [lanesImmersive, setLanesImmersive] = useState(false);
 
@@ -100,7 +103,7 @@ export function FieldStage({
     toSpan: number;
   } | null>(null);
   const liveCenterRef = useRef(0);
-  const [showGhost, setShowGhost] = useState(true);
+  const showGhost = true;
   const [selected, setSelected] = useState<string | null>(null);
   const [overtakePlan, setOvertakePlan] = useState<ArenaOvertakePlan | null>(
     null,
@@ -134,7 +137,9 @@ export function FieldStage({
   );
 
   const toggleSelect = (id: string) => {
-    const runner = runners.find((item) => item.id === id) ?? (ghost?.id === id ? ghost : null);
+    const runner =
+      runners.find((item) => item.id === id) ??
+      (ghost?.id === id ? ghost : null);
     if (!runner) return;
     setSelected(id);
     tweenCenterTo(valueAt(runner, time));
@@ -157,13 +162,7 @@ export function FieldStage({
   const fieldHigh = useMemo(() => arenaFieldHigh(fieldLanes), [fieldLanes]);
   const clampViewCenter = useCallback(
     (value: number, viewSpan: number) =>
-      clampCourseCenter(
-        value,
-        viewSpan,
-        fieldHigh,
-        unit,
-        appearance.ground,
-      ),
+      clampCourseCenter(value, viewSpan, fieldHigh, unit, appearance.ground),
     [fieldHigh, unit, appearance.ground],
   );
 
@@ -266,7 +265,10 @@ export function FieldStage({
 
   useEffect(() => {
     if (!overtakePlan || replayEpoch === 0) return;
-    if (reduced) { setOvertakeProgress(1); return; }
+    if (reduced) {
+      setOvertakeProgress(1);
+      return;
+    }
     let raf = 0;
     const start = performance.now();
     const duration = overtakePlan.durationMs;
@@ -317,9 +319,12 @@ export function FieldStage({
 
   const followCenter = overtakeFrame ? overtakeFrame.viewCenter : total;
   const resolvedCenter = clampViewCenter(center ?? followCenter, span);
-  const displaySpan = centerTween !== null && centerTweenRef.current
-    ? centerTweenRef.current.fromSpan + (centerTweenRef.current.toSpan - centerTweenRef.current.fromSpan) * centerTween
-    : span;
+  const displaySpan =
+    centerTween !== null && centerTweenRef.current
+      ? centerTweenRef.current.fromSpan +
+        (centerTweenRef.current.toSpan - centerTweenRef.current.fromSpan) *
+          centerTween
+      : span;
   const displayCenter =
     centerTween !== null && centerTweenRef.current
       ? clampViewCenter(
@@ -344,11 +349,18 @@ export function FieldStage({
     setCenterTween(null);
   };
 
-  const tweenCenterTo = (target: number, nextSpan = view.span, follow = false) => {
+  const tweenCenterTo = (
+    target: number,
+    nextSpan = view.span,
+    follow = false,
+  ) => {
     const clamped = clampViewCenter(target, nextSpan);
     const fromSpan = view.span;
     const from = liveCenterRef.current;
-    if (Math.abs(from - clamped) < 0.05 && Math.abs(fromSpan - nextSpan) < 0.05) {
+    if (
+      Math.abs(from - clamped) < 0.05 &&
+      Math.abs(fromSpan - nextSpan) < 0.05
+    ) {
       cancelCenterTween();
       setCenter(follow ? null : clamped);
       setSpan(nextSpan);
@@ -380,7 +392,14 @@ export function FieldStage({
         setSpan(nextSpan);
       }
     };
-    centerTweenRef.current = { from, to: clamped, start, raf: 0, fromSpan, toSpan: nextSpan };
+    centerTweenRef.current = {
+      from,
+      to: clamped,
+      start,
+      raf: 0,
+      fromSpan,
+      toSpan: nextSpan,
+    };
     setCenterTween(0);
     centerTweenRef.current.raf = requestAnimationFrame(tick);
   };
@@ -390,9 +409,13 @@ export function FieldStage({
   };
   void centerOnYou;
 
-  useEffect(() => () => {
-    if (centerTweenRef.current) cancelAnimationFrame(centerTweenRef.current.raf);
-  }, []);
+  useEffect(
+    () => () => {
+      if (centerTweenRef.current)
+        cancelAnimationFrame(centerTweenRef.current.raf);
+    },
+    [],
+  );
 
   const trackSelected = resolveArenaSelectedId(
     selected,
@@ -403,7 +426,11 @@ export function FieldStage({
   if (!you) return <p className="fb-copy">Join a field to see your lanes.</p>;
 
   return (
-    <section className="focus-arena-stage" hidden={!tabActive} aria-hidden={!tabActive}>
+    <section
+      className="focus-arena-stage"
+      hidden={!tabActive}
+      aria-hidden={!tabActive}
+    >
       <div className="focus-arena-total">
         <div>
           <p className="fb-kicker">Accumulated this week</p>
@@ -444,39 +471,84 @@ export function FieldStage({
       )}
       <div className="focus-segments" role="tablist" aria-label="Arena view">
         {(["lanes", "standings", "3d"] as const).map((m) => (
-          <button key={m} role="tab" aria-selected={m === "3d" ? mode === "lanes" && dimension === "3d" : mode === m && (m === "standings" || dimension === "2d")}
+          <button
+            key={m}
+            role="tab"
+            aria-selected={
+              m === "3d"
+                ? mode === "lanes" && dimension === "3d"
+                : mode === m && (m === "standings" || dimension === "2d")
+            }
             onClick={() => {
               if (m !== mode) void playCue("selection");
               setReplayEpoch(0);
               setOvertakeProgress(1);
               setMode(m === "3d" ? "lanes" : m);
               setDimension(m === "3d" ? "3d" : "2d");
-              setSceneUnavailable(false);
-            }}>
+            }}
+          >
             {m === "lanes" ? "2D map" : m === "3d" ? "3D field" : "Standings"}
           </button>
         ))}
       </div>
 
-
-      {sceneUnavailable ? <p className="fb-note" role="status">3D isn’t available here. Your 2D map is ready.</p> : null}
-      {dimension==="3d"&&mode==="lanes"&&tabActive?<Suspense fallback={<p className="fb-copy" role="status">Opening your field…</p>}><PursuitPreview runners={runners} ghost={ghost} time={time} extra={0} selected={trackSelected||you.id} showGhost={showGhost} unit={unit} view={view} onPan={v=>{cancelCenterTween();setCenter(clampViewCenter(v,view.span));}} onSelect={toggleSelect} onUnavailable={()=>{setDimension("2d");setSceneUnavailable(true);}}/></Suspense>:null}
-      <div hidden={dimension==="3d"&&mode==="lanes"}>
-      <div style={{ display: "flow-root" }}>
-        <ExpandingField
-          open={lanesImmersive && tabActive}
-          tabActive={tabActive}
-          onClose={() => setLanesImmersive(false)}
-        >
-          <div className="focus-field-toolbar">
-            <span className="fb-note">{mode === "standings" ? "Ranked by this week's effort" : lanesImmersive ? "Drag to pan · swipe across peers" : null}</span>
-          </div>
-          <div className="focus-track-frame">
-              {mode === "lanes" && <FieldGroundPicker appearance={appearance} onChange={setAppearance}/>}
+      {dimension === "3d" && mode === "lanes" && tabActive ? (
+        <PortraitField
+          lanes={sceneLanes.map((l) => ({
+            ...l,
+            value: overtakeFrame?.laneValues[l.id] ?? l.value,
+          }))}
+          view={view}
+          unit={unit}
+          onZoom={(value) => {
+            cancelCenterTween();
+            setSpan(value);
+          }}
+          onSelect={toggleSelect}
+        />
+      ) : null}
+      <div hidden={dimension === "3d" && mode === "lanes"}>
+        <div style={{ display: "flow-root" }}>
+          <ExpandingField
+            open={lanesImmersive && tabActive}
+            tabActive={tabActive}
+            onClose={() => setLanesImmersive(false)}
+          >
+            <div className="focus-field-toolbar">
+              <span className="fb-note">
+                {mode === "standings"
+                  ? "Ranked by this week's effort"
+                  : lanesImmersive
+                    ? "Drag to pan · swipe across peers"
+                    : null}
+              </span>
+            </div>
+            <div className="focus-track-frame">
+              {mode === "lanes" && (
+                <FieldGroundPicker
+                  appearance={appearance}
+                  onChange={setAppearance}
+                />
+              )}
+              {mode === "lanes" ? (
+                <div className="club-map-status">
+                  <b>
+                    {displayPlace} / {runners.length} PLACE
+                  </b>
+                  <span>
+                    {portraitFieldGap(
+                      portraitField(sceneLanes, view).nextGap,
+                      unit,
+                    )}
+                  </span>
+                </div>
+              ) : null}
               <ArenaLanes
                 appearance={appearance}
                 presentation={mode === "standings" ? "standings" : "lanes"}
-                scores={Object.fromEntries((boardRows ?? []).map((row) => [row.id, row.elo]))}
+                scores={Object.fromEntries(
+                  (boardRows ?? []).map((row) => [row.id, row.elo]),
+                )}
                 immersive={lanesImmersive}
                 lanes={sceneLanes}
                 view={view}
@@ -495,68 +567,79 @@ export function FieldStage({
                 overtakeFrame={overtakeFrame}
                 overtakePlan={overtakePlan}
               />
-          </div>
-
-          <div hidden={mode === "standings"}>
-          <FieldOverview lanes={overtakeFrame ? sceneLanes.map(l => ({ ...l, value: overtakeFrame.laneValues[l.id] ?? l.value })) : sceneLanes} view={view} unit={unit} onNavigate={value => tweenCenterTo(value, appearance.ground === "oval" ? Math.min(view.span, fieldDefaultSpan(unit) / 2) : view.span)}/>
-          <div
-            className="focus-zoom-slider"
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 10,
-              padding: "10px 4px 6px",
-            }}
-          >
-            <span className="fb-note" style={{ fontSize: 12 }}>
-              Zoom
-            </span>
-            <input
-              type="range"
-              min={model.gps ? .5 : 2}
-              max={Math.max(model.gps ? 40 : 100, Math.ceil(view.span))}
-              step={model.gps ? "any" : 1}
-              value={view.span}
-              onChange={(e) => {
-                const current = view.center;
-                cancelCenterTween();
-                setSpan(Number(e.target.value));
-                if (center !== null) setCenter(current);
-              }}
-              onPointerUp={() => void playCue("selection")}
-              onKeyUp={(e) => {
-                if (e.key.startsWith("Arrow")) void playCue("selection");
-              }}
-              aria-label="Field zoom"
-              style={{ flex: 1, accentColor: "#26382d" }}
-            />
-            <span
-              className="fb-note"
-              style={{ fontSize: 11, minWidth: 44, textAlign: "right" }}
-            >
-              ±{(view.span / 2).toLocaleString("en-US",{maximumFractionDigits:unit==="pts"?0:2})} {unit}
-            </span>
-          </div>
-
-          {ghost && (
-            <div className="focus-track-caption">
-              <label>
-                <input
-                  type="checkbox"
-                  checked={showGhost}
-                  onChange={(e) => {
-                    const next = e.target.checked;
-                    setShowGhost(next);
-                    if (!next && selected === ghost?.id) setSelected(null);
-                  }}
-                />{" "}
-                Past you
-              </label>
+              {mode === "lanes" ? (
+                <>
+                  <div
+                    className="focus-zoom-slider"
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 10,
+                      padding: "10px 4px 6px",
+                    }}
+                  >
+                    <span className="fb-note" style={{ fontSize: 12 }}>
+                      Zoom
+                    </span>
+                    <input
+                      type="range"
+                      min={model.gps ? 0.5 : 2}
+                      max={Math.max(model.gps ? 40 : 100, Math.ceil(view.span))}
+                      step={model.gps ? "any" : 1}
+                      value={view.span}
+                      onChange={(e) => {
+                        const current = view.center;
+                        cancelCenterTween();
+                        setSpan(Number(e.target.value));
+                        if (center !== null) setCenter(current);
+                      }}
+                      onPointerUp={() => void playCue("selection")}
+                      onKeyUp={(e) => {
+                        if (e.key.startsWith("Arrow"))
+                          void playCue("selection");
+                      }}
+                      aria-label="Field zoom"
+                      style={{ flex: 1, accentColor: "#26382d" }}
+                    />
+                    <span
+                      className="fb-note"
+                      style={{ fontSize: 11, minWidth: 44, textAlign: "right" }}
+                    >
+                      ±
+                      {(view.span / 2).toLocaleString("en-US", {
+                        maximumFractionDigits: unit === "pts" ? 0 : 2,
+                      })}{" "}
+                      {unit}
+                    </span>
+                  </div>
+                </>
+              ) : null}
             </div>
-          )}
-          </div>
-        </ExpandingField>
-      </div>
+
+            <div hidden={mode === "standings"}>
+              <FieldOverview
+                lanes={
+                  overtakeFrame
+                    ? sceneLanes.map((l) => ({
+                        ...l,
+                        value: overtakeFrame.laneValues[l.id] ?? l.value,
+                      }))
+                    : sceneLanes
+                }
+                view={view}
+                unit={unit}
+                onNavigate={(value) =>
+                  tweenCenterTo(
+                    value,
+                    appearance.ground === "oval"
+                      ? Math.min(view.span, fieldDefaultSpan(unit) / 2)
+                      : view.span,
+                  )
+                }
+              />
+            </div>
+          </ExpandingField>
+        </div>
       </div>
     </section>
   );

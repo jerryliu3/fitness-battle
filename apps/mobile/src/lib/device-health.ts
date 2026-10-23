@@ -14,6 +14,7 @@ export interface DeviceSyncResult {
   ok: boolean;
   message: string;
   count: number;
+  activities?: ActivitySample[];
   /** HealthKit / Health Connect permission was granted on this attempt. */
   authorized?: boolean;
 }
@@ -166,6 +167,7 @@ async function postIngest(
     authorized: true,
     message: `Sent ${activities.length} workouts.`,
     count: activities.length,
+    activities,
   };
 }
 

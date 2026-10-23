@@ -10,7 +10,7 @@ import {
 } from "@/lib/profile/avatar-upload";
 import { createClient } from "@/lib/supabase/client";
 import {
-  countsOnTrack,
+  clubLifetimeTotals,
   distanceUnitLabel,
   effortHistory,
   ELO_UNRANKED,
@@ -21,14 +21,7 @@ import {
 } from "@fitness-battle/shared";
 import { useEffect, useRef, useState } from "react";
 
-function seasonSummary(state: CompeteState) {
-  const counted = state.activities.filter((a) => countsOnTrack(a, "open"));
-  const meters = counted.reduce((t, a) => t + a.distanceM, 0);
-  const weeks = state.periodResults.filter(
-    (r) => r.sport === state.primary && r.track === "open",
-  ).length;
-  return { meters, sessions: counted.length, weeks };
-}
+
 
 function EditIcon() {
   return (
@@ -91,7 +84,7 @@ export function AthleteOverview({
       : ELO_UNRANKED;
   const currentElo = track === "open" ? openElo : verifiedElo;
 
-  const season = seasonSummary(state);
+  const season = clubLifetimeTotals(state);
   const unit = distanceUnitLabel(state.units);
 
   async function onAvatarChosen(e: React.ChangeEvent<HTMLInputElement>) {

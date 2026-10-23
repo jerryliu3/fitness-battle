@@ -2,6 +2,7 @@ import { createRequire } from "node:module";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
+import { fieldCourse, defaultFieldAppearance } from "@fitness-battle/shared";
 import { ArenaLanes } from "@/features/focus/arena-lanes";
 
 const require = createRequire(import.meta.url);
@@ -24,11 +25,11 @@ function render(presentation: "lanes" | "standings", value = 3, span = 6) {
   return markup.slice(start, end).replace("<svg ", '<svg xmlns="http://www.w3.org/2000/svg" ');
 }
 
-async function goldPixels(svg: string, top: number, bottom: number) {
+async function goldPixels(svg: string, top: number, bottom: number, left = 0, right = Infinity) {
   const { data, info } = await sharp(Buffer.from(svg)).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
   let gold = 0;
-  for (let y = top; y < Math.min(bottom, info.height); y++) {
-    for (let x = 0; x < info.width; x++) {
+  for (let y = Math.max(0, Math.floor(top)); y < Math.min(bottom, info.height); y++) {
+    for (let x = Math.max(0, Math.floor(left)); x < Math.min(right, info.width); x++) {
       const i = (y * info.width + x) * 4;
       if (data[i] > 200 && data[i + 1] > 140 && data[i + 1] < 230 && data[i + 2] < 110 && data[i + 3] > 100) gold++;
     }
@@ -39,7 +40,13 @@ async function goldPixels(svg: string, top: number, bottom: number) {
 describe("production capsule visibility", () => {
   it.each([0, 3, 6])("renders the gold head at value %s, including field edges", async value => {
     // A 300 m head is compact in a 6 km overview, but remains painted at either edge.
-    const pixels=await goldPixels(render("lanes", value), 0, 540);
+    const course = fieldCourse(360, 540, 1, { center: 3, span: 6 }, "km", defaultFieldAppearance);
+    const head = course.point(value, 0, 0, true);
+    // A fixed pixel window around the head retains the upper size bound,
+    // while excluding the earned trail far behind it.
+    // A solid gold trail may legitimately fill thousands of pixels at the far edge.
+    const pixels=await goldPixels(render("lanes", value), head.y - 50, head.y + 50,
+      head.x - 50, head.x + 50);
     expect(pixels).toBeGreaterThan(100);
     expect(pixels).toBeLessThan(2000);
   });

@@ -65,8 +65,8 @@ export function ResultCard({
           </span>
           <small>
             {result.frozen
-              ? "Weekly bonus held by freeze"
-              : "Weekly placement bonus"}{" "}
+              ? "Weekly score adjustment held by freeze"
+              : "Weekly score adjustment"}{" "}
             · {APP_TIMEZONE}
           </small>
         </>

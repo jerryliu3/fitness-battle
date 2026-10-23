@@ -70,6 +70,8 @@ export function getRealPlayerPool(): readonly PoolPlayer[] {
 }
 
 export interface Action {
+  /** Presentation only: acknowledge older sync activity without a replay backlog. */
+  syncPresentation?: "quiet";
   type:
     | "rename"
     | "log-manual"

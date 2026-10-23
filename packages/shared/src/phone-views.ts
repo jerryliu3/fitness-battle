@@ -378,6 +378,7 @@ export function seedArenaBaselinesFromState(
   readItem: (key: string) => string | null,
   writeItem: (key: string, value: string) => void,
   now: Date = competeNow(state),
+  replaceExisting = false,
 ): void {
   for (const rating of state.ratings) {
     if (!rating.optedIn) continue;
@@ -395,7 +396,9 @@ export function seedArenaBaselinesFromState(
     ).startsAt.toISOString();
     for (const track of ["open", "verified"] as const) {
       const key = arenaBaselineStorageKey(accountKey, sport, track);
-      if (readArenaBaseline(readItem(key), periodStart, unit)) continue;
+      if (
+        !replaceExisting &&
+        readArenaBaseline(readItem(key), periodStart, unit)) continue;
       const arena = buildArenaModel(state, now, track, sport);
       const serialized = serializeArenaBaseline(
         periodStart,

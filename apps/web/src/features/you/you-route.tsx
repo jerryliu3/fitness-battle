@@ -82,7 +82,7 @@ function humanError(code?: string): string {
 function YouContent({ surface }: { surface: "progress" | "athlete" }) {
   const reduced = useReducedMotion();
   const { user, signOut, demoMode } = useAuth();
-  const { state, dispatch, loadStatus } = useCompete();
+  const { state, dispatch, loadStatus, previewSyncReview } = useCompete();
   const [panel, setPanel] = useState<AthletePanel | null>(null);
   const overviewRef = useRef<HTMLDivElement>(null);
   const settingsFocus = useRef<HTMLElement | null>(null);
@@ -600,7 +600,7 @@ function YouContent({ surface }: { surface: "progress" | "athlete" }) {
                 <h2>Data Sync</h2>
                 <p className="fb-copy" style={{ color: "var(--muted)", marginBottom: 16 }}>
                   Connect fitness trackers and wearables to sync your activities automatically.
-                  Workouts and recovery data contribute directly to your weekly effort score.
+                  Eligible workouts count toward your registered events. Sleep and recovery have their own views; samples do not earn competition points.
                 </p>
                 {PROVIDERS.map((provider) => {
                   const link = state.links.find(
@@ -619,7 +619,7 @@ function YouContent({ surface }: { surface: "progress" | "athlete" }) {
                         <small style={{ color: "var(--muted)", fontSize: 13, display: "block", marginTop: 2 }}>
                           {provider.blurb}
                           {link?.linked
-                            ? ` · ${evidenceLabel(status === "stub" ? "stub" : status === "connected" ? "receiving_data" : "disconnected")}`
+                            ? ` · ${demoMode || user?.mode === "demo" ? "Demo · sample data" : evidenceLabel(status === "stub" ? "stub" : status === "connected" ? "receiving_data" : "disconnected")}`
                             : ""}
                         </small>
                       </div>
@@ -638,7 +638,7 @@ function YouContent({ surface }: { surface: "progress" | "athlete" }) {
                             width: "auto",
                             fontSize: 12,
                             padding: "5px 12px",
-                            minHeight: "auto",
+                            minHeight: 44,
                             borderRadius: 8,
                           }}
                           disabled={connectingProvider === provider.id}
@@ -654,7 +654,7 @@ function YouContent({ surface }: { surface: "progress" | "athlete" }) {
                               width: "auto",
                               fontSize: 12,
                               padding: "5px 8px",
-                              minHeight: "auto",
+                              minHeight: 44,
                               color: "var(--red, #b83a38)",
                             }}
                             onClick={() => void disconnectProvider(provider.id)}
@@ -673,7 +673,7 @@ function YouContent({ surface }: { surface: "progress" | "athlete" }) {
                   <div className="fb-grow">
                     <strong style={{ fontSize: 14 }}>Sleep & recovery</strong>
                     <small style={{ color: "var(--muted)", fontSize: 13, display: "block", marginTop: 2 }}>
-                      Nightly recovery metrics and sleep score
+                      Tracker sleep appears when available. Add a sample night to preview sleep views.
                     </small>
                   </div>
                   <button
@@ -683,13 +683,13 @@ function YouContent({ surface }: { surface: "progress" | "athlete" }) {
                       width: "auto",
                       fontSize: 12,
                       padding: "5px 12px",
-                      minHeight: "auto",
+                      minHeight: 44,
                       borderRadius: 8,
                       flexShrink: 0,
                     }}
                     onClick={() => dispatch({ type: "log-sleep" })}
                   >
-                    Sync sleep
+                    Add sample night
                   </button>
                 </div>
                 <label className="fb-field" style={{ marginTop: 16 }}>
@@ -727,6 +727,11 @@ function YouContent({ surface }: { surface: "progress" | "athlete" }) {
                 ) : null}
               </section>
               <section className="fb-card">
+                {(demoMode || user?.mode === "demo") && previewSyncReview ? (
+                  <button className="fb-btn-line" onClick={previewSyncReview}>
+                    Preview today’s sync recap
+                  </button>
+                ) : null}
                 <h2>Import fitness history</h2>
                 {state.calibrated ? (
                   <p className="fb-copy">
@@ -840,7 +845,7 @@ function YouContent({ surface }: { surface: "progress" | "athlete" }) {
                               width: "auto",
                               fontSize: 12,
                               padding: "4px 10px",
-                              minHeight: "auto",
+                              minHeight: 44,
                               borderRadius: 8,
                             }}
                             onClick={() => {
@@ -880,13 +885,13 @@ function YouContent({ surface }: { surface: "progress" | "athlete" }) {
               <section className="fb-card">
                 <h2>Week freezes</h2>
                 <p className="fb-copy">
-                  {state.freezesLeft} of {STARTING_FREEZES} left. A freeze holds the weekly placement bonus. Activity milestones
+                  {state.freezesLeft} of {STARTING_FREEZES} left. A freeze holds the weekly score adjustment. Activity milestones
                   can still grow your score.
                 </p>
                 {frozen ? (
                   <div className="fb-stack">
                     <p className="fb-note" style={{ color: "var(--green, #2f6f4e)" }}>
-                      ❄ This week is frozen. Your weekly placement bonus is held through next Monday.
+                      ❄ This week is frozen. Your weekly score adjustment is held through next Monday.
                     </p>
                     <button
                       type="button"
@@ -899,8 +904,8 @@ function YouContent({ surface }: { surface: "progress" | "athlete" }) {
                 ) : confirmFreeze ? (
                   <div className="fb-stack">
                     <p className="fb-note">
-                      Freeze this week? You will have {state.freezesLeft - 1} freezes left.
-                      Your weekly placement bonus is held until next Monday.
+                      Freeze this week? You will have {state.freezesLeft - 1}{" "} freezes left.
+                      Your weekly score adjustment is held until next Monday.
                     </p>
                     <div className="fb-row">
                       <button
@@ -977,8 +982,7 @@ function YouContent({ surface }: { surface: "progress" | "athlete" }) {
               <p className="fb-copy">
                 Your level is a band on the weekly effort score ladder. It rises
                 immediately at weekly activity milestones in active sports.
-                Your rank sets the milestone size. Weekly placement can add a bonus;
-                effort score never goes down.
+                Your rank sets the milestone size. Weekly placement can raise or lower your score. A week without counted activity decays toward the score floor. Activity milestone points already earned are kept.
               </p>
               {RANK_BANDS.map((band) => (
                 <div key={band.name} className="fb-row">
@@ -1007,11 +1011,13 @@ function YouContent({ surface }: { surface: "progress" | "athlete" }) {
 
   const settingsPortal = settingsScrollRoot
     ? createPortal(
-        (panel || settingsPresent) ? <div className="focus-settings-stack">
+        panel || settingsPresent ? (
+          <div className="focus-settings-stack">
         <AnimatePresence mode="wait" onExitComplete={() => {
           setSettingsPresent(false);
         }}>{settingsPanel}</AnimatePresence>
-        </div> : null,
+        </div>
+        ) : null,
         settingsScrollRoot,
       )
     : null;
@@ -1059,7 +1065,9 @@ function YouContent({ surface }: { surface: "progress" | "athlete" }) {
         openProfileEdit={requestedEdit === "profile"}
         sections="profile"
       />
-      {isOwnerEmail(user.email) && <Link href="/admin" className="fb-btn-line">Round lab</Link>}
+      {isOwnerEmail(user.email) && (
+              <Link href="/admin" className="fb-btn-line">Round lab</Link>
+            )}
       <nav className="focus-settings-list" aria-label="Athlete settings">
         {(
           [

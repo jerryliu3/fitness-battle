@@ -1117,3 +1117,91 @@
 .training-atlas .focus-elo-track-toggle>button { flex:1; min-height:44px; padding:8px; border:0; border-radius:8px; background:none; font:inherit; font-size:12px; text-transform:none; letter-spacing:0; color:var(--muted); cursor:pointer; }
 .training-atlas .focus-elo-track-toggle>button[aria-pressed=true] { background:var(--ink); color:var(--card); }
 @media(min-width:900px) { .club-rival-card { height:100%; } }
+
+/* Locked perspective portrait field: independent of the Three.js renderer. */
+.club-perspective-board{position:relative;width:100%;max-width:560px;aspect-ratio:7/10;margin-inline:auto;overflow:hidden;border-radius:20px;background:#0b3038;isolation:isolate}
+.club-perspective-scenery{position:absolute;inset:0 0 auto;width:100%;height:40%;object-fit:cover}
+.club-perspective-svg{position:absolute;inset:0;width:100%;height:100%;overflow:hidden}
+.club-perspective-svg g[role=button]{cursor:pointer;outline:none}.club-perspective-svg g[role=button]:focus-visible>rect{stroke:#f7c948;stroke-width:4}
+.club-board-status{position:absolute;top:22px;left:20px;right:20px;display:flex;justify-content:space-between;align-items:center;gap:12px;color:white;font-size:12px;text-shadow:0 1px 6px #102e38}.club-board-status b{font-size:18px}.club-board-status small{font-size:9px}.club-board-status span{text-align:right}
+.club-board-controls{position:absolute;bottom:18px;left:0;right:0;display:grid;justify-items:center;gap:8px}.club-board-zoom,.club-board-peers{display:flex;align-items:center;gap:16px;padding:2px 6px;background:#102e38ed;border:1px solid #68858a;border-radius:28px;color:white;font-size:12px}.club-board-controls button{min-width:44px;min-height:44px;background:transparent;color:white;border:0;border-radius:50%;font:inherit;cursor:pointer}.club-board-controls button:disabled{opacity:.3}.club-board-zoom button{font-size:24px}.club-board-controls button:focus-visible{outline:2px solid #f7c948;outline-offset:1px}
+.phone-shell .atlas-bars>button{justify-content:center;background:repeating-linear-gradient(to top,transparent 0,transparent 30px,var(--line) 31px,transparent 32px)}
+.phone-shell .atlas-bars>button>span{width:42%;max-width:none;border-radius:4px 4px 0 0;background:linear-gradient(to top,#176c75,#388e93)}
+.club-chart-delta{font-size:12px;color:var(--ink);margin:0}.club-chart-delta[data-direction=up]{color:#176c75}
+
+.focus-track-frame{position:relative}.club-map-status{position:absolute;top:14px;left:14px;right:14px;z-index:3;display:flex;justify-content:space-between;gap:8px;pointer-events:none;background:#102e38ed;color:white;border-radius:12px;padding:12px;font-size:11px}
+.focus-track-frame>.focus-zoom-slider{position:absolute;bottom:18px;left:24px;right:24px;z-index:3;border-radius:28px;padding:8px 16px!important;background:#f8f9f6ee;box-shadow:0 4px 20px #103e4620}.focus-track-frame>.focus-ground-button{margin-bottom:8px}.focus-track-frame:has(>.focus-ground-button)>.club-map-status{top:56px}
+
+.club-perspective-svg{touch-action:pan-y;cursor:grab}.club-perspective-svg:active{cursor:grabbing}
+
+@media(min-width:900px){.phone-shell .atlas-bars{height:230px}.phone-shell .atlas-bars>button{height:192px}.phone-shell .atlas-bars small{top:200px}}
+
+.club-crew-track-scroll{overflow-x:auto;max-width:100%;overscroll-behavior-x:contain}.club-crew-track{position:relative}.club-crew-marker{position:absolute;width:56px;min-height:76px;border:0;background:transparent;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;color:var(--ink);font:inherit;padding:0}.club-crew-marker .crew-member-photo{width:40px;height:40px;display:grid;place-items:center;box-sizing:border-box}.club-crew-marker b{font-size:11px;max-width:56px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.club-crew-marker small{font-size:10px;white-space:nowrap}.club-crew-marker:focus-visible{outline:2px solid var(--field-teal);border-radius:8px}
+.club-crew-track-scroll{overflow-y:hidden}.club-crew-track>svg{display:block}
+
+.club-sync-recap {
+  display: grid;
+  gap: 16px;
+}
+.club-sync-total {
+  font-size: 44px;
+  line-height: 1.1;
+  color: var(--ink);
+  letter-spacing: -1.5px;
+}
+.club-sync-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+}
+.club-sync-list li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px 0;
+  border-bottom: 1px solid var(--line);
+}
+.club-sync-list li > div {
+  display: grid;
+  gap: 4px;
+}
+.club-sync-list span,
+.club-sync-list small {
+  font-size: 12px;
+  color: var(--muted);
+}
+.club-sync-swipe {
+  height: 60px;
+  position: relative;
+  display: grid;
+  place-items: center;
+  border-radius: 30px;
+  background: var(--accent-soft);
+  touch-action: pan-y;
+  user-select: none;
+  cursor: grab;
+  font-size: 14px;
+  font-weight: 700;
+}
+.club-sync-swipe i {
+  position: absolute;
+  top: 4px;
+  display: grid;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  border-radius: 26px;
+  background: var(--lime);
+  font-size: 24px;
+  font-style: normal;
+}
+.club-sync-swipe:focus-visible {
+  outline: 2px solid var(--field-teal);
+  outline-offset: 3px;
+}
+
+/* Keep status legible over bright scenery and clear of the 2D lane headers. */
+.club-board-status{padding:12px;border-radius:12px;background:#102e38ed;text-shadow:none}
+.focus-track-frame:has(>.club-map-status)>.focus-lane-surface{margin-top:44px}

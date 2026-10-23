@@ -133,13 +133,15 @@ export function recordStepPath(
     .join(" ");
 }
 
-/** Prototype's dated standing-record chart. A record holds until the next real improvement. */
+/** Connect actual PR achievements only; no synthetic extension to today. */
 export function personalRecordChart(
   rows: readonly RecordAttempt[],
   now: Date,
   width = 340,
   height = 170,
 ) {
+  let best=Infinity;
+  rows=[...rows].filter(r=>Number.isFinite(r.seconds)&&r.seconds>0&&Number.isFinite(Date.parse(r.startedAt))&&Date.parse(r.startedAt)<=now.getTime()).sort((a,b)=>Date.parse(a.startedAt)-Date.parse(b.startedAt)).filter(r=>{if(r.seconds>=best)return false;best=r.seconds;return true;});
   if (!rows.length) return null;
   const left = 54,
     right = width - 14,
@@ -152,13 +154,8 @@ export function personalRecordChart(
   const min = Math.max(0, low - padding),
     max = high + padding;
   const start = Date.parse(rows[0]!.startedAt);
-  const end = Math.max(
-    start + 86400000,
-    Date.parse(rows.at(-1)!.startedAt),
-    now.getTime(),
-  );
-  const x = (at: string) =>
-    left + ((Date.parse(at) - start) / (end - start)) * (right - left);
+  const end = Date.parse(rows.at(-1)!.startedAt);
+  const x = (at:string)=>end===start?(left+right)/2:left+(Date.parse(at)-start)/(end-start)*(right-left);
   // Lower elapsed time is lower on the chart, as in the reviewed prototype.
   const y = (seconds: number) =>
     top + ((max - seconds) / (max - min)) * (bottom - top);
@@ -167,12 +164,7 @@ export function personalRecordChart(
     x: x(row.startedAt),
     y: y(row.seconds),
   }));
-  const path =
-    points
-      .map((point, i) =>
-        i ? `H ${point.x} V ${point.y}` : `M ${point.x} ${point.y}`,
-      )
-      .join(" ") + ` H ${right}`;
+  const path = points.map((p,i)=>`${i?"L":"M"} ${p.x} ${p.y}`).join(" ");
   const ticks = [max, (min + max) / 2, min].map((seconds) => ({
     seconds,
     y: y(seconds),

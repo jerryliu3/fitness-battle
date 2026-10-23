@@ -47,7 +47,7 @@ export function WeekRecap({ state }: { state: CompeteState }) {
       {recap ? (
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel="View latest week recap"
+          accessibilityLabel={`View latest week recap. ${sportById(recap.sport).name}, ${recap.track === "verified" ? "GPS" : "Open"}. Place ${recap.place} of ${recap.fieldSize}. ${recap.eloAfter - recap.eloBefore >= 0 ? "+" : ""}${recap.eloAfter - recap.eloBefore} Effort Score.`}
           onPress={() => router.push("/arena?results=latest")}
           style={s.receipt}
         >
@@ -55,9 +55,9 @@ export function WeekRecap({ state }: { state: CompeteState }) {
             <Text style={f.h2}>{recap.place}</Text>
           </View>
           <View style={{ flex: 1, gap: 4 }}>
-            <Text style={f.rowTitle}>Last week, well earned.</Text>
+            <Text style={f.rowTitle}>Your latest settled week.</Text>
             <Text style={f.small}>
-              {sportById(recap.sport).name} ·{" "}
+              {sportById(recap.sport).name} · {recap.track === "verified" ? "GPS" : "Open"} ·{" "}
               {new Date(recap.periodStart).toLocaleDateString("en-US", {
                 month: "short",
                 day: "numeric",

@@ -133,7 +133,7 @@ export function ArenaLanes({
     previousGeometry.current = { width: size.width, laneWidth, count: ordered.length, left: course.left, oval: course.oval };
   }, [width, laneWidth, size.width, standings, course.oval, course.left]);
   return (
-    <div style={{ position: "relative", minWidth: 0 }}>
+    <div className="focus-lane-surface" style={{ position: "relative", minWidth: 0 }}>
     <div className="focus-lane-scroll" ref={host} data-immersive={immersive}
       onScroll={(event) => { if (!standings) laneScroll.current = event.currentTarget.scrollLeft; }}
       style={{ visibility: measured ? "visible" : "hidden", height: standings ? height : undefined, transition: reduced ? "none" : "height .48s cubic-bezier(.22,1,.36,1)" }}>

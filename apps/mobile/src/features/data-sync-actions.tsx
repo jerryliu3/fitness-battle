@@ -15,7 +15,7 @@ import { mobileEnv } from "../lib/env";
 import { FocusButton, f } from "../ui/focus";
 export function DataSyncActions({ provider }: { provider?: ProviderId }) {
   const { user, accessToken, demoMode } = useAuth();
-  const { state, dispatch } = useCompeteStore();
+  const { state, dispatch, previewSyncReview } = useCompeteStore();
   const [busy, setBusy] = useState(false),
     [note, setNote] = useState("");
   const flight = useRef(false);
@@ -156,6 +156,13 @@ export function DataSyncActions({ provider }: { provider?: ProviderId }) {
             />
           </View>
         ))}
+      {!live && !provider && previewSyncReview ? (
+        <FocusButton
+          secondary
+          label="Preview today’s sync recap"
+          onPress={previewSyncReview}
+        />
+      ) : null}
       {!provider ? (
         <>
           <FocusButton

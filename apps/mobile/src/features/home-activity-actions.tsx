@@ -29,7 +29,10 @@ export function HomeActivityActions({
 }: {
   compact?: boolean;
 }) {
-  const { state, canWrite, dispatch, refresh, saveError } = useCompeteStore();
+  const { state, canWrite, dispatch, refresh, saveError,
+    beginSyncReviewBatch,
+    endSyncReviewBatch,
+  } = useCompeteStore();
   const { user, accessToken, demoMode } = useAuth();
   const owner = useRef(user?.id);
   owner.current = user?.id;
@@ -57,6 +60,7 @@ export function HomeActivityActions({
     }
     flight.current = true;
     setBusy(true);
+    beginSyncReviewBatch?.(id);
     setNote("");
     const messages: string[] = [];
     try {
@@ -78,7 +82,18 @@ export function HomeActivityActions({
               ? await syncAppleHealth(createAppleHealthDeps(auth))
               : await syncHealthConnect(createHealthConnectDeps(auth));
           if (owner.current !== id) return;
-          if (result.ok) await refresh();
+          if (result.ok && result.activities?.length) {
+            dispatch({
+              type: "apply-sync",
+              accountId: id,
+              provider: link.provider,
+              activities: result.activities.flatMap((sample) => {
+                const a = activityFromSample(sample, "recorded");
+                return a ? [a] : [];
+              }),
+              linkStatus: "connected",
+            });
+          } else if (result.ok) await refresh();
           if (owner.current !== id) return;
           messages.push(result.message);
         } else if (demoMode || user.mode === "demo") {
@@ -135,6 +150,7 @@ export function HomeActivityActions({
       if (owner.current === id)
         setNote("Sync could not finish. Retry from Athlete.");
     } finally {
+      endSyncReviewBatch?.(id);
       flight.current = false;
       setBusy(false);
     }

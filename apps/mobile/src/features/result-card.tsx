@@ -54,7 +54,7 @@ export function ResultCard({
     >
       <Pressable
         accessibilityRole="button"
-        accessibilityLabel={`${receipt ? "Hide" : "View"} ${sportById(result.sport).name} result receipt`}
+        accessibilityLabel={`${receipt ? "Hide" : "View"} ${sportById(result.sport).name} result receipt. ${range}. ${result.track === "verified" ? "GPS" : "Open"}. Place ${result.place} of ${result.fieldSize}. ${formatVolume(result.sport, result.distanceM, result.movingSec, units)}. ${result.eloBefore} to ${result.eloAfter} effort score, ${formatEloDelta(result.eloBefore, result.eloAfter)}. ${result.frozen ? "Weekly score adjustment held by freeze." : "Weekly score adjustment."}`}
         accessibilityState={{ expanded: receipt }}
         onPressIn={() => tilt(1)}
         onPressOut={() => tilt(0)}
@@ -92,9 +92,9 @@ export function ResultCard({
             </Text>
             <Text style={f.small}>
               {result.frozen
-                ? "Weekly bonus held by freeze"
-                : "Weekly placement bonus"}{" "}
-              · {APP_TIMEZONE}
+                ? "Weekly score adjustment held by freeze"
+                : "Weekly score adjustment"}{" "}
+              · Eastern time
             </Text>
           </>
         ) : (
