@@ -65,6 +65,8 @@ export function PhoneShell({
   } = useCompete();
   const tab = shellTabFromPath(path);
   const onAthlete = path?.startsWith("/athlete") ?? false;
+  const progressDetail =
+    Boolean(path?.startsWith("/you/")) && path !== "/you";
   useCompeteFieldRefresh(!hideTabs && (tab?.id === "arena" || tab?.id === "field"));
   const bottomNavigation = useRef(false);
   const [animateDestination, setAnimateDestination] = useState(false);
@@ -186,7 +188,7 @@ export function PhoneShell({
   return (
     <div className="phone-frame">
       <div className="phone-shell">
-        {!onAthlete && path !== "/week" && <header className="focus-shell-header">
+        {!onAthlete && path !== "/week" && !progressDetail && <header className="focus-shell-header">
           <div className="club-header-effort"><EffortRail compact /></div>
           <DebugEventMenu activeTab={active} onNavigate={navigateDebugTarget} />
           <Link
@@ -208,7 +210,7 @@ export function PhoneShell({
           accountLoadingBody
         ) : onAthlete ? (
           panel(<motion.div key={accountKey} initial={reduce ? false : { x: 40, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ duration: reduce ? 0 : 0.26 }}><AthletePage /></motion.div>)
-        ) : matched ? (
+        ) : matched && !progressDetail ? (
           <div className="phone-panels">
             {SHELL_TABS.map((tab) => {
               const on = active === tab.id;
@@ -229,7 +231,7 @@ export function PhoneShell({
         ) : (
           panel(<motion.div key={path} initial={reduce ? false : { x: 40, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ duration: reduce ? 0 : 0.26 }}>{children}</motion.div>)
         )}
-        {hideTabs || onAthlete || path === "/week" ? null : (
+        {hideTabs || onAthlete || path === "/week" || progressDetail ? null : (
           <nav className="phone-tabs" aria-label="Primary">
               {SHELL_TABS.map((tab) => {
                 const on = active === tab.id;
