@@ -1,17 +1,12 @@
+import { clubLifetimeTotals } from "@fitness-battle/shared";
 import { SHELL_COLORS as clubColors } from "@fitness-battle/shared";
-import {
-  clubLifetimeTotals,
-  distanceUnitLabel,
-  formatDistanceM,
-  type CompeteState,
-} from "@fitness-battle/shared";
+import { distanceUnitLabel, formatDistanceM, type CompeteState } from "@fitness-battle/shared";
 import { useRouter } from "expo-router";
 import { Text, View } from "react-native";
+import { IconButton } from "../ui/icon-button";
 import { FocusButton, f } from "../ui/focus";
 import { EffortTrend } from "./effort-trend";
 import { ProfilePhoto } from "./profile-photo";
-
-
 
 export function AthleteMetrics({
   state,
@@ -55,10 +50,8 @@ export function AthleteMetrics({
                 </Text>
               ) : null}
             </View>
+            {onEdit ? <IconButton icon="edit" label="Edit profile" onPress={onEdit} /> : null}
           </View>
-          {onEdit ? (
-            <FocusButton label="Edit profile" secondary onPress={onEdit} />
-          ) : null}
         </>
       ) : (
         <>

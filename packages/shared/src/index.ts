@@ -39,4 +39,3 @@ export * from "./account-runtime";
 
 export * from "./legacy-demo";
 export * from "./crew-activity";
-export * from "./score-track-prefs";

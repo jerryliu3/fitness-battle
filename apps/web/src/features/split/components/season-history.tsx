@@ -2,6 +2,7 @@
 
 import {
   APP_TIMEZONE,
+  competitionTrack,
   formatEloDelta,
   sportById,
   type PeriodResult,
@@ -38,9 +39,7 @@ export function SeasonHistory({
   units?: UnitSystem;
 }) {
   const [sportFilter, setSportFilter] = useState<SportId | "all">(primary);
-  const [trackFilter, setTrackFilter] = useState<"open" | "verified" | "all">(
-    "open",
-  );
+
 
   const sports = useMemo(() => {
     const ids = [...new Set(results.map((row) => row.sport))];
@@ -50,10 +49,10 @@ export function SeasonHistory({
   const rows = useMemo(() => {
     return results.filter((row) => {
       if (sportFilter !== "all" && row.sport !== sportFilter) return false;
-      if (trackFilter !== "all" && row.track !== trackFilter) return false;
+      if (row.track !== competitionTrack(row.sport)) return false;
       return true;
     }).sort((a,b)=>b.periodStart.localeCompare(a.periodStart));
-  }, [results, sportFilter, trackFilter]);
+  }, [results, sportFilter]);
 
   if (results.length === 0) {
     return (
@@ -97,25 +96,6 @@ export function SeasonHistory({
           </button>
         ))}
       </div>
-      <div className="fb-chips">
-        {(
-          [
-            ["open", "Open"],
-            ["verified", "GPS"],
-            ["all", "Both"],
-          ] as const
-        ).map(([id, label]) => (
-          <button
-            key={id}
-            type="button"
-            className={trackFilter === id ? "fb-chip on" : "fb-chip"}
-            onClick={() => setTrackFilter(id)}
-          >
-            {label}
-          </button>
-        ))}
-      </div>
-
       <div className="weekly-chapters">
         {!rows.length?<p className="fb-note">No closed weeks match this selection.</p>:null}
         {rows.map((row,index)=>{

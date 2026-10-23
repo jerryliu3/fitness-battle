@@ -18,8 +18,8 @@ export default async function RankingsHomePage() {
   return (
     <main className="rankings-wrap">
       <header className="rankings-top">
-        <Link href="/pace" className="fb-back">
-          ← Back to Pace
+        <Link href="/you" className="club-icon-button" aria-label="Return to Progress">
+          ‹
         </Link>
         <span className="rankings-kicker">Race Rankings</span>
       </header>
