@@ -152,11 +152,15 @@ describe("native competition interactions", () => {
     await act(async () => viewControl().props.onChange("lanes"));
     expect(lane().props.active).toBe(true);
     expect(mock.mounts).toBe(1);
-    const choose = renderer.root.findAllByType("Pressable" as never).find(node=>node.props.accessibilityLabel?.startsWith("Choose event."))!;
-    await act(async()=>choose.props.onPress());
+    const choose = renderer.root.findAll(node=>typeof node.props.onAccessibilityTap === "function" && node.props.accessibilityLabel?.startsWith("Choose event."))[0]!;
+    await act(async()=>choose.props.onAccessibilityTap());
     const register=renderer.root.findAllByType("FocusButton" as never).find(node=>node.props.label==="Register for another event")!;
     await act(async()=>register.props.onPress());
-    expect(renderer.root.findAllByType("Sheet" as never).some(node=>node.props.title==="Register for this week."&&node.props.open)).toBe(true);
+    const registrationOpen = () => renderer.root.findAllByType("Sheet" as never).some(node=>node.props.title==="Register for this week."&&node.props.open);
+    expect(registrationOpen()).toBe(false);
+    const chooser=renderer.root.findAllByType("Sheet" as never).find(node=>node.props.title==="Choose your event")!;
+    await act(async()=>chooser.props.onClosed());
+    expect(registrationOpen()).toBe(true);
   });
 
   it("uses the animated field rank instead of counting the athlete's final position as a rival", async () => {

@@ -104,3 +104,9 @@ The existing persistence path was reviewed read-only with the Supabase skill: ac
 Navigation inventory, overlap findings and prioritized grouping recommendations: [navigation audit](navigation-audit.md). No primary destination was consolidated or removed.
 
 Final evidence: [native field after second sweep](ios-field-final.jpg), [web Home with repaired recap](web-home-final.jpg). Earlier progress, Crew and sync screenshots remain linked above.
+
+## CI follow-up
+
+After the owner requested repairs to the failing PR checks, full local `pnpm typecheck` and `pnpm test` were run successfully. The original audit's full-validation waiver above describes that earlier pass.
+
+The capsule raster test now measures the local head bounds, preserving visibility/size assertions without counting the intentionally solid earned trail as head pixels. Native interaction coverage now opens the accessible event-title control and verifies that registration waits for the chooser's closed callback. A fixed fixture clock and an activity timestamp before the exclusive current-time boundary remove a timing race in the animation check. These are test corrections; product behavior is unchanged. The shared fixes were committed to #276 and propagated through #277–280 with normal merges, preserving published history.
