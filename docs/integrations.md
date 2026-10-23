@@ -107,13 +107,14 @@ Tokens live in `private.fitness_tokens`. The mobile app sends `Authorization: Be
 
 Onboarding (and You, until used) offers a one-time 90-day calibration (`import-history` / `mark_backfill_complete`). After `calibrated` / `backfill_completed_at` is set, it cannot run again. A live provider sync uses the same 90-day horizon on the first pull.
 
-## Garmin application disclosures
+## Connected fitness privacy disclosures
 
-The public privacy policy at `/privacy` describes Garmin activity uses, Vercel
-and Supabase processing, competition/crew visibility, no sale or advertising use,
-no AI processing or model training/evaluation/improvement, and email requests for
-access, correction, export and deletion. Disconnect stops future sync; deletion
-of previously imported records is a separate request. Keep this disclosure current
-before adding a processor or a new use of Garmin data. Publish the updated policy
-before submitting its URL to Garmin. The existing `/icons/icon-192.png` asset fits
-the developer application's maximum 300×300 branding size.
+The public policy at `/privacy` covers all connected fitness services, with
+Garmin as an example rather than a separate policy. It describes activity uses,
+Vercel and Supabase processing, competition/crew visibility, no sale or advertising
+use, no AI processing or model training/evaluation/improvement, and email requests
+for access, correction, export and deletion. Disconnect stops future sync;
+deletion of previously imported records is a separate request. Keep disclosures
+current before adding a processor or new data use. Publish the updated policy
+before submitting its URL to a provider. The existing `/icons/icon-192.png` asset
+fits Garmin’s developer application maximum 300×300 branding size.

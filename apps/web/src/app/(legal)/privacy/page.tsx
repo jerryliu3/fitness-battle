@@ -4,7 +4,7 @@ import Link from "next/link";
 export const metadata: Metadata = {
   title: "Privacy Policy · overtaek",
   description:
-    "How overtaek collects, uses, and shares account and fitness data, including Garmin, WHOOP, and other trackers.",
+    "How overtaek collects, uses, and shares account and fitness data, and the choices you have when using connected fitness services.",
 };
 
 const UPDATED = "October 23, 2026";
@@ -20,15 +20,14 @@ export default function PrivacyPolicyPage() {
         overtaek (“we”, “us”, or “the app”) helps you run fitness battles
         with automatic tracking. This policy explains what we collect, why we
         use it, and the choices you have. It is written for ordinary use of the
-        product, including when you connect a wearable or activity service such
-        as WHOOP.
+        product, including when you connect a wearable or activity service.
       </p>
 
       <h2>1. Who this applies to</h2>
       <p>
         This policy covers the overtaek web and mobile apps and related APIs. If you
-        use a third-party service through us (for example WHOOP, Strava, Oura,
-        or Garmin), that provider’s own privacy policy also applies to data they
+        use a third-party service through us (for example Garmin, Strava, WHOOP,
+        or Oura), that provider’s own privacy policy also applies to data they
         hold.
       </p>
 
@@ -47,8 +46,8 @@ export default function PrivacyPolicyPage() {
       </p>
       <ul>
         <li>Workouts and activity summaries (type, time, distance, duration, heart rate when provided)</li>
-        <li>Recovery or readiness scores and related sleep metrics when you connect WHOOP or Oura</li>
-        <li>Basic profile fields the provider exposes under the scopes you grant (for example name or email on WHOOP)</li>
+        <li>Recovery or readiness scores and related sleep metrics when supported by your connected service</li>
+        <li>Basic profile fields the provider exposes under the scopes you grant (such as name or email)</li>
         <li>OAuth access and refresh tokens so we can sync on your behalf until you disconnect</li>
       </ul>
       <p>
@@ -77,26 +76,33 @@ export default function PrivacyPolicyPage() {
         <li>Respond to support requests you send us</li>
       </ul>
       <p>
-        We do not sell your personal information. We do not use WHOOP or other
-        fitness data for advertising.
+        We do not sell your personal information. We do not use fitness or health
+        data for advertising.
       </p>
 
       <h2>4. How we share information</h2>
       <p>We share data only as needed to run the product:</p>
       <ul>
         <li>
-          <strong>Other participants.</strong> Display name and scored effort
-          appear on battles and standings you join.
+          <strong>Other participants.</strong> Your display name, scored effort,
+          and standings appear in competitions you join. Members of crews you
+          join can see your contribution to shared progress. These totals may
+          be derived from connected activity data and are used for in-app
+          competition and group progress. Authorization tokens and raw heart
+          rate data are not shown to other participants.
         </li>
         <li>
-          <strong>Service providers.</strong> Infrastructure such as hosting
-          (Vercel) and database/auth (Supabase) process data on our
-          instructions.
+          <strong>Service providers.</strong> Vercel hosts our web application
+          and processes backend API requests, including activity sync. Supabase
+          provides database storage and account authentication. These providers
+          process account and connected fitness data on our instructions to
+          operate the service.
         </li>
         <li>
-          <strong>Fitness providers.</strong> When you connect WHOOP or another
-          tracker, you authorize that provider to share data with us. Tokens and
-          sync traffic go to their APIs under their terms.
+          <strong>Fitness providers.</strong> When you connect a tracker, you
+          authorize that provider to share data with us. Authorization and sync
+          requests go to that provider’s APIs under its terms. We do not forward
+          imported activity data to other connected fitness providers.
         </li>
         <li>
           <strong>Legal.</strong> We may disclose information if required by law
@@ -104,80 +110,41 @@ export default function PrivacyPolicyPage() {
         </li>
       </ul>
 
-      <h2>5. WHOOP</h2>
       <p>
-        When you connect WHOOP, overtaek requests the scopes shown in the
-        WHOOP authorization screen (currently offline access plus recovery,
-        sleep, workout, and profile read access). We use that data to sync
-        workouts and readiness into your battles. You can disconnect WHOOP in
-        the Athlete section of the app, and you can revoke access at any time in
-        your WHOOP account settings. After disconnect or revoke, we stop pulling
-        new WHOOP data and clear stored WHOOP tokens.
-      </p>
-      <p>
-        WHOOP’s handling of your account is governed by{" "}
-        <a
-          href="https://www.whoop.com/privacy"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          WHOOP’s privacy policy
-        </a>
-        .
+        Apart from the product features, infrastructure providers, and legal
+        disclosures described above, we do not share fitness or health data
+        with third parties for their own use. We do not send this data to
+        third-party analytics services or other integration partners.
       </p>
 
-      <h2>6. Garmin data</h2>
+      <h2>5. Connected fitness services</h2>
       <p>
-        Connecting Garmin is optional. With your authorization, we receive
-        activity data made available through the permissions you grant, such as
-        activity type, start time, duration, distance, and available heart rate
-        information. We use this data to sync your workout history, calculate
-        effort scores and weekly standings, and show your progress and activity
-        summaries. We do not use Garmin data for advertising or sell it.
+        Connecting a fitness service is optional. We receive the data available
+        under the permissions you approve, and use it to populate workout
+        history, calculate effort scores and weekly standings, and show personal
+        progress. Where supported and authorized, we also use sleep, recovery,
+        or readiness data to display those metrics in the app. These practices
+        apply to all connected services, including Garmin.
       </p>
       <p>
-        The third-party infrastructure providers that process Garmin data on our
-        behalf are Vercel (hosting and backend API processing) and Supabase
-        (database storage and account authentication). Garmin receives the
-        authorization and API requests needed to maintain your connection. We
-        do not forward Garmin activity data to other connected fitness providers,
-        integration partners, third-party analytics services, or AI services.
+        The authorization screen identifies the permissions requested by each
+        service. The provider’s own privacy policy governs the information it
+        holds. You can withdraw consent for future syncing by disconnecting the
+        service in the app’s tracker settings or revoking overtaek’s access in
+        the provider’s account settings. Disconnecting through the app removes
+        stored authorization tokens and stops future syncing. It does not
+        automatically delete previously imported activities; you can request
+        deletion as described below.
       </p>
+
+      <h2>6. AI and machine learning</h2>
       <p>
-        Other athletes in competitions you join can see your display name,
-        Garmin-derived effort totals, and standings. Members of crews you join
-        can see your contribution to shared progress. This information is used
-        for in-app competition and group progress. Your Garmin authorization
-        tokens and raw heart rate data are not shown to other participants.
-        Apart from these product features, our infrastructure providers, and
-        the legal disclosures described above, we do not share Garmin data
-        with third parties for their own use.
-      </p>
-      <h3>AI transparency</h3>
-      <p>
-        We do not send Garmin data or information derived from it to AI or
-        machine learning systems. Garmin data and anything derived from it are
-        not used to train, evaluate, or improve AI models. Any future permitted
-        AI processing would require an updated disclosure, your explicit opt-in
-        consent, and an easy way to withdraw that consent before it begins.
-      </p>
-      <h3>Access, correction, export, deletion, and consent</h3>
-      <p>
-        You can view synced activity history and progress in the app. To request
-        a copy or export of your Garmin data, correct inaccurate stored data,
-        or delete Garmin data and associated personal progress records, email{" "}
-        <a href="mailto:3jerryliu@gmail.com">3jerryliu@gmail.com</a>
-        {" "}from your account email address. We verify account ownership before
-        fulfilling requests. You can also request account deletion through the
-        app or by email, subject to the limited retention exceptions below.
-      </p>
-      <p>
-        You can withdraw consent for future Garmin syncing by disconnecting
-        Garmin in the app’s tracker settings, or by revoking overtaek’s access
-        in Garmin Connect. Disconnecting through the app removes stored Garmin
-        authorization tokens and stops future syncing. Disconnecting does not
-        automatically delete previously imported activities; contact us to
-        request deletion of those activities and associated personal records.
+        We do not send fitness or health data, or information derived from it,
+        to AI or machine learning systems. We do not use this data to train,
+        evaluate, or improve AI models. Any future permitted AI processing would
+        require an updated disclosure, your explicit opt-in consent, and an easy
+        way to withdraw that consent before processing begins. Provider
+        restrictions on AI use continue to apply regardless of consent.
       </p>
 
       <h2>7. Storage and retention</h2>
@@ -203,13 +170,24 @@ export default function PrivacyPolicyPage() {
         storage is perfectly secure.
       </p>
 
-      <h2>9. Your choices</h2>
+      <h2>9. Your choices and data rights</h2>
       <ul>
-        <li>Update display name and preferences in the app</li>
-        <li>Connect or disconnect trackers from Athlete / onboarding</li>
-        <li>Revoke provider access in that provider’s own settings</li>
-        <li>Request access, correction, export, or deletion by contacting us</li>
+        <li>View synced activity history and progress in the app</li>
+        <li>Update your display name and preferences in the app</li>
+        <li>Disconnect trackers or revoke access in the provider’s settings</li>
+        <li>Request access, correction, export, or deletion of your data</li>
       </ul>
+      <p>
+        To request a copy or export of your data, correct inaccurate stored
+        information, or delete imported activities and associated personal
+        progress records, email{" "}
+        <a href="mailto:3jerryliu@gmail.com">3jerryliu@gmail.com</a>
+        {" "}from your account email address. We verify account ownership before
+        fulfilling requests. You can also request account deletion through the
+        app or by email, subject to the limited retention exceptions above.
+        These choices apply to all connected fitness data as well as other
+        personal information we hold.
+      </p>
 
       <h2>10. Children</h2>
       <p>
