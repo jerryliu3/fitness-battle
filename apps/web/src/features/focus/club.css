@@ -810,6 +810,18 @@
   color: var(--ink);
   cursor: pointer;
 }
+.club-activity-sport {
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 14px;
+  background: var(--action-soft);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+}
 .club-activity-icon {
   display: grid;
   place-items: center;
@@ -945,9 +957,9 @@
   border-radius: 4px;
   background: none;
 }
-.phone-shell .focus-crew-hero .club-crew-name:hover {
-  text-decoration: underline;
-  text-underline-offset: 4px;
+.phone-shell .focus-crew-hero .club-crew-name:hover,
+.phone-shell .focus-crew-hero .club-crew-name:focus-visible {
+  text-decoration: none;
 }
 .phone-shell .focus-crew-gear-btn {
   width: 44px !important;
