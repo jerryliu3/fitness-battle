@@ -9,13 +9,21 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { SHELL_COLORS, SHELL_RADIUS } from "../theme";
 import { playCue } from "../lib/haptics";
 
-interface PhoneTabBarProps {
+export interface PhoneTabBarProps {
   state: {
     index: number;
     routes: { key: string; name: string }[];
   };
-  navigation: {
+  navigation?: {
     navigate: (name: string) => void;
+    emit: (event: {
+      type: "tabPress" | "tabLongPress";
+      target: string;
+      canPreventDefault?: boolean;
+    }) => { type: string; defaultPrevented?: boolean };
+  };
+  navigateToTab?: (routeKey: string) => void;
+  emitter?: {
     emit: (event: {
       type: "tabPress" | "tabLongPress";
       target: string;
@@ -24,7 +32,12 @@ interface PhoneTabBarProps {
   };
 }
 
-export function PhoneTabBar({ state, navigation }: PhoneTabBarProps) {
+export function PhoneTabBar({
+  state,
+  navigation,
+  navigateToTab,
+  emitter,
+}: PhoneTabBarProps) {
   const insets = useSafeAreaInsets();
   return (
     <View
@@ -44,18 +57,32 @@ export function PhoneTabBar({ state, navigation }: PhoneTabBarProps) {
             accessibilityState={{ selected }}
             accessibilityLabel={tab.label}
             onPress={() => {
-              const event = navigation.emit({
-                type: "tabPress",
-                target: route.key,
-                canPreventDefault: true,
-              });
-              if (!selected && !event.defaultPrevented) {
+              const event = emitter
+                ? emitter.emit({
+                    type: "tabPress",
+                    target: route.key,
+                    canPreventDefault: true,
+                  })
+                : navigation?.emit({
+                    type: "tabPress",
+                    target: route.key,
+                    canPreventDefault: true,
+                  });
+              if (!selected && !event?.defaultPrevented) {
                 void playCue("selection");
-                navigation.navigate(route.name);
+                if (navigateToTab) {
+                  navigateToTab(route.key);
+                } else if (navigation) {
+                  navigation.navigate(route.name);
+                }
               }
             }}
             onLongPress={() => {
-              navigation.emit({ type: "tabLongPress", target: route.key });
+              if (emitter) {
+                emitter.emit({ type: "tabLongPress", target: route.key });
+              } else if (navigation) {
+                navigation.emit({ type: "tabLongPress", target: route.key });
+              }
             }}
             style={[styles.tab, selected ? styles.tabOn : null]}
           >

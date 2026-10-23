@@ -2,6 +2,7 @@ import { useEffect, useId, useRef, useState } from "react";
 import {
   Image,
   ScrollView,
+  type ScrollViewInstance,
   Pressable,
   StyleSheet,
   Text,
@@ -44,7 +45,7 @@ export function PortraitField({
   const prefix = useId().replace(/:/g, "");
   const scene = portraitField(lanes, view, undefined, laneOffset, prefix);
   const [width, setWidth] = useState(340);
-  const scroll = useRef<ScrollView>(null);
+  const scroll = useRef<ScrollViewInstance>(null);
   const moveTo = (offset: number) => {
     const focus = Math.max(
       0,

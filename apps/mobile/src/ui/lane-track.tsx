@@ -16,7 +16,7 @@ import {
   type ArenaViewWindow,
 } from "@fitness-battle/shared";
 import { useEffect, useId, useMemo, useRef, useState } from "react";
-import { PanResponder, Pressable, ScrollView, Text, View } from "react-native";
+import { PanResponder, Pressable, ScrollView, Text, View, type ScrollViewInstance } from "react-native";
 import Svg, {
   Circle,
   Defs,
@@ -66,7 +66,7 @@ export function LaneTrack({
   const [exploring, setExploring] = useState(false);
   const [width, setWidth] = useState(340);
   const wakeTime = usePolishedWakeTime(active && exploring);
-  const scroll = useRef<ScrollView>(null);
+  const scroll = useRef<ScrollViewInstance>(null);
   const animating = Boolean(overtakeFrame && overtakeFrame.phase !== "done");
   const me = lanes.find((l) => l.you);
   const rawV = view ?? {
