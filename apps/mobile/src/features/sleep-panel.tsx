@@ -1,3 +1,4 @@
+import { SectionHeader, AppText } from "../ui/section";
 import {
   buildSleepView,
   competeNow,
@@ -26,59 +27,57 @@ export function SleepPanel({
   return (
     <View style={f.card}>
       <Text style={f.kicker}>Sleep & Recovery</Text>
-      <Text style={f.h2}>
-        {view.lastNight ? "Last night" : "No night recorded yet"}
-      </Text>
+      <SectionHeader title={view.lastNight ? "Last night" : "No night recorded yet"}/>
       {view.lastNight ? (
         <>
           <Text style={f.massive}>{view.lastNight.score}</Text>
-          <Text style={f.copy}>
+          <AppText role="body" secondary >
             sleep score · {formatSleepDuration(view.lastNight.durationMin)}
             {view.lastNight.verified ? "" : " · entered on this device"}
-          </Text>
+          </AppText>
         </>
       ) : (
         <>
-          <Text style={f.copy}>
+          <AppText role="body" secondary >
             Connect a supported sleep tracker in Athlete → Data Sync.
-          </Text>
+          </AppText>
 
         </>
       )}
       <View style={f.row}>
-        <Text style={f.copy}>Contest score</Text>
-        <Text style={f.rowTitle}>
+        <AppText role="body" secondary >Contest score</AppText>
+        <AppText role="itemTitle" >
           {view.nightsLogged ? view.contestScore.toFixed(0) : "—"}
-        </Text>
+        </AppText>
       </View>
       {view.nightsLogged ? (
-        <Text style={f.small}>
+        <AppText role="caption" secondary >
           Avg: {view.mean.toFixed(0)} · nights you miss count against this
           week&apos;s contest score
-        </Text>
+        </AppText>
       ) : null}
       <View style={f.row}>
-        <Text style={f.copy}>Nights so far</Text>
-        <Text style={f.rowTitle}>
+        <AppText role="body" secondary >Nights so far</AppText>
+        <AppText role="itemTitle" >
           {view.elapsedNights
             ? `${view.nightsLogged} / ${view.elapsedNights}`
             : "—"}
-        </Text>
+        </AppText>
       </View>
       <View style={f.row}>
-        <Text style={f.copy}>Field</Text>
-        <Text style={f.rowTitle}>
+        <AppText role="body" secondary >Field</AppText>
+        <AppText role="itemTitle" >
           {view.place ?? "—"} / {view.fieldSize || "—"}
-        </Text>
+        </AppText>
       </View>
       {view.rows.map((r) => (
         <View key={r.id} style={f.row}>
-          <Text style={f.small}>{r.place}</Text>
-          <Text style={[f.rowTitle, f.grow]}>
+          <AppText role="supporting" secondary >{r.place}</AppText>
+          <AppText role="itemTitle" style={f.grow}>
             {r.name}
             {r.you ? " (you)" : ""}
-          </Text>
-          <Text style={f.rowTitle}>{r.score.toFixed(0)}</Text>
+          </AppText>
+          <AppText role="itemTitle" >{r.score.toFixed(0)}</AppText>
         </View>
       ))}
     </View>

@@ -1,5 +1,6 @@
+import { AppText } from "../ui/section";
 import { useEffect, useRef, useState } from "react";
-import { Text, TextInput, View } from "react-native";
+import { TextInput, View } from "react-native";
 import { requestApi } from "../lib/api";
 import { useAuth } from "../lib/auth";
 import { useCompeteStore } from "../lib/compete-store";
@@ -101,15 +102,15 @@ export function AccountActions() {
       >
         {panel === "report" ? (
           sent ? (
-            <Text style={f.copy} accessibilityLiveRegion="polite">
+            <AppText role="body" secondary  accessibilityLiveRegion="polite">
               Report sent. Thanks for helping us improve Overtaek.
-            </Text>
+            </AppText>
           ) : (
             <>
-              <Text style={f.copy}>
+              <AppText role="body" secondary >
                 Tell us what happened and what you expected. Leave out passwords
                 and sensitive details.
-              </Text>
+              </AppText>
               {live ? (
                 <>
                   <TextInput
@@ -131,21 +132,21 @@ export function AccountActions() {
                   />
                 </>
               ) : (
-                <Text style={f.copy}>
+                <AppText role="body" secondary >
                   Sign in with a live account to send a report. Demo reports are
                   not sent.
-                </Text>
+                </AppText>
               )}
             </>
           )
         ) : (
           <>
-            <Text style={f.copy}>
+            <AppText role="body" secondary >
               {live
                 ? "This permanently deletes your account and associated data. This cannot be undone."
                 : "This deletes this demo account and its saved training on this device."}{" "}
               Type DELETE to confirm.
-            </Text>
+            </AppText>
             <TextInput
               accessibilityLabel="Type DELETE to confirm"
               style={f.input}
@@ -163,7 +164,7 @@ export function AccountActions() {
         )}
         {error ? (
           <View accessibilityLiveRegion="polite">
-            <Text style={f.copy}>{error}</Text>
+            <AppText role="body" secondary >{error}</AppText>
           </View>
         ) : null}
       </FocusSheet>

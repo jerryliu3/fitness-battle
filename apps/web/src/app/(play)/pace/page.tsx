@@ -1,4 +1,6 @@
 "use client";
+import { AppParagraph, AppText, AppHeading } from "@/ui/section";
+
 
 import { useCompete } from "@/components/compete-context";
 import {
@@ -17,7 +19,7 @@ export default function PacePage() {
   const [sport, setSport] = useState<"running" | "cycling">("running");
   const [scope, setScope] = useState<PaceScope>("global");
   const [benchmark, setBenchmark] = useState<Benchmark>(BENCHMARKS.running[0]!);
-  if (!state) return <p className="fb-copy">Loading pace…</p>;
+  if (!state) return <AppParagraph typographyRole="body" className="fb-copy">Loading pace…</AppParagraph>;
 
   const options = BENCHMARKS[sport];
   const selected = options.find((item) => item.id === benchmark.id) ?? options[0]!;
@@ -29,11 +31,11 @@ export default function PacePage() {
 
   return (
     <>
-      <p className="fb-kicker">Pace</p>
-      <h1>Times</h1>
-      <p className="fb-copy">
+      <AppParagraph typographyRole="badgeLabel" className="fb-kicker">Pace</AppParagraph>
+      <AppHeading level={1} role="pageTitle">Times</AppHeading>
+      <AppParagraph typographyRole="body" className="fb-copy">
         Completion time for a distance. It does not move your effort score or the weekly track.
-      </p>
+      </AppParagraph>
 
       <div className="fb-chips">
         {(["running", "cycling"] as const).map((id) => (
@@ -81,38 +83,38 @@ export default function PacePage() {
         ))}
       </div>
       {scope === "category" ? (
-        <p className="fb-note" style={{ margin: "4px 0 12px" }}>
+        <AppParagraph typographyRole="caption" className="fb-note" style={{ margin: "4px 0 12px" }}>
           Showing athletes in your {currentRank} rating tier (effort score {yourElo}).
-        </p>
+        </AppParagraph>
       ) : null}
 
       <section className="fb-card">
         {rows.length === 0 ? (
-          <p className="fb-copy">No one in this slice yet.</p>
+          <AppParagraph typographyRole="body" className="fb-copy">No one in this slice yet.</AppParagraph>
         ) : (
           rows.slice(0, 20).map((row) => (
             <div key={row.id} className={row.you ? "fb-row fb-you" : "fb-row"}>
               <span className="fb-place">{row.place}</span>
               <span className="fb-grow">
                 {row.name}
-                <small>{row.city}</small>
+                <AppText as="small" role="supporting" secondary>{row.city}</AppText>
               </span>
               <b>{formatClockTime(row.seconds)}</b>
             </div>
           ))
         )}
         {!you ? (
-          <p className="fb-note">
+          <AppParagraph typographyRole="caption" className="fb-note">
             You are not on this list until a synced effort covers {selected.label}.
             Longer activities are scaled back to the distance.
-          </p>
+          </AppParagraph>
         ) : null}
       </section>
 
-      <p className="fb-note">
+      <AppParagraph typographyRole="caption" className="fb-note">
         Public race results, separate from your training pace, live on{" "}
         <Link href="/rankings">race rankings</Link>.
-      </p>
+      </AppParagraph>
     </>
   );
 }

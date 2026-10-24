@@ -1,3 +1,5 @@
+
+import { AppParagraph, SectionHeader, AppHeading } from "@/ui/section";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { formatRaceTime } from "@fitness-battle/rankings";
@@ -39,16 +41,16 @@ export default async function DistanceBoardPage({
         </Link>
         <span className="rankings-kicker">{label}</span>
       </header>
-      <h1>{label}</h1>
-      <p className="rankings-lede">
+      <AppHeading level={1} role="pageTitle">{label}</AppHeading>
+      <AppParagraph typographyRole="body" className="rankings-lede">
         {sample
           ? "Fastest published finishers. Chip time when the source has one, otherwise the official time."
           : "No finishers are published for this distance yet."}
-      </p>
+      </AppParagraph>
       <Board title="Women" rows={women} />
       <Board title="Men" rows={men} />
       {sources.length > 0 ? (
-        <p className="rankings-source">{sources.join(" · ")}</p>
+        <AppParagraph typographyRole="body" className="rankings-source">{sources.join(" · ")}</AppParagraph>
       ) : null}
     </main>
   );
@@ -71,12 +73,12 @@ async function loadBoard(
 function Board({ title, rows }: { title: string; rows: LeaderboardRow[] }) {
   return (
     <section className="rankings-section">
-      <h2>{title}</h2>
+      <SectionHeader title={title}/>
       {rows.length === 0 ? (
-        <p className="rankings-note">No results yet.</p>
+        <AppParagraph typographyRole="body" className="rankings-note">No results yet.</AppParagraph>
       ) : (
         <div className="rankings-table-wrap" tabIndex={0} role="region" aria-label={`${title} results, scroll for race details`}>
-          <p className="rankings-overflow-hint">Swipe for race details ↔</p>
+          <AppParagraph typographyRole="body" className="rankings-overflow-hint">Swipe for race details ↔</AppParagraph>
           <table className="rankings-table">
             <caption className="rankings-kicker">
               {title}, fastest official time first

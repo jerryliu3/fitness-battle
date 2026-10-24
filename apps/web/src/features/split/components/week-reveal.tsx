@@ -1,4 +1,6 @@
 "use client";
+import { AppParagraph } from "@/ui/section";
+
 
 import { useAuth } from "@/components/auth-context";
 import * as Dialog from "@radix-ui/react-dialog";
@@ -44,9 +46,9 @@ function RoundTakeover({
           onPointerDownOutside={(event) => event.preventDefault()}
         >
           <AnimatePresence mode="wait" initial={false}><motion.div key={stage} initial={reduced ? false : { x: 28, opacity: 0 }} animate={{ x: 0, opacity: 1 }} exit={{ x: reduced ? 0 : -28, opacity: 0 }} transition={{ duration: reduced ? 0 : 0.2 }}>
-          <p className="fb-kicker">
+          <AppParagraph typographyRole="badgeLabel" className="fb-kicker">
             Round complete · {stage === "results" ? "1" : "2"} / 2
-          </p>
+          </AppParagraph>
           <Dialog.Title>
             {stage === "results" ? "Your week, settled." : "Keep it going."}
           </Dialog.Title>
@@ -78,12 +80,12 @@ function RoundTakeover({
               {results.map((result) => {
                 const enrollment = roundEnrollment(state, result);
                 return (
-                  <p className="week-next-row" key={result.id}>
+                  <AppParagraph typographyRole="body" className="week-next-row" key={result.id}>
                     <b>{sportById(result.sport).name}</b>:{" "}
                     {enrollment.startsAt
                       ? `Your current round ${enrollment.status === "upcoming" ? "starts" : "started"} ${enrollment.startsAt.toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit", timeZone: APP_TIMEZONE, timeZoneName: "short" })}. ${enrollment.renews ? "Renews after this round." : "Stops after this round."}`
                       : "You’re not registered for another round. Update sport settings to join again."}
-                  </p>
+                  </AppParagraph>
                 );
               })}
               <Link

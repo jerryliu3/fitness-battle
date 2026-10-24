@@ -1,4 +1,6 @@
 "use client";
+import { AppParagraph } from "@/ui/section";
+
 
 import { useAuth } from "@/components/auth-context";
 import { useCompete } from "@/components/compete-context";
@@ -112,13 +114,13 @@ export function FieldJoinActions({
 
   return (
     <div className="fb-stack">
-      <p className="fb-note">
+      <AppParagraph typographyRole="caption" className="fb-note">
         {isOptedIn
           ? `You are registered for ${sportName} this week.`
           : crews.length > 0
             ? "Join a density field, or register with a crew so you share one individual leaderboard. Each person still opts in on their own."
             : "Fields are density groups of eight. Create or join a private crew if you want the option to register together."}
-      </p>
+      </AppParagraph>
       <button
         type="button"
         className="fb-btn"
@@ -148,7 +150,7 @@ export function FieldJoinActions({
           </button>
         );
       })}
-      {note ? <p className="fb-note">{note}</p> : null}
+      {note ? <AppParagraph typographyRole="caption" className="fb-note">{note}</AppParagraph> : null}
     </div>
   );
 }
@@ -185,10 +187,10 @@ export function FieldCrewSwitch({ sport }: { sport: SportId }) {
   if (isCrewField && pin) {
     return (
       <div className="fb-stack">
-        <p className="fb-note">
+        <AppParagraph typographyRole="caption" className="fb-note">
           Sharing this field with {pin.crewName} ({pin.memberIds.length}{" "}
           athletes, {pin.syntheticIds.length} fillers). Scores stay individual.
-        </p>
+        </AppParagraph>
         <button
           type="button"
           className="fb-btn-ghost"
@@ -200,7 +202,7 @@ export function FieldCrewSwitch({ sport }: { sport: SportId }) {
         >
           Leave crew field
         </button>
-        {note ? <p className="fb-note">{note}</p> : null}
+        {note ? <AppParagraph typographyRole="caption" className="fb-note">{note}</AppParagraph> : null}
       </div>
     );
   }
@@ -208,7 +210,7 @@ export function FieldCrewSwitch({ sport }: { sport: SportId }) {
   if (crews.length === 0) {
     return (
       <div className="fb-stack">
-        <p className="fb-note">You aren’t in any {sport} crews yet.</p>
+        <AppParagraph typographyRole="caption" className="fb-note">You aren’t in any {sport} crews yet.</AppParagraph>
         <Link href="/field" className="fb-btn-ghost">
           Find or create a crew
         </Link>
@@ -218,10 +220,10 @@ export function FieldCrewSwitch({ sport }: { sport: SportId }) {
 
   return (
     <div className="fb-stack">
-      <p className="fb-note">
+      <AppParagraph typographyRole="caption" className="fb-note">
         Optional: move onto your crew’s shared individual leaderboard for the
         rest of this week.
-      </p>
+      </AppParagraph>
       {crews.map((crew) => (
         <button
           key={crew.id}
@@ -246,7 +248,7 @@ export function FieldCrewSwitch({ sport }: { sport: SportId }) {
           Compete with {crew.name}
         </button>
       ))}
-      {note ? <p className="fb-note">{note}</p> : null}
+      {note ? <AppParagraph typographyRole="caption" className="fb-note">{note}</AppParagraph> : null}
     </div>
   );
 }

@@ -1,4 +1,6 @@
 "use client";
+import { AppParagraph, AppHeading } from "@/ui/section";
+
 
 import { useAuth } from "@/components/auth-context";
 import {
@@ -56,13 +58,13 @@ function SignupForm() {
 
   return (
     <section className="fb-card fb-auth-card">
-      <p className="fb-kicker">overtaek</p>
-      <h1 className="fb-title">Create account</h1>
-      <p className="fb-copy">
+      <AppParagraph typographyRole="badgeLabel" className="fb-kicker">overtaek</AppParagraph>
+      <AppHeading level={1} role="pageTitle" className="fb-title">Create account</AppHeading>
+      <AppParagraph typographyRole="body" className="fb-copy">
         After signup you will set preferences and run a one-time 90-day
         calibration.
         {offlineMode ? " Demo mode keeps everything on this device." : ""}
-      </p>
+      </AppParagraph>
       <form className="fb-stack" onSubmit={onSubmit}>
         <label className="fb-field">
           Display name
@@ -95,37 +97,37 @@ function SignupForm() {
           />
         </label>
         {error ? (
-          <p className="fb-error" role="alert" aria-live="assertive">
+          <AppParagraph typographyRole="supporting" className="fb-error" role="alert" aria-live="assertive">
             {error}
-          </p>
+          </AppParagraph>
         ) : null}
         {message ? (
-          <p className="fb-note" role="status" aria-live="polite">
+          <AppParagraph typographyRole="caption" className="fb-note" role="status" aria-live="polite">
             {message}
-          </p>
+          </AppParagraph>
         ) : null}
         <button type="submit" className="fb-btn" disabled={busy}>
           {busy ? "Creating…" : "Create account"}
         </button>
       </form>
-      <p className="fb-note">
+      <AppParagraph typographyRole="caption" className="fb-note">
         Already have an account?{" "}
         <Link href={buildLoginHref(next)}>Sign in</Link>
-      </p>
-      <p className="fb-note">
+      </AppParagraph>
+      <AppParagraph typographyRole="caption" className="fb-note">
         By creating an account you agree to our{" "}
         <Link href="/terms">Terms of Service</Link>
         {" and "}
         <Link href="/privacy">Privacy Policy</Link>
         .
-      </p>
+      </AppParagraph>
     </section>
   );
 }
 
 export default function SignupPage() {
   return (
-    <Suspense fallback={<p className="fb-copy">Loading…</p>}>
+    <Suspense fallback={<AppParagraph typographyRole="body" className="fb-copy">Loading…</AppParagraph>}>
       <SignupForm />
     </Suspense>
   );

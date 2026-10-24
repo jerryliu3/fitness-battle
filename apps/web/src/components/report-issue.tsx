@@ -1,4 +1,6 @@
 "use client";
+import { AppParagraph } from "@/ui/section";
+
 
 import { useState, type FormEvent } from "react";
 import { Sheet } from "@/ui/sheet";
@@ -42,10 +44,10 @@ export function ReportIssue() {
       setOpen(true);
     }}>Report an issue</button>
     <Sheet open={open} title="Report an issue" body="Tell us what happened and what you expected. Please leave out passwords and other sensitive details." onClose={() => setOpen(false)}>
-      {sent ? <p className="fb-note" role="status">Report sent. Thanks for helping us improve Overtaek.</p> : <form onSubmit={submit} style={{ display: "grid", gap: 12, marginTop: 16 }}>
+      {sent ? <AppParagraph typographyRole="caption" className="fb-note" role="status">Report sent. Thanks for helping us improve Overtaek.</AppParagraph> : <form onSubmit={submit} style={{ display: "grid", gap: 12, marginTop: 16 }}>
         <label htmlFor="issue-description">What went wrong?</label>
         <textarea id="issue-description" style={{ width: "100%", boxSizing: "border-box", padding: 12, border: "1px solid var(--line)", borderRadius: 12, font: "inherit", resize: "vertical" }} rows={6} minLength={10} maxLength={5000} required value={message} onChange={(event) => setMessage(event.target.value)} disabled={busy} />
-        {error ? <p className="fb-error" role="alert">{error}</p> : null}
+        {error ? <AppParagraph typographyRole="supporting" className="fb-error" role="alert">{error}</AppParagraph> : null}
         <button type="submit" className="fb-btn" disabled={busy}>{busy ? "Sending…" : "Send report"}</button>
       </form>}
     </Sheet>

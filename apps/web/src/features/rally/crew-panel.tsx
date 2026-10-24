@@ -1,4 +1,6 @@
 "use client";
+import { AppParagraph, AppText, AppHeading, Section } from "@/ui/section";
+
 import { RankBadge } from "../progress/rank-badge";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/components/auth-context";
@@ -303,7 +305,7 @@ export function CrewPanel() {
     <>
       {user && !offlineMode && !data && (
         <section className="focus-card">
-          <p className="fb-copy">{note || "Loading your circle…"}</p>
+          <AppParagraph typographyRole="body" className="fb-copy">{note || "Loading your circle…"}</AppParagraph>
           <button className="fb-btn-line" onClick={() => void reload()}>
             Refresh crews
           </button>
@@ -339,12 +341,12 @@ export function CrewPanel() {
             className="focus-crew-hero"
           >
             <img className="club-landscape" src="/club/alpine-trail.jpg" alt=""/>
-            <p className="fb-kicker">
+            <AppParagraph typographyRole="badgeLabel" className="fb-kicker">
               {isSolo
                 ? "Solo circle · 1 member"
                 : `Your people · ${memberCountLabel}`}
-            </p>
-            <h2><button type="button" className="club-crew-name" onClick={()=>setPanel("members")} aria-label={`View ${crew.name} members`}>{crew.name}</button></h2>
+            </AppParagraph>
+            <AppHeading level={1} role="pageTitle"><button type="button" className="club-crew-name" onClick={()=>setPanel("members")} aria-label={`View ${crew.name} members`}>{crew.name}</button></AppHeading>
             <div className="focus-row">
               <div className="focus-avatar-stack">
                 {members.slice(0, 5).map((m) => (
@@ -406,29 +408,28 @@ export function CrewPanel() {
           <div className="focus-crew-layout">
             <div className="focus-crew-main">
               <section className="focus-card">
-                <p className="fb-kicker">Our shared week · {crew.sport}</p>
+                <AppParagraph typographyRole="badgeLabel" className="fb-kicker">Our shared week · {crew.sport}</AppParagraph>
                 {sessionsMetric ? (
-                  <h2>{entries.reduce((total, entry) => total + Number(entry.session_count ?? 1), 0)} sessions</h2>
+                  <strong>{entries.reduce((total, entry) => total + Number(entry.session_count ?? 1), 0)} sessions</strong>
                 ) : (
-                  <h2 className="focus-goal">
+                  <strong className="focus-goal">
                     {formatDistanceM(totalM, state?.units)}{" "}
                     <small>
                       {`${unitLabel} together`}
                     </small>
-                  </h2>
+                  </strong>
                 )}
                 <CrewRelay userId={user?.id} key={crew.id} members={members} entries={entries} sport={crew.sport as SportId} format={crew.format} previousDistanceM={previousDistanceM} targetDistanceM={crew.journey_km*1000} targetSessions={crew.target_sessions} units={state?.units} />
-                <p className="fb-copy">
+                <AppParagraph typographyRole="body" className="fb-copy">
                   {sessionsMetric
                     ? `Each member aims for ${crew.target_sessions} sessions.`
                     : "Every pace belongs here."}
-                </p>
+                </AppParagraph>
               </section>
               {user && !isSolo ? <CrewSessions key={`${user.id}:${crew.id}`} crewId={crew.id} userId={user.id} demo={offlineMode} sport={crew.sport} /> : null}
               {user ? (
                 <>
-                  <h2>Crew standings</h2>
-                  <section className="focus-card">
+                  <Section title="Crew standings">
                     {members
                       .slice()
                       .sort((a, b) => memberTotal(b.user_id) - memberTotal(a.user_id))
@@ -441,7 +442,7 @@ export function CrewPanel() {
                           </span>
                         </div>
                       ))}
-                  </section>
+                  </Section>
                 </>
               ) : null}
             </div>
@@ -449,22 +450,22 @@ export function CrewPanel() {
         </>
       )}
       {!panel && note && (
-        <p
+        <AppParagraph typographyRole="supporting"
           className={isCrewErrorNote(note) ? "fb-error" : "focus-feedback"}
           role={isCrewErrorNote(note) ? "alert" : "status"}
         >
           {note}
-        </p>
+        </AppParagraph>
       )}
       {data?.notices?.map((n) => (
-        <p className="fb-note" key={n.id}>
+        <AppParagraph typographyRole="caption" className="fb-note" key={n.id}>
           {formatNoticeUnits(n.body, state?.units)}
-        </p>
+        </AppParagraph>
       ))}
       {!user && (
         <div className="focus-crew-preview" style={{ marginBottom: 28 }}>
           <section className="focus-card">
-            <p className="fb-kicker">What crews unlock</p>
+            <AppParagraph typographyRole="badgeLabel" className="fb-kicker">What crews unlock</AppParagraph>
             <ul className="focus-crew-preview-list">
               <li>
                 <b>Shared week</b>
@@ -481,11 +482,11 @@ export function CrewPanel() {
             </ul>
           </section>
           <section className="focus-card focus-empty">
-            <h2>Make room for your people.</h2>
-            <p className="fb-copy" style={{ marginBottom: 20 }}>
+            <AppHeading level={2} role="contentTitle">Make room for your people.</AppHeading>
+            <AppParagraph typographyRole="body" className="fb-copy" style={{ marginBottom: 20 }}>
               Private crews share a week of effort — invite codes,
               member standings, and a shared field when you register together.
-            </p>
+            </AppParagraph>
             <div className="fb-row" style={{ width: "100%", gap: 10 }}>
               <Link
                 className="fb-btn"
@@ -528,19 +529,19 @@ export function CrewPanel() {
         }}
       >
         {note ? (
-          <p
+          <AppParagraph typographyRole="caption"
             className={isCrewErrorNote(note) ? "fb-error" : "fb-note"}
             role={isCrewErrorNote(note) ? "alert" : "status"}
             style={{ marginBottom: "12px" }}
           >
             {note}
-          </p>
+          </AppParagraph>
         ) : null}
         {!user ? (
           <div style={{ marginTop: 8 }}>
-            <p className="fb-copy" style={{ marginBottom: 16 }}>
+            <AppParagraph typographyRole="body" className="fb-copy" style={{ marginBottom: 16 }}>
               A live account is required to invite friends, join circles, or manage crew membership.
-            </p>
+            </AppParagraph>
             <div className="fb-row" style={{ width: "100%", gap: 10 }}>
               <Link
                 className="fb-btn"
@@ -629,17 +630,17 @@ export function CrewPanel() {
             {members.map((m) => (
               <li key={m.user_id}>
                 {m.avatar_url ? <img src={m.avatar_url} alt="" className="club-member-photo" /> : <span className="club-member-photo club-member-initials">{m.display_name.slice(0, 2).toUpperCase()}</span>}
-                <div><b>{m.display_name}</b><p className="fb-note">{sessionsMetric ? `${memberTotal(m.user_id)} sessions` : `${formatDistanceM(memberTotal(m.user_id), state?.units)} ${unitLabel}`} this week</p></div>
-                <small>{(m.user_id === user?.id ? resting : m.rest_week === weekKey) ? "Rest week" : "Active"}</small>
+                <div><b>{m.display_name}</b><AppParagraph typographyRole="caption" className="fb-note">{sessionsMetric ? `${memberTotal(m.user_id)} sessions` : `${formatDistanceM(memberTotal(m.user_id), state?.units)} ${unitLabel}`} this week</AppParagraph></div>
+                <AppText as="small" role="caption" secondary>{(m.user_id === user?.id ? resting : m.rest_week === weekKey) ? "Rest week" : "Active"}</AppText>
               </li>
             ))}
           </ul>
         ) : panel === "invite" ? (
           crew?.id === "solo-preview" ? (
             <div>
-              <p className="fb-copy" style={{ marginBottom: 16 }}>
+              <AppParagraph typographyRole="body" className="fb-copy" style={{ marginBottom: 16 }}>
                 Create a crew first to generate an invite code and bring your friends together.
-              </p>
+              </AppParagraph>
               <button
                 className="fb-btn"
                 onClick={() => setPanel("add")}
@@ -649,7 +650,7 @@ export function CrewPanel() {
             </div>
           ) : (
             <>
-              <p className="fb-copy">Share this link with friends.</p>
+              <AppParagraph typographyRole="body" className="fb-copy">Share this link with friends.</AppParagraph>
               <label className="fb-field">
                 Invite link
                 <input
@@ -679,12 +680,12 @@ export function CrewPanel() {
           )
         ) : crew?.id === "solo-preview" ? (
           <div>
-            <p className="fb-copy" style={{ marginBottom: 16 }}>
+            <AppParagraph typographyRole="body" className="fb-copy" style={{ marginBottom: 16 }}>
               {crew?.name} · {crew?.sport} · 1 member
-            </p>
-            <p className="fb-note" style={{ marginBottom: 16 }}>
+            </AppParagraph>
+            <AppParagraph typographyRole="caption" className="fb-note" style={{ marginBottom: 16 }}>
               You are currently in a solo circle. Create a shared crew to set weekly group goals with friends.
-            </p>
+            </AppParagraph>
             <button
               className="fb-btn"
               onClick={() => setPanel("add")}
@@ -694,9 +695,9 @@ export function CrewPanel() {
           </div>
         ) : (
           <>
-            <p className="fb-copy">
+            <AppParagraph typographyRole="body" className="fb-copy">
               {crew?.name} · {crew?.sport} · {crew?.format.replaceAll("_", " ")}
-            </p>
+            </AppParagraph>
             <button
               className="fb-btn-line"
               disabled={busy}
@@ -706,10 +707,10 @@ export function CrewPanel() {
             >
               {resting ? "Clear rest week" : "Mark my rest week"}
             </button>
-            <p className="fb-note">
+            <AppParagraph typographyRole="caption" className="fb-note">
               A crew rest marker does not freeze effort score. Week freezes live in
               Athlete → Preferences.
-            </p>
+            </AppParagraph>
             {crew?.id && crew.id !== "solo-preview" && (
               <div
                 style={{

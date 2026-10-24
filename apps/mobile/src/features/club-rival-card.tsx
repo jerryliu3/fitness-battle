@@ -1,3 +1,4 @@
+import { textStyle } from "../ui/section";
 import { AppIcon } from "../ui/app-icon";
 import { alpineTrail } from "../ui/club-art";
 import {
@@ -104,26 +105,23 @@ const s = StyleSheet.create({
   scrim: { ...StyleSheet.absoluteFill, backgroundColor: "#081f3670" },
   top: { flexDirection: "row", justifyContent: "space-between", gap: 10 },
   eyebrow: {
-    fontFamily: "DMSans_700Bold",
-    fontSize: 10,
+    ...textStyle("badgeLabel"),
     letterSpacing: 0.7,
-    color: "#ffffffdd",
-  },
+    color: "#ffffffdd"
+},
   title: {
-    fontFamily: "DMSans_700Bold",
-    fontSize: 24,
+    ...textStyle("contentTitle"),
     color: c.card,
-    marginTop: 5,
-  },
+    marginTop: 5
+},
   place: { fontFamily: "DMSans_700Bold", fontSize: 22, color: c.card },
   markers: { alignSelf: "center", height: 110 },
   bottom: { flexDirection: "row", alignItems: "center", gap: 12 },
-  headline: { fontFamily: "DMSans_700Bold", fontSize: 17, color: c.card },
+  headline: { ...textStyle("contentTitle"), color: c.card },
   caption: {
-    fontFamily: "DMSans_400Regular",
-    fontSize: 12,
-    color: "#ffffffdd",
-  },
+    ...textStyle("caption"),
+    color: "#ffffffdd"
+},
   arrow: {
     backgroundColor: c.tennis,
     borderRadius: 22,

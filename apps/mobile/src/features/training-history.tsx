@@ -1,5 +1,5 @@
 import { ActivityRoute } from "../ui/activity-route";
-import { Section, SectionStack } from "../ui/section";
+import { AppText, Section, SectionStack } from "../ui/section";
 import { TrainingAtlas } from "./training-atlas";
 import { useState, type ReactNode } from "react";
 import { RecordChart } from "./record-chart";
@@ -92,13 +92,13 @@ export function TrainingHistory({ state, children }: { state: CompeteState; chil
               ))}
             </View>
           </ScrollView>
-          <Text style={f.rowTitle}>
+          <AppText role="itemTitle" >
             {formatClockTime(inspected.seconds)} · {date(inspected.startedAt)}
-          </Text>
-          <Text style={f.small}>
+          </AppText>
+          <AppText role="caption" secondary >
             {inspected.source.replaceAll("_", " ")}
             {inspected.verified ? " · GPS recorded" : ""}
-          </Text>
+          </AppText>
           <ActivityRoute units={state.units} key={inspected.activityId} activity={state.activities.find(a => a.id === inspected.activityId)} milestone />
         </Section>
       ) : null}

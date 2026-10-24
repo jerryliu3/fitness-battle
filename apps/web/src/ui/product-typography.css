@@ -1,0 +1,65 @@
+/* Loaded after product chrome. Values come from the shared contract on <html>. */
+:is(.phone-shell, .focus-sheet, .fb-auth) {
+  font-family: var(--font-body), "DM Sans", sans-serif;
+}
+:is(.phone-shell, .focus-sheet, .fb-auth) :is(.fb-title, h1) {
+  font-size: var(--type-pageTitle-size);
+  line-height: var(--type-pageTitle-leading);
+  font-weight: var(--type-pageTitle-weight);
+  letter-spacing: normal;
+}
+:is(.phone-shell, .focus-sheet, .fb-auth) :is(h2, .fb-section-title) {
+  font-size: var(--type-sectionTitle-size);
+  line-height: var(--type-sectionTitle-leading);
+  font-weight: var(--type-sectionTitle-weight);
+  letter-spacing: normal;
+}
+:is(.phone-shell, .focus-sheet, .fb-auth) h3 {
+  font-size: var(--type-contentTitle-size);
+  line-height: var(--type-contentTitle-leading);
+  font-weight: var(--type-contentTitle-weight);
+}
+:is(.phone-shell, .focus-sheet, .fb-auth) .fb-copy {
+  font-size: var(--type-body-size);
+  line-height: var(--type-body-leading);
+  font-weight: var(--type-body-weight);
+}
+:is(.phone-shell, .focus-sheet, .fb-auth) .fb-note {
+  font-size: var(--type-caption-size);
+  line-height: var(--type-caption-leading);
+  font-weight: var(--type-caption-weight);
+}
+:is(.phone-shell, .focus-sheet, .fb-auth) :is(.fb-btn, .fb-btn-line, .fb-btn-ghost, .club-text-link, .ui-text-action) {
+  font-size: var(--type-actionLabel-size);
+  line-height: var(--type-actionLabel-leading);
+  font-weight: var(--type-actionLabel-weight);
+  min-height: 44px;
+}
+.phone-shell :is(.focus-settings-row b, .fb-row b, .club-activity-row b) {
+  font-size: var(--type-itemTitle-size);
+  line-height: var(--type-itemTitle-leading);
+  font-weight: var(--type-itemTitle-weight);
+}
+.phone-shell :is(.focus-settings-row small, .fb-row small, .club-activity-row > span:nth-child(2) small) {
+  font-size: var(--type-supporting-size);
+  line-height: var(--type-supporting-leading);
+  font-weight: var(--type-supporting-weight);
+}
+.phone-shell :is(.club-detail-heading h1, .focus-settings-stack-panel > .focus-heading h1),
+.club-fullscreen-sheet .club-sheet-heading h2 {
+  font-size: var(--type-navigationTitle-size);
+  line-height: var(--type-navigationTitle-leading);
+  font-weight: var(--type-navigationTitle-weight);
+}
+/* Continuous groups share the section rhythm. Cards retain their inner padding. */
+.phone-shell :is(.club-progress, .club-progress-section, .focus-home-overlay, .focus-crew-main, .focus-crew-side, .focus-settings-panel, .club-detail-page) {
+  gap: 28px;
+}
+.phone-shell :is(.focus-card, .fb-card, .club-week-recap) > .ui-section-header {
+  margin-bottom: 12px;
+}
+.phone-shell .ui-section > .ui-section-header { margin: 0; }
+.phone-shell .club-event-choose { text-align: left; white-space: normal; }
+.phone-shell .club-event-choose > .ui-text { display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px; }
+.phone-shell .focus-goal { display: block; font-size: 2.5rem; line-height: 1.15; font-weight: 700; }
+.phone-shell .focus-goal small { font-size: var(--type-supporting-size); font-weight: 400; }

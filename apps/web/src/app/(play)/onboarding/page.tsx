@@ -1,4 +1,6 @@
 "use client";
+import { AppParagraph, AppText, AppHeading } from "@/ui/section";
+
 
 import { ProfilePhoto } from "@/features/you/profile-photo";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
@@ -35,7 +37,7 @@ function OnboardingFlow() {
   const [connectMessage, setConnectMessage] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
-  if (!state) return <p className="fb-copy">Loading…</p>;
+  if (!state) return <AppParagraph typographyRole="body" className="fb-copy">Loading…</AppParagraph>;
 
   const stravaLink = state.links.find((l) => l.provider === "strava");
   const isStravaLinked = Boolean(stravaLink?.linked);
@@ -43,13 +45,13 @@ function OnboardingFlow() {
   if (state.onboardingCompleted) {
     return (
       <section className="fb-card">
-        <p className="fb-kicker">You are set</p>
-        <h1 className="fb-title">Onboarding already finished</h1>
-        <p className="fb-copy">
+        <AppParagraph typographyRole="badgeLabel" className="fb-kicker">You are set</AppParagraph>
+        <AppHeading level={1} role="pageTitle" className="fb-title">Onboarding already finished</AppHeading>
+        <AppParagraph typographyRole="body" className="fb-copy">
           {state.calibrated
             ? `Preferences and the one-time ${BACKFILL_DAYS}-day calibration cannot be run again.`
             : "Onboarding is complete. You can update preferences and run your one-time calibration anytime from Athlete."}
-        </p>
+        </AppParagraph>
         <button type="button" className="fb-btn" onClick={() => router.replace("/today")}>
           Back to Today
         </button>
@@ -116,18 +118,18 @@ function OnboardingFlow() {
   return (
     <AnimatePresence mode="wait" initial={false}><motion.div key={step} initial={reduced ? false : { x: 28, opacity: 0 }} animate={{ x: 0, opacity: 1 }} exit={{ x: reduced ? 0 : -28, opacity: 0 }} transition={{ duration: reduced ? 0 : 0.2 }}>
       <header>
-        <p className="fb-kicker">
+        <AppParagraph typographyRole="badgeLabel" className="fb-kicker">
           Setup · step{" "}
           {step === "prefs" ? "1" : step === "connect" ? "2" : step === "backfill" ? "3" : "4"}{" "}
           of 4
-        </p>
-        <h1 className="fb-title">
+        </AppParagraph>
+        <AppHeading level={1} role="pageTitle" className="fb-title">
           {step === "prefs" && "Your training profile"}
           {step === "connect" && "Link a tracker"}
           {step === "backfill" && "Import fitness history"}
           {step === "done" && "You are ready"}
-        </h1>
-        <p className="fb-copy">
+        </AppHeading>
+        <AppParagraph typographyRole="body" className="fb-copy">
           {step === "prefs" &&
             "Name, city, units, and sports to join immediately. You can change these later on Athlete."}
           {step === "connect" &&
@@ -136,7 +138,7 @@ function OnboardingFlow() {
             "Import your recent activity history to calibrate your starting rating and leave the baseline."}
           {step === "done" &&
             "Join a board when you want. Browsing Today and Pace stays open without competing."}
-        </p>
+        </AppParagraph>
       </header>
 
       {step === "prefs" ? (
@@ -150,7 +152,7 @@ function OnboardingFlow() {
             City
             <input value={city} onChange={(e) => setCity(e.target.value)} maxLength={40} />
           </label>
-          <p className="fb-note">Units of measurement (required)</p>
+          <AppParagraph typographyRole="caption" className="fb-note">Units of measurement (required)</AppParagraph>
           <div className="fb-chips" role="group" aria-label="Units">
             <button
               type="button"
@@ -182,7 +184,7 @@ function OnboardingFlow() {
               </button>
             ))}
           </div>
-          <p className="fb-note">Health metrics use last night, not distance.</p>
+          <AppParagraph typographyRole="caption" className="fb-note">Health metrics use last night, not distance.</AppParagraph>
           <div className="fb-chips" aria-label="Health metrics">
             {HEALTH_METRICS.map((item) => (
               <button
@@ -209,25 +211,25 @@ function OnboardingFlow() {
             <div key={provider.id} className="fb-row">
               <span className="fb-grow">
                 {provider.name}
-                <small>
+                <AppText as="small" role="supporting" secondary>
                   {provider.blurb}
                   {isStravaLinked
                     ? ` · ${stravaLink?.status === "connected" ? "Connected" : "Demo stub (not live)"}`
                     : " · Not connected"}
-                </small>
+                </AppText>
               </span>
             </div>
           ))}
           {connectMessage ? (
-            <p className="fb-note">{connectMessage}</p>
+            <AppParagraph typographyRole="caption" className="fb-note">{connectMessage}</AppParagraph>
           ) : isStravaLinked ? (
-            <p className="fb-note">
+            <AppParagraph typographyRole="caption" className="fb-note">
               Demo stub linked. Live Strava OAuth is not configured in this environment.
-            </p>
+            </AppParagraph>
           ) : (
-            <p className="fb-note">
+            <AppParagraph typographyRole="caption" className="fb-note">
               Without server API keys, linking connects an honest demo stub for testing.
-            </p>
+            </AppParagraph>
           )}
           {isStravaLinked ? (
             <button type="button" className="fb-btn" onClick={() => setStep("backfill")}>
@@ -247,13 +249,13 @@ function OnboardingFlow() {
       {step === "backfill" ? (
         <section className="fb-card fb-stack">
           {state.calibrated ? (
-            <p className="fb-copy">Calibration already finished on this device.</p>
+            <AppParagraph typographyRole="body" className="fb-copy">Calibration already finished on this device.</AppParagraph>
           ) : (
             <>
-              <p className="fb-copy">
+              <AppParagraph typographyRole="body" className="fb-copy">
                 Import your recent activity history to calibrate your starting rating
                 and leave the baseline.
-              </p>
+              </AppParagraph>
               <button type="button" className="fb-btn" onClick={runBackfill}>
                 Import fitness history
               </button>
@@ -271,11 +273,11 @@ function OnboardingFlow() {
 
       {step === "done" ? (
         <section className="fb-card fb-stack">
-          <p className="fb-copy">
+          <AppParagraph typographyRole="body" className="fb-copy">
             {state.calibrated
               ? `History imported. Levels start from your ${BACKFILL_DAYS}-day sample.`
               : `You can compete from the default baseline. You can still run the one-time ${BACKFILL_DAYS}-day calibration later from You, but only once.`}
-          </p>
+          </AppParagraph>
           <button type="button" className="fb-btn" onClick={finish}>
             Start competing
           </button>
@@ -297,7 +299,7 @@ function OnboardingFlow() {
 export default function OnboardingPage() {
   return (
     <AuthGate reason="Create an account to finish setup, link a tracker, and run the one-time calibration.">
-      <Suspense fallback={<p className="fb-copy">Loading setup…</p>}>
+      <Suspense fallback={<AppParagraph typographyRole="body" className="fb-copy">Loading setup…</AppParagraph>}>
         <OnboardingFlow />
       </Suspense>
     </AuthGate>

@@ -19,3 +19,5 @@
 /* Keep migrated open sections independent of legacy card padding and gaps. */
 .phone-shell .ui-section { padding: 0; margin: 0; border: 0; background: none; border-radius: 0; gap: .75rem; }
 @media (min-width: 900px) { .ui-section.club-latest { grid-column: 1; } }
+
+.ui-section-stack.is-open { gap: 28px; }

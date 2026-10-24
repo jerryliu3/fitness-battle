@@ -1,3 +1,4 @@
+import { AppText } from "../ui/section";
 import {
   APP_TIMEZONE,
   effortHistory,
@@ -61,9 +62,9 @@ export function EffortTrend({ state }: { state: CompeteState }) {
         >
           {effectiveElo.toLocaleString()}
         </Text>
-        <Text style={f.copy}>effort score</Text>
+        <AppText role="body" secondary >effort score</AppText>
       </View>
-      {milestone ? <Text style={f.small}>+1 per {formatVolume(state.primary, state.primary === "strength" ? 0 : milestone.step, state.primary === "strength" ? milestone.step : 0, state.units)} this week · +{milestone.earned} from activity</Text> : null}
+      {milestone ? <AppText role="caption" secondary >+1 per {formatVolume(state.primary, state.primary === "strength" ? 0 : milestone.step, state.primary === "strength" ? milestone.step : 0, state.units)} this week · +{milestone.earned} from activity</AppText> : null}
       <ChartScrubber key={`${scope}:${track}`} label="Effort score history" width={340} height={150} plotTop={yTop} plotBottom={yBottom}
         points={model.pts.map((point, index) => ({ id: point.date, x: point.x, y: point.y,
           value: `${model.dailyValues[index].toLocaleString()} effort score`,
@@ -122,7 +123,7 @@ export function EffortTrend({ state }: { state: CompeteState }) {
         ))}
       </Svg>
       </ChartScrubber>
-      <Text style={f.small}>History reflects closed-week scores and your current score.</Text>
+      <AppText role="caption" secondary >History reflects closed-week scores and your current score.</AppText>
     </View>
   );
 }

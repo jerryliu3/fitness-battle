@@ -1,4 +1,6 @@
 "use client";
+import { AppParagraph, SectionHeader } from "@/ui/section";
+
 
 /**
  * Web Athlete → Notifications.
@@ -9,16 +11,16 @@
 export function NotificationSettings() {
   return (
     <section className="fb-card" id="notifications">
-      <h2>Notifications</h2>
-      <p className="fb-copy">
+      <SectionHeader title="Notifications"/>
+      <AppParagraph typographyRole="body" className="fb-copy">
         Push notifications are available in the Overtaek mobile app — not in
         this browser. Open Athlete → Notifications on your phone to arm reminders,
         weekly summaries, and competition alerts.
-      </p>
-      <p className="fb-note">
+      </AppParagraph>
+      <AppParagraph typographyRole="caption" className="fb-note">
         Web stays quiet on purpose so this screen never pretends a browser push
         channel is live.
-      </p>
+      </AppParagraph>
     </section>
   );
 }

@@ -1,3 +1,4 @@
+import { AppText, SectionStack } from "../../src/ui/section";
 import { WeekChart } from "../../src/features/week-chart";
 import { LatestActivity } from "../../src/features/club-latest-activity";
 import type { Activity } from "@fitness-battle/shared";
@@ -7,7 +8,7 @@ import { RivalCard } from "../../src/features/club-rival-card";
 import { APP_TIMEZONE, buildTodayRoute, competeNow, countsOnTrack, dayKey, primaryFreezePeriodStart } from "@fitness-battle/shared";
 import { useState, useCallback, useEffect } from "react";
 import { useFocusEffect, useRouter } from "expo-router";
-import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { SessionStage } from "../../src/features/session-stage";
@@ -26,7 +27,7 @@ export default function Home() {
   if (!state)
     return (
       <SafeAreaView style={f.safe}>
-        <Text style={f.copy}>Loading your week…</Text>
+        <AppText role="body" secondary >Loading your week…</AppText>
       </SafeAreaView>
     );
   const route = buildTodayRoute(state);
@@ -43,13 +44,14 @@ export default function Home() {
           contentContainerStyle={s.homeOverlayContent}
           showsVerticalScrollIndicator={false}
         >
-          {removed?<View style={f.row}><Text accessibilityLiveRegion="polite" style={f.copy}>Session removed.</Text><Pressable accessibilityRole="button" onPress={()=>{dispatch({type:"set-disposition",activityId:removed.id,disposition:removed.disposition});setRemoved(null);}} style={{minHeight:44,justifyContent:"center"}}><Text style={f.rowTitle}>Undo</Text></Pressable></View>:null}
+          {removed?<View style={f.row}><AppText role="body" secondary accessibilityLiveRegion="polite" >Session removed.</AppText><Pressable accessibilityRole="button" onPress={()=>{dispatch({type:"set-disposition",activityId:removed.id,disposition:removed.disposition});setRemoved(null);}} style={{minHeight:44,justifyContent:"center"}}><AppText role="itemTitle" >Undo</AppText></Pressable></View>:null}
           {state.frozenPeriods.includes(primaryFreezePeriodStart(state)) ? (
-            <Text style={f.copy}>
+            <AppText role="body" secondary >
               ❄ Week frozen · Your effort score is protected through next
               Monday.
-            </Text>
+            </AppText>
           ) : null}
+          <SectionStack divided={false}>
           <WeekChart state={state} onOpen={() => router.push("/week")} />
           <RivalCard state={state} />
           <LatestActivity state={state} onOpen={setLatest} />
@@ -62,6 +64,7 @@ export default function Home() {
             />
           </View>
           </FocusDisclosure>
+          </SectionStack>
         </ScrollView>
       </View>
       <FocusSheet open={Boolean(latest)} title="Your activity" onClose={()=>setLatest(null)}>{latest?<SessionStage state={state} activities={[latest]} onRemove={id=>{setRemoved(latest);dispatch({type:"set-disposition",activityId:id,disposition:"excluded"});setLatest(null);}}/>:null}</FocusSheet>
@@ -90,6 +93,6 @@ const s = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 4,
     paddingBottom: 120,
-    gap: 24,
+    gap: 28,
   },
 });

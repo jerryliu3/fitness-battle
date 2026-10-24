@@ -1,3 +1,5 @@
+
+import { AppHeading } from "@/ui/section";
 import Link from "next/link";
 
 export default function NotFound() {
@@ -12,7 +14,7 @@ export default function NotFound() {
           <section className="fb-card focus-empty" style={{ margin: "auto 0" }}>
             <span className="focus-empty-mark">◎</span>
             <p className="fb-kicker">404 · Off track</p>
-            <h1>This path isn’t on the map.</h1>
+            <AppHeading level={1} role="pageTitle">This path isn’t on the map.</AppHeading>
             <p className="fb-copy">
               The page you were looking for doesn’t exist or has moved. Let’s get
               you back to today’s field.

@@ -1,4 +1,4 @@
-import { AppText, SectionHeader } from "../ui/section";
+import { AppText, Section, SectionStack } from "../ui/section";
 import { AppIcon } from "../ui/app-icon";
 import { RankBadge } from "../ui/rank-badge";
 import { alpineTrail } from "../ui/club-art";
@@ -363,19 +363,21 @@ export function CrewHub({ membersOnly = false, crewId = "" }: { membersOnly?: bo
   }
   const membersView = (
 <View style={{ gap: 16 }}>
-            <Text style={f.copy}>{crew.name}</Text>
+            <AppText role="body" secondary >{crew.name}</AppText>
+            <SectionStack>
             {members.map(m => <View key={m.user_id} style={[f.section, f.row]}>
-              {m.avatar_url ? <Image source={{ uri: m.avatar_url }} style={{ width: 56, height: 56, borderRadius: 28 }} /> : <View style={[f.avatar, { width: 56, height: 56, borderRadius: 28 }]}><AppText role="contentTitle">{m.display_name.slice(0, 2).toUpperCase()}</AppText></View>}
-              <View style={f.grow}><AppText role="itemTitle">{m.display_name}</AppText><Text style={f.small}>{(m.user_id === user?.id ? resting : m.rest_week === weekKey) ? "Rest week" : "Active"}</Text>
-                <Text style={f.small}>{sessionsMetric ? `${memberTotal(m.user_id)} sessions` : distance(memberTotal(m.user_id))} this week</Text>
+              {m.avatar_url ? <Image source={{ uri: m.avatar_url }} style={{ width: 56, height: 56, borderRadius: 28 }} /> : <View style={[f.avatar, { width: 56, height: 56, borderRadius: 28 }]}><AppText role="avatarInitials">{m.display_name.slice(0, 2).toUpperCase()}</AppText></View>}
+              <View style={f.grow}><AppText role="itemTitle">{m.display_name}</AppText><AppText role="supporting" secondary >{(m.user_id === user?.id ? resting : m.rest_week === weekKey) ? "Rest week" : "Active"}</AppText>
+                <AppText role="supporting" secondary >{sessionsMetric ? `${memberTotal(m.user_id)} sessions` : distance(memberTotal(m.user_id))} this week</AppText>
               </View>
             </View>)}
+            </SectionStack>
           </View>
   );
   if (api.live && !api.data)
     return (
       <View style={f.section}>
-        <Text style={f.copy}>{api.error || "Loading your circle…"}</Text>
+        <AppText role="body" secondary >{api.error || "Loading your circle…"}</AppText>
         <FocusButton
           label="Refresh crews"
           onPress={() => void api.reload()}
@@ -394,15 +396,15 @@ export function CrewHub({ membersOnly = false, crewId = "" }: { membersOnly?: bo
         />
       ) : null}
       {solo ? (
-        <View style={{gap:18}}>
-        <ImageBackground source={alpineTrail} style={{height:200,justifyContent:"flex-end",padding:22,borderRadius:20,overflow:"hidden",backgroundColor:c.fieldDeep}}><View style={[StyleSheet.absoluteFill,{backgroundColor:"#081f3670"}]}/><Text style={[f.title,{color:c.card,fontSize:28}]}>Stronger together.</Text><Text style={[f.copy,{color:c.card}]}>A place for every pace.</Text></ImageBackground>
+        <SectionStack divided={false}>
+        <ImageBackground source={alpineTrail} style={{height:200,justifyContent:"flex-end",padding:22,borderRadius:20,overflow:"hidden",backgroundColor:c.fieldDeep}}><View style={[StyleSheet.absoluteFill,{backgroundColor:"#081f3670"}]}/><AppText role="pageTitle" style={{ color: c.card }}>Stronger together.</AppText><AppText role="body" secondary style={{ color: c.card }}>A place for every pace.</AppText></ImageBackground>
         <View style={f.section}>
           <Text style={f.kicker}>Your people</Text>
-          <Text style={f.title}>Make room for your people.</Text>
-          <Text style={f.copy}>
+          <AppText role="pageTitle" >Make room for your people.</AppText>
+          <AppText role="body" secondary >
             Private crews share a week of effort, member standings and
             an optional shared field.
-          </Text>
+          </AppText>
           <FocusButton
             label={api.live ? "Create or join a crew" : "View account"}
             onPress={() =>
@@ -410,14 +412,14 @@ export function CrewHub({ membersOnly = false, crewId = "" }: { membersOnly?: bo
             }
           />
           {!api.live ? (
-            <Text style={f.small}>
+            <AppText role="caption" secondary >
               A live account is needed to create or join a private crew.
-            </Text>
+            </AppText>
           ) : null}
         </View>
-        </View>
+        </SectionStack>
       ) : (
-        <>
+        <SectionStack divided={false}>
           <View style={f.chipRow}>
             {crews.map((c) => (
               <Pressable
@@ -427,7 +429,7 @@ export function CrewHub({ membersOnly = false, crewId = "" }: { membersOnly?: bo
                 onPress={() => setSelected(c.id)}
                 style={[f.chip, crew.id === c.id && f.chipActive]}
               >
-                <Text style={f.rowTitle}>{c.name}</Text>
+                <AppText role="itemTitle" >{c.name}</AppText>
               </Pressable>
             ))}
             <Pressable
@@ -435,7 +437,7 @@ export function CrewHub({ membersOnly = false, crewId = "" }: { membersOnly?: bo
               onPress={() => open("add")}
               style={[f.chip, { borderStyle: "dashed" }]}
             >
-              <Text style={f.rowTitle}>＋ Add Crew</Text>
+              <AppText role="itemTitle" >＋ Add Crew</AppText>
             </Pressable>
           </View>
           <ImageBackground source={alpineTrail} style={[f.card,{backgroundColor:c.fieldDeep,gap:18,minHeight:260,overflow:"hidden",justifyContent:"space-between"}]} imageStyle={{borderRadius:20}}><View pointerEvents="none" style={[StyleSheet.absoluteFill,{backgroundColor:"#081f3680"}]}/>
@@ -449,15 +451,15 @@ export function CrewHub({ membersOnly = false, crewId = "" }: { membersOnly?: bo
                 {solo ? "Solo circle" : "Your people"} · {members.length} member
                 {members.length === 1 ? "" : "s"}
               </Text>
-              <Text style={[f.title, { color: c.paper }]}>{crew.name}</Text>
+              <AppText role="pageTitle" style={{ color: c.paper }}>{crew.name}</AppText>
             </Pressable>
             <View style={[f.row, { flexWrap: "wrap" }]}>
               <View style={f.chipRow}>
                 {members.slice(0, 5).map((m) => (
                   <View key={m.user_id} style={f.avatar}>
-                    <Text style={f.rowTitle}>
+                    <AppText role="itemTitle" >
                       {m.display_name.slice(0, 2).toUpperCase()}
-                    </Text>
+                    </AppText>
                   </View>
                 ))}
               </View>
@@ -499,61 +501,60 @@ export function CrewHub({ membersOnly = false, crewId = "" }: { membersOnly?: bo
                   )
                 : formatDistanceM(totalM, state?.units)}
             </Text>
-            <Text style={f.copy}>
+            <AppText role="body" secondary >
               {sessionsMetric
                 ? `sessions · ${crew.target_sessions} per member`
                 : `${distanceUnitLabel(state?.units)} together`}
-            </Text>
+            </AppText>
             <CrewRelay userId={user?.id} key={crew.id} members={members} entries={entries} sport={crew.sport as SportId} format={crew.format} previousDistanceM={previousDistanceM} targetDistanceM={crew.journey_km*1000} targetSessions={crew.target_sessions} units={state?.units} />
           </View>
           {user ? (
             <>
               {user && !solo ? <CrewSessions key={`${user?.id}:${crew.id}`} crewId={crew.id} sport={crew.sport} /> : null}
-              <SectionHeader title="Crew standings"/>
-              <View style={f.section}>
+              <Section title="Crew standings">
                 {[...members]
                   .sort(
                     (a, b) => memberTotal(b.user_id) - memberTotal(a.user_id),
                   )
                   .map((m, i) => (
                     <View key={m.user_id} style={f.row}>
-                      <Text style={f.small}>{i + 1}</Text>
-                      <Text style={[f.rowTitle, f.grow]}>{m.display_name}</Text>
+                      <AppText role="supporting" secondary >{i + 1}</AppText>
+                      <AppText role="itemTitle" style={f.grow}>{m.display_name}</AppText>
                       <RankBadge score={m.effort_score} />
-                      <Text style={f.rowTitle}>
+                      <AppText role="itemTitle" >
                         {sessionsMetric ? `${memberTotal(m.user_id)} sessions` : distance(memberTotal(m.user_id))}
-                      </Text>
+                      </AppText>
                     </View>
                   ))}
-              </View>
+              </Section>
             </>
           ) : null}
-        </>
+        </SectionStack>
       )}
       {!panel && (note || api.error) ? (
-        <Text style={f.copy} accessibilityLiveRegion="polite">
+        <AppText role="body" secondary  accessibilityLiveRegion="polite">
           {note || api.error}
-        </Text>
+        </AppText>
       ) : null}
       {api.data?.notices?.map((n) => (
-        <Text style={f.small} key={n.id}>
+        <AppText role="caption" secondary  key={n.id}>
           {formatNoticeUnits(n.body, state?.units)}
-        </Text>
+        </AppText>
       ))}
       {!user ? (
         <>
           <View style={f.section}>
             <Text style={f.kicker}>What crews unlock</Text>
-            <Text style={f.rowTitle}>Shared week</Text>
-            <Text style={f.copy}>
+            <AppText role="itemTitle" >Shared week</AppText>
+            <AppText role="body" secondary >
               See who showed up and how the circle is pacing.
-            </Text>
-            <Text style={f.rowTitle}>Invite codes</Text>
-            <Text style={f.copy}>Bring friends in without a public board.</Text>
-            <Text style={f.rowTitle}>Crew field</Text>
-            <Text style={f.copy}>
+            </AppText>
+            <AppText role="itemTitle" >Invite codes</AppText>
+            <AppText role="body" secondary >Bring friends in without a public board.</AppText>
+            <AppText role="itemTitle" >Crew field</AppText>
+            <AppText role="body" secondary >
               Register together on one individual leaderboard.
-            </Text>
+            </AppText>
           </View>
         </>
       ) : null}
@@ -582,9 +583,9 @@ export function CrewHub({ membersOnly = false, crewId = "" }: { membersOnly?: bo
       >
         {!api.live && panel !== "members" ? (
           <>
-            <Text style={f.copy}>
+            <AppText role="body" secondary >
               A live account is needed to create or join a private crew.
-            </Text>
+            </AppText>
             <FocusButton
               label="Go to Athlete"
               onPress={() => {
@@ -595,7 +596,7 @@ export function CrewHub({ membersOnly = false, crewId = "" }: { membersOnly?: bo
           </>
         ) : panel === "add" ? (
           <>
-            <Text style={f.small}>Invite code</Text>
+            <AppText role="caption" secondary >Invite code</AppText>
             <TextInput
               accessibilityLabel="Invite code"
               style={f.input}
@@ -628,7 +629,7 @@ export function CrewHub({ membersOnly = false, crewId = "" }: { membersOnly?: bo
                 style={[f.chip, format === o.id && f.chipActive]}
                 onPress={() => setFormat(o.id)}
               >
-                <Text style={f.rowTitle}>{o.name}</Text>
+                <AppText role="itemTitle" >{o.name}</AppText>
               </Pressable>
             ))}
             <FocusButton
@@ -655,21 +656,21 @@ export function CrewHub({ membersOnly = false, crewId = "" }: { membersOnly?: bo
           </>
         ) : solo ? (
           <>
-            <Text style={f.copy}>
+            <AppText role="body" secondary >
               Create a crew first to invite your friends and share settings.
-            </Text>
+            </AppText>
             <FocusButton label="Create crew ＋" onPress={() => open("add")} />
           </>
         ) : panel === "members" ? (
           membersView
         ) : panel === "invite" ? (
           <>
-            <Text style={f.copy}>
+            <AppText role="body" secondary >
               Share this link so friends join your crew.
-            </Text>
-            <Text selectable style={f.small}>
+            </AppText>
+            <AppText role="caption" secondary selectable >
               {inviteLink(crew.invite_code)}
-            </Text>
+            </AppText>
             <FocusButton
               label="Share invite link"
               onPress={() =>
@@ -681,13 +682,13 @@ export function CrewHub({ membersOnly = false, crewId = "" }: { membersOnly?: bo
             <Text selectable style={f.massive}>
               {crew.invite_code}
             </Text>
-            <Text style={f.small}>Or share the code only</Text>
+            <AppText role="caption" secondary >Or share the code only</AppText>
           </>
         ) : panel === "leave" ? (
           <>
-            <Text style={f.copy}>
+            <AppText role="body" secondary >
               You can rejoin anytime with an invite code.
-            </Text>
+            </AppText>
             <FocusButton
               label={busy ? "Leaving…" : "Confirm leave crew"}
               disabled={busy}
@@ -696,9 +697,9 @@ export function CrewHub({ membersOnly = false, crewId = "" }: { membersOnly?: bo
           </>
         ) : (
           <>
-            <Text style={f.copy}>
+            <AppText role="body" secondary >
               {crew.sport} · {crew.format.replaceAll("_", " ")}
-            </Text>
+            </AppText>
             <FocusButton
               label={resting ? "Clear rest week" : "Mark my rest week"}
               secondary
@@ -707,10 +708,10 @@ export function CrewHub({ membersOnly = false, crewId = "" }: { membersOnly?: bo
                 void write("/rest", { crewId: crew.id, rest: !resting })
               }
             />
-            <Text style={f.small}>
+            <AppText role="caption" secondary >
               A crew rest marker does not freeze effort score. Week freezes live
               in Athlete → Preferences.
-            </Text>
+            </AppText>
             <FocusButton
               label="Leave crew"
               secondary
@@ -720,9 +721,9 @@ export function CrewHub({ membersOnly = false, crewId = "" }: { membersOnly?: bo
           </>
         )}
         {note ? (
-          <Text style={f.copy} accessibilityLiveRegion="polite">
+          <AppText role="body" secondary  accessibilityLiveRegion="polite">
             {note}
-          </Text>
+          </AppText>
         ) : null}
       </FocusSheet>
     </>

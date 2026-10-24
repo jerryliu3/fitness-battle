@@ -1,4 +1,5 @@
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { Section, AppText } from "../ui/section";
+import { Pressable, StyleSheet, View } from "react-native";
 import { useRouter } from "expo-router";
 import {
   APP_TIMEZONE,
@@ -16,10 +17,8 @@ export function WeekRecap({ state }: { state: CompeteState }) {
     recap = latestClubRecap(state),
     difference = week.movingSec - week.previousSec;
   return (
-    <View style={f.section}>
-      <Text accessibilityRole="header" style={f.h2}>
-        Your week, in perspective
-      </Text>
+    <Section  title="Your week, in perspective">
+
       <View style={f.row}>
         {[
           { value: clubDuration(week.movingSec), label: "Active time" },
@@ -27,23 +26,20 @@ export function WeekRecap({ state }: { state: CompeteState }) {
           { value: `${week.activeDays} / 7`, label: "Active days" },
         ].map((m) => (
           <View key={m.label} style={{ flex: 1, gap: 5 }}>
-            <Text
-              style={[
-                f.rowTitle,
-                { fontSize: 20, fontFamily: "DMSans_700Bold", lineHeight: 28 },
-              ]}
+            <AppText role="metricValue"
+
             >
               {m.value}
-            </Text>
-            <Text style={f.small}>{m.label}</Text>
+            </AppText>
+            <AppText role="caption" secondary >{m.label}</AppText>
           </View>
         ))}
       </View>
-      <Text style={f.small}>
+      <AppText role="caption" secondary >
         {week.previousSec
           ? `${difference >= 0 ? "+" : "−"}${clubDuration(Math.abs(difference))} compared with all of last week.`
           : "Each session builds your story."}
-      </Text>
+      </AppText>
       {recap ? (
         <Pressable
           accessibilityRole="button"
@@ -52,11 +48,11 @@ export function WeekRecap({ state }: { state: CompeteState }) {
           style={s.receipt}
         >
           <View style={s.stamp}>
-            <Text style={f.h2}>{recap.place}</Text>
+            <AppText role="metricValue" >{recap.place}</AppText>
           </View>
           <View style={{ flex: 1, gap: 4 }}>
-            <Text style={f.rowTitle}>Your latest settled week.</Text>
-            <Text style={f.small}>
+            <AppText role="itemTitle" >Your latest settled week.</AppText>
+            <AppText role="supporting" secondary >
               {sportById(recap.sport).name} · {recap.track === "verified" ? "GPS" : "Open"} ·{" "}
               {new Date(recap.periodStart).toLocaleDateString("en-US", {
                 month: "short",
@@ -64,19 +60,19 @@ export function WeekRecap({ state }: { state: CompeteState }) {
                 timeZone: APP_TIMEZONE,
               })}{" "}
               · Place {recap.place} of {recap.fieldSize}
-            </Text>
-            <Text style={f.small}>
+            </AppText>
+            <AppText role="supporting" secondary >
               {recap.eloAfter - recap.eloBefore >= 0 ? "+" : ""}
               {recap.eloAfter - recap.eloBefore} Effort Score · View recap →
-            </Text>
+            </AppText>
           </View>
         </Pressable>
       ) : (
-        <Text style={f.small}>
+        <AppText role="caption" secondary >
           Your first settled competition recap will appear here.
-        </Text>
+        </AppText>
       )}
-    </View>
+    </Section>
   );
 }
 const s = StyleSheet.create({

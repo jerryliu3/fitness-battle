@@ -1,4 +1,6 @@
 "use client";
+import { AppText, AppParagraph } from "@/ui/section";
+
 import { WeekChart } from "./week-chart";
 import { LatestActivity } from "@/features/club/latest-activity";
 
@@ -146,7 +148,7 @@ function JourneyDayStop({
         }}
         style={{ cursor: "pointer" }}
       >
-        <small>{dateWithWeekday}</small>
+        <AppText as="small" role="caption" secondary>{dateWithWeekday}</AppText>
         <b>{sessionTitle}</b>
       </span>
     </>
@@ -173,9 +175,9 @@ function SessionStopPeek({
       <button type="button" className="focus-stop-peek-close" aria-label="Close preview" onClick={onClose}>
         ×
       </button>
-      <p className="fb-kicker">{kicker}</p>
+      <AppParagraph typographyRole="badgeLabel" className="fb-kicker">{kicker}</AppParagraph>
       <strong>{title}</strong>
-      {detail ? <p className="fb-note">{detail}</p> : null}
+      {detail ? <AppParagraph typographyRole="caption" className="fb-note">{detail}</AppParagraph> : null}
       <button type="button" className="fb-btn" onClick={onOpen}>
         See session
       </button>
@@ -230,7 +232,7 @@ export function TodayScreen() {
 
   useEffect(()=>{if(!onHome)setSession({kind:"closed"});},[onHome]);
 
-  if (!state) return <p className="fb-copy">Loading your week…</p>;
+  if (!state) return <AppParagraph typographyRole="body" className="fb-copy">Loading your week…</AppParagraph>;
 
   const route = buildTodayRoute(state);
   const now = competeNow(state);
@@ -377,7 +379,7 @@ export function TodayScreen() {
                       <b>PAST</b>
                     </button>
                     <span>
-                      <small>Past</small>
+                      <AppText as="small" role="caption" secondary>Past</AppText>
                       <b>More past sessions</b>
                     </span>
                   </>
@@ -390,7 +392,7 @@ export function TodayScreen() {
                       aria-label="Past sessions"
                     />
                     <span>
-                      <small>Past</small>
+                      <AppText as="small" role="caption" secondary>Past</AppText>
                       <b>Past sessions will appear here</b>
                     </span>
                   </>
@@ -478,7 +480,7 @@ export function TodayScreen() {
                       }}
                       style={{ cursor: "pointer" }}
                     >
-                      <small>
+                      <AppText as="small" role="caption" secondary>
                         {new Date(`${stop.day.day}T12:00:00.000Z`).toLocaleDateString(
                           "en-US",
                           {
@@ -488,7 +490,7 @@ export function TodayScreen() {
                             timeZone: "UTC",
                           },
                         )}
-                      </small>
+                      </AppText>
                       <b>
                         {stop.day.items.length > 1
                           ? `${stop.day.items.length} sessions`
@@ -539,7 +541,7 @@ export function TodayScreen() {
                       }}
                       style={{ cursor: "pointer" }}
                     >
-                      <small>Today</small>
+                      <AppText as="small" role="caption" secondary>Today</AppText>
                       <b>See today&apos;s session</b>
                     </span>
                   </>

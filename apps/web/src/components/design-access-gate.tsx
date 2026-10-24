@@ -1,4 +1,6 @@
 "use client";
+import { AppParagraph, AppHeading } from "@/ui/section";
+
 
 import { useAuth } from "@/components/auth-context";
 import { isAuthorizedForDesign, isLocalHost } from "@/lib/auth/design-access";
@@ -19,7 +21,7 @@ export function DesignAccessGate({ children }: { children: ReactNode }) {
   if (loading || !mounted) {
     return (
       <main style={{ padding: "48px 16px", maxWidth: 480, margin: "0 auto" }}>
-        <p className="fb-copy">Checking access…</p>
+        <AppParagraph typographyRole="body" className="fb-copy">Checking access…</AppParagraph>
       </main>
     );
   }
@@ -36,11 +38,11 @@ export function DesignAccessGate({ children }: { children: ReactNode }) {
     return (
       <main style={{ padding: "48px 16px", maxWidth: 480, margin: "0 auto" }}>
         <section className="fb-card fb-auth-wall">
-          <p className="fb-kicker">Restricted Access</p>
-          <h1 className="fb-title">Sign in required</h1>
-          <p className="fb-copy">
+          <AppParagraph typographyRole="badgeLabel" className="fb-kicker">Restricted Access</AppParagraph>
+          <AppHeading level={1} role="pageTitle" className="fb-title">Sign in required</AppHeading>
+          <AppParagraph typographyRole="body" className="fb-copy">
             Design lab and UX study prototypes are restricted. Please sign in with an authorized account.
-          </p>
+          </AppParagraph>
           <div className="fb-stack">
             <Link href={buildLoginHref(pathname)} className="fb-btn">
               Sign in
@@ -55,13 +57,13 @@ export function DesignAccessGate({ children }: { children: ReactNode }) {
     return (
       <main style={{ padding: "48px 16px", maxWidth: 480, margin: "0 auto" }}>
         <section className="fb-card fb-auth-wall">
-          <p className="fb-kicker">Restricted Access</p>
-          <h1 className="fb-title">Access denied</h1>
-          <p className="fb-copy">
+          <AppParagraph typographyRole="badgeLabel" className="fb-kicker">Restricted Access</AppParagraph>
+          <AppHeading level={1} role="pageTitle" className="fb-title">Access denied</AppHeading>
+          <AppParagraph typographyRole="body" className="fb-copy">
             The design lab is restricted to <strong>3jerryliu@gmail.com</strong>
             {isLocal ? " (or demo accounts on local)" : ""}. You are signed in as{" "}
             <strong>{user.email}</strong>.
-          </p>
+          </AppParagraph>
           <div className="fb-stack">
             <Link href="/today" className="fb-btn">
               Back to app

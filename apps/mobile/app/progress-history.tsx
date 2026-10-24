@@ -1,3 +1,4 @@
+import { SectionStack } from "../src/ui/section";
 import { useRouter } from "expo-router";
 import { ScrollView } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -16,11 +17,13 @@ export default function ProgressHistoryScreen() {
     <SafeAreaView style={f.safe} edges={["top"]}>
       <ScreenHeader title="Past weeks & awards" onBack={() => router.back()} />
       <ScrollView contentContainerStyle={[f.content, { paddingTop: 0 }]}>
+<SectionStack divided={false}>
         <WeeklyChapters state={state} />
         {awardCards(state).length > 0 ? (
           <AwardShelf cards={awardCards(state)} />
         ) : null}
-      </ScrollView>
+      </SectionStack>
+</ScrollView>
     </SafeAreaView>
   );
 }

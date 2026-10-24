@@ -1,4 +1,6 @@
 "use client";
+import { AppParagraph, AppText, typographyStyle, SectionHeader, Section, AppHeading } from "@/ui/section";
+
 
 import { isOwnerEmail } from "@/lib/auth/design-access";
 import { ReportIssue } from "@/components/report-issue";
@@ -166,9 +168,9 @@ function YouContent({ surface }: { surface: "progress" | "athlete" }) {
     >
       <div style={{ display: "grid", gap: 12, marginTop: 16 }}>
         {deleteError ? (
-          <p className="fb-error" role="alert">
+          <AppParagraph typographyRole="supporting" className="fb-error" role="alert">
             {deleteError}
-          </p>
+          </AppParagraph>
         ) : null}
         <button
           type="button"
@@ -250,7 +252,7 @@ function YouContent({ surface }: { surface: "progress" | "athlete" }) {
   ]);
 
   if (!state || loadStatus === "loading") {
-    return <p className="fb-copy">Loading…</p>;
+    return <AppParagraph typographyRole="body" className="fb-copy">Loading…</AppParagraph>;
   }
 
   const now = competeNow(state);
@@ -480,12 +482,12 @@ function YouContent({ surface }: { surface: "progress" | "athlete" }) {
           primary={state.primary}
         />
         <section className="focus-card fb-stack">
-          <p className="fb-kicker">Account</p>
-          <h2>Sign in to save progress</h2>
-          <p className="fb-copy">
+          <AppParagraph typographyRole="badgeLabel" className="fb-kicker">Account</AppParagraph>
+          <SectionHeader title="Sign in to save progress"/>
+          <AppParagraph typographyRole="body" className="fb-copy">
             Create an account or sign in to keep lifetime totals and season
             history with you.
-          </p>
+          </AppParagraph>
           <div className="fb-row" style={{ width: "100%", gap: 10 }}>
             <Link
               href="/signup?next=/you"
@@ -512,12 +514,12 @@ function YouContent({ surface }: { surface: "progress" | "athlete" }) {
       <div className="focus-athlete">
         <AthleteOverview state={state} sections="profile" />
         <section className="focus-card fb-stack">
-          <p className="fb-kicker">Account</p>
-          <h2>Sign in to sync your athlete</h2>
-          <p className="fb-copy">
+          <AppParagraph typographyRole="badgeLabel" className="fb-kicker">Account</AppParagraph>
+          <SectionHeader title="Sign in to sync your athlete"/>
+          <AppParagraph typographyRole="body" className="fb-copy">
             Create an account or sign in to connect trackers and keep progress
             with you.
-          </p>
+          </AppParagraph>
           <div className="fb-row" style={{ width: "100%", gap: 10 }}>
             <Link
               href="/signup?next=/you"
@@ -572,17 +574,17 @@ function YouContent({ surface }: { surface: "progress" | "athlete" }) {
           ‹
         </button>
         <header className="focus-heading">
-                    <h1>{PANEL_TITLES[panel]}</h1>
+                    <AppHeading level={1} role="navigationTitle">{PANEL_TITLES[panel]}</AppHeading>
         </header>
         <div className="focus-settings-panel">
           {panel === "connections" ? (
             <>
-              <section className="fb-card">
-                <h2>Data Sync</h2>
-                <p className="fb-copy" style={{ color: "var(--muted)", marginBottom: 16 }}>
+              <Section className="fb-card" title="Data Sync">
+
+                <AppParagraph typographyRole="body" className="fb-copy" style={{ color: "var(--muted)", marginBottom: 16 }}>
                   Connect fitness trackers and wearables to sync your activities automatically.
                   Eligible workouts count toward your registered events. Sleep and recovery have their own views; samples do not earn competition points.
-                </p>
+                </AppParagraph>
                 {PROVIDERS.map((provider) => {
                   const link = state.links.find(
                     (item) => item.provider === provider.id,
@@ -597,13 +599,13 @@ function YouContent({ surface }: { surface: "progress" | "athlete" }) {
                     >
                       <span className="club-integration-icon" style={{ background: INTEGRATION_ICONS[provider.id].background }}><svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><path d={INTEGRATION_ICONS[provider.id].path} fill={INTEGRATION_ICONS[provider.id].color} fillRule="evenodd" /></svg></span>
                       <div className="fb-grow">
-                        <strong style={{ fontSize: 14 }}>{provider.name}</strong>
-                        <small style={{ color: "var(--muted)", fontSize: 13, display: "block", marginTop: 2 }}>
+                        <strong style={{ ...typographyStyle("itemTitle") }}>{provider.name}</strong>
+                        <AppText as="small" role="supporting" secondary style={{ ...typographyStyle("caption"), color: "var(--muted)", display: "block", marginTop: 2 }}>
                           {provider.blurb}
                           {link?.linked
                             ? ` · ${offlineMode ? "Demo · sample data" : evidenceLabel(status === "stub" ? "stub" : status === "connected" ? "receiving_data" : "disconnected")}`
                             : ""}
-                        </small>
+                        </AppText>
                       </div>
                       <div
                         style={{
@@ -641,40 +643,40 @@ function YouContent({ surface }: { surface: "progress" | "athlete" }) {
                     type="button"
                     className="fb-btn-ghost"
                     style={{
-                      width: "auto",
-                      padding: 0,
-                      color: "var(--red, #b83a38)",
-                      textDecoration: "underline",
-                      fontSize: 13,
-                      cursor: "pointer",
-                      textAlign: "left",
-                    }}
+    ...typographyStyle("actionLabel"),
+    width: "auto",
+    padding: 0,
+    color: "var(--red, #b83a38)",
+    textDecoration: "underline",
+    cursor: "pointer",
+    textAlign: "left"
+}}
                     onClick={() => setPanel("connections")}
                   >
                     Sync failed · check Data Sync
                   </button>
                 ) : syncNote ? (
-                  <p className="fb-note">{syncNote}</p>
+                  <AppParagraph typographyRole="caption" className="fb-note">{syncNote}</AppParagraph>
                 ) : null}
-              </section>
+              </Section>
               <section className="fb-card">
                 {(offlineMode) && previewSyncReview ? (
                   <button className="fb-btn-line" onClick={previewSyncReview}>
                     Preview today’s sync recap
                   </button>
                 ) : null}
-                <h2>Import fitness history</h2>
+                <SectionHeader title="Import fitness history"/>
                 {state.calibrated ? (
-                  <p className="fb-copy">
+                  <AppParagraph typographyRole="body" className="fb-copy">
                     History is locked in. This one-time calibration cannot run
                     again.
-                  </p>
+                  </AppParagraph>
                 ) : (
                   <>
-                    <p className="fb-copy">
+                    <AppParagraph typographyRole="body" className="fb-copy">
                       Import your recent activity history to calibrate your starting effort score
                       and leave the baseline.
-                    </p>
+                    </AppParagraph>
                     <button
                       type="button"
                       className="fb-btn"
@@ -694,14 +696,14 @@ function YouContent({ surface }: { surface: "progress" | "athlete" }) {
             <label className="club-preference-row"><strong>Primary sport</strong><select className="fb-input" value={state.primary} onChange={event => dispatch({ type: "set-primary", sport: event.target.value as SportId })}>
               {SPORTS.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
             </select></label>
-            <div className="club-preference-row"><span><strong>Freeze this week</strong><small>{state.freezesLeft} remaining</small></span>
+            <div className="club-preference-row"><span><strong>Freeze this week</strong><AppText as="small" role="caption" secondary>{state.freezesLeft} remaining</AppText></span>
               <button type="button" role="switch" aria-label="Freeze this week" aria-checked={frozen} className={frozen ? "fb-switch on" : "fb-switch"} disabled={!frozen && state.freezesLeft <= 0}
                 onClick={() => frozen ? dispatch({ type: "unfreeze" }) : setConfirmFreeze(true)}><span className="fb-switch-knob" /></button>
             </div>
-            {confirmFreeze && !frozen && <div className="fb-stack"><p className="fb-note">A freeze holds this week's placement bonus. Activity milestones still count.</p>
+            {confirmFreeze && !frozen && <div className="fb-stack"><AppParagraph typographyRole="caption" className="fb-note">A freeze holds this week's placement bonus. Activity milestones still count.</AppParagraph>
               <button type="button" className="fb-btn" onClick={() => { dispatch({ type: "freeze" }); setConfirmFreeze(false); }}>Confirm freeze</button>
               <button type="button" className="fb-btn-ghost" onClick={() => setConfirmFreeze(false)}>Cancel</button></div>}
-            <h2>Active Sports</h2>
+            <SectionHeader title="Active Sports"/>
             {SPORTS.map(sport => { const active = Boolean(state.ratings.find(r => r.sport === sport.id)?.optedIn); return <div key={sport.id} className="club-preference-row">
               <strong className="club-sport-label"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d={SPORT_ICON_PATHS[sport.id]} /></svg>{sport.name}</strong><button type="button" role="switch" aria-label={`Toggle ${sport.name} active status`} aria-checked={active} className={active ? "fb-switch on" : "fb-switch"}
                 onClick={() => requireAuth(`Sign in to activate ${sport.name}.`, () => dispatch(active ? { type: "opt-out", sport: sport.id } : { type: "opt-in", sport: sport.id, crewBoard: null }))}><span className="fb-switch-knob" /></button>
@@ -710,7 +712,7 @@ function YouContent({ surface }: { surface: "progress" | "athlete" }) {
           {panel === "account" ? (
             <>
               <section className="fb-card fb-stack">
-                <h2>Your account</h2>
+                <SectionHeader title="Your account"/>
                 <button type="button" className="fb-btn-line" onClick={() => void signOut()}>Sign out</button>
                 <ReportIssue />
                 {legacyBackup && <button type="button" className="fb-btn-line" onClick={() => {
@@ -720,22 +722,22 @@ function YouContent({ surface }: { surface: "progress" | "athlete" }) {
                 }}>Download local demo backup</button>}
               </section>
               {user ? (
-                <section className="fb-card" style={{ borderColor: "#f3d1cc" }}>
-                  <h2 style={{ color: "var(--red, #b83a38)" }}>Danger Zone</h2>
-                  <p className="fb-copy">
+                <Section className="fb-card" style={{ borderColor: "#f3d1cc" }} title="Danger Zone">
+
+                  <AppParagraph typographyRole="body" className="fb-copy">
                     Permanently delete your account and all associated workout history, rankings, and effort scores. This action cannot be undone.
-                  </p>
+                  </AppParagraph>
                   <button
                     type="button"
                     className="fb-btn-ghost"
                     style={{
-                      color: "var(--red, #b83a38)",
-                      border: "1px solid #f3d1cc",
-                      borderRadius: 8,
-                      padding: "8px 16px",
-                      width: "auto",
-                      fontWeight: 600,
-                    }}
+    ...typographyStyle("actionLabel"),
+    color: "var(--red, #b83a38)",
+    border: "1px solid #f3d1cc",
+    borderRadius: 8,
+    padding: "8px 16px",
+    width: "auto"
+}}
                     onClick={() => {
                       setDeleteError(null);
                       setDeleteConfirmOpen(true);
@@ -743,39 +745,39 @@ function YouContent({ surface }: { surface: "progress" | "athlete" }) {
                   >
                     Delete account
                   </button>
-                </section>
+                </Section>
               ) : null}
             </>
           ) : null}
           {panel === "notifications" ? <NotificationSettings /> : null}
           {panel === "scoring" ? (
-            <section className="fb-card">
-              <h2>Levels</h2>
-              <p className="fb-copy">
+            <Section className="fb-card" title="Levels">
+
+              <AppParagraph typographyRole="body" className="fb-copy">
                 Your level is a band on the weekly effort score ladder. It rises
                 immediately at weekly activity milestones in active sports.
                 Your rank sets the milestone size. Weekly placement can raise or lower your score. A week without counted activity decays toward the score floor. Activity milestone points already earned are kept.
-              </p>
+              </AppParagraph>
               {RANK_BANDS.map((band) => (
                 <div key={band.name} className="fb-row">
                   <span className="fb-grow">
                     {band.name}
-                    <small>
+                    <AppText as="small" role="supporting" secondary>
                       {band.min}+ · {band.blurb}
-                    </small>
+                    </AppText>
                   </span>
                 </div>
               ))}
-              <p className="fb-note">
+              <AppParagraph typographyRole="caption" className="fb-note">
                 Score is mostly distance, or time when there is no GPS. Heart
                 rate can add a little. Pace adds less. Effort score never falls below
                 500.
-              </p>
-              <p className="fb-note">
+              </AppParagraph>
+              <AppParagraph typographyRole="caption" className="fb-note">
                 Competition weeks run Monday 00:00 to next Monday 00:00 Eastern
                 Time (ET / New York). New fields open Monday midnight Eastern Time.
-              </p>
-            </section>
+              </AppParagraph>
+            </Section>
           ) : null}
         </div>
       </motion.aside>
@@ -800,8 +802,8 @@ function YouContent({ surface }: { surface: "progress" | "athlete" }) {
       {surface === "progress" ? (
         <ProgressHub overview={<><TrainingHistory state={state}><Achievements state={state}/></TrainingHistory><WeekRecap state={state}/>
         <Link href="/you/history" className="fb-card club-history-preview">
-          <h2 className="fb-section-title">Past weeks & awards</h2>
-          <p className="fb-copy">Closed competition weeks, chapter history, and your award shelf.</p>
+          <SectionHeader title="Past weeks & awards"/>
+          <AppParagraph typographyRole="body" className="fb-copy">Closed competition weeks, chapter history, and your award shelf.</AppParagraph>
         </Link></>} effort={<>
           <AthleteOverview
             state={state}
@@ -818,7 +820,7 @@ function YouContent({ surface }: { surface: "progress" | "athlete" }) {
         </>} history={null}/>
       ) : user ? (
         <>
-      <header className="club-detail-heading"><Link href="/today" className="club-icon-button" aria-label="Return to Home">‹</Link><h1>Athlete</h1></header>
+      <header className="club-detail-heading"><Link href="/today" className="club-icon-button" aria-label="Return to Home">‹</Link><AppHeading level={1} role="navigationTitle">Athlete</AppHeading></header>
       <AthleteOverview
         state={state}
         email={user.email}
@@ -852,7 +854,7 @@ function YouContent({ surface }: { surface: "progress" | "athlete" }) {
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d={SETTINGS_ICON_PATHS[PANEL_TITLES[id] as keyof typeof SETTINGS_ICON_PATHS]} /></svg>
             <span>
               <b>{PANEL_TITLES[id]}</b>
-              <small>{detail}</small>
+              <AppText as="small" role="supporting" secondary>{detail}</AppText>
             </span>
             <span aria-hidden="true">→</span>
           </button>
@@ -861,24 +863,24 @@ function YouContent({ surface }: { surface: "progress" | "athlete" }) {
         </>
       ) : null}
       {!state.onboardingCompleted ? (
-        <section className="fb-card">
-          <h2>Finish setup</h2>
-          <p className="fb-copy">
+        <Section className="fb-card" title="Finish setup">
+
+          <AppParagraph typographyRole="body" className="fb-copy">
             {user
               ? `Preferences and the optional ${BACKFILL_DAYS}-day calibration live in onboarding.`
               : "Create an account to lock in preferences, link trackers, and calibrate your effort score."}
-          </p>
+          </AppParagraph>
           <Link
             href={user ? "/onboarding" : "/signup?next=%2Fonboarding"}
             className="fb-btn"
           >
             {user ? "Continue onboarding" : "Create account to finish setup"}
           </Link>
-        </section>
+        </Section>
       ) : null}
       {!user ? (
         <div className="fb-stack">
-          <p className="fb-note">Browsing as a guest</p>
+          <AppParagraph typographyRole="caption" className="fb-note">Browsing as a guest</AppParagraph>
           <div className="fb-row" style={{ gap: 10 }}>
             <Link href="/signup" className="fb-btn" style={{ flex: 1, justifyContent: "center" }}>
               Create account
@@ -903,7 +905,7 @@ function YouContent({ surface }: { surface: "progress" | "athlete" }) {
 
 export function ProgressPage() {
   return (
-    <Suspense fallback={<p className="fb-copy">Loading…</p>}>
+    <Suspense fallback={<AppParagraph typographyRole="body" className="fb-copy">Loading…</AppParagraph>}>
       <YouContent surface="progress" />
     </Suspense>
   );
@@ -911,7 +913,7 @@ export function ProgressPage() {
 
 export function AthletePage() {
   return (
-    <Suspense fallback={<p className="fb-copy">Loading…</p>}>
+    <Suspense fallback={<AppParagraph typographyRole="body" className="fb-copy">Loading…</AppParagraph>}>
       <YouContent surface="athlete" />
     </Suspense>
   );

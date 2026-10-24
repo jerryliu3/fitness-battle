@@ -62,19 +62,35 @@ Web uses rem units. StatusBadge expands with its label and supports neutral
 and success tones plus an optional icon; achievement illustrations stay intact.
 ListRow separates item titles and supporting copy from headings.
 
-Pilot consumers: Home Latest activity and Progress Your training, Achievements
-and Personal records. Achievements remains on Progress. Their stacks do not
-change counted activity, navigation or demo disclosures. Native event headings,
-Crew member roles and compact navigation are also separated from legacy h2.
-Legacy f.h2/f.sectionTitle and web SectionHeading remain compatibility APIs;
-do not add new consumers. Feature metrics, chart axes and medal illustration
-geometry remain explicit exceptions to text normalization. Wider legacy screen
-migration is incremental. `pnpm lint:ui` uses the TypeScript AST to reject raw
-font overrides and legacy heading tokens in the eight migrated pilot feature
-files. Its checked-in configuration lists only the atlas total and axis label
-exceptions; add newly migrated files to that configuration. Existing workspace
-lint placeholders remain separate; this is scoped enforcement, not a full
-repository lint migration.
+The contract is applied throughout production Home, Compete, Progress, Crew,
+Athlete/settings, onboarding, notifications, authentication, history, awards,
+sleep/recovery, rankings and supporting sheets on web and native. Achievements
+remains on Progress. Shared page stacks own peer spacing; Sections own the
+12-unit relationship between their header and content. Cards retain their own
+inner padding and do not add another section boundary.
+
+Native feature and route text consumes AppText or the UI-owned textStyle adapter.
+Web uses AppHeading, AppParagraph and AppText, with shared CSS variables for
+product control/row classes. Page titles, centered navigation, section titles,
+card titles, explanatory copy, row titles, subtitles, captions and status labels
+have distinct roles. Numeric metricValue/metricUnit and controlSymbol roles
+prevent numbers and arrows from inheriting heading semantics; avatarInitials
+is separate from content headings. Native body copy is 16/24 across production.
+
+Legacy f typography aliases and web SectionHeading remain only for compatibility
+with historical studies and UI internals. New production consumers must use the
+semantic adapters. `pnpm lint:ui` checks all production feature and route files,
+authentication/components and supporting product pages; it rejects raw text font
+overrides, legacy f text aliases and raw HTML headings. Its checked-in exceptions
+are deliberate score, time, distance, rank and chart scales. SVG labels and map
+renderer overlays retain geometry-specific type; historical brand/mascot studies
+and prototypes retain their exploratory typography. Do not use those exceptions
+for ordinary content.
+
+October 24 rollout validation: semantic UI lint and source syntax/import review
+were completed. The owner explicitly requested skipping typecheck and tests for
+the expanded rollout; no build or runtime/device verification was run for that
+follow-up. Earlier pilot verification does not validate the expanded changes.
 
 Review galleries: web `/design/components` under the existing design access
 gate; native `/components` (development review deep link). Check 320/390/430
