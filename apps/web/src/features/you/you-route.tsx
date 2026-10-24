@@ -16,7 +16,7 @@ import { AthleteOverview } from "@/features/focus/athlete-overview";
 import { SeasonHistory } from "@/features/split/components/season-history";
 import { AwardShelf } from "./award-shelf";
 import { buildSplitBoard } from "@/features/split/model";
-import { activityFromSample, INTEGRATION_ICONS, awardCards, BACKFILL_DAYS, competeNow, competitionTrack, evidenceLabel, primaryFreezePeriodStart, PROVIDERS, RANK_BANDS, sleepRenewal, SPORTS, type SportId, type ActivitySample, type ProviderId, type ReadinessMark, type ReadinessSample } from "@fitness-battle/shared";
+import { SPORT_ICON_PATHS, SETTINGS_ICON_PATHS, activityFromSample, INTEGRATION_ICONS, awardCards, BACKFILL_DAYS, competeNow, competitionTrack, evidenceLabel, primaryFreezePeriodStart, PROVIDERS, RANK_BANDS, sleepRenewal, SPORTS, type SportId, type ActivitySample, type ProviderId, type ReadinessMark, type ReadinessSample } from "@fitness-battle/shared";
 import { AuthPrompt } from "@/components/auth-gate";
 import { Sheet } from "@/ui/sheet";
 import Link from "next/link";
@@ -77,7 +77,7 @@ function YouContent({ surface }: { surface: "progress" | "athlete" }) {
   const searchParams = useSearchParams();
   const accountKey = user?.id ?? "guest";
   const pushIdentity: SyncIdentity | null = user
-    ? { userId: user.id, localOnly: offlineMode || user.mode === "demo" }
+    ? { userId: user.id, localOnly: offlineMode }
     : null;
   const router = useRouter();
   const requestedPanel = searchParams.get("panel");
@@ -601,7 +601,7 @@ function YouContent({ surface }: { surface: "progress" | "athlete" }) {
                         <small style={{ color: "var(--muted)", fontSize: 13, display: "block", marginTop: 2 }}>
                           {provider.blurb}
                           {link?.linked
-                            ? ` · ${offlineMode || user?.mode === "demo" ? "Demo · sample data" : evidenceLabel(status === "stub" ? "stub" : status === "connected" ? "receiving_data" : "disconnected")}`
+                            ? ` · ${offlineMode ? "Demo · sample data" : evidenceLabel(status === "stub" ? "stub" : status === "connected" ? "receiving_data" : "disconnected")}`
                             : ""}
                         </small>
                       </div>
@@ -658,7 +658,7 @@ function YouContent({ surface }: { surface: "progress" | "athlete" }) {
                 ) : null}
               </section>
               <section className="fb-card">
-                {(offlineMode || user?.mode === "demo") && previewSyncReview ? (
+                {(offlineMode) && previewSyncReview ? (
                   <button className="fb-btn-line" onClick={previewSyncReview}>
                     Preview today’s sync recap
                   </button>
@@ -701,9 +701,9 @@ function YouContent({ surface }: { surface: "progress" | "athlete" }) {
             {confirmFreeze && !frozen && <div className="fb-stack"><p className="fb-note">A freeze holds this week's placement bonus. Activity milestones still count.</p>
               <button type="button" className="fb-btn" onClick={() => { dispatch({ type: "freeze" }); setConfirmFreeze(false); }}>Confirm freeze</button>
               <button type="button" className="fb-btn-ghost" onClick={() => setConfirmFreeze(false)}>Cancel</button></div>}
-            <h2>Sports</h2>
+            <h2>Active Sports</h2>
             {SPORTS.map(sport => { const active = Boolean(state.ratings.find(r => r.sport === sport.id)?.optedIn); return <div key={sport.id} className="club-preference-row">
-              <strong>{sport.name}</strong><button type="button" role="switch" aria-label={`Toggle ${sport.name} active status`} aria-checked={active} className={active ? "fb-switch on" : "fb-switch"}
+              <strong className="club-sport-label"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d={SPORT_ICON_PATHS[sport.id]} /></svg>{sport.name}</strong><button type="button" role="switch" aria-label={`Toggle ${sport.name} active status`} aria-checked={active} className={active ? "fb-switch on" : "fb-switch"}
                 onClick={() => requireAuth(`Sign in to activate ${sport.name}.`, () => dispatch(active ? { type: "opt-out", sport: sport.id } : { type: "opt-in", sport: sport.id, crewBoard: null }))}><span className="fb-switch-knob" /></button>
             </div>; })}
           </section> : null}
@@ -849,6 +849,7 @@ function YouContent({ surface }: { surface: "progress" | "athlete" }) {
               setPanel(id);
             }}
           >
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d={SETTINGS_ICON_PATHS[PANEL_TITLES[id] as keyof typeof SETTINGS_ICON_PATHS]} /></svg>
             <span>
               <b>{PANEL_TITLES[id]}</b>
               <small>{detail}</small>

@@ -86,3 +86,9 @@ The October 21 feature stack adds immediate activity score milestones, durable p
 Apply additive migration `20261023043826_crew_activity_reads.sql` before rolling out Home Crew activity reads. The endpoint reuses active membership authorization and supports both latest-per-member previews and cursor pagination. Run `supabase/tests/crew-activity-reads.sql` against a disposable migrated database to verify authorization and cursor behavior before deployment.
 
 Backend configuration now determines offline preview mode; the legacy demo-data flag does not bypass authentication in configured environments. Seeded synthetic accounts use real Supabase sessions and existing policies. Legacy local caches are backed up before account hydration and can be exported from Account. A backup error blocks the transition rather than discarding local data. Never use production sample-sync or sleep fixtures to claim a live tracker connection.
+
+### Native cleanup and Crew level badges
+
+The October 23 follow-up adds Expo-supported `@react-native-community/datetimepicker` and `@react-native-picker/picker`. Expo Go must match this checkout's SDK; standalone apps need a new binary for native dependencies and the light appearance configuration. The current native portrait renderer is SVG and does not depend on `/arena-scene`.
+
+Apply `20261023154755_crew_member_effort_scores.sql` for Crew level badges. Without it, the roster remains readable and unknown peer badges stay hidden. Run `supabase/tests/crew-member-effort-scores.sql` in a disposable migrated database before rollout. This pass does not apply production migrations or verify the installed device bundle.

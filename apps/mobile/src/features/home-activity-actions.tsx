@@ -1,4 +1,5 @@
 import { IconButton } from "../ui/icon-button";
+import { NumberPicker, DateTimeField } from "../ui/form-picker";
 import { ChoicePicker } from "../ui/choice-picker";
 
 import {
@@ -14,7 +15,7 @@ import {
 } from "@fitness-battle/shared";
 import { Link } from "expo-router";
 import { useRef, useState } from "react";
-import { Text, TextInput, View } from "react-native";
+import { Text, View } from "react-native";
 import { requestApi } from "../lib/api";
 import { useAuth } from "../lib/auth";
 import { useCompeteStore } from "../lib/compete-store";
@@ -76,7 +77,7 @@ export function HomeActivityActions({
           link.provider === "google_health"
         ) {
           const auth = {
-            localOnly: offlineMode || user.mode === "demo",
+            localOnly: offlineMode,
             getAccessToken: async () => ({
               token: accessToken ?? undefined,
               userId: id,
@@ -101,7 +102,7 @@ export function HomeActivityActions({
           } else if (result.ok) await refresh();
           if (owner.current !== id) return;
           messages.push(result.message);
-        } else if (offlineMode || user.mode === "demo") {
+        } else if (offlineMode) {
           if (owner.current !== id) return;
           dispatch({
             type: "sync",
@@ -205,11 +206,11 @@ export function HomeActivityActions({
         <ChoicePicker label="Sport" placeholder="Choose a sport" value={sport} options={SPORTS.map(item => ({ value: item.id, label: item.name }))} onChange={value => { setSport(value); setMiles(""); }} />
         {sport && <>
           <Text style={f.rowTitle}>Duration</Text>
-          <TextInput accessibilityLabel="Duration in minutes" placeholder="Minutes" keyboardType="decimal-pad" style={f.input} value={minutes} onChangeText={setMinutes} />
+          <NumberPicker label="Duration" unit="min" value={minutes} onChange={setMinutes} />
           {sportById(sport).gps && <><Text style={f.rowTitle}>Distance ({state.units === "metric" ? "km" : "mi"})</Text>
-            <TextInput accessibilityLabel={`Distance in ${state.units === "metric" ? "kilometres" : "miles"}`} placeholder={state.units === "metric" ? "Kilometres" : "Miles"} keyboardType="decimal-pad" style={f.input} value={miles} onChangeText={setMiles} /></>}
+            <NumberPicker label="Distance" unit={state.units === "metric" ? "km" : "mi"} max={1000} step={0.1} value={miles} onChange={setMiles} /></>}
           <Text style={f.rowTitle}>Time of day (optional · Eastern)</Text>
-          <TextInput accessibilityLabel="Time of day in Eastern time, HH:MM" placeholder="HH:MM" keyboardType="numbers-and-punctuation" style={f.input} value={time} onChangeText={setTime} maxLength={5} />
+          <DateTimeField label="Time of day · Eastern" mode="time" value={time} onChange={setTime} />
         </>}
         {formError ? (
           <Text style={f.copy} accessibilityRole="alert">

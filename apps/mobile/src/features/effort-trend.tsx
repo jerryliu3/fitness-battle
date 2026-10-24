@@ -3,9 +3,10 @@ import {
   currentEffortMilestone,
   formatVolume,
   rankForElo,
-  type CompeteState,
+  type CompeteState, type ScoreTrack,
 } from "@fitness-battle/shared";
 
+import { useState } from "react";
 import { useScoreTrackLens } from "../lib/score-track-lens";
 import { Text, View } from "react-native";
 import Svg, {
@@ -17,10 +18,13 @@ import Svg, {
 } from "react-native-svg";
 import { useAuth } from "../lib/auth";
 import { SHELL_COLORS as c } from "../theme";
-import { f } from "../ui/focus";
+import { FocusSegments, f } from "../ui/focus";
 export function EffortTrend({ state }: { state: CompeteState }) {
-  const [track] = useScoreTrackLens();
+  const [defaultTrack] = useScoreTrackLens();
   const { user } = useAuth();
+  const scope = `${user?.id}:${state.primary}`;
+  const [lens, setLens] = useState<{ scope: string; track: ScoreTrack } | null>(null);
+  const track = lens?.scope === scope ? lens.track : defaultTrack;
   const milestone = currentEffortMilestone(state, state.primary, track);
   const model = effortHistory(state, track, user, user?.email);
   const {
@@ -38,6 +42,7 @@ export function EffortTrend({ state }: { state: CompeteState }) {
   } = model;
   return (
     <View style={f.card}>
+      <FocusSegments label="Effort chart score track" value={track} options={[{ value: "open", label: "Open" }, { value: "verified", label: "GPS Tracked" }]} onChange={track => setLens({ scope, track })} />
 
       <Text style={f.kicker}>{rankForElo(effectiveElo).name}</Text>
       <View style={f.row}>

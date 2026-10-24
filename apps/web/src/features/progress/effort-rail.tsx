@@ -27,8 +27,8 @@ export function EffortRail({ compact = false }: { compact?: boolean }) {
   const remaining=formatVolume(model.sport,model.sport==="strength"?0:model.remaining,model.sport==="strength"?model.remaining:0,state.units);
   return <Link className={`effort-rail${compact ? " effort-rail-compact" : ""}`} href="/you?view=effort#effort-score" aria-label={`${sportById(model.sport).name} ${competitionTrackLabel(model.sport)} Effort Score ${model.score}. ${model.capped?"Maximum score":`${remaining} to the next point`}`}>
     <span className="effort-rail-top"><span>{sportById(model.sport).name} · {rankForElo(model.score).name}</span><strong>{model.score.toLocaleString()} <small>Effort Score</small></strong></span>
-    <span className="effort-rail-track" role="progressbar" aria-label="Progress to next Effort Score point" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(model.fraction*100)}><motion.span initial={false} animate={{scaleX:model.fraction,scaleY:gain&&!reduced?[1,1.6,1]:1}} transition={{duration:reduced?0:.65}} /></span>
-    <span className="effort-rail-caption">{model.capped?"Maximum score reached":`${remaining} to +1`}<span>{saveError?"Changes not saved":`${model.earned?`${competitionTrackLabel(model.sport)} · +${model.earned} this week`:competitionTrackLabel(model.sport)}`}</span></span>
+    <span className="effort-rail-track" role="progressbar" aria-label="Progress to next Effort Score point" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(model.fraction*100)}><motion.span initial={false} animate={{scaleX:model.fraction,scaleY:gain&&!reduced?[1,1.6,1]:1}} transition={{duration:reduced?0:.65}} /><small className="effort-rail-remaining">{model.capped?"Maximum score":`${remaining} left`}</small></span>
+    <span className="effort-rail-caption"><span>{saveError?"Changes not saved":`${model.earned?`${competitionTrackLabel(model.sport)} · +${model.earned} this week`:competitionTrackLabel(model.sport)}`}</span></span>
     {gain>0&&<span className="effort-rail-gain" role="status" key={`${model.score}:${gain}`}>+{gain}{!reduced&&<span className="effort-stars" aria-hidden="true">✦ ✧ ✦</span>}</span>}
   </Link>;
 }

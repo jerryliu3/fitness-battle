@@ -12,6 +12,7 @@ vi.mock("../lib/compete-store", () => ({ useCompeteStore: () => ({ state: mock.s
 vi.mock("../lib/platform-providers", () => ({ providersForDevice: () => mock.supported.map((id) => ({ id })) }));
 vi.mock("../lib/device-health", () => ({ syncAppleHealth: mock.device, syncHealthConnect: mock.device, createAppleHealthDeps: vi.fn(), createHealthConnectDeps: vi.fn() }));
 vi.mock("../ui/icon-button", () => ({ IconButton: "IconButton" }));
+vi.mock("../ui/form-picker", () => ({ NumberPicker: "NumberPicker", DateTimeField: "DateTimeField" }));
 vi.mock("../ui/choice-picker", () => ({ ChoicePicker: "ChoicePicker" }));
 vi.mock("../ui/focus", () => ({ f: {}, FocusButton: (props: any) => createElement("Button", props), FocusSheet: (props: any) => props.open ? createElement("Sheet", props) : null }));
 import { HomeActivityActions } from "./home-activity-actions";
@@ -25,16 +26,16 @@ beforeEach(async () => {
 });
 afterEach(async () => { await act(async () => renderer.unmount()); vi.unstubAllGlobals(); });
 describe("native Home actions", () => {
- it("shows validation errors inside the open sheet, then saves decimal-keyboard input", async () => {
+ it("shows validation errors inside the open sheet, then saves picker values", async () => {
   await act(async () => button("Add activity").props.onPress());
   expect(button("Save activity").props.disabled).toBe(true);
   await act(async () => renderer.root.findByType("ChoicePicker" as any).props.onChange("running"));
-  const input = (name: string) => renderer.root.findAllByType("TextInput" as any).find((node) => node.props.accessibilityLabel === name)!;
-  await act(async () => input("Duration in minutes").props.onChangeText("30"));
+  const input = (name: string) => renderer.root.findAllByType("NumberPicker" as any).find((node) => node.props.label === name)!;
+  await act(async () => input("Duration").props.onChange("30"));
   await act(async () => button("Save activity").props.onPress());
   expect(mock.dispatch).not.toHaveBeenCalled();
   expect(renderer.root.findByType("Sheet" as any).findAllByProps({ accessibilityRole: "alert" })).toHaveLength(1);
-  await act(async () => input("Distance in miles").props.onChangeText("2,5"));
+  await act(async () => input("Distance").props.onChange("2,5"));
   await act(async () => button("Save activity").props.onPress());
   expect(mock.dispatch).toHaveBeenCalledWith(expect.objectContaining({ type: "log-manual", distanceM: 4023.36, movingSec: 1800 }));
   expect(renderer.root.findAllByType("Sheet" as any)).toHaveLength(0);
