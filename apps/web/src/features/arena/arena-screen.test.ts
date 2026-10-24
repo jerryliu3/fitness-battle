@@ -20,7 +20,7 @@ describe("single-sport competition",()=>{
   const html=renderToStaticMarkup(createElement(ArenaScreen));
   expect(html.match(/data-active-field=/g)).toHaveLength(1);
   expect(html).toContain('data-active-field="Running"');
-  expect(html).toContain("Cycling");expect(html).toContain('aria-label="Next event"');expect(html).toContain("Your events");
+  expect(html).toContain("Cycling");expect(html).toContain('aria-label="Next event"');
  });
  it("shows recovery alone when it is the only registration",()=>{
   mock.state=reduceCompete(freshState(),{type:"opt-in-health",metric:"sleep"});

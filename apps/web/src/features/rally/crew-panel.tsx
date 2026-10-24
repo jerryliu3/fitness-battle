@@ -694,12 +694,6 @@ export function CrewPanel() {
             <p className="fb-copy">
               {crew?.name} · {crew?.sport} · {crew?.format.replaceAll("_", " ")}
             </p>
-            {members.map((m) => (
-              <div className="fb-row" key={m.user_id}>
-                <b className="fb-grow">{m.display_name}</b>
-                <small>{(m.user_id === user?.id ? resting : m.rest_week === weekKey) ? "Rest week" : "Active"}</small>
-              </div>
-            ))}
             <button
               className="fb-btn-line"
               disabled={busy}

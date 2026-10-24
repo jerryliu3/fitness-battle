@@ -69,11 +69,11 @@ export function EventCarousel({
           aria-haspopup="dialog"
           onClick={() => setChoosing(true)}
         >
-          <span className="fb-kicker">
-            Your events · {index + 1} of {events.length}
-          </span>
           <strong>
-            {events[index]?.label} {events[index]?.badge && <span className="club-track-badge">{events[index]?.badge}</span>} <span aria-hidden="true">⌄</span>
+            {events[index]?.label}{" "}
+            {events[index]?.badge ? (
+              <span className="club-track-badge">{events[index]?.badge}</span>
+            ) : null}
           </strong>
         </button>
         <button

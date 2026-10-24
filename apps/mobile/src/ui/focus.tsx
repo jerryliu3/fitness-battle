@@ -188,7 +188,11 @@ export function FocusButton({
       accessibilityLabel={accessibilityLabel ?? label}
       disabled={disabled}
       accessibilityState={{ disabled }}
-      onPress={onPress}
+      onPress={() => {
+        if (disabled) return;
+        void playCue("light");
+        onPress();
+      }}
       style={({ pressed }) => [
         f.button,
         secondary && f.secondary,
@@ -227,7 +231,9 @@ export function FocusSegments<T extends string>({
           accessibilityRole="tab"
           accessibilityState={{ selected: value === option.value }}
           onPress={() => {
-            if (value !== option.value) onChange(option.value);
+            if (value === option.value) return;
+            void playCue("selection");
+            onChange(option.value);
           }}
           style={({ pressed }) => [
             f.segment,
@@ -261,7 +267,10 @@ export function FocusTextButton({
     <Pressable
       accessibilityRole="button"
       accessibilityLabel={accessibilityLabel ?? label}
-      onPress={onPress}
+      onPress={() => {
+        void playCue("selection");
+        onPress();
+      }}
       style={({ pressed }) => [f.textButton, pressed && { opacity: 0.5 }]}
     >
       <Text style={f.textButtonText}>{label}</Text>
@@ -288,7 +297,10 @@ export function FocusDisclosure({
       <Pressable
         accessibilityRole="button"
         accessibilityState={{ expanded: open }}
-        onPress={() => setOpen(!open)}
+        onPress={() => {
+          void playCue("selection");
+          setOpen(!open);
+        }}
         style={[f.disclosureHead, compact && f.disclosureHeadCompact]}
       >
         <View style={f.grow}>
@@ -337,6 +349,13 @@ export const f = StyleSheet.create({
     color: c.ink,
   },
   h2: {
+    fontFamily: "DMSans_500Medium",
+    fontSize: 20,
+    lineHeight: 26,
+    letterSpacing: -0.6,
+    color: c.ink,
+  },
+  sectionTitle: {
     fontFamily: "DMSans_500Medium",
     fontSize: 20,
     lineHeight: 26,

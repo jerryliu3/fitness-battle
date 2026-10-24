@@ -42,9 +42,13 @@ import { useReducedMotion } from "../ui/use-reduced-motion";
 export function CompetitionField({
   sport,
   track,
+  arenaView = "lanes2d",
+  chromeInHeader = false,
 }: {
   sport: SportId;
   track: ScoreTrack;
+  arenaView?: "lanes2d" | "standings" | "3d";
+  chromeInHeader?: boolean;
 }) {
   const { state, accountKey, readBaselineItem, writeBaselineItem } =
     useCompeteStore();
@@ -53,6 +57,16 @@ export function CompetitionField({
   const isFocused = shellTabFromPath(pathname)?.id === "arena";
   const [dimension, setDimension] = useState<"2d" | "3d">("2d");
   const [mode, setMode] = useState<"lanes" | "standings">("lanes");
+  const viewMode = chromeInHeader
+    ? arenaView === "standings"
+      ? "standings"
+      : "lanes"
+    : mode;
+  const viewDimension = chromeInHeader
+    ? arenaView === "3d"
+      ? "3d"
+      : "2d"
+    : dimension;
   const [center, setCenter] = useState<number | null>(null);
   const [span, setSpan] = useState<number | null>(null);
   const ghost = true;
@@ -168,7 +182,7 @@ export function CompetitionField({
 
   useEffect(() => {
     if (!overtakePlan || replayEpoch === 0) return;
-    if (reduceMotion || !isFocused || mode !== "lanes") {
+    if (reduceMotion || !isFocused || viewMode !== "lanes") {
       if (pendingBaselineRef.current) {
         writeBaselineItem(
           pendingBaselineRef.current.key,
@@ -204,8 +218,15 @@ export function CompetitionField({
     reduceMotion,
     writeBaselineItem,
     isFocused,
-    mode,
+    viewMode,
   ]);
+
+  useEffect(() => {
+    if (!chromeInHeader) return;
+    if (viewMode !== "lanes" || viewDimension !== "2d") {
+      setOvertakeProgress(1);
+    }
+  }, [arenaView, chromeInHeader, viewDimension, viewMode]);
 
   const overtakeFrame = useMemo(
     () =>
@@ -253,44 +274,48 @@ export function CompetitionField({
   const selected = arena.lanes.find((lane) => lane.id === selectedId);
   return (
     <View style={{ gap: 14 }}>
-      <View style={f.row}>
-        <View style={f.grow}>
-          <Text style={f.kicker}>Accumulated this week</Text>
-          <Text
-            style={[f.massive, { fontSize: 34, fontFamily: "DMSans_700Bold" }]}
-          >
-            {displayTotal.toFixed(1)} <Text style={f.copy}>{arena.unit}</Text>
-          </Text>
-        </View>
-        <View style={{ alignItems: "center", gap: 2 }}>
-          <Text style={f.h2}>
-            {overtakeFrame?.currentRank ?? place(total)} / {ranked.length}
-          </Text>
-          <Text style={f.small}>your place</Text>
-        </View>
-      </View>
-      {overtakePlan && overtakeStatus ? (
-        <Text style={f.rowTitle} accessibilityLiveRegion="polite">
-          {overtakeStatus.headline}
-          {overtakeStatus.detail ? ` · ${overtakeStatus.detail}` : ""}
-        </Text>
+      {!chromeInHeader ? (
+        <>
+          <View style={f.row}>
+            <View style={f.grow}>
+              <Text style={f.kicker}>Accumulated this week</Text>
+              <Text
+                style={[f.massive, { fontSize: 34, fontFamily: "DMSans_700Bold" }]}
+              >
+                {displayTotal.toFixed(1)} <Text style={f.copy}>{arena.unit}</Text>
+              </Text>
+            </View>
+            <View style={{ alignItems: "center", gap: 2 }}>
+              <Text style={f.h2}>
+                {overtakeFrame?.currentRank ?? place(total)} / {ranked.length}
+              </Text>
+              <Text style={f.small}>your place</Text>
+            </View>
+          </View>
+          {overtakePlan && overtakeStatus ? (
+            <Text style={f.rowTitle} accessibilityLiveRegion="polite">
+              {overtakeStatus.headline}
+              {overtakeStatus.detail ? ` · ${overtakeStatus.detail}` : ""}
+            </Text>
+          ) : null}
+          <FocusSegments
+            label={`${arena.sportName} field view`}
+            value={mode === "lanes" && dimension === "3d" ? "3d" : mode}
+            options={[
+              { value: "lanes", label: "2D map" },
+              { value: "standings", label: "Standings" },
+              { value: "3d", label: "3D field" },
+            ]}
+            onChange={(next) => {
+              void playCue("selection");
+              setMode(next === "3d" ? "lanes" : next);
+              setDimension(next === "3d" ? "3d" : "2d");
+            }}
+          />
+        </>
       ) : null}
-      <FocusSegments
-        label={`${arena.sportName} field view`}
-        value={mode === "lanes" && dimension === "3d" ? "3d" : mode}
-        options={[
-          { value: "lanes", label: "2D map" },
-          { value: "standings", label: "Standings" },
-          { value: "3d", label: "3D field" },
-        ]}
-        onChange={(next) => {
-          void playCue("selection");
-          setMode(next === "3d" ? "lanes" : next);
-          setDimension(next === "3d" ? "3d" : "2d");
-        }}
-      />
 
-      {dimension === "3d" && mode === "lanes" && isFocused ? (
+      {viewDimension === "3d" && viewMode === "lanes" && isFocused ? (
         <PortraitField
           lanes={arena.lanes.map((l) => ({
             ...l,
@@ -305,7 +330,7 @@ export function CompetitionField({
       ) : null}
       <View
         style={{
-          display: mode === "lanes" && dimension === "2d" ? "flex" : "none",
+          display: viewMode === "lanes" && viewDimension === "2d" ? "flex" : "none",
         }}
       >
         <FieldGroundPicker appearance={appearance} onChange={setAppearance} />
@@ -313,7 +338,7 @@ export function CompetitionField({
           <LaneTrack
             topInset={44}
             appearance={appearance}
-            active={isFocused && mode === "lanes" && dimension === "2d"}
+            active={isFocused && viewMode === "lanes" && viewDimension === "2d"}
             selectedId={selectedId ?? me?.id}
             lanes={arena.lanes}
             unit={arena.unit}
@@ -416,7 +441,7 @@ export function CompetitionField({
           }}
         />
       </View>
-      {mode === "standings" ? (
+      {viewMode === "standings" ? (
         <View style={f.card}>
           <Text style={f.small}>Ranked by this week's effort</Text>
           {ranked.map((lane) => (

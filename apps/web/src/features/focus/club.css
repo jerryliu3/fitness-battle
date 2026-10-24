@@ -135,9 +135,13 @@
   font-weight: 700;
   letter-spacing: -1px;
 }
-.phone-shell h2 {
+.phone-shell h2,
+.phone-shell .fb-section-title {
+  font-size: 20px;
   font-weight: 650;
   letter-spacing: -0.5px;
+  line-height: 1.2;
+  margin: 0;
 }
 .phone-shell .focus-heading {
   text-align: left;
@@ -806,6 +810,18 @@
   color: var(--ink);
   cursor: pointer;
 }
+.club-activity-sport {
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 14px;
+  background: var(--action-soft);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+}
 .club-activity-icon {
   display: grid;
   place-items: center;
@@ -941,9 +957,9 @@
   border-radius: 4px;
   background: none;
 }
-.phone-shell .focus-crew-hero .club-crew-name:hover {
-  text-decoration: underline;
-  text-underline-offset: 4px;
+.phone-shell .focus-crew-hero .club-crew-name:hover,
+.phone-shell .focus-crew-hero .club-crew-name:focus-visible {
+  text-decoration: none;
 }
 .phone-shell .focus-crew-gear-btn {
   width: 44px !important;
@@ -1216,6 +1232,10 @@
 .club-week-detail .effort-rail { width: 100%; box-sizing: border-box; }
 .club-detail-heading { display: grid; grid-template-columns: 44px 1fr 44px; align-items: center; gap: 12px; min-height: 52px; }
 .club-detail-heading h1 { text-align: center; font-size: 20px; margin: 0; }
+.club-detail-page { display: grid; gap: 18px; padding: 0 0 40px; animation: club-detail-enter .28s ease-out; }
+@keyframes club-detail-enter { from { opacity: 0; transform: translateX(12px); } to { opacity: 1; transform: none; } }
+.club-history-preview { text-decoration: none; color: inherit; }
+.club-achievements-catalog { display: grid; gap: 18px; }
 .club-icon-button { display: inline-flex; width: 44px; height: 44px; flex: none; align-items: center; justify-content: center; border-radius: 50%; border: 1px solid var(--line); background: #ffffffd9; color: var(--ink); text-decoration: none; font-size: 24px; backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); }
 .club-icon-button:disabled { opacity: .4; }
 .club-preferences { display: grid; gap: 0; }

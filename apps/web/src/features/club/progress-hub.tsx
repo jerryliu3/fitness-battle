@@ -4,11 +4,11 @@ import { useSearchParams } from "next/navigation";
 export function ProgressHub({
   overview,
   effort,
-  history,
+  history = null,
 }: {
   overview: ReactNode;
   effort: ReactNode;
-  history: ReactNode;
+  history?: ReactNode;
 }) {
   const params = useSearchParams();
   const requested = params.get("view");
@@ -35,7 +35,6 @@ export function ProgressHub({
       </div>
       <div className="club-progress-section" hidden={view !== "overview"}>
         {overview}
-        {history}
       </div>
       <div className="club-progress-section" hidden={view !== "effort"}>
         {effort}

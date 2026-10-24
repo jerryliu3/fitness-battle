@@ -3,10 +3,11 @@ import { weeklyHoursComparison } from "@fitness-battle/shared";
 import { Platform, Pressable, StyleSheet, Text, View } from "react-native";
 import Svg, { Circle, Defs, Line, LinearGradient, Polygon, Polyline, Stop, Text as SvgText } from "react-native-svg";
 import { PulseCircle } from "../ui/pulse-circle";
+import { ChartFrame } from "../ui/chart-frame";
 import { HomeActivityActions } from "./home-activity-actions";
 import { SHELL_COLORS as c } from "../theme";
 
-export function WeekChart({ state, onOpen }: { state: CompeteState; onOpen?: () => void }) {
+export function WeekChart({ state, onOpen, ready = true }: { state: CompeteState; onOpen?: () => void; ready?: boolean }) {
   const { nowDayIndex, currCumulativeHours, prevCumulativeHours, currTotalHours, prevTotalHours, sessionCount, weekProgress } = weeklyHoursComparison(state);
   const dayLabels = ["M", "T", "W", "T", "F", "S", "S"];
   // SVG chart geometry
@@ -46,7 +47,7 @@ export function WeekChart({ state, onOpen }: { state: CompeteState; onOpen?: () 
   const currLinePoints = currPointsList.join(" ");
   const currAreaPoints = `${currLinePoints} ${currPreciseX.toFixed(1)},${yBottom} ${xStart.toFixed(1)},${yBottom}`;
   const prevLastY = getY(prevTotalHours);
-  return (<View style={s.statsCard} accessibilityLabel="This week's progress">
+  return (<ChartFrame ready={ready}><View style={s.statsCard} accessibilityLabel="This week's progress">
             <View style={s.statsHeader}>
               <View>
 
@@ -218,7 +219,7 @@ export function WeekChart({ state, onOpen }: { state: CompeteState; onOpen?: () 
                 })}
               </Svg>
             </Pressable>
-          </View>);
+          </View></ChartFrame>);
 }
 const s = StyleSheet.create({
   statsCard: {

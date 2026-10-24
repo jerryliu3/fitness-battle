@@ -39,11 +39,17 @@ export function FieldStage({
   boardRows,
   sportTitle,
   tabActive = true,
+  arenaView,
+  onArenaViewChange,
+  chromeInHeader = false,
 }: {
   model: FieldModel;
   boardRows?: BoardRow[];
   sportTitle?: string;
   tabActive?: boolean;
+  arenaView?: "lanes2d" | "standings" | "3d";
+  onArenaViewChange?: (view: "lanes2d" | "standings" | "3d") => void;
+  chromeInHeader?: boolean;
 }) {
   const { user } = useAuth();
   const pathname = usePathname();
@@ -84,6 +90,13 @@ export function FieldStage({
 
   const [dimension, setDimension] = useState<"2d" | "3d">("2d");
   const [mode, setMode] = useState<"lanes" | "standings">("lanes");
+  const controlledView = arenaView != null;
+  const activeMode =
+    controlledView && arenaView === "standings" ? "standings" : "lanes";
+  const activeDimension =
+    controlledView && arenaView === "3d" ? "3d" : "2d";
+  const viewMode = controlledView ? activeMode : mode;
+  const viewDimension = controlledView ? activeDimension : dimension;
   const [lanesImmersive, setLanesImmersive] = useState(false);
 
   useEffect(() => {
@@ -434,6 +447,7 @@ export function FieldStage({
       hidden={!tabActive}
       aria-hidden={!tabActive}
     >
+      {!chromeInHeader ? (
       <div className="focus-arena-total">
         <div>
           <p className="fb-kicker">Accumulated this week</p>
@@ -447,7 +461,8 @@ export function FieldStage({
           <small>your place</small>
         </span>
       </div>
-      {overtakePlan && overtakeStatus && (
+      ) : null}
+      {!chromeInHeader && overtakePlan && overtakeStatus && (
         <div
           className="focus-overtake-banner"
           role="status"
@@ -472,6 +487,7 @@ export function FieldStage({
           </span>
         </div>
       )}
+      {!chromeInHeader ? (
       <div className="focus-segments" role="tablist" aria-label="Arena view">
         {(["lanes", "standings", "3d"] as const).map((m) => (
           <button
@@ -479,23 +495,29 @@ export function FieldStage({
             role="tab"
             aria-selected={
               m === "3d"
-                ? mode === "lanes" && dimension === "3d"
-                : mode === m && (m === "standings" || dimension === "2d")
+                ? viewMode === "lanes" && viewDimension === "3d"
+                : viewMode === m && (m === "standings" || viewDimension === "2d")
             }
             onClick={() => {
-              if (m !== mode) void playCue("selection");
+              void playCue("selection");
               setReplayEpoch(0);
               setOvertakeProgress(1);
-              setMode(m === "3d" ? "lanes" : m);
-              setDimension(m === "3d" ? "3d" : "2d");
+              const next =
+                m === "3d" ? "3d" : m === "standings" ? "standings" : "lanes2d";
+              if (controlledView) onArenaViewChange?.(next);
+              else {
+                setMode(m === "3d" ? "lanes" : m);
+                setDimension(m === "3d" ? "3d" : "2d");
+              }
             }}
           >
             {m === "lanes" ? "2D map" : m === "3d" ? "3D field" : "Standings"}
           </button>
         ))}
       </div>
+      ) : null}
 
-      {dimension === "3d" && mode === "lanes" && tabActive ? (
+      {viewDimension === "3d" && viewMode === "lanes" && tabActive ? (
         <PortraitField
           lanes={sceneLanes.map((l) => ({
             ...l,
@@ -510,7 +532,7 @@ export function FieldStage({
           onSelect={toggleSelect}
         />
       ) : null}
-      <div hidden={dimension === "3d" && mode === "lanes"}>
+      <div hidden={viewDimension === "3d" && viewMode === "lanes"}>
         <div style={{ display: "flow-root" }}>
           <ExpandingField
             open={lanesImmersive && tabActive}
@@ -519,7 +541,7 @@ export function FieldStage({
           >
             <div className="focus-field-toolbar">
               <span className="fb-note">
-                {mode === "standings"
+                {viewMode === "standings"
                   ? "Ranked by this week's effort"
                   : lanesImmersive
                     ? "Drag to pan · swipe across peers"
@@ -527,13 +549,13 @@ export function FieldStage({
               </span>
             </div>
             <div className="focus-track-frame">
-              {mode === "lanes" && (
+              {viewMode === "lanes" && (
                 <FieldGroundPicker
                   appearance={appearance}
                   onChange={setAppearance}
                 />
               )}
-              {mode === "lanes" ? (
+              {viewMode === "lanes" ? (
                 <div className="club-map-status">
                   <b>
                     {displayPlace} / {runners.length} PLACE
@@ -548,7 +570,7 @@ export function FieldStage({
               ) : null}
               <ArenaLanes
                 appearance={appearance}
-                presentation={mode === "standings" ? "standings" : "lanes"}
+                presentation={viewMode === "standings" ? "standings" : "lanes"}
                 scores={Object.fromEntries(
                   (boardRows ?? []).map((row) => [row.id, row.elo]),
                 )}
@@ -570,8 +592,8 @@ export function FieldStage({
                 overtakeFrame={overtakeFrame}
                 overtakePlan={overtakePlan}
               />
-              {mode === "standings" && ghost && <div className="club-past-self"><span>Past you · unranked</span><strong>{valueAt(ghost, time).toFixed(1)} {unit}</strong></div>}
-              {mode === "lanes" ? (
+              {viewMode === "standings" && ghost && <div className="club-past-self"><span>Past you · unranked</span><strong>{valueAt(ghost, time).toFixed(1)} {unit}</strong></div>}
+              {viewMode === "lanes" ? (
                 <>
                   <div
                     className="focus-zoom-slider"
@@ -620,7 +642,7 @@ export function FieldStage({
               ) : null}
             </div>
 
-            <div hidden={mode === "standings"}>
+            <div hidden={viewMode === "standings"}>
               <FieldOverview
                 lanes={
                   overtakeFrame

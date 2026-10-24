@@ -1,10 +1,11 @@
 import { useState } from "react";
-import { Image, Pressable, Text, View } from "react-native";
+import { Pressable, Text, View } from "react-native";
 import { APP_TIMEZONE, clubDuration, formatVolume, homeRecentActivities, sportById, type Activity, type CompeteState } from "@fitness-battle/shared";
 import { useAuth } from "../lib/auth";
 import { useCrewActivities } from "./use-crew-activities";
 import { SHELL_COLORS as c } from "../theme";
 import { FocusSheet, f } from "../ui/focus";
+import { SportActivityIcon } from "../ui/sport-activity-icon";
 
 export function LatestActivity({ state, onOpen }: { state: CompeteState; onOpen: (activity: Activity) => void }) {
   const { user } = useAuth();
@@ -17,7 +18,7 @@ export function LatestActivity({ state, onOpen }: { state: CompeteState; onOpen:
       <Text accessibilityRole="header" style={f.h2}>Latest activity</Text>
       {rows.map(row => <Pressable key={`${row.userId}:${row.id}`} accessibilityRole="button" onPress={() => row.ownActivity ? onOpen(row.ownActivity) : setSelected({ account: user?.id, id: row.id })}
         style={[f.row, { minHeight: 76, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: c.line }]}>
-        {row.avatarUrl ? <Image source={{ uri: row.avatarUrl }} style={{ width: 42, height: 42, borderRadius: 14 }} /> : <View style={{ width: 42, height: 42, borderRadius: 14, backgroundColor: c.actionSoft, alignItems: "center", justifyContent: "center" }}><Text style={f.h2}>↗</Text></View>}
+        <SportActivityIcon sport={row.sport} />
         <View style={[f.grow, { gap: 4 }]}><Text style={f.rowTitle}>{row.ownActivity ? sportById(row.sport).name : `${row.name} · ${sportById(row.sport).name}`} · {clubDuration(row.movingSec)}</Text>
           <Text style={f.small}>{row.verified ? "GPS Tracked" : row.source === "manual" ? "Manual activity" : "Activity"}</Text></View>
         <Text style={f.small}>{new Date(row.startedAt).toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: APP_TIMEZONE })} →</Text>

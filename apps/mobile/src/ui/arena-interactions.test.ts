@@ -64,7 +64,7 @@ vi.mock("../lib/score-track-lens", () => ({
 }));
 vi.mock("../features/crew", () => ({ useCrewApi: () => ({ live: false }) }));
 vi.mock("../features/competition-summary", () => ({
-  CompetitionSummary: () => null,
+  CompetitionSummary: ({ children }: { children?: unknown }) => children ?? null,
 }));
 vi.mock("../features/sleep-panel", () => ({ SleepPanel: () => null }));
 vi.mock("../features/round-takeover", () => ({ RoundTakeover: () => null }));
@@ -138,7 +138,7 @@ describe("native competition interactions", () => {
     const viewControl = () =>
       renderer.root
         .findAllByType("Segments" as never)
-        .find((node) => node.props.label === "Running field view")!;
+        .find((node) => node.props.label === "Arena view")!;
     expect(mock.mounts).toBe(1);
     const rival = lane().props.lanes.find(
       (item: { you: boolean; ghost: boolean }) => !item.you && !item.ghost,
@@ -214,11 +214,10 @@ it("mounts only one registered sport and replaces it when switching",async()=>{
  const choice=renderer.root.findAllByType("Pressable" as never).find(n=>n.props.accessibilityLabel==="Show Cycling")!;
  await act(async()=>choice.props.onPress());
  expect(renderer.root.findAllByType("LaneTrack" as never)).toHaveLength(1);
- expect(renderer.root.findAllByType("Segments" as never).some(n=>n.props.label==="Cycling field view")).toBe(true);
- expect(renderer.root.findAllByType("Segments" as never).some(n=>n.props.label==="Running field view")).toBe(false);
+ expect(renderer.root.findAllByType("Segments" as never).some(n=>n.props.label==="Arena view")).toBe(true);
  expect(mock.dispatch).not.toHaveBeenCalledWith(expect.objectContaining({type:"set-primary"}));
  mock.state={...mock.state!,ratings:mock.state!.ratings.map(r=>r.sport==="cycling"?{...r,optedIn:false}:r)};
  await act(async()=>renderer.update(createElement(ArenaScreen)));
  expect(renderer.root.findAllByType("LaneTrack" as never)).toHaveLength(1);
- expect(renderer.root.findAllByType("Segments" as never).some(n=>n.props.label==="Running field view")).toBe(true);
+ expect(renderer.root.findAllByType("Segments" as never).some(n=>n.props.label==="Arena view")).toBe(true);
 });

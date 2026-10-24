@@ -1,4 +1,5 @@
 import { Platform, Pressable } from "react-native";
+import { playCue } from "../lib/haptics";
 import Svg, { Path } from "react-native-svg";
 import { SHELL_COLORS as c } from "../theme";
 
@@ -12,7 +13,7 @@ export function IconButton({ icon, label, onPress, disabled = false }: {
   icon: keyof typeof paths; label: string; onPress: () => void; disabled?: boolean;
 }) {
   return <Pressable accessibilityRole="button" accessibilityLabel={label} disabled={disabled}
-    accessibilityState={{ disabled }} onPress={onPress}
+    accessibilityState={{ disabled }} onPress={() => { if (disabled) return; void playCue("light"); onPress(); }}
     style={({ pressed }) => ({ width: 44, height: 44, borderRadius: 22, borderWidth: 1,
       borderColor: c.line, backgroundColor: "#ffffffdc", alignItems: "center", justifyContent: "center",
       opacity: disabled ? 0.4 : pressed ? 0.65 : 1 })}>

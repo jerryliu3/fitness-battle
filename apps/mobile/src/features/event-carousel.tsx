@@ -57,12 +57,11 @@ export function EventCarousel({
           }}
           style={{ flex: 1, minHeight: 54, gap: 4, justifyContent: "center" }}
         >
-          <Text style={f.kicker}>
-            Your events · {index + 1} of {events.length} · ↔
-          </Text>
-          <Text style={[f.h2, { fontFamily: "DMSans_700Bold" }]}>
-            {events[index]?.label} ⌄
-            {events[index]?.badge ? <Text style={[f.small, { color: c.muted }]}>  {events[index]?.badge}</Text> : null}
+          <Text style={[f.sectionTitle, { fontFamily: "DMSans_700Bold" }]}>
+            {events[index]?.label}
+            {events[index]?.badge ? (
+              <Text style={[f.small, { color: c.muted }]}> · {events[index]?.badge}</Text>
+            ) : null}
           </Text>
         </View>
         <Pressable

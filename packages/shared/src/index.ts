@@ -34,6 +34,7 @@ export * from "./sync-review";
 export * from "./integration-icons";
 
 export * from "./week-chart";
+export * from "./sport-mark";
 
 export * from "./account-runtime";
 
