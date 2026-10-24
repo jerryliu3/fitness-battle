@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState, type MutableRefObject } from "react";
 import {
   Animated,
   Image,
@@ -27,6 +27,8 @@ import {
   type ArenaSceneLane,
   type ArenaViewWindow,
 } from "@fitness-battle/shared";
+import { LaneRacerTarget } from "./lane-racer-target";
+import { IconButton } from "./icon-button";
 import { drawFieldNode } from "./field-course";
 import { alpineTrail } from "./club-art";
 export function PortraitField({
@@ -35,17 +37,27 @@ export function PortraitField({
   unit,
   onZoom,
   onSelect,
+  height = 560,
+  fullscreen = false,
+  onExpand,
+  laneAnchor,
 }: {
+  height?: number;
+  fullscreen?: boolean;
+  onExpand?: () => void;
+  laneAnchor?: MutableRefObject<number>;
   lanes: ArenaSceneLane[];
   view: ArenaViewWindow;
   unit: string;
   onZoom: (span: number) => void;
   onSelect: (id: string) => void;
 }) {
-  const [laneOffset, setLaneOffset] = useState(0);
+  const [laneOffset, setLaneOffset] = useState(laneAnchor?.current ?? 0);
   const prefix = useId().replace(/:/g, "");
+  if (laneAnchor) laneAnchor.current = laneOffset;
   const scene = portraitField(lanes, view, undefined, laneOffset, prefix);
   const [width, setWidth] = useState(340);
+  const GroundTarget = fullscreen ? G : LaneRacerTarget;
   const scroll = useRef<ScrollViewInstance>(null);
   const scrollX = useRef(new Animated.Value(0)).current;
   const moveTo = (offset: number) => {
@@ -58,8 +70,9 @@ export function PortraitField({
   };
   const shift = (d: number) => moveTo(laneOffset + d);
   useEffect(() => {
-    setLaneOffset(0);
-    scroll.current?.scrollTo({ x: scene.baseFocus * 110, animated: false });
+    const offset = laneAnchor?.current ?? 0;
+    setLaneOffset(offset);
+    scroll.current?.scrollTo({ x: (scene.baseFocus + offset) * 110, animated: false });
   }, [width, scene.baseFocus, scene.ordered.length]);
   return (
     <View style={{ gap: 10 }}>
@@ -74,7 +87,7 @@ export function PortraitField({
         </Text>
       </View>
     <View
-      style={s.board}
+      style={[s.board, { height, borderRadius: fullscreen ? 0 : 20 }]}
       onLayout={(e) => {
         if (e.nativeEvent.layout.width > 0)
           setWidth(e.nativeEvent.layout.width);
@@ -99,10 +112,10 @@ export function PortraitField({
         <View
           style={{
             width: width + Math.max(0, scene.ordered.length - 1) * 110,
-            height: 560,
+            height,
           }}
         >
-          <Animated.View style={{ position: "absolute", width, height: 560, transform: [{ translateX: scrollX }] }}>
+          <Animated.View style={{ position: "absolute", width, height, transform: [{ translateX: scrollX }] }}>
           <Svg
             width={width}
             height="100%"
@@ -122,6 +135,8 @@ export function PortraitField({
                 <Stop offset="100%" stopColor="#0b3038" />
               </LinearGradient>
             </Defs>
+            <GroundTarget onPress={fullscreen ? undefined : onExpand} accessibilityLabel={fullscreen ? undefined : "Expand 3D field to full screen"}>
+            <Rect width={420} height={600} fill="transparent" />
             <Rect
               y={80}
               width={420}
@@ -148,6 +163,7 @@ export function PortraitField({
               height={110}
               fill={`url(#${prefix}-horizon)`}
             />
+            </GroundTarget>
             {scene.markers.map((m) => (
               <G key={`trail-${m.id}`} pointerEvents="none">
                 <Path
@@ -173,14 +189,14 @@ export function PortraitField({
               .map((m, i) => {
                 const id = `${prefix}-portrait-${i}`;
                 return (
-                  <G
+                  <LaneRacerTarget
                     key={m.id}
-                    transform={`translate(${m.x} ${m.y}) scale(${m.scale})`}
                     onPress={() => onSelect(m.id)}
                     accessible
                     accessibilityRole="button"
                     accessibilityLabel={`${m.name}${m.you ? ", you" : ""}, ${m.gap.toFixed(1)} ${unit}${m.outside ? ", outside visible distance range" : ""}`}
                   >
+                    <G transform={`translate(${m.x} ${m.y}) scale(${m.scale})`}>
                     <Ellipse
                       cy={27}
                       rx={24}
@@ -293,13 +309,15 @@ export function PortraitField({
                         {m.gap.toFixed(unit === "pts" ? 0 : 2)} {unit}
                       </SvgText>
                     ) : null}
-                  </G>
+                    </G>
+                  </LaneRacerTarget>
                 );
               })}
           </Svg>
           </Animated.View>
         </View>
       </Animated.ScrollView>
+      {!fullscreen && onExpand && <View style={{ position: "absolute", top: 12, right: 12 }}><IconButton icon="expand" label="Expand 3D field to full screen" onPress={onExpand} /></View>}
       <View style={s.controls}>
         <View style={s.controlRow}>
           <Pressable

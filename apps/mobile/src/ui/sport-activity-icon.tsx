@@ -1,7 +1,7 @@
-import { sportActivityMark, type SportId } from "@fitness-battle/shared";
-import { Text, View } from "react-native";
+import type { SportId } from "@fitness-battle/shared";
+import { View } from "react-native";
 import { SHELL_COLORS as c } from "../theme";
-import { f } from "./focus";
+import { SportIcon } from "./sport-icon";
 
 export function SportActivityIcon({ sport }: { sport: SportId }) {
   return (
@@ -15,9 +15,7 @@ export function SportActivityIcon({ sport }: { sport: SportId }) {
         justifyContent: "center",
       }}
     >
-      <Text style={[f.small, { color: c.ink, fontFamily: "DMSans_700Bold", fontSize: 11 }]}>
-        {sportActivityMark(sport)}
-      </Text>
+      <SportIcon sport={sport} size={26} />
     </View>
   );
 }

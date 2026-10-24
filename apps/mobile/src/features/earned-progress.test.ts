@@ -7,6 +7,7 @@ vi.mock("react-native",()=>({
  Pressable:"Pressable",ScrollView:"ScrollView",Text:"Text",View:"View",Image:"Image",StyleSheet:{create:(value:unknown)=>value},
  Animated:{View:"AnimatedView",Value:class{constructor(public value:number){}setValue(value:number){this.value=value;}interpolate(){return 0;}},timing:()=>({start(){},stop(){}})},
 }));
+vi.mock("../ui/chart-scrubber",()=>({ChartScrubber:({children}:{children:unknown})=>children}));
 vi.mock("react-native-svg",()=>({default:"Svg",G:"G",Path:"Path",Text:"SvgText"}));
 vi.mock("expo-router",()=>({useRouter:()=>({navigate:mock.navigate})}));
 vi.mock("../lib/compete-store",()=>({useCompeteStore:()=>({state:mock.state,accountKey:mock.account,canWrite:true,saveError:null})}));

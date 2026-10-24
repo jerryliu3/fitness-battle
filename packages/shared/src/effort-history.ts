@@ -159,6 +159,7 @@ export function effortHistory(
   const pts = dailyValues.map((v, i) => {
     const xPos = xStart + (i / 29) * (xEnd - xStart);
     return {
+      date: new Date(windowStart.getTime() + i * msPerDay).toISOString(),
       x: xPos,
       y: yBottom - ((v - yMin) / (yMax - yMin || 1)) * (yBottom - yTop),
     };

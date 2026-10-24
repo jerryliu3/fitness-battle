@@ -6,7 +6,7 @@ export const SPORT_ICON_PATHS = {
   strength: "M3 8v8m3-11v14m0-7h12m0-7v14m3-11v8",
 } as const;
 export const SETTINGS_ICON_PATHS = {
-  "Data Sync": "M20 7v5h-5M4 17v-5h5M6 7a7 7 0 0 1 12-1l2 3M4 15l2 3a7 7 0 0 0 12-1",
+  "Data Sync": "M12 3v12m-4-4 4 4 4-4M5 16v4h14v-4",
   Preferences: "M4 6h16M4 12h16M4 18h16M8 3v6m8 0v6m-6 0v6",
   Notifications: "M5 17h14l-2-3V9a5 5 0 0 0-10 0v5l-2 3m5 3h4",
   "How scoring works": "M4 20V12h4v8m2 0V8h4v12m2 0V4h4v16",

@@ -1,8 +1,10 @@
 import type { CompeteState } from "@fitness-battle/shared";
-import { weeklyHoursComparison } from "@fitness-battle/shared";
+import { APP_TIMEZONE, competeNow, dayKey, weeklyHoursComparison, weeklyPeriodBounds } from "@fitness-battle/shared";
 import { Platform, Pressable, StyleSheet, Text, View } from "react-native";
 import Svg, { Circle, Defs, Line, LinearGradient, Polygon, Polyline, Stop, Text as SvgText } from "react-native-svg";
 import { PulseCircle } from "../ui/pulse-circle";
+import { ChartScrubber } from "../ui/chart-scrubber";
+import { f } from "../ui/focus";
 import { ChartFrame } from "../ui/chart-frame";
 import { HomeActivityActions } from "./home-activity-actions";
 import { SHELL_COLORS as c } from "../theme";
@@ -11,11 +13,11 @@ export function WeekChart({ state, onOpen, ready = true }: { state: CompeteState
   const { nowDayIndex, currCumulativeHours, prevCumulativeHours, currTotalHours, prevTotalHours, sessionCount, weekProgress } = weeklyHoursComparison(state);
   const dayLabels = ["M", "T", "W", "T", "F", "S", "S"];
   // SVG chart geometry
-  const chartW = 230;
+  const chartW = 340;
   const xStart = 28;
-  const xEnd = 220;
+  const xEnd = 330;
   const yTop = 14;
-  const yBottom = 92;
+  const yBottom = 142;
   const yMidPos = Math.round((yTop + yBottom) / 2);
   const maxVal = Math.max(...currCumulativeHours, ...prevCumulativeHours, 0.5);
   const yMax = Math.max(1, Math.ceil(maxVal * 1.15));
@@ -47,6 +49,12 @@ export function WeekChart({ state, onOpen, ready = true }: { state: CompeteState
   const currLinePoints = currPointsList.join(" ");
   const currAreaPoints = `${currLinePoints} ${currPreciseX.toFixed(1)},${yBottom} ${xStart.toFixed(1)},${yBottom}`;
   const prevLastY = getY(prevTotalHours);
+  const weekStart = Date.parse(`${dayKey(weeklyPeriodBounds(competeNow(state)).startsAt)}T12:00:00Z`);
+  const points = currCumulativeHours.slice(0, nowDayIndex + 1).map((hours, index) => ({
+    id: String(index), x: index === nowDayIndex ? currPreciseX : getX(index), y: getY(hours),
+    label: new Date(weekStart + index * 86400000).toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric", timeZone: APP_TIMEZONE }),
+    value: `${hours.toFixed(1)} hr · last week ${prevCumulativeHours[index].toFixed(1)} hr`,
+  }));
   return (<ChartFrame ready={ready}><View style={s.statsCard} accessibilityLabel="This week's progress">
             <View style={s.statsHeader}>
               <View>
@@ -68,11 +76,13 @@ export function WeekChart({ state, onOpen, ready = true }: { state: CompeteState
               </View>
             </View>
 
-            <Pressable accessibilityRole={onOpen ? "button" : undefined} accessibilityLabel={onOpen ? "Explore your week" : undefined} disabled={!onOpen} onPress={onOpen} style={s.chartWrap}>
+            <View style={s.chartWrap}>
+            <ChartScrubber label="This week’s cumulative hours" points={points} width={chartW} height={170} plotTop={yTop} plotBottom={yBottom}>
               <Svg
                 width="100%"
-                height={onOpen ? 130 : 200}
-                viewBox={`0 0 ${chartW} 120`}
+                height={210}
+                viewBox={`0 0 ${chartW} 170`}
+                preserveAspectRatio="none"
                 accessible={Platform.OS==="web"?undefined:true}
                 accessibilityLabel={`Cumulative hours: ${currTotalHours === 0 ? "0 hours" : `${currTotalHours.toFixed(1)} hrs`} this week compared to ${prevTotalHours.toFixed(1)} hrs last week`}
               >
@@ -160,7 +170,7 @@ export function WeekChart({ state, onOpen, ready = true }: { state: CompeteState
                 <Polyline
                   points={currLinePoints}
                   fill="none"
-                  stroke={c.tennis}
+                  stroke={c.fieldTeal}
                   strokeWidth={2.8}
                   strokeLinecap="round"
                   strokeLinejoin="round"
@@ -172,14 +182,14 @@ export function WeekChart({ state, onOpen, ready = true }: { state: CompeteState
                   cy={currLastY}
                   r={6.5}
                   fill="none"
-                  stroke={c.tennis}
+                  stroke={c.fieldTeal}
                   strokeWidth={2}
                 />
                 <Circle
                   cx={currPreciseX}
                   cy={currLastY}
                   r={3.5}
-                  fill={c.tennis}
+                  fill={c.fieldTeal}
                 />
 
                 {/* Direct on-chart label: Last week at end */}
@@ -218,19 +228,17 @@ export function WeekChart({ state, onOpen, ready = true }: { state: CompeteState
                   );
                 })}
               </Svg>
-            </Pressable>
+            </ChartScrubber>
+            </View>
+            {onOpen && <Pressable accessibilityRole="button" accessibilityLabel="Explore your week" onPress={onOpen} style={{ minHeight: 44, justifyContent: "center", alignSelf: "flex-end" }}><Text style={f.rowTitle}>Your week →</Text></Pressable>}
           </View></ChartFrame>);
 }
 const s = StyleSheet.create({
   statsCard: {
-    backgroundColor: c.card,
-    borderWidth: 1,
-    borderColor: c.line,
-    borderBottomWidth: 1,
-    borderRadius: 20,
-    padding: 18,
-    gap: 12,
-    marginBottom: 8,
+    paddingVertical: 12,
+    gap: 16,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: c.line,
   },
   statsMain: {
     fontFamily: "DMSans_700Bold",
@@ -256,8 +264,6 @@ const s = StyleSheet.create({
   },
   chartWrap: {
     width: "100%",
-    borderTopWidth: 1,
-    borderTopColor: c.line,
-    paddingTop: 12,
+    paddingTop: 4,
   },
 });

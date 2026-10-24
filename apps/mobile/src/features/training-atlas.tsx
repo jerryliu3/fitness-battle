@@ -1,3 +1,4 @@
+import { ChartScrubber } from "../ui/chart-scrubber";
 import { useState } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import {
@@ -75,7 +76,7 @@ export function TrainingAtlas({ state }: { state: CompeteState }) {
         ? dayKey(next).slice(0, 7) <= dayKey(now).slice(0, 7)
         : weeklyPeriodBounds(next).startsAt <= now;
   return (
-    <View style={f.card}>
+    <View style={f.section}>
       <Text style={f.h2}>Your training</Text>
       <ScrollView horizontal showsHorizontalScrollIndicator={false}>
         <View style={f.row}>
@@ -152,18 +153,21 @@ export function TrainingAtlas({ state }: { state: CompeteState }) {
         </Text>
       </View>
       <Text style={[f.small, { color: c.secondary }]}>{comparison.label}</Text>
-      <ScrollView
-        horizontal
-        contentContainerStyle={{ flexGrow: 1 }}
-        showsHorizontalScrollIndicator={range === "year"}
-      >
+      <ChartScrubber key={`${range}:${anchor.toISOString()}:${sport}`} label="Training hours by period"
+        points={buckets.flatMap((b, index) => Date.parse(b.start) > now.getTime() ? [] : [{
+          id: b.start, x: (index + .5) / buckets.length * 340,
+          y: 118 - (b.movingSec ? Math.max(2, (b.movingSec / max) * 118) : 0),
+          label: `${b.label}${b.partial ? " · so far" : ""}`,
+          value: `${formatTrainingHours(b.movingSec)} hr · ${b.sessions} ${b.sessions === 1 ? "session" : "sessions"}`,
+        }])}
+        width={340} height={144} plotTop={0} plotBottom={118} onSelect={setSelected}>
         <View
           style={{
             flex: 1,
-            minWidth: range === "year" ? 528 : undefined,
-            height: 154,
+
+            height: 144,
             flexDirection: "row",
-            gap: 4,
+            gap: 0,
           }}
         >
           {buckets.map((b) => (
@@ -217,13 +221,7 @@ export function TrainingAtlas({ state }: { state: CompeteState }) {
             </Pressable>
           ))}
         </View>
-      </ScrollView>
-      <View style={s.row} accessibilityLiveRegion="polite">
-        <Text style={f.h2}>{formatTrainingHours(bucket.movingSec)} hr</Text>
-        <Text style={f.small}>
-          {bucket.sessions} {bucket.sessions === 1 ? "session" : "sessions"}{bucket.partial ? " · so far" : ""}
-        </Text>
-      </View>
+      </ChartScrubber>
       <FocusDisclosure title="Daily activity">
         <Text style={f.kicker}>
           {anchor.toLocaleDateString("en-US", {
@@ -344,7 +342,7 @@ const s = StyleSheet.create({
   },
   barButton: {
     flex: 1,
-    minWidth: 32,
+    minWidth: 0,
     gap: 8,
     alignItems: "center",
     justifyContent: "flex-end",

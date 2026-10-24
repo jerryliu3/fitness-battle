@@ -30,7 +30,7 @@ export function AthleteMetrics({
         <>
           <View
             style={[
-              f.card,
+              f.section,
               {
                 flexDirection: "row",
                 alignItems: "center",

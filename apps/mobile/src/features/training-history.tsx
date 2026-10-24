@@ -43,7 +43,7 @@ export function TrainingHistory({ state, children }: { state: CompeteState; chil
       <TrainingAtlas state={state} />
       {children}
       {active && latest && inspected ? (
-        <View style={f.card}>
+        <View style={f.section}>
           <Text style={f.h2}>Personal records</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false}>
             <View style={f.row}>

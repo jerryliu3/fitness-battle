@@ -7,6 +7,7 @@ import {
   APP_TIMEZONE,
   type RecordAttempt,
 } from "@fitness-battle/shared";
+import { ChartScrubber } from "../ui/chart-scrubber";
 import { f } from "../ui/focus";
 const date = (at: string) =>
   new Date(at).toLocaleDateString("en-US", {
@@ -29,7 +30,11 @@ export function RecordChart({
   if (!chart) return null;
   return (
     <View style={{ marginVertical: 16 }}>
+      <ChartScrubber label="Personal record timeline, lower time is faster" points={chart.points.map(point => ({
+        id: point.activityId, x: point.x, y: point.y, label: date(point.startedAt), value: formatClockTime(point.seconds),
+      }))} width={chart.width} height={chart.height} plotTop={16} plotBottom={chart.height - 28} onSelect={onSelect}>
       <Svg
+        preserveAspectRatio="none"
         viewBox={`0 0 ${chart.width} ${chart.height}`}
         width="100%"
         height={190}
@@ -92,6 +97,7 @@ export function RecordChart({
           {chart.points.length>1?date(chart.end):""}
         </SvgText>
       </Svg>
+      </ChartScrubber>
     </View>
   );
 }

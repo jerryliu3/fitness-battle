@@ -219,12 +219,39 @@ export function FocusSegments<T extends string>({
   accent?: boolean;
   variant?: "segments" | "tabs";
 }) {
+  const reduce = useReducedMotion();
+  const [width, setWidth] = useState(0);
+  const position = useRef(new Animated.Value(0)).current;
+  const selectedIndex = Math.max(0, options.findIndex(option => option.value === value));
+  const inset = variant === "tabs" ? 0 : 5;
+  const gap = 4;
+  const segmentWidth = Math.max(0, (width - inset * 2 - gap * (options.length - 1)) / Math.max(1, options.length));
+  const initialized = useRef(false);
+  useEffect(() => {
+    if (!width) return;
+    const animation = Animated.timing(position, {
+      toValue: selectedIndex * (segmentWidth + gap),
+      duration: reduce || !initialized.current ? 0 : 240,
+      easing: Easing.out(Easing.cubic),
+      useNativeDriver: true,
+    });
+    initialized.current = true;
+    animation.start();
+    return () => animation.stop();
+  }, [selectedIndex, segmentWidth, width, reduce, position]);
   return (
     <View
       accessibilityRole="tablist"
       accessibilityLabel={label}
+      onLayout={event => setWidth(event.nativeEvent.layout.width)}
       style={[f.segments, variant === "tabs" && { backgroundColor: "transparent", borderWidth: 0, borderRadius: 0, padding: 0, borderBottomWidth: 1 }]}
     >
+      {width > 0 && <Animated.View pointerEvents="none" style={{
+        position: "absolute", left: inset, width: segmentWidth,
+        ...(variant === "tabs" ? { bottom: 0, height: 2 } : { top: 4, bottom: 4, borderRadius: 20 }),
+        backgroundColor: variant === "tabs" || !accent ? c.ink : c.tennis,
+        transform: [{ translateX: position }],
+      }} />}
       {options.map((option) => (
         <Pressable
           key={option.value}
@@ -237,9 +264,7 @@ export function FocusSegments<T extends string>({
           }}
           style={({ pressed }) => [
             f.segment,
-            value === option.value && f.segmentSelected,
-            variant === "tabs" && { backgroundColor: "transparent", borderRadius: 0, borderBottomWidth: value === option.value ? 2 : 0, borderBottomColor: c.ink },
-            value === option.value && accent && { backgroundColor: c.tennis },
+            variant === "tabs" && { borderRadius: 0 },
             pressed && { opacity: 0.7 },
           ]}
         >
@@ -320,9 +345,9 @@ export function FocusDisclosure({
 export const f = StyleSheet.create({
   safe: { flex: 1, backgroundColor: c.paper },
   content: {
-    padding: 22,
+    padding: 20,
     paddingBottom: 120,
-    gap: 18,
+    gap: 24,
     maxWidth: 880,
     width: "100%",
     alignSelf: "center",
@@ -387,6 +412,12 @@ export const f = StyleSheet.create({
     gap: 12,
   },
   grow: { flex: 1 },
+  section: {
+    paddingVertical: 20,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: c.line,
+    gap: 16,
+  },
   card: {
     backgroundColor: c.card,
     borderWidth: 1,
@@ -466,20 +497,19 @@ export const f = StyleSheet.create({
   disclosureHeadCompact: { minHeight: 48, padding: 12 },
   disclosureBodyCompact: { paddingHorizontal: 12, paddingBottom: 12, gap: 10 },
   disclosure: {
-    backgroundColor: c.card,
-    borderWidth: 1,
-    borderColor: c.line,
-    borderRadius: 15,
+    backgroundColor: "transparent",
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: c.line,
     overflow: "hidden",
   },
   disclosureHead: {
-    padding: 20,
+    paddingVertical: 18,
     flexDirection: "row",
     alignItems: "center",
     gap: 14,
     minHeight: 68,
   },
-  disclosureBody: { paddingHorizontal: 20, paddingBottom: 23, gap: 15 },
+  disclosureBody: { paddingHorizontal: 0, paddingBottom: 23, gap: 15 },
   modal: { flex: 1, justifyContent: "flex-end" },
   backdrop: { ...StyleSheet.absoluteFill, backgroundColor: "#14211b80" },
   sheet: {

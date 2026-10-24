@@ -35,7 +35,7 @@ export function ProgressScreen() {
         <MotionStep identity={section}>
         <View style={{display:section==="effort"?"flex":"none",gap:18}}>
         <AthleteMetrics state={state} />
-        <View style={f.card}>
+        <View style={f.section}>
           <Text style={f.kicker}>
             This week · {sportById(state.primary).name}
           </Text>
@@ -69,8 +69,8 @@ export function ProgressScreen() {
         </View>
         </View>
         <View style={{display:section==="overview"?"flex":"none",gap:18}}><TrainingHistory state={state}><Achievements state={state}/></TrainingHistory><WeekRecap state={state}/>
-        {state.periodResults.length ? <Pressable accessibilityRole="button" style={f.card} onPress={() => router.push("/arena?results=latest")}><Text style={f.rowTitle}>Latest week results ↗</Text></Pressable> : null}
-        <View style={f.card}>
+        {state.periodResults.length ? <Pressable accessibilityRole="button" style={f.section} onPress={() => router.push("/arena?results=latest")}><Text style={f.rowTitle}>Latest week results ↗</Text></Pressable> : null}
+        <View style={f.section}>
           <Pressable accessibilityRole="button" onPress={() => router.push("/progress-history")}>
             <Text style={f.sectionTitle}>Past weeks & awards</Text>
             <Text style={f.copy}>Closed competition weeks, chapter history, and your award shelf.</Text>

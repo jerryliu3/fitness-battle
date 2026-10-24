@@ -17,9 +17,9 @@ export function SettingsRow({
       accessibilityRole="button"
       onPress={onPress}
       style={({ pressed }) => [
-        f.card,
+        f.section,
         f.row,
-        { padding: 18, minHeight: 64, opacity: pressed ? 0.6 : 1 },
+        { paddingVertical: 14, minHeight: 72, opacity: pressed ? 0.6 : 1 },
       ]}
     >
       {title in SETTINGS_ICON_PATHS && <Svg width={24} height={24} viewBox="0 0 24 24" fill="none" stroke={SHELL_COLORS.ink} strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round" accessibilityElementsHidden><Path d={SETTINGS_ICON_PATHS[title as keyof typeof SETTINGS_ICON_PATHS]} /></Svg>}

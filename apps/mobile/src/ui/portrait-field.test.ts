@@ -1,6 +1,7 @@
 import { createElement } from "react";
 import { act, create, type ReactTestRenderer } from "react-test-renderer";
 import { afterEach, expect, it, vi } from "vitest";
+vi.mock("./icon-button", () => ({ IconButton: "IconButton" }));
 vi.mock("./club-art", () => ({ alpineTrail: 1 }));
 vi.mock("./field-course", () => ({ drawFieldNode: () => null }));
 vi.mock("react-native", () => ({
