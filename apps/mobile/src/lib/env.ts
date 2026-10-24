@@ -18,4 +18,8 @@ export const mobileEnv = {
     process.env.EXPO_PUBLIC_STRAVA_REDIRECT_URI || "overtaek://strava",
   apiUrl:
     process.env.EXPO_PUBLIC_API_URL ?? extra.apiUrl ?? "http://localhost:3000",
+  mapboxAccessToken:
+    process.env.EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN ??
+    extra.mapboxAccessToken ??
+    "",
 };
