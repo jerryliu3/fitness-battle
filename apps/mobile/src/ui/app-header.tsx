@@ -22,11 +22,7 @@ export function AppHeader() {
     setDebugOpen(false);
     const result = triggerDebugEvent?.(eventId);
     if (!result) return;
-    if (eventId === "sync-activity") {
-      if (path !== "/today" && path !== "/arena") router.navigate("/today");
-      return;
-    }
-    router.push(result.targetRoute);
+    if (eventId === "week-closing") router.push(result.targetRoute);
   }
 
   return (

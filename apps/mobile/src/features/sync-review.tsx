@@ -1,5 +1,5 @@
-import { useRef, useState } from "react";
-import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { useEffect, useRef, useState } from "react";
+import { Modal, Pressable, ScrollView, StyleSheet, Text, View, type ScrollViewInstance } from "react-native";
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 import { APP_TIMEZONE, clubDuration, formatVolume, sportById, type CompeteState, type CompetitionMoment as Moment, type SyncReviewReceipt } from "@fitness-battle/shared";
 import { FocusButton, f } from "../ui/focus";
@@ -8,27 +8,32 @@ import { SHELL_COLORS as c } from "../theme";
 import { CompetitionMoment } from "./competition-moment";
 import { useReducedMotion } from "../ui/use-reduced-motion";
 
-export function SyncReview({ receipt, state, moment, remaining = 0, onComplete, onAcknowledge = () => {} }: {
-  receipt: SyncReviewReceipt | null; state: CompeteState; moment?: Moment | null; remaining?: number;
+export function SyncReview({ receipt, state, moment, debug = false, remaining = 0, onComplete, onAcknowledge = () => {} }: {
+  receipt: SyncReviewReceipt | null; state: CompeteState; debug?: boolean; moment?: Moment | null; remaining?: number;
   onComplete: (selected?: readonly string[], quiet?: boolean) => unknown; onAcknowledge?: () => void;
 }) {
   const reduced = useReducedMotion();
-  const close = () => { if (receipt) onComplete(undefined, true); else onAcknowledge(); };
+  const close = () => { if (receipt) onComplete(undefined, true); };
+  const scroll = useRef<ScrollViewInstance | null>(null);
+  const resetScroll = () => scroll.current?.scrollTo({ y: 0, animated: false });
+  useEffect(resetScroll, [receipt ? "review" : moment?.id]);
   return <Modal visible presentationStyle="fullScreen" animationType={reduced ? "none" : "slide"} onRequestClose={close}>
     <SafeAreaProvider><SafeAreaView style={f.safe} edges={["top", "bottom"]}>
       <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingHorizontal: 20, minHeight: 56 }}>
         <Text style={f.rowTitle}>{receipt ? "Review your activities" : moment?.plan.hasOvertake ? "Your overtakes" : "Your field changed"}</Text>
         {receipt && <Pressable accessibilityRole="button" accessibilityLabel="Apply activities and skip recap" onPress={close} style={{ minHeight: 44, minWidth: 44, justifyContent: "center" }}><Text style={f.small}>Skip</Text></Pressable>}
       </View>
-      <ScrollView contentContainerStyle={{ padding: 22, gap: 20, paddingBottom: 32, flexGrow: 1 }} keyboardShouldPersistTaps="handled">
-        {receipt ? <Review key={`${receipt.account}:${receipt.day}`} receipt={receipt} state={state} onComplete={onComplete}/> : moment ? <CompetitionMoment key={moment.id} moment={moment} remaining={remaining} onConfirm={onAcknowledge}/> : null}
+      <ScrollView ref={scroll} contentContainerStyle={{ padding: 22, gap: 20, paddingBottom: 32, flexGrow: 1 }} keyboardShouldPersistTaps="handled">
+        {debug && <Text style={f.kicker}>DEBUG PREVIEW · LOCAL DATA ONLY</Text>}
+        {receipt ? <Review key={`${receipt.account}:${receipt.day}`} receipt={receipt} state={state} onComplete={onComplete} resetScroll={resetScroll}/> : moment ? <CompetitionMoment key={moment.id} moment={moment} remaining={remaining} onConfirm={onAcknowledge}/> : null}
       </ScrollView>
     </SafeAreaView></SafeAreaProvider>
   </Modal>;
 }
-function Review({ receipt, state, onComplete }: { receipt: SyncReviewReceipt; state: CompeteState; onComplete: (selected?: readonly string[], quiet?: boolean) => unknown }) {
+function Review({ receipt, state, onComplete, resetScroll }: { resetScroll: () => void; receipt: SyncReviewReceipt; state: CompeteState; onComplete: (selected?: readonly string[], quiet?: boolean) => unknown }) {
   const [excluded, setExcluded] = useState<string[]>([]), [detail, setDetail] = useState<string | null>(null), [progress, setProgress] = useState(0), [width, setWidth] = useState(280);
   const complete = useRef(false), dragStart = useRef(0), dragDistance = useRef(0), dragging = useRef(false);
+  useEffect(resetScroll, [detail]);
   const activities = receipt.activities, selected = activities.filter(a => !excluded.includes(a.id));
   const latest = useRef({ onComplete, selected }); latest.current = { onComplete, selected };
   const finish = () => { if (complete.current) return; complete.current = true; latest.current.onComplete(latest.current.selected.map(a => a.id)); };

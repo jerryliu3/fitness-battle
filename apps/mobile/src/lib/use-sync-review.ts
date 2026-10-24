@@ -10,10 +10,13 @@ import {
   competeNow,
   dayKey,
   changedTodaySync,
+  changedSyncActivities,
+  countsOnTrack,
   planSyncReview,
   reduceCompete,
   selectedSyncActions,
   type Action,
+  type Activity,
   type CompeteState,
   type SportId,
   type SyncReviewReceipt,
@@ -30,7 +33,7 @@ export function useSyncReviewGate(
   current.current = { raw, state, account, onApply };
   const owner = useRef(account),
     batch = useRef(0),
-    pending = useRef<{ receipt: SyncReviewReceipt; actions: Action[] } | null>(
+    pending = useRef<{ receipt: SyncReviewReceipt; actions: Action[]; beforeApply?: () => void } | null>(
       null,
     );
   const [receipt, setReceipt] = useState<SyncReviewReceipt | null>(null);
@@ -49,6 +52,7 @@ export function useSyncReviewGate(
     blocked.current = false;
     setReceipt(null);
     if (!value || value.receipt.account !== current.current.account) return;
+    value.beforeApply?.();
     const actions = selected ? selectedSyncActions(value.actions, selected) : value.actions;
     const before = current.current.state;
     if (before) current.current.onApply?.(actions.reduce(reduceCompete, before), quiet);
@@ -89,8 +93,9 @@ export function useSyncReviewGate(
         c.raw(action);
         return;
       }
-      const plan = planSyncReview(action, c.state);
-      c.onApply?.(reduceCompete(c.state, plan.immediate), plan.immediate.syncPresentation === "quiet" || plan.preview);
+      const normalized = c.account && !action.accountId ? { ...action, accountId: c.account } : action;
+      const plan = planSyncReview(normalized, c.state);
+      if (plan.immediate.syncPresentation === "quiet" || plan.preview) c.onApply?.(reduceCompete(c.state, plan.immediate), true);
       c.raw(plan.immediate);
       if (!plan.activities.length) return;
       const previous = pending.current;
@@ -146,8 +151,30 @@ export function useSyncReviewGate(
     };
     setReceipt({ ...pending.current.receipt });
   }, []);
+  const stage = (activities: Activity[], actions: Action[], beforeApply?: () => void, forState?: CompeteState) => {
+    const c = current.current;
+    const source = forState ?? c.state;
+    if (!source) return;
+    pending.current = { receipt: { account: c.account, day: dayKey(competeNow(source)), activities, preview: false }, actions, beforeApply };
+    blocked.current = actions.length > 0;
+    setReceipt({ ...pending.current.receipt });
+  };
+  const holdRemote = (next: CompeteState): CompeteState => {
+    const c = current.current;
+    if (!c.state || pending.current) return next;
+    const activities = changedSyncActivities(next.activities, c.state.activities, competeNow(next)).filter(a => countsOnTrack(a, "open") && a.source !== "manual" && a.source !== "history");
+    if (!activities.length) return next;
+    const actions: Action[] = [...new Set(activities.map(a => a.source))].filter((provider): provider is NonNullable<Action["provider"]> => provider !== "manual" && provider !== "history").map(provider => ({
+      type: "apply-sync", provider, accountId: c.account ?? undefined, now: competeNow(next).toISOString(), activities: activities.filter(a => a.source === provider),
+    }));
+    stage(activities, actions);
+    const held = new Set(activities.map(a => a.id));
+    return { ...next, activities: [...next.activities.filter(a => !held.has(a.id)), ...c.state.activities.filter(a => held.has(a.id))] };
+  };
   return {
     dispatch,
+    stage,
+    holdRemote,
     preview,
     receipt: receipt?.account === account ? receipt : null,
     finish,

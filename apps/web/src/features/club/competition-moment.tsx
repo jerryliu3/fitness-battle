@@ -13,6 +13,7 @@ export function CompetitionMoment({ moment, remaining, onConfirm }: { moment: Mo
   useEffect(() => {
     if (reduced) { setProgress(1); return; }
     let raf = 0;
+    setProgress(0);
     const start = performance.now();
     const duration = 4200 + count * 1150;
     const tick = (now: number) => { if (skipped.current) return; const p = Math.min(1, (now - start) / duration); setProgress(p); if (p < 1) raf = requestAnimationFrame(tick); };
@@ -58,7 +59,7 @@ export function CompetitionMoment({ moment, remaining, onConfirm }: { moment: Mo
       {!passedBy && frame.count > 0 && !frame.done && <g><rect x="420" y="18" width="180" height="34" rx="17" fill="#f7c948"/><text x="510" y="40" textAnchor="middle" fill="#142b3b" fontSize="13" fontWeight="700">+1 OVERTAKE · ×{frame.count}</text></g>}
     </svg>
     <div className="moment-result"><span>Your place</span><strong>#{moment.plan.rankBefore} <span>→</span> #{frame.rank}</strong><small>{frame.youValue.toFixed(1)} {moment.unit} this round</small></div>
-    <p className="fb-note">{frame.done ? "Your stats are up to date." : "Replaying the change in accumulated effort."}</p>
-    <button className="fb-btn moment-continue" type="button" onClick={() => frame.done ? (() => { if (!confirmed.current) { confirmed.current = true; onConfirm(); } })() : (() => { skipped.current = true; setProgress(1); })()}>{frame.done ? remaining > 1 ? "Next field →" : "Back to the app →" : "Skip animation"}</button>
+    <p className="fb-note">{frame.done ? remaining > 1 ? "There’s more to your update." : "Your stats are up to date." : "Replaying the change in accumulated effort."}</p>
+    <button className="fb-btn moment-continue" type="button" onClick={() => frame.done ? (() => { if (!confirmed.current) { confirmed.current = true; onConfirm(); } })() : (() => { skipped.current = true; setProgress(1); })()}>{frame.done ? remaining > 1 ? "Continue →" : "Back to the app →" : "Skip animation"}</button>
   </div>;
 }

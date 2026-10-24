@@ -189,6 +189,7 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
   const userId = user?.id ?? null;
   const [state, setState] = useState<CompeteState | null>(null);
   const syncReviewBlocked = useRef(false);
+  const holdRemoteRef = useRef<(next: CompeteState) => CompeteState>(next => next);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [loadStatus, setLoadStatus] = useState<LoadStatus>("loading");
   const [attempt, setAttempt] = useState(0);
@@ -503,7 +504,7 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
           const savedAt = dirty
             ? new Date().toISOString()
             : (body.updatedAt ?? new Date().toISOString());
-          publish(accountId, next, savedAt, "ready", false);
+          publish(accountId, holdRemoteRef.current(next), savedAt, "ready", false);
         }
         setStandingsStale(false);
         return true;
@@ -548,6 +549,13 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
     setFieldNotice(null);
   }, []);
 
+  const experience = useCompetitionExperience(
+    loadStatus === "loading" || loadStatus === "failed" ? null : state,
+    userId ?? "guest",
+    readStorageItem,
+    (key, value) => { if (!debugActiveRef.current) writeStorageItem(key, value); },
+  );
+
   const triggerDebugEvent = useCallback((event: DebugEventId): DebugEventResult | null => {
     const accountKey = userIdRef.current ?? "guest";
     const current = stateRef.current ?? rollClock(freshState());
@@ -555,14 +563,25 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
     debugActiveRef.current = true;
     setDebugActive(true);
     const step = (debugStepRef.current += 1);
-    const result = applyDebugEvent(current, event, accountKey, step);
-    for (const [key, val] of Object.entries(result.baselines)) writeStorageItem(key, val);
+    const result = applyDebugEvent(event.startsWith("sync-") ? { ...current, primary: "running" } : current, event, accountKey, step);
     if (statusRef.current === "loading" || statusRef.current === "failed") {
       statusRef.current = "local";
       setLoadStatus("local");
     }
-    stateRef.current = result.state;
-    setState(result.state);
+    syncReview.reset();
+    if (event.startsWith("sync-")) {
+      const activities = result.state.activities.filter(a => a.id.startsWith("debug-") && !current.activities.some(old => old.id === a.id));
+      const ids = new Set(activities.map(a => a.id));
+      const base = { ...result.state, activities: result.state.activities.filter(a => !ids.has(a.id)) };
+      experience.clear(base);
+      stateRef.current = base;
+      setState(base);
+      syncReview.stage(activities, [{ type: "apply-sync", provider: "strava", activities }], () => experience.prime(result.baselines), base);
+    } else {
+      experience.prime(result.baselines);
+      stateRef.current = result.state;
+      setState(result.state);
+    }
     setLastDebugEvent({ id: event, nonce: step });
     return result;
   }, []);
@@ -573,6 +592,8 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
     debugActiveRef.current = false;
     setDebugActive(false);
     setLastDebugEvent(null);
+    syncReview.reset();
+    experience.clear(snapshot?.state ?? undefined);
     if (!snapshot) return;
     statusRef.current = snapshot.status;
     stateRef.current = snapshot.state;
@@ -661,12 +682,6 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
     ],
   );
 
-  const experience = useCompetitionExperience(
-    loadStatus === "failed" || loadStatus === "loading" ? null : state,
-    userId ?? "guest",
-    readStorageItem,
-    writeStorageItem,
-  );
   const syncReview = useSyncReviewGate(
     api.dispatch,
     loadStatus === "failed" || loadStatus === "loading" ? null : state,
@@ -674,6 +689,7 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
     syncReviewBlocked,
     experience.observe,
   );
+  holdRemoteRef.current = syncReview.holdRemote;
   return (
     <CompeteContext.Provider value={{
         ...api,
@@ -693,6 +709,7 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
         <Suspense fallback={<AppParagraph typographyRole="body" role="status">Opening today’s recap…</AppParagraph>}>
           <SyncReview
             key={userId ?? "guest"}
+            debug={debugActive}
             receipt={syncReview.receipt}
             moment={experience.moment}
             remaining={experience.remaining}

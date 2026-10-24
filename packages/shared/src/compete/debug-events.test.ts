@@ -30,7 +30,7 @@ function sceneLanesFromState(state: ReturnType<typeof freshState>) {
 
 describe("applyDebugEvent", () => {
   it("exposes all four primary UI event mechanisms", () => {
-    expect(DEBUG_EVENT_OPTIONS.map((o) => o.id)).toEqual(["sync-activity", "overtake", "overtaken", "week-closing"]);
+    expect(DEBUG_EVENT_OPTIONS.map((o) => o.id)).toEqual(["sync-activity", "sync-combo", "overtake", "overtake-combo", "overtaken", "week-closing"]);
   });
 
   it("simulates a new synced activity with forward Arena movement and Today reveal", () => {
@@ -76,4 +76,14 @@ describe("applyDebugEvent", () => {
     const reveal = roundReveal(result.state);
     expect(reveal?.results[0]?.distanceM).toBeGreaterThan(0);
   });
+});
+
+it("provides a multi-pass sync fixture with two inspectable GPS routes", () => {
+  const result = applyDebugEvent(freshState(new Date("2026-10-24T18:00:00Z")), "sync-combo", "guest", 2);
+  expect(result.state.activities).toHaveLength(2);
+  expect(result.state.activities.every(a => a.summaryPolyline && a.detailedPolyline)).toBe(true);
+  expect(result.state.activities[0].summaryPolyline).not.toBe(result.state.activities[1].summaryPolyline);
+  const { lanes, periodStart, unit } = sceneLanesFromState(result.state);
+  const previous = readArenaBaseline(result.baselines[arenaBaselineStorageKey("guest", result.state.primary, competitionTrack(result.state.primary))], periodStart, unit);
+  expect(reconcileArenaOvertake(lanes, previous)?.overtakenIds.length).toBeGreaterThanOrEqual(2);
 });

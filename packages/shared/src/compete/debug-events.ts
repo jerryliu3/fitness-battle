@@ -1,7 +1,8 @@
 import { arenaBaselineStorageKey, serializeArenaBaseline } from "../arena-view";
+import { DEFAULT_SAMPLE_ROUTE, SAMPLE_ROUTES } from "../sampleRoute";
 import { APP_TIMEZONE } from "../period";
 import { buildArenaModel, competePeriodWindow } from "../phone-views";
-import { competeNow, reduceCompete } from "./engine";
+import { competeNow, freshState, reduceCompete } from "./engine";
 import { countsOnTrack } from "./ledger";
 import {
   competitionTrack,
@@ -13,7 +14,7 @@ import {
   type SportId,
 } from "./sports";
 
-export type DebugEventId = "sync-activity" | "overtake" | "overtaken" | "week-closing";
+export type DebugEventId = "sync-activity" | "sync-combo" | "overtake" | "overtake-combo" | "overtaken" | "week-closing";
 
 export interface DebugEventOption {
   id: DebugEventId;
@@ -22,8 +23,10 @@ export interface DebugEventOption {
 }
 
 export const DEBUG_EVENT_OPTIONS: readonly DebugEventOption[] = [
-  { id: "sync-activity", label: "New sync activity", detail: "Add a synced GPS workout on Home & Compete" },
-  { id: "overtake", label: "Overtake someone", detail: "Surge past a rival in your Arena lane" },
+  { id: "sync-activity", label: "Sync · no overtakes", detail: "Review activities and maps, swipe, then return" },
+  { id: "sync-combo", label: "Sync → photo finish + combo", detail: "Review multiple activities, then pass several rivals" },
+  { id: "overtake", label: "Overtake someone", detail: "Open the full-screen photo finish" },
+  { id: "overtake-combo", label: "Overtake several rivals", detail: "Watch each pass build the full-screen combo" },
   { id: "overtaken", label: "Get overtaken", detail: "Watch a rival pass you in your Arena lane" },
   { id: "week-closing", label: "Week closing", detail: "Settle the week & open the round recap" },
 ];
@@ -60,6 +63,7 @@ function makeDebugActivity(
     source: gps ? "strava" : "manual",
     provenance: "recorded",
     disposition: "counted",
+    ...(gps ? { summaryPolyline: DEFAULT_SAMPLE_ROUTE.summaryPolyline, detailedPolyline: DEFAULT_SAMPLE_ROUTE.summaryPolyline, elevationGainM: DEFAULT_SAMPLE_ROUTE.elevationGainM } : {}),
   };
 }
 
@@ -75,7 +79,9 @@ export function applyDebugEvent(
     inputState.ratings.find((r) => r.optedIn)?.sport ??
     inputState.primary;
 
-  let base: CompeteState = { ...inputState, onboardingCompleted: true, primary: sport };
+  // UI testing must work even in an empty, real or unusually seeded field.
+  let base: CompeteState = { ...freshState(now), name: inputState.name, avatarUrl: inputState.avatarUrl,
+    units: inputState.units, onboardingCompleted: true, primary: sport, demoNow: now.toISOString() };
   if (!base.ratings.find((r) => r.sport === sport)?.optedIn || !base.enrollments.some((e) => e.sport === sport)) {
     base = reduceCompete(base, { type: "opt-in", sport, accountId: accountKey, now: now.toISOString() });
   }
@@ -86,6 +92,28 @@ export function applyDebugEvent(
   const stepUnit = gps ? 1 : 10;
   const jitter = ((stepIndex % 7) + 1) * 0.031 * stepUnit;
   const baselines: Record<string, string> = {};
+
+  if (event === "overtake-combo" || event === "sync-combo") {
+    const single = applyDebugEvent(base, "overtake", accountKey, stepIndex);
+    const arena = buildArenaModel(single.state, now, competitionTrack(sport), sport);
+    const rivals = arena.lanes.filter(l => !l.you && !l.ghost).sort((a, b) => a.values[2] - b.values[2]);
+    const target = (rivals[Math.min(2, rivals.length - 1)]?.values[2] ?? 5 * stepUnit) + stepUnit;
+    const activity = makeDebugActivity(sport, target, base.units, new Date(now.getTime() - 1000), `debug-combo-${stepIndex}-${now.getTime()}`);
+    const kept = single.state.activities.filter(a => a.sport !== sport || Date.parse(a.startedAt) < period.startsAt.getTime() || Date.parse(a.startedAt) >= period.endsAt.getTime());
+    const activities = event === "sync-combo" ? [
+      { ...activity, id: `${activity.id}-1`, distanceM: Math.round(activity.distanceM * .6), movingSec: Math.round(activity.movingSec * .6) },
+      { ...activity, id: `${activity.id}-2`, startedAt: new Date(now.getTime() - 3600_000).toISOString(), distanceM: activity.distanceM - Math.round(activity.distanceM * .6), movingSec: activity.movingSec - Math.round(activity.movingSec * .6), ...(gps ? { summaryPolyline: SAMPLE_ROUTES[1].summaryPolyline, detailedPolyline: SAMPLE_ROUTES[1].summaryPolyline } : {}) },
+    ] : [activity];
+    const nextState = reduceCompete({ ...single.state, activities: [...kept, ...activities] }, { type: "set-primary", sport, accountId: accountKey, now: now.toISOString() });
+    for (const track of gps ? ["open", "verified"] as const : ["open"] as const) {
+      const after = buildArenaModel(nextState, now, track, sport);
+      const you = after.lanes.find(l => l.you && !l.ghost)!;
+      const crossed = after.lanes.filter(l => !l.you && !l.ghost && l.values[2] < you.values[2]).sort((a,b) => a.values[2] - b.values[2]);
+      const before = Math.max(0, (crossed[0]?.values[2] ?? stepUnit) - stepUnit);
+      baselines[arenaBaselineStorageKey(accountKey, sport, track)] = serializeArenaBaseline(periodStartIso, after.lanes.filter(l => !l.ghost).map(l => ({ id: l.id, value: l.you ? before : l.values[2] })), after.unit);
+    }
+    return { event, state: nextState, baselines, targetRoute: event === "sync-combo" ? "/today" : "/arena" };
+  }
 
   if (event === "sync-activity") {
     const syncDisplay = (sport === "cycling" ? 11.2 : sport === "walking" ? 2.1 : gps ? 3.2 : 6) + jitter;

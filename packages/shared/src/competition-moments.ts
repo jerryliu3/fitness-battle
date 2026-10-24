@@ -32,7 +32,19 @@ export function competitionMoments(state: CompeteState, account: string, read: (
     const previous = readArenaBaseline(read(s.key), s.period, s.unit);
     const plan = reconcileArenaOvertake(s.lanes, previous);
     if (!plan || (!plan.hasOvertake && !plan.passedByIds?.length)) return [];
-    return [{ id: `${s.key}:${s.value}`, sport: s.sport, unit: s.unit, lanes: s.lanes, plan } satisfies CompetitionMoment];
+    const common = { sport: s.sport, unit: s.unit, lanes: s.lanes };
+    if (plan.hasOvertake && plan.passedByIds?.length) {
+      const middleRank = 1 + Object.values(plan.rivals).filter(r => r.endValue > plan.youBefore + .00001).length;
+      const rivalPlan: ArenaOvertakePlan = { ...plan, hasOvertake: false, overtakenIds: [], youAfter: plan.youBefore, rankAfter: middleRank,
+        rivals: Object.fromEntries(Object.entries(plan.rivals).map(([id, r]) => [id, { ...r, overtaken: false }])) };
+      const ownPlan: ArenaOvertakePlan = { ...plan, passedByIds: [], passedByNames: [], rankBefore: middleRank, anyRivalMoved: false, rivalSlideEnd: 0,
+        rivals: Object.fromEntries(Object.entries(plan.rivals).map(([id, r]) => [id, { ...r, startValue: r.endValue, moved: false, passedYou: false }])) };
+      return [
+        { ...common, id: `${s.key}:${s.value}:rivals`, plan: rivalPlan },
+        { ...common, id: `${s.key}:${s.value}:you`, plan: ownPlan },
+      ];
+    }
+    return [{ ...common, id: `${s.key}:${s.value}`, plan } satisfies CompetitionMoment];
   });
 }
 
@@ -57,7 +69,7 @@ export function photoFinishFrame(moment: CompetitionMoment, progress: number) {
   const peers = Object.values(plan.rivals).filter(r => r.overtaken || r.passedYou);
   const passedBy = !plan.hasOvertake;
   const crossing = (r: typeof peers[number]) => passedBy
-    ? (plan.youBefore - r.startValue) / Math.max(.00001, r.endValue - r.startValue)
+    ? (plan.youBefore - r.startValue) / Math.max(.00001, r.endValue - r.startValue - (plan.youAfter - plan.youBefore))
     : (r.endValue - plan.youBefore) / Math.max(.00001, plan.youAfter - plan.youBefore);
   const crossings = peers.map(crossing).map(v => Math.max(.04, Math.min(.96, v))).sort((a, b) => a - b);
   // Integrate a low speed near each pass and invert its cumulative timeline.

@@ -38,3 +38,17 @@ it("marks deselected incoming activity excluded before scoring and preserves GPS
   expect(actions.find(a => a.type === "apply-sync")?.activities?.every(a => a.disposition === "excluded")).toBe(true);
   expect(selectedSyncActions([{ type: "apply-sync", activities }], activities.map(a => a.id))[0].activities).toEqual(activities);
 });
+
+it("queues rival movement and own passes separately when they arrive together", () => {
+  const { result } = fixture("overtake");
+  const snapshot = competitionMomentSnapshots(result.state, "a")[0];
+  const you = snapshot.lanes.find(l => l.you)!;
+  const ahead = snapshot.lanes.find(l => !l.you && l.value > you.value)!;
+  const baseline = JSON.parse(result.baselines[snapshot.arenaKey]);
+  baseline.values[ahead.id] = 0;
+  const modified = JSON.stringify(baseline);
+  const moments = competitionMoments(result.state, "a", key => key === snapshot.key ? modified : null);
+  expect(moments.map(m => m.plan.hasOvertake)).toEqual([false, true]);
+  expect(moments[0].plan.rankAfter).toBe(moments[1].plan.rankBefore);
+  expect(photoFinishFrame(moments[1], 1).rank).toBe(moments[1].plan.rankAfter);
+});

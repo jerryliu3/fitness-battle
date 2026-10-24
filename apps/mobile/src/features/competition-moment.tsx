@@ -16,6 +16,7 @@ export function CompetitionMoment({ moment, remaining, onConfirm }: { moment: Mo
   useEffect(() => {
     if (reduced) { setProgress(1); return; }
     let raf = 0;
+    setProgress(0);
     const start = Date.now(), duration = 4200 + count * 1150;
     const tick = () => { if (skipped.current) return; const p = Math.min(1, (Date.now() - start) / duration); setProgress(p); if (p < 1) raf = requestAnimationFrame(tick); };
     raf = requestAnimationFrame(tick);
@@ -62,7 +63,7 @@ export function CompetitionMoment({ moment, remaining, onConfirm }: { moment: Mo
       </Svg>
     </View>
     <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 12 }}><Text style={f.small}>Your place</Text><Text style={f.h2}>#{moment.plan.rankBefore} → #{frame.rank}</Text><Text style={f.small}>{frame.youValue.toFixed(1)} {moment.unit} this round</Text></View>
-    <Text style={f.small}>{frame.done ? "Your stats are up to date." : "Replaying the change in accumulated effort."}</Text>
-    <FocusButton label={frame.done ? remaining > 1 ? "Next field →" : "Back to the app →" : "Skip animation"} onPress={() => frame.done ? (() => { if (!confirmed.current) { confirmed.current = true; onConfirm(); } })() : (() => { skipped.current = true; setProgress(1); })()}/>
+    <Text style={f.small}>{frame.done ? remaining > 1 ? "There’s more to your update." : "Your stats are up to date." : "Replaying the change in accumulated effort."}</Text>
+    <FocusButton label={frame.done ? remaining > 1 ? "Continue →" : "Back to the app →" : "Skip animation"} onPress={() => frame.done ? (() => { if (!confirmed.current) { confirmed.current = true; onConfirm(); } })() : (() => { skipped.current = true; setProgress(1); })()}/>
   </View>;
 }

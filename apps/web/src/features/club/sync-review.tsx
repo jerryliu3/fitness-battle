@@ -1,27 +1,29 @@
 "use client";
-import { useRef, useState } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
 import { APP_TIMEZONE, clubDuration, formatVolume, sportById, type CompeteState, type CompetitionMoment, type SyncReviewReceipt } from "@fitness-battle/shared";
 import { Sheet } from "@/ui/sheet";
 import { ActivityRoute } from "@/components/routes/activity-route";
 import { CompetitionMoment as Moment } from "./competition-moment";
 
-export function SyncReview({ receipt, state, moment, remaining = 0, onComplete, onAcknowledge = () => {} }: {
-  receipt: SyncReviewReceipt | null; state: CompeteState; moment?: CompetitionMoment | null; remaining?: number;
+export function SyncReview({ receipt, state, moment, debug = false, remaining = 0, onComplete, onAcknowledge = () => {} }: {
+  receipt: SyncReviewReceipt | null; state: CompeteState; debug?: boolean; moment?: CompetitionMoment | null; remaining?: number;
   onComplete: (selected?: readonly string[], quiet?: boolean) => unknown; onAcknowledge?: () => void;
 }) {
   const title = receipt ? "Review your activities" : moment?.plan.hasOvertake ? "Your overtakes" : "Your field changed";
-  return <Sheet open title={title} body="" fullScreen onClose={() => receipt ? onComplete(undefined, true) : onAcknowledge()}>
+  return <Sheet open title={title} body="" fullScreen minimal={!receipt} scrollResetKey={receipt ? "review" : moment?.id} onClose={() => { if (receipt) onComplete(undefined, true); }}>
+    {debug && <p className="fb-kicker" style={{ textAlign: "center", marginTop: 20 }}>DEBUG PREVIEW · LOCAL DATA ONLY</p>}
     {receipt ? <Review key={`${receipt.account}:${receipt.day}`} receipt={receipt} state={state} onComplete={onComplete}/> : moment ? <Moment key={moment.id} moment={moment} remaining={remaining} onConfirm={onAcknowledge}/> : null}
   </Sheet>;
 }
 function Review({ receipt, state, onComplete }: { receipt: SyncReviewReceipt; state: CompeteState; onComplete: (selected?: readonly string[], quiet?: boolean) => unknown }) {
   const [excluded, setExcluded] = useState<string[]>([]), [detail, setDetail] = useState<string | null>(null), [progress, setProgress] = useState(0);
-  const complete = useRef(false), start = useRef(0);
+  const complete = useRef(false), start = useRef(0), step = useRef<HTMLDivElement | null>(null);
+  useLayoutEffect(() => { step.current?.closest(".sheet-content")?.scrollTo({ top: 0 }); }, [detail]);
   const activities = receipt.activities;
   const selected = activities.filter(a => !excluded.includes(a.id));
   const finish = () => { if (complete.current) return; complete.current = true; onComplete(selected.map(a => a.id)); };
   const activity = activities.find(a => a.id === detail);
-  if (activity) return <div className="sync-review-step">
+  if (activity) return <div ref={step} className="sync-review-step">
     <button className="fb-btn-line" onClick={() => setDetail(null)}>← All activities</button>
     <p className="fb-kicker">ACTIVITY DETAILS</p><h1>{sportById(activity.sport).name}</h1>
     <ActivityRoute activity={activity} units={state.units}/>
@@ -29,7 +31,7 @@ function Review({ receipt, state, onComplete }: { receipt: SyncReviewReceipt; st
     <p className="fb-copy">{new Date(activity.startedAt).toLocaleString("en-US", { dateStyle: "medium", timeStyle: "short", timeZone: APP_TIMEZONE })}</p>
     <p className="fb-note">{activity.verified ? "GPS Tracked" : "Open activity"}{activity.avgHr ? ` · ${activity.avgHr} bpm average` : ""}{activity.elevationGainM != null ? ` · ${activity.elevationGainM} m elevation gain` : ""}</p>
   </div>;
-  return <div className="sync-review-step">
+  return <div ref={step} className="sync-review-step">
     <p className="fb-kicker">{receipt.preview ? "SAMPLE PREVIEW · NO COMPETITION CREDIT" : "SYNC COMPLETE · YOUR NEXT MOVE"}</p>
     <h1>Make it count.</h1>
     <div className="sync-review-total">{clubDuration(selected.reduce((n, a) => n + a.movingSec, 0))}</div>
