@@ -113,7 +113,11 @@ function SignupForm() {
         <Link href={buildLoginHref(next)}>Sign in</Link>
       </p>
       <p className="fb-note">
+        By creating an account you agree to our{" "}
+        <Link href="/terms">Terms of Service</Link>
+        {" and "}
         <Link href="/privacy">Privacy Policy</Link>
+        .
       </p>
     </section>
   );
