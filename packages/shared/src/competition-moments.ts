@@ -39,9 +39,15 @@ export function competitionMoments(state: CompeteState, account: string, read: (
 /** Exclude before reducing, so deselected volume never awards a milestone first. */
 export function selectedSyncActions(actions: Action[], selected: readonly string[]): Action[] {
   const ids = new Set(selected);
-  return actions.map(a => ({ ...a, activities: a.activities?.map(activity => ids.has(activity.id) ? activity : {
-    ...activity, disposition: "excluded" as const, dispositionReason: "Deselected during sync review.",
-  }) }));
+  return actions.flatMap(a => [
+    ...(a.activities ?? []).filter(activity => !ids.has(activity.id)).map(activity => ({
+      type: "set-disposition", activityId: activity.id, disposition: "excluded", accountId: a.accountId, now: a.now,
+    } satisfies Action)),
+    { ...a, activities: a.activities?.map(activity => ids.has(activity.id) ? activity : {
+      ...activity, disposition: "excluded" as const, dispositionReason: "Deselected during sync review.",
+    }) },
+  ]);
+
 }
 
 /** Slow down around every crossing, independent of how many peers were passed. */

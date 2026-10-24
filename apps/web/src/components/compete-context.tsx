@@ -2,6 +2,7 @@
 import { AppParagraph } from "@/ui/section";
 
 
+import { useCompetitionExperience } from "@/lib/use-competition-experience";
 import { useSyncReviewGate } from "@/lib/use-sync-review";
 
 import { accountName } from "@/lib/account-name";
@@ -660,11 +661,18 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
     ],
   );
 
+  const experience = useCompetitionExperience(
+    loadStatus === "failed" || loadStatus === "loading" ? null : state,
+    userId ?? "guest",
+    readStorageItem,
+    writeStorageItem,
+  );
   const syncReview = useSyncReviewGate(
     api.dispatch,
     loadStatus === "failed" || loadStatus === "loading" ? null : state,
     userId ?? null,
     syncReviewBlocked,
+    experience.observe,
   );
   return (
     <CompeteContext.Provider value={{
@@ -681,11 +689,14 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
     </div>
       )}
     {children}
-      {syncReview.receipt && state ? (
+      {(syncReview.receipt || experience.moment) && state ? (
         <Suspense fallback={<AppParagraph typographyRole="body" role="status">Opening today’s recap…</AppParagraph>}>
           <SyncReview
-            key={`${syncReview.receipt.account}:${syncReview.receipt.day}`}
+            key={userId ?? "guest"}
             receipt={syncReview.receipt}
+            moment={experience.moment}
+            remaining={experience.remaining}
+            onAcknowledge={experience.acknowledge}
             state={state}
             onComplete={syncReview.finish}
           />

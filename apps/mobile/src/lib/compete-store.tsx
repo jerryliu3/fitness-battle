@@ -1,3 +1,4 @@
+import { useCompetitionExperience } from "./use-competition-experience";
 import { useSyncReviewGate } from "./use-sync-review";
 import {
   applyDebugEvent,
@@ -18,6 +19,7 @@ import {
   reduceCompete,
   rollClock,
   seedArenaBaselinesFromState,
+  momentStorageKey,
   seenFieldFromState,
   SPORTS,
   type Action,
@@ -119,7 +121,7 @@ async function preloadBaselineCache(
     arenaBaselineStorageKey(accountKey, sport.id, "open"),
     arenaBaselineStorageKey(accountKey, sport.id, "verified"),
   ]);
-  const pairs = await AsyncStorage.multiGet(keys);
+  const pairs = await AsyncStorage.multiGet([...keys, ...keys.map(momentStorageKey)]);
   for (const [key, value] of pairs) {
     if (value != null && !cache.has(key)) cache.set(key, value);
   }
@@ -734,11 +736,15 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
     [readBaselineItem, writeBaselineItem, scheduleSave, remember],
   );
 
+  const experience = useCompetitionExperience(
+    loadReady.current ? state : null, accountRef.current ?? "guest", readBaselineItem, writeBaselineItem,
+  );
   const syncReview = useSyncReviewGate(
     dispatch,
     loadReady.current ? state : null,
     accountRef.current ?? null,
     syncReviewBlocked,
+    experience.observe,
   );
 
   const retrySave = useCallback(() => {
@@ -894,15 +900,18 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
         </View>
       )}
       {children}
-      {syncReview.receipt && state ? (
+      {(syncReview.receipt || experience.moment) && state ? (
         <Suspense
           fallback={
             <Text accessibilityLiveRegion="polite">Opening today’s recap…</Text>
           }
         >
           <SyncReview
-            key={`${syncReview.receipt.account}:${syncReview.receipt.day}`}
+            key={accountRef.current ?? "guest"}
             receipt={syncReview.receipt}
+            moment={experience.moment}
+            remaining={experience.remaining}
+            onAcknowledge={experience.acknowledge}
             state={state}
             onComplete={syncReview.finish}
           />

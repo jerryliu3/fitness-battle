@@ -1303,3 +1303,32 @@
 .club-route-open { width: 100%; min-height: 44px; display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 8px 4px; color: var(--ink, #142b3b); font-weight: 700; font-size: 13px; }
 .club-route-open span { color: var(--muted, #637482); font-size: 12px; font-weight: 500; }
 .club-route-player { height: max(380px, 65dvh); width: 100%; }
+
+/* Root event experiences cover app chrome and retain one surface across stages. */
+.club-fullscreen-sheet:has(.sync-review-step), .club-fullscreen-sheet:has(.moment-step) { width: 100vw; max-width: none; padding: max(20px, env(safe-area-inset-top)) 24px max(24px, env(safe-area-inset-bottom)); background: var(--club-canvas, #f8f9f6); }
+.sync-review-step, .moment-step { max-width: 620px; width: 100%; margin: 30px auto 0; display: flex; flex-direction: column; gap: 20px; color: #142b3b; }
+.sync-review-step h1, .moment-step h1 { font-size: clamp(32px, 7vw, 48px); font-weight: 750; letter-spacing: -.04em; line-height: 1.06; margin: 0; }
+.sync-review-total { font-size: clamp(46px, 12vw, 72px); font-weight: 700; line-height: 1; letter-spacing: -.04em; }
+.sync-review-list { background: #fff; border: 1px solid #e3e9e7; border-radius: 20px; overflow: hidden; }
+.sync-review-row { display: flex; align-items: center; gap: 8px; border-bottom: 1px solid #e3e9e7; padding: 8px 12px; }
+.sync-review-row:last-child { border: 0; }
+.sync-review-row label { display: grid; place-items: center; min-width: 44px; min-height: 48px; }
+.sync-review-row input { width: 23px; height: 23px; accent-color: #176c75; }
+.sync-review-row button { flex: 1; display: flex; align-items: center; justify-content: space-between; gap: 12px; text-align: left; min-height: 76px; padding: 8px; border: 0; background: none; color: inherit; cursor: pointer; }
+.sync-review-row button > span:first-child { display: flex; flex-direction: column; gap: 5px; }
+.sync-review-row small { color: #637482; }
+.sync-review-footer { position: sticky; bottom: -24px; padding: 20px 0 8px; background: #f8f9f6f5; margin-top: 12px; text-align: center; }
+.sync-review-swipe { height: 66px; background: #142b3b; color: white; touch-action: pan-y; user-select: none; border-radius: 36px; }
+.sync-review-swipe i { top: 5px; width: 56px; height: 56px; background: #f7c948; color: #142b3b; }
+.sync-review-swipe:focus-visible { outline: 3px solid #176c75; outline-offset: 4px; }
+.moment-counter { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+.moment-counter > strong { font-size: 78px; line-height: 1; letter-spacing: -.06em; font-weight: 750; }
+.moment-counter > span { color: #637482; font-size: 18px; }
+.moment-counter > b { background: #f7c948; border-radius: 20px; padding: 8px 14px; font-size: 13px; }
+.moment-scene { display: block; width: 100%; border-radius: 24px; overflow: hidden; }
+.moment-result { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.moment-result > strong { font-size: 32px; font-weight: 750; }
+.moment-result > strong span { color: #637482; }
+.moment-result > small, .moment-result > span { color: #637482; }
+.moment-continue { min-height: 56px; width: 100%; margin-top: 10px; }
+@media (max-width: 420px) { .club-fullscreen-sheet:has(.sync-review-step), .club-fullscreen-sheet:has(.moment-step) { padding-left: 18px; padding-right: 18px; } .moment-step, .sync-review-step { margin-top: 18px; gap: 18px; } }

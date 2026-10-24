@@ -1,25 +1,16 @@
 "use client";
-import { AppParagraph, AppText, typographyStyle } from "@/ui/section";
 import { PortraitField } from "@/features/club/portrait-field";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useReducedMotion } from "motion/react";
 import { playCue } from "@/lib/haptics";
 import { usePathname } from "next/navigation";
 import {
   portraitField,
   portraitFieldGap,
-  arenaBaselineStorageKey,
   arenaFieldHigh,
   fieldDefaultSpan,
   clampCourseCenter,
-  formatArenaOvertakeStatus,
   shellTabFromPath,
-  readArenaBaseline,
-  reconcileArenaOvertake,
   resolveArenaSelectedId,
-  serializeArenaBaseline,
-  stepArenaOvertake,
-  type ArenaOvertakePlan,
   type ArenaSceneLane,
   type ArenaViewWindow,
   type BoardRow,
@@ -54,7 +45,6 @@ export function FieldStage({
 }) {
   const { user } = useAuth();
   const pathname = usePathname();
-  const reduced = useReducedMotion();
   const accountKey = user?.id ?? "guest";
   const [appearance, setAppearance] = useFieldAppearance(
     accountKey,
@@ -119,37 +109,6 @@ export function FieldStage({
   const liveCenterRef = useRef(0);
   const showGhost = true;
   const [selected, setSelected] = useState<string | null>(null);
-  const [overtakePlan, setOvertakePlan] = useState<ArenaOvertakePlan | null>(
-    null,
-  );
-  const [overtakeProgress, setOvertakeProgress] = useState(1);
-  const [replayEpoch, setReplayEpoch] = useState(0);
-  const committedRef = useRef<Record<string, Record<string, number>>>({});
-  const lastSignatureRef = useRef<string | null>(null);
-  const pendingBaselineRef = useRef<{
-    key: string;
-    snapshot: string;
-    scopeKey: string;
-    nextCommitted: Record<string, number>;
-  } | null>(null);
-
-  const persistArenaBaseline = useCallback(
-    (
-      key: string,
-      snapshot: string,
-      scopeKey: string,
-      nextCommitted: Record<string, number>,
-    ) => {
-      committedRef.current[scopeKey] = nextCommitted;
-      try {
-        localStorage.setItem(key, snapshot);
-      } catch {
-        /* Storage optional */
-      }
-    },
-    [],
-  );
-
   const toggleSelect = (id: string) => {
     const runner =
       runners.find((item) => item.id === id) ??
@@ -197,144 +156,9 @@ export function FieldStage({
     [fieldLanes, ghost, showGhost, time],
   );
 
-  useEffect(() => {
-    if (!tabActive) return;
-    const key = arenaBaselineStorageKey(accountKey, model.sport, model.track);
-    const scopeKey = `${key}:${model.periodStart}:${unit}`;
-    const signature = `${scopeKey}|${fieldLanes
-      .map((lane) => `${lane.id}:${lane.value.toFixed(3)}`)
-      .join(",")}`;
-    if (lastSignatureRef.current === signature) return;
-    lastSignatureRef.current = signature;
-
-    let previous: Record<string, number> | null = null;
-    try {
-      previous = readArenaBaseline(
-        localStorage.getItem(key),
-        model.periodStart,
-        unit,
-      );
-    } catch {
-      previous = committedRef.current[scopeKey] ?? null;
-    }
-    const plan = reconcileArenaOvertake(fieldLanes, previous);
-    const snapshot = serializeArenaBaseline(
-      model.periodStart,
-      fieldLanes,
-      unit,
-    );
-    const nextCommitted: Record<string, number> = {};
-    for (const lane of fieldLanes) {
-      nextCommitted[lane.id] = lane.value;
-    }
-    if (pendingBaselineRef.current) {
-      const pending = pendingBaselineRef.current;
-      persistArenaBaseline(
-        pending.key,
-        pending.snapshot,
-        pending.scopeKey,
-        pending.nextCommitted,
-      );
-      pendingBaselineRef.current = null;
-    }
-    if (!plan) {
-      persistArenaBaseline(key, snapshot, scopeKey, nextCommitted);
-      setOvertakePlan(null);
-      setOvertakeProgress(1);
-      return;
-    }
-    const reduced =
-      typeof window !== "undefined" &&
-      typeof window.matchMedia === "function" &&
-      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    if (centerTweenRef.current?.raf) {
-      cancelAnimationFrame(centerTweenRef.current.raf);
-    }
-    centerTweenRef.current = null;
-    setCenterTween(null);
-    setCenter(null);
-    setMode("lanes");
-    setOvertakePlan(plan);
-    if (reduced) {
-      persistArenaBaseline(key, snapshot, scopeKey, nextCommitted);
-      setOvertakeProgress(1);
-      setReplayEpoch(0);
-    } else {
-      pendingBaselineRef.current = {
-        key,
-        snapshot,
-        scopeKey,
-        nextCommitted,
-      };
-      setOvertakeProgress(0);
-      setReplayEpoch((n) => n + 1);
-    }
-  }, [
-    accountKey,
-    fieldLanes,
-    model.periodStart,
-    model.sport,
-    model.track,
-    tabActive,
-    unit,
-    persistArenaBaseline,
-  ]);
-
-  useEffect(() => {
-    if (!overtakePlan || replayEpoch === 0) return;
-    if (reduced) {
-      setOvertakeProgress(1);
-      return;
-    }
-    let raf = 0;
-    const start = performance.now();
-    const duration = overtakePlan.durationMs;
-    const tick = (now: number) => {
-      const next = Math.min(1, (now - start) / duration);
-      setOvertakeProgress(next);
-      if (next >= 1 && pendingBaselineRef.current) {
-        const pending = pendingBaselineRef.current;
-        persistArenaBaseline(
-          pending.key,
-          pending.snapshot,
-          pending.scopeKey,
-          pending.nextCommitted,
-        );
-        pendingBaselineRef.current = null;
-      }
-      if (next < 1) {
-        raf = requestAnimationFrame(tick);
-      }
-    };
-    raf = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(raf);
-  }, [overtakePlan, replayEpoch, reduced, persistArenaBaseline]);
-
-  const overtakeFrame = useMemo(
-    () =>
-      overtakePlan && overtakeProgress < 1
-        ? stepArenaOvertake(overtakePlan, overtakeProgress, span)
-        : null,
-    [overtakePlan, overtakeProgress, span],
-  );
-
-  const overtakeStatus = useMemo(
-    () =>
-      overtakePlan
-        ? formatArenaOvertakeStatus(overtakePlan, overtakeFrame, unit)
-        : null,
-    [overtakeFrame, overtakePlan, unit],
-  );
-
-  const displayTotal = overtakeFrame ? overtakeFrame.youValue : total;
-  const displayPlace =
-    overtakeFrame && you
-      ? overtakeFrame.currentRank
-      : you
-        ? placeAt(runners, you.id, time, 0)
-        : 0;
-
-  const followCenter = overtakeFrame ? overtakeFrame.viewCenter : total;
+  const displayTotal = total;
+  const displayPlace = you ? placeAt(runners, you.id, time, 0) : 0;
+  const followCenter = total;
   const resolvedCenter = clampViewCenter(center ?? followCenter, span);
   const displaySpan =
     centerTween !== null && centerTweenRef.current
@@ -440,7 +264,7 @@ export function FieldStage({
     showGhost,
   );
 
-  if (!you) return <AppParagraph typographyRole="body" className="fb-copy">Join a field to see your lanes.</AppParagraph>;
+  if (!you) return <p className="fb-copy">Join a field to see your lanes.</p>;
 
   return (
     <section
@@ -451,43 +275,18 @@ export function FieldStage({
       {!chromeInHeader ? (
       <div className="focus-arena-total">
         <div>
-          <AppParagraph typographyRole="badgeLabel" className="fb-kicker">Accumulated this week</AppParagraph>
+          <p className="fb-kicker">Accumulated this week</p>
           <strong>
             {displayTotal.toFixed(1)}
-            <AppText as="small" role="caption" secondary>{unit}</AppText>
+            <small>{unit}</small>
           </strong>
         </div>
         <span className="focus-status">
           {displayPlace} / {runners.length}
-          <AppText as="small" role="caption" secondary>your place</AppText>
+          <small>your place</small>
         </span>
       </div>
       ) : null}
-      {!chromeInHeader && overtakePlan && overtakeStatus && (
-        <div
-          className="focus-overtake-banner"
-          role="status"
-          aria-live="polite"
-          style={{
-    ...typographyStyle("supporting"),
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: 10,
-    padding: "8px 12px",
-    marginBottom: 10,
-    borderRadius: 12,
-    background: overtakePlan.hasOvertake ? "#d4ee8940" : overtakePlan.passedByIds?.length ? "#fff3d6" : "#eef3e8",
-    border: `1px solid ${overtakePlan.hasOvertake ? "#9bbf63" : overtakePlan.passedByIds?.length ? "#e6c36a" : "#d7e0cf"}`,
-    color: "#26382d"
-}}
-        >
-          <span>
-            <b>{overtakeStatus.headline}</b>
-            {overtakeStatus.detail ? ` · ${overtakeStatus.detail}` : null}
-          </span>
-        </div>
-      )}
       {!chromeInHeader ? (
       <div className="focus-segments" role="tablist" aria-label="Arena view">
         {(["lanes", "standings", "3d"] as const).map((m) => (
@@ -501,8 +300,6 @@ export function FieldStage({
             }
             onClick={() => {
               void playCue("selection");
-              setReplayEpoch(0);
-              setOvertakeProgress(1);
               const next =
                 m === "3d" ? "3d" : m === "standings" ? "standings" : "lanes2d";
               if (controlledView) onArenaViewChange?.(next);
@@ -522,7 +319,7 @@ export function FieldStage({
         <PortraitField
           lanes={sceneLanes.map((l) => ({
             ...l,
-            value: overtakeFrame?.laneValues[l.id] ?? l.value,
+            value: l.value,
           }))}
           view={view}
           unit={unit}
@@ -590,8 +387,6 @@ export function FieldStage({
                   setSpan(view.span);
                   setCenter(clampViewCenter(v, view.span));
                 }}
-                overtakeFrame={overtakeFrame}
-                overtakePlan={overtakePlan}
               />
               {viewMode === "standings" && ghost && <div className="club-past-self"><span>Past you · unranked</span><strong>{valueAt(ghost, time).toFixed(1)} {unit}</strong></div>}
               {viewMode === "lanes" ? (
@@ -605,7 +400,7 @@ export function FieldStage({
                       padding: "10px 4px 6px",
                     }}
                   >
-                    <span className="fb-note" style={{ ...typographyStyle("caption") }}>
+                    <span className="fb-note" style={{ fontSize: 12 }}>
                       Zoom
                     </span>
                     <input
@@ -630,7 +425,7 @@ export function FieldStage({
                     />
                     <span
                       className="fb-note"
-                      style={{ ...typographyStyle("caption"), minWidth: 44, textAlign: "right" }}
+                      style={{ fontSize: 11, minWidth: 44, textAlign: "right" }}
                     >
                       ±
                       {(view.span / 2).toLocaleString("en-US", {
@@ -645,14 +440,7 @@ export function FieldStage({
 
             <div hidden={viewMode === "standings"}>
               <FieldOverview
-                lanes={
-                  overtakeFrame
-                    ? sceneLanes.map((l) => ({
-                        ...l,
-                        value: overtakeFrame.laneValues[l.id] ?? l.value,
-                      }))
-                    : sceneLanes
-                }
+                lanes={sceneLanes}
                 view={view}
                 unit={unit}
                 onNavigate={(value) =>

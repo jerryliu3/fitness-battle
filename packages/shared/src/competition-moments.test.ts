@@ -35,6 +35,6 @@ it("marks deselected incoming activity excluded before scoring and preserves GPS
   const result = applyDebugEvent(state, "sync-activity", "a");
   const activities = result.state.activities;
   const actions = selectedSyncActions([{ type: "apply-sync", provider: "strava", activities }], []);
-  expect(actions[0].activities?.every(a => a.disposition === "excluded")).toBe(true);
+  expect(actions.find(a => a.type === "apply-sync")?.activities?.every(a => a.disposition === "excluded")).toBe(true);
   expect(selectedSyncActions([{ type: "apply-sync", activities }], activities.map(a => a.id))[0].activities).toEqual(activities);
 });

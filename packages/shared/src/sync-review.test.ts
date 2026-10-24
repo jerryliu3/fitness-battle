@@ -22,7 +22,7 @@ const activity = (
 });
 const today = activity("today", "2026-10-22T12:00:00Z"),
   old = activity("old", "2026-10-20T12:00:00Z");
-it("applies older work immediately and holds only new eligible activity from today", () => {
+it("reviews all newly synced eligible activities, including older imports", () => {
   const state = freshState(now),
     action: Action = {
       type: "apply-sync",
@@ -31,9 +31,9 @@ it("applies older work immediately and holds only new eligible activity from tod
       now: now.toISOString(),
     };
   const plan = planSyncReview(action, state);
-  expect(plan.immediate.syncPresentation).toBe("quiet");
-  expect(plan.immediate.activities?.map((a) => a.id)).toEqual(["old"]);
-  expect(plan.deferred?.activities?.map((a) => a.id)).toEqual(["today"]);
+  expect(plan.immediate.syncPresentation).toBeUndefined();
+  expect(plan.immediate.activities?.map((a) => a.id)).toEqual([]);
+  expect(plan.deferred?.activities?.map((a) => a.id)).toEqual(["old", "today"]);
   const split = reduceCompete(
     reduceCompete(state, plan.immediate),
     plan.deferred!,
@@ -47,7 +47,7 @@ it("does not create a recap backlog or repeat unchanged activities", () => {
     {
       type: "apply-sync",
       provider: "strava",
-      activities: [today, old],
+      activities: [today],
       now: now.toISOString(),
     },
     state,
@@ -88,7 +88,7 @@ it("keeps sample previews distinct and excludes future, other-provider and user-
   expect(preview.deferred).toBeNull();
   expect(preview.activities).toHaveLength(1);
 });
-it("uses Eastern today around midnight instead of the UTC date", () => {
+it("accepts newly synced past activity across Eastern midnight and rejects future instants", () => {
   const at = new Date("2026-10-23T02:00:00Z"),
     state = freshState(at);
   const result = planSyncReview(
@@ -103,7 +103,7 @@ it("uses Eastern today around midnight instead of the UTC date", () => {
     },
     state,
   );
-  expect(result.activities.map((a) => a.id)).toEqual(["same-day"]);
+  expect(result.activities.map((a) => a.id)).toEqual(["same-day", "yesterday"]);
 });
 
 it("normalizes sample generation to one instant for a clearly marked preview", () => {
