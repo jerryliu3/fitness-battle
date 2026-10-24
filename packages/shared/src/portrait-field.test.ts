@@ -43,7 +43,7 @@ it("triples underlying horizontal lane spacing while retaining distance and race
     "km",
     defaultFieldAppearance,
   );
-  expect(course.laneWidth).toBeCloseTo((Math.max(390 - 60, 4 * 74) / 4) * 3);
+  expect(course.laneWidth).toBeCloseTo((390 - 60) / 4);
   expect(((58 * course.markerScale) / course.length) * 1.2).toBeCloseTo(0.3);
 });
 

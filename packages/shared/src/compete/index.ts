@@ -76,6 +76,7 @@ export {
 export {
   RANK_BANDS,
   rankForElo,
+  effortRankBadge,
   rankForEffortScore,
   eloInBand,
   effortScoreInBand,

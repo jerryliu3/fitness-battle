@@ -18,7 +18,7 @@ export function AccountActions() {
   const [sent, setSent] = useState(false);
   const ownerRef = useRef(user?.id);
   ownerRef.current = user?.id;
-  const live = !!user && !offlineMode && user.mode !== "demo";
+  const live = !!user && !offlineMode;
   const mounted = useRef(true);
   useEffect(() => {
     mounted.current = true;

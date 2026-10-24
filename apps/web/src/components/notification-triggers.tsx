@@ -22,7 +22,7 @@ export function NotificationTriggers() {
   const identity = useMemo<SyncIdentity | null>(
     () =>
       user
-        ? { userId: user.id, localOnly: offlineMode || user.mode === "demo" }
+        ? { userId: user.id, localOnly: offlineMode }
         : null,
     [user, offlineMode],
   );

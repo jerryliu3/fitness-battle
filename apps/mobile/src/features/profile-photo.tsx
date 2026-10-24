@@ -58,7 +58,7 @@ export function ProfilePhoto({ state }: { state: CompeteState }) {
         if (bytes.byteLength > 5 * 1024 * 1024)
           throw new Error("Choose a photo smaller than 5 MB.");
         if (!mounted.current || ownerRef.current !== id) return;
-        if (offlineMode || user.mode === "demo") {
+        if (offlineMode) {
           url = `data:image/jpeg;base64,${asset.base64}`;
         } else {
           const path = getCanonicalAvatarObjectPath(id);
@@ -69,7 +69,7 @@ export function ProfilePhoto({ state }: { state: CompeteState }) {
           url = `${supabase.storage.from("avatars").getPublicUrl(path).data.publicUrl}?v=${Date.now()}`;
         }
       }
-      if (remove && !offlineMode && user.mode !== "demo") {
+      if (remove && !offlineMode) {
         const { error: removeError } = await supabase.storage.from("avatars").remove(
           buildAvatarCleanupPathsForProfileChange({
             userId: id,

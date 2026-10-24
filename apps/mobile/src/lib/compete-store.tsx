@@ -211,7 +211,7 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
         }
       }
       if (
-        (authRef.current.user?.dataOrigin === "synthetic" || authRef.current.user?.mode === "demo") &&
+        authRef.current.offlineMode && authRef.current.user?.dataOrigin === "synthetic" &&
         authRef.current.user
       ) {
         const seed = getDemoCompeteState(authRef.current.user.email.split("@")[0]);
@@ -232,8 +232,7 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
       const currentAuth = authRef.current;
       const live =
         !!currentAuth.user &&
-        !currentAuth.offlineMode &&
-        currentAuth.user.mode !== "demo";
+        !currentAuth.offlineMode;
       if (live) {
         try {
           const account = await competeAccount();
@@ -596,8 +595,7 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
           const currentAuth = authRef.current;
           if (
             !currentAuth.user ||
-            currentAuth.offlineMode ||
-            currentAuth.user.mode === "demo"
+            currentAuth.offlineMode
           )
             return;
           if (!loadReady.current) {

@@ -21,7 +21,7 @@ export function DataSyncActions({ provider }: { provider?: ProviderId }) {
   const flight = useRef(false);
   const owner = useRef({ id: user?.id });
   if (owner.current.id !== user?.id) owner.current = { id: user?.id };
-  const live = !!user && !offlineMode && user.mode !== "demo";
+  const live = !!user && !offlineMode;
   const mounted = useRef(true);
   useEffect(() => {
     mounted.current = true;

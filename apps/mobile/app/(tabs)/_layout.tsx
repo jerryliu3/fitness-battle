@@ -7,7 +7,7 @@ import { SHELL_COLORS } from "../../src/theme";
 
 export default function TabLayout() {
   if (Platform.OS === "ios") return <View style={{ flex: 1 }}><AppHeader />
-    <NativeTabs tintColor={SHELL_COLORS.ink} blurEffect="systemUltraThinMaterial" backgroundColor="#ffffff99" disableTransparentOnScrollEdge>
+    <NativeTabs tintColor={SHELL_COLORS.ink} blurEffect="systemUltraThinMaterialLight" backgroundColor="#ffffff" disableTransparentOnScrollEdge>
       <NativeTabs.Trigger name="today"><NativeTabs.Trigger.Icon sf="house" /><NativeTabs.Trigger.Label>Home</NativeTabs.Trigger.Label></NativeTabs.Trigger>
       <NativeTabs.Trigger name="arena"><NativeTabs.Trigger.Icon sf="flag.checkered" /><NativeTabs.Trigger.Label>Compete</NativeTabs.Trigger.Label></NativeTabs.Trigger>
       <NativeTabs.Trigger name="you"><NativeTabs.Trigger.Icon sf="chart.xyaxis.line" /><NativeTabs.Trigger.Label>Progress</NativeTabs.Trigger.Label></NativeTabs.Trigger>

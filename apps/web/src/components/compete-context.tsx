@@ -194,7 +194,7 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
   const [fieldNotice, setFieldNotice] = useState<FieldNotice | null>(null);
   const [standingsStale, setStandingsStale] = useState(false);
   const userIdRef = useRef(userId);
-  const demoRef = useRef(offlineMode || user?.mode === "demo");
+  const offlineRef = useRef(offlineMode);
   const statusRef = useRef<LoadStatus>("loading");
   const stateRef = useRef<CompeteState | null>(null);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -213,7 +213,7 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
   const debugStepRef = useRef(0);
   const preDebugRef = useRef<{ state: CompeteState | null; status: LoadStatus } | null>(null);
   userIdRef.current = userId;
-  demoRef.current = offlineMode || user?.mode === "demo";
+  offlineRef.current = offlineMode;
 
   // Drop prior-account state before children render with the new userId.
   if (!loading && loadedFor !== userId) {
@@ -242,7 +242,7 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
 
   const runSave = useCallback(
     (accountId: string | null, next: CompeteState, generation: number) => {
-      if (!accountId || demoRef.current || debugActiveRef.current || statusRef.current !== "ready" || conflictRef.current) return;
+      if (!accountId || offlineRef.current || debugActiveRef.current || statusRef.current !== "ready" || conflictRef.current) return;
       saveChain.current = saveChain.current.catch(() => {}).then(async () => {
         if (accountId !== userIdRef.current || generation !== dirtyRef.current || conflictRef.current) return;
         try {
@@ -279,7 +279,7 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
 
   const scheduleSave = useCallback(
     (accountId: string | null, next: CompeteState, immediate = false) => {
-      if (!accountId || demoRef.current || statusRef.current !== "ready") return;
+      if (!accountId || offlineRef.current || statusRef.current !== "ready") return;
       if (timer.current) clearTimeout(timer.current);
       const generation = dirtyRef.current;
       if (immediate) {
@@ -315,7 +315,6 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
 
   const userDisplayName = user?.displayName ?? "";
   const userEmail = user?.email ?? "";
-  const userMode = user?.mode;
 
   useEffect(() => {
     if (loading) return;
@@ -326,7 +325,7 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
     queue.current = [];
     const accountId = userId;
     let cancelled = false;
-    const signedIn = Boolean(accountId) && !(offlineMode || userMode === "demo");
+    const signedIn = Boolean(accountId) && !offlineMode;
     const local = readLocal(accountId);
 
     const settle = (chosen: CompeteState, savedAt: string, status: LoadStatus) => {
@@ -399,7 +398,7 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
     return () => {
       cancelled = true;
     };
-  }, [attempt, offlineMode, loading, publish, userId, userDisplayName, userEmail, userMode]);
+  }, [attempt, offlineMode, loading, publish, userId, userDisplayName, userEmail]);
 
   useEffect(() => {
     if (!state || loadStatus === "loading" || loadStatus === "failed") return;
@@ -450,7 +449,7 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
   const refresh = useCallback(async (): Promise<boolean> => {
     if (syncReviewBlocked.current) return false;
     const accountId = userIdRef.current;
-    if (!accountId || demoRef.current || debugActiveRef.current || statusRef.current !== "ready") return true;
+    if (!accountId || offlineRef.current || debugActiveRef.current || statusRef.current !== "ready") return true;
     if (refreshFlight.current) return refreshFlight.current;
     const generation = dirtyRef.current;
     const task = (async () => {
@@ -502,7 +501,7 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
   }, [publish]);
 
   useEffect(() => {
-    if (loading || !userId || offlineMode || user?.mode === "demo") return;
+    if (loading || !userId || offlineMode) return;
     const kick = () => {
       if (document.visibilityState === "hidden") return;
       void refresh();
@@ -513,7 +512,7 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
       document.removeEventListener("visibilitychange", kick);
       window.removeEventListener("online", kick);
     };
-  }, [offlineMode, loading, refresh, user?.mode, userId]);
+  }, [offlineMode, loading, refresh, userId]);
 
   const dismissFieldNotice = useCallback(() => {
     const accountKey = userIdRef.current ?? "guest";
