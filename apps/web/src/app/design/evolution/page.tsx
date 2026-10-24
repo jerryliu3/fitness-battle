@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
-import { Manrope, Nunito_Sans, Space_Grotesk } from "next/font/google";
+import localFont from "next/font/local";
 import { EvolutionLab } from "@/app/design/_studies/evolution-lab/evolution-lab";
 
-const formType = Space_Grotesk({ subsets: ["latin"], variable: "--font-form" });
-const evenType = Nunito_Sans({ subsets: ["latin"], variable: "--font-even" });
-const currentType = Manrope({ subsets: ["latin"], variable: "--font-current" });
+const formType = localFont({ src: "../../fonts/spacegrotesk/SpaceGrotesk[wght].woff2", weight: "300 700",  variable: "--font-form" });
+const evenType = localFont({ src: "../../fonts/nunitosans/NunitoSans[YTLC,opsz,wdth,wght].woff2", weight: "200 900",  variable: "--font-even" });
+const currentType = localFont({ src: "../../fonts/manrope/Manrope[wght].woff2", weight: "200 800",  variable: "--font-current" });
 
 export const metadata: Metadata = {
   title: "Beyond Bounce · Design lab",

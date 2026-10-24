@@ -56,3 +56,9 @@ Avoid changing all cards at once. Prioritize records/achievement detail and long
 `pnpm typecheck` passed. `pnpm test` passed 753 tests (5 existing skips): rankings 16, shared 352, pursuit 2, native 112 and web 271. Added coverage includes Eastern/DST streak boundaries, default five-lane geometry, synthetic account load/save and tracker eligibility, Members stack navigation, picker cancellation/decimal/time commits and idle wake-clock cleanup. Browser inspection also confirmed Active Sports icons and off-state contrast.
 
 The final source was exported again to an iOS Hermes bundle successfully after the chart changes. A booted iPhone simulator exists, but the computer-use surface could not access Simulator; no native visual pass is claimed.
+
+## PR-stack follow-up
+
+Rebased onto `origin/main` at `acfda40`, preserving the merged field-header controls, Progress detail routes, activity sport icons and Crew settings simplification. Each cleanup PR boundary passed `pnpm typecheck` and `pnpm test`: foundations 755 tests; fields/Crew 756; Home/Athlete 756, all with the same 5 existing skips.
+
+The Google Fonts build failure is addressed by vendoring the existing families and licenses and using `next/font/local` for both product and study routes. Assets are compressed to WOFF2 without changing CSS variable names. The normal production build is rerun without mocked font responses or network exemptions.

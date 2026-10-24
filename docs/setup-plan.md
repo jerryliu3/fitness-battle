@@ -92,3 +92,7 @@ Backend configuration now determines offline preview mode; the legacy demo-data 
 The October 23 follow-up adds Expo-supported `@react-native-community/datetimepicker` and `@react-native-picker/picker`. Expo Go must match this checkout's SDK; standalone apps need a new binary for native dependencies and the light appearance configuration. The current native portrait renderer is SVG and does not depend on `/arena-scene`.
 
 Apply `20261023154755_crew_member_effort_scores.sql` for Crew level badges. Without it, the roster remains readable and unknown peer badges stay hidden. Run `supabase/tests/crew-member-effort-scores.sql` in a disposable migrated database before rollout. This pass does not apply production migrations or verify the installed device bundle.
+
+### Offline web font builds
+
+Web product and design-study fonts are checked in under `apps/web/src/app/fonts/` with their upstream OFL licenses. Routes use `next/font/local`; ordinary production builds no longer require Google Fonts DNS, CSS or font downloads. WOFF2 assets preserve the existing font families, weights and CSS variables. Update fonts from the official Google Fonts repository and keep the license files together; see the font directory README.

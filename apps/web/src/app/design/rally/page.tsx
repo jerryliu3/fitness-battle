@@ -1,14 +1,12 @@
 import type { Metadata } from "next";
-import { Archivo_Black, Bangers } from "next/font/google";
+import localFont from "next/font/local";
 import { RallyFocus } from "@/app/design/_studies/rally-lab/rally-focus";
 
-const rallyType = Archivo_Black({
-  subsets: ["latin"],
+const rallyType = localFont({ src: "../../fonts/archivoblack/ArchivoBlack-Regular.woff2",
   weight: "400",
   variable: "--font-rf-display",
 });
-const comicType = Bangers({
-  subsets: ["latin"],
+const comicType = localFont({ src: "../../fonts/bangers/Bangers-Regular.woff2",
   weight: "400",
   variable: "--font-rf-comic",
 });

@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
-import { Nunito_Sans } from "next/font/google";
+import localFont from "next/font/local";
 import { Ember2DPrototype } from "@/app/design/_studies/ember-2d/prototype";
 
-const type = Nunito_Sans({ subsets: ["latin"], weight: "900", variable: "--font-overtaek" });
+const type = localFont({ src: "../../../fonts/nunitosans/NunitoSans[YTLC,opsz,wdth,wght].woff2",  weight: "900", variable: "--font-overtaek" });
 export const metadata: Metadata = {
   title: "Overtaek · 2D Ember studies",
   description: "Three fully 2D mascot concepts with the Overtaek overtaking animation.",

@@ -1,27 +1,17 @@
 import type { Metadata } from "next";
-import {
-  Barlow_Condensed,
-  Fraunces,
-  IBM_Plex_Mono,
-  Syne,
-} from "next/font/google";
+import localFont from "next/font/local";
 import { BrandGallery } from "@/app/design/_studies/brand-lab/brand-gallery";
 import { parseSelection } from "@/app/design/_studies/brand-lab/catalog";
 
-const condensed = Barlow_Condensed({
-  subsets: ["latin"],
-  weight: ["600", "700", "800"],
+const condensed = localFont({ src: [{ path: "../../fonts/barlowcondensed/BarlowCondensed-Bold.woff2", weight: "700", style: "normal" }, { path: "../../fonts/barlowcondensed/BarlowCondensed-ExtraBold.woff2", weight: "800", style: "normal" }, { path: "../../fonts/barlowcondensed/BarlowCondensed-SemiBold.woff2", weight: "600", style: "normal" }],
   variable: "--font-brand-condensed",
 });
-const serif = Fraunces({ subsets: ["latin"], variable: "--font-brand-serif" });
-const mono = IBM_Plex_Mono({
-  subsets: ["latin"],
-  weight: ["400", "500"],
+const serif = localFont({ src: "../../fonts/fraunces/Fraunces[SOFT,WONK,opsz,wght].woff2", weight: "100 900",  variable: "--font-brand-serif" });
+const mono = localFont({ src: [{ path: "../../fonts/ibmplexmono/IBMPlexMono-Medium.woff2", weight: "500", style: "normal" }, { path: "../../fonts/ibmplexmono/IBMPlexMono-Regular.woff2", weight: "400", style: "normal" }],
   variable: "--font-brand-mono",
 });
-const expressive = Syne({
-  subsets: ["latin"],
-  weight: ["700", "800"],
+const expressive = localFont({ src: "../../fonts/syne/Syne[wght].woff2",
+  weight: "700 800",
   variable: "--font-brand-expressive",
 });
 export const metadata: Metadata = {
