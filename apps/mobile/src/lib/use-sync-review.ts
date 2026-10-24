@@ -11,6 +11,8 @@ import {
   dayKey,
   changedTodaySync,
   planSyncReview,
+  reduceCompete,
+  selectedSyncActions,
   type Action,
   type CompeteState,
   type SportId,
@@ -22,9 +24,10 @@ export function useSyncReviewGate(
   state: CompeteState | null,
   account: string | null,
   blocked: MutableRefObject<boolean>,
+  onApply?: (next: CompeteState, quiet?: boolean) => void,
 ) {
-  const current = useRef({ raw, state, account });
-  current.current = { raw, state, account };
+  const current = useRef({ raw, state, account, onApply });
+  current.current = { raw, state, account, onApply };
   const owner = useRef(account),
     batch = useRef(0),
     pending = useRef<{ receipt: SyncReviewReceipt; actions: Action[] } | null>(
@@ -40,13 +43,16 @@ export function useSyncReviewGate(
   useEffect(() => {
     setReceipt(null);
   }, [account]);
-  const finish = useCallback(() => {
+  const finish = useCallback((selected?: readonly string[], quiet = false) => {
     const value = pending.current;
     pending.current = null;
     blocked.current = false;
     setReceipt(null);
     if (!value || value.receipt.account !== current.current.account) return;
-    value.actions.forEach((a) => current.current.raw(a));
+    const actions = selected ? selectedSyncActions(value.actions, selected) : value.actions;
+    const before = current.current.state;
+    if (before) current.current.onApply?.(actions.reduce(reduceCompete, before), quiet);
+    actions.forEach((a) => current.current.raw(a));
     return value.receipt.preview
       ? undefined
       : (value.receipt.activities.find((a) =>
@@ -62,7 +68,7 @@ export function useSyncReviewGate(
       current.current.state &&
       value.receipt.day !== dayKey(competeNow(current.current.state))
     )
-      finish();
+      finish(undefined, true);
   }, [finish]);
   useEffect(() => {
     if (!receipt) return;
@@ -84,6 +90,7 @@ export function useSyncReviewGate(
         return;
       }
       const plan = planSyncReview(action, c.state);
+      c.onApply?.(reduceCompete(c.state, plan.immediate), plan.immediate.syncPresentation === "quiet" || plan.preview);
       c.raw(plan.immediate);
       if (!plan.activities.length) return;
       const previous = pending.current;
@@ -147,5 +154,6 @@ export function useSyncReviewGate(
     begin,
     end,
     flushExpired,
+    reset: () => { pending.current = null; blocked.current = false; batch.current = 0; setReceipt(null); },
   };
 }
