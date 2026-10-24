@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Children, Fragment, useId, type ReactNode, type CSSProperties, createElement, type HTMLAttributes } from "react";
+import { Children, Fragment, useId, type ReactNode, type ReactElement, type CSSProperties, createElement, type HTMLAttributes } from "react";
 import { SHELL_TYPOGRAPHY, type TypographyRole } from "@fitness-battle/shared";
 import "./section.css";
 
@@ -15,10 +15,10 @@ export function typographyStyle(role: TypographyRole): CSSProperties {
   const token = SHELL_TYPOGRAPHY[role];
   return { fontFamily: 'var(--font-body), "DM Sans", sans-serif', fontSize: `${token.size / 16}rem`, lineHeight: `${token.lineHeight / 16}rem`, fontWeight: token.weight, letterSpacing: "normal" };
 }
-export function AppHeading({ role = "sectionTitle", level = 2, style, ...props }: Omit<HTMLAttributes<HTMLHeadingElement>, "role"> & { role?: TypographyRole; level?: 1 | 2 | 3 | 4 | 5 | 6 }) {
+export function AppHeading({ role = "sectionTitle", level = 2, style, ...props }: Omit<HTMLAttributes<HTMLHeadingElement>, "role"> & { role?: TypographyRole; level?: 1 | 2 | 3 | 4 | 5 | 6 }): ReactElement {
   return createElement(`h${level}`, { ...props, style: { ...typographyStyle(role), ...style } });
 }
-export function AppText({ role = "body", secondary = false, as = "span", style, className = "", ...props }: Omit<HTMLAttributes<HTMLElement>, "role"> & { role?: TypographyRole; secondary?: boolean; as?: "span" | "small" }) {
+export function AppText({ role = "body", secondary = false, as = "span", style, className = "", ...props }: Omit<HTMLAttributes<HTMLElement>, "role"> & { role?: TypographyRole; secondary?: boolean; as?: "span" | "small" }): ReactElement {
   return createElement(as, { ...props, style: { ...typographyStyle(role), ...style }, className: `ui-text${secondary ? " ui-text-secondary" : ""} ${className}` });
 }
 export function AppParagraph({ typographyRole = "body", style, ...props }: HTMLAttributes<HTMLParagraphElement> & { typographyRole?: TypographyRole }) {
