@@ -1,21 +1,24 @@
 import { ChartScrubber } from "../ui/chart-scrubber";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import {
   APP_TIMEZONE,
-  trainingComparison,
+  clampTrainingAnchor,
   clubDuration,
-  formatWeeklyCompetitionRange,
-  weeklyPeriodBounds,
-  SPORTS,
   competeNow,
   dayKey,
+  earliestDataDate,
   formatTrainingHours,
+  formatWeeklyCompetitionRange,
   shiftAppDay,
   shiftTrainingMonth,
   sportById,
+  SPORTS,
   trainingAtlas,
   trainingBuckets,
+  trainingComparison,
+  trainingRangeNavigation,
+  weeklyPeriodBounds,
   type CompeteState,
   type SportId,
   type TrainingRange,
@@ -56,25 +59,24 @@ export function TrainingAtlas({ state }: { state: CompeteState }) {
     cells.find((d) => d.day === selectedDay) ??
     cells.find((d) => d.day === dayKey(now)) ??
     cells.find((d) => d.inMonth && !d.future);
+  const earliest = useMemo(() => earliestDataDate(state, now), [state, now]);
+  const { prevAllowed, nextAllowed } = trainingRangeNavigation(
+    anchor,
+    earliest,
+    now,
+    range,
+  );
   const move = (n: number) => {
-    setAnchor(
+    if (n < 0 && !prevAllowed) return;
+    if (n > 0 && !nextAllowed) return;
+    const target =
       range === "week"
         ? shiftAppDay(anchor, n * 7)
-        : shiftTrainingMonth(anchor, n * (range === "year" ? 12 : 1)),
-    );
+        : shiftTrainingMonth(anchor, n * (range === "year" ? 12 : 1));
+    setAnchor(clampTrainingAnchor(target, earliest, now, range));
     setSelected(null);
     setSelectedDay(null);
   };
-  const next =
-    range === "week"
-      ? shiftAppDay(anchor, 7)
-      : shiftTrainingMonth(anchor, range === "year" ? 12 : 1);
-  const nextAllowed =
-    range === "year"
-      ? dayKey(next).slice(0, 4) <= dayKey(now).slice(0, 4)
-      : range === "month"
-        ? dayKey(next).slice(0, 7) <= dayKey(now).slice(0, 7)
-        : weeklyPeriodBounds(next).startsAt <= now;
   return (
     <View style={f.section}>
       <Text style={f.h2}>Your training</Text>
@@ -106,6 +108,7 @@ export function TrainingAtlas({ state }: { state: CompeteState }) {
         ]}
         onChange={(r) => {
           setRange(r);
+          setAnchor((current) => clampTrainingAnchor(current, earliest, now, r));
           setSelected(null);
         }}
       />
@@ -114,9 +117,13 @@ export function TrainingAtlas({ state }: { state: CompeteState }) {
           style={s.arrow}
           accessibilityRole="button"
           accessibilityLabel={`Previous ${range}`}
+          accessibilityState={{ disabled: !prevAllowed }}
+          disabled={!prevAllowed}
           onPress={() => move(-1)}
         >
-          <Text style={f.rowTitle}>←</Text>
+          <Text style={[f.rowTitle, { opacity: prevAllowed ? 1 : 0.3 }]}>
+            ←
+          </Text>
         </Pressable>
         <Text style={f.rowTitle}>
           {range === "week"
@@ -132,6 +139,7 @@ export function TrainingAtlas({ state }: { state: CompeteState }) {
           style={s.arrow}
           accessibilityRole="button"
           accessibilityLabel={`Next ${range}`}
+          accessibilityState={{ disabled: !nextAllowed }}
           disabled={!nextAllowed}
           onPress={() => move(1)}
         >

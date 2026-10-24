@@ -47,6 +47,97 @@ export function trainingAtlas(activities: Activity[], sport: SportId | "all", an
 }
 export function formatTrainingHours(seconds:number):string { return (Math.max(0,seconds)/3600).toLocaleString("en-US",{maximumFractionDigits:2}); }
 
+/**
+ * Earliest recorded activity, settled period result, or durable personal record attempt.
+ * When no historical data is recorded, returns `null`.
+ */
+export function earliestDataDate(state: CompeteState, now = competeNow(state)): Date | null {
+  let min: number | undefined;
+
+  for (const a of state.activities) {
+    if (countsOnTrack(a, "open")) {
+      const t = Date.parse(a.startedAt);
+      if (Number.isFinite(t) && t <= now.getTime()) {
+        if (min === undefined || t < min) min = t;
+      }
+    }
+  }
+  for (const r of state.periodResults) {
+    const t = Date.parse(r.periodStart);
+    if (Number.isFinite(t) && t <= now.getTime()) {
+      if (min === undefined || t < min) min = t;
+    }
+  }
+  for (const a of state.recordAttempts ?? []) {
+    const t = Date.parse(a.startedAt);
+    if (Number.isFinite(t) && t <= now.getTime()) {
+      if (min === undefined || t < min) min = t;
+    }
+  }
+
+  return min !== undefined ? new Date(min) : null;
+}
+
+export function trainingRangeNavigation(
+  anchor: Date,
+  earliest: Date | null,
+  now: Date,
+  range: TrainingRange,
+): { prevAllowed: boolean; nextAllowed: boolean } {
+  const nextAllowed =
+    range === "year"
+      ? dayKey(anchor).slice(0, 4) < dayKey(now).slice(0, 4)
+      : range === "month"
+        ? dayKey(anchor).slice(0, 7) < dayKey(now).slice(0, 7)
+        : weeklyPeriodBounds(anchor).startsAt.getTime() <
+          weeklyPeriodBounds(now).startsAt.getTime();
+
+  if (!earliest) {
+    return { prevAllowed: false, nextAllowed };
+  }
+
+  const prevAllowed =
+    range === "year"
+      ? dayKey(anchor).slice(0, 4) > dayKey(earliest).slice(0, 4)
+      : range === "month"
+        ? dayKey(anchor).slice(0, 7) > dayKey(earliest).slice(0, 7)
+        : weeklyPeriodBounds(anchor).startsAt.getTime() >
+          weeklyPeriodBounds(earliest).startsAt.getTime();
+
+  return { prevAllowed, nextAllowed };
+}
+
+export function clampTrainingAnchor(
+  anchor: Date,
+  earliest: Date | null,
+  now: Date,
+  range: TrainingRange,
+): Date {
+  const lowerBound = earliest ?? now;
+  if (range === "year") {
+    const anchorYear = dayKey(anchor).slice(0, 4);
+    const earliestYear = dayKey(lowerBound).slice(0, 4);
+    const nowYear = dayKey(now).slice(0, 4);
+    if (anchorYear < earliestYear) return lowerBound;
+    if (anchorYear > nowYear) return now;
+    return anchor;
+  }
+  if (range === "month") {
+    const anchorMonth = dayKey(anchor).slice(0, 7);
+    const earliestMonth = dayKey(lowerBound).slice(0, 7);
+    const nowMonth = dayKey(now).slice(0, 7);
+    if (anchorMonth < earliestMonth) return lowerBound;
+    if (anchorMonth > nowMonth) return now;
+    return anchor;
+  }
+  const anchorWeek = weeklyPeriodBounds(anchor).startsAt.getTime();
+  const earliestWeek = weeklyPeriodBounds(lowerBound).startsAt.getTime();
+  const nowWeek = weeklyPeriodBounds(now).startsAt.getTime();
+  if (anchorWeek < earliestWeek) return lowerBound;
+  if (anchorWeek > nowWeek) return now;
+  return anchor;
+}
+
 /** Presentation of the existing +1 receipt rule; high-water awards are never reassigned to a particular session. */
 export function effortPointProgress(state: CompeteState, sport: SportId = state.primary, track: ScoreTrack = "open", now=competeNow(state)) {
   const rating=state.ratings.find(r=>r.sport===sport), enrollment=state.enrollments.find(e=>e.sport===sport);

@@ -1,5 +1,6 @@
 import { competeNow, ELO_UNRANKED, type CompeteState } from "./compete";
 import { APP_TIMEZONE, dayKey } from "./timezone";
+import { earliestDataDate } from "./training-view";
 
 /** Shared presentation model for the 30-day Open / GPS effort history. */
 export function effortHistory(
@@ -28,22 +29,17 @@ export function effortHistory(
   const isGuest = (!user && !email) || state.name === "Guest";
   const effectiveElo = currentElo <= 0 ? ELO_UNRANKED : currentElo;
 
-  // Determine user's start anchor date (account creation or earliest activity/period)
+  // Determine user's start anchor date (earliest data or fallback to creation date)
   let earliestDate: Date;
   if (isGuest) {
     earliestDate = calendarToday;
   } else {
+    const dataDate = earliestDataDate(state, today);
     const candidateTimestamps: number[] = [];
-    if (user?.createdAt) {
+    if (dataDate) {
+      candidateTimestamps.push(dataDate.getTime());
+    } else if (user?.createdAt) {
       candidateTimestamps.push(new Date(user.createdAt).getTime());
-    }
-    if (history.length > 0) {
-      candidateTimestamps.push(new Date(history[0].periodStart).getTime());
-    }
-    if (state.activities.length > 0) {
-      candidateTimestamps.push(
-        ...state.activities.map((a) => new Date(a.startedAt).getTime()),
-      );
     }
     const valid = candidateTimestamps.filter(
       (value) => Number.isFinite(value) && value <= today.getTime(),

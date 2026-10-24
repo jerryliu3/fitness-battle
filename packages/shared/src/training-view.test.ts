@@ -1,7 +1,16 @@
 import { describe, expect, it } from "vitest";
 import { freshState, reduceCompete } from "./compete/engine";
 import { dayKey } from "./period";
-import { effortPointProgress, sessionStageModel, trainingAtlas, trainingBuckets, trainingComparison } from "./training-view";
+import {
+  clampTrainingAnchor,
+  earliestDataDate,
+  effortPointProgress,
+  sessionStageModel,
+  trainingAtlas,
+  trainingBuckets,
+  trainingComparison,
+  trainingRangeNavigation,
+} from "./training-view";
 import type { Activity } from "./compete/sports";
 const activity=(id:string,startedAt:string,extra:Partial<Activity>={}):Activity=>({id,startedAt,sport:"running",distanceM:1609.344,movingSec:1800,avgHr:null,source:"strava",verified:true,provenance:"recorded",disposition:"counted",...extra});
 describe("training calendar presentation",()=>{
@@ -66,4 +75,80 @@ it("compares actual eligible hours and keeps the selected sport and prior timefr
  const comparison=trainingComparison(rows,"running","week",now,now);
  expect(comparison.total).toBe(3600);expect(comparison.prior).toBe(1800);expect(comparison.percent).toBe(100);expect(comparison.label).toBe("↑ 100% vs all of previous week");
  expect(trainingComparison(rows,"cycling","week",now,now).percent).toBeNull();
+});
+
+describe("training date boundaries & navigation limiting", () => {
+  const now = new Date("2026-10-23T16:00:00Z");
+
+  it("defaults earliestDataDate to null when no activities exist", () => {
+    const state = freshState(now);
+    expect(earliestDataDate(state, now)).toBeNull();
+  });
+
+  it("identifies earliestDataDate from activities, settled weeks, or record attempts without account creation date", () => {
+    const state = freshState(now);
+    state.activities = [
+      activity("recent", "2026-10-20T12:00:00Z"),
+      activity("old", "2025-06-14T08:00:00Z"),
+      activity("uncounted", "2024-01-01T00:00:00Z", { disposition: "excluded" }),
+    ];
+    expect(earliestDataDate(state, now)?.toISOString()).toBe("2025-06-14T08:00:00.000Z");
+
+    // Settled period result older than activities
+    state.periodResults = [{
+      id: "old-week",
+      periodStart: "2025-01-06T05:00:00Z",
+      periodEnd: "2025-01-13T05:00:00Z",
+      sport: "running",
+      track: "open",
+      place: 1,
+      fieldSize: 5,
+      effort: 10,
+      distanceM: 5000,
+      movingSec: 1800,
+      eloBefore: 1000,
+      eloAfter: 1020,
+      frozen: false,
+      settledAt: "2025-01-13T05:00:00Z",
+    }];
+    expect(earliestDataDate(state, now)?.toISOString()).toBe("2025-01-06T05:00:00.000Z");
+  });
+
+  it("limits navigation arrows at the boundaries of earliest data and now", () => {
+    const earliest = new Date("2026-08-10T12:00:00Z"); // August 10, 2026
+
+    // Year range: both anchor and earliest are 2026 -> prev not allowed, next not allowed
+    const yearNav = trainingRangeNavigation(now, earliest, now, "year");
+    expect(yearNav.prevAllowed).toBe(false);
+    expect(yearNav.nextAllowed).toBe(false);
+
+    // Month range: October 2026 vs August 2026
+    const monthNavAtNow = trainingRangeNavigation(now, earliest, now, "month");
+    expect(monthNavAtNow.prevAllowed).toBe(true);
+    expect(monthNavAtNow.nextAllowed).toBe(false);
+
+    const monthNavAtEarliest = trainingRangeNavigation(earliest, earliest, now, "month");
+    expect(monthNavAtEarliest.prevAllowed).toBe(false);
+    expect(monthNavAtEarliest.nextAllowed).toBe(true);
+
+    // Week range: week of Oct 19 vs week of Aug 10
+    const weekNavAtNow = trainingRangeNavigation(now, earliest, now, "week");
+    expect(weekNavAtNow.prevAllowed).toBe(true);
+    expect(weekNavAtNow.nextAllowed).toBe(false);
+
+    const weekNavAtEarliest = trainingRangeNavigation(earliest, earliest, now, "week");
+    expect(weekNavAtEarliest.prevAllowed).toBe(false);
+    expect(weekNavAtEarliest.nextAllowed).toBe(true);
+  });
+
+  it("clamps anchors into the valid [earliest, now] range", () => {
+    const earliest = new Date("2026-08-10T12:00:00Z");
+    const wayPast = new Date("2024-01-01T00:00:00Z");
+    const wayFuture = new Date("2028-01-01T00:00:00Z");
+
+    expect(clampTrainingAnchor(wayPast, earliest, now, "month")).toBe(earliest);
+    expect(clampTrainingAnchor(wayFuture, earliest, now, "month")).toBe(now);
+    expect(clampTrainingAnchor(wayPast, earliest, now, "year")).toBe(earliest);
+    expect(clampTrainingAnchor(wayPast, earliest, now, "week")).toBe(earliest);
+  });
 });
