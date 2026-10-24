@@ -13,6 +13,7 @@ export const webEnv = {
   useDemoData:
     (process.env.NEXT_PUBLIC_USE_DEMO_DATA ?? "false").toLowerCase() === "true",
   appUrl: process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000",
+  mapboxAccessToken: process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN ?? "",
 };
 
 /** Server-only secrets. Import only from Route Handlers / server modules. */
