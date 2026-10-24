@@ -30,6 +30,10 @@ export function activityFromSample(
   const recorded = !isDemo && provenance === "recorded";
   return {
     id: sample.id,
+    summaryPolyline: sample.summaryPolyline,
+    detailedPolyline: sample.detailedPolyline,
+    elevationGainM: sample.elevationGainM,
+    routeBounds: sample.routeBounds,
     sport: sample.categorySlug,
     startedAt: sample.startedAt,
     distanceM,

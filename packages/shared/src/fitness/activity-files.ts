@@ -1,4 +1,5 @@
 import type { ActivitySample, CategorySlug, FitnessProviderId } from "../types";
+import { calculateRouteBounds, encodePolyline, simplifyCoordinates, type LngLat } from "../routeGeoUtils";
 import { mapSportToCategory } from "./strava-provider";
 
 const FIT_EPOCH_MS = Date.UTC(1989, 11, 31);
@@ -24,6 +25,28 @@ interface TrackPoint {
   lat: number;
   lon: number;
   time?: string;
+  elevation?: number;
+}
+
+function routeMetadata(points: TrackPoint[]): Partial<ActivitySample> {
+  const valid = points.filter(p => Number.isFinite(p.lat) && Number.isFinite(p.lon) && Math.abs(p.lat) <= 90 && Math.abs(p.lon) <= 180);
+  if (valid.length < 2) return {};
+  const coordinates: LngLat[] = valid.map(p => [p.lon, p.lat]);
+  let elevationGainM = 0;
+  let hasElevation = false;
+  for (let i = 1; i < valid.length; i++) {
+    const before = valid[i - 1].elevation, after = valid[i].elevation;
+    if (before != null && after != null && Number.isFinite(before) && Number.isFinite(after)) {
+      hasElevation = true;
+      elevationGainM += Math.max(0, after - before);
+    }
+  }
+  return {
+    detailedPolyline: encodePolyline(coordinates),
+    summaryPolyline: encodePolyline(simplifyCoordinates(coordinates, { tolerance: 0.00003, highQuality: true })),
+    routeBounds: calculateRouteBounds(coordinates),
+    elevationGainM: hasElevation ? Math.round(elevationGainM) : null,
+  };
 }
 
 function summarizeTrack(
@@ -32,6 +55,7 @@ function summarizeTrack(
   name: string,
   provider: FitnessProviderId,
 ): ActivitySample | null {
+  points = points.filter(p => Number.isFinite(p.lat) && Number.isFinite(p.lon) && Math.abs(p.lat) <= 90 && Math.abs(p.lon) <= 180);
   if (points.length < 2) return null;
   let distance = 0;
   for (let i = 1; i < points.length; i += 1) {
@@ -46,10 +70,10 @@ function summarizeTrack(
   const movingSec = times.length
     ? Math.max(1, Math.round((Math.max(...times) - Math.min(...times)) / 1000))
     : 0;
-  const externalId = `${started.toISOString()}:${Math.round(distance)}:${movingSec}`;
+  const externalId = `file-${started.toISOString()}:${Math.round(distance)}:${movingSec}`;
   const gps = sport !== "strength";
   return {
-    id: `${provider}-file-${externalId}`,
+    id: `${provider}-${externalId}`,
     provider,
     externalId,
     categorySlug: sport,
@@ -58,6 +82,7 @@ function summarizeTrack(
     movingSec,
     avgHr: null,
     rawName: name,
+    ...(gps ? routeMetadata(points) : {}),
   };
 }
 
@@ -84,17 +109,18 @@ export function parseGpx(xml: string, provider: FitnessProviderId): ActivitySamp
     const type = tagText(chunk, "type") ?? name;
     const sport = mapSportToCategory(type) ?? "running";
     const points: TrackPoint[] = [];
-    const pattern = /<trkpt\b([^>]*)>([\s\S]*?)<\/trkpt>/gi;
+    const pattern = /<trkpt\b([^>]*?)(?:\/\s*>|>([\s\S]*?)<\/trkpt>)/gi;
     let match: RegExpExecArray | null;
     while ((match = pattern.exec(chunk))) {
       const attrs = match[1] ?? "";
-      const lat = /lat="([^"]+)"/i.exec(attrs)?.[1];
-      const lon = /lon="([^"]+)"/i.exec(attrs)?.[1];
+      const lat = /lat=["']([^"']+)["']/i.exec(attrs)?.[1];
+      const lon = /lon=["']([^"']+)["']/i.exec(attrs)?.[1];
       if (!lat || !lon) continue;
       points.push({
         lat: Number(lat),
         lon: Number(lon),
         time: tagText(match[2] ?? "", "time") ?? undefined,
+        elevation: tagText(match[2] ?? "", "ele") == null ? undefined : Number(tagText(match[2] ?? "", "ele")),
       });
     }
     const sample = summarizeTrack(points, sport, name, provider);
@@ -125,10 +151,14 @@ export function parseTcx(xml: string, provider: FitnessProviderId): ActivitySamp
     if (Number.isNaN(start.getTime())) continue;
     const movingSec = Math.max(0, Math.round(lapSeconds));
     const distance = Math.max(0, Math.round(lapDistance));
-    const externalId = `${start.toISOString()}:${distance}:${movingSec}`;
+    const externalId = `file-${start.toISOString()}:${distance}:${movingSec}`;
     const gps = sport !== "strength";
+    const points: TrackPoint[] = [...block.matchAll(/<Trackpoint\b[^>]*>([\s\S]*?)<\/Trackpoint>/gi)].flatMap(match => {
+      const lat = tagText(match[1], "LatitudeDegrees"), lon = tagText(match[1], "LongitudeDegrees");
+      return lat == null || lon == null ? [] : [{ lat: Number(lat), lon: Number(lon), time: tagText(match[1], "Time") ?? undefined, elevation: tagText(match[1], "AltitudeMeters") == null ? undefined : Number(tagText(match[1], "AltitudeMeters")) }];
+    });
     activities.push({
-      id: `${provider}-file-${externalId}`,
+      id: `${provider}-${externalId}`,
       provider,
       externalId,
       categorySlug: sport,
@@ -137,6 +167,7 @@ export function parseTcx(xml: string, provider: FitnessProviderId): ActivitySamp
       movingSec,
       avgHr,
       rawName: sportAttr || sport,
+      ...(gps ? routeMetadata(points) : {}),
     });
   }
   return activities;
@@ -164,6 +195,7 @@ interface FitSession {
   timer?: number;
   distance?: number;
   hr?: number;
+  end?: number;
 }
 
 /** Parse session messages from a FIT activity file. */
@@ -182,22 +214,16 @@ export function parseFit(bytes: Uint8Array, provider: FitnessProviderId): Activi
     { little: boolean; global: number; fields: { num: number; size: number }[]; devSize: number }
   >();
   const sessions: FitSession[] = [];
+  const records: TrackPoint[] = [];
+  let lastTimestamp: number | undefined;
 
   while (offset < end) {
     const header = bytes[offset];
     if (header == null) break;
     offset += 1;
-    if ((header & 0x80) !== 0) {
-      const local = (header >> 5) & 0x03;
-      const definition = definitions.get(local);
-      if (!definition) break;
-      const size =
-        definition.fields.reduce((sum, field) => sum + field.size, 0) + definition.devSize;
-      offset += size;
-      continue;
-    }
-    const local = header & 0x0f;
-    if ((header & 0x40) !== 0) {
+    const compressed = (header & 0x80) !== 0;
+    const local = compressed ? (header >> 5) & 0x03 : header & 0x0f;
+    if (!compressed && (header & 0x40) !== 0) {
       if (offset + 5 > end) break;
       offset += 1;
       const little = bytes[offset] === 0;
@@ -228,13 +254,29 @@ export function parseFit(bytes: Uint8Array, provider: FitnessProviderId): Activi
     const definition = definitions.get(local);
     if (!definition) break;
     const session: FitSession = {};
+    const record: { lat?: number; lon?: number; elevation?: number; timestamp?: number } = {};
+    if (compressed && lastTimestamp != null) {
+      const timeOffset = header & 0x1f;
+      record.timestamp = (lastTimestamp & ~0x1f) + timeOffset + (timeOffset < (lastTimestamp & 0x1f) ? 32 : 0);
+    }
     for (const field of definition.fields) {
+      if (compressed && field.num === 253 && field.size === 4) continue;
       if (offset + field.size > end) {
         offset = end;
         break;
       }
       const value =
         field.size <= 4 ? readUInt(view, offset, field.size, definition.little) : 0;
+      if (field.num === 253 && field.size === 4 && value !== 0xffffffff) record.timestamp = value;
+      if (definition.global === 20) {
+        if ((field.num === 0 || field.num === 1) && field.size === 4 && value !== 0x7fffffff) {
+          const degrees = view.getInt32(offset, definition.little) * (180 / 2147483648);
+          if (field.num === 0) record.lat = degrees;
+          else record.lon = degrees;
+        }
+        if (field.num === 2 && field.size === 2 && value !== 0xffff) record.elevation = value / 5 - 500;
+        if (field.num === 78 && field.size === 4 && value !== 0xffffffff) record.elevation = value / 5 - 500;
+      }
       if (definition.global === 18) {
         if (field.num === 5 && field.size === 1) session.sport = value;
         if (field.num === 2 && field.size === 4) session.start = value;
@@ -245,10 +287,12 @@ export function parseFit(bytes: Uint8Array, provider: FitnessProviderId): Activi
       offset += field.size;
     }
     if (definition.devSize) offset += definition.devSize;
-    if (definition.global === 18 && session.start != null) sessions.push(session);
+    if (record.timestamp != null) lastTimestamp = record.timestamp;
+    if (definition.global === 18 && session.start != null) sessions.push({ ...session, end: record.timestamp });
+    if (definition.global === 20 && record.lat != null && record.lon != null) records.push({ lat: record.lat, lon: record.lon, elevation: record.elevation, time: record.timestamp == null ? undefined : new Date(FIT_EPOCH_MS + record.timestamp * 1000).toISOString() });
   }
 
-  return sessions.flatMap((session) => {
+  return sessions.flatMap((session, index) => {
     const sport = FIT_SPORT[session.sport ?? -1] ?? null;
     if (!sport || session.start == null) return [];
     const started = new Date(FIT_EPOCH_MS + session.start * 1000);
@@ -266,6 +310,11 @@ export function parseFit(bytes: Uint8Array, provider: FitnessProviderId): Activi
       movingSec,
       avgHr: session.hr ?? null,
       rawName: sport,
+      ...(gps ? routeMetadata(records.filter(p => {
+        if (!p.time) return sessions.length === 1;
+        const at = (Date.parse(p.time) - FIT_EPOCH_MS) / 1000;
+        return at >= session.start! && at <= (session.end ?? sessions[index + 1]?.start ?? Infinity);
+      })) : {}),
     };
     return [sample];
   });

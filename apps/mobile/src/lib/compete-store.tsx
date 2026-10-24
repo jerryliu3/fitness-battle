@@ -21,6 +21,7 @@ import {
   seenFieldFromState,
   SPORTS,
   type Action,
+  type Activity,
   type CompeteState,
   type DebugEventId,
   type DebugEventResult,
@@ -227,6 +228,17 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
             }
           }
         }
+      }
+      if (process.env.NODE_ENV === "development" && authRef.current.offlineMode && authRef.current.user?.dataOrigin === "synthetic") {
+        try {
+          const response = await fetchWithTimeout(`${mobileEnv.apiUrl}/api/dev/route-seed?account=${encodeURIComponent(authRef.current.user.email)}`, {}, 2500);
+          const body = response.ok ? await response.json() as { activities?: Activity[] } : null;
+          if (!alive || accountRef.current !== owner) return;
+          const existing = new Map(next.activities.map(a => [a.id, a]));
+          const incoming = (body?.activities ?? []).filter(a => a.id.startsWith("local-route-"));
+          const ids = new Set(incoming.map(a => a.id));
+          next = { ...next, activities: [...next.activities.filter(a => !ids.has(a.id)), ...incoming.map(a => ({ ...a, disposition: existing.get(a.id)?.disposition ?? a.disposition }))] };
+        } catch { /* Optional local fixtures; ordinary offline state remains available. */ }
       }
       const dirty = (await AsyncStorage.getItem(keys.dirty)) === "1";
       const currentAuth = authRef.current;

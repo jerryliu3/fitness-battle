@@ -1,7 +1,7 @@
 import { createElement } from "react";
 import { act, create, type ReactTestRenderer } from "react-test-renderer";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { MARIN_HEADLANDS_ROUTE_COORDINATES } from "@fitness-battle/shared";
+import { encodePolyline, MARIN_HEADLANDS_ROUTE_COORDINATES } from "@fitness-battle/shared";
 
 vi.mock("../lib/env", () => ({
   mobileEnv: {
@@ -16,11 +16,17 @@ vi.mock("react-native", () => ({
   StyleSheet: { create: (v: unknown) => v },
 }));
 
-const mockInjectJavaScript = vi.fn();
+const mockInjectJavaScript = vi.hoisted(() => vi.fn());
 
-vi.mock("react-native-webview", () => ({
-  default: (props: Record<string, unknown>) => createElement("WebView", props),
-}));
+vi.mock("react-native-webview", async () => {
+  const { createElement, forwardRef, useImperativeHandle } = await import("react");
+  return {
+  default: forwardRef((props: Record<string, unknown>, ref) => {
+    useImperativeHandle(ref, () => ({ injectJavaScript: mockInjectJavaScript }));
+    return createElement("WebView", props);
+  }),
+  };
+});
 
 import { RouteTimelapse } from "./route-timelapse";
 
@@ -32,7 +38,7 @@ afterEach(async () => {
 });
 
 describe("Mobile RouteTimelapse", () => {
-  it("renders WebView pointing to /route-scene with encoded polyline and mode", async () => {
+  it("uses a short scene URL and transfers full geometry after the bridge is ready", async () => {
     await act(async () => {
       renderer = create(
         createElement(RouteTimelapse, {
@@ -47,7 +53,9 @@ describe("Mobile RouteTimelapse", () => {
     expect(webView).toBeDefined();
     expect(webView.props.source.uri).toContain("https://example.test/route-scene");
     expect(webView.props.source.uri).toContain("mode=3d-flyover");
-    expect(webView.props.source.uri).toContain("polyline=");
+    expect(webView.props.source.uri).not.toContain("polyline=");
+    await act(async () => webView.props.onMessage({ nativeEvent: { data: JSON.stringify({ type: "route-ready" }) } }));
+    expect(mockInjectJavaScript).toHaveBeenCalledWith(expect.stringContaining(JSON.stringify(encodePolyline(MARIN_HEADLANDS_ROUTE_COORDINATES))));
   });
 
   it("handles bridge messages from webview", async () => {

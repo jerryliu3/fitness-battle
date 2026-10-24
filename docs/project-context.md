@@ -22,3 +22,7 @@ The core product features:
 - **`packages/pursuit`**: Shared Three.js Arena 3D scene for web and Expo web.
 - **`packages/rankings`**: Parser fixtures and data ingestion tools for official race results.
 - **`supabase/`**: PostgreSQL database schema, migrations, and Row-Level Security (RLS) policies.
+
+## Planned activity detail
+
+The owner wants FIT and health-source metrics imported, retained and displayed for non-GPS activities too, including strength sessions with no route. This is a follow-up to v1 GPS maps; do not invent coordinates or treat the absence of a route as the absence of an activity. Current FIT session import retains duration and average heart rate. Rich sample-series storage and charts remain future work.

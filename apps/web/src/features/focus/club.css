@@ -796,7 +796,14 @@
   display: grid;
   gap: 8px;
 }
+.club-activity-map {
+  width: 64px;
+  height: 64px;
+  flex: none;
+}
+.club-activity-map .route-ui { border-radius: 12px; }
 .club-activity-row {
+  width: 100%;
   display: flex;
   align-items: center;
   gap: 12px;
@@ -1306,3 +1313,9 @@
 .club-perspective-group > .club-board-status b { font-size: 13px; }
 
 .phone-shell .focus-competition-card { background: var(--card); border: 1px solid var(--line); border-radius: 20px; padding: 16px; }
+
+/* Recorded GPS routes on Home and personal-record milestones. */
+.club-activity-route { margin: 8px 0 20px; }
+.club-route-open { width: 100%; min-height: 44px; display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 8px 4px; color: var(--ink, #142b3b); font-weight: 700; font-size: 13px; }
+.club-route-open span { color: var(--muted, #637482); font-size: 12px; font-weight: 500; }
+.club-route-player { height: max(380px, 65dvh); width: 100%; }

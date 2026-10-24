@@ -33,6 +33,23 @@ function tableWriter() {
 }
 
 describe("compete account units preference", () => {
+  it("loads recorded routes with their owning activity after a refresh", async () => {
+    const state = freshState();
+    const db = {
+      from: (table: string) => thenableQuery(table === "athlete_prefs" ? {
+        clock_period_start: state.clock.periodStart, units: "us", onboarding_completed: true,
+      } : table === "profiles" ? { primary_sport: "running", display_name: "Runner" } : table === "activities" ? [{
+        compete_key: "strava-42", sport: "running", started_at: new Date().toISOString(),
+        distance_m: 5000, moving_sec: 1800, verified: true, provenance: "recorded", disposition: "counted",
+        source_label: "strava", summary_polyline: "summary-geometry", detailed_polyline: "detailed-geometry",
+      }] : []),
+    };
+    const loaded = await loadCompeteAccount(db as never, "owner");
+    expect(loaded?.state.activities.find(a => a.id === "strava-42")).toMatchObject({
+      summaryPolyline: "summary-geometry", detailedPolyline: "detailed-geometry",
+    });
+  });
+
   it("persists and reloads metric units from athlete_prefs", async () => {
     const userId = "user-units";
     let storedUnits = "us";

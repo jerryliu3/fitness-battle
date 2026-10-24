@@ -43,4 +43,5 @@ export * from "./crew-activity";
 export * from "./weekly-streak";
 export * from "./product-icons";
 export * from "./routeGeoUtils";
+export * from "./activity-route";
 export * from "./sampleRoute";

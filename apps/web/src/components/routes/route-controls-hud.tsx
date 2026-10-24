@@ -9,6 +9,7 @@ export interface RouteControlsHudProps {
   currentDistanceKm: number;
   totalDistanceKm: number;
   mode: "3d-flyover" | "2d-overview";
+  units?: "us" | "metric";
   isRecordingVideo: boolean;
   recordingProgress?: number; // 0 to 1
   onTogglePlay: () => void;
@@ -27,6 +28,7 @@ export function RouteControlsHud({
   currentDistanceKm,
   totalDistanceKm,
   mode,
+  units = "metric",
   isRecordingVideo,
   recordingProgress,
   onTogglePlay,
@@ -38,10 +40,12 @@ export function RouteControlsHud({
   className = "",
 }: RouteControlsHudProps) {
   const percent = Math.round(progress * 100);
+  const factor = units === "us" ? 1 / 1.609344 : 1;
+  const distanceUnit = units === "us" ? "mi" : "km";
 
   return (
     <div
-      className={`pointer-events-auto flex flex-col gap-2 rounded-2xl border border-white/10 bg-[#142b3b]/90 p-3 shadow-2xl backdrop-blur-md text-white transition-all ${className}`}
+      className={`route-controls pointer-events-auto flex flex-col gap-2 rounded-2xl border border-white/10 bg-[#142b3b]/90 p-3 shadow-2xl backdrop-blur-md text-white transition-all ${className}`}
     >
       {/* Top row: Scrubber and Distance Readout */}
       <div className="flex items-center gap-3 px-1">
@@ -51,7 +55,7 @@ export function RouteControlsHud({
           onClick={isFinished ? onReplay : onTogglePlay}
           disabled={isRecordingVideo}
           aria-label={isFinished ? "Replay timelapse" : isPlaying ? "Pause timelapse" : "Play timelapse"}
-          className="flex h-10 w-10 sm:h-9 sm:w-9 shrink-0 items-center justify-center rounded-full bg-[#f7c948] text-[#142b3b] shadow transition-transform active:scale-95 hover:bg-[#ffe380] disabled:opacity-50"
+          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#f7c948] text-[#142b3b] shadow transition-transform active:scale-95 hover:bg-[#ffe380] disabled:opacity-50"
         >
           {isFinished ? (
             // Replay icon
@@ -84,31 +88,30 @@ export function RouteControlsHud({
             disabled={isRecordingVideo}
             onChange={(e) => onSeek(parseFloat(e.target.value))}
             aria-label="Route timelapse scrubber"
-            className="w-full h-2 cursor-pointer appearance-none rounded-lg bg-white/20 accent-[#f7c948] disabled:cursor-not-allowed focus:outline-none"
-            style={{
-              background: `linear-gradient(to right, #f7c948 ${percent}%, rgba(255,255,255,0.2) ${percent}%)`,
-            }}
+            className="w-full h-2 cursor-pointer appearance-none rounded-lg bg-white/20 accent-[#f7c948] disabled:cursor-not-allowed focus-visible:outline focus-visible:outline-2 focus-visible:outline-white"
+            style={{ "--route-progress": `${percent}%` } as React.CSSProperties}
           />
         </div>
 
         {/* Distance metric */}
         <div className="shrink-0 text-right font-mono text-xs text-white/90">
           <span className="font-semibold text-[#f7c948]">
-            {currentDistanceKm.toFixed(1)}
+            {(currentDistanceKm * factor).toFixed(1)}
           </span>
-          <span className="text-white/50"> / {totalDistanceKm.toFixed(1)} km</span>
+          <span className="text-white/50"> / {(totalDistanceKm * factor).toFixed(1)} {distanceUnit}</span>
         </div>
       </div>
 
       {/* Bottom row: Mode Toggle, Video Export & HD Snapshot buttons */}
-      <div className="flex items-center justify-between gap-2 border-t border-white/10 pt-2 text-xs">
+      <div className="flex flex-wrap items-center justify-between gap-2 border-t border-white/10 pt-2 text-xs">
         {/* 2D / 3D Mode Toggle Pill */}
         <div className="flex items-center rounded-xl bg-white/10 p-0.5">
           <button
             type="button"
+            aria-pressed={mode === "2d-overview"}
             onClick={mode === "2d-overview" ? undefined : onToggleMode}
             disabled={isRecordingVideo}
-            className={`rounded-lg px-2.5 py-1 font-medium transition-colors ${
+            className={`min-h-11 rounded-lg px-2.5 py-1 font-medium transition-colors ${
               mode === "2d-overview"
                 ? "bg-[#f7c948] text-[#142b3b] shadow-sm font-semibold"
                 : "text-white/70 hover:text-white"
@@ -118,9 +121,10 @@ export function RouteControlsHud({
           </button>
           <button
             type="button"
+            aria-pressed={mode === "3d-flyover"}
             onClick={mode === "3d-flyover" ? undefined : onToggleMode}
             disabled={isRecordingVideo}
-            className={`rounded-lg px-2.5 py-1 font-medium transition-colors ${
+            className={`min-h-11 rounded-lg px-2.5 py-1 font-medium transition-colors ${
               mode === "3d-flyover"
                 ? "bg-[#f7c948] text-[#142b3b] shadow-sm font-semibold"
                 : "text-white/70 hover:text-white"
@@ -138,7 +142,7 @@ export function RouteControlsHud({
             onClick={onSnapImage}
             disabled={isRecordingVideo}
             title="Capture Instant HD Snapshot"
-            className="flex items-center gap-1.5 rounded-xl border border-white/15 bg-white/5 px-2.5 py-1.5 font-medium text-white/90 transition-all hover:bg-white/15 active:scale-95 disabled:opacity-50"
+            className="flex min-h-11 items-center gap-1.5 rounded-xl border border-white/15 bg-white/5 px-2.5 py-1.5 font-medium text-white/90 transition-all hover:bg-white/15 active:scale-95 disabled:opacity-50"
           >
             <svg
               className="h-3.5 w-3.5"
@@ -166,7 +170,7 @@ export function RouteControlsHud({
             type="button"
             onClick={onExportVideo}
             disabled={isRecordingVideo}
-            className={`flex items-center gap-1.5 rounded-xl px-3 py-1.5 font-semibold transition-all active:scale-95 ${
+            className={`flex min-h-11 items-center gap-1.5 rounded-xl px-3 py-1.5 font-semibold transition-all active:scale-95 ${
               isRecordingVideo
                 ? "bg-red-500/90 text-white animate-pulse cursor-wait"
                 : "bg-white/10 text-white hover:bg-white/20 border border-white/15"

@@ -3,12 +3,14 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
+import "./routes.css";
 import {
   calculateRouteBounds,
   decodePolyline,
   type LngLat,
 } from "@fitness-battle/shared";
 import { webEnv } from "@/lib/env";
+import { RouteStaticPreview } from "./route-static-preview";
 import { RouteControlsHud } from "./route-controls-hud";
 import { useRouteAnimation } from "./use-route-animation";
 import {
@@ -35,7 +37,9 @@ export interface RouteTimelapseMapProps {
   /** Container styling */
   className?: string;
   /** Optional callback fired when animation completes */
+  units?: "us" | "metric";
   onFinish?: () => void;
+  onUnavailable?: () => void;
 }
 
 export function RouteTimelapseMap({
@@ -48,6 +52,8 @@ export function RouteTimelapseMap({
   mapboxToken,
   className = "",
   onFinish,
+  units = "metric",
+  onUnavailable,
 }: RouteTimelapseMapProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<mapboxgl.Map | null>(null);
@@ -100,9 +106,8 @@ export function RouteTimelapseMap({
   // Initialize Mapbox GL instance with preserveDrawingBuffer: true
   useEffect(() => {
     if (!containerRef.current || !activeToken || rawCoords.length < 2) {
-      if (!activeToken) {
-        setTokenError(true);
-      }
+      setTokenError(true);
+      onUnavailable?.();
       return;
     }
 
@@ -112,22 +117,35 @@ export function RouteTimelapseMap({
     const startCoord = rawCoords[0];
     const initialBearing = 0;
 
-    const map = new mapboxgl.Map({
-      container: containerRef.current,
-      style: mapStyle,
-      center: startCoord,
-      zoom: 14.5,
-      pitch: mode === "3d-flyover" ? 58 : 0,
-      bearing: initialBearing,
-      // CRITICAL for captureStream() video recording and toBlob() HD snapshots:
-      preserveDrawingBuffer: true,
-      antialias: true,
-      attributionControl: false,
-    });
+    let map: mapboxgl.Map;
+    try {
+      map = new mapboxgl.Map({
+        container: containerRef.current,
+        style: mapStyle,
+        center: startCoord,
+        zoom: 14.5,
+        pitch: mode === "3d-flyover" ? 58 : 0,
+        bearing: initialBearing,
+        // CRITICAL for captureStream() video recording and toBlob() HD snapshots:
+        preserveDrawingBuffer: true,
+        antialias: true,
+        attributionControl: true,
+      });
 
+    } catch {
+      setTokenError(true);
+      onUnavailable?.();
+      return;
+    }
     mapRef.current = map;
+    const resize = new ResizeObserver(() => map.resize());
+    resize.observe(containerRef.current);
+    const timeout = window.setTimeout(() => {
+      if (!map.loaded()) { setTokenError(true); onUnavailable?.(); }
+    }, 15000);
 
     map.on("load", () => {
+      window.clearTimeout(timeout);
       // 1. Add 3D Terrain DEM source
       map.addSource("mapbox-dem", {
         type: "raster-dem",
@@ -192,7 +210,7 @@ export function RouteTimelapseMap({
           "line-color": accentColor,
           "line-width": 6,
           "line-opacity": 0.95,
-          "line-trim-offset": [0, 0.0005],
+          "line-trim-offset": autoPlay ? [0, 1] : [1, 1],
         },
       });
 
@@ -244,6 +262,8 @@ export function RouteTimelapseMap({
     });
 
     return () => {
+      window.clearTimeout(timeout);
+      resize.disconnect();
       setMapLoaded(false);
       map.remove();
       mapRef.current = null;
@@ -285,7 +305,7 @@ export function RouteTimelapseMap({
         [bounds[0], bounds[1]],
         [bounds[2], bounds[3]],
       ],
-      { padding: 60, duration: 900 },
+      { padding: { top: 60, bottom: 160, left: 40, right: 40 }, duration: 0 },
     );
   }, [mapLoaded, rawCoords]);
 
@@ -392,10 +412,11 @@ export function RouteTimelapseMap({
 
   return (
     <div
-      className={`relative w-full h-[450px] sm:h-[540px] overflow-hidden rounded-2xl bg-[#142b3b] shadow-xl border border-[#e3e9e7]/30 ${className}`}
+      className={`route-ui relative w-full h-[450px] sm:h-[540px] overflow-hidden rounded-2xl bg-[#142b3b] shadow-xl border border-[#e3e9e7]/30 ${className}`}
     >
       {/* Mapbox WebGL Canvas Container */}
       <div ref={containerRef} className="h-full w-full" />
+      {!mapLoaded && !tokenError && <div role="status" className="absolute inset-0 flex items-center justify-center text-white">Loading route map…</div>}
 
       {/* Floating Header Badges */}
       <div className="pointer-events-none absolute top-3 left-3 right-3 flex items-center justify-between gap-2">
@@ -406,7 +427,7 @@ export function RouteTimelapseMap({
 
         {totalDistanceKm > 0 && (
           <div className="rounded-full bg-[#142b3b]/85 px-3 py-1.5 font-mono text-xs font-medium text-white/90 shadow-md backdrop-blur-md">
-            {totalDistanceKm.toFixed(1)} km total
+            {(totalDistanceKm * (units === "us" ? 1 / 1.609344 : 1)).toFixed(1)} {units === "us" ? "mi" : "km"} total
           </div>
         )}
       </div>
@@ -421,6 +442,7 @@ export function RouteTimelapseMap({
             currentDistanceKm={currentDistanceKm}
             totalDistanceKm={totalDistanceKm}
             mode={mode}
+            units={units}
             isRecordingVideo={isRecordingVideo}
             recordingProgress={recordingProgress}
             onTogglePlay={isPlaying ? pause : play}
@@ -433,32 +455,10 @@ export function RouteTimelapseMap({
         </div>
       )}
 
-      {/* Fallback configuration guidance if token is missing */}
-      {tokenError && (
-        <div className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center bg-[#142b3b]/95 text-white">
-          <div className="w-12 h-12 rounded-full bg-[#f7c948]/20 flex items-center justify-center mb-3">
-            <svg
-              className="w-6 h-6 text-[#f7c948]"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"
-              />
-            </svg>
-          </div>
-          <h3 className="text-lg font-bold">Mapbox Access Token Needed</h3>
-          <p className="mt-1 text-xs text-white/70 max-w-sm">
-            To view interactive 3D terrain flyovers and satellite imagery, provide a Mapbox token via{" "}
-            <code className="text-[#f7c948]">NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN</code> or pass the{" "}
-            <code className="text-[#f7c948]">mapboxToken</code> prop.
-          </p>
-        </div>
-      )}
+      {tokenError && <div className="absolute inset-0 bg-[#142b3b]">
+        <RouteStaticPreview coordinates={rawCoords} showPlayBadge={false} mapboxToken="" strokeColor="f7c948" className="h-full" />
+        <p role="status" className="absolute top-4 left-4 right-4 rounded-xl bg-[#142b3b] p-3 text-sm text-white">Route outline only. Interactive maps and flyovers are currently unavailable.</p>
+      </div>}
     </div>
   );
 }

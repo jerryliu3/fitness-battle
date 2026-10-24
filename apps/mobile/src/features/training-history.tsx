@@ -1,3 +1,4 @@
+import { ActivityRoute } from "../ui/activity-route";
 import { TrainingAtlas } from "./training-atlas";
 import { useState, type ReactNode } from "react";
 import { RecordChart } from "./record-chart";
@@ -98,6 +99,7 @@ export function TrainingHistory({ state, children }: { state: CompeteState; chil
             {inspected.source.replaceAll("_", " ")}
             {inspected.verified ? " · GPS recorded" : ""}
           </Text>
+          <ActivityRoute units={state.units} key={inspected.activityId} activity={state.activities.find(a => a.id === inspected.activityId)} milestone />
         </View>
       ) : null}
     </>

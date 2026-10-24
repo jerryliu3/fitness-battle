@@ -65,9 +65,7 @@ export function RouteStaticPreview({
   const token =
     mapboxToken !== undefined
       ? mapboxToken
-      : mobileEnv.mapboxAccessToken ||
-        process.env.EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN ||
-        "";
+      : mobileEnv.mapboxAccessToken;
 
   // Decode coordinates if string
   const rawCoords: LngLat[] = useMemo(() => {
@@ -158,7 +156,7 @@ export function RouteStaticPreview({
         activeOpacity={0.88}
         onPress={onPress}
         accessibilityRole="button"
-        accessibilityLabel="Open 3D Route Flyover"
+        accessibilityLabel="Open route overview and flyover"
       >
         {content}
       </TouchableOpacity>

@@ -19,11 +19,11 @@ export function recentActivityStart(now: Date): string {
 export function homeRecentActivities(state: CompeteState, viewerId: string | undefined, peers: readonly CrewActivity[], now = competeNow(state)): HomeActivity[] {
   const since = Date.parse(recentActivityStart(now)), until = now.getTime();
   const recent = (startedAt: string) => { const at = Date.parse(startedAt); return at >= since && at <= until; };
-  const own = state.activities.filter(a => countsOnTrack(a, "open") && recent(a.startedAt)).sort((a,b) => b.startedAt.localeCompare(a.startedAt))[0];
+  const own = state.activities.filter(a => countsOnTrack(a, "open") && recent(a.startedAt)).sort((a,b) => b.startedAt.localeCompare(a.startedAt)).slice(0, 3);
   const latest = new Map<string, HomeActivity>();
   for (const row of [...peers].filter(row => row.userId !== viewerId && recent(row.startedAt)).sort((a,b) => b.startedAt.localeCompare(a.startedAt))) {
     if (!latest.has(row.userId)) latest.set(row.userId, row);
   }
-  if (own) latest.set(viewerId ?? "self", { ...own, userId: viewerId ?? "self", name: state.name, avatarUrl: state.avatarUrl ?? null, ownActivity: own });
+  for (const activity of own) latest.set(`self:${activity.id}`, { ...activity, userId: viewerId ?? "self", name: state.name, avatarUrl: state.avatarUrl ?? null, ownActivity: activity });
   return [...latest.values()].sort((a,b) => b.startedAt.localeCompare(a.startedAt));
 }

@@ -26,6 +26,8 @@ pnpm test
 
 ### Running Applications
 
+GPS route previews use `NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN` on web and `EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN` on mobile. Native interactive replay loads `/route-scene` from `EXPO_PUBLIC_API_URL`; that deployment needs its web Mapbox token. Apply the existing `20261024000000_activity_routes.sql` migration before deploying route persistence. Older activities need a backfill sync to populate route polylines (`POST /api/fitness/sync` with `provider: "strava", backfill: true` through the existing authenticated flow); ordinary incremental sync may not revisit them. Rows without geometry stay map-free. No precise personal-record segment geometry is currently available.
+
 #### 1. Web Application (`apps/web`)
 
 ```bash
@@ -96,3 +98,9 @@ Apply `20261023154755_crew_member_effort_scores.sql` for Crew level badges. With
 ### Offline web font builds
 
 Web product and design-study fonts are checked in under `apps/web/src/app/fonts/` with their upstream OFL licenses. Routes use `next/font/local`; ordinary production builds no longer require Google Fonts DNS, CSS or font downloads. WOFF2 assets preserve the existing font families, weights and CSS variables. Update fonts from the official Google Fonts repository and keep the license files together; see the font directory README.
+
+### Private local route fixtures
+
+Run `pnpm --filter @fitness-battle/web exec node scripts/seed-route-files.mjs /absolute/path/activity.gpx /absolute/path/activity.fit` from the repository root. The script uses the production parsers and writes `.local/route-activities.json`, which is ignored by Git. Never commit the supplied GPS files. With `pnpm dev:web`, backend-unconfigured local demo accounts automatically load these fixtures on sign-in or refresh, retaining original dates. Imported rows are labeled local previews and are Open-only, without a tracker connection claim. Supabase-configured and production deployments never serve this development endpoint. Native development uses the same endpoint at `EXPO_PUBLIC_API_URL`.
+
+GPX/TCX/FIT imports now retain detailed GPS coordinates, a simplified preview, bounds and available elevation gain. File uploads remain imported/pending and never establish a live Garmin connection. Native and Expo-web replay pass detailed geometry through the WebView/iframe message bridge, keeping long tracks out of URLs.
