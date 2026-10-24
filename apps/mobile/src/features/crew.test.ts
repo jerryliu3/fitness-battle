@@ -35,7 +35,8 @@ vi.mock("react-native", () => ({
   TextInput: "TextInput",
   View: "View",
   ImageBackground: "ImageBackground",
-  StyleSheet: {absoluteFill:{}},
+  StyleSheet: {absoluteFill:{}, create: (value: unknown) => value},
+  useWindowDimensions: () => ({width:390,height:844,fontScale:1}),
   ScrollView: "ScrollView",
   Share: { share: vi.fn() },
 }));

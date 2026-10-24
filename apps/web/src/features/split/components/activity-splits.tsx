@@ -1,4 +1,6 @@
 "use client";
+import { AppParagraph, AppText, SectionHeader } from "@/ui/section";
+
 
 import {
   APP_TIMEZONE,
@@ -35,11 +37,11 @@ export function ActivitySplits({
   if (activities.length === 0) {
     return (
       <div className="sp-empty">
-        <h2>No splits yet</h2>
-        <p className="fb-copy">
+        <SectionHeader title="No splits yet"/>
+        <AppParagraph typographyRole="body" className="fb-copy">
           Sync a tracker or log work this week. Sessions appear here as
           numbered splits.
-        </p>
+        </AppParagraph>
       </div>
     );
   }
@@ -60,7 +62,7 @@ export function ActivitySplits({
               <span className="num">{String(index + 1).padStart(2, "0")}</span>
               <span>
                 <strong>{dayLabel(activity.startedAt)}</strong>
-                <small>
+                <AppText as="small" role="caption" secondary>
                   {formatVolume(
                     sport,
                     activity.distanceM,
@@ -70,18 +72,18 @@ export function ActivitySplits({
                   {activity.verified ? " · GPS Tracked" : " · activity"}
                   {" · "}
                   {activity.source}
-                </small>
+                </AppText>
               </span>
               <b>{formatEffort(pts)} pts</b>
             </button>
             {open ? (
-              <p className="fb-note" style={{ padding: "0 4px 8px" }}>
+              <AppParagraph typographyRole="caption" className="fb-note" style={{ padding: "0 4px 8px" }}>
                 Contributes to this week’s effort.{" "}
                 {activity.avgHr != null
                   ? `Avg HR ${activity.avgHr}. `
                   : "No heart-rate mark. "}
                 Source: {activity.source}.
-              </p>
+              </AppParagraph>
             ) : null}
           </div>
         );

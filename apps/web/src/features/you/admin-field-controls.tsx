@@ -1,4 +1,6 @@
 "use client";
+import { AppParagraph, SectionHeader } from "@/ui/section";
+
 import { useEffect, useRef, useState } from "react";
 interface Field { id: string; name: string; sport: string; member_ids: string[]; wave_start: string; week_end: string; updated_at: string }
 /** Production-only admin UI. No product state mutation or simulated clock. */
@@ -38,20 +40,20 @@ export function AdminFieldControls({ target, owner }: { target: string; owner: s
   }
   const enabled = field && confirmation === `WAVE ${field.id}` && reason.trim().length >= 8 && !busy;
   return <section>
-    <h2>Field-wide wave controls</h2>
-    <p>Uses the athlete ID above. These actions close the selected field for all seated athletes and save real results. Athletes scheduled to stop are not enrolled again.</p>
+    <SectionHeader title="Field-wide wave controls"/>
+    <AppParagraph typographyRole="body">Uses the athlete ID above. These actions close the selected field for all seated athletes and save real results. Athletes scheduled to stop are not enrolled again.</AppParagraph>
     <button className="fb-btn-line" disabled={busy || !target} onClick={() => void load()}>Load athlete’s active fields</button>
     {fields.length > 0 && <>
       <label>Field<select disabled={busy} value={selected} onChange={(event) => { setSelected(event.target.value); setConfirmation(""); }}>{fields.map((row) => <option key={row.id} value={row.id}>{row.name} · {row.sport} · {row.member_ids.length} athletes</option>)}</select></label>
-      {field && <p>Field ID: {field.id}. Current wave ends {new Date(field.week_end).toLocaleString("en-US", { timeZone: "America/New_York", timeZoneName: "short" })}.</p>}
+      {field && <AppParagraph typographyRole="body">Field ID: {field.id}. Current wave ends {new Date(field.week_end).toLocaleString("en-US", { timeZone: "America/New_York", timeZoneName: "short" })}.</AppParagraph>}
       <label>Reason<input className="fb-input" value={reason} maxLength={1000} disabled={busy} onChange={(event) => setReason(event.target.value)}/></label>
       <label>Type WAVE {selected}<input className="fb-input" value={confirmation} disabled={busy} onChange={(event) => setConfirmation(event.target.value)}/></label>
       <div className="focus-actions">
         <button className="fb-btn-line" disabled={!enabled} onClick={() => void run("close-field")}>End field now · next wave Monday</button>
         <button className="fb-btn" disabled={!enabled} onClick={() => void run("restart-field")}>End field + start next wave now</button>
       </div>
-      <p>Starting now creates a fresh activity window ending next Monday at midnight Eastern. Ending only schedules the next normal Monday–Monday wave.</p>
+      <AppParagraph typographyRole="body">Starting now creates a fresh activity window ending next Monday at midnight Eastern. Ending only schedules the next normal Monday–Monday wave.</AppParagraph>
     </>}
-    {note && <p role="status">{note}</p>}
+    {note && <AppParagraph typographyRole="body" role="status">{note}</AppParagraph>}
   </section>;
 }

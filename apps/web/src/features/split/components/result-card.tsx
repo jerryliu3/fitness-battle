@@ -1,4 +1,6 @@
 "use client";
+import { AppText } from "@/ui/section";
+
 import { useState } from "react";
 import { useReducedMotion } from "motion/react";
 import {
@@ -63,12 +65,12 @@ export function ResultCard({
           <span>
             {result.eloBefore} → {result.eloAfter} effort score
           </span>
-          <small>
+          <AppText as="small" role="caption" secondary>
             {result.frozen
               ? "Weekly score adjustment held by freeze"
               : "Weekly score adjustment"}{" "}
             · {APP_TIMEZONE}
-          </small>
+          </AppText>
         </>
       ) : (
         <>

@@ -1,4 +1,6 @@
 "use client";
+import { AppParagraph, AppText, Section } from "@/ui/section";
+
 import Link from "next/link";
 import {
   APP_TIMEZONE,
@@ -13,11 +15,8 @@ export function WeekRecap({ state }: { state: CompeteState }) {
     recap = latestClubRecap(state);
   const difference = week.movingSec - week.previousSec;
   return (
-    <section className="club-week-recap">
-      <div className="club-section-heading">
-        <h2>Your week, in perspective</h2>
-        <span aria-hidden="true">↗</span>
-      </div>
+    <Section className="club-week-recap" title="Your week, in perspective" action={<span aria-hidden="true">↗</span>}>
+
       <div className="club-week-metrics">
         <div>
           <strong>{clubDuration(week.movingSec)}</strong>
@@ -35,11 +34,11 @@ export function WeekRecap({ state }: { state: CompeteState }) {
           <small>Active days</small>
         </div>
       </div>
-      <p className="fb-note">
+      <AppParagraph typographyRole="caption" className="fb-note">
         {week.previousSec
           ? `${difference >= 0 ? "+" : "−"}${clubDuration(Math.abs(difference))} compared with all of last week.`
           : "Each session builds your story."}
-      </p>
+      </AppParagraph>
       {recap ? (
         <Link className="club-recap-link" href="/arena?results=latest">
           <span className="club-recap-stamp" aria-hidden="true">
@@ -47,7 +46,7 @@ export function WeekRecap({ state }: { state: CompeteState }) {
           </span>
           <span>
             <b>Your latest settled week.</b>
-            <small>
+            <AppText as="small" role="caption" secondary>
               {sportById(recap.sport).name} · {recap.track === "verified" ? "GPS" : "Open"} ·{" "}
               {new Date(recap.periodStart).toLocaleDateString("en-US", {
                 month: "short",
@@ -55,19 +54,19 @@ export function WeekRecap({ state }: { state: CompeteState }) {
                 timeZone: APP_TIMEZONE,
               })}{" "}
               · Place {recap.place} of {recap.fieldSize}
-            </small>
-            <small>
+            </AppText>
+            <AppText as="small" role="caption" secondary>
               {recap.eloAfter - recap.eloBefore >= 0 ? "+" : ""}
               {recap.eloAfter - recap.eloBefore} Effort Score · View recap
-            </small>
+            </AppText>
           </span>
           <span aria-hidden="true">→</span>
         </Link>
       ) : (
-        <p className="fb-note">
+        <AppParagraph typographyRole="caption" className="fb-note">
           Your first settled competition recap will appear here.
-        </p>
+        </AppParagraph>
       )}
-    </section>
+    </Section>
   );
 }

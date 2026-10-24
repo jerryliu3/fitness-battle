@@ -10,6 +10,7 @@ const mock = vi.hoisted(() => ({
   setParams: vi.fn(),
 }));
 vi.mock("react-native", () => ({
+  useWindowDimensions: () => ({ width: 390, height: 844, fontScale: 1 }),
   StyleSheet: { create: (styles: unknown) => styles },
   Pressable: "Pressable",
   ScrollView: "ScrollView",

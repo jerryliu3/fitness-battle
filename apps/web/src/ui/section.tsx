@@ -1,0 +1,50 @@
+import Link from "next/link";
+import { Children, Fragment, useId, type ReactNode, type ReactElement, type CSSProperties, createElement, type HTMLAttributes } from "react";
+import { SHELL_TYPOGRAPHY, type TypographyRole } from "@fitness-battle/shared";
+import "./section.css";
+
+/** Publish the shared contract for legacy semantic CSS classes and portal surfaces. */
+export function typographyVariables(): CSSProperties {
+  return Object.fromEntries(Object.entries(SHELL_TYPOGRAPHY).flatMap(([role, token]) => [
+    [`--type-${role}-size`, `${token.size / 16}rem`],
+    [`--type-${role}-leading`, `${token.lineHeight / 16}rem`],
+    [`--type-${role}-weight`, token.weight],
+  ])) as CSSProperties;
+}
+export function typographyStyle(role: TypographyRole): CSSProperties {
+  const token = SHELL_TYPOGRAPHY[role];
+  return { fontFamily: 'var(--font-body), "DM Sans", sans-serif', fontSize: `${token.size / 16}rem`, lineHeight: `${token.lineHeight / 16}rem`, fontWeight: token.weight, letterSpacing: "normal" };
+}
+export function AppHeading({ role = "sectionTitle", level = 2, style, ...props }: Omit<HTMLAttributes<HTMLHeadingElement>, "role"> & { role?: TypographyRole; level?: 1 | 2 | 3 | 4 | 5 | 6 }): ReactElement {
+  return createElement(`h${level}`, { ...props, style: { ...typographyStyle(role), ...style } });
+}
+export function AppText({ role = "body", secondary = false, as = "span", style, className = "", ...props }: Omit<HTMLAttributes<HTMLElement>, "role"> & { role?: TypographyRole; secondary?: boolean; as?: "span" | "small" }): ReactElement {
+  return createElement(as, { ...props, style: { ...typographyStyle(role), ...style }, className: `ui-text${secondary ? " ui-text-secondary" : ""} ${className}` });
+}
+export function AppParagraph({ typographyRole = "body", style, ...props }: HTMLAttributes<HTMLParagraphElement> & { typographyRole?: TypographyRole }) {
+  return <p {...props} style={{ ...typographyStyle(typographyRole), ...style }}/>;
+}
+export function TextAction({ href, label, accessibilityLabel }: { href: string; label: string; accessibilityLabel: string }) {
+  return <Link className="ui-text-action" style={typographyStyle("actionLabel")} href={href} aria-label={accessibilityLabel}>{label}</Link>;
+}
+export function SectionHeader({ title, subtitle, action, id }: { title: string; subtitle?: string; action?: ReactNode; id?: string }) {
+  return <div className="ui-section-header"><div className="ui-section-heading"><AppHeading id={id}>{title}</AppHeading>{subtitle && <p style={typographyStyle("body")} className="ui-text-secondary">{subtitle}</p>}</div>{action}</div>;
+}
+export function PageHeader({ title, subtitle }: { title: string; subtitle?: string }) {
+  return <header className="ui-section-heading"><AppHeading level={1} role="pageTitle">{title}</AppHeading>{subtitle && <p className="ui-text-secondary" style={typographyStyle("body")}>{subtitle}</p>}</header>;
+}
+export function Section({ title, subtitle, action, children, className = "", ...props }: Omit<HTMLAttributes<HTMLElement>, "title"> & { title: string; subtitle?: string; action?: ReactNode; children: ReactNode }) {
+  const id = useId();
+  return <section {...props} className={`ui-section ${className}`} aria-labelledby={id}><SectionHeader id={id} title={title} subtitle={subtitle} action={action}/><div className="ui-section-content">{children}</div></section>;
+}
+export function SectionStack({ children, divided = true, className = "" }: { children: ReactNode; divided?: boolean; className?: string }) {
+  if (!divided) return <div className={`ui-section-stack is-open ${className}`}>{children}</div>;
+  return <div className={`ui-section-stack is-divided ${className}`}>{Children.toArray(children).map((child, index) => <Fragment key={(child as { key?: string }).key ?? index}>{index > 0 && <div className="ui-section-boundary" aria-hidden="true"/>}{child}</Fragment>)}</div>;
+}
+export function StatusBadge({ children, tone = "neutral", icon }: { children: ReactNode; tone?: "neutral" | "success"; icon?: ReactNode }) {
+  return <span className={`ui-status-badge is-${tone}`} style={typographyStyle("badgeLabel")}>{icon}{children}</span>;
+}
+export function Surface({ className = "", ...props }: HTMLAttributes<HTMLDivElement>) { return <div {...props} className={`ui-surface ${className}`}/>; }
+export function ListRow({ title, subtitle, leading, trailing }: { title: string; subtitle?: string; leading?: ReactNode; trailing?: ReactNode }) {
+  return <div className="ui-list-row">{leading}<div><AppText role="itemTitle">{title}</AppText>{subtitle && <div><AppText role="supporting" secondary>{subtitle}</AppText></div>}</div>{trailing}</div>;
+}

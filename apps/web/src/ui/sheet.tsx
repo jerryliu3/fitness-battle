@@ -1,5 +1,6 @@
 "use client";
 
+import { typographyStyle } from "./section";
 import * as Dialog from "@radix-ui/react-dialog";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useEffect, useRef, type ReactNode, type RefObject } from "react";
@@ -96,10 +97,10 @@ export function Sheet({
                 >
                   <div className="sheet-grab" aria-hidden="true" />
                   <div className="club-sheet-heading">
-                    <Dialog.Title ref={heading} tabIndex={-1}>{title}</Dialog.Title>
+                    <Dialog.Title ref={heading} tabIndex={-1} style={typographyStyle(fullScreen ? "navigationTitle" : "pageTitle")}>{title}</Dialog.Title>
                     {!minimal && <Dialog.Close asChild><button type="button" className="club-sheet-dismiss" aria-label={fullScreen ? "Return to previous screen" : "Close dialog"}>{fullScreen ? <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true"><path d="m14 6-6 6 6 6" /></svg> : "×"}</button></Dialog.Close>}
                   </div>
-                  <Dialog.Description>{body}</Dialog.Description>
+                  <Dialog.Description style={typographyStyle("body")}>{body}</Dialog.Description>
                   {children}
                 </motion.div>
               </Dialog.Content>

@@ -1,5 +1,6 @@
+import { SectionStack, StatusBadge, AppText } from "../ui/section";
 import { useState } from "react";
-import { Platform, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Platform, Pressable, ScrollView, StyleSheet, View } from "react-native";
 import Svg, { Defs, LinearGradient, Path, Stop } from "react-native-svg";
 import {
   clubAchievements,
@@ -46,27 +47,28 @@ export function AchievementsCatalog({
   const item = rows.find((row) => row.id === selected) ?? rows[0];
   return (
     <ScrollView contentContainerStyle={[f.content, { paddingTop: 0, gap: 18, paddingBottom: 40 }]}>
+<SectionStack divided={false}>
       {item ? (
         <View style={{ alignItems: "center", gap: 12 }}>
           <Badge item={item} />
-          <Text style={f.h2}>
+          <AppText role="metricValue" >
             {item.current.toLocaleString()} / {item.target.toLocaleString()}
-          </Text>
-          <Text style={f.copy}>
+          </AppText>
+          <AppText role="body" secondary >
             {item.category === "sessions"
               ? "Sessions currently in your activity history."
               : `${sportById(state.primary).name} · Open Effort Score.`}
-          </Text>
-          <Text style={f.copy}>
+          </AppText>
+          <AppText role="body" secondary >
             {item.earned
               ? "Milestone reached. Keep building on it."
               : `${Math.max(0, item.target - item.current)} ${item.category === "sessions" ? "sessions" : "points"} to this milestone.`}
-          </Text>
+          </AppText>
         </View>
       ) : null}
-      <Text style={f.small}>
+      <AppText role="caption" secondary >
         Milestones reflect your current activity history and score. They do not grant rewards or change competition points.
-      </Text>
+      </AppText>
       {rows.map((row) => (
         <Pressable
           key={row.id}
@@ -77,15 +79,16 @@ export function AchievementsCatalog({
         >
           <Badge item={row} />
           <View style={f.grow}>
-            <Text style={f.rowTitle}>{row.title}</Text>
-            <Text style={f.small}>
-              {row.target} {row.category === "sessions" ? "sessions" : "Open effort score"} ·{" "}
-              {row.earned ? "Earned" : "Upcoming"}
-            </Text>
+            <AppText role="itemTitle" >{row.title}</AppText>
+            <AppText role="supporting" secondary >
+              {row.target} {row.category === "sessions" ? "sessions" : "Open effort score"}
+            </AppText>
           </View>
+          <StatusBadge tone={row.earned ? "success" : "neutral"}>{row.earned ? "Earned" : "Up next"}</StatusBadge>
         </Pressable>
       ))}
-    </ScrollView>
+    </SectionStack>
+</ScrollView>
   );
 }
 
@@ -95,7 +98,7 @@ export const achievementTileStyle = StyleSheet.create({
     minWidth: 0,
     padding: 10,
     paddingVertical: 14,
-    borderRadius: 18,
+    borderRadius: 20,
     borderWidth: 1,
     borderColor: c.line,
     backgroundColor: c.card,

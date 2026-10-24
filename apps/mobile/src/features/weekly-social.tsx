@@ -1,3 +1,4 @@
+import { AppText } from "../ui/section";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Pressable, ScrollView, Text, View } from "react-native";
 import {
@@ -91,9 +92,9 @@ export function WeeklySocialActions({
   return (
     <View style={[f.card, { gap: 12 }]}>
       {data?.receivedCongrats ? (
-        <Text style={f.small}>
+        <AppText role="caption" secondary >
           {data.receivedCongrats} congrats from your field
-        </Text>
+        </AppText>
       ) : null}
       <Text style={f.kicker}>Athlete</Text>
       <ScrollView horizontal showsHorizontalScrollIndicator={false}>
@@ -113,10 +114,10 @@ export function WeeklySocialActions({
             : null}
         </View>
       </ScrollView>
-      <Text style={f.rowTitle}>
+      <AppText role="itemTitle" >
         {peer.name} · #{peer.place} ·{" "}
         {formatVolume(result.sport, peer.distanceM, peer.movingSec, units)}
-      </Text>
+      </AppText>
       <View style={f.row}>
         <FocusButton
           label={peer.congrats ? "Congrats ✓" : "Congrats"}
@@ -131,7 +132,7 @@ export function WeeklySocialActions({
           onPress={() => void toggle("repeat")}
         />
       </View>
-      <Text style={f.small}>{repeatStatus(peer.status)}</Text>
+      <AppText role="supporting" secondary >{repeatStatus(peer.status)}</AppText>
       {error ? <Text accessibilityRole="alert">{error}</Text> : null}
     </View>
   );

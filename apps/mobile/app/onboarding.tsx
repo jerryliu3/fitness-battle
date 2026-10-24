@@ -1,3 +1,4 @@
+import { SectionHeader, SectionStack, AppText } from "../src/ui/section";
 import { IconButton } from "../src/ui/icon-button";
 import { ProfilePhoto } from "../src/features/profile-photo";
 import { SPORTS, type SportId, type UnitSystem } from "@fitness-battle/shared";
@@ -20,7 +21,7 @@ export default function Onboarding() {
   if (!state)
     return (
       <SafeAreaView style={f.safe} edges={["bottom"]}>
-        <Text style={f.copy}>Loading setup…</Text>
+        <AppText role="body" secondary >Loading setup…</AppText>
       </SafeAreaView>
     );
   return (
@@ -30,19 +31,20 @@ export default function Onboarding() {
         keyboardShouldPersistTaps="handled"
         contentContainerStyle={f.content}
       >
+<SectionStack divided={false}>
         <IconButton icon="back" label="Return to previous screen"
           onPress={() =>
             router.canGoBack() ? router.back() : router.replace("/athlete")
           }
         />
         <Text style={f.kicker}>Setup</Text>
-        <Text style={f.title}>Your own pace.</Text>
-        <Text style={f.copy}>
+        <AppText role="pageTitle" >Your own pace.</AppText>
+        <AppText role="body" secondary >
           Choose your preferences. Trackers and optional history calibration
           live in Athlete → Data Sync.
-        </Text>
+        </AppText>
         <ProfilePhoto state={state} />
-        <Text style={f.rowTitle}>Name</Text>
+        <AppText role="itemTitle" >Name</AppText>
         <TextInput
           accessibilityLabel="Display name"
           style={f.input}
@@ -57,7 +59,7 @@ export default function Onboarding() {
           onChangeText={setCity}
           maxLength={80}
         />
-        <Text style={f.h2}>Distance units</Text>
+        <SectionHeader title="Distance units"/>
         {(["us", "metric"] as const).map((u) => (
           <FocusButton
             key={u}
@@ -66,7 +68,7 @@ export default function Onboarding() {
             onPress={() => setUnits(u)}
           />
         ))}
-        <Text style={f.h2}>Sports to join now</Text>
+        <SectionHeader title="Sports to join now"/>
         {SPORTS.map((s) => (
           <FocusButton
             key={s.id}
@@ -84,7 +86,7 @@ export default function Onboarding() {
           />
         ))}
         <View style={f.row}>
-          <Text style={f.rowTitle}>Track sleep & recovery</Text>
+          <AppText role="itemTitle" >Track sleep & recovery</AppText>
           <Switch
             accessibilityLabel="Track sleep and recovery"
             value={sleep}
@@ -93,7 +95,7 @@ export default function Onboarding() {
         </View>
         {saveError && (
           <>
-            <Text style={f.copy}>{saveError}</Text>
+            <AppText role="body" secondary >{saveError}</AppText>
             <FocusButton
               label="Retry account loading"
               secondary
@@ -124,7 +126,8 @@ export default function Onboarding() {
             router.replace("/arena");
           }}
         />
-      </ScrollView>
+      </SectionStack>
+</ScrollView>
     </SafeAreaView>
   );
 }

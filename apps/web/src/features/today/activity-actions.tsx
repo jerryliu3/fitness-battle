@@ -1,4 +1,6 @@
 "use client";
+import { AppParagraph } from "@/ui/section";
+
 
 import { useRef, useState } from "react";
 import Link from "next/link";
@@ -90,7 +92,7 @@ export function ActivityActions({ compact = false }: { compact?: boolean }) {
           <Link href="/login?next=/today">Sign in to add or sync</Link>
         )}
     </div>
-    {note && <p role="status" className={compact ? "fb-note focus-sync-status" : "fb-note"}>{note} <Link href="/athlete?panel=connections">Tracker settings</Link></p>}
+    {note && <AppParagraph typographyRole="caption" role="status" className={compact ? "fb-note focus-sync-status" : "fb-note"}>{note} <Link href="/athlete?panel=connections">Tracker settings</Link></AppParagraph>}
     <Sheet open={open} onClose={() => setOpen(false)} title="Add activity" body="" minimal>
       <form style={{ display: "grid", gap: 16 }} onSubmit={(event) => {
         event.preventDefault();
@@ -109,7 +111,7 @@ export function ActivityActions({ compact = false }: { compact?: boolean }) {
         {sport && sportById(sport).gps && <label>Distance ({state.units === "metric" ? "km" : "mi"})<input className="fb-input" required type="number" min="0" max={state.units === "metric" ? "2000" : "1242"} step="0.01" value={miles} onChange={(event) => setMiles(event.target.value)}/></label>}
         <label>Time of day (optional · Eastern)<input className="fb-input" type="time" value={time} onChange={event => setTime(event.target.value)} /></label>
         </>}
-        {formError && <p role="alert" className="fb-note">{formError}</p>}
+        {formError && <AppParagraph typographyRole="caption" role="alert" className="fb-note">{formError}</AppParagraph>}
         <button disabled={!ready || !sport} type="submit" className="fb-btn">Add activity</button>
       </form>
     </Sheet>

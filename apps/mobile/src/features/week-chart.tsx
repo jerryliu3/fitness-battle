@@ -1,3 +1,4 @@
+import { AppText, textStyle } from "../ui/section";
 import type { CompeteState } from "@fitness-battle/shared";
 import { APP_TIMEZONE, competeNow, dayKey, weeklyHoursComparison, weeklyPeriodBounds } from "@fitness-battle/shared";
 import { Platform, Pressable, StyleSheet, Text, View } from "react-native";
@@ -203,7 +204,7 @@ export function WeekChart({ state, onOpen, ready = true }: { state: CompeteState
                   }
                   textAnchor="end"
                   fontSize="9"
-                  fontWeight="600"
+                  fontWeight="700"
                   fill={c.muted}
                 >
                   Last week
@@ -230,7 +231,7 @@ export function WeekChart({ state, onOpen, ready = true }: { state: CompeteState
               </Svg>
             </ChartScrubber>
             </View>
-            {onOpen && <Pressable accessibilityRole="button" accessibilityLabel="Explore your week" onPress={onOpen} style={{ minHeight: 44, justifyContent: "center", alignSelf: "flex-end" }}><Text style={f.rowTitle}>Your week →</Text></Pressable>}
+            {onOpen && <Pressable accessibilityRole="button" accessibilityLabel="Explore your week" onPress={onOpen} style={{ minHeight: 44, justifyContent: "center", alignSelf: "flex-end" }}><AppText role="itemTitle" >Your week →</AppText></Pressable>}
           </View></ChartFrame>);
 }
 const s = StyleSheet.create({
@@ -258,8 +259,7 @@ const s = StyleSheet.create({
     gap: 8,
   },
   statsSessionCount: {
-    fontFamily: "DMSans_500Medium",
-    fontSize: 13,
+    ...textStyle("caption"),
     color: c.muted,
   },
   chartWrap: {

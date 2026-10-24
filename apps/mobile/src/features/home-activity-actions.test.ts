@@ -3,7 +3,9 @@ import { act, create, type ReactTestRenderer } from "react-test-renderer";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { freshState } from "@fitness-battle/shared";
 const mock = vi.hoisted(() => ({ state: null as any, user: { id: "athlete", mode: "demo" } as any, canWrite: true, dispatch: vi.fn(), supported: ["strava"], device: vi.fn(), begin: vi.fn(), end: vi.fn(), refresh: vi.fn() }));
-vi.mock("react-native", () => ({ Text: "Text", TextInput: "TextInput", View: "View" }));
+vi.mock("react-native", () => ({
+  useWindowDimensions: () => ({ width: 390, height: 844, fontScale: 1 }),
+  StyleSheet: { create: (styles: unknown) => styles }, Text: "Text", TextInput: "TextInput", View: "View" }));
 vi.mock("expo-router", () => ({ Link: "Link" }));
 vi.mock("../lib/api", () => ({ requestApi: vi.fn() }));
 vi.mock("../lib/env", () => ({ mobileEnv: { apiUrl: "http://localhost" } }));
@@ -34,7 +36,7 @@ describe("native Home actions", () => {
   await act(async () => input("Duration").props.onChange("30"));
   await act(async () => button("Save activity").props.onPress());
   expect(mock.dispatch).not.toHaveBeenCalled();
-  expect(renderer.root.findByType("Sheet" as any).findAllByProps({ accessibilityRole: "alert" })).toHaveLength(1);
+  expect(renderer.root.findByType("Sheet" as any).findAllByType("Text" as any).filter(node => node.props.accessibilityRole === "alert")).toHaveLength(1);
   await act(async () => input("Distance").props.onChange("2,5"));
   await act(async () => button("Save activity").props.onPress());
   expect(mock.dispatch).toHaveBeenCalledWith(expect.objectContaining({ type: "log-manual", distanceM: 4023.36, movingSec: 1800 }));

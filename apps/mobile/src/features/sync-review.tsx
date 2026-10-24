@@ -1,3 +1,4 @@
+import { AppText } from "../ui/section";
 import { useRef, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { useRouter } from "expo-router";
@@ -61,35 +62,35 @@ export function SyncReview({
       <Text style={[f.massive, { fontSize: 42 }]}>
         {clubDuration(today.reduce((n, a) => n + a.movingSec, 0))}
       </Text>
-      <Text style={f.copy}>
+      <AppText role="body" secondary >
         {today.length} {today.length === 1 ? "activity" : "activities"} from
         today
-      </Text>
+      </AppText>
       {today.map((a) => (
         <View key={a.id} style={s.row}>
           <View style={{ flex: 1, gap: 3 }}>
-            <Text style={f.rowTitle}>{sportById(a.sport).name}</Text>
-            <Text style={f.small}>
+            <AppText role="itemTitle" >{sportById(a.sport).name}</AppText>
+            <AppText role="supporting" secondary >
               {formatVolume(a.sport, a.distanceM, a.movingSec, state.units)} ·{" "}
               {clubDuration(a.movingSec)}
-            </Text>
+            </AppText>
           </View>
-          <Text style={[f.small, { maxWidth: 115, textAlign: "right" }]}>
+          <AppText role="caption" secondary style={{ maxWidth: 115, textAlign: "right" }}>
             {receipt.preview
               ? "Preview only"
               : a.verified
                 ? "GPS verified"
                 : "Open activity"}
-          </Text>
+          </AppText>
         </View>
       ))}
       <View
         onLayout={(e) => setWidth(e.nativeEvent.layout.width)}
         style={s.swipe}
       >
-        <Text style={[f.rowTitle, { textAlign: "center" }]}>
+        <AppText role="itemTitle" style={{ textAlign: "center" }}>
           Swipe to lock it in
-        </Text>
+        </AppText>
         <View
           accessible
           accessibilityRole="adjustable"
@@ -129,7 +130,7 @@ export function SyncReview({
               { transform: [{ translateX: progress * travel }] },
             ]}
           >
-            <Text style={f.h2}>→</Text>
+            <AppText role="controlSymbol" >→</AppText>
           </View>
         </View>
       </View>

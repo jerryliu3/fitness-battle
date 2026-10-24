@@ -1,4 +1,6 @@
 "use client";
+import { AppParagraph, AppHeading } from "@/ui/section";
+
 
 import Link from "next/link";
 import { AwardShelf } from "@/features/you/award-shelf";
@@ -8,14 +10,14 @@ import { awardCards } from "@fitness-battle/shared";
 
 export function ProgressHistoryPage() {
   const { state } = useCompete();
-  if (!state) return <p className="fb-copy">Loading history…</p>;
+  if (!state) return <AppParagraph typographyRole="body" className="fb-copy">Loading history…</AppParagraph>;
   return (
     <div className="club-detail-page">
       <header className="club-detail-heading">
         <Link href="/you" className="club-icon-button" aria-label="Return to Progress">
           ‹
         </Link>
-        <h1>Past weeks & awards</h1>
+        <AppHeading level={1} role="navigationTitle">Past weeks & awards</AppHeading>
       </header>
       <SeasonHistory results={state.periodResults} primary={state.primary} units={state.units} />
       {awardCards(state).length > 0 ? <AwardShelf state={state} /> : null}

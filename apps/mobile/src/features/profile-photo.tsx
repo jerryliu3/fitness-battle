@@ -1,3 +1,4 @@
+import { AppText } from "../ui/section";
 import {
   buildAvatarCleanupPathsForProfileChange,
   getCanonicalAvatarObjectPath,
@@ -6,7 +7,7 @@ import {
 } from "@fitness-battle/shared";
 import * as ImagePicker from "expo-image-picker";
 import { useEffect, useRef, useState } from "react";
-import { Image, Pressable, Text, View } from "react-native";
+import { Image, Pressable, View } from "react-native";
 import Svg, { Path } from "react-native-svg";
 import { useAuth } from "../lib/auth";
 import { useCompeteStore } from "../lib/compete-store";
@@ -168,9 +169,9 @@ export function ProfilePhoto({ state }: { state: CompeteState }) {
         <FocusButton label="Cancel" secondary onPress={() => setMenuOpen(false)} />
       </FocusSheet>
       {error ? (
-        <Text style={f.small} accessibilityLiveRegion="polite">
+        <AppText role="caption" secondary  accessibilityLiveRegion="polite">
           {error}
-        </Text>
+        </AppText>
       ) : null}
     </View>
   );

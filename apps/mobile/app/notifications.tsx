@@ -1,3 +1,4 @@
+import { textStyle } from "../src/ui/section";
 import { ScreenHeader } from "../src/ui/screen-header";
 import { IconButton } from "../src/ui/icon-button";
 import {
@@ -264,29 +265,24 @@ const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.paper },
   scroll: { padding: 20, gap: 12 },
   back: {
-    fontFamily: fonts.bodyMedium,
+    ...textStyle("supporting"),
     color: colors.muted,
-    fontSize: 14,
-    marginBottom: 4,
-  },
+    marginBottom: 4
+},
   kicker: {
-    fontFamily: fonts.bodyMedium,
+    ...textStyle("caption"),
     color: colors.muted,
-    fontSize: 13,
-    textTransform: "uppercase",
-  },
+    textTransform: "uppercase"
+},
   title: {
-    fontFamily: fonts.bodyBold,
-    fontSize: 32,
+    ...textStyle("pageTitle"),
     color: colors.ink,
-    letterSpacing: -0.5,
-  },
+    letterSpacing: -0.5
+},
   copy: {
-    fontFamily: fonts.body,
-    color: colors.muted,
-    fontSize: 15,
-    lineHeight: 21,
-  },
+    ...textStyle("body"),
+    color: colors.muted
+},
   card: {
     backgroundColor: colors.card,
     borderRadius: 18,
@@ -305,13 +301,11 @@ const styles = StyleSheet.create({
   },
   rowFirst: { borderTopWidth: 0 },
   grow: { flex: 1, minWidth: 0, gap: 4 },
-  rowTitle: { fontFamily: fonts.bodyBold, fontSize: 16, color: colors.ink },
+  rowTitle: { ...textStyle("itemTitle"), color: colors.ink },
   rowDetail: {
-    fontFamily: fonts.body,
-    fontSize: 13,
-    color: colors.muted,
-    lineHeight: 18,
-  },
+    ...textStyle("supporting"),
+    color: colors.muted
+},
   line: {
     borderWidth: 1,
     borderColor: colors.line,
@@ -320,6 +314,6 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     alignItems: "center",
   },
-  lineText: { color: colors.ink, fontFamily: fonts.bodyBold },
+  lineText: { ...textStyle("actionLabel"), color: colors.ink },
   disabled: { opacity: 0.45 },
 });

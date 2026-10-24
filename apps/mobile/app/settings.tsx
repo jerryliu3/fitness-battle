@@ -1,3 +1,4 @@
+import { SectionStack } from "../src/ui/section";
 import { ScreenHeader } from "../src/ui/screen-header";
 
 import { router } from "expo-router";
@@ -10,6 +11,7 @@ export default function SettingsScreen() {
   return (
     <SafeAreaView style={f.safe} edges={["top"]}>
       <ScrollView contentContainerStyle={f.content}>
+<SectionStack divided={false}>
         <ScreenHeader title="Settings" onBack={() => router.canGoBack() ? router.back() : router.replace("/athlete")} />
         <View style={{ gap: 8 }}>
           <SettingsRow
@@ -68,7 +70,8 @@ export default function SettingsScreen() {
             }
           />
         </View>
-      </ScrollView>
+      </SectionStack>
+</ScrollView>
     </SafeAreaView>
   );
 }

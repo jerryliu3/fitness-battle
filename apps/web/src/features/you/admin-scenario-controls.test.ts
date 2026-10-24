@@ -26,7 +26,7 @@ describe("scenario lab UI", () => {
   expect(button("Apply scenario to account").props.disabled).toBe(false);
   await act(async () => button("Apply scenario to account").props.onClick());
   expect(JSON.parse(fetcher.mock.calls[1]![1].body)).toMatchObject({ target, updatedAt: "v1", action: "add-activity", verified: false });
-  expect(renderer.root.findByProps({ role: "status" }).children.join("")).toContain("Audit ID: audit");
+  expect(renderer.root.findAllByType("p").find(node => node.props.role === "status")!.children.join("")).toContain("Audit ID: audit");
  });
  it("does not apply a delayed preview after switching targets", async () => {
   let resolve!: (value: Response) => void;

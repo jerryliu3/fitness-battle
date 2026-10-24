@@ -1,5 +1,6 @@
 "use client";
 import { ActivityRoute } from "@/components/routes/activity-route";
+import { AppParagraph, Section, SectionStack } from "@/ui/section";
 import { TrainingAtlas } from "./training-atlas";
 import { useState, type ReactNode } from "react";
 import { RecordChart } from "./record-chart";
@@ -39,12 +40,11 @@ export function TrainingHistory({ state, children }: { state: CompeteState; chil
   const latest = rows.at(-1),
     inspected = rows.find((r) => r.activityId === receipt) ?? latest;
   return (
-    <>
+    <SectionStack>
       <TrainingAtlas state={state} />
       {children}
       {active && latest && inspected ? (
-        <section className="focus-card record-history">
-          <h2>Personal records</h2>
+        <Section title="Personal records" className="record-history">
           <div
             className="record-distance-tabs"
             role="group"
@@ -66,9 +66,9 @@ export function TrainingHistory({ state, children }: { state: CompeteState; chil
               </button>
             ))}
           </div>
-          <p className="fb-kicker">
+          <AppParagraph typographyRole="badgeLabel" className="fb-kicker">
             {active.label} · {active.sport}
-          </p>
+          </AppParagraph>
           <strong className="record-time">
             {formatClockTime(latest.seconds)}
           </strong>
@@ -93,14 +93,14 @@ export function TrainingHistory({ state, children }: { state: CompeteState; chil
           <div aria-live="polite">
             <b>{formatClockTime(inspected.seconds)}</b> ·{" "}
             {date(inspected.startedAt)}
-            <p className="fb-copy">
+            <AppParagraph typographyRole="body" className="fb-copy">
               {inspected.source.replaceAll("_", " ")}
               {inspected.verified ? " · GPS recorded" : ""}
-            </p>
+            </AppParagraph>
           </div>
           <ActivityRoute units={state.units} key={inspected.activityId} activity={state.activities.find(a => a.id === inspected.activityId)} milestone />
-        </section>
+        </Section>
       ) : null}
-    </>
+    </SectionStack>
   );
 }

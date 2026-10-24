@@ -1,4 +1,6 @@
 "use client";
+import { AppText, AppParagraph, AppHeading } from "@/ui/section";
+
 import Link from "next/link";
 import {
   competeNow,
@@ -43,12 +45,12 @@ export function RivalCard({ state }: { state: CompeteState }) {
       <img className="club-landscape" src="/club/alpine-trail.jpg" alt="" />
       <div className="club-rival-top">
         <div>
-          <h2>{sport ? sportById(sport).name : "Find your field"}</h2>
+          <AppHeading level={2} role="contentTitle">{sport ? sportById(sport).name : "Find your field"}</AppHeading>
         </div>
         {you ? (
           <span className="club-place">
             <b>{you.place}</b> / {fieldSize}
-            <small>place</small>
+            <AppText as="small" role="caption" secondary>place</AppText>
           </span>
         ) : null}
       </div>
@@ -61,7 +63,7 @@ export function RivalCard({ state }: { state: CompeteState }) {
                 ? "You’re leading the way."
                 : "Your next chapter starts here."}
           </strong>
-          <p>
+          <AppParagraph typographyRole="body">
             {rival
               ? synthetic
                 ? "Next rival · simulated athlete"
@@ -69,7 +71,7 @@ export function RivalCard({ state }: { state: CompeteState }) {
               : you
                 ? "Keep showing up. Every effort counts."
                 : "Register for a weekly event."}
-          </p>
+          </AppParagraph>
         </div>
         <span className="club-round-arrow" aria-hidden="true">
           ↗

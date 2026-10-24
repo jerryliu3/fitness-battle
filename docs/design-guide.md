@@ -186,3 +186,18 @@ The header uses a bounded effort container with remaining volume inside its mete
 Native choice controls overlay their parent; duration/distance use wheels and dates/times use platform pickers. Native Members uses a root stack destination. Default 2D geometry shows approximately five lanes while retaining its existing longitudinal distance scale. Place and next-rival status sit above the field as a plain text row. White competition date containers, Active Sports cards, sport/settings icons and distinct level symbols provide separation. iOS chrome stays light. See the [follow-up audit](reviews/mobile-bugfixes-2026-10-23/README.md) for changes, rollout and remaining device checks.
 
 Home's Latest activity retains up to three of the athlete's eligible sessions from today and yesterday (Eastern), plus the existing latest-session-per-crew-member summaries. This keeps an earlier GPS route accessible after another session. Each available own GPS route replaces the sport icon with a 64px square map thumbnail. The row opens activity details with the full map and flyover; previews do not sit below Home activity rows. Private crew coordinates remain unavailable. Personal record charts hold each best time horizontally until the next achievement, then step down at its date.
+
+## Shared hierarchy implementation — October 24
+
+Product typography now has semantic shared roles, with **22/28 DM Sans 700**
+section titles and **14/20 DM Sans 700** section actions. Page titles remain
+30/36; compact centered Back titles use 20/26. Platform adapters, open Sections,
+SectionStack boundaries and scalable status badges are described in
+[component guidelines](design/component-guidelines.md#semantic-typography-and-sections-october-24-2026).
+The contract now applies across the production web and native application,
+including Home, Compete, Progress, Crew, Athlete/settings, onboarding,
+notifications, authentication, history, awards, sleep/recovery and rankings.
+SectionHeader/Section compositions and page stacks share one rhythm; copy, row
+titles, subtitles and captions consume semantic roles. Keep chart/metric scale,
+avatar initials, utility symbols and achievement art separate from headings. Shared divided boundaries use #d0dad7 at one logical unit on both
+platforms, with 16 before and 12 after; mobile page gutters remain 20.

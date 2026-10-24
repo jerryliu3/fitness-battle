@@ -22,7 +22,7 @@ describe("admin field control UI", () => {
   expect(restart().props.disabled).toBe(false);
   await act(async () => restart().props.onClick());
   expect(JSON.parse(fetcher.mock.calls[1]![1].body)).toMatchObject({ target: "a", fieldId: "field-id", updatedAt: "version", action: "restart-field", confirmation: "WAVE field-id" });
-  expect(renderer.root.findByProps({ role: "status" }).children.join("")).toContain("2 athletes");
+  expect(renderer.root.findAllByType("p").find(node => node.props.role === "status")!.children.join("")).toContain("2 athletes");
  });
  it("clears the selected field when the athlete changes", async () => {
   await act(async () => renderer.root.findByType("button").props.onClick());

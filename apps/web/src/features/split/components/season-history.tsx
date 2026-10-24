@@ -1,4 +1,6 @@
 "use client";
+import { AppParagraph, AppText, SectionHeader, AppHeading } from "@/ui/section";
+
 
 import {
   APP_TIMEZONE,
@@ -58,13 +60,13 @@ export function SeasonHistory({
     return (
       <section className="sp-history" id="season-history">
         <div className="fd-roster-head">
-          <h3>Past weeks</h3>
+          <AppHeading level={3} role="contentTitle">Past weeks</AppHeading>
         </div>
         <div className="sp-empty">
-          <h2>No closed weeks yet</h2>
-          <p className="fb-copy">
+          <SectionHeader title="No closed weeks yet"/>
+          <AppParagraph typographyRole="body" className="fb-copy">
             When a competition week ends, your place and effort score change land here — your weekly result.
-          </p>
+          </AppParagraph>
         </div>
       </section>
     );
@@ -73,7 +75,7 @@ export function SeasonHistory({
   return (
     <section className="sp-history" id="season-history">
       <div className="fd-roster-head">
-        <h3>Past weeks</h3>
+        <AppHeading level={3} role="contentTitle">Past weeks</AppHeading>
         <span>{new Set(rows.map(row=>row.periodStart)).size} weeks</span>
       </div>
 
@@ -97,12 +99,12 @@ export function SeasonHistory({
         ))}
       </div>
       <div className="weekly-chapters">
-        {!rows.length?<p className="fb-note">No closed weeks match this selection.</p>:null}
+        {!rows.length?<AppParagraph typographyRole="caption" className="fb-note">No closed weeks match this selection.</AppParagraph>:null}
         {rows.map((row,index)=>{
           const month=new Date(Date.parse(row.periodEnd)-1).toLocaleDateString("en-US",{month:"long",year:"numeric",timeZone:APP_TIMEZONE});
           const previous=rows[index-1];
           const previousMonth=previous?new Date(Date.parse(previous.periodEnd)-1).toLocaleDateString("en-US",{month:"long",year:"numeric",timeZone:APP_TIMEZONE}):null;
-          return <div key={row.id}>{month!==previousMonth?<h4 className="fb-kicker chapter-month">{month}</h4>:null}<details className="weekly-chapter"><summary><span className={`chapter-place${row.place===1?" is-first":""}`}>#{row.place}</span><span className="chapter-label"><b>{weekLabel(row.periodStart,row.periodEnd)}</b><small>{sportById(row.sport).name} · {row.track==="verified"?"GPS":"Open"} · {row.place} of {row.fieldSize}{row.frozen?" · frozen":""}</small></span><span className="chapter-delta">{formatEloDelta(row.eloBefore,row.eloAfter)}<small>score</small></span></summary><ResultCard result={row} units={units}/></details></div>;
+          return <div key={row.id}>{month!==previousMonth?<h4 className="fb-kicker chapter-month">{month}</h4>:null}<details className="weekly-chapter"><summary><span className={`chapter-place${row.place===1?" is-first":""}`}>#{row.place}</span><span className="chapter-label"><b>{weekLabel(row.periodStart,row.periodEnd)}</b><AppText as="small" role="caption" secondary>{sportById(row.sport).name} · {row.track==="verified"?"GPS":"Open"} · {row.place} of {row.fieldSize}{row.frozen?" · frozen":""}</AppText></span><span className="chapter-delta">{formatEloDelta(row.eloBefore,row.eloAfter)}<AppText as="small" role="caption" secondary>score</AppText></span></summary><ResultCard result={row} units={units}/></details></div>;
         })}
       </div>
     </section>

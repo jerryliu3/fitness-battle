@@ -1,5 +1,6 @@
+import { Section, TextAction, StatusBadge, AppText } from "../ui/section";
 import { useRouter } from "expo-router";
-import { Platform, Pressable, StyleSheet, Text, View } from "react-native";
+import { Platform, Pressable, View } from "react-native";
 import Svg, { Defs, LinearGradient, Path, Stop } from "react-native-svg";
 import {
   clubAchievements,
@@ -8,7 +9,6 @@ import {
   type CompeteState,
 } from "@fitness-battle/shared";
 import { achievementTileStyle } from "./achievements-catalog";
-import { f } from "../ui/focus";
 import { SHELL_COLORS as c } from "../theme";
 
 function Badge({ item }: { item: ClubAchievement }) {
@@ -36,18 +36,7 @@ export function Achievements({ state }: { state: CompeteState }) {
   const featured = featuredClubAchievements(rows);
   const router = useRouter();
   return (
-    <View style={[f.section, { gap: 12 }]}>
-      <View style={f.row}>
-        <Text accessibilityRole="header" style={f.sectionTitle}>Achievements</Text>
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel="View all achievements"
-          style={{ minHeight: 44, justifyContent: "center" }}
-          onPress={() => router.push("/progress-achievements")}
-        >
-          <Text style={f.rowTitle}>View all →</Text>
-        </Pressable>
-      </View>
+    <Section title="Achievements" action={<TextAction label="View all" accessibilityLabel="View all achievements" onPress={() => router.push("/progress-achievements")}/> }>
       <View style={{ flexDirection: "row", gap: 8 }}>
         {featured.map((row) => (
           <Pressable
@@ -58,17 +47,15 @@ export function Achievements({ state }: { state: CompeteState }) {
             style={achievementTileStyle.tile}
           >
             <Badge item={row} />
-            <Text style={[f.rowTitle, { textAlign: "center", fontSize: 13, fontFamily: "DMSans_700Bold" }]}>
+            <AppText role="itemTitle" style={{ textAlign: "center" }}>
               {row.target.toLocaleString()}
               {row.category === "sessions" ? (row.target === 1 ? " session" : " sessions") : " pts"}
-            </Text>
-            <Text style={[f.small, { textAlign: "center", fontSize: 11, lineHeight: 16 }]}>{row.title}</Text>
-            <Text style={[f.small, { fontSize: 10, color: row.earned ? c.green : c.muted }]}>
-              {row.earned ? "✓ Earned" : "Up next"}
-            </Text>
+            </AppText>
+            <AppText role="caption" secondary style={{ textAlign: "center" }}>{row.title}</AppText>
+            <StatusBadge tone={row.earned ? "success" : "neutral"}>{row.earned ? "✓ Earned" : "Up next"}</StatusBadge>
           </Pressable>
         ))}
       </View>
-    </View>
+    </Section>
   );
 }
