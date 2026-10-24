@@ -1,4 +1,6 @@
 "use client";
+import { AppText } from "@/ui/section";
+
 
 import { formatEffort, selfLaneLabel } from "@fitness-battle/shared";
 import type { BoardRow } from "@fitness-battle/shared";
@@ -54,7 +56,7 @@ export function FieldRoster({
             </span>
             <span className="grow">
               {ghost.name}
-              <small>{ghost.detail ?? "Reference · not ranked"}</small>
+              <AppText as="small" role="caption" secondary>{ghost.detail ?? "Reference · not ranked"}</AppText>
             </span>
             <b>
               {formatEffort(ghost.effort)} {unit}
@@ -71,7 +73,7 @@ export function FieldRoster({
             </span>
             <span className="grow">
               {ghost.name}
-              <small>{ghost.detail ?? "Reference · not ranked"}</small>
+              <AppText as="small" role="caption" secondary>{ghost.detail ?? "Reference · not ranked"}</AppText>
             </span>
             <b>
               {formatEffort(ghost.effort)} {unit}
@@ -95,7 +97,7 @@ export function FieldRoster({
             <span className="place">{row.place}</span>
             <span className="grow">
               {row.you ? selfLaneLabel(row.name) : row.name}
-              <small>{secondary}</small>
+              <AppText as="small" role="caption" secondary>{secondary}</AppText>
             </span>
             <b>
               {formatEffort(row.effort)} {unit}

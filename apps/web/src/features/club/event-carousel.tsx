@@ -1,4 +1,6 @@
 "use client";
+import { AppParagraph, AppHeading, AppText, StatusBadge } from "@/ui/section";
+
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useReducedMotion } from "motion/react";
 import { Sheet } from "@/ui/sheet";
@@ -69,12 +71,12 @@ export function EventCarousel({
           aria-haspopup="dialog"
           onClick={() => setChoosing(true)}
         >
-          <strong>
+          <AppText role="sectionTitle">
             {events[index]?.label}{" "}
             {events[index]?.badge ? (
-              <span className="club-track-badge">{events[index]?.badge}</span>
+              <StatusBadge>{events[index]?.badge}</StatusBadge>
             ) : null}
-          </strong>
+          </AppText>
         </button>
         <button
           type="button"
@@ -130,8 +132,8 @@ export function EventCarousel({
               children
             ) : (
               <div className="club-event-preview">
-                <h2>{event.label}</h2>
-                <p>Swipe to open this event</p>
+                <AppHeading level={2} role="contentTitle">{event.label}</AppHeading>
+                <AppParagraph typographyRole="body">Swipe to open this event</AppParagraph>
               </div>
             )}
           </div>

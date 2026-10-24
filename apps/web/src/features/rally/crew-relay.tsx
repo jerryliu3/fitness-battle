@@ -1,4 +1,6 @@
 "use client";
+import { AppText, AppParagraph } from "@/ui/section";
+
 import { useId, useLayoutEffect, useRef, useState } from "react";
 import {
   crewWeekRelay,
@@ -113,33 +115,33 @@ export function CrewRelay(props: Props) {
                   )}
                 </span>
                 <b>{m.name.split(" ")[0]}</b>
-                <small>{volume(m.value)}</small>
+                <AppText as="small" role="caption" secondary>{volume(m.value)}</AppText>
               </button>
             );
           })}
         </div>
       </div>
       {member ? (
-        <p className="crew-member-receipt" aria-live="polite">
+        <AppParagraph typographyRole="body" className="crew-member-receipt" aria-live="polite">
           <b>{member.name}</b>
           <span>
             {volume(member.value)} · {(member.share * 100).toFixed(1)}% of
             recorded crew activity · {member.sessions} {member.sessions===1?"session":"sessions"}
           </span>
-        </p>
+        </AppParagraph>
       ) : null}
       {target ? (
-        <p className="fb-note">
+        <AppParagraph typographyRole="caption" className="fb-note">
           {model.remaining
             ? `${volume(model.remaining)} ${kind === "baseline" ? "to match last week" : "to the target"}`
             : model.total > target
               ? `${volume(model.total - target)} beyond ${kind === "baseline" ? "last week" : "the target"}`
               : "Target reached together."}
-        </p>
+        </AppParagraph>
       ) : (
-        <p className="fb-note">
+        <AppParagraph typographyRole="caption" className="fb-note">
           Recorded contributions are shown without inventing a finish.
-        </p>
+        </AppParagraph>
       )}
     </div>
   );

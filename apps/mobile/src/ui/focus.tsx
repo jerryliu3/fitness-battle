@@ -1,4 +1,5 @@
-import { AppText } from "./section";
+import { SHELL_SPACING, SHELL_SECTION, SHELL_RADIUS } from "@fitness-battle/shared";
+import { AppText, PageHeader, textStyle } from "./section";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import {
   Animated,
@@ -126,7 +127,7 @@ export function FocusSheet({
           </View> : !minimal && <View style={f.sheetHead}>
             <View />
             <Pressable onPress={onClose} accessibilityRole="button" accessibilityLabel="Close dialog" style={f.close}>
-              <Text style={f.h2}>×</Text>
+              <AppText role="controlSymbol">×</AppText>
             </Pressable>
           </View>}
           <ScrollView
@@ -158,15 +159,7 @@ export function FocusHeading({
   return (
     <View style={f.heading}>
       <Text style={f.kicker}>{kicker}</Text>
-      <Text
-        accessibilityRole="header"
-        style={f.title}
-      >
-        {title}
-      </Text>
-      {Boolean(body) && (
-        <Text style={f.copy}>{body}</Text>
-      )}
+      <PageHeader title={title} subtitle={body}/>
     </View>
   );
 }
@@ -331,9 +324,9 @@ export function FocusDisclosure({
       >
         <View style={f.grow}>
           <Text style={f.rowTitle}>{title}</Text>
-          {Boolean(detail) && <Text style={f.small}>{detail}</Text>}
+          {Boolean(detail) && <AppText role="supporting" secondary>{detail}</AppText>}
         </View>
-        <Text style={f.h2}>{open ? "−" : "＋"}</Text>
+        <AppText role="controlSymbol">{open ? "−" : "＋"}</AppText>
       </Pressable>
       {open && (
         <View style={[f.disclosureBody, compact && f.disclosureBodyCompact]}>
@@ -348,7 +341,7 @@ export const f = StyleSheet.create({
   content: {
     padding: 20,
     paddingBottom: 120,
-    gap: 24,
+    gap: SHELL_SPACING.section,
     maxWidth: 880,
     width: "100%",
     alignSelf: "center",
@@ -360,50 +353,33 @@ export const f = StyleSheet.create({
     marginBottom: 8,
   },
   kicker: {
-    fontFamily: "DMSans_700Bold",
-    fontSize: 10,
-    letterSpacing: 1.5,
-    lineHeight: 16,
+    ...textStyle("badgeLabel"),
+    letterSpacing: 0.8,
     textTransform: "uppercase",
     color: c.muted,
   },
   title: {
-    fontFamily: "DMSans_700Bold",
-    fontSize: 30,
-    lineHeight: 36,
-    letterSpacing: -1.3,
+    ...textStyle("pageTitle"),
     color: c.ink,
   },
   h2: {
-    fontFamily: "DMSans_500Medium",
-    fontSize: 20,
-    lineHeight: 26,
-    letterSpacing: -0.6,
+    ...textStyle("contentTitle"),
     color: c.ink,
   },
   sectionTitle: {
-    fontFamily: "DMSans_500Medium",
-    fontSize: 20,
-    lineHeight: 26,
-    letterSpacing: -0.6,
+    ...textStyle("sectionTitle"),
     color: c.ink,
   },
   copy: {
-    fontFamily: "DMSans_400Regular",
-    fontSize: 14,
-    lineHeight: 22,
+    ...textStyle("body"),
     color: c.muted,
   },
   small: {
-    fontFamily: "DMSans_400Regular",
-    fontSize: 12,
-    lineHeight: 18,
+    ...textStyle("caption"),
     color: c.muted,
   },
   rowTitle: {
-    fontFamily: "DMSans_500Medium",
-    fontSize: 14,
-    lineHeight: 20,
+    ...textStyle("itemTitle"),
     color: c.ink,
   },
   row: {
@@ -414,10 +390,7 @@ export const f = StyleSheet.create({
   },
   grow: { flex: 1 },
   section: {
-    paddingVertical: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: mobileSurfaces.divider,
-    gap: 16,
+    gap: SHELL_SECTION.contentGap,
   },
   card: {
     backgroundColor: c.card,
@@ -432,7 +405,7 @@ export const f = StyleSheet.create({
     backgroundColor: c.actionPrimary,
     borderBottomWidth: 1,
     borderBottomColor: c.actionPrimary,
-    borderRadius: 11,
+    borderRadius: SHELL_RADIUS.control,
     minHeight: 48,
     padding: 15,
     flexDirection: "row",
@@ -441,8 +414,7 @@ export const f = StyleSheet.create({
     gap: 12,
   },
   buttonText: {
-    fontFamily: "DMSans_500Medium",
-    fontSize: 14,
+    ...textStyle("actionLabel"),
     color: c.ink,
   },
   secondary: {
@@ -473,8 +445,7 @@ export const f = StyleSheet.create({
   },
   segmentSelected: { backgroundColor: c.ink },
   segmentText: {
-    fontFamily: "DMSans_500Medium",
-    fontSize: 12,
+    ...textStyle("itemTitle"),
     color: c.muted,
     textAlign: "center",
   },
@@ -486,8 +457,7 @@ export const f = StyleSheet.create({
     flexShrink: 0,
   },
   textButtonText: {
-    fontFamily: "DMSans_500Medium",
-    fontSize: 14,
+    ...textStyle("actionLabel"),
     color: c.ink,
   },
   disclosureCompact: {
@@ -515,8 +485,8 @@ export const f = StyleSheet.create({
   backdrop: { ...StyleSheet.absoluteFill, backgroundColor: "#14211b80" },
   sheet: {
     maxHeight: "92%",
-    borderTopLeftRadius: 27,
-    borderTopRightRadius: 27,
+    borderTopLeftRadius: SHELL_RADIUS.sheet,
+    borderTopRightRadius: SHELL_RADIUS.sheet,
     backgroundColor: c.paper,
     paddingTop: 10,
   },
@@ -555,8 +525,7 @@ export const f = StyleSheet.create({
   chipActive: { borderColor: c.plum, backgroundColor: c.soft },
   chipRow: { flexDirection: "row", gap: 9, flexWrap: "wrap" },
   input: {
-    fontFamily: "DMSans_400Regular",
-    fontSize: 14,
+    ...textStyle("body"),
     color: c.ink,
     minHeight: 49,
     padding: 14,

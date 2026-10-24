@@ -1,3 +1,4 @@
+import { AppText } from "../ui/section";
 import { RankBadge } from "../ui/rank-badge";
 import { PortraitField } from "../ui/portrait-field";
 import {
@@ -346,18 +347,18 @@ export function CompetitionField({
               paddingHorizontal: expanded ? 16 : 0,
             }}
           >
-            <Text style={[f.small, { color: c.ink }]}>
+            <AppText role="caption" secondary style={{ color: c.ink }}>
               {overtakeFrame?.currentRank ?? place(total)} / {ranked.length}{" "}
               PLACE
-            </Text>
-            <Text
-              style={[f.small, { color: c.ink, fontSize: 10, flexShrink: 1 }]}
+            </AppText>
+            <AppText role="caption" secondary
+              style={{ color: c.ink, flexShrink: 1 }}
             >
               {portraitFieldGap(
                 portraitField(fieldLanes, view).nextGap,
                 arena.unit,
               )}
-            </Text>
+            </AppText>
           </View>
 
         <View style={{ position: "relative" }}>
@@ -409,9 +410,9 @@ export function CompetitionField({
                 justifyContent: "center",
               }}
             >
-              <Text style={{ color: "white", fontSize: 24 }}>−</Text>
+              <AppText role="controlSymbol" style={{color: "white"}}>−</AppText>
             </Pressable>
-            <Text style={[f.small, { color: "white" }]}>Zoom</Text>
+            <AppText role="caption" secondary style={{ color: "white" }}>Zoom</AppText>
             <Pressable
               accessibilityRole="button"
               accessibilityLabel="Zoom in"
@@ -424,7 +425,7 @@ export function CompetitionField({
                 justifyContent: "center",
               }}
             >
-              <Text style={{ color: "white", fontSize: 24 }}>＋</Text>
+              <AppText role="controlSymbol" style={{color: "white"}}>＋</AppText>
             </Pressable>
           </View>
         </View>
@@ -454,21 +455,21 @@ export function CompetitionField({
               <Text
                 style={[f.massive, { fontSize: 34, fontFamily: "DMSans_700Bold" }]}
               >
-                {displayTotal.toFixed(1)} <Text style={f.copy}>{arena.unit}</Text>
+                {displayTotal.toFixed(1)} <AppText role="body" secondary >{arena.unit}</AppText>
               </Text>
             </View>
             <View style={{ alignItems: "center", gap: 2 }}>
-              <Text style={f.h2}>
+              <AppText role="metricValue" >
                 {overtakeFrame?.currentRank ?? place(total)} / {ranked.length}
-              </Text>
-              <Text style={f.small}>your place</Text>
+              </AppText>
+              <AppText role="caption" secondary >your place</AppText>
             </View>
           </View>
           {overtakePlan && overtakeStatus ? (
-            <Text style={f.rowTitle} accessibilityLiveRegion="polite">
+            <AppText role="itemTitle"  accessibilityLiveRegion="polite">
               {overtakeStatus.headline}
               {overtakeStatus.detail ? ` · ${overtakeStatus.detail}` : ""}
-            </Text>
+            </AppText>
           ) : null}
           <FocusSegments
             label={`${arena.sportName} field view`}
@@ -491,7 +492,7 @@ export function CompetitionField({
         <SafeAreaView style={f.safe} edges={["top", "bottom"]}>
           <View style={[f.row, { minHeight: 56, paddingHorizontal: 12 }]}>
             <IconButton icon="back" label="Close full screen field" onPress={() => setExpanded(false)} />
-            <Text accessibilityRole="header" style={f.h2}>{arena.sportName}</Text><View style={{ width: 44 }} />
+            <AppText role="navigationTitle" accessibilityRole="header" >{arena.sportName}</AppText><View style={{ width: 44 }} />
           </View>
           <View style={{ paddingHorizontal: 16, paddingBottom: 4 }}><FocusSegments label="Full screen field dimension" value={viewDimension} options={[{ value: "2d", label: "2D map" }, { value: "3d", label: "3D field" }]} onChange={next => { setDimension(next); onArenaViewChange?.(next === "2d" ? "lanes2d" : "3d"); }} /></View>
           {fieldContent}
@@ -499,7 +500,7 @@ export function CompetitionField({
       </Modal> : fieldContent}
       {viewMode === "standings" ? (
         <View style={f.section}>
-          <Text style={f.small}>Ranked by this week's effort</Text>
+          <AppText role="caption" secondary >Ranked by this week's effort</AppText>
           {ranked.map((lane) => (
             <Pressable
               key={lane.id}
@@ -508,7 +509,7 @@ export function CompetitionField({
               onPress={() => selectAthlete(lane.id)}
               style={[f.row, { minHeight: 48, paddingVertical: 6 }]}
             >
-              <Text style={f.small}>{place(lane.values[2])}</Text>
+              <AppText role="caption" secondary >{place(lane.values[2])}</AppText>
               <Svg width={26} height={36} viewBox="-40 -50 80 100">
                 <PolishedRacer
                   x={0}
@@ -518,28 +519,28 @@ export function CompetitionField({
                   showWake={false}
                 />
               </Svg>
-              <Text style={[f.rowTitle, f.grow]}>
+              <AppText role="itemTitle" style={f.grow}>
                 {lane.you ? selfLaneLabel(lane.name) : lane.name}
-              </Text>
+              </AppText>
               <RankBadge score={scores.find(row => row.id === lane.id)?.elo} />
               <View style={{ alignItems: "flex-end" }}>
-                <Text style={f.rowTitle}>
+                <AppText role="itemTitle" >
                   {lane.values[2].toFixed(1)} {arena.unit}
-                </Text>
-                <Text style={[f.small, { color: c.ink }]}>
+                </AppText>
+                <AppText role="supporting" secondary style={{ color: c.ink }}>
                   {scores.find((row) => row.id === lane.id)?.elo ?? "—"} effort
                   score
-                </Text>
+                </AppText>
               </View>
             </Pressable>
           ))}
-          {pastYou && <View style={[f.row, { minHeight: 48, borderTopWidth: 1, borderTopColor: c.line }]}><Text style={f.copy}>Past you · unranked</Text><Text style={f.rowTitle}>{pastYou.values[2].toFixed(1)} {arena.unit}</Text></View>}
+          {pastYou && <View style={[f.row, { minHeight: 48, borderTopWidth: 1, borderTopColor: c.line }]}><AppText role="body" secondary >Past you · unranked</AppText><AppText role="itemTitle" >{pastYou.values[2].toFixed(1)} {arena.unit}</AppText></View>}
         </View>
       ) : null}
-      <Text style={f.small}>
+      <AppText role="caption" secondary >
         Accumulated effort, not live GPS positions. Practice fields may contain
         synthetic athletes.
-      </Text>
+      </AppText>
     </View>
   );
 }

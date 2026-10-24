@@ -1,4 +1,6 @@
 "use client";
+import { AppParagraph, Section, AppHeading } from "@/ui/section";
+
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   APP_TIMEZONE,
@@ -96,10 +98,7 @@ export function CrewSessions({
     }
   }
   return (
-    <section className="focus-card start-line">
-      <div className="focus-row">
-        <h2>Start Line</h2>
-        <button
+    <Section className="focus-card start-line" title="Start Line" action={<button
           type="button"
           className="fb-btn-ghost"
           disabled={busy}
@@ -109,22 +108,22 @@ export function CrewSessions({
           }}
         >
           ＋ Schedule
-        </button>
-      </div>
-      {demo ? <p className="fb-note">Demo · saved on this device</p> : null}
+        </button>}>
+
+      {demo ? <AppParagraph typographyRole="caption" className="fb-note">Demo · saved on this device</AppParagraph> : null}
       {sessions.map((s) => {
         const joined = s.participants.some((p) => p.user_id === userId),
           closed = !!s.cancelled_at || Date.parse(s.starts_at) <= Date.now();
         return (
           <article key={s.id} className="start-ticket">
-            <p className="fb-kicker">
+            <AppParagraph typographyRole="badgeLabel" className="fb-kicker">
               {new Date(s.starts_at).toLocaleDateString("en-US", {
                 weekday: "long",
                 month: "short",
                 day: "numeric",
                 timeZone: s.time_zone,
               })}
-            </p>
+            </AppParagraph>
             <strong className="start-ticket-time">
               {new Date(s.starts_at).toLocaleTimeString("en-US", {
                 hour: "numeric",
@@ -132,10 +131,10 @@ export function CrewSessions({
                 timeZone: s.time_zone,
               })}
             </strong>
-            <p className="fb-copy">
+            <AppParagraph typographyRole="body" className="fb-copy">
               {s.time_zone} · {s.duration_min} min
-            </p>
-            <h3>{s.title}</h3>
+            </AppParagraph>
+            <AppHeading level={3} role="contentTitle">{s.title}</AppHeading>
             <div className="start-ticket-bottom">
               <div
                 className="start-lights"
@@ -154,13 +153,13 @@ export function CrewSessions({
                   <span>+{s.participants.length - 6}</span>
                 ) : null}
               </div>
-              <p className="fb-copy">
+              <AppParagraph typographyRole="body" className="fb-copy">
                 {s.cancelled_at
                   ? "Cancelled"
                   : closed
                     ? "Session started"
                     : `${s.participants.length} on the start list`}
-              </p>
+              </AppParagraph>
               {!closed ? (
                 <div className="focus-row">
                   <button
@@ -188,10 +187,10 @@ export function CrewSessions({
         );
       })}
       {!sessions.length && !error ? (
-        <p className="fb-copy">Same time. Your own place.</p>
+        <AppParagraph typographyRole="body" className="fb-copy">Same time. Your own place.</AppParagraph>
       ) : null}
       {!open && error ? (
-        <p role="alert">
+        <AppParagraph typographyRole="body" role="alert">
           {error}{" "}
           <button
             className="fb-btn-ghost"
@@ -203,7 +202,7 @@ export function CrewSessions({
           >
             Refresh
           </button>
-        </p>
+        </AppParagraph>
       ) : null}
       <Sheet
         open={open}
@@ -254,7 +253,7 @@ export function CrewSessions({
             ))}
           </div>
         </fieldset>
-        {error ? <p role="alert">{error}</p> : null}
+        {error ? <AppParagraph typographyRole="body" role="alert">{error}</AppParagraph> : null}
         <button
           className="fb-btn"
           disabled={busy}
@@ -283,6 +282,6 @@ export function CrewSessions({
           {busy ? "Saving…" : "Set the start line"}
         </button>
       </Sheet>
-    </section>
+    </Section>
   );
 }

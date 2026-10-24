@@ -1,3 +1,4 @@
+import { textStyle } from "./section";
 import { BottomSheet } from "heroui-native/bottom-sheet";
 import { useEffect, useState, type ReactNode } from "react";
 import { AccessibilityInfo, StyleSheet, View } from "react-native";
@@ -41,8 +42,8 @@ export function DetailSheet({
         <BottomSheet.Overlay />
         <BottomSheet.Content snapPoints={["42%"]}>
           <View style={styles.stack}>
-            <BottomSheet.Title>{title}</BottomSheet.Title>
-            <BottomSheet.Description>{body}</BottomSheet.Description>
+            <BottomSheet.Title style={textStyle("pageTitle")}>{title}</BottomSheet.Title>
+            <BottomSheet.Description style={textStyle("body")}>{body}</BottomSheet.Description>
             {children}
             <BottomSheet.Close />
           </View>

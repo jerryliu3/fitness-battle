@@ -1,4 +1,6 @@
 "use client";
+import { AppParagraph } from "@/ui/section";
+
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   formatVolume,
@@ -75,7 +77,7 @@ export function WeeklySocialActions({
   if (!user || offlineMode) return null;
   if (error && !data)
     return (
-      <p role="alert">
+      <AppParagraph typographyRole="body" role="alert">
         {error}{" "}
         <button
           className="fb-btn-ghost"
@@ -87,15 +89,15 @@ export function WeeklySocialActions({
         >
           Retry
         </button>
-      </p>
+      </AppParagraph>
     );
   if (!peer) return null;
   return (
     <section className="week-social">
       {data?.receivedCongrats ? (
-        <p className="fb-copy">
+        <AppParagraph typographyRole="body" className="fb-copy">
           {data.receivedCongrats} congrats from your field
-        </p>
+        </AppParagraph>
       ) : null}
       <label className="fb-field">
         Athlete
@@ -111,10 +113,10 @@ export function WeeklySocialActions({
           <span>{peer.name}</span>
         )}
       </label>
-      <p>
+      <AppParagraph typographyRole="body">
         <b>{peer.name}</b> · #{peer.place} ·{" "}
         {formatVolume(result.sport, peer.distanceM, peer.movingSec, units)}
-      </p>
+      </AppParagraph>
       <div className="focus-row">
         <button
           className="fb-btn-line"
@@ -133,10 +135,10 @@ export function WeeklySocialActions({
           {peer.repeat ? "Race again ✓" : "Race again"}
         </button>
       </div>
-      <p className="fb-copy" aria-live="polite">
+      <AppParagraph typographyRole="body" className="fb-copy" aria-live="polite">
         {repeatStatus(peer.status)}
-      </p>
-      {error ? <p role="alert">{error}</p> : null}
+      </AppParagraph>
+      {error ? <AppParagraph typographyRole="body" role="alert">{error}</AppParagraph> : null}
     </section>
   );
 }

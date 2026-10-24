@@ -1,4 +1,5 @@
 "use client";
+import { SectionStack } from "@/ui/section";
 import { useEffect, useState, type ReactNode } from "react";
 import { useSearchParams } from "next/navigation";
 export function ProgressHub({
@@ -34,10 +35,10 @@ export function ProgressHub({
         ))}
       </div>
       <div className="club-progress-section" hidden={view !== "overview"}>
-        {overview}
+        <SectionStack divided={false}>{overview}</SectionStack>
       </div>
       <div className="club-progress-section" hidden={view !== "effort"}>
-        {effort}
+        <SectionStack divided={false}>{effort}</SectionStack>
       </div>
     </div>
   );

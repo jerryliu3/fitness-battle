@@ -1,4 +1,6 @@
 "use client";
+import { AppParagraph, typographyStyle, AppHeading } from "@/ui/section";
+
 import { clubLifetimeTotals } from "@fitness-battle/shared";
 import { ProfilePhoto } from "@/features/you/profile-photo";
 import { currentEffortMilestone, formatVolume } from "@fitness-battle/shared";
@@ -149,15 +151,15 @@ export function AthleteOverview({
               />
             </label>
             {profileError ? (
-              <p className="fb-error" role="alert" style={{ fontSize: 11, marginBottom: 8 }}>
+              <AppParagraph typographyRole="supporting" className="fb-error" role="alert" style={{ ...typographyStyle("supporting"), marginBottom: 8 }}>
                 {profileError}
-              </p>
+              </AppParagraph>
             ) : null}
             <div className="fb-row" style={{ gap: 8 }}>
               <button
                 type="button"
                 className="fb-btn"
-                style={{ fontSize: 13, padding: "6px 14px" }}
+                style={{ ...typographyStyle("actionLabel"), padding: "6px 14px" }}
                 onClick={() => {
                   const trimmedName = name.trim();
                   if (!trimmedName) {
@@ -175,7 +177,7 @@ export function AthleteOverview({
               <button
                 type="button"
                 className="fb-btn-line"
-                style={{ fontSize: 13, padding: "6px 14px" }}
+                style={{ ...typographyStyle("actionLabel"), padding: "6px 14px" }}
                 onClick={() => {
                   setName(state.name);
                   setCity(state.city);
@@ -194,13 +196,13 @@ export function AthleteOverview({
           <div className="focus-profile-card-copy">
             <div className="focus-profile-identity">
               <div className="focus-profile-identity-text">
-                <p className="fb-kicker">{state.city || "Your location"}</p>
-                <h1>{state.name}</h1>
+                <AppParagraph typographyRole="badgeLabel" className="fb-kicker">{state.city || "Your location"}</AppParagraph>
+                <AppHeading level={1} role="pageTitle">{state.name}</AppHeading>
                 {email ? (
-                  <p className="focus-profile-email">
+                  <AppParagraph typographyRole="body" className="focus-profile-email">
                     {email}
                     {offlineMode ? " · demo" : ""}
-                  </p>
+                  </AppParagraph>
                 ) : null}
               </div>
               <button
@@ -222,7 +224,7 @@ export function AthleteOverview({
 
       {showProgress ? (
       <section className="focus-season-strip" aria-label="Lifetime totals">
-        <p className="fb-kicker">Lifetime totals</p>
+        <AppParagraph typographyRole="badgeLabel" className="fb-kicker">Lifetime totals</AppParagraph>
         <div className="focus-season-stats">
           <div>
             <strong>{formatDistanceM(season.meters, state.units)}</strong>
@@ -259,7 +261,7 @@ export function AthleteOverview({
           <span className="focus-elo-score-label">effort score</span>
         </div>
 
-        {milestone ? <p className="fb-copy">+1 per {formatVolume(state.primary, state.primary === "strength" ? 0 : milestone.step, state.primary === "strength" ? milestone.step : 0, state.units)} this week · +{milestone.earned} from activity</p> : null}
+        {milestone ? <AppParagraph typographyRole="body" className="fb-copy">+1 per {formatVolume(state.primary, state.primary === "strength" ? 0 : milestone.step, state.primary === "strength" ? milestone.step : 0, state.units)} this week · +{milestone.earned} from activity</AppParagraph> : null}
         <svg
           viewBox="0 0 340 150"
           className="focus-trend"

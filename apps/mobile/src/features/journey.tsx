@@ -1,3 +1,4 @@
+import { AppText } from "../ui/section";
 import {
   APP_TIMEZONE,
   dayKey,
@@ -104,7 +105,7 @@ export function Journey({
     <>
       {removed ? (
         <View style={f.feedback} accessibilityLiveRegion="polite">
-          <Text style={f.copy}>Session removed.</Text>
+          <AppText role="body" secondary >Session removed.</AppText>
           <FocusButton
             label="Undo"
             secondary
@@ -214,13 +215,13 @@ export function Journey({
                   ) : null}
                   {day ? (
                     <>
-                      <Text style={f.rowTitle}>✓</Text>
-                      <Text style={f.small}>{dayHours}</Text>
+                      <AppText role="itemTitle" >✓</AppText>
+                      <AppText role="caption" secondary >{dayHours}</AppText>
                     </>
                   ) : stop.kind === "today" ? null : (
-                    <Text style={f.rowTitle}>
+                    <AppText role="itemTitle" >
                       {stop.kind === "start" ? "START" : "⋯"}
-                    </Text>
+                    </AppText>
                   )}
                 </Pressable>
                 <View
@@ -243,7 +244,7 @@ export function Journey({
                   }}
                 >
                   {dateWithWeekday ? (
-                    <Text style={f.small}>{dateWithWeekday}</Text>
+                    <AppText role="caption" secondary >{dateWithWeekday}</AppText>
                   ) : null}
                   <Text
                     style={[

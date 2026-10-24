@@ -1,3 +1,4 @@
+import { SectionStack, AppText } from "../src/ui/section";
 import {
   BENCHMARKS,
   formatClockTime,
@@ -8,7 +9,7 @@ import {
 import { useRouter } from "expo-router";
 import * as WebBrowser from "expo-web-browser";
 import { useState } from "react";
-import { Pressable, ScrollView, Text, View } from "react-native";
+import { Pressable, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useCompeteStore } from "../src/lib/compete-store";
 import { mobileEnv } from "../src/lib/env";
@@ -27,6 +28,7 @@ export default function Benchmarks() {
   return (
     <SafeAreaView style={f.safe} edges={["bottom"]}>
       <ScrollView contentContainerStyle={f.content}>
+<SectionStack divided={false}>
         <IconButton icon="back" label="Return to previous screen" onPress={() => router.back()} />
         <FocusHeading
           kicker="Beyond this week"
@@ -44,9 +46,9 @@ export default function Benchmarks() {
               }}
               style={[f.chip, sport === s && f.chipActive]}
             >
-              <Text style={f.rowTitle}>
+              <AppText role="itemTitle" >
                 {s === "running" ? "Running" : "Cycling"}
-              </Text>
+              </AppText>
             </Pressable>
           ))}
         </View>
@@ -58,7 +60,7 @@ export default function Benchmarks() {
               onPress={() => setDistance(b.id)}
               style={[f.chip, b.id === benchmark.id && f.chipActive]}
             >
-              <Text style={f.rowTitle}>{b.label}</Text>
+              <AppText role="itemTitle" >{b.label}</AppText>
             </Pressable>
           ))}
         </View>
@@ -70,38 +72,38 @@ export default function Benchmarks() {
               onPress={() => setScope(s)}
               style={[f.chip, scope === s && f.chipActive]}
             >
-              <Text style={f.rowTitle}>
+              <AppText role="itemTitle" >
                 {s === "category"
                   ? `Your tier · ${rankForElo(state.ratings.find((r) => r.sport === sport)?.openElo ?? 500).name}`
                   : s}
-              </Text>
+              </AppText>
             </Pressable>
           ))}
         </View>
         {scope === "category" ? (
-          <Text style={f.copy}>
+          <AppText role="body" secondary >
             Compared with athletes in your current effort score tier.
-          </Text>
+          </AppText>
         ) : null}
         <View style={f.card}>
           {rows.slice(0, 20).map((r) => (
             <View key={r.id} style={f.row}>
-              <Text style={f.small}>{r.place}</Text>
-              <Text style={[f.rowTitle, f.grow]}>{r.name}</Text>
-              <Text style={f.rowTitle}>{formatClockTime(r.seconds)}</Text>
+              <AppText role="supporting" secondary >{r.place}</AppText>
+              <AppText role="itemTitle" style={f.grow}>{r.name}</AppText>
+              <AppText role="itemTitle" >{formatClockTime(r.seconds)}</AppText>
             </View>
           ))}
           {!rows.some((r) => r.you) && (
-            <Text style={f.copy}>
+            <AppText role="body" secondary >
               You appear after a synced activity covers {benchmark.label}.
               Longer efforts are scaled to the distance.
-            </Text>
+            </AppText>
           )}
         </View>
-        <Text style={f.small}>
+        <AppText role="caption" secondary >
           Practice peer times are synthetic. Published race results are kept
           separate.
-        </Text>
+        </AppText>
         <FocusButton
           label="Published race rankings"
           secondary
@@ -109,7 +111,8 @@ export default function Benchmarks() {
             void WebBrowser.openBrowserAsync(`${mobileEnv.apiUrl}/rankings`)
           }
         />
-      </ScrollView>
+      </SectionStack>
+</ScrollView>
     </SafeAreaView>
   );
 }

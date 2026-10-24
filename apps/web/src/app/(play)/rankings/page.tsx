@@ -1,3 +1,5 @@
+
+import { AppParagraph, AppHeading } from "@/ui/section";
 import Link from "next/link";
 import { DISTANCES, createRankingsClient } from "@/lib/rankings";
 
@@ -23,12 +25,12 @@ export default async function RankingsHomePage() {
         </Link>
         <span className="rankings-kicker">Race Rankings</span>
       </header>
-      <h1>Road leaderboards</h1>
-      <p className="rankings-lede">
+      <AppHeading level={1} role="pageTitle">Road leaderboards</AppHeading>
+      <AppParagraph typographyRole="body" className="rankings-lede">
         Finishers from audited public results, split by distance and sex. The
         clock is chip time when the source provides one, otherwise the official
         time. People under 18 are not stored.
-      </p>
+      </AppParagraph>
       <ul className="rankings-boards">
         {DISTANCES.map((distance) => {
           const stored =
@@ -53,14 +55,14 @@ export default async function RankingsHomePage() {
           );
         })}
       </ul>
-      <p className="rankings-note">
+      <AppParagraph typographyRole="body" className="rankings-note">
         The count is every published finisher. A distance page shows the fastest
         200 women and 200 men. The same person can appear twice until results
         are linked across events.
         {client
           ? ""
           : " The rankings database is not configured in this environment."}
-      </p>
+      </AppParagraph>
     </main>
   );
 }

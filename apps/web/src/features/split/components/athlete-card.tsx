@@ -1,4 +1,6 @@
 "use client";
+import { AppParagraph, AppHeading } from "@/ui/section";
+
 
 import {
   formatEffort,
@@ -25,9 +27,9 @@ export function AthleteCard({
   const bib = initialsFromName(name);
   return (
     <section className="sp-bib" aria-label="Athlete record">
-      <p className="label">Athlete · {bib}</p>
+      <AppParagraph typographyRole="body" className="label">Athlete · {bib}</AppParagraph>
       <div className="number">{you ? String(you.place).padStart(3, "0") : "—"}</div>
-      <h1>{name}</h1>
+      <AppHeading level={1} role="pageTitle">{name}</AppHeading>
       <div className="sp-bib-meta">
         <span>{sportLabel}</span>
         <span>{city || "—"}</span>

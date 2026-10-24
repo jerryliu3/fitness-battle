@@ -1,6 +1,6 @@
 import { AppText } from "../ui/section";
 import { useRef, useState, type ReactNode } from "react";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { Pressable, StyleSheet, View } from "react-native";
 import { FocusButton, FocusSheet, f } from "../ui/focus";
 import { SHELL_COLORS as c } from "../theme";
 type ClubEvent = { id: string; label: string; badge?: string };
@@ -61,7 +61,7 @@ export function EventCarousel({
           <AppText role="sectionTitle" accessibilityRole="header">
             {events[index]?.label}
             {events[index]?.badge ? (
-              <Text style={[f.small, { color: c.muted }]}> · {events[index]?.badge}</Text>
+              <AppText role="badgeLabel" secondary> · {events[index]?.badge}</AppText>
             ) : null}
           </AppText>
         </View>
@@ -146,8 +146,8 @@ export function EventCarousel({
               },
             ]}
           >
-            <Text style={f.rowTitle}>{event.label}</Text>
-            <Text style={f.copy}>{event.id === value ? "✓" : "→"}</Text>
+            <AppText role="itemTitle" >{event.label}</AppText>
+            <AppText role="body" secondary >{event.id === value ? "✓" : "→"}</AppText>
           </Pressable>
         ))}
         <FocusButton

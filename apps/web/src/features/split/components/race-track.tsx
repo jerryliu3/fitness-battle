@@ -1,4 +1,6 @@
 "use client";
+import { AppText } from "@/ui/section";
+
 
 import type { CheckpointIndex } from "@fitness-battle/shared";
 import {
@@ -48,7 +50,7 @@ export function RaceTrack({
           <div className="sp-lane-label">
             <span>{ghostName}</span>
             <strong>
-              {formatPts(ghostEffort)} <small>pts</small>
+              {formatPts(ghostEffort)} <AppText as="small" role="caption" secondary>pts</AppText>
             </strong>
           </div>
           <div className="sp-lane-road">
@@ -79,7 +81,7 @@ export function RaceTrack({
             <span className="sp-lane-label">
               <span>{lane.name}</span>
               <strong>
-                {formatPts(pts)} <small>pts</small>
+                {formatPts(pts)} <AppText as="small" role="caption" secondary>pts</AppText>
               </strong>
             </span>
             <span className="sp-lane-road">

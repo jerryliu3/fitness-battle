@@ -8,8 +8,9 @@ for (const file of files) {
   const allowed = [...(exceptions[file] ?? [])];
   function visit(node) {
     const rawType = ts.isPropertyAssignment(node) && forbidden.has(node.name.getText(source));
-    const legacyHeading = ts.isPropertyAccessExpression(node) && /^f\.(h2|sectionTitle)$/.test(node.getText(source));
-    if (rawType || legacyHeading) {
+    const legacyHeading = ts.isPropertyAccessExpression(node) && /^f\.(h2|sectionTitle|title|copy|small|rowTitle)$/.test(node.getText(source));
+    const rawHeading = (ts.isJsxOpeningElement(node) || ts.isJsxSelfClosingElement(node)) && /^h[1-3]$/.test(node.tagName.getText(source));
+    if (rawType || legacyHeading || rawHeading) {
       const text = node.getText(source);
       const exception = allowed.indexOf(text);
       if (exception >= 0) allowed.splice(exception, 1);

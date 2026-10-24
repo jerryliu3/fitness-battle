@@ -1,3 +1,4 @@
+import { typographyVariables } from "@/ui/section";
 import type { Metadata } from "next";
 import localFont from "next/font/local";
 import { cookies } from "next/headers";
@@ -47,6 +48,7 @@ export default async function RootLayout({
   return (
     <html
       lang="en"
+      style={typographyVariables()}
       data-theme={theme.id}
       className={`${display.variable} ${body.variable} ${formType.variable} ${rallyDisplay.variable} ${rallyComic.variable} ${overtaek.variable} ${theme.htmlClass}`}
     >

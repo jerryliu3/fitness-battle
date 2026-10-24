@@ -1,5 +1,5 @@
 "use client";
-import { Section } from "@/ui/section";
+import { AppParagraph, AppText, Section } from "@/ui/section";
 import { useMemo, useState } from "react";
 import {
   APP_TIMEZONE,
@@ -132,12 +132,12 @@ export function TrainingAtlas({ state }: { state: CompeteState }) {
           {sport === "all" ? "All sports" : sportById(sport).name}
         </span>
       </div>
-      <p
+      <AppParagraph typographyRole="body"
         className="club-chart-delta"
         data-direction={(comparison.percent ?? 0) >= 0 ? "up" : "down"}
       >
         {comparison.label}
-      </p>
+      </AppParagraph>
       <div className="atlas-chart-scroll">
         <div
           className="atlas-bars"
@@ -162,14 +162,14 @@ export function TrainingAtlas({ state }: { state: CompeteState }) {
                     : 0,
                 }}
               />
-              <small>{b.label}</small>
+              <AppText as="small" role="caption" secondary>{b.label}</AppText>
             </button>
           ))}
         </div>
       </div>
       <div className="atlas-reading" aria-live="polite">
         <strong>
-          {formatTrainingHours(bucket.movingSec)} <small>hr</small>
+          {formatTrainingHours(bucket.movingSec)} <AppText as="small" role="caption" secondary>hr</AppText>
         </strong>
         <span>
           {bucket.label} · {bucket.sessions} session
@@ -181,13 +181,13 @@ export function TrainingAtlas({ state }: { state: CompeteState }) {
         <summary>
           Daily activity <span>＋</span>
         </summary>
-        <p className="fb-kicker">
+        <AppParagraph typographyRole="badgeLabel" className="fb-kicker">
           {anchor.toLocaleDateString("en-US", {
             month: "long",
             timeZone: APP_TIMEZONE,
           })}{" "}
           · daily activity
-        </p>
+        </AppParagraph>
         <div className="atlas-chart-scroll">
           <div className="atlas-month">
             <div className="atlas-weekdays" aria-hidden="true">
@@ -219,14 +219,14 @@ export function TrainingAtlas({ state }: { state: CompeteState }) {
         <div className="atlas-day" aria-live="polite">
           {day ? (
             <>
-              <p className="fb-kicker">
+              <AppParagraph typographyRole="badgeLabel" className="fb-kicker">
                 {new Date(`${day.day}T12:00:00Z`).toLocaleDateString("en-US", {
                   month: "short",
                   day: "numeric",
                   timeZone: APP_TIMEZONE,
                 })}{" "}
                 · {formatTrainingHours(day.movingSec)} hr
-              </p>
+              </AppParagraph>
               {day.activityIds.length ? (
                 day.activityIds.map((id) => {
                   const a = state.activities.find((a) => a.id === id)!;
@@ -236,22 +236,22 @@ export function TrainingAtlas({ state }: { state: CompeteState }) {
                         {sportById(a.sport).name}
                         <span>{formatTrainingHours(a.movingSec)} hr</span>
                       </summary>
-                      <p className="fb-note">
+                      <AppParagraph typographyRole="caption" className="fb-note">
                         {a.source} · {a.verified ? "GPS Tracked" : "Open"}
-                      </p>
+                      </AppParagraph>
                     </details>
                   );
                 })
               ) : (
-                <p className="fb-note">Nothing recorded.</p>
+                <AppParagraph typographyRole="caption" className="fb-note">Nothing recorded.</AppParagraph>
               )}
             </>
           ) : (
-            <p className="fb-note">No recorded days in this selection.</p>
+            <AppParagraph typographyRole="caption" className="fb-note">No recorded days in this selection.</AppParagraph>
           )}
         </div>
       </details>
-      <p className="atlas-legend">
+      <AppParagraph typographyRole="body" className="atlas-legend">
         <span>Moving time</span>
         <span>
           Less <i data-intensity="0" />
@@ -260,7 +260,7 @@ export function TrainingAtlas({ state }: { state: CompeteState }) {
           <i data-intensity="3" />
           <i data-intensity="4" /> More
         </span>
-      </p>
+      </AppParagraph>
     </Section>
   );
 }

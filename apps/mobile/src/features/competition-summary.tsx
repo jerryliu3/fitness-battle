@@ -1,4 +1,4 @@
-import { SectionHeader } from "../ui/section";
+import { AppText, StatusBadge, SectionHeader } from "../ui/section";
 import {
   competeNow,
   APP_TIMEZONE,
@@ -10,7 +10,7 @@ import {
   type SportId,
 } from "@fitness-battle/shared";
 import { type ReactNode } from "react";
-import { Text, View, StyleSheet } from "react-native";
+import { View } from "react-native";
 import { SHELL_COLORS as c } from "../theme";
 import { f } from "../ui/focus";
 export function CompetitionSummary({
@@ -45,45 +45,17 @@ export function CompetitionSummary({
     hours = Math.floor(left / 60);
   return (
     <>
-      <View style={[f.section, { gap: 14 }]}>
-        <View style={f.row}>
-          <View style={[f.grow, { gap: 6 }]}>
-            <View style={{ gap: 3 }}>
-              <SectionHeader title="Competition"/>
-              <Text style={f.small}>{weekLabel}</Text>
+      <View style={f.section}>
+        <SectionHeader title="Competition" subtitle={weekLabel} action={<StatusBadge>{days ? `${days} day${days === 1 ? "" : "s"}` : hours ? `${hours}h` : `${left}m`} left</StatusBadge>}/>
 
-            </View>
-          </View>
-          <Text style={s.pill}>
-            {days
-              ? `${days} day${days === 1 ? "" : "s"}`
-              : hours
-                ? `${hours}h`
-                : `${left}m`}{" "}
-            left
-          </Text>
-        </View>
         {children}
       </View>
       {state.frozenPeriods.includes(primaryFreezePeriodStart(state)) ? (
-        <Text style={f.copy}>
+        <AppText role="body" secondary >
           ❄ Week frozen · Your effort score is protected through next Monday.
-        </Text>
+        </AppText>
       ) : null}
 
     </>
   );
 }
-
-const s = StyleSheet.create({
-  pill: {
-    overflow: "hidden",
-    borderRadius: 12,
-    backgroundColor: c.soft,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    fontFamily: "DMSans_500Medium",
-    fontSize: 11,
-    color: c.muted,
-  },
-});

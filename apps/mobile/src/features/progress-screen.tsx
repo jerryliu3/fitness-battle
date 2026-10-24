@@ -1,4 +1,4 @@
-import { SectionHeader } from "../ui/section";
+import { SectionStack, AppText, SectionHeader } from "../ui/section";
 import { MotionStep } from "../ui/motion-step";
 import { Achievements } from "./club-achievements";
 import { WeekRecap } from "./club-week-recap";
@@ -32,9 +32,10 @@ export function ProgressScreen() {
   return (
     <SafeAreaView style={f.safe} edges={[]}>
       <ScrollView contentContainerStyle={f.content}>
+<SectionStack divided={false}>
         <FocusSegments variant="tabs" label="Progress view" value={section} options={[{value:"overview",label:"Overview"},{value:"effort",label:"Effort score"}]} onChange={setSection}/>
         <MotionStep identity={section}>
-        <View style={{display:section==="effort"?"flex":"none",gap:18}}>
+        <View style={{display:section==="effort"?"flex":"none",gap:28}}>
         <AthleteMetrics state={state} />
         <View style={f.section}>
           <Text style={f.kicker}>
@@ -42,8 +43,8 @@ export function ProgressScreen() {
           </Text>
           <View style={[f.row, { flexWrap: "wrap" }]}>
             <View>
-              <Text style={f.small}>Distance</Text>
-              <Text style={f.rowTitle}>
+              <AppText role="supporting" secondary >Distance</AppText>
+              <AppText role="itemTitle" >
                 {you
                   ? formatVolume(
                       state.primary,
@@ -52,36 +53,37 @@ export function ProgressScreen() {
                       state.units,
                     )
                   : "—"}
-              </Text>
+              </AppText>
             </View>
             <View>
-              <Text style={f.small}>Effort</Text>
-              <Text style={f.rowTitle}>
+              <AppText role="supporting" secondary >Effort</AppText>
+              <AppText role="itemTitle" >
                 {you ? formatEffort(you.effort) : "—"}
-              </Text>
+              </AppText>
             </View>
             <View>
-              <Text style={f.small}>Place</Text>
-              <Text style={f.rowTitle}>
+              <AppText role="supporting" secondary >Place</AppText>
+              <AppText role="itemTitle" >
                 {you ? `${you.place} / ${board.length}` : "—"}
-              </Text>
+              </AppText>
             </View>
           </View>
         </View>
         </View>
-        <View style={{display:section==="overview"?"flex":"none",gap:18}}><TrainingHistory state={state}><Achievements state={state}/></TrainingHistory><WeekRecap state={state}/>
-        {state.periodResults.length ? <Pressable accessibilityRole="button" style={f.section} onPress={() => router.push("/arena?results=latest")}><Text style={f.rowTitle}>Latest week results ↗</Text></Pressable> : null}
+        <View style={{display:section==="overview"?"flex":"none",gap:28}}><TrainingHistory state={state}><Achievements state={state}/></TrainingHistory><WeekRecap state={state}/>
+        {state.periodResults.length ? <Pressable accessibilityRole="button" style={f.section} onPress={() => router.push("/arena?results=latest")}><AppText role="itemTitle" >Latest week results ↗</AppText></Pressable> : null}
         <View style={f.section}>
           <Pressable accessibilityRole="button" onPress={() => router.push("/progress-history")}>
             <SectionHeader title="Past weeks & awards"/>
-            <Text style={f.copy}>Closed competition weeks, chapter history, and your award shelf.</Text>
-            <Text style={f.rowTitle}>View all →</Text>
+            <AppText role="body" secondary >Closed competition weeks, chapter history, and your award shelf.</AppText>
+            <AppText role="itemTitle" >View all →</AppText>
           </Pressable>
           {awardCards(state).length > 0 ? <AwardShelf cards={awardCards(state).slice(0, 3)} /> : null}
         </View>
         </View>
         </MotionStep>
-      </ScrollView>
+      </SectionStack>
+</ScrollView>
     </SafeAreaView>
   );
 }
