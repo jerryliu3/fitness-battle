@@ -43,7 +43,7 @@ export function Achievements({ state }: { state: CompeteState }) {
           <Link
             className="club-achievement"
             key={row.id}
-            href="/you/achievements"
+            href={`/you/achievements?milestone=${encodeURIComponent(row.id)}`}
             aria-label={`${row.title}. ${row.target} ${row.category === "sessions" ? "sessions" : "Open effort score"}. ${row.earned ? "Earned" : "In progress"}`}
           >
             <AchievementBadge item={row} />

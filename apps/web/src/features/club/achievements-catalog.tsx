@@ -29,9 +29,19 @@ function AchievementBadge({ item }: { item: ClubAchievement }) {
   );
 }
 
-export function AchievementsCatalog({ state }: { state: CompeteState }) {
+export function AchievementsCatalog({
+  state,
+  initialId,
+}: {
+  state: CompeteState;
+  initialId?: string;
+}) {
   const rows = clubAchievements(state);
-  const [selected, setSelected] = useState(rows[0]?.id ?? "");
+  const [selected, setSelected] = useState(
+    initialId && rows.some((row) => row.id === initialId)
+      ? initialId
+      : rows[0]?.id ?? "",
+  );
   const item = rows.find((row) => row.id === selected) ?? rows[0];
   return (
     <div className="club-achievements-catalog">
