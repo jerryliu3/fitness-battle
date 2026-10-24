@@ -1,4 +1,5 @@
 "use client";
+import { Section, SectionStack } from "@/ui/section";
 import { TrainingAtlas } from "./training-atlas";
 import { useState, type ReactNode } from "react";
 import { RecordChart } from "./record-chart";
@@ -38,12 +39,11 @@ export function TrainingHistory({ state, children }: { state: CompeteState; chil
   const latest = rows.at(-1),
     inspected = rows.find((r) => r.activityId === receipt) ?? latest;
   return (
-    <>
+    <SectionStack>
       <TrainingAtlas state={state} />
       {children}
       {active && latest && inspected ? (
-        <section className="focus-card record-history">
-          <h2>Personal records</h2>
+        <Section title="Personal records" className="record-history">
           <div
             className="record-distance-tabs"
             role="group"
@@ -97,8 +97,8 @@ export function TrainingHistory({ state, children }: { state: CompeteState; chil
               {inspected.verified ? " · GPS recorded" : ""}
             </p>
           </div>
-        </section>
+        </Section>
       ) : null}
-    </>
+    </SectionStack>
   );
 }

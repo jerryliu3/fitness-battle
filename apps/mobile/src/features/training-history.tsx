@@ -1,3 +1,4 @@
+import { Section, SectionStack } from "../ui/section";
 import { TrainingAtlas } from "./training-atlas";
 import { useState, type ReactNode } from "react";
 import { RecordChart } from "./record-chart";
@@ -39,12 +40,11 @@ export function TrainingHistory({ state, children }: { state: CompeteState; chil
     latest = rows.at(-1),
     inspected = rows.find((r) => r.activityId === receipt) ?? latest;
   return (
-    <>
+    <SectionStack>
       <TrainingAtlas state={state} />
       {children}
       {active && latest && inspected ? (
-        <View style={f.section}>
-          <Text style={f.h2}>Personal records</Text>
+        <Section title="Personal records">
           <ScrollView horizontal showsHorizontalScrollIndicator={false}>
             <View style={f.row}>
               {available.map((d) => (
@@ -98,8 +98,8 @@ export function TrainingHistory({ state, children }: { state: CompeteState; chil
             {inspected.source.replaceAll("_", " ")}
             {inspected.verified ? " · GPS recorded" : ""}
           </Text>
-        </View>
+        </Section>
       ) : null}
-    </>
+    </SectionStack>
   );
 }

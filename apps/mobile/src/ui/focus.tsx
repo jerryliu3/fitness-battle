@@ -1,3 +1,4 @@
+import { AppText } from "./section";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import {
   Animated,
@@ -120,7 +121,7 @@ export function FocusSheet({
           {!fullScreen && <View style={f.handle} />}
           {fullScreen ? <View style={[f.row, { paddingHorizontal: 22, paddingVertical: 8 }]}>
             <IconButton icon="back" label="Return to previous screen" onPress={onClose} />
-            <Text accessibilityRole="header" style={[f.h2, { flex: 1, textAlign: "center" }]}>{content.current.title}</Text>
+            <AppText role="navigationTitle" accessibilityRole="header" style={{ flex: 1, textAlign: "center" }}>{content.current.title}</AppText>
             <View style={{ width: 44 }} />
           </View> : !minimal && <View style={f.sheetHead}>
             <View />
@@ -132,9 +133,9 @@ export function FocusSheet({
             keyboardShouldPersistTaps="handled"
             contentContainerStyle={f.sheetBody}
           >
-            {!fullScreen && <Text accessibilityRole="header" style={f.title}>
+            {!fullScreen && <AppText role="pageTitle" accessibilityRole="header">
               {content.current.title}
-            </Text>}
+            </AppText>}
             {Boolean(content.current.body) && (
               <Text style={f.copy}>{content.current.body}</Text>
             )}

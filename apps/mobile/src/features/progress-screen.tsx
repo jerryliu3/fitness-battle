@@ -1,3 +1,4 @@
+import { SectionHeader } from "../ui/section";
 import { MotionStep } from "../ui/motion-step";
 import { Achievements } from "./club-achievements";
 import { WeekRecap } from "./club-week-recap";
@@ -72,7 +73,7 @@ export function ProgressScreen() {
         {state.periodResults.length ? <Pressable accessibilityRole="button" style={f.section} onPress={() => router.push("/arena?results=latest")}><Text style={f.rowTitle}>Latest week results ↗</Text></Pressable> : null}
         <View style={f.section}>
           <Pressable accessibilityRole="button" onPress={() => router.push("/progress-history")}>
-            <Text style={f.sectionTitle}>Past weeks & awards</Text>
+            <SectionHeader title="Past weeks & awards"/>
             <Text style={f.copy}>Closed competition weeks, chapter history, and your award shelf.</Text>
             <Text style={f.rowTitle}>View all →</Text>
           </Pressable>

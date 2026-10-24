@@ -1,3 +1,4 @@
+import { Section } from "../ui/section";
 import { ChartScrubber } from "../ui/chart-scrubber";
 import { useMemo, useState } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
@@ -78,8 +79,7 @@ export function TrainingAtlas({ state }: { state: CompeteState }) {
     setSelectedDay(null);
   };
   return (
-    <View style={f.section}>
-      <Text style={f.h2}>Your training</Text>
+    <Section title="Your training">
       <ScrollView horizontal showsHorizontalScrollIndicator={false}>
         <View style={f.row}>
           {[{ id: "all", name: "All sports" }, ...SPORTS].map((s) => (
@@ -331,7 +331,7 @@ export function TrainingAtlas({ state }: { state: CompeteState }) {
           ))}
         </View>
       </View>
-    </View>
+    </Section>
   );
 }
 const s = StyleSheet.create({

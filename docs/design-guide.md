@@ -182,3 +182,15 @@ The owner selects Running/Cycling = GPS Tracked and Walking/Strength = Open. The
 The header uses a bounded effort container with remaining volume inside its meter and a weekly activity flame. Streak weeks follow Eastern Monday–Monday periods; eligible counted activity in any sport activates the week, while freeze alone does not. An unfinished current week dims the prior streak. Effort history retains independent Open/GPS Tracked lenses without changing the sport's fixed product track.
 
 Native choice controls overlay their parent; duration/distance use wheels and dates/times use platform pickers. Native Members uses a root stack destination. Default 2D geometry shows approximately five lanes while retaining its existing longitudinal distance scale. Place and next-rival status sit above the field as a plain text row. White competition date containers, Active Sports cards, sport/settings icons and distinct level symbols provide separation. iOS chrome stays light. See the [follow-up audit](reviews/mobile-bugfixes-2026-10-23/README.md) for changes, rollout and remaining device checks.
+
+## Shared hierarchy implementation — October 24
+
+Product typography now has semantic shared roles, with **22/28 DM Sans 700**
+section titles and **14/20 DM Sans 700** section actions. Page titles remain
+30/36; compact centered Back titles use 20/26. Platform adapters, open Sections,
+SectionStack boundaries and scalable status badges are described in
+[component guidelines](design/component-guidelines.md#semantic-typography-and-sections-october-24-2026).
+Home Latest activity and Progress Your training, Achievements and Personal
+records use this pilot contract. Keep chart/metric scale and achievement art
+separate. Shared divided boundaries use #d0dad7 at one logical unit on both
+platforms, with 16 before and 12 after; mobile page gutters remain 20.

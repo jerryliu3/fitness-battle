@@ -1,4 +1,5 @@
 "use client";
+import { Section, TextAction, StatusBadge, AppText } from "@/ui/section";
 import Link from "next/link";
 import { useId } from "react";
 import {
@@ -33,11 +34,7 @@ export function Achievements({ state }: { state: CompeteState }) {
   const rows = clubAchievements(state);
   const featured = featuredClubAchievements(rows);
   return (
-    <section className="club-achievements">
-      <div className="club-section-heading">
-        <h2 className="fb-section-title">Achievements</h2>
-        <Link href="/you/achievements" className="club-text-link">View all →</Link>
-      </div>
+    <Section className="club-achievements" title="Achievements" action={<TextAction href="/you/achievements" label="View all" accessibilityLabel="View all achievements"/>}>
       <div className="club-achievement-grid">
         {featured.map((row) => (
           <Link
@@ -47,17 +44,17 @@ export function Achievements({ state }: { state: CompeteState }) {
             aria-label={`${row.title}. ${row.target} ${row.category === "sessions" ? "sessions" : "Open effort score"}. ${row.earned ? "Earned" : "In progress"}`}
           >
             <AchievementBadge item={row} />
-            <b>
+            <AppText role="itemTitle">
               {row.target.toLocaleString()}
               {row.category === "sessions" ? (row.target === 1 ? " session" : " sessions") : " pts"}
-            </b>
-            <small>{row.title}</small>
-            <span className={row.earned ? "club-earned" : "club-upcoming"}>
+            </AppText>
+            <AppText role="caption" secondary>{row.title}</AppText>
+            <StatusBadge tone={row.earned ? "success" : "neutral"}>
               {row.earned ? "✓ Earned" : "Up next"}
-            </span>
+            </StatusBadge>
           </Link>
         ))}
       </div>
-    </section>
+    </Section>
   );
 }

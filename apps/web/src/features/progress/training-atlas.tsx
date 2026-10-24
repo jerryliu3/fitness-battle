@@ -1,4 +1,5 @@
 "use client";
+import { Section } from "@/ui/section";
 import { useMemo, useState } from "react";
 import {
   APP_TIMEZONE,
@@ -76,11 +77,7 @@ export function TrainingAtlas({ state }: { state: CompeteState }) {
     setSelectedDay(null);
   };
   return (
-    <section className="focus-card training-atlas" aria-label="Training atlas">
-      <div className="focus-row">
-        <h2>Your training</h2>
-
-      </div>
+    <Section title="Your training" className="training-atlas">
       <div className="fb-chips" role="group" aria-label="Atlas sport">
         {[{ id: "all", name: "All sports" }, ...SPORTS].map(item => <button key={item.id} type="button"
           className={sport === item.id ? "fb-chip on" : "fb-chip"} aria-pressed={sport === item.id}
@@ -264,6 +261,6 @@ export function TrainingAtlas({ state }: { state: CompeteState }) {
           <i data-intensity="4" /> More
         </span>
       </p>
-    </section>
+    </Section>
   );
 }

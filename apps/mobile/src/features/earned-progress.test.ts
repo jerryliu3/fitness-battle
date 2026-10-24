@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { freshState, reduceCompete, type Activity, type CompeteState } from "@fitness-battle/shared";
 const mock=vi.hoisted(()=>({state:null as CompeteState|null,account:"one",navigate:vi.fn()}));
 vi.mock("react-native",()=>({
+ useWindowDimensions:()=>({width:390,height:844,fontScale:1}),
  Pressable:"Pressable",ScrollView:"ScrollView",Text:"Text",View:"View",Image:"Image",StyleSheet:{create:(value:unknown)=>value},
  Animated:{View:"AnimatedView",Value:class{constructor(public value:number){}setValue(value:number){this.value=value;}interpolate(){return 0;}},timing:()=>({start(){},stop(){}})},
 }));

@@ -1,3 +1,4 @@
+import { SectionHeader } from "../ui/section";
 import {
   competeNow,
   APP_TIMEZONE,
@@ -48,7 +49,7 @@ export function CompetitionSummary({
         <View style={f.row}>
           <View style={[f.grow, { gap: 6 }]}>
             <View style={{ gap: 3 }}>
-              <Text style={f.sectionTitle}>Competition</Text>
+              <SectionHeader title="Competition"/>
               <Text style={f.small}>{weekLabel}</Text>
 
             </View>
