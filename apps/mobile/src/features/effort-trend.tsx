@@ -1,4 +1,5 @@
 import {
+  APP_TIMEZONE,
   effortHistory,
   currentEffortMilestone,
   formatVolume,
@@ -16,6 +17,7 @@ import Svg, {
   Polyline,
   Text as SvgText,
 } from "react-native-svg";
+import { ChartScrubber } from "../ui/chart-scrubber";
 import { useAuth } from "../lib/auth";
 import { SHELL_COLORS as c } from "../theme";
 import { FocusSegments, f } from "../ui/focus";
@@ -41,7 +43,7 @@ export function EffortTrend({ state }: { state: CompeteState }) {
     lastPoint,
   } = model;
   return (
-    <View style={f.card}>
+    <View style={f.section}>
       <FocusSegments label="Effort chart score track" value={track} options={[{ value: "open", label: "Open" }, { value: "verified", label: "GPS Tracked" }]} onChange={track => setLens({ scope, track })} />
 
       <Text style={f.kicker}>{rankForElo(effectiveElo).name}</Text>
@@ -62,9 +64,15 @@ export function EffortTrend({ state }: { state: CompeteState }) {
         <Text style={f.copy}>effort score</Text>
       </View>
       {milestone ? <Text style={f.small}>+1 per {formatVolume(state.primary, state.primary === "strength" ? 0 : milestone.step, state.primary === "strength" ? milestone.step : 0, state.units)} this week · +{milestone.earned} from activity</Text> : null}
+      <ChartScrubber key={`${scope}:${track}`} label="Effort score history" width={340} height={150} plotTop={yTop} plotBottom={yBottom}
+        points={model.pts.map((point, index) => ({ id: point.date, x: point.x, y: point.y,
+          value: `${model.dailyValues[index].toLocaleString()} effort score`,
+          label: new Date(point.date).toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: APP_TIMEZONE }),
+        }))}>
       <Svg
+        preserveAspectRatio="none"
         width="100%"
-        height={170}
+        height={210}
         viewBox="0 0 340 150"
         accessible
         accessibilityLabel={`30-day ${track === "open" ? "Open" : "GPS Tracked"} effort score history ending at ${effectiveElo}`}
@@ -83,7 +91,7 @@ export function EffortTrend({ state }: { state: CompeteState }) {
         {model.linePoints ? (
           <Polyline
             points={model.linePoints}
-            stroke={c.tennis}
+            stroke={c.fieldTeal}
             strokeWidth={2.5}
             fill="none"
           />
@@ -92,7 +100,7 @@ export function EffortTrend({ state }: { state: CompeteState }) {
           cx={lastPoint.x}
           cy={lastPoint.y}
           r={6}
-          stroke={c.tennis}
+          stroke={c.fieldTeal}
           strokeWidth={2}
           fill={c.card}
         />
@@ -113,6 +121,8 @@ export function EffortTrend({ state }: { state: CompeteState }) {
           </SvgText>
         ))}
       </Svg>
+      </ChartScrubber>
+      <Text style={f.small}>History reflects closed-week scores and your current score.</Text>
     </View>
   );
 }

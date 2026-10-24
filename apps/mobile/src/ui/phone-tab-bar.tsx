@@ -95,7 +95,7 @@ export function PhoneTabBar({
               <Path
                 d={SHELL_TAB_ICONS[tab.id]}
                 fill="none"
-                stroke={selected ? SHELL_COLORS.ink : SHELL_COLORS.muted}
+                stroke={selected ? SHELL_COLORS.starEmber : SHELL_COLORS.muted}
                 strokeWidth={1.6}
                 strokeLinecap="round"
                 strokeLinejoin="round"
@@ -142,7 +142,7 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
   },
   tabOn: {
-    backgroundColor: SHELL_COLORS.actionSoft,
+    backgroundColor: "#142b3bf2",
   },
   label: {
     fontFamily: "DMSans_700Bold",
@@ -150,6 +150,6 @@ const styles = StyleSheet.create({
     color: SHELL_COLORS.muted,
   },
   labelOn: {
-    color: SHELL_COLORS.ink,
+    color: SHELL_COLORS.starEmber,
   },
 });

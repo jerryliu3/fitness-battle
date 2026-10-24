@@ -608,13 +608,13 @@ export default function AthleteScreen() {
               </View>
               <View style={[f.row, { flexWrap: "wrap" }]}>
                 <View style={f.grow}><Text style={f.rowTitle}>Freeze this week</Text><Text style={f.small}>{state.freezesLeft} remaining</Text></View>
-                <Switch trackColor={{ false: "#b9c5ca", true: SHELL_COLORS.fieldTeal }} thumbColor="#ffffff" accessibilityLabel="Freeze this week" value={frozen} disabled={!frozen && state.freezesLeft <= 0}
+                <Switch style={{ alignSelf: "center", marginVertical: 0 }} trackColor={{ false: "#b9c5ca", true: SHELL_COLORS.fieldTeal }} thumbColor="#ffffff" accessibilityLabel="Freeze this week" value={frozen} disabled={!frozen && state.freezesLeft <= 0}
                   onValueChange={enabled => enabled ? setConfirmFreeze(true) : dispatch({ type: "unfreeze" })} />
               </View>
               <Text style={f.h2}>Active Sports</Text>
-              {SPORTS.map(sport => <View key={sport.id} style={[f.row, { minHeight: 56, backgroundColor: SHELL_COLORS.card, paddingHorizontal: 14, borderRadius: 12, borderWidth: 1, borderColor: SHELL_COLORS.line }]}>
+              {SPORTS.map(sport => <View key={sport.id} style={[f.row, { minHeight: 64, alignItems: "center", borderBottomWidth: 1, borderBottomColor: SHELL_COLORS.line }]}>
                 <View style={[f.row, f.grow, { justifyContent: "flex-start", gap: 10 }]}><SportIcon sport={sport.id} /><Text style={f.rowTitle}>{sport.name}</Text></View>
-                <Switch trackColor={{ false: "#b9c5ca", true: SHELL_COLORS.fieldTeal }} thumbColor="#ffffff" accessibilityLabel={`Toggle ${sport.name} active status`}
+                <Switch style={{ alignSelf: "center", marginVertical: 0 }} trackColor={{ false: "#b9c5ca", true: SHELL_COLORS.fieldTeal }} thumbColor="#ffffff" accessibilityLabel={`Toggle ${sport.name} active status`}
                   value={Boolean(state.ratings.find(r => r.sport === sport.id)?.optedIn)}
                   onValueChange={enabled => dispatch(enabled ? { type: "opt-in", sport: sport.id, crewBoard: null } : { type: "opt-out", sport: sport.id })} />
               </View>)}

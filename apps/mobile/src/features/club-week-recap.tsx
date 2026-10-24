@@ -16,7 +16,7 @@ export function WeekRecap({ state }: { state: CompeteState }) {
     recap = latestClubRecap(state),
     difference = week.movingSec - week.previousSec;
   return (
-    <View style={f.card}>
+    <View style={f.section}>
       <Text accessibilityRole="header" style={f.h2}>
         Your week, in perspective
       </Text>

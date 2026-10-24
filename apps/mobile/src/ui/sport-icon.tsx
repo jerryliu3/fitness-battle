@@ -1,6 +1,14 @@
-import Svg, { Path } from "react-native-svg";
-import { SPORT_ICON_PATHS, type SportId } from "@fitness-battle/shared";
-import { SHELL_COLORS as c } from "../theme";
-export function SportIcon({ sport }: { sport: SportId }) {
-  return <Svg width={24} height={24} viewBox="0 0 24 24" fill="none" stroke={c.ink} strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round" accessibilityElementsHidden><Path d={SPORT_ICON_PATHS[sport]} /></Svg>;
+import { Text } from "react-native";
+import type { SportId } from "@fitness-battle/shared";
+
+// Leave the font unspecified: iOS uses Apple Color Emoji, Android its system emoji.
+const sportEmoji: Record<SportId, string> = {
+  running: "🏃",
+  cycling: "🚴",
+  walking: "🚶",
+  strength: "🏋️",
+};
+
+export function SportIcon({ sport, size = 24 }: { sport: SportId; size?: number }) {
+  return <Text accessible={false} accessibilityElementsHidden style={{ fontSize: size, lineHeight: size + 8, textAlign: "center", includeFontPadding: false }}>{sportEmoji[sport]}</Text>;
 }

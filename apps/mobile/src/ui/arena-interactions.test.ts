@@ -32,6 +32,8 @@ vi.mock("react-native", async () => {
   return {
     StyleSheet: { create: (styles: unknown) => styles },
     View,
+    Modal: "Modal",
+    useWindowDimensions: () => ({ width: 390, height: 844 }),
     Pressable: "Pressable",
     ScrollView: "ScrollView",
     Switch: "Switch",
@@ -40,6 +42,7 @@ vi.mock("react-native", async () => {
 });
 vi.mock("react-native-safe-area-context", () => ({
   SafeAreaView: "SafeAreaView",
+  useSafeAreaInsets: () => ({ top: 47, bottom: 34, left: 0, right: 0 }),
 }));
 vi.mock("expo-router", () => ({
   usePathname: () => "/arena",
@@ -68,7 +71,9 @@ vi.mock("../features/competition-summary", () => ({
 }));
 vi.mock("../features/sleep-panel", () => ({ SleepPanel: () => null }));
 vi.mock("../features/round-takeover", () => ({ RoundTakeover: () => null }));
+vi.mock("./icon-button", () => ({ IconButton: "IconButton" }));
 vi.mock("./arena-3d", () => ({ Arena3D: () => null }));
+vi.mock("./portrait-field", () => ({ PortraitField: "PortraitField" }));
 vi.mock("./award-shelf", () => ({ AwardShelf: () => null }));
 vi.mock("react-native-svg", () => ({ default: "Svg" }));
 vi.mock("./polished-racer", () => ({ PolishedRacer: "PolishedRacer" }));
@@ -220,4 +225,36 @@ it("mounts only one registered sport and replaces it when switching",async()=>{
  await act(async()=>renderer.update(createElement(ArenaScreen)));
  expect(renderer.root.findAllByType("LaneTrack" as never)).toHaveLength(1);
  expect(renderer.root.findAllByType("Segments" as never).some(n=>n.props.label==="Arena view")).toBe(true);
+});
+
+it("expands one field, retains its viewport and selection, and closes on system Back", async () => {
+  vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
+  mock.state = reduceCompete(freshState(), { type: "opt-in", sport: "running" });
+  await act(async () => { renderer = create(createElement(ArenaScreen)); });
+  await layoutCarousel();
+  const lane = () => renderer.root.findByType("LaneTrack" as never);
+  const rival = lane().props.lanes.find((item: { you: boolean; ghost: boolean }) => !item.you && !item.ghost);
+  await act(async () => { lane().props.onSelect(rival); lane().props.onZoom(2.4); });
+  const before = lane().props.view;
+  const anchor = lane().props.anchor;
+  anchor.current = { left: 30, laneWidth: 70, width: 350, scroll: 140, oval: false, count: 8 };
+  await act(async () => lane().props.onExpand());
+  expect(renderer.root.findAllByType("LaneTrack" as never)).toHaveLength(1);
+  expect(lane().props.fullscreen).toBe(true);
+  expect(lane().props.height).toBeGreaterThan(0);
+  expect(lane().props.view).toEqual(before);
+  expect(lane().props.selectedId).toBe(rival.id);
+  expect(lane().props.anchor).toBe(anchor);
+  const dimension = () => renderer.root.findAllByType("Segments" as never).find(node => node.props.label === "Full screen field dimension")!;
+  await act(async () => dimension().props.onChange("3d"));
+  expect(renderer.root.findByType("PortraitField" as never).props.fullscreen).toBe(true);
+  expect(renderer.root.findByType("PortraitField" as never).props.view).toEqual(before);
+  await act(async () => dimension().props.onChange("2d"));
+  const modal = renderer.root.findByType("Modal" as never);
+  expect(modal.props.presentationStyle).toBe("fullScreen");
+  await act(async () => modal.props.onRequestClose());
+  expect(renderer.root.findAllByType("Modal" as never)).toHaveLength(0);
+  expect(lane().props.fullscreen).toBe(false);
+  expect(lane().props.view).toEqual(before);
+  expect(lane().props.anchor.current.scroll).toBe(140);
 });

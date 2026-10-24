@@ -45,6 +45,7 @@ describe("shared effort history", () => {
       "alice@example.com",
     );
     expect(model.dailyValues).toHaveLength(3);
+    expect(model.pts.map(point => point.date.slice(0, 10))).toEqual(["2026-10-16", "2026-10-17", "2026-10-18"]);
   });
   it("ignores malformed anchor dates instead of crashing either profile renderer", () => {
     const state = freshState();

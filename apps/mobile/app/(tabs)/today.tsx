@@ -87,9 +87,9 @@ const s = StyleSheet.create({
     flex: 1,
   },
   homeOverlayContent: {
-    paddingHorizontal: 22,
+    paddingHorizontal: 20,
     paddingTop: 4,
     paddingBottom: 120,
-    gap: 18,
+    gap: 24,
   },
 });

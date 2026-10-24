@@ -33,7 +33,7 @@ export function AppHeader() {
     <SafeAreaView edges={["top"]} style={s.safe}>
       <View style={s.header}>
         <View style={{ flex: 1, maxWidth: 190 }}><EffortRail compact /></View>
-        {streak && <View accessibilityLabel={`${streak.count} week activity streak${streak.active ? "" : ", inactive this week"}`} style={{ flexDirection: "row", alignItems: "center", gap: 3, opacity: streak.active ? 1 : .4 }}><Svg width={18} height={24} viewBox="0 0 24 24"><Path d="M13 2c1 6 7 7 7 13a8 8 0 0 1-16 0c0-3 2-6 5-8-1 4 0 5 2 6 2-3 3-6 2-11Z" fill={c.gold}/></Svg><Text style={s.debugBtnText}>{streak.count}</Text></View>}
+        {streak && <View accessibilityLabel={`${streak.count} week activity streak${streak.active ? "" : ", inactive this week"}`} style={{ flexDirection: "row", alignItems: "center", gap: 3, opacity: streak.active ? 1 : .4 }}><Text accessible={false} style={{ fontSize: 20, lineHeight: 28 }}>🔥</Text><Text style={s.debugBtnText}>{streak.count}</Text></View>}
           <Pressable
             accessibilityRole="button"
             accessibilityLabel="Debug event triggers"

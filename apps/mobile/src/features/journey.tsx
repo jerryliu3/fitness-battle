@@ -233,7 +233,7 @@ export function Journey({
                         : stop.lane === "r"
                           ? 0
                           : width * 0.25,
-                    width: stop.lane === "c" ? width * 0.5 : width * 0.45,
+                    width: stop.lane === "c" ? width * 0.5 : stop.lane === "r" ? width * 0.76 - 50 : width * 0.45,
                     alignItems:
                       stop.lane === "r"
                         ? "flex-end"

@@ -1,3 +1,4 @@
+import { SETTINGS_ICON_PATHS } from "@fitness-battle/shared";
 import { Platform, Pressable } from "react-native";
 import { playCue } from "../lib/haptics";
 import Svg, { Path } from "react-native-svg";
@@ -6,7 +7,8 @@ import { SHELL_COLORS as c } from "../theme";
 const paths = {
   back: "m14 6-6 6 6 6",
   plus: "M12 5v14M5 12h14",
-  sync: "M20 7v5h-5M4 17v-5h5M6.1 7a7 7 0 0 1 11.6-1L20 9M4 15l2.3 3A7 7 0 0 0 17.9 17",
+  sync: SETTINGS_ICON_PATHS["Data Sync"],
+  expand: "M8 3H3v5m13-5h5v5m0 8v5h-5M8 21H3v-5",
   edit: "m15 5 4 4M4 20l4-1L20 7l-4-4L4 15v5Z",
 } as const;
 export function IconButton({ icon, label, onPress, disabled = false }: {

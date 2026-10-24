@@ -8,10 +8,10 @@ import {
   type CompeteState,
   type SportId,
 } from "@fitness-battle/shared";
-import { useState, type ReactNode } from "react";
-import { Pressable, Text, View, StyleSheet } from "react-native";
+import { type ReactNode } from "react";
+import { Text, View, StyleSheet } from "react-native";
 import { SHELL_COLORS as c } from "../theme";
-import { FocusSheet, f } from "../ui/focus";
+import { f } from "../ui/focus";
 export function CompetitionSummary({
   state,
   children,
@@ -22,7 +22,6 @@ export function CompetitionSummary({
   selectedSport?: SportId | "sleep";
 }) {
   const now = competeNow(state);
-  const [infoOpen, setInfoOpen] = useState(false);
   const active = state.ratings.filter((rating) => rating.optedIn);
   const sport = selectedSport === "sleep" ? undefined : selectedSport ??
     active.find((rating) => rating.sport === state.primary)?.sport ??
@@ -45,24 +44,12 @@ export function CompetitionSummary({
     hours = Math.floor(left / 60);
   return (
     <>
-      <View style={s.card}>
+      <View style={[f.section, { gap: 14 }]}>
         <View style={f.row}>
           <View style={[f.grow, { gap: 6 }]}>
             <View style={{ flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: 8 }}>
               <Text style={f.sectionTitle}>Competition · {weekLabel}</Text>
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel="About competition scoring"
-                onPress={() => setInfoOpen(true)}
-                style={{
-                  minWidth: 44,
-                  minHeight: 44,
-                  justifyContent: "center",
-                  alignItems: "center",
-                }}
-              >
-                <Text style={f.copy}>ⓘ</Text>
-              </Pressable>
+
             </View>
           </View>
           <Text style={s.pill}>
@@ -81,28 +68,12 @@ export function CompetitionSummary({
           ❄ Week frozen · Your effort score is protected through next Monday.
         </Text>
       ) : null}
-      <FocusSheet
-        open={infoOpen}
-        title="About competition scoring"
-        onClose={() => setInfoOpen(false)}
-      >
-        <Text style={f.copy}>
-          Running and cycling use GPS Tracked activities from a connected tracker. Walking and strength include manual activity.
-        </Text>
-      </FocusSheet>
+
     </>
   );
 }
 
 const s = StyleSheet.create({
-  card: {
-    backgroundColor: c.card,
-    borderColor: c.line,
-    borderWidth: 1,
-    borderRadius: 20,
-    padding: 16,
-    gap: 10,
-  },
   pill: {
     overflow: "hidden",
     borderRadius: 12,
