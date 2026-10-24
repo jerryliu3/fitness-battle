@@ -1,4 +1,6 @@
 "use client";
+import { AppParagraph } from "@/ui/section";
+
 import { useEffect, useRef, useState } from "react";
 import { PERSON_ICON_PATH, type CompeteState } from "@fitness-battle/shared";
 import { useAuth } from "@/components/auth-context";
@@ -90,7 +92,7 @@ export function ProfilePhoto({ state, email }: { state: CompeteState; email?: st
       {state.avatarUrl ? <img src={state.avatarUrl} alt="" className="focus-portrait-img" /> :
         <svg width="54" height="54" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d={PERSON_ICON_PATH} /></svg>}
     </button>
-    {avatarError && <p role="alert" className="fb-error">{avatarError}</p>}
+    {avatarError && <AppParagraph typographyRole="supporting" role="alert" className="fb-error">{avatarError}</AppParagraph>}
     <Sheet open={open} title="Profile photo" body="" onClose={() => setOpen(false)}>
       <button type="button" className="fb-btn" disabled={avatarBusy} onClick={() => { setOpen(false); fileInputRef.current?.click(); }}>Choose photo</button>
       {state.avatarUrl && <button type="button" className="fb-btn-line" disabled={avatarBusy} onClick={() => { setOpen(false); void onRemovePhoto(); }}>Delete photo</button>}

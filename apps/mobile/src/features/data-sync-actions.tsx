@@ -1,3 +1,4 @@
+import { SectionHeader, AppText } from "../ui/section";
 import {
   activityFromSample,
   type ActivitySample,
@@ -7,7 +8,7 @@ import {
 } from "@fitness-battle/shared";
 import * as DocumentPicker from "expo-document-picker";
 import { useEffect, useRef, useState } from "react";
-import { Platform, Pressable, Text, View } from "react-native";
+import { Platform, Pressable, View } from "react-native";
 import { requestApi } from "../lib/api";
 import { useAuth } from "../lib/auth";
 import { useCompeteStore } from "../lib/compete-store";
@@ -124,7 +125,7 @@ export function DataSyncActions({ provider }: { provider?: ProviderId }) {
                   }
                 })
               }
-            ><Text style={[f.rowTitle, { color: "#b83a38" }]}>{busy ? "Disconnecting…" : "Disconnect"}</Text></Pressable>
+            ><AppText role="itemTitle" style={{ color: "#b83a38" }}>{busy ? "Disconnecting…" : "Disconnect"}</AppText></Pressable>
           </View>
         ))}
       {!live && !provider && previewSyncReview ? (
@@ -196,10 +197,10 @@ export function DataSyncActions({ provider }: { provider?: ProviderId }) {
             .filter((a) => a.disposition === "pending")
             .map((a) => (
               <View key={a.id} style={f.card}>
-                <Text style={f.rowTitle}>
+                <AppText role="itemTitle" >
                   {a.sport} · {new Date(a.startedAt).toLocaleDateString()}
-                </Text>
-                <Text style={f.copy}>Imported activity · pending review</Text>
+                </AppText>
+                <AppText role="body" secondary >Imported activity · pending review</AppText>
                 <FocusButton
                   label="Count this activity"
                   secondary
@@ -224,14 +225,14 @@ export function DataSyncActions({ provider }: { provider?: ProviderId }) {
                 />
               </View>
             ))}
-          <Text style={f.h2}>Sleep & recovery</Text>
-          <Text style={f.copy}>Sleep data appears when supplied by a connected tracker.</Text>
-          <Text style={f.h2}>Import fitness history</Text>
-          <Text style={f.copy}>
+          <SectionHeader title="Sleep & recovery"/>
+          <AppText role="body" secondary >Sleep data appears when supplied by a connected tracker.</AppText>
+          <SectionHeader title="Import fitness history"/>
+          <AppText role="body" secondary >
             {state.calibrated
               ? "History is locked in. This one-time calibration cannot run again."
               : "Calibrate your starting effort score from the shared sample history. Imported sample sessions remain excluded from competition."}
-          </Text>
+          </AppText>
           <FocusButton
             label={
               state.calibrated
@@ -244,9 +245,9 @@ export function DataSyncActions({ provider }: { provider?: ProviderId }) {
         </>
       ) : null}
       {note ? (
-        <Text style={f.copy} accessibilityLiveRegion="polite">
+        <AppText role="body" secondary  accessibilityLiveRegion="polite">
           {note}
-        </Text>
+        </AppText>
       ) : null}
     </View>
   );

@@ -11,6 +11,7 @@ import "@/features/rally/rally-shell.css";
 import "@/features/rally/product.css";
 import "@/features/focus/focus.css";
 import "@/features/focus/club.css";
+import "@/ui/product-typography.css";
 
 function PlayChrome({ children }: { children: ReactNode }) {
   const path = usePathname();

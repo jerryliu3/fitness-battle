@@ -1,3 +1,4 @@
+import { SectionStack } from "../../src/ui/section";
 import { ScrollView } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { f } from "../../src/ui/focus";
@@ -6,8 +7,10 @@ export default function CrewScreen() {
   return (
     <SafeAreaView style={f.safe} edges={[]}>
       <ScrollView contentContainerStyle={f.content}>
+<SectionStack divided={false}>
         <CrewHub />
-      </ScrollView>
+      </SectionStack>
+</ScrollView>
     </SafeAreaView>
   );
 }

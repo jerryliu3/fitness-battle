@@ -1,4 +1,6 @@
 "use client";
+import { AppParagraph } from "@/ui/section";
+
 
 import { useSyncReviewGate } from "@/lib/use-sync-review";
 
@@ -665,7 +667,7 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
       )}
     {children}
       {syncReview.receipt && state ? (
-        <Suspense fallback={<p role="status">Opening today’s recap…</p>}>
+        <Suspense fallback={<AppParagraph typographyRole="body" role="status">Opening today’s recap…</AppParagraph>}>
           <SyncReview
             key={`${syncReview.receipt.account}:${syncReview.receipt.day}`}
             receipt={syncReview.receipt}

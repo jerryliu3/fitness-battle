@@ -1,5 +1,6 @@
+import { Section, AppText } from "../ui/section";
 import { useState } from "react";
-import { Pressable, Text, View } from "react-native";
+import { Pressable, View } from "react-native";
 import { APP_TIMEZONE, clubDuration, formatVolume, homeRecentActivities, sportById, type Activity, type CompeteState } from "@fitness-battle/shared";
 import { useAuth } from "../lib/auth";
 import { useCrewActivities } from "./use-crew-activities";
@@ -13,20 +14,19 @@ export function LatestActivity({ state, onOpen }: { state: CompeteState; onOpen:
   const [selected, setSelected] = useState<{ account?: string; id: string } | null>(null);
   const detail = selected?.account === user?.id ? rows.find(row => row.id === selected?.id) : null;
   return <>
-    {rows.length > 0 && <View style={[f.section, { gap: 8 }]}>
-      <Text accessibilityRole="header" style={f.h2}>Latest activity</Text>
+    {rows.length > 0 && <Section title="Latest activity">
       {rows.map(row => <Pressable key={`${row.userId}:${row.id}`} accessibilityRole="button" onPress={() => row.ownActivity ? onOpen(row.ownActivity) : setSelected({ account: user?.id, id: row.id })}
         style={[f.row, { minHeight: 76, paddingVertical: 12, borderBottomWidth: 0 }]}>
         <SportActivityIcon sport={row.sport} />
-        <View style={[f.grow, { gap: 4 }]}><Text style={f.rowTitle}>{row.ownActivity ? sportById(row.sport).name : `${row.name} · ${sportById(row.sport).name}`} · {clubDuration(row.movingSec)}</Text>
-          <Text style={f.small}>{row.verified ? "GPS Tracked" : row.source === "manual" ? "Manual activity" : "Activity"}</Text></View>
-        <Text style={f.small}>{new Date(row.startedAt).toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: APP_TIMEZONE })} →</Text>
+        <View style={[f.grow, { gap: 4 }]}><AppText role="itemTitle" >{row.ownActivity ? sportById(row.sport).name : `${row.name} · ${sportById(row.sport).name}`} · {clubDuration(row.movingSec)}</AppText>
+          <AppText role="supporting" secondary >{row.verified ? "GPS Tracked" : row.source === "manual" ? "Manual activity" : "Activity"}</AppText></View>
+        <AppText role="caption" secondary >{new Date(row.startedAt).toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: APP_TIMEZONE })} →</AppText>
       </Pressable>)}
-    </View>}
-    {crew.error && <Text style={f.small} accessibilityLiveRegion="polite">{crew.error}</Text>}
+    </Section>}
+    {crew.error && <AppText role="caption" secondary  accessibilityLiveRegion="polite">{crew.error}</AppText>}
     <FocusSheet open={Boolean(detail)} title={detail ? `${detail.name}'s activity` : "Activity"} onClose={() => setSelected(null)}>
-      {detail && <><Text style={f.h2}>{sportById(detail.sport).name}</Text><Text style={f.copy}>{clubDuration(detail.movingSec)} · {formatVolume(detail.sport, detail.distanceM, detail.movingSec, state.units)}</Text>
-        <Text style={f.small}>{new Date(detail.startedAt).toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit", timeZone: APP_TIMEZONE, timeZoneName: "short" })}</Text></>}
+      {detail && <><AppText role="contentTitle">{sportById(detail.sport).name}</AppText><AppText role="body" secondary >{clubDuration(detail.movingSec)} · {formatVolume(detail.sport, detail.distanceM, detail.movingSec, state.units)}</AppText>
+        <AppText role="caption" secondary >{new Date(detail.startedAt).toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit", timeZone: APP_TIMEZONE, timeZoneName: "short" })}</AppText></>}
     </FocusSheet>
   </>;
 }

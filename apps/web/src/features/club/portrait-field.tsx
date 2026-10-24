@@ -1,4 +1,6 @@
 "use client";
+import { AppText } from "@/ui/section";
+
 import { useId, useMemo, useRef, useState } from "react";
 import {
   portraitField,
@@ -41,7 +43,7 @@ export function PortraitField({
     <div className="club-perspective-group">
       <div className="club-board-status">
         <b>
-          {scene.place} / {scene.fieldSize} <small>PLACE</small>
+          {scene.place} / {scene.fieldSize} <AppText as="small" role="caption" secondary>PLACE</AppText>
         </b>
         <span>{portraitFieldGap(scene.nextGap, unit)}</span>
       </div>

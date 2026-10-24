@@ -1,4 +1,6 @@
 "use client";
+import { AppParagraph, AppText, typographyStyle, SectionHeader } from "@/ui/section";
+
 
 import {
   buildSleepView,
@@ -60,23 +62,23 @@ export function SleepPanel({
 
   return (
     <section className="sl-panel" aria-label="Sleep">
-      <p className="fb-kicker">
+      <AppParagraph typographyRole="badgeLabel" className="fb-kicker">
         Health · {metric.name} ·{" "}
         {formatClock({
           startsAt: view.periodStart,
           endsAt: view.periodEnd,
           kind: "weekly",
         })}
-      </p>
-      <h2 className="sl-heading">Last night</h2>
+      </AppParagraph>
+      <SectionHeader title="Last night"/>
 
       {!view.optedIn ? (
         <div className="sp-empty">
-          <h2>Sleep is its own board</h2>
-          <p className="fb-copy">
+          <SectionHeader title="Sleep is its own board"/>
+          <AppParagraph typographyRole="body" className="fb-copy">
             WHOOP, Oura, Garmin, Apple Health, and Health Connect can send a
             night. The week ranks the average of those scores.
-          </p>
+          </AppParagraph>
           <button type="button" className="fb-btn" onClick={onJoin}>
             Join sleep this week
           </button>
@@ -89,16 +91,16 @@ export function SleepPanel({
                 <strong>{night.score}</strong>
                 <span>sleep score</span>
               </p>
-              <p className="fb-copy">
+              <AppParagraph typographyRole="body" className="fb-copy">
                 {formatSleepDuration(night.durationMin)}
                 {night.efficiency != null ? ` · ${night.efficiency}% efficient` : ""}
                 {night.verified ? "" : " · entered on this device"}
-              </p>
+              </AppParagraph>
               {delta != null ? (
-                <p className="fb-note">
+                <AppParagraph typographyRole="caption" className="fb-note">
                   {delta >= 0 ? "+" : ""}
                   {Math.round(delta)} vs your recent nightly average
-                </p>
+                </AppParagraph>
               ) : null}
             </div>
             <div className="sl-night">
@@ -134,10 +136,10 @@ export function SleepPanel({
               <span>Contest score</span>
               <strong>{view.nightsLogged ? view.contestScore.toFixed(0) : "—"}</strong>
               {view.nightsLogged ? (
-                <small style={{ display: "block", fontSize: "11px", color: "var(--fb-muted, #768375)" }}>
+                <AppText as="small" role="caption" secondary style={{ ...typographyStyle("caption"), display: "block", color: "var(--fb-muted, #768375)" }}>
                   Avg: {view.mean.toFixed(0)} · nights you miss count against this
                   week&apos;s contest score
-                </small>
+                </AppText>
               ) : null}
             </div>
             <div>
@@ -146,7 +148,7 @@ export function SleepPanel({
                 {view.elapsedNights > 0 ? (
                   <>
                     {view.nightsLogged}
-                    <small> / {view.elapsedNights}</small>
+                    <AppText as="small" role="caption" secondary> / {view.elapsedNights}</AppText>
                   </>
                 ) : (
                   "—"
@@ -157,7 +159,7 @@ export function SleepPanel({
               <span>Field</span>
               <strong>
                 {view.place ?? "—"}
-                <small> / {view.fieldSize || "—"}</small>
+                <AppText as="small" role="caption" secondary> / {view.fieldSize || "—"}</AppText>
               </strong>
             </div>
           </div>
@@ -169,9 +171,9 @@ export function SleepPanel({
                   <span>{row.place}</span>
                   <span>
                     {row.you ? selfLaneLabel(row.name) : row.name}
-                    <small>
+                    <AppText as="small" role="caption" secondary>
                       {row.lastNight == null ? "No night yet" : `Last night ${row.lastNight}`}
-                    </small>
+                    </AppText>
                   </span>
                   <b>{row.score.toFixed(0)}</b>
                 </li>
@@ -181,10 +183,10 @@ export function SleepPanel({
         </>
       ) : (
         <div className="sp-empty">
-          <h2>No night recorded yet</h2>
-          <p className="fb-copy">
+          <SectionHeader title="No night recorded yet"/>
+          <AppParagraph typographyRole="body" className="fb-copy">
             Connect a supported sleep tracker in Athlete → Data Sync.
-          </p>
+          </AppParagraph>
 
         </div>
       )}

@@ -1,3 +1,4 @@
+import { SectionHeader, SectionStack, textStyle, AppText } from "../src/ui/section";
 import { SportIcon } from "../src/ui/sport-icon";
 import { activityFromSample } from "@fitness-battle/shared";
 import { ScreenHeader } from "../src/ui/screen-header";
@@ -379,6 +380,7 @@ export default function AthleteScreen() {
           contentContainerStyle={f.content}
           showsVerticalScrollIndicator={false}
         >
+<SectionStack divided={false}>
           <FocusButton
             label="Sign out"
             secondary
@@ -386,7 +388,8 @@ export default function AthleteScreen() {
           />
           <AccountActions />
           {legacyBackup && <FocusButton label="Export local demo backup" secondary onPress={() => { void Share.share({ message: legacyBackup, title: "Overtaek local demo backup" }); }} />}
-        </ScrollView>
+        </SectionStack>
+</ScrollView>
       </SafeAreaView>
     );
   }
@@ -400,6 +403,7 @@ export default function AthleteScreen() {
           contentContainerStyle={f.content}
           keyboardShouldPersistTaps="handled"
         >
+<SectionStack divided={false}>
           {providersForDevice().map((provider) => {
             const link = state.links.find(
               (row) => row.provider === provider.id,
@@ -496,7 +500,8 @@ export default function AthleteScreen() {
             <Text style={styles.copy}>{note}</Text>
           ) : null}
           <DataSyncActions />
-        </ScrollView>
+        </SectionStack>
+</ScrollView>
       </SafeAreaView>
     );
   }
@@ -506,30 +511,32 @@ export default function AthleteScreen() {
       <SafeAreaView style={f.safe} edges={["top"]}>
         {pageHeader}
         <ScrollView contentContainerStyle={f.content}>
-          <Text style={f.copy}>
+<SectionStack divided={false}>
+          <AppText role="body" secondary >
             Open includes your eligible sessions. GPS Tracked uses sessions recorded
             by a GPS tracker. Sample workouts do not count toward competition.
-          </Text>
-          <Text style={f.copy}>
+          </AppText>
+          <AppText role="body" secondary >
             Each active sport has its own effort score. Rank-priced activity
             milestones add points immediately. Weekly placement can raise or lower your score.
             A week without counted activity decays toward the score floor.
             Activity milestone points already earned are kept. Stopping after this week keeps the current
             week open and turns off renewal.
-          </Text>
-          <Text style={f.copy}>
+          </AppText>
+          <AppText role="body" secondary >
             A week freeze holds the weekly score adjustment and can be undone
             before the week ends. Activity milestones can still grow your score.
-          </Text>
+          </AppText>
           {RANK_BANDS.map((band) => (
             <View key={band.name} style={f.card}>
-              <Text style={f.h2}>
+              <AppText role="contentTitle" >
                 {band.name} · {band.min}+
-              </Text>
-              <Text style={f.copy}>{band.blurb}</Text>
+              </AppText>
+              <AppText role="body" secondary >{band.blurb}</AppText>
             </View>
           ))}
-        </ScrollView>
+        </SectionStack>
+</ScrollView>
       </SafeAreaView>
     );
   }
@@ -543,6 +550,7 @@ export default function AthleteScreen() {
           contentContainerStyle={f.content}
           keyboardShouldPersistTaps="handled"
         >
+<SectionStack divided={false}>
           {panel === "profile" ? (
             <>
               <Input
@@ -589,36 +597,36 @@ export default function AthleteScreen() {
                 />
               ) : null}
               {note ? (
-                <Text style={f.copy} accessibilityLiveRegion="polite">
+                <AppText role="body" secondary  accessibilityLiveRegion="polite">
                   {note}
-                </Text>
+                </AppText>
               ) : null}
             </>
           ) : (
             <>
               <View style={[f.row, { flexWrap: "wrap" }]}>
-                <Text style={f.rowTitle}>Units</Text>
+                <AppText role="itemTitle" >Units</AppText>
                 <FocusSegments label="Unit system" value={state.units} options={[{ value: "us", label: "Imperial" }, { value: "metric", label: "Metric" }]}
                   onChange={units => dispatch({ type: "set-units", units })} />
               </View>
               <View style={[f.row, { flexWrap: "wrap" }]}>
-                <Text style={f.rowTitle}>Primary sport</Text>
+                <AppText role="itemTitle" >Primary sport</AppText>
                 <ChoicePicker label="Primary sport" value={state.primary} options={SPORTS.map(s => ({ value: s.id, label: s.name }))}
                   onChange={sport => dispatch({ type: "set-primary", sport })} />
               </View>
               <View style={[f.row, { flexWrap: "wrap" }]}>
-                <View style={f.grow}><Text style={f.rowTitle}>Freeze this week</Text><Text style={f.small}>{state.freezesLeft} remaining</Text></View>
+                <View style={f.grow}><AppText role="itemTitle" >Freeze this week</AppText><AppText role="supporting" secondary >{state.freezesLeft} remaining</AppText></View>
                 <Switch style={{ alignSelf: "center", marginVertical: 0 }} trackColor={{ false: "#b9c5ca", true: SHELL_COLORS.fieldTeal }} thumbColor="#ffffff" accessibilityLabel="Freeze this week" value={frozen} disabled={!frozen && state.freezesLeft <= 0}
                   onValueChange={enabled => enabled ? setConfirmFreeze(true) : dispatch({ type: "unfreeze" })} />
               </View>
-              <Text style={f.h2}>Active Sports</Text>
+              <SectionHeader title="Active Sports"/>
               {SPORTS.map(sport => <View key={sport.id} style={[f.row, { minHeight: 64, alignItems: "center", borderBottomWidth: 1, borderBottomColor: SHELL_COLORS.line }]}>
-                <View style={[f.row, f.grow, { justifyContent: "flex-start", gap: 10 }]}><SportIcon sport={sport.id} /><Text style={f.rowTitle}>{sport.name}</Text></View>
+                <View style={[f.row, f.grow, { justifyContent: "flex-start", gap: 10 }]}><SportIcon sport={sport.id} /><AppText role="itemTitle" >{sport.name}</AppText></View>
                 <Switch style={{ alignSelf: "center", marginVertical: 0 }} trackColor={{ false: "#b9c5ca", true: SHELL_COLORS.fieldTeal }} thumbColor="#ffffff" accessibilityLabel={`Toggle ${sport.name} active status`}
                   value={Boolean(state.ratings.find(r => r.sport === sport.id)?.optedIn)}
                   onValueChange={enabled => dispatch(enabled ? { type: "opt-in", sport: sport.id, crewBoard: null } : { type: "opt-out", sport: sport.id })} />
               </View>)}
-              {saveError ? <Text style={f.copy}>{saveError}</Text> : null}
+              {saveError ? <AppText role="body" secondary >{saveError}</AppText> : null}
               <FocusSheet
                 open={confirmFreeze}
                 title="Freeze this week?"
@@ -635,7 +643,8 @@ export default function AthleteScreen() {
               </FocusSheet>
             </>
           )}
-        </ScrollView>
+        </SectionStack>
+</ScrollView>
       </SafeAreaView>
     );
   }
@@ -648,9 +657,10 @@ export default function AthleteScreen() {
         contentContainerStyle={f.content}
         keyboardShouldPersistTaps="handled"
       >
+<SectionStack divided={false}>
         {saveError ? (
           <View style={f.feedback}>
-            <Text style={f.copy}>{saveError}</Text>
+            <AppText role="body" secondary >{saveError}</AppText>
             <FocusButton label="Retry save" secondary onPress={retrySave} />
           </View>
         ) : null}
@@ -690,39 +700,37 @@ export default function AthleteScreen() {
         </View>
         {!state.onboardingCompleted ? (
           <View style={f.card}>
-            <Text style={f.h2}>Finish setup</Text>
+            <SectionHeader title="Finish setup"/>
             <FocusButton
               label="Continue onboarding"
               onPress={() => router.push("/onboarding")}
             />
           </View>
         ) : null}
-      </ScrollView>
+      </SectionStack>
+</ScrollView>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: SHELL_COLORS.paper },
-  scroll: { padding: 16, gap: 12, paddingBottom: 32 },
+  scroll: { padding: 20, gap: 28, paddingBottom: 32 },
   kicker: {
-    fontFamily: "DMSans_700Bold",
-    fontSize: 13,
+    ...textStyle("badgeLabel"),
     letterSpacing: 0.6,
     textTransform: "uppercase",
-    color: SHELL_COLORS.muted,
-  },
+    color: SHELL_COLORS.muted
+},
   name: {
-    fontFamily: "DMSans_700Bold",
-    fontSize: 28,
+    ...textStyle("pageTitle"),
     color: SHELL_COLORS.ink,
   },
   section: {
+    ...textStyle("sectionTitle"),
     marginTop: 8,
-    fontFamily: "DMSans_700Bold",
-    color: SHELL_COLORS.ink,
-    fontSize: 16,
-  },
+    color: SHELL_COLORS.ink
+},
   row: {
     minHeight: 60,
     flexDirection: "row",
@@ -737,15 +745,13 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   rowTitle: {
-    fontFamily: "DMSans_700Bold",
-    color: SHELL_COLORS.ink,
-    fontSize: 16,
-  },
+    ...textStyle("itemTitle"),
+    color: SHELL_COLORS.ink
+},
   copy: {
-    fontFamily: "DMSans_400Regular",
-    color: SHELL_COLORS.muted,
-    fontSize: 14,
-  },
+    ...textStyle("body"),
+    color: SHELL_COLORS.muted
+},
   authToggle: { flexDirection: "row", gap: 8 },
   authTab: {
     flex: 1,
@@ -761,8 +767,7 @@ const styles = StyleSheet.create({
     backgroundColor: SHELL_COLORS.greenSoft,
   },
   authTabText: {
-    fontFamily: "DMSans_700Bold",
-    color: SHELL_COLORS.ink,
-    fontSize: 15,
-  },
+    ...textStyle("itemTitle"),
+    color: SHELL_COLORS.ink
+},
 });

@@ -1,3 +1,4 @@
+import { Section, AppText } from "../ui/section";
 import { DateTimeField } from "../ui/form-picker";
 import { SHELL_COLORS as clubColors } from "@fitness-battle/shared";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -98,10 +99,7 @@ export function CrewSessions({
     }
   }
   return (
-    <View style={f.section}>
-      <View style={f.row}>
-        <Text style={f.h2}>Start Line</Text>
-        <FocusButton
+    <Section  title="Start Line" action={<FocusButton
           label="＋ Schedule"
           secondary
           disabled={busy}
@@ -109,10 +107,10 @@ export function CrewSessions({
             setError("");
             setOpen(true);
           }}
-        />
-      </View>
+        />}>
+
       {offlineMode ? (
-        <Text style={f.small}>Demo · saved on this device</Text>
+        <AppText role="caption" secondary >Demo · saved on this device</AppText>
       ) : null}
       {sessions.map((s) => {
         const joined = s.participants.some((p) => p.user_id === user?.id),
@@ -145,10 +143,10 @@ export function CrewSessions({
                 timeZone: s.time_zone,
               })}
             </Text>
-            <Text style={f.small}>
+            <AppText role="caption" secondary >
               {s.time_zone} · {s.duration_min} min
-            </Text>
-            <Text style={f.h2}>{s.title}</Text>
+            </AppText>
+            <AppText role="contentTitle" >{s.title}</AppText>
             <View
               style={[
                 f.chipRow,
@@ -180,13 +178,13 @@ export function CrewSessions({
                 <Text>+{s.participants.length - 6}</Text>
               ) : null}
             </View>
-            <Text style={f.small}>
+            <AppText role="caption" secondary >
               {s.cancelled_at
                 ? "Cancelled"
                 : closed
                   ? "Session started"
                   : `${s.participants.length} on the start list`}
-            </Text>
+            </AppText>
             {!closed ? (
               <>
                 <FocusButton
@@ -211,13 +209,13 @@ export function CrewSessions({
         );
       })}
       {!sessions.length && !error ? (
-        <Text style={f.small}>Same time. Your own place.</Text>
+        <AppText role="caption" secondary >Same time. Your own place.</AppText>
       ) : null}
       {!open && error ? (
         <>
-          <Text accessibilityRole="alert" style={f.copy}>
+          <AppText role="body" secondary accessibilityRole="alert" >
             {error}
-          </Text>
+          </AppText>
           <FocusButton
             secondary
             label="Refresh sessions"
@@ -237,7 +235,7 @@ export function CrewSessions({
           if (!busy) setOpen(false);
         }}
       >
-        <Text style={f.small}>Session name</Text>
+        <AppText role="caption" secondary >Session name</AppText>
         <TextInput
           accessibilityLabel="Session title"
           style={f.input}
@@ -246,11 +244,11 @@ export function CrewSessions({
           value={title}
           onChangeText={setTitle}
         />
-        <Text style={f.small}>Date · {APP_TIMEZONE}</Text>
+        <AppText role="caption" secondary >Date · {APP_TIMEZONE}</AppText>
         <DateTimeField label="Session date · Eastern" mode="date" value={day} onChange={setDay} />
-        <Text style={f.small}>Time · {APP_TIMEZONE}</Text>
+        <AppText role="caption" secondary >Time · {APP_TIMEZONE}</AppText>
         <DateTimeField label="Session time · Eastern" mode="time" value={time} onChange={setTime} />
-        <Text style={f.small}>Duration</Text>
+        <AppText role="caption" secondary >Duration</AppText>
         <View style={f.chipRow}>
           {[15, 30, 45, 60, 90, 120, 180, 240].map((n) => (
             <Pressable
@@ -265,9 +263,9 @@ export function CrewSessions({
           ))}
         </View>
         {error ? (
-          <Text accessibilityRole="alert" style={f.copy}>
+          <AppText role="body" secondary accessibilityRole="alert" >
             {error}
-          </Text>
+          </AppText>
         ) : null}
         <FocusButton
           label={busy ? "Saving…" : "Set the start line"}
@@ -295,6 +293,6 @@ export function CrewSessions({
           }}
         />
       </FocusSheet>
-    </View>
+    </Section>
   );
 }

@@ -1,3 +1,4 @@
+import { textStyle } from "../src/ui/section";
 import {
   DMSans_400Regular,
   DMSans_500Medium,
@@ -107,14 +108,14 @@ export default function RootLayout() {
       >
         {fontError || fontLoadTimedOut ? (
           <View style={{ paddingHorizontal: 28, gap: 12, maxWidth: 420 }}>
-            <Text style={{ fontSize: 20, fontWeight: "700", textAlign: "center", color: SHELL_COLORS.ink }}>
+            <Text style={{ ...textStyle("itemTitle"), textAlign: "center", color: SHELL_COLORS.ink }}>
               Fonts couldn’t load
             </Text>
-            <Text style={{ fontSize: 15, textAlign: "center", color: SHELL_COLORS.ink }}>
+            <Text style={{ ...textStyle("supporting"), textAlign: "center", color: SHELL_COLORS.ink }}>
               Reload the app in Expo Go. If this continues, check the Expo server logs for the font-loading error.
             </Text>
             {__DEV__ && fontError ? (
-              <Text selectable style={{ fontSize: 12, color: SHELL_COLORS.ink }}>
+              <Text selectable style={{ ...textStyle("caption"), color: SHELL_COLORS.ink }}>
                 {fontError.message}
               </Text>
             ) : null}

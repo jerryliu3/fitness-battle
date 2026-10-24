@@ -1,4 +1,6 @@
 "use client";
+import { AppParagraph, SectionHeader, AppHeading } from "@/ui/section";
+
 import { useEffect, useRef, useState } from "react";
 import { competeNow, freshState, reduceCompete, rollClock, type CompeteState } from "@fitness-battle/shared";
 import { useCompete } from "@/components/compete-context";
@@ -36,10 +38,10 @@ export default function AdminLab() {
     finally { if (owner.current === accountId) setBusy(false); }
   }
   return <main className="fb-card" style={{ padding: 24, maxWidth: 800, margin: "auto" }}>
-    <h1>Round lab</h1>
-    <p className="fb-copy">Local simulation is isolated from your account. Production settlement below writes real results.</p>
-    <section><h2>Local sandbox</h2>
-      <p>{competeNow(local).toLocaleString()} · {local.activities.length} sessions · {local.periodResults.length} results</p>
+    <AppHeading level={1} role="pageTitle">Round lab</AppHeading>
+    <AppParagraph typographyRole="body" className="fb-copy">Local simulation is isolated from your account. Production settlement below writes real results.</AppParagraph>
+    <section><SectionHeader title="Local sandbox"/>
+      <AppParagraph typographyRole="body">{competeNow(local).toLocaleString()} · {local.activities.length} sessions · {local.periodResults.length} results</AppParagraph>
       <div className="focus-actions">
         <button className="fb-btn-line" onClick={() => setSandbox(structuredClone(state ?? freshState()))}>Copy current account</button>
         <button className="fb-btn-line" onClick={() => change({ type: "opt-in", sport: "running" })}>Join running</button>
@@ -53,12 +55,12 @@ export default function AdminLab() {
       <details><summary>Sandbox rounds</summary><pre style={{ overflow: "auto" }}>{JSON.stringify({ enrollments: local.enrollments, results: local.periodResults }, null, 2)}</pre></details>
     </section>
     {user?.mode === "supabase" && isOwnerEmail(user.email) && <section>
-      <h2>Production settlement</h2>
-      <p>Load an athlete first. Closing an open round early records real results and advances their enrollment to the next round. Other athletes are not modified.</p>
+      <SectionHeader title="Production settlement"/>
+      <AppParagraph typographyRole="body">Load an athlete first. Closing an open round early records real results and advances their enrollment to the next round. Other athletes are not modified.</AppParagraph>
       <label>Athlete account ID<input className="fb-input" disabled={busy} value={target} placeholder={user.id} onChange={(event) => { setTarget(event.target.value); setPreview(null); }}/></label>
       <button className="fb-btn-line" disabled={busy} onClick={() => void load()}>Load account preview</button>
       {preview && <>
-        <h3>{preview.name}</h3><pre style={{ overflow: "auto" }}>{JSON.stringify(preview.enrollments, null, 2)}</pre>
+        <AppHeading level={3} role="contentTitle">{preview.name}</AppHeading><pre style={{ overflow: "auto" }}>{JSON.stringify(preview.enrollments, null, 2)}</pre>
         <label>Action<select disabled={busy} value={action} onChange={(event) => setAction(event.target.value)}><option value="settle-due">Settle only rounds already due</option><option value="close-round">Close current round early</option></select></label>
         <label>Reason<input className="fb-input" disabled={busy} minLength={8} maxLength={1000} value={reason} onChange={(event) => setReason(event.target.value)}/></label>
         <label>Type SETTLE {target}<input className="fb-input" disabled={busy} value={confirmation} onChange={(event) => setConfirmation(event.target.value)}/></label>
@@ -80,6 +82,6 @@ export default function AdminLab() {
     </section>}
     {user?.mode === "supabase" && isOwnerEmail(user.email) && <AdminScenarioControls target={target} owner={user.id} onTargetChange={(value) => { setTarget(value); setPreview(null); }}/>}
     {user?.mode === "supabase" && isOwnerEmail(user.email) && <AdminFieldControls target={target} owner={user.id}/>}
-    {note && <p role="status">{note}</p>}
+    {note && <AppParagraph typographyRole="body" role="status">{note}</AppParagraph>}
   </main>;
 }

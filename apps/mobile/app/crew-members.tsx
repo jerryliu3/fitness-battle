@@ -1,3 +1,4 @@
+import { SectionStack } from "../src/ui/section";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { ScrollView } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -9,6 +10,8 @@ export default function CrewMembersScreen() {
   const { crewId } = useLocalSearchParams<{ crewId?: string }>();
   return <SafeAreaView style={f.safe}>
     <ScreenHeader title="Members" onBack={() => router.back()} />
-    <ScrollView contentContainerStyle={f.content}><CrewHub membersOnly crewId={crewId} /></ScrollView>
+    <ScrollView contentContainerStyle={f.content}>
+<SectionStack divided={false}><CrewHub membersOnly crewId={crewId} /></SectionStack>
+</ScrollView>
   </SafeAreaView>;
 }

@@ -1,3 +1,4 @@
+import { SectionStack, AppText } from "../ui/section";
 import { MotionStep } from "../ui/motion-step";
 import { useAuth } from "../lib/auth";
 import {
@@ -37,13 +38,14 @@ function Round({
       <SafeAreaProvider>
       <SafeAreaView style={f.safe}>
         <ScrollView contentContainerStyle={f.content}>
+<SectionStack divided={false}>
           <MotionStep identity={next ? "next" : "results"}>
           <Text style={f.kicker}>
             Round complete · {next ? "2 / 2" : "1 / 2"}
           </Text>
-          <Text style={f.title}>
+          <AppText role="pageTitle" >
             {next ? "Keep it going." : "Your week, settled."}
-          </Text>
+          </AppText>
           {!next ? (
             <>
               {rows.map((result) => (
@@ -59,12 +61,12 @@ function Round({
               {rows.map((result) => {
                 const enrollment = roundEnrollment(state, result);
                 return (
-                  <Text key={result.id} style={f.copy}>
+                  <AppText role="body" secondary key={result.id} >
                     {sportById(result.sport).name}:{" "}
                     {enrollment.startsAt
                       ? `Your current round ${enrollment.status === "upcoming" ? "starts" : "started"} ${enrollment.startsAt.toLocaleString("en-US", { timeZone: APP_TIMEZONE, timeZoneName: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}. ${enrollment.renews ? "Renews after this round." : "Stops after this round."}`
                       : "You’re not registered for another round. Update sport settings to join again."}
-                  </Text>
+                  </AppText>
                 );
               })}
               <FocusButton
@@ -79,7 +81,8 @@ function Round({
             </>
           )}
           </MotionStep>
-        </ScrollView>
+        </SectionStack>
+</ScrollView>
       </SafeAreaView>
       </SafeAreaProvider>
     </Modal>

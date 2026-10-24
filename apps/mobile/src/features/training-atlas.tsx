@@ -1,3 +1,4 @@
+import { AppText, Section } from "../ui/section";
 import { ChartScrubber } from "../ui/chart-scrubber";
 import { useMemo, useState } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
@@ -78,8 +79,7 @@ export function TrainingAtlas({ state }: { state: CompeteState }) {
     setSelectedDay(null);
   };
   return (
-    <View style={f.section}>
-      <Text style={f.h2}>Your training</Text>
+    <Section title="Your training">
       <ScrollView horizontal showsHorizontalScrollIndicator={false}>
         <View style={f.row}>
           {[{ id: "all", name: "All sports" }, ...SPORTS].map((s) => (
@@ -93,7 +93,7 @@ export function TrainingAtlas({ state }: { state: CompeteState }) {
               }}
               style={[f.chip, sport === s.id && f.chipActive]}
             >
-              <Text style={f.small}>{s.name}</Text>
+              <AppText role="caption" secondary >{s.name}</AppText>
             </Pressable>
           ))}
         </View>
@@ -121,11 +121,11 @@ export function TrainingAtlas({ state }: { state: CompeteState }) {
           disabled={!prevAllowed}
           onPress={() => move(-1)}
         >
-          <Text style={[f.rowTitle, { opacity: prevAllowed ? 1 : 0.3 }]}>
+          <AppText role="itemTitle" style={{ opacity: prevAllowed ? 1 : 0.3 }}>
             ←
-          </Text>
+          </AppText>
         </Pressable>
-        <Text style={f.rowTitle}>
+        <AppText role="itemTitle" >
           {range === "week"
             ? formatWeeklyCompetitionRange(anchor)
             : anchor.toLocaleDateString("en-US", {
@@ -134,7 +134,7 @@ export function TrainingAtlas({ state }: { state: CompeteState }) {
                   ? { year: "numeric" }
                   : { month: "long", year: "numeric" }),
               })}
-        </Text>
+        </AppText>
         <Pressable
           style={s.arrow}
           accessibilityRole="button"
@@ -143,9 +143,9 @@ export function TrainingAtlas({ state }: { state: CompeteState }) {
           disabled={!nextAllowed}
           onPress={() => move(1)}
         >
-          <Text style={[f.rowTitle, { opacity: nextAllowed ? 1 : 0.3 }]}>
+          <AppText role="itemTitle" style={{ opacity: nextAllowed ? 1 : 0.3 }}>
             →
-          </Text>
+          </AppText>
         </Pressable>
       </View>
       <View style={{ gap: 4 }}>
@@ -155,12 +155,12 @@ export function TrainingAtlas({ state }: { state: CompeteState }) {
         >
           {clubDuration(buckets.reduce((sum, b) => sum + b.movingSec, 0))}
         </Text>
-        <Text style={f.small}>
+        <AppText role="caption" secondary >
           {buckets.reduce((sum, b) => sum + b.sessions, 0)} {buckets.reduce((sum, b) => sum + b.sessions, 0) === 1 ? "session" : "sessions"} ·{" "}
           {sport === "all" ? "All sports" : sportById(sport).name}
-        </Text>
+        </AppText>
       </View>
-      <Text style={[f.small, { color: c.secondary }]}>{comparison.label}</Text>
+      <AppText role="caption" secondary style={{ color: c.secondary }}>{comparison.label}</AppText>
       <ChartScrubber key={`${range}:${anchor.toISOString()}:${sport}`} label="Training hours by period"
         points={buckets.flatMap((b, index) => Date.parse(b.start) > now.getTime() ? [] : [{
           id: b.start, x: (index + .5) / buckets.length * 340,
@@ -225,7 +225,7 @@ export function TrainingAtlas({ state }: { state: CompeteState }) {
                   }}
                 />
               </View>
-              <Text style={[f.small, { fontSize: 10 }]}>{b.label}</Text>
+              <AppText role="caption" secondary >{b.label}</AppText>
             </Pressable>
           ))}
         </View>
@@ -244,15 +244,12 @@ export function TrainingAtlas({ state }: { state: CompeteState }) {
         >
           <View style={{ flexDirection: "row", gap: 4 }}>
             {["M", "T", "W", "T", "F", "S", "S"].map((d, i) => (
-              <Text
+              <AppText role="caption" secondary
                 key={i}
-                style={[
-                  f.small,
-                  { width: (gridWidth - 24) / 7, textAlign: "center" },
-                ]}
+                style={{ width: (gridWidth - 24) / 7, textAlign: "center" }}
               >
                 {d}
-              </Text>
+              </AppText>
             ))}
           </View>
           <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 4 }}>
@@ -275,14 +272,11 @@ export function TrainingAtlas({ state }: { state: CompeteState }) {
                   },
                 ]}
               >
-                <Text
-                  style={[
-                    f.small,
-                    { color: d.intensity === 4 ? c.card : c.ink },
-                  ]}
+                <AppText role="caption" secondary
+                  style={{ color: d.intensity === 4 ? c.card : c.ink }}
                 >
                   {d.inMonth ? d.label : ""}
-                </Text>
+                </AppText>
               </Pressable>
             ))}
           </View>
@@ -301,22 +295,22 @@ export function TrainingAtlas({ state }: { state: CompeteState }) {
                   const a = state.activities.find((a) => a.id === id)!;
                   return (
                     <View key={id} style={s.row}>
-                      <Text style={f.copy}>{sportById(a.sport).name}</Text>
-                      <Text style={f.small}>
+                      <AppText role="body" secondary >{sportById(a.sport).name}</AppText>
+                      <AppText role="caption" secondary >
                         {formatTrainingHours(a.movingSec)} hr · {a.source}
-                      </Text>
+                      </AppText>
                     </View>
                   );
                 })
               ) : (
-                <Text style={f.small}>Nothing recorded.</Text>
+                <AppText role="caption" secondary >Nothing recorded.</AppText>
               )}
             </>
           ) : null}
         </View>
       </FocusDisclosure>
       <View style={s.row}>
-        <Text style={f.small}>Moving time</Text>
+        <AppText role="caption" secondary >Moving time</AppText>
         <View style={{ flexDirection: "row", gap: 3 }}>
           {colors.map((color) => (
             <View
@@ -331,7 +325,7 @@ export function TrainingAtlas({ state }: { state: CompeteState }) {
           ))}
         </View>
       </View>
-    </View>
+    </Section>
   );
 }
 const s = StyleSheet.create({

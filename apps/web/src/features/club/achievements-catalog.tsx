@@ -1,4 +1,5 @@
 "use client";
+import { AppParagraph, AppText, StatusBadge } from "@/ui/section";
 
 import { useId, useState } from "react";
 import {
@@ -51,31 +52,31 @@ export function AchievementsCatalog({
           <strong>
             {item.current.toLocaleString()} / {item.target.toLocaleString()}
           </strong>
-          <p>
+          <AppParagraph typographyRole="body">
             {item.category === "sessions"
               ? "Sessions currently in your activity history."
               : `${sportById(state.primary).name} · Open Effort Score.`}
-          </p>
-          <p>
+          </AppParagraph>
+          <AppParagraph typographyRole="body">
             {item.earned
               ? "Milestone reached. Keep building on it."
               : `${Math.max(0, item.target - item.current).toLocaleString()} ${item.category === "sessions" ? "sessions" : "points"} to this milestone.`}
-          </p>
+          </AppParagraph>
         </div>
       ) : null}
-      <p className="fb-note">
+      <AppParagraph typographyRole="caption" className="fb-note">
         Milestones reflect your current activity history and score. They do not grant rewards or change competition points.
-      </p>
+      </AppParagraph>
       <div className="club-all-achievements">
         {rows.map((row) => (
           <button type="button" key={row.id} aria-pressed={row.id === item?.id} onClick={() => setSelected(row.id)}>
             <AchievementBadge item={row} />
             <span>
               <b>{row.title}</b>
-              <small>
-                {row.target} {row.category === "sessions" ? "sessions" : "Open effort score"} ·{" "}
-                {row.earned ? "Earned" : "Upcoming"}
-              </small>
+              <AppText as="small" role="caption" secondary>
+                {row.target} {row.category === "sessions" ? "sessions" : "Open effort score"}
+              </AppText>
+              <StatusBadge tone={row.earned ? "success" : "neutral"}>{row.earned ? "Earned" : "Up next"}</StatusBadge>
             </span>
           </button>
         ))}

@@ -1,3 +1,4 @@
+import { AppText } from "./section";
 import type { AwardCardModel } from "@fitness-battle/shared";
 import { Card } from "heroui-native/card";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
@@ -7,7 +8,7 @@ export function AwardShelf({ cards }: { cards: AwardCardModel[] }) {
   if (cards.length === 0) {
     return (
       <View style={styles.empty}>
-        <Text style={styles.emptyText}>No week awards yet.</Text>
+        <AppText role="body" secondary>No week awards yet.</AppText>
       </View>
     );
   }
@@ -22,16 +23,16 @@ export function AwardShelf({ cards }: { cards: AwardCardModel[] }) {
       {cards.map((card) => (
         <Card key={card.id} style={styles.card}>
           <Card.Header>
-            <Card.Title>{card.headline}</Card.Title>
-            <Card.Description>
+            <AppText role="contentTitle" accessibilityRole="header">{card.headline}</AppText>
+            <AppText role="supporting" secondary>
               {card.sportName} · {card.weekLabel}
-            </Card.Description>
+            </AppText>
           </Card.Header>
           <Card.Body>
             <Text style={styles.place}>{card.place}</Text>
-            <Text style={styles.meta}>
+            <AppText role="caption" secondary>
               {card.effort} effort · {card.delta} effort score
-            </Text>
+            </AppText>
           </Card.Body>
         </Card>
       ))}
@@ -47,15 +48,6 @@ const styles = StyleSheet.create({
     fontSize: 28,
     color: SHELL_COLORS.ink,
   },
-  meta: {
-    fontFamily: "DMSans_400Regular",
-    color: SHELL_COLORS.muted,
-    fontSize: 13,
-  },
   empty: { paddingVertical: 8 },
-  emptyText: {
-    fontFamily: "DMSans_400Regular",
-    color: SHELL_COLORS.muted,
-    fontSize: 15,
-  },
+
 });

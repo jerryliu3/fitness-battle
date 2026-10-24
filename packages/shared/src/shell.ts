@@ -94,6 +94,27 @@ export const SHELL_TYPE = {
   body: "DM Sans",
 } as const;
 
+/** Logical pixels; web adapters convert sizes to rem, native keeps font scaling. */
+export const SHELL_TYPOGRAPHY = {
+  pageTitle: { size: 30, lineHeight: 36, weight: 700 },
+  navigationTitle: { size: 20, lineHeight: 26, weight: 700 },
+  sectionTitle: { size: 22, lineHeight: 28, weight: 700 },
+  contentTitle: { size: 18, lineHeight: 24, weight: 700 },
+  body: { size: 16, lineHeight: 24, weight: 400 },
+  itemTitle: { size: 14, lineHeight: 20, weight: 500 },
+  supporting: { size: 14, lineHeight: 20, weight: 400 },
+  actionLabel: { size: 14, lineHeight: 20, weight: 700 },
+  caption: { size: 12, lineHeight: 18, weight: 400 },
+  badgeLabel: { size: 12, lineHeight: 16, weight: 700 },
+  // Numeric and control roles are deliberately independent of heading hierarchy.
+  metricValue: { size: 20, lineHeight: 26, weight: 500 },
+  metricUnit: { size: 20, lineHeight: 26, weight: 400 },
+  controlSymbol: { size: 20, lineHeight: 26, weight: 500 },
+  avatarInitials: { size: 18, lineHeight: 24, weight: 700 },
+} as const;
+export type TypographyRole = keyof typeof SHELL_TYPOGRAPHY;
+export const SHELL_SECTION = { subtitleGap: 4, contentGap: 12, beforeDivider: 16, afterDivider: 12, dividerWidth: 1, dividerColor: "#d0dad7" } as const;
+
 export const SHELL_SPACING = { xs: 4, sm: 8, md: 12, lg: 16, xl: 24, page: 20, section: 28 } as const;
 export const SHELL_MOTION = { feedback: 120, transition: 220, reveal: 420 } as const;
 
@@ -103,6 +124,8 @@ export const SHELL_TOKENS = {
   colors: SHELL_COLORS,
   radius: SHELL_RADIUS,
   type: SHELL_TYPE,
+  typography: SHELL_TYPOGRAPHY,
+  section: SHELL_SECTION,
 } as const;
 
 export const PERSON_ICON_PATH =

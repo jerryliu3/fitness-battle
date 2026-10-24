@@ -1,3 +1,4 @@
+import { SectionHeader, SectionStack, AppText } from "../../src/ui/section";
 import { AppIcon } from "../../src/ui/app-icon";
 import { competitionTrack, competitionTrackLabel } from "@fitness-battle/shared";
 import { EventCarousel } from "../../src/features/event-carousel";
@@ -112,6 +113,7 @@ export default function ArenaScreen() {
   return (
     <SafeAreaView style={f.safe} edges={[]}>
       <ScrollView contentContainerStyle={f.content}>
+<SectionStack divided={false}>
         <CompetitionSummary state={state} selectedSport={selectedSport??undefined}>
           {selectedSport && selectedSport !== "sleep" ? (
             <FocusSegments
@@ -133,29 +135,30 @@ export default function ArenaScreen() {
         </CompetitionSummary>
         {saveError ? (
           <View style={f.feedback}>
-            <Text style={f.copy}>{saveError}</Text>
+            <AppText role="body" secondary >{saveError}</AppText>
             <FocusButton label="Retry save" secondary onPress={retrySave} />
           </View>
         ) : null}
         {standingsStale ? (
-          <Text style={f.copy} accessibilityLiveRegion="polite">
+          <AppText role="body" secondary  accessibilityLiveRegion="polite">
             Standings may be out of date until the next refresh.
-          </Text>
+          </AppText>
         ) : null}
         <RoundTakeover state={state} ready={canWrite} dispatch={dispatch} />
         {hasRegistration?<EventCarousel key={accountKey} events={[...active.map(r=>({id:r.sport,label:SPORTS.find(s=>s.id===r.sport)!.name,badge:competitionTrackLabel(r.sport)})),...(sleepOptedIn?[{id:"sleep",label:"Sleep & Recovery"}]:[])]} value={selectedSport!} onChange={id=>{setSelection({account:accountKey,sport:id as SportId|"sleep"});void playCue("selection");}} onRegister={openRegistration}>
-        {selectedSport&&selectedSport!=="sleep"?<CompetitionField key={`${accountKey}:${selectedSport}:${state.units}:${track}`} sport={selectedSport} track={track} arenaView={fieldView} onArenaViewChange={setFieldView} chromeInHeader/>:selectedSport==="sleep"?<SleepPanel state={state} dispatch={dispatch}/>:<View style={f.card}><Text style={f.title}>Your next chapter starts here.</Text><Text style={f.copy}>Register for an event to open your field.</Text></View>}
-        </EventCarousel>:<View style={f.card}><Text style={f.title}>Your next chapter starts here.</Text><Text style={f.copy}>Register for an event to open your field.</Text><FocusButton label="Explore events" onPress={openRegistration}/></View>}
+        {selectedSport&&selectedSport!=="sleep"?<CompetitionField key={`${accountKey}:${selectedSport}:${state.units}:${track}`} sport={selectedSport} track={track} arenaView={fieldView} onArenaViewChange={setFieldView} chromeInHeader/>:selectedSport==="sleep"?<SleepPanel state={state} dispatch={dispatch}/>:<View style={f.card}><AppText role="contentTitle">Your next chapter starts here.</AppText><AppText role="body" secondary >Register for an event to open your field.</AppText></View>}
+        </EventCarousel>:<View style={f.card}><AppText role="contentTitle">Your next chapter starts here.</AppText><AppText role="body" secondary >Register for an event to open your field.</AppText><FocusButton label="Explore events" onPress={openRegistration}/></View>}
         {state.periodResults.length ? <FocusButton label="Latest week results ↗" secondary onPress={() => router.push("/arena?results=latest")} /> : null}
         <View style={[f.row, { alignItems: "stretch", flexWrap: "wrap" }]}>
           <View style={[f.card, { flex: 1.2, minWidth: 150, backgroundColor: "#eef3f1" }]}>
-            <AppIcon name="compete" size={32} /><Text style={f.kicker}>Coming soon</Text><Text style={f.h2}>1v1</Text><Text style={f.copy}>A week. A friendly challenge.</Text>
+            <AppIcon name="compete" size={32} /><Text style={f.kicker}>Coming soon</Text><SectionHeader title="1v1"/><AppText role="body" secondary >A week. A friendly challenge.</AppText>
           </View>
           <Pressable accessibilityRole="button" accessibilityLabel="Beyond this week: pace and race rankings" style={[f.card, { flex: 1, minWidth: 130, justifyContent: "space-between" }]} onPress={() => router.push("/benchmarks")}>
-            <AppIcon name="external" size={32} /><Text style={f.rowTitle}>Beyond this week</Text><Text style={f.small}>Your all-time pace & race rankings</Text>
+            <AppIcon name="external" size={32} /><AppText role="itemTitle" >Beyond this week</AppText><AppText role="caption" secondary >Your all-time pace & race rankings</AppText>
           </Pressable>
         </View>
-      </ScrollView>
+      </SectionStack>
+</ScrollView>
       <FocusSheet
         open={register}
         title="Register for this week."
@@ -166,7 +169,7 @@ export default function ArenaScreen() {
         }}
       >
         <View style={f.row}>
-          <Text style={[f.rowTitle, f.grow]}>Compete with your crew</Text>
+          <AppText role="itemTitle" style={f.grow}>Compete with your crew</AppText>
           <Switch
             accessibilityLabel="Compete with your crew"
             value={withCrew}
@@ -175,9 +178,9 @@ export default function ArenaScreen() {
           />
         </View>
         {withCrew && !crewApi.live ? (
-          <Text style={f.copy}>
+          <AppText role="body" secondary >
             A live account and a matching crew are required.
-          </Text>
+          </AppText>
         ) : null}
         {SPORTS.map((s) => {
           const isRegistered = state.ratings.find(
@@ -198,12 +201,12 @@ export default function ArenaScreen() {
                 }}
                 style={[f.chip, sport === s.id && f.chipActive]}
               >
-                <Text style={f.rowTitle}>{s.name} · {competitionTrackLabel(s.id)}</Text>
-                <Text style={f.small}>
+                <AppText role="itemTitle" >{s.name} · {competitionTrackLabel(s.id)}</AppText>
+                <AppText role="caption" secondary >
                   {isRegistered
                     ? "Already registered"
                     : competitionTrackLabel(s.id)}
-                </Text>
+                </AppText>
               </Pressable>
               {withCrew && sport === s.id && !isRegistered ? (
                 eligible.length ? (
@@ -216,10 +219,10 @@ export default function ArenaScreen() {
                     />
                   ))
                 ) : (
-                  <Text style={f.copy}>
+                  <AppText role="body" secondary >
                     {crewApi.error ||
                       "No eligible crew for this event. Add a crew on Crew, or turn off crew competition."}
-                  </Text>
+                  </AppText>
                 )
               ) : null}
             </View>
@@ -253,9 +256,9 @@ export default function ArenaScreen() {
           }}
         />
         {Boolean(joinError) && (
-          <Text style={f.copy} accessibilityLiveRegion="polite">
+          <AppText role="body" secondary  accessibilityLiveRegion="polite">
             {joinError}
-          </Text>
+          </AppText>
         )}
       </FocusSheet>
     </SafeAreaView>

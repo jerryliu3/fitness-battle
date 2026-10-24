@@ -1,3 +1,4 @@
+import { SectionStack } from "../src/ui/section";
 import { ScreenHeader } from "../src/ui/screen-header";
 import { useRouter } from "expo-router";
 import { ScrollView } from "react-native";
@@ -14,8 +15,10 @@ export default function Week() {
   if (!state) return null;
   return <SafeAreaView style={f.safe}>
     <ScrollView contentContainerStyle={f.content}>
+<SectionStack divided={false}>
       <ScreenHeader title="Your week" onBack={() => router.canGoBack() ? router.back() : router.replace("/today")} />
       <WeekChart state={state} /><EffortRail /><WeekRecap state={state} />
-    </ScrollView>
+    </SectionStack>
+</ScrollView>
   </SafeAreaView>;
 }

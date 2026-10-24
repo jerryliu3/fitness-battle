@@ -1,4 +1,5 @@
 "use client";
+import { AppParagraph, AppText, typographyStyle } from "@/ui/section";
 import { PortraitField } from "@/features/club/portrait-field";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useReducedMotion } from "motion/react";
@@ -439,7 +440,7 @@ export function FieldStage({
     showGhost,
   );
 
-  if (!you) return <p className="fb-copy">Join a field to see your lanes.</p>;
+  if (!you) return <AppParagraph typographyRole="body" className="fb-copy">Join a field to see your lanes.</AppParagraph>;
 
   return (
     <section
@@ -450,15 +451,15 @@ export function FieldStage({
       {!chromeInHeader ? (
       <div className="focus-arena-total">
         <div>
-          <p className="fb-kicker">Accumulated this week</p>
+          <AppParagraph typographyRole="badgeLabel" className="fb-kicker">Accumulated this week</AppParagraph>
           <strong>
             {displayTotal.toFixed(1)}
-            <small>{unit}</small>
+            <AppText as="small" role="caption" secondary>{unit}</AppText>
           </strong>
         </div>
         <span className="focus-status">
           {displayPlace} / {runners.length}
-          <small>your place</small>
+          <AppText as="small" role="caption" secondary>your place</AppText>
         </span>
       </div>
       ) : null}
@@ -468,18 +469,18 @@ export function FieldStage({
           role="status"
           aria-live="polite"
           style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            gap: 10,
-            padding: "8px 12px",
-            marginBottom: 10,
-            borderRadius: 12,
-            background: overtakePlan.hasOvertake ? "#d4ee8940" : overtakePlan.passedByIds?.length ? "#fff3d6" : "#eef3e8",
-            border: `1px solid ${overtakePlan.hasOvertake ? "#9bbf63" : overtakePlan.passedByIds?.length ? "#e6c36a" : "#d7e0cf"}`,
-            fontSize: 13,
-            color: "#26382d",
-          }}
+    ...typographyStyle("supporting"),
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 10,
+    padding: "8px 12px",
+    marginBottom: 10,
+    borderRadius: 12,
+    background: overtakePlan.hasOvertake ? "#d4ee8940" : overtakePlan.passedByIds?.length ? "#fff3d6" : "#eef3e8",
+    border: `1px solid ${overtakePlan.hasOvertake ? "#9bbf63" : overtakePlan.passedByIds?.length ? "#e6c36a" : "#d7e0cf"}`,
+    color: "#26382d"
+}}
         >
           <span>
             <b>{overtakeStatus.headline}</b>
@@ -604,7 +605,7 @@ export function FieldStage({
                       padding: "10px 4px 6px",
                     }}
                   >
-                    <span className="fb-note" style={{ fontSize: 12 }}>
+                    <span className="fb-note" style={{ ...typographyStyle("caption") }}>
                       Zoom
                     </span>
                     <input
@@ -629,7 +630,7 @@ export function FieldStage({
                     />
                     <span
                       className="fb-note"
-                      style={{ fontSize: 11, minWidth: 44, textAlign: "right" }}
+                      style={{ ...typographyStyle("caption"), minWidth: 44, textAlign: "right" }}
                     >
                       ±
                       {(view.span / 2).toLocaleString("en-US", {

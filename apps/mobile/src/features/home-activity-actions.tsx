@@ -1,3 +1,4 @@
+import { AppText } from "../ui/section";
 import { IconButton } from "../ui/icon-button";
 import { NumberPicker, DateTimeField } from "../ui/form-picker";
 import { ChoicePicker } from "../ui/choice-picker";
@@ -15,7 +16,7 @@ import {
 } from "@fitness-battle/shared";
 import { Link } from "expo-router";
 import { useRef, useState } from "react";
-import { Text, View } from "react-native";
+import { View } from "react-native";
 import { requestApi } from "../lib/api";
 import { useAuth } from "../lib/auth";
 import { useCompeteStore } from "../lib/compete-store";
@@ -192,9 +193,9 @@ export function HomeActivityActions({
         <Link href="/athlete">Sign in to add or sync activities</Link>
       )}
       {note ? (
-        <Text style={f.small} accessibilityLiveRegion="polite">
+        <AppText role="caption" secondary  accessibilityLiveRegion="polite">
           {note}
-        </Text>
+        </AppText>
       ) : null}
       <FocusSheet
         open={open}
@@ -202,20 +203,20 @@ export function HomeActivityActions({
         title="Add activity"
         minimal
       >
-        <Text style={f.rowTitle}>Sport</Text>
+        <AppText role="itemTitle" >Sport</AppText>
         <ChoicePicker label="Sport" placeholder="Choose a sport" value={sport} options={SPORTS.map(item => ({ value: item.id, label: item.name }))} onChange={value => { setSport(value); setMiles(""); }} />
         {sport && <>
-          <Text style={f.rowTitle}>Duration</Text>
+          <AppText role="itemTitle" >Duration</AppText>
           <NumberPicker label="Duration" unit="min" value={minutes} onChange={setMinutes} />
-          {sportById(sport).gps && <><Text style={f.rowTitle}>Distance ({state.units === "metric" ? "km" : "mi"})</Text>
+          {sportById(sport).gps && <><AppText role="itemTitle" >Distance ({state.units === "metric" ? "km" : "mi"})</AppText>
             <NumberPicker label="Distance" unit={state.units === "metric" ? "km" : "mi"} max={1000} step={0.1} value={miles} onChange={setMiles} /></>}
-          <Text style={f.rowTitle}>Time of day (optional · Eastern)</Text>
+          <AppText role="itemTitle" >Time of day (optional · Eastern)</AppText>
           <DateTimeField label="Time of day · Eastern" mode="time" value={time} onChange={setTime} clearLabel="Use current time" />
         </>}
         {formError ? (
-          <Text style={f.copy} accessibilityRole="alert">
+          <AppText role="body" secondary  accessibilityRole="alert">
             {formError}
-          </Text>
+          </AppText>
         ) : null}
         <FocusButton
           disabled={!user || !canWrite || !sport}

@@ -1,4 +1,6 @@
 "use client";
+import { AppParagraph, AppHeading } from "@/ui/section";
+
 
 import { useAuth } from "@/components/auth-context";
 import {
@@ -44,12 +46,12 @@ function LoginForm() {
 
   return (
     <section className="fb-card fb-auth-card">
-      <p className="fb-kicker">overtaek</p>
-      <h1 className="fb-title">Sign in</h1>
-      <p className="fb-copy">
+      <AppParagraph typographyRole="badgeLabel" className="fb-kicker">overtaek</AppParagraph>
+      <AppHeading level={1} role="pageTitle" className="fb-title">Sign in</AppHeading>
+      <AppParagraph typographyRole="body" className="fb-copy">
         Your weekly fields, training progress and crew are waiting.
         {offlineMode ? " Demo mode stores your session on this device." : ""}
-      </p>
+      </AppParagraph>
       <form className="fb-stack" onSubmit={onSubmit}>
         <label className="fb-field">
           Email
@@ -72,29 +74,29 @@ function LoginForm() {
           />
         </label>
         {error ? (
-          <p className="fb-error" role="alert" aria-live="assertive">
+          <AppParagraph typographyRole="supporting" className="fb-error" role="alert" aria-live="assertive">
             {error}
-          </p>
+          </AppParagraph>
         ) : null}
         <button type="submit" className="fb-btn" disabled={busy}>
           {busy ? "Signing in…" : "Sign in"}
         </button>
       </form>
 
-      <p className="fb-note">
+      <AppParagraph typographyRole="caption" className="fb-note">
         New here?{" "}
         <Link href={buildSignupHref(next)}>Create an account</Link>
-      </p>
-      <p className="fb-note">
+      </AppParagraph>
+      <AppParagraph typographyRole="caption" className="fb-note">
         <Link href="/privacy">Privacy Policy</Link>
-      </p>
+      </AppParagraph>
     </section>
   );
 }
 
 export default function LoginPage() {
   return (
-    <Suspense fallback={<p className="fb-copy">Loading…</p>}>
+    <Suspense fallback={<AppParagraph typographyRole="body" className="fb-copy">Loading…</AppParagraph>}>
       <LoginForm />
     </Suspense>
   );

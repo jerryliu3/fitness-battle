@@ -1,4 +1,6 @@
 "use client";
+import { AppParagraph, Section } from "@/ui/section";
+
 import { useEffect, useRef, useState } from "react";
 import { SPORTS, type SportId } from "@fitness-battle/shared";
 import type { ScenarioAction } from "@/lib/admin-scenario";
@@ -66,24 +68,24 @@ export function AdminScenarioControls({ target, owner, onTargetChange }: { targe
     finally { if (sequence.current === request) { setBusy(false); setPreview(null); setConfirmation(""); } }
   }
   const activity = action === "add-activity", overtake = action === "overtake";
-  return <section className="fb-card" style={{ padding: 20, marginTop: 24 }} aria-label="Compete scenario lab">
-    <h2>Compete scenario lab</h2>
-    <p>These controls change the selected database account, including real production athletes. Use a dedicated test account for repeatable scenarios. Web and Expo read the same changes.</p>
+  return <Section className="fb-card" style={{ padding: 20, marginTop: 24 }} aria-label="Compete scenario lab" title="Compete scenario lab">
+
+    <AppParagraph typographyRole="body">These controls change the selected database account, including real production athletes. Use a dedicated test account for repeatable scenarios. Web and Expo read the same changes.</AppParagraph>
     <label>Athlete UUID<input className="fb-input" disabled={busy} value={target} placeholder={owner} onChange={(event) => onTargetChange(event.target.value.trim())}/></label>
     {!target && <button className="fb-btn-line" onClick={() => onTargetChange(owner)}>Use my account</button>}
     <button className="fb-btn-line" disabled={busy || !target} onClick={() => void load()}>Load scenario preview</button>
     {preview && <>
-      <p><strong>{preview.name}</strong> · {preview.generatedCount} lab activities · {preview.results.length} recent sport results</p>
+      <AppParagraph typographyRole="body"><strong>{preview.name}</strong> · {preview.generatedCount} lab activities · {preview.results.length} recent sport results</AppParagraph>
       <ul>{preview.enrollments.map((row) => <li key={row.sport}>{row.sport}: {new Date(row.waveStart).toLocaleString("en-US", { timeZone: "America/New_York", timeZoneName: "short" })} – {new Date(row.weekEnd).toLocaleString("en-US", { timeZone: "America/New_York", timeZoneName: "short" })} · {row.autoEnrollNext ? "renews" : "stops after wave"}</li>)}</ul>
       <label>Sport<select disabled={busy} value={sport} onChange={(event) => setSport(event.target.value as SportId)}>{SPORTS.map((row) => <option key={row.id} value={row.id}>{row.name}</option>)}</select></label>
       <label>Scenario<select disabled={busy} value={action} onChange={(event) => { setAction(event.target.value as ScenarioAction); setConfirmation(""); }}>{ACTIONS.map((row) => <option key={row.id} value={row.id}>{row.label}</option>)}</select></label>
-      <p>{ACTIONS.find((row) => row.id === action)?.help}</p>
+      <AppParagraph typographyRole="body">{ACTIONS.find((row) => row.id === action)?.help}</AppParagraph>
       {(activity || overtake) && sport !== "strength" && <label>Score track<select disabled={busy} value={verified ? "verified" : "open"} onChange={(event) => setVerified(event.target.value === "verified")}><option value="open">Manual · Open only</option><option value="verified">Simulated GPS · Open + Verified</option></select></label>}
       {activity && <>
         {sport !== "strength" && <label>Miles<input className="fb-input" type="number" min="0" step="0.1" disabled={busy} value={miles} onChange={(event) => setMiles(event.target.value)}/></label>}
         <label>Duration (minutes)<input className="fb-input" type="number" min="1" disabled={busy} value={minutes} onChange={(event) => setMinutes(event.target.value)}/></label>
         <label>Activity time (your browser’s timezone; blank = now)<input className="fb-input" type="datetime-local" disabled={busy} value={startedAt} onChange={(event) => setStartedAt(event.target.value)}/></label>
-        <p>Use earlier dates to test day grouping. The activity must fall within the competition window to affect its standings.</p>
+        <AppParagraph typographyRole="body">Use earlier dates to test day grouping. The activity must fall within the competition window to affect its standings.</AppParagraph>
       </>}
       {(overtake || action === "join-field") && <>
         <label>Opponent UUID<input className="fb-input" list="scenario-field-members" disabled={busy} value={opponent} onChange={(event) => setOpponent(event.target.value.trim())}/></label>
@@ -94,7 +96,7 @@ export function AdminScenarioControls({ target, owner, onTargetChange }: { targe
       <label>Type SCENARIO {target}<input className="fb-input" disabled={busy} value={confirmation} onChange={(event) => setConfirmation(event.target.value)}/></label>
       <button className="fb-btn" disabled={busy || reason.trim().length < 8 || confirmation !== `SCENARIO ${target}`} onClick={() => void run()}>Apply scenario to account</button>
     </>}
-    {note && <p role="status">{note}</p>}
+    {note && <AppParagraph typographyRole="body" role="status">{note}</AppParagraph>}
     <details><summary>How to test the actual Compete experience</summary>
       <ol>
         <li>Sign into the athlete on a separate browser profile, tab, or Expo device. Keep the admin account here.</li>
@@ -105,5 +107,5 @@ export function AdminScenarioControls({ target, owner, onTargetChange }: { targe
         <li>Remove lab activities for each affected athlete and sport to reset test volume. Registration and settled results are separate; this does not rewind ratings or clear the test device’s seen-history.</li>
       </ol>
     </details>
-  </section>;
+  </Section>;
 }

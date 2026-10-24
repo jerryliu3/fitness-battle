@@ -1,4 +1,6 @@
 "use client";
+import { AppParagraph, SectionHeader, AppHeading } from "@/ui/section";
+
 
 import { buildLoginHref, buildSignupHref } from "@/lib/auth/login-redirect";
 import Link from "next/link";
@@ -21,14 +23,14 @@ export function AuthGate({ reason, children, require = true }: AuthGateProps) {
   const path = usePathname();
 
   if (!require) return <>{children}</>;
-  if (loading) return <p className="fb-copy">Checking your account…</p>;
+  if (loading) return <AppParagraph typographyRole="body" className="fb-copy">Checking your account…</AppParagraph>;
   if (user) return <>{children}</>;
 
   return (
     <section className="fb-card fb-auth-wall">
-      <p className="fb-kicker">Account</p>
-      <h1 className="fb-title">Sign in to continue</h1>
-      <p className="fb-copy">{reason}</p>
+      <AppParagraph typographyRole="badgeLabel" className="fb-kicker">Account</AppParagraph>
+      <AppHeading level={1} role="pageTitle" className="fb-title">Sign in to continue</AppHeading>
+      <AppParagraph typographyRole="body" className="fb-copy">{reason}</AppParagraph>
       <div className="fb-row" style={{ width: "100%", gap: 10 }}>
         <Link
           href={buildSignupHref(path)}
@@ -81,9 +83,9 @@ export function AuthPrompt({ open, reason, nextPath, onClose }: AuthPromptProps)
     <div className="fb-modal" role="dialog" aria-modal="true" aria-label="Sign in">
       <button type="button" className="fb-modal-backdrop" onClick={onClose} aria-label="Close" />
       <div className="fb-modal-card">
-        <p className="fb-kicker">Join in</p>
-        <h2>Create an account to compete</h2>
-        <p className="fb-copy">{reason}</p>
+        <AppParagraph typographyRole="badgeLabel" className="fb-kicker">Join in</AppParagraph>
+        <SectionHeader title="Create an account to compete"/>
+        <AppParagraph typographyRole="body" className="fb-copy">{reason}</AppParagraph>
         <div className="fb-stack">
           <div className="fb-row" style={{ width: "100%", gap: 10 }}>
             <Link

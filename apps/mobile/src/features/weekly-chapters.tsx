@@ -1,3 +1,4 @@
+import { SectionHeader, AppText } from "../ui/section";
 import { useState } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { competitionTrack, APP_TIMEZONE, formatEloDelta, sportById, type CompeteState, type SportId } from "@fitness-battle/shared";
@@ -11,13 +12,13 @@ export function WeeklyChapters({state}:{state:CompeteState}){
   const month=(end:string)=>new Date(Date.parse(end)-1).toLocaleDateString("en-US",{month:"long",year:"numeric",timeZone:APP_TIMEZONE});
   const date=(at:string)=>new Date(at).toLocaleDateString("en-US",{month:"short",day:"numeric",timeZone:APP_TIMEZONE});
   return <View style={{gap:14}}>
-    <View style={s.row}><Text style={f.h2}>Past weeks</Text><Text style={f.small}>{new Set(rows.map(r=>r.periodStart)).size} weeks</Text></View>
-    {!state.periodResults.length?<Text style={f.copy}>Your first settled week will appear here.</Text>:<>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false}><View style={f.row}>{(["all",...sports] as const).map(id=><Pressable key={id} accessibilityRole="button" accessibilityState={{selected:sport===id}} style={[f.chip,sport===id&&f.chipActive]} onPress={()=>setSport(id)}><Text style={f.small}>{id==="all"?"All sports":sportById(id).name}</Text></Pressable>)}</View></ScrollView>
-      {!rows.length?<Text style={f.small}>No closed weeks match this selection.</Text>:null}
+    <SectionHeader title="Past weeks" action={<AppText role="caption" secondary >{new Set(rows.map(r=>r.periodStart)).size} weeks</AppText>}/>
+    {!state.periodResults.length?<AppText role="body" secondary >Your first settled week will appear here.</AppText>:<>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false}><View style={f.row}>{(["all",...sports] as const).map(id=><Pressable key={id} accessibilityRole="button" accessibilityState={{selected:sport===id}} style={[f.chip,sport===id&&f.chipActive]} onPress={()=>setSport(id)}><AppText role="caption" secondary >{id==="all"?"All sports":sportById(id).name}</AppText></Pressable>)}</View></ScrollView>
+      {!rows.length?<AppText role="caption" secondary >No closed weeks match this selection.</AppText>:null}
       {rows.map((r,i)=><View key={r.id}>{i===0||month(r.periodEnd)!==month(rows[i-1]!.periodEnd)?<Text style={[f.kicker,{marginTop:8,marginBottom:12}]}>{month(r.periodEnd)}</Text>:null}
         <Pressable accessibilityRole="button" accessibilityState={{expanded:selected===r.id}} accessibilityLabel={`${date(r.periodStart)} to ${date(new Date(Date.parse(r.periodEnd)-1).toISOString())}, ${sportById(r.sport).name}, ${r.track}, place ${r.place} of ${r.fieldSize}, ${formatEloDelta(r.eloBefore,r.eloAfter)} Effort Score`} onPress={()=>setSelected(selected===r.id?null:r.id)} style={s.chapter}>
-          <View style={[s.place,r.place===1&&{backgroundColor:c.tennis}]}><Text style={[f.h2,{fontSize:23}]}>#{r.place}</Text></View><View style={{flex:1,gap:4}}><Text style={f.rowTitle}>{date(r.periodStart)} – {date(new Date(Date.parse(r.periodEnd)-1).toISOString())}</Text><Text style={f.small}>{sportById(r.sport).name} · {r.track==="verified"?"GPS":"Open"} · {r.place} of {r.fieldSize}{r.frozen?" · frozen":""}</Text></View><View style={{alignItems:"flex-end"}}><Text style={f.rowTitle}>{formatEloDelta(r.eloBefore,r.eloAfter)}</Text><Text style={f.small}>score</Text></View>
+          <View style={[s.place,r.place===1&&{backgroundColor:c.tennis}]}><AppText role="metricValue" >#{r.place}</AppText></View><View style={{flex:1,gap:4}}><AppText role="itemTitle" >{date(r.periodStart)} – {date(new Date(Date.parse(r.periodEnd)-1).toISOString())}</AppText><AppText role="supporting" secondary >{sportById(r.sport).name} · {r.track==="verified"?"GPS":"Open"} · {r.place} of {r.fieldSize}{r.frozen?" · frozen":""}</AppText></View><View style={{alignItems:"flex-end"}}><AppText role="itemTitle" >{formatEloDelta(r.eloBefore,r.eloAfter)}</AppText><AppText role="supporting" secondary >score</AppText></View>
         </Pressable>{selected===r.id?<ResultCard result={r} units={state.units}/>:null}
       </View>)}
     </>}

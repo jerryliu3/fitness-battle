@@ -1,3 +1,4 @@
+import { AppText } from "../ui/section";
 import { useId, useState } from "react";
 import {
   Image,
@@ -41,8 +42,8 @@ export function CrewRelay(props: Props) {
       onLayout={(e) => setWidth(e.nativeEvent.layout.width)}
     >
       <View style={f.row}>
-        <Text style={[f.small, f.grow]}>{label}</Text>
-        {target ? <Text style={f.rowTitle}>{volume(target)}</Text> : null}
+        <AppText role="caption" secondary style={f.grow}>{label}</AppText>
+        {target ? <AppText role="itemTitle" >{volume(target)}</AppText> : null}
       </View>
       <ScrollView horizontal showsHorizontalScrollIndicator={w > width}>
         <View style={{ width: w, height: scene.height }}>
@@ -101,21 +102,21 @@ export function CrewRelay(props: Props) {
                       style={{ width: 34, height: 34, borderRadius: 17 }}
                     />
                   ) : (
-                    <Text style={f.rowTitle}>
+                    <AppText role="itemTitle" >
                       {m.name
                         .split(" ")
                         .map((v) => v[0])
                         .slice(0, 2)
                         .join("")}
-                    </Text>
+                    </AppText>
                   )}
                 </View>
-                <Text numberOfLines={1} style={[f.rowTitle, { fontSize: 11 }]}>
+                <AppText role="itemTitle" numberOfLines={1} >
                   {m.name.split(" ")[0]}
-                </Text>
-                <Text numberOfLines={1} style={[f.small, { fontSize: 10 }]}>
+                </AppText>
+                <AppText role="caption" secondary numberOfLines={1} >
                   {volume(m.value)}
-                </Text>
+                </AppText>
               </Pressable>
             );
           })}
@@ -123,25 +124,25 @@ export function CrewRelay(props: Props) {
       </ScrollView>
       {member ? (
         <View accessibilityLiveRegion="polite">
-          <Text style={f.rowTitle}>{member.name}</Text>
-          <Text style={f.small}>
+          <AppText role="itemTitle" >{member.name}</AppText>
+          <AppText role="supporting" secondary >
             {volume(member.value)} · {(member.share * 100).toFixed(1)}% of
             recorded crew activity · {member.sessions} {member.sessions===1?"session":"sessions"}
-          </Text>
+          </AppText>
         </View>
       ) : null}
       {target ? (
-        <Text style={f.small}>
+        <AppText role="caption" secondary >
           {model.remaining
             ? `${volume(model.remaining)} ${kind === "baseline" ? "to match last week" : "to the target"}`
             : model.total > target
               ? `${volume(model.total - target)} beyond ${kind === "baseline" ? "last week" : "the target"}`
               : "Target reached together."}
-        </Text>
+        </AppText>
       ) : (
-        <Text style={f.small}>
+        <AppText role="caption" secondary >
           Recorded contributions are shown without inventing a finish.
-        </Text>
+        </AppText>
       )}
     </View>
   );

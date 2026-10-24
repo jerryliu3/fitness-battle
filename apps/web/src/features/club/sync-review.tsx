@@ -1,4 +1,6 @@
 "use client";
+import { AppParagraph, AppText } from "@/ui/section";
+
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
@@ -42,18 +44,18 @@ export function SyncReview({
       onClose={() => finish(false)}
     >
       <div className="club-sync-recap">
-        <p className="fb-kicker">
+        <AppParagraph typographyRole="badgeLabel" className="fb-kicker">
           {receipt.preview
             ? "PREVIEW · NOT A LIVE CONNECTION"
             : "YOU SHOWED UP"}
-        </p>
+        </AppParagraph>
         <strong className="club-sync-total">
           {clubDuration(today.reduce((n, a) => n + a.movingSec, 0))}
         </strong>
-        <p className="fb-copy">
+        <AppParagraph typographyRole="body" className="fb-copy">
           {today.length} {today.length === 1 ? "activity" : "activities"} from
           today
-        </p>
+        </AppParagraph>
         <ul className="club-sync-list">
           {today.map((a) => (
             <li key={a.id}>
@@ -64,13 +66,13 @@ export function SyncReview({
                   · {clubDuration(a.movingSec)}
                 </span>
               </div>
-              <small>
+              <AppText as="small" role="caption" secondary>
                 {receipt.preview
                   ? "Preview only"
                   : a.verified
                     ? "GPS verified"
                     : "Open activity"}
-              </small>
+              </AppText>
             </li>
           ))}
         </ul>
