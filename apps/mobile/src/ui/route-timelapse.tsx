@@ -8,6 +8,7 @@ import { colors } from "../theme";
 export interface RouteTimelapseProps {
   coordinates: LngLat[] | string;
   mode?: "3d-flyover" | "2d-overview";
+  units?: "us" | "metric";
   accentColor?: string;
   durationMs?: number;
   onFinish?: () => void;
@@ -18,6 +19,7 @@ export interface RouteTimelapseProps {
 export function RouteTimelapse({
   coordinates,
   mode = "3d-flyover",
+  units = "metric",
   accentColor = colors.lime,
   durationMs = 12000,
   onFinish,
@@ -30,9 +32,7 @@ export function RouteTimelapse({
   const polylineStr =
     typeof coordinates === "string" ? coordinates : encodePolyline(coordinates);
 
-  const uri = `${mobileEnv.apiUrl.replace(/\/$/, "")}/route-scene?polyline=${encodeURIComponent(
-    polylineStr,
-  )}&mode=${mode}&accent=${encodeURIComponent(accentColor)}&duration=${durationMs}`;
+  const uri = `${mobileEnv.apiUrl.replace(/\/$/, "")}/route-scene?mode=${mode}&accent=${encodeURIComponent(accentColor)}&duration=${durationMs}&units=${units}`;
   const origin = new URL(uri).origin;
 
   function inject(message: object) {
@@ -41,6 +41,14 @@ export function RouteTimelapse({
     )}}));true;`;
     ref.current?.injectJavaScript(script);
   }
+
+  useEffect(() => {
+    ready.current = false;
+    const timeout = setTimeout(() => {
+      if (!ready.current) onUnavailable?.();
+    }, 15000);
+    return () => clearTimeout(timeout);
+  }, [uri]);
 
   useEffect(() => {
     if (ready.current) {
@@ -73,6 +81,7 @@ export function RouteTimelapse({
             const msg = JSON.parse(event.nativeEvent.data);
             if (msg.type === "route-ready") {
               ready.current = true;
+              inject({ type: "set-route", coordinates: polylineStr, mode, accentColor, durationMs });
             } else if (msg.type === "route-finish") {
               onFinish?.();
             } else if (msg.type === "route-unavailable") {

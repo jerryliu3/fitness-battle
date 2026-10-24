@@ -15,6 +15,7 @@ vi.mock("../ui/focus",()=>({FocusButton:"FocusButton",FocusDisclosure:"Disclosur
 vi.mock("../ui/mascot/animated-ember",()=>({AnimatedEmber:"Ember"}));
 vi.mock("../ui/use-reduced-motion",()=>({useReducedMotion:()=>true}));
 vi.mock("../ui/field-course",()=>({drawFieldNode:()=>null}));
+vi.mock("../ui/activity-route",()=>({ActivityRoute:()=>null}));
 import { EffortRail } from "./effort-rail";
 import { SessionStage } from "./session-stage";
 import { TrainingAtlas } from "./training-atlas";

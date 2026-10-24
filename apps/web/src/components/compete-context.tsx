@@ -13,6 +13,7 @@ import {
   fieldChangeNotice,
   fieldSeenStorageKey,
   freshState,
+  findDemoAccount,
   isCompeteState,
   migrateCompeteState,
   primaryRevealResults,
@@ -23,6 +24,7 @@ import {
   seenFieldFromState,
   withAccountEloBaseline,
   type Action,
+  type Activity,
   type CompeteState,
   type DebugEventId,
   type DebugEventResult,
@@ -341,6 +343,19 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
 
     if (!signedIn) {
       settle(local.state, local.savedAt, "local");
+      if (process.env.NODE_ENV === "development" && accountId && offlineMode && findDemoAccount(userEmail)) {
+        void fetch(`/api/dev/route-seed?account=${encodeURIComponent(userEmail)}`)
+          .then(response => response.ok ? response.json() : null)
+          .then((body: { activities?: Activity[] } | null) => {
+            if (cancelled || userIdRef.current !== accountId || !body?.activities?.length || !stateRef.current) return;
+            const current = stateRef.current;
+            const existing = new Map(current.activities.map(a => [a.id, a]));
+            const incoming = body.activities.filter(a => a.id.startsWith("local-route-"));
+            const ids = new Set(incoming.map(a => a.id));
+            const next = { ...current, activities: [...current.activities.filter(a => !ids.has(a.id)), ...incoming.map(a => ({ ...a, disposition: existing.get(a.id)?.disposition ?? a.disposition }))] };
+            publish(accountId, next, local.savedAt, "local", false);
+          }).catch(() => { /* Optional local fixtures; ordinary offline state remains available. */ });
+      }
       return () => {
       cancelled = true;
     };

@@ -19,3 +19,8 @@ it("uses Eastern calendar dates rather than a rolling 48-hour cutoff", () => {
   expect(recentActivityStart(new Date("2026-11-02T02:00:00Z"))).toBe("2026-10-31T04:00:00.000Z");
   expect(homeRecentActivities(freshState(now), "self", [row({ startedAt: "2026-10-22T03:59:59Z" })], now)).toEqual([]);
 });
+it("keeps up to three recent own activities so a later gym session does not hide a GPS route", () => {
+  const state = freshState(now);
+  state.activities = [1, 2, 3, 4].map(i => ({ id: `own-${i}`, sport: "running", startedAt: `2026-10-23T${10 + i}:00:00Z`, distanceM: 5000, movingSec: 1800, avgHr: null, source: "garmin", provenance: "imported", disposition: "counted", verified: false }));
+  expect(homeRecentActivities(state, "self", [], now).map(a => a.id)).toEqual(["own-4", "own-3", "own-2"]);
+});

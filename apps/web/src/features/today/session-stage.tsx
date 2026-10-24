@@ -1,4 +1,5 @@
 "use client";
+import { ActivityRoute } from "@/components/routes/activity-route";
 import { useState, type ReactNode } from "react";
 import { APP_TIMEZONE, clubSessionMetrics, countsOnTrack, isVerifiedActivity, formatTrainingHours, formatVolume, sessionStageModel, sportById, type Activity, type CompeteState } from "@fitness-battle/shared";
 import { AnimatedEmber } from "@/components/mascot/animated-ember";
@@ -20,6 +21,7 @@ export function SessionStage({state,activities,suggestion,onRemove,actions}:{sta
         <p className="fb-note">{a.source} · {a.verified?"GPS Tracked":a.source==="manual"?"Manual":"Activity"}{sportById(a.sport).gps?` · ${formatVolume(a.sport,a.distanceM,a.movingSec,state.units)}`:""}{a.avgHr?` · ${a.avgHr} bpm`:""}</p>
         {removing===a.id?<div className="session-remove-confirm"><p>Remove this session from your activity?</p><button type="button" className="fb-btn-line" onClick={()=>{onRemove(a.id);setRemoving(null);}}>Remove session</button><button type="button" className="fb-btn-ghost" onClick={()=>setRemoving(null)}>Keep session</button></div>:<button type="button" className="fb-btn-ghost" onClick={()=>setRemoving(a.id)}>Remove session</button>}
       </div></details>)}</div>
+      <div className="fb-stack">{model.rows.map(a => <ActivityRoute units={state.units} key={a.id} activity={a} />)}</div>
       <ImpactReceipt state={state} seconds={model.movingSec} sport={sport}/>
     </>}
   </section>;

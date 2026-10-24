@@ -133,7 +133,7 @@ export function recordStepPath(
     .join(" ");
 }
 
-/** Connect actual PR achievements only; no synthetic extension to today. */
+/** Hold each best time until the next achievement; no extension to today. */
 export function personalRecordChart(
   rows: readonly RecordAttempt[],
   now: Date,
@@ -164,7 +164,7 @@ export function personalRecordChart(
     x: x(row.startedAt),
     y: y(row.seconds),
   }));
-  const path = points.map((p,i)=>`${i?"L":"M"} ${p.x} ${p.y}`).join(" ");
+  const path = points.map((p,i)=>i ? `H ${p.x} V ${p.y}` : `M ${p.x} ${p.y}`).join(" ");
   const ticks = [max, (min + max) / 2, min].map((seconds) => ({
     seconds,
     y: y(seconds),

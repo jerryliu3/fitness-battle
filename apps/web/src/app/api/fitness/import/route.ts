@@ -2,7 +2,7 @@ import { unzipSync } from "fflate";
 import { NextResponse } from "next/server";
 import { parseActivityFile, type ActivitySample } from "@fitness-battle/shared";
 import { resolveRequestUserId } from "@/lib/auth/request-user";
-import { createProviderStore, persistSyncedActivities } from "@/lib/fitness-store";
+import { persistSyncedActivities } from "@/lib/fitness-store";
 
 export const runtime = "nodejs";
 
@@ -50,18 +50,7 @@ export async function POST(request: Request) {
 
   let persisted = false;
   try {
-    persisted = await persistSyncedActivities(userId, activities);
-    const store = createProviderStore("garmin");
-    if (store) {
-      await store.setConnection({
-        userId,
-        provider: "garmin",
-        connectedAt: new Date().toISOString(),
-        status: "connected",
-        lastSyncAt: new Date().toISOString(),
-        lastActivityAt: activities.map((item) => item.startedAt).sort().at(-1) ?? null,
-      });
-    }
+    persisted = await persistSyncedActivities(userId, activities, "imported");
   } catch {
     persisted = false;
   }

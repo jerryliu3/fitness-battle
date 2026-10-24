@@ -94,7 +94,7 @@ describe("progress history", () => {
   });
 });
 
-it("connects only real record improvements without extending to today", () => {
+it("holds the prior best until each new record without extending to today", () => {
   const a = recordAttemptsForActivity(
     run("first", "2026-10-01T12:00:00Z", 1600),
     now,
@@ -114,6 +114,7 @@ it("connects only real record improvements without extending to today", () => {
   expect(chart.points[1]!.x).toBeGreaterThan(chart.points[0]!.x);
   expect(chart.points[1]!.y).toBeGreaterThan(chart.points[0]!.y);
   expect(chart.points.map((p) => p.seconds)).toEqual([1600, 1500]);
+  expect(chart.path).toBe(`M ${chart.points[0]!.x} ${chart.points[0]!.y} H ${chart.points[1]!.x} V ${chart.points[1]!.y}`);
 });
 
 it("formats large effort scores without raw decimals", () => {
@@ -126,5 +127,5 @@ it("ignores slower attempts and future records in the milestone chart",()=>{
  const b={...a,activityId:"b",seconds:1700,startedAt:"2026-10-05T12:00:00Z"};
  const c={...a,activityId:"c",seconds:1500,startedAt:"2026-10-20T12:00:00Z"};
  const chart=personalRecordChart([c,b,a],now)!;
- expect(chart.points.map(p=>p.activityId)).toEqual(["a","c"]);expect(Date.parse(chart.end)).toBe(Date.parse(c.startedAt));expect(chart.path.endsWith(`${chart.points[1]!.x} ${chart.points[1]!.y}`)).toBe(true);
+ expect(chart.points.map(p=>p.activityId)).toEqual(["a","c"]);expect(Date.parse(chart.end)).toBe(Date.parse(c.startedAt));expect(chart.path.endsWith(`H ${chart.points[1]!.x} V ${chart.points[1]!.y}`)).toBe(true);
 });

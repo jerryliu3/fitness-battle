@@ -152,6 +152,11 @@ export interface Rating {
 }
 
 export interface Activity {
+  /** Optional recorded GPS geometry; never inferred from verification or distance. */
+  summaryPolyline?: string | null;
+  detailedPolyline?: string | null;
+  elevationGainM?: number | null;
+  routeBounds?: [number, number, number, number] | null;
   id: string;
   sport: SportId;
   startedAt: string;

@@ -1,0 +1,23 @@
+/* Route rendering also runs outside PhoneShell in the native WebView. */
+@import "tailwindcss/theme.css" layer(theme);
+@import "tailwindcss/utilities.css" source(none);
+@source "./";
+
+.route-ui { color: #142b3b; }
+.route-scene-map.route-ui { height: 100%; width: 100%; border: 0; border-radius: 0; }
+.route-ui svg { display: block; }
+/* Keep attribution and the Mapbox mark clear of the playback controls. */
+.route-ui .mapboxgl-ctrl-bottom-right, .route-ui .mapboxgl-ctrl-bottom-left { top: 52px; bottom: auto; }
+.route-ui button { cursor: pointer; }
+.route-ui button:focus-visible, .route-ui[role="button"]:focus-visible { outline: 2px solid #176c75; outline-offset: 3px; }
+@media (prefers-reduced-motion: reduce) {
+  .route-ui *, .route-ui *::before, .route-ui *::after { animation: none !important; transition: none !important; }
+}
+
+.route-controls button[aria-pressed] { border: 0; }
+.route-controls button[aria-pressed="false"] { background: transparent; color: rgb(255 255 255 / 80%); }
+.route-controls input[type="range"] { appearance: none; width: 100%; height: 44px; min-height: 44px; padding: 0; border: 0; border-radius: 0; background: transparent !important; }
+.route-controls input[type="range"]::-webkit-slider-runnable-track { height: 6px; border-radius: 999px; background: linear-gradient(to right, #f7c948 var(--route-progress), rgb(255 255 255 / 20%) var(--route-progress)); }
+.route-controls input[type="range"]::-webkit-slider-thumb { appearance: none; width: 16px; height: 16px; margin-top: -5px; border: 0; border-radius: 50%; background: #f7c948; }
+.route-controls input[type="range"]::-moz-range-track { height: 6px; border-radius: 999px; background: linear-gradient(to right, #f7c948 var(--route-progress), rgb(255 255 255 / 20%) var(--route-progress)); }
+.route-controls input[type="range"]::-moz-range-thumb { width: 16px; height: 16px; border: 0; border-radius: 50%; background: #f7c948; }

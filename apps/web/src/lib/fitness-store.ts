@@ -219,6 +219,7 @@ async function recomputeMemberships(
 export async function persistSyncedActivities(
   userId: string,
   activities: ActivitySample[],
+  provenance: "recorded" | "imported" = "recorded",
 ): Promise<boolean> {
   const db = serviceDb();
   if (!db || !isUuid(userId) || activities.length === 0) return false;
@@ -247,12 +248,16 @@ export async function persistSyncedActivities(
         moving_sec: activity.movingSec ?? null,
         avg_hr: activity.avgHr ?? null,
         raw_name: activity.rawName,
+        summary_polyline: activity.summaryPolyline ?? null,
+        detailed_polyline: activity.detailedPolyline ?? null,
+        route_bounds: activity.routeBounds ?? null,
+        elevation_gain_m: activity.elevationGainM ?? null,
         sport,
         distance_m: sport === "strength" ? 0 : Number(activity.metricValue ?? 0),
-        verified: true,
-        provenance: "recorded",
-        disposition: "counted",
-        compete_key: `${activity.provider}-${activity.externalId}`,
+        verified: provenance === "recorded",
+        provenance,
+        disposition: provenance === "imported" ? "pending" : "counted",
+        compete_key: activity.id,
         source_label: activity.provider,
       },
     ];

@@ -1,4 +1,5 @@
 "use client";
+import { ActivityRoute } from "@/components/routes/activity-route";
 import { TrainingAtlas } from "./training-atlas";
 import { useState, type ReactNode } from "react";
 import { RecordChart } from "./record-chart";
@@ -97,6 +98,7 @@ export function TrainingHistory({ state, children }: { state: CompeteState; chil
               {inspected.verified ? " · GPS recorded" : ""}
             </p>
           </div>
+          <ActivityRoute units={state.units} key={inspected.activityId} activity={state.activities.find(a => a.id === inspected.activityId)} milestone />
         </section>
       ) : null}
     </>

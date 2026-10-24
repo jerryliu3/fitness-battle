@@ -117,13 +117,13 @@ export function useRouteAnimation({
         smoothedBearingRef.current = targetBearing;
       }
 
-      // 3. Update active line trim: [0, t] keeps the visited trail [0..t] visible as the runner advances
+      // Hide the unvisited portion [t, 1]; Mapbox trims the interval itself.
       if (map.getLayer("route-active")) {
         // Clamp to avoid edge issues at 0 and 1
         const trimEnd = Math.max(0.0005, Math.min(1.0, t));
         map.setPaintProperty("route-active", "line-trim-offset", [
-          0,
           trimEnd,
+          1,
         ]);
       }
 
@@ -176,7 +176,7 @@ export function useRouteAnimation({
         pitch: mode === "3d-flyover" ? 42 : 0,
         bearing: 0,
         duration: 1800,
-        essential: true,
+        essential: false,
       },
     );
   }, [map, coordinates, mode]);

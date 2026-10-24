@@ -7,6 +7,7 @@ import {
   type LngLat,
 } from "@fitness-battle/shared";
 import { webEnv } from "@/lib/env";
+import "./routes.css";
 
 export interface RouteStaticPreviewProps {
   /** Array of [lng, lat] coordinates or a Google-encoded polyline string. */
@@ -116,14 +117,14 @@ export function RouteStaticPreview({
           onClick?.();
         }
       }}
-      className={`group relative overflow-hidden rounded-2xl bg-[#f8f9f6] border border-[#e3e9e7] ${
+      className={`route-ui group relative w-full overflow-hidden rounded-2xl bg-[#f8f9f6] border border-[#e3e9e7] ${
         isClickable ? "cursor-pointer transition-transform active:scale-[0.99] hover:shadow-md" : ""
       } ${className}`}
       style={{ aspectRatio: `${width} / ${height}` }}
       aria-label={alt}
     >
       {/* 1. Subtle loading skeleton */}
-      {!loaded && !hasError && (
+      {imageUrl && !loaded && !hasError && (
         <div className="absolute inset-0 flex flex-col items-center justify-center bg-[#f8f9f6] animate-pulse">
           <div className="w-12 h-12 rounded-full border-2 border-[#142b3b]/10 border-t-[#f7c948] animate-spin" />
           <span className="mt-2 text-xs font-medium text-[#637482]">Loading map…</span>
@@ -237,7 +238,7 @@ function FallbackSvgRoute({
     <div className="relative flex h-full w-full flex-col items-center justify-center bg-gradient-to-b from-[#142b3b] to-[#10232f] text-white">
       <svg
         viewBox="0 0 100 100"
-        preserveAspectRatio="none"
+        preserveAspectRatio="xMidYMid meet"
         className="h-full w-full opacity-85"
       >
         <polyline
@@ -271,7 +272,7 @@ function FallbackSvgRoute({
       </svg>
       {hasNoToken && (
         <div className="absolute top-2.5 left-2.5 rounded bg-black/50 px-2 py-0.5 text-[10px] font-medium tracking-wide text-white/80 backdrop-blur-sm">
-          Mapbox token required for static satellite imagery
+          Route outline · map unavailable
         </div>
       )}
     </div>

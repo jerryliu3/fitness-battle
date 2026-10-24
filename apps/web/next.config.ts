@@ -8,6 +8,8 @@ const nextConfig: NextConfig = {
     "@fitness-battle/pursuit",
   ],
   outputFileTracingRoot: path.join(__dirname, "../.."),
+  // Supplied GPS fixtures are private development data, never deployment assets.
+  outputFileTracingExcludes: { "/*": ["../../.local/**/*"] },
   async redirects() {
     return [
       { source: "/compete", destination: "/arena", permanent: true },
