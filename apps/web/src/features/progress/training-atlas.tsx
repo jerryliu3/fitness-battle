@@ -2,19 +2,22 @@
 import { useState } from "react";
 import {
   APP_TIMEZONE,
-  trainingComparison,
+  clampTrainingAnchor,
   clubDuration,
-  formatWeeklyCompetitionRange,
-  weeklyPeriodBounds,
-  SPORTS,
   competeNow,
   dayKey,
+  earliestDataDate,
   formatTrainingHours,
+  formatWeeklyCompetitionRange,
   shiftAppDay,
   shiftTrainingMonth,
   sportById,
+  SPORTS,
   trainingAtlas,
   trainingBuckets,
+  trainingComparison,
+  trainingRangeNavigation,
+  weeklyPeriodBounds,
   type CompeteState,
   type SportId,
   type TrainingRange,
@@ -54,25 +57,24 @@ export function TrainingAtlas({ state }: { state: CompeteState }) {
             ? { year: "numeric" }
             : { month: "long", year: "numeric" }),
         });
+  const earliest = earliestDataDate(state, now);
+  const { prevAllowed, nextAllowed } = trainingRangeNavigation(
+    anchor,
+    earliest,
+    now,
+    range,
+  );
   const move = (direction: number) => {
-    setAnchor(
+    if (direction < 0 && !prevAllowed) return;
+    if (direction > 0 && !nextAllowed) return;
+    const target =
       range === "week"
         ? shiftAppDay(anchor, direction * 7)
-        : shiftTrainingMonth(anchor, direction * (range === "year" ? 12 : 1)),
-    );
+        : shiftTrainingMonth(anchor, direction * (range === "year" ? 12 : 1));
+    setAnchor(clampTrainingAnchor(target, earliest, now, range));
     setSelected(null);
     setSelectedDay(null);
   };
-  const next =
-    range === "week"
-      ? shiftAppDay(anchor, 7)
-      : shiftTrainingMonth(anchor, range === "year" ? 12 : 1);
-  const nextAllowed =
-    range === "year"
-      ? dayKey(next).slice(0, 4) <= dayKey(now).slice(0, 4)
-      : range === "month"
-        ? dayKey(next).slice(0, 7) <= dayKey(now).slice(0, 7)
-        : weeklyPeriodBounds(next).startsAt <= now;
   return (
     <section className="focus-card training-atlas" aria-label="Training atlas">
       <div className="focus-row">
@@ -96,6 +98,7 @@ export function TrainingAtlas({ state }: { state: CompeteState }) {
             aria-pressed={range === r}
             onClick={() => {
               setRange(r);
+              setAnchor((current) => clampTrainingAnchor(current, earliest, now, r));
               setSelected(null);
             }}
           >
@@ -107,6 +110,7 @@ export function TrainingAtlas({ state }: { state: CompeteState }) {
         <button
           type="button"
           aria-label={`Previous ${range}`}
+          disabled={!prevAllowed}
           onClick={() => move(-1)}
         >
           ←
