@@ -1,5 +1,5 @@
 import { ChartScrubber } from "../ui/chart-scrubber";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import {
   APP_TIMEZONE,
@@ -59,7 +59,7 @@ export function TrainingAtlas({ state }: { state: CompeteState }) {
     cells.find((d) => d.day === selectedDay) ??
     cells.find((d) => d.day === dayKey(now)) ??
     cells.find((d) => d.inMonth && !d.future);
-  const earliest = earliestDataDate(state, now);
+  const earliest = useMemo(() => earliestDataDate(state, now), [state, now]);
   const { prevAllowed, nextAllowed } = trainingRangeNavigation(
     anchor,
     earliest,
@@ -117,6 +117,7 @@ export function TrainingAtlas({ state }: { state: CompeteState }) {
           style={s.arrow}
           accessibilityRole="button"
           accessibilityLabel={`Previous ${range}`}
+          accessibilityState={{ disabled: !prevAllowed }}
           disabled={!prevAllowed}
           onPress={() => move(-1)}
         >
@@ -138,6 +139,7 @@ export function TrainingAtlas({ state }: { state: CompeteState }) {
           style={s.arrow}
           accessibilityRole="button"
           accessibilityLabel={`Next ${range}`}
+          accessibilityState={{ disabled: !nextAllowed }}
           disabled={!nextAllowed}
           onPress={() => move(1)}
         >

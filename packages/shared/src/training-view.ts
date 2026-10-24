@@ -49,9 +49,9 @@ export function formatTrainingHours(seconds:number):string { return (Math.max(0,
 
 /**
  * Earliest recorded activity, settled period result, or durable personal record attempt.
- * When no historical data is recorded, falls back to `now`.
+ * When no historical data is recorded, returns `null`.
  */
-export function earliestDataDate(state: CompeteState, now = competeNow(state)): Date {
+export function earliestDataDate(state: CompeteState, now = competeNow(state)): Date | null {
   const timestamps: number[] = [];
   for (const a of state.activities) {
     if (countsOnTrack(a, "open")) {
@@ -67,12 +67,12 @@ export function earliestDataDate(state: CompeteState, now = competeNow(state)): 
     const t = Date.parse(a.startedAt);
     if (Number.isFinite(t) && t <= now.getTime()) timestamps.push(t);
   }
-  return timestamps.length ? new Date(Math.min(...timestamps)) : now;
+  return timestamps.length ? new Date(Math.min(...timestamps)) : null;
 }
 
 export function trainingRangeNavigation(
   anchor: Date,
-  earliest: Date,
+  earliest: Date | null,
   now: Date,
   range: TrainingRange,
 ): { prevAllowed: boolean; nextAllowed: boolean } {
@@ -88,6 +88,10 @@ export function trainingRangeNavigation(
         ? dayKey(next).slice(0, 7) <= dayKey(now).slice(0, 7)
         : weeklyPeriodBounds(next).startsAt.getTime() <= now.getTime();
 
+  if (!earliest) {
+    return { prevAllowed: false, nextAllowed };
+  }
+
   const prevAllowed =
     range === "year"
       ? dayKey(anchor).slice(0, 4) > dayKey(earliest).slice(0, 4)
@@ -101,30 +105,31 @@ export function trainingRangeNavigation(
 
 export function clampTrainingAnchor(
   anchor: Date,
-  earliest: Date,
+  earliest: Date | null,
   now: Date,
   range: TrainingRange,
 ): Date {
+  const lowerBound = earliest ?? now;
   if (range === "year") {
     const anchorYear = dayKey(anchor).slice(0, 4);
-    const earliestYear = dayKey(earliest).slice(0, 4);
+    const earliestYear = dayKey(lowerBound).slice(0, 4);
     const nowYear = dayKey(now).slice(0, 4);
-    if (anchorYear < earliestYear) return earliest;
+    if (anchorYear < earliestYear) return lowerBound;
     if (anchorYear > nowYear) return now;
     return anchor;
   }
   if (range === "month") {
     const anchorMonth = dayKey(anchor).slice(0, 7);
-    const earliestMonth = dayKey(earliest).slice(0, 7);
+    const earliestMonth = dayKey(lowerBound).slice(0, 7);
     const nowMonth = dayKey(now).slice(0, 7);
-    if (anchorMonth < earliestMonth) return earliest;
+    if (anchorMonth < earliestMonth) return lowerBound;
     if (anchorMonth > nowMonth) return now;
     return anchor;
   }
   const anchorWeek = weeklyPeriodBounds(anchor).startsAt.getTime();
-  const earliestWeek = weeklyPeriodBounds(earliest).startsAt.getTime();
+  const earliestWeek = weeklyPeriodBounds(lowerBound).startsAt.getTime();
   const nowWeek = weeklyPeriodBounds(now).startsAt.getTime();
-  if (anchorWeek < earliestWeek) return earliest;
+  if (anchorWeek < earliestWeek) return lowerBound;
   if (anchorWeek > nowWeek) return now;
   return anchor;
 }

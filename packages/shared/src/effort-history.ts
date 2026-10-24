@@ -36,7 +36,7 @@ export function effortHistory(
   } else {
     const dataDate = earliestDataDate(state, today);
     const candidateTimestamps: number[] = [];
-    if (dataDate.getTime() < today.getTime()) {
+    if (dataDate) {
       candidateTimestamps.push(dataDate.getTime());
     } else if (user?.createdAt) {
       candidateTimestamps.push(new Date(user.createdAt).getTime());

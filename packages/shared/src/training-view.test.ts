@@ -80,9 +80,9 @@ it("compares actual eligible hours and keeps the selected sport and prior timefr
 describe("training date boundaries & navigation limiting", () => {
   const now = new Date("2026-10-23T16:00:00Z");
 
-  it("defaults earliestDataDate to now when no activities exist", () => {
+  it("defaults earliestDataDate to null when no activities exist", () => {
     const state = freshState(now);
-    expect(earliestDataDate(state, now).toISOString()).toBe(now.toISOString());
+    expect(earliestDataDate(state, now)).toBeNull();
   });
 
   it("identifies earliestDataDate from activities, settled weeks, or record attempts without account creation date", () => {
@@ -92,7 +92,7 @@ describe("training date boundaries & navigation limiting", () => {
       activity("old", "2025-06-14T08:00:00Z"),
       activity("uncounted", "2024-01-01T00:00:00Z", { disposition: "excluded" }),
     ];
-    expect(earliestDataDate(state, now).toISOString()).toBe("2025-06-14T08:00:00.000Z");
+    expect(earliestDataDate(state, now)?.toISOString()).toBe("2025-06-14T08:00:00.000Z");
 
     // Settled period result older than activities
     state.periodResults = [{
@@ -111,7 +111,7 @@ describe("training date boundaries & navigation limiting", () => {
       frozen: false,
       settledAt: "2025-01-13T05:00:00Z",
     }];
-    expect(earliestDataDate(state, now).toISOString()).toBe("2025-01-06T05:00:00.000Z");
+    expect(earliestDataDate(state, now)?.toISOString()).toBe("2025-01-06T05:00:00.000Z");
   });
 
   it("limits navigation arrows at the boundaries of earliest data and now", () => {

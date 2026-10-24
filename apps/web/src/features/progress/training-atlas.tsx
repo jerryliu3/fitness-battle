@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import {
   APP_TIMEZONE,
   clampTrainingAnchor,
@@ -57,7 +57,7 @@ export function TrainingAtlas({ state }: { state: CompeteState }) {
             ? { year: "numeric" }
             : { month: "long", year: "numeric" }),
         });
-  const earliest = earliestDataDate(state, now);
+  const earliest = useMemo(() => earliestDataDate(state, now), [state, now]);
   const { prevAllowed, nextAllowed } = trainingRangeNavigation(
     anchor,
     earliest,
