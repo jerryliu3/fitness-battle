@@ -52,22 +52,30 @@ export function formatTrainingHours(seconds:number):string { return (Math.max(0,
  * When no historical data is recorded, returns `null`.
  */
 export function earliestDataDate(state: CompeteState, now = competeNow(state)): Date | null {
-  const timestamps: number[] = [];
+  let min: number | undefined;
+
   for (const a of state.activities) {
     if (countsOnTrack(a, "open")) {
       const t = Date.parse(a.startedAt);
-      if (Number.isFinite(t) && t <= now.getTime()) timestamps.push(t);
+      if (Number.isFinite(t) && t <= now.getTime()) {
+        if (min === undefined || t < min) min = t;
+      }
     }
   }
   for (const r of state.periodResults) {
     const t = Date.parse(r.periodStart);
-    if (Number.isFinite(t) && t <= now.getTime()) timestamps.push(t);
+    if (Number.isFinite(t) && t <= now.getTime()) {
+      if (min === undefined || t < min) min = t;
+    }
   }
   for (const a of state.recordAttempts ?? []) {
     const t = Date.parse(a.startedAt);
-    if (Number.isFinite(t) && t <= now.getTime()) timestamps.push(t);
+    if (Number.isFinite(t) && t <= now.getTime()) {
+      if (min === undefined || t < min) min = t;
+    }
   }
-  return timestamps.length ? new Date(Math.min(...timestamps)) : null;
+
+  return min !== undefined ? new Date(min) : null;
 }
 
 export function trainingRangeNavigation(
@@ -76,17 +84,13 @@ export function trainingRangeNavigation(
   now: Date,
   range: TrainingRange,
 ): { prevAllowed: boolean; nextAllowed: boolean } {
-  const next =
-    range === "week"
-      ? shiftAppDay(anchor, 7)
-      : shiftTrainingMonth(anchor, range === "year" ? 12 : 1);
-
   const nextAllowed =
     range === "year"
-      ? dayKey(next).slice(0, 4) <= dayKey(now).slice(0, 4)
+      ? dayKey(anchor).slice(0, 4) < dayKey(now).slice(0, 4)
       : range === "month"
-        ? dayKey(next).slice(0, 7) <= dayKey(now).slice(0, 7)
-        : weeklyPeriodBounds(next).startsAt.getTime() <= now.getTime();
+        ? dayKey(anchor).slice(0, 7) < dayKey(now).slice(0, 7)
+        : weeklyPeriodBounds(anchor).startsAt.getTime() <
+          weeklyPeriodBounds(now).startsAt.getTime();
 
   if (!earliest) {
     return { prevAllowed: false, nextAllowed };
