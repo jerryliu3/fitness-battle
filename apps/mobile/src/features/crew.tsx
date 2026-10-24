@@ -1,3 +1,4 @@
+import { AppIcon } from "../ui/app-icon";
 import { RankBadge } from "../ui/rank-badge";
 import { alpineTrail } from "../ui/club-art";
 import { SHELL_COLORS as c } from "../theme";
@@ -362,7 +363,7 @@ export function CrewHub({ membersOnly = false, crewId = "" }: { membersOnly?: bo
   const membersView = (
 <View style={{ gap: 16 }}>
             <Text style={f.copy}>{crew.name}</Text>
-            {members.map(m => <View key={m.user_id} style={[f.card, f.row]}>
+            {members.map(m => <View key={m.user_id} style={[f.section, f.row]}>
               {m.avatar_url ? <Image source={{ uri: m.avatar_url }} style={{ width: 56, height: 56, borderRadius: 28 }} /> : <View style={[f.avatar, { width: 56, height: 56, borderRadius: 28 }]}><Text style={f.h2}>{m.display_name.slice(0, 2).toUpperCase()}</Text></View>}
               <View style={f.grow}><Text style={f.h2}>{m.display_name}</Text><Text style={f.small}>{(m.user_id === user?.id ? resting : m.rest_week === weekKey) ? "Rest week" : "Active"}</Text>
                 <Text style={f.small}>{sessionsMetric ? `${memberTotal(m.user_id)} sessions` : distance(memberTotal(m.user_id))} this week</Text>
@@ -372,7 +373,7 @@ export function CrewHub({ membersOnly = false, crewId = "" }: { membersOnly?: bo
   );
   if (api.live && !api.data)
     return (
-      <View style={f.card}>
+      <View style={f.section}>
         <Text style={f.copy}>{api.error || "Loading your circle…"}</Text>
         <FocusButton
           label="Refresh crews"
@@ -394,7 +395,7 @@ export function CrewHub({ membersOnly = false, crewId = "" }: { membersOnly?: bo
       {solo ? (
         <View style={{gap:18}}>
         <ImageBackground source={alpineTrail} style={{height:200,justifyContent:"flex-end",padding:22,borderRadius:20,overflow:"hidden",backgroundColor:c.fieldDeep}}><View style={[StyleSheet.absoluteFill,{backgroundColor:"#081f3670"}]}/><Text style={[f.title,{color:c.card,fontSize:28}]}>Stronger together.</Text><Text style={[f.copy,{color:c.card}]}>A place for every pace.</Text></ImageBackground>
-        <View style={f.card}>
+        <View style={f.section}>
           <Text style={f.kicker}>Your people</Text>
           <Text style={f.title}>Make room for your people.</Text>
           <Text style={f.copy}>
@@ -482,12 +483,12 @@ export function CrewHub({ membersOnly = false, crewId = "" }: { membersOnly?: bo
                   onPress={() => open("manage")}
                   style={[f.chip, { minWidth: 48 }]}
                 >
-                  <Text style={f.h2}>⚙</Text>
+                  <AppIcon name="preferences" />
                 </Pressable>
               ) : null}
             </View>
           </ImageBackground>
-          <View style={f.card}>
+          <View style={f.section}>
             <Text style={f.kicker}>Our shared week · {crew.sport}</Text>
             <Text style={f.massive}>
               {sessionsMetric
@@ -508,7 +509,7 @@ export function CrewHub({ membersOnly = false, crewId = "" }: { membersOnly?: bo
             <>
               {user && !solo ? <CrewSessions key={`${user?.id}:${crew.id}`} crewId={crew.id} sport={crew.sport} /> : null}
               <Text style={f.h2}>Crew standings</Text>
-              <View style={f.card}>
+              <View style={f.section}>
                 {[...members]
                   .sort(
                     (a, b) => memberTotal(b.user_id) - memberTotal(a.user_id),
@@ -540,7 +541,7 @@ export function CrewHub({ membersOnly = false, crewId = "" }: { membersOnly?: bo
       ))}
       {!user ? (
         <>
-          <View style={f.card}>
+          <View style={f.section}>
             <Text style={f.kicker}>What crews unlock</Text>
             <Text style={f.rowTitle}>Shared week</Text>
             <Text style={f.copy}>

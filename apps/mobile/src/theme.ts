@@ -1,4 +1,9 @@
 import { SHELL_COLORS as c } from "@fitness-battle/shared";
+
+/** Native section boundaries need a full pixel, rather than a faint device hairline. */
+export const mobileSurfaces = {
+  divider: "#d0dad7",
+} as const;
 export const colors = {
   ink: c.ink,
   paper: c.paper,

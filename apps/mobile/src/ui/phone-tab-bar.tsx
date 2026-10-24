@@ -1,13 +1,14 @@
-import Svg, { Path } from "react-native-svg";
+import { AppIcon } from "./app-icon";
 import {
-  SHELL_TAB_ICONS,
   SHELL_TABS,
   type ShellTabId,
 } from "@fitness-battle/shared";
-import { Platform, Pressable, StyleSheet, Text, View } from "react-native";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { SHELL_COLORS } from "../theme";
 import { playCue } from "../lib/haptics";
+
+const tabIcons = { today: "home", arena: "compete", you: "progress", field: "crew" } as const;
 
 export interface PhoneTabBarProps {
   state: {
@@ -86,21 +87,7 @@ export function PhoneTabBar({
             }}
             style={[styles.tab, selected ? styles.tabOn : null]}
           >
-            <Svg
-              width={22}
-              height={22}
-              viewBox="0 0 24 24"
-              accessible={Platform.OS === "web" ? undefined : false}
-            >
-              <Path
-                d={SHELL_TAB_ICONS[tab.id]}
-                fill="none"
-                stroke={selected ? SHELL_COLORS.starEmber : SHELL_COLORS.muted}
-                strokeWidth={1.6}
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </Svg>
+            <AppIcon name={tabIcons[tab.id]} size={22} color={selected ? SHELL_COLORS.starEmber : SHELL_COLORS.muted} />
             <Text style={[styles.label, selected ? styles.labelOn : null]}>
               {tab.label}
             </Text>

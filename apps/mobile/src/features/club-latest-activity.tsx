@@ -3,7 +3,6 @@ import { Pressable, Text, View } from "react-native";
 import { APP_TIMEZONE, clubDuration, formatVolume, homeRecentActivities, sportById, type Activity, type CompeteState } from "@fitness-battle/shared";
 import { useAuth } from "../lib/auth";
 import { useCrewActivities } from "./use-crew-activities";
-import { SHELL_COLORS as c } from "../theme";
 import { FocusSheet, f } from "../ui/focus";
 import { SportActivityIcon } from "../ui/sport-activity-icon";
 
@@ -14,10 +13,10 @@ export function LatestActivity({ state, onOpen }: { state: CompeteState; onOpen:
   const [selected, setSelected] = useState<{ account?: string; id: string } | null>(null);
   const detail = selected?.account === user?.id ? rows.find(row => row.id === selected?.id) : null;
   return <>
-    {rows.length > 0 && <View style={{ gap: 8 }}>
+    {rows.length > 0 && <View style={[f.section, { gap: 8 }]}>
       <Text accessibilityRole="header" style={f.h2}>Latest activity</Text>
       {rows.map(row => <Pressable key={`${row.userId}:${row.id}`} accessibilityRole="button" onPress={() => row.ownActivity ? onOpen(row.ownActivity) : setSelected({ account: user?.id, id: row.id })}
-        style={[f.row, { minHeight: 76, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: c.line }]}>
+        style={[f.row, { minHeight: 76, paddingVertical: 12, borderBottomWidth: 0 }]}>
         <SportActivityIcon sport={row.sport} />
         <View style={[f.grow, { gap: 4 }]}><Text style={f.rowTitle}>{row.ownActivity ? sportById(row.sport).name : `${row.name} · ${sportById(row.sport).name}`} · {clubDuration(row.movingSec)}</Text>
           <Text style={f.small}>{row.verified ? "GPS Tracked" : row.source === "manual" ? "Manual activity" : "Activity"}</Text></View>

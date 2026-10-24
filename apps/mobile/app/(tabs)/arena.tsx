@@ -1,3 +1,4 @@
+import { AppIcon } from "../../src/ui/app-icon";
 import { competitionTrack, competitionTrackLabel } from "@fitness-battle/shared";
 import { EventCarousel } from "../../src/features/event-carousel";
 import {
@@ -148,10 +149,10 @@ export default function ArenaScreen() {
         {state.periodResults.length ? <FocusButton label="Latest week results ↗" secondary onPress={() => router.push("/arena?results=latest")} /> : null}
         <View style={[f.row, { alignItems: "stretch", flexWrap: "wrap" }]}>
           <View style={[f.card, { flex: 1.2, minWidth: 150, backgroundColor: "#eef3f1" }]}>
-            <Text style={[f.h2, { fontSize: 36 }]}>⚑</Text><Text style={f.kicker}>Coming soon</Text><Text style={f.h2}>1v1</Text><Text style={f.copy}>A week. A friendly challenge.</Text>
+            <AppIcon name="compete" size={32} /><Text style={f.kicker}>Coming soon</Text><Text style={f.h2}>1v1</Text><Text style={f.copy}>A week. A friendly challenge.</Text>
           </View>
           <Pressable accessibilityRole="button" accessibilityLabel="Beyond this week: pace and race rankings" style={[f.card, { flex: 1, minWidth: 130, justifyContent: "space-between" }]} onPress={() => router.push("/benchmarks")}>
-            <Text style={[f.h2, { fontSize: 36 }]}>↗</Text><Text style={f.rowTitle}>Beyond this week</Text><Text style={f.small}>Your all-time pace & race rankings</Text>
+            <AppIcon name="external" size={32} /><Text style={f.rowTitle}>Beyond this week</Text><Text style={f.small}>Your all-time pace & race rankings</Text>
           </Pressable>
         </View>
       </ScrollView>

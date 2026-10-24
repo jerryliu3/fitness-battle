@@ -1,5 +1,7 @@
 # Mobile consumer UI audit — October 23, 2026
 
+Owner follow-up: the initial pass was verified by the owner after PR #308. The [follow-up decisions](mobile-refinement-2026-10-23.md) supersede this report's temporary emoji choice, header recommendation and faint divider treatment. Mapbox and finer score history are excluded from the current UI work. The original findings and implementation record below remain as history.
+
 ## Assessment
 
 The app has enough functionality to feel like a carefully designed consumer product. The larger gap is coherence: screen composition, information hierarchy, illustration, and touch behavior have accumulated independently. Adding features would create more places to resolve these problems.

@@ -13,7 +13,7 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { SHELL_COLORS as c } from "../theme";
+import { SHELL_COLORS as c, mobileSurfaces } from "../theme";
 import { useReducedMotion } from "./use-reduced-motion";
 import { IconButton } from "./icon-button";
 import { playCue } from "../lib/haptics";
@@ -414,8 +414,8 @@ export const f = StyleSheet.create({
   grow: { flex: 1 },
   section: {
     paddingVertical: 20,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: c.line,
+    borderBottomWidth: 1,
+    borderBottomColor: mobileSurfaces.divider,
     gap: 16,
   },
   card: {
@@ -498,8 +498,8 @@ export const f = StyleSheet.create({
   disclosureBodyCompact: { paddingHorizontal: 12, paddingBottom: 12, gap: 10 },
   disclosure: {
     backgroundColor: "transparent",
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: c.line,
+    borderBottomWidth: 1,
+    borderBottomColor: mobileSurfaces.divider,
     overflow: "hidden",
   },
   disclosureHead: {

@@ -7,7 +7,7 @@ import { ChartScrubber } from "../ui/chart-scrubber";
 import { f } from "../ui/focus";
 import { ChartFrame } from "../ui/chart-frame";
 import { HomeActivityActions } from "./home-activity-actions";
-import { SHELL_COLORS as c } from "../theme";
+import { SHELL_COLORS as c, mobileSurfaces } from "../theme";
 
 export function WeekChart({ state, onOpen, ready = true }: { state: CompeteState; onOpen?: () => void; ready?: boolean }) {
   const { nowDayIndex, currCumulativeHours, prevCumulativeHours, currTotalHours, prevTotalHours, sessionCount, weekProgress } = weeklyHoursComparison(state);
@@ -237,8 +237,8 @@ const s = StyleSheet.create({
   statsCard: {
     paddingVertical: 12,
     gap: 16,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: c.line,
+    borderBottomWidth: 1,
+    borderBottomColor: mobileSurfaces.divider,
   },
   statsMain: {
     fontFamily: "DMSans_700Bold",

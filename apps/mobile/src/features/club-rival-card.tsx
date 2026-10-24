@@ -1,3 +1,4 @@
+import { AppIcon } from "../ui/app-icon";
 import { alpineTrail } from "../ui/club-art";
 import {
   ImageBackground,
@@ -91,7 +92,7 @@ export function RivalCard({ state }: { state: CompeteState }) {
                   : "Register for a weekly event."}
             </Text>
           </View>
-          <Text style={s.arrow}>↗</Text>
+          <View style={s.arrow}><AppIcon name="external" size={22} /></View>
         </View>
       </ImageBackground>
     </Pressable>
@@ -124,13 +125,11 @@ const s = StyleSheet.create({
     color: "#ffffffdd",
   },
   arrow: {
-    color: c.ink,
     backgroundColor: c.tennis,
     borderRadius: 22,
     width: 40,
     height: 40,
-    textAlign: "center",
-    lineHeight: 40,
-    fontSize: 22,
+    alignItems: "center",
+    justifyContent: "center",
   },
 });

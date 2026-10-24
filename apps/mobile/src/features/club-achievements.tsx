@@ -36,7 +36,7 @@ export function Achievements({ state }: { state: CompeteState }) {
   const featured = featuredClubAchievements(rows);
   const router = useRouter();
   return (
-    <View style={{ gap: 12 }}>
+    <View style={[f.section, { gap: 12 }]}>
       <View style={f.row}>
         <Text accessibilityRole="header" style={f.sectionTitle}>Achievements</Text>
         <Pressable

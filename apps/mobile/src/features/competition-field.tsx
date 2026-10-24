@@ -76,7 +76,14 @@ export function CompetitionField({
   const sceneDimension = viewDimension;
   const dimensions = useWindowDimensions();
   const insets = useSafeAreaInsets();
-  const sceneHeight = expanded ? Math.max(140, dimensions.height - insets.top - insets.bottom - 108 - (sceneDimension === "2d" ? 90 : 34)) : undefined;
+  // Keep the inline preview useful within a phone screen; expansion owns the
+  // full remaining height. Both still show the same distance window.
+  const inlineHeight = sceneDimension === "2d"
+    ? Math.max(300, Math.min(420, dimensions.height * .46))
+    : Math.max(360, Math.min(480, dimensions.height * .56));
+  const sceneHeight = Math.round(expanded
+    ? Math.max(140, dimensions.height - insets.top - insets.bottom - 108 - (sceneDimension === "2d" ? 90 : 34))
+    : inlineHeight);
   const laneAnchor = useRef<LaneAnchor | null>(null);
   const portraitAnchor = useRef(0);
   const expandField = () => { setExpanded(true); void playCue("light"); };

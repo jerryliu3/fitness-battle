@@ -93,7 +93,7 @@ export function PortraitField({
           setWidth(e.nativeEvent.layout.width);
       }}
     >
-      <Image source={alpineTrail} style={s.scenery} />
+      <Image source={alpineTrail} style={[s.scenery, { height: Math.min(180, height * .32) }]} />
       <Animated.ScrollView
         ref={scroll}
         horizontal
@@ -197,6 +197,7 @@ export function PortraitField({
                     accessibilityLabel={`${m.name}${m.you ? ", you" : ""}, ${m.gap.toFixed(1)} ${unit}${m.outside ? ", outside visible distance range" : ""}`}
                   >
                     <G transform={`translate(${m.x} ${m.y}) scale(${m.scale})`}>
+                    <Rect x={-30 / m.scale} y={-45 / m.scale} width={60 / m.scale} height={90 / m.scale} fill="transparent" />
                     <Ellipse
                       cy={27}
                       rx={24}
