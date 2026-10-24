@@ -1,3 +1,4 @@
+import { DateTimeField } from "../ui/form-picker";
 import { SHELL_COLORS as clubColors } from "@fitness-battle/shared";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Pressable, Text, TextInput, View } from "react-native";
@@ -245,21 +246,10 @@ export function CrewSessions({
           value={title}
           onChangeText={setTitle}
         />
-        <Text style={f.small}>Date · YYYY-MM-DD</Text>
-        <TextInput
-          accessibilityLabel="Session date YYYY-MM-DD"
-          style={f.input}
-          placeholder="YYYY-MM-DD"
-          value={day}
-          onChangeText={setDay}
-        />
-        <Text style={f.small}>Time · {APP_TIMEZONE} · HH:mm</Text>
-        <TextInput
-          accessibilityLabel="Session time HH:mm Eastern"
-          style={f.input}
-          value={time}
-          onChangeText={setTime}
-        />
+        <Text style={f.small}>Date · {APP_TIMEZONE}</Text>
+        <DateTimeField label="Session date · Eastern" mode="date" value={day} onChange={setDay} />
+        <Text style={f.small}>Time · {APP_TIMEZONE}</Text>
+        <DateTimeField label="Session time · Eastern" mode="time" value={time} onChange={setTime} />
         <Text style={f.small}>Duration</Text>
         <View style={f.chipRow}>
           {[15, 30, 45, 60, 90, 120, 180, 240].map((n) => (

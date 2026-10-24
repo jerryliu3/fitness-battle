@@ -1,5 +1,6 @@
 import { useEffect, useId, useRef, useState } from "react";
 import {
+  Animated,
   Image,
   ScrollView,
   type ScrollViewInstance,
@@ -46,6 +47,7 @@ export function PortraitField({
   const scene = portraitField(lanes, view, undefined, laneOffset, prefix);
   const [width, setWidth] = useState(340);
   const scroll = useRef<ScrollViewInstance>(null);
+  const scrollX = useRef(new Animated.Value(0)).current;
   const moveTo = (offset: number) => {
     const focus = Math.max(
       0,
@@ -60,6 +62,17 @@ export function PortraitField({
     scroll.current?.scrollTo({ x: scene.baseFocus * 110, animated: false });
   }, [width, scene.baseFocus, scene.ordered.length]);
   return (
+    <View style={{ gap: 10 }}>
+      <View style={s.status} pointerEvents="none">
+        <Text style={[s.white, { color: "#142b3b" }]}>
+          {scene.place} / {scene.fieldSize} PLACE
+        </Text>
+        <Text
+          style={[s.white, { color: "#142b3b", fontSize: 11, flexShrink: 1, textAlign: "right" }]}
+        >
+          {portraitFieldGap(scene.nextGap, unit)}
+        </Text>
+      </View>
     <View
       style={s.board}
       onLayout={(e) => {
@@ -68,7 +81,7 @@ export function PortraitField({
       }}
     >
       <Image source={alpineTrail} style={s.scenery} />
-      <ScrollView
+      <Animated.ScrollView
         ref={scroll}
         horizontal
         nestedScrollEnabled
@@ -78,9 +91,10 @@ export function PortraitField({
         showsHorizontalScrollIndicator={false}
         scrollEventThrottle={16}
         style={StyleSheet.absoluteFill}
-        onScroll={(e) =>
-          setLaneOffset(e.nativeEvent.contentOffset.x / 110 - scene.baseFocus)
-        }
+        onScroll={Animated.event([{ nativeEvent: { contentOffset: { x: scrollX } } }], {
+          useNativeDriver: true,
+          listener: (e: { nativeEvent: { contentOffset: { x: number } } }) => setLaneOffset(e.nativeEvent.contentOffset.x / 110 - scene.baseFocus),
+        })}
       >
         <View
           style={{
@@ -88,11 +102,8 @@ export function PortraitField({
             height: 560,
           }}
         >
+          <Animated.View style={{ position: "absolute", width, height: 560, transform: [{ translateX: scrollX }] }}>
           <Svg
-            style={{
-              position: "absolute",
-              left: (scene.baseFocus + laneOffset) * 110,
-            }}
             width={width}
             height="100%"
             viewBox="0 0 420 600"
@@ -286,18 +297,9 @@ export function PortraitField({
                 );
               })}
           </Svg>
+          </Animated.View>
         </View>
-      </ScrollView>
-      <View style={s.status} pointerEvents="none">
-        <Text style={s.white}>
-          {scene.place} / {scene.fieldSize} PLACE
-        </Text>
-        <Text
-          style={[s.white, { fontSize: 11, flexShrink: 1, textAlign: "right" }]}
-        >
-          {portraitFieldGap(scene.nextGap, unit)}
-        </Text>
-      </View>
+      </Animated.ScrollView>
       <View style={s.controls}>
         <View style={s.controlRow}>
           <Pressable
@@ -354,6 +356,7 @@ export function PortraitField({
         </View>
       </View>
     </View>
+    </View>
   );
 }
 const s = StyleSheet.create({
@@ -371,13 +374,6 @@ const s = StyleSheet.create({
     height: 230,
   },
   status: {
-    position: "absolute",
-    top: 16,
-    left: 12,
-    right: 12,
-    padding: 12,
-    borderRadius: 12,
-    backgroundColor: "#102e38ed",
     flexDirection: "row",
     justifyContent: "space-between",
     gap: 12,

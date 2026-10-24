@@ -1,9 +1,11 @@
+import { RankBadge } from "../ui/rank-badge";
 import { alpineTrail } from "../ui/club-art";
 import { SHELL_COLORS as c } from "../theme";
 import { CrewSessions } from "./crew-sessions";
 import { CrewRelay } from "./crew-relay";
 import {
   type SportId,
+  competitionTrack,
   competeNow,
   countsOnTrack,
   distanceUnitLabel,
@@ -32,6 +34,7 @@ export interface PrivateCrew {
   journey_km: number;
 }
 interface Member {
+  effort_score?: number | null;
   avatar_url?: string | null;
   crew_id: string;
   user_id: string;
@@ -142,13 +145,13 @@ function inviteLink(code: string): string {
   return `${base}/field?invite=${encodeURIComponent(code)}`;
 }
 
-export function CrewHub() {
+export function CrewHub({ membersOnly = false, crewId = "" }: { membersOnly?: boolean; crewId?: string } = {}) {
   const { state, refresh } = useCompeteStore();
   const { user } = useAuth();
   const router = useRouter();
   const params = useGlobalSearchParams<{ invite?: string | string[] }>();
   const api = useCrewApi();
-  const [selected, setSelected] = useState("");
+  const [selected, setSelected] = useState(crewId);
   const [panel, setPanel] = useState<
     "add" | "invite" | "manage" | "leave" | "members" | null
   >(null);
@@ -162,7 +165,7 @@ export function CrewHub() {
   const owner = useRef(user?.id);
   owner.current = user?.id;
   useEffect(() => {
-    setSelected("");
+    setSelected(crewId);
     setDemoRest({});
     setPanel(null);
     setNote("");
@@ -240,6 +243,7 @@ export function CrewHub() {
               crew_id: pin.crewId,
               user_id: !api.live && member.name === state?.name && user ? user.id : member.id,
               display_name: member.name,
+              effort_score: competitionTrack(pin.sport) === "verified" ? member.verifiedElo : member.elo,
               avatar_url: member.id === selfId ? state?.avatarUrl : member.avatarUrl,
               rest_week: null,
             }),
@@ -296,6 +300,7 @@ export function CrewHub() {
       .filter((e) => e.user_id === id)
       .reduce((n, e) => n + Number(sessionsMetric ? e.session_count ?? 1 : e.distance_m), 0);
   function open(next: typeof panel) {
+    if (next === "members") { router.push({ pathname: "/crew-members", params: { crewId: crew.id } }); return; }
     setNote("");
     setName("");
     setCode("");
@@ -323,7 +328,7 @@ export function CrewHub() {
       if (owner.current !== id) return;
       if (result.crew?.id) setSelected(result.crew.id);
       if (path === "/leave") {
-        setSelected("");
+        setSelected(crewId);
         await refresh();
       }
       if (path === "/entries") {
@@ -354,6 +359,17 @@ export function CrewHub() {
       setBusy(false);
     }
   }
+  const membersView = (
+<View style={{ gap: 16 }}>
+            <Text style={f.copy}>{crew.name}</Text>
+            {members.map(m => <View key={m.user_id} style={[f.card, f.row]}>
+              {m.avatar_url ? <Image source={{ uri: m.avatar_url }} style={{ width: 56, height: 56, borderRadius: 28 }} /> : <View style={[f.avatar, { width: 56, height: 56, borderRadius: 28 }]}><Text style={f.h2}>{m.display_name.slice(0, 2).toUpperCase()}</Text></View>}
+              <View style={f.grow}><Text style={f.h2}>{m.display_name}</Text><Text style={f.small}>{(m.user_id === user?.id ? resting : m.rest_week === weekKey) ? "Rest week" : "Active"}</Text>
+                <Text style={f.small}>{sessionsMetric ? `${memberTotal(m.user_id)} sessions` : distance(memberTotal(m.user_id))} this week</Text>
+              </View>
+            </View>)}
+          </View>
+  );
   if (api.live && !api.data)
     return (
       <View style={f.card}>
@@ -365,6 +381,7 @@ export function CrewHub() {
         />
       </View>
     );
+  if (membersOnly) return membersView;
   return (
     <>
       {api.error ? (
@@ -500,6 +517,7 @@ export function CrewHub() {
                     <View key={m.user_id} style={f.row}>
                       <Text style={f.small}>{i + 1}</Text>
                       <Text style={[f.rowTitle, f.grow]}>{m.display_name}</Text>
+                      <RankBadge score={m.effort_score} />
                       <Text style={f.rowTitle}>
                         {sessionsMetric ? `${memberTotal(m.user_id)} sessions` : distance(memberTotal(m.user_id))}
                       </Text>
@@ -641,15 +659,7 @@ export function CrewHub() {
             <FocusButton label="Create crew ＋" onPress={() => open("add")} />
           </>
         ) : panel === "members" ? (
-          <View style={{ gap: 16 }}>
-            <Text style={f.copy}>{crew.name}</Text>
-            {members.map(m => <View key={m.user_id} style={[f.card, f.row]}>
-              {m.avatar_url ? <Image source={{ uri: m.avatar_url }} style={{ width: 56, height: 56, borderRadius: 28 }} /> : <View style={[f.avatar, { width: 56, height: 56, borderRadius: 28 }]}><Text style={f.h2}>{m.display_name.slice(0, 2).toUpperCase()}</Text></View>}
-              <View style={f.grow}><Text style={f.h2}>{m.display_name}</Text><Text style={f.small}>{(m.user_id === user?.id ? resting : m.rest_week === weekKey) ? "Rest week" : "Active"}</Text>
-                <Text style={f.small}>{sessionsMetric ? `${memberTotal(m.user_id)} sessions` : distance(memberTotal(m.user_id))} this week</Text>
-              </View>
-            </View>)}
-          </View>
+          membersView
         ) : panel === "invite" ? (
           <>
             <Text style={f.copy}>

@@ -39,14 +39,14 @@ export function PolishedRacer({
 }
 
 /** One clock for the field; pause for reduced motion, hidden tabs and offscreen fields. */
-export function usePolishedWakeTime(host:RefObject<HTMLDivElement|null>){
+export function usePolishedWakeTime(host:RefObject<HTMLDivElement|null>, enabled = true){
   const [time,setTime]=useState<number|undefined>(undefined);
   useEffect(()=>{
     const media=window.matchMedia("(prefers-reduced-motion: reduce)");
     let raf=0,inView=true;
     const update=()=>{
       cancelAnimationFrame(raf);
-      if(media.matches||document.hidden||!inView){setTime(undefined);return;}
+      if(!enabled||media.matches||document.hidden||!inView){setTime(undefined);return;}
       const start=performance.now();let published=0;
       const tick=(now:number)=>{if(now-published>=1000/30){published=now;setTime((now-start)/1000);}raf=requestAnimationFrame(tick);};
       raf=requestAnimationFrame(tick);
@@ -55,6 +55,6 @@ export function usePolishedWakeTime(host:RefObject<HTMLDivElement|null>){
     if(host.current)observer?.observe(host.current);
     media.addEventListener("change",update);document.addEventListener("visibilitychange",update);update();
     return ()=>{cancelAnimationFrame(raf);observer?.disconnect();media.removeEventListener("change",update);document.removeEventListener("visibilitychange",update);};
-  },[host]);
+  },[host,enabled]);
   return time;
 }

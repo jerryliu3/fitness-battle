@@ -11,6 +11,7 @@ import {
 const mock = vi.hoisted(() => ({
   live: false,
   navigate: vi.fn(),
+  push: vi.fn(),
   state: null as unknown,
   data: null as unknown,
 }));
@@ -40,7 +41,7 @@ vi.mock("react-native", () => ({
 vi.mock("expo-router", () => ({
   useFocusEffect() {},
   useGlobalSearchParams: () => ({}),
-  useRouter: () => ({ navigate: mock.navigate }),
+  useRouter: () => ({ navigate: mock.navigate, push: mock.push }),
 }));
 vi.mock("../lib/auth", () => ({
   useAuth: () => ({
@@ -154,6 +155,8 @@ it("keeps crew settings open while setting and clearing the current rest week", 
   await act(async () => {
     renderer = create(createElement(CrewHub));
   });
+  await act(async () => renderer.root.findByProps({ accessibilityLabel: "View crew members" }).props.onPress());
+  expect(mock.push).toHaveBeenCalledWith({ pathname: "/crew-members", params: { crewId: "crew" } });
   await act(async () =>
     renderer.root
       .findByProps({ accessibilityLabel: "Crew settings" })

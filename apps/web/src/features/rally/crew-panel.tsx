@@ -1,4 +1,5 @@
 "use client";
+import { RankBadge } from "../progress/rank-badge";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/components/auth-context";
 import { useCompete } from "@/components/compete-context";
@@ -6,7 +7,7 @@ import { CrewSessions } from "./crew-sessions";
 import { CrewRelay } from "./crew-relay";
 import { Sheet } from "@/ui/sheet";
 import { playCue } from "@/lib/haptics";
-import { APP_TIMEZONE, competeNow, weeklyPeriodBounds, dayKey, type SportId, countsOnTrack, distanceUnitLabel, formatDistanceM, formatNoticeUnits } from "@fitness-battle/shared";
+import { competitionTrack, APP_TIMEZONE, competeNow, weeklyPeriodBounds, dayKey, type SportId, countsOnTrack, distanceUnitLabel, formatDistanceM, formatNoticeUnits } from "@fitness-battle/shared";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 interface Crew {
@@ -19,6 +20,7 @@ interface Crew {
   journey_km: number;
 }
 interface Member {
+  effort_score?: number | null;
   avatar_url?: string | null;
   crew_id: string;
   user_id: string;
@@ -204,6 +206,7 @@ export function CrewPanel() {
           crew_id: crewBoard.crewId,
           user_id: offlineMode && m.name === athleteName && user ? user.id : m.id,
           display_name: m.name,
+          effort_score: competitionTrack(crewBoard.sport) === "verified" ? m.verifiedElo : m.elo,
           avatar_url: m.id === user?.id ? state?.avatarUrl : m.avatarUrl,
           rest_week: null,
         }))
@@ -432,7 +435,7 @@ export function CrewPanel() {
                       .map((m, i) => (
                         <div className="fb-row" key={m.user_id}>
                           <span>{i + 1}</span>
-                          <b className="fb-grow">{m.display_name}</b>
+                          <b className="fb-grow">{m.display_name}</b><RankBadge score={m.effort_score} />
                           <span>
                             {sessionsMetric ? `${memberTotal(m.user_id)} sessions` : `${formatDistanceM(memberTotal(m.user_id), state?.units)} ${unitLabel}`}
                           </span>

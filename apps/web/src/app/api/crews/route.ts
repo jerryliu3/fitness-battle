@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { dayKey, waveWindowAt } from "@fitness-battle/shared";
+import { competitionTrack, dayKey, waveWindowAt, type SportId } from "@fitness-battle/shared";
 import { resolveRequestUserId } from "@/lib/auth/request-user";
 import { createRequestClient } from "@/lib/supabase/request";
 
@@ -74,7 +74,7 @@ export async function GET(request: Request) {
       started_at: new Date().toISOString(), disposition: "counted",
     })));
   }
-  const [memberResult, entryResult, noticeResult] = await Promise.all([
+  const [memberResult, entryResult, noticeResult, ratingResult] = await Promise.all([
     crewIds.length
       ? supabase.from("crew_members").select("crew_id, user_id, display_name, rest_week, status").in("crew_id", crewIds)
       : Promise.resolve({ data: [], error: null }),
@@ -91,12 +91,16 @@ export async function GET(request: Request) {
       .is("read_at", null)
       .order("created_at", { ascending: false })
       .limit(20),
+    crewIds.length ? supabase.rpc("crew_member_effort_scores") : Promise.resolve({ data: [], error: null }),
   ]);
   if (memberResult.error || entryResult.error || noticeResult.error) return NextResponse.json({ error: "crews_unavailable" }, { status: 500 });
   const { data: members } = memberResult, { data: entries } = entryResult, { data: notices } = noticeResult;
   const memberIds=[...new Set((members??[]).filter(m=>m.status==="active").map(m=>m.user_id))];
   const {data:portraits}=memberIds.length?await supabase.from("profiles").select("id, avatar_url").in("id",memberIds):{data:[]};
   const photos=new Map((portraits??[]).map(p=>[p.id,p.avatar_url]));
+  const ratings = new Map((ratingResult.error ? [] : ratingResult.data ?? []).map((row: { crew_id: string; user_id: string; open_elo: number; verified_elo: number }) => [
+    `${row.crew_id}:${row.user_id}`, competitionTrack(sportByCrew.get(row.crew_id) as SportId) === "verified" ? Number(row.verified_elo) : Number(row.open_elo),
+  ]));
   const week = waveWindowAt();
   const allEntries = (entries ?? []) as EntryRow[];
   const seasonWeeks: Record<string, number> = {};
@@ -117,7 +121,7 @@ export async function GET(request: Request) {
   });
   return NextResponse.json({
     crews: memberships ?? [],
-    members: (members??[]).map(m=>({...m,avatar_url:photos.get(m.user_id)??null})),
+    members: (members??[]).map(m=>({...m,avatar_url:photos.get(m.user_id)??null,effort_score:ratings.get(`${m.crew_id}:${m.user_id}`)??null})),
     entries: currentEntries,
     progress,
     previousProgress,

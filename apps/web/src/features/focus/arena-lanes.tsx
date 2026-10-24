@@ -3,7 +3,7 @@ import { useRef, useLayoutEffect, useState, useId, useMemo } from "react";
 import { motion, useReducedMotion } from "motion/react";
 import {
   arenaPosition,
-  ordinalPlace,
+  ordinalPlace, effortRankBadge,
   athletePennantOffset,
   PERSON_ICON_PATH,
   formatActivityAge,
@@ -53,7 +53,7 @@ export function ArenaLanes({
   const reduced = useReducedMotion();
   const standings = presentation === "standings";
   const prefix = useId();
-  const wakeTime = usePolishedWakeTime(host);
+  const wakeTime = usePolishedWakeTime(host, immersive && !standings);
   const [measured, setMeasured] = useState(false);
   const [size, setSize] = useState({ width: 360, height: 540 });
   const previousGeometry = useRef<{ width: number; laneWidth: number; count: number; left: number; oval: boolean } | null>(null);
@@ -285,7 +285,7 @@ export function ArenaLanes({
               role="button"
               aria-pressed={selected === l.id}
               tabIndex={0}
-              aria-label={`${course.oval && !standings ? `${fieldLap(l.value, unit).laps} completed laps, ` : ""}${l.name}, ${standings ? `place ${rank}, ` : ""}${formatLastUpdated(l)}, ${relativeDistance(l.value)} relative to you${!standings && edge ? `, ${position.edge} of visible range` : ""}`}
+              aria-label={`${course.oval && !standings ? `${fieldLap(l.value, unit).laps} completed laps, ` : ""}${l.name}, ${standings ? `place ${rank}, ${scores[l.id] != null ? `${effortRankBadge(scores[l.id]).name} level, ` : ""}` : ""}${formatLastUpdated(l)}, ${relativeDistance(l.value)} relative to you${!standings && edge ? `, ${position.edge} of visible range` : ""}`}
               onKeyDown={(e) => {
                 if (e.key === "Enter" || e.key === " ") {
                   e.preventDefault();
@@ -347,7 +347,7 @@ export function ArenaLanes({
                 <rect x={-30} y={-33} width={Math.max(200, width - 16)} height={70} rx={14} fill="transparent" />
                 <line x1={-22} x2={width - 52} y1={38} y2={38} stroke="#e0e5dc" />
                 <text x={40} y={4} fill="#616c63" fontSize={12}>{rank}</text>
-                <text x={64} y={-5} fill="#282f2c" fontSize={13} fontWeight={600}>{l.you ? selfLaneLabel(l.name) : l.name}</text>
+                <text x={64} y={-5} fill="#282f2c" fontSize={13} fontWeight={600}>{l.you ? selfLaneLabel(l.name) : l.name}{scores[l.id] != null ? ` ${effortRankBadge(scores[l.id]).symbol}` : ""}</text>
                 <text x={64} y={15} fill="#a67c00" fontSize={10}>{scores[l.id] ?? "—"} effort score</text>
                 <text x={width - 58} y={5} textAnchor="end" fill="#282f2c" fontSize={13} fontWeight={700}>{l.value.toFixed(1)} {unit}</text>
               </motion.g>

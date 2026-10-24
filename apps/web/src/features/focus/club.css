@@ -1286,3 +1286,23 @@
 .club-fullscreen-sheet .club-sheet-heading { display: grid; grid-template-columns: 44px 1fr 44px; }
 .club-fullscreen-sheet .club-sheet-heading h2 { grid-column: 2; grid-row: 1; text-align: center; }
 .club-fullscreen-sheet .club-sheet-dismiss { grid-column: 1; grid-row: 1; }
+
+/* Compact effort progress and activity streak share stable header space. */
+.club-header-effort { max-width: 190px; }
+.effort-rail-track { position: relative; height: 24px; overflow: hidden; }
+.effort-rail-track > .effort-rail-remaining { position: absolute; inset: 0; display: flex; align-items: center; padding: 0 8px; color: var(--ink); font-size: 10px; font-weight: 700; background: transparent; }
+.effort-rail-compact .effort-rail-caption { display: none; }
+.club-week-streak { display: inline-flex; align-items: center; gap: 3px; color: #dfad3c; opacity: .4; font-size: 12px; }
+.club-week-streak b { color: var(--ink); }
+.club-week-streak.is-active { opacity: 1; }
+.club-map-status { position: static; padding: 8px 0; background: transparent; color: var(--ink); border-radius: 0; }
+.focus-track-frame:has(>.club-map-status)>.focus-lane-surface { margin-top: 0; }
+.club-preference-row { padding: 12px; border: 1px solid var(--line); border-radius: 12px; background: white; }
+.fb-switch:not(.on) { background: #b9c5ca; }
+.club-rank-badge { display: inline-flex; align-items: center; justify-content: center; min-width: 24px; color: #176c75; font-size: 17px; }
+.club-sport-label { display: inline-flex; align-items: center; gap: 10px; }
+.club-perspective-group { display: grid; gap: 10px; }
+.club-perspective-group > .club-board-status { position: static; padding: 0; background: transparent; color: var(--ink); border-radius: 0; text-shadow: none; }
+.club-perspective-group > .club-board-status b { font-size: 13px; }
+
+.phone-shell .focus-competition-card { background: var(--card); border: 1px solid var(--line); border-radius: 20px; padding: 16px; }

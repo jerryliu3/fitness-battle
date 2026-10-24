@@ -11,7 +11,7 @@ function database(previousError=false){
   const query={select:vi.fn(()=>query),eq:vi.fn((key,value)=>{filters.push([key,value]);return query;}),in:vi.fn((key,value)=>{filters.push([key,value]);return query;}),is:vi.fn(()=>query),order:vi.fn(()=>query),limit:vi.fn(()=>query),then:(resolve:(value:ReturnType<typeof result>)=>unknown)=>Promise.resolve(result()).then(resolve)};
   return query;
  });
- const rpc=vi.fn(async(name:string)=>name==="crew_previous_week_totals"?{data:previousError?null:[{user_id:"self",distance_m:2000,moving_sec:900,session_count:1},{user_id:"peer",distance_m:3000,moving_sec:1200,session_count:1}],error:previousError?{message:"function_unavailable"}:null}:{data:[{user_id:"self",distance_m:1000,moving_sec:600,session_count:1}],error:null});
+ const rpc=vi.fn(async(name:string)=>name==="crew_member_effort_scores"?{data:[{crew_id:"crew",user_id:"peer",open_elo:1200,verified_elo:1600}],error:null}:name==="crew_previous_week_totals"?{data:previousError?null:[{user_id:"self",distance_m:2000,moving_sec:900,session_count:1},{user_id:"peer",distance_m:3000,moving_sec:1200,session_count:1}],error:previousError?{message:"function_unavailable"}:null}:{data:[{user_id:"self",distance_m:1000,moving_sec:600,session_count:1}],error:null});
  return {from,rpc,queries};
 }
 describe("crew comparison reads",()=>{
@@ -20,6 +20,7 @@ describe("crew comparison reads",()=>{
   const db=database();mock.client.mockResolvedValue(db);const request=new Request("http://localhost/api/crews");const response=await GET(request),body=await response.json();
   expect(response.status).toBe(200);expect(mock.client).toHaveBeenCalledWith(request);
   expect(body.previousProgressAvailable).toEqual({crew:true});expect(body.previousProgress.reduce((sum:number,r:{distance_m:number})=>sum+r.distance_m,0)).toBe(5000);
+  expect(body.members[1].effort_score).toBe(1600);
   expect(body.members[1].avatar_url).toBe("https://example.com/peer.jpg");
   expect(db.rpc).toHaveBeenCalledWith("crew_previous_week_totals",{p_crew_id:"crew"});
   expect(db.queries.find(q=>q.table==="profiles")?.filters).toContainEqual(["id",["self","peer"]]);

@@ -38,6 +38,13 @@ export function PortraitField({
   } | null>(null);
   const moved = useRef(false);
   return (
+    <div className="club-perspective-group">
+      <div className="club-board-status">
+        <b>
+          {scene.place} / {scene.fieldSize} <small>PLACE</small>
+        </b>
+        <span>{portraitFieldGap(scene.nextGap, unit)}</span>
+      </div>
     <div className="club-perspective-board">
       <img
         className="club-perspective-scenery"
@@ -263,12 +270,6 @@ export function PortraitField({
             );
           })}
       </svg>
-      <div className="club-board-status">
-        <b>
-          {scene.place} / {scene.fieldSize} <small>PLACE</small>
-        </b>
-        <span>{portraitFieldGap(scene.nextGap, unit)}</span>
-      </div>
       <div className="club-board-controls">
         <div className="club-board-zoom">
           <button
@@ -315,6 +316,7 @@ export function PortraitField({
           </button>
         </div>
       </div>
+    </div>
     </div>
   );
 }

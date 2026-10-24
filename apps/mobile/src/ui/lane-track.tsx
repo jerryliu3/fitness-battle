@@ -15,7 +15,7 @@ import {
   type ArenaOvertakePlan,
   type ArenaViewWindow,
 } from "@fitness-battle/shared";
-import { useEffect, useId, useMemo, useRef, useState } from "react";
+import { memo, useEffect, useId, useMemo, useRef, useState } from "react";
 import { PanResponder, Pressable, ScrollView, Text, View, type ScrollViewInstance } from "react-native";
 import Svg, {
   Circle,
@@ -32,7 +32,7 @@ import { playCue } from "../lib/haptics";
 import { drawFieldNode } from "./field-course";
 import { LaneRacerTarget } from "./lane-racer-target";
 import { PolishedRacer, usePolishedWakeTime } from "./polished-racer";
-export function LaneTrack({
+function LaneTrackContent({
   lanes,
   appearance = defaultFieldAppearance,
   unit,
@@ -313,3 +313,6 @@ export function LaneTrack({
     </View>
   );
 }
+
+/** Keep the mounted lane/scroll anchor, but suspend hidden field prop work. */
+export const LaneTrack = memo(LaneTrackContent, (previous, next) => previous.active === false && next.active === false);
