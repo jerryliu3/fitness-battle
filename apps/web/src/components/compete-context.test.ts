@@ -2,10 +2,8 @@ import { createElement } from "react";
 import { act, create, type ReactTestRenderer } from "react-test-renderer";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { freshState } from "@fitness-battle/shared";
-vi.mock("@/components/auth-context", () => {
- const user = { id: "athlete", mode: "supabase", displayName: "Athlete", email: "test@example.com" };
- return { useAuth: () => ({ user, loading: false, offlineMode: false }) };
-});
+const auth = vi.hoisted(() => ({ user: { id: "athlete", mode: "supabase", dataOrigin: "recorded", displayName: "Athlete", email: "test@example.com" } }));
+vi.mock("@/components/auth-context", () => ({ useAuth: () => ({ user: auth.user, loading: false, offlineMode: false }) }));
 vi.mock("@/lib/compete-demo-seed", () => ({ getDemoCompeteState: () => null }));
 import { CompeteProvider, useCompete } from "./compete-context";
 let renderer: ReactTestRenderer;
@@ -14,7 +12,7 @@ const values = new Map<string,string>();
 function Probe() { api = useCompete(); return null; }
 async function flush() { for (let i=0;i<30;i++) await Promise.resolve(); }
 beforeEach(() => {
- vi.useFakeTimers(); values.clear();
+ vi.useFakeTimers(); values.clear(); auth.user.mode = "supabase"; auth.user.dataOrigin = "recorded";
  vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
  vi.stubGlobal("localStorage", { getItem: (key: string) => values.get(key) ?? null, setItem: (key: string,value: string) => values.set(key,value), removeItem: (key: string) => values.delete(key) });
  vi.stubGlobal("window", { addEventListener: vi.fn(), removeEventListener: vi.fn() });
@@ -22,6 +20,16 @@ beforeEach(() => {
 });
 afterEach(async () => { if (renderer) await act(async () => renderer.unmount()); vi.useRealTimers(); vi.unstubAllGlobals(); });
 describe("web account revision handling", () => {
+ it("loads and saves authenticated synthetic accounts regardless of the legacy mode label", async () => {
+  auth.user.mode = "demo"; auth.user.dataOrigin = "synthetic";
+  const fetcher = vi.fn(async (_url: string, init?: RequestInit) => init?.method === "PUT" ? Response.json({ updatedAt: "revision-2" }) : Response.json({ state: freshState(), updatedAt: "revision-1" }));
+  vi.stubGlobal("fetch", fetcher);
+  await act(async () => { renderer = create(createElement(CompeteProvider, null, createElement(Probe))); await flush(); });
+  expect(api.loadStatus).toBe("ready");
+  await act(async () => api.dispatch({ type: "set-city", city: "Boston" }));
+  await act(async () => { vi.advanceTimersByTime(500); await flush(); });
+  expect(fetcher.mock.calls.some(([, init]) => init?.method === "PUT")).toBe(true);
+ });
  it("does not rebase dirty competition state onto a newer server revision, and offers explicit recovery", async () => {
   let reads=0;
   const fetcher = vi.fn(async (_url: string, init?: RequestInit) => {

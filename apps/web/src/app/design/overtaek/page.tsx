@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Nunito_Sans } from "next/font/google";
+import localFont from "next/font/local";
 import { LoadingPrototype } from "@/app/design/_studies/overtaek-lab/loading-prototype";
 
-const type = Nunito_Sans({ subsets: ["latin"], weight: "900", variable: "--font-overtaek" });
+const type = localFont({ src: "../../fonts/nunitosans/NunitoSans[YTLC,opsz,wdth,wght].woff2",  weight: "900", variable: "--font-overtaek" });
 export const metadata: Metadata = {
   title: "Overtaek · Loading prototype",
   description: "Star Ember overtakes E: OVERTAKE becomes OVERTAEK.",

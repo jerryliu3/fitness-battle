@@ -14,6 +14,7 @@ export function canOpenCompeteNotice(path: string): boolean {
   return (
     !isAthleteSettingsPath(path) &&
     path !== "/onboarding" &&
+    path !== "/crew-members" &&
     shellTabFromPath(path)?.id !== "you"
   );
 }

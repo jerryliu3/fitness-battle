@@ -40,3 +40,5 @@ export * from "./account-runtime";
 
 export * from "./legacy-demo";
 export * from "./crew-activity";
+export * from "./weekly-streak";
+export * from "./product-icons";

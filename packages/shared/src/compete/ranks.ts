@@ -85,3 +85,10 @@ export function eloInBand(elo: number): {
 }
 
 export const effortScoreInBand = eloInBand;
+
+/** Distinct typographic badges keep levels legible alongside athlete names. */
+export function effortRankBadge(elo: number) {
+  const rank = rankForElo(elo);
+  const symbols = ["○", "◔", "●", "◆", "✦", "★", "✹", "♛"];
+  return { ...rank, symbol: symbols[RANK_BANDS.findIndex(band => band.name === rank.name)] ?? "–" };
+}

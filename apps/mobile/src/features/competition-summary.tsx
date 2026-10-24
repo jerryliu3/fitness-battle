@@ -96,8 +96,11 @@ export function CompetitionSummary({
 
 const s = StyleSheet.create({
   card: {
-    backgroundColor: c.paper,
-    padding: 0,
+    backgroundColor: c.card,
+    borderColor: c.line,
+    borderWidth: 1,
+    borderRadius: 20,
+    padding: 16,
     gap: 10,
   },
   pill: {

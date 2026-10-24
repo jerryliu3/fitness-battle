@@ -1,3 +1,4 @@
+import { RankBadge } from "../ui/rank-badge";
 import { PortraitField } from "../ui/portrait-field";
 import {
   portraitField,
@@ -334,9 +335,31 @@ export function CompetitionField({
         }}
       >
         <FieldGroundPicker appearance={appearance} onChange={setAppearance} />
+        <View
+            pointerEvents="none"
+            style={{
+              flexDirection: "row",
+              justifyContent: "space-between",
+              gap: 8,
+              paddingVertical: 10,
+            }}
+          >
+            <Text style={[f.small, { color: c.ink }]}>
+              {overtakeFrame?.currentRank ?? place(total)} / {ranked.length}{" "}
+              PLACE
+            </Text>
+            <Text
+              style={[f.small, { color: c.ink, fontSize: 10, flexShrink: 1 }]}
+            >
+              {portraitFieldGap(
+                portraitField(fieldLanes, view).nextGap,
+                arena.unit,
+              )}
+            </Text>
+          </View>
+
         <View style={{ position: "relative" }}>
           <LaneTrack
-            topInset={44}
             appearance={appearance}
             active={isFocused && viewMode === "lanes" && viewDimension === "2d"}
             selectedId={selectedId ?? me?.id}
@@ -350,34 +373,6 @@ export function CompetitionField({
             overtakeFrame={overtakeFrame}
             overtakePlan={overtakePlan}
           />
-          <View
-            pointerEvents="none"
-            style={{
-              position: "absolute",
-              top: 54,
-              left: 12,
-              right: 12,
-              flexDirection: "row",
-              justifyContent: "space-between",
-              gap: 8,
-              padding: 10,
-              borderRadius: 12,
-              backgroundColor: "#102e38ed",
-            }}
-          >
-            <Text style={[f.small, { color: "white" }]}>
-              {overtakeFrame?.currentRank ?? place(total)} / {ranked.length}{" "}
-              PLACE
-            </Text>
-            <Text
-              style={[f.small, { color: "white", fontSize: 10, flexShrink: 1 }]}
-            >
-              {portraitFieldGap(
-                portraitField(fieldLanes, view).nextGap,
-                arena.unit,
-              )}
-            </Text>
-          </View>
           <View
             style={{
               position: "absolute",
@@ -465,6 +460,7 @@ export function CompetitionField({
               <Text style={[f.rowTitle, f.grow]}>
                 {lane.you ? selfLaneLabel(lane.name) : lane.name}
               </Text>
+              <RankBadge score={scores.find(row => row.id === lane.id)?.elo} />
               <View style={{ alignItems: "flex-end" }}>
                 <Text style={f.rowTitle}>
                   {lane.values[2].toFixed(1)} {arena.unit}

@@ -87,3 +87,12 @@ it("bounds the ruler to five marks across chase and very wide windows",()=>{
   const marks=fieldScaleMarks(min!,max!);expect(marks.length).toBeLessThanOrEqual(5);expect(marks.every(v=>v>=Math.max(0,min!)&&v<=max!)).toBe(true);
  }
 });
+
+it("shows five lanes at default zoom on phone and desktop without changing distance scale", () => {
+  for (const width of [320, 390, 768]) {
+    const view = { center: 18, span: 1.2 };
+    const course = fieldCourse(width, 540, 12, view, "km", defaultFieldAppearance);
+    expect((width - 60) / course.laneWidth).toBeCloseTo(5);
+    expect(Math.abs(course.along(18.3) - course.along(18))).toBeCloseTo(course.length * .3 / 1.2);
+  }
+});

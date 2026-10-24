@@ -7,6 +7,7 @@ import { FieldScreen } from "@/features/field/field-screen";
 import { TodayScreen } from "@/features/today/today-screen";
 import { AthletePage, ProgressPage } from "@/features/you/you-route";
 import {
+  weeklyActivityStreak, competeNow,
   PERSON_ICON_PATH,
   SHELL_TABS,
   SHELL_TAB_ICONS,
@@ -19,7 +20,7 @@ import * as ScrollArea from "@radix-ui/react-scroll-area";
 import { motion, useReducedMotion } from "motion/react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { EffortRail } from "@/features/progress/effort-rail";
 import { BootSplash } from "./boot-splash";
 import { DebugEventMenu } from "./debug-event-menu";
@@ -63,6 +64,7 @@ export function PhoneShell({
     loadStatus,
     retryLoad,
   } = useCompete();
+  const streak = useMemo(() => state ? weeklyActivityStreak(state.activities, competeNow(state)) : null, [state]);
   const tab = shellTabFromPath(path);
   const onAthlete = path?.startsWith("/athlete") ?? false;
   const progressDetail =
@@ -190,6 +192,7 @@ export function PhoneShell({
       <div className="phone-shell">
         {!onAthlete && path !== "/week" && !progressDetail && <header className="focus-shell-header">
           <div className="club-header-effort"><EffortRail compact /></div>
+          {streak && <span className={`club-week-streak${streak.active ? " is-active" : ""}`} aria-label={`${streak.count} week activity streak${streak.active ? "" : ", inactive this week"}`}><svg width="18" height="24" viewBox="0 0 24 24" aria-hidden="true"><path d="M13 2c1 6 7 7 7 13a8 8 0 0 1-16 0c0-3 2-6 5-8-1 4 0 5 2 6 2-3 3-6 2-11Z" fill="currentColor" /></svg><b>{streak.count}</b></span>}
           <DebugEventMenu activeTab={active} onNavigate={navigateDebugTarget} />
           <Link
             href="/athlete"

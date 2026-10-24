@@ -149,6 +149,14 @@ describe("tracker action ownership", () => {
     );
   });
 
+  it("keeps authenticated synthetic users eligible for real tracker actions", async () => {
+    mock.user = { id: "synthetic", mode: "demo" };
+    mock.request.mockResolvedValueOnce({});
+    await act(async () => { renderer = create(createElement(DataSyncActions, { provider: "strava" })); });
+    await act(async () => renderer.root.findByProps({ accessibilityLabel: "Disconnect strava" }).props.onPress());
+    expect(mock.request).toHaveBeenCalledWith("https://test.local", "synthetic-token", "/api/fitness/disconnect", { body: { provider: "strava" } });
+  });
+
   it.each(["Disconnect"])(
     "ignores a late %s response after switching accounts",
     async (label) => {

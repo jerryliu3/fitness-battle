@@ -1,28 +1,19 @@
 import type { Metadata } from "next";
-import {
-  Archivo_Black,
-  Bangers,
-  Outfit,
-  Space_Grotesk,
-} from "next/font/google";
+import localFont from "next/font/local";
 import { WorldsLab } from "@/app/design/_studies/worlds-lab/worlds-lab";
 
-const comic = Bangers({
-  subsets: ["latin"],
+const comic = localFont({ src: "../../fonts/bangers/Bangers-Regular.woff2",
   weight: "400",
   variable: "--font-world-comic",
 });
-const broadcast = Archivo_Black({
-  subsets: ["latin"],
+const broadcast = localFont({ src: "../../fonts/archivoblack/ArchivoBlack-Regular.woff2",
   weight: "400",
   variable: "--font-world-broadcast",
 });
-const rounded = Outfit({
-  subsets: ["latin"],
+const rounded = localFont({ src: "../../fonts/outfit/Outfit[wght].woff2", weight: "100 900",
   variable: "--font-world-rounded",
 });
-const music = Space_Grotesk({
-  subsets: ["latin"],
+const music = localFont({ src: "../../fonts/spacegrotesk/SpaceGrotesk[wght].woff2", weight: "300 700",
   variable: "--font-world-music",
 });
 

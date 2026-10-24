@@ -111,6 +111,7 @@ beforeEach(() => {
   mock.router.navigate.mockClear();
   mock.auth.user = null;
   mock.auth.loading = false;
+  mock.auth.offlineMode = false;
   seenNames.length = 0;
   fetcher = vi
     .fn()
@@ -152,12 +153,24 @@ async function save() {
 }
 
 describe("mobile account lifecycle", () => {
+  it("loads and saves an authenticated synthetic account independently of its legacy mode label", async () => {
+    login("Synthetic");
+    mock.auth.user!.mode = "demo";
+    mock.auth.offlineMode = false;
+    await mount();
+    expect(fetcher).toHaveBeenCalled();
+    expect(api.state?.name).toBe("Synthetic");
+    await act(async () => api.dispatch({ type: "set-city", city: "Boston" }));
+    await save();
+    expect(fetcher.mock.calls.some(([, init]) => init.method === "PUT")).toBe(true);
+  });
   it.each([
     "/athlete",
     "/athlete-settings",
     "/settings",
     "/notifications",
     "/onboarding",
+    "/crew-members",
   ])("keeps %s open when a field update arrives", async (path) => {
     login("Alice");
     mock.pathname = path;

@@ -1,11 +1,11 @@
 import { EffortRail } from "../features/effort-rail";
 
 import { usePathname, useRouter } from "expo-router";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Image, Platform, Pressable, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Svg, { Path } from "react-native-svg";
-import { DEBUG_EVENT_OPTIONS, PERSON_ICON_PATH, type DebugEventId } from "@fitness-battle/shared";
+import { weeklyActivityStreak, competeNow, DEBUG_EVENT_OPTIONS, PERSON_ICON_PATH, type DebugEventId } from "@fitness-battle/shared";
 import { useCompeteStore } from "../lib/compete-store";
 import { isAthleteSettingsPath } from "../lib/navigation";
 import { SHELL_COLORS as c } from "../theme";
@@ -15,6 +15,7 @@ export function AppHeader() {
   const [debugOpen, setDebugOpen] = useState(false);
   const router = useRouter();
   const path = usePathname();
+  const streak = useMemo(() => state ? weeklyActivityStreak(state.activities, competeNow(state)) : null, [state]);
   const onAthlete = isAthleteSettingsPath(path);
 
   function handleSelectDebug(eventId: DebugEventId) {
@@ -31,7 +32,8 @@ export function AppHeader() {
   return (
     <SafeAreaView edges={["top"]} style={s.safe}>
       <View style={s.header}>
-        <View style={{ flex: 1, maxWidth: 260 }}><EffortRail compact /></View>
+        <View style={{ flex: 1, maxWidth: 190 }}><EffortRail compact /></View>
+        {streak && <View accessibilityLabel={`${streak.count} week activity streak${streak.active ? "" : ", inactive this week"}`} style={{ flexDirection: "row", alignItems: "center", gap: 3, opacity: streak.active ? 1 : .4 }}><Svg width={18} height={24} viewBox="0 0 24 24"><Path d="M13 2c1 6 7 7 7 13a8 8 0 0 1-16 0c0-3 2-6 5-8-1 4 0 5 2 6 2-3 3-6 2-11Z" fill={c.gold}/></Svg><Text style={s.debugBtnText}>{streak.count}</Text></View>}
           <Pressable
             accessibilityRole="button"
             accessibilityLabel="Debug event triggers"
@@ -85,7 +87,7 @@ const s = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    gap: 12,
+    gap: 8,
   },
   debugBtn: { minHeight: 44, justifyContent: "center", paddingHorizontal: 10, paddingVertical: 5, borderRadius: 999, borderWidth: 1, borderColor: c.line, backgroundColor: c.card },
   debugBtnActive: { borderColor: c.tennis, backgroundColor: "#fff5d1" },

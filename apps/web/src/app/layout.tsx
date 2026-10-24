@@ -1,41 +1,35 @@
 import type { Metadata } from "next";
-import { Archivo_Black, Bangers, Bebas_Neue, DM_Sans, Nunito_Sans, Space_Grotesk } from "next/font/google";
+import localFont from "next/font/local";
 import { cookies } from "next/headers";
 import { Providers } from "@/components/providers";
 import { getTheme, parseThemeId } from "@/theme/catalog";
 import "./globals.css";
 import "@/theme/themes.css";
 
-const display = Bebas_Neue({
+const display = localFont({ src: "fonts/bebasneue/BebasNeue-Regular.woff2",
   weight: "400",
-  subsets: ["latin"],
   variable: "--font-display",
 });
 
-const body = DM_Sans({
-  subsets: ["latin"],
+const body = localFont({ src: "fonts/dmsans/DMSans[opsz,wght].woff2", weight: "100 1000",
   variable: "--font-body",
 });
 
-const formType = Space_Grotesk({
-  subsets: ["latin"],
+const formType = localFont({ src: "fonts/spacegrotesk/SpaceGrotesk[wght].woff2", weight: "300 700",
   variable: "--font-form",
 });
 
-const rallyDisplay = Archivo_Black({
-  subsets: ["latin"],
+const rallyDisplay = localFont({ src: "fonts/archivoblack/ArchivoBlack-Regular.woff2",
   weight: "400",
   variable: "--font-rally-display",
 });
 
-const rallyComic = Bangers({
-  subsets: ["latin"],
+const rallyComic = localFont({ src: "fonts/bangers/Bangers-Regular.woff2",
   weight: "400",
   variable: "--font-rally-comic",
 });
 
-const overtaek = Nunito_Sans({
-  subsets: ["latin"],
+const overtaek = localFont({ src: "fonts/nunitosans/NunitoSans[YTLC,opsz,wdth,wght].woff2",
   weight: "900",
   variable: "--font-overtaek",
 });

@@ -7,7 +7,7 @@ import { useScoreTrackLens } from "@/lib/score-track-lens";
 import { useAuth } from "@/components/auth-context";
 import { useCompete } from "@/components/compete-context";
 
-import { distanceUnitLabel, effortHistory, ELO_UNRANKED, formatDistanceM, rankForElo, type CompeteState } from "@fitness-battle/shared";
+import { distanceUnitLabel, effortHistory, ELO_UNRANKED, formatDistanceM, rankForElo, type CompeteState, type ScoreTrack } from "@fitness-battle/shared";
 import { useEffect, useState } from "react";
 
 function EditIcon() {
@@ -48,7 +48,10 @@ export function AthleteOverview({
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState(state.name);
   const [city, setCity] = useState(state.city);
-  const [track] = useScoreTrackLens();
+  const [defaultTrack] = useScoreTrackLens();
+  const scope = `${user?.id}:${state.primary}`;
+  const [lens, setLens] = useState<{ scope: string; track: ScoreTrack } | null>(null);
+  const track = lens?.scope === scope ? lens.track : defaultTrack;
 
   const [profileError, setProfileError] = useState<string | null>(null);
 
@@ -243,6 +246,7 @@ export function AthleteOverview({
 
       {showProgress ? (
       <section className="focus-card focus-elo" id="effort-score">
+        <div className="focus-elo-track-toggle" role="group" aria-label="Effort chart score track">{(["open", "verified"] as const).map(value => <button key={value} type="button" aria-pressed={track === value} onClick={() => setLens({ scope, track: value })}>{value === "open" ? "Open" : "GPS Tracked"}</button>)}</div>
         <div className="focus-elo-top">
 
           <span className="focus-elo-rank-pill">

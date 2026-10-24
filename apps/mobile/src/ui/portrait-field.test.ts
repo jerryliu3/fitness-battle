@@ -6,6 +6,7 @@ vi.mock("./field-course", () => ({ drawFieldNode: () => null }));
 vi.mock("react-native", () => ({
   PanResponder:{create:(handlers:object)=>({panHandlers:handlers})},
   ScrollView:"ScrollView",
+  Animated: { Value: class { constructor(public value: number) {} }, View: "AnimatedView", ScrollView: "ScrollView", event: (_: unknown, options: { listener: (event: unknown) => void }) => options.listener },
   Image: "Image",
   Pressable: "Pressable",
   Text: "Text",
