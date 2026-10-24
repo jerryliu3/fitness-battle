@@ -3,7 +3,7 @@
 import { typographyStyle } from "./section";
 import * as Dialog from "@radix-ui/react-dialog";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
-import { useEffect, useRef, type ReactNode, type RefObject } from "react";
+import { useEffect, useLayoutEffect, useRef, type ReactNode, type RefObject } from "react";
 import { playCue } from "@/lib/haptics";
 
 export function Sheet({
@@ -16,6 +16,7 @@ export function Sheet({
   returnFocusTo,
   minimal = false,
   fullScreen = false,
+  scrollResetKey,
 }: {
   open: boolean;
   title: string;
@@ -24,12 +25,15 @@ export function Sheet({
   children?: ReactNode;
   minimal?: boolean;
   fullScreen?: boolean;
+  scrollResetKey?: string;
   /** Stops mobile browsers from focusing the first field when the sheet opens. */
   preventAutoFocus?: boolean;
   /** Preserve the original opener when an intermediate preview unmounts. */
   returnFocusTo?: RefObject<HTMLElement | null>;
 }) {
   const reduced = useReducedMotion();
+  const contentRef = useRef<HTMLDivElement | null>(null);
+  useLayoutEffect(() => { contentRef.current?.scrollTo({ top: 0 }); }, [scrollResetKey]);
   const returnFocus = useRef<HTMLElement | null>(null);
   const heading = useRef<HTMLHeadingElement | null>(null);
   useEffect(() => {
@@ -79,6 +83,7 @@ export function Sheet({
                 }}
               >
                 <motion.div
+                  ref={contentRef}
                   className={`sheet-content focus-sheet${fullScreen ? " club-fullscreen-sheet" : ""}`}
                   initial={
                     reduced ? false : { y: "100%", x: "-50%", opacity: 0.98 }

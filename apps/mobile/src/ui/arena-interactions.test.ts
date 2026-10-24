@@ -169,7 +169,7 @@ describe("native competition interactions", () => {
     expect(registrationOpen()).toBe(true);
   });
 
-  it("uses the animated field rank instead of counting the athlete's final position as a rival", async () => {
+  it("leaves event replay to the root experience and shows settled field values", async () => {
     vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
     vi.stubGlobal("requestAnimationFrame", () => 1);
     vi.stubGlobal("cancelAnimationFrame", vi.fn());
@@ -196,15 +196,9 @@ describe("native competition interactions", () => {
     await act(async () => renderer.update(createElement(ArenaScreen)));
     await layoutCarousel();
     const lane = renderer.root.findByType("LaneTrack" as never);
-    const frame = lane.props.overtakeFrame;
-    expect(frame).not.toBeNull();
-    const rankText = renderer.root
-      .findAllByType("Text" as never)
-      .find((node) => node.props.children?.[1] === " / ")!;
-    expect(rankText.props.children[0]).toBe(frame.currentRank);
-    expect(frame.currentRank).toBeLessThanOrEqual(
-      lane.props.lanes.filter((item: { ghost: boolean }) => !item.ghost).length,
-    );
+    expect(lane.props.overtakeFrame).toBeUndefined();
+    expect(lane.props.lanes.find((item: { you: boolean }) => item.you).values[2]).toBeGreaterThan(0);
+
   });
 
 

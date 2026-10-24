@@ -1,0 +1,36 @@
+import { createElement } from "react";
+import { act, create, type ReactTestRenderer } from "react-test-renderer";
+import { afterEach, expect, it, vi } from "vitest";
+import { applyDebugEvent, freshState, type SyncReviewReceipt } from "@fitness-battle/shared";
+vi.mock("@/ui/sheet", () => ({ Sheet: "Sheet" }));
+vi.mock("@/components/routes/activity-route", () => ({ ActivityRoute: "ActivityRoute" }));
+vi.mock("./competition-moment", () => ({ CompetitionMoment: "Moment" }));
+import { SyncReview } from "./sync-review";
+const state = freshState(new Date("2026-10-24T18:00:00Z"));
+const activities = applyDebugEvent(state, "sync-activity", "a").state.activities;
+const receipt: SyncReviewReceipt = { account: "a", day: "2026-10-24", preview: false, activities };
+let renderer: ReactTestRenderer;
+afterEach(async () => { if (renderer) await act(async () => renderer.unmount()); });
+it("covers the shell, exposes activity maps/details, and confirms only the selected activities", async () => {
+  vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
+  const done = vi.fn();
+  await act(async () => { renderer = create(createElement(SyncReview, { state, receipt, onComplete: done })); });
+  expect(renderer.root.findByType("Sheet" as never).props.fullScreen).toBe(true);
+  expect(renderer.root.findByType("ActivityRoute" as never).props.activity.id).toBe(activities[0].id);
+  await act(async () => renderer.root.findByType("input").props.onChange({ target: { checked: false } }));
+  const bar = renderer.root.findByProps({ role: "slider" });
+  await act(async () => { bar.props.onKeyDown({ key: "Enter", preventDefault() {} }); bar.props.onKeyDown({ key: "Enter", preventDefault() {} }); });
+  expect(done).toHaveBeenCalledTimes(1);
+  expect(done).toHaveBeenCalledWith([]);
+});
+it("requires a full deliberate swipe and resets a short drag", async () => {
+  const done = vi.fn();
+  await act(async () => { renderer = create(createElement(SyncReview, { state, receipt, onComplete: done })); });
+  const bar = renderer.root.findByProps({ role: "slider" });
+  const target = { clientWidth: 300, getBoundingClientRect: () => ({ left: 0 }), setPointerCapture() {}, releasePointerCapture() {}, hasPointerCapture: () => true };
+  await act(async () => { bar.props.onPointerDown({ currentTarget: target, clientX: 20, pointerId: 1 }); bar.props.onPointerUp({ currentTarget: target, clientX: 70, pointerId: 1 }); });
+  expect(done).not.toHaveBeenCalled();
+  expect(bar.props["aria-valuenow"]).toBe(0);
+  await act(async () => { bar.props.onPointerDown({ currentTarget: target, clientX: 20, pointerId: 1 }); bar.props.onPointerUp({ currentTarget: target, clientX: 260, pointerId: 1 }); });
+  expect(done).toHaveBeenCalledWith(activities.map(a => a.id));
+});

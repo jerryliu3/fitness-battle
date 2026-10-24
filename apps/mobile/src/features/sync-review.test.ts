@@ -2,14 +2,17 @@ import { createElement } from "react";
 import { act, create } from "react-test-renderer";
 import { expect, it, vi } from "vitest";
 import { freshState, type SyncReviewReceipt } from "@fitness-battle/shared";
-const nav = vi.hoisted(() => vi.fn());
-vi.mock("expo-router", () => ({ useRouter: () => ({ navigate: nav }) }));
+vi.mock("../ui/activity-route", () => ({ ActivityRoute: "ActivityRoute" }));
+vi.mock("./competition-moment", () => ({ CompetitionMoment: "CompetitionMoment" }));
+vi.mock("../ui/use-reduced-motion", () => ({ useReducedMotion: () => true }));
+vi.mock("react-native-safe-area-context", () => ({ SafeAreaProvider: "SafeAreaProvider", SafeAreaView: "SafeAreaView" }));
 vi.mock("../ui/focus", () => ({
   FocusSheet: "Sheet",
   FocusButton: "Button",
   f: {},
 }));
 vi.mock("react-native", () => ({
+  Modal: "Modal",
   View: "View",
   ScrollView: "ScrollView",
   Text: "Text",
@@ -18,7 +21,7 @@ vi.mock("react-native", () => ({
   PanResponder: { create: (handlers: object) => ({ panHandlers: handlers }) },
 }));
 import { SyncReview } from "./sync-review";
-it("a native swipe confirms once and reveals the applicable field", async () => {
+it("a native full-screen swipe confirms the selected activities once without navigating away", async () => {
   vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
   const done = vi.fn(() => "running" as const),
     receipt: SyncReviewReceipt = {
@@ -65,9 +68,7 @@ it("a native swipe confirms once and reveals the applicable field", async () => 
     slider.props.onResponderRelease({ nativeEvent: { pageX: 220 } });
   });
   expect(done).toHaveBeenCalledTimes(1);
-  expect(nav).toHaveBeenCalledWith({
-    pathname: "/arena",
-    params: { event: "running" },
-  });
+  expect(done).toHaveBeenCalledWith(["a"]);
+  expect(renderer!.root.findByType("Modal" as never).props.presentationStyle).toBe("fullScreen");
   await act(async () => renderer!.unmount());
 });

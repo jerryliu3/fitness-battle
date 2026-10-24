@@ -35,11 +35,7 @@ export function DebugEventMenu({
     void playCue("selection");
     const result = triggerDebugEvent?.(eventId);
     if (!result) return;
-    if (eventId === "sync-activity") {
-      if (activeTab !== "today" && activeTab !== "arena") onNavigate("/today", "today");
-      return;
-    }
-    onNavigate(result.targetRoute, result.targetRoute.startsWith("/arena") ? "arena" : "today");
+    if (eventId === "week-closing") onNavigate(result.targetRoute, "arena");
   }
 
   return (

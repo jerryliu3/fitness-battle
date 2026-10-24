@@ -1,25 +1,16 @@
-import { AppText } from "../ui/section";
 import { RankBadge } from "../ui/rank-badge";
 import { PortraitField } from "../ui/portrait-field";
 import {
   portraitField,
   portraitFieldGap,
-  arenaBaselineStorageKey,
   arenaFieldHigh,
   clampCourseCenter,
   fieldDefaultSpan,
   buildArenaModel,
-  competePeriodWindow,
-  formatArenaOvertakeStatus,
   initialsFromName,
-  readArenaBaseline,
-  reconcileArenaOvertake,
   selfLaneLabel,
-  serializeArenaBaseline,
   shellTabFromPath,
-  stepArenaOvertake,
   weeklyBoard,
-  type ArenaOvertakePlan,
   type ArenaSceneLane,
   type ScoreTrack,
   type SportId,
@@ -56,7 +47,7 @@ export function CompetitionField({
   chromeInHeader?: boolean;
   onArenaViewChange?: (value: "lanes2d" | "standings" | "3d") => void;
 }) {
-  const { state, accountKey, readBaselineItem, writeBaselineItem } =
+  const { state, accountKey } =
     useCompeteStore();
   const pathname = usePathname();
   const [appearance, setAppearance] = useFieldAppearance(accountKey, sport);
@@ -94,15 +85,6 @@ export function CompetitionField({
   const [span, setSpan] = useState<number | null>(null);
   const ghost = true;
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [overtakePlan, setOvertakePlan] = useState<ArenaOvertakePlan | null>(
-    null,
-  );
-  const [overtakeProgress, setOvertakeProgress] = useState(1);
-  const [replayEpoch, setReplayEpoch] = useState(0);
-  const lastSignatureRef = useRef<string | null>(null);
-  const pendingBaselineRef = useRef<{ key: string; snapshot: string } | null>(
-    null,
-  );
   const reduceMotion = useReducedMotion();
 
   const arena = useMemo(
@@ -149,149 +131,12 @@ export function CompetitionField({
     [arena?.lanes],
   );
 
-  useEffect(() => {
-    if (!isFocused) {
-      setMode("lanes");
-      return;
-    }
-    if (!state || !arena?.optedIn || fieldLanes.length === 0) {
-      setOvertakePlan(null);
-      setOvertakeProgress(1);
-      return;
-    }
-    const periodStart = competePeriodWindow(
-      state,
-      undefined,
-      arena.sportId,
-    ).startsAt.toISOString();
-    const key = arenaBaselineStorageKey(accountKey, arena.sportId, track);
-    const scopeKey = `${key}:${periodStart}:${arena.unit}`;
-    const signature = `${scopeKey}|${fieldLanes
-      .map((lane) => `${lane.id}:${lane.value.toFixed(3)}`)
-      .join(",")}`;
-    if (lastSignatureRef.current === signature) return;
-    lastSignatureRef.current = signature;
-
-    const previous = readArenaBaseline(
-      readBaselineItem(key),
-      periodStart,
-      arena.unit,
-    );
-    const snapshot = serializeArenaBaseline(
-      periodStart,
-      fieldLanes,
-      arena.unit,
-    );
-    const plan = reconcileArenaOvertake(fieldLanes, previous);
-    if (pendingBaselineRef.current) {
-      writeBaselineItem(
-        pendingBaselineRef.current.key,
-        pendingBaselineRef.current.snapshot,
-      );
-      pendingBaselineRef.current = null;
-    }
-    if (!plan) {
-      writeBaselineItem(key, snapshot);
-      setOvertakePlan(null);
-      setOvertakeProgress(1);
-      return;
-    }
-    setCenter(null);
-    setMode("lanes");
-    setOvertakePlan(plan);
-    if (reduceMotion) {
-      writeBaselineItem(key, snapshot);
-      setOvertakeProgress(1);
-      setReplayEpoch(0);
-      return;
-    }
-    pendingBaselineRef.current = { key, snapshot };
-    setOvertakeProgress(0);
-    setReplayEpoch((n) => n + 1);
-  }, [
-    accountKey,
-    arena?.optedIn,
-    arena?.sportId,
-    arena?.unit,
-    fieldLanes,
-    isFocused,
-    readBaselineItem,
-    state,
-    track,
-    writeBaselineItem,
-    reduceMotion,
-  ]);
-
-  useEffect(() => {
-    if (!overtakePlan || replayEpoch === 0) return;
-    if (reduceMotion || !isFocused || viewMode !== "lanes") {
-      if (pendingBaselineRef.current) {
-        writeBaselineItem(
-          pendingBaselineRef.current.key,
-          pendingBaselineRef.current.snapshot,
-        );
-        pendingBaselineRef.current = null;
-      }
-      setOvertakeProgress(1);
-      return;
-    }
-    let raf = 0;
-    const start = Date.now();
-    const duration = overtakePlan.durationMs;
-    const tick = () => {
-      const next = Math.min(1, (Date.now() - start) / duration);
-      setOvertakeProgress(next);
-      if (next >= 1 && pendingBaselineRef.current) {
-        writeBaselineItem(
-          pendingBaselineRef.current.key,
-          pendingBaselineRef.current.snapshot,
-        );
-        pendingBaselineRef.current = null;
-      }
-      if (next < 1) {
-        raf = requestAnimationFrame(tick);
-      }
-    };
-    raf = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(raf);
-  }, [
-    overtakePlan,
-    replayEpoch,
-    reduceMotion,
-    writeBaselineItem,
-    isFocused,
-    viewMode,
-  ]);
-
-  useEffect(() => {
-    if (!chromeInHeader) return;
-    if (viewMode !== "lanes" || viewDimension !== "2d") {
-      setOvertakeProgress(1);
-    }
-  }, [arenaView, chromeInHeader, viewDimension, viewMode]);
-
-  const overtakeFrame = useMemo(
-    () =>
-      overtakePlan && overtakeProgress < 1
-        ? stepArenaOvertake(overtakePlan, overtakeProgress, viewSpan)
-        : null,
-    [overtakePlan, overtakeProgress, viewSpan],
-  );
-
-  const overtakeStatus = useMemo(
-    () =>
-      overtakePlan && arena
-        ? formatArenaOvertakeStatus(overtakePlan, overtakeFrame, arena.unit)
-        : null,
-    [arena, overtakeFrame, overtakePlan],
-  );
-
   if (!state || !arena) return null;
 
-  const displayTotal = overtakeFrame ? overtakeFrame.youValue : total;
+  const displayTotal = total;
   const view = {
     center: clampCourseCenter(
-      center ?? (overtakeFrame ? overtakeFrame.viewCenter : total),
+      center ?? total,
       viewSpan,
       arenaFieldHigh(fieldLanes),
       arena.unit,
@@ -319,7 +164,7 @@ export function CompetitionField({
           lanes={arena.lanes.map((l) => ({
             ...l,
             initials: initialsFromName(l.name),
-            value: overtakeFrame?.laneValues[l.id] ?? l.values[2],
+            value: l.values[2],
           }))}
           view={view}
           unit={arena.unit}
@@ -347,18 +192,18 @@ export function CompetitionField({
               paddingHorizontal: expanded ? 16 : 0,
             }}
           >
-            <AppText role="caption" secondary style={{ color: c.ink }}>
-              {overtakeFrame?.currentRank ?? place(total)} / {ranked.length}{" "}
+            <Text style={[f.small, { color: c.ink }]}>
+              {place(total)} / {ranked.length}{" "}
               PLACE
-            </AppText>
-            <AppText role="caption" secondary
-              style={{ color: c.ink, flexShrink: 1 }}
+            </Text>
+            <Text
+              style={[f.small, { color: c.ink, fontSize: 10, flexShrink: 1 }]}
             >
               {portraitFieldGap(
                 portraitField(fieldLanes, view).nextGap,
                 arena.unit,
               )}
-            </AppText>
+            </Text>
           </View>
 
         <View style={{ position: "relative" }}>
@@ -378,8 +223,6 @@ export function CompetitionField({
             onSelect={(lane) => selectAthlete(lane.id)}
             view={view}
             onPan={setCenter}
-            overtakeFrame={overtakeFrame}
-            overtakePlan={overtakePlan}
           />
           <View
             style={{
@@ -410,9 +253,9 @@ export function CompetitionField({
                 justifyContent: "center",
               }}
             >
-              <AppText role="controlSymbol" style={{color: "white"}}>−</AppText>
+              <Text style={{ color: "white", fontSize: 24 }}>−</Text>
             </Pressable>
-            <AppText role="caption" secondary style={{ color: "white" }}>Zoom</AppText>
+            <Text style={[f.small, { color: "white" }]}>Zoom</Text>
             <Pressable
               accessibilityRole="button"
               accessibilityLabel="Zoom in"
@@ -425,7 +268,7 @@ export function CompetitionField({
                 justifyContent: "center",
               }}
             >
-              <AppText role="controlSymbol" style={{color: "white"}}>＋</AppText>
+              <Text style={{ color: "white", fontSize: 24 }}>＋</Text>
             </Pressable>
           </View>
         </View>
@@ -433,7 +276,7 @@ export function CompetitionField({
           lanes={arena.lanes.map((l) => ({
             ...l,
             initials: initialsFromName(l.name),
-            value: overtakeFrame?.laneValues[l.id] ?? l.values[2],
+            value: l.values[2],
           }))}
           view={view}
           unit={arena.unit}
@@ -455,22 +298,16 @@ export function CompetitionField({
               <Text
                 style={[f.massive, { fontSize: 34, fontFamily: "DMSans_700Bold" }]}
               >
-                {displayTotal.toFixed(1)} <AppText role="body" secondary >{arena.unit}</AppText>
+                {displayTotal.toFixed(1)} <Text style={f.copy}>{arena.unit}</Text>
               </Text>
             </View>
             <View style={{ alignItems: "center", gap: 2 }}>
-              <AppText role="metricValue" >
-                {overtakeFrame?.currentRank ?? place(total)} / {ranked.length}
-              </AppText>
-              <AppText role="caption" secondary >your place</AppText>
+              <Text style={f.h2}>
+                {place(total)} / {ranked.length}
+              </Text>
+              <Text style={f.small}>your place</Text>
             </View>
           </View>
-          {overtakePlan && overtakeStatus ? (
-            <AppText role="itemTitle"  accessibilityLiveRegion="polite">
-              {overtakeStatus.headline}
-              {overtakeStatus.detail ? ` · ${overtakeStatus.detail}` : ""}
-            </AppText>
-          ) : null}
           <FocusSegments
             label={`${arena.sportName} field view`}
             value={mode === "lanes" && dimension === "3d" ? "3d" : mode}
@@ -492,7 +329,7 @@ export function CompetitionField({
         <SafeAreaView style={f.safe} edges={["top", "bottom"]}>
           <View style={[f.row, { minHeight: 56, paddingHorizontal: 12 }]}>
             <IconButton icon="back" label="Close full screen field" onPress={() => setExpanded(false)} />
-            <AppText role="navigationTitle" accessibilityRole="header" >{arena.sportName}</AppText><View style={{ width: 44 }} />
+            <Text accessibilityRole="header" style={f.h2}>{arena.sportName}</Text><View style={{ width: 44 }} />
           </View>
           <View style={{ paddingHorizontal: 16, paddingBottom: 4 }}><FocusSegments label="Full screen field dimension" value={viewDimension} options={[{ value: "2d", label: "2D map" }, { value: "3d", label: "3D field" }]} onChange={next => { setDimension(next); onArenaViewChange?.(next === "2d" ? "lanes2d" : "3d"); }} /></View>
           {fieldContent}
@@ -500,7 +337,7 @@ export function CompetitionField({
       </Modal> : fieldContent}
       {viewMode === "standings" ? (
         <View style={f.section}>
-          <AppText role="caption" secondary >Ranked by this week's effort</AppText>
+          <Text style={f.small}>Ranked by this week's effort</Text>
           {ranked.map((lane) => (
             <Pressable
               key={lane.id}
@@ -509,7 +346,7 @@ export function CompetitionField({
               onPress={() => selectAthlete(lane.id)}
               style={[f.row, { minHeight: 48, paddingVertical: 6 }]}
             >
-              <AppText role="caption" secondary >{place(lane.values[2])}</AppText>
+              <Text style={f.small}>{place(lane.values[2])}</Text>
               <Svg width={26} height={36} viewBox="-40 -50 80 100">
                 <PolishedRacer
                   x={0}
@@ -519,28 +356,28 @@ export function CompetitionField({
                   showWake={false}
                 />
               </Svg>
-              <AppText role="itemTitle" style={f.grow}>
+              <Text style={[f.rowTitle, f.grow]}>
                 {lane.you ? selfLaneLabel(lane.name) : lane.name}
-              </AppText>
+              </Text>
               <RankBadge score={scores.find(row => row.id === lane.id)?.elo} />
               <View style={{ alignItems: "flex-end" }}>
-                <AppText role="itemTitle" >
+                <Text style={f.rowTitle}>
                   {lane.values[2].toFixed(1)} {arena.unit}
-                </AppText>
-                <AppText role="supporting" secondary style={{ color: c.ink }}>
+                </Text>
+                <Text style={[f.small, { color: c.ink }]}>
                   {scores.find((row) => row.id === lane.id)?.elo ?? "—"} effort
                   score
-                </AppText>
+                </Text>
               </View>
             </Pressable>
           ))}
-          {pastYou && <View style={[f.row, { minHeight: 48, borderTopWidth: 1, borderTopColor: c.line }]}><AppText role="body" secondary >Past you · unranked</AppText><AppText role="itemTitle" >{pastYou.values[2].toFixed(1)} {arena.unit}</AppText></View>}
+          {pastYou && <View style={[f.row, { minHeight: 48, borderTopWidth: 1, borderTopColor: c.line }]}><Text style={f.copy}>Past you · unranked</Text><Text style={f.rowTitle}>{pastYou.values[2].toFixed(1)} {arena.unit}</Text></View>}
         </View>
       ) : null}
-      <AppText role="caption" secondary >
+      <Text style={f.small}>
         Accumulated effort, not live GPS positions. Practice fields may contain
         synthetic athletes.
-      </AppText>
+      </Text>
     </View>
   );
 }

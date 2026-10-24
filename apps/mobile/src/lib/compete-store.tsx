@@ -1,3 +1,4 @@
+import { useCompetitionExperience } from "./use-competition-experience";
 import { useSyncReviewGate } from "./use-sync-review";
 import {
   applyDebugEvent,
@@ -18,6 +19,7 @@ import {
   reduceCompete,
   rollClock,
   seedArenaBaselinesFromState,
+  momentStorageKey,
   seenFieldFromState,
   SPORTS,
   type Action,
@@ -119,7 +121,7 @@ async function preloadBaselineCache(
     arenaBaselineStorageKey(accountKey, sport.id, "open"),
     arenaBaselineStorageKey(accountKey, sport.id, "verified"),
   ]);
-  const pairs = await AsyncStorage.multiGet(keys);
+  const pairs = await AsyncStorage.multiGet([...keys, ...keys.map(momentStorageKey)]);
   for (const [key, value] of pairs) {
     if (value != null && !cache.has(key)) cache.set(key, value);
   }
@@ -143,6 +145,7 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
 
   const [savedState, setState] = useState<CompeteState | null>(null);
   const syncReviewBlocked = useRef(false);
+  const holdRemoteRef = useRef<(next: CompeteState) => CompeteState>(next => next);
   const loadedOwnerRef = useRef<string | null | undefined>(undefined);
   const state = loadedOwnerRef.current === owner ? savedState : null;
   const [returnGain, setReturnGain] = useState(0);
@@ -504,12 +507,13 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
             dirtyRef.current !== generation ||
             saveTimer.current != null;
         }
-        const next = applyRemoteSnapshot(
+        const snapshot = applyRemoteSnapshot(
           stateRef.current,
           remote,
           dirty,
           unitsUnsavedRef.current,
         );
+        const next = holdRemoteRef.current(snapshot);
         seedArenaBaselinesFromState(
           next,
           account.userId,
@@ -734,12 +738,17 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
     [readBaselineItem, writeBaselineItem, scheduleSave, remember],
   );
 
+  const experience = useCompetitionExperience(
+    loadReady.current ? state : null, accountRef.current ?? "guest", readBaselineItem, (key, value) => { if (!debugActiveRef.current) writeBaselineItem(key, value); },
+  );
   const syncReview = useSyncReviewGate(
     dispatch,
     loadReady.current ? state : null,
     accountRef.current ?? null,
     syncReviewBlocked,
+    experience.observe,
   );
+  holdRemoteRef.current = syncReview.holdRemote;
 
   const retrySave = useCallback(() => {
     if (conflictRef.current) {
@@ -783,7 +792,8 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
     const owned = all.filter(
       (key) =>
         key === fieldSeenStorageKey(expectedId) ||
-        key.startsWith(`fb-arena-baseline:${expectedId}:`),
+        key.startsWith(`fb-arena-baseline:${expectedId}:`) ||
+        key.startsWith(`moment:v1:fb-arena-baseline:${expectedId}:`),
     );
     await AsyncStorage.multiRemove([
       scoped.state,
@@ -827,17 +837,28 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
 
   const triggerDebugEvent = useCallback(
     (event: DebugEventId): DebugEventResult | null => {
-      const accountKey = accountRef.current ?? "device";
+      const accountKey = accountRef.current ?? "guest";
       const current = stateRef.current ?? rollClock(freshState());
       if (!preDebugStateRef.current) preDebugStateRef.current = stateRef.current;
       debugActiveRef.current = true;
       setDebugActive(true);
-      const result = applyDebugEvent(current, event, accountKey, (debugStepRef.current += 1));
-      for (const [key, val] of Object.entries(result.baselines)) writeBaselineItem(key, val);
+      const result = applyDebugEvent(event.startsWith("sync-") ? { ...current, primary: "running" } : current, event, accountKey, (debugStepRef.current += 1));
       loadedOwnerRef.current = owner;
       loadReady.current = true;
-      stateRef.current = result.state;
-      setState(result.state);
+      syncReview.reset();
+      if (event.startsWith("sync-")) {
+        const activities = result.state.activities.filter(a => a.id.startsWith("debug-") && !current.activities.some(old => old.id === a.id));
+        const ids = new Set(activities.map(a => a.id));
+        const base = { ...result.state, activities: result.state.activities.filter(a => !ids.has(a.id)) };
+        experience.clear(base);
+        stateRef.current = base;
+        setState(base);
+        syncReview.stage(activities, [{ type: "apply-sync", provider: "strava", activities }], () => experience.prime(result.baselines), base);
+      } else {
+        experience.prime(result.baselines);
+        stateRef.current = result.state;
+        setState(result.state);
+      }
       return result;
     },
     [owner, writeBaselineItem],
@@ -848,6 +869,8 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
     preDebugStateRef.current = null;
     debugActiveRef.current = false;
     setDebugActive(false);
+    syncReview.reset();
+    experience.clear(prior ?? undefined);
     if (!prior) return;
     stateRef.current = prior;
     setState(prior);
@@ -894,15 +917,19 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
         </View>
       )}
       {children}
-      {syncReview.receipt && state ? (
+      {(syncReview.receipt || experience.moment) && state ? (
         <Suspense
           fallback={
             <Text accessibilityLiveRegion="polite">Opening today’s recap…</Text>
           }
         >
           <SyncReview
-            key={`${syncReview.receipt.account}:${syncReview.receipt.day}`}
+            key={accountRef.current ?? "guest"}
+            debug={debugActive}
             receipt={syncReview.receipt}
+            moment={experience.moment}
+            remaining={experience.remaining}
+            onAcknowledge={experience.acknowledge}
             state={state}
             onComplete={syncReview.finish}
           />

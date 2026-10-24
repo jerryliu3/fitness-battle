@@ -1,133 +1,57 @@
 "use client";
-import { AppParagraph, AppText } from "@/ui/section";
-
-import { useRef, useState } from "react";
-import { useRouter } from "next/navigation";
-import {
-  clubDuration,
-  formatVolume,
-  sportById,
-  type CompeteState,
-  type SportId,
-  type SyncReviewReceipt,
-} from "@fitness-battle/shared";
+import { useLayoutEffect, useRef, useState } from "react";
+import { APP_TIMEZONE, clubDuration, formatVolume, sportById, type CompeteState, type CompetitionMoment, type SyncReviewReceipt } from "@fitness-battle/shared";
 import { Sheet } from "@/ui/sheet";
-export function SyncReview({
-  receipt,
-  state,
-  onComplete,
-}: {
-  receipt: SyncReviewReceipt;
-  state: CompeteState;
-  onComplete: () => SportId | undefined;
+import { ActivityRoute } from "@/components/routes/activity-route";
+import { CompetitionMoment as Moment } from "./competition-moment";
+
+export function SyncReview({ receipt, state, moment, debug = false, remaining = 0, onComplete, onAcknowledge = () => {} }: {
+  receipt: SyncReviewReceipt | null; state: CompeteState; debug?: boolean; moment?: CompetitionMoment | null; remaining?: number;
+  onComplete: (selected?: readonly string[], quiet?: boolean) => unknown; onAcknowledge?: () => void;
 }) {
-  const router = useRouter(),
-    [progress, setProgress] = useState(0),
-    start = useRef(0),
-    complete = useRef(false);
-  const finish = (reveal: boolean) => {
-    if (complete.current) return;
-    complete.current = true;
-    const sport = onComplete();
-    if (reveal && sport) router.push(`/arena?event=${sport}`);
-  };
-  const today = receipt.activities;
-  return (
-    <Sheet
-      open
-      title={receipt.preview ? "Sample sync preview" : "Today’s effort"}
-      body={
-        receipt.preview
-          ? "Demo/sample preview. Confirming adds no activities or competition points."
-          : "Your sync is saved safely. Older activities were applied automatically. Review today’s activity, then reveal your updated field. Closing applies it without the recap."
-      }
-      onClose={() => finish(false)}
-    >
-      <div className="club-sync-recap">
-        <AppParagraph typographyRole="badgeLabel" className="fb-kicker">
-          {receipt.preview
-            ? "PREVIEW · NOT A LIVE CONNECTION"
-            : "YOU SHOWED UP"}
-        </AppParagraph>
-        <strong className="club-sync-total">
-          {clubDuration(today.reduce((n, a) => n + a.movingSec, 0))}
-        </strong>
-        <AppParagraph typographyRole="body" className="fb-copy">
-          {today.length} {today.length === 1 ? "activity" : "activities"} from
-          today
-        </AppParagraph>
-        <ul className="club-sync-list">
-          {today.map((a) => (
-            <li key={a.id}>
-              <div>
-                <b>{sportById(a.sport).name}</b>
-                <span>
-                  {formatVolume(a.sport, a.distanceM, a.movingSec, state.units)}{" "}
-                  · {clubDuration(a.movingSec)}
-                </span>
-              </div>
-              <AppText as="small" role="caption" secondary>
-                {receipt.preview
-                  ? "Preview only"
-                  : a.verified
-                    ? "GPS verified"
-                    : "Open activity"}
-              </AppText>
-            </li>
-          ))}
-        </ul>
-        <div
-          className="club-sync-swipe"
-          role="slider"
-          tabIndex={0}
-          aria-label="Swipe to confirm today’s synced activities"
-          aria-valuemin={0}
-          aria-valuemax={100}
-          aria-valuenow={Math.round(progress * 100)}
-          onKeyDown={(e) => {
-            if (["Enter", " ", "End", "ArrowRight"].includes(e.key)) {
-              e.preventDefault();
-              finish(true);
-            }
-          }}
-          onPointerDown={(e) => {
-            start.current = e.clientX;
-            e.currentTarget.setPointerCapture(e.pointerId);
-          }}
-          onPointerMove={(e) => {
-            if (!e.currentTarget.hasPointerCapture(e.pointerId)) return;
-            const max = e.currentTarget.clientWidth - 60;
-            setProgress(
-              Math.max(0, Math.min(1, (e.clientX - start.current) / max)),
-            );
-          }}
-          onPointerUp={(e) => {
-            if (
-              (e.clientX - start.current) /
-                Math.max(1, e.currentTarget.clientWidth - 60) >=
-              0.68
-            )
-              finish(true);
-            else setProgress(0);
-          }}
-          onPointerCancel={() => setProgress(0)}
-        >
-          <span>Swipe to lock it in</span>
-          <i style={{ left: `calc(${progress * 100}% - ${progress * 56}px)` }}>
-            →
-          </i>
-        </div>
-        <button className="fb-btn" type="button" onClick={() => finish(true)}>
-          {receipt.preview ? "Finish preview" : "Confirm activities"}
-        </button>
-        <button
-          className="fb-btn-line"
-          type="button"
-          onClick={() => finish(false)}
-        >
-          {receipt.preview ? "Close preview" : "Apply and skip recap"}
-        </button>
+  const title = receipt ? "Review your activities" : moment?.plan.hasOvertake ? "Your overtakes" : "Your field changed";
+  return <Sheet open title={title} body="" fullScreen minimal={!receipt} scrollResetKey={receipt ? "review" : moment?.id} onClose={() => { if (receipt) onComplete(undefined, true); }}>
+    {debug && <p className="fb-kicker" style={{ textAlign: "center", marginTop: 20 }}>DEBUG PREVIEW · LOCAL DATA ONLY</p>}
+    {receipt ? <Review key={`${receipt.account}:${receipt.day}`} receipt={receipt} state={state} onComplete={onComplete}/> : moment ? <Moment key={moment.id} moment={moment} remaining={remaining} onConfirm={onAcknowledge}/> : null}
+  </Sheet>;
+}
+function Review({ receipt, state, onComplete }: { receipt: SyncReviewReceipt; state: CompeteState; onComplete: (selected?: readonly string[], quiet?: boolean) => unknown }) {
+  const [excluded, setExcluded] = useState<string[]>([]), [detail, setDetail] = useState<string | null>(null), [progress, setProgress] = useState(0);
+  const complete = useRef(false), start = useRef(0), step = useRef<HTMLDivElement | null>(null);
+  useLayoutEffect(() => { step.current?.closest(".sheet-content")?.scrollTo({ top: 0 }); }, [detail]);
+  const activities = receipt.activities;
+  const selected = activities.filter(a => !excluded.includes(a.id));
+  const finish = () => { if (complete.current) return; complete.current = true; onComplete(selected.map(a => a.id)); };
+  const activity = activities.find(a => a.id === detail);
+  if (activity) return <div ref={step} className="sync-review-step">
+    <button className="fb-btn-line" onClick={() => setDetail(null)}>← All activities</button>
+    <p className="fb-kicker">ACTIVITY DETAILS</p><h1>{sportById(activity.sport).name}</h1>
+    <ActivityRoute activity={activity} units={state.units}/>
+    <div className="moment-result"><strong>{formatVolume(activity.sport, activity.distanceM, activity.movingSec, state.units)}</strong><span>{clubDuration(activity.movingSec)}</span></div>
+    <p className="fb-copy">{new Date(activity.startedAt).toLocaleString("en-US", { dateStyle: "medium", timeStyle: "short", timeZone: APP_TIMEZONE })}</p>
+    <p className="fb-note">{activity.verified ? "GPS Tracked" : "Open activity"}{activity.avgHr ? ` · ${activity.avgHr} bpm average` : ""}{activity.elevationGainM != null ? ` · ${activity.elevationGainM} m elevation gain` : ""}</p>
+  </div>;
+  return <div ref={step} className="sync-review-step">
+    <p className="fb-kicker">{receipt.preview ? "SAMPLE PREVIEW · NO COMPETITION CREDIT" : "SYNC COMPLETE · YOUR NEXT MOVE"}</p>
+    <h1>Make it count.</h1>
+    <div className="sync-review-total">{clubDuration(selected.reduce((n, a) => n + a.movingSec, 0))}</div>
+    <p className="fb-copy">{selected.length} of {activities.length} activities selected. Review your effort, then slide to see what changed.</p>
+    {activities.length > 0 && <ActivityRoute activity={selected[0] ?? activities[0]} units={state.units}/>}
+    <div className="sync-review-list">{activities.map(a => <div key={a.id} className="sync-review-row">
+      <label><input type="checkbox" checked={!excluded.includes(a.id)} onChange={e => { setExcluded(ids => e.target.checked ? ids.filter(id => id !== a.id) : [...ids, a.id]); setProgress(0); }} aria-label={`Count ${sportById(a.sport).name} activity ${a.id}`}/><span className="sr-only">Include activity</span></label>
+      <button type="button" onClick={() => setDetail(a.id)}><span><b>{sportById(a.sport).name}</b><small>{formatVolume(a.sport, a.distanceM, a.movingSec, state.units)} · {clubDuration(a.movingSec)}</small><small>{new Date(a.startedAt).toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: APP_TIMEZONE })} · {a.verified ? "GPS Tracked" : "Open"}</small></span><span aria-hidden="true">↗</span></button>
+    </div>)}</div>
+    {!receipt.preview && excluded.length > 0 && <p className="fb-note">Deselected activities stay saved, excluded from competition.</p>}
+    <div className="sync-review-footer">
+      <div className="club-sync-swipe sync-review-swipe" role="slider" tabIndex={0} aria-label="Swipe to confirm synced activities" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(progress * 100)} aria-valuetext={progress >= .85 ? "Ready to confirm" : "Slide right to confirm; Enter also confirms"}
+        onKeyDown={e => { if (["Enter", " ", "End"].includes(e.key)) { e.preventDefault(); finish(); } }}
+        onPointerDown={e => { if (e.clientX - e.currentTarget.getBoundingClientRect().left > 64) return; start.current = e.clientX; e.currentTarget.setPointerCapture(e.pointerId); }}
+        onPointerMove={e => { if (e.currentTarget.hasPointerCapture(e.pointerId)) setProgress(Math.max(0, Math.min(1, (e.clientX - start.current) / Math.max(1, e.currentTarget.clientWidth - 60)))); }}
+        onPointerUp={e => { if (!e.currentTarget.hasPointerCapture(e.pointerId)) return; const distance = (e.clientX - start.current) / Math.max(1, e.currentTarget.clientWidth - 60); e.currentTarget.releasePointerCapture(e.pointerId); if (distance >= .85) finish(); else setProgress(0); }}
+        onPointerCancel={() => setProgress(0)}>
+        <span>{receipt.preview ? "Swipe to preview" : selected.length ? "Swipe to lock it in" : "Swipe to save as excluded"}</span><i style={{ left: `calc(${progress * 100}% - ${progress * 56}px)` }}>→</i>
       </div>
-    </Sheet>
-  );
+      <p className="fb-note">{receipt.preview ? "Preview only. No activities or points will be added." : "Your synced activities are saved safely."}</p>
+    </div>
+  </div>;
 }

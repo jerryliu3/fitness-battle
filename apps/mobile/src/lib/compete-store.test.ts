@@ -1,3 +1,7 @@
+vi.mock("../features/sync-review", async () => {
+  const { createElement } = await import("react");
+  return { SyncReview: (props: object) => createElement("SyncReview", props) };
+});
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { freshState } from "@fitness-battle/shared";
 import { createElement } from "react";
@@ -456,4 +460,39 @@ it("does not let an in-flight refresh replace a native debug preview", async () 
   });
   expect(api.state).toBe(preview);
   expect(api.debugActive).toBe(true);
+});
+
+it("runs debug sync through review, actual application, full-screen combo and acknowledgement", async () => {
+  login("alice"); await mount();
+  const original = api.state;
+  const stored = mock.values.get(accountStorageKeys("alice").state);
+  await act(async () => { api.triggerDebugEvent?.("sync-combo"); await flush(); });
+  let screen = renderer.root.findByType("SyncReview" as never);
+  expect(screen.props.receipt.activities).toHaveLength(2);
+  expect(screen.props.moment).toBeNull();
+  expect(screen.props.debug).toBe(true);
+  const ids = screen.props.receipt.activities.map((a: { id: string }) => a.id);
+  await act(async () => { screen.props.onComplete(ids); await flush(); });
+  screen = renderer.root.findByType("SyncReview" as never);
+  expect(screen.props.receipt).toBeNull();
+  expect(screen.props.moment.plan.overtakenIds.length).toBeGreaterThanOrEqual(2);
+  expect(api.state?.activities.filter(a => ids.includes(a.id))).toHaveLength(2);
+  await act(async () => { screen.props.onAcknowledge(); });
+  expect(renderer.root.findAllByType("SyncReview" as never)).toHaveLength(0);
+  expect(mock.values.get(accountStorageKeys("alice").state)).toBe(stored);
+  await act(async () => { api.resetDebugState?.(); });
+  expect(api.state).toBe(original);
+});
+
+it("holds remote synced activity for review while preserving the server revision", async () => {
+  login("alice"); await mount();
+  const activity = { id: "remote-sync", sport: "running" as const, source: "strava" as const, startedAt: new Date().toISOString(), distanceM: 5000, movingSec: 1800, avgHr: null, verified: true, provenance: "recorded" as const, disposition: "counted" as const };
+  fetcher.mockResolvedValueOnce(Response.json({ state: { ...api.state, activities: [...api.state!.activities, activity] }, updatedAt: "remote-revision" }));
+  await act(async () => { await api.refresh(); await flush(); });
+  expect(api.state!.activities.some(a => a.id === activity.id)).toBe(false);
+  const screen = renderer.root.findByType("SyncReview" as never);
+  expect(screen.props.receipt.activities[0].id).toBe(activity.id);
+  await act(async () => { screen.props.onComplete([activity.id]); });
+  expect(api.state!.activities.some(a => a.id === activity.id)).toBe(true);
+  expect(mock.values.get(`${accountStorageKeys("alice").state}:revision`)).toBe("remote-revision");
 });

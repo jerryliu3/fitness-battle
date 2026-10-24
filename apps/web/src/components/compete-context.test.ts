@@ -1,3 +1,7 @@
+vi.mock("@/features/club/sync-review", async () => {
+  const { createElement } = await import("react");
+  return { SyncReview: (props: object) => createElement("SyncReview", props) };
+});
 import { createElement } from "react";
 import { act, create, type ReactTestRenderer } from "react-test-renderer";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -52,4 +56,27 @@ describe("web account revision handling", () => {
   expect(values.has("fb-compete-v1:athlete:recovery")).toBe(true);
   expect(api.state?.city).toBe("Server city");
  });
+});
+
+it("runs web debug sync through the real receipt and combo coordinator without uploading fixtures", async () => {
+  const fetcher = vi.fn(async () => Response.json({ state: freshState(), updatedAt: "initial" }));
+  vi.stubGlobal("fetch", fetcher);
+  await act(async () => { renderer = create(createElement(CompeteProvider, null, createElement(Probe))); await flush(); });
+  const original = api.state;
+  await act(async () => { api.triggerDebugEvent?.("sync-combo"); await flush(); });
+  await act(async () => { await vi.advanceTimersByTimeAsync(500); await flush(); });
+  let screen = renderer.root.findByType("SyncReview" as never);
+  expect(screen.props.receipt.activities).toHaveLength(2);
+  expect(screen.props.moment).toBeNull();
+  const ids = screen.props.receipt.activities.map((a: { id: string }) => a.id);
+  await act(async () => { screen.props.onComplete(ids); await flush(); });
+  screen = renderer.root.findByType("SyncReview" as never);
+  expect(screen.props.receipt).toBeNull();
+  expect(screen.props.moment.plan.overtakenIds.length).toBeGreaterThanOrEqual(2);
+  await act(async () => { screen.props.onAcknowledge(); });
+  expect(renderer.root.findAllByType("SyncReview" as never)).toHaveLength(0);
+  await act(async () => { vi.advanceTimersByTime(1000); await flush(); });
+  expect(fetcher).toHaveBeenCalledTimes(1);
+  await act(async () => { api.resetDebugState?.(); });
+  expect(api.state).toBe(original);
 });

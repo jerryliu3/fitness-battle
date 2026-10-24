@@ -140,6 +140,9 @@ function YouContent({ surface }: { surface: "progress" | "athlete" }) {
           localStorage.removeItem(`fb-compete-v1:${user.id}:revision`);
           localStorage.removeItem(`fb-compete-v1:${user.id}:recovery`);
           localStorage.removeItem(`fb:field-seen:v1:${user.id}`);
+          for (const key of Object.keys(localStorage)) {
+            if (key.startsWith(`moment:v1:fb-arena-baseline:${user.id}:`)) localStorage.removeItem(key);
+          }
         } catch {
           // ignore
         }

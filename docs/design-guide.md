@@ -201,3 +201,9 @@ SectionHeader/Section compositions and page stacks share one rhythm; copy, row
 titles, subtitles and captions consume semantic roles. Keep chart/metric scale,
 avatar initials, utility symbols and achievement art separate from headings. Shared divided boundaries use #d0dad7 at one logical unit on both
 platforms, with 16 before and 12 after; mobile page gutters remain 20.
+
+## Full-screen activity and competition moments — October 24
+
+The root account provider owns event presentation across Home / Compete / Progress / Crew. Browsing a field never consumes a rank-change event. A saved baseline is scoped by account, sport, competition track, period and display units; first loads seed quietly. Later own-volume passes and peer-driven passes open a full-screen scene regardless of the current tab. Each crossing slows the camera, names the actual competitor, increments the overtake total and builds the combo. Rival movement uses a neutral chase treatment. Final place and volume match the settled current field; confirmation returns to the parent application. Reduced motion shows the same result immediately. These are accumulated-effort replays, not live GPS races.
+
+One modal stays mounted through review and movement, avoiding native modal handoff races. Sync review reuses the activity route explorer from #316; absent geometry or an unavailable map never blocks confirmation. Multiple sports queue separate moments. Historical activities can be reviewed without inventing passes in a past period. The inline field displays current stats and no longer owns replay timing.

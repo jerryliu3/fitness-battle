@@ -39,7 +39,7 @@ function Harness({ account = "a" }: { account?: string }) {
 afterEach(async () => {
   if (renderer) await act(async () => renderer.unmount());
 });
-it("batches a recap, applies history immediately, and confirms at most once", async () => {
+it("batches new and older activity in one review and confirms at most once", async () => {
   vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
   await act(async () => {
     renderer = create(createElement(Harness));
@@ -58,9 +58,9 @@ it("batches a recap, applies history immediately, and confirms at most once", as
     });
   });
   expect(gate.receipt).toBeNull();
-  expect(stateValue.activities.map((a) => a.id)).toEqual(["old"]);
+  expect(stateValue.activities.map((a) => a.id)).toEqual([]);
   await act(async () => gate.end("a"));
-  expect(gate.receipt?.activities.map((a) => a.id)).toEqual(["today"]);
+  expect(gate.receipt?.activities.map((a) => a.id)).toEqual(["today", "old"]);
   await act(async () => {
     gate.finish();
     gate.finish();
@@ -96,4 +96,13 @@ it("drops pending UI on account changes and ignores stale sync responses", async
     });
   });
   expect(stateValue.activities.some((a) => a.id === "today")).toBe(false);
+});
+
+it("excludes deselected activity before applying and can skip quietly", async () => {
+  await act(async () => { renderer = create(createElement(Harness)); });
+  await act(async () => gate.dispatch({ type: "apply-sync", provider: "strava", accountId: "a", now: now.toISOString(), activities: [today, { ...today, id: "second" }] }));
+  await act(async () => { gate.finish(["second"]); });
+  expect(stateValue.activities.find(a => a.id === "today")?.disposition).toBe("excluded");
+  expect(stateValue.activities.find(a => a.id === "second")?.disposition).toBe("counted");
+  expect(gate.receipt).toBeNull();
 });
