@@ -1,0 +1,21 @@
+/* Semantic adapters; metrics and achievement illustration geometry remain feature-owned. */
+.ui-text { color: var(--ink, #142b3b); }
+.ui-text-secondary { color: var(--muted, #637482); }
+.ui-section-heading { flex: 1 1 auto; min-width: min(100%, 12.5rem); display: grid; gap: .25rem; }
+.ui-section-heading :is(h1,h2,p) { margin: 0; overflow-wrap: anywhere; }
+.ui-section-header { display: flex; flex-wrap: wrap; align-items: baseline; column-gap: .75rem; row-gap: .25rem; }
+.ui-text-action { display: inline-flex; align-items: center; min-height: 44px; min-width: 44px; padding-block: .75rem; color: var(--ink, #142b3b); text-decoration: none; overflow-wrap: anywhere; max-width: 100%; }
+.ui-text-action:focus-visible { outline: 2px solid #176c75; outline-offset: 3px; border-radius: 4px; }
+.ui-section, .ui-section-content { display: grid; gap: .75rem; min-width: 0; }
+.ui-section-stack { display: grid; min-width: 0; }
+.ui-section-boundary { height: 28px; }
+.is-divided > .ui-section-boundary { height: 29px; padding-top: 16px; padding-bottom: 12px; }
+.is-divided > .ui-section-boundary::after { content: ""; display: block; height: 1px; background: #d0dad7; }
+.ui-status-badge { display: inline-flex; flex-wrap: wrap; align-items: center; gap: .25rem; padding: .25rem .5rem; border-radius: 999px; max-width: 100%; background: #eef3f1; color: #142b3b; overflow-wrap: anywhere; }
+.ui-status-badge.is-success { color: #24765c; background: #e9f5ee; }
+.ui-surface { padding: 20px; border: 1px solid #e3e9e7; border-radius: 20px; background: white; }
+.ui-list-row { display: flex; align-items: center; gap: .75rem; min-height: 44px; }
+.ui-list-row > div { flex: 1; min-width: 0; }
+/* Keep migrated open sections independent of legacy card padding and gaps. */
+.phone-shell .ui-section { padding: 0; margin: 0; border: 0; background: none; border-radius: 0; gap: .75rem; }
+@media (min-width: 900px) { .ui-section.club-latest { grid-column: 1; } }

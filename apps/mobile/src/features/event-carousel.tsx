@@ -1,3 +1,4 @@
+import { AppText } from "../ui/section";
 import { useRef, useState, type ReactNode } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { FocusButton, FocusSheet, f } from "../ui/focus";
@@ -57,12 +58,12 @@ export function EventCarousel({
           }}
           style={{ flex: 1, minHeight: 54, gap: 4, justifyContent: "center" }}
         >
-          <Text style={[f.sectionTitle, { fontFamily: "DMSans_700Bold" }]}>
+          <AppText role="sectionTitle" accessibilityRole="header">
             {events[index]?.label}
             {events[index]?.badge ? (
               <Text style={[f.small, { color: c.muted }]}> · {events[index]?.badge}</Text>
             ) : null}
-          </Text>
+          </AppText>
         </View>
         <Pressable
           accessibilityRole="button"
@@ -72,7 +73,7 @@ export function EventCarousel({
           onPress={() => select(events[index - 1]!.id)}
           style={[s.arrow, index === 0 && { opacity: 0.3 }]}
         >
-          <Text style={f.h2}>←</Text>
+          <AppText role="navigationTitle" accessibilityElementsHidden>←</AppText>
         </Pressable>
         <Pressable
           accessibilityRole="button"
@@ -82,7 +83,7 @@ export function EventCarousel({
           onPress={() => select(events[index + 1]!.id)}
           style={[s.arrow, index === events.length - 1 && { opacity: 0.3 }]}
         >
-          <Text style={f.h2}>→</Text>
+          <AppText role="navigationTitle" accessibilityElementsHidden>→</AppText>
         </Pressable>
       </View>
       {/* Event title owns event swipes; the board owns lane swipes. Avoid nested horizontal pagers trapping vertical page gestures. */}

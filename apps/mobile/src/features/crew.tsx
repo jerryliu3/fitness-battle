@@ -1,3 +1,4 @@
+import { AppText, SectionHeader } from "../ui/section";
 import { AppIcon } from "../ui/app-icon";
 import { RankBadge } from "../ui/rank-badge";
 import { alpineTrail } from "../ui/club-art";
@@ -364,8 +365,8 @@ export function CrewHub({ membersOnly = false, crewId = "" }: { membersOnly?: bo
 <View style={{ gap: 16 }}>
             <Text style={f.copy}>{crew.name}</Text>
             {members.map(m => <View key={m.user_id} style={[f.section, f.row]}>
-              {m.avatar_url ? <Image source={{ uri: m.avatar_url }} style={{ width: 56, height: 56, borderRadius: 28 }} /> : <View style={[f.avatar, { width: 56, height: 56, borderRadius: 28 }]}><Text style={f.h2}>{m.display_name.slice(0, 2).toUpperCase()}</Text></View>}
-              <View style={f.grow}><Text style={f.h2}>{m.display_name}</Text><Text style={f.small}>{(m.user_id === user?.id ? resting : m.rest_week === weekKey) ? "Rest week" : "Active"}</Text>
+              {m.avatar_url ? <Image source={{ uri: m.avatar_url }} style={{ width: 56, height: 56, borderRadius: 28 }} /> : <View style={[f.avatar, { width: 56, height: 56, borderRadius: 28 }]}><AppText role="contentTitle">{m.display_name.slice(0, 2).toUpperCase()}</AppText></View>}
+              <View style={f.grow}><AppText role="itemTitle">{m.display_name}</AppText><Text style={f.small}>{(m.user_id === user?.id ? resting : m.rest_week === weekKey) ? "Rest week" : "Active"}</Text>
                 <Text style={f.small}>{sessionsMetric ? `${memberTotal(m.user_id)} sessions` : distance(memberTotal(m.user_id))} this week</Text>
               </View>
             </View>)}
@@ -508,7 +509,7 @@ export function CrewHub({ membersOnly = false, crewId = "" }: { membersOnly?: bo
           {user ? (
             <>
               {user && !solo ? <CrewSessions key={`${user?.id}:${crew.id}`} crewId={crew.id} sport={crew.sport} /> : null}
-              <Text style={f.h2}>Crew standings</Text>
+              <SectionHeader title="Crew standings"/>
               <View style={f.section}>
                 {[...members]
                   .sort(

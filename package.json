@@ -10,7 +10,7 @@
     "build": "pnpm --filter @fitness-battle/web build",
     "build:web": "pnpm --filter @fitness-battle/web build",
     "typecheck": "pnpm -r typecheck",
-    "lint": "pnpm -r lint",
+    "lint": "pnpm lint:ui && pnpm -r lint",
     "test": "pnpm -r test",
     "supabase:start": "supabase start",
     "supabase:stop": "supabase stop",
@@ -18,7 +18,8 @@
     "supabase:reset": "supabase db reset",
     "rankings:db:start": "supabase start --workdir rankings-db",
     "rankings:db:reset": "supabase db reset --workdir rankings-db",
-    "rankings:ingest": "node packages/rankings/scripts/ingest.mjs"
+    "rankings:ingest": "node packages/rankings/scripts/ingest.mjs",
+    "lint:ui": "node scripts/check-ui-contract.mjs"
   },
   "devDependencies": {
     "typescript": "^5.9.2"

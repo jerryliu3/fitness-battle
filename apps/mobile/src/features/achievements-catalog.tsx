@@ -95,7 +95,7 @@ export const achievementTileStyle = StyleSheet.create({
     minWidth: 0,
     padding: 10,
     paddingVertical: 14,
-    borderRadius: 18,
+    borderRadius: 20,
     borderWidth: 1,
     borderColor: c.line,
     backgroundColor: c.card,
