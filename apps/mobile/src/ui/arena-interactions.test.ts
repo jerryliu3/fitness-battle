@@ -1,3 +1,4 @@
+vi.mock("./app-icon", () => ({ AppIcon: "AppIcon" }));
 vi.mock("./club-art",()=>({alpineTrail:1}));
 import { createElement } from "react";
 import { act, create, type ReactTestRenderer } from "react-test-renderer";
@@ -236,12 +237,16 @@ it("expands one field, retains its viewport and selection, and closes on system 
   const rival = lane().props.lanes.find((item: { you: boolean; ghost: boolean }) => !item.you && !item.ghost);
   await act(async () => { lane().props.onSelect(rival); lane().props.onZoom(2.4); });
   const before = lane().props.view;
+  const inlineHeight = lane().props.height;
+  expect(inlineHeight).toBeGreaterThanOrEqual(300);
+  expect(inlineHeight).toBeLessThanOrEqual(420);
   const anchor = lane().props.anchor;
   anchor.current = { left: 30, laneWidth: 70, width: 350, scroll: 140, oval: false, count: 8 };
   await act(async () => lane().props.onExpand());
   expect(renderer.root.findAllByType("LaneTrack" as never)).toHaveLength(1);
   expect(lane().props.fullscreen).toBe(true);
   expect(lane().props.height).toBeGreaterThan(0);
+  expect(lane().props.height).toBeGreaterThan(inlineHeight);
   expect(lane().props.view).toEqual(before);
   expect(lane().props.selectedId).toBe(rival.id);
   expect(lane().props.anchor).toBe(anchor);

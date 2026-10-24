@@ -98,7 +98,7 @@ export function CrewSessions({
     }
   }
   return (
-    <View style={f.card}>
+    <View style={f.section}>
       <View style={f.row}>
         <Text style={f.h2}>Start Line</Text>
         <FocusButton

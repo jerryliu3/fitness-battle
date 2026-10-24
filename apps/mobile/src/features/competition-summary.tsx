@@ -47,8 +47,9 @@ export function CompetitionSummary({
       <View style={[f.section, { gap: 14 }]}>
         <View style={f.row}>
           <View style={[f.grow, { gap: 6 }]}>
-            <View style={{ flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: 8 }}>
-              <Text style={f.sectionTitle}>Competition · {weekLabel}</Text>
+            <View style={{ gap: 3 }}>
+              <Text style={f.sectionTitle}>Competition</Text>
+              <Text style={f.small}>{weekLabel}</Text>
 
             </View>
           </View>

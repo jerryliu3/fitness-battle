@@ -2,10 +2,10 @@ import { EffortRail } from "../features/effort-rail";
 
 import { usePathname, useRouter } from "expo-router";
 import { useMemo, useState } from "react";
-import { Image, Platform, Pressable, StyleSheet, Text, View } from "react-native";
+import { Image, Pressable, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import Svg, { Path } from "react-native-svg";
-import { weeklyActivityStreak, competeNow, DEBUG_EVENT_OPTIONS, PERSON_ICON_PATH, type DebugEventId } from "@fitness-battle/shared";
+import { AppIcon } from "./app-icon";
+import { weeklyActivityStreak, competeNow, DEBUG_EVENT_OPTIONS, type DebugEventId } from "@fitness-battle/shared";
 import { useCompeteStore } from "../lib/compete-store";
 import { isAthleteSettingsPath } from "../lib/navigation";
 import { SHELL_COLORS as c } from "../theme";
@@ -32,31 +32,34 @@ export function AppHeader() {
   return (
     <SafeAreaView edges={["top"]} style={s.safe}>
       <View style={s.header}>
-        <View style={{ flex: 1, maxWidth: 190 }}><EffortRail compact /></View>
-        {streak && <View accessibilityLabel={`${streak.count} week activity streak${streak.active ? "" : ", inactive this week"}`} style={{ flexDirection: "row", alignItems: "center", gap: 3, opacity: streak.active ? 1 : .4 }}><Text accessible={false} style={{ fontSize: 20, lineHeight: 28 }}>🔥</Text><Text style={s.debugBtnText}>{streak.count}</Text></View>}
+        <View style={s.identity} testID="athlete-header-group">
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel="Debug event triggers"
-            accessibilityState={{ expanded: debugOpen }}
-            onPress={() => setDebugOpen((open) => !open)}
-            style={[s.debugBtn, debugActive && s.debugBtnActive]}
+            accessibilityLabel="Open athlete settings"
+            accessibilityState={{ selected: onAthlete }}
+            onPress={() => router.navigate("/athlete")}
+            style={[s.profile, onAthlete && s.selected]}
           >
-            <Text style={s.debugBtnText}>Debug {debugOpen ? "▴" : "▾"}</Text>
+            {state?.avatarUrl ? (
+              <Image source={{ uri: state.avatarUrl }} style={s.photo} />
+            ) : (
+              <AppIcon name="person" size={22} color={c.muted} />
+            )}
           </Pressable>
+          <View style={s.effort}><EffortRail compact /></View>
+          {streak && <View accessibilityLabel={`${streak.count} week activity streak${streak.active ? "" : ", inactive this week"}`} style={[s.streak, { opacity: streak.active ? 1 : .4 }]}>
+            <AppIcon name="flame" size={22} color={c.actionPressed} />
+            <Text style={s.debugBtnText}>{streak.count}</Text>
+          </View>}
+        </View>
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel="Open athlete settings"
-          accessibilityState={{ selected: onAthlete }}
-          onPress={() => router.navigate("/athlete")}
-          style={[s.profile, onAthlete && s.selected]}
+          accessibilityLabel="Debug event triggers"
+          accessibilityState={{ expanded: debugOpen }}
+          onPress={() => setDebugOpen((open) => !open)}
+          style={[s.debugBtn, debugActive && s.debugBtnActive]}
         >
-          {state?.avatarUrl ? (
-            <Image source={{ uri: state.avatarUrl }} style={s.photo} />
-          ) : (
-            <Svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke={c.muted} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" accessible={Platform.OS==="web"?undefined:false}>
-              <Path d={PERSON_ICON_PATH}/>
-            </Svg>
-          )}
+          <Text style={s.debugBtnText}>Debug {debugOpen ? "▴" : "▾"}</Text>
         </Pressable>
       </View>
       {debugOpen ? (
@@ -82,14 +85,17 @@ export function AppHeader() {
 const s = StyleSheet.create({
   safe: { backgroundColor: c.paper, zIndex: 30 },
   header: {
-    paddingHorizontal: 22,
+    paddingHorizontal: 20,
     paddingVertical: 10,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     gap: 8,
   },
-  debugBtn: { minHeight: 44, justifyContent: "center", paddingHorizontal: 10, paddingVertical: 5, borderRadius: 999, borderWidth: 1, borderColor: c.line, backgroundColor: c.card },
+  identity: { flex: 1, minWidth: 0, flexDirection: "row", alignItems: "center", gap: 10 },
+  effort: { flex: 1, minWidth: 0, maxWidth: 190 },
+  streak: { flexDirection: "row", alignItems: "center", gap: 3, flexShrink: 0 },
+  debugBtn: { flexShrink: 0, minHeight: 44, justifyContent: "center", paddingHorizontal: 10, paddingVertical: 5, borderRadius: 999, borderWidth: 1, borderColor: c.line, backgroundColor: c.card },
   debugBtnActive: { borderColor: c.tennis, backgroundColor: "#fff5d1" },
   debugBtnText: { fontFamily: "DMSans_700Bold", fontSize: 11, color: c.ink },
   debugMenu: { marginHorizontal: 22, marginBottom: 10, padding: 10, borderRadius: 16, borderWidth: 1, borderColor: c.line, backgroundColor: c.card, gap: 6 },
@@ -102,6 +108,7 @@ const s = StyleSheet.create({
   profile: {
     width: 44,
     height: 44,
+    flexShrink: 0,
     borderRadius: 22,
     backgroundColor: c.card,
     alignItems: "center",
