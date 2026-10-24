@@ -182,7 +182,7 @@ export function CompetitionField({
 
   useEffect(() => {
     if (!overtakePlan || replayEpoch === 0) return;
-    if (reduceMotion || !isFocused || mode !== "lanes") {
+    if (reduceMotion || !isFocused || viewMode !== "lanes") {
       if (pendingBaselineRef.current) {
         writeBaselineItem(
           pendingBaselineRef.current.key,
@@ -218,8 +218,15 @@ export function CompetitionField({
     reduceMotion,
     writeBaselineItem,
     isFocused,
-    mode,
+    viewMode,
   ]);
+
+  useEffect(() => {
+    if (!chromeInHeader) return;
+    if (viewMode !== "lanes" || viewDimension !== "2d") {
+      setOvertakeProgress(1);
+    }
+  }, [arenaView, chromeInHeader, viewDimension, viewMode]);
 
   const overtakeFrame = useMemo(
     () =>
