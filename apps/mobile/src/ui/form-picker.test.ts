@@ -34,3 +34,15 @@ it("returns the chosen wall time for the existing Eastern validator without devi
   await act(async () => done.props.onPress());
   expect(change).toHaveBeenCalledWith("09:45");
 });
+
+it("allows an optional time to return to current time without clearing required session times", async () => {
+  vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
+  const change = vi.fn();
+  await act(async () => { renderer = create(createElement(DateTimeField, { label: "Time of day", mode: "time", value: "08:00", onChange: change, clearLabel: "Use current time" })); });
+  await act(async () => renderer.root.findAllByType("Pressable" as never).find(node => node.props.accessibilityLabel === "Use current time")!.props.onPress());
+  expect(change).toHaveBeenCalledWith("");
+  await act(async () => renderer.update(createElement(DateTimeField, { label: "Time of day", mode: "time", value: "", onChange: change, clearLabel: "Use current time" })));
+  expect(renderer.root.findAllByType("Pressable" as never)).toHaveLength(1);
+  await act(async () => renderer.update(createElement(DateTimeField, { label: "Session time", mode: "time", value: "08:00", onChange: change })));
+  expect(renderer.root.findAllByType("Pressable" as never)).toHaveLength(1);
+});

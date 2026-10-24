@@ -38,7 +38,7 @@ export function NumberPicker({ label, value, onChange, max = 1440, step = 1, uni
   </>;
 }
 /** Values are wall-clock strings. Existing Eastern validators resolve instants and reject DST gaps. */
-export function DateTimeField({ label, value, mode, onChange }: { label: string; value: string; mode: "date" | "time"; onChange: (value: string) => void }) {
+export function DateTimeField({ label, value, mode, onChange, clearLabel }: { label: string; value: string; mode: "date" | "time"; onChange: (value: string) => void; clearLabel?: string }) {
   const [open, setOpen] = useState(false), [draft, setDraft] = useState(new Date());
   const serialize = (date: Date) => mode === "date" ? date.toISOString().slice(0, 10) : date.toISOString().slice(11, 16);
   const accept = (date: Date) => { onChange(serialize(date)); setOpen(false); };
@@ -50,6 +50,7 @@ export function DateTimeField({ label, value, mode, onChange }: { label: string;
       const date = new Date(mode === "date" ? `${value || dayKey(new Date())}T12:00:00Z` : `2000-01-01T${value || "08:00"}:00Z`);
       setDraft(date); setOpen(true);
     }}><Text style={f.rowTitle}>{value || `Choose ${mode}`}</Text></Pressable>
+    {value && clearLabel ? <Pressable accessibilityRole="button" accessibilityLabel={clearLabel} onPress={() => { onChange(""); setOpen(false); }} style={{ paddingVertical: 12 }}><Text style={f.rowTitle}>{clearLabel}</Text></Pressable> : null}
     {open && (Platform.OS === "android" ? picker : <PickerSurface label={label} close={() => setOpen(false)} done={() => accept(draft)}>{picker}</PickerSurface>)}
   </>;
 }

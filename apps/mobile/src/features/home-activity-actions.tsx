@@ -210,7 +210,7 @@ export function HomeActivityActions({
           {sportById(sport).gps && <><Text style={f.rowTitle}>Distance ({state.units === "metric" ? "km" : "mi"})</Text>
             <NumberPicker label="Distance" unit={state.units === "metric" ? "km" : "mi"} max={1000} step={0.1} value={miles} onChange={setMiles} /></>}
           <Text style={f.rowTitle}>Time of day (optional · Eastern)</Text>
-          <DateTimeField label="Time of day · Eastern" mode="time" value={time} onChange={setTime} />
+          <DateTimeField label="Time of day · Eastern" mode="time" value={time} onChange={setTime} clearLabel="Use current time" />
         </>}
         {formError ? (
           <Text style={f.copy} accessibilityRole="alert">
