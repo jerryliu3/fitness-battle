@@ -30,6 +30,12 @@ export interface StravaActivityRaw {
   distance: number;
   moving_time: number;
   average_heartrate?: number | null;
+  total_elevation_gain?: number | null;
+  map?: {
+    id?: string;
+    summary_polyline?: string | null;
+    polyline?: string | null;
+  } | null;
 }
 
 /**
@@ -119,6 +125,9 @@ export function mapStravaActivity(raw: StravaActivityRaw): ActivitySample | null
     movingSec,
     avgHr: raw.average_heartrate ?? null,
     rawName: raw.name || `${sport} activity`,
+    summaryPolyline: raw.map?.summary_polyline ?? null,
+    detailedPolyline: raw.map?.polyline ?? null,
+    elevationGainM: raw.total_elevation_gain ?? null,
   };
 }
 

@@ -93,6 +93,14 @@ export interface ActivitySample {
   movingSec?: number;
   avgHr?: number | null;
   rawName: string;
+  /** Google Encoded Polyline for route thumbnails and quick maps. */
+  summaryPolyline?: string | null;
+  /** High-resolution Google Encoded Polyline for 3D flyovers. */
+  detailedPolyline?: string | null;
+  /** Total elevation gain in meters. */
+  elevationGainM?: number | null;
+  /** Bounding box [minLng, minLat, maxLng, maxLat]. */
+  routeBounds?: [number, number, number, number] | null;
 }
 
 /** Daily recovery or sleep score from a readiness provider. */
