@@ -86,6 +86,8 @@ function LoginForm() {
         <Link href={buildSignupHref(next)}>Create an account</Link>
       </p>
       <p className="fb-note">
+        <Link href="/terms">Terms of Service</Link>
+        {" · "}
         <Link href="/privacy">Privacy Policy</Link>
       </p>
     </section>

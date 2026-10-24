@@ -15,6 +15,7 @@ export default function LegalLayout({ children }: { children: ReactNode }) {
           overtaek
         </Link>
         <nav className="fb-legal-nav" aria-label="Legal">
+          <Link href="/terms">Terms</Link>
           <Link href="/privacy">Privacy</Link>
           <Link href="/login">Sign in</Link>
         </nav>
