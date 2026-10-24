@@ -62,3 +62,21 @@ The final source was exported again to an iOS Hermes bundle successfully after t
 Rebased onto `origin/main` at `acfda40`, preserving the merged field-header controls, Progress detail routes, activity sport icons and Crew settings simplification. Each cleanup PR boundary passed `pnpm typecheck` and `pnpm test`: foundations 755 tests; fields/Crew 756; Home/Athlete 756, all with the same 5 existing skips.
 
 The Google Fonts build failure is addressed by vendoring the existing families and licenses and using `next/font/local` for both product and study routes. Assets are compressed to WOFF2 without changing CSS variable names. The normal production build is rerun without mocked font responses or network exemptions.
+
+### Completed native and font-build validation
+
+The normal production `pnpm build` passed with the checked-in WOFF2 fonts, no font mocks and no network exception. No product/design TypeScript or CSS source still references Google Fonts endpoints or `next/font/google`.
+
+Generated the ignored iOS project, installed pods, and ran a complete Xcode Release Simulator build with Xcode 27.1 / iOS 27.1 SDK:
+
+```sh
+xcodebuild -workspace apps/mobile/ios/Overtaek.xcworkspace -scheme Overtaek \
+  -configuration Release -sdk iphonesimulator \
+  -destination 'generic/platform=iOS Simulator' \
+  -derivedDataPath /private/tmp/fitness-stack-ios-build \
+  CODE_SIGNING_ALLOWED=NO build
+```
+
+The command exited 0 with `BUILD SUCCEEDED`. `Overtaek.app/Overtaek` is a universal arm64/x86_64 Simulator executable and `main.jsbundle` is present. This validates native module compilation, linking and Release JavaScript bundling, including both picker packages. It is not a signed device/App Store build or an interactive Simulator UI test.
+
+Review/merge order: [#303 Foundations](https://github.com/jerryliu3/fitness-battle/pull/303), [#304 Fields/Crew](https://github.com/jerryliu3/fitness-battle/pull/304), [#305 Home/Athlete](https://github.com/jerryliu3/fitness-battle/pull/305), [#306 Offline fonts](https://github.com/jerryliu3/fitness-battle/pull/306). CI Typecheck & Test passed on all four runtime commits. No local/production SQL migration was applied; the local Docker daemon remains unavailable.
