@@ -4,6 +4,7 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { competitionTrack, APP_TIMEZONE, formatEloDelta, sportById, type CompeteState, type SportId } from "@fitness-battle/shared";
 import { f } from "../ui/focus";
 import { SHELL_COLORS as c } from "../theme";
+import { CompetitionReplayButton } from "./competition-replay";
 import { ResultCard } from "./result-card";
 export function WeeklyChapters({state}:{state:CompeteState}){
   const [sport,setSport]=useState<SportId|"all">(state.primary),[selected,setSelected]=useState<string|null>(null);
@@ -19,7 +20,7 @@ export function WeeklyChapters({state}:{state:CompeteState}){
       {rows.map((r,i)=><View key={r.id}>{i===0||month(r.periodEnd)!==month(rows[i-1]!.periodEnd)?<Text style={[f.kicker,{marginTop:8,marginBottom:12}]}>{month(r.periodEnd)}</Text>:null}
         <Pressable accessibilityRole="button" accessibilityState={{expanded:selected===r.id}} accessibilityLabel={`${date(r.periodStart)} to ${date(new Date(Date.parse(r.periodEnd)-1).toISOString())}, ${sportById(r.sport).name}, ${r.track}, place ${r.place} of ${r.fieldSize}, ${formatEloDelta(r.eloBefore,r.eloAfter)} Effort Score`} onPress={()=>setSelected(selected===r.id?null:r.id)} style={s.chapter}>
           <View style={[s.place,r.place===1&&{backgroundColor:c.tennis}]}><AppText role="heading" >#{r.place}</AppText></View><View style={{flex:1,gap:4}}><AppText role="label" >{date(r.periodStart)} – {date(new Date(Date.parse(r.periodEnd)-1).toISOString())}</AppText><AppText role="body" secondary >{sportById(r.sport).name} · {r.track==="verified"?"GPS":"Open"} · {r.place} of {r.fieldSize}{r.frozen?" · frozen":""}</AppText></View><View style={{alignItems:"flex-end"}}><AppText role="label" >{formatEloDelta(r.eloBefore,r.eloAfter)}</AppText><AppText role="body" secondary >score</AppText></View>
-        </Pressable>{selected===r.id?<ResultCard result={r} units={state.units}/>:null}
+        </Pressable>{selected===r.id?<><ResultCard result={r} units={state.units}/><CompetitionReplayButton state={state} selection={r} label="Replay this round" /></>:null}
       </View>)}
     </>}
   </View>;

@@ -47,5 +47,6 @@ export * from "./routeGeoUtils";
 export * from "./activity-route";
 export * from "./sampleRoute";
 export * from "./competition-moments";
+export * from "./competition-replay";
 
 export { normalizeRouteReplay, routeReplayAt, type RouteReplaySample } from "./route-replay";

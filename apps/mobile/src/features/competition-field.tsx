@@ -1,3 +1,4 @@
+import { CompetitionReplayButton } from "./competition-replay";
 import { UserAvatar } from "../ui/user-avatar";
 import { textStyle } from "../ui/section";
 import { RankBadge } from "../ui/rank-badge";
@@ -6,6 +7,8 @@ import {
   portraitField,
   portraitFieldGap,
   arenaFieldHigh,
+  competePeriodWindow,
+  competeNow,
   clampCourseCenter,
   fieldDefaultSpan,
   buildArenaModel,
@@ -324,6 +327,17 @@ export function CompetitionField({
               setMode(next === "3d" ? "lanes" : next);
               setDimension(next === "3d" ? "3d" : "2d");
             }}
+          />
+          <CompetitionReplayButton
+            state={state}
+            selection={{
+              sport,
+              track,
+              periodStart: competePeriodWindow(state, competeNow(state), sport).startsAt.toISOString(),
+              periodEnd: competePeriodWindow(state, competeNow(state), sport).endsAt.toISOString(),
+            }}
+            dimension={sceneDimension}
+            label="Replay"
           />
         </>
       ) : null}

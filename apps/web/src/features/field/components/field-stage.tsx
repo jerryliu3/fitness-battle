@@ -7,6 +7,9 @@ import { playCue } from "@/lib/haptics";
 import { usePathname } from "next/navigation";
 import {
   arenaFieldHigh,
+  competePeriodWindow,
+  competeNow,
+  type CompeteState,
   effortRankBadge,
   fieldDefaultSpan,
   clampCourseCenter,
@@ -25,6 +28,7 @@ import {
   useFieldAppearance,
 } from "./field-course";
 import { placeAt, valueAt, type SceneRunner } from "../geometry";
+import { CompetitionReplayButton } from "@/features/replay/competition-replay";
 import type { FieldModel } from "../model";
 
 export function FieldStage({
@@ -32,11 +36,13 @@ export function FieldStage({
   boardRows,
   sportTitle,
   tabActive = true,
+  replayState,
 }: {
   model: FieldModel;
   boardRows?: BoardRow[];
   sportTitle?: string;
   tabActive?: boolean;
+  replayState?: CompeteState;
 }) {
   const { user } = useAuth();
   const pathname = usePathname();
@@ -339,6 +345,7 @@ export function FieldStage({
       </div>
 
       <div className="focus-broadcast-rail" aria-label="Quick jump rivals">
+        {replayState && <CompetitionReplayButton state={replayState} selection={{ sport: model.sport, track: model.track, periodStart: model.periodStart, periodEnd: competePeriodWindow(replayState, competeNow(replayState), model.sport).endsAt.toISOString() }} dimension={viewDimension} label="Replay" />}
         {aheadPeer ? (
           <button
             type="button"

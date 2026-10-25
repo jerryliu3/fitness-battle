@@ -282,3 +282,13 @@ while their ground anchors retain the true projected distance. Gesture inversion
 and lateral movement use the same camera scale on both platforms. Native SVG
 owns its gesture responders, and the fullscreen Modal establishes its own safe
 area so controls clear the Dynamic Island. See [follow-up review](reviews/infinite-field-horizon/README.md).
+
+### Competition event replay — October 25
+
+Fullscreen Compete and settled round recaps offer an event-by-event replay on web
+and native, with 2D/3D views, play/pause, speed, stepping and a draggable in-memory
+timeline. The camera follows the changing athlete with a Follow me alternative.
+Workout chronology comes from counted activity; simulated rivals retain explicitly
+labeled daily steps. Replay remains presentation-only and does not award overtakes
+or alter standings writes. See [data and interaction contract](reviews/competition-replay/README.md),
+including historical reconstruction and native walkthrough limitations.

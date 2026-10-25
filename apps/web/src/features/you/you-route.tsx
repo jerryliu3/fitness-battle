@@ -480,6 +480,7 @@ function YouContent({ surface }: { surface: "progress" | "athlete" }) {
           units={state.units}
         />
         <SeasonHistory
+          state={state}
           results={state.periodResults}
           primary={state.primary}
         />

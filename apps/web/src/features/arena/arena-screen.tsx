@@ -132,6 +132,7 @@ export function ArenaScreen({ tabActive = true }: { tabActive?: boolean }) {
       {hasAnyRegistration ? <EventCarousel key={account} events={[...active.map(r=>({id:r.sport,label:SPORTS.find(s=>s.id===r.sport)!.name,badge:competitionTrackLabel(r.sport)})),...(sleepOptedIn?[{id:"sleep",label:"Sleep & Recovery"}]:[])]} value={selectedSport!} onChange={id=>{setSelection({account,sport:id as SportId|"sleep"});void playCue("selection");}} onRegister={()=>{setSport(null);setRegister(true);}}>
       {selectedSport && selectedSport !== "sleep" ? (
         <FieldStage key={`${account}:${selectedSport}:${state.units}`} tabActive={tabActive}
+          replayState={state}
           sportTitle={SPORTS.find(s=>s.id===selectedSport)?.name}
           model={buildFieldModel(state,selectedSport,track,now)}
           boardRows={buildSplitBoard(state,selectedSport,track,now).rows}/>
