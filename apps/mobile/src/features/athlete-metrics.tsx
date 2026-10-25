@@ -73,7 +73,7 @@ export function AthleteMetrics({
                   gap: 4,
                 }}
               >
-                <AppText role="heading" >
+                <AppText role="metric" >
                   {formatDistanceM(season.meters, state.units)}
                 </AppText>
                 <AppText role="caption" secondary >{unit} total</AppText>
@@ -86,7 +86,7 @@ export function AthleteMetrics({
                   gap: 4,
                 }}
               >
-                <AppText role="heading" >{season.sessions}</AppText>
+                <AppText role="metric" >{season.sessions}</AppText>
                 <AppText role="caption" secondary >sessions</AppText>
               </View>
               <View
@@ -97,7 +97,7 @@ export function AthleteMetrics({
                   gap: 4,
                 }}
               >
-                <AppText role="heading" >{season.weeks}</AppText>
+                <AppText role="metric" >{season.weeks}</AppText>
                 <AppText role="caption" secondary >settled weeks</AppText>
               </View>
               <View
@@ -108,7 +108,7 @@ export function AthleteMetrics({
                   gap: 4,
                 }}
               >
-                <AppText role="heading" >{state.lifetimeOvertakes}</AppText>
+                <AppText role="metric" >{state.lifetimeOvertakes}</AppText>
                 <AppText role="caption" secondary >overtakes</AppText>
               </View>
             </View>

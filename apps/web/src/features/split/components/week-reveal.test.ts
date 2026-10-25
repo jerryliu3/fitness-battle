@@ -13,6 +13,8 @@ vi.mock("next/navigation", () => ({
 }));
 vi.mock("@radix-ui/react-dialog", () => ({
   Root: "div",
+  Trigger: ({ children }: { children: unknown }) =>
+    createElement("span", null, children as never),
   Portal: "div",
   Overlay: "div",
   Content: "div",

@@ -1,0 +1,20 @@
+.home-health{background:var(--health-background);color:var(--health-text);padding:0;display:grid;gap:16px}
+.home-health-title{display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap}
+.home-health-title h2{margin:0;color:var(--health-text)}
+.home-health-title>span{color:var(--health-secondary);font:var(--type-caption)}
+.home-health-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.home-health-tile{position:relative;min-width:0;min-height:200px;padding:14px;border:1px solid var(--health-border);border-radius:20px;background:var(--health-tile);color:var(--health-text);font-family:inherit;text-align:center;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:8px}
+.home-health-tile:focus-visible{outline:3px solid var(--health-accent);outline-offset:3px}
+.home-health-tile[aria-expanded=true]{border-color:var(--health-accent)}
+.home-health-name{font:var(--type-label);overflow-wrap:anywhere}
+.home-health-tile strong{font:var(--type-heading);font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.home-health-context{font:var(--type-caption);color:var(--health-secondary)}
+.home-health-detail{padding:14px;background:var(--health-tile);border-radius:12px;font:var(--type-body)}
+.home-health-detail p{margin:6px 0}
+.home-health-detail>span,.home-health-note{font:var(--type-caption);color:var(--health-secondary)}
+.home-health-note{margin:0}
+@media(max-width:360px){.home-health{padding:0}.home-health-tile{padding:8px}.home-health-tile strong{font:var(--type-body)}}
+.home-health-signal{position:relative;width:100%;max-width:160px;aspect-ratio:1}
+.home-health-signal>svg{display:block;width:100%;height:100%}
+.home-health-reading{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px}
+.home-health-reading>span{font:var(--type-caption);color:var(--health-secondary)}

@@ -2,13 +2,13 @@ import { Children, Fragment, useEffect, useState, type ReactNode } from "react";
 import { Pressable, Text, View, StyleSheet, type TextProps, type TextStyle, type ViewProps, useWindowDimensions } from "react-native";
 import { SHELL_COLORS as c, SHELL_RADIUS, SHELL_SECTION as geometry, SHELL_SPACING, SHELL_TYPOGRAPHY, type TypographyRole } from "@fitness-battle/shared";
 
-const families = { 400: "DMSans_400Regular", 500: "DMSans_500Medium", 700: "DMSans_700Bold" } as const;
+const families = { 400: "Manrope_400Regular", 500: "Manrope_500Medium", 600: "Manrope_600SemiBold", 700: "Manrope_700Bold", 800: "Manrope_800ExtraBold" } as const;
 export function textStyle(role: TypographyRole): TextStyle {
   const token = SHELL_TYPOGRAPHY[role];
-  return { fontFamily: families[token.weight], fontSize: token.size, lineHeight: token.lineHeight, letterSpacing: 0, textTransform: "none", fontStyle: "normal" };
+  return { fontFamily: families[token.weight], fontSize: token.size, lineHeight: token.lineHeight, letterSpacing: token.tracking * token.size, textTransform: "none", fontStyle: "normal" };
 }
 export function chartTextProps() {
-  return { fontFamily: families[SHELL_TYPOGRAPHY.caption.weight], fontSize: SHELL_TYPOGRAPHY.caption.size, fontWeight: "400" as const };
+  return { fontFamily: families[SHELL_TYPOGRAPHY.caption.weight], fontSize: SHELL_TYPOGRAPHY.caption.size, fontWeight: "500" as const };
 }
 export function AppText({ role = "body", secondary = false, style, ...props }: Omit<TextProps, "role"> & { role?: TypographyRole; secondary?: boolean }) {
   return <Text {...props} style={[{ color: secondary ? c.muted : c.ink }, style, textStyle(role)]} />;
@@ -41,7 +41,7 @@ export function StatusBadge({ children, tone = "neutral", icon }: { children: Re
 }
 export function Surface({ style, ...props }: ViewProps) { return <View {...props} style={[styles.surface, style]}/>; }
 export function ListRow({ title, subtitle, leading, trailing }: { title: string; subtitle?: string; leading?: ReactNode; trailing?: ReactNode }) {
-  return <View style={styles.listRow}>{leading}<View style={{ flex: 1, minWidth: 0 }}><AppText role="label">{title}</AppText>{subtitle && <AppText role="body" secondary>{subtitle}</AppText>}</View>{trailing}</View>;
+  return <View style={styles.listRow}>{leading}<View style={{ flex: 1, minWidth: 0 }}><AppText role="row">{title}</AppText>{subtitle && <AppText role="support" secondary>{subtitle}</AppText>}</View>{trailing}</View>;
 }
 const styles = StyleSheet.create({
   header: { flexDirection: "row", flexWrap: "wrap", alignItems: "baseline", columnGap: 12, rowGap: 4 },

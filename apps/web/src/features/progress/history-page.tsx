@@ -18,7 +18,7 @@ export function ProgressHistoryPage() {
         </Link>
         <AppHeading level={1} role="heading">Past weeks & awards</AppHeading>
       </header>
-      <SeasonHistory results={state.periodResults} primary={state.primary} units={state.units} />
+      <SeasonHistory state={state} results={state.periodResults} primary={state.primary} units={state.units} />
       {awardCards(state).length > 0 ? <AwardShelf state={state} /> : null}
     </div>
   );
