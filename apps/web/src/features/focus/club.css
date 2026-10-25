@@ -752,6 +752,28 @@
   color: var(--ink);
   font: inherit;
   cursor: pointer;
+  text-decoration: none;
+}
+.club-achievement-title,
+.club-achievement-progress {
+  text-align: center;
+  text-decoration: none;
+}
+.club-achievement-meter {
+  width: 100%;
+  height: 4px;
+  border-radius: 999px;
+  background: var(--accent-soft);
+  overflow: hidden;
+}
+.club-achievement-meter > span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--lime, #f1c75b);
+}
+.club-achievement-meter[data-earned="true"] > span {
+  background: var(--field-teal, #176c75);
 }
 .club-badge {
   width: 64px;

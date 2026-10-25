@@ -47,11 +47,37 @@ export function Achievements({ state }: { state: CompeteState }) {
             style={achievementTileStyle.tile}
           >
             <Badge item={row} />
-            <AppText role="label" style={{ textAlign: "center" }}>
-              {row.target.toLocaleString()}
-              {row.category === "sessions" ? (row.target === 1 ? " session" : " sessions") : " pts"}
+            <AppText role="caption" secondary style={{ textAlign: "center" }}>
+              {row.title}
             </AppText>
-            <AppText role="caption" secondary style={{ textAlign: "center" }}>{row.title}</AppText>
+            <View
+              accessible
+              accessibilityRole="progressbar"
+              accessibilityLabel={`${row.current} of ${row.target}`}
+              accessibilityValue={{
+                min: 0,
+                max: row.target,
+                now: Math.min(row.current, row.target),
+              }}
+              style={{
+                width: "100%",
+                height: 4,
+                borderRadius: 999,
+                backgroundColor: c.soft,
+                overflow: "hidden",
+              }}
+            >
+              <View
+                style={{
+                  height: 4,
+                  width: `${Math.round(row.fraction * 100)}%`,
+                  backgroundColor: row.earned ? c.fieldTeal : c.tennis,
+                }}
+              />
+            </View>
+            <AppText role="label" style={{ textAlign: "center" }}>
+              {row.current.toLocaleString()} / {row.target.toLocaleString()}
+            </AppText>
             <StatusBadge tone={row.earned ? "success" : "neutral"}>{row.earned ? "✓ Earned" : "Up next"}</StatusBadge>
           </Pressable>
         ))}

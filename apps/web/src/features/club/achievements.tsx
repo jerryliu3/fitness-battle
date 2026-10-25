@@ -44,11 +44,23 @@ export function Achievements({ state }: { state: CompeteState }) {
             aria-label={`${row.title}. ${row.target} ${row.category === "sessions" ? "sessions" : "Open effort score"}. ${row.earned ? "Earned" : "In progress"}`}
           >
             <AchievementBadge item={row} />
-            <AppText role="label">
-              {row.target.toLocaleString()}
-              {row.category === "sessions" ? (row.target === 1 ? " session" : " sessions") : " pts"}
+            <AppText role="caption" secondary className="club-achievement-title">
+              {row.title}
             </AppText>
-            <AppText role="caption" secondary>{row.title}</AppText>
+            <div
+              className="club-achievement-meter"
+              data-earned={row.earned ? "true" : "false"}
+              role="progressbar"
+              aria-valuemin={0}
+              aria-valuemax={row.target}
+              aria-valuenow={Math.min(row.current, row.target)}
+              aria-label={`${row.current} of ${row.target}`}
+            >
+              <span style={{ width: `${Math.round(row.fraction * 100)}%` }} />
+            </div>
+            <AppText role="label" className="club-achievement-progress">
+              {row.current.toLocaleString()} / {row.target.toLocaleString()}
+            </AppText>
             <StatusBadge tone={row.earned ? "success" : "neutral"}>
               {row.earned ? "✓ Earned" : "Up next"}
             </StatusBadge>
