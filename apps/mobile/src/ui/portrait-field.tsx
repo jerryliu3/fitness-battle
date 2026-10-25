@@ -1,3 +1,4 @@
+import { chartTextProps, textStyle  } from "./section";
 import { useEffect, useId, useRef, useState, type MutableRefObject } from "react";
 import {
   Animated,
@@ -81,7 +82,7 @@ export function PortraitField({
           {scene.place} / {scene.fieldSize} PLACE
         </Text>
         <Text
-          style={[s.white, { color: "#142b3b", fontSize: 11, flexShrink: 1, textAlign: "right" }]}
+          style={[s.white, { ...textStyle("caption"), color: "#142b3b", flexShrink: 1, textAlign: "right" }]}
         >
           {portraitFieldGap(scene.nextGap, unit)}
         </Text>
@@ -253,12 +254,11 @@ export function PortraitField({
                           rx={9}
                           fill={m.you ? "#f7c948" : "#d8e5df"}
                         />
-                        <SvgText
+                        <SvgText {...chartTextProps()}
                           y={-8}
                           textAnchor="middle"
                           fill="#142b3b"
-                          fontWeight="700"
-                          fontSize={15}
+
                         >
                           {m.initials}
                         </SvgText>
@@ -274,23 +274,21 @@ export function PortraitField({
                           rx={9}
                           fill="#f7c948"
                         />
-                        <SvgText
+                        <SvgText {...chartTextProps()}
                           y={-53}
                           textAnchor="middle"
                           fill="#142b3b"
-                          fontSize={11}
-                          fontWeight="800"
+
                         >
                           YOU
                         </SvgText>
                       </>
                     ) : null}
-                    <SvgText
+                    <SvgText {...chartTextProps()}
                       y={45}
                       textAnchor="middle"
                       fill="white"
-                      fontSize={12}
-                      fontWeight="700"
+
                     >
                       {m.ghost
                         ? "Past you"
@@ -299,11 +297,11 @@ export function PortraitField({
                           : m.name.split(" ")[0]}
                     </SvgText>
                     {!m.you ? (
-                      <SvgText
+                      <SvgText {...chartTextProps()}
                         y={61}
                         textAnchor="middle"
                         fill="#e5eee5"
-                        fontSize={11}
+
                       >
                         {m.outside ? `${m.direction} ` : ""}
                         {m.gap > 0 ? "+" : ""}
@@ -397,7 +395,7 @@ const s = StyleSheet.create({
     justifyContent: "space-between",
     gap: 12,
   },
-  white: { color: "#fff", fontFamily: "DMSans_700Bold", fontSize: 13 },
+  white: { ...textStyle("label"), color: "#fff" },
   controls: {
     position: "absolute",
     bottom: 16,

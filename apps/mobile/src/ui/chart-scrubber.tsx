@@ -1,3 +1,4 @@
+import { textStyle } from "./section";
 import { useMemo, useRef, useState, type ReactNode } from "react";
 import { PanResponder, Text, View } from "react-native";
 import Svg, { Circle, Line } from "react-native-svg";
@@ -72,8 +73,8 @@ export function ChartScrubber({
   };
   return <View style={{ gap: 8 }}>
     <View style={{ minHeight: 44, gap: 2 }} accessibilityLiveRegion="polite">
-      <Text style={[f.rowTitle, { fontVariant: ["tabular-nums"] }]}>{selected?.value ?? points.at(-1)?.value ?? "No data"}</Text>
-      <Text style={f.small}>{selected?.label ?? points.at(-1)?.label ?? ""}</Text>
+      <Text style={[textStyle("label"), { fontVariant: ["tabular-nums"] }]}>{selected?.value ?? points.at(-1)?.value ?? "No data"}</Text>
+      <Text style={textStyle("caption")}>{selected?.label ?? points.at(-1)?.label ?? ""}</Text>
     </View>
     <View
       {...responder.panHandlers}

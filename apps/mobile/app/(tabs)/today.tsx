@@ -44,7 +44,7 @@ export default function Home() {
           contentContainerStyle={s.homeOverlayContent}
           showsVerticalScrollIndicator={false}
         >
-          {removed?<View style={f.row}><AppText role="body" secondary accessibilityLiveRegion="polite" >Session removed.</AppText><Pressable accessibilityRole="button" onPress={()=>{dispatch({type:"set-disposition",activityId:removed.id,disposition:removed.disposition});setRemoved(null);}} style={{minHeight:44,justifyContent:"center"}}><AppText role="itemTitle" >Undo</AppText></Pressable></View>:null}
+          {removed?<View style={f.row}><AppText role="body" secondary accessibilityLiveRegion="polite" >Session removed.</AppText><Pressable accessibilityRole="button" onPress={()=>{dispatch({type:"set-disposition",activityId:removed.id,disposition:removed.disposition});setRemoved(null);}} style={{minHeight:44,justifyContent:"center"}}><AppText role="label" >Undo</AppText></Pressable></View>:null}
           {state.frozenPeriods.includes(primaryFreezePeriodStart(state)) ? (
             <AppText role="body" secondary >
               ❄ Week frozen · Your effort score is protected through next

@@ -1,3 +1,4 @@
+import { textStyle } from "./section";
 import { AppIcon } from "./app-icon";
 import {
   SHELL_TABS,
@@ -132,10 +133,9 @@ const styles = StyleSheet.create({
     backgroundColor: "#142b3bf2",
   },
   label: {
-    fontFamily: "DMSans_700Bold",
-    fontSize: 11,
-    color: SHELL_COLORS.muted,
-  },
+    ...textStyle("caption"),
+    color: SHELL_COLORS.muted
+},
   labelOn: {
     color: SHELL_COLORS.starEmber,
   },

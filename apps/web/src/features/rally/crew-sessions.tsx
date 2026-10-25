@@ -116,7 +116,7 @@ export function CrewSessions({
           closed = !!s.cancelled_at || Date.parse(s.starts_at) <= Date.now();
         return (
           <article key={s.id} className="start-ticket">
-            <AppParagraph typographyRole="badgeLabel" className="fb-kicker">
+            <AppParagraph typographyRole="label" className="fb-kicker">
               {new Date(s.starts_at).toLocaleDateString("en-US", {
                 weekday: "long",
                 month: "short",
@@ -134,7 +134,7 @@ export function CrewSessions({
             <AppParagraph typographyRole="body" className="fb-copy">
               {s.time_zone} · {s.duration_min} min
             </AppParagraph>
-            <AppHeading level={3} role="contentTitle">{s.title}</AppHeading>
+            <AppHeading level={3} role="heading">{s.title}</AppHeading>
             <div className="start-ticket-bottom">
               <div
                 className="start-lights"

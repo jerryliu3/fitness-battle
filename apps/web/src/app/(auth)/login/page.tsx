@@ -1,7 +1,6 @@
 "use client";
 import { AppParagraph, AppHeading } from "@/ui/section";
 
-
 import { useAuth } from "@/components/auth-context";
 import {
   buildSignupHref,
@@ -46,8 +45,8 @@ function LoginForm() {
 
   return (
     <section className="fb-card fb-auth-card">
-      <AppParagraph typographyRole="badgeLabel" className="fb-kicker">overtaek</AppParagraph>
-      <AppHeading level={1} role="pageTitle" className="fb-title">Sign in</AppHeading>
+      <AppParagraph typographyRole="label" className="fb-kicker">overtaek</AppParagraph>
+      <AppHeading level={1} role="display" className="fb-title">Sign in</AppHeading>
       <AppParagraph typographyRole="body" className="fb-copy">
         Your weekly fields, training progress and crew are waiting.
         {offlineMode ? " Demo mode stores your session on this device." : ""}
@@ -74,7 +73,7 @@ function LoginForm() {
           />
         </label>
         {error ? (
-          <AppParagraph typographyRole="supporting" className="fb-error" role="alert" aria-live="assertive">
+          <AppParagraph typographyRole="body" className="fb-error" role="alert" aria-live="assertive">
             {error}
           </AppParagraph>
         ) : null}

@@ -59,10 +59,10 @@ export function TrainingHistory({ state, children }: { state: CompeteState; chil
                     setReceipt(null);
                   }}
                 >
-                  <Text>
+                  <AppText role="label">
                     {d.sport === "cycling" ? "Ride · " : ""}
                     {d.label}
-                  </Text>
+                  </AppText>
                 </Pressable>
               ))}
             </View>
@@ -87,12 +87,12 @@ export function TrainingHistory({ state, children }: { state: CompeteState; chil
                   ]}
                   onPress={() => setReceipt(r.activityId)}
                 >
-                  <Text>{date(r.startedAt)}</Text>
+                  <AppText role="label">{date(r.startedAt)}</AppText>
                 </Pressable>
               ))}
             </View>
           </ScrollView>
-          <AppText role="itemTitle" >
+          <AppText role="label" >
             {formatClockTime(inspected.seconds)} · {date(inspected.startedAt)}
           </AppText>
           <AppText role="caption" secondary >

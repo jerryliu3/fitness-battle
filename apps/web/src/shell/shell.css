@@ -20,19 +20,17 @@
   min-width: 0;
 }
 .focus-shell-brand > a {
-  font-size: 18px;
-  font-weight: 700;
-  letter-spacing: 0.06em;
   color: var(--ink);
   text-decoration: none;
-  line-height: 1.1;
+  letter-spacing: normal;
+  text-transform: none;
+  font: var(--type-heading);
 }
 .focus-shell-tagline {
-  font-size: 9px;
-  letter-spacing: 0.04em;
   color: var(--muted);
-  line-height: 1.2;
+  letter-spacing: normal;
   text-transform: none;
+  font: var(--type-caption);
 }
 .focus-shell-profile {
   width: 36px;
@@ -43,29 +41,33 @@
   display: grid;
   place-items: center;
   overflow: hidden;
-  font-size: 11px;
-  font-weight: 700;
   color: var(--ink);
   text-decoration: none;
   flex-shrink: 0;
   box-sizing: border-box;
+  letter-spacing: normal;
+  text-transform: none;
+  font: var(--type-caption);
 }
 .focus-shell-profile.is-selected {
   border: 2px solid var(--lime);
   box-shadow: 0 0 0 2px #f1c75b44;
 }
 .focus-shell-debug { position: relative; margin-right: auto; display: flex; align-items: center; z-index: 35; }
-.focus-shell-debug-btn { display: inline-flex; align-items: center; gap: 6px; min-height: 32px; padding: 4px 10px; border-radius: 999px; border: 1px dashed var(--line); background: var(--card); color: var(--ink); font: inherit; font-size: 11px; font-weight: 700; cursor: pointer; }
+.focus-shell-debug-btn { display: inline-flex; align-items: center; gap: 6px; min-height: 32px; padding: 4px 10px; border-radius: 999px; border: 1px dashed var(--line); background: var(--card); color: var(--ink); cursor: pointer; letter-spacing: normal; text-transform: none; font: var(--type-caption); }
 .focus-shell-debug-btn.is-active { border-style: solid; border-color: var(--lime-deep, #dfb237); background: var(--action-soft, #fff5d1); }
 .focus-shell-debug-dot { width: 6px; height: 6px; border-radius: 999px; background: var(--muted); }
 .focus-shell-debug-btn.is-active .focus-shell-debug-dot { background: var(--green, #24765c); }
 .focus-shell-debug-menu { position: absolute; top: calc(100% + 8px); left: 0; width: 268px; padding: 10px; border-radius: 16px; border: 1px solid var(--line); background: var(--card); box-shadow: 0 12px 28px rgba(20, 43, 59, 0.14); display: grid; gap: 6px; }
-.focus-shell-debug-kicker { margin: 2px 6px 4px; font-size: 9px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
+.focus-shell-debug-kicker { margin: 2px 6px 4px; color: var(--muted); letter-spacing: normal; text-transform: none; font: var(--type-label); }
 .focus-shell-debug-item { width: 100%; text-align: left; padding: 8px 10px; border-radius: 11px; border: 1px solid transparent; background: var(--paper); color: var(--ink); font: inherit; display: grid; gap: 2px; cursor: pointer; }
 .focus-shell-debug-item:hover { border-color: var(--line); background: var(--action-soft, #fff5d1); }
-.focus-shell-debug-item b { font-size: 12px; font-weight: 700; line-height: 1.25; }
-.focus-shell-debug-item small { font-size: 11px; color: var(--muted); line-height: 1.3; }
-.focus-shell-debug-reset { width: 100%; min-height: 34px; margin-top: 2px; padding: 6px 10px; border-radius: 10px; border: 1px solid var(--line); background: var(--card); color: var(--muted); font: inherit; font-size: 11px; font-weight: 600; cursor: pointer; }
+.focus-shell-debug-item b {
+  letter-spacing: normal;
+  text-transform: none;
+  font: var(--type-caption); }
+.focus-shell-debug-item small { color: var(--muted); letter-spacing: normal; text-transform: none; font: var(--type-caption); }
+.focus-shell-debug-reset { width: 100%; min-height: 34px; margin-top: 2px; padding: 6px 10px; border-radius: 10px; border: 1px solid var(--line); background: var(--card); color: var(--muted); cursor: pointer; letter-spacing: normal; text-transform: none; font: var(--type-caption); }
 .focus-shell-debug-reset:hover { color: var(--ink); background: var(--paper); }
 .sheet-grab {
   width: 40px;
@@ -188,9 +190,6 @@
   border: 0;
   background: transparent;
   color: var(--muted);
-  font: inherit;
-  font-weight: 700;
-  font-size: 13px;
   border-radius: 999px;
   display: flex;
   flex-direction: column;
@@ -198,6 +197,9 @@
   justify-content: center;
   gap: 4px;
   text-decoration: none;
+  letter-spacing: normal;
+  text-transform: none;
+  font: var(--type-label);
 }
 
 .phone-tab[data-state="active"],
@@ -241,13 +243,17 @@
 
 .sheet-content h2 {
   margin: 0;
-  font-size: 22px;
+  letter-spacing: normal;
+  text-transform: none;
+  font: var(--type-heading);
 }
 
 .sheet-content p {
   margin: 0;
   color: var(--muted, #726377);
-  line-height: 1.45;
+  letter-spacing: normal;
+  text-transform: none;
+  font: var(--type-body);
 }
 
 .sheet-close {
@@ -256,8 +262,9 @@
   border-radius: 14px;
   background: #40234e;
   color: #f6f253;
-  font: inherit;
-  font-weight: 700;
+  letter-spacing: normal;
+  text-transform: none;
+  font: var(--type-label);
 }
 
 .checkpoint-frame {
@@ -338,16 +345,16 @@
 .checkpoint-ember { position: absolute; width: clamp(140px, 14vw, 180px); aspect-ratio: 360 / 485; bottom: -10px; left: 50%; transform: translateX(-50%); pointer-events: auto; }
 .checkpoint-greeting { display: flex; align-items: center; gap: 16px; margin-block: 12px; }
 .checkpoint-greeting > div { width: 76px; aspect-ratio: 360 / 485; flex: none; }
-.checkpoint-greeting p { color: var(--muted); font-size: 14px; }
+.checkpoint-greeting p { color: var(--muted); letter-spacing: normal; text-transform: none; font: var(--type-body); }
 button.checkpoint-disc { cursor: pointer; transition: box-shadow 180ms ease, background-color 180ms ease; }
 button.checkpoint-disc:focus-visible { outline: 3px solid var(--ink); outline-offset: 6px; }
 button.checkpoint-disc:active { box-shadow: 0 0 0 7px color-mix(in srgb, var(--lime) 35%, transparent); }
 
 .checkpoint-copy h1 {
   margin: 4px 0;
-  font-size: clamp(28px, 3.2vw, 40px);
-  letter-spacing: -0.6px;
-  line-height: 1.1;
+  letter-spacing: normal;
+  text-transform: none;
+  font: var(--type-display);
 }
 
 .award-row {
@@ -368,7 +375,9 @@ button.checkpoint-disc:active { box-shadow: 0 0 0 7px color-mix(in srgb, var(--l
 }
 
 .award-card strong {
-  font-size: clamp(28px, 2.4vw, 36px);
+  letter-spacing: normal;
+  text-transform: none;
+  font: var(--type-body);
 }
 
 .phone-guest {
@@ -376,7 +385,9 @@ button.checkpoint-disc:active { box-shadow: 0 0 0 7px color-mix(in srgb, var(--l
   padding: 10px 12px;
   border-radius: 14px;
   background: #fff4d4;
-  font-size: 14px;
+  letter-spacing: normal;
+  text-transform: none;
+  font: var(--type-caption);
 }
 
 .phone-shell .fb-btn,
@@ -420,14 +431,16 @@ button.checkpoint-disc:active { box-shadow: 0 0 0 7px color-mix(in srgb, var(--l
 }
 
 .track-gain strong {
-  font-size: 42px;
-  letter-spacing: -1px;
-  line-height: 1;
+  letter-spacing: normal;
+  text-transform: none;
+  font: var(--type-display);
 }
 
 .track-gain small {
-  font-size: 18px;
   color: var(--muted);
+  letter-spacing: normal;
+  text-transform: none;
+  font: var(--type-heading);
 }
 
 .track-switch button,
@@ -441,7 +454,9 @@ button.checkpoint-disc:active { box-shadow: 0 0 0 7px color-mix(in srgb, var(--l
 }
 
 .phone-shell .track-gain strong {
-  font-size: clamp(42px, 5vw, 64px);
+  letter-spacing: normal;
+  text-transform: none;
+  font: var(--type-body);
 }
 
 @media (min-width: 900px) {
@@ -454,8 +469,10 @@ button.checkpoint-disc:active { box-shadow: 0 0 0 7px color-mix(in srgb, var(--l
   }
 
   .phone-tab {
-    font-size: 14px;
     min-height: 48px;
+    letter-spacing: normal;
+    text-transform: none;
+    font: var(--type-body);
   }
 }
 

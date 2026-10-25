@@ -26,8 +26,18 @@ it("keeps long scalable headings and named actions unconstrained at large font s
 });
 it("adds boundaries only between present sections and leaves item titles separate", async () => {
   let renderer: ReturnType<typeof create>;
-  await act(async () => { renderer = create(createElement(SectionStack, { children: [createElement(AppText, { key: "item", role: "itemTitle" }, "Member name"), false, null, createElement(AppText, { key: "caption", role: "caption" }, "Yesterday")] })); });
+  await act(async () => { renderer = create(createElement(SectionStack, { children: [createElement(AppText, { key: "item", role: "label" }, "Member name"), false, null, createElement(AppText, { key: "caption", role: "caption" }, "Yesterday")] })); });
   expect(renderer!.root.findAllByType("Text" as never)).toHaveLength(2);
   expect(renderer!.root.findAllByType("View" as never)).toHaveLength(3);
   expect(renderer!.root.findAllByType("Text" as never)[0].props.accessibilityRole).toBeUndefined();
+});
+
+it("preserves the recipe and keeps numeric emphasis separate from heading semantics", async () => {
+  let renderer: ReturnType<typeof create>;
+  await act(async () => { renderer = create(createElement(AppText, { role: "heading", style: { fontSize: 99, fontFamily: "Other", letterSpacing: 3, color: "red" } }, "1,140")); });
+  const text = renderer!.root.findByType("Text" as never);
+  const style = Object.assign({}, ...text.props.style);
+  expect(style).toMatchObject({ fontSize: 22, lineHeight: 28, fontFamily: "DMSans_700Bold", letterSpacing: 0, textTransform: "none", color: "red" });
+  expect(text.props.accessibilityRole).toBeUndefined();
+  expect(text.props.allowFontScaling).not.toBe(false);
 });

@@ -1,4 +1,4 @@
-import { SectionHeader, AppText } from "../ui/section";
+import { textStyle, SectionHeader, AppText  } from "../ui/section";
 import { useRef, useState } from "react";
 import { Animated, Pressable, Text, View } from "react-native";
 import {
@@ -102,12 +102,12 @@ export function ResultCard({
           <>
             <View style={{ flexDirection: "row", gap: 10, alignItems: "stretch" }}>
               <View style={{ flex: 1.1, backgroundColor: "#ffffff88", borderRadius: 16, padding: 16, justifyContent: "center" }}>
-                <Text style={[f.massive, { fontSize: 64 }]}>#{result.place}</Text>
+                <Text style={f.massive}>#{result.place}</Text>
                 <AppText role="body" secondary >of {result.fieldSize}</AppText>
               </View>
               <View style={{ flex: 1, gap: 10 }}>
                 <AppText role="body" secondary style={{ padding: 12, backgroundColor: "#ffffffbb", borderRadius: 14 }}>{formatVolume(result.sport, result.distanceM, result.movingSec, units)}</AppText>
-                <AppText role="itemTitle" style={{ padding: 12, backgroundColor: "#fff5d1", borderRadius: 14 }}>{result.eloAfter} effort score · {formatEloDelta(result.eloBefore,result.eloAfter)}</AppText>
+                <AppText role="label" style={{ padding: 12, backgroundColor: "#fff5d1", borderRadius: 14 }}>{result.eloAfter} effort score · {formatEloDelta(result.eloBefore,result.eloAfter)}</AppText>
               </View>
             </View>
           </>

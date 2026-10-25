@@ -1,3 +1,4 @@
+import { textStyle } from "./section";
 import { useMemo, useState } from "react";
 import {
   View,
@@ -307,9 +308,9 @@ const styles = StyleSheet.create({
     backgroundColor: colors.paper,
   },
   emptyText: {
-    fontSize: 12,
-    color: colors.muted,
-  },
+    ...textStyle("caption"),
+    color: colors.muted
+},
   badge: {
     position: "absolute",
     bottom: 12,
@@ -328,12 +329,11 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   badgePlayIcon: {
-    color: colors.lime,
-    fontSize: 10,
-  },
+    ...textStyle("label"),
+    color: colors.lime
+},
   badgeText: {
-    color: "#ffffff",
-    fontSize: 11,
-    fontFamily: fonts.bodyBold,
-  },
+    ...textStyle("label"),
+    color: "#ffffff"
+},
 });

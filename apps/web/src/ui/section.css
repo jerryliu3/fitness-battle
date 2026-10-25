@@ -21,3 +21,10 @@
 @media (min-width: 900px) { .ui-section.club-latest { grid-column: 1; } }
 
 .ui-section-stack.is-open { gap: 28px; }
+
+/* One surface composition for peer feature cards, whether informational or linked. */
+.ui-feature-card { display: flex; flex-direction: column; align-items: stretch; gap: 12px; padding: 20px; border: 1px solid #e3e9e7; border-radius: 20px; background: #fff; color: #142b3b; text-decoration: none; min-width: 0; }
+.ui-feature-card h2, .ui-feature-card p { margin: 0; }
+.ui-feature-card .ui-status-badge { align-self: flex-start; }
+a.ui-feature-card:focus-visible { outline: 2px solid #176c75; outline-offset: 3px; }
+.ui-feature-card .ui-text-secondary { color: #637482; }

@@ -215,11 +215,11 @@ export function Journey({
                   ) : null}
                   {day ? (
                     <>
-                      <AppText role="itemTitle" >✓</AppText>
+                      <AppText role="label" >✓</AppText>
                       <AppText role="caption" secondary >{dayHours}</AppText>
                     </>
                   ) : stop.kind === "today" ? null : (
-                    <AppText role="itemTitle" >
+                    <AppText role="label" >
                       {stop.kind === "start" ? "START" : "⋯"}
                     </AppText>
                   )}

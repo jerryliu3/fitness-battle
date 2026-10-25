@@ -1,5 +1,7 @@
 "use client";
 
+import { typographyStyle } from "../../ui/section";
+
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
@@ -420,13 +422,13 @@ export function RouteTimelapseMap({
 
       {/* Floating Header Badges */}
       <div className="pointer-events-none absolute top-3 left-3 right-3 flex items-center justify-between gap-2">
-        <div className="flex items-center gap-2 rounded-full bg-[#142b3b]/85 px-3 py-1.5 text-xs font-semibold text-white shadow-md backdrop-blur-md">
+        <div className="flex items-center gap-2 rounded-full bg-[#142b3b]/85 px-3 py-1.5   text-white shadow-md backdrop-blur-md" style={typographyStyle("label")}>
           <span className="h-2 w-2 rounded-full bg-[#f7c948] animate-pulse" />
           <span>{mode === "3d-flyover" ? "3D Flyover Replay" : "2D Overview"}</span>
         </div>
 
         {totalDistanceKm > 0 && (
-          <div className="rounded-full bg-[#142b3b]/85 px-3 py-1.5 font-mono text-xs font-medium text-white/90 shadow-md backdrop-blur-md">
+          <div className="rounded-full bg-[#142b3b]/85 px-3 py-1.5    text-white/90 shadow-md backdrop-blur-md" style={typographyStyle("label")}>
             {(totalDistanceKm * (units === "us" ? 1 / 1.609344 : 1)).toFixed(1)} {units === "us" ? "mi" : "km"} total
           </div>
         )}
@@ -457,7 +459,7 @@ export function RouteTimelapseMap({
 
       {tokenError && <div className="absolute inset-0 bg-[#142b3b]">
         <RouteStaticPreview coordinates={rawCoords} showPlayBadge={false} mapboxToken="" strokeColor="f7c948" className="h-full" />
-        <p role="status" className="absolute top-4 left-4 right-4 rounded-xl bg-[#142b3b] p-3 text-sm text-white">Route outline only. Interactive maps and flyovers are currently unavailable.</p>
+        <p role="status" className="absolute top-4 left-4 right-4 rounded-xl bg-[#142b3b] p-3  text-white" style={typographyStyle("caption")}>Route outline only. Interactive maps and flyovers are currently unavailable.</p>
       </div>}
     </div>
   );

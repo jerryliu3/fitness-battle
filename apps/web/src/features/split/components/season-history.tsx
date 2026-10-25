@@ -1,7 +1,6 @@
 "use client";
 import { AppParagraph, AppText, SectionHeader, AppHeading } from "@/ui/section";
 
-
 import {
   APP_TIMEZONE,
   competitionTrack,
@@ -42,7 +41,6 @@ export function SeasonHistory({
 }) {
   const [sportFilter, setSportFilter] = useState<SportId | "all">(primary);
 
-
   const sports = useMemo(() => {
     const ids = [...new Set(results.map((row) => row.sport))];
     return ids.sort();
@@ -60,7 +58,7 @@ export function SeasonHistory({
     return (
       <section className="sp-history" id="season-history">
         <div className="fd-roster-head">
-          <AppHeading level={3} role="contentTitle">Past weeks</AppHeading>
+          <AppHeading level={3} role="heading">Past weeks</AppHeading>
         </div>
         <div className="sp-empty">
           <SectionHeader title="No closed weeks yet"/>
@@ -75,7 +73,7 @@ export function SeasonHistory({
   return (
     <section className="sp-history" id="season-history">
       <div className="fd-roster-head">
-        <AppHeading level={3} role="contentTitle">Past weeks</AppHeading>
+        <AppHeading level={3} role="heading">Past weeks</AppHeading>
         <span>{new Set(rows.map(row=>row.periodStart)).size} weeks</span>
       </div>
 

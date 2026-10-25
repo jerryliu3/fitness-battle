@@ -1,7 +1,6 @@
 "use client";
 import { AppParagraph, AppText, typographyStyle, SectionHeader } from "@/ui/section";
 
-
 import {
   buildSleepView,
   formatClock,
@@ -62,7 +61,7 @@ export function SleepPanel({
 
   return (
     <section className="sl-panel" aria-label="Sleep">
-      <AppParagraph typographyRole="badgeLabel" className="fb-kicker">
+      <AppParagraph typographyRole="label" className="fb-kicker">
         Health · {metric.name} ·{" "}
         {formatClock({
           startsAt: view.periodStart,

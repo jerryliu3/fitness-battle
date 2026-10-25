@@ -96,21 +96,11 @@ export const SHELL_TYPE = {
 
 /** Logical pixels; web adapters convert sizes to rem, native keeps font scaling. */
 export const SHELL_TYPOGRAPHY = {
-  pageTitle: { size: 30, lineHeight: 36, weight: 700 },
-  navigationTitle: { size: 20, lineHeight: 26, weight: 700 },
-  sectionTitle: { size: 22, lineHeight: 28, weight: 700 },
-  contentTitle: { size: 18, lineHeight: 24, weight: 700 },
+  display: { size: 30, lineHeight: 36, weight: 700 },
+  heading: { size: 22, lineHeight: 28, weight: 700 },
   body: { size: 16, lineHeight: 24, weight: 400 },
-  itemTitle: { size: 14, lineHeight: 20, weight: 500 },
-  supporting: { size: 14, lineHeight: 20, weight: 400 },
-  actionLabel: { size: 14, lineHeight: 20, weight: 700 },
+  label: { size: 14, lineHeight: 20, weight: 700 },
   caption: { size: 12, lineHeight: 18, weight: 400 },
-  badgeLabel: { size: 12, lineHeight: 16, weight: 700 },
-  // Numeric and control roles are deliberately independent of heading hierarchy.
-  metricValue: { size: 20, lineHeight: 26, weight: 500 },
-  metricUnit: { size: 20, lineHeight: 26, weight: 400 },
-  controlSymbol: { size: 20, lineHeight: 26, weight: 500 },
-  avatarInitials: { size: 18, lineHeight: 24, weight: 700 },
 } as const;
 export type TypographyRole = keyof typeof SHELL_TYPOGRAPHY;
 export const SHELL_SECTION = { subtitleGap: 4, contentGap: 12, beforeDivider: 16, afterDivider: 12, dividerWidth: 1, dividerColor: "#d0dad7" } as const;

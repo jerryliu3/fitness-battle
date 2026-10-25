@@ -1,3 +1,6 @@
+import { ChartSvg, ChartText } from "../ui/chart-text";
+
+import { chartTextProps } from "../ui/section";
 import { SHELL_COLORS as clubColors } from "@fitness-battle/shared";
 import { View, Text } from "react-native";
 import Svg, { Circle, G, Line, Path, Text as SvgText } from "react-native-svg";
@@ -33,7 +36,7 @@ export function RecordChart({
       <ChartScrubber label="Personal record timeline, lower time is faster" points={chart.points.map(point => ({
         id: point.activityId, x: point.x, y: point.y, label: date(point.startedAt), value: formatClockTime(point.seconds),
       }))} width={chart.width} height={chart.height} plotTop={16} plotBottom={chart.height - 28} onSelect={onSelect}>
-      <Svg
+      <ChartSvg
         preserveAspectRatio="none"
         viewBox={`0 0 ${chart.width} ${chart.height}`}
         width="100%"
@@ -49,15 +52,15 @@ export function RecordChart({
               y2={t.y}
               stroke={clubColors.line}
             />
-            <SvgText
+            <ChartText
               x={chart.left - 8}
               y={t.y + 4}
               textAnchor="end"
               fill={clubColors.muted}
-              fontSize={10}
+
             >
               {formatClockTime(t.seconds)}
-            </SvgText>
+            </ChartText>
           </G>
         ))}
         <Path d={chart.path} fill="none" stroke={clubColors.ink} strokeWidth={2} />
@@ -78,25 +81,25 @@ export function RecordChart({
             />
           </G>
         ))}
-        <SvgText
+        <ChartText
           x={chart.points.length===1?(chart.left+chart.right)/2:chart.left}
           textAnchor={chart.points.length===1?"middle":"start"}
           y={chart.height - 8}
           fill={clubColors.muted}
-          fontSize={10}
+
         >
           {date(chart.start)}
-        </SvgText>
-        <SvgText
+        </ChartText>
+        <ChartText
           x={chart.right}
           y={chart.height - 8}
           textAnchor="end"
           fill={clubColors.muted}
-          fontSize={10}
+
         >
           {chart.points.length>1?date(chart.end):""}
-        </SvgText>
-      </Svg>
+        </ChartText>
+      </ChartSvg>
       </ChartScrubber>
     </View>
   );

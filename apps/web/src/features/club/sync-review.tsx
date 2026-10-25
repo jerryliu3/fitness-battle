@@ -1,4 +1,6 @@
 "use client";
+import { AppHeading } from "@/ui/section";
+
 import { useLayoutEffect, useRef, useState } from "react";
 import { APP_TIMEZONE, clubDuration, formatVolume, sportById, type CompeteState, type CompetitionMoment, type SyncReviewReceipt } from "@fitness-battle/shared";
 import { Sheet } from "@/ui/sheet";
@@ -25,7 +27,7 @@ function Review({ receipt, state, onComplete }: { receipt: SyncReviewReceipt; st
   const activity = activities.find(a => a.id === detail);
   if (activity) return <div ref={step} className="sync-review-step">
     <button className="fb-btn-line" onClick={() => setDetail(null)}>← All activities</button>
-    <p className="fb-kicker">ACTIVITY DETAILS</p><h1>{sportById(activity.sport).name}</h1>
+    <p className="fb-kicker">ACTIVITY DETAILS</p><AppHeading level={1} role="display">{sportById(activity.sport).name}</AppHeading>
     <ActivityRoute activity={activity} units={state.units}/>
     <div className="moment-result"><strong>{formatVolume(activity.sport, activity.distanceM, activity.movingSec, state.units)}</strong><span>{clubDuration(activity.movingSec)}</span></div>
     <p className="fb-copy">{new Date(activity.startedAt).toLocaleString("en-US", { dateStyle: "medium", timeStyle: "short", timeZone: APP_TIMEZONE })}</p>
@@ -33,7 +35,7 @@ function Review({ receipt, state, onComplete }: { receipt: SyncReviewReceipt; st
   </div>;
   return <div ref={step} className="sync-review-step">
     <p className="fb-kicker">{receipt.preview ? "SAMPLE PREVIEW · NO COMPETITION CREDIT" : "SYNC COMPLETE · YOUR NEXT MOVE"}</p>
-    <h1>Make it count.</h1>
+    <AppHeading level={1} role="display">Make it count.</AppHeading>
     <div className="sync-review-total">{clubDuration(selected.reduce((n, a) => n + a.movingSec, 0))}</div>
     <p className="fb-copy">{selected.length} of {activities.length} activities selected. Review your effort, then slide to see what changed.</p>
     {activities.length > 0 && <ActivityRoute activity={selected[0] ?? activities[0]} units={state.units}/>}

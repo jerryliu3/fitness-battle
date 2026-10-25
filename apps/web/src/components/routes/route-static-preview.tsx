@@ -1,5 +1,7 @@
 "use client";
 
+import { typographyStyle } from "../../ui/section";
+
 import { useMemo, useState } from "react";
 import {
   buildMapboxStaticImageUrl,
@@ -127,7 +129,7 @@ export function RouteStaticPreview({
       {imageUrl && !loaded && !hasError && (
         <div className="absolute inset-0 flex flex-col items-center justify-center bg-[#f8f9f6] animate-pulse">
           <div className="w-12 h-12 rounded-full border-2 border-[#142b3b]/10 border-t-[#f7c948] animate-spin" />
-          <span className="mt-2 text-xs font-medium text-[#637482]">Loading map…</span>
+          <span className="mt-2   text-[#637482]" style={typographyStyle("label")}>Loading map…</span>
         </div>
       )}
 
@@ -157,7 +159,7 @@ export function RouteStaticPreview({
 
       {/* 3. Optional "Play 3D Replay" badge overlay */}
       {showPlayBadge && (
-        <div className="pointer-events-none absolute bottom-3 right-3 flex items-center gap-1.5 rounded-full bg-[#142b3b]/85 px-3 py-1.5 text-xs font-semibold text-white shadow-lg backdrop-blur-md transition-all group-hover:bg-[#142b3b] group-hover:scale-105">
+        <div className="pointer-events-none absolute bottom-3 right-3 flex items-center gap-1.5 rounded-full bg-[#142b3b]/85 px-3 py-1.5   text-white shadow-lg backdrop-blur-md transition-all group-hover:bg-[#142b3b] group-hover:scale-105" style={typographyStyle("label")}>
           <svg
             className="h-3.5 w-3.5 fill-[#f7c948]"
             viewBox="0 0 24 24"
@@ -191,7 +193,7 @@ function FallbackSvgRoute({
 }) {
   if (coords.length < 2) {
     return (
-      <div className="flex h-full w-full items-center justify-center p-4 text-center text-xs text-[#637482]">
+      <div className="flex h-full w-full items-center justify-center p-4 text-center  text-[#637482]" style={typographyStyle("caption")}>
         No route data available
       </div>
     );
@@ -271,7 +273,7 @@ function FallbackSvgRoute({
         )}
       </svg>
       {hasNoToken && (
-        <div className="absolute top-2.5 left-2.5 rounded bg-black/50 px-2 py-0.5 text-[10px] font-medium tracking-wide text-white/80 backdrop-blur-sm">
+        <div className="absolute top-2.5 left-2.5 rounded bg-black/50 px-2 py-0.5    text-white/80 backdrop-blur-sm" style={typographyStyle("label")}>
           Route outline · map unavailable
         </div>
       )}

@@ -45,7 +45,7 @@ export function RivalCard({ state }: { state: CompeteState }) {
       <img className="club-landscape" src="/club/alpine-trail.jpg" alt="" />
       <div className="club-rival-top">
         <div>
-          <AppHeading level={2} role="contentTitle">{sport ? sportById(sport).name : "Find your field"}</AppHeading>
+          <AppHeading level={2} role="heading">{sport ? sportById(sport).name : "Find your field"}</AppHeading>
         </div>
         {you ? (
           <span className="club-place">

@@ -19,8 +19,8 @@ export function LatestActivity({ state, onOpen }: { state: CompeteState; onOpen:
       {rows.map(row => { const route = activityRoute(row.ownActivity); return <button key={`${row.userId}:${row.id}`} type="button" className="club-activity-row" onClick={() => row.ownActivity ? onOpen(row.ownActivity) : setSelected({ account: user?.id, id: row.id })}>
         <span className={route ? "club-activity-map" : "club-activity-icon club-activity-sport"}>{route ? <RouteStaticPreview coordinates={route} width={128} height={128} padding={16} strokeWidth={3} showMarkers={false} showPlayBadge={false} alt="Activity route" /> : <span aria-hidden="true">{sportActivityMark(row.sport)}</span>}</span>
         <span><b>{row.ownActivity ? sportById(row.sport).name : `${row.name} · ${sportById(row.sport).name}`} · {clubDuration(row.movingSec)}</b>
-          <AppText as="small" role="supporting" secondary>{row.verified ? "GPS Tracked" : row.source === "manual" ? "Manual activity" : "Activity"}</AppText></span>
-        <span><AppText as="small" role="supporting" secondary>{new Date(row.startedAt).toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: APP_TIMEZONE })}</AppText><span aria-hidden="true">→</span></span>
+          <AppText as="small" role="body" secondary>{row.verified ? "GPS Tracked" : row.source === "manual" ? "Manual activity" : "Activity"}</AppText></span>
+        <span><AppText as="small" role="body" secondary>{new Date(row.startedAt).toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: APP_TIMEZONE })}</AppText><span aria-hidden="true">→</span></span>
       </button>; })}
     </Section>}
     {crew.error && <AppParagraph typographyRole="caption" role="status" className="fb-note">{crew.error}</AppParagraph>}

@@ -1,4 +1,6 @@
 "use client";
+import { typographyStyle } from "@/ui/section";
+
 import { useRef, useLayoutEffect, useState, useId, useMemo } from "react";
 import { motion, useReducedMotion } from "motion/react";
 import {
@@ -254,7 +256,7 @@ export function ArenaLanes({
       >
         <motion.g aria-hidden={standings} initial={false} animate={{ opacity: standings ? 0 : 1 }} style={{ pointerEvents: "none" }}>
           {groundPaint}
-          {!course.oval && course.laneWidth >= 48 && ordered.map((lane, i) => <text key={lane.id} x={course.point(effectiveView.center, i).x} y={36} textAnchor="middle" className={lane.you ? "lane-title is-you" : "lane-title"}>{`${ordinalPlace(1 + ordered.filter(peer=>peer.value>lane.value+0.000001).length)}${lane.you?" · You":""}`}</text>)}
+          {!course.oval && course.laneWidth >= 48 && ordered.map((lane, i) => <text style={typographyStyle("caption")} key={lane.id} x={course.point(effectiveView.center, i).x} y={36} textAnchor="middle" className={lane.you ? "lane-title is-you" : "lane-title"}>{`${ordinalPlace(1 + ordered.filter(peer=>peer.value>lane.value+0.000001).length)}${lane.you?" · You":""}`}</text>)}
         </motion.g>
         {ordered.map((l, i) => {
           const position = arenaPosition(l.value, effectiveView);
@@ -330,26 +332,26 @@ export function ArenaLanes({
               ) : <circle r={18} fill="white" stroke="#616c63" strokeDasharray="3 3"/>}
               <rect className="focus-racer-focus-ring" x={-23} y={-headHalf-3} width={46} height={headHalf*2+6} rx={23} fill="none" stroke="#f1c75b" strokeWidth={2}/>
               <rect x={xx - 24 / markerScale} y={yy - Math.max(22 / markerScale, headHalf + 4)} width={48 / markerScale} height={Math.max(44 / markerScale, headHalf * 2 + 8)} rx="24" fill="transparent"/>
-              {(standings || edge) && <text x={xx} y={yy+4} textAnchor="middle" className="lane-initial" fill="#282f2c">{!standings&&edge?(edge==="ahead"?"↑":"↓"):l.initials}</text>}
+              {(standings || edge) && <text style={typographyStyle("caption")} x={xx} y={yy+4} textAnchor="middle" className="lane-initial" fill="#282f2c">{!standings&&edge?(edge==="ahead"?"↑":"↓"):l.initials}</text>}
               </g>
-              {!standings&&edge&&<g pointerEvents="none"><rect x={-34} y={edge==="ahead"?27:-42} width={68} height={20} rx={8} fill="#ffffffee"/><text x={0} y={edge==="ahead"?41:-28} textAnchor="middle" fontSize={10} fill="#616c63">{relativeDistance(l.value)}</text></g>}
+              {!standings&&edge&&<g pointerEvents="none"><rect x={-34} y={edge==="ahead"?27:-42} width={68} height={20} rx={8} fill="#ffffffee"/><text style={typographyStyle("caption")} x={0} y={edge==="ahead"?41:-28} textAnchor="middle"  fill="#616c63">{relativeDistance(l.value)}</text></g>}
               {!standings && !edge && (l.you || selected===l.id) && <g className="athlete-pennant" pointerEvents="none">
                 <path d={`M0 0 L${pennantX+pennantWidth/2} ${pennantY>0?pennantY:pennantY+46}`} fill="none" stroke="#819486" strokeWidth="1.2"/>
                 <rect x={pennantX} y={pennantY+2} width={pennantWidth} height={46} rx={12} fill="#282f2c" opacity={.1}/>
                 <rect x={pennantX} y={pennantY} width={pennantWidth} height={46} rx={12} fill="#ffffff" stroke={l.you?"#f1c75b":"#e0e5dc"}/>
                 <circle cx={pennantX+24} cy={pennantY+23} r={16} fill="#eef0e9"/>
                 {l.avatarUrl ? <><defs><clipPath id={`${prefix}-portrait-${i}`}><circle cx={pennantX+24} cy={pennantY+23} r={16}/></clipPath></defs><image href={l.avatarUrl} x={pennantX+8} y={pennantY+7} width={32} height={32} preserveAspectRatio="xMidYMid slice" clipPath={`url(#${prefix}-portrait-${i})`}/></> : <path d={PERSON_ICON_PATH} transform={`translate(${pennantX+14} ${pennantY+13}) scale(.83)`} fill="none" stroke="#616c63" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round"/>}
-                <text x={pennantX+47} y={pennantY+20} fontSize={12} fill="#282f2c" fontWeight={600}>{l.you?"You":l.name.length>13?`${l.name.slice(0,12)}…`:l.name}</text>
-                <text x={pennantX+47} y={pennantY+35} fontSize={10} fill="#616c63">{ordinalPlace(rank)} · {l.you?`${l.value.toFixed(1)} ${unit}`:relativeDistance(l.value)}</text>
+                <text style={typographyStyle("caption")} x={pennantX+47} y={pennantY+20}  fill="#282f2c" >{l.you?"You":l.name.length>13?`${l.name.slice(0,12)}…`:l.name}</text>
+                <text style={typographyStyle("caption")} x={pennantX+47} y={pennantY+35}  fill="#616c63">{ordinalPlace(rank)} · {l.you?`${l.value.toFixed(1)} ${unit}`:relativeDistance(l.value)}</text>
               </g>}
               <g aria-hidden={!standings} display={standings ? "inline" : "none"}>
               <motion.g initial={false} animate={{ opacity: standings ? 1 : 0 }}>
                 <rect x={-30} y={-33} width={Math.max(200, width - 16)} height={70} rx={14} fill="transparent" />
                 <line x1={-22} x2={width - 52} y1={38} y2={38} stroke="#e0e5dc" />
-                <text x={40} y={4} fill="#616c63" fontSize={12}>{rank}</text>
-                <text x={64} y={-5} fill="#282f2c" fontSize={13} fontWeight={600}>{l.you ? selfLaneLabel(l.name) : l.name}{scores[l.id] != null ? ` ${effortRankBadge(scores[l.id]).symbol}` : ""}</text>
-                <text x={64} y={15} fill="#a67c00" fontSize={10}>{scores[l.id] ?? "—"} effort score</text>
-                <text x={width - 58} y={5} textAnchor="end" fill="#282f2c" fontSize={13} fontWeight={700}>{l.value.toFixed(1)} {unit}</text>
+                <text style={typographyStyle("caption")} x={40} y={4} fill="#616c63" >{rank}</text>
+                <text style={typographyStyle("caption")} x={64} y={-5} fill="#282f2c"  >{l.you ? selfLaneLabel(l.name) : l.name}{scores[l.id] != null ? ` ${effortRankBadge(scores[l.id]).symbol}` : ""}</text>
+                <text style={typographyStyle("caption")} x={64} y={15} fill="#a67c00" >{scores[l.id] ?? "—"} effort score</text>
+                <text style={typographyStyle("caption")} x={width - 58} y={5} textAnchor="end" fill="#282f2c"  >{l.value.toFixed(1)} {unit}</text>
               </motion.g>
               </g>
             </motion.g>
@@ -378,7 +380,7 @@ export function ArenaLanes({
                   stroke="#616c63"
                   strokeDasharray="3 3"
                 />
-                <text
+                <text style={typographyStyle("caption")}
                   x={gx}
                   y={gy + 4}
                   textAnchor="middle"
@@ -390,7 +392,7 @@ export function ArenaLanes({
             );
           })()}
 
-        <text opacity={standings ? 0 : 1} x="18" y={height - 18} className="lane-distance">
+        <text style={typographyStyle("caption")} opacity={standings ? 0 : 1} x="18" y={height - 18} className="lane-distance">
           {course.oval ? `${fieldLap(yourValue, unit).laps} laps + ${(yourValue % (unit === "pts" ? 20 : 1)).toFixed(1)} ${unit} · ${yourValue.toFixed(1)} ${unit} total` : "Drag ↕ distance · ↔ lanes · tap track to expand"}
         </text>
       </svg>

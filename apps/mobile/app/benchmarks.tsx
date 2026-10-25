@@ -46,7 +46,7 @@ export default function Benchmarks() {
               }}
               style={[f.chip, sport === s && f.chipActive]}
             >
-              <AppText role="itemTitle" >
+              <AppText role="label" >
                 {s === "running" ? "Running" : "Cycling"}
               </AppText>
             </Pressable>
@@ -60,7 +60,7 @@ export default function Benchmarks() {
               onPress={() => setDistance(b.id)}
               style={[f.chip, b.id === benchmark.id && f.chipActive]}
             >
-              <AppText role="itemTitle" >{b.label}</AppText>
+              <AppText role="label" >{b.label}</AppText>
             </Pressable>
           ))}
         </View>
@@ -72,7 +72,7 @@ export default function Benchmarks() {
               onPress={() => setScope(s)}
               style={[f.chip, scope === s && f.chipActive]}
             >
-              <AppText role="itemTitle" >
+              <AppText role="label" >
                 {s === "category"
                   ? `Your tier · ${rankForElo(state.ratings.find((r) => r.sport === sport)?.openElo ?? 500).name}`
                   : s}
@@ -88,9 +88,9 @@ export default function Benchmarks() {
         <View style={f.card}>
           {rows.slice(0, 20).map((r) => (
             <View key={r.id} style={f.row}>
-              <AppText role="supporting" secondary >{r.place}</AppText>
-              <AppText role="itemTitle" style={f.grow}>{r.name}</AppText>
-              <AppText role="itemTitle" >{formatClockTime(r.seconds)}</AppText>
+              <AppText role="body" secondary >{r.place}</AppText>
+              <AppText role="label" style={f.grow}>{r.name}</AppText>
+              <AppText role="label" >{formatClockTime(r.seconds)}</AppText>
             </View>
           ))}
           {!rows.some((r) => r.you) && (

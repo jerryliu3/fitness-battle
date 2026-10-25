@@ -1,4 +1,4 @@
-import { AppText } from "./section";
+import { textStyle, AppText  } from "./section";
 import type { AwardCardModel } from "@fitness-battle/shared";
 import { Card } from "heroui-native/card";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
@@ -23,8 +23,8 @@ export function AwardShelf({ cards }: { cards: AwardCardModel[] }) {
       {cards.map((card) => (
         <Card key={card.id} style={styles.card}>
           <Card.Header>
-            <AppText role="contentTitle" accessibilityRole="header">{card.headline}</AppText>
-            <AppText role="supporting" secondary>
+            <AppText role="heading" accessibilityRole="header">{card.headline}</AppText>
+            <AppText role="body" secondary>
               {card.sportName} · {card.weekLabel}
             </AppText>
           </Card.Header>
@@ -44,10 +44,9 @@ const styles = StyleSheet.create({
   row: { gap: 12, paddingVertical: 4 },
   card: { width: 220, borderRadius: SHELL_RADIUS.card },
   place: {
-    fontFamily: "DMSans_700Bold",
-    fontSize: 28,
-    color: SHELL_COLORS.ink,
-  },
+    ...textStyle("display"),
+    color: SHELL_COLORS.ink
+},
   empty: { paddingVertical: 8 },
 
 });

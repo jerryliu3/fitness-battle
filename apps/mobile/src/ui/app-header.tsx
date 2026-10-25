@@ -1,3 +1,4 @@
+import { textStyle } from "./section";
 import { EffortRail } from "../features/effort-rail";
 
 import { usePathname, useRouter } from "expo-router";
@@ -93,14 +94,14 @@ const s = StyleSheet.create({
   streak: { flexDirection: "row", alignItems: "center", gap: 3, flexShrink: 0 },
   debugBtn: { flexShrink: 0, minHeight: 44, justifyContent: "center", paddingHorizontal: 10, paddingVertical: 5, borderRadius: 999, borderWidth: 1, borderColor: c.line, backgroundColor: c.card },
   debugBtnActive: { borderColor: c.tennis, backgroundColor: "#fff5d1" },
-  debugBtnText: { fontFamily: "DMSans_700Bold", fontSize: 11, color: c.ink },
+  debugBtnText: { ...textStyle("caption"), color: c.ink },
   debugMenu: { marginHorizontal: 22, marginBottom: 10, padding: 10, borderRadius: 16, borderWidth: 1, borderColor: c.line, backgroundColor: c.card, gap: 6 },
-  debugKicker: { fontFamily: "DMSans_700Bold", fontSize: 9, letterSpacing: 1, color: c.muted, marginHorizontal: 4, marginBottom: 2 },
+  debugKicker: { ...textStyle("label"), color: c.muted, marginHorizontal: 4, marginBottom: 2 },
   debugItem: { paddingHorizontal: 10, paddingVertical: 8, borderRadius: 10, backgroundColor: c.paper, gap: 2 },
-  debugItemTitle: { fontFamily: "DMSans_700Bold", fontSize: 12, color: c.ink },
-  debugItemDetail: { fontFamily: "DMSans_400Regular", fontSize: 11, color: c.muted },
+  debugItemTitle: { ...textStyle("heading"), color: c.ink },
+  debugItemDetail: { ...textStyle("caption"), color: c.muted },
   debugReset: { paddingVertical: 8, alignItems: "center", borderRadius: 10, borderWidth: 1, borderColor: c.line },
-  debugResetText: { fontFamily: "DMSans_500Medium", fontSize: 11, color: c.muted },
+  debugResetText: { ...textStyle("caption"), color: c.muted },
   profile: {
     width: 44,
     height: 44,

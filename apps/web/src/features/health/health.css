@@ -6,16 +6,17 @@
 
 .sl-heading {
   margin: 0;
-  font-size: 40px;
-  line-height: 0.95;
-  letter-spacing: -0.04em;
+  letter-spacing: normal;
+  text-transform: none;
+  font: var(--type-display);
 }
 
 .sl-heading span {
   display: block;
   color: var(--muted);
-  font-size: 22px;
-  letter-spacing: -0.03em;
+  letter-spacing: normal;
+  text-transform: none;
+  font: var(--type-heading);
 }
 
 .sl-hero {
@@ -37,17 +38,17 @@
 }
 
 .sl-score strong {
-  font-size: 84px;
-  line-height: 0.8;
-  letter-spacing: -0.06em;
+  letter-spacing: normal;
+  text-transform: none;
+  font: var(--type-display);
 }
 
 .sl-score span {
   padding-bottom: 8px;
   color: #c5cbe6;
-  font-size: 13px;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
+  letter-spacing: normal;
+  text-transform: none;
+  font: var(--type-body);
 }
 
 .sl-hero .fb-copy,
@@ -87,7 +88,9 @@
   padding: 0;
   list-style: none;
   color: #c5cbe6;
-  font-size: 12px;
+  letter-spacing: normal;
+  text-transform: none;
+  font: var(--type-caption);
 }
 
 .sl-week {
@@ -119,8 +122,10 @@
 }
 
 .sl-day span {
-  font-size: 11px;
   color: var(--muted);
+  letter-spacing: normal;
+  text-transform: none;
+  font: var(--type-caption);
 }
 
 .sl-stats {
@@ -139,17 +144,22 @@
 .sl-stats span {
   display: block;
   color: var(--muted);
-  font-size: 12px;
+  letter-spacing: normal;
+  text-transform: none;
+  font: var(--type-caption);
 }
 
 .sl-stats strong {
-  font-size: 22px;
+  letter-spacing: normal;
+  text-transform: none;
+  font: var(--type-heading);
 }
 
 .sl-stats small {
   color: var(--muted);
-  font-size: 13px;
-  font-weight: 500;
+  letter-spacing: normal;
+  text-transform: none;
+  font: var(--type-caption);
 }
 
 .sl-board {
@@ -178,9 +188,13 @@
 .sl-board small {
   display: block;
   color: var(--muted);
-  font-size: 12px;
+  letter-spacing: normal;
+  text-transform: none;
+  font: var(--type-caption);
 }
 
 .sl-board b {
-  font-size: 18px;
+  letter-spacing: normal;
+  text-transform: none;
+  font: var(--type-heading);
 }

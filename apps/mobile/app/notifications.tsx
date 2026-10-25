@@ -265,19 +265,17 @@ const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.paper },
   scroll: { padding: 20, gap: 12 },
   back: {
-    ...textStyle("supporting"),
+    ...textStyle("body"),
     color: colors.muted,
     marginBottom: 4
 },
   kicker: {
     ...textStyle("caption"),
-    color: colors.muted,
-    textTransform: "uppercase"
+    color: colors.muted
 },
   title: {
-    ...textStyle("pageTitle"),
-    color: colors.ink,
-    letterSpacing: -0.5
+    ...textStyle("display"),
+    color: colors.ink
 },
   copy: {
     ...textStyle("body"),
@@ -301,9 +299,9 @@ const styles = StyleSheet.create({
   },
   rowFirst: { borderTopWidth: 0 },
   grow: { flex: 1, minWidth: 0, gap: 4 },
-  rowTitle: { ...textStyle("itemTitle"), color: colors.ink },
+  rowTitle: { ...textStyle("label"), color: colors.ink },
   rowDetail: {
-    ...textStyle("supporting"),
+    ...textStyle("body"),
     color: colors.muted
 },
   line: {
@@ -314,6 +312,6 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     alignItems: "center",
   },
-  lineText: { ...textStyle("actionLabel"), color: colors.ink },
+  lineText: { ...textStyle("label"), color: colors.ink },
   disabled: { opacity: 0.45 },
 });

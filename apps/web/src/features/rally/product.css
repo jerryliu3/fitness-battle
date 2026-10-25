@@ -64,14 +64,18 @@ body:has(.rally-focus[data-product="on"]) .fb {
   background: none;
   border: 0;
   color: var(--rf-paper);
-  font-size: 12px;
   text-decoration: none;
+  letter-spacing: normal;
+  text-transform: none;
+  font: var(--type-caption);
 }
 
 .rally-focus[data-product="on"] .rf-header nav a[aria-current="page"] {
   background: var(--rf-tennis);
   color: var(--rf-plum);
-  font-weight: 750;
+  letter-spacing: normal;
+  text-transform: none;
+  font: var(--type-label);
 }
 
 .rally-focus[data-product="on"] .rf-wordmark,
@@ -90,7 +94,9 @@ body:has(.rally-focus[data-product="on"]) .fb {
     gap: 5px;
     color: var(--rf-plum);
     padding: 9px 5px;
-    font-size: 10px;
+    letter-spacing: normal;
+    text-transform: none;
+    font: var(--type-caption);
   }
 
   .rally-focus[data-product="on"] .rf-header nav a[aria-current="page"] {
@@ -105,14 +111,18 @@ body:has(.rally-focus[data-product="on"]) .fb {
 }
 
 .rally-focus[data-product="on"] .sp-brand {
-  font-family: var(--font-rf-display), sans-serif;
   color: var(--rf-tennis);
+  letter-spacing: normal;
+  text-transform: none;
+  font: var(--type-body);
 }
 
 .rally-focus[data-product="on"] .sp-title-block h1,
 .rally-focus[data-product="on"] .sp-title-block h1 span {
-  font-family: var(--font-rf-display), sans-serif;
   color: var(--rf-tennis);
+  letter-spacing: normal;
+  text-transform: none;
+  font: var(--type-display);
 }
 
 .rally-focus[data-product="on"] .fb-kicker {
@@ -234,14 +244,16 @@ body:has(.rally-focus[data-product="on"]) .fb {
 
 .rf-ace-strip strong {
   display: block;
-  font-family: var(--font-rf-display), sans-serif;
-  font-size: 22px;
-  line-height: 1;
   margin: 4px 0 6px;
+  letter-spacing: normal;
+  text-transform: none;
+  font: var(--type-heading);
 }
 
 .rf-field-note {
   margin: 0;
   color: color-mix(in srgb, var(--rf-paper) 80%, transparent);
-  font-size: 13px;
+  letter-spacing: normal;
+  text-transform: none;
+  font: var(--type-caption);
 }

@@ -105,19 +105,18 @@ const s = StyleSheet.create({
   scrim: { ...StyleSheet.absoluteFill, backgroundColor: "#081f3670" },
   top: { flexDirection: "row", justifyContent: "space-between", gap: 10 },
   eyebrow: {
-    ...textStyle("badgeLabel"),
-    letterSpacing: 0.7,
+    ...textStyle("label"),
     color: "#ffffffdd"
 },
   title: {
-    ...textStyle("contentTitle"),
+    ...textStyle("heading"),
     color: c.card,
     marginTop: 5
 },
-  place: { fontFamily: "DMSans_700Bold", fontSize: 22, color: c.card },
+  place: { ...textStyle("heading"), color: c.card },
   markers: { alignSelf: "center", height: 110 },
   bottom: { flexDirection: "row", alignItems: "center", gap: 12 },
-  headline: { ...textStyle("contentTitle"), color: c.card },
+  headline: { ...textStyle("heading"), color: c.card },
   caption: {
     ...textStyle("caption"),
     color: "#ffffffdd"

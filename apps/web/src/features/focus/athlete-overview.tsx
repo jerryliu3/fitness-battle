@@ -1,5 +1,6 @@
 "use client";
-import { AppParagraph, typographyStyle, AppHeading } from "@/ui/section";
+import { ChartSvg, ChartText } from "@/ui/chart-text";
+import { AppParagraph, AppText, SectionHeader, typographyStyle, AppHeading } from "@/ui/section";
 
 import { clubLifetimeTotals } from "@fitness-battle/shared";
 import { ProfilePhoto } from "@/features/you/profile-photo";
@@ -151,7 +152,7 @@ export function AthleteOverview({
               />
             </label>
             {profileError ? (
-              <AppParagraph typographyRole="supporting" className="fb-error" role="alert" style={{ ...typographyStyle("supporting"), marginBottom: 8 }}>
+              <AppParagraph typographyRole="body" className="fb-error" role="alert" style={{ ...typographyStyle("body"), marginBottom: 8 }}>
                 {profileError}
               </AppParagraph>
             ) : null}
@@ -159,7 +160,7 @@ export function AthleteOverview({
               <button
                 type="button"
                 className="fb-btn"
-                style={{ ...typographyStyle("actionLabel"), padding: "6px 14px" }}
+                style={{ ...typographyStyle("label"), padding: "6px 14px" }}
                 onClick={() => {
                   const trimmedName = name.trim();
                   if (!trimmedName) {
@@ -177,7 +178,7 @@ export function AthleteOverview({
               <button
                 type="button"
                 className="fb-btn-line"
-                style={{ ...typographyStyle("actionLabel"), padding: "6px 14px" }}
+                style={{ ...typographyStyle("label"), padding: "6px 14px" }}
                 onClick={() => {
                   setName(state.name);
                   setCity(state.city);
@@ -196,8 +197,8 @@ export function AthleteOverview({
           <div className="focus-profile-card-copy">
             <div className="focus-profile-identity">
               <div className="focus-profile-identity-text">
-                <AppParagraph typographyRole="badgeLabel" className="fb-kicker">{state.city || "Your location"}</AppParagraph>
-                <AppHeading level={1} role="pageTitle">{state.name}</AppHeading>
+                <AppParagraph typographyRole="label" className="fb-kicker">{state.city || "Your location"}</AppParagraph>
+                <AppHeading level={1} role="display">{state.name}</AppHeading>
                 {email ? (
                   <AppParagraph typographyRole="body" className="focus-profile-email">
                     {email}
@@ -224,23 +225,23 @@ export function AthleteOverview({
 
       {showProgress ? (
       <section className="focus-season-strip" aria-label="Lifetime totals">
-        <AppParagraph typographyRole="badgeLabel" className="fb-kicker">Lifetime totals</AppParagraph>
+        <SectionHeader title="Lifetime totals"/>
         <div className="focus-season-stats">
           <div>
-            <strong>{formatDistanceM(season.meters, state.units)}</strong>
-            <span>{unit} total</span>
+            <AppText role="heading">{formatDistanceM(season.meters, state.units)}</AppText>
+            <AppText role="body" secondary>{unit} total</AppText>
           </div>
           <div>
-            <strong>{season.sessions}</strong>
-            <span>sessions</span>
+            <AppText role="heading">{season.sessions}</AppText>
+            <AppText role="body" secondary>sessions</AppText>
           </div>
           <div>
-            <strong>{season.weeks}</strong>
-            <span>settled weeks</span>
+            <AppText role="heading">{season.weeks}</AppText>
+            <AppText role="body" secondary>settled weeks</AppText>
           </div>
           <div>
-            <strong>{state.lifetimeOvertakes}</strong>
-            <span>overtakes</span>
+            <AppText role="heading">{state.lifetimeOvertakes}</AppText>
+            <AppText role="body" secondary>overtakes</AppText>
           </div>
         </div>
       </section>
@@ -257,12 +258,12 @@ export function AthleteOverview({
         </div>
 
         <div className="focus-elo-score-row">
-          <strong>{effectiveElo.toLocaleString()}</strong>
-          <span className="focus-elo-score-label">effort score</span>
+          <AppText role="display" className="ui-score-value">{effectiveElo.toLocaleString()}</AppText>
+          <AppText role="body" secondary>Effort score</AppText>
         </div>
 
         {milestone ? <AppParagraph typographyRole="body" className="fb-copy">+1 per {formatVolume(state.primary, state.primary === "strength" ? 0 : milestone.step, state.primary === "strength" ? milestone.step : 0, state.units)} this week · +{milestone.earned} from activity</AppParagraph> : null}
-        <svg
+        <ChartSvg
           viewBox="0 0 340 150"
           className="focus-trend"
           role="img"
@@ -276,18 +277,16 @@ export function AthleteOverview({
           </defs>
 
           {/* Horizontal gridlines & Y-axis numbers */}
-          <text
+          <ChartText
             x="36"
             y={yTop}
             textAnchor="end"
             dominantBaseline="middle"
             fill="#616c63"
-            fontSize="10"
-            fontFamily="inherit"
-            fontWeight="500"
+
           >
             {yMax}
-          </text>
+          </ChartText>
           <line
             x1={xStart}
             y1={yTop}
@@ -297,18 +296,16 @@ export function AthleteOverview({
             strokeDasharray="3 3"
           />
 
-          <text
+          <ChartText
             x="36"
             y={yMidPos}
             textAnchor="end"
             dominantBaseline="middle"
             fill="#616c63"
-            fontSize="10"
-            fontFamily="inherit"
-            fontWeight="500"
+
           >
             {yMid}
-          </text>
+          </ChartText>
           <line
             x1={xStart}
             y1={yMidPos}
@@ -318,18 +315,16 @@ export function AthleteOverview({
             strokeDasharray="3 3"
           />
 
-          <text
+          <ChartText
             x="36"
             y={yBottom}
             textAnchor="end"
             dominantBaseline="middle"
             fill="#616c63"
-            fontSize="10"
-            fontFamily="inherit"
-            fontWeight="500"
+
           >
             {yMin}
-          </text>
+          </ChartText>
           <line
             x1={xStart}
             y1={yBottom}
@@ -404,37 +399,35 @@ export function AthleteOverview({
           />
 
           {/* X-axis date labels integrated directly into the graph */}
-          <text
+          <ChartText
             x={xStart}
             y="136"
             textAnchor="start"
             fill="#616c63"
-            fontSize="10"
-            fontFamily="inherit"
+
           >
             {startDateLabel}
-          </text>
-          <text
+          </ChartText>
+          <ChartText
+            minChartWidth={260}
             x={xMid}
             y="136"
             textAnchor="middle"
             fill="#616c63"
-            fontSize="10"
-            fontFamily="inherit"
+
           >
             {midDateLabel}
-          </text>
-          <text
+          </ChartText>
+          <ChartText
             x={xEnd}
             y="136"
             textAnchor="end"
             fill="#616c63"
-            fontSize="10"
-            fontFamily="inherit"
+
           >
             {endDateLabel}
-          </text>
-        </svg>
+          </ChartText>
+        </ChartSvg>
       </section>
       ) : null}
     </>

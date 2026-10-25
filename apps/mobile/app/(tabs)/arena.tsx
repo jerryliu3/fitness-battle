@@ -1,4 +1,4 @@
-import { SectionHeader, SectionStack, AppText } from "../../src/ui/section";
+import { FeatureCard, SectionHeader, SectionStack, AppText } from "../../src/ui/section";
 import { AppIcon } from "../../src/ui/app-icon";
 import { competitionTrack, competitionTrackLabel } from "@fitness-battle/shared";
 import { EventCarousel } from "../../src/features/event-carousel";
@@ -146,16 +146,12 @@ export default function ArenaScreen() {
         ) : null}
         <RoundTakeover state={state} ready={canWrite} dispatch={dispatch} />
         {hasRegistration?<EventCarousel key={accountKey} events={[...active.map(r=>({id:r.sport,label:SPORTS.find(s=>s.id===r.sport)!.name,badge:competitionTrackLabel(r.sport)})),...(sleepOptedIn?[{id:"sleep",label:"Sleep & Recovery"}]:[])]} value={selectedSport!} onChange={id=>{setSelection({account:accountKey,sport:id as SportId|"sleep"});void playCue("selection");}} onRegister={openRegistration}>
-        {selectedSport&&selectedSport!=="sleep"?<CompetitionField key={`${accountKey}:${selectedSport}:${state.units}:${track}`} sport={selectedSport} track={track} arenaView={fieldView} onArenaViewChange={setFieldView} chromeInHeader/>:selectedSport==="sleep"?<SleepPanel state={state} dispatch={dispatch}/>:<View style={f.card}><AppText role="contentTitle">Your next chapter starts here.</AppText><AppText role="body" secondary >Register for an event to open your field.</AppText></View>}
-        </EventCarousel>:<View style={f.card}><AppText role="contentTitle">Your next chapter starts here.</AppText><AppText role="body" secondary >Register for an event to open your field.</AppText><FocusButton label="Explore events" onPress={openRegistration}/></View>}
+        {selectedSport&&selectedSport!=="sleep"?<CompetitionField key={`${accountKey}:${selectedSport}:${state.units}:${track}`} sport={selectedSport} track={track} arenaView={fieldView} onArenaViewChange={setFieldView} chromeInHeader/>:selectedSport==="sleep"?<SleepPanel state={state} dispatch={dispatch}/>:<View style={f.card}><AppText role="heading">Your next chapter starts here.</AppText><AppText role="body" secondary >Register for an event to open your field.</AppText></View>}
+        </EventCarousel>:<View style={f.card}><AppText role="heading">Your next chapter starts here.</AppText><AppText role="body" secondary >Register for an event to open your field.</AppText><FocusButton label="Explore events" onPress={openRegistration}/></View>}
         {state.periodResults.length ? <FocusButton label="Latest week results ↗" secondary onPress={() => router.push("/arena?results=latest")} /> : null}
-        <View style={[f.row, { alignItems: "stretch", flexWrap: "wrap" }]}>
-          <View style={[f.card, { flex: 1.2, minWidth: 150, backgroundColor: "#eef3f1" }]}>
-            <AppIcon name="compete" size={32} /><Text style={f.kicker}>Coming soon</Text><SectionHeader title="1v1"/><AppText role="body" secondary >A week. A friendly challenge.</AppText>
-          </View>
-          <Pressable accessibilityRole="button" accessibilityLabel="Beyond this week: pace and race rankings" style={[f.card, { flex: 1, minWidth: 130, justifyContent: "space-between" }]} onPress={() => router.push("/benchmarks")}>
-            <AppIcon name="external" size={32} /><AppText role="itemTitle" >Beyond this week</AppText><AppText role="caption" secondary >Your all-time pace & race rankings</AppText>
-          </Pressable>
+        <View style={[f.row, { alignItems: "stretch", flexWrap: "wrap", gap: 16 }]}>
+          <FeatureCard title="1v1 Head-to-Head" description="Challenge a friend or rival for the week." badge="Coming soon"/>
+          <FeatureCard title="Beyond this week" description="All-time pace and race rankings." onPress={() => router.push("/benchmarks")}/>
         </View>
       </SectionStack>
 </ScrollView>
@@ -169,7 +165,7 @@ export default function ArenaScreen() {
         }}
       >
         <View style={f.row}>
-          <AppText role="itemTitle" style={f.grow}>Compete with your crew</AppText>
+          <AppText role="label" style={f.grow}>Compete with your crew</AppText>
           <Switch
             accessibilityLabel="Compete with your crew"
             value={withCrew}
@@ -201,7 +197,7 @@ export default function ArenaScreen() {
                 }}
                 style={[f.chip, sport === s.id && f.chipActive]}
               >
-                <AppText role="itemTitle" >{s.name} · {competitionTrackLabel(s.id)}</AppText>
+                <AppText role="label" >{s.name} · {competitionTrackLabel(s.id)}</AppText>
                 <AppText role="caption" secondary >
                   {isRegistered
                     ? "Already registered"

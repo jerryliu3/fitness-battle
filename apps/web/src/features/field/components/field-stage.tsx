@@ -1,4 +1,5 @@
 "use client";
+import { typographyStyle } from "@/ui/section";
 import { PortraitField } from "@/features/club/portrait-field";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { playCue } from "@/lib/haptics";
@@ -400,7 +401,7 @@ export function FieldStage({
                       padding: "10px 4px 6px",
                     }}
                   >
-                    <span className="fb-note" style={{ fontSize: 12 }}>
+                    <span className="fb-note" style={{ ...typographyStyle("caption") }}>
                       Zoom
                     </span>
                     <input
@@ -425,7 +426,7 @@ export function FieldStage({
                     />
                     <span
                       className="fb-note"
-                      style={{ fontSize: 11, minWidth: 44, textAlign: "right" }}
+                      style={{ ...typographyStyle("caption"), minWidth: 44, textAlign: "right" }}
                     >
                       ±
                       {(view.span / 2).toLocaleString("en-US", {

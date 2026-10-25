@@ -46,7 +46,7 @@ export function SleepPanel({
       )}
       <View style={f.row}>
         <AppText role="body" secondary >Contest score</AppText>
-        <AppText role="itemTitle" >
+        <AppText role="label" >
           {view.nightsLogged ? view.contestScore.toFixed(0) : "—"}
         </AppText>
       </View>
@@ -58,7 +58,7 @@ export function SleepPanel({
       ) : null}
       <View style={f.row}>
         <AppText role="body" secondary >Nights so far</AppText>
-        <AppText role="itemTitle" >
+        <AppText role="label" >
           {view.elapsedNights
             ? `${view.nightsLogged} / ${view.elapsedNights}`
             : "—"}
@@ -66,18 +66,18 @@ export function SleepPanel({
       </View>
       <View style={f.row}>
         <AppText role="body" secondary >Field</AppText>
-        <AppText role="itemTitle" >
+        <AppText role="label" >
           {view.place ?? "—"} / {view.fieldSize || "—"}
         </AppText>
       </View>
       {view.rows.map((r) => (
         <View key={r.id} style={f.row}>
-          <AppText role="supporting" secondary >{r.place}</AppText>
-          <AppText role="itemTitle" style={f.grow}>
+          <AppText role="body" secondary >{r.place}</AppText>
+          <AppText role="label" style={f.grow}>
             {r.name}
             {r.you ? " (you)" : ""}
           </AppText>
-          <AppText role="itemTitle" >{r.score.toFixed(0)}</AppText>
+          <AppText role="label" >{r.score.toFixed(0)}</AppText>
         </View>
       ))}
     </View>

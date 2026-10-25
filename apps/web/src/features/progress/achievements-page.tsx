@@ -1,7 +1,6 @@
 "use client";
 import { AppParagraph, AppHeading } from "@/ui/section";
 
-
 import Link from "next/link";
 import { AchievementsCatalog } from "@/features/club/achievements-catalog";
 import { useCompete } from "@/components/compete-context";
@@ -15,7 +14,7 @@ export function AchievementsPage() {
         <Link href="/you" className="club-icon-button" aria-label="Return to Progress">
           ‹
         </Link>
-        <AppHeading level={1} role="navigationTitle">Achievements</AppHeading>
+        <AppHeading level={1} role="heading">Achievements</AppHeading>
       </header>
       <AchievementsCatalog state={state} />
     </div>

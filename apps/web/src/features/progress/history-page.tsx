@@ -1,7 +1,6 @@
 "use client";
 import { AppParagraph, AppHeading } from "@/ui/section";
 
-
 import Link from "next/link";
 import { AwardShelf } from "@/features/you/award-shelf";
 import { SeasonHistory } from "@/features/split/components/season-history";
@@ -17,7 +16,7 @@ export function ProgressHistoryPage() {
         <Link href="/you" className="club-icon-button" aria-label="Return to Progress">
           ‹
         </Link>
-        <AppHeading level={1} role="navigationTitle">Past weeks & awards</AppHeading>
+        <AppHeading level={1} role="heading">Past weeks & awards</AppHeading>
       </header>
       <SeasonHistory results={state.periodResults} primary={state.primary} units={state.units} />
       {awardCards(state).length > 0 ? <AwardShelf state={state} /> : null}

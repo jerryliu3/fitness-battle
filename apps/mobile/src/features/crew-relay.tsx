@@ -1,4 +1,4 @@
-import { AppText } from "../ui/section";
+import { chartTextProps, AppText  } from "../ui/section";
 import { useId, useState } from "react";
 import {
   Image,
@@ -43,7 +43,7 @@ export function CrewRelay(props: Props) {
     >
       <View style={f.row}>
         <AppText role="caption" secondary style={f.grow}>{label}</AppText>
-        {target ? <AppText role="itemTitle" >{volume(target)}</AppText> : null}
+        {target ? <AppText role="label" >{volume(target)}</AppText> : null}
       </View>
       <ScrollView horizontal showsHorizontalScrollIndicator={w > width}>
         <View style={{ width: w, height: scene.height }}>
@@ -56,23 +56,22 @@ export function CrewRelay(props: Props) {
             {scene.segments.map(s=><G key={s.id}>{s.nodes.map(drawFieldNode)}</G>)}
             {scene.finish.map(drawFieldNode)}
             {target ? (
-              <SvgText
+              <SvgText {...chartTextProps()}
                 x={Math.max(64, Math.min(w - 64, (scene.finishX ?? 0) + 12))}
                 y={222}
                 textAnchor="middle"
                 fill={c.ink}
-                fontSize={11}
-                fontWeight="700"
+
               >
                 FINISH · {volume(target)}
               </SvgText>
             ) : (
-              <SvgText
+              <SvgText {...chartTextProps()}
                 x={w / 2}
                 y={222}
                 textAnchor="middle"
                 fill={c.muted}
-                fontSize={11}
+
               >
                 A shared target has not been set
               </SvgText>
@@ -102,7 +101,7 @@ export function CrewRelay(props: Props) {
                       style={{ width: 34, height: 34, borderRadius: 17 }}
                     />
                   ) : (
-                    <AppText role="itemTitle" >
+                    <AppText role="label" >
                       {m.name
                         .split(" ")
                         .map((v) => v[0])
@@ -111,7 +110,7 @@ export function CrewRelay(props: Props) {
                     </AppText>
                   )}
                 </View>
-                <AppText role="itemTitle" numberOfLines={1} >
+                <AppText role="label" numberOfLines={1} >
                   {m.name.split(" ")[0]}
                 </AppText>
                 <AppText role="caption" secondary numberOfLines={1} >
@@ -124,8 +123,8 @@ export function CrewRelay(props: Props) {
       </ScrollView>
       {member ? (
         <View accessibilityLiveRegion="polite">
-          <AppText role="itemTitle" >{member.name}</AppText>
-          <AppText role="supporting" secondary >
+          <AppText role="label" >{member.name}</AppText>
+          <AppText role="body" secondary >
             {volume(member.value)} · {(member.share * 100).toFixed(1)}% of
             recorded crew activity · {member.sessions} {member.sessions===1?"session":"sessions"}
           </AppText>

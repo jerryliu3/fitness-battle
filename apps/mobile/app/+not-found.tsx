@@ -10,7 +10,7 @@ export default function NotFound() {
     <SafeAreaView style={f.safe} edges={["bottom"]}>
       <View style={f.content}>
         <Text style={f.kicker}>OVERTAEK</Text>
-        <AppText role="pageTitle" >A little off course.</AppText>
+        <AppText accessibilityRole="header" role="display" >A little off course.</AppText>
         <AppText role="body" secondary >We couldn't find that page.</AppText>
         <IconButton icon="back"
           label="Return to Home"

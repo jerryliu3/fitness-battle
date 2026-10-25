@@ -1,3 +1,4 @@
+import { textStyle } from "./section";
 import { Image, StyleSheet, Text, View } from "react-native";
 import { DEFAULT_MASCOT, MASCOTS, type MascotVariant } from "@fitness-battle/shared";
 import { colors, fonts } from "../theme";
@@ -44,7 +45,7 @@ const styles = StyleSheet.create({
   image: { width: 72, height: 72 },
   ember: { width: 72, height: 97 },
   content: { flex: 1, gap: 4 },
-  kicker: { color: colors.muted, fontFamily: fonts.bodyBold, fontSize: 11 },
-  title: { color: colors.ink, fontFamily: fonts.bodyBold, fontSize: 18 },
-  detail: { color: colors.muted, fontFamily: fonts.body, fontSize: 14 },
+  kicker: { ...textStyle("label"), color: colors.muted },
+  title: { ...textStyle("heading"), color: colors.ink },
+  detail: { ...textStyle("body"), color: colors.muted },
 });

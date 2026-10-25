@@ -1,7 +1,6 @@
 "use client";
 import { AppParagraph } from "@/ui/section";
 
-
 import { useAuth } from "@/components/auth-context";
 import * as Dialog from "@radix-ui/react-dialog";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
@@ -46,7 +45,7 @@ function RoundTakeover({
           onPointerDownOutside={(event) => event.preventDefault()}
         >
           <AnimatePresence mode="wait" initial={false}><motion.div key={stage} initial={reduced ? false : { x: 28, opacity: 0 }} animate={{ x: 0, opacity: 1 }} exit={{ x: reduced ? 0 : -28, opacity: 0 }} transition={{ duration: reduced ? 0 : 0.2 }}>
-          <AppParagraph typographyRole="badgeLabel" className="fb-kicker">
+          <AppParagraph typographyRole="label" className="fb-kicker">
             Round complete · {stage === "results" ? "1" : "2"} / 2
           </AppParagraph>
           <Dialog.Title>

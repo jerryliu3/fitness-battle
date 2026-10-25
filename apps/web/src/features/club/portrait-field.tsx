@@ -1,5 +1,5 @@
 "use client";
-import { AppText } from "@/ui/section";
+import { typographyStyle, AppText  } from "@/ui/section";
 
 import { useId, useMemo, useRef, useState } from "react";
 import {
@@ -220,12 +220,11 @@ export function PortraitField({
                       rx={9}
                       fill={m.you ? "#f7c948" : "#d8e5df"}
                     />
-                    <text
+                    <text style={typographyStyle("caption")}
                       y={-8}
                       textAnchor="middle"
                       fill="#142b3b"
-                      fontWeight={700}
-                      fontSize={15}
+
                     >
                       {m.initials}
                     </text>
@@ -241,28 +240,26 @@ export function PortraitField({
                       rx={9}
                       fill="#f7c948"
                     />
-                    <text
+                    <text style={typographyStyle("caption")}
                       y={-53}
                       textAnchor="middle"
                       fill="#142b3b"
-                      fontSize={11}
-                      fontWeight={800}
+
                     >
                       YOU
                     </text>
                   </>
                 ) : null}
-                <text
+                <text style={typographyStyle("caption")}
                   y={45}
                   textAnchor="middle"
                   fill="white"
-                  fontSize={12}
-                  fontWeight={700}
+
                 >
                   {m.ghost ? "Past you" : m.you ? "You" : m.name.split(" ")[0]}
                 </text>
                 {!m.you ? (
-                  <text y={61} textAnchor="middle" fill="#e5eee5" fontSize={11}>
+                  <text style={typographyStyle("caption")} y={61} textAnchor="middle" fill="#e5eee5" >
                     {m.outside ? `${m.direction} ` : ""}
                     {m.gap > 0 ? "+" : ""}
                     {m.gap.toFixed(unit === "pts" ? 0 : 2)} {unit}

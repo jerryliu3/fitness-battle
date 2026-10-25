@@ -30,20 +30,20 @@ The owner follow-up replaces the temporary sport emoji with **Tabler Icons** for
 The shared contract is `SHELL_TYPOGRAPHY` and `SHELL_SECTION` in
 `packages/shared/src/shell.ts`. Platform components live in each app's
 `src/ui/section.tsx`; shared stays plain TypeScript. Keep HeroUI Native and web
-Radix controls. DM Sans uses the actually loaded 400/500/700 weights.
+Radix controls. All product text uses DM Sans and exactly five recipes:
 
-| Role | Size / line height | Weight |
-| --- | --- | --- |
-| pageTitle | 30 / 36 | 700 |
-| navigationTitle | 20 / 26 | 700 |
-| sectionTitle | 22 / 28 | 700 |
-| contentTitle | 18 / 24 | 700 |
-| body | 16 / 24 | 400 |
-| itemTitle | 14 / 20 | 500 |
-| supporting | 14 / 20 | 400 |
-| actionLabel | 14 / 20 | 700 |
-| caption | 12 / 18 | 400 |
-| badgeLabel | 12 / 16 | 700 |
+| Role | Size / line height | Weight | Use |
+| --- | --- | --- | --- |
+| display | 30 / 36 | 700 | Page titles and prominent numbers |
+| heading | 22 / 28 | 700 | Section, card and centered navigation titles; secondary numbers |
+| body | 16 / 24 | 400 | Explanations, subtitles and units |
+| label | 14 / 20 | 700 | Tabs, buttons, row labels and status badges |
+| caption | 12 / 18 | 400 | Chart labels, dates and metadata |
+
+No separate metric, avatar, navigation, badge or control type scales. No custom
+tracking, uppercase transforms, italics or medium/semibold weights. Emphasis
+comes from the selected recipe, position and semantic color. Every control and
+chart uses this same library. A screen uses a subset of these five recipes.
 
 Use AppText for text roles, PageHeader for a large page introduction and
 SectionHeader for a content group. ScreenHeader remains the centered compact
@@ -71,26 +71,32 @@ inner padding and do not add another section boundary.
 
 Native feature and route text consumes AppText or the UI-owned textStyle adapter.
 Web uses AppHeading, AppParagraph and AppText, with shared CSS variables for
-product control/row classes. Page titles, centered navigation, section titles,
-card titles, explanatory copy, row titles, subtitles, captions and status labels
-have distinct roles. Numeric metricValue/metricUnit and controlSymbol roles
-prevent numbers and arrows from inheriting heading semantics; avatarInitials
-is separate from content headings. Native body copy is 16/24 across production.
+product control/row classes. Native uses AppText or textStyle. The recipe is
+applied after caller styles so local font overrides cannot create new variants.
+Accessibility is independent of visual emphasis: actual native headings declare
+accessibilityRole="header"; a number using heading/display is not a heading.
+Web preserves semantic heading levels independently of visual size.
 
-Legacy f typography aliases and web SectionHeading remain only for compatibility
-with historical studies and UI internals. New production consumers must use the
-semantic adapters. `pnpm lint:ui` checks all production feature and route files,
-authentication/components and supporting product pages; it rejects raw text font
-overrides, legacy f text aliases and raw HTML headings. Its checked-in exceptions
-are deliberate score, time, distance, rank and chart scales. SVG labels and map
-renderer overlays retain geometry-specific type; historical brand/mascot studies
-and prototypes retain their exploratory typography. Do not use those exceptions
-for ordinary content.
+The Open/GPS switch and Overview/Effort tabs both use label. Effort explanation
+and lifetime units use body; lifetime values use heading; the main score uses
+display. Every SVG label uses caption, including map labels. ChartSvg/ChartText
+counteract chart scaling so timeline/effort/hour chart captions retain the recipe
+size as plots resize. Native also honors the user's font scale. Keep sufficient
+axis gutters; do not shrink labels to fit. Coming soon and Beyond this week use
+one FeatureCard composition, with heading/body/optional label badge, on both
+platforms.
 
-October 24 rollout validation: semantic UI lint and source syntax/import review
-were completed. The owner explicitly requested skipping typecheck and tests for
-the expanded rollout; no build or runtime/device verification was run for that
-follow-up. Earlier pilot verification does not validate the expanded changes.
+Legacy f typography aliases remain for historical studies; product consumers
+use the five recipes. `pnpm lint:ui` checks production routes, features, controls,
+map overlays and CSS. It rejects raw font overrides, SVG font attributes,
+arbitrary Tailwind typography, raw HTML headings and legacy feature aliases.
+There are no numeric metric exceptions. CI runs this contract. Only historical
+design studies, canonical recipe adapters and brand/mascot artwork are outside
+the raw-font rule; artwork exceptions do not apply to nearby product text.
+
+See [five-style audit](../reviews/ui-five-style-audit-2026-10-24.md) for the
+observed gaps and verification. Previous rollout checks did not inspect CSS or
+SVG labels; the current check includes both.
 
 Review galleries: web `/design/components` under the existing design access
 gate; native `/components` (development review deep link). Check 320/390/430
