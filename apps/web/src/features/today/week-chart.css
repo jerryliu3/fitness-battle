@@ -8,7 +8,6 @@
 .home-portfolio .chart-scrubber svg{display:block;width:100%;height:auto;max-height:210px;overflow:visible}
 .home-portfolio-footer{display:flex;justify-content:flex-end}
 .home-portfolio-dates{display:flex;justify-content:space-between;color:var(--muted);font:var(--type-caption)}
-.home-portfolio-key{display:flex;flex-wrap:wrap;gap:16px;color:var(--muted);font:var(--type-caption)}
-.home-portfolio-key>span{display:flex;align-items:center;gap:6px}
-.home-portfolio-key i{width:16px;height:0;border-top:2px solid #176c75}
-.home-portfolio-key>span:nth-child(2) i{border-top:2px dashed #668e91}
+.home-portfolio-delta{font:var(--type-caption)}
+.home-portfolio-delta.is-up{color:var(--green,#24765c)}
+.home-portfolio-delta.is-down{color:var(--red,#b42318)}

@@ -11,12 +11,13 @@ import "./week-chart.css";
 
 export function WeekChart({ state, detail = false, ready = true }: { state: CompeteState; detail?: boolean; ready?: boolean }) {
   const chart = portfolioWeekChart(state);
+  const deltaUp = chart.currTotalHours >= chart.prevTotalHours;
   const gradient = useId().replace(/:/g, "");
   const reduced = useReducedMotion();
   return <ChartFrame ready={ready}>
     <motion.section initial={detail && !reduced ? { y: 12, opacity: .8 } : false} animate={{ y: 0, opacity: 1 }} transition={{ duration: reduced ? 0 : .3 }} className="home-portfolio" aria-label="This week's progress">
       <div className="home-portfolio-header"><AppHeading level={2} role="heading">Current week</AppHeading><ActivityActions compact /></div>
-      <div className="home-portfolio-total"><strong>{chart.currTotalHours.toFixed(1)}<span> hrs</span></strong><div><span>{chart.sessionCount} {chart.sessionCount === 1 ? "session" : "sessions"}</span><span>{chart.deltaLabel}</span></div></div>
+      <div className="home-portfolio-total"><strong>{chart.currTotalHours.toFixed(1)}<span> hrs</span></strong><div><span>{chart.sessionCount} {chart.sessionCount === 1 ? "session" : "sessions"}</span><span className={deltaUp ? "home-portfolio-delta is-up" : "home-portfolio-delta is-down"}>{chart.deltaLabel}</span></div></div>
       <ChartScrubber label="This week's cumulative training hours" points={chart.inspection} width={chart.width} height={chart.height} plotTop={chart.top} plotBottom={chart.bottom} summaryOnSelection>
         <svg viewBox={`0 0 ${chart.width} ${chart.height}`} role="img" aria-label={`${chart.currTotalHours.toFixed(1)} training hours this week; ${chart.prevTotalHours.toFixed(1)} hours last week. Current week ends at today's point.`}>
           <defs><linearGradient id={gradient} x1="0" y1="0" x2="0" y2="1"><stop stopColor={c.fieldTeal} stopOpacity=".2"/><stop offset="1" stopColor={c.fieldTeal} stopOpacity="0"/></linearGradient></defs>
@@ -29,7 +30,7 @@ export function WeekChart({ state, detail = false, ready = true }: { state: Comp
       </ChartScrubber>
       {!detail && <div className="home-portfolio-footer"><TextAction href="/week" label="View week" accessibilityLabel="View your full week" /></div>}
       <div className="home-portfolio-dates"><span>{chart.startLabel}</span><span>{chart.endLabel}</span></div>
-      <div className="home-portfolio-key"><span><i/>This week</span><span><i/>Last week</span>{detail && <span>{chart.deltaLabel}</span>}</div>
+      {detail && <div className="home-portfolio-key"><span className={deltaUp ? "home-portfolio-delta is-up" : "home-portfolio-delta is-down"}>{chart.deltaLabel}</span></div>}
     </motion.section>
   </ChartFrame>;
 }
