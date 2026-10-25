@@ -20,7 +20,7 @@ import { useAuth } from "../../src/lib/auth";
 import { useCompeteStore } from "../../src/lib/compete-store";
 
 import { playCue } from "../../src/lib/haptics";
-import { FocusButton, FocusSegments, FocusSheet, f } from "../../src/ui/focus";
+import { FocusButton, FocusSheet, f } from "../../src/ui/focus";
 
 export default function ArenaScreen() {
   const {
@@ -43,8 +43,6 @@ export default function ArenaScreen() {
   const [withCrew, setWithCrew] = useState(false);
   const [joinBusy, setJoinBusy] = useState(false);
   const [joinError, setJoinError] = useState("");
-  const [fieldView, setFieldView] = useState<"lanes2d" | "standings" | "3d">("lanes2d");
-  useEffect(() => { setFieldView("lanes2d"); }, [selection?.sport, accountKey]);
   const joinFlight = useRef(false);
   const currentUser = useRef(user?.id);
   currentUser.current = user?.id;
@@ -114,25 +112,7 @@ export default function ArenaScreen() {
     <SafeAreaView style={f.safe} edges={[]}>
       <ScrollView contentContainerStyle={f.content}>
 <SectionStack divided={false}>
-        <CompetitionSummary state={state} selectedSport={selectedSport??undefined}>
-          {selectedSport && selectedSport !== "sleep" ? (
-            <FocusSegments
-              label="Arena view"
-              value={fieldView === "3d" ? "3d" : fieldView === "standings" ? "standings" : "lanes"}
-              options={[
-                { value: "lanes", label: "2D map" },
-                { value: "standings", label: "Standings" },
-                { value: "3d", label: "3D field" },
-              ]}
-              onChange={(next) => {
-                void playCue("selection");
-                setFieldView(
-                  next === "3d" ? "3d" : next === "standings" ? "standings" : "lanes2d",
-                );
-              }}
-            />
-          ) : null}
-        </CompetitionSummary>
+        <CompetitionSummary state={state} selectedSport={selectedSport??undefined} />
         {saveError ? (
           <View style={f.feedback}>
             <AppText role="body" secondary >{saveError}</AppText>
@@ -146,7 +126,7 @@ export default function ArenaScreen() {
         ) : null}
         <RoundTakeover state={state} ready={canWrite} dispatch={dispatch} />
         {hasRegistration?<EventCarousel key={accountKey} events={[...active.map(r=>({id:r.sport,label:SPORTS.find(s=>s.id===r.sport)!.name,badge:competitionTrackLabel(r.sport)})),...(sleepOptedIn?[{id:"sleep",label:"Sleep & Recovery"}]:[])]} value={selectedSport!} onChange={id=>{setSelection({account:accountKey,sport:id as SportId|"sleep"});void playCue("selection");}} onRegister={openRegistration}>
-        {selectedSport&&selectedSport!=="sleep"?<CompetitionField key={`${accountKey}:${selectedSport}:${state.units}:${track}`} sport={selectedSport} track={track} arenaView={fieldView} onArenaViewChange={setFieldView} chromeInHeader/>:selectedSport==="sleep"?<SleepPanel state={state} dispatch={dispatch}/>:<View style={f.card}><AppText role="heading">Your next chapter starts here.</AppText><AppText role="body" secondary >Register for an event to open your field.</AppText></View>}
+        {selectedSport&&selectedSport!=="sleep"?<CompetitionField key={`${accountKey}:${selectedSport}:${state.units}:${track}`} sport={selectedSport} track={track} />:selectedSport==="sleep"?<SleepPanel state={state} dispatch={dispatch}/>:<View style={f.card}><AppText role="heading">Your next chapter starts here.</AppText><AppText role="body" secondary >Register for an event to open your field.</AppText></View>}
         </EventCarousel>:<View style={f.card}><AppText role="heading">Your next chapter starts here.</AppText><AppText role="body" secondary >Register for an event to open your field.</AppText><FocusButton label="Explore events" onPress={openRegistration}/></View>}
         {state.periodResults.length ? <FocusButton label="Latest week results ↗" secondary onPress={() => router.push("/arena?results=latest")} /> : null}
         <View style={[f.row, { alignItems: "stretch", flexWrap: "wrap", gap: 16 }]}>

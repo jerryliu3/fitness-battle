@@ -24,32 +24,37 @@ import Svg, {
 } from "react-native-svg";
 import {
   portraitField,
-  portraitFieldGap,
   type ArenaSceneLane,
   type ArenaViewWindow,
 } from "@fitness-battle/shared";
+import { SHELL_COLORS as c } from "../theme";
 import { LaneRacerTarget } from "./lane-racer-target";
-import { IconButton } from "./icon-button";
 import { drawFieldNode } from "./field-course";
 import { alpineTrail } from "./club-art";
 export function PortraitField({
   lanes,
   view,
   unit,
+  selectedId,
   onZoom,
   onSelect,
   height = 560,
   fullscreen = false,
+  fullscreenBottomOffset = 152,
   onExpand,
+  onToggleDimension,
   laneAnchor,
 }: {
   height?: number;
   fullscreen?: boolean;
+  fullscreenBottomOffset?: number;
   onExpand?: () => void;
+  onToggleDimension?: () => void;
   laneAnchor?: MutableRefObject<number>;
   lanes: ArenaSceneLane[];
   view: ArenaViewWindow;
   unit: string;
+  selectedId?: string;
   onZoom: (span: number) => void;
   onSelect: (id: string) => void;
 }) {
@@ -61,6 +66,7 @@ export function PortraitField({
   const GroundTarget = fullscreen ? G : LaneRacerTarget;
   const scroll = useRef<ScrollViewInstance>(null);
   const scrollX = useRef(new Animated.Value(0)).current;
+  const prevSelectedRef = useRef<string | undefined>(selectedId);
   const moveTo = (offset: number) => {
     const focus = Math.max(
       0,
@@ -75,18 +81,19 @@ export function PortraitField({
     setLaneOffset(offset);
     scroll.current?.scrollTo({ x: (scene.baseFocus + offset) * 110, animated: false });
   }, [width, scene.baseFocus, scene.ordered.length]);
+  useEffect(() => {
+    if (!selectedId || selectedId === prevSelectedRef.current) {
+      prevSelectedRef.current = selectedId;
+      return;
+    }
+    prevSelectedRef.current = selectedId;
+    const focus = scene.ordered.findIndex((lane) => lane.id === selectedId);
+    if (focus < 0) return;
+    setLaneOffset(focus - scene.baseFocus);
+    scroll.current?.scrollTo({ x: focus * 110, animated: true });
+  }, [selectedId, scene.baseFocus, scene.ordered]);
   return (
     <View style={{ gap: 10 }}>
-      <View style={s.status} pointerEvents="none">
-        <Text style={[s.white, { color: "#142b3b" }]}>
-          {scene.place} / {scene.fieldSize} PLACE
-        </Text>
-        <Text
-          style={[s.white, { ...textStyle("caption"), color: "#142b3b", flexShrink: 1, textAlign: "right" }]}
-        >
-          {portraitFieldGap(scene.nextGap, unit)}
-        </Text>
-      </View>
     <View
       style={[s.board, { height, borderRadius: fullscreen ? 0 : 20 }]}
       onLayout={(e) => {
@@ -94,7 +101,7 @@ export function PortraitField({
           setWidth(e.nativeEvent.layout.width);
       }}
     >
-      <Image source={alpineTrail} style={[s.scenery, { height: Math.min(180, height * .32) }]} />
+      <Image source={alpineTrail} resizeMode="cover" style={[s.scenery, { height: Math.min(200, height * .36) }]} />
       <Animated.ScrollView
         ref={scroll}
         horizontal
@@ -121,7 +128,7 @@ export function PortraitField({
             width={width}
             height="100%"
             viewBox="0 0 420 600"
-            preserveAspectRatio="none"
+            preserveAspectRatio="xMidYMid slice"
             accessibilityLabel="Fixed perspective competition field"
           >
             <Defs>
@@ -132,16 +139,17 @@ export function PortraitField({
                 x2="0"
                 y2="1"
               >
-                <Stop offset="0%" stopColor="#0b3038" stopOpacity={0} />
-                <Stop offset="100%" stopColor="#0b3038" />
+                <Stop offset="0%" stopColor="#0b242c" stopOpacity={0} />
+                <Stop offset="34%" stopColor="#0b3038" stopOpacity={0.88} />
+                <Stop offset="100%" stopColor="#0b3038" stopOpacity={1} />
               </LinearGradient>
             </Defs>
             <GroundTarget onPress={fullscreen ? undefined : onExpand} accessibilityLabel={fullscreen ? undefined : "Expand 3D field to full screen"}>
             <Rect width={420} height={600} fill="transparent" />
             <Rect
-              y={80}
+              y={52}
               width={420}
-              height={520}
+              height={548}
               fill={`url(#${prefix}-shade)`}
             />
             {scene.ground.map(drawFieldNode)}
@@ -316,8 +324,73 @@ export function PortraitField({
           </Animated.View>
         </View>
       </Animated.ScrollView>
-      {!fullscreen && onExpand && <View style={{ position: "absolute", top: 12, right: 12 }}><IconButton icon="expand" label="Expand 3D field to full screen" onPress={onExpand} /></View>}
-      <View style={s.controls}>
+      {!fullscreen && (onToggleDimension || onExpand) ? (
+        <View
+          style={{
+            position: "absolute",
+            top: 10,
+            right: 10,
+            flexDirection: "row",
+            alignItems: "center",
+            gap: 8,
+          }}
+        >
+          {onToggleDimension ? (
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Switch to 2D map"
+              onPress={onToggleDimension}
+              style={{
+                minHeight: 36,
+                paddingHorizontal: 12,
+                justifyContent: "center",
+                borderRadius: 999,
+                backgroundColor: "rgba(20, 20, 19, 0.78)",
+                borderWidth: 1,
+                borderColor: "rgba(255, 255, 255, 0.2)",
+              }}
+            >
+              <Text style={{ ...textStyle("caption"), color: "#ffffff" }}>
+                3D
+              </Text>
+            </Pressable>
+          ) : null}
+          {onExpand ? (
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Expand 3D field to full screen"
+              onPress={onExpand}
+              style={{
+                minHeight: 36,
+                paddingHorizontal: 14,
+                flexDirection: "row",
+                alignItems: "center",
+                gap: 6,
+                borderRadius: 999,
+                backgroundColor: "rgba(20, 20, 19, 0.85)",
+                borderWidth: 1,
+                borderColor: "rgba(200, 245, 59, 0.55)",
+              }}
+            >
+              <Text
+                style={{
+                  ...textStyle("caption"),
+                  color: c.tennis,
+                }}
+              >
+                Full Arena ⤢
+              </Text>
+            </Pressable>
+          ) : null}
+        </View>
+      ) : null}
+      <View
+        style={[
+          s.controls,
+          fullscreen && { bottom: fullscreenBottomOffset },
+        ]}
+        pointerEvents="box-none"
+      >
         <View style={s.controlRow}>
           <Pressable
             style={s.button}
@@ -330,7 +403,6 @@ export function PortraitField({
           >
             <Text style={s.white}>−</Text>
           </Pressable>
-          <Text style={s.white}>Zoom</Text>
           <Pressable
             style={s.button}
             accessibilityRole="button"
@@ -343,34 +415,36 @@ export function PortraitField({
             <Text style={s.white}>＋</Text>
           </Pressable>
         </View>
-        <View style={s.controlRow}>
-          <Pressable
-            style={s.button}
-            accessibilityRole="button"
-            accessibilityLabel="Previous lane"
-            disabled={scene.focus <= 0}
-            onPress={() => shift(-1)}
-          >
-            <Text style={s.white}>←</Text>
-          </Pressable>
-          <Pressable
-            style={s.button}
-            accessibilityRole="button"
-            accessibilityLabel="Your lane"
-            onPress={() => moveTo(0)}
-          >
-            <Text style={s.white}>Your lane</Text>
-          </Pressable>
-          <Pressable
-            style={s.button}
-            accessibilityRole="button"
-            accessibilityLabel="Next lane"
-            disabled={scene.focus >= scene.ordered.length - 1}
-            onPress={() => shift(1)}
-          >
-            <Text style={s.white}>→</Text>
-          </Pressable>
-        </View>
+        {!fullscreen ? (
+          <View style={s.controlRow}>
+            <Pressable
+              style={s.button}
+              accessibilityRole="button"
+              accessibilityLabel="Previous lane"
+              disabled={scene.focus <= 0}
+              onPress={() => shift(-1)}
+            >
+              <Text style={s.white}>←</Text>
+            </Pressable>
+            <Pressable
+              style={s.button}
+              accessibilityRole="button"
+              accessibilityLabel="Your lane"
+              onPress={() => moveTo(0)}
+            >
+              <Text style={s.white}>Your lane</Text>
+            </Pressable>
+            <Pressable
+              style={s.button}
+              accessibilityRole="button"
+              accessibilityLabel="Next lane"
+              disabled={scene.focus >= scene.ordered.length - 1}
+              onPress={() => shift(1)}
+            >
+              <Text style={s.white}>→</Text>
+            </Pressable>
+          </View>
+        ) : null}
       </View>
     </View>
     </View>
@@ -381,7 +455,7 @@ const s = StyleSheet.create({
     height: 560,
     borderRadius: 20,
     overflow: "hidden",
-    backgroundColor: "#0b3038",
+    backgroundColor: "#0b242c",
   },
   scenery: {
     position: "absolute",
@@ -389,11 +463,6 @@ const s = StyleSheet.create({
     left: 0,
     width: "100%",
     height: 230,
-  },
-  status: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    gap: 12,
   },
   white: { ...textStyle("label"), color: "#fff" },
   controls: {
