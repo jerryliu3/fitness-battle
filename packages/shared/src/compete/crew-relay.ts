@@ -90,19 +90,21 @@ export function crewWeekRelay(input: CrewWeekRelayInput) {
         ? "baseline"
         : "unknown";
   const model = crewRelay(
-    input.members.map((m) => {
-      const rows = input.entries.filter((e) => e.user_id === m.user_id);
-      return {
-        id: m.user_id,
-        name: m.display_name,
-        value: rows.reduce(
-          (n, e) =>
-            n + Number(sessions ? (e.session_count ?? 1) : e.distance_m),
-          0,
-        ),
-        sessions: rows.reduce((n, e) => n + Number(e.session_count ?? 1), 0),
-      };
-    }),
+    input.members
+      .map((m) => {
+        const rows = input.entries.filter((e) => e.user_id === m.user_id);
+        return {
+          id: m.user_id,
+          name: m.display_name,
+          value: rows.reduce(
+            (n, e) =>
+              n + Number(sessions ? (e.session_count ?? 1) : e.distance_m),
+            0,
+          ),
+          sessions: rows.reduce((n, e) => n + Number(e.session_count ?? 1), 0),
+        };
+      })
+      .filter((m) => m.value > 0),
     target,
   );
   return {

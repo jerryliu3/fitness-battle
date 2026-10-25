@@ -30,3 +30,7 @@ it("labels a configured volume goal separately from missing prior-week history",
  const result=crewWeekRelay({members:[{user_id:"a",display_name:"A"}],entries:[{user_id:"a",distance_m:120000,moving_sec:3600}],format:"volume",sport:"running",targetSessions:4,targetDistanceM:100000,previousDistanceM:null});
  expect(result.kind).toBe("distance");expect(result.target).toBe(100000);expect(result.model.finish).toBeLessThan(result.model.segments[0]!.fraction);
 });
+it("omits members with zero distance or sessions from the relay model",()=>{
+ const result=crewWeekRelay({members:[{user_id:"a",display_name:"A"},{user_id:"b",display_name:"B"}],entries:[{user_id:"a",distance_m:5000,moving_sec:1200}],format:"volume",sport:"running",targetSessions:4,targetDistanceM:10000,previousDistanceM:null});
+ expect(result.model.segments.map(s=>s.id)).toEqual(["a"]);
+});

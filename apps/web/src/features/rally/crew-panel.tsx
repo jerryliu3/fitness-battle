@@ -331,14 +331,13 @@ export function CrewPanel() {
             ))}
             <button
               type="button"
-              className="focus-crew-add-tab"
               onClick={() => {
                 setName("");
                 setCode("");
                 setPanel("add");
               }}
             >
-              ＋ Add Crew
+              New crew
             </button>
           </div>
           <section
@@ -434,6 +433,7 @@ export function CrewPanel() {
                   <Section title="Crew standings">
                     {members
                       .slice()
+                      .filter((m) => memberTotal(m.user_id) > 0)
                       .sort((a, b) => memberTotal(b.user_id) - memberTotal(a.user_id))
                       .map((m, i) => (
                         <div className="fb-row" key={m.user_id}>
@@ -513,7 +513,7 @@ export function CrewPanel() {
         fullScreen={panel === "members"}
         title={
           panel === "add"
-            ? "Add Crew"
+            ? "New crew"
             : panel === "invite"
               ? "Invite to crew"
               : panel === "members"
