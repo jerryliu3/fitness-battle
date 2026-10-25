@@ -2,7 +2,13 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createElement, useEffect } from "react";
 import { act, create, type ReactTestRenderer } from "react-test-renderer";
 const mock = vi.hoisted(() => ({ state: null as unknown, complete: null as null | (() => void) }));
-vi.mock("../lib/compete-store", () => ({ useCompeteStore: () => ({ state: mock.state }) }));
+vi.mock("../lib/auth", () => ({ useAuth: () => ({ loading: false }) }));
+vi.mock("../lib/compete-store", () => ({
+  useCompeteStore: () => ({
+    state: mock.state,
+    accountHydrated: mock.state !== null,
+  }),
+}));
 vi.mock("react-native", () => ({ View: "View", StyleSheet: { absoluteFill: {} } }));
 vi.mock("./boot-splash", () => ({ BootSplash: ({ onAnimationComplete }: { onAnimationComplete: () => void }) => {
   mock.complete = onAnimationComplete;
@@ -71,11 +77,12 @@ describe("native boot gate", () => {
     await frames();
     expect(covered()).toBe(false);
   });
-  it("the animation deadline cannot bypass account hydration", async () => {
+  it("keeps the cover until account hydration finishes even after the animation", async () => {
     mock.state = null;
     await act(async () => { renderer = create(tree()); });
     await layout();
-    await act(async () => { await vi.advanceTimersByTimeAsync(8500); });
+    await act(async () => { mock.complete?.(); });
+    await frames();
     expect(covered()).toBe(true);
     mock.state = {};
     await act(async () => { renderer.update(tree()); });

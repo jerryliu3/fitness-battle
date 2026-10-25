@@ -65,6 +65,8 @@ const DIRTY_KEY = "fb-compete-dirty";
 
 interface CompeteContextValue {
   canWrite: boolean;
+  /** True once the current account snapshot finished its initial hydrate. */
+  accountHydrated: boolean;
   state: CompeteState | null;
   accountKey: string;
   readBaselineItem: (key: string) => string | null;
@@ -139,6 +141,11 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
   const keys = accountStorageKeys(owner);
   const [saveError, setSaveError] = useState<string | null>(null);
   const loadReady = useRef(false);
+  const [accountHydrated, setAccountHydrated] = useState(false);
+  const markAccountHydrated = (ready: boolean) => {
+    loadReady.current = ready;
+    setAccountHydrated(ready);
+  };
   const lifecycle = useRef(0);
   const [loadAttempt, setLoadAttempt] = useState(0);
   const saveChain = useRef<Promise<void>>(Promise.resolve());
@@ -188,7 +195,7 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
     revisionRef.current = null;
     conflictRef.current = false;
     setSaveConflict(false);
-    loadReady.current = false;
+    markAccountHydrated(false);
     if (saveTimer.current) clearTimeout(saveTimer.current);
     saveTimer.current = null;
     refreshFlight.current = null;
@@ -293,7 +300,7 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
               unitsUnsavedRef.current,
             );
           if (alive) {
-            loadReady.current = true;
+            markAccountHydrated(true);
             setStandingsStale(false);
           }
         } catch {
@@ -305,7 +312,7 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
           }
         }
       }
-      if (!live) loadReady.current = true;
+      if (!live) markAccountHydrated(true);
       if (!alive || accountRef.current !== owner) return;
       next = hydrateAccountIdentity(next, currentAuth.user, live);
       await preloadBaselineCache(owner ?? "guest", baselineCacheRef.current);
@@ -470,7 +477,7 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
           account.userId === accountRef.current &&
           epoch === lifecycle.current
         ) {
-          loadReady.current = true;
+          markAccountHydrated(true);
           setStandingsStale(false);
           setSaveError(null);
           return true;
@@ -528,7 +535,7 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
             JSON.stringify(next),
           );
         }
-        loadReady.current = true;
+        markAccountHydrated(true);
         if (!unsavedRef.current) setSaveError(null);
         setStandingsStale(false);
         return true;
@@ -783,7 +790,7 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
       if (saveTimer.current) clearTimeout(saveTimer.current);
       dirtyRef.current += 1;
       lifecycle.current += 1;
-      loadReady.current = false;
+      markAccountHydrated(false);
     }
     await saveChain.current.catch(() => {});
     const scoped = accountStorageKeys(expectedId);
@@ -844,7 +851,7 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
       setDebugActive(true);
       const result = applyDebugEvent(event.startsWith("sync-") ? { ...current, primary: "running" } : current, event, accountKey, (debugStepRef.current += 1));
       loadedOwnerRef.current = owner;
-      loadReady.current = true;
+      markAccountHydrated(true);
       syncReview.reset();
       if (event.startsWith("sync-")) {
         const activities = result.state.activities.filter(a => a.id.startsWith("debug-") && !current.activities.some(old => old.id === a.id));
@@ -879,7 +886,8 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
   return (
     <CompeteContext.Provider
       value={{
-        canWrite: Boolean(state) && (loadReady.current || debugActive) && !auth.loading,
+        canWrite: Boolean(state) && (accountHydrated || debugActive) && !auth.loading,
+        accountHydrated,
         state,
         accountKey: accountRef.current ?? "device",
         readBaselineItem,

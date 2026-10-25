@@ -25,12 +25,9 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode }
 import { EffortRail } from "@/features/progress/effort-rail";
 import { ApplicationBootGate } from "./application-boot-gate";
 import { BootSplash } from "./boot-splash";
+import { ShellBootReadiness } from "./shell-boot-readiness";
 import { DebugEventMenu } from "./debug-event-menu";
-import {
-  hasSeenBootSplash,
-  isCompeteDataReady,
-  markBootSplashSeen,
-} from "./boot-gate";
+import { isCompeteDataReady, markBootSplashSeen } from "./boot-gate";
 import "./shell.css";
 
 function renderTab(
@@ -86,7 +83,6 @@ export function PhoneShell({
   );
 
   useLayoutEffect(() => {
-    setBootAnimDone(hasSeenBootSplash());
     setBootChecked(true);
   }, []);
 
@@ -181,6 +177,7 @@ export function PhoneShell({
         setBootAnimDone(true);
       }} />
     }>
+    <ShellBootReadiness />
     <div className="phone-frame">
       <div className="phone-shell">
         {!onAthlete && path !== "/week" && !progressDetail && <header className="focus-shell-header">
