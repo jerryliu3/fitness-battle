@@ -14,9 +14,7 @@ import { useRouter } from "expo-router";
 import {
   competeNow,
   competitionTrack,
-  formatEffort,
-  formatVolume,
-  nextClubRival,
+  clubRivalCardSummary,
   sportById,
   weeklyBoard,
   type CompeteState,
@@ -29,35 +27,16 @@ export function RivalCard({ state }: { state: CompeteState }) {
   const sport =
     state.ratings.find((r) => r.sport === state.primary && r.optedIn)?.sport ??
     state.ratings.find((r) => r.optedIn)?.sport;
-  const { you, rival, fieldSize } = nextClubRival(
+  const { place, headline, caption } = clubRivalCardSummary(
     sport ? weeklyBoard(state, sport, competitionTrack(sport), competeNow(state)) : [],
+    sport,
+    state.units,
+    state.enrollments.find(e => e.sport === sport)?.syntheticIds,
   );
-  const synthetic = Boolean(
-    rival &&
-      state.enrollments
-        .find((e) => e.sport === sport)
-        ?.syntheticIds.includes(rival.id),
-  );
-  const gap =
-    rival && you && sport
-      ? sportById(sport).gps
-        ? formatVolume(
-            sport,
-            Math.max(0, rival.distanceM - you.distanceM),
-            0,
-            state.units,
-          )
-        : `${formatEffort(Math.max(0, rival.effort - you.effort))} pts`
-      : null;
-  const headline = rival
-    ? `${gap} to ${rival.name.split(" ")[0]}`
-    : you
-      ? "You’re leading the way."
-      : "Your next chapter starts here.";
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel={`${sport ? sportById(sport).name : "Find your field"}. ${you ? `Place ${you.place} of ${fieldSize}. ` : ""}${headline}. ${synthetic ? "Simulated athlete. " : ""}Open Compete`}
+      accessibilityLabel={`${sport ? sportById(sport).name : "Find your field"}. ${place ? `${place} place. ` : ""}${headline}. ${caption}. Open Compete`}
       onPress={() =>
         router.navigate(sport ? `/arena?event=${sport}` : "/arena")
       }
@@ -76,25 +55,16 @@ export function RivalCard({ state }: { state: CompeteState }) {
               {sport ? sportById(sport).name : "Find your field"}
             </Text>
           </View>
-          {you ? (
+          {place ? (
             <Text style={s.place}>
-              {you.place} / {fieldSize}
-              <Text style={s.eyebrow}> PLACE</Text>
+              {place}
             </Text>
           ) : null}
         </View>
         <View style={s.bottom}>
           <View style={{ flex: 1, gap: 5 }}>
             <Text style={s.headline}>{headline}</Text>
-            <Text style={s.caption}>
-              {rival
-                ? synthetic
-                  ? "Next rival · simulated athlete"
-                  : "Next rival in your field"
-                : you
-                  ? "Keep showing up. Every effort counts."
-                  : "Register for a weekly event."}
-            </Text>
+            <Text style={s.caption}>{caption}</Text>
           </View>
           <View style={s.arrow}><AppIcon name="external" size={22} /></View>
         </View>
@@ -107,10 +77,6 @@ const s = StyleSheet.create({
   background: { minHeight: 180, justifyContent: "space-between", padding: 20 },
   scrim: { ...StyleSheet.absoluteFill, backgroundColor: "#081f3670" },
   top: { flexDirection: "row", justifyContent: "space-between", gap: 10 },
-  eyebrow: {
-    ...textStyle("label"),
-    color: "#ffffffdd"
-},
   title: {
     ...textStyle("heading"),
     color: c.card,

@@ -214,3 +214,14 @@ background pause support. The Ember wordmark animation remains selectable in
 code and the web `/design/loading` review. Both use the same application-readiness
 gate; animation completion alone does not dismiss the cover. See
 [loading implementation](overtaek-loading-prototype.md).
+
+
+### Home rival card — October 24
+
+Home shows the athlete’s ordinal place (1st, 2nd, 3rd), without the field-size
+fraction. Target the next ranked athlete ahead; when leading, show the closest
+trailing athlete. Name that rival and label the gap as behind, ahead of, or level
+with, using athlete distance units for GPS sports and effort points for strength.
+Small positive gaps use meters/feet rather than rounding to zero. Keep simulated
+athlete disclosure and the existing registration/solo fallbacks. This is shared
+presentation on web and native; it does not change ranking or scoring.

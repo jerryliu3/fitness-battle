@@ -2,10 +2,11 @@ import { countsOnTrack } from "./compete/ledger";
 import { weeklyPeriodBounds, APP_TIMEZONE } from "./period";
 import { competitionTrack, sportById } from "./compete/sports";
 import { formatClockTime } from "./compete/pace";
-import { formatVolume } from "./compete/engine";
+import { formatVolume, formatEffort, type BoardRow } from "./compete/engine";
+import { ordinalPlace } from "./arena-view";
 import { competeNow } from "./compete/engine";
 import { trainingBuckets } from "./training-view";
-import type { CompeteState } from "./compete/sports";
+import type { CompeteState, SportId, UnitSystem } from "./compete/sports";
 
 /** Calendar-week presentation only; does not change competition enrollment bounds. */
 export function clubWeekSummary(state: CompeteState, now = competeNow(state)) {
@@ -53,17 +54,46 @@ export function clubDuration(seconds: number): string {
     : `${minutes}m`;
 }
 
-/** Immediate higher-place athlete, including tied totals. No past-self row is ranked. */
+/** Next athlete ahead, or the closest trailing place when leading. Only ranked board rows enter here. */
 export function nextClubRival(
   rows: readonly import("./compete/engine").BoardRow[],
 ) {
   const you = rows.find((row) => row.you);
-  const rival = you
+  const ahead = you
     ? rows
         .filter((row) => !row.you && row.place < you.place)
         .sort((a, b) => b.place - a.place)[0]
     : undefined;
+  const rival = ahead ?? (you
+    ? rows.filter(row => !row.you && row.place > you.place).sort((a, b) => a.place - b.place)[0]
+    : undefined);
   return { you, rival, fieldSize: rows.length };
+}
+
+/** Shared Home copy only; never changes standings or competition values. */
+export function clubRivalCardSummary(rows: readonly BoardRow[], sport: SportId | undefined, units: UnitSystem, syntheticIds: readonly string[] = []) {
+  const { you, rival } = nextClubRival(rows);
+  const place = you ? ordinalPlace(you.place) : null;
+  if (!you || !rival || !sport) return {
+    place,
+    headline: you ? "You’re leading the way." : "Your next chapter starts here.",
+    caption: you ? "Keep showing up. Every effort counts." : "Register for a weekly event.",
+  };
+  const distance = sportById(sport).gps;
+  const delta = distance ? rival.distanceM - you.distanceM : rival.effort - you.effort;
+  const gap = Math.abs(delta);
+  const amount = distance
+    ? gap > 0 && gap < (units === "metric" ? 50 : 80.4672)
+      ? units === "metric" ? `${Math.max(1, Math.round(gap))} m` : `${Math.max(1, Math.round(gap / .3048))} ft`
+      : formatVolume(sport, gap, 0, units)
+    : gap > 0 && gap < .05 ? "<0.1 pts" : `${formatEffort(gap)} pts`;
+  const name = rival.name.trim().split(/\s+/)[0] || "your rival";
+  const label = rival.place < you.place ? "Next rival" : "Closest rival";
+  return {
+    place,
+    headline: delta === 0 ? `Level with ${name}` : `${amount} ${delta > 0 ? "behind" : "ahead of"} ${name}`,
+    caption: syntheticIds.includes(rival.id) ? `${label} · simulated athlete` : `${label} in your field`,
+  };
 }
 
 export function latestClubRecap(state: CompeteState, now = competeNow(state)) {
