@@ -440,29 +440,31 @@ function ProductFrame({ tab, children }: { tab: string; children: ReactNode }) {
         contentContainerStyle={{
           paddingHorizontal: 20,
           paddingTop: 12,
-          paddingBottom: 120,
+          paddingBottom: tab === "profile" ? 40 : 120,
           gap: 24,
         }}
         showsVerticalScrollIndicator={false}
       >
         {children}
       </ScrollView>
-      <PhoneTabBar
-        state={{
-          index:
-            ({ compete: 1, progress: 2, crew: 3 } as Record<string, number>)[
-              tab
-            ] ?? -1,
-          routes: routes.map((name) => ({ key: name, name })),
-        }}
-        navigateToTab={(key) =>
-          router.push(
-            (key === "today"
-              ? "/today"
-              : `/refine-${({ arena: "compete", you: "progress", field: "crew" } as Record<string, string>)[key]}`) as "/today",
-          )
-        }
-      />
+      {tab !== "profile" && (
+        <PhoneTabBar
+          state={{
+            index:
+              ({ compete: 1, progress: 2, crew: 3 } as Record<string, number>)[
+                tab
+              ] ?? -1,
+            routes: routes.map((name) => ({ key: name, name })),
+          }}
+          navigateToTab={(key) =>
+            router.push(
+              (key === "today"
+                ? "/today"
+                : `/refine-${({ arena: "compete", you: "progress", field: "crew" } as Record<string, string>)[key]}`) as "/today",
+            )
+          }
+        />
+      )}
     </View>
   );
 }

@@ -48,6 +48,12 @@ export default function RefinementHub() {
             count: "2 directions",
             copy: "The real shared trail, with sessions and member contributions in view.",
           },
+          {
+            id: "profile",
+            title: "Profile",
+            count: "2 directions",
+            copy: "Athlete passports with three PB visuals and owner/public views.",
+          },
         ].map((item) => (
           <Surface key={item.id} style={{ gap: 12 }}>
             <T role="heading">{item.title}</T>

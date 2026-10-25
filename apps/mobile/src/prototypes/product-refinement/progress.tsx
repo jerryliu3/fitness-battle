@@ -574,9 +574,11 @@ export function SessionList({ rows }: { rows: Activity[] }) {
 export function ProgressDetail({
   page,
   sport,
+  metric = false,
 }: {
   page: Page;
   sport: SportId | "all";
+  metric?: boolean;
 }) {
   const nav = useStudyNav();
   if (page.key === "session") {
@@ -594,7 +596,7 @@ export function ProgressDetail({
             />
             {a.distanceM > 0 && (
               <Metric
-                value={`${(a.distanceM / 1609.344).toFixed(1)} mi`}
+                value={`${(a.distanceM / (metric ? 1000 : 1609.344)).toFixed(1)} ${metric ? "km" : "mi"}`}
                 label="Distance"
               />
             )}
@@ -778,7 +780,7 @@ export function ProgressDetail({
         {[
           ["5K", "23:42"],
           ["10K", "49:18"],
-          ["Longest run", "12.4 mi"],
+          ["Longest run", "6.9 mi"],
         ].map(([label, value]) => (
           <Surface key={label} style={{ gap: 8 }}>
             <T role="label">{label}</T>
