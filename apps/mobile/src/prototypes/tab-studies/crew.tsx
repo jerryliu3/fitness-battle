@@ -296,7 +296,9 @@ function CrewConcept({ concept }: { concept: StudyConcept }) {
               {crew.name}
             </Copy>
             <Copy>Running together · Private crew</Copy>
-            <Copy muted>Sample invite code: SUNDAY26</Copy>
+            <Copy muted>
+              Sample invite code: {crewIndex === 0 ? "SUNDAY26" : "NIGHT26"}
+            </Copy>
           </Card>
           <Copy>
             This is a visual invitation preview. No link is activated, copied,
@@ -525,7 +527,10 @@ function CrewConcept({ concept }: { concept: StudyConcept }) {
                 }}
               >
                 <Copy size={30} bold color={palette.ink}>
-                  SP
+                  {crew.name
+                    .split(" ")
+                    .map((word) => word[0])
+                    .join("")}
                 </Copy>
               </View>
               <Copy size={31} bold>
@@ -700,7 +705,7 @@ function CrewConcept({ concept }: { concept: StudyConcept }) {
                   {
                     [
                       "Everyone left a little of themselves here.",
-                      "A steady week, shared six ways.",
+                      "A steady week, shared by everyone.",
                       "The beginning of a good rhythm.",
                     ][i]
                   }
@@ -990,7 +995,7 @@ function SessionTicket({
         </Copy>
         <Copy>Sunday · Riverside path</Copy>
         <Copy size={12} muted>
-          Organizer: Mara · Easy running · Sample plan
+          Organizer: {members[0].name} · Easy running · Sample plan
         </Copy>
       </Card>
       <Action
