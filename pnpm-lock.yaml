@@ -34,6 +34,9 @@ importers:
       '@expo-google-fonts/dm-sans':
         specifier: ^0.4.0
         version: 0.4.2
+      '@expo-google-fonts/manrope':
+        specifier: ^0.4.0
+        version: 0.4.2
       '@expo-google-fonts/nunito-sans':
         specifier: ^0.4.2
         version: 0.4.2
@@ -891,6 +894,9 @@ packages:
 
   '@expo-google-fonts/dm-sans@0.4.2':
     resolution: {integrity: sha512-e/fLH5aCJzkEenz7axvEn8N7IJAKhUwNjIxS75h9j+Ip1M9S7d22M19gJN3A7QW4egVkBJRyQh1hQFhngQn9yA==}
+
+  '@expo-google-fonts/manrope@0.4.2':
+    resolution: {integrity: sha512-BZsKe8d9BJrVnIQIZcTS7/Kac0TbXnqs/+8EBSiQxrmK6GoCO6eTkmr50D1weIk/EoF20pTmAkpWICnovATr/g==}
 
   '@expo-google-fonts/nunito-sans@0.4.2':
     resolution: {integrity: sha512-e4+jUhgXNC6Zahf3MQwiiUimjWPp/Noe5v7CxBDbvXED+E7p7/egDaXKTbLwSBJku/mP3N+vNdJwk5xKAjkQmg==}
@@ -5470,6 +5476,8 @@ snapshots:
   '@expo-google-fonts/bebas-neue@0.4.1': {}
 
   '@expo-google-fonts/dm-sans@0.4.2': {}
+
+  '@expo-google-fonts/manrope@0.4.2': {}
 
   '@expo-google-fonts/nunito-sans@0.4.2': {}
 

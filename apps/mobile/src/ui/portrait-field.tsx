@@ -1,10 +1,8 @@
 import { chartTextProps, textStyle  } from "./section";
-import { useEffect, useId, useRef, useState, type MutableRefObject } from "react";
+import { useEffect, useId, useMemo, useRef, useState, type ComponentRef, type MutableRefObject } from "react";
 import {
-  Animated,
+  PanResponder,
   Image,
-  ScrollView,
-  type ScrollViewInstance,
   Pressable,
   StyleSheet,
   Text,
@@ -24,6 +22,8 @@ import Svg, {
 } from "react-native-svg";
 import {
   portraitField,
+  portraitDepthAt,
+  portraitScaleAtDepth,
   portraitFieldGap,
   type ArenaSceneLane,
   type ArenaViewWindow,
@@ -36,7 +36,11 @@ export function PortraitField({
   lanes,
   view,
   unit,
+  selectedId,
+  focusOnMount = false,
+  animateSelection = true,
   onZoom,
+  onPan,
   onSelect,
   height = 560,
   fullscreen = false,
@@ -50,31 +54,75 @@ export function PortraitField({
   lanes: ArenaSceneLane[];
   view: ArenaViewWindow;
   unit: string;
+  selectedId?: string;
+  focusOnMount?: boolean;
+  animateSelection?: boolean;
   onZoom: (span: number) => void;
+  onPan: (center: number) => void;
   onSelect: (id: string) => void;
 }) {
   const [laneOffset, setLaneOffset] = useState(laneAnchor?.current ?? 0);
   const prefix = useId().replace(/:/g, "");
   if (laneAnchor) laneAnchor.current = laneOffset;
-  const scene = portraitField(lanes, view, undefined, laneOffset, prefix);
+  const scene = useMemo(() => portraitField(lanes, view, undefined, laneOffset, prefix), [lanes, view.center, view.span, laneOffset, prefix]);
   const [width, setWidth] = useState(340);
-  const GroundTarget = fullscreen ? G : LaneRacerTarget;
-  const scroll = useRef<ScrollViewInstance>(null);
-  const scrollX = useRef(new Animated.Value(0)).current;
-  const moveTo = (offset: number) => {
-    const focus = Math.max(
-      0,
-      Math.min(scene.ordered.length - 1, scene.baseFocus + offset),
-    );
-    setLaneOffset(focus - scene.baseFocus);
-    scroll.current?.scrollTo({ x: focus * 110, animated: true });
-  };
+  const [exploring, setExploring] = useState(false);
+  const latest = useRef({ scene, view, onPan, width, height, exploring: exploring || fullscreen });
+  latest.current = { scene, view, onPan, width, height, exploring: exploring || fullscreen };
+  const surface = useRef<ComponentRef<typeof View>>(null);
+  const frame = useRef<number | null>(null);
+  const pending = useRef<{ offset: number; center: number } | null>(null);
+  const start = useRef({ focus: 0, center: 0, span: 1, depth: 0, y: 0 });
+  const [pan] = useState(() => PanResponder.create({
+    // Claim movement before SVG portrait targets or the outer event pager.
+    onMoveShouldSetPanResponderCapture: (_, g) => Math.hypot(g.dx, g.dy) > 8 && (latest.current.exploring || Math.abs(g.dx) > Math.abs(g.dy) * 1.3),
+    onMoveShouldSetPanResponder: (_, g) => Math.hypot(g.dx, g.dy) > 8 && (latest.current.exploring || Math.abs(g.dx) > Math.abs(g.dy) * 1.3),
+    onPanResponderGrant: (e, g) => {
+      const p = latest.current;
+      const pageY = e.nativeEvent.pageY, dy = g.dy;
+      const y = e.nativeEvent.locationY - dy;
+      start.current = { focus: p.scene.focus, center: p.view.center, span: p.view.span, depth: portraitDepthAt(y / p.height * 600), y };
+      // SVG child touches can report child-local coordinates. Measure the
+      // responder surface so the distance anchor uses the board's origin.
+      surface.current?.measureInWindow((_x: number, top: number) => {
+        const localY = pageY - top - dy;
+        start.current = { ...start.current, y: localY, depth: portraitDepthAt(localY / p.height * 600) };
+      });
+    },
+    onPanResponderMove: (_, g) => {
+      const p = latest.current, d = start.current;
+      pending.current = {
+        offset: Math.max(0, Math.min(p.scene.ordered.length - 1, d.focus - g.dx / p.width * 420 / (222 * portraitScaleAtDepth(d.depth)))) - p.scene.baseFocus,
+        center: d.center + (portraitDepthAt((d.y + g.dy) / p.height * 600) - d.depth) * d.span,
+      };
+      if (frame.current !== null) return;
+      frame.current = requestAnimationFrame(() => {
+        frame.current = null;
+        const next = pending.current;
+        pending.current = null;
+        if (!next) return;
+        setLaneOffset(next.offset);
+        if (latest.current.exploring) latest.current.onPan(next.center);
+      });
+    },
+    // Own a claimed field drag so the event carousel cannot steal it.
+    onPanResponderTerminationRequest: () => false,
+    onPanResponderTerminate: () => { if (frame.current !== null) cancelAnimationFrame(frame.current); frame.current = null; pending.current = null; },
+  }));
+  useEffect(() => () => { if (frame.current !== null) cancelAnimationFrame(frame.current); }, []);
+  const moveTo = (offset: number) => setLaneOffset(Math.max(0, Math.min(scene.ordered.length - 1, scene.baseFocus + offset)) - scene.baseFocus);
   const shift = (d: number) => moveTo(laneOffset + d);
+  const prevSelectedRef = useRef<string | undefined>(focusOnMount ? undefined : selectedId);
   useEffect(() => {
-    const offset = laneAnchor?.current ?? 0;
-    setLaneOffset(offset);
-    scroll.current?.scrollTo({ x: (scene.baseFocus + offset) * 110, animated: false });
-  }, [width, scene.baseFocus, scene.ordered.length]);
+    if (!selectedId || selectedId === prevSelectedRef.current) {
+      prevSelectedRef.current = selectedId;
+      return;
+    }
+    prevSelectedRef.current = selectedId;
+    const focus = scene.ordered.findIndex((lane) => lane.id === selectedId);
+    if (focus < 0) return;
+    moveTo(focus - scene.baseFocus);
+  }, [selectedId, scene.baseFocus, scene.ordered, animateSelection]);
   return (
     <View style={{ gap: 10 }}>
       <View style={s.status} pointerEvents="none">
@@ -94,35 +142,15 @@ export function PortraitField({
           setWidth(e.nativeEvent.layout.width);
       }}
     >
-      <Image source={alpineTrail} style={[s.scenery, { height: Math.min(180, height * .32) }]} />
-      <Animated.ScrollView
-        ref={scroll}
-        horizontal
-        nestedScrollEnabled
-        directionalLockEnabled
-        alwaysBounceVertical={false}
-        bounces={false}
-        showsHorizontalScrollIndicator={false}
-        scrollEventThrottle={16}
-        style={StyleSheet.absoluteFill}
-        onScroll={Animated.event([{ nativeEvent: { contentOffset: { x: scrollX } } }], {
-          useNativeDriver: true,
-          listener: (e: { nativeEvent: { contentOffset: { x: number } } }) => setLaneOffset(e.nativeEvent.contentOffset.x / 110 - scene.baseFocus),
-        })}
-      >
-        <View
-          style={{
-            width: width + Math.max(0, scene.ordered.length - 1) * 110,
-            height,
-          }}
-        >
-          <Animated.View style={{ position: "absolute", width, height, transform: [{ translateX: scrollX }] }}>
+      <Image source={alpineTrail} style={[s.scenery, { height: height * .44 }]} />
+      <View ref={surface} style={StyleSheet.absoluteFill}>
           <Svg
+            {...pan.panHandlers}
             width={width}
             height="100%"
             viewBox="0 0 420 600"
             preserveAspectRatio="none"
-            accessibilityLabel="Fixed perspective competition field"
+            accessibilityLabel="Distance perspective competition field"
           >
             <Defs>
               <LinearGradient
@@ -136,7 +164,7 @@ export function PortraitField({
                 <Stop offset="100%" stopColor="#0b3038" />
               </LinearGradient>
             </Defs>
-            <GroundTarget onPress={fullscreen ? undefined : onExpand} accessibilityLabel={fullscreen ? undefined : "Expand 3D field to full screen"}>
+            <G>
             <Rect width={420} height={600} fill="transparent" />
             <Rect
               y={80}
@@ -145,6 +173,7 @@ export function PortraitField({
               fill={`url(#${prefix}-shade)`}
             />
             {scene.ground.map(drawFieldNode)}
+            {scene.ticks.map(t => <G key={t.value}><Rect x={4} y={t.y - 10} width={78} height={20} rx={6} fill="#103e46"/><SvgText {...chartTextProps()} x={12} y={t.y + 4} fill="#f8f9f6">{t.value === 0 ? "START" : `${t.value.toLocaleString("en-US", { maximumFractionDigits: 3 })} ${unit}`}</SvgText></G>)}
             <Defs>
               <LinearGradient
                 id={`${prefix}-horizon`}
@@ -164,7 +193,7 @@ export function PortraitField({
               height={110}
               fill={`url(#${prefix}-horizon)`}
             />
-            </GroundTarget>
+            </G>
             {scene.markers.map((m) => (
               <G key={`trail-${m.id}`} pointerEvents="none">
                 <Path
@@ -185,7 +214,7 @@ export function PortraitField({
               </G>
             ))}
             {scene.markers
-              .filter((m) => m.x > 28 && m.x < 392)
+              .filter((m) => m.x > 22 && m.x < 398)
               .sort((a, b) => a.y - b.y)
               .map((m, i) => {
                 const id = `${prefix}-portrait-${i}`;
@@ -197,7 +226,7 @@ export function PortraitField({
                     accessibilityRole="button"
                     accessibilityLabel={`${m.name}${m.you ? ", you" : ""}, ${m.gap.toFixed(1)} ${unit}${m.outside ? ", outside visible distance range" : ""}`}
                   >
-                    <G transform={`translate(${m.x} ${m.y}) scale(${m.scale})`}>
+                    <G transform={`translate(${m.x} ${m.y - 27 * m.scale}) scale(${m.scale})`}>
                     <Rect x={-30 / m.scale} y={-45 / m.scale} width={60 / m.scale} height={90 / m.scale} fill="transparent" />
                     <Ellipse
                       cy={27}
@@ -313,69 +342,39 @@ export function PortraitField({
                 );
               })}
           </Svg>
-          </Animated.View>
-        </View>
-      </Animated.ScrollView>
+      </View>
       {!fullscreen && onExpand && <View style={{ position: "absolute", top: 12, right: 12 }}><IconButton icon="expand" label="Expand 3D field to full screen" onPress={onExpand} /></View>}
+      <View style={{ position: "absolute", top: 12, left: 12, right: 60, gap: 6 }}>
+        {!fullscreen && <Pressable style={[s.controlRow, { alignSelf: "flex-start", minHeight: 44, paddingHorizontal: 16 }]} accessibilityRole="button" accessibilityLabel={exploring ? "Finish exploring field" : "Explore field in two directions"} accessibilityState={{ selected: exploring }} onPress={() => setExploring(!exploring)}><Text style={s.white}>{exploring ? "Done" : "Explore"}</Text></Pressable>}
+        <Text style={[s.white, textStyle("caption")]}>{exploring || fullscreen ? "Drag in any direction" : "Swipe across lanes · Explore to move forward"}</Text>
+      </View>
+    </View>
+      <View style={{ gap: 6 }}>
+        {(["↑", "↓"] as const).map(direction => {
+          const peers = scene.outside.filter(m => m.direction === direction && !m.ghost);
+          if (!peers.length) return null;
+          const nearest = peers.reduce((a,b) => Math.abs(a.value-view.center) < Math.abs(b.value-view.center) ? a : b);
+          return <Pressable key={direction} style={[s.controlRow, { minHeight: 44, paddingHorizontal: 12 }]} accessibilityRole="button" onPress={() => { moveTo(scene.ordered.findIndex(l => l.id === nearest.id) - scene.baseFocus); onSelect(nearest.id); }}><Text style={[s.white, textStyle("caption")]}>{direction} {peers.length} {direction === "↑" ? "ahead" : "behind"} · {nearest.name.split(" ")[0]} {nearest.you ? "your position" : `${Math.abs(nearest.gap).toFixed(unit === "pts" ? 0 : 2)} ${unit} ${nearest.gap >= 0 ? "ahead of you" : "behind you"}`}</Text></Pressable>;
+        })}
+      </View>
       <View style={s.controls}>
         <View style={s.controlRow}>
-          <Pressable
-            style={s.button}
-            accessibilityRole="button"
-            accessibilityLabel="Zoom out"
-            disabled={view.span >= (unit === "pts" ? 100 : 40)}
-            onPress={() =>
-              onZoom(Math.min(unit === "pts" ? 100 : 40, view.span * 1.5))
-            }
-          >
-            <Text style={s.white}>−</Text>
-          </Pressable>
-          <Text style={s.white}>Zoom</Text>
-          <Pressable
-            style={s.button}
-            accessibilityRole="button"
-            accessibilityLabel="Zoom in"
-            disabled={view.span <= (unit === "pts" ? 2 : 0.5)}
-            onPress={() =>
-              onZoom(Math.max(unit === "pts" ? 2 : 0.5, view.span / 1.5))
-            }
-          >
-            <Text style={s.white}>＋</Text>
-          </Pressable>
+          <Pressable style={s.button} accessibilityRole="button" accessibilityLabel="Previous lane" disabled={scene.focus <= 0} onPress={() => shift(-1)}><Text style={s.white}>←</Text></Pressable>
+          <Pressable style={s.button} accessibilityRole="button" accessibilityLabel="Move backward" disabled={scene.min <= 0} onPress={() => onPan(view.center - view.span / 3)}><Text style={s.white}>↓</Text></Pressable>
+          <Pressable style={s.button} accessibilityRole="button" accessibilityLabel="Your lane" onPress={() => { moveTo(0); onPan(lanes.find(l => l.you)?.value ?? 0); }}><Text style={s.white}>You</Text></Pressable>
+          <Pressable style={s.button} accessibilityRole="button" accessibilityLabel="Move forward" onPress={() => onPan(view.center + view.span / 3)}><Text style={s.white}>↑</Text></Pressable>
+          <Pressable style={s.button} accessibilityRole="button" accessibilityLabel="Next lane" disabled={scene.focus >= scene.ordered.length - 1} onPress={() => shift(1)}><Text style={s.white}>→</Text></Pressable>
         </View>
         <View style={s.controlRow}>
-          <Pressable
-            style={s.button}
-            accessibilityRole="button"
-            accessibilityLabel="Previous lane"
-            disabled={scene.focus <= 0}
-            onPress={() => shift(-1)}
-          >
-            <Text style={s.white}>←</Text>
-          </Pressable>
-          <Pressable
-            style={s.button}
-            accessibilityRole="button"
-            accessibilityLabel="Your lane"
-            onPress={() => moveTo(0)}
-          >
-            <Text style={s.white}>Your lane</Text>
-          </Pressable>
-          <Pressable
-            style={s.button}
-            accessibilityRole="button"
-            accessibilityLabel="Next lane"
-            disabled={scene.focus >= scene.ordered.length - 1}
-            onPress={() => shift(1)}
-          >
-            <Text style={s.white}>→</Text>
-          </Pressable>
+          <Pressable style={s.button} accessibilityRole="button" accessibilityLabel="Zoom out" disabled={view.span >= (unit === "pts" ? 100 : 40)} onPress={() => onZoom(Math.min(unit === "pts" ? 100 : 40, view.span * 1.5))}><Text style={s.white}>−</Text></Pressable>
+          <Text style={[s.white, textStyle("caption")]}>{Math.max(0, scene.min).toFixed(unit === "pts" ? 0 : 2)}–{scene.max.toFixed(unit === "pts" ? 0 : 2)} {unit}</Text>
+          <Pressable style={s.button} accessibilityRole="button" accessibilityLabel="Zoom in" disabled={view.span <= (unit === "pts" ? 2 : 0.5)} onPress={() => onZoom(Math.max(unit === "pts" ? 2 : 0.5, view.span / 1.5))}><Text style={s.white}>＋</Text></Pressable>
         </View>
       </View>
     </View>
-    </View>
   );
 }
+
 const s = StyleSheet.create({
   board: {
     height: 560,
@@ -397,17 +396,16 @@ const s = StyleSheet.create({
   },
   white: { ...textStyle("label"), color: "#fff" },
   controls: {
-    position: "absolute",
-    bottom: 16,
-    left: 0,
-    right: 0,
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "center",
     alignItems: "center",
     gap: 8,
   },
   controlRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 16,
+    gap: 4,
     backgroundColor: "#102e38ed",
     borderWidth: 1,
     borderColor: "#68858a",

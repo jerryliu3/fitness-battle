@@ -82,7 +82,7 @@ const s = StyleSheet.create({
     color: c.card,
     marginTop: 5
 },
-  place: { ...textStyle("heading"), color: c.card },
+  place: { ...textStyle("metric"), color: c.card },
   markers: { alignSelf: "center", height: 110 },
   bottom: { flexDirection: "row", alignItems: "center", gap: 12 },
   headline: { ...textStyle("heading"), color: c.card },

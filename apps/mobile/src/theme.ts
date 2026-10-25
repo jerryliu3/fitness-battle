@@ -21,9 +21,9 @@ export const colors = {
 };
 
 export const fonts = {
-  body: "DMSans_400Regular",
-  bodyMedium: "DMSans_500Medium",
-  bodyBold: "DMSans_700Bold",
+  body: "Manrope_400Regular",
+  bodyMedium: "Manrope_500Medium",
+  bodyBold: "Manrope_700Bold",
 };
 
 export {

@@ -371,8 +371,8 @@ export function CrewHub({ membersOnly = false, crewId = "" }: { membersOnly?: bo
             <SectionStack>
             {members.map(m => <View key={m.user_id} style={[f.section, f.row]}>
               <UserAvatar src={m.avatar_url} name={m.display_name} size={56} />
-              <View style={f.grow}><AppText role="label">{m.display_name}</AppText><AppText role="body" secondary >{(m.user_id === user?.id ? resting : m.rest_week === weekKey) ? "Rest week" : "Active"}</AppText>
-                <AppText role="body" secondary >{sessionsMetric ? `${memberTotal(m.user_id)} sessions` : distance(memberTotal(m.user_id))} this week</AppText>
+              <View style={f.grow}><AppText role="row">{m.display_name}</AppText><AppText role="support" secondary >{(m.user_id === user?.id ? resting : m.rest_week === weekKey) ? "Rest week" : "Active"}</AppText>
+                <AppText role="support" secondary >{sessionsMetric ? `${memberTotal(m.user_id)} sessions` : distance(memberTotal(m.user_id))} this week</AppText>
               </View>
             </View>)}
             </SectionStack>
@@ -519,9 +519,9 @@ export function CrewHub({ membersOnly = false, crewId = "" }: { membersOnly?: bo
                   .map((m, i) => (
                     <View key={m.user_id} style={f.row}>
                       <AppText role="body" secondary >{i + 1}</AppText>
-                      <AppText role="label" style={f.grow}>{m.display_name}</AppText>
+                      <AppText role="row" style={f.grow}>{m.display_name}</AppText>
                       <RankBadge score={m.effort_score} />
-                      <AppText role="label" >
+                      <AppText role="value" >
                         {sessionsMetric ? `${memberTotal(m.user_id)} sessions` : distance(memberTotal(m.user_id))}
                       </AppText>
                     </View>

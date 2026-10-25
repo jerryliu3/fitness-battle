@@ -19,8 +19,8 @@ it("ignores absent children when separating peer sections", () => {
 it("keeps the selected recipe when a caller supplies typography overrides", () => {
   const html = renderToStaticMarkup(createElement(AppText, { role: "label", style: { fontSize: 99, fontWeight: 500, letterSpacing: 3, textTransform: "uppercase", color: "red" } }, "GPS Tracked"));
   expect(html).toContain("font-size:0.875rem");
-  expect(html).toContain("font-weight:700");
-  expect(html).toContain("letter-spacing:normal");
+  expect(html).toContain("font-weight:600");
+  expect(html).toContain("letter-spacing:0em");
   expect(html).toContain("text-transform:none");
   expect(html).toContain("color:red");
   expect(html).not.toContain("99px");
@@ -31,7 +31,7 @@ it("uses the same card structure and recipes for upcoming and navigable features
   const destination = renderToStaticMarkup(createElement(FeatureCard, { title: "Beyond this week", description: "All-time rankings.", href: "/pace" }));
   for (const html of [upcoming, destination]) {
     expect(html).toContain('class="ui-feature-card"');
-    expect(html).toMatch(/<h2[^>]*font-size:1.375rem/);
+    expect(html).toMatch(/<h2[^>]*font-size:1.25rem/);
     expect(html).toMatch(/<p[^>]*font-size:1rem/);
   }
   expect(upcoming).toMatch(/^<section/);
