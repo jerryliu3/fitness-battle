@@ -23,6 +23,7 @@ import Svg, {
 import {
   portraitField,
   portraitDepthAt,
+  portraitScaleAtDepth,
   portraitFieldGap,
   type ArenaSceneLane,
   type ArenaViewWindow,
@@ -67,6 +68,8 @@ export function PortraitField({
   const pending = useRef<{ offset: number; center: number } | null>(null);
   const start = useRef({ focus: 0, center: 0, span: 1, depth: 0, y: 0 });
   const [pan] = useState(() => PanResponder.create({
+    // Claim movement before SVG portrait targets or the outer event pager.
+    onMoveShouldSetPanResponderCapture: (_, g) => Math.hypot(g.dx, g.dy) > 8 && (latest.current.exploring || Math.abs(g.dx) > Math.abs(g.dy) * 1.3),
     onMoveShouldSetPanResponder: (_, g) => Math.hypot(g.dx, g.dy) > 8 && (latest.current.exploring || Math.abs(g.dx) > Math.abs(g.dy) * 1.3),
     onPanResponderGrant: (e, g) => {
       const p = latest.current;
@@ -83,7 +86,7 @@ export function PortraitField({
     onPanResponderMove: (_, g) => {
       const p = latest.current, d = start.current;
       pending.current = {
-        offset: Math.max(0, Math.min(p.scene.ordered.length - 1, d.focus - g.dx / p.width * 420 / (110 / (2 - d.depth)))) - p.scene.baseFocus,
+        offset: Math.max(0, Math.min(p.scene.ordered.length - 1, d.focus - g.dx / p.width * 420 / (222 * portraitScaleAtDepth(d.depth)))) - p.scene.baseFocus,
         center: d.center + (portraitDepthAt((d.y + g.dy) / p.height * 600) - d.depth) * d.span,
       };
       if (frame.current !== null) return;
@@ -122,9 +125,10 @@ export function PortraitField({
           setWidth(e.nativeEvent.layout.width);
       }}
     >
-      <Image source={alpineTrail} style={[s.scenery, { height: Math.min(180, height * .32) }]} />
-      <View ref={surface} {...pan.panHandlers} style={StyleSheet.absoluteFill}>
+      <Image source={alpineTrail} style={[s.scenery, { height: height * .44 }]} />
+      <View ref={surface} style={StyleSheet.absoluteFill}>
           <Svg
+            {...pan.panHandlers}
             width={width}
             height="100%"
             viewBox="0 0 420 600"

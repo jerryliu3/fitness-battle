@@ -29,10 +29,10 @@ export function portraitField(
   const min = view.center - span / 2;
   const max = view.center + span / 2;
   const project = (lane: number, depth: number) => {
-    const perspective = 1 / (2 - depth);
+    const perspective = portraitScaleAtDepth(depth);
     return {
-      x: 210 + (lane - focus) * 110 * perspective,
-      y: 180 + 330 * depth * perspective,
+      x: 210 + (lane - focus) * 222 * perspective,
+      y: 148 + 362 * perspective,
       perspective,
     };
   };
@@ -46,17 +46,21 @@ export function portraitField(
     return `${p.x},${p.y}`;
   };
   const ground: FieldNode[] = [
-    path("M-600 208 Q210 86 1020 208 L1020 650 H-600 Z", "#1c464b"),
+    path("M-600 148 Q210 130 1020 148 L1020 700 H-600 Z", "#1c464b"),
   ];
   // Constant scene budget independent of roster size and accumulated distance.
-  const firstLane = Math.max(-1, Math.floor(focus) - 7);
-  const lastLane = Math.min(ordered.length, Math.ceil(focus) + 7);
+  // Recycle a fixed band of scenery lanes, including beyond the roster. The
+  // whole plane continues to a common vanishing point and below the viewport;
+  // the measured distance window is not a rectangular cutout in the scenery.
+  const firstLane = Math.floor(focus) - 8;
+  const lastLane = Math.ceil(focus) + 8;
+  const foreground = portraitDepthAt(700);
   for (let i = firstLane; i <= lastLane; i++) {
     ground.push(path(
-      `M${point(i - 0.5, 0)} L${point(i + 0.5, 0)} L${point(i + 0.5, 1)} L${point(i - 0.5, 1)} Z`,
+      `M210,148 L${point(i + 0.5, foreground)} L${point(i - 0.5, foreground)} Z`,
       ordered[i]?.you ? "#255659" : i % 2 ? "#183e44" : "#1c464b",
     ));
-    ground.push(path(`M${point(i - 0.5, 0)} L${point(i - 0.5, 1)}`, "none", {
+    ground.push(path(`M210,148 L${point(i - 0.5, foreground)}`, "none", {
       stroke: ordered[i]?.you ? "#f7c948" : "#7b9a91",
       strokeWidth: ordered[i]?.you ? 2 : 1, strokeOpacity: 0.65,
     }));
@@ -64,6 +68,15 @@ export function portraitField(
   const rawStep = span / 5;
   const power = 10 ** Math.floor(Math.log10(rawStep));
   const step = [1, 2, 5, 10].find(n => n * power >= rawStep)! * power;
+  // Fixed-size continuation beyond the ruler: increasingly distant survey
+  // lines approach the horizon. They remain tied to distance while panning.
+  for (const multiple of [1, 2, 4, 8, 16, 32]) {
+    const value = (Math.ceil(max / step) + multiple) * step;
+    const depth = (max - value) / span;
+    ground.push(path(`M${point(focus - 8, depth)} L${point(focus + 8, depth)}`, "none", {
+      stroke: "#b4c8b8", strokeOpacity: 0.16 / Math.sqrt(multiple), strokeWidth: 1,
+    }));
+  }
   const ticks: { value: number; y: number }[] = [];
   for (let value = Math.max(0, Math.ceil(min / step) * step); value <= max + step * 0.001; value += step) {
     const depth = (max - value) / span;
@@ -101,7 +114,7 @@ export function portraitField(
       outside,
       direction: delta > 0 ? "↑" : "↓",
       gap: lane.value - (me?.value ?? 0),
-      scale: (lane.ghost ? 0.85 : 1) * p.perspective,
+      scale: (lane.ghost ? 0.85 : 1) * Math.max(0.6, p.perspective),
       color: lane.ghost
         ? "#c9d6e3"
         : lane.you
@@ -129,13 +142,26 @@ export function portraitField(
           {
             tag: "clipPath",
             attrs: { id: `${prefix}-curve` },
-            children: [path("M-100 208 Q210 100 520 208 V650 H-100Z", "white")],
+            children: [path("M-100 148 Q210 130 520 148 V700 H-100Z", "white")],
+          },
+          {
+            tag: "linearGradient",
+            attrs: { id: `${prefix}-depth-fade`, gradientUnits: "userSpaceOnUse", x1: 0, y1: 148, x2: 0, y2: 245 },
+            children: [
+              { tag: "stop", attrs: { offset: "0%", stopColor: "white", stopOpacity: 0 } },
+              { tag: "stop", attrs: { offset: "100%", stopColor: "white", stopOpacity: 1 } },
+            ],
+          },
+          {
+            tag: "mask",
+            attrs: { id: `${prefix}-atmosphere`, maskUnits: "userSpaceOnUse", x: -100, y: 130, width: 620, height: 570 },
+            children: [{ tag: "rect", attrs: { x: -100, y: 130, width: 620, height: 570, fill: `url(#${prefix}-depth-fade)` } }],
           },
         ],
       },
       {
         tag: "g",
-        attrs: { clipPath: `url(#${prefix}-curve)` },
+        attrs: { clipPath: `url(#${prefix}-curve)`, mask: `url(#${prefix}-atmosphere)` },
         children: ground,
       },
     ] as FieldNode[],
@@ -156,8 +182,13 @@ export function portraitFieldGap(gap: number | null, unit: string) {
     : `${gap.toLocaleString("en-US", { maximumFractionDigits: unit === "pts" ? 0 : 2 })} ${unit} to next rival`;
 }
 
-/** Inverse ground projection, used to keep the grabbed distance under the finger. */
+/** Camera-space scale; shared by projection and lateral gesture anchoring. */
+export function portraitScaleAtDepth(depth: number) {
+  return 1 / (3 - 2 * depth);
+}
+
+/** Inverse of y = horizon + camera height * perspective. */
 export function portraitDepthAt(y: number) {
-  const q = Math.max(-0.3, Math.min(1.8, (y - 180) / 330));
-  return 2 * q / (1 + q);
+  const perspective = Math.max(1 / 6, Math.min(2, (y - 148) / 362));
+  return (3 - 1 / perspective) / 2;
 }

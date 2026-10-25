@@ -65,3 +65,16 @@ it("projects survey lines and athletes through the same invertible distance plan
   expect(scene.markers.some(m => m.ghost)).toBe(false);
   expect(scene.outside.some(m => m.ghost)).toBe(true);
 });
+
+it("continues a bounded field to a fixed horizon across pan, zoom and roster sizes", () => {
+  const a = portraitField(lanes, { center: 10, span: 1.2 });
+  const b = portraitField(Array.from({ length: 200 }, (_, i) => ({ id: `p${i}`, name: "Peer", initials: "P", value: i })), { center: 80, span: 40 }, undefined, 5.5);
+  const groundA = a.ground[1]!.children!;
+  const groundB = b.ground[1]!.children!;
+  const raysA = groundA.filter(node => String(node.attrs.d).startsWith("M210,148"));
+  const raysB = groundB.filter(node => String(node.attrs.d).startsWith("M210,148"));
+  expect(raysA.length).toBeGreaterThan(30);
+  expect(raysB.length).toBeLessThanOrEqual(36);
+  expect(raysA.every(node => parseFloat(String(node.attrs.d).split(",")[2]!) > 600)).toBe(true);
+  expect(JSON.stringify(b.ground)).not.toMatch(/NaN|Infinity/);
+});

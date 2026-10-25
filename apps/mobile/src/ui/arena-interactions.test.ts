@@ -42,6 +42,7 @@ vi.mock("react-native", async () => {
   };
 });
 vi.mock("react-native-safe-area-context", () => ({
+  SafeAreaProvider: "SafeAreaProvider",
   SafeAreaView: "SafeAreaView",
   useSafeAreaInsets: () => ({ top: 47, bottom: 34, left: 0, right: 0 }),
 }));

@@ -20,7 +20,7 @@ import {
 import { usePathname } from "expo-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Modal, Pressable, Text, View, useWindowDimensions } from "react-native";
-import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
+import { SafeAreaProvider, SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { IconButton } from "../ui/icon-button";
 import Svg from "react-native-svg";
 import { useCompeteStore } from "../lib/compete-store";
@@ -329,6 +329,7 @@ export function CompetitionField({
       ) : null}
 
       {expanded ? <Modal visible animationType={reduceMotion ? "none" : "slide"} presentationStyle="fullScreen" onRequestClose={() => setExpanded(false)}>
+        <SafeAreaProvider>
         <SafeAreaView style={f.safe} edges={["top", "bottom"]}>
           <View style={[f.row, { minHeight: 56, paddingHorizontal: 12 }]}>
             <IconButton icon="back" label="Close full screen field" onPress={() => setExpanded(false)} />
@@ -337,6 +338,7 @@ export function CompetitionField({
           <View style={{ paddingHorizontal: 16, paddingBottom: 4 }}><FocusSegments label="Full screen field dimension" value={viewDimension} options={[{ value: "2d", label: "2D map" }, { value: "3d", label: "3D field" }]} onChange={next => { setDimension(next); onArenaViewChange?.(next === "2d" ? "lanes2d" : "3d"); }} /></View>
           {fieldContent}
         </SafeAreaView>
+        </SafeAreaProvider>
       </Modal> : fieldContent}
       {viewMode === "standings" ? (
         <View style={f.section}>

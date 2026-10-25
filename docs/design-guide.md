@@ -269,3 +269,16 @@ survey intervals. Gesture events coalesce to at most one React update per
 animation frame; there is no idle render loop, running animation, WebGL context,
 or native WebView needed for this selected field. The earlier Three.js pursuit
 and bridge stay independent. See [implementation and local validation](reviews/distance-field-2026-10-25/README.md).
+
+
+#### Infinite perspective correction
+
+The measured window must never become the scenery's boundary. Lane ribbons now
+converge at a fixed, visible vanishing point and continue below the viewport.
+A bounded set of more distant survey lines and an atmospheric fade blend the
+field into the alpine horizon. The measured athlete/ruler projection is
+`perspective = 1 / (3 - 2 * depth)`; portraits have a minimum readable scale,
+while their ground anchors retain the true projected distance. Gesture inversion
+and lateral movement use the same camera scale on both platforms. Native SVG
+owns its gesture responders, and the fullscreen Modal establishes its own safe
+area so controls clear the Dynamic Island. See [follow-up review](reviews/infinite-field-horizon/README.md).

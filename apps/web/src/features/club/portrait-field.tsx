@@ -5,6 +5,7 @@ import { useEffect, useId, useMemo, useRef, useState } from "react";
 import {
   portraitField,
   portraitDepthAt,
+  portraitScaleAtDepth,
   portraitFieldGap,
   type ArenaSceneLane,
   type ArenaViewWindow,
@@ -187,7 +188,7 @@ export function PortraitField({
           if (d.moved) {
             moved.current = true;
             const depth = portraitDepthAt((d.y - d.top) / d.height * 600);
-            const offset = Math.max(0, Math.min(scene.ordered.length - 1, d.focus - dx / d.width * 420 / (110 / (2 - depth)))) - scene.baseFocus;
+            const offset = Math.max(0, Math.min(scene.ordered.length - 1, d.focus - dx / d.width * 420 / (222 * portraitScaleAtDepth(depth)))) - scene.baseFocus;
             queue(offset, d.center + (portraitDepthAt((e.clientY - d.top) / d.height * 600) - depth) * d.span);
           }
         }}
