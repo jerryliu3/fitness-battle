@@ -89,6 +89,17 @@ export const SHELL_RADIUS = {
   pill: 999,
 } as const;
 
+/** Light Home palette shared by the Portfolio chart and daily readings. */
+export const HOME_HEALTH_COLORS = {
+  background: SHELL_COLORS.paper,
+  tile: SHELL_COLORS.card,
+  border: SHELL_COLORS.line,
+  text: SHELL_COLORS.ink,
+  secondary: SHELL_COLORS.muted,
+  accent: SHELL_COLORS.fieldTeal,
+  comparison: SHELL_COLORS.secondary,
+} as const;
+
 export const SHELL_TYPE = {
   display: "DM Sans",
   body: "DM Sans",

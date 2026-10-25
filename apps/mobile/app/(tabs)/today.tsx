@@ -1,5 +1,6 @@
 import { AppText, SectionStack } from "../../src/ui/section";
 import { WeekChart } from "../../src/features/week-chart";
+import { DailyHealth } from "../../src/features/daily-health";
 import { LatestActivity } from "../../src/features/club-latest-activity";
 import type { Activity } from "@fitness-battle/shared";
 
@@ -53,6 +54,7 @@ export default function Home() {
           ) : null}
           <SectionStack divided={false}>
           <WeekChart state={state} onOpen={() => router.push("/week")} />
+          <DailyHealth state={state} />
           <RivalCard state={state} />
           <LatestActivity state={state} onOpen={setLatest} />
           <FocusDisclosure title="Your activity journey">
