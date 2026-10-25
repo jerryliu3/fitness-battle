@@ -1,5 +1,5 @@
 import { expect, it } from "vitest";
-import { portraitField, portraitFieldGap } from "./portrait-field";
+import { portraitField, portraitFieldGap, portraitDepthAt } from "./portrait-field";
 import { fieldCourse, defaultFieldAppearance } from "./index";
 const lanes = [
   { id: "a", name: "Ahead", initials: "A", value: 12 },
@@ -13,16 +13,16 @@ it("keeps ranks, gaps and out-of-window distances true without ranking past you"
   expect(s.fieldSize).toBe(3);
   expect(s.nextGap).toBe(2);
   expect(s.markers.find((m) => m.you)?.x).toBe(210);
-  expect(s.markers.find((m) => m.id === "a")?.outside).toBe(true);
-  expect(s.markers.find((m) => m.id === "a")?.gap).toBe(2);
+  expect(s.outside.find((m) => m.id === "a")?.outside).toBe(true);
+  expect(s.outside.find((m) => m.id === "a")?.gap).toBe(2);
   expect(portraitFieldGap(null, "pts")).toContain("leading");
   expect(portraitFieldGap(2, "mi")).toBe("2 mi to next rival");
 });
-it("retains lane identity across overtakes, changes zoom depth and reaches every peer without free panning", () => {
+it("retains lane identity across overtakes, changes zoom depth and reaches every peer with independent distance and lane panning", () => {
   const a = portraitField(lanes, { center: 10, span: 10 });
   const b = portraitField(
     lanes.map((l) => ({ ...l, value: l.you ? 14 : l.value })),
-    { center: 10, span: 2 },
+    { center: 8, span: 2 },
     "b",
   );
   expect(a.ordered.map((l) => l.id)).toEqual(b.ordered.map((l) => l.id));
@@ -48,7 +48,20 @@ it("triples underlying horizontal lane spacing while retaining distance and race
 });
 
 it("keeps past you visible without ranking it and supports continuous horizontal exploration",()=>{
- const s=portraitField(lanes,{center:10,span:20},undefined,.4);
+ const s=portraitField(lanes.map(l=>l.ghost?{...l,value:11}:l),{center:10,span:20},undefined,.4);
  expect(s.markers.some(m=>m.ghost)).toBe(true);expect(s.fieldSize).toBe(3);expect(s.focus-s.baseFocus).toBeCloseTo(.4);
- expect(s.markers.every(m=>m.trail.includes("Q"))).toBe(true);expect(JSON.stringify(s.ground)).toContain("Q");
+ expect(s.markers.every(m=>m.trail.includes("L"))).toBe(true);expect(JSON.stringify(s.ground)).toContain("Q");
+});
+
+it("projects survey lines and athletes through the same invertible distance plane", () => {
+  const view = { center: 10, span: 4 };
+  const scene = portraitField(lanes, view);
+  for (const marker of scene.markers) {
+    expect(view.center + view.span / 2 - portraitDepthAt(marker.y) * view.span).toBeCloseTo(marker.value);
+  }
+  for (const tick of scene.ticks) {
+    expect(view.center + view.span / 2 - portraitDepthAt(tick.y) * view.span).toBeCloseTo(tick.value);
+  }
+  expect(scene.markers.some(m => m.ghost)).toBe(false);
+  expect(scene.outside.some(m => m.ghost)).toBe(true);
 });

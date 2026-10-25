@@ -244,3 +244,28 @@ week, session totals and activity actions remain. `HOME_HEALTH_COLORS` reuses th
 ranges or targets are inferred. Only stored current sleep duration is available;
 Steps, Resting HR and HRV show unavailable until their data feeds exist. See the
 [implementation review](reviews/home-health-production/README.md).
+
+### Distance-plane field — October 25
+
+The optional **3D field** remains a lightweight SVG perspective renderer on web
+and native. Its longitudinal coordinate is now the athlete's actual accumulated
+value in the same distance/effort window as 2D. Survey lines and portrait anchors
+share one invertible perspective projection; lane identity stays independent of
+rank. Out-of-window athletes are culled rather than pinned at false positions.
+Directional navigation below the board names the nearest offscreen athlete and
+retains their actual gap relative to you. Past you remains unranked.
+
+Horizontal swipes browse lanes. Explicit Explore enables simultaneous horizontal
+and longitudinal dragging, preserving ordinary page scrolling when inactive;
+native fullscreen enables exploration immediately. Web also supports arrow keys,
+Home to return to you, and trackpad/wheel panning while Explore is active. The
+five direction/You controls and zoom controls remain available without gestures.
+Distance labels show accumulated values from the start, while athlete labels
+show gaps relative to you. Navigation sits below the plane to avoid covering
+athletes, including at the near/far bounds.
+
+Scene work is bounded to nearby lanes, in-window portraits and roughly five
+survey intervals. Gesture events coalesce to at most one React update per
+animation frame; there is no idle render loop, running animation, WebGL context,
+or native WebView needed for this selected field. The earlier Three.js pursuit
+and bridge stay independent. See [implementation and local validation](reviews/distance-field-2026-10-25/README.md).

@@ -50,6 +50,7 @@ it("zooms the local portrait scene and changes peer focus while retaining actual
         view: { center: 10, span: 1.2 },
         unit: "km",
         onZoom: zoom,
+        onPan: () => {},
         onSelect: select,
       }),
     );

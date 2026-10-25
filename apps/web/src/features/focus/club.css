@@ -1211,7 +1211,7 @@
 @media(min-width:900px) { .club-rival-card { height:100%; } }
 
 /* Locked perspective portrait field: independent of the Three.js renderer. */
-.club-perspective-board{position:relative;width:100%;max-width:560px;aspect-ratio:7/10;margin-inline:auto;overflow:hidden;border-radius:20px;background:#0b3038;isolation:isolate}
+.club-perspective-board{position:relative;width:100%;max-width:460px;aspect-ratio:7/10;margin-inline:auto;overflow:hidden;border-radius:20px;background:#0b3038;isolation:isolate}
 .club-perspective-scenery{position:absolute;inset:0 0 auto;width:100%;height:40%;object-fit:cover}
 .club-perspective-svg{position:absolute;inset:0;width:100%;height:100%;overflow:hidden}
 .club-perspective-svg g[role=button]{cursor:pointer;outline:none}.club-perspective-svg g[role=button]:focus-visible>rect{stroke:#f7c948;stroke-width:4}
@@ -1993,3 +1993,18 @@
   text-transform: none;
   font: var(--type-caption);
 }
+/* Distance-plane field: navigation stays outside the surveyed distance window. */
+.club-field-explore{position:absolute;top:12px;left:12px;right:12px;display:flex;align-items:center;gap:10px;color:white;font:var(--type-caption)}
+.club-field-explore button,.club-field-offscreen button{min-height:44px;border:1px solid #68858a;border-radius:16px;background:#103e46ed;color:white;padding:8px 12px;font:inherit;cursor:pointer}
+.club-field-explore button[aria-pressed=true]{background:#f7c948;color:var(--ink)}
+.club-field-offscreen{display:flex;flex-wrap:wrap;justify-content:center;gap:6px;font:var(--type-caption)}
+.club-field-offscreen button{font-size:11px}
+.club-perspective-svg:focus-visible{outline:3px solid #f7c948;outline-offset:-3px}
+.club-field-explore button:focus-visible,.club-field-offscreen button:focus-visible{outline:2px solid #f7c948;outline-offset:2px}
+
+.club-distance-controls{position:static;display:flex;flex-wrap:wrap;justify-content:center;gap:8px;padding-bottom:8px}
+
+.club-field-explore span{padding:6px 8px;border-radius:10px;background:#103e46df}
+
+.club-distance-controls .club-board-peers{gap:4px}
+.club-distance-controls .club-board-zoom{gap:4px}

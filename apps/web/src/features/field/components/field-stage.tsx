@@ -473,6 +473,11 @@ export function FieldStage({
                 cancelCenterTween();
                 setSpan(value);
               }}
+              onPan={(value) => {
+                cancelCenterTween();
+                setSpan(view.span);
+                setCenter(clampViewCenter(value, view.span));
+              }}
               onSelect={toggleSelect}
             />
           ) : null}
