@@ -1,10 +1,9 @@
 "use client";
-import { typographyStyle, AppText  } from "@/ui/section";
+import { typographyStyle } from "@/ui/section";
 
-import { useId, useMemo, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import {
   portraitField,
-  portraitFieldGap,
   type ArenaSceneLane,
   type ArenaViewWindow,
 } from "@fitness-battle/shared";
@@ -15,23 +14,42 @@ export function PortraitField({
   lanes,
   view,
   unit,
+  selectedId,
+  immersive = false,
+  onExpand,
+  onToggleDimension,
   onZoom,
   onSelect,
 }: {
   lanes: ArenaSceneLane[];
   view: ArenaViewWindow;
   unit: string;
+  selectedId?: string;
+  immersive?: boolean;
+  onExpand?: () => void;
+  onToggleDimension?: () => void;
   onZoom: (span: number) => void;
   onSelect: (id: string) => void;
 }) {
   const [laneOffset, setLaneOffset] = useState(0);
   const prefix = useId().replace(/:/g, "");
-  const scene = portraitField(lanes, view, undefined, laneOffset,prefix);
+  const scene = portraitField(lanes, view, undefined, laneOffset, prefix);
+  const prevSelectedRef = useRef<string | undefined>(selectedId);
   const shift = (d: number) =>
     setLaneOffset(
       Math.max(0, Math.min(scene.ordered.length - 1, scene.focus + d)) -
         scene.baseFocus,
     );
+  useEffect(() => {
+    if (!selectedId || selectedId === prevSelectedRef.current) {
+      prevSelectedRef.current = selectedId;
+      return;
+    }
+    prevSelectedRef.current = selectedId;
+    const focus = scene.ordered.findIndex((lane) => lane.id === selectedId);
+    if (focus < 0) return;
+    setLaneOffset(focus - scene.baseFocus);
+  }, [selectedId, scene.baseFocus, scene.ordered]);
   const drag = useRef<{
     x: number;
     y: number;
@@ -41,13 +59,7 @@ export function PortraitField({
   const moved = useRef(false);
   return (
     <div className="club-perspective-group">
-      <div className="club-board-status">
-        <b>
-          {scene.place} / {scene.fieldSize} <AppText as="small" role="caption" secondary>PLACE</AppText>
-        </b>
-        <span>{portraitFieldGap(scene.nextGap, unit)}</span>
-      </div>
-    <div className="club-perspective-board">
+    <div className={immersive ? "club-perspective-board is-immersive" : "club-perspective-board"}>
       <img
         className="club-perspective-scenery"
         src="/club/alpine-trail.jpg"
@@ -56,6 +68,7 @@ export function PortraitField({
       <svg
         className="club-perspective-svg"
         viewBox="0 0 420 600"
+        preserveAspectRatio="xMidYMid slice"
         aria-label="Fixed perspective competition field"
         role="group"
         onPointerDown={(e) => {
@@ -107,11 +120,12 @@ export function PortraitField({
       >
         <defs>
           <linearGradient id={`${prefix}-shade`} x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#0b3038" stopOpacity="0" />
+            <stop offset="0%" stopColor="#0b242c" stopOpacity="0" />
+            <stop offset="34%" stopColor="#0b3038" stopOpacity="0.88" />
             <stop offset="100%" stopColor="#0b3038" />
           </linearGradient>
         </defs>
-        <rect y={80} width={420} height={520} fill={`url(#${prefix}-shade)`} />
+        <rect y={52} width={420} height={548} fill={`url(#${prefix}-shade)`} />
         {scene.ground.map(drawFieldNode)}
         <defs>
           <linearGradient id={`${prefix}-horizon`} x1="0" y1="0" x2="0" y2="1">
@@ -269,6 +283,30 @@ export function PortraitField({
             );
           })}
       </svg>
+      {!immersive && (onToggleDimension || onExpand) ? (
+        <div className="focus-portal-actions">
+          {onToggleDimension ? (
+            <button
+              type="button"
+              className="focus-portal-pill"
+              aria-label="Switch to 2D map"
+              onClick={onToggleDimension}
+            >
+              3D
+            </button>
+          ) : null}
+          {onExpand ? (
+            <button
+              type="button"
+              className="focus-portal-pill is-accent"
+              aria-label="Expand 3D field to full screen"
+              onClick={onExpand}
+            >
+              Full Arena ⤢
+            </button>
+          ) : null}
+        </div>
+      ) : null}
       <div className="club-board-controls">
         <div className="club-board-zoom">
           <button
@@ -281,7 +319,6 @@ export function PortraitField({
           >
             −
           </button>
-          <span>Zoom</span>
           <button
             type="button"
             aria-label="Zoom in"
@@ -293,27 +330,29 @@ export function PortraitField({
             ＋
           </button>
         </div>
-        <div className="club-board-peers">
-          <button
-            type="button"
-            aria-label="Previous lane"
-            disabled={scene.focus <= 0}
-            onClick={() => shift(-1)}
-          >
-            ←
-          </button>
-          <button type="button" onClick={() => setLaneOffset(0)}>
-            Your lane
-          </button>
-          <button
-            type="button"
-            aria-label="Next lane"
-            disabled={scene.focus >= scene.ordered.length - 1}
-            onClick={() => shift(1)}
-          >
-            →
-          </button>
-        </div>
+        {!immersive ? (
+          <div className="club-board-peers">
+            <button
+              type="button"
+              aria-label="Previous lane"
+              disabled={scene.focus <= 0}
+              onClick={() => shift(-1)}
+            >
+              ←
+            </button>
+            <button type="button" onClick={() => setLaneOffset(0)}>
+              Your lane
+            </button>
+            <button
+              type="button"
+              aria-label="Next lane"
+              disabled={scene.focus >= scene.ordered.length - 1}
+              onClick={() => shift(1)}
+            >
+              →
+            </button>
+          </div>
+        ) : null}
       </div>
     </div>
     </div>
