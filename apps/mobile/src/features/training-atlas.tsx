@@ -151,7 +151,7 @@ export function TrainingAtlas({ state }: { state: CompeteState }) {
       <View style={{ gap: 4 }}>
         <Text style={f.kicker}>Active time</Text>
         <Text
-          style={[f.massive, { ...textStyle("display") }]}
+          style={f.massive}
         >
           {clubDuration(buckets.reduce((sum, b) => sum + b.movingSec, 0))}
         </Text>

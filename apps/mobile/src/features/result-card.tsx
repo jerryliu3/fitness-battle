@@ -102,7 +102,7 @@ export function ResultCard({
           <>
             <View style={{ flexDirection: "row", gap: 10, alignItems: "stretch" }}>
               <View style={{ flex: 1.1, backgroundColor: "#ffffff88", borderRadius: 16, padding: 16, justifyContent: "center" }}>
-                <Text style={[f.massive, { ...textStyle("display") }]}>#{result.place}</Text>
+                <Text style={f.massive}>#{result.place}</Text>
                 <AppText role="body" secondary >of {result.fieldSize}</AppText>
               </View>
               <View style={{ flex: 1, gap: 10 }}>

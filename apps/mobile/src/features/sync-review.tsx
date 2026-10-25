@@ -22,7 +22,7 @@ export function SyncReview({ receipt, state, moment, debug = false, remaining = 
     <SafeAreaProvider><SafeAreaView style={f.safe} edges={["top", "bottom"]}>
       <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingHorizontal: 20, minHeight: 56 }}>
         <Text style={textStyle("label")}>{receipt ? "Review your activities" : moment?.plan.hasOvertake ? "Your overtakes" : "Your field changed"}</Text>
-        {receipt && <Pressable accessibilityRole="button" accessibilityLabel="Apply activities and skip recap" onPress={close} style={{ minHeight: 44, minWidth: 44, justifyContent: "center" }}><Text style={textStyle("caption")}>Skip</Text></Pressable>}
+        {receipt && <Pressable accessibilityRole="button" accessibilityLabel="Apply activities and skip recap" onPress={close} style={{ minHeight: 44, minWidth: 44, justifyContent: "center" }}><Text style={textStyle("label")}>Skip</Text></Pressable>}
       </View>
       <ScrollView ref={scroll} contentContainerStyle={{ padding: 22, gap: 20, paddingBottom: 32, flexGrow: 1 }} keyboardShouldPersistTaps="handled">
         {debug && <Text style={f.kicker}>DEBUG PREVIEW · LOCAL DATA ONLY</Text>}
@@ -51,7 +51,7 @@ function Review({ receipt, state, onComplete, resetScroll }: { resetScroll: () =
   return <View style={{ gap: 20, flex: 1 }}>
     <Text style={f.kicker}>{receipt.preview ? "SAMPLE PREVIEW · NO COMPETITION CREDIT" : "SYNC COMPLETE · YOUR NEXT MOVE"}</Text>
     <Text accessibilityRole="header" style={textStyle("display")}>Make it count.</Text>
-    <Text style={[f.massive, { ...textStyle("display") }]}>{clubDuration(selected.reduce((n, a) => n + a.movingSec, 0))}</Text>
+    <Text style={f.massive}>{clubDuration(selected.reduce((n, a) => n + a.movingSec, 0))}</Text>
     <Text style={textStyle("body")}>{selected.length} of {activities.length} activities selected. Review your effort, then slide to see what changed.</Text>
     {activities.length > 0 && <ActivityRoute activity={selected[0] ?? activities[0]} units={state.units}/>}
     <View style={{ borderRadius: 20, overflow: "hidden", backgroundColor: "white", borderWidth: 1, borderColor: c.line }}>
@@ -65,7 +65,7 @@ function Review({ receipt, state, onComplete, resetScroll }: { resetScroll: () =
     {!receipt.preview && excluded.length > 0 && <Text style={textStyle("caption")}>Deselected activities stay saved, excluded from competition.</Text>}
     <View style={{ marginTop: "auto", paddingTop: 16, gap: 12 }}>
       <View onLayout={e => setWidth(e.nativeEvent.layout.width)} style={{ height: 66, borderRadius: 36, backgroundColor: c.ink, justifyContent: "center", position: "relative" }}>
-        <Text style={[textStyle("label"), { ...textStyle("body"), color: "white", textAlign: "center", paddingLeft: 46 }]}>{receipt.preview ? "Swipe to preview" : selected.length ? "Swipe to lock it in" : "Swipe to save as excluded"}</Text>
+        <Text style={[textStyle("label"), { color: "white", textAlign: "center", paddingLeft: 46 }]}>{receipt.preview ? "Swipe to preview" : selected.length ? "Swipe to lock it in" : "Swipe to save as excluded"}</Text>
         <View accessible accessibilityRole="adjustable" accessibilityLabel="Swipe to confirm synced activities" accessibilityValue={{ min: 0, max: 100, now: Math.round(progress * 100) }} accessibilityActions={[{ name: "increment", label: "Confirm activities" }]} onAccessibilityAction={finish} style={StyleSheet.absoluteFill}
           onStartShouldSetResponder={e => e.nativeEvent.locationX <= 64}
           onMoveShouldSetResponder={() => dragging.current}

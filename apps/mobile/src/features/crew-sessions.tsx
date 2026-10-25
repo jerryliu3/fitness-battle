@@ -136,7 +136,7 @@ export function CrewSessions({
                 timeZone: s.time_zone,
               })}
             </Text>
-            <Text style={[f.massive, { ...textStyle("display") }]}>
+            <Text style={f.massive}>
               {new Date(s.starts_at).toLocaleTimeString("en-US", {
                 hour: "numeric",
                 minute: "2-digit",

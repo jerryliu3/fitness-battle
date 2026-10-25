@@ -198,7 +198,7 @@ export function CompetitionField({
               PLACE
             </Text>
             <Text
-              style={[textStyle("caption"), { ...textStyle("caption"), color: c.ink, flexShrink: 1 }]}
+              style={[textStyle("caption"), { color: c.ink, flexShrink: 1 }]}
             >
               {portraitFieldGap(
                 portraitField(fieldLanes, view).nextGap,
@@ -297,7 +297,7 @@ export function CompetitionField({
             <View style={f.grow}>
               <Text style={f.kicker}>Accumulated this week</Text>
               <Text
-                style={[f.massive, { ...textStyle("display") }]}
+                style={f.massive}
               >
                 {displayTotal.toFixed(1)} <Text style={textStyle("body")}>{arena.unit}</Text>
               </Text>
