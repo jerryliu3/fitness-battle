@@ -29,8 +29,8 @@ export function SettingsRow({
     >
       {settingsIcons[title] && <AppIcon name={settingsIcons[title]} />}
       <View style={f.grow}>
-        <Text style={textStyle("label")}>{title}</Text>
-        <Text style={textStyle("caption")}>{detail}</Text>
+        <Text style={textStyle("row")}>{title}</Text>
+        <Text style={textStyle("support")}>{detail}</Text>
       </View>
       <AppIcon name="chevron" size={18} />
     </Pressable>

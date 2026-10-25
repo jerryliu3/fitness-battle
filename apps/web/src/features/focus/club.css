@@ -1403,16 +1403,16 @@
 
 /* Recorded GPS routes on Home and personal-record milestones. */
 .club-activity-route { margin: 8px 0 20px; }
-.club-route-open { width: 100%; min-height: 44px; display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 8px 4px; color: var(--ink, #142b3b); font-family: var(--font-body), "DM Sans", sans-serif; font-size: var(--type-label-size); line-height: var(--type-label-leading); font-weight: var(--type-label-weight); letter-spacing: normal; text-transform: none; font-style: normal; }
-.club-route-open span { color: var(--muted, #637482); font-family: var(--font-body), "DM Sans", sans-serif; font-size: var(--type-caption-size); line-height: var(--type-caption-leading); font-weight: var(--type-caption-weight); letter-spacing: normal; text-transform: none; font-style: normal; }
+.club-route-open { width: 100%; min-height: 44px; display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 8px 4px; color: var(--ink, #142b3b); font-family: var(--font-body), "Manrope", sans-serif; font-size: var(--type-label-size); line-height: var(--type-label-leading); font-weight: var(--type-label-weight); letter-spacing: normal; text-transform: none; font-style: normal; }
+.club-route-open span { color: var(--muted, #637482); font-family: var(--font-body), "Manrope", sans-serif; font-size: var(--type-caption-size); line-height: var(--type-caption-leading); font-weight: var(--type-caption-weight); letter-spacing: normal; text-transform: none; font-style: normal; }
 .club-route-player { height: max(380px, 65dvh); width: 100%; }
 
 /* Root event experiences cover app chrome and retain one surface across stages. */
 .club-fullscreen-sheet:has(.sync-review-step), .club-fullscreen-sheet:has(.moment-step) { width: 100vw; max-width: none; padding: max(20px, env(safe-area-inset-top)) 24px max(24px, env(safe-area-inset-bottom)); background: var(--club-canvas, #f8f9f6); }
 .sync-review-step, .moment-step { max-width: 620px; width: 100%; margin: 30px auto 0; display: flex; flex-direction: column; gap: 20px; color: #142b3b; }
-.sync-review-step h1, .moment-step h1 { margin: 0; font-family: var(--font-body), "DM Sans", sans-serif; font-size: var(--type-display-size); line-height: var(--type-display-leading); font-weight: var(--type-display-weight); letter-spacing: normal; text-transform: none; font-style: normal; }
+.sync-review-step h1, .moment-step h1 { margin: 0; font-family: var(--font-body), "Manrope", sans-serif; font-size: var(--type-display-size); line-height: var(--type-display-leading); font-weight: var(--type-display-weight); letter-spacing: normal; text-transform: none; font-style: normal; }
 .sync-review-total {
-  font-family: var(--font-body), "DM Sans", sans-serif;
+  font-family: var(--font-body), "Manrope", sans-serif;
   font-size: var(--type-label-size);
   line-height: var(--type-label-leading);
   font-weight: var(--type-label-weight);
@@ -1433,19 +1433,19 @@
 .sync-review-swipe:focus-visible { outline: 3px solid #176c75; outline-offset: 4px; }
 .moment-counter { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
 .moment-counter > strong {
-  font-family: var(--font-body), "DM Sans", sans-serif;
+  font-family: var(--font-body), "Manrope", sans-serif;
   font-size: var(--type-display-size);
   line-height: var(--type-display-leading);
   font-weight: var(--type-display-weight);
   letter-spacing: normal;
   text-transform: none;
   font-style: normal; }
-.moment-counter > span { color: #637482; font-family: var(--font-body), "DM Sans", sans-serif; font-size: var(--type-heading-size); line-height: var(--type-heading-leading); font-weight: var(--type-heading-weight); letter-spacing: normal; text-transform: none; font-style: normal; }
-.moment-counter > b { background: #f7c948; border-radius: 20px; padding: 8px 14px; font-family: var(--font-body), "DM Sans", sans-serif; font-size: var(--type-body-size); line-height: var(--type-body-leading); font-weight: var(--type-body-weight); letter-spacing: normal; text-transform: none; font-style: normal; }
+.moment-counter > span { color: #637482; font-family: var(--font-body), "Manrope", sans-serif; font-size: var(--type-heading-size); line-height: var(--type-heading-leading); font-weight: var(--type-heading-weight); letter-spacing: normal; text-transform: none; font-style: normal; }
+.moment-counter > b { background: #f7c948; border-radius: 20px; padding: 8px 14px; font-family: var(--font-body), "Manrope", sans-serif; font-size: var(--type-body-size); line-height: var(--type-body-leading); font-weight: var(--type-body-weight); letter-spacing: normal; text-transform: none; font-style: normal; }
 .moment-scene { display: block; width: 100%; border-radius: 24px; overflow: hidden; }
 .moment-result { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
 .moment-result > strong {
-  font-family: var(--font-body), "DM Sans", sans-serif;
+  font-family: var(--font-body), "Manrope", sans-serif;
   font-size: var(--type-display-size);
   line-height: var(--type-display-leading);
   font-weight: var(--type-display-weight);

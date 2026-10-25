@@ -133,7 +133,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#142b3bf2",
   },
   label: {
-    ...textStyle("caption"),
+    ...textStyle("nav"),
     color: SHELL_COLORS.muted
 },
   labelOn: {

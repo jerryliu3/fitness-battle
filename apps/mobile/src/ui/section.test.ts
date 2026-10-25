@@ -37,7 +37,7 @@ it("preserves the recipe and keeps numeric emphasis separate from heading semant
   await act(async () => { renderer = create(createElement(AppText, { role: "heading", style: { fontSize: 99, fontFamily: "Other", letterSpacing: 3, color: "red" } }, "1,140")); });
   const text = renderer!.root.findByType("Text" as never);
   const style = Object.assign({}, ...text.props.style);
-  expect(style).toMatchObject({ fontSize: 22, lineHeight: 28, fontFamily: "DMSans_700Bold", letterSpacing: 0, textTransform: "none", color: "red" });
+  expect(style).toMatchObject({ fontSize: 20, lineHeight: 26, fontFamily: "Manrope_700Bold", letterSpacing: -0.4, textTransform: "none", color: "red" });
   expect(text.props.accessibilityRole).toBeUndefined();
   expect(text.props.allowFontScaling).not.toBe(false);
 });

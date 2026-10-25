@@ -80,3 +80,22 @@
 .phone-shell .focus-season-stats .ui-text-secondary { margin-top: 4px; }
 .ui-competition-status { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
 @media (max-width: 600px) { .phone-shell .club-competition-extras { grid-template-columns: 1fr; } }
+
+/* Semantic hierarchy: rows, metrics and controls no longer share a recipe. */
+:is(.phone-shell, .focus-sheet, .fb-auth) :is(h1, .fb-title) { letter-spacing: var(--type-display-tracking); }
+:is(.phone-shell, .focus-sheet, .fb-auth) :is(h2, .fb-section-title) { letter-spacing: var(--type-heading-tracking); }
+:is(.phone-shell, .focus-sheet, .fb-auth) h3 { font: var(--type-row); letter-spacing: var(--type-row-tracking); }
+.phone-shell :is(.focus-settings-row b, .fb-row b, .club-activity-row b, .focus-standings b, .crew-member-shelf b, .club-recap-link b) {
+  font: var(--type-row); letter-spacing: var(--type-row-tracking);
+}
+.phone-shell :is(.focus-settings-row small, .fb-row small, .club-activity-row > span:nth-child(2) small, .crew-member-shelf small) { font: var(--type-support); }
+.phone-shell :is(.focus-standings strong, .lane-total) { font: var(--type-value); letter-spacing: var(--type-value-tracking); font-variant-numeric: tabular-nums; }
+.phone-shell :is(.club-week-metrics strong, .club-session-metrics strong, .focus-season-stats strong, .club-place b) {
+  font: var(--type-metric); letter-spacing: var(--type-metric-tracking); font-variant-numeric: tabular-nums;
+}
+.phone-shell :is(.focus-stats-numbers strong, .focus-arena-total strong, .focus-arena-stage .focus-arena-total strong, .club-training-total > strong, .session-stage-hours, .focus-stats-hours strong) {
+  font: var(--type-hero); letter-spacing: var(--type-hero-tracking); font-variant-numeric: tabular-nums;
+}
+.phone-shell :is(.club-week-metrics small, .club-session-metrics small, .club-training-total strong small, .focus-arena-total strong small, .session-stage-hours small) { font: var(--type-caption); letter-spacing: normal; }
+.phone-shell :is(.focus-settings-label, .fb-field-label) { font: var(--type-field); }
+.phone-shell :is(.phone-tab > span, .focus-tab-label, .fb-tab-label) { font: var(--type-nav); }

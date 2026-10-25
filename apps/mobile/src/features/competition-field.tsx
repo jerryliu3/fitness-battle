@@ -308,7 +308,7 @@ export function CompetitionField({
               </Text>
             </View>
             <View style={{ alignItems: "center", gap: 2 }}>
-              <Text style={textStyle("heading")}>
+              <Text style={textStyle("metric")}>
                 {place(total)} / {ranked.length}
               </Text>
               <Text style={textStyle("caption")}>your place</Text>
@@ -375,12 +375,12 @@ export function CompetitionField({
                   showWake={false}
                 />
               </Svg>} />
-              <Text style={[textStyle("label"), f.grow]}>
+              <Text style={[textStyle("row"), f.grow]}>
                 {lane.you ? selfLaneLabel(lane.name) : lane.name}
               </Text>
               <RankBadge score={scores.find(row => row.id === lane.id)?.elo} />
               <View style={{ alignItems: "flex-end" }}>
-                <Text style={textStyle("label")}>
+                <Text style={textStyle("value")}>
                   {lane.values[2].toFixed(1)} {arena.unit}
                 </Text>
                 <Text style={[textStyle("caption"), { color: c.ink }]}>
