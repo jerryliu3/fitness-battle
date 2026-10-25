@@ -15,7 +15,7 @@ export function WeekRecap({ state }: { state: CompeteState }) {
     recap = latestClubRecap(state);
   const difference = week.movingSec - week.previousSec;
   return (
-    <Section className="club-week-recap" title="Your week, in perspective" action={<span aria-hidden="true">↗</span>}>
+    <Section className="club-week-recap" title="Your week, in perspective">
 
       <div className="club-week-metrics">
         <div>
