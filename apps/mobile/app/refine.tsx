@@ -36,6 +36,12 @@ export default function RefinementHub() {
             count: "3 directions",
             copy: "Event picker, swipeable meets and sport tabs.",
           },
+          {
+            id: "progress",
+            title: "Progress",
+            count: "2 directions",
+            copy: "Training charts, visual comparisons and the sessions behind them.",
+          },
         ].map((item) => (
           <Surface key={item.id} style={{ gap: 12 }}>
             <T role="heading">{item.title}</T>
