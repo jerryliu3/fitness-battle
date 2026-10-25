@@ -2,8 +2,7 @@
 
 October 25, 2026.
 
-Fullscreen Compete offers Replay on web and native. The existing 3D perspective
-view also has a fullscreen replay entry on web. Settled-round recaps and expanded
+Fullscreen Compete offers Replay on web and native. Both fullscreen dimensions use the same replay control in the race HUD. Settled-round recaps and expanded
 Past weeks results can open the same viewer. Replay stays out of inline standings.
 
 One event represents one eligible counted workout. Events are ordered by workout
@@ -53,7 +52,7 @@ Older results without retained field seating report that replay is unavailable.
 
 The web development server compiled the actual Arena and replay components.
 The local walkthrough exercised next-event changes, latest totals, 2D/3D switching,
-play/pause and seeking. The current offline preview contains only available
+play/pause and seeking at desktop and 390×844. [Phone view](web-phone.png). The current offline preview contains only available
 simulated peers, which is disclosed in the viewer.
 
 Metro produced an iOS JavaScript bundle. The installed simulator app cannot run
@@ -64,6 +63,17 @@ walkthrough is claimed. A new native binary is required for that walkthrough.
 Shared regression cases cover tie ordering, reverse seeking, interpolation,
 unit conversion, eligibility, half-open bounds, strength and simulated totals.
 API regression cases cover authentication, input bounds, the authorized RPC,
-minimal responses and errors. Per the owner's request, type checks, automated
+minimal responses and errors. A rolled-back SQL fixture covers membership,
+private crew access, sample/future/track exclusions and a ledger over 1000 events.
+Per the owner's request, type checks, automated
 tests and production builds were not run. The local Docker database is not
 running, so the migration has not been applied or runtime-verified here.
+
+Manual code review checked the RPC's ownership/crew gates, privacy of the response,
+eligibility and period parity, event ordering, tie places, reverse seeking, timer
+cleanup and background pause. Review fixes aligned tied places with the scene,
+kept the current event athlete visible on initial mount/dimension changes, added
+a bounded web load/retry path, and let narrow-screen playback controls wrap. The
+replay was rebased onto main's new full-arena HUD before final review. No remaining
+actionable issue was identified in that static review; live database and native
+binary limitations above remain.

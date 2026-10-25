@@ -2020,3 +2020,5 @@
 @media(min-width:900px){.competition-replay-scene,.competition-replay-controls,.competition-replay-viewbar{width:min(100%,1000px);align-self:center}.competition-replay-actions{gap:12px}}
 
 .competition-replay-scene .focus-lane-surface{height:100%;min-height:0}
+
+.competition-replay-actions{flex-wrap:wrap}

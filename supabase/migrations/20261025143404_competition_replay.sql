@@ -13,7 +13,7 @@ declare
   ledger jsonb;
 begin
   if uid is null then raise exception 'authentication_required' using errcode = '42501'; end if;
-  if p_sport not in ('running','cycling','walking','strength')
+  if p_sport is null or p_track is null or p_sport not in ('running','cycling','walking','strength')
      or p_track not in ('open','verified') or p_start is null or p_end is null
      or p_end <= p_start then raise exception 'invalid_replay'; end if;
   select * into f from public.week_fields

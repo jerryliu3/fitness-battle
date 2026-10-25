@@ -36,6 +36,9 @@ export function PortraitField({
   lanes,
   view,
   unit,
+  selectedId,
+  focusOnMount = false,
+  animateSelection = true,
   onZoom,
   onPan,
   onSelect,
@@ -51,6 +54,9 @@ export function PortraitField({
   lanes: ArenaSceneLane[];
   view: ArenaViewWindow;
   unit: string;
+  selectedId?: string;
+  focusOnMount?: boolean;
+  animateSelection?: boolean;
   onZoom: (span: number) => void;
   onPan: (center: number) => void;
   onSelect: (id: string) => void;
@@ -106,6 +112,17 @@ export function PortraitField({
   useEffect(() => () => { if (frame.current !== null) cancelAnimationFrame(frame.current); }, []);
   const moveTo = (offset: number) => setLaneOffset(Math.max(0, Math.min(scene.ordered.length - 1, scene.baseFocus + offset)) - scene.baseFocus);
   const shift = (d: number) => moveTo(laneOffset + d);
+  const prevSelectedRef = useRef<string | undefined>(focusOnMount ? undefined : selectedId);
+  useEffect(() => {
+    if (!selectedId || selectedId === prevSelectedRef.current) {
+      prevSelectedRef.current = selectedId;
+      return;
+    }
+    prevSelectedRef.current = selectedId;
+    const focus = scene.ordered.findIndex((lane) => lane.id === selectedId);
+    if (focus < 0) return;
+    moveTo(focus - scene.baseFocus);
+  }, [selectedId, scene.baseFocus, scene.ordered, animateSelection]);
   return (
     <View style={{ gap: 10 }}>
       <View style={s.status} pointerEvents="none">

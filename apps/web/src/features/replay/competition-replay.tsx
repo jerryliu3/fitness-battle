@@ -40,16 +40,19 @@ function ReplayViewer({ state, selection, initialDimension }: { state: CompeteSt
   const [appearance] = useFieldAppearance(user?.id ?? "guest", selection.sport);
   // Keep a coherent ledger throughout playback even if live state refreshes.
   const localState = useRef(state);
+  localState.current = state;
   useEffect(() => {
     const controller = new AbortController();
+    let cancelled = false;
     setData(null); setError(""); setCursor(0); setPlaying(false); setCenter(null);
     if (!user || offlineMode) { setData(localCompetitionReplay(localState.current, selection)); return () => controller.abort(); }
+    const timeout = window.setTimeout(() => controller.abort(), 20_000);
     const query = new URLSearchParams({ sport: selection.sport, track: selection.track, start: selection.periodStart, end: selection.periodEnd });
     void fetch(`/api/compete/replay?${query}`, { signal: controller.signal, cache: "no-store" }).then(async response => {
       if (!response.ok) throw new Error("Could not load this competition’s replay.");
       return response.json() as Promise<CompetitionReplay>;
-    }).then(next => { if (!controller.signal.aborted) setData(next); }).catch(() => { if (!controller.signal.aborted) setError("Could not load this competition’s replay. Try again."); });
-    return () => controller.abort();
+    }).then(next => { if (!controller.signal.aborted) setData(next); }).catch(() => { if (!cancelled) setError("Could not load this competition’s replay. Try again."); }).finally(() => window.clearTimeout(timeout));
+    return () => { cancelled = true; window.clearTimeout(timeout); controller.abort(); };
   }, [user?.id, offlineMode, selection.sport, selection.track, selection.periodStart, selection.periodEnd, attempt]);
   const index = useMemo(() => data ? indexCompetitionReplay(data, state.units) : null, [data, state.units]);
   const count = index?.replay.events.length ?? 0;
@@ -89,7 +92,7 @@ function ReplayViewer({ state, selection, initialDimension }: { state: CompeteSt
     {!index ? <div className="competition-replay-message" role="status"><p>{error || "Loading the competition timeline…"}</p>{error && <button type="button" className="fb-btn" onClick={() => setAttempt(a => a + 1)}>Retry</button>}</div> : <>
       <div className="competition-replay-viewbar"><div className="focus-segments" role="group" aria-label="Replay field dimension">{(["2d", "3d"] as const).map(d => <button type="button" key={d} aria-pressed={dimension === d} className={dimension === d ? "is-active" : ""} onClick={() => setDimension(d)}>{d === "2d" ? "2D map" : "3D field"}</button>)}</div><span>Your place <b>{me?.place ?? "—"} / {lanes.length}</b></span></div>
       <div className="competition-replay-scene">
-        {dimension === "2d" ? <ArenaLanes immersive lanes={lanes} appearance={appearance} view={view} unit={unit} selected={selected ?? focus?.id ?? ""} onSelect={select} onPan={setCenter} /> : <PortraitField immersive selectedId={selected ?? focus?.id} lanes={lanes} view={view} unit={unit} onSelect={select} onZoom={setSpan} />}
+        {dimension === "2d" ? <ArenaLanes focusOnMount immersive lanes={lanes} appearance={appearance} view={view} unit={unit} selected={selected ?? focus?.id ?? ""} onSelect={select} onPan={setCenter} /> : <PortraitField focusOnMount immersive selectedId={selected ?? focus?.id} lanes={lanes} view={view} unit={unit} onSelect={select} onZoom={setSpan} />}
         <button type="button" className="competition-replay-follow fb-btn-line" onClick={() => { setCenter(null); setSelected(null); setFollowEvent(v => !v); }}>{followEvent ? "Follow me" : "Follow event"}</button>
       </div>
       <footer className="competition-replay-controls">

@@ -41,6 +41,8 @@ function LaneTrackContent({
   unit,
   showGhost,
   selectedId,
+  focusOnMount = false,
+  animateSelection = true,
   index,
   onSelect,
   view,
@@ -70,6 +72,8 @@ function LaneTrackContent({
   unit: string;
   showGhost: boolean;
   selectedId?: string;
+  focusOnMount?: boolean;
+  animateSelection?: boolean;
   index: number;
   onSelect: (lane: ArenaLane) => void;
   view?: ArenaViewWindow;
@@ -142,7 +146,7 @@ function LaneTrackContent({
   const maxTailY = Math.min(height, bounds.min <= 0 && bounds.max >= 0 ? course.along(0) + 4 : height);
   const localAnchor = useRef<LaneAnchor | null>(null);
   const previous = anchor ?? localAnchor;
-  const prevSelectedRef = useRef<string | undefined>(selectedId);
+  const prevSelectedRef = useRef<string | undefined>(focusOnMount ? undefined : selectedId);
   useEffect(() => {
     const old = previous.current;
     const laneIndex = old && !old.oval && !course.oval && old.count === ordered.length ? (old.scroll + old.width / 2 - old.left) / old.laneWidth - .5 : Math.max(0, ordered.findIndex(l => l.you));
@@ -159,7 +163,7 @@ function LaneTrackContent({
     const laneIndex = ordered.findIndex((l) => l.id === selectedId);
     if (laneIndex < 0) return;
     const x = Math.max(0, Math.min(w - width, course.left + (laneIndex + 0.5) * lw - width / 2));
-    scroll.current?.scrollTo({ x, animated: true });
+    scroll.current?.scrollTo({ x, animated: animateSelection });
     previous.current = { left: course.left, laneWidth: lw, width, scroll: x, oval: course.oval, count: ordered.length };
   }, [selectedId, w, lw, width, course.left, course.oval, ordered.length]);
   return (

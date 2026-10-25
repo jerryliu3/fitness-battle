@@ -18,6 +18,7 @@ export function PortraitField({
   view,
   unit,
   selectedId,
+  focusOnMount = false,
   immersive = false,
   onExpand,
   onToggleDimension,
@@ -29,6 +30,7 @@ export function PortraitField({
   view: ArenaViewWindow;
   unit: string;
   selectedId?: string;
+  focusOnMount?: boolean;
   immersive?: boolean;
   onExpand?: () => void;
   onToggleDimension?: () => void;
@@ -39,7 +41,7 @@ export function PortraitField({
   const [laneOffset, setLaneOffset] = useState(0);
   const prefix = useId().replace(/:/g, "");
   const scene = useMemo(() => portraitField(lanes, view, undefined, laneOffset, prefix), [lanes, view.center, view.span, laneOffset, prefix]);
-  const prevSelectedRef = useRef<string | undefined>(selectedId);
+  const prevSelectedRef = useRef<string | undefined>(focusOnMount ? undefined : selectedId);
   const [exploring, setExploring] = useState(false);
   const svg = useRef<SVGSVGElement>(null);
   const latest = useRef({ onPan, view, scene });

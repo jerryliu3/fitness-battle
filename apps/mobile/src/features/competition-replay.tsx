@@ -23,9 +23,10 @@ export function CompetitionReplayButton({ state, selection, dimension = "2d", la
   state: CompeteState; selection: CompetitionReplaySelection; dimension?: "2d" | "3d"; label?: string;
 }) {
   const [open, setOpen] = useState(false);
+  const reduced = useReducedMotion();
   return <>
     <FocusButton secondary label={label} onPress={() => setOpen(true)} />
-    {open && <Modal visible animationType="slide" presentationStyle="fullScreen" onRequestClose={() => setOpen(false)}>
+    {open && <Modal visible animationType={reduced ? "none" : "slide"} presentationStyle="fullScreen" onRequestClose={() => setOpen(false)}>
       <SafeAreaProvider><SafeAreaView style={f.safe} edges={["top", "bottom"]}>
         <ReplayViewer key={`${selection.sport}:${selection.track}:${selection.periodStart}`} state={state} selection={selection} initialDimension={dimension} onClose={() => setOpen(false)} />
       </SafeAreaView></SafeAreaProvider>
@@ -68,6 +69,8 @@ function ReplayViewer({ state, selection, initialDimension, onClose }: { state: 
   const [height, setHeight] = useState(250);
   const [appearance] = useFieldAppearance(user?.id ?? "guest", selection.sport);
   const localState = useRef(state);
+  localState.current = state;
+  const portraitAnchor = useRef(0);
   useEffect(() => {
     let cancelled = false;
     setData(null); setError(""); setCursor(0); setPlaying(false); setCenter(null);
@@ -111,7 +114,7 @@ function ReplayViewer({ state, selection, initialDimension, onClose }: { state: 
     {!index ? <View style={s.message}><AppText role="body" accessibilityLiveRegion="polite">{error || "Loading the competition timeline…"}</AppText>{error && <FocusButton label="Retry" onPress={() => setAttempt(a => a + 1)} />}</View> : <>
       <View style={{ paddingHorizontal: 12, paddingBottom: 8 }}><FocusSegments label="Replay field dimension" value={dimension} options={[{ value: "2d", label: "2D map" }, { value: "3d", label: "3D field" }]} onChange={setDimension} /></View>
       <View style={s.scene} onLayout={event => setHeight(Math.max(100, event.nativeEvent.layout.height))}>
-        {dimension === "2d" ? <LaneTrack lanes={nativeLanes} appearance={appearance} unit={unit} height={height} fullscreen active selectedId={selected ?? focus?.id} index={2} showGhost={false} onSelect={lane => select(lane.id)} view={view} onPan={setCenter} onZoom={setSpan} /> : <PortraitField selectedId={selected ?? focus?.id} lanes={lanes} unit={unit} height={height} fullscreen onSelect={select} view={view} onZoom={setSpan} />}
+        {dimension === "2d" ? <LaneTrack focusOnMount animateSelection={!reduced} lanes={nativeLanes} appearance={appearance} unit={unit} height={height} fullscreen active selectedId={selected ?? focus?.id} index={2} showGhost={false} onSelect={lane => select(lane.id)} view={view} onPan={setCenter} onZoom={setSpan} /> : <PortraitField focusOnMount animateSelection={!reduced} laneAnchor={portraitAnchor} fullscreenBottomOffset={12} selectedId={selected ?? focus?.id} lanes={lanes} unit={unit} height={height} fullscreen onSelect={select} view={view} onZoom={setSpan} />}
         <Pressable accessibilityRole="button" onPress={() => { setCenter(null); setSelected(null); setFollowEvent(v => !v); }} style={s.follow}><AppText role="label">{followEvent ? "Follow me" : "Follow event"}</AppText></Pressable>
       </View>
       <View style={s.controls}>
@@ -142,7 +145,7 @@ const s = StyleSheet.create({
   rail: { height: 4, borderRadius: 2, backgroundColor: c.line, overflow: "hidden" },
   fill: { height: 4, backgroundColor: "#176c75" },
   thumb: { position: "absolute", top: 12, width: 20, height: 20, marginLeft: -10, borderRadius: 10, backgroundColor: "#176c75", borderWidth: 2, borderColor: "white" },
-  actions: { flexDirection: "row", justifyContent: "space-between", gap: 3, marginBottom: 4 },
+  actions: { flexDirection: "row", flexWrap: "wrap", justifyContent: "center", gap: 3, marginBottom: 4 },
   action: { minWidth: 44, minHeight: 44, paddingHorizontal: 8, alignItems: "center", justifyContent: "center", borderRadius: 12, backgroundColor: "white", borderWidth: 1, borderColor: c.line },
   primary: { backgroundColor: c.tennis, minWidth: 66 },
 });
