@@ -319,10 +319,7 @@ export function CompetitionField({
                 accessibilityLabel={
                   sceneDimension === "2d" ? "Switch to 3D field" : "Switch to 2D map"
                 }
-                onPress={() => {
-                  void playCue("selection");
-                  toggleDimension();
-                }}
+                onPress={toggleDimension}
                 style={{
                   minHeight: 40,
                   paddingHorizontal: 14,

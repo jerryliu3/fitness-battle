@@ -312,10 +312,7 @@ function LaneTrackContent({
             <Pressable
               accessibilityRole="button"
               accessibilityLabel="Switch to 3D field"
-              onPress={() => {
-                void playCue("selection");
-                onToggleDimension();
-              }}
+              onPress={onToggleDimension}
               style={{
                 minHeight: 36,
                 paddingHorizontal: 12,
