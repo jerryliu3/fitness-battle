@@ -42,6 +42,12 @@ export default function RefinementHub() {
             count: "2 directions",
             copy: "Training charts, visual comparisons and the sessions behind them.",
           },
+          {
+            id: "crew",
+            title: "Crew",
+            count: "2 directions",
+            copy: "The real shared trail, with sessions and member contributions in view.",
+          },
         ].map((item) => (
           <Surface key={item.id} style={{ gap: 12 }}>
             <T role="heading">{item.title}</T>

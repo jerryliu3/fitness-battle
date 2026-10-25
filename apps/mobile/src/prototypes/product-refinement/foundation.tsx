@@ -168,7 +168,13 @@ export function Metric({
     </View>
   );
 }
-export type Page = { title: string; key: string; id?: string; item?: number; period?: string };
+export type Page = {
+  title: string;
+  key: string;
+  id?: string;
+  item?: number;
+  period?: string;
+};
 type Navigation = {
   push: (page: Page) => void;
   back: () => void;
@@ -209,6 +215,8 @@ export function Flow({
       >
         <SafeAreaView
           accessibilityViewIsModal
+          role="dialog"
+          aria-modal={true}
           style={{ flex: 1, backgroundColor: c.paper }}
         >
           <View
@@ -306,7 +314,11 @@ export function Study({
           >
             <T role="caption">All studies</T>
           </Tap>
-          <Tap label="Choose concept" onPress={() => setChoosing(true)}>
+          <Tap
+            label="Choose concept"
+            onPress={() => setChoosing(true)}
+            style={{ flex: 1, minWidth: 0, paddingHorizontal: 8 }}
+          >
             <T role="label">
               {index + 1} / {concepts.length} · {concepts[index]}⌄
             </T>
