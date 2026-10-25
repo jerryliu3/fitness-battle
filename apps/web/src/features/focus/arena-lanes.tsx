@@ -14,7 +14,7 @@ import {
   clampArenaLaneCenter,
   orderedArenaLanes,
   polishedLaneScale,
-  fieldCourse, fieldCourseScene, fieldScaleScene, fieldLap, defaultFieldAppearance, type FieldAppearance,
+  fieldCourse, fieldCourseScene, fieldLap, defaultFieldAppearance, type FieldAppearance,
   selfLaneLabel,
   type ArenaOvertakeFrame,
   type ArenaOvertakePlan,
@@ -97,7 +97,7 @@ export function ArenaLanes({
   const width = standings ? size.width : course.width;
   const height = standings ? Math.max(160, ordered.length * 76 + 24) : course.height;
   const laneWidth = course.laneWidth, plotHeight = course.length;
-  const maxTailY = Math.min(height - 58, bounds.min <= 0 && bounds.max >= 0 ? course.along(0) + 4 : height - 58);
+  const maxTailY = Math.min(height, bounds.min <= 0 && bounds.max >= 0 ? course.along(0) + 4 : height);
 
   const yourValue = liveLanes.find((lane) => lane.you)?.value ?? 0;
   const relativeDistance = (value: number) => `${value - yourValue > 0 ? "+" : ""}${(value - yourValue).toFixed(1)} ${unit}`;
@@ -135,6 +135,18 @@ export function ArenaLanes({
     laneScroll.current = el.scrollLeft;
     previousGeometry.current = { width: size.width, laneWidth, count: ordered.length, left: course.left, oval: course.oval };
   }, [width, laneWidth, size.width, standings, course.oval, course.left]);
+  const prevSelectedRef = useRef(selected);
+  useLayoutEffect(() => {
+    if (prevSelectedRef.current === selected) return;
+    prevSelectedRef.current = selected;
+    const el = host.current;
+    if (!el || el.clientWidth === 0 || standings || course.oval || !selected) return;
+    const idx = ordered.findIndex((lane) => lane.id === selected);
+    if (idx < 0) return;
+    const nextScroll = Math.max(0, Math.min(width - size.width, course.left + (idx + .5) * laneWidth - size.width / 2));
+    el.scrollLeft = nextScroll;
+    laneScroll.current = nextScroll;
+  }, [selected, standings, course.oval, course.left, laneWidth, width, size.width, ordered]);
   return (
     <div className="focus-lane-surface" style={{ position: "relative", minWidth: 0 }}>
     <div className="focus-lane-scroll" ref={host} data-immersive={immersive}
@@ -257,7 +269,6 @@ export function ArenaLanes({
       >
         <motion.g aria-hidden={standings} initial={false} animate={{ opacity: standings ? 0 : 1 }} style={{ pointerEvents: "none" }}>
           {groundPaint}
-          {!course.oval && course.laneWidth >= 48 && ordered.map((lane, i) => <text style={typographyStyle("caption")} key={lane.id} x={course.point(effectiveView.center, i).x} y={36} textAnchor="middle" className={lane.you ? "lane-title is-you" : "lane-title"}>{`${ordinalPlace(1 + ordered.filter(peer=>peer.value>lane.value+0.000001).length)}${lane.you?" · You":""}`}</text>)}
         </motion.g>
         {ordered.map((l, i) => {
           const position = arenaPosition(l.value, effectiveView);
@@ -393,13 +404,8 @@ export function ArenaLanes({
               </g>
             );
           })()}
-
-        <text style={typographyStyle("caption")} opacity={standings ? 0 : 1} x="18" y={height - 18} className="lane-distance">
-          {course.oval ? `${fieldLap(yourValue, unit).laps} laps + ${(yourValue % (unit === "pts" ? 20 : 1)).toFixed(1)} ${unit} · ${yourValue.toFixed(1)} ${unit} total` : "Drag ↕ distance · ↔ lanes · tap track to expand"}
-        </text>
       </svg>
     </div>
-    {!standings && !course.oval && <svg aria-hidden="true" width={42} height={height} style={{ position: "absolute", right: 0, top: 0, pointerEvents: "none" }}>{fieldScaleScene(course, unit).map(drawFieldNode)}</svg>}
     </div>
   );
 }

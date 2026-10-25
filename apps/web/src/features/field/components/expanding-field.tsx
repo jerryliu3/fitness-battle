@@ -12,11 +12,13 @@ export function ExpandingField({
   open,
   onClose,
   tabActive = true,
+  hud,
   children,
 }: {
   open: boolean;
   onClose: () => void;
   tabActive?: boolean;
+  hud?: ReactNode;
   children: ReactNode;
 }) {
   const reduce = useReducedMotion();
@@ -105,7 +107,7 @@ export function ExpandingField({
     mount.style.height = `${source.height}px`;
     mount.style.transformOrigin = "0 0";
     const scale = expandedFieldScale(source.width, source.height, window.innerWidth, window.innerHeight);
-    const landing = `translate(${(window.innerWidth - source.width * scale) / 2}px, ${Math.max(56, (window.innerHeight - source.height * scale) / 2)}px) scale(${scale})`;
+    const landing = `translate(${(window.innerWidth - source.width * scale) / 2}px, ${Math.max(0, (window.innerHeight - source.height * scale) / 2)}px) scale(${scale})`;
     const home = `translate(${(destination ?? source).left}px, ${(destination ?? source).top}px) scale(1)`;
     const fromTransform = contentTransform.current ?? (open ? home : landing);
     contentTransform.current = null;
@@ -166,8 +168,12 @@ export function ExpandingField({
           }}
           onCloseAutoFocus={(event) => { event.preventDefault(); returnFocus.current?.focus({ preventScroll: true }); }}>
           <Dialog.Title className="fb-sr-only">Explore athlete lanes</Dialog.Title>
-          <button type="button" className="focus-field-close club-icon-button" onClick={onClose} aria-label="Return to field">‹</button>
-        <button type="button" className="focus-field-pursuit" disabled>3D pursuit · Coming soon</button>
+          {hud ?? (
+            <>
+              <button type="button" className="focus-field-close club-icon-button" onClick={onClose} aria-label="Return to field">‹</button>
+              <button type="button" className="focus-field-pursuit" disabled>3D pursuit · Coming soon</button>
+            </>
+          )}
         </Dialog.Content>
       </Dialog.Portal>}
     </Dialog.Root>
