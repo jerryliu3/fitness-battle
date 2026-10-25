@@ -74,6 +74,27 @@ export function ResultCard({
         </>
       ) : (
         <>
+          <span className="week-result-podium" aria-hidden="true">
+            {(
+              [
+                { step: 2, label: "2nd", height: 50 },
+                { step: 1, label: "1st", height: 64 },
+                { step: 3, label: "3rd", height: 40 },
+              ] as const
+            ).map((podium) => {
+              const isYou = result.place === podium.step;
+              return (
+                <span
+                  key={podium.step}
+                  className={`week-result-podium-step${isYou ? " is-you" : ""}`}
+                  style={{ height: podium.height }}
+                >
+                  <b>{podium.label}</b>
+                  {isYou ? <small>YOU</small> : null}
+                </span>
+              );
+            })}
+          </span>
           <span className="week-result-bento">
           <span className="week-result-place">
             <strong>#{result.place}</strong>

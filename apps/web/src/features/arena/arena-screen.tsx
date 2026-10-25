@@ -45,7 +45,6 @@ export function ArenaScreen({ tabActive = true }: { tabActive?: boolean }) {
   const [competeWithCrew, setCompeteWithCrew] = useState(false);
   const [sport, setSport] = useState<SportId | "sleep" | null>(null);
   const [competitionTipOpen, setCompetitionTipOpen] = useState(false);
-  const [fieldView, setFieldView] = useState<"lanes2d" | "standings" | "3d">("lanes2d");
 
   useEffect(() => {
     if (!competitionTipOpen) return;
@@ -59,9 +58,6 @@ export function ArenaScreen({ tabActive = true }: { tabActive?: boolean }) {
   }, [competitionTipOpen]);
 
   const account = user?.id ?? "guest";
-  useEffect(() => {
-    setFieldView("lanes2d");
-  }, [selection?.sport, account, tabActive]);
 
   if (!state) return <AppParagraph typographyRole="body" className="fb-copy">Loading your lanes…</AppParagraph>;
 
@@ -118,24 +114,6 @@ export function ArenaScreen({ tabActive = true }: { tabActive?: boolean }) {
           <SectionHeader title="Competition" subtitle={dateRangeLabel} action={<div className="ui-competition-status"><StatusBadge>{badgeLabel}</StatusBadge><span className="focus-competition-tip-wrap"><button type="button" className="focus-competition-tip" aria-label="About competition scoring" aria-expanded={competitionTipOpen} onClick={() => setCompetitionTipOpen(open => !open)}>ⓘ</button>{competitionTipOpen && <AppText role="caption" className="focus-competition-tip-popover" aria-hidden={!competitionTipOpen}>{SCORE_TRACK_TOOLTIP}</AppText>}</span></div>}/>
 
         </div>
-        {selectedSport && selectedSport !== "sleep" ? (
-          <div className="focus-competition-field-tabs" role="tablist" aria-label="Arena view">
-            {(["lanes", "standings", "3d"] as const).map((m) => (
-              <button
-                key={m}
-                type="button"
-                role="tab"
-                aria-selected={fieldView === (m === "lanes" ? "lanes2d" : m)}
-                onClick={() => {
-                  void playCue("selection");
-                  setFieldView(m === "3d" ? "3d" : m === "standings" ? "standings" : "lanes2d");
-                }}
-              >
-                {m === "lanes" ? "2D map" : m === "3d" ? "3D field" : "Standings"}
-              </button>
-            ))}
-          </div>
-        ) : null}
       </header>
 
       {frozen && (
@@ -156,10 +134,7 @@ export function ArenaScreen({ tabActive = true }: { tabActive?: boolean }) {
         <FieldStage key={`${account}:${selectedSport}:${state.units}`} tabActive={tabActive}
           sportTitle={SPORTS.find(s=>s.id===selectedSport)?.name}
           model={buildFieldModel(state,selectedSport,track,now)}
-          boardRows={buildSplitBoard(state,selectedSport,track,now).rows}
-          arenaView={fieldView}
-          onArenaViewChange={setFieldView}
-          chromeInHeader/>
+          boardRows={buildSplitBoard(state,selectedSport,track,now).rows}/>
       ) : selectedSport === "sleep" ? (
         <SleepPanel state={state} now={now}
           onJoin={()=>participate("join sleep",()=>dispatch({type:"opt-in-health",metric:"sleep"}))}

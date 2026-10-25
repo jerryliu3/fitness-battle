@@ -1,15 +1,17 @@
 "use client";
-import { typographyStyle } from "@/ui/section";
 import { PortraitField } from "@/features/club/portrait-field";
+import { PolishedRacer } from "@/features/brand/polished-racer";
+import { UserAvatar } from "@/ui/user-avatar";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { playCue } from "@/lib/haptics";
 import { usePathname } from "next/navigation";
 import {
-  portraitField,
-  portraitFieldGap,
   arenaFieldHigh,
+  effortRankBadge,
   fieldDefaultSpan,
   clampCourseCenter,
+  ordinalPlace,
+  selfLaneLabel,
   shellTabFromPath,
   resolveArenaSelectedId,
   type ArenaSceneLane,
@@ -20,8 +22,6 @@ import { useAuth } from "@/components/auth-context";
 import { ExpandingField } from "./expanding-field";
 import { ArenaLanes } from "@/features/focus/arena-lanes";
 import {
-  FieldGroundPicker,
-  FieldOverview,
   useFieldAppearance,
 } from "./field-course";
 import { placeAt, valueAt, type SceneRunner } from "../geometry";
@@ -32,22 +32,16 @@ export function FieldStage({
   boardRows,
   sportTitle,
   tabActive = true,
-  arenaView,
-  onArenaViewChange,
-  chromeInHeader = false,
 }: {
   model: FieldModel;
   boardRows?: BoardRow[];
   sportTitle?: string;
   tabActive?: boolean;
-  arenaView?: "lanes2d" | "standings" | "3d";
-  onArenaViewChange?: (view: "lanes2d" | "standings" | "3d") => void;
-  chromeInHeader?: boolean;
 }) {
   const { user } = useAuth();
   const pathname = usePathname();
   const accountKey = user?.id ?? "guest";
-  const [appearance, setAppearance] = useFieldAppearance(
+  const [appearance] = useFieldAppearance(
     accountKey,
     model.sport,
   );
@@ -80,21 +74,17 @@ export function FieldStage({
       }
     : null;
 
-  const [dimension, setDimension] = useState<"2d" | "3d">("2d");
-  const [mode, setMode] = useState<"lanes" | "standings">("lanes");
-  const controlledView = arenaView != null;
-  const activeMode =
-    controlledView && arenaView === "standings" ? "standings" : "lanes";
-  const activeDimension =
-    controlledView && arenaView === "3d" ? "3d" : "2d";
-  const viewMode = controlledView ? activeMode : mode;
-  const viewDimension = controlledView ? activeDimension : dimension;
+  const [viewDimension, setViewDimension] = useState<"2d" | "3d">("2d");
+  const [standingsOpen, setStandingsOpen] = useState(false);
   const [lanesImmersive, setLanesImmersive] = useState(false);
+  const toggleDimension = () => {
+    void playCue("selection");
+    setViewDimension((prev) => (prev === "2d" ? "3d" : "2d"));
+  };
 
   useEffect(() => {
     if (tabActive && shellTabFromPath(pathname)?.id === "arena") return;
     setLanesImmersive(false);
-    setMode("lanes");
   }, [pathname, tabActive]);
   const [span, setSpan] = useState(fieldDefaultSpan(unit));
   const [center, setCenter] = useState<number | null>(null);
@@ -157,7 +147,6 @@ export function FieldStage({
     [fieldLanes, ghost, showGhost, time],
   );
 
-  const displayTotal = total;
   const displayPlace = you ? placeAt(runners, you.id, time, 0) : 0;
   const followCenter = total;
   const resolvedCenter = clampViewCenter(center ?? followCenter, span);
@@ -246,11 +235,6 @@ export function FieldStage({
     centerTweenRef.current.raf = requestAnimationFrame(tick);
   };
 
-  const centerOnYou = () => {
-    tweenCenterTo(total, view.span, true);
-  };
-  void centerOnYou;
-
   useEffect(
     () => () => {
       if (centerTweenRef.current)
@@ -265,7 +249,197 @@ export function FieldStage({
     showGhost,
   );
 
+  const ranked = useMemo(
+    () => [...fieldLanes].sort((a, b) => b.value - a.value),
+    [fieldLanes],
+  );
+  const placeOf = (value: number) =>
+    1 + ranked.filter((lane) => lane.value > value + 0.000001).length;
+  const scoreMap = useMemo(
+    () => Object.fromEntries((boardRows ?? []).map((row) => [row.id, row.elo])),
+    [boardRows],
+  );
+  const leader = ranked[0];
+  const leaderValue = Math.max(leader?.value ?? 0, 0.0001);
+  const myRankIndex = ranked.findIndex((lane) => lane.you);
+  const aheadPeer = myRankIndex > 0 ? ranked[myRankIndex - 1] : null;
+  const behindPeer =
+    myRankIndex >= 0 && myRankIndex < ranked.length - 1
+      ? ranked[myRankIndex + 1]
+      : null;
+  const focusedLane =
+    ranked.find((lane) => lane.id === (trackSelected || you?.id)) ??
+    ranked.find((lane) => lane.you) ??
+    ranked[0];
+  const focusedRank = focusedLane ? placeOf(focusedLane.value) : 1;
+  const focusedElo = focusedLane ? scoreMap[focusedLane.id] : undefined;
+  const focusedDeltaToYou = focusedLane ? focusedLane.value - total : 0;
+  const focusedDeltaToLeader =
+    focusedLane && leader ? focusedLane.value - leader.value : 0;
+
   if (!you) return <p className="fb-copy">Join a field to see your lanes.</p>;
+
+  const broadcastHud = lanesImmersive ? (
+    <div className="focus-broadcast-hud" aria-label="Broadcast race controls">
+      <div className="focus-broadcast-top">
+        <button
+          type="button"
+          className="focus-broadcast-back"
+          aria-label="Close full screen field"
+          onClick={() => setLanesImmersive(false)}
+        >
+          ← Back
+        </button>
+        <div className="focus-broadcast-title">
+          {sportTitle ?? model.sport} · {displayPlace} / {runners.length}
+        </div>
+        <button
+          type="button"
+          className="focus-broadcast-dim-btn"
+          aria-label={
+            viewDimension === "2d" ? "Switch to 3D field" : "Switch to 2D map"
+          }
+          onClick={toggleDimension}
+        >
+          {viewDimension === "2d" ? "2D" : "3D"}
+        </button>
+      </div>
+
+      <div className="focus-broadcast-tower" aria-label="Live intervals">
+        <span className="focus-broadcast-tower-kicker">LIVE INTERVALS</span>
+        {ranked.slice(0, 4).map((peer, idx) => {
+          const delta = peer.value - leaderValue;
+          const isSelected = (trackSelected || you.id) === peer.id;
+          return (
+            <button
+              key={peer.id}
+              type="button"
+              className={
+                isSelected
+                  ? "focus-broadcast-tower-row is-selected"
+                  : peer.you
+                    ? "focus-broadcast-tower-row is-you"
+                    : "focus-broadcast-tower-row"
+              }
+              onClick={() => {
+                void playCue("selection");
+                toggleSelect(peer.id);
+              }}
+            >
+              <span className="focus-broadcast-tower-rank">{idx + 1}</span>
+              <span className="focus-broadcast-tower-name">
+                {peer.you ? "YOU" : peer.name.split(" ")[0]}
+              </span>
+              <span className="focus-broadcast-tower-val">
+                {idx === 0 ? peer.value.toFixed(1) : delta.toFixed(1)}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+
+      <div className="focus-broadcast-rail" aria-label="Quick jump rivals">
+        {aheadPeer ? (
+          <button
+            type="button"
+            className="focus-broadcast-rail-btn"
+            onClick={() => {
+              void playCue("selection");
+              toggleSelect(aheadPeer.id);
+            }}
+          >
+            ↑ Ahead
+          </button>
+        ) : null}
+        <button
+          type="button"
+          className="focus-broadcast-rail-btn is-you"
+          onClick={() => {
+            void playCue("selection");
+            toggleSelect(you.id);
+          }}
+        >
+          YOU
+        </button>
+        {behindPeer ? (
+          <button
+            type="button"
+            className="focus-broadcast-rail-btn"
+            onClick={() => {
+              void playCue("selection");
+              toggleSelect(behindPeer.id);
+            }}
+          >
+            ↓ Behind
+          </button>
+        ) : null}
+      </div>
+
+      {focusedLane ? (
+        <div
+          className="focus-broadcast-spotlight"
+          aria-label="Focused athlete spotlight"
+        >
+          <div className="focus-broadcast-spotlight-head">
+            <div className="focus-broadcast-spotlight-meta">
+              <span className="focus-broadcast-spotlight-kicker">
+                {ordinalPlace(focusedRank).toUpperCase()} PLACE
+                {focusedLane.you ? " · YOU" : ""}
+                {focusedElo ? ` · ${focusedElo} ELO` : ""}
+              </span>
+              <strong className="focus-broadcast-spotlight-name">
+                {focusedLane.you
+                  ? selfLaneLabel(focusedLane.name)
+                  : focusedLane.name}
+              </strong>
+            </div>
+            <div className="focus-broadcast-spotlight-stat">
+              <strong>
+                {focusedLane.value.toFixed(1)} {unit}
+              </strong>
+              <span>
+                {focusedLane.you
+                  ? focusedRank === 1
+                    ? "Leading the field"
+                    : `${Math.abs(focusedDeltaToLeader).toFixed(1)} ${unit} to 1st`
+                  : `${focusedDeltaToYou > 0 ? "+" : ""}${focusedDeltaToYou.toFixed(1)} ${unit} vs you`}
+              </span>
+            </div>
+          </div>
+
+          <div
+            className="focus-broadcast-chips"
+            role="group"
+            aria-label="Field athletes"
+          >
+            {ranked.map((peer, idx) => {
+              const activeChip = focusedLane.id === peer.id;
+              return (
+                <button
+                  key={peer.id}
+                  type="button"
+                  className={
+                    activeChip
+                      ? "focus-broadcast-chip is-active"
+                      : peer.you
+                        ? "focus-broadcast-chip is-you"
+                        : "focus-broadcast-chip"
+                  }
+                  onClick={() => {
+                    void playCue("selection");
+                    toggleSelect(peer.id);
+                  }}
+                >
+                  <span>#{idx + 1}</span>
+                  <b>{peer.you ? "You" : peer.name.split(" ")[0]}</b>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      ) : null}
+    </div>
+  ) : null;
 
   return (
     <section
@@ -273,106 +447,66 @@ export function FieldStage({
       hidden={!tabActive}
       aria-hidden={!tabActive}
     >
-      {!chromeInHeader ? (
-      <div className="focus-arena-total">
-        <div>
-          <p className="fb-kicker">Accumulated this week</p>
-          <strong>
-            {displayTotal.toFixed(1)}
-            <small>{unit}</small>
-          </strong>
-        </div>
-        <span className="focus-status">
-          {displayPlace} / {runners.length}
-          <small>your place</small>
-        </span>
-      </div>
-      ) : null}
-      {!chromeInHeader ? (
-      <div className="focus-segments" role="tablist" aria-label="Arena view">
-        {(["lanes", "standings", "3d"] as const).map((m) => (
-          <button
-            key={m}
-            role="tab"
-            aria-selected={
-              m === "3d"
-                ? viewMode === "lanes" && viewDimension === "3d"
-                : viewMode === m && (m === "standings" || viewDimension === "2d")
-            }
-            onClick={() => {
-              void playCue("selection");
-              const next =
-                m === "3d" ? "3d" : m === "standings" ? "standings" : "lanes2d";
-              if (controlledView) onArenaViewChange?.(next);
-              else {
-                setMode(m === "3d" ? "lanes" : m);
-                setDimension(m === "3d" ? "3d" : "2d");
-              }
-            }}
-          >
-            {m === "lanes" ? "2D map" : m === "3d" ? "3D field" : "Standings"}
-          </button>
-        ))}
-      </div>
-      ) : null}
+      <div style={{ display: "flow-root" }}>
+        <ExpandingField
+          open={lanesImmersive && tabActive}
+          tabActive={tabActive}
+          onClose={() => setLanesImmersive(false)}
+          hud={broadcastHud}
+        >
+          {viewDimension === "3d" && tabActive ? (
+            <PortraitField
+              lanes={sceneLanes.map((l) => ({
+                ...l,
+                value: l.value,
+              }))}
+              view={view}
+              unit={unit}
+              selectedId={trackSelected || you.id}
+              immersive={lanesImmersive}
+              onExpand={() => {
+                void playCue("light");
+                setLanesImmersive(true);
+              }}
+              onToggleDimension={toggleDimension}
+              onZoom={(value) => {
+                cancelCenterTween();
+                setSpan(value);
+              }}
+              onSelect={toggleSelect}
+            />
+          ) : null}
 
-      {viewDimension === "3d" && viewMode === "lanes" && tabActive ? (
-        <PortraitField
-          lanes={sceneLanes.map((l) => ({
-            ...l,
-            value: l.value,
-          }))}
-          view={view}
-          unit={unit}
-          onZoom={(value) => {
-            cancelCenterTween();
-            setSpan(value);
-          }}
-          onSelect={toggleSelect}
-        />
-      ) : null}
-      <div hidden={viewDimension === "3d" && viewMode === "lanes"}>
-        <div style={{ display: "flow-root" }}>
-          <ExpandingField
-            open={lanesImmersive && tabActive}
-            tabActive={tabActive}
-            onClose={() => setLanesImmersive(false)}
-          >
-            <div className="focus-field-toolbar">
-              <span className="fb-note">
-                {viewMode === "standings"
-                  ? "Ranked by this week's effort"
-                  : lanesImmersive
-                    ? "Drag to pan · swipe across peers"
-                    : null}
-              </span>
-            </div>
-            <div className="focus-track-frame">
-              {viewMode === "lanes" && (
-                <FieldGroundPicker
-                  appearance={appearance}
-                  onChange={setAppearance}
-                />
-              )}
-              {viewMode === "lanes" ? (
-                <div className="club-map-status">
-                  <b>
-                    {displayPlace} / {runners.length} PLACE
-                  </b>
-                  <span>
-                    {portraitFieldGap(
-                      portraitField(sceneLanes, view).nextGap,
-                      unit,
-                    )}
-                  </span>
+          <div hidden={viewDimension === "3d"}>
+            <div className="focus-track-frame focus-portal-frame">
+              {!lanesImmersive ? (
+                <div className="focus-portal-actions">
+                  <button
+                    type="button"
+                    className="focus-portal-pill"
+                    aria-label="Switch to 3D field"
+                    onClick={toggleDimension}
+                  >
+                    2D
+                  </button>
+                  <button
+                    type="button"
+                    className="focus-portal-pill is-accent"
+                    aria-label="Expand 2D map to full screen"
+                    onClick={() => {
+                      void playCue("light");
+                      setLanesImmersive(true);
+                    }}
+                  >
+                    Full Arena ⤢
+                  </button>
                 </div>
               ) : null}
+
               <ArenaLanes
                 appearance={appearance}
-                presentation={viewMode === "standings" ? "standings" : "lanes"}
-                scores={Object.fromEntries(
-                  (boardRows ?? []).map((row) => [row.id, row.elo]),
-                )}
+                presentation="lanes"
+                scores={scoreMap}
                 immersive={lanesImmersive}
                 lanes={sceneLanes}
                 view={view}
@@ -389,73 +523,204 @@ export function FieldStage({
                   setCenter(clampViewCenter(v, view.span));
                 }}
               />
-              {viewMode === "standings" && ghost && <div className="club-past-self"><span>Past you · unranked</span><strong>{valueAt(ghost, time).toFixed(1)} {unit}</strong></div>}
-              {viewMode === "lanes" ? (
-                <>
-                  <div
-                    className="focus-zoom-slider"
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 10,
-                      padding: "10px 4px 6px",
-                    }}
-                  >
-                    <span className="fb-note" style={{ ...typographyStyle("caption") }}>
-                      Zoom
-                    </span>
-                    <input
-                      type="range"
-                      min={model.gps ? 0.5 : 2}
-                      max={Math.max(model.gps ? 40 : 100, Math.ceil(view.span))}
-                      step={model.gps ? "any" : 1}
-                      value={view.span}
-                      onChange={(e) => {
-                        const current = view.center;
-                        cancelCenterTween();
-                        setSpan(Number(e.target.value));
-                        if (center !== null) setCenter(current);
-                      }}
-                      onPointerUp={() => void playCue("selection")}
-                      onKeyUp={(e) => {
-                        if (e.key.startsWith("Arrow"))
-                          void playCue("selection");
-                      }}
-                      aria-label="Field zoom"
-                      style={{ flex: 1, accentColor: "#26382d" }}
-                    />
-                    <span
-                      className="fb-note"
-                      style={{ ...typographyStyle("caption"), minWidth: 44, textAlign: "right" }}
-                    >
-                      ±
-                      {(view.span / 2).toLocaleString("en-US", {
-                        maximumFractionDigits: unit === "pts" ? 0 : 2,
-                      })}{" "}
-                      {unit}
+
+              <div className="focus-portal-zoom-pill">
+                <button
+                  type="button"
+                  aria-label="Zoom out"
+                  disabled={view.span >= (unit === "pts" ? 100 : 40)}
+                  onClick={() => {
+                    cancelCenterTween();
+                    setSpan(Math.min(unit === "pts" ? 100 : 40, view.span * 1.5));
+                  }}
+                >
+                  −
+                </button>
+                <button
+                  type="button"
+                  aria-label="Zoom in"
+                  disabled={view.span <= (unit === "pts" ? 2 : 0.5)}
+                  onClick={() => {
+                    cancelCenterTween();
+                    setSpan(Math.max(unit === "pts" ? 2 : 0.5, view.span / 1.5));
+                  }}
+                >
+                  ＋
+                </button>
+              </div>
+            </div>
+          </div>
+        </ExpandingField>
+      </div>
+
+      {/* Collapsed-by-default Standings Disclosure */}
+      <div className="focus-standings-collapsible">
+        <button
+          type="button"
+          className="focus-standings-toggle"
+          aria-expanded={standingsOpen}
+          onClick={() => {
+            void playCue("selection");
+            setStandingsOpen((prev) => !prev);
+          }}
+        >
+          <div className="focus-standings-toggle-copy">
+            <strong>
+              {standingsOpen ? "Hide standings" : "Show standings"}
+            </strong>
+            <span>
+              {ordinalPlace(displayPlace)} of {runners.length} ·{" "}
+              {total.toFixed(1)} {unit}
+              {leader
+                ? ` · Leader ${leader.you ? "You" : leader.name.split(" ")[0]} (${leader.value.toFixed(1)} ${unit})`
+                : ""}
+            </span>
+          </div>
+          <span className="focus-standings-toggle-chevron" aria-hidden="true">
+            {standingsOpen ? "▴" : "▾"}
+          </span>
+        </button>
+
+        {standingsOpen ? (
+          <div className="focus-standings-body">
+            {leader ? (
+              <button
+                type="button"
+                className="focus-leader-stage"
+                onClick={() => toggleSelect(leader.id)}
+              >
+                <div className="focus-leader-stage-top">
+                  <span className="focus-leader-crown">
+                    1ST PLACE · FIELD LEADER
+                  </span>
+                  <span className="focus-leader-elo">
+                    {scoreMap[leader.id] ?? "—"} ELO
+                  </span>
+                </div>
+                <div className="focus-leader-stage-main">
+                  <UserAvatar
+                    src={leader.avatarUrl}
+                    name={leader.name}
+                    size={42}
+                    fallback={
+                      <svg
+                        width="32"
+                        height="42"
+                        viewBox="-40 -50 80 100"
+                        aria-hidden="true"
+                      >
+                        <PolishedRacer
+                          x={0}
+                          y={0}
+                          you={Boolean(leader.you)}
+                          gold
+                          showWake={false}
+                        />
+                      </svg>
+                    }
+                  />
+                  <div className="focus-leader-stage-copy">
+                    <strong>
+                      {leader.you ? selfLaneLabel(leader.name) : leader.name}
+                    </strong>
+                    <span>
+                      {leader.you
+                        ? "You hold the crown this week"
+                        : `${(leader.value - total).toFixed(1)} ${unit} ahead of you`}
                     </span>
                   </div>
-                </>
+                  <strong className="focus-leader-stage-val">
+                    {leader.value.toFixed(1)} {unit}
+                  </strong>
+                </div>
+              </button>
+            ) : null}
+
+            <div className="focus-standings-bars" role="list">
+              {ranked.map((lane) => {
+                const r = placeOf(lane.value);
+                const pct = Math.max(
+                  6,
+                  Math.min(100, Math.round((lane.value / leaderValue) * 100)),
+                );
+                const elo = scoreMap[lane.id];
+                return (
+                  <button
+                    key={lane.id}
+                    type="button"
+                    role="listitem"
+                    className={
+                      lane.you
+                        ? "focus-standing-bar-row is-you"
+                        : "focus-standing-bar-row"
+                    }
+                    onClick={() => toggleSelect(lane.id)}
+                  >
+                    <span className="focus-standing-rank">{r}</span>
+                    <UserAvatar
+                      src={lane.avatarUrl}
+                      name={lane.name}
+                      size={36}
+                      fallback={
+                        <svg
+                          className="focus-standing-avatar"
+                          width="26"
+                          height="36"
+                          viewBox="-40 -50 80 100"
+                          aria-hidden="true"
+                        >
+                          <PolishedRacer
+                            x={0}
+                            y={0}
+                            you={Boolean(lane.you)}
+                            gold={r === 1}
+                            showWake={false}
+                          />
+                        </svg>
+                      }
+                    />
+                    <div className="focus-standing-bar-content">
+                      <div className="focus-standing-bar-top">
+                        <strong className="focus-standing-name">
+                          {lane.you ? selfLaneLabel(lane.name) : lane.name}
+                          {elo != null
+                            ? ` ${effortRankBadge(elo).symbol}`
+                            : ""}
+                        </strong>
+                        <div className="focus-standing-metrics">
+                          <strong>
+                            {lane.value.toFixed(1)} {unit}
+                          </strong>
+                          <small>{elo ?? "—"} effort score</small>
+                        </div>
+                      </div>
+                      <div className="focus-standing-bar-track" aria-hidden="true">
+                        <div
+                          className={
+                            r === 1
+                              ? "focus-standing-bar-fill is-leader"
+                              : lane.you
+                                ? "focus-standing-bar-fill is-you"
+                                : "focus-standing-bar-fill"
+                          }
+                          style={{ width: `${pct}%` }}
+                        />
+                      </div>
+                    </div>
+                  </button>
+                );
+              })}
+              {ghost ? (
+                <div className="club-past-self">
+                  <span>Past you · unranked</span>
+                  <strong>
+                    {valueAt(ghost, time).toFixed(1)} {unit}
+                  </strong>
+                </div>
               ) : null}
             </div>
-
-            <div hidden={viewMode === "standings"}>
-              <FieldOverview
-                lanes={sceneLanes}
-                view={view}
-                unit={unit}
-                onNavigate={(value) =>
-                  tweenCenterTo(
-                    value,
-                    appearance.ground === "oval"
-                      ? Math.min(view.span, fieldDefaultSpan(unit) / 2)
-                      : view.span,
-                  )
-                }
-              />
-            </div>
-          </ExpandingField>
-        </div>
+          </div>
+        ) : null}
       </div>
     </section>
   );

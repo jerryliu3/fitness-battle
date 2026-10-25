@@ -1,6 +1,6 @@
 import { chartTextProps, textStyle  } from "./section";
 import {
-  fieldCourse, fieldCourseScene, fieldScaleScene, fieldLap, defaultFieldAppearance, type FieldAppearance,
+  fieldCourse, fieldCourseScene, fieldLap, defaultFieldAppearance, type FieldAppearance,
   arenaPosition,
   fieldDefaultSpan,
   ordinalPlace,
@@ -29,7 +29,6 @@ import Svg, {
   Text as SvgText,
 } from "react-native-svg";
 import { SHELL_COLORS as c } from "../theme";
-import { IconButton } from "./icon-button";
 import { playCue } from "../lib/haptics";
 import { drawFieldNode } from "./field-course";
 import { LaneRacerTarget } from "./lane-racer-target";
@@ -53,12 +52,14 @@ function LaneTrackContent({
   height = 540,
   fullscreen = false,
   onExpand,
+  onToggleDimension,
   onZoom,
   anchor,
 }: {
   height?: number;
   fullscreen?: boolean;
   onExpand?: () => void;
+  onToggleDimension?: () => void;
   onZoom?: (span: number) => void;
   anchor?: MutableRefObject<LaneAnchor | null>;
   appearance?: FieldAppearance;
@@ -138,9 +139,10 @@ function LaneTrackContent({
   const live = ordered.map(l => ({ ...l, value: animating ? overtakeFrame?.laneValues[l.id] ?? l.values[index] ?? 0 : l.values[index] ?? 0, initials: initialsFromName(l.name) }));
   const groundPaint = useMemo(() => fieldCourseScene(course, appearance, live, unit, prefix).map(drawFieldNode), [course, appearance, lanes, index, overtakeFrame, unit, prefix]);
   const bounds = arenaWindow(v.center, v.span);
-  const maxTailY = Math.min(height - 58, bounds.min <= 0 && bounds.max >= 0 ? course.along(0) + 4 : height - 58);
+  const maxTailY = Math.min(height, bounds.min <= 0 && bounds.max >= 0 ? course.along(0) + 4 : height);
   const localAnchor = useRef<LaneAnchor | null>(null);
   const previous = anchor ?? localAnchor;
+  const prevSelectedRef = useRef<string | undefined>(selectedId);
   useEffect(() => {
     const old = previous.current;
     const laneIndex = old && !old.oval && !course.oval && old.count === ordered.length ? (old.scroll + old.width / 2 - old.left) / old.laneWidth - .5 : Math.max(0, ordered.findIndex(l => l.you));
@@ -148,6 +150,18 @@ function LaneTrackContent({
     scroll.current?.scrollTo({ x, animated: false });
     previous.current = { left: course.left, laneWidth: lw, width, scroll: x, oval: course.oval, count: ordered.length };
   }, [w, lw, width, course.left, course.oval]);
+  useEffect(() => {
+    if (!selectedId || selectedId === prevSelectedRef.current || course.oval) {
+      prevSelectedRef.current = selectedId;
+      return;
+    }
+    prevSelectedRef.current = selectedId;
+    const laneIndex = ordered.findIndex((l) => l.id === selectedId);
+    if (laneIndex < 0) return;
+    const x = Math.max(0, Math.min(w - width, course.left + (laneIndex + 0.5) * lw - width / 2));
+    scroll.current?.scrollTo({ x, animated: true });
+    previous.current = { left: course.left, laneWidth: lw, width, scroll: x, oval: course.oval, count: ordered.length };
+  }, [selectedId, w, lw, width, course.left, course.oval, ordered.length]);
   return (
     <View
       onLayout={(e) => {
@@ -155,61 +169,14 @@ function LaneTrackContent({
           setWidth(e.nativeEvent.layout.width);
       }}
       style={{
+        position: "relative",
         borderRadius: fullscreen ? 0 : 24,
         overflow: "hidden",
-        backgroundColor: "#eef3e8",
+        backgroundColor: "#14311e",
         borderWidth: fullscreen ? 0 : 1,
         borderColor: "#d7e0cf",
       }}
     >
-      <View
-        style={{
-          flexDirection: "row",
-          alignItems: "center",
-          justifyContent: "space-between",
-          gap: 8,
-          paddingHorizontal: 12,
-          paddingVertical: 4,
-        }}
-      >
-        <Text
-          style={{
-    ...textStyle("caption"),
-    flex: 1,
-    color: c.muted
-}}
-        >
-          {fullscreen || exploring ? "Drag to explore · pinch to zoom" : "Swipe across peers · pinch to zoom"}
-        </Text>
-        {!fullscreen && <Pressable
-          accessibilityRole="button"
-          accessibilityState={{ selected: exploring }}
-          accessibilityLabel={
-            exploring ? "Finish panning lanes" : "Enable vertical lane panning"
-          }
-          onPress={() => {
-            void playCue("selection");
-            setExploring((value) => !value);
-          }}
-          style={{
-            minHeight: 44,
-            paddingHorizontal: 12,
-            justifyContent: "center",
-            borderRadius: 10,
-            backgroundColor: exploring ? c.tennis : "#ffffff99",
-          }}
-        >
-          <Text
-            style={{
-    ...textStyle("caption"),
-    color: c.ink
-}}
-          >
-            {exploring ? "Done" : "Explore"}
-          </Text>
-        </Pressable>}
-        {!fullscreen && onExpand && <IconButton icon="expand" label="Expand 2D map to full screen" onPress={onExpand} />}
-      </View>
       <View {...pan.panHandlers}>
       <ScrollView
         horizontal
@@ -228,7 +195,6 @@ function LaneTrackContent({
             accessibilityLabel={`Vertical lanes in ${unit}, centered on your distance`}
           >
             {fullscreen ? <G>{groundPaint}</G> : <LaneRacerTarget onPress={onExpand} accessibilityLabel="Expand 2D map to full screen">{groundPaint}</LaneRacerTarget>}
-            {!course.oval && lw >= 48 && ordered.map((l, i) => <SvgText {...chartTextProps()} key={l.id} x={course.point(v.center, i).x} y={36} textAnchor="middle"   fill={l.you ? c.ink : c.muted}>{`${ordinalPlace(1+live.filter(peer=>peer.value>(live.find(peer=>peer.id===l.id)?.value??0)+.000001).length)}${l.you?" · You":""}`}</SvgText>)}
             {ordered.map((l, i) => {
               const value =
                 animating && overtakeFrame
@@ -327,14 +293,99 @@ function LaneTrackContent({
               );
             })}
             {ghost && (() => { const p = course.point(ghost.values[index] ?? 0, ordered.findIndex(l => l.you), 18 * course.markerScale, true); return <G onPress={() => onSelect(ghost)}><Circle cx={p.x} cy={p.y} r={13 * course.markerScale} fill="#ffffffcc" stroke={c.muted} strokeDasharray="3 3"/></G>; })()}
-            {course.oval && <SvgText {...chartTextProps()} x={18} y={height - 18}  fill={c.muted}>
-              {`${fieldLap(overtakeFrame?.youValue ?? me?.values[index] ?? 0, unit).laps} laps · ${(overtakeFrame?.youValue ?? me?.values[index] ?? 0).toFixed(1)} ${unit} total`}
-            </SvgText>}
           </Svg>
         </View>
       </ScrollView>
       </View>
-      {!course.oval && <Svg width={42} height={height} pointerEvents="none" style={{ position: "absolute", top: 52, right: 0 }}>{fieldScaleScene(course, unit).map(drawFieldNode)}</Svg>}
+      {!fullscreen ? (
+        <View
+          style={{
+            position: "absolute",
+            top: 10,
+            right: 10,
+            flexDirection: "row",
+            alignItems: "center",
+            gap: 8,
+          }}
+        >
+          {onToggleDimension ? (
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Switch to 3D field"
+              onPress={onToggleDimension}
+              style={{
+                minHeight: 36,
+                paddingHorizontal: 12,
+                justifyContent: "center",
+                borderRadius: 999,
+                backgroundColor: "rgba(20, 20, 19, 0.78)",
+                borderWidth: 1,
+                borderColor: "rgba(255, 255, 255, 0.2)",
+              }}
+            >
+              <Text style={{ ...textStyle("caption"), color: "#ffffff" }}>
+                2D
+              </Text>
+            </Pressable>
+          ) : null}
+          <Pressable
+            accessibilityRole="button"
+            accessibilityState={{ selected: exploring }}
+            accessibilityLabel={
+              exploring ? "Finish panning lanes" : "Enable vertical lane panning"
+            }
+            onPress={() => {
+              void playCue("selection");
+              setExploring((value) => !value);
+            }}
+            style={{
+              minHeight: 36,
+              paddingHorizontal: 14,
+              justifyContent: "center",
+              borderRadius: 999,
+              backgroundColor: exploring ? c.tennis : "rgba(20, 20, 19, 0.75)",
+              borderWidth: 1,
+              borderColor: exploring ? c.tennis : "rgba(255, 255, 255, 0.16)",
+            }}
+          >
+            <Text
+              style={{
+                ...textStyle("caption"),
+                color: exploring ? c.ink : "#ffffff",
+              }}
+            >
+              {exploring ? "Done" : "Explore"}
+            </Text>
+          </Pressable>
+          {onExpand ? (
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Expand 2D map to full screen"
+              onPress={onExpand}
+              style={{
+                minHeight: 36,
+                paddingHorizontal: 14,
+                flexDirection: "row",
+                alignItems: "center",
+                gap: 6,
+                borderRadius: 999,
+                backgroundColor: "rgba(20, 20, 19, 0.85)",
+                borderWidth: 1,
+                borderColor: "rgba(200, 245, 59, 0.55)",
+              }}
+            >
+              <Text
+                style={{
+                  ...textStyle("caption"),
+                  color: c.tennis,
+                }}
+              >
+                Full Arena ⤢
+              </Text>
+            </Pressable>
+          ) : null}
+        </View>
+      ) : null}
     </View>
   );
 }
