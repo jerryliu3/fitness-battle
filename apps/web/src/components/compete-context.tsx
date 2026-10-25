@@ -660,7 +660,7 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
           scheduleSave(
             userIdRef.current,
             next,
-            withAccount.type === "set-units",
+            withAccount.type === "set-units" || withAccount.type === "set-avatar",
           );
         }
       },

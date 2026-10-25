@@ -598,14 +598,13 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
     };
   }, [pathname, router, state]);
 
-  const scheduleSave = useCallback((next: CompeteState) => {
+  const scheduleSave = useCallback((next: CompeteState, immediate = false) => {
     if (debugActiveRef.current) return;
     const id = accountRef.current;
     const scoped = accountStorageKeys(id);
     const generation = dirtyRef.current;
     if (saveTimer.current) clearTimeout(saveTimer.current);
-    saveTimer.current = setTimeout(() => {
-      saveTimer.current = null;
+    const run = () => {
       saveChain.current = saveChain.current
         .catch(() => {})
         .then(async () => {
@@ -682,6 +681,14 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
             }
           }
         });
+    };
+    if (immediate) {
+      run();
+      return;
+    }
+    saveTimer.current = setTimeout(() => {
+      saveTimer.current = null;
+      run();
     }, 400);
   }, []);
 
@@ -740,7 +747,7 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
         [scoped.state, JSON.stringify(next)],
         [scoped.dirty, "1"],
       ]).catch(() => setSaveError("Could not save on this device."));
-      scheduleSave(next);
+      scheduleSave(next, action.type === "set-units" || action.type === "set-avatar");
     },
     [readBaselineItem, writeBaselineItem, scheduleSave, remember],
   );
