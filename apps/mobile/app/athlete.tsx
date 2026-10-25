@@ -605,12 +605,12 @@ export default function AthleteScreen() {
           ) : (
             <>
               <View style={[f.row, { flexWrap: "wrap" }]}>
-                <AppText role="label" >Units</AppText>
+                <AppText role="field" >Units</AppText>
                 <FocusSegments label="Unit system" value={state.units} options={[{ value: "us", label: "Imperial" }, { value: "metric", label: "Metric" }]}
                   onChange={units => dispatch({ type: "set-units", units })} />
               </View>
               <View style={[f.row, { flexWrap: "wrap" }]}>
-                <AppText role="label" >Primary sport</AppText>
+                <AppText role="field" >Primary sport</AppText>
                 <ChoicePicker label="Primary sport" value={state.primary} options={SPORTS.map(s => ({ value: s.id, label: s.name }))}
                   onChange={sport => dispatch({ type: "set-primary", sport })} />
               </View>

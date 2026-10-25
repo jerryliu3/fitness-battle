@@ -43,3 +43,15 @@ Account compete state is **tables only**. `/api/compete` never reads or writes a
 `seat_athlete_week_field` is the only field write RPC. `/api/crews/field` and account hydration both use the same field/roster reader. The database roster owns score filtering and exact `[wave_start, week_end)` bounds: solo totals come from counted `activities`; private crew totals retain the existing explicit sharing boundary and come from counted `crew_entries`. `share_crew_week` still copies eligible account activities into the crew feed. `crew_field_roster` supplies identity/Elo only for deterministic seating fillers.
 
 The consolidation migration copies existing `crew_week_fields` into `week_fields`, retaining the newer plan on conflict, before dropping the old table and its write RPC. Historical migration files remain unchanged. Deploy this migration with the matching server change; the old server reads a table that is retired by the migration. `crewBoard` remains the client presentation name for both field kinds, not a second database store.
+
+## Lazy competition replay
+
+`GET /api/compete/replay?sport=…&track=…&start=…&end=…` reads a compact field
+activity ledger through the membership-authorized `competition_replay` RPC
+(`20261025143404_competition_replay.sql`). It uses the request's cookie/Bearer
+session, exact persisted seating bounds and existing eligibility filters. There
+are no new scoring writes or broad activity RLS policies. Current and ended
+fields use the same API; retained current counted activity reconstructs chronology
+rather than preserving past ingestion/correction history. See the
+[replay contract](reviews/competition-replay/README.md) for fidelity, memory,
+simulated-athlete and deployment details.

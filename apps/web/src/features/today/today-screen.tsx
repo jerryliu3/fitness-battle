@@ -2,6 +2,7 @@
 import { AppText, AppParagraph } from "@/ui/section";
 
 import { WeekChart } from "./week-chart";
+import { DailyHealth } from "./daily-health";
 import { LatestActivity } from "@/features/club/latest-activity";
 
 import { useEffect, useLayoutEffect, useRef, useState, type Ref } from "react";
@@ -350,6 +351,7 @@ export function TodayScreen() {
       )}
       <WeekChart state={state} ready={loadStatus === "ready" || loadStatus === "local"} />
       </div>
+      {(loadStatus === "ready" || loadStatus === "local") && <DailyHealth state={state} />}
       <RivalCard state={state} />
       <LatestActivity state={state} onOpen={activity=>openSession(activity,"full")} />
       <details ref={journeyDetailsRef} className="club-home-journey"><summary>Your activity journey <span>＋</span></summary>

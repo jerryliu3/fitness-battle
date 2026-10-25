@@ -35,6 +35,7 @@ import { PortraitField } from "./portrait-field";
 let renderer: ReactTestRenderer;
 afterEach(async () => {
   if (renderer) await act(async () => renderer.unmount());
+  vi.unstubAllGlobals();
 });
 it("zooms the local portrait scene and changes peer focus while retaining actual athlete selection", async () => {
   vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
@@ -50,6 +51,7 @@ it("zooms the local portrait scene and changes peer focus while retaining actual
         view: { center: 10, span: 1.2 },
         unit: "km",
         onZoom: zoom,
+        onPan: () => {},
         onSelect: select,
       }),
     );
@@ -69,4 +71,39 @@ it("zooms the local portrait scene and changes peer focus while retaining actual
     .find((n) => n.props.accessibilityLabel?.startsWith("Maya"))!;
   await act(async () => peer.props.onPress());
   expect(select).toHaveBeenCalledWith("peer");
+});
+
+it("owns fullscreen SVG drags and coalesces the latest two-axis position per frame", async () => {
+  vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
+  const frames: (() => void)[] = [];
+  const request = vi.fn((callback: () => void) => { frames.push(callback); return frames.length; });
+  vi.stubGlobal("requestAnimationFrame", request);
+  vi.stubGlobal("cancelAnimationFrame", vi.fn());
+  const pan = vi.fn();
+  await act(async () => {
+    renderer = create(createElement(PortraitField, {
+      lanes: [
+        { id: "a", name: "Ahead", initials: "A", value: 10.2 },
+        { id: "you", you: true, name: "Alex", initials: "A", value: 10 },
+        { id: "b", name: "Behind", initials: "B", value: 9.8 },
+      ],
+      view: { center: 10, span: 1.2 }, unit: "km", fullscreen: true,
+      onPan: pan, onZoom() {}, onSelect() {},
+    }));
+  });
+  const svg = renderer.root.findByType("Svgdefault" as never);
+  const before = renderer.root.findAllByType("SvgG" as never).map(n => n.props.transform).filter(Boolean);
+  expect(svg.props.onMoveShouldSetPanResponderCapture(null, { dx: 20, dy: 40 })).toBe(true);
+  await act(async () => {
+    svg.props.onPanResponderGrant({ nativeEvent: { pageY: 320, locationY: 320 } }, { dy: 0 });
+    svg.props.onPanResponderMove(null, { dx: 20, dy: 30 });
+    svg.props.onPanResponderMove(null, { dx: 40, dy: 60 });
+  });
+  expect(request).toHaveBeenCalledTimes(1);
+  expect(pan).not.toHaveBeenCalled();
+  await act(async () => frames[0]!());
+  expect(pan).toHaveBeenCalledTimes(1);
+  expect(pan.mock.calls[0]![0]).toBeGreaterThan(10);
+  const after = renderer.root.findAllByType("SvgG" as never).map(n => n.props.transform).filter(Boolean);
+  expect(after).not.toEqual(before);
 });

@@ -34,6 +34,7 @@ export * from "./sync-review";
 export * from "./integration-icons";
 
 export * from "./week-chart";
+export * from "./home-health";
 export * from "./sport-mark";
 
 export * from "./account-runtime";
@@ -46,5 +47,6 @@ export * from "./routeGeoUtils";
 export * from "./activity-route";
 export * from "./sampleRoute";
 export * from "./competition-moments";
+export * from "./competition-replay";
 
 export { normalizeRouteReplay, routeReplayAt, type RouteReplaySample } from "./route-replay";

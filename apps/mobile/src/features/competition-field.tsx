@@ -1,3 +1,4 @@
+import { CompetitionReplayButton } from "./competition-replay";
 import { UserAvatar } from "../ui/user-avatar";
 import { textStyle } from "../ui/section";
 import { RankBadge } from "../ui/rank-badge";
@@ -6,6 +7,8 @@ import {
   portraitField,
   portraitFieldGap,
   arenaFieldHigh,
+  competePeriodWindow,
+  competeNow,
   clampCourseCenter,
   fieldDefaultSpan,
   buildArenaModel,
@@ -20,7 +23,7 @@ import {
 import { usePathname } from "expo-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Modal, Pressable, Text, View, useWindowDimensions } from "react-native";
-import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
+import { SafeAreaProvider, SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { IconButton } from "../ui/icon-button";
 import Svg from "react-native-svg";
 import { useCompeteStore } from "../lib/compete-store";
@@ -76,7 +79,7 @@ export function CompetitionField({
     ? Math.max(300, Math.min(420, dimensions.height * .46))
     : Math.max(360, Math.min(480, dimensions.height * .56));
   const sceneHeight = Math.round(expanded
-    ? Math.max(140, dimensions.height - insets.top - insets.bottom - 108 - (sceneDimension === "2d" ? 90 : 34))
+    ? Math.max(140, dimensions.height - insets.top - insets.bottom - 108 - (sceneDimension === "2d" ? 90 : 260))
     : inlineHeight);
   const laneAnchor = useRef<LaneAnchor | null>(null);
   const portraitAnchor = useRef(0);
@@ -171,6 +174,7 @@ export function CompetitionField({
           view={view}
           unit={arena.unit}
           onZoom={zoomTo}
+          onPan={(value) => { stopZoom(); setCenter(value); }}
           height={sceneHeight}
           fullscreen={expanded}
           onExpand={expandField}
@@ -304,7 +308,7 @@ export function CompetitionField({
               </Text>
             </View>
             <View style={{ alignItems: "center", gap: 2 }}>
-              <Text style={textStyle("heading")}>
+              <Text style={textStyle("metric")}>
                 {place(total)} / {ranked.length}
               </Text>
               <Text style={textStyle("caption")}>your place</Text>
@@ -324,10 +328,22 @@ export function CompetitionField({
               setDimension(next === "3d" ? "3d" : "2d");
             }}
           />
+          <CompetitionReplayButton
+            state={state}
+            selection={{
+              sport,
+              track,
+              periodStart: competePeriodWindow(state, competeNow(state), sport).startsAt.toISOString(),
+              periodEnd: competePeriodWindow(state, competeNow(state), sport).endsAt.toISOString(),
+            }}
+            dimension={sceneDimension}
+            label="Replay"
+          />
         </>
       ) : null}
 
       {expanded ? <Modal visible animationType={reduceMotion ? "none" : "slide"} presentationStyle="fullScreen" onRequestClose={() => setExpanded(false)}>
+        <SafeAreaProvider>
         <SafeAreaView style={f.safe} edges={["top", "bottom"]}>
           <View style={[f.row, { minHeight: 56, paddingHorizontal: 12 }]}>
             <IconButton icon="back" label="Close full screen field" onPress={() => setExpanded(false)} />
@@ -336,6 +352,7 @@ export function CompetitionField({
           <View style={{ paddingHorizontal: 16, paddingBottom: 4 }}><FocusSegments label="Full screen field dimension" value={viewDimension} options={[{ value: "2d", label: "2D map" }, { value: "3d", label: "3D field" }]} onChange={next => { setDimension(next); onArenaViewChange?.(next === "2d" ? "lanes2d" : "3d"); }} /></View>
           {fieldContent}
         </SafeAreaView>
+        </SafeAreaProvider>
       </Modal> : fieldContent}
       {viewMode === "standings" ? (
         <View style={f.section}>
@@ -358,12 +375,12 @@ export function CompetitionField({
                   showWake={false}
                 />
               </Svg>} />
-              <Text style={[textStyle("label"), f.grow]}>
+              <Text style={[textStyle("row"), f.grow]}>
                 {lane.you ? selfLaneLabel(lane.name) : lane.name}
               </Text>
               <RankBadge score={scores.find(row => row.id === lane.id)?.elo} />
               <View style={{ alignItems: "flex-end" }}>
-                <Text style={textStyle("label")}>
+                <Text style={textStyle("value")}>
                   {lane.values[2].toFixed(1)} {arena.unit}
                 </Text>
                 <Text style={[textStyle("caption"), { color: c.ink }]}>

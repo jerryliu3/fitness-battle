@@ -12,3 +12,10 @@ export const SETTINGS_ICON_PATHS = {
   "How scoring works": "M4 20V12h4v8m2 0V8h4v12m2 0V4h4v16",
   Account: "M12 3a4 4 0 1 0 0 8 4 4 0 0 0 0-8M4 21v-3a8 8 0 0 1 16 0v3",
 } as const;
+
+export const HOME_HEALTH_ICON_PATHS = {
+  sleep: "M20 15a8 8 0 0 1-11-11A8 8 0 1 0 20 15Z",
+  steps: "M8 3c-2 0-3 3-3 5s1 3 3 3 3-1 3-3-1-5-3-5Zm-2 11h4v5H6Zm11-5c-2 0-3 3-3 5s1 3 3 3 3-1 3-3-1-5-3-5Zm-2 11h4v2h-4Z",
+  "resting-hr": "M20 5a5 5 0 0 0-8 1 5 5 0 0 0-8-1c-5 5 8 15 8 15S25 10 20 5Z",
+  hrv: "M2 12h4l3-7 5 14 3-7h5",
+} as const;

@@ -123,7 +123,7 @@ export function CrewRelay(props: Props) {
       </ScrollView>
       {member && !props.compact ? (
         <View accessibilityLiveRegion="polite">
-          <AppText role="label">{member.name}</AppText>
+          <AppText role="row">{member.name}</AppText>
           <AppText role="body" secondary>
             {volume(member.value)} · {(member.share * 100).toFixed(1)}% of
             recorded crew activity · {member.sessions}{" "}

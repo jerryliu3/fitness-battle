@@ -16,3 +16,17 @@ it("shares current/previous hours while excluding samples and future activity", 
   expect(model.sessionCount).toBe(1);
   expect(model.currCumulativeHours.at(-1)).toBe(1);
 });
+
+it("keeps Portfolio lines finite for empty and partial weeks with matching totals", async () => {
+  const { portfolioWeekChart } = await import("./week-chart");
+  const state = freshState(now);
+  state.activities = [];
+  const chart = portfolioWeekChart(state, now);
+  expect(chart.current).not.toMatch(/NaN|Infinity/);
+  expect(chart.tip.x).toBeGreaterThan(chart.left);
+  expect(chart.tip.x).toBeLessThan(chart.right);
+  expect(chart.startLabel).toBe("Oct 19");
+  expect(chart.endLabel).toBe("Oct 25");
+  expect(chart.inspection.at(-1)?.x).toBe(chart.tip.x);
+  expect(chart.currTotalHours).toBe(weeklyHoursComparison(state, now).currTotalHours);
+});

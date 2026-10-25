@@ -21,7 +21,7 @@ export function nearestChartDatum(points: readonly ChartDatum[], x: number) {
 
 /** One touch surface, shared by line and bar charts. Vertical drags yield to the page. */
 export function ChartScrubber({
-  points, width, height, plotTop, plotBottom, children, onSelect, label,
+  points, width, height, plotTop, plotBottom, children, onSelect, label, summaryOnSelection = false,
 }: {
   points: readonly ChartDatum[];
   width: number;
@@ -31,6 +31,7 @@ export function ChartScrubber({
   children: ReactNode;
   onSelect?: (id: string) => void;
   label: string;
+  summaryOnSelection?: boolean;
 }) {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const measuredWidth = useRef(1);
@@ -72,9 +73,10 @@ export function ChartScrubber({
     if (point) inspect(point.x / width * measuredWidth.current);
   };
   return <View style={{ gap: 8 }}>
-    <View style={{ minHeight: 44, gap: 2 }} accessibilityLiveRegion="polite">
+    <View style={{ minHeight: summaryOnSelection ? 18 : 44, gap: 2 }} accessibilityLiveRegion="polite">
+      {summaryOnSelection ? <Text style={textStyle("caption")}>{selected ? `${selected.label} · ${selected.value}` : "Slide across the chart to inspect"}</Text> : <>
       <Text style={[textStyle("label"), { fontVariant: ["tabular-nums"] }]}>{selected?.value ?? points.at(-1)?.value ?? "No data"}</Text>
-      <Text style={textStyle("caption")}>{selected?.label ?? points.at(-1)?.label ?? ""}</Text>
+      <Text style={textStyle("caption")}>{selected?.label ?? points.at(-1)?.label ?? ""}</Text></>}
     </View>
     <View
       {...responder.panHandlers}

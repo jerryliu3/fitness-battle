@@ -323,8 +323,8 @@ export function FocusDisclosure({
         style={[f.disclosureHead, compact && f.disclosureHeadCompact]}
       >
         <View style={f.grow}>
-          <Text style={textStyle("label")}>{title}</Text>
-          {Boolean(detail) && <AppText role="body" secondary>{detail}</AppText>}
+          <Text style={textStyle("row")}>{title}</Text>
+          {Boolean(detail) && <AppText role="support" secondary>{detail}</AppText>}
         </View>
         <AppText role="label">{open ? "−" : "＋"}</AppText>
       </Pressable>
@@ -377,7 +377,7 @@ export const f = StyleSheet.create({
     color: c.muted,
   },
   rowTitle: {
-    ...textStyle("label"),
+    ...textStyle("row"),
     color: c.ink,
   },
   row: {
@@ -543,7 +543,7 @@ export const f = StyleSheet.create({
   divider: { height: 1, backgroundColor: c.line },
   feedback: { padding: 14, backgroundColor: c.soft, borderRadius: 10 },
   massive: {
-    ...textStyle("display"),
+    ...textStyle("hero"),
     color: c.ink
 },
 });

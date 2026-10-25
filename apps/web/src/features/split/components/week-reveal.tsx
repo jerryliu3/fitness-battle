@@ -8,6 +8,7 @@ import { useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { WeeklySocialActions } from "./weekly-social";
+import { CompetitionReplayButton } from "@/features/replay/competition-replay";
 import { ResultCard } from "./result-card";
 import {
   APP_TIMEZONE,
@@ -61,6 +62,7 @@ function RoundTakeover({
               {results.map((result) => (
                 <div key={result.id}>
                   <ResultCard result={result} units={state.units} />
+                  <CompetitionReplayButton state={state} selection={result} label="Replay this round" />
                   {social ? (
                     <WeeklySocialActions result={result} units={state.units} />
                   ) : null}
