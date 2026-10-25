@@ -203,3 +203,14 @@ logical unit, with 16 before and 12 after; mobile page gutters remain 20.
 The root account provider owns event presentation across Home / Compete / Progress / Crew. Browsing a field never consumes a rank-change event. A saved baseline is scoped by account, sport, competition track, period and display units; first loads seed quietly. Later own-volume passes and peer-driven passes open a full-screen scene regardless of the current tab. Each crossing slows the camera, names the actual competitor, increments the overtake total and builds the combo. Rival movement uses a neutral chase treatment. Final place and volume match the settled current field; confirmation returns to the parent application. Reduced motion shows the same result immediately. These are accumulated-effort replays, not live GPS races.
 
 One modal stays mounted through review and movement, avoiding native modal handoff races. Sync review reuses the activity route explorer from #316; absent geometry or an unavailable map never blocks confirmation. Multiple sports queue separate moments. Historical activities can be reviewed without inventing passes in a past period. The inline field displays current stats and no longer owns replay timing.
+
+
+### Launch animation — October 24
+
+The default launch mark is the 35% clean staggered **over / taek** race, using
+product ink/paper/tennis colors and the existing Nunito Sans Black face. It shares
+5.4-second choreography across web and native SVG, with reduced-motion and
+background pause support. The Ember wordmark animation remains selectable in
+code and the web `/design/loading` review. Both use the same application-readiness
+gate; animation completion alone does not dismiss the cover. See
+[loading implementation](overtaek-loading-prototype.md).

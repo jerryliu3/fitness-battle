@@ -1,0 +1,16 @@
+.logo-race-splash {
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 28px;
+  padding: 24px 12px;
+  background: var(--paper);
+  color: var(--ink);
+}
+.logo-race-splash-mark { display: block; width: 100%; max-width: 760px; overflow: hidden; }
+.logo-race-splash-wait { min-height: 52px; display: flex; flex-direction: column; align-items: center; gap: 12px; font: 13px var(--font-body), sans-serif; color: var(--muted); }
+.logo-race-splash-spinner { width: 22px; height: 22px; border: 2px solid var(--line); border-top-color: var(--ink); border-radius: 50%; animation: logo-race-spin .7s linear infinite; }
+@keyframes logo-race-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .logo-race-splash-spinner { animation: none; } }

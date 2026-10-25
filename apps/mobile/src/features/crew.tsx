@@ -1,3 +1,4 @@
+import { useBootLoading } from "../ui/boot-readiness";
 import { AppText, Section, SectionStack } from "../ui/section";
 import { AppIcon } from "../ui/app-icon";
 import { RankBadge } from "../ui/rank-badge";
@@ -70,6 +71,7 @@ export function useCrewApi() {
   const [data, setData] = useState<CrewData | null>(null);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  useBootLoading(Boolean(user && accessToken && !offlineMode && !data && !error));
   const identity = useRef(user?.id);
   identity.current = user?.id;
   const request = useCallback(

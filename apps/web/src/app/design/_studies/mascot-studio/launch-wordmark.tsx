@@ -10,7 +10,7 @@ import { BootSplash } from "@/shell/boot-splash";
 type Layout = BootLayout & {homeX:number;homeY:number};
 /** The approved skid preview renders the actual production loader. */
 export function LaunchWordmark(props:{progress:number;concept:EmberLaunchConcept;returnToK:boolean;reducedMotion:boolean;sliding?:boolean}) {
-  if(props.sliding && props.returnToK)return <BootSplash progress={props.progress} onAnimationComplete={()=>{}}/>;
+  if(props.sliding && props.returnToK)return <BootSplash variant="ember" progress={props.progress} onAnimationComplete={()=>{}}/>;
   return <StandaloneLaunchWordmark {...props}/>;
 }
 /** Keep the earlier launch and the optional unmorphed endpoint available. */

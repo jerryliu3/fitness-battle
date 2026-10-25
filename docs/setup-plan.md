@@ -108,3 +108,15 @@ GPX/TCX/FIT imports now retain detailed GPS coordinates, a simplified preview, b
 ### Full-screen sync and movement rollout
 
 The October 24 event stack reuses #316's activity route maps/flyovers and existing scoring/persistence. No migration, native dependency or new environment variable is required. Debug's sync, combo and passed-by options launch the production full-screen UI with isolated local fixtures. Use **Reset debug preview** to restore the loaded account. See [flow contract and verification](reviews/fullscreen-events-2026-10-24/README.md). An updated native JS/binary delivery is required to see the new screens; this source change does not update an already installed app.
+
+### Application startup readiness
+
+Web and mobile mount the application under the existing launch cover. Dismissal
+requires the launch animation, account hydration, the mounted screen, and initial
+Home/Crew reads to settle. Web also waits for fonts and eagerly loaded images;
+native waits for the application container layout and initial Home images. Request errors reveal the
+existing error/retry UI. Home/Crew reads are bounded by transport timeouts.
+`useBootLoading` registers screen reads with the platform boot gate; register new
+initial reads there rather than adding splash timers. Once opened, later account
+reloads and background refreshes keep the application mounted without replaying
+startup. The eight-second native deadline releases only a stalled animation.

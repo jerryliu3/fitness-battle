@@ -1,4 +1,5 @@
 "use client";
+import { useBootLoading } from "@/shell/boot-readiness";
 import { AppParagraph, AppText, AppHeading, Section } from "@/ui/section";
 
 import { RankBadge } from "../progress/rank-badge";
@@ -96,9 +97,10 @@ export function CrewPanel() {
   const [demoRest, setDemoRest] = useState<Record<string, string | null>>({});
   const [leaveConfirmOpen, setLeaveConfirmOpen] = useState(false);
   useEffect(() => { setDemoRest({}); setPanel(null); setNote(""); }, [user?.id]);
+  useBootLoading(Boolean(user && !offlineMode && !data && !note));
   async function reload() {
     try {
-      const res = await fetch("/api/crews");
+      const res = await fetch("/api/crews", { signal: AbortSignal.timeout(15000) });
       if (!res.ok) throw Error("Could not load your crews. Try again.");
       const nextData: CrewData = await res.json();
       setData(nextData);
