@@ -17,7 +17,7 @@
 | Chart | Real units, dates and inspectable values | Invented historical interpolation | Accessible labels and text receipt |
 | Milestone | Derived personal progress | Invented medals, unlocks or rewards | Threshold, source and earned/next text |
 
-Use DM Sans, dark navy text, pale neutral canvas, white surfaces, yellow actions and teal chart/landscape accents. Never use yellow for small text on white. Minimum web controls and native touch regions are 44px; maintain contrast and visible keyboard focus. Selected states also have shape/text/weight. Pending and errors preserve input; successes describe the actual outcome. Native sheets retain the parent and support system Back; web sheets use Radix focus management. Respect reduced motion and do not trigger haptics from decorative animation. No recording destination or social feed is introduced.
+Use Manrope, dark navy text, pale neutral canvas, white surfaces, yellow actions and teal chart/landscape accents. Never use yellow for small text on white. Minimum web controls and native touch regions are 44px; maintain contrast and visible keyboard focus. Selected states also have shape/text/weight. Pending and errors preserve input; successes describe the actual outcome. Native sheets retain the parent and support system Back; web sheets use Radix focus management. Respect reduced motion and do not trigger haptics from decorative animation. No recording destination or social feed is introduced.
 
 October 23: use the shared icon-only Back control, compact picker, photo commands and step-motion primitives. Full-screen Members and Athlete destinations cover the shell header. Floating navigation reserves content clearance and retains reduced-motion support.
 
@@ -25,7 +25,10 @@ October 23 mobile consumer polish: use open full-width sections with quiet botto
 
 The owner follow-up replaces the temporary sport emoji with **Tabler Icons** for native sports and utility chrome. Use the shared mobile `AppIcon` catalog at 1.8px stroke; the streak uses its filled flame. Provider marks and product illustrations retain their distinct roles. Group profile → effort score → streak on the left of the header, with Debug on the right and no additional enclosing card. Use a full-pixel `#d0dad7` section divider from `mobileSurfaces`, including Latest activity, achievements and Crew; device hairlines were too faint. Keep the hierarchy review light. Inline competition previews adapt to phone height; expansion retains the same distance window. See the [follow-up decisions and checks](../reviews/mobile-refinement-2026-10-23.md).
 
-## Semantic typography and sections (October 24, 2026)
+## Semantic typography and sections (October 24, 2026; superseded typography)
+
+The October 25 Manrope hierarchy below replaces the five-role sizes and restrictions
+in this historical section; composition, accessibility and section rules still apply.
 
 The shared contract is `SHELL_TYPOGRAPHY` and `SHELL_SECTION` in
 `packages/shared/src/shell.ts`. Platform components live in each app's
@@ -104,3 +107,14 @@ widths, desktop, 200% web zoom, large native text, long labels, empty/populated/
 error content, focus and screen-reader names. The gallery's state examples are
 illustrative; they do not replace validation on the live pilot routes. Native
 keeps the light Everyday Club palette under either system appearance.
+
+## Manrope hierarchy — October 25, 2026
+
+The approved full hierarchy supersedes the earlier five-recipe limit. The shared
+`SHELL_TYPOGRAPHY` contract now distinguishes row titles (`row`), supporting row
+text (`support`), aligned row totals (`value`), prominent stats (`metric`/`hero`),
+field labels (`field`) and bottom navigation (`nav`) from headings and controls.
+Use these roles through the existing adapters; do not add component-specific font
+sizes. Keep explanatory paragraphs at `body`, controls at `label`, timestamps and
+units at `caption`. Manrope is bundled on both platforms; the racing identity
+retains Nunito Sans Black. See the current design guide for exact values.

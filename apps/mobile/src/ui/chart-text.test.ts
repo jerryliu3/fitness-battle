@@ -13,7 +13,7 @@ it("counteracts plot stretching while respecting the user's text scale", async (
   await act(async () => renderer!.root.findByType("Svg" as never).props.onLayout({ nativeEvent: { layout: { width: 170, height: 300 } } }));
   const text = renderer!.root.findByType("SvgText" as never);
   expect(text.props.transform).toBe("translate(36 20) scale(4 1) translate(-36 -20)");
-  expect(text.props.fontSize).toBe(12);
-  expect(text.props.fontFamily).toBe("DMSans_400Regular");
+  expect(text.props.fontSize).toBe(13);
+  expect(text.props.fontFamily).toBe("Manrope_500Medium");
   await act(async () => renderer!.unmount());
 });

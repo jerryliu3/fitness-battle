@@ -364,9 +364,9 @@ export function ArenaLanes({
                 <rect x={-30} y={-33} width={Math.max(200, width - 16)} height={70} rx={14} fill="transparent" />
                 <line x1={-22} x2={width - 52} y1={38} y2={38} stroke="#e0e5dc" />
                 <text style={typographyStyle("caption")} x={40} y={4} fill="#616c63" >{rank}</text>
-                <text style={typographyStyle("caption")} x={64} y={-5} fill="#282f2c"  >{l.you ? selfLaneLabel(l.name) : l.name}{scores[l.id] != null ? ` ${effortRankBadge(scores[l.id]).symbol}` : ""}</text>
+                <text style={typographyStyle("row")} x={64} y={-5} fill="#282f2c"  >{l.you ? selfLaneLabel(l.name) : l.name}{scores[l.id] != null ? ` ${effortRankBadge(scores[l.id]).symbol}` : ""}</text>
                 <text style={typographyStyle("caption")} x={64} y={15} fill="#a67c00" >{scores[l.id] ?? "—"} effort score</text>
-                <text style={typographyStyle("caption")} x={width - 58} y={5} textAnchor="end" fill="#282f2c"  >{l.value.toFixed(1)} {unit}</text>
+                <text style={typographyStyle("value")} x={width - 58} y={5} textAnchor="end" fill="#282f2c"  >{l.value.toFixed(1)} {unit}</text>
               </motion.g>
               </g>
             </motion.g>

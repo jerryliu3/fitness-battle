@@ -15,7 +15,7 @@ it("keeps chart captions at their recipe size when the plot shrinks or stretches
   const text = () => renderer!.root.findAllByType("text")[0];
   expect(renderer!.root.findAllByType("text")).toHaveLength(1);
   expect(text().props.transform).toBe("translate(36 20) scale(2 0.5) translate(-36 -20)");
-  expect(text().props.style.fontSize).toBe("0.75rem");
+  expect(text().props.style.fontSize).toBe("0.8125rem");
   width = 340;
   matrix = { a: 1, b: 0, c: 0, d: 1 };
   await act(async () => resize());

@@ -27,7 +27,7 @@ The palette is defined in `packages/shared/src/shell.ts`, consumed by native `sr
 | Action soft | `#fff5d1` | Selected navigation and milestone backgrounds |
 | Field teal / deep | `#176c75` / `#103e46` | Charts and alpine competition scenery |
 
-DM Sans, bold readable page titles, 20px cards, 12px controls, 24px sheets, 44px minimum controls, teal keyboard focus and reduced-motion support. Primary actions use yellow with dark labels; navigation rows use quiet text and a directional affordance. Radix manages web dialogs; native sheets preserve the parent and system Back. Full component decisions are in [component guidelines](design/component-guidelines.md).
+Manrope, bold readable page titles, 20px cards, 12px controls, 24px sheets, 44px minimum controls, teal keyboard focus and reduced-motion support. Primary actions use yellow with dark labels; navigation rows use quiet text and a directional affordance. Radix manages web dialogs; native sheets preserve the parent and system Back. Full component decisions are in [component guidelines](design/component-guidelines.md).
 
 Home leads with a personal greeting, weekly chart and real next-rival preview, then latest activity, effort progress and a weekly recap. The activity journey expands on demand. Progress leads with week/month/year training, then basic session/effort achievements and records; effort score and season history have separate views. Achievements are read-only milestones derived from currently available counted activity and the primary sport's Open rating, without reward entitlements or new scoring writes.
 
@@ -185,13 +185,20 @@ Native choice controls overlay their parent; duration/distance use wheels and da
 
 ## Shared hierarchy implementation — October 24
 
-All product typography now uses exactly five DM Sans recipes: display 30/36 bold,
-heading 22/28 bold, body 16/24 regular, label 14/20 bold and caption 12/18 regular.
-These cover page/navigation/section/card titles, numbers, tabs, controls, badges,
-subtitles and charts on web and native. There are no metric-scale exceptions,
-uppercase transformations, custom tracking or medium weights. Brand/mascot art
-and historical studies remain separate assets. See [component guidelines](design/component-guidelines.md#semantic-typography-and-sections-october-24-2026)
-and the [five-style audit](reviews/ui-five-style-audit-2026-10-24.md).
+The October 25 typography review supersedes the former five-style limit. Product
+text uses Manrope on web and native, with semantic roles from
+`packages/shared/src/shell.ts`: display 32/38/800, heading 20/26/700,
+body 16/24/400, label (controls) 14/20/600, caption 13/18/500,
+hero metric 48/54/800, secondary metric 28/34/700, row title 17/24/600,
+row value 20/26/700, support 14/20/400, field label 13/18/600 and
+navigation 12/18/500 (size/leading/weight). Shared tracking is expressed in em
+and converted to logical pixels on native. Body copy stays readable; row titles,
+metadata, values and actions no longer share a bold label recipe. Metrics use
+real text, retaining font scaling and heading semantics only for actual headings.
+Web self-hosts the variable font; native bundles static 400–800 weights.
+Nunito Sans Black remains the Over / Taek racing wordmark. Historical artwork
+and prototype font assets remain separate. Role changes must update both
+platform adapters and the UI contract checker.
 
 The contract applies across Home, Compete, Progress, Crew, Athlete/settings,
 onboarding, notifications, authentication, history, awards, sleep/recovery,

@@ -101,17 +101,24 @@ export const HOME_HEALTH_COLORS = {
 } as const;
 
 export const SHELL_TYPE = {
-  display: "DM Sans",
-  body: "DM Sans",
+  display: "Manrope",
+  body: "Manrope",
 } as const;
 
-/** Logical pixels; web adapters convert sizes to rem, native keeps font scaling. */
+/** Logical pixels; tracking is in em. Adapters preserve native font scaling. */
 export const SHELL_TYPOGRAPHY = {
-  display: { size: 30, lineHeight: 36, weight: 700 },
-  heading: { size: 22, lineHeight: 28, weight: 700 },
-  body: { size: 16, lineHeight: 24, weight: 400 },
-  label: { size: 14, lineHeight: 20, weight: 700 },
-  caption: { size: 12, lineHeight: 18, weight: 400 },
+  display: { size: 32, lineHeight: 38, weight: 800, tracking: -0.035 },
+  heading: { size: 20, lineHeight: 26, weight: 700, tracking: -0.02 },
+  body: { size: 16, lineHeight: 24, weight: 400, tracking: 0 },
+  label: { size: 14, lineHeight: 20, weight: 600, tracking: 0 },
+  caption: { size: 13, lineHeight: 18, weight: 500, tracking: 0 },
+  hero: { size: 48, lineHeight: 54, weight: 800, tracking: -0.04 },
+  metric: { size: 28, lineHeight: 34, weight: 700, tracking: -0.025 },
+  row: { size: 17, lineHeight: 24, weight: 600, tracking: -0.015 },
+  value: { size: 20, lineHeight: 26, weight: 700, tracking: -0.02 },
+  support: { size: 14, lineHeight: 20, weight: 400, tracking: 0 },
+  field: { size: 13, lineHeight: 18, weight: 600, tracking: 0 },
+  nav: { size: 12, lineHeight: 18, weight: 500, tracking: 0 },
 } as const;
 export type TypographyRole = keyof typeof SHELL_TYPOGRAPHY;
 export const SHELL_SECTION = { subtitleGap: 4, contentGap: 12, beforeDivider: 16, afterDivider: 12, dividerWidth: 1, dividerColor: "#d0dad7" } as const;

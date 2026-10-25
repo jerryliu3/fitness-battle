@@ -295,7 +295,7 @@ export function TrainingAtlas({ state }: { state: CompeteState }) {
                   const a = state.activities.find((a) => a.id === id)!;
                   return (
                     <View key={id} style={s.row}>
-                      <AppText role="body" secondary >{sportById(a.sport).name}</AppText>
+                      <AppText role="row" >{sportById(a.sport).name}</AppText>
                       <AppText role="caption" secondary >
                         {formatTrainingHours(a.movingSec)} hr · {a.source}
                       </AppText>

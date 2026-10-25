@@ -228,20 +228,20 @@ export function AthleteOverview({
         <SectionHeader title="Lifetime totals"/>
         <div className="focus-season-stats">
           <div>
-            <AppText role="heading">{formatDistanceM(season.meters, state.units)}</AppText>
-            <AppText role="body" secondary>{unit} total</AppText>
+            <AppText role="metric">{formatDistanceM(season.meters, state.units)}</AppText>
+            <AppText role="caption" secondary>{unit} total</AppText>
           </div>
           <div>
-            <AppText role="heading">{season.sessions}</AppText>
-            <AppText role="body" secondary>sessions</AppText>
+            <AppText role="metric">{season.sessions}</AppText>
+            <AppText role="caption" secondary>sessions</AppText>
           </div>
           <div>
-            <AppText role="heading">{season.weeks}</AppText>
-            <AppText role="body" secondary>settled weeks</AppText>
+            <AppText role="metric">{season.weeks}</AppText>
+            <AppText role="caption" secondary>settled weeks</AppText>
           </div>
           <div>
-            <AppText role="heading">{state.lifetimeOvertakes}</AppText>
-            <AppText role="body" secondary>overtakes</AppText>
+            <AppText role="metric">{state.lifetimeOvertakes}</AppText>
+            <AppText role="caption" secondary>overtakes</AppText>
           </div>
         </div>
       </section>
@@ -258,7 +258,7 @@ export function AthleteOverview({
         </div>
 
         <div className="focus-elo-score-row">
-          <AppText role="display" className="ui-score-value">{effectiveElo.toLocaleString()}</AppText>
+          <AppText role="metric" className="ui-score-value">{effectiveElo.toLocaleString()}</AppText>
           <AppText role="body" secondary>Effort score</AppText>
         </div>
 

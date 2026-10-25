@@ -21,7 +21,7 @@ export function DailyHealth({ state }: { state: CompeteState }) {
             {signal.ticks.map((tick, i) => <Line key={i} x1={tick.outer.x} y1={tick.outer.y} x2={tick.inner.x} y2={tick.inner.y} stroke={colors.comparison}/>)}
             {signal.fill && <Path d={signal.fill} fill="none" stroke={colors.accent} strokeWidth={7} strokeLinecap="round"/>}
           </Svg>
-          <View style={s.reading}><AppText role={fontScale > 1.2 || width >= 360 ? "heading" : "body"} style={s.value}>{metric.value}</AppText>{!!metric.unit && <AppText role="caption" style={s.secondary}>{metric.unit}</AppText>}</View>
+          <View style={s.reading}><AppText role={fontScale > 1.2 || width >= 360 ? "value" : "body"} style={s.value}>{metric.value}</AppText>{!!metric.unit && <AppText role="caption" style={s.secondary}>{metric.unit}</AppText>}</View>
         </View>
         <AppText role="caption" style={s.secondary}>{healthSignalRange(metric)}</AppText>
       </Pressable>;

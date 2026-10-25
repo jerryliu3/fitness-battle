@@ -43,8 +43,8 @@ export function ProgressScreen() {
           </Text>
           <View style={[f.row, { flexWrap: "wrap" }]}>
             <View>
-              <AppText role="body" secondary >Distance</AppText>
-              <AppText role="label" >
+              <AppText role="caption" secondary >Distance</AppText>
+              <AppText role="metric" >
                 {you
                   ? formatVolume(
                       state.primary,
@@ -56,14 +56,14 @@ export function ProgressScreen() {
               </AppText>
             </View>
             <View>
-              <AppText role="body" secondary >Effort</AppText>
-              <AppText role="label" >
+              <AppText role="caption" secondary >Effort</AppText>
+              <AppText role="metric" >
                 {you ? formatEffort(you.effort) : "—"}
               </AppText>
             </View>
             <View>
-              <AppText role="body" secondary >Place</AppText>
-              <AppText role="label" >
+              <AppText role="caption" secondary >Place</AppText>
+              <AppText role="metric" >
                 {you ? `${you.place} / ${board.length}` : "—"}
               </AppText>
             </View>
