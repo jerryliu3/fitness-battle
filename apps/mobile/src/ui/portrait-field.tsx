@@ -1,5 +1,5 @@
 import { chartTextProps, textStyle  } from "./section";
-import { useEffect, useId, useMemo, useRef, useState, type MutableRefObject } from "react";
+import { useEffect, useId, useMemo, useRef, useState, type ComponentRef, type MutableRefObject } from "react";
 import {
   PanResponder,
   Image,
@@ -62,7 +62,7 @@ export function PortraitField({
   const [exploring, setExploring] = useState(false);
   const latest = useRef({ scene, view, onPan, width, height, exploring: exploring || fullscreen });
   latest.current = { scene, view, onPan, width, height, exploring: exploring || fullscreen };
-  const surface = useRef<View>(null);
+  const surface = useRef<ComponentRef<typeof View>>(null);
   const frame = useRef<number | null>(null);
   const pending = useRef<{ offset: number; center: number } | null>(null);
   const start = useRef({ focus: 0, center: 0, span: 1, depth: 0, y: 0 });
@@ -75,7 +75,7 @@ export function PortraitField({
       start.current = { focus: p.scene.focus, center: p.view.center, span: p.view.span, depth: portraitDepthAt(y / p.height * 600), y };
       // SVG child touches can report child-local coordinates. Measure the
       // responder surface so the distance anchor uses the board's origin.
-      surface.current?.measureInWindow((_x, top) => {
+      surface.current?.measureInWindow((_x: number, top: number) => {
         const localY = pageY - top - dy;
         start.current = { ...start.current, y: localY, depth: portraitDepthAt(localY / p.height * 600) };
       });
