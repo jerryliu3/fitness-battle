@@ -7,6 +7,7 @@ import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
 import "./routes.css";
 import {
+  normalizeRouteReplay, routeReplayAt, type RouteReplaySample,
   calculateRouteBounds,
   decodePolyline,
   type LngLat,
@@ -24,6 +25,7 @@ import {
 export interface RouteTimelapseMapProps {
   /** Array of [lng, lat] coordinates or an encoded polyline string */
   coordinates: LngLat[] | string;
+  routeReplay?: RouteReplaySample[];
   /** Camera mode: '3d-flyover' or '2d-overview'. Default: '3d-flyover' */
   mode?: "3d-flyover" | "2d-overview";
   /** Animation duration in milliseconds. Default: 12000 (12s) */
@@ -46,6 +48,7 @@ export interface RouteTimelapseMapProps {
 
 export function RouteTimelapseMap({
   coordinates,
+  routeReplay,
   mode: initialMode = "3d-flyover",
   durationMs = 12000,
   accentColor = "#f7c948",
@@ -57,6 +60,7 @@ export function RouteTimelapseMap({
   units = "metric",
   onUnavailable,
 }: RouteTimelapseMapProps) {
+  const replaySamples = useMemo(() => normalizeRouteReplay(routeReplay), [routeReplay]);
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<mapboxgl.Map | null>(null);
   const [mapLoaded, setMapLoaded] = useState(false);
@@ -441,6 +445,8 @@ export function RouteTimelapseMap({
             isPlaying={isPlaying}
             isFinished={isFinished}
             progress={progress}
+            replaySample={routeReplayAt(replaySamples, progress)}
+            hasReplaySamples={replaySamples.length > 0}
             currentDistanceKm={currentDistanceKm}
             totalDistanceKm={totalDistanceKm}
             mode={mode}

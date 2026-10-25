@@ -1,12 +1,13 @@
 import { useRef, useEffect } from "react";
 import { View, StyleSheet, type StyleProp, type ViewStyle } from "react-native";
 import WebView, { type WebViewMessageEvent } from "react-native-webview";
-import { encodePolyline, type LngLat } from "@fitness-battle/shared";
+import { encodePolyline, type RouteReplaySample, type LngLat } from "@fitness-battle/shared";
 import { mobileEnv } from "../lib/env";
 import { colors } from "../theme";
 
 export interface RouteTimelapseProps {
   coordinates: LngLat[] | string;
+  routeReplay?: RouteReplaySample[];
   mode?: "3d-flyover" | "2d-overview";
   units?: "us" | "metric";
   accentColor?: string;
@@ -18,6 +19,7 @@ export interface RouteTimelapseProps {
 
 export function RouteTimelapse({
   coordinates,
+  routeReplay,
   mode = "3d-flyover",
   units = "metric",
   accentColor = colors.lime,
@@ -54,13 +56,14 @@ export function RouteTimelapse({
     if (ready.current) {
       inject({
         type: "set-route",
+        routeReplay,
         coordinates: polylineStr,
         mode,
         accentColor,
         durationMs,
       });
     }
-  }, [polylineStr, mode, accentColor, durationMs]);
+  }, [polylineStr, routeReplay, mode, accentColor, durationMs]);
 
   return (
     <View style={[styles.frame, style]}>
@@ -81,7 +84,7 @@ export function RouteTimelapse({
             const msg = JSON.parse(event.nativeEvent.data);
             if (msg.type === "route-ready") {
               ready.current = true;
-              inject({ type: "set-route", coordinates: polylineStr, mode, accentColor, durationMs });
+              inject({ type: "set-route", routeReplay, coordinates: polylineStr, mode, accentColor, durationMs });
             } else if (msg.type === "route-finish") {
               onFinish?.();
             } else if (msg.type === "route-unavailable") {

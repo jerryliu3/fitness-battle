@@ -3,6 +3,7 @@ import { act, create } from "react-test-renderer";
 import { describe, expect, it, vi } from "vitest";
 import { encodePolyline, type Activity } from "@fitness-battle/shared";
 
+vi.mock("@/components/auth-context", () => ({ useAuth: () => ({ user: null, offlineMode: true }) }));
 vi.mock("next/dynamic", () => ({ default: () => (props: object) => createElement("replay", props) }));
 vi.mock("@/ui/sheet", () => ({ Sheet: ({ open, children }: { open: boolean; children: React.ReactNode }) => open ? children : null }));
 vi.mock("@/lib/env", () => ({ webEnv: { mapboxAccessToken: "pk.test" } }));

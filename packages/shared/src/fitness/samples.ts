@@ -32,6 +32,7 @@ export function activityFromSample(
     id: sample.id,
     summaryPolyline: sample.summaryPolyline,
     detailedPolyline: sample.detailedPolyline,
+    routeReplay: sample.routeReplay,
     elevationGainM: sample.elevationGainM,
     routeBounds: sample.routeBounds,
     sport: sample.categorySlug,

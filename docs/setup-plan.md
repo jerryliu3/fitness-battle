@@ -120,3 +120,11 @@ existing error/retry UI. Home/Crew reads are bounded by transport timeouts.
 initial reads there rather than adding splash timers. Once opened, later account
 reloads and background refreshes keep the application mounted without replaying
 startup. The eight-second native deadline releases only a stalled animation.
+
+
+### Session replay samples
+
+Apply `20261025023647_activity_replay_samples.sql` before deploying recorded replay
+metrics. Reimport GPS files for sample retention; older routes remain playable.
+Native/Expo web need the updated `/route-scene` deployment. No production migration
+was run during implementation. See [scope and verification](reviews/session-map-replay.md).

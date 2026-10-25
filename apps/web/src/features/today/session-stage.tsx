@@ -13,6 +13,7 @@ export function SessionStage({state,activities,suggestion,onRemove,actions}:{sta
   const sport=model.rows[0]?.sport??state.primary;
   const seconds=model.sessions?model.movingSec:(suggestion?.minutes??0)*60;
   return <section className="session-stage" aria-label={model.sessions?"Recorded sessions":"Today's suggestion"}>
+    {model.sessions ? <div className="fb-stack">{model.rows.map(a => <ActivityRoute units={state.units} key={a.id} activity={a} />)}</div> : null}
     {model.sessions?<div className="club-session-meta"><span className="club-status-badge">{model.rows.every(a=>isVerifiedActivity(a))?"✓ GPS Tracked":"Activity"}{model.rows.every(a=>countsOnTrack(a,"open"))?"":" · Excluded"}</span><span className="fb-note">{new Date(model.rows[0]!.startedAt).toLocaleDateString("en-US",{weekday:"short",month:"short",day:"numeric",timeZone:APP_TIMEZONE})}</span></div>:null}
     <AppParagraph typographyRole="label" className="fb-kicker">{model.sessions?`${model.sessions} recorded session${model.sessions===1?"":"s"}`:"Today's suggestion"}</AppParagraph>
     <AppHeading level={1} role="display">{model.sessions?"Time well spent.":suggestion?.title??"Make room to move."}</AppHeading>
@@ -23,7 +24,6 @@ export function SessionStage({state,activities,suggestion,onRemove,actions}:{sta
         <AppParagraph typographyRole="caption" className="fb-note">{a.source} · {a.verified?"GPS Tracked":a.source==="manual"?"Manual":"Activity"}{sportById(a.sport).gps?` · ${formatVolume(a.sport,a.distanceM,a.movingSec,state.units)}`:""}{a.avgHr?` · ${a.avgHr} bpm`:""}</AppParagraph>
         {removing===a.id?<div className="session-remove-confirm"><AppParagraph typographyRole="body">Remove this session from your activity?</AppParagraph><button type="button" className="fb-btn-line" onClick={()=>{onRemove(a.id);setRemoving(null);}}>Remove session</button><button type="button" className="fb-btn-ghost" onClick={()=>setRemoving(null)}>Keep session</button></div>:<button type="button" className="fb-btn-ghost" onClick={()=>setRemoving(a.id)}>Remove session</button>}
       </div></details>)}</div>
-      <div className="fb-stack">{model.rows.map(a => <ActivityRoute units={state.units} key={a.id} activity={a} />)}</div>
       <ImpactReceipt state={state} seconds={model.movingSec} sport={sport}/>
     </>}
   </section>;

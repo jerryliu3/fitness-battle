@@ -155,6 +155,7 @@ export interface Activity {
   /** Optional recorded GPS geometry; never inferred from verification or distance. */
   summaryPolyline?: string | null;
   detailedPolyline?: string | null;
+  routeReplay?: import("../route-replay").RouteReplaySample[] | null;
   elevationGainM?: number | null;
   routeBounds?: [number, number, number, number] | null;
   id: string;

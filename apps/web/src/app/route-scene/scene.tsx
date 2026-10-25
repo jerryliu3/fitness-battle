@@ -3,7 +3,7 @@
 import { useEffect, useState, useRef } from "react";
 import dynamic from "next/dynamic";
 import { useSearchParams } from "next/navigation";
-import { type LngLat } from "@fitness-battle/shared";
+import { normalizeRouteReplay, type RouteReplaySample, type LngLat } from "@fitness-battle/shared";
 import { webEnv } from "@/lib/env";
 import type { RouteTimelapseMapProps } from "@/components/routes";
 
@@ -15,6 +15,7 @@ const RouteTimelapseMap = dynamic<RouteTimelapseMapProps>(
 export interface RouteSceneMessage {
   type: "set-route" | "play" | "pause" | "seek" | "toggle-mode";
   coordinates?: LngLat[] | string;
+  routeReplay?: unknown;
   mode?: "3d-flyover" | "2d-overview";
   accentColor?: string;
   durationMs?: number;
@@ -33,6 +34,7 @@ export function RouteScene() {
   const [coordinates, setCoordinates] = useState<LngLat[] | string>(
     paramPolyline || "",
   );
+  const [routeReplay, setRouteReplay] = useState<RouteReplaySample[]>([]);
   const [mode, setMode] = useState<"3d-flyover" | "2d-overview">(paramMode);
   const [accentColor, setAccentColor] = useState<string>(paramAccent);
   const [durationMs, setDurationMs] = useState(Math.max(1000, Math.min(120000, Number(searchParams.get("duration")) || 12000)));
@@ -63,6 +65,7 @@ export function RouteScene() {
 
       if (msg.type === "set-route") {
         if (msg.coordinates) setCoordinates(msg.coordinates);
+        setRouteReplay(normalizeRouteReplay(msg.routeReplay));
         if (msg.mode) setMode(msg.mode);
         if (msg.accentColor) setAccentColor(msg.accentColor);
         if (Number.isFinite(msg.durationMs)) setDurationMs(Math.max(1000, Math.min(120000, msg.durationMs!)));
@@ -96,6 +99,7 @@ export function RouteScene() {
     <div style={{ height: "100dvh", width: "100vw", background: "#142b3b", overflow: "hidden" }}>
       {coordinates.length > 0 ? <RouteTimelapseMap
         coordinates={coordinates}
+        routeReplay={routeReplay}
         key={`${typeof coordinates === "string" ? coordinates : JSON.stringify(coordinates)}:${mode}`}
         mode={mode}
         autoPlay={false}
