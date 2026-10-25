@@ -1959,61 +1959,37 @@
 .focus-standing-bar-fill.is-you {
   background: #c8f53b;
 }
-.week-podium-stage {
+.week-result-podium {
   display: flex;
   align-items: flex-end;
   justify-content: center;
-  gap: 10px;
-  padding: 14px 12px 12px;
-  border-radius: 16px;
-  background: #ffffffaa;
+  gap: 8px;
+  padding-top: 6px;
+  padding-bottom: 4px;
 }
-.week-podium-slot {
+.week-result-podium-step {
   flex: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 4px;
-}
-.week-podium-name {
-  max-width: 96px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  letter-spacing: normal;
-  text-transform: none;
-  font: var(--type-caption);
-}
-.week-podium-name.is-you {
-  color: var(--ink);
-}
-.week-podium-val {
-  letter-spacing: normal;
-  text-transform: none;
-  font: var(--type-caption);
-  color: var(--muted);
-  font-variant-numeric: tabular-nums;
-}
-.week-podium-pedestal {
-  width: 100%;
-  display: grid;
-  place-items: center;
-  border-radius: 12px 12px 6px 6px;
-  background: var(--accent-soft);
-  border: 1px solid var(--line);
-  color: var(--ink);
+  justify-content: center;
+  gap: 2px;
+  border-radius: 12px;
+  background: #ffffff99;
+  border: 1px solid #c3a65566;
+  color: #142b3b;
   letter-spacing: normal;
   text-transform: none;
   font: var(--type-label);
 }
-.week-podium-pedestal.podium-1 {
-  height: 58px;
-  background: #c8f53b;
-  border-color: var(--ink);
+.week-result-podium-step.is-you {
+  background: #142b3b;
+  border: 2px solid #142b3b;
+  color: #f7c948;
 }
-.week-podium-pedestal.podium-2 {
-  height: 44px;
-}
-.week-podium-pedestal.podium-3 {
-  height: 34px;
+.week-result-podium-step.is-you small {
+  color: #ffffff;
+  letter-spacing: normal;
+  text-transform: none;
+  font: var(--type-caption);
 }
