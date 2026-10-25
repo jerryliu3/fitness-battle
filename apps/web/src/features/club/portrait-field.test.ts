@@ -19,6 +19,7 @@ it("renders real portraits, relative gaps and in-board controls without requirin
       view: { center: 10, span: 1.2 },
       unit: "km",
       onZoom: () => {},
+      onPan: () => {},
       onSelect: () => {},
     }),
   );
@@ -27,6 +28,6 @@ it("renders real portraits, relative gaps and in-board controls without requirin
   expect(html).toContain('aria-label="Zoom in"');
   expect(html).toContain('aria-label="Next lane"');
   expect(html).toContain("YOU");
-  expect(html).toContain("Fixed perspective competition field");
+  expect(html).toContain("Distance perspective field");
   expect(html).not.toContain("canvas");
 });
