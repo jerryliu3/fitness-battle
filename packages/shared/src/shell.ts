@@ -89,6 +89,17 @@ export const SHELL_RADIUS = {
   pill: 999,
 } as const;
 
+/** Signal Room surface for Home daily readings, on both platforms. */
+export const HOME_HEALTH_COLORS = {
+  background: SHELL_COLORS.ink,
+  tile: "#1b3644",
+  border: "#31505a",
+  text: "#f0f4ec",
+  secondary: "#b7cbd2",
+  gold: SHELL_COLORS.tennis,
+  sage: "#b6cfb5",
+} as const;
+
 export const SHELL_TYPE = {
   display: "DM Sans",
   body: "DM Sans",

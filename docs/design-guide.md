@@ -234,3 +234,15 @@ activity rows, standings and profile entries. Fall back only for absent/failed
 images. Current-account photo edits/removal override stale roster copies. Keep
 map thumbnails functional and race capsules as race markers. Reuse authorized
 roster data for session portraits; never broaden profile reads for presentation.
+
+## Home chart and daily health — October 25 selection
+
+Production Home on web/native now combines the Portfolio cumulative hours chart
+(teal line, subtle fill, quiet previous-week comparison, endpoint dates, no weekday
+picker) with Signal Room's dark four-tile daily health panel beneath it. Current
+week, session totals and activity actions remain. `HOME_HEALTH_COLORS` defines navy
+`#142b3b`, tile `#1b3644`, border `#31505a`, text `#f0f4ec`, secondary `#b7cbd2`,
+yellow `#f7c948` and sage `#b6cfb5`. Historical sleep gaps stay visible; no medical
+ranges or targets are inferred. Only stored current sleep duration is available;
+Steps, Resting HR and HRV show unavailable until their data feeds exist. See the
+[implementation review](reviews/home-health-production/README.md).
