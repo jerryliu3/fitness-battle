@@ -144,7 +144,7 @@ export function PortraitField({
       ) : null}
       <svg
         ref={svg}
-        style={{ touchAction: exploring ? "none" : "pan-y" }}
+        style={{ touchAction: exploring || immersive ? "none" : "pan-y" }}
         tabIndex={0}
         onKeyDown={e => {
           if (e.target !== e.currentTarget) return;
@@ -182,7 +182,7 @@ export function PortraitField({
           if (
             !d.moved &&
             Math.hypot(dx, dy) > 8 &&
-            (exploring || Math.abs(dx) > Math.abs(dy) * 1.3)
+            (exploring || immersive || Math.abs(dx) > Math.abs(dy) * 1.3)
           ) {
             d.moved = true;
             e.currentTarget.setPointerCapture(e.pointerId);

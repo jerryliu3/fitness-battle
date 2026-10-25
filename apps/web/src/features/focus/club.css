@@ -1644,6 +1644,19 @@
 .club-perspective-board.is-immersive .club-board-controls {
   bottom: calc(max(16px, env(safe-area-inset-bottom)) + 150px);
 }
+.focus-field-expanded .club-perspective-board.is-immersive {
+  position: relative;
+  z-index: 1;
+}
+.focus-field-expanded .club-field-explore,
+.focus-field-expanded .club-perspective-group > .club-board-status,
+.focus-field-expanded .club-field-offscreen {
+  display: none;
+}
+.focus-field-expanded .club-perspective-board.is-immersive .club-board-controls {
+  z-index: 90;
+  bottom: calc(max(14px, env(safe-area-inset-bottom)) + 210px);
+}
 .focus-broadcast-hud {
   position: fixed;
   inset: 0;
