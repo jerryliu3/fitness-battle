@@ -8,11 +8,11 @@
 .home-health-tile[aria-expanded=true]{border-color:var(--health-accent)}
 .home-health-name{font:var(--type-label);padding-right:20px;overflow-wrap:anywhere}
 .home-health-icon{position:absolute;right:12px;top:14px;width:18px;height:18px;color:var(--health-accent)}
-.home-health-tile strong{font:var(--type-display);font-weight:500;font-size:28px;line-height:1.2;font-variant-numeric:tabular-nums;letter-spacing:-.5px;overflow-wrap:anywhere}
+.home-health-tile strong{font:var(--type-display);font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
 .home-health-context{font:var(--type-caption);color:var(--health-secondary)}
 .home-health-spark{width:80px;height:36px;align-self:flex-end;margin-top:auto}
 .home-health-detail{padding:14px;background:var(--health-tile);border-radius:12px;font:var(--type-body)}
 .home-health-detail p{margin:6px 0}
 .home-health-detail>span,.home-health-note{font:var(--type-caption);color:var(--health-secondary)}
 .home-health-note{margin:0}
-@media(max-width:360px){.home-health{padding:0}.home-health-tile{padding:12px}.home-health-tile strong{font-size:25px}.home-health-name{font-size:13px}}
+@media(max-width:360px){.home-health{padding:0}.home-health-tile{padding:12px}}

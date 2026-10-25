@@ -32,7 +32,7 @@ const s = StyleSheet.create({
   grid: { flexDirection: "row", flexWrap: "wrap", gap: 10 },
   tile: { padding: 14, minHeight: 145, borderWidth: 1, borderColor: colors.border, borderRadius: 20, backgroundColor: colors.tile, gap: 8 },
   tileHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", gap: 4 },
-  value: { ...textStyle("display"), fontSize: 28, lineHeight: 34, fontFamily: "DMSans_500Medium", color: colors.text, fontVariant: ["tabular-nums"] },
+  value: { ...textStyle("display"), color: colors.text, fontVariant: ["tabular-nums"] },
   secondary: { color: colors.secondary },
   detail: { backgroundColor: colors.tile, borderRadius: 12, padding: 14, gap: 6 },
 });
