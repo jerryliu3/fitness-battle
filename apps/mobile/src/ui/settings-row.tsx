@@ -1,3 +1,4 @@
+import { textStyle } from "./section";
 import { AppIcon, type AppIconName } from "./app-icon";
 import { Pressable, Text, View } from "react-native";
 import { f } from "./focus";
@@ -28,8 +29,8 @@ export function SettingsRow({
     >
       {settingsIcons[title] && <AppIcon name={settingsIcons[title]} />}
       <View style={f.grow}>
-        <Text style={f.rowTitle}>{title}</Text>
-        <Text style={f.small}>{detail}</Text>
+        <Text style={textStyle("label")}>{title}</Text>
+        <Text style={textStyle("caption")}>{detail}</Text>
       </View>
       <AppIcon name="chevron" size={18} />
     </Pressable>

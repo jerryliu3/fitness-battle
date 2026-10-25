@@ -122,23 +122,23 @@ export function FocusSheet({
           {!fullScreen && <View style={f.handle} />}
           {fullScreen ? <View style={[f.row, { paddingHorizontal: 22, paddingVertical: 8 }]}>
             <IconButton icon="back" label="Return to previous screen" onPress={onClose} />
-            <AppText role="navigationTitle" accessibilityRole="header" style={{ flex: 1, textAlign: "center" }}>{content.current.title}</AppText>
+            <AppText role="heading" accessibilityRole="header" style={{ flex: 1, textAlign: "center" }}>{content.current.title}</AppText>
             <View style={{ width: 44 }} />
           </View> : !minimal && <View style={f.sheetHead}>
             <View />
             <Pressable onPress={onClose} accessibilityRole="button" accessibilityLabel="Close dialog" style={f.close}>
-              <AppText role="controlSymbol">×</AppText>
+              <AppText role="label">×</AppText>
             </Pressable>
           </View>}
           <ScrollView
             keyboardShouldPersistTaps="handled"
             contentContainerStyle={f.sheetBody}
           >
-            {!fullScreen && <AppText role="pageTitle" accessibilityRole="header">
+            {!fullScreen && <AppText role="display" accessibilityRole="header">
               {content.current.title}
             </AppText>}
             {Boolean(content.current.body) && (
-              <Text style={f.copy}>{content.current.body}</Text>
+              <Text style={textStyle("body")}>{content.current.body}</Text>
             )}
             {content.current.children}
           </ScrollView>
@@ -323,10 +323,10 @@ export function FocusDisclosure({
         style={[f.disclosureHead, compact && f.disclosureHeadCompact]}
       >
         <View style={f.grow}>
-          <Text style={f.rowTitle}>{title}</Text>
-          {Boolean(detail) && <AppText role="supporting" secondary>{detail}</AppText>}
+          <Text style={textStyle("label")}>{title}</Text>
+          {Boolean(detail) && <AppText role="body" secondary>{detail}</AppText>}
         </View>
-        <AppText role="controlSymbol">{open ? "−" : "＋"}</AppText>
+        <AppText role="label">{open ? "−" : "＋"}</AppText>
       </Pressable>
       {open && (
         <View style={[f.disclosureBody, compact && f.disclosureBodyCompact]}>
@@ -353,21 +353,19 @@ export const f = StyleSheet.create({
     marginBottom: 8,
   },
   kicker: {
-    ...textStyle("badgeLabel"),
-    letterSpacing: 0.8,
-    textTransform: "uppercase",
-    color: c.muted,
-  },
+    ...textStyle("label"),
+    color: c.muted
+},
   title: {
-    ...textStyle("pageTitle"),
+    ...textStyle("display"),
     color: c.ink,
   },
   h2: {
-    ...textStyle("contentTitle"),
+    ...textStyle("heading"),
     color: c.ink,
   },
   sectionTitle: {
-    ...textStyle("sectionTitle"),
+    ...textStyle("heading"),
     color: c.ink,
   },
   copy: {
@@ -379,7 +377,7 @@ export const f = StyleSheet.create({
     color: c.muted,
   },
   rowTitle: {
-    ...textStyle("itemTitle"),
+    ...textStyle("label"),
     color: c.ink,
   },
   row: {
@@ -414,7 +412,7 @@ export const f = StyleSheet.create({
     gap: 12,
   },
   buttonText: {
-    ...textStyle("actionLabel"),
+    ...textStyle("label"),
     color: c.ink,
   },
   secondary: {
@@ -445,7 +443,7 @@ export const f = StyleSheet.create({
   },
   segmentSelected: { backgroundColor: c.ink },
   segmentText: {
-    ...textStyle("itemTitle"),
+    ...textStyle("label"),
     color: c.muted,
     textAlign: "center",
   },
@@ -457,7 +455,7 @@ export const f = StyleSheet.create({
     flexShrink: 0,
   },
   textButtonText: {
-    ...textStyle("actionLabel"),
+    ...textStyle("label"),
     color: c.ink,
   },
   disclosureCompact: {
@@ -545,9 +543,7 @@ export const f = StyleSheet.create({
   divider: { height: 1, backgroundColor: c.line },
   feedback: { padding: 14, backgroundColor: c.soft, borderRadius: 10 },
   massive: {
-    fontFamily: "DMSans_400Regular",
-    fontSize: 48,
-    letterSpacing: -2,
-    color: c.ink,
-  },
+    ...textStyle("display"),
+    color: c.ink
+},
 });

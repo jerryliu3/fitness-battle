@@ -1,4 +1,5 @@
-import { AppText, textStyle } from "../ui/section";
+import { ChartSvg, ChartText } from "../ui/chart-text";
+import { chartTextProps, AppText, textStyle  } from "../ui/section";
 import type { CompeteState } from "@fitness-battle/shared";
 import { APP_TIMEZONE, competeNow, dayKey, weeklyHoursComparison, weeklyPeriodBounds } from "@fitness-battle/shared";
 import { Platform, Pressable, StyleSheet, Text, View } from "react-native";
@@ -79,7 +80,7 @@ export function WeekChart({ state, onOpen, ready = true }: { state: CompeteState
 
             <View style={s.chartWrap}>
             <ChartScrubber label="This week’s cumulative hours" points={points} width={chartW} height={170} plotTop={yTop} plotBottom={yBottom}>
-              <Svg
+              <ChartSvg
                 width="100%"
                 height={210}
                 viewBox={`0 0 ${chartW} 170`}
@@ -101,16 +102,16 @@ export function WeekChart({ state, onOpen, ready = true }: { state: CompeteState
                 </Defs>
 
                 {/* Horizontal gridlines & Y labels */}
-                <SvgText
+                <ChartText
                   x="22"
                   y={yTop + 3}
                   textAnchor="end"
-                  fontSize="9"
+
                   fill={c.muted}
-                  fontWeight="500"
+
                 >
                   {`${yMax}h`}
-                </SvgText>
+                </ChartText>
                 <Line
                   x1={xStart}
                   y1={yTop}
@@ -120,16 +121,16 @@ export function WeekChart({ state, onOpen, ready = true }: { state: CompeteState
                   strokeDasharray="3 3"
                 />
 
-                <SvgText
+                <ChartText
                   x="22"
                   y={yMidPos + 3}
                   textAnchor="end"
-                  fontSize="9"
+
                   fill={c.muted}
-                  fontWeight="500"
+
                 >
                   {`${yMid}h`}
-                </SvgText>
+                </ChartText>
                 <Line
                   x1={xStart}
                   y1={yMidPos}
@@ -139,16 +140,16 @@ export function WeekChart({ state, onOpen, ready = true }: { state: CompeteState
                   strokeDasharray="3 3"
                 />
 
-                <SvgText
+                <ChartText
                   x="22"
                   y={yBottom + 3}
                   textAnchor="end"
-                  fontSize="9"
+
                   fill={c.muted}
-                  fontWeight="500"
+
                 >
                   0h
-                </SvgText>
+                </ChartText>
                 <Line
                   x1={xStart}
                   y1={yBottom}
@@ -194,7 +195,7 @@ export function WeekChart({ state, onOpen, ready = true }: { state: CompeteState
                 />
 
                 {/* Direct on-chart label: Last week at end */}
-                <SvgText
+                <ChartText
                   x={xEnd}
                   y={
                     Math.abs(currPreciseX - xEnd) < 50 &&
@@ -203,35 +204,33 @@ export function WeekChart({ state, onOpen, ready = true }: { state: CompeteState
                       : Math.max(yTop + 10, prevLastY - 6)
                   }
                   textAnchor="end"
-                  fontSize="9"
-                  fontWeight="700"
+
                   fill={c.muted}
                 >
                   Last week
-                </SvgText>
+                </ChartText>
 
                 {/* Day labels */}
                 {dayLabels.map((lbl, i) => {
                   const cx = getDayCenterX(i);
                   const isToday = i === nowDayIndex;
                   return (
-                    <SvgText
+                    <ChartText
                       key={i}
                       x={cx}
                       y={yBottom + 16}
                       textAnchor="middle"
-                      fontSize="10"
-                      fontWeight={isToday ? "700" : "500"}
+
                       fill={isToday ? c.ink : c.muted}
                     >
                       {lbl}
-                    </SvgText>
+                    </ChartText>
                   );
                 })}
-              </Svg>
+              </ChartSvg>
             </ChartScrubber>
             </View>
-            {onOpen && <Pressable accessibilityRole="button" accessibilityLabel="Explore your week" onPress={onOpen} style={{ minHeight: 44, justifyContent: "center", alignSelf: "flex-end" }}><AppText role="itemTitle" >Your week →</AppText></Pressable>}
+            {onOpen && <Pressable accessibilityRole="button" accessibilityLabel="Explore your week" onPress={onOpen} style={{ minHeight: 44, justifyContent: "center", alignSelf: "flex-end" }}><AppText role="label" >Your week →</AppText></Pressable>}
           </View></ChartFrame>);
 }
 const s = StyleSheet.create({
@@ -242,11 +241,9 @@ const s = StyleSheet.create({
     borderBottomColor: mobileSurfaces.divider,
   },
   statsMain: {
-    fontFamily: "DMSans_700Bold",
-    fontSize: 24,
-    color: c.ink,
-    letterSpacing: -0.4,
-  },
+    ...textStyle("heading"),
+    color: c.ink
+},
   statsHeader: {
     flexDirection: "row",
     justifyContent: "space-between",

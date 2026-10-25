@@ -1,7 +1,6 @@
 "use client";
 import { AppParagraph, AppText, typographyStyle, SectionHeader, Section, AppHeading } from "@/ui/section";
 
-
 import { isOwnerEmail } from "@/lib/auth/design-access";
 import { ReportIssue } from "@/components/report-issue";
 import { useAuth } from "@/components/auth-context";
@@ -171,7 +170,7 @@ function YouContent({ surface }: { surface: "progress" | "athlete" }) {
     >
       <div style={{ display: "grid", gap: 12, marginTop: 16 }}>
         {deleteError ? (
-          <AppParagraph typographyRole="supporting" className="fb-error" role="alert">
+          <AppParagraph typographyRole="body" className="fb-error" role="alert">
             {deleteError}
           </AppParagraph>
         ) : null}
@@ -485,7 +484,7 @@ function YouContent({ surface }: { surface: "progress" | "athlete" }) {
           primary={state.primary}
         />
         <section className="focus-card fb-stack">
-          <AppParagraph typographyRole="badgeLabel" className="fb-kicker">Account</AppParagraph>
+          <AppParagraph typographyRole="label" className="fb-kicker">Account</AppParagraph>
           <SectionHeader title="Sign in to save progress"/>
           <AppParagraph typographyRole="body" className="fb-copy">
             Create an account or sign in to keep lifetime totals and season
@@ -517,7 +516,7 @@ function YouContent({ surface }: { surface: "progress" | "athlete" }) {
       <div className="focus-athlete">
         <AthleteOverview state={state} sections="profile" />
         <section className="focus-card fb-stack">
-          <AppParagraph typographyRole="badgeLabel" className="fb-kicker">Account</AppParagraph>
+          <AppParagraph typographyRole="label" className="fb-kicker">Account</AppParagraph>
           <SectionHeader title="Sign in to sync your athlete"/>
           <AppParagraph typographyRole="body" className="fb-copy">
             Create an account or sign in to connect trackers and keep progress
@@ -577,7 +576,7 @@ function YouContent({ surface }: { surface: "progress" | "athlete" }) {
           ‹
         </button>
         <header className="focus-heading">
-                    <AppHeading level={1} role="navigationTitle">{PANEL_TITLES[panel]}</AppHeading>
+                    <AppHeading level={1} role="heading">{PANEL_TITLES[panel]}</AppHeading>
         </header>
         <div className="focus-settings-panel">
           {panel === "connections" ? (
@@ -602,8 +601,8 @@ function YouContent({ surface }: { surface: "progress" | "athlete" }) {
                     >
                       <span className="club-integration-icon" style={{ background: INTEGRATION_ICONS[provider.id].background }}><svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><path d={INTEGRATION_ICONS[provider.id].path} fill={INTEGRATION_ICONS[provider.id].color} fillRule="evenodd" /></svg></span>
                       <div className="fb-grow">
-                        <strong style={{ ...typographyStyle("itemTitle") }}>{provider.name}</strong>
-                        <AppText as="small" role="supporting" secondary style={{ ...typographyStyle("caption"), color: "var(--muted)", display: "block", marginTop: 2 }}>
+                        <strong style={{ ...typographyStyle("label") }}>{provider.name}</strong>
+                        <AppText as="small" role="body" secondary style={{ ...typographyStyle("caption"), color: "var(--muted)", display: "block", marginTop: 2 }}>
                           {provider.blurb}
                           {link?.linked
                             ? ` · ${offlineMode ? "Demo · sample data" : evidenceLabel(status === "stub" ? "stub" : status === "connected" ? "receiving_data" : "disconnected")}`
@@ -646,7 +645,7 @@ function YouContent({ surface }: { surface: "progress" | "athlete" }) {
                     type="button"
                     className="fb-btn-ghost"
                     style={{
-    ...typographyStyle("actionLabel"),
+    ...typographyStyle("label"),
     width: "auto",
     padding: 0,
     color: "var(--red, #b83a38)",
@@ -734,7 +733,7 @@ function YouContent({ surface }: { surface: "progress" | "athlete" }) {
                     type="button"
                     className="fb-btn-ghost"
                     style={{
-    ...typographyStyle("actionLabel"),
+    ...typographyStyle("label"),
     color: "var(--red, #b83a38)",
     border: "1px solid #f3d1cc",
     borderRadius: 8,
@@ -765,7 +764,7 @@ function YouContent({ surface }: { surface: "progress" | "athlete" }) {
                 <div key={band.name} className="fb-row">
                   <span className="fb-grow">
                     {band.name}
-                    <AppText as="small" role="supporting" secondary>
+                    <AppText as="small" role="body" secondary>
                       {band.min}+ · {band.blurb}
                     </AppText>
                   </span>
@@ -823,7 +822,7 @@ function YouContent({ surface }: { surface: "progress" | "athlete" }) {
         </>} history={null}/>
       ) : user ? (
         <>
-      <header className="club-detail-heading"><Link href="/today" className="club-icon-button" aria-label="Return to Home">‹</Link><AppHeading level={1} role="navigationTitle">Athlete</AppHeading></header>
+      <header className="club-detail-heading"><Link href="/today" className="club-icon-button" aria-label="Return to Home">‹</Link><AppHeading level={1} role="heading">Athlete</AppHeading></header>
       <AthleteOverview
         state={state}
         email={user.email}
@@ -857,7 +856,7 @@ function YouContent({ surface }: { surface: "progress" | "athlete" }) {
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d={SETTINGS_ICON_PATHS[PANEL_TITLES[id] as keyof typeof SETTINGS_ICON_PATHS]} /></svg>
             <span>
               <b>{PANEL_TITLES[id]}</b>
-              <AppText as="small" role="supporting" secondary>{detail}</AppText>
+              <AppText as="small" role="body" secondary>{detail}</AppText>
             </span>
             <span aria-hidden="true">→</span>
           </button>

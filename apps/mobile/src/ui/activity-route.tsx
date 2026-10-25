@@ -1,3 +1,4 @@
+import { textStyle } from "./section";
 import { useMemo, useState } from "react";
 import { Text, View } from "react-native";
 import { activityRoute, type Activity } from "@fitness-battle/shared";
@@ -12,15 +13,15 @@ export function ActivityRoute({ activity, milestone = false, units = "metric" }:
   if (!coordinates || !activity) return null;
   const show = () => { setUnavailable(false); setOpen(true); };
   return <View style={{ gap: 8 }}>
-    {activity.id.startsWith("local-route-") && <Text style={f.small}>Local file preview · original activity date · Open only</Text>}
+    {activity.id.startsWith("local-route-") && <Text style={textStyle("caption")}>Local file preview · original activity date · Open only</Text>}
     <RouteStaticPreview coordinates={coordinates} height={260} strokeColor="176c75" showPlayBadge={false} onPress={show} />
     <FocusButton label="Explore route · 2D / 3D" secondary onPress={show} />
     <FocusSheet open={open} title="Your route" onClose={() => setOpen(false)} fullScreen>
-      {activity.elevationGainM != null && <Text style={f.small}>{activity.elevationGainM.toLocaleString()} m elevation gain</Text>}
-      {milestone && <Text style={f.small}>Full activity route · the record segment is not identified.</Text>}
-      {open && (unavailable ? <><RouteStaticPreview coordinates={coordinates} showPlayBadge={false} /><Text style={f.small}>Route outline only. Interactive maps and flyovers are currently unavailable.</Text></>
+      {activity.elevationGainM != null && <Text style={textStyle("caption")}>{activity.elevationGainM.toLocaleString()} m elevation gain</Text>}
+      {milestone && <Text style={textStyle("caption")}>Full activity route · the record segment is not identified.</Text>}
+      {open && (unavailable ? <><RouteStaticPreview coordinates={coordinates} showPlayBadge={false} /><Text style={textStyle("caption")}>Route outline only. Interactive maps and flyovers are currently unavailable.</Text></>
         : <RouteTimelapse key={activity.id} coordinates={coordinates} units={units} mode="2d-overview" onUnavailable={() => setUnavailable(true)} />)}
-      <Text style={f.small}>Replay follows recorded GPS points. Playback speed is illustrative.</Text>
+      <Text style={textStyle("caption")}>Replay follows recorded GPS points. Playback speed is illustrative.</Text>
     </FocusSheet>
   </View>;
 }

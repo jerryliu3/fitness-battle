@@ -1,4 +1,4 @@
-import { Section, AppText } from "../ui/section";
+import { textStyle, Section, AppText  } from "../ui/section";
 import { DateTimeField } from "../ui/form-picker";
 import { SHELL_COLORS as clubColors } from "@fitness-battle/shared";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -136,7 +136,7 @@ export function CrewSessions({
                 timeZone: s.time_zone,
               })}
             </Text>
-            <Text style={[f.massive, { fontSize: 46 }]}>
+            <Text style={[f.massive, { ...textStyle("display") }]}>
               {new Date(s.starts_at).toLocaleTimeString("en-US", {
                 hour: "numeric",
                 minute: "2-digit",
@@ -146,7 +146,7 @@ export function CrewSessions({
             <AppText role="caption" secondary >
               {s.time_zone} · {s.duration_min} min
             </AppText>
-            <AppText role="contentTitle" >{s.title}</AppText>
+            <AppText role="heading" >{s.title}</AppText>
             <View
               style={[
                 f.chipRow,
@@ -171,11 +171,11 @@ export function CrewSessions({
                     },
                   ]}
                 >
-                  <Text>{p.display_name.slice(0, 2).toUpperCase()}</Text>
+                  <AppText role="label">{p.display_name.slice(0, 2).toUpperCase()}</AppText>
                 </View>
               ))}
               {s.participants.length > 6 ? (
-                <Text>+{s.participants.length - 6}</Text>
+                <AppText role="label">+{s.participants.length - 6}</AppText>
               ) : null}
             </View>
             <AppText role="caption" secondary >
@@ -258,7 +258,7 @@ export function CrewSessions({
               style={[f.chip, duration === String(n) && f.chipActive]}
               onPress={() => setDuration(String(n))}
             >
-              <Text>{n} min</Text>
+              <AppText role="label">{n} min</AppText>
             </Pressable>
           ))}
         </View>

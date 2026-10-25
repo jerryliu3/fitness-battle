@@ -38,13 +38,13 @@ export default function Onboarding() {
           }
         />
         <Text style={f.kicker}>Setup</Text>
-        <AppText role="pageTitle" >Your own pace.</AppText>
+        <AppText accessibilityRole="header" role="display" >Your own pace.</AppText>
         <AppText role="body" secondary >
           Choose your preferences. Trackers and optional history calibration
           live in Athlete → Data Sync.
         </AppText>
         <ProfilePhoto state={state} />
-        <AppText role="itemTitle" >Name</AppText>
+        <AppText role="label" >Name</AppText>
         <TextInput
           accessibilityLabel="Display name"
           style={f.input}
@@ -86,7 +86,7 @@ export default function Onboarding() {
           />
         ))}
         <View style={f.row}>
-          <AppText role="itemTitle" >Track sleep & recovery</AppText>
+          <AppText role="label" >Track sleep & recovery</AppText>
           <Switch
             accessibilityLabel="Track sleep and recovery"
             value={sleep}

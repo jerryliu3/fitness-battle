@@ -25,7 +25,7 @@ export default async function RankingsHomePage() {
         </Link>
         <span className="rankings-kicker">Race Rankings</span>
       </header>
-      <AppHeading level={1} role="pageTitle">Road leaderboards</AppHeading>
+      <AppHeading level={1} role="display">Road leaderboards</AppHeading>
       <AppParagraph typographyRole="body" className="rankings-lede">
         Finishers from audited public results, split by distance and sex. The
         clock is chip time when the source provides one, otherwise the official

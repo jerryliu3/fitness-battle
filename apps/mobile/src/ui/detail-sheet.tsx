@@ -42,7 +42,7 @@ export function DetailSheet({
         <BottomSheet.Overlay />
         <BottomSheet.Content snapPoints={["42%"]}>
           <View style={styles.stack}>
-            <BottomSheet.Title style={textStyle("pageTitle")}>{title}</BottomSheet.Title>
+            <BottomSheet.Title style={textStyle("display")}>{title}</BottomSheet.Title>
             <BottomSheet.Description style={textStyle("body")}>{body}</BottomSheet.Description>
             {children}
             <BottomSheet.Close />

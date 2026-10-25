@@ -14,7 +14,7 @@ export default function NotFound() {
           <section className="fb-card focus-empty" style={{ margin: "auto 0" }}>
             <span className="focus-empty-mark">◎</span>
             <p className="fb-kicker">404 · Off track</p>
-            <AppHeading level={1} role="pageTitle">This path isn’t on the map.</AppHeading>
+            <AppHeading level={1} role="display">This path isn’t on the map.</AppHeading>
             <p className="fb-copy">
               The page you were looking for doesn’t exist or has moved. Let’s get
               you back to today’s field.

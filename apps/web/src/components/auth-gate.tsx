@@ -1,7 +1,6 @@
 "use client";
 import { AppParagraph, SectionHeader, AppHeading } from "@/ui/section";
 
-
 import { buildLoginHref, buildSignupHref } from "@/lib/auth/login-redirect";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -28,8 +27,8 @@ export function AuthGate({ reason, children, require = true }: AuthGateProps) {
 
   return (
     <section className="fb-card fb-auth-wall">
-      <AppParagraph typographyRole="badgeLabel" className="fb-kicker">Account</AppParagraph>
-      <AppHeading level={1} role="pageTitle" className="fb-title">Sign in to continue</AppHeading>
+      <AppParagraph typographyRole="label" className="fb-kicker">Account</AppParagraph>
+      <AppHeading level={1} role="display" className="fb-title">Sign in to continue</AppHeading>
       <AppParagraph typographyRole="body" className="fb-copy">{reason}</AppParagraph>
       <div className="fb-row" style={{ width: "100%", gap: 10 }}>
         <Link
@@ -83,7 +82,7 @@ export function AuthPrompt({ open, reason, nextPath, onClose }: AuthPromptProps)
     <div className="fb-modal" role="dialog" aria-modal="true" aria-label="Sign in">
       <button type="button" className="fb-modal-backdrop" onClick={onClose} aria-label="Close" />
       <div className="fb-modal-card">
-        <AppParagraph typographyRole="badgeLabel" className="fb-kicker">Join in</AppParagraph>
+        <AppParagraph typographyRole="label" className="fb-kicker">Join in</AppParagraph>
         <SectionHeader title="Create an account to compete"/>
         <AppParagraph typographyRole="body" className="fb-copy">{reason}</AppParagraph>
         <div className="fb-stack">

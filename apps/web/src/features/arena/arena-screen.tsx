@@ -1,5 +1,5 @@
 "use client";
-import { AppParagraph, AppText, typographyStyle, SectionHeader, AppHeading } from "@/ui/section";
+import { FeatureCard, StatusBadge, AppParagraph, AppText, typographyStyle, SectionHeader, AppHeading } from "@/ui/section";
 
 import { EventCarousel } from "@/features/club/event-carousel";
 import { useEffect, useState } from "react";
@@ -115,26 +115,8 @@ export function ArenaScreen({ tabActive = true }: { tabActive?: boolean }) {
     <div className="focus-arena">
       <header className="focus-competition-card">
         <div className="focus-competition-info">
-          <AppParagraph typographyRole="body" className="focus-competition-title">
-            <span>Competition · {dateRangeLabel}</span>
-            <span className="focus-competition-pill">{badgeLabel}</span>
-            <span className="focus-competition-tip-wrap">
-              <button
-                type="button"
-                className="focus-competition-tip"
-                aria-label="About competition scoring"
-                aria-expanded={competitionTipOpen}
-                onClick={() => setCompetitionTipOpen((open) => !open)}
-              >
-                ⓘ
-              </button>
-              {competitionTipOpen ? (
-                <span className="focus-competition-tip-popover" role="tooltip">
-                  {SCORE_TRACK_TOOLTIP}
-                </span>
-              ) : null}
-            </span>
-          </AppParagraph>
+          <SectionHeader title="Competition" subtitle={dateRangeLabel} action={<div className="ui-competition-status"><StatusBadge>{badgeLabel}</StatusBadge><span className="focus-competition-tip-wrap"><button type="button" className="focus-competition-tip" aria-label="About competition scoring" aria-expanded={competitionTipOpen} onClick={() => setCompetitionTipOpen(open => !open)}>ⓘ</button>{competitionTipOpen && <AppText role="caption" className="focus-competition-tip-popover" aria-hidden={!competitionTipOpen}>{SCORE_TRACK_TOOLTIP}</AppText>}</span></div>}/>
+
         </div>
         {selectedSport && selectedSport !== "sleep" ? (
           <div className="focus-competition-field-tabs" role="tablist" aria-label="Arena view">
@@ -183,9 +165,9 @@ export function ArenaScreen({ tabActive = true }: { tabActive?: boolean }) {
           onJoin={()=>participate("join sleep",()=>dispatch({type:"opt-in-health",metric:"sleep"}))}
           onLeave={()=>dispatch({type:sleep.renews?"schedule-leave":"resume-renewal",metric:"sleep"})}
           leaveLabel={sleep.renews?"Stop after this week":"Keep playing next week"}/>
-      ) : <section className="focus-card focus-empty"><AppHeading level={2} role="contentTitle">Your next chapter starts here.</AppHeading><AppParagraph typographyRole="body" className="fb-copy">Register for an event to open your field.</AppParagraph></section>}
+      ) : <section className="focus-card focus-empty"><AppHeading level={2} role="heading">Your next chapter starts here.</AppHeading><AppParagraph typographyRole="body" className="fb-copy">Register for an event to open your field.</AppParagraph></section>}
 
-      </EventCarousel> : <section className="focus-card focus-empty"><AppHeading level={2} role="contentTitle">Your next chapter starts here.</AppHeading><AppParagraph typographyRole="body" className="fb-copy">Register for an event to open your field.</AppParagraph><button type="button" className="fb-btn" onClick={()=>setRegister(true)}>Explore events</button></section>}
+      </EventCarousel> : <section className="focus-card focus-empty"><AppHeading level={2} role="heading">Your next chapter starts here.</AppHeading><AppParagraph typographyRole="body" className="fb-copy">Register for an event to open your field.</AppParagraph><button type="button" className="fb-btn" onClick={()=>setRegister(true)}>Explore events</button></section>}
 
       {state.periodResults.length ? (
         <Link className="fb-btn-ghost" href="/arena?results=latest">
@@ -193,14 +175,7 @@ export function ArenaScreen({ tabActive = true }: { tabActive?: boolean }) {
         </Link>
       ) : null}
       <div className="club-competition-extras">
-      <section className="focus-card focus-coming-soon">
-        <AppParagraph typographyRole="badgeLabel" className="fb-kicker">Coming soon</AppParagraph>
-        <SectionHeader title="1v1 Head-to-Head"/>
-        <AppParagraph typographyRole="body" className="fb-copy">
-          Challenge a friend or rival stranger head-to-head for the week. Not open
-          yet — stay tuned.
-        </AppParagraph>
-      </section>
+      <FeatureCard title="1v1 Head-to-Head" description="Challenge a friend or rival for the week." badge="Coming soon"/>
 
       <WeekReveal
         state={state}
@@ -208,13 +183,7 @@ export function ArenaScreen({ tabActive = true }: { tabActive?: boolean }) {
         onDismiss={(revealIds) => dispatch({ type: "acknowledge-reveal", revealIds })}
       />
 
-      <Link href="/pace" className="focus-benchmark">
-        <span aria-hidden="true">→</span>
-        <div>
-          <b>Beyond this week</b>
-          <AppText as="small" role="caption" secondary>All-time pace & race rankings</AppText>
-        </div>
-      </Link>
+      <FeatureCard title="Beyond this week" description="All-time pace and race rankings." href="/pace"/>
 
       </div>
       <Sheet
@@ -237,10 +206,10 @@ export function ArenaScreen({ tabActive = true }: { tabActive?: boolean }) {
           }}
         >
           <div>
-            <strong style={{ ...typographyStyle("itemTitle"), display: "block" }}>
+            <strong style={{ ...typographyStyle("label"), display: "block" }}>
               Compete with your crew
             </strong>
-            <AppText as="small" role="supporting" secondary style={{ ...typographyStyle("caption"), color: "var(--muted)" }}>
+            <AppText as="small" role="body" secondary style={{ ...typographyStyle("caption"), color: "var(--muted)" }}>
               Share an individual field leaderboard with your crew
             </AppText>
           </div>
@@ -255,7 +224,7 @@ export function ArenaScreen({ tabActive = true }: { tabActive?: boolean }) {
           </button>
         </div>
 
-        <AppParagraph typographyRole="badgeLabel" className="fb-kicker">Event / Category</AppParagraph>
+        <AppParagraph typographyRole="label" className="fb-kicker">Event / Category</AppParagraph>
         <div className="focus-sport-options" aria-label="Sport or Category">
           {SPORTS.map((s) => {
             const isRegistered = state.ratings.find(

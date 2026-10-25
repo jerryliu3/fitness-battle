@@ -10,7 +10,9 @@
   min-height: 100vh;
   background: var(--rf-plum);
   color: var(--rf-plum);
-  font-family: var(--font-body), sans-serif;
+  letter-spacing: normal;
+  text-transform: none;
+  font: var(--type-body);
 }
 .rally-focus * {
   box-sizing: border-box;
@@ -56,10 +58,9 @@
   transform: none;
 }
 .rf-kicker {
-  font-size: 11px;
-  font-weight: 750;
-  line-height: 1.5;
-  letter-spacing: 0.07em;
+  letter-spacing: normal;
+  text-transform: none;
+  font: var(--type-label);
 }
 .rf-app {
   max-width: 1140px;
@@ -109,9 +110,11 @@
   background: none;
   border: 0;
   color: var(--rf-paper);
-  font-size: 12px;
   border-radius: 8px;
   white-space: nowrap;
+  letter-spacing: normal;
+  text-transform: none;
+  font: var(--type-label);
 }
 .rf-header nav svg {
   width: 17px;
@@ -120,7 +123,9 @@
 .rf-header nav button[aria-current="page"] {
   background: var(--rf-tennis);
   color: var(--rf-plum);
-  font-weight: 750;
+  letter-spacing: normal;
+  text-transform: none;
+  font: var(--type-label);
 }
 .rf-club {
   background: none;
@@ -128,8 +133,10 @@
   border-radius: 30px;
   padding: 11px 17px;
   color: var(--rf-paper);
-  font-size: 11px;
   white-space: nowrap;
+  letter-spacing: normal;
+  text-transform: none;
+  font: var(--type-caption);
 }
 .rf-demo-line {
   display: flex;
@@ -137,7 +144,9 @@
   gap: 20px;
   padding: 15px 0;
   color: #e0d6e4;
-  font-size: 11px;
+  letter-spacing: normal;
+  text-transform: none;
+  font: var(--type-caption);
 }
 .rf-hero {
   display: flex;
@@ -154,23 +163,24 @@
 }
 .rf-hero .rf-kicker {
   color: var(--rf-tennis);
-  font-size: 10px;
+  letter-spacing: normal;
+  text-transform: none;
+  font: var(--type-label);
 }
 .rf-hero h1 {
-  font-family: var(--rf-display), sans-serif;
-  font-size: 49px;
-  font-weight: 400;
-  line-height: 1.02;
-  letter-spacing: -0.055em;
   margin: 15px 0;
+  letter-spacing: normal;
+  text-transform: none;
+  font: var(--type-display);
 }
 .rf-hero h1 em {
   font-style: normal;
   color: var(--rf-tennis);
 }
 .rf-hero > div > p:last-child {
-  font-size: 13px;
-  line-height: 1.5;
+  letter-spacing: normal;
+  text-transform: none;
+  font: var(--type-body);
 }
 .rf-hero-ace {
   position: relative;
@@ -185,10 +195,10 @@
 .rf-hero-ace > span {
   display: block;
   text-align: center;
-  font-size: 9px;
-  letter-spacing: 0.06em;
-  font-weight: 650;
   margin-top: 4px;
+  letter-spacing: normal;
+  text-transform: none;
+  font: var(--type-caption);
 }
 .rf-week-layout {
   display: grid;
@@ -208,16 +218,19 @@
   justify-content: space-between;
   gap: 15px;
   align-items: center;
-  font-size: 10px;
-  letter-spacing: 0.04em;
+  letter-spacing: normal;
+  text-transform: none;
+  font: var(--type-caption);
 }
 .rf-matchup > header > span {
-  font-weight: 800;
+  letter-spacing: normal;
+  text-transform: none;
+  font: var(--type-label);
 }
 .rf-matchup > header > b {
-  font-weight: 500;
-  font-size: 11px;
-  letter-spacing: 0;
+  letter-spacing: normal;
+  text-transform: none;
+  font: var(--type-caption);
 }
 .rf-scoreboard {
   display: grid;
@@ -228,34 +241,29 @@
   padding: 27px 0;
 }
 .rf-scoreboard > div > span {
-  font-size: 10px;
-  font-weight: 750;
-  letter-spacing: 0.03em;
   display: block;
-  line-height: 1.5;
+  letter-spacing: normal;
+  text-transform: none;
+  font: var(--type-caption);
 }
 .rf-scoreboard strong {
-  font-family: var(--rf-display), sans-serif;
-  font-size: 63px;
-  font-weight: 400;
-  line-height: 1;
-  letter-spacing: -0.065em;
   display: block;
   margin-top: 12px;
   white-space: nowrap;
+  letter-spacing: normal;
+  text-transform: none;
+  font: var(--type-display);
 }
 .rf-scoreboard strong small {
-  font-family: var(--font-body), sans-serif;
-  font-size: 11px;
-  font-weight: 500;
   margin-left: 5px;
-  letter-spacing: 0;
+  letter-spacing: normal;
+  text-transform: none;
+  font: var(--type-display);
 }
 .rf-vs {
-  font-family: var(--rf-display), sans-serif;
-  font-size: 20px;
-  font-weight: 400;
-  font-style: italic;
+  letter-spacing: normal;
+  text-transform: none;
+  font: var(--type-heading);
 }
 .rf-court {
   background: var(--rf-tennis);
@@ -295,11 +303,12 @@
   height: 45px;
 }
 .rf-court-lane > span {
-  font-size: 9px;
-  font-weight: 800;
   width: 67px;
   flex-shrink: 0;
   text-align: right;
+  letter-spacing: normal;
+  text-transform: none;
+  font: var(--type-caption);
 }
 .rf-court-track {
   position: relative;
@@ -324,8 +333,10 @@
   place-items: center;
   background: var(--rf-plum);
   color: var(--rf-tennis);
-  font-size: 8px;
   transition: left 0.65s;
+  letter-spacing: normal;
+  text-transform: none;
+  font: var(--type-caption);
 }
 .rf-court-reference .rf-court-travel {
   background: #907595;
@@ -340,8 +351,9 @@
   justify-content: space-between;
   gap: 15px;
   padding: 11px 0 0 79px;
-  font-size: 10px;
-  font-weight: 600;
+  letter-spacing: normal;
+  text-transform: none;
+  font: var(--type-caption);
 }
 .rf-ace-call {
   display: flex;
@@ -355,21 +367,22 @@
   flex-shrink: 0;
 }
 .rf-ace-call > div > span {
-  font-size: 9px;
-  font-weight: 800;
-  letter-spacing: 0.06em;
   display: block;
+  letter-spacing: normal;
+  text-transform: none;
+  font: var(--type-caption);
 }
 .rf-ace-call strong {
-  font-size: 19px;
   display: block;
   margin: 5px 0;
-  letter-spacing: -0.035em;
-  font-weight: 750;
+  letter-spacing: normal;
+  text-transform: none;
+  font: var(--type-heading);
 }
 .rf-ace-call p {
-  font-size: 11px;
-  line-height: 1.5;
+  letter-spacing: normal;
+  text-transform: none;
+  font: var(--type-caption);
 }
 .rf-replay {
   border-top: 1px solid var(--rf-line);
@@ -385,8 +398,9 @@
   border: 0;
   padding: 9px 10px;
   border-radius: 5px;
-  font-size: 11px;
-  font-weight: 600;
+  letter-spacing: normal;
+  text-transform: none;
+  font: var(--type-label);
 }
 .rf-replay .rf-replay-button {
   background: var(--rf-plum);
@@ -413,10 +427,14 @@
   border-radius: 10px;
   padding: 15px 18px;
   margin-top: 12px;
-  font-size: 12px;
+  letter-spacing: normal;
+  text-transform: none;
+  font: var(--type-caption);
 }
 .rf-matchup-link > span {
-  font-size: 17px;
+  letter-spacing: normal;
+  text-transform: none;
+  font: var(--type-body);
 }
 .rf-small-moves {
   background: var(--rf-paper);
@@ -431,21 +449,24 @@
   margin-bottom: 22px;
 }
 .rf-small-moves .rf-kicker {
-  font-size: 10px;
+  letter-spacing: normal;
+  text-transform: none;
+  font: var(--type-label);
 }
 .rf-small-moves h2 {
-  font-size: 23px;
-  line-height: 1.2;
-  letter-spacing: -0.04em;
   margin-top: 7px;
+  letter-spacing: normal;
+  text-transform: none;
+  font: var(--type-heading);
 }
 .rf-small-moves > header > button {
   border: 0;
   background: none;
   padding: 7px 0;
-  font-size: 11px;
   white-space: nowrap;
-  font-weight: 650;
+  letter-spacing: normal;
+  text-transform: none;
+  font: var(--type-label);
 }
 .rf-small-ring-list {
   display: grid;
@@ -479,16 +500,18 @@
   gap: 5px 12px;
   align-items: center;
   justify-content: space-between;
-  font-size: 10px;
-  font-weight: 700;
+  letter-spacing: normal;
+  text-transform: none;
+  font: var(--type-caption);
 }
 .rf-move-day > span {
   background: var(--rf-tennis);
   padding: 3px 6px;
   border-radius: 20px;
-  font-size: 9px;
-  font-weight: 600;
   white-space: nowrap;
+  letter-spacing: normal;
+  text-transform: none;
+  font: var(--type-caption);
 }
 .rf-move:disabled .rf-move-day > span {
   background: #e0d9df;
@@ -522,42 +545,44 @@
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  font-size: 28px;
-  font-weight: 650;
-  line-height: 1;
-  letter-spacing: -0.05em;
   text-align: center;
+  letter-spacing: normal;
+  text-transform: none;
+  font: var(--type-display);
 }
 .rf-ring strong small {
-  font-size: 10px;
   display: block;
-  font-weight: 400;
-  letter-spacing: 0;
   margin-top: 5px;
+  letter-spacing: normal;
+  text-transform: none;
+  font: var(--type-caption);
 }
 .rf-move-name {
   grid-column: 2;
   grid-row: 2;
   align-self: end;
-  font-size: 15px;
-  font-weight: 700;
-  letter-spacing: -0.03em;
-  line-height: 1.3;
+  letter-spacing: normal;
+  text-transform: none;
+  font: var(--type-label);
 }
 .rf-move-time {
   grid-column: 2;
   grid-row: 3;
-  font-size: 10px;
-  line-height: 1.5;
+  letter-spacing: normal;
+  text-transform: none;
+  font: var(--type-caption);
 }
 .rf-ring-caption {
-  font-size: 11px;
-  line-height: 1.5;
   color: var(--rf-muted);
   margin-top: 16px !important;
+  letter-spacing: normal;
+  text-transform: none;
+  font: var(--type-caption);
 }
 .rf-small-moves .rf-ring-caption {
-  font-size: 10px;
+  letter-spacing: normal;
+  text-transform: none;
+  font: var(--type-caption);
 }
 .rf-highlight {
   background: var(--rf-tennis);
@@ -592,15 +617,16 @@
   min-width: 0;
 }
 .rf-highlight h2 {
-  font-size: 30px;
-  font-weight: 700;
-  letter-spacing: -0.04em;
   margin: 10px 0;
+  letter-spacing: normal;
+  text-transform: none;
+  font: var(--type-display);
 }
 .rf-highlight-copy > p:last-child {
-  font-size: 13px;
-  line-height: 1.6;
   max-width: 430px;
+  letter-spacing: normal;
+  text-transform: none;
+  font: var(--type-body);
 }
 .rf-highlight > button {
   border: 0;
@@ -608,8 +634,10 @@
   background: var(--rf-plum);
   color: var(--rf-paper);
   padding: 13px 18px;
-  font-size: 11px;
   white-space: nowrap;
+  letter-spacing: normal;
+  text-transform: none;
+  font: var(--type-label);
 }
 .rf-highlight > button:disabled {
   opacity: 0.55;
@@ -625,15 +653,15 @@
   color: var(--rf-paper);
 }
 .rf-product-footer > span {
-  font-family: var(--rf-display), sans-serif;
-  font-size: 18px;
-  font-weight: 400;
-  letter-spacing: -0.04em;
   color: var(--rf-tennis);
+  letter-spacing: normal;
+  text-transform: none;
+  font: var(--type-heading);
 }
 .rf-product-footer p {
-  font-size: 11px;
-  line-height: 1.6;
+  letter-spacing: normal;
+  text-transform: none;
+  font: var(--type-caption);
 }
 .rf-matchup-choice {
   background: #ffffff0c;
@@ -644,8 +672,10 @@
   margin-bottom: 20px;
 }
 .rf-matchup-choice > .rf-kicker {
-  font-size: 10px;
   margin-bottom: 13px;
+  letter-spacing: normal;
+  text-transform: none;
+  font: var(--type-label);
 }
 .rf-matchup-choice > div {
   display: flex;
@@ -659,8 +689,9 @@
   color: var(--rf-paper);
   background: none;
   border-radius: 30px;
-  font-size: 11px;
-  font-weight: 600;
+  letter-spacing: normal;
+  text-transform: none;
+  font: var(--type-label);
 }
 .rf-matchup-choice button[aria-pressed="true"] {
   background: var(--rf-tennis);
@@ -671,17 +702,21 @@
   display: flex;
   gap: 10px;
   align-items: center;
-  font-size: 11px;
   margin-left: auto;
+  letter-spacing: normal;
+  text-transform: none;
+  font: var(--type-caption);
 }
 .rf-matchup-choice select {
   background: var(--rf-paper);
   border: 0;
   border-radius: 6px;
   padding: 10px;
-  font-size: 12px;
   color: var(--rf-plum);
   min-width: 180px;
+  letter-spacing: normal;
+  text-transform: none;
+  font: var(--type-caption);
 }
 .rf-matchups-layout {
   display: grid;
@@ -702,37 +737,35 @@
   gap: 20px;
 }
 .rf-distance-field h2 {
-  font-size: 22px;
-  line-height: 1.2;
-  letter-spacing: -0.04em;
   max-width: 245px;
   margin-top: 9px;
+  letter-spacing: normal;
+  text-transform: none;
+  font: var(--type-heading);
 }
 .rf-distance-field > header > strong {
-  font-family: var(--rf-display), sans-serif;
-  font-size: 33px;
-  line-height: 1;
-  letter-spacing: -0.05em;
-  font-weight: 400;
   text-align: right;
   white-space: nowrap;
+  letter-spacing: normal;
+  text-transform: none;
+  font: var(--type-display);
 }
 .rf-distance-field > header > strong small {
   display: block;
-  font-family: var(--font-body), sans-serif;
-  font-size: 10px;
-  font-weight: 500;
-  letter-spacing: 0;
   margin-top: 9px;
-  line-height: 1.4;
+  letter-spacing: normal;
+  text-transform: none;
+  font: var(--type-caption);
 }
 .rf-field-axis {
   display: flex;
   justify-content: space-between;
   gap: 12px;
-  font-size: 9px;
   margin: 25px 0 10px;
   color: var(--rf-muted);
+  letter-spacing: normal;
+  text-transform: none;
+  font: var(--type-caption);
 }
 .rf-field-row {
   display: flex;
@@ -768,22 +801,26 @@
   height: 28px;
   display: grid;
   place-items: center;
-  font-size: 9px;
   flex-shrink: 0;
+  letter-spacing: normal;
+  text-transform: none;
+  font: var(--type-caption);
 }
 .rf-field-you .rf-field-person > b {
   background: var(--rf-plum);
   color: var(--rf-tennis);
 }
 .rf-field-person > span {
-  font-size: 12px;
-  font-weight: 650;
+  letter-spacing: normal;
+  text-transform: none;
+  font: var(--type-caption);
 }
 .rf-field-person small {
   display: block;
-  font-size: 9px;
-  font-weight: 400;
   margin-top: 4px;
+  letter-spacing: normal;
+  text-transform: none;
+  font: var(--type-caption);
 }
 .rf-field-track {
   position: relative;
@@ -814,22 +851,24 @@
 .rf-field-row > strong {
   width: 36px;
   text-align: right;
-  font-size: 15px;
-  font-weight: 650;
-  letter-spacing: -0.025em;
   flex-shrink: 0;
+  letter-spacing: normal;
+  text-transform: none;
+  font: var(--type-label);
 }
 .rf-field-row > strong small {
-  font-size: 9px;
-  font-weight: 400;
   display: block;
   margin-top: 2px;
+  letter-spacing: normal;
+  text-transform: none;
+  font: var(--type-caption);
 }
 .rf-distance-field > p {
-  font-size: 11px;
-  line-height: 1.6;
   margin-top: 19px;
   color: var(--rf-muted);
+  letter-spacing: normal;
+  text-transform: none;
+  font: var(--type-caption);
 }
 .rf-moves-summary {
   display: flex;
@@ -844,28 +883,27 @@
 }
 .rf-moves-summary > .rf-kicker {
   max-width: 160px;
-  line-height: 1.7;
+  letter-spacing: normal;
+  text-transform: none;
+  font: var(--type-label);
 }
 .rf-moves-summary > strong {
-  font-family: var(--rf-display), sans-serif;
-  font-size: 58px;
-  letter-spacing: -0.06em;
-  line-height: 1;
-  font-weight: 400;
   white-space: nowrap;
+  letter-spacing: normal;
+  text-transform: none;
+  font: var(--type-display);
 }
 .rf-moves-summary > strong small {
   display: block;
-  font-family: var(--font-body), sans-serif;
-  font-size: 12px;
-  font-weight: 500;
-  letter-spacing: 0;
-  line-height: 1.5;
   margin-top: 10px;
+  letter-spacing: normal;
+  text-transform: none;
+  font: var(--type-caption);
 }
 .rf-moves-summary p {
-  font-size: 13px;
-  line-height: 1.6;
+  letter-spacing: normal;
+  text-transform: none;
+  font: var(--type-body);
 }
 .rf-moves-grid {
   display: grid;
@@ -883,12 +921,16 @@
 .rf-moves-grid .rf-move-day {
   display: flex;
   justify-content: space-between;
-  font-size: 12px;
   margin-bottom: 20px;
+  letter-spacing: normal;
+  text-transform: none;
+  font: var(--type-caption);
 }
 .rf-moves-grid .rf-move-day > span {
-  font-size: 10px;
   padding: 5px 9px;
+  letter-spacing: normal;
+  text-transform: none;
+  font: var(--type-caption);
 }
 .rf-moves-grid .rf-ring {
   width: 190px;
@@ -897,20 +939,28 @@
   margin: 0 auto 20px;
 }
 .rf-moves-grid .rf-ring > strong {
-  font-size: 49px;
+  letter-spacing: normal;
+  text-transform: none;
+  font: var(--type-display);
 }
 .rf-moves-grid .rf-ring > strong small {
-  font-size: 13px;
   margin-top: 7px;
+  letter-spacing: normal;
+  text-transform: none;
+  font: var(--type-caption);
 }
 .rf-moves-grid .rf-move-name {
   display: block;
-  font-size: 21px;
+  letter-spacing: normal;
+  text-transform: none;
+  font: var(--type-heading);
 }
 .rf-moves-grid .rf-move-time {
   display: block;
   margin-top: 11px;
-  font-size: 12px;
+  letter-spacing: normal;
+  text-transform: none;
+  font: var(--type-caption);
 }
 .rally-focus[data-view="moves"] .rf-ring-caption {
   color: #e0d6e4;
@@ -929,16 +979,20 @@
 }
 .rf-moves-note .rf-kicker {
   color: var(--rf-tennis);
-  font-size: 10px;
+  letter-spacing: normal;
+  text-transform: none;
+  font: var(--type-label);
 }
 .rf-moves-note h2 {
-  font-size: 27px;
-  letter-spacing: -0.04em;
   margin: 9px 0;
+  letter-spacing: normal;
+  text-transform: none;
+  font: var(--type-heading);
 }
 .rf-moves-note p:last-child {
-  font-size: 13px;
-  line-height: 1.5;
+  letter-spacing: normal;
+  text-transform: none;
+  font: var(--type-caption);
 }
 .rf-you-layout {
   display: grid;
@@ -960,18 +1014,16 @@
   margin: 20px auto 15px;
 }
 .rf-athlete-card > div > strong {
-  font-family: var(--rf-display), sans-serif;
-  font-size: 65px;
-  font-weight: 400;
-  line-height: 1;
-  letter-spacing: -0.065em;
+  letter-spacing: normal;
+  text-transform: none;
+  font: var(--type-display);
 }
 .rf-athlete-card > div > span {
   display: block;
-  font-size: 10px;
-  font-weight: 750;
-  letter-spacing: 0.04em;
   margin-top: 9px;
+  letter-spacing: normal;
+  text-transform: none;
+  font: var(--type-caption);
 }
 .rf-athlete-card dl {
   display: grid;
@@ -982,20 +1034,22 @@
   margin: 24px 0 0;
 }
 .rf-athlete-card dt {
-  font-size: 10px;
+  letter-spacing: normal;
+  text-transform: none;
+  font: var(--type-caption);
 }
 .rf-athlete-card dd {
-  font-size: 29px;
-  font-weight: 700;
-  letter-spacing: -0.04em;
   margin: 9px 0 0;
   white-space: nowrap;
+  letter-spacing: normal;
+  text-transform: none;
+  font: var(--type-display);
 }
 .rf-athlete-card dd small {
-  font-size: 11px;
-  font-weight: 500;
   margin-left: 4px;
-  letter-spacing: 0;
+  letter-spacing: normal;
+  text-transform: none;
+  font: var(--type-caption);
 }
 .rf-you-side {
   display: grid;
@@ -1007,10 +1061,10 @@
   border-radius: 22px;
 }
 .rf-week-record h2 {
-  font-size: 27px;
-  line-height: 1.15;
-  letter-spacing: -0.04em;
   margin: 12px 0 24px;
+  letter-spacing: normal;
+  text-transform: none;
+  font: var(--type-heading);
 }
 .rf-week-record > div {
   display: flex;
@@ -1021,27 +1075,28 @@
   border-top: 1px solid var(--rf-line);
 }
 .rf-week-record > div > span {
-  font-size: 13px;
-  font-weight: 650;
+  letter-spacing: normal;
+  text-transform: none;
+  font: var(--type-label);
 }
 .rf-week-record > div > span small {
-  font-size: 10px;
-  font-weight: 400;
   display: block;
   margin-top: 6px;
-  line-height: 1.5;
+  letter-spacing: normal;
+  text-transform: none;
+  font: var(--type-caption);
 }
 .rf-week-record > div > strong {
-  font-size: 29px;
-  font-weight: 650;
-  letter-spacing: -0.04em;
   white-space: nowrap;
+  letter-spacing: normal;
+  text-transform: none;
+  font: var(--type-display);
 }
 .rf-week-record > div > strong small {
-  font-size: 11px;
   margin-left: 4px;
-  font-weight: 500;
-  letter-spacing: 0;
+  letter-spacing: normal;
+  text-transform: none;
+  font: var(--type-caption);
 }
 .rf-week-record > button, .rf-tracker-card > button {
   background: none;
@@ -1049,9 +1104,10 @@
   border-bottom: 1px solid currentColor;
   padding: 10px 0 5px;
   margin-top: 8px;
-  font-size: 12px;
-  font-weight: 650;
   color: inherit;
+  letter-spacing: normal;
+  text-transform: none;
+  font: var(--type-label);
 }
 .rf-tracker-card {
   position: relative;
@@ -1063,7 +1119,9 @@
 }
 .rf-tracker-card .rf-kicker {
   color: var(--rf-tennis);
-  font-size: 10px;
+  letter-spacing: normal;
+  text-transform: none;
+  font: var(--type-label);
 }
 .rf-demo-badge {
   position: absolute;
@@ -1071,22 +1129,24 @@
   right: 24px;
   background: var(--rf-tennis);
   color: var(--rf-plum);
-  font-size: 9px;
-  font-weight: 650;
   padding: 5px 8px;
   border-radius: 30px;
+  letter-spacing: normal;
+  text-transform: none;
+  font: var(--type-label);
 }
 .rf-tracker-card h2 {
-  font-size: 24px;
-  letter-spacing: -0.04em;
-  line-height: 1.2;
   margin: 20px 0 12px;
   max-width: 320px;
+  letter-spacing: normal;
+  text-transform: none;
+  font: var(--type-heading);
 }
 .rf-tracker-card p {
-  font-size: 12px;
-  line-height: 1.6;
   max-width: 330px;
+  letter-spacing: normal;
+  text-transform: none;
+  font: var(--type-caption);
 }
 .rf-dialog {
   width: calc(100% - 32px);
@@ -1112,23 +1172,23 @@
   margin-bottom: 24px;
 }
 .rf-dialog h2 {
-  font-family: var(--rf-display), sans-serif;
-  font-size: 27px;
-  line-height: 1.15;
-  letter-spacing: -0.05em;
-  font-weight: 400;
+  letter-spacing: normal;
+  text-transform: none;
+  font: var(--type-heading);
 }
 .rf-dialog > header > button {
   border: 0;
   background: none;
   padding: 0 7px;
-  font-size: 30px;
-  line-height: 1;
+  letter-spacing: normal;
+  text-transform: none;
+  font: var(--type-label);
 }
 .rf-dialog > div > p {
-  font-size: 13px;
-  line-height: 1.65;
   margin: 18px 0;
+  letter-spacing: normal;
+  text-transform: none;
+  font: var(--type-body);
 }
 .rf-dialog > div > .world-mascot {
   width: 160px;
@@ -1141,8 +1201,9 @@
   color: var(--rf-paper);
   border: 0;
   border-radius: 8px;
-  font-size: 12px;
-  font-weight: 650;
+  letter-spacing: normal;
+  text-transform: none;
+  font: var(--type-caption);
 }
 .rf-dialog-done {
   display: block;
@@ -1150,24 +1211,25 @@
   margin-top: 25px;
 }
 .rf-decisions {
-  font-size: 14px;
-  line-height: 1.6;
   margin: 0;
+  letter-spacing: normal;
+  text-transform: none;
+  font: var(--type-body);
 }
 .rf-decisions dt {
-  font-weight: 800;
   margin-top: 22px;
-  font-size: 11px;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
+  letter-spacing: normal;
+  text-transform: none;
+  font: var(--type-caption);
 }
 .rf-decisions dd {
   margin: 7px 0 0;
 }
 .rf-source-note {
-  font-size: 11px !important;
-  line-height: 1.6;
   color: var(--rf-muted);
+  letter-spacing: normal !important;
+  text-transform: none !important;
+  font: var(--type-caption) !important;
 }
 .rf-receipt-poster {
   background: var(--rf-tennis);
@@ -1182,13 +1244,11 @@
   overflow: hidden;
 }
 .rf-receipt-poster h3 {
-  font-family: var(--rf-display), sans-serif;
-  font-weight: 400;
-  font-size: 37px;
-  line-height: 1;
-  letter-spacing: -0.05em;
   position: relative;
   z-index: 1;
+  letter-spacing: normal;
+  text-transform: none;
+  font: var(--type-display);
 }
 .rf-receipt-poster .world-mascot {
   width: 140px;
@@ -1212,45 +1272,42 @@
   grid-column: 1 / -1;
 }
 .rf-receipt-frames > section > span {
-  font-size: 9px;
-  font-weight: 750;
-  letter-spacing: 0.04em;
-  line-height: 1.5;
   display: block;
+  letter-spacing: normal;
+  text-transform: none;
+  font: var(--type-caption);
 }
 .rf-receipt-frames strong {
   display: block;
-  font-size: 39px;
-  letter-spacing: -0.05em;
-  font-weight: 650;
-  line-height: 1.2;
   margin: 14px 0 9px;
+  letter-spacing: normal;
+  text-transform: none;
+  font: var(--type-display);
 }
 .rf-receipt-frames strong small {
-  font-size: 12px;
-  font-weight: 500;
   margin-left: 5px;
-  letter-spacing: 0;
+  letter-spacing: normal;
+  text-transform: none;
+  font: var(--type-caption);
 }
 .rf-receipt-frames .rf-receipt-gap {
-  font-size: 27px;
+  letter-spacing: normal;
+  text-transform: none;
+  font: var(--type-heading);
 }
 .rf-receipt-frames p {
-  font-size: 11px;
-  line-height: 1.5;
+  letter-spacing: normal;
+  text-transform: none;
+  font: var(--type-caption);
 }
 .rf-receipt-note {
-  font-size: 14px !important;
-  font-weight: 500;
+  letter-spacing: normal !important;
+  text-transform: none !important;
+  font: var(--type-caption) !important;
 }
 /* Flip supplies the expressive layer; Rally's palette, navigation and Ace stay fixed. */
 .rally-focus[data-ink="on"] .rf-sticker {
   display: block;
-  font-family: var(--rf-comic), sans-serif;
-  font-size: 20px;
-  line-height: 0.95;
-  letter-spacing: 0.015em;
-  font-weight: 400;
   background: var(--rf-paper);
   color: var(--rf-plum);
   border: 2px solid var(--rf-plum);
@@ -1261,6 +1318,9 @@
   left: 0;
   z-index: 2;
   box-shadow: 3px 3px 0 var(--rf-plum);
+  letter-spacing: normal;
+  text-transform: none;
+  font: var(--type-heading);
 }
 .rally-focus[data-ink="on"] .rf-highlight {
   border: 2px solid var(--rf-plum);
@@ -1272,12 +1332,11 @@
   background-size: 6px 6px;
 }
 .rally-focus[data-ink="on"] .rf-highlight h2 {
-  font-family: var(--rf-comic), sans-serif;
-  font-size: 38px;
-  font-weight: 400;
-  letter-spacing: 0;
   transform: rotate(-2deg);
   transform-origin: left center;
+  letter-spacing: normal;
+  text-transform: none;
+  font: var(--type-display);
 }
 .rally-focus[data-ink="on"] .rf-highlight > button {
   border-radius: 0;
@@ -1288,9 +1347,9 @@
   border-radius: 4px;
 }
 .rally-focus[data-ink="on"] .rf-dialog-activity h2 {
-  font-family: var(--rf-comic), sans-serif;
-  font-size: 37px;
-  letter-spacing: 0;
+  letter-spacing: normal;
+  text-transform: none;
+  font: var(--type-display);
 }
 .rally-focus[data-ink="on"] .rf-receipt-poster {
   border: 2px solid var(--rf-plum);
@@ -1303,25 +1362,28 @@
   position: relative;
   display: inline-block;
   margin-bottom: 14px;
-  font-size: 17px;
+  letter-spacing: normal;
+  text-transform: none;
+  font: var(--type-caption);
 }
 .rally-focus[data-ink="on"] .rf-receipt-poster h3 {
-  font-family: var(--rf-comic), sans-serif;
-  font-size: 47px;
-  letter-spacing: 0;
+  letter-spacing: normal;
+  text-transform: none;
+  font: var(--type-display);
 }
 .rally-focus[data-ink="on"] .rf-receipt-frames > section {
   border: 2px solid var(--rf-plum);
   border-radius: 0;
 }
 .rally-focus[data-ink="on"] .rf-receipt-frames strong {
-  font-family: var(--rf-comic), sans-serif;
-  font-weight: 400;
-  letter-spacing: 0;
-  font-size: 46px;
+  letter-spacing: normal;
+  text-transform: none;
+  font: var(--type-display);
 }
 .rally-focus[data-ink="on"] .rf-receipt-frames .rf-receipt-gap {
-  font-size: 35px;
+  letter-spacing: normal;
+  text-transform: none;
+  font: var(--type-display);
 }
 @media (max-width: 1000px) {
   .rf-header {
@@ -1332,13 +1394,17 @@
   }
   .rf-header nav button {
     padding: 11px 12px;
-    font-size: 11px;
+    letter-spacing: normal;
+    text-transform: none;
+    font: var(--type-label);
   }
   .rf-wordmark {
     font-size: 32px !important;
   }
   .rf-hero h1 {
-    font-size: 43px;
+    letter-spacing: normal;
+    text-transform: none;
+    font: var(--type-display);
   }
   .rf-week-layout {
     grid-template-columns: 1.45fr 1fr;
@@ -1348,7 +1414,9 @@
     padding: 20px;
   }
   .rf-scoreboard strong {
-    font-size: 52px;
+    letter-spacing: normal;
+    text-transform: none;
+    font: var(--type-display);
   }
   .rf-scoreboard {
     gap: 5px;
@@ -1358,10 +1426,14 @@
     gap: 9px;
   }
   .rf-small-moves h2 {
-    font-size: 21px;
+    letter-spacing: normal;
+    text-transform: none;
+    font: var(--type-heading);
   }
   .rf-small-moves > header > button {
-    font-size: 10px;
+    letter-spacing: normal;
+    text-transform: none;
+    font: var(--type-label);
   }
   .rf-move {
     grid-template-columns: 68px 1fr;
@@ -1373,21 +1445,31 @@
     height: 68px;
   }
   .rf-ring > strong {
-    font-size: 23px;
+    letter-spacing: normal;
+    text-transform: none;
+    font: var(--type-heading);
   }
   .rf-move-day {
-    font-size: 9px;
     gap: 6px;
+    letter-spacing: normal;
+    text-transform: none;
+    font: var(--type-caption);
   }
   .rf-move-name {
-    font-size: 13px;
+    letter-spacing: normal;
+    text-transform: none;
+    font: var(--type-body);
   }
   .rf-move-time {
-    font-size: 9px;
+    letter-spacing: normal;
+    text-transform: none;
+    font: var(--type-caption);
   }
   .rf-move-day > span {
-    font-size: 8px;
     padding: 3px 5px;
+    letter-spacing: normal;
+    text-transform: none;
+    font: var(--type-caption);
   }
   .rf-replay > div {
     flex: 1;
@@ -1411,8 +1493,9 @@
     white-space: normal;
     max-width: 165px;
     text-align: left;
-    font-size: 11px;
-    line-height: 1.4;
+    letter-spacing: normal;
+    text-transform: none;
+    font: var(--type-label);
   }
   .rf-matchups-layout {
     grid-template-columns: 1fr 1fr;
@@ -1423,26 +1506,38 @@
     gap: 6px;
   }
   .rf-field-person > span {
-    font-size: 11px;
+    letter-spacing: normal;
+    text-transform: none;
+    font: var(--type-caption);
   }
   .rf-field-person small {
-    font-size: 8px;
+    letter-spacing: normal;
+    text-transform: none;
+    font: var(--type-caption);
   }
   .rf-distance-field h2 {
-    font-size: 20px;
+    letter-spacing: normal;
+    text-transform: none;
+    font: var(--type-heading);
   }
   .rf-field-row > strong {
-    font-size: 13px;
     width: 31px;
+    letter-spacing: normal;
+    text-transform: none;
+    font: var(--type-body);
   }
   .rf-field-row {
     gap: 8px;
   }
   .rf-distance-field > header > strong {
-    font-size: 27px;
+    letter-spacing: normal;
+    text-transform: none;
+    font: var(--type-heading);
   }
   .rf-distance-field > header > strong small {
-    font-size: 9px;
+    letter-spacing: normal;
+    text-transform: none;
+    font: var(--type-caption);
   }
   .rf-moves-grid {
     gap: 16px;
@@ -1455,20 +1550,28 @@
     height: 150px;
   }
   .rf-moves-grid .rf-ring > strong {
-    font-size: 40px;
+    letter-spacing: normal;
+    text-transform: none;
+    font: var(--type-display);
   }
   .rf-moves-grid .rf-move-name {
-    font-size: 18px;
+    letter-spacing: normal;
+    text-transform: none;
+    font: var(--type-heading);
   }
   .rf-moves-summary {
     padding: 24px;
     gap: 20px;
   }
   .rf-moves-summary p {
-    font-size: 12px;
+    letter-spacing: normal;
+    text-transform: none;
+    font: var(--type-caption);
   }
   .rf-moves-summary > strong {
-    font-size: 49px;
+    letter-spacing: normal;
+    text-transform: none;
+    font: var(--type-display);
   }
   .rf-you-layout {
     gap: 16px;
@@ -1480,7 +1583,9 @@
     padding: 24px;
   }
   .rf-athlete-card dd {
-    font-size: 24px;
+    letter-spacing: normal;
+    text-transform: none;
+    font: var(--type-heading);
   }
   .rf-demo-badge {
     position: static;
@@ -1501,7 +1606,9 @@
   .rf-header nav button {
     padding: 11px 9px;
     gap: 6px;
-    font-size: 10px;
+    letter-spacing: normal;
+    text-transform: none;
+    font: var(--type-label);
   }
   .rf-header nav svg {
     width: 15px;
@@ -1512,7 +1619,9 @@
   }
   .rf-club {
     padding: 10px 12px;
-    font-size: 10px;
+    letter-spacing: normal;
+    text-transform: none;
+    font: var(--type-caption);
   }
   .rf-wordmark {
     font-size: 28px !important;
@@ -1521,7 +1630,9 @@
     font-size: 7px;
   }
   .rf-hero h1 {
-    font-size: 37px;
+    letter-spacing: normal;
+    text-transform: none;
+    font: var(--type-display);
   }
   .rf-hero-ace {
     width: 175px;
@@ -1531,13 +1642,17 @@
     height: 165px;
   }
   .rf-hero-ace > span {
-    font-size: 8px;
+    letter-spacing: normal;
+    text-transform: none;
+    font: var(--type-caption);
   }
   .rf-week-layout, .rf-matchups-layout {
     grid-template-columns: 1fr;
   }
   .rf-scoreboard strong {
-    font-size: 67px;
+    letter-spacing: normal;
+    text-transform: none;
+    font: var(--type-display);
   }
   .rf-replay > div {
     min-width: 0;
@@ -1556,10 +1671,14 @@
     display: flex;
     flex-direction: column;
     gap: 8px;
-    font-size: 11px;
+    letter-spacing: normal;
+    text-transform: none;
+    font: var(--type-caption);
   }
   .rf-small-ring-list .rf-move-day > span {
-    font-size: 9px;
+    letter-spacing: normal;
+    text-transform: none;
+    font: var(--type-caption);
   }
   .rf-small-ring-list .rf-ring {
     height: 106px;
@@ -1568,50 +1687,72 @@
     margin: 12px auto;
   }
   .rf-small-ring-list .rf-ring > strong {
-    font-size: 30px;
+    letter-spacing: normal;
+    text-transform: none;
+    font: var(--type-display);
   }
   .rf-small-ring-list .rf-move-name {
     display: block;
-    font-size: 14px;
+    letter-spacing: normal;
+    text-transform: none;
+    font: var(--type-caption);
   }
   .rf-small-ring-list .rf-move-time {
     display: block;
-    font-size: 10px;
     margin-top: 8px;
+    letter-spacing: normal;
+    text-transform: none;
+    font: var(--type-caption);
   }
   .rf-field-person {
     width: 160px;
     gap: 10px;
   }
   .rf-field-person > span {
-    font-size: 13px;
+    letter-spacing: normal;
+    text-transform: none;
+    font: var(--type-body);
   }
   .rf-field-person small {
-    font-size: 10px;
+    letter-spacing: normal;
+    text-transform: none;
+    font: var(--type-caption);
   }
   .rf-field-row {
     gap: 14px;
     padding: 14px 0;
   }
   .rf-field-row > strong {
-    font-size: 16px;
     width: 42px;
+    letter-spacing: normal;
+    text-transform: none;
+    font: var(--type-body);
   }
   .rf-distance-field h2 {
     max-width: none;
-    font-size: 24px;
+    letter-spacing: normal;
+    text-transform: none;
+    font: var(--type-heading);
   }
   .rf-distance-field > header > strong {
-    font-size: 34px;
+    letter-spacing: normal;
+    text-transform: none;
+    font: var(--type-display);
   }
   .rf-distance-field > header > strong small {
-    font-size: 11px;
+    letter-spacing: normal;
+    text-transform: none;
+    font: var(--type-caption);
   }
   .rf-field-axis {
-    font-size: 11px;
+    letter-spacing: normal;
+    text-transform: none;
+    font: var(--type-caption);
   }
   .rf-field-row > strong small {
-    font-size: 10px;
+    letter-spacing: normal;
+    text-transform: none;
+    font: var(--type-caption);
   }
   .rf-matchup-choice label {
     margin-left: 0;
@@ -1636,22 +1777,30 @@
     padding: 17px 14px;
   }
   .rf-moves-grid .rf-move-day {
-    font-size: 10px;
     flex-direction: column;
     gap: 10px;
+    letter-spacing: normal;
+    text-transform: none;
+    font: var(--type-caption);
   }
   .rf-moves-grid .rf-ring {
     height: 125px;
     width: 125px;
   }
   .rf-moves-grid .rf-ring > strong {
-    font-size: 34px;
+    letter-spacing: normal;
+    text-transform: none;
+    font: var(--type-display);
   }
   .rf-moves-grid .rf-move-name {
-    font-size: 16px;
+    letter-spacing: normal;
+    text-transform: none;
+    font: var(--type-body);
   }
   .rf-moves-grid .rf-move-time {
-    font-size: 10px;
+    letter-spacing: normal;
+    text-transform: none;
+    font: var(--type-caption);
   }
   .rf-you-layout {
     grid-template-columns: 1fr;
@@ -1661,33 +1810,45 @@
     width: 230px;
   }
   .rf-athlete-card > div > strong {
-    font-size: 65px;
+    letter-spacing: normal;
+    text-transform: none;
+    font: var(--type-display);
   }
   .rf-athlete-card dl {
     gap: 20px;
   }
   .rf-athlete-card dd {
-    font-size: 31px;
+    letter-spacing: normal;
+    text-transform: none;
+    font: var(--type-display);
   }
   .rf-athlete-card dt {
-    font-size: 11px;
+    letter-spacing: normal;
+    text-transform: none;
+    font: var(--type-caption);
   }
   .rf-you-side {
     grid-template-columns: 1fr 1fr;
     align-items: start;
   }
   .rf-week-record h2 {
-    font-size: 25px;
+    letter-spacing: normal;
+    text-transform: none;
+    font: var(--type-heading);
   }
   .rf-week-record > div {
     flex-wrap: wrap;
     gap: 10px;
   }
   .rf-week-record > div > strong {
-    font-size: 28px;
+    letter-spacing: normal;
+    text-transform: none;
+    font: var(--type-display);
   }
   .rf-tracker-card h2 {
-    font-size: 24px;
+    letter-spacing: normal;
+    text-transform: none;
+    font: var(--type-heading);
   }
 }
 @media (max-width: 600px) {
@@ -1706,8 +1867,10 @@
     margin-top: 8px;
   }
   .rf-club {
-    font-size: 11px;
     padding: 10px 13px;
+    letter-spacing: normal;
+    text-transform: none;
+    font: var(--type-caption);
   }
   .rf-header nav {
     position: fixed;
@@ -1732,9 +1895,11 @@
     gap: 5px;
     color: var(--rf-plum);
     padding: 9px 5px;
-    font-size: 10px;
     border-radius: 12px;
     min-height: 52px;
+    letter-spacing: normal;
+    text-transform: none;
+    font: var(--type-label);
   }
   .rf-header nav button[aria-current="page"] {
     background: var(--rf-plum);
@@ -1745,10 +1910,11 @@
     height: 18px;
   }
   .rf-demo-line {
-    font-size: 9px;
-    line-height: 1.6;
     gap: 15px;
     padding: 12px 0;
+    letter-spacing: normal;
+    text-transform: none;
+    font: var(--type-caption);
   }
   .rf-demo-line > span:last-child {
     text-align: right;
@@ -1760,18 +1926,21 @@
     padding: 16px 0 27px;
   }
   .rf-hero .rf-kicker {
-    font-size: 9px;
-    letter-spacing: 0.05em;
+    letter-spacing: normal;
+    text-transform: none;
+    font: var(--type-label);
   }
   .rf-hero h1 {
-    font-size: 29px;
-    line-height: 1.06;
     margin: 13px 0 12px;
+    letter-spacing: normal;
+    text-transform: none;
+    font: var(--type-display);
   }
   .rf-hero > div > p:last-child {
-    font-size: 11px;
-    line-height: 1.6;
     max-width: 225px;
+    letter-spacing: normal;
+    text-transform: none;
+    font: var(--type-caption);
   }
   .rf-hero-ace {
     width: 105px;
@@ -1782,8 +1951,9 @@
     height: 120px;
   }
   .rf-hero-ace > span {
-    font-size: 6px;
-    letter-spacing: 0.05em;
+    letter-spacing: normal;
+    text-transform: none;
+    font: var(--type-caption);
   }
   .rf-week-layout, .rf-matchups-layout {
     gap: 18px;
@@ -1793,18 +1963,23 @@
     border-radius: 18px;
   }
   .rf-matchup > header {
-    font-size: 9px;
     gap: 12px;
     align-items: flex-start;
+    letter-spacing: normal;
+    text-transform: none;
+    font: var(--type-caption);
   }
   .rf-matchup > header > span {
     max-width: 150px;
-    line-height: 1.5;
+    letter-spacing: normal;
+    text-transform: none;
+    font: var(--type-body);
   }
   .rf-matchup > header > b {
-    font-size: 10px;
     white-space: nowrap;
-    line-height: 1.5;
+    letter-spacing: normal;
+    text-transform: none;
+    font: var(--type-caption);
   }
   .rf-scoreboard {
     grid-template-columns: 1fr 30px 1fr;
@@ -1812,20 +1987,26 @@
     padding: 23px 0;
   }
   .rf-scoreboard > div > span {
-    font-size: 9px;
-    letter-spacing: 0;
-    line-height: 1.5;
+    letter-spacing: normal;
+    text-transform: none;
+    font: var(--type-caption);
   }
   .rf-scoreboard strong {
-    font-size: 43px;
     margin-top: 12px;
+    letter-spacing: normal;
+    text-transform: none;
+    font: var(--type-display);
   }
   .rf-scoreboard strong small {
-    font-size: 10px;
     margin-left: 4px;
+    letter-spacing: normal;
+    text-transform: none;
+    font: var(--type-display);
   }
   .rf-vs {
-    font-size: 16px;
+    letter-spacing: normal;
+    text-transform: none;
+    font: var(--type-body);
   }
   .rf-court {
     padding: 13px 10px 10px;
@@ -1837,7 +2018,9 @@
   }
   .rf-court-lane > span {
     width: 50px;
-    font-size: 8px;
+    letter-spacing: normal;
+    text-transform: none;
+    font: var(--type-caption);
   }
   .rf-court-track {
     margin-right: 13px;
@@ -1846,11 +2029,15 @@
   .rf-court-dot {
     width: 26px;
     height: 26px;
-    font-size: 7px;
+    letter-spacing: normal;
+    text-transform: none;
+    font: var(--type-caption);
   }
   .rf-court-axis {
     padding: 12px 0 0 59px;
-    font-size: 9px;
+    letter-spacing: normal;
+    text-transform: none;
+    font: var(--type-caption);
   }
   .rf-court-lines {
     inset: 11px;
@@ -1868,15 +2055,20 @@
     width: 55px;
   }
   .rf-ace-call > div > span {
-    font-size: 8px;
+    letter-spacing: normal;
+    text-transform: none;
+    font: var(--type-caption);
   }
   .rf-ace-call strong {
-    font-size: 17px;
     margin: 5px 0;
+    letter-spacing: normal;
+    text-transform: none;
+    font: var(--type-body);
   }
   .rf-ace-call p {
-    font-size: 10px;
-    line-height: 1.6;
+    letter-spacing: normal;
+    text-transform: none;
+    font: var(--type-caption);
   }
   .rf-replay {
     gap: 12px;
@@ -1884,7 +2076,9 @@
   }
   .rf-replay .rf-replay-button {
     padding: 11px 13px;
-    font-size: 10px;
+    letter-spacing: normal;
+    text-transform: none;
+    font: var(--type-label);
   }
   .rf-replay > div {
     width: 100%;
@@ -1893,13 +2087,17 @@
   }
   .rf-replay > div button {
     flex: 1;
-    font-size: 10px;
     padding: 9px 6px;
+    letter-spacing: normal;
+    text-transform: none;
+    font: var(--type-label);
   }
   .rf-matchup-link {
-    font-size: 11px;
     padding: 13px 16px;
     margin-top: 11px;
+    letter-spacing: normal;
+    text-transform: none;
+    font: var(--type-caption);
   }
   .rf-small-moves {
     padding: 20px 15px;
@@ -1910,14 +2108,20 @@
     align-items: center;
   }
   .rf-small-moves .rf-kicker {
-    font-size: 9px;
+    letter-spacing: normal;
+    text-transform: none;
+    font: var(--type-label);
   }
   .rf-small-moves h2 {
-    font-size: 22px;
     margin-top: 6px;
+    letter-spacing: normal;
+    text-transform: none;
+    font: var(--type-heading);
   }
   .rf-small-moves > header > button {
-    font-size: 11px;
+    letter-spacing: normal;
+    text-transform: none;
+    font: var(--type-label);
   }
   .rf-small-ring-list {
     gap: 7px;
@@ -1927,12 +2131,16 @@
     border-radius: 13px;
   }
   .rf-small-ring-list .rf-move-day {
-    font-size: 10px;
     gap: 7px;
+    letter-spacing: normal;
+    text-transform: none;
+    font: var(--type-caption);
   }
   .rf-small-ring-list .rf-move-day > span {
-    font-size: 8px;
     padding: 3px 6px;
+    letter-spacing: normal;
+    text-transform: none;
+    font: var(--type-caption);
   }
   .rf-small-ring-list .rf-ring {
     height: 80px;
@@ -1940,27 +2148,34 @@
     margin: 12px auto;
   }
   .rf-small-ring-list .rf-ring > strong {
-    font-size: 25px;
+    letter-spacing: normal;
+    text-transform: none;
+    font: var(--type-heading);
   }
   .rf-small-ring-list .rf-ring > strong small {
-    font-size: 9px;
+    letter-spacing: normal;
+    text-transform: none;
+    font: var(--type-caption);
   }
   .rf-small-ring-list .rf-move-name {
-    font-size: 11px;
-    line-height: 1.4;
     min-height: 30px;
     display: grid;
     place-items: center;
+    letter-spacing: normal;
+    text-transform: none;
+    font: var(--type-caption);
   }
   .rf-small-ring-list .rf-move-time {
-    font-size: 9px;
-    line-height: 1.5;
     margin-top: 6px;
+    letter-spacing: normal;
+    text-transform: none;
+    font: var(--type-caption);
   }
   .rf-small-moves .rf-ring-caption {
-    font-size: 9px;
-    line-height: 1.5;
     margin-top: 14px !important;
+    letter-spacing: normal;
+    text-transform: none;
+    font: var(--type-caption);
   }
   .rf-highlight {
     margin-top: 20px;
@@ -1985,33 +2200,43 @@
     grid-column: 2;
   }
   .rf-highlight-copy > .rf-kicker {
-    font-size: 8px;
+    letter-spacing: normal;
+    text-transform: none;
+    font: var(--type-label);
   }
   .rf-highlight h2 {
-    font-size: 24px;
-    line-height: 1.1;
     margin: 9px 0;
+    letter-spacing: normal;
+    text-transform: none;
+    font: var(--type-heading);
   }
   .rf-highlight-copy > p:last-child {
-    font-size: 11px;
-    line-height: 1.6;
+    letter-spacing: normal;
+    text-transform: none;
+    font: var(--type-caption);
   }
   .rf-highlight > button {
     grid-column: 2;
     max-width: none;
     width: fit-content;
     padding: 11px 13px;
-    font-size: 10px;
+    letter-spacing: normal;
+    text-transform: none;
+    font: var(--type-label);
   }
   .rally-focus[data-ink="on"] .rf-highlight h2 {
-    font-size: 30px;
+    letter-spacing: normal;
+    text-transform: none;
+    font: var(--type-display);
   }
   .rally-focus[data-ink="on"] .rf-sticker {
-    font-size: 13px;
     padding: 5px 7px;
     top: -17px;
     left: -7px;
     box-shadow: 2px 2px var(--rf-plum);
+    letter-spacing: normal;
+    text-transform: none;
+    font: var(--type-caption);
   }
   .rf-product-footer {
     padding: 23px 0 26px;
@@ -2020,14 +2245,16 @@
     gap: 15px;
   }
   .rf-product-footer > span {
-    font-size: 13px;
     max-width: 180px;
-    line-height: 1.2;
+    letter-spacing: normal;
+    text-transform: none;
+    font: var(--type-body);
   }
   .rf-product-footer p {
-    font-size: 10px;
-    line-height: 1.5;
     text-align: right;
+    letter-spacing: normal;
+    text-transform: none;
+    font: var(--type-caption);
   }
   .rf-matchup-choice {
     padding: 17px 16px;
@@ -2035,24 +2262,32 @@
     border-radius: 12px;
   }
   .rf-matchup-choice > .rf-kicker {
-    font-size: 9px;
+    letter-spacing: normal;
+    text-transform: none;
+    font: var(--type-label);
   }
   .rf-matchup-choice > div {
     gap: 6px;
   }
   .rf-matchup-choice button {
     padding: 10px 12px;
-    font-size: 10px;
+    letter-spacing: normal;
+    text-transform: none;
+    font: var(--type-label);
   }
   .rf-matchup-choice label {
-    font-size: 10px;
     margin-top: 8px;
     gap: 14px;
+    letter-spacing: normal;
+    text-transform: none;
+    font: var(--type-caption);
   }
   .rf-matchup-choice select {
     padding: 10px 12px;
-    font-size: 12px;
     max-width: none;
+    letter-spacing: normal;
+    text-transform: none;
+    font: var(--type-caption);
   }
   .rf-distance-field {
     padding: 22px 16px;
@@ -2062,25 +2297,33 @@
     gap: 15px;
   }
   .rf-distance-field .rf-kicker {
-    font-size: 9px;
+    letter-spacing: normal;
+    text-transform: none;
+    font: var(--type-label);
   }
   .rf-distance-field h2 {
-    font-size: 21px;
     max-width: 200px;
-    line-height: 1.2;
+    letter-spacing: normal;
+    text-transform: none;
+    font: var(--type-heading);
   }
   .rf-distance-field > header > strong {
-    font-size: 29px;
+    letter-spacing: normal;
+    text-transform: none;
+    font: var(--type-display);
   }
   .rf-distance-field > header > strong small {
-    font-size: 9px;
     max-width: 75px;
     white-space: normal;
-    line-height: 1.5;
+    letter-spacing: normal;
+    text-transform: none;
+    font: var(--type-caption);
   }
   .rf-field-axis {
-    font-size: 9px;
     gap: 10px;
+    letter-spacing: normal;
+    text-transform: none;
+    font: var(--type-caption);
   }
   .rf-field-row {
     padding: 13px 0;
@@ -2093,25 +2336,36 @@
   .rf-field-person > b {
     width: 26px;
     height: 26px;
-    font-size: 8px;
+    letter-spacing: normal;
+    text-transform: none;
+    font: var(--type-caption);
   }
   .rf-field-person > span {
-    font-size: 12px;
+    letter-spacing: normal;
+    text-transform: none;
+    font: var(--type-caption);
   }
   .rf-field-person small {
-    font-size: 9px;
-    line-height: 1.4;
+    letter-spacing: normal;
+    text-transform: none;
+    font: var(--type-caption);
   }
   .rf-field-row > strong {
-    font-size: 15px;
     width: 37px;
+    letter-spacing: normal;
+    text-transform: none;
+    font: var(--type-body);
   }
   .rf-field-row > strong small {
-    font-size: 9px;
+    letter-spacing: normal;
+    text-transform: none;
+    font: var(--type-caption);
   }
   .rf-distance-field > p {
-    font-size: 10px;
     margin-top: 17px;
+    letter-spacing: normal;
+    text-transform: none;
+    font: var(--type-caption);
   }
   .rf-moves-summary {
     padding: 23px 20px;
@@ -2120,18 +2374,25 @@
     margin-bottom: 18px;
   }
   .rf-moves-summary > .rf-kicker {
-    font-size: 10px;
+    letter-spacing: normal;
+    text-transform: none;
+    font: var(--type-label);
   }
   .rf-moves-summary > strong {
-    font-size: 53px;
+    letter-spacing: normal;
+    text-transform: none;
+    font: var(--type-display);
   }
   .rf-moves-summary > strong small {
-    font-size: 11px;
+    letter-spacing: normal;
+    text-transform: none;
+    font: var(--type-caption);
   }
   .rf-moves-summary p {
-    font-size: 11px;
-    line-height: 1.6;
     flex-basis: 100%;
+    letter-spacing: normal;
+    text-transform: none;
+    font: var(--type-caption);
   }
   .rf-moves-grid {
     grid-template-columns: 1fr;
@@ -2152,13 +2413,17 @@
     flex-direction: column;
     align-items: flex-start;
     justify-content: flex-start;
-    font-size: 11px;
     gap: 10px;
     margin: 0;
+    letter-spacing: normal;
+    text-transform: none;
+    font: var(--type-caption);
   }
   .rf-moves-grid .rf-move-day > span {
-    font-size: 10px;
     padding: 4px 8px;
+    letter-spacing: normal;
+    text-transform: none;
+    font: var(--type-caption);
   }
   .rf-moves-grid .rf-ring {
     height: 115px;
@@ -2169,27 +2434,36 @@
     max-width: 100%;
   }
   .rf-moves-grid .rf-ring > strong {
-    font-size: 34px;
+    letter-spacing: normal;
+    text-transform: none;
+    font: var(--type-display);
   }
   .rf-moves-grid .rf-ring > strong small {
-    font-size: 11px;
+    letter-spacing: normal;
+    text-transform: none;
+    font: var(--type-caption);
   }
   .rf-moves-grid .rf-move-name {
     grid-column: 2;
     grid-row: 2;
-    font-size: 17px;
     display: block;
     align-self: end;
+    letter-spacing: normal;
+    text-transform: none;
+    font: var(--type-body);
   }
   .rf-moves-grid .rf-move-time {
     grid-column: 2;
     grid-row: 3;
-    font-size: 10px;
     margin-top: 5px;
+    letter-spacing: normal;
+    text-transform: none;
+    font: var(--type-caption);
   }
   .rf-ring-caption {
-    font-size: 10px;
-    line-height: 1.6;
+    letter-spacing: normal;
+    text-transform: none;
+    font: var(--type-caption);
   }
   .rf-moves-note {
     gap: 15px;
@@ -2201,16 +2475,20 @@
     height: 90px;
   }
   .rf-moves-note h2 {
-    font-size: 23px;
-    line-height: 1.15;
     margin: 9px 0;
+    letter-spacing: normal;
+    text-transform: none;
+    font: var(--type-heading);
   }
   .rf-moves-note .rf-kicker {
-    font-size: 9px;
+    letter-spacing: normal;
+    text-transform: none;
+    font: var(--type-label);
   }
   .rf-moves-note p:last-child {
-    font-size: 11px;
-    line-height: 1.6;
+    letter-spacing: normal;
+    text-transform: none;
+    font: var(--type-caption);
   }
   .rf-you-layout {
     gap: 18px;
@@ -2220,7 +2498,9 @@
     border-radius: 18px;
   }
   .rf-athlete-card > .rf-kicker {
-    font-size: 10px;
+    letter-spacing: normal;
+    text-transform: none;
+    font: var(--type-label);
   }
   .rf-athlete-card > .world-mascot {
     height: 210px;
@@ -2228,10 +2508,14 @@
     margin: 17px auto;
   }
   .rf-athlete-card > div > strong {
-    font-size: 61px;
+    letter-spacing: normal;
+    text-transform: none;
+    font: var(--type-display);
   }
   .rf-athlete-card > div > span {
-    font-size: 10px;
+    letter-spacing: normal;
+    text-transform: none;
+    font: var(--type-caption);
   }
   .rf-athlete-card dl {
     gap: 12px;
@@ -2239,13 +2523,19 @@
     padding-top: 20px;
   }
   .rf-athlete-card dt {
-    font-size: 10px;
+    letter-spacing: normal;
+    text-transform: none;
+    font: var(--type-caption);
   }
   .rf-athlete-card dd {
-    font-size: 26px;
+    letter-spacing: normal;
+    text-transform: none;
+    font: var(--type-heading);
   }
   .rf-athlete-card dd small {
-    font-size: 10px;
+    letter-spacing: normal;
+    text-transform: none;
+    font: var(--type-caption);
   }
   .rf-you-side {
     grid-template-columns: 1fr;
@@ -2256,38 +2546,58 @@
     border-radius: 18px;
   }
   .rf-week-record h2 {
-    font-size: 25px;
+    letter-spacing: normal;
+    text-transform: none;
+    font: var(--type-heading);
   }
   .rf-week-record > div {
     flex-wrap: nowrap;
   }
   .rf-week-record > div > span {
-    font-size: 12px;
+    letter-spacing: normal;
+    text-transform: none;
+    font: var(--type-caption);
   }
   .rf-week-record > div > span small {
-    font-size: 9px;
     max-width: 160px;
+    letter-spacing: normal;
+    text-transform: none;
+    font: var(--type-caption);
   }
   .rf-week-record > div > strong {
-    font-size: 29px;
+    letter-spacing: normal;
+    text-transform: none;
+    font: var(--type-display);
   }
   .rf-week-record > div > strong small {
-    font-size: 10px;
+    letter-spacing: normal;
+    text-transform: none;
+    font: var(--type-caption);
   }
   .rf-week-record > button, .rf-tracker-card > button {
-    font-size: 11px;
+    letter-spacing: normal;
+    text-transform: none;
+    font: var(--type-label);
   }
   .rf-tracker-card h2 {
-    font-size: 25px;
+    letter-spacing: normal;
+    text-transform: none;
+    font: var(--type-heading);
   }
   .rf-tracker-card p {
-    font-size: 12px;
+    letter-spacing: normal;
+    text-transform: none;
+    font: var(--type-caption);
   }
   .rf-tracker-card .rf-kicker {
-    font-size: 10px;
+    letter-spacing: normal;
+    text-transform: none;
+    font: var(--type-label);
   }
   .rf-demo-badge {
-    font-size: 9px;
+    letter-spacing: normal;
+    text-transform: none;
+    font: var(--type-label);
   }
   .rf-dialog {
     padding: 23px 20px;
@@ -2300,17 +2610,24 @@
     gap: 16px;
   }
   .rf-dialog h2 {
-    font-size: 22px;
+    letter-spacing: normal;
+    text-transform: none;
+    font: var(--type-heading);
   }
   .rf-dialog > header > button {
-    font-size: 28px;
+    letter-spacing: normal;
+    text-transform: none;
+    font: var(--type-label);
   }
   .rf-dialog > div > p {
-    font-size: 12px;
+    letter-spacing: normal;
+    text-transform: none;
+    font: var(--type-caption);
   }
   .rf-dialog .rf-kicker {
-    font-size: 9px;
-    line-height: 1.6;
+    letter-spacing: normal;
+    text-transform: none;
+    font: var(--type-label);
   }
   .rf-receipt-poster {
     padding: 19px 17px;
@@ -2318,7 +2635,9 @@
     margin-top: 17px;
   }
   .rf-receipt-poster h3 {
-    font-size: 25px;
+    letter-spacing: normal;
+    text-transform: none;
+    font: var(--type-heading);
   }
   .rf-receipt-poster .world-mascot {
     width: 104px;
@@ -2333,61 +2652,86 @@
     border-radius: 10px;
   }
   .rf-receipt-frames > section > span {
-    font-size: 8px;
-    line-height: 1.6;
-    letter-spacing: 0.025em;
+    letter-spacing: normal;
+    text-transform: none;
+    font: var(--type-caption);
   }
   .rf-receipt-frames strong {
-    font-size: 31px;
     margin: 12px 0 7px;
+    letter-spacing: normal;
+    text-transform: none;
+    font: var(--type-display);
   }
   .rf-receipt-frames strong small {
-    font-size: 10px;
+    letter-spacing: normal;
+    text-transform: none;
+    font: var(--type-caption);
   }
   .rf-receipt-frames .rf-receipt-gap {
-    font-size: 23px;
+    letter-spacing: normal;
+    text-transform: none;
+    font: var(--type-heading);
   }
   .rf-receipt-frames p {
-    font-size: 10px;
-    line-height: 1.6;
+    letter-spacing: normal;
+    text-transform: none;
+    font: var(--type-caption);
   }
   .rf-source-note {
-    font-size: 10px !important;
-    line-height: 1.6;
+    letter-spacing: normal !important;
+    text-transform: none !important;
+    font: var(--type-caption) !important;
   }
   .rf-dialog .rf-primary, .rf-dialog-done {
-    font-size: 11px;
     padding: 13px 16px;
+    letter-spacing: normal;
+    text-transform: none;
+    font: var(--type-caption);
   }
   .rf-decisions {
-    font-size: 13px;
-    line-height: 1.6;
+    letter-spacing: normal;
+    text-transform: none;
+    font: var(--type-body);
   }
   .rf-decisions dt {
-    font-size: 10px;
+    letter-spacing: normal;
+    text-transform: none;
+    font: var(--type-caption);
   }
   .rally-focus[data-ink="on"] .rf-dialog-activity h2 {
-    font-size: 31px;
+    letter-spacing: normal;
+    text-transform: none;
+    font: var(--type-display);
   }
   .rally-focus[data-ink="on"] .rf-receipt-poster h3 {
-    font-size: 36px;
+    letter-spacing: normal;
+    text-transform: none;
+    font: var(--type-display);
   }
   .rally-focus[data-ink="on"] .rf-receipt-poster .rf-sticker {
-    font-size: 14px;
     top: 0;
     left: 0;
     margin-bottom: 14px;
+    letter-spacing: normal;
+    text-transform: none;
+    font: var(--type-caption);
   }
   .rally-focus[data-ink="on"] .rf-receipt-frames strong {
-    font-size: 37px;
+    letter-spacing: normal;
+    text-transform: none;
+    font: var(--type-display);
   }
   .rally-focus[data-ink="on"] .rf-receipt-frames .rf-receipt-gap {
-    font-size: 29px;
+    letter-spacing: normal;
+    text-transform: none;
+    font: var(--type-display);
   }
 }
 @media (max-width: 360px) {
   .rf-hero h1 {
-    font-size: 25px;
+    letter-spacing: normal;
+    text-transform: none;
+    font: var(--type-display);
   }
   .rf-hero-ace {
     width: 86px;
@@ -2397,77 +2741,111 @@
     width: 86px;
   }
   .rf-scoreboard strong {
-    font-size: 36px;
+    letter-spacing: normal;
+    text-transform: none;
+    font: var(--type-display);
   }
   .rf-scoreboard > div > span {
-    font-size: 8px;
+    letter-spacing: normal;
+    text-transform: none;
+    font: var(--type-caption);
   }
   .rf-matchup > header > span {
     max-width: 132px;
   }
   .rf-matchup > header > b {
-    font-size: 9px;
+    letter-spacing: normal;
+    text-transform: none;
+    font: var(--type-caption);
   }
   .rf-small-ring-list .rf-ring {
     width: 65px;
     height: 65px;
   }
   .rf-small-ring-list .rf-ring > strong {
-    font-size: 22px;
+    letter-spacing: normal;
+    text-transform: none;
+    font: var(--type-heading);
   }
   .rf-small-ring-list .rf-move-name {
-    font-size: 10px;
+    letter-spacing: normal;
+    text-transform: none;
+    font: var(--type-caption);
   }
   .rf-small-ring-list .rf-move-time {
-    font-size: 8px;
+    letter-spacing: normal;
+    text-transform: none;
+    font: var(--type-caption);
   }
   .rf-small-ring-list .rf-move-day {
-    font-size: 9px;
+    letter-spacing: normal;
+    text-transform: none;
+    font: var(--type-caption);
   }
   .rf-small-ring-list .rf-move-day > span {
-    font-size: 7px;
     padding: 3px 5px;
+    letter-spacing: normal;
+    text-transform: none;
+    font: var(--type-caption);
   }
   .rf-small-moves h2 {
-    font-size: 21px;
+    letter-spacing: normal;
+    text-transform: none;
+    font: var(--type-heading);
   }
   .rf-small-moves > header > button {
-    font-size: 10px;
+    letter-spacing: normal;
+    text-transform: none;
+    font: var(--type-label);
   }
   .rf-court-lane > span {
     width: 46px;
-    font-size: 7px;
+    letter-spacing: normal;
+    text-transform: none;
+    font: var(--type-caption);
   }
   .rf-court-lane {
     gap: 8px;
   }
   .rf-court-axis {
     padding-left: 54px;
-    font-size: 8px;
+    letter-spacing: normal;
+    text-transform: none;
+    font: var(--type-caption);
   }
   .rf-field-person {
     width: 111px;
     gap: 7px;
   }
   .rf-field-person > span {
-    font-size: 11px;
+    letter-spacing: normal;
+    text-transform: none;
+    font: var(--type-caption);
   }
   .rf-field-person small {
-    font-size: 8px;
+    letter-spacing: normal;
+    text-transform: none;
+    font: var(--type-caption);
   }
   .rf-field-row {
     gap: 7px;
   }
   .rf-field-row > strong {
-    font-size: 13px;
     width: 31px;
+    letter-spacing: normal;
+    text-transform: none;
+    font: var(--type-body);
   }
   .rf-distance-field h2 {
-    font-size: 20px;
+    letter-spacing: normal;
+    text-transform: none;
+    font: var(--type-heading);
   }
   .rf-matchup-choice button {
     padding: 10px 10px;
-    font-size: 9px;
+    letter-spacing: normal;
+    text-transform: none;
+    font: var(--type-label);
   }
   .rf-moves-grid .rf-move {
     grid-template-columns: 96px 1fr;
@@ -2479,13 +2857,19 @@
     height: 96px;
   }
   .rf-moves-grid .rf-move-name {
-    font-size: 15px;
+    letter-spacing: normal;
+    text-transform: none;
+    font: var(--type-body);
   }
   .rf-moves-grid .rf-ring > strong {
-    font-size: 30px;
+    letter-spacing: normal;
+    text-transform: none;
+    font: var(--type-display);
   }
   .rf-athlete-card dd {
-    font-size: 23px;
+    letter-spacing: normal;
+    text-transform: none;
+    font: var(--type-heading);
   }
   .rf-athlete-card > .world-mascot {
     width: 190px;
@@ -2506,13 +2890,19 @@
     height: 88px;
   }
   .rf-highlight-copy > p:last-child {
-    font-size: 10px;
+    letter-spacing: normal;
+    text-transform: none;
+    font: var(--type-caption);
   }
   .rf-highlight > button {
-    font-size: 9px;
+    letter-spacing: normal;
+    text-transform: none;
+    font: var(--type-label);
   }
   .rally-focus[data-ink="on"] .rf-highlight h2 {
-    font-size: 27px;
+    letter-spacing: normal;
+    text-transform: none;
+    font: var(--type-heading);
   }
   .rf-receipt-poster {
     gap: 11px;
@@ -2523,13 +2913,17 @@
     height: 108px;
   }
   .rally-focus[data-ink="on"] .rf-receipt-poster h3 {
-    font-size: 31px;
+    letter-spacing: normal;
+    text-transform: none;
+    font: var(--type-display);
   }
   .rf-receipt-frames > section {
     padding: 14px 11px;
   }
   .rf-receipt-frames .rf-receipt-gap {
-    font-size: 21px;
+    letter-spacing: normal;
+    text-transform: none;
+    font: var(--type-heading);
   }
 }
 @media (pointer: coarse) {

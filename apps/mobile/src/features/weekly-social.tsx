@@ -76,7 +76,7 @@ export function WeeklySocialActions({
   if (error && !data)
     return (
       <View>
-        <Text accessibilityRole="alert">{error}</Text>
+        <AppText role="body" accessibilityRole="alert">{error}</AppText>
         <FocusButton
           label="Retry"
           secondary
@@ -108,13 +108,13 @@ export function WeeklySocialActions({
                   style={[f.chip, p.id === peer.id && f.chipActive]}
                   onPress={() => setSelected(p.id)}
                 >
-                  <Text>{p.name}</Text>
+                  <AppText role="label">{p.name}</AppText>
                 </Pressable>
               ))
             : null}
         </View>
       </ScrollView>
-      <AppText role="itemTitle" >
+      <AppText role="label" >
         {peer.name} · #{peer.place} ·{" "}
         {formatVolume(result.sport, peer.distanceM, peer.movingSec, units)}
       </AppText>
@@ -132,8 +132,8 @@ export function WeeklySocialActions({
           onPress={() => void toggle("repeat")}
         />
       </View>
-      <AppText role="supporting" secondary >{repeatStatus(peer.status)}</AppText>
-      {error ? <Text accessibilityRole="alert">{error}</Text> : null}
+      <AppText role="body" secondary >{repeatStatus(peer.status)}</AppText>
+      {error ? <AppText role="body" accessibilityRole="alert">{error}</AppText> : null}
     </View>
   );
 }

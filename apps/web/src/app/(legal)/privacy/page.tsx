@@ -14,8 +14,8 @@ const UPDATED = "October 23, 2026";
 export default function PrivacyPolicyPage() {
   return (
     <article className="fb-legal-doc">
-      <AppParagraph typographyRole="badgeLabel" className="fb-kicker">Legal</AppParagraph>
-      <AppHeading level={1} role="pageTitle" className="fb-title">Privacy Policy</AppHeading>
+      <AppParagraph typographyRole="label" className="fb-kicker">Legal</AppParagraph>
+      <AppHeading level={1} role="display" className="fb-title">Privacy Policy</AppHeading>
       <AppParagraph typographyRole="body" className="fb-copy">Last updated {UPDATED}</AppParagraph>
 
       <AppParagraph typographyRole="body">
@@ -25,7 +25,7 @@ export default function PrivacyPolicyPage() {
         product, including when you connect a wearable or activity service.
       </AppParagraph>
 
-      <AppHeading level={2} role="sectionTitle">1. Who this applies to</AppHeading>
+      <AppHeading level={2} role="heading">1. Who this applies to</AppHeading>
       <AppParagraph typographyRole="body">
         This policy covers the overtaek web and mobile apps and related APIs. If you
         use a third-party service through us (for example Garmin, Strava, WHOOP,
@@ -33,14 +33,14 @@ export default function PrivacyPolicyPage() {
         hold.
       </AppParagraph>
 
-      <AppHeading level={2} role="sectionTitle">2. Information we collect</AppHeading>
-      <AppHeading level={3} role="contentTitle">Account</AppHeading>
+      <AppHeading level={2} role="heading">2. Information we collect</AppHeading>
+      <AppHeading level={3} role="heading">Account</AppHeading>
       <AppParagraph typographyRole="body">
         When you create an account we collect your email address, password (stored
         by our auth provider), and optional display name. We use this to sign you
         in and show you on boards.
       </AppParagraph>
-      <AppHeading level={3} role="contentTitle">Fitness and health connections</AppHeading>
+      <AppHeading level={3} role="heading">Fitness and health connections</AppHeading>
       <AppParagraph typographyRole="body">
         If you connect a tracker, we receive only the data needed to score
         battles and show readiness when that provider supports it. Depending on
@@ -57,19 +57,19 @@ export default function PrivacyPolicyPage() {
         you choose to upload from the mobile app. We do not scrape your phone
         health store from the web.
       </AppParagraph>
-      <AppHeading level={3} role="contentTitle">Battle and product data</AppHeading>
+      <AppHeading level={3} role="heading">Battle and product data</AppHeading>
       <AppParagraph typographyRole="body">
         We store battle membership, preferences, period standings, imported or
         synced activity samples used for scoring, and similar product state so
         the board and history work across devices.
       </AppParagraph>
-      <AppHeading level={3} role="contentTitle">Technical data</AppHeading>
+      <AppHeading level={3} role="heading">Technical data</AppHeading>
       <AppParagraph typographyRole="body">
         Like most web apps, our hosts may process standard request logs (IP
         address, user agent, timestamps) for security and reliability.
       </AppParagraph>
 
-      <AppHeading level={2} role="sectionTitle">3. How we use information</AppHeading>
+      <AppHeading level={2} role="heading">3. How we use information</AppHeading>
       <ul>
         <li>Authenticate you and keep your session secure</li>
         <li>Sync activities and readiness to compute battle scores and standings</li>
@@ -82,7 +82,7 @@ export default function PrivacyPolicyPage() {
         data for advertising.
       </AppParagraph>
 
-      <AppHeading level={2} role="sectionTitle">4. How we share information</AppHeading>
+      <AppHeading level={2} role="heading">4. How we share information</AppHeading>
       <AppParagraph typographyRole="body">We share data only as needed to run the product:</AppParagraph>
       <ul>
         <li>
@@ -119,7 +119,7 @@ export default function PrivacyPolicyPage() {
         third-party analytics services or other integration partners.
       </AppParagraph>
 
-      <AppHeading level={2} role="sectionTitle">5. Connected fitness services</AppHeading>
+      <AppHeading level={2} role="heading">5. Connected fitness services</AppHeading>
       <AppParagraph typographyRole="body">
         Connecting a fitness service is optional. We receive the data available
         under the permissions you approve, and use it to populate workout
@@ -139,7 +139,7 @@ export default function PrivacyPolicyPage() {
         deletion as described below.
       </AppParagraph>
 
-      <AppHeading level={2} role="sectionTitle">6. AI and machine learning</AppHeading>
+      <AppHeading level={2} role="heading">6. AI and machine learning</AppHeading>
       <AppParagraph typographyRole="body">
         We do not send fitness or health data, or information derived from it,
         to AI or machine learning systems. We do not use this data to train,
@@ -149,7 +149,7 @@ export default function PrivacyPolicyPage() {
         restrictions on AI use continue to apply regardless of consent.
       </AppParagraph>
 
-      <AppHeading level={2} role="sectionTitle">7. Storage and retention</AppHeading>
+      <AppHeading level={2} role="heading">7. Storage and retention</AppHeading>
       <AppParagraph typographyRole="body">
         Account and battle data live in our application database. Fitness OAuth
         tokens are stored server-side in a private token store, not in the
@@ -164,7 +164,7 @@ export default function PrivacyPolicyPage() {
         a live cloud connection.
       </AppParagraph>
 
-      <AppHeading level={2} role="sectionTitle">8. Security</AppHeading>
+      <AppHeading level={2} role="heading">8. Security</AppHeading>
       <AppParagraph typographyRole="body">
         We use industry-standard protections appropriate for an early consumer
         app: encrypted transport (HTTPS), access controls, and server-side
@@ -172,7 +172,7 @@ export default function PrivacyPolicyPage() {
         storage is perfectly secure.
       </AppParagraph>
 
-      <AppHeading level={2} role="sectionTitle">9. Your choices and data rights</AppHeading>
+      <AppHeading level={2} role="heading">9. Your choices and data rights</AppHeading>
       <ul>
         <li>View synced activity history and progress in the app</li>
         <li>Update your display name and preferences in the app</li>
@@ -191,7 +191,7 @@ export default function PrivacyPolicyPage() {
         personal information we hold.
       </AppParagraph>
 
-      <AppHeading level={2} role="sectionTitle">10. Children</AppHeading>
+      <AppHeading level={2} role="heading">10. Children</AppHeading>
       <AppParagraph typographyRole="body">
         overtaek is not directed at children under 13, and we do not
         knowingly collect personal information from children under 13. Public
@@ -199,21 +199,21 @@ export default function PrivacyPolicyPage() {
         rules apply.
       </AppParagraph>
 
-      <AppHeading level={2} role="sectionTitle">11. International users</AppHeading>
+      <AppHeading level={2} role="heading">11. International users</AppHeading>
       <AppParagraph typographyRole="body">
         We may process data in the United States or other countries where our
         providers operate. If you use the app from elsewhere, you understand
         your information may be transferred to those locations.
       </AppParagraph>
 
-      <AppHeading level={2} role="sectionTitle">12. Changes</AppHeading>
+      <AppHeading level={2} role="heading">12. Changes</AppHeading>
       <AppParagraph typographyRole="body">
         We may update this policy as the product changes. We will revise the
         “Last updated” date above and, when changes are material, provide
         additional notice in the app when practical.
       </AppParagraph>
 
-      <AppHeading level={2} role="sectionTitle">13. Contact</AppHeading>
+      <AppHeading level={2} role="heading">13. Contact</AppHeading>
       <AppParagraph typographyRole="body">
         Privacy questions:{" "}
         <a href="mailto:3jerryliu@gmail.com">3jerryliu@gmail.com</a>

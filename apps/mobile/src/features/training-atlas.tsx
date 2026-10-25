@@ -1,4 +1,4 @@
-import { AppText, Section } from "../ui/section";
+import { textStyle, AppText, Section  } from "../ui/section";
 import { ChartScrubber } from "../ui/chart-scrubber";
 import { useMemo, useState } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
@@ -121,11 +121,11 @@ export function TrainingAtlas({ state }: { state: CompeteState }) {
           disabled={!prevAllowed}
           onPress={() => move(-1)}
         >
-          <AppText role="itemTitle" style={{ opacity: prevAllowed ? 1 : 0.3 }}>
+          <AppText role="label" style={{ opacity: prevAllowed ? 1 : 0.3 }}>
             ←
           </AppText>
         </Pressable>
-        <AppText role="itemTitle" >
+        <AppText role="label" >
           {range === "week"
             ? formatWeeklyCompetitionRange(anchor)
             : anchor.toLocaleDateString("en-US", {
@@ -143,7 +143,7 @@ export function TrainingAtlas({ state }: { state: CompeteState }) {
           disabled={!nextAllowed}
           onPress={() => move(1)}
         >
-          <AppText role="itemTitle" style={{ opacity: nextAllowed ? 1 : 0.3 }}>
+          <AppText role="label" style={{ opacity: nextAllowed ? 1 : 0.3 }}>
             →
           </AppText>
         </Pressable>
@@ -151,7 +151,7 @@ export function TrainingAtlas({ state }: { state: CompeteState }) {
       <View style={{ gap: 4 }}>
         <Text style={f.kicker}>Active time</Text>
         <Text
-          style={[f.massive, { fontSize: 38, fontFamily: "DMSans_700Bold" }]}
+          style={[f.massive, { ...textStyle("display") }]}
         >
           {clubDuration(buckets.reduce((sum, b) => sum + b.movingSec, 0))}
         </Text>

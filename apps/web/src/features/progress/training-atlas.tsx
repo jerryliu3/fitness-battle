@@ -181,7 +181,7 @@ export function TrainingAtlas({ state }: { state: CompeteState }) {
         <summary>
           Daily activity <span>＋</span>
         </summary>
-        <AppParagraph typographyRole="badgeLabel" className="fb-kicker">
+        <AppParagraph typographyRole="label" className="fb-kicker">
           {anchor.toLocaleDateString("en-US", {
             month: "long",
             timeZone: APP_TIMEZONE,
@@ -219,7 +219,7 @@ export function TrainingAtlas({ state }: { state: CompeteState }) {
         <div className="atlas-day" aria-live="polite">
           {day ? (
             <>
-              <AppParagraph typographyRole="badgeLabel" className="fb-kicker">
+              <AppParagraph typographyRole="label" className="fb-kicker">
                 {new Date(`${day.day}T12:00:00Z`).toLocaleDateString("en-US", {
                   month: "short",
                   day: "numeric",

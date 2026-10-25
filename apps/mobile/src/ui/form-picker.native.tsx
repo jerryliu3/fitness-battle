@@ -1,3 +1,4 @@
+import { textStyle } from "./section";
 import { dayKey } from "@fitness-battle/shared";
 import { useState } from "react";
 import { Modal, Platform, Pressable, Text, View } from "react-native";
@@ -10,9 +11,9 @@ function PickerSurface({ label, close, done, children }: { label: string; close:
   return <Modal transparent animationType="fade" onRequestClose={close}>
     <View style={{ flex: 1, backgroundColor: "#142b3b66", justifyContent: "center", padding: 24 }} accessibilityViewIsModal>
       <View style={[f.card, { backgroundColor: c.card }]}>
-        <Text accessibilityRole="header" style={f.h2}>{label}</Text>{children}
-        <View style={f.row}><Pressable accessibilityRole="button" onPress={close} style={{ padding: 12 }}><Text style={f.rowTitle}>Cancel</Text></Pressable>
-          <Pressable accessibilityRole="button" onPress={done} style={{ padding: 12 }}><Text style={f.rowTitle}>Done</Text></Pressable></View>
+        <Text accessibilityRole="header" style={textStyle("heading")}>{label}</Text>{children}
+        <View style={f.row}><Pressable accessibilityRole="button" onPress={close} style={{ padding: 12 }}><Text style={textStyle("label")}>Cancel</Text></Pressable>
+          <Pressable accessibilityRole="button" onPress={done} style={{ padding: 12 }}><Text style={textStyle("label")}>Done</Text></Pressable></View>
       </View>
     </View>
   </Modal>;
@@ -24,7 +25,7 @@ export function NumberPicker({ label, value, onChange, max = 1440, step = 1, uni
   const whole = Math.floor(Number(draft));
   const tenth = Math.round((Number(draft) - whole) * 10);
   return <>
-    <Pressable accessibilityRole="button" accessibilityLabel={`${label}: ${value || "Choose"} ${unit}`} style={f.input} onPress={() => { setDraft(value || "0"); setOpen(true); }}><Text style={f.rowTitle}>{value ? `${value} ${unit}` : `Choose ${label.toLowerCase()}`}</Text></Pressable>
+    <Pressable accessibilityRole="button" accessibilityLabel={`${label}: ${value || "Choose"} ${unit}`} style={f.input} onPress={() => { setDraft(value || "0"); setOpen(true); }}><Text style={textStyle("label")}>{value ? `${value} ${unit}` : `Choose ${label.toLowerCase()}`}</Text></Pressable>
     {open && <PickerSurface label={label} close={() => setOpen(false)} done={() => { onChange(draft); setOpen(false); }}>
       <View style={{ flexDirection: "row" }}>
         <Picker accessibilityLabel={label} selectedValue={String(whole)} onValueChange={item => setDraft(String(Number(item) + (fractional && Number(item) < max ? tenth / 10 : 0)))} style={{ color: c.ink, flex: 1 }}>
@@ -49,8 +50,8 @@ export function DateTimeField({ label, value, mode, onChange, clearLabel }: { la
     <Pressable accessibilityRole="button" accessibilityLabel={`${label}: ${value || "Choose"}`} style={f.input} onPress={() => {
       const date = new Date(mode === "date" ? `${value || dayKey(new Date())}T12:00:00Z` : `2000-01-01T${value || "08:00"}:00Z`);
       setDraft(date); setOpen(true);
-    }}><Text style={f.rowTitle}>{value || `Choose ${mode}`}</Text></Pressable>
-    {value && clearLabel ? <Pressable accessibilityRole="button" accessibilityLabel={clearLabel} onPress={() => { onChange(""); setOpen(false); }} style={{ paddingVertical: 12 }}><Text style={f.rowTitle}>{clearLabel}</Text></Pressable> : null}
+    }}><Text style={textStyle("label")}>{value || `Choose ${mode}`}</Text></Pressable>
+    {value && clearLabel ? <Pressable accessibilityRole="button" accessibilityLabel={clearLabel} onPress={() => { onChange(""); setOpen(false); }} style={{ paddingVertical: 12 }}><Text style={textStyle("label")}>{clearLabel}</Text></Pressable> : null}
     {open && (Platform.OS === "android" ? picker : <PickerSurface label={label} close={() => setOpen(false)} done={() => accept(draft)}>{picker}</PickerSurface>)}
   </>;
 }

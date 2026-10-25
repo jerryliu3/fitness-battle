@@ -3,7 +3,7 @@ import { act, create, type ReactTestRenderer } from "react-test-renderer";
 import { afterEach, describe, expect, it, vi } from "vitest";
 const storage = vi.hoisted(() => ({ getItem: vi.fn(), setItem: vi.fn(() => Promise.resolve()) }));
 vi.mock("@react-native-async-storage/async-storage", () => ({ default: storage }));
-vi.mock("react-native", () => ({ View: "View", Text: "Text", Pressable: "Pressable", PanResponder: { create: (handlers: object) => ({ panHandlers: handlers }) } }));
+vi.mock("react-native", () => ({ StyleSheet: { create: (value: unknown) => value }, View: "View", Text: "Text", Pressable: "Pressable", PanResponder: { create: (handlers: object) => ({ panHandlers: handlers }) } }));
 vi.mock("react-native-svg", () => ({ Circle: "Circle", ClipPath: "ClipPath", Defs: "Defs", Ellipse: "Ellipse", G: "G", Line: "Line", LinearGradient: "LinearGradient", Mask: "Mask", Path: "Path", Pattern: "Pattern", Rect: "Rect", Stop: "Stop", Text: "SvgText" }));
 vi.mock("./focus", () => ({ FocusSheet: "FocusSheet", f: {} }));
 import { FieldOverview, useFieldAppearance, drawFieldNode } from "./field-course";

@@ -125,7 +125,7 @@ export function DataSyncActions({ provider }: { provider?: ProviderId }) {
                   }
                 })
               }
-            ><AppText role="itemTitle" style={{ color: "#b83a38" }}>{busy ? "Disconnecting…" : "Disconnect"}</AppText></Pressable>
+            ><AppText role="label" style={{ color: "#b83a38" }}>{busy ? "Disconnecting…" : "Disconnect"}</AppText></Pressable>
           </View>
         ))}
       {!live && !provider && previewSyncReview ? (
@@ -197,7 +197,7 @@ export function DataSyncActions({ provider }: { provider?: ProviderId }) {
             .filter((a) => a.disposition === "pending")
             .map((a) => (
               <View key={a.id} style={f.card}>
-                <AppText role="itemTitle" >
+                <AppText role="label" >
                   {a.sport} · {new Date(a.startedAt).toLocaleDateString()}
                 </AppText>
                 <AppText role="body" secondary >Imported activity · pending review</AppText>

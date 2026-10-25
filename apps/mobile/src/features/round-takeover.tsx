@@ -43,7 +43,7 @@ function Round({
           <Text style={f.kicker}>
             Round complete · {next ? "2 / 2" : "1 / 2"}
           </Text>
-          <AppText role="pageTitle" >
+          <AppText accessibilityRole="header" role="display" >
             {next ? "Keep it going." : "Your week, settled."}
           </AppText>
           {!next ? (

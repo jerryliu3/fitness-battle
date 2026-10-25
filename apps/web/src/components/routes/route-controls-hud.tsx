@@ -1,5 +1,7 @@
 "use client";
 
+import { typographyStyle } from "../../ui/section";
+
 import React from "react";
 
 export interface RouteControlsHudProps {
@@ -94,8 +96,8 @@ export function RouteControlsHud({
         </div>
 
         {/* Distance metric */}
-        <div className="shrink-0 text-right font-mono text-xs text-white/90">
-          <span className="font-semibold text-[#f7c948]">
+        <div className="shrink-0 text-right   text-white/90" style={typographyStyle("caption")}>
+          <span className=" text-[#f7c948]" style={typographyStyle("label")}>
             {(currentDistanceKm * factor).toFixed(1)}
           </span>
           <span className="text-white/50"> / {(totalDistanceKm * factor).toFixed(1)} {distanceUnit}</span>
@@ -103,7 +105,7 @@ export function RouteControlsHud({
       </div>
 
       {/* Bottom row: Mode Toggle, Video Export & HD Snapshot buttons */}
-      <div className="flex flex-wrap items-center justify-between gap-2 border-t border-white/10 pt-2 text-xs">
+      <div className="flex flex-wrap items-center justify-between gap-2 border-t border-white/10 pt-2 " style={typographyStyle("caption")}>
         {/* 2D / 3D Mode Toggle Pill */}
         <div className="flex items-center rounded-xl bg-white/10 p-0.5">
           <button
@@ -111,11 +113,11 @@ export function RouteControlsHud({
             aria-pressed={mode === "2d-overview"}
             onClick={mode === "2d-overview" ? undefined : onToggleMode}
             disabled={isRecordingVideo}
-            className={`min-h-11 rounded-lg px-2.5 py-1 font-medium transition-colors ${
+            className={`min-h-11 rounded-lg px-2.5 py-1  transition-colors ${
               mode === "2d-overview"
-                ? "bg-[#f7c948] text-[#142b3b] shadow-sm font-semibold"
+                ? "bg-[#f7c948] text-[#142b3b] shadow-sm "
                 : "text-white/70 hover:text-white"
-            }`}
+            }`} style={typographyStyle("label")}
           >
             2D
           </button>
@@ -124,11 +126,11 @@ export function RouteControlsHud({
             aria-pressed={mode === "3d-flyover"}
             onClick={mode === "3d-flyover" ? undefined : onToggleMode}
             disabled={isRecordingVideo}
-            className={`min-h-11 rounded-lg px-2.5 py-1 font-medium transition-colors ${
+            className={`min-h-11 rounded-lg px-2.5 py-1  transition-colors ${
               mode === "3d-flyover"
-                ? "bg-[#f7c948] text-[#142b3b] shadow-sm font-semibold"
+                ? "bg-[#f7c948] text-[#142b3b] shadow-sm "
                 : "text-white/70 hover:text-white"
-            }`}
+            }`} style={typographyStyle("label")}
           >
             3D Flyover
           </button>
@@ -142,7 +144,7 @@ export function RouteControlsHud({
             onClick={onSnapImage}
             disabled={isRecordingVideo}
             title="Capture Instant HD Snapshot"
-            className="flex min-h-11 items-center gap-1.5 rounded-xl border border-white/15 bg-white/5 px-2.5 py-1.5 font-medium text-white/90 transition-all hover:bg-white/15 active:scale-95 disabled:opacity-50"
+            className="flex min-h-11 items-center gap-1.5 rounded-xl border border-white/15 bg-white/5 px-2.5 py-1.5  text-white/90 transition-all hover:bg-white/15 active:scale-95 disabled:opacity-50" style={typographyStyle("label")}
           >
             <svg
               className="h-3.5 w-3.5"
@@ -170,11 +172,11 @@ export function RouteControlsHud({
             type="button"
             onClick={onExportVideo}
             disabled={isRecordingVideo}
-            className={`flex min-h-11 items-center gap-1.5 rounded-xl px-3 py-1.5 font-semibold transition-all active:scale-95 ${
+            className={`flex min-h-11 items-center gap-1.5 rounded-xl px-3 py-1.5  transition-all active:scale-95 ${
               isRecordingVideo
                 ? "bg-red-500/90 text-white animate-pulse cursor-wait"
                 : "bg-white/10 text-white hover:bg-white/20 border border-white/15"
-            }`}
+            }`} style={typographyStyle("label")}
           >
             {isRecordingVideo ? (
               <>

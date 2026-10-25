@@ -175,7 +175,7 @@ function SessionStopPeek({
       <button type="button" className="focus-stop-peek-close" aria-label="Close preview" onClick={onClose}>
         ×
       </button>
-      <AppParagraph typographyRole="badgeLabel" className="fb-kicker">{kicker}</AppParagraph>
+      <AppParagraph typographyRole="label" className="fb-kicker">{kicker}</AppParagraph>
       <strong>{title}</strong>
       {detail ? <AppParagraph typographyRole="caption" className="fb-note">{detail}</AppParagraph> : null}
       <button type="button" className="fb-btn" onClick={onOpen}>

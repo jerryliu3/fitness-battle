@@ -329,7 +329,7 @@ export default function AthleteScreen() {
           </View>
 
           {authMode === "signup" ? (
-            <Input
+            <Input style={textStyle("body")}
               value={displayName}
               onChangeText={setDisplayName}
               accessibilityLabel="Display name"
@@ -337,7 +337,7 @@ export default function AthleteScreen() {
               autoCapitalize="words"
             />
           ) : null}
-          <Input
+          <Input style={textStyle("body")}
             value={email}
             onChangeText={setEmail}
             accessibilityLabel="Email"
@@ -346,7 +346,7 @@ export default function AthleteScreen() {
             keyboardType="email-address"
             autoComplete="email"
           />
-          <Input
+          <Input style={textStyle("body")}
             value={password}
             onChangeText={setPassword}
             accessibilityLabel="Password"
@@ -356,13 +356,13 @@ export default function AthleteScreen() {
             secureTextEntry
             autoComplete={authMode === "signup" ? "new-password" : "password"}
           />
-          <Button onPress={() => void submitAuth()} isDisabled={authBusy}>
+          <Button onPress={() => void submitAuth()} isDisabled={authBusy}><AppText role="label">
             {authBusy
               ? "Working…"
               : authMode === "signin"
                 ? "Sign in"
                 : "Create account"}
-          </Button>
+          </AppText></Button>
           {authNote ? <Text style={styles.copy}>{authNote}</Text> : null}
         </ScrollView>
       </SafeAreaView>
@@ -529,7 +529,7 @@ export default function AthleteScreen() {
           </AppText>
           {RANK_BANDS.map((band) => (
             <View key={band.name} style={f.card}>
-              <AppText role="contentTitle" >
+              <AppText role="heading" >
                 {band.name} · {band.min}+
               </AppText>
               <AppText role="body" secondary >{band.blurb}</AppText>
@@ -553,14 +553,14 @@ export default function AthleteScreen() {
 <SectionStack divided={false}>
           {panel === "profile" ? (
             <>
-              <Input
+              <Input style={textStyle("body")}
                 value={draftName}
                 onChangeText={setName}
                 accessibilityLabel="Name"
                 maxLength={80}
                 placeholder="Name"
               />
-              <Input
+              <Input style={textStyle("body")}
                 value={draftCity}
                 onChangeText={setCity}
                 accessibilityLabel="City"
@@ -582,9 +582,9 @@ export default function AthleteScreen() {
                     setCity(null);
                     setNote("Profile saved.");
                   }}
-                >
+                ><AppText role="label">
                   Save profile
-                </Button>
+                </AppText></Button>
               ) : null}
               {dirty ? (
                 <FocusButton
@@ -605,23 +605,23 @@ export default function AthleteScreen() {
           ) : (
             <>
               <View style={[f.row, { flexWrap: "wrap" }]}>
-                <AppText role="itemTitle" >Units</AppText>
+                <AppText role="label" >Units</AppText>
                 <FocusSegments label="Unit system" value={state.units} options={[{ value: "us", label: "Imperial" }, { value: "metric", label: "Metric" }]}
                   onChange={units => dispatch({ type: "set-units", units })} />
               </View>
               <View style={[f.row, { flexWrap: "wrap" }]}>
-                <AppText role="itemTitle" >Primary sport</AppText>
+                <AppText role="label" >Primary sport</AppText>
                 <ChoicePicker label="Primary sport" value={state.primary} options={SPORTS.map(s => ({ value: s.id, label: s.name }))}
                   onChange={sport => dispatch({ type: "set-primary", sport })} />
               </View>
               <View style={[f.row, { flexWrap: "wrap" }]}>
-                <View style={f.grow}><AppText role="itemTitle" >Freeze this week</AppText><AppText role="supporting" secondary >{state.freezesLeft} remaining</AppText></View>
+                <View style={f.grow}><AppText role="label" >Freeze this week</AppText><AppText role="body" secondary >{state.freezesLeft} remaining</AppText></View>
                 <Switch style={{ alignSelf: "center", marginVertical: 0 }} trackColor={{ false: "#b9c5ca", true: SHELL_COLORS.fieldTeal }} thumbColor="#ffffff" accessibilityLabel="Freeze this week" value={frozen} disabled={!frozen && state.freezesLeft <= 0}
                   onValueChange={enabled => enabled ? setConfirmFreeze(true) : dispatch({ type: "unfreeze" })} />
               </View>
               <SectionHeader title="Active Sports"/>
               {SPORTS.map(sport => <View key={sport.id} style={[f.row, { minHeight: 64, alignItems: "center", borderBottomWidth: 1, borderBottomColor: SHELL_COLORS.line }]}>
-                <View style={[f.row, f.grow, { justifyContent: "flex-start", gap: 10 }]}><SportIcon sport={sport.id} /><AppText role="itemTitle" >{sport.name}</AppText></View>
+                <View style={[f.row, f.grow, { justifyContent: "flex-start", gap: 10 }]}><SportIcon sport={sport.id} /><AppText role="label" >{sport.name}</AppText></View>
                 <Switch style={{ alignSelf: "center", marginVertical: 0 }} trackColor={{ false: "#b9c5ca", true: SHELL_COLORS.fieldTeal }} thumbColor="#ffffff" accessibilityLabel={`Toggle ${sport.name} active status`}
                   value={Boolean(state.ratings.find(r => r.sport === sport.id)?.optedIn)}
                   onValueChange={enabled => dispatch(enabled ? { type: "opt-in", sport: sport.id, crewBoard: null } : { type: "opt-out", sport: sport.id })} />
@@ -717,17 +717,15 @@ const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: SHELL_COLORS.paper },
   scroll: { padding: 20, gap: 28, paddingBottom: 32 },
   kicker: {
-    ...textStyle("badgeLabel"),
-    letterSpacing: 0.6,
-    textTransform: "uppercase",
+    ...textStyle("label"),
     color: SHELL_COLORS.muted
 },
   name: {
-    ...textStyle("pageTitle"),
+    ...textStyle("display"),
     color: SHELL_COLORS.ink,
   },
   section: {
-    ...textStyle("sectionTitle"),
+    ...textStyle("heading"),
     marginTop: 8,
     color: SHELL_COLORS.ink
 },
@@ -745,7 +743,7 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   rowTitle: {
-    ...textStyle("itemTitle"),
+    ...textStyle("label"),
     color: SHELL_COLORS.ink
 },
   copy: {
@@ -767,7 +765,7 @@ const styles = StyleSheet.create({
     backgroundColor: SHELL_COLORS.greenSoft,
   },
   authTabText: {
-    ...textStyle("itemTitle"),
+    ...textStyle("label"),
     color: SHELL_COLORS.ink
 },
 });

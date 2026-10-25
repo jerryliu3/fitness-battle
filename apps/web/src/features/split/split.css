@@ -33,16 +33,18 @@
   background: transparent;
   padding: 0;
   cursor: pointer;
-  font-family: var(--font-display), "Bebas Neue", sans-serif;
-  font-size: 28px;
-  letter-spacing: 0.04em;
   color: var(--sp-ink);
   text-decoration: none;
+  letter-spacing: normal;
+  text-transform: none;
+  font: var(--type-display);
 }
 
 .sp-brand span {
   color: var(--sp-lime-deep);
-  font-size: 0.7em;
+  letter-spacing: normal;
+  text-transform: none;
+  font: var(--type-caption);
 }
 
 .sp-header-actions {
@@ -59,9 +61,11 @@
   background: var(--sp-card);
   border-radius: 999px;
   padding: 6px 10px;
-  font-size: 12px;
   color: var(--sp-muted);
   text-decoration: none;
+  letter-spacing: normal;
+  text-transform: none;
+  font: var(--type-caption);
 }
 
 .sp-source i {
@@ -86,11 +90,9 @@
 
 .sp-title-block h1 {
   margin: 0;
-  font-family: var(--font-display), "Bebas Neue", sans-serif;
-  font-size: clamp(36px, 9vw, 48px);
-  line-height: 0.92;
-  letter-spacing: 0.01em;
-  font-weight: 400;
+  letter-spacing: normal;
+  text-transform: none;
+  font: var(--type-display);
 }
 
 .sp-title-block h1 span {
@@ -124,8 +126,9 @@
   border-radius: 10px;
   padding: 10px 8px;
   cursor: pointer;
-  font-size: 13px;
-  font-weight: 650;
+  letter-spacing: normal;
+  text-transform: none;
+  font: var(--type-label);
 }
 
 .sp-mode-switch button[aria-pressed="true"] {
@@ -143,9 +146,9 @@
   display: flex;
   justify-content: space-between;
   color: #8d96a8;
-  font-size: 11px;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
+  letter-spacing: normal;
+  text-transform: none;
+  font: var(--type-caption);
 }
 
 .sp-lane {
@@ -169,7 +172,9 @@
   justify-content: space-between;
   align-items: baseline;
   gap: 8px;
-  font-size: 13px;
+  letter-spacing: normal;
+  text-transform: none;
+  font: var(--type-body);
 }
 
 .sp-lane-label strong {
@@ -178,8 +183,9 @@
 
 .sp-lane-label small {
   color: #8d96a8;
-  font-size: 11px;
-  font-weight: 500;
+  letter-spacing: normal;
+  text-transform: none;
+  font: var(--type-caption);
 }
 
 .sp-lane-road {
@@ -217,13 +223,13 @@
   border-radius: 6px;
   display: grid;
   place-items: center;
-  font-size: 10px;
-  font-weight: 800;
-  letter-spacing: 0.02em;
   background: #e8edf5;
   color: #15181f;
   border: 2px solid #0d1016;
   transition: left 280ms cubic-bezier(0.22, 1, 0.36, 1);
+  letter-spacing: normal;
+  text-transform: none;
+  font: var(--type-caption);
 }
 
 .sp-lane.your-lane .sp-marker {
@@ -244,8 +250,10 @@
 .sp-checkpoint label {
   display: flex;
   justify-content: space-between;
-  font-size: 13px;
   color: #c5ccd8;
+  letter-spacing: normal;
+  text-transform: none;
+  font: var(--type-body);
 }
 
 .sp-checkpoint input[type="range"] {
@@ -257,9 +265,9 @@
   display: flex;
   justify-content: space-between;
   color: #8d96a8;
-  font-size: 11px;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: normal;
+  text-transform: none;
+  font: var(--type-caption);
 }
 
 .sp-layout {
@@ -282,30 +290,30 @@
 
 .sp-verdict .sp-kicker {
   margin: 0;
-  font-size: 11px;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  font-weight: 700;
   opacity: 0.75;
+  letter-spacing: normal;
+  text-transform: none;
+  font: var(--type-label);
 }
 
 .sp-verdict strong {
-  font-family: var(--font-display), "Bebas Neue", sans-serif;
-  font-size: 56px;
-  line-height: 0.85;
-  font-weight: 400;
+  letter-spacing: normal;
+  text-transform: none;
+  font: var(--type-display);
 }
 
 .sp-verdict h2 {
   margin: 0;
-  font-size: 18px;
-  letter-spacing: -0.02em;
+  letter-spacing: normal;
+  text-transform: none;
+  font: var(--type-heading);
 }
 
 .sp-verdict p {
   margin: 0;
-  font-size: 14px;
-  line-height: 1.4;
+  letter-spacing: normal;
+  text-transform: none;
+  font: var(--type-body);
 }
 
 .sp-verdict-actions {
@@ -318,12 +326,13 @@
 .sp-link {
   border-radius: 12px;
   padding: 12px 14px;
-  font-weight: 700;
   text-decoration: none;
   text-align: center;
   cursor: pointer;
   border: none;
-  font: inherit;
+  letter-spacing: normal;
+  text-transform: none;
+  font: var(--type-label);
 }
 
 .sp-cta {
@@ -345,10 +354,9 @@
   align-items: center;
   padding: 12px 4px 0;
   color: var(--sp-muted);
-  font-size: 12px;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  font-weight: 650;
+  letter-spacing: normal;
+  text-transform: none;
+  font: var(--type-caption);
 }
 
 .sp-bottom strong {
@@ -396,7 +404,9 @@
 }
 
 .sp-roster .ghost-ref b {
-  font-weight: 600;
+  letter-spacing: normal;
+  text-transform: none;
+  font: var(--type-label);
 }
 
 .sp-roster .place {
@@ -413,7 +423,9 @@
 .sp-roster .grow small {
   display: block;
   color: var(--sp-muted);
-  font-size: 12px;
+  letter-spacing: normal;
+  text-transform: none;
+  font: var(--type-caption);
 }
 
 .sp-roster b {
@@ -448,20 +460,25 @@
   place-items: center;
   background: var(--sp-ink);
   color: var(--sp-lime);
-  font-weight: 800;
-  font-size: 13px;
+  letter-spacing: normal;
+  text-transform: none;
+  font: var(--type-label);
 }
 
 .sp-split-entry strong {
   display: block;
-  font-size: 15px;
+  letter-spacing: normal;
+  text-transform: none;
+  font: var(--type-body);
 }
 
 .sp-split-entry small {
   display: block;
   color: var(--sp-muted);
-  font-size: 12px;
   margin-top: 2px;
+  letter-spacing: normal;
+  text-transform: none;
+  font: var(--type-caption);
 }
 
 .sp-split-entry b {
@@ -478,10 +495,9 @@
 }
 
 .sp-split-total strong {
-  font-family: var(--font-display), "Bebas Neue", sans-serif;
-  font-size: 40px;
-  line-height: 0.9;
-  font-weight: 400;
+  letter-spacing: normal;
+  text-transform: none;
+  font: var(--type-display);
 }
 
 .sp-bib {
@@ -495,25 +511,24 @@
 
 .sp-bib .label {
   margin: 0;
-  font-size: 11px;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
   color: #9aa3b5;
+  letter-spacing: normal;
+  text-transform: none;
+  font: var(--type-caption);
 }
 
 .sp-bib .number {
-  font-family: var(--font-display), "Bebas Neue", sans-serif;
-  font-size: 64px;
-  line-height: 0.85;
   color: var(--sp-lime);
+  letter-spacing: normal;
+  text-transform: none;
+  font: var(--type-display);
 }
 
 .sp-bib h1 {
   margin: 0;
-  font-family: var(--font-display), "Bebas Neue", sans-serif;
-  font-size: 36px;
-  line-height: 0.95;
-  font-weight: 400;
+  letter-spacing: normal;
+  text-transform: none;
+  font: var(--type-display);
 }
 
 .sp-bib-meta {
@@ -521,9 +536,9 @@
   flex-wrap: wrap;
   gap: 8px 14px;
   color: #c0c7d4;
-  font-size: 13px;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
+  letter-spacing: normal;
+  text-transform: none;
+  font: var(--type-caption);
 }
 
 .sp-records {
@@ -542,14 +557,16 @@
 .sp-records span {
   display: block;
   color: var(--sp-muted);
-  font-size: 11px;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
+  letter-spacing: normal;
+  text-transform: none;
+  font: var(--type-caption);
 }
 
 .sp-records strong {
-  font-size: 18px;
   font-variant-numeric: tabular-nums;
+  letter-spacing: normal;
+  text-transform: none;
+  font: var(--type-heading);
 }
 
 .sp-empty {
@@ -579,25 +596,25 @@
 
 .sp-reveal-kicker {
   margin: 0;
-  font-size: 11px;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  font-weight: 700;
   color: #3d4a20;
+  letter-spacing: normal;
+  text-transform: none;
+  font: var(--type-label);
 }
 
 .sp-reveal h2 {
   margin: 0;
-  font-family: var(--font-display), "Bebas Neue", sans-serif;
-  font-size: clamp(34px, 8vw, 44px);
-  line-height: 0.92;
-  font-weight: 400;
+  letter-spacing: normal;
+  text-transform: none;
+  font: var(--type-heading);
 }
 
 .sp-reveal-week {
   margin: 0;
   color: var(--sp-muted);
-  font-size: 14px;
+  letter-spacing: normal;
+  text-transform: none;
+  font: var(--type-body);
 }
 
 .sp-reveal-grid {
@@ -615,21 +632,24 @@
 
 .sp-reveal-grid span {
   display: block;
-  font-size: 11px;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
   color: var(--sp-muted);
+  letter-spacing: normal;
+  text-transform: none;
+  font: var(--type-caption);
 }
 
 .sp-reveal-grid strong {
-  font-size: 22px;
   font-variant-numeric: tabular-nums;
+  letter-spacing: normal;
+  text-transform: none;
+  font: var(--type-heading);
 }
 
 .sp-reveal-grid strong small {
-  font-size: 14px;
   color: var(--sp-muted);
-  font-weight: 600;
+  letter-spacing: normal;
+  text-transform: none;
+  font: var(--type-caption);
 }
 
 .sp-reveal-grid strong[data-delta="up"] {
@@ -661,14 +681,18 @@
 
 .sp-history-main strong {
   display: block;
-  font-size: 15px;
+  letter-spacing: normal;
+  text-transform: none;
+  font: var(--type-body);
 }
 
 .sp-history-main small {
   display: block;
   color: var(--sp-muted);
-  font-size: 12px;
   margin-top: 2px;
+  letter-spacing: normal;
+  text-transform: none;
+  font: var(--type-caption);
 }
 
 .sp-history-stats {
@@ -680,26 +704,31 @@
 .sp-history-stats span {
   display: grid;
   gap: 2px;
-  font-size: 13px;
   font-variant-numeric: tabular-nums;
+  letter-spacing: normal;
+  text-transform: none;
+  font: var(--type-body);
 }
 
 .sp-history-stats em {
-  font-style: normal;
-  font-size: 10px;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
   color: var(--sp-muted);
+  letter-spacing: normal;
+  text-transform: none;
+  font: var(--type-caption);
 }
 
 .sp-history-stats span[data-delta="up"] {
   color: #2f7a12;
-  font-weight: 700;
+  letter-spacing: normal;
+  text-transform: none;
+  font: var(--type-label);
 }
 
 .sp-history-stats span[data-delta="down"] {
   color: #a1281c;
-  font-weight: 700;
+  letter-spacing: normal;
+  text-transform: none;
+  font: var(--type-label);
 }
 
 @media (max-width: 420px) {

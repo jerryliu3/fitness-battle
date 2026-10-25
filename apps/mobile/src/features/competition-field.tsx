@@ -1,3 +1,4 @@
+import { textStyle } from "../ui/section";
 import { RankBadge } from "../ui/rank-badge";
 import { PortraitField } from "../ui/portrait-field";
 import {
@@ -192,12 +193,12 @@ export function CompetitionField({
               paddingHorizontal: expanded ? 16 : 0,
             }}
           >
-            <Text style={[f.small, { color: c.ink }]}>
+            <Text style={[textStyle("caption"), { color: c.ink }]}>
               {place(total)} / {ranked.length}{" "}
               PLACE
             </Text>
             <Text
-              style={[f.small, { color: c.ink, fontSize: 10, flexShrink: 1 }]}
+              style={[textStyle("caption"), { ...textStyle("caption"), color: c.ink, flexShrink: 1 }]}
             >
               {portraitFieldGap(
                 portraitField(fieldLanes, view).nextGap,
@@ -253,9 +254,9 @@ export function CompetitionField({
                 justifyContent: "center",
               }}
             >
-              <Text style={{ color: "white", fontSize: 24 }}>−</Text>
+              <Text style={{ ...textStyle("heading"), color: "white" }}>−</Text>
             </Pressable>
-            <Text style={[f.small, { color: "white" }]}>Zoom</Text>
+            <Text style={[textStyle("caption"), { color: "white" }]}>Zoom</Text>
             <Pressable
               accessibilityRole="button"
               accessibilityLabel="Zoom in"
@@ -268,7 +269,7 @@ export function CompetitionField({
                 justifyContent: "center",
               }}
             >
-              <Text style={{ color: "white", fontSize: 24 }}>＋</Text>
+              <Text style={{ ...textStyle("heading"), color: "white" }}>＋</Text>
             </Pressable>
           </View>
         </View>
@@ -296,16 +297,16 @@ export function CompetitionField({
             <View style={f.grow}>
               <Text style={f.kicker}>Accumulated this week</Text>
               <Text
-                style={[f.massive, { fontSize: 34, fontFamily: "DMSans_700Bold" }]}
+                style={[f.massive, { ...textStyle("display") }]}
               >
-                {displayTotal.toFixed(1)} <Text style={f.copy}>{arena.unit}</Text>
+                {displayTotal.toFixed(1)} <Text style={textStyle("body")}>{arena.unit}</Text>
               </Text>
             </View>
             <View style={{ alignItems: "center", gap: 2 }}>
-              <Text style={f.h2}>
+              <Text style={textStyle("heading")}>
                 {place(total)} / {ranked.length}
               </Text>
-              <Text style={f.small}>your place</Text>
+              <Text style={textStyle("caption")}>your place</Text>
             </View>
           </View>
           <FocusSegments
@@ -329,7 +330,7 @@ export function CompetitionField({
         <SafeAreaView style={f.safe} edges={["top", "bottom"]}>
           <View style={[f.row, { minHeight: 56, paddingHorizontal: 12 }]}>
             <IconButton icon="back" label="Close full screen field" onPress={() => setExpanded(false)} />
-            <Text accessibilityRole="header" style={f.h2}>{arena.sportName}</Text><View style={{ width: 44 }} />
+            <Text accessibilityRole="header" style={textStyle("heading")}>{arena.sportName}</Text><View style={{ width: 44 }} />
           </View>
           <View style={{ paddingHorizontal: 16, paddingBottom: 4 }}><FocusSegments label="Full screen field dimension" value={viewDimension} options={[{ value: "2d", label: "2D map" }, { value: "3d", label: "3D field" }]} onChange={next => { setDimension(next); onArenaViewChange?.(next === "2d" ? "lanes2d" : "3d"); }} /></View>
           {fieldContent}
@@ -337,7 +338,7 @@ export function CompetitionField({
       </Modal> : fieldContent}
       {viewMode === "standings" ? (
         <View style={f.section}>
-          <Text style={f.small}>Ranked by this week's effort</Text>
+          <Text style={textStyle("caption")}>Ranked by this week's effort</Text>
           {ranked.map((lane) => (
             <Pressable
               key={lane.id}
@@ -346,7 +347,7 @@ export function CompetitionField({
               onPress={() => selectAthlete(lane.id)}
               style={[f.row, { minHeight: 48, paddingVertical: 6 }]}
             >
-              <Text style={f.small}>{place(lane.values[2])}</Text>
+              <Text style={textStyle("caption")}>{place(lane.values[2])}</Text>
               <Svg width={26} height={36} viewBox="-40 -50 80 100">
                 <PolishedRacer
                   x={0}
@@ -356,25 +357,25 @@ export function CompetitionField({
                   showWake={false}
                 />
               </Svg>
-              <Text style={[f.rowTitle, f.grow]}>
+              <Text style={[textStyle("label"), f.grow]}>
                 {lane.you ? selfLaneLabel(lane.name) : lane.name}
               </Text>
               <RankBadge score={scores.find(row => row.id === lane.id)?.elo} />
               <View style={{ alignItems: "flex-end" }}>
-                <Text style={f.rowTitle}>
+                <Text style={textStyle("label")}>
                   {lane.values[2].toFixed(1)} {arena.unit}
                 </Text>
-                <Text style={[f.small, { color: c.ink }]}>
+                <Text style={[textStyle("caption"), { color: c.ink }]}>
                   {scores.find((row) => row.id === lane.id)?.elo ?? "—"} effort
                   score
                 </Text>
               </View>
             </Pressable>
           ))}
-          {pastYou && <View style={[f.row, { minHeight: 48, borderTopWidth: 1, borderTopColor: c.line }]}><Text style={f.copy}>Past you · unranked</Text><Text style={f.rowTitle}>{pastYou.values[2].toFixed(1)} {arena.unit}</Text></View>}
+          {pastYou && <View style={[f.row, { minHeight: 48, borderTopWidth: 1, borderTopColor: c.line }]}><Text style={textStyle("body")}>Past you · unranked</Text><Text style={textStyle("label")}>{pastYou.values[2].toFixed(1)} {arena.unit}</Text></View>}
         </View>
       ) : null}
-      <Text style={f.small}>
+      <Text style={textStyle("caption")}>
         Accumulated effort, not live GPS positions. Practice fields may contain
         synthetic athletes.
       </Text>

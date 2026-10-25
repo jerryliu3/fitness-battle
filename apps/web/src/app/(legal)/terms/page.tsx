@@ -1,3 +1,4 @@
+import { AppHeading } from "@/ui/section";
 import type { Metadata } from "next";
 import Link from "next/link";
 
@@ -13,7 +14,7 @@ export default function TermsOfServicePage() {
   return (
     <article className="fb-legal-doc">
       <p className="fb-kicker">Legal</p>
-      <h1 className="fb-title">Terms of Service</h1>
+      <AppHeading level={1} role="display" className="fb-title">Terms of Service</AppHeading>
       <p className="fb-copy">Last updated {UPDATED}</p>
 
       <p>
@@ -25,7 +26,7 @@ export default function TermsOfServicePage() {
         use the service.
       </p>
 
-      <h2>1. The service</h2>
+      <AppHeading level={2} role="heading">1. The service</AppHeading>
       <p>
         overtaek helps you join fitness battles, sync or upload workouts,
         compare effort with other participants, and use related features such as
@@ -35,7 +36,7 @@ export default function TermsOfServicePage() {
         features may occur.
       </p>
 
-      <h2>2. Eligibility</h2>
+      <AppHeading level={2} role="heading">2. Eligibility</AppHeading>
       <p>
         You must be at least 13 years old to use overtaek. If you are under 18,
         you may use the app only with permission from a parent or legal guardian
@@ -44,7 +45,7 @@ export default function TermsOfServicePage() {
         enter this agreement.
       </p>
 
-      <h2>3. Your account</h2>
+      <AppHeading level={2} role="heading">3. Your account</AppHeading>
       <p>
         You are responsible for your account credentials and for activity under
         your account. Keep your password confidential and notify us if you
@@ -53,7 +54,7 @@ export default function TermsOfServicePage() {
         security or abuse risk.
       </p>
 
-      <h2>4. Battles, crews, and shared information</h2>
+      <AppHeading level={2} role="heading">4. Battles, crews, and shared information</AppHeading>
       <p>
         When you join a battle or crew, other members can see information needed
         for competition—such as your display name, scores, standings, and
@@ -63,7 +64,7 @@ export default function TermsOfServicePage() {
         the product.
       </p>
 
-      <h2>5. Connected fitness services</h2>
+      <AppHeading level={2} role="heading">5. Connected fitness services</AppHeading>
       <p>
         Connecting a tracker (for example Strava, Garmin, WHOOP, or Oura) is
         optional. When you connect a provider, you authorize us to access data
@@ -73,7 +74,7 @@ export default function TermsOfServicePage() {
         future syncing as described in the Privacy Policy.
       </p>
 
-      <h2>6. Health and fitness disclaimer</h2>
+      <AppHeading level={2} role="heading">6. Health and fitness disclaimer</AppHeading>
       <p>
         overtaek is for motivation and friendly competition. It is not medical
         advice, a medical device, or a substitute for professional healthcare,
@@ -85,7 +86,7 @@ export default function TermsOfServicePage() {
         symptoms.
       </p>
 
-      <h2>7. Acceptable use</h2>
+      <AppHeading level={2} role="heading">7. Acceptable use</AppHeading>
       <p>You agree not to:</p>
       <ul>
         <li>Use the service for any unlawful purpose or in violation of others’ rights</li>
@@ -100,7 +101,7 @@ export default function TermsOfServicePage() {
         reasonably believe a violation occurred.
       </p>
 
-      <h2>8. Your content</h2>
+      <AppHeading level={2} role="heading">8. Your content</AppHeading>
       <p>
         You retain ownership of content you submit (such as display names and
         workouts you upload). You grant us a non-exclusive, worldwide license to
@@ -109,14 +110,14 @@ export default function TermsOfServicePage() {
         You represent that you have the rights needed to grant this license.
       </p>
 
-      <h2>9. Our intellectual property</h2>
+      <AppHeading level={2} role="heading">9. Our intellectual property</AppHeading>
       <p>
         The overtaek name, branding, software, and design are ours or our
         licensors’. These Terms do not grant you any right to our trademarks or
         except for the limited right to use the apps as intended.
       </p>
 
-      <h2>10. Third-party services</h2>
+      <AppHeading level={2} role="heading">10. Third-party services</AppHeading>
       <p>
         The app relies on third-party hosts and providers (such as Vercel and
         Supabase) and links to or integrates with third-party fitness
@@ -124,7 +125,7 @@ export default function TermsOfServicePage() {
         responsible for third-party products, outages, or policy changes.
       </p>
 
-      <h2>11. Termination</h2>
+      <AppHeading level={2} role="heading">11. Termination</AppHeading>
       <p>
         You may stop using overtaek at any time and may request account deletion
         as described in the Privacy Policy. We may suspend or terminate your
@@ -134,7 +135,7 @@ export default function TermsOfServicePage() {
         termination.
       </p>
 
-      <h2>12. Disclaimers</h2>
+      <AppHeading level={2} role="heading">12. Disclaimers</AppHeading>
       <p>
         TO THE MAXIMUM EXTENT PERMITTED BY LAW, THE SERVICE IS PROVIDED “AS IS”
         AND “AS AVAILABLE” WITHOUT WARRANTIES OF ANY KIND, WHETHER EXPRESS OR
@@ -144,7 +145,7 @@ export default function TermsOfServicePage() {
         WILL BE ACCURATE OR COMPLETE.
       </p>
 
-      <h2>13. Limitation of liability</h2>
+      <AppHeading level={2} role="heading">13. Limitation of liability</AppHeading>
       <p>
         TO THE MAXIMUM EXTENT PERMITTED BY LAW, WE AND OUR SUPPLIERS WILL NOT BE
         LIABLE FOR ANY INDIRECT, INCIDENTAL, SPECIAL, CONSEQUENTIAL, OR PUNITIVE
@@ -157,7 +158,7 @@ export default function TermsOfServicePage() {
         EXTENT PERMITTED BY LAW.
       </p>
 
-      <h2>14. Indemnification</h2>
+      <AppHeading level={2} role="heading">14. Indemnification</AppHeading>
       <p>
         You will defend, indemnify, and hold us harmless from claims, damages,
         and expenses (including reasonable attorneys’ fees) arising from your use
@@ -165,7 +166,7 @@ export default function TermsOfServicePage() {
         violation of any third-party rights.
       </p>
 
-      <h2>15. Disputes and governing law</h2>
+      <AppHeading level={2} role="heading">15. Disputes and governing law</AppHeading>
       <p>
         These Terms are governed by the laws of the State of New York, excluding
         its conflict-of-law rules, except where mandatory consumer protection
@@ -177,7 +178,7 @@ export default function TermsOfServicePage() {
         unauthorized access.
       </p>
 
-      <h2>16. Changes</h2>
+      <AppHeading level={2} role="heading">16. Changes</AppHeading>
       <p>
         We may update these Terms as the product evolves. We will revise the
         “Last updated” date above and, when changes are material, provide
@@ -185,7 +186,7 @@ export default function TermsOfServicePage() {
         take effect constitutes acceptance of the updated Terms.
       </p>
 
-      <h2>17. Contact</h2>
+      <AppHeading level={2} role="heading">17. Contact</AppHeading>
       <p>
         Questions about these Terms:{" "}
         <a href="mailto:3jerryliu@gmail.com">3jerryliu@gmail.com</a>

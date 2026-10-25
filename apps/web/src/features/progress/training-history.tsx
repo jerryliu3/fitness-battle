@@ -66,7 +66,7 @@ export function TrainingHistory({ state, children }: { state: CompeteState; chil
               </button>
             ))}
           </div>
-          <AppParagraph typographyRole="badgeLabel" className="fb-kicker">
+          <AppParagraph typographyRole="label" className="fb-kicker">
             {active.label} · {active.sport}
           </AppParagraph>
           <strong className="record-time">

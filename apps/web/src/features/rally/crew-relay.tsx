@@ -1,5 +1,5 @@
 "use client";
-import { AppText, AppParagraph } from "@/ui/section";
+import { typographyStyle, AppText, AppParagraph  } from "@/ui/section";
 
 import { useId, useLayoutEffect, useRef, useState } from "react";
 import {
@@ -61,23 +61,22 @@ export function CrewRelay(props: Props) {
             ))}
             {scene.finish.map(drawFieldNode)}
             {target ? (
-              <text
+              <text style={typographyStyle("caption")}
                 x={Math.max(64, Math.min(w - 64, (scene.finishX ?? 0) + 12))}
                 y={222}
                 textAnchor="middle"
                 fill="#142b3b"
-                fontSize={11}
-                fontWeight={700}
+
               >
                 FINISH · {volume(target)}
               </text>
             ) : (
-              <text
+              <text style={typographyStyle("caption")}
                 x={w / 2}
                 y={222}
                 textAnchor="middle"
                 fill="#637482"
-                fontSize={11}
+
               >
                 A shared target has not been set
               </text>

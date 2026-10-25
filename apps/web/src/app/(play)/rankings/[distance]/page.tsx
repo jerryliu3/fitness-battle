@@ -41,7 +41,7 @@ export default async function DistanceBoardPage({
         </Link>
         <span className="rankings-kicker">{label}</span>
       </header>
-      <AppHeading level={1} role="pageTitle">{label}</AppHeading>
+      <AppHeading level={1} role="display">{label}</AppHeading>
       <AppParagraph typographyRole="body" className="rankings-lede">
         {sample
           ? "Fastest published finishers. Chip time when the source has one, otherwise the official time."

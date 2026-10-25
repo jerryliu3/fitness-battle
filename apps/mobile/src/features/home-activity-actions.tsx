@@ -203,14 +203,14 @@ export function HomeActivityActions({
         title="Add activity"
         minimal
       >
-        <AppText role="itemTitle" >Sport</AppText>
+        <AppText role="label" >Sport</AppText>
         <ChoicePicker label="Sport" placeholder="Choose a sport" value={sport} options={SPORTS.map(item => ({ value: item.id, label: item.name }))} onChange={value => { setSport(value); setMiles(""); }} />
         {sport && <>
-          <AppText role="itemTitle" >Duration</AppText>
+          <AppText role="label" >Duration</AppText>
           <NumberPicker label="Duration" unit="min" value={minutes} onChange={setMinutes} />
-          {sportById(sport).gps && <><AppText role="itemTitle" >Distance ({state.units === "metric" ? "km" : "mi"})</AppText>
+          {sportById(sport).gps && <><AppText role="label" >Distance ({state.units === "metric" ? "km" : "mi"})</AppText>
             <NumberPicker label="Distance" unit={state.units === "metric" ? "km" : "mi"} max={1000} step={0.1} value={miles} onChange={setMiles} /></>}
-          <AppText role="itemTitle" >Time of day (optional · Eastern)</AppText>
+          <AppText role="label" >Time of day (optional · Eastern)</AppText>
           <DateTimeField label="Time of day · Eastern" mode="time" value={time} onChange={setTime} clearLabel="Use current time" />
         </>}
         {formError ? (

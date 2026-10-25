@@ -1,7 +1,6 @@
 "use client";
 import { AppParagraph, AppText, AppHeading } from "@/ui/section";
 
-
 import { useCompete } from "@/components/compete-context";
 import {
   BENCHMARKS,
@@ -31,8 +30,8 @@ export default function PacePage() {
 
   return (
     <>
-      <AppParagraph typographyRole="badgeLabel" className="fb-kicker">Pace</AppParagraph>
-      <AppHeading level={1} role="pageTitle">Times</AppHeading>
+      <AppParagraph typographyRole="label" className="fb-kicker">Pace</AppParagraph>
+      <AppHeading level={1} role="display">Times</AppHeading>
       <AppParagraph typographyRole="body" className="fb-copy">
         Completion time for a distance. It does not move your effort score or the weekly track.
       </AppParagraph>
@@ -97,7 +96,7 @@ export default function PacePage() {
               <span className="fb-place">{row.place}</span>
               <span className="fb-grow">
                 {row.name}
-                <AppText as="small" role="supporting" secondary>{row.city}</AppText>
+                <AppText as="small" role="body" secondary>{row.city}</AppText>
               </span>
               <b>{formatClockTime(row.seconds)}</b>
             </div>

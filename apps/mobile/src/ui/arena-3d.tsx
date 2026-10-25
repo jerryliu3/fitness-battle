@@ -1,3 +1,4 @@
+import { textStyle } from "./section";
 import { SHELL_COLORS as clubColors } from "@fitness-battle/shared";
 import { useRef, useEffect } from "react";
 import { View, Text, StyleSheet } from "react-native";
@@ -110,5 +111,5 @@ const styles = StyleSheet.create({
     backgroundColor: clubColors.soft,
   },
   web: { flex: 1, backgroundColor: clubColors.soft },
-  caption: { fontSize: 10, color: clubColors.muted, padding: 9, textAlign: "center" },
+  caption: { ...textStyle("caption"), color: clubColors.muted, padding: 9, textAlign: "center" },
 });

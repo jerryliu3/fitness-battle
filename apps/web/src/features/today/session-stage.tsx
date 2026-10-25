@@ -14,8 +14,8 @@ export function SessionStage({state,activities,suggestion,onRemove,actions}:{sta
   const seconds=model.sessions?model.movingSec:(suggestion?.minutes??0)*60;
   return <section className="session-stage" aria-label={model.sessions?"Recorded sessions":"Today's suggestion"}>
     {model.sessions?<div className="club-session-meta"><span className="club-status-badge">{model.rows.every(a=>isVerifiedActivity(a))?"✓ GPS Tracked":"Activity"}{model.rows.every(a=>countsOnTrack(a,"open"))?"":" · Excluded"}</span><span className="fb-note">{new Date(model.rows[0]!.startedAt).toLocaleDateString("en-US",{weekday:"short",month:"short",day:"numeric",timeZone:APP_TIMEZONE})}</span></div>:null}
-    <AppParagraph typographyRole="badgeLabel" className="fb-kicker">{model.sessions?`${model.sessions} recorded session${model.sessions===1?"":"s"}`:"Today's suggestion"}</AppParagraph>
-    <AppHeading level={1} role="pageTitle">{model.sessions?"Time well spent.":suggestion?.title??"Make room to move."}</AppHeading>
+    <AppParagraph typographyRole="label" className="fb-kicker">{model.sessions?`${model.sessions} recorded session${model.sessions===1?"":"s"}`:"Today's suggestion"}</AppParagraph>
+    <AppHeading level={1} role="display">{model.sessions?"Time well spent.":suggestion?.title??"Make room to move."}</AppHeading>
     <div className="session-stage-object"><div><span className="session-stage-hours">{formatTrainingHours(seconds)}<AppText as="small" role="caption" secondary> hr</AppText></span><span className="fb-note">{model.sessions?"Moving time":"Suggested time"}</span></div><AnimatedEmber expression="happy" action={model.sessions?"celebrate":"idle"} loop={false} /></div>
     {model.sessions?<div className="club-session-metrics">{clubSessionMetrics(model.rows,state.units).map(metric=><div key={metric.label}><strong>{metric.value}</strong><AppText as="small" role="caption" secondary>{metric.label}</AppText></div>)}</div>:null}
     {!model.sessions?<><AppParagraph typographyRole="body" className="fb-copy">{suggestion?.detail??"Nothing recorded today."}</AppParagraph>{actions}</>:<>

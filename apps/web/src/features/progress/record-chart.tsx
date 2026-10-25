@@ -1,4 +1,7 @@
 "use client";
+import { ChartSvg, ChartText } from "@/ui/chart-text";
+import { typographyStyle } from "@/ui/section";
+
 import {
   formatClockTime,
   personalRecordChart,
@@ -26,7 +29,7 @@ export function RecordChart({
   if (!chart) return null;
   return (
     <div className="record-chart">
-      <svg
+      <ChartSvg
         viewBox={`0 0 ${chart.width} ${chart.height}`}
         role="group"
         aria-label="Personal record timeline, lower time is faster"
@@ -40,15 +43,15 @@ export function RecordChart({
               y2={t.y}
               stroke="#e0e5dc"
             />
-            <text
+            <ChartText
               x={chart.left - 8}
               y={t.y + 4}
               textAnchor="end"
               fill="#616c63"
-              fontSize={10}
+
             >
               {formatClockTime(t.seconds)}
-            </text>
+            </ChartText>
           </g>
         ))}
         <path
@@ -85,19 +88,19 @@ export function RecordChart({
             />
           </g>
         ))}
-        <text x={chart.points.length===1?(chart.left+chart.right)/2:chart.left} textAnchor={chart.points.length===1?"middle":"start"} y={chart.height - 8} fill="#616c63" fontSize={10}>
+        <ChartText x={chart.points.length===1?(chart.left+chart.right)/2:chart.left} textAnchor={chart.points.length===1?"middle":"start"} y={chart.height - 8} fill="#616c63" >
           {date(chart.start)}
-        </text>
-        <text
+        </ChartText>
+        <ChartText
           x={chart.right}
           y={chart.height - 8}
           textAnchor="end"
           fill="#616c63"
-          fontSize={10}
+
         >
           {chart.points.length>1?date(chart.end):""}
-        </text>
-      </svg>
+        </ChartText>
+      </ChartSvg>
     </div>
   );
 }

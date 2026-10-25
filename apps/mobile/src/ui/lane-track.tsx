@@ -1,3 +1,4 @@
+import { chartTextProps, textStyle  } from "./section";
 import {
   fieldCourse, fieldCourseScene, fieldScaleScene, fieldLap, defaultFieldAppearance, type FieldAppearance,
   arenaPosition,
@@ -173,12 +174,10 @@ function LaneTrackContent({
       >
         <Text
           style={{
-            flex: 1,
-            fontFamily: "DMSans_400Regular",
-            fontSize: 11,
-            lineHeight: 16,
-            color: c.muted,
-          }}
+    ...textStyle("caption"),
+    flex: 1,
+    color: c.muted
+}}
         >
           {fullscreen || exploring ? "Drag to explore · pinch to zoom" : "Swipe across peers · pinch to zoom"}
         </Text>
@@ -202,10 +201,9 @@ function LaneTrackContent({
         >
           <Text
             style={{
-              fontFamily: "DMSans_500Medium",
-              fontSize: 12,
-              color: c.ink,
-            }}
+    ...textStyle("caption"),
+    color: c.ink
+}}
           >
             {exploring ? "Done" : "Explore"}
           </Text>
@@ -230,7 +228,7 @@ function LaneTrackContent({
             accessibilityLabel={`Vertical lanes in ${unit}, centered on your distance`}
           >
             {fullscreen ? <G>{groundPaint}</G> : <LaneRacerTarget onPress={onExpand} accessibilityLabel="Expand 2D map to full screen">{groundPaint}</LaneRacerTarget>}
-            {!course.oval && lw >= 48 && ordered.map((l, i) => <SvgText key={l.id} x={course.point(v.center, i).x} y={36} textAnchor="middle" fontSize={11} fontWeight={l.you ? "bold" : "600"} fill={l.you ? c.ink : c.muted}>{`${ordinalPlace(1+live.filter(peer=>peer.value>(live.find(peer=>peer.id===l.id)?.value??0)+.000001).length)}${l.you?" · You":""}`}</SvgText>)}
+            {!course.oval && lw >= 48 && ordered.map((l, i) => <SvgText {...chartTextProps()} key={l.id} x={course.point(v.center, i).x} y={36} textAnchor="middle"   fill={l.you ? c.ink : c.muted}>{`${ordinalPlace(1+live.filter(peer=>peer.value>(live.find(peer=>peer.id===l.id)?.value??0)+.000001).length)}${l.you?" · You":""}`}</SvgText>)}
             {ordered.map((l, i) => {
               const value =
                 animating && overtakeFrame
@@ -313,23 +311,23 @@ function LaneTrackContent({
                     rx={24}
                     fill="transparent"
                   />
-                  {edge?<SvgText x={0} y={4} textAnchor="middle" fontSize={12} fill={c.ink}>{edge==="ahead"?"↑":"↓"}</SvgText>:null}
+                  {edge?<SvgText {...chartTextProps()} x={0} y={4} textAnchor="middle"  fill={c.ink}>{edge==="ahead"?"↑":"↓"}</SvgText>:null}
                   </G>
-                  {edge?<G transform={`translate(${xx} ${yy})`} pointerEvents="none"><Rect x={-34} y={edge==="ahead"?27:-42} width={68} height={20} rx={8} fill="#ffffffee"/><SvgText x={0} y={edge==="ahead"?41:-28} textAnchor="middle" fontSize={10} fill={c.muted}>{`${value-(overtakeFrame?.youValue??me?.values[index]??0)>0?"+":""}${(value-(overtakeFrame?.youValue??me?.values[index]??0)).toFixed(1)} ${unit}`}</SvgText></G>:null}
+                  {edge?<G transform={`translate(${xx} ${yy})`} pointerEvents="none"><Rect x={-34} y={edge==="ahead"?27:-42} width={68} height={20} rx={8} fill="#ffffffee"/><SvgText {...chartTextProps()} x={0} y={edge==="ahead"?41:-28} textAnchor="middle"  fill={c.muted}>{`${value-(overtakeFrame?.youValue??me?.values[index]??0)>0?"+":""}${(value-(overtakeFrame?.youValue??me?.values[index]??0)).toFixed(1)} ${unit}`}</SvgText></G>:null}
                   {!edge&&(l.you||selectedId===l.id)?<G transform={`translate(${xx} ${yy})`} pointerEvents="none">
                     <Path d={`M0 0 L${pennantX+pennantWidth/2} ${pennantY>0?pennantY:pennantY+46}`} fill="none" stroke={c.secondary} strokeWidth={1.2}/>
                     <Rect x={pennantX} y={pennantY+2} width={pennantWidth} height={46} rx={12} fill={c.ink} opacity={.1}/>
                     <Rect x={pennantX} y={pennantY} width={pennantWidth} height={46} rx={12} fill={c.card} stroke={l.you?c.tennis:c.line}/>
                     <Circle cx={pennantX+24} cy={pennantY+23} r={16} fill={c.soft}/>
                     {l.avatarUrl?<><Defs><ClipPath id={`${prefix}-portrait-${i}`}><Circle cx={pennantX+24} cy={pennantY+23} r={16}/></ClipPath></Defs><SvgImage href={{uri:l.avatarUrl}} x={pennantX+8} y={pennantY+7} width={32} height={32} preserveAspectRatio="xMidYMid slice" clipPath={`url(#${prefix}-portrait-${i})`}/></>:<Path d={PERSON_ICON_PATH} transform={`translate(${pennantX+14} ${pennantY+13}) scale(.83)`} fill="none" stroke={c.muted} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round"/>}
-                    <SvgText x={pennantX+47} y={pennantY+20} fontSize={12} fill={c.ink} fontWeight="600">{l.you?"You":l.name.length>13?`${l.name.slice(0,12)}…`:l.name}</SvgText>
-                    <SvgText x={pennantX+47} y={pennantY+35} fontSize={10} fill={c.muted}>{ordinalPlace(rank)} · {l.you?`${value.toFixed(1)} ${unit}`:`${value-(overtakeFrame?.youValue??me?.values[index]??0)>0?"+":""}${(value-(overtakeFrame?.youValue??me?.values[index]??0)).toFixed(1)} ${unit}`}</SvgText>
+                    <SvgText {...chartTextProps()} x={pennantX+47} y={pennantY+20}  fill={c.ink} >{l.you?"You":l.name.length>13?`${l.name.slice(0,12)}…`:l.name}</SvgText>
+                    <SvgText {...chartTextProps()} x={pennantX+47} y={pennantY+35}  fill={c.muted}>{ordinalPlace(rank)} · {l.you?`${value.toFixed(1)} ${unit}`:`${value-(overtakeFrame?.youValue??me?.values[index]??0)>0?"+":""}${(value-(overtakeFrame?.youValue??me?.values[index]??0)).toFixed(1)} ${unit}`}</SvgText>
                   </G>:null}
                 </LaneRacerTarget>
               );
             })}
             {ghost && (() => { const p = course.point(ghost.values[index] ?? 0, ordered.findIndex(l => l.you), 18 * course.markerScale, true); return <G onPress={() => onSelect(ghost)}><Circle cx={p.x} cy={p.y} r={13 * course.markerScale} fill="#ffffffcc" stroke={c.muted} strokeDasharray="3 3"/></G>; })()}
-            {course.oval && <SvgText x={18} y={height - 18} fontSize={9} fill={c.muted}>
+            {course.oval && <SvgText {...chartTextProps()} x={18} y={height - 18}  fill={c.muted}>
               {`${fieldLap(overtakeFrame?.youValue ?? me?.values[index] ?? 0, unit).laps} laps · ${(overtakeFrame?.youValue ?? me?.values[index] ?? 0).toFixed(1)} ${unit} total`}
             </SvgText>}
           </Svg>

@@ -26,7 +26,7 @@ export function WeekRecap({ state }: { state: CompeteState }) {
           { value: `${week.activeDays} / 7`, label: "Active days" },
         ].map((m) => (
           <View key={m.label} style={{ flex: 1, gap: 5 }}>
-            <AppText role="metricValue"
+            <AppText role="heading"
 
             >
               {m.value}
@@ -48,11 +48,11 @@ export function WeekRecap({ state }: { state: CompeteState }) {
           style={s.receipt}
         >
           <View style={s.stamp}>
-            <AppText role="metricValue" >{recap.place}</AppText>
+            <AppText role="heading" >{recap.place}</AppText>
           </View>
           <View style={{ flex: 1, gap: 4 }}>
-            <AppText role="itemTitle" >Your latest settled week.</AppText>
-            <AppText role="supporting" secondary >
+            <AppText role="label" >Your latest settled week.</AppText>
+            <AppText role="body" secondary >
               {sportById(recap.sport).name} · {recap.track === "verified" ? "GPS" : "Open"} ·{" "}
               {new Date(recap.periodStart).toLocaleDateString("en-US", {
                 month: "short",
@@ -61,7 +61,7 @@ export function WeekRecap({ state }: { state: CompeteState }) {
               })}{" "}
               · Place {recap.place} of {recap.fieldSize}
             </AppText>
-            <AppText role="supporting" secondary >
+            <AppText role="body" secondary >
               {recap.eloAfter - recap.eloBefore >= 0 ? "+" : ""}
               {recap.eloAfter - recap.eloBefore} Effort Score · View recap →
             </AppText>

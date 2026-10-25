@@ -58,10 +58,10 @@ export function EventCarousel({
           }}
           style={{ flex: 1, minHeight: 54, gap: 4, justifyContent: "center" }}
         >
-          <AppText role="sectionTitle" accessibilityRole="header">
+          <AppText role="heading" accessibilityRole="header">
             {events[index]?.label}
             {events[index]?.badge ? (
-              <AppText role="badgeLabel" secondary> · {events[index]?.badge}</AppText>
+              <AppText role="label" secondary> · {events[index]?.badge}</AppText>
             ) : null}
           </AppText>
         </View>
@@ -73,7 +73,7 @@ export function EventCarousel({
           onPress={() => select(events[index - 1]!.id)}
           style={[s.arrow, index === 0 && { opacity: 0.3 }]}
         >
-          <AppText role="navigationTitle" accessibilityElementsHidden>←</AppText>
+          <AppText role="heading" accessibilityElementsHidden>←</AppText>
         </Pressable>
         <Pressable
           accessibilityRole="button"
@@ -83,7 +83,7 @@ export function EventCarousel({
           onPress={() => select(events[index + 1]!.id)}
           style={[s.arrow, index === events.length - 1 && { opacity: 0.3 }]}
         >
-          <AppText role="navigationTitle" accessibilityElementsHidden>→</AppText>
+          <AppText role="heading" accessibilityElementsHidden>→</AppText>
         </Pressable>
       </View>
       {/* Event title owns event swipes; the board owns lane swipes. Avoid nested horizontal pagers trapping vertical page gestures. */}
@@ -146,7 +146,7 @@ export function EventCarousel({
               },
             ]}
           >
-            <AppText role="itemTitle" >{event.label}</AppText>
+            <AppText role="label" >{event.label}</AppText>
             <AppText role="body" secondary >{event.id === value ? "✓" : "→"}</AppText>
           </Pressable>
         ))}

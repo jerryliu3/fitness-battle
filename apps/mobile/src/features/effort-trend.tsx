@@ -1,4 +1,5 @@
-import { AppText } from "../ui/section";
+import { ChartSvg, ChartText } from "../ui/chart-text";
+import { chartTextProps, AppText  } from "../ui/section";
 import {
   APP_TIMEZONE,
   effortHistory,
@@ -64,13 +65,13 @@ export function EffortTrend({ state }: { state: CompeteState }) {
         </Text>
         <AppText role="body" secondary >effort score</AppText>
       </View>
-      {milestone ? <AppText role="caption" secondary >+1 per {formatVolume(state.primary, state.primary === "strength" ? 0 : milestone.step, state.primary === "strength" ? milestone.step : 0, state.units)} this week · +{milestone.earned} from activity</AppText> : null}
+      {milestone ? <AppText role="body" secondary >+1 per {formatVolume(state.primary, state.primary === "strength" ? 0 : milestone.step, state.primary === "strength" ? milestone.step : 0, state.units)} this week · +{milestone.earned} from activity</AppText> : null}
       <ChartScrubber key={`${scope}:${track}`} label="Effort score history" width={340} height={150} plotTop={yTop} plotBottom={yBottom}
         points={model.pts.map((point, index) => ({ id: point.date, x: point.x, y: point.y,
           value: `${model.dailyValues[index].toLocaleString()} effort score`,
           label: new Date(point.date).toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: APP_TIMEZONE }),
         }))}>
-      <Svg
+      <ChartSvg
         preserveAspectRatio="none"
         width="100%"
         height={210}
@@ -110,18 +111,19 @@ export function EffortTrend({ state }: { state: CompeteState }) {
           { x: xMid, label: model.midDateLabel },
           { x: xEnd, label: model.endDateLabel },
         ].map(({ x, label }) => (
-          <SvgText
+          <ChartText
+            minChartWidth={x === xMid ? 260 : 0}
             key={x}
             x={x}
             y={140}
             textAnchor={x === xEnd ? "end" : x === xStart ? "start" : "middle"}
-            fontSize={9}
+
             fill={c.muted}
           >
             {label}
-          </SvgText>
+          </ChartText>
         ))}
-      </Svg>
+      </ChartSvg>
       </ChartScrubber>
       <AppText role="caption" secondary >History reflects closed-week scores and your current score.</AppText>
     </View>
@@ -138,9 +140,9 @@ function ViewGrid({ y, value }: { y: number; value: number }) {
         stroke={c.line}
         strokeDasharray="3 3"
       />
-      <SvgText x={36} y={y + 3} textAnchor="end" fontSize={10} fill={c.muted}>
+      <ChartText x={36} y={y + 3} textAnchor="end"  fill={c.muted}>
         {value}
-      </SvgText>
+      </ChartText>
     </>
   );
 }

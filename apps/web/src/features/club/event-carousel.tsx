@@ -71,7 +71,7 @@ export function EventCarousel({
           aria-haspopup="dialog"
           onClick={() => setChoosing(true)}
         >
-          <AppText role="sectionTitle">
+          <AppText role="heading">
             {events[index]?.label}{" "}
             {events[index]?.badge ? (
               <StatusBadge>{events[index]?.badge}</StatusBadge>
@@ -132,7 +132,7 @@ export function EventCarousel({
               children
             ) : (
               <div className="club-event-preview">
-                <AppHeading level={2} role="contentTitle">{event.label}</AppHeading>
+                <AppHeading level={2} role="heading">{event.label}</AppHeading>
                 <AppParagraph typographyRole="body">Swipe to open this event</AppParagraph>
               </div>
             )}

@@ -51,7 +51,7 @@ export function AchievementsCatalog({
       {item ? (
         <View style={{ alignItems: "center", gap: 12 }}>
           <Badge item={item} />
-          <AppText role="metricValue" >
+          <AppText role="heading" >
             {item.current.toLocaleString()} / {item.target.toLocaleString()}
           </AppText>
           <AppText role="body" secondary >
@@ -79,8 +79,8 @@ export function AchievementsCatalog({
         >
           <Badge item={row} />
           <View style={f.grow}>
-            <AppText role="itemTitle" >{row.title}</AppText>
-            <AppText role="supporting" secondary >
+            <AppText role="label" >{row.title}</AppText>
+            <AppText role="body" secondary >
               {row.target} {row.category === "sessions" ? "sessions" : "Open effort score"}
             </AppText>
           </View>

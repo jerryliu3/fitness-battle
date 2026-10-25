@@ -341,12 +341,12 @@ export function CrewPanel() {
             className="focus-crew-hero"
           >
             <img className="club-landscape" src="/club/alpine-trail.jpg" alt=""/>
-            <AppParagraph typographyRole="badgeLabel" className="fb-kicker">
+            <AppParagraph typographyRole="label" className="fb-kicker">
               {isSolo
                 ? "Solo circle · 1 member"
                 : `Your people · ${memberCountLabel}`}
             </AppParagraph>
-            <AppHeading level={1} role="pageTitle"><button type="button" className="club-crew-name" onClick={()=>setPanel("members")} aria-label={`View ${crew.name} members`}>{crew.name}</button></AppHeading>
+            <AppHeading level={1} role="display"><button type="button" className="club-crew-name" onClick={()=>setPanel("members")} aria-label={`View ${crew.name} members`}>{crew.name}</button></AppHeading>
             <div className="focus-row">
               <div className="focus-avatar-stack">
                 {members.slice(0, 5).map((m) => (
@@ -408,7 +408,7 @@ export function CrewPanel() {
           <div className="focus-crew-layout">
             <div className="focus-crew-main">
               <section className="focus-card">
-                <AppParagraph typographyRole="badgeLabel" className="fb-kicker">Our shared week · {crew.sport}</AppParagraph>
+                <AppParagraph typographyRole="label" className="fb-kicker">Our shared week · {crew.sport}</AppParagraph>
                 {sessionsMetric ? (
                   <strong>{entries.reduce((total, entry) => total + Number(entry.session_count ?? 1), 0)} sessions</strong>
                 ) : (
@@ -450,7 +450,7 @@ export function CrewPanel() {
         </>
       )}
       {!panel && note && (
-        <AppParagraph typographyRole="supporting"
+        <AppParagraph typographyRole="body"
           className={isCrewErrorNote(note) ? "fb-error" : "focus-feedback"}
           role={isCrewErrorNote(note) ? "alert" : "status"}
         >
@@ -465,7 +465,7 @@ export function CrewPanel() {
       {!user && (
         <div className="focus-crew-preview" style={{ marginBottom: 28 }}>
           <section className="focus-card">
-            <AppParagraph typographyRole="badgeLabel" className="fb-kicker">What crews unlock</AppParagraph>
+            <AppParagraph typographyRole="label" className="fb-kicker">What crews unlock</AppParagraph>
             <ul className="focus-crew-preview-list">
               <li>
                 <b>Shared week</b>
@@ -482,7 +482,7 @@ export function CrewPanel() {
             </ul>
           </section>
           <section className="focus-card focus-empty">
-            <AppHeading level={2} role="contentTitle">Make room for your people.</AppHeading>
+            <AppHeading level={2} role="heading">Make room for your people.</AppHeading>
             <AppParagraph typographyRole="body" className="fb-copy" style={{ marginBottom: 20 }}>
               Private crews share a week of effort — invite codes,
               member standings, and a shared field when you register together.

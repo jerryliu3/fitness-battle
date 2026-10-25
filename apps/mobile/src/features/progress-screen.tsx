@@ -43,8 +43,8 @@ export function ProgressScreen() {
           </Text>
           <View style={[f.row, { flexWrap: "wrap" }]}>
             <View>
-              <AppText role="supporting" secondary >Distance</AppText>
-              <AppText role="itemTitle" >
+              <AppText role="body" secondary >Distance</AppText>
+              <AppText role="label" >
                 {you
                   ? formatVolume(
                       state.primary,
@@ -56,14 +56,14 @@ export function ProgressScreen() {
               </AppText>
             </View>
             <View>
-              <AppText role="supporting" secondary >Effort</AppText>
-              <AppText role="itemTitle" >
+              <AppText role="body" secondary >Effort</AppText>
+              <AppText role="label" >
                 {you ? formatEffort(you.effort) : "—"}
               </AppText>
             </View>
             <View>
-              <AppText role="supporting" secondary >Place</AppText>
-              <AppText role="itemTitle" >
+              <AppText role="body" secondary >Place</AppText>
+              <AppText role="label" >
                 {you ? `${you.place} / ${board.length}` : "—"}
               </AppText>
             </View>
@@ -71,12 +71,12 @@ export function ProgressScreen() {
         </View>
         </View>
         <View style={{display:section==="overview"?"flex":"none",gap:28}}><TrainingHistory state={state}><Achievements state={state}/></TrainingHistory><WeekRecap state={state}/>
-        {state.periodResults.length ? <Pressable accessibilityRole="button" style={f.section} onPress={() => router.push("/arena?results=latest")}><AppText role="itemTitle" >Latest week results ↗</AppText></Pressable> : null}
+        {state.periodResults.length ? <Pressable accessibilityRole="button" style={f.section} onPress={() => router.push("/arena?results=latest")}><AppText role="label" >Latest week results ↗</AppText></Pressable> : null}
         <View style={f.section}>
           <Pressable accessibilityRole="button" onPress={() => router.push("/progress-history")}>
             <SectionHeader title="Past weeks & awards"/>
             <AppText role="body" secondary >Closed competition weeks, chapter history, and your award shelf.</AppText>
-            <AppText role="itemTitle" >View all →</AppText>
+            <AppText role="label" >View all →</AppText>
           </Pressable>
           {awardCards(state).length > 0 ? <AwardShelf cards={awardCards(state).slice(0, 3)} /> : null}
         </View>

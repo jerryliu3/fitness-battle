@@ -9,8 +9,10 @@
   --accent: #142b3b;
   --accent-soft: #eef3f1;
   --fb-radius: 20px;
-  font-family: var(--font-body), sans-serif;
   color: var(--ink);
+  letter-spacing: normal;
+  text-transform: none;
+  font: var(--type-body);
 }
 body:has(.fb-auth),
 body:has(.fb-legal) {
@@ -28,17 +30,15 @@ body:has(.fb-legal) {
   box-shadow: 0 6px 30px #142b3b05;
 }
 .fb-auth .fb-title {
-  font-family: var(--font-body), sans-serif;
-  font-size: 32px;
-  line-height: 1.2;
-  font-weight: 700;
-  letter-spacing: -1px;
+  letter-spacing: normal;
+  text-transform: none;
+  font: var(--type-display);
 }
 .fb-auth .fb-kicker {
-  text-transform: none;
-  font-size: 18px;
-  letter-spacing: -0.5px;
   color: var(--ink);
+  letter-spacing: normal;
+  text-transform: none;
+  font: var(--type-label);
 }
 .fb-auth .fb-btn {
   min-height: 48px;
@@ -46,8 +46,10 @@ body:has(.fb-legal) {
   border-radius: 12px;
   background: var(--lime);
   color: var(--ink);
-  font-weight: 700;
   box-shadow: none;
+  letter-spacing: normal;
+  text-transform: none;
+  font: var(--type-label);
 }
 .fb-auth .fb-btn-line {
   min-height: 44px;
@@ -71,7 +73,7 @@ body:has(.fb-legal) {
   max-width: 960px;
 }
 .fb-legal .fb-legal-brand {
-  font-family: var(--font-body), sans-serif;
-  font-weight: 700;
+  letter-spacing: normal;
   text-transform: none;
+  font: var(--type-label);
 }

@@ -38,7 +38,7 @@ export default function AdminLab() {
     finally { if (owner.current === accountId) setBusy(false); }
   }
   return <main className="fb-card" style={{ padding: 24, maxWidth: 800, margin: "auto" }}>
-    <AppHeading level={1} role="pageTitle">Round lab</AppHeading>
+    <AppHeading level={1} role="display">Round lab</AppHeading>
     <AppParagraph typographyRole="body" className="fb-copy">Local simulation is isolated from your account. Production settlement below writes real results.</AppParagraph>
     <section><SectionHeader title="Local sandbox"/>
       <AppParagraph typographyRole="body">{competeNow(local).toLocaleString()} · {local.activities.length} sessions · {local.periodResults.length} results</AppParagraph>
@@ -60,7 +60,7 @@ export default function AdminLab() {
       <label>Athlete account ID<input className="fb-input" disabled={busy} value={target} placeholder={user.id} onChange={(event) => { setTarget(event.target.value); setPreview(null); }}/></label>
       <button className="fb-btn-line" disabled={busy} onClick={() => void load()}>Load account preview</button>
       {preview && <>
-        <AppHeading level={3} role="contentTitle">{preview.name}</AppHeading><pre style={{ overflow: "auto" }}>{JSON.stringify(preview.enrollments, null, 2)}</pre>
+        <AppHeading level={3} role="heading">{preview.name}</AppHeading><pre style={{ overflow: "auto" }}>{JSON.stringify(preview.enrollments, null, 2)}</pre>
         <label>Action<select disabled={busy} value={action} onChange={(event) => setAction(event.target.value)}><option value="settle-due">Settle only rounds already due</option><option value="close-round">Close current round early</option></select></label>
         <label>Reason<input className="fb-input" disabled={busy} minLength={8} maxLength={1000} value={reason} onChange={(event) => setReason(event.target.value)}/></label>
         <label>Type SETTLE {target}<input className="fb-input" disabled={busy} value={confirmation} onChange={(event) => setConfirmation(event.target.value)}/></label>

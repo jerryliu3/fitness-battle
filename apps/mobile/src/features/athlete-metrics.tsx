@@ -1,4 +1,4 @@
-import { AppText } from "../ui/section";
+import { AppText, SectionHeader } from "../ui/section";
 import { clubLifetimeTotals } from "@fitness-battle/shared";
 import { SHELL_COLORS as clubColors } from "@fitness-battle/shared";
 import { distanceUnitLabel, formatDistanceM, type CompeteState } from "@fitness-battle/shared";
@@ -43,7 +43,7 @@ export function AthleteMetrics({
             <ProfilePhoto state={state} />
             <View style={{ flex: 1, gap: 4 }}>
               <Text style={f.kicker}>{state.city || "Your own pace"}</Text>
-              <AppText role="pageTitle" >{state.name}</AppText>
+              <AppText accessibilityRole="header" role="display" >{state.name}</AppText>
               {email ? (
                 <AppText role="caption" secondary >
                   {email}
@@ -63,7 +63,7 @@ export function AthleteMetrics({
             ]}
             accessibilityLabel="Lifetime totals"
           >
-            <Text style={f.kicker}>Lifetime totals</Text>
+            <SectionHeader title="Lifetime totals"/>
             <View style={[f.row, { marginTop: 12, flexWrap: "wrap" }]}>
               <View
                 style={{
@@ -73,7 +73,7 @@ export function AthleteMetrics({
                   gap: 4,
                 }}
               >
-                <AppText role="metricValue" >
+                <AppText role="heading" >
                   {formatDistanceM(season.meters, state.units)}
                 </AppText>
                 <AppText role="caption" secondary >{unit} total</AppText>
@@ -86,7 +86,7 @@ export function AthleteMetrics({
                   gap: 4,
                 }}
               >
-                <AppText role="metricValue" >{season.sessions}</AppText>
+                <AppText role="heading" >{season.sessions}</AppText>
                 <AppText role="caption" secondary >sessions</AppText>
               </View>
               <View
@@ -97,7 +97,7 @@ export function AthleteMetrics({
                   gap: 4,
                 }}
               >
-                <AppText role="metricValue" >{season.weeks}</AppText>
+                <AppText role="heading" >{season.weeks}</AppText>
                 <AppText role="caption" secondary >settled weeks</AppText>
               </View>
               <View
@@ -108,7 +108,7 @@ export function AthleteMetrics({
                   gap: 4,
                 }}
               >
-                <AppText role="metricValue" >{state.lifetimeOvertakes}</AppText>
+                <AppText role="heading" >{state.lifetimeOvertakes}</AppText>
                 <AppText role="caption" secondary >overtakes</AppText>
               </View>
             </View>

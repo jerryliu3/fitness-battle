@@ -108,10 +108,10 @@ export default function RootLayout() {
       >
         {fontError || fontLoadTimedOut ? (
           <View style={{ paddingHorizontal: 28, gap: 12, maxWidth: 420 }}>
-            <Text style={{ ...textStyle("itemTitle"), textAlign: "center", color: SHELL_COLORS.ink }}>
+            <Text style={{ ...textStyle("label"), textAlign: "center", color: SHELL_COLORS.ink }}>
               Fonts couldn’t load
             </Text>
-            <Text style={{ ...textStyle("supporting"), textAlign: "center", color: SHELL_COLORS.ink }}>
+            <Text style={{ ...textStyle("body"), textAlign: "center", color: SHELL_COLORS.ink }}>
               Reload the app in Expo Go. If this continues, check the Expo server logs for the font-loading error.
             </Text>
             {__DEV__ && fontError ? (

@@ -1,7 +1,6 @@
 "use client";
 import { AppParagraph, AppText, AppHeading } from "@/ui/section";
 
-
 import { ProfilePhoto } from "@/features/you/profile-photo";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { AuthGate } from "@/components/auth-gate";
@@ -45,8 +44,8 @@ function OnboardingFlow() {
   if (state.onboardingCompleted) {
     return (
       <section className="fb-card">
-        <AppParagraph typographyRole="badgeLabel" className="fb-kicker">You are set</AppParagraph>
-        <AppHeading level={1} role="pageTitle" className="fb-title">Onboarding already finished</AppHeading>
+        <AppParagraph typographyRole="label" className="fb-kicker">You are set</AppParagraph>
+        <AppHeading level={1} role="display" className="fb-title">Onboarding already finished</AppHeading>
         <AppParagraph typographyRole="body" className="fb-copy">
           {state.calibrated
             ? `Preferences and the one-time ${BACKFILL_DAYS}-day calibration cannot be run again.`
@@ -118,12 +117,12 @@ function OnboardingFlow() {
   return (
     <AnimatePresence mode="wait" initial={false}><motion.div key={step} initial={reduced ? false : { x: 28, opacity: 0 }} animate={{ x: 0, opacity: 1 }} exit={{ x: reduced ? 0 : -28, opacity: 0 }} transition={{ duration: reduced ? 0 : 0.2 }}>
       <header>
-        <AppParagraph typographyRole="badgeLabel" className="fb-kicker">
+        <AppParagraph typographyRole="label" className="fb-kicker">
           Setup · step{" "}
           {step === "prefs" ? "1" : step === "connect" ? "2" : step === "backfill" ? "3" : "4"}{" "}
           of 4
         </AppParagraph>
-        <AppHeading level={1} role="pageTitle" className="fb-title">
+        <AppHeading level={1} role="display" className="fb-title">
           {step === "prefs" && "Your training profile"}
           {step === "connect" && "Link a tracker"}
           {step === "backfill" && "Import fitness history"}
@@ -211,7 +210,7 @@ function OnboardingFlow() {
             <div key={provider.id} className="fb-row">
               <span className="fb-grow">
                 {provider.name}
-                <AppText as="small" role="supporting" secondary>
+                <AppText as="small" role="body" secondary>
                   {provider.blurb}
                   {isStravaLinked
                     ? ` · ${stravaLink?.status === "connected" ? "Connected" : "Demo stub (not live)"}`

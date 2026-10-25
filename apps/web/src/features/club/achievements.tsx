@@ -44,7 +44,7 @@ export function Achievements({ state }: { state: CompeteState }) {
             aria-label={`${row.title}. ${row.target} ${row.category === "sessions" ? "sessions" : "Open effort score"}. ${row.earned ? "Earned" : "In progress"}`}
           >
             <AchievementBadge item={row} />
-            <AppText role="itemTitle">
+            <AppText role="label">
               {row.target.toLocaleString()}
               {row.category === "sessions" ? (row.target === 1 ? " session" : " sessions") : " pts"}
             </AppText>

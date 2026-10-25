@@ -55,8 +55,6 @@ Athlete's Account settings destination contains Sign out, Report an issue and De
 
 ## Production motion implementation
 
-Recorded GPS activities on Home include a route preview and an Explore route action on web and native. Personal records show the selected milestone's activity route, explicitly labeled as the full activity rather than the precise record segment. The full-screen viewer opens paused in 2D with optional 3D terrain, play/pause and seeking. Replay speed is illustrative. Missing route geometry never receives a sample substitute; unavailable map access retains the route outline. Crew activity summaries do not expose private GPS routes.
-
 One live lane canvas should change bounds when expanding, retaining its selection, zoom and horizontal anchor. Expanded web lanes live in a root dialog with attached controls, Escape, scroll locking and focus return. Embedded touch lanes allow page scrolling; vertical field exploration requires fullscreen web lanes or native's explicit Explore mode. Programmatic viewport changes interpolate center and span together; direct manipulation interrupts immediately. Center me restores following.
 
 Give each transform one animation owner. Fade sheet scrims independently, retain surfaces through exit, preserve parent scroll behind settings, and respect reduced motion. Haptics follow deliberate actions or confirmed outcomes, not decorative animation callbacks. The [production repair review](reviews/motion-regressions-2026-10-19.md) tracks remaining gaps against the 18-flow prototype, including native fullscreen expansion and medal detail.
@@ -185,22 +183,20 @@ The header uses a bounded effort container with remaining volume inside its mete
 
 Native choice controls overlay their parent; duration/distance use wheels and dates/times use platform pickers. Native Members uses a root stack destination. Default 2D geometry shows approximately five lanes while retaining its existing longitudinal distance scale. Place and next-rival status sit above the field as a plain text row. White competition date containers, Active Sports cards, sport/settings icons and distinct level symbols provide separation. iOS chrome stays light. See the [follow-up audit](reviews/mobile-bugfixes-2026-10-23/README.md) for changes, rollout and remaining device checks.
 
-Home's Latest activity retains up to three of the athlete's eligible sessions from today and yesterday (Eastern), plus the existing latest-session-per-crew-member summaries. This keeps an earlier GPS route accessible after another session. Each available own GPS route replaces the sport icon with a 64px square map thumbnail. The row opens activity details with the full map and flyover; previews do not sit below Home activity rows. Private crew coordinates remain unavailable. Personal record charts hold each best time horizontally until the next achievement, then step down at its date.
-
 ## Shared hierarchy implementation — October 24
 
-Product typography now has semantic shared roles, with **22/28 DM Sans 700**
-section titles and **14/20 DM Sans 700** section actions. Page titles remain
-30/36; compact centered Back titles use 20/26. Platform adapters, open Sections,
-SectionStack boundaries and scalable status badges are described in
-[component guidelines](design/component-guidelines.md#semantic-typography-and-sections-october-24-2026).
-The contract now applies across the production web and native application,
-including Home, Compete, Progress, Crew, Athlete/settings, onboarding,
-notifications, authentication, history, awards, sleep/recovery and rankings.
-SectionHeader/Section compositions and page stacks share one rhythm; copy, row
-titles, subtitles and captions consume semantic roles. Keep chart/metric scale,
-avatar initials, utility symbols and achievement art separate from headings. Shared divided boundaries use #d0dad7 at one logical unit on both
-platforms, with 16 before and 12 after; mobile page gutters remain 20.
+All product typography now uses exactly five DM Sans recipes: display 30/36 bold,
+heading 22/28 bold, body 16/24 regular, label 14/20 bold and caption 12/18 regular.
+These cover page/navigation/section/card titles, numbers, tabs, controls, badges,
+subtitles and charts on web and native. There are no metric-scale exceptions,
+uppercase transformations, custom tracking or medium weights. Brand/mascot art
+and historical studies remain separate assets. See [component guidelines](design/component-guidelines.md#semantic-typography-and-sections-october-24-2026)
+and the [five-style audit](reviews/ui-five-style-audit-2026-10-24.md).
+
+The contract applies across Home, Compete, Progress, Crew, Athlete/settings,
+onboarding, notifications, authentication, history, awards, sleep/recovery,
+rankings and supporting sheets. Shared divided boundaries use #d0dad7 at one
+logical unit, with 16 before and 12 after; mobile page gutters remain 20.
 
 ## Full-screen activity and competition moments — October 24
 

@@ -1,4 +1,7 @@
 "use client";
+import { ChartSvg, ChartText } from "@/ui/chart-text";
+import { typographyStyle } from "@/ui/section";
+
 import { weeklyHoursComparison, type CompeteState } from "@fitness-battle/shared";
 import { motion, useReducedMotion } from "motion/react";
 import Link from "next/link";
@@ -76,7 +79,7 @@ export function WeekChart({ state, detail = false, ready = true }: { state: Comp
         </div>
 
         <div className="focus-activity-chart-wrap" style={{ position: "relative" }}>
-          <svg
+          <ChartSvg
             viewBox={`0 0 ${chartW} ${chartH}`}
             className="focus-activity-svg"
             role="img"
@@ -96,16 +99,16 @@ export function WeekChart({ state, detail = false, ready = true }: { state: Comp
             </defs>
 
             {/* Horizontal gridlines & Y-axis labels */}
-            <text
+            <ChartText
               x="26"
               y={yTop + 4}
               textAnchor="end"
-              fontSize="9"
+
               fill="#616c63"
-              fontWeight="500"
+
             >
               {yMax}h
-            </text>
+            </ChartText>
             <line
               x1={xStart}
               y1={yTop}
@@ -115,16 +118,16 @@ export function WeekChart({ state, detail = false, ready = true }: { state: Comp
               strokeDasharray="3 3"
             />
 
-            <text
+            <ChartText
               x="26"
               y={yMidPos + 3}
               textAnchor="end"
-              fontSize="9"
+
               fill="#616c63"
-              fontWeight="500"
+
             >
               {yMid}h
-            </text>
+            </ChartText>
             <line
               x1={xStart}
               y1={yMidPos}
@@ -134,16 +137,16 @@ export function WeekChart({ state, detail = false, ready = true }: { state: Comp
               strokeDasharray="3 3"
             />
 
-            <text
+            <ChartText
               x="26"
               y={yBottom + 3}
               textAnchor="end"
-              fontSize="9"
+
               fill="#616c63"
-              fontWeight="500"
+
             >
               0h
-            </text>
+            </ChartText>
             <line
               x1={xStart}
               y1={yBottom}
@@ -183,7 +186,7 @@ export function WeekChart({ state, detail = false, ready = true }: { state: Comp
             <circle cx={currPreciseX} cy={currLastY} r="3.5" fill="#f1c75b" />
 
             {/* Direct on-chart label: Last week at the end of the baseline */}
-            <text
+            <ChartText
               x={xEnd}
               y={
                 Math.abs(currPreciseX - xEnd) < 55 && Math.abs(currLastY - prevLastY) < 18
@@ -191,32 +194,30 @@ export function WeekChart({ state, detail = false, ready = true }: { state: Comp
                   : Math.max(yTop + 10, prevLastY - 6)
               }
               textAnchor="end"
-              fontSize="9"
-              fontWeight="600"
+
               fill="#616c63"
             >
               Last week
-            </text>
+            </ChartText>
 
             {/* X-axis day labels */}
             {dayLabels.map((lbl, i) => {
               const cx = getDayCenterX(i);
               const isToday = i === nowDayIndex;
               return (
-                <text
+                <ChartText
                   key={i}
                   x={cx}
                   y={yBottom + 18}
                   textAnchor="middle"
-                  fontSize="10"
-                  fontWeight={isToday ? "700" : "500"}
+
                   fill={isToday ? "#282f2c" : "#616c63"}
                 >
                   {lbl}
-                </text>
+                </ChartText>
               );
             })}
-          </svg>
+          </ChartSvg>
           {!detail && <Link href="/week" aria-label="Explore your week" style={{ position: "absolute", inset: 0, borderRadius: 14 }} />}
         </div>
       </motion.section>

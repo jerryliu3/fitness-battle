@@ -1,7 +1,7 @@
 import { createElement } from "react";
 import { act, create, type ReactTestRenderer } from "react-test-renderer";
 import { afterEach, expect, it, vi } from "vitest";
-vi.mock("react-native", () => ({ Modal: "Modal", Platform: { OS: "ios" }, Pressable: "Pressable", Text: "Text", View: "View" }));
+vi.mock("react-native", () => ({ StyleSheet: { create: (value: unknown) => value }, Modal: "Modal", Platform: { OS: "ios" }, Pressable: "Pressable", Text: "Text", View: "View" }));
 vi.mock("@react-native-community/datetimepicker", () => ({ default: "DateTimePicker" }));
 vi.mock("@react-native-picker/picker", async () => { const { createElement } = await import("react"); return { Picker: Object.assign((props: object) => createElement("Picker", props), { Item: "PickerItem" }) }; });
 vi.mock("./focus", () => ({ f: {} }));
