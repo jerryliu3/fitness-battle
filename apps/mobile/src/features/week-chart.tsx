@@ -59,7 +59,8 @@ export function WeekChart({ state, onOpen, ready = true }: { state: CompeteState
   }));
   return (<ChartFrame ready={ready}><View style={s.statsCard} accessibilityLabel="This week's progress">
             <View style={s.statsHeader}>
-              <View>
+              <View style={{ gap: 8 }}>
+                <AppText role="heading" accessibilityRole="header">Current week</AppText>
 
                 <View style={s.statsNumbers}>
                   <Text style={s.statsMain}>
