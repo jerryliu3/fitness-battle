@@ -119,7 +119,7 @@ function ReplayViewer({ state, selection, initialDimension, onClose }: { state: 
       </View>
       <View style={s.controls}>
         <AppText role="caption" secondary>Your place {me?.place ?? "—"} / {lanes.length} · {Math.ceil(cursor)} / {count} events</AppText>
-        <AppText role="label" numberOfLines={2}>{caption}</AppText>
+        <AppText role="row" numberOfLines={2}>{caption}</AppText>
         <AppText role="caption" secondary>{competitionReplayDate(index, cursor)}</AppText>
         <ReplayTimeline cursor={cursor} count={count} caption={caption} onSeek={seek} />
         <View style={s.actions}>

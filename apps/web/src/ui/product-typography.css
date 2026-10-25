@@ -99,3 +99,5 @@
 .phone-shell :is(.club-week-metrics small, .club-session-metrics small, .club-training-total strong small, .focus-arena-total strong small, .session-stage-hours small) { font: var(--type-caption); letter-spacing: normal; }
 .phone-shell :is(.focus-settings-label, .fb-field-label) { font: var(--type-field); }
 .phone-shell :is(.phone-tab > span, .focus-tab-label, .fb-tab-label) { font: var(--type-nav); }
+
+.phone-shell .competition-replay-event { font: var(--type-row); letter-spacing: var(--type-row-tracking); }
