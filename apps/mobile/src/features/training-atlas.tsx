@@ -14,7 +14,7 @@ import {
   shiftAppDay,
   shiftTrainingMonth,
   sportById,
-  SPORTS,
+  defaultTrainingSports,
   trainingAtlas,
   trainingBuckets,
   trainingComparison,
@@ -24,8 +24,15 @@ import {
   type SportId,
   type TrainingRange,
 } from "@fitness-battle/shared";
-import { FocusDisclosure, FocusSegments, f } from "../ui/focus";
+import { FocusDisclosure, f } from "../ui/focus";
+import { TrainingSportMenu } from "./training-sport-menu";
 import { SHELL_COLORS as c } from "../theme";
+
+const RANGE_OPTIONS: { value: TrainingRange; label: string; full: string }[] = [
+  { value: "week", label: "W", full: "Week" },
+  { value: "month", label: "M", full: "Month" },
+  { value: "year", label: "Y", full: "Year" },
+];
 const colors = [
   c.soft,
   `${c.secondary}33`,
@@ -36,13 +43,13 @@ const colors = [
 export function TrainingAtlas({ state }: { state: CompeteState }) {
   const now = competeNow(state);
   const [gridWidth, setGridWidth] = useState(280);
-  const [sport, setSport] = useState<SportId | "all">("all"),
+  const [sports, setSports] = useState<SportId[]>(() => defaultTrainingSports()),
     [range, setRange] = useState<TrainingRange>("week"),
     [anchor, setAnchor] = useState(() => now),
     [selected, setSelected] = useState<string | null>(null),
     [selectedDay, setSelectedDay] = useState<string | null>(null);
-  const buckets = trainingBuckets(state.activities, sport, range, anchor, now),
-    cells = trainingAtlas(state.activities, sport, anchor, now);
+  const buckets = trainingBuckets(state.activities, sports, range, anchor, now),
+    cells = trainingAtlas(state.activities, sports, anchor, now);
   const bucket =
     buckets.find((b) => b.start === selected) ??
     buckets.find((b) => b.partial) ??
@@ -50,7 +57,7 @@ export function TrainingAtlas({ state }: { state: CompeteState }) {
     buckets[0]!;
   const comparison = trainingComparison(
     state.activities,
-    sport,
+    sports,
     range,
     anchor,
     now,
@@ -80,38 +87,44 @@ export function TrainingAtlas({ state }: { state: CompeteState }) {
   };
   return (
     <Section title="Your training">
-      <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-        <View style={f.row}>
-          {[{ id: "all", name: "All sports" }, ...SPORTS].map((s) => (
+      <View style={[f.row, { justifyContent: "space-between", alignItems: "center" }]}>
+        <TrainingSportMenu
+          value={sports}
+          onChange={(next) => {
+            setSports(next);
+            setSelected(null);
+          }}
+        />
+        <View
+          accessibilityRole="tablist"
+          accessibilityLabel="Training chart range"
+          style={s.chartRange}
+        >
+          {RANGE_OPTIONS.map((option) => (
             <Pressable
-              key={s.id}
-              accessibilityRole="button"
-              accessibilityState={{ selected: sport === s.id }}
+              key={option.value}
+              accessibilityRole="tab"
+              accessibilityState={{ selected: range === option.value }}
+              accessibilityLabel={option.full}
               onPress={() => {
-                setSport(s.id as SportId | "all");
+                setRange(option.value);
+                setAnchor((current) =>
+                  clampTrainingAnchor(current, earliest, now, option.value),
+                );
                 setSelected(null);
               }}
-              style={[f.chip, sport === s.id && f.chipActive]}
+              style={[s.rangeBtn, range === option.value && s.rangeBtnOn]}
             >
-              <AppText role="caption" secondary >{s.name}</AppText>
+              <AppText
+                role="label"
+                style={{ color: range === option.value ? c.card : c.muted }}
+              >
+                {option.label}
+              </AppText>
             </Pressable>
           ))}
         </View>
-      </ScrollView>
-      <FocusSegments
-        label="Training chart range"
-        value={range}
-        options={[
-          { value: "week", label: "Week" },
-          { value: "month", label: "Month" },
-          { value: "year", label: "Year" },
-        ]}
-        onChange={(r) => {
-          setRange(r);
-          setAnchor((current) => clampTrainingAnchor(current, earliest, now, r));
-          setSelected(null);
-        }}
-      />
+      </View>
       <View style={s.row}>
         <Pressable
           style={s.arrow}
@@ -155,17 +168,17 @@ export function TrainingAtlas({ state }: { state: CompeteState }) {
         >
           {clubDuration(buckets.reduce((sum, b) => sum + b.movingSec, 0))}
         </Text>
-        <AppText role="caption" secondary >
-          {buckets.reduce((sum, b) => sum + b.sessions, 0)} {buckets.reduce((sum, b) => sum + b.sessions, 0) === 1 ? "session" : "sessions"} ·{" "}
-          {sport === "all" ? "All sports" : sportById(sport).name}
-        </AppText>
       </View>
-      <AppText role="caption" secondary style={{ color: c.secondary }}>{comparison.label}</AppText>
-      <ChartScrubber key={`${range}:${anchor.toISOString()}:${sport}`} label="Training hours by period"
+      {comparison.percent !== null ? (
+        <AppText role="caption" secondary style={{ color: c.secondary }}>
+          {comparison.label}
+        </AppText>
+      ) : null}
+      <ChartScrubber key={`${range}:${anchor.toISOString()}:${sports.join(",")}`} label="Training hours by period"
         points={buckets.flatMap((b, index) => Date.parse(b.start) > now.getTime() ? [] : [{
           id: b.start, x: (index + .5) / buckets.length * 340,
           y: 118 - (b.movingSec ? Math.max(2, (b.movingSec / max) * 118) : 0),
-          label: `${b.label}${b.partial ? " · so far" : ""}`,
+          label: b.label,
           value: `${formatTrainingHours(b.movingSec)} hr · ${b.sessions} ${b.sessions === 1 ? "session" : "sessions"}`,
         }])}
         width={340} height={144} plotTop={0} plotBottom={118} onSelect={setSelected}>
@@ -329,6 +342,26 @@ export function TrainingAtlas({ state }: { state: CompeteState }) {
   );
 }
 const s = StyleSheet.create({
+  chartRange: {
+    flexDirection: "row",
+    gap: 2,
+    padding: 2,
+    borderRadius: 7,
+    borderWidth: 1,
+    borderColor: c.line,
+    backgroundColor: c.soft,
+  },
+  rangeBtn: {
+    minWidth: 32,
+    minHeight: 32,
+    paddingHorizontal: 8,
+    borderRadius: 5,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  rangeBtnOn: {
+    backgroundColor: c.ink,
+  },
   row: {
     flexDirection: "row",
     alignItems: "center",

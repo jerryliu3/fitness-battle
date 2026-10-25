@@ -12,7 +12,7 @@ vi.mock("../ui/chart-scrubber",()=>({ChartScrubber:({children}:{children:unknown
 vi.mock("react-native-svg",()=>({default:"Svg",G:"G",Path:"Path",Text:"SvgText"}));
 vi.mock("expo-router",()=>({useRouter:()=>({navigate:mock.navigate})}));
 vi.mock("../lib/compete-store",()=>({useCompeteStore:()=>({state:mock.state,accountKey:mock.account,canWrite:true,saveError:null})}));
-vi.mock("../ui/focus",()=>({FocusButton:"FocusButton",FocusDisclosure:"Disclosure",FocusSegments:"FocusSegments",f:{}}));
+vi.mock("../ui/focus",()=>({FocusButton:"FocusButton",FocusDisclosure:"Disclosure",FocusSegments:"FocusSegments",FocusSheet:"FocusSheet",f:{chip:{},chipActive:{},row:{}}}));
 vi.mock("../ui/mascot/animated-ember",()=>({AnimatedEmber:"Ember"}));
 vi.mock("../ui/use-reduced-motion",()=>({useReducedMotion:()=>true}));
 vi.mock("../ui/field-course",()=>({drawFieldNode:()=>null}));
@@ -52,10 +52,10 @@ describe("native earned progress flows",()=>{
  it("switches the chart between week, month and year without manufacturing future sessions",async()=>{
   const state={...mock.state!,activities:[recorded("today",3600)]};
   await act(async()=>{renderer=create(createElement(TrainingAtlas,{state}));});
-  const segments=()=>renderer.root.findByType("FocusSegments" as never);
-  await act(async()=>segments().props.onChange("year"));
+  const range=(label:string)=>renderer.root.findAllByType("Pressable" as never).find(n=>n.props.accessibilityLabel===label)!;
+  await act(async()=>range("Year").props.onPress());
   const months=renderer.root.findAllByType("Pressable" as never).filter(n=>/^(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec),/.test(n.props.accessibilityLabel??""));expect(months).toHaveLength(12);expect(months[10]!.props.disabled).toBe(true);
-  await act(async()=>segments().props.onChange("week"));expect(renderer.root.findAllByType("Pressable" as never).filter(n=>/^(Mon|Tue|Wed|Thu|Fri|Sat|Sun),/.test(n.props.accessibilityLabel??""))).toHaveLength(7);
+  await act(async()=>range("Week").props.onPress());expect(renderer.root.findAllByType("Pressable" as never).filter(n=>/^(Mon|Tue|Wed|Thu|Fri|Sat|Sun),/.test(n.props.accessibilityLabel??""))).toHaveLength(7);
  });
  it("links member cards to the dimensional relay's contribution receipt, including zero contributors",async()=>{
   await act(async()=>{renderer=create(createElement(CrewRelay,{members:[{user_id:"a",display_name:"Maya"},{user_id:"b",display_name:"Leo"}],entries:[{user_id:"a",distance_m:5000,moving_sec:1200,session_count:1}],sport:"running",format:"volume",previousDistanceM:10000,targetSessions:3}));});

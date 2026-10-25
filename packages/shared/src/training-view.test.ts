@@ -27,6 +27,14 @@ describe("training calendar presentation",()=>{
   expect(month[0]!.start).toBe("2026-10-01T04:00:00.000Z");expect(month.at(-1)!.end).toBe("2026-11-01T04:00:00.000Z");expect(month.reduce((sum,b)=>sum+b.sessions,0)).toBe(2);
   const year=trainingBuckets(rows,"all","year",now,new Date("2026-11-03T12:00:00Z"));expect(year).toHaveLength(12);expect(year[9]!.sessions).toBe(2);expect(year[8]!.sessions).toBe(1);
  });
+ it("filters by multi-sport selection the same as a single sport or all",()=>{
+  const now=new Date("2026-10-21T12:00:00Z"), at="2026-10-20T12:00:00Z";
+  const rows=[activity("run",at),activity("ride",at,{sport:"cycling"}),activity("walk",at,{sport:"walking"})];
+  const week=(sport: Parameters<typeof trainingBuckets>[1])=>trainingBuckets(rows,sport,"week",now,now).reduce((sum,b)=>sum+b.sessions,0);
+  expect(week("all")).toBe(3);
+  expect(week(["running","cycling"])).toBe(2);
+  expect(week(["strength"])).toBe(0);
+ });
  it("excludes sample, future, pending and excluded rows and preserves sport and track eligibility",()=>{
   const now=new Date("2026-10-21T12:00:00Z"), at="2026-10-20T12:00:00Z";
   const rows=[activity("real",at),activity("manual",at,{source:"manual",provenance:"manual",verified:false}),activity("strength",at,{sport:"strength"}),activity("excluded",at,{disposition:"excluded"}),activity("sample",at,{provenance:"demo"}),activity("pending",at,{disposition:"pending"}),activity("future","2026-10-22T12:00:00Z")];

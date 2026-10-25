@@ -3,9 +3,40 @@ import { countsOnTrack } from "./compete/ledger";
 import { periodEffort } from "./compete/effort";
 import { currentEffortMilestone } from "./compete/milestones";
 import { competeNow } from "./compete/engine";
-import { ELO_CAP, type Activity, type CompeteState, type ScoreTrack, type SportId } from "./compete/sports";
+import {
+  ELO_CAP,
+  SPORT_IDS,
+  sportById,
+  type Activity,
+  type CompeteState,
+  type ScoreTrack,
+  type SportId,
+} from "./compete/sports";
 
 export type TrainingRange = "week" | "month" | "year";
+export type TrainingSportFilter = SportId | "all" | readonly SportId[];
+
+export function defaultTrainingSports(): SportId[] {
+  return [...SPORT_IDS];
+}
+
+export function isAllTrainingSports(sports: readonly SportId[]): boolean {
+  return sports.length >= SPORT_IDS.length;
+}
+
+export function trainingSportFilterLabel(sports: readonly SportId[]): string {
+  if (isAllTrainingSports(sports)) return "All sports";
+  if (sports.length === 0) return "Sports";
+  if (sports.length === 1) return sportById(sports[0]!).name;
+  return `${sports.length} sports`;
+}
+
+function sportMatches(sport: SportId, filter: TrainingSportFilter): boolean {
+  if (filter === "all") return true;
+  if (typeof filter === "string") return sport === filter;
+  if (!filter.length) return false;
+  return filter.includes(sport);
+}
 export interface TrainingBucket {
   start: string; end: string; label: string; movingSec: number; sessions: number; distanceM: number; partial: boolean;
 }
@@ -13,15 +44,26 @@ export function shiftTrainingMonth(anchor: Date, months: number): Date {
   const [year, month] = dayKey(anchor).split("-").map(Number);
   return new Date(Date.UTC(year!, month! - 1 + months, 1, 12));
 }
-function eligible(activities: Activity[], sport: SportId | "all", track: ScoreTrack, now: Date) {
-  return activities.filter(a => (sport === "all" || a.sport === sport) && countsOnTrack(a, track) && Number.isFinite(Date.parse(a.startedAt)) && Date.parse(a.startedAt) <= now.getTime());
+function eligible(
+  activities: Activity[],
+  sport: TrainingSportFilter,
+  track: ScoreTrack,
+  now: Date,
+) {
+  return activities.filter(
+    (a) =>
+      sportMatches(a.sport, sport) &&
+      countsOnTrack(a, track) &&
+      Number.isFinite(Date.parse(a.startedAt)) &&
+      Date.parse(a.startedAt) <= now.getTime(),
+  );
 }
 function bucket(rows: Activity[], start: Date, end: Date, now: Date, label: string): TrainingBucket {
   const included = rows.filter(a => Date.parse(a.startedAt) >= start.getTime() && Date.parse(a.startedAt) < end.getTime());
   return { start: start.toISOString(), end: end.toISOString(), label, movingSec: included.reduce((t,a)=>t+Math.max(0,a.movingSec),0), distanceM: included.reduce((t,a)=>t+Math.max(0,a.distanceM),0), sessions: included.length, partial: start <= now && now < end };
 }
 /** Calendar buckets are Eastern, half-open, and never synthesize activity. Month bars are clipped calendar weeks. */
-export function trainingBuckets(activities: Activity[], sport: SportId | "all", range: TrainingRange, anchor: Date, now = new Date(), track: ScoreTrack = "open"): TrainingBucket[] {
+export function trainingBuckets(activities: Activity[], sport: TrainingSportFilter, range: TrainingRange, anchor: Date, now = new Date(), track: ScoreTrack = "open"): TrainingBucket[] {
   const rows = eligible(activities, sport, track, now);
   const week = weeklyPeriodBounds(anchor), month = monthlyPeriodBounds(anchor);
   if (range === "year") {
@@ -36,7 +78,7 @@ export function trainingBuckets(activities: Activity[], sport: SportId | "all", 
 }
 export interface TrainingDay extends TrainingBucket { day: string; inMonth: boolean; future: boolean; intensity: number; activityIds: string[] }
 /** Monday-first month atlas with padding days and a stable, duration-based intensity scale. */
-export function trainingAtlas(activities: Activity[], sport: SportId | "all", anchor: Date, now = new Date(), track: ScoreTrack = "open"): TrainingDay[] {
+export function trainingAtlas(activities: Activity[], sport: TrainingSportFilter, anchor: Date, now = new Date(), track: ScoreTrack = "open"): TrainingDay[] {
   const rows=eligible(activities,sport,track,now), month=monthlyPeriodBounds(anchor), start=weeklyPeriodBounds(month.startsAt).startsAt;
   const cells:TrainingDay[]=[];
   for(let at=start; at < month.endsAt || cells.length%7!==0; at=shiftAppDay(at,1)){
@@ -156,7 +198,7 @@ export function sessionStageModel(activities: Activity[]) {
 }
 
 /** Honest full-period comparison; partial selections explicitly say so in the UI. */
-export function trainingComparison(activities: Activity[], sport: SportId | "all", range: TrainingRange, anchor: Date, now = new Date()) {
+export function trainingComparison(activities: Activity[], sport: TrainingSportFilter, range: TrainingRange, anchor: Date, now = new Date()) {
   const current=trainingBuckets(activities,sport,range,anchor,now);
   const priorAnchor=range==="week"?shiftAppDay(anchor,-7):shiftTrainingMonth(anchor,range==="year"?-12:-1);
   const previous=trainingBuckets(activities,sport,range,priorAnchor,now);
