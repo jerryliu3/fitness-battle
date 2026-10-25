@@ -7,9 +7,11 @@ import {
   formatEloDelta,
   sportById,
   type PeriodResult,
+  type CompeteState,
   type SportId,
   type UnitSystem,
 } from "@fitness-battle/shared";
+import { CompetitionReplayButton } from "@/features/replay/competition-replay";
 import { ResultCard } from "./result-card";
 import { useMemo, useState } from "react";
 
@@ -34,10 +36,12 @@ export function SeasonHistory({
   results,
   primary,
   units = "us",
+  state,
 }: {
   results: PeriodResult[];
   primary: SportId;
   units?: UnitSystem;
+  state?: CompeteState;
 }) {
   const [sportFilter, setSportFilter] = useState<SportId | "all">(primary);
 
@@ -102,7 +106,7 @@ export function SeasonHistory({
           const month=new Date(Date.parse(row.periodEnd)-1).toLocaleDateString("en-US",{month:"long",year:"numeric",timeZone:APP_TIMEZONE});
           const previous=rows[index-1];
           const previousMonth=previous?new Date(Date.parse(previous.periodEnd)-1).toLocaleDateString("en-US",{month:"long",year:"numeric",timeZone:APP_TIMEZONE}):null;
-          return <div key={row.id}>{month!==previousMonth?<h4 className="fb-kicker chapter-month">{month}</h4>:null}<details className="weekly-chapter"><summary><span className={`chapter-place${row.place===1?" is-first":""}`}>#{row.place}</span><span className="chapter-label"><b>{weekLabel(row.periodStart,row.periodEnd)}</b><AppText as="small" role="caption" secondary>{sportById(row.sport).name} · {row.track==="verified"?"GPS":"Open"} · {row.place} of {row.fieldSize}{row.frozen?" · frozen":""}</AppText></span><span className="chapter-delta">{formatEloDelta(row.eloBefore,row.eloAfter)}<AppText as="small" role="caption" secondary>score</AppText></span></summary><ResultCard result={row} units={units}/></details></div>;
+          return <div key={row.id}>{month!==previousMonth?<h4 className="fb-kicker chapter-month">{month}</h4>:null}<details className="weekly-chapter"><summary><span className={`chapter-place${row.place===1?" is-first":""}`}>#{row.place}</span><span className="chapter-label"><b>{weekLabel(row.periodStart,row.periodEnd)}</b><AppText as="small" role="caption" secondary>{sportById(row.sport).name} · {row.track==="verified"?"GPS":"Open"} · {row.place} of {row.fieldSize}{row.frozen?" · frozen":""}</AppText></span><span className="chapter-delta">{formatEloDelta(row.eloBefore,row.eloAfter)}<AppText as="small" role="caption" secondary>score</AppText></span></summary><ResultCard result={row} units={units}/>{state && <CompetitionReplayButton state={state} selection={row} label="Replay this round" />}</details></div>;
         })}
       </div>
     </section>

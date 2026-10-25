@@ -100,6 +100,61 @@ export function ResultCard({
           </>
         ) : (
           <>
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "flex-end",
+                justifyContent: "center",
+                gap: 8,
+                paddingTop: 6,
+                paddingBottom: 4,
+              }}
+            >
+              {(
+                [
+                  { step: 2, label: "2nd", height: 52 },
+                  { step: 1, label: "1st", height: 68 },
+                  { step: 3, label: "3rd", height: 42 },
+                ] as const
+              ).map((podium) => {
+                const isYou = result.place === podium.step;
+                return (
+                  <View
+                    key={podium.step}
+                    style={{
+                      flex: 1,
+                      height: podium.height,
+                      borderRadius: 12,
+                      backgroundColor: isYou ? "#142b3b" : "#ffffff99",
+                      borderWidth: isYou ? 2 : 1,
+                      borderColor: isYou ? "#142b3b" : "#c3a65566",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      gap: 2,
+                    }}
+                  >
+                    <Text
+                      style={[
+                        textStyle("label"),
+                        { color: isYou ? "#f7c948" : "#142b3b" },
+                      ]}
+                    >
+                      {podium.label}
+                    </Text>
+                    {isYou ? (
+                      <Text
+                        style={[
+                          textStyle("caption"),
+                          { color: "#ffffff" },
+                        ]}
+                      >
+                        YOU
+                      </Text>
+                    ) : null}
+                  </View>
+                );
+              })}
+            </View>
             <View style={{ flexDirection: "row", gap: 10, alignItems: "stretch" }}>
               <View style={{ flex: 1.1, backgroundColor: "#ffffff88", borderRadius: 16, padding: 16, justifyContent: "center" }}>
                 <Text style={f.massive}>#{result.place}</Text>

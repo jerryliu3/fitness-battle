@@ -6,6 +6,10 @@ import {
   useFonts as useDmSans,
 } from "@expo-google-fonts/dm-sans";
 import {
+  Manrope_400Regular, Manrope_500Medium, Manrope_600SemiBold,
+  Manrope_700Bold, Manrope_800ExtraBold, useFonts as useManrope,
+} from "@expo-google-fonts/manrope";
+import {
   NunitoSans_900Black,
   useFonts as useNunito,
 } from "@expo-google-fonts/nunito-sans";
@@ -56,9 +60,10 @@ export default function RootLayout() {
     DMSans_700Bold,
   });
   const [nunitoLoaded, nunitoError] = useNunito({ NunitoSans_900Black });
-  const fontsLoaded = dmLoaded && nunitoLoaded;
+  const [manropeLoaded, manropeError] = useManrope({ Manrope_400Regular, Manrope_500Medium, Manrope_600SemiBold, Manrope_700Bold, Manrope_800ExtraBold });
+  const fontsLoaded = manropeLoaded && dmLoaded && nunitoLoaded;
   const [fontLoadTimedOut, setFontLoadTimedOut] = useState(false);
-  const fontError = dmError ?? nunitoError;
+  const fontError = manropeError ?? dmError ?? nunitoError;
 
   useEffect(() => {
     if (fontsLoaded || fontError) return;

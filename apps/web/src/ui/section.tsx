@@ -6,15 +6,16 @@ import "./section.css";
 /** Publish the shared contract for legacy semantic CSS classes and portal surfaces. */
 export function typographyVariables(): CSSProperties {
   return Object.fromEntries(Object.entries(SHELL_TYPOGRAPHY).flatMap(([role, token]) => [
-    [`--type-${role}`, `${token.weight} ${token.size / 16}rem/${token.lineHeight / 16}rem var(--font-body), "DM Sans", sans-serif`],
+    [`--type-${role}`, `${token.weight} ${token.size / 16}rem/${token.lineHeight / 16}rem var(--font-body), "Manrope", sans-serif`],
     [`--type-${role}-size`, `${token.size / 16}rem`],
     [`--type-${role}-leading`, `${token.lineHeight / 16}rem`],
     [`--type-${role}-weight`, token.weight],
+    [`--type-${role}-tracking`, `${token.tracking}em`],
   ])) as CSSProperties;
 }
 export function typographyStyle(role: TypographyRole): CSSProperties {
   const token = SHELL_TYPOGRAPHY[role];
-  return { fontFamily: 'var(--font-body), "DM Sans", sans-serif', fontSize: `${token.size / 16}rem`, lineHeight: `${token.lineHeight / 16}rem`, fontWeight: token.weight, letterSpacing: "normal", textTransform: "none", fontStyle: "normal" };
+  return { fontFamily: 'var(--font-body), "Manrope", sans-serif', fontSize: `${token.size / 16}rem`, lineHeight: `${token.lineHeight / 16}rem`, fontWeight: token.weight, letterSpacing: `${token.tracking}em`, textTransform: "none", fontStyle: "normal" };
 }
 export function AppHeading({ role = "heading", level = 2, style, ...props }: Omit<HTMLAttributes<HTMLHeadingElement>, "role"> & { role?: TypographyRole; level?: 1 | 2 | 3 | 4 | 5 | 6 }): ReactElement {
   return createElement(`h${level}`, { ...props, style: { ...style, ...typographyStyle(role) } });
@@ -47,7 +48,7 @@ export function StatusBadge({ children, tone = "neutral", icon }: { children: Re
 }
 export function Surface({ className = "", ...props }: HTMLAttributes<HTMLDivElement>) { return <div {...props} className={`ui-surface ${className}`}/>; }
 export function ListRow({ title, subtitle, leading, trailing }: { title: string; subtitle?: string; leading?: ReactNode; trailing?: ReactNode }) {
-  return <div className="ui-list-row">{leading}<div><AppText role="label">{title}</AppText>{subtitle && <div><AppText role="body" secondary>{subtitle}</AppText></div>}</div>{trailing}</div>;
+  return <div className="ui-list-row">{leading}<div><AppText role="row">{title}</AppText>{subtitle && <div><AppText role="support" secondary>{subtitle}</AppText></div>}</div>{trailing}</div>;
 }
 
 export function FeatureCard({ title, description, badge, href }: { title: string; description: string; badge?: string; href?: string }) {

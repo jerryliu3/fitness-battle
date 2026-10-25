@@ -29,7 +29,7 @@ The palette is defined in `packages/shared/src/shell.ts`, consumed by native `sr
 | Action soft | `#fff5d1` | Selected navigation and milestone backgrounds |
 | Field teal / deep | `#176c75` / `#103e46` | Charts and alpine competition scenery |
 
-DM Sans, bold readable page titles, 20px cards, 12px controls, 24px sheets, 44px minimum controls, teal keyboard focus and reduced-motion support. Primary actions use yellow with dark labels; navigation rows use quiet text and a directional affordance. Radix manages web dialogs; native sheets preserve the parent and system Back. Full component decisions are in [component guidelines](design/component-guidelines.md).
+Manrope, bold readable page titles, 20px cards, 12px controls, 24px sheets, 44px minimum controls, teal keyboard focus and reduced-motion support. Primary actions use yellow with dark labels; navigation rows use quiet text and a directional affordance. Radix manages web dialogs; native sheets preserve the parent and system Back. Full component decisions are in [component guidelines](design/component-guidelines.md).
 
 Home leads with a personal greeting, weekly chart and real next-rival preview, then latest activity, effort progress and a weekly recap. The activity journey expands on demand. Progress leads with week/month/year training, then basic session/effort achievements and records; effort score and season history have separate views. Achievements are read-only milestones derived from currently available counted activity and the primary sport's Open rating, without reward entitlements or new scoring writes.
 
@@ -187,13 +187,20 @@ Native choice controls overlay their parent; duration/distance use wheels and da
 
 ## Shared hierarchy implementation — October 24
 
-All product typography now uses exactly five DM Sans recipes: display 30/36 bold,
-heading 22/28 bold, body 16/24 regular, label 14/20 bold and caption 12/18 regular.
-These cover page/navigation/section/card titles, numbers, tabs, controls, badges,
-subtitles and charts on web and native. There are no metric-scale exceptions,
-uppercase transformations, custom tracking or medium weights. Brand/mascot art
-and historical studies remain separate assets. See [component guidelines](design/component-guidelines.md#semantic-typography-and-sections-october-24-2026)
-and the [five-style audit](reviews/ui-five-style-audit-2026-10-24.md).
+The October 25 typography review supersedes the former five-style limit. Product
+text uses Manrope on web and native, with semantic roles from
+`packages/shared/src/shell.ts`: display 32/38/800, heading 20/26/700,
+body 16/24/400, label (controls) 14/20/600, caption 13/18/500,
+hero metric 48/54/800, secondary metric 28/34/700, row title 17/24/600,
+row value 20/26/700, support 14/20/400, field label 13/18/600 and
+navigation 12/18/500 (size/leading/weight). Shared tracking is expressed in em
+and converted to logical pixels on native. Body copy stays readable; row titles,
+metadata, values and actions no longer share a bold label recipe. Metrics use
+real text, retaining font scaling and heading semantics only for actual headings.
+Web self-hosts the variable font; native bundles static 400–800 weights.
+Nunito Sans Black remains the Over / Taek racing wordmark. Historical artwork
+and prototype font assets remain separate. Role changes must update both
+platform adapters and the UI contract checker.
 
 The contract applies across Home, Compete, Progress, Crew, Athlete/settings,
 onboarding, notifications, authentication, history, awards, sleep/recovery,
@@ -236,3 +243,71 @@ activity rows, standings and profile entries. Fall back only for absent/failed
 images. Current-account photo edits/removal override stale roster copies. Keep
 map thumbnails functional and race capsules as race markers. Reuse authorized
 roster data for session portraits; never broaden profile reads for presentation.
+
+## Home chart and daily health — October 25 selection
+
+Production Home on web/native now combines the Portfolio cumulative hours chart
+(teal line, subtle fill, quiet previous-week comparison, endpoint dates, no weekday
+picker) with Signal Room's four-tile daily health layout beneath it, rethemed to match the light chart. Current
+week, session totals and activity actions remain. `HOME_HEALTH_COLORS` reuses the existing light tokens: canvas `#f8f9f6`, white tiles, border `#e3e9e7`, navy text `#142b3b`, muted captions `#637482`, teal accent `#176c75` and comparison `#668e91`. The chart and health section share an open canvas, typography and teal visual language. The selected Signal Fill treatment uses a teal arc from zero to the current reading, with the observed seven-day maximum defining the full scale. Units sit inside each ring (sleep keeps inline h/m), and the observed min/max followed by “(7 day range)” is the only caption below available readings. Missing current readings leave an empty track; no medical
+ranges or targets are inferred. Only stored current sleep duration is available;
+Steps, Resting HR and HRV show unavailable until their data feeds exist. See the
+[implementation review](reviews/home-health-production/README.md).
+
+### Distance-plane field — October 25
+
+The optional **3D field** remains a lightweight SVG perspective renderer on web
+and native. Its longitudinal coordinate is now the athlete's actual accumulated
+value in the same distance/effort window as 2D. Survey lines and portrait anchors
+share one invertible perspective projection; lane identity stays independent of
+rank. Out-of-window athletes are culled rather than pinned at false positions.
+Directional navigation below the board names the nearest offscreen athlete and
+retains their actual gap relative to you. Past you remains unranked.
+
+Horizontal swipes browse lanes. Explicit Explore enables simultaneous horizontal
+and longitudinal dragging, preserving ordinary page scrolling when inactive;
+native fullscreen enables exploration immediately. Web also supports arrow keys,
+Home to return to you, and trackpad/wheel panning while Explore is active. The
+five direction/You controls and zoom controls remain available without gestures.
+Distance labels show accumulated values from the start, while athlete labels
+show gaps relative to you. Navigation sits below the plane to avoid covering
+athletes, including at the near/far bounds.
+
+Scene work is bounded to nearby lanes, in-window portraits and roughly five
+survey intervals. Gesture events coalesce to at most one React update per
+animation frame; there is no idle render loop, running animation, WebGL context,
+or native WebView needed for this selected field. The earlier Three.js pursuit
+and bridge stay independent. See [implementation and local validation](reviews/distance-field-2026-10-25/README.md).
+
+
+#### Infinite perspective correction
+
+The measured window must never become the scenery's boundary. Lane ribbons now
+converge at a fixed, visible vanishing point and continue below the viewport.
+A bounded set of more distant survey lines and an atmospheric fade blend the
+field into the alpine horizon. The measured athlete/ruler projection is
+`perspective = 1 / (3 - 2 * depth)`; portraits have a minimum readable scale,
+while their ground anchors retain the true projected distance. Gesture inversion
+and lateral movement use the same camera scale on both platforms. Native SVG
+owns its gesture responders, and the fullscreen Modal establishes its own safe
+area so controls clear the Dynamic Island. See [follow-up review](reviews/infinite-field-horizon/README.md).
+
+### Competition event replay — October 25
+
+Fullscreen Compete and settled round recaps offer an event-by-event replay on web
+and native, with 2D/3D views, play/pause, speed, stepping and a draggable in-memory
+timeline. The camera follows the changing athlete with a Follow me alternative.
+Workout chronology comes from counted activity; simulated rivals retain explicitly
+labeled daily steps. Replay remains presentation-only and does not award overtakes
+or alter standings writes. See [data and interaction contract](reviews/competition-replay/README.md),
+including historical reconstruction and native walkthrough limitations.
+
+### Web Full Arena viewport — October 25 follow-up
+
+Expanded web fields reflow their persistent scene to the full browser viewport in
+both 2D and 3D. Expansion animates a reveal clip; it does not freeze or scale the
+inline field. The scene keeps its selection, distance window and horizontal lane
+anchor across expansion and resize. Fullscreen zoom controls sit above the athlete
+spotlight, matching the native fullscreen arrangement. Replay remains a control
+inside Full Arena; recap/history entries open a fullscreen replay viewer. See the
+[fullscreen review](reviews/web-fullscreen-field/README.md).

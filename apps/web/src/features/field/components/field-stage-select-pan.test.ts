@@ -13,6 +13,8 @@ describe("field stage athlete selection", () => {
     const source = readFileSync(stagePath, "utf8");
     expect(source).toContain("tweenCenterTo(valueAt(runner, time))");
     expect(source).toMatch(/clampViewCenter\(target, nextSpan\)/);
+    expect(source).toContain("Show standings");
+    expect(source).toContain("Switch to 3D field");
     expect(source).not.toContain("Center me");
     expect(source).not.toContain("Center on you");
     expect(source).not.toContain("Fit field");

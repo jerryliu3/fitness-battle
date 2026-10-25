@@ -101,12 +101,12 @@ export function fieldCourseScene(g: FieldCourse, appearance: FieldAppearance, la
     const l = lanes[i], p = g.point(l.value, i, 0, true), s = g.markerScale;
     masks.push(path(polishedCapsulePath(-1.5), "black", { transform: `translate(${p.x} ${p.y}) rotate(${p.angle}) scale(${s})` }));
   }
-  out.push(n("defs", {}, [n("clipPath", { id: clip }, [rect(0, g.top, g.width, g.length, "white")]), n("mask", { id: mask, x: 0, y: 0, width: g.width, height: g.height, maskUnits: "userSpaceOnUse" }, masks)]));
+  out.push(n("defs", {}, [n("clipPath", { id: clip }, [rect(0, 0, g.width, g.height, "white")]), n("mask", { id: mask, x: 0, y: 0, width: g.width, height: g.height, maskUnits: "userSpaceOnUse" }, masks)]));
   if (ground === "straight" || ground === "oval") {
     const grain = g.oval ? 1 : z;
     out.push(n("defs", {}, [n("pattern", { id: `${prefix}-rubber-grain`, width: 11 * grain, height: 13 * grain, y: g.oval ? 0 : g.along(0), patternUnits: "userSpaceOnUse" }, [circle(3 * grain, 4 * grain, .6 * grain, "#713e36", { opacity: .22 }), circle(8 * grain, 10 * grain, .5 * grain, "#f5ad8f", { opacity: .22 })])]));
   }
-  surface.push(rect(0, g.top, g.width, g.length, edges === "club" ? "#dfe7d2" : "#f6f7f2"));
+  surface.push(rect(0, 0, g.width, g.height, edges === "club" ? "#dfe7d2" : "#f6f7f2"));
   if (g.oval) {
     const ring = (r: number) => `M${r} 135V-135A${r} ${r} 0 0 0 ${-r} -135V135A${r} ${r} 0 0 0 ${r} 135Z`;
     const items: FieldNode[] = [path(ring(g.outerRadius + 18), edges === "club" ? "#b7c79b" : "#f6f7f2"), path(ring(g.outerRadius), palette.surface), path(ring(g.outerRadius), `url(#${prefix}-rubber-grain)`), path(ring(140), edges === "club" ? "#b0c48f" : "#f6f7f2")];
@@ -122,33 +122,33 @@ export function fieldCourseScene(g: FieldCourse, appearance: FieldAppearance, la
     surface.push(text(g.midX, g.midY + 12, "Normalized circuit", "#616c63", 9, { textAnchor: "middle" }));
   } else {
     const scenic = ground === "trail" || ground === "parkland";
-    if (scenic) surface.push(path(g.curve(g.bounds.min - 1, g.bounds.max + 1, (lanes.length - 1) / 2), "none", { stroke: palette.lane, strokeWidth: Math.max(1, g.fieldWidth - 14 * z) }));
-    else surface.push(rect(g.left, g.top, g.fieldWidth, g.length, palette.lane));
+    if (scenic) surface.push(path(g.curve(g.bounds.min - g.bounds.span * .5, g.bounds.max + g.bounds.span * .5, (lanes.length - 1) / 2), "none", { stroke: palette.lane, strokeWidth: Math.max(1, g.fieldWidth - 14 * z) }));
+    else surface.push(rect(g.left, 0, g.fieldWidth, g.height, palette.lane));
     for (let i = 0; i < lanes.length; i++) {
       const x = g.left + (i + .5) * g.laneWidth, half = g.laneWidth / 2;
       if (ground === "athletics" || ground === "straight" || ground === "night") {
-        surface.push(rect(x - half, g.top, g.laneWidth, g.length, ground === "straight" ? i % 2 ? "#af544b" : "#a84c44" : ground === "night" ? i % 2 ? "#2e4037" : "#30443a" : i % 2 ? "#95a5a5" : "#819798"));
-        surface.push(line(x - half, g.top, x - half, g.bottom, ground === "night" ? "#9db092" : "#fff7e9", 1.5 * z));
+        surface.push(rect(x - half, 0, g.laneWidth, g.height, ground === "straight" ? i % 2 ? "#af544b" : "#a84c44" : ground === "night" ? i % 2 ? "#2e4037" : "#30443a" : i % 2 ? "#95a5a5" : "#819798"));
+        surface.push(line(x - half, 0, x - half, g.height, ground === "night" ? "#9db092" : "#fff7e9", 1.5 * z));
       }
       if (ground === "straight") for (const d of whole) {
         surface.push(line(x - half, g.along(d), x + half, g.along(d), "#fff7e9", (d === 0 ? 4 : 1) * z, { opacity: d === 0 ? 1 : .4 }));
         if (d === 0) surface.push(text(x, g.along(0) + 20 * z, String(i + 1), "#fff7e9", 18 * z, { textAnchor: "middle", fontWeight: 700 }));
       }
-      if (ground === "straight") surface.push(rect(x - half, g.top, g.laneWidth, g.length, `url(#${prefix}-rubber-grain)`));
+      if (ground === "straight") surface.push(rect(x - half, 0, g.laneWidth, g.height, `url(#${prefix}-rubber-grain)`));
       if (ground === "road") {
-        surface.push(rect(x - half + 7 * z, g.top, Math.max(1, g.laneWidth - 14 * z), g.length, "#4f5f58"));
-        for (const side of [-1, 1]) surface.push(line(x + side * (half - 13 * z), g.top, x + side * (half - 13 * z), g.bottom, "#e3e6cf", 1.7 * z, { strokeDasharray: `${19 * z} ${20 * z}`, strokeDashoffset: -g.along(0) }));
+        surface.push(rect(x - half + 7 * z, 0, Math.max(1, g.laneWidth - 14 * z), g.height, "#4f5f58"));
+        for (const side of [-1, 1]) surface.push(line(x + side * (half - 13 * z), 0, x + side * (half - 13 * z), g.height, "#e3e6cf", 1.7 * z, { strokeDasharray: `${19 * z} ${20 * z}`, strokeDashoffset: -g.along(0) }));
       }
       if (ground === "pool") {
-        surface.push(line(x - half, g.top, x - half, g.bottom, "#fffdf1", 4 * z));
+        surface.push(line(x - half, 0, x - half, g.height, "#fffdf1", 4 * z));
         for (const d of samples) surface.push(circle(x - half, g.along(d), 3.5 * z, i % 2 ? "#e4bc52" : "#82b3b8"));
         for (const d of whole) surface.push(path(`M${x - 10 * z} ${g.along(d)}h${20 * z}m${-10 * z} 0v${10 * z}`, "none", { stroke: "#4f8790", strokeWidth: 2 * z, opacity: .4 }));
       }
-      if (ground === "boardwalk") for (let k = 0; k < 5; k++) surface.push(line(x - half + (k + .5) * g.laneWidth / 5, g.top, x - half + (k + .5) * g.laneWidth / 5, g.bottom, k % 2 ? "#d1cdbc" : "#f1eee3", 2 * z));
+      if (ground === "boardwalk") for (let k = 0; k < 5; k++) surface.push(line(x - half + (k + .5) * g.laneWidth / 5, 0, x - half + (k + .5) * g.laneWidth / 5, g.height, k % 2 ? "#d1cdbc" : "#f1eee3", 2 * z));
       if (ground === "boardwalk") for (const d of whole) surface.push(path(`M${x - half / 3} ${g.along(d)}q${3 * z} ${12 * z} 0 ${30 * z}`, "none", { stroke: "#bcb7a3", strokeWidth: .7 * z, opacity: .45 }));
       if (ground === "night") for (const d of whole) surface.push(circle(x - half + 2 * z, g.along(d), 1.7 * z, "#dce6bb", { opacity: .7 }));
     }
-    if (ground === "straight" || ground === "athletics") surface.push(line(g.left + g.fieldWidth, g.top, g.left + g.fieldWidth, g.bottom, "#fff7e9", 1.5 * z));
+    if (ground === "straight" || ground === "athletics") surface.push(line(g.left + g.fieldWidth, 0, g.left + g.fieldWidth, g.height, "#fff7e9", 1.5 * z));
     // Whole-unit reference paint only; all numeric scale labels live on the side.
     if (ground !== "straight" && g.bounds.min <= 0) surface.push(line(g.left, g.along(0), g.left + g.fieldWidth, g.along(0), "#61715c", 2 * z));
     if (edges === "club" || scenic) for (const d of samples) for (const side of [-1, 1]) {
