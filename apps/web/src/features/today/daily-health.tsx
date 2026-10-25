@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, type CSSProperties } from "react";
-import { HOME_HEALTH_COLORS as colors, healthSignal, homeHealthMetrics, type CompeteState } from "@fitness-battle/shared";
+import { HOME_HEALTH_COLORS as colors, healthSignal, healthSignalRange, homeHealthMetrics, type CompeteState } from "@fitness-battle/shared";
 import { AppHeading } from "@/ui/section";
 import "./daily-health.css";
 
@@ -24,7 +24,7 @@ export function DailyHealth({ state }: { state: CompeteState }) {
           </svg>
           <span className="home-health-reading"><strong>{metric.value}</strong>{metric.unit && <span>{metric.unit}</span>}</span>
         </div>
-        <span className="home-health-context">{signal.available ? "Based on 7-day range" : "No reading available"}</span>
+        <span className="home-health-context">{healthSignalRange(metric)}</span>
       </button>;
     })}</div>
     {selected && <div className="home-health-detail" role="status"><b>{selected.name}</b><p>{selected.detail}</p>{selected.history.some(value => value != null) && <span>The ring fills from zero to today’s reading. Its scale ends at the highest recorded reading in the last seven wake dates; it is not a goal.</span>}</div>}

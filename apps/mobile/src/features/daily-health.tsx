@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Pressable, StyleSheet, View, useWindowDimensions } from "react-native";
 import Svg, { Line, Path } from "react-native-svg";
-import { HOME_HEALTH_COLORS as colors, homeHealthMetrics, healthSignal, type CompeteState } from "@fitness-battle/shared";
+import { HOME_HEALTH_COLORS as colors, homeHealthMetrics, healthSignal, healthSignalRange, type CompeteState } from "@fitness-battle/shared";
 import { AppText } from "../ui/section";
 
 export function DailyHealth({ state }: { state: CompeteState }) {
@@ -23,7 +23,7 @@ export function DailyHealth({ state }: { state: CompeteState }) {
           </Svg>
           <View style={s.reading}><AppText role={fontScale > 1.2 || width >= 360 ? "heading" : "body"} style={s.value}>{metric.value}</AppText>{!!metric.unit && <AppText role="caption" style={s.secondary}>{metric.unit}</AppText>}</View>
         </View>
-        <AppText role="caption" style={s.secondary}>{signal.available ? "Based on 7-day range" : "No reading available"}</AppText>
+        <AppText role="caption" style={s.secondary}>{healthSignalRange(metric)}</AppText>
       </Pressable>;
     })}</View>
     {selected && <View style={s.detail} accessibilityLiveRegion="polite"><AppText role="label" style={{ color: colors.text }}>{selected.name}</AppText><AppText style={{ color: colors.text }}>{selected.detail}</AppText>{selected.history.some(value => value != null) && <AppText role="caption" style={s.secondary}>The ring fills from zero to today’s reading. Its scale ends at the highest recorded reading in the last seven wake dates; it is not a goal.</AppText>}</View>}

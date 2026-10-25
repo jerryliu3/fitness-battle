@@ -79,3 +79,11 @@ export function healthSignal(history: readonly (number | null)[]) {
   return { available, maximum, fraction, track: arc(405), fill: fraction > 0 ? arc(135 + fraction * 270) : null,
     ticks: [0, .25, .5, .75, 1].map(position => ({ outer: point(135 + position * 270, 65), inner: point(135 + position * 270, 61) })) };
 }
+
+/** Observed min/max, separate from the filled dial’s zero-based scale. */
+export function healthSignalRange(metric: HomeHealthMetric): string {
+  if (!healthSignal(metric.history).available) return "No reading available";
+  const values = metric.history.filter((value): value is number => value != null && Number.isFinite(value) && value >= 0);
+  const format = metric.id === "sleep" ? formatSleepDuration : (value: number) => value.toLocaleString("en-US");
+  return `${format(Math.min(...values))}–${format(Math.max(...values))} (7 day range)`;
+}

@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { freshState } from "./compete/engine";
 import type { SleepNight } from "./compete/health";
-import { healthSignal, healthSparkline, homeHealthMetrics } from "./home-health";
+import { healthSignal, healthSignalRange, healthSparkline, homeHealthMetrics } from "./home-health";
 const now = new Date("2026-10-25T03:30:00Z"); // Oct 24 Eastern
 const night = (overrides: Partial<SleepNight> = {}): SleepNight => ({ id: "sleep", metric: "sleep", day: "2026-10-24", durationMin: 462, score: 80, efficiency: null, deepMin: null, remMin: null, lightMin: null, awakeMin: null, source: "oura", verified: true, ...overrides });
 describe("Home daily health", () => {
@@ -58,4 +58,11 @@ it("fills health signals from zero against the seven-day maximum without treatin
   expect(healthSignal([0]).available).toBe(true);
   expect(healthSignal([0]).fill).toBeNull();
   expect(healthSignal([]).track).not.toContain("NaN");
+});
+
+it("labels the observed range with sleep units and ignores missing days", () => {
+  const metric = homeHealthMetrics(freshState(now), now)[0];
+  expect(healthSignalRange({ ...metric, history: [414, null, 480, 462] })).toBe("6h 54m–8h (7 day range)");
+  expect(healthSignalRange({ ...metric, id: "resting-hr", history: [49, null, 54, 52] })).toBe("49–54 (7 day range)");
+  expect(healthSignalRange({ ...metric, history: [414, null] })).toBe("No reading available");
 });
