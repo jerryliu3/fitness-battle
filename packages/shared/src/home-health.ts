@@ -9,6 +9,7 @@ export interface HomeHealthMetric {
   name: string;
   value: string;
   context: string;
+  unit: string;
   detail: string;
   /** Seven calendar days, oldest first. Missing readings remain gaps. */
   history: (number | null)[];
@@ -31,15 +32,15 @@ export function homeHealthMetrics(state: CompeteState, now = competeNow(state)):
   );
   return [
     {
-      id: "sleep", name: "Sleep", value: night ? formatSleepDuration(night.durationMin) : "—",
+      id: "sleep", name: "Sleep", unit: "", value: night ? formatSleepDuration(night.durationMin) : "—",
       context: night ? "Last night" : "No reading today", history,
       detail: night
         ? `${source} · wake date ${night.day}. Recorded sleep duration; not a readiness score.`
         : latest ? `No sleep reading for today. Last recorded wake date: ${latest.day}.` : "No sleep duration recorded yet. Available tracker readings appear after sync.",
     },
-    { id: "steps", name: "Steps", value: "—", context: "Not available", history: [], detail: "Daily step totals are not connected yet. Workout distance is not a daily step count." },
-    { id: "resting-hr", name: "Resting HR", value: "—", context: "bpm · Not available", history: [], detail: "Resting heart rate is not connected yet. Workout average heart rate is a separate measurement." },
-    { id: "hrv", name: "HRV", value: "—", context: "ms · Not available", history: [], detail: "Heart rate variability is not connected yet. No readiness score or target is inferred." },
+    { id: "steps", name: "Steps", unit: "steps", value: "—", context: "Not available", history: [], detail: "Daily step totals are not connected yet. Workout distance is not a daily step count." },
+    { id: "resting-hr", name: "Resting HR", unit: "bpm", value: "—", context: "bpm · Not available", history: [], detail: "Resting heart rate is not connected yet. Workout average heart rate is a separate measurement." },
+    { id: "hrv", name: "HRV", unit: "ms", value: "—", context: "ms · Not available", history: [], detail: "Heart rate variability is not connected yet. No readiness score or target is inferred." },
   ];
 }
 
@@ -62,4 +63,19 @@ export function healthSparkline(history: readonly (number | null)[]) {
   });
   if (current.length) segments.push(current.join(" "));
   return { segments, dots };
+}
+
+/** Zero-based visual magnitude; the observed seven-day maximum is not a goal. */
+export function healthSignal(history: readonly (number | null)[]) {
+  const reading = history.at(-1);
+  const available = reading != null && Number.isFinite(reading) && reading >= 0;
+  const maximum = Math.max(0, ...history.filter((value): value is number => value != null && Number.isFinite(value) && value >= 0));
+  const fraction = available && maximum > 0 ? reading / maximum : 0;
+  const point = (angle: number, radius = 54) => ({ x: 72 + Math.cos(angle * Math.PI / 180) * radius, y: 72 + Math.sin(angle * Math.PI / 180) * radius });
+  const arc = (end: number) => {
+    const from = point(135), to = point(end);
+    return `M${from.x},${from.y} A54,54 0 ${end - 135 > 180 ? 1 : 0} 1 ${to.x},${to.y}`;
+  };
+  return { available, maximum, fraction, track: arc(405), fill: fraction > 0 ? arc(135 + fraction * 270) : null,
+    ticks: [0, .25, .5, .75, 1].map(position => ({ outer: point(135 + position * 270, 65), inner: point(135 + position * 270, 61) })) };
 }

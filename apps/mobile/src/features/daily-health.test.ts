@@ -3,7 +3,7 @@ import { act, create, type ReactTestRenderer } from "react-test-renderer";
 import { afterEach, expect, it, vi } from "vitest";
 import { freshState } from "@fitness-battle/shared";
 vi.mock("react-native", () => ({ View: "View", Text: "Text", Pressable: "Pressable", useWindowDimensions: () => ({ fontScale: 1.5, width: 320 }), StyleSheet: { create: (value: unknown) => value } }));
-vi.mock("react-native-svg", () => ({ default: "Svg", Circle: "Circle", Path: "Path", Polyline: "Polyline" }));
+vi.mock("react-native-svg", () => ({ default: "Svg", Line: "Line", Path: "Path", Polyline: "Polyline" }));
 vi.mock("../ui/section", () => ({ AppText: "Text", textStyle: () => ({}) }));
 import { DailyHealth } from "./daily-health";
 let view: ReactTestRenderer;

@@ -11,8 +11,9 @@ horizontal chart inspection and screen-reader adjustments.
 
 Today's health sits immediately beneath the progress chart. Four selectable tiles
 show Sleep, Steps, Resting HR and HRV. Only today's stored sleep duration is currently
-available in the app's health model. Historical sleep appears as a seven-wake-date
-sparkline with gaps preserved and source/wake date in the reading details. Stale,
+available in the app's health model. A teal Signal Fill arc runs from zero to today’s reading, with the highest
+recorded value in the seven-wake-date window defining the end of the scale.
+Missing or stale readings leave the track empty. Source/wake date remain in details. Stale,
 future, history, known generated sample nights and stub tracker data are excluded
 from today's value. The other three metrics explicitly show unavailable until a
 separate data integration exists. Workout HR/distance and readiness/sleep scores
@@ -35,3 +36,8 @@ Theme correction: the chart and health section now share the light canvas and
 teal accent, with white metric tiles and navy/muted text. Web/native consume the
 same palette. Phone reviews at 390px and 320px confirm readable headings and no
 horizontal overflow. Data and interactions are unchanged by this correction.
+
+Signal Fill selection: web/native use the same shared geometry and recorded-data
+filtering. Units sit inside the ring (steps, bpm, ms); sleep uses inline h/m.
+One caption beneath an available reading says “Based on 7-day range.” No prototype
+explanation, sample timestamp or Latest label appears in production.
