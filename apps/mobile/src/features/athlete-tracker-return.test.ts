@@ -50,6 +50,7 @@ vi.mock("./data-sync-actions", () => ({ DataSyncActions: "DataSyncActions" }));
 vi.mock("../ui/screen-header", () => ({ ScreenHeader: "ScreenHeader" }));
 vi.mock("../ui/sport-icon", () => ({ SportIcon: "SportIcon" }));
 vi.mock("../ui/integration-icon", () => ({ IntegrationIcon: "IntegrationIcon" }));
+vi.mock("../ui/choice-picker", () => ({ ChoicePicker: "ChoicePicker" }));
 vi.mock("../ui/settings-row", () => ({ SettingsRow: "SettingsRow" }));
 vi.mock("../ui/focus", () => ({
   FocusButton: "Button",
