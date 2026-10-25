@@ -6,18 +6,9 @@ import { playCue } from "../lib/haptics";
 import { SHELL_COLORS as c } from "../theme";
 import { f } from "./focus";
 
-export interface ChartDatum {
-  id: string;
-  x: number;
-  y: number;
-  label: string;
-  value: string;
-}
+import { nearestChartDatum, type ChartDatum } from "@fitness-battle/shared";
 
-export function nearestChartDatum(points: readonly ChartDatum[], x: number) {
-  return points.reduce<ChartDatum | undefined>((best, point) =>
-    !best || Math.abs(point.x - x) < Math.abs(best.x - x) ? point : best, undefined);
-}
+export type { ChartDatum };
 
 /** One touch surface, shared by line and bar charts. Vertical drags yield to the page. */
 export function ChartScrubber({

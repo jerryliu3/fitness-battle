@@ -5,10 +5,8 @@
 .home-portfolio-total>strong{font:var(--type-display);font-variant-numeric:tabular-nums}
 .home-portfolio-total>strong>span{font:var(--type-body);letter-spacing:0;color:var(--muted)}
 .home-portfolio-total>div{display:grid;gap:4px;text-align:right;font:var(--type-caption);color:var(--muted)}
-.home-portfolio-plot{position:relative}
-.home-portfolio-plot>svg{display:block;width:100%;height:auto;max-height:210px;overflow:visible}
-.home-portfolio-open{position:absolute;inset:0;border-radius:12px}
-.home-portfolio-open:focus-visible{outline:3px solid var(--field-teal,#176c75);outline-offset:3px}
+.home-portfolio .chart-scrubber svg{display:block;width:100%;height:auto;max-height:210px;overflow:visible}
+.home-portfolio-footer{display:flex;justify-content:flex-end}
 .home-portfolio-dates{display:flex;justify-content:space-between;color:var(--muted);font:var(--type-caption)}
 .home-portfolio-key{display:flex;flex-wrap:wrap;gap:16px;color:var(--muted);font:var(--type-caption)}
 .home-portfolio-key>span{display:flex;align-items:center;gap:6px}
