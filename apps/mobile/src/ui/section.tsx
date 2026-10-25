@@ -37,7 +37,8 @@ export function SectionStack({ children, divided = true }: { children: ReactNode
   return <View>{sections.map((child, index) => <Fragment key={(child as { key?: string }).key ?? index}>{index > 0 && (divided ? <View style={styles.boundary}><View style={styles.divider}/></View> : <View style={{ height: SHELL_SPACING.section }}/>)}{child}</Fragment>)}</View>;
 }
 export function StatusBadge({ children, tone = "neutral", icon }: { children: ReactNode; tone?: "neutral" | "success"; icon?: ReactNode }) {
-  return <View style={[styles.badge, { backgroundColor: tone === "success" ? c.statusSuccessSoft : c.soft }]}>{icon}<AppText role="label" style={{ color: tone === "success" ? c.green : c.ink, flexShrink: 1 }}>{children}</AppText></View>;
+  const success = tone === "success";
+  return <View style={[styles.badge, { backgroundColor: success ? c.statusSuccessSoft : c.soft, borderColor: success ? "#a9d4bc" : c.line }]}>{icon}<AppText role="label" style={{ color: success ? c.green : c.ink, flexShrink: 1, fontWeight: "600" }}>{children}</AppText></View>;
 }
 export function Surface({ style, ...props }: ViewProps) { return <View {...props} style={[styles.surface, style]}/>; }
 export function ListRow({ title, subtitle, leading, trailing }: { title: string; subtitle?: string; leading?: ReactNode; trailing?: ReactNode }) {
@@ -50,7 +51,7 @@ const styles = StyleSheet.create({
   section: { gap: geometry.contentGap }, content: { gap: geometry.contentGap },
   boundary: { paddingTop: geometry.beforeDivider, paddingBottom: geometry.afterDivider },
   divider: { height: geometry.dividerWidth, backgroundColor: geometry.dividerColor },
-  badge: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: 4, maxWidth: "100%", paddingHorizontal: 8, paddingVertical: 4, borderRadius: SHELL_RADIUS.pill },
+  badge: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: 4, maxWidth: "100%", paddingHorizontal: 9, paddingVertical: 4, borderRadius: SHELL_RADIUS.pill, borderWidth: 1 },
   surface: { backgroundColor: c.card, borderRadius: SHELL_RADIUS.card, borderWidth: 1, borderColor: c.line, padding: 20 },
   listRow: { flexDirection: "row", alignItems: "center", gap: 12, minHeight: 44 },
 });
