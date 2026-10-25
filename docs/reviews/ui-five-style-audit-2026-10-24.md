@@ -41,7 +41,9 @@ preserved.
 
 `pnpm lint:ui` now checks 184 production source files and 13 stylesheets,
 including native UI internals, web map controls, SVG attributes, tracking/case,
-raw HTML headings and arbitrary typography classes. CI runs the contract.
+raw HTML headings and arbitrary typography classes. Native tab labels and number
+wheel items also consume the library; OS date/time dialog internals retain
+platform-managed typography. CI runs the contract.
 
 ## Verification
 

@@ -28,10 +28,10 @@ export function NumberPicker({ label, value, onChange, max = 1440, step = 1, uni
     <Pressable accessibilityRole="button" accessibilityLabel={`${label}: ${value || "Choose"} ${unit}`} style={f.input} onPress={() => { setDraft(value || "0"); setOpen(true); }}><Text style={textStyle("label")}>{value ? `${value} ${unit}` : `Choose ${label.toLowerCase()}`}</Text></Pressable>
     {open && <PickerSurface label={label} close={() => setOpen(false)} done={() => { onChange(draft); setOpen(false); }}>
       <View style={{ flexDirection: "row" }}>
-        <Picker accessibilityLabel={label} selectedValue={String(whole)} onValueChange={item => setDraft(String(Number(item) + (fractional && Number(item) < max ? tenth / 10 : 0)))} style={{ color: c.ink, flex: 1 }}>
+        <Picker itemStyle={textStyle("body")} accessibilityLabel={label} selectedValue={String(whole)} onValueChange={item => setDraft(String(Number(item) + (fractional && Number(item) < max ? tenth / 10 : 0)))} style={{ color: c.ink, flex: 1 }}>
           {options.map(option => <Picker.Item key={option} label={`${option} ${unit}`} value={option} color={c.ink} />)}
         </Picker>
-        {fractional && <Picker accessibilityLabel={`${label} tenths`} selectedValue={tenth} onValueChange={item => setDraft(String(Math.min(max, whole + Number(item) / 10)))} style={{ color: c.ink, flex: 1 }}>
+        {fractional && <Picker itemStyle={textStyle("body")} accessibilityLabel={`${label} tenths`} selectedValue={tenth} onValueChange={item => setDraft(String(Math.min(max, whole + Number(item) / 10)))} style={{ color: c.ink, flex: 1 }}>
           {Array.from({ length: whole >= max ? 1 : 10 }, (_, i) => <Picker.Item key={i} label={`.${i}`} value={i} color={c.ink} />)}
         </Picker>}
       </View>
