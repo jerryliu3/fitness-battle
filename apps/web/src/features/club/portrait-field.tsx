@@ -214,7 +214,7 @@ export function PortraitField({
         </defs>
         <rect y={80} width={420} height={520} fill={`url(#${prefix}-shade)`} />
         {scene.ground.map(drawFieldNode)}
-        {scene.ticks.map(t => <g key={t.value} pointerEvents="none"><rect x={4} y={t.y - 10} width={78} height={20} rx={6} fill="#103e46"/><text x={12} y={t.y + 4} fill="#f8f9f6" fontSize={11}>{t.value === 0 ? "START" : `${t.value.toLocaleString("en-US", { maximumFractionDigits: 3 })} ${unit}`}</text></g>)}
+        {scene.ticks.map(t => <g key={t.value} pointerEvents="none"><rect x={4} y={t.y - 10} width={78} height={20} rx={6} fill="#103e46"/><text x={12} y={t.y + 4} fill="#f8f9f6" style={typographyStyle("caption")}>{t.value === 0 ? "START" : `${t.value.toLocaleString("en-US", { maximumFractionDigits: 3 })} ${unit}`}</text></g>)}
         <defs>
           <linearGradient id={`${prefix}-horizon`} x1="0" y1="0" x2="0" y2="1">
             <stop offset="0%" stopColor="#b4d3cd" stopOpacity={0} />

@@ -152,7 +152,7 @@ export function PortraitField({
               fill={`url(#${prefix}-shade)`}
             />
             {scene.ground.map(drawFieldNode)}
-            {scene.ticks.map(t => <G key={t.value}><Rect x={4} y={t.y - 10} width={78} height={20} rx={6} fill="#103e46"/><SvgText {...chartTextProps()} x={12} y={t.y + 4} fill="#f8f9f6" fontSize={11}>{t.value === 0 ? "START" : `${t.value.toLocaleString("en-US", { maximumFractionDigits: 3 })} ${unit}`}</SvgText></G>)}
+            {scene.ticks.map(t => <G key={t.value}><Rect x={4} y={t.y - 10} width={78} height={20} rx={6} fill="#103e46"/><SvgText {...chartTextProps()} x={12} y={t.y + 4} fill="#f8f9f6">{t.value === 0 ? "START" : `${t.value.toLocaleString("en-US", { maximumFractionDigits: 3 })} ${unit}`}</SvgText></G>)}
             <Defs>
               <LinearGradient
                 id={`${prefix}-horizon`}

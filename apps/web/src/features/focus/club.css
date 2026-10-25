@@ -1998,7 +1998,7 @@
 .club-field-explore button,.club-field-offscreen button{min-height:44px;border:1px solid #68858a;border-radius:16px;background:#103e46ed;color:white;padding:8px 12px;font:inherit;cursor:pointer}
 .club-field-explore button[aria-pressed=true]{background:#f7c948;color:var(--ink)}
 .club-field-offscreen{display:flex;flex-wrap:wrap;justify-content:center;gap:6px;font:var(--type-caption)}
-.club-field-offscreen button{font-size:11px}
+.club-field-offscreen button{font-size:var(--type-caption-size)}
 .club-perspective-svg:focus-visible{outline:3px solid #f7c948;outline-offset:-3px}
 .club-field-explore button:focus-visible,.club-field-offscreen button:focus-visible{outline:2px solid #f7c948;outline-offset:2px}
 
