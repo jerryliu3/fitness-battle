@@ -11,7 +11,7 @@ no production layout, tracker connection, scoring or account rule changes.
 | [Compete](native-compete-concepts/README.md) | 9 | `/study-compete` | [#340](https://github.com/jerryliu3/fitness-battle/pull/340) · first |
 | [Progress](native-progress-concepts/README.md) | 9 | `/study-progress` | [#341](https://github.com/jerryliu3/fitness-battle/pull/341) · second |
 | [Crew](native-crew-concepts/README.md) | 9 | `/study-crew` | [#342](https://github.com/jerryliu3/fitness-battle/pull/342) · third |
-| [Profile](native-profile-concepts/README.md) | 4 | `/study-profile` | final PR · fourth |
+| [Profile](native-profile-concepts/README.md) | 4 | `/study-profile` | [#343](https://github.com/jerryliu3/fitness-battle/pull/343) · fourth |
 
 PRs are stacked so each diff contains its tab, rather than repeating the shared
 kit. Review and merge from Compete through Profile. The final branch includes
