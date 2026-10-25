@@ -1,9 +1,8 @@
 "use client";
-import { AppParagraph, AppHeading, AppText, StatusBadge } from "@/ui/section";
+import { AppParagraph, AppHeading, StatusBadge } from "@/ui/section";
 
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useRef, type ReactNode } from "react";
 import { useReducedMotion } from "motion/react";
-import { Sheet } from "@/ui/sheet";
 export type ClubEvent = { id: string; label: string; badge?: string };
 export function EventCarousel({
   events,
@@ -18,7 +17,6 @@ export function EventCarousel({
   onRegister: () => void;
   children: ReactNode;
 }) {
-  const [choosing, setChoosing] = useState(false);
   const scroller = useRef<HTMLDivElement>(null),
     timer = useRef<ReturnType<typeof setTimeout> | null>(null),
     fromScroll = useRef(false);
@@ -64,38 +62,31 @@ export function EventCarousel({
       aria-label="Your registered events"
       aria-roledescription="carousel"
     >
-      <div className="club-event-toolbar">
-        <button
-          type="button"
-          className="club-event-choose"
-          aria-haspopup="dialog"
-          onClick={() => setChoosing(true)}
-        >
-          <AppText role="heading">
-            {events[index]?.label}{" "}
-            {events[index]?.badge ? (
-              <StatusBadge>{events[index]?.badge}</StatusBadge>
-            ) : null}
-          </AppText>
-        </button>
-        <button
-          type="button"
-          className="club-icon-button"
-          aria-label="Previous event"
-          disabled={index === 0}
-          onClick={() => onChange(events[index - 1]!.id)}
-        >
-          ←
-        </button>
-        <button
-          type="button"
-          className="club-icon-button"
-          aria-label="Next event"
-          disabled={index === events.length - 1}
-          onClick={() => onChange(events[index + 1]!.id)}
-        >
-          →
-        </button>
+      <div className="club-event-chips-bar">
+        <div className="club-event-chips" role="tablist" aria-label="Registered events">
+          {events.map((event) => (
+            <button
+              key={event.id}
+              type="button"
+              role="tab"
+              className="club-event-chip"
+              aria-selected={event.id === value}
+              onClick={() => onChange(event.id)}
+            >
+              {event.label}
+              {event.badge ? (
+                <StatusBadge>{event.badge}</StatusBadge>
+              ) : null}
+            </button>
+          ))}
+          <button
+            type="button"
+            className="club-event-chip is-register"
+            onClick={onRegister}
+          >
+            Register
+          </button>
+        </div>
       </div>
       <div
         ref={scroller}
@@ -139,51 +130,6 @@ export function EventCarousel({
           </div>
         ))}
       </div>
-      <div className="club-event-dots" aria-label="Choose an event">
-        {events.map((event, i) => (
-          <button
-            type="button"
-            key={event.id}
-            aria-label={`Show ${event.label}`}
-            aria-pressed={i === index}
-            onClick={() => onChange(event.id)}
-          >
-            <span />
-          </button>
-        ))}
-      </div>
-      <Sheet
-        open={choosing}
-        title="Choose your event"
-        body="Each registration has its own competition field."
-        onClose={() => setChoosing(false)}
-      >
-        {events.map((event) => (
-          <button
-            key={event.id}
-            type="button"
-            className="club-event-option"
-            aria-pressed={event.id === value}
-            onClick={() => {
-              onChange(event.id);
-              setChoosing(false);
-            }}
-          >
-            <span>{event.label}</span>
-            <span aria-hidden="true">{event.id === value ? "✓" : "→"}</span>
-          </button>
-        ))}
-        <button
-          type="button"
-          className="fb-btn"
-          onClick={() => {
-            setChoosing(false);
-            onRegister();
-          }}
-        >
-          Register for another event
-        </button>
-      </Sheet>
     </section>
   );
 }

@@ -415,6 +415,53 @@
   min-width: 0;
   width: 100%;
 }
+.club-event-chips-bar {
+  position: sticky;
+  top: 0;
+  z-index: 6;
+  padding: 4px 0 14px;
+  background: linear-gradient(
+    180deg,
+    var(--paper) 72%,
+    color-mix(in srgb, var(--paper) 0%, transparent)
+  );
+}
+.club-event-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+.club-event-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 40px;
+  padding: 6px 14px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: var(--card);
+  color: var(--ink);
+  letter-spacing: normal;
+  text-transform: none;
+  font: var(--type-label);
+  cursor: pointer;
+}
+.club-event-chip[aria-selected="true"] {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: var(--lime);
+}
+.club-event-chip.is-register {
+  border-style: dashed;
+  background: transparent;
+  color: var(--muted);
+}
+.club-event-chip.is-register:hover,
+.club-event-chip.is-register:focus-visible {
+  color: var(--ink);
+  border-color: var(--ink);
+}
 .club-event-toolbar {
   display: flex;
   gap: 10px;
