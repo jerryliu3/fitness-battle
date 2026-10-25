@@ -7,7 +7,7 @@ Nine focused native screens following the October 25 owner review of #340–343.
 | 1 | [Compete](compete.md) | Weekly board / swipeable meets / sport rooms | [#345](https://github.com/jerryliu3/fitness-battle/pull/345) |
 | 2 | [Progress](progress.md) | Training portfolio / training mix | [#351](https://github.com/jerryliu3/fitness-battle/pull/351) |
 | 3 | [Crew](crew.md) | Shared clubhouse / together first | [#352](https://github.com/jerryliu3/fitness-battle/pull/352) |
-| 4 | [Profile](profile.md) | Club passport / field pass | Profile follow-up |
+| 4 | [Profile](profile.md) | Club passport / field pass | [#355](https://github.com/jerryliu3/fitness-battle/pull/355) |
 
 Each PR builds on the previous PR in this new stack so the review shell and exact production primitives can be shared. No dependency on the former study PRs. Merge/review in order; use the Profile branch to run all four tabs together.
 
