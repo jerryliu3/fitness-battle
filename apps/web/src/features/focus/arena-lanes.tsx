@@ -32,6 +32,7 @@ export function ArenaLanes({
   view,
   unit,
   selected,
+  focusOnMount = false,
   onSelect,
   onPan,
   onBackgroundTap,
@@ -46,6 +47,7 @@ export function ArenaLanes({
   view: ArenaViewWindow;
   unit: string;
   selected: string;
+  focusOnMount?: boolean;
   onSelect: (id: string) => void;
   onPan: (center: number) => void;
   onBackgroundTap?: () => void;
@@ -135,7 +137,7 @@ export function ArenaLanes({
     laneScroll.current = el.scrollLeft;
     previousGeometry.current = { width: size.width, laneWidth, count: ordered.length, left: course.left, oval: course.oval };
   }, [width, laneWidth, size.width, standings, course.oval, course.left]);
-  const prevSelectedRef = useRef(selected);
+  const prevSelectedRef = useRef(focusOnMount ? "" : selected);
   useLayoutEffect(() => {
     if (prevSelectedRef.current === selected) return;
     prevSelectedRef.current = selected;

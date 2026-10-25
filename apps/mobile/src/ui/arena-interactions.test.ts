@@ -73,6 +73,9 @@ vi.mock("../features/competition-summary", () => ({
 }));
 vi.mock("../features/sleep-panel", () => ({ SleepPanel: () => null }));
 vi.mock("../features/round-takeover", () => ({ RoundTakeover: () => null }));
+vi.mock("../features/competition-replay", () => ({
+  CompetitionReplayButton: "CompetitionReplayButton",
+}));
 vi.mock("./icon-button", () => ({ IconButton: "IconButton" }));
 vi.mock("./arena-3d", () => ({ Arena3D: () => null }));
 vi.mock("./portrait-field", () => ({ PortraitField: "PortraitField" }));

@@ -282,3 +282,23 @@ while their ground anchors retain the true projected distance. Gesture inversion
 and lateral movement use the same camera scale on both platforms. Native SVG
 owns its gesture responders, and the fullscreen Modal establishes its own safe
 area so controls clear the Dynamic Island. See [follow-up review](reviews/infinite-field-horizon/README.md).
+
+### Competition event replay — October 25
+
+Fullscreen Compete and settled round recaps offer an event-by-event replay on web
+and native, with 2D/3D views, play/pause, speed, stepping and a draggable in-memory
+timeline. The camera follows the changing athlete with a Follow me alternative.
+Workout chronology comes from counted activity; simulated rivals retain explicitly
+labeled daily steps. Replay remains presentation-only and does not award overtakes
+or alter standings writes. See [data and interaction contract](reviews/competition-replay/README.md),
+including historical reconstruction and native walkthrough limitations.
+
+### Web Full Arena viewport — October 25 follow-up
+
+Expanded web fields reflow their persistent scene to the full browser viewport in
+both 2D and 3D. Expansion animates a reveal clip; it does not freeze or scale the
+inline field. The scene keeps its selection, distance window and horizontal lane
+anchor across expansion and resize. Fullscreen zoom controls sit above the athlete
+spotlight, matching the native fullscreen arrangement. Replay remains a control
+inside Full Arena; recap/history entries open a fullscreen replay viewer. See the
+[fullscreen review](reviews/web-fullscreen-field/README.md).
