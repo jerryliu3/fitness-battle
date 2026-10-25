@@ -14,6 +14,7 @@ const concepts = [
   { id: "tempo", name: "05 / Tempo", idea: "A spacious calendar ribbon. The rhythm of your week leads into a compact daily health strip.", chart: "Daily training timeline" },
   { id: "dials", name: "06 / Signal Dials", idea: "Portfolio above, Signal Room below. A quiet dial places each daily reading within its observed seven-day range.", chart: "Cumulative training hours" },
   { id: "halos", name: "07 / Seven-Day Halo", idea: "The same selected chart, with seven daily observations arranged around the latest reading. Variation becomes a constellation, not a score.", chart: "Cumulative training hours" },
+  { id: "fills", name: "08 / Signal Fill", idea: "Signal Dials with a continuous teal arc filling from zero to the current reading. Each scale ends at its observed seven-day maximum.", chart: "Cumulative training hours" },
 ] as const;
 const days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 const hours = [.5, .85, 0, 1.25, .6, .9, 0];
@@ -25,7 +26,7 @@ const metrics = [
   { name: "HRV", value: "58", unit: "ms · Last night", icon: "⌁", note: "Fictional overnight HRV. No readiness, diagnosis or normal range is inferred.", points: "0,20 10,14 20,18 30,8 40,12 50,4 60,10" },
 ];
 function Chart({ kind, day }: { kind: string; day: number }) {
-  const selectedDirection = kind === "dials" || kind === "halos";
+  const selectedDirection = kind === "dials" || kind === "halos" || kind === "fills";
   const lineEnd = 24 + (selectedDirection ? day : 6) * 43;
   const line = cumulative.slice(0, selectedDirection ? day + 1 : 7).map((value, index) => `${24 + index * 43},${150 - value * 29}`).join(" ");
   if (kind === "orbit") return <svg viewBox="0 0 330 205" role="img" aria-label="4.1 hours this week, five active days">
@@ -55,10 +56,10 @@ function Chart({ kind, day }: { kind: string; day: number }) {
   </svg>;
 }
 function Concept({ concept, unavailable }: { concept: typeof concepts[number]; unavailable: boolean }) {
-  const visual = concept.id === "dials" || concept.id === "halos" ? concept.id : null;
+  const visual = concept.id === "dials" || concept.id === "halos" || concept.id === "fills" ? concept.id : null;
   const [day,setDay]=useState(5);
   const [detail,setDetail]=useState<string|null>(null);
-  return <article className={`health-concept ${concept.id}`}>
+  return <article className={`health-concept ${concept.id}${concept.id === "fills" ? " dials" : ""}`}>
     <div className="concept-caption"><span>{concept.name}</span><p>{concept.idea}</p></div>
     <div className="concept-phone">
       <header className="health-shell"><span>overtaek<span className="brand-dot">.</span></span><span className="sample-avatar">AL</span></header>
@@ -72,7 +73,7 @@ function Concept({ concept, unavailable }: { concept: typeof concepts[number]; u
       </section>
       <section className="health-vitals" aria-label="Today's core health metrics">
         <div className="vitals-title"><h3>Today’s health</h3><span>Sample · 3:20 PM</span></div>
-        {visual && <p className="signal-concept-note">{visual === "dials" ? "Your observed range. No targets or scores." : "Seven readings. Teal is the latest, not the best."}</p>}
+        {visual && <p className="signal-concept-note">{visual === "fills" ? "From zero to your reading. Scale ends at your 7-day maximum." : visual === "dials" ? "Your observed range. No targets or scores." : "Seven readings. Teal is the latest, not the best."}</p>}
         <div className="health-metrics">{metrics.map((metric,i)=><button key={metric.name} className="health-metric" aria-expanded={detail===metric.name} onClick={()=>setDetail(detail===metric.name?null:metric.name)}>
           <span className="metric-symbol" aria-hidden="true">{metric.icon}</span><span className="metric-name">{metric.name}</span>{visual ? <SignalVisual kind={visual} index={i} unavailable={unavailable}/> : <strong>{unavailable?"—":metric.value}</strong>}<span className="metric-unit">{unavailable?"Not available":metric.unit}</span>
           {concept.id==="pulse"&&<svg viewBox="0 0 60 32" aria-hidden="true"><polyline points={unavailable?"0,16 60,16":metric.points} fill="none" stroke={i%2?colors.comparison:colors.accent} strokeWidth="2"/></svg>}
@@ -89,8 +90,8 @@ export function HomeHealthStudy() {
   const [selected,setSelected]=useState("new");
   const [unavailable,setUnavailable]=useState(false);
   return <main className="health-study" style={signalPalette}>
-    <div className="health-study-intro"><span className="study-eyebrow">OVERTAEK / HOME EXPLORATIONS / 07</span><h1>Your week.<br/>Your body. One glance.</h1><p>The selected Portfolio chart meets Signal Room’s daily health panel. Two new visual concepts explore dials and seven-day halos; the original five remain available for comparison. All metrics are fictional. No production data or health connections are changed.</p></div>
-    <div className="health-study-controls"><label>Concept<select value={selected} onChange={e=>setSelected(e.target.value)}><option value="new">Compare two new visuals</option><option value="all">Compare all seven</option>{concepts.map(c=><option key={c.id} value={c.id}>{c.name}</option>)}</select></label><button aria-pressed={unavailable} onClick={()=>setUnavailable(!unavailable)}>{unavailable?"Show sample readings":"Preview missing readings"}</button><span>Inspect a metric. Preview missing readings.</span></div>
-    <div className={`health-study-grid ${selected!=="all"&&selected!=="new"?"focused":""}`}>{concepts.filter(c=>selected==="all"||(selected==="new"&&(c.id==="dials"||c.id==="halos"))||selected===c.id).map(c=><Concept key={c.id} concept={c} unavailable={unavailable}/>)}</div>
+    <div className="health-study-intro"><span className="study-eyebrow">OVERTAEK / HOME EXPLORATIONS / 08</span><h1>Your week.<br/>Your body. One glance.</h1><p>The selected Portfolio chart meets Signal Room’s daily health panel. Compare the dot dial with a new arc that fills from zero. Seven-day halos and the original five concepts remain available in the chooser. All metrics are fictional. No production data or health connections are changed.</p></div>
+    <div className="health-study-controls"><label>Concept<select value={selected} onChange={e=>setSelected(e.target.value)}><option value="new">Compare dot and fill</option><option value="all">Compare all eight</option>{concepts.map(c=><option key={c.id} value={c.id}>{c.name}</option>)}</select></label><button aria-pressed={unavailable} onClick={()=>setUnavailable(!unavailable)}>{unavailable?"Show sample readings":"Preview missing readings"}</button><span>Inspect a metric. Preview missing readings.</span></div>
+    <div className={`health-study-grid ${selected!=="all"&&selected!=="new"?"focused":""}`}>{concepts.filter(c=>selected==="all"||(selected==="new"&&(c.id==="dials"||c.id==="fills"))||selected===c.id).map(c=><Concept key={c.id} concept={c} unavailable={unavailable}/>)}</div>
   </main>;
 }

@@ -62,3 +62,13 @@ accessible and no weekday picker in either new concept. Screenshots:
 production components.
 
 Theme correction: Signal Dials, Seven-Day Halo and the original Signal Room now share production Home’s light canvas, white tiles, navy text and teal accents through HOME_HEALTH_COLORS. The chart and metrics are one light composition; their structures remain distinct alternatives.
+
+## Round 3 — zero-based filled dial
+
+**Signal Fill** retains Signal Dials’ light layout and replaces the dot with a
+continuous teal arc from zero to the latest reading. The full 270-degree scale
+ends at the fictional metric’s observed seven-day maximum, with explicit zero
+and maximum labels below each ring. This encodes magnitude rather than a goal
+or health score. Missing mode keeps the neutral track and removes the fill.
+
+The study opens with Dot vs Fill; all eight concepts remain selectable.
