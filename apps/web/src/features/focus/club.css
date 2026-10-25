@@ -1585,7 +1585,21 @@
 .sync-review-row small { color: #637482; }
 .sync-review-footer { position: sticky; bottom: -24px; padding: 20px 0 8px; background: #f8f9f6f5; margin-top: 12px; text-align: center; }
 .sync-review-swipe { height: 66px; background: #142b3b; color: white; touch-action: pan-y; user-select: none; border-radius: 36px; }
-.sync-review-swipe i { top: 5px; width: 56px; height: 56px; background: #f7c948; color: #142b3b; }
+.sync-review-swipe-label {
+  position: relative;
+  z-index: 0;
+  padding-inline: 12px;
+}
+.sync-review-swipe i { top: 5px; width: 56px; height: 56px; background: #f7c948; color: #142b3b; z-index: 1; }
+.sync-review-swipe.is-saving i { display: grid; place-items: center; }
+.sync-review-swipe-spin {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 2px solid #142b3b44;
+  border-top-color: #142b3b;
+  animation: fd-spin 0.75s linear infinite;
+}
 .sync-review-swipe:focus-visible { outline: 3px solid #176c75; outline-offset: 4px; }
 .moment-counter { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
 .moment-counter > strong {

@@ -18,12 +18,21 @@ export function SyncReview({ receipt, state, moment, debug = false, remaining = 
   </Sheet>;
 }
 function Review({ receipt, state, onComplete }: { receipt: SyncReviewReceipt; state: CompeteState; onComplete: (selected?: readonly string[], quiet?: boolean) => unknown }) {
-  const [excluded, setExcluded] = useState<string[]>([]), [detail, setDetail] = useState<string | null>(null), [progress, setProgress] = useState(0);
+  const [excluded, setExcluded] = useState<string[]>([]), [detail, setDetail] = useState<string | null>(null), [progress, setProgress] = useState(0), [saving, setSaving] = useState(false);
   const complete = useRef(false), start = useRef(0), step = useRef<HTMLDivElement | null>(null);
   useLayoutEffect(() => { step.current?.closest(".sheet-content")?.scrollTo({ top: 0 }); }, [detail]);
   const activities = receipt.activities;
   const selected = activities.filter(a => !excluded.includes(a.id));
-  const finish = () => { if (complete.current) return; complete.current = true; onComplete(selected.map(a => a.id)); };
+  const finish = () => {
+    if (complete.current || saving) return;
+    setProgress(1);
+    setSaving(true);
+    globalThis.setTimeout(() => {
+      if (complete.current) return;
+      complete.current = true;
+      onComplete(selected.map(a => a.id));
+    }, 900);
+  };
   const activity = activities.find(a => a.id === detail);
   if (activity) return <div ref={step} className="sync-review-step">
     <button className="fb-btn-line" onClick={() => setDetail(null)}>← All activities</button>
@@ -45,13 +54,13 @@ function Review({ receipt, state, onComplete }: { receipt: SyncReviewReceipt; st
     </div>)}</div>
     {!receipt.preview && excluded.length > 0 && <p className="fb-note">Deselected activities stay saved, excluded from competition.</p>}
     <div className="sync-review-footer">
-      <div className="club-sync-swipe sync-review-swipe" role="slider" tabIndex={0} aria-label="Swipe to confirm synced activities" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(progress * 100)} aria-valuetext={progress >= .85 ? "Ready to confirm" : "Slide right to confirm; Enter also confirms"}
+      <div className={saving ? "club-sync-swipe sync-review-swipe is-saving" : "club-sync-swipe sync-review-swipe"} role="slider" tabIndex={0} aria-busy={saving} aria-label="Swipe to confirm synced activities" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(progress * 100)} aria-valuetext={saving ? "Saving" : progress >= .85 ? "Ready to confirm" : "Slide right to confirm; Enter also confirms"}
         onKeyDown={e => { if (["Enter", " ", "End"].includes(e.key)) { e.preventDefault(); finish(); } }}
-        onPointerDown={e => { if (e.clientX - e.currentTarget.getBoundingClientRect().left > 64) return; start.current = e.clientX; e.currentTarget.setPointerCapture(e.pointerId); }}
-        onPointerMove={e => { if (e.currentTarget.hasPointerCapture(e.pointerId)) setProgress(Math.max(0, Math.min(1, (e.clientX - start.current) / Math.max(1, e.currentTarget.clientWidth - 60)))); }}
-        onPointerUp={e => { if (!e.currentTarget.hasPointerCapture(e.pointerId)) return; const distance = (e.clientX - start.current) / Math.max(1, e.currentTarget.clientWidth - 60); e.currentTarget.releasePointerCapture(e.pointerId); if (distance >= .85) finish(); else setProgress(0); }}
-        onPointerCancel={() => setProgress(0)}>
-        <span>{receipt.preview ? "Swipe to preview" : selected.length ? "Swipe to lock it in" : "Swipe to save as excluded"}</span><i style={{ left: `calc(${progress * 100}% - ${progress * 56}px)` }}>→</i>
+        onPointerDown={e => { if (saving || e.clientX - e.currentTarget.getBoundingClientRect().left > 64) return; start.current = e.clientX; e.currentTarget.setPointerCapture(e.pointerId); }}
+        onPointerMove={e => { if (saving || !e.currentTarget.hasPointerCapture(e.pointerId)) return; setProgress(Math.max(0, Math.min(1, (e.clientX - start.current) / Math.max(1, e.currentTarget.clientWidth - 60)))); }}
+        onPointerUp={e => { if (saving || !e.currentTarget.hasPointerCapture(e.pointerId)) return; const distance = (e.clientX - start.current) / Math.max(1, e.currentTarget.clientWidth - 60); e.currentTarget.releasePointerCapture(e.pointerId); if (distance >= .85) finish(); else setProgress(0); }}
+        onPointerCancel={() => { if (!saving) setProgress(0); }}>
+        <span className="sync-review-swipe-label" style={{ clipPath: `inset(0 0 0 ${Math.round(progress * 100)}%)` }}>{receipt.preview ? "Swipe to preview" : selected.length ? "Swipe to lock it in" : "Swipe to save as excluded"}</span><i style={{ left: `calc(${progress * 100}% - ${progress * 56}px)` }} aria-hidden="true">{saving ? <span className="sync-review-swipe-spin" /> : "→"}</i>
       </div>
       <p className="fb-note">{receipt.preview ? "Preview only. No activities or points will be added." : "Your synced activities are saved safely."}</p>
     </div>
