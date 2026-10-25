@@ -7,7 +7,7 @@ import { BootSplash } from "./boot-splash";
 let bootAnimationCompleted = false;
 
 /**
- * Force the OVERTAKE → OVERTAEK splash to finish even when local compete state
+ * Force the selected launch animation to finish even when local compete state
  * is already available (typical on TestFlight after AsyncStorage hydrates).
  */
 export function BootGate({ children }: { children: ReactNode }) {

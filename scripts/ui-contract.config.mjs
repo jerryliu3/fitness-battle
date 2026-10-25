@@ -14,9 +14,9 @@ const roots = [
 ];
 // Artwork and historical design studies are not product typography.
 export const files = roots.flatMap(root => collect(root, ".tsx")).filter(file =>
-  !file.includes("/mascot/") && !file.endsWith(".test.tsx") && ![
+  !file.includes("/mascot/") && !file.endsWith(".test.tsx") && !file.endsWith("boot-splash.tsx") && ![
     "apps/mobile/app/mascot.tsx", "apps/mobile/app/structure.tsx",
-    "apps/mobile/src/ui/boot-splash.tsx", "apps/mobile/src/ui/section.tsx",
+    "apps/mobile/src/ui/section.tsx",
     "apps/web/src/ui/section.tsx",
   ].includes(file));
 export const cssFiles = ["apps/web/src/app/globals.css", "apps/web/src/shell/shell.css", "apps/web/src/theme/themes.css",
