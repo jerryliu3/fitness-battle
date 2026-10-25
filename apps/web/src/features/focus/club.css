@@ -1519,11 +1519,11 @@
 .focus-portal-zoom-pill button:disabled {
   opacity: 0.35;
 }
-.focus-expanding-field.is-open .focus-portal-frame {
+.focus-field-expanded .focus-portal-frame {
   border-radius: 0;
   border: 0;
 }
-.focus-expanding-field.is-open .focus-portal-zoom-pill {
+.focus-field-expanded .focus-portal-zoom-pill {
   bottom: calc(max(16px, env(safe-area-inset-bottom)) + 150px);
 }
 .club-perspective-board.is-immersive {
@@ -2022,3 +2022,13 @@
 .competition-replay-scene .focus-lane-surface{height:100%;min-height:0}
 
 .competition-replay-actions{flex-wrap:wrap}
+
+/* Full Arena lays out the persistent scene across the actual viewport. */
+.focus-field-expanded { height:100dvh; overflow:hidden; }
+.focus-field-expanded .focus-field-content > div:not([hidden]),
+.focus-field-expanded .focus-track-frame,
+.focus-field-expanded .focus-lane-surface,
+.focus-field-expanded .focus-lane-scroll { height:100%; min-height:0; max-height:none; }
+.focus-field-expanded .focus-track-frame { margin:0; border:0; border-radius:0; box-shadow:none; }
+.focus-field-expanded .club-perspective-group { display:flex; flex-direction:column; height:100%; min-height:0; }
+.focus-field-expanded .club-perspective-board { flex:1; width:100%; max-width:none; height:100%; min-height:0; aspect-ratio:auto; border-radius:0; }

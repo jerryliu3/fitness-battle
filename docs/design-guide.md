@@ -292,3 +292,13 @@ Workout chronology comes from counted activity; simulated rivals retain explicit
 labeled daily steps. Replay remains presentation-only and does not award overtakes
 or alter standings writes. See [data and interaction contract](reviews/competition-replay/README.md),
 including historical reconstruction and native walkthrough limitations.
+
+### Web Full Arena viewport — October 25 follow-up
+
+Expanded web fields reflow their persistent scene to the full browser viewport in
+both 2D and 3D. Expansion animates a reveal clip; it does not freeze or scale the
+inline field. The scene keeps its selection, distance window and horizontal lane
+anchor across expansion and resize. Fullscreen zoom controls sit above the athlete
+spotlight, matching the native fullscreen arrangement. Replay remains a control
+inside Full Arena; recap/history entries open a fullscreen replay viewer. See the
+[fullscreen review](reviews/web-fullscreen-field/README.md).

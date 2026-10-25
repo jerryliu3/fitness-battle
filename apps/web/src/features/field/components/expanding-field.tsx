@@ -4,7 +4,6 @@ import * as Dialog from "@radix-ui/react-dialog";
 import { useReducedMotion } from "motion/react";
 import { createPortal } from "react-dom";
 import { useLayoutEffect, useRef, useState, type ReactNode } from "react";
-import { expandedFieldScale } from "./expanded-field-geometry";
 import { collapseExpandingFieldImmediate } from "./expanding-field-teardown";
 
 /** One portal target for the entire lifetime: moving it never remounts the lane canvas. */
@@ -22,6 +21,8 @@ export function ExpandingField({
   children: ReactNode;
 }) {
   const reduce = useReducedMotion();
+  const lastHud = useRef(hud);
+  if (hud) lastHud.current = hud;
   const slot = useRef<HTMLDivElement>(null);
   // Radix mounts its portal after the parent layout effect. Observe the actual host.
   const [dialog, setDialog] = useState<HTMLDivElement | null>(null);
@@ -29,10 +30,7 @@ export function ExpandingField({
   const [present, setPresent] = useState(false);
   const origin = useRef<DOMRect | null>(null);
   const returnFocus = useRef<HTMLElement | SVGElement | null>(null);
-  const interruptedBounds = useRef<DOMRect | null>(null);
   const animation = useRef<Animation | null>(null);
-  const contentAnimation = useRef<Animation | null>(null);
-  const contentTransform = useRef<string | null>(null);
   const lastClip = useRef<string | null>(null);
   const [viewport, setViewport] = useState({ width: 0, height: 0 });
 
@@ -48,7 +46,7 @@ export function ExpandingField({
     node.className = "focus-field-content";
     slot.current?.appendChild(node);
     setMount(node);
-    return () => { animation.current?.cancel(); contentAnimation.current?.cancel(); node.remove(); };
+    return () => { animation.current?.cancel(); node.remove(); };
   }, []);
 
   useLayoutEffect(() => {
@@ -56,10 +54,9 @@ export function ExpandingField({
       if (present || open) {
         collapseExpandingFieldImmediate(dialog, mount, slot.current, {
           host: animation.current,
-          content: contentAnimation.current,
         });
         animation.current = null;
-        contentAnimation.current = null;
+        lastClip.current = null;
         setPresent(false);
         if (open) onClose();
       }
@@ -78,51 +75,40 @@ export function ExpandingField({
     if (!tabActive || !present || !host || !mount) return;
     host.appendChild(mount);
     const source = origin.current;
+    if (!source) return;
     const destination = slot.current?.getBoundingClientRect();
     const clip = (rect: DOMRect) => `inset(${rect.top}px ${window.innerWidth - rect.right}px ${window.innerHeight - rect.bottom}px ${rect.left}px round 24px)`;
     const full = "inset(0px 0px 0px 0px round 0px)";
     const visible = destination && destination.bottom > 0 && destination.top < window.innerHeight;
-    const finish = () => {
+    animation.current?.cancel();
+    host.style.visibility = "";
+    // Reflow the persistent scene at viewport dimensions. Its ResizeObserver
+    // updates geometry while the field retains selection, camera and lane anchor.
+    // Only the reveal is animated; the field is never a scaled inline thumbnail.
+    mount.style.cssText = "position:absolute;inset:0;width:100%;height:100%;";
+    const from = lastClip.current && lastClip.current !== "none" ? lastClip.current : open ? clip(source) : full;
+    const frames = open
+      ? [{ clipPath: from }, { clipPath: full }]
+      : visible
+        ? [{ clipPath: from }, { clipPath: clip(destination) }]
+        : [{ opacity: 1 }, { opacity: 0 }];
+    const player = host.animate(frames, {
+      duration: reduce ? 0 : 420,
+      easing: "cubic-bezier(.22,1,.36,1)",
+      fill: "both",
+    });
+    animation.current = player;
+    player.onfinish = () => {
       if (open) return;
-      // Remove the viewport transform before returning the persistent canvas to
-      // normal flow. A filled WAAPI animation otherwise survives for one frame.
-      contentAnimation.current?.cancel();
-      contentAnimation.current = null;
       host.style.visibility = "hidden";
       slot.current?.appendChild(mount);
       mount.style.cssText = "";
       if (slot.current) slot.current.style.height = "";
+      lastClip.current = null;
       setPresent(false);
     };
-    const interrupted = interruptedBounds.current;
-    interruptedBounds.current = null;
-    animation.current?.cancel();
-    if (!source) return;
-    // Freeze layout for the whole round trip. Only a uniform transform moves
-    // the live content; resizing the viewport must not reflow every marker.
-    mount.style.position = "absolute";
-    mount.style.left = "0";
-    mount.style.top = "0";
-    mount.style.width = `${source.width}px`;
-    mount.style.height = `${source.height}px`;
-    mount.style.transformOrigin = "0 0";
-    const scale = expandedFieldScale(source.width, source.height, window.innerWidth, window.innerHeight);
-    const landing = `translate(${(window.innerWidth - source.width * scale) / 2}px, ${Math.max(0, (window.innerHeight - source.height * scale) / 2)}px) scale(${scale})`;
-    const home = `translate(${(destination ?? source).left}px, ${(destination ?? source).top}px) scale(1)`;
-    const fromTransform = contentTransform.current ?? (open ? home : landing);
-    contentTransform.current = null;
-    contentAnimation.current?.cancel();
-    const timing = { duration: reduce ? 0 : 420, easing: "cubic-bezier(.22,1,.36,1)", fill: "both" as const };
-    contentAnimation.current = mount.animate([{ transform: fromTransform }, { transform: open ? landing : home }], timing);
-    const frames = open && source ? [{ clipPath: lastClip.current ?? clip(interrupted ?? source) }, { clipPath: full }] : visible ? [{ clipPath: lastClip.current ?? full }, { clipPath: clip(destination) }] : [{ opacity: 1 }, { opacity: 0 }];
-    const player = host.animate(frames, timing);
-    animation.current = player;
-    player.onfinish = finish;
     return () => {
-      if (player.playState === "running") interruptedBounds.current = host.getBoundingClientRect();
-      contentTransform.current = mount.parentElement === host ? getComputedStyle(mount).transform : null;
       lastClip.current = mount.parentElement === host ? getComputedStyle(host).clipPath : null;
-      contentAnimation.current?.cancel();
       player.cancel();
     };
   }, [open, present, mount, reduce, dialog, viewport, tabActive]);
@@ -166,12 +152,21 @@ export function ExpandingField({
             // events do not pass through Dialog.Content's capture handler.
             if (event.detail.originalEvent.target instanceof Node && dialog?.contains(event.detail.originalEvent.target)) event.preventDefault();
           }}
-          onCloseAutoFocus={(event) => { event.preventDefault(); returnFocus.current?.focus({ preventScroll: true }); }}>
+          onCloseAutoFocus={(event) => {
+            event.preventDefault();
+            // Switching dimensions can hide the original expansion button.
+            requestAnimationFrame(() => {
+              const original = returnFocus.current;
+              const target = original && original !== document.body && original !== document.documentElement && original.getClientRects().length
+                ? original
+                : [...(slot.current?.querySelectorAll<HTMLElement>("button[aria-label^='Expand ']") ?? [])].find(button => button.getClientRects().length);
+              target?.focus({ preventScroll: true });
+            });
+          }}>
           <Dialog.Title className="fb-sr-only">Explore athlete lanes</Dialog.Title>
-          {hud ?? (
+          {lastHud.current ?? (
             <>
               <button type="button" className="focus-field-close club-icon-button" onClick={onClose} aria-label="Return to field">‹</button>
-              <button type="button" className="focus-field-pursuit" disabled>3D pursuit · Coming soon</button>
             </>
           )}
         </Dialog.Content>
