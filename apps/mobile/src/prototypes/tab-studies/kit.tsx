@@ -262,7 +262,7 @@ export function Stat({
   big?: boolean;
 }) {
   return (
-    <View style={{ flexShrink: 1, gap: 3 }}>
+    <View style={{ flexShrink: 1, minWidth: 60, gap: 3 }}>
       <Copy size={big ? 48 : 25} bold>
         {value}
       </Copy>
@@ -544,7 +544,7 @@ export function Chart({
             accessibilityState={{ selected: selected === i }}
             onPress={() => onSelect(i)}
             style={{
-              minWidth: 35,
+              minWidth: 44,
               minHeight: 44,
               alignItems: "center",
               justifyContent: "center",

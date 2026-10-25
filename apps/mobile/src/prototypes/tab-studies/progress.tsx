@@ -871,7 +871,9 @@ function Calendar({
   onSelect: (v: number) => void;
 }) {
   return (
-    <View style={{ flexDirection: "row", flexWrap: "wrap" }}>
+    <View
+      style={{ flexDirection: "row", flexWrap: "wrap", marginHorizontal: -18 }}
+    >
       {["M", "T", "W", "T", "F", "S", "S"].map((d, i) => (
         <View
           key={i}

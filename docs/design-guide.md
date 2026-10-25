@@ -3,7 +3,8 @@
 Native tab explorations: [nine Compete concepts](reviews/native-compete-concepts/README.md)
 and [nine Progress concepts](reviews/native-progress-concepts/README.md)
 plus [nine Crew concepts](reviews/native-crew-concepts/README.md)
-are isolated React Native prototypes at `/study-compete`, `/study-progress`, and `/study-crew`; they do not select a
+and [four Profile concepts](reviews/native-profile-concepts/README.md)
+are isolated React Native prototypes indexed at `/study` ([review index](reviews/native-tab-study.md)); they do not select a
 production layout or change the domain rules below.
 
 The selected production direction is **Everyday Club**, following the owner’s October 22 reference and implementation request. Retain yellow and Ember, Home / Compete / Progress / Crew, existing data behavior, 2D default competition, no recording action and no social feed. See [audit](design/ui-audit.md) and [component decisions](design/component-guidelines.md).
