@@ -444,12 +444,20 @@
 .focus-settings-row:last-child {
   border-bottom: 0;
 }
-.focus-settings-row span:first-child {
+.focus-settings-row .focus-settings-copy {
   display: flex;
   flex-direction: column;
+  align-items: flex-start;
+  flex: 1;
   gap: 4px;
   min-width: 0;
+  text-align: left;
+  overflow-wrap: anywhere;
 }
+.focus-settings-row > svg,
+.focus-settings-row > span[aria-hidden] { flex-shrink: 0; }
+.focus-settings-copy > b,
+.focus-settings-copy > small { display: block; max-width: 100%; }
 .focus-settings-row b {
   letter-spacing: normal;
   text-transform: none;
