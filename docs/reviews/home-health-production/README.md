@@ -1,7 +1,7 @@
 # Home — Portfolio + Signal Room
 
 The October 25 selection combines Portfolio's quiet cumulative hours chart with
-Signal Room's dark daily-health tiles, on web and native iOS/Android.
+Signal Room's daily-health tile layout, rethemed to match the light Portfolio chart, on web and native iOS/Android.
 
 The chart keeps the existing Eastern weekly hours comparison and eligibility.
 It removes the weekday labels/picker, uses a teal line and subtle area, shows the
@@ -19,7 +19,7 @@ separate data integration exists. Workout HR/distance and readiness/sleep scores
 are never substituted. No new health permissions, API, persistence, migration,
 goals or scoring changes are introduced.
 
-The production palette is the shared HOME_HEALTH_COLORS token set. Readable text,
+The production palette is the shared HOME_HEALTH_COLORS token set: canvas background, white tiles, navy text, muted captions and teal chart/icon/selection accents. The section stays open on the same light canvas as the chart, with no contrasting outer panel. Readable text,
 44px+ tile controls, explicit expanded states, wrapping, and native single-column
 layout at larger font sizes are part of both implementations.
 
@@ -30,3 +30,8 @@ Browser review at 390px and 320px confirmed heading contrast, wrapping with no
 horizontal overflow, recorded sleep details and unavailable metric explanations.
 Screenshots show a local synthetic account's existing recorded data. Physical
 native-device and VoiceOver review remain outstanding.
+
+Theme correction: the chart and health section now share the light canvas and
+teal accent, with white metric tiles and navy/muted text. Web/native consume the
+same palette. Phone reviews at 390px and 320px confirm readable headings and no
+horizontal overflow. Data and interactions are unchanged by this correction.

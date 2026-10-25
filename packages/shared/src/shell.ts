@@ -89,15 +89,15 @@ export const SHELL_RADIUS = {
   pill: 999,
 } as const;
 
-/** Signal Room surface for Home daily readings, on both platforms. */
+/** Light Home palette shared by the Portfolio chart and daily readings. */
 export const HOME_HEALTH_COLORS = {
-  background: SHELL_COLORS.ink,
-  tile: "#1b3644",
-  border: "#31505a",
-  text: "#f0f4ec",
-  secondary: "#b7cbd2",
-  gold: SHELL_COLORS.tennis,
-  sage: "#b6cfb5",
+  background: SHELL_COLORS.paper,
+  tile: SHELL_COLORS.card,
+  border: SHELL_COLORS.line,
+  text: SHELL_COLORS.ink,
+  secondary: SHELL_COLORS.muted,
+  accent: SHELL_COLORS.fieldTeal,
+  comparison: SHELL_COLORS.secondary,
 } as const;
 
 export const SHELL_TYPE = {

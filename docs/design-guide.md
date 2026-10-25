@@ -239,10 +239,8 @@ roster data for session portraits; never broaden profile reads for presentation.
 
 Production Home on web/native now combines the Portfolio cumulative hours chart
 (teal line, subtle fill, quiet previous-week comparison, endpoint dates, no weekday
-picker) with Signal Room's dark four-tile daily health panel beneath it. Current
-week, session totals and activity actions remain. `HOME_HEALTH_COLORS` defines navy
-`#142b3b`, tile `#1b3644`, border `#31505a`, text `#f0f4ec`, secondary `#b7cbd2`,
-yellow `#f7c948` and sage `#b6cfb5`. Historical sleep gaps stay visible; no medical
+picker) with Signal Room's four-tile daily health layout beneath it, rethemed to match the light chart. Current
+week, session totals and activity actions remain. `HOME_HEALTH_COLORS` reuses the existing light tokens: canvas `#f8f9f6`, white tiles, border `#e3e9e7`, navy text `#142b3b`, muted captions `#637482`, teal accent `#176c75` and comparison `#668e91`. The chart and health section share an open canvas, typography and teal visual language. Historical sleep gaps stay visible; no medical
 ranges or targets are inferred. Only stored current sleep duration is available;
 Steps, Resting HR and HRV show unavailable until their data feeds exist. See the
 [implementation review](reviews/home-health-production/README.md).
