@@ -22,6 +22,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { EffortRail } from "@/features/progress/effort-rail";
+import { ApplicationBootGate } from "./application-boot-gate";
 import { BootSplash } from "./boot-splash";
 import { DebugEventMenu } from "./debug-event-menu";
 import {
@@ -162,21 +163,6 @@ export function PhoneShell({
     for (const tab of SHELL_TABS) router.prefetch(tab.href);
   }, [router]);
 
-  // Only play the full initial mascot boot splash on fresh browser boot.
-  // Account creation, login, or page transitions don't reload the splash.
-  if (!bootChecked) return null;
-  if (!bootAnimDone) {
-    return (
-      <BootSplash
-        waiting={false}
-        onAnimationComplete={() => {
-          markBootSplashSeen();
-          setBootAnimDone(true);
-        }}
-      />
-    );
-  }
-
   const accountLoadingBody = panel(
     <p
       className="fb-copy phone-account-loading"
@@ -188,6 +174,12 @@ export function PhoneShell({
   );
 
   return (
+    <ApplicationBootGate ready={bootChecked && bootAnimDone && !loading && dataReady} splash={
+      <BootSplash waiting={bootAnimDone} onAnimationComplete={() => {
+        markBootSplashSeen();
+        setBootAnimDone(true);
+      }} />
+    }>
     <div className="phone-frame">
       <div className="phone-shell">
         {!onAthlete && path !== "/week" && !progressDetail && <header className="focus-shell-header">
@@ -285,5 +277,6 @@ export function PhoneShell({
         )}
       </div>
     </div>
+    </ApplicationBootGate>
   );
 }

@@ -1,4 +1,5 @@
 import { textStyle } from "./section";
+import { useBootImage } from "./boot-readiness";
 import { EffortRail } from "../features/effort-rail";
 
 import { usePathname, useRouter } from "expo-router";
@@ -13,6 +14,7 @@ import { SHELL_COLORS as c } from "../theme";
 
 export function AppHeader() {
   const { state, debugActive, triggerDebugEvent, resetDebugState } = useCompeteStore();
+  const imageSettled = useBootImage(state?.avatarUrl);
   const [debugOpen, setDebugOpen] = useState(false);
   const router = useRouter();
   const path = usePathname();
@@ -38,7 +40,7 @@ export function AppHeader() {
             style={[s.profile, onAthlete && s.selected]}
           >
             {state?.avatarUrl ? (
-              <Image source={{ uri: state.avatarUrl }} style={s.photo} />
+              <Image source={{ uri: state.avatarUrl }} style={s.photo} onLoadEnd={imageSettled} />
             ) : (
               <AppIcon name="person" size={22} color={c.muted} />
             )}

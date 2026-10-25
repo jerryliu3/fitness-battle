@@ -1,3 +1,4 @@
+import { useBootLoading } from "../ui/boot-readiness";
 import { useCallback, useState } from "react";
 import { useFocusEffect } from "expo-router";
 import { recentActivityStart, type CrewActivityPage } from "@fitness-battle/shared";
@@ -8,6 +9,7 @@ import { mobileEnv } from "../lib/env";
 export function useCrewActivities() {
   const { user, offlineMode, accessToken } = useAuth();
   const [result, setResult] = useState<{ account: string; activities: CrewActivityPage["activities"]; error: string }>({ account: "", activities: [], error: "" });
+  useBootLoading(Boolean(user && !offlineMode && Boolean(accessToken) && result.account !== user.id));
   useFocusEffect(useCallback(() => {
     if (!user || offlineMode || !accessToken) return;
     let current = true;

@@ -1,4 +1,5 @@
 import { textStyle } from "./section";
+import { useBootImage } from "./boot-readiness";
 import { useMemo, useState } from "react";
 import {
   View,
@@ -109,6 +110,8 @@ export function RouteStaticPreview({
     token,
   ]);
 
+  const imageSettled = useBootImage(hasError ? null : imageUrl);
+
   const content = (
     <View style={[styles.container, { aspectRatio: width / height }, style]}>
       {/* 1. Mapbox Static API Image */}
@@ -119,7 +122,7 @@ export function RouteStaticPreview({
             style={styles.image}
             resizeMode="cover"
             onLoadStart={() => setLoading(true)}
-            onLoadEnd={() => setLoading(false)}
+            onLoadEnd={() => { setLoading(false); imageSettled(); }}
             onError={() => {
               setLoading(false);
               setHasError(true);

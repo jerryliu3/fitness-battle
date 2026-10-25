@@ -1,3 +1,4 @@
+import { useBootImage } from "../ui/boot-readiness";
 import { textStyle } from "../ui/section";
 import { AppIcon } from "../ui/app-icon";
 import { alpineTrail } from "../ui/club-art";
@@ -24,6 +25,7 @@ import {
 import { SHELL_COLORS as c } from "../theme";
 export function RivalCard({ state }: { state: CompeteState }) {
   const router = useRouter();
+  const imageSettled = useBootImage(alpineTrail);
   const sport =
     state.ratings.find((r) => r.sport === state.primary && r.optedIn)?.sport ??
     state.ratings.find((r) => r.optedIn)?.sport;
@@ -63,6 +65,7 @@ export function RivalCard({ state }: { state: CompeteState }) {
     >
       <ImageBackground
         source={alpineTrail}
+        onLoadEnd={imageSettled}
         style={s.background}
         imageStyle={{ borderRadius: 20 }}
       >
