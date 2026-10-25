@@ -39,7 +39,7 @@ it("keeps additive shared views and journey endpoints consistent", () => {
   expect(crewTotal(crews[1].members)).toBeCloseTo(45.2);
   for (const crew of crews)
     expect(
-      dayShares.reduce(
+      dayShares.reduce<number>(
         (sum, share) => sum + share * crewTotal(crew.members),
         0,
       ),
