@@ -1,13 +1,16 @@
 "use client";
-import { useState } from "react";
+import { useState, type CSSProperties } from "react";
+import { HOME_HEALTH_COLORS as colors } from "@fitness-battle/shared";
 import "./study.css";
 import { SignalVisual, SignalVisualDetail } from "./signal-visuals";
+
+const signalPalette = Object.fromEntries(Object.entries(colors).map(([key, value]) => [`--signal-${key}`, value])) as CSSProperties;
 
 const concepts = [
   { id: "portfolio", name: "01 / The Portfolio", idea: "One confident number. A quiet cumulative line. Daily health reads like a watchlist.", chart: "Cumulative training hours" },
   { id: "orbit", name: "02 / Daily Orbit", idea: "A weekly arc becomes an anchor. Four daily signals stay in its orbit.", chart: "Weekly training composition" },
   { id: "ledger", name: "03 / The Ledger", idea: "An editorial weekly receipt. Individual sessions and crisp daily numbers, without a dashboard of boxes.", chart: "Daily training hours" },
-  { id: "pulse", name: "04 / Signal Room", idea: "A dark instrument panel. A week of activity cells sits above four small daily signal charts.", chart: "Weekly activity time grid" },
+  { id: "pulse", name: "04 / Signal Room", idea: "A light instrument panel. A week of activity cells sits above four small daily signal charts.", chart: "Weekly activity time grid" },
   { id: "tempo", name: "05 / Tempo", idea: "A spacious calendar ribbon. The rhythm of your week leads into a compact daily health strip.", chart: "Daily training timeline" },
   { id: "dials", name: "06 / Signal Dials", idea: "Portfolio above, Signal Room below. A quiet dial places each daily reading within its observed seven-day range.", chart: "Cumulative training hours" },
   { id: "halos", name: "07 / Seven-Day Halo", idea: "The same selected chart, with seven daily observations arranged around the latest reading. Variation becomes a constellation, not a score.", chart: "Cumulative training hours" },
@@ -69,10 +72,10 @@ function Concept({ concept, unavailable }: { concept: typeof concepts[number]; u
       </section>
       <section className="health-vitals" aria-label="Today's core health metrics">
         <div className="vitals-title"><h3>Today’s health</h3><span>Sample · 3:20 PM</span></div>
-        {visual && <p className="signal-concept-note">{visual === "dials" ? "Your observed range. No targets or scores." : "Seven readings. Gold is the latest, not the best."}</p>}
+        {visual && <p className="signal-concept-note">{visual === "dials" ? "Your observed range. No targets or scores." : "Seven readings. Teal is the latest, not the best."}</p>}
         <div className="health-metrics">{metrics.map((metric,i)=><button key={metric.name} className="health-metric" aria-expanded={detail===metric.name} onClick={()=>setDetail(detail===metric.name?null:metric.name)}>
           <span className="metric-symbol" aria-hidden="true">{metric.icon}</span><span className="metric-name">{metric.name}</span>{visual ? <SignalVisual kind={visual} index={i} unavailable={unavailable}/> : <strong>{unavailable?"—":metric.value}</strong>}<span className="metric-unit">{unavailable?"Not available":metric.unit}</span>
-          {concept.id==="pulse"&&<svg viewBox="0 0 60 32" aria-hidden="true"><polyline points={unavailable?"0,16 60,16":metric.points} fill="none" stroke={i%2?"#b6cfb5":"#f7c948"} strokeWidth="2"/></svg>}
+          {concept.id==="pulse"&&<svg viewBox="0 0 60 32" aria-hidden="true"><polyline points={unavailable?"0,16 60,16":metric.points} fill="none" stroke={i%2?colors.comparison:colors.accent} strokeWidth="2"/></svg>}
           {concept.id==="orbit"&&<span className="metric-orbit" aria-hidden="true"/>}
         </button>)}</div>
         {detail&&<div className="health-detail" role="status"><b>{detail}</b>{visual ? <SignalVisualDetail kind={visual} index={metrics.findIndex(m=>m.name===detail)} unavailable={unavailable}/> : <p>{unavailable?"No reading is available. A production design would show the source and last successful reading, without substituting a score or zero.":metrics.find(m=>m.name===detail)?.note}</p>}<span>Illustrative data · No live connection</span></div>}
@@ -85,7 +88,7 @@ function Concept({ concept, unavailable }: { concept: typeof concepts[number]; u
 export function HomeHealthStudy() {
   const [selected,setSelected]=useState("new");
   const [unavailable,setUnavailable]=useState(false);
-  return <main className="health-study">
+  return <main className="health-study" style={signalPalette}>
     <div className="health-study-intro"><span className="study-eyebrow">OVERTAEK / HOME EXPLORATIONS / 07</span><h1>Your week.<br/>Your body. One glance.</h1><p>The selected Portfolio chart meets Signal Room’s daily health panel. Two new visual concepts explore dials and seven-day halos; the original five remain available for comparison. All metrics are fictional. No production data or health connections are changed.</p></div>
     <div className="health-study-controls"><label>Concept<select value={selected} onChange={e=>setSelected(e.target.value)}><option value="new">Compare two new visuals</option><option value="all">Compare all seven</option>{concepts.map(c=><option key={c.id} value={c.id}>{c.name}</option>)}</select></label><button aria-pressed={unavailable} onClick={()=>setUnavailable(!unavailable)}>{unavailable?"Show sample readings":"Preview missing readings"}</button><span>Inspect a metric. Preview missing readings.</span></div>
     <div className={`health-study-grid ${selected!=="all"&&selected!=="new"?"focused":""}`}>{concepts.filter(c=>selected==="all"||(selected==="new"&&(c.id==="dials"||c.id==="halos"))||selected===c.id).map(c=><Concept key={c.id} concept={c} unavailable={unavailable}/>)}</div>
