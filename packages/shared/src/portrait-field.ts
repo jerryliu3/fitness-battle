@@ -121,8 +121,10 @@ export function portraitField(
           ? "#f7c948"
           : "#c9d6e3",
       trail: outside ? "" : (() => {
-        const end = Math.min(1, (max - Math.max(0, lane.value - span * 0.18)) / span);
-        const a = project(i, depth), b = project(i, end);
+        const startDepth = Math.min(1, max / span);
+        if (startDepth <= depth) return "";
+        const a = project(i, depth);
+        const b = project(i, startDepth);
         return `M${a.x} ${a.y} L${b.x} ${b.y}`;
       })(),
     };

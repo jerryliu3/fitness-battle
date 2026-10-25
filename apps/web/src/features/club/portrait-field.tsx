@@ -233,21 +233,27 @@ export function PortraitField({
         />
         {scene.markers.map((m) => (
           <g key={`trail-${m.id}`} pointerEvents="none">
-            <path
-              d={m.trail}
-              stroke={m.color}
-              strokeWidth={12}
-              opacity={0.12}
-              fill="none"
-            />
-            <path
-              d={m.trail}
-              stroke={m.color}
-              strokeWidth={5}
-              opacity={m.ghost ? 0.4 : 0.8}
-              strokeDasharray={m.ghost ? "5 6" : undefined}
-              fill="none"
-            />
+            {m.trail ? (
+              <>
+                <path
+                  d={m.trail}
+                  stroke={m.color}
+                  strokeWidth={14}
+                  opacity={0.22}
+                  strokeLinecap="round"
+                  fill="none"
+                />
+                <path
+                  d={m.trail}
+                  stroke={m.you ? "#f7c948" : m.color}
+                  strokeWidth={m.ghost ? 4 : 5}
+                  opacity={m.ghost ? 0.45 : 0.95}
+                  strokeDasharray={m.ghost ? "6 8" : undefined}
+                  strokeLinecap="round"
+                  fill="none"
+                />
+              </>
+            ) : null}
           </g>
         ))}
         {scene.markers
@@ -271,6 +277,16 @@ export function PortraitField({
                 }}
               >
                 <rect x={-30 / m.scale} y={-45 / m.scale} width={60 / m.scale} height={90 / m.scale} fill="transparent" />
+                {!m.ghost && m.trail ? (
+                  <circle
+                    cx={0}
+                    cy={27}
+                    r={7}
+                    fill="#ffffff"
+                    stroke={m.you ? "#f7c948" : "#98a6bc"}
+                    strokeWidth={3}
+                  />
+                ) : null}
                 <ellipse
                   cy={27}
                   rx={24}

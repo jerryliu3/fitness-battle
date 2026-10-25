@@ -198,21 +198,27 @@ export function PortraitField({
             </G>
             {scene.markers.map((m) => (
               <G key={`trail-${m.id}`} pointerEvents="none">
-                <Path
-                  d={m.trail}
-                  stroke={m.color}
-                  strokeWidth={12}
-                  opacity={0.12}
-                  fill="none"
-                />
-                <Path
-                  d={m.trail}
-                  stroke={m.color}
-                  strokeWidth={5}
-                  opacity={m.ghost ? 0.4 : 0.8}
-                  strokeDasharray={m.ghost ? "5 6" : undefined}
-                  fill="none"
-                />
+                {m.trail ? (
+                  <>
+                    <Path
+                      d={m.trail}
+                      stroke={m.color}
+                      strokeWidth={14}
+                      opacity={0.22}
+                      strokeLinecap="round"
+                      fill="none"
+                    />
+                    <Path
+                      d={m.trail}
+                      stroke={m.you ? "#f7c948" : m.color}
+                      strokeWidth={m.ghost ? 4 : 5}
+                      opacity={m.ghost ? 0.45 : 0.95}
+                      strokeDasharray={m.ghost ? "6 8" : undefined}
+                      strokeLinecap="round"
+                      fill="none"
+                    />
+                  </>
+                ) : null}
               </G>
             ))}
             {scene.markers

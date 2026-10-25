@@ -309,9 +309,16 @@ export function ArenaLanes({
           const row = sortedByValue.findIndex((lane) => lane.id === l.id);
           const rank = 1 + sortedByValue.filter((lane) => lane.value > l.value + 0.000001).length;
           const point = course.point(l.value, i, 0, true);
+          const startPoint = course.point(0, i, 0, true);
           const targetY = standings ? 48 + row * 76 : point.y + (l.you ? charging * 4 * course.markerScale : 0);
           const targetX = standings ? 38 : point.x + (effect?.joltX ?? 0) * course.markerScale;
           const edge = !course.oval && position.edge;
+          const showStartTrail =
+            !course.oval &&
+            !standings &&
+            !edge &&
+            l.value > 0.0001 &&
+            bounds.min <= 0;
           const markerScale = standings || edge ? 1 : course.markerScale;
           const xx = 0, yy = 0;
           const active = selected === l.id || l.you;
@@ -369,10 +376,32 @@ export function ArenaLanes({
                   data-overtake-ripple="true"
                 />
               )}
+              {showStartTrail && (
+                <g pointerEvents="none">
+                  <line
+                    x1={xx}
+                    y1={yy}
+                    x2={startPoint.x - targetX + xx}
+                    y2={startPoint.y - targetY + yy}
+                    stroke={l.you ? "#f7c948" : "#d8e4ec"}
+                    strokeWidth={5}
+                    strokeLinecap="round"
+                    opacity={0.92}
+                  />
+                  <circle
+                    cx={xx}
+                    cy={yy}
+                    r={6}
+                    fill="#ffffff"
+                    stroke={l.you ? "#f7c948" : "#98a6bc"}
+                    strokeWidth={3}
+                  />
+                </g>
+              )}
               {/* Local echoes own their animation; replay only moves the parent marker. */}
               {standings || !edge ? (
                 <PolishedRacer sizeScale={standings ? undefined : 1} x={xx} y={yy} you={Boolean(l.you)} gold={rank === 1} active={active}
-                  showWake={!standings} independentWake animateWake={immersive} wakeBottom={course.oval ? undefined : (maxTailY - targetY) / markerScale}/>
+                  showWake={!standings && !showStartTrail} independentWake animateWake={immersive} wakeBottom={course.oval ? undefined : (maxTailY - targetY) / markerScale}/>
               ) : <circle r={18} fill="white" stroke="#616c63" strokeDasharray="3 3"/>}
               <rect className="focus-racer-focus-ring" x={-23} y={-headHalf-3} width={46} height={headHalf*2+6} rx={23} fill="none" stroke="#f1c75b" strokeWidth={2}/>
               <rect x={xx - 24 / markerScale} y={yy - Math.max(22 / markerScale, headHalf + 4)} width={48 / markerScale} height={Math.max(44 / markerScale, headHalf * 2 + 8)} rx="24" fill="transparent"/>
