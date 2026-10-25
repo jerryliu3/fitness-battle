@@ -27,3 +27,36 @@ Verification: workspace typecheck, production web build, browser comparison at
 1280px and focused layouts at 390px; metric expansion and missing-reading mode;
 no horizontal overflow. Screenshots accompany this document. Native implementation
 is deliberately deferred pending concept selection.
+
+## Round 2 — selected foundation, two visual metric concepts
+
+The October 25 selection is Portfolio's chart with Signal Room's health panel.
+Production implementation lives in the separate Home PR. This follow-up extends
+the same `/design/home-health` files from #328, which has since merged.
+
+The study now opens with two new alternatives; the original five remain available
+from the concept chooser and Compare all seven. Both new phones retain the quiet
+Portfolio chart and omit the weekday picker/receipt below it.
+
+6. **Signal Dials:** four open circular scales, each with a gold dot positioning
+   the latest reading within its own observed seven-day min/max. The background
+   arc stays unfilled, so this does not imply goal completion or a health score.
+   Each observed range is printed beneath the dial.
+7. **Seven-Day Halo:** seven observations run clockwise around the latest value.
+   Dot size encodes relative value within the displayed sample's range. The latest
+   dot is gold and the earlier dots are sage. It shows variation without a trend
+   line; gold means latest, not best.
+
+All observations remain fictional (October 18–24), with no live source or medical
+reference range. Expand any metric to inspect the seven exact values and the
+visual's meaning. Missing mode removes markers/readings and leaves neutral empty
+scales; missing data is never represented as zero. These are alternatives for
+review, with no production renderer, health integration or scoring changes.
+
+Round 2 validation: web typecheck/build; desktop comparison at 1280px and focused
+phone layouts at 390px/320px. Verified seven-day reading detail, missing-state
+labels with no gold/current markers, no horizontal overflow, all seven concepts
+accessible and no weekday picker in either new concept. Screenshots:
+`round-2-comparison.png`, `dials-phone.png`, `halos-phone.png`, and
+`halos-missing-320.png`. These remain coded responsive studies rather than native
+production components.
