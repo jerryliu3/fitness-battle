@@ -1,4 +1,5 @@
 import { useBootLoading } from "../ui/boot-readiness";
+import { UserAvatar } from "../ui/user-avatar";
 import { AppText, Section, SectionStack } from "../ui/section";
 import { AppIcon } from "../ui/app-icon";
 import { RankBadge } from "../ui/rank-badge";
@@ -20,7 +21,7 @@ import {
 } from "@fitness-battle/shared";
 import { useFocusEffect, useGlobalSearchParams, useRouter } from "expo-router";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Image, ImageBackground, Pressable, Share, StyleSheet, Text, TextInput, View } from "react-native";
+import { ImageBackground, Pressable, Share, StyleSheet, Text, TextInput, View } from "react-native";
 import { useAuth } from "../lib/auth";
 import { useCompeteStore } from "../lib/compete-store";
 import { mobileEnv } from "../lib/env";
@@ -232,7 +233,7 @@ export function CrewHub({ membersOnly = false, crewId = "" }: { membersOnly?: bo
   };
   const crews = solo ? [preview] : rawCrews;
   const crew = crews.find((c) => c.id === selected) ?? crews[0]!;
-  const members: Member[] = solo
+  const rawMembers: Member[] = solo
     ? [
         {
           crew_id: crew.id,
@@ -256,6 +257,7 @@ export function CrewHub({ membersOnly = false, crewId = "" }: { membersOnly?: bo
       ).filter(
         (m) => m.crew_id === crew.id && (!m.status || m.status === "active"),
       );
+  const members = rawMembers.map(m => m.user_id === selfId ? { ...m, avatar_url: state?.avatarUrl ?? null } : m);
   const entries: Entry[] = solo
     ? (state?.activities ?? [])
         .filter(
@@ -368,7 +370,7 @@ export function CrewHub({ membersOnly = false, crewId = "" }: { membersOnly?: bo
             <AppText role="body" secondary >{crew.name}</AppText>
             <SectionStack>
             {members.map(m => <View key={m.user_id} style={[f.section, f.row]}>
-              {m.avatar_url ? <Image source={{ uri: m.avatar_url }} style={{ width: 56, height: 56, borderRadius: 28 }} /> : <View style={[f.avatar, { width: 56, height: 56, borderRadius: 28 }]}><AppText role="label">{m.display_name.slice(0, 2).toUpperCase()}</AppText></View>}
+              <UserAvatar src={m.avatar_url} name={m.display_name} size={56} />
               <View style={f.grow}><AppText role="label">{m.display_name}</AppText><AppText role="body" secondary >{(m.user_id === user?.id ? resting : m.rest_week === weekKey) ? "Rest week" : "Active"}</AppText>
                 <AppText role="body" secondary >{sessionsMetric ? `${memberTotal(m.user_id)} sessions` : distance(memberTotal(m.user_id))} this week</AppText>
               </View>
@@ -458,11 +460,7 @@ export function CrewHub({ membersOnly = false, crewId = "" }: { membersOnly?: bo
             <View style={[f.row, { flexWrap: "wrap" }]}>
               <View style={f.chipRow}>
                 {members.slice(0, 5).map((m) => (
-                  <View key={m.user_id} style={f.avatar}>
-                    <AppText role="label" >
-                      {m.display_name.slice(0, 2).toUpperCase()}
-                    </AppText>
-                  </View>
+                  <UserAvatar key={m.user_id} src={m.avatar_url} name={m.display_name} decorative={false} />
                 ))}
               </View>
               {user ? (
@@ -512,7 +510,7 @@ export function CrewHub({ membersOnly = false, crewId = "" }: { membersOnly?: bo
           </View>
           {user ? (
             <>
-              {user && !solo ? <CrewSessions key={`${user?.id}:${crew.id}`} crewId={crew.id} sport={crew.sport} /> : null}
+              {user && !solo ? <CrewSessions key={`${user?.id}:${crew.id}`} crewId={crew.id} portraits={Object.fromEntries(members.map(m => [m.user_id, m.avatar_url]))} sport={crew.sport} /> : null}
               <Section title="Crew standings">
                 {[...members]
                   .sort(

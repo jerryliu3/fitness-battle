@@ -1,4 +1,5 @@
 "use client";
+import { UserAvatar } from "@/ui/user-avatar";
 import { AppParagraph, Section, AppHeading } from "@/ui/section";
 
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -14,11 +15,13 @@ import {
 import { Sheet } from "@/ui/sheet";
 export function CrewSessions({
   crewId,
+  portraits = {},
   userId,
   demo = false,
   sport = "running",
 }: {
   crewId: string;
+  portraits?: Record<string, string | null | undefined>;
   userId: string;
   demo?: boolean;
   sport?: string;
@@ -141,13 +144,7 @@ export function CrewSessions({
                 aria-label={`${s.participants.length} on the start list`}
               >
                 {s.participants.slice(0, 6).map((p) => (
-                  <span
-                    key={p.user_id}
-                    title={p.display_name}
-                    className={p.user_id === userId ? "is-you" : ""}
-                  >
-                    {p.display_name.slice(0, 2).toUpperCase()}
-                  </span>
+                  <UserAvatar key={p.user_id} src={portraits[p.user_id]} name={p.display_name} size={34} decorative={false} highlight={p.user_id === userId} className={p.user_id === userId ? "is-you" : ""} />
                 ))}
                 {s.participants.length > 6 ? (
                   <span>+{s.participants.length - 6}</span>

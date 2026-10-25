@@ -1,7 +1,7 @@
+import { UserAvatar } from "../ui/user-avatar";
 import { chartTextProps, AppText  } from "../ui/section";
 import { useId, useState } from "react";
 import {
-  Image,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -95,20 +95,7 @@ export function CrewRelay(props: Props) {
                     { borderColor: member?.id === p.id ? c.ink : p.color },
                   ]}
                 >
-                  {person?.avatar_url ? (
-                    <Image
-                      source={{ uri: person.avatar_url }}
-                      style={{ width: 34, height: 34, borderRadius: 17 }}
-                    />
-                  ) : (
-                    <AppText role="label" >
-                      {m.name
-                        .split(" ")
-                        .map((v) => v[0])
-                        .slice(0, 2)
-                        .join("")}
-                    </AppText>
-                  )}
+                  <UserAvatar src={person?.avatar_url} name={m.name} size={34} />
                 </View>
                 <AppText role="label" numberOfLines={1} >
                   {m.name.split(" ")[0]}

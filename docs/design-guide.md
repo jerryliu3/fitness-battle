@@ -225,3 +225,12 @@ with, using athlete distance units for GPS sports and effort points for strength
 Small positive gaps use meters/feet rather than rounding to zero. Keep simulated
 athlete disclosure and the existing registration/solo fallbacks. This is shared
 presentation on web and native; it does not change ranking or scoring.
+
+
+### Athlete portraits
+
+Use an available, authorized profile photo for identity in Crew, session attendees,
+activity rows, standings and profile entries. Fall back only for absent/failed
+images. Current-account photo edits/removal override stale roster copies. Keep
+map thumbnails functional and race capsules as race markers. Reuse authorized
+roster data for session portraits; never broaden profile reads for presentation.
