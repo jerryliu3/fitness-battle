@@ -5,7 +5,8 @@ const n=(tag:CapsuleNode["tag"],attrs:CapsuleNode["attrs"],children?:CapsuleNode
 export function polishedCapsulePath(inset=0){const w=20-inset,h=29-inset;return `M${-w} ${-h+w}a${w} ${w} 0 0 1 ${2*w} 0V${h-w}a${w} ${w} 0 0 1 ${-2*w} 0Z`;}
 export function polishedWakeLength(fast:boolean){return (POLISHED_IDENTITY.endpoint-(fast?93:145))/POLISHED_IDENTITY.scale-29;}
 /** Same marker sizes as the finalized matching lane study. */
-export function polishedLaneScale(you:boolean){return (you?17:14)/23*(POLISHED_IDENTITY.scale/1.35);}
+const LANE_CAPSULE_SCALE = 0.6;
+export function polishedLaneScale(you:boolean){return (you?17:14)/23*(POLISHED_IDENTITY.scale/1.35)*LANE_CAPSULE_SCALE;}
 export function polishedWakeDuration(fast:boolean){return fast?1.15:1.32;}
 export function polishedEchoPose(fast:boolean,index:number,time?:number){
   const length=polishedWakeLength(fast),duration=polishedWakeDuration(fast),count=POLISHED_IDENTITY.echoes;
