@@ -77,6 +77,9 @@ it("renders nine roots, drills shared → member → activity, and keeps RSVP lo
     await press(label);
   await press("Night Shift");
   expect(textOf(app!.root)).toContain("45.2 mi");
+  await press("Start Line sessionsPlans & local RSVP preview");
+  expect(textOf(app!.root)).toContain("Organizer: Alex Lee");
+  await press("Done");
   await press("Sunday People");
   await press("Explore shared journey contributions");
   await press("Open Alex Lee contribution");
