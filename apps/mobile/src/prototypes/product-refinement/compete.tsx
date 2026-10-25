@@ -697,6 +697,7 @@ function CompeteDetail({
             nav.push({
               key: "sessions",
               title: "Counted sessions",
+              period: page.title,
               id: "Alex Morgan",
             })
           }

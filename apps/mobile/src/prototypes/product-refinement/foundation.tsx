@@ -168,7 +168,7 @@ export function Metric({
     </View>
   );
 }
-export type Page = { title: string; key: string; id?: string; item?: number };
+export type Page = { title: string; key: string; id?: string; item?: number; period?: string };
 type Navigation = {
   push: (page: Page) => void;
   back: () => void;
