@@ -1,7 +1,8 @@
 # Product design guide — Everyday Club
 
 Native tab explorations: [nine Compete concepts](reviews/native-compete-concepts/README.md)
-are isolated React Native prototypes at `/study-compete`; they do not select a
+and [nine Progress concepts](reviews/native-progress-concepts/README.md)
+are isolated React Native prototypes at `/study-compete` and `/study-progress`; they do not select a
 production layout or change the domain rules below.
 
 The selected production direction is **Everyday Club**, following the owner’s October 22 reference and implementation request. Retain yellow and Ember, Home / Compete / Progress / Crew, existing data behavior, 2D default competition, no recording action and no social feed. See [audit](design/ui-audit.md) and [component decisions](design/component-guidelines.md).
