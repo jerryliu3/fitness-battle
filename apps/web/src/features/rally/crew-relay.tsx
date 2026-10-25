@@ -1,4 +1,5 @@
 "use client";
+import { UserAvatar } from "@/ui/user-avatar";
 import { typographyStyle, AppText, AppParagraph  } from "@/ui/section";
 
 import { useId, useLayoutEffect, useRef, useState } from "react";
@@ -101,17 +102,7 @@ export function CrewRelay(props: Props) {
                     border: `3px solid ${member?.id === p.id ? "#142b3b" : p.color}`,
                   }}
                 >
-                  {person?.avatar_url ? (
-                    <img src={person.avatar_url} alt="" />
-                  ) : (
-                    <span>
-                      {m.name
-                        .split(" ")
-                        .map((v) => v[0])
-                        .slice(0, 2)
-                        .join("")}
-                    </span>
-                  )}
+                  <UserAvatar src={person?.avatar_url} name={m.name} size={34} />
                 </span>
                 <b>{m.name.split(" ")[0]}</b>
                 <AppText as="small" role="caption" secondary>{volume(m.value)}</AppText>

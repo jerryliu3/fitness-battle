@@ -1,6 +1,7 @@
 import { textStyle } from "./section";
 import { useState } from "react";
 import { ActionSheetIOS, FlatList, Modal, Platform, Pressable, StyleSheet, Text, View } from "react-native";
+import { Picker } from "@react-native-picker/picker";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { SHELL_COLORS as c } from "../theme";
 import { f } from "./focus";
@@ -11,13 +12,14 @@ export function ChoicePicker<T extends string>({ label, value, options, onChange
   onChange: (value: T) => void; placeholder?: string;
 }) {
   const [open, setOpen] = useState(false);
+  const [draft, setDraft] = useState<T | "">(value);
   const selected = options.findIndex(option => option.value === value);
   const choose = () => {
     if (Platform.OS === "ios" && options.length <= 10) {
       ActionSheetIOS.showActionSheetWithOptions({ title: label, options: [...options.map(option => option.label), "Cancel"], cancelButtonIndex: options.length }, index => {
-        if (index < options.length) onChange(options[index].value);
+        if (index >= 0 && index < options.length) onChange(options[index].value);
       });
-    } else setOpen(true);
+    } else { setDraft(value || options[0]?.value || ""); setOpen(true); }
   };
   return <View style={{ flexShrink: 1 }}>
     <Pressable accessibilityRole="button" accessibilityLabel={`${label}: ${options[selected]?.label ?? placeholder}`}
@@ -29,13 +31,18 @@ export function ChoicePicker<T extends string>({ label, value, options, onChange
         <Pressable style={StyleSheet.absoluteFill} accessibilityRole="button" accessibilityLabel={`Cancel ${label}`} onPress={() => setOpen(false)} />
         <View style={s.menu}>
           <View style={[f.row, { padding: 16 }]}><Text accessibilityRole="header" style={textStyle("heading")}>{label}</Text><Pressable accessibilityRole="button" onPress={() => setOpen(false)} style={{ minHeight: 44, justifyContent: "center" }}><Text style={textStyle("label")}>Cancel</Text></Pressable></View>
-          <FlatList data={options} keyExtractor={option => option.value} initialScrollIndex={Math.max(0, selected)}
+          {Platform.OS === "ios" ? <>
+            <Picker accessibilityLabel={label} selectedValue={draft} onValueChange={item => setDraft(item as T)} itemStyle={textStyle("body")}>
+              {options.map(option => <Picker.Item key={option.value} label={option.label} value={option.value} />)}
+            </Picker>
+            <Pressable accessibilityRole="button" accessibilityLabel={`Confirm ${label}`} onPress={() => { if (options.some(option => option.value === draft)) onChange(draft as T); setOpen(false); }} style={{ minHeight: 44, alignItems: "center", justifyContent: "center" }}><Text style={textStyle("label")}>Done</Text></Pressable>
+          </> : <FlatList data={options} keyExtractor={option => option.value} initialScrollIndex={Math.max(0, selected)}
             getItemLayout={(_, index) => ({ length: 52, offset: 52 * index, index })}
             renderItem={({ item }) => <Pressable accessibilityRole="radio" accessibilityState={{ checked: value === item.value }}
               style={[f.row, s.option, value === item.value && { backgroundColor: c.soft }]}
               onPress={() => { onChange(item.value); setOpen(false); }}>
               <Text style={textStyle("label")}>{item.label}</Text><Text style={textStyle("body")}>{value === item.value ? "✓" : ""}</Text>
-            </Pressable>} />
+            </Pressable>} />}
         </View>
       </SafeAreaView>
     </Modal>

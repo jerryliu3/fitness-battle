@@ -3,8 +3,11 @@
 import { typographyStyle } from "../../ui/section";
 
 import React from "react";
+import type { RouteReplaySample } from "@fitness-battle/shared";
 
 export interface RouteControlsHudProps {
+  replaySample?: RouteReplaySample | null;
+  hasReplaySamples?: boolean;
   isPlaying: boolean;
   isFinished: boolean;
   progress: number; // 0 to 1
@@ -24,6 +27,8 @@ export interface RouteControlsHudProps {
 }
 
 export function RouteControlsHud({
+  replaySample,
+  hasReplaySamples = false,
   isPlaying,
   isFinished,
   progress,
@@ -49,6 +54,12 @@ export function RouteControlsHud({
     <div
       className={`route-controls pointer-events-auto flex flex-col gap-2 rounded-2xl border border-white/10 bg-[#142b3b]/90 p-3 shadow-2xl backdrop-blur-md text-white transition-all ${className}`}
     >
+      {hasReplaySamples && <div className="route-recorded-metrics" aria-label="Recorded measurements at the replay position">
+        <span><small>Recorded time</small><b>{replaySample ? `${Math.floor(replaySample.elapsedSec / 60)}:${String(Math.floor(replaySample.elapsedSec) % 60).padStart(2, "0")}` : "—"}</b></span>
+        <span><small>Speed</small><b>{replaySample?.speedMps != null ? `${(replaySample.speedMps * (units === "us" ? 2.236936 : 3.6)).toFixed(1)} ${units === "us" ? "mph" : "km/h"}` : "—"}</b></span>
+        <span><small>Heart rate</small><b>{replaySample?.heartRate != null ? `${Math.round(replaySample.heartRate)} bpm` : "—"}</b></span>
+        <span><small>Cadence</small><b>{replaySample?.cadence != null ? `${Math.round(replaySample.cadence)} ${replaySample.cadenceUnit}` : "—"}</b></span>
+      </div>}
       {/* Top row: Scrubber and Distance Readout */}
       <div className="flex items-center gap-3 px-1">
         {/* Play/Pause or Replay button */}

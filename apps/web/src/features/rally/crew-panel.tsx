@@ -1,5 +1,6 @@
 "use client";
 import { useBootLoading } from "@/shell/boot-readiness";
+import { UserAvatar } from "@/ui/user-avatar";
 import { AppParagraph, AppText, AppHeading, Section } from "@/ui/section";
 
 import { RankBadge } from "../progress/rank-badge";
@@ -270,12 +271,13 @@ export function CrewPanel() {
         ? [demoCrew]
         : [soloCrew];
   const crew = crews.find((c) => c.id === selected) ?? crews[0];
-  const members =
+  const rawMembers =
     rawCrews.length > 0
       ? (data?.members ?? []).filter((m) => m.crew_id === crew?.id && (!m.status || m.status === "active"))
       : demoCrew && crew?.id === demoCrew.id
         ? demoMembers
         : [soloMember];
+  const members = rawMembers.map(m => m.user_id === user?.id ? { ...m, avatar_url: state?.avatarUrl ?? null } : m);
   const entries =
     rawCrews.length > 0
       ? (data?.progress ?? data?.entries ?? []).filter(
@@ -352,9 +354,7 @@ export function CrewPanel() {
             <div className="focus-row">
               <div className="focus-avatar-stack">
                 {members.slice(0, 5).map((m) => (
-                  <span key={m.user_id}>
-                    {m.display_name.slice(0, 2).toUpperCase()}
-                  </span>
+                  <UserAvatar key={m.user_id} src={m.avatar_url} name={m.display_name} decorative={false} />
                 ))}
               </div>
               <div className="focus-crew-hero-buttons">
@@ -428,7 +428,7 @@ export function CrewPanel() {
                     : "Every pace belongs here."}
                 </AppParagraph>
               </section>
-              {user && !isSolo ? <CrewSessions key={`${user.id}:${crew.id}`} crewId={crew.id} userId={user.id} demo={offlineMode} sport={crew.sport} /> : null}
+              {user && !isSolo ? <CrewSessions key={`${user.id}:${crew.id}`} crewId={crew.id} portraits={Object.fromEntries(members.map(m => [m.user_id, m.avatar_url]))} userId={user.id} demo={offlineMode} sport={crew.sport} /> : null}
               {user ? (
                 <>
                   <Section title="Crew standings">
@@ -631,7 +631,7 @@ export function CrewPanel() {
           <ul className="focus-member-list">
             {members.map((m) => (
               <li key={m.user_id}>
-                {m.avatar_url ? <img src={m.avatar_url} alt="" className="club-member-photo" /> : <span className="club-member-photo club-member-initials">{m.display_name.slice(0, 2).toUpperCase()}</span>}
+                <UserAvatar src={m.avatar_url} name={m.display_name} size={56} />
                 <div><b>{m.display_name}</b><AppParagraph typographyRole="caption" className="fb-note">{sessionsMetric ? `${memberTotal(m.user_id)} sessions` : `${formatDistanceM(memberTotal(m.user_id), state?.units)} ${unitLabel}`} this week</AppParagraph></div>
                 <AppText as="small" role="caption" secondary>{(m.user_id === user?.id ? resting : m.rest_week === weekKey) ? "Rest week" : "Active"}</AppText>
               </li>

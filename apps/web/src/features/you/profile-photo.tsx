@@ -1,4 +1,5 @@
 "use client";
+import { UserAvatar } from "@/ui/user-avatar";
 import { AppParagraph } from "@/ui/section";
 
 import { useEffect, useRef, useState } from "react";
@@ -89,8 +90,7 @@ export function ProfilePhoto({ state, email }: { state: CompeteState; email?: st
   return <div className="club-profile-photo">
     <input ref={fileInputRef} type="file" accept="image/png,image/jpeg,image/webp" hidden onChange={onAvatarChosen} />
     <button type="button" className="focus-portrait" aria-label="Profile photo options" disabled={avatarBusy} onClick={() => setOpen(true)}>
-      {state.avatarUrl ? <img src={state.avatarUrl} alt="" className="focus-portrait-img" /> :
-        <svg width="54" height="54" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d={PERSON_ICON_PATH} /></svg>}
+      <UserAvatar src={state.avatarUrl} name={state.name} size={86} fallback={<svg width="54" height="54" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d={PERSON_ICON_PATH} /></svg>} />
     </button>
     {avatarError && <AppParagraph typographyRole="body" role="alert" className="fb-error">{avatarError}</AppParagraph>}
     <Sheet open={open} title="Profile photo" body="" onClose={() => setOpen(false)}>

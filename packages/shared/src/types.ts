@@ -97,6 +97,7 @@ export interface ActivitySample {
   summaryPolyline?: string | null;
   /** High-resolution Google Encoded Polyline for 3D flyovers. */
   detailedPolyline?: string | null;
+  routeReplay?: import("./route-replay").RouteReplaySample[] | null;
   /** Total elevation gain in meters. */
   elevationGainM?: number | null;
   /** Bounding box [minLng, minLat, maxLng, maxLat]. */

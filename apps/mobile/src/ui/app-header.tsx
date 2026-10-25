@@ -1,10 +1,11 @@
+import { UserAvatar } from "./user-avatar";
 import { textStyle } from "./section";
 import { useBootImage } from "./boot-readiness";
 import { EffortRail } from "../features/effort-rail";
 
 import { usePathname, useRouter } from "expo-router";
 import { useMemo, useState } from "react";
-import { Image, Pressable, StyleSheet, Text, View } from "react-native";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { AppIcon } from "./app-icon";
 import { weeklyActivityStreak, competeNow, DEBUG_EVENT_OPTIONS, type DebugEventId } from "@fitness-battle/shared";
@@ -39,11 +40,7 @@ export function AppHeader() {
             onPress={() => router.navigate("/athlete")}
             style={[s.profile, onAthlete && s.selected]}
           >
-            {state?.avatarUrl ? (
-              <Image source={{ uri: state.avatarUrl }} style={s.photo} onLoadEnd={imageSettled} />
-            ) : (
-              <AppIcon name="person" size={22} color={c.muted} />
-            )}
+            <UserAvatar src={state?.avatarUrl} name={state?.name ?? "Athlete"} size={36} fallback={<AppIcon name="person" size={22} color={c.muted} />} onLoadEnd={imageSettled} />
           </Pressable>
           <View style={s.effort}><EffortRail compact /></View>
           {streak && <View accessibilityLabel={`${streak.count} week activity streak${streak.active ? "" : ", inactive this week"}`} style={[s.streak, { opacity: streak.active ? 1 : .4 }]}>

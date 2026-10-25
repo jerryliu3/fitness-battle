@@ -1,3 +1,4 @@
+import { UserAvatar } from "../ui/user-avatar";
 import { textStyle, Section, AppText  } from "../ui/section";
 import { DateTimeField } from "../ui/form-picker";
 import { SHELL_COLORS as clubColors } from "@fitness-battle/shared";
@@ -19,9 +20,11 @@ import { requestApi } from "../lib/api";
 import { FocusButton, FocusSheet, f } from "../ui/focus";
 export function CrewSessions({
   crewId,
+  portraits = {},
   sport = "running",
 }: {
   crewId: string;
+  portraits?: Record<string, string | null | undefined>;
   sport?: string;
 }) {
   const { user, accessToken, offlineMode } = useAuth();
@@ -159,20 +162,7 @@ export function CrewSessions({
               ]}
             >
               {s.participants.slice(0, 6).map((p) => (
-                <View
-                  key={p.user_id}
-                  accessible
-                  accessibilityLabel={p.display_name}
-                  style={[
-                    f.avatar,
-                    {
-                      backgroundColor:
-                        p.user_id === user?.id ? clubColors.tennis : clubColors.line,
-                    },
-                  ]}
-                >
-                  <AppText role="label">{p.display_name.slice(0, 2).toUpperCase()}</AppText>
-                </View>
+                <UserAvatar key={p.user_id} src={portraits[p.user_id]} name={p.display_name} size={38} decorative={false} highlight={p.user_id === user?.id} />
               ))}
               {s.participants.length > 6 ? (
                 <AppText role="label">+{s.participants.length - 6}</AppText>

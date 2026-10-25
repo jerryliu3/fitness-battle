@@ -14,11 +14,12 @@ describe("GPS file persistence", () => {
     await persistSyncedActivities("11111111-1111-4111-8111-111111111111", [{
       id: "garmin-file-one", externalId: "file-one", provider: "garmin", categorySlug: "running",
       startedAt: "2026-10-23T12:00:00Z", metricValue: 10000, movingSec: 3000, rawName: "Run",
+      routeReplay: [{ progress: 0, elapsedSec: 0, heartRate: 140 }],
       detailedPolyline: "geometry", summaryPolyline: "summary", routeBounds: [-74, 40, -73, 41], elevationGainM: 25,
     }], "imported");
     expect(mock.upsert).toHaveBeenCalledWith([expect.objectContaining({
       compete_key: "garmin-file-one", external_id: "file-one", detailed_polyline: "geometry", summary_polyline: "summary",
-      route_bounds: [-74, 40, -73, 41], elevation_gain_m: 25, verified: false, provenance: "imported", disposition: "pending",
+      route_replay: [{ progress: 0, elapsedSec: 0, heartRate: 140 }], route_bounds: [-74, 40, -73, 41], elevation_gain_m: 25, verified: false, provenance: "imported", disposition: "pending",
     })], { onConflict: "user_id,provider,external_id" });
   });
 });

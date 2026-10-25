@@ -1,3 +1,4 @@
+import { UserAvatar } from "../ui/user-avatar";
 import { textStyle } from "../ui/section";
 import { RankBadge } from "../ui/rank-badge";
 import { PortraitField } from "../ui/portrait-field";
@@ -348,7 +349,7 @@ export function CompetitionField({
               style={[f.row, { minHeight: 48, paddingVertical: 6 }]}
             >
               <Text style={textStyle("caption")}>{place(lane.values[2])}</Text>
-              <Svg width={26} height={36} viewBox="-40 -50 80 100">
+              <UserAvatar src={lane.avatarUrl} name={lane.name} size={36} fallback={<Svg width={26} height={36} viewBox="-40 -50 80 100">
                 <PolishedRacer
                   x={0}
                   y={0}
@@ -356,7 +357,7 @@ export function CompetitionField({
                   gold={place(lane.values[2]) === 1}
                   showWake={false}
                 />
-              </Svg>
+              </Svg>} />
               <Text style={[textStyle("label"), f.grow]}>
                 {lane.you ? selfLaneLabel(lane.name) : lane.name}
               </Text>

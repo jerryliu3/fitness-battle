@@ -63,3 +63,13 @@ describe("production capsule visibility", () => {
     expect(await goldPixels(svg, 82, 160)).toBe(0);
   });
 });
+
+it("prefers the profile photo over initials in standings even outside the lane viewport", () => {
+  const markup = renderToStaticMarkup(createElement(ArenaLanes, {
+    lanes: [{ id: "self", name: "Test athlete", initials: "TA", value: 99, you: true, avatarUrl: "https://example.test/athlete.jpg" }],
+    presentation: "standings", view: { center: 3, span: 6 }, unit: "km", selected: "self",
+    onSelect() {}, onPan() {},
+  }));
+  expect(markup).toContain('href="https://example.test/athlete.jpg"');
+  expect(markup).not.toContain('>TA</text>');
+});

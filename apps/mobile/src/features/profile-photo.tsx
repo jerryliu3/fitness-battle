@@ -1,3 +1,4 @@
+import { UserAvatar } from "../ui/user-avatar";
 import { AppText } from "../ui/section";
 import {
   buildAvatarCleanupPathsForProfileChange,
@@ -7,7 +8,7 @@ import {
 } from "@fitness-battle/shared";
 import * as ImagePicker from "expo-image-picker";
 import { useEffect, useRef, useState } from "react";
-import { Image, Pressable, View } from "react-native";
+import { Pressable, View } from "react-native";
 import Svg, { Path } from "react-native-svg";
 import { useAuth } from "../lib/auth";
 import { useCompeteStore } from "../lib/compete-store";
@@ -114,14 +115,7 @@ export function ProfilePhoto({ state }: { state: CompeteState }) {
           overflow: "hidden",
         }}
       >
-        {state.avatarUrl ? (
-          <Image
-            source={{ uri: state.avatarUrl }}
-            accessibilityLabel="Profile photo"
-            style={{ width: 86, height: 86 }}
-          />
-        ) : (
-          <Svg width={54} height={54} viewBox="0 0 24 24">
+        <UserAvatar src={state.avatarUrl} name={state.name} size={86} fallback={<Svg width={54} height={54} viewBox="0 0 24 24">
             <Path
               d={PERSON_ICON_PATH}
               fill="none"
@@ -130,8 +124,7 @@ export function ProfilePhoto({ state }: { state: CompeteState }) {
               strokeLinecap="round"
               strokeLinejoin="round"
             />
-          </Svg>
-        )}
+          </Svg>} />
       </Pressable>
       <FocusSheet
         open={menuOpen}

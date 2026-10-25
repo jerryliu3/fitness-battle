@@ -67,7 +67,7 @@ it("selects the immediate higher place through ties and handles leading/empty fi
   ).toBe("near");
   expect(
     nextClubRival([row("you", 1, true), row("behind", 2)]).rival,
-  ).toBeUndefined();
+  ).toMatchObject({ id: "behind" });
   expect(nextClubRival([]).you).toBeUndefined();
 });
 
@@ -134,4 +134,43 @@ it("keeps a newer Open-only running recap ahead of an older GPS recap", () => {
   expect(latestClubRecap({ ...state, periodResults: [older, result] }, now)?.id).toBe("latest-open");
   expect(clubLifetimeTotals(next, now).weeks).toBe(2);
   expect(clubLifetimeTotals({ ...next, periodResults: [...next.periodResults, { ...result, id: "future", periodEnd: "2026-11-09T05:00:00Z" }] }, now).weeks).toBe(2);
+});
+
+import { clubRivalCardSummary } from "./club-summary";
+describe("Home rival card presentation", () => {
+  const athlete = (id: string, place: number, distanceM: number, effort = 0) => ({ ...row(id, place, id === "you"), distanceM, effort });
+  it("targets the next higher place even when a trailing athlete is closer", () => {
+    const rows = [athlete("far-leader", 1, 10000), athlete("Mara Chen", 2, 6000), athlete("you", 3, 5000), athlete("trailing", 4, 4999)];
+    expect(clubRivalCardSummary(rows, "running", "metric")).toEqual({ place: "3rd", headline: "1.0 km behind Mara", caption: "Next rival in your field" });
+    expect(clubRivalCardSummary([...rows].reverse(), "running", "us").headline).toBe("0.6 mi behind Mara");
+  });
+  it("gives the leader a closest trailing rival and a positive lead", () => {
+    const rows = [athlete("distant", 3, 1000), athlete("you", 1, 6000), athlete("Mara Chen", 2, 5000)];
+    expect(clubRivalCardSummary(rows, "running", "metric", ["Mara Chen"])).toEqual({ place: "1st", headline: "1.0 km ahead of Mara", caption: "Closest rival · simulated athlete" });
+  });
+  it("describes equal totals honestly in either ranked order", () => {
+    for (const place of [1, 3]) {
+      const rows = [athlete("Mara", 2, 5000), athlete("you", place, 5000)];
+      expect(clubRivalCardSummary(rows, "running", "metric").headline).toBe("Level with Mara");
+    }
+  });
+  it("uses effort points for strength rather than unrelated distance", () => {
+    const rows = [athlete("Mara", 1, 0, 12.5), athlete("you", 2, 9000, 10)];
+    expect(clubRivalCardSummary(rows, "strength", "us").headline).toBe("2.5 pts behind Mara");
+  });
+  it("does not round a positive close gap down to zero", () => {
+    const rows = [athlete("Mara", 1, 5010, .01), athlete("you", 2, 5000)];
+    expect(clubRivalCardSummary(rows, "running", "metric").headline).toBe("10 m behind Mara");
+    expect(clubRivalCardSummary(rows, "running", "us").headline).toBe("33 ft behind Mara");
+    expect(clubRivalCardSummary(rows, "strength", "metric").headline).toBe("<0.1 pts behind Mara");
+  });
+  it("keeps ordinal suffixes and handles solo, missing-self and unregistered fields", () => {
+    for (const [place, text] of [[2, "2nd"], [11, "11th"], [12, "12th"], [13, "13th"], [21, "21st"], [22, "22nd"], [23, "23rd"]] as const) {
+      expect(clubRivalCardSummary([athlete("you", place, 0)], "running", "us").place).toBe(text);
+    }
+    expect(clubRivalCardSummary([athlete("you", 1, 0)], "running", "us").headline).toBe("You’re leading the way.");
+    for (const rows of [[], [athlete("Mara", 1, 1000)]]) {
+      expect(clubRivalCardSummary(rows, undefined, "us")).toEqual({ place: null, headline: "Your next chapter starts here.", caption: "Register for a weekly event." });
+    }
+  });
 });

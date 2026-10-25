@@ -1,6 +1,6 @@
 "use client";
 import { ChartSvg, ChartText } from "@/ui/chart-text";
-import { typographyStyle } from "@/ui/section";
+import { AppHeading, typographyStyle } from "@/ui/section";
 
 import { weeklyHoursComparison, type CompeteState } from "@fitness-battle/shared";
 import { motion, useReducedMotion } from "motion/react";
@@ -62,6 +62,7 @@ export function WeekChart({ state, detail = false, ready = true }: { state: Comp
       <motion.section initial={detail && !reduced ? { scale: .94, y: 16, opacity: .8 } : false} animate={{ scale: 1, y: 0, opacity: 1 }} transition={{ duration: reduced ? 0 : .3 }} className="focus-stats-card" aria-label="This week's progress">
         <div className="focus-stats-header">
           <div>
+            <AppHeading level={2} role="heading" style={{ margin: "0 0 8px" }}>Current week</AppHeading>
 
             <div className="focus-stats-numbers">
               <strong>

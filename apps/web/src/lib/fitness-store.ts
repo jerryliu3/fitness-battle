@@ -1,3 +1,4 @@
+import { normalizeRouteReplay } from "@fitness-battle/shared";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import type {
   ActivitySample,
@@ -250,6 +251,7 @@ export async function persistSyncedActivities(
         raw_name: activity.rawName,
         summary_polyline: activity.summaryPolyline ?? null,
         detailed_polyline: activity.detailedPolyline ?? null,
+        route_replay: activity.routeReplay == null ? null : normalizeRouteReplay(activity.routeReplay),
         route_bounds: activity.routeBounds ?? null,
         elevation_gain_m: activity.elevationGainM ?? null,
         sport,

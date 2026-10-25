@@ -1,0 +1,20 @@
+import { createElement } from "react";
+import { act, create, type ReactTestRenderer } from "react-test-renderer";
+import { afterEach, expect, it, vi } from "vitest";
+vi.mock("react-native", () => ({ View: "View", Text: "Text", Image: "Image", StyleSheet: { create: (v: unknown) => v } }));
+import { UserAvatar } from "./user-avatar";
+let view: ReactTestRenderer;
+const images = () => view.root.findAll(node => (node.type as unknown) === "Image");
+afterEach(async () => { if (view) await act(async () => view.unmount()); vi.unstubAllGlobals(); });
+it("prefers the real photo, settles failure, and updates/removes current-account images", async () => {
+  vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
+  const settled = vi.fn();
+  await act(async () => { view = create(createElement(UserAvatar, { name: "Alex Park", src: "https://example.test/a.jpg", onLoadEnd: settled })); });
+  expect(images()[0].props.source.uri).toBe("https://example.test/a.jpg");
+  await act(async () => { images()[0].props.onError(); });
+  expect(settled).toHaveBeenCalledOnce(); expect(images()).toHaveLength(0); expect(JSON.stringify(view.toJSON())).toContain("AP");
+  await act(async () => { view.update(createElement(UserAvatar, { name: "Alex Park", src: "https://example.test/b.jpg" })); });
+  expect(images()[0].props.source.uri).toBe("https://example.test/b.jpg");
+  await act(async () => { view.update(createElement(UserAvatar, { name: "Alex Park", src: null })); });
+  expect(images()).toHaveLength(0);
+});

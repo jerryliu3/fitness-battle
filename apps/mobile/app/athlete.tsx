@@ -151,7 +151,7 @@ export default function AthleteScreen() {
   const signedIn = Boolean(user);
 
   const titles = { profile: "Edit profile", connections: "Data Sync", preferences: "Preferences", scoring: "How scoring works", account: "Account" };
-  const pageHeader = <ScreenHeader title={panel ? titles[panel] : "Athlete"} onBack={() => panel ? setPanel(null) : router.canGoBack() ? router.back() : router.replace("/today")} />;
+  const pageHeader = <ScreenHeader localBack={Boolean(panel)} title={panel ? titles[panel] : "Athlete"} onBack={() => panel ? setPanel(null) : router.canGoBack() ? router.back() : router.replace("/today")} />;
 
   async function submitAuth() {
     setAuthBusy(true);

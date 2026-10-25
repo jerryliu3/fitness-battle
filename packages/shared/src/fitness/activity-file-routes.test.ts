@@ -48,3 +48,21 @@ describe("GPS geometry in imported files", () => {
     expect(activity).toMatchObject({ movingSec: 20, metricValue: 1000, elevationGainM: 10 });
   });
 });
+
+it("retains FIT record speed, heart rate and fractional running cadence", () => {
+  const data: number[] = [];
+  const u16 = (n: number) => data.push(n & 255, n >>> 8 & 255);
+  const u32 = (n: number) => data.push(n & 255, n >>> 8 & 255, n >>> 16 & 255, n >>> 24 & 255);
+  const degrees = (n: number) => Math.round(n * 2147483648 / 180);
+  data.push(0x40, 0, 0); u16(20); data.push(7, 253, 4, 6, 0, 4, 5, 1, 4, 5, 3, 1, 2, 4, 1, 2, 6, 2, 4, 53, 1, 2);
+  data.push(0); u32(100); u32(degrees(40)); u32(degrees(-74)); data.push(130, 85); u16(3100); data.push(64);
+  data.push(0); u32(110); u32(degrees(40.0002)); u32(degrees(-74.0002)); data.push(140, 86); u16(3200); data.push(0);
+  data.push(0x41, 0, 0); u16(18); data.push(5, 253, 4, 6, 2, 4, 6, 5, 1, 2, 8, 4, 6, 9, 4, 6);
+  data.push(1); u32(110); u32(100); data.push(1); u32(10000); u32(3000);
+  const bytes = new Uint8Array(14 + data.length + 2);
+  bytes[0] = 14; bytes.set([46, 70, 73, 84], 8);
+  new DataView(bytes.buffer).setUint32(4, data.length, true); bytes.set(data, 14);
+  const [sample] = parseFit(bytes, "garmin");
+  expect(sample.routeReplay?.[0]).toMatchObject({ progress: 0, elapsedSec: 0, speedMps: 3.1, heartRate: 130, cadence: 171, cadenceUnit: "spm" });
+  expect(sample.routeReplay?.[1]).toMatchObject({ progress: 1, elapsedSec: 10, speedMps: 3.2, cadence: 172 });
+});

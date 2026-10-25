@@ -1,11 +1,12 @@
 import { useEffect, useRef } from "react";
 import { View, StyleSheet, type StyleProp, type ViewStyle } from "react-native";
-import { encodePolyline, type LngLat } from "@fitness-battle/shared";
+import { encodePolyline, type RouteReplaySample, type LngLat } from "@fitness-battle/shared";
 import { mobileEnv } from "../lib/env";
 import { colors } from "../theme";
 
 export interface RouteTimelapseProps {
   coordinates: LngLat[] | string;
+  routeReplay?: RouteReplaySample[];
   mode?: "3d-flyover" | "2d-overview";
   units?: "us" | "metric";
   accentColor?: string;
@@ -17,6 +18,7 @@ export interface RouteTimelapseProps {
 
 export function RouteTimelapse({
   coordinates,
+  routeReplay,
   mode = "3d-flyover",
   units = "metric",
   accentColor = colors.lime,
@@ -31,7 +33,7 @@ export function RouteTimelapse({
   const ref = useRef<HTMLIFrameElement>(null);
   const uri = `${mobileEnv.apiUrl.replace(/\/$/, "")}/route-scene?mode=${mode}&accent=${encodeURIComponent(accentColor)}&duration=${durationMs}&units=${units}`;
   const origin = new URL(uri).origin;
-  const send = () => ref.current?.contentWindow?.postMessage({ type: "set-route", coordinates: polylineStr, mode, accentColor, durationMs }, origin);
+  const send = () => ref.current?.contentWindow?.postMessage({ type: "set-route", routeReplay, coordinates: polylineStr, mode, accentColor, durationMs }, origin);
   useEffect(() => {
     function receive(event: MessageEvent) {
       if (event.origin !== origin || event.source !== ref.current?.contentWindow) return;
@@ -42,7 +44,7 @@ export function RouteTimelapse({
     window.addEventListener("message", receive);
     send();
     return () => window.removeEventListener("message", receive);
-  }, [polylineStr, mode, accentColor, durationMs, origin, onFinish, onUnavailable]);
+  }, [polylineStr, routeReplay, mode, accentColor, durationMs, origin, onFinish, onUnavailable]);
 
   return (
     <View style={[styles.frame, style]}>
