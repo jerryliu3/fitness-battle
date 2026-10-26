@@ -1,6 +1,31 @@
-const DEFAULT_POST_LOGIN_PATH = "/today";
+import { webProductPath } from "@fitness-battle/shared";
+
+const DEFAULT_POST_LOGIN_PATH = webProductPath("/today");
 const LOGIN_PATH = "/login";
 const SENTINEL_BASE_URL = "http://fitness-battle.local";
+
+const PRODUCT_ROOTS = new Set([
+  "today",
+  "arena",
+  "you",
+  "field",
+  "athlete",
+  "onboarding",
+  "week",
+  "pace",
+  "admin",
+  "rankings",
+]);
+
+function withWebProductPrefix(safePath: string) {
+  const resolved = new URL(safePath, SENTINEL_BASE_URL);
+  const root = resolved.pathname.split("/").filter(Boolean)[0];
+  if (!root || !PRODUCT_ROOTS.has(root)) {
+    return safePath;
+  }
+  resolved.pathname = webProductPath(resolved.pathname);
+  return `${resolved.pathname}${resolved.search}${resolved.hash}`;
+}
 
 function isSafeRelativePath(path: string) {
   if (!path.startsWith("/") || path.startsWith("//")) return false;
@@ -35,7 +60,7 @@ export function resolveSafePostLoginPath(candidatePath?: string | null) {
   const safePath = normalizeSafePath(normalized);
   const pathname = new URL(safePath, SENTINEL_BASE_URL).pathname;
   if (pathname === "/" || isAuthPath(pathname)) return DEFAULT_POST_LOGIN_PATH;
-  return safePath;
+  return withWebProductPrefix(safePath);
 }
 
 export function buildLoginHref(nextPath?: string | null) {

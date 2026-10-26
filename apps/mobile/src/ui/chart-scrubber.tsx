@@ -8,7 +8,7 @@ import { f } from "./focus";
 
 import { nearestChartDatum, type ChartDatum } from "@fitness-battle/shared";
 
-export type { ChartDatum };
+export { nearestChartDatum, type ChartDatum };
 
 /** One touch surface, shared by line and bar charts. Vertical drags yield to the page. */
 export function ChartScrubber({

@@ -16,20 +16,20 @@ export function AppText({ role = "body", secondary = false, style, ...props }: O
 export function TextAction({ label, accessibilityLabel, onPress }: { label: string; accessibilityLabel: string; onPress: () => void }) {
   return <Pressable accessibilityRole="button" accessibilityLabel={accessibilityLabel} onPress={onPress} style={styles.action}><AppText role="label">{label}</AppText></Pressable>;
 }
-export function SectionHeader({ title, subtitle, action }: { title: string; subtitle?: string; action?: ReactNode }) {
+export function SectionHeader({ title, titleRole = "heading", subtitle, action }: { title: string; titleRole?: "display" | "heading"; subtitle?: string; action?: ReactNode }) {
   const { fontScale, width } = useWindowDimensions();
   const [wrapped, setWrapped] = useState(false);
   useEffect(() => setWrapped(false), [title, width, fontScale]);
   return <View style={styles.header}>
-    <View style={[styles.heading, { flexBasis: wrapped ? "100%" : 200 * fontScale, flexGrow: 1, flexShrink: 1 }]}><AppText role="heading" accessibilityRole="header" onTextLayout={event => { if (event.nativeEvent.lines.length > 1) setWrapped(true); }}>{title}</AppText>{subtitle && <AppText secondary>{subtitle}</AppText>}</View>
+    <View style={[styles.heading, { flexBasis: wrapped ? "100%" : 200 * fontScale, flexGrow: 1, flexShrink: 1 }]}><AppText role={titleRole} accessibilityRole="header" onTextLayout={event => { if (event.nativeEvent.lines.length > 1) setWrapped(true); }}>{title}</AppText>{subtitle && <AppText secondary>{subtitle}</AppText>}</View>
     {action}
   </View>;
 }
 export function PageHeader({ title, subtitle }: { title: string; subtitle?: string }) {
   return <View style={styles.heading}><AppText role="display" accessibilityRole="header">{title}</AppText>{subtitle && <AppText secondary>{subtitle}</AppText>}</View>;
 }
-export function Section({ title, subtitle, action, children }: { title: string; subtitle?: string; action?: ReactNode; children: ReactNode }) {
-  return <View style={styles.section}><SectionHeader title={title} subtitle={subtitle} action={action}/><View style={styles.content}>{children}</View></View>;
+export function Section({ title, titleRole, subtitle, action, children }: { title: string; titleRole?: "display" | "heading"; subtitle?: string; action?: ReactNode; children: ReactNode }) {
+  return <View style={styles.section}><SectionHeader title={title} titleRole={titleRole} subtitle={subtitle} action={action}/><View style={styles.content}>{children}</View></View>;
 }
 export function SectionStack({ children, divided = true }: { children: ReactNode; divided?: boolean }) {
   if (!divided) return <View style={{ gap: SHELL_SPACING.section }}>{children}</View>;

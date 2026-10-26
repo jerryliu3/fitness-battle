@@ -19,16 +19,16 @@ export function SyncReview({ receipt, state, moment, debug = false, remaining = 
   const resetScroll = () => scroll.current?.scrollTo({ y: 0, animated: false });
   useEffect(resetScroll, [receipt ? "review" : moment?.id]);
   return <Modal visible presentationStyle="fullScreen" animationType={reduced ? "none" : "slide"} onRequestClose={close}>
-    <SafeAreaProvider><SafeAreaView style={f.safe} edges={["top", "bottom"]}>
+    <SafeAreaProvider>{!receipt && moment ? <CompetitionMoment key={moment.id} moment={moment} debug={debug} remaining={remaining} onConfirm={onAcknowledge}/> : <SafeAreaView style={f.safe} edges={["top", "bottom"]}>
       <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingHorizontal: 20, minHeight: 56 }}>
         <Text style={textStyle("label")}>{receipt ? "Review your activities" : moment?.plan.hasOvertake ? "Your overtakes" : "Your field changed"}</Text>
         {receipt && <Pressable accessibilityRole="button" accessibilityLabel="Apply activities and skip recap" onPress={close} style={{ minHeight: 44, minWidth: 44, justifyContent: "center" }}><Text style={textStyle("label")}>Skip</Text></Pressable>}
       </View>
       <ScrollView ref={scroll} contentContainerStyle={{ padding: 22, gap: 20, paddingBottom: 32, flexGrow: 1 }} keyboardShouldPersistTaps="handled">
         {debug && <Text style={f.kicker}>DEBUG PREVIEW · LOCAL DATA ONLY</Text>}
-        {receipt ? <Review key={`${receipt.account}:${receipt.day}`} receipt={receipt} state={state} onComplete={onComplete} resetScroll={resetScroll}/> : moment ? <CompetitionMoment key={moment.id} moment={moment} remaining={remaining} onConfirm={onAcknowledge}/> : null}
+        {receipt ? <Review key={`${receipt.account}:${receipt.day}`} receipt={receipt} state={state} onComplete={onComplete} resetScroll={resetScroll}/> : null}
       </ScrollView>
-    </SafeAreaView></SafeAreaProvider>
+    </SafeAreaView>}</SafeAreaProvider>
   </Modal>;
 }
 function Review({ receipt, state, onComplete, resetScroll }: { resetScroll: () => void; receipt: SyncReviewReceipt; state: CompeteState; onComplete: (selected?: readonly string[], quiet?: boolean) => unknown }) {

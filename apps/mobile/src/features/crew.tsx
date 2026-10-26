@@ -18,6 +18,7 @@ import {
   weeklyPeriodBounds,
   dayKey,
   APP_TIMEZONE,
+  crewMemberWeekValue,
 } from "@fitness-battle/shared";
 import { useFocusEffect, useGlobalSearchParams, useRouter } from "expo-router";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -302,9 +303,7 @@ export function CrewHub({ membersOnly = false, crewId = "" }: { membersOnly?: bo
   const distance = (meters: number) =>
     `${formatDistanceM(meters, state?.units)} ${distanceUnitLabel(state?.units)}`;
   const memberTotal = (id: string) =>
-    entries
-      .filter((e) => e.user_id === id)
-      .reduce((n, e) => n + Number(sessionsMetric ? e.session_count ?? 1 : e.distance_m), 0);
+    crewMemberWeekValue(entries, id, sessionsMetric);
   function open(next: typeof panel) {
     if (next === "members") { router.push({ pathname: "/crew-members", params: { crewId: crew.id } }); return; }
     setNote("");
@@ -439,9 +438,9 @@ export function CrewHub({ membersOnly = false, crewId = "" }: { membersOnly?: bo
             <Pressable
               accessibilityRole="button"
               onPress={() => open("add")}
-              style={[f.chip, { borderStyle: "dashed" }]}
+              style={f.chip}
             >
-              <AppText role="label" >＋ Add Crew</AppText>
+              <AppText role="label" >New crew</AppText>
             </Pressable>
           </View>
           <ImageBackground source={alpineTrail} style={[f.card,{backgroundColor:c.fieldDeep,gap:18,minHeight:260,overflow:"hidden",justifyContent:"space-between"}]} imageStyle={{borderRadius:20}}><View pointerEvents="none" style={[StyleSheet.absoluteFill,{backgroundColor:"#081f3680"}]}/>
@@ -512,7 +511,8 @@ export function CrewHub({ membersOnly = false, crewId = "" }: { membersOnly?: bo
             <>
               {user && !solo ? <CrewSessions key={`${user?.id}:${crew.id}`} crewId={crew.id} portraits={Object.fromEntries(members.map(m => [m.user_id, m.avatar_url]))} sport={crew.sport} /> : null}
               <Section title="Crew standings">
-                {[...members]
+                {members
+                  .slice()
                   .sort(
                     (a, b) => memberTotal(b.user_id) - memberTotal(a.user_id),
                   )
@@ -563,7 +563,7 @@ export function CrewHub({ membersOnly = false, crewId = "" }: { membersOnly?: bo
         fullScreen={panel === "members"}
         title={
           panel === "add"
-            ? "Add Crew"
+            ? "New crew"
             : panel === "invite"
               ? "Invite to crew"
               : panel === "members"
