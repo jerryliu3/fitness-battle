@@ -21,6 +21,7 @@ describe("phone shell", () => {
 
   it("resolves a tab from its path and ignores a sheet query", () => {
     expect(shellTabFromPath("/arena")?.id).toBe("arena");
+    expect(shellTabFromPath("/app/arena")?.id).toBe("arena");
     expect(shellTabFromPath("/you/")?.id).toBe("you");
     expect(shellTabFromPath("/field?sheet=crew")?.id).toBe("field");
     expect(shellTabFromPath("/onboarding")).toBeNull();

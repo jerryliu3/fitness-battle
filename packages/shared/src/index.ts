@@ -10,6 +10,8 @@ export * from "./notifications";
 export * from "./period";
 export * from "./phone-views";
 export * from "./shell";
+export * from "./product-routes";
+export * from "./support";
 export * from "./types";
 
 export * from "./layout-concepts";

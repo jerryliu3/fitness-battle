@@ -188,8 +188,9 @@ export default function TermsOfServicePage() {
 
       <AppHeading level={2} role="heading">17. Contact</AppHeading>
       <p>
-        Questions about these Terms:{" "}
-        <a href="mailto:3jerryliu@gmail.com">3jerryliu@gmail.com</a>
+        Questions about these Terms: see our{" "}
+        <Link href="/support">Support</Link> page or email{" "}
+        <a href="mailto:support@overtaek.com">support@overtaek.com</a>
         . You can also reach us through the{" "}
         <a
           href="https://github.com/jerryliu3/fitness-battle"

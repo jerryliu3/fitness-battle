@@ -12,7 +12,7 @@ const nextConfig: NextConfig = {
   outputFileTracingExcludes: { "/*": ["../../.local/**/*"] },
   async redirects() {
     return [
-      { source: "/compete", destination: "/arena", permanent: true },
+      { source: "/compete", destination: "/app/arena", permanent: true },
       {
         source: "/signin",
         destination: "/login",
