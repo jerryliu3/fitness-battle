@@ -1,4 +1,4 @@
-import { portfolioWeekChart, type CompeteState } from "@fitness-battle/shared";
+import { portfolioWeekChart, weekHoursDeltaTone, type CompeteState } from "@fitness-battle/shared";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import Svg, { Circle, Defs, Line, LinearGradient, Polygon, Polyline, Stop } from "react-native-svg";
 import { useId } from "react";
@@ -10,11 +10,11 @@ import { SHELL_COLORS as c, mobileSurfaces } from "../theme";
 
 export function WeekChart({ state, onOpen, ready = true }: { state: CompeteState; onOpen?: () => void; ready?: boolean }) {
   const chart = portfolioWeekChart(state);
-  const deltaUp = chart.currTotalHours >= chart.prevTotalHours;
+  const deltaTone = weekHoursDeltaTone(chart);
   const gradient = useId().replace(/:/g, "");
   return <ChartFrame ready={ready}><View style={s.card}>
     <View style={s.header}><AppText role="heading" accessibilityRole="header">Current week</AppText><HomeActivityActions compact/></View>
-    <View style={s.total}><Text style={s.number}>{chart.currTotalHours.toFixed(1)}<Text style={s.unit}> hrs</Text></Text><View style={s.comparison}><AppText role="caption" secondary>{chart.sessionCount} {chart.sessionCount === 1 ? "session" : "sessions"}</AppText><AppText role="caption" style={{ color: deltaUp ? c.green : c.statusError }}>{chart.deltaLabel}</AppText></View></View>
+    <View style={s.total}><Text style={s.number}>{chart.currTotalHours.toFixed(1)}<Text style={s.unit}> hrs</Text></Text><View style={s.comparison}><AppText role="caption" secondary>{chart.sessionCount} {chart.sessionCount === 1 ? "session" : "sessions"}</AppText><AppText role="caption" style={{ color: deltaTone === "up" ? c.green : c.statusError }}>{chart.deltaLabel}</AppText></View></View>
     <ChartScrubber label="This week’s cumulative training hours" points={chart.inspection} width={chart.width} height={chart.height} plotTop={chart.top} plotBottom={chart.bottom} summaryOnSelection>
       <Svg width="100%" height={164} viewBox={`0 0 ${chart.width} ${chart.height}`} preserveAspectRatio="none" accessible={false}>
         <Defs><LinearGradient id={gradient} x1="0" y1="0" x2="0" y2="1"><Stop stopColor={c.fieldTeal} stopOpacity=".2"/><Stop offset="1" stopColor={c.fieldTeal} stopOpacity="0"/></LinearGradient></Defs>

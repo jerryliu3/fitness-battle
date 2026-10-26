@@ -63,3 +63,8 @@ export function portfolioWeekChart(state: CompeteState, now = competeNow(state))
     deltaLabel: `${currTotalHours - comparison.prevTotalHours >= 0 ? "+" : ""}${(currTotalHours - comparison.prevTotalHours).toFixed(1)}h vs last week`,
   };
 }
+
+/** Whether this week is at or above the same point last week (for delta coloring). */
+export function weekHoursDeltaTone(chart: { currTotalHours: number; prevTotalHours: number }): "up" | "down" {
+  return chart.currTotalHours >= chart.prevTotalHours ? "up" : "down";
+}

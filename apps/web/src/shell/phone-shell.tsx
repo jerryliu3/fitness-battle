@@ -27,7 +27,7 @@ import { ApplicationBootGate } from "./application-boot-gate";
 import { BootSplash } from "./boot-splash";
 import { ShellBootReadiness } from "./shell-boot-readiness";
 import { DebugEventMenu } from "./debug-event-menu";
-import { isCompeteDataReady, markBootSplashSeen } from "./boot-gate";
+import { isCompeteDataReady, shouldShowBootSplash } from "./boot-gate";
 import "./shell.css";
 
 function renderTab(
@@ -74,17 +74,12 @@ export function PhoneShell({
   useLayoutEffect(() => { setAnimateDestination(!bottomNavigation.current); bottomNavigation.current = false; }, [path]);
   const [intent, setIntent] = useState<ShellTabId | null>(null);
   const [bootAnimDone, setBootAnimDone] = useState(false);
-  const [bootChecked, setBootChecked] = useState(false);
   const matched = tab?.id ?? null;
   const active = onAthlete ? null : intent ?? matched;
   const accountKey = user?.id ?? "guest";
   const [visited, setVisited] = useState<Set<ShellTabId>>(
     () => new Set(["today"]),
   );
-
-  useLayoutEffect(() => {
-    setBootChecked(true);
-  }, []);
 
   useEffect(() => {
     if (active && isShellTabId(active)) {
@@ -171,11 +166,8 @@ export function PhoneShell({
   );
 
   return (
-    <ApplicationBootGate ready={bootChecked && bootAnimDone && !loading && dataReady} splash={
-      <BootSplash waiting={bootAnimDone} onAnimationComplete={() => {
-        markBootSplashSeen();
-        setBootAnimDone(true);
-      }} />
+    <ApplicationBootGate ready={!shouldShowBootSplash(dataReady, bootAnimDone) && !loading} splash={
+      <BootSplash waiting={bootAnimDone} onAnimationComplete={() => setBootAnimDone(true)} />
     }>
     <ShellBootReadiness />
     <div className="phone-frame">

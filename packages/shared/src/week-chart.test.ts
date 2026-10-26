@@ -1,6 +1,6 @@
 import { expect, it } from "vitest";
 import { freshState } from "./compete/engine";
-import { weeklyHoursComparison } from "./week-chart";
+import { weeklyHoursComparison, weekHoursDeltaTone } from "./week-chart";
 const now = new Date("2026-10-23T16:00:00Z");
 it("shares current/previous hours while excluding samples and future activity", () => {
   const state = freshState(now);
@@ -29,4 +29,10 @@ it("keeps Portfolio lines finite for empty and partial weeks with matching total
   expect(chart.endLabel).toBe("Oct 25");
   expect(chart.inspection.at(-1)?.x).toBe(chart.tip.x);
   expect(chart.currTotalHours).toBe(weeklyHoursComparison(state, now).currTotalHours);
+});
+
+it("classifies week-over-week delta tone from hour totals", () => {
+  expect(weekHoursDeltaTone({ currTotalHours: 2, prevTotalHours: 1 })).toBe("up");
+  expect(weekHoursDeltaTone({ currTotalHours: 1, prevTotalHours: 2 })).toBe("down");
+  expect(weekHoursDeltaTone({ currTotalHours: 1, prevTotalHours: 1 })).toBe("up");
 });

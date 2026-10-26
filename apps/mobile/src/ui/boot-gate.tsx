@@ -27,6 +27,15 @@ export function BootGate({ children }: { children: ReactNode }) {
     });
     return () => { cancelAnimationFrame(first); cancelAnimationFrame(second); };
   }, [opened, dataReady, animationDone, laidOut, pending]);
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (!bootAnimationCompleted) {
+        bootAnimationCompleted = true;
+        setAnimationDone(true);
+      }
+    }, 10_000);
+    return () => clearTimeout(timer);
+  }, []);
   return <BootLoadingContext.Provider value={report}>
     <View style={{ flex: 1 }}>
       <View style={{ flex: 1 }} onLayout={() => setLaidOut(true)}

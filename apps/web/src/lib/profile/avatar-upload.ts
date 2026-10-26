@@ -124,6 +124,14 @@ export async function uploadWebProfileAvatar({
       void supabase.storage.from(AVATAR_BUCKET).remove(cleanupPaths);
     }
 
+    const { error: profileError } = await supabase
+      .from("profiles")
+      .update({ avatar_url: nextAvatarUrl })
+      .eq("id", userId);
+    if (profileError) {
+      throw new Error(profileError.message || "Could not save profile photo.");
+    }
+
     return nextAvatarUrl;
   }
 
@@ -140,18 +148,27 @@ export async function removeWebProfileAvatar({
   previousAvatarUrl?: string | null;
   supabase?: SupabaseClient | null;
 }): Promise<null> {
-  if (supabase && userId && previousAvatarUrl) {
-    try {
-      const cleanupPaths = buildAvatarCleanupPathsForProfileChange({
-        userId,
-        previousAvatarUrl,
-        nextAvatarUrl: null,
-      });
-      if (cleanupPaths.length > 0) {
-        await supabase.storage.from(AVATAR_BUCKET).remove(cleanupPaths);
+  if (supabase && userId) {
+    if (previousAvatarUrl) {
+      try {
+        const cleanupPaths = buildAvatarCleanupPathsForProfileChange({
+          userId,
+          previousAvatarUrl,
+          nextAvatarUrl: null,
+        });
+        if (cleanupPaths.length > 0) {
+          await supabase.storage.from(AVATAR_BUCKET).remove(cleanupPaths);
+        }
+      } catch {
+        // Storage cleanup is best-effort.
       }
-    } catch {
-      // Non-blocking cleanup
+    }
+    const { error: profileError } = await supabase
+      .from("profiles")
+      .update({ avatar_url: null })
+      .eq("id", userId);
+    if (profileError) {
+      throw new Error(profileError.message || "Could not remove profile photo.");
     }
   }
   return null;
