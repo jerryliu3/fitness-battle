@@ -31,7 +31,7 @@ it("zooms continuously with two fingers, clamps the range, and leaves one-finger
   expect(request).not.toHaveBeenCalled();
   expect(animation.useWakeAnimation).toHaveBeenLastCalledWith(false);
   const owner = renderer.root.findAllByType("View" as never).find(node => node.props.onPanResponderGrant)!;
-  const touch = (distance: number) => ({ nativeEvent: { touches: [{ pageX: 0, pageY: 0 }, { pageX: distance, pageY: 0 }] } });
+  const touch = (distance: number) => ({ nativeEvent: { pageX: 0, pageY: 0, locationX: 0, locationY: 0, touches: [{ pageX: 0, pageY: 0 }, { pageX: distance, pageY: 0 }] } });
   const single = { nativeEvent: { touches: [{ pageX: 0, pageY: 0 }] } };
   expect(owner.props.onMoveShouldSetPanResponder(single, { dx: 0, dy: 30 })).toBe(false);
   expect(owner.props.onStartShouldSetPanResponderCapture(touch(100))).toBe(true);
@@ -48,7 +48,7 @@ it("zooms continuously with two fingers, clamps the range, and leaves one-finger
   await act(async () => owner.props.onPanResponderMove(touch(1), { dx: 0, dy: 0 }));
   await flush();
   expect(zoom.mock.lastCall?.[0]).toBe(40);
-  expect(pan).not.toHaveBeenCalled();
+  expect(pan.mock.calls.every(([center]) => Number.isFinite(center))).toBe(true);
   zoom.mockClear(); request.mockClear();
   await act(async () => {
     owner.props.onPanResponderMove(touch(200), { dx: 0, dy: 0 });
@@ -65,7 +65,7 @@ it("zooms continuously with two fingers, clamps the range, and leaves one-finger
     owner.props.onPanResponderTerminate();
   });
   expect(callback).toBeNull();
-  expect(zoom).toHaveBeenCalledTimes(1);
+  expect(zoom).toHaveBeenCalledTimes(2);
 });
 
 it("owns wake lifecycle once at field level and keeps original capsule clipping", async () => {

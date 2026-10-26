@@ -1,7 +1,9 @@
+import { useFieldFlight } from "../ui/use-field-flight";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { AppState, Modal, PanResponder, Pressable, StyleSheet, View } from "react-native";
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 import {
+  orderedArenaLanes,
   competitionReplayFrame, competitionReplayCaption, competitionReplayDate,
   indexCompetitionReplay, localCompetitionReplay, initialsFromName, fieldDefaultSpan,
   clampCourseCenter, sportById,
@@ -68,6 +70,7 @@ function ReplayViewer({ state, selection, initialDimension, onClose }: { state: 
   const [center, setCenter] = useState<number | null>(null), [span, setSpan] = useState<number | null>(null);
   const [followEvent, setFollowEvent] = useState(true);
   const [selected, setSelected] = useState<string | null>(null);
+  const [focusRequest, setFocusRequest] = useState(0);
   const [height, setHeight] = useState(250);
   const [appearance] = useFieldAppearance(user?.id ?? "guest", selection.sport);
   const localState = useRef(state);
@@ -104,7 +107,11 @@ function ReplayViewer({ state, selection, initialDimension, onClose }: { state: 
   const lanes = useMemo(() => (frame?.rows ?? []).map(row => ({ ...row, initials: initialsFromName(row.name) })), [index, cursor]);
   const nativeLanes = useMemo<ArenaLane[]>(() => lanes.map(l => ({ ...l, ghost: false, values: [l.value, l.value, l.value] })), [lanes]);
   const view = { center: clampCourseCenter(center ?? focus?.value ?? 0, viewSpan, Math.max(0, ...lanes.map(l => l.value)), unit, appearance.ground), span: viewSpan };
-  const select = (id: string) => { const lane = lanes.find(l => l.id === id); if (lane) { setSelected(id); setCenter(lane.value); } };
+  const flight = useFieldFlight(view, next => { setCenter(next.center); setSpan(next.span); }, Boolean(reduced));
+  const applyView = (next: typeof view) => { flight.cancel(); setCenter(next.center); setSpan(next.span); };
+  const panTo = (center: number) => applyView({ ...view, center });
+  const zoomTo = (span: number) => applyView({ ...view, span });
+  const select = (id: string) => { const lane = lanes.find(l => l.id === id); if (lane) { const ordered = orderedArenaLanes(lanes); portraitAnchor.current = Math.max(0, ordered.findIndex(l => l.id === id)) - Math.max(0, ordered.findIndex(l => l.you)); setSelected(id); setFocusRequest(value => value + 1); flight.fly({ ...view, center: clampCourseCenter(lane.value, view.span, Math.max(0, ...lanes.map(l => l.value)), unit, appearance.ground) }); } };
   const closed = data && Date.parse(data.through) >= Date.parse(data.periodEnd);
   const caption = index ? competitionReplayCaption(index, cursor) : "";
   return <View style={{ flex: 1 }}>
@@ -116,8 +123,8 @@ function ReplayViewer({ state, selection, initialDimension, onClose }: { state: 
     {!index ? <View style={s.message}><AppText role="body" accessibilityLiveRegion="polite">{error || "Loading the competition timeline…"}</AppText>{error && <FocusButton label="Retry" onPress={() => setAttempt(a => a + 1)} />}</View> : <>
       <View style={{ paddingHorizontal: 12, paddingBottom: 8 }}><FocusSegments label="Replay field dimension" value={dimension} options={[{ value: "2d", label: "2D map" }, { value: "3d", label: "3D field" }]} onChange={setDimension} /></View>
       <View style={s.scene} onLayout={event => setHeight(Math.max(100, event.nativeEvent.layout.height))}>
-        {dimension === "2d" ? <LaneTrack focusOnMount animateSelection={!reduced} lanes={nativeLanes} appearance={appearance} unit={unit} height={height} fullscreen active selectedId={selected ?? focus?.id} index={2} showGhost={false} onSelect={lane => select(lane.id)} view={view} onPan={setCenter} onZoom={setSpan} /> : <PortraitField focusOnMount animateSelection={!reduced} laneAnchor={portraitAnchor} selectedId={selected ?? focus?.id} lanes={lanes} unit={unit} height={height} fullscreen onSelect={select} view={view} onPan={setCenter} onZoom={setSpan} />}
-        <Pressable accessibilityRole="button" onPress={() => { setCenter(null); setSelected(null); setFollowEvent(v => !v); }} style={s.follow}><AppText role="label">{followEvent ? "Follow me" : "Follow event"}</AppText></Pressable>
+        {dimension === "2d" ? <LaneTrack onGestureStart={flight.cancel} onViewChange={applyView} focusRequest={focusRequest} focusOnMount animateSelection={!reduced} lanes={nativeLanes} appearance={appearance} unit={unit} height={height} fullscreen active selectedId={selected ?? focus?.id} index={2} showGhost={false} onSelect={lane => select(lane.id)} view={view} onPan={panTo} onZoom={zoomTo} /> : <PortraitField onGestureStart={flight.cancel} onViewChange={applyView} focusRequest={focusRequest} focusOnMount animateSelection={!reduced} laneAnchor={portraitAnchor} selectedId={selected ?? focus?.id} lanes={lanes} unit={unit} height={height} fullscreen onSelect={select} view={view} onPan={panTo} onZoom={zoomTo} />}
+        <Pressable accessibilityRole="button" onPress={() => { flight.cancel(); setCenter(null); setSelected(null); setFollowEvent(v => !v); }} style={s.follow}><AppText role="label">{followEvent ? "Follow me" : "Follow event"}</AppText></Pressable>
       </View>
       <View style={s.controls}>
         <AppText role="caption" secondary>Your place {me?.place ?? "—"} / {lanes.length} · {Math.ceil(cursor)} / {count} events</AppText>

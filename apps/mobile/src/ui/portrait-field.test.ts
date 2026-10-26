@@ -5,6 +5,7 @@ vi.mock("./icon-button", () => ({ IconButton: "IconButton" }));
 vi.mock("./club-art", () => ({ alpineTrail: 1 }));
 vi.mock("./field-course", () => ({ drawFieldNode: () => null }));
 vi.mock("react-native", () => ({
+  Platform: { OS: "ios" },
   PanResponder:{create:(handlers:object)=>({panHandlers:handlers})},
   ScrollView:"ScrollView",
   Animated: { Value: class { constructor(public value: number) {} }, View: "AnimatedView", ScrollView: "ScrollView", event: (_: unknown, options: { listener: (event: unknown) => void }) => options.listener },
@@ -106,4 +107,24 @@ it("owns fullscreen SVG drags and coalesces the latest two-axis position per fra
   expect(pan.mock.calls[0]![0]).toBeGreaterThan(10);
   const after = renderer.root.findAllByType("SvgG" as never).map(n => n.props.transform).filter(Boolean);
   expect(after).not.toEqual(before);
+});
+
+it("pinches the native perspective field and retains the distance under the midpoint", async () => {
+  vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
+  let frame: (() => void) | null = null;
+  vi.stubGlobal("requestAnimationFrame", (fn: () => void) => { frame = fn; return 1; });
+  vi.stubGlobal("cancelAnimationFrame", vi.fn());
+  const change = vi.fn();
+  await act(async () => { renderer = create(createElement(PortraitField, { lanes: [{ id: "you", name: "You", initials: "Y", you: true, value: 10 }], view: { center: 10, span: 2 }, unit: "km", fullscreen: true, onViewChange: change, onZoom() {}, onPan() {}, onSelect() {} })); });
+  const svg = renderer.root.findByType("Svgdefault" as never);
+  const touch = (points: number[][]) => ({ nativeEvent: { pageY: 320, locationY: 320, touches: points.map(([pageX, pageY]) => ({ pageX, pageY })) } });
+  expect(svg.props.onStartShouldSetPanResponderCapture(touch([[100, 320], [200, 320]]))).toBe(true);
+  await act(async () => {
+    svg.props.onPanResponderGrant(touch([[100, 320], [200, 320]]), { dy: 0 });
+    svg.props.onPanResponderMove(touch([[50, 320], [250, 320]]), { dx: 0, dy: 0 });
+    frame?.();
+  });
+  expect(change).toHaveBeenCalledTimes(1);
+  expect(change.mock.lastCall![0].span).toBeCloseTo(1);
+  expect(change.mock.lastCall![0].center).not.toBe(10);
 });

@@ -8,6 +8,14 @@ The October 23 [mobile consumer audit](reviews/mobile-consumer-ui-audit-2026-10-
 
 The owner verified the first pass and selects the [follow-up refinements](reviews/mobile-refinement-2026-10-23.md): profile and effort grouped left with the flame beside them, Debug right, stronger full-pixel section separators, and Tabler library icons instead of emoji. Hierarchy changes stay light; field balance is refined after the shell changes. Mapbox and finer score history are outside this pass.
 
+The October 26 [field navigation repair](reviews/field-navigation-2026-10-26/README.md)
+gives fullscreen 2D and perspective fields ownership of two-axis dragging and
+pinch zoom. Athlete selection eases from the displayed camera position; direct
+touch interrupts it and repeat selection recenters the same athlete. Respect
+Reduced Motion. Keep inline page scrolling available, isolate decorative clocks
+from scene construction, and paint nearby lanes with overscan. Renderer or
+joystick replacements remain under discussion pending release-device profiling.
+
 Use semantic shared tokens: navy `#142b3b`, yellow `#f7c948`, canvas `#f8f9f6`, white cards, muted `#637482`, border `#e3e9e7`, teal `#176c75`. Cards use quiet 20px corners. Yellow primary controls use dark labels. Historical decisions below describe earlier iterations; this selection supersedes their presentation rules.
 
 ## Brand and character exploration

@@ -199,3 +199,9 @@ export function portraitDepthAt(y: number) {
   const perspective = Math.max(1 / 6, Math.min(2, (y - 148) / 362));
   return (3 - 1 / perspective) / 2;
 }
+
+/** Extend the navigable plane over the scenery without a dead zone or horizon singularity. */
+export function portraitPanDepthAt(y: number) {
+  const anchor = Math.max(300, Math.min(700, y));
+  return portraitDepthAt(anchor) + (y - anchor) * 181 / (anchor - 148) ** 2;
+}

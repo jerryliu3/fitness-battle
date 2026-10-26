@@ -2,8 +2,10 @@ import { CompetitionReplayButton } from "./competition-replay";
 import { UserAvatar } from "../ui/user-avatar";
 import { textStyle } from "../ui/section";
 import { RankBadge } from "../ui/rank-badge";
+import { useFieldFlight } from "../ui/use-field-flight";
 import { PortraitField } from "../ui/portrait-field";
 import {
+  orderedArenaLanes,
   arenaFieldHigh,
   clampCourseCenter,
   competeNow,
@@ -65,12 +67,11 @@ export function CompetitionField({
   const laneAnchor = useRef<LaneAnchor | null>(null);
   const portraitAnchor = useRef(0);
   const expandField = () => { setExpanded(true); void playCue("light"); };
-  const zoomFrame = useRef<number | null>(null);
-  const spanRef = useRef(0);
   const [center, setCenter] = useState<number | null>(null);
   const [span, setSpan] = useState<number | null>(null);
   const ghost = true;
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [focusRequest, setFocusRequest] = useState(0);
   const reduceMotion = useReducedMotion();
 
   const arena = useMemo(
@@ -79,24 +80,6 @@ export function CompetitionField({
   );
   const defaultSpan = fieldDefaultSpan(arena?.unit ?? "km");
   const viewSpan = span ?? defaultSpan;
-  spanRef.current = viewSpan;
-  const stopZoom = () => {
-    if (zoomFrame.current !== null) cancelAnimationFrame(zoomFrame.current);
-    zoomFrame.current = null;
-  };
-  const directZoom = (value: number) => { stopZoom(); setSpan(value); };
-  const zoomTo = (value: number) => {
-    stopZoom();
-    if (reduceMotion) { setSpan(value); return; }
-    const from = spanRef.current, started = Date.now();
-    const tick = () => {
-      const progress = Math.min(1, (Date.now() - started) / 240);
-      setSpan(from + (value - from) * (1 - Math.pow(1 - progress, 3)));
-      zoomFrame.current = progress < 1 ? requestAnimationFrame(tick) : null;
-    };
-    zoomFrame.current = requestAnimationFrame(tick);
-  };
-  useEffect(() => () => { if (zoomFrame.current !== null) cancelAnimationFrame(zoomFrame.current); }, []);
   useEffect(() => { if (!isFocused) setExpanded(false); }, [isFocused]);
   const me = arena?.lanes.find((l) => l.you);
   const total = me?.values[2] ?? 0;
@@ -117,23 +100,25 @@ export function CompetitionField({
     [arena?.lanes],
   );
 
-  if (!state || !arena) return null;
-
   const view = {
-    center: clampCourseCenter(
-      center ?? total,
-      viewSpan,
-      arenaFieldHigh(fieldLanes),
-      arena.unit,
-      appearance.ground,
-    ),
+    center: clampCourseCenter(center ?? total, viewSpan, arenaFieldHigh(fieldLanes), arena?.unit ?? "km", appearance.ground),
     span: viewSpan,
   };
+  const flight = useFieldFlight(view, next => { setCenter(next.center); setSpan(next.span); }, reduceMotion);
+  const applyView = (next: typeof view) => { flight.cancel(); setCenter(next.center); setSpan(next.span); };
+  const panTo = (value: number) => applyView({ ...view, center: value });
+  const directZoom = (value: number) => applyView({ ...view, span: value });
+  const zoomTo = (value: number) => flight.fly({ ...view, span: value });
+  if (!state || !arena) return null;
+  const displayTotal = total;
   const selectAthlete = (id: string) => {
     const lane = arena.lanes.find((item) => item.id === id);
     if (!lane) return;
+    const ordered = orderedArenaLanes(arena.lanes);
+    portraitAnchor.current = Math.max(0, ordered.findIndex(l => l.id === id)) - Math.max(0, ordered.findIndex(l => l.you));
     setSelectedId(id);
-    setCenter(lane.values[2]);
+    setFocusRequest(value => value + 1);
+    flight.fly({ ...view, center: clampCourseCenter(lane.values[2], view.span, arenaFieldHigh(fieldLanes), arena.unit, appearance.ground) });
   };
 
   const ranked = arena.lanes
@@ -182,11 +167,12 @@ export function CompetitionField({
           view={view}
           unit={arena.unit}
           selectedId={selectedId ?? me?.id}
+          focusRequest={focusRequest}
+          animateSelection={!reduceMotion}
+          onGestureStart={flight.cancel}
+          onViewChange={applyView}
           onZoom={zoomTo}
-          onPan={(value) => {
-            stopZoom();
-            setCenter(value);
-          }}
+          onPan={panTo}
           height={sceneHeight}
           fullscreen={expanded}
           onExpand={expandField}
@@ -210,6 +196,10 @@ export function CompetitionField({
             onZoom={directZoom}
             anchor={laneAnchor}
             active={isFocused && sceneDimension === "2d"}
+            focusRequest={focusRequest}
+            animateSelection={!reduceMotion}
+            onGestureStart={flight.cancel}
+            onViewChange={applyView}
             selectedId={selectedId ?? me?.id}
             lanes={arena.lanes}
             unit={arena.unit}
@@ -217,7 +207,7 @@ export function CompetitionField({
             index={2}
             onSelect={(lane) => selectAthlete(lane.id)}
             view={view}
-            onPan={setCenter}
+            onPan={panTo}
           />
           <View
             style={{

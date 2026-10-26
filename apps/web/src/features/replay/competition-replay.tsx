@@ -1,4 +1,5 @@
 "use client";
+import { useFieldFlight } from "../field/use-field-flight";
 
 import * as Dialog from "@radix-ui/react-dialog";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -39,6 +40,7 @@ function ReplayViewer({ state, selection, initialDimension }: { state: CompeteSt
   const [center, setCenter] = useState<number | null>(null), [span, setSpan] = useState<number | null>(null);
   const [followEvent, setFollowEvent] = useState(true);
   const [selected, setSelected] = useState<string | null>(null);
+  const [focusRequest, setFocusRequest] = useState(0);
   const [appearance] = useFieldAppearance(user?.id ?? "guest", selection.sport);
   // Keep a coherent ledger throughout playback even if live state refreshes.
   const localState = useRef(state);
@@ -83,7 +85,11 @@ function ReplayViewer({ state, selection, initialDimension }: { state: CompeteSt
   const viewSpan = span ?? fieldDefaultSpan(unit);
   const lanes = useMemo(() => (frame?.rows ?? []).map(row => ({ ...row, initials: initialsFromName(row.name) })), [index, cursor]);
   const view = { center: clampCourseCenter(center ?? focus?.value ?? 0, viewSpan, Math.max(0, ...lanes.map(l => l.value)), unit, appearance.ground), span: viewSpan };
-  const select = (id: string) => { const lane = lanes.find(l => l.id === id); if (lane) { setSelected(id); setCenter(lane.value); } };
+  const flight = useFieldFlight(view, next => { setCenter(next.center); setSpan(next.span); }, Boolean(reduced));
+  const applyView = (next: typeof view) => { flight.cancel(); setCenter(next.center); setSpan(next.span); };
+  const panTo = (center: number) => applyView({ ...view, center });
+  const zoomTo = (span: number) => applyView({ ...view, span });
+  const select = (id: string) => { const lane = lanes.find(l => l.id === id); if (lane) { setSelected(id); setFocusRequest(value => value + 1); flight.fly({ ...view, center: clampCourseCenter(lane.value, view.span, Math.max(0, ...lanes.map(l => l.value)), unit, appearance.ground) }); } };
   const closed = data && Date.parse(data.through) >= Date.parse(data.periodEnd);
   return <>
     <header className="competition-replay-header">
@@ -94,8 +100,8 @@ function ReplayViewer({ state, selection, initialDimension }: { state: CompeteSt
     {!index ? <div className="competition-replay-message" role="status"><p>{error || "Loading the competition timeline…"}</p>{error && <button type="button" className="fb-btn" onClick={() => setAttempt(a => a + 1)}>Retry</button>}</div> : <>
       <div className="competition-replay-viewbar"><div className="focus-segments" role="group" aria-label="Replay field dimension">{(["2d", "3d"] as const).map(d => <button type="button" key={d} aria-pressed={dimension === d} className={dimension === d ? "is-active" : ""} onClick={() => setDimension(d)}>{d === "2d" ? "2D map" : "3D field"}</button>)}</div><span>Your place <b>{me?.place ?? "—"} / {lanes.length}</b></span></div>
       <div className="competition-replay-scene">
-        {dimension === "2d" ? <ArenaLanes playback focusOnMount immersive lanes={lanes} appearance={appearance} view={view} unit={unit} selected={selected ?? focus?.id ?? ""} onSelect={select} onPan={setCenter} /> : <PortraitField focusOnMount immersive selectedId={selected ?? focus?.id} lanes={lanes} view={view} unit={unit} onSelect={select} onPan={setCenter} onZoom={setSpan} />}
-        <button type="button" className="competition-replay-follow fb-btn-line" onClick={() => { setCenter(null); setSelected(null); setFollowEvent(v => !v); }}>{followEvent ? "Follow me" : "Follow event"}</button>
+        {dimension === "2d" ? <ArenaLanes playback onGestureStart={flight.cancel} onViewChange={applyView} focusRequest={focusRequest} focusOnMount immersive lanes={lanes} appearance={appearance} view={view} unit={unit} selected={selected ?? focus?.id ?? ""} onSelect={select} onPan={panTo} /> : <PortraitField onGestureStart={flight.cancel} onViewChange={applyView} focusRequest={focusRequest} focusOnMount immersive selectedId={selected ?? focus?.id} lanes={lanes} view={view} unit={unit} onSelect={select} onPan={panTo} onZoom={zoomTo} />}
+        <button type="button" className="competition-replay-follow fb-btn-line" onClick={() => { flight.cancel(); setCenter(null); setSelected(null); setFollowEvent(v => !v); }}>{followEvent ? "Follow me" : "Follow event"}</button>
       </div>
       <footer className="competition-replay-controls">
         <div className="competition-replay-event"><strong>{competitionReplayCaption(index, cursor)}</strong><span>{competitionReplayDate(index, cursor)} · {Math.ceil(cursor)} / {count}</span></div>

@@ -261,3 +261,30 @@ it("expands one field, retains its viewport and selection, and closes on system 
   expect(lane().props.view).toEqual(before);
   expect(lane().props.anchor.current.scroll).toBe(140);
 });
+
+it("flies to an athlete from the current frame and lets a field drag interrupt it", async () => {
+  vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
+  const frames = new Map<number, () => void>(); let serial = 0;
+  vi.stubGlobal("requestAnimationFrame", (fn: () => void) => { frames.set(++serial, fn); return serial; });
+  vi.stubGlobal("cancelAnimationFrame", (id: number) => frames.delete(id));
+  mock.reducedMotion = false;
+  mock.state = reduceCompete(freshState(), { type: "opt-in", sport: "running" });
+  await act(async () => { renderer = create(createElement(ArenaScreen)); });
+  await layoutCarousel();
+  const lane = () => renderer.root.findByType("LaneTrack" as never);
+  const from = lane().props.view.center;
+  const rival = lane().props.lanes.filter((l: { you: boolean; ghost: boolean }) => !l.you && !l.ghost).sort((a: { values: number[] }, b: { values: number[] }) => b.values[2]! - a.values[2]!)[0];
+  await act(async () => lane().props.onSelect(rival));
+  expect(lane().props.view.center).toBe(from);
+  const started = Date.now(); vi.setSystemTime(started + 140);
+  await act(async () => { const work = [...frames.values()]; frames.clear(); work.forEach(fn => fn()); });
+  expect(lane().props.view.center).not.toBe(from);
+  expect(lane().props.view.center).not.toBe(rival.values[2]);
+  const manual = lane().props.view.center + .1;
+  await act(async () => lane().props.onPan(manual));
+  expect(frames.size).toBe(0);
+  expect(lane().props.view.center).toBeCloseTo(manual);
+  const request = lane().props.focusRequest;
+  await act(async () => lane().props.onSelect(rival));
+  expect(lane().props.focusRequest).toBe(request + 1);
+});

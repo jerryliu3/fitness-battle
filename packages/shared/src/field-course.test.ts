@@ -96,3 +96,13 @@ it("shows five lanes at default zoom on phone and desktop without changing dista
     expect(Math.abs(course.along(18.3) - course.along(18))).toBeCloseTo(course.length * .3 / 1.2);
   }
 });
+
+it("bounds painted scenery to the visible lane band without changing lane geometry", () => {
+  const roster = Array.from({ length: 100 }, (_, i) => ({ id: String(i), name: String(i), initials: "A", value: 18.2, you: i === 50 }));
+  const course = fieldCourse(390, 540, roster.length, { center: 18, span: 1.2 }, "km", defaultFieldAppearance);
+  const full = flatten(fieldCourseScene(course, defaultFieldAppearance, roster, "km", "test"));
+  const visible = flatten(fieldCourseScene(course, defaultFieldAppearance, roster, "km", "test", { first: 47, last: 53 }));
+  expect(visible.length).toBeLessThan(full.length / 4);
+  expect(visible.length).toBeLessThan(250);
+  expect(JSON.stringify(visible)).not.toMatch(/NaN|Infinity/);
+});
