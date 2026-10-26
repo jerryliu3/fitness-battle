@@ -75,7 +75,7 @@ export function useFieldGestures(options: {
     flush();
     points.current.delete(e.pointerId);
     if (!points.current.size) {
-      if (!cancelled && !moved.current) { latest.current.onTap?.(e, tapTarget.current); handledTap.current = Boolean(latest.current.onTap); }
+      if (!cancelled && !moved.current && !e.defaultPrevented) { latest.current.onTap?.(e, tapTarget.current); handledTap.current = Boolean(latest.current.onTap); }
       origin.current = null;
     } else rebase();
     if (e.currentTarget.hasPointerCapture?.(e.pointerId)) e.currentTarget.releasePointerCapture(e.pointerId);

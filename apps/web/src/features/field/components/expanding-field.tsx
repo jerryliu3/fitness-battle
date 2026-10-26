@@ -4,6 +4,7 @@ import * as Dialog from "@radix-ui/react-dialog";
 import { useReducedMotion } from "motion/react";
 import { createPortal } from "react-dom";
 import { useLayoutEffect, useRef, useState, type ReactNode } from "react";
+import { bindFieldOverlayHold } from "./field-overlay-hold";
 import { collapseExpandingFieldImmediate } from "./expanding-field-teardown";
 
 /** One portal target for the entire lifetime: moving it never remounts the lane canvas. */
@@ -21,12 +22,17 @@ export function ExpandingField({
   children: ReactNode;
 }) {
   const reduce = useReducedMotion();
+  const [overlaysHidden, setOverlaysHidden] = useState(false);
   const lastHud = useRef(hud);
   if (hud) lastHud.current = hud;
   const slot = useRef<HTMLDivElement>(null);
   // Radix mounts its portal after the parent layout effect. Observe the actual host.
   const [dialog, setDialog] = useState<HTMLDivElement | null>(null);
   const [mount, setMount] = useState<HTMLDivElement | null>(null);
+  useLayoutEffect(() => {
+    if (!open || !mount) return;
+    return bindFieldOverlayHold(mount, setOverlaysHidden);
+  }, [open, mount]);
   const [present, setPresent] = useState(false);
   const origin = useRef<DOMRect | null>(null);
   const returnFocus = useRef<HTMLElement | SVGElement | null>(null);
@@ -146,7 +152,7 @@ export function ExpandingField({
     <Dialog.Root open={present && tabActive} onOpenChange={(next) => { if (!next) onClose(); }}>
       {present && tabActive && <Dialog.Portal>
         <Dialog.Overlay className="focus-field-backdrop" />
-        <Dialog.Content ref={setDialog} className="focus-field-expanded" aria-describedby={undefined}
+        <Dialog.Content ref={setDialog} className={`focus-field-expanded${overlaysHidden ? " is-holding-field" : ""}`} aria-describedby={undefined}
           onPointerDownOutside={(event) => {
             // DOM-contained portal children are inside even though their React
             // events do not pass through Dialog.Content's capture handler.

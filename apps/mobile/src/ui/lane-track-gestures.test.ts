@@ -51,3 +51,24 @@ it("owns diagonal fullscreen drags, coalesces events, and continues panning afte
   await flush(); expect(applied.mock.lastCall![0].span).toBeCloseTo(1);
   expect(applied.mock.lastCall![0].center).toBeGreaterThan(applied.mock.calls[count - 1]![0].center);
 });
+
+it("labels offscreen athletes from the window edge and removes hidden arrow hit targets", async () => {
+  vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
+  vi.stubGlobal("requestAnimationFrame", vi.fn());
+  vi.stubGlobal("cancelAnimationFrame", vi.fn());
+  const props = {
+    lanes: [
+      { id: "me", name: "You", you: true, ghost: false, values: [10, 10, 10] as [number, number, number] },
+      { id: "ahead", name: "Ahead", you: false, ghost: false, values: [20, 20, 20] as [number, number, number] },
+    ],
+    unit: "km", index: 2 as const, showGhost: false, fullscreen: true, animateSelection: false,
+    view: { center: 10, span: 2 }, onSelect() {},
+  };
+  await act(async () => { renderer = create(createElement(LaneTrack, props)); });
+  const arrows = () => renderer.root.findAllByType("Pressable" as never).filter(node => node.props.accessibilityLabel === "Focus Ahead");
+  expect(arrows()).toHaveLength(1);
+  expect(renderer.root.findAllByType("SvgText" as never).some(node => node.props.children === "9.0 km")).toBe(true);
+  await act(async () => renderer.update(createElement(LaneTrack, { ...props, overlaysHidden: true })));
+  expect(arrows()).toHaveLength(0);
+  expect(renderer.root.findAllByType("SvgText" as never).some(node => node.props.children === "9.0 km")).toBe(false);
+});

@@ -2181,3 +2181,41 @@
 .moment-replay-feedback > small { font: var(--type-caption); flex-basis: 100%; color: #637482; }
 .moment-replay-bottom > button { width: 100%; min-height: 48px; }
 @media (max-width: 540px) { .moment-replay-top { flex-direction: column; } .moment-replay-label { padding: 10px 14px; } .moment-replay-standings { align-self: flex-end; width: 220px; } }
+
+/* Fullscreen panels leave an accessible tab at the left edge. */
+.focus-panel-toggle {
+  min-width: 44px;
+  min-height: 44px;
+  border: 0;
+  border-radius: 12px;
+  background: #142b3b;
+  color: white;
+  cursor: pointer;
+  position: absolute;
+  top: 0;
+  right: 0;
+}
+.focus-panel-content { padding-right: 38px; }
+.focus-broadcast-tower.is-collapsed,
+.focus-broadcast-spotlight.is-collapsed {
+  left: 0;
+  right: auto;
+  width: auto;
+  margin: 0;
+  padding: 0;
+  min-width: 44px;
+  min-height: 44px;
+}
+.is-holding-field .focus-broadcast-hud,
+.is-holding-field .club-field-explore,
+.is-holding-field .club-field-offscreen,
+.is-holding-field .club-board-controls,
+.is-holding-field .focus-portal-zoom-pill,
+.is-holding-field [data-offscreen],
+.is-holding-field .athlete-pennant {
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.focus-broadcast-tower > .focus-panel-content:not([hidden]) { display: grid; gap: 4px; }
+.focus-broadcast-spotlight > .focus-panel-content:not([hidden]) { display: grid; gap: 10px; }

@@ -261,10 +261,11 @@ export function ArenaLanes({
                 transition: { duration: reduced || cameraChanged || animating || previousGeometry.current?.width !== size.width ? 0 : 0.48, ease: [0.22, 1, 0.36, 1] as const },
               })}
               data-athlete={l.id}
+              data-offscreen={edge || undefined}
               role="button"
               aria-pressed={selected === l.id}
               tabIndex={0}
-              aria-label={`${course.oval && !standings ? `${fieldLap(l.value, unit).laps} completed laps, ` : ""}${l.name}, ${standings ? `place ${rank}, ${scores[l.id] != null ? `${effortRankBadge(scores[l.id]).name} level, ` : ""}` : ""}${formatLastUpdated(l)}, ${relativeDistance(l.value)} relative to you${!standings && edge ? `, ${position.edge} of visible range` : ""}`}
+              aria-label={`${course.oval && !standings ? `${fieldLap(l.value, unit).laps} completed laps, ` : ""}${l.name}, ${standings ? `place ${rank}, ${scores[l.id] != null ? `${effortRankBadge(scores[l.id]).name} level, ` : ""}` : ""}${formatLastUpdated(l)}, ${!standings && edge ? `${position.distanceOutside.toFixed(1)} ${unit} ${position.edge} of visible range` : `${relativeDistance(l.value)} relative to you`}`}
               onKeyDown={(e) => {
                 if (e.key === "Enter" || e.key === " ") {
                   e.preventDefault();
@@ -318,7 +319,7 @@ export function ArenaLanes({
               {standings && l.avatarUrl && <UserAvatarSvg src={l.avatarUrl} name={l.name} x={xx-17} y={yy-17} />}
               {((standings && !l.avatarUrl) || (!standings && edge)) && <text style={typographyStyle("caption")} x={xx} y={yy+4} textAnchor="middle" className="lane-initial" fill="#282f2c">{!standings&&edge?(edge==="ahead"?"↑":"↓"):l.initials}</text>}
               </g>
-              {!standings&&edge&&<g pointerEvents="none"><rect x={-34} y={edge==="ahead"?27:-42} width={68} height={20} rx={8} fill="#ffffffee"/><text style={typographyStyle("caption")} x={0} y={edge==="ahead"?41:-28} textAnchor="middle"  fill="#616c63">{relativeDistance(l.value)}</text></g>}
+              {!standings&&edge&&<g pointerEvents="none"><rect x={-34} y={edge==="ahead"?27:-42} width={68} height={20} rx={8} fill="#ffffffee"/><text style={typographyStyle("caption")} x={0} y={edge==="ahead"?41:-28} textAnchor="middle"  fill="#616c63">{position.distanceOutside.toFixed(1)} {unit}</text></g>}
               {!standings && !edge && (l.you || selected===l.id) && <g className="athlete-pennant" pointerEvents="none">
                 <path d={`M0 0 L${pennantX+pennantWidth/2} ${pennantY>0?pennantY:pennantY+46}`} fill="none" stroke="#819486" strokeWidth="1.2"/>
                 <rect x={pennantX} y={pennantY+2} width={pennantWidth} height={46} rx={12} fill="#282f2c" opacity={.1}/>
