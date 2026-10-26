@@ -29,6 +29,7 @@ it("keeps Portfolio lines finite for empty and partial weeks with matching total
   expect(chart.endLabel).toBe("Oct 25");
   expect(chart.inspection.at(-1)?.x).toBe(chart.tip.x);
   expect(chart.currTotalHours).toBe(weeklyHoursComparison(state, now).currTotalHours);
+  expect(chart.deltaTone).toBe("up");
 });
 
 it("classifies week-over-week delta tone from hour totals", () => {

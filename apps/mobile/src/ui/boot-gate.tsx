@@ -1,4 +1,5 @@
 import { useEffect, useState, type ReactNode } from "react";
+import { isCompeteDataReady } from "@fitness-battle/shared/boot";
 import { useAuth } from "../lib/auth";
 import { useCompeteStore } from "../lib/compete-store";
 import { View, StyleSheet } from "react-native";
@@ -13,9 +14,9 @@ let bootAnimationCompleted = false;
  */
 export function BootGate({ children }: { children: ReactNode }) {
   const { loading: authLoading } = useAuth();
-  const { state, accountHydrated } = useCompeteStore();
+  const { state, loadStatus } = useCompeteStore();
   const [animationDone, setAnimationDone] = useState(bootAnimationCompleted);
-  const dataReady = !authLoading && accountHydrated && state !== null;
+  const dataReady = !authLoading && isCompeteDataReady(loadStatus, state);
   const [opened, setOpened] = useState(false);
   const [laidOut, setLaidOut] = useState(false);
   const { pending, report } = useBootRequests();
@@ -27,6 +28,7 @@ export function BootGate({ children }: { children: ReactNode }) {
     });
     return () => { cancelAnimationFrame(first); cancelAnimationFrame(second); };
   }, [opened, dataReady, animationDone, laidOut, pending]);
+  // Safety net if the splash animation callback never fires (still requires dataReady).
   useEffect(() => {
     const timer = setTimeout(() => {
       if (!bootAnimationCompleted) {

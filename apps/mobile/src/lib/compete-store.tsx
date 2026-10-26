@@ -63,8 +63,11 @@ const STORAGE_KEY = "fb-compete-v1";
 const SEEN_KEY = "fb-counted-seen";
 const DIRTY_KEY = "fb-compete-dirty";
 
+export type AccountLoadStatus = "local" | "loading" | "ready" | "failed";
+
 interface CompeteContextValue {
   canWrite: boolean;
+  loadStatus: AccountLoadStatus;
   /** True once the current account snapshot finished its initial hydrate. */
   accountHydrated: boolean;
   state: CompeteState | null;
@@ -140,6 +143,7 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
   const owner = auth.user?.id ?? null;
   const keys = accountStorageKeys(owner);
   const [saveError, setSaveError] = useState<string | null>(null);
+  const [loadStatus, setLoadStatus] = useState<AccountLoadStatus>("loading");
   const loadReady = useRef(false);
   const [accountHydrated, setAccountHydrated] = useState(false);
   const markAccountHydrated = (ready: boolean) => {
@@ -196,6 +200,7 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
     conflictRef.current = false;
     setSaveConflict(false);
     markAccountHydrated(false);
+    setLoadStatus("loading");
     if (saveTimer.current) clearTimeout(saveTimer.current);
     saveTimer.current = null;
     refreshFlight.current = null;
@@ -300,11 +305,14 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
               unitsUnsavedRef.current,
             );
           if (alive) {
+            setLoadStatus("ready");
             markAccountHydrated(true);
             setStandingsStale(false);
           }
         } catch {
           if (alive) {
+            setLoadStatus("failed");
+            markAccountHydrated(true);
             setStandingsStale(true);
             setSaveError(
               "Your account could not load. Refresh your account before making changes.",
@@ -312,7 +320,10 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
           }
         }
       }
-      if (!live) markAccountHydrated(true);
+      if (!live) {
+        setLoadStatus("local");
+        markAccountHydrated(true);
+      }
       if (!alive || accountRef.current !== owner) return;
       next = hydrateAccountIdentity(next, currentAuth.user, live);
       await preloadBaselineCache(owner ?? "guest", baselineCacheRef.current);
@@ -336,6 +347,8 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
     })().catch(() => {
       if (alive) {
         loadedOwnerRef.current = owner;
+        setLoadStatus("failed");
+        markAccountHydrated(true);
         setState(
           hydrateAccountIdentity(freshState(), authRef.current.user, false),
         );
@@ -894,6 +907,7 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
     <CompeteContext.Provider
       value={{
         canWrite: Boolean(state) && (accountHydrated || debugActive) && !auth.loading,
+        loadStatus,
         accountHydrated,
         state,
         accountKey: accountRef.current ?? "device",

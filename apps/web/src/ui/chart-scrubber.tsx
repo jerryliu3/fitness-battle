@@ -1,7 +1,7 @@
 "use client";
 
-import { nearestChartDatum, type ChartDatum } from "@fitness-battle/shared";
-import { useCallback, useEffect, useRef, useState, type ReactNode, type PointerEvent as ReactPointerEvent } from "react";
+import { chartClientXToModel, nearestChartDatum, type ChartDatum } from "@fitness-battle/shared";
+import { useCallback, useId, useRef, useState, type ReactNode, type PointerEvent as ReactPointerEvent } from "react";
 import { AppText } from "./section";
 import { playCue } from "@/lib/haptics";
 import "./chart-scrubber.css";
@@ -34,33 +34,22 @@ export function ChartScrubber({
 }) {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const surfaceRef = useRef<HTMLDivElement>(null);
-  const measuredWidth = useRef(1);
   const lastId = useRef<string | null>(null);
   const scrubbing = useRef(false);
   const direction = useRef<"horizontal" | "vertical" | null>(null);
   const origin = useRef({ x: 0, y: 0 });
+  const summaryId = useId();
   const selected = points.find((point) => point.id === selectedId);
   const latest = useRef({ points, width, onSelect });
   latest.current = { points, width, onSelect };
 
-  useEffect(() => {
-    const node = surfaceRef.current;
-    if (!node || typeof ResizeObserver === "undefined") return;
-    const observer = new ResizeObserver(() => {
-      measuredWidth.current = Math.max(1, node.getBoundingClientRect().width);
-    });
-    observer.observe(node);
-    measuredWidth.current = Math.max(1, node.getBoundingClientRect().width);
-    return () => observer.disconnect();
-  }, []);
-
   const inspect = useCallback((clientX: number) => {
     const surface = surfaceRef.current;
     if (!surface) return;
-    const left = surface.getBoundingClientRect().left;
+    const rect = surface.getBoundingClientRect();
     const current = latest.current;
-    const x = Math.max(0, Math.min(measuredWidth.current, clientX - left));
-    const point = nearestChartDatum(current.points, (x / measuredWidth.current) * current.width);
+    const modelX = chartClientXToModel(clientX, rect, current.width);
+    const point = nearestChartDatum(current.points, modelX);
     if (!point || lastId.current === point.id) return;
     lastId.current = point.id;
     setSelectedId(point.id);
@@ -73,7 +62,6 @@ export function ChartScrubber({
     origin.current = { x: event.clientX, y: event.clientY };
     scrubbing.current = true;
     event.currentTarget.setPointerCapture(event.pointerId);
-    inspect(event.clientX);
   }
 
   function onPointerMove(event: ReactPointerEvent<HTMLDivElement>) {
@@ -85,8 +73,12 @@ export function ChartScrubber({
       direction.current = Math.abs(dx) >= Math.abs(dy) ? "horizontal" : "vertical";
       if (direction.current === "vertical") {
         scrubbing.current = false;
+        direction.current = null;
         lastId.current = null;
-        event.currentTarget.releasePointerCapture(event.pointerId);
+        setSelectedId(null);
+        if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+          event.currentTarget.releasePointerCapture(event.pointerId);
+        }
         return;
       }
     }
@@ -104,7 +96,7 @@ export function ChartScrubber({
 
   return (
     <div className="chart-scrubber">
-      <div className="chart-scrubber-summary" aria-live="polite">
+      <div id={summaryId} className="chart-scrubber-summary" aria-live="polite">
         {summaryOnSelection ? (
           <AppText role="caption" secondary>
             {selected ? `${selected.label} · ${selected.value}` : "Slide across the chart to inspect"}
@@ -119,7 +111,9 @@ export function ChartScrubber({
       <div
         ref={surfaceRef}
         className="chart-scrubber-surface"
+        role="application"
         aria-label={label}
+        aria-describedby={summaryId}
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}
         onPointerUp={onPointerUp}

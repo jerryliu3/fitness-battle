@@ -124,14 +124,7 @@ export async function uploadWebProfileAvatar({
       void supabase.storage.from(AVATAR_BUCKET).remove(cleanupPaths);
     }
 
-    const { error: profileError } = await supabase
-      .from("profiles")
-      .update({ avatar_url: nextAvatarUrl })
-      .eq("id", userId);
-    if (profileError) {
-      throw new Error(profileError.message || "Could not save profile photo.");
-    }
-
+    // profiles.avatar_url is written by save_compete_account when set-avatar saves (immediate PUT).
     return nextAvatarUrl;
   }
 
@@ -162,13 +155,6 @@ export async function removeWebProfileAvatar({
       } catch {
         // Storage cleanup is best-effort.
       }
-    }
-    const { error: profileError } = await supabase
-      .from("profiles")
-      .update({ avatar_url: null })
-      .eq("id", userId);
-    if (profileError) {
-      throw new Error(profileError.message || "Could not remove profile photo.");
     }
   }
   return null;

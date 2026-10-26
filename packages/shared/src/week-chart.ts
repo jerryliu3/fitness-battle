@@ -39,6 +39,11 @@ export function weeklyHoursComparison(state: CompeteState, now = competeNow(stat
   };
 }
 
+/** Whether this week is at or above the same point last week (for delta coloring). */
+export function weekHoursDeltaTone(chart: { currTotalHours: number; prevTotalHours: number }): "up" | "down" {
+  return chart.currTotalHours >= chart.prevTotalHours ? "up" : "down";
+}
+
 /** Shared Portfolio geometry. The existing hour eligibility/period model stays authoritative. */
 export function portfolioWeekChart(state: CompeteState, now = competeNow(state)) {
   const comparison = weeklyHoursComparison(state, now);
@@ -57,14 +62,11 @@ export function portfolioWeekChart(state: CompeteState, now = competeNow(state))
     id: dayKey(shiftAppDay(period.startsAt, index)), x: index === nowDayIndex ? tip.x : x(index), y: y(hours),
     label: date(shiftAppDay(period.startsAt, index)), value: `${hours.toFixed(1)} hr · last week ${prevCumulativeHours[index].toFixed(1)} hr`,
   }));
+  const deltaTone = weekHoursDeltaTone(comparison);
   return { ...comparison, width, height, left, right, top, bottom, tip, current, previous, inspection,
     area: `${current} ${tip.x.toFixed(1)},${bottom} ${origin}`,
     startLabel: date(period.startsAt), endLabel: date(new Date(period.endsAt.getTime() - 1)),
     deltaLabel: `${currTotalHours - comparison.prevTotalHours >= 0 ? "+" : ""}${(currTotalHours - comparison.prevTotalHours).toFixed(1)}h vs last week`,
+    deltaTone,
   };
-}
-
-/** Whether this week is at or above the same point last week (for delta coloring). */
-export function weekHoursDeltaTone(chart: { currTotalHours: number; prevTotalHours: number }): "up" | "down" {
-  return chart.currTotalHours >= chart.prevTotalHours ? "up" : "down";
 }

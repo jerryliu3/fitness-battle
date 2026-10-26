@@ -69,11 +69,6 @@ export function ProfilePhoto({ state }: { state: CompeteState }) {
             .upload(path, bytes, { upsert: true, contentType: "image/jpeg" });
           if (uploadError) throw uploadError;
           url = `${supabase.storage.from("avatars").getPublicUrl(path).data.publicUrl}?v=${Date.now()}`;
-          const { error: profileError } = await supabase
-            .from("profiles")
-            .update({ avatar_url: url })
-            .eq("id", id);
-          if (profileError) throw profileError;
         }
       }
       if (remove && !offlineMode) {
@@ -85,11 +80,6 @@ export function ProfilePhoto({ state }: { state: CompeteState }) {
           }),
         );
         if (removeError) throw removeError;
-        const { error: profileError } = await supabase
-          .from("profiles")
-          .update({ avatar_url: null })
-          .eq("id", id);
-        if (profileError) throw profileError;
       }
       if (mounted.current && ownerRef.current === id)
         dispatch({ type: "set-avatar", avatarUrl: url, accountId: id });

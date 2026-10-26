@@ -6,6 +6,7 @@ vi.mock("../lib/auth", () => ({ useAuth: () => ({ loading: false }) }));
 vi.mock("../lib/compete-store", () => ({
   useCompeteStore: () => ({
     state: mock.state,
+    loadStatus: mock.state === null ? "loading" : "ready",
     accountHydrated: mock.state !== null,
   }),
 }));

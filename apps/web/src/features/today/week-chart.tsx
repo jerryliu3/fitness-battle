@@ -1,7 +1,7 @@
 "use client";
 
 import { useId } from "react";
-import { portfolioWeekChart, weekHoursDeltaTone, type CompeteState, SHELL_COLORS as c } from "@fitness-battle/shared";
+import { portfolioWeekChart, type CompeteState, SHELL_COLORS as c } from "@fitness-battle/shared";
 import { motion, useReducedMotion } from "motion/react";
 import { AppHeading, TextAction } from "@/ui/section";
 import { ChartFrame } from "@/ui/chart-frame";
@@ -11,7 +11,7 @@ import "./week-chart.css";
 
 export function WeekChart({ state, detail = false, ready = true }: { state: CompeteState; detail?: boolean; ready?: boolean }) {
   const chart = portfolioWeekChart(state);
-  const deltaTone = weekHoursDeltaTone(chart);
+  const deltaTone = chart.deltaTone;
   const gradient = useId().replace(/:/g, "");
   const reduced = useReducedMotion();
   return <ChartFrame ready={ready}>

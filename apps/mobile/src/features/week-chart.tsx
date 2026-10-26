@@ -1,4 +1,4 @@
-import { portfolioWeekChart, weekHoursDeltaTone, type CompeteState } from "@fitness-battle/shared";
+import { portfolioWeekChart, type CompeteState } from "@fitness-battle/shared";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import Svg, { Circle, Defs, Line, LinearGradient, Polygon, Polyline, Stop } from "react-native-svg";
 import { useId } from "react";
@@ -10,7 +10,7 @@ import { SHELL_COLORS as c, mobileSurfaces } from "../theme";
 
 export function WeekChart({ state, onOpen, ready = true }: { state: CompeteState; onOpen?: () => void; ready?: boolean }) {
   const chart = portfolioWeekChart(state);
-  const deltaTone = weekHoursDeltaTone(chart);
+  const deltaTone = chart.deltaTone;
   const gradient = useId().replace(/:/g, "");
   return <ChartFrame ready={ready}><View style={s.card}>
     <View style={s.header}><AppText role="heading" accessibilityRole="header">Current week</AppText><HomeActivityActions compact/></View>
