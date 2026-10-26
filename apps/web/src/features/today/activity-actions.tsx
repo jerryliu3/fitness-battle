@@ -93,7 +93,7 @@ export function ActivityActions({ compact = false }: { compact?: boolean }) {
         )}
     </div>
     {note && <AppParagraph typographyRole="caption" role="status" className={compact ? "fb-note focus-sync-status" : "fb-note"}>{note} <Link href="/athlete?panel=connections">Tracker settings</Link></AppParagraph>}
-    <Sheet open={open} onClose={() => setOpen(false)} title="Add activity" body="" minimal>
+    <Sheet open={open} onClose={() => setOpen(false)} title="Add manual activity" body="" minimal>
       <form style={{ display: "grid", gap: 16 }} onSubmit={(event) => {
         event.preventDefault();
         if (!ready || !sport) return;

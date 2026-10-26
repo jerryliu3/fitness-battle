@@ -15,15 +15,21 @@ export function LatestActivity({ state, onOpen }: { state: CompeteState; onOpen:
   const [selected, setSelected] = useState<{ account?: string; id: string } | null>(null);
   const detail = selected?.account === user?.id ? rows.find(row => row.id === selected?.id) : null;
   return <>
-    {rows.length > 0 && <Section title="Latest activity">
-      {rows.map(row => { const route = activityRoute(row.ownActivity); return <Pressable key={`${row.userId}:${row.id}`} accessibilityRole="button" onPress={() => row.ownActivity ? onOpen(row.ownActivity) : setSelected({ account: user?.id, id: row.id })}
-        style={[f.row, { minHeight: 76, paddingVertical: 12, borderBottomWidth: 0 }]}>
-        {route ? <RouteStaticPreview coordinates={route} width={128} height={128} padding={16} strokeWidth={3} showMarkers={false} showPlayBadge={false} style={{ width: 64, height: 64, borderRadius: 12 }} /> : <SportActivityIcon sport={row.sport} />}
-        <View style={[f.grow, { gap: 4 }]}><AppText role="row" >{row.ownActivity ? sportById(row.sport).name : `${row.name} · ${sportById(row.sport).name}`} · {clubDuration(row.movingSec)}</AppText>
-          <AppText role="support" secondary >{row.verified ? "GPS Tracked" : row.source === "manual" ? "Manual activity" : "Activity"}</AppText></View>
-        <AppText role="caption" secondary >{new Date(row.startedAt).toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: APP_TIMEZONE })} →</AppText>
-      </Pressable>; })}
-    </Section>}
+    <Section title="Latest activity">
+      {rows.length > 0 ? (
+        rows.map(row => { const route = activityRoute(row.ownActivity); return <Pressable key={`${row.userId}:${row.id}`} accessibilityRole="button" onPress={() => row.ownActivity ? onOpen(row.ownActivity) : setSelected({ account: user?.id, id: row.id })}
+          style={[f.row, { minHeight: 76, paddingVertical: 12, borderBottomWidth: 0 }]}>
+          {route ? <RouteStaticPreview coordinates={route} width={128} height={128} padding={16} strokeWidth={3} showMarkers={false} showPlayBadge={false} style={{ width: 64, height: 64, borderRadius: 12 }} /> : <SportActivityIcon sport={row.sport} />}
+          <View style={[f.grow, { gap: 4 }]}><AppText role="row" >{row.ownActivity ? sportById(row.sport).name : `${row.name} · ${sportById(row.sport).name}`} · {clubDuration(row.movingSec)}</AppText>
+            <AppText role="support" secondary >{row.verified ? "GPS Tracked" : row.source === "manual" ? "Manual activity" : "Activity"}</AppText></View>
+          <AppText role="caption" secondary >{new Date(row.startedAt).toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: APP_TIMEZONE })} →</AppText>
+        </Pressable>; })
+      ) : (
+        <View style={{ paddingVertical: 12 }}>
+          <AppText role="body" secondary>No recent activity yet.</AppText>
+        </View>
+      )}
+    </Section>
     {crew.error && <AppText role="caption" secondary  accessibilityLiveRegion="polite">{crew.error}</AppText>}
     <FocusSheet open={Boolean(detail)} title={detail ? `${detail.name}'s activity` : "Activity"} onClose={() => setSelected(null)}>
       {detail && <><AppText role="heading">{sportById(detail.sport).name}</AppText><AppText role="support" secondary >{clubDuration(detail.movingSec)} · {formatVolume(detail.sport, detail.distanceM, detail.movingSec, state.units)}</AppText>

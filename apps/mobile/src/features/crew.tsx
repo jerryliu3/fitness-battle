@@ -102,7 +102,7 @@ function inviteLink(code: string): string {
 }
 
 export function CrewHub({ membersOnly = false, crewId = "" }: { membersOnly?: boolean; crewId?: string } = {}) {
-  const { state, refresh } = useCompeteStore();
+  const { state, refresh, dispatch } = useCompeteStore();
   const { user } = useAuth();
   const router = useRouter();
   const params = useGlobalSearchParams<{ invite?: string | string[] }>();
@@ -147,7 +147,6 @@ export function CrewHub({ membersOnly = false, crewId = "" }: { membersOnly?: bo
     }, [api.reload]),
   );
   const pin =
-    !api.live &&
     state?.crewBoard &&
     state.crewBoard.crewId !== "solo" &&
     !state.crewBoard.crewId.startsWith("field:")
@@ -156,11 +155,11 @@ export function CrewHub({ membersOnly = false, crewId = "" }: { membersOnly?: bo
   const rawCrews = (api.data?.crews ?? []).flatMap((r) =>
     r.crews ? [r.crews] : [],
   );
-  if (pin)
+  if (pin && !rawCrews.some((c) => c.id === pin.crewId))
     rawCrews.push({
       id: pin.crewId,
       name: pin.crewName,
-      invite_code: "",
+      invite_code: "WEEKLY",
       sport: pin.sport,
       format: "volume",
       target_sessions: 4,
@@ -277,6 +276,76 @@ export function CrewHub({ membersOnly = false, crewId = "" }: { membersOnly?: bo
         setNote(resting ? "Rest week cleared." : "Rest week set. You can clear it here.");
         return;
       }
+      if (!api.live) {
+        if (path === "") {
+          const newName = (body as { name?: string }).name || "My Crew";
+          const newSport = (body as { sport?: string }).sport || state?.primary || "running";
+          const newId = `demo-crew-${Date.now()}`;
+          const newPin = {
+            crewId: newId,
+            crewName: newName,
+            sport: newSport as SportId,
+            waveStart: week.startsAt.toISOString(),
+            weekEnd: week.endsAt.toISOString(),
+            capacity: 8,
+            memberIds: [selfId],
+            syntheticIds: [],
+            members: [
+              {
+                id: selfId,
+                name: state?.name ?? "You",
+                elo: 1000,
+                distanceM: 0,
+                movingSec: 0,
+                verifiedDistanceM: 0,
+                verifiedMovingSec: 0,
+              },
+            ],
+          };
+          dispatch({ type: "opt-in", sport: newSport as SportId, crewBoard: newPin });
+          setSelected(newId);
+          setPanel(null);
+          setNote("Saved. Your crew is up to date.");
+          return;
+        }
+        if (path === "/join") {
+          const inviteCode = (body as { code?: string }).code || "WEEKLY";
+          const joinId = `demo-crew-${inviteCode.toLowerCase()}`;
+          const joinPin = {
+            crewId: joinId,
+            crewName: `Crew ${inviteCode}`,
+            sport: (state?.primary ?? "running") as SportId,
+            waveStart: week.startsAt.toISOString(),
+            weekEnd: week.endsAt.toISOString(),
+            capacity: 8,
+            memberIds: [selfId],
+            syntheticIds: [],
+            members: [
+              {
+                id: selfId,
+                name: state?.name ?? "You",
+                elo: 1000,
+                distanceM: 0,
+                movingSec: 0,
+                verifiedDistanceM: 0,
+                verifiedMovingSec: 0,
+              },
+            ],
+          };
+          dispatch({ type: "opt-in", sport: (state?.primary ?? "running") as SportId, crewBoard: joinPin });
+          setSelected(joinId);
+          setPanel(null);
+          setNote("Saved. Your crew is up to date.");
+          return;
+        }
+        if (path === "/leave") {
+          dispatch({ type: "clear-crew-board" });
+          setSelected("");
+          setPanel(null);
+          setNote("You left the crew.");
+          return;
+        }
+      }
       const result = await api.request(path, body);
       if (owner.current !== id) return;
       const reloaded = await api.reload();
@@ -359,14 +428,14 @@ export function CrewHub({ membersOnly = false, crewId = "" }: { membersOnly?: bo
             an optional shared field.
           </AppText>
           <FocusButton
-            label={api.live ? "Create or join a crew" : "View account"}
+            label={user ? "Create or join a crew" : "View account"}
             onPress={() =>
-              api.live ? open("add") : router.navigate("/athlete")
+              user ? open("add") : router.navigate("/athlete")
             }
           />
-          {!api.live ? (
+          {!user ? (
             <AppText role="caption" secondary >
-              A live account is needed to create or join a private crew.
+              Sign in to create or join a private crew.
             </AppText>
           ) : null}
         </View>
@@ -531,10 +600,10 @@ export function CrewHub({ membersOnly = false, crewId = "" }: { membersOnly?: bo
           }
         }}
       >
-        {!api.live && panel !== "members" ? (
+        {!user && panel !== "members" ? (
           <>
             <AppText role="body" secondary >
-              A live account is needed to create or join a private crew.
+              Sign in to create or join a private crew.
             </AppText>
             <FocusButton
               label="Go to Athlete"

@@ -32,7 +32,7 @@ import { playCue } from "../lib/haptics";
 import { SHELL_COLORS as c } from "../theme";
 import { f } from "../ui/focus";
 import { LaneTrack, type LaneAnchor } from "../ui/lane-track";
-import { useFieldAppearance } from "../ui/field-course";
+import { FieldOverview, useFieldAppearance } from "../ui/field-course";
 import { PolishedRacer } from "../ui/polished-racer";
 import { useReducedMotion } from "../ui/use-reduced-motion";
 
@@ -45,7 +45,7 @@ export function CompetitionField({
 }) {
   const { state, accountKey } = useCompeteStore();
   const pathname = usePathname();
-  const [appearance] = useFieldAppearance(accountKey, sport);
+  const [appearance, setAppearance] = useFieldAppearance(accountKey, sport);
   const isFocused = shellTabFromPath(pathname)?.id === "arena";
   const [sceneDimension, setSceneDimension] = useState<"2d" | "3d">("2d");
   const [standingsOpen, setStandingsOpen] = useState(false);
@@ -189,6 +189,7 @@ export function CompetitionField({
         <View style={{ position: "relative" }}>
           <LaneTrack
             appearance={appearance}
+            onChangeAppearance={setAppearance}
             height={sceneHeight}
             fullscreen={expanded}
             onExpand={expandField}
@@ -265,6 +266,20 @@ export function CompetitionField({
             </Pressable>
           </View>
         </View>
+        {!expanded ? (
+          <View style={{ marginTop: 8, borderRadius: 12, overflow: "hidden" }}>
+            <FieldOverview
+              lanes={fieldLanes}
+              view={view}
+              unit={arena.unit}
+              onNavigate={(value) => {
+                setCenter(value);
+                if (appearance.ground === "oval")
+                  setSpan(Math.min(view.span, fieldDefaultSpan(arena.unit) / 2));
+              }}
+            />
+          </View>
+        ) : null}
       </View>
     </View>
   );
@@ -833,10 +848,6 @@ export function CompetitionField({
           </View>
         ) : null}
       </View>
-      <Text style={textStyle("caption")}>
-        Accumulated effort, not live GPS positions. Practice fields may contain
-        synthetic athletes.
-      </Text>
     </View>
   );
 }

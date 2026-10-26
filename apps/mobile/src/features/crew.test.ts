@@ -113,15 +113,10 @@ describe("crew empty states", () => {
       ).toBe(false);
       const entry = buttons.find(
         (button) =>
-          button.props.label ===
-          (live ? "Create or join a crew" : "View account"),
+          button.props.label === "Create or join a crew",
       )!;
       await act(async () => entry.props.onPress());
-      if (live)
-        expect(renderer.root.findByType("Sheet" as never).props.open).toBe(
-          true,
-        );
-      else expect(mock.navigate).toHaveBeenCalledWith("/athlete");
+      expect(renderer.root.findByType("Sheet" as never).props.open).toBe(true);
     },
   );
 });

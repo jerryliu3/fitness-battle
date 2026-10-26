@@ -27,6 +27,7 @@ export function ChartScrubber({
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const measuredWidth = useRef(1);
   const lastId = useRef<string | null>(null);
+  const touchStart = useRef<{ x: number; y: number; locationX: number } | null>(null);
   const direction = useRef<"horizontal" | "vertical" | null>(null);
   const selected = points.find(point => point.id === selectedId);
   const latest = useRef({ points, width, onSelect });
@@ -83,6 +84,27 @@ export function ChartScrubber({
     </View>
     <View
       {...responder.panHandlers}
+      onTouchStart={event => {
+        touchStart.current = {
+          x: event.nativeEvent.pageX,
+          y: event.nativeEvent.pageY,
+          locationX: event.nativeEvent.locationX,
+        };
+      }}
+      onTouchEnd={event => {
+        if (touchStart.current) {
+          const dx = Math.abs(event.nativeEvent.pageX - touchStart.current.x);
+          const dy = Math.abs(event.nativeEvent.pageY - touchStart.current.y);
+          if (dx < 10 && dy < 10) {
+            lastId.current = null;
+            inspectRef.current(touchStart.current.locationX);
+          }
+          touchStart.current = null;
+        }
+      }}
+      onTouchCancel={() => {
+        touchStart.current = null;
+      }}
       onLayout={event => { measuredWidth.current = Math.max(1, event.nativeEvent.layout.width); }}
       accessible
       accessibilityRole="adjustable"

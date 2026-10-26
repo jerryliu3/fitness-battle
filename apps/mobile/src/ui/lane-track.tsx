@@ -1,6 +1,6 @@
 import { chartTextProps, textStyle  } from "./section";
 import {
-  fieldCourse, fieldCourseScene, fieldLap, defaultFieldAppearance, type FieldAppearance,
+  fieldCourse, fieldCourseScene, fieldLap, defaultFieldAppearance, fieldGrounds, type FieldAppearance, type FieldGround,
   fieldZoomSpan, pinchFieldView, fieldFlightDuration, fieldFlightEase, fieldProgressTrail,
   arenaPosition,
   arenaWindow,
@@ -20,7 +20,7 @@ import {
   type ArenaViewWindow,
 } from "@fitness-battle/shared";
 import { memo, useEffect, useId, useMemo, useRef, useState, type ComponentRef, type MutableRefObject } from "react";
-import { PanResponder, Pressable, Text, View } from "react-native";
+import { Dimensions, Modal, PanResponder, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import Svg, {
   Circle,
   Defs,
@@ -40,6 +40,7 @@ export interface LaneAnchor { left: number; laneWidth: number; width: number; sc
 function LaneTrackContent({
   lanes,
   appearance = defaultFieldAppearance,
+  onChangeAppearance,
   unit,
   showGhost,
   selectedId,
@@ -74,6 +75,7 @@ function LaneTrackContent({
   onZoom?: (span: number) => void;
   anchor?: MutableRefObject<LaneAnchor | null>;
   appearance?: FieldAppearance;
+  onChangeAppearance?: (appearance: FieldAppearance) => void;
   active?: boolean;
   /** Reserve room for an overlaid field status without covering lane headers. */
   topInset?: number;
@@ -94,6 +96,27 @@ function LaneTrackContent({
 }) {
   const prefix = useId();
   const [exploring, setExploring] = useState(false);
+  const [styleMenuOpen, setStyleMenuOpen] = useState(false);
+  const styleTriggerRef = useRef<ComponentRef<typeof View>>(null);
+  const [menuLayout, setMenuLayout] = useState<{ x: number; y: number; width: number } | null>(null);
+  const toggleStyleMenu = () => {
+    if (styleMenuOpen) { setStyleMenuOpen(false); return; }
+    if (styleTriggerRef.current?.measureInWindow) {
+      styleTriggerRef.current.measureInWindow((x: number, y: number, _w: number, h: number) => {
+        const windowWidth = Dimensions.get("window").width || 375;
+        const windowHeight = Dimensions.get("window").height || 812;
+        const menuWidth = 220;
+        const clampedX = Math.max(16, Math.min(x, windowWidth - menuWidth - 16));
+        const menuY = y + h + 6 + 280 > windowHeight && y > 290 ? y - 286 : y + h + 6;
+        setMenuLayout({ x: clampedX, y: Math.max(16, menuY), width: menuWidth });
+        setStyleMenuOpen(true);
+      });
+    } else {
+      setMenuLayout({ x: 16, y: 50, width: 220 });
+      setStyleMenuOpen(true);
+    }
+  };
+  useEffect(() => { if (!active) setStyleMenuOpen(false); }, [active]);
   const [width, setWidth] = useState(340);
   const [visibleScroll, setVisibleScroll] = useState(anchor?.current?.scroll ?? 0);
   const surface = useRef<ComponentRef<typeof View>>(null);
@@ -381,6 +404,20 @@ function LaneTrackContent({
               </Text>
             </Pressable>
           ) : null}
+          {onChangeAppearance ? (
+            <View ref={styleTriggerRef} collapsable={false}>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={`Map style: ${fieldGrounds[appearance.ground]?.name ?? "Style"}`}
+                accessibilityState={{ expanded: styleMenuOpen }}
+                onPress={toggleStyleMenu}
+                style={{ minHeight: 36, paddingHorizontal: 12, flexDirection: "row", alignItems: "center", gap: 6, borderRadius: 999, backgroundColor: "rgba(20, 20, 19, 0.78)", borderWidth: 1, borderColor: "rgba(255, 255, 255, 0.2)" }}
+              >
+                <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: fieldGrounds[appearance.ground]?.lane ?? c.tennis }} />
+                <Text style={{ ...textStyle("caption"), color: "#ffffff" }}>{fieldGrounds[appearance.ground]?.name ?? "Style"} ▾</Text>
+              </Pressable>
+            </View>
+          ) : null}
           <Pressable
             accessibilityRole="button"
             accessibilityState={{ selected: exploring }}
@@ -439,6 +476,30 @@ function LaneTrackContent({
           ) : null}
         </View>
       ) : null}
+      <Modal visible={styleMenuOpen} transparent animationType="none" onRequestClose={() => setStyleMenuOpen(false)}>
+        <Pressable style={StyleSheet.absoluteFill} accessibilityRole="button" accessibilityLabel="Close style menu" onPress={() => setStyleMenuOpen(false)}>
+          <View style={StyleSheet.absoluteFill} />
+        </Pressable>
+        <View style={[{ backgroundColor: c.card, borderRadius: 14, borderWidth: 1, borderColor: c.line, padding: 8, shadowColor: "#000", shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.18, shadowRadius: 12, elevation: 8 }, menuLayout ? { position: "absolute", top: menuLayout.y, left: menuLayout.x, minWidth: menuLayout.width } : null]}>
+          <Text style={[textStyle("caption"), { paddingHorizontal: 8, paddingVertical: 4, color: c.muted }]}>Field style</Text>
+          <ScrollView style={{ maxHeight: 260 }}>
+            {Object.entries(fieldGrounds).map(([id, item]) => {
+              const selected = appearance.ground === id;
+              return (
+                <Pressable key={id} accessibilityRole="button" accessibilityState={{ selected }} onPress={() => {
+                  void playCue("selection");
+                  onChangeAppearance?.({ ...appearance, ground: id as FieldGround });
+                  setStyleMenuOpen(false);
+                }} style={{ flexDirection: "row", alignItems: "center", minHeight: 38, paddingHorizontal: 8, paddingVertical: 6, borderRadius: 8, backgroundColor: selected ? c.soft : "transparent", gap: 10 }}>
+                  <View style={{ width: 14, height: 18, borderRadius: 4, backgroundColor: item.lane, borderWidth: 1, borderColor: "rgba(0,0,0,0.12)" }} />
+                  <Text style={[textStyle("body"), { flex: 1, color: selected ? c.ink : c.muted, fontWeight: selected ? "700" : "400" }]}>{item.name}</Text>
+                  {selected ? <Text style={{ color: c.tennis, fontWeight: "700" }}>✓</Text> : null}
+                </Pressable>
+              );
+            })}
+          </ScrollView>
+        </View>
+      </Modal>
     </View>
   );
 }
