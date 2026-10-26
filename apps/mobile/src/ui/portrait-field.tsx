@@ -2,6 +2,7 @@ import { chartTextProps, textStyle  } from "./section";
 import { useEffect, useId, useMemo, useRef, useState, type ComponentRef, type MutableRefObject } from "react";
 import {
   PanResponder,
+  Platform,
   Image,
   Pressable,
   StyleSheet,
@@ -24,13 +25,14 @@ import Svg, {
 import {
   portraitField,
   portraitDepthAt,
+  portraitPanDepthAt,
   portraitScaleAtDepth,
   portraitFieldGap,
   competeAthleteTrailColors,
+  fieldFlightDuration, fieldFlightEase, fieldZoomSpan, pinchFieldView,
   type ArenaSceneLane,
   type ArenaViewWindow,
 } from "@fitness-battle/shared";
-import { LaneRacerTarget } from "./lane-racer-target";
 import { IconButton } from "./icon-button";
 import { drawFieldNode } from "./field-course";
 import { alpineTrail } from "./club-art";
@@ -49,7 +51,13 @@ export function PortraitField({
   onExpand,
   onToggleDimension,
   laneAnchor,
+  focusRequest = 0,
+  onViewChange,
+  onGestureStart,
 }: {
+  focusRequest?: number;
+  onViewChange?: (view: ArenaViewWindow) => void;
+  onGestureStart?: () => void;
   height?: number;
   fullscreen?: boolean;
   onExpand?: () => void;
@@ -71,62 +79,89 @@ export function PortraitField({
   const scene = useMemo(() => portraitField(lanes, view, undefined, laneOffset, prefix), [lanes, view.center, view.span, laneOffset, prefix]);
   const [width, setWidth] = useState(340);
   const [exploring, setExploring] = useState(false);
-  const latest = useRef({ scene, view, onPan, width, height, exploring: exploring || fullscreen });
-  latest.current = { scene, view, onPan, width, height, exploring: exploring || fullscreen };
+  const latest = useRef({ scene, view, onPan, onZoom, onViewChange, onGestureStart, width, height, exploring: exploring || fullscreen, unit });
+  latest.current = { scene, view, onPan, onZoom, onViewChange, onGestureStart, width, height, exploring: exploring || fullscreen, unit };
   const surface = useRef<ComponentRef<typeof View>>(null);
   const frame = useRef<number | null>(null);
-  const pending = useRef<{ offset: number; center: number } | null>(null);
-  const start = useRef({ focus: 0, center: 0, span: 1, depth: 0, y: 0 });
+  const travel = useRef<number | null>(null);
+  const pending = useRef<{ offset: number; view: ArenaViewWindow } | null>(null);
+  const stopTravel = () => { if (travel.current !== null) cancelAnimationFrame(travel.current); travel.current = null; };
+  const interruptTravel = () => { stopTravel(); onGestureStart?.(); };
+  const panTo = (center: number) => { interruptTravel(); onPan(center); };
+  const zoomTo = (span: number) => { interruptTravel(); onZoom(span); };
+  const publish = () => {
+    frame.current = null;
+    const next = pending.current;
+    pending.current = null;
+    if (!next) return;
+    setLaneOffset(next.offset);
+    const p = latest.current;
+    if (p.onViewChange) p.onViewChange(next.view);
+    else { if (next.view.span !== p.view.span) p.onZoom(next.view.span); if (p.exploring || next.view.span !== p.view.span) p.onPan(next.view.center); }
+  };
+  const start = useRef({ focus: 0, view, depth: 0, x: 0, y: 0, top: 0, distance: 0, count: 1 });
   const [pan] = useState(() => PanResponder.create({
-    // Claim movement before SVG portrait targets or the outer event pager.
-    onMoveShouldSetPanResponderCapture: (_, g) => Math.hypot(g.dx, g.dy) > 8 && (latest.current.exploring || Math.abs(g.dx) > Math.abs(g.dy) * 1.3),
-    onMoveShouldSetPanResponder: (_, g) => Math.hypot(g.dx, g.dy) > 8 && (latest.current.exploring || Math.abs(g.dx) > Math.abs(g.dy) * 1.3),
+    onStartShouldSetPanResponderCapture: e => e.nativeEvent.touches.length >= 2,
+    onStartShouldSetPanResponder: e => e.nativeEvent.touches.length >= 2,
+    onMoveShouldSetPanResponderCapture: (e, g) => (e?.nativeEvent.touches?.length ?? 0) >= 2 || Math.hypot(g.dx, g.dy) > 4 && (latest.current.exploring || Math.abs(g.dx) > Math.abs(g.dy) * 1.3),
+    onMoveShouldSetPanResponder: (e, g) => (e?.nativeEvent.touches?.length ?? 0) >= 2 || Math.hypot(g.dx, g.dy) > 4 && (latest.current.exploring || Math.abs(g.dx) > Math.abs(g.dy) * 1.3),
     onPanResponderGrant: (e, g) => {
-      const p = latest.current;
-      const pageY = e.nativeEvent.pageY, dy = g.dy;
-      const y = e.nativeEvent.locationY - dy;
-      start.current = { focus: p.scene.focus, center: p.view.center, span: p.view.span, depth: portraitDepthAt(y / p.height * 600), y };
-      // SVG child touches can report child-local coordinates. Measure the
-      // responder surface so the distance anchor uses the board's origin.
-      surface.current?.measureInWindow((_x: number, top: number) => {
-        const localY = pageY - top - dy;
-        start.current = { ...start.current, y: localY, depth: portraitDepthAt(localY / p.height * 600) };
+      stopTravel(); latest.current.onGestureStart?.();
+      const p = latest.current, touches = e.nativeEvent.touches;
+      const a = touches?.[0], b = touches?.[1];
+      const x = a ? (a.pageX + (b?.pageX ?? a.pageX)) / 2 : e.nativeEvent.pageX ?? 0;
+      const y = a ? (a.pageY + (b?.pageY ?? a.pageY)) / 2 : e.nativeEvent.pageY;
+      const top = e.nativeEvent.pageY - e.nativeEvent.locationY;
+      start.current = { focus: p.scene.focus, view: p.view, depth: portraitDepthAt((y - top) / p.height * 600), x, y, top, distance: a && b ? Math.hypot(a.pageX - b.pageX, a.pageY - b.pageY) : 0, count: b ? 2 : 1 };
+      surface.current?.measureInWindow((_x: number, measuredTop: number) => {
+        start.current.top = measuredTop;
+        start.current.depth = portraitDepthAt((start.current.y - measuredTop) / p.height * 600);
       });
     },
-    onPanResponderMove: (_, g) => {
-      const p = latest.current, d = start.current;
-      pending.current = {
-        offset: Math.max(0, Math.min(p.scene.ordered.length - 1, d.focus - g.dx / p.width * 420 / (222 * portraitScaleAtDepth(d.depth)))) - p.scene.baseFocus,
-        center: d.center + (portraitDepthAt((d.y + g.dy) / p.height * 600) - d.depth) * d.span,
-      };
-      if (frame.current !== null) return;
-      frame.current = requestAnimationFrame(() => {
-        frame.current = null;
+    onPanResponderMove: (e, g) => {
+      const p = latest.current, d = start.current, touches = e?.nativeEvent.touches;
+      const a = touches?.[0], b = touches?.[1];
+      const count = b ? 2 : 1;
+      const x = a ? (a.pageX + (b?.pageX ?? a.pageX)) / 2 : d.x + g.dx;
+      const y = a ? (a.pageY + (b?.pageY ?? a.pageY)) / 2 : d.y + g.dy;
+      const distance = a && b ? Math.hypot(a.pageX - b.pageX, a.pageY - b.pageY) : 0;
+      if (count !== d.count) {
         const next = pending.current;
-        pending.current = null;
-        if (!next) return;
-        setLaneOffset(next.offset);
-        if (latest.current.exploring) latest.current.onPan(next.center);
-      });
+        start.current = { ...d, count, x, y, distance, view: next?.view ?? p.view, focus: next ? p.scene.baseFocus + next.offset : p.scene.focus, depth: portraitDepthAt((y - d.top) / p.height * 600) };
+        return;
+      }
+      const depth = portraitDepthAt((y - d.top) / p.height * 600);
+      const span = count === 2 && distance > 0 && d.distance > 0 ? fieldZoomSpan(d.view.span * d.distance / distance, p.unit) : d.view.span;
+      const nextView = p.exploring || count === 2 ? pinchFieldView(d.view, span, d.depth, depth) : p.view;
+      if (p.exploring && count === 1) nextView.center = d.view.center + (portraitPanDepthAt((y - d.top) / p.height * 600) - portraitPanDepthAt((d.y - d.top) / p.height * 600)) * d.view.span;
+      pending.current = {
+        offset: Math.max(0, Math.min(p.scene.ordered.length - 1, d.focus - (x - d.x) / p.width * 420 / (222 * portraitScaleAtDepth(d.depth)))) - p.scene.baseFocus,
+        view: nextView,
+      };
+      if (frame.current === null) frame.current = requestAnimationFrame(publish);
     },
-    // Own a claimed field drag so the event carousel cannot steal it.
+    onPanResponderRelease: () => { if (frame.current !== null) cancelAnimationFrame(frame.current); publish(); },
     onPanResponderTerminationRequest: () => false,
-    onPanResponderTerminate: () => { if (frame.current !== null) cancelAnimationFrame(frame.current); frame.current = null; pending.current = null; },
+    onPanResponderTerminate: () => { if (frame.current !== null) cancelAnimationFrame(frame.current); publish(); },
   }));
-  useEffect(() => () => { if (frame.current !== null) cancelAnimationFrame(frame.current); }, []);
-  const moveTo = (offset: number) => setLaneOffset(Math.max(0, Math.min(scene.ordered.length - 1, scene.baseFocus + offset)) - scene.baseFocus);
-  const shift = (d: number) => moveTo(laneOffset + d);
-  const prevSelectedRef = useRef<string | undefined>(focusOnMount ? undefined : selectedId);
+  useEffect(() => () => { if (frame.current !== null) cancelAnimationFrame(frame.current); stopTravel(); }, []);
+  const moveTo = (offset: number, animate = animateSelection) => {
+    stopTravel();
+    const target = Math.max(0, Math.min(scene.ordered.length - 1, scene.baseFocus + offset)) - scene.baseFocus;
+    if (!animate) { setLaneOffset(target); return; }
+    const from = laneOffset, started = Date.now(), duration = fieldFlightDuration(view, view, target - from);
+    const tick = () => { const t = Math.min(1, (Date.now() - started) / duration); setLaneOffset(from + (target - from) * fieldFlightEase(t)); travel.current = t < 1 ? requestAnimationFrame(tick) : null; };
+    travel.current = requestAnimationFrame(tick);
+  };
+  const shift = (d: number) => { interruptTravel(); moveTo(laneOffset + d, false); };
+  const prevSelectedRef = useRef(focusOnMount ? "" : `${selectedId}:${focusRequest}`);
   useEffect(() => {
-    if (!selectedId || selectedId === prevSelectedRef.current) {
-      prevSelectedRef.current = selectedId;
-      return;
-    }
-    prevSelectedRef.current = selectedId;
+    const key = `${selectedId}:${focusRequest}`;
+    if (!selectedId || key === prevSelectedRef.current) return;
+    prevSelectedRef.current = key;
     const focus = scene.ordered.findIndex((lane) => lane.id === selectedId);
-    if (focus < 0) return;
-    moveTo(focus - scene.baseFocus);
-  }, [selectedId, scene.baseFocus, scene.ordered, animateSelection]);
+    if (focus >= 0) moveTo(focus - scene.baseFocus);
+  }, [selectedId, focusRequest, scene.baseFocus, scene.ordered, animateSelection]);
   return (
     <View style={{ gap: 10 }}>
       <View style={s.status} pointerEvents="none">
@@ -147,14 +182,15 @@ export function PortraitField({
       }}
     >
       <Image source={alpineTrail} style={[s.scenery, { height: height * .44 }]} />
-      <View ref={surface} style={StyleSheet.absoluteFill}>
+      <View ref={surface} {...pan.panHandlers} style={{ ...StyleSheet.absoluteFill, ...(Platform.OS === "web" ? { touchAction: exploring || fullscreen ? "none" : "pan-y" } : {}) }}>
           <Svg
-            {...pan.panHandlers}
+            pointerEvents="none"
+            accessible
             width={width}
             height="100%"
             viewBox="0 0 420 600"
             preserveAspectRatio="none"
-            accessibilityLabel="Distance perspective competition field"
+            accessibilityLabel={`3D field, ${scene.min.toFixed(2)} to ${scene.max.toFixed(2)} ${unit}`}
           >
             <Defs>
               <LinearGradient
@@ -198,33 +234,13 @@ export function PortraitField({
               fill={`url(#${prefix}-horizon)`}
             />
             </G>
-            {scene.markers.map((m) => {
-              const trail = m.trail ? competeAthleteTrailColors(Boolean(m.you), Boolean(m.ghost)) : null;
-              return (
-              <G key={`trail-${m.id}`} pointerEvents="none">
-                {m.trail && trail ? (
-                  <>
-                    <Path
-                      d={m.trail}
-                      stroke={trail.glow}
-                      strokeWidth={trail.glowStrokeWidth}
-                      opacity={trail.glowOpacity}
-                      strokeLinecap="round"
-                      fill="none"
-                    />
-                    <Path
-                      d={m.trail}
-                      stroke={trail.stroke}
-                      strokeWidth={trail.strokeWidth}
-                      opacity={trail.strokeOpacity}
-                      strokeDasharray={m.ghost ? "6 8" : undefined}
-                      strokeLinecap="round"
-                      fill="none"
-                    />
-                  </>
-                ) : null}
-              </G>
-              );
+            {[...scene.trails].sort((a, b) =>
+              (a.id === selectedId ? 2 : a.you ? 1 : 0) - (b.id === selectedId ? 2 : b.you ? 1 : 0)
+            ).map(m => {
+              const trail = competeAthleteTrailColors(Boolean(m.you), Boolean(m.ghost));
+              return <Path key={`trail-${m.id}`} pointerEvents="none" d={m.trail}
+                stroke={trail.stroke} strokeWidth={trail.strokeWidth} opacity={trail.strokeOpacity}
+                vectorEffect="non-scaling-stroke" strokeLinecap="round" fill="none" />;
             })}
             {scene.markers
               .filter((m) => m.x > 22 && m.x < 398)
@@ -232,13 +248,7 @@ export function PortraitField({
               .map((m, i) => {
                 const id = `${prefix}-portrait-${i}`;
                 return (
-                  <LaneRacerTarget
-                    key={m.id}
-                    onPress={() => onSelect(m.id)}
-                    accessible
-                    accessibilityRole="button"
-                    accessibilityLabel={`${m.name}${m.you ? ", you" : ""}, ${m.gap.toFixed(1)} ${unit}${m.outside ? ", outside visible distance range" : ""}`}
-                  >
+                  <G key={m.id}>
                     <G transform={`translate(${m.x} ${m.y - 27 * m.scale}) scale(${m.scale})`}>
                     <Rect x={-30 / m.scale} y={-45 / m.scale} width={60 / m.scale} height={90 / m.scale} fill="transparent" />
                     {!m.ghost && m.trail ? (
@@ -364,10 +374,12 @@ export function PortraitField({
                       </SvgText>
                     ) : null}
                     </G>
-                  </LaneRacerTarget>
+                  </G>
                 );
               })}
           </Svg>
+          <Pressable accessible={false} onPress={() => {}} style={{ position: "absolute", inset: 0 }} />
+          {scene.markers.filter(m => m.x > 22 && m.x < 398).map(m => <Pressable key={m.id} accessibilityRole="button" accessibilityLabel={`Focus ${m.name}`} accessibilityState={{ selected: selectedId === m.id }} onPress={() => onSelect(m.id)} style={{ position: "absolute", left: (m.x - 30) / 420 * width, top: (m.y - 27 * m.scale - 45) / 600 * height, width: 60 / 420 * width, height: 90 / 600 * height }} />)}
       </View>
       {!fullscreen && (onToggleDimension || onExpand) ? (
         <View
@@ -423,9 +435,9 @@ export function PortraitField({
           ) : null}
         </View>
       ) : null}
-      <View style={{ position: "absolute", top: 12, left: 12, right: 60, gap: 6 }}>
+      <View pointerEvents="box-none" style={{ position: "absolute", top: 12, left: 12, right: 60, gap: 6 }}>
         {!fullscreen && <Pressable style={[s.controlRow, { alignSelf: "flex-start", minHeight: 44, paddingHorizontal: 16 }]} accessibilityRole="button" accessibilityLabel={exploring ? "Finish exploring field" : "Explore field in two directions"} accessibilityState={{ selected: exploring }} onPress={() => setExploring(!exploring)}><Text style={s.white}>{exploring ? "Done" : "Explore"}</Text></Pressable>}
-        <Text style={[s.white, textStyle("caption")]}>{exploring || fullscreen ? "Drag in any direction" : "Swipe across lanes · Explore to move forward"}</Text>
+        <View pointerEvents="none"><Text style={[s.white, textStyle("caption")]}>{exploring || fullscreen ? "Drag to move · Pinch to zoom" : "Swipe across lanes · Explore to move forward"}</Text></View>
       </View>
     </View>
       <View style={{ gap: 6 }}>
@@ -433,21 +445,21 @@ export function PortraitField({
           const peers = scene.outside.filter(m => m.direction === direction && !m.ghost);
           if (!peers.length) return null;
           const nearest = peers.reduce((a,b) => Math.abs(a.value-view.center) < Math.abs(b.value-view.center) ? a : b);
-          return <Pressable key={direction} style={[s.controlRow, { minHeight: 44, paddingHorizontal: 12 }]} accessibilityRole="button" onPress={() => { moveTo(scene.ordered.findIndex(l => l.id === nearest.id) - scene.baseFocus); onSelect(nearest.id); }}><Text style={[s.white, textStyle("caption")]}>{direction} {peers.length} {direction === "↑" ? "ahead" : "behind"} · {nearest.name.split(" ")[0]} {nearest.you ? "your position" : `${Math.abs(nearest.gap).toFixed(unit === "pts" ? 0 : 2)} ${unit} ${nearest.gap >= 0 ? "ahead of you" : "behind you"}`}</Text></Pressable>;
+          return <Pressable key={direction} style={[s.controlRow, { minHeight: 44, paddingHorizontal: 12 }]} accessibilityRole="button" onPress={() => { onSelect(nearest.id); }}><Text style={[s.white, textStyle("caption")]}>{direction} {peers.length} {direction === "↑" ? "ahead" : "behind"} · {nearest.name.split(" ")[0]} {nearest.you ? "your position" : `${Math.abs(nearest.gap).toFixed(unit === "pts" ? 0 : 2)} ${unit} ${nearest.gap >= 0 ? "ahead of you" : "behind you"}`}</Text></Pressable>;
         })}
       </View>
       <View style={s.controls}>
         <View style={s.controlRow}>
           <Pressable style={s.button} accessibilityRole="button" accessibilityLabel="Previous lane" disabled={scene.focus <= 0} onPress={() => shift(-1)}><Text style={s.white}>←</Text></Pressable>
-          <Pressable style={s.button} accessibilityRole="button" accessibilityLabel="Move backward" disabled={scene.min <= 0} onPress={() => onPan(view.center - view.span / 3)}><Text style={s.white}>↓</Text></Pressable>
-          <Pressable style={s.button} accessibilityRole="button" accessibilityLabel="Your lane" onPress={() => { moveTo(0); onPan(lanes.find(l => l.you)?.value ?? 0); }}><Text style={s.white}>You</Text></Pressable>
-          <Pressable style={s.button} accessibilityRole="button" accessibilityLabel="Move forward" onPress={() => onPan(view.center + view.span / 3)}><Text style={s.white}>↑</Text></Pressable>
+          <Pressable style={s.button} accessibilityRole="button" accessibilityLabel="Move backward" disabled={scene.min <= 0} onPress={() => panTo(view.center - view.span / 3)}><Text style={s.white}>↓</Text></Pressable>
+          <Pressable style={s.button} accessibilityRole="button" accessibilityLabel="Your lane" onPress={() => { onSelect(lanes.find(l => l.you)?.id ?? ""); }}><Text style={s.white}>You</Text></Pressable>
+          <Pressable style={s.button} accessibilityRole="button" accessibilityLabel="Move forward" onPress={() => panTo(view.center + view.span / 3)}><Text style={s.white}>↑</Text></Pressable>
           <Pressable style={s.button} accessibilityRole="button" accessibilityLabel="Next lane" disabled={scene.focus >= scene.ordered.length - 1} onPress={() => shift(1)}><Text style={s.white}>→</Text></Pressable>
         </View>
         <View style={s.controlRow}>
-          <Pressable style={s.button} accessibilityRole="button" accessibilityLabel="Zoom out" disabled={view.span >= (unit === "pts" ? 100 : 40)} onPress={() => onZoom(Math.min(unit === "pts" ? 100 : 40, view.span * 1.5))}><Text style={s.white}>−</Text></Pressable>
+          <Pressable style={s.button} accessibilityRole="button" accessibilityLabel="Zoom out" disabled={view.span >= (unit === "pts" ? 100 : 40)} onPress={() => zoomTo(Math.min(unit === "pts" ? 100 : 40, view.span * 1.5))}><Text style={s.white}>−</Text></Pressable>
           <Text style={[s.white, textStyle("caption")]}>{Math.max(0, scene.min).toFixed(unit === "pts" ? 0 : 2)}–{scene.max.toFixed(unit === "pts" ? 0 : 2)} {unit}</Text>
-          <Pressable style={s.button} accessibilityRole="button" accessibilityLabel="Zoom in" disabled={view.span <= (unit === "pts" ? 2 : 0.5)} onPress={() => onZoom(Math.max(unit === "pts" ? 2 : 0.5, view.span / 1.5))}><Text style={s.white}>＋</Text></Pressable>
+          <Pressable style={s.button} accessibilityRole="button" accessibilityLabel="Zoom in" disabled={view.span <= (unit === "pts" ? 2 : 0.5)} onPress={() => zoomTo(Math.max(unit === "pts" ? 2 : 0.5, view.span / 1.5))}><Text style={s.white}>＋</Text></Pressable>
         </View>
       </View>
     </View>

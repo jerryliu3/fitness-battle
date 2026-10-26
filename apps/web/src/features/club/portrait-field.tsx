@@ -1,13 +1,17 @@
 "use client";
 import { typographyStyle, AppText  } from "@/ui/section";
 
+import { useFieldGestures } from "../field/use-field-gestures";
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 import {
+  orderedArenaLanes,
   portraitField,
   portraitDepthAt,
+  portraitPanDepthAt,
   portraitScaleAtDepth,
   portraitFieldGap,
   competeAthleteTrailColors,
+  fieldFlightDuration, fieldFlightEase, pinchFieldView,
   type ArenaSceneLane,
   type ArenaViewWindow,
 } from "@fitness-battle/shared";
@@ -26,7 +30,13 @@ export function PortraitField({
   onZoom,
   onPan,
   onSelect,
+  focusRequest = 0,
+  onViewChange,
+  onGestureStart,
 }: {
+  focusRequest?: number;
+  onViewChange?: (view: ArenaViewWindow) => void;
+  onGestureStart?: () => void;
   lanes: ArenaSceneLane[];
   view: ArenaViewWindow;
   unit: string;
@@ -39,72 +49,72 @@ export function PortraitField({
   onPan: (center: number) => void;
   onSelect: (id: string) => void;
 }) {
-  const [laneOffset, setLaneOffset] = useState(0);
+  const [laneOffset, setLaneOffset] = useState(() => {
+    const ordered = orderedArenaLanes(lanes);
+    return Math.max(0, ordered.findIndex(l => l.id === selectedId)) - Math.max(0, ordered.findIndex(l => l.you));
+  });
   const prefix = useId().replace(/:/g, "");
   const scene = useMemo(() => portraitField(lanes, view, undefined, laneOffset, prefix), [lanes, view.center, view.span, laneOffset, prefix]);
-  const prevSelectedRef = useRef<string | undefined>(focusOnMount ? undefined : selectedId);
-  const [exploring, setExploring] = useState(false);
+  const prevSelectedRef = useRef(focusOnMount ? "" : `${selectedId}:${focusRequest}`);
+  const [exploreEnabled, setExploring] = useState(false);
+  const exploring = immersive || exploreEnabled;
   const svg = useRef<SVGSVGElement>(null);
-  const latest = useRef({ onPan, view, scene });
-  latest.current = { onPan, view, scene };
-  const pending = useRef<{ offset: number; center: number } | null>(null);
-  const frame = useRef<number | null>(null);
-  const queue = (offset: number, center: number) => {
-    pending.current = { offset, center };
-    if (frame.current !== null) return;
-    frame.current = requestAnimationFrame(() => {
-      frame.current = null;
-      const next = pending.current;
-      pending.current = null;
-      if (!next) return;
-      setLaneOffset(next.offset);
-      if (exploring) latest.current.onPan(next.center);
-    });
-  };
-  useEffect(() => () => { if (frame.current !== null) cancelAnimationFrame(frame.current); }, []);
-
-  useEffect(() => {
-    const node = svg.current;
-    if (!node || !exploring) return;
-    const wheel = (event: WheelEvent) => {
-      event.preventDefault();
-      const p = latest.current;
-      const pixels = event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? node.clientHeight : 1;
-      const center = (pending.current?.center ?? p.view.center) + event.deltaY * pixels / node.clientHeight * p.view.span;
-      const offset = (pending.current?.offset ?? p.scene.focus - p.scene.baseFocus) + event.deltaX * pixels / 110;
-      queue(Math.max(-p.scene.baseFocus, Math.min(p.scene.ordered.length - 1 - p.scene.baseFocus, offset)), center);
-    };
-    node.addEventListener("wheel", wheel, { passive: false });
-    return () => node.removeEventListener("wheel", wheel);
-  }, [exploring]);
-
-  const shift = (d: number) =>
+  const latest = useRef({ onPan, onZoom, onViewChange, view, scene, exploring });
+  latest.current = { onPan, onZoom, onViewChange, view, scene, exploring };
+  const shift = (d: number) => {
+    interruptTravel();
     setLaneOffset(
       Math.max(0, Math.min(scene.ordered.length - 1, scene.focus + d)) -
         scene.baseFocus,
     );
+  };
+  const travel = useRef<number | null>(null);
+  const stopTravel = () => { if (travel.current !== null) cancelAnimationFrame(travel.current); travel.current = null; };
+  const interruptTravel = () => { stopTravel(); onGestureStart?.(); };
+  const panTo = (center: number) => { interruptTravel(); onPan(center); };
+  const zoomTo = (span: number) => { interruptTravel(); onZoom(span); };
+  useEffect(() => () => stopTravel(), []);
   useEffect(() => {
-    if (!selectedId || selectedId === prevSelectedRef.current) {
-      prevSelectedRef.current = selectedId;
-      return;
-    }
-    prevSelectedRef.current = selectedId;
+    const key = `${selectedId}:${focusRequest}`;
+    if (!selectedId || key === prevSelectedRef.current) return;
+    prevSelectedRef.current = key;
     const focus = scene.ordered.findIndex((lane) => lane.id === selectedId);
     if (focus < 0) return;
-    setLaneOffset(focus - scene.baseFocus);
-  }, [selectedId, scene.baseFocus, scene.ordered]);
-  const drag = useRef<{
-    x: number;
-    y: number;
-    focus: number;
-    center: number;
-    span: number;
-    height: number;
-    width: number;
-    top: number;
-    moved: boolean;
-  } | null>(null);
-  const moved = useRef(false);
+    stopTravel();
+    const target = focus - scene.baseFocus, from = laneOffset;
+    if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) { setLaneOffset(target); return; }
+    const started = performance.now(), duration = fieldFlightDuration(view, view, target - from);
+    const tick = (now: number) => { const t = Math.min(1, (now - started) / duration); setLaneOffset(from + (target - from) * fieldFlightEase(t)); travel.current = t < 1 ? requestAnimationFrame(tick) : null; };
+    travel.current = requestAnimationFrame(tick);
+  }, [selectedId, focusRequest, scene.baseFocus, scene.ordered]);
+  const gestures = useFieldGestures({
+    surface: svg, view, unit, enabled: exploring,
+    lateral: () => latest.current.scene.focus,
+    onStart: () => { stopTravel(); onGestureStart?.(); },
+    onTap: (_event, target) => { const id = (target as Element)?.closest("[data-athlete]")?.getAttribute("data-athlete"); if (id) onSelect(id); },
+    onMove: gesture => {
+      const node = svg.current;
+      if (!node) return;
+      const screen = node.getScreenCTM();
+      if (!screen) return;
+      // The scene keeps its aspect ratio. Convert through its actual screen
+      // transform, including letterboxing and browser/CSS scaling.
+      const inverse = screen.inverse();
+      const from = new DOMPoint(gesture.from.x, gesture.from.y).matrixTransform(inverse);
+      const to = new DOMPoint(gesture.to.x, gesture.to.y).matrixTransform(inverse);
+      const depth = portraitDepthAt(from.y);
+      const nextDepth = portraitDepthAt(to.y);
+      const offset = Math.max(0, Math.min(scene.ordered.length - 1, gesture.lateral - (to.x - from.x) / (222 * portraitScaleAtDepth(depth)))) - scene.baseFocus;
+      setLaneOffset(offset);
+      if (exploring || gesture.pinching) {
+        const next = pinchFieldView(gesture.view, gesture.span, depth, nextDepth);
+        if (!gesture.pinching) next.center = gesture.view.center + (portraitPanDepthAt(to.y) - portraitPanDepthAt(from.y)) * gesture.view.span;
+        if (onViewChange) onViewChange(next); else { if (gesture.pinching) onZoom(next.span); onPan(next.center); }
+        return { view: next, lateral: offset + scene.baseFocus };
+      }
+      return { view: gesture.view, lateral: offset + scene.baseFocus };
+    },
+  });
   return (
     <div className={immersive ? "club-perspective-group is-immersive" : "club-perspective-group"}>
       <div className="club-board-status">
@@ -151,64 +161,16 @@ export function PortraitField({
           if (e.target !== e.currentTarget) return;
           if (!["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "Home"].includes(e.key)) return;
           e.preventDefault();
-          if (e.key === "ArrowUp" || e.key === "ArrowDown") onPan(view.center + (e.key === "ArrowUp" ? 1 : -1) * view.span / 4);
-          else if (e.key === "Home") { setLaneOffset(0); onPan(lanes.find(l => l.you)?.value ?? 0); }
+          if (e.key === "ArrowUp" || e.key === "ArrowDown") panTo(view.center + (e.key === "ArrowUp" ? 1 : -1) * view.span / 4);
+          else if (e.key === "Home") { onSelect(lanes.find(l => l.you)?.id ?? ""); }
           else shift(e.key === "ArrowRight" ? 1 : -1);
         }}
         className="club-perspective-svg"
         viewBox="0 0 420 600"
+        preserveAspectRatio="xMidYMid meet"
         aria-label="Distance perspective field. Arrow keys browse distances and lanes; Home returns to you."
         role="group"
-        onPointerDown={(e) => {
-          if (e.button !== 0 || !e.isPrimary) return;
-          const rect = e.currentTarget.getBoundingClientRect();
-          drag.current = {
-            x: e.clientX,
-            y: e.clientY,
-            focus: scene.focus,
-            center: view.center,
-            span: view.span,
-            height: rect.height,
-            width: rect.width,
-            top: rect.top,
-            moved: false,
-          };
-          moved.current = false;
-        }}
-        onPointerMove={(e) => {
-          const d = drag.current;
-          if (!d) return;
-          const dx = e.clientX - d.x,
-            dy = e.clientY - d.y;
-          if (
-            !d.moved &&
-            Math.hypot(dx, dy) > 8 &&
-            (exploring || immersive || Math.abs(dx) > Math.abs(dy) * 1.3)
-          ) {
-            d.moved = true;
-            e.currentTarget.setPointerCapture(e.pointerId);
-          }
-          if (d.moved) {
-            moved.current = true;
-            const depth = portraitDepthAt((d.y - d.top) / d.height * 600);
-            const offset = Math.max(0, Math.min(scene.ordered.length - 1, d.focus - dx / d.width * 420 / (222 * portraitScaleAtDepth(depth)))) - scene.baseFocus;
-            queue(offset, d.center + (portraitDepthAt((e.clientY - d.top) / d.height * 600) - depth) * d.span);
-          }
-        }}
-        onPointerUp={() => {
-          drag.current = null;
-        }}
-        onLostPointerCapture={() => { drag.current = null; }}
-        onPointerCancel={() => {
-          drag.current = null;
-        }}
-        onClickCapture={(e) => {
-          if (moved.current) {
-            e.preventDefault();
-            e.stopPropagation();
-            moved.current = false;
-          }
-        }}
+        {...gestures}
       >
         <defs>
           <linearGradient id={`${prefix}-shade`} x1="0" y1="0" x2="0" y2="1">
@@ -232,33 +194,13 @@ export function PortraitField({
           height={110}
           fill={`url(#${prefix}-horizon)`}
         />
-        {scene.markers.map((m) => {
-          const trail = m.trail ? competeAthleteTrailColors(Boolean(m.you), Boolean(m.ghost)) : null;
-          return (
-          <g key={`trail-${m.id}`} pointerEvents="none">
-            {m.trail && trail ? (
-              <>
-                <path
-                  d={m.trail}
-                  stroke={trail.glow}
-                  strokeWidth={trail.glowStrokeWidth}
-                  opacity={trail.glowOpacity}
-                  strokeLinecap="round"
-                  fill="none"
-                />
-                <path
-                  d={m.trail}
-                  stroke={trail.stroke}
-                  strokeWidth={trail.strokeWidth}
-                  opacity={trail.strokeOpacity}
-                  strokeDasharray={m.ghost ? "6 8" : undefined}
-                  strokeLinecap="round"
-                  fill="none"
-                />
-              </>
-            ) : null}
-          </g>
-          );
+        {[...scene.trails].sort((a, b) =>
+          (a.id === selectedId ? 2 : a.you ? 1 : 0) - (b.id === selectedId ? 2 : b.you ? 1 : 0)
+        ).map(m => {
+          const trail = competeAthleteTrailColors(Boolean(m.you), Boolean(m.ghost));
+          return <path key={`trail-${m.id}`} pointerEvents="none" d={m.trail}
+            stroke={trail.stroke} strokeWidth={trail.strokeWidth} opacity={trail.strokeOpacity}
+            vectorEffect="non-scaling-stroke" strokeLinecap="round" fill="none" />;
         })}
         {scene.markers
           .filter((m) => m.x > 22 && m.x < 398)
@@ -275,7 +217,8 @@ export function PortraitField({
                 role="button"
                 tabIndex={0}
                 aria-label={`${m.name}${m.you ? ", you" : ""}, ${m.gap > 0 ? "+" : ""}${m.gap.toFixed(1)} ${unit}${m.outside ? ", outside visible distance range" : ""}`}
-                onClick={() => onSelect(m.id)}
+                data-athlete={m.id}
+                onClick={event => { if (event.detail === 0) onSelect(m.id); }}
                 onKeyDown={(e) => {
                   if (e.key === "Enter" || e.key === " ") {
                     e.preventDefault();
@@ -401,9 +344,9 @@ export function PortraitField({
             );
           })}
       </svg>
-      <div className="club-field-explore">
-        <button type="button" aria-pressed={exploring} onClick={() => setExploring(!exploring)}>{exploring ? "Done" : "Explore"}</button>
-        <span>{exploring ? "Drag in any direction" : "Swipe across lanes · Explore to move forward"}</span>
+      <div className="club-field-explore" style={{ pointerEvents: "none" }}>
+        {!immersive && <button type="button" style={{ pointerEvents: "auto" }} aria-pressed={exploring} onClick={() => setExploring(!exploring)}>{exploring ? "Done" : "Explore"}</button>}
+        <span>{exploring ? "Drag to move · Pinch to zoom" : "Swipe across lanes · Explore to move forward"}</span>
       </div>
     </div>
       <div className="club-field-offscreen">
@@ -411,21 +354,21 @@ export function PortraitField({
           const peers = scene.outside.filter(m => m.direction === direction && !m.ghost);
           if (!peers.length) return null;
           const nearest = peers.reduce((a,b) => Math.abs(a.value-view.center) < Math.abs(b.value-view.center) ? a : b);
-          return <button type="button" key={direction} onClick={() => { setLaneOffset(scene.ordered.findIndex(l => l.id === nearest.id) - scene.baseFocus); onSelect(nearest.id); }}>{direction} {peers.length} {direction === "↑" ? "ahead" : "behind"} · {nearest.name.split(" ")[0]} {nearest.you ? "your position" : `${Math.abs(nearest.gap).toFixed(unit === "pts" ? 0 : 2)} ${unit} ${nearest.gap >= 0 ? "ahead of you" : "behind you"}`}</button>;
+          return <button type="button" key={direction} onClick={() => { onSelect(nearest.id); }}>{direction} {peers.length} {direction === "↑" ? "ahead" : "behind"} · {nearest.name.split(" ")[0]} {nearest.you ? "your position" : `${Math.abs(nearest.gap).toFixed(unit === "pts" ? 0 : 2)} ${unit} ${nearest.gap >= 0 ? "ahead of you" : "behind you"}`}</button>;
         })}
       </div>
       <div className="club-board-controls club-distance-controls">
         <div className="club-board-peers">
           <button type="button" aria-label="Previous lane" disabled={scene.focus <= 0} onClick={() => shift(-1)}>←</button>
-          <button type="button" aria-label="Move backward" disabled={scene.min <= 0} onClick={() => onPan(view.center - view.span / 3)}>↓</button>
-          <button type="button" onClick={() => { setLaneOffset(0); onPan(lanes.find(l => l.you)?.value ?? 0); }}>You</button>
-          <button type="button" aria-label="Move forward" onClick={() => onPan(view.center + view.span / 3)}>↑</button>
+          <button type="button" aria-label="Move backward" disabled={scene.min <= 0} onClick={() => panTo(view.center - view.span / 3)}>↓</button>
+          <button type="button" onClick={() => { onSelect(lanes.find(l => l.you)?.id ?? ""); }}>You</button>
+          <button type="button" aria-label="Move forward" onClick={() => panTo(view.center + view.span / 3)}>↑</button>
           <button type="button" aria-label="Next lane" disabled={scene.focus >= scene.ordered.length - 1} onClick={() => shift(1)}>→</button>
         </div>
         <div className="club-board-zoom">
-          <button type="button" aria-label="Zoom out" disabled={view.span >= (unit === "pts" ? 100 : 40)} onClick={() => onZoom(Math.min(unit === "pts" ? 100 : 40, view.span * 1.5))}>−</button>
+          <button type="button" aria-label="Zoom out" disabled={view.span >= (unit === "pts" ? 100 : 40)} onClick={() => zoomTo(Math.min(unit === "pts" ? 100 : 40, view.span * 1.5))}>−</button>
           <span aria-live="off">{Math.max(0, scene.min).toFixed(unit === "pts" ? 0 : 2)}–{scene.max.toFixed(unit === "pts" ? 0 : 2)} {unit}</span>
-          <button type="button" aria-label="Zoom in" disabled={view.span <= (unit === "pts" ? 2 : 0.5)} onClick={() => onZoom(Math.max(unit === "pts" ? 2 : 0.5, view.span / 1.5))}>＋</button>
+          <button type="button" aria-label="Zoom in" disabled={view.span <= (unit === "pts" ? 2 : 0.5)} onClick={() => zoomTo(Math.max(unit === "pts" ? 2 : 0.5, view.span / 1.5))}>＋</button>
         </div>
       </div>
     </div>

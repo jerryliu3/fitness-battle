@@ -1,5 +1,5 @@
 import { expect, it } from "vitest";
-import { portraitField, portraitFieldGap, portraitDepthAt } from "./portrait-field";
+import { portraitField, portraitFieldGap, portraitDepthAt, portraitPanDepthAt } from "./portrait-field";
 import { fieldCourse, defaultFieldAppearance } from "./index";
 const lanes = [
   { id: "a", name: "Ahead", initials: "A", value: 12 },
@@ -66,9 +66,23 @@ it("projects survey lines and athletes through the same invertible distance plan
   expect(scene.outside.some(m => m.ghost)).toBe(true);
 });
 
-it("omits start trails when the start line is outside the distance window", () => {
+it("keeps trails when the start line is offscreen and an athlete is ahead of the window", () => {
   const scene = portraitField(lanes, { center: 8, span: 4 });
-  expect(scene.markers.find((m) => m.you)?.trail).toBe("");
+  expect(scene.markers.find((m) => m.you)?.trail).toContain("L");
+  const far = portraitField([{ id: "you", you: true, name: "You", initials: "Y", value: 100 }], { center: 8, span: 4 });
+  expect(far.markers).toHaveLength(0);
+  expect(far.trails[0]?.trail).toContain("L");
+  expect(JSON.stringify(far.trails)).not.toMatch(/NaN|Infinity/);
+});
+
+it("keeps panning responsive over scenery above the horizon and beyond the foreground", () => {
+  for (const y of [-100, 0, 100, 148, 200, 300, 500, 700, 900]) {
+    const delta = portraitPanDepthAt(y + 20) - portraitPanDepthAt(y);
+    expect(delta).toBeGreaterThan(0);
+    expect(delta).toBeLessThan(.17);
+    expect(Number.isFinite(delta)).toBe(true);
+  }
+  expect(portraitPanDepthAt(400)).toBe(portraitDepthAt(400));
 });
 
 it("continues a bounded field to a fixed horizon across pan, zoom and roster sizes", () => {

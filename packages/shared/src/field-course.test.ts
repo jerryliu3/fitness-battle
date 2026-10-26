@@ -1,3 +1,4 @@
+import { fieldProgressTrail } from "./field-course";
 import { describe, expect, it } from "vitest";
 import { defaultFieldAppearance, fieldAppearanceKey, fieldGrounds, readFieldAppearance } from "./field-appearance";
 import { fieldScaleMarks, fieldCourse, fieldCourseScene, fieldLap, fieldMarks, fieldScaleScene, fieldOverview, overviewTarget, clampCourseCenter, type FieldNode } from "./field-course";
@@ -94,5 +95,25 @@ it("shows five lanes at default zoom on phone and desktop without changing dista
     const course = fieldCourse(width, 540, 12, view, "km", defaultFieldAppearance);
     expect((width - 60) / course.laneWidth).toBeCloseTo(5);
     expect(Math.abs(course.along(18.3) - course.along(18))).toBeCloseTo(course.length * .3 / 1.2);
+  }
+});
+
+it("bounds painted scenery to the visible lane band without changing lane geometry", () => {
+  const roster = Array.from({ length: 100 }, (_, i) => ({ id: String(i), name: String(i), initials: "A", value: 18.2, you: i === 50 }));
+  const course = fieldCourse(390, 540, roster.length, { center: 18, span: 1.2 }, "km", defaultFieldAppearance);
+  const full = flatten(fieldCourseScene(course, defaultFieldAppearance, roster, "km", "test"));
+  const visible = flatten(fieldCourseScene(course, defaultFieldAppearance, roster, "km", "test", { first: 47, last: 53 }));
+  expect(visible.length).toBeLessThan(full.length / 4);
+  expect(visible.length).toBeLessThan(250);
+  expect(JSON.stringify(visible)).not.toMatch(/NaN|Infinity/);
+});
+
+it("clips a solid route independently of the head and start visibility", () => {
+  for (const ground of ["straight", "trail", "oval"] as const) {
+    const course = fieldCourse(390, 540, 8, { center: 18, span: 1.2 }, "km", { ...defaultFieldAppearance, ground });
+    expect(fieldProgressTrail(course, 18, 3, "km")).toContain("L");
+    expect(fieldProgressTrail(course, 100, 3, "km")).toContain("L");
+    expect(fieldProgressTrail(course, 0, 3, "km")).toBe("");
+    expect(fieldProgressTrail(course, 100, 3, "km")).not.toMatch(/NaN|Infinity/);
   }
 });

@@ -6,6 +6,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { playCue } from "@/lib/haptics";
 import { usePathname } from "next/navigation";
 import {
+  fieldFlightDuration, fieldFlightEase,
   arenaFieldHigh,
   competePeriodWindow,
   competeNow,
@@ -106,12 +107,14 @@ export function FieldStage({
   const liveCenterRef = useRef(0);
   const showGhost = true;
   const [selected, setSelected] = useState<string | null>(null);
+  const [focusRequest, setFocusRequest] = useState(0);
   const toggleSelect = (id: string) => {
     const runner =
       runners.find((item) => item.id === id) ??
       (ghost?.id === id ? ghost : null);
     if (!runner) return;
     setSelected(id);
+    setFocusRequest(value => value + 1);
     tweenCenterTo(valueAt(runner, time));
   };
 
@@ -182,6 +185,7 @@ export function FieldStage({
     if (centerTweenRef.current?.raf) {
       cancelAnimationFrame(centerTweenRef.current.raf);
     }
+    if (centerTweenRef.current) { setCenter(liveCenterRef.current); setSpan(displaySpan); }
     centerTweenRef.current = null;
     setCenterTween(null);
   };
@@ -195,8 +199,8 @@ export function FieldStage({
     const fromSpan = view.span;
     const from = liveCenterRef.current;
     if (
-      Math.abs(from - clamped) < 0.05 &&
-      Math.abs(fromSpan - nextSpan) < 0.05
+      Math.abs(from - clamped) < 1e-6 &&
+      Math.abs(fromSpan - nextSpan) < 1e-6
     ) {
       cancelCenterTween();
       setCenter(follow ? null : clamped);
@@ -214,10 +218,10 @@ export function FieldStage({
       return;
     }
     const start = performance.now();
-    const duration = 420;
+    const duration = fieldFlightDuration({ center: from, span: fromSpan }, { center: clamped, span: nextSpan });
     const tick = (now: number) => {
       const t = Math.min(1, (now - start) / duration);
-      const eased = 1 - Math.pow(1 - t, 3);
+      const eased = fieldFlightEase(t);
       setCenterTween(eased);
       if (t < 1) {
         const raf = requestAnimationFrame(tick);
@@ -469,6 +473,9 @@ export function FieldStage({
               }))}
               view={view}
               unit={unit}
+              focusRequest={focusRequest}
+              onGestureStart={cancelCenterTween}
+              onViewChange={next => { cancelCenterTween(); setSpan(next.span); setCenter(clampViewCenter(next.center, next.span)); }}
               selectedId={trackSelected || you.id}
               immersive={lanesImmersive}
               onExpand={() => {
@@ -523,6 +530,9 @@ export function FieldStage({
                 lanes={sceneLanes}
                 view={view}
                 unit={unit}
+                focusRequest={focusRequest}
+                onGestureStart={cancelCenterTween}
+                onViewChange={next => { cancelCenterTween(); setSpan(next.span); setCenter(clampViewCenter(next.center, next.span)); }}
                 selected={trackSelected || you.id}
                 onSelect={toggleSelect}
                 onBackgroundTap={() => {

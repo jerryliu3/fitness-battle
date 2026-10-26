@@ -1,10 +1,12 @@
 "use client";
+import { useFieldGestures } from "../field/use-field-gestures";
 import { UserAvatarSvg } from "@/ui/user-avatar-svg";
 import { typographyStyle } from "@/ui/section";
 
 import { useRef, useEffect, useLayoutEffect, useState, useId, useMemo } from "react";
 import { motion, useReducedMotion } from "motion/react";
 import {
+  pinchFieldView, fieldProgressTrail,
   arenaPosition,
   ordinalPlace, effortRankBadge,
   athletePennantOffset,
@@ -15,8 +17,6 @@ import {
   orderedArenaLanes,
   polishedLaneScale,
   competeAthleteTrailColors,
-  competeFieldIncludesStart,
-  competeStartTrailVector,
   fieldLaneMarkerScale,
   fieldCourse, fieldCourseScene, fieldLap, defaultFieldAppearance, type FieldAppearance,
   selfLaneLabel,
@@ -42,9 +42,14 @@ export function ArenaLanes({
   onSelect,
   onPan,
   onBackgroundTap,
+  onZoom, onViewChange, onGestureStart, focusRequest = 0,
   overtakeFrame = null,
   overtakePlan = null,
 }: {
+  focusRequest?: number;
+  onZoom?: (span: number) => void;
+  onViewChange?: (view: ArenaViewWindow) => void;
+  onGestureStart?: () => void;
   lanes: ArenaSceneLane[];
   appearance?: FieldAppearance;
   presentation?: "lanes" | "standings";
@@ -65,6 +70,7 @@ export function ArenaLanes({
   overtakePlan?: ArenaOvertakePlan | null;
 }) {
   const host = useRef<HTMLDivElement>(null);
+  const surface = useRef<SVGSVGElement>(null);
   const reduced = useReducedMotion();
   const standings = presentation === "standings";
   const prefix = useId();
@@ -72,38 +78,8 @@ export function ArenaLanes({
   const [size, setSize] = useState({ width: 360, height: 540 });
   const previousGeometry = useRef<{ width: number; laneWidth: number; count: number; left: number; oval: boolean } | null>(null);
   const laneScroll = useRef<number | null>(null);
-  const drag = useRef<{
-    pointerId: number;
-    x: number;
-    y: number;
-    scrollLeft: number;
-    center: number;
-    moved: boolean;
-    mode: "undecided" | "vertical" | "horizontal";
-    captured: boolean;
-    id: string | null;
-  } | null>(null);
-  const pendingPan = useRef<number | null>(null);
-  const panFrame = useRef<number | null>(null);
-  const latestPan = useRef(onPan);
-  latestPan.current = onPan;
-  const flushPan = () => {
-    if (panFrame.current !== null) cancelAnimationFrame(panFrame.current);
-    panFrame.current = null;
-    const next = pendingPan.current;
-    pendingPan.current = null;
-    if (next !== null) latestPan.current(next);
-  };
-  const queuePan = (center: number) => {
-    pendingPan.current = center;
-    if (panFrame.current === null) panFrame.current = requestAnimationFrame(flushPan);
-  };
-  const cancelPan = () => {
-    if (panFrame.current !== null) cancelAnimationFrame(panFrame.current);
-    panFrame.current = null;
-    pendingPan.current = null;
-  };
-  useEffect(() => cancelPan, []);
+  const scrollAfterZoom = useRef<number | null>(null);
+  const [visibleScroll, setVisibleScroll] = useState(0);
   const animating = Boolean(overtakeFrame && overtakeFrame.phase !== "done");
   const liveLanes =
     animating && overtakeFrame
@@ -125,11 +101,12 @@ export function ArenaLanes({
   const cameraChanged = previousCamera.current.center !== effectiveView.center || previousCamera.current.span !== effectiveView.span || previousCamera.current.ground !== appearance.ground;
   useLayoutEffect(() => { previousCamera.current = { center: effectiveView.center, span: effectiveView.span, ground: appearance.ground }; });
   const course = useMemo(() => fieldCourse(size.width, size.height, ordered.length, effectiveView, unit, appearance), [size.width, size.height, ordered.length, effectiveView.center, effectiveView.span, unit, appearance]);
-  const groundPaint = useMemo(() => fieldCourseScene(course, appearance, ordered, unit, prefix).map(drawFieldNode), [course, appearance, unit, prefix]);
+  const firstVisible = Math.max(0, Math.floor((visibleScroll - course.left) / course.laneWidth) - 2);
+  const lastVisible = Math.min(ordered.length - 1, Math.ceil((visibleScroll + size.width - course.left) / course.laneWidth) + 2);
+  const groundPaint = useMemo(() => fieldCourseScene(course, appearance, ordered, unit, prefix, standings ? undefined : { first: firstVisible, last: lastVisible }).map(drawFieldNode), [course, appearance, unit, prefix, firstVisible, lastVisible, standings]);
   const width = standings ? size.width : course.width;
   const height = standings ? Math.max(160, ordered.length * 76 + 24) : course.height;
   const laneWidth = course.laneWidth, plotHeight = course.length;
-  const maxTailY = Math.min(height, bounds.min <= 0 && bounds.max >= 0 ? course.along(0) + 4 : height);
 
   const yourValue = liveLanes.find((lane) => lane.you)?.value ?? 0;
   const relativeDistance = (value: number) => `${value - yourValue > 0 ? "+" : ""}${(value - yourValue).toFixed(1)} ${unit}`;
@@ -164,33 +141,63 @@ export function ArenaLanes({
     const laneIndex = followSelected ? Math.max(0, ordered.findIndex(lane => lane.id === selected)) : previous && !previous.oval && !course.oval && previous.count === ordered.length
       ? ((laneScroll.current ?? el.scrollLeft) + previous.width / 2 - previous.left) / previous.laneWidth - 0.5
       : Math.max(0, ordered.findIndex((lane) => lane.you));
-    el.scrollLeft = course.oval ? 0 : Math.max(0, Math.min(width - size.width, course.left + (laneIndex + .5) * laneWidth - size.width / 2));
+    el.scrollLeft = course.oval ? 0 : scrollAfterZoom.current ?? Math.max(0, Math.min(width - size.width, course.left + (laneIndex + .5) * laneWidth - size.width / 2));
+    scrollAfterZoom.current = null;
+    setVisibleScroll(el.scrollLeft);
     laneScroll.current = el.scrollLeft;
     previousGeometry.current = { width: size.width, laneWidth, count: ordered.length, left: course.left, oval: course.oval };
   }, [width, laneWidth, size.width, standings, course.oval, course.left, followSelected, selected]);
-  const prevSelectedRef = useRef(focusOnMount ? "" : selected);
+  const prevSelectedRef = useRef(focusOnMount ? "" : `${selected}:${focusRequest}`);
   useLayoutEffect(() => {
-    if (prevSelectedRef.current === selected) return;
-    prevSelectedRef.current = selected;
+    const key = `${selected}:${focusRequest}`;
+    if (prevSelectedRef.current === key) return;
+    prevSelectedRef.current = key;
     const el = host.current;
     if (!el || el.clientWidth === 0 || standings || course.oval || !selected) return;
     const idx = ordered.findIndex((lane) => lane.id === selected);
     if (idx < 0) return;
     const nextScroll = Math.max(0, Math.min(width - size.width, course.left + (idx + .5) * laneWidth - size.width / 2));
-    el.scrollLeft = nextScroll;
-    laneScroll.current = nextScroll;
-  }, [selected, standings, course.oval, course.left, laneWidth, width, size.width, ordered]);
+    el.scrollTo({ left: nextScroll, behavior: reduced ? "instant" : "smooth" });
+  }, [selected, focusRequest, standings, course.oval, course.left, laneWidth, width, size.width, ordered]);
+  const gestures = useFieldGestures({
+    surface, view: effectiveView, unit, enabled: immersive,
+    lateral: () => host.current?.scrollLeft ?? 0,
+    onStart: () => { host.current?.scrollTo({ left: host.current.scrollLeft, behavior: "instant" }); onGestureStart?.(); },
+    onMove: gesture => {
+      if (standings) return;
+      const el = host.current;
+      if (!el) return;
+      el.scrollLeft = gesture.lateral - (gesture.to.x - gesture.from.x);
+      if (immersive || gesture.pinching) {
+        const { top, left } = el.getBoundingClientRect();
+        const next = pinchFieldView(gesture.view, gesture.span, (gesture.from.y - top - course.top) / plotHeight, (gesture.to.y - top - course.top) / plotHeight);
+        next.center = clampPanCenter(next.center, next.span);
+        const fromCourse = fieldCourse(size.width, size.height, ordered.length, gesture.view, unit, appearance);
+        const nextCourse = fieldCourse(size.width, size.height, ordered.length, next, unit, appearance);
+        const nextScroll = gesture.pinching ? Math.max(0, Math.min(nextCourse.width - size.width, nextCourse.left + (gesture.lateral + gesture.from.x - left - fromCourse.left) / fromCourse.laneWidth * nextCourse.laneWidth - (gesture.to.x - left))) : el.scrollLeft;
+        if (gesture.pinching) scrollAfterZoom.current = nextScroll;
+        if (onViewChange) onViewChange(next); else { if (gesture.pinching) onZoom?.(next.span); onPan(next.center); }
+        return { view: next, lateral: nextScroll };
+      }
+      return { view: gesture.view, lateral: el.scrollLeft };
+    },
+    onTap: (event, target) => {
+      const id = (target as Element).closest("[data-athlete]")?.getAttribute("data-athlete");
+      if (id) onSelect(id); else if (!standings) onBackgroundTap?.();
+    },
+  });
   return (
     <div className="focus-lane-surface" style={{ position: "relative", minWidth: 0 }}>
     <div className="focus-lane-scroll" ref={host} data-immersive={immersive}
-      onScroll={(event) => { if (!standings) laneScroll.current = event.currentTarget.scrollLeft; }}
+      onScroll={(event) => { if (!standings) { laneScroll.current = event.currentTarget.scrollLeft; setVisibleScroll(event.currentTarget.scrollLeft); } }}
       style={{ visibility: measured ? "visible" : "hidden", height: standings ? height : undefined, transition: reduced ? "none" : "height .48s cubic-bezier(.22,1,.36,1)" }}>
       <svg
+        ref={surface}
         className="focus-lane-track"
         viewBox={`0 0 ${width} ${height}`}
         width={width}
         height={height}
-        style={{ width, height, touchAction: immersive ? "none" : "pan-y pinch-zoom" }}
+        style={{ width, height, touchAction: immersive ? "none" : "pan-y" }}
         role="group"
         aria-label={standings ? "Athlete standings, ranked by weekly effort" : `Vertical athlete lanes, ${bounds.min.toFixed(1)} to ${bounds.max.toFixed(1)} ${unit}. Drag to explore.`}
         tabIndex={0}
@@ -209,103 +216,20 @@ export function ArenaLanes({
             );
           }
         }}
-        onPointerDown={(e) => {
-          if (!e.isPrimary || e.button !== 0) return;
-          drag.current = {
-            pointerId: e.pointerId,
-            x: e.clientX,
-            y: e.clientY,
-            scrollLeft: host.current?.scrollLeft ?? 0,
-            center: effectiveView.center,
-            moved: false,
-            mode: "undecided",
-            captured: false,
-            id:
-              (e.target as Element)
-                .closest("[data-athlete]")
-                ?.getAttribute("data-athlete") ?? null,
-          };
-        }}
-        onPointerMove={(e) => {
-          if (standings) return;
-          const press = drag.current;
-          if (!press || press.pointerId !== e.pointerId) return;
-          const scale = e.currentTarget.getBoundingClientRect().height / height || 1;
-          const dx = (e.clientX - press.x) / scale;
-          const dy = (e.clientY - press.y) / scale;
-          if (press.mode === "undecided") {
-            if (Math.abs(dx) < 6 && Math.abs(dy) < 6) return;
-            if (Math.abs(dx) > Math.abs(dy)) {
-              press.mode = "horizontal";
-              press.captured = true;
-              e.currentTarget.setPointerCapture(e.pointerId);
-            } else {
-              if (!immersive && e.pointerType === "touch") { drag.current = null; return; }
-              press.mode = "vertical";
-              if (!press.captured) {
-                press.captured = true;
-                e.currentTarget.setPointerCapture(e.pointerId);
-              }
-            }
-          }
-          if (press.mode === "horizontal") {
-            press.moved = true;
-            const el = host.current;
-            if (el) el.scrollLeft = press.scrollLeft - dx;
-            return;
-          }
-          if (press.mode === "vertical") {
-            if (!press.captured) {
-              press.captured = true;
-              e.currentTarget.setPointerCapture(e.pointerId);
-            }
-            if (Math.abs(dy) > 5) {
-              press.moved = true;
-              queuePan(
-                clampPanCenter(
-                  press.center + (dy / plotHeight) * effectiveView.span,
-                  effectiveView.span,
-                ),
-              );
-            }
-          }
-        }}
-        onPointerUp={(e) => {
-          flushPan();
-          const press = drag.current;
-          drag.current = null;
-          if (!press || press.pointerId !== e.pointerId) return;
-          if (press.captured) {
-            try {
-              e.currentTarget.releasePointerCapture(e.pointerId);
-            } catch {
-              /* already released */
-            }
-          }
-          if (!press.moved && press.id) {
-            onSelect(press.id);
-            return;
-          }
-          if (!press.moved && !press.id && !standings) onBackgroundTap?.();
-        }}
-        onLostPointerCapture={() => { flushPan(); drag.current = null; }}
-        onPointerCancel={(e) => {
-          cancelPan();
-          const press = drag.current;
-          drag.current = null;
-          if (press?.captured) {
-            try {
-              e.currentTarget.releasePointerCapture(e.pointerId);
-            } catch {
-              /* already released */
-            }
-          }
-        }}
+        {...gestures}
       >
         <motion.g aria-hidden={standings} initial={false} animate={{ opacity: standings ? 0 : 1 }} style={{ pointerEvents: "none" }}>
           {groundPaint}
         </motion.g>
+        {!standings && <g pointerEvents="none">{ordered.map((lane, i) => ({ lane, i })).sort((a, b) =>
+          (a.lane.id === selected ? 2 : a.lane.you ? 1 : 0) - (b.lane.id === selected ? 2 : b.lane.you ? 1 : 0)
+        ).map(({ lane, i }) => {
+          if (!course.oval && (i < firstVisible || i > lastVisible)) return null;
+          const trail = fieldProgressTrail(course, lane.value, i, unit);
+          return trail ? <path key={lane.id} d={trail} fill="none" stroke={competeAthleteTrailColors(Boolean(lane.you)).stroke} strokeWidth={6} strokeLinecap="round" strokeLinejoin="round" /> : null;
+        })}</g>}
         {ordered.map((l, i) => {
+          if (!standings && !course.oval && (i < firstVisible || i > lastVisible)) return null;
           const position = arenaPosition(l.value, effectiveView);
           const effect = overtakeFrame?.rivalEffects[l.id];
           const charging =
@@ -313,21 +237,10 @@ export function ArenaLanes({
           const row = sortedByValue.findIndex((lane) => lane.id === l.id);
           const rank = 1 + sortedByValue.filter((lane) => lane.value > l.value + 0.000001).length;
           const point = course.point(l.value, i, 0, true);
-          const startPoint = course.point(0, i, 0, true);
           const targetY = standings ? 48 + row * 76 : point.y + (l.you ? charging * 4 * course.markerScale : 0);
           const targetX = standings ? 38 : point.x + (effect?.joltX ?? 0) * course.markerScale;
           const edge = !course.oval && position.edge;
-          const showStartTrail =
-            !course.oval &&
-            !standings &&
-            !edge &&
-            l.value > 0.0001 && // at the start line the athlete sits on the marker; no connector
-            competeFieldIncludesStart(effectiveView);
-          const trailColors = competeAthleteTrailColors(Boolean(l.you), Boolean(l.ghost));
-          const startTrail = showStartTrail
-            ? competeStartTrailVector(0, 0, startPoint.x - targetX, startPoint.y - targetY)
-            : null;
-          const markerScale = standings || edge ? 1 : course.markerScale;
+          const markerScale = standings || edge ? 1 : Math.min(1.8, course.markerScale);
           const xx = 0, yy = 0;
           const active = selected === l.id || l.you;
           const headHalf =
@@ -345,7 +258,7 @@ export function ArenaLanes({
               {...(playback ? { transform: `translate(${targetX} ${targetY})` } : {
                 initial: false,
                 animate: { x: targetX, y: targetY },
-                transition: { duration: reduced || cameraChanged || drag.current || animating || previousGeometry.current?.width !== size.width ? 0 : 0.48, ease: [0.22, 1, 0.36, 1] as const },
+                transition: { duration: reduced || cameraChanged || animating || previousGeometry.current?.width !== size.width ? 0 : 0.48, ease: [0.22, 1, 0.36, 1] as const },
               })}
               data-athlete={l.id}
               role="button"
@@ -360,28 +273,6 @@ export function ArenaLanes({
                 }
               }}
             >
-              {startTrail && (
-                <g pointerEvents="none">
-                  <line
-                    x1={0}
-                    y1={0}
-                    x2={startTrail.dx}
-                    y2={startTrail.dy}
-                    stroke={trailColors.stroke}
-                    strokeWidth={trailColors.strokeWidth}
-                    strokeLinecap="round"
-                    opacity={trailColors.strokeOpacity}
-                  />
-                  <circle
-                    cx={0}
-                    cy={0}
-                    r={6}
-                    fill={trailColors.dotFill}
-                    stroke={trailColors.dotStroke}
-                    strokeWidth={3}
-                  />
-                </g>
-              )}
               <g transform={`rotate(${standings ? 0 : point.angle}) scale(${markerScale})`}>
               {l.you && charging > 0.02 && (
                 <g
@@ -419,10 +310,8 @@ export function ArenaLanes({
                   you={Boolean(l.you)}
                   gold={rank === 1}
                   active={active}
-                  showWake={!standings && !showStartTrail}
-                  independentWake
-                  animateWake={immersive}
-                  wakeBottom={course.oval ? undefined : (maxTailY - targetY) / markerScale}/>
+                  showWake={false}
+                  />
               ) : <circle r={18} fill="white" stroke="#616c63" strokeDasharray="3 3"/>}
               <rect className="focus-racer-focus-ring" x={-23} y={-headHalf-3} width={46} height={headHalf*2+6} rx={23} fill="none" stroke="#f1c75b" strokeWidth={2}/>
               <rect x={xx - 24 / markerScale} y={yy - Math.max(22 / markerScale, headHalf + 4)} width={48 / markerScale} height={Math.max(44 / markerScale, headHalf * 2 + 8)} rx="24" fill="transparent"/>

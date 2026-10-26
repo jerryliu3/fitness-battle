@@ -1,6 +1,7 @@
 import { chartTextProps, textStyle  } from "./section";
 import {
   fieldCourse, fieldCourseScene, fieldLap, defaultFieldAppearance, type FieldAppearance,
+  fieldZoomSpan, pinchFieldView, fieldFlightDuration, fieldFlightEase, fieldProgressTrail,
   arenaPosition,
   arenaWindow,
   fieldDefaultSpan,
@@ -12,19 +13,16 @@ import {
   initialsFromName,
   orderedArenaLanes,
   competeAthleteTrailColors,
-  competeFieldIncludesStart,
-  competeStartTrailVector,
   fieldLaneMarkerScale,
   type ArenaLane,
   type ArenaOvertakeFrame,
   type ArenaOvertakePlan,
   type ArenaViewWindow,
 } from "@fitness-battle/shared";
-import { memo, useEffect, useId, useMemo, useRef, useState, type MutableRefObject } from "react";
-import { PanResponder, Pressable, ScrollView, Text, View, type ScrollViewInstance } from "react-native";
+import { memo, useEffect, useId, useMemo, useRef, useState, type ComponentRef, type MutableRefObject } from "react";
+import { PanResponder, Pressable, Text, View } from "react-native";
 import Svg, {
   Circle,
-  Line,
   Defs,
   ClipPath,
   Image as SvgImage,
@@ -36,9 +34,7 @@ import Svg, {
 import { SHELL_COLORS as c } from "../theme";
 import { playCue } from "../lib/haptics";
 import { drawFieldNode } from "./field-course";
-import { LaneRacerTarget } from "./lane-racer-target";
 import { PolishedRacer } from "./polished-racer";
-import { useWakeAnimation } from "./use-wake-animation";
 export interface LaneAnchor { left: number; laneWidth: number; width: number; scroll: number; oval: boolean; count: number }
 
 function LaneTrackContent({
@@ -64,7 +60,13 @@ function LaneTrackContent({
   onToggleDimension,
   onZoom,
   anchor,
+  focusRequest = 0,
+  onViewChange,
+  onGestureStart,
 }: {
+  focusRequest?: number;
+  onViewChange?: (view: ArenaViewWindow) => void;
+  onGestureStart?: () => void;
   height?: number;
   fullscreen?: boolean;
   onExpand?: () => void;
@@ -93,15 +95,18 @@ function LaneTrackContent({
   const prefix = useId();
   const [exploring, setExploring] = useState(false);
   const [width, setWidth] = useState(340);
-  const wakeAnimation = useWakeAnimation(active && (exploring || fullscreen));
-  const scroll = useRef<ScrollViewInstance>(null);
+  const [visibleScroll, setVisibleScroll] = useState(anchor?.current?.scroll ?? 0);
+  const surface = useRef<ComponentRef<typeof View>>(null);
+  const scrollAfterZoom = useRef<number | null>(null);
+  const lateralTravel = useRef<number | null>(null);
+  const stopLateralTravel = () => { if (lateralTravel.current !== null) cancelAnimationFrame(lateralTravel.current); lateralTravel.current = null; };
   const animating = Boolean(overtakeFrame && overtakeFrame.phase !== "done");
   const me = lanes.find((l) => l.you);
   const rawV = view ?? {
     center: me?.values[index] ?? 0,
     span: fieldDefaultSpan(unit),
   };
-  const ordered = orderedArenaLanes(lanes);
+  const ordered = useMemo(() => orderedArenaLanes(lanes), [lanes]);
   const fieldHigh = arenaFieldHigh(
     ordered.map((lane) => ({ value: lane.values[index], ghost: lane.ghost })),
   );
@@ -113,88 +118,90 @@ function LaneTrackContent({
       ? rawV
       : { center: effectiveCenter, span: rawV.span };
   const course = useMemo(() => fieldCourse(width, height, ordered.length, v, unit, appearance), [width, height, ordered.length, v.center, v.span, unit, appearance]);
-  const latest = useRef({ v, onPan, onZoom, exploring: exploring || fullscreen, clampCenter, length: course.length, unit });
-  latest.current = { v, onPan, onZoom, exploring: exploring || fullscreen, clampCenter, length: course.length, unit };
-  const pending = useRef<{ center?: number; span?: number } | null>(null);
+  const latest = useRef({ v, onPan, onZoom, onViewChange, onGestureStart, exploring: exploring || fullscreen, clampCenter, course, width, height, unit, appearance, count: ordered.length });
+  latest.current = { v, onPan, onZoom, onViewChange, onGestureStart, exploring: exploring || fullscreen, clampCenter, course, width, height, unit, appearance, count: ordered.length };
+  const pending = useRef<{ view: ArenaViewWindow; scroll: number } | null>(null);
   const frame = useRef<number | null>(null);
-  const flush = () => {
-    if (frame.current !== null) cancelAnimationFrame(frame.current);
+  const start = useRef({ view: v, x: 0, y: 0, top: 0, left: 0, distance: 0, count: 1, scroll: 0 });
+  const publish = () => {
     frame.current = null;
-    const next = pending.current;
-    pending.current = null;
-    if (next?.span !== undefined) latest.current.onZoom?.(next.span);
-    if (next?.center !== undefined) latest.current.onPan?.(next.center);
+    const next = pending.current; pending.current = null;
+    if (!next) return;
+    const p = latest.current;
+    if (next.view.span !== p.v.span) scrollAfterZoom.current = next.scroll;
+    if (previous.current) previous.current.scroll = next.scroll;
+    setVisibleScroll(next.scroll);
+    if (p.onViewChange) p.onViewChange(next.view);
+    else { if (next.view.span !== p.v.span) p.onZoom?.(next.view.span); p.onPan?.(next.view.center); }
   };
-  const queue = (next: { center?: number; span?: number }) => {
-    pending.current = next;
-    if (frame.current === null) frame.current = requestAnimationFrame(flush);
-  };
-  const cancel = () => {
-    if (frame.current !== null) cancelAnimationFrame(frame.current);
-    frame.current = null;
-    pending.current = null;
-  };
-  useEffect(() => cancel, []);
-  const pinch = useRef<{ distance: number; span: number } | null>(null);
-  const touchDistance = (touches: readonly { pageX: number; pageY: number }[]) => touches.length < 2 ? 0 : Math.hypot(touches[1].pageX - touches[0].pageX, touches[1].pageY - touches[0].pageY);
-  const start = useRef(v.center);
-  const pan = useMemo(
-    () =>
-      PanResponder.create({
-        onStartShouldSetPanResponderCapture: event => event.nativeEvent.touches.length >= 2,
-        onStartShouldSetPanResponder: event => event.nativeEvent.touches.length >= 2,
-        onMoveShouldSetPanResponder: (event, g) =>
-          event.nativeEvent.touches.length >= 2 || latest.current.exploring &&
-          Math.abs(g.dy) > 7 &&
-          Math.abs(g.dy) > Math.abs(g.dx),
-        onPanResponderGrant: event => {
-          start.current = latest.current.v.center;
-          const distance = touchDistance(event.nativeEvent.touches);
-          pinch.current = distance > 0 ? { distance, span: latest.current.v.span } : null;
-        },
-        onPanResponderMove: (event, g) => {
-          const distance = touchDistance(event.nativeEvent.touches);
-          if (distance > 0) {
-            if (!pinch.current) pinch.current = { distance, span: latest.current.v.span };
-            queue({ span: Math.max(.5, Math.min(latest.current.unit === "pts" ? 100 : 40, pinch.current.span * pinch.current.distance / distance)) });
-          } else if (!pinch.current && latest.current.exploring) {
-            queue({ center: latest.current.clampCenter(start.current + (g.dy / latest.current.length) * latest.current.v.span, latest.current.v.span) });
-          }
-        },
-        onPanResponderRelease: () => { flush(); pinch.current = null; },
-        onPanResponderTerminate: () => { cancel(); pinch.current = null; },
-        onPanResponderTerminationRequest: () => !pinch.current && !latest.current.exploring,
-      }),
-    [],
-  );
+  const pan = useMemo(() => PanResponder.create({
+    onStartShouldSetPanResponderCapture: e => e.nativeEvent.touches.length >= 2,
+    onStartShouldSetPanResponder: e => e.nativeEvent.touches.length >= 2,
+    onMoveShouldSetPanResponderCapture: (e, g) => e.nativeEvent.touches.length >= 2 || Math.hypot(g.dx, g.dy) > 4 && (latest.current.exploring || Math.abs(g.dx) > Math.abs(g.dy) * 1.3),
+    onMoveShouldSetPanResponder: (e, g) => e.nativeEvent.touches.length >= 2 || Math.hypot(g.dx, g.dy) > 4 && (latest.current.exploring || Math.abs(g.dx) > Math.abs(g.dy) * 1.3),
+    onPanResponderGrant: e => {
+      stopLateralTravel(); latest.current.onGestureStart?.();
+      const touches = e.nativeEvent.touches, a = touches[0], b = touches[1];
+      if (!a) return;
+      start.current = { view: latest.current.v, x: (a.pageX + (b?.pageX ?? a.pageX)) / 2, y: (a.pageY + (b?.pageY ?? a.pageY)) / 2, top: e.nativeEvent.pageY - e.nativeEvent.locationY, left: e.nativeEvent.pageX - e.nativeEvent.locationX, distance: b ? Math.hypot(b.pageX - a.pageX, b.pageY - a.pageY) : 0, count: b ? 2 : 1, scroll: previous.current?.scroll ?? 0 };
+      surface.current?.measureInWindow((left: number, top: number) => { start.current.left = left; start.current.top = top; });
+    },
+    onPanResponderMove: e => {
+      const p = latest.current, d = start.current, touches = e.nativeEvent.touches, a = touches[0], b = touches[1];
+      if (!a) return;
+      const count = b ? 2 : 1, x = (a.pageX + (b?.pageX ?? a.pageX)) / 2, y = (a.pageY + (b?.pageY ?? a.pageY)) / 2;
+      const distance = b ? Math.hypot(b.pageX - a.pageX, b.pageY - a.pageY) : 0;
+      if (count !== d.count) { start.current = { ...d, x, y, count, distance, view: pending.current?.view ?? p.v, scroll: pending.current?.scroll ?? previous.current?.scroll ?? 0 }; return; }
+      const span = count === 2 && distance > 0 && d.distance > 0 ? fieldZoomSpan(d.view.span * d.distance / distance, p.unit) : d.view.span;
+      const next = p.exploring || count === 2 ? pinchFieldView(d.view, span, (d.y - d.top - p.course.top) / p.course.length, (y - d.top - p.course.top) / p.course.length) : { ...d.view };
+      next.center = p.clampCenter(next.center, next.span);
+      const fromCourse = fieldCourse(p.width, p.height, p.count, d.view, p.unit, p.appearance);
+      const nextCourse = fieldCourse(p.width, p.height, p.count, next, p.unit, p.appearance);
+      const scrollX = count === 2 ? nextCourse.left + (d.scroll + d.x - d.left - fromCourse.left) / fromCourse.laneWidth * nextCourse.laneWidth - (x - d.left) : d.scroll - (x - d.x);
+      pending.current = { view: next, scroll: Math.max(0, Math.min(nextCourse.width - p.width, scrollX)) };
+      if (frame.current === null) frame.current = requestAnimationFrame(publish);
+    },
+    onPanResponderRelease: () => { if (frame.current !== null) cancelAnimationFrame(frame.current); publish(); },
+    onPanResponderTerminate: () => { if (frame.current !== null) cancelAnimationFrame(frame.current); publish(); },
+    onPanResponderTerminationRequest: () => false,
+  }), []);
+  useEffect(() => () => { if (frame.current !== null) cancelAnimationFrame(frame.current); stopLateralTravel(); }, []);
   const ghost = showGhost ? lanes.find((l) => l.ghost) : null;
   const w = course.width, lw = course.laneWidth;
   const live = ordered.map(l => ({ ...l, value: animating ? overtakeFrame?.laneValues[l.id] ?? l.values[index] ?? 0 : l.values[index] ?? 0, initials: initialsFromName(l.name) }));
-  const groundPaint = useMemo(() => fieldCourseScene(course, appearance, live, unit, prefix).map(drawFieldNode), [course, appearance, unit, prefix]);
+  const firstVisible = Math.max(0, Math.floor((visibleScroll - course.left) / lw) - 2);
+  const lastVisible = Math.min(ordered.length - 1, Math.ceil((visibleScroll + width - course.left) / lw) + 2);
+  const groundPaint = useMemo(() => fieldCourseScene(course, appearance, live, unit, prefix, { first: firstVisible, last: lastVisible }).map(drawFieldNode), [course, appearance, unit, prefix, firstVisible, lastVisible]);
   const bounds = arenaWindow(v.center, v.span);
-  const maxTailY = Math.min(height, bounds.min <= 0 && bounds.max >= 0 ? course.along(0) + 4 : height);
   const localAnchor = useRef<LaneAnchor | null>(null);
   const previous = anchor ?? localAnchor;
-  const prevSelectedRef = useRef<string | undefined>(focusOnMount ? undefined : selectedId);
+  const prevSelectedRef = useRef(focusOnMount ? "" : `${selectedId}:${focusRequest}`);
   useEffect(() => {
     const old = previous.current;
     const laneIndex = followSelected ? Math.max(0, ordered.findIndex(l => l.id === selectedId)) : old && !old.oval && !course.oval && old.count === ordered.length ? (old.scroll + old.width / 2 - old.left) / old.laneWidth - .5 : Math.max(0, ordered.findIndex(l => l.you));
-    const x = course.oval ? 0 : Math.max(0, Math.min(w - width, course.left + (laneIndex + .5) * lw - width / 2));
-    scroll.current?.scrollTo({ x, animated: false });
+    const x = course.oval ? 0 : scrollAfterZoom.current ?? Math.max(0, Math.min(w - width, course.left + (laneIndex + .5) * lw - width / 2));
+    scrollAfterZoom.current = null;
+    setVisibleScroll(x);
     previous.current = { left: course.left, laneWidth: lw, width, scroll: x, oval: course.oval, count: ordered.length };
-  }, [w, lw, width, course.left, course.oval, followSelected, selectedId]);
+  }, [w, lw, width, course.left, course.oval, followSelected, followSelected ? selectedId : undefined]);
   useEffect(() => {
-    if (!selectedId || selectedId === prevSelectedRef.current || course.oval) {
-      prevSelectedRef.current = selectedId;
+    const key = `${selectedId}:${focusRequest}`;
+    if (!selectedId || key === prevSelectedRef.current || course.oval) {
+      prevSelectedRef.current = key;
       return;
     }
-    prevSelectedRef.current = selectedId;
+    prevSelectedRef.current = key;
     const laneIndex = ordered.findIndex((l) => l.id === selectedId);
     if (laneIndex < 0) return;
     const x = Math.max(0, Math.min(w - width, course.left + (laneIndex + 0.5) * lw - width / 2));
-    scroll.current?.scrollTo({ x, animated: animateSelection });
-    previous.current = { left: course.left, laneWidth: lw, width, scroll: x, oval: course.oval, count: ordered.length };
-  }, [selectedId, w, lw, width, course.left, course.oval, ordered.length]);
+    stopLateralTravel();
+    const from = previous.current?.scroll ?? visibleScroll;
+    const apply = (value: number) => { setVisibleScroll(value); previous.current = { left: course.left, laneWidth: lw, width, scroll: value, oval: course.oval, count: ordered.length }; };
+    if (!animateSelection) { apply(x); return; }
+    const started = Date.now(), duration = fieldFlightDuration(v, v, (x - from) / lw);
+    const tick = () => { const t = Math.min(1, (Date.now() - started) / duration); apply(from + (x - from) * fieldFlightEase(t)); lateralTravel.current = t < 1 ? requestAnimationFrame(tick) : null; };
+    lateralTravel.current = requestAnimationFrame(tick);
+  }, [selectedId, focusRequest, w, lw, width, course.left, course.oval, ordered.length]);
   return (
     <View
       onLayout={(e) => {
@@ -210,25 +217,28 @@ function LaneTrackContent({
         borderColor: "#d7e0cf",
       }}
     >
-      <View {...pan.panHandlers}>
-      <ScrollView
-        horizontal
-        ref={scroll}
-        nestedScrollEnabled
-        pinchGestureEnabled={false}
-        showsHorizontalScrollIndicator
-        contentContainerStyle={{ paddingTop: topInset }}
-        onScroll={e => { const x = e.nativeEvent.contentOffset.x; if (previous.current) previous.current.scroll = x; }}
-        scrollEventThrottle={16}
-      >
-        <View>
+      <View ref={surface} {...pan.panHandlers} style={{ height, overflow: "hidden" }}>
           <Svg
-            width={w}
+            pointerEvents="none"
+            accessible
+            width={width}
             height={height}
-            accessibilityLabel={`Vertical lanes in ${unit}, centered on your distance`}
+            viewBox={`${visibleScroll} 0 ${width} ${height}`}
+            accessibilityLabel={`2D field, ${bounds.min.toFixed(2)} to ${bounds.max.toFixed(2)} ${unit}`}
           >
-            {fullscreen ? <G>{groundPaint}</G> : <LaneRacerTarget onPress={onExpand} accessibilityLabel="Expand 2D map to full screen">{groundPaint}</LaneRacerTarget>}
+            <Rect x={visibleScroll} width={width} height={height} fill="transparent" />
+            <G>{groundPaint}</G>
+            <G pointerEvents="none">
+              {live.map((lane, i) => ({ lane, i })).sort((a, b) =>
+                (a.lane.id === selectedId ? 2 : a.lane.you ? 1 : 0) - (b.lane.id === selectedId ? 2 : b.lane.you ? 1 : 0)
+              ).map(({ lane, i }) => {
+                if (!course.oval && (i < firstVisible || i > lastVisible)) return null;
+                const trail = fieldProgressTrail(course, lane.value, i, unit);
+                return trail ? <Path key={lane.id} d={trail} fill="none" stroke={competeAthleteTrailColors(Boolean(lane.you)).stroke} strokeWidth={6} strokeLinecap="round" strokeLinejoin="round" /> : null;
+              })}
+            </G>
             {ordered.map((l, i) => {
+              if (!course.oval && (i < firstVisible || i > lastVisible)) return null;
               const value =
                 animating && overtakeFrame
                   ? (overtakeFrame.laneValues[l.id] ?? l.values[index] ?? 0)
@@ -238,19 +248,9 @@ function LaneTrackContent({
               const charging =
                 l.you && animating ? (overtakeFrame?.charging ?? 0) : 0;
               const point = course.point(value, i, 0, true);
-              const startPoint = course.point(0, i, 0, true);
-              const scale = edge ? 1 : course.markerScale;
+              const scale = edge ? 1 : Math.min(1.8, course.markerScale);
               const xx = point.x + (effect?.joltX ?? 0) * scale;
               const yy = point.y + (l.you ? charging * 4 * scale : 0);
-              const showStartTrail =
-                !course.oval &&
-                !edge &&
-                value > 0.0001 && // at the start line the athlete sits on the marker; no connector
-                competeFieldIncludesStart(v);
-              const trailColors = competeAthleteTrailColors(Boolean(l.you), Boolean(l.ghost));
-              const startTrail = showStartTrail
-                ? competeStartTrailVector(xx, yy, startPoint.x, startPoint.y)
-                : null;
               const headHalf = 29 * fieldLaneMarkerScale(Boolean(l.you));
               const rank=1+live.filter(peer=>peer.value>value+.000001).length;
               const pennantWidth=146, visibleLeft=previous.current?.scroll??0;
@@ -258,35 +258,7 @@ function LaneTrackContent({
               const pennantY=athletePennantOffset(yy,course.point(overtakeFrame?.youValue??me?.values[index]??0,Math.max(0,ordered.findIndex(peer=>peer.you)),0,true).y,l.you,height);
               return (
                 <G key={l.id}>
-                  {startTrail ? (
-                    <G pointerEvents="none">
-                      <Line
-                        x1={xx}
-                        y1={yy}
-                        x2={xx + startTrail.dx}
-                        y2={yy + startTrail.dy}
-                        stroke={trailColors.stroke}
-                        strokeWidth={trailColors.strokeWidth}
-                        strokeLinecap="round"
-                        opacity={trailColors.strokeOpacity}
-                      />
-                      <Circle
-                        cx={xx}
-                        cy={yy}
-                        r={6}
-                        fill={trailColors.dotFill}
-                        stroke={trailColors.dotStroke}
-                        strokeWidth={3}
-                      />
-                    </G>
-                  ) : null}
-                <LaneRacerTarget
-                  onPress={() => onSelect(l)}
-                  accessible
-                  accessibilityRole="button"
-                  accessibilityState={{ selected: selectedId === l.id }}
-                  accessibilityLabel={`${course.oval ? `${fieldLap(value, unit).laps} completed laps, ` : ""}${l.name}, ${(value - (overtakeFrame?.youValue ?? me?.values[index] ?? 0)).toFixed(1)} ${unit} relative to you${edge ? `, ${edge} of view` : ""}`}
-                >
+                <G>
                   <G transform={`translate(${xx} ${yy}) rotate(${point.angle}) scale(${scale})`}>
                   {l.you && charging > 0.02 ? (
                     <Path
@@ -324,9 +296,6 @@ function LaneTrackContent({
                       x={0}
                       y={0}
                       you={l.you}
-                      showWake={!showStartTrail}
-                      animation={wakeAnimation}
-                      wakeBottom={course.oval ? undefined : (maxTailY - yy) / scale}
                       gold={
                         !ordered.some(
                           (peer) =>
@@ -357,14 +326,29 @@ function LaneTrackContent({
                     <SvgText {...chartTextProps()} x={pennantX+47} y={pennantY+20}  fill={c.ink} >{l.you?"You":l.name.length>13?`${l.name.slice(0,12)}…`:l.name}</SvgText>
                     <SvgText {...chartTextProps()} x={pennantX+47} y={pennantY+35}  fill={c.muted}>{ordinalPlace(rank)} · {l.you?`${value.toFixed(1)} ${unit}`:`${value-(overtakeFrame?.youValue??me?.values[index]??0)>0?"+":""}${(value-(overtakeFrame?.youValue??me?.values[index]??0)).toFixed(1)} ${unit}`}</SvgText>
                   </G>:null}
-                </LaneRacerTarget>
+                </G>
                 </G>
               );
             })}
-            {ghost && (() => { const p = course.point(ghost.values[index] ?? 0, ordered.findIndex(l => l.you), 18 * course.markerScale, true); return <G onPress={() => onSelect(ghost)}><Circle cx={p.x} cy={p.y} r={13 * course.markerScale} fill="#ffffffcc" stroke={c.muted} strokeDasharray="3 3"/></G>; })()}
+            {ghost && (() => { const p = course.point(ghost.values[index] ?? 0, ordered.findIndex(l => l.you), 18 * Math.min(1.8, course.markerScale), true); return <G><Circle cx={p.x} cy={p.y} r={13 * Math.min(1.8, course.markerScale)} fill="#ffffffcc" stroke={c.muted} strokeDasharray="3 3"/></G>; })()}
           </Svg>
-        </View>
-      </ScrollView>
+        <Pressable accessible={false} onPress={fullscreen ? () => {} : onExpand} style={{ position: "absolute", inset: 0 }} />
+        {ordered.flatMap((lane, i) => {
+          if (!course.oval && (i < firstVisible || i > lastVisible)) return null;
+          const value = animating ? overtakeFrame?.laneValues[lane.id] ?? lane.values[index] : lane.values[index];
+          const point = course.point(value, i, 0, true);
+          const x = Math.max(visibleScroll - point.x + 8, Math.min(visibleScroll + width - point.x - 154, lane.you ? -158 : 12));
+          const y = athletePennantOffset(point.y, course.point(me?.values[index] ?? 0, Math.max(0, ordered.findIndex(l => l.you)), 0, true).y, lane.you, height);
+          const edge = !course.oval && arenaPosition(value, v).edge;
+          return [
+            <Pressable key={lane.id} accessibilityRole="button" accessibilityLabel={`Focus ${lane.name}`} accessibilityState={{ selected: selectedId === lane.id }} onPress={() => onSelect(lane)} style={{ position: "absolute", left: point.x - visibleScroll - 24, top: point.y - 30, width: 48, height: 60 }} />,
+            !edge && (lane.you || lane.id === selectedId) ? <Pressable key={`${lane.id}-nameplate`} accessible={false} onPress={() => onSelect(lane)} style={{ position: "absolute", left: point.x - visibleScroll + x, top: point.y + y, width: 146, height: 46 }} /> : null,
+          ];
+        })}
+        {ghost && (() => {
+          const p = course.point(ghost.values[index] ?? 0, ordered.findIndex(l => l.you), 18 * Math.min(1.8, course.markerScale), true);
+          return <Pressable accessibilityRole="button" accessibilityLabel="Focus past you" onPress={() => onSelect(ghost)} style={{ position: "absolute", left: p.x - visibleScroll - 22, top: p.y - 22, width: 44, height: 44 }} />;
+        })()}
       </View>
       {!fullscreen ? (
         <View

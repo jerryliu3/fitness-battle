@@ -90,7 +90,8 @@ export function fieldOverview(lanes: readonly { value: number; ghost?: boolean }
 export function overviewTarget(fraction: number, high: number) { return Math.max(0, Math.min(1, Number.isFinite(fraction) ? fraction : 0)) * high; }
 
 /** Scenery only: athlete movement must not rebuild sampled ribbons or full-field masks. */
-export function fieldCourseScene(g: FieldCourse, appearance: FieldAppearance, lanes: readonly ArenaSceneLane[], unit: string, prefix: string): FieldNode[] {
+export function fieldCourseScene(g: FieldCourse, appearance: FieldAppearance, lanes: readonly ArenaSceneLane[], unit: string, prefix: string, visible?: { first: number; last: number }): FieldNode[] {
+  const visibleLane = (i: number) => g.oval || !visible || i >= visible.first && i <= visible.last;
   const { ground, edges } = appearance, palette = fieldGrounds[ground], z = g.zoom;
   const whole = fieldMarks(g.bounds.min, g.bounds.max), samples = fieldMarks(g.bounds.min, g.bounds.max, .5);
   const out: FieldNode[] = [], surface: FieldNode[] = [];
@@ -119,6 +120,7 @@ export function fieldCourseScene(g: FieldCourse, appearance: FieldAppearance, la
     if (scenic) surface.push(path(g.curve(g.bounds.min - g.bounds.span * .5, g.bounds.max + g.bounds.span * .5, (lanes.length - 1) / 2), "none", { stroke: palette.lane, strokeWidth: Math.max(1, g.fieldWidth - 14 * z) }));
     else surface.push(rect(g.left, 0, g.fieldWidth, g.height, palette.lane));
     for (let i = 0; i < lanes.length; i++) {
+    if (!visibleLane(i)) continue;
       const x = g.left + (i + .5) * g.laneWidth, half = g.laneWidth / 2;
       if (ground === "athletics" || ground === "straight" || ground === "night") {
         surface.push(rect(x - half, 0, g.laneWidth, g.height, ground === "straight" ? i % 2 ? "#af544b" : "#a84c44" : ground === "night" ? i % 2 ? "#2e4037" : "#30443a" : i % 2 ? "#95a5a5" : "#819798"));
@@ -158,6 +160,7 @@ export function fieldCourseScene(g: FieldCourse, appearance: FieldAppearance, la
       surface.push(rect(x - 9 * z, y - 13 * z, 18 * z, 26 * z, "#d5ddc2", { rx: 9 * z }), circle(x, y - 4 * z, 4 * z, "#a7b995"), circle(x + 3 * z, y + 2 * z, 4.5 * z, "#b5c69f"));
     }
     if (ground === "trail") for (const d of samples) for (let i = 0; i < lanes.length - 1; i++) {
+      if (!visibleLane(i)) continue;
       const p = g.point(d, i + .5);
       surface.push(circle(p.x - 5 * z, p.y, 2 * z, "#c0caa9"), path(`M${p.x + 2 * z} ${p.y + 6 * z}l${-2 * z} ${-5 * z}m${2 * z} ${5 * z}l${3 * z} ${-4 * z}`, "none", { stroke: "#b5c49b", strokeWidth: z }));
     }
@@ -174,4 +177,19 @@ export function fieldCourseScene(g: FieldCourse, appearance: FieldAppearance, la
 export function fieldScaleScene(g: FieldCourse, unit: string): FieldNode[] {
   if (g.oval) return [];
   return [rect(0, 0, 42, g.height, "#f6f7f2"), text(9, 36, unit, "#616c63", 11), ...fieldScaleMarks(g.bounds.min, g.bounds.max).map(d => text(9, g.along(d) + 3, String(d), "#616c63", 11))];
+}
+
+/** Completed route in world space, clipped before sampling so long efforts stay bounded. */
+export function fieldProgressTrail(g: FieldCourse, value: number, lane: number, unit: string) {
+  if (value <= 0) return "";
+  if (g.oval) return g.curve(0, Math.min(value, fieldLoopLength(unit)), lane);
+  const from = Math.max(0, g.bounds.max - (g.height - g.top) / g.length * g.bounds.span);
+  const to = Math.min(value, g.bounds.max + g.top / g.length * g.bounds.span);
+  if (to <= from) return "";
+  // Straight grounds need two vertices; only winding trails need samples.
+  if (g.drift(from) === 0 && g.drift((from + to) / 2) === 0 && g.drift(to) === 0) {
+    const a = g.point(from, lane), b = g.point(to, lane);
+    return `M${a.x} ${a.y} L${b.x} ${b.y}`;
+  }
+  return g.curve(from, to, lane);
 }

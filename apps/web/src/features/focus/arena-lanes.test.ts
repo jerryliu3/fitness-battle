@@ -32,7 +32,7 @@ afterEach(async () => {
 async function mount(overrides = {}) {
   await act(async () => {
     renderer = create(createElement(ArenaLanes, { ...props, ...overrides }), {
-      createNodeMock: () => ({ clientWidth: 390, clientHeight: 540, scrollLeft: 0 }),
+      createNodeMock: () => ({ clientWidth: 390, clientHeight: 540, scrollLeft: 0, scrollTo() {}, addEventListener() {}, removeEventListener() {}, getBoundingClientRect: () => ({ top: 0, left: 0, height: 540 }) }),
     });
   });
 }
@@ -45,8 +45,7 @@ it("has no idle field clock and reuses scenery when only athlete values change",
   })));
   expect(scene).toHaveBeenCalledTimes(calls);
   expect(request).not.toHaveBeenCalled();
-  expect(renderer.root.findByType("Racer" as never).props.showWake).toBe(true);
-  expect(renderer.root.findByType("Racer" as never).props.independentWake).toBe(true);
+  expect(renderer.root.findByType("Racer" as never).props.showWake).toBe(false);
 });
 it("uses the replay position immediately, without restarting marker easing", async () => {
   await mount({ playback: true });

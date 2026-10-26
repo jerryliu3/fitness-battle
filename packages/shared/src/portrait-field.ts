@@ -3,7 +3,6 @@ import {
   type ArenaSceneLane,
   type ArenaViewWindow,
 } from "./arena-view";
-import { competeFieldIncludesStart } from "./compete-trail";
 import type { FieldNode } from "./field-course";
 
 /** Fixed-camera perspective, presentation only. Values remain in the current score-track unit. */
@@ -104,6 +103,15 @@ export function portraitField(
         ]
       : []),
   ];
+  const trailFor = (lane: ArenaSceneLane, i: number) => {
+    if (lane.value <= 0) return "";
+    const headDepth = (max - lane.value) / span;
+    const startDepth = Math.min(foreground, max / span);
+    if (startDepth <= headDepth) return "";
+    const a = project(i, headDepth), b = project(i, startDepth);
+    return `M${a.x} ${a.y} L${b.x} ${b.y}`;
+  };
+  const trails = rows.map(({ lane, i }) => ({ ...lane, trail: trailFor(lane, i) })).filter(l => l.trail);
   const markers = rows.map(({ lane, i }) => {
     const delta = (lane.value - view.center) / span;
     const outside = Math.abs(delta) > 0.5;
@@ -121,23 +129,14 @@ export function portraitField(
         : lane.you
           ? "#f7c948"
           : "#c9d6e3",
-      // Portrait uses the caller's view window as-is (2D lanes clamp center before rendering).
-      trail:
-        outside || !competeFieldIncludesStart(view)
-          ? ""
-          : (() => {
-              const startDepth = Math.min(1, max / span);
-              if (startDepth <= depth) return "";
-              const a = project(i, depth);
-              const b = project(i, startDepth);
-              return `M${a.x} ${a.y} L${b.x} ${b.y}`;
-            })(),
+      trail: trailFor(lane, i),
     };
   });
   const rivals = ordered
     .filter((l) => !l.you && l.value > (me?.value ?? 0))
     .sort((a, b) => a.value - b.value);
   return {
+    trails,
     ticks,
     min,
     max,
@@ -198,4 +197,10 @@ export function portraitScaleAtDepth(depth: number) {
 export function portraitDepthAt(y: number) {
   const perspective = Math.max(1 / 6, Math.min(2, (y - 148) / 362));
   return (3 - 1 / perspective) / 2;
+}
+
+/** Extend the navigable plane over the scenery without a dead zone or horizon singularity. */
+export function portraitPanDepthAt(y: number) {
+  const anchor = Math.max(300, Math.min(700, y));
+  return portraitDepthAt(anchor) + (y - anchor) * 181 / (anchor - 148) ** 2;
 }
