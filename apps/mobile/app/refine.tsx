@@ -64,7 +64,7 @@ export default function RefinementHub() {
             <Action
               label={`Open ${item.title}`}
               onPress={() =>
-                router.push(`/refine-${item.id}` as "/refine-compete")
+                router.push(`/refine-${item.id}` as never)
               }
             />
           </Surface>
