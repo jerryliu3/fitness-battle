@@ -9,8 +9,6 @@ vi.mock("react-native", () => ({ StyleSheet: { create: (value: unknown) => value
 vi.mock("react-native-svg", () => Object.fromEntries(["default", "Circle", "Defs", "ClipPath", "Image", "G", "Path", "Rect", "Text"].map(key => [key, `Svg${key}`])));
 vi.mock("./field-course", () => ({ drawFieldNode: () => null }));
 vi.mock("./polished-racer", () => ({ PolishedRacer: "Racer", usePolishedWakeTime: () => { throw new Error("2D must have no wake clock"); } }));
-const animation = vi.hoisted(() => ({ useWakeAnimation: vi.fn(() => undefined) }));
-vi.mock("./use-wake-animation", () => animation);
 vi.mock("./icon-button", () => ({ IconButton: "IconButton" }));
 vi.mock("../lib/haptics", () => ({ playCue: vi.fn() }));
 import { LaneTrack } from "./lane-track";
@@ -29,7 +27,6 @@ it("zooms continuously with two fingers, clamps the range, and leaves one-finger
   const lanes = buildArenaModel(state).lanes;
   await act(async () => { renderer = create(createElement(LaneTrack, { lanes, unit: "km", index: 2, showGhost: true, view: { center: 4, span: 2 }, onSelect: vi.fn(), onZoom: zoom, onPan: pan })); });
   expect(request).not.toHaveBeenCalled();
-  expect(animation.useWakeAnimation).toHaveBeenLastCalledWith(false);
   const owner = renderer.root.findAllByType("View" as never).find(node => node.props.onPanResponderGrant)!;
   const touch = (distance: number) => ({ nativeEvent: { pageX: 0, pageY: 0, locationX: 0, locationY: 0, touches: [{ pageX: 0, pageY: 0 }, { pageX: distance, pageY: 0 }] } });
   const single = { nativeEvent: { touches: [{ pageX: 0, pageY: 0 }] } };
@@ -68,13 +65,13 @@ it("zooms continuously with two fingers, clamps the range, and leaves one-finger
   expect(zoom).toHaveBeenCalledTimes(2);
 });
 
-it("owns wake lifecycle once at field level and keeps original capsule clipping", async () => {
+it("keeps the visible solid route when the start is offscreen and has no native scroll owner", async () => {
   vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
   const lanes = [{ id: "me", name: "Me", initials: "M", you: true, ghost: false, values: [4, 4, 4] as [number, number, number] }];
-  const props = { lanes, unit: "km", index: 2, showGhost: false, fullscreen: true, view: { center: 4, span: 1.2 }, onSelect: vi.fn() };
-  await act(async () => { renderer = create(createElement(LaneTrack, props)); });
-  expect(animation.useWakeAnimation).toHaveBeenLastCalledWith(true);
-  expect(renderer.root.findByType("Racer" as never).props.wakeBottom).toBeGreaterThan(0);
-  await act(async () => renderer.update(createElement(LaneTrack, { ...props, active: false })));
-  expect(animation.useWakeAnimation).toHaveBeenLastCalledWith(false);
+  await act(async () => { renderer = create(createElement(LaneTrack, { lanes, unit: "km", index: 2, showGhost: false, fullscreen: true, view: { center: 4, span: 1.2 }, onSelect: vi.fn() })); });
+  expect(renderer.root.findAllByType("ScrollView" as never)).toHaveLength(0);
+  const route = renderer.root.findAllByType("SvgPath" as never).find(n => n.props.strokeWidth === 6)!;
+  expect(route.props.d).toContain("L");
+  expect(route.props.stroke).toBe("#f7c948");
+  expect(renderer.root.findByType("Racer" as never).props.animation).toBeUndefined();
 });

@@ -1,7 +1,6 @@
 import { expect, it } from "vitest";
 import {
-  competeFieldIncludesStart,
-  competeStartTrailVector,
+  competeAthleteTrailColors,
   fieldLaneMarkerScale,
   FIELD_LANE_CAPSULE_SCALE,
 } from "./compete-trail";
@@ -13,11 +12,8 @@ it("keeps field capsule scale separate from study lane scale", () => {
   );
 });
 
-it("only draws start trails when distance zero is in the view window", () => {
-  expect(competeFieldIncludesStart({ center: 10, span: 4 })).toBe(false);
-  expect(competeFieldIncludesStart({ center: 2, span: 4 })).toBe(true);
-});
-
-it("computes start trail offsets in course space", () => {
-  expect(competeStartTrailVector(10, 20, 4, 8)).toEqual({ dx: -6, dy: -12 });
+it("uses the same opaque six-point solid stroke for every athlete", () => {
+  for (const [you, ghost] of [[true, false], [false, false], [false, true]]) {
+    expect(competeAthleteTrailColors(you, ghost)).toMatchObject({ strokeWidth: 6, strokeOpacity: 1 });
+  }
 });

@@ -7,7 +7,6 @@ vi.mock("react-native-svg", () => Object.fromEntries(["default", "Circle", "Defs
 vi.mock("../lib/haptics", () => ({ playCue() {} }));
 vi.mock("./field-course", () => ({ drawFieldNode: () => null }));
 vi.mock("./polished-racer", () => ({ PolishedRacer: "Racer" }));
-vi.mock("./use-wake-animation", () => ({ useWakeAnimation: () => undefined }));
 import { LaneTrack } from "./lane-track";
 
 let renderer: ReactTestRenderer;
@@ -18,17 +17,18 @@ it("owns diagonal fullscreen drags, coalesces events, and continues panning afte
   const schedule = vi.fn((fn: () => void) => { work = fn; return 1; });
   vi.stubGlobal("requestAnimationFrame", schedule);
   vi.stubGlobal("cancelAnimationFrame", () => { work = null; });
-  const applied = vi.fn(), scrollTo = vi.fn();
+  const applied = vi.fn();
   const lanes = Array.from({ length: 12 }, (_, i) => ({ id: String(i), name: `Peer ${i}`, you: i === 6, ghost: false, values: [10, 10, 10] as [number, number, number] }));
   function Probe() {
     const [view, setView] = useState({ center: 10, span: 2 });
     return createElement(LaneTrack, { lanes, unit: "km", showGhost: false, index: 2, fullscreen: true, animateSelection: false, view, onViewChange: (next: ArenaViewWindow) => { applied(next); setView(next); }, onSelect() {} });
   }
-  await act(async () => { renderer = create(createElement(Probe), { createNodeMock: element => element.type === "ScrollView" ? { scrollTo } : null }); });
+  await act(async () => { renderer = create(createElement(Probe)); });
   const responder = () => renderer.root.findAllByType("View" as never).find(n => n.props.onPanResponderMove)!;
   const event = (points: number[][]) => ({ nativeEvent: { pageX: points[0]![0], pageY: points[0]![1], locationX: points[0]![0], locationY: points[0]![1], touches: points.map(([pageX, pageY]) => ({ pageX, pageY })) } });
   const flush = async () => { const fn = work; work = null; await act(async () => fn?.()); };
-  expect(renderer.root.findByType("ScrollView" as never).props.scrollEnabled).toBe(false);
+  expect(renderer.root.findAllByType("ScrollView" as never)).toHaveLength(0);
+  const initialViewport = renderer.root.findByType("Svgdefault" as never).props.viewBox;
   expect(responder().props.onMoveShouldSetPanResponderCapture(event([[100, 300]]), { dx: 20, dy: 20 })).toBe(true);
   await act(async () => {
     responder().props.onPanResponderGrant(event([[100, 300]]));
@@ -37,7 +37,7 @@ it("owns diagonal fullscreen drags, coalesces events, and continues panning afte
   });
   expect(applied).not.toHaveBeenCalled(); expect(schedule).toHaveBeenCalledTimes(1);
   await flush(); expect(applied.mock.lastCall![0].center).toBeGreaterThan(10);
-  expect(scrollTo.mock.lastCall![0].animated).toBe(false);
+  expect(renderer.root.findByType("Svgdefault" as never).props.viewBox).not.toBe(initialViewport);
   await act(async () => responder().props.onPanResponderRelease());
   await act(async () => {
     responder().props.onPanResponderGrant(event([[100, 300], [200, 300]]));

@@ -282,6 +282,7 @@ export function CompetitionField({
             {fieldContent}
             {/* Top Bar HUD */}
             <View
+              pointerEvents="box-none"
               style={[
                 f.row,
                 {
@@ -308,6 +309,7 @@ export function CompetitionField({
                 />
               </View>
               <View
+                pointerEvents="none"
                 style={{
                   backgroundColor: "rgba(20, 20, 19, 0.74)",
                   borderRadius: 999,
@@ -714,7 +716,7 @@ export function CompetitionField({
                           y={0}
                           you={leader.you}
                           gold
-                          showWake={false}
+
                         />
                       </Svg>
                     }
@@ -772,7 +774,7 @@ export function CompetitionField({
                           y={0}
                           you={lane.you}
                           gold={rank === 1}
-                          showWake={false}
+
                         />
                       </Svg>
                     }

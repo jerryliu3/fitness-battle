@@ -178,3 +178,18 @@ export function fieldScaleScene(g: FieldCourse, unit: string): FieldNode[] {
   if (g.oval) return [];
   return [rect(0, 0, 42, g.height, "#f6f7f2"), text(9, 36, unit, "#616c63", 11), ...fieldScaleMarks(g.bounds.min, g.bounds.max).map(d => text(9, g.along(d) + 3, String(d), "#616c63", 11))];
 }
+
+/** Completed route in world space, clipped before sampling so long efforts stay bounded. */
+export function fieldProgressTrail(g: FieldCourse, value: number, lane: number, unit: string) {
+  if (value <= 0) return "";
+  if (g.oval) return g.curve(0, Math.min(value, fieldLoopLength(unit)), lane);
+  const from = Math.max(0, g.bounds.max - (g.height - g.top) / g.length * g.bounds.span);
+  const to = Math.min(value, g.bounds.max + g.top / g.length * g.bounds.span);
+  if (to <= from) return "";
+  // Straight grounds need two vertices; only winding trails need samples.
+  if (g.drift(from) === 0 && g.drift((from + to) / 2) === 0 && g.drift(to) === 0) {
+    const a = g.point(from, lane), b = g.point(to, lane);
+    return `M${a.x} ${a.y} L${b.x} ${b.y}`;
+  }
+  return g.curve(from, to, lane);
+}

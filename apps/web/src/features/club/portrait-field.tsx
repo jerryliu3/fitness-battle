@@ -189,26 +189,21 @@ export function PortraitField({
           height={110}
           fill={`url(#${prefix}-horizon)`}
         />
-        {scene.markers.map((m) => {
+        {[...scene.trails].sort((a, b) =>
+              (a.id === selectedId ? 2 : a.you ? 1 : 0) - (b.id === selectedId ? 2 : b.you ? 1 : 0)
+            ).map((m) => {
           const trail = m.trail ? competeAthleteTrailColors(Boolean(m.you), Boolean(m.ghost)) : null;
           return (
           <g key={`trail-${m.id}`} pointerEvents="none">
             {m.trail && trail ? (
               <>
-                <path
-                  d={m.trail}
-                  stroke={trail.glow}
-                  strokeWidth={trail.glowStrokeWidth}
-                  opacity={trail.glowOpacity}
-                  strokeLinecap="round"
-                  fill="none"
-                />
+
                 <path
                   d={m.trail}
                   stroke={trail.stroke}
                   strokeWidth={trail.strokeWidth}
                   opacity={trail.strokeOpacity}
-                  strokeDasharray={m.ghost ? "6 8" : undefined}
+                  vectorEffect="non-scaling-stroke"
                   strokeLinecap="round"
                   fill="none"
                 />
@@ -359,8 +354,8 @@ export function PortraitField({
             );
           })}
       </svg>
-      <div className="club-field-explore">
-        {!immersive && <button type="button" aria-pressed={exploring} onClick={() => setExploring(!exploring)}>{exploring ? "Done" : "Explore"}</button>}
+      <div className="club-field-explore" style={{ pointerEvents: "none" }}>
+        {!immersive && <button type="button" style={{ pointerEvents: "auto" }} aria-pressed={exploring} onClick={() => setExploring(!exploring)}>{exploring ? "Done" : "Explore"}</button>}
         <span>{exploring ? "Drag to move · Pinch to zoom" : "Swipe across lanes · Explore to move forward"}</span>
       </div>
     </div>

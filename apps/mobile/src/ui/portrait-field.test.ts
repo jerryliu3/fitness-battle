@@ -19,6 +19,7 @@ vi.mock("react-native-svg", () =>
   Object.fromEntries(
     [
       "default",
+      "Circle",
       "ClipPath",
       "Defs",
       "Ellipse",
@@ -67,14 +68,12 @@ it("zooms the local portrait scene and changes peer focus while retaining actual
   expect(zoom.mock.lastCall?.[0]).toBeCloseTo(1.8);
   await act(async () => button("Previous lane").props.onPress());
   expect(button("Previous lane").props.disabled).toBe(true);
-  const peer = renderer.root
-    .findAllByType("SvgG" as never)
-    .find((n) => n.props.accessibilityLabel?.startsWith("Maya"))!;
+  const peer = button("Focus Maya");
   await act(async () => peer.props.onPress());
   expect(select).toHaveBeenCalledWith("peer");
 });
 
-it("owns fullscreen SVG drags and coalesces the latest two-axis position per frame", async () => {
+it("owns fullscreen native drags and coalesces the latest two-axis position per frame", async () => {
   vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
   const frames: (() => void)[] = [];
   const request = vi.fn((callback: () => void) => { frames.push(callback); return frames.length; });
@@ -92,7 +91,7 @@ it("owns fullscreen SVG drags and coalesces the latest two-axis position per fra
       onPan: pan, onZoom() {}, onSelect() {},
     }));
   });
-  const svg = renderer.root.findByType("Svgdefault" as never);
+  const svg = renderer.root.findAllByType("View" as never).find(n => n.props.onPanResponderMove)!;
   const before = renderer.root.findAllByType("SvgG" as never).map(n => n.props.transform).filter(Boolean);
   expect(svg.props.onMoveShouldSetPanResponderCapture(null, { dx: 20, dy: 40 })).toBe(true);
   await act(async () => {
@@ -116,7 +115,7 @@ it("pinches the native perspective field and retains the distance under the midp
   vi.stubGlobal("cancelAnimationFrame", vi.fn());
   const change = vi.fn();
   await act(async () => { renderer = create(createElement(PortraitField, { lanes: [{ id: "you", name: "You", initials: "Y", you: true, value: 10 }], view: { center: 10, span: 2 }, unit: "km", fullscreen: true, onViewChange: change, onZoom() {}, onPan() {}, onSelect() {} })); });
-  const svg = renderer.root.findByType("Svgdefault" as never);
+  const svg = renderer.root.findAllByType("View" as never).find(n => n.props.onPanResponderMove)!;
   const touch = (points: number[][]) => ({ nativeEvent: { pageY: 320, locationY: 320, touches: points.map(([pageX, pageY]) => ({ pageX, pageY })) } });
   expect(svg.props.onStartShouldSetPanResponderCapture(touch([[100, 320], [200, 320]]))).toBe(true);
   await act(async () => {

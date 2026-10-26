@@ -33,7 +33,6 @@ import {
   type ArenaSceneLane,
   type ArenaViewWindow,
 } from "@fitness-battle/shared";
-import { LaneRacerTarget } from "./lane-racer-target";
 import { IconButton } from "./icon-button";
 import { drawFieldNode } from "./field-course";
 import { alpineTrail } from "./club-art";
@@ -180,14 +179,15 @@ export function PortraitField({
       }}
     >
       <Image source={alpineTrail} style={[s.scenery, { height: height * .44 }]} />
-      <View ref={surface} style={{ ...StyleSheet.absoluteFill, ...(Platform.OS === "web" ? { touchAction: exploring || fullscreen ? "none" : "pan-y" } : {}) }}>
+      <View ref={surface} {...pan.panHandlers} style={{ ...StyleSheet.absoluteFill, ...(Platform.OS === "web" ? { touchAction: exploring || fullscreen ? "none" : "pan-y" } : {}) }}>
           <Svg
-            {...pan.panHandlers}
+            pointerEvents="none"
+            accessible
             width={width}
             height="100%"
             viewBox="0 0 420 600"
             preserveAspectRatio="none"
-            accessibilityLabel="Distance perspective competition field"
+            accessibilityLabel={`3D field, ${scene.min.toFixed(2)} to ${scene.max.toFixed(2)} ${unit}`}
           >
             <Defs>
               <LinearGradient
@@ -231,26 +231,21 @@ export function PortraitField({
               fill={`url(#${prefix}-horizon)`}
             />
             </G>
-            {scene.markers.map((m) => {
+            {[...scene.trails].sort((a, b) =>
+              (a.id === selectedId ? 2 : a.you ? 1 : 0) - (b.id === selectedId ? 2 : b.you ? 1 : 0)
+            ).map((m) => {
               const trail = m.trail ? competeAthleteTrailColors(Boolean(m.you), Boolean(m.ghost)) : null;
               return (
               <G key={`trail-${m.id}`} pointerEvents="none">
                 {m.trail && trail ? (
                   <>
-                    <Path
-                      d={m.trail}
-                      stroke={trail.glow}
-                      strokeWidth={trail.glowStrokeWidth}
-                      opacity={trail.glowOpacity}
-                      strokeLinecap="round"
-                      fill="none"
-                    />
+
                     <Path
                       d={m.trail}
                       stroke={trail.stroke}
                       strokeWidth={trail.strokeWidth}
                       opacity={trail.strokeOpacity}
-                      strokeDasharray={m.ghost ? "6 8" : undefined}
+                      vectorEffect="non-scaling-stroke"
                       strokeLinecap="round"
                       fill="none"
                     />
@@ -265,13 +260,7 @@ export function PortraitField({
               .map((m, i) => {
                 const id = `${prefix}-portrait-${i}`;
                 return (
-                  <LaneRacerTarget
-                    key={m.id}
-                    onPress={() => onSelect(m.id)}
-                    accessible
-                    accessibilityRole="button"
-                    accessibilityLabel={`${m.name}${m.you ? ", you" : ""}, ${m.gap.toFixed(1)} ${unit}${m.outside ? ", outside visible distance range" : ""}`}
-                  >
+                  <G key={m.id}>
                     <G transform={`translate(${m.x} ${m.y - 27 * m.scale}) scale(${m.scale})`}>
                     <Rect x={-30 / m.scale} y={-45 / m.scale} width={60 / m.scale} height={90 / m.scale} fill="transparent" />
                     {!m.ghost && m.trail ? (
@@ -397,10 +386,12 @@ export function PortraitField({
                       </SvgText>
                     ) : null}
                     </G>
-                  </LaneRacerTarget>
+                  </G>
                 );
               })}
           </Svg>
+          <Pressable accessible={false} onPress={() => {}} style={{ position: "absolute", inset: 0 }} />
+          {scene.markers.filter(m => m.x > 22 && m.x < 398).map(m => <Pressable key={m.id} accessibilityRole="button" accessibilityLabel={`Focus ${m.name}`} accessibilityState={{ selected: selectedId === m.id }} onPress={() => onSelect(m.id)} style={{ position: "absolute", left: (m.x - 30) / 420 * width, top: (m.y - 27 * m.scale - 45) / 600 * height, width: 60 / 420 * width, height: 90 / 600 * height }} />)}
       </View>
       {!fullscreen && (onToggleDimension || onExpand) ? (
         <View
@@ -456,9 +447,9 @@ export function PortraitField({
           ) : null}
         </View>
       ) : null}
-      <View style={{ position: "absolute", top: 12, left: 12, right: 60, gap: 6 }}>
+      <View pointerEvents="box-none" style={{ position: "absolute", top: 12, left: 12, right: 60, gap: 6 }}>
         {!fullscreen && <Pressable style={[s.controlRow, { alignSelf: "flex-start", minHeight: 44, paddingHorizontal: 16 }]} accessibilityRole="button" accessibilityLabel={exploring ? "Finish exploring field" : "Explore field in two directions"} accessibilityState={{ selected: exploring }} onPress={() => setExploring(!exploring)}><Text style={s.white}>{exploring ? "Done" : "Explore"}</Text></Pressable>}
-        <Text style={[s.white, textStyle("caption")]}>{exploring || fullscreen ? "Drag to move · Pinch to zoom" : "Swipe across lanes · Explore to move forward"}</Text>
+        <View pointerEvents="none"><Text style={[s.white, textStyle("caption")]}>{exploring || fullscreen ? "Drag to move · Pinch to zoom" : "Swipe across lanes · Explore to move forward"}</Text></View>
       </View>
     </View>
       <View style={{ gap: 6 }}>

@@ -1,3 +1,4 @@
+import { fieldProgressTrail } from "./field-course";
 import { describe, expect, it } from "vitest";
 import { defaultFieldAppearance, fieldAppearanceKey, fieldGrounds, readFieldAppearance } from "./field-appearance";
 import { fieldScaleMarks, fieldCourse, fieldCourseScene, fieldLap, fieldMarks, fieldScaleScene, fieldOverview, overviewTarget, clampCourseCenter, type FieldNode } from "./field-course";
@@ -105,4 +106,14 @@ it("bounds painted scenery to the visible lane band without changing lane geomet
   expect(visible.length).toBeLessThan(full.length / 4);
   expect(visible.length).toBeLessThan(250);
   expect(JSON.stringify(visible)).not.toMatch(/NaN|Infinity/);
+});
+
+it("clips a solid route independently of the head and start visibility", () => {
+  for (const ground of ["straight", "trail", "oval"] as const) {
+    const course = fieldCourse(390, 540, 8, { center: 18, span: 1.2 }, "km", { ...defaultFieldAppearance, ground });
+    expect(fieldProgressTrail(course, 18, 3, "km")).toContain("L");
+    expect(fieldProgressTrail(course, 100, 3, "km")).toContain("L");
+    expect(fieldProgressTrail(course, 0, 3, "km")).toBe("");
+    expect(fieldProgressTrail(course, 100, 3, "km")).not.toMatch(/NaN|Infinity/);
+  }
 });

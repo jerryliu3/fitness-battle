@@ -66,9 +66,13 @@ it("projects survey lines and athletes through the same invertible distance plan
   expect(scene.outside.some(m => m.ghost)).toBe(true);
 });
 
-it("omits start trails when the start line is outside the distance window", () => {
+it("keeps trails when the start line is offscreen and an athlete is ahead of the window", () => {
   const scene = portraitField(lanes, { center: 8, span: 4 });
-  expect(scene.markers.find((m) => m.you)?.trail).toBe("");
+  expect(scene.markers.find((m) => m.you)?.trail).toContain("L");
+  const far = portraitField([{ id: "you", you: true, name: "You", initials: "Y", value: 100 }], { center: 8, span: 4 });
+  expect(far.markers).toHaveLength(0);
+  expect(far.trails[0]?.trail).toContain("L");
+  expect(JSON.stringify(far.trails)).not.toMatch(/NaN|Infinity/);
 });
 
 it("keeps panning responsive over scenery above the horizon and beyond the foreground", () => {

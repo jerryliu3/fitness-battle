@@ -12,8 +12,11 @@ The October 26 [field navigation repair](reviews/field-navigation-2026-10-26/REA
 gives fullscreen 2D and perspective fields ownership of two-axis dragging and
 pinch zoom. Athlete selection eases from the displayed camera position; direct
 touch interrupts it and repeat selection recenters the same athlete. Respect
-Reduced Motion. Keep inline page scrolling available, isolate decorative clocks
-from scene construction, and paint nearby lanes with overscan. Renderer or
+Reduced Motion. Keep inline page scrolling available and paint nearby lanes with
+overscan. Native touch surfaces own input above drawing-only SVG. Mobile wakes
+are removed; completed routes use a fixed, opaque six-point line that remains
+visible when the start or athlete is offscreen. Decorative hints pass touches
+through. Renderer or
 joystick replacements remain under discussion pending release-device profiling.
 
 Use semantic shared tokens: navy `#142b3b`, yellow `#f7c948`, canvas `#f8f9f6`, white cards, muted `#637482`, border `#e3e9e7`, teal `#176c75`. Cards use quiet 20px corners. Yellow primary controls use dark labels. Historical decisions below describe earlier iterations; this selection supersedes their presentation rules.

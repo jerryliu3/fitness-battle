@@ -359,8 +359,6 @@ function CompeteRoot({
                   you={p.place === 3}
                   gold={p.place === 1}
                   sizeScale={0.5}
-                  time={0}
-                  showWake
                 />
               ))}
             </Svg>
