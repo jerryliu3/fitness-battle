@@ -38,7 +38,7 @@ export function SectionStack({ children, divided = true }: { children: ReactNode
 }
 export function StatusBadge({ children, tone = "neutral", icon }: { children: ReactNode; tone?: "neutral" | "success"; icon?: ReactNode }) {
   const success = tone === "success";
-  return <View style={[styles.badge, { backgroundColor: success ? c.statusSuccessSoft : c.soft, borderColor: success ? "#a9d4bc" : c.line }]}>{icon}<AppText role="label" style={{ color: success ? c.green : c.ink, flexShrink: 1, fontWeight: "600" }}>{children}</AppText></View>;
+  return <View style={[styles.badge, { backgroundColor: success ? c.statusSuccessSoft : c.soft, borderColor: success ? "#a9d4bc" : c.line }]}>{icon}<AppText role="label" style={{ color: success ? c.green : c.ink, flexShrink: 1 }}>{children}</AppText></View>;
 }
 export function Surface({ style, ...props }: ViewProps) { return <View {...props} style={[styles.surface, style]}/>; }
 export function ListRow({ title, subtitle, leading, trailing }: { title: string; subtitle?: string; leading?: ReactNode; trailing?: ReactNode }) {
