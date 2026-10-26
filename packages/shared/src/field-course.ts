@@ -1,6 +1,5 @@
 import { arenaPosition, arenaWindow, clampArenaLaneCenterToField, type ArenaSceneLane, type ArenaViewWindow } from "./arena-view";
 import { fieldGrounds, type FieldAppearance } from "./field-appearance";
-import { polishedCapsulePath } from "./polished-identity";
 
 /** Small SVG scene contract, painted by DOM SVG and react-native-svg adapters. */
 export interface FieldNode {
@@ -90,18 +89,13 @@ export function fieldOverview(lanes: readonly { value: number; ghost?: boolean }
 }
 export function overviewTarget(fraction: number, high: number) { return Math.max(0, Math.min(1, Number.isFinite(fraction) ? fraction : 0)) * high; }
 
-/** Fixed world ground and Liquid Glass / faint-underlay Banked trail. No animation clock. */
+/** Scenery only: athlete movement must not rebuild sampled ribbons or full-field masks. */
 export function fieldCourseScene(g: FieldCourse, appearance: FieldAppearance, lanes: readonly ArenaSceneLane[], unit: string, prefix: string): FieldNode[] {
   const { ground, edges } = appearance, palette = fieldGrounds[ground], z = g.zoom;
   const whole = fieldMarks(g.bounds.min, g.bounds.max), samples = fieldMarks(g.bounds.min, g.bounds.max, .5);
-  const out: FieldNode[] = [], surface: FieldNode[] = [], traces: FieldNode[] = [];
-  const clip = `${prefix}-ground-clip`, mask = `${prefix}-head-clear`;
-  const masks: FieldNode[] = [rect(0, 0, g.width, g.height, "white")];
-  for (let i = 0; i < lanes.length; i++) {
-    const l = lanes[i], p = g.point(l.value, i, 0, true), s = g.markerScale;
-    masks.push(path(polishedCapsulePath(-1.5), "black", { transform: `translate(${p.x} ${p.y}) rotate(${p.angle}) scale(${s})` }));
-  }
-  out.push(n("defs", {}, [n("clipPath", { id: clip }, [rect(0, 0, g.width, g.height, "white")]), n("mask", { id: mask, x: 0, y: 0, width: g.width, height: g.height, maskUnits: "userSpaceOnUse" }, masks)]));
+  const out: FieldNode[] = [], surface: FieldNode[] = [];
+  const clip = `${prefix}-ground-clip`;
+  out.push(n("defs", {}, [n("clipPath", { id: clip }, [rect(0, 0, g.width, g.height, "white")])]));
   if (ground === "straight" || ground === "oval") {
     const grain = g.oval ? 1 : z;
     out.push(n("defs", {}, [n("pattern", { id: `${prefix}-rubber-grain`, width: 11 * grain, height: 13 * grain, y: g.oval ? 0 : g.along(0), patternUnits: "userSpaceOnUse" }, [circle(3 * grain, 4 * grain, .6 * grain, "#713e36", { opacity: .22 }), circle(8 * grain, 10 * grain, .5 * grain, "#f5ad8f", { opacity: .22 })])]));
@@ -172,37 +166,7 @@ export function fieldCourseScene(g: FieldCourse, appearance: FieldAppearance, la
       surface.push(n("ellipse", { cx: x, cy: g.along(d), rx: 55 * z, ry: 60 * z, fill: "#e5d698", opacity: .07 }), circle(x, g.along(d), 3 * z, "#f8edbe"));
     }
   }
-  for (let i = 0; i < lanes.length; i++) {
-    const l = lanes[i];
-    const from = g.oval ? fieldLap(l.value, unit).laps * fieldLoopLength(unit) : Math.max(0, g.bounds.min);
-    const to = g.oval ? l.value : Math.min(l.value, g.bounds.max);
-    if (to <= from) continue;
-    const clearance = g.oval ? fieldLoopLength(unit) * .08 : 104 * g.markerScale / g.length * g.bounds.span;
-    const half = g.oval ? 7 * g.markerScale : Math.min(g.laneWidth * .34, 30 * z);
-    const color = l.you ? "#f7c948" : "#3f817c";
-    // Short gradient segments follow winding/oval courses without a straight-axis wash.
-    // Alpha is continuous at segment boundaries; the existing mask keeps heads clear.
-    const segments: FieldNode[] = [];
-    const count = g.oval ? 24 : 1;
-    for (let j = 0; j < count; j++) {
-      const a = from + (to - from) * j / count, b = from + (to - from) * (j + 1) / count;
-      const side = (d: number, sign: number) => {
-        const taper = Math.min(1, Math.max(0, l.value - d) / Math.max(1e-6, clearance * .75));
-        const p = g.point(d, i, sign * half * taper);
-        return `${p.x.toFixed(3)} ${p.y.toFixed(3)}`;
-      };
-      const values = Array.from({ length: g.oval ? 5 : 81 }, (_, k) => a + (b - a) * k / ((g.oval ? 5 : 81) - 1));
-      const ribbon = `M${values.map(d => side(d, -1)).join("L")}L${[...values].reverse().map(d => side(d, 1)).join("L")}Z`;
-      const start = g.point(a, i), end = g.point(b, i), id = `${prefix}-progress-${i}-${j}`;
-      const fadeDistance=unit==="pts"?20:1.5;
-      const alpha = (value:number)=>.9*Math.max(0,Math.min(1,(l.value-value)/fadeDistance));
-      const stops=[n("stop",{offset:0,stopColor:color,stopOpacity:alpha(a)}),...(l.value-fadeDistance>a&&l.value-fadeDistance<b?[n("stop",{offset:(l.value-fadeDistance-a)/(b-a),stopColor:color,stopOpacity:.9})]:[]),n("stop",{offset:1,stopColor:color,stopOpacity:alpha(b)})];
-      segments.push(n("defs", {}, [n("linearGradient", { id, gradientUnits: "userSpaceOnUse", x1: g.oval ? start.x : 0, y1: start.y, x2: g.oval ? end.x : 0, y2: end.y }, stops)]), path(ribbon, `url(#${id})`));
-    }
-    traces.push(n("g", { pointerEvents: "none" }, segments));
-  }
-  const content = [n("g", {}, surface), n("g", { mask: `url(#${mask})` }, traces)];
-  out.push(n("g", { clipPath: `url(#${clip})` }, content));
+  out.push(n("g", { clipPath: `url(#${clip})` }, surface));
   return out;
 }
 

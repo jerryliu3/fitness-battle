@@ -2788,3 +2788,13 @@
   text-transform: none;
   font: var(--type-label)}.chapter-label small,.chapter-delta small{color:var(--muted);letter-spacing: normal;text-transform: none;font: var(--type-caption)}.chapter-delta{display:grid;gap:3px;text-align:right;font-variant-numeric:tabular-nums;letter-spacing: normal;text-transform: none;font: var(--type-body)}.weekly-chapter .week-result-card{margin:8px auto 24px;width:calc(100% - 16px);max-width:360px}
 .crew-dimensional-relay{display:grid;gap:12px;margin-top:14px;min-width:0}.crew-relay-context{display:flex;justify-content:space-between;gap:12px;color:var(--muted);letter-spacing: normal;text-transform: none;font: var(--type-caption)}.crew-dimensional-relay>svg{overflow:visible}.crew-dimensional-relay svg g[role=button]{cursor:pointer;outline-offset:4px}.crew-member-shelf{display:flex;gap:8px;overflow-x:auto;max-width:100%;padding:3px 0 6px;overscroll-behavior-x:contain}.crew-member-shelf>button{display:flex;flex-direction:column;align-items:center;gap:6px;min-width:112px;max-width:132px;min-height:116px;padding:12px;background:var(--card);border:1px solid var(--line);border-bottom-width:3px;border-radius:14px;color:var(--ink);font:inherit}.crew-member-shelf>button[aria-pressed=true]{border-color:var(--lime);background:var(--accent-soft)}.crew-member-shelf b{max-width:106px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;letter-spacing: normal;text-transform: none;font: var(--type-body)}.crew-member-shelf small{color:var(--muted);letter-spacing: normal;text-transform: none;font: var(--type-caption)}.crew-member-photo{width:36px;height:36px;border-radius:50%;display:grid;place-items:center;background:var(--accent-soft);overflow:hidden;color:var(--muted);flex-shrink:0}.crew-member-photo img{width:100%;height:100%;object-fit:cover}.crew-member-receipt{display:grid;gap:4px;letter-spacing: normal;text-transform: none;font: var(--type-body)}.crew-member-receipt>span{color:var(--muted);letter-spacing: normal;text-transform: none;font: var(--type-caption)}
+
+/* Original capsule echoes and masks; only their animation owner changes. */
+.field-local-wake[data-animate="true"] .field-local-echo { animation-name: field-local-echo; animation-timing-function: linear; animation-iteration-count: infinite; }
+.field-local-wake[data-paused="true"] .field-local-echo,
+[aria-hidden="true"] .field-local-wake .field-local-echo { animation-play-state: paused; }
+@keyframes field-local-echo {
+  0% { transform: translateY(0); opacity: .8; }
+  100% { transform: translateY(var(--wake-travel)); opacity: .12; }
+}
+@media (prefers-reduced-motion: reduce) { .field-local-wake .field-local-echo { animation: none !important; } }

@@ -1,13 +1,10 @@
 import {
   createElement,
-  useCallback,
-  useEffect,
+  memo,
   useId,
-  useState,
   type ComponentType,
 } from "react";
-import { AppState, Platform } from "react-native";
-import { useFocusEffect } from "expo-router";
+import { Platform } from "react-native";
 import {
   G,
   Path,
@@ -23,7 +20,6 @@ import {
   polishedLaneScale,
   type CapsuleNode,
 } from "@fitness-battle/shared";
-import { useReducedMotion } from "./use-reduced-motion";
 
 const elements = {
   g: G,
@@ -34,17 +30,17 @@ const elements = {
   stop: Stop,
   mask: Mask,
 };
-function draw(node: CapsuleNode, key: number): React.ReactNode {
+export function drawCapsuleNode(node: CapsuleNode, key: number): React.ReactNode {
   const Element = elements[node.tag] as ComponentType<Record<string, unknown>>;
   const {maskType,...attrs}=node.attrs;
   const attributes=Platform.OS==="web"&&maskType?{...attrs,style:{maskType}}:node.attrs;
   return createElement(
     Element,
     { ...attributes, key },
-    node.children?.map(draw),
+    node.children?.map(drawCapsuleNode),
   );
 }
-export function PolishedRacer({
+export const PolishedRacer = memo(function PolishedRacer({
   x,
   y,
   you,
@@ -65,11 +61,11 @@ export function PolishedRacer({
 }) {
   const id = useId(),
     scale = sizeScale ?? polishedLaneScale(you);
-  const [defs, wake, ...head] = polishedCapsuleScene(id, gold, time);
+  const [defs, wake, ...head] = polishedCapsuleScene(id, gold, time, false, showWake);
   return (
     <G transform={`translate(${x} ${y}) scale(${scale})`} pointerEvents="none">
-      {draw(defs, 0)}
-      {wakeBottom !== undefined && (
+      {drawCapsuleNode(defs, 0)}
+      {showWake && wakeBottom !== undefined && (
         <Defs>
           <ClipPath id={`${id}-wake-bound`}>
             <Rect
@@ -87,50 +83,10 @@ export function PolishedRacer({
             wakeBottom === undefined ? undefined : `url(#${id}-wake-bound)`
           }
         >
-          {draw(wake, 1)}
+          {drawCapsuleNode(wake, 1)}
         </G>
       ) : null}
-      {head.map(draw)}
+      {head.map(drawCapsuleNode)}
     </G>
   );
-}
-/** One field clock, suspended when the screen/app is inactive or motion is reduced. */
-export function usePolishedWakeTime(active = true) {
-  const reduced = useReducedMotion();
-  const [foreground, setForeground] = useState(
-      AppState.currentState === "active",
-    ),
-    [focused, setFocused] = useState(false);
-  const [time, setTime] = useState<number | undefined>(undefined);
-  useFocusEffect(
-    useCallback(() => {
-      setFocused(true);
-      return () => setFocused(false);
-    }, []),
-  );
-  useEffect(() => {
-    const app = AppState.addEventListener("change", (state) =>
-      setForeground(state === "active"),
-    );
-    return () => app.remove();
-  }, []);
-  useEffect(() => {
-    if (!active || reduced || !foreground || !focused) {
-      setTime(undefined);
-      return;
-    }
-    let raf = 0,
-      published = 0;
-    const start = performance.now();
-    const tick = (now: number) => {
-      if (now - published >= 1000 / 30) {
-        published = now;
-        setTime((now - start) / 1000);
-      }
-      raf = requestAnimationFrame(tick);
-    };
-    raf = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(raf);
-  }, [active, reduced, foreground, focused]);
-  return time;
-}
+});

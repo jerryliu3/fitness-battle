@@ -63,21 +63,21 @@ describe("production course contract", () => {
       const appearance = { ground, edges }, g = fieldCourse(320, 540, 2, { center: 18, span: unit === "pts" ? 20 : 6 }, unit, appearance);
       const nodes = flatten(fieldCourseScene(g, appearance, lanes, unit, `${ground}-${edges}-${unit}`));
       expect(JSON.stringify(nodes)).not.toMatch(/NaN|Infinity|undefined/);
-      expect(nodes.filter(n => n.tag === "mask")).toHaveLength(1);
-      const stops = nodes.filter(n => n.tag === "stop");
-      expect(stops.some(n => n.attrs.stopOpacity === 0)).toBe(true);
-      expect(stops.every(n => Number(n.attrs.stopOpacity) <= .9)).toBe(true);
+      expect(nodes.filter(n => n.tag === "mask" || n.tag === "linearGradient")).toHaveLength(0);
       expect(nodes.length).toBeLessThan(1500);
     }
   });
 });
 
-it("fades earned distance toward the athlete and darkens back toward the start", () => {
- const g=fieldCourse(390,540,1,{center:2,span:6},"km",defaultFieldAppearance);
- const nodes=flatten(fieldCourseScene(g,defaultFieldAppearance,[{id:"me",name:"Me",initials:"ME",value:2,you:true}],"km","fade"));
- const gradient=nodes.find(n=>n.tag==="linearGradient"&&String(n.attrs.id).includes("-progress-"))!;
- expect(gradient.children?.[0].attrs.stopOpacity).toBe(.9);
- expect(gradient.children?.at(-1)?.attrs.stopOpacity).toBe(0);
+it("keeps scenery identical as athletes move, without progress ribbons or head masks", () => {
+ for (const ground of Object.keys(fieldGrounds) as (keyof typeof fieldGrounds)[]) {
+  const appearance = { ground, edges: "club" as const };
+  const g = fieldCourse(390, 540, lanes.length, { center: 18, span: 6 }, "km", appearance);
+  const before = fieldCourseScene(g, appearance, lanes, "km", "stable");
+  const after = fieldCourseScene(g, appearance, lanes.map(l => ({ ...l, value: l.value + 2 })), "km", "stable");
+  expect(after).toEqual(before);
+  expect(flatten(after).some(n => n.tag === "mask" || n.tag === "linearGradient")).toBe(false);
+ }
 });
 
 it("uses whole-unit ruler marks even at close chase scales",()=>{for(const unit of ["km","mi"]){const g=fieldCourse(390,540,4,{center:18.2,span:1.2},unit,defaultFieldAppearance);const labels=fieldScaleScene(g,unit).filter(n=>n.tag==="text").slice(1);expect(labels.length).toBeGreaterThan(0);expect(labels.every(n=>Number.isInteger(Number(n.text)))).toBe(true);}});
