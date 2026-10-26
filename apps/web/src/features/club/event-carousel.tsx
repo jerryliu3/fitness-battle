@@ -28,6 +28,8 @@ export function EventCarousel({
   );
   const activeIndex = useRef(index);
   activeIndex.current = index;
+  const eventsRef = useRef(events);
+  eventsRef.current = events;
   useEffect(() => {
     const host = scroller.current;
     if (!host) return;
@@ -46,7 +48,8 @@ export function EventCarousel({
       return;
     }
     const host = scroller.current;
-    host?.scrollTo({
+    if (!host?.clientWidth) return;
+    host.scrollTo({
       left: index * host.clientWidth,
       behavior: reduced ? "instant" : "smooth",
     });
@@ -107,9 +110,10 @@ export function EventCarousel({
               host.clientWidth,
               events.length,
             );
-            if (next !== index) {
+            if (next !== activeIndex.current) {
+              activeIndex.current = next;
               fromScroll.current = true;
-              onChange(events[next]!.id);
+              onChange(eventsRef.current[next]!.id);
             }
           }, 150);
         }}

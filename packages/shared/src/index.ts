@@ -33,6 +33,7 @@ export * from "./club-summary";
 
 export * from "./portrait-field";
 export * from "./compete-trail";
+export * from "./compete-carousel";
 
 export * from "./sync-review";
 

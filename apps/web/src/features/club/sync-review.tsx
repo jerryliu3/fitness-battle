@@ -2,12 +2,10 @@
 import { AppHeading } from "@/ui/section";
 
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
-import { APP_TIMEZONE, clubDuration, formatVolume, sportById, type CompeteState, type CompetitionMoment, type SyncReviewReceipt } from "@fitness-battle/shared";
+import { APP_TIMEZONE, clubDuration, formatVolume, sportById, SYNC_REVIEW_SAVE_DELAY_MS, type CompeteState, type CompetitionMoment, type SyncReviewReceipt } from "@fitness-battle/shared";
 import { Sheet } from "@/ui/sheet";
 import { ActivityRoute } from "@/components/routes/activity-route";
 import { CompetitionMoment as Moment } from "./competition-moment";
-
-const SYNC_REVIEW_SAVE_DELAY_MS = 900;
 
 export function SyncReview({ receipt, state, moment, debug = false, remaining = 0, onComplete, onAcknowledge = () => {} }: {
   receipt: SyncReviewReceipt | null; state: CompeteState; debug?: boolean; moment?: CompetitionMoment | null; remaining?: number;

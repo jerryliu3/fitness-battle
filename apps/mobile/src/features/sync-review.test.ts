@@ -17,6 +17,7 @@ vi.mock("react-native", () => ({
   ScrollView: "ScrollView",
   Text: "Text",
   Pressable: "Pressable",
+  ActivityIndicator: "ActivityIndicator",
   StyleSheet: { create: (v: unknown) => v },
   PanResponder: { create: (handlers: object) => ({ panHandlers: handlers }) },
 }));
@@ -67,6 +68,7 @@ it("a native full-screen swipe confirms the selected activities once without nav
     slider.props.onResponderRelease({ nativeEvent: { pageX: 220 } });
     slider.props.onResponderRelease({ nativeEvent: { pageX: 220 } });
   });
+  await act(async () => { await new Promise((resolve) => setTimeout(resolve, 1000)); });
   expect(done).toHaveBeenCalledTimes(1);
   expect(done).toHaveBeenCalledWith(["a"]);
   expect(renderer!.root.findByType("Modal" as never).props.presentationStyle).toBe("fullScreen");

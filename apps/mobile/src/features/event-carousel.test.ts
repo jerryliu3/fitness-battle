@@ -6,13 +6,22 @@ vi.mock("react-native", () => ({
   Text: "Text",
   Pressable: "Pressable",
   ScrollView: "ScrollView",
-  Dimensions: { get: () => ({ width: 400, height: 800 }) },
   StyleSheet: { create: (x: unknown) => x },
 }));
 vi.mock("../ui/section", () => ({
   AppText: "AppText",
 }));
 import { EventCarousel } from "./event-carousel";
+
+function layoutCarousel(r: ReturnType<typeof create>) {
+  const host = r.root.findAll(
+    (node) => typeof node.props.onLayout === "function",
+  )[0]!;
+  act(() => {
+    host.props.onLayout({ nativeEvent: { layout: { width: 400, height: 120 } } });
+  });
+}
+
 it("switches events from chips and opens register from the dashed chip", async () => {
   vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
   const change = vi.fn(),
@@ -32,6 +41,7 @@ it("switches events from chips and opens register from the dashed chip", async (
       }),
     );
   });
+  layoutCarousel(r!);
   const presses = r!.root.findAllByType("Pressable" as never);
   const cyclingChip = presses.find((n) => n.props.accessibilityRole === "tab" && n.props.accessibilityState?.selected === false)!;
   await act(async () => { cyclingChip.props.onPress(); });
@@ -59,6 +69,7 @@ it("switches events when a horizontal page drag ends without momentum", async ()
       }),
     );
   });
+  layoutCarousel(r!);
   const scroller = r!.root.findByType("ScrollView" as never);
   await act(async () => {
     scroller.props.onScrollEndDrag({
