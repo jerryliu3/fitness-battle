@@ -1,4 +1,5 @@
 "use client";
+import { GeographicCourse } from "@/features/course/geographic-course";
 import { PortraitField } from "@/features/club/portrait-field";
 import { PolishedRacer } from "@/features/brand/polished-racer";
 import { UserAvatar } from "@/ui/user-avatar";
@@ -458,6 +459,7 @@ export function FieldStage({
       hidden={!tabActive}
       aria-hidden={!tabActive}
     >
+      <GeographicCourse active={tabActive} lanes={sceneLanes} unit={unit} selectedId={trackSelected || you.id} />
       <div style={{ display: "flow-root" }}>
         <ExpandingField
           open={lanesImmersive && tabActive}

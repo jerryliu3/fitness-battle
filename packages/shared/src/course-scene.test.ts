@@ -7,6 +7,9 @@ it("uses current real totals and excludes ghosts and points without changing sco
   const scene = raceCourseScene(course, lanes, "km", "peer");
   expect(scene.markers.features).toHaveLength(2);
   expect(scene.selected?.metres).toBe(1000);
+  expect(scene.trails.features).toHaveLength(2);
+  expect(scene.trails.features.at(-1)?.id).toBe("peer");
+  expect(scene.trails.features[0].properties.color).toBe("#f7c948");
   expect(scene.trail.geometry.coordinates.at(-1)).toEqual(scene.selected?.coordinate);
   expect(scene.markers.features.find(f => f.properties.id === "peer")?.properties.selected).toBe(true);
   expect(raceCourseScene(course, lanes, "pts", "peer").markers.features).toHaveLength(0);

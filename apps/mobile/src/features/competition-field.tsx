@@ -1,3 +1,4 @@
+import { GeographicCourse } from "./geographic-course";
 import { CompetitionReplayButton } from "./competition-replay";
 import { UserAvatar } from "../ui/user-avatar";
 import { textStyle } from "../ui/section";
@@ -271,6 +272,7 @@ export function CompetitionField({
 
   return (
     <View style={{ gap: 14 }}>
+      <GeographicCourse active={isFocused} lanes={fieldLanes} unit={arena.unit} selectedId={selectedId ?? me?.id ?? ""} />
       {expanded ? (
         <Modal
           visible

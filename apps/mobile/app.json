@@ -34,7 +34,8 @@
           "cameraPermission": false,
           "microphonePermission": false
         }
-      ]
+      ],
+      "@rnmapbox/maps"
     ],
     "experiments": {
       "typedRoutes": true

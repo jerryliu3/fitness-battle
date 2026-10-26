@@ -11,6 +11,7 @@ it("requests real route geometry without activity writes", async () => {
   const course = await requestMapboxCourse("0,0", ".01,0", "walking", "public");
   expect(course.length).toBeGreaterThan(1000);
   expect(fetcher).toHaveBeenCalledTimes(1);
+  expect(fetcher.mock.calls[0][0]).toContain("exclude=ferry");
   expect(fetcher.mock.calls[0][0]).toContain("mapbox/walking/0,0;0.01,0");
 });
 it("handles failed geocoding and no-route responses explicitly", async () => {

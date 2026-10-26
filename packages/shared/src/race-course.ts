@@ -72,7 +72,8 @@ export interface CourseCameraPose { center: LngLat; zoom: number; pitch: number;
 export interface CourseCameraDriver {
   read(): CourseCameraPose;
   move(pose: CourseCameraPose, duration: number): void;
-  stop(): void;
+  stop(userGesture?: boolean): void;
+  fit?(bounds: { ne: LngLat; sw: LngLat }, duration: number): void;
 }
 /** One owner for both platforms. Native engines own every frame between camera commands. */
 export function createCourseCamera(driver: CourseCameraDriver, reducedMotion = false) {
@@ -85,7 +86,7 @@ export function createCourseCamera(driver: CourseCameraDriver, reducedMotion = f
     driver.move(pose, reducedMotion ? 0 : automatic ? 500 : Math.min(1800, 400 + 180 * Math.log2(1 + metres / 30)));
   };
   return {
-    interrupt() { following = false; driver.stop(); },
+    interrupt() { following = false; driver.stop(true); },
     setReducedMotion(value: boolean) { reducedMotion = value; driver.stop(); },
     focus(course: RaceCourse, metres: number, automatic = false) {
       if (automatic && !following) return;
@@ -104,6 +105,7 @@ export function createCourseCamera(driver: CourseCameraDriver, reducedMotion = f
       const unwrapped = course.coordinates.map(c => c[0] + 360 * Math.round((course.coordinates[0][0] - c[0]) / 360));
       const north = Math.max(...course.coordinates.map(c => c[1])), south = Math.min(...course.coordinates.map(c => c[1]));
       const east = Math.max(...unwrapped), west = Math.min(...unwrapped);
+      if (driver.fit) { driver.stop(); driver.fit({ ne: [east, north], sw: [west, south] }, reducedMotion ? 0 : 900); return; }
       const center: LngLat = [(east + west) / 2, (north + south) / 2];
       // A conservative fit for phone-width viewports, including routes crossing the date line.
       const extent = Math.max(east - west, (north - south) / Math.max(.08, Math.cos(center[1] * Math.PI / 180)), .001);

@@ -23,7 +23,7 @@ export async function requestMapboxCourse(start: string, finish: string, profile
     return result;
   }
   const [a, b] = await Promise.all([resolve(start), resolve(finish)]);
-  const response = await fetch(`https://api.mapbox.com/directions/v5/mapbox/${profile}/${a.join(",")};${b.join(",")}?geometries=geojson&overview=full&access_token=${encodeURIComponent(token)}`, { signal });
+  const response = await fetch(`https://api.mapbox.com/directions/v5/mapbox/${profile}/${a.join(",")};${b.join(",")}?geometries=geojson&overview=full&exclude=ferry&access_token=${encodeURIComponent(token)}`, { signal });
   if (!response.ok) throw new Error("Route generation is unavailable. Try a closer start and destination.");
   const json = await response.json() as { code?: unknown; routes?: { geometry?: { coordinates?: unknown } }[] };
   const coordinates: unknown = json.routes?.[0]?.geometry?.coordinates;

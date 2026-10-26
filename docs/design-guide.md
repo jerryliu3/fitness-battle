@@ -349,3 +349,13 @@ Athlete movement must not rebuild scenery; replay owns marker position
 interpolation, and gestures publish at most once per animation frame. Preserve
 capsule identity, ground choices, distance scale, ghost and offscreen indicators.
 See the [performance investigation and fidelity validation](reviews/2d-field-performance/README.md).
+
+The optional geographic course view uses Mapbox Standard scenery and the same
+competition totals, with GPX or explicit walking/cycling route requests. Keep
+course choice separate from activity import and scoring. The dedicated screen
+supports native map gestures, selectable athletes, 2D/chase views, whole-route
+framing and recenter/follow. Manual exploration suspends follow; selecting an
+athlete resumes it. Respect reduced motion and retain map attribution. Points
+fields keep the existing field. Courses currently stop at the finish and remain
+local to the view; no shared published event-course assignment is implied. See
+[implementation and validation](reviews/geographic-course/README.md).
