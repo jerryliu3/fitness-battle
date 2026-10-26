@@ -91,3 +91,10 @@ it("provides a multi-pass sync fixture with two inspectable GPS routes", () => {
   const previous = readArenaBaseline(result.baselines[arenaBaselineStorageKey("guest", result.state.primary, competitionTrack(result.state.primary))], periodStart, unit);
   expect(reconcileArenaOvertake(lanes, previous)?.overtakenIds.length).toBeGreaterThanOrEqual(2);
 });
+
+it("still passes several rivals when the live week has only just started", () => {
+  const result = applyDebugEvent(freshState(), "sync-combo", "guest", 2);
+  const { lanes, periodStart, unit } = sceneLanesFromState(result.state);
+  const previous = readArenaBaseline(result.baselines[arenaBaselineStorageKey("guest", result.state.primary, competitionTrack(result.state.primary))], periodStart, unit);
+  expect(reconcileArenaOvertake(lanes, previous)?.overtakenIds.length).toBeGreaterThanOrEqual(2);
+});
