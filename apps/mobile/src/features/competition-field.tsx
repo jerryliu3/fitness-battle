@@ -716,7 +716,6 @@ export function CompetitionField({
                           y={0}
                           you={leader.you}
                           gold
-
                         />
                       </Svg>
                     }
@@ -774,7 +773,6 @@ export function CompetitionField({
                           y={0}
                           you={lane.you}
                           gold={rank === 1}
-
                         />
                       </Svg>
                     }

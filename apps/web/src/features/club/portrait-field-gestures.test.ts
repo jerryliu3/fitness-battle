@@ -34,3 +34,32 @@ it("maps the same world-space drag identically through letterboxing and display 
   expect(results[1]!.center).toBeCloseTo(results[0]!.center);
   expect(results[1]!.focus).toBeCloseTo(results[0]!.focus);
 });
+
+
+it("lets navigation controls interrupt an athlete flight on both camera axes", async () => {
+  vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
+  const frames = new Map<number, () => void>(); let serial = 0;
+  vi.stubGlobal("requestAnimationFrame", (callback: () => void) => { frames.set(++serial, callback); return serial; });
+  vi.stubGlobal("cancelAnimationFrame", (id: number) => frames.delete(id));
+  vi.stubGlobal("window", { matchMedia: () => ({ matches: false }) });
+  const interrupt = vi.fn(), pan = vi.fn(), zoom = vi.fn();
+  const props = {
+    lanes: [{ id: "you", name: "You", initials: "Y", you: true, value: 10 }, { id: "peer", name: "Peer", initials: "P", value: 10 }],
+    selectedId: "peer", view: { center: 10, span: 2 }, unit: "km",
+    onGestureStart: interrupt, onPan: pan, onZoom: zoom, onSelect() {},
+  };
+  let renderer!: ReturnType<typeof create>;
+  await act(async () => { renderer = create(createElement(PortraitField, props)); });
+  try {
+    for (const [index, label] of ["Next lane", "Move forward", "Zoom in"].entries()) {
+      await act(async () => renderer.update(createElement(PortraitField, { ...props, focusRequest: index + 1 })));
+      expect(frames.size).toBe(1);
+      const button = renderer.root.findAllByType("button").find(node => node.props["aria-label"] === label)!;
+      await act(async () => button.props.onClick());
+      expect(frames.size).toBe(0);
+      expect(interrupt).toHaveBeenCalledTimes(index + 1);
+    }
+    expect(pan).toHaveBeenLastCalledWith(10 + 2 / 3);
+    expect(zoom).toHaveBeenLastCalledWith(2 / 1.5);
+  } finally { await act(async () => renderer.unmount()); }
+});

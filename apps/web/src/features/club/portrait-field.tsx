@@ -61,13 +61,18 @@ export function PortraitField({
   const svg = useRef<SVGSVGElement>(null);
   const latest = useRef({ onPan, onZoom, onViewChange, view, scene, exploring });
   latest.current = { onPan, onZoom, onViewChange, view, scene, exploring };
-  const shift = (d: number) =>
+  const shift = (d: number) => {
+    interruptTravel();
     setLaneOffset(
       Math.max(0, Math.min(scene.ordered.length - 1, scene.focus + d)) -
         scene.baseFocus,
     );
+  };
   const travel = useRef<number | null>(null);
   const stopTravel = () => { if (travel.current !== null) cancelAnimationFrame(travel.current); travel.current = null; };
+  const interruptTravel = () => { stopTravel(); onGestureStart?.(); };
+  const panTo = (center: number) => { interruptTravel(); onPan(center); };
+  const zoomTo = (span: number) => { interruptTravel(); onZoom(span); };
   useEffect(() => () => stopTravel(), []);
   useEffect(() => {
     const key = `${selectedId}:${focusRequest}`;
@@ -156,7 +161,7 @@ export function PortraitField({
           if (e.target !== e.currentTarget) return;
           if (!["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "Home"].includes(e.key)) return;
           e.preventDefault();
-          if (e.key === "ArrowUp" || e.key === "ArrowDown") onPan(view.center + (e.key === "ArrowUp" ? 1 : -1) * view.span / 4);
+          if (e.key === "ArrowUp" || e.key === "ArrowDown") panTo(view.center + (e.key === "ArrowUp" ? 1 : -1) * view.span / 4);
           else if (e.key === "Home") { onSelect(lanes.find(l => l.you)?.id ?? ""); }
           else shift(e.key === "ArrowRight" ? 1 : -1);
         }}
@@ -190,27 +195,12 @@ export function PortraitField({
           fill={`url(#${prefix}-horizon)`}
         />
         {[...scene.trails].sort((a, b) =>
-              (a.id === selectedId ? 2 : a.you ? 1 : 0) - (b.id === selectedId ? 2 : b.you ? 1 : 0)
-            ).map((m) => {
-          const trail = m.trail ? competeAthleteTrailColors(Boolean(m.you), Boolean(m.ghost)) : null;
-          return (
-          <g key={`trail-${m.id}`} pointerEvents="none">
-            {m.trail && trail ? (
-              <>
-
-                <path
-                  d={m.trail}
-                  stroke={trail.stroke}
-                  strokeWidth={trail.strokeWidth}
-                  opacity={trail.strokeOpacity}
-                  vectorEffect="non-scaling-stroke"
-                  strokeLinecap="round"
-                  fill="none"
-                />
-              </>
-            ) : null}
-          </g>
-          );
+          (a.id === selectedId ? 2 : a.you ? 1 : 0) - (b.id === selectedId ? 2 : b.you ? 1 : 0)
+        ).map(m => {
+          const trail = competeAthleteTrailColors(Boolean(m.you), Boolean(m.ghost));
+          return <path key={`trail-${m.id}`} pointerEvents="none" d={m.trail}
+            stroke={trail.stroke} strokeWidth={trail.strokeWidth} opacity={trail.strokeOpacity}
+            vectorEffect="non-scaling-stroke" strokeLinecap="round" fill="none" />;
         })}
         {scene.markers
           .filter((m) => m.x > 22 && m.x < 398)
@@ -370,15 +360,15 @@ export function PortraitField({
       <div className="club-board-controls club-distance-controls">
         <div className="club-board-peers">
           <button type="button" aria-label="Previous lane" disabled={scene.focus <= 0} onClick={() => shift(-1)}>←</button>
-          <button type="button" aria-label="Move backward" disabled={scene.min <= 0} onClick={() => onPan(view.center - view.span / 3)}>↓</button>
+          <button type="button" aria-label="Move backward" disabled={scene.min <= 0} onClick={() => panTo(view.center - view.span / 3)}>↓</button>
           <button type="button" onClick={() => { onSelect(lanes.find(l => l.you)?.id ?? ""); }}>You</button>
-          <button type="button" aria-label="Move forward" onClick={() => onPan(view.center + view.span / 3)}>↑</button>
+          <button type="button" aria-label="Move forward" onClick={() => panTo(view.center + view.span / 3)}>↑</button>
           <button type="button" aria-label="Next lane" disabled={scene.focus >= scene.ordered.length - 1} onClick={() => shift(1)}>→</button>
         </div>
         <div className="club-board-zoom">
-          <button type="button" aria-label="Zoom out" disabled={view.span >= (unit === "pts" ? 100 : 40)} onClick={() => onZoom(Math.min(unit === "pts" ? 100 : 40, view.span * 1.5))}>−</button>
+          <button type="button" aria-label="Zoom out" disabled={view.span >= (unit === "pts" ? 100 : 40)} onClick={() => zoomTo(Math.min(unit === "pts" ? 100 : 40, view.span * 1.5))}>−</button>
           <span aria-live="off">{Math.max(0, scene.min).toFixed(unit === "pts" ? 0 : 2)}–{scene.max.toFixed(unit === "pts" ? 0 : 2)} {unit}</span>
-          <button type="button" aria-label="Zoom in" disabled={view.span <= (unit === "pts" ? 2 : 0.5)} onClick={() => onZoom(Math.max(unit === "pts" ? 2 : 0.5, view.span / 1.5))}>＋</button>
+          <button type="button" aria-label="Zoom in" disabled={view.span <= (unit === "pts" ? 2 : 0.5)} onClick={() => zoomTo(Math.max(unit === "pts" ? 2 : 0.5, view.span / 1.5))}>＋</button>
         </div>
       </div>
     </div>

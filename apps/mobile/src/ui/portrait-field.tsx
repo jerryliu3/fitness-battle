@@ -86,6 +86,9 @@ export function PortraitField({
   const travel = useRef<number | null>(null);
   const pending = useRef<{ offset: number; view: ArenaViewWindow } | null>(null);
   const stopTravel = () => { if (travel.current !== null) cancelAnimationFrame(travel.current); travel.current = null; };
+  const interruptTravel = () => { stopTravel(); onGestureStart?.(); };
+  const panTo = (center: number) => { interruptTravel(); onPan(center); };
+  const zoomTo = (span: number) => { interruptTravel(); onZoom(span); };
   const publish = () => {
     frame.current = null;
     const next = pending.current;
@@ -150,7 +153,7 @@ export function PortraitField({
     const tick = () => { const t = Math.min(1, (Date.now() - started) / duration); setLaneOffset(from + (target - from) * fieldFlightEase(t)); travel.current = t < 1 ? requestAnimationFrame(tick) : null; };
     travel.current = requestAnimationFrame(tick);
   };
-  const shift = (d: number) => moveTo(laneOffset + d, false);
+  const shift = (d: number) => { interruptTravel(); moveTo(laneOffset + d, false); };
   const prevSelectedRef = useRef(focusOnMount ? "" : `${selectedId}:${focusRequest}`);
   useEffect(() => {
     const key = `${selectedId}:${focusRequest}`;
@@ -233,26 +236,11 @@ export function PortraitField({
             </G>
             {[...scene.trails].sort((a, b) =>
               (a.id === selectedId ? 2 : a.you ? 1 : 0) - (b.id === selectedId ? 2 : b.you ? 1 : 0)
-            ).map((m) => {
-              const trail = m.trail ? competeAthleteTrailColors(Boolean(m.you), Boolean(m.ghost)) : null;
-              return (
-              <G key={`trail-${m.id}`} pointerEvents="none">
-                {m.trail && trail ? (
-                  <>
-
-                    <Path
-                      d={m.trail}
-                      stroke={trail.stroke}
-                      strokeWidth={trail.strokeWidth}
-                      opacity={trail.strokeOpacity}
-                      vectorEffect="non-scaling-stroke"
-                      strokeLinecap="round"
-                      fill="none"
-                    />
-                  </>
-                ) : null}
-              </G>
-              );
+            ).map(m => {
+              const trail = competeAthleteTrailColors(Boolean(m.you), Boolean(m.ghost));
+              return <Path key={`trail-${m.id}`} pointerEvents="none" d={m.trail}
+                stroke={trail.stroke} strokeWidth={trail.strokeWidth} opacity={trail.strokeOpacity}
+                vectorEffect="non-scaling-stroke" strokeLinecap="round" fill="none" />;
             })}
             {scene.markers
               .filter((m) => m.x > 22 && m.x < 398)
@@ -463,15 +451,15 @@ export function PortraitField({
       <View style={s.controls}>
         <View style={s.controlRow}>
           <Pressable style={s.button} accessibilityRole="button" accessibilityLabel="Previous lane" disabled={scene.focus <= 0} onPress={() => shift(-1)}><Text style={s.white}>←</Text></Pressable>
-          <Pressable style={s.button} accessibilityRole="button" accessibilityLabel="Move backward" disabled={scene.min <= 0} onPress={() => onPan(view.center - view.span / 3)}><Text style={s.white}>↓</Text></Pressable>
+          <Pressable style={s.button} accessibilityRole="button" accessibilityLabel="Move backward" disabled={scene.min <= 0} onPress={() => panTo(view.center - view.span / 3)}><Text style={s.white}>↓</Text></Pressable>
           <Pressable style={s.button} accessibilityRole="button" accessibilityLabel="Your lane" onPress={() => { onSelect(lanes.find(l => l.you)?.id ?? ""); }}><Text style={s.white}>You</Text></Pressable>
-          <Pressable style={s.button} accessibilityRole="button" accessibilityLabel="Move forward" onPress={() => onPan(view.center + view.span / 3)}><Text style={s.white}>↑</Text></Pressable>
+          <Pressable style={s.button} accessibilityRole="button" accessibilityLabel="Move forward" onPress={() => panTo(view.center + view.span / 3)}><Text style={s.white}>↑</Text></Pressable>
           <Pressable style={s.button} accessibilityRole="button" accessibilityLabel="Next lane" disabled={scene.focus >= scene.ordered.length - 1} onPress={() => shift(1)}><Text style={s.white}>→</Text></Pressable>
         </View>
         <View style={s.controlRow}>
-          <Pressable style={s.button} accessibilityRole="button" accessibilityLabel="Zoom out" disabled={view.span >= (unit === "pts" ? 100 : 40)} onPress={() => onZoom(Math.min(unit === "pts" ? 100 : 40, view.span * 1.5))}><Text style={s.white}>−</Text></Pressable>
+          <Pressable style={s.button} accessibilityRole="button" accessibilityLabel="Zoom out" disabled={view.span >= (unit === "pts" ? 100 : 40)} onPress={() => zoomTo(Math.min(unit === "pts" ? 100 : 40, view.span * 1.5))}><Text style={s.white}>−</Text></Pressable>
           <Text style={[s.white, textStyle("caption")]}>{Math.max(0, scene.min).toFixed(unit === "pts" ? 0 : 2)}–{scene.max.toFixed(unit === "pts" ? 0 : 2)} {unit}</Text>
-          <Pressable style={s.button} accessibilityRole="button" accessibilityLabel="Zoom in" disabled={view.span <= (unit === "pts" ? 2 : 0.5)} onPress={() => onZoom(Math.max(unit === "pts" ? 2 : 0.5, view.span / 1.5))}><Text style={s.white}>＋</Text></Pressable>
+          <Pressable style={s.button} accessibilityRole="button" accessibilityLabel="Zoom in" disabled={view.span <= (unit === "pts" ? 2 : 0.5)} onPress={() => zoomTo(Math.max(unit === "pts" ? 2 : 0.5, view.span / 1.5))}><Text style={s.white}>＋</Text></Pressable>
         </View>
       </View>
     </View>
