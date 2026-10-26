@@ -42,6 +42,7 @@ function LaneTrackContent({
   showGhost,
   selectedId,
   focusOnMount = false,
+  followSelected = false,
   animateSelection = true,
   index,
   onSelect,
@@ -73,6 +74,8 @@ function LaneTrackContent({
   showGhost: boolean;
   selectedId?: string;
   focusOnMount?: boolean;
+  /** Lock the horizontal camera to the athlete during passive playback. */
+  followSelected?: boolean;
   animateSelection?: boolean;
   index: number;
   onSelect: (lane: ArenaLane) => void;
@@ -149,11 +152,11 @@ function LaneTrackContent({
   const prevSelectedRef = useRef<string | undefined>(focusOnMount ? undefined : selectedId);
   useEffect(() => {
     const old = previous.current;
-    const laneIndex = old && !old.oval && !course.oval && old.count === ordered.length ? (old.scroll + old.width / 2 - old.left) / old.laneWidth - .5 : Math.max(0, ordered.findIndex(l => l.you));
+    const laneIndex = followSelected ? Math.max(0, ordered.findIndex(l => l.id === selectedId)) : old && !old.oval && !course.oval && old.count === ordered.length ? (old.scroll + old.width / 2 - old.left) / old.laneWidth - .5 : Math.max(0, ordered.findIndex(l => l.you));
     const x = course.oval ? 0 : Math.max(0, Math.min(w - width, course.left + (laneIndex + .5) * lw - width / 2));
     scroll.current?.scrollTo({ x, animated: false });
     previous.current = { left: course.left, laneWidth: lw, width, scroll: x, oval: course.oval, count: ordered.length };
-  }, [w, lw, width, course.left, course.oval]);
+  }, [w, lw, width, course.left, course.oval, followSelected, selectedId]);
   useEffect(() => {
     if (!selectedId || selectedId === prevSelectedRef.current || course.oval) {
       prevSelectedRef.current = selectedId;

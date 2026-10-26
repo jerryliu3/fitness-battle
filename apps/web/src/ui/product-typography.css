@@ -61,7 +61,7 @@
 .phone-shell .ui-section > .ui-section-header { margin: 0; }
 .phone-shell .club-event-choose { text-align: left; white-space: normal; }
 .phone-shell .club-event-choose > .ui-text { display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px; }
-.phone-shell .focus-goal { display: block; letter-spacing: normal; text-transform: none; font: var(--type-display); }
+.phone-shell .focus-goal { display: block; letter-spacing: var(--type-hero-tracking); text-transform: none; font: var(--type-hero); }
 .phone-shell .focus-goal small {
   letter-spacing: normal;
   text-transform: none;
@@ -101,3 +101,10 @@
 .phone-shell :is(.phone-tab > span, .focus-tab-label, .fb-tab-label) { font: var(--type-nav); }
 
 .phone-shell .competition-replay-event { font: var(--type-row); letter-spacing: var(--type-row-tracking); }
+
+/* Expanded standings use the same row/value hierarchy as native. */
+.phone-shell .focus-standing-name { font: var(--type-row); letter-spacing: var(--type-row-tracking); }
+.phone-shell .focus-standing-metrics > strong { font: var(--type-value); letter-spacing: var(--type-value-tracking); }
+.phone-shell .focus-standing-metrics > small { font: var(--type-caption); }
+.phone-shell .focus-standing-bar-top { flex-wrap: wrap; row-gap: 6px; }
+.phone-shell .focus-standing-name { min-width: 0; overflow-wrap: anywhere; }

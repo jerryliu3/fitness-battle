@@ -12,7 +12,7 @@ export function WeekChart({ state, onOpen, ready = true }: { state: CompeteState
   const chart = portfolioWeekChart(state);
   const gradient = useId().replace(/:/g, "");
   return <ChartFrame ready={ready}><View style={s.card}>
-    <View style={s.header}><AppText role="heading" accessibilityRole="header">Current week</AppText><HomeActivityActions compact/></View>
+    <View style={s.header}><AppText role="display" accessibilityRole="header">Current week</AppText><HomeActivityActions compact/></View>
     <View style={s.total}><Text style={s.number}>{chart.currTotalHours.toFixed(1)}<Text style={s.unit}> hrs</Text></Text><View style={s.comparison}><AppText role="caption" secondary>{chart.sessionCount} {chart.sessionCount === 1 ? "session" : "sessions"}</AppText><AppText role="caption" secondary>{chart.deltaLabel}</AppText></View></View>
     <ChartScrubber label="This week’s cumulative training hours" points={chart.inspection} width={chart.width} height={chart.height} plotTop={chart.top} plotBottom={chart.bottom} summaryOnSelection>
       <Svg width="100%" height={164} viewBox={`0 0 ${chart.width} ${chart.height}`} preserveAspectRatio="none" accessible={false}>

@@ -47,8 +47,10 @@ export function Achievements({ state }: { state: CompeteState }) {
             style={achievementTileStyle.tile}
           >
             <Badge item={row} />
-            <AppText role="label" style={{ textAlign: "center" }}>
+            <AppText role="metric" style={{ textAlign: "center" }}>
               {row.target.toLocaleString()}
+            </AppText>
+            <AppText role="caption" secondary>
               {row.category === "sessions" ? (row.target === 1 ? " session" : " sessions") : " pts"}
             </AppText>
             <AppText role="caption" secondary style={{ textAlign: "center" }}>{row.title}</AppText>
