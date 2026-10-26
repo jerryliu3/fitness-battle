@@ -1,3 +1,4 @@
+import { webProductPath } from "@fitness-battle/shared";
 import { NextResponse } from "next/server";
 
 /**
@@ -9,7 +10,7 @@ export function trackerRedirect(
   provider: string,
   outcome: "connected" | "stub" | "error",
 ): NextResponse {
-  const webUrl = new URL("/you", origin);
+  const webUrl = new URL(webProductPath("/you"), origin);
   webUrl.searchParams.set("tracker", outcome);
   webUrl.searchParams.set("provider", provider);
   // Three slashes so Expo Router treats `you` as a path, not a host.
