@@ -1,7 +1,7 @@
 import { fieldProgressTrail } from "./field-course";
 import { describe, expect, it } from "vitest";
 import { defaultFieldAppearance, fieldAppearanceKey, fieldGrounds, readFieldAppearance } from "./field-appearance";
-import { fieldScaleMarks, fieldCourse, fieldCourseScene, fieldLap, fieldMarks, fieldScaleScene, fieldOverview, overviewTarget, clampCourseCenter, type FieldNode } from "./field-course";
+import { fieldDefaultSpan, fieldScaleMarks, fieldCourse, fieldCourseScene, fieldLap, fieldMarks, fieldScaleScene, fieldOverview, overviewTarget, clampCourseCenter, type FieldNode } from "./field-course";
 
 const lanes = [{ id: "a", name: "A", initials: "A", value: 12 }, { id: "me", name: "Me", initials: "ME", value: 19.2, you: true }];
 const flatten = (nodes: FieldNode[]): FieldNode[] => nodes.flatMap(n => [n, ...flatten(n.children ?? [])]);
@@ -18,14 +18,75 @@ describe("production course contract", () => {
     expect(fieldAppearanceKey("a:b", "c")).not.toBe(fieldAppearanceKey("a", "b:c"));
     expect(fieldAppearanceKey("a", "running")).not.toBe(fieldAppearanceKey("b", "running"));
   });
-  it("zooms both dimensions and the racer by the same factor with side whitespace", () => {
-    const a = fieldCourse(390, 540, 8, { center: 18, span: 6 }, "km", defaultFieldAppearance);
-    const b = fieldCourse(390, 540, 8, { center: 18, span: 12 }, "km", defaultFieldAppearance);
+  it("zooms both dimensions until the field reaches its minimum width", () => {
+    const a = fieldCourse(390, 540, 8, { center: 18, span: 1.2 }, "km", defaultFieldAppearance);
+    const b = fieldCourse(390, 540, 8, { center: 18, span: 2.4 }, "km", defaultFieldAppearance);
     expect(b.laneWidth / a.laneWidth).toBe(.5);
     expect(b.markerScale / a.markerScale).toBe(.5);
     expect((b.along(19) - b.along(18)) / (a.along(19) - a.along(18))).toBeCloseTo(.5);
     expect(b.width).toBe(390);
     expect(b.left).toBeGreaterThan(0);
+  });
+  it("locks the outermost lane separation at one third of the viewport while depth keeps zooming", () => {
+    for (const width of [320, 390, 768]) for (const count of [2, 4, 8, 30]) for (const unit of ["km", "mi", "pts"]) {
+      const a = fieldCourse(width, 540, count, { center: 485, span: fieldDefaultSpan(unit) * 100 }, unit, defaultFieldAppearance);
+      const b = fieldCourse(width, 540, count, { center: 485, span: fieldDefaultSpan(unit) * 200 }, unit, defaultFieldAppearance);
+      expect(a.point(485, count - 1).x - a.point(485, 0).x).toBeCloseTo(width / 3);
+      expect(b.laneWidth).toBeCloseTo(a.laneWidth);
+      expect(b.point(485, 0).x).toBeCloseTo(a.point(485, 0).x);
+      expect(b.drift(486)).toBeCloseTo(a.drift(486));
+      expect(b.horizontalZoom).toBeCloseTo(a.horizontalZoom);
+      expect(b.zoom / a.zoom).toBeCloseTo(.5);
+      expect((b.along(486) - b.along(485)) / (a.along(486) - a.along(485))).toBeCloseTo(.5);
+      expect(b.markerScale / a.markerScale).toBeCloseTo(.5);
+      expect(b.width).toBe(width);
+    }
+  });
+  it("crosses the width limit continuously and restores horizontal zoom when zooming back in", () => {
+    const width = 390, count = 8, base = count * (width - 60) / 5;
+    const minWidth = width / 3 * count / (count - 1);
+    const threshold = fieldDefaultSpan("km") * base / minWidth;
+    const course = (span: number) => fieldCourse(width, 540, count, { center: 18, span }, "km", defaultFieldAppearance);
+    const before = course(threshold * (1 - 1e-6)), at = course(threshold), after = course(threshold * (1 + 1e-6));
+    expect(before.fieldWidth).toBeGreaterThan(at.fieldWidth);
+    expect(before.fieldWidth / at.fieldWidth).toBeCloseTo(1, 5);
+    expect(after.fieldWidth).toBeCloseTo(at.fieldWidth);
+    expect(course(threshold / 2).fieldWidth).toBeCloseTo(at.fieldWidth * 2);
+  });
+  it("keeps scenery width locked while vertical patterns and object dimensions keep shrinking", () => {
+    const scene = (ground: "straight" | "road" | "trail", span: number) => {
+      const appearance = { ...defaultFieldAppearance, ground };
+      const course = fieldCourse(390, 540, 8, { center: 18, span }, "km", appearance);
+      return flatten(fieldCourseScene(course, appearance, lanes, "km", "lock"));
+    };
+    const a = scene("straight", 12).find(node => node.tag === "pattern")!.attrs;
+    const b = scene("straight", 24).find(node => node.tag === "pattern")!.attrs;
+    expect(b.width).toBe(a.width);
+    expect(Number(b.height) / Number(a.height)).toBeCloseTo(.5);
+    const roadA = scene("road", 12).find(node => node.attrs.strokeDasharray)!.attrs;
+    const roadB = scene("road", 24).find(node => node.attrs.strokeDasharray)!.attrs;
+    expect(roadB.x1).toBe(roadA.x1);
+    expect(roadB.strokeWidth).toBe(roadA.strokeWidth);
+    const dashA = String(roadA.strokeDasharray).split(" ").map(Number);
+    const dashB = String(roadB.strokeDasharray).split(" ").map(Number);
+    expect(dashB).toEqual(dashA.map(value => value / 2));
+    const treeA = scene("trail", 12).find(node => node.tag === "ellipse" && node.attrs.fill === "#b9c69c")!.attrs;
+    const treeB = scene("trail", 24).find(node => node.tag === "ellipse" && node.attrs.fill === "#b9c69c")!.attrs;
+    // The sampled world position may change; each tree's aspect ratio follows
+    // the camera's independent X/Y scales regardless of its decorative size.
+    expect(Number(treeB.ry) / Number(treeB.rx)).toBeCloseTo(Number(treeA.ry) / Number(treeA.rx) / 2);
+  });
+  it("keeps wide empty/single-athlete fields finite and leaves oval zoom uniform", () => {
+    for (const count of [0, 1]) {
+      const course = fieldCourse(320, 540, count, { center: 485, span: 40 }, "km", defaultFieldAppearance);
+      expect(course.fieldWidth).toBeCloseTo(320 / 3);
+      expect(JSON.stringify(course.point(485, 0))).not.toMatch(/NaN|Infinity/);
+    }
+    const appearance = { ...defaultFieldAppearance, ground: "oval" as const };
+    const a = fieldCourse(390, 540, 8, { center: 18, span: 6 }, "km", appearance);
+    const b = fieldCourse(390, 540, 8, { center: 18, span: 12 }, "km", appearance);
+    expect(b.ovalScale / a.ovalScale).toBeCloseTo(.5);
+    expect(b.horizontalZoom).toBe(b.zoom);
   });
   it("keeps meander fixed to distance while scenery moves with the camera", () => {
     const a = fieldCourse(390, 540, 4, { center: 18, span: 6 }, "km", defaultFieldAppearance);
