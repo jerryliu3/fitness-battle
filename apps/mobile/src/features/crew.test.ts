@@ -83,10 +83,12 @@ vi.mock("../ui/focus", () => ({
 }));
 vi.mock("./crew-relay",()=>({CrewRelay:"CrewRelay"}));
 import { CrewHub } from "./crew";
+import { clearApiReads } from "../lib/api-read-cache";
 let renderer: ReactTestRenderer;
 afterEach(async () => {
   if (renderer) await act(async () => renderer.unmount());
   mock.data = null;
+  clearApiReads();
   vi.unstubAllGlobals();
 });
 describe("crew empty states", () => {

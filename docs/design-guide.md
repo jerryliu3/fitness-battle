@@ -238,6 +238,10 @@ gate; animation completion alone does not dismiss the cover. See
 [loading implementation](overtaek-loading-prototype.md).
 
 
+Mobile performance update (October 26): retain the full launch animation even when
+content is ready, per the owner's preference. Account loading, caching and prefetching
+run underneath the cover so Home is ready when the animation finishes.
+
 ### Home rival card — October 24
 
 Home shows the athlete’s ordinal place (1st, 2nd, 3rd), without the field-size
