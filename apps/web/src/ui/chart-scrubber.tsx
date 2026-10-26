@@ -61,7 +61,6 @@ export function ChartScrubber({
     direction.current = null;
     origin.current = { x: event.clientX, y: event.clientY };
     scrubbing.current = true;
-    event.currentTarget.setPointerCapture(event.pointerId);
   }
 
   function onPointerMove(event: ReactPointerEvent<HTMLDivElement>) {
@@ -76,11 +75,9 @@ export function ChartScrubber({
         direction.current = null;
         lastId.current = null;
         setSelectedId(null);
-        if (event.currentTarget.hasPointerCapture(event.pointerId)) {
-          event.currentTarget.releasePointerCapture(event.pointerId);
-        }
         return;
       }
+      event.currentTarget.setPointerCapture(event.pointerId);
     }
     if (direction.current === "horizontal") inspect(event.clientX);
   }
@@ -146,6 +143,9 @@ export function ChartScrubber({
         onPointerMove={onPointerMove}
         onPointerUp={onPointerUp}
         onPointerCancel={onPointerUp}
+        onPointerLeave={(event) => {
+          if (!event.currentTarget.hasPointerCapture(event.pointerId)) onPointerUp(event);
+        }}
         onLostPointerCapture={onPointerUp}
       >
         <div className="chart-scrubber-plot" aria-hidden="true">{children}</div>

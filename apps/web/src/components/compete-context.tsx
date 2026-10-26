@@ -404,21 +404,18 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
       })
       .catch(() => {
         if (cancelled || userIdRef.current !== accountId) return;
-        queue.current = [];
-        publish(
-          accountId,
-          { ...withAccountEloBaseline(local.state), name: accountName(local.state.name, userDisplayName, userEmail) },
-          local.savedAt,
-          "failed",
-          false,
-        );
+        const pending = queue.current.splice(0);
+        let next = { ...withAccountEloBaseline(local.state), name: accountName(local.state.name, userDisplayName, userEmail) };
+        for (const action of pending) next = reduceCompete(next, action);
+        publish(accountId, next, pending.length > 0 ? new Date().toISOString() : local.savedAt, "failed", false);
+        if (pending.some((action) => action.type === "set-avatar")) scheduleSave(accountId, next, true, true);
         setSaveError(null);
       });
 
     return () => {
       cancelled = true;
     };
-  }, [attempt, offlineMode, loading, publish, userId, userDisplayName, userEmail]);
+  }, [attempt, offlineMode, loading, publish, scheduleSave, userId, userDisplayName, userEmail]);
 
   useEffect(() => {
     if (!state || loadStatus === "loading" || loadStatus === "failed") return;

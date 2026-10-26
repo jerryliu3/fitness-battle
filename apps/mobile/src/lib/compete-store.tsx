@@ -761,7 +761,7 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
       scheduleSave(
         next,
         action.type === "set-units" || action.type === "set-avatar",
-        action.type === "set-avatar",
+        action.type === "set-avatar" && !loadReady.current,
       );
     },
     [readBaselineItem, writeBaselineItem, scheduleSave, remember],

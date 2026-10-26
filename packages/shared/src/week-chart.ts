@@ -43,9 +43,13 @@ export function weeklyHoursComparison(state: CompeteState, now = competeNow(stat
   };
 }
 
+function roundedHour(hours: number) {
+  return Number(hours.toFixed(1));
+}
+
 /** Whether this week is at or above last week through the same weekday (for delta coloring). */
 export function weekHoursDeltaTone(chart: { currHoursSameDay: number; prevHoursSameDay: number }): "up" | "down" {
-  return chart.currHoursSameDay >= chart.prevHoursSameDay ? "up" : "down";
+  return roundedHour(chart.currHoursSameDay) >= roundedHour(chart.prevHoursSameDay) ? "up" : "down";
 }
 
 /** Shared Portfolio geometry. The existing hour eligibility/period model stays authoritative. */
@@ -66,7 +70,7 @@ export function portfolioWeekChart(state: CompeteState, now = competeNow(state))
     id: dayKey(shiftAppDay(period.startsAt, index)), x: index === nowDayIndex ? tip.x : x(index), y: y(hours),
     label: date(shiftAppDay(period.startsAt, index)), value: `${hours.toFixed(1)} hr · last week ${prevCumulativeHours[index].toFixed(1)} hr`,
   }));
-  const deltaHours = comparison.currHoursSameDay - comparison.prevHoursSameDay;
+  const deltaHours = Number((roundedHour(comparison.currHoursSameDay) - roundedHour(comparison.prevHoursSameDay)).toFixed(1));
   const deltaTone = weekHoursDeltaTone(comparison);
   return { ...comparison, width, height, left, right, top, bottom, tip, current, previous, inspection,
     area: `${current} ${tip.x.toFixed(1)},${bottom} ${origin}`,

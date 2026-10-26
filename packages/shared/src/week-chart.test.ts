@@ -36,6 +36,7 @@ it("classifies week-over-week delta tone from same weekday cumulative hours", ()
   expect(weekHoursDeltaTone({ currHoursSameDay: 2, prevHoursSameDay: 1 })).toBe("up");
   expect(weekHoursDeltaTone({ currHoursSameDay: 1, prevHoursSameDay: 2 })).toBe("down");
   expect(weekHoursDeltaTone({ currHoursSameDay: 1, prevHoursSameDay: 1 })).toBe("up");
+  expect(weekHoursDeltaTone({ currHoursSameDay: 1.04, prevHoursSameDay: 1 })).toBe("up");
 });
 
 it("delta label compares through today, not full prior week total", async () => {
