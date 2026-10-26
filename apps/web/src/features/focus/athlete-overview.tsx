@@ -134,7 +134,7 @@ export function AthleteOverview({
           <ProfilePhoto state={state} email={email} />
           <div className="focus-profile-card-copy" style={{ flex: 1 }}>
             <label className="fb-field" style={{ marginBottom: 8 }}>
-              Display name
+              <AppText role="field">Display name</AppText>
               <input
                 value={name}
                 onChange={(e) => setName(e.target.value)}
@@ -143,7 +143,7 @@ export function AthleteOverview({
               />
             </label>
             <label className="fb-field" style={{ marginBottom: 12 }}>
-              Location / City
+              <AppText role="field">Location / City</AppText>
               <input
                 value={city}
                 onChange={(e) => setCity(e.target.value)}
