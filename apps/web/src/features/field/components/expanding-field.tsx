@@ -1,5 +1,6 @@
 "use client";
 
+import { createFieldOverlayHold } from "@fitness-battle/shared";
 import * as Dialog from "@radix-ui/react-dialog";
 import { useReducedMotion } from "motion/react";
 import { createPortal } from "react-dom";
@@ -21,12 +22,52 @@ export function ExpandingField({
   children: ReactNode;
 }) {
   const reduce = useReducedMotion();
+  const [overlaysHidden, setOverlaysHidden] = useState(false);
   const lastHud = useRef(hud);
   if (hud) lastHud.current = hud;
   const slot = useRef<HTMLDivElement>(null);
   // Radix mounts its portal after the parent layout effect. Observe the actual host.
   const [dialog, setDialog] = useState<HTMLDivElement | null>(null);
   const [mount, setMount] = useState<HTMLDivElement | null>(null);
+  useLayoutEffect(() => {
+    if (!open || !mount) return;
+    const hold = createFieldOverlayHold(setOverlaysHidden);
+    const pointers = new Set<number>();
+    const down = (event: PointerEvent) => {
+      if (event.button !== 0 || (event.target instanceof Element && event.target.closest("button, a, input"))) return;
+      pointers.add(event.pointerId);
+      hold.start(event.clientX, event.clientY, pointers.size);
+    };
+    const move = (event: PointerEvent) => hold.move(event.clientX, event.clientY, pointers.size);
+    const up = (event: PointerEvent) => {
+      // Preserve the gesture owner's release cleanup, but consume its tap.
+      if (hold.suppressSelection()) event.preventDefault();
+      pointers.delete(event.pointerId);
+      hold.end();
+    };
+    const clear = () => { pointers.clear(); hold.end(); };
+    const click = (event: MouseEvent) => {
+      if (hold.suppressSelection()) { event.preventDefault(); event.stopPropagation(); }
+    };
+    const context = (event: MouseEvent) => { if (hold.suppressSelection()) event.preventDefault(); };
+    mount.addEventListener("pointerdown", down, true);
+    window.addEventListener("pointermove", move);
+    window.addEventListener("pointerup", up, true);
+    window.addEventListener("pointercancel", up);
+    window.addEventListener("blur", clear);
+    mount.addEventListener("click", click, true);
+    mount.addEventListener("contextmenu", context);
+    return () => {
+      clear();
+      mount.removeEventListener("pointerdown", down, true);
+      window.removeEventListener("pointermove", move);
+      window.removeEventListener("pointerup", up, true);
+      window.removeEventListener("pointercancel", up);
+      window.removeEventListener("blur", clear);
+      mount.removeEventListener("click", click, true);
+      mount.removeEventListener("contextmenu", context);
+    };
+  }, [open, mount]);
   const [present, setPresent] = useState(false);
   const origin = useRef<DOMRect | null>(null);
   const returnFocus = useRef<HTMLElement | SVGElement | null>(null);
@@ -146,7 +187,7 @@ export function ExpandingField({
     <Dialog.Root open={present && tabActive} onOpenChange={(next) => { if (!next) onClose(); }}>
       {present && tabActive && <Dialog.Portal>
         <Dialog.Overlay className="focus-field-backdrop" />
-        <Dialog.Content ref={setDialog} className="focus-field-expanded" aria-describedby={undefined}
+        <Dialog.Content ref={setDialog} className={`focus-field-expanded${overlaysHidden ? " is-holding-field" : ""}`} aria-describedby={undefined}
           onPointerDownOutside={(event) => {
             // DOM-contained portal children are inside even though their React
             // events do not pass through Dialog.Content's capture handler.

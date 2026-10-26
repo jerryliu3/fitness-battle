@@ -30,4 +30,13 @@ it("accepts the secondary pointer and rebases at the displayed zoom after a fing
   const down = point(1, 100, 200);
   handlers().onPointerDown(down); handlers().onPointerUp(point(1, 100, 200));
   expect(tap.mock.lastCall![1]).toBe(down.target);
+  // A fullscreen hold consumes the release tap while still releasing capture.
+  tap.mockClear();
+  handlers().onPointerDown(point(1, 100, 200));
+  handlers().onPointerUp({ ...point(1, 100, 200), defaultPrevented: true });
+  expect(tap).not.toHaveBeenCalled();
+  expect(target.releasePointerCapture).toHaveBeenCalled();
+  handlers().onPointerDown(point(1, 100, 200));
+  handlers().onPointerUp(point(1, 100, 200));
+  expect(tap).toHaveBeenCalledTimes(1);
 });

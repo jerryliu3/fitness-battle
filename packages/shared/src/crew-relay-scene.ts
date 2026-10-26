@@ -69,68 +69,31 @@ export function crewRelayScene(model: Relay, width: number, prefix: string) {
     }));
   const finish: FieldNode[] = [];
   if (model.finish !== null) {
-    const f = model.finish,
-      strip = 0.018,
-      a = Math.max(0, f - strip),
-      b = Math.min(1, f + strip),
-      patternId = `${prefix}-finish`;
-    finish.push(
-      {
-        tag: "defs",
-        attrs: {},
-        children: [
-          {
-            tag: "pattern",
-            attrs: {
-              id: patternId,
-              width: 8,
-              height: 8,
-              patternUnits: "userSpaceOnUse",
-            },
-            children: [
-              {
-                tag: "rect",
-                attrs: { width: 4, height: 4, fill: "#142b3b" },
-              },
-              {
-                tag: "rect",
-                attrs: { x: 4, y: 4, width: 4, height: 4, fill: "#142b3b" },
-              },
-              {
-                tag: "rect",
-                attrs: { x: 4, width: 4, height: 4, fill: "#ffffff" },
-              },
-              {
-                tag: "rect",
-                attrs: { y: 4, width: 4, height: 4, fill: "#ffffff" },
-              },
-            ],
-          },
-        ],
-      },
-      path(face(a, b), `url(#${patternId})`, { opacity: 0.95 }),
-      path(`M${p(f)} L${p(f, false, true)}`, "none", {
-        stroke: "#142b3b",
-        strokeWidth: 2,
-        opacity: 0.85,
-      }),
-    );
-    const { x: bx, y: by } = point(f, true);
-    finish.push(
-      {
-        tag: "line",
-        attrs: {
-          x1: bx,
-          y1: by,
-          x2: bx,
-          y2: by - 18,
-          stroke: "#142b3b",
-          strokeWidth: 2,
-        },
-      },
-      path(`M${bx} ${by - 18}h22v12h-22Z`, "#142b3b"),
-      path(`M${bx + 11} ${by - 18}h11v6h-11Z`, "#ffffff"),
-    );
+    const f = model.finish;
+    // Print the checks in the top plane, using the same projection as the block.
+    const strip = 10 / length;
+    const a = Math.max(0, f - strip / 2);
+    const b = Math.min(1, f + strip / 2);
+    const surface = (fraction: number, depth: number) => {
+      const front = point(fraction), back = point(fraction, true);
+      return `${front.x + (back.x - front.x) * depth} ${front.y + (back.y - front.y) * depth}`;
+    };
+    for (let row = 0; row < 8; row++) {
+      for (let col = 0; col < 2; col++) {
+        const x0 = a + (b - a) * col / 2, x1 = a + (b - a) * (col + 1) / 2;
+        const y0 = row / 8, y1 = (row + 1) / 8;
+        finish.push(path(`M${surface(x0, y0)} L${surface(x1, y0)} L${surface(x1, y1)} L${surface(x0, y1)}Z`, (row + col) % 2 ? "#ffffff" : "#142b3b"));
+      }
+    }
+    for (const back of [false, true]) {
+      const { x, y } = point(f, back);
+      const flagX = back ? x : x - 16;
+      finish.push(
+        { tag: "line", attrs: { x1: x, y1: y, x2: x, y2: y - 24, stroke: "#142b3b", strokeWidth: 2 } },
+        path(`M${flagX} ${y - 24}h16v10h-16Z`, "#ffffff", { stroke: "#142b3b", strokeWidth: .5 }),
+        path(`M${flagX} ${y - 24}h8v5h-8Z M${flagX + 8} ${y - 19}h8v5h-8Z`, "#142b3b"),
+      );
+    }
   }
   const people = model.segments.map((s, i) => {
     const x = left + ((i + 0.5) * length) / Math.max(1, model.segments.length),

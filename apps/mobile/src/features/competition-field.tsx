@@ -6,6 +6,7 @@ import { useFieldFlight } from "../ui/use-field-flight";
 import { PortraitField } from "../ui/portrait-field";
 import {
   orderedArenaLanes,
+  createFieldOverlayHold,
   arenaFieldHigh,
   clampCourseCenter,
   competeNow,
@@ -50,6 +51,12 @@ export function CompetitionField({
   const [sceneDimension, setSceneDimension] = useState<"2d" | "3d">("2d");
   const [standingsOpen, setStandingsOpen] = useState(false);
   const [expanded, setExpanded] = useState(false);
+  const [intervalsCollapsed, setIntervalsCollapsed] = useState(false);
+  const [spotlightCollapsed, setSpotlightCollapsed] = useState(false);
+  const [overlaysHidden, setOverlaysHidden] = useState(false);
+  const hold = useRef<ReturnType<typeof createFieldOverlayHold> | null>(null);
+  if (!hold.current) hold.current = createFieldOverlayHold(setOverlaysHidden);
+  useEffect(() => { hold.current?.end(); return () => hold.current?.end(); }, [expanded]);
   const toggleDimension = () => {
     void playCue("selection");
     setSceneDimension((prev) => (prev === "2d" ? "3d" : "2d"));
@@ -112,6 +119,7 @@ export function CompetitionField({
   if (!state || !arena) return null;
   const displayTotal = total;
   const selectAthlete = (id: string) => {
+    if (hold.current?.suppressSelection()) return;
     const lane = arena.lanes.find((item) => item.id === id);
     if (!lane) return;
     const ordered = orderedArenaLanes(arena.lanes);
@@ -156,7 +164,19 @@ export function CompetitionField({
   };
 
   const fieldContent = (
-    <View>
+    <View
+      onTouchStart={event => {
+        if (!expanded) return;
+        const { pageX, pageY, touches } = event.nativeEvent;
+        hold.current?.start(pageX, pageY, touches.length);
+      }}
+      onTouchMove={event => {
+        const { pageX, pageY, touches } = event.nativeEvent;
+        hold.current?.move(pageX, pageY, touches.length);
+      }}
+      onTouchEnd={() => hold.current?.end()}
+      onTouchCancel={() => hold.current?.end()}
+    >
       {sceneDimension === "3d" && isFocused ? (
         <PortraitField
           lanes={arena.lanes.map((l) => ({
@@ -175,6 +195,7 @@ export function CompetitionField({
           onPan={panTo}
           height={sceneHeight}
           fullscreen={expanded}
+          overlaysHidden={overlaysHidden}
           onExpand={expandField}
           onToggleDimension={toggleDimension}
           laneAnchor={portraitAnchor}
@@ -192,6 +213,7 @@ export function CompetitionField({
             onChangeAppearance={setAppearance}
             height={sceneHeight}
             fullscreen={expanded}
+            overlaysHidden={overlaysHidden}
             onExpand={expandField}
             onToggleDimension={toggleDimension}
             onZoom={directZoom}
@@ -211,9 +233,11 @@ export function CompetitionField({
             onPan={panTo}
           />
           <View
+            pointerEvents={overlaysHidden ? "none" : "auto"}
             style={{
               position: "absolute",
               bottom: expanded ? safeBottom + 148 : 14,
+              opacity: overlaysHidden ? 0 : 1,
               alignSelf: "center",
               flexDirection: "row",
               alignItems: "center",
@@ -295,6 +319,7 @@ export function CompetitionField({
         >
           <View style={[f.safe, { backgroundColor: "#0b242c", position: "relative" }]}>
             {fieldContent}
+            <View pointerEvents={overlaysHidden ? "none" : "box-none"} accessibilityElementsHidden={overlaysHidden} importantForAccessibility={overlaysHidden ? "no-hide-descendants" : "auto"} style={{ position: "absolute", inset: 0, opacity: overlaysHidden ? 0 : 1 }}>
             {/* Top Bar HUD */}
             <View
               pointerEvents="box-none"
@@ -369,7 +394,7 @@ export function CompetitionField({
               style={{
                 position: "absolute",
                 top: safeTop + 62,
-                left: 12,
+                left: intervalsCollapsed ? 0 : 12,
                 backgroundColor: "rgba(20, 20, 19, 0.72)",
                 borderRadius: 14,
                 paddingVertical: 8,
@@ -377,9 +402,13 @@ export function CompetitionField({
                 borderWidth: 1,
                 borderColor: "rgba(255, 255, 255, 0.14)",
                 gap: 5,
-                maxWidth: 196,
+                maxWidth: 230,
+                minHeight: 60,
+                minWidth: 64,
               }}
             >
+              <PanelToggle label="live intervals" collapsed={intervalsCollapsed} onPress={() => setIntervalsCollapsed(value => !value)} />
+              <View style={{ display: intervalsCollapsed ? "none" : "flex", gap: 5, paddingRight: 38 }}>
               <Text style={{ ...textStyle("caption"), color: "rgba(255,255,255,0.65)" }}>
                 LIVE INTERVALS
               </Text>
@@ -439,6 +468,8 @@ export function CompetitionField({
                   </Pressable>
                 );
               })}
+            </View>
+
             </View>
 
             {/* Broadcast HUD: Right Quick-Jump Rail */}
@@ -526,9 +557,11 @@ export function CompetitionField({
                 pointerEvents="box-none"
                 style={{
                   position: "absolute",
-                  left: 12,
-                  right: 12,
+                  left: spotlightCollapsed ? 0 : 12,
+                  right: spotlightCollapsed ? undefined : 12,
                   bottom: safeBottom + 8,
+                  minHeight: 64,
+                  minWidth: 64,
                   backgroundColor: "rgba(20, 20, 19, 0.86)",
                   borderRadius: 20,
                   paddingVertical: 10,
@@ -538,6 +571,8 @@ export function CompetitionField({
                   gap: 8,
                 }}
               >
+                <PanelToggle label="athlete panel" collapsed={spotlightCollapsed} onPress={() => setSpotlightCollapsed(value => !value)} />
+                <View style={{ display: spotlightCollapsed ? "none" : "flex", gap: 8, paddingRight: 38 }}>
                 <View
                   style={{
                     flexDirection: "row",
@@ -644,8 +679,10 @@ export function CompetitionField({
                     );
                   })}
                 </ScrollView>
+                </View>
               </View>
             ) : null}
+            </View>
           </View>
         </Modal>
       ) : (
@@ -849,5 +886,19 @@ export function CompetitionField({
         ) : null}
       </View>
     </View>
+  );
+}
+
+function PanelToggle({ label, collapsed, onPress }: { label: string; collapsed: boolean; onPress: () => void }) {
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={`${collapsed ? "Expand" : "Collapse"} ${label}`}
+      accessibilityState={{ expanded: !collapsed }}
+      onPress={onPress}
+      style={{ minWidth: 44, minHeight: 44, position: "absolute", top: 0, right: 0, zIndex: 1, alignItems: "center", justifyContent: "center" }}
+    >
+      <Text style={{ ...textStyle("heading"), color: "white" }}>{collapsed ? "›" : "‹"}</Text>
+    </Pressable>
   );
 }

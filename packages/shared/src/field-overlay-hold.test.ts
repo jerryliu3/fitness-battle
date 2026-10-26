@@ -1,0 +1,41 @@
+import { afterEach, expect, it, vi } from "vitest";
+import { createFieldOverlayHold } from "./field-overlay-hold";
+afterEach(() => vi.useRealTimers());
+it("hides during a stationary hold and restores on release without selecting an athlete", () => {
+  vi.useFakeTimers();
+  const changed = vi.fn(), hold = createFieldOverlayHold(changed);
+  hold.start(10, 20);
+  vi.advanceTimersByTime(449);
+  expect(changed).not.toHaveBeenCalled();
+  vi.advanceTimersByTime(1);
+  expect(changed).toHaveBeenLastCalledWith(true);
+  expect(hold.suppressSelection()).toBe(true);
+  hold.end();
+  expect(changed).toHaveBeenLastCalledWith(false);
+  expect(hold.suppressSelection()).toBe(true);
+  vi.advanceTimersByTime(101);
+  expect(hold.suppressSelection()).toBe(false);
+});
+it("leaves taps, drags, pinches and cancelled gestures visible", () => {
+  vi.useFakeTimers();
+  const changed = vi.fn(), hold = createFieldOverlayHold(changed);
+  hold.start(0, 0); hold.end();
+  hold.start(0, 0); hold.move(9, 0);
+  vi.advanceTimersByTime(500);
+  hold.start(0, 0); hold.move(0, 0, 2);
+  vi.advanceTimersByTime(500);
+  hold.start(0, 0, 2);
+  vi.advanceTimersByTime(500);
+  expect(changed).not.toHaveBeenCalled();
+  expect(hold.suppressSelection()).toBe(false);
+});
+it("keeps overlays hidden through movement after a hold until release", () => {
+  vi.useFakeTimers();
+  const changed = vi.fn(), hold = createFieldOverlayHold(changed);
+  hold.start(0, 0);
+  vi.advanceTimersByTime(450);
+  hold.move(30, 50);
+  expect(changed).toHaveBeenCalledExactlyOnceWith(true);
+  hold.end();
+  expect(changed).toHaveBeenLastCalledWith(false);
+});

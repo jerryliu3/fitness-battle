@@ -58,6 +58,7 @@ function LaneTrackContent({
   topInset = 0,
   height = 540,
   fullscreen = false,
+  overlaysHidden = false,
   onExpand,
   onToggleDimension,
   onZoom,
@@ -71,6 +72,7 @@ function LaneTrackContent({
   onGestureStart?: () => void;
   height?: number;
   fullscreen?: boolean;
+  overlaysHidden?: boolean;
   onExpand?: () => void;
   onToggleDimension?: () => void;
   onZoom?: (span: number) => void;
@@ -258,6 +260,7 @@ function LaneTrackContent({
                   ? (overtakeFrame.laneValues[l.id] ?? l.values[index] ?? 0)
                   : (l.values[index] ?? 0);
               const edge = !course.oval && arenaPosition(value, v).edge;
+              if (edge && overlaysHidden) return null;
               const effect = overtakeFrame?.rivalEffects[l.id];
               const charging =
                 l.you && animating ? (overtakeFrame?.charging ?? 0) : 0;
@@ -330,8 +333,8 @@ function LaneTrackContent({
                   />
                   {edge?<SvgText {...chartTextProps()} x={0} y={4} textAnchor="middle"  fill={c.ink}>{edge==="ahead"?"↑":"↓"}</SvgText>:null}
                   </G>
-                  {edge?<G transform={`translate(${xx} ${yy})`} pointerEvents="none"><Rect x={-34} y={edge==="ahead"?27:-42} width={68} height={20} rx={8} fill="#ffffffee"/><SvgText {...chartTextProps()} x={0} y={edge==="ahead"?41:-28} textAnchor="middle"  fill={c.muted}>{`${value-(overtakeFrame?.youValue??me?.values[index]??0)>0?"+":""}${(value-(overtakeFrame?.youValue??me?.values[index]??0)).toFixed(1)} ${unit}`}</SvgText></G>:null}
-                  {!edge&&(l.you||selectedId===l.id)?<G transform={`translate(${xx} ${yy})`} pointerEvents="none">
+                  {edge?<G transform={`translate(${xx} ${yy})`} pointerEvents="none"><Rect x={-34} y={edge==="ahead"?27:-42} width={68} height={20} rx={8} fill="#ffffffee"/><SvgText {...chartTextProps()} x={0} y={edge==="ahead"?41:-28} textAnchor="middle"  fill={c.muted}>{`${arenaPosition(value, v).distanceOutside.toFixed(1)} ${unit}`}</SvgText></G>:null}
+                  {!overlaysHidden&&!edge&&(l.you||selectedId===l.id)?<G transform={`translate(${xx} ${yy})`} pointerEvents="none">
                     <Path d={`M0 0 L${pennantX+pennantWidth/2} ${pennantY>0?pennantY:pennantY+46}`} fill="none" stroke={c.secondary} strokeWidth={1.2}/>
                     <Rect x={pennantX} y={pennantY+2} width={pennantWidth} height={46} rx={12} fill={c.ink} opacity={.1}/>
                     <Rect x={pennantX} y={pennantY} width={pennantWidth} height={46} rx={12} fill={c.card} stroke={l.you?c.tennis:c.line}/>
@@ -356,7 +359,7 @@ function LaneTrackContent({
           const edge = !course.oval && arenaPosition(value, v).edge;
           return [
             <Pressable key={lane.id} accessibilityRole="button" accessibilityLabel={`Focus ${lane.name}`} accessibilityState={{ selected: selectedId === lane.id }} onPress={() => onSelect(lane)} style={{ position: "absolute", left: point.x - visibleScroll - 24, top: point.y - 30, width: 48, height: 60 }} />,
-            !edge && (lane.you || lane.id === selectedId) ? <Pressable key={`${lane.id}-nameplate`} accessible={false} onPress={() => onSelect(lane)} style={{ position: "absolute", left: point.x - visibleScroll + x, top: point.y + y, width: 146, height: 46 }} /> : null,
+            !overlaysHidden && !edge && (lane.you || lane.id === selectedId) ? <Pressable key={`${lane.id}-nameplate`} accessible={false} onPress={() => onSelect(lane)} style={{ position: "absolute", left: point.x - visibleScroll + x, top: point.y + y, width: 146, height: 46 }} /> : null,
           ];
         })}
         {ghost && (() => {

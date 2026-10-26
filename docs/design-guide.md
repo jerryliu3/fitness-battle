@@ -58,7 +58,7 @@ The visible tabs are **Home / Compete / Progress / Crew**. Stable route IDs are 
 
 ## Lane viewport contract
 
-2D and 3D use the same athlete values and viewport. Lane identity stays fixed when standings change; the user's lane is centered among peers. Default longitudinal range is ±600 m (a 1.2 km window, converted exactly to miles; ±10 effort points for non-GPS) around the user, independently of the most distant competitor. Zoom and pan only change presentation. Center/Fit APIs remain available internally; their visible buttons and the redundant viewport caption were removed in #232. Out-of-range 2D markers show dotted arrow indicators and distances relative to the athlete rather than pretending those athletes sit at the edge distance. Past you is never ranked.
+2D and 3D use the same athlete values and viewport. Lane identity stays fixed when standings change; the user's lane is centered among peers. Default longitudinal range is ±600 m (a 1.2 km window, converted exactly to miles; ±10 effort points for non-GPS) around the user, independently of the most distant competitor. Zoom and pan only change presentation. Center/Fit APIs remain available internally; their visible buttons and the redundant viewport caption were removed in #232. Out-of-range markers show arrow indicators and the unsigned distance from the nearest longitudinal viewport edge. The gap changes with pan/zoom and reaches zero at the same center boundary where the arrow disappears. Visible athlete nameplates retain their gaps relative to you. Fullscreen Live intervals and athlete panels collapse independently into side tabs; a stationary 450 ms hold hides overlays until release, without taking over dragging or pinching. Past you is never ranked.
 
 Web retains the real Three.js renderer. Native 2D is SVG; native 3D embeds the same web renderer and receives bounded, credential-free presentation messages. It requires the corresponding web deployment and a configured `EXPO_PUBLIC_API_URL`. An unavailable renderer falls back to native 2D. New native binaries must include the Expo-supported `react-native-webview` dependency.
 
@@ -353,3 +353,5 @@ Athlete movement must not rebuild scenery; replay owns marker position
 interpolation, and gestures publish at most once per animation frame. Preserve
 capsule identity, ground choices, distance scale, ghost and offscreen indicators.
 See the [performance investigation and fidelity validation](reviews/2d-field-performance/README.md).
+
+Crew shared-week finish checks are printed in the top plane of the progress block, with a flag at each side. The finish remains anchored to the configured target or available prior-week baseline.

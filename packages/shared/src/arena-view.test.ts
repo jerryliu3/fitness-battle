@@ -19,6 +19,18 @@ import {
 import { seedArenaBaselinesFromState } from "./phone-views";
 import { freshState, reduceCompete } from "./compete/engine";
 describe("distance viewport", () => {
+  it("measures offscreen distance from the boundary where the arrow disappears", () => {
+    const view = { center: 10, span: 4 };
+    expect(arenaPosition(15, view).distanceOutside).toBe(3);
+    expect(arenaPosition(5, view).distanceOutside).toBe(3);
+    expect(arenaPosition(15, { center: 12, span: 4 }).distanceOutside).toBe(1);
+    for (const value of [8, 10, 12]) {
+      expect(arenaPosition(value, view).distanceOutside).toBe(0);
+      expect(arenaPosition(value, view).edge).toBeNull();
+    }
+    expect(arenaPosition(15, { center: 13, span: 4 }).distanceOutside).toBe(0);
+    expect(arenaPosition(5, { center: 7, span: 4 }).distanceOutside).toBe(0);
+  });
   it("centers the athlete without compressing an extreme field", () => {
     const w = arenaWindow(23.4, 6);
     expect((w.min + w.max) / 2).toBe(23.4);

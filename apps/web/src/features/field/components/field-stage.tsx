@@ -84,6 +84,8 @@ export function FieldStage({
   const [viewDimension, setViewDimension] = useState<"2d" | "3d">("2d");
   const [standingsOpen, setStandingsOpen] = useState(false);
   const [lanesImmersive, setLanesImmersive] = useState(false);
+  const [intervalsCollapsed, setIntervalsCollapsed] = useState(false);
+  const [spotlightCollapsed, setSpotlightCollapsed] = useState(false);
   const toggleDimension = () => {
     void playCue("selection");
     setViewDimension((prev) => (prev === "2d" ? "3d" : "2d"));
@@ -315,7 +317,9 @@ export function FieldStage({
         </button>
       </div>
 
-      <div className="focus-broadcast-tower" aria-label="Live intervals">
+      <div className={`focus-broadcast-tower${intervalsCollapsed ? " is-collapsed" : ""}`} aria-label="Live intervals">
+        <button type="button" className="focus-panel-toggle" aria-label={intervalsCollapsed ? "Expand live intervals" : "Collapse live intervals"} aria-expanded={!intervalsCollapsed} onClick={() => setIntervalsCollapsed(value => !value)}>{intervalsCollapsed ? "›" : "‹"}</button>
+        <div hidden={intervalsCollapsed}>
         <span className="focus-broadcast-tower-kicker">LIVE INTERVALS</span>
         {ranked.slice(0, 4).map((peer, idx) => {
           const delta = peer.value - leaderValue;
@@ -346,6 +350,8 @@ export function FieldStage({
             </button>
           );
         })}
+      </div>
+
       </div>
 
       <div className="focus-broadcast-rail" aria-label="Quick jump rivals">
@@ -388,9 +394,11 @@ export function FieldStage({
 
       {focusedLane ? (
         <div
-          className="focus-broadcast-spotlight"
+          className={`focus-broadcast-spotlight${spotlightCollapsed ? " is-collapsed" : ""}`}
           aria-label="Focused athlete spotlight"
         >
+          <button type="button" className="focus-panel-toggle" aria-label={spotlightCollapsed ? "Expand athlete panel" : "Collapse athlete panel"} aria-expanded={!spotlightCollapsed} onClick={() => setSpotlightCollapsed(value => !value)}>{spotlightCollapsed ? "›" : "‹"}</button>
+          <div hidden={spotlightCollapsed}>
           <div className="focus-broadcast-spotlight-head">
             <div className="focus-broadcast-spotlight-meta">
               <span className="focus-broadcast-spotlight-kicker">
@@ -446,6 +454,7 @@ export function FieldStage({
                 </button>
               );
             })}
+          </div>
           </div>
         </div>
       ) : null}

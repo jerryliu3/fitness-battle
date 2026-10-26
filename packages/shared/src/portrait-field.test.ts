@@ -97,3 +97,14 @@ it("continues a bounded field to a fixed horizon across pan, zoom and roster siz
   expect(raysA.every(node => parseFloat(String(node.attrs.d).split(",")[2]!) > 600)).toBe(true);
   expect(JSON.stringify(b.ground)).not.toMatch(/NaN|Infinity/);
 });
+
+it("measures perspective offscreen gaps from the current visible edge", () => {
+  const scene = portraitField(lanes, { center: 10, span: 1.2 });
+  expect(scene.outside.find(m => m.id === "a")?.edgeGap).toBeCloseTo(1.4);
+  expect(scene.outside.find(m => m.id === "b")?.edgeGap).toBeCloseTo(1.4);
+  const panned = portraitField(lanes, { center: 11, span: 1.2 });
+  expect(panned.outside.find(m => m.id === "a")?.edgeGap).toBeCloseTo(.4);
+  const entered = portraitField(lanes, { center: 11.4, span: 1.2 });
+  expect(entered.outside.some(m => m.id === "a")).toBe(false);
+  expect(entered.markers.find(m => m.id === "a")?.edgeGap).toBe(0);
+});
