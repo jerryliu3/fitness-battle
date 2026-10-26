@@ -10,7 +10,7 @@ import { useScoreTrackLens } from "@/lib/score-track-lens";
 import { useAuth } from "@/components/auth-context";
 import { useCompete } from "@/components/compete-context";
 
-import { distanceUnitLabel, effortHistory, ELO_UNRANKED, formatDistanceM, rankForElo, type CompeteState, type ScoreTrack } from "@fitness-battle/shared";
+import { distanceUnitLabel, effortHistory, ELO_UNRANKED, formatDistanceM, formatEffortScore, rankForElo, type CompeteState, type ScoreTrack } from "@fitness-battle/shared";
 import { useEffect, useState } from "react";
 
 function EditIcon() {
@@ -258,7 +258,7 @@ export function AthleteOverview({
         </div>
 
         <div className="focus-elo-score-row">
-          <AppText role="metric" className="ui-score-value">{effectiveElo.toLocaleString()}</AppText>
+          <AppText role="metric" className="ui-score-value">{formatEffortScore(effectiveElo)}</AppText>
           <AppText role="body" secondary>Effort score</AppText>
         </div>
 

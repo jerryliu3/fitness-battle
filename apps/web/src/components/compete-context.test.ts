@@ -16,7 +16,9 @@ const values = new Map<string,string>();
 function Probe() { api = useCompete(); return null; }
 async function flush() { for (let i=0;i<30;i++) await Promise.resolve(); }
 beforeEach(() => {
- vi.useFakeTimers(); values.clear(); auth.user.mode = "supabase"; auth.user.dataOrigin = "recorded";
+ vi.useFakeTimers();
+ vi.setSystemTime(new Date("2026-10-22T16:00:00Z"));
+ values.clear(); auth.user.mode = "supabase"; auth.user.dataOrigin = "recorded";
  vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
  vi.stubGlobal("localStorage", { getItem: (key: string) => values.get(key) ?? null, setItem: (key: string,value: string) => values.set(key,value), removeItem: (key: string) => values.delete(key) });
  vi.stubGlobal("window", { addEventListener: vi.fn(), removeEventListener: vi.fn() });

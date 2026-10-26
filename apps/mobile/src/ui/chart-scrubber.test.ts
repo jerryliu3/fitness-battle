@@ -58,3 +58,21 @@ it("scrubs in rendered coordinates, pulses once per crossed point and yields ver
   await act(async () => surface().props.onAccessibilityAction({ nativeEvent: { actionName: "decrement" } }));
   expect(surface().props.accessibilityValue.text).toBe("Monday, 1 hr");
 });
+
+it("selects points directly on tap anywhere on the chart", async () => {
+  vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
+  const select = vi.fn();
+  await act(async () => {
+    renderer = create(createElement(ChartScrubber, {
+      points, width: 100, height: 120, plotTop: 10, plotBottom: 100, onSelect: select, label: "Hours", children: null,
+    }));
+  });
+  const surface = () => renderer.root.findAllByType("View" as never).find(node => node.props.accessibilityRole === "adjustable")!;
+  await act(async () => surface().props.onLayout({ nativeEvent: { layout: { width: 300 } } }));
+  // Tap near Tuesday (x=240 in layout coordinates = 80 in model coordinates)
+  await act(async () => {
+    surface().props.onTouchStart({ nativeEvent: { pageX: 240, pageY: 100, locationX: 240 } });
+    surface().props.onTouchEnd({ nativeEvent: { pageX: 241, pageY: 101 } });
+  });
+  expect(select).toHaveBeenCalledWith("tue");
+});

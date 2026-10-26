@@ -1,55 +1,115 @@
 import { textStyle } from "./section";
-import { useState } from "react";
-import { ActionSheetIOS, FlatList, Modal, Platform, Pressable, StyleSheet, Text, View } from "react-native";
-import { Picker } from "@react-native-picker/picker";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { useAnchoredMenu, AnchoredMenu } from "./anchored-menu";
+import {
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 import { SHELL_COLORS as c } from "../theme";
 import { f } from "./focus";
+import { playCue } from "../lib/haptics";
 
-/** Choices overlay their parent, including activity and settings sheets. Long lists are virtualized. */
-export function ChoicePicker<T extends string>({ label, value, options, onChange, placeholder = "Choose…" }: {
-  label: string; value: T | ""; options: readonly { value: T; label: string }[];
-  onChange: (value: T) => void; placeholder?: string;
+/** Dropdown menu anchored to its trigger control. */
+export function ChoicePicker<T extends string>({
+  label,
+  value,
+  options,
+  onChange,
+  placeholder = "Choose…",
+}: {
+  label: string;
+  value: T | "";
+  options: readonly { value: T; label: string }[];
+  onChange: (value: T) => void;
+  placeholder?: string;
 }) {
-  const [open, setOpen] = useState(false);
-  const [draft, setDraft] = useState<T | "">(value);
-  const selected = options.findIndex(option => option.value === value);
-  const choose = () => {
-    if (Platform.OS === "ios" && options.length <= 10) {
-      ActionSheetIOS.showActionSheetWithOptions({ title: label, options: [...options.map(option => option.label), "Cancel"], cancelButtonIndex: options.length }, index => {
-        if (index >= 0 && index < options.length) onChange(options[index].value);
-      });
-    } else { setDraft(value || options[0]?.value || ""); setOpen(true); }
-  };
-  return <View style={{ flexShrink: 1 }}>
-    <Pressable accessibilityRole="button" accessibilityLabel={`${label}: ${options[selected]?.label ?? placeholder}`}
-      accessibilityState={{ expanded: open }} onPress={choose} style={[f.input, f.row]}>
-      <Text style={[textStyle("label"), { flexShrink: 1 }]}>{options[selected]?.label ?? placeholder}</Text><Text style={textStyle("body")}>⌄</Text>
-    </Pressable>
-    <Modal visible={open} transparent animationType="fade" onRequestClose={() => setOpen(false)}>
-      <SafeAreaView style={s.overlay} accessibilityViewIsModal>
-        <Pressable style={StyleSheet.absoluteFill} accessibilityRole="button" accessibilityLabel={`Cancel ${label}`} onPress={() => setOpen(false)} />
-        <View style={s.menu}>
-          <View style={[f.row, { padding: 16 }]}><Text accessibilityRole="header" style={textStyle("heading")}>{label}</Text><Pressable accessibilityRole="button" onPress={() => setOpen(false)} style={{ minHeight: 44, justifyContent: "center" }}><Text style={textStyle("label")}>Cancel</Text></Pressable></View>
-          {Platform.OS === "ios" ? <>
-            <Picker accessibilityLabel={label} selectedValue={draft} onValueChange={item => setDraft(item as T)} itemStyle={textStyle("body")}>
-              {options.map(option => <Picker.Item key={option.value} label={option.label} value={option.value} />)}
-            </Picker>
-            <Pressable accessibilityRole="button" accessibilityLabel={`Confirm ${label}`} onPress={() => { if (options.some(option => option.value === draft)) onChange(draft as T); setOpen(false); }} style={{ minHeight: 44, alignItems: "center", justifyContent: "center" }}><Text style={textStyle("label")}>Done</Text></Pressable>
-          </> : <FlatList data={options} keyExtractor={option => option.value} initialScrollIndex={Math.max(0, selected)}
-            getItemLayout={(_, index) => ({ length: 52, offset: 52 * index, index })}
-            renderItem={({ item }) => <Pressable accessibilityRole="radio" accessibilityState={{ checked: value === item.value }}
-              style={[f.row, s.option, value === item.value && { backgroundColor: c.soft }]}
-              onPress={() => { onChange(item.value); setOpen(false); }}>
-              <Text style={textStyle("label")}>{item.label}</Text><Text style={textStyle("body")}>{value === item.value ? "✓" : ""}</Text>
-            </Pressable>} />}
-        </View>
-      </SafeAreaView>
-    </Modal>
-  </View>;
+  const { open, close, toggle, anchorRef, menuLayout } = useAnchoredMenu({
+    minWidth: 180,
+    estimatedHeight: Math.min(280, options.length * 44 + 16),
+  });
+  const selected = options.findIndex((option) => option.value === value);
+
+  return (
+    <View style={{ flexShrink: 1 }}>
+      <View ref={anchorRef} collapsable={false}>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={`${label}: ${options[selected]?.label ?? placeholder}`}
+          accessibilityState={{ expanded: open }}
+          onPress={toggle}
+          style={[f.input, f.row, s.trigger]}
+        >
+          <Text style={[textStyle("label"), { flexShrink: 1 }]}>
+            {options[selected]?.label ?? placeholder}
+          </Text>
+          <Text style={[textStyle("body"), { marginLeft: 4 }]}>▾</Text>
+        </Pressable>
+      </View>
+      <AnchoredMenu
+        open={open}
+        onClose={close}
+        menuLayout={menuLayout}
+        accessibilityLabel={`Close ${label} dropdown`}
+      >
+        <ScrollView
+          style={{ maxHeight: 280 }}
+          bounces={false}
+          keyboardShouldPersistTaps="handled"
+        >
+          {options.map((option) => {
+            const isSelected = option.value === value;
+            return (
+              <Pressable
+                key={option.value}
+                accessibilityRole="button"
+                accessibilityLabel={option.label}
+                accessibilityState={{ selected: isSelected }}
+                style={[s.option, isSelected && s.optionSelected]}
+                onPress={() => {
+                  void playCue("selection");
+                  onChange(option.value);
+                  close();
+                }}
+              >
+                <Text
+                  style={[
+                    isSelected ? textStyle("label") : textStyle("body"),
+                    { flexShrink: 1 },
+                    isSelected && { color: c.ink },
+                  ]}
+                >
+                  {option.label}
+                </Text>
+                {isSelected ? (
+                  <Text style={[textStyle("label"), { color: c.ink }]}>✓</Text>
+                ) : null}
+              </Pressable>
+            );
+          })}
+        </ScrollView>
+      </AnchoredMenu>
+    </View>
+  );
 }
+
 const s = StyleSheet.create({
-  overlay: { flex: 1, justifyContent: "center", padding: 24, backgroundColor: "#142b3b66" },
-  menu: { maxHeight: "70%", backgroundColor: c.card, borderRadius: 20, overflow: "hidden", borderWidth: 1, borderColor: c.line },
-  option: { height: 52, paddingHorizontal: 20, borderTopWidth: 1, borderTopColor: c.line },
+  trigger: {
+    minHeight: 44,
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  option: {
+    height: 44,
+    paddingHorizontal: 16,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: c.line,
+  },
+  optionSelected: {
+    backgroundColor: c.soft,
+  },
 });

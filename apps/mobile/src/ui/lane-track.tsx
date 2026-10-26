@@ -1,6 +1,7 @@
 import { chartTextProps, textStyle  } from "./section";
+import { useAnchoredMenu, AnchoredMenu } from "./anchored-menu";
 import {
-  fieldCourse, fieldCourseScene, fieldLap, defaultFieldAppearance, type FieldAppearance,
+  fieldCourse, fieldCourseScene, fieldLap, defaultFieldAppearance, fieldGrounds, type FieldAppearance, type FieldGround,
   fieldZoomSpan, pinchFieldView, fieldFlightDuration, fieldFlightEase, fieldProgressTrail,
   arenaPosition,
   arenaWindow,
@@ -20,7 +21,7 @@ import {
   type ArenaViewWindow,
 } from "@fitness-battle/shared";
 import { memo, useEffect, useId, useMemo, useRef, useState, type ComponentRef, type MutableRefObject } from "react";
-import { PanResponder, Pressable, Text, View } from "react-native";
+import { PanResponder, Pressable, ScrollView, Text, View } from "react-native";
 import Svg, {
   Circle,
   Defs,
@@ -40,6 +41,7 @@ export interface LaneAnchor { left: number; laneWidth: number; width: number; sc
 function LaneTrackContent({
   lanes,
   appearance = defaultFieldAppearance,
+  onChangeAppearance,
   unit,
   showGhost,
   selectedId,
@@ -74,6 +76,7 @@ function LaneTrackContent({
   onZoom?: (span: number) => void;
   anchor?: MutableRefObject<LaneAnchor | null>;
   appearance?: FieldAppearance;
+  onChangeAppearance?: (appearance: FieldAppearance) => void;
   active?: boolean;
   /** Reserve room for an overlaid field status without covering lane headers. */
   topInset?: number;
@@ -93,6 +96,17 @@ function LaneTrackContent({
   overtakePlan?: ArenaOvertakePlan | null;
 }) {
   const prefix = useId();
+  const {
+    open: styleMenuOpen,
+    close: closeStyleMenu,
+    toggle: toggleStyleMenu,
+    anchorRef: styleTriggerRef,
+    menuLayout,
+  } = useAnchoredMenu({ minWidth: 220, estimatedHeight: 280 });
+
+  useEffect(() => {
+    if (!active) closeStyleMenu();
+  }, [active, closeStyleMenu]);
   const [exploring, setExploring] = useState(false);
   const [width, setWidth] = useState(340);
   const [visibleScroll, setVisibleScroll] = useState(anchor?.current?.scroll ?? 0);
@@ -381,6 +395,20 @@ function LaneTrackContent({
               </Text>
             </Pressable>
           ) : null}
+          {onChangeAppearance ? (
+            <View ref={styleTriggerRef} collapsable={false}>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={`Map style: ${fieldGrounds[appearance.ground]?.name ?? "Style"}`}
+                accessibilityState={{ expanded: styleMenuOpen }}
+                onPress={toggleStyleMenu}
+                style={{ minHeight: 36, paddingHorizontal: 12, flexDirection: "row", alignItems: "center", gap: 6, borderRadius: 999, backgroundColor: "rgba(20, 20, 19, 0.78)", borderWidth: 1, borderColor: "rgba(255, 255, 255, 0.2)" }}
+              >
+                <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: fieldGrounds[appearance.ground]?.lane ?? c.tennis }} />
+                <Text style={{ ...textStyle("caption"), color: "#ffffff" }}>{fieldGrounds[appearance.ground]?.name ?? "Style"} ▾</Text>
+              </Pressable>
+            </View>
+          ) : null}
           <Pressable
             accessibilityRole="button"
             accessibilityState={{ selected: exploring }}
@@ -439,6 +467,77 @@ function LaneTrackContent({
           ) : null}
         </View>
       ) : null}
+      <AnchoredMenu
+        open={styleMenuOpen}
+        onClose={closeStyleMenu}
+        menuLayout={menuLayout}
+        accessibilityLabel="Close style menu"
+        style={{ padding: 8 }}
+      >
+        <Text
+          style={[
+            textStyle("caption"),
+            { paddingHorizontal: 8, paddingVertical: 4, color: c.muted },
+          ]}
+        >
+          Field style
+        </Text>
+        <ScrollView style={{ maxHeight: 260 }}>
+          {Object.entries(fieldGrounds).map(([id, item]) => {
+            const isSelected = appearance.ground === id;
+            return (
+              <Pressable
+                key={id}
+                accessibilityRole="button"
+                accessibilityState={{ selected: isSelected }}
+                onPress={() => {
+                  void playCue("selection");
+                  onChangeAppearance?.({
+                    ...appearance,
+                    ground: id as FieldGround,
+                  });
+                   closeStyleMenu();
+                }}
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  minHeight: 38,
+                  paddingHorizontal: 8,
+                  paddingVertical: 6,
+                  borderRadius: 8,
+                  backgroundColor: isSelected ? c.soft : "transparent",
+                  gap: 10,
+                }}
+              >
+                <View
+                  style={{
+                    width: 14,
+                    height: 18,
+                    borderRadius: 4,
+                    backgroundColor: item.lane,
+                    borderWidth: 1,
+                    borderColor: "rgba(0,0,0,0.12)",
+                  }}
+                />
+                <Text
+                  style={[
+                    isSelected ? textStyle("label") : textStyle("body"),
+                    {
+                      flex: 1,
+                      color: isSelected ? c.ink : c.muted,
+                    },
+                  ]}
+                >
+                  {item.name}
+                </Text>
+                {isSelected ? (
+                  <Text style={[textStyle("label"), { color: c.tennis }]}>✓</Text>
+                ) : null}
+              </Pressable>
+            );
+          })}
+        </ScrollView>
+      </AnchoredMenu>
     </View>
   );
 }
