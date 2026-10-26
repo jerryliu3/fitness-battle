@@ -1,4 +1,3 @@
-import { useBootLoading } from "../ui/boot-readiness";
 import { UserAvatar } from "../ui/user-avatar";
 import { AppText, Section, SectionStack } from "../ui/section";
 import { AppIcon } from "../ui/app-icon";
@@ -9,6 +8,7 @@ import { CrewSessions } from "./crew-sessions";
 import { CrewRelay } from "./crew-relay";
 import {
   type SportId,
+  type CrewBoardPin,
   competitionTrack,
   competeNow,
   countsOnTrack,
@@ -26,7 +26,8 @@ import { ImageBackground, Pressable, Share, StyleSheet, Text, TextInput, View } 
 import { useAuth } from "../lib/auth";
 import { useCompeteStore } from "../lib/compete-store";
 import { mobileEnv } from "../lib/env";
-import { fetchWithTimeout } from "../lib/fetch-with-timeout";
+import { requestApi } from "../lib/api";
+import { useCachedApi } from "../lib/use-cached-api";
 import { playCue } from "../lib/haptics";
 import { FocusButton, FocusSheet, f } from "../ui/focus";
 export interface PrivateCrew {
@@ -70,69 +71,18 @@ export interface CrewData {
 }
 export function useCrewApi() {
   const { user, accessToken, offlineMode } = useAuth();
-  const [data, setData] = useState<CrewData | null>(null);
-  const [error, setError] = useState("");
-  const [busy, setBusy] = useState(false);
-  useBootLoading(Boolean(user && accessToken && !offlineMode && !data && !error));
-  const identity = useRef(user?.id);
-  identity.current = user?.id;
+  const live = !!user && !offlineMode && !!accessToken;
+  const { data, error, busy, reload } = useCachedApi<CrewData>("/api/crews");
   const request = useCallback(
     async (path: string, body?: object) => {
-      if (!user || offlineMode || !accessToken)
-        throw Error("Private crews need a live signed-in account.");
-      const response = await fetchWithTimeout(
-        `${mobileEnv.apiUrl}/api/crews${path}`,
-        {
-          method: body ? "POST" : "GET",
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-            ...(body ? { "Content-Type": "application/json" } : {}),
-          },
-          ...(body ? { body: JSON.stringify(body) } : {}),
-        },
+      if (!live) throw Error("Private crews need a live signed-in account.");
+      return requestApi<{ crew?: PrivateCrew; pin?: CrewBoardPin; saved?: number }>(
+        mobileEnv.apiUrl, accessToken, `/api/crews${path}`, { body },
       );
-      const result = await response.json();
-      if (!response.ok || result.persisted === false)
-        throw Error(result.error ?? "Could not reach your crew.");
-      return result;
     },
-    [user?.id, accessToken, offlineMode],
+    [live, accessToken],
   );
-  const reload = useCallback(async () => {
-    const owner = user?.id;
-    if (!owner || offlineMode || !accessToken) return;
-    setBusy(true);
-    setError("");
-    try {
-      const result = await request("");
-      if (identity.current === owner) {
-        setData(result);
-        return true;
-      }
-      return false;
-    } catch (e) {
-      if (identity.current === owner)
-        setError(e instanceof Error ? e.message : "Could not load crews.");
-      return false;
-    } finally {
-      if (identity.current === owner) setBusy(false);
-    }
-  }, [user?.id, accessToken, offlineMode, request]);
-  useEffect(() => {
-    void reload();
-  }, [reload]);
-  useEffect(() => {
-    setData(null);
-    setError("");
-  }, [user?.id]);
-  return {
-    data,
-    error,
-    busy,
-    reload,
-    request,
-    live: !!user && !offlineMode && !!accessToken,
-  };
+  return { data: data ?? null, error, busy, reload, request, live };
 }
 
 function crewError(error: unknown): string {

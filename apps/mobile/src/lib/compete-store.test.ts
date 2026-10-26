@@ -157,6 +157,47 @@ async function save() {
 }
 
 describe("mobile account lifecycle", () => {
+  it("renders only the current account's cache before the server resolves, with writes gated", async () => {
+    login("Alice");
+    mock.values.set(accountStorageKeys("Alice").state, JSON.stringify(accountState("Cached Alice")));
+    let resolve!: (response: Response) => void;
+    fetcher.mockImplementationOnce(() => new Promise<Response>(done => { resolve = done; }));
+    await mount();
+    expect(api.state?.name).toBe("Cached Alice");
+    expect(api.loadStatus).toBe("loading");
+    expect(api.canWrite).toBe(false);
+    await act(async () => { api.dispatch({ type: "set-city", city: "Blocked during hydration" }); });
+    expect(api.state?.city).not.toBe("Blocked during hydration");
+    await act(async () => { api.dispatch({ type: "set-avatar", avatarUrl: "https://example.com/new.jpg" }); });
+    expect(api.state?.avatarUrl).not.toBe("https://example.com/new.jpg");
+    await act(async () => {
+      resolve(Response.json({ state: accountState("Server Alice"), updatedAt: "rev" }));
+      await flush();
+    });
+    expect(api.state?.name).toBe("Server Alice");
+    expect(api.canWrite).toBe(true);
+  });
+
+  it("skips fresh automatic standings refreshes but still allows an explicit refresh", async () => {
+    login("Alice");
+    await mount();
+    expect(fetcher).toHaveBeenCalledTimes(1);
+    await act(async () => { await api.refresh({ ifStale: true }); });
+    expect(fetcher).toHaveBeenCalledTimes(1);
+    await act(async () => { await api.refresh(); });
+    expect(fetcher).toHaveBeenCalledTimes(2);
+  });
+  it("recovers a failed initial account load through a later standings refresh", async () => {
+    login("Alice");
+    fetcher.mockResolvedValueOnce(Response.json({ error: "offline" }, { status: 503 }));
+    await mount();
+    expect(api.loadStatus).toBe("failed");
+    expect(api.canWrite).toBe(false);
+    await act(async () => { expect(await api.refresh({ ifStale: true })).toBe(true); });
+    expect(api.loadStatus).toBe("ready");
+    expect(api.canWrite).toBe(true);
+    expect(api.standingsStale).toBe(false);
+  });
   it("loads and saves an authenticated synthetic account independently of its legacy mode label", async () => {
     login("Synthetic");
     mock.auth.user!.mode = "demo";
