@@ -58,6 +58,14 @@ The visible tabs are **Home / Compete / Progress / Crew**. Stable route IDs are 
 
 ## Lane viewport contract
 
+The October 26 width-lock selection applies to unfolded 2D fields on native and
+web. Zoom both axes until the viewport is 3.9 times the gap between the outermost
+athlete lane centers (a 25.6% minimum field width), then hold horizontal lane
+spacing and scenery scale while longitudinal zoom continues. Zooming back in
+restores two-axis scaling. Empty/single-athlete fields use a 25.6%-width ground
+band. Distance positions, ruler values and GPS capsule distance remain linear;
+the oval and perspective camera retain their existing behavior.
+
 2D and 3D use the same athlete values and viewport. Lane identity stays fixed when standings change; the user's lane is centered among peers. Default longitudinal range is ±600 m (a 1.2 km window, converted exactly to miles; ±10 effort points for non-GPS) around the user, independently of the most distant competitor. Zoom and pan only change presentation. Center/Fit APIs remain available internally; their visible buttons and the redundant viewport caption were removed in #232. Out-of-range markers show arrow indicators and the unsigned distance from the nearest longitudinal viewport edge. The gap changes with pan/zoom and reaches zero at the same center boundary where the arrow disappears. Visible athlete nameplates retain their gaps relative to you. Fullscreen Live intervals and athlete panels collapse independently into side tabs; a stationary 450 ms hold hides overlays until release, without taking over dragging or pinching. Past you is never ranked.
 
 Web retains the real Three.js renderer. Native 2D is SVG; native 3D embeds the same web renderer and receives bounded, credential-free presentation messages. It requires the corresponding web deployment and a configured `EXPO_PUBLIC_API_URL`. An unavailable renderer falls back to native 2D. New native binaries must include the Expo-supported `react-native-webview` dependency.
@@ -114,7 +122,7 @@ Athlete’s main effort score uses the same gold badge treatment as Home accents
 
 ## Compete grounds and earned distance
 
-The October 21 selection promotes **Liquid Glass / faint underlay / Banked trail** into the web and native 2D field, with **Map lens** zoom: world details, lane spacing and capsules scale together. Meadow Trail and Club grounds are the defaults. Each event offers Personal track, Road ribbons, Parkland Passage, Pool Deck, Boardwalk, Meadow Trail, Club Straightaway, Club Oval and Night Meet. Open edges and Club grounds apply to every surface. Choices are local to the account/event on that device; they do not change units, scores, rankings or tracker data.
+The October 21 selection promotes **Liquid Glass / faint underlay / Banked trail** into the web and native 2D field, with **Map lens** zoom. The October 26 width-lock selection above supersedes uniform horizontal scaling at wide zoom. Meadow Trail and Club grounds are the defaults. Each event offers Personal track, Road ribbons, Parkland Passage, Pool Deck, Boardwalk, Meadow Trail, Club Straightaway, Club Oval and Night Meet. Open edges and Club grounds apply to every surface. Choices are local to the account/event on that device; they do not change units, scores, rankings or tracker data.
 
 The narrow earned trace follows each racer directly beneath its canonical afterimages. Only live heads are excluded. One fixed side scale replaces repeated lane labels; red straightaway splits use whole displayed units, with lane numbers behind the start. Scenery stays anchored to accumulated distance. Grounds are illustrative rather than GPS locations. The oval normalizes a loop to 1 km, 1 mile or 20 effort points, with completed laps and accumulated totals explicit.
 

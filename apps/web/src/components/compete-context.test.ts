@@ -1,4 +1,11 @@
+// Exercise the Suspense state even when the module loads slowly in CI.
+const lazyReview = vi.hoisted(() => {
+  let release!: () => void;
+  const ready = new Promise<void>(resolve => { release = resolve; });
+  return { ready, release: () => release() };
+});
 vi.mock("@/features/club/sync-review", async () => {
+  await lazyReview.ready;
   const { createElement } = await import("react");
   return { SyncReview: (props: object) => createElement("SyncReview", props) };
 });
@@ -66,6 +73,9 @@ it("runs web debug sync through the real receipt and combo coordinator without u
   await act(async () => { renderer = create(createElement(CompeteProvider, null, createElement(Probe))); await flush(); });
   const original = api.state;
   await act(async () => { api.triggerDebugEvent?.("sync-combo"); await flush(); });
+  expect(renderer.root.findByProps({ role: "status" })).toBeTruthy();
+  lazyReview.release();
+  await act(async () => { await vi.dynamicImportSettled(); });
   await act(async () => { await vi.advanceTimersByTimeAsync(500); await flush(); });
   let screen = renderer.root.findByType("SyncReview" as never);
   expect(screen.props.receipt.activities).toHaveLength(2);
