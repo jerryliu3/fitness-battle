@@ -4,6 +4,8 @@ import {
   crewWeekRelay,
   filterCrewMembersWithPeriodActivity,
   crewMemberWeekValue,
+  crewRelayIsEmpty,
+  crewRelayRosterFootnote,
 } from "./crew-relay";
 it("keeps member identity and ribbon colors stable when API row order changes",()=>{
  const a={id:"a",name:"A",value:10,sessions:1},b={id:"b",name:"B",value:20,sessions:2};
@@ -43,4 +45,12 @@ it("shares period totals and active-member filtering across crew surfaces",()=>{
 it("omits members with zero distance or sessions from the relay model",()=>{
  const result=crewWeekRelay({members:[{user_id:"a",display_name:"A"},{user_id:"b",display_name:"B"}],entries:[{user_id:"a",distance_m:5000,moving_sec:1200}],format:"volume",sport:"running",targetSessions:4,targetDistanceM:10000,previousDistanceM:null});
  expect(result.model.segments.map(s=>s.id)).toEqual(["a"]);
+ expect(result.inactiveCount).toBe(1);
+ expect(crewRelayIsEmpty(result.model)).toBe(false);
+});
+it("marks an all-zero crew week as empty and explains session roster targets",()=>{
+ const empty=crewWeekRelay({members:[{user_id:"a",display_name:"A"}],entries:[],format:"personal_target",sport:"strength",targetSessions:3});
+ expect(crewRelayIsEmpty(empty.model)).toBe(true);
+ expect(crewRelayRosterFootnote(true,1,2)).toMatch(/logged yet/);
+ expect(crewRelayRosterFootnote(false,1,2)).toBeNull();
 });

@@ -15,6 +15,7 @@ import {
   shiftTrainingMonth,
   sportById,
   defaultTrainingSports,
+  normalizeTrainingSports,
   trainingAtlas,
   trainingBuckets,
   trainingComparison,
@@ -86,7 +87,7 @@ export function TrainingAtlas({ state }: { state: CompeteState }) {
         <TrainingSportMenu
           value={sports}
           onChange={(next) => {
-            setSports(next);
+            setSports(normalizeTrainingSports(next));
             setSelected(null);
           }}
         />

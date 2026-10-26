@@ -23,6 +23,7 @@ export * from "./activity-age";
 export * from "./member-count";
 export * from "./field-appearance";
 export * from "./field-course";
+export * from "./training-types";
 export * from "./training-view";
 export * from "./training-chart-controls";
 export * from "./crew-relay-scene";

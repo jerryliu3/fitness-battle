@@ -12,8 +12,9 @@ import {
   type ScoreTrack,
   type SportId,
 } from "./compete/sports";
+import type { TrainingRange } from "./training-types";
 
-export type TrainingRange = "week" | "month" | "year";
+export type { TrainingRange } from "./training-types";
 export type TrainingSportFilter = SportId | "all" | readonly SportId[];
 
 export function defaultTrainingSports(): SportId[] {
@@ -28,6 +29,11 @@ export function isAllTrainingSports(sports: readonly SportId[]): boolean {
 }
 
 /** Toggle one sport in a multi-select; never returns an empty list. */
+export function normalizeTrainingSports(sports: readonly SportId[]): SportId[] {
+  const picked = new Set(sports);
+  return SPORT_IDS.filter((id) => picked.has(id));
+}
+
 export function toggleTrainingSports(
   current: readonly SportId[],
   id: SportId,
@@ -35,7 +41,9 @@ export function toggleTrainingSports(
   const next = current.includes(id)
     ? current.filter((sport) => sport !== id)
     : [...current, id];
-  return next.length ? [...next] : defaultTrainingSports();
+  return next.length
+    ? normalizeTrainingSports(next)
+    : defaultTrainingSports();
 }
 
 export function trainingSportFilterLabel(sports: readonly SportId[]): string {

@@ -1,6 +1,6 @@
 import { UserAvatar } from "../ui/user-avatar";
 import { chartTextProps, AppText  } from "../ui/section";
-import { useId, useState } from "react";
+import { useEffect, useId, useMemo, useState } from "react";
 import {
   Pressable,
   ScrollView,
@@ -12,6 +12,8 @@ import Svg, { G, Text as SvgText } from "react-native-svg";
 import {
   crewWeekRelay,
   crewRelayScene,
+  crewRelayIsEmpty,
+  crewRelayRosterFootnote,
   formatVolume,
   type CrewWeekRelayInput,
   type SportId,
@@ -26,7 +28,24 @@ export function CrewRelay(props: Props) {
   const [selected, setSelected] = useState(""),
     [width, setWidth] = useState(320),
     prefix = useId();
-  const { model, sessions, kind, target, label } = crewWeekRelay(props);
+  const relay = crewWeekRelay(props);
+  const { model, sessions, kind, target, label, inactiveCount, rosterSize } =
+    relay;
+  const empty = crewRelayIsEmpty(model);
+  const rosterFootnote = crewRelayRosterFootnote(
+    sessions,
+    inactiveCount,
+    rosterSize,
+  );
+  const segmentKey = useMemo(
+    () => model.segments.map((s) => s.id).join(","),
+    [model.segments],
+  );
+  useEffect(() => {
+    if (selected && !model.segments.some((s) => s.id === selected)) {
+      setSelected("");
+    }
+  }, [segmentKey, selected, model.segments]);
   const laneMembers = Math.max(1, model.segments.length);
   const w = Math.max(width, laneMembers * 64 + 32),
     scene = crewRelayScene(model, w, prefix);
@@ -109,7 +128,11 @@ export function CrewRelay(props: Props) {
           })}
         </View>
       </ScrollView>
-      {member ? (
+      {empty ? (
+        <AppText role="caption" secondary>
+          No one has logged activity this week yet.
+        </AppText>
+      ) : member ? (
         <View accessibilityLiveRegion="polite">
           <AppText role="row" >{member.name}</AppText>
           <AppText role="body" secondary >
@@ -117,6 +140,9 @@ export function CrewRelay(props: Props) {
             recorded crew activity · {member.sessions} {member.sessions===1?"session":"sessions"}
           </AppText>
         </View>
+      ) : null}
+      {rosterFootnote ? (
+        <AppText role="caption" secondary>{rosterFootnote}</AppText>
       ) : null}
       {target ? (
         <AppText role="caption" secondary >

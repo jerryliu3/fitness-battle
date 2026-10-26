@@ -2,10 +2,12 @@
 import { UserAvatar } from "@/ui/user-avatar";
 import { typographyStyle, AppText, AppParagraph  } from "@/ui/section";
 
-import { useId, useLayoutEffect, useRef, useState } from "react";
+import { useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from "react";
 import {
   crewWeekRelay,
   crewRelayScene,
+  crewRelayIsEmpty,
+  crewRelayRosterFootnote,
   formatVolume,
   type CrewWeekRelayInput,
   type SportId,
@@ -19,7 +21,24 @@ export function CrewRelay(props: Props) {
     [width, setWidth] = useState(320),
     host = useRef<HTMLDivElement>(null),
     prefix = useId();
-  const { model, sessions, kind, target, label } = crewWeekRelay(props);
+  const relay = crewWeekRelay(props);
+  const { model, sessions, kind, target, label, inactiveCount, rosterSize } =
+    relay;
+  const empty = crewRelayIsEmpty(model);
+  const rosterFootnote = crewRelayRosterFootnote(
+    sessions,
+    inactiveCount,
+    rosterSize,
+  );
+  const segmentKey = useMemo(
+    () => model.segments.map((s) => s.id).join(","),
+    [model.segments],
+  );
+  useEffect(() => {
+    if (selected && !model.segments.some((s) => s.id === selected)) {
+      setSelected("");
+    }
+  }, [segmentKey, selected, model.segments]);
   const laneMembers = Math.max(1, model.segments.length);
   const w = Math.max(width, laneMembers * 64 + 32),
     scene = crewRelayScene(model, w, prefix);
@@ -112,13 +131,22 @@ export function CrewRelay(props: Props) {
           })}
         </div>
       </div>
-      {member ? (
+      {empty ? (
+        <AppParagraph typographyRole="caption" className="fb-note">
+          No one has logged activity this week yet.
+        </AppParagraph>
+      ) : member ? (
         <AppParagraph typographyRole="body" className="crew-member-receipt" aria-live="polite">
           <b>{member.name}</b>
           <span>
             {volume(member.value)} · {(member.share * 100).toFixed(1)}% of
             recorded crew activity · {member.sessions} {member.sessions===1?"session":"sessions"}
           </span>
+        </AppParagraph>
+      ) : null}
+      {rosterFootnote ? (
+        <AppParagraph typographyRole="caption" className="fb-note">
+          {rosterFootnote}
         </AppParagraph>
       ) : null}
       {target ? (

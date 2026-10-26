@@ -12,6 +12,7 @@ import {
   trainingRangeNavigation,
   isAllTrainingSports,
   toggleTrainingSports,
+  normalizeTrainingSports,
 } from "./training-view";
 import type { Activity } from "./compete/sports";
 const activity=(id:string,startedAt:string,extra:Partial<Activity>={}):Activity=>({id,startedAt,sport:"running",distanceM:1609.344,movingSec:1800,avgHr:null,source:"strava",verified:true,provenance:"recorded",disposition:"counted",...extra});
@@ -34,6 +35,7 @@ describe("training calendar presentation",()=>{
   expect(isAllTrainingSports(["running","cycling","walking","walking"])).toBe(false);
   expect(toggleTrainingSports(["running","cycling"], "walking")).toEqual(["running","cycling","walking"]);
   expect(toggleTrainingSports(["running"], "running")).toEqual(["running","cycling","walking","strength"]);
+  expect(normalizeTrainingSports(["walking","running","running"])).toEqual(["running","walking"]);
  });
  it("filters by multi-sport selection the same as a single sport or all",()=>{
   const now=new Date("2026-10-21T12:00:00Z"), at="2026-10-20T12:00:00Z";

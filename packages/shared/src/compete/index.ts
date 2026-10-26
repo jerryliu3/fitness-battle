@@ -219,8 +219,11 @@ export { RECORD_DISTANCES, recordAttemptsForActivity, personalRecordHistory, wee
 export {
   crewRelay,
   crewWeekRelay,
+  crewRelayIsEmpty,
+  crewRelayRosterFootnote,
   crewMemberWeekValue,
   filterCrewMembersWithPeriodActivity,
+  type CrewRelayModel,
   type CrewWeekRelayInput,
   RELAY_COLORS,
 } from "./crew-relay";

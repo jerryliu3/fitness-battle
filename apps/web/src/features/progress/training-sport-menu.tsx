@@ -60,7 +60,10 @@ export function TrainingSportMenu({
           <button
             type="button"
             className="training-sport-menu-all"
-            onClick={() => onChange(defaultTrainingSports())}
+            onClick={() => {
+              onChange(defaultTrainingSports());
+              setOpen(false);
+            }}
           >
             All sports
           </button>

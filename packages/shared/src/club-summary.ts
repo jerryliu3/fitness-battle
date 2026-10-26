@@ -120,6 +120,17 @@ export interface ClubAchievement {
   earned: boolean;
   fraction: number;
 }
+
+export function achievementProgressPercent(fraction: number): number {
+  return Math.round(Math.max(0, Math.min(1, fraction)) * 100);
+}
+
+export function achievementAccessibilityLabel(row: ClubAchievement): string {
+  const unit =
+    row.category === "sessions" ? "sessions" : "Open effort score";
+  const status = row.earned ? "Earned" : "In progress";
+  return `${row.title}. ${row.current} of ${row.target} ${unit}. ${status}`;
+}
 /** Read-only milestones from available counted activity and the primary sport's Open rating. */
 export function clubAchievements(
   state: CompeteState,

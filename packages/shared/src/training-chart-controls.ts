@@ -1,4 +1,4 @@
-import type { TrainingRange } from "./training-view";
+import type { TrainingRange } from "./training-types";
 
 export const TRAINING_CHART_RANGE_OPTIONS: readonly {
   value: TrainingRange;

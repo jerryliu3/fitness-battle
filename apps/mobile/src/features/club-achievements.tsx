@@ -3,12 +3,14 @@ import { useRouter } from "expo-router";
 import { Platform, Pressable, View } from "react-native";
 import Svg, { Defs, LinearGradient, Path, Stop } from "react-native-svg";
 import {
+  achievementAccessibilityLabel,
   clubAchievements,
   featuredClubAchievements,
   type ClubAchievement,
   type CompeteState,
 } from "@fitness-battle/shared";
 import { achievementTileStyle } from "./achievements-catalog";
+import { AchievementMeter } from "./achievement-meter";
 import { SHELL_COLORS as c } from "../theme";
 
 function Badge({ item }: { item: ClubAchievement }) {
@@ -42,7 +44,7 @@ export function Achievements({ state }: { state: CompeteState }) {
           <Pressable
             key={row.id}
             accessibilityRole="button"
-            accessibilityLabel={`${row.title}. ${row.target} ${row.category === "sessions" ? "sessions" : "Open effort score"}. ${row.earned ? "Earned" : "In progress"}`}
+            accessibilityLabel={achievementAccessibilityLabel(row)}
             onPress={() => router.push(`/progress-achievements?milestone=${row.id}`)}
             style={achievementTileStyle.tile}
           >
@@ -50,31 +52,7 @@ export function Achievements({ state }: { state: CompeteState }) {
             <AppText role="caption" secondary style={{ textAlign: "center" }}>
               {row.title}
             </AppText>
-            <View
-              accessible
-              accessibilityRole="progressbar"
-              accessibilityLabel={`${row.current} of ${row.target}`}
-              accessibilityValue={{
-                min: 0,
-                max: row.target,
-                now: Math.min(row.current, row.target),
-              }}
-              style={{
-                width: "100%",
-                height: 4,
-                borderRadius: 999,
-                backgroundColor: c.soft,
-                overflow: "hidden",
-              }}
-            >
-              <View
-                style={{
-                  height: 4,
-                  width: `${Math.round(row.fraction * 100)}%`,
-                  backgroundColor: row.earned ? c.fieldTeal : c.tennis,
-                }}
-              />
-            </View>
+            <AchievementMeter row={row} />
             <AppText role="label" style={{ textAlign: "center" }}>
               {row.current.toLocaleString()} / {row.target.toLocaleString()}
             </AppText>
