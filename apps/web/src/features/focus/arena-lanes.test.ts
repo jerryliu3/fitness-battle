@@ -32,7 +32,7 @@ afterEach(async () => {
 async function mount(overrides = {}) {
   await act(async () => {
     renderer = create(createElement(ArenaLanes, { ...props, ...overrides }), {
-      createNodeMock: () => ({ clientWidth: 390, clientHeight: 540, scrollLeft: 0 }),
+      createNodeMock: () => ({ clientWidth: 390, clientHeight: 540, scrollLeft: 0, scrollTo() {}, addEventListener() {}, removeEventListener() {}, getBoundingClientRect: () => ({ top: 0, left: 0, height: 540 }) }),
     });
   });
 }

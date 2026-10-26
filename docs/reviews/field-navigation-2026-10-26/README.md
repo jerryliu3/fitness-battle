@@ -61,7 +61,20 @@ primary documentation:
 The previous checkpoint's screenshots and scene benchmarks are intentionally
 excluded: main already changed its visual design and renderer performance, so
 those results would not describe this PR accurately. Automated checks below
-are rerun against the integrated branch. Physical iPhone testing remains open.
+were rerun against the integrated branch based on `cd0fbd6d`:
+
+- Workspace `pnpm typecheck`, `pnpm lint:ui`, web production build and iOS Hermes
+  bundle export pass.
+- 43 focused native/web/shared geometry and interaction checks pass, including
+  main's idle-clock, scenery reuse and immediate replay-marker regressions.
+- Broad suites: shared 439 pass / 2 fail, native 156 pass / 1 fail, web 330 pass /
+  1 fail / 5 skipped. All four failures concern the existing multi-pass debug
+  fixture or competition-moment expectation. The two shared failures reproduce
+  against an isolated archive of unchanged origin/main; the native/web failures
+  assert the same fixture produces at least two overtakes. No scoring or debug
+  fixture code is changed here.
+- Physical iPhone gesture latency and frame rate remain unverified. An iOS
+  bundle export is not a signed-device build or hardware walkthrough.
 
 ## Test on a physical iPhone before merging
 
@@ -76,6 +89,7 @@ EXPO_PUBLIC_API_URL=https://fitness-battle-one.vercel.app pnpm --filter @fitness
 Use the project's existing private mobile environment for the Supabase account
 configuration. The API URL must be reachable from the phone; use the deployed
 URL above or your intended environment. Public values are embedded when built.
+See [Expo’s local build guide](https://docs.expo.dev/guides/local-app-development/).
 Connect and trust the iPhone, enable Developer Mode, and select the device when
 prompted. Xcode and the project's signing team/provisioning are required. This
 build contains native modules, so use the installed app rather than Expo Go.

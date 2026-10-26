@@ -105,7 +105,7 @@ export function ArenaLanes({
   const course = useMemo(() => fieldCourse(size.width, size.height, ordered.length, effectiveView, unit, appearance), [size.width, size.height, ordered.length, effectiveView.center, effectiveView.span, unit, appearance]);
   const firstVisible = Math.max(0, Math.floor((visibleScroll - course.left) / course.laneWidth) - 2);
   const lastVisible = Math.min(ordered.length - 1, Math.ceil((visibleScroll + size.width - course.left) / course.laneWidth) + 2);
-  const groundPaint = useMemo(() => fieldCourseScene(course, appearance, ordered, unit, prefix, standings ? undefined : { first: firstVisible, last: lastVisible }).map(drawFieldNode), [course, appearance, lanes, overtakeFrame, unit, prefix, firstVisible, lastVisible, standings]);
+  const groundPaint = useMemo(() => fieldCourseScene(course, appearance, ordered, unit, prefix, standings ? undefined : { first: firstVisible, last: lastVisible }).map(drawFieldNode), [course, appearance, unit, prefix, firstVisible, lastVisible, standings]);
   const width = standings ? size.width : course.width;
   const height = standings ? Math.max(160, ordered.length * 76 + 24) : course.height;
   const laneWidth = course.laneWidth, plotHeight = course.length;

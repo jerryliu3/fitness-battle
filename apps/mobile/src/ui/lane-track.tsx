@@ -179,7 +179,7 @@ function LaneTrackContent({
   const live = ordered.map(l => ({ ...l, value: animating ? overtakeFrame?.laneValues[l.id] ?? l.values[index] ?? 0 : l.values[index] ?? 0, initials: initialsFromName(l.name) }));
   const firstVisible = Math.max(0, Math.floor((visibleScroll - course.left) / lw) - 2);
   const lastVisible = Math.min(ordered.length - 1, Math.ceil((visibleScroll + width - course.left) / lw) + 2);
-  const groundPaint = useMemo(() => fieldCourseScene(course, appearance, live, unit, prefix, { first: firstVisible, last: lastVisible }).map(drawFieldNode), [course, appearance, lanes, index, overtakeFrame, unit, prefix, firstVisible, lastVisible]);
+  const groundPaint = useMemo(() => fieldCourseScene(course, appearance, live, unit, prefix, { first: firstVisible, last: lastVisible }).map(drawFieldNode), [course, appearance, unit, prefix, firstVisible, lastVisible]);
   const bounds = arenaWindow(v.center, v.span);
   const maxTailY = Math.min(height, bounds.min <= 0 && bounds.max >= 0 ? course.along(0) + 4 : height);
   const localAnchor = useRef<LaneAnchor | null>(null);
