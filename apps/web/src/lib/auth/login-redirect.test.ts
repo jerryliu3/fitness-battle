@@ -34,7 +34,10 @@ describe("login-redirect", () => {
       expect(resolveSafePostLoginPath("/design/worlds?concept=flip")).toBe(
         "/design/worlds?concept=flip",
       );
-      expect(resolveSafePostLoginPath("/account/delete")).toBe("/account/delete");
+      expect(resolveSafePostLoginPath("/support")).toBe("/support");
+      expect(resolveSafePostLoginPath("/support#delete-account")).toBe(
+        "/support#delete-account",
+      );
     });
 
     it("rejects open redirect attempts and falls back to /app/today", () => {

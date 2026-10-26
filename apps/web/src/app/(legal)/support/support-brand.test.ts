@@ -11,7 +11,7 @@ const pagePath = join(
 describe("support page", () => {
   it("links account deletion and support email", () => {
     const source = readFileSync(pagePath, "utf8");
-    expect(source).toMatch(/\/account\/delete/);
-    expect(source).toMatch(/OVERTAEK_SUPPORT_EMAIL/);
+    expect(source).toMatch(/delete-account/);
+    expect(source).toMatch(/support@overtaek\.xyz/);
   });
 });

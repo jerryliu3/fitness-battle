@@ -190,7 +190,7 @@ export default function TermsOfServicePage() {
       <p>
         Questions about these Terms: see our{" "}
         <Link href="/support">Support</Link> page or email{" "}
-        <a href="mailto:support@overtaek.com">support@overtaek.com</a>
+        <a href="mailto:support@overtaek.xyz">support@overtaek.xyz</a>
         . You can also reach us through the{" "}
         <a
           href="https://github.com/jerryliu3/fitness-battle"

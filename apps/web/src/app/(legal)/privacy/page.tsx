@@ -1,6 +1,5 @@
 
 import { AppParagraph, AppHeading } from "@/ui/section";
-import { OVERTAEK_SUPPORT_EMAIL } from "@fitness-battle/shared";
 import type { Metadata } from "next";
 import Link from "next/link";
 
@@ -11,7 +10,8 @@ export const metadata: Metadata = {
 };
 
 const UPDATED = "October 26, 2026";
-const supportMailto = `mailto:${OVERTAEK_SUPPORT_EMAIL}`;
+const SUPPORT_EMAIL = "support@overtaek.xyz";
+const supportMailto = `mailto:${SUPPORT_EMAIL}`;
 
 export default function PrivacyPolicyPage() {
   return (
@@ -216,14 +216,14 @@ export default function PrivacyPolicyPage() {
         <li>Request access, correction, export, or deletion of your data</li>
         <li>
           Delete your account in the app (Athlete → Account) or on the web at{" "}
-          <Link href="/account/delete">/account/delete</Link>
+          <Link href="/support#delete-account">Support → Account deletion</Link>
         </li>
       </ul>
       <AppParagraph typographyRole="body">
         To request a copy or export of your data, correct inaccurate stored
         information, or delete imported activities and associated personal
         progress records, email{" "}
-        <a href={supportMailto}>{OVERTAEK_SUPPORT_EMAIL}</a>
+        <a href={supportMailto}>{SUPPORT_EMAIL}</a>
         {" "}from your account email address or visit our{" "}
         <Link href="/support">Support</Link> page. We verify account ownership
         before fulfilling requests. Account deletion permanently removes your
@@ -256,7 +256,7 @@ export default function PrivacyPolicyPage() {
       <AppHeading level={2} role="heading">13. Contact</AppHeading>
       <AppParagraph typographyRole="body">
         Privacy and data requests:{" "}
-        <a href={supportMailto}>{OVERTAEK_SUPPORT_EMAIL}</a>. General help:{" "}
+        <a href={supportMailto}>{SUPPORT_EMAIL}</a>. General help:{" "}
         <Link href="/support">Support</Link>.
       </AppParagraph>
 

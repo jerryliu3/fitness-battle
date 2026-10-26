@@ -15,6 +15,6 @@ describe("privacy policy branding", () => {
     expect(source).toMatch(/overtaek/);
     expect(source).toMatch(/Apple HealthKit/);
     expect(source).toMatch(/Mapbox/);
-    expect(source).toMatch(/OVERTAEK_SUPPORT_EMAIL/);
+    expect(source).toMatch(/support@overtaek\.xyz/);
   });
 });

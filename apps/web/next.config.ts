@@ -18,6 +18,11 @@ const nextConfig: NextConfig = {
         destination: "/login",
         permanent: true,
       },
+      {
+        source: "/account/delete",
+        destination: "/support#delete-account",
+        permanent: false,
+      },
     ];
   },
 };

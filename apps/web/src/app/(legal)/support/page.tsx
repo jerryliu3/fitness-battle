@@ -1,7 +1,7 @@
 import { AppHeading, AppParagraph } from "@/ui/section";
-import { OVERTAEK_SUPPORT_EMAIL } from "@fitness-battle/shared";
 import type { Metadata } from "next";
 import Link from "next/link";
+import { DeleteAccountSection } from "./delete-account-section";
 
 export const metadata: Metadata = {
   title: "Support · overtaek",
@@ -9,8 +9,10 @@ export const metadata: Metadata = {
     "Contact Overtaek support, get help with your account, and request account or data deletion.",
 };
 
+const SUPPORT_EMAIL = "support@overtaek.xyz";
+
 export default function SupportPage() {
-  const mailto = `mailto:${OVERTAEK_SUPPORT_EMAIL}`;
+  const mailto = `mailto:${SUPPORT_EMAIL}`;
 
   return (
     <article className="fb-legal-doc">
@@ -28,29 +30,29 @@ export default function SupportPage() {
       <AppHeading level={2} role="heading">Contact</AppHeading>
       <AppParagraph typographyRole="body">
         Email{" "}
-        <a href={mailto}>{OVERTAEK_SUPPORT_EMAIL}</a> from the address tied to
-        your Overtaek account when the request involves your data. We usually
-        reply within a few business days.
+        <a href={mailto}>{SUPPORT_EMAIL}</a> from the address tied to your
+        Overtaek account when the request involves your data. We usually reply
+        within a few business days.
       </AppParagraph>
 
-      <AppHeading level={2} role="heading">Account & data deletion</AppHeading>
+      <AppHeading level={2} role="heading" id="delete-account">
+        Account & data deletion
+      </AppHeading>
       <AppParagraph typographyRole="body">
         You can permanently delete your Overtaek account and the personal data we
-        control without reinstalling the mobile app:
+        control without reinstalling the mobile app.
       </AppParagraph>
       <ul>
         <li>
-          <strong>In the app:</strong> Athlete → Account → Delete account (web and
-          mobile).
+          <strong>In the app:</strong> Athlete → Account → Delete account (web
+          and mobile).
         </li>
         <li>
-          <strong>On the web:</strong>{" "}
-          <Link href="/account/delete">Delete your account</Link> (sign in
-          required).
+          <strong>On the web:</strong> use the form below while signed in.
         </li>
         <li>
           <strong>By email:</strong> send a deletion request to{" "}
-          <a href={mailto}>{OVERTAEK_SUPPORT_EMAIL}</a> from your account email.
+          <a href={mailto}>{SUPPORT_EMAIL}</a> from your account email.
         </li>
       </ul>
       <AppParagraph typographyRole="body">
@@ -59,6 +61,7 @@ export default function SupportPage() {
         security, legal, or abuse-prevention reasons, as described in our{" "}
         <Link href="/privacy">Privacy Policy</Link>.
       </AppParagraph>
+      <DeleteAccountSection />
 
       <AppHeading level={2} role="heading">Common topics</AppHeading>
       <ul>

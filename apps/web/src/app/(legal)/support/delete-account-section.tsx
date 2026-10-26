@@ -2,13 +2,14 @@
 
 import { useAuth } from "@/components/auth-context";
 import { buildLoginHref } from "@/lib/auth/login-redirect";
-import { AppHeading, AppParagraph } from "@/ui/section";
-import { OVERTAEK_SUPPORT_EMAIL } from "@fitness-battle/shared";
+import { AppParagraph } from "@/ui/section";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 
-export function DeleteAccountClient() {
+const SUPPORT_EMAIL = "support@overtaek.xyz";
+
+export function DeleteAccountSection() {
   const { user, loading, signOut } = useAuth();
   const router = useRouter();
   const [confirm, setConfirm] = useState("");
@@ -52,21 +53,21 @@ export function DeleteAccountClient() {
     return (
       <>
         <AppParagraph typographyRole="body">
-          Sign in to delete your Overtaek account from the web. This permanently
-          removes your auth record and associated data we control.
+          Sign in below to delete your account from the web without reinstalling
+          the mobile app.
         </AppParagraph>
         <p className="fb-marketing-actions">
-          <Link href={buildLoginHref("/account/delete")} className="fb-btn">
-            Sign in to continue
+          <Link
+            href={buildLoginHref("/support#delete-account")}
+            className="fb-btn"
+          >
+            Sign in to delete account
           </Link>
         </p>
         <AppParagraph typographyRole="caption" className="fb-note">
-          Prefer email? Write{" "}
-          <a href={`mailto:${OVERTAEK_SUPPORT_EMAIL}`}>
-            {OVERTAEK_SUPPORT_EMAIL}
-          </a>{" "}
-          from your account address. See also{" "}
-          <Link href="/support">Support</Link>.
+          Or email{" "}
+          <a href={`mailto:${SUPPORT_EMAIL}`}>{SUPPORT_EMAIL}</a> from your
+          account address.
         </AppParagraph>
       </>
     );
@@ -75,10 +76,7 @@ export function DeleteAccountClient() {
   return (
     <>
       <AppParagraph typographyRole="body">
-        Signed in as <strong>{user.email}</strong>. This action cannot be undone.
-        Your standings, crews, synced activities, and profile data tied to this
-        account will be removed from our systems, subject to the limited retention
-        described in our <Link href="/privacy">Privacy Policy</Link>.
+        Signed in as <strong>{user.email}</strong>. This cannot be undone.
       </AppParagraph>
       <label className="fb-field">
         Type {phrase} to confirm
@@ -104,9 +102,6 @@ export function DeleteAccountClient() {
         >
           {busy ? "Deleting…" : "Permanently delete account"}
         </button>
-        <Link href="/support" className="fb-btn-line">
-          Cancel
-        </Link>
       </div>
     </>
   );
