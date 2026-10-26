@@ -49,3 +49,12 @@ Crew previous-week distance is provided by the additive membership-authorized `c
 Sync confirmation is a presentation gate, not another ingestion or scoring path. Preserve durable server ingest and apply through the existing reducer. Changed eligible non-future synced activities are held in a memory-only, account-scoped full-screen receipt, including newly imported older dates. Confirm applies selected activities exactly once before event reveal; deselected activities are marked excluded before the scoring reducer runs. Existing disposition is updated through the existing action before merging an updated activity. Previously earned high-water awards remain durable. Close/skip or day rollover applies quietly. Refresh must not replace a pending receipt. Samples are labeled previews and never receive competition credit.
 
 Weekly activity streaks are presentation derived from counted non-sample, non-future activity with positive volume in any sport. Weeks use the existing Eastern Monday–Monday bounds. Until the current week is active, show the immediately preceding consecutive streak dimmed; a missed complete week breaks it. Manual counted activity qualifies, while a freeze alone does not. Streaks do not change ratings or settlement writes. Authenticated synthetic accounts follow ordinary session and membership authorization; only backend-unconfigured offline previews use local fixture paths.
+
+Account field hydration covers every current sport enrollment, using the existing
+seating RPC for open fields and authorized reads for Crew fields. A preferred
+`crewBoard` remains for Crew consumers; each enrollment also carries its own
+transient `fieldBoard` roster and Open/GPS totals. Standings only use a snapshot
+matching that enrollment's sport, bounds and Crew context. All field snapshots
+are stripped before durable account writes and refreshed with server snapshots,
+including while the athlete has an unsaved draft. Synthetic accounts use the same
+membership path; a missing field is not repaired with a replay fixture fallback.

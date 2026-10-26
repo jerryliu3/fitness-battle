@@ -11,7 +11,7 @@ import { CrewSessions } from "./crew-sessions";
 import { CrewRelay } from "./crew-relay";
 import { Sheet } from "@/ui/sheet";
 import { playCue } from "@/lib/haptics";
-import { competitionTrack, APP_TIMEZONE, competeNow, weeklyPeriodBounds, dayKey, type SportId, countsOnTrack, distanceUnitLabel, formatDistanceM, formatNoticeUnits } from "@fitness-battle/shared";
+import { competitionTrack, APP_TIMEZONE, competeNow, weeklyPeriodBounds, dayKey, type SportId, countsOnTrack, distanceUnitLabel, formatDistanceM, formatNoticeUnits, crewMemberWeekValue } from "@fitness-battle/shared";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 interface Crew {
@@ -291,7 +291,8 @@ export function CrewPanel() {
   const resting = offlineMode ? demoRest[restKey] === weekKey : members.find(m => m.user_id === user?.id)?.rest_week === weekKey;
   const unitLabel = distanceUnitLabel(state?.units);
   const sessionsMetric = crew?.format === "personal_target" || crew?.sport === "strength";
-  const memberTotal = (id: string) => entries.filter(e => e.user_id === id).reduce((sum, e) => sum + Number(sessionsMetric ? e.session_count ?? 1 : e.distance_m), 0);
+  const memberTotal = (id: string) =>
+    crewMemberWeekValue(entries, id, sessionsMetric);
   const totalM = entries.reduce((t, e) => t + Number(e.distance_m), 0);
   const previousDistanceM = data?.previousProgressAvailable?.[crew.id]
     ? (data.previousProgress??[]).filter(row=>row.crew_id===crew.id && members.some(m=>m.user_id===row.user_id)).reduce((sum,row)=>sum+Number(row.distance_m),0)
@@ -331,14 +332,13 @@ export function CrewPanel() {
             ))}
             <button
               type="button"
-              className="focus-crew-add-tab"
               onClick={() => {
                 setName("");
                 setCode("");
                 setPanel("add");
               }}
             >
-              ＋ Add Crew
+              New crew
             </button>
           </div>
           <section
@@ -412,14 +412,14 @@ export function CrewPanel() {
               <section className="focus-card">
                 <AppParagraph typographyRole="label" className="fb-kicker">Our shared week · {crew.sport}</AppParagraph>
                 {sessionsMetric ? (
-                  <strong>{entries.reduce((total, entry) => total + Number(entry.session_count ?? 1), 0)} sessions</strong>
+                  <AppText role="hero">{entries.reduce((total, entry) => total + Number(entry.session_count ?? 1), 0)} <AppText role="caption" secondary>sessions</AppText></AppText>
                 ) : (
-                  <strong className="focus-goal">
+                  <AppText role="hero" className="focus-goal">
                     {formatDistanceM(totalM, state?.units)}{" "}
-                    <small>
+                    <AppText role="caption" secondary>
                       {`${unitLabel} together`}
-                    </small>
-                  </strong>
+                    </AppText>
+                  </AppText>
                 )}
                 <CrewRelay userId={user?.id} key={crew.id} members={members} entries={entries} sport={crew.sport as SportId} format={crew.format} previousDistanceM={previousDistanceM} targetDistanceM={crew.journey_km*1000} targetSessions={crew.target_sessions} units={state?.units} />
                 <AppParagraph typographyRole="body" className="fb-copy">
@@ -439,9 +439,9 @@ export function CrewPanel() {
                         <div className="fb-row" key={m.user_id}>
                           <span>{i + 1}</span>
                           <b className="fb-grow">{m.display_name}</b><RankBadge score={m.effort_score} />
-                          <span>
+                          <AppText role="value">
                             {sessionsMetric ? `${memberTotal(m.user_id)} sessions` : `${formatDistanceM(memberTotal(m.user_id), state?.units)} ${unitLabel}`}
-                          </span>
+                          </AppText>
                         </div>
                       ))}
                   </Section>
@@ -513,7 +513,7 @@ export function CrewPanel() {
         fullScreen={panel === "members"}
         title={
           panel === "add"
-            ? "Add Crew"
+            ? "New crew"
             : panel === "invite"
               ? "Invite to crew"
               : panel === "members"

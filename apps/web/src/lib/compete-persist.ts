@@ -526,61 +526,51 @@ export async function loadCompeteAccount(
   };
 }
 
-/** Hydrate the active field from the same seating and roster path for crew/solo. */
+/** Seat/read every enrolled sport; keep Crew's preferred board for existing consumers. */
 export async function hydrateFieldBoard(
   db: Db,
   userId: string,
   state: CompeteState,
 ): Promise<CompeteState> {
-  const enrollment =
-    state.enrollments.find(
-      (item) => item.crewId && item.crewId !== "solo" && !item.crewId.startsWith("field:"),
-    ) ??
-    state.enrollments.find((item) => item.sport === state.primary) ??
-    state.enrollments[0];
-  if (!enrollment) {
-    return state.crewBoard ? { ...state, crewBoard: null } : state;
-  }
+  const preferred = state.enrollments.find(isCrewEnrollment) ??
+    state.enrollments.find(item => item.sport === state.primary) ?? state.enrollments[0];
+  if (!preferred) return state.crewBoard ? { ...state, crewBoard: null } : state;
 
-  const isCrew = Boolean(
-    enrollment.crewId &&
-      enrollment.crewId !== "solo" &&
-      !enrollment.crewId.startsWith("field:"),
-  );
-  const pin = isCrew
-    ? await loadCrewWeekFieldPin(db, enrollment.crewId!, enrollment.waveStart)
-    : await seatWeekFieldPin(db, {
-        sport: enrollment.sport,
-        waveStart: enrollment.waveStart,
-        weekEnd: enrollment.weekEnd,
-        capacity: enrollment.capacity,
-        syntheticIds: enrollment.syntheticIds,
-      });
-  if (!pin) return { ...state, crewBoard: null };
-
-  const waveStartIso = new Date(pin.waveStart).toISOString();
-  const weekEndIso = new Date(pin.weekEnd).toISOString();
+  const pins = await Promise.all(state.enrollments.map(async enrollment => {
+    const pin = isCrewEnrollment(enrollment)
+      ? await loadCrewWeekFieldPin(db, enrollment.crewId!, enrollment.waveStart)
+      : await seatWeekFieldPin(db, {
+          sport: enrollment.sport,
+          waveStart: enrollment.waveStart,
+          weekEnd: enrollment.weekEnd,
+          capacity: enrollment.capacity,
+          syntheticIds: enrollment.syntheticIds,
+        });
+    return pin ? { ...pin, waveStart: new Date(pin.waveStart).toISOString(), weekEnd: new Date(pin.weekEnd).toISOString() } : null;
+  }));
 
   return {
     ...state,
-    crewBoard: {
-      ...pin,
-      waveStart: waveStartIso,
-      weekEnd: weekEndIso,
-    },
-    enrollments: state.enrollments.map((item) =>
-      item.sport === enrollment.sport
-        ? {
-            ...item,
-            capacity: pin.capacity,
-            peerIds: pin.memberIds.filter((id) => id !== userId),
-            syntheticIds: pin.syntheticIds,
-            waveStart: waveStartIso,
-            weekEnd: weekEndIso,
-          }
-        : item,
-    ),
+    crewBoard: pins[state.enrollments.indexOf(preferred)] ?? null,
+    enrollments: state.enrollments.map((enrollment, index) => {
+      const pin = pins[index];
+      const { fieldBoard: _previous, ...base } = enrollment;
+      return pin ? {
+        ...base,
+        fieldBoard: pin,
+        crewId: isCrewEnrollment(enrollment) ? pin.crewId : null,
+        capacity: pin.capacity,
+        peerIds: pin.memberIds.filter(id => id !== userId),
+        syntheticIds: pin.syntheticIds,
+        waveStart: pin.waveStart,
+        weekEnd: pin.weekEnd,
+      } : base;
+    }),
   };
+}
+
+function isCrewEnrollment(enrollment: WaveEnrollment): boolean {
+  return Boolean(enrollment.crewId && enrollment.crewId !== "solo" && !enrollment.crewId.startsWith("field:"));
 }
 
 /** Keyset-independent stable pagination retains old records beyond the activity window. */

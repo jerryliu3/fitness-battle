@@ -22,7 +22,7 @@ export function LatestActivity({ state, onOpen }: { state: CompeteState; onOpen:
         <span className={route ? "club-activity-map" : "club-activity-icon club-activity-sport"}>{route ? <RouteStaticPreview coordinates={route} width={128} height={128} padding={16} strokeWidth={3} showMarkers={false} showPlayBadge={false} alt="Activity route" /> : row.ownActivity ? <SportActivityIcon sport={row.sport} /> : <UserAvatar src={row.avatarUrl} name={row.name} size={48} fallback={<SportActivityIcon sport={row.sport} />} />}</span>
         <span><b>{row.ownActivity ? sportById(row.sport).name : `${row.name} · ${sportById(row.sport).name}`} · {clubDuration(row.movingSec)}</b>
           <AppText as="small" role="support" secondary>{row.verified ? "GPS Tracked" : row.source === "manual" ? "Manual activity" : "Activity"}</AppText></span>
-        <span><AppText as="small" role="support" secondary>{new Date(row.startedAt).toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: APP_TIMEZONE })}</AppText><span aria-hidden="true">→</span></span>
+        <span><AppText as="small" role="caption" secondary>{new Date(row.startedAt).toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: APP_TIMEZONE })}</AppText><span aria-hidden="true">→</span></span>
       </button>; })}
     </Section>}
     {crew.error && <AppParagraph typographyRole="caption" role="status" className="fb-note">{crew.error}</AppParagraph>}

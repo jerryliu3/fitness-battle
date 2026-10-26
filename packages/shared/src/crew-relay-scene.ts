@@ -9,8 +9,18 @@ const path = (
 export function crewRelayScene(model: Relay, width: number, prefix: string) {
   const length = Math.max(180, width - 52),
     left = 16;
-  const p = (fraction: number, back = false, bottom = false) =>
-    `${left + fraction * length + (back ? 24 : 0)} ${174 - fraction * 30 + (back ? -46 : 0) + (bottom ? 18 : 0)}`;
+  const point = (fraction: number, back = false, bottom = false) => ({
+    x: left + fraction * length + (back ? 24 : 0),
+    y:
+      174 -
+      fraction * 30 +
+      (back ? -46 : 0) +
+      (bottom ? 18 : 0),
+  });
+  const p = (fraction: number, back = false, bottom = false) => {
+    const { x, y } = point(fraction, back, bottom);
+    return `${x} ${y}`;
+  };
   const top = (a: number, b: number) =>
     `M${p(a)} L${p(b)} L${p(b, true)} L${p(a, true)}Z`;
   const face = (a: number, b: number) =>
@@ -59,48 +69,68 @@ export function crewRelayScene(model: Relay, width: number, prefix: string) {
     }));
   const finish: FieldNode[] = [];
   if (model.finish !== null) {
-    const x = left + model.finish * length,
-      y = 174 - model.finish * 30;
+    const f = model.finish,
+      strip = 0.018,
+      a = Math.max(0, f - strip),
+      b = Math.min(1, f + strip),
+      patternId = `${prefix}-finish`;
     finish.push(
-      path(`M${p(model.finish)} L${p(model.finish, true)}`, "none", {
+      {
+        tag: "defs",
+        attrs: {},
+        children: [
+          {
+            tag: "pattern",
+            attrs: {
+              id: patternId,
+              width: 8,
+              height: 8,
+              patternUnits: "userSpaceOnUse",
+            },
+            children: [
+              {
+                tag: "rect",
+                attrs: { width: 4, height: 4, fill: "#142b3b" },
+              },
+              {
+                tag: "rect",
+                attrs: { x: 4, y: 4, width: 4, height: 4, fill: "#142b3b" },
+              },
+              {
+                tag: "rect",
+                attrs: { x: 4, width: 4, height: 4, fill: "#ffffff" },
+              },
+              {
+                tag: "rect",
+                attrs: { y: 4, width: 4, height: 4, fill: "#ffffff" },
+              },
+            ],
+          },
+        ],
+      },
+      path(face(a, b), `url(#${patternId})`, { opacity: 0.95 }),
+      path(`M${p(f)} L${p(f, false, true)}`, "none", {
         stroke: "#142b3b",
-        strokeWidth: 12,
+        strokeWidth: 2,
+        opacity: 0.85,
       }),
-      path(`M${p(model.finish)} L${p(model.finish, true)}`, "none", {
-        stroke: "#ffffff",
-        strokeWidth: 12,
-        strokeDasharray: "6 6",
-      }),
-      {
-        tag: "line",
-        attrs: {
-          x1: x,
-          y1: y - 2,
-          x2: x,
-          y2: y + 28,
-          stroke: "#142b3b",
-          strokeWidth: 2,
-        },
-      },
-      {
-        tag: "line",
-        attrs: {
-          x1: x + 24,
-          y1: y - 47,
-          x2: x + 24,
-          y2: y - 65,
-          stroke: "#142b3b",
-          strokeWidth: 2,
-        },
-      },
     );
-    for (let i = 0; i < 6; i++)
-      finish.push(
-        path(
-          `M${x + 24 + i * 4} ${y - 65}h4v10h-4Z`,
-          i % 2 ? "#ffffff" : "#142b3b",
-        ),
-      );
+    const { x: bx, y: by } = point(f, true);
+    finish.push(
+      {
+        tag: "line",
+        attrs: {
+          x1: bx,
+          y1: by,
+          x2: bx,
+          y2: by - 18,
+          stroke: "#142b3b",
+          strokeWidth: 2,
+        },
+      },
+      path(`M${bx} ${by - 18}h22v12h-22Z`, "#142b3b"),
+      path(`M${bx + 11} ${by - 18}h11v6h-11Z`, "#ffffff"),
+    );
   }
   const people = model.segments.map((s, i) => {
     const x = left + ((i + 0.5) * length) / Math.max(1, model.segments.length),

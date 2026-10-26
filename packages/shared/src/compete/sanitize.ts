@@ -20,10 +20,10 @@ export function sanitizeCompeteStateForAccount(
   return withAccountEloBaseline(withoutDuels);
 }
 
-/** Drop durable field pin; hydrate from week_fields at load. */
+/** Drop live field snapshots; hydrate them from week_fields at load. */
 export function stripDurableCrewBoard(state: CompeteState): CompeteState {
-  if (state.crewBoard == null) return state;
-  return { ...state, crewBoard: null };
+  if (state.crewBoard == null && !state.enrollments.some(item => item.fieldBoard)) return state;
+  return { ...state, crewBoard: null, enrollments: state.enrollments.map(({ fieldBoard: _fieldBoard, ...item }) => item) };
 }
 
 /**

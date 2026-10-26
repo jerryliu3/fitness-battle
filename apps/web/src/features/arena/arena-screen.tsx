@@ -95,7 +95,7 @@ export function ArenaScreen({ tabActive = true }: { tabActive?: boolean }) {
     <div className="focus-arena">
       <header className="focus-competition-card">
         <div className="focus-competition-info">
-          <SectionHeader title="Competition" subtitle={dateRangeLabel} action={<StatusBadge>{badgeLabel}</StatusBadge>}/>
+          <SectionHeader titleRole="display" title="Competition" subtitle={dateRangeLabel} action={<StatusBadge>{badgeLabel}</StatusBadge>}/>
 
         </div>
       </header>

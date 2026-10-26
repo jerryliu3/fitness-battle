@@ -16,7 +16,7 @@ export function WeekChart({ state, detail = false, ready = true }: { state: Comp
   const reduced = useReducedMotion();
   return <ChartFrame ready={ready}>
     <motion.section initial={detail && !reduced ? { y: 12, opacity: .8 } : false} animate={{ y: 0, opacity: 1 }} transition={{ duration: reduced ? 0 : .3 }} className="home-portfolio" aria-label="This week's progress">
-      <div className="home-portfolio-header"><AppHeading level={2} role="heading">Current week</AppHeading><ActivityActions compact /></div>
+      <div className="home-portfolio-header"><AppHeading level={1} role="display">Current week</AppHeading><ActivityActions compact /></div>
       <div className="home-portfolio-total"><strong>{chart.currTotalHours.toFixed(1)}<span> hrs</span></strong><div><span>{chart.sessionCount} {chart.sessionCount === 1 ? "session" : "sessions"}</span><span className={deltaUp ? "home-portfolio-delta is-up" : "home-portfolio-delta is-down"}>{chart.deltaLabel}</span></div></div>
       <ChartScrubber label="This week's cumulative training hours" points={chart.inspection} width={chart.width} height={chart.height} plotTop={chart.top} plotBottom={chart.bottom} summaryOnSelection>
         <svg viewBox={`0 0 ${chart.width} ${chart.height}`} role="img" aria-label={`${chart.currTotalHours.toFixed(1)} training hours this week; ${chart.prevTotalHours.toFixed(1)} hours last week. Current week ends at today's point.`}>
