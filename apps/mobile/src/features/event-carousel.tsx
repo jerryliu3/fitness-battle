@@ -5,6 +5,7 @@ import {
   Pressable,
   ScrollView,
   StyleSheet,
+  useWindowDimensions,
   View,
   type ScrollViewInstance,
 } from "react-native";
@@ -28,7 +29,8 @@ export function EventCarousel({
   const scroller = useRef<ScrollViewInstance>(null);
   const fromScroll = useRef(false);
   const indexRef = useRef(0);
-  const [pageWidth, setPageWidth] = useState(0);
+  const windowWidth = useWindowDimensions().width;
+  const [pageWidth, setPageWidth] = useState(windowWidth);
   const index = Math.max(0, events.findIndex((event) => event.id === value));
   indexRef.current = index;
 
@@ -71,6 +73,7 @@ export function EventCarousel({
             <Pressable
               key={event.id}
               accessibilityRole="tab"
+              accessibilityLabel={event.label}
               accessibilityState={{ selected: event.id === value }}
               onPress={() => onChange(event.id)}
               style={[s.chip, event.id === value && s.chipActive]}
@@ -97,37 +100,35 @@ export function EventCarousel({
           if (next > 0 && next !== pageWidth) setPageWidth(next);
         }}
       >
-        {pageWidth > 0 ? (
-          <ScrollView
-            ref={scroller}
-            horizontal
-            pagingEnabled
-            nestedScrollEnabled
-            showsHorizontalScrollIndicator={false}
-            accessibilityLabel="Swipe between registered events"
-            onMomentumScrollEnd={(e) => commitPage(e.nativeEvent.contentOffset.x)}
-            onScrollEndDrag={(e) => commitPage(e.nativeEvent.contentOffset.x)}
-          >
-            {events.map((event, i) => (
-              <View
-                key={event.id}
-                style={[s.page, { width: pageWidth }]}
-                accessibilityRole="none"
-                importantForAccessibility={i === index ? "yes" : "no-hide-descendants"}
-                accessibilityLabel={`${event.label}, ${i + 1} of ${events.length}`}
-              >
-                {i === index ? (
-                  <View style={s.pageBody}>{children}</View>
-                ) : (
-                  <View style={s.pageBody}>
-                    <AppText role="heading">{event.label}</AppText>
-                    <AppText role="body" secondary>Swipe to open this event</AppText>
-                  </View>
-                )}
-              </View>
-            ))}
-          </ScrollView>
-        ) : null}
+        <ScrollView
+          ref={scroller}
+          horizontal
+          pagingEnabled
+          nestedScrollEnabled
+          showsHorizontalScrollIndicator={false}
+          accessibilityLabel="Swipe between registered events"
+          onMomentumScrollEnd={(e) => commitPage(e.nativeEvent.contentOffset.x)}
+          onScrollEndDrag={(e) => commitPage(e.nativeEvent.contentOffset.x)}
+        >
+          {events.map((event, i) => (
+            <View
+              key={event.id}
+              style={[s.page, { width: pageWidth }]}
+              accessibilityRole="none"
+              importantForAccessibility={i === index ? "yes" : "no-hide-descendants"}
+              accessibilityLabel={`${event.label}, ${i + 1} of ${events.length}`}
+            >
+              {i === index ? (
+                <View style={s.pageBody}>{children}</View>
+              ) : (
+                <View style={s.pageBody}>
+                  <AppText role="heading">{event.label}</AppText>
+                  <AppText role="body" secondary>Swipe to open this event</AppText>
+                </View>
+              )}
+            </View>
+          ))}
+        </ScrollView>
       </View>
     </View>
   );

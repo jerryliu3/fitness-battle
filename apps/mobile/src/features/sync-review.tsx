@@ -86,8 +86,10 @@ function Review({ receipt, state, onComplete, resetScroll }: { resetScroll: () =
     </View>
     {!receipt.preview && excluded.length > 0 && <Text style={textStyle("caption")}>Deselected activities stay saved, excluded from competition.</Text>}
     <View style={{ marginTop: "auto", paddingTop: 16, gap: 12 }}>
-      <View onLayout={e => setWidth(e.nativeEvent.layout.width)} style={{ height: 66, borderRadius: 36, backgroundColor: c.ink, justifyContent: "center", position: "relative" }}>
-        <Text style={[textStyle("label"), { color: "white", textAlign: "center", paddingLeft: 46 }]}>{receipt.preview ? "Swipe to preview" : selected.length ? "Swipe to lock it in" : "Swipe to save as excluded"}</Text>
+      <View onLayout={e => setWidth(e.nativeEvent.layout.width)} style={{ height: 66, borderRadius: 36, backgroundColor: c.ink, justifyContent: "center", position: "relative", overflow: "hidden" }}>
+        <View pointerEvents="none" style={{ position: "absolute", left: progress * width, right: 0, top: 0, bottom: 0, overflow: "hidden", justifyContent: "center" }}>
+          <Text style={[textStyle("label"), { color: "white", textAlign: "center", width, marginLeft: -progress * width }]}>{receipt.preview ? "Swipe to preview" : selected.length ? "Swipe to lock it in" : "Swipe to save as excluded"}</Text>
+        </View>
         <View accessible accessibilityRole="adjustable" accessibilityLabel="Swipe to confirm synced activities" accessibilityState={{ busy: saving }} accessibilityValue={{ min: 0, max: 100, now: Math.round(progress * 100) }} accessibilityActions={[{ name: "increment", label: "Confirm activities" }]} onAccessibilityAction={finish} style={StyleSheet.absoluteFill}
           onStartShouldSetResponder={e => !saving && e.nativeEvent.locationX <= 64}
           onMoveShouldSetResponder={() => !saving && dragging.current}

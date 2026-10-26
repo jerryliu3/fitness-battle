@@ -6,6 +6,7 @@ vi.mock("react-native", () => ({
   Text: "Text",
   Pressable: "Pressable",
   ScrollView: "ScrollView",
+  useWindowDimensions: () => ({ width: 390, height: 844, scale: 2, fontScale: 1 }),
   StyleSheet: { create: (x: unknown) => x },
 }));
 vi.mock("../ui/section", () => ({
