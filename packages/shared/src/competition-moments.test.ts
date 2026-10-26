@@ -1,7 +1,7 @@
 import { expect, it } from "vitest";
 import { applyDebugEvent } from "./compete/debug-events";
 import { freshState } from "./compete/engine";
-import { competitionMoments, competitionMomentSnapshots, momentStorageKey, photoFinishFrame, selectedSyncActions } from "./competition-moments";
+import { competitionMoments, competitionMomentScene, competitionMomentSnapshots, momentStorageKey, photoFinishFrame, selectedSyncActions } from "./competition-moments";
 const state = freshState(new Date("2026-10-24T18:00:00Z"));
 function fixture(event: "overtake" | "overtaken") {
   const result = applyDebugEvent(state, event, "a");
@@ -51,4 +51,19 @@ it("queues rival movement and own passes separately when they arrive together", 
   expect(moments.map(m => m.plan.hasOvertake)).toEqual([false, true]);
   expect(moments[0].plan.rankAfter).toBe(moments[1].plan.rankBefore);
   expect(photoFinishFrame(moments[1], 1).rank).toBe(moments[1].plan.rankAfter);
+});
+
+it("replays every captured lane, follows real totals and preserves stable lane identity", () => {
+  for (const direction of ["overtake", "overtaken"] as const) {
+    const moment = fixture(direction).moments[0];
+    for (const progress of [0, .3, .5, .8, 1]) {
+      const scene = competitionMomentScene(moment, progress);
+      expect(scene.lanes.map(l => l.id)).toEqual(moment.lanes.map(l => l.id));
+      expect(scene.view.center).toBe(scene.youValue);
+      expect(scene.view.span).toBeGreaterThan(0);
+      for (const lane of scene.lanes) expect(lane.value).toBe(scene.values[lane.id] ?? moment.lanes.find(l => l.id === lane.id)!.value);
+      expect(scene.standings.some(l => l.you)).toBe(true);
+      expect(scene.standings.find(l => l.you)?.place).toBe(scene.rank);
+    }
+  }
 });

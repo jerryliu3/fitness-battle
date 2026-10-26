@@ -35,18 +35,24 @@ describe("middleware", () => {
   });
 
   describe("legacy tab redirects", () => {
-    it("redirects / to /today", async () => {
+    it("does not redirect the marketing home page", async () => {
       const req = new NextRequest("http://localhost:3000/");
       const res = await middleware(req);
-      expect(res.status).toBe(307);
-      expect(new URL(res.headers.get("location")!).pathname).toBe("/today");
+      expect(res.status).toBe(200);
     });
 
-    it("redirects /board to /arena", async () => {
+    it("redirects /today to /app/today", async () => {
+      const req = new NextRequest("http://localhost:3000/today");
+      const res = await middleware(req);
+      expect(res.status).toBe(307);
+      expect(new URL(res.headers.get("location")!).pathname).toBe("/app/today");
+    });
+
+    it("redirects /board to /app/arena", async () => {
       const req = new NextRequest("http://localhost:3000/board");
       const res = await middleware(req);
       expect(res.status).toBe(307);
-      expect(new URL(res.headers.get("location")!).pathname).toBe("/arena");
+      expect(new URL(res.headers.get("location")!).pathname).toBe("/app/arena");
     });
   });
 
@@ -117,7 +123,7 @@ describe("middleware", () => {
       const res = await middleware(req);
       expect(res.status).toBe(307);
       const location = new URL(res.headers.get("location")!);
-      expect(location.pathname).toBe("/today");
+      expect(location.pathname).toBe("/app/today");
       expect(location.searchParams.get("denied")).toBe("design");
     });
 

@@ -10,7 +10,7 @@ function collect(directory, extension) {
 const roots = [
   "apps/mobile/app", "apps/mobile/src/features", "apps/mobile/src/ui",
   "apps/web/src/features", "apps/web/src/components", "apps/web/src/ui",
-  "apps/web/src/app/(play)", "apps/web/src/app/(auth)", "apps/web/src/app/(legal)",
+  "apps/web/src/app/app", "apps/web/src/app/(auth)", "apps/web/src/app/(legal)",
 ];
 // Artwork and historical design studies are not product typography.
 export const files = roots.flatMap(root => collect(root, ".tsx")).filter(file =>

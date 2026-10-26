@@ -32,3 +32,24 @@ Browser checks exercised the real header menu at desktop and 390×844: sync revi
 This local environment displayed the existing route-outline fallback; live Mapbox tiles and terrain flyover playback were not visually verified. Their existing #316 components/bridge are reused. Native responder, selection, presentation, queue, application, account isolation and late-refresh behavior are covered by component/provider tests; no new installed native binary or physical-device verification is claimed. No database migration or live tracker sync was performed.
 
 Validation completed: `pnpm typecheck`, `pnpm test` (all workspace suites; five existing web skips), targeted final provider/receipt/movement regressions, `pnpm build:web`, and `expo export --platform ios` (Hermes bundle). The mixed-direction test additionally verifies rival movement then own passes preserve the intermediate/final place. Browser map fallback and native-device limitations above still apply.
+
+## October 25 field replay refinement
+
+The automatic movement step uses `ArenaLanes` on web and `LaneTrack` on native,
+matching Compete's 2D grounds and capsule renderer. `competitionMomentScene`
+projects the existing photo-finish timeline onto every captured lane and derives
+a nearby standings overlay. The real saved field appearance is loaded per account
+and sport. The field fills the modal; only the overlays use safe-area spacing.
+There are no interactive field controls. The receipt and scoring gate are unchanged.
+
+Verification for this refinement: workspace typecheck; shared competition-moment
+coverage (including complete-roster frames and both pass directions); web movement,
+receipt and queue tests; native movement, receipt and account-provider tests; and
+web production build. Browser checks at desktop and 390×844 exercised combo,
+passed-by, final confirmation and sync-review confirmation into the full field.
+Debug data and browser sizing were restored. No installed native-device check or
+live sync was performed. After moving this change onto current main (which contains
+the replay test-mock fixes), the full workspace suite passes: 884 tests passed,
+five existing web skips. Review also centered the native footer on wide screens,
+aligned overlay typography with the current shared recipes, and added web/native
+Skip-to-final tests that require a separate, single confirmation.

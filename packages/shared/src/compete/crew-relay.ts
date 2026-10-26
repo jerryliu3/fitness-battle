@@ -6,6 +6,7 @@ export const RELAY_COLORS = [
   "#a5b7c9",
   "#c2b6cc",
 ];
+
 export function crewRelay(
   members: readonly {
     id: string;
@@ -46,6 +47,74 @@ export function crewRelay(
       };
     }),
   };
+}
+
+export type CrewRelayModel = ReturnType<typeof crewRelay>;
+
+export function crewRelayIsEmpty(model: CrewRelayModel): boolean {
+  return model.segments.length === 0;
+}
+
+export function crewRelayRosterFootnote(
+  sessions: boolean,
+  inactiveCount: number,
+  rosterSize: number,
+): string | null {
+  if (!sessions || inactiveCount <= 0 || rosterSize <= 0) return null;
+  const noun = inactiveCount === 1 ? "member hasn’t" : "members haven’t";
+  return `Target counts all ${rosterSize} members; ${inactiveCount} ${noun} logged yet.`;
+}
+
+export function crewEntryTotals(entries: CrewWeekRelayInput["entries"]) {
+  const byUser = new Map<string, { distance: number; sessions: number }>();
+  for (const entry of entries) {
+    const row = byUser.get(entry.user_id) ?? { distance: 0, sessions: 0 };
+    row.distance += Number(entry.distance_m);
+    row.sessions += Number(entry.session_count ?? 1);
+    byUser.set(entry.user_id, row);
+  }
+  return byUser;
+}
+
+export function crewMemberWeekValue(
+  entries: CrewWeekRelayInput["entries"],
+  userId: string,
+  sessions: boolean,
+): number {
+  const row = crewEntryTotals(entries).get(userId);
+  if (!row) return 0;
+  return sessions ? row.sessions : row.distance;
+}
+
+export function filterCrewMembersWithPeriodActivity<
+  T extends { user_id: string },
+>(
+  members: readonly T[],
+  entries: CrewWeekRelayInput["entries"],
+  sessions: boolean,
+): T[] {
+  const totals = crewEntryTotals(entries);
+  return members.filter((m) => {
+    const row = totals.get(m.user_id);
+    if (!row) return false;
+    return (sessions ? row.sessions : row.distance) > 0;
+  });
+}
+
+function crewMemberContributions(
+  input: CrewWeekRelayInput,
+  sessions: boolean,
+) {
+  const byUser = crewEntryTotals(input.entries);
+  return input.members.map((m) => {
+    const totals = byUser.get(m.user_id) ?? { distance: 0, sessions: 0 };
+    return {
+      id: m.user_id,
+      name: m.display_name,
+      value: sessions ? totals.sessions : totals.distance,
+      sessions: totals.sessions,
+    };
+  });
 }
 
 export interface CrewWeekRelayInput {
@@ -89,27 +158,19 @@ export function crewWeekRelay(input: CrewWeekRelayInput) {
       : baseline
         ? "baseline"
         : "unknown";
-  const model = crewRelay(
-    input.members.map((m) => {
-      const rows = input.entries.filter((e) => e.user_id === m.user_id);
-      return {
-        id: m.user_id,
-        name: m.display_name,
-        value: rows.reduce(
-          (n, e) =>
-            n + Number(sessions ? (e.session_count ?? 1) : e.distance_m),
-          0,
-        ),
-        sessions: rows.reduce((n, e) => n + Number(e.session_count ?? 1), 0),
-      };
-    }),
-    target,
-  );
+  const contributions = crewMemberContributions(input, sessions);
+  const active = contributions.filter((m) => m.value > 0);
+  const model = crewRelay(active, target);
+  const rosterSize = input.members.length;
+  const inactiveCount = Math.max(0, rosterSize - active.length);
   return {
     model,
     sessions,
     kind,
     target: model.target,
+    rosterSize,
+    activeCount: active.length,
+    inactiveCount,
     label:
       kind === "sessions"
         ? "Shared session target"

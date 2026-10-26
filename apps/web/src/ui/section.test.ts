@@ -38,3 +38,9 @@ it("uses the same card structure and recipes for upcoming and navigable features
   expect(destination).toMatch(/^<a/);
   expect(destination).toContain('href="/pace"');
 });
+
+ it("distinguishes a screen title from its subordinate sections without changing default sections", () => {
+  const html = renderToStaticMarkup(createElement(Section, { title: "Your training", titleRole: "display", children: createElement(Section, { title: "Personal records", children: "Record" }) }));
+  expect(html).toMatch(/<h1[^>]*font-size:2rem[^>]*>Your training<\/h1>/);
+  expect(html).toMatch(/<h2[^>]*font-size:1.25rem[^>]*>Personal records<\/h2>/);
+ });

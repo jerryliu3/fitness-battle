@@ -39,7 +39,7 @@ seeking; it does not store a full field snapshot for each event.
 
 Simulated athletes use the same deterministic daily volume model as the current
 field. Their daily steps are labeled simulated rather than invented workouts.
-Offline previews show only the viewer's eligible sessions and known simulated
+Offline and explicitly active Debug previews show only the viewer's eligible sessions and known simulated
 athletes; they never interpolate a real peer's history from aggregate totals.
 Authenticated errors stay explicit, with retry, rather than switching to fixtures.
 
@@ -77,3 +77,30 @@ a bounded web load/retry path, and let narrow-screen playback controls wrap. The
 replay was rebased onto main's new full-arena HUD before final review. No remaining
 actionable issue was identified in that static review; live database and native
 binary limitations above remain.
+
+### Debug preview data boundary
+
+An authenticated Debug preview is still an in-memory practice field. Web and native
+must use `localCompetitionReplay` while `debugActive` is true, rather than querying
+production seating for the fixture's sport/round. The viewer reloads its source when
+Debug is reset. Ordinary authenticated replay stays server-backed; a failed real
+field lookup never silently falls back to practice data. Production diagnostics
+confirmed `field_not_found` when the fixture did not have matching persisted field
+membership.
+No production seating or activity data was changed to address the preview error.
+
+Web and native regression tests cover authenticated Debug opening without a network
+request, resetting Debug while the viewer is open to reload from the server, and
+real server failures staying visible rather than falling back to preview data.
+
+### Multi-sport seating follow-up
+
+A Crew field in one sport must not prevent another enrolled sport from receiving
+persisted field membership. Hydration now processes every enrollment, reads Crew
+fields without reseating, and uses the existing seating RPC for each open field.
+Per-enrollment transient snapshots retain real roster totals for every sport while
+keeping the preferred Crew board available to existing consumers. This fixes the
+case of Crew cycling plus separate running where the running Replay lookup had
+no field to read. The change applies equally to synthetic and ordinary accounts.
+No migration is required; normal account load/refresh provisions missing open
+seats through the authenticated RPC. No production seating was manually changed.
