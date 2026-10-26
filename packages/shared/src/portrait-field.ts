@@ -3,6 +3,7 @@ import {
   type ArenaSceneLane,
   type ArenaViewWindow,
 } from "./arena-view";
+import { competeFieldIncludesStart } from "./compete-trail";
 import type { FieldNode } from "./field-course";
 
 /** Fixed-camera perspective, presentation only. Values remain in the current score-track unit. */
@@ -120,13 +121,16 @@ export function portraitField(
         : lane.you
           ? "#f7c948"
           : "#c9d6e3",
-      trail: outside ? "" : (() => {
-        const startDepth = Math.min(1, max / span);
-        if (startDepth <= depth) return "";
-        const a = project(i, depth);
-        const b = project(i, startDepth);
-        return `M${a.x} ${a.y} L${b.x} ${b.y}`;
-      })(),
+      trail:
+        outside || !competeFieldIncludesStart(view)
+          ? ""
+          : (() => {
+              const startDepth = Math.min(1, max / span);
+              if (startDepth <= depth) return "";
+              const a = project(i, depth);
+              const b = project(i, startDepth);
+              return `M${a.x} ${a.y} L${b.x} ${b.y}`;
+            })(),
     };
   });
   const rivals = ordered

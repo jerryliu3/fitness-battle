@@ -14,6 +14,9 @@ import {
   clampArenaLaneCenter,
   orderedArenaLanes,
   polishedLaneScale,
+  competeAthleteTrailColors,
+  competeFieldIncludesStart,
+  fieldLaneMarkerScale,
   fieldCourse, fieldCourseScene, fieldLap, defaultFieldAppearance, type FieldAppearance,
   selfLaneLabel,
   type ArenaOvertakeFrame,
@@ -318,11 +321,16 @@ export function ArenaLanes({
             !standings &&
             !edge &&
             l.value > 0.0001 &&
-            bounds.min <= 0;
+            competeFieldIncludesStart(effectiveView);
+          const trailColors = competeAthleteTrailColors(Boolean(l.you), Boolean(l.ghost));
           const markerScale = standings || edge ? 1 : course.markerScale;
           const xx = 0, yy = 0;
           const active = selected === l.id || l.you;
-          const headHalf = 29 * (standings ? polishedLaneScale(Boolean(l.you)) : 1);
+          const headHalf =
+            29 *
+            (standings
+              ? polishedLaneScale(Boolean(l.you))
+              : fieldLaneMarkerScale(Boolean(l.you)));
           const pennantWidth=146;
           const visibleLeft=host.current?.scrollLeft??0;
           const pennantX=Math.max(visibleLeft-targetX+8,Math.min(visibleLeft+size.width-targetX-pennantWidth-8,l.you?-pennantWidth-12:12));
@@ -383,7 +391,7 @@ export function ArenaLanes({
                     y1={yy}
                     x2={startPoint.x - targetX + xx}
                     y2={startPoint.y - targetY + yy}
-                    stroke={l.you ? "#f7c948" : "#d8e4ec"}
+                    stroke={trailColors.stroke}
                     strokeWidth={5}
                     strokeLinecap="round"
                     opacity={0.92}
@@ -392,16 +400,25 @@ export function ArenaLanes({
                     cx={xx}
                     cy={yy}
                     r={6}
-                    fill="#ffffff"
-                    stroke={l.you ? "#f7c948" : "#98a6bc"}
+                    fill={trailColors.dotFill}
+                    stroke={trailColors.dotStroke}
                     strokeWidth={3}
                   />
                 </g>
               )}
               {/* Local echoes own their animation; replay only moves the parent marker. */}
               {standings || !edge ? (
-                <PolishedRacer sizeScale={standings ? undefined : 1} x={xx} y={yy} you={Boolean(l.you)} gold={rank === 1} active={active}
-                  showWake={!standings && !showStartTrail} independentWake animateWake={immersive} wakeBottom={course.oval ? undefined : (maxTailY - targetY) / markerScale}/>
+                <PolishedRacer
+                  sizeScale={standings ? undefined : fieldLaneMarkerScale(Boolean(l.you))}
+                  x={xx}
+                  y={yy}
+                  you={Boolean(l.you)}
+                  gold={rank === 1}
+                  active={active}
+                  showWake={!standings && !showStartTrail}
+                  independentWake
+                  animateWake={immersive}
+                  wakeBottom={course.oval ? undefined : (maxTailY - targetY) / markerScale}/>
               ) : <circle r={18} fill="white" stroke="#616c63" strokeDasharray="3 3"/>}
               <rect className="focus-racer-focus-ring" x={-23} y={-headHalf-3} width={46} height={headHalf*2+6} rx={23} fill="none" stroke="#f1c75b" strokeWidth={2}/>
               <rect x={xx - 24 / markerScale} y={yy - Math.max(22 / markerScale, headHalf + 4)} width={48 / markerScale} height={Math.max(44 / markerScale, headHalf * 2 + 8)} rx="24" fill="transparent"/>

@@ -47,7 +47,7 @@ describe("production capsule visibility", () => {
     // A solid gold trail may legitimately fill thousands of pixels at the far edge.
     const pixels=await goldPixels(render("lanes", value), head.y - 50, head.y + 50,
       head.x - 50, head.x + 50);
-    expect(pixels).toBeGreaterThan(100);
+    expect(pixels).toBeGreaterThan(40);
     expect(pixels).toBeLessThan(2000);
   });
   it("keeps the same world-size capsule legible at chase scale",async()=>{expect(await goldPixels(render("lanes",3,1.2),0,540)).toBeGreaterThan(500);});

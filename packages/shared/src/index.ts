@@ -32,6 +32,7 @@ export * from "./crew-relay-presentation";
 export * from "./club-summary";
 
 export * from "./portrait-field";
+export * from "./compete-trail";
 
 export * from "./sync-review";
 

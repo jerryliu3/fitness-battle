@@ -62,6 +62,7 @@ export function EventCarousel({
       aria-label="Your registered events"
       aria-roledescription="carousel"
     >
+      {/* Sport chips select the active field; horizontal swipe on the pages still switches events. */}
       <div className="club-event-chips-bar">
         <div className="club-event-chips" role="tablist" aria-label="Registered events">
           {events.map((event) => (
@@ -79,14 +80,14 @@ export function EventCarousel({
               ) : null}
             </button>
           ))}
-          <button
-            type="button"
-            className="club-event-chip is-register"
-            onClick={onRegister}
-          >
-            Register
-          </button>
         </div>
+        <button
+          type="button"
+          className="club-event-chip is-register"
+          onClick={onRegister}
+        >
+          Register
+        </button>
       </div>
       <div
         ref={scroller}

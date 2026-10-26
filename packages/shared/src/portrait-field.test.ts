@@ -66,6 +66,11 @@ it("projects survey lines and athletes through the same invertible distance plan
   expect(scene.outside.some(m => m.ghost)).toBe(true);
 });
 
+it("omits start trails when the start line is outside the distance window", () => {
+  const scene = portraitField(lanes, { center: 8, span: 4 });
+  expect(scene.markers.find((m) => m.you)?.trail).toBe("");
+});
+
 it("continues a bounded field to a fixed horizon across pan, zoom and roster sizes", () => {
   const a = portraitField(lanes, { center: 10, span: 1.2 });
   const b = portraitField(Array.from({ length: 200 }, (_, i) => ({ id: `p${i}`, name: "Peer", initials: "P", value: i })), { center: 80, span: 40 }, undefined, 5.5);

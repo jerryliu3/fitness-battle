@@ -1,7 +1,6 @@
 import { AppText } from "../ui/section";
-import { useRef, useState, type ReactNode } from "react";
+import { type ReactNode } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
-import { FocusButton, FocusSheet, f } from "../ui/focus";
 import { SHELL_COLORS as c } from "../theme";
 type ClubEvent = { id: string; label: string; badge?: string };
 export function EventCarousel({
@@ -17,159 +16,85 @@ export function EventCarousel({
   onRegister: () => void;
   children: ReactNode;
 }) {
-  const [choosing, setChoosing] = useState(false);
-  const headerStart = useRef({ x: 0, y: 0 });
-  const registerAfterClose = useRef(false);
-  const index = Math.max(
-    0,
-    events.findIndex((event) => event.id === value),
-  );
-  function select(id: string) {
-    onChange(id);
-  }
   return (
     <View style={{ gap: 10 }}>
-      <View style={f.row}>
-        <View
-          accessible
-          accessibilityRole="button"
-          accessibilityHint="Swipe left or right to switch events, or tap to choose."
-          accessibilityLabel={`Choose event. ${events[index]?.label}, ${index + 1} of ${events.length}`}
-          onAccessibilityTap={() => setChoosing(true)}
-          accessibilityActions={[{ name: "activate", label: "Choose event" }]}
-          onAccessibilityAction={() => setChoosing(true)}
-          onStartShouldSetResponder={() => true}
-          onResponderGrant={(e) => {
-            headerStart.current = {
-              x: e.nativeEvent.pageX,
-              y: e.nativeEvent.pageY,
-            };
-          }}
-          onResponderRelease={(e) => {
-            const dx = e.nativeEvent.pageX - headerStart.current.x;
-            const dy = e.nativeEvent.pageY - headerStart.current.y;
-            if (Math.abs(dx) >= 40 && Math.abs(dx) > Math.abs(dy)) {
-              const next = Math.max(
-                0,
-                Math.min(events.length - 1, index + (dx < 0 ? 1 : -1)),
-              );
-              if (next !== index) select(events[next]!.id);
-            } else if (Math.hypot(dx, dy) < 12) setChoosing(true);
-          }}
-          style={{ flex: 1, minHeight: 54, gap: 4, justifyContent: "center" }}
-        >
-          <AppText role="heading" accessibilityRole="header">
-            {events[index]?.label}
-            {events[index]?.badge ? (
-              <AppText role="label" secondary> · {events[index]?.badge}</AppText>
-            ) : null}
-          </AppText>
+      <View style={s.chipsBar}>
+        <View style={s.chips} accessibilityRole="tablist" accessibilityLabel="Registered events">
+          {events.map((event) => (
+            <Pressable
+              key={event.id}
+              accessibilityRole="tab"
+              accessibilityState={{ selected: event.id === value }}
+              onPress={() => onChange(event.id)}
+              style={[s.chip, event.id === value && s.chipActive]}
+            >
+              <AppText role="label" style={event.id === value ? s.chipActiveText : undefined}>
+                {event.label}
+                {event.badge ? ` · ${event.badge}` : ""}
+              </AppText>
+            </Pressable>
+          ))}
         </View>
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel="Previous event"
-          disabled={index === 0}
-          accessibilityState={{ disabled: index === 0 }}
-          onPress={() => select(events[index - 1]!.id)}
-          style={[s.arrow, index === 0 && { opacity: 0.3 }]}
+          accessibilityLabel="Register for an event"
+          onPress={onRegister}
+          style={s.registerChip}
         >
-          <AppText role="heading" accessibilityElementsHidden>←</AppText>
-        </Pressable>
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel="Next event"
-          disabled={index === events.length - 1}
-          accessibilityState={{ disabled: index === events.length - 1 }}
-          onPress={() => select(events[index + 1]!.id)}
-          style={[s.arrow, index === events.length - 1 && { opacity: 0.3 }]}
-        >
-          <AppText role="heading" accessibilityElementsHidden>→</AppText>
+          <AppText role="label" secondary>Register</AppText>
         </Pressable>
       </View>
-      {/* Event title owns event swipes; the board owns lane swipes. Avoid nested horizontal pagers trapping vertical page gestures. */}
-      <View key={value} style={{ borderTopWidth: 1, borderBottomWidth: 1, borderColor: c.line, paddingVertical: 14 }}>{children}</View>
-      <View style={{ flexDirection: "row", justifyContent: "center" }}>
-        {events.map((event, i) => (
-          <Pressable
-            key={event.id}
-            accessibilityRole="button"
-            accessibilityLabel={`Show ${event.label}`}
-            accessibilityState={{ selected: i === index }}
-            onPress={() => select(event.id)}
-            style={{
-              minWidth: 32,
-              minHeight: 44,
-              alignItems: "center",
-              justifyContent: "center",
-            }}
-          >
-            <View
-              style={{
-                width: i === index ? 24 : 6,
-                height: 6,
-                borderRadius: 3,
-                backgroundColor: i === index ? c.tennis : c.line,
-              }}
-            />
-          </Pressable>
-        ))}
-      </View>
-      <FocusSheet
-        open={choosing}
-        title="Choose your event"
-        body="Each registration has its own competition field."
-        onClose={() => {
-          registerAfterClose.current = false;
-          setChoosing(false);
-        }}
-        onClosed={() => {
-          if (!registerAfterClose.current) return;
-          registerAfterClose.current = false;
-          onRegister();
+      <View
+        key={value}
+        style={{
+          borderTopWidth: 1,
+          borderBottomWidth: 1,
+          borderColor: c.line,
+          paddingVertical: 14,
         }}
       >
-        {events.map((event) => (
-          <Pressable
-            key={event.id}
-            accessibilityRole="button"
-            accessibilityState={{ selected: event.id === value }}
-            onPress={() => {
-              select(event.id);
-              setChoosing(false);
-            }}
-            style={[
-              f.row,
-              {
-                minHeight: 56,
-                borderBottomWidth: 1,
-                borderBottomColor: c.line,
-              },
-            ]}
-          >
-            <AppText role="label" >{event.label}</AppText>
-            <AppText role="body" secondary >{event.id === value ? "✓" : "→"}</AppText>
-          </Pressable>
-        ))}
-        <FocusButton
-          label="Register for another event"
-          onPress={() => {
-            registerAfterClose.current = true;
-            setChoosing(false);
-          }}
-        />
-      </FocusSheet>
+        {children}
+      </View>
     </View>
   );
 }
 const s = StyleSheet.create({
-  arrow: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+  chipsBar: {
+    flexDirection: "row",
+    flexWrap: "wrap",
     alignItems: "center",
-    justifyContent: "center",
+    gap: 8,
+  },
+  chips: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+    flex: 1,
+    minWidth: 0,
+  },
+  chip: {
+    minHeight: 40,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 999,
     borderWidth: 1,
     borderColor: c.line,
     backgroundColor: c.card,
+  },
+  chipActive: {
+    backgroundColor: c.ink,
+    borderColor: c.ink,
+  },
+  chipActiveText: {
+    color: c.tennis,
+  },
+  registerChip: {
+    minHeight: 40,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderStyle: "dashed",
+    borderColor: c.line,
   },
 });

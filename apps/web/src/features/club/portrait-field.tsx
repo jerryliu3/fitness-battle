@@ -7,6 +7,7 @@ import {
   portraitDepthAt,
   portraitScaleAtDepth,
   portraitFieldGap,
+  competeAthleteTrailColors,
   type ArenaSceneLane,
   type ArenaViewWindow,
 } from "@fitness-battle/shared";
@@ -231,13 +232,15 @@ export function PortraitField({
           height={110}
           fill={`url(#${prefix}-horizon)`}
         />
-        {scene.markers.map((m) => (
+        {scene.markers.map((m) => {
+          const trail = m.trail ? competeAthleteTrailColors(Boolean(m.you), Boolean(m.ghost)) : null;
+          return (
           <g key={`trail-${m.id}`} pointerEvents="none">
-            {m.trail ? (
+            {m.trail && trail ? (
               <>
                 <path
                   d={m.trail}
-                  stroke={m.color}
+                  stroke={trail.glow}
                   strokeWidth={14}
                   opacity={0.22}
                   strokeLinecap="round"
@@ -245,7 +248,7 @@ export function PortraitField({
                 />
                 <path
                   d={m.trail}
-                  stroke={m.you ? "#f7c948" : m.color}
+                  stroke={trail.stroke}
                   strokeWidth={m.ghost ? 4 : 5}
                   opacity={m.ghost ? 0.45 : 0.95}
                   strokeDasharray={m.ghost ? "6 8" : undefined}
@@ -255,7 +258,8 @@ export function PortraitField({
               </>
             ) : null}
           </g>
-        ))}
+          );
+        })}
         {scene.markers
           .filter((m) => m.x > 22 && m.x < 398)
           .sort((a, b) => a.y - b.y)
@@ -286,23 +290,26 @@ export function PortraitField({
                     stroke={m.you ? "#f7c948" : "#98a6bc"}
                     strokeWidth={3}
                   />
-                ) : null}
-                <ellipse
-                  cy={27}
-                  rx={24}
-                  ry={10}
-                  fill={m.color}
-                  opacity={0.16}
-                />
-                <ellipse
-                  cy={27}
-                  rx={16}
-                  ry={6}
-                  fill="#143c43"
-                  stroke={m.color}
-                  strokeWidth={2.5}
-                />
-                <ellipse cy={27} rx={5} ry={2} fill={m.color} />
+                ) : (
+                  <>
+                    <ellipse
+                      cy={27}
+                      rx={24}
+                      ry={10}
+                      fill={m.color}
+                      opacity={0.16}
+                    />
+                    <ellipse
+                      cy={27}
+                      rx={16}
+                      ry={6}
+                      fill="#143c43"
+                      stroke={m.color}
+                      strokeWidth={2.5}
+                    />
+                    <ellipse cy={27} rx={5} ry={2} fill={m.color} />
+                  </>
+                )}
                 <path
                   d="M-9 12 L0 27 L9 12"
                   fill={m.you ? "#f7c948" : "#f8f9f6"}

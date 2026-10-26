@@ -59,8 +59,6 @@
   margin-bottom: 12px;
 }
 .phone-shell .ui-section > .ui-section-header { margin: 0; }
-.phone-shell .club-event-choose { text-align: left; white-space: normal; }
-.phone-shell .club-event-choose > .ui-text { display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px; }
 .phone-shell .focus-goal { display: block; letter-spacing: var(--type-hero-tracking); text-transform: none; font: var(--type-hero); }
 .phone-shell .focus-goal small {
   letter-spacing: normal;

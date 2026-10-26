@@ -8,14 +8,11 @@ vi.mock("react-native", () => ({
   ScrollView: "ScrollView",
   StyleSheet: { create: (x: unknown) => x },
 }));
-vi.mock("../ui/focus", () => ({
-  FocusSheet: "Sheet",
-  FocusButton: "Button",
-  f: {},
+vi.mock("../ui/section", () => ({
+  AppText: "AppText",
 }));
-vi.mock("../ui/use-reduced-motion", () => ({ useReducedMotion: () => true }));
 import { EventCarousel } from "./event-carousel";
-it("switches events with header swipes while keeping tap and accessibility chooser", async () => {
+it("switches events from chips and opens register from the dashed chip", async () => {
   vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
   const change = vi.fn(),
     register = vi.fn();
@@ -34,34 +31,12 @@ it("switches events with header swipes while keeping tap and accessibility choos
       }),
     );
   });
-  const header = () =>
-    r!.root
-      .findAllByType("View" as never)
-      .find((n) => n.props.onResponderRelease)!;
-  const gesture = async (x: number, y = 0) =>
-    act(async () => {
-      header().props.onResponderGrant({
-        nativeEvent: { pageX: 100, pageY: 100 },
-      });
-      header().props.onResponderRelease({
-        nativeEvent: { pageX: 100 + x, pageY: 100 + y },
-      });
-    });
-  await gesture(-80);
+  const presses = r!.root.findAllByType("Pressable" as never);
+  const cyclingChip = presses.find((n) => n.props.accessibilityRole === "tab" && n.props.accessibilityState?.selected === false)!;
+  await act(async () => { cyclingChip.props.onPress(); });
   expect(change).toHaveBeenCalledWith("cycling");
-  expect(r!.root.findByType("Sheet" as never).props.open).toBe(false);
-  change.mockClear();
-  await gesture(80);
-  expect(change).not.toHaveBeenCalled();
-  await gesture(5, 80);
-  expect(change).not.toHaveBeenCalled();
-  await gesture(0);
-  expect(r!.root.findByType("Sheet" as never).props.open).toBe(true);
-  await act(async () => r!.root.findByType("Button" as never).props.onPress());
-  expect(register).not.toHaveBeenCalled();
-  await act(async () => r!.root.findByType("Sheet" as never).props.onClosed());
-  expect(register).toHaveBeenCalledTimes(1);
-  await act(async () => r!.root.findByType("Sheet" as never).props.onClosed());
+  const registerChip = presses.find((n) => n.props.accessibilityLabel === "Register for an event")!;
+  await act(async () => { registerChip.props.onPress(); });
   expect(register).toHaveBeenCalledTimes(1);
   await act(async () => r!.unmount());
 });

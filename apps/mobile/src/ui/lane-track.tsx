@@ -11,6 +11,9 @@ import {
   clampCourseCenter,
   initialsFromName,
   orderedArenaLanes,
+  competeAthleteTrailColors,
+  competeFieldIncludesStart,
+  fieldLaneMarkerScale,
   type ArenaLane,
   type ArenaOvertakeFrame,
   type ArenaOvertakePlan,
@@ -20,6 +23,7 @@ import { memo, useEffect, useId, useMemo, useRef, useState, type MutableRefObjec
 import { PanResponder, Pressable, ScrollView, Text, View, type ScrollViewInstance } from "react-native";
 import Svg, {
   Circle,
+  Line,
   Defs,
   ClipPath,
   Image as SvgImage,
@@ -232,9 +236,18 @@ function LaneTrackContent({
               const effect = overtakeFrame?.rivalEffects[l.id];
               const charging =
                 l.you && animating ? (overtakeFrame?.charging ?? 0) : 0;
-              const point = course.point(value, i, 0, true), scale = edge?1:course.markerScale;
-              const xx = point.x + (effect?.joltX ?? 0) * scale, yy = point.y + (l.you ? charging * 4 * scale : 0);
-              const headHalf = 29;
+              const point = course.point(value, i, 0, true);
+              const startPoint = course.point(0, i, 0, true);
+              const scale = edge ? 1 : course.markerScale;
+              const xx = point.x + (effect?.joltX ?? 0) * scale;
+              const yy = point.y + (l.you ? charging * 4 * scale : 0);
+              const showStartTrail =
+                !course.oval &&
+                !edge &&
+                value > 0.0001 &&
+                competeFieldIncludesStart(v);
+              const trailColors = competeAthleteTrailColors(Boolean(l.you), Boolean(l.ghost));
+              const headHalf = 29 * fieldLaneMarkerScale(Boolean(l.you));
               const rank=1+live.filter(peer=>peer.value>value+.000001).length;
               const pennantWidth=146, visibleLeft=previous.current?.scroll??0;
               const pennantX=Math.max(visibleLeft-xx+8,Math.min(visibleLeft+width-xx-pennantWidth-8,l.you?-pennantWidth-12:12));
@@ -280,11 +293,35 @@ function LaneTrackContent({
                       strokeDasharray="3 3"
                     />
                   ) : (
+                    <>
+                    {showStartTrail ? (
+                      <>
+                        <Line
+                          x1={0}
+                          y1={0}
+                          x2={startPoint.x - xx}
+                          y2={startPoint.y - yy}
+                          stroke={trailColors.stroke}
+                          strokeWidth={5}
+                          strokeLinecap="round"
+                          opacity={0.92}
+                        />
+                        <Circle
+                          cx={0}
+                          cy={0}
+                          r={6}
+                          fill={trailColors.dotFill}
+                          stroke={trailColors.dotStroke}
+                          strokeWidth={3}
+                        />
+                      </>
+                    ) : null}
                     <PolishedRacer
-                      sizeScale={1}
+                      sizeScale={fieldLaneMarkerScale(Boolean(l.you))}
                       x={0}
                       y={0}
                       you={l.you}
+                      showWake={!showStartTrail}
                       animation={wakeAnimation}
                       wakeBottom={course.oval ? undefined : (maxTailY - yy) / scale}
                       gold={
@@ -295,6 +332,7 @@ function LaneTrackContent({
                         )
                       }
                     />
+                    </>
                   )}
 
                   <Rect

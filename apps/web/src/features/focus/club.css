@@ -419,6 +419,10 @@
   position: sticky;
   top: 0;
   z-index: 6;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
   padding: 4px 0 14px;
   background: linear-gradient(
     180deg,
@@ -431,6 +435,8 @@
   flex-wrap: wrap;
   gap: 8px;
   align-items: center;
+  flex: 1;
+  min-width: 0;
 }
 .club-event-chip {
   display: inline-flex;
@@ -462,45 +468,6 @@
   color: var(--ink);
   border-color: var(--ink);
 }
-.club-event-toolbar {
-  display: flex;
-  gap: 10px;
-  align-items: center;
-  padding: 4px 0 16px;
-}
-.club-event-choose {
-  display: grid;
-  gap: 4px;
-  flex: 1;
-  text-align: left;
-  border: 0;
-  background: none;
-  color: var(--ink);
-  font: inherit;
-  min-height: 54px;
-  cursor: pointer;
-}
-.club-event-choose .fb-kicker {
-  margin: 0;
-}
-.club-event-choose strong {
-  letter-spacing: normal;
-  text-transform: none;
-  font: var(--type-heading);
-}
-.club-icon-button {
-  width: 44px;
-  min-height: 44px;
-  flex: none;
-  border-radius: 50%;
-  border: 1px solid var(--line);
-  background: var(--card);
-  color: var(--ink);
-  cursor: pointer;
-  letter-spacing: normal;
-  text-transform: none;
-  font: var(--type-label);
-}
 .club-event-pages {
   display: flex;
   overflow-x: auto;
@@ -528,42 +495,6 @@
   text-align: center;
   background: var(--accent-soft);
   border-radius: 20px;
-}
-.club-event-dots {
-  display: flex;
-  justify-content: center;
-}
-.club-event-dots button {
-  display: grid;
-  place-items: center;
-  width: 32px;
-  min-height: 44px;
-  border: 0;
-  background: none;
-}
-.club-event-dots span {
-  height: 6px;
-  width: 6px;
-  border-radius: 6px;
-  background: var(--line);
-}
-.club-event-dots button[aria-pressed="true"] span {
-  width: 24px;
-  background: var(--lime);
-}
-.club-event-option {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  min-height: 56px;
-  width: 100%;
-  border: 0;
-  border-bottom: 1px solid var(--line);
-  font: inherit;
-  background: none;
-  color: var(--ink);
-  padding: 12px 4px;
-  cursor: pointer;
 }
 .phone-shell .focus-competition-card {
   background: none;
@@ -689,9 +620,6 @@
   .phone-shell .focus-competition-tracks {
     width: 100%;
     max-width: none;
-  }
-  .club-event-toolbar {
-    padding-bottom: 12px;
   }
 }
 .club-event-page .focus-field-toolbar {
@@ -1249,11 +1177,6 @@
     text-transform: none;
     font: var(--type-caption);
   }
-  .club-event-choose strong {
-    letter-spacing: normal;
-    text-transform: none;
-    font: var(--type-heading);
-  }
 }
 
 /* Portal surfaces receive the same hierarchy as the persistent shell. */
@@ -1709,14 +1632,23 @@
   position: relative;
   z-index: 1;
 }
+.focus-field-expanded {
+  --focus-broadcast-inset: max(200px, 26vh);
+}
 .focus-field-expanded .club-field-explore,
-.focus-field-expanded .club-perspective-group > .club-board-status,
-.focus-field-expanded .club-field-offscreen {
+.focus-field-expanded .club-perspective-group > .club-board-status {
   display: none;
+}
+.focus-field-expanded .club-field-offscreen {
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  z-index: 85;
+  bottom: calc(max(14px, env(safe-area-inset-bottom)) + var(--focus-broadcast-inset) + 72px);
 }
 .focus-field-expanded .club-perspective-board.is-immersive .club-board-controls {
   z-index: 90;
-  bottom: calc(max(14px, env(safe-area-inset-bottom)) + 210px);
+  bottom: calc(max(14px, env(safe-area-inset-bottom)) + var(--focus-broadcast-inset));
 }
 .focus-broadcast-hud {
   position: fixed;
