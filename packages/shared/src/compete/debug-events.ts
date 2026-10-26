@@ -97,7 +97,10 @@ export function applyDebugEvent(
     const single = applyDebugEvent(base, "overtake", accountKey, stepIndex);
     const arena = buildArenaModel(single.state, now, competitionTrack(sport), sport);
     const rivals = arena.lanes.filter(l => !l.you && !l.ghost).sort((a, b) => a.values[2] - b.values[2]);
-    const target = (rivals[Math.min(2, rivals.length - 1)]?.values[2] ?? 5 * stepUnit) + stepUnit;
+    // Early in the week several synthetics are still at zero. Aim past the third rival who has actually moved.
+    const racing = rivals.filter(l => l.values[2] > stepUnit * 0.05);
+    const pool = racing.length >= 2 ? racing : rivals;
+    const target = (pool[Math.min(2, pool.length - 1)]?.values[2] ?? 5 * stepUnit) + stepUnit;
     const activity = makeDebugActivity(sport, target, base.units, new Date(now.getTime() - 1000), `debug-combo-${stepIndex}-${now.getTime()}`);
     const kept = single.state.activities.filter(a => a.sport !== sport || Date.parse(a.startedAt) < period.startsAt.getTime() || Date.parse(a.startedAt) >= period.endsAt.getTime());
     const activities = event === "sync-combo" ? [

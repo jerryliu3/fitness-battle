@@ -10,9 +10,13 @@ import {
 import { buildArenaModel, competePeriodWindow } from "../phone-views";
 import { applyDebugEvent, DEBUG_EVENT_OPTIONS } from "./debug-events";
 import { competeNow, freshState } from "./engine";
-import { competitionTrack } from "./sports";
+import { competitionTrack, type CompeteState } from "./sports";
 import { roundReveal } from "./round-reveal";
 import { initialsFromName } from "./track";
+
+function pinnedState(iso: string): CompeteState {
+  return { ...freshState(new Date(iso)), demoNow: iso };
+}
 
 function sceneLanesFromState(state: ReturnType<typeof freshState>) {
   const now = competeNow(state);
@@ -34,7 +38,7 @@ describe("applyDebugEvent", () => {
   });
 
   it("simulates a new synced activity with forward Arena movement and Today reveal", () => {
-    const result = applyDebugEvent(freshState(new Date("2026-10-21T15:00:00.000Z")), "sync-activity", "guest", 1);
+    const result = applyDebugEvent(pinnedState("2026-10-21T15:00:00.000Z"), "sync-activity", "guest", 1);
     expect(result.targetRoute).toBe("/today");
     expect(result.revealStopKey).toMatch(/^today:/);
     expect(result.state.activities[0]?.verified).toBe(true);
@@ -46,7 +50,7 @@ describe("applyDebugEvent", () => {
   });
 
   it("simulates overtaking and getting overtaken on consecutive triggers", () => {
-    let current = freshState(new Date("2026-10-21T15:00:00.000Z"));
+    let current = pinnedState("2026-10-21T15:00:00.000Z");
     for (let step = 1; step <= 4; step += 1) {
       const result = applyDebugEvent(current, "overtake", "guest", step);
       const { lanes, periodStart, unit } = sceneLanesFromState(result.state);
@@ -71,7 +75,7 @@ describe("applyDebugEvent", () => {
   });
 
   it("simulates week closing with a settled period result ready for RoundTakeover", () => {
-    const result = applyDebugEvent(freshState(new Date("2026-10-21T15:00:00.000Z")), "week-closing", "guest", 1);
+    const result = applyDebugEvent(pinnedState("2026-10-21T15:00:00.000Z"), "week-closing", "guest", 1);
     expect(result.targetRoute).toBe("/arena?results=latest");
     const reveal = roundReveal(result.state);
     expect(reveal?.results[0]?.distanceM).toBeGreaterThan(0);
@@ -79,10 +83,17 @@ describe("applyDebugEvent", () => {
 });
 
 it("provides a multi-pass sync fixture with two inspectable GPS routes", () => {
-  const result = applyDebugEvent(freshState(new Date("2026-10-24T18:00:00Z")), "sync-combo", "guest", 2);
+  const result = applyDebugEvent(pinnedState("2026-10-24T18:00:00Z"), "sync-combo", "guest", 2);
   expect(result.state.activities).toHaveLength(2);
   expect(result.state.activities.every(a => a.summaryPolyline && a.detailedPolyline)).toBe(true);
   expect(result.state.activities[0].summaryPolyline).not.toBe(result.state.activities[1].summaryPolyline);
+  const { lanes, periodStart, unit } = sceneLanesFromState(result.state);
+  const previous = readArenaBaseline(result.baselines[arenaBaselineStorageKey("guest", result.state.primary, competitionTrack(result.state.primary))], periodStart, unit);
+  expect(reconcileArenaOvertake(lanes, previous)?.overtakenIds.length).toBeGreaterThanOrEqual(2);
+});
+
+it("still passes several rivals when the live week has only just started", () => {
+  const result = applyDebugEvent(freshState(), "sync-combo", "guest", 2);
   const { lanes, periodStart, unit } = sceneLanesFromState(result.state);
   const previous = readArenaBaseline(result.baselines[arenaBaselineStorageKey("guest", result.state.primary, competitionTrack(result.state.primary))], periodStart, unit);
   expect(reconcileArenaOvertake(lanes, previous)?.overtakenIds.length).toBeGreaterThanOrEqual(2);

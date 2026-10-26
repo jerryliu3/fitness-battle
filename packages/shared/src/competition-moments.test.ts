@@ -2,7 +2,8 @@ import { expect, it } from "vitest";
 import { applyDebugEvent } from "./compete/debug-events";
 import { freshState } from "./compete/engine";
 import { competitionMoments, competitionMomentScene, competitionMomentSnapshots, momentStorageKey, photoFinishFrame, selectedSyncActions } from "./competition-moments";
-const state = freshState(new Date("2026-10-24T18:00:00Z"));
+const pinned = new Date("2026-10-24T18:00:00Z");
+const state = { ...freshState(pinned), demoNow: pinned.toISOString() };
 function fixture(event: "overtake" | "overtaken") {
   const result = applyDebugEvent(state, event, "a");
   const baseline = Object.fromEntries(Object.entries(result.baselines).map(([k, v]) => [momentStorageKey(k), v]));

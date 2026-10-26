@@ -45,6 +45,7 @@ vi.mock("../lib/tracker-connect", () => ({
   startCloudTrackerConnect: vi.fn(),
 }));
 vi.mock("./account-actions", () => ({ AccountActions: "AccountActions" }));
+vi.mock("./legal-links", () => ({ LegalLinks: "LegalLinks" }));
 vi.mock("./athlete-metrics", () => ({ AthleteMetrics: "AthleteMetrics" }));
 vi.mock("./data-sync-actions", () => ({ DataSyncActions: "DataSyncActions" }));
 vi.mock("../ui/screen-header", () => ({ ScreenHeader: "ScreenHeader" }));

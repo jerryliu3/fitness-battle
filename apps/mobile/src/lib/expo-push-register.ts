@@ -63,11 +63,20 @@ export async function registerExpoPushToken(): Promise<ExpoRegistrationResult> {
     });
   }
 
-  const existing = await Notifications.getPermissionsAsync();
-  let status = existing.status;
-  if (status !== "granted") {
-    const asked = await Notifications.requestPermissionsAsync();
-    status = asked.status;
+  let status: Notifications.PermissionStatus;
+  try {
+    const existing = await Notifications.getPermissionsAsync();
+    status = existing.status;
+    if (status !== "granted") {
+      const asked = await Notifications.requestPermissionsAsync();
+      status = asked.status;
+    }
+  } catch {
+    return {
+      ok: false,
+      reason: "denied",
+      message: "Notification permission was not granted.",
+    };
   }
   if (status !== "granted") {
     return {

@@ -96,6 +96,23 @@ describe("syncHealthConnect", () => {
     expect(fetchFn).not.toHaveBeenCalled();
   });
 
+  it("returns a denial result when the permission request throws", async () => {
+    const health = mockHealthModule();
+    health.requestPermission.mockRejectedValue(new Error("User denied"));
+    const result = await syncHealthConnect(
+      createHealthConnectDeps({
+        platform: "android",
+        healthModule: health,
+      }),
+    );
+    expect(result).toEqual({
+      ok: false,
+      authorized: false,
+      message: "Health Connect permission was not granted. Allow workout access and try again.",
+      count: 0,
+    });
+  });
+
   it("uploads with the caller-provided bearer token", async () => {
     const fetchFn = vi.fn(async () => ({
       ok: true,

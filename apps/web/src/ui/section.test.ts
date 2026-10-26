@@ -27,7 +27,7 @@ it("keeps the selected recipe when a caller supplies typography overrides", () =
 });
 
 it("uses the same card structure and recipes for upcoming and navigable features", () => {
-  const upcoming = renderToStaticMarkup(createElement(FeatureCard, { title: "1v1 Head-to-Head", description: "Challenge a friend.", badge: "Coming soon" }));
+  const upcoming = renderToStaticMarkup(createElement(FeatureCard, { title: "Weekly field", description: "See this week's standings.", badge: "Open" }));
   const destination = renderToStaticMarkup(createElement(FeatureCard, { title: "Beyond this week", description: "All-time rankings.", href: "/pace" }));
   for (const html of [upcoming, destination]) {
     expect(html).toContain('class="ui-feature-card"');

@@ -353,12 +353,31 @@ export async function syncHealthConnect(
       count: 0,
     };
   }
-  const ready = await health.initialize();
+  let ready = false;
+  try {
+    ready = await health.initialize();
+  } catch {
+    return {
+      ok: false,
+      message: "Health Connect is not available on this device.",
+      count: 0,
+    };
+  }
   if (!ready) return { ok: false, message: "Health Connect is not available on this device.", count: 0 };
-  const granted = await health.requestPermission([
-    { accessType: "read", recordType: "ExerciseSession" },
-    { accessType: "read", recordType: "Distance" },
-  ]);
+  let granted: HealthConnectPermission[];
+  try {
+    granted = await health.requestPermission([
+      { accessType: "read", recordType: "ExerciseSession" },
+      { accessType: "read", recordType: "Distance" },
+    ]);
+  } catch {
+    return {
+      ok: false,
+      authorized: false,
+      message: "Health Connect permission was not granted. Allow workout access and try again.",
+      count: 0,
+    };
+  }
   if (!healthConnectGrantedExerciseRead(granted ?? [])) {
     return {
       ok: false,
@@ -370,10 +389,23 @@ export async function syncHealthConnect(
   const startTime = new Date(Date.now() - BACKFILL_MS).toISOString();
   const endTime = new Date().toISOString();
   const range = { timeRangeFilter: { operator: "between", startTime, endTime } };
-  const [{ records: sessions = [] }, { records: distances = [] }] = await Promise.all([
-    health.readRecords("ExerciseSession", range),
-    health.readRecords("Distance", range),
-  ]);
+  let sessions: NonNullable<Awaited<ReturnType<HealthConnectModule["readRecords"]>>["records"]> = [];
+  let distances: typeof sessions = [];
+  try {
+    const [exercise, distance] = await Promise.all([
+      health.readRecords("ExerciseSession", range),
+      health.readRecords("Distance", range),
+    ]);
+    sessions = exercise.records ?? [];
+    distances = distance.records ?? [];
+  } catch {
+    return {
+      ok: false,
+      authorized: true,
+      message: "Health Connect could not be read. You can keep using Overtaek without it.",
+      count: 0,
+    };
+  }
   const typeNames = new Map<number, string>();
   for (const [name, value] of Object.entries(health.ExerciseType ?? {})) {
     if (typeof value === "number") typeNames.set(value, name);

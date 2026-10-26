@@ -7,6 +7,15 @@ import {
   type CompeteState,
 } from "@fitness-battle/shared";
 import * as ImagePicker from "expo-image-picker";
+
+async function photoLibraryDenied() {
+  try {
+    const permission = await ImagePicker.getMediaLibraryPermissionsAsync();
+    return permission.status === "denied";
+  } catch {
+    return false;
+  }
+}
 import { useEffect, useRef, useState } from "react";
 import { Pressable, View } from "react-native";
 import Svg, { Path } from "react-native-svg";
@@ -43,6 +52,12 @@ export function ProfilePhoto({ state }: { state: CompeteState }) {
     try {
       let url: string | null = null;
       if (!remove) {
+        if (await photoLibraryDenied()) {
+          setError(
+            "Photo library access is off. Overtaek still works without a profile photo.",
+          );
+          return;
+        }
         const result = await ImagePicker.launchImageLibraryAsync({
           mediaTypes: ["images"],
           allowsEditing: true,
@@ -50,7 +65,14 @@ export function ProfilePhoto({ state }: { state: CompeteState }) {
           quality: 0.65,
           base64: true,
         });
-        if (result.canceled) return;
+        if (result.canceled) {
+          if (await photoLibraryDenied()) {
+            setError(
+              "Photo library access is off. Overtaek still works without a profile photo.",
+            );
+          }
+          return;
+        }
         const asset = result.assets[0];
         if (!asset.base64)
           throw new Error(
