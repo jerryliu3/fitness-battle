@@ -2,7 +2,7 @@
 import { UserAvatarSvg } from "@/ui/user-avatar-svg";
 import { typographyStyle } from "@/ui/section";
 
-import { useRef, useLayoutEffect, useState, useId, useMemo } from "react";
+import { useRef, useEffect, useLayoutEffect, useState, useId, useMemo } from "react";
 import { motion, useReducedMotion } from "motion/react";
 import {
   arenaPosition,
@@ -22,7 +22,7 @@ import {
   type ArenaViewWindow,
 } from "@fitness-battle/shared";
 import { drawFieldNode } from "@/features/field/components/field-course";
-import { PolishedRacer, usePolishedWakeTime } from "@/features/brand/polished-racer";
+import { PolishedRacer } from "@/features/brand/polished-racer";
 export function ArenaLanes({
   lanes,
   appearance = defaultFieldAppearance,
@@ -34,6 +34,7 @@ export function ArenaLanes({
   selected,
   focusOnMount = false,
   followSelected = false,
+  playback = false,
   onSelect,
   onPan,
   onBackgroundTap,
@@ -51,6 +52,8 @@ export function ArenaLanes({
   focusOnMount?: boolean;
   /** Keep a passive replay camera centered on its selected athlete. */
   followSelected?: boolean;
+  /** Replay already interpolates positions on its own animation clock. */
+  playback?: boolean;
   onSelect: (id: string) => void;
   onPan: (center: number) => void;
   onBackgroundTap?: () => void;
@@ -61,7 +64,6 @@ export function ArenaLanes({
   const reduced = useReducedMotion();
   const standings = presentation === "standings";
   const prefix = useId();
-  const wakeTime = usePolishedWakeTime(host, immersive && !standings);
   const [measured, setMeasured] = useState(false);
   const [size, setSize] = useState({ width: 360, height: 540 });
   const previousGeometry = useRef<{ width: number; laneWidth: number; count: number; left: number; oval: boolean } | null>(null);
@@ -77,6 +79,27 @@ export function ArenaLanes({
     captured: boolean;
     id: string | null;
   } | null>(null);
+  const pendingPan = useRef<number | null>(null);
+  const panFrame = useRef<number | null>(null);
+  const latestPan = useRef(onPan);
+  latestPan.current = onPan;
+  const flushPan = () => {
+    if (panFrame.current !== null) cancelAnimationFrame(panFrame.current);
+    panFrame.current = null;
+    const next = pendingPan.current;
+    pendingPan.current = null;
+    if (next !== null) latestPan.current(next);
+  };
+  const queuePan = (center: number) => {
+    pendingPan.current = center;
+    if (panFrame.current === null) panFrame.current = requestAnimationFrame(flushPan);
+  };
+  const cancelPan = () => {
+    if (panFrame.current !== null) cancelAnimationFrame(panFrame.current);
+    panFrame.current = null;
+    pendingPan.current = null;
+  };
+  useEffect(() => cancelPan, []);
   const animating = Boolean(overtakeFrame && overtakeFrame.phase !== "done");
   const liveLanes =
     animating && overtakeFrame
@@ -98,7 +121,7 @@ export function ArenaLanes({
   const cameraChanged = previousCamera.current.center !== effectiveView.center || previousCamera.current.span !== effectiveView.span || previousCamera.current.ground !== appearance.ground;
   useLayoutEffect(() => { previousCamera.current = { center: effectiveView.center, span: effectiveView.span, ground: appearance.ground }; });
   const course = useMemo(() => fieldCourse(size.width, size.height, ordered.length, effectiveView, unit, appearance), [size.width, size.height, ordered.length, effectiveView.center, effectiveView.span, unit, appearance]);
-  const groundPaint = useMemo(() => fieldCourseScene(course, appearance, ordered, unit, prefix).map(drawFieldNode), [course, appearance, lanes, overtakeFrame, unit, prefix]);
+  const groundPaint = useMemo(() => fieldCourseScene(course, appearance, ordered, unit, prefix).map(drawFieldNode), [course, appearance, unit, prefix]);
   const width = standings ? size.width : course.width;
   const height = standings ? Math.max(160, ordered.length * 76 + 24) : course.height;
   const laneWidth = course.laneWidth, plotHeight = course.length;
@@ -108,6 +131,7 @@ export function ArenaLanes({
   const relativeDistance = (value: number) => `${value - yourValue > 0 ? "+" : ""}${(value - yourValue).toFixed(1)} ${unit}`;
 
   const sortedByValue = [...ordered].sort((a, b) => b.value - a.value);
+  const Marker = playback ? "g" : motion.g;
 
   function formatLastUpdated(lane: ArenaSceneLane): string {
     return lane.you && lane.value === 0
@@ -233,7 +257,7 @@ export function ArenaLanes({
             }
             if (Math.abs(dy) > 5) {
               press.moved = true;
-              onPan(
+              queuePan(
                 clampPanCenter(
                   press.center + (dy / plotHeight) * effectiveView.span,
                   effectiveView.span,
@@ -243,6 +267,7 @@ export function ArenaLanes({
           }
         }}
         onPointerUp={(e) => {
+          flushPan();
           const press = drag.current;
           drag.current = null;
           if (!press || press.pointerId !== e.pointerId) return;
@@ -259,8 +284,9 @@ export function ArenaLanes({
           }
           if (!press.moved && !press.id && !standings) onBackgroundTap?.();
         }}
-        onLostPointerCapture={() => { drag.current = null; }}
+        onLostPointerCapture={() => { flushPan(); drag.current = null; }}
         onPointerCancel={(e) => {
+          cancelPan();
           const press = drag.current;
           drag.current = null;
           if (press?.captured) {
@@ -295,11 +321,13 @@ export function ArenaLanes({
           const pennantX=Math.max(visibleLeft-targetX+8,Math.min(visibleLeft+size.width-targetX-pennantWidth-8,l.you?-pennantWidth-12:12));
           const pennantY=athletePennantOffset(targetY,course.point(yourValue,Math.max(0,ordered.findIndex(peer=>peer.you)),0,true).y,Boolean(l.you),height);
           return (
-            <motion.g
+            <Marker
               key={l.id}
-              initial={false}
-              animate={{ x: targetX, y: targetY }}
-              transition={{ duration: reduced || cameraChanged || drag.current || animating || previousGeometry.current?.width !== size.width ? 0 : 0.48, ease: [0.22, 1, 0.36, 1] }}
+              {...(playback ? { transform: `translate(${targetX} ${targetY})` } : {
+                initial: false,
+                animate: { x: targetX, y: targetY },
+                transition: { duration: reduced || cameraChanged || drag.current || animating || previousGeometry.current?.width !== size.width ? 0 : 0.48, ease: [0.22, 1, 0.36, 1] as const },
+              })}
               data-athlete={l.id}
               role="button"
               aria-pressed={selected === l.id}
@@ -341,11 +369,10 @@ export function ArenaLanes({
                   data-overtake-ripple="true"
                 />
               )}
-              {/* Clip only the wake, in racer-local coordinates; the head must stay
-                  visible at field edges and throughout the standings transition. */}
+              {/* Local echoes own their animation; replay only moves the parent marker. */}
               {standings || !edge ? (
                 <PolishedRacer sizeScale={standings ? undefined : 1} x={xx} y={yy} you={Boolean(l.you)} gold={rank === 1} active={active}
-                  showWake={!standings} wakeBottom={course.oval ? undefined : (maxTailY-targetY)/markerScale} time={wakeTime}/>
+                  showWake={!standings} independentWake animateWake={immersive} wakeBottom={course.oval ? undefined : (maxTailY - targetY) / markerScale}/>
               ) : <circle r={18} fill="white" stroke="#616c63" strokeDasharray="3 3"/>}
               <rect className="focus-racer-focus-ring" x={-23} y={-headHalf-3} width={46} height={headHalf*2+6} rx={23} fill="none" stroke="#f1c75b" strokeWidth={2}/>
               <rect x={xx - 24 / markerScale} y={yy - Math.max(22 / markerScale, headHalf + 4)} width={48 / markerScale} height={Math.max(44 / markerScale, headHalf * 2 + 8)} rx="24" fill="transparent"/>
@@ -372,7 +399,7 @@ export function ArenaLanes({
                 <text style={typographyStyle("value")} x={width - 58} y={5} textAnchor="end" fill="#282f2c"  >{l.value.toFixed(1)} {unit}</text>
               </motion.g>
               </g>
-            </motion.g>
+            </Marker>
           );
         })}
         {ghost && !standings &&

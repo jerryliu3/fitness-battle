@@ -318,7 +318,7 @@ inside Full Arena; recap/history entries open a fullscreen replay viewer. See th
 
 Sync and debug overtake/passed-by moments now replay on the production 2D field,
 edge to edge on web and native. Use the captured complete roster, canonical glass
-capsules, earned traces, course scenery and the account/event's saved ground
+capsules, course scenery and the account/event's saved ground
 appearance. Preserve the slowed crossing timeline and a camera following the
 athlete with a subtle close-up at each pass. Nearby live standings, overtake/combo
 feedback and Skip/Continue are overlays; no field exploration, dimension, zoom,
@@ -326,3 +326,15 @@ customization or playback controls appear here. Native bypasses the receipt's
 padded ScrollView and places only overlays inside safe-area bounds. Reduced motion
 shows final totals immediately. This automatic movement moment is separate from
 the browsable competition-history replay with timeline controls.
+
+### 2D field performance — October 25
+
+Production 2D preserves the original full-size capsule echoes, colors, masks,
+spacing and gold/platinum animation timing. Inline/reduced-motion wakes keep the
+original still pose; fullscreen/exploration animates them. Web CSS and native Reanimated animate the original SVG groups without publishing
+React frame updates. Native keeps the original scene layering and uses two shared
+UI-thread phases per field. Pause hidden web wakes and inactive native fields. Earned-distance ribbons stay removed.
+Athlete movement must not rebuild scenery; replay owns marker position
+interpolation, and gestures publish at most once per animation frame. Preserve
+capsule identity, ground choices, distance scale, ghost and offscreen indicators.
+See the [performance investigation and fidelity validation](reviews/2d-field-performance/README.md).

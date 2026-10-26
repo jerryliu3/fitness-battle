@@ -1,13 +1,15 @@
 "use client";
-import {createElement,useEffect,useId,useState,type RefObject} from "react";
+import {memo,createElement,useEffect,useId,useMemo,useState,type RefObject} from "react";
 import {polishedCapsulePath,polishedCapsuleScene,polishedLaneScale,type CapsuleNode} from "@fitness-battle/shared";
+
+import { LocalWake } from "./local-wake";
 
 function draw(node:CapsuleNode,key:number):React.ReactNode{
   const {maskType,...attrs}=node.attrs;
   return createElement(node.tag,{...attrs,...(maskType?{style:{maskType}}:{}),key},node.children?.map(draw));
 }
-export function PolishedRacer({
-  x, y, you, gold = you, time, active = false, showWake = true, wakeBottom, sizeScale,
+export const PolishedRacer = memo(function PolishedRacer({
+  x, y, you, gold = you, time, active = false, showWake = true, wakeBottom, sizeScale, independentWake = false, animateWake = true,
 }: {
   x: number;
   y: number;
@@ -16,13 +18,15 @@ export function PolishedRacer({
   time?: number;
   active?: boolean;
   showWake?: boolean;
+  independentWake?: boolean;
+  animateWake?: boolean;
   /** Distance from the head to the field's lower wake boundary, in field pixels. */
   wakeBottom?: number;
   sizeScale?: number;
 }) {
   const id = useId();
   const scale = sizeScale ?? polishedLaneScale(you);
-  const [defs, wake, ...head] = polishedCapsuleScene(id, gold, time);
+  const [defs, wake, ...head] = useMemo(() => polishedCapsuleScene(id, gold, time), [id, gold, time]);
   return <g transform={`translate(${x} ${y}) scale(${scale})`} pointerEvents="none" data-polished-racer={gold ? "gold" : "platinum"}>
     {draw(defs, 0)}
     {showWake && <g clipPath={wakeBottom === undefined ? undefined : `url(#${id}-wake-clip)`}>
@@ -31,12 +35,12 @@ export function PolishedRacer({
           <rect x={-40} y={-35} width={80} height={Math.max(0, wakeBottom / scale + 35)} />
         </clipPath>
       </defs>}
-      {draw(wake, 1)}
+      {independentWake ? <LocalWake gold={gold} wake={wake} animate={animateWake} /> : draw(wake, 1)}
     </g>}
     {head.map(draw)}
     {active && !you && <path d={polishedCapsulePath(-3)} fill="none" stroke="#282f2c" strokeWidth="1.5" />}
   </g>;
-}
+});
 
 /** One clock for the field; pause for reduced motion, hidden tabs and offscreen fields. */
 export function usePolishedWakeTime(host:RefObject<HTMLDivElement|null>, enabled = true){

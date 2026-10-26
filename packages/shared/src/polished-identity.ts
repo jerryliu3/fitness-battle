@@ -6,8 +6,9 @@ export function polishedCapsulePath(inset=0){const w=20-inset,h=29-inset;return 
 export function polishedWakeLength(fast:boolean){return (POLISHED_IDENTITY.endpoint-(fast?93:145))/POLISHED_IDENTITY.scale-29;}
 /** Same marker sizes as the finalized matching lane study. */
 export function polishedLaneScale(you:boolean){return (you?17:14)/23*(POLISHED_IDENTITY.scale/1.35);}
+export function polishedWakeDuration(fast:boolean){return fast?1.15:1.32;}
 export function polishedEchoPose(fast:boolean,index:number,time?:number){
-  const length=polishedWakeLength(fast),duration=fast?1.15:1.32,count=POLISHED_IDENTITY.echoes;
+  const length=polishedWakeLength(fast),duration=polishedWakeDuration(fast),count=POLISHED_IDENTITY.echoes;
   if(time===undefined)return {offset:length*(index+1)/count,opacity:.6*(1-index/(count+1))};
   const phase=((Math.max(0,time)/duration+index/count)%1);
   return {offset:length*phase,opacity:.8-(.8-.12)*phase};

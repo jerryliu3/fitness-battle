@@ -2,11 +2,11 @@ import { chartTextProps, textStyle  } from "./section";
 import {
   fieldCourse, fieldCourseScene, fieldLap, defaultFieldAppearance, type FieldAppearance,
   arenaPosition,
+  arenaWindow,
   fieldDefaultSpan,
   ordinalPlace,
   athletePennantOffset,
   PERSON_ICON_PATH,
-  arenaWindow,
   arenaFieldHigh,
   clampCourseCenter,
   initialsFromName,
@@ -32,7 +32,8 @@ import { SHELL_COLORS as c } from "../theme";
 import { playCue } from "../lib/haptics";
 import { drawFieldNode } from "./field-course";
 import { LaneRacerTarget } from "./lane-racer-target";
-import { PolishedRacer, usePolishedWakeTime } from "./polished-racer";
+import { PolishedRacer } from "./polished-racer";
+import { useWakeAnimation } from "./use-wake-animation";
 export interface LaneAnchor { left: number; laneWidth: number; width: number; scroll: number; oval: boolean; count: number }
 
 function LaneTrackContent({
@@ -87,7 +88,7 @@ function LaneTrackContent({
   const prefix = useId();
   const [exploring, setExploring] = useState(false);
   const [width, setWidth] = useState(340);
-  const wakeTime = usePolishedWakeTime(active && (exploring || fullscreen));
+  const wakeAnimation = useWakeAnimation(active && (exploring || fullscreen));
   const scroll = useRef<ScrollViewInstance>(null);
   const animating = Boolean(overtakeFrame && overtakeFrame.phase !== "done");
   const me = lanes.find((l) => l.you);
@@ -109,6 +110,26 @@ function LaneTrackContent({
   const course = useMemo(() => fieldCourse(width, height, ordered.length, v, unit, appearance), [width, height, ordered.length, v.center, v.span, unit, appearance]);
   const latest = useRef({ v, onPan, onZoom, exploring: exploring || fullscreen, clampCenter, length: course.length, unit });
   latest.current = { v, onPan, onZoom, exploring: exploring || fullscreen, clampCenter, length: course.length, unit };
+  const pending = useRef<{ center?: number; span?: number } | null>(null);
+  const frame = useRef<number | null>(null);
+  const flush = () => {
+    if (frame.current !== null) cancelAnimationFrame(frame.current);
+    frame.current = null;
+    const next = pending.current;
+    pending.current = null;
+    if (next?.span !== undefined) latest.current.onZoom?.(next.span);
+    if (next?.center !== undefined) latest.current.onPan?.(next.center);
+  };
+  const queue = (next: { center?: number; span?: number }) => {
+    pending.current = next;
+    if (frame.current === null) frame.current = requestAnimationFrame(flush);
+  };
+  const cancel = () => {
+    if (frame.current !== null) cancelAnimationFrame(frame.current);
+    frame.current = null;
+    pending.current = null;
+  };
+  useEffect(() => cancel, []);
   const pinch = useRef<{ distance: number; span: number } | null>(null);
   const touchDistance = (touches: readonly { pageX: number; pageY: number }[]) => touches.length < 2 ? 0 : Math.hypot(touches[1].pageX - touches[0].pageX, touches[1].pageY - touches[0].pageY);
   const start = useRef(v.center);
@@ -130,13 +151,13 @@ function LaneTrackContent({
           const distance = touchDistance(event.nativeEvent.touches);
           if (distance > 0) {
             if (!pinch.current) pinch.current = { distance, span: latest.current.v.span };
-            latest.current.onZoom?.(Math.max(.5, Math.min(latest.current.unit === "pts" ? 100 : 40, pinch.current.span * pinch.current.distance / distance)));
+            queue({ span: Math.max(.5, Math.min(latest.current.unit === "pts" ? 100 : 40, pinch.current.span * pinch.current.distance / distance)) });
           } else if (!pinch.current && latest.current.exploring) {
-            latest.current.onPan?.(latest.current.clampCenter(start.current + (g.dy / latest.current.length) * latest.current.v.span, latest.current.v.span));
+            queue({ center: latest.current.clampCenter(start.current + (g.dy / latest.current.length) * latest.current.v.span, latest.current.v.span) });
           }
         },
-        onPanResponderRelease: () => { pinch.current = null; },
-        onPanResponderTerminate: () => { pinch.current = null; },
+        onPanResponderRelease: () => { flush(); pinch.current = null; },
+        onPanResponderTerminate: () => { cancel(); pinch.current = null; },
         onPanResponderTerminationRequest: () => !pinch.current && !latest.current.exploring,
       }),
     [],
@@ -144,7 +165,7 @@ function LaneTrackContent({
   const ghost = showGhost ? lanes.find((l) => l.ghost) : null;
   const w = course.width, lw = course.laneWidth;
   const live = ordered.map(l => ({ ...l, value: animating ? overtakeFrame?.laneValues[l.id] ?? l.values[index] ?? 0 : l.values[index] ?? 0, initials: initialsFromName(l.name) }));
-  const groundPaint = useMemo(() => fieldCourseScene(course, appearance, live, unit, prefix).map(drawFieldNode), [course, appearance, lanes, index, overtakeFrame, unit, prefix]);
+  const groundPaint = useMemo(() => fieldCourseScene(course, appearance, live, unit, prefix).map(drawFieldNode), [course, appearance, unit, prefix]);
   const bounds = arenaWindow(v.center, v.span);
   const maxTailY = Math.min(height, bounds.min <= 0 && bounds.max >= 0 ? course.along(0) + 4 : height);
   const localAnchor = useRef<LaneAnchor | null>(null);
@@ -192,7 +213,7 @@ function LaneTrackContent({
         pinchGestureEnabled={false}
         showsHorizontalScrollIndicator
         contentContainerStyle={{ paddingTop: topInset }}
-        onScroll={e => { if (previous.current) previous.current.scroll = e.nativeEvent.contentOffset.x; }}
+        onScroll={e => { const x = e.nativeEvent.contentOffset.x; if (previous.current) previous.current.scroll = x; }}
         scrollEventThrottle={16}
       >
         <View>
@@ -264,6 +285,7 @@ function LaneTrackContent({
                       x={0}
                       y={0}
                       you={l.you}
+                      animation={wakeAnimation}
                       wakeBottom={course.oval ? undefined : (maxTailY - yy) / scale}
                       gold={
                         !ordered.some(
@@ -272,7 +294,6 @@ function LaneTrackContent({
                               peer.values[index]) > value,
                         )
                       }
-                      time={wakeTime}
                     />
                   )}
 

@@ -1,13 +1,11 @@
 import {
   createElement,
-  useCallback,
-  useEffect,
+  memo,
   useId,
-  useState,
+  useMemo,
   type ComponentType,
 } from "react";
-import { AppState, Platform } from "react-native";
-import { useFocusEffect } from "expo-router";
+import { Platform } from "react-native";
 import {
   G,
   Path,
@@ -21,9 +19,22 @@ import {
 import {
   polishedCapsuleScene,
   polishedLaneScale,
+  polishedWakeLength,
+  POLISHED_IDENTITY,
   type CapsuleNode,
 } from "@fitness-battle/shared";
-import { useReducedMotion } from "./use-reduced-motion";
+
+import Animated, { useAnimatedProps, type SharedValue } from "react-native-reanimated";
+import type { WakeAnimation } from "./use-wake-animation";
+
+const AnimatedG = Animated.createAnimatedComponent(G);
+const Echo = memo(function Echo({ phase, length, index, shape }: { phase: SharedValue<number>; length: number; index: number; shape: CapsuleNode }) {
+  const animatedProps = useAnimatedProps(() => {
+    const progress = (phase.value + index / POLISHED_IDENTITY.echoes) % 1;
+    return { matrix: [1, 0, 0, 1, 0, progress * length], opacity: .8 - (.8 - .12) * progress };
+  });
+  return <AnimatedG animatedProps={animatedProps}>{shape.children?.map(drawCapsuleNode)}</AnimatedG>;
+});
 
 const elements = {
   g: G,
@@ -34,17 +45,17 @@ const elements = {
   stop: Stop,
   mask: Mask,
 };
-function draw(node: CapsuleNode, key: number): React.ReactNode {
+function drawCapsuleNode(node: CapsuleNode, key: number): React.ReactNode {
   const Element = elements[node.tag] as ComponentType<Record<string, unknown>>;
   const {maskType,...attrs}=node.attrs;
   const attributes=Platform.OS==="web"&&maskType?{...attrs,style:{maskType}}:node.attrs;
   return createElement(
     Element,
     { ...attributes, key },
-    node.children?.map(draw),
+    node.children?.map(drawCapsuleNode),
   );
 }
-export function PolishedRacer({
+export const PolishedRacer = memo(function PolishedRacer({
   x,
   y,
   you,
@@ -53,6 +64,7 @@ export function PolishedRacer({
   wakeBottom,
   showWake = true,
   sizeScale,
+  animation,
 }: {
   x: number;
   y: number;
@@ -62,14 +74,17 @@ export function PolishedRacer({
   wakeBottom?: number;
   showWake?: boolean;
   sizeScale?: number;
+  animation?: WakeAnimation;
 }) {
   const id = useId(),
     scale = sizeScale ?? polishedLaneScale(you);
-  const [defs, wake, ...head] = polishedCapsuleScene(id, gold, time);
+  const scene = useMemo(() => polishedCapsuleScene(id, gold, time), [id, gold, time]);
+  const [paintedDefs, , ...paintedHead] = useMemo(() => scene.map(drawCapsuleNode), [scene]);
+  const wake = scene[1], fade = wake.children![0];
   return (
     <G transform={`translate(${x} ${y}) scale(${scale})`} pointerEvents="none">
-      {draw(defs, 0)}
-      {wakeBottom !== undefined && (
+      {paintedDefs}
+      {showWake && wakeBottom !== undefined && (
         <Defs>
           <ClipPath id={`${id}-wake-bound`}>
             <Rect
@@ -87,50 +102,13 @@ export function PolishedRacer({
             wakeBottom === undefined ? undefined : `url(#${id}-wake-bound)`
           }
         >
-          {draw(wake, 1)}
+          {animation ? <G {...wake.attrs}><G {...fade.attrs}>
+            {fade.children!.map((shape, index) => <Echo key={index} phase={gold ? animation.gold : animation.platinum}
+              length={polishedWakeLength(gold)} index={index} shape={shape} />)}
+          </G></G> : drawCapsuleNode(wake, 1)}
         </G>
       ) : null}
-      {head.map(draw)}
+      {paintedHead}
     </G>
   );
-}
-/** One field clock, suspended when the screen/app is inactive or motion is reduced. */
-export function usePolishedWakeTime(active = true) {
-  const reduced = useReducedMotion();
-  const [foreground, setForeground] = useState(
-      AppState.currentState === "active",
-    ),
-    [focused, setFocused] = useState(false);
-  const [time, setTime] = useState<number | undefined>(undefined);
-  useFocusEffect(
-    useCallback(() => {
-      setFocused(true);
-      return () => setFocused(false);
-    }, []),
-  );
-  useEffect(() => {
-    const app = AppState.addEventListener("change", (state) =>
-      setForeground(state === "active"),
-    );
-    return () => app.remove();
-  }, []);
-  useEffect(() => {
-    if (!active || reduced || !foreground || !focused) {
-      setTime(undefined);
-      return;
-    }
-    let raf = 0,
-      published = 0;
-    const start = performance.now();
-    const tick = (now: number) => {
-      if (now - published >= 1000 / 30) {
-        published = now;
-        setTime((now - start) / 1000);
-      }
-      raf = requestAnimationFrame(tick);
-    };
-    raf = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(raf);
-  }, [active, reduced, foreground, focused]);
-  return time;
-}
+});
