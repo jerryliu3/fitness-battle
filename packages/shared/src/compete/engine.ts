@@ -512,6 +512,14 @@ export function competeNow(
   return state.demoNow ? new Date(state.demoNow) : fallback;
 }
 
+/** A field snapshot only applies to its exact sport, wave and membership context. */
+export function fieldBoardForEnrollment(state: CompeteState, enrollment: WaveEnrollment): CrewBoardPin | null {
+  return [state.crewBoard, enrollment.fieldBoard].find(pin =>
+    isCrewBoardPin(pin) && fieldPinMatchesEnrollment(pin, enrollment) &&
+    Date.parse(pin.weekEnd) === Date.parse(enrollment.weekEnd),
+  ) ?? null;
+}
+
 function groupFor(
   state: CompeteState,
   sport: SportId,
@@ -520,10 +528,7 @@ function groupFor(
   asOf: Date,
 ): { id: string; name: string; elo: number; effort: number; distanceM: number; movingSec: number; you: boolean }[] {
   const mine = rating(state, sport);
-  const pin =
-    state.crewBoard && fieldPinMatchesEnrollment(state.crewBoard, enrollment)
-      ? state.crewBoard
-      : null;
+  const pin = fieldBoardForEnrollment(state, enrollment);
   const fromPool = realPlayerPool.filter((player) =>
     enrollment.peerIds.includes(player.id),
   );

@@ -1,5 +1,6 @@
 import {
   competeNow,
+  fieldBoardForEnrollment,
   latestCountedActivityAt,
   sportById,
   distanceTrackMaxKm,
@@ -66,6 +67,8 @@ export function buildFieldModel(
   options?: { ghostSelector?: GhostPeriodSelector },
 ): FieldModel {
   const board = buildSplitBoard(state, sport, track, now, options);
+  const enrollment = state.enrollments.find(item => item.sport === sport);
+  const fieldBoard = enrollment ? fieldBoardForEnrollment(state, enrollment) : null;
   const gps = sportById(sport).gps;
   const unit: ArenaDistanceUnit = gps
     ? state.units === "metric"
@@ -89,7 +92,7 @@ export function buildFieldModel(
     return {
       id: row.id,
       name: row.you ? state.name : row.name,
-      avatarUrl: row.you ? state.avatarUrl : state.crewBoard?.members.find(m=>m.id===row.id)?.avatarUrl,
+      avatarUrl: row.you ? state.avatarUrl : fieldBoard?.members.find(m=>m.id===row.id)?.avatarUrl,
       initials: row.you
         ? initialsFromName(state.name)
         : initialsFromName(row.name),

@@ -3,7 +3,7 @@ import { latestCountedActivityAt } from "./activity-age";
  * View models for the phone tabs. Plain data — no React, DOM, or native imports.
  * The checkpoint route and lane values stay here so Expo and the web column match.
  */
-import { competeNow, formatEffort, weeklyBoard } from "./compete/engine";
+import { competeNow, fieldBoardForEnrollment, formatEffort, weeklyBoard } from "./compete/engine";
 import { resolvePastSelfGhost, ghostHasVolume } from "./compete/ghost";
 import { formatEloDelta, formatPlace } from "./compete/history";
 import { countsOnTrack } from "./compete/ledger";
@@ -306,6 +306,8 @@ export function buildArenaModel(
     now,
   );
   const board = optedIn ? weeklyBoard(state, sport, track, now) : [];
+  const enrollment = state.enrollments.find(item => item.sport === sport);
+  const fieldBoard = enrollment ? fieldBoardForEnrollment(state, enrollment) : null;
   const lanes: ArenaLane[] = board.map((row) => {
     const series = row.you
       ? youSeries
@@ -321,7 +323,7 @@ export function buildArenaModel(
     return {
       id: row.id,
       name: row.you ? state.name : row.name,
-      avatarUrl: row.you ? state.avatarUrl : state.crewBoard?.members.find(m=>m.id===row.id)?.avatarUrl,
+      avatarUrl: row.you ? state.avatarUrl : fieldBoard?.members.find(m=>m.id===row.id)?.avatarUrl,
       you: row.you,
       ghost: false,
       lastUpdated: row.you

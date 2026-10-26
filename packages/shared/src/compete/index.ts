@@ -102,6 +102,7 @@ export {
   settleSportRound,
   competeNow,
   weeklyBoard,
+  fieldBoardForEnrollment,
   projectedElo,
   formatClock,
   daysLeft,
