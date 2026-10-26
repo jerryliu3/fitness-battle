@@ -46,7 +46,7 @@ export function CrewRelay(props: Props) {
           <AppText role="caption" secondary style={f.grow}>
             {label}
           </AppText>
-          {target ? <AppText role="label">{volume(target)}</AppText> : null}
+          {target ? <AppText role="value">{volume(target)}</AppText> : null}
         </View>
       )}
       <ScrollView horizontal showsHorizontalScrollIndicator={w > width}>

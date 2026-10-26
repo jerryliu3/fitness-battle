@@ -1,6 +1,6 @@
 "use client";
 import { ActivityRoute } from "@/components/routes/activity-route";
-import { AppParagraph, Section, SectionStack } from "@/ui/section";
+import { AppParagraph, AppText, Section, SectionStack } from "@/ui/section";
 import { TrainingAtlas } from "./training-atlas";
 import { useState, type ReactNode } from "react";
 import { RecordChart } from "./record-chart";
@@ -69,9 +69,9 @@ export function TrainingHistory({ state, children }: { state: CompeteState; chil
           <AppParagraph typographyRole="label" className="fb-kicker">
             {active.label} · {active.sport}
           </AppParagraph>
-          <strong className="record-time">
+          <AppText role="hero" className="record-time">
             {formatClockTime(latest.seconds)}
-          </strong>
+          </AppText>
           <RecordChart rows={rows} selected={inspected.activityId} now={now} onSelect={setReceipt} />
           <div
             className="record-distance-tabs"
@@ -91,9 +91,9 @@ export function TrainingHistory({ state, children }: { state: CompeteState; chil
             ))}
           </div>
           <div aria-live="polite">
-            <b>{formatClockTime(inspected.seconds)}</b> ·{" "}
-            {date(inspected.startedAt)}
-            <AppParagraph typographyRole="body" className="fb-copy">
+            <AppText role="value">{formatClockTime(inspected.seconds)}</AppText>{" · "}
+            <AppText role="caption" secondary>{date(inspected.startedAt)}</AppText>
+            <AppParagraph typographyRole="caption" className="fb-copy">
               {inspected.source.replaceAll("_", " ")}
               {inspected.verified ? " · GPS recorded" : ""}
             </AppParagraph>
