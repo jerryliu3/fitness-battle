@@ -1,7 +1,7 @@
 import { textStyle, AppText, Section  } from "../ui/section";
 import { ChartScrubber } from "../ui/chart-scrubber";
 import { useMemo, useState } from "react";
-import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 import {
   APP_TIMEZONE,
   clampTrainingAnchor,
@@ -86,7 +86,7 @@ export function TrainingAtlas({ state }: { state: CompeteState }) {
     setSelectedDay(null);
   };
   return (
-    <Section title="Your training">
+    <Section titleRole="display" title="Your training">
       <View style={[f.row, { justifyContent: "space-between", alignItems: "center" }]}>
         <TrainingSportMenu
           value={sports}

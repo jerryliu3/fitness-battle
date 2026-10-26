@@ -7,6 +7,8 @@ describe("trackerRedirect", () => {
     expect(response.status).toBe(200);
     const html = await response.text();
     expect(html).toContain("overtaek:///you?tracker=connected&provider=oura");
-    expect(html).toContain("https://example.com/you?tracker=connected&provider=oura");
+    expect(html).toContain(
+      "https://example.com/app/you?tracker=connected&provider=oura",
+    );
   });
 });

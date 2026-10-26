@@ -42,7 +42,7 @@ export function CrewRelay(props: Props) {
     <div ref={host} className="crew-dimensional-relay">
       <div className="crew-relay-context">
         <span>{label}</span>
-        {target ? <b>{volume(target)}</b> : null}
+        {target ? <AppText role="value">{volume(target)}</AppText> : null}
       </div>
       <div className="club-crew-track-scroll">
         <div
@@ -113,7 +113,7 @@ export function CrewRelay(props: Props) {
       </div>
       {member ? (
         <AppParagraph typographyRole="body" className="crew-member-receipt" aria-live="polite">
-          <b>{member.name}</b>
+          <AppText role="row">{member.name}</AppText>
           <span>
             {volume(member.value)} · {(member.share * 100).toFixed(1)}% of
             recorded crew activity · {member.sessions} {member.sessions===1?"session":"sessions"}

@@ -552,6 +552,24 @@ a {
   padding: 0 20px 48px;
 }
 
+.fb-marketing {
+  margin: 0 auto;
+}
+
+.fb-marketing-main {
+  padding-top: 24px;
+  display: grid;
+  gap: 16px;
+}
+
+.fb-marketing-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+  margin: 8px 0 0;
+}
+
 .fb-legal-header {
   display: flex;
   align-items: center;

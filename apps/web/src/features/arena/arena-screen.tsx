@@ -111,7 +111,7 @@ export function ArenaScreen({ tabActive = true }: { tabActive?: boolean }) {
     <div className="focus-arena">
       <header className="focus-competition-card">
         <div className="focus-competition-info">
-          <SectionHeader title="Competition" subtitle={dateRangeLabel} action={<div className="ui-competition-status"><StatusBadge>{badgeLabel}</StatusBadge><span className="focus-competition-tip-wrap"><button type="button" className="focus-competition-tip" aria-label="About competition scoring" aria-expanded={competitionTipOpen} onClick={() => setCompetitionTipOpen(open => !open)}>ⓘ</button>{competitionTipOpen && <AppText role="caption" className="focus-competition-tip-popover" aria-hidden={!competitionTipOpen}>{SCORE_TRACK_TOOLTIP}</AppText>}</span></div>}/>
+          <SectionHeader titleRole="display" title="Competition" subtitle={dateRangeLabel} action={<div className="ui-competition-status"><StatusBadge>{badgeLabel}</StatusBadge><span className="focus-competition-tip-wrap"><button type="button" className="focus-competition-tip" aria-label="About competition scoring" aria-expanded={competitionTipOpen} onClick={() => setCompetitionTipOpen(open => !open)}>ⓘ</button>{competitionTipOpen && <AppText role="caption" className="focus-competition-tip-popover" aria-hidden={!competitionTipOpen}>{SCORE_TRACK_TOOLTIP}</AppText>}</span></div>}/>
 
         </div>
       </header>
