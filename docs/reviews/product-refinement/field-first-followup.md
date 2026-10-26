@@ -1,6 +1,6 @@
 # Follow-up: the field and the moments around it
 
-One additional direction across the tabs, stacked on Profile #355. These are isolated native study routes with fictional data. No production screen, scoring, account or backend behavior is selected or replaced.
+[PR #379](https://github.com/jerryliu3/fitness-battle/pull/379): one additional direction across the tabs, stacked on Profile #355. These are isolated native study routes with fictional data. No production screen, scoring, account or backend behavior is selected or replaced.
 
 ## Compete: three rebuilt directions
 

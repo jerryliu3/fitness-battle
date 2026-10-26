@@ -1,6 +1,6 @@
 # Product-derived native refinement
 
-The [field-first follow-up](field-first-followup.md) rebuilds all three Compete directions around the actual 2D/3D field and adds one direction each for Progress, Crew and Profile. Open `/refine-next` for the follow-up collection. The earlier nine-screen stack below remains its foundation; validation recorded below predates the follow-up.
+The [field-first follow-up](field-first-followup.md), [PR #379](https://github.com/jerryliu3/fitness-battle/pull/379), rebuilds all three Compete directions around the actual 2D/3D field and adds one direction each for Progress, Crew and Profile. Open `/refine-next` for the follow-up collection. The earlier nine-screen stack below remains its foundation; validation recorded below predates the follow-up.
 
 Nine focused native screens following the October 25 owner review of #340–343. This new stack starts from current `main` and the actual product components; it does not import the previous study kit or those 31 layouts. These are implementation candidates for visual review, not selected production layouts.
 
