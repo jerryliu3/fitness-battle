@@ -5,11 +5,19 @@ import {
 } from "@fitness-battle/shared";
 import { SHELL_COLORS as c } from "../theme";
 
-export function AchievementMeter({ row }: { row: ClubAchievement }) {
+export function AchievementMeter({
+  row,
+  decorative = true,
+}: {
+  row: ClubAchievement;
+  decorative?: boolean;
+}) {
   return (
     <View
-      importantForAccessibility="no-hide-descendants"
-      accessibilityElementsHidden
+      importantForAccessibility={
+        decorative ? "no-hide-descendants" : undefined
+      }
+      accessibilityElementsHidden={decorative ? true : undefined}
       style={{
         width: "100%",
         height: 4,

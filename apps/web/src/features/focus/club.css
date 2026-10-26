@@ -827,7 +827,13 @@
 }
 .club-all-achievements button > span {
   display: grid;
+  flex: 1;
+  min-width: 0;
   gap: 5px;
+}
+.club-achievement-detail .club-achievement-meter {
+  align-self: stretch;
+  max-width: 280px;
 }
 .club-all-achievements .club-badge {
   width: 42px;

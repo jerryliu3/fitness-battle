@@ -1,54 +1,43 @@
 "use client";
 import { UserAvatar } from "@/ui/user-avatar";
-import { typographyStyle, AppText, AppParagraph  } from "@/ui/section";
-
-import { useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { typographyStyle, AppText, AppParagraph } from "@/ui/section";
+import { useEffect, useId, useLayoutEffect, useRef, useState } from "react";
 import {
+  buildCrewRelayViewState,
   crewWeekRelay,
-  crewRelayScene,
-  crewRelayIsEmpty,
-  crewRelayRosterFootnote,
-  formatVolume,
   type CrewWeekRelayInput,
   type SportId,
   type UnitSystem,
 } from "@fitness-battle/shared";
-import { drawFieldNode } from "@/features/field/components/field-course";
+import { drawFieldNode as drawFieldNodeDom } from "@/features/field/components/field-course";
+
 type Props = CrewWeekRelayInput & { units?: UnitSystem; userId?: string };
+
 export function CrewRelay(props: Props) {
   const { members, sport, units, userId } = props;
-  const [selected, setSelected] = useState(""),
-    [width, setWidth] = useState(320),
-    host = useRef<HTMLDivElement>(null),
-    prefix = useId();
+  const [selected, setSelected] = useState("");
+  const [width, setWidth] = useState(320);
+  const host = useRef<HTMLDivElement>(null);
+  const prefix = useId();
   const relay = crewWeekRelay(props);
-  const { model, sessions, kind, target, label, inactiveCount, rosterSize } =
-    relay;
-  const empty = crewRelayIsEmpty(model);
-  const rosterFootnote = crewRelayRosterFootnote(
-    sessions,
-    inactiveCount,
-    rosterSize,
-  );
-  const segmentKey = useMemo(
-    () => model.segments.map((s) => s.id).join(","),
-    [model.segments],
-  );
+  const view = buildCrewRelayViewState(relay, {
+    selected,
+    userId,
+    containerWidth: width,
+    scenePrefix: prefix,
+    sport: sport as SportId,
+    units,
+  });
+
   useEffect(() => {
-    if (selected && !model.segments.some((s) => s.id === selected)) {
+    if (
+      selected &&
+      !view.model.segments.some((segment) => segment.id === selected)
+    ) {
       setSelected("");
     }
-  }, [segmentKey, selected, model.segments]);
-  const laneMembers = Math.max(1, model.segments.length);
-  const w = Math.max(width, laneMembers * 64 + 32),
-    scene = crewRelayScene(model, w, prefix);
-  const member =
-    model.segments.find((m) => m.id === (selected || userId)) ??
-    model.segments[0];
-  const volume = (value: number) =>
-    sessions
-      ? `${value} sessions`
-      : formatVolume(sport as SportId, value, 0, units);
+  }, [view.segmentKey, selected, view.model.segments]);
+
   useLayoutEffect(() => {
     const el = host.current;
     if (!el) return;
@@ -58,103 +47,119 @@ export function CrewRelay(props: Props) {
     observer.observe(el);
     return () => observer.disconnect();
   }, []);
+
+  const volume = view.volume;
+
   return (
     <div ref={host} className="crew-dimensional-relay">
       <div className="crew-relay-context">
-        <span>{label}</span>
-        {target ? <b>{volume(target)}</b> : null}
+        <span>{view.label}</span>
+        {view.target ? <b>{volume(view.target)}</b> : null}
       </div>
       <div className="club-crew-track-scroll">
         <div
           className="club-crew-track"
-          style={{ width: w, height: scene.height }}
+          style={{ width: view.width, height: view.scene.height }}
         >
           <svg
-            width={w}
-            height={scene.height}
-            viewBox={`0 0 ${w} ${scene.height}`}
+            width={view.width}
+            height={view.scene.height}
+            viewBox={`0 0 ${view.width} ${view.scene.height}`}
             role="img"
-            aria-label={`${volume(model.total)} together${target ? ` of ${volume(target)} target` : "; target unavailable"}`}
+            aria-label={`${volume(view.model.total)} together${view.target ? ` of ${volume(view.target)} target` : "; target unavailable"}`}
           >
-            {scene.ground.map(drawFieldNode)}
-            {scene.segments.map((s) => (
-              <g key={s.id}>{s.nodes.map(drawFieldNode)}</g>
+            {view.scene.ground.map(drawFieldNodeDom)}
+            {view.scene.segments.map((s) => (
+              <g key={s.id}>{s.nodes.map(drawFieldNodeDom)}</g>
             ))}
-            {scene.finish.map(drawFieldNode)}
-            {target ? (
-              <text style={typographyStyle("caption")}
-                x={Math.max(64, Math.min(w - 64, (scene.finishX ?? 0) + 12))}
+            {view.scene.finish.map(drawFieldNodeDom)}
+            {view.target ? (
+              <text
+                style={typographyStyle("caption")}
+                x={Math.max(
+                  64,
+                  Math.min(
+                    view.width - 64,
+                    (view.scene.finishX ?? 0) + 12,
+                  ),
+                )}
                 y={222}
                 textAnchor="middle"
                 fill="#142b3b"
-
               >
-                FINISH · {volume(target)}
+                FINISH · {volume(view.target)}
               </text>
             ) : (
-              <text style={typographyStyle("caption")}
-                x={w / 2}
+              <text
+                style={typographyStyle("caption")}
+                x={view.width / 2}
                 y={222}
                 textAnchor="middle"
                 fill="#637482"
-
               >
                 A shared target has not been set
               </text>
             )}
           </svg>
-          {scene.people.map((p) => {
-            const m = model.segments.find((m) => m.id === p.id)!,
-              person = members.find((m) => m.user_id === p.id);
+          {view.scene.people.map((p) => {
+            const m = view.model.segments.find((segment) => segment.id === p.id)!;
+            const person = members.find((member) => member.user_id === p.id);
             return (
               <button
                 type="button"
                 className="club-crew-marker"
                 key={p.id}
                 style={{ left: p.x - 28, top: p.y }}
-                aria-pressed={member?.id === p.id}
+                aria-pressed={view.member?.id === p.id}
                 aria-label={`${m.name}, ${volume(m.value)}`}
                 onClick={() => setSelected(p.id)}
               >
                 <span
                   className="crew-member-photo"
                   style={{
-                    border: `3px solid ${member?.id === p.id ? "#142b3b" : p.color}`,
+                    border: `3px solid ${view.member?.id === p.id ? "#142b3b" : p.color}`,
                   }}
                 >
                   <UserAvatar src={person?.avatar_url} name={m.name} size={34} />
                 </span>
                 <b>{m.name.split(" ")[0]}</b>
-                <AppText as="small" role="caption" secondary>{volume(m.value)}</AppText>
+                <AppText as="small" role="caption" secondary>
+                  {volume(m.value)}
+                </AppText>
               </button>
             );
           })}
         </div>
       </div>
-      {empty ? (
+      {view.empty ? (
         <AppParagraph typographyRole="caption" className="fb-note">
           No one has logged activity this week yet.
         </AppParagraph>
-      ) : member ? (
-        <AppParagraph typographyRole="body" className="crew-member-receipt" aria-live="polite">
-          <b>{member.name}</b>
+      ) : view.member ? (
+        <AppParagraph
+          typographyRole="body"
+          className="crew-member-receipt"
+          aria-live="polite"
+        >
+          <b>{view.member.name}</b>
           <span>
-            {volume(member.value)} · {(member.share * 100).toFixed(1)}% of
-            recorded crew activity · {member.sessions} {member.sessions===1?"session":"sessions"}
+            {volume(view.member.value)} · {(view.member.share * 100).toFixed(1)}%
+            of recorded crew activity · {view.member.sessions}{" "}
+            {view.member.sessions === 1 ? "session" : "sessions"}
           </span>
         </AppParagraph>
       ) : null}
-      {rosterFootnote ? (
+      {view.rosterFootnote ? (
         <AppParagraph typographyRole="caption" className="fb-note">
-          {rosterFootnote}
+          {view.rosterFootnote}
         </AppParagraph>
       ) : null}
-      {target ? (
+      {view.target ? (
         <AppParagraph typographyRole="caption" className="fb-note">
-          {model.remaining
-            ? `${volume(model.remaining)} ${kind === "baseline" ? "to match last week" : "to the target"}`
-            : model.total > target
-              ? `${volume(model.total - target)} beyond ${kind === "baseline" ? "last week" : "the target"}`
+          {view.model.remaining
+            ? `${volume(view.model.remaining)} ${view.kind === "baseline" ? "to match last week" : "to the target"}`
+            : view.model.total > view.target
+              ? `${volume(view.model.total - view.target)} beyond ${view.kind === "baseline" ? "last week" : "the target"}`
               : "Target reached together."}
         </AppParagraph>
       ) : (

@@ -221,6 +221,7 @@ export {
   crewWeekRelay,
   crewRelayIsEmpty,
   crewRelayRosterFootnote,
+  crewEntryTotals,
   crewMemberWeekValue,
   filterCrewMembersWithPeriodActivity,
   type CrewRelayModel,

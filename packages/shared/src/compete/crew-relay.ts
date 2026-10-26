@@ -65,7 +65,7 @@ export function crewRelayRosterFootnote(
   return `Target counts all ${rosterSize} members; ${inactiveCount} ${noun} logged yet.`;
 }
 
-function crewEntryTotals(entries: CrewWeekRelayInput["entries"]) {
+export function crewEntryTotals(entries: CrewWeekRelayInput["entries"]) {
   const byUser = new Map<string, { distance: number; sessions: number }>();
   for (const entry of entries) {
     const row = byUser.get(entry.user_id) ?? { distance: 0, sessions: 0 };
@@ -93,9 +93,12 @@ export function filterCrewMembersWithPeriodActivity<
   entries: CrewWeekRelayInput["entries"],
   sessions: boolean,
 ): T[] {
-  return members.filter(
-    (m) => crewMemberWeekValue(entries, m.user_id, sessions) > 0,
-  );
+  const totals = crewEntryTotals(entries);
+  return members.filter((m) => {
+    const row = totals.get(m.user_id);
+    if (!row) return false;
+    return (sessions ? row.sessions : row.distance) > 0;
+  });
 }
 
 function crewMemberContributions(

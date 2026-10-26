@@ -27,6 +27,7 @@ export * from "./training-types";
 export * from "./training-view";
 export * from "./training-chart-controls";
 export * from "./crew-relay-scene";
+export * from "./crew-relay-presentation";
 export * from "./club-summary";
 
 export * from "./portrait-field";

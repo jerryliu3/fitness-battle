@@ -1,20 +1,16 @@
 import { UserAvatar } from "../ui/user-avatar";
-import { chartTextProps, AppText  } from "../ui/section";
-import { useEffect, useId, useMemo, useState } from "react";
+import { chartTextProps, AppText } from "../ui/section";
+import { useEffect, useId, useState } from "react";
 import {
   Pressable,
   ScrollView,
   StyleSheet,
-  Text,
   View,
 } from "react-native";
 import Svg, { G, Text as SvgText } from "react-native-svg";
 import {
+  buildCrewRelayViewState,
   crewWeekRelay,
-  crewRelayScene,
-  crewRelayIsEmpty,
-  crewRelayRosterFootnote,
-  formatVolume,
   type CrewWeekRelayInput,
   type SportId,
   type UnitSystem,
@@ -22,89 +18,101 @@ import {
 import { drawFieldNode } from "../ui/field-course";
 import { SHELL_COLORS as c } from "../theme";
 import { f } from "../ui/focus";
+
 type Props = CrewWeekRelayInput & { units?: UnitSystem; userId?: string };
+
 export function CrewRelay(props: Props) {
   const { members, sport, units, userId } = props;
-  const [selected, setSelected] = useState(""),
-    [width, setWidth] = useState(320),
-    prefix = useId();
+  const [selected, setSelected] = useState("");
+  const [width, setWidth] = useState(320);
+  const prefix = useId();
   const relay = crewWeekRelay(props);
-  const { model, sessions, kind, target, label, inactiveCount, rosterSize } =
-    relay;
-  const empty = crewRelayIsEmpty(model);
-  const rosterFootnote = crewRelayRosterFootnote(
-    sessions,
-    inactiveCount,
-    rosterSize,
-  );
-  const segmentKey = useMemo(
-    () => model.segments.map((s) => s.id).join(","),
-    [model.segments],
-  );
+  const view = buildCrewRelayViewState(relay, {
+    selected,
+    userId,
+    containerWidth: width,
+    scenePrefix: prefix,
+    sport: sport as SportId,
+    units,
+  });
+
   useEffect(() => {
-    if (selected && !model.segments.some((s) => s.id === selected)) {
+    if (
+      selected &&
+      !view.model.segments.some((segment) => segment.id === selected)
+    ) {
       setSelected("");
     }
-  }, [segmentKey, selected, model.segments]);
-  const laneMembers = Math.max(1, model.segments.length);
-  const w = Math.max(width, laneMembers * 64 + 32),
-    scene = crewRelayScene(model, w, prefix);
-  const member =
-    model.segments.find((m) => m.id === (selected || userId)) ??
-    model.segments[0];
-  const volume = (value: number) =>
-    sessions
-      ? `${value} sessions`
-      : formatVolume(sport as SportId, value, 0, units);
+  }, [view.segmentKey, selected, view.model.segments]);
+
+  const volume = view.volume;
+
   return (
     <View
       style={{ gap: 12, marginTop: 12 }}
       onLayout={(e) => setWidth(e.nativeEvent.layout.width)}
     >
       <View style={f.row}>
-        <AppText role="caption" secondary style={f.grow}>{label}</AppText>
-        {target ? <AppText role="label" >{volume(target)}</AppText> : null}
+        <AppText role="caption" secondary style={f.grow}>
+          {view.label}
+        </AppText>
+        {view.target ? (
+          <AppText role="label">{volume(view.target)}</AppText>
+        ) : null}
       </View>
-      <ScrollView horizontal showsHorizontalScrollIndicator={w > width}>
-        <View style={{ width: w, height: scene.height }}>
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={view.width > width}
+      >
+        <View style={{ width: view.width, height: view.scene.height }}>
           <Svg
-            width={w}
-            height={scene.height}
-            accessibilityLabel={`${volume(model.total)} together${target ? ` of ${volume(target)} target` : "; target unavailable"}`}
+            width={view.width}
+            height={view.scene.height}
+            accessibilityLabel={`${volume(view.model.total)} together${view.target ? ` of ${volume(view.target)} target` : "; target unavailable"}`}
           >
-            {scene.ground.map(drawFieldNode)}
-            {scene.segments.map(s=><G key={s.id}>{s.nodes.map(drawFieldNode)}</G>)}
-            {scene.finish.map(drawFieldNode)}
-            {target ? (
-              <SvgText {...chartTextProps()}
-                x={Math.max(64, Math.min(w - 64, (scene.finishX ?? 0) + 12))}
+            {view.scene.ground.map(drawFieldNode)}
+            {view.scene.segments.map((s) => (
+              <G key={s.id}>{s.nodes.map(drawFieldNode)}</G>
+            ))}
+            {view.scene.finish.map(drawFieldNode)}
+            {view.target ? (
+              <SvgText
+                {...chartTextProps()}
+                x={Math.max(
+                  64,
+                  Math.min(
+                    view.width - 64,
+                    (view.scene.finishX ?? 0) + 12,
+                  ),
+                )}
                 y={222}
                 textAnchor="middle"
                 fill={c.ink}
-
               >
-                FINISH · {volume(target)}
+                FINISH · {volume(view.target)}
               </SvgText>
             ) : (
-              <SvgText {...chartTextProps()}
-                x={w / 2}
+              <SvgText
+                {...chartTextProps()}
+                x={view.width / 2}
                 y={222}
                 textAnchor="middle"
                 fill={c.muted}
-
               >
                 A shared target has not been set
               </SvgText>
             )}
           </Svg>
-          {scene.people.map((p) => {
-            const m = model.segments.find((m) => m.id === p.id)!,
-              person = members.find((m) => m.user_id === p.id);
+          {view.scene.people.map((p) => {
+            const m = view.model.segments.find(
+              (segment) => segment.id === p.id,
+            )!;
+            const person = members.find((member) => member.user_id === p.id);
             return (
               <Pressable
                 key={p.id}
                 accessibilityRole="button"
-                accessibilityState={{ selected: member?.id === p.id }}
+                accessibilityState={{ selected: view.member?.id === p.id }}
                 accessibilityLabel={`${m.name}, ${volume(m.value)}`}
                 onPress={() => setSelected(p.id)}
                 style={[s.marker, { left: p.x - 28, top: p.y }]}
@@ -112,15 +120,22 @@ export function CrewRelay(props: Props) {
                 <View
                   style={[
                     s.photo,
-                    { borderColor: member?.id === p.id ? c.ink : p.color },
+                    {
+                      borderColor:
+                        view.member?.id === p.id ? c.ink : p.color,
+                    },
                   ]}
                 >
-                  <UserAvatar src={person?.avatar_url} name={m.name} size={34} />
+                  <UserAvatar
+                    src={person?.avatar_url}
+                    name={m.name}
+                    size={34}
+                  />
                 </View>
-                <AppText role="label" numberOfLines={1} >
+                <AppText role="label" numberOfLines={1}>
                   {m.name.split(" ")[0]}
                 </AppText>
-                <AppText role="caption" secondary numberOfLines={1} >
+                <AppText role="caption" secondary numberOfLines={1}>
                   {volume(m.value)}
                 </AppText>
               </Pressable>
@@ -128,38 +143,41 @@ export function CrewRelay(props: Props) {
           })}
         </View>
       </ScrollView>
-      {empty ? (
+      {view.empty ? (
         <AppText role="caption" secondary>
           No one has logged activity this week yet.
         </AppText>
-      ) : member ? (
+      ) : view.member ? (
         <View accessibilityLiveRegion="polite">
-          <AppText role="row" >{member.name}</AppText>
-          <AppText role="body" secondary >
-            {volume(member.value)} · {(member.share * 100).toFixed(1)}% of
-            recorded crew activity · {member.sessions} {member.sessions===1?"session":"sessions"}
+          <AppText role="row">{view.member.name}</AppText>
+          <AppText role="body" secondary>
+            {volume(view.member.value)} ·{" "}
+            {(view.member.share * 100).toFixed(1)}% of recorded crew activity ·{" "}
+            {view.member.sessions}{" "}
+            {view.member.sessions === 1 ? "session" : "sessions"}
           </AppText>
         </View>
       ) : null}
-      {rosterFootnote ? (
-        <AppText role="caption" secondary>{rosterFootnote}</AppText>
+      {view.rosterFootnote ? (
+        <AppText role="caption" secondary>{view.rosterFootnote}</AppText>
       ) : null}
-      {target ? (
-        <AppText role="caption" secondary >
-          {model.remaining
-            ? `${volume(model.remaining)} ${kind === "baseline" ? "to match last week" : "to the target"}`
-            : model.total > target
-              ? `${volume(model.total - target)} beyond ${kind === "baseline" ? "last week" : "the target"}`
+      {view.target ? (
+        <AppText role="caption" secondary>
+          {view.model.remaining
+            ? `${volume(view.model.remaining)} ${view.kind === "baseline" ? "to match last week" : "to the target"}`
+            : view.model.total > view.target
+              ? `${volume(view.model.total - view.target)} beyond ${view.kind === "baseline" ? "last week" : "the target"}`
               : "Target reached together."}
         </AppText>
       ) : (
-        <AppText role="caption" secondary >
+        <AppText role="caption" secondary>
           Recorded contributions are shown without inventing a finish.
         </AppText>
       )}
     </View>
   );
 }
+
 const s = StyleSheet.create({
   marker: {
     position: "absolute",

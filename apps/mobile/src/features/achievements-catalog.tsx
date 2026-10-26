@@ -3,11 +3,13 @@ import { useState } from "react";
 import { Platform, Pressable, ScrollView, StyleSheet, View } from "react-native";
 import Svg, { Defs, LinearGradient, Path, Stop } from "react-native-svg";
 import {
+  achievementAccessibilityLabel,
   clubAchievements,
   sportById,
   type ClubAchievement,
   type CompeteState,
 } from "@fitness-battle/shared";
+import { AchievementMeter } from "./achievement-meter";
 import { f } from "../ui/focus";
 import { SHELL_COLORS as c } from "../theme";
 
@@ -51,6 +53,7 @@ export function AchievementsCatalog({
       {item ? (
         <View style={{ alignItems: "center", gap: 12 }}>
           <Badge item={item} />
+          <AchievementMeter row={item} decorative={false} />
           <AppText role="heading" >
             {item.current.toLocaleString()} / {item.target.toLocaleString()}
           </AppText>
@@ -74,12 +77,14 @@ export function AchievementsCatalog({
           key={row.id}
           accessibilityRole="button"
           accessibilityState={{ selected: row.id === item?.id }}
+          accessibilityLabel={achievementAccessibilityLabel(row)}
           onPress={() => setSelected(row.id)}
           style={[f.row, { minHeight: 72 }]}
         >
           <Badge item={row} />
           <View style={f.grow}>
             <AppText role="label" >{row.title}</AppText>
+            <AchievementMeter row={row} />
             <AppText role="body" secondary >
               {row.target} {row.category === "sessions" ? "sessions" : "Open effort score"}
             </AppText>
