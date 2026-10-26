@@ -118,7 +118,8 @@ function SignupForm() {
         <Link href="/terms">Terms of Service</Link>
         {" and "}
         <Link href="/privacy">Privacy Policy</Link>
-        .
+        .{" "}
+        <Link href="/support">Support</Link>
       </AppParagraph>
     </section>
   );
