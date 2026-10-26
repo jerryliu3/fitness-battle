@@ -1,8 +1,6 @@
 import { textStyle } from "./section";
-import { type ComponentRef, useRef, useState } from "react";
+import { useAnchoredMenu, AnchoredMenu } from "./anchored-menu";
 import {
-  Dimensions,
-  Modal,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -27,42 +25,15 @@ export function ChoicePicker<T extends string>({
   onChange: (value: T) => void;
   placeholder?: string;
 }) {
-  const [open, setOpen] = useState(false);
-  const triggerRef = useRef<ComponentRef<typeof View>>(null);
-  const [menuLayout, setMenuLayout] = useState<{
-    x: number;
-    y: number;
-    width: number;
-  } | null>(null);
+  const { open, close, toggle, anchorRef, menuLayout } = useAnchoredMenu({
+    minWidth: 180,
+    estimatedHeight: Math.min(280, options.length * 44 + 16),
+  });
   const selected = options.findIndex((option) => option.value === value);
-
-  const toggle = () => {
-    if (open) {
-      setOpen(false);
-      return;
-    }
-    if (triggerRef.current?.measureInWindow) {
-      triggerRef.current.measureInWindow((x: number, y: number, width: number, height: number) => {
-        const windowWidth = Dimensions.get("window").width || 375;
-        const windowHeight = Dimensions.get("window").height || 812;
-        const menuWidth = Math.max(width, 180);
-        const clampedX = Math.max(16, Math.min(x, windowWidth - menuWidth - 16));
-        const estimatedHeight = Math.min(280, options.length * 44 + 16);
-        const posY = y + height + 4 + estimatedHeight > windowHeight && y > estimatedHeight + 20
-          ? y - estimatedHeight - 4
-          : y + height + 4;
-        setMenuLayout({ x: clampedX, y: Math.max(16, posY), width: menuWidth });
-        setOpen(true);
-      });
-    } else {
-      setMenuLayout({ x: 16, y: 50, width: 200 });
-      setOpen(true);
-    }
-  };
 
   return (
     <View style={{ flexShrink: 1 }}>
-      <View ref={triggerRef} collapsable={false}>
+      <View ref={anchorRef} collapsable={false}>
         <Pressable
           accessibilityRole="button"
           accessibilityLabel={`${label}: ${options[selected]?.label ?? placeholder}`}
@@ -76,71 +47,49 @@ export function ChoicePicker<T extends string>({
           <Text style={[textStyle("body"), { marginLeft: 4 }]}>▾</Text>
         </Pressable>
       </View>
-      <Modal
-        visible={open}
-        transparent
-        animationType="none"
-        onRequestClose={() => setOpen(false)}
+      <AnchoredMenu
+        open={open}
+        onClose={close}
+        menuLayout={menuLayout}
+        accessibilityLabel={`Close ${label} dropdown`}
       >
-        <Pressable
-          style={StyleSheet.absoluteFill}
-          accessibilityRole="button"
-          accessibilityLabel={`Close ${label} dropdown`}
-          onPress={() => setOpen(false)}
+        <ScrollView
+          style={{ maxHeight: 280 }}
+          bounces={false}
+          keyboardShouldPersistTaps="handled"
         >
-          <View style={StyleSheet.absoluteFill} />
-        </Pressable>
-        <View
-          style={[
-            s.dropdown,
-            menuLayout
-              ? {
-                  position: "absolute",
-                  top: menuLayout.y,
-                  left: menuLayout.x,
-                  minWidth: menuLayout.width,
-                }
-              : null,
-          ]}
-        >
-          <ScrollView
-            style={{ maxHeight: 280 }}
-            bounces={false}
-            keyboardShouldPersistTaps="handled"
-          >
-            {options.map((option) => {
-              const isSelected = option.value === value;
-              return (
-                <Pressable
-                  key={option.value}
-                  accessibilityRole="button"
-                  accessibilityLabel={option.label}
-                  accessibilityState={{ selected: isSelected }}
-                  style={[s.option, isSelected && s.optionSelected]}
-                  onPress={() => {
-                    void playCue("selection");
-                    onChange(option.value);
-                    setOpen(false);
-                  }}
+          {options.map((option) => {
+            const isSelected = option.value === value;
+            return (
+              <Pressable
+                key={option.value}
+                accessibilityRole="button"
+                accessibilityLabel={option.label}
+                accessibilityState={{ selected: isSelected }}
+                style={[s.option, isSelected && s.optionSelected]}
+                onPress={() => {
+                  void playCue("selection");
+                  onChange(option.value);
+                  close();
+                }}
+              >
+                <Text
+                  style={[
+                    isSelected ? textStyle("label") : textStyle("body"),
+                    { flexShrink: 1 },
+                    isSelected && { color: c.ink },
+                  ]}
                 >
-                  <Text
-                    style={[
-                      textStyle("label"),
-                      { flexShrink: 1 },
-                      isSelected && { color: c.ink, fontWeight: "700" },
-                    ]}
-                  >
-                    {option.label}
-                  </Text>
-                  {isSelected ? (
-                    <Text style={[textStyle("label"), { color: c.ink }]}>✓</Text>
-                  ) : null}
-                </Pressable>
-              );
-            })}
-          </ScrollView>
-        </View>
-      </Modal>
+                  {option.label}
+                </Text>
+                {isSelected ? (
+                  <Text style={[textStyle("label"), { color: c.ink }]}>✓</Text>
+                ) : null}
+              </Pressable>
+            );
+          })}
+        </ScrollView>
+      </AnchoredMenu>
     </View>
   );
 }
@@ -150,19 +99,6 @@ const s = StyleSheet.create({
     minHeight: 44,
     alignItems: "center",
     justifyContent: "space-between",
-  },
-  dropdown: {
-    backgroundColor: c.card,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: c.line,
-    overflow: "hidden",
-    shadowColor: c.ink,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.12,
-    shadowRadius: 10,
-    elevation: 8,
-    zIndex: 9999,
   },
   option: {
     height: 44,

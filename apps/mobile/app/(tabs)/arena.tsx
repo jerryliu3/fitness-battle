@@ -194,8 +194,10 @@ export default function ArenaScreen() {
           />
         </View>
         {withCrew && !crewApi.live && !state.crewBoard ? (
-          <AppText role="body" secondary >
-            A live account and a matching crew are required.
+          <AppText role="body" secondary>
+            {!user
+              ? "Sign in to compete with your crew."
+              : "Join or create a crew in the Crew tab first to compete together."}
           </AppText>
         ) : null}
         {SPORTS.map((s) => {
