@@ -11,7 +11,7 @@ import { CrewSessions } from "./crew-sessions";
 import { CrewRelay } from "./crew-relay";
 import { Sheet } from "@/ui/sheet";
 import { playCue } from "@/lib/haptics";
-import { competitionTrack, APP_TIMEZONE, competeNow, weeklyPeriodBounds, dayKey, type SportId, countsOnTrack, distanceUnitLabel, formatDistanceM, formatNoticeUnits, crewMemberWeekValue, filterCrewMembersWithPeriodActivity } from "@fitness-battle/shared";
+import { competitionTrack, APP_TIMEZONE, competeNow, weeklyPeriodBounds, dayKey, type SportId, countsOnTrack, distanceUnitLabel, formatDistanceM, formatNoticeUnits, crewMemberWeekValue } from "@fitness-battle/shared";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 interface Crew {
@@ -432,11 +432,7 @@ export function CrewPanel() {
               {user ? (
                 <>
                   <Section title="Crew standings">
-                    {filterCrewMembersWithPeriodActivity(
-                      members,
-                      entries,
-                      sessionsMetric,
-                    )
+                    {members
                       .slice()
                       .sort((a, b) => memberTotal(b.user_id) - memberTotal(a.user_id))
                       .map((m, i) => (
