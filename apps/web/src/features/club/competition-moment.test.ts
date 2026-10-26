@@ -1,9 +1,13 @@
 import { createElement } from "react";
 import { act, create, type ReactTestRenderer } from "react-test-renderer";
 import { expect, it, vi } from "vitest";
-import { applyDebugEvent, competitionMoments, freshState, momentStorageKey } from "@fitness-battle/shared";
-vi.mock("motion/react", () => ({ useReducedMotion: () => true }));
+import { defaultFieldAppearance, applyDebugEvent, competitionMoments, freshState, momentStorageKey } from "@fitness-battle/shared";
+const preferences = vi.hoisted(() => ({ reduced: true }));
+vi.mock("motion/react", () => ({ useReducedMotion: () => preferences.reduced }));
 vi.mock("@/lib/haptics", () => ({ playCue: vi.fn() }));
+vi.mock("@/components/auth-context", () => ({ useAuth: () => ({ user: { id: "a" } }) }));
+vi.mock("@/features/field/components/field-course", () => ({ useFieldAppearance: () => [defaultFieldAppearance] }));
+vi.mock("@/features/focus/arena-lanes", () => ({ ArenaLanes: "ArenaLanes" }));
 import { CompetitionMoment } from "./competition-moment";
 it("reduced motion shows the final result in either direction and confirms at most once", async () => {
   vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
@@ -15,9 +19,42 @@ it("reduced motion shows the final result in either direction and confirms at mo
     await act(async () => { renderer = create(createElement(CompetitionMoment, { moment, remaining: 1, onConfirm: done })); });
     const button = renderer.root.findByType("button");
     expect(button.props.children).toBe("Back to the app →");
-    expect(renderer.root.findByType("svg").props["aria-label"]).toContain(`Place ${moment.plan.rankAfter}`);
+    const field = renderer.root.findByType("ArenaLanes" as never);
+    expect(field.props.immersive).toBe(true);
+    expect(field.props.lanes).toHaveLength(moment.lanes.length);
+    expect(field.props.lanes.find((lane: { you?: boolean }) => lane.you).value).toBe(moment.plan.youAfter);
+    expect(field.props.appearance).toEqual(defaultFieldAppearance);
+    expect(renderer.root.findByProps({ role: "status" }).findByType("small").props.children.join("")).toContain(`Your place #${moment.plan.rankAfter}`);
     await act(async () => { button.props.onClick(); button.props.onClick(); });
     expect(done).toHaveBeenCalledTimes(1);
     await act(async () => renderer.unmount());
+  }
+});
+
+it("skipping playback shows final totals and waits for explicit confirmation", async () => {
+  preferences.reduced = false;
+  vi.stubGlobal("requestAnimationFrame", vi.fn(() => 1));
+  vi.stubGlobal("cancelAnimationFrame", vi.fn());
+  const result = applyDebugEvent(freshState(new Date("2026-10-24T18:00:00Z")), "overtake", "a");
+  const baselines = Object.fromEntries(Object.entries(result.baselines).map(([key, value]) => [momentStorageKey(key), value]));
+  const moment = competitionMoments(result.state, "a", key => baselines[key])[0];
+  const done = vi.fn();
+  let renderer!: ReactTestRenderer;
+  try {
+    await act(async () => { renderer = create(createElement(CompetitionMoment, { moment, remaining: 2, onConfirm: done })); });
+    const button = renderer.root.findByType("button");
+    const field = () => renderer.root.findByType("ArenaLanes" as never);
+    expect(field().props.lanes.find((lane: { you?: boolean }) => lane.you).value).toBe(moment.plan.youBefore);
+    expect(button.props.children).toBe("Skip animation");
+    await act(async () => button.props.onClick());
+    expect(field().props.lanes.find((lane: { you?: boolean }) => lane.you).value).toBe(moment.plan.youAfter);
+    expect(button.props.children).toBe("Continue →");
+    expect(done).not.toHaveBeenCalled();
+    await act(async () => { button.props.onClick(); button.props.onClick(); });
+    expect(done).toHaveBeenCalledTimes(1);
+  } finally {
+    if (renderer) await act(async () => renderer.unmount());
+    preferences.reduced = true;
+    vi.unstubAllGlobals();
   }
 });

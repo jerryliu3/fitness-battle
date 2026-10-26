@@ -13,8 +13,8 @@ export function SyncReview({ receipt, state, moment, debug = false, remaining = 
 }) {
   const title = receipt ? "Review your activities" : moment?.plan.hasOvertake ? "Your overtakes" : "Your field changed";
   return <Sheet open title={title} body="" fullScreen minimal={!receipt} scrollResetKey={receipt ? "review" : moment?.id} onClose={() => { if (receipt) onComplete(undefined, true); }}>
-    {debug && <p className="fb-kicker" style={{ textAlign: "center", marginTop: 20 }}>DEBUG PREVIEW · LOCAL DATA ONLY</p>}
-    {receipt ? <Review key={`${receipt.account}:${receipt.day}`} receipt={receipt} state={state} onComplete={onComplete}/> : moment ? <Moment key={moment.id} moment={moment} remaining={remaining} onConfirm={onAcknowledge}/> : null}
+    {debug && receipt && <p className="fb-kicker" style={{ textAlign: "center", marginTop: 20 }}>DEBUG PREVIEW · LOCAL DATA ONLY</p>}
+    {receipt ? <Review key={`${receipt.account}:${receipt.day}`} receipt={receipt} state={state} onComplete={onComplete}/> : moment ? <Moment key={moment.id} moment={moment} debug={debug} remaining={remaining} onConfirm={onAcknowledge}/> : null}
   </Sheet>;
 }
 function Review({ receipt, state, onComplete }: { receipt: SyncReviewReceipt; state: CompeteState; onComplete: (selected?: readonly string[], quiet?: boolean) => unknown }) {

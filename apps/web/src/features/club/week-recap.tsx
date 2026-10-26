@@ -34,11 +34,12 @@ export function WeekRecap({ state }: { state: CompeteState }) {
           <small>Active days</small>
         </div>
       </div>
-      <AppParagraph typographyRole="caption" className="fb-note">
-        {week.previousSec
-          ? `${difference >= 0 ? "+" : "−"}${clubDuration(Math.abs(difference))} compared with all of last week.`
-          : "Each session builds your story."}
-      </AppParagraph>
+      {week.previousSec ? (
+        <AppParagraph typographyRole="caption" className="fb-note">
+          {difference >= 0 ? "+" : "−"}
+          {clubDuration(Math.abs(difference))} compared with all of last week.
+        </AppParagraph>
+      ) : null}
       {recap ? (
         <Link className="club-recap-link" href="/arena?results=latest">
           <span className="club-recap-stamp" aria-hidden="true">
@@ -62,11 +63,7 @@ export function WeekRecap({ state }: { state: CompeteState }) {
           </span>
           <span aria-hidden="true">→</span>
         </Link>
-      ) : (
-        <AppParagraph typographyRole="caption" className="fb-note">
-          Your first settled competition recap will appear here.
-        </AppParagraph>
-      )}
+      ) : null}
     </Section>
   );
 }

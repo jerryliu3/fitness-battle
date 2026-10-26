@@ -3,11 +3,13 @@ import { AppParagraph, AppText, StatusBadge } from "@/ui/section";
 
 import { useId, useState } from "react";
 import {
+  achievementAccessibilityLabel,
   clubAchievements,
   sportById,
   type ClubAchievement,
   type CompeteState,
 } from "@fitness-battle/shared";
+import { AchievementMeter } from "./achievement-meter";
 
 function AchievementBadge({ item }: { item: ClubAchievement }) {
   const id = useId();
@@ -49,6 +51,7 @@ export function AchievementsCatalog({
       {item ? (
         <div className="club-achievement-detail">
           <AchievementBadge item={item} />
+          <AchievementMeter row={item} decorative={false} />
           <strong>
             {item.current.toLocaleString()} / {item.target.toLocaleString()}
           </strong>
@@ -69,10 +72,11 @@ export function AchievementsCatalog({
       </AppParagraph>
       <div className="club-all-achievements">
         {rows.map((row) => (
-          <button type="button" key={row.id} aria-pressed={row.id === item?.id} onClick={() => setSelected(row.id)}>
+          <button type="button" key={row.id} aria-pressed={row.id === item?.id} aria-label={achievementAccessibilityLabel(row)} onClick={() => setSelected(row.id)}>
             <AchievementBadge item={row} />
             <span>
               <b>{row.title}</b>
+              <AchievementMeter row={row} />
               <AppText as="small" role="caption" secondary>
                 {row.target} {row.category === "sessions" ? "sessions" : "Open effort score"}
               </AppText>

@@ -1,5 +1,7 @@
 # Product design guide — Everyday Club
 
+The [product-derived native refinement](reviews/product-refinement/README.md) narrows the October 25 tab review to nine implementation candidates built from the current app. It preserves the selected production tokens and domain rules; layouts remain under review.
+
 The selected production direction is **Everyday Club**, following the owner’s October 22 reference and implementation request. Retain yellow and Ember, Home / Compete / Progress / Crew, existing data behavior, 2D default competition, no recording action and no social feed. See [audit](design/ui-audit.md) and [component decisions](design/component-guidelines.md).
 
 The October 23 [mobile consumer audit](reviews/mobile-consumer-ui-audit-2026-10-23.md) refines native composition and interaction: open sections for continuous full-row content, consistent sport icons, inspectable charts, moving segment highlights and fullscreen field exploration. It preserves Everyday Club's palette and identity. Native fullscreen uses a root Modal with parent-owned viewport/selection and restored horizontal anchors; moving the scene host into the Modal remounts it, rather than providing a shared-element expansion.
@@ -205,6 +207,8 @@ onboarding, notifications, authentication, history, awards, sleep/recovery,
 rankings and supporting sheets. Shared divided boundaries use #d0dad7 at one
 logical unit, with 16 before and 12 after; mobile page gutters remain 20.
 
+The rendered-screen follow-up makes Home, Compete and Progress screen titles explicit display roles via `SectionHeader` / `Section` `titleRole`; subordinate sections retain heading. Achievement quantities use metric with separate caption units, personal-record heroes use hero, record receipts use value plus caption date, and standings use row names with value totals. See [rendered audit](reviews/typography-rendered-audit/README.md) for measured coverage and limitations.
+
 ## Full-screen activity and competition moments — October 24
 
 The root account provider owns event presentation across Home / Compete / Progress / Crew. Browsing a field never consumes a rank-change event. A saved baseline is scoped by account, sport, competition track, period and display units; first loads seed quietly. Later own-volume passes and peer-driven passes open a full-screen scene regardless of the current tab. Each crossing slows the camera, names the actual competitor, increments the overtake total and builds the combo. Rival movement uses a neutral chase treatment. Final place and volume match the settled current field; confirmation returns to the parent application. Reduced motion shows the same result immediately. These are accumulated-effort replays, not live GPS races.
@@ -309,3 +313,16 @@ anchor across expansion and resize. Fullscreen zoom controls sit above the athle
 spotlight, matching the native fullscreen arrangement. Replay remains a control
 inside Full Arena; recap/history entries open a fullscreen replay viewer. See the
 [fullscreen review](reviews/web-fullscreen-field/README.md).
+
+### Automatic movement replay — October 25 follow-up
+
+Sync and debug overtake/passed-by moments now replay on the production 2D field,
+edge to edge on web and native. Use the captured complete roster, canonical glass
+capsules, earned traces, course scenery and the account/event's saved ground
+appearance. Preserve the slowed crossing timeline and a camera following the
+athlete with a subtle close-up at each pass. Nearby live standings, overtake/combo
+feedback and Skip/Continue are overlays; no field exploration, dimension, zoom,
+customization or playback controls appear here. Native bypasses the receipt's
+padded ScrollView and places only overlays inside safe-area bounds. Reduced motion
+shows final totals immediately. This automatic movement moment is separate from
+the browsable competition-history replay with timeline controls.
