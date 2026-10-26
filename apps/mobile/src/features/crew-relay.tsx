@@ -27,7 +27,8 @@ export function CrewRelay(props: Props) {
     [width, setWidth] = useState(320),
     prefix = useId();
   const { model, sessions, kind, target, label } = crewWeekRelay(props);
-  const w = Math.max(width, members.length * 64 + 32),
+  const laneMembers = Math.max(1, model.segments.length);
+  const w = Math.max(width, laneMembers * 64 + 32),
     scene = crewRelayScene(model, w, prefix);
   const member =
     model.segments.find((m) => m.id === (selected || userId)) ??

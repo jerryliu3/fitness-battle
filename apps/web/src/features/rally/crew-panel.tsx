@@ -11,7 +11,7 @@ import { CrewSessions } from "./crew-sessions";
 import { CrewRelay } from "./crew-relay";
 import { Sheet } from "@/ui/sheet";
 import { playCue } from "@/lib/haptics";
-import { competitionTrack, APP_TIMEZONE, competeNow, weeklyPeriodBounds, dayKey, type SportId, countsOnTrack, distanceUnitLabel, formatDistanceM, formatNoticeUnits } from "@fitness-battle/shared";
+import { competitionTrack, APP_TIMEZONE, competeNow, weeklyPeriodBounds, dayKey, type SportId, countsOnTrack, distanceUnitLabel, formatDistanceM, formatNoticeUnits, crewMemberWeekValue, filterCrewMembersWithPeriodActivity } from "@fitness-battle/shared";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 interface Crew {
@@ -291,7 +291,8 @@ export function CrewPanel() {
   const resting = offlineMode ? demoRest[restKey] === weekKey : members.find(m => m.user_id === user?.id)?.rest_week === weekKey;
   const unitLabel = distanceUnitLabel(state?.units);
   const sessionsMetric = crew?.format === "personal_target" || crew?.sport === "strength";
-  const memberTotal = (id: string) => entries.filter(e => e.user_id === id).reduce((sum, e) => sum + Number(sessionsMetric ? e.session_count ?? 1 : e.distance_m), 0);
+  const memberTotal = (id: string) =>
+    crewMemberWeekValue(entries, id, sessionsMetric);
   const totalM = entries.reduce((t, e) => t + Number(e.distance_m), 0);
   const previousDistanceM = data?.previousProgressAvailable?.[crew.id]
     ? (data.previousProgress??[]).filter(row=>row.crew_id===crew.id && members.some(m=>m.user_id===row.user_id)).reduce((sum,row)=>sum+Number(row.distance_m),0)
@@ -431,9 +432,12 @@ export function CrewPanel() {
               {user ? (
                 <>
                   <Section title="Crew standings">
-                    {members
+                    {filterCrewMembersWithPeriodActivity(
+                      members,
+                      entries,
+                      sessionsMetric,
+                    )
                       .slice()
-                      .filter((m) => memberTotal(m.user_id) > 0)
                       .sort((a, b) => memberTotal(b.user_id) - memberTotal(a.user_id))
                       .map((m, i) => (
                         <div className="fb-row" key={m.user_id}>

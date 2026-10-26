@@ -21,7 +21,21 @@ export function defaultTrainingSports(): SportId[] {
 }
 
 export function isAllTrainingSports(sports: readonly SportId[]): boolean {
-  return sports.length >= SPORT_IDS.length;
+  return (
+    sports.length === SPORT_IDS.length &&
+    SPORT_IDS.every((id) => sports.includes(id))
+  );
+}
+
+/** Toggle one sport in a multi-select; never returns an empty list. */
+export function toggleTrainingSports(
+  current: readonly SportId[],
+  id: SportId,
+): SportId[] {
+  const next = current.includes(id)
+    ? current.filter((sport) => sport !== id)
+    : [...current, id];
+  return next.length ? [...next] : defaultTrainingSports();
 }
 
 export function trainingSportFilterLabel(sports: readonly SportId[]): string {

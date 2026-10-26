@@ -4,6 +4,7 @@ import {
   SPORTS,
   defaultTrainingSports,
   isAllTrainingSports,
+  toggleTrainingSports,
   trainingSportFilterLabel,
   type SportId,
 } from "@fitness-battle/shared";
@@ -25,16 +26,16 @@ export function TrainingSportMenu({
     const close = (event: MouseEvent) => {
       if (!root.current?.contains(event.target as Node)) setOpen(false);
     };
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setOpen(false);
+    };
     document.addEventListener("mousedown", close);
-    return () => document.removeEventListener("mousedown", close);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", close);
+      document.removeEventListener("keydown", onKey);
+    };
   }, [open]);
-
-  const toggle = (id: SportId) => {
-    const next = value.includes(id)
-      ? value.filter((sport) => sport !== id)
-      : [...value, id];
-    onChange(next.length ? next : [...defaultTrainingSports()]);
-  };
 
   return (
     <div className="training-sport-menu" ref={root}>
@@ -42,7 +43,7 @@ export function TrainingSportMenu({
         type="button"
         className={`fb-chip${allSelected ? " on" : ""}`}
         aria-expanded={open}
-        aria-haspopup="listbox"
+        aria-haspopup="true"
         onClick={() => setOpen((current) => !current)}
       >
         {label}
@@ -51,7 +52,11 @@ export function TrainingSportMenu({
         </span>
       </button>
       {open ? (
-        <div className="training-sport-menu-panel" role="listbox" aria-label="Sports">
+        <div
+          className="training-sport-menu-panel"
+          role="group"
+          aria-label="Sports filter"
+        >
           <button
             type="button"
             className="training-sport-menu-all"
@@ -66,7 +71,7 @@ export function TrainingSportMenu({
                 <input
                   type="checkbox"
                   checked={checked}
-                  onChange={() => toggle(sport.id)}
+                  onChange={() => onChange(toggleTrainingSports(value, sport.id))}
                 />
                 <span>{sport.name}</span>
               </label>

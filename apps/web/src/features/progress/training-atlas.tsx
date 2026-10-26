@@ -23,13 +23,8 @@ import {
   type SportId,
   type TrainingRange,
 } from "@fitness-battle/shared";
+import { ChartRangeToggle } from "./chart-range-toggle";
 import { TrainingSportMenu } from "./training-sport-menu";
-
-const RANGE_OPTIONS: { value: TrainingRange; label: string }[] = [
-  { value: "week", label: "W" },
-  { value: "month", label: "M" },
-  { value: "year", label: "Y" },
-];
 
 export function TrainingAtlas({ state }: { state: CompeteState }) {
   const now = competeNow(state);
@@ -94,35 +89,14 @@ export function TrainingAtlas({ state }: { state: CompeteState }) {
             setSelected(null);
           }}
         />
-        <div
-          className="chart-range-toggle"
-          role="group"
-          aria-label="Training chart range"
-        >
-          {RANGE_OPTIONS.map((option) => (
-            <button
-              key={option.value}
-              type="button"
-              aria-pressed={range === option.value}
-              aria-label={
-                option.value === "week"
-                  ? "Week"
-                  : option.value === "month"
-                    ? "Month"
-                    : "Year"
-              }
-              onClick={() => {
-                setRange(option.value);
-                setAnchor((current) =>
-                  clampTrainingAnchor(current, earliest, now, option.value),
-                );
-                setSelected(null);
-              }}
-            >
-              {option.label}
-            </button>
-          ))}
-        </div>
+        <ChartRangeToggle
+          value={range}
+          onChange={(next) => {
+            setRange(next);
+            setAnchor((current) => clampTrainingAnchor(current, earliest, now, next));
+            setSelected(null);
+          }}
+        />
       </div>
       <div className="atlas-heading">
         <button

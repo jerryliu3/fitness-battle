@@ -10,6 +10,8 @@ import {
   trainingBuckets,
   trainingComparison,
   trainingRangeNavigation,
+  isAllTrainingSports,
+  toggleTrainingSports,
 } from "./training-view";
 import type { Activity } from "./compete/sports";
 const activity=(id:string,startedAt:string,extra:Partial<Activity>={}):Activity=>({id,startedAt,sport:"running",distanceM:1609.344,movingSec:1800,avgHr:null,source:"strava",verified:true,provenance:"recorded",disposition:"counted",...extra});
@@ -26,6 +28,12 @@ describe("training calendar presentation",()=>{
   const month=trainingBuckets(rows,"running","month",now,new Date("2026-11-03T12:00:00Z"));
   expect(month[0]!.start).toBe("2026-10-01T04:00:00.000Z");expect(month.at(-1)!.end).toBe("2026-11-01T04:00:00.000Z");expect(month.reduce((sum,b)=>sum+b.sessions,0)).toBe(2);
   const year=trainingBuckets(rows,"all","year",now,new Date("2026-11-03T12:00:00Z"));expect(year).toHaveLength(12);expect(year[9]!.sessions).toBe(2);expect(year[8]!.sessions).toBe(1);
+ });
+ it("detects a full sport set without treating duplicates as all sports",()=>{
+  expect(isAllTrainingSports(["running","cycling","walking","strength"])).toBe(true);
+  expect(isAllTrainingSports(["running","cycling","walking","walking"])).toBe(false);
+  expect(toggleTrainingSports(["running","cycling"], "walking")).toEqual(["running","cycling","walking"]);
+  expect(toggleTrainingSports(["running"], "running")).toEqual(["running","cycling","walking","strength"]);
  });
  it("filters by multi-sport selection the same as a single sport or all",()=>{
   const now=new Date("2026-10-21T12:00:00Z"), at="2026-10-20T12:00:00Z";

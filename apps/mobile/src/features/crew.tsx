@@ -18,6 +18,8 @@ import {
   weeklyPeriodBounds,
   dayKey,
   APP_TIMEZONE,
+  crewMemberWeekValue,
+  filterCrewMembersWithPeriodActivity,
 } from "@fitness-battle/shared";
 import { useFocusEffect, useGlobalSearchParams, useRouter } from "expo-router";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -302,9 +304,7 @@ export function CrewHub({ membersOnly = false, crewId = "" }: { membersOnly?: bo
   const distance = (meters: number) =>
     `${formatDistanceM(meters, state?.units)} ${distanceUnitLabel(state?.units)}`;
   const memberTotal = (id: string) =>
-    entries
-      .filter((e) => e.user_id === id)
-      .reduce((n, e) => n + Number(sessionsMetric ? e.session_count ?? 1 : e.distance_m), 0);
+    crewMemberWeekValue(entries, id, sessionsMetric);
   function open(next: typeof panel) {
     if (next === "members") { router.push({ pathname: "/crew-members", params: { crewId: crew.id } }); return; }
     setNote("");
@@ -512,8 +512,11 @@ export function CrewHub({ membersOnly = false, crewId = "" }: { membersOnly?: bo
             <>
               {user && !solo ? <CrewSessions key={`${user?.id}:${crew.id}`} crewId={crew.id} portraits={Object.fromEntries(members.map(m => [m.user_id, m.avatar_url]))} sport={crew.sport} /> : null}
               <Section title="Crew standings">
-                {[...members]
-                  .filter((m) => memberTotal(m.user_id) > 0)
+                {filterCrewMembersWithPeriodActivity(
+                  members,
+                  entries,
+                  sessionsMetric,
+                )
                   .sort(
                     (a, b) => memberTotal(b.user_id) - memberTotal(a.user_id),
                   )

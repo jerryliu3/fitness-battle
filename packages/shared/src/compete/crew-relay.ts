@@ -48,6 +48,41 @@ export function crewRelay(
   };
 }
 
+export function crewMemberWeekValue(
+  entries: CrewWeekRelayInput["entries"],
+  userId: string,
+  sessions: boolean,
+): number {
+  return entries
+    .filter((e) => e.user_id === userId)
+    .reduce(
+      (n, e) => n + Number(sessions ? (e.session_count ?? 1) : e.distance_m),
+      0,
+    );
+}
+
+export function filterCrewMembersWithPeriodActivity<
+  T extends { user_id: string },
+>(members: readonly T[], entries: CrewWeekRelayInput["entries"], sessions: boolean): T[] {
+  return members.filter(
+    (m) => crewMemberWeekValue(entries, m.user_id, sessions) > 0,
+  );
+}
+
+function crewMemberContributions(
+  input: CrewWeekRelayInput,
+  sessions: boolean,
+) {
+  return input.members.map((m) => ({
+    id: m.user_id,
+    name: m.display_name,
+    value: crewMemberWeekValue(input.entries, m.user_id, sessions),
+    sessions: input.entries
+      .filter((e) => e.user_id === m.user_id)
+      .reduce((n, e) => n + Number(e.session_count ?? 1), 0),
+  }));
+}
+
 export interface CrewWeekRelayInput {
   members: {
     user_id: string;
@@ -90,21 +125,7 @@ export function crewWeekRelay(input: CrewWeekRelayInput) {
         ? "baseline"
         : "unknown";
   const model = crewRelay(
-    input.members
-      .map((m) => {
-        const rows = input.entries.filter((e) => e.user_id === m.user_id);
-        return {
-          id: m.user_id,
-          name: m.display_name,
-          value: rows.reduce(
-            (n, e) =>
-              n + Number(sessions ? (e.session_count ?? 1) : e.distance_m),
-            0,
-          ),
-          sessions: rows.reduce((n, e) => n + Number(e.session_count ?? 1), 0),
-        };
-      })
-      .filter((m) => m.value > 0),
+    crewMemberContributions(input, sessions).filter((m) => m.value > 0),
     target,
   );
   return {

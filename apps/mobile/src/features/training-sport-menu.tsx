@@ -7,6 +7,7 @@ import {
   SPORTS,
   defaultTrainingSports,
   isAllTrainingSports,
+  toggleTrainingSports,
   trainingSportFilterLabel,
   type SportId,
 } from "@fitness-battle/shared";
@@ -22,13 +23,6 @@ export function TrainingSportMenu({
   const label = trainingSportFilterLabel(value);
   const allSelected = isAllTrainingSports(value);
 
-  const toggle = (id: SportId) => {
-    const next = value.includes(id)
-      ? value.filter((sport) => sport !== id)
-      : [...value, id];
-    onChange(next.length ? next : [...defaultTrainingSports()]);
-  };
-
   return (
     <>
       <Pressable
@@ -42,11 +36,7 @@ export function TrainingSportMenu({
           ▾
         </AppText>
       </Pressable>
-      <FocusSheet
-        open={open}
-        title="Sports"
-        onClose={() => setOpen(false)}
-      >
+      <FocusSheet open={open} title="Sports" onClose={() => setOpen(false)}>
         <View style={{ gap: 12 }}>
           <Pressable
             accessibilityRole="button"
@@ -62,7 +52,7 @@ export function TrainingSportMenu({
                 key={sport.id}
                 accessibilityRole="checkbox"
                 accessibilityState={{ checked }}
-                onPress={() => toggle(sport.id)}
+                onPress={() => onChange(toggleTrainingSports(value, sport.id))}
                 style={[f.row, { minHeight: 44 }]}
               >
                 <View

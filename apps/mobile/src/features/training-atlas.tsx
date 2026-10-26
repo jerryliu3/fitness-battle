@@ -25,14 +25,9 @@ import {
   type TrainingRange,
 } from "@fitness-battle/shared";
 import { FocusDisclosure, f } from "../ui/focus";
+import { ChartRangeToggle } from "./chart-range-toggle";
 import { TrainingSportMenu } from "./training-sport-menu";
 import { SHELL_COLORS as c } from "../theme";
-
-const RANGE_OPTIONS: { value: TrainingRange; label: string; full: string }[] = [
-  { value: "week", label: "W", full: "Week" },
-  { value: "month", label: "M", full: "Month" },
-  { value: "year", label: "Y", full: "Year" },
-];
 const colors = [
   c.soft,
   `${c.secondary}33`,
@@ -95,35 +90,16 @@ export function TrainingAtlas({ state }: { state: CompeteState }) {
             setSelected(null);
           }}
         />
-        <View
-          accessibilityRole="tablist"
-          accessibilityLabel="Training chart range"
-          style={s.chartRange}
-        >
-          {RANGE_OPTIONS.map((option) => (
-            <Pressable
-              key={option.value}
-              accessibilityRole="tab"
-              accessibilityState={{ selected: range === option.value }}
-              accessibilityLabel={option.full}
-              onPress={() => {
-                setRange(option.value);
-                setAnchor((current) =>
-                  clampTrainingAnchor(current, earliest, now, option.value),
-                );
-                setSelected(null);
-              }}
-              style={[s.rangeBtn, range === option.value && s.rangeBtnOn]}
-            >
-              <AppText
-                role="label"
-                style={{ color: range === option.value ? c.card : c.muted }}
-              >
-                {option.label}
-              </AppText>
-            </Pressable>
-          ))}
-        </View>
+        <ChartRangeToggle
+          value={range}
+          onChange={(next) => {
+            setRange(next);
+            setAnchor((current) =>
+              clampTrainingAnchor(current, earliest, now, next),
+            );
+            setSelected(null);
+          }}
+        />
       </View>
       <View style={s.row}>
         <Pressable
@@ -342,26 +318,6 @@ export function TrainingAtlas({ state }: { state: CompeteState }) {
   );
 }
 const s = StyleSheet.create({
-  chartRange: {
-    flexDirection: "row",
-    gap: 2,
-    padding: 2,
-    borderRadius: 7,
-    borderWidth: 1,
-    borderColor: c.line,
-    backgroundColor: c.soft,
-  },
-  rangeBtn: {
-    minWidth: 32,
-    minHeight: 32,
-    paddingHorizontal: 8,
-    borderRadius: 5,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  rangeBtnOn: {
-    backgroundColor: c.ink,
-  },
   row: {
     flexDirection: "row",
     alignItems: "center",

@@ -9,8 +9,18 @@ const path = (
 export function crewRelayScene(model: Relay, width: number, prefix: string) {
   const length = Math.max(180, width - 52),
     left = 16;
-  const p = (fraction: number, back = false, bottom = false) =>
-    `${left + fraction * length + (back ? 24 : 0)} ${174 - fraction * 30 + (back ? -46 : 0) + (bottom ? 18 : 0)}`;
+  const point = (fraction: number, back = false, bottom = false) => ({
+    x: left + fraction * length + (back ? 24 : 0),
+    y:
+      174 -
+      fraction * 30 +
+      (back ? -46 : 0) +
+      (bottom ? 18 : 0),
+  });
+  const p = (fraction: number, back = false, bottom = false) => {
+    const { x, y } = point(fraction, back, bottom);
+    return `${x} ${y}`;
+  };
   const top = (a: number, b: number) =>
     `M${p(a)} L${p(b)} L${p(b, true)} L${p(a, true)}Z`;
   const face = (a: number, b: number) =>
@@ -105,8 +115,7 @@ export function crewRelayScene(model: Relay, width: number, prefix: string) {
         opacity: 0.85,
       }),
     );
-    const back = p(f, true),
-      [bx, by] = back.split(" ").map(Number);
+    const { x: bx, y: by } = point(f, true);
     finish.push(
       {
         tag: "line",
@@ -119,14 +128,8 @@ export function crewRelayScene(model: Relay, width: number, prefix: string) {
           strokeWidth: 2,
         },
       },
-      path(
-        `M${bx} ${by - 18}h22v12h-22Z`,
-        "#142b3b",
-      ),
-      path(
-        `M${bx + 11} ${by - 18}h11v6h-11Z`,
-        "#ffffff",
-      ),
+      path(`M${bx} ${by - 18}h22v12h-22Z`, "#142b3b"),
+      path(`M${bx + 11} ${by - 18}h11v6h-11Z`, "#ffffff"),
     );
   }
   const people = model.segments.map((s, i) => {

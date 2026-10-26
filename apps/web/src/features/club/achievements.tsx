@@ -41,7 +41,7 @@ export function Achievements({ state }: { state: CompeteState }) {
             className="club-achievement"
             key={row.id}
             href={`/you/achievements?milestone=${encodeURIComponent(row.id)}`}
-            aria-label={`${row.title}. ${row.target} ${row.category === "sessions" ? "sessions" : "Open effort score"}. ${row.earned ? "Earned" : "In progress"}`}
+            aria-label={`${row.title}. ${row.current} of ${row.target} ${row.category === "sessions" ? "sessions" : "Open effort score"}. ${row.earned ? "Earned" : "In progress"}`}
           >
             <AchievementBadge item={row} />
             <AppText role="caption" secondary className="club-achievement-title">
@@ -50,11 +50,7 @@ export function Achievements({ state }: { state: CompeteState }) {
             <div
               className="club-achievement-meter"
               data-earned={row.earned ? "true" : "false"}
-              role="progressbar"
-              aria-valuemin={0}
-              aria-valuemax={row.target}
-              aria-valuenow={Math.min(row.current, row.target)}
-              aria-label={`${row.current} of ${row.target}`}
+              aria-hidden="true"
             >
               <span style={{ width: `${Math.round(row.fraction * 100)}%` }} />
             </div>
