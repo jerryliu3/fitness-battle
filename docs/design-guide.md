@@ -311,3 +311,16 @@ anchor across expansion and resize. Fullscreen zoom controls sit above the athle
 spotlight, matching the native fullscreen arrangement. Replay remains a control
 inside Full Arena; recap/history entries open a fullscreen replay viewer. See the
 [fullscreen review](reviews/web-fullscreen-field/README.md).
+
+### Automatic movement replay — October 25 follow-up
+
+Sync and debug overtake/passed-by moments now replay on the production 2D field,
+edge to edge on web and native. Use the captured complete roster, canonical glass
+capsules, earned traces, course scenery and the account/event's saved ground
+appearance. Preserve the slowed crossing timeline and a camera following the
+athlete with a subtle close-up at each pass. Nearby live standings, overtake/combo
+feedback and Skip/Continue are overlays; no field exploration, dimension, zoom,
+customization or playback controls appear here. Native bypasses the receipt's
+padded ScrollView and places only overlays inside safe-area bounds. Reduced motion
+shows final totals immediately. This automatic movement moment is separate from
+the browsable competition-history replay with timeline controls.
