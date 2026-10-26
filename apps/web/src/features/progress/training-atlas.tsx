@@ -77,7 +77,7 @@ export function TrainingAtlas({ state }: { state: CompeteState }) {
     setSelectedDay(null);
   };
   return (
-    <Section title="Your training" className="training-atlas">
+    <Section titleRole="display" title="Your training" className="training-atlas">
       <div className="fb-chips" role="group" aria-label="Atlas sport">
         {[{ id: "all", name: "All sports" }, ...SPORTS].map(item => <button key={item.id} type="button"
           className={sport === item.id ? "fb-chip on" : "fb-chip"} aria-pressed={sport === item.id}
@@ -168,9 +168,9 @@ export function TrainingAtlas({ state }: { state: CompeteState }) {
         </div>
       </div>
       <div className="atlas-reading" aria-live="polite">
-        <strong>
+        <AppText role="metric">
           {formatTrainingHours(bucket.movingSec)} <AppText as="small" role="caption" secondary>hr</AppText>
-        </strong>
+        </AppText>
         <span>
           {bucket.label} · {bucket.sessions} session
           {bucket.sessions === 1 ? "" : "s"}

@@ -79,7 +79,7 @@ export function TrainingAtlas({ state }: { state: CompeteState }) {
     setSelectedDay(null);
   };
   return (
-    <Section title="Your training">
+    <Section titleRole="display" title="Your training">
       <ScrollView horizontal showsHorizontalScrollIndicator={false}>
         <View style={f.row}>
           {[{ id: "all", name: "All sports" }, ...SPORTS].map((s) => (

@@ -207,6 +207,8 @@ onboarding, notifications, authentication, history, awards, sleep/recovery,
 rankings and supporting sheets. Shared divided boundaries use #d0dad7 at one
 logical unit, with 16 before and 12 after; mobile page gutters remain 20.
 
+The rendered-screen follow-up makes Home, Compete and Progress screen titles explicit display roles via `SectionHeader` / `Section` `titleRole`; subordinate sections retain heading. Achievement quantities use metric with separate caption units, personal-record heroes use hero, record receipts use value plus caption date, and standings use row names with value totals. See [rendered audit](reviews/typography-rendered-audit/README.md) for measured coverage and limitations.
+
 ## Full-screen activity and competition moments — October 24
 
 The root account provider owns event presentation across Home / Compete / Progress / Crew. Browsing a field never consumes a rank-change event. A saved baseline is scoped by account, sport, competition track, period and display units; first loads seed quietly. Later own-volume passes and peer-driven passes open a full-screen scene regardless of the current tab. Each crossing slows the camera, names the actual competitor, increments the overtake total and builds the combo. Rival movement uses a neutral chase treatment. Final place and volume match the settled current field; confirmation returns to the parent application. Reduced motion shows the same result immediately. These are accumulated-effort replays, not live GPS races.
