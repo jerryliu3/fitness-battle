@@ -135,8 +135,6 @@ export function ArenaScreen({ tabActive = true }: { tabActive?: boolean }) {
         </Link>
       ) : null}
       <div className="club-competition-extras">
-      <FeatureCard title="1v1 Head-to-Head" description="Challenge a friend or rival for the week." badge="Coming soon"/>
-
       <WeekReveal
         state={state}
         ready={loadStatus === "ready" || loadStatus === "local"}

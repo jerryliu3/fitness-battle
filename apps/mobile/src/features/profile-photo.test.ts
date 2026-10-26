@@ -4,9 +4,13 @@ import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { freshState } from "@fitness-battle/shared";
 const mock = vi.hoisted(() => ({
   pick: vi.fn(), dispatch: vi.fn(),
+  permission: vi.fn(),
   user: { id: "alice", mode: "demo" } as { id: string; mode: string } | null,
 }));
-vi.mock("expo-image-picker", () => ({ launchImageLibraryAsync: mock.pick }));
+vi.mock("expo-image-picker", () => ({
+  launchImageLibraryAsync: mock.pick,
+  getMediaLibraryPermissionsAsync: mock.permission,
+}));
 vi.mock("react-native", () => ({
   useWindowDimensions: () => ({ width: 390, height: 844, fontScale: 1 }),
   StyleSheet: { create: (styles: unknown) => styles }, View: "View", Text: "Text", Image: "Image", Pressable: "Pressable" }));
@@ -25,6 +29,7 @@ beforeEach(() => {
   vi.clearAllMocks();
   mock.user = { id: "alice", mode: "demo" };
   mock.pick.mockResolvedValue({ canceled: true });
+  mock.permission.mockResolvedValue({ status: "granted", granted: true });
 });
 afterEach(async () => {
   await act(async () => renderer?.unmount());
@@ -51,6 +56,14 @@ it("does not open the picker when the account changes during sheet dismissal", a
   await act(async () => renderer.update(tree()));
   await act(async () => sheet().props.onClosed());
   expect(mock.pick).not.toHaveBeenCalled();
+});
+it("keeps the app usable when photo library access is denied", async () => {
+  mock.permission.mockResolvedValue({ status: "denied", granted: false });
+  await act(async () => { renderer = create(tree()); });
+  await act(async () => choose().props.onPress());
+  await act(async () => sheet().props.onClosed());
+  expect(mock.pick).not.toHaveBeenCalled();
+  expect(JSON.stringify(renderer.toJSON())).toContain("Photo library access is off");
 });
 it("still applies a selected photo after the handoff", async () => {
   mock.pick.mockResolvedValue({ canceled: false, assets: [{ base64: "/9j/" }] });

@@ -21,6 +21,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { AccountActions } from "../src/features/account-actions";
+import { LegalLinks } from "../src/features/legal-links";
 import { AthleteMetrics } from "../src/features/athlete-metrics";
 import { SettingsRow } from "../src/ui/settings-row";
 import { DataSyncActions } from "../src/features/data-sync-actions";
@@ -364,6 +365,7 @@ export default function AthleteScreen() {
                 : "Create account"}
           </AppText></Button>
           {authNote ? <Text style={styles.copy}>{authNote}</Text> : null}
+          <LegalLinks />
         </ScrollView>
       </SafeAreaView>
     );
@@ -387,6 +389,7 @@ export default function AthleteScreen() {
             onPress={() => void signOut()}
           />
           <AccountActions />
+          <LegalLinks />
           {legacyBackup && <FocusButton label="Export local demo backup" secondary onPress={() => { void Share.share({ message: legacyBackup, title: "Overtaek local demo backup" }); }} />}
         </SectionStack>
 </ScrollView>

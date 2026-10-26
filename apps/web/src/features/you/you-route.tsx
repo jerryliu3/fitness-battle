@@ -507,6 +507,11 @@ function YouContent({ surface }: { surface: "progress" | "athlete" }) {
               Sign in
             </Link>
           </div>
+          <AppParagraph typographyRole="caption" className="fb-note">
+            <Link href="/privacy">Privacy Policy</Link>
+            {" · "}
+            <Link href="/terms">Terms of Service</Link>
+          </AppParagraph>
         </section>
       </div>
     );
@@ -539,6 +544,11 @@ function YouContent({ surface }: { surface: "progress" | "athlete" }) {
               Sign in
             </Link>
           </div>
+          <AppParagraph typographyRole="caption" className="fb-note">
+            <Link href="/privacy">Privacy Policy</Link>
+            {" · "}
+            <Link href="/terms">Terms of Service</Link>
+          </AppParagraph>
         </section>
       </div>
     );
@@ -716,6 +726,11 @@ function YouContent({ surface }: { surface: "progress" | "athlete" }) {
             <>
               <section className="fb-card fb-stack">
                 <SectionHeader title="Your account"/>
+                <AppParagraph typographyRole="caption" className="fb-note">
+                  <Link href="/privacy">Privacy Policy</Link>
+                  {" · "}
+                  <Link href="/terms">Terms of Service</Link>
+                </AppParagraph>
                 <button type="button" className="fb-btn-line" onClick={() => void signOut()}>Sign out</button>
                 <ReportIssue />
                 {legacyBackup && <button type="button" className="fb-btn-line" onClick={() => {
@@ -892,6 +907,11 @@ function YouContent({ surface }: { surface: "progress" | "athlete" }) {
               Sign in
             </Link>
           </div>
+          <AppParagraph typographyRole="caption" className="fb-note">
+            <Link href="/privacy">Privacy Policy</Link>
+            {" · "}
+            <Link href="/terms">Terms of Service</Link>
+          </AppParagraph>
         </div>
       ) : null}
       <AuthPrompt

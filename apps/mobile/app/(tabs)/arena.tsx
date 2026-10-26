@@ -129,10 +129,7 @@ export default function ArenaScreen() {
         {selectedSport&&selectedSport!=="sleep"?<CompetitionField key={`${accountKey}:${selectedSport}:${state.units}:${track}`} sport={selectedSport} track={track} />:selectedSport==="sleep"?<SleepPanel state={state} dispatch={dispatch}/>:<View style={f.card}><AppText role="heading">Your next chapter starts here.</AppText><AppText role="body" secondary >Register for an event to open your field.</AppText></View>}
         </EventCarousel>:<View style={f.card}><AppText role="heading">Your next chapter starts here.</AppText><AppText role="body" secondary >Register for an event to open your field.</AppText><FocusButton label="Explore events" onPress={openRegistration}/></View>}
         {state.periodResults.length ? <FocusButton label="Latest week results ↗" secondary onPress={() => router.push("/arena?results=latest")} /> : null}
-        <View style={[f.row, { alignItems: "stretch", flexWrap: "wrap", gap: 16 }]}>
-          <FeatureCard title="1v1 Head-to-Head" description="Challenge a friend or rival for the week." badge="Coming soon"/>
-          <FeatureCard title="Beyond this week" description="All-time pace and race rankings." onPress={() => router.push("/benchmarks")}/>
-        </View>
+        <FeatureCard title="Beyond this week" description="All-time pace and race rankings." onPress={() => router.push("/benchmarks")}/>
       </SectionStack>
 </ScrollView>
       <FocusSheet
