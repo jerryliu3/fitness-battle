@@ -70,7 +70,7 @@ export function AnchoredMenu({
   menuLayout: AnchoredMenuLayout | null;
   accessibilityLabel?: string;
   style?: StyleProp<ViewStyle>;
-  children: ReactNode;
+  children?: ReactNode;
 }) {
   if (!open) return null;
   return (
