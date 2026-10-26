@@ -10,7 +10,8 @@ vi.mock("react-native-svg", () => ({ default: "Svg", Circle: "Circle", Line: "Li
 vi.mock("./focus", () => ({ f: {} }));
 vi.mock("../lib/haptics", () => ({ playCue: vi.fn() }));
 import { playCue } from "../lib/haptics";
-import { ChartScrubber, nearestChartDatum } from "./chart-scrubber";
+import { nearestChartDatum } from "@fitness-battle/shared";
+import { ChartScrubber } from "./chart-scrubber";
 
 const points = [
   { id: "mon", x: 20, y: 90, label: "Monday", value: "1 hr" },
@@ -37,6 +38,7 @@ it("scrubs in rendered coordinates, pulses once per crossed point and yields ver
   const surface = () => renderer.root.findAllByType("View" as never).find(node => node.props.accessibilityRole === "adjustable")!;
   await act(async () => surface().props.onLayout({ nativeEvent: { layout: { width: 300 } } }));
   await act(async () => surface().props.onPanResponderGrant({ nativeEvent: { locationX: 60 } }));
+  expect(select).not.toHaveBeenCalled();
   await act(async () => surface().props.onPanResponderMove({ nativeEvent: { locationX: 80 } }, { dx: 20, dy: 0 }));
   expect(select).toHaveBeenCalledExactlyOnceWith("mon");
   await act(async () => surface().props.onPanResponderMove({ nativeEvent: { locationX: 240 } }, { dx: 180, dy: 0 }));
@@ -51,6 +53,7 @@ it("scrubs in rendered coordinates, pulses once per crossed point and yields ver
     surface().props.onPanResponderGrant({ nativeEvent: { locationX: 240 } });
     surface().props.onPanResponderMove({ nativeEvent: { locationX: 240 } }, { dx: 3, dy: 30 });
   });
+  expect(select.mock.lastCall).toEqual(["tue"]);
   expect(surface().props.onPanResponderTerminationRequest()).toBe(true);
   await act(async () => surface().props.onAccessibilityAction({ nativeEvent: { actionName: "decrement" } }));
   expect(surface().props.accessibilityValue.text).toBe("Monday, 1 hr");

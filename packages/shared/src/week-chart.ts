@@ -30,18 +30,22 @@ export function weeklyHoursComparison(state: CompeteState, now = competeNow(stat
   const prevCumulativeHours = cumulative(previous, previousStart, 7);
   const currentSeconds = current.reduce((sum, a) => sum + (a.movingSec || 0), 0);
   currCumulativeHours[currCumulativeHours.length - 1] = Number((currentSeconds / 3600).toFixed(2));
+  const currHoursSameDay = currCumulativeHours[nowDayIndex] ?? 0;
+  const prevHoursSameDay = prevCumulativeHours[nowDayIndex] ?? 0;
   return {
     nowDayIndex, currCumulativeHours, prevCumulativeHours,
     currTotalHours: Number((currentSeconds / 3600).toFixed(1)),
     prevTotalHours: Number((prevCumulativeHours.at(-1) ?? 0).toFixed(1)),
+    currHoursSameDay,
+    prevHoursSameDay,
     sessionCount: current.length,
     weekProgress: Math.min(1, Math.max(0, (now.getTime() - weekStart) / (weekEnd - weekStart || 1))),
   };
 }
 
-/** Whether this week is at or above the same point last week (for delta coloring). */
-export function weekHoursDeltaTone(chart: { currTotalHours: number; prevTotalHours: number }): "up" | "down" {
-  return chart.currTotalHours >= chart.prevTotalHours ? "up" : "down";
+/** Whether this week is at or above last week through the same weekday (for delta coloring). */
+export function weekHoursDeltaTone(chart: { currHoursSameDay: number; prevHoursSameDay: number }): "up" | "down" {
+  return chart.currHoursSameDay >= chart.prevHoursSameDay ? "up" : "down";
 }
 
 /** Shared Portfolio geometry. The existing hour eligibility/period model stays authoritative. */
@@ -62,11 +66,12 @@ export function portfolioWeekChart(state: CompeteState, now = competeNow(state))
     id: dayKey(shiftAppDay(period.startsAt, index)), x: index === nowDayIndex ? tip.x : x(index), y: y(hours),
     label: date(shiftAppDay(period.startsAt, index)), value: `${hours.toFixed(1)} hr · last week ${prevCumulativeHours[index].toFixed(1)} hr`,
   }));
+  const deltaHours = comparison.currHoursSameDay - comparison.prevHoursSameDay;
   const deltaTone = weekHoursDeltaTone(comparison);
   return { ...comparison, width, height, left, right, top, bottom, tip, current, previous, inspection,
     area: `${current} ${tip.x.toFixed(1)},${bottom} ${origin}`,
     startLabel: date(period.startsAt), endLabel: date(new Date(period.endsAt.getTime() - 1)),
-    deltaLabel: `${currTotalHours - comparison.prevTotalHours >= 0 ? "+" : ""}${(currTotalHours - comparison.prevTotalHours).toFixed(1)}h vs last week`,
+    deltaLabel: `${deltaHours >= 0 ? "+" : ""}${deltaHours.toFixed(1)}h vs last week`,
     deltaTone,
   };
 }

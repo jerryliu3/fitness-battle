@@ -7,7 +7,6 @@ vi.mock("../lib/compete-store", () => ({
   useCompeteStore: () => ({
     state: mock.state,
     loadStatus: mock.state === null ? "loading" : "ready",
-    accountHydrated: mock.state !== null,
   }),
 }));
 vi.mock("react-native", () => ({ View: "View", StyleSheet: { absoluteFill: {} } }));

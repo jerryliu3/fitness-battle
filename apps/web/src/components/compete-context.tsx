@@ -33,6 +33,7 @@ import {
   type DebugEventResult,
   type FieldNotice,
 } from "@fitness-battle/shared";
+import type { CompeteLoadStatus } from "@fitness-battle/shared/boot";
 import {
   lazy,
   Suspense,
@@ -52,8 +53,7 @@ const SyncReview = lazy(() =>
   })),
 );
 
-/** One account-load state. Failed loads are read-only until retry succeeds. */
-type LoadStatus = "local" | "loading" | "ready" | "failed";
+type LoadStatus = CompeteLoadStatus;
 
 interface CompeteApi {
   state: CompeteState | null;
@@ -284,8 +284,9 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
   );
 
   const scheduleSave = useCallback(
-    (accountId: string | null, next: CompeteState, immediate = false) => {
-      if (!accountId || offlineRef.current || statusRef.current !== "ready") return;
+    (accountId: string | null, next: CompeteState, immediate = false, force = false) => {
+      if (!accountId || offlineRef.current) return;
+      if (statusRef.current !== "ready" && !force) return;
       if (timer.current) clearTimeout(timer.current);
       const generation = dirtyRef.current;
       if (immediate) {
@@ -616,11 +617,13 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
       triggerDebugEvent,
       resetDebugState,
       dispatch: (action: Action) => {
-        if (statusRef.current === "failed" && !debugActiveRef.current) return;
         const withAccount: Action =
           userIdRef.current && !action.accountId
             ? { ...action, accountId: userIdRef.current }
             : action;
+        const avatarOnlyWhileFailed =
+          withAccount.type === "set-avatar" && statusRef.current === "failed";
+        if (statusRef.current === "failed" && !debugActiveRef.current && !avatarOnlyWhileFailed) return;
         if (statusRef.current === "loading" || !stateRef.current) {
           queue.current.push(withAccount);
           dirtyRef.current += 1;
@@ -656,12 +659,10 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
         stateRef.current = next;
         setState(next);
         writeLocal(userIdRef.current, next, savedAt);
-        if (statusRef.current === "ready") {
-          scheduleSave(
-            userIdRef.current,
-            next,
-            withAccount.type === "set-units" || withAccount.type === "set-avatar",
-          );
+        const immediate = withAccount.type === "set-units" || withAccount.type === "set-avatar";
+        const forceSave = withAccount.type === "set-avatar" && statusRef.current === "failed";
+        if (statusRef.current === "ready" || forceSave) {
+          scheduleSave(userIdRef.current, next, immediate, forceSave);
         }
       },
     }),

@@ -94,6 +94,32 @@ export function ChartScrubber({
     }
   }
 
+  function moveSelection(step: number) {
+    const current = latest.current;
+    const index = current.points.findIndex((point) => point.id === selectedId);
+    const next = current.points[
+      Math.max(0, Math.min(current.points.length - 1, (index < 0 ? current.points.length - 1 : index) + step))
+    ];
+    if (!next) return;
+    const surface = surfaceRef.current;
+    const rect = surface?.getBoundingClientRect();
+    const clientX = rect
+      ? rect.left + (next.x / current.width) * rect.width
+      : next.x;
+    lastId.current = null;
+    inspect(clientX);
+  }
+
+  function onKeyDown(event: React.KeyboardEvent<HTMLDivElement>) {
+    if (event.key === "ArrowLeft") {
+      event.preventDefault();
+      moveSelection(-1);
+    } else if (event.key === "ArrowRight") {
+      event.preventDefault();
+      moveSelection(1);
+    }
+  }
+
   return (
     <div className="chart-scrubber">
       <div id={summaryId} className="chart-scrubber-summary" aria-live="polite">
@@ -112,8 +138,10 @@ export function ChartScrubber({
         ref={surfaceRef}
         className="chart-scrubber-surface"
         role="application"
+        tabIndex={0}
         aria-label={label}
         aria-describedby={summaryId}
+        onKeyDown={onKeyDown}
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}
         onPointerUp={onPointerUp}
