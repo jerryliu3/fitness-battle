@@ -2195,8 +2195,7 @@
   top: 0;
   right: 0;
 }
-.focus-broadcast-tower > div:not([hidden]),
-.focus-broadcast-spotlight > div:not([hidden]) { padding-right: 38px; }
+.focus-panel-content { padding-right: 38px; }
 .focus-broadcast-tower.is-collapsed,
 .focus-broadcast-spotlight.is-collapsed {
   left: 0;
@@ -2218,5 +2217,5 @@
   pointer-events: none;
 }
 
-.focus-broadcast-tower > div:not([hidden]) { display: grid; gap: 4px; }
-.focus-broadcast-spotlight > div:not([hidden]) { display: grid; gap: 10px; }
+.focus-broadcast-tower > .focus-panel-content:not([hidden]) { display: grid; gap: 4px; }
+.focus-broadcast-spotlight > .focus-panel-content:not([hidden]) { display: grid; gap: 10px; }

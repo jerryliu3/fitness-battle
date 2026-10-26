@@ -22,3 +22,29 @@ it("leaves visible unfilled runway before and beyond the true finish",()=>{
   expect(crewRelayScene(model,320,"runway").finish.length).toBeGreaterThanOrEqual(6);
  }
 });
+
+it("keeps every finish check in the block's top plane with poles on both edges", () => {
+  const model = crewRelay([{ id: "a", name: "A", value: 80, sessions: 3 }], 100);
+  for (const width of [248, 640]) {
+    const scene = crewRelayScene(model, width, "plane");
+    const length = width - 52;
+    const checks = scene.finish.filter(node => node.tag === "path" && String(node.attrs.d).includes(" L"));
+    expect(checks).toHaveLength(16);
+    for (const check of checks) {
+      const coords = String(check.attrs.d).match(/-?\d+(?:\.\d+)?/g)!.map(Number);
+      for (let i = 0; i < coords.length; i += 2) {
+        const x = coords[i]!, y = coords[i + 1]!;
+        // Invert the top-plane projection, independently of checker subdivision.
+        const depth = (174 - y - 30 * (x - 16) / length) / (46 - 720 / length);
+        const fraction = (x - 16 - 24 * depth) / length;
+        expect(depth).toBeGreaterThanOrEqual(-1e-6);
+        expect(depth).toBeLessThanOrEqual(1 + 1e-6);
+        expect(Math.abs(fraction - model.finish!) * length).toBeLessThanOrEqual(5.0001);
+      }
+    }
+    const poles = scene.finish.filter(node => node.tag === "line");
+    expect(poles).toHaveLength(2);
+    expect(Number(poles[1]!.attrs.x1) - Number(poles[0]!.attrs.x1)).toBeCloseTo(24);
+    expect(Number(poles[0]!.attrs.y1) - Number(poles[1]!.attrs.y1)).toBeCloseTo(46);
+  }
+});

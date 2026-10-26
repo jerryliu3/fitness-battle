@@ -34,6 +34,7 @@ vi.mock("react-native", async () => {
     StyleSheet: { create: (styles: unknown) => styles },
     View,
     Modal: "Modal",
+    AppState: { addEventListener: () => ({ remove() {} }) },
     useWindowDimensions: () => ({ width: 390, height: 844 }),
     Pressable: "Pressable",
     ScrollView: "ScrollView",

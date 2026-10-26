@@ -319,39 +319,38 @@ export function FieldStage({
 
       <div className={`focus-broadcast-tower${intervalsCollapsed ? " is-collapsed" : ""}`} aria-label="Live intervals">
         <button type="button" className="focus-panel-toggle" aria-label={intervalsCollapsed ? "Expand live intervals" : "Collapse live intervals"} aria-expanded={!intervalsCollapsed} onClick={() => setIntervalsCollapsed(value => !value)}>{intervalsCollapsed ? "›" : "‹"}</button>
-        <div hidden={intervalsCollapsed}>
-        <span className="focus-broadcast-tower-kicker">LIVE INTERVALS</span>
-        {ranked.slice(0, 4).map((peer, idx) => {
-          const delta = peer.value - leaderValue;
-          const isSelected = (trackSelected || you.id) === peer.id;
-          return (
-            <button
-              key={peer.id}
-              type="button"
-              className={
-                isSelected
-                  ? "focus-broadcast-tower-row is-selected"
-                  : peer.you
-                    ? "focus-broadcast-tower-row is-you"
-                    : "focus-broadcast-tower-row"
-              }
-              onClick={() => {
-                void playCue("selection");
-                toggleSelect(peer.id);
-              }}
-            >
-              <span className="focus-broadcast-tower-rank">{idx + 1}</span>
-              <span className="focus-broadcast-tower-name">
-                {peer.you ? "YOU" : peer.name.split(" ")[0]}
-              </span>
-              <span className="focus-broadcast-tower-val">
-                {idx === 0 ? peer.value.toFixed(1) : delta.toFixed(1)}
-              </span>
-            </button>
-          );
-        })}
-      </div>
-
+        <div className="focus-panel-content" hidden={intervalsCollapsed}>
+          <span className="focus-broadcast-tower-kicker">LIVE INTERVALS</span>
+          {ranked.slice(0, 4).map((peer, idx) => {
+            const delta = peer.value - leaderValue;
+            const isSelected = (trackSelected || you.id) === peer.id;
+            return (
+              <button
+                key={peer.id}
+                type="button"
+                className={
+                  isSelected
+                    ? "focus-broadcast-tower-row is-selected"
+                    : peer.you
+                      ? "focus-broadcast-tower-row is-you"
+                      : "focus-broadcast-tower-row"
+                }
+                onClick={() => {
+                  void playCue("selection");
+                  toggleSelect(peer.id);
+                }}
+              >
+                <span className="focus-broadcast-tower-rank">{idx + 1}</span>
+                <span className="focus-broadcast-tower-name">
+                  {peer.you ? "YOU" : peer.name.split(" ")[0]}
+                </span>
+                <span className="focus-broadcast-tower-val">
+                  {idx === 0 ? peer.value.toFixed(1) : delta.toFixed(1)}
+                </span>
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       <div className="focus-broadcast-rail" aria-label="Quick jump rivals">
@@ -398,63 +397,63 @@ export function FieldStage({
           aria-label="Focused athlete spotlight"
         >
           <button type="button" className="focus-panel-toggle" aria-label={spotlightCollapsed ? "Expand athlete panel" : "Collapse athlete panel"} aria-expanded={!spotlightCollapsed} onClick={() => setSpotlightCollapsed(value => !value)}>{spotlightCollapsed ? "›" : "‹"}</button>
-          <div hidden={spotlightCollapsed}>
-          <div className="focus-broadcast-spotlight-head">
-            <div className="focus-broadcast-spotlight-meta">
-              <span className="focus-broadcast-spotlight-kicker">
-                {ordinalPlace(focusedRank).toUpperCase()} PLACE
-                {focusedLane.you ? " · YOU" : ""}
-                {focusedElo ? ` · ${focusedElo} ELO` : ""}
-              </span>
-              <strong className="focus-broadcast-spotlight-name">
-                {focusedLane.you
-                  ? selfLaneLabel(focusedLane.name)
-                  : focusedLane.name}
-              </strong>
+          <div className="focus-panel-content" hidden={spotlightCollapsed}>
+            <div className="focus-broadcast-spotlight-head">
+              <div className="focus-broadcast-spotlight-meta">
+                <span className="focus-broadcast-spotlight-kicker">
+                  {ordinalPlace(focusedRank).toUpperCase()} PLACE
+                  {focusedLane.you ? " · YOU" : ""}
+                  {focusedElo ? ` · ${focusedElo} ELO` : ""}
+                </span>
+                <strong className="focus-broadcast-spotlight-name">
+                  {focusedLane.you
+                    ? selfLaneLabel(focusedLane.name)
+                    : focusedLane.name}
+                </strong>
+              </div>
+              <div className="focus-broadcast-spotlight-stat">
+                <strong>
+                  {focusedLane.value.toFixed(1)} {unit}
+                </strong>
+                <span>
+                  {focusedLane.you
+                    ? focusedRank === 1
+                      ? "Leading the field"
+                      : `${Math.abs(focusedDeltaToLeader).toFixed(1)} ${unit} to 1st`
+                    : `${focusedDeltaToYou > 0 ? "+" : ""}${focusedDeltaToYou.toFixed(1)} ${unit} vs you`}
+                </span>
+              </div>
             </div>
-            <div className="focus-broadcast-spotlight-stat">
-              <strong>
-                {focusedLane.value.toFixed(1)} {unit}
-              </strong>
-              <span>
-                {focusedLane.you
-                  ? focusedRank === 1
-                    ? "Leading the field"
-                    : `${Math.abs(focusedDeltaToLeader).toFixed(1)} ${unit} to 1st`
-                  : `${focusedDeltaToYou > 0 ? "+" : ""}${focusedDeltaToYou.toFixed(1)} ${unit} vs you`}
-              </span>
-            </div>
-          </div>
 
-          <div
-            className="focus-broadcast-chips"
-            role="group"
-            aria-label="Field athletes"
-          >
-            {ranked.map((peer, idx) => {
-              const activeChip = focusedLane.id === peer.id;
-              return (
-                <button
-                  key={peer.id}
-                  type="button"
-                  className={
-                    activeChip
-                      ? "focus-broadcast-chip is-active"
-                      : peer.you
-                        ? "focus-broadcast-chip is-you"
-                        : "focus-broadcast-chip"
-                  }
-                  onClick={() => {
-                    void playCue("selection");
-                    toggleSelect(peer.id);
-                  }}
-                >
-                  <span>#{idx + 1}</span>
-                  <b>{peer.you ? "You" : peer.name.split(" ")[0]}</b>
-                </button>
-              );
-            })}
-          </div>
+            <div
+              className="focus-broadcast-chips"
+              role="group"
+              aria-label="Field athletes"
+            >
+              {ranked.map((peer, idx) => {
+                const activeChip = focusedLane.id === peer.id;
+                return (
+                  <button
+                    key={peer.id}
+                    type="button"
+                    className={
+                      activeChip
+                        ? "focus-broadcast-chip is-active"
+                        : peer.you
+                          ? "focus-broadcast-chip is-you"
+                          : "focus-broadcast-chip"
+                    }
+                    onClick={() => {
+                      void playCue("selection");
+                      toggleSelect(peer.id);
+                    }}
+                  >
+                    <span>#{idx + 1}</span>
+                    <b>{peer.you ? "You" : peer.name.split(" ")[0]}</b>
+                  </button>
+                );
+              })}
+            </div>
           </div>
         </div>
       ) : null}

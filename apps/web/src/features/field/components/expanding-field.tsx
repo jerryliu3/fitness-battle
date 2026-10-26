@@ -1,10 +1,10 @@
 "use client";
 
-import { createFieldOverlayHold } from "@fitness-battle/shared";
 import * as Dialog from "@radix-ui/react-dialog";
 import { useReducedMotion } from "motion/react";
 import { createPortal } from "react-dom";
 import { useLayoutEffect, useRef, useState, type ReactNode } from "react";
+import { bindFieldOverlayHold } from "./field-overlay-hold";
 import { collapseExpandingFieldImmediate } from "./expanding-field-teardown";
 
 /** One portal target for the entire lifetime: moving it never remounts the lane canvas. */
@@ -31,42 +31,7 @@ export function ExpandingField({
   const [mount, setMount] = useState<HTMLDivElement | null>(null);
   useLayoutEffect(() => {
     if (!open || !mount) return;
-    const hold = createFieldOverlayHold(setOverlaysHidden);
-    const pointers = new Set<number>();
-    const down = (event: PointerEvent) => {
-      if (event.button !== 0 || (event.target instanceof Element && event.target.closest("button, a, input"))) return;
-      pointers.add(event.pointerId);
-      hold.start(event.clientX, event.clientY, pointers.size);
-    };
-    const move = (event: PointerEvent) => hold.move(event.clientX, event.clientY, pointers.size);
-    const up = (event: PointerEvent) => {
-      // Preserve the gesture owner's release cleanup, but consume its tap.
-      if (hold.suppressSelection()) event.preventDefault();
-      pointers.delete(event.pointerId);
-      hold.end();
-    };
-    const clear = () => { pointers.clear(); hold.end(); };
-    const click = (event: MouseEvent) => {
-      if (hold.suppressSelection()) { event.preventDefault(); event.stopPropagation(); }
-    };
-    const context = (event: MouseEvent) => { if (hold.suppressSelection()) event.preventDefault(); };
-    mount.addEventListener("pointerdown", down, true);
-    window.addEventListener("pointermove", move);
-    window.addEventListener("pointerup", up, true);
-    window.addEventListener("pointercancel", up);
-    window.addEventListener("blur", clear);
-    mount.addEventListener("click", click, true);
-    mount.addEventListener("contextmenu", context);
-    return () => {
-      clear();
-      mount.removeEventListener("pointerdown", down, true);
-      window.removeEventListener("pointermove", move);
-      window.removeEventListener("pointerup", up, true);
-      window.removeEventListener("pointercancel", up);
-      window.removeEventListener("blur", clear);
-      mount.removeEventListener("click", click, true);
-      mount.removeEventListener("contextmenu", context);
-    };
+    return bindFieldOverlayHold(mount, setOverlaysHidden);
   }, [open, mount]);
   const [present, setPresent] = useState(false);
   const origin = useRef<DOMRect | null>(null);
