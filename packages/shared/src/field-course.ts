@@ -15,6 +15,9 @@ const circle = (cx: number, cy: number, r: number, fill: string, extra: FieldNod
 const text = (x: number, y: number, value: string, fill: string, size = 10, extra: FieldNode["attrs"] = {}) => n("text", { x, y, fill, fontSize: size, ...extra }, undefined, value);
 const path = (d: string, fill: string, extra: FieldNode["attrs"] = {}) => n("path", { d, fill, ...extra });
 
+/** Keep the outermost lanes at least 1 / 3.9 (25.6%) of the viewport apart. */
+const MAX_VIEWPORT_TO_FIELD_RATIO = 3.9;
+
 /** A local chase window; the existing overview retains the whole accumulated course. */
 export function fieldDefaultSpan(unit: string) { return unit === "pts" ? 20 : unit === "mi" ? 1200 / 1609.344 : 1.2; }
 export function clampCourseCenter(value: number, span: number, high: number, unit: string, ground: FieldAppearance["ground"]) {
@@ -43,8 +46,8 @@ export function fieldCourse(viewportWidth: number, height: number, count: number
   const oval = appearance.ground === "oval";
   const baseFieldWidth = Math.max(viewportWidth - 60, count * (viewportWidth - 60) / 5);
   // Measure the field between the outermost lane centers, excluding half-lane
-  // margins. After it reaches one third of the viewport, only depth zooms out.
-  const minFieldWidth = viewportWidth / 3 * (count > 1 ? count / (count - 1) : 1);
+  // margins. At the width floor, only depth continues zooming out.
+  const minFieldWidth = viewportWidth / MAX_VIEWPORT_TO_FIELD_RATIO * (count > 1 ? count / (count - 1) : 1);
   const horizontalZoom = oval ? zoom : Math.max(zoom, minFieldWidth / baseFieldWidth);
   const fieldWidth = baseFieldWidth * horizontalZoom;
   const width = oval ? viewportWidth : Math.max(viewportWidth, fieldWidth + 60);

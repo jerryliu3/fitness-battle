@@ -11,7 +11,7 @@ import { LaneTrack } from "./lane-track";
 
 let renderer: ReactTestRenderer;
 afterEach(async () => { if (renderer) await act(async () => renderer.unmount()); vi.unstubAllGlobals(); });
-it("keeps the native field one third wide while longitudinal distances keep zooming out", async () => {
+it("keeps the native field over a quarter wide while longitudinal distances keep zooming out", async () => {
   vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
   const lanes = Array.from({ length: 7 }, (_, i) => ({ id: String(i), name: `Peer ${i}`, you: i === 3, ghost: false, values: [485 + i * .1, 485 + i * .1, 485 + i * .1] as [number, number, number] }));
   const props = { lanes, unit: "km", showGhost: false, index: 2, fullscreen: true, animateSelection: false, appearance: { ground: "straight" as const, edges: "club" as const }, onSelect() {} };
@@ -20,7 +20,7 @@ it("keeps the native field one third wide while longitudinal distances keep zoom
   const positions = () => renderer.root.findAllByType("SvgPath" as never).filter(n => n.props.strokeWidth === 6).map(n => (n.props.d.match(/-?\d+(?:\.\d+)?/g) as string[]).map(Number).slice(-2)).sort((a, b) => a[0]! - b[0]!);
   const a = positions();
   expect(a).toHaveLength(7);
-  expect(a.at(-1)![0]! - a[0]![0]!).toBeCloseTo(390 / 3);
+  expect(a.at(-1)![0]! - a[0]![0]!).toBeCloseTo(390 / 3.9);
   await act(async () => renderer.update(createElement(LaneTrack, { ...props, view: { center: 485, span: 24 } })));
   const b = positions();
   expect(b.map(p => p[0])).toEqual(a.map(p => p[0]));

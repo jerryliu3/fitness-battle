@@ -59,12 +59,12 @@ The visible tabs are **Home / Compete / Progress / Crew**. Stable route IDs are 
 ## Lane viewport contract
 
 The October 26 width-lock selection applies to unfolded 2D fields on native and
-web. Zoom both axes until the gap between the outermost athlete lane centers is
-one third of the viewport width, then hold horizontal lane spacing and scenery
-scale while longitudinal zoom continues. Zooming back in restores two-axis
-scaling. Empty/single-athlete fields use a one-third-width ground band. Distance
-positions, ruler values and GPS capsule distance remain linear; the oval and
-perspective camera retain their existing behavior.
+web. Zoom both axes until the viewport is 3.9 times the gap between the outermost
+athlete lane centers (a 25.6% minimum field width), then hold horizontal lane
+spacing and scenery scale while longitudinal zoom continues. Zooming back in
+restores two-axis scaling. Empty/single-athlete fields use a 25.6%-width ground
+band. Distance positions, ruler values and GPS capsule distance remain linear;
+the oval and perspective camera retain their existing behavior.
 
 2D and 3D use the same athlete values and viewport. Lane identity stays fixed when standings change; the user's lane is centered among peers. Default longitudinal range is ±600 m (a 1.2 km window, converted exactly to miles; ±10 effort points for non-GPS) around the user, independently of the most distant competitor. Zoom and pan only change presentation. Center/Fit APIs remain available internally; their visible buttons and the redundant viewport caption were removed in #232. Out-of-range markers show arrow indicators and the unsigned distance from the nearest longitudinal viewport edge. The gap changes with pan/zoom and reaches zero at the same center boundary where the arrow disappears. Visible athlete nameplates retain their gaps relative to you. Fullscreen Live intervals and athlete panels collapse independently into side tabs; a stationary 450 ms hold hides overlays until release, without taking over dragging or pinching. Past you is never ranked.
 

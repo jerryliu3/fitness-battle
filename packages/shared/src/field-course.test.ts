@@ -27,11 +27,13 @@ describe("production course contract", () => {
     expect(b.width).toBe(390);
     expect(b.left).toBeGreaterThan(0);
   });
-  it("locks the outermost lane separation at one third of the viewport while depth keeps zooming", () => {
+  it("locks the viewport-to-field ratio at 3.9 while depth keeps zooming", () => {
     for (const width of [320, 390, 768]) for (const count of [2, 4, 8, 30]) for (const unit of ["km", "mi", "pts"]) {
       const a = fieldCourse(width, 540, count, { center: 485, span: fieldDefaultSpan(unit) * 100 }, unit, defaultFieldAppearance);
       const b = fieldCourse(width, 540, count, { center: 485, span: fieldDefaultSpan(unit) * 200 }, unit, defaultFieldAppearance);
-      expect(a.point(485, count - 1).x - a.point(485, 0).x).toBeCloseTo(width / 3);
+      const separation = a.point(485, count - 1).x - a.point(485, 0).x;
+      expect(width / separation).toBeCloseTo(3.9);
+      expect(separation / width).toBeGreaterThan(.25);
       expect(b.laneWidth).toBeCloseTo(a.laneWidth);
       expect(b.point(485, 0).x).toBeCloseTo(a.point(485, 0).x);
       expect(b.drift(486)).toBeCloseTo(a.drift(486));
@@ -44,7 +46,7 @@ describe("production course contract", () => {
   });
   it("crosses the width limit continuously and restores horizontal zoom when zooming back in", () => {
     const width = 390, count = 8, base = count * (width - 60) / 5;
-    const minWidth = width / 3 * count / (count - 1);
+    const minWidth = width / 3.9 * count / (count - 1);
     const threshold = fieldDefaultSpan("km") * base / minWidth;
     const course = (span: number) => fieldCourse(width, 540, count, { center: 18, span }, "km", defaultFieldAppearance);
     const before = course(threshold * (1 - 1e-6)), at = course(threshold), after = course(threshold * (1 + 1e-6));
@@ -79,7 +81,7 @@ describe("production course contract", () => {
   it("keeps wide empty/single-athlete fields finite and leaves oval zoom uniform", () => {
     for (const count of [0, 1]) {
       const course = fieldCourse(320, 540, count, { center: 485, span: 40 }, "km", defaultFieldAppearance);
-      expect(course.fieldWidth).toBeCloseTo(320 / 3);
+      expect(course.fieldWidth).toBeCloseTo(320 / 3.9);
       expect(JSON.stringify(course.point(485, 0))).not.toMatch(/NaN|Infinity/);
     }
     const appearance = { ...defaultFieldAppearance, ground: "oval" as const };
