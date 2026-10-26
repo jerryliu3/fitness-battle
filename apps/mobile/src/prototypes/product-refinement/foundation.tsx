@@ -276,7 +276,11 @@ export function Study({
   tab,
   concepts,
   children,
+  followup = false,
+  reviewControls,
 }: {
+  followup?: boolean;
+  reviewControls?: ReactNode;
   tab: "compete" | "progress" | "crew" | "profile";
   concepts: readonly string[];
   children: (index: number) => ReactNode;
@@ -333,6 +337,7 @@ export function Study({
           </Tap>
         </View>
       )}
+      {params.clean !== "1" && reviewControls}
       {compare ? (
         <ScrollView
           horizontal
@@ -357,7 +362,9 @@ export function Study({
                   overflow: "hidden",
                 }}
               >
-                <ProductFrame tab={tab}>{children(i)}</ProductFrame>
+                <ProductFrame tab={tab} followup={followup}>
+                  {children(i)}
+                </ProductFrame>
               </View>
             </View>
           ))}
@@ -366,7 +373,9 @@ export function Study({
         <View
           style={{ flex: 1, maxWidth: 500, width: "100%", alignSelf: "center" }}
         >
-          <ProductFrame tab={tab}>{children(index)}</ProductFrame>
+          <ProductFrame tab={tab} followup={followup}>
+            {children(index)}
+          </ProductFrame>
         </View>
       )}
       <FocusSheet
@@ -405,7 +414,15 @@ export function Study({
     </SafeAreaView>
   );
 }
-function ProductFrame({ tab, children }: { tab: string; children: ReactNode }) {
+function ProductFrame({
+  tab,
+  children,
+  followup,
+}: {
+  tab: string;
+  children: ReactNode;
+  followup?: boolean;
+}) {
   const router = useRouter();
   const routes = ["today", "arena", "you", "field"];
   return (
@@ -414,7 +431,13 @@ function ProductFrame({ tab, children }: { tab: string; children: ReactNode }) {
         <View style={{ ...row, paddingHorizontal: 20, paddingVertical: 8 }}>
           <Tap
             label="Open your profile"
-            onPress={() => router.push("/refine-profile" as "/athlete")}
+            onPress={() =>
+              router.push(
+                (followup
+                  ? "/refine-next?tab=profile"
+                  : "/refine-profile") as "/athlete",
+              )
+            }
           >
             <UserAvatar name="Alex Morgan" size={38} />
           </Tap>
@@ -460,7 +483,9 @@ function ProductFrame({ tab, children }: { tab: string; children: ReactNode }) {
             router.push(
               (key === "today"
                 ? "/today"
-                : `/refine-${({ arena: "compete", you: "progress", field: "crew" } as Record<string, string>)[key]}`) as "/today",
+                : followup
+                  ? `/refine-next?tab=${({ arena: "compete", you: "progress", field: "crew" } as Record<string, string>)[key]}`
+                  : `/refine-${({ arena: "compete", you: "progress", field: "crew" } as Record<string, string>)[key]}`) as "/today",
             )
           }
         />

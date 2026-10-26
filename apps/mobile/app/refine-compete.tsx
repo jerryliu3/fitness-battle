@@ -1,1 +1,1 @@
-export { default } from "../src/prototypes/product-refinement/compete";
+export { default } from "../src/prototypes/product-refinement/field-directions";

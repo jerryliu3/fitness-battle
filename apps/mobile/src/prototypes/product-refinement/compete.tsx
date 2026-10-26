@@ -430,11 +430,13 @@ function CompeteRoot({
     </>
   );
 }
-function MeetPager({
+export function MeetPager({
   selected,
   choose,
   gps,
+  compact = false,
 }: {
+  compact?: boolean;
   selected: number;
   choose: (i: number) => void;
   gps: boolean;
@@ -472,10 +474,10 @@ function MeetPager({
             key={m.id}
             style={{
               width: step - 12,
-              padding: 20,
+              padding: compact ? 14 : 20,
               borderRadius: 24,
               backgroundColor: i === selected ? c.ink : "#e7eeea",
-              gap: 18,
+              gap: compact ? 8 : 18,
             }}
           >
             <View style={row}>
@@ -490,12 +492,12 @@ function MeetPager({
                 role="caption"
                 style={{ color: i === selected ? "#c9d6e3" : c.muted }}
               >
-                3 days left
+                Weekly
               </T>
             </View>
             <View>
               <T
-                role="display"
+                role={compact ? "heading" : "display"}
                 style={{ color: i === selected ? c.card : c.ink }}
               >
                 {(gps && m.gps !== null ? m.gps : m.total).toFixed(1)}
@@ -519,7 +521,7 @@ function MeetPager({
                 ...row,
                 borderTopWidth: 1,
                 borderColor: "#ffffff33",
-                paddingTop: 14,
+                paddingTop: compact ? 6 : 14,
               }}
             >
               <T
@@ -565,7 +567,7 @@ function MeetPager({
     </View>
   );
 }
-function CompeteDetail({
+export function CompeteDetail({
   page,
   meet,
   gps,

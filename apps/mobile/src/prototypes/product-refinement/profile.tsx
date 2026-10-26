@@ -52,7 +52,7 @@ export default function ProfileRefinement() {
     </Study>
   );
 }
-function Profile({ variant }: { variant: number }) {
+export function Profile({ variant }: { variant: number }) {
   const [identity, setIdentity] = useState(startingIdentity),
     [pins, setPins] = useState(["5k", "10k", "longest"]),
     [visibility, setVisibility] = useState<Visibility>({
@@ -91,6 +91,7 @@ function Profile({ variant }: { variant: number }) {
       )}
     >
       <ProfileRoot
+        variant={variant}
         publicView={publicView}
         setPublic={(v) => router.setParams({ public: v ? "1" : undefined })}
         card={card}
@@ -100,11 +101,13 @@ function Profile({ variant }: { variant: number }) {
   );
 }
 function ProfileRoot({
+  variant,
   publicView,
   setPublic,
   card,
   metric,
 }: {
+  variant: number;
   publicView: boolean;
   setPublic: (v: boolean) => void;
   card: (v: boolean) => React.ReactNode;
@@ -178,6 +181,74 @@ function ProfileRoot({
           />
         </View>
       </View>
+      {variant === 2 && (
+        <View style={{ gap: 16 }}>
+          <SectionHeader
+            title="The marks you leave"
+            subtitle="A personal history, one milestone at a time"
+          />
+          {[
+            {
+              id: "5k",
+              date: "Oct 11",
+              title: "A little faster",
+              note: "5K · 23:42 · 18 seconds off your best",
+            },
+            {
+              id: "longest",
+              date: "Oct 22",
+              title: "A little further",
+              note: "Your longest run · 62 minutes",
+            },
+            {
+              id: "streak",
+              date: "Oct 25",
+              title: "Still showing up",
+              note: "Four active weeks, back to back",
+            },
+          ].map((m, i) => (
+            <Tap
+              key={m.id}
+              onPress={() =>
+                nav.push({ key: "profile-record", title: m.title, id: m.id })
+              }
+              style={{ ...row, alignItems: "stretch", gap: 16 }}
+            >
+              <View style={{ width: 12, alignItems: "center", paddingTop: 6 }}>
+                <View
+                  style={{
+                    width: 10,
+                    height: 10,
+                    borderRadius: 5,
+                    backgroundColor: i === 2 ? c.tennis : c.secondary,
+                  }}
+                />
+                {i < 2 && (
+                  <View
+                    style={{
+                      width: 1,
+                      flex: 1,
+                      minHeight: 40,
+                      backgroundColor: c.line,
+                      marginTop: 6,
+                    }}
+                  />
+                )}
+              </View>
+              <View style={{ flex: 1, gap: 4, paddingBottom: 16 }}>
+                <T role="caption" secondary>
+                  {m.date}
+                </T>
+                <T role="heading">{m.title}</T>
+                <T role="caption" secondary>
+                  {m.note}
+                </T>
+              </View>
+              <AppIcon name="chevron" size={16} />
+            </Tap>
+          ))}
+        </View>
+      )}
       <Rule />
       <SectionHeader
         title="A few proud moments"
@@ -267,7 +338,7 @@ function ProfileRoot({
     </>
   );
 }
-function Passport({
+export function Passport({
   variant,
   identity,
   pins,
@@ -283,22 +354,34 @@ function Passport({
   publicMode: boolean;
 }) {
   const nav = useStudyNav();
-  const dark = variant === 1;
+  const dark = variant !== 0;
   const ink = dark ? c.card : c.ink;
   return (
     <View
       style={{
         borderRadius: 28,
-        backgroundColor: dark ? c.ink : c.card,
+        backgroundColor: variant === 2 ? c.fieldDeep : dark ? c.ink : c.card,
         borderWidth: 1,
         borderColor: c.line,
         overflow: "hidden",
       }}
     >
+      {variant === 2 && (
+        <View style={{ height: 6, flexDirection: "row" }}>
+          {[c.tennis, "#d9e4da", c.secondary, c.tennis].map((color, i) => (
+            <View
+              key={i}
+              style={{ flex: i === 1 ? 3 : 1, backgroundColor: color }}
+            />
+          ))}
+        </View>
+      )}
       <View style={{ padding: 22, gap: 18 }}>
         <View style={{ ...row, justifyContent: "space-between" }}>
           <T role="caption" style={{ color: dark ? "#c9d6e3" : c.muted }}>
-            Overtaek / Athlete
+            {variant === 2
+              ? "OVERTAEK / CLUB EDITION 01"
+              : "Overtaek / Athlete"}
           </T>
           <T role="caption" style={{ color: dark ? "#c9d6e3" : c.muted }}>
             Since Jan 2026
@@ -435,6 +518,23 @@ function Passport({
                 Your selected records will appear here.
               </T>
             )}
+          </View>
+        )}
+        {variant === 2 && (
+          <View
+            style={{
+              borderTopWidth: 1,
+              borderColor: "#ffffff26",
+              paddingTop: 14,
+              gap: 5,
+            }}
+          >
+            <T role="label" style={{ color: c.tennis }}>
+              Four weeks. A hundred small decisions.
+            </T>
+            <T role="caption" style={{ color: "#c9d6e3" }}>
+              Your records tell the story. Your consistency makes it yours.
+            </T>
           </View>
         )}
         {!publicMode && (
