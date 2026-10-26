@@ -19,7 +19,8 @@ it("covers the shell, exposes activity maps/details, and confirms only the selec
   expect(renderer.root.findByType("ActivityRoute" as never).props.activity.id).toBe(activities[0].id);
   await act(async () => renderer.root.findByType("input").props.onChange({ target: { checked: false } }));
   const bar = renderer.root.findByProps({ role: "slider" });
-  await act(async () => { bar.props.onKeyDown({ key: "Enter", preventDefault() {} }); bar.props.onKeyDown({ key: "Enter", preventDefault() {} }); });
+  await act(async () => { bar.props.onKeyDown({ key: "Enter", preventDefault() {} }); });
+  await act(async () => { await new Promise((resolve) => setTimeout(resolve, 1000)); });
   expect(done).toHaveBeenCalledTimes(1);
   expect(done).toHaveBeenCalledWith([]);
 });
@@ -32,5 +33,27 @@ it("requires a full deliberate swipe and resets a short drag", async () => {
   expect(done).not.toHaveBeenCalled();
   expect(bar.props["aria-valuenow"]).toBe(0);
   await act(async () => { bar.props.onPointerDown({ currentTarget: target, clientX: 20, pointerId: 1 }); bar.props.onPointerUp({ currentTarget: target, clientX: 260, pointerId: 1 }); });
+  await act(async () => { await new Promise((resolve) => setTimeout(resolve, 1000)); });
   expect(done).toHaveBeenCalledWith(activities.map(a => a.id));
+});
+it("locks activity selection while the save spinner runs", async () => {
+  const done = vi.fn();
+  await act(async () => { renderer = create(createElement(SyncReview, { state, receipt, onComplete: done })); });
+  const bar = renderer.root.findByProps({ role: "slider" });
+  const target = { clientWidth: 300, getBoundingClientRect: () => ({ left: 0 }), setPointerCapture() {}, releasePointerCapture() {}, hasPointerCapture: () => true };
+  await act(async () => { bar.props.onPointerDown({ currentTarget: target, clientX: 20, pointerId: 1 }); bar.props.onPointerUp({ currentTarget: target, clientX: 260, pointerId: 1 }); });
+  const checkbox = renderer.root.findByType("input");
+  await act(async () => { checkbox.props.onChange({ target: { checked: false } }); });
+  await act(async () => { await new Promise((resolve) => setTimeout(resolve, 1000)); });
+  expect(done).toHaveBeenCalledWith(activities.map(a => a.id));
+});
+it("disables activity detail navigation while saving", async () => {
+  const done = vi.fn();
+  await act(async () => { renderer = create(createElement(SyncReview, { state, receipt, onComplete: done })); });
+  const bar = renderer.root.findByProps({ role: "slider" });
+  const target = { clientWidth: 300, getBoundingClientRect: () => ({ left: 0 }), setPointerCapture() {}, releasePointerCapture() {}, hasPointerCapture: () => true };
+  await act(async () => { bar.props.onPointerDown({ currentTarget: target, clientX: 20, pointerId: 1 }); bar.props.onPointerUp({ currentTarget: target, clientX: 260, pointerId: 1 }); });
+  const detailButtons = renderer.root
+    .findAll((node) => node.type === "button" && typeof node.props.onClick === "function" && node.props.disabled === true);
+  expect(detailButtons.length).toBeGreaterThan(0);
 });

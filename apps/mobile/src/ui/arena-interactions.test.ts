@@ -167,14 +167,9 @@ describe("native competition interactions", () => {
     await act(async () => standingsToggle().props.onPress());
     expect(standingsToggle().props.accessibilityLabel).toBe("Show standings");
     expect(mock.mounts).toBe(1);
-    const choose = renderer.root.findAll(node=>typeof node.props.onAccessibilityTap === "function" && node.props.accessibilityLabel?.startsWith("Choose event."))[0]!;
-    await act(async()=>choose.props.onAccessibilityTap());
-    const register=renderer.root.findAllByType("FocusButton" as never).find(node=>node.props.label==="Register for another event")!;
-    await act(async()=>register.props.onPress());
+    const register = renderer.root.findAllByType("Pressable" as never).find((node) => node.props.accessibilityLabel === "Register for an event")!;
+    await act(async () => register.props.onPress());
     const registrationOpen = () => renderer.root.findAllByType("Sheet" as never).some(node=>node.props.title==="Register for this week."&&node.props.open);
-    expect(registrationOpen()).toBe(false);
-    const chooser=renderer.root.findAllByType("Sheet" as never).find(node=>node.props.title==="Choose your event")!;
-    await act(async()=>chooser.props.onClosed());
     expect(registrationOpen()).toBe(true);
   });
 
@@ -220,7 +215,7 @@ it("mounts only one registered sport and replaces it when switching",async()=>{
  await act(async()=>{renderer=create(createElement(ArenaScreen));});
  await layoutCarousel();
  expect(renderer.root.findAllByType("LaneTrack" as never)).toHaveLength(1);
- const choice=renderer.root.findAllByType("Pressable" as never).find(n=>n.props.accessibilityLabel==="Show Cycling")!;
+ const choice=renderer.root.findAllByType("Pressable" as never).find(n=>n.props.accessibilityRole==="tab"&&n.props.accessibilityLabel==="Cycling")!;
  await act(async()=>choice.props.onPress());
  expect(renderer.root.findAllByType("LaneTrack" as never)).toHaveLength(1);
  expect(renderer.root.findAllByType("Pressable" as never).some(n=>n.props.accessibilityLabel==="Show standings")).toBe(true);

@@ -14,6 +14,10 @@ import {
   clampArenaLaneCenter,
   orderedArenaLanes,
   polishedLaneScale,
+  competeAthleteTrailColors,
+  competeFieldIncludesStart,
+  competeStartTrailVector,
+  fieldLaneMarkerScale,
   fieldCourse, fieldCourseScene, fieldLap, defaultFieldAppearance, type FieldAppearance,
   selfLaneLabel,
   type ArenaOvertakeFrame,
@@ -309,13 +313,28 @@ export function ArenaLanes({
           const row = sortedByValue.findIndex((lane) => lane.id === l.id);
           const rank = 1 + sortedByValue.filter((lane) => lane.value > l.value + 0.000001).length;
           const point = course.point(l.value, i, 0, true);
+          const startPoint = course.point(0, i, 0, true);
           const targetY = standings ? 48 + row * 76 : point.y + (l.you ? charging * 4 * course.markerScale : 0);
           const targetX = standings ? 38 : point.x + (effect?.joltX ?? 0) * course.markerScale;
           const edge = !course.oval && position.edge;
+          const showStartTrail =
+            !course.oval &&
+            !standings &&
+            !edge &&
+            l.value > 0.0001 && // at the start line the athlete sits on the marker; no connector
+            competeFieldIncludesStart(effectiveView);
+          const trailColors = competeAthleteTrailColors(Boolean(l.you), Boolean(l.ghost));
+          const startTrail = showStartTrail
+            ? competeStartTrailVector(0, 0, startPoint.x - targetX, startPoint.y - targetY)
+            : null;
           const markerScale = standings || edge ? 1 : course.markerScale;
           const xx = 0, yy = 0;
           const active = selected === l.id || l.you;
-          const headHalf = 29 * (standings ? polishedLaneScale(Boolean(l.you)) : 1);
+          const headHalf =
+            29 *
+            (standings
+              ? polishedLaneScale(Boolean(l.you))
+              : fieldLaneMarkerScale(Boolean(l.you)));
           const pennantWidth=146;
           const visibleLeft=host.current?.scrollLeft??0;
           const pennantX=Math.max(visibleLeft-targetX+8,Math.min(visibleLeft+size.width-targetX-pennantWidth-8,l.you?-pennantWidth-12:12));
@@ -341,6 +360,28 @@ export function ArenaLanes({
                 }
               }}
             >
+              {startTrail && (
+                <g pointerEvents="none">
+                  <line
+                    x1={0}
+                    y1={0}
+                    x2={startTrail.dx}
+                    y2={startTrail.dy}
+                    stroke={trailColors.stroke}
+                    strokeWidth={trailColors.strokeWidth}
+                    strokeLinecap="round"
+                    opacity={trailColors.strokeOpacity}
+                  />
+                  <circle
+                    cx={0}
+                    cy={0}
+                    r={6}
+                    fill={trailColors.dotFill}
+                    stroke={trailColors.dotStroke}
+                    strokeWidth={3}
+                  />
+                </g>
+              )}
               <g transform={`rotate(${standings ? 0 : point.angle}) scale(${markerScale})`}>
               {l.you && charging > 0.02 && (
                 <g
@@ -371,8 +412,17 @@ export function ArenaLanes({
               )}
               {/* Local echoes own their animation; replay only moves the parent marker. */}
               {standings || !edge ? (
-                <PolishedRacer sizeScale={standings ? undefined : 1} x={xx} y={yy} you={Boolean(l.you)} gold={rank === 1} active={active}
-                  showWake={!standings} independentWake animateWake={immersive} wakeBottom={course.oval ? undefined : (maxTailY - targetY) / markerScale}/>
+                <PolishedRacer
+                  sizeScale={standings ? undefined : fieldLaneMarkerScale(Boolean(l.you))}
+                  x={xx}
+                  y={yy}
+                  you={Boolean(l.you)}
+                  gold={rank === 1}
+                  active={active}
+                  showWake={!standings && !showStartTrail}
+                  independentWake
+                  animateWake={immersive}
+                  wakeBottom={course.oval ? undefined : (maxTailY - targetY) / markerScale}/>
               ) : <circle r={18} fill="white" stroke="#616c63" strokeDasharray="3 3"/>}
               <rect className="focus-racer-focus-ring" x={-23} y={-headHalf-3} width={46} height={headHalf*2+6} rx={23} fill="none" stroke="#f1c75b" strokeWidth={2}/>
               <rect x={xx - 24 / markerScale} y={yy - Math.max(22 / markerScale, headHalf + 4)} width={48 / markerScale} height={Math.max(44 / markerScale, headHalf * 2 + 8)} rx="24" fill="transparent"/>

@@ -11,6 +11,10 @@ import {
   clampCourseCenter,
   initialsFromName,
   orderedArenaLanes,
+  competeAthleteTrailColors,
+  competeFieldIncludesStart,
+  competeStartTrailVector,
+  fieldLaneMarkerScale,
   type ArenaLane,
   type ArenaOvertakeFrame,
   type ArenaOvertakePlan,
@@ -20,6 +24,7 @@ import { memo, useEffect, useId, useMemo, useRef, useState, type MutableRefObjec
 import { PanResponder, Pressable, ScrollView, Text, View, type ScrollViewInstance } from "react-native";
 import Svg, {
   Circle,
+  Line,
   Defs,
   ClipPath,
   Image as SvgImage,
@@ -232,16 +237,50 @@ function LaneTrackContent({
               const effect = overtakeFrame?.rivalEffects[l.id];
               const charging =
                 l.you && animating ? (overtakeFrame?.charging ?? 0) : 0;
-              const point = course.point(value, i, 0, true), scale = edge?1:course.markerScale;
-              const xx = point.x + (effect?.joltX ?? 0) * scale, yy = point.y + (l.you ? charging * 4 * scale : 0);
-              const headHalf = 29;
+              const point = course.point(value, i, 0, true);
+              const startPoint = course.point(0, i, 0, true);
+              const scale = edge ? 1 : course.markerScale;
+              const xx = point.x + (effect?.joltX ?? 0) * scale;
+              const yy = point.y + (l.you ? charging * 4 * scale : 0);
+              const showStartTrail =
+                !course.oval &&
+                !edge &&
+                value > 0.0001 && // at the start line the athlete sits on the marker; no connector
+                competeFieldIncludesStart(v);
+              const trailColors = competeAthleteTrailColors(Boolean(l.you), Boolean(l.ghost));
+              const startTrail = showStartTrail
+                ? competeStartTrailVector(xx, yy, startPoint.x, startPoint.y)
+                : null;
+              const headHalf = 29 * fieldLaneMarkerScale(Boolean(l.you));
               const rank=1+live.filter(peer=>peer.value>value+.000001).length;
               const pennantWidth=146, visibleLeft=previous.current?.scroll??0;
               const pennantX=Math.max(visibleLeft-xx+8,Math.min(visibleLeft+width-xx-pennantWidth-8,l.you?-pennantWidth-12:12));
               const pennantY=athletePennantOffset(yy,course.point(overtakeFrame?.youValue??me?.values[index]??0,Math.max(0,ordered.findIndex(peer=>peer.you)),0,true).y,l.you,height);
               return (
+                <G key={l.id}>
+                  {startTrail ? (
+                    <G pointerEvents="none">
+                      <Line
+                        x1={xx}
+                        y1={yy}
+                        x2={xx + startTrail.dx}
+                        y2={yy + startTrail.dy}
+                        stroke={trailColors.stroke}
+                        strokeWidth={trailColors.strokeWidth}
+                        strokeLinecap="round"
+                        opacity={trailColors.strokeOpacity}
+                      />
+                      <Circle
+                        cx={xx}
+                        cy={yy}
+                        r={6}
+                        fill={trailColors.dotFill}
+                        stroke={trailColors.dotStroke}
+                        strokeWidth={3}
+                      />
+                    </G>
+                  ) : null}
                 <LaneRacerTarget
-                  key={l.id}
                   onPress={() => onSelect(l)}
                   accessible
                   accessibilityRole="button"
@@ -281,10 +320,11 @@ function LaneTrackContent({
                     />
                   ) : (
                     <PolishedRacer
-                      sizeScale={1}
+                      sizeScale={fieldLaneMarkerScale(Boolean(l.you))}
                       x={0}
                       y={0}
                       you={l.you}
+                      showWake={!showStartTrail}
                       animation={wakeAnimation}
                       wakeBottom={course.oval ? undefined : (maxTailY - yy) / scale}
                       gold={
@@ -318,6 +358,7 @@ function LaneTrackContent({
                     <SvgText {...chartTextProps()} x={pennantX+47} y={pennantY+35}  fill={c.muted}>{ordinalPlace(rank)} · {l.you?`${value.toFixed(1)} ${unit}`:`${value-(overtakeFrame?.youValue??me?.values[index]??0)>0?"+":""}${(value-(overtakeFrame?.youValue??me?.values[index]??0)).toFixed(1)} ${unit}`}</SvgText>
                   </G>:null}
                 </LaneRacerTarget>
+                </G>
               );
             })}
             {ghost && (() => { const p = course.point(ghost.values[index] ?? 0, ordered.findIndex(l => l.you), 18 * course.markerScale, true); return <G onPress={() => onSelect(ghost)}><Circle cx={p.x} cy={p.y} r={13 * course.markerScale} fill="#ffffffcc" stroke={c.muted} strokeDasharray="3 3"/></G>; })()}

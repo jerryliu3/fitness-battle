@@ -2,6 +2,9 @@ import { dayKey } from "./period";
 import { countsOnTrack } from "./compete/ledger";
 import { competeNow, reduceCompete, type Action } from "./compete/engine";
 import type { Activity, CompeteState } from "./compete/sports";
+/** Brief beat before applying sync review so the confirm affordance can show progress. */
+export const SYNC_REVIEW_SAVE_DELAY_MS = 900;
+
 export interface SyncReviewReceipt {
   account: string | null;
   activities: Activity[];

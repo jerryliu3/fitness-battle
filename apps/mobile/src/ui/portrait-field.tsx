@@ -9,6 +9,7 @@ import {
   View,
 } from "react-native";
 import Svg, {
+  Circle,
   ClipPath,
   Defs,
   Ellipse,
@@ -25,6 +26,7 @@ import {
   portraitDepthAt,
   portraitScaleAtDepth,
   portraitFieldGap,
+  competeAthleteTrailColors,
   type ArenaSceneLane,
   type ArenaViewWindow,
 } from "@fitness-battle/shared";
@@ -196,25 +198,34 @@ export function PortraitField({
               fill={`url(#${prefix}-horizon)`}
             />
             </G>
-            {scene.markers.map((m) => (
+            {scene.markers.map((m) => {
+              const trail = m.trail ? competeAthleteTrailColors(Boolean(m.you), Boolean(m.ghost)) : null;
+              return (
               <G key={`trail-${m.id}`} pointerEvents="none">
-                <Path
-                  d={m.trail}
-                  stroke={m.color}
-                  strokeWidth={12}
-                  opacity={0.12}
-                  fill="none"
-                />
-                <Path
-                  d={m.trail}
-                  stroke={m.color}
-                  strokeWidth={5}
-                  opacity={m.ghost ? 0.4 : 0.8}
-                  strokeDasharray={m.ghost ? "5 6" : undefined}
-                  fill="none"
-                />
+                {m.trail && trail ? (
+                  <>
+                    <Path
+                      d={m.trail}
+                      stroke={trail.glow}
+                      strokeWidth={trail.glowStrokeWidth}
+                      opacity={trail.glowOpacity}
+                      strokeLinecap="round"
+                      fill="none"
+                    />
+                    <Path
+                      d={m.trail}
+                      stroke={trail.stroke}
+                      strokeWidth={trail.strokeWidth}
+                      opacity={trail.strokeOpacity}
+                      strokeDasharray={m.ghost ? "6 8" : undefined}
+                      strokeLinecap="round"
+                      fill="none"
+                    />
+                  </>
+                ) : null}
               </G>
-            ))}
+              );
+            })}
             {scene.markers
               .filter((m) => m.x > 22 && m.x < 398)
               .sort((a, b) => a.y - b.y)
@@ -230,22 +241,35 @@ export function PortraitField({
                   >
                     <G transform={`translate(${m.x} ${m.y - 27 * m.scale}) scale(${m.scale})`}>
                     <Rect x={-30 / m.scale} y={-45 / m.scale} width={60 / m.scale} height={90 / m.scale} fill="transparent" />
-                    <Ellipse
-                      cy={27}
-                      rx={24}
-                      ry={10}
-                      fill={m.color}
-                      opacity={0.16}
-                    />
-                    <Ellipse
-                      cy={27}
-                      rx={16}
-                      ry={6}
-                      fill="#143c43"
-                      stroke={m.color}
-                      strokeWidth={2.5}
-                    />
-                    <Ellipse cy={27} rx={5} ry={2} fill={m.color} />
+                    {!m.ghost && m.trail ? (
+                      <Circle
+                        cx={0}
+                        cy={27}
+                        r={7}
+                        fill="#ffffff"
+                        stroke={m.you ? "#f7c948" : "#98a6bc"}
+                        strokeWidth={3}
+                      />
+                    ) : (
+                      <>
+                        <Ellipse
+                          cy={27}
+                          rx={24}
+                          ry={10}
+                          fill={m.color}
+                          opacity={0.16}
+                        />
+                        <Ellipse
+                          cy={27}
+                          rx={16}
+                          ry={6}
+                          fill="#143c43"
+                          stroke={m.color}
+                          strokeWidth={2.5}
+                        />
+                        <Ellipse cy={27} rx={5} ry={2} fill={m.color} />
+                      </>
+                    )}
                     <Path
                       d="M-9 12 L0 27 L9 12"
                       fill={m.you ? "#f7c948" : "#f8f9f6"}

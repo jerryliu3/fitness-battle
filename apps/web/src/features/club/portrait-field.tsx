@@ -7,6 +7,7 @@ import {
   portraitDepthAt,
   portraitScaleAtDepth,
   portraitFieldGap,
+  competeAthleteTrailColors,
   type ArenaSceneLane,
   type ArenaViewWindow,
 } from "@fitness-battle/shared";
@@ -105,7 +106,7 @@ export function PortraitField({
   } | null>(null);
   const moved = useRef(false);
   return (
-    <div className="club-perspective-group">
+    <div className={immersive ? "club-perspective-group is-immersive" : "club-perspective-group"}>
       <div className="club-board-status">
         <b>
           {scene.place} / {scene.fieldSize} <AppText as="small" role="caption" secondary>PLACE</AppText>
@@ -144,7 +145,7 @@ export function PortraitField({
       ) : null}
       <svg
         ref={svg}
-        style={{ touchAction: exploring ? "none" : "pan-y" }}
+        style={{ touchAction: exploring || immersive ? "none" : "pan-y" }}
         tabIndex={0}
         onKeyDown={e => {
           if (e.target !== e.currentTarget) return;
@@ -182,7 +183,7 @@ export function PortraitField({
           if (
             !d.moved &&
             Math.hypot(dx, dy) > 8 &&
-            (exploring || Math.abs(dx) > Math.abs(dy) * 1.3)
+            (exploring || immersive || Math.abs(dx) > Math.abs(dy) * 1.3)
           ) {
             d.moved = true;
             e.currentTarget.setPointerCapture(e.pointerId);
@@ -231,30 +232,42 @@ export function PortraitField({
           height={110}
           fill={`url(#${prefix}-horizon)`}
         />
-        {scene.markers.map((m) => (
+        {scene.markers.map((m) => {
+          const trail = m.trail ? competeAthleteTrailColors(Boolean(m.you), Boolean(m.ghost)) : null;
+          return (
           <g key={`trail-${m.id}`} pointerEvents="none">
-            <path
-              d={m.trail}
-              stroke={m.color}
-              strokeWidth={12}
-              opacity={0.12}
-              fill="none"
-            />
-            <path
-              d={m.trail}
-              stroke={m.color}
-              strokeWidth={5}
-              opacity={m.ghost ? 0.4 : 0.8}
-              strokeDasharray={m.ghost ? "5 6" : undefined}
-              fill="none"
-            />
+            {m.trail && trail ? (
+              <>
+                <path
+                  d={m.trail}
+                  stroke={trail.glow}
+                  strokeWidth={trail.glowStrokeWidth}
+                  opacity={trail.glowOpacity}
+                  strokeLinecap="round"
+                  fill="none"
+                />
+                <path
+                  d={m.trail}
+                  stroke={trail.stroke}
+                  strokeWidth={trail.strokeWidth}
+                  opacity={trail.strokeOpacity}
+                  strokeDasharray={m.ghost ? "6 8" : undefined}
+                  strokeLinecap="round"
+                  fill="none"
+                />
+              </>
+            ) : null}
           </g>
-        ))}
+          );
+        })}
         {scene.markers
           .filter((m) => m.x > 22 && m.x < 398)
           .sort((a, b) => a.y - b.y)
           .map((m, i) => {
             const id = `${prefix}-portrait-${i}`;
+            const markerTrail = m.trail
+              ? competeAthleteTrailColors(Boolean(m.you), Boolean(m.ghost))
+              : null;
             return (
               <g
                 key={m.id}
@@ -271,22 +284,35 @@ export function PortraitField({
                 }}
               >
                 <rect x={-30 / m.scale} y={-45 / m.scale} width={60 / m.scale} height={90 / m.scale} fill="transparent" />
-                <ellipse
-                  cy={27}
-                  rx={24}
-                  ry={10}
-                  fill={m.color}
-                  opacity={0.16}
-                />
-                <ellipse
-                  cy={27}
-                  rx={16}
-                  ry={6}
-                  fill="#143c43"
-                  stroke={m.color}
-                  strokeWidth={2.5}
-                />
-                <ellipse cy={27} rx={5} ry={2} fill={m.color} />
+                {!m.ghost && m.trail ? (
+                  <circle
+                    cx={0}
+                    cy={27}
+                    r={7}
+                    fill={markerTrail!.dotFill}
+                    stroke={markerTrail!.dotStroke}
+                    strokeWidth={3}
+                  />
+                ) : (
+                  <>
+                    <ellipse
+                      cy={27}
+                      rx={24}
+                      ry={10}
+                      fill={m.color}
+                      opacity={0.16}
+                    />
+                    <ellipse
+                      cy={27}
+                      rx={16}
+                      ry={6}
+                      fill="#143c43"
+                      stroke={m.color}
+                      strokeWidth={2.5}
+                    />
+                    <ellipse cy={27} rx={5} ry={2} fill={m.color} />
+                  </>
+                )}
                 <path
                   d="M-9 12 L0 27 L9 12"
                   fill={m.you ? "#f7c948" : "#f8f9f6"}
