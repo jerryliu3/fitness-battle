@@ -33,6 +33,7 @@ export function ArenaLanes({
   unit,
   selected,
   focusOnMount = false,
+  followSelected = false,
   onSelect,
   onPan,
   onBackgroundTap,
@@ -48,6 +49,8 @@ export function ArenaLanes({
   unit: string;
   selected: string;
   focusOnMount?: boolean;
+  /** Keep a passive replay camera centered on its selected athlete. */
+  followSelected?: boolean;
   onSelect: (id: string) => void;
   onPan: (center: number) => void;
   onBackgroundTap?: () => void;
@@ -130,13 +133,13 @@ export function ArenaLanes({
     const el = host.current;
     if (!el || el.clientWidth === 0 || standings) return;
     const previous = previousGeometry.current;
-    const laneIndex = previous && !previous.oval && !course.oval && previous.count === ordered.length
+    const laneIndex = followSelected ? Math.max(0, ordered.findIndex(lane => lane.id === selected)) : previous && !previous.oval && !course.oval && previous.count === ordered.length
       ? ((laneScroll.current ?? el.scrollLeft) + previous.width / 2 - previous.left) / previous.laneWidth - 0.5
       : Math.max(0, ordered.findIndex((lane) => lane.you));
     el.scrollLeft = course.oval ? 0 : Math.max(0, Math.min(width - size.width, course.left + (laneIndex + .5) * laneWidth - size.width / 2));
     laneScroll.current = el.scrollLeft;
     previousGeometry.current = { width: size.width, laneWidth, count: ordered.length, left: course.left, oval: course.oval };
-  }, [width, laneWidth, size.width, standings, course.oval, course.left]);
+  }, [width, laneWidth, size.width, standings, course.oval, course.left, followSelected, selected]);
   const prevSelectedRef = useRef(focusOnMount ? "" : selected);
   useLayoutEffect(() => {
     if (prevSelectedRef.current === selected) return;
