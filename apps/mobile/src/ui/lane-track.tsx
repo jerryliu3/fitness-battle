@@ -33,7 +33,7 @@ import { playCue } from "../lib/haptics";
 import { drawFieldNode } from "./field-course";
 import { LaneRacerTarget } from "./lane-racer-target";
 import { PolishedRacer } from "./polished-racer";
-import { LocalWake } from "./local-wake";
+import { useWakeAnimation } from "./use-wake-animation";
 export interface LaneAnchor { left: number; laneWidth: number; width: number; scroll: number; oval: boolean; count: number }
 
 function LaneTrackContent({
@@ -88,8 +88,7 @@ function LaneTrackContent({
   const prefix = useId();
   const [exploring, setExploring] = useState(false);
   const [width, setWidth] = useState(340);
-  const [wakeLanes, setWakeLanes] = useState({ first: 0, last: 5 });
-  const wakeLanesRef = useRef(wakeLanes);
+  const wakeAnimation = useWakeAnimation(active && (exploring || fullscreen));
   const scroll = useRef<ScrollViewInstance>(null);
   const animating = Boolean(overtakeFrame && overtakeFrame.phase !== "done");
   const me = lanes.find((l) => l.you);
@@ -171,22 +170,12 @@ function LaneTrackContent({
   const maxTailY = Math.min(height, bounds.min <= 0 && bounds.max >= 0 ? course.along(0) + 4 : height);
   const localAnchor = useRef<LaneAnchor | null>(null);
   const previous = anchor ?? localAnchor;
-  const updateWakeLanes = (x: number) => {
-    const next = course.oval ? { first: 0, last: ordered.length - 1 } : {
-      first: Math.max(0, Math.floor((x - course.left) / lw)),
-      last: Math.min(ordered.length - 1, Math.ceil((x + width - course.left) / lw) - 1),
-    };
-    if (next.first === wakeLanesRef.current.first && next.last === wakeLanesRef.current.last) return;
-    wakeLanesRef.current = next;
-    setWakeLanes(next);
-  };
   const prevSelectedRef = useRef<string | undefined>(focusOnMount ? undefined : selectedId);
   useEffect(() => {
     const old = previous.current;
     const laneIndex = followSelected ? Math.max(0, ordered.findIndex(l => l.id === selectedId)) : old && !old.oval && !course.oval && old.count === ordered.length ? (old.scroll + old.width / 2 - old.left) / old.laneWidth - .5 : Math.max(0, ordered.findIndex(l => l.you));
     const x = course.oval ? 0 : Math.max(0, Math.min(w - width, course.left + (laneIndex + .5) * lw - width / 2));
     scroll.current?.scrollTo({ x, animated: false });
-    updateWakeLanes(x);
     previous.current = { left: course.left, laneWidth: lw, width, scroll: x, oval: course.oval, count: ordered.length };
   }, [w, lw, width, course.left, course.oval, followSelected, selectedId]);
   useEffect(() => {
@@ -199,7 +188,6 @@ function LaneTrackContent({
     if (laneIndex < 0) return;
     const x = Math.max(0, Math.min(w - width, course.left + (laneIndex + 0.5) * lw - width / 2));
     scroll.current?.scrollTo({ x, animated: animateSelection });
-    updateWakeLanes(x);
     previous.current = { left: course.left, laneWidth: lw, width, scroll: x, oval: course.oval, count: ordered.length };
   }, [selectedId, w, lw, width, course.left, course.oval, ordered.length]);
   return (
@@ -225,7 +213,7 @@ function LaneTrackContent({
         pinchGestureEnabled={false}
         showsHorizontalScrollIndicator
         contentContainerStyle={{ paddingTop: topInset }}
-        onScroll={e => { const x = e.nativeEvent.contentOffset.x; if (previous.current) previous.current.scroll = x; updateWakeLanes(x); }}
+        onScroll={e => { const x = e.nativeEvent.contentOffset.x; if (previous.current) previous.current.scroll = x; }}
         scrollEventThrottle={16}
       >
         <View>
@@ -297,7 +285,8 @@ function LaneTrackContent({
                       x={0}
                       y={0}
                       you={l.you}
-                      showWake={false}
+                      animation={wakeAnimation}
+                      wakeBottom={course.oval ? undefined : (maxTailY - yy) / scale}
                       gold={
                         !ordered.some(
                           (peer) =>
@@ -333,20 +322,6 @@ function LaneTrackContent({
             })}
             {ghost && (() => { const p = course.point(ghost.values[index] ?? 0, ordered.findIndex(l => l.you), 18 * course.markerScale, true); return <G onPress={() => onSelect(ghost)}><Circle cx={p.x} cy={p.y} r={13 * course.markerScale} fill="#ffffffcc" stroke={c.muted} strokeDasharray="3 3"/></G>; })()}
           </Svg>
-          {/* Bounded wake-only SVGs preserve the original art without repainting the field SVG. */}
-          <View pointerEvents="none" style={{ position: "absolute", left: 0, top: 0, width: w, height: course.oval ? height : maxTailY, overflow: "hidden" }}>
-            {active && ordered.map((lane, i) => {
-              if (i < wakeLanes.first || i > wakeLanes.last) return null;
-              const value = animating ? overtakeFrame?.laneValues[lane.id] ?? lane.values[index] : lane.values[index];
-              if (!course.oval && arenaPosition(value, v).edge) return null;
-              const point = course.point(value, i, 0, true), scale = course.markerScale;
-              const effect = overtakeFrame?.rivalEffects[lane.id];
-              const charging = lane.you && animating ? overtakeFrame?.charging ?? 0 : 0;
-              return <LocalWake key={lane.id} x={point.x + (effect?.joltX ?? 0) * scale}
-                y={point.y + charging * 4 * scale} angle={point.angle} scale={scale} animate={fullscreen || exploring}
-                gold={!live.some(peer => peer.value > value)} />;
-            })}
-          </View>
         </View>
       </ScrollView>
       </View>

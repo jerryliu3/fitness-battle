@@ -331,10 +331,9 @@ the browsable competition-history replay with timeline controls.
 
 Production 2D preserves the original full-size capsule echoes, colors, masks,
 spacing and gold/platinum animation timing. Inline/reduced-motion wakes keep the
-original still pose; fullscreen/exploration animates them. Web CSS and bounded,
-separate native wake SVGs own frames without updating React field state or
-repainting the native field SVG. Pause hidden web wakes and inactive native fields;
-native only mounts wakes in visible lanes. Earned-distance ribbons stay removed.
+original still pose; fullscreen/exploration animates them. Web CSS and native Reanimated animate the original SVG groups without publishing
+React frame updates. Native keeps the original scene layering and uses two shared
+UI-thread phases per field. Pause hidden web wakes and inactive native fields. Earned-distance ribbons stay removed.
 Athlete movement must not rebuild scenery; replay owns marker position
 interpolation, and gestures publish at most once per animation frame. Preserve
 capsule identity, ground choices, distance scale, ghost and offscreen indicators.

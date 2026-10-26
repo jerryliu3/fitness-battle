@@ -1,7 +1,7 @@
 "use client";
 
-import { createElement, memo, useEffect, useId, useMemo, useRef, type CSSProperties } from "react";
-import { polishedCapsuleScene, polishedWakeDuration, polishedWakeLength, type CapsuleNode } from "@fitness-battle/shared";
+import { createElement, memo, useEffect, useRef, type CSSProperties } from "react";
+import { polishedWakeDuration, polishedWakeLength, type CapsuleNode } from "@fitness-battle/shared";
 
 function draw(node: CapsuleNode, key: number): React.ReactNode {
   const { maskType, ...attrs } = node.attrs;
@@ -9,9 +9,7 @@ function draw(node: CapsuleNode, key: number): React.ReactNode {
 }
 
 /** Browser-owned animation. Visibility changes mutate only this decorative group. */
-export const LocalWake = memo(function LocalWake({ gold, animate = true }: { gold: boolean; animate?: boolean }) {
-  const id = useId();
-  const [defs, wake] = useMemo(() => polishedCapsuleScene(id, gold), [id, gold]);
+export const LocalWake = memo(function LocalWake({ gold, wake, animate = true }: { gold: boolean; wake: CapsuleNode; animate?: boolean }) {
   const fade = wake.children![0];
   const host = useRef<SVGGElement>(null);
   useEffect(() => {
@@ -28,7 +26,6 @@ export const LocalWake = memo(function LocalWake({ gold, animate = true }: { gol
     return () => { observer.disconnect(); document.removeEventListener("visibilitychange", update); };
   }, []);
   return <g ref={host} className="field-local-wake" data-animate={animate} data-paused="true" aria-hidden="true" pointerEvents="none">
-    {draw(defs, 0)}
     <g {...wake.attrs}><g {...fade.attrs}>
       {fade.children!.map((echo, index) => <g key={index} {...echo.attrs} className="field-local-echo"
         style={{ animationDuration: `${polishedWakeDuration(gold)}s`, animationDelay: `${-index * polishedWakeDuration(gold) / fade.children!.length}s`, "--wake-travel": `${polishedWakeLength(gold)}px` } as CSSProperties}>

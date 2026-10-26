@@ -1,7 +1,7 @@
 import { createElement, Profiler } from "react";
 import { act, create, type ReactTestRenderer } from "react-test-renderer";
 import { afterEach, expect, it, vi } from "vitest";
-import { POLISHED_IDENTITY } from "@fitness-battle/shared";
+import { POLISHED_IDENTITY, polishedCapsuleScene } from "@fitness-battle/shared";
 import { LocalWake } from "./local-wake";
 let renderer: ReactTestRenderer;
 afterEach(async () => { if (renderer) await act(async () => renderer.unmount()); vi.unstubAllGlobals(); });
@@ -19,9 +19,9 @@ it("keeps visibility and background changes outside React and cleans up its obse
   });
   const node = { dataset: { paused: "true" }, closest: () => null };
   const render = vi.fn();
-  await act(async () => { renderer = create(createElement(Profiler, { id: "wake", onRender: render }, createElement(LocalWake, { gold: true })), { createNodeMock: () => node }); });
+  await act(async () => { renderer = create(createElement(Profiler, { id: "wake", onRender: render }, createElement(LocalWake, { gold: true, wake: polishedCapsuleScene("test", true)[1] })), { createNodeMock: () => node }); });
   expect(renderer.root.findAllByType("g").filter(n => n.props.className === "field-local-echo")).toHaveLength(POLISHED_IDENTITY.echoes);
-  expect(renderer.root.findAllByType("mask")).toHaveLength(2);
+  expect(renderer.root.findAllByType("defs")).toHaveLength(0);
   const renders = render.mock.calls.length;
   await act(async () => intersection([{ isIntersecting: true }]));
   expect(node.dataset.paused).toBe("false");

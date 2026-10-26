@@ -2,6 +2,7 @@ import {
   createElement,
   memo,
   useId,
+  useMemo,
   type ComponentType,
 } from "react";
 import { Platform } from "react-native";
@@ -18,8 +19,22 @@ import {
 import {
   polishedCapsuleScene,
   polishedLaneScale,
+  polishedWakeLength,
+  POLISHED_IDENTITY,
   type CapsuleNode,
 } from "@fitness-battle/shared";
+
+import Animated, { useAnimatedProps, type SharedValue } from "react-native-reanimated";
+import type { WakeAnimation } from "./use-wake-animation";
+
+const AnimatedG = Animated.createAnimatedComponent(G);
+const Echo = memo(function Echo({ phase, length, index, shape }: { phase: SharedValue<number>; length: number; index: number; shape: CapsuleNode }) {
+  const animatedProps = useAnimatedProps(() => {
+    const progress = (phase.value + index / POLISHED_IDENTITY.echoes) % 1;
+    return { matrix: [1, 0, 0, 1, 0, progress * length], opacity: .8 - (.8 - .12) * progress };
+  });
+  return <AnimatedG animatedProps={animatedProps}>{shape.children?.map(drawCapsuleNode)}</AnimatedG>;
+});
 
 const elements = {
   g: G,
@@ -30,7 +45,7 @@ const elements = {
   stop: Stop,
   mask: Mask,
 };
-export function drawCapsuleNode(node: CapsuleNode, key: number): React.ReactNode {
+function drawCapsuleNode(node: CapsuleNode, key: number): React.ReactNode {
   const Element = elements[node.tag] as ComponentType<Record<string, unknown>>;
   const {maskType,...attrs}=node.attrs;
   const attributes=Platform.OS==="web"&&maskType?{...attrs,style:{maskType}}:node.attrs;
@@ -49,6 +64,7 @@ export const PolishedRacer = memo(function PolishedRacer({
   wakeBottom,
   showWake = true,
   sizeScale,
+  animation,
 }: {
   x: number;
   y: number;
@@ -58,13 +74,16 @@ export const PolishedRacer = memo(function PolishedRacer({
   wakeBottom?: number;
   showWake?: boolean;
   sizeScale?: number;
+  animation?: WakeAnimation;
 }) {
   const id = useId(),
     scale = sizeScale ?? polishedLaneScale(you);
-  const [defs, wake, ...head] = polishedCapsuleScene(id, gold, time, false, showWake);
+  const scene = useMemo(() => polishedCapsuleScene(id, gold, time), [id, gold, time]);
+  const [paintedDefs, , ...paintedHead] = useMemo(() => scene.map(drawCapsuleNode), [scene]);
+  const wake = scene[1], fade = wake.children![0];
   return (
     <G transform={`translate(${x} ${y}) scale(${scale})`} pointerEvents="none">
-      {drawCapsuleNode(defs, 0)}
+      {paintedDefs}
       {showWake && wakeBottom !== undefined && (
         <Defs>
           <ClipPath id={`${id}-wake-bound`}>
@@ -83,10 +102,13 @@ export const PolishedRacer = memo(function PolishedRacer({
             wakeBottom === undefined ? undefined : `url(#${id}-wake-bound)`
           }
         >
-          {drawCapsuleNode(wake, 1)}
+          {animation ? <G {...wake.attrs}><G {...fade.attrs}>
+            {fade.children!.map((shape, index) => <Echo key={index} phase={gold ? animation.gold : animation.platinum}
+              length={polishedWakeLength(gold)} index={index} shape={shape} />)}
+          </G></G> : drawCapsuleNode(wake, 1)}
         </G>
       ) : null}
-      {head.map(drawCapsuleNode)}
+      {paintedHead}
     </G>
   );
 });

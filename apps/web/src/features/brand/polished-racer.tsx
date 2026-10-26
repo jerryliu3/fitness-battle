@@ -1,5 +1,5 @@
 "use client";
-import {memo,createElement,useEffect,useId,useState,type RefObject} from "react";
+import {memo,createElement,useEffect,useId,useMemo,useState,type RefObject} from "react";
 import {polishedCapsulePath,polishedCapsuleScene,polishedLaneScale,type CapsuleNode} from "@fitness-battle/shared";
 
 import { LocalWake } from "./local-wake";
@@ -26,7 +26,7 @@ export const PolishedRacer = memo(function PolishedRacer({
 }) {
   const id = useId();
   const scale = sizeScale ?? polishedLaneScale(you);
-  const [defs, wake, ...head] = polishedCapsuleScene(id, gold, time, false, showWake && !independentWake);
+  const [defs, wake, ...head] = useMemo(() => polishedCapsuleScene(id, gold, time), [id, gold, time]);
   return <g transform={`translate(${x} ${y}) scale(${scale})`} pointerEvents="none" data-polished-racer={gold ? "gold" : "platinum"}>
     {draw(defs, 0)}
     {showWake && <g clipPath={wakeBottom === undefined ? undefined : `url(#${id}-wake-clip)`}>
@@ -35,7 +35,7 @@ export const PolishedRacer = memo(function PolishedRacer({
           <rect x={-40} y={-35} width={80} height={Math.max(0, wakeBottom / scale + 35)} />
         </clipPath>
       </defs>}
-      {independentWake ? <LocalWake gold={gold} animate={animateWake} /> : draw(wake, 1)}
+      {independentWake ? <LocalWake gold={gold} wake={wake} animate={animateWake} /> : draw(wake, 1)}
     </g>}
     {head.map(draw)}
     {active && !you && <path d={polishedCapsulePath(-3)} fill="none" stroke="#282f2c" strokeWidth="1.5" />}
