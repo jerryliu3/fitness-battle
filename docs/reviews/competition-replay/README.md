@@ -92,3 +92,15 @@ No production seating or activity data was changed to address the preview error.
 Web and native regression tests cover authenticated Debug opening without a network
 request, resetting Debug while the viewer is open to reload from the server, and
 real server failures staying visible rather than falling back to preview data.
+
+### Multi-sport seating follow-up
+
+A Crew field in one sport must not prevent another enrolled sport from receiving
+persisted field membership. Hydration now processes every enrollment, reads Crew
+fields without reseating, and uses the existing seating RPC for each open field.
+Per-enrollment transient snapshots retain real roster totals for every sport while
+keeping the preferred Crew board available to existing consumers. This fixes the
+case of Crew cycling plus separate running where the running Replay lookup had
+no field to read. The change applies equally to synthetic and ordinary accounts.
+No migration is required; normal account load/refresh provisions missing open
+seats through the authenticated RPC. No production seating was manually changed.
