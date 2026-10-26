@@ -1,4 +1,4 @@
-import type { SportId } from "../compete/sports";
+import type { CrewBoardPin, SportId } from "../compete/sports";
 
 /** Configurable group size for density matching. */
 export const DEFAULT_GROUP_CAPACITY = 8;
@@ -50,6 +50,8 @@ export interface WaveEnrollment {
   autoEnrollNext: boolean;
   /** Private crew that pinned this shared individual field, when any. */
   crewId?: string | null;
+  /** Authorized live roster/totals for this enrollment; stripped before account writes. */
+  fieldBoard?: CrewBoardPin;
 }
 
 export interface GroupAssignment {

@@ -13,5 +13,8 @@ describe("privacy policy branding", () => {
     const source = readFileSync(pagePath, "utf8");
     expect(source).not.toMatch(/Fitness Battle/);
     expect(source).toMatch(/overtaek/);
+    expect(source).toMatch(/Apple HealthKit/);
+    expect(source).toMatch(/Mapbox/);
+    expect(source).toMatch(/support@overtaek\.xyz/);
   });
 });

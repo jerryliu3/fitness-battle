@@ -2,7 +2,7 @@
 .home-portfolio-header{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
 .home-portfolio-header h2{margin:0}
 .home-portfolio-total{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
-.home-portfolio-total>strong{font:var(--type-display);font-variant-numeric:tabular-nums}
+.home-portfolio-total>strong{font:var(--type-hero);letter-spacing:var(--type-hero-tracking);font-variant-numeric:tabular-nums}
 .home-portfolio-total>strong>span{font:var(--type-body);letter-spacing:0;color:var(--muted)}
 .home-portfolio-total>div{display:grid;gap:4px;text-align:right;font:var(--type-caption);color:var(--muted)}
 .home-portfolio .chart-scrubber svg{display:block;width:100%;height:auto;max-height:210px;overflow:visible}

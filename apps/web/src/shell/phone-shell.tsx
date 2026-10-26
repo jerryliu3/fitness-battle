@@ -14,6 +14,8 @@ import {
   SHELL_TAB_ICONS,
   isShellTabId,
   shellTabFromPath,
+  stripWebProductPrefix,
+  webProductPath,
   type ShellTabId,
 } from "@fitness-battle/shared";
 import { playCue } from "@/lib/haptics";
@@ -55,6 +57,7 @@ export function PhoneShell({
   hideTabs?: boolean;
 }) {
   const path = usePathname();
+  const productPath = stripWebProductPrefix(path ?? "/");
   const router = useRouter();
   const reduce = useReducedMotion();
   const { user, loading } = useAuth();
@@ -65,9 +68,9 @@ export function PhoneShell({
   } = useCompete();
   const streak = useMemo(() => state ? weeklyActivityStreak(state.activities, competeNow(state)) : null, [state]);
   const tab = shellTabFromPath(path);
-  const onAthlete = path?.startsWith("/athlete") ?? false;
+  const onAthlete = productPath.startsWith("/athlete");
   const progressDetail =
-    Boolean(path?.startsWith("/you/")) && path !== "/you";
+    productPath.startsWith("/you/") && productPath !== "/you";
   useCompeteFieldRefresh(!hideTabs && (tab?.id === "arena" || tab?.id === "field"));
   const bottomNavigation = useRef(false);
   const [animateDestination, setAnimateDestination] = useState(false);
@@ -145,7 +148,7 @@ export function PhoneShell({
     const href = SHELL_TABS.find((t) => t.id === tabId)?.href;
     if (!href) return;
     void playCue("selection");
-    router.push(href);
+    router.push(webProductPath(href));
   }
 
   function navigateDebugTarget(href: string, tabId: ShellTabId) {
@@ -153,11 +156,11 @@ export function PhoneShell({
     if (tabId !== active) {
       setIntent(tabId);
     }
-    router.push(href);
+    router.push(webProductPath(href));
   }
 
   useEffect(() => {
-    for (const tab of SHELL_TABS) router.prefetch(tab.href);
+    for (const tab of SHELL_TABS) router.prefetch(webProductPath(tab.href));
   }, [router]);
 
   const accountLoadingBody = panel(
@@ -180,12 +183,12 @@ export function PhoneShell({
     <ShellBootReadiness />
     <div className="phone-frame">
       <div className="phone-shell">
-        {!onAthlete && path !== "/week" && !progressDetail && <header className="focus-shell-header">
+        {!onAthlete && productPath !== "/week" && !progressDetail && <header className="focus-shell-header">
           <div className="club-header-effort"><EffortRail compact /></div>
           {streak && <span className={`club-week-streak${streak.active ? " is-active" : ""}`} aria-label={`${streak.count} week activity streak${streak.active ? "" : ", inactive this week"}`}><svg width="18" height="24" viewBox="0 0 24 24" aria-hidden="true"><path d="M13 2c1 6 7 7 7 13a8 8 0 0 1-16 0c0-3 2-6 5-8-1 4 0 5 2 6 2-3 3-6 2-11Z" fill="currentColor" /></svg><b>{streak.count}</b></span>}
           <DebugEventMenu activeTab={active} onNavigate={navigateDebugTarget} />
           <Link
-            href="/athlete"
+            href={webProductPath("/athlete")}
             className={`focus-shell-profile${onAthlete ? " is-selected" : ""}`}
             aria-label="Open athlete settings"
             aria-current={onAthlete ? "page" : undefined}
@@ -228,7 +231,7 @@ export function PhoneShell({
                     <Link
                       key={`${accountKey}:${tab.id}`}
                       aria-current={on ? "page" : undefined}
-                      href={tab.href}
+                      href={webProductPath(tab.href)}
                       className="phone-tab"
                       onClick={(e) => {
                         if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return;

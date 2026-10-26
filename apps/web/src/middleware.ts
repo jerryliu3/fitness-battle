@@ -7,13 +7,26 @@ import {
   isLocalEnvironment,
   parseDemoUserFromCookie,
 } from "@/lib/auth/design-access";
+import { webProductPath } from "@fitness-battle/shared";
 
-const LEGACY_TABS: Record<string, string> = {
-  "/": "/today",
+const LEGACY_TAB_ALIASES: Record<string, string> = {
   "/board": "/arena",
   "/splits": "/today",
   "/progress": "/you",
 };
+
+const PRODUCT_SEGMENTS = [
+  "today",
+  "arena",
+  "you",
+  "field",
+  "athlete",
+  "onboarding",
+  "week",
+  "pace",
+  "admin",
+  "rankings",
+] as const;
 
 function copyCookies(from: NextResponse, to: NextResponse) {
   for (const cookie of from.cookies.getAll()) {
@@ -21,15 +34,29 @@ function copyCookies(from: NextResponse, to: NextResponse) {
   }
 }
 
+function redirectProductPath(request: NextRequest, pathname: string) {
+  const url = request.nextUrl.clone();
+  url.pathname = webProductPath(pathname);
+  return NextResponse.redirect(url);
+}
+
 export async function middleware(request: NextRequest) {
-  const target = LEGACY_TABS[request.nextUrl.pathname];
-  if (target) {
+  const { pathname } = request.nextUrl;
+
+  const aliasTarget = LEGACY_TAB_ALIASES[pathname];
+  if (aliasTarget) {
     const url = request.nextUrl.clone();
-    url.pathname = target;
+    url.pathname = webProductPath(aliasTarget);
     return NextResponse.redirect(url);
   }
 
-  const { pathname, hostname } = request.nextUrl;
+  for (const segment of PRODUCT_SEGMENTS) {
+    if (pathname === `/${segment}` || pathname.startsWith(`/${segment}/`)) {
+      return redirectProductPath(request, pathname);
+    }
+  }
+
+  const { hostname } = request.nextUrl;
 
   if (isDesignOrUxPath(pathname)) {
     const { response, user } = await updateSessionAndGetUser(request);
@@ -38,7 +65,6 @@ export async function middleware(request: NextRequest) {
     let authEmail: string | null = user?.email ?? null;
     let authMode: "supabase" | "demo" = "supabase";
 
-    // On local development, check demo user cookie if no Supabase session exists
     if (!authEmail && isLocal) {
       const demoCookie = request.cookies.get(DEMO_USER_COOKIE)?.value;
       const demoUser = parseDemoUserFromCookie(demoCookie);
@@ -48,7 +74,6 @@ export async function middleware(request: NextRequest) {
       }
     }
 
-    // Unauthenticated: redirect to login with next path
     if (!authEmail) {
       const loginUrl = request.nextUrl.clone();
       loginUrl.pathname = "/login";
@@ -60,7 +85,6 @@ export async function middleware(request: NextRequest) {
       return redirectResponse;
     }
 
-    // Check authorization for design / ux
     const authorized = isAuthorizedForDesign({
       email: authEmail,
       mode: authMode,
@@ -68,9 +92,8 @@ export async function middleware(request: NextRequest) {
     });
 
     if (!authorized) {
-      // Authenticated but unauthorized: redirect to /today with denied notice
       const todayUrl = request.nextUrl.clone();
-      todayUrl.pathname = "/today";
+      todayUrl.pathname = webProductPath("/today");
       todayUrl.search = "?denied=design";
       const redirectResponse = NextResponse.redirect(todayUrl);
       copyCookies(response, redirectResponse);
@@ -90,5 +113,3 @@ export const config = {
     "/ux/:path*",
   ],
 };
-
-
