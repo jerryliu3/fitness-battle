@@ -3,12 +3,14 @@ import { useRouter } from "expo-router";
 import { Platform, Pressable, View } from "react-native";
 import Svg, { Defs, LinearGradient, Path, Stop } from "react-native-svg";
 import {
+  achievementAccessibilityLabel,
   clubAchievements,
   featuredClubAchievements,
   type ClubAchievement,
   type CompeteState,
 } from "@fitness-battle/shared";
 import { achievementTileStyle } from "./achievements-catalog";
+import { AchievementMeter } from "./achievement-meter";
 import { SHELL_COLORS as c } from "../theme";
 
 function Badge({ item }: { item: ClubAchievement }) {
@@ -42,16 +44,18 @@ export function Achievements({ state }: { state: CompeteState }) {
           <Pressable
             key={row.id}
             accessibilityRole="button"
-            accessibilityLabel={`${row.title}. ${row.target} ${row.category === "sessions" ? "sessions" : "Open effort score"}. ${row.earned ? "Earned" : "In progress"}`}
+            accessibilityLabel={achievementAccessibilityLabel(row)}
             onPress={() => router.push(`/progress-achievements?milestone=${row.id}`)}
             style={achievementTileStyle.tile}
           >
             <Badge item={row} />
-            <AppText role="label" style={{ textAlign: "center" }}>
-              {row.target.toLocaleString()}
-              {row.category === "sessions" ? (row.target === 1 ? " session" : " sessions") : " pts"}
+            <AppText role="caption" secondary style={{ textAlign: "center" }}>
+              {row.title}
             </AppText>
-            <AppText role="caption" secondary style={{ textAlign: "center" }}>{row.title}</AppText>
+            <AchievementMeter row={row} />
+            <AppText role="label" style={{ textAlign: "center" }}>
+              {row.current.toLocaleString()} / {row.target.toLocaleString()}
+            </AppText>
             <StatusBadge tone={row.earned ? "success" : "neutral"}>{row.earned ? "✓ Earned" : "Up next"}</StatusBadge>
           </Pressable>
         ))}

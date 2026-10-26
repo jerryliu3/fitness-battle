@@ -1,7 +1,7 @@
 import { textStyle, AppText, Section  } from "../ui/section";
 import { ChartScrubber } from "../ui/chart-scrubber";
 import { useMemo, useState } from "react";
-import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 import {
   APP_TIMEZONE,
   clampTrainingAnchor,
@@ -14,7 +14,8 @@ import {
   shiftAppDay,
   shiftTrainingMonth,
   sportById,
-  SPORTS,
+  defaultTrainingSports,
+  normalizeTrainingSports,
   trainingAtlas,
   trainingBuckets,
   trainingComparison,
@@ -24,7 +25,9 @@ import {
   type SportId,
   type TrainingRange,
 } from "@fitness-battle/shared";
-import { FocusDisclosure, FocusSegments, f } from "../ui/focus";
+import { FocusDisclosure, f } from "../ui/focus";
+import { ChartRangeToggle } from "./chart-range-toggle";
+import { TrainingSportMenu } from "./training-sport-menu";
 import { SHELL_COLORS as c } from "../theme";
 const colors = [
   c.soft,
@@ -36,13 +39,13 @@ const colors = [
 export function TrainingAtlas({ state }: { state: CompeteState }) {
   const now = competeNow(state);
   const [gridWidth, setGridWidth] = useState(280);
-  const [sport, setSport] = useState<SportId | "all">("all"),
+  const [sports, setSports] = useState<SportId[]>(() => defaultTrainingSports()),
     [range, setRange] = useState<TrainingRange>("week"),
     [anchor, setAnchor] = useState(() => now),
     [selected, setSelected] = useState<string | null>(null),
     [selectedDay, setSelectedDay] = useState<string | null>(null);
-  const buckets = trainingBuckets(state.activities, sport, range, anchor, now),
-    cells = trainingAtlas(state.activities, sport, anchor, now);
+  const buckets = trainingBuckets(state.activities, sports, range, anchor, now),
+    cells = trainingAtlas(state.activities, sports, anchor, now);
   const bucket =
     buckets.find((b) => b.start === selected) ??
     buckets.find((b) => b.partial) ??
@@ -50,7 +53,7 @@ export function TrainingAtlas({ state }: { state: CompeteState }) {
     buckets[0]!;
   const comparison = trainingComparison(
     state.activities,
-    sport,
+    sports,
     range,
     anchor,
     now,
@@ -79,39 +82,26 @@ export function TrainingAtlas({ state }: { state: CompeteState }) {
     setSelectedDay(null);
   };
   return (
-    <Section title="Your training">
-      <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-        <View style={f.row}>
-          {[{ id: "all", name: "All sports" }, ...SPORTS].map((s) => (
-            <Pressable
-              key={s.id}
-              accessibilityRole="button"
-              accessibilityState={{ selected: sport === s.id }}
-              onPress={() => {
-                setSport(s.id as SportId | "all");
-                setSelected(null);
-              }}
-              style={[f.chip, sport === s.id && f.chipActive]}
-            >
-              <AppText role="caption" secondary >{s.name}</AppText>
-            </Pressable>
-          ))}
-        </View>
-      </ScrollView>
-      <FocusSegments
-        label="Training chart range"
-        value={range}
-        options={[
-          { value: "week", label: "Week" },
-          { value: "month", label: "Month" },
-          { value: "year", label: "Year" },
-        ]}
-        onChange={(r) => {
-          setRange(r);
-          setAnchor((current) => clampTrainingAnchor(current, earliest, now, r));
-          setSelected(null);
-        }}
-      />
+    <Section titleRole="display" title="Your training">
+      <View style={[f.row, { justifyContent: "space-between", alignItems: "center" }]}>
+        <TrainingSportMenu
+          value={sports}
+          onChange={(next) => {
+            setSports(normalizeTrainingSports(next));
+            setSelected(null);
+          }}
+        />
+        <ChartRangeToggle
+          value={range}
+          onChange={(next) => {
+            setRange(next);
+            setAnchor((current) =>
+              clampTrainingAnchor(current, earliest, now, next),
+            );
+            setSelected(null);
+          }}
+        />
+      </View>
       <View style={s.row}>
         <Pressable
           style={s.arrow}
@@ -155,17 +145,17 @@ export function TrainingAtlas({ state }: { state: CompeteState }) {
         >
           {clubDuration(buckets.reduce((sum, b) => sum + b.movingSec, 0))}
         </Text>
-        <AppText role="caption" secondary >
-          {buckets.reduce((sum, b) => sum + b.sessions, 0)} {buckets.reduce((sum, b) => sum + b.sessions, 0) === 1 ? "session" : "sessions"} ·{" "}
-          {sport === "all" ? "All sports" : sportById(sport).name}
-        </AppText>
       </View>
-      <AppText role="caption" secondary style={{ color: c.secondary }}>{comparison.label}</AppText>
-      <ChartScrubber key={`${range}:${anchor.toISOString()}:${sport}`} label="Training hours by period"
+      {comparison.percent !== null ? (
+        <AppText role="caption" secondary style={{ color: c.secondary }}>
+          {comparison.label}
+        </AppText>
+      ) : null}
+      <ChartScrubber key={`${range}:${anchor.toISOString()}:${sports.join(",")}`} label="Training hours by period"
         points={buckets.flatMap((b, index) => Date.parse(b.start) > now.getTime() ? [] : [{
           id: b.start, x: (index + .5) / buckets.length * 340,
           y: 118 - (b.movingSec ? Math.max(2, (b.movingSec / max) * 118) : 0),
-          label: `${b.label}${b.partial ? " · so far" : ""}`,
+          label: b.label,
           value: `${formatTrainingHours(b.movingSec)} hr · ${b.sessions} ${b.sessions === 1 ? "session" : "sessions"}`,
         }])}
         width={340} height={144} plotTop={0} plotBottom={118} onSelect={setSelected}>

@@ -45,11 +45,13 @@ export function PortraitField({
   height = 560,
   fullscreen = false,
   onExpand,
+  onToggleDimension,
   laneAnchor,
 }: {
   height?: number;
   fullscreen?: boolean;
   onExpand?: () => void;
+  onToggleDimension?: () => void;
   laneAnchor?: MutableRefObject<number>;
   lanes: ArenaSceneLane[];
   view: ArenaViewWindow;
@@ -343,7 +345,60 @@ export function PortraitField({
               })}
           </Svg>
       </View>
-      {!fullscreen && onExpand && <View style={{ position: "absolute", top: 12, right: 12 }}><IconButton icon="expand" label="Expand 3D field to full screen" onPress={onExpand} /></View>}
+      {!fullscreen && (onToggleDimension || onExpand) ? (
+        <View
+          style={{
+            position: "absolute",
+            top: 10,
+            right: 10,
+            flexDirection: "row",
+            alignItems: "center",
+            gap: 8,
+            zIndex: 30,
+          }}
+        >
+          {onToggleDimension ? (
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Switch to 2D map"
+              onPress={onToggleDimension}
+              style={{
+                minHeight: 36,
+                paddingHorizontal: 12,
+                justifyContent: "center",
+                borderRadius: 999,
+                backgroundColor: "rgba(20, 20, 19, 0.78)",
+                borderWidth: 1,
+                borderColor: "rgba(255, 255, 255, 0.2)",
+              }}
+            >
+              <Text style={{ ...textStyle("caption"), color: "#ffffff" }}>
+                3D
+              </Text>
+            </Pressable>
+          ) : null}
+          {onExpand ? (
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Open Full Arena"
+              onPress={onExpand}
+              style={{
+                minHeight: 36,
+                paddingHorizontal: 14,
+                justifyContent: "center",
+                borderRadius: 999,
+                backgroundColor: "rgba(20, 20, 19, 0.78)",
+                borderWidth: 1,
+                borderColor: "rgba(255, 255, 255, 0.2)",
+              }}
+            >
+              <Text style={{ ...textStyle("caption"), color: "#ffffff" }}>
+                Full Arena ↗
+              </Text>
+            </Pressable>
+          ) : null}
+        </View>
+      ) : null}
       <View style={{ position: "absolute", top: 12, left: 12, right: 60, gap: 6 }}>
         {!fullscreen && <Pressable style={[s.controlRow, { alignSelf: "flex-start", minHeight: 44, paddingHorizontal: 16 }]} accessibilityRole="button" accessibilityLabel={exploring ? "Finish exploring field" : "Explore field in two directions"} accessibilityState={{ selected: exploring }} onPress={() => setExploring(!exploring)}><Text style={s.white}>{exploring ? "Done" : "Explore"}</Text></Pressable>}
         <Text style={[s.white, textStyle("caption")]}>{exploring || fullscreen ? "Drag in any direction" : "Swipe across lanes · Explore to move forward"}</Text>

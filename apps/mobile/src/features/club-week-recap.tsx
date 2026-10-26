@@ -35,11 +35,12 @@ export function WeekRecap({ state }: { state: CompeteState }) {
           </View>
         ))}
       </View>
-      <AppText role="caption" secondary >
-        {week.previousSec
-          ? `${difference >= 0 ? "+" : "−"}${clubDuration(Math.abs(difference))} compared with all of last week.`
-          : "Each session builds your story."}
-      </AppText>
+      {week.previousSec ? (
+        <AppText role="caption" secondary >
+          {difference >= 0 ? "+" : "−"}
+          {clubDuration(Math.abs(difference))} compared with all of last week.
+        </AppText>
+      ) : null}
       {recap ? (
         <Pressable
           accessibilityRole="button"
@@ -67,11 +68,7 @@ export function WeekRecap({ state }: { state: CompeteState }) {
             </AppText>
           </View>
         </Pressable>
-      ) : (
-        <AppText role="caption" secondary >
-          Your first settled competition recap will appear here.
-        </AppText>
-      )}
+      ) : null}
     </Section>
   );
 }

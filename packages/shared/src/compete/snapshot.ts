@@ -60,6 +60,7 @@ function mergeFreshRemote(
     if (!remoteEnr) return localEnr;
     return {
       ...localEnr,
+      fieldBoard: remoteEnr.fieldBoard,
       peerIds: remoteEnr.peerIds,
       syntheticIds: remoteEnr.syntheticIds,
       crewId: remoteEnr.crewId !== undefined ? remoteEnr.crewId : localEnr.crewId,

@@ -15,7 +15,8 @@ import "@/ui/product-typography.css";
 
 function PlayChrome({ children }: { children: ReactNode }) {
   const path = usePathname();
-  const hideTabs = path.startsWith("/onboarding");
+  const hideTabs =
+    path.startsWith("/app/onboarding") || path.startsWith("/onboarding");
   return <PhoneShell hideTabs={hideTabs}>{children}</PhoneShell>;
 }
 

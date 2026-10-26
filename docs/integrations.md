@@ -59,7 +59,8 @@ Use your deployed web origin (production example: `https://fitness-battle-one.ve
 | Dashboard field | Public URL |
 | --- | --- |
 | Privacy policy | `{origin}/privacy` |
-| App / website link | `{origin}/` |
+| App / website link | `{origin}/` (marketing) · `{origin}/app` (signed-in product) |
+| Support & account deletion | `{origin}/support` (deletion: `{origin}/support#delete-account`) |
 | Redirect URI | `{origin}/api/fitness/whoop/callback` |
 
 Set `WHOOP_REDIRECT_URI` to the same Redirect URI value (including `http://localhost:3000/...` for local). After WHOOP sends the user back with an auth code, the callback exchanges the token and redirects into Athlete (`/you?tracker=...&provider=whoop`).

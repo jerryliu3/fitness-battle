@@ -8,9 +8,9 @@ describe("dimensional crew ribbon",()=>{
   const html=renderToStaticMarkup(createElement(CrewRelay,props));
   expect(html).toContain("Last week’s distance");expect(html).toContain("100.0 km");expect(html).toContain("24.0 km to match last week");expect(html.match(/class="crew-member-photo"/g)).toHaveLength(3);expect(html).toContain("linearGradient");expect(html).toContain("maya.jpg");
  });
- it("shows the true overflow and preserves a zero-contribution member's selector",()=>{
+ it("shows overflow without a zero-contribution member on the ribbon",()=>{
   const html=renderToStaticMarkup(createElement(CrewRelay,{...props,previousDistanceM:50000,members:[...props.members,{user_id:"d",display_name:"Sam"}]}));
-  expect(html).toContain("26.0 km beyond last week");expect(html).toContain("Sam");expect(html).toContain("0.0 km");
+  expect(html).toContain("26.0 km beyond last week");expect(html).not.toContain("Sam");expect(html.match(/class="crew-member-photo"/g)).toHaveLength(3);
  });
  it("does not turn missing history into an invented cooperative target",()=>{
   const html=renderToStaticMarkup(createElement(CrewRelay,{...props,format:"cooperative",previousDistanceM:null}));
@@ -20,5 +20,5 @@ describe("dimensional crew ribbon",()=>{
 
 it("uses the configured cooperative journey as its finish even without prior-week history",()=>{
  const html=renderToStaticMarkup(createElement(CrewRelay,{...props,format:"cooperative",previousDistanceM:null,targetDistanceM:100000}));
- expect(html).toContain("Shared distance target");expect(html).toContain("24.0 km to the target");expect(html).not.toContain("comparison unavailable");expect(html).toContain("stroke-dasharray");
+ expect(html).toContain("Shared distance target");expect(html).toContain("24.0 km to the target");expect(html).not.toContain("comparison unavailable");expect(html).toContain("FINISH · 100.0 km");
 });
