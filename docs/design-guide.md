@@ -1,5 +1,7 @@
 # Product design guide — Everyday Club
 
+The [product-derived native refinement](reviews/product-refinement/README.md) narrows the October 25 tab review to nine implementation candidates built from the current app. It preserves the selected production tokens and domain rules; layouts remain under review.
+
 The selected production direction is **Everyday Club**, following the owner’s October 22 reference and implementation request. Retain yellow and Ember, Home / Compete / Progress / Crew, existing data behavior, 2D default competition, no recording action and no social feed. See [audit](design/ui-audit.md) and [component decisions](design/component-guidelines.md).
 
 The October 23 [mobile consumer audit](reviews/mobile-consumer-ui-audit-2026-10-23.md) refines native composition and interaction: open sections for continuous full-row content, consistent sport icons, inspectable charts, moving segment highlights and fullscreen field exploration. It preserves Everyday Club's palette and identity. Native fullscreen uses a root Modal with parent-owned viewport/selection and restored horizontal anchors; moving the scene host into the Modal remounts it, rather than providing a shared-element expansion.
