@@ -19,10 +19,16 @@ import { drawFieldNode } from "../ui/field-course";
 import { SHELL_COLORS as c } from "../theme";
 import { f } from "../ui/focus";
 
-type Props = CrewWeekRelayInput & { units?: UnitSystem; userId?: string };
+type Props = CrewWeekRelayInput & {
+  units?: UnitSystem;
+  userId?: string;
+  /** Parent already presents the target and member details. */
+  compact?: boolean;
+  onSelectMember?: (id: string) => void;
+};
 
 export function CrewRelay(props: Props) {
-  const { members, sport, units, userId } = props;
+  const { members, sport, units, userId, compact, onSelectMember } = props;
   const [selected, setSelected] = useState("");
   const [width, setWidth] = useState(320);
   const prefix = useId();
@@ -52,14 +58,16 @@ export function CrewRelay(props: Props) {
       style={{ gap: 12, marginTop: 12 }}
       onLayout={(e) => setWidth(e.nativeEvent.layout.width)}
     >
-      <View style={f.row}>
-        <AppText role="caption" secondary style={f.grow}>
-          {view.label}
-        </AppText>
-        {view.target ? (
-          <AppText role="label">{volume(view.target)}</AppText>
-        ) : null}
-      </View>
+      {!compact && (
+        <View style={f.row}>
+          <AppText role="caption" secondary style={f.grow}>
+            {view.label}
+          </AppText>
+          {view.target ? (
+            <AppText role="value">{volume(view.target)}</AppText>
+          ) : null}
+        </View>
+      )}
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={view.width > width}
@@ -114,7 +122,10 @@ export function CrewRelay(props: Props) {
                 accessibilityRole="button"
                 accessibilityState={{ selected: view.member?.id === p.id }}
                 accessibilityLabel={`${m.name}, ${volume(m.value)}`}
-                onPress={() => setSelected(p.id)}
+                onPress={() => {
+                  setSelected(p.id);
+                  onSelectMember?.(p.id);
+                }}
                 style={[s.marker, { left: p.x - 28, top: p.y }]}
               >
                 <View
@@ -143,11 +154,11 @@ export function CrewRelay(props: Props) {
           })}
         </View>
       </ScrollView>
-      {view.empty ? (
+      {!compact && view.empty ? (
         <AppText role="caption" secondary>
           No one has logged activity this week yet.
         </AppText>
-      ) : view.member ? (
+      ) : !compact && view.member ? (
         <View accessibilityLiveRegion="polite">
           <AppText role="row">{view.member.name}</AppText>
           <AppText role="body" secondary>
@@ -158,10 +169,10 @@ export function CrewRelay(props: Props) {
           </AppText>
         </View>
       ) : null}
-      {view.rosterFootnote ? (
+      {!compact && view.rosterFootnote ? (
         <AppText role="caption" secondary>{view.rosterFootnote}</AppText>
       ) : null}
-      {view.target ? (
+      {!compact && view.target ? (
         <AppText role="caption" secondary>
           {view.model.remaining
             ? `${volume(view.model.remaining)} ${view.kind === "baseline" ? "to match last week" : "to the target"}`
@@ -169,11 +180,11 @@ export function CrewRelay(props: Props) {
               ? `${volume(view.model.total - view.target)} beyond ${view.kind === "baseline" ? "last week" : "the target"}`
               : "Target reached together."}
         </AppText>
-      ) : (
+      ) : !compact ? (
         <AppText role="caption" secondary>
           Recorded contributions are shown without inventing a finish.
         </AppText>
-      )}
+      ) : null}
     </View>
   );
 }

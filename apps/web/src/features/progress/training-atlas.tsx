@@ -81,7 +81,7 @@ export function TrainingAtlas({ state }: { state: CompeteState }) {
     setSelectedDay(null);
   };
   return (
-    <Section title="Your training" className="training-atlas">
+    <Section titleRole="display" title="Your training" className="training-atlas">
       <div className="training-atlas-toolbar">
         <TrainingSportMenu
           value={sports}
@@ -163,10 +163,10 @@ export function TrainingAtlas({ state }: { state: CompeteState }) {
         </div>
       </div>
       <div className="atlas-reading" aria-live="polite">
-        <strong>
+        <AppText role="metric">
           {formatTrainingHours(bucket.movingSec)}{" "}
           <AppText as="small" role="caption" secondary>hr</AppText>
-        </strong>
+        </AppText>
         <span>{bucket.label}</span>
       </div>
       <details className="club-calendar">

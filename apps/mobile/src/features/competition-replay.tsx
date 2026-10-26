@@ -7,6 +7,7 @@ import {
   clampCourseCenter, sportById,
   type CompetitionReplay, type CompetitionReplaySelection, type CompeteState, type ArenaLane,
 } from "@fitness-battle/shared";
+import { useCompeteStore } from "../lib/compete-store";
 import { useAuth } from "../lib/auth";
 import { mobileEnv } from "../lib/env";
 import { requestApi } from "../lib/api";
@@ -58,6 +59,7 @@ function ReplayAction({ label, text, disabled, onPress, primary = false }: { lab
 }
 function ReplayViewer({ state, selection, initialDimension, onClose }: { state: CompeteState; selection: CompetitionReplaySelection; initialDimension: "2d" | "3d"; onClose: () => void }) {
   const { user, accessToken, offlineMode } = useAuth();
+  const { debugActive } = useCompeteStore();
   const reduced = useReducedMotion();
   const [data, setData] = useState<CompetitionReplay | null>(null), [error, setError] = useState("");
   const [attempt, setAttempt] = useState(0);
@@ -74,11 +76,11 @@ function ReplayViewer({ state, selection, initialDimension, onClose }: { state: 
   useEffect(() => {
     let cancelled = false;
     setData(null); setError(""); setCursor(0); setPlaying(false); setCenter(null);
-    if (!user || offlineMode) { setData(localCompetitionReplay(localState.current, selection)); return () => { cancelled = true; }; }
+    if (!user || offlineMode || debugActive) { setData(localCompetitionReplay(localState.current, selection)); return () => { cancelled = true; }; }
     const query = `sport=${selection.sport}&track=${selection.track}&start=${encodeURIComponent(selection.periodStart)}&end=${encodeURIComponent(selection.periodEnd)}`;
     void requestApi<CompetitionReplay>(mobileEnv.apiUrl, accessToken, `/api/compete/replay?${query}`).then(next => { if (!cancelled) setData(next); }).catch(() => { if (!cancelled) setError("Could not load this competition’s replay. Try again."); });
     return () => { cancelled = true; };
-  }, [user?.id, offlineMode, accessToken, selection.sport, selection.track, selection.periodStart, selection.periodEnd, attempt]);
+  }, [user?.id, offlineMode, debugActive, accessToken, selection.sport, selection.track, selection.periodStart, selection.periodEnd, attempt]);
   const index = useMemo(() => data ? indexCompetitionReplay(data, state.units) : null, [data, state.units]);
   const count = index?.replay.events.length ?? 0;
   const cursorRef = useRef(cursor); cursorRef.current = cursor;
@@ -130,7 +132,7 @@ function ReplayViewer({ state, selection, initialDimension, onClose }: { state: 
           <ReplayAction label={closed ? "Jump to finish" : "Jump to latest event"} text={closed ? "Finish" : "Latest"} disabled={!count || cursor >= count} onPress={() => seek(count)} />
           <ReplayAction label={`Playback speed ${speed} times`} text={`${speed}×`} onPress={() => setSpeed(v => v === 4 ? 1 : v * 2)} />
         </View>
-        <AppText role="caption" secondary>{!count ? "No counted activity in this competition yet." : "Drag the timeline to move event by event."}{data?.scope === "local" ? " Local preview · your sessions and available simulated athletes." : " Workout order from current counted activities."}{data?.athletes.some(a => a.synthetic) ? " Simulated athletes use daily steps." : ""}</AppText>
+        <AppText role="caption" secondary>{!count ? "No counted activity in this competition yet." : "Drag the timeline to move event by event."}{data?.scope === "local" ? debugActive ? " Debug preview · local practice field." : " Local preview · your sessions and available simulated athletes." : " Workout order from current counted activities."}{data?.athletes.some(a => a.synthetic) ? " Simulated athletes use daily steps." : ""}</AppText>
       </View>
     </>}
   </View>;

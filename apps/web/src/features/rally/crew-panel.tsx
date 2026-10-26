@@ -412,14 +412,14 @@ export function CrewPanel() {
               <section className="focus-card">
                 <AppParagraph typographyRole="label" className="fb-kicker">Our shared week · {crew.sport}</AppParagraph>
                 {sessionsMetric ? (
-                  <strong>{entries.reduce((total, entry) => total + Number(entry.session_count ?? 1), 0)} sessions</strong>
+                  <AppText role="hero">{entries.reduce((total, entry) => total + Number(entry.session_count ?? 1), 0)} <AppText role="caption" secondary>sessions</AppText></AppText>
                 ) : (
-                  <strong className="focus-goal">
+                  <AppText role="hero" className="focus-goal">
                     {formatDistanceM(totalM, state?.units)}{" "}
-                    <small>
+                    <AppText role="caption" secondary>
                       {`${unitLabel} together`}
-                    </small>
-                  </strong>
+                    </AppText>
+                  </AppText>
                 )}
                 <CrewRelay userId={user?.id} key={crew.id} members={members} entries={entries} sport={crew.sport as SportId} format={crew.format} previousDistanceM={previousDistanceM} targetDistanceM={crew.journey_km*1000} targetSessions={crew.target_sessions} units={state?.units} />
                 <AppParagraph typographyRole="body" className="fb-copy">
@@ -443,9 +443,9 @@ export function CrewPanel() {
                         <div className="fb-row" key={m.user_id}>
                           <span>{i + 1}</span>
                           <b className="fb-grow">{m.display_name}</b><RankBadge score={m.effort_score} />
-                          <span>
+                          <AppText role="value">
                             {sessionsMetric ? `${memberTotal(m.user_id)} sessions` : `${formatDistanceM(memberTotal(m.user_id), state?.units)} ${unitLabel}`}
-                          </span>
+                          </AppText>
                         </div>
                       ))}
                   </Section>

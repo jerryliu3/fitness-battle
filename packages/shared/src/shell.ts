@@ -1,3 +1,5 @@
+import { stripWebProductPrefix } from "./product-routes";
+
 /**
  * Phone-first shell shared by Expo and the web column.
  * Plain data only — no React, DOM, or native imports.
@@ -42,7 +44,7 @@ export function shellTabFromPath(
   path: string | null | undefined,
 ): ShellTab | null {
   if (!path) return null;
-  const clean = path.split("?")[0]?.replace(/\/+$/, "") || "/";
+  const clean = stripWebProductPrefix(path.split("?")[0] ?? "/");
   return (
     SHELL_TABS.find(
       (tab) => clean === tab.href || clean.startsWith(`${tab.href}/`),

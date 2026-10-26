@@ -2248,9 +2248,9 @@
   background: var(--ot-secondary);
 }
 .focus-goal {
-  letter-spacing: normal !important;
-  text-transform: none !important;
-  font: var(--type-display) !important;
+  letter-spacing: var(--type-hero-tracking);
+  text-transform: none;
+  font: var(--type-hero);
 }
 .focus-goal small {
   color: var(--muted);
