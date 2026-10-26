@@ -5,7 +5,6 @@ import { createClient } from "@/lib/supabase/client";
 import { getSupabaseConfig } from "@/lib/supabase/config";
 
 import { accountDataOrigin, hashString, findDemoAccount } from "@fitness-battle/shared";
-import { markBootSplashSeen } from "@/shell/boot-gate";
 import {
   DEMO_USER_COOKIE,
   parseDemoUserFromCookie,
@@ -228,7 +227,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const next = demoUserFromEmail(email.trim().toLowerCase());
         writeDemoUser(next);
         setUser(next);
-        markBootSplashSeen();
         return {};
       }
       try { setLegacyBackup(archiveLegacyDemo()); }
@@ -239,7 +237,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         password,
       });
       if (error) return { error: error.message };
-      markBootSplashSeen();
       return {};
     },
     [offlineMode],
@@ -259,7 +256,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         );
         writeDemoUser(next);
         setUser(next);
-        markBootSplashSeen();
         return {};
       }
       try { setLegacyBackup(archiveLegacyDemo()); }
@@ -275,7 +271,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         },
       });
       if (error) return { error: error.message };
-      markBootSplashSeen();
       if (!data.session) return { needsEmailConfirm: true };
       return {};
     },

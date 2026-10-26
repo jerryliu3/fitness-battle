@@ -124,6 +124,7 @@ export async function uploadWebProfileAvatar({
       void supabase.storage.from(AVATAR_BUCKET).remove(cleanupPaths);
     }
 
+    // profiles.avatar_url is written by save_compete_account when set-avatar saves (immediate PUT).
     return nextAvatarUrl;
   }
 
@@ -140,18 +141,20 @@ export async function removeWebProfileAvatar({
   previousAvatarUrl?: string | null;
   supabase?: SupabaseClient | null;
 }): Promise<null> {
-  if (supabase && userId && previousAvatarUrl) {
-    try {
-      const cleanupPaths = buildAvatarCleanupPathsForProfileChange({
-        userId,
-        previousAvatarUrl,
-        nextAvatarUrl: null,
-      });
-      if (cleanupPaths.length > 0) {
-        await supabase.storage.from(AVATAR_BUCKET).remove(cleanupPaths);
+  if (supabase && userId) {
+    if (previousAvatarUrl) {
+      try {
+        const cleanupPaths = buildAvatarCleanupPathsForProfileChange({
+          userId,
+          previousAvatarUrl,
+          nextAvatarUrl: null,
+        });
+        if (cleanupPaths.length > 0) {
+          await supabase.storage.from(AVATAR_BUCKET).remove(cleanupPaths);
+        }
+      } catch {
+        // Storage cleanup is best-effort.
       }
-    } catch {
-      // Non-blocking cleanup
     }
   }
   return null;

@@ -10,10 +10,11 @@ import { SHELL_COLORS as c, mobileSurfaces } from "../theme";
 
 export function WeekChart({ state, onOpen, ready = true }: { state: CompeteState; onOpen?: () => void; ready?: boolean }) {
   const chart = portfolioWeekChart(state);
+  const deltaTone = chart.deltaTone;
   const gradient = useId().replace(/:/g, "");
   return <ChartFrame ready={ready}><View style={s.card}>
     <View style={s.header}><AppText role="display" accessibilityRole="header">Current week</AppText><HomeActivityActions compact/></View>
-    <View style={s.total}><Text style={s.number}>{chart.currTotalHours.toFixed(1)}<Text style={s.unit}> hrs</Text></Text><View style={s.comparison}><AppText role="caption" secondary>{chart.sessionCount} {chart.sessionCount === 1 ? "session" : "sessions"}</AppText><AppText role="caption" secondary>{chart.deltaLabel}</AppText></View></View>
+    <View style={s.total}><Text style={s.number}>{chart.currTotalHours.toFixed(1)}<Text style={s.unit}> hrs</Text></Text><View style={s.comparison}><AppText role="caption" secondary>{chart.sessionCount} {chart.sessionCount === 1 ? "session" : "sessions"}</AppText><AppText role="caption" style={{ color: deltaTone === "up" ? c.green : c.statusError }}>{chart.deltaLabel}</AppText></View></View>
     <ChartScrubber label="This week’s cumulative training hours" points={chart.inspection} width={chart.width} height={chart.height} plotTop={chart.top} plotBottom={chart.bottom} summaryOnSelection>
       <Svg width="100%" height={164} viewBox={`0 0 ${chart.width} ${chart.height}`} preserveAspectRatio="none" accessible={false}>
         <Defs><LinearGradient id={gradient} x1="0" y1="0" x2="0" y2="1"><Stop stopColor={c.fieldTeal} stopOpacity=".2"/><Stop offset="1" stopColor={c.fieldTeal} stopOpacity="0"/></LinearGradient></Defs>
@@ -25,7 +26,6 @@ export function WeekChart({ state, onOpen, ready = true }: { state: CompeteState
       </Svg>
     </ChartScrubber>
     <View style={s.dates}><AppText role="caption" secondary>{chart.startLabel}</AppText><AppText role="caption" secondary>{chart.endLabel}</AppText></View>
-    <View style={s.legend}><View style={s.key}><View style={s.currentLine}/><AppText role="caption" secondary>This week</AppText></View><View style={s.key}><Text style={{ color: c.secondary }}>┄</Text><AppText role="caption" secondary>Last week</AppText></View></View>
     {onOpen && <Pressable accessibilityRole="button" accessibilityLabel="Explore your week" onPress={onOpen} style={s.open}><AppText role="label">Your week →</AppText></Pressable>}
   </View></ChartFrame>;
 }
@@ -37,8 +37,5 @@ const s = StyleSheet.create({
   unit: { ...textStyle("body"), color: c.muted },
   comparison: { gap: 4, alignItems: "flex-end", flexShrink: 1 },
   dates: { flexDirection: "row", justifyContent: "space-between" },
-  legend: { flexDirection: "row", flexWrap: "wrap", gap: 16 },
-  key: { flexDirection: "row", alignItems: "center", gap: 6 },
-  currentLine: { width: 16, height: 2, backgroundColor: c.fieldTeal },
   open: { minHeight: 44, justifyContent: "center", alignSelf: "flex-end" },
 });

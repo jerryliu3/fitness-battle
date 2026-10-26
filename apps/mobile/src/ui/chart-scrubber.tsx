@@ -2,22 +2,13 @@ import { textStyle } from "./section";
 import { useMemo, useRef, useState, type ReactNode } from "react";
 import { PanResponder, Text, View } from "react-native";
 import Svg, { Circle, Line } from "react-native-svg";
+import { chartClientXToModel, nearestChartDatum, type ChartDatum } from "@fitness-battle/shared";
 import { playCue } from "../lib/haptics";
 import { SHELL_COLORS as c } from "../theme";
-import { f } from "./focus";
 
-export interface ChartDatum {
-  id: string;
-  x: number;
-  y: number;
-  label: string;
-  value: string;
-}
+export type { ChartDatum };
 
-export function nearestChartDatum(points: readonly ChartDatum[], x: number) {
-  return points.reduce<ChartDatum | undefined>((best, point) =>
-    !best || Math.abs(point.x - x) < Math.abs(best.x - x) ? point : best, undefined);
-}
+const DIRECTION_LOCK_PX = 4;
 
 /** One touch surface, shared by line and bar charts. Vertical drags yield to the page. */
 export function ChartScrubber({
@@ -40,9 +31,10 @@ export function ChartScrubber({
   const selected = points.find(point => point.id === selectedId);
   const latest = useRef({ points, width, onSelect });
   latest.current = { points, width, onSelect };
-  const inspect = (x: number) => {
+  const inspect = (locationX: number) => {
     const current = latest.current;
-    const point = nearestChartDatum(current.points, x / measuredWidth.current * current.width);
+    const modelX = chartClientXToModel(locationX, { left: 0, width: measuredWidth.current }, current.width);
+    const point = nearestChartDatum(current.points, modelX);
     if (!point || lastId.current === point.id) return;
     lastId.current = point.id;
     setSelectedId(point.id);
@@ -51,25 +43,36 @@ export function ChartScrubber({
   };
   const inspectRef = useRef(inspect);
   inspectRef.current = inspect;
+  const clearSelection = () => {
+    lastId.current = null;
+    direction.current = null;
+    setSelectedId(null);
+  };
   const responder = useMemo(() => PanResponder.create({
-    onStartShouldSetPanResponder: () => true,
-    onMoveShouldSetPanResponder: (_, gesture) => Math.abs(gesture.dx) > Math.abs(gesture.dy),
-    onPanResponderGrant: event => {
+    onStartShouldSetPanResponder: () => false,
+    onMoveShouldSetPanResponder: (_, gesture) =>
+      Math.max(Math.abs(gesture.dx), Math.abs(gesture.dy)) >= DIRECTION_LOCK_PX
+      && Math.abs(gesture.dx) >= Math.abs(gesture.dy),
+    onPanResponderGrant: () => {
       direction.current = null;
-      inspectRef.current(event.nativeEvent.locationX);
     },
     onPanResponderMove: (event, gesture) => {
-      if (!direction.current && Math.max(Math.abs(gesture.dx), Math.abs(gesture.dy)) > 4)
+      if (!direction.current && Math.max(Math.abs(gesture.dx), Math.abs(gesture.dy)) >= DIRECTION_LOCK_PX) {
         direction.current = Math.abs(gesture.dx) >= Math.abs(gesture.dy) ? "horizontal" : "vertical";
+        if (direction.current === "vertical") {
+          clearSelection();
+          return;
+        }
+      }
       if (direction.current === "horizontal") inspectRef.current(event.nativeEvent.locationX);
     },
     onPanResponderTerminationRequest: () => direction.current !== "horizontal",
     onPanResponderRelease: () => { lastId.current = null; direction.current = null; },
     onPanResponderTerminate: () => { lastId.current = null; direction.current = null; },
   }), []);
-  const move = (direction: number) => {
+  const move = (step: number) => {
     const index = points.findIndex(point => point.id === selectedId);
-    const point = points[Math.max(0, Math.min(points.length - 1, (index < 0 ? points.length - 1 : index) + direction))];
+    const point = points[Math.max(0, Math.min(points.length - 1, (index < 0 ? points.length - 1 : index) + step))];
     if (point) inspect(point.x / width * measuredWidth.current);
   };
   return <View style={{ gap: 8 }}>

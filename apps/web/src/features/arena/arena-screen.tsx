@@ -20,9 +20,6 @@ import { SleepPanel } from "@/features/health/sleep-panel";
 import { Sheet } from "@/ui/sheet";
 import { APP_TIMEZONE, competitionTrack, competitionTrackLabel, competeNow, competePeriodWindow, primaryFreezePeriodStart, sleepRenewal, SPORTS, weeklyCompetitionLastDay, weeklyPeriodBounds, type SportId } from "@fitness-battle/shared";
 
-const SCORE_TRACK_TOOLTIP =
-  "Running and cycling use GPS Tracked activities from a connected tracker. Walking and strength include manual activity.";
-
 function formatCompetitionDateRange(startsAt: Date, endsAt: Date): string {
   const lastDay = weeklyCompetitionLastDay(endsAt);
   const opts: Intl.DateTimeFormatOptions = {
@@ -44,19 +41,6 @@ export function ArenaScreen({ tabActive = true }: { tabActive?: boolean }) {
   useEffect(()=>{if(tabActive&&requestedEvent&&SPORTS.some(s=>s.id===requestedEvent))setSelection({account:user?.id??"guest",sport:requestedEvent as SportId});},[requestedEvent,user?.id,tabActive]);
   const [competeWithCrew, setCompeteWithCrew] = useState(false);
   const [sport, setSport] = useState<SportId | "sleep" | null>(null);
-  const [competitionTipOpen, setCompetitionTipOpen] = useState(false);
-
-  useEffect(() => {
-    if (!competitionTipOpen) return;
-    const close = (event: MouseEvent) => {
-      if (!(event.target as Element).closest(".focus-competition-tip-wrap")) {
-        setCompetitionTipOpen(false);
-      }
-    };
-    document.addEventListener("mousedown", close);
-    return () => document.removeEventListener("mousedown", close);
-  }, [competitionTipOpen]);
-
   const account = user?.id ?? "guest";
 
   if (!state) return <AppParagraph typographyRole="body" className="fb-copy">Loading your lanes…</AppParagraph>;
@@ -111,7 +95,7 @@ export function ArenaScreen({ tabActive = true }: { tabActive?: boolean }) {
     <div className="focus-arena">
       <header className="focus-competition-card">
         <div className="focus-competition-info">
-          <SectionHeader titleRole="display" title="Competition" subtitle={dateRangeLabel} action={<div className="ui-competition-status"><StatusBadge>{badgeLabel}</StatusBadge><span className="focus-competition-tip-wrap"><button type="button" className="focus-competition-tip" aria-label="About competition scoring" aria-expanded={competitionTipOpen} onClick={() => setCompetitionTipOpen(open => !open)}>ⓘ</button>{competitionTipOpen && <AppText role="caption" className="focus-competition-tip-popover" aria-hidden={!competitionTipOpen}>{SCORE_TRACK_TOOLTIP}</AppText>}</span></div>}/>
+          <SectionHeader titleRole="display" title="Competition" subtitle={dateRangeLabel} action={<StatusBadge>{badgeLabel}</StatusBadge>}/>
 
         </div>
       </header>

@@ -8,6 +8,7 @@ import { recentActivityStart, type CrewActivityPage } from "@fitness-battle/shar
 export function useCrewActivities(active = true) {
   const { user, offlineMode } = useAuth();
   const [result, setResult] = useState<{ account: string; activities: CrewActivityPage["activities"]; error: string }>({ account: "", activities: [], error: "" });
+  // Boot gate: hold the launch cover until the first crew snapshot stamps this account id.
   useBootLoading(Boolean(user && !offlineMode && active && result.account !== user.id));
   useEffect(() => {
     if (!user || offlineMode || !active) return;

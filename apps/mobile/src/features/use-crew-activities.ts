@@ -9,6 +9,7 @@ import { mobileEnv } from "../lib/env";
 export function useCrewActivities() {
   const { user, offlineMode, accessToken } = useAuth();
   const [result, setResult] = useState<{ account: string; activities: CrewActivityPage["activities"]; error: string }>({ account: "", activities: [], error: "" });
+  // Boot gate: hold the launch cover until the first crew snapshot stamps this account id.
   useBootLoading(Boolean(user && !offlineMode && Boolean(accessToken) && result.account !== user.id));
   useFocusEffect(useCallback(() => {
     if (!user || offlineMode || !accessToken) return;

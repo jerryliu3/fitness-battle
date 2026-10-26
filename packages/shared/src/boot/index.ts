@@ -15,6 +15,7 @@ export {
   type BootLayout,
 } from "./motion";
 export { bootEmberPose } from "./pose";
+export type { CompeteLoadStatus } from "./load-status";
 export { isCompeteDataReady, shouldShowBootSplash } from "./gate";
 
 export { DEFAULT_BOOT_SPLASH_VARIANT, LOGO_RACE_DURATION_MS, logoRaceWords, stackedLayout, staggeredLogoFrame, type BootSplashVariant, type LogoRaceWord } from "./logo-race";

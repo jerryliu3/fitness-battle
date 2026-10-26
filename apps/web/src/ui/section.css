@@ -11,8 +11,8 @@
 .ui-section-boundary { height: 28px; }
 .is-divided > .ui-section-boundary { height: 29px; padding-top: 16px; padding-bottom: 12px; }
 .is-divided > .ui-section-boundary::after { content: ""; display: block; height: 1px; background: #d0dad7; }
-.ui-status-badge { display: inline-flex; flex-wrap: wrap; align-items: center; gap: .25rem; padding: .25rem .5rem; border-radius: 999px; max-width: 100%; background: #eef3f1; color: #142b3b; overflow-wrap: anywhere; }
-.ui-status-badge.is-success { color: #24765c; background: #e9f5ee; }
+.ui-status-badge { display: inline-flex; flex-wrap: wrap; align-items: center; gap: .25rem; padding: .2rem .55rem; border-radius: 999px; max-width: 100%; background: linear-gradient(180deg, #f8fbfa 0%, #e8f0ed 100%); color: #142b3b; border: 1px solid #c5d5cf; box-shadow: 0 1px 0 rgba(255,255,255,.85) inset, 0 1px 2px rgba(20,43,59,.06); font-weight: var(--type-label-weight); letter-spacing: var(--type-label-tracking); overflow-wrap: anywhere; }
+.ui-status-badge.is-success { color: #1d6b52; background: linear-gradient(180deg, #f3fbf6 0%, #e3f3ea 100%); border-color: #a9d4bc; }
 .ui-surface { padding: 20px; border: 1px solid #e3e9e7; border-radius: 20px; background: white; }
 .ui-list-row { display: flex; align-items: center; gap: .75rem; min-height: 44px; }
 .ui-list-row > div { flex: 1; min-width: 0; }

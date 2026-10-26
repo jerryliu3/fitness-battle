@@ -1,4 +1,3 @@
-import { UserAvatar } from "../ui/user-avatar";
 import { RouteStaticPreview } from "../ui/route-static-preview";
 import { Section, AppText } from "../ui/section";
 import { useState } from "react";
@@ -19,7 +18,7 @@ export function LatestActivity({ state, onOpen }: { state: CompeteState; onOpen:
     {rows.length > 0 && <Section title="Latest activity">
       {rows.map(row => { const route = activityRoute(row.ownActivity); return <Pressable key={`${row.userId}:${row.id}`} accessibilityRole="button" onPress={() => row.ownActivity ? onOpen(row.ownActivity) : setSelected({ account: user?.id, id: row.id })}
         style={[f.row, { minHeight: 76, paddingVertical: 12, borderBottomWidth: 0 }]}>
-        {route ? <RouteStaticPreview coordinates={route} width={128} height={128} padding={16} strokeWidth={3} showMarkers={false} showPlayBadge={false} style={{ width: 64, height: 64, borderRadius: 12 }} /> : <UserAvatar src={row.avatarUrl} name={row.name} size={48} fallback={<SportActivityIcon sport={row.sport} />} />}
+        {route ? <RouteStaticPreview coordinates={route} width={128} height={128} padding={16} strokeWidth={3} showMarkers={false} showPlayBadge={false} style={{ width: 64, height: 64, borderRadius: 12 }} /> : <SportActivityIcon sport={row.sport} />}
         <View style={[f.grow, { gap: 4 }]}><AppText role="row" >{row.ownActivity ? sportById(row.sport).name : `${row.name} · ${sportById(row.sport).name}`} · {clubDuration(row.movingSec)}</AppText>
           <AppText role="support" secondary >{row.verified ? "GPS Tracked" : row.source === "manual" ? "Manual activity" : "Activity"}</AppText></View>
         <AppText role="caption" secondary >{new Date(row.startedAt).toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: APP_TIMEZONE })} →</AppText>

@@ -27,12 +27,9 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode }
 import { EffortRail } from "@/features/progress/effort-rail";
 import { ApplicationBootGate } from "./application-boot-gate";
 import { BootSplash } from "./boot-splash";
+import { ShellBootReadiness } from "./shell-boot-readiness";
 import { DebugEventMenu } from "./debug-event-menu";
-import {
-  hasSeenBootSplash,
-  isCompeteDataReady,
-  markBootSplashSeen,
-} from "./boot-gate";
+import { isCompeteDataReady, shouldShowBootSplash } from "./boot-gate";
 import "./shell.css";
 
 function renderTab(
@@ -80,18 +77,12 @@ export function PhoneShell({
   useLayoutEffect(() => { setAnimateDestination(!bottomNavigation.current); bottomNavigation.current = false; }, [path]);
   const [intent, setIntent] = useState<ShellTabId | null>(null);
   const [bootAnimDone, setBootAnimDone] = useState(false);
-  const [bootChecked, setBootChecked] = useState(false);
   const matched = tab?.id ?? null;
   const active = onAthlete ? null : intent ?? matched;
   const accountKey = user?.id ?? "guest";
   const [visited, setVisited] = useState<Set<ShellTabId>>(
     () => new Set(["today"]),
   );
-
-  useLayoutEffect(() => {
-    setBootAnimDone(hasSeenBootSplash());
-    setBootChecked(true);
-  }, []);
 
   useEffect(() => {
     if (active && isShellTabId(active)) {
@@ -178,12 +169,10 @@ export function PhoneShell({
   );
 
   return (
-    <ApplicationBootGate ready={bootChecked && bootAnimDone && !loading && dataReady} splash={
-      <BootSplash waiting={bootAnimDone} onAnimationComplete={() => {
-        markBootSplashSeen();
-        setBootAnimDone(true);
-      }} />
+    <ApplicationBootGate ready={!shouldShowBootSplash(dataReady, bootAnimDone) && !loading} splash={
+      <BootSplash waiting={bootAnimDone} onAnimationComplete={() => setBootAnimDone(true)} />
     }>
+    <ShellBootReadiness />
     <div className="phone-frame">
       <div className="phone-shell">
         {!onAthlete && productPath !== "/week" && !progressDetail && <header className="focus-shell-header">

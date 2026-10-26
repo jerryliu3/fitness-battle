@@ -38,6 +38,7 @@ export * from "./sync-review";
 export * from "./integration-icons";
 
 export * from "./week-chart";
+export * from "./chart-scrubber";
 export * from "./home-health";
 export * from "./sport-mark";
 

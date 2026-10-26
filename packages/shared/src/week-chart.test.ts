@@ -1,6 +1,6 @@
 import { expect, it } from "vitest";
 import { freshState } from "./compete/engine";
-import { weeklyHoursComparison } from "./week-chart";
+import { weeklyHoursComparison, weekHoursDeltaTone } from "./week-chart";
 const now = new Date("2026-10-23T16:00:00Z");
 it("shares current/previous hours while excluding samples and future activity", () => {
   const state = freshState(now);
@@ -29,4 +29,24 @@ it("keeps Portfolio lines finite for empty and partial weeks with matching total
   expect(chart.endLabel).toBe("Oct 25");
   expect(chart.inspection.at(-1)?.x).toBe(chart.tip.x);
   expect(chart.currTotalHours).toBe(weeklyHoursComparison(state, now).currTotalHours);
+  expect(chart.deltaTone).toBe("up");
+});
+
+it("classifies week-over-week delta tone from same weekday cumulative hours", () => {
+  expect(weekHoursDeltaTone({ currHoursSameDay: 2, prevHoursSameDay: 1 })).toBe("up");
+  expect(weekHoursDeltaTone({ currHoursSameDay: 1, prevHoursSameDay: 2 })).toBe("down");
+  expect(weekHoursDeltaTone({ currHoursSameDay: 1, prevHoursSameDay: 1 })).toBe("up");
+  expect(weekHoursDeltaTone({ currHoursSameDay: 1.04, prevHoursSameDay: 1 })).toBe("up");
+});
+
+it("delta label compares through today, not full prior week total", async () => {
+  const { portfolioWeekChart } = await import("./week-chart");
+  const state = freshState(now);
+  state.activities = [
+    { id: "this-week", startedAt: "2026-10-23T15:00:00Z", movingSec: 3600 },
+    { id: "last-week-day", startedAt: "2026-10-16T15:00:00Z", movingSec: 10 * 3600 },
+  ].map(a => ({ sport: "running", distanceM: 1000, avgHr: null, source: "strava", provenance: "recorded", verified: true, disposition: "counted", ...a })) as typeof state.activities;
+  const chart = portfolioWeekChart(state, now);
+  expect(chart.deltaLabel).toBe("-9.0h vs last week");
+  expect(chart.deltaTone).toBe("down");
 });
