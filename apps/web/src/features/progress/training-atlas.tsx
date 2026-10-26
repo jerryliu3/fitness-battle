@@ -13,7 +13,8 @@ import {
   shiftAppDay,
   shiftTrainingMonth,
   sportById,
-  SPORTS,
+  defaultTrainingSports,
+  normalizeTrainingSports,
   trainingAtlas,
   trainingBuckets,
   trainingComparison,
@@ -23,15 +24,18 @@ import {
   type SportId,
   type TrainingRange,
 } from "@fitness-battle/shared";
+import { ChartRangeToggle } from "./chart-range-toggle";
+import { TrainingSportMenu } from "./training-sport-menu";
+
 export function TrainingAtlas({ state }: { state: CompeteState }) {
   const now = competeNow(state);
-  const [sport, setSport] = useState<SportId | "all">("all"),
+  const [sports, setSports] = useState<SportId[]>(() => defaultTrainingSports()),
     [range, setRange] = useState<TrainingRange>("week"),
     [anchor, setAnchor] = useState(() => now),
     [selected, setSelected] = useState<string | null>(null),
     [selectedDay, setSelectedDay] = useState<string | null>(null);
-  const buckets = trainingBuckets(state.activities, sport, range, anchor, now),
-    cells = trainingAtlas(state.activities, sport, anchor, now);
+  const buckets = trainingBuckets(state.activities, sports, range, anchor, now),
+    cells = trainingAtlas(state.activities, sports, anchor, now);
   const bucket =
     buckets.find((b) => b.start === selected) ??
     buckets.find((b) => b.partial) ??
@@ -39,7 +43,7 @@ export function TrainingAtlas({ state }: { state: CompeteState }) {
     buckets[0]!;
   const comparison = trainingComparison(
     state.activities,
-    sport,
+    sports,
     range,
     anchor,
     now,
@@ -78,30 +82,22 @@ export function TrainingAtlas({ state }: { state: CompeteState }) {
   };
   return (
     <Section titleRole="display" title="Your training" className="training-atlas">
-      <div className="fb-chips" role="group" aria-label="Atlas sport">
-        {[{ id: "all", name: "All sports" }, ...SPORTS].map(item => <button key={item.id} type="button"
-          className={sport === item.id ? "fb-chip on" : "fb-chip"} aria-pressed={sport === item.id}
-          onClick={() => { setSport(item.id as SportId | "all"); setSelected(null); }}>{item.name}</button>)}
-      </div>
-      <div
-        className="focus-segments"
-        role="group"
-        aria-label="Training chart range"
-      >
-        {(["week", "month", "year"] as const).map((r) => (
-          <button
-            key={r}
-            type="button"
-            aria-pressed={range === r}
-            onClick={() => {
-              setRange(r);
-              setAnchor((current) => clampTrainingAnchor(current, earliest, now, r));
-              setSelected(null);
-            }}
-          >
-            {r[0]!.toUpperCase() + r.slice(1)}
-          </button>
-        ))}
+      <div className="training-atlas-toolbar">
+        <TrainingSportMenu
+          value={sports}
+          onChange={(next) => {
+            setSports(normalizeTrainingSports(next));
+            setSelected(null);
+          }}
+        />
+        <ChartRangeToggle
+          value={range}
+          onChange={(next) => {
+            setRange(next);
+            setAnchor((current) => clampTrainingAnchor(current, earliest, now, next));
+            setSelected(null);
+          }}
+        />
       </div>
       <div className="atlas-heading">
         <button
@@ -127,17 +123,16 @@ export function TrainingAtlas({ state }: { state: CompeteState }) {
         <strong>
           {clubDuration(buckets.reduce((sum, b) => sum + b.movingSec, 0))}
         </strong>
-        <span className="fb-note">
-          {buckets.reduce((sum, b) => sum + b.sessions, 0)} {buckets.reduce((sum, b) => sum + b.sessions, 0) === 1 ? "session" : "sessions"} ·{" "}
-          {sport === "all" ? "All sports" : sportById(sport).name}
-        </span>
       </div>
-      <AppParagraph typographyRole="body"
-        className="club-chart-delta"
-        data-direction={(comparison.percent ?? 0) >= 0 ? "up" : "down"}
-      >
-        {comparison.label}
-      </AppParagraph>
+      {comparison.percent !== null ? (
+        <AppParagraph
+          typographyRole="body"
+          className="club-chart-delta"
+          data-direction={(comparison.percent ?? 0) >= 0 ? "up" : "down"}
+        >
+          {comparison.label}
+        </AppParagraph>
+      ) : null}
       <div className="atlas-chart-scroll">
         <div
           className="atlas-bars"
@@ -169,13 +164,10 @@ export function TrainingAtlas({ state }: { state: CompeteState }) {
       </div>
       <div className="atlas-reading" aria-live="polite">
         <AppText role="metric">
-          {formatTrainingHours(bucket.movingSec)} <AppText as="small" role="caption" secondary>hr</AppText>
+          {formatTrainingHours(bucket.movingSec)}{" "}
+          <AppText as="small" role="caption" secondary>hr</AppText>
         </AppText>
-        <span>
-          {bucket.label} · {bucket.sessions} session
-          {bucket.sessions === 1 ? "" : "s"}
-          {bucket.partial ? " · so far" : ""}
-        </span>
+        <span>{bucket.label}</span>
       </div>
       <details className="club-calendar">
         <summary>

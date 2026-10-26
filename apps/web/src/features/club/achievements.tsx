@@ -3,11 +3,13 @@ import { Section, TextAction, StatusBadge, AppText } from "@/ui/section";
 import Link from "next/link";
 import { useId } from "react";
 import {
+  achievementAccessibilityLabel,
   clubAchievements,
   featuredClubAchievements,
   type ClubAchievement,
   type CompeteState,
 } from "@fitness-battle/shared";
+import { AchievementMeter } from "./achievement-meter";
 
 function AchievementBadge({ item }: { item: ClubAchievement }) {
   const id = useId();
@@ -41,16 +43,16 @@ export function Achievements({ state }: { state: CompeteState }) {
             className="club-achievement"
             key={row.id}
             href={`/you/achievements?milestone=${encodeURIComponent(row.id)}`}
-            aria-label={`${row.title}. ${row.target} ${row.category === "sessions" ? "sessions" : "Open effort score"}. ${row.earned ? "Earned" : "In progress"}`}
+            aria-label={achievementAccessibilityLabel(row)}
           >
             <AchievementBadge item={row} />
-            <AppText role="metric">
-              {row.target.toLocaleString()}
+            <AppText role="caption" secondary className="club-achievement-title">
+              {row.title}
             </AppText>
-            <AppText role="caption" secondary>
-              {row.category === "sessions" ? (row.target === 1 ? " session" : " sessions") : " pts"}
+            <AchievementMeter row={row} />
+            <AppText role="label" className="club-achievement-progress">
+              {row.current.toLocaleString()} / {row.target.toLocaleString()}
             </AppText>
-            <AppText role="caption" secondary>{row.title}</AppText>
             <StatusBadge tone={row.earned ? "success" : "neutral"}>
               {row.earned ? "✓ Earned" : "Up next"}
             </StatusBadge>

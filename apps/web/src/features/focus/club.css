@@ -752,6 +752,28 @@
   color: var(--ink);
   font: inherit;
   cursor: pointer;
+  text-decoration: none;
+}
+.club-achievement-title,
+.club-achievement-progress {
+  text-align: center;
+  text-decoration: none;
+}
+.club-achievement-meter {
+  width: 100%;
+  height: 4px;
+  border-radius: 999px;
+  background: var(--accent-soft);
+  overflow: hidden;
+}
+.club-achievement-meter > span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--lime, #f1c75b);
+}
+.club-achievement-meter[data-earned="true"] > span {
+  background: var(--field-teal, #176c75);
 }
 .club-badge {
   width: 64px;
@@ -805,7 +827,13 @@
 }
 .club-all-achievements button > span {
   display: grid;
+  flex: 1;
+  min-width: 0;
   gap: 5px;
+}
+.club-achievement-detail .club-achievement-meter {
+  align-self: stretch;
+  max-width: 280px;
 }
 .club-all-achievements .club-badge {
   width: 42px;
@@ -1205,9 +1233,90 @@
 .club-sheet-heading { display:flex; align-items:center; justify-content:space-between; gap:16px; }
 .club-sheet-heading h2 { margin:0; }
 .club-sheet-dismiss { display:grid; place-items:center; width:44px; min-height:44px; flex:none; border:1px solid var(--line); border-radius:50%; background:var(--card); color:var(--ink); cursor:pointer; letter-spacing: normal; text-transform: none; font: var(--type-heading); }
-.training-atlas .focus-elo-track-toggle { display:flex; gap:4px; padding:4px; width:100%; background:var(--accent-soft); border:1px solid var(--line); border-radius:12px; }
-.training-atlas .focus-elo-track-toggle>button { flex:1; min-height:44px; padding:8px; border:0; border-radius:8px; background:none; color:var(--muted); cursor:pointer; letter-spacing: normal; text-transform: none; font: var(--type-label); }
-.training-atlas .focus-elo-track-toggle>button[aria-pressed=true] { background:var(--ink); color:var(--card); }
+.training-atlas-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.training-atlas .chart-range-toggle {
+  display: inline-flex;
+  gap: 2px;
+  padding: 2px;
+  background: var(--accent-soft);
+  border: 1px solid var(--line);
+  border-radius: 7px;
+}
+.training-atlas .chart-range-toggle > button {
+  border: 0;
+  background: transparent;
+  min-width: 32px;
+  min-height: 32px;
+  padding: 4px 8px;
+  border-radius: 5px;
+  color: var(--muted);
+  cursor: pointer;
+  letter-spacing: normal;
+  text-transform: none;
+  font: var(--type-label);
+}
+.training-atlas .chart-range-toggle > button[aria-pressed="true"] {
+  background: #fff;
+  color: var(--ink);
+  box-shadow: 0 1px 3px rgba(38, 56, 45, 0.08);
+}
+.training-sport-menu {
+  position: relative;
+}
+.training-sport-menu-caret {
+  margin-left: 4px;
+  opacity: 0.65;
+}
+.training-sport-menu-panel {
+  position: absolute;
+  z-index: 4;
+  top: calc(100% + 6px);
+  left: 0;
+  min-width: 180px;
+  display: grid;
+  gap: 2px;
+  padding: 8px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--card);
+  box-shadow: 0 10px 28px #142b3b14;
+}
+.training-sport-menu-all {
+  border: 0;
+  background: none;
+  text-align: left;
+  padding: 8px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  color: var(--ink);
+  font: var(--type-label);
+}
+.training-sport-menu-all:hover {
+  background: var(--accent-soft);
+}
+.training-sport-menu-option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  font: var(--type-label);
+}
+.training-sport-menu-option:hover {
+  background: var(--accent-soft);
+}
+.training-sport-menu-option input {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--ink);
+}
 @media(min-width:900px) { .club-rival-card { height:100%; } }
 
 /* Locked perspective portrait field: independent of the Three.js renderer. */

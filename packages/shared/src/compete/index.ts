@@ -217,7 +217,18 @@ export { roundReveal, roundEnrollment } from "./round-reveal";
 export { applyEffortMilestones, milestoneStep, type EffortMilestone } from "./milestones";
 
 export { RECORD_DISTANCES, recordAttemptsForActivity, personalRecordHistory, weeklyTraining, recordStepPath, type RecordAttempt, type TrainingWeek } from "./progress";
-export { crewRelay, crewWeekRelay, type CrewWeekRelayInput, RELAY_COLORS } from './crew-relay';
+export {
+  crewRelay,
+  crewWeekRelay,
+  crewRelayIsEmpty,
+  crewRelayRosterFootnote,
+  crewEntryTotals,
+  crewMemberWeekValue,
+  filterCrewMembersWithPeriodActivity,
+  type CrewRelayModel,
+  type CrewWeekRelayInput,
+  RELAY_COLORS,
+} from "./crew-relay";
 export { crewSessionInstant, crewSessionError, type CrewSession } from './crew-sessions';
 export { crewSessionDraftId } from './crew-sessions';
 export { repeatStatus, type WeeklySocial, type WeeklyPeer } from './weekly-social';
