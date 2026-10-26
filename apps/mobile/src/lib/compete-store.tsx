@@ -312,7 +312,6 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
         } catch {
           if (alive) {
             setLoadStatus("failed");
-            markAccountHydrated(true);
             setStandingsStale(true);
             setSaveError(
               "Your account could not load. Refresh your account before making changes.",
@@ -348,7 +347,6 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
       if (alive) {
         loadedOwnerRef.current = owner;
         setLoadStatus("failed");
-        markAccountHydrated(true);
         setState(
           hydrateAccountIdentity(freshState(), authRef.current.user, false),
         );
