@@ -9,7 +9,9 @@ export const metadata: Metadata = {
     "How overtaek collects, uses, and shares account and fitness data, and the choices you have when using connected fitness services.",
 };
 
-const UPDATED = "October 23, 2026";
+const UPDATED = "October 26, 2026";
+const SUPPORT_EMAIL = "support@overtaek.xyz";
+const supportMailto = `mailto:${SUPPORT_EMAIL}`;
 
 export default function PrivacyPolicyPage() {
   return (
@@ -37,8 +39,9 @@ export default function PrivacyPolicyPage() {
       <AppHeading level={3} role="heading">Account</AppHeading>
       <AppParagraph typographyRole="body">
         When you create an account we collect your email address, password (stored
-        by our auth provider), and optional display name. We use this to sign you
-        in and show you on boards.
+        by our auth provider), an internal account identifier (user ID), and
+        optional display name. We use this to sign you in, secure your session,
+        and show you on boards.
       </AppParagraph>
       <AppHeading level={3} role="heading">Fitness and health connections</AppHeading>
       <AppParagraph typographyRole="body">
@@ -52,21 +55,46 @@ export default function PrivacyPolicyPage() {
         <li>Basic profile fields the provider exposes under the scopes you grant (such as name or email)</li>
         <li>OAuth access and refresh tokens so we can sync on your behalf until you disconnect</li>
       </ul>
+      <AppHeading level={3} role="heading">Apple HealthKit (iOS)</AppHeading>
       <AppParagraph typographyRole="body">
-        Device sources such as Apple Health or Health Connect only send workouts
-        you choose to upload from the mobile app. We do not scrape your phone
-        health store from the web.
+        On iPhone, you may choose to read workouts from Apple Health. Overtaek
+        requests HealthKit access only to import workout summaries you sync from
+        the app. We do not sell HealthKit data, use it for advertising, or share
+        it with data brokers. Health data is used to score battles and show your
+        history inside the product. You can revoke access in iOS Settings →
+        Health → Data Access & Devices.
+      </AppParagraph>
+      <AppHeading level={3} role="heading">Health Connect (Android)</AppHeading>
+      <AppParagraph typographyRole="body">
+        On Android, you may choose to read exercise, heart rate, and sleep data
+        from Health Connect when you sync from the app. We use this information
+        for the same scoring and history features as other trackers. We do not
+        sell this data, use it for advertising, or share it with data brokers.
+        You can revoke access in Health Connect permissions for Overtaek.
+      </AppParagraph>
+      <AppHeading level={3} role="heading">Location and route data</AppHeading>
+      <AppParagraph typographyRole="body">
+        Overtaek does not continuously track your real-time location in the
+        background. When activities include GPS routes (from a connected service
+        or imported file), we store coordinate samples needed to show maps,
+        distance, and verified scoring. Map previews may be rendered using
+        Mapbox’s static map service; those requests include the route geometry
+        needed to draw the image, not live device location.
       </AppParagraph>
       <AppHeading level={3} role="heading">Battle and product data</AppHeading>
       <AppParagraph typographyRole="body">
         We store battle membership, preferences, period standings, imported or
-        synced activity samples used for scoring, and similar product state so
-        the board and history work across devices.
+        synced activity samples used for scoring, crew membership, display names
+        visible to other participants, and similar product state so the board
+        and history work across devices.
       </AppParagraph>
       <AppHeading level={3} role="heading">Technical data</AppHeading>
       <AppParagraph typographyRole="body">
         Like most web apps, our hosts may process standard request logs (IP
-        address, user agent, timestamps) for security and reliability.
+        address, user agent, timestamps) for security and reliability. We do not
+        use third-party crash analytics or session-recording SDKs in the product
+        today. If we add diagnostic tools in the future, we will update this
+        policy before collecting new categories of diagnostic data.
       </AppParagraph>
 
       <AppHeading level={2} role="heading">3. How we use information</AppHeading>
@@ -76,10 +104,11 @@ export default function PrivacyPolicyPage() {
         <li>Show you progress, history, and connection status in the app</li>
         <li>Operate, protect, and improve the service</li>
         <li>Respond to support requests you send us</li>
+        <li>Send optional product notifications you enable (for example week summaries)</li>
       </ul>
       <AppParagraph typographyRole="body">
         We do not sell your personal information. We do not use fitness or health
-        data for advertising.
+        data for advertising or for sharing with data brokers.
       </AppParagraph>
 
       <AppHeading level={2} role="heading">4. How we share information</AppHeading>
@@ -96,9 +125,11 @@ export default function PrivacyPolicyPage() {
         <li>
           <strong>Service providers.</strong> Vercel hosts our web application
           and processes backend API requests, including activity sync. Supabase
-          provides database storage and account authentication. These providers
-          process account and connected fitness data on our instructions to
-          operate the service.
+          provides database storage and account authentication. Mapbox provides
+          static map imagery when route previews are shown. Expo’s push
+          notification service may process device push tokens when you enable
+          notifications on mobile. These providers process data on our
+          instructions to operate the service.
         </li>
         <li>
           <strong>Fitness providers.</strong> When you connect a tracker, you
@@ -116,7 +147,7 @@ export default function PrivacyPolicyPage() {
         Apart from the product features, infrastructure providers, and legal
         disclosures described above, we do not share fitness or health data
         with third parties for their own use. We do not send this data to
-        third-party analytics services or other integration partners.
+        third-party analytics services.
       </AppParagraph>
 
       <AppHeading level={2} role="heading">5. Connected fitness services</AppHeading>
@@ -127,6 +158,11 @@ export default function PrivacyPolicyPage() {
         progress. Where supported and authorized, we also use sleep, recovery,
         or readiness data to display those metrics in the app. These practices
         apply to all connected services, including Garmin.
+      </AppParagraph>
+      <AppParagraph typographyRole="body">
+        Device sources such as Apple Health or Health Connect only send workouts
+        you choose to upload from the mobile app. We do not scrape your phone
+        health store from the web.
       </AppParagraph>
       <AppParagraph typographyRole="body">
         The authorization screen identifies the permissions requested by each
@@ -178,17 +214,21 @@ export default function PrivacyPolicyPage() {
         <li>Update your display name and preferences in the app</li>
         <li>Disconnect trackers or revoke access in the provider’s settings</li>
         <li>Request access, correction, export, or deletion of your data</li>
+        <li>
+          Delete your account in the app (Athlete → Account) or on the web at{" "}
+          <Link href="/support#delete-account">Support → Account deletion</Link>
+        </li>
       </ul>
       <AppParagraph typographyRole="body">
         To request a copy or export of your data, correct inaccurate stored
         information, or delete imported activities and associated personal
         progress records, email{" "}
-        <a href="mailto:3jerryliu@gmail.com">3jerryliu@gmail.com</a>
-        {" "}from your account email address. We verify account ownership before
-        fulfilling requests. You can also request account deletion through the
-        app or by email, subject to the limited retention exceptions above.
-        These choices apply to all connected fitness data as well as other
-        personal information we hold.
+        <a href={supportMailto}>{SUPPORT_EMAIL}</a>
+        {" "}from your account email address or visit our{" "}
+        <Link href="/support">Support</Link> page. We verify account ownership
+        before fulfilling requests. Account deletion permanently removes your
+        auth record and associated rows we control, subject to the limited
+        retention exceptions above.
       </AppParagraph>
 
       <AppHeading level={2} role="heading">10. Children</AppHeading>
@@ -215,21 +255,13 @@ export default function PrivacyPolicyPage() {
 
       <AppHeading level={2} role="heading">13. Contact</AppHeading>
       <AppParagraph typographyRole="body">
-        Privacy questions:{" "}
-        <a href="mailto:3jerryliu@gmail.com">3jerryliu@gmail.com</a>
-        . You can also reach us through the{" "}
-        <a
-          href="https://github.com/jerryliu3/fitness-battle"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          overtaek GitHub repository
-        </a>
-        .
+        Privacy and data requests:{" "}
+        <a href={supportMailto}>{SUPPORT_EMAIL}</a>. General help:{" "}
+        <Link href="/support">Support</Link>.
       </AppParagraph>
 
       <AppParagraph typographyRole="body" className="fb-legal-foot">
-        <Link href="/">Back to overtaek</Link>
+        <Link href="/">Back to home</Link>
       </AppParagraph>
     </article>
   );

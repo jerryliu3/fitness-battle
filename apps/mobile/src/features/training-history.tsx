@@ -92,9 +92,8 @@ export function TrainingHistory({ state, children }: { state: CompeteState; chil
               ))}
             </View>
           </ScrollView>
-          <AppText role="label" >
-            {formatClockTime(inspected.seconds)} · {date(inspected.startedAt)}
-          </AppText>
+          <AppText role="value">{formatClockTime(inspected.seconds)}</AppText>
+          <AppText role="caption" secondary>{date(inspected.startedAt)}</AppText>
           <AppText role="caption" secondary >
             {inspected.source.replaceAll("_", " ")}
             {inspected.verified ? " · GPS recorded" : ""}

@@ -46,7 +46,7 @@ export function CompetitionSummary({
   return (
     <>
       <View style={f.section}>
-        <SectionHeader title="Competition" subtitle={weekLabel} action={<StatusBadge>{days ? `${days} day${days === 1 ? "" : "s"}` : hours ? `${hours}h` : `${left}m`} left</StatusBadge>}/>
+        <SectionHeader titleRole="display" title="Competition" subtitle={weekLabel} action={<StatusBadge>{days ? `${days} day${days === 1 ? "" : "s"}` : hours ? `${hours}h` : `${left}m`} left</StatusBadge>}/>
 
         {children}
       </View>
