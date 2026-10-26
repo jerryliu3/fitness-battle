@@ -10,11 +10,11 @@ import {
 import { buildArenaModel, competePeriodWindow } from "../phone-views";
 import { applyDebugEvent, DEBUG_EVENT_OPTIONS } from "./debug-events";
 import { competeNow, freshState } from "./engine";
-import { competitionTrack } from "./sports";
+import { competitionTrack, type CompeteState } from "./sports";
 import { roundReveal } from "./round-reveal";
 import { initialsFromName } from "./track";
 
-function pinnedState(iso: string) {
+function pinnedState(iso: string): CompeteState {
   return { ...freshState(new Date(iso)), demoNow: iso };
 }
 
