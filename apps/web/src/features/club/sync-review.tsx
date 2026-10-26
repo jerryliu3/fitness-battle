@@ -41,7 +41,7 @@ function Review({ receipt, state, onComplete }: { receipt: SyncReviewReceipt; st
   };
   const activity = activities.find(a => a.id === detail);
   if (activity) return <div ref={step} className="sync-review-step">
-    <button className="fb-btn-line" onClick={() => setDetail(null)}>← All activities</button>
+    <button type="button" className="fb-btn-line" disabled={saving} onClick={() => setDetail(null)}>← All activities</button>
     <p className="fb-kicker">ACTIVITY DETAILS</p><AppHeading level={1} role="display">{sportById(activity.sport).name}</AppHeading>
     <ActivityRoute activity={activity} units={state.units}/>
     <div className="moment-result"><strong>{formatVolume(activity.sport, activity.distanceM, activity.movingSec, state.units)}</strong><span>{clubDuration(activity.movingSec)}</span></div>
@@ -56,7 +56,7 @@ function Review({ receipt, state, onComplete }: { receipt: SyncReviewReceipt; st
     {activities.length > 0 && <ActivityRoute activity={selected[0] ?? activities[0]} units={state.units}/>}
     <div className="sync-review-list">{activities.map(a => <div key={a.id} className="sync-review-row">
       <label><input type="checkbox" disabled={saving} checked={!excluded.includes(a.id)} onChange={e => { if (saving) return; setExcluded(ids => e.target.checked ? ids.filter(id => id !== a.id) : [...ids, a.id]); setProgress(0); }} aria-label={`Count ${sportById(a.sport).name} activity ${a.id}`}/><span className="sr-only">Include activity</span></label>
-      <button type="button" onClick={() => setDetail(a.id)}><span><b>{sportById(a.sport).name}</b><small>{formatVolume(a.sport, a.distanceM, a.movingSec, state.units)} · {clubDuration(a.movingSec)}</small><small>{new Date(a.startedAt).toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: APP_TIMEZONE })} · {a.verified ? "GPS Tracked" : "Open"}</small></span><span aria-hidden="true">↗</span></button>
+      <button type="button" disabled={saving} onClick={() => setDetail(a.id)}><span><b>{sportById(a.sport).name}</b><small>{formatVolume(a.sport, a.distanceM, a.movingSec, state.units)} · {clubDuration(a.movingSec)}</small><small>{new Date(a.startedAt).toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: APP_TIMEZONE })} · {a.verified ? "GPS Tracked" : "Open"}</small></span><span aria-hidden="true">↗</span></button>
     </div>)}</div>
     {!receipt.preview && excluded.length > 0 && <p className="fb-note">Deselected activities stay saved, excluded from competition.</p>}
     <div className="sync-review-footer">

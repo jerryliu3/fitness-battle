@@ -356,6 +356,28 @@ export function ArenaLanes({
                 }
               }}
             >
+              {showStartTrail && (
+                <g pointerEvents="none">
+                  <line
+                    x1={0}
+                    y1={0}
+                    x2={startPoint.x - targetX}
+                    y2={startPoint.y - targetY}
+                    stroke={trailColors.stroke}
+                    strokeWidth={5}
+                    strokeLinecap="round"
+                    opacity={0.92}
+                  />
+                  <circle
+                    cx={0}
+                    cy={0}
+                    r={6}
+                    fill={trailColors.dotFill}
+                    stroke={trailColors.dotStroke}
+                    strokeWidth={3}
+                  />
+                </g>
+              )}
               <g transform={`rotate(${standings ? 0 : point.angle}) scale(${markerScale})`}>
               {l.you && charging > 0.02 && (
                 <g
@@ -383,28 +405,6 @@ export function ArenaLanes({
                   pointerEvents="none"
                   data-overtake-ripple="true"
                 />
-              )}
-              {showStartTrail && (
-                <g pointerEvents="none">
-                  <line
-                    x1={xx}
-                    y1={yy}
-                    x2={startPoint.x - targetX + xx}
-                    y2={startPoint.y - targetY + yy}
-                    stroke={trailColors.stroke}
-                    strokeWidth={5}
-                    strokeLinecap="round"
-                    opacity={0.92}
-                  />
-                  <circle
-                    cx={xx}
-                    cy={yy}
-                    r={6}
-                    fill={trailColors.dotFill}
-                    stroke={trailColors.dotStroke}
-                    strokeWidth={3}
-                  />
-                </g>
               )}
               {/* Local echoes own their animation; replay only moves the parent marker. */}
               {standings || !edge ? (

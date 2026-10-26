@@ -56,6 +56,7 @@ export function EventCarousel({
     },
     [],
   );
+  const tabPrefix = "club-event-tab";
   return (
     <section
       className="club-event-carousel"
@@ -68,10 +69,12 @@ export function EventCarousel({
           {events.map((event) => (
             <button
               key={event.id}
+              id={`${tabPrefix}-${event.id}`}
               type="button"
               role="tab"
               className="club-event-chip"
               aria-selected={event.id === value}
+              aria-controls={`${tabPrefix}-panel-${event.id}`}
               onClick={() => onChange(event.id)}
             >
               {event.label}
@@ -84,6 +87,7 @@ export function EventCarousel({
         <button
           type="button"
           className="club-event-chip is-register"
+          aria-label="Register for an event"
           onClick={onRegister}
         >
           Register
@@ -114,10 +118,13 @@ export function EventCarousel({
         {events.map((event, i) => (
           <div
             key={event.id}
+            id={`${tabPrefix}-panel-${event.id}`}
             className="club-event-page"
-            role="group"
+            role="tabpanel"
+            aria-labelledby={`${tabPrefix}-${event.id}`}
             aria-roledescription="slide"
             aria-label={`${event.label}, ${i + 1} of ${events.length}`}
+            aria-hidden={i !== index}
             inert={i !== index}
           >
             {i === index ? (

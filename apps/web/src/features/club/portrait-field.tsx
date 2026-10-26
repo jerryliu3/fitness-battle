@@ -106,7 +106,7 @@ export function PortraitField({
   } | null>(null);
   const moved = useRef(false);
   return (
-    <div className="club-perspective-group">
+    <div className={immersive ? "club-perspective-group is-immersive" : "club-perspective-group"}>
       <div className="club-board-status">
         <b>
           {scene.place} / {scene.fieldSize} <AppText as="small" role="caption" secondary>PLACE</AppText>
@@ -265,6 +265,9 @@ export function PortraitField({
           .sort((a, b) => a.y - b.y)
           .map((m, i) => {
             const id = `${prefix}-portrait-${i}`;
+            const markerTrail = m.trail
+              ? competeAthleteTrailColors(Boolean(m.you), Boolean(m.ghost))
+              : null;
             return (
               <g
                 key={m.id}
@@ -286,8 +289,8 @@ export function PortraitField({
                     cx={0}
                     cy={27}
                     r={7}
-                    fill="#ffffff"
-                    stroke={m.you ? "#f7c948" : "#98a6bc"}
+                    fill={markerTrail!.dotFill}
+                    stroke={markerTrail!.dotStroke}
                     strokeWidth={3}
                   />
                 ) : (

@@ -1,8 +1,10 @@
 import { AppText } from "../ui/section";
-import { type ReactNode } from "react";
-import { Pressable, StyleSheet, View } from "react-native";
+import { useEffect, useRef, useState, type ReactNode } from "react";
+import { Pressable, ScrollView, StyleSheet, View, type ScrollViewInstance } from "react-native";
 import { SHELL_COLORS as c } from "../theme";
+
 type ClubEvent = { id: string; label: string; badge?: string };
+
 export function EventCarousel({
   events,
   value,
@@ -16,6 +18,20 @@ export function EventCarousel({
   onRegister: () => void;
   children: ReactNode;
 }) {
+  const scroller = useRef<ScrollViewInstance>(null);
+  const fromScroll = useRef(false);
+  const [pageWidth, setPageWidth] = useState(0);
+  const index = Math.max(0, events.findIndex((event) => event.id === value));
+
+  useEffect(() => {
+    if (fromScroll.current) {
+      fromScroll.current = false;
+      return;
+    }
+    if (!pageWidth) return;
+    scroller.current?.scrollTo({ x: index * pageWidth, animated: true });
+  }, [index, pageWidth]);
+
   return (
     <View style={{ gap: 10 }}>
       <View style={s.chipsBar}>
@@ -45,19 +61,57 @@ export function EventCarousel({
         </Pressable>
       </View>
       <View
-        key={value}
-        style={{
-          borderTopWidth: 1,
-          borderBottomWidth: 1,
-          borderColor: c.line,
-          paddingVertical: 14,
+        onLayout={(e) => {
+          const next = e.nativeEvent.layout.width;
+          if (next > 0 && next !== pageWidth) setPageWidth(next);
         }}
       >
-        {children}
+        <ScrollView
+          ref={scroller}
+          horizontal
+          pagingEnabled
+          nestedScrollEnabled
+          showsHorizontalScrollIndicator={false}
+          accessibilityLabel="Swipe between registered events"
+          onMomentumScrollEnd={(e) => {
+            if (!pageWidth) return;
+            const next = Math.max(
+              0,
+              Math.min(events.length - 1, Math.round(e.nativeEvent.contentOffset.x / pageWidth)),
+            );
+            if (next !== index) {
+              fromScroll.current = true;
+              onChange(events[next]!.id);
+            }
+          }}
+        >
+          {events.map((event, i) => (
+            <View
+              key={event.id}
+              style={[
+                s.page,
+                pageWidth ? { width: pageWidth } : undefined,
+              ]}
+              accessibilityRole="tab"
+              accessibilityState={{ selected: i === index }}
+              accessibilityLabel={`${event.label}, ${i + 1} of ${events.length}`}
+            >
+              {i === index ? (
+                <View style={s.pageBody}>{children}</View>
+              ) : (
+                <View style={s.pageBody}>
+                  <AppText role="heading">{event.label}</AppText>
+                  <AppText role="body" secondary>Swipe to open this event</AppText>
+                </View>
+              )}
+            </View>
+          ))}
+        </ScrollView>
       </View>
     </View>
   );
 }
+
 const s = StyleSheet.create({
   chipsBar: {
     flexDirection: "row",
@@ -96,5 +150,13 @@ const s = StyleSheet.create({
     borderWidth: 1,
     borderStyle: "dashed",
     borderColor: c.line,
+  },
+  page: {
+    borderTopWidth: 1,
+    borderBottomWidth: 1,
+    borderColor: c.line,
+  },
+  pageBody: {
+    paddingVertical: 14,
   },
 });

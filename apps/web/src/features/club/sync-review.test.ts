@@ -47,3 +47,13 @@ it("locks activity selection while the save spinner runs", async () => {
   await act(async () => { await new Promise((resolve) => setTimeout(resolve, 950)); });
   expect(done).toHaveBeenCalledWith(activities.map(a => a.id));
 });
+it("disables activity detail navigation while saving", async () => {
+  const done = vi.fn();
+  await act(async () => { renderer = create(createElement(SyncReview, { state, receipt, onComplete: done })); });
+  const bar = renderer.root.findByProps({ role: "slider" });
+  const target = { clientWidth: 300, getBoundingClientRect: () => ({ left: 0 }), setPointerCapture() {}, releasePointerCapture() {}, hasPointerCapture: () => true };
+  await act(async () => { bar.props.onPointerDown({ currentTarget: target, clientX: 20, pointerId: 1 }); bar.props.onPointerUp({ currentTarget: target, clientX: 260, pointerId: 1 }); });
+  const detailButtons = renderer.root
+    .findAll((node) => node.type === "button" && typeof node.props.onClick === "function" && node.props.disabled === true);
+  expect(detailButtons.length).toBeGreaterThan(0);
+});
