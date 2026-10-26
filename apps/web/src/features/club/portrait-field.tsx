@@ -241,16 +241,16 @@ export function PortraitField({
                 <path
                   d={m.trail}
                   stroke={trail.glow}
-                  strokeWidth={14}
-                  opacity={0.22}
+                  strokeWidth={trail.glowStrokeWidth}
+                  opacity={trail.glowOpacity}
                   strokeLinecap="round"
                   fill="none"
                 />
                 <path
                   d={m.trail}
                   stroke={trail.stroke}
-                  strokeWidth={m.ghost ? 4 : 5}
-                  opacity={m.ghost ? 0.45 : 0.95}
+                  strokeWidth={trail.strokeWidth}
+                  opacity={trail.strokeOpacity}
                   strokeDasharray={m.ghost ? "6 8" : undefined}
                   strokeLinecap="round"
                   fill="none"

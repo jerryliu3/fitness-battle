@@ -121,6 +121,7 @@ export function portraitField(
         : lane.you
           ? "#f7c948"
           : "#c9d6e3",
+      // Portrait uses the caller's view window as-is (2D lanes clamp center before rendering).
       trail:
         outside || !competeFieldIncludesStart(view)
           ? ""

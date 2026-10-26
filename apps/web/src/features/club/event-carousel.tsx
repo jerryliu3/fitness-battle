@@ -1,8 +1,9 @@
 "use client";
 import { AppParagraph, AppHeading, StatusBadge } from "@/ui/section";
 
-import { useEffect, useRef, type ReactNode } from "react";
+import { useEffect, useId, useRef, type ReactNode } from "react";
 import { useReducedMotion } from "motion/react";
+import { competeEventCarouselPageIndex } from "@fitness-battle/shared";
 export type ClubEvent = { id: string; label: string; badge?: string };
 export function EventCarousel({
   events,
@@ -56,7 +57,7 @@ export function EventCarousel({
     },
     [],
   );
-  const tabPrefix = "club-event-tab";
+  const tabPrefix = useId().replace(/:/g, "");
   return (
     <section
       className="club-event-carousel"
@@ -101,12 +102,10 @@ export function EventCarousel({
           timer.current = setTimeout(() => {
             const host = scroller.current;
             if (!host?.clientWidth) return;
-            const next = Math.max(
-              0,
-              Math.min(
-                events.length - 1,
-                Math.round(host.scrollLeft / host.clientWidth),
-              ),
+            const next = competeEventCarouselPageIndex(
+              host.scrollLeft,
+              host.clientWidth,
+              events.length,
             );
             if (next !== index) {
               fromScroll.current = true;

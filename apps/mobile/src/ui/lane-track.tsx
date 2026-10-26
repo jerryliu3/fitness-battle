@@ -13,6 +13,7 @@ import {
   orderedArenaLanes,
   competeAthleteTrailColors,
   competeFieldIncludesStart,
+  competeStartTrailVector,
   fieldLaneMarkerScale,
   type ArenaLane,
   type ArenaOvertakeFrame,
@@ -244,9 +245,12 @@ function LaneTrackContent({
               const showStartTrail =
                 !course.oval &&
                 !edge &&
-                value > 0.0001 &&
+                value > 0.0001 && // at the start line the athlete sits on the marker; no connector
                 competeFieldIncludesStart(v);
               const trailColors = competeAthleteTrailColors(Boolean(l.you), Boolean(l.ghost));
+              const startTrail = showStartTrail
+                ? competeStartTrailVector(xx, yy, startPoint.x, startPoint.y)
+                : null;
               const headHalf = 29 * fieldLaneMarkerScale(Boolean(l.you));
               const rank=1+live.filter(peer=>peer.value>value+.000001).length;
               const pennantWidth=146, visibleLeft=previous.current?.scroll??0;
@@ -254,17 +258,17 @@ function LaneTrackContent({
               const pennantY=athletePennantOffset(yy,course.point(overtakeFrame?.youValue??me?.values[index]??0,Math.max(0,ordered.findIndex(peer=>peer.you)),0,true).y,l.you,height);
               return (
                 <G key={l.id}>
-                  {showStartTrail ? (
+                  {startTrail ? (
                     <G pointerEvents="none">
                       <Line
                         x1={xx}
                         y1={yy}
-                        x2={startPoint.x}
-                        y2={startPoint.y}
+                        x2={xx + startTrail.dx}
+                        y2={yy + startTrail.dy}
                         stroke={trailColors.stroke}
-                        strokeWidth={5}
+                        strokeWidth={trailColors.strokeWidth}
                         strokeLinecap="round"
-                        opacity={0.92}
+                        opacity={trailColors.strokeOpacity}
                       />
                       <Circle
                         cx={xx}

@@ -16,6 +16,7 @@ import {
   polishedLaneScale,
   competeAthleteTrailColors,
   competeFieldIncludesStart,
+  competeStartTrailVector,
   fieldLaneMarkerScale,
   fieldCourse, fieldCourseScene, fieldLap, defaultFieldAppearance, type FieldAppearance,
   selfLaneLabel,
@@ -320,9 +321,12 @@ export function ArenaLanes({
             !course.oval &&
             !standings &&
             !edge &&
-            l.value > 0.0001 &&
+            l.value > 0.0001 && // at the start line the athlete sits on the marker; no connector
             competeFieldIncludesStart(effectiveView);
           const trailColors = competeAthleteTrailColors(Boolean(l.you), Boolean(l.ghost));
+          const startTrail = showStartTrail
+            ? competeStartTrailVector(0, 0, startPoint.x - targetX, startPoint.y - targetY)
+            : null;
           const markerScale = standings || edge ? 1 : course.markerScale;
           const xx = 0, yy = 0;
           const active = selected === l.id || l.you;
@@ -356,17 +360,17 @@ export function ArenaLanes({
                 }
               }}
             >
-              {showStartTrail && (
+              {startTrail && (
                 <g pointerEvents="none">
                   <line
                     x1={0}
                     y1={0}
-                    x2={startPoint.x - targetX}
-                    y2={startPoint.y - targetY}
+                    x2={startTrail.dx}
+                    y2={startTrail.dy}
                     stroke={trailColors.stroke}
-                    strokeWidth={5}
+                    strokeWidth={trailColors.strokeWidth}
                     strokeLinecap="round"
-                    opacity={0.92}
+                    opacity={trailColors.strokeOpacity}
                   />
                   <circle
                     cx={0}

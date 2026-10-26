@@ -20,7 +20,7 @@ it("covers the shell, exposes activity maps/details, and confirms only the selec
   await act(async () => renderer.root.findByType("input").props.onChange({ target: { checked: false } }));
   const bar = renderer.root.findByProps({ role: "slider" });
   await act(async () => { bar.props.onKeyDown({ key: "Enter", preventDefault() {} }); });
-  await act(async () => { await new Promise((resolve) => setTimeout(resolve, 950)); });
+  await act(async () => { await new Promise((resolve) => setTimeout(resolve, 1000)); });
   expect(done).toHaveBeenCalledTimes(1);
   expect(done).toHaveBeenCalledWith([]);
 });
@@ -33,7 +33,7 @@ it("requires a full deliberate swipe and resets a short drag", async () => {
   expect(done).not.toHaveBeenCalled();
   expect(bar.props["aria-valuenow"]).toBe(0);
   await act(async () => { bar.props.onPointerDown({ currentTarget: target, clientX: 20, pointerId: 1 }); bar.props.onPointerUp({ currentTarget: target, clientX: 260, pointerId: 1 }); });
-  await act(async () => { await new Promise((resolve) => setTimeout(resolve, 950)); });
+  await act(async () => { await new Promise((resolve) => setTimeout(resolve, 1000)); });
   expect(done).toHaveBeenCalledWith(activities.map(a => a.id));
 });
 it("locks activity selection while the save spinner runs", async () => {
@@ -44,7 +44,7 @@ it("locks activity selection while the save spinner runs", async () => {
   await act(async () => { bar.props.onPointerDown({ currentTarget: target, clientX: 20, pointerId: 1 }); bar.props.onPointerUp({ currentTarget: target, clientX: 260, pointerId: 1 }); });
   const checkbox = renderer.root.findByType("input");
   await act(async () => { checkbox.props.onChange({ target: { checked: false } }); });
-  await act(async () => { await new Promise((resolve) => setTimeout(resolve, 950)); });
+  await act(async () => { await new Promise((resolve) => setTimeout(resolve, 1000)); });
   expect(done).toHaveBeenCalledWith(activities.map(a => a.id));
 });
 it("disables activity detail navigation while saving", async () => {

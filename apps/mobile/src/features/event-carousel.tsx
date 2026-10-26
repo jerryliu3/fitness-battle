@@ -1,6 +1,14 @@
 import { AppText } from "../ui/section";
-import { useEffect, useRef, useState, type ReactNode } from "react";
-import { Pressable, ScrollView, StyleSheet, View, type ScrollViewInstance } from "react-native";
+import { competeEventCarouselPageIndex } from "@fitness-battle/shared";
+import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
+import {
+  Dimensions,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  View,
+  type ScrollViewInstance,
+} from "react-native";
 import { SHELL_COLORS as c } from "../theme";
 
 type ClubEvent = { id: string; label: string; badge?: string };
@@ -20,17 +28,40 @@ export function EventCarousel({
 }) {
   const scroller = useRef<ScrollViewInstance>(null);
   const fromScroll = useRef(false);
-  const [pageWidth, setPageWidth] = useState(0);
+  const [pageWidth, setPageWidth] = useState(() => Dimensions.get("window").width);
   const index = Math.max(0, events.findIndex((event) => event.id === value));
+
+  const syncScroll = useCallback(
+    (animated: boolean) => {
+      if (!pageWidth) return;
+      scroller.current?.scrollTo({ x: index * pageWidth, animated });
+    },
+    [index, pageWidth],
+  );
 
   useEffect(() => {
     if (fromScroll.current) {
       fromScroll.current = false;
       return;
     }
-    if (!pageWidth) return;
-    scroller.current?.scrollTo({ x: index * pageWidth, animated: true });
-  }, [index, pageWidth]);
+    syncScroll(true);
+  }, [syncScroll]);
+
+  useEffect(() => {
+    syncScroll(false);
+  }, [pageWidth, syncScroll]);
+
+  const commitPage = useCallback(
+    (offsetX: number) => {
+      if (!pageWidth) return;
+      const next = competeEventCarouselPageIndex(offsetX, pageWidth, events.length);
+      if (next !== index) {
+        fromScroll.current = true;
+        onChange(events[next]!.id);
+      }
+    },
+    [events, index, onChange, pageWidth],
+  );
 
   return (
     <View style={{ gap: 10 }}>
@@ -63,7 +94,7 @@ export function EventCarousel({
       <View
         onLayout={(e) => {
           const next = e.nativeEvent.layout.width;
-          if (next > 0 && next !== pageWidth) setPageWidth(next);
+          if (next > 0 && Math.abs(next - pageWidth) > 0.5) setPageWidth(next);
         }}
       >
         <ScrollView
@@ -73,27 +104,15 @@ export function EventCarousel({
           nestedScrollEnabled
           showsHorizontalScrollIndicator={false}
           accessibilityLabel="Swipe between registered events"
-          onMomentumScrollEnd={(e) => {
-            if (!pageWidth) return;
-            const next = Math.max(
-              0,
-              Math.min(events.length - 1, Math.round(e.nativeEvent.contentOffset.x / pageWidth)),
-            );
-            if (next !== index) {
-              fromScroll.current = true;
-              onChange(events[next]!.id);
-            }
-          }}
+          onMomentumScrollEnd={(e) => commitPage(e.nativeEvent.contentOffset.x)}
+          onScrollEndDrag={(e) => commitPage(e.nativeEvent.contentOffset.x)}
         >
           {events.map((event, i) => (
             <View
               key={event.id}
-              style={[
-                s.page,
-                pageWidth ? { width: pageWidth } : undefined,
-              ]}
-              accessibilityRole="tab"
-              accessibilityState={{ selected: i === index }}
+              style={[s.page, { width: pageWidth }]}
+              accessibilityRole="none"
+              importantForAccessibility={i === index ? "yes" : "no-hide-descendants"}
               accessibilityLabel={`${event.label}, ${i + 1} of ${events.length}`}
             >
               {i === index ? (
