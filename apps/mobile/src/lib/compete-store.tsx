@@ -309,7 +309,6 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
         } catch {
           if (alive) {
             setLoadStatus("failed");
-            markLoadReady(true);
             setStandingsStale(true);
             setSaveError(
               "Your account could not load. Refresh your account before making changes.",
@@ -345,7 +344,6 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
       if (alive) {
         loadedOwnerRef.current = owner;
         setLoadStatus("failed");
-        markLoadReady(true);
         setState(
           hydrateAccountIdentity(freshState(), authRef.current.user, false),
         );
@@ -908,7 +906,7 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
   return (
     <CompeteContext.Provider
       value={{
-        canWrite: Boolean(state) && (loadStatus !== "loading" || debugActive) && !auth.loading,
+        canWrite: Boolean(state) && (loadStatus === "ready" || loadStatus === "local" || debugActive) && !auth.loading,
         loadStatus,
         state,
         accountKey: accountRef.current ?? "device",
