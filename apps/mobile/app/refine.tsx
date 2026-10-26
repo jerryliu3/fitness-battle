@@ -29,12 +29,26 @@ export default function RefinementHub() {
           language. Each direction is a full screen with working detail
           navigation and fictional data.
         </T>
+        <Surface style={{ gap: 12, backgroundColor: c.soft }}>
+          <T role="heading">One more direction.</T>
+          <T>
+            Field-first competition, a connected training portfolio, shared crew
+            moments and an earned athlete passport.
+          </T>
+          {["compete", "progress", "crew", "profile"].map((tab) => (
+            <Action
+              key={tab}
+              label={`Follow-up · ${tab[0]!.toUpperCase()}${tab.slice(1)}`}
+              onPress={() => router.push(`/refine-next?tab=${tab}` as "/today")}
+            />
+          ))}
+        </Surface>
         {[
           {
             id: "compete",
             title: "Compete",
             count: "3 directions",
-            copy: "Event picker, swipeable meets and sport tabs.",
+            copy: "Three field-first directions with the actual 2D map and 3D renderer.",
           },
           {
             id: "progress",

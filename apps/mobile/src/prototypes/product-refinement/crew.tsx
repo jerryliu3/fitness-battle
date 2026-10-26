@@ -340,7 +340,7 @@ function CrewRoot({
     </>
   );
 }
-function SessionTicket({ id, going }: { id: string; going: boolean }) {
+export function SessionTicket({ id, going }: { id: string; going: boolean }) {
   const nav = useStudyNav();
   const s = crewSessions.find((s) => s.id === id)!;
   return (
@@ -391,7 +391,7 @@ function SessionTicket({ id, going }: { id: string; going: boolean }) {
     </Tap>
   );
 }
-function CrewDetail({
+export function CrewDetail({
   page,
   going,
   toggle,
