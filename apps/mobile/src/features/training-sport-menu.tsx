@@ -1,8 +1,11 @@
 import { AppText } from "../ui/section";
-import { FocusSheet, f } from "../ui/focus";
 import { SHELL_COLORS as c } from "../theme";
-import { useState } from "react";
-import { Pressable, View } from "react-native";
+import {
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  View,
+} from "react-native";
 import {
   SPORTS,
   defaultTrainingSports,
@@ -11,6 +14,9 @@ import {
   trainingSportFilterLabel,
   type SportId,
 } from "@fitness-battle/shared";
+import { f } from "../ui/focus";
+import { playCue } from "../lib/haptics";
+import { useAnchoredMenu, AnchoredMenu } from "../ui/anchored-menu";
 
 export function TrainingSportMenu({
   value,
@@ -19,62 +25,89 @@ export function TrainingSportMenu({
   value: readonly SportId[];
   onChange: (sports: SportId[]) => void;
 }) {
-  const [open, setOpen] = useState(false);
+  const { open, close, toggle, anchorRef, menuLayout } = useAnchoredMenu({
+    minWidth: 190,
+    estimatedHeight: Math.min(280, (SPORTS.length + 1) * 44 + 16),
+  });
   const label = trainingSportFilterLabel(value);
   const allSelected = isAllTrainingSports(value);
 
   return (
     <>
-      <Pressable
-        accessibilityRole="button"
-        accessibilityState={{ expanded: open }}
-        onPress={() => setOpen(true)}
-        style={[f.chip, allSelected && f.chipActive, { flexDirection: "row", gap: 4 }]}
+      <View ref={anchorRef} collapsable={false}>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={`Training sports filter: ${label}`}
+          accessibilityState={{ expanded: open }}
+          onPress={toggle}
+          style={[f.chip, allSelected && f.chipActive, { flexDirection: "row", gap: 4 }]}
+        >
+          <AppText role="caption" secondary>{label}</AppText>
+          <AppText role="caption" secondary aria-hidden>
+            ▾
+          </AppText>
+        </Pressable>
+      </View>
+      <AnchoredMenu
+        open={open}
+        onClose={close}
+        menuLayout={menuLayout}
+        accessibilityLabel="Close sports menu"
       >
-        <AppText role="caption" secondary>{label}</AppText>
-        <AppText role="caption" secondary aria-hidden>
-          ▾
-        </AppText>
-      </Pressable>
-      <FocusSheet open={open} title="Sports" onClose={() => setOpen(false)}>
-        <View style={{ gap: 12 }}>
+        <ScrollView bounces={false} style={{ maxHeight: 280 }}>
           <Pressable
             accessibilityRole="button"
-            onPress={() => onChange(defaultTrainingSports())}
-            style={[f.chip, isAllTrainingSports(value) && f.chipActive]}
+            accessibilityLabel="All sports"
+            style={[s.option, allSelected && s.optionSelected]}
+            onPress={() => {
+              void playCue("selection");
+              onChange(defaultTrainingSports());
+              close();
+            }}
           >
-            <AppText role="label">All sports</AppText>
+            <AppText role={allSelected ? "label" : "body"}>
+              All sports
+            </AppText>
+            {allSelected ? <AppText role="label">✓</AppText> : null}
           </Pressable>
           {SPORTS.map((sport) => {
-            const checked = value.includes(sport.id);
+            const checked = !allSelected && value.includes(sport.id);
             return (
               <Pressable
                 key={sport.id}
-                accessibilityRole="checkbox"
-                accessibilityState={{ checked }}
-                onPress={() => onChange(toggleTrainingSports(value, sport.id))}
-                style={[f.row, { minHeight: 44 }]}
+                accessibilityRole="button"
+                accessibilityLabel={sport.name}
+                accessibilityState={{ selected: checked }}
+                style={[s.option, checked && s.optionSelected]}
+                onPress={() => {
+                  void playCue("selection");
+                  onChange(toggleTrainingSports(value, sport.id));
+                }}
               >
-                <View
-                  style={{
-                    width: 22,
-                    height: 22,
-                    borderRadius: 6,
-                    borderWidth: 1,
-                    borderColor: checked ? c.plum : c.line,
-                    backgroundColor: checked ? c.soft : "transparent",
-                    alignItems: "center",
-                    justifyContent: "center",
-                  }}
-                >
-                  {checked ? <AppText role="caption">✓</AppText> : null}
-                </View>
-                <AppText role="label">{sport.name}</AppText>
+                <AppText role={checked ? "label" : "body"}>
+                  {sport.name}
+                </AppText>
+                {checked ? <AppText role="label">✓</AppText> : null}
               </Pressable>
             );
           })}
-        </View>
-      </FocusSheet>
+        </ScrollView>
+      </AnchoredMenu>
     </>
   );
 }
+
+const s = StyleSheet.create({
+  option: {
+    height: 44,
+    paddingHorizontal: 16,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: c.line,
+  },
+  optionSelected: {
+    backgroundColor: c.soft,
+  },
+});

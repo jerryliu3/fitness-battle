@@ -1,3 +1,4 @@
+import { FieldOverlayGroup, FieldOverlayView } from "./field-overlay-motion";
 import { chartTextProps, textStyle  } from "./section";
 import { useEffect, useId, useMemo, useRef, useState, type ComponentRef, type MutableRefObject } from "react";
 import {
@@ -48,6 +49,7 @@ export function PortraitField({
   onSelect,
   height = 560,
   fullscreen = false,
+  overlaysHidden = false,
   onExpand,
   onToggleDimension,
   laneAnchor,
@@ -60,6 +62,7 @@ export function PortraitField({
   onGestureStart?: () => void;
   height?: number;
   fullscreen?: boolean;
+  overlaysHidden?: boolean;
   onExpand?: () => void;
   onToggleDimension?: () => void;
   laneAnchor?: MutableRefObject<number>;
@@ -164,7 +167,7 @@ export function PortraitField({
   }, [selectedId, focusRequest, scene.baseFocus, scene.ordered, animateSelection]);
   return (
     <View style={{ gap: 10 }}>
-      <View style={s.status} pointerEvents="none">
+      <FieldOverlayView hidden={overlaysHidden} style={s.status} pointerEvents="none">
         <Text style={[s.white, { color: "#142b3b" }]}>
           {scene.place} / {scene.fieldSize} PLACE
         </Text>
@@ -173,7 +176,7 @@ export function PortraitField({
         >
           {portraitFieldGap(scene.nextGap, unit)}
         </Text>
-      </View>
+      </FieldOverlayView>
     <View
       style={[s.board, { height, borderRadius: fullscreen ? 0 : 20 }]}
       onLayout={(e) => {
@@ -329,6 +332,7 @@ export function PortraitField({
                         </SvgText>
                       </>
                     )}
+                    <FieldOverlayGroup hidden={overlaysHidden}>
                     {m.you ? (
                       <>
                         <Rect
@@ -373,6 +377,7 @@ export function PortraitField({
                         {m.gap.toFixed(unit === "pts" ? 0 : 2)} {unit}
                       </SvgText>
                     ) : null}
+                    </FieldOverlayGroup>
                     </G>
                   </G>
                 );
@@ -435,17 +440,17 @@ export function PortraitField({
           ) : null}
         </View>
       ) : null}
-      <View pointerEvents="box-none" style={{ position: "absolute", top: 12, left: 12, right: 60, gap: 6 }}>
+      <FieldOverlayView hidden={overlaysHidden} pointerEvents="box-none" style={{ position: "absolute", top: 12, left: 12, right: 60, gap: 6 }}>
         {!fullscreen && <Pressable style={[s.controlRow, { alignSelf: "flex-start", minHeight: 44, paddingHorizontal: 16 }]} accessibilityRole="button" accessibilityLabel={exploring ? "Finish exploring field" : "Explore field in two directions"} accessibilityState={{ selected: exploring }} onPress={() => setExploring(!exploring)}><Text style={s.white}>{exploring ? "Done" : "Explore"}</Text></Pressable>}
         <View pointerEvents="none"><Text style={[s.white, textStyle("caption")]}>{exploring || fullscreen ? "Drag to move · Pinch to zoom" : "Swipe across lanes · Explore to move forward"}</Text></View>
-      </View>
+      </FieldOverlayView>
     </View>
       <View style={{ gap: 6 }}>
         {(["↑", "↓"] as const).map(direction => {
           const peers = scene.outside.filter(m => m.direction === direction && !m.ghost);
           if (!peers.length) return null;
           const nearest = peers.reduce((a,b) => Math.abs(a.value-view.center) < Math.abs(b.value-view.center) ? a : b);
-          return <Pressable key={direction} style={[s.controlRow, { minHeight: 44, paddingHorizontal: 12 }]} accessibilityRole="button" onPress={() => { onSelect(nearest.id); }}><Text style={[s.white, textStyle("caption")]}>{direction} {peers.length} {direction === "↑" ? "ahead" : "behind"} · {nearest.name.split(" ")[0]} {nearest.you ? "your position" : `${Math.abs(nearest.gap).toFixed(unit === "pts" ? 0 : 2)} ${unit} ${nearest.gap >= 0 ? "ahead of you" : "behind you"}`}</Text></Pressable>;
+          return <Pressable key={direction} style={[s.controlRow, { minHeight: 44, paddingHorizontal: 12 }]} accessibilityRole="button" onPress={() => { onSelect(nearest.id); }}><Text style={[s.white, textStyle("caption")]}>{direction} {peers.length} {direction === "↑" ? "ahead" : "behind"} · {nearest.name.split(" ")[0]} {`${nearest.edgeGap.toFixed(1)} ${unit} from view`}</Text></Pressable>;
         })}
       </View>
       <View style={s.controls}>

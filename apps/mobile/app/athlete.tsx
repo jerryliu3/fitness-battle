@@ -607,25 +607,27 @@ export default function AthleteScreen() {
             </>
           ) : (
             <>
-              <View style={[f.row, { flexWrap: "wrap" }]}>
-                <AppText role="field" >Units</AppText>
-                <FocusSegments label="Unit system" value={state.units} options={[{ value: "us", label: "Imperial" }, { value: "metric", label: "Metric" }]}
-                  onChange={units => dispatch({ type: "set-units", units })} />
+              <View style={[f.row, { minHeight: 48, alignItems: "center", justifyContent: "space-between" }]}>
+                <AppText role="label">Units</AppText>
+                <View style={{ width: 170 }}>
+                  <FocusSegments label="Unit system" value={state.units} options={[{ value: "us", label: "Imperial" }, { value: "metric", label: "Metric" }]}
+                    onChange={units => dispatch({ type: "set-units", units })} />
+                </View>
               </View>
-              <View style={[f.row, { flexWrap: "wrap" }]}>
-                <AppText role="field" >Primary sport</AppText>
+              <View style={[f.row, { minHeight: 48, alignItems: "center", justifyContent: "space-between" }]}>
+                <AppText role="label">Primary sport</AppText>
                 <ChoicePicker label="Primary sport" value={state.primary} options={SPORTS.map(s => ({ value: s.id, label: s.name }))}
                   onChange={sport => dispatch({ type: "set-primary", sport })} />
               </View>
-              <View style={[f.row, { flexWrap: "wrap" }]}>
+              <View style={[f.row, { minHeight: 48, alignItems: "center" }]}>
                 <View style={f.grow}><AppText role="label" >Freeze this week</AppText><AppText role="body" secondary >{state.freezesLeft} remaining</AppText></View>
-                <Switch style={{ alignSelf: "center", marginVertical: 0 }} trackColor={{ false: "#b9c5ca", true: SHELL_COLORS.fieldTeal }} thumbColor="#ffffff" accessibilityLabel="Freeze this week" value={frozen} disabled={!frozen && state.freezesLeft <= 0}
+                <Switch style={{ alignSelf: "center", marginVertical: 0 }} trackColor={{ false: SHELL_COLORS.line, true: SHELL_COLORS.ink }} thumbColor="#ffffff" ios_backgroundColor={SHELL_COLORS.line} accessibilityLabel="Freeze this week" value={frozen} disabled={!frozen && state.freezesLeft <= 0}
                   onValueChange={enabled => enabled ? setConfirmFreeze(true) : dispatch({ type: "unfreeze" })} />
               </View>
               <SectionHeader title="Active Sports"/>
               {SPORTS.map(sport => <View key={sport.id} style={[f.row, { minHeight: 64, alignItems: "center", borderBottomWidth: 1, borderBottomColor: SHELL_COLORS.line }]}>
                 <View style={[f.row, f.grow, { justifyContent: "flex-start", gap: 10 }]}><SportIcon sport={sport.id} /><AppText role="label" >{sport.name}</AppText></View>
-                <Switch style={{ alignSelf: "center", marginVertical: 0 }} trackColor={{ false: "#b9c5ca", true: SHELL_COLORS.fieldTeal }} thumbColor="#ffffff" accessibilityLabel={`Toggle ${sport.name} active status`}
+                <Switch style={{ alignSelf: "center", marginVertical: 0 }} trackColor={{ false: SHELL_COLORS.line, true: SHELL_COLORS.ink }} thumbColor="#ffffff" ios_backgroundColor={SHELL_COLORS.line} accessibilityLabel={`Toggle ${sport.name} active status`}
                   value={Boolean(state.ratings.find(r => r.sport === sport.id)?.optedIn)}
                   onValueChange={enabled => dispatch(enabled ? { type: "opt-in", sport: sport.id, crewBoard: null } : { type: "opt-out", sport: sport.id })} />
               </View>)}

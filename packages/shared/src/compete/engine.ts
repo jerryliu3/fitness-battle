@@ -1493,7 +1493,13 @@ export function formatDistanceM(
 }
 
 export function formatEffort(value: number): string {
-  return Number.isFinite(value) ? value.toLocaleString("en-US", { maximumFractionDigits: 1 }) : "—";
+  return Number.isFinite(value)
+    ? value.toLocaleString("en-US", { useGrouping: false, maximumFractionDigits: 1 })
+    : "—";
+}
+
+export function formatEffortScore(score: number): string {
+  return Number.isFinite(score) ? String(Math.round(score)) : "—";
 }
 
 export function formatNoticeUnits(

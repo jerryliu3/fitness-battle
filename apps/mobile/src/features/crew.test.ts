@@ -83,10 +83,12 @@ vi.mock("../ui/focus", () => ({
 }));
 vi.mock("./crew-relay",()=>({CrewRelay:"CrewRelay"}));
 import { CrewHub } from "./crew";
+import { clearApiReads } from "../lib/api-read-cache";
 let renderer: ReactTestRenderer;
 afterEach(async () => {
   if (renderer) await act(async () => renderer.unmount());
   mock.data = null;
+  clearApiReads();
   vi.unstubAllGlobals();
 });
 describe("crew empty states", () => {
@@ -111,15 +113,10 @@ describe("crew empty states", () => {
       ).toBe(false);
       const entry = buttons.find(
         (button) =>
-          button.props.label ===
-          (live ? "Create or join a crew" : "View account"),
+          button.props.label === "Create or join a crew",
       )!;
       await act(async () => entry.props.onPress());
-      if (live)
-        expect(renderer.root.findByType("Sheet" as never).props.open).toBe(
-          true,
-        );
-      else expect(mock.navigate).toHaveBeenCalledWith("/athlete");
+      expect(renderer.root.findByType("Sheet" as never).props.open).toBe(true);
     },
   );
 });

@@ -7,7 +7,7 @@ import IconHome from "@tabler/icons-react-native/IconHome";
 import IconFlag from "@tabler/icons-react-native/IconFlag";
 import IconChartLine from "@tabler/icons-react-native/IconChartLine";
 import IconUsers from "@tabler/icons-react-native/IconUsers";
-import IconDownload from "@tabler/icons-react-native/IconDownload";
+import IconRefresh from "@tabler/icons-react-native/IconRefresh";
 import IconArrowUpRight from "@tabler/icons-react-native/IconArrowUpRight";
 import IconArrowLeft from "@tabler/icons-react-native/IconArrowLeft";
 import IconPlus from "@tabler/icons-react-native/IconPlus";
@@ -24,7 +24,7 @@ import { SHELL_COLORS as c } from "../theme";
 const icons = {
   running: IconRun, walking: IconWalk, cycling: IconBike, strength: IconBarbell,
   person: IconUser, home: IconHome, compete: IconFlag, progress: IconChartLine, crew: IconUsers,
-  sync: IconDownload, back: IconArrowLeft, plus: IconPlus, expand: IconMaximize, edit: IconPencil,
+  sync: IconRefresh, back: IconArrowLeft, plus: IconPlus, expand: IconMaximize, edit: IconPencil,
   preferences: IconAdjustmentsHorizontal, notifications: IconBell, scoring: IconChartBar,
   external: IconArrowUpRight, chevron: IconChevronRight, flame: IconFlameFilled,
 };

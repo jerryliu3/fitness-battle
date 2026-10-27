@@ -79,6 +79,7 @@ export function arenaPosition(value: number, view: ArenaViewWindow) {
   const bounds = arenaWindow(view.center, view.span);
   return {
     fraction: Math.max(0, Math.min(1, (bounds.max - value) / bounds.span)),
+    distanceOutside: Math.max(0, value - bounds.max, bounds.min - value),
     edge:
       value > bounds.max
         ? ("ahead" as const)

@@ -54,6 +54,22 @@ it("uses the replay position immediately, without restarting marker easing", asy
   expect(marker.props.transform).toBe(`translate(${point.x} ${point.y})`);
   expect(marker.props.animate).toBeUndefined();
 });
+it("keeps the web field over a quarter wide while longitudinal distances keep zooming out", async () => {
+  const overrides = {
+    lanes: Array.from({ length: 7 }, (_, i) => ({ id: String(i), name: `Peer ${i}`, initials: "P", value: 485 + i * .1, you: i === 3 })),
+    selected: "3", playback: true,
+    appearance: { ground: "straight" as const, edges: "club" as const },
+  };
+  await mount({ ...overrides, view: { center: 485, span: 12 } });
+  const positions = () => renderer.root.findAllByType("g").filter(n => n.props["data-athlete"]).map(n => (n.props.transform.match(/-?\d+(?:\.\d+)?/g) as string[]).map(Number)).sort((a, b) => a[0]! - b[0]!);
+  const a = positions();
+  expect(a).toHaveLength(7);
+  expect(a.at(-1)![0]! - a[0]![0]!).toBeCloseTo(390 / 3.9);
+  await act(async () => renderer.update(createElement(ArenaLanes, { ...props, ...overrides, view: { center: 485, span: 24 } })));
+  const b = positions();
+  expect(b.map(p => p[0])).toEqual(a.map(p => p[0]));
+  expect((b.at(-1)![1]! - b[0]![1]!) / (a.at(-1)![1]! - a[0]![1]!)).toBeCloseTo(.5);
+});
 it("coalesces pointer moves, flushes the last drag position, and cancels on unmount", async () => {
   const onPan = vi.fn();
   await mount({ onPan });

@@ -123,6 +123,7 @@ export function portraitField(
       outside,
       direction: delta > 0 ? "↑" : "↓",
       gap: lane.value - (me?.value ?? 0),
+      edgeGap: Math.max(0, lane.value - max, min - lane.value),
       scale: (lane.ghost ? 0.85 : 1) * Math.max(0.6, p.perspective),
       color: lane.ghost
         ? "#c9d6e3"

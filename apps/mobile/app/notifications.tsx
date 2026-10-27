@@ -222,7 +222,8 @@ export default function NotificationsScreen() {
               disabled={busy}
               onValueChange={(value) => void toggleMaster(value)}
               trackColor={{ false: colors.line, true: colors.ink }}
-              thumbColor={prefs.enabled ? colors.lime : "#f4f4f5"}
+              thumbColor="#ffffff"
+              ios_backgroundColor={colors.line}
             />
           </View>
 
@@ -240,9 +241,8 @@ export default function NotificationsScreen() {
                   void toggleCategory(category.id, value)
                 }
                 trackColor={{ false: colors.line, true: colors.ink }}
-                thumbColor={
-                  prefs.categories[category.id] ? colors.lime : "#f4f4f5"
-                }
+                thumbColor="#ffffff"
+                ios_backgroundColor={colors.line}
               />
             </View>
           ))}

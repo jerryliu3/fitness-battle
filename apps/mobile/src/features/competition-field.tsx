@@ -5,9 +5,11 @@ import { UserAvatar } from "../ui/user-avatar";
 import { textStyle } from "../ui/section";
 import { RankBadge } from "../ui/rank-badge";
 import { useFieldFlight } from "../ui/use-field-flight";
+import { FieldOverlayView, SlidingFieldPanel } from "../ui/field-overlay-motion";
 import { PortraitField } from "../ui/portrait-field";
 import {
   orderedArenaLanes,
+  createFieldOverlayHold,
   arenaFieldHigh,
   clampCourseCenter,
   competeNow,
@@ -25,7 +27,7 @@ import {
 } from "@fitness-battle/shared";
 import { usePathname } from "expo-router";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Modal, Pressable, ScrollView, Text, View, useWindowDimensions } from "react-native";
+import { AppState, Modal, Pressable, ScrollView, Text, View, useWindowDimensions } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { IconButton } from "../ui/icon-button";
 import Svg from "react-native-svg";
@@ -34,7 +36,7 @@ import { playCue } from "../lib/haptics";
 import { SHELL_COLORS as c } from "../theme";
 import { f } from "../ui/focus";
 import { LaneTrack, type LaneAnchor } from "../ui/lane-track";
-import { useFieldAppearance } from "../ui/field-course";
+import { FieldOverview, useFieldAppearance } from "../ui/field-course";
 import { PolishedRacer } from "../ui/polished-racer";
 import { useReducedMotion } from "../ui/use-reduced-motion";
 
@@ -47,7 +49,7 @@ export function CompetitionField({
 }) {
   const { state, accountKey } = useCompeteStore();
   const pathname = usePathname();
-  const [appearance] = useFieldAppearance(accountKey, sport);
+  const [appearance, setAppearance] = useFieldAppearance(accountKey, sport);
   const isFocused = shellTabFromPath(pathname)?.id === "arena";
   const [sceneDimension, setSceneDimension] = useState<"2d" | "3d">("2d");
   const [courseOpen, setCourseOpen] = useState(false);
@@ -59,6 +61,19 @@ export function CompetitionField({
   };
   const [standingsOpen, setStandingsOpen] = useState(false);
   const [expanded, setExpanded] = useState(false);
+  const [intervalsCollapsed, setIntervalsCollapsed] = useState(false);
+  const [spotlightCollapsed, setSpotlightCollapsed] = useState(false);
+  const [overlaysHidden, setOverlaysHidden] = useState(false);
+  const hold = useRef<ReturnType<typeof createFieldOverlayHold> | null>(null);
+  if (!hold.current) hold.current = createFieldOverlayHold(setOverlaysHidden);
+  useEffect(() => {
+    hold.current?.reset();
+    if (!expanded || !isFocused) return;
+    const subscription = AppState.addEventListener("change", status => {
+      if (status !== "active") hold.current?.reset();
+    });
+    return () => { subscription.remove(); hold.current?.reset(); };
+  }, [expanded, isFocused, sceneDimension]);
   const toggleDimension = () => {
     chooseView(sceneDimension === "2d" ? "3d" : "2d");
   };
@@ -164,7 +179,19 @@ export function CompetitionField({
   };
 
   const fieldContent = (
-    <View>
+    <View
+      onTouchStart={event => {
+        if (!expanded) return;
+        const { pageX, pageY, touches } = event.nativeEvent;
+        hold.current?.start(pageX, pageY, touches.length);
+      }}
+      onTouchMove={event => {
+        const { pageX, pageY, touches } = event.nativeEvent;
+        hold.current?.move(pageX, pageY, touches.length);
+      }}
+      onTouchEnd={() => hold.current?.end()}
+      onTouchCancel={() => hold.current?.end()}
+    >
       {sceneDimension === "3d" && isFocused && !courseOpen ? (
         <PortraitField
           lanes={arena.lanes.map((l) => ({
@@ -183,10 +210,11 @@ export function CompetitionField({
           onPan={panTo}
           height={sceneHeight}
           fullscreen={expanded}
+          overlaysHidden={overlaysHidden}
           onExpand={expandField}
           onToggleDimension={toggleDimension}
           laneAnchor={portraitAnchor}
-          onSelect={selectAthlete}
+          onSelect={id => { if (!hold.current?.suppressSelection()) selectAthlete(id); }}
         />
       ) : null}
       <View
@@ -197,8 +225,10 @@ export function CompetitionField({
         <View style={{ position: "relative" }}>
           <LaneTrack
             appearance={appearance}
+            onChangeAppearance={setAppearance}
             height={sceneHeight}
             fullscreen={expanded}
+            overlaysHidden={overlaysHidden}
             onExpand={expandField}
             onToggleDimension={toggleDimension}
             onZoom={directZoom}
@@ -213,11 +243,14 @@ export function CompetitionField({
             unit={arena.unit}
             showGhost={ghost}
             index={2}
-            onSelect={(lane) => selectAthlete(lane.id)}
+            onSelect={lane => { if (!hold.current?.suppressSelection()) selectAthlete(lane.id); }}
             view={view}
             onPan={panTo}
           />
-          <View
+          <FieldOverlayView
+            hidden={overlaysHidden}
+            onTouchStart={event => event.stopPropagation()}
+            pointerEvents="auto"
             style={{
               position: "absolute",
               bottom: expanded ? safeBottom + 148 : 14,
@@ -271,8 +304,22 @@ export function CompetitionField({
             >
               <Text style={{ ...textStyle("heading"), color: "white" }}>＋</Text>
             </Pressable>
-          </View>
+          </FieldOverlayView>
         </View>
+        {!expanded ? (
+          <View style={{ marginTop: 8, borderRadius: 12, overflow: "hidden" }}>
+            <FieldOverview
+              lanes={fieldLanes}
+              view={view}
+              unit={arena.unit}
+              onNavigate={(value) => {
+                setCenter(value);
+                if (appearance.ground === "oval")
+                  setSpan(Math.min(view.span, fieldDefaultSpan(arena.unit) / 2));
+              }}
+            />
+          </View>
+        ) : null}
       </View>
     </View>
   );
@@ -288,10 +335,11 @@ export function CompetitionField({
           presentationStyle="fullScreen"
           onRequestClose={() => setExpanded(false)}
         >
-          <View style={[f.safe, { backgroundColor: "#0b242c", position: "relative" }]}>
+          <View onTouchStartCapture={() => hold.current?.reset()} style={[f.safe, { backgroundColor: "#0b242c", position: "relative" }]}>
             {fieldContent}
             {/* Top Bar HUD */}
-            <View
+            <FieldOverlayView
+              hidden={overlaysHidden}
               pointerEvents="box-none"
               style={[
                 f.row,
@@ -340,15 +388,21 @@ export function CompetitionField({
                 </Text>
               </View>
               <FieldViewSwitcher value={sceneDimension} geographic={arena.unit !== "pts"} onChange={chooseView} />
-            </View>
+            </FieldOverlayView>
 
             {/* Broadcast HUD: Left Interval Tower */}
-            <View
-              pointerEvents="box-none"
+            <SlidingFieldPanel
+              label="live intervals"
+              collapsed={intervalsCollapsed}
+              onToggle={() => setIntervalsCollapsed(value => !value)}
+              overlaysHidden={overlaysHidden}
               style={{
                 position: "absolute",
                 top: safeTop + 62,
                 left: 12,
+                maxWidth: 274, // 230 px panel plus the 44 px grip target.
+              }}
+              surfaceStyle={{
                 backgroundColor: "rgba(20, 20, 19, 0.72)",
                 borderRadius: 14,
                 paddingVertical: 8,
@@ -356,7 +410,6 @@ export function CompetitionField({
                 borderWidth: 1,
                 borderColor: "rgba(255, 255, 255, 0.14)",
                 gap: 5,
-                maxWidth: 196,
               }}
             >
               <Text style={{ ...textStyle("caption"), color: "rgba(255,255,255,0.65)" }}>
@@ -418,10 +471,11 @@ export function CompetitionField({
                   </Pressable>
                 );
               })}
-            </View>
+            </SlidingFieldPanel>
 
             {/* Broadcast HUD: Right Quick-Jump Rail */}
-            <View
+            <FieldOverlayView
+              hidden={overlaysHidden}
               pointerEvents="box-none"
               style={{
                 position: "absolute",
@@ -497,17 +551,22 @@ export function CompetitionField({
                   </Text>
                 </Pressable>
               ) : null}
-            </View>
+            </FieldOverlayView>
 
             {/* Broadcast HUD: Bottom Focused Athlete Spotlight + Player Chips */}
             {focusedLane ? (
-              <View
-                pointerEvents="box-none"
+              <SlidingFieldPanel
+                label="athlete panel"
+                collapsed={spotlightCollapsed}
+                onToggle={() => setSpotlightCollapsed(value => !value)}
+                overlaysHidden={overlaysHidden}
                 style={{
                   position: "absolute",
                   left: 12,
                   right: 12,
                   bottom: safeBottom + 8,
+                }}
+                surfaceStyle={{
                   backgroundColor: "rgba(20, 20, 19, 0.86)",
                   borderRadius: 20,
                   paddingVertical: 10,
@@ -623,7 +682,7 @@ export function CompetitionField({
                     );
                   })}
                 </ScrollView>
-              </View>
+              </SlidingFieldPanel>
             ) : null}
           </View>
         </Modal>
@@ -827,10 +886,6 @@ export function CompetitionField({
           </View>
         ) : null}
       </View>
-      <Text style={textStyle("caption")}>
-        Accumulated effort, not live GPS positions. Practice fields may contain
-        synthetic athletes.
-      </Text>
     </View>
   );
 }

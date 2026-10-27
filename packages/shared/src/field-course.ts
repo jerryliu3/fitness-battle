@@ -15,6 +15,9 @@ const circle = (cx: number, cy: number, r: number, fill: string, extra: FieldNod
 const text = (x: number, y: number, value: string, fill: string, size = 10, extra: FieldNode["attrs"] = {}) => n("text", { x, y, fill, fontSize: size, ...extra }, undefined, value);
 const path = (d: string, fill: string, extra: FieldNode["attrs"] = {}) => n("path", { d, fill, ...extra });
 
+/** Keep the outermost lanes at least 1 / 3.9 (25.6%) of the viewport apart. */
+const MAX_VIEWPORT_TO_FIELD_RATIO = 3.9;
+
 /** A local chase window; the existing overview retains the whole accumulated course. */
 export function fieldDefaultSpan(unit: string) { return unit === "pts" ? 20 : unit === "mi" ? 1200 / 1609.344 : 1.2; }
 export function clampCourseCenter(value: number, span: number, high: number, unit: string, ground: FieldAppearance["ground"]) {
@@ -41,12 +44,17 @@ function ovalPoint(f: number, r: number) {
 export function fieldCourse(viewportWidth: number, height: number, count: number, view: ArenaViewWindow, unit: string, appearance: FieldAppearance) {
   const zoom = (appearance.ground === "oval" ? (unit === "pts" ? 20 : unit === "mi" ? 4 : 6) : fieldDefaultSpan(unit)) / arenaWindow(view.center, view.span).span;
   const oval = appearance.ground === "oval";
-  const fieldWidth = Math.max(viewportWidth - 60, count * (viewportWidth - 60) / 5) * zoom;
+  const baseFieldWidth = Math.max(viewportWidth - 60, count * (viewportWidth - 60) / 5);
+  // Measure the field between the outermost lane centers, excluding half-lane
+  // margins. At the width floor, only depth continues zooming out.
+  const minFieldWidth = viewportWidth / MAX_VIEWPORT_TO_FIELD_RATIO * (count > 1 ? count / (count - 1) : 1);
+  const horizontalZoom = oval ? zoom : Math.max(zoom, minFieldWidth / baseFieldWidth);
+  const fieldWidth = baseFieldWidth * horizontalZoom;
   const width = oval ? viewportWidth : Math.max(viewportWidth, fieldWidth + 60);
   const left = (width - 42 - fieldWidth) / 2, top = 72, bottom = height - 64, length = bottom - top;
   const laneWidth = fieldWidth / Math.max(1, count), bounds = arenaWindow(view.center, view.span);
   const along = (v: number) => top + (bounds.max - v) / bounds.span * length;
-  const drift = (v: number) => appearance.ground === "trail" ? Math.sin(v * .58) * 13 * zoom : 0;
+  const drift = (v: number) => appearance.ground === "trail" ? Math.sin(v * .58) * 13 * horizontalZoom : 0;
   const outerRadius = 140 + Math.max(1, count) * 18;
   const ovalScale = Math.min((width - 60) / (outerRadius * 2), (length - 24) / (270 + outerRadius * 2)) * zoom;
   const focus = ovalPoint(view.center / fieldLoopLength(unit), 140 + Math.floor(count / 2) * 18 + 9);
@@ -64,7 +72,7 @@ export function fieldCourse(viewportWidth: number, height: number, count: number
     const steps = Math.max(1, Math.min(180, Math.ceil(Math.abs(b - a) / (oval ? fieldLoopLength(unit) / 100 : view.span / 60))));
     return Array.from({ length: steps + 1 }, (_, j) => { const p = point(a + (b - a) * j / steps, i, offset); return `${j ? "L" : "M"}${p.x.toFixed(3)} ${p.y.toFixed(3)}`; }).join(" ");
   }
-  return { width, height, left, fieldWidth, top, bottom, length, laneWidth, bounds, zoom, oval, ovalScale, outerRadius, midX, midY, along, drift, point, curve,
+  return { width, height, left, fieldWidth, top, bottom, length, laneWidth, bounds, zoom, horizontalZoom, oval, ovalScale, outerRadius, midX, midY, along, drift, point, curve,
     markerScale: unit === "pts" ? (oval ? Math.min(1.5, ovalScale * 1.3) : zoom)
       : (oval ? (540 + 2 * Math.PI * (140 + Math.floor(count / 2) * 18 + 9)) * ovalScale : length / bounds.span) * .3 / 58 };
 }
@@ -92,14 +100,18 @@ export function overviewTarget(fraction: number, high: number) { return Math.max
 /** Scenery only: athlete movement must not rebuild sampled ribbons or full-field masks. */
 export function fieldCourseScene(g: FieldCourse, appearance: FieldAppearance, lanes: readonly ArenaSceneLane[], unit: string, prefix: string, visible?: { first: number; last: number }): FieldNode[] {
   const visibleLane = (i: number) => g.oval || !visible || i >= visible.first && i <= visible.last;
-  const { ground, edges } = appearance, palette = fieldGrounds[ground], z = g.zoom;
+  const { ground, edges } = appearance, palette = fieldGrounds[ground], z = g.horizontalZoom;
+  const depthZoom = g.zoom, depthRatio = depthZoom / z;
+  const sceneCircle = (cx: number, cy: number, r: number, fill: string, extra: FieldNode["attrs"] = {}) =>
+    depthRatio === 1 ? circle(cx, cy, r, fill, extra)
+      : n("ellipse", { cx, cy, rx: r, ry: r * depthRatio, fill, ...extra });
   const whole = fieldMarks(g.bounds.min, g.bounds.max), samples = fieldMarks(g.bounds.min, g.bounds.max, .5);
   const out: FieldNode[] = [], surface: FieldNode[] = [];
   const clip = `${prefix}-ground-clip`;
   out.push(n("defs", {}, [n("clipPath", { id: clip }, [rect(0, 0, g.width, g.height, "white")])]));
   if (ground === "straight" || ground === "oval") {
-    const grain = g.oval ? 1 : z;
-    out.push(n("defs", {}, [n("pattern", { id: `${prefix}-rubber-grain`, width: 11 * grain, height: 13 * grain, y: g.oval ? 0 : g.along(0), patternUnits: "userSpaceOnUse" }, [circle(3 * grain, 4 * grain, .6 * grain, "#713e36", { opacity: .22 }), circle(8 * grain, 10 * grain, .5 * grain, "#f5ad8f", { opacity: .22 })])]));
+    const grain = g.oval ? 1 : z, grainDepth = g.oval ? 1 : depthZoom;
+    out.push(n("defs", {}, [n("pattern", { id: `${prefix}-rubber-grain`, width: 11 * grain, height: 13 * grainDepth, y: g.oval ? 0 : g.along(0), patternUnits: "userSpaceOnUse" }, [sceneCircle(3 * grain, 4 * grainDepth, .6 * grain, "#713e36", { opacity: .22 }), sceneCircle(8 * grain, 10 * grainDepth, .5 * grain, "#f5ad8f", { opacity: .22 })])]));
   }
   surface.push(rect(0, 0, g.width, g.height, edges === "club" ? "#dfe7d2" : "#f6f7f2"));
   if (g.oval) {
@@ -127,46 +139,46 @@ export function fieldCourseScene(g: FieldCourse, appearance: FieldAppearance, la
         surface.push(line(x - half, 0, x - half, g.height, ground === "night" ? "#9db092" : "#fff7e9", 1.5 * z));
       }
       if (ground === "straight") for (const d of whole) {
-        surface.push(line(x - half, g.along(d), x + half, g.along(d), "#fff7e9", (d === 0 ? 4 : 1) * z, { opacity: d === 0 ? 1 : .4 }));
-        if (d === 0) surface.push(text(x, g.along(0) + 20 * z, String(i + 1), "#fff7e9", 18 * z, { textAnchor: "middle", fontWeight: 700 }));
+        surface.push(line(x - half, g.along(d), x + half, g.along(d), "#fff7e9", (d === 0 ? 4 : 1) * depthZoom, { opacity: d === 0 ? 1 : .4 }));
+        if (d === 0) surface.push(text(x, g.along(0) + 20 * depthZoom, String(i + 1), "#fff7e9", 18 * depthZoom, { textAnchor: "middle", fontWeight: 700 }));
       }
       if (ground === "straight") surface.push(rect(x - half, 0, g.laneWidth, g.height, `url(#${prefix}-rubber-grain)`));
       if (ground === "road") {
         surface.push(rect(x - half + 7 * z, 0, Math.max(1, g.laneWidth - 14 * z), g.height, "#4f5f58"));
-        for (const side of [-1, 1]) surface.push(line(x + side * (half - 13 * z), 0, x + side * (half - 13 * z), g.height, "#e3e6cf", 1.7 * z, { strokeDasharray: `${19 * z} ${20 * z}`, strokeDashoffset: -g.along(0) }));
+        for (const side of [-1, 1]) surface.push(line(x + side * (half - 13 * z), 0, x + side * (half - 13 * z), g.height, "#e3e6cf", 1.7 * z, { strokeDasharray: `${19 * depthZoom} ${20 * depthZoom}`, strokeDashoffset: -g.along(0) }));
       }
       if (ground === "pool") {
         surface.push(line(x - half, 0, x - half, g.height, "#fffdf1", 4 * z));
-        for (const d of samples) surface.push(circle(x - half, g.along(d), 3.5 * z, i % 2 ? "#e4bc52" : "#82b3b8"));
-        for (const d of whole) surface.push(path(`M${x - 10 * z} ${g.along(d)}h${20 * z}m${-10 * z} 0v${10 * z}`, "none", { stroke: "#4f8790", strokeWidth: 2 * z, opacity: .4 }));
+        for (const d of samples) surface.push(sceneCircle(x - half, g.along(d), 3.5 * z, i % 2 ? "#e4bc52" : "#82b3b8"));
+        for (const d of whole) surface.push(path(`M${x - 10 * z} ${g.along(d)}h${20 * z}m${-10 * z} 0v${10 * depthZoom}`, "none", { stroke: "#4f8790", strokeWidth: 2 * z, opacity: .4 }));
       }
       if (ground === "boardwalk") for (let k = 0; k < 5; k++) surface.push(line(x - half + (k + .5) * g.laneWidth / 5, 0, x - half + (k + .5) * g.laneWidth / 5, g.height, k % 2 ? "#d1cdbc" : "#f1eee3", 2 * z));
-      if (ground === "boardwalk") for (const d of whole) surface.push(path(`M${x - half / 3} ${g.along(d)}q${3 * z} ${12 * z} 0 ${30 * z}`, "none", { stroke: "#bcb7a3", strokeWidth: .7 * z, opacity: .45 }));
-      if (ground === "night") for (const d of whole) surface.push(circle(x - half + 2 * z, g.along(d), 1.7 * z, "#dce6bb", { opacity: .7 }));
+      if (ground === "boardwalk") for (const d of whole) surface.push(path(`M${x - half / 3} ${g.along(d)}q${3 * z} ${12 * depthZoom} 0 ${30 * depthZoom}`, "none", { stroke: "#bcb7a3", strokeWidth: .7 * z, opacity: .45 }));
+      if (ground === "night") for (const d of whole) surface.push(sceneCircle(x - half + 2 * z, g.along(d), 1.7 * z, "#dce6bb", { opacity: .7 }));
     }
     if (ground === "straight" || ground === "athletics") surface.push(line(g.left + g.fieldWidth, 0, g.left + g.fieldWidth, g.height, "#fff7e9", 1.5 * z));
     // Whole-unit reference paint only; all numeric scale labels live on the side.
-    if (ground !== "straight" && g.bounds.min <= 0) surface.push(line(g.left, g.along(0), g.left + g.fieldWidth, g.along(0), "#61715c", 2 * z));
+    if (ground !== "straight" && g.bounds.min <= 0) surface.push(line(g.left, g.along(0), g.left + g.fieldWidth, g.along(0), "#61715c", 2 * depthZoom));
     if (edges === "club" || scenic) for (const d of samples) for (const side of [-1, 1]) {
       const x = g.left + g.fieldWidth / 2 + side * (g.fieldWidth / 2 + 12 * z) + g.drift(d), y = g.along(d), r = (8 + (Math.sin(d * 91.7) + 1) * 2) * z;
-      surface.push(n("ellipse", { cx: x + 3 * z, cy: y + 5 * z, rx: r, ry: r * .65, fill: "#718564", opacity: .16 }), circle(x, y, r, "#b9c69c"), circle(x - 3 * z, y - 3 * z, r * .68, "#cad4ae"));
+      surface.push(n("ellipse", { cx: x + 3 * z, cy: y + 5 * depthZoom, rx: r, ry: r * .65 * depthRatio, fill: "#718564", opacity: .16 }), sceneCircle(x, y, r, "#b9c69c"), sceneCircle(x - 3 * z, y - 3 * depthZoom, r * .68, "#cad4ae"));
     }
     if (edges === "club") for (const d of whole.filter(d => d % 2 === 0)) {
       const x = g.left + g.fieldWidth + 25 * z + g.drift(d), y = g.along(d);
-      surface.push(rect(x - 4 * z, y - 14 * z, 8 * z, 28 * z, "#8c805e", { rx: 2 * z }), line(x, y - 11 * z, x, y + 11 * z, "#d4c5a2", 2 * z));
+      surface.push(rect(x - 4 * z, y - 14 * depthZoom, 8 * z, 28 * depthZoom, "#8c805e", { rx: 2 * z, ry: 2 * depthZoom }), line(x, y - 11 * depthZoom, x, y + 11 * depthZoom, "#d4c5a2", 2 * z));
     }
     if (ground === "parkland") for (const d of whole.filter(d => d % 2 === 0)) {
       const x = g.left + g.fieldWidth / 2 + (d % 4 ? -1 : 1) * g.laneWidth / 2, y = g.along(d);
-      surface.push(rect(x - 9 * z, y - 13 * z, 18 * z, 26 * z, "#d5ddc2", { rx: 9 * z }), circle(x, y - 4 * z, 4 * z, "#a7b995"), circle(x + 3 * z, y + 2 * z, 4.5 * z, "#b5c69f"));
+      surface.push(rect(x - 9 * z, y - 13 * depthZoom, 18 * z, 26 * depthZoom, "#d5ddc2", { rx: 9 * z, ry: 9 * depthZoom }), sceneCircle(x, y - 4 * depthZoom, 4 * z, "#a7b995"), sceneCircle(x + 3 * z, y + 2 * depthZoom, 4.5 * z, "#b5c69f"));
     }
     if (ground === "trail") for (const d of samples) for (let i = 0; i < lanes.length - 1; i++) {
       if (!visibleLane(i)) continue;
       const p = g.point(d, i + .5);
-      surface.push(circle(p.x - 5 * z, p.y, 2 * z, "#c0caa9"), path(`M${p.x + 2 * z} ${p.y + 6 * z}l${-2 * z} ${-5 * z}m${2 * z} ${5 * z}l${3 * z} ${-4 * z}`, "none", { stroke: "#b5c49b", strokeWidth: z }));
+      surface.push(sceneCircle(p.x - 5 * z, p.y, 2 * z, "#c0caa9"), path(`M${p.x + 2 * z} ${p.y + 6 * depthZoom}l${-2 * z} ${-5 * depthZoom}m${2 * z} ${5 * depthZoom}l${3 * z} ${-4 * depthZoom}`, "none", { stroke: "#b5c49b", strokeWidth: z }));
     }
     if (ground === "night") for (const d of whole.filter(d => d % 2 === 0)) for (const side of [-1, 1]) {
       const x = g.left + g.fieldWidth / 2 + side * (g.fieldWidth / 2 + 8 * z);
-      surface.push(n("ellipse", { cx: x, cy: g.along(d), rx: 55 * z, ry: 60 * z, fill: "#e5d698", opacity: .07 }), circle(x, g.along(d), 3 * z, "#f8edbe"));
+      surface.push(n("ellipse", { cx: x, cy: g.along(d), rx: 55 * z, ry: 60 * depthZoom, fill: "#e5d698", opacity: .07 }), sceneCircle(x, g.along(d), 3 * z, "#f8edbe"));
     }
   }
   out.push(n("g", { clipPath: `url(#${clip})` }, surface));

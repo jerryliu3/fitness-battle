@@ -1,4 +1,3 @@
-import { useBootLoading } from "../ui/boot-readiness";
 import { UserAvatar } from "../ui/user-avatar";
 import { AppText, Section, SectionStack } from "../ui/section";
 import { AppIcon } from "../ui/app-icon";
@@ -9,6 +8,7 @@ import { CrewSessions } from "./crew-sessions";
 import { CrewRelay } from "./crew-relay";
 import {
   type SportId,
+  type CrewBoardPin,
   competitionTrack,
   competeNow,
   countsOnTrack,
@@ -26,7 +26,8 @@ import { ImageBackground, Pressable, Share, StyleSheet, Text, TextInput, View } 
 import { useAuth } from "../lib/auth";
 import { useCompeteStore } from "../lib/compete-store";
 import { mobileEnv } from "../lib/env";
-import { fetchWithTimeout } from "../lib/fetch-with-timeout";
+import { requestApi } from "../lib/api";
+import { useCachedApi } from "../lib/use-cached-api";
 import { playCue } from "../lib/haptics";
 import { FocusButton, FocusSheet, f } from "../ui/focus";
 export interface PrivateCrew {
@@ -70,69 +71,18 @@ export interface CrewData {
 }
 export function useCrewApi() {
   const { user, accessToken, offlineMode } = useAuth();
-  const [data, setData] = useState<CrewData | null>(null);
-  const [error, setError] = useState("");
-  const [busy, setBusy] = useState(false);
-  useBootLoading(Boolean(user && accessToken && !offlineMode && !data && !error));
-  const identity = useRef(user?.id);
-  identity.current = user?.id;
+  const live = !!user && !offlineMode && !!accessToken;
+  const { data, error, busy, reload } = useCachedApi<CrewData>("/api/crews");
   const request = useCallback(
     async (path: string, body?: object) => {
-      if (!user || offlineMode || !accessToken)
-        throw Error("Private crews need a live signed-in account.");
-      const response = await fetchWithTimeout(
-        `${mobileEnv.apiUrl}/api/crews${path}`,
-        {
-          method: body ? "POST" : "GET",
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-            ...(body ? { "Content-Type": "application/json" } : {}),
-          },
-          ...(body ? { body: JSON.stringify(body) } : {}),
-        },
+      if (!live) throw Error("Private crews need a live signed-in account.");
+      return requestApi<{ crew?: PrivateCrew; pin?: CrewBoardPin; saved?: number }>(
+        mobileEnv.apiUrl, accessToken, `/api/crews${path}`, { body },
       );
-      const result = await response.json();
-      if (!response.ok || result.persisted === false)
-        throw Error(result.error ?? "Could not reach your crew.");
-      return result;
     },
-    [user?.id, accessToken, offlineMode],
+    [live, accessToken],
   );
-  const reload = useCallback(async () => {
-    const owner = user?.id;
-    if (!owner || offlineMode || !accessToken) return;
-    setBusy(true);
-    setError("");
-    try {
-      const result = await request("");
-      if (identity.current === owner) {
-        setData(result);
-        return true;
-      }
-      return false;
-    } catch (e) {
-      if (identity.current === owner)
-        setError(e instanceof Error ? e.message : "Could not load crews.");
-      return false;
-    } finally {
-      if (identity.current === owner) setBusy(false);
-    }
-  }, [user?.id, accessToken, offlineMode, request]);
-  useEffect(() => {
-    void reload();
-  }, [reload]);
-  useEffect(() => {
-    setData(null);
-    setError("");
-  }, [user?.id]);
-  return {
-    data,
-    error,
-    busy,
-    reload,
-    request,
-    live: !!user && !offlineMode && !!accessToken,
-  };
+  return { data: data ?? null, error, busy, reload, request, live };
 }
 
 function crewError(error: unknown): string {
@@ -152,7 +102,7 @@ function inviteLink(code: string): string {
 }
 
 export function CrewHub({ membersOnly = false, crewId = "" }: { membersOnly?: boolean; crewId?: string } = {}) {
-  const { state, refresh } = useCompeteStore();
+  const { state, refresh, dispatch } = useCompeteStore();
   const { user } = useAuth();
   const router = useRouter();
   const params = useGlobalSearchParams<{ invite?: string | string[] }>();
@@ -197,7 +147,6 @@ export function CrewHub({ membersOnly = false, crewId = "" }: { membersOnly?: bo
     }, [api.reload]),
   );
   const pin =
-    !api.live &&
     state?.crewBoard &&
     state.crewBoard.crewId !== "solo" &&
     !state.crewBoard.crewId.startsWith("field:")
@@ -206,11 +155,11 @@ export function CrewHub({ membersOnly = false, crewId = "" }: { membersOnly?: bo
   const rawCrews = (api.data?.crews ?? []).flatMap((r) =>
     r.crews ? [r.crews] : [],
   );
-  if (pin)
+  if (pin && !rawCrews.some((c) => c.id === pin.crewId))
     rawCrews.push({
       id: pin.crewId,
       name: pin.crewName,
-      invite_code: "",
+      invite_code: "WEEKLY",
       sport: pin.sport,
       format: "volume",
       target_sessions: 4,
@@ -327,6 +276,76 @@ export function CrewHub({ membersOnly = false, crewId = "" }: { membersOnly?: bo
         setNote(resting ? "Rest week cleared." : "Rest week set. You can clear it here.");
         return;
       }
+      if (!api.live) {
+        if (path === "") {
+          const newName = (body as { name?: string }).name || "My Crew";
+          const newSport = (body as { sport?: string }).sport || state?.primary || "running";
+          const newId = `demo-crew-${Date.now()}`;
+          const newPin = {
+            crewId: newId,
+            crewName: newName,
+            sport: newSport as SportId,
+            waveStart: week.startsAt.toISOString(),
+            weekEnd: week.endsAt.toISOString(),
+            capacity: 8,
+            memberIds: [selfId],
+            syntheticIds: [],
+            members: [
+              {
+                id: selfId,
+                name: state?.name ?? "You",
+                elo: 1000,
+                distanceM: 0,
+                movingSec: 0,
+                verifiedDistanceM: 0,
+                verifiedMovingSec: 0,
+              },
+            ],
+          };
+          dispatch({ type: "opt-in", sport: newSport as SportId, crewBoard: newPin });
+          setSelected(newId);
+          setPanel(null);
+          setNote("Saved. Your crew is up to date.");
+          return;
+        }
+        if (path === "/join") {
+          const inviteCode = (body as { code?: string }).code || "WEEKLY";
+          const joinId = `demo-crew-${inviteCode.toLowerCase()}`;
+          const joinPin = {
+            crewId: joinId,
+            crewName: `Crew ${inviteCode}`,
+            sport: (state?.primary ?? "running") as SportId,
+            waveStart: week.startsAt.toISOString(),
+            weekEnd: week.endsAt.toISOString(),
+            capacity: 8,
+            memberIds: [selfId],
+            syntheticIds: [],
+            members: [
+              {
+                id: selfId,
+                name: state?.name ?? "You",
+                elo: 1000,
+                distanceM: 0,
+                movingSec: 0,
+                verifiedDistanceM: 0,
+                verifiedMovingSec: 0,
+              },
+            ],
+          };
+          dispatch({ type: "opt-in", sport: (state?.primary ?? "running") as SportId, crewBoard: joinPin });
+          setSelected(joinId);
+          setPanel(null);
+          setNote("Saved. Your crew is up to date.");
+          return;
+        }
+        if (path === "/leave") {
+          dispatch({ type: "clear-crew-board" });
+          setSelected("");
+          setPanel(null);
+          setNote("You left the crew.");
+          return;
+        }
+      }
       const result = await api.request(path, body);
       if (owner.current !== id) return;
       const reloaded = await api.reload();
@@ -409,14 +428,14 @@ export function CrewHub({ membersOnly = false, crewId = "" }: { membersOnly?: bo
             an optional shared field.
           </AppText>
           <FocusButton
-            label={api.live ? "Create or join a crew" : "View account"}
+            label={user ? "Create or join a crew" : "View account"}
             onPress={() =>
-              api.live ? open("add") : router.navigate("/athlete")
+              user ? open("add") : router.navigate("/athlete")
             }
           />
-          {!api.live ? (
+          {!user ? (
             <AppText role="caption" secondary >
-              A live account is needed to create or join a private crew.
+              Sign in to create or join a private crew.
             </AppText>
           ) : null}
         </View>
@@ -581,10 +600,10 @@ export function CrewHub({ membersOnly = false, crewId = "" }: { membersOnly?: bo
           }
         }}
       >
-        {!api.live && panel !== "members" ? (
+        {!user && panel !== "members" ? (
           <>
             <AppText role="body" secondary >
-              A live account is needed to create or join a private crew.
+              Sign in to create or join a private crew.
             </AppText>
             <FocusButton
               label="Go to Athlete"

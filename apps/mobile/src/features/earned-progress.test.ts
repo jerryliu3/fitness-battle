@@ -5,7 +5,7 @@ import { freshState, reduceCompete, type Activity, type CompeteState } from "@fi
 const mock=vi.hoisted(()=>({state:null as CompeteState|null,account:"one",navigate:vi.fn()}));
 vi.mock("react-native",()=>({
  useWindowDimensions:()=>({width:390,height:844,fontScale:1}),
- Pressable:"Pressable",ScrollView:"ScrollView",Text:"Text",View:"View",Image:"Image",StyleSheet:{create:(value:unknown)=>value},
+ Modal:"Modal",Pressable:"Pressable",ScrollView:"ScrollView",Text:"Text",View:"View",Image:"Image",StyleSheet:{create:(value:unknown)=>value},
  Animated:{View:"AnimatedView",Value:class{constructor(public value:number){}setValue(value:number){this.value=value;}interpolate(){return 0;}},timing:()=>({start(){},stop(){}})},
 }));
 vi.mock("../ui/chart-scrubber",()=>({ChartScrubber:({children}:{children:unknown})=>children}));
@@ -17,6 +17,7 @@ vi.mock("../ui/mascot/animated-ember",()=>({AnimatedEmber:"Ember"}));
 vi.mock("../ui/use-reduced-motion",()=>({useReducedMotion:()=>true}));
 vi.mock("../ui/field-course",()=>({drawFieldNode:()=>null}));
 vi.mock("../ui/activity-route",()=>({ActivityRoute:()=>null}));
+vi.mock("../lib/haptics",()=>({playCue:vi.fn()}));
 import { EffortRail } from "./effort-rail";
 import { SessionStage } from "./session-stage";
 import { TrainingAtlas } from "./training-atlas";

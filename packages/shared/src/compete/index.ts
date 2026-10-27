@@ -110,6 +110,7 @@ export {
   formatDistanceM,
   distanceUnitLabel,
   formatEffort,
+  formatEffortScore,
   formatNoticeUnits,
   setRealPlayerPool,
   getRealPlayerPool,

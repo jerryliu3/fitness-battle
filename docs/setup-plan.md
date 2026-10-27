@@ -112,14 +112,27 @@ The October 24 event stack reuses #316's activity route maps/flyovers and existi
 ### Application startup readiness
 
 Web and mobile mount the application under the existing launch cover. Dismissal
-requires the launch animation, account hydration, the mounted screen, and initial
-Home/Crew reads to settle. Web also waits for fonts and eagerly loaded images;
+requires account display data, the mounted screen and completion of the full launch
+animation on both platforms. On mobile,
+a valid account-scoped disk snapshot can satisfy display readiness while the
+server revision loads; account writes remain gated until validation completes.
+Auxiliary Home/Crew reads warm in parallel and no longer hold the native launch
+cover. Web still waits for initial Home/Crew reads, fonts and eagerly loaded images;
 native waits for the application container layout and initial Home images. Request errors reveal the
 existing error/retry UI. Home/Crew reads are bounded by transport timeouts.
-`useBootLoading` registers screen reads with the platform boot gate; register new
-initial reads there rather than adding splash timers. Once opened, later account
+`useBootLoading` registers essential readiness with the platform boot gate; auxiliary
+reads should render cached content and refresh in the background. Once opened, later account
 reloads and background refreshes keep the application mounted without replaying
-startup. The eight-second native deadline releases only a stalled animation.
+startup. The native safety deadline releases only a stalled animation.
+
+Mobile fonts, authentication and account hydration start concurrently. All four
+main tabs already mount eagerly on both navigator implementations. Crew snapshots
+and Home crew activity reuse a bounded, memory-only, credential-scoped read cache;
+focus/resume revalidates after 60 seconds, successful API/compete writes invalidate
+it, and account changes clear it. Home/Compete/Crew standings poll through the
+existing account refresh with freshness checks and failure backoff. Likely nested
+destinations pre-render after the active screen has had its first frames. See
+[performance scan](performance-scan.md) for scope, remaining costs and device checks.
 
 
 ### Session replay samples
