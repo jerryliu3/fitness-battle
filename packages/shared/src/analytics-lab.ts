@@ -357,6 +357,73 @@ export const ANALYTICS_DOMAIN_SPECS: readonly AnalyticsDomainSpec[] = [
   },
 ] as const;
 
+export interface SvgLineGeometry {
+  points: Array<{ x: number; y: number; val: number }>;
+  polyline: string;
+  areaPath: string;
+}
+
+export function buildSvgLineGeometry(
+  values: number[],
+  width: number,
+  height: number,
+  padding = 10,
+): SvgLineGeometry {
+  if (values.length === 0) return { points: [], polyline: "", areaPath: "" };
+  const min = Math.min(...values);
+  const max = Math.max(...values);
+  const span = Math.max(1, max - min);
+  const usableW = Math.max(1, width - padding * 2);
+  const usableH = Math.max(1, height - padding * 2);
+
+  const points = values.map((val, i) => {
+    const x = padding + (i / Math.max(1, values.length - 1)) * usableW;
+    const y = height - padding - ((val - min) / span) * usableH;
+    return { x, y, val };
+  });
+
+  const polyline = points.map((p) => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(" ");
+  const first = points[0]!;
+  const last = points[points.length - 1]!;
+  const areaPath = `M ${first.x.toFixed(1)},${height} L ${polyline} L ${last.x.toFixed(1)},${height} Z`;
+
+  return { points, polyline, areaPath };
+}
+
+export function buildSvgCorridorGeometry(
+  series: Array<{ value: number; baselineLow: number; baselineHigh: number }>,
+  width: number,
+  height: number,
+  padding = 10,
+) {
+  if (series.length === 0) return { linePath: "", corridorPath: "", points: [] };
+  const allVals = series.flatMap((s) => [s.value, s.baselineLow, s.baselineHigh]);
+  const min = Math.min(...allVals);
+  const max = Math.max(...allVals);
+  const span = Math.max(1, max - min);
+  const usableW = Math.max(1, width - padding * 2);
+  const usableH = Math.max(1, height - padding * 2);
+
+  const getY = (val: number) => height - padding - ((val - min) / span) * usableH;
+  const points = series.map((s, i) => {
+    const x = padding + (i / Math.max(1, series.length - 1)) * usableW;
+    return {
+      x,
+      y: getY(s.value),
+      yLow: getY(s.baselineLow),
+      yHigh: getY(s.baselineHigh),
+      val: s.value,
+    };
+  });
+
+  const linePath = points.map((p) => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(" ");
+  const topPts = points.map((p) => `${p.x.toFixed(1)},${p.yHigh.toFixed(1)}`).join(" L ");
+  const botPts = [...points].reverse().map((p) => `${p.x.toFixed(1)},${p.yLow.toFixed(1)}`).join(" L ");
+  const corridorPath = `M ${topPts} L ${botPts} Z`;
+
+  return { linePath, corridorPath, points };
+}
+
 export interface MarketEquityPoint {
   id: string;
   label: string;
@@ -568,6 +635,25 @@ function sliceByLens<T>(items: readonly T[], lens: AnalyticsTimeLens): T[] {
   if (lens === "30d") return items.slice(-10);
   if (lens === "90d") return items.slice(-12);
   return [...items];
+}
+
+export function getDomainTitle(domain?: AnalyticsDomainId | string | null): string {
+  switch (domain) {
+    case "market":
+      return "Athlete Market";
+    case "vitals":
+      return "Autonomic Vitals";
+    case "sleep":
+      return "Sleep & Recovery";
+    case "load":
+      return "Workload Ratio";
+    case "performance":
+      return "Cardio & Pace";
+    case "combined":
+      return "Multi-Metric Synthesis";
+    default:
+      return "Athlete Telemetry";
+  }
 }
 
 export function formatMinutesAsHoursMins(minutes: number): string {
