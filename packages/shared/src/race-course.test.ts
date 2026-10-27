@@ -27,8 +27,11 @@ describe("race courses", () => {
     expect(raceCoursePosition(course, length).returning).toBe(true);
     expect(raceCoursePosition(course, 2 * length).coordinate).toEqual(course.coordinates[0]);
     expect(raceCoursePosition(course, 2 * length).returning).toBe(false);
-    expect(raceCourseTrail(course, 1.5 * length)).toEqual(course.coordinates);
-    expect(raceCourseTrail(course, 20 * length)).toEqual(course.coordinates);
+    for (const progress of [1.5 * length, 20 * length]) {
+      const trail = raceCourseTrail(course, progress);
+      expect(trail).toContainEqual(course.coordinates.at(-1));
+      expect(trail.at(-1)).toEqual(raceCoursePosition(course, progress).coordinate);
+    }
   });
   it("points the chase camera along the return leg without turning early", () => {
     const straight = createRaceCourse("Street", [[0, 0], [.01, 0]]);
@@ -62,6 +65,7 @@ describe("race courses", () => {
     camera.focus(course, 200); expect(move).toHaveBeenCalledTimes(1);
     camera.dimension("2d"); expect(pose.pitch).toBe(0); expect(pose.bearing).toBe(0);
     camera.zoom(50); expect(pose.zoom).toBe(20); expect(camera.following).toBe(false);
+    camera.zoom(-50); expect(pose.zoom).toBe(0);
     expect(stop).toHaveBeenCalled();
   });
   it("honors reduced motion for every camera command", () => {

@@ -16,7 +16,7 @@ final class FieldGestures: XCTestCase {
  }
  func test02NativePanPinchAndSelection() throws {
   let app = XCUIApplication(bundleIdentifier: "com.overtaek.app"); app.activate()
-  XCTAssertTrue(app.buttons["Whole route"].waitForExistence(timeout:10))
+  XCTAssertTrue(app.buttons["Race overview"].waitForExistence(timeout:10))
   func recenter() { if app.buttons["Recenter"].exists { app.buttons["Recenter"].tap() }; XCTAssertTrue(app.buttons["Following"].waitForExistence(timeout:5)) }
   func map() -> XCUIElement {
    return app.otherElements.allElementsBoundByIndex.first { element in
@@ -37,7 +37,7 @@ final class FieldGestures: XCTestCase {
    let peer=app.buttons.matching(NSPredicate(format:"label BEGINSWITH %@","Noah Brooks ·")).firstMatch
    peer.tap(); XCTAssertTrue(app.buttons["Following"].waitForExistence(timeout:5)); shot(app,dimension+"-selected-noah")
    peer.tap(); XCTAssertTrue(app.buttons["Following"].exists)
-   app.buttons["Whole route"].tap(); XCTAssertTrue(app.buttons["Recenter"].waitForExistence(timeout:5)); shot(app,dimension+"-whole-route")
+   app.buttons["Race overview"].tap(); XCTAssertTrue(app.buttons["Recenter"].waitForExistence(timeout:5)); shot(app,dimension+"-whole-route")
   }
  }
 
@@ -50,15 +50,26 @@ final class FieldGestures: XCTestCase {
   app.buttons["Racers: together"].tap(); XCTAssertTrue(spaced.waitForExistence(timeout:5))
   for mode in ["2D", "3D"] {
    app.buttons["Switch to " + mode + " field"].firstMatch.tap()
-   XCTAssertTrue(app.buttons["Whole route"].waitForNonExistence(timeout:8))
+   XCTAssertTrue(app.buttons["Race overview"].waitForNonExistence(timeout:8))
    if mode == "2D" {
     app.buttons["Expand 2D map to full screen"].tap()
     XCTAssertTrue(app.buttons["Close full screen field"].waitForExistence(timeout:5))
    }
    let course = app.buttons["Switch to 4D course"].firstMatch
    XCTAssertTrue(course.waitForExistence(timeout:5)); course.tap()
-   XCTAssertTrue(app.buttons["Whole route"].waitForExistence(timeout:15))
+   XCTAssertTrue(app.buttons["Race overview"].waitForExistence(timeout:15))
   }
   shot(app,"native-4d-selector")
  }
+ func test04IndividualTrails() throws {
+  let app = XCUIApplication(bundleIdentifier: "com.overtaek.app"); app.activate()
+  let peer = app.buttons.matching(NSPredicate(format:"label BEGINSWITH %@", "Leo Park ·")).firstMatch
+  XCTAssertTrue(peer.waitForExistence(timeout:10)); peer.tap()
+  if app.buttons["2D map"].exists { app.buttons["2D map"].tap() }
+  for _ in 0..<4 { app.buttons["Zoom in"].tap() }
+  if app.buttons["Recenter"].exists { app.buttons["Recenter"].tap() }
+  XCTAssertTrue(app.buttons["Following"].waitForExistence(timeout:5))
+  shot(app,"individual-trails-closeup")
+ }
+
 }

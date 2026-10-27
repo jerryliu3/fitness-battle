@@ -10,7 +10,7 @@ Distance fields convert km/mi to metres and place athletes along the same route.
 Points-based fields retain the existing visualization. Athletes retrace the route back and forth at each endpoint; cumulative
 distance and standings continue unchanged. The chase camera faces the direction
 of travel. After the first outbound trip the complete covered trail stays visible,
-without duplicating geometry on subsequent trips. Course selection is local
+with geometry bounded independently of subsequent trips. Course selection is local
 to the current view, not a server-authoritative assignment to other participants.
 Shared published course assignment is a separate product/data change.
 
@@ -19,16 +19,26 @@ geographic course screen. The same selector works inside fullscreen views.
 Closing or selecting 2D/3D aborts pending course requests but preserves the chosen
 course for reopening. Points fields only expose 2D/3D.
 
-Racer spacing defaults to two metres between adjacent ID-sorted visual lanes,
-centered on the route. The **Racers: spaced / Racers: together** control permits a
-side-by-side experiment. Offsets use the route's canonical direction, with a
-five-metre tangent sample around bends, so reversing travel does not swap road
-sides. Camera focus includes the same lateral offset. Shared completed trails
-stay on the centerline, keeping the three-prefix geometry limit. This adds no
-per-frame updates, score changes, road-width queries, or collision simulation.
-Ten tied athletes span 18 metres; narrow roads and zoomed-out marker overlap
-remain limitations of this illustrative spacing.
+The underlying route stays invisible ahead of the field. Each athlete reveals
+only their own covered trail, so the leading athlete discovers new ground first.
+Zero activity draws a dot at the start but no trail. **Race overview** fits only
+earned trails and current dots; it never frames the unreached route.
 
+The viewer's own lane stays centered on the route. Peers alternate left/right in
+stable ID order with one metre between adjacent lanes (ten racers span nine
+metres). Selecting a peer moves the camera without rearranging lanes. **Racers:
+spaced / Racers: together** permits comparison. Each dot and its individual trail
+interpolate the same offset polyline, including bends and return legs, so the dot
+always sits at its trail's endpoint. Offset vertices are computed lazily and
+cached; selection reuses the trail source instead of resending all geometry.
+
+Trails are thin opaque lines: approximately 35 cm near the course's origin when
+zoomed in, with a 0.75 px visibility floor when zoomed out. This is illustrative
+spacing rather than road-width queries or collision simulation. Narrow roads and
+zoomed-out marker overlap remain possible. After a racer covers the whole course,
+a full traversal plus the current partial leg keeps all covered ground visible
+and the line ending at the dot. Geometry is bounded to two traversals regardless
+of total laps.
 The geographic view uses one platform-agnostic camera controller. Focus resumes
 following; direct manipulation, zoom and overview suspend it. Two-dimensional
 and chase views use the same map instance. The map engines execute gestures,
@@ -49,7 +59,7 @@ safe or meaningful race course. No live GPS permission is required.
 
 ## Native/web integration
 
-Compete exposes **Race on a real course** for km/mi fields. It opens a dedicated
+Compete exposes **4D** beside **2D / 3D** for km/mi fields. It opens a dedicated
 screen with the current roster/totals and selectable athletes. Import GPX or
 submit start/destination addresses, city names or `longitude,latitude` pairs.
 Mapbox Geocoding resolves text on explicit submission; Directions requests a
@@ -69,11 +79,11 @@ intent/controller and geographic geometry. Next defers its Mapbox GL chunk until
 the course screen opens. Expo's static browser preview links to the Next web app
 rather than bundling the iOS/Android Mapbox module.
 
-Use **2D map / 3D chase** without replacing the map instance, **Whole route** to
-inspect the complete track, **Recenter** to resume following, and zoom controls
+Use **2D map / 3D chase** without replacing the map instance, **Race overview** to
+inspect covered ground, **Recenter** to resume following, and zoom controls
 as an alternative to pinch. Selecting an athlete again recenters it. All route
-geometry is independent of the camera; the completed selected route is a fixed
-six-point-wide opaque line, even when the start is outside the viewport. Basemap and
+geometry is independent of the camera; every earned trail remains visible even
+when its start is outside the viewport. Basemap and
 Mapbox attribution remain visible. Imagery/scenery are supplied by Mapbox
 Standard; no custom scene asset pipeline or second Skia renderer was added.
 
@@ -126,14 +136,15 @@ Measure sustained physical-device performance separately from simulator input.
 
 The course screen owns its selected athlete independently of the hidden SVG
 field, so selecting peers does not run a second camera animation behind the
-modal. The native static course source retains its object identity across
-athlete changes; web sets that source only at map initialization. Per-update
-work is limited to athlete positions and at most three completed-route prefixes. Peer trails share
-one cyan prefix, with you and selected painted above it. These
-invariants are covered by the adapter regressions.
+modal. Both adapters render only athlete dots and individual earned trails. Unreached
+course geometry is not supplied to any map source. Geometry is cached by course,
+immutable roster, spacing and viewer anchor; selecting a peer changes dots and
+the camera without rebuilding or retransmitting the trail collection. Offset
+vertices are cached lazily only as needed. All update work remains independent
+of camera frames. These invariants are covered by adapter regressions.
 
 
-### Actual runtime evidence
+### Initial runtime evidence (before individual trails)
 
 - Browser: real Mapbox Standard buildings/scenery loaded; city-name geocoding
   generated a New York → Brooklyn walking route. Explicit Manhattan coordinates
@@ -179,13 +190,14 @@ web production build and the native Release build pass.
 ![Native whole route](images/2d-whole-route.png)
 
 
-### Third view and spacing follow-up
+### Earlier third-view and marker-spacing validation
 
 The **4D** selector replaces the separate course-entry button on native and web.
 The native modal owns a SafeAreaProvider so its view controls remain below the
 iOS status bar. Switching out of 4D cancels pending loading, preserves the chosen
 course, and stops the hidden portrait renderer. Spacing changes only marker
-geometry and camera targets; completed trails retain the bounded shared geometry.
+geometry and camera targets in that earlier version; the individual-trail design
+above supersedes its shared-centerline presentation.
 
 The follow-up has 15 shared regressions, two native adapter/selector checks, and
 three web adapter/selector checks. They cover tied racers, rank reorder, bends,
@@ -208,3 +220,31 @@ interaction check. Native SDK compilation and physical-device performance were
 not rerun for these JavaScript-only changes.
 
 ![Native third view with safe controls and selected racer](images/4d-selector-native.png)
+
+
+### Individual trail discovery follow-up
+
+The shared model tests cover viewer centering, ten one-metre lanes, no future
+geometry, no trail at zero activity, discovered-only bounds, shared marker/trail
+endpoints through bends/date-line crossings/return trips, and bounded geometry
+across thousands of trips. Adapter checks verify that no full-course source is
+created and that selecting a peer does not resend the trail collection.
+
+
+All four actual iOS simulator scenarios pass for the individual-trail update
+(120.6 seconds): route loading, pan/pinch/selection, view and spacing switches,
+and a zoomed-in peer selected on its own trail. Browser inspection verifies
+separate narrow trails and the discovered-only overview without style errors.
+The maps cap zoom at 20 so a near-zero discovered area cannot overzoom past the
+controls' supported range. No future-course source is created on either platform.
+
+![Native individual trail alignment](images/individual-trails-native.png)
+
+![Browser individual trail alignment](images/individual-trails-web.png)
+
+
+After setting consistent 0–20 zoom bounds, the native app's final JavaScript bundle was refreshed
+and course loading plus the close-up trail scenario were rechecked (two cases,
+zero failures, 31.4 seconds). The final 20 focused shared/native/web tests,
+workspace typechecks, UI contract, and web production build pass. Device frame
+rate/heat/battery remain unmeasured.

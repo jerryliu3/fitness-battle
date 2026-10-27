@@ -13,9 +13,8 @@ export default function CourseMap({ course, lanes, unit, selectedId, focusReques
   const ref = useRef<ComponentRef<typeof Camera>>(null);
   const reduced = useReducedMotion();
   const [spaced, setSpaced] = useState(true);
-  const scene = useMemo(() => raceCourseScene(course, lanes, unit, selectedId, spaced ? 2 : 0), [course, lanes, unit, selectedId, spaced]);
-  // Athlete updates must not resend the static 20k-point course to the native source.
-  const route = useMemo(() => scene.route, [course]);
+  const scene = useMemo(() => raceCourseScene(course, lanes, unit, selectedId, spaced ? 1 : 0), [course, lanes, unit, selectedId, spaced]);
+  const trailWidth = .35 / (78271.516964 * Math.cos(course.coordinates[0][1] * Math.PI / 180));
   const pose = useRef<CourseCameraPose>({ center: scene.selected?.coordinate ?? course.coordinates[0], zoom: 16, pitch: 60, bearing: 0 });
   const [ready, setReady] = useState(false), [error, setError] = useState(""), [flat, setFlat] = useState(false);
   const [following, setFollowing] = useState(true);
@@ -43,14 +42,13 @@ export default function CourseMap({ course, lanes, unit, selectedId, focusReques
       onDidFinishLoadingMap={() => { setReady(true); setError(""); }}
       onMapLoadingError={() => setError("The map could not load. Check your connection and Mapbox access.")}
     >
-      <Camera ref={ref} defaultSettings={{ centerCoordinate: pose.current.center, zoomLevel: 16, pitch: 60 }} />
+      <Camera minZoomLevel={0} maxZoomLevel={20} ref={ref} defaultSettings={{ centerCoordinate: pose.current.center, zoomLevel: 16, pitch: 60 }} />
       <CameraGestureObserver onCameraChanged={({ nativeEvent }) => {
         const p = nativeEvent.properties;
         pose.current = { center: [p.center[0], p.center[1]], zoom: p.zoom, pitch: p.pitch, bearing: p.heading };
         if (p.isUserInteraction && controller.following) { controller.interrupt(); setFollowing(false); }
       }} />
-      <ShapeSource id="course" shape={route}><LineLayer id="course-line" slot="middle" style={{ lineColor: "#637482", lineWidth: 4, lineOpacity: .7 }} /></ShapeSource>
-      <ShapeSource id="completed" shape={scene.trails}><LineLayer id="completed-line" slot="middle" style={{ lineColor: ["get", "color"], lineSortKey: ["get", "priority"], lineWidth: 6, lineCap: "round", lineJoin: "round" }} /></ShapeSource>
+      <ShapeSource id="completed" shape={scene.trails}><LineLayer id="completed-line" slot="middle" style={{ lineColor: ["get", "color"], lineSortKey: ["get", "priority"], lineWidth: ["interpolate", ["exponential", 2], ["zoom"], 0, .75, 16, Math.max(.75, trailWidth * 2 ** 16), 22, trailWidth * 2 ** 22], lineCap: "round", lineJoin: "round" }} /></ShapeSource>
       <ShapeSource id="athletes" shape={scene.markers} onPress={event => { const id = event.features[0]?.properties?.id; if (typeof id === "string") onSelect(id); }}>
         <CircleLayer id="athlete-dots" slot="top" style={{ circleRadius: ["case", ["get", "selected"], 10, 7], circleColor: ["case", ["get", "you"], "#f7c948", "#20b9c6"], circleStrokeColor: "#ffffff", circleStrokeWidth: 2 }} />
       </ShapeSource>
@@ -60,7 +58,7 @@ export default function CourseMap({ course, lanes, unit, selectedId, focusReques
       {control(following ? "Following" : "Recenter", focus)}
       {control(flat ? "3D chase" : "2D map", () => { controller.dimension(flat ? "3d" : "2d"); setFlat(!flat); })}
       {control(spaced ? "Racers: spaced" : "Racers: together", () => setSpaced(value => !value))}
-      {control("Whole route", () => { controller.overview(course); setFlat(true); })}
+      {control("Race overview", () => { controller.overview({ coordinates: scene.overviewCoordinates }); setFlat(true); })}
       {control("Zoom in", () => controller.zoom(1))}{control("Zoom out", () => controller.zoom(-1))}
     </ScrollView>
   </View>;

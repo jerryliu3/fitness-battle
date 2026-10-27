@@ -353,7 +353,7 @@ See the [performance investigation and fidelity validation](reviews/2d-field-per
 The optional geographic course view uses Mapbox Standard scenery and the same
 competition totals, with GPX or explicit walking/cycling route requests. Keep
 course choice separate from activity import and scoring. The dedicated screen
-supports native map gestures, selectable athletes, 2D/chase views, whole-route
+supports native map gestures, selectable athletes, 2D/chase views, discovered-ground
 framing and recenter/follow. Manual exploration suspends follow; selecting an
 athlete resumes it. Respect reduced motion and retain map attribution. Points
 fields keep the existing field. Athletes retrace courses back and forth at each
@@ -366,9 +366,13 @@ Geographic scenery is the third field option, labeled **4D** beside **2D / 3D**
 on native and web, including fullscreen controls. Distance fields offer all three;
 points fields retain 2D / 3D. 4D opens the dedicated course screen, preserves the
 chosen course when switching views, and has the same selector for returning.
-Racers default to visual lanes spaced two metres across the route, assigned by
-stable athlete ID rather than rank. The spacing toggle compares spaced/together
-layouts. Camera follow targets the displayed marker; shared solid trails stay on
-the route centerline. These are presentation offsets, not measured road widths,
-collision avoidance, or adjustments to earned distance. Markers may still overlap
-when zoomed out.
+The route ahead stays invisible. Each athlete reveals an individual narrow,
+opaque trail that ends exactly at their dot; no activity means no trail. The
+viewer stays centered on the underlying route, with peers alternating left/right
+in stable ID order at one-metre spacing. Selection moves the camera without
+rearranging lanes. The spacing toggle compares spaced/together layouts. Camera
+follow uses the same displayed position as the trail. Race overview frames only
+covered ground. Return trips preserve the full earned trail with geometry
+bounded to two traversals, regardless of cumulative distance. Offsets remain
+illustrative rather than measured road widths or collision avoidance; zoomed-out
+markers can still overlap.
