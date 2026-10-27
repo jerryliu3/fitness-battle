@@ -436,3 +436,19 @@ Standings and the existing distance-only 4D course. Standings replaces the field
 in that card; switching back retains the camera and lane selection. Athlete taps
 in standings focus that athlete in the retained field. The redundant view row and
 2D/3D toggle chips are removed. Event/sport selection remains separate.
+
+### Fullscreen controls and overview — October 27
+
+Full Arena uses the same view dropdown. Replay is a chip beneath Behind for all
+field dimensions. Visible +/- clusters are removed in fullscreen 2D/3D; pinch,
+web wheel/keyboard field gestures and labeled Zoom in/Zoom out dropdown actions
+remain available. Choosing Standings returns to the inline standings card.
+Existing 4D map controls retain their geographic camera behavior.
+
+The horizontal race overview sits beneath the expandable athlete panel, with
+separate layout and touch handling so sliding the panel away never removes the
+overview. The overview shows actual athlete positions and the retained camera
+window in both 2D/3D, supports dragging, native adjustable accessibility actions,
+and web keyboard arrows/Home/End. Selecting it cancels camera travel before
+navigating. Both elements clear the bottom safe area; the panel reserves 56px
+above the overview. Field hold-to-hide applies to both.

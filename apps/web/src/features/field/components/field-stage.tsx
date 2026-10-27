@@ -30,6 +30,7 @@ import { ExpandingField } from "./expanding-field";
 import { ArenaLanes } from "@/features/focus/arena-lanes";
 import {
   useFieldAppearance,
+  FieldOverview,
 } from "./field-course";
 import { placeAt, valueAt, type SceneRunner } from "../geometry";
 import { CompetitionReplayButton } from "@/features/replay/competition-replay";
@@ -463,6 +464,10 @@ export function FieldStage({
           </div>
         </div>
       ) : null}
+      <div className="focus-broadcast-overview" aria-label="Race overview">
+        <FieldOverview lanes={fieldLanes} view={view} unit={unit}
+          onNavigate={value => { cancelCenterTween(); setCenter(clampViewCenter(value, view.span)); }} />
+      </div>
     </> : null}
     </div>
   ) : null;
@@ -486,7 +491,7 @@ export function FieldStage({
           hud={broadcastHud}
         >
           {viewDimension === "4d" && tabActive ? <div className="focus-geographic-host" style={{ position: "relative", height: lanesImmersive ? "100%" : 460 }}>
-            <GeographicCourse lanes={fieldLanes} unit={unit} selectedId={trackSelected || you.id} focusRequest={focusRequest} onSelect={toggleSelect} course={course} onCourseChange={setCourse} controlsBottom={lanesImmersive ? spotlightCollapsed ? 80 : 180 : 8} />
+            <GeographicCourse lanes={fieldLanes} unit={unit} selectedId={trackSelected || you.id} focusRequest={focusRequest} onSelect={toggleSelect} course={course} onCourseChange={setCourse} controlsBottom={lanesImmersive ? spotlightCollapsed ? 136 : 236 : 8} />
             {!lanesImmersive ? <button type="button" className="focus-portal-pill is-accent" style={{ position: "absolute", top: 12, right: 12 }} aria-label="Expand 4D course to full screen" onClick={() => setLanesImmersive(true)}>Full Arena ⤢</button> : null}
           </div> : null}
           {viewDimension === "3d" && tabActive ? (

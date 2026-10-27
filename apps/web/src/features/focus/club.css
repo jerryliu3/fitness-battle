@@ -2330,3 +2330,19 @@
 .club-fullscreen-sheet:has(.session-detail) > .club-sheet-heading { position: sticky; top: 0; z-index: 2; padding-block: 8px; background: var(--paper); }
 .focus-broadcast-replay-chip { pointer-events: auto; border-radius: 999px; background: rgba(20,20,19,.78); padding: 2px 8px; }
 .focus-broadcast-replay-chip button, .focus-broadcast-rail-btn { min-height: 44px; }
+
+/* The overview stays independent of the sliding athlete panel. */
+.focus-broadcast-spotlight { bottom: calc(max(14px, env(safe-area-inset-bottom)) + 56px); }
+.focus-broadcast-overview {
+  position: fixed;
+  left: 14px;
+  right: 14px;
+  bottom: max(14px, env(safe-area-inset-bottom));
+  max-width: 560px;
+  margin-inline: auto;
+  border-radius: 12px;
+  overflow: hidden;
+  background: var(--card);
+  color: var(--ink);
+  pointer-events: auto;
+}

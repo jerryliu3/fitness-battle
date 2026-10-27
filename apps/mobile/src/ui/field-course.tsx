@@ -52,7 +52,7 @@ export function FieldOverview({ lanes, view, unit, onNavigate }: { lanes: ArenaS
     onPanResponderGrant: event => { start.current = event.nativeEvent.locationX; const p = latest.current; p.onNavigate(overviewTarget(start.current / p.width, p.overview.high)); },
     onPanResponderMove: (_, gesture) => { const p = latest.current; p.onNavigate(overviewTarget((start.current + gesture.dx) / p.width, p.overview.high)); },
   }));
-  return <View style={[f.row, { gap: 8, backgroundColor: "#f6f7f2", paddingHorizontal: 10 }]}>
+  return <View style={[f.row, { gap: 8, backgroundColor: clubColors.card, paddingHorizontal: 10 }]}>
     <Text style={textStyle("caption")}>0</Text>
     <View {...pan.panHandlers} onLayout={e => setWidth(e.nativeEvent.layout.width)} style={{ flex: 1, minHeight: 44, justifyContent: "center" }} accessible accessibilityRole="adjustable" accessibilityLabel="Field distance overview" aria-valuemin={0} aria-valuemax={overview.high} aria-valuenow={Math.min(overview.high, Math.max(0, view.center))} aria-valuetext={`${view.center.toFixed(1)} ${unit}`} accessibilityValue={{ min: 0, max: overview.high, now: Math.min(overview.high, Math.max(0, view.center)), text: `${view.center.toFixed(1)} ${unit}` }} accessibilityActions={[{ name: "increment" }, { name: "decrement" }]} onAccessibilityAction={e => onNavigate(Math.max(0, Math.min(overview.high, view.center + (e.nativeEvent.actionName === "increment" ? 1 : -1) * view.span / 4)))}>
       <View pointerEvents="none" style={{ height: 1, backgroundColor: "#bdc8b5" }}/>

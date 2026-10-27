@@ -106,3 +106,18 @@ it("keeps 4D inside the fullscreen host with the same panels, selection and repl
   expect(map().props.course).toBe(course);
   expect(button("Expand athlete panel")).toBeDefined();
 });
+
+it("keeps a navigable overview beneath both collapsed and expanded athlete panels", async () => {
+  const overview = () => renderer.root.findByType("FieldOverview" as never);
+  const bottom = overview().parent!.props.style[0].bottom;
+  await act(async () => overview().props.onNavigate(5));
+  expect(field().props.view.center).toBe(5);
+  await act(async () => button("Collapse athlete panel").props.onPress());
+  expect(overview().parent!.props.style[0].bottom).toBe(bottom);
+  await act(async () => renderer.root.findByType("ChoicePicker" as never).props.onChange("3d"));
+  expect(overview()).toBeDefined();
+  await act(async () => overview().props.onNavigate(3));
+  expect(renderer.root.findByType("PortraitField" as never).props.view.center).toBe(3);
+  await act(async () => button("Expand athlete panel").props.onPress());
+  expect(overview().parent!.props.style[0].bottom).toBe(bottom);
+});

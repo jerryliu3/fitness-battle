@@ -192,7 +192,7 @@ export function CompetitionField({
       onTouchCancel={() => hold.current?.end()}
     >
       {sceneDimension === "4d" && isFocused ? <View style={{ height: sceneHeight }}>
-        <GeographicCourse lanes={fieldLanes} unit={arena.unit} selectedId={selectedId ?? me?.id ?? ""} focusRequest={focusRequest} onSelect={id => { if (!hold.current?.suppressSelection()) selectAthlete(id); }} course={course} onCourseChange={setCourse} controlsBottom={expanded ? safeBottom + (spotlightCollapsed ? 76 : 160) : 8} overlaysHidden={overlaysHidden} />
+        <GeographicCourse lanes={fieldLanes} unit={arena.unit} selectedId={selectedId ?? me?.id ?? ""} focusRequest={focusRequest} onSelect={id => { if (!hold.current?.suppressSelection()) selectAthlete(id); }} course={course} onCourseChange={setCourse} controlsBottom={expanded ? safeBottom + (spotlightCollapsed ? 132 : 216) : 8} overlaysHidden={overlaysHidden} />
         {!expanded ? <View style={{ position: "absolute", right: 12, top: 12 }}><IconButton icon="expand" label="Expand 4D course to full screen" onPress={expandField} /></View> : null}
       </View> : null}
       {sceneDimension === "3d" && isFocused ? (
@@ -583,7 +583,7 @@ export function CompetitionField({
                   position: "absolute",
                   left: 12,
                   right: 12,
-                  bottom: safeBottom + 8,
+                  bottom: safeBottom + 64,
                 }}
                 surfaceStyle={{
                   backgroundColor: "rgba(20, 20, 19, 0.86)",
@@ -703,6 +703,11 @@ export function CompetitionField({
                 </ScrollView>
               </SlidingFieldPanel>
             ) : null}
+            <FieldOverlayView hidden={overlaysHidden} onTouchStart={event => event.stopPropagation()}
+              style={{ position: "absolute", left: 12, right: 12, bottom: safeBottom + 8, borderRadius: 12, overflow: "hidden" }}>
+              <FieldOverview lanes={fieldLanes} view={view} unit={arena.unit}
+                onNavigate={panTo} />
+            </FieldOverlayView>
           </> : null}
           </View>
         </Modal>

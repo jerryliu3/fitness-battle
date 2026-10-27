@@ -104,3 +104,20 @@ case of Crew cycling plus separate running where the running Replay lookup had
 no field to read. The change applies equally to synthetic and ordinary accounts.
 No migration is required; normal account load/refresh provisions missing open
 seats through the authenticated RPC. No production seating was manually changed.
+
+## October 27 fullscreen control follow-up
+
+The Compete fullscreen view dropdown retains 2D/3D and the existing distance-only
+4D course, and exposes labeled Zoom in/Zoom out actions for 2D/3D. Pinch and
+existing web gesture handling remain; standalone fullscreen +/- clusters are
+removed. Replay follows Behind in the quick-jump rail. Standings in the menu
+returns to the inline standings card. Inline controls retain their zoom affordances.
+
+The shared distance overview is now a separate bottom HUD element beneath the
+athlete spotlight, independent of its expanded/collapsed state, in both 2D and 3D.
+Dragging or keyboard/native adjustable actions navigate the actual camera window.
+The spotlight moves up 56px; overview and panel clear the bottom safe area and
+follow hold-to-hide. Focused native tests exercise overview navigation before and
+after panel collapse and after switching 2D to 3D. Web dropdown/portrait tests and
+JSX parsing cover the corresponding control change. No typecheck or expensive
+suite was run at the owner's request.
