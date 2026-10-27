@@ -250,6 +250,16 @@ Mobile performance update (October 26): retain the full launch animation even wh
 content is ready, per the owner's preference. Account loading, caching and prefetching
 run underneath the cover so Home is ready when the animation finishes.
 
+### Account controls and launch timing — October 27
+
+Primary sport opts into an iOS UIButton/UIMenu anchored to the visible control,
+with checked selection and VoiceOver labels. The local Expo `anchored-choice`
+module requires a new native build; older binaries, Android and web retain the
+existing accessible anchored choice list. Other pickers retain their current behavior.
+The shared launch race now lasts 3.78 seconds (30% shorter), with a shorter opening,
+zero initial velocity, sharper passes and a longer final ease. Readiness still owns dismissal.
+
+
 ### Home rival card — October 24
 
 Home shows the athlete’s ordinal place (1st, 2nd, 3rd), without the field-size
@@ -403,12 +413,3 @@ Mapbox positions native/DOM annotations; do not project camera frames through Re
 Paths use a 36 cm stroke on 42 cm lane spacing (6 cm gap at close zoom), with a
 3 px visibility floor at wider zooms. Hold-to-hide includes nameplates. See the
 [racer-card follow-up](reviews/geographic-course/racer-callouts.md).
-
-### Account controls and launch timing — October 27
-
-Primary sport opts into an iOS UIButton/UIMenu anchored to the visible control,
-with checked selection and VoiceOver labels. The local Expo `anchored-choice`
-module requires a new native build; older binaries, Android and web retain the
-existing accessible anchored choice list. Other pickers retain their current behavior.
-The shared launch race now lasts 3.78 seconds (30% shorter), with a shorter opening,
-zero initial velocity, sharper passes and a longer final ease. Readiness still owns dismissal.
