@@ -22,7 +22,7 @@ import { useAuth } from "@/components/auth-context";
 import { useCompete } from "@/components/compete-context";
 import { AnimatedEmber } from "@/components/mascot/animated-ember";
 import type { EmberAction } from "@fitness-battle/shared/mascot";
-import { APP_TIMEZONE, buildTodayRoute, competeNow, countsOnTrack, dayKey, formatVolume, primaryFreezePeriodStart, sportById, type Activity } from "@fitness-battle/shared";
+import { APP_TIMEZONE, buildTodayRoute, competeNow, countsOnTrack, dayKey, formatVolume, primaryFreezePeriodStart, shellTabFromPath, sportById, type Activity } from "@fitness-battle/shared";
 import {
   JourneyTrail,
   groupActivitiesByDay,
@@ -196,7 +196,7 @@ type SessionPhase =
   | { kind: "full"; target: SessionTarget };
 
 export function TodayScreen() {
-  const onHome = usePathname() === "/today";
+  const onHome = shellTabFromPath(usePathname())?.id === "today";
   const { user } = useAuth();
   const { state, dispatch, lastDebugEvent, loadStatus } = useCompete();
   const suggestionPrompt = useDailySuggestion(user?.id ?? "guest", state);
