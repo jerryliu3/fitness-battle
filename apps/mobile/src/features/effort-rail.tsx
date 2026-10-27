@@ -14,7 +14,7 @@ export function EffortRail({ compact = false }: { compact?: boolean }){
   const [gain,setGain]=useState(0);
   const scope=`${accountKey}:${state?.primary}:${state ? competitionTrack(state.primary) : "open"}`;
   useEffect(()=>{
-    if(!model||!canWrite){previous.current=null;setGain(0);return;}
+    if(!model){previous.current=null;setGain(0);return;}
     const last=previous.current, changed=last?.scope===scope;
     previous.current={scope,score:model.score};
     const delta=changed&&!saveError?Math.max(0,model.score-last.score):0;
@@ -26,7 +26,7 @@ export function EffortRail({ compact = false }: { compact?: boolean }){
     const timer=setTimeout(()=>setGain(0),1500);
     return()=>{clearTimeout(timer);progress.stop();animation.stop();};
   },[scope,model?.score,model?.fraction,canWrite,saveError,reduced,fill,burst]);
-  if(!state||!model||!canWrite)return null;
+  if(!state||!model)return null;
   const remaining=formatVolume(model.sport,model.sport==="strength"?0:model.remaining,model.sport==="strength"?model.remaining:0,state.units);
   return <Pressable style={[s.rail, compact && { borderWidth: 0, backgroundColor: "transparent", padding: 0, minHeight: 44, justifyContent: "center" }]} accessibilityRole="button" accessibilityLabel={`${sportById(model.sport).name} ${competitionTrackLabel(model.sport)} Effort Score ${model.score}. ${remaining} to next point. Open Progress`} onPress={()=>router.navigate("/you?view=effort")}>
     <View style={s.row}>{!compact && <Text style={s.caption}>{sportById(model.sport).name} · {rankForElo(model.score).name}</Text>}{compact ? <View style={{ flexDirection: "row", alignItems: "baseline", gap: 4, flexShrink: 1 }}><Text style={[s.score, { flexShrink: 0 }]}>{formatEffortScore(model.score)}</Text><Text style={[s.caption, { flexShrink: 1 }]} numberOfLines={1}>Effort Score</Text></View> : <Text style={s.score} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>{formatEffortScore(model.score)} <Text style={s.caption}>Effort Score</Text></Text>}</View>

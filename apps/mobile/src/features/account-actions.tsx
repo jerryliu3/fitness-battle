@@ -1,6 +1,6 @@
 import { AppText } from "../ui/section";
 import { useEffect, useRef, useState } from "react";
-import { TextInput, View } from "react-native";
+import { Pressable, Text, TextInput, View } from "react-native";
 import { requestApi } from "../lib/api";
 import { useAuth } from "../lib/auth";
 import { useCompeteStore } from "../lib/compete-store";
@@ -82,15 +82,16 @@ export function AccountActions() {
           setPanel("report");
         }}
       />
-      <FocusButton
-        label="Delete account"
-        secondary
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel="Delete account"
+        style={[f.button, f.secondary]}
         onPress={() => {
           setError("");
           setConfirmation("");
           setPanel("delete");
         }}
-      />
+      ><Text style={[f.buttonText, { color: "#b42318" }]}>Delete account</Text></Pressable>
       <FocusSheet
         open={!!panel}
         title={

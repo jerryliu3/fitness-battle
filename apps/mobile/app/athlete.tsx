@@ -104,6 +104,7 @@ export default function AthleteScreen() {
   const [authNote, setAuthNote] = useState<string | null>(null);
   const [confirmFreeze, setConfirmFreeze] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
+  const [confirmSignOut, setConfirmSignOut] = useState(false);
   const panel = params.panel ?? null;
   function setPanel(next: AthletePanel | null) {
     if (next)
@@ -154,7 +155,7 @@ export default function AthleteScreen() {
 
   if (!state || authLoading) {
     return (
-      <SafeAreaView style={styles.safe} edges={["bottom"]}>
+      <SafeAreaView style={[styles.safe, { alignItems: "center", justifyContent: "center" }]} edges={["bottom"]}>
         <Text style={styles.copy}>Loading account…</Text>
       </SafeAreaView>
     );
@@ -403,11 +404,12 @@ export default function AthleteScreen() {
           <FocusButton
             label="Sign out"
             secondary
-            onPress={() => void signOut()}
+            onPress={() => setConfirmSignOut(true)}
           />
           <AccountActions />
           <LegalLinks />
-          {legacyBackup && <FocusButton label="Export local demo backup" secondary onPress={() => { void Share.share({ message: legacyBackup, title: "Overtaek local demo backup" }); }} />}
+          {legacyBackup && <View style={{ gap: 8 }}><AppText role="body" secondary>This archived copy contains legacy demo data, not your current account data.</AppText><FocusButton label="Share archived demo backup" secondary onPress={() => { void Share.share({ message: legacyBackup, title: "Overtaek archived demo backup" }); }} /></View>}
+          <FocusSheet open={confirmSignOut} title="Sign out?" onClose={() => setConfirmSignOut(false)}><AppText role="body" secondary>You can sign in again to return to your account.</AppText><FocusButton label="Sign out" onPress={() => { setConfirmSignOut(false); void signOut(); }} /><FocusButton label="Cancel" secondary onPress={() => setConfirmSignOut(false)} /></FocusSheet>
         </SectionStack>
 </ScrollView>
       </SafeAreaView>
