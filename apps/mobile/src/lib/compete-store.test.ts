@@ -579,3 +579,40 @@ it("ignores a failed in-flight save after signing out and back into the same acc
   expect(api.saveError).toBeNull();
   expect(renderer.root.findAllByProps({ accessibilityRole: "alert" })).toHaveLength(0);
 });
+
+it("preserves restored draft units through refresh and automatic retry", async () => {
+  login("Alice");
+  const keys = accountStorageKeys("Alice");
+  mock.values.set(keys.state, JSON.stringify({ ...accountState("Alice"), units: "metric" }));
+  mock.values.set(keys.dirty, "1");
+  mock.values.set(`${keys.state}:revision`, "revision-1");
+  fetcher.mockImplementation(async (_url: string, init: RequestInit) => init.method === "PUT"
+    ? Response.json({ updatedAt: "revision-2" })
+    : Response.json({ state: { ...accountState("Alice"), units: "us" }, updatedAt: "revision-1" }));
+  await mount();
+  expect(api.state?.units).toBe("metric");
+  await act(async () => { await api.refresh(); });
+  expect(api.state?.units).toBe("metric");
+  await save();
+  const writes = fetcher.mock.calls.filter(([, init]) => init?.method === "PUT");
+  expect(writes).toHaveLength(1);
+  expect(JSON.parse(writes[0]![1]!.body as string).state.units).toBe("metric");
+  expect(mock.values.has(keys.dirty)).toBe(false);
+  expect(api.saveError).toBeNull();
+});
+
+it("removes an orphan dirty flag before caching the loaded account", async () => {
+  login("Alice");
+  const keys = accountStorageKeys("Alice");
+  mock.values.set(keys.dirty, "1");
+  mock.values.set(`${keys.state}:revision`, "old-revision");
+  await mount();
+  await save();
+  expect(mock.values.has(keys.dirty)).toBe(false);
+  expect(fetcher.mock.calls.filter(([, init]) => init?.method === "PUT")).toHaveLength(0);
+  await switchTo(null);
+  await switchTo("Alice");
+  await save();
+  expect(api.saveError).toBeNull();
+  expect(fetcher.mock.calls.filter(([, init]) => init?.method === "PUT")).toHaveLength(0);
+});

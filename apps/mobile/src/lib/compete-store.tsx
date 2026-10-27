@@ -266,6 +266,7 @@ export function CompeteProvider({ children, navigationReady = true }: { children
         } catch { /* Optional local fixtures; ordinary offline state remains available. */ }
       }
       const dirty = hasCache && (await AsyncStorage.getItem(keys.dirty)) === "1";
+      if (!hasCache) await AsyncStorage.removeItem(keys.dirty);
       const currentAuth = authRef.current;
       const live =
         !!currentAuth.user &&
@@ -322,7 +323,8 @@ export function CompeteProvider({ children, navigationReady = true }: { children
               next,
               rollClock(migrateCompeteState(body.state)),
               dirty,
-              unitsUnsavedRef.current,
+              // Hydrated drafts represent a pending whole-document save, including units.
+              dirty || unitsUnsavedRef.current,
             );
           if (alive) {
             remoteLoaded = true;
@@ -347,6 +349,7 @@ export function CompeteProvider({ children, navigationReady = true }: { children
       await preloadBaselineCache(owner ?? "guest", baselineCacheRef.current);
       if (!alive || accountRef.current !== owner) return;
       unsavedRef.current = dirty;
+      unitsUnsavedRef.current = dirty;
       seedArenaBaselinesFromState(
         next,
         owner ?? "guest",

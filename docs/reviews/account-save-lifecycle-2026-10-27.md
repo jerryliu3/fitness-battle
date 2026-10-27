@@ -21,3 +21,23 @@ unchanged preferences, persisted-draft hydration and failed PUT/retry. This is a
 local deterministic reproduction of the identified client causes, not a claim to
 have reproduced a production server failure with a real account. No SQL, auth policy,
 or server save path changed. Typecheck/full build and expensive tests were skipped.
+
+## Deep-review corrections
+
+Web hydration now distinguishes a successfully parsed cached snapshot from fresh
+fallback state. A detached dirty bit cannot promote defaults into an uploadable
+draft; both clients discard orphan dirty metadata before writing a replacement
+cache. Web's optional dirty/revision writes and acknowledgements use guarded
+storage helpers, so browser quota/security failures cannot abort an edit or turn
+a successful server save into a failed save. Explicit conflict recovery still
+requires a durable recovery backup before discarding the draft.
+
+A persisted dirty snapshot represents a whole-document pending save. Both clients
+preserve its units at hydration and through intervening refreshes until successful
+acknowledgement, rather than requiring separate persisted per-field flags. The
+loaded revision still blocks automatic writes over a newer server version.
+
+Focused provider regressions cover absent/malformed/invalid cached snapshots with
+orphan markers, storage-disabled edits plus failed-save/retry, and metric drafts
+restored against US-unit server snapshots. All 10 web and 30 native provider tests
+passed. No typecheck or expensive suite was run.

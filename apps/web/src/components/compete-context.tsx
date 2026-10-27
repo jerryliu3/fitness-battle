@@ -137,11 +137,18 @@ function writeStorageItem(key: string, value: string): void {
   }
 }
 
-function readLocal(userId: string | null): { savedAt: string; state: CompeteState } {
+function removeStorageItem(key: string): void {
+  try { localStorage.removeItem(key); } catch {
+    /* Storage failure must not block edits or successful server acknowledgements. */
+  }
+}
+
+function readLocal(userId: string | null): { savedAt: string; state: CompeteState; cached: boolean } {
   const existing = parseStored(readStorageItem(storageKey(userId)));
   const demoSeed = getDemoCompeteState(userId);
   if (demoSeed && (!existing || existing.state.activities.length === 0)) {
     return {
+      cached: false,
       savedAt: new Date(0).toISOString(),
       state: rollClock(demoSeed),
     };
@@ -157,20 +164,23 @@ function readLocal(userId: string | null): { savedAt: string; state: CompeteStat
         };
         writeLocal(userId, nextState, existing.savedAt);
         return {
+          cached: true,
           savedAt: existing.savedAt,
           state: nextState,
         };
       }
     }
-    return existing;
+    return { ...existing, cached: true };
   }
   if (demoSeed) {
     return {
+      cached: false,
       savedAt: new Date(0).toISOString(),
       state: rollClock(demoSeed),
     };
   }
   return {
+    cached: false,
     savedAt: new Date(0).toISOString(),
     state: rollClock(freshState()),
   };
@@ -264,7 +274,7 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
           const body = await response.json().catch(() => null);
           if (!isCurrent()) return;
           if (!response.ok) {
-            localStorage.setItem(deviceOnlyKey(accountId), "1");
+            writeStorageItem(deviceOnlyKey(accountId), "1");
             if (body?.error === "account_changed_reload" || body?.error === "account_version_required") {
               conflictRef.current = true; setSaveConflict(true);
               setSaveError("Your account changed elsewhere. Reload the account before saving again.");
@@ -273,15 +283,15 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
           }
           if (typeof body?.updatedAt !== "string") throw new Error("missing_revision");
           revisionRef.current = body.updatedAt;
-          localStorage.setItem(`${storageKey(accountId)}:revision`, body.updatedAt);
+          writeStorageItem(`${storageKey(accountId)}:revision`, body.updatedAt);
           if (dirtyRef.current === generation) {
-            localStorage.removeItem(deviceOnlyKey(accountId));
+            removeStorageItem(deviceOnlyKey(accountId));
             unsavedRef.current = false; unitsUnsavedRef.current = false;
           }
           setSaveError(null);
         } catch {
           if (!isCurrent()) return;
-          localStorage.setItem(deviceOnlyKey(accountId), "1");
+          writeStorageItem(deviceOnlyKey(accountId), "1");
           setSaveError("This device updated. The account copy did not save.");
         }
       });
@@ -384,15 +394,18 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
       })
       .then((body) => {
         if (cancelled || userIdRef.current !== accountId || !accountId) return;
-        const staleDeviceDraft = readStorageItem(deviceOnlyKey(accountId)) === "1";
+        // A marker cannot turn a missing/corrupt cache into an uploadable draft.
+        const staleDeviceDraft = local.cached && readStorageItem(deviceOnlyKey(accountId)) === "1";
+        if (!local.cached) removeStorageItem(deviceOnlyKey(accountId));
         unsavedRef.current = staleDeviceDraft || queue.current.length > 0;
+        unitsUnsavedRef.current ||= staleDeviceDraft;
         const cachedRevision = readStorageItem(`${storageKey(accountId)}:revision`);
         revisionRef.current = staleDeviceDraft ? cachedRevision : body.updatedAt ?? null;
         if (staleDeviceDraft && cachedRevision && body.updatedAt && cachedRevision !== body.updatedAt) {
           conflictRef.current = true; setSaveConflict(true);
           setSaveError("Your account changed elsewhere. Reload the account before saving again.");
         }
-        if (!staleDeviceDraft && body.updatedAt) localStorage.setItem(`${storageKey(accountId)}:revision`, body.updatedAt);
+        if (!staleDeviceDraft && body.updatedAt) writeStorageItem(`${storageKey(accountId)}:revision`, body.updatedAt);
         const remote = isCompeteState(body.state)
           ? rollClock(migrateCompeteState(body.state))
           : null;
@@ -401,8 +414,9 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
           return;
         }
         const dirty = staleDeviceDraft || !body.updatedAt;
-        if (!dirty) localStorage.removeItem(deviceOnlyKey(accountId));
-        const chosen = applyRemoteSnapshot(local.state, remote, dirty);
+        if (!dirty) removeStorageItem(deviceOnlyKey(accountId));
+        // A persisted draft is a whole document; retain its units until acknowledged.
+        const chosen = applyRemoteSnapshot(local.state, remote, dirty, staleDeviceDraft);
         settle(
           chosen,
           chosen === local.state ? local.savedAt : (body.updatedAt ?? local.savedAt),
@@ -502,7 +516,7 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
           timer.current != null;
         if (!dirty && !conflictRef.current) {
           revisionRef.current = body.updatedAt ?? null;
-          if (body.updatedAt) localStorage.setItem(`${storageKey(accountId)}:revision`, body.updatedAt);
+          if (body.updatedAt) writeStorageItem(`${storageKey(accountId)}:revision`, body.updatedAt);
         }
         const next = applyRemoteSnapshot(
           local,
@@ -658,7 +672,7 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
         unsavedRef.current = true;
         if (withAccount.type === "set-units") unitsUnsavedRef.current = true;
         if (userIdRef.current && !offlineRef.current)
-          localStorage.setItem(deviceOnlyKey(userIdRef.current), "1");
+          writeStorageItem(deviceOnlyKey(userIdRef.current), "1");
         seedArenaBaselinesFromState(
           next,
           accountKey,
