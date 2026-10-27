@@ -24,11 +24,13 @@ type Props = CrewWeekRelayInput & {
   userId?: string;
   /** Parent already presents the target and member details. */
   compact?: boolean;
+  /** Hide the target row when the parent already shows it. */
+  hideTargetSummary?: boolean;
   onSelectMember?: (id: string) => void;
 };
 
 export function CrewRelay(props: Props) {
-  const { members, sport, units, userId, compact, onSelectMember } = props;
+  const { members, sport, units, userId, compact, hideTargetSummary, onSelectMember } = props;
   const [selected, setSelected] = useState("");
   const [width, setWidth] = useState(320);
   const prefix = useId();
@@ -58,7 +60,7 @@ export function CrewRelay(props: Props) {
       style={{ gap: 12, marginTop: 12 }}
       onLayout={(e) => setWidth(e.nativeEvent.layout.width)}
     >
-      {!compact && (
+      {!compact && !hideTargetSummary && (
         <View style={f.row}>
           <AppText role="caption" secondary style={f.grow}>
             {view.label}

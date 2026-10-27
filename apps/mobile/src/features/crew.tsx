@@ -528,7 +528,7 @@ export function CrewHub({ membersOnly = false, crewId = "" }: { membersOnly?: bo
                 : `${formatDistanceM(relay.model.total, state?.units)}${relay.target == null ? "" : ` / ${formatDistanceM(relay.target, state?.units)}`} ${distanceUnitLabel(state?.units)}`}
             </Text>
             <AppText role="body" secondary>{relay.kind === "baseline" ? "Last week’s distance" : relay.target == null ? "No shared target set" : "Shared target"}</AppText>
-            <CrewRelay compact userId={user?.id} key={crew.id} members={members} entries={entries} sport={crew.sport as SportId} format={crew.format} previousDistanceM={previousDistanceM} targetDistanceM={crew.journey_km*1000} targetSessions={crew.target_sessions} units={state?.units} />
+            <CrewRelay hideTargetSummary userId={user?.id} key={crew.id} members={members} entries={entries} sport={crew.sport as SportId} format={crew.format} previousDistanceM={previousDistanceM} targetDistanceM={crew.journey_km*1000} targetSessions={crew.target_sessions} units={state?.units} />
           </View>
           {user ? (
             <>
