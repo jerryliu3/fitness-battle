@@ -130,3 +130,10 @@ above the spotlight, including native's equivalent layout. The replay viewer als
 retains labeled zoom actions in its dropdown. This was a web phone-viewport review,
 not an installed native device validation. Three native and three web replay tests
 passed after the shared-renderer follow-up.
+
+Deep-review correction: the distance overview is shown only in 2D/3D. The 4D
+geographic camera does not consume the distance-window state, so its fullscreen
+HUD omits that slider instead of exposing an inert navigation control. Both
+platform field tests now verify that the overview disappears in 4D, returns in
+2D/3D, and leaves the selected course and athlete intact. Five native field tests
+and the web 4D integration test passed; no typecheck or expensive suite was run.

@@ -85,6 +85,7 @@ it("keeps 4D inside the fullscreen host with the same panels, selection and repl
   const map = () => renderer.root.findByType("GeographicCourse" as never);
   const course = createRaceCourse("City", [[0, 0], [.02, 0]]);
   await act(async () => map().props.onCourseChange(course));
+  expect(renderer.root.findAllByType("FieldOverview" as never)).toHaveLength(0);
   expect(renderer.root.findAllByType("Modal" as never)).toHaveLength(1);
   expect(button("Collapse live intervals")).toBeDefined();
   await act(async () => button("Collapse athlete panel").props.onPress());
@@ -101,8 +102,10 @@ it("keeps 4D inside the fullscreen host with the same panels, selection and repl
   expect(map().props.overlaysHidden).toBe(true);
   await act(async () => scene().props.onTouchEnd());
   await switchTo("2D");
+  expect(renderer.root.findAllByType("FieldOverview" as never)).toHaveLength(1);
   expect(renderer.root.findAllByType("GeographicCourse" as never)).toHaveLength(0);
   await switchTo("4D");
+  expect(renderer.root.findAllByType("FieldOverview" as never)).toHaveLength(0);
   expect(map().props.course).toBe(course);
   expect(button("Expand athlete panel")).toBeDefined();
 });

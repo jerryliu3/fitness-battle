@@ -704,11 +704,11 @@ export function CompetitionField({
                 </ScrollView>
               </SlidingFieldPanel>
             ) : null}
-            <FieldOverlayView hidden={overlaysHidden} onTouchStart={event => event.stopPropagation()}
+            {sceneDimension !== "4d" ? <FieldOverlayView hidden={overlaysHidden} onTouchStart={event => event.stopPropagation()}
               style={{ position: "absolute", left: 12, right: 12, bottom: safeBottom + 8, borderRadius: 12, overflow: "hidden" }}>
               <FieldOverview lanes={fieldLanes} view={view} unit={arena.unit}
                 onNavigate={panTo} />
-            </FieldOverlayView>
+            </FieldOverlayView> : null}
           </> : null}
           </View>
         </Modal>

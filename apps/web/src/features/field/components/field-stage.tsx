@@ -464,10 +464,10 @@ export function FieldStage({
           </div>
         </div>
       ) : null}
-      <div className="focus-broadcast-overview" aria-label="Race overview">
+      {viewDimension !== "4d" ? <div className="focus-broadcast-overview" aria-label="Race overview">
         <FieldOverview lanes={fieldLanes} view={view} unit={unit}
           onNavigate={value => { cancelCenterTween(); setCenter(clampViewCenter(value, view.span)); }} />
-      </div>
+      </div> : null}
     </> : null}
     </div>
   ) : null;
