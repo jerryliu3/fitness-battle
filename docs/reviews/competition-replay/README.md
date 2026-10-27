@@ -121,3 +121,12 @@ follow hold-to-hide. Focused native tests exercise overview navigation before an
 after panel collapse and after switching 2D to 3D. Web dropdown/portrait tests and
 JSX parsing cover the corresponding control change. No typecheck or expensive
 suite was run at the owner's request.
+
+Combined local browser review at 390×844 verified inline Standings/2D/3D switching,
+fullscreen 2D/3D, Replay beneath Behind, replay opening, dropdown zoom and overview
+keyboard navigation with the athlete panel collapsed and expanded. The walkthrough
+caught and fixed a 3D direction row overlapping the overview; directions now sit
+above the spotlight, including native's equivalent layout. The replay viewer also
+retains labeled zoom actions in its dropdown. This was a web phone-viewport review,
+not an installed native device validation. Three native and three web replay tests
+passed after the shared-renderer follow-up.
