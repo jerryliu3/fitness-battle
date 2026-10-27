@@ -272,10 +272,10 @@ export function reconcileArenaOvertake(
   const rankBefore =
     1 +
     Object.values(rivals).filter(
-      (rival) => rival.startValue > youBefore + EPSILON,
+      (rival) => rival.startValue > youBefore,
     ).length;
   const rankAfter =
-    1 + Object.values(rivals).filter((rival) => rival.endValue > youAfter + EPSILON).length;
+    1 + Object.values(rivals).filter((rival) => rival.endValue > youAfter).length;
 
   return {
     youId: you.id,

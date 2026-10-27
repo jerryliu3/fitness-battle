@@ -1,3 +1,4 @@
+import { averageTiePosition, competitionPlace } from "../competition-place";
 import { weekEndAfter } from "../matching/waves";
 import { APP_TIMEZONE, endOfZonedDay, startOfZonedDay } from "../period";
 import { settleElo } from "./elo";
@@ -356,7 +357,8 @@ export function sleepBoard(input: {
   }
 
   rows.sort((a, b) => b.score - a.score || a.name.localeCompare(b.name));
-  return rows.map((row, index) => ({ ...row, place: index + 1 }));
+  const scores = rows.map(row => row.score);
+  return rows.map(row => ({ ...row, place: competitionPlace(scores, row.score) }));
 }
 
 export interface SleepDayCell {
@@ -504,7 +506,7 @@ export function settleSleepWeeks<T extends {
     const eloAfter = settleElo(
       rating.elo,
       rows.filter((row) => !row.you).map((row) => row.elo),
-      place,
+      you ? averageTiePosition(rows.map(row => row.score), you.score) : place,
       rows.length,
       score,
       false,

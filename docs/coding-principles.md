@@ -18,7 +18,7 @@
 3. **Period & Settlement Model**:
    - Default periods run weekly from Monday 00:00:00 America/New_York to next Monday 00:00:00 America/New_York (half-open: `[start, end)`).
    - Settlement occurs on week close, archiving place and Elo rating updates.
-   - Standings and places are 1-indexed (`place >= 1`).
+   - Standings and places are 1-indexed (`place >= 1`). GPS events rank exact weekly distance; points events rank exact effort. Equal totals share a place and skip the occupied subsequent places (1, 2, 2, 4); display rounding does not create ties. Tied score settlement uses the average of their occupied positions. Sleep contest scores follow the same tie rule. Archived results are not rewritten.
 
 4. **Security & Data Integrity**:
    - Database functions marked `SECURITY DEFINER` must set `SET search_path = ''` and check `auth.uid()`.

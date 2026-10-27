@@ -12,7 +12,7 @@ export interface SceneRunner {
 }
 
 /** Presentation interpolation. Does not score fitness. */
-export function valueAt(
+function rawValueAt(
   runner: SceneRunner,
   time: number,
   extra = 0,
@@ -27,9 +27,11 @@ export function valueAt(
     values.length === 1
       ? values[0]!
       : values[i]! + (values[i + 1]! - values[i]!) * fraction;
-  return (
-    Math.round((base + (runner.you ? Math.max(0, extra) : 0)) * 1000) / 1000
-  );
+  return base + (runner.you ? Math.max(0, extra) : 0);
+}
+
+export function valueAt(runner: SceneRunner, time: number, extra = 0): number {
+  return Math.round(rawValueAt(runner, time, extra) * 1000) / 1000;
 }
 
 export function worldZ(value: number): number {
@@ -93,11 +95,11 @@ export function placeAt(
 ): number {
   const runner = runners.find((item) => item.id === id);
   if (!runner || runner.ghost) return 0;
-  const mine = valueAt(runner, time, extra);
+  const mine = rawValueAt(runner, time, extra);
   return (
     1 +
     runners.filter(
-      (item) => !item.ghost && valueAt(item, time, extra) > mine + 0.000001,
+      (item) => !item.ghost && rawValueAt(item, time, extra) > mine,
     ).length
   );
 }

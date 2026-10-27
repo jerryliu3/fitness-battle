@@ -1,3 +1,4 @@
+import { averageTiePosition, competitionPlace } from "../competition-place";
 import { applyEffortMilestones } from "./milestones";
 import { APP_TIMEZONE, shiftAppDay, type PeriodBounds } from "../period";
 import {
@@ -638,19 +639,24 @@ function settleEnrollment(
   const openRows = groupFor(state, sport, "open", enrollment, asOf);
   const verifiedIdx = verifiedRows.findIndex((row) => row.you);
   const openIdx = openRows.findIndex((row) => row.you);
-  const verifiedPlace = placeOrLast(verifiedIdx, verifiedRows.length);
-  const openPlace = placeOrLast(openIdx, openRows.length);
+  const gps = sportById(sport).gps;
+  const total = (row: { distanceM: number; effort: number }) => gps ? row.distanceM : row.effort;
+  const verifiedTotals = verifiedRows.map(total);
+  const openTotals = openRows.map(total);
+  const verifiedPlace = verifiedIdx >= 0 ? competitionPlace(verifiedTotals, total(verifiedRows[verifiedIdx]!)) - 1 : placeOrLast(-1, verifiedRows.length);
+  const openPlace = openIdx >= 0 ? competitionPlace(openTotals, total(openRows[openIdx]!)) - 1 : placeOrLast(-1, openRows.length);
+  const verifiedScorePosition = verifiedIdx >= 0 ? averageTiePosition(verifiedTotals, total(verifiedRows[verifiedIdx]!)) : verifiedPlace;
+  const openScorePosition = openIdx >= 0 ? averageTiePosition(openTotals, total(openRows[openIdx]!)) : openPlace;
   // Missing you → zero effort so Elo takes inactivity decay, not a fake last-place race.
   const verifiedEffort = verifiedIdx >= 0 ? (verifiedRows[verifiedIdx]?.effort ?? 0) : 0;
   const openEffort = openIdx >= 0 ? (openRows[openIdx]?.effort ?? 0) : 0;
   const youVerified = verifiedIdx >= 0 ? verifiedRows[verifiedIdx] : undefined;
   const youOpen = openIdx >= 0 ? openRows[openIdx] : undefined;
-  const gps = sportById(sport).gps;
   const nextVerified = gps
     ? settleElo(
         current.verifiedElo,
         verifiedRows.filter((row) => !row.you).map((row) => row.elo),
-        verifiedPlace,
+        verifiedScorePosition,
         verifiedRows.length,
         verifiedEffort,
         frozen,
@@ -659,7 +665,7 @@ function settleEnrollment(
   const nextOpen = settleElo(
     current.openElo,
     openRows.filter((row) => !row.you).map((row) => row.elo),
-    openPlace,
+    openScorePosition,
     openRows.length,
     openEffort,
     frozen,
@@ -1411,9 +1417,10 @@ export function weeklyBoard(
   const enrollment = enrollmentFor(live, sport);
   if (!enrollment) return [];
   const rows = groupFor(live, sport, track, enrollment, now);
-  return rows.map((row, index) => ({
+  const values = rows.map(row => sportById(sport).gps ? row.distanceM : row.effort);
+  return rows.map(row => ({
     ...row,
-    place: index + 1,
+    place: competitionPlace(values, sportById(sport).gps ? row.distanceM : row.effort),
   }));
 }
 

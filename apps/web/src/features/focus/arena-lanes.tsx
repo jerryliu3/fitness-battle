@@ -199,7 +199,7 @@ export function ArenaLanes({
         height={height}
         style={{ width, height, touchAction: immersive ? "none" : "pan-y" }}
         role="group"
-        aria-label={standings ? "Athlete standings, ranked by weekly effort" : `Vertical athlete lanes, ${bounds.min.toFixed(1)} to ${bounds.max.toFixed(1)} ${unit}. Drag to explore.`}
+        aria-label={standings ? `Athlete standings, ranked by weekly ${unit === "pts" ? "effort" : "distance"}` : `Vertical athlete lanes, ${bounds.min.toFixed(1)} to ${bounds.max.toFixed(1)} ${unit}. Drag to explore.`}
         tabIndex={0}
         onKeyDown={(e) => {
           if (!standings && e.target === e.currentTarget && (e.key === "Enter" || e.key === " ")) {
@@ -235,7 +235,7 @@ export function ArenaLanes({
           const charging =
             l.you && animating ? (overtakeFrame?.charging ?? 0) : 0;
           const row = sortedByValue.findIndex((lane) => lane.id === l.id);
-          const rank = 1 + sortedByValue.filter((lane) => lane.value > l.value + 0.000001).length;
+          const rank = 1 + sortedByValue.filter((lane) => lane.value > l.value).length;
           const point = course.point(l.value, i, 0, true);
           const targetY = standings ? 48 + row * 76 : point.y + (l.you ? charging * 4 * course.markerScale : 0);
           const targetX = standings ? 38 : point.x + (effect?.joltX ?? 0) * course.markerScale;
