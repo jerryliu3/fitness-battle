@@ -3,14 +3,15 @@ import { AthletePennant } from "./athlete-pennant";
 import { useEffect, useId, useMemo, useRef, useState, type ReactNode, type ComponentRef } from "react";
 import { View, Text, Pressable, ScrollView } from "react-native";
 import Mapbox, { MapView, Camera, ShapeSource, LineLayer, CircleLayer, MarkerView, CameraGestureObserver } from "@rnmapbox/maps";
-import { courseAthleteDetail, createCourseCamera, raceCourseScene, RACE_LANE_SPACING_METRES, RACE_TRAIL_WIDTH_METRES, RACE_TRAIL_MIN_WIDTH_PIXELS, type RaceCourse, type ArenaSceneLane, type CourseCameraPose } from "@fitness-battle/shared";
+import { courseAthleteDetail, createCourseCamera, raceEffortMetres, raceCourseScene, RACE_LANE_SPACING_METRES, RACE_TRAIL_WIDTH_METRES, RACE_TRAIL_MIN_WIDTH_PIXELS, type CourseDistanceTarget, type RaceCourse, type ArenaSceneLane, type CourseCameraPose } from "@fitness-battle/shared";
 import { mobileEnv } from "../lib/env";
 import { FieldOverlayView } from "./field-overlay-motion";
 import { textStyle } from "./section";
 import { useReducedMotion } from "./use-reduced-motion";
 
 Mapbox.setAccessToken(mobileEnv.mapboxAccessToken);
-export default function CourseMap({ course, lanes, unit, selectedId, focusRequest, onSelect, controlsBottom = 8, extraControls, overlaysHidden = false }: {
+export default function CourseMap({ course, lanes, unit, selectedId, focusRequest, onSelect, controlsBottom = 8, extraControls, overlaysHidden = false, distanceTarget, onResumeFollow }: {
+  distanceTarget?: CourseDistanceTarget | null; onResumeFollow?: () => void;
   course: RaceCourse; lanes: ArenaSceneLane[]; unit: string; selectedId: string; focusRequest: number; onSelect(id: string): void; controlsBottom?: number; extraControls?: ReactNode; overlaysHidden?: boolean;
 }) {
   const prefix = useId();
@@ -30,7 +31,7 @@ export default function CourseMap({ course, lanes, unit, selectedId, focusReques
     move(next, duration) { ref.current?.setCamera({ centerCoordinate: next.center, zoomLevel: next.zoom, pitch: next.pitch, heading: next.bearing, animationDuration: duration, animationMode: "easeTo" }); },
   }), []);
   useEffect(() => controller.setReducedMotion(Boolean(reduced)), [controller, reduced]);
-  const focus = () => { if (scene.selected) { controller.focus(course, scene.selected.metres, false, scene.selected.lateralMetres); setFollowing(true); } };
+  const focus = () => { if (scene.selected) { controller.focus(course, scene.selected.metres, false, scene.selected.lateralMetres); setFollowing(true); onResumeFollow?.(); } };
   const lastFocus = useRef<{ course: RaceCourse; id: string; request: number } | null>(null);
   useEffect(() => {
     if (!ready || !scene.selected) return;
@@ -40,6 +41,13 @@ export default function CourseMap({ course, lanes, unit, selectedId, focusReques
     controller.focus(course, scene.selected.metres, !explicit, scene.selected.lateralMetres);
     if (explicit) setFollowing(true);
   }, [ready, controller, course, selectedId, focusRequest, scene.selected?.metres, scene.selected?.lateralMetres]);
+  useEffect(() => {
+    if (!ready || !distanceTarget) return;
+    const metres = raceEffortMetres(distanceTarget.value, unit);
+    if (metres === null) return;
+    controller.seek(course, metres);
+    setFollowing(false);
+  }, [ready, course, unit, distanceTarget?.value, distanceTarget?.request, controller]);
   const control = (label: string, action: () => void) => <Pressable accessibilityRole="button" accessibilityLabel={label} onPress={() => { action(); setFollowing(controller.following); }} style={{ minHeight: 44, paddingHorizontal: 14, justifyContent: "center", borderRadius: 12, backgroundColor: "#ffffff" }}><Text style={textStyle("label")}>{label}</Text></Pressable>;
   return <View style={{ flex: 1, minHeight: 200 }}>
     <MapView accessibilityLabel={`${course.name}. Out-and-back geographic race course.`} style={{ flex: 1 }} styleURL="mapbox://styles/mapbox/standard" logoEnabled attributionEnabled

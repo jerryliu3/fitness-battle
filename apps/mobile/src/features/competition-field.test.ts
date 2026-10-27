@@ -85,15 +85,29 @@ it("keeps 4D inside the fullscreen host with the same panels, selection and repl
   const map = () => renderer.root.findByType("GeographicCourse" as never);
   const course = createRaceCourse("City", [[0, 0], [.02, 0]]);
   await act(async () => map().props.onCourseChange(course));
-  expect(renderer.root.findAllByType("FieldOverview" as never)).toHaveLength(0);
+  const overview = () => renderer.root.findByType("FieldOverview" as never);
+  expect(overview().props.positionOnly).toBe(true);
+  const selected = map().props.selectedId;
+  const fieldCenter = field().props.view.center;
+  await act(async () => overview().props.onNavigate(.75));
+  expect(map().props.distanceTarget).toMatchObject({ value: .75, request: 1 });
+  expect(overview().props.view.center).toBe(.75);
+  expect(map().props.selectedId).toBe(selected);
+  expect(field().props.view.center).toBe(fieldCenter);
+  await act(async () => map().props.onResumeFollow());
+  expect(map().props.distanceTarget).toBeNull();
   expect(renderer.root.findAllByType("Modal" as never)).toHaveLength(1);
   expect(button("Collapse live intervals")).toBeDefined();
   await act(async () => button("Collapse athlete panel").props.onPress());
   expect(button("Expand athlete panel")).toBeDefined();
+  expect(overview()).toBeDefined();
+  await act(async () => overview().props.onNavigate(.5));
   const peer = map().props.lanes.find((lane: { you: boolean }) => !lane.you);
   if (peer) {
     await act(async () => map().props.onSelect(peer.id));
     expect(map().props.selectedId).toBe(peer.id);
+    expect(map().props.distanceTarget).toBeNull();
+    expect(overview().props.view.center).toBe(peer.value);
   }
   expect(mocks.fly).not.toHaveBeenCalled();
   const replay = renderer.root.findAllByType("ReplayButton" as never).find(node => node.props.dimension === "4d")!;
@@ -105,7 +119,7 @@ it("keeps 4D inside the fullscreen host with the same panels, selection and repl
   expect(renderer.root.findAllByType("FieldOverview" as never)).toHaveLength(1);
   expect(renderer.root.findAllByType("GeographicCourse" as never)).toHaveLength(0);
   await switchTo("4D");
-  expect(renderer.root.findAllByType("FieldOverview" as never)).toHaveLength(0);
+  expect(overview().props.positionOnly).toBe(true);
   expect(map().props.course).toBe(course);
   expect(button("Expand athlete panel")).toBeDefined();
 });

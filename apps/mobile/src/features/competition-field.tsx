@@ -22,6 +22,7 @@ import {
   shellTabFromPath,
   weeklyBoard,
   type RaceCourse,
+  type CourseDistanceTarget,
   type ArenaSceneLane,
   type ScoreTrack,
   type SportId,
@@ -54,6 +55,7 @@ export function CompetitionField({
   const isFocused = shellTabFromPath(pathname)?.id === "arena";
   const [sceneDimension, setSceneDimension] = useState<"2d" | "3d" | "4d">("2d");
   const [course, setCourse] = useState<RaceCourse | null>(null);
+  const [courseTarget, setCourseTarget] = useState<CourseDistanceTarget | null>(null);
   const chooseView = (value: "2d" | "3d" | "4d") => {
     void playCue("selection");
     flight.cancel();
@@ -135,6 +137,7 @@ export function CompetitionField({
   const selectAthlete = (id: string) => {
     const lane = arena.lanes.find((item) => item.id === id);
     if (!lane) return;
+    setCourseTarget(null);
     setStandingsOpen(false);
     const ordered = orderedArenaLanes(arena.lanes);
     portraitAnchor.current = Math.max(0, ordered.findIndex(l => l.id === id)) - Math.max(0, ordered.findIndex(l => l.you));
@@ -192,7 +195,7 @@ export function CompetitionField({
       onTouchCancel={() => hold.current?.end()}
     >
       {sceneDimension === "4d" && isFocused ? <View style={{ height: sceneHeight }}>
-        <GeographicCourse lanes={fieldLanes} unit={arena.unit} selectedId={selectedId ?? me?.id ?? ""} focusRequest={focusRequest} onSelect={id => { if (!hold.current?.suppressSelection()) selectAthlete(id); }} course={course} onCourseChange={setCourse} controlsBottom={expanded ? safeBottom + (spotlightCollapsed ? 132 : 216) : 8} overlaysHidden={overlaysHidden} />
+        <GeographicCourse lanes={fieldLanes} unit={arena.unit} selectedId={selectedId ?? me?.id ?? ""} focusRequest={focusRequest} onSelect={id => { if (!hold.current?.suppressSelection()) selectAthlete(id); }} course={course} onCourseChange={setCourse} distanceTarget={courseTarget} onResumeFollow={() => setCourseTarget(null)} controlsBottom={expanded ? safeBottom + (spotlightCollapsed ? 132 : 216) : 8} overlaysHidden={overlaysHidden} />
         {!expanded ? <View style={{ position: "absolute", right: 12, top: 12 }}><IconButton icon="expand" label="Expand 4D course to full screen" onPress={expandField} /></View> : null}
       </View> : null}
       {sceneDimension === "3d" && isFocused ? (
@@ -704,11 +707,15 @@ export function CompetitionField({
                 </ScrollView>
               </SlidingFieldPanel>
             ) : null}
-            {sceneDimension !== "4d" ? <FieldOverlayView hidden={overlaysHidden} onTouchStart={event => event.stopPropagation()}
+            <FieldOverlayView hidden={overlaysHidden} onTouchStart={event => event.stopPropagation()}
               style={{ position: "absolute", left: 12, right: 12, bottom: safeBottom + 8, borderRadius: 12, overflow: "hidden" }}>
-              <FieldOverview lanes={fieldLanes} view={view} unit={arena.unit}
-                onNavigate={panTo} />
-            </FieldOverlayView> : null}
+              <FieldOverview lanes={fieldLanes} view={sceneDimension === "4d" ? { ...view, center: courseTarget?.value ?? focusedLane?.values[2] ?? total } : view}
+                unit={arena.unit} positionOnly={sceneDimension === "4d"}
+                onNavigate={value => {
+                  if (sceneDimension === "4d") setCourseTarget(previous => ({ value, request: (previous?.request ?? 0) + 1 }));
+                  else panTo(value);
+                }} />
+            </FieldOverlayView>
           </> : null}
           </View>
         </Modal>

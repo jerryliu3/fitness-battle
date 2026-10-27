@@ -452,3 +452,19 @@ window in both 2D/3D, supports dragging, native adjustable accessibility actions
 and web keyboard arrows/Home/End. Selecting it cancels camera travel before
 navigating. Both elements clear the bottom safe area; the panel reserves 56px
 above the overview. Field hold-to-hide applies to both.
+
+### 4D distance overview follow-up — October 27
+
+With a course selected, Full Arena restores the horizontal overview in 4D beneath
+the athlete panel, including when the panel is collapsed. It shows the real athlete
+positions and a **Course distance target** cursor, rather than claiming that a
+linear distance window represents the geographic viewport. Pointer/drag, native
+adjustable actions and web arrow/Home/End controls seek along the same accumulated
+distance and out-and-back mapping as racer positions, respecting mi/km units.
+
+Seeking suspends automatic athlete following, preserves map zoom/pitch/bearing,
+and moves immediately during scrubbing. Recenter or selecting an athlete resumes
+following and restores the target cursor to that athlete's distance. Returning to
+a course retains an explicit target; choosing another athlete clears it. Seeking
+is presentation-only and never edits activity, athlete selection, scores or trails.
+The earlier hide-only PR remains the fallback until this follow-up is applied.

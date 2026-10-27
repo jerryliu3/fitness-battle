@@ -74,3 +74,23 @@ describe("race courses", () => {
     expect(move.mock.calls.every(call => call[1] === 0)).toBe(true);
   });
 });
+
+it("seeks directly through return trips without resetting the camera or following", () => {
+  let pose: CourseCameraPose = { center: [0, 0], zoom: 14, pitch: 35, bearing: 72 };
+  const move = vi.fn((next: CourseCameraPose, _duration: number) => { pose = next; }), stop = vi.fn();
+  const camera = createCourseCamera({ read: () => pose, stop, move });
+  for (const fraction of [0, .25, 1, 1.25, 2, 20_000.25]) {
+    camera.seek(course, course.length * fraction);
+    expect(pose.center).toEqual(raceCoursePosition(course, course.length * fraction).coordinate);
+    expect(pose).toMatchObject({ zoom: 14, pitch: 35, bearing: 72 });
+    expect(move.mock.lastCall![1]).toBe(0);
+    expect(camera.following).toBe(false);
+  }
+  move.mockClear();
+  camera.focus(course, 200, true);
+  expect(move).not.toHaveBeenCalled();
+  camera.focus(course, 200);
+  expect(move).toHaveBeenCalledOnce();
+  expect(camera.following).toBe(true);
+  expect(stop).toHaveBeenCalled();
+});

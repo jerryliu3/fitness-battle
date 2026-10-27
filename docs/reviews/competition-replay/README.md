@@ -137,3 +137,26 @@ HUD omits that slider instead of exposing an inert navigation control. Both
 platform field tests now verify that the overview disappears in 4D, returns in
 2D/3D, and leaves the selected course and athlete intact. Five native field tests
 and the web 4D integration test passed; no typecheck or expensive suite was run.
+
+## 4D overview follow-up
+
+The follow-up to the hide-only correction restores the fullscreen overview when a
+geographic course is selected. Both hosts pass explicit distance targets through
+GeographicCourse into their existing map camera adapter. The adapters convert
+host display units to metres; the shared camera follows the existing course
+position mapping through bends, turnarounds and repeated out-and-back trips.
+
+The geographic overview uses a point cursor labeled Course distance target instead
+of the 2D/3D viewport window. Scrubbing issues immediate camera commands while
+preserving zoom, pitch and bearing, and suspends automatic following. Recenter or
+athlete selection resumes following and clears the explicit target. Repeated
+distance targets remain actionable after manual map movement. Ordinary map gestures,
+course overview/zoom controls and 2D/3D distance-window behavior remain unchanged.
+
+Validation: 9 shared race-course tests, 4 web map/host tests and 8 native map/host
+tests passed. Coverage includes pending targets before map load, mi/km conversion,
+repeated targets, selected-athlete preservation, suspended automatic chase,
+recenter, retained course selection and visible overview in collapsed/expanded
+panels. Adapters use mocked map engines; no installed-device or live Mapbox-rendering
+validation is claimed. Typecheck/build and expensive suites were skipped per the
+owner's requested workflow.

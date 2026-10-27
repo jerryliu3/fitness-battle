@@ -2,11 +2,12 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
-import { courseAthleteDetail, createCourseCamera, raceCourseScene, RACE_LANE_SPACING_METRES, RACE_TRAIL_WIDTH_METRES, RACE_TRAIL_MIN_WIDTH_PIXELS, type RaceCourse, type ArenaSceneLane, type CourseCameraPose } from "@fitness-battle/shared";
+import { courseAthleteDetail, createCourseCamera, raceEffortMetres, raceCourseScene, RACE_LANE_SPACING_METRES, RACE_TRAIL_WIDTH_METRES, RACE_TRAIL_MIN_WIDTH_PIXELS, type CourseDistanceTarget, type RaceCourse, type ArenaSceneLane, type CourseCameraPose } from "@fitness-battle/shared";
 import { CourseCallout } from "./course-callout";
 import { webEnv } from "@/lib/env";
 
-export default function CourseMap({ course, lanes, unit, selectedId, focusRequest, onSelect, controlsBottom = 8, extraControls }: {
+export default function CourseMap({ course, lanes, unit, selectedId, focusRequest, onSelect, controlsBottom = 8, extraControls, distanceTarget, onResumeFollow }: {
+  distanceTarget?: CourseDistanceTarget | null; onResumeFollow?: () => void;
   course: RaceCourse; lanes: ArenaSceneLane[]; unit: string; selectedId: string; focusRequest: number; onSelect(id: string): void; controlsBottom?: number; extraControls?: ReactNode;
 }) {
   const container = useRef<HTMLDivElement>(null), map = useRef<mapboxgl.Map | null>(null);
@@ -65,6 +66,13 @@ export default function CourseMap({ course, lanes, unit, selectedId, focusReques
     camera.current?.focus(course, scene.selected.metres, !explicit, scene.selected.lateralMetres);
     if (explicit) setFollowing(true);
   }, [ready, course, selectedId, focusRequest, scene.selected?.metres, scene.selected?.lateralMetres]);
+  useEffect(() => {
+    if (!ready || !distanceTarget) return;
+    const metres = raceEffortMetres(distanceTarget.value, unit);
+    if (metres === null) return;
+    camera.current?.seek(course, metres);
+    setFollowing(false);
+  }, [ready, course, unit, distanceTarget?.value, distanceTarget?.request]);
   const control = (label: string, action: () => void) => <button type="button" className="fb-btn-line" style={{ whiteSpace: "nowrap", minHeight: 44 }} onClick={() => { action(); setFollowing(camera.current?.following ?? false); }}>{label}</button>;
   return <div className="geographic-map" style={{ flex: 1, minHeight: 200, display: "flex", flexDirection: "column", position: "relative", "--map-controls-bottom": `${controlsBottom}px` } as React.CSSProperties}>
     <div ref={container} aria-label="Geographic race course. Drag to explore; pinch or scroll to zoom." style={{ flex: 1, minHeight: 160, position: "relative", overflow: "hidden" }} />
@@ -72,7 +80,7 @@ export default function CourseMap({ course, lanes, unit, selectedId, focusReques
     {error ? <p role="alert" className="fb-copy" style={{ position: "absolute", left: 8, right: 8, bottom: controlsBottom + 100, padding: 12, background: "white" }}>{error}</p> : null}
     <div className="geographic-map-controls" style={{ position: "absolute", bottom: controlsBottom, left: 8, right: 8, display: "flex", overflowX: "auto", gap: 8, padding: 8 }}>
       {extraControls}
-      {control(following ? "Following" : "Recenter", () => { if (scene.selected) camera.current?.focus(course, scene.selected.metres, false, scene.selected.lateralMetres); })}
+      {control(following ? "Following" : "Recenter", () => { if (scene.selected) { camera.current?.focus(course, scene.selected.metres, false, scene.selected.lateralMetres); onResumeFollow?.(); } })}
       {control(flat ? "3D chase" : "2D map", () => { camera.current?.dimension(flat ? "3d" : "2d"); setFlat(!flat); if (camera.current?.following && scene.selected) camera.current.focus(course, scene.selected.metres, false, scene.selected.lateralMetres); })}
       {control(spaced ? "Racers: spaced" : "Racers: together", () => setSpaced(value => !value))}
       {control("Race overview", () => { camera.current?.overview({ coordinates: scene.overviewCoordinates }); setFlat(true); })}

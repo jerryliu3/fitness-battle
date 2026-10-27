@@ -13,6 +13,7 @@ import {
   competePeriodWindow,
   competeNow,
   type RaceCourse,
+  type CourseDistanceTarget,
   type CompeteState,
   effortRankBadge,
   fieldDefaultSpan,
@@ -87,6 +88,7 @@ export function FieldStage({
 
   const [viewDimension, setViewDimension] = useState<"2d" | "3d" | "4d">("2d");
   const [course, setCourse] = useState<RaceCourse | null>(null);
+  const [courseTarget, setCourseTarget] = useState<CourseDistanceTarget | null>(null);
   const chooseView = (value: "2d" | "3d" | "4d") => {
     void playCue("selection");
     cancelCenterTween();
@@ -123,6 +125,7 @@ export function FieldStage({
       runners.find((item) => item.id === id) ??
       (ghost?.id === id ? ghost : null);
     if (!runner) return;
+    setCourseTarget(null);
     setStandingsOpen(false);
     setSelected(id);
     setFocusRequest(value => value + 1);
@@ -464,10 +467,14 @@ export function FieldStage({
           </div>
         </div>
       ) : null}
-      {viewDimension !== "4d" ? <div className="focus-broadcast-overview" aria-label="Race overview">
-        <FieldOverview lanes={fieldLanes} view={view} unit={unit}
-          onNavigate={value => { cancelCenterTween(); setCenter(clampViewCenter(value, view.span)); }} />
-      </div> : null}
+      <div className="focus-broadcast-overview" aria-label="Race overview">
+        <FieldOverview lanes={fieldLanes} view={viewDimension === "4d" ? { ...view, center: courseTarget?.value ?? focusedLane?.value ?? total } : view}
+          unit={unit} positionOnly={viewDimension === "4d"}
+          onNavigate={value => {
+            if (viewDimension === "4d") setCourseTarget(previous => ({ value, request: (previous?.request ?? 0) + 1 }));
+            else { cancelCenterTween(); setCenter(clampViewCenter(value, view.span)); }
+          }} />
+      </div>
     </> : null}
     </div>
   ) : null;
@@ -491,7 +498,7 @@ export function FieldStage({
           hud={broadcastHud}
         >
           {viewDimension === "4d" && tabActive ? <div className="focus-geographic-host" style={{ position: "relative", height: lanesImmersive ? "100%" : 460 }}>
-            <GeographicCourse lanes={fieldLanes} unit={unit} selectedId={trackSelected || you.id} focusRequest={focusRequest} onSelect={toggleSelect} course={course} onCourseChange={setCourse} controlsBottom={lanesImmersive ? spotlightCollapsed ? 136 : 236 : 8} />
+            <GeographicCourse lanes={fieldLanes} unit={unit} selectedId={trackSelected || you.id} focusRequest={focusRequest} onSelect={toggleSelect} course={course} onCourseChange={setCourse} distanceTarget={courseTarget} onResumeFollow={() => setCourseTarget(null)} controlsBottom={lanesImmersive ? spotlightCollapsed ? 136 : 236 : 8} />
             {!lanesImmersive ? <button type="button" className="focus-portal-pill is-accent" style={{ position: "absolute", top: 12, right: 12 }} aria-label="Expand 4D course to full screen" onClick={() => setLanesImmersive(true)}>Full Arena ⤢</button> : null}
           </div> : null}
           {viewDimension === "3d" && tabActive ? (
