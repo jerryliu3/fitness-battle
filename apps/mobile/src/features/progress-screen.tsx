@@ -30,7 +30,6 @@ export function ProgressScreen() {
         <View style={{display:section==="effort"?"flex":"none",gap:28}}>
         <AthleteMetrics state={state} />
         </View>
-        </View>
         <View style={{display:section==="overview"?"flex":"none",gap:28}}><TrainingHistory state={state}><Achievements state={state}/></TrainingHistory>
         <View style={f.section}>
           <Pressable accessibilityRole="button" onPress={() => router.push("/progress-history")}>
