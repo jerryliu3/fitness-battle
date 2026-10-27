@@ -21,6 +21,7 @@ export * from "./effort-history";
 export * from "./journey";
 export * from "./haptics";
 export * from "./activity-age";
+export * from "./activity-comparison";
 export * from "./member-count";
 export * from "./field-appearance";
 export * from "./field-course";

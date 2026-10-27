@@ -50,6 +50,14 @@ describe("native earned progress flows",()=>{
   await act(async()=>{renderer=create(createElement(SessionStage,{state:mock.state!,activities:[],suggestion:{title:"Easy movement",minutes:30,detail:"Keep it comfortable."},onRemove:vi.fn()}));});
   const json=JSON.stringify(renderer.toJSON());expect(json).toContain("Suggested time");expect(json).toContain('"0.5"');expect(json).not.toContain("recorded session");
  });
+ it("leads an individual session with its history comparison when enough history exists",async()=>{
+  const current=recorded("today",2400);
+  const prior=[1,2,3].map((day,index)=>({...recorded(`prior-${day}`,1800+index*300),startedAt:new Date(now.getTime()-day*86400000).toISOString()}));
+  const state={...mock.state!,activities:[current,...prior]};
+  await act(async()=>{renderer=create(createElement(SessionStage,{state,activities:[current],onRemove:vi.fn()}));});
+  expect(text()).toContain("This session in context");
+  expect(renderer.root.findAllByType("Ember" as never)).toHaveLength(0);
+ });
  it("switches the chart between week, month and year without manufacturing future sessions",async()=>{
   const state={...mock.state!,activities:[recorded("today",3600)]};
   await act(async()=>{renderer=create(createElement(TrainingAtlas,{state}));});

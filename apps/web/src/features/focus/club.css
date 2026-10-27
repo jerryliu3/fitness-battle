@@ -962,6 +962,21 @@
 .session-stage-object:before {
   border-radius: 14px;
 }
+.activity-comparison { display: grid; gap: 10px; padding: 4px 0; }
+.activity-comparison h2 { margin: 0; color: var(--ink); font: var(--type-heading); }
+.activity-comparison p { margin: 0; color: var(--muted); font: var(--type-caption); }
+.activity-comparison-choices { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
+.activity-comparison-choices button { min-height: 44px; padding: 0 14px; border: 1px solid var(--line); border-radius: 12px; color: var(--ink); background: transparent; font: var(--type-label); cursor: pointer; }
+.activity-comparison-choices button[aria-pressed="true"] { background: var(--ink); border-color: var(--ink); color: var(--card); }
+.activity-comparison-chart { display: grid; gap: 12px; padding: 8px 0; }
+.activity-comparison-row { display: grid; gap: 5px; }
+.activity-comparison-row > div:first-child { display: flex; justify-content: space-between; gap: 8px; }
+.activity-comparison-row span { color: var(--muted); font: var(--type-caption); }
+.activity-comparison-row strong { color: var(--ink); font: var(--type-label); }
+.activity-comparison-track { height: 9px; overflow: hidden; border-radius: 5px; background: var(--accent-soft); }
+.activity-comparison-track > div { height: 100%; border-radius: 5px; }
+.activity-comparison-track .is-current { background: var(--action-primary); }
+.activity-comparison-track .is-previous { background: var(--field-teal); }
 .phone-shell .focus-crew {
   display: grid;
   gap: 20px;
