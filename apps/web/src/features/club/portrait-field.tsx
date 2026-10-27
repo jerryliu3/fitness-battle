@@ -119,7 +119,7 @@ export function PortraitField({
   });
   return (
     <div className={immersive ? "club-perspective-group is-immersive" : "club-perspective-group"}>
-      <div className="club-board-status">
+      <div className="club-board-status" style={!immersive && controlsTop > 12 ? { minHeight: 44, paddingLeft: 120, flexWrap: "wrap", justifyContent: "flex-end", gap: 4 } : undefined}>
         <b>
           {scene.place} / {scene.fieldSize} <AppText as="small" role="caption" secondary>PLACE</AppText>
         </b>

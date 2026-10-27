@@ -169,7 +169,7 @@ export function PortraitField({
   }, [selectedId, focusRequest, scene.baseFocus, scene.ordered, animateSelection]);
   return (
     <View style={{ gap: 10 }}>
-      <FieldOverlayView hidden={overlaysHidden} style={s.status} pointerEvents="none">
+      <FieldOverlayView hidden={overlaysHidden} style={[s.status, !fullscreen && controlsTop > 12 ? { minHeight: 48, paddingLeft: 136, flexWrap: "wrap", justifyContent: "flex-end", gap: 4 } : null]} pointerEvents="none">
         <Text style={[s.white, { color: "#142b3b" }]}>
           {scene.place} / {scene.fieldSize} PLACE
         </Text>
