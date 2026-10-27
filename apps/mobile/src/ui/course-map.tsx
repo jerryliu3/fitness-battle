@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type ComponentRef } from "react";
 import { View, Text, Pressable, ScrollView } from "react-native";
 import Mapbox, { MapView, Camera, ShapeSource, LineLayer, CircleLayer, CameraGestureObserver } from "@rnmapbox/maps";
-import { createCourseCamera, raceCourseScene, type RaceCourse, type ArenaSceneLane, type CourseCameraPose } from "@fitness-battle/shared";
+import { createCourseCamera, raceCourseScene, RACE_LANE_SPACING_METRES, RACE_TRAIL_WIDTH_METRES, type RaceCourse, type ArenaSceneLane, type CourseCameraPose } from "@fitness-battle/shared";
 import { mobileEnv } from "../lib/env";
 import { textStyle } from "./section";
 import { useReducedMotion } from "./use-reduced-motion";
@@ -13,8 +13,8 @@ export default function CourseMap({ course, lanes, unit, selectedId, focusReques
   const ref = useRef<ComponentRef<typeof Camera>>(null);
   const reduced = useReducedMotion();
   const [spaced, setSpaced] = useState(true);
-  const scene = useMemo(() => raceCourseScene(course, lanes, unit, selectedId, spaced ? 1 : 0), [course, lanes, unit, selectedId, spaced]);
-  const trailWidth = .35 / (78271.516964 * Math.cos(course.coordinates[0][1] * Math.PI / 180));
+  const scene = useMemo(() => raceCourseScene(course, lanes, unit, selectedId, spaced ? RACE_LANE_SPACING_METRES : 0), [course, lanes, unit, selectedId, spaced]);
+  const trailWidth = RACE_TRAIL_WIDTH_METRES / (78271.516964 * Math.cos(course.coordinates[0][1] * Math.PI / 180));
   const pose = useRef<CourseCameraPose>({ center: scene.selected?.coordinate ?? course.coordinates[0], zoom: 16, pitch: 60, bearing: 0 });
   const [ready, setReady] = useState(false), [error, setError] = useState(""), [flat, setFlat] = useState(false);
   const [following, setFollowing] = useState(true);
@@ -50,7 +50,7 @@ export default function CourseMap({ course, lanes, unit, selectedId, focusReques
       }} />
       <ShapeSource id="completed" shape={scene.trails}><LineLayer id="completed-line" slot="middle" style={{ lineColor: ["get", "color"], lineSortKey: ["get", "priority"], lineWidth: ["interpolate", ["exponential", 2], ["zoom"], 0, .75, 16, Math.max(.75, trailWidth * 2 ** 16), 22, trailWidth * 2 ** 22], lineCap: "round", lineJoin: "round" }} /></ShapeSource>
       <ShapeSource id="athletes" shape={scene.markers} onPress={event => { const id = event.features[0]?.properties?.id; if (typeof id === "string") onSelect(id); }}>
-        <CircleLayer id="athlete-dots" slot="top" style={{ circleRadius: ["case", ["get", "selected"], 10, 7], circleColor: ["case", ["get", "you"], "#f7c948", "#20b9c6"], circleStrokeColor: "#ffffff", circleStrokeWidth: 2 }} />
+        <CircleLayer id="athlete-dots" slot="top" style={{ circleRadius: ["case", ["get", "selected"], 5, 3], circleColor: ["case", ["get", "you"], "#f7c948", "#20b9c6"], circleStrokeColor: "#ffffff", circleStrokeWidth: 1 }} />
       </ShapeSource>
     </MapView>
     {error ? <Text accessibilityRole="alert" style={{ ...textStyle("body"), padding: 12, backgroundColor: "#ffffff" }}>{error}</Text> : null}

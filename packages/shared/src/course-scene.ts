@@ -2,6 +2,9 @@ import { raceCourseRacerPosition, raceCourseTrail, raceEffortMetres, type RaceCo
 import type { ArenaSceneLane } from "./arena-view";
 import type { LngLat } from "./routeGeoUtils";
 
+export const RACE_LANE_SPACING_METRES = .35;
+export const RACE_TRAIL_WIDTH_METRES = .12;
+
 function buildCourseGeometry(course: RaceCourse, lanes: readonly ArenaSceneLane[], unit: string, spacing: number, anchorId: string) {
   const roster = lanes.filter(lane => !lane.ghost);
   const ids = roster.map(lane => lane.id).sort();
@@ -32,7 +35,7 @@ function buildCourseGeometry(course: RaceCourse, lanes: readonly ArenaSceneLane[
 }
 // Selection only updates dots and the camera; it must not resend every long trail to Mapbox.
 const geometryCache = new WeakMap<RaceCourse, { lanes: readonly ArenaSceneLane[]; unit: string; spacing: number; anchor: string; geometry: ReturnType<typeof buildCourseGeometry> }>();
-export function raceCourseScene(course: RaceCourse, lanes: readonly ArenaSceneLane[], unit: string, selectedId: string, spacingMetres = 1) {
+export function raceCourseScene(course: RaceCourse, lanes: readonly ArenaSceneLane[], unit: string, selectedId: string, spacingMetres = RACE_LANE_SPACING_METRES) {
   const anchor = lanes.find(lane => lane.you && !lane.ghost)?.id ?? "";
   let cached = geometryCache.get(course);
   if (!cached || cached.lanes !== lanes || cached.unit !== unit || cached.spacing !== spacingMetres || cached.anchor !== anchor) {

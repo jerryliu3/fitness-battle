@@ -367,9 +367,9 @@ on native and web, including fullscreen controls. Distance fields offer all thre
 points fields retain 2D / 3D. 4D opens the dedicated course screen, preserves the
 chosen course when switching views, and has the same selector for returning.
 The route ahead stays invisible. Each athlete reveals an individual narrow,
-opaque trail that ends exactly at their dot; no activity means no trail. The
+opaque trail (about 12 cm wide at close zoom) that ends exactly at their dot; no activity means no trail. The
 viewer stays centered on the underlying route, with peers alternating left/right
-in stable ID order at one-metre spacing. Selection moves the camera without
+in stable ID order at 35 cm spacing (ten lane centers span 3.15 m). Selection moves the camera without
 rearranging lanes. The spacing toggle compares spaced/together layouts. Camera
 follow uses the same displayed position as the trail. Race overview frames only
 covered ground. Return trips preserve the full earned trail with geometry

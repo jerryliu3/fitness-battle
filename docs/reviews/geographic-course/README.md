@@ -25,14 +25,14 @@ Zero activity draws a dot at the start but no trail. **Race overview** fits only
 earned trails and current dots; it never frames the unreached route.
 
 The viewer's own lane stays centered on the route. Peers alternate left/right in
-stable ID order with one metre between adjacent lanes (ten racers span nine
+stable ID order with 35 cm between adjacent lanes (ten lane centers span 3.15
 metres). Selecting a peer moves the camera without rearranging lanes. **Racers:
 spaced / Racers: together** permits comparison. Each dot and its individual trail
 interpolate the same offset polyline, including bends and return legs, so the dot
 always sits at its trail's endpoint. Offset vertices are computed lazily and
 cached; selection reuses the trail source instead of resending all geometry.
 
-Trails are thin opaque lines: approximately 35 cm near the course's origin when
+Trails are thin opaque lines: approximately 12 cm near the course's origin when
 zoomed in, with a 0.75 px visibility floor when zoomed out. This is illustrative
 spacing rather than road-width queries or collision simulation. Narrow roads and
 zoomed-out marker overlap remain possible. After a racer covers the whole course,
@@ -224,7 +224,7 @@ not rerun for these JavaScript-only changes.
 
 ### Individual trail discovery follow-up
 
-The shared model tests cover viewer centering, ten one-metre lanes, no future
+The shared model tests cover viewer centering, ten tightly packed lanes, no future
 geometry, no trail at zero activity, discovered-only bounds, shared marker/trail
 endpoints through bends/date-line crossings/return trips, and bounded geometry
 across thousands of trips. Adapter checks verify that no full-course source is
@@ -248,3 +248,23 @@ and course loading plus the close-up trail scenario were rechecked (two cases,
 zero failures, 31.4 seconds). The final 20 focused shared/native/web tests,
 workspace typechecks, UI contract, and web production build pass. Device frame
 rate/heat/battery remain unmeasured.
+
+
+### Tighter road footprint
+
+The spacing follow-up compresses lane centers from 1 m to 0.35 m apart, reducing
+ten racers from a 9 m span to 3.15 m. Trail width drops from approximately 35 cm
+to 12 cm at close zoom, retaining the 0.75 px visibility floor. Selected/peer dot
+radii shrink from 10/7 px to 5/3 px with a 1 px outline. Both platforms consume
+the same shared spacing/width constants; viewer centering and trail alignment
+stay unchanged. This reduces sidewalk spillover without road-boundary queries.
+The tighter layout trades some zoomed-out separation for a smaller footprint;
+GPX routes still provide no road-width guarantee.
+
+
+The compact layout passes the 16 shared course checks, both map-adapter checks,
+and workspace typechecks. The iOS course-load and close-up scenarios pass again
+(two cases, zero failures, 28.7 seconds), using the same road as the earlier
+screenshots. The individual-trail screenshots above now show the tighter layout;
+the visible racers stay on this road. Other narrow/off-center routes remain an
+approximation, rather than a guarantee of road containment.

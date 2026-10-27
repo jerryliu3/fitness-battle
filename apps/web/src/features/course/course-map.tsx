@@ -2,7 +2,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
-import { createCourseCamera, raceCourseScene, type RaceCourse, type ArenaSceneLane, type CourseCameraPose } from "@fitness-battle/shared";
+import { createCourseCamera, raceCourseScene, RACE_LANE_SPACING_METRES, RACE_TRAIL_WIDTH_METRES, type RaceCourse, type ArenaSceneLane, type CourseCameraPose } from "@fitness-battle/shared";
 import { webEnv } from "@/lib/env";
 
 export default function CourseMap({ course, lanes, unit, selectedId, focusRequest, onSelect }: {
@@ -11,7 +11,7 @@ export default function CourseMap({ course, lanes, unit, selectedId, focusReques
   const container = useRef<HTMLDivElement>(null), map = useRef<mapboxgl.Map | null>(null);
   const [ready, setReady] = useState(false), [error, setError] = useState(""), [flat, setFlat] = useState(false), [following, setFollowing] = useState(true);
   const [spaced, setSpaced] = useState(true);
-  const scene = useMemo(() => raceCourseScene(course, lanes, unit, selectedId, spaced ? 1 : 0), [course, lanes, unit, selectedId, spaced]);
+  const scene = useMemo(() => raceCourseScene(course, lanes, unit, selectedId, spaced ? RACE_LANE_SPACING_METRES : 0), [course, lanes, unit, selectedId, spaced]);
   const latest = useRef({ scene, onSelect }); latest.current = { scene, onSelect };
   const reduced = useRef(false);
   const camera = useRef<ReturnType<typeof createCourseCamera> | null>(null);
@@ -38,9 +38,9 @@ export default function CourseMap({ course, lanes, unit, selectedId, focusReques
       const s = latest.current.scene;
       instance.addSource("completed", { type: "geojson", data: s.trails });
       instance.addSource("athletes", { type: "geojson", data: s.markers });
-      const trailWidth = .35 / (78271.516964 * Math.cos(course.coordinates[0][1] * Math.PI / 180));
+      const trailWidth = RACE_TRAIL_WIDTH_METRES / (78271.516964 * Math.cos(course.coordinates[0][1] * Math.PI / 180));
       instance.addLayer({ id: "completed-line", type: "line", source: "completed", slot: "middle", layout: { "line-cap": "round", "line-join": "round", "line-sort-key": ["get", "priority"] }, paint: { "line-color": ["get", "color"], "line-width": ["interpolate", ["exponential", 2], ["zoom"], 0, .75, 16, Math.max(.75, trailWidth * 2 ** 16), 22, trailWidth * 2 ** 22] } });
-      instance.addLayer({ id: "athlete-dots", type: "circle", source: "athletes", slot: "top", paint: { "circle-radius": ["case", ["get", "selected"], 10, 7], "circle-color": ["case", ["get", "you"], "#f7c948", "#20b9c6"], "circle-stroke-color": "#ffffff", "circle-stroke-width": 2 } });
+      instance.addLayer({ id: "athlete-dots", type: "circle", source: "athletes", slot: "top", paint: { "circle-radius": ["case", ["get", "selected"], 5, 3], "circle-color": ["case", ["get", "you"], "#f7c948", "#20b9c6"], "circle-stroke-color": "#ffffff", "circle-stroke-width": 1 } });
       instance.on("click", "athlete-dots", event => { const id = event.features?.[0]?.properties?.id; if (typeof id === "string") latest.current.onSelect(id); });
       setReady(true); setError("");
     });

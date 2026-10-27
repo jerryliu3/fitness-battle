@@ -21,14 +21,14 @@ it("gives each real racer a covered trail ending at its dot, without exposing fu
   expect(lanes[0].value).toBe(.5);
 });
 
-it("centers the viewer on the road and fits ten stable individual lanes across nine metres", () => {
+it("centers the viewer on the road and fits ten stable individual lanes across 3.15 metres", () => {
   const course = createRaceCourse("Street", [[0, 0], [.01, 0]]);
   const lanes = Array.from({ length: 10 }, (_, i) => ({ id: `racer-${i}`, name: `Racer ${i}`, initials: "R", you: i === 7, value: .5 }));
   const scene = raceCourseScene(course, lanes, "km", "racer-0");
   expect(scene.markers.features.find(f => f.properties.you)?.geometry.coordinates).toEqual(raceCoursePosition(course, 500).coordinate);
   const markers = [...scene.markers.features].sort((a, b) => a.geometry.coordinates[1] - b.geometry.coordinates[1]);
-  for (let i = 1; i < markers.length; i++) expect(distance(markers[i - 1].geometry.coordinates, markers[i].geometry.coordinates, { units: "meters" })).toBeCloseTo(1, 3);
-  expect(distance(markers[0].geometry.coordinates, markers.at(-1)!.geometry.coordinates, { units: "meters" })).toBeCloseTo(9, 3);
+  for (let i = 1; i < markers.length; i++) expect(distance(markers[i - 1].geometry.coordinates, markers[i].geometry.coordinates, { units: "meters" })).toBeCloseTo(.35, 3);
+  expect(distance(markers[0].geometry.coordinates, markers.at(-1)!.geometry.coordinates, { units: "meters" })).toBeCloseTo(3.15, 3);
   expect(scene.trails.features).toHaveLength(10);
   const selected = raceCourseScene(course, lanes, "km", "racer-9");
   expect(selected.trails).toBe(scene.trails);
@@ -70,7 +70,7 @@ it("keeps each racer's trail aligned through bends, turnarounds, and the date li
         expect(outbound.trails.features[i].geometry.coordinates.at(-1)).toEqual(outbound.markers.features[i].geometry.coordinates);
         expect(inbound.trails.features[i].geometry.coordinates.at(-1)).toEqual(inbound.markers.features[i].geometry.coordinates);
       }
-      expect(outbound.selected?.coordinate).toEqual(raceCourseRacerPosition(course, metres, -1).coordinate);
+      expect(outbound.selected?.coordinate).toEqual(raceCourseRacerPosition(course, metres, -.35).coordinate);
     }
   }
 });
