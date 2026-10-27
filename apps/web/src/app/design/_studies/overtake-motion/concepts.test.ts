@@ -46,9 +46,9 @@ describe("overtake study fixtures", () => {
 
   for (const concept of concepts.logo) {
     it(`${concept.id} has over enter first, then runs a continuous 3-stage lead swap without mid-race pauses or end consolidation`, () => {
-      const intro = staggeredLogoFrame(.15, concept.id);
-      const stage1 = staggeredLogoFrame(.44, concept.id);
-      const stage2 = staggeredLogoFrame(.68, concept.id);
+      const intro = staggeredLogoFrame(.11, concept.id);
+      const stage1 = staggeredLogoFrame(.40, concept.id);
+      const stage2 = staggeredLogoFrame(.64, concept.id);
       const end = staggeredLogoFrame(1, concept.id);
 
       // Intro: over is on stage by itself while taek has not entered yet.
@@ -77,10 +77,10 @@ describe("overtake study fixtures", () => {
         if (p >= .05 && p <= .85) {
           expect(frame.overSpeed).toBeGreaterThan(0);
         }
-        if (p >= .18 && p <= .9) {
-          expect(frame.taekSpeed).toBeGreaterThan(0);
+        if (p > .12 && p < .9) {
+          expect(frame.taekSpeed, `progress ${p}`).toBeGreaterThan(0);
         }
-        if (p >= .68) {
+        if (p >= .64) {
           const lead = frame.tx - frame.ox;
           expect(lead).toBeGreaterThanOrEqual(prevLead - 1e-6);
           prevLead = lead;

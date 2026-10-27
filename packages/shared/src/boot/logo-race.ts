@@ -12,7 +12,7 @@ function hermiteTangents(points: [number, number][]) {
     if (i === points.length - 1) return 0;
     const prev = slopes[i - 1], next = slopes[i];
     if (prev * next <= 0) return 0;
-    return Math.sign(prev) * Math.min(Math.abs((prev + next) / 2), 3 * Math.abs(prev), 3 * Math.abs(next));
+    return Math.sign(prev) * Math.min(Math.abs((prev + next) / 2), 2 * Math.abs(prev), 2 * Math.abs(next));
   });
 }
 
