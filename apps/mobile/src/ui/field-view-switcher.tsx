@@ -1,17 +1,17 @@
-import { Pressable, Text, View } from "react-native";
-import { textStyle } from "./section";
-import { SHELL_COLORS as c } from "../theme";
+import { View } from "react-native";
+import { ChoicePicker } from "./choice-picker";
 
-export function FieldViewSwitcher({ value, geographic, onChange }: {
+export function FieldViewSwitcher({ value, geographic, onChange, standings = false, onStandings }: {
   value: "2d" | "3d" | "4d"; geographic: boolean; onChange(value: "2d" | "3d" | "4d"): void;
+  standings?: boolean; onStandings?: () => void;
 }) {
-  const modes: ("2d" | "3d" | "4d")[] = geographic ? ["2d", "3d", "4d"] : ["2d", "3d"];
-  return <View accessibilityLabel="Field view" style={{ flexDirection: "row", gap: 4 }}>
-    {modes.map(mode => <Pressable key={mode}
-      accessibilityRole="button" accessibilityLabel={`Switch to ${mode.toUpperCase()} ${mode === "4d" ? "course" : "field"}`}
-      accessibilityState={{ selected: value === mode }} onPress={() => onChange(mode)}
-      style={{ minHeight: 44, minWidth: 44, alignItems: "center", justifyContent: "center", borderRadius: 12, backgroundColor: value === mode ? c.tennis : "#ffffff" }}>
-      <Text style={{ ...textStyle("label"), color: c.ink }}>{mode.toUpperCase()}</Text>
-    </Pressable>)}
+  const options = [
+    { value: "2d", label: "2D map" }, { value: "3d", label: "3D field" },
+    ...(geographic ? [{ value: "4d", label: "4D course" }] : []),
+    ...(onStandings ? [{ value: "standings", label: "Standings" }] : []),
+  ];
+  return <View style={{ maxWidth: 160 }}>
+    <ChoicePicker label="Field view" value={standings ? "standings" : value} options={options}
+      onChange={next => { if (next === "standings") onStandings?.(); else onChange(next as "2d" | "3d" | "4d"); }} />
   </View>;
 }

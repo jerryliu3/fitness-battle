@@ -428,3 +428,11 @@ Mapbox positions native/DOM annotations; do not project camera frames through Re
 Paths use a 36 cm stroke on 42 cm lane spacing (6 cm gap at close zoom), with a
 3 px visibility floor at wider zooms. Hold-to-hide includes nameplates. See the
 [racer-card follow-up](reviews/geographic-course/racer-callouts.md).
+
+### In-field view selection — October 27
+
+Compete owns one dropdown inside the inline field card for 2D map, 3D field,
+Standings and the existing distance-only 4D course. Standings replaces the field
+in that card; switching back retains the camera and lane selection. Athlete taps
+in standings focus that athlete in the retained field. The redundant view row and
+2D/3D toggle chips are removed. Event/sport selection remains separate.

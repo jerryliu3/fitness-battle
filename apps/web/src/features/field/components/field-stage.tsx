@@ -89,15 +89,14 @@ export function FieldStage({
   const chooseView = (value: "2d" | "3d" | "4d") => {
     void playCue("selection");
     cancelCenterTween();
+    setStandingsOpen(false);
     setViewDimension(value);
   };
   const [standingsOpen, setStandingsOpen] = useState(false);
   const [lanesImmersive, setLanesImmersive] = useState(false);
   const [intervalsCollapsed, setIntervalsCollapsed] = useState(false);
   const [spotlightCollapsed, setSpotlightCollapsed] = useState(false);
-  const toggleDimension = () => {
-    chooseView(viewDimension === "2d" ? "3d" : "2d");
-  };
+
 
   useEffect(() => {
     if (tabActive && shellTabFromPath(pathname)?.id === "arena") return;
@@ -123,6 +122,7 @@ export function FieldStage({
       runners.find((item) => item.id === id) ??
       (ghost?.id === id ? ghost : null);
     if (!runner) return;
+    setStandingsOpen(false);
     setSelected(id);
     setFocusRequest(value => value + 1);
     if (viewDimension !== "4d") tweenCenterTo(valueAt(runner, time));
@@ -464,11 +464,15 @@ export function FieldStage({
   return (
     <section
       className="focus-arena-stage"
+      style={{ position: "relative" }}
       hidden={!tabActive}
       aria-hidden={!tabActive}
     >
-      <FieldViewSwitcher value={viewDimension} geographic={unit !== "pts"} onChange={chooseView} />
-      <div style={{ display: "flow-root" }}>
+      {!lanesImmersive ? <div style={{ position: "absolute", left: 12, top: 12, zIndex: 10 }}>
+        <FieldViewSwitcher value={viewDimension} geographic={unit !== "pts"} onChange={chooseView}
+          standings={standingsOpen} onStandings={() => { cancelCenterTween(); setStandingsOpen(true); }} />
+      </div> : null}
+      <div style={{ display: standingsOpen ? "none" : "flow-root" }}>
         <ExpandingField
           open={lanesImmersive && tabActive}
           tabActive={tabActive}
@@ -492,11 +496,11 @@ export function FieldStage({
               onViewChange={next => { cancelCenterTween(); setSpan(next.span); setCenter(clampViewCenter(next.center, next.span)); }}
               selectedId={trackSelected || you.id}
               immersive={lanesImmersive}
+              controlsTop={lanesImmersive ? 12 : 66}
               onExpand={() => {
                 void playCue("light");
                 setLanesImmersive(true);
               }}
-              onToggleDimension={toggleDimension}
               onZoom={(value) => {
                 cancelCenterTween();
                 setSpan(value);
@@ -514,14 +518,6 @@ export function FieldStage({
             <div className="focus-track-frame focus-portal-frame">
               {!lanesImmersive ? (
                 <div className="focus-portal-actions">
-                  <button
-                    type="button"
-                    className="focus-portal-pill"
-                    aria-label="Switch to 3D field"
-                    onClick={toggleDimension}
-                  >
-                    2D
-                  </button>
                   <button
                     type="button"
                     className="focus-portal-pill is-accent"
@@ -589,34 +585,7 @@ export function FieldStage({
         </ExpandingField>
       </div>
 
-      {/* Collapsed-by-default Standings Disclosure */}
-      <div className="focus-standings-collapsible">
-        <button
-          type="button"
-          className="focus-standings-toggle"
-          aria-expanded={standingsOpen}
-          onClick={() => {
-            void playCue("selection");
-            setStandingsOpen((prev) => !prev);
-          }}
-        >
-          <div className="focus-standings-toggle-copy">
-            <strong>
-              {standingsOpen ? "Hide standings" : "Show standings"}
-            </strong>
-            <span>
-              {ordinalPlace(displayPlace)} of {runners.length} ·{" "}
-              {total.toFixed(1)} {unit}
-              {leader
-                ? ` · Leader ${leader.you ? "You" : leader.name.split(" ")[0]} (${leader.value.toFixed(1)} ${unit})`
-                : ""}
-            </span>
-          </div>
-          <span className="focus-standings-toggle-chevron" aria-hidden="true">
-            {standingsOpen ? "▴" : "▾"}
-          </span>
-        </button>
-
+      <div className="focus-standings-collapsible" hidden={!standingsOpen} style={{ paddingTop: 64 }}>
         {standingsOpen ? (
           <div className="focus-standings-body">
             {leader ? (

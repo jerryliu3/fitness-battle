@@ -52,6 +52,7 @@ export function PortraitField({
   overlaysHidden = false,
   onExpand,
   onToggleDimension,
+  controlsTop = 12,
   laneAnchor,
   focusRequest = 0,
   onViewChange,
@@ -65,6 +66,7 @@ export function PortraitField({
   overlaysHidden?: boolean;
   onExpand?: () => void;
   onToggleDimension?: () => void;
+  controlsTop?: number;
   laneAnchor?: MutableRefObject<number>;
   lanes: ArenaSceneLane[];
   view: ArenaViewWindow;
@@ -440,7 +442,7 @@ export function PortraitField({
           ) : null}
         </View>
       ) : null}
-      <FieldOverlayView hidden={overlaysHidden} pointerEvents="box-none" style={{ position: "absolute", top: 12, left: 12, right: 60, gap: 6 }}>
+      <FieldOverlayView hidden={overlaysHidden} pointerEvents="box-none" style={{ position: "absolute", top: controlsTop, left: 12, right: 60, gap: 6 }}>
         {!fullscreen && <Pressable style={[s.controlRow, { alignSelf: "flex-start", minHeight: 44, paddingHorizontal: 16 }]} accessibilityRole="button" accessibilityLabel={exploring ? "Finish exploring field" : "Explore field in two directions"} accessibilityState={{ selected: exploring }} onPress={() => setExploring(!exploring)}><Text style={s.white}>{exploring ? "Done" : "Explore"}</Text></Pressable>}
         <View pointerEvents="none"><Text style={[s.white, textStyle("caption")]}>{exploring || fullscreen ? "Drag to move · Pinch to zoom" : "Swipe across lanes · Explore to move forward"}</Text></View>
       </FieldOverlayView>

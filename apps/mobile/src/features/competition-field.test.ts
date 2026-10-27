@@ -15,6 +15,7 @@ vi.mock("react-native-safe-area-context", () => ({ useSafeAreaInsets: () => ({ t
 vi.mock("react-native-svg", () => ({ default: "Svg", G: "SvgG" }));
 vi.mock("./geographic-course", () => ({ GeographicCourse: "GeographicCourse" }));
 vi.mock("./competition-replay", () => ({ CompetitionReplayButton: "ReplayButton" }));
+vi.mock("../ui/choice-picker", () => ({ ChoicePicker: "ChoicePicker" }));
 vi.mock("../ui/user-avatar", () => ({ UserAvatar: "UserAvatar" }));
 vi.mock("../ui/section", () => ({ textStyle: () => ({}) }));
 vi.mock("../ui/rank-badge", () => ({ RankBadge: "RankBadge" }));
@@ -76,7 +77,7 @@ it("collapses each panel independently and isolates zoom/replay touches from sce
 });
 
 it("keeps 4D inside the fullscreen host with the same panels, selection and replay", async () => {
-  const switchTo = async (mode: string) => act(async () => button(`Switch to ${mode} ${mode === "4D" ? "course" : "field"}`).props.onPress());
+  const switchTo = async (mode: string) => act(async () => renderer.root.findByType("ChoicePicker" as never).props.onChange(mode.toLowerCase()));
   await switchTo("4D");
   const map = () => renderer.root.findByType("GeographicCourse" as never);
   const course = createRaceCourse("City", [[0, 0], [.02, 0]]);

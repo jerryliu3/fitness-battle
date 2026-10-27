@@ -27,6 +27,7 @@ export function PortraitField({
   immersive = false,
   onExpand,
   onToggleDimension,
+  controlsTop = 12,
   onZoom,
   onPan,
   onSelect,
@@ -45,6 +46,7 @@ export function PortraitField({
   immersive?: boolean;
   onExpand?: () => void;
   onToggleDimension?: () => void;
+  controlsTop?: number;
   onZoom: (span: number) => void;
   onPan: (center: number) => void;
   onSelect: (id: string) => void;
@@ -346,7 +348,7 @@ export function PortraitField({
             );
           })}
       </svg>
-      <div className="club-field-explore" style={{ pointerEvents: "none" }}>
+      <div className="club-field-explore" style={{ pointerEvents: "none", top: controlsTop }}>
         {!immersive && <button type="button" style={{ pointerEvents: "auto" }} aria-pressed={exploring} onClick={() => setExploring(!exploring)}>{exploring ? "Done" : "Explore"}</button>}
         <span>{exploring ? "Drag to move · Pinch to zoom" : "Swipe across lanes · Explore to move forward"}</span>
       </div>

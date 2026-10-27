@@ -57,6 +57,7 @@ export function CompetitionField({
   const chooseView = (value: "2d" | "3d" | "4d") => {
     void playCue("selection");
     flight.cancel();
+    setStandingsOpen(false);
     setSceneDimension(value);
   };
   const [standingsOpen, setStandingsOpen] = useState(false);
@@ -74,9 +75,6 @@ export function CompetitionField({
     });
     return () => { subscription.remove(); hold.current?.reset(); };
   }, [expanded, isFocused, sceneDimension]);
-  const toggleDimension = () => {
-    chooseView(sceneDimension === "2d" ? "3d" : "2d");
-  };
   const dimensions = useWindowDimensions();
   const insets = useSafeAreaInsets();
   const safeTop = Math.max(insets.top, 56);
@@ -137,6 +135,7 @@ export function CompetitionField({
   const selectAthlete = (id: string) => {
     const lane = arena.lanes.find((item) => item.id === id);
     if (!lane) return;
+    setStandingsOpen(false);
     const ordered = orderedArenaLanes(arena.lanes);
     portraitAnchor.current = Math.max(0, ordered.findIndex(l => l.id === id)) - Math.max(0, ordered.findIndex(l => l.you));
     setSelectedId(id);
@@ -214,9 +213,9 @@ export function CompetitionField({
           onPan={panTo}
           height={sceneHeight}
           fullscreen={expanded}
+          controlsTop={expanded ? 12 : 66}
           overlaysHidden={overlaysHidden}
           onExpand={expandField}
-          onToggleDimension={toggleDimension}
           laneAnchor={portraitAnchor}
           onSelect={id => { if (!hold.current?.suppressSelection()) selectAthlete(id); }}
         />
@@ -234,8 +233,7 @@ export function CompetitionField({
             fullscreen={expanded}
             overlaysHidden={overlaysHidden}
             onExpand={expandField}
-            onToggleDimension={toggleDimension}
-            onZoom={directZoom}
+              onZoom={directZoom}
             anchor={laneAnchor}
             active={isFocused && sceneDimension === "2d"}
             focusRequest={focusRequest}
@@ -331,8 +329,11 @@ export function CompetitionField({
   );
 
   return (
-    <View style={{ gap: 14 }}>
-      <FieldViewSwitcher value={sceneDimension} geographic={arena.unit !== "pts"} onChange={chooseView} />
+    <View style={{ gap: 14, position: "relative" }}>
+      {!expanded ? <View style={{ position: "absolute", left: 12, top: 12, zIndex: 10 }}>
+        <FieldViewSwitcher value={sceneDimension} geographic={arena.unit !== "pts"} onChange={chooseView}
+          standings={standingsOpen} onStandings={() => { flight.cancel(); setStandingsOpen(true); }} />
+      </View> : null}
       {expanded ? (
         <Modal
           visible
@@ -695,44 +696,10 @@ export function CompetitionField({
           </View>
         </Modal>
       ) : (
-        fieldContent
+        <View style={{ display: standingsOpen ? "none" : "flex" }}>{fieldContent}</View>
       )}
 
-      {/* Collapsed-by-default Standings Disclosure */}
-      <View style={f.section}>
-        <Pressable
-          accessibilityRole="button"
-          accessibilityState={{ expanded: standingsOpen }}
-          accessibilityLabel={standingsOpen ? "Hide standings" : "Show standings"}
-          onPress={() => {
-            void playCue("selection");
-            setStandingsOpen((prev) => !prev);
-          }}
-          style={[
-            f.row,
-            {
-              justifyContent: "space-between",
-              minHeight: 40,
-            },
-          ]}
-        >
-          <View style={{ gap: 2 }}>
-            <Text style={textStyle("label")}>
-              {standingsOpen ? "Hide standings" : "Show standings"}
-            </Text>
-            <Text style={[textStyle("caption"), { color: c.muted }]}>
-              {ordinalPlace(place(total))} of {ranked.length} · {total.toFixed(1)}{" "}
-              {arena.unit}
-              {leader
-                ? ` · Leader ${leader.you ? "You" : leader.name.split(" ")[0]} (${leader.values[2].toFixed(1)} ${arena.unit})`
-                : ""}
-            </Text>
-          </View>
-          <Text style={[textStyle("label"), { color: c.ink }]}>
-            {standingsOpen ? "▴" : "▾"}
-          </Text>
-        </Pressable>
-
+      <View style={[f.section, { display: standingsOpen ? "flex" : "none", paddingTop: 64 }]}>
         {standingsOpen ? (
           <View style={{ gap: 10, paddingTop: 6 }}>
             {/* 1st Place Leader Stage */}
