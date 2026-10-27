@@ -211,6 +211,7 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
   const revisionRef = useRef<string | null>(null);
   const conflictRef = useRef(false);
   const [saveConflict, setSaveConflict] = useState(false);
+  const lifecycle = useRef(0);
   const saveChain = useRef<Promise<void>>(Promise.resolve());
   const refreshFlight = useRef<Promise<boolean> | null>(null);
   const [debugActive, setDebugActive] = useState(false);
@@ -223,6 +224,7 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
 
   // Drop prior-account state before children render with the new userId.
   if (!loading && loadedFor !== userId) {
+    lifecycle.current += 1;
     revisionRef.current = null; conflictRef.current = false; setSaveConflict(false);
     setLoadedFor(userId);
     setState(null);
@@ -249,15 +251,18 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
   const runSave = useCallback(
     (accountId: string | null, next: CompeteState, generation: number) => {
       if (!accountId || offlineRef.current || debugActiveRef.current || statusRef.current !== "ready" || conflictRef.current) return;
+      const epoch = lifecycle.current;
+      const isCurrent = () => accountId === userIdRef.current && epoch === lifecycle.current;
       saveChain.current = saveChain.current.catch(() => {}).then(async () => {
-        if (accountId !== userIdRef.current || generation !== dirtyRef.current || conflictRef.current) return;
+        if (!isCurrent() || generation !== dirtyRef.current || conflictRef.current) return;
         try {
           const response = await fetch("/api/compete", {
             method: "PUT", headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ state: next, accountId, updatedAt: revisionRef.current }),
           });
-          if (userIdRef.current !== accountId) return;
+          if (!isCurrent()) return;
           const body = await response.json().catch(() => null);
+          if (!isCurrent()) return;
           if (!response.ok) {
             localStorage.setItem(deviceOnlyKey(accountId), "1");
             if (body?.error === "account_changed_reload" || body?.error === "account_version_required") {
@@ -275,7 +280,7 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
           }
           setSaveError(null);
         } catch {
-          if (userIdRef.current !== accountId) return;
+          if (!isCurrent()) return;
           localStorage.setItem(deviceOnlyKey(accountId), "1");
           setSaveError("This device updated. The account copy did not save.");
         }
@@ -331,6 +336,7 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
     }
     queue.current = [];
     const accountId = userId;
+    lifecycle.current += 1;
     let cancelled = false;
     const signedIn = Boolean(accountId) && !offlineMode;
     const local = readLocal(accountId);
@@ -343,7 +349,7 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
       for (const action of pending) next = reduceCompete(next, action);
       if (signedIn) next = withAccountEloBaseline(next);
       const stamped = pending.length > 0 ? new Date().toISOString() : savedAt;
-      publish(accountId, next, stamped, status, status === "ready" && pending.length > 0);
+      publish(accountId, next, stamped, status, status === "ready" && (pending.length > 0 || unsavedRef.current));
     };
 
     if (!signedIn) {
@@ -379,6 +385,7 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
       .then((body) => {
         if (cancelled || userIdRef.current !== accountId || !accountId) return;
         const staleDeviceDraft = readStorageItem(deviceOnlyKey(accountId)) === "1";
+        unsavedRef.current = staleDeviceDraft || queue.current.length > 0;
         const cachedRevision = readStorageItem(`${storageKey(accountId)}:revision`);
         revisionRef.current = staleDeviceDraft ? cachedRevision : body.updatedAt ?? null;
         if (staleDeviceDraft && cachedRevision && body.updatedAt && cachedRevision !== body.updatedAt) {
@@ -460,8 +467,13 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
       unsavedRef.current = false; unitsUnsavedRef.current = false;
       dirtyRef.current += 1;
     }
+    if (!conflictRef.current && statusRef.current === "ready" && unsavedRef.current && stateRef.current) {
+      scheduleSave(accountId, stateRef.current, true);
+      return;
+    }
+    setSaveError(null);
     setAttempt((value) => value + 1);
-  }, []);
+  }, [scheduleSave]);
 
   const refresh = useCallback(async (): Promise<boolean> => {
     if (syncReviewBlocked.current) return false;
@@ -634,9 +646,6 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
           setState(next);
           return;
         }
-        dirtyRef.current += 1;
-        unsavedRef.current = true;
-        if (withAccount.type === "set-units") unitsUnsavedRef.current = true;
         seedArenaBaselinesFromState(
           stateRef.current,
           accountKey,
@@ -644,6 +653,12 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
           writeStorageItem,
         );
         const next = reduceCompete(stateRef.current, withAccount);
+        if (JSON.stringify(next) === JSON.stringify(stateRef.current)) return;
+        dirtyRef.current += 1;
+        unsavedRef.current = true;
+        if (withAccount.type === "set-units") unitsUnsavedRef.current = true;
+        if (userIdRef.current && !offlineRef.current)
+          localStorage.setItem(deviceOnlyKey(userIdRef.current), "1");
         seedArenaBaselinesFromState(
           next,
           accountKey,
@@ -702,6 +717,12 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
       <button className="fb-btn-line" onClick={retryLoad}>Reload account</button>
     </div>
       )}
+    {saveError && !saveConflict && loadStatus === "ready" && (
+      <div role="alert" className="fb-card" style={{ padding: 16 }}>
+        <p>{saveError}</p>
+        <button className="fb-btn-line" onClick={retryLoad}>Retry save</button>
+      </div>
+    )}
     {children}
       {(syncReview.receipt || experience.moment) && state ? (
         <Suspense fallback={<AppParagraph typographyRole="body" role="status">Opening today’s recap…</AppParagraph>}>

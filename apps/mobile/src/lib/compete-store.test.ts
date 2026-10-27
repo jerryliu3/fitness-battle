@@ -324,7 +324,7 @@ describe("mobile account lifecycle", () => {
         : Response.json({ state: accountState("Alice") }),
     );
     await act(async () => {
-      api.dispatch({ type: "set-city", city: "Toronto" });
+      api.dispatch({ type: "set-city", city: "Boston" });
     });
     await save();
     expect(api.saveError).toBeNull();
@@ -537,4 +537,45 @@ it("holds remote synced activity for review while preserving the server revision
   await act(async () => { screen.props.onComplete([activity.id]); });
   expect(api.state!.activities.some(a => a.id === activity.id)).toBe(true);
   expect(mock.values.get(`${accountStorageKeys("alice").state}:revision`)).toBe("remote-revision");
+});
+
+it("does not manufacture a dirty draft or save request for an unchanged preference", async () => {
+  login("Alice");
+  await mount();
+  await act(async () => { api.dispatch({ type: "set-city", city: api.state!.city }); await flush(); });
+  await save();
+  expect(mock.values.get(accountStorageKeys("Alice").dirty)).toBeUndefined();
+  expect(fetcher.mock.calls.filter(([, init]) => init?.method === "PUT")).toHaveLength(0);
+});
+
+it("retries a persisted draft after sign-in without claiming a save has already failed", async () => {
+  const keys = accountStorageKeys("Alice");
+  mock.values.set(keys.state, JSON.stringify({ ...accountState("Alice"), city: "Draft city" }));
+  mock.values.set(keys.dirty, "1");
+  mock.values.set(`${keys.state}:revision`, "revision-1");
+  login("Alice");
+  fetcher.mockImplementation(async (_url: string, init: RequestInit) => init.method === "PUT"
+    ? Response.json({ updatedAt: "revision-2" })
+    : Response.json({ state: accountState("Alice"), updatedAt: "revision-1" }));
+  await mount();
+  expect(api.saveError).toBeNull();
+  expect(api.state?.city).toBe("Draft city");
+  await save();
+  expect(fetcher.mock.calls.filter(([, init]) => init?.method === "PUT")).toHaveLength(1);
+  expect(mock.values.has(keys.dirty)).toBe(false);
+  expect(api.saveError).toBeNull();
+});
+
+it("ignores a failed in-flight save after signing out and back into the same account", async () => {
+  login("Alice");
+  await mount();
+  let complete!: (response: Response) => void;
+  fetcher.mockImplementationOnce(() => new Promise<Response>(resolve => { complete = resolve; }));
+  await act(async () => { api.dispatch({ type: "set-city", city: "Draft" }); await flush(); });
+  await save();
+  await switchTo(null);
+  await switchTo("Alice");
+  await act(async () => { complete(Response.json({ error: "account_changed_reload" }, { status: 409 })); await flush(); });
+  expect(api.saveError).toBeNull();
+  expect(renderer.root.findAllByProps({ accessibilityRole: "alert" })).toHaveLength(0);
 });

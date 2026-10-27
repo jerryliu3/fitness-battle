@@ -265,7 +265,7 @@ export function CompeteProvider({ children, navigationReady = true }: { children
           next = { ...next, activities: [...next.activities.filter(a => !ids.has(a.id)), ...incoming.map(a => ({ ...a, disposition: existing.get(a.id)?.disposition ?? a.disposition }))] };
         } catch { /* Optional local fixtures; ordinary offline state remains available. */ }
       }
-      const dirty = (await AsyncStorage.getItem(keys.dirty)) === "1";
+      const dirty = hasCache && (await AsyncStorage.getItem(keys.dirty)) === "1";
       const currentAuth = authRef.current;
       const live =
         !!currentAuth.user &&
@@ -347,10 +347,6 @@ export function CompeteProvider({ children, navigationReady = true }: { children
       await preloadBaselineCache(owner ?? "guest", baselineCacheRef.current);
       if (!alive || accountRef.current !== owner) return;
       unsavedRef.current = dirty;
-      if (dirty && live && remoteLoaded) {
-        const message = saveFailure();
-        if (message) setSaveError(message);
-      }
       seedArenaBaselinesFromState(
         next,
         owner ?? "guest",
@@ -645,13 +641,16 @@ export function CompeteProvider({ children, navigationReady = true }: { children
     const id = accountRef.current;
     const scoped = accountStorageKeys(id);
     const generation = dirtyRef.current;
+    const epoch = lifecycle.current;
+    const isCurrent = () => id === accountRef.current && epoch === lifecycle.current;
     if (saveTimer.current) clearTimeout(saveTimer.current);
+    saveTimer.current = null;
     const run = () => {
       saveChain.current = saveChain.current
         .catch(() => {})
         .then(async () => {
           if (
-            id !== accountRef.current ||
+            !isCurrent() ||
             generation !== dirtyRef.current ||
             conflictRef.current
           )
@@ -670,7 +669,7 @@ export function CompeteProvider({ children, navigationReady = true }: { children
           }
           try {
             const account = await competeAccount();
-            if (!account || account.userId !== id || id !== accountRef.current)
+            if (!account || account.userId !== id || !isCurrent())
               return;
             const response = await fetchWithTimeout(
               `${mobileEnv.apiUrl}/api/compete`,
@@ -687,9 +686,10 @@ export function CompeteProvider({ children, navigationReady = true }: { children
                 }),
               },
             );
-            if (id !== accountRef.current) return;
+            if (!isCurrent()) return;
             if (!response.ok) {
               const body = await response.json().catch(() => null);
+              if (!isCurrent()) return;
               if (
                 body?.error === "account_changed_reload" ||
                 body?.error === "account_version_required"
@@ -702,7 +702,7 @@ export function CompeteProvider({ children, navigationReady = true }: { children
               return;
             }
             const body = await response.json();
-            if (id !== accountRef.current) return;
+            if (!isCurrent()) return;
             if (typeof body.updatedAt !== "string")
               throw new Error("missing_revision");
             revisionRef.current = body.updatedAt;
@@ -710,7 +710,7 @@ export function CompeteProvider({ children, navigationReady = true }: { children
               `${scoped.state}:revision`,
               body.updatedAt,
             );
-            if (id !== accountRef.current || generation !== dirtyRef.current)
+            if (!isCurrent() || generation !== dirtyRef.current)
               return;
             unsavedRef.current = false;
             unitsUnsavedRef.current = false;
@@ -718,7 +718,7 @@ export function CompeteProvider({ children, navigationReady = true }: { children
             setSaveError(null);
             await AsyncStorage.removeItem(scoped.dirty);
           } catch {
-            if (id === accountRef.current) {
+            if (isCurrent()) {
               const message = saveFailure();
               if (message) setSaveError(message);
             }
@@ -734,6 +734,11 @@ export function CompeteProvider({ children, navigationReady = true }: { children
       run();
     }, 400);
   }, []);
+
+  useEffect(() => {
+    if (loadStatus === "ready" && unsavedRef.current && !conflictRef.current && stateRef.current)
+      scheduleSave(stateRef.current);
+  }, [loadStatus, scheduleSave]);
 
   const dispatch = useCallback(
     (action: Action) => {
@@ -761,9 +766,6 @@ export function CompeteProvider({ children, navigationReady = true }: { children
         setState(next);
         return;
       }
-      dirtyRef.current += 1;
-      unsavedRef.current = true;
-      if (action.type === "set-units") unitsUnsavedRef.current = true;
       seedArenaBaselinesFromState(
         prev,
         id ?? "guest",
@@ -774,6 +776,10 @@ export function CompeteProvider({ children, navigationReady = true }: { children
         ...action,
         accountId: action.accountId ?? id ?? undefined,
       });
+      if (JSON.stringify(next) === JSON.stringify(prev)) return;
+      dirtyRef.current += 1;
+      unsavedRef.current = true;
+      if (action.type === "set-units") unitsUnsavedRef.current = true;
       stateRef.current = next;
       setState(next);
       seedArenaBaselinesFromState(
@@ -787,15 +793,21 @@ export function CompeteProvider({ children, navigationReady = true }: { children
       if (action.syncPresentation === "quiet")
         remember(countedActivityIds(next), true);
       const scoped = accountStorageKeys(id);
+      const epoch = lifecycle.current;
       void AsyncStorage.multiSet([
         [scoped.state, JSON.stringify(next)],
         [scoped.dirty, "1"],
-      ]).catch(() => setSaveError("Could not save on this device."));
-      scheduleSave(
-        next,
-        action.type === "set-units" || action.type === "set-avatar",
-        action.type === "set-avatar" && !loadReady.current,
-      );
+      ]).then(() => {
+        if (accountRef.current !== id || lifecycle.current !== epoch) return;
+        scheduleSave(
+          stateRef.current ?? next,
+          action.type === "set-units" || action.type === "set-avatar",
+          action.type === "set-avatar" && !loadReady.current,
+        );
+      }).catch(() => {
+        if (accountRef.current === id && lifecycle.current === epoch)
+          setSaveError("Could not save on this device.");
+      });
     },
     [readBaselineItem, writeBaselineItem, scheduleSave, remember],
   );
@@ -838,7 +850,8 @@ export function CompeteProvider({ children, navigationReady = true }: { children
       setLoadAttempt((value) => value + 1);
       return;
     }
-    if (stateRef.current) scheduleSave(stateRef.current);
+    if (unsavedRef.current && stateRef.current) scheduleSave(stateRef.current, true);
+    else setSaveError(null);
   }, [scheduleSave]);
   const clearAccountData = useCallback(async (expectedId: string) => {
     if (accountRef.current === expectedId) {
