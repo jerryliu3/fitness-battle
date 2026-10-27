@@ -11,9 +11,19 @@ import {
   demoSleepNight,
   scoreSleepNight,
   sleepContest,
+  sleepBoard,
 } from "./health";
 
 describe("sleep health metric", () => {
+  it("shares a sleep contest place for equal scores", () => {
+    const start = "2026-10-12T04:00:00.000Z";
+    const input = { name: "You", nights: [], elo: 1000, periodStart: start, periodEnd: new Date("2026-10-19T04:00:00Z"), asOf: new Date("2026-10-12T16:00:00Z") };
+    const rival = sleepBoard(input)[0]!;
+    const tied = sleepBoard({ ...input, nights: [{ ...demoSleepNight("manual", "2026-10-12"), score: rival.score }] });
+    expect(tied.find(row => row.you)?.score).toBe(rival.score);
+    expect(tied.find(row => row.you)?.place).toBe(tied.find(row => row.id === rival.id)?.place);
+  });
+
   it("keeps a device score and blends raw stages when one is missing", () => {
     expect(scoreSleepNight({ durationMin: 400, deviceScore: 84 })).toBe(84);
     const blended = scoreSleepNight({

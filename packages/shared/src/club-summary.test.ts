@@ -154,6 +154,10 @@ describe("Home rival card presentation", () => {
       expect(clubRivalCardSummary(rows, "running", "metric").headline).toBe("Level with Mara");
     }
   });
+  it("shows a tied athlete as level rather than claiming a solo lead", () => {
+    const rows = [athlete("Mara", 1, 5000), athlete("you", 1, 5000)];
+    expect(clubRivalCardSummary(rows, "running", "metric").headline).toBe("Level with Mara");
+  });
   it("uses effort points for strength rather than unrelated distance", () => {
     const rows = [athlete("Mara", 1, 0, 12.5), athlete("you", 2, 9000, 10)];
     expect(clubRivalCardSummary(rows, "strength", "us").headline).toBe("2.5 pts behind Mara");

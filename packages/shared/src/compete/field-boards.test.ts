@@ -1,5 +1,6 @@
 import { expect, it } from "vitest";
-import { fieldBoardForEnrollment, freshState, reduceCompete, weeklyBoard } from "./engine";
+import { settleElo } from "./elo";
+import { fieldBoardForEnrollment, freshState, reduceCompete, rollClock, weeklyBoard } from "./engine";
 import { prepareCompeteStateForAccount } from "./sanitize";
 import { applyRemoteSnapshot } from "./snapshot";
 import type { CrewBoardPin } from "./sports";
@@ -45,4 +46,28 @@ it("refreshes per-sport peer totals in a dirty draft without losing the athlete'
   const merged = applyRemoteSnapshot(local, remote, true);
   expect(merged.enrollments[0]!.autoEnrollNext).toBe(false);
   expect(weeklyBoard(merged, "running", "open", new Date(now)).find(row => row.id === "peer")?.distanceM).toBe(11000);
+});
+
+it("shares the same place for equal distance even when weighted effort differs, and settles ties fairly", () => {
+  const { state, pin } = fixture();
+  state.name = "Zoe";
+  state.demoNow = null;
+  state.enrollments[0]!.fieldBoard = { ...pin, members: [{ ...pin.members[0]!, distanceM: 6000, movingSec: 3600, elo: 1000 }] };
+  state.ratings = state.ratings.map(rating => rating.sport === "running" ? { ...rating, openElo: 1000 } : rating);
+  const active = reduceCompete(state, { type: "log-manual", sport: "running", distanceM: 6000, movingSec: 1200, activityId: "you-run", startedAt: "2026-10-21T11:00:00.000Z", now });
+  const board = weeklyBoard(active, "running", "open", new Date(now));
+  expect(board.map(row => row.place)).toEqual([1, 1]);
+  expect(board[0]!.effort).not.toEqual(board[1]!.effort);
+  const closed = rollClock(active, new Date("2026-10-26T04:01:00Z"));
+  const result = closed.periodResults.find(row => row.sport === "running" && row.track === "open");
+  expect(result?.place).toBe(1);
+  expect(result?.eloAfter).toBe(settleElo(result!.eloBefore, [1000], 0.5, 2, result!.effort, false));
+});
+
+it("orders GPS standings by full distance, even when the rounded display or weighted efforts suggest otherwise", () => {
+  const { state, pin } = fixture();
+  state.enrollments[0]!.fieldBoard = { ...pin, members: [{ ...pin.members[0]!, distanceM: 6001, movingSec: 3600 }] };
+  const active = reduceCompete(state, { type: "log-manual", sport: "running", distanceM: 6000, movingSec: 1200, activityId: "you-run", startedAt: "2026-10-21T11:00:00.000Z", now });
+  const board = weeklyBoard(active, "running", "open", new Date(now));
+  expect(board.map(row => [row.id, row.place])).toEqual([["peer", 1], ["you", 2]]);
 });

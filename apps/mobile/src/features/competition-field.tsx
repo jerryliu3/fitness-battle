@@ -154,6 +154,7 @@ export function CompetitionField({
   const scores = weeklyBoard(state, sport, track);
   const pastYou = arena.lanes.find(lane => lane.ghost);
   const leader = ranked[0];
+  const leadersTied = leader ? ranked.filter(lane => lane.values[2] === leader.values[2]).length > 1 : false;
   const leaderValue = Math.max(leader?.values[2] ?? 0, 0.0001);
   const myRankIndex = ranked.findIndex((lane) => lane.you);
   const aheadPeer = myRankIndex > 0 ? ranked[myRankIndex - 1] : null;
@@ -460,7 +461,7 @@ export function CompetitionField({
                         color: peer.you ? c.tennis : "rgba(255,255,255,0.7)",
                       }}
                     >
-                      {idx + 1}
+                      {place(peer.values[2])}
                     </Text>
                     <Text
                       numberOfLines={1}
@@ -651,13 +652,13 @@ export function CompetitionField({
                   showsHorizontalScrollIndicator={false}
                   contentContainerStyle={{ gap: 6, paddingTop: 2 }}
                 >
-                  {ranked.map((peer, idx) => {
+                  {ranked.map((peer) => {
                     const activeChip = focusedLane.id === peer.id;
                     return (
                       <Pressable
                         key={peer.id}
                         accessibilityRole="button"
-                        accessibilityLabel={`Focus ${peer.name}, place ${idx + 1}`}
+                        accessibilityLabel={`Focus ${peer.name}, place ${place(peer.values[2])}`}
                         onPress={() => {
                           void playCue("selection");
                           selectAthlete(peer.id);
@@ -690,7 +691,7 @@ export function CompetitionField({
                                 : "rgba(255,255,255,0.7)",
                           }}
                         >
-                          #{idx + 1}
+                          #{place(peer.values[2])}
                         </Text>
                         <Text
                           numberOfLines={1}
@@ -749,7 +750,7 @@ export function CompetitionField({
                     }}
                   >
                     <Text style={{ ...textStyle("caption"), color: c.ink }}>
-                      1ST PLACE · FIELD LEADER
+                      {leadersTied ? "TIED FOR 1ST · FIELD LEADER" : "1ST PLACE · FIELD LEADER"}
                     </Text>
                   </View>
                   <Text style={{ ...textStyle("caption"), color: "rgba(255,255,255,0.7)" }}>
@@ -777,7 +778,9 @@ export function CompetitionField({
                       {leader.you ? selfLaneLabel(leader.name) : leader.name}
                     </Text>
                     <Text style={{ ...textStyle("caption"), color: "rgba(255,255,255,0.7)" }}>
-                      {leader.you
+                      {leadersTied
+                        ? "Tied for the lead"
+                        : leader.you
                         ? "You hold the crown this week"
                         : `${(leader.values[2] - total).toFixed(1)} ${arena.unit} ahead of you`}
                     </Text>
@@ -789,7 +792,7 @@ export function CompetitionField({
               </Pressable>
             ) : null}
 
-            <Text style={textStyle("caption")}>Ranked by this week's effort</Text>
+            <Text style={textStyle("caption")}>Places use exact {arena.unit === "pts" ? "effort" : "distance"} totals; displayed values are rounded.</Text>
             {ranked.map((lane) => {
               const rank = place(lane.values[2]);
               const pct = Math.max(

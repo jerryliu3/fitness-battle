@@ -64,7 +64,8 @@ export function nextClubRival(
         .filter((row) => !row.you && row.place < you.place)
         .sort((a, b) => b.place - a.place)[0]
     : undefined;
-  const rival = ahead ?? (you
+  const tied = you ? rows.find(row => !row.you && row.place === you.place) : undefined;
+  const rival = tied ?? ahead ?? (you
     ? rows.filter(row => !row.you && row.place > you.place).sort((a, b) => a.place - b.place)[0]
     : undefined);
   return { you, rival, fieldSize: rows.length };

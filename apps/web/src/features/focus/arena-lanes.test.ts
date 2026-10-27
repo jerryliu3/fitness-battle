@@ -92,3 +92,15 @@ it("coalesces pointer moves, flushes the last drag position, and cancels on unmo
   await act(async () => renderer.unmount());
   expect(callbacks.size).toBe(0);
 });
+
+it("uses shared places in standings for equal field totals", async () => {
+  await mount({ presentation: "standings", playback: true, lanes: [
+    { id: "me", name: "Me", initials: "ME", value: 3, you: true },
+    { id: "peer", name: "Peer", initials: "P", value: 3 },
+    { id: "behind", name: "Behind", initials: "B", value: 2 },
+  ] });
+  const markers = renderer.root.findAllByType("g").filter(node => node.props["data-athlete"]);
+  expect(markers.find(node => node.props["data-athlete"] === "me")!.props["aria-label"]).toContain("place 1");
+  expect(markers.find(node => node.props["data-athlete"] === "peer")!.props["aria-label"]).toContain("place 1");
+  expect(markers.find(node => node.props["data-athlete"] === "behind")!.props["aria-label"]).toContain("place 3");
+});

@@ -92,7 +92,7 @@ export function photoFinishFrame(moment: CompetitionMoment, progress: number) {
   const nearest = peers.slice().sort((a, b) => Math.abs(values[a.id] - youValue) - Math.abs(values[b.id] - youValue))[0];
   const nearestCrossing = nearest ? crossing(nearest) : 0;
   const focus = nearest ? Math.exp(-Math.pow((travel - nearestCrossing) / .075, 2)) * (p < .95 ? 1 : 0) : 0;
-  const rank = 1 + Object.values(plan.rivals).filter(r => values[r.id] > youValue + .00001).length;
+  const rank = 1 + Object.values(plan.rivals).filter(r => values[r.id] > youValue).length;
   return { progress: p, travel, youValue, values, count: p >= 1 ? peers.length : passed.length, rank: p >= 1 ? plan.rankAfter : rank, focus, nearestId: nearest?.id, done: p >= 1 };
 }
 
@@ -101,7 +101,7 @@ export function competitionMomentScene(moment: CompetitionMoment, progress: numb
   const frame = photoFinishFrame(moment, progress);
   const lanes = moment.lanes.map(lane => ({ ...lane, value: frame.values[lane.id] ?? lane.value }));
   const standings = [...lanes].sort((a, b) => b.value - a.value).map(lane => ({
-    ...lane, place: 1 + lanes.filter(peer => peer.value > lane.value + .00001).length,
+    ...lane, place: 1 + lanes.filter(peer => peer.value > lane.value).length,
   }));
   const ownIndex = standings.findIndex(lane => lane.you);
   const start = Math.max(0, Math.min(ownIndex - 1, standings.length - 3));

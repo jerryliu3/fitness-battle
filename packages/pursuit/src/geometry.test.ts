@@ -34,6 +34,12 @@ describe("field geometry", () => {
     expect(worldZ(12)).toBeLessThan(0);
   });
 
+  it("shares exact ties while distinguishing nearby totals", () => {
+    const tied = { ...maya, series: [...you.series] as SceneRunner["series"] };
+    expect(placeAt([you, tied], "you", 3, 0)).toBe(1);
+    expect(placeAt([you, { ...tied, series: [0, 4, 8, 12.0000005] }], "you", 3, 0)).toBe(2);
+  });
+
   it("ranks by value without moving lanes", () => {
     expect(placeAt([you, maya], "you", 1, 0)).toBe(2);
     expect(placeAt([you, maya], "you", 3, 0)).toBe(1);

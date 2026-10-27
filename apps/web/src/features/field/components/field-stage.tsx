@@ -278,12 +278,13 @@ export function FieldStage({
     [fieldLanes],
   );
   const placeOf = (value: number) =>
-    1 + ranked.filter((lane) => lane.value > value + 0.000001).length;
+    1 + ranked.filter((lane) => lane.value > value).length;
   const scoreMap = useMemo(
     () => Object.fromEntries((boardRows ?? []).map((row) => [row.id, row.elo])),
     [boardRows],
   );
   const leader = ranked[0];
+  const leadersTied = leader ? ranked.filter(lane => lane.value === leader.value).length > 1 : false;
   const leaderValue = Math.max(leader?.value ?? 0, 0.0001);
   const myRankIndex = ranked.findIndex((lane) => lane.you);
   const aheadPeer = myRankIndex > 0 ? ranked[myRankIndex - 1] : null;
@@ -347,7 +348,7 @@ export function FieldStage({
                   toggleSelect(peer.id);
                 }}
               >
-                <span className="focus-broadcast-tower-rank">{idx + 1}</span>
+                <span className="focus-broadcast-tower-rank">{placeOf(peer.value)}</span>
                 <span className="focus-broadcast-tower-name">
                   {peer.you ? "YOU" : peer.name.split(" ")[0]}
                 </span>
@@ -440,7 +441,7 @@ export function FieldStage({
               role="group"
               aria-label="Field athletes"
             >
-              {ranked.map((peer, idx) => {
+              {ranked.map((peer) => {
                 const activeChip = focusedLane.id === peer.id;
                 return (
                   <button
@@ -458,7 +459,7 @@ export function FieldStage({
                       toggleSelect(peer.id);
                     }}
                   >
-                    <span>#{idx + 1}</span>
+                    <span>#{placeOf(peer.value)}</span>
                     <b>{peer.you ? "You" : peer.name.split(" ")[0]}</b>
                   </button>
                 );
@@ -614,7 +615,7 @@ export function FieldStage({
               >
                 <div className="focus-leader-stage-top">
                   <span className="focus-leader-crown">
-                    1ST PLACE · FIELD LEADER
+                    {leadersTied ? "TIED FOR 1ST · FIELD LEADER" : "1ST PLACE · FIELD LEADER"}
                   </span>
                   <span className="focus-leader-elo">
                     {scoreMap[leader.id] ?? "—"} ELO
@@ -647,7 +648,9 @@ export function FieldStage({
                       {leader.you ? selfLaneLabel(leader.name) : leader.name}
                     </strong>
                     <span>
-                      {leader.you
+                      {leadersTied
+                        ? "Tied for the lead"
+                        : leader.you
                         ? "You hold the crown this week"
                         : `${(leader.value - total).toFixed(1)} ${unit} ahead of you`}
                     </span>
@@ -659,6 +662,7 @@ export function FieldStage({
               </button>
             ) : null}
 
+            <p className="fb-note">Places use exact {unit === "pts" ? "effort" : "distance"} totals; displayed values are rounded.</p>
             <div className="focus-standings-bars" role="list">
               {ranked.map((lane) => {
                 const r = placeOf(lane.value);
