@@ -14,9 +14,9 @@ export default function Week() {
   const router = useRouter();
   if (!state) return null;
   return <SafeAreaView style={f.safe}>
-    <ScrollView contentContainerStyle={f.content}>
+    <ScreenHeader title="Your week" onBack={() => router.canGoBack() ? router.back() : router.replace("/today")} />
+    <ScrollView contentContainerStyle={[f.content, { paddingTop: 0 }]}>
 <SectionStack divided={false}>
-      <ScreenHeader title="Your week" onBack={() => router.canGoBack() ? router.back() : router.replace("/today")} />
       <WeekChart state={state} /><EffortRail /><WeekRecap state={state} />
     </SectionStack>
 </ScrollView>

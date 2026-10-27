@@ -9,7 +9,7 @@ import { RivalCard } from "../../src/features/club-rival-card";
 import { APP_TIMEZONE, buildTodayRoute, competeNow, countsOnTrack, dayKey, primaryFreezePeriodStart } from "@fitness-battle/shared";
 import { useState, useCallback, useEffect } from "react";
 import { useFocusEffect, useRouter } from "expo-router";
-import { Pressable, ScrollView, StyleSheet, View } from "react-native";
+import { Platform, Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { SessionStage } from "../../src/features/session-stage";
@@ -57,7 +57,7 @@ export default function Home() {
           <DailyHealth state={state} />
           <RivalCard state={state} />
           <LatestActivity state={state} onOpen={setLatest} />
-          <FocusDisclosure title="Your activity journey">
+          {Platform.OS === "web" && <FocusDisclosure title="Your activity journey">
           <View style={s.homeJourneyLayer} pointerEvents="box-none">
             <Journey
               activities={counted}
@@ -65,7 +65,7 @@ export default function Home() {
               onToday={() => setExpanded("suggestion")}
             />
           </View>
-          </FocusDisclosure>
+          </FocusDisclosure>}
           </SectionStack>
         </ScrollView>
       </View>
