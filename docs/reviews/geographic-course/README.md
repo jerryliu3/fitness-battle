@@ -7,8 +7,10 @@ than connected with an invented straight line. Input is bounded to 4 MB and
 20,000 points. Native/web share a cumulative metre index with logarithmic seeks.
 
 Distance fields convert km/mi to metres and place athletes along the same route.
-Points-based fields retain the existing visualization. Progress clamps at the
-finish; it does not silently wrap or change standings. Course selection is local
+Points-based fields retain the existing visualization. Athletes retrace the route back and forth at each endpoint; cumulative
+distance and standings continue unchanged. The chase camera faces the direction
+of travel. After the first outbound trip the complete covered trail stays visible,
+without duplicating geometry on subsequent trips. Course selection is local
 to the current view, not a server-authoritative assignment to other participants.
 Shared published course assignment is a separate product/data change.
 

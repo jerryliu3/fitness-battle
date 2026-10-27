@@ -15,3 +15,13 @@ it("uses current real totals and excludes ghosts and points without changing sco
   expect(raceCourseScene(course, lanes, "pts", "peer").markers.features).toHaveLength(0);
   expect(lanes[0].value).toBe(.5);
 });
+
+it("keeps total distance and the full covered trail when a selected athlete returns", () => {
+  const course = createRaceCourse("Street", [[0, 0], [.01, 0]]);
+  const value = course.length * 1.5 / 1000;
+  const scene = raceCourseScene(course, [{ id: "you", name: "You", initials: "Y", you: true, value }], "km", "you");
+  expect(scene.selected?.metres).toBeCloseTo(value * 1000);
+  expect(scene.selected?.returning).toBe(true);
+  expect(scene.selected?.coordinate[0]).toBeCloseTo(.005);
+  expect(scene.trails.features[0].geometry.coordinates).toEqual(course.coordinates);
+});

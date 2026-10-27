@@ -54,13 +54,21 @@ function segmentAt(course: RaceCourse, metres: number) {
   return low;
 }
 export function raceCoursePosition(course: RaceCourse, progress: number) {
-  const metres = Math.max(0, Math.min(course.length, Number.isFinite(progress) ? progress : 0));
-  const segment = segmentAt(course, metres), a = course.coordinates[segment], b = course.coordinates[segment + 1];
-  const heading = bearing(a, b);
-  const coordinate = metres === course.length ? course.coordinates.at(-1)! : destination(point(a), metres - course.metres[segment], heading, { units: "meters" }).geometry.coordinates as LngLat;
-  return { coordinate, heading, metres, finished: metres >= course.length, segment };
+  const metres = Math.max(0, Number.isFinite(progress) ? progress : 0);
+  const cycle = metres % (2 * course.length);
+  const returning = cycle >= course.length;
+  const routeMetres = returning ? 2 * course.length - cycle : cycle;
+  let segment = segmentAt(course, routeMetres);
+  if (returning && segment > 0 && routeMetres === course.metres[segment]) segment--;
+  const a = course.coordinates[segment], b = course.coordinates[segment + 1];
+  const forwardHeading = bearing(a, b);
+  const coordinate = routeMetres === course.length ? course.coordinates.at(-1)! : destination(point(a), routeMetres - course.metres[segment], forwardHeading, { units: "meters" }).geometry.coordinates as LngLat;
+  return { coordinate, heading: returning ? bearing(b, a) : forwardHeading, metres, routeMetres, returning, segment };
 }
 export function raceCourseTrail(course: RaceCourse, progress: number): LngLat[] {
+  // Once an athlete has reached the far end, the whole path has been covered.
+  // Keep that solid trace without duplicating geometry for every return trip.
+  if (progress >= course.length) return course.coordinates;
   const position = raceCoursePosition(course, progress);
   return [...course.coordinates.slice(0, position.segment + 1), position.coordinate];
 }
@@ -93,8 +101,9 @@ export function createCourseCamera(driver: CourseCameraDriver, reducedMotion = f
       if (!automatic) following = true;
       const position = raceCoursePosition(course, metres), current = driver.read();
       // Look forward along bends rather than abruptly adopting the next segment's heading.
-      const ahead = raceCoursePosition(course, Math.min(course.length, position.metres + 30));
-      const heading = ahead.metres > position.metres ? bearing(position.coordinate, ahead.coordinate) : position.heading;
+      const remaining = position.returning ? position.routeMetres : course.length - position.routeMetres;
+      const ahead = raceCoursePosition(course, position.metres + Math.min(30, remaining));
+      const heading = remaining > .01 ? bearing(position.coordinate, ahead.coordinate) : position.heading;
       move({ ...current, center: position.coordinate, pitch: dimension === "3d" ? 60 : 0, bearing: dimension === "3d" ? heading : 0 }, automatic);
     },
     dimension(value: CourseDimension) { dimension = value; move({ ...driver.read(), pitch: value === "3d" ? 60 : 0, bearing: value === "2d" ? 0 : driver.read().bearing }); },

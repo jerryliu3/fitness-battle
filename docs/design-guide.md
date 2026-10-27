@@ -356,6 +356,7 @@ course choice separate from activity import and scoring. The dedicated screen
 supports native map gestures, selectable athletes, 2D/chase views, whole-route
 framing and recenter/follow. Manual exploration suspends follow; selecting an
 athlete resumes it. Respect reduced motion and retain map attribution. Points
-fields keep the existing field. Courses currently stop at the finish and remain
-local to the view; no shared published event-course assignment is implied. See
+fields keep the existing field. Athletes retrace courses back and forth at each
+endpoint while cumulative distance continues; the chase camera follows their direction and the covered trail stays
+solid. Courses remain local to the view; no shared published event-course assignment is implied. See
 [implementation and validation](reviews/geographic-course/README.md).

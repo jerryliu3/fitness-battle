@@ -2,16 +2,42 @@ import { describe, expect, it, vi } from "vitest";
 import { createRaceCourse, raceCourseFromGpx, raceCoursePosition, raceCourseTrail, raceEffortMetres, createCourseCamera, type CourseCameraPose } from "./race-course";
 const course = createRaceCourse("City", [[0, 0], [.001, 0], [.001, .002]]);
 describe("race courses", () => {
-  it("indexes distance, removes duplicates and clamps both ends without laps", () => {
+  it("indexes distance, removes duplicates and preserves distance units", () => {
     const duplicate = createRaceCourse("City", [[0, 0], [0, 0], [.001, 0]]);
     expect(duplicate.metres).toHaveLength(2);
     expect(raceCoursePosition(course, -20).coordinate).toEqual([0, 0]);
     expect(raceCoursePosition(course, course.metres[1]).coordinate[0]).toBeCloseTo(.001);
-    expect(raceCoursePosition(course, course.length + 999).coordinate).toEqual([.001, .002]);
-    expect(raceCoursePosition(course, course.length).finished).toBe(true);
     expect(raceCourseTrail(course, 200)).toHaveLength(3);
     expect(raceEffortMetres(1, "mi")).toBe(1609.344);
     expect(raceEffortMetres(10, "pts")).toBeNull();
+  });
+  it("retraces the course indefinitely while preserving total distance and covered trails", () => {
+    const length = course.length;
+    for (const trips of [0, 2, 20_000]) {
+      const outbound = raceCoursePosition(course, (trips + .25) * length);
+      const inbound = raceCoursePosition(course, (trips + 1.75) * length);
+      expect(inbound.coordinate[0]).toBeCloseTo(outbound.coordinate[0]);
+      expect(inbound.coordinate[1]).toBeCloseTo(outbound.coordinate[1]);
+      expect(outbound.returning).toBe(false);
+      expect(inbound.returning).toBe(true);
+      expect(inbound.metres).toBe((trips + 1.75) * length);
+      expect(Math.abs(inbound.heading - outbound.heading)).toBeCloseTo(180);
+    }
+    expect(raceCoursePosition(course, length).coordinate).toEqual(course.coordinates.at(-1));
+    expect(raceCoursePosition(course, length).returning).toBe(true);
+    expect(raceCoursePosition(course, 2 * length).coordinate).toEqual(course.coordinates[0]);
+    expect(raceCoursePosition(course, 2 * length).returning).toBe(false);
+    expect(raceCourseTrail(course, 1.5 * length)).toEqual(course.coordinates);
+    expect(raceCourseTrail(course, 20 * length)).toEqual(course.coordinates);
+  });
+  it("points the chase camera along the return leg without turning early", () => {
+    const straight = createRaceCourse("Street", [[0, 0], [.01, 0]]);
+    const move = vi.fn();
+    const camera = createCourseCamera({ read: () => ({ center: [0, 0], zoom: 16, pitch: 60, bearing: 0 }), stop() {}, move });
+    for (const [metres, heading] of [[straight.length - 1, 90], [straight.length, -90], [straight.length + 50, -90], [2 * straight.length, 90]]) {
+      camera.focus(straight, metres);
+      expect(move.mock.calls.at(-1)![0].bearing).toBeCloseTo(heading);
+    }
   });
   it("supports GPX routes and tracks without activity timestamps", () => {
     for (const [container, point] of [["trkseg", "trkpt"], ["rte", "rtept"]]) {
