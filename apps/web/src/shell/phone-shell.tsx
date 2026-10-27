@@ -178,7 +178,7 @@ export function PhoneShell({
         {!onAthlete && productPath !== "/week" && !progressDetail && <header className="focus-shell-header">
           <div className="club-header-effort"><EffortRail compact /></div>
           {streak && <span className={`club-week-streak${streak.active ? " is-active" : ""}`} aria-label={`${streak.count} week activity streak${streak.active ? "" : ", inactive this week"}`}><svg width="18" height="24" viewBox="0 0 24 24" aria-hidden="true"><path d="M13 2c1 6 7 7 7 13a8 8 0 0 1-16 0c0-3 2-6 5-8-1 4 0 5 2 6 2-3 3-6 2-11Z" fill="currentColor" /></svg><b>{streak.count}</b></span>}
-          <DebugEventMenu activeTab={active} onNavigate={navigateDebugTarget} />
+          {process.env.NODE_ENV === "development" && <DebugEventMenu activeTab={active} onNavigate={navigateDebugTarget} />}
           <Link
             href={webProductPath("/athlete")}
             className={`focus-shell-profile${onAthlete ? " is-selected" : ""}`}

@@ -45,7 +45,7 @@ function asProvider(value: string): ProviderId | null {
 }
 
 function asActivitySource(label: string): Activity["source"] {
-  const provider = asProvider(label);
+  const provider = asProvider(label.toLowerCase());
   if (provider) return provider;
   if (label === "history" || label === "manual") return label;
   return "manual";
@@ -131,15 +131,30 @@ async function accountActivityRows(
     (categories ?? []).map((row) => [row.slug as string, row.id as string]),
   );
 
+  // Older imports can use a different provider/external ID for the same
+  // compete key. Preserve the existing database identity when saving them.
+  const identities = new Map<string, { provider: string; externalId: string }>();
+  for (let offset = 0; offset < clean.activities.length; offset += 100) {
+    const keys = clean.activities.slice(offset, offset + 100).map(activity => activity.id);
+    const { data, error } = await db.from("activities")
+      .select("compete_key, provider, external_id")
+      .eq("user_id", userId).in("compete_key", keys);
+    if (error) throw new Error(error.message);
+    for (const row of data ?? []) {
+      identities.set(String(row.compete_key), { provider: String(row.provider), externalId: String(row.external_id) });
+    }
+  }
+
   const activityRows = clean.activities.flatMap((activity) => {
     const parts = splitCompeteKey(activity);
+    const identity = identities.get(activity.id);
     const categoryId = categoryBySlug.get(activity.sport);
     if (!categoryId) return [];
     return [
       {
         user_id: userId,
-        provider: parts.provider,
-        external_id: parts.externalId,
+        provider: identity?.provider ?? parts.provider,
+        external_id: identity?.externalId ?? parts.externalId,
         category_id: categoryId,
         started_at: activity.startedAt,
         metric_value:

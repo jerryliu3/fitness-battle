@@ -9,6 +9,7 @@ function thenableQuery<T>(data: T) {
   const builder = {
     select: () => builder,
     eq: () => builder,
+    in: () => builder,
     order: () => builder,
     limit: () => builder,
     range: () => builder,
@@ -41,13 +42,21 @@ describe("compete account units preference", () => {
       } : table === "profiles" ? { primary_sport: "running", display_name: "Runner" } : table === "activities" ? [{
         compete_key: "strava-42", sport: "running", started_at: new Date().toISOString(),
         distance_m: 5000, moving_sec: 1800, verified: true, provenance: "recorded", disposition: "counted",
-        source_label: "strava", summary_polyline: "summary-geometry", detailed_polyline: "detailed-geometry",
+        source_label: "Strava", summary_polyline: "summary-geometry", detailed_polyline: "detailed-geometry",
       }] : []),
     };
     const loaded = await loadCompeteAccount(db as never, "owner");
     expect(loaded?.state.activities.find(a => a.id === "strava-42")).toMatchObject({
-      summaryPolyline: "summary-geometry", detailedPolyline: "detailed-geometry",
+      summaryPolyline: "summary-geometry", detailedPolyline: "detailed-geometry", source: "strava",
     });
+  });
+
+  it("preserves an existing activity identity when its compete key has a legacy provider", async () => {
+    const state = reduceCompete(freshState(), { type: "log-manual", sport: "running", distanceM: 160, movingSec: 180, activityId: "legacy-key" });
+    const rpc = vi.fn(async () => ({ data: "revision", error: null }));
+    const db = { rpc, from: (table: string) => thenableQuery(table === "categories" ? [{ id: "running-id", slug: "running" }] : table === "activities" ? [{ compete_key: "legacy-key", provider: "strava", external_id: "original-id" }] : []) };
+    await persistCompeteAccount(db as never, "owner", state, "old-revision");
+    expect(rpc).toHaveBeenCalledWith("save_compete_account", expect.objectContaining({ p_expected_updated_at: "old-revision", p_activities: [expect.objectContaining({ compete_key: "legacy-key", provider: "strava", external_id: "original-id" })] }));
   });
 
   it("persists and reloads metric units from athlete_prefs", async () => {

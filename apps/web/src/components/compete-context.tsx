@@ -201,6 +201,8 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
   const syncReviewBlocked = useRef(false);
   const holdRemoteRef = useRef<(next: CompeteState) => CompeteState>(next => next);
   const [saveError, setSaveError] = useState<string | null>(null);
+  const [retryingSave, setRetryingSave] = useState(false);
+  const [retryFailed, setRetryFailed] = useState(false);
   const [loadStatus, setLoadStatus] = useState<LoadStatus>("loading");
   const [attempt, setAttempt] = useState(0);
   /** Account the current `state`/`loadStatus` belong to — cleared synchronously on switch. */
@@ -240,6 +242,8 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
     setState(null);
     setLoadStatus("loading");
     setSaveError(null);
+    setRetryingSave(false);
+    setRetryFailed(false);
     statusRef.current = "loading";
     stateRef.current = null;
     queue.current = [];
@@ -264,7 +268,10 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
       const epoch = lifecycle.current;
       const isCurrent = () => accountId === userIdRef.current && epoch === lifecycle.current;
       saveChain.current = saveChain.current.catch(() => {}).then(async () => {
-        if (!isCurrent() || generation !== dirtyRef.current || conflictRef.current) return;
+        if (!isCurrent() || generation !== dirtyRef.current || conflictRef.current) {
+          if (isCurrent()) setRetryingSave(false);
+          return;
+        }
         try {
           const response = await fetch("/api/compete", {
             method: "PUT", headers: { "Content-Type": "application/json" },
@@ -289,10 +296,13 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
             unsavedRef.current = false; unitsUnsavedRef.current = false;
           }
           setSaveError(null);
+          setRetryFailed(false);
         } catch {
           if (!isCurrent()) return;
           writeStorageItem(deviceOnlyKey(accountId), "1");
           setSaveError("This device updated. The account copy did not save.");
+        } finally {
+          if (isCurrent()) setRetryingSave(false);
         }
       });
     }, [],
@@ -482,6 +492,8 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
       dirtyRef.current += 1;
     }
     if (!conflictRef.current && statusRef.current === "ready" && unsavedRef.current && stateRef.current) {
+      setRetryingSave(true);
+      setRetryFailed(true);
       scheduleSave(accountId, stateRef.current, true);
       return;
     }
@@ -734,7 +746,8 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
     {saveError && !saveConflict && loadStatus === "ready" && (
       <div role="alert" className="fb-card" style={{ padding: 16 }}>
         <p>{saveError}</p>
-        <button className="fb-btn-line" onClick={retryLoad}>Retry save</button>
+        {retryFailed && !retryingSave && <p role="status">Retry could not save. Your changes remain on this device.</p>}
+        <button className="fb-btn-line" disabled={retryingSave} onClick={retryLoad}>{retryingSave ? "Saving…" : "Retry save"}</button>
       </div>
     )}
     {children}

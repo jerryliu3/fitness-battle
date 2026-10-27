@@ -13,6 +13,7 @@ import { ResultCard } from "./result-card";
 import {
   APP_TIMEZONE,
   roundReveal,
+  stripWebProductPrefix,
   roundEnrollment,
   sportById,
   type CompeteState,
@@ -134,7 +135,7 @@ export function WeekReveal({
         }
       : state,
   );
-  if (!ready || (!preview && (path !== "/arena" || !replay)) || !reveal) return null;
+  if (!ready || (!preview && (stripWebProductPrefix(path) !== "/arena" || !replay)) || !reveal) return null;
   return (
     <RoundTakeover
       key={`${user?.id ?? "guest"}:${reveal.key}`}

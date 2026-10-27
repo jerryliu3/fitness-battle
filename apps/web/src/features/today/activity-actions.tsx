@@ -2,7 +2,7 @@
 import { AppParagraph } from "@/ui/section";
 
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { activityFromSample, competeNow, manualActivityInstant, parseManualActivity, SPORTS, sportById, type ActivitySample, type ReadinessSample, type SportId } from "@fitness-battle/shared";
 import { useAuth } from "@/components/auth-context";
@@ -25,6 +25,11 @@ export function ActivityActions({ compact = false }: { compact?: boolean }) {
   const [busy, setBusy] = useState(false);
   const [note, setNote] = useState("");
   const [formError, setFormError] = useState("");
+  useEffect(() => {
+    if (note !== "Activity added on this device. Account save pending.") return;
+    const timer = window.setTimeout(() => setNote(""), 10000);
+    return () => window.clearTimeout(timer);
+  }, [note]);
   if (!state) return null;
   const ready = Boolean(user) && loadStatus !== "loading" && loadStatus !== "failed";
 
@@ -92,7 +97,7 @@ export function ActivityActions({ compact = false }: { compact?: boolean }) {
           <Link href="/login?next=/today">Sign in to add or sync</Link>
         )}
     </div>
-    {note && <AppParagraph typographyRole="caption" role="status" className={compact ? "fb-note focus-sync-status" : "fb-note"}>{note} <Link href="/athlete?panel=connections">Tracker settings</Link></AppParagraph>}
+    {note && <AppParagraph typographyRole="caption" role="status" className={compact ? "fb-note focus-sync-status" : "fb-note"}>{note} <Link href="/athlete?panel=connections">Tracker settings</Link> <button type="button" aria-label="Dismiss activity message" onClick={() => setNote("")}>×</button></AppParagraph>}
     <Sheet open={open} onClose={() => setOpen(false)} title="Add manual activity" body="" minimal>
       <form style={{ display: "grid", gap: 16 }} onSubmit={(event) => {
         event.preventDefault();
@@ -103,7 +108,7 @@ export function ActivityActions({ compact = false }: { compact?: boolean }) {
         if (when.error !== null) { setFormError(when.error); return; }
         const { movingSec, distanceM } = parsed;
         dispatch({ type: "log-manual", sport, movingSec, distanceM, startedAt: when.startedAt, activityId: `manual-${crypto.randomUUID()}` });
-        setOpen(false); setMiles(""); setMinutes(""); setTime(""); setSport(""); setNote("Activity added for today.");
+        setOpen(false); setMiles(""); setMinutes(""); setTime(""); setSport(""); setNote("Activity added on this device. Account save pending.");
       }}>
         <label>Sport<select required className="fb-input" value={sport} onChange={(event) => { setSport(event.target.value as SportId); setMiles(""); }}><option value="" disabled>Choose a sport</option>{SPORTS.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label>
         {sport && <>
