@@ -69,6 +69,8 @@ describe("deliberate week results", () => {
         createElement(WeekReveal, { state, ready: true, onDismiss: vi.fn() }),
       ),
     ).toContain("Result card");
+    route.path = "/app/arena";
+    expect(renderToStaticMarkup(createElement(WeekReveal, { state, ready: true, onDismiss: vi.fn() }))).toContain("Result card");
     route.path = "/field";
     expect(
       renderToStaticMarkup(

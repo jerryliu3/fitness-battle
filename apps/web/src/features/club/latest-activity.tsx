@@ -20,7 +20,7 @@ export function LatestActivity({ state, onOpen }: { state: CompeteState; onOpen:
       {rows.length > 0 ? (
         rows.map(row => { const route = activityRoute(row.ownActivity); return <button key={`${row.userId}:${row.id}`} type="button" className="club-activity-row" onClick={() => row.ownActivity ? onOpen(row.ownActivity) : setSelected({ account: user?.id, id: row.id })}>
           <span className={route ? "club-activity-map" : "club-activity-icon club-activity-sport"}>{route ? <RouteStaticPreview coordinates={route} width={128} height={128} padding={16} strokeWidth={3} showMarkers={false} showPlayBadge={false} alt="Activity route" /> : <SportActivityIcon sport={row.sport} />}</span>
-          <span><b>{row.ownActivity ? sportById(row.sport).name : `${row.name} · ${sportById(row.sport).name}`} · {clubDuration(row.movingSec)}</b>
+          <span><b>{row.ownActivity ? `You · ${sportById(row.sport).name}` : `${row.name} · ${sportById(row.sport).name}`} · {clubDuration(row.movingSec)}</b>
             <AppText as="small" role="support" secondary>{row.verified ? "GPS Tracked" : row.source === "manual" ? "Manual activity" : "Activity"}</AppText></span>
           <span><AppText as="small" role="caption" secondary>{new Date(row.startedAt).toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: APP_TIMEZONE })}</AppText><span aria-hidden="true">→</span></span>
         </button>; })

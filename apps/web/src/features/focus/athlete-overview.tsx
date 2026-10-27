@@ -17,6 +17,7 @@ import {
   formatDistanceM,
   formatEffortScore,
   rankForElo,
+  sportById,
   personalRecordHistory,
   RECORD_DISTANCES,
   formatClockTime,
@@ -240,7 +241,7 @@ export function AthleteOverview({
                   const rank = rankForElo(elo);
                   return (
                     <div style={{ color: "var(--tennis, #ccff00)", ...typographyStyle("label") }}>
-                      {elo} · {rank.name}
+                      {sportById(state.primary).name} · Open Effort Score {elo} · {rank.name}
                     </div>
                   );
                 })()}

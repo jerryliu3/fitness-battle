@@ -298,6 +298,12 @@ export function TodayScreen() {
   }, [counted, lastDebugEvent, reduced, todayStop, units]);
 
   useEffect(() => {
+    if (!removed) return;
+    const timer = window.setTimeout(() => setRemoved(null), 10000);
+    return () => window.clearTimeout(timer);
+  }, [removed]);
+
+  useEffect(() => {
     if (!syncNotice) return;
     const timer = window.setTimeout(() => setSyncNotice(null), 4500);
     return () => window.clearTimeout(timer);
@@ -346,7 +352,7 @@ export function TodayScreen() {
       </Sheet>
       <div className="focus-home-overlay">
       {syncNotice ? <div className="fb-note" role="status" aria-live="polite"><b>{syncNotice}</b></div> : null}
-      {removed ? <div className="fb-note" role="status">Session removed. <button type="button" className="fb-btn-ghost" onClick={() => { dispatch({type:"set-disposition", activityId:removed.id, disposition:removed.disposition}); setRemoved(null); }}>Undo</button></div> : null}
+      {removed ? <div className="fb-note" role="status">Session removed. <button type="button" aria-label="Dismiss session removed message" onClick={() => setRemoved(null)}>×</button> <button type="button" className="fb-btn-ghost" onClick={() => { dispatch({type:"set-disposition", activityId:removed.id, disposition:removed.disposition}); setRemoved(null); }}>Undo</button></div> : null}
       {frozen && (
         <div className="fb-pill" style={{ marginBottom: "16px" }}>
           <b>❄ Week frozen</b>
@@ -407,7 +413,7 @@ export function TodayScreen() {
               {stop.kind === "today" ? (
                 stop.day ? (
                   <>
-                    {peekStopKey === "today" && session.kind === "peek" && session.target !== "suggestion" ? (
+                    {peekStopKey === stop.day.id && session.kind === "peek" && session.target !== "suggestion" ? (
                       <SessionStopPeek
                         kicker={
                           "items" in session.target
