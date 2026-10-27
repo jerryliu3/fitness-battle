@@ -1,5 +1,5 @@
 import { useMemo, useRef, useState, type ReactNode } from "react";
-import { Pressable, ScrollView, StyleSheet, View } from "react-native";
+import { Pressable, ScrollView, StyleSheet, View, type ScrollViewInstance } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import Svg, { Circle, Line, Path, Rect, Text as SvgText } from "react-native-svg";
@@ -29,7 +29,7 @@ export default function ActivityContextLab() {
   const [concept, setConcept] = useState<Concept>(concepts.some(item => item.id === params.concept) ? params.concept! : "scatter");
   const [sample, setSample] = useState<Example>(examples.some(item => item.id === params.sample) ? params.sample! : "run");
   const [focused, setFocused] = useState(false);
-  const scroll = useRef<ScrollView>(null);
+  const scroll = useRef<ScrollViewInstance>(null);
   const data = useMemo(() => example(sample), [sample]);
   const history = useMemo(() => sessionHistory(data.current, data.history, new Date(data.current.startedAt)), [data]);
   return <SafeAreaView style={s.safe}>

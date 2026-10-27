@@ -2311,7 +2311,7 @@
 .ac-readout > span { font: var(--type-label); }
 .ac-readout > strong { font: var(--type-metric); font-variant-numeric: tabular-nums; }
 .ac-plot { display: block; width: 100%; height: auto; overflow: visible; touch-action: pan-y; cursor: crosshair; }
-.ac-plot text { fill: var(--muted); font-family: inherit; font-size: 13px; }
+.ac-plot text { fill: var(--muted); font: var(--type-caption); }
 .ac-legend { display: flex; flex-wrap: wrap; gap: 16px; font: var(--type-caption); color: var(--muted); }
 .ac-legend > span { display: inline-flex; align-items: center; gap: 7px; }
 .ac-dot { width: 9px; height: 9px; border-radius: 50%; background: var(--field-teal); }
