@@ -54,6 +54,7 @@ export default function Home() {
           ) : null}
           <SectionStack divided={false}>
           <WeekChart state={state} onOpen={() => router.push("/week")} />
+          {Platform.OS !== "web" && <Pressable accessibilityRole="button" accessibilityLabel="Open today’s session" onPress={() => setExpanded("suggestion")} style={{ minHeight: 44, justifyContent: "center", alignSelf: "flex-start" }}><AppText role="label">Today’s session →</AppText></Pressable>}
           <DailyHealth state={state} />
           <RivalCard state={state} />
           <LatestActivity state={state} onOpen={setLatest} />
