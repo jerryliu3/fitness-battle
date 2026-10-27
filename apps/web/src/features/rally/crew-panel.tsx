@@ -1,7 +1,7 @@
 "use client";
 import { useBootLoading } from "@/shell/boot-readiness";
 import { UserAvatar } from "@/ui/user-avatar";
-import { AppParagraph, AppText, AppHeading, Section } from "@/ui/section";
+import { AppParagraph, AppText, AppHeading, Section, typographyStyle } from "@/ui/section";
 
 import { RankBadge } from "../progress/rank-badge";
 import { useEffect, useState } from "react";
@@ -90,6 +90,7 @@ export function CrewPanel() {
   const [panel, setPanel] = useState<
     "invite" | "manage" | "add" | "members" | null
   >(null);
+  const [viewingMember, setViewingMember] = useState<Member | null>(null);
   const [name, setName] = useState("");
   const [code, setCode] = useState("");
   const [format, setFormat] = useState("volume");
@@ -352,11 +353,43 @@ export function CrewPanel() {
             </AppParagraph>
             <AppHeading level={1} role="display"><button type="button" className="club-crew-name" onClick={()=>setPanel("members")} aria-label={`View ${crew.name} members`}>{crew.name}</button></AppHeading>
             <div className="focus-row">
-              <div className="focus-avatar-stack">
+              <button
+                type="button"
+                className="focus-avatar-stack"
+                onClick={() => setPanel("members")}
+                aria-label="View crew members"
+                style={{
+                  cursor: "pointer",
+                  background: "none",
+                  border: 0,
+                  padding: 0,
+                  display: "flex",
+                  alignItems: "center",
+                }}
+              >
                 {members.slice(0, 5).map((m) => (
                   <UserAvatar key={m.user_id} src={m.avatar_url} name={m.display_name} decorative={false} />
                 ))}
-              </div>
+                {members.length > 5 && (
+                  <span
+                    style={{
+                      width: "36px",
+                      height: "36px",
+                      borderRadius: "18px",
+                      background: "var(--card, #fff)",
+                      color: "var(--ink, #00101b)",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      border: "1px solid var(--line, #e0e5dc)",
+                      marginLeft: "-8px",
+                      ...typographyStyle("caption"),
+                    }}
+                  >
+                    +{members.length - 5}
+                  </span>
+                )}
+              </button>
               <div className="focus-crew-hero-buttons">
                 <button
                   type="button"
@@ -436,13 +469,40 @@ export function CrewPanel() {
                       .slice()
                       .sort((a, b) => memberTotal(b.user_id) - memberTotal(a.user_id))
                       .map((m, i) => (
-                        <div className="fb-row" key={m.user_id}>
+                        <button
+                          type="button"
+                          className="fb-row"
+                          key={m.user_id}
+                          style={{
+                            width: "100%",
+                            textAlign: "left",
+                            cursor: "pointer",
+                            background: "none",
+                            border: 0,
+                            padding: "8px 0",
+                            borderBottom: "1px solid var(--line, #e0e5dc)",
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "8px",
+                          }}
+                          onClick={() => {
+                            if (m.user_id === user?.id) {
+                              router.push("/athlete");
+                            } else {
+                              setViewingMember(m);
+                            }
+                          }}
+                        >
                           <span>{i + 1}</span>
-                          <b className="fb-grow">{m.display_name}</b><RankBadge score={m.effort_score} />
+                          <UserAvatar src={m.avatar_url} name={m.display_name} size={32} />
+                          <b className="fb-grow">{m.display_name}</b>
+                          <RankBadge score={m.effort_score} />
                           <AppText role="value">
-                            {sessionsMetric ? `${memberTotal(m.user_id)} sessions` : `${formatDistanceM(memberTotal(m.user_id), state?.units)} ${unitLabel}`}
+                            {sessionsMetric
+                              ? `${memberTotal(m.user_id)} sessions`
+                              : `${formatDistanceM(memberTotal(m.user_id), state?.units)} ${unitLabel}`}
                           </AppText>
-                        </div>
+                        </button>
                       ))}
                   </Section>
                 </>
@@ -776,6 +836,50 @@ export function CrewPanel() {
           </button>
         </div>
       </Sheet>
+      {viewingMember && crew && (
+        <Sheet
+          open={Boolean(viewingMember)}
+          title={viewingMember.display_name}
+          body="Member profile"
+          onClose={() => setViewingMember(null)}
+        >
+          <div style={{ display: "flex", flexDirection: "column", gap: "16px", marginTop: "12px" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
+              <UserAvatar src={viewingMember.avatar_url} name={viewingMember.display_name} size={64} />
+              <div>
+                <strong style={{ ...typographyStyle("heading"), display: "block" }}>{viewingMember.display_name}</strong>
+                <RankBadge score={viewingMember.effort_score} />
+                <span style={{ ...typographyStyle("caption"), color: "var(--muted)", display: "block", marginTop: 4 }}>
+                  {(viewingMember.user_id === user?.id ? resting : viewingMember.rest_week === weekKey)
+                    ? "Rest week"
+                    : "Active this week"}
+                </span>
+              </div>
+            </div>
+            <div className="fb-card" style={{ padding: "16px", borderRadius: "16px", border: "1px solid var(--line)" }}>
+              <span style={{ ...typographyStyle("caption"), color: "var(--muted)" }}>
+                This week's contribution
+              </span>
+              <div style={{ ...typographyStyle("metric"), margin: "6px 0" }}>
+                {sessionsMetric
+                  ? `${memberTotal(viewingMember.user_id)} sessions`
+                  : `${formatDistanceM(memberTotal(viewingMember.user_id), state?.units)} ${unitLabel}`}
+              </div>
+              <span style={{ ...typographyStyle("body"), color: "var(--muted)" }}>
+                {crew.name} · {crew.sport}
+              </span>
+            </div>
+            <button
+              type="button"
+              className="fb-btn-line"
+              style={{ ...typographyStyle("label"), padding: "8px 16px" }}
+              onClick={() => setViewingMember(null)}
+            >
+              Close
+            </button>
+          </div>
+        </Sheet>
+      )}
     </>
   );
 }

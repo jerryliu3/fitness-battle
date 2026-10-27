@@ -1,5 +1,5 @@
 "use client";
-import { AppParagraph, AppHeading, StatusBadge } from "@/ui/section";
+import { AppParagraph, AppHeading, AppText, StatusBadge, typographyStyle } from "@/ui/section";
 
 import { useEffect, useId, useRef, type ReactNode } from "react";
 import { useReducedMotion } from "motion/react";
@@ -67,35 +67,53 @@ export function EventCarousel({
       aria-label="Your registered events"
       aria-roledescription="carousel"
     >
-      {/* Sport chips select the active field; horizontal swipe on the pages still switches events. */}
-      <div className="club-event-chips-bar">
-        <div className="club-event-chips" role="tablist" aria-label="Registered events">
-          {events.map((event) => (
+      <div
+        className="club-event-toolbar"
+        style={{
+          display: "flex",
+          width: "100%",
+          padding: "4px 0 12px",
+          borderBottom: "1px solid var(--line, #e0e5dc)",
+        }}
+      >
+        <div
+          role="tablist"
+          aria-label="Registered sports"
+          style={{
+            display: "grid",
+            gridTemplateColumns: `repeat(${events.length}, 1fr)`,
+            width: "100%",
+          }}
+        >
+          {events.map((event, i) => (
             <button
               key={event.id}
               id={`${tabPrefix}-${event.id}`}
               type="button"
               role="tab"
-              className="club-event-chip"
-              aria-selected={event.id === value}
+              aria-selected={i === index}
               aria-controls={`${tabPrefix}-panel-${event.id}`}
+              aria-label={`Show ${event.label}`}
               onClick={() => onChange(event.id)}
+              style={{
+                cursor: "pointer",
+                padding: "8px 4px",
+                border: "none",
+                borderBottom: i === index ? "2.5px solid var(--ink, #00101b)" : "2.5px solid transparent",
+                background: "transparent",
+                color: i === index ? "var(--ink, #00101b)" : "var(--muted, #64748b)",
+                ...typographyStyle("heading"),
+                textAlign: "center",
+                marginBottom: "-13px",
+              }}
             >
               {event.label}
               {event.badge ? (
-                <StatusBadge>{event.badge}</StatusBadge>
+                <AppText role="caption" secondary style={{ marginLeft: 4 }}>· {event.badge}</AppText>
               ) : null}
             </button>
           ))}
         </div>
-        <button
-          type="button"
-          className="club-event-chip is-register"
-          aria-label="Register for an event"
-          onClick={onRegister}
-        >
-          Register
-        </button>
       </div>
       <div
         ref={scroller}

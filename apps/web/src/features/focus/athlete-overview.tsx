@@ -10,7 +10,20 @@ import { useScoreTrackLens } from "@/lib/score-track-lens";
 import { useAuth } from "@/components/auth-context";
 import { useCompete } from "@/components/compete-context";
 
-import { distanceUnitLabel, effortHistory, ELO_UNRANKED, formatDistanceM, formatEffortScore, rankForElo, type CompeteState, type ScoreTrack } from "@fitness-battle/shared";
+import {
+  distanceUnitLabel,
+  effortHistory,
+  ELO_UNRANKED,
+  formatDistanceM,
+  formatEffortScore,
+  rankForElo,
+  personalRecordHistory,
+  RECORD_DISTANCES,
+  formatClockTime,
+  competeNow,
+  type CompeteState,
+  type ScoreTrack,
+} from "@fitness-battle/shared";
 import { useEffect, useState } from "react";
 
 function EditIcon() {
@@ -38,6 +51,7 @@ export function AthleteOverview({
   offlineMode,
   openProfileEdit = false,
   sections = "profile",
+  onEditProfile,
 }: {
   state: CompeteState;
   email?: string | null;
@@ -45,6 +59,7 @@ export function AthleteOverview({
   openProfileEdit?: boolean;
   /** Profile card on Athlete; lifetime totals + effort chart on Progress. */
   sections?: "profile" | "progress";
+  onEditProfile?: () => void;
 }) {
   const { user } = useAuth();
   const { dispatch } = useCompete();
@@ -192,34 +207,111 @@ export function AthleteOverview({
           </div>
         </section>
       ) : showProfile ? (
-        <section className="focus-profile-card" aria-label="Athlete profile">
-          <ProfilePhoto state={state} email={email} />
-          <div className="focus-profile-card-copy">
-            <div className="focus-profile-identity">
-              <div className="focus-profile-identity-text">
-                <AppParagraph typographyRole="label" className="fb-kicker">{state.city || "Your location"}</AppParagraph>
-                <AppHeading level={1} role="display">{state.name}</AppHeading>
-                {email ? (
-                  <AppParagraph typographyRole="body" className="focus-profile-email">
-                    {email}
-                    {offlineMode ? " · demo" : ""}
-                  </AppParagraph>
-                ) : null}
+        <section
+          className="focus-profile-card"
+          aria-label="Athlete profile"
+          style={{
+            background: "var(--ink, #00101b)",
+            color: "var(--paper, #f7f9f5)",
+            border: "1px solid var(--line, #24384a)",
+            borderRadius: "24px",
+            padding: "20px",
+            display: "flex",
+            flexDirection: "column",
+            gap: "16px",
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", gap: "16px", width: "100%" }}>
+            <ProfilePhoto state={state} email={email} />
+            <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: 2 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 8 }}>
+                <AppHeading level={1} role="display" style={{ color: "#ffffff", margin: 0 }}>
+                  {state.name}
+                </AppHeading>
+                <AppText role="caption" secondary style={{ color: "#8fa2b5", whiteSpace: "nowrap" }}>Since Jan 2026</AppText>
               </div>
-              <button
-                type="button"
-                className="focus-profile-edit"
-                aria-label="Edit profile"
-                onClick={() => {
-                  setName(state.name);
-                  setCity(state.city);
-                  setEditing(true);
-                }}
-              >
-                <EditIcon />
-              </button>
+              {state.city ? (
+                <AppText role="caption" secondary style={{ color: "#c9d6e3" }}>{state.city}</AppText>
+              ) : null}
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 4 }}>
+                {(() => {
+                  const primaryRating = state.ratings.find((r) => r.sport === state.primary);
+                  const elo = primaryRating?.openElo || 1000;
+                  const rank = rankForElo(elo);
+                  return (
+                    <div style={{ color: "var(--tennis, #ccff00)", ...typographyStyle("label") }}>
+                      {elo} · {rank.name}
+                    </div>
+                  );
+                })()}
+                <button
+                  type="button"
+                  className="fb-pill"
+                  aria-label="Edit profile"
+                  style={{
+                    cursor: "pointer",
+                    padding: "6px 14px",
+                    borderRadius: "999px",
+                    border: "1px solid rgba(255, 255, 255, 0.2)",
+                    background: "rgba(255, 255, 255, 0.1)",
+                    color: "#ffffff",
+                    ...typographyStyle("label"),
+                  }}
+                  onClick={() => {
+                    if (onEditProfile) {
+                      onEditProfile();
+                    } else {
+                      setName(state.name);
+                      setCity(state.city);
+                      setEditing(true);
+                    }
+                  }}
+                >
+                  Edit profile
+                </button>
+              </div>
             </div>
           </div>
+
+          {(() => {
+            const records = personalRecordHistory(state, competeNow(state));
+            const topRecords = records.slice(0, 3);
+            if (topRecords.length === 0) return null;
+            return (
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: `repeat(${topRecords.length}, 1fr)`,
+                  gap: "8px",
+                  paddingTop: "14px",
+                  borderTop: "1px solid rgba(255, 255, 255, 0.15)",
+                  width: "100%",
+                  textAlign: "center",
+                }}
+              >
+                {topRecords.map((r) => {
+                  const label =
+                    RECORD_DISTANCES[r.sport]?.find((d) => d.id === r.distanceId)?.label ??
+                    r.distanceId;
+                  return (
+                    <div key={r.activityId} style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
+                      <span
+                        style={{
+                          color: "#c9d6e3",
+                          ...typographyStyle("caption"),
+                        }}
+                      >
+                        {label}
+                      </span>
+                      <strong style={{ color: "#ffffff", ...typographyStyle("heading") }}>
+                        {formatClockTime(r.seconds)}
+                      </strong>
+                    </div>
+                  );
+                })}
+              </div>
+            );
+          })()}
         </section>
       ) : null}
 

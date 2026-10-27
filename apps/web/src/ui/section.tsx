@@ -29,7 +29,7 @@ export function AppParagraph({ typographyRole = "body", style, ...props }: HTMLA
 export function TextAction({ href, label, accessibilityLabel }: { href: string; label: string; accessibilityLabel: string }) {
   return <Link className="ui-text-action" style={typographyStyle("label")} href={href} aria-label={accessibilityLabel}>{label}</Link>;
 }
-export function SectionHeader({ title, titleRole = "heading", subtitle, action, id }: { title: string; titleRole?: "display" | "heading"; subtitle?: string; action?: ReactNode; id?: string }) {
+export function SectionHeader({ title, titleRole = "heading", subtitle, action, id }: { title: ReactNode; titleRole?: "display" | "heading"; subtitle?: string; action?: ReactNode; id?: string }) {
   return <div className="ui-section-header"><div className="ui-section-heading"><AppHeading id={id} role={titleRole} level={titleRole === "display" ? 1 : 2}>{title}</AppHeading>{subtitle && <p style={typographyStyle("body")} className="ui-text-secondary">{subtitle}</p>}</div>{action}</div>;
 }
 export function PageHeader({ title, subtitle }: { title: string; subtitle?: string }) {

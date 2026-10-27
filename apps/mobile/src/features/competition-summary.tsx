@@ -53,7 +53,7 @@ export function CompetitionSummary({
           titleRole="display"
           title={
             <View style={{ flexDirection: "row", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
-              <AppText role="display" accessibilityRole="header">Competition</AppText>
+              <AppText role="display" accessibilityRole="header">Compete</AppText>
               <StatusBadge>{days ? `${days} day${days === 1 ? "" : "s"}` : hours ? `${hours}h` : `${left}m`} left</StatusBadge>
             </View>
           }
@@ -79,7 +79,7 @@ export function CompetitionSummary({
                   alignItems: "center",
                 }}
               >
-                <AppText role="label">Register +</AppText>
+                <AppText role="label">＋ Register</AppText>
               </Pressable>
             ) : null
           }

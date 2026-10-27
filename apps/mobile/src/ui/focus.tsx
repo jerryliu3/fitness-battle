@@ -147,6 +147,122 @@ export function FocusSheet({
     </Modal>
   );
 }
+
+export function FocusSidePanel({
+  open,
+  title,
+  onClose,
+  children,
+}: {
+  open: boolean;
+  title: string;
+  onClose: () => void;
+  children?: ReactNode;
+}) {
+  const reduce = useReducedMotion();
+  const [present, setPresent] = useState(open);
+  const progress = useRef(new Animated.Value(0)).current;
+  const { width: windowWidth } = useWindowDimensions();
+  const panelWidth = Math.min(windowWidth, 440);
+
+  useEffect(() => {
+    if (open) void playCue("light");
+  }, [open]);
+
+  useEffect(() => {
+    if (open && !present) {
+      setPresent(true);
+      return;
+    }
+    if (!present) return;
+    const animation = Animated.timing(progress, {
+      toValue: open ? 1 : 0,
+      duration: reduce ? 0 : open ? 280 : 200,
+      easing: open ? Easing.out(Easing.cubic) : Easing.in(Easing.cubic),
+      useNativeDriver: true,
+    });
+    animation.start(({ finished }) => {
+      if (finished && !open) {
+        setPresent(false);
+      }
+    });
+    return () => animation.stop();
+  }, [open, present, progress, reduce]);
+
+  return (
+    <Modal
+      visible={present}
+      transparent
+      animationType="none"
+      onRequestClose={onClose}
+    >
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
+        style={{ flex: 1, flexDirection: "row", justifyContent: "flex-end" }}
+      >
+        <Animated.View
+          style={[StyleSheet.absoluteFill, { opacity: progress }]}
+          pointerEvents={open ? "auto" : "none"}
+        >
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Close panel"
+            style={f.backdrop}
+            onPress={onClose}
+          />
+        </Animated.View>
+        <Animated.View
+          style={{
+            width: panelWidth,
+            height: "100%",
+            backgroundColor: c.paper,
+            borderLeftWidth: 1,
+            borderLeftColor: c.line,
+            shadowColor: "#000",
+            shadowOffset: { width: -4, height: 0 },
+            shadowOpacity: 0.15,
+            shadowRadius: 16,
+            elevation: 16,
+            transform: [
+              {
+                translateX: progress.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: [panelWidth, 0],
+                }),
+              },
+            ],
+          }}
+          accessibilityViewIsModal
+        >
+          <SafeAreaView edges={["top", "bottom"]} style={{ flex: 1 }}>
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                paddingHorizontal: 16,
+                paddingVertical: 12,
+                borderBottomWidth: 1,
+                borderBottomColor: c.line,
+                gap: 8,
+              }}
+            >
+              <IconButton icon="back" label="Close panel" onPress={onClose} />
+              <AppText role="heading" accessibilityRole="header" style={{ flex: 1 }}>
+                {title}
+              </AppText>
+            </View>
+            <ScrollView
+              keyboardShouldPersistTaps="handled"
+              contentContainerStyle={{ padding: 20, gap: 20, paddingBottom: 40 }}
+            >
+              {children}
+            </ScrollView>
+          </SafeAreaView>
+        </Animated.View>
+      </KeyboardAvoidingView>
+    </Modal>
+  );
+}
 export function FocusHeading({
   kicker,
   title,
@@ -207,7 +323,7 @@ export function FocusSegments<T extends string>({
   variant = "segments",
 }: {
   label: string;
-  options: readonly { value: T; label: string }[];
+  options: readonly { value: T; label: string; accessibilityLabel?: string }[];
   value: T;
   onChange: (value: T) => void;
   accent?: boolean;
@@ -250,6 +366,7 @@ export function FocusSegments<T extends string>({
         <Pressable
           key={option.value}
           accessibilityRole="tab"
+          accessibilityLabel={option.accessibilityLabel ?? option.label}
           accessibilityState={{ selected: value === option.value }}
           onPress={() => {
             if (value === option.value) return;

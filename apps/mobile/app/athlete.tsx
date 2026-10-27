@@ -5,7 +5,21 @@ import { ScreenHeader } from "../src/ui/screen-header";
 import { IntegrationIcon } from "../src/ui/integration-icon";
 
 import { ChoicePicker } from "../src/ui/choice-picker";
-import { SPORTS, RANK_BANDS, primaryFreezePeriodStart, type ProviderId } from "@fitness-battle/shared";
+import {
+  SPORTS,
+  RANK_BANDS,
+  primaryFreezePeriodStart,
+  competeNow,
+  clubLifetimeTotals,
+  formatDistanceM,
+  distanceUnitLabel,
+  initialsFromName,
+  personalRecordHistory,
+  formatClockTime,
+  rankForElo,
+  RECORD_DISTANCES,
+  type ProviderId,
+} from "@fitness-battle/shared";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { Button } from "heroui-native/button";
 import { Input } from "heroui-native/input";
@@ -39,7 +53,9 @@ import {
   startCloudTrackerConnect,
 } from "../src/lib/tracker-connect";
 import { SHELL_COLORS, SHELL_RADIUS } from "../src/theme";
-import { FocusButton, FocusSegments, FocusSheet, f } from "../src/ui/focus";
+import { FocusButton, FocusSegments, FocusSheet, FocusSidePanel, f } from "../src/ui/focus";
+import { UserAvatar } from "../src/ui/user-avatar";
+import { ProfilePhoto } from "../src/features/profile-photo";
 
 function isDeviceProvider(
   id: ProviderId,
@@ -87,6 +103,7 @@ export default function AthleteScreen() {
   const [authBusy, setAuthBusy] = useState(false);
   const [authNote, setAuthNote] = useState<string | null>(null);
   const [confirmFreeze, setConfirmFreeze] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
   const panel = params.panel ?? null;
   function setPanel(next: AthletePanel | null) {
     if (next)
@@ -654,6 +671,13 @@ export default function AthleteScreen() {
     );
   }
 
+  const now = competeNow(state);
+  const season = clubLifetimeTotals(state);
+  const unit = distanceUnitLabel(state.units);
+  const records = personalRecordHistory(state, now);
+  const topRecords = records.slice(0, 3);
+  const primaryRating = state.ratings.find(r => r.sport === state.primary);
+
   return (
     <SafeAreaView style={styles.safe} edges={["top"]}>
         {pageHeader}
@@ -669,40 +693,234 @@ export default function AthleteScreen() {
             <FocusButton label="Retry save" secondary onPress={retrySave} />
           </View>
         ) : null}
-        <AthleteMetrics
-          state={state}
-          sections="profile"
-          email={account.email}
-          offlineMode={offlineMode}
-          onEdit={() => setPanel("profile")}
-        />
-        <View style={{ gap: 8 }}>
-          <SettingsRow
-            title="Data Sync"
-            detail="Trackers & history"
-            onPress={() => setPanel("connections")}
-          />
-          <SettingsRow
-            title="Preferences"
-            detail="Units, sports & freezes"
-            onPress={() => setPanel("preferences")}
-          />
-          <SettingsRow
-            title="Notifications"
-            detail="Your updates, your choice"
-            onPress={() => router.push("/notifications")}
-          />
-          <SettingsRow
-            title="How scoring works"
-            detail="Levels & eligibility"
-            onPress={() => setPanel("scoring")}
-          />
-          <SettingsRow
-            title="Account"
-            detail="Sign out, report an issue & delete account"
-            onPress={() => setPanel("account")}
-          />
+
+        {/* Concept 2: The Field Pass Card */}
+        <View
+          style={{
+            borderRadius: 24,
+            backgroundColor: SHELL_COLORS.ink,
+            borderWidth: 1,
+            borderColor: SHELL_COLORS.line,
+            overflow: "hidden",
+          }}
+        >
+          <View style={{ padding: 20, gap: 16 }}>
+            <View style={[f.row, { gap: 16, alignItems: "center" }]}>
+              <UserAvatar
+                src={state.avatarUrl}
+                name={state.name}
+                size={64}
+                highlight
+                fallback={<AppText role="heading" style={{ color: SHELL_COLORS.card }}>{initialsFromName(state.name)}</AppText>}
+              />
+              <View style={{ flex: 1, gap: 4 }}>
+                <View style={[f.row, { justifyContent: "space-between", alignItems: "baseline" }]}>
+                  <AppText role="display" style={{ color: SHELL_COLORS.card }}>{state.name}</AppText>
+                  <AppText role="caption" style={{ color: "#8fa2b5" }}>Since Jan 2026</AppText>
+                </View>
+                {state.city ? (
+                  <AppText role="caption" style={{ color: "#c9d6e3" }}>{state.city}</AppText>
+                ) : null}
+                <View style={[f.row, { justifyContent: "space-between", alignItems: "center", marginTop: 4 }]}>
+                  <AppText role="caption" style={{ color: SHELL_COLORS.tennis }}>
+                    {primaryRating?.openElo || 1000} · {rankForElo(primaryRating?.openElo || 1000).name}
+                  </AppText>
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel="Edit profile"
+                    onPress={() => setEditOpen(true)}
+                    style={{
+                      paddingVertical: 5,
+                      paddingHorizontal: 12,
+                      borderRadius: 999,
+                      borderWidth: 1,
+                      borderColor: "rgba(255, 255, 255, 0.2)",
+                      backgroundColor: "rgba(255, 255, 255, 0.1)",
+                    }}
+                  >
+                    <AppText role="label" style={{ color: "#ffffff" }}>Edit profile</AppText>
+                  </Pressable>
+                </View>
+              </View>
+            </View>
+            {topRecords.length > 0 ? (
+              <View
+                style={[
+                  f.row,
+                  {
+                    paddingTop: 14,
+                    borderTopWidth: 1,
+                    borderColor: "#ffffff20",
+                    justifyContent: "space-around",
+                  },
+                ]}
+              >
+                {topRecords.map((r) => {
+                  const label = RECORD_DISTANCES[r.sport]?.find((d) => d.id === r.distanceId)?.label ?? r.distanceId;
+                  return (
+                    <View key={r.activityId} style={{ alignItems: "center", gap: 2, flex: 1 }}>
+                      <AppText role="heading" style={{ color: SHELL_COLORS.card }}>
+                        {formatClockTime(r.seconds)}
+                      </AppText>
+                      <AppText role="caption" style={{ color: "#c9d6e3" }}>
+                        {label}
+                      </AppText>
+                    </View>
+                  );
+                })}
+              </View>
+            ) : null}
+          </View>
         </View>
+
+        {/* Edit Profile Button (opens side panel) */}
+        <FocusButton
+          label="Edit profile"
+          onPress={() => setEditOpen(true)}
+        />
+
+        {/* Since the first mile stats */}
+        <View style={f.section}>
+          <SectionHeader title="Since the first mile" subtitle="Counted training · 2026" />
+          <View style={[f.row, { paddingVertical: 12, justifyContent: "space-around" }]}>
+            <View style={{ alignItems: "center", gap: 4 }}>
+              <AppText role="display">{formatDistanceM(season.meters, state.units)}</AppText>
+              <AppText role="caption" secondary>{unit} total</AppText>
+            </View>
+            <View style={{ alignItems: "center", gap: 4 }}>
+              <AppText role="display">{season.sessions}</AppText>
+              <AppText role="caption" secondary>Sessions</AppText>
+            </View>
+            <View style={{ alignItems: "center", gap: 4 }}>
+              <AppText role="display">{season.weeks}</AppText>
+              <AppText role="caption" secondary>Active weeks</AppText>
+            </View>
+          </View>
+        </View>
+
+        {/* A few proud moments */}
+        <View style={f.section}>
+          <SectionHeader title="A few proud moments" subtitle="Milestones earned by showing up" />
+          <View style={[f.row, { gap: 12 }]}>
+            <Pressable
+              accessibilityRole="button"
+              onPress={() => router.push("/progress-history")}
+              style={[f.card, { flex: 1, padding: 14, backgroundColor: SHELL_COLORS.card, gap: 4 }]}
+            >
+              <AppText role="label">Four weeks strong</AppText>
+              <AppText role="caption" secondary>4 active weeks in a row</AppText>
+            </Pressable>
+            {topRecords[0] ? (
+              <Pressable
+                accessibilityRole="button"
+                onPress={() => router.push("/progress-achievements")}
+                style={[f.card, { flex: 1, padding: 14, backgroundColor: SHELL_COLORS.card, gap: 4 }]}
+              >
+                <AppText role="label">A new best</AppText>
+                <AppText role="caption" secondary>
+                  {formatClockTime(topRecords[0].seconds)} · Fastest {RECORD_DISTANCES[topRecords[0].sport]?.find((d) => d.id === topRecords[0].distanceId)?.label ?? topRecords[0].distanceId}
+                </AppText>
+              </Pressable>
+            ) : null}
+          </View>
+        </View>
+
+        {/* Side Panel for Edit Profile & Settings (not a bottom sheet) */}
+        <FocusSidePanel
+          open={editOpen}
+          title="Edit profile & Settings"
+          onClose={() => setEditOpen(false)}
+        >
+          <View style={{ gap: 12 }}>
+            <SectionHeader title="Profile details" />
+            <ProfilePhoto state={state} />
+            <Input
+              style={textStyle("body")}
+              value={draftName}
+              onChangeText={setName}
+              accessibilityLabel="Name"
+              maxLength={80}
+              placeholder="Name"
+            />
+            <Input
+              style={textStyle("body")}
+              value={draftCity}
+              onChangeText={setCity}
+              accessibilityLabel="City"
+              maxLength={40}
+              placeholder="City"
+            />
+            {dirty ? (
+              <Button
+                onPress={() => {
+                  const trimmed = draftName.trim();
+                  if (!trimmed) {
+                    setNote("Display name cannot be empty.");
+                    return;
+                  }
+                  dispatch({ type: "rename", name: trimmed });
+                  if (draftCity.trim())
+                    dispatch({ type: "set-city", city: draftCity.trim() });
+                  setName(null);
+                  setCity(null);
+                  setNote("Profile saved.");
+                }}
+              >
+                <AppText role="label">Save profile</AppText>
+              </Button>
+            ) : null}
+            {note ? (
+              <AppText role="body" secondary accessibilityLiveRegion="polite">
+                {note}
+              </AppText>
+            ) : null}
+          </View>
+
+          <View style={{ gap: 8, marginTop: 16 }}>
+            <SectionHeader title="Settings" />
+            <SettingsRow
+              title="Data Sync"
+              detail="Trackers & history"
+              onPress={() => {
+                setEditOpen(false);
+                setPanel("connections");
+              }}
+            />
+            <SettingsRow
+              title="Preferences"
+              detail="Units, sports & freezes"
+              onPress={() => {
+                setEditOpen(false);
+                setPanel("preferences");
+              }}
+            />
+            <SettingsRow
+              title="Notifications"
+              detail="Your updates, your choice"
+              onPress={() => {
+                setEditOpen(false);
+                router.push("/notifications");
+              }}
+            />
+            <SettingsRow
+              title="How scoring works"
+              detail="Levels & eligibility"
+              onPress={() => {
+                setEditOpen(false);
+                setPanel("scoring");
+              }}
+            />
+            <SettingsRow
+              title="Account"
+              detail="Sign out, report an issue & delete account"
+              onPress={() => {
+                setEditOpen(false);
+                setPanel("account");
+              }}
+            />
+          </View>
+        </FocusSidePanel>
+
         {!state.onboardingCompleted ? (
           <View style={f.card}>
             <SectionHeader title="Finish setup"/>

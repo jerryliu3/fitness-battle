@@ -137,34 +137,51 @@ export default function ArenaScreen() {
         ) : null}
         <RoundTakeover state={state} ready={canWrite} dispatch={dispatch} />
         {hasRegistration ? (
-          <View style={{ gap: 14 }}>
-            {eventOptions.length > 1 ? (
-              <FocusSegments
-                variant="tabs"
-                label="Competition events"
-                value={selectedSport!}
-                options={eventOptions}
-                onChange={id => {
-                  setSelection({ account: accountKey, sport: id as SportId | "sleep" });
-                  void playCue("selection");
-                }}
-              />
-            ) : null}
+          <EventCarousel
+            key={accountKey}
+            events={[
+              ...active.map((r) => ({
+                id: r.sport,
+                label: SPORTS.find((s) => s.id === r.sport)!.name,
+                badge: competitionTrackLabel(r.sport),
+              })),
+              ...(sleepOptedIn
+                ? [{ id: "sleep", label: "Sleep & Recovery" }]
+                : []),
+            ]}
+            value={selectedSport!}
+            onChange={(id) => {
+              setSelection({
+                account: accountKey,
+                sport: id as SportId | "sleep",
+              });
+              void playCue("selection");
+            }}
+            onRegister={openRegistration}
+          >
             {selectedSport && selectedSport !== "sleep" ? (
-              <CompetitionField key={`${accountKey}:${selectedSport}:${state.units}:${track}`} sport={selectedSport} track={track} />
+              <CompetitionField
+                key={`${accountKey}:${selectedSport}:${state.units}:${track}`}
+                sport={selectedSport}
+                track={track}
+              />
             ) : selectedSport === "sleep" ? (
               <SleepPanel state={state} dispatch={dispatch} />
             ) : (
               <View style={f.card}>
                 <AppText role="heading">Your next chapter starts here.</AppText>
-                <AppText role="body" secondary>Register for an event to open your field.</AppText>
+                <AppText role="body" secondary>
+                  Register for an event to open your field.
+                </AppText>
               </View>
             )}
-          </View>
+          </EventCarousel>
         ) : (
           <View style={f.card}>
             <AppText role="heading">Your next chapter starts here.</AppText>
-            <AppText role="body" secondary>Register for an event to open your field.</AppText>
+            <AppText role="body" secondary>
+              Register for an event to open your field.
+            </AppText>
             <FocusButton label="Explore events" onPress={openRegistration} />
           </View>
         )}
