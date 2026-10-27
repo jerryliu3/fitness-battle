@@ -298,7 +298,6 @@ export function TrainingAtlas({ state }: { state: CompeteState }) {
             </>
           ) : null}
         </View>
-      </FocusDisclosure>
       <View style={s.row}>
         <AppText role="caption" secondary >Moving time</AppText>
         <View style={{ flexDirection: "row", gap: 3 }}>
@@ -315,6 +314,7 @@ export function TrainingAtlas({ state }: { state: CompeteState }) {
           ))}
         </View>
       </View>
+      </FocusDisclosure>
     </Section>
   );
 }
