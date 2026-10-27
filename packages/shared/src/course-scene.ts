@@ -4,7 +4,7 @@ import type { LngLat } from "./routeGeoUtils";
 
 export const RACE_LANE_SPACING_METRES = .42;
 export const RACE_TRAIL_WIDTH_METRES = .36;
-export const RACE_TRAIL_MIN_WIDTH_PIXELS = 1.25;
+export const RACE_TRAIL_MIN_WIDTH_PIXELS = 3;
 
 function buildCourseGeometry(course: RaceCourse, lanes: readonly ArenaSceneLane[], unit: string, spacing: number, anchorId: string) {
   const roster = lanes.filter(lane => !lane.ghost);

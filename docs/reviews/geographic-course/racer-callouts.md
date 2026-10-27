@@ -21,7 +21,7 @@ view during a follow flight keeps its destination on the selected racer.
 Lane spacing increases by 20%, from 35 to 42 cm. Each trail grows from 12 to
 36 cm, leaving a 6 cm gap at close zoom. Ten lane centers span 3.78 m; including
 stroke width, the footprint is approximately 4.14 m. The minimum visible stroke
-increases from 0.75 to 1.25 pixels at wide zoom. Road widths are still approximate;
+increases from 0.75 to 3 pixels at wide zoom. Road widths are still approximate;
 the map does not infer measured road edges, and distant lanes can overlap.
 
 The same map renderer supplies these changes in live fields and competition
@@ -60,3 +60,10 @@ onscreen positions. Live and competition replay use the same behavior.
 
 No tests, typechecks, builds or UI walkthroughs were run for this scheduled
 follow-up, honoring the owner's request to push without further verification.
+
+## Wide-zoom visibility experiment
+
+The 4D minimum trail width is now 3 screen pixels on native and web, including
+competition replay. Physical lane spacing and close-up trail width are unchanged.
+At wide zoom, adjacent trails can merge sooner; this deliberately favors readable
+earned progress over visually separate subpixel lanes. No further checks were run.

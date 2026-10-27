@@ -401,5 +401,5 @@ the racer's displayed lane coordinate. Show every real racer's nameplate in 4D; 
 annotations sit above Mapbox scenery, without moving racers onto building roofs.
 Mapbox positions native/DOM annotations; do not project camera frames through React.
 Paths use a 36 cm stroke on 42 cm lane spacing (6 cm gap at close zoom), with a
-1.25 px visibility floor at wider zooms. Hold-to-hide includes nameplates. See the
+3 px visibility floor at wider zooms. Hold-to-hide includes nameplates. See the
 [racer-card follow-up](reviews/geographic-course/racer-callouts.md).
