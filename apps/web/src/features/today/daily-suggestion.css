@@ -15,7 +15,7 @@
 }
 .home-daily-suggestion button { background: transparent; color: inherit; border: 0; cursor: pointer; font: inherit; }
 .home-daily-suggestion-open { flex: 1; min-width: 0; padding: 16px; text-align: left; display: grid; gap: 4px; }
-.home-daily-suggestion-open span { font-size: 13px; color: var(--muted, #637482); }
-.home-daily-suggestion-open strong { font-size: 14px; font-weight: 600; overflow-wrap: anywhere; }
-.home-daily-suggestion-dismiss { min-width: 44px; min-height: 44px; font-size: 22px !important; }
+.home-daily-suggestion-open span { font: var(--type-caption); color: var(--muted, #637482); }
+.home-daily-suggestion-open strong { font: var(--type-label); overflow-wrap: anywhere; }
+.home-daily-suggestion-dismiss { min-width: 44px; min-height: 44px; font: var(--type-heading) !important; }
 .home-daily-suggestion button:focus-visible { outline: 2px solid currentColor; outline-offset: -4px; border-radius: 14px; }
