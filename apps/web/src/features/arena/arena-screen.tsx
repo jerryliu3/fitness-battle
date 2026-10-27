@@ -120,8 +120,7 @@ export function ArenaScreen({ tabActive = true }: { tabActive?: boolean }) {
                     border: "1px solid var(--line, #e0e5dc)",
                     background: "var(--card, #ffffff)",
                     color: "var(--ink, #00101b)",
-                    fontWeight: 600,
-                    fontSize: "13px",
+                    ...typographyStyle("label"),
                   }}
                 >
                   ＋ Register

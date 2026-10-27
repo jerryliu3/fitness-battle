@@ -1,5 +1,5 @@
 "use client";
-import { AppParagraph, AppHeading, StatusBadge } from "@/ui/section";
+import { AppParagraph, AppHeading, AppText, StatusBadge, typographyStyle } from "@/ui/section";
 
 import { useEffect, useId, useRef, type ReactNode } from "react";
 import { useReducedMotion } from "motion/react";
@@ -102,15 +102,14 @@ export function EventCarousel({
                 borderBottom: i === index ? "2.5px solid var(--ink, #00101b)" : "2.5px solid transparent",
                 background: "transparent",
                 color: i === index ? "var(--ink, #00101b)" : "var(--muted, #64748b)",
-                fontWeight: i === index ? 700 : 500,
-                fontSize: "16px",
+                ...typographyStyle("heading"),
                 textAlign: "center",
                 marginBottom: "-13px",
               }}
             >
               {event.label}
               {event.badge ? (
-                <span style={{ opacity: 0.65, fontSize: "12px", marginLeft: 4 }}>· {event.badge}</span>
+                <AppText role="caption" secondary style={{ marginLeft: 4 }}>· {event.badge}</AppText>
               ) : null}
             </button>
           ))}

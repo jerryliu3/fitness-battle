@@ -99,11 +99,8 @@ export function EventCarousel({
           >
             <AppText
               role="heading"
-              style={
-                event.id === value
-                  ? { color: c.ink, fontWeight: "700", textAlign: "center" }
-                  : { color: c.muted, fontWeight: "500", textAlign: "center" }
-              }
+              secondary={event.id !== value}
+              style={{ textAlign: "center" }}
             >
               {event.label}
               {event.badge ? (
