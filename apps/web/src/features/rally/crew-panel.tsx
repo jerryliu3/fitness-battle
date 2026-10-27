@@ -381,10 +381,9 @@ export function CrewPanel() {
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
-                      fontSize: "12px",
-                      fontWeight: 600,
                       border: "1px solid var(--line, #e0e5dc)",
                       marginLeft: "-8px",
+                      ...typographyStyle("caption"),
                     }}
                   >
                     +{members.length - 5}
@@ -848,9 +847,9 @@ export function CrewPanel() {
             <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
               <UserAvatar src={viewingMember.avatar_url} name={viewingMember.display_name} size={64} />
               <div>
-                <strong style={{ fontSize: "18px", display: "block" }}>{viewingMember.display_name}</strong>
+                <strong style={{ ...typographyStyle("heading"), display: "block" }}>{viewingMember.display_name}</strong>
                 <RankBadge score={viewingMember.effort_score} />
-                <span style={{ fontSize: "12px", color: "var(--muted)", display: "block", marginTop: 4 }}>
+                <span style={{ ...typographyStyle("caption"), color: "var(--muted)", display: "block", marginTop: 4 }}>
                   {(viewingMember.user_id === user?.id ? resting : viewingMember.rest_week === weekKey)
                     ? "Rest week"
                     : "Active this week"}
@@ -858,15 +857,15 @@ export function CrewPanel() {
               </div>
             </div>
             <div className="fb-card" style={{ padding: "16px", borderRadius: "16px", border: "1px solid var(--line)" }}>
-              <span style={{ fontSize: "12px", color: "var(--muted)", textTransform: "uppercase" }}>
+              <span style={{ ...typographyStyle("caption"), color: "var(--muted)" }}>
                 This week's contribution
               </span>
-              <div style={{ fontSize: "28px", fontWeight: 700, margin: "6px 0" }}>
+              <div style={{ ...typographyStyle("metric"), margin: "6px 0" }}>
                 {sessionsMetric
                   ? `${memberTotal(viewingMember.user_id)} sessions`
                   : `${formatDistanceM(memberTotal(viewingMember.user_id), state?.units)} ${unitLabel}`}
               </div>
-              <span style={{ fontSize: "13px", color: "var(--muted)" }}>
+              <span style={{ ...typographyStyle("body"), color: "var(--muted)" }}>
                 {crew.name} · {crew.sport}
               </span>
             </div>
