@@ -2346,3 +2346,11 @@
   color: var(--ink);
   pointer-events: auto;
 }
+
+/* Distance navigation must clear both the overview and athlete spotlight. */
+.focus-field-expanded .club-perspective-group .club-distance-controls {
+  position: absolute;
+  bottom: calc(max(14px, env(safe-area-inset-bottom)) + 220px);
+}
+.focus-broadcast-overview .focus-field-overview { background: var(--card); }
+.focus-broadcast-replay-chip .competition-replay-trigger { border-radius: 999px; padding-inline: 14px; }

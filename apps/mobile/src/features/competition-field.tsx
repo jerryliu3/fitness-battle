@@ -214,6 +214,7 @@ export function CompetitionField({
           height={sceneHeight}
           fullscreen={expanded}
           controlsTop={expanded ? 12 : 66}
+          fullscreenControlsBottom={safeBottom + 220}
           overlaysHidden={overlaysHidden}
           onExpand={expandField}
           laneAnchor={portraitAnchor}
