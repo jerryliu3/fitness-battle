@@ -12,6 +12,7 @@ import { Achievements } from "@/features/club/achievements";
 import { ProgressHub } from "@/features/club/progress-hub";
 import { WeekRecap } from "@/features/club/week-recap";
 import { TrainingHistory } from "@/features/progress/training-history";
+import { AthleteTelemetryMatrix } from "@/features/progress/athlete-telemetry-matrix";
 import { WeekRecords } from "@/features/split/components/athlete-card";
 import { AthleteOverview } from "@/features/focus/athlete-overview";
 import { SeasonHistory } from "@/features/split/components/season-history";
@@ -822,7 +823,9 @@ function YouContent({ surface }: { surface: "progress" | "athlete" }) {
         <Link href="/you/history" className="fb-card club-history-preview">
           <SectionHeader title="Past weeks & awards"/>
           <AppParagraph typographyRole="body" className="fb-copy">Closed competition weeks, chapter history, and your award shelf.</AppParagraph>
-        </Link></>} effort={<>
+        </Link>
+        <AthleteTelemetryMatrix state={state} />
+        </>} effort={<>
           <AthleteOverview
             state={state}
             email={user?.email}

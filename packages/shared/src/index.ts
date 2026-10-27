@@ -60,3 +60,4 @@ export * from "./competition-replay";
 export { normalizeRouteReplay, routeReplayAt, type RouteReplaySample } from "./route-replay";
 
 export { createFieldOverlayHold } from "./field-overlay-hold";
+export * from "./analytics-lab";
