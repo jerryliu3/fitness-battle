@@ -1,4 +1,5 @@
 "use client";
+import { AthletePennant } from "../field/components/athlete-pennant";
 import { useFieldGestures } from "../field/use-field-gestures";
 import { UserAvatarSvg } from "@/ui/user-avatar-svg";
 import { typographyStyle } from "@/ui/section";
@@ -10,7 +11,6 @@ import {
   arenaPosition,
   ordinalPlace, effortRankBadge,
   athletePennantOffset,
-  PERSON_ICON_PATH,
   formatActivityAge,
   arenaWindow,
   clampArenaLaneCenter,
@@ -321,13 +321,7 @@ export function ArenaLanes({
               </g>
               {!standings&&edge&&<g pointerEvents="none"><rect x={-34} y={edge==="ahead"?27:-42} width={68} height={20} rx={8} fill="#ffffffee"/><text style={typographyStyle("caption")} x={0} y={edge==="ahead"?41:-28} textAnchor="middle"  fill="#616c63">{position.distanceOutside.toFixed(1)} {unit}</text></g>}
               {!standings && !edge && (l.you || selected===l.id) && <g className="athlete-pennant" pointerEvents="none">
-                <path d={`M0 0 L${pennantX+pennantWidth/2} ${pennantY>0?pennantY:pennantY+46}`} fill="none" stroke="#819486" strokeWidth="1.2"/>
-                <rect x={pennantX} y={pennantY+2} width={pennantWidth} height={46} rx={12} fill="#282f2c" opacity={.1}/>
-                <rect x={pennantX} y={pennantY} width={pennantWidth} height={46} rx={12} fill="#ffffff" stroke={l.you?"#f1c75b":"#e0e5dc"}/>
-                <circle cx={pennantX+24} cy={pennantY+23} r={16} fill="#eef0e9"/>
-                {l.avatarUrl ? <><defs><clipPath id={`${prefix}-portrait-${i}`}><circle cx={pennantX+24} cy={pennantY+23} r={16}/></clipPath></defs><image href={l.avatarUrl} x={pennantX+8} y={pennantY+7} width={32} height={32} preserveAspectRatio="xMidYMid slice" clipPath={`url(#${prefix}-portrait-${i})`}/></> : <path d={PERSON_ICON_PATH} transform={`translate(${pennantX+14} ${pennantY+13}) scale(.83)`} fill="none" stroke="#616c63" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round"/>}
-                <text style={typographyStyle("caption")} x={pennantX+47} y={pennantY+20}  fill="#282f2c" >{l.you?"You":l.name.length>13?`${l.name.slice(0,12)}…`:l.name}</text>
-                <text style={typographyStyle("caption")} x={pennantX+47} y={pennantY+35}  fill="#616c63">{ordinalPlace(rank)} · {l.you?`${l.value.toFixed(1)} ${unit}`:relativeDistance(l.value)}</text>
+                <AthletePennant lane={l} prefix={`${prefix}-portrait-${i}`} x={pennantX} y={pennantY} detail={`${ordinalPlace(rank)} · ${l.you ? `${l.value.toFixed(1)} ${unit}` : relativeDistance(l.value)}`} />
               </g>}
               <g aria-hidden={!standings} display={standings ? "inline" : "none"}>
               <motion.g initial={false} animate={{ opacity: standings ? 1 : 0 }}>

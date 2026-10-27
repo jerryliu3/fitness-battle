@@ -1,9 +1,10 @@
 import { raceCourseRacerPosition, raceCourseTrail, raceEffortMetres, type RaceCourse } from "./race-course";
-import type { ArenaSceneLane } from "./arena-view";
+import { ordinalPlace, type ArenaSceneLane } from "./arena-view";
 import type { LngLat } from "./routeGeoUtils";
 
-export const RACE_LANE_SPACING_METRES = .35;
-export const RACE_TRAIL_WIDTH_METRES = .12;
+export const RACE_LANE_SPACING_METRES = .42;
+export const RACE_TRAIL_WIDTH_METRES = .36;
+export const RACE_TRAIL_MIN_WIDTH_PIXELS = 1.25;
 
 function buildCourseGeometry(course: RaceCourse, lanes: readonly ArenaSceneLane[], unit: string, spacing: number, anchorId: string) {
   const roster = lanes.filter(lane => !lane.ghost);
@@ -46,10 +47,19 @@ export function raceCourseScene(course: RaceCourse, lanes: readonly ArenaSceneLa
   const selected = athletes.find(lane => lane.id === selectedId) ?? athletes.find(lane => lane.you) ?? athletes[0];
   return {
     selected, trails, overviewCoordinates,
+    callouts: athletes.filter(athlete => athlete.you || athlete.id === selected?.id),
     markers: { type: "FeatureCollection" as const, features: athletes.map(athlete => ({
       type: "Feature" as const, id: athlete.id,
       properties: { id: athlete.id, name: athlete.name, you: Boolean(athlete.you), selected: athlete.id === selected?.id },
       geometry: { type: "Point" as const, coordinates: athlete.coordinate },
     })) },
   };
+}
+
+/** Matches the 2D nameplate: absolute distance for you, relative distance for peers. */
+export function courseAthleteDetail(lanes: readonly ArenaSceneLane[], lane: ArenaSceneLane, unit: string) {
+  const rank = 1 + lanes.filter(peer => !peer.ghost && peer.value > lane.value).length;
+  const mine = lanes.find(peer => peer.you)?.value ?? 0;
+  const value = lane.you ? lane.value : lane.value - mine;
+  return `${ordinalPlace(rank)} · ${!lane.you && value > 0 ? "+" : ""}${value.toFixed(1)} ${unit}`;
 }

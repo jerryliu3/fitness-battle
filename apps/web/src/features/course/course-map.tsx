@@ -2,7 +2,8 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
-import { createCourseCamera, raceCourseScene, RACE_LANE_SPACING_METRES, RACE_TRAIL_WIDTH_METRES, type RaceCourse, type ArenaSceneLane, type CourseCameraPose } from "@fitness-battle/shared";
+import { courseAthleteDetail, createCourseCamera, raceCourseScene, RACE_LANE_SPACING_METRES, RACE_TRAIL_WIDTH_METRES, RACE_TRAIL_MIN_WIDTH_PIXELS, type RaceCourse, type ArenaSceneLane, type CourseCameraPose } from "@fitness-battle/shared";
+import { CourseCallout } from "./course-callout";
 import { webEnv } from "@/lib/env";
 
 export default function CourseMap({ course, lanes, unit, selectedId, focusRequest, onSelect, controlsBottom = 8, extraControls }: {
@@ -40,7 +41,7 @@ export default function CourseMap({ course, lanes, unit, selectedId, focusReques
       instance.addSource("completed", { type: "geojson", data: s.trails });
       instance.addSource("athletes", { type: "geojson", data: s.markers });
       const trailWidth = RACE_TRAIL_WIDTH_METRES / (78271.516964 * Math.cos(course.coordinates[0][1] * Math.PI / 180));
-      instance.addLayer({ id: "completed-line", type: "line", source: "completed", slot: "middle", layout: { "line-cap": "round", "line-join": "round", "line-sort-key": ["get", "priority"] }, paint: { "line-color": ["get", "color"], "line-width": ["interpolate", ["exponential", 2], ["zoom"], 0, .75, 16, Math.max(.75, trailWidth * 2 ** 16), 22, trailWidth * 2 ** 22] } });
+      instance.addLayer({ id: "completed-line", type: "line", source: "completed", slot: "middle", layout: { "line-cap": "round", "line-join": "round", "line-sort-key": ["get", "priority"] }, paint: { "line-color": ["get", "color"], "line-width": ["interpolate", ["exponential", 2], ["zoom"], 0, RACE_TRAIL_MIN_WIDTH_PIXELS, 16, Math.max(RACE_TRAIL_MIN_WIDTH_PIXELS, trailWidth * 2 ** 16), 22, trailWidth * 2 ** 22] } });
       instance.addLayer({ id: "athlete-dots", type: "circle", source: "athletes", slot: "top", paint: { "circle-radius": ["case", ["get", "selected"], 5, 3], "circle-color": ["case", ["get", "you"], "#f7c948", "#20b9c6"], "circle-stroke-color": "#ffffff", "circle-stroke-width": 1 } });
       instance.on("click", "athlete-dots", event => { const id = event.features?.[0]?.properties?.id; if (typeof id === "string") latest.current.onSelect(id); });
       setReady(true); setError("");
@@ -66,12 +67,13 @@ export default function CourseMap({ course, lanes, unit, selectedId, focusReques
   }, [ready, course, selectedId, focusRequest, scene.selected?.metres, scene.selected?.lateralMetres]);
   const control = (label: string, action: () => void) => <button type="button" className="fb-btn-line" style={{ whiteSpace: "nowrap", minHeight: 44 }} onClick={() => { action(); setFollowing(camera.current?.following ?? false); }}>{label}</button>;
   return <div className="geographic-map" style={{ flex: 1, minHeight: 200, display: "flex", flexDirection: "column", position: "relative", "--map-controls-bottom": `${controlsBottom}px` } as React.CSSProperties}>
-    <div ref={container} aria-label="Geographic race course. Drag to explore; pinch or scroll to zoom." style={{ flex: 1, minHeight: 160 }} />
+    <div ref={container} aria-label="Geographic race course. Drag to explore; pinch or scroll to zoom." style={{ flex: 1, minHeight: 160, position: "relative", overflow: "hidden" }} />
+    {ready && map.current ? scene.callouts.map(lane => <CourseCallout key={lane.id} map={map.current!} lane={lane} coordinate={lane.coordinate} detail={courseAthleteDetail(lanes, lane, unit)} onSelect={onSelect} />) : null}
     {error ? <p role="alert" className="fb-copy" style={{ position: "absolute", left: 8, right: 8, bottom: controlsBottom + 100, padding: 12, background: "white" }}>{error}</p> : null}
     <div className="geographic-map-controls" style={{ position: "absolute", bottom: controlsBottom, left: 8, right: 8, display: "flex", overflowX: "auto", gap: 8, padding: 8 }}>
       {extraControls}
       {control(following ? "Following" : "Recenter", () => { if (scene.selected) camera.current?.focus(course, scene.selected.metres, false, scene.selected.lateralMetres); })}
-      {control(flat ? "3D chase" : "2D map", () => { camera.current?.dimension(flat ? "3d" : "2d"); setFlat(!flat); })}
+      {control(flat ? "3D chase" : "2D map", () => { camera.current?.dimension(flat ? "3d" : "2d"); setFlat(!flat); if (camera.current?.following && scene.selected) camera.current.focus(course, scene.selected.metres, false, scene.selected.lateralMetres); })}
       {control(spaced ? "Racers: spaced" : "Racers: together", () => setSpaced(value => !value))}
       {control("Race overview", () => { camera.current?.overview({ coordinates: scene.overviewCoordinates }); setFlat(true); })}
       {control("Zoom in", () => camera.current?.zoom(1))}{control("Zoom out", () => camera.current?.zoom(-1))}

@@ -1,7 +1,9 @@
-import { useEffect, useMemo, useRef, useState, type ReactNode, type ComponentRef } from "react";
+import Svg, { G } from "react-native-svg";
+import { AthletePennant } from "./athlete-pennant";
+import { useEffect, useId, useMemo, useRef, useState, type ReactNode, type ComponentRef } from "react";
 import { View, Text, Pressable, ScrollView } from "react-native";
-import Mapbox, { MapView, Camera, ShapeSource, LineLayer, CircleLayer, CameraGestureObserver } from "@rnmapbox/maps";
-import { createCourseCamera, raceCourseScene, RACE_LANE_SPACING_METRES, RACE_TRAIL_WIDTH_METRES, type RaceCourse, type ArenaSceneLane, type CourseCameraPose } from "@fitness-battle/shared";
+import Mapbox, { MapView, Camera, ShapeSource, LineLayer, CircleLayer, MarkerView, CameraGestureObserver } from "@rnmapbox/maps";
+import { courseAthleteDetail, createCourseCamera, raceCourseScene, RACE_LANE_SPACING_METRES, RACE_TRAIL_WIDTH_METRES, RACE_TRAIL_MIN_WIDTH_PIXELS, type RaceCourse, type ArenaSceneLane, type CourseCameraPose } from "@fitness-battle/shared";
 import { mobileEnv } from "../lib/env";
 import { FieldOverlayView } from "./field-overlay-motion";
 import { textStyle } from "./section";
@@ -11,6 +13,7 @@ Mapbox.setAccessToken(mobileEnv.mapboxAccessToken);
 export default function CourseMap({ course, lanes, unit, selectedId, focusRequest, onSelect, controlsBottom = 8, extraControls, overlaysHidden = false }: {
   course: RaceCourse; lanes: ArenaSceneLane[]; unit: string; selectedId: string; focusRequest: number; onSelect(id: string): void; controlsBottom?: number; extraControls?: ReactNode; overlaysHidden?: boolean;
 }) {
+  const prefix = useId();
   const ref = useRef<ComponentRef<typeof Camera>>(null);
   const reduced = useReducedMotion();
   const [spaced, setSpaced] = useState(true);
@@ -52,16 +55,24 @@ export default function CourseMap({ course, lanes, unit, selectedId, focusReques
         pose.current = { center: [p.center[0], p.center[1]], zoom: p.zoom, pitch: p.pitch, bearing: p.heading };
         if (p.isUserInteraction && controller.following) { controller.interrupt(); setFollowing(false); }
       }} />
-      <ShapeSource id="completed" shape={scene.trails}><LineLayer id="completed-line" slot="middle" style={{ lineColor: ["get", "color"], lineSortKey: ["get", "priority"], lineWidth: ["interpolate", ["exponential", 2], ["zoom"], 0, .75, 16, Math.max(.75, trailWidth * 2 ** 16), 22, trailWidth * 2 ** 22], lineCap: "round", lineJoin: "round" }} /></ShapeSource>
+      <ShapeSource id="completed" shape={scene.trails}><LineLayer id="completed-line" slot="middle" style={{ lineColor: ["get", "color"], lineSortKey: ["get", "priority"], lineWidth: ["interpolate", ["exponential", 2], ["zoom"], 0, RACE_TRAIL_MIN_WIDTH_PIXELS, 16, Math.max(RACE_TRAIL_MIN_WIDTH_PIXELS, trailWidth * 2 ** 16), 22, trailWidth * 2 ** 22], lineCap: "round", lineJoin: "round" }} /></ShapeSource>
       <ShapeSource id="athletes" shape={scene.markers} onPress={event => { const id = event.features[0]?.properties?.id; if (typeof id === "string") onSelect(id); }}>
         <CircleLayer id="athlete-dots" slot="top" style={{ circleRadius: ["case", ["get", "selected"], 5, 3], circleColor: ["case", ["get", "you"], "#f7c948", "#20b9c6"], circleStrokeColor: "#ffffff", circleStrokeWidth: 1 }} />
       </ShapeSource>
+      {!overlaysHidden ? scene.callouts.map(lane => <MarkerView key={lane.id} coordinate={lane.coordinate} anchor={{ x: lane.you ? 1 : 0, y: 1 }} allowOverlap allowOverlapWithPuck allowZElevate={false}>
+        <View collapsable={false} pointerEvents="box-none" style={{ width: 170, height: 118 }}>
+          <Svg width={170} height={118} viewBox="0 0 170 118" pointerEvents="none"><G transform={`translate(${lane.you ? 170 : 0} 118)`}>
+            <AthletePennant lane={lane} x={lane.you ? -158 : 12} y={-100} detail={courseAthleteDetail(lanes, lane, unit)} prefix={`${prefix}-${lane.id}`} />
+          </G></Svg>
+          <Pressable accessibilityRole="button" accessibilityLabel={`Focus ${lane.name}, ${courseAthleteDetail(lanes, lane, unit)}`} onTouchStart={event => event.stopPropagation()} onPress={() => onSelect(lane.id)} style={{ position: "absolute", left: 12, top: 18, width: 146, height: 46 }} />
+        </View>
+      </MarkerView>) : null}
     </MapView>
     {error ? <Text accessibilityRole="alert" style={{ ...textStyle("body"), position: "absolute", left: 8, right: 8, bottom: controlsBottom + 136, padding: 12, borderRadius: 12, backgroundColor: "#ffffff" }}>{error}</Text> : null}
     <FieldOverlayView hidden={overlaysHidden} onTouchStart={event => event.stopPropagation()} style={{ position: "absolute", bottom: controlsBottom, left: 8, right: 8 }}><ScrollView horizontal style={{ flexGrow: 0, borderRadius: 12, backgroundColor: "#142b3b" }} contentContainerStyle={{ flexDirection: "row", gap: 6, padding: 8 }}>
       {extraControls}
       {control(following ? "Following" : "Recenter", focus)}
-      {control(flat ? "3D chase" : "2D map", () => { controller.dimension(flat ? "3d" : "2d"); setFlat(!flat); })}
+      {control(flat ? "3D chase" : "2D map", () => { controller.dimension(flat ? "3d" : "2d"); setFlat(!flat); if (controller.following) focus(); })}
       {control(spaced ? "Racers: spaced" : "Racers: together", () => setSpaced(value => !value))}
       {control("Race overview", () => { controller.overview({ coordinates: scene.overviewCoordinates }); setFlat(true); })}
       {control("Zoom in", () => controller.zoom(1))}{control("Zoom out", () => controller.zoom(-1))}

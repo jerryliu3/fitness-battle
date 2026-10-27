@@ -56,4 +56,25 @@ final class FieldGestures: XCTestCase {
   app.buttons["Close full screen field"].tap()
   XCTAssertTrue(app.buttons["Expand 4D course to full screen"].waitForExistence(timeout:10))
  }
+ func test03FixedSizeRacerCards() throws {
+  let app = XCUIApplication(bundleIdentifier: "com.overtaek.app"); app.activate()
+  if app.buttons["Expand 4D course to full screen"].exists { app.buttons["Expand 4D course to full screen"].tap() }
+  app.buttons["Recenter on your athlete"].tap()
+  let card = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@ AND NOT label CONTAINS %@", "Focus Alice Park, ", "place")).firstMatch
+  XCTAssertTrue(card.waitForExistence(timeout:10)); let before = card.frame.size
+  XCTAssertEqual(before.width, 146, accuracy: 1); XCTAssertEqual(before.height, 46, accuracy: 1)
+  let origin = app.coordinate(withNormalizedOffset:CGVector(dx:0,dy:0))
+  origin.withOffset(CGVector(dx:card.frame.midX,dy:card.frame.midY)).press(forDuration:0.05,thenDragTo:origin.withOffset(CGVector(dx:card.frame.midX+60,dy:card.frame.midY+30)))
+  XCTAssertTrue(app.buttons["Recenter"].waitForExistence(timeout:5)); app.buttons["Recenter"].tap()
+  app.pinch(withScale:1.5,velocity:1)
+  XCTAssertTrue(card.waitForExistence(timeout:5)); XCTAssertEqual(card.frame.width, before.width, accuracy: 1); XCTAssertEqual(card.frame.height, before.height, accuracy: 1)
+  card.tap(); XCTAssertTrue(app.buttons["Following"].waitForExistence(timeout:5))
+  shot(app,"native-fixed-size-card-chase")
+  app.buttons["2D map"].tap()
+  app.buttons["Jump to Leo Park"].tap()
+  for _ in 0..<3 { app.buttons["Zoom in"].tap() }
+  if app.buttons["Recenter"].exists { app.buttons["Recenter"].tap() }
+  shot(app,"native-wider-trails-callout")
+ }
+
 }

@@ -25,15 +25,15 @@ Zero activity draws a dot at the start but no trail. **Race overview** fits only
 earned trails and current dots; it never frames the unreached route.
 
 The viewer's own lane stays centered on the route. Peers alternate left/right in
-stable ID order with 35 cm between adjacent lanes (ten lane centers span 3.15
+stable ID order with 42 cm between adjacent lanes (ten lane centers span 3.78
 metres). Selecting a peer moves the camera without rearranging lanes. **Racers:
 spaced / Racers: together** permits comparison. Each dot and its individual trail
 interpolate the same offset polyline, including bends and return legs, so the dot
 always sits at its trail's endpoint. Offset vertices are computed lazily and
 cached; selection reuses the trail source instead of resending all geometry.
 
-Trails are thin opaque lines: approximately 12 cm near the course's origin when
-zoomed in, with a 0.75 px visibility floor when zoomed out. This is illustrative
+Trails are thin opaque lines: approximately 36 cm near the course's origin when
+zoomed in, with a 1.25 px visibility floor when zoomed out. This is illustrative
 spacing rather than road-width queries or collision simulation. Narrow roads and
 zoomed-out marker overlap remain possible. After a racer covers the whole course,
 a full traversal plus the current partial leg keeps all covered ground visible
@@ -314,3 +314,7 @@ Validation on the final implementation:
 ![4D shared controls on a phone browser](images/shared-overlays-web.png)
 ![4D using the shared fullscreen controls](images/shared-overlays-native.png)
 ![4D in the competition timeline](images/replay-native.png)
+
+
+The [racer-card and wider-trail follow-up](racer-callouts.md) adds the shared 2D
+nameplate to geographic maps and supersedes the earlier 35 cm / 12 cm footprint.

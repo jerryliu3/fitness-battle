@@ -1,6 +1,6 @@
 import { expect, it } from "vitest";
 import { distance } from "@turf/turf";
-import { raceCourseScene } from "./course-scene";
+import { courseAthleteDetail, RACE_LANE_SPACING_METRES, RACE_TRAIL_WIDTH_METRES, raceCourseScene } from "./course-scene";
 import { createRaceCourse, raceCoursePosition, raceCourseRacerPosition } from "./race-course";
 
 it("gives each real racer a covered trail ending at its dot, without exposing future geometry", () => {
@@ -21,14 +21,14 @@ it("gives each real racer a covered trail ending at its dot, without exposing fu
   expect(lanes[0].value).toBe(.5);
 });
 
-it("centers the viewer on the road and fits ten stable individual lanes across 3.15 metres", () => {
+it("centers the viewer on the road and fits ten stable individual lanes across 3.78 metres", () => {
   const course = createRaceCourse("Street", [[0, 0], [.01, 0]]);
   const lanes = Array.from({ length: 10 }, (_, i) => ({ id: `racer-${i}`, name: `Racer ${i}`, initials: "R", you: i === 7, value: .5 }));
   const scene = raceCourseScene(course, lanes, "km", "racer-0");
   expect(scene.markers.features.find(f => f.properties.you)?.geometry.coordinates).toEqual(raceCoursePosition(course, 500).coordinate);
   const markers = [...scene.markers.features].sort((a, b) => a.geometry.coordinates[1] - b.geometry.coordinates[1]);
-  for (let i = 1; i < markers.length; i++) expect(distance(markers[i - 1].geometry.coordinates, markers[i].geometry.coordinates, { units: "meters" })).toBeCloseTo(.35, 3);
-  expect(distance(markers[0].geometry.coordinates, markers.at(-1)!.geometry.coordinates, { units: "meters" })).toBeCloseTo(3.15, 3);
+  for (let i = 1; i < markers.length; i++) expect(distance(markers[i - 1].geometry.coordinates, markers[i].geometry.coordinates, { units: "meters" })).toBeCloseTo(.42, 3);
+  expect(distance(markers[0].geometry.coordinates, markers.at(-1)!.geometry.coordinates, { units: "meters" })).toBeCloseTo(3.78, 3);
   expect(scene.trails.features).toHaveLength(10);
   const selected = raceCourseScene(course, lanes, "km", "racer-9");
   expect(selected.trails).toBe(scene.trails);
@@ -70,7 +70,20 @@ it("keeps each racer's trail aligned through bends, turnarounds, and the date li
         expect(outbound.trails.features[i].geometry.coordinates.at(-1)).toEqual(outbound.markers.features[i].geometry.coordinates);
         expect(inbound.trails.features[i].geometry.coordinates.at(-1)).toEqual(inbound.markers.features[i].geometry.coordinates);
       }
-      expect(outbound.selected?.coordinate).toEqual(raceCourseRacerPosition(course, metres, -.35).coordinate);
+      expect(outbound.selected?.coordinate).toEqual(raceCourseRacerPosition(course, metres, -.42).coordinate);
     }
   }
+});
+
+it("keeps a small gap between wider trails and only labels you and the selected racer", () => {
+  expect(RACE_LANE_SPACING_METRES).toBeCloseTo(.35 * 1.2);
+  expect(RACE_LANE_SPACING_METRES - RACE_TRAIL_WIDTH_METRES).toBeCloseTo(.06);
+  const course = createRaceCourse("Street", [[0, 0], [.02, 0]]);
+  const lanes = [{ id: "you", name: "You", initials: "Y", you: true, value: .5 }, { id: "a", name: "A", initials: "A", value: 1 }, { id: "b", name: "B", initials: "B", value: .4 }, { id: "past", name: "Past", initials: "P", ghost: true, value: 100 }];
+  const scene = raceCourseScene(course, lanes, "km", "a");
+  expect(scene.callouts.map(lane => lane.id)).toEqual(["you", "a"]);
+  expect(courseAthleteDetail(lanes, lanes[0], "km")).toBe("2nd · 0.5 km");
+  expect(courseAthleteDetail(lanes, lanes[1], "km")).toBe("1st · +0.5 km");
+  expect(courseAthleteDetail(lanes, lanes[2], "km")).toBe("3rd · -0.1 km");
+  expect(raceCourseScene(course, lanes, "km", "you").callouts.map(lane => lane.id)).toEqual(["you"]);
 });

@@ -2271,3 +2271,7 @@
 .is-holding-field .geographic-map-controls { opacity: 0; pointer-events: none; }
 .competition-replay-scene > .geographic-field-scene { width: 100%; }
 @media (prefers-reduced-motion: reduce) { .geographic-map-controls { transition: none; } }
+
+.course-callout-target:focus-visible { outline: 3px solid var(--teal, #176c75); border-radius: 12px; }
+.is-holding-field .course-athlete-callout { opacity: 0; pointer-events: none; }
+.is-holding-field .course-callout-target { pointer-events: none !important; }

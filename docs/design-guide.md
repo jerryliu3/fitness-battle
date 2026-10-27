@@ -383,9 +383,9 @@ replay also offers 4D, using timeline values for both dots and earned trails;
 rewinding never reveals later effort. Mapbox supplies geography-specific camera
 controls, while appearance/oval controls remain specific to the illustrative field.
 The route ahead stays invisible. Each athlete reveals an individual narrow,
-opaque trail (about 12 cm wide at close zoom) that ends exactly at their dot; no activity means no trail. The
+opaque trail (about 36 cm wide at close zoom) that ends exactly at their dot; no activity means no trail. The
 viewer stays centered on the underlying route, with peers alternating left/right
-in stable ID order at 35 cm spacing (ten lane centers span 3.15 m). Selection moves the camera without
+in stable ID order at 42 cm spacing (ten lane centers span 3.78 m). Selection moves the camera without
 rearranging lanes. The spacing toggle compares spaced/together layouts. Camera
 follow uses the same displayed position as the trail. Race overview frames only
 covered ground. Return trips preserve the full earned trail with geometry
@@ -393,3 +393,13 @@ bounded to two traversals, regardless of cumulative distance. Offsets remain
 illustrative rather than measured road widths or collision avoidance; zoomed-out
 markers can still overlap.
 Crew shared-week finish checks are printed in the top plane of the progress block, without flags. The finish remains anchored to the configured target or available prior-week baseline.
+
+
+4D reuses the 2D floating athlete nameplate and leader graphic. Keep the nameplate
+146 × 46 screen points/pixels at every zoom, with the leader endpoint attached to
+the racer's displayed lane coordinate. Show your nameplate and the selected peer's;
+annotations sit above Mapbox scenery, without moving racers onto building roofs.
+Mapbox positions native/DOM annotations; do not project camera frames through React.
+Paths use a 36 cm stroke on 42 cm lane spacing (6 cm gap at close zoom), with a
+1.25 px visibility floor at wider zooms. Hold-to-hide includes nameplates. See the
+[racer-card follow-up](reviews/geographic-course/racer-callouts.md).

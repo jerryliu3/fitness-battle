@@ -13,6 +13,7 @@ vi.mock("mapbox-gl", () => ({ default: { Map: class {
   emit(name: string, event = {}) { this.events.get(name)?.forEach(callback => callback(event)); }
   addSource(id: string) { this.sources.set(id, { setData: vi.fn() }); } getSource(id: string) { return this.sources.get(id); } addLayer() {}
 } } }));
+vi.mock("./course-callout", () => ({ CourseCallout: "CourseCallout" }));
 import CourseMap from "./course-map";
 let renderer: ReactTestRenderer;
 afterEach(async () => { if (renderer) await act(async () => renderer.unmount()); mock.instances.length = 0; vi.unstubAllGlobals(); });
@@ -38,9 +39,15 @@ it("keeps one map instance, suspends following for user input and resumes on sel
   expect(mock.instances).toHaveLength(1);
   expect(instance.getSource("course")).toBeUndefined();
   expect(instance.getSource("completed").setData).not.toHaveBeenCalled();
+  await act(async () => renderer.root.findAllByType("button").find(node => node.props.children === "2D map")!.props.onClick());
+  expect(instance.easeTo.mock.lastCall[0]).toMatchObject({ center: markers.features.find((f: any) => f.id === "peer").geometry.coordinates, pitch: 0 });
   await act(async () => renderer.root.findAllByType("button").find(node => node.props.children === "Race overview")!.props.onClick());
   expect(instance.fitBounds.mock.lastCall[0][1][0]).toBeLessThan(.02);
   expect(instance.fitBounds.mock.lastCall[1].maxZoom).toBe(20);
   await act(async () => instance.emit("click", { features: [{ properties: { id: "you" } }] }));
   expect(props.onSelect).toHaveBeenCalledWith("you");
+  const labels = renderer.root.findAllByType("CourseCallout" as never);
+  expect(labels).toHaveLength(2);
+  expect(labels.find(label => label.props.lane.id === "peer")!.props.coordinate).toEqual(markers.features.find((f: any) => f.id === "peer").geometry.coordinates);
+
 });
