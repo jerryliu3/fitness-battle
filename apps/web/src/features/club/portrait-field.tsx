@@ -27,6 +27,7 @@ export function PortraitField({
   immersive = false,
   onExpand,
   onToggleDimension,
+  controlsTop = 12,
   onZoom,
   onPan,
   onSelect,
@@ -45,6 +46,7 @@ export function PortraitField({
   immersive?: boolean;
   onExpand?: () => void;
   onToggleDimension?: () => void;
+  controlsTop?: number;
   onZoom: (span: number) => void;
   onPan: (center: number) => void;
   onSelect: (id: string) => void;
@@ -117,7 +119,7 @@ export function PortraitField({
   });
   return (
     <div className={immersive ? "club-perspective-group is-immersive" : "club-perspective-group"}>
-      <div className="club-board-status">
+      <div className="club-board-status" style={!immersive && controlsTop > 12 ? { minHeight: 44, paddingLeft: 120, flexWrap: "wrap", justifyContent: "flex-end", gap: 4 } : undefined}>
         <b>
           {scene.place} / {scene.fieldSize} <AppText as="small" role="caption" secondary>PLACE</AppText>
         </b>
@@ -346,7 +348,7 @@ export function PortraitField({
             );
           })}
       </svg>
-      <div className="club-field-explore" style={{ pointerEvents: "none" }}>
+      <div className="club-field-explore" style={{ pointerEvents: "none", top: controlsTop }}>
         {!immersive && <button type="button" style={{ pointerEvents: "auto" }} aria-pressed={exploring} onClick={() => setExploring(!exploring)}>{exploring ? "Done" : "Explore"}</button>}
         <span>{exploring ? "Drag to move · Pinch to zoom" : "Swipe across lanes · Explore to move forward"}</span>
       </div>
@@ -367,11 +369,11 @@ export function PortraitField({
           <button type="button" aria-label="Move forward" onClick={() => panTo(view.center + view.span / 3)}>↑</button>
           <button type="button" aria-label="Next lane" disabled={scene.focus >= scene.ordered.length - 1} onClick={() => shift(1)}>→</button>
         </div>
-        <div className="club-board-zoom">
+        {!immersive ? <div className="club-board-zoom">
           <button type="button" aria-label="Zoom out" disabled={view.span >= (unit === "pts" ? 100 : 40)} onClick={() => zoomTo(Math.min(unit === "pts" ? 100 : 40, view.span * 1.5))}>−</button>
           <span aria-live="off">{Math.max(0, scene.min).toFixed(unit === "pts" ? 0 : 2)}–{scene.max.toFixed(unit === "pts" ? 0 : 2)} {unit}</span>
           <button type="button" aria-label="Zoom in" disabled={view.span <= (unit === "pts" ? 2 : 0.5)} onClick={() => zoomTo(Math.max(unit === "pts" ? 2 : 0.5, view.span / 1.5))}>＋</button>
-        </div>
+        </div> : null}
       </div>
     </div>
   );

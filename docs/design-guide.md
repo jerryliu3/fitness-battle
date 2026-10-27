@@ -428,3 +428,43 @@ Mapbox positions native/DOM annotations; do not project camera frames through Re
 Paths use a 36 cm stroke on 42 cm lane spacing (6 cm gap at close zoom), with a
 3 px visibility floor at wider zooms. Hold-to-hide includes nameplates. See the
 [racer-card follow-up](reviews/geographic-course/racer-callouts.md).
+
+### In-field view selection — October 27
+
+Compete owns one dropdown inside the inline field card for 2D map, 3D field,
+Standings and the existing distance-only 4D course. Standings replaces the field
+in that card; switching back retains the camera and lane selection. Athlete taps
+in standings focus that athlete in the retained field. The redundant view row and
+2D/3D toggle chips are removed. Event/sport selection remains separate.
+
+### Fullscreen controls and overview — October 27
+
+Full Arena uses the same view dropdown. Replay is a chip beneath Behind for all
+field dimensions. Visible +/- clusters are removed in fullscreen 2D/3D; pinch,
+web wheel/keyboard field gestures and labeled Zoom in/Zoom out dropdown actions
+remain available. Choosing Standings returns to the inline standings card.
+Existing 4D map controls retain their geographic camera behavior.
+
+The horizontal race overview sits beneath the expandable athlete panel, with
+separate layout and touch handling so sliding the panel away never removes the
+overview. The overview shows actual athlete positions and the retained camera
+window in both 2D/3D, supports dragging, native adjustable accessibility actions,
+and web keyboard arrows/Home/End. Selecting it cancels camera travel before
+navigating. Both elements clear the bottom safe area; the panel reserves 56px
+above the overview. Field hold-to-hide applies to both.
+
+### 4D distance overview follow-up — October 27
+
+With a course selected, Full Arena restores the horizontal overview in 4D beneath
+the athlete panel, including when the panel is collapsed. It shows the real athlete
+positions and a **Course distance target** cursor, rather than claiming that a
+linear distance window represents the geographic viewport. Pointer/drag, native
+adjustable actions and web arrow/Home/End controls seek along the same accumulated
+distance and out-and-back mapping as racer positions, respecting mi/km units.
+
+Seeking suspends automatic athlete following, preserves map zoom/pitch/bearing,
+and moves immediately during scrubbing. Recenter or selecting an athlete resumes
+following and restores the target cursor to that athlete's distance. Returning to
+a course retains an explicit target; choosing another athlete clears it. Seeking
+is presentation-only and never edits activity, athlete selection, scores or trails.
+The earlier hide-only PR remains the fallback until this follow-up is applied.

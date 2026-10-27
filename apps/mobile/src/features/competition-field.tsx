@@ -22,6 +22,7 @@ import {
   shellTabFromPath,
   weeklyBoard,
   type RaceCourse,
+  type CourseDistanceTarget,
   type ArenaSceneLane,
   type ScoreTrack,
   type SportId,
@@ -54,9 +55,11 @@ export function CompetitionField({
   const isFocused = shellTabFromPath(pathname)?.id === "arena";
   const [sceneDimension, setSceneDimension] = useState<"2d" | "3d" | "4d">("2d");
   const [course, setCourse] = useState<RaceCourse | null>(null);
+  const [courseTarget, setCourseTarget] = useState<CourseDistanceTarget | null>(null);
   const chooseView = (value: "2d" | "3d" | "4d") => {
     void playCue("selection");
     flight.cancel();
+    setStandingsOpen(false);
     setSceneDimension(value);
   };
   const [standingsOpen, setStandingsOpen] = useState(false);
@@ -74,9 +77,6 @@ export function CompetitionField({
     });
     return () => { subscription.remove(); hold.current?.reset(); };
   }, [expanded, isFocused, sceneDimension]);
-  const toggleDimension = () => {
-    chooseView(sceneDimension === "2d" ? "3d" : "2d");
-  };
   const dimensions = useWindowDimensions();
   const insets = useSafeAreaInsets();
   const safeTop = Math.max(insets.top, 56);
@@ -137,6 +137,8 @@ export function CompetitionField({
   const selectAthlete = (id: string) => {
     const lane = arena.lanes.find((item) => item.id === id);
     if (!lane) return;
+    setCourseTarget(null);
+    setStandingsOpen(false);
     const ordered = orderedArenaLanes(arena.lanes);
     portraitAnchor.current = Math.max(0, ordered.findIndex(l => l.id === id)) - Math.max(0, ordered.findIndex(l => l.you));
     setSelectedId(id);
@@ -193,7 +195,7 @@ export function CompetitionField({
       onTouchCancel={() => hold.current?.end()}
     >
       {sceneDimension === "4d" && isFocused ? <View style={{ height: sceneHeight }}>
-        <GeographicCourse lanes={fieldLanes} unit={arena.unit} selectedId={selectedId ?? me?.id ?? ""} focusRequest={focusRequest} onSelect={id => { if (!hold.current?.suppressSelection()) selectAthlete(id); }} course={course} onCourseChange={setCourse} controlsBottom={expanded ? safeBottom + (spotlightCollapsed ? 76 : 160) : 8} overlaysHidden={overlaysHidden} />
+        <GeographicCourse lanes={fieldLanes} unit={arena.unit} selectedId={selectedId ?? me?.id ?? ""} focusRequest={focusRequest} onSelect={id => { if (!hold.current?.suppressSelection()) selectAthlete(id); }} course={course} onCourseChange={setCourse} distanceTarget={courseTarget} onResumeFollow={() => setCourseTarget(null)} controlsBottom={expanded ? safeBottom + (spotlightCollapsed ? 132 : 216) : 8} overlaysHidden={overlaysHidden} />
         {!expanded ? <View style={{ position: "absolute", right: 12, top: 12 }}><IconButton icon="expand" label="Expand 4D course to full screen" onPress={expandField} /></View> : null}
       </View> : null}
       {sceneDimension === "3d" && isFocused ? (
@@ -214,9 +216,10 @@ export function CompetitionField({
           onPan={panTo}
           height={sceneHeight}
           fullscreen={expanded}
+          controlsTop={expanded ? 12 : 66}
+          fullscreenControlsBottom={safeBottom + 220}
           overlaysHidden={overlaysHidden}
           onExpand={expandField}
-          onToggleDimension={toggleDimension}
           laneAnchor={portraitAnchor}
           onSelect={id => { if (!hold.current?.suppressSelection()) selectAthlete(id); }}
         />
@@ -234,8 +237,7 @@ export function CompetitionField({
             fullscreen={expanded}
             overlaysHidden={overlaysHidden}
             onExpand={expandField}
-            onToggleDimension={toggleDimension}
-            onZoom={directZoom}
+              onZoom={directZoom}
             anchor={laneAnchor}
             active={isFocused && sceneDimension === "2d"}
             focusRequest={focusRequest}
@@ -251,7 +253,7 @@ export function CompetitionField({
             view={view}
             onPan={panTo}
           />
-          <FieldOverlayView
+          {!expanded ? <FieldOverlayView
             hidden={overlaysHidden}
             onTouchStart={event => event.stopPropagation()}
             pointerEvents="auto"
@@ -310,7 +312,7 @@ export function CompetitionField({
             >
               <Text style={{ ...textStyle("heading"), color: "white" }}>＋</Text>
             </Pressable>
-          </FieldOverlayView>
+          </FieldOverlayView> : null}
         </View>
         {!expanded ? (
           <View style={{ marginTop: 8, borderRadius: 12, overflow: "hidden" }}>
@@ -331,8 +333,11 @@ export function CompetitionField({
   );
 
   return (
-    <View style={{ gap: 14 }}>
-      <FieldViewSwitcher value={sceneDimension} geographic={arena.unit !== "pts"} onChange={chooseView} />
+    <View style={{ gap: 14, position: "relative" }}>
+      {!expanded ? <View style={{ position: "absolute", left: 12, top: 12, zIndex: 10 }}>
+        <FieldViewSwitcher value={sceneDimension} geographic={arena.unit !== "pts"} onChange={chooseView}
+          standings={standingsOpen} onStandings={() => { flight.cancel(); setStandingsOpen(true); }} />
+      </View> : null}
       {expanded ? (
         <Modal
           visible
@@ -392,7 +397,10 @@ export function CompetitionField({
                   {arena.sportName} · {place(total)} / {ranked.length}
                 </Text>
               </View>
-              <FieldViewSwitcher value={sceneDimension} geographic={arena.unit !== "pts"} onChange={chooseView} />
+              <FieldViewSwitcher value={sceneDimension} geographic={arena.unit !== "pts"} onChange={chooseView}
+                onStandings={() => { setExpanded(false); setStandingsOpen(true); }}
+                onZoomIn={sceneDimension !== "4d" ? () => zoomTo(Math.max(arena.unit === "pts" ? 2 : 0.5, view.span / 1.5)) : undefined}
+                onZoomOut={sceneDimension !== "4d" ? () => zoomTo(Math.min(arena.unit === "pts" ? 100 : 40, view.span * 1.5)) : undefined} />
             </FieldOverlayView>
 
             {(sceneDimension !== "4d" || course) ? <>
@@ -490,7 +498,6 @@ export function CompetitionField({
                 gap: 8,
               }}
             >
-              {sceneDimension !== "2d" ? <CompetitionReplayButton state={state} selection={replaySelection} dimension={sceneDimension} course={course} onCourseChange={setCourse} label="Replay" /> : null}
               {aheadPeer ? (
                 <Pressable
                   accessibilityRole="button"
@@ -502,6 +509,8 @@ export function CompetitionField({
                   style={{
                     backgroundColor: "rgba(20, 20, 19, 0.75)",
                     borderRadius: 999,
+                    minHeight: 44,
+                    justifyContent: "center",
                     paddingVertical: 8,
                     paddingHorizontal: 12,
                     borderWidth: 1,
@@ -525,6 +534,8 @@ export function CompetitionField({
                   style={{
                     backgroundColor: c.tennis,
                     borderRadius: 999,
+                    minHeight: 44,
+                    justifyContent: "center",
                     paddingVertical: 8,
                     paddingHorizontal: 12,
                     alignItems: "center",
@@ -546,6 +557,8 @@ export function CompetitionField({
                   style={{
                     backgroundColor: "rgba(20, 20, 19, 0.75)",
                     borderRadius: 999,
+                    minHeight: 44,
+                    justifyContent: "center",
                     paddingVertical: 8,
                     paddingHorizontal: 12,
                     borderWidth: 1,
@@ -558,6 +571,9 @@ export function CompetitionField({
                   </Text>
                 </Pressable>
               ) : null}
+              <View onTouchStart={event => event.stopPropagation()} style={{ minHeight: 44, justifyContent: "center", borderRadius: 999, backgroundColor: "rgba(20,20,19,.78)", paddingHorizontal: 8 }}>
+                <CompetitionReplayButton state={state} selection={replaySelection} dimension={sceneDimension} course={course} onCourseChange={setCourse} label="Replay" />
+              </View>
             </FieldOverlayView>
 
             {/* Broadcast HUD: Bottom Focused Athlete Spotlight + Player Chips */}
@@ -571,7 +587,7 @@ export function CompetitionField({
                   position: "absolute",
                   left: 12,
                   right: 12,
-                  bottom: safeBottom + 8,
+                  bottom: safeBottom + 64,
                 }}
                 surfaceStyle={{
                   backgroundColor: "rgba(20, 20, 19, 0.86)",
@@ -691,48 +707,23 @@ export function CompetitionField({
                 </ScrollView>
               </SlidingFieldPanel>
             ) : null}
+            <FieldOverlayView hidden={overlaysHidden} onTouchStart={event => event.stopPropagation()}
+              style={{ position: "absolute", left: 12, right: 12, bottom: safeBottom + 8, borderRadius: 12, overflow: "hidden" }}>
+              <FieldOverview lanes={fieldLanes} view={sceneDimension === "4d" ? { ...view, center: courseTarget?.value ?? focusedLane?.values[2] ?? total } : view}
+                unit={arena.unit} positionOnly={sceneDimension === "4d"}
+                onNavigate={value => {
+                  if (sceneDimension === "4d") setCourseTarget(previous => ({ value, request: (previous?.request ?? 0) + 1 }));
+                  else panTo(value);
+                }} />
+            </FieldOverlayView>
           </> : null}
           </View>
         </Modal>
       ) : (
-        fieldContent
+        <View style={{ display: standingsOpen ? "none" : "flex" }}>{fieldContent}</View>
       )}
 
-      {/* Collapsed-by-default Standings Disclosure */}
-      <View style={f.section}>
-        <Pressable
-          accessibilityRole="button"
-          accessibilityState={{ expanded: standingsOpen }}
-          accessibilityLabel={standingsOpen ? "Hide standings" : "Show standings"}
-          onPress={() => {
-            void playCue("selection");
-            setStandingsOpen((prev) => !prev);
-          }}
-          style={[
-            f.row,
-            {
-              justifyContent: "space-between",
-              minHeight: 40,
-            },
-          ]}
-        >
-          <View style={{ gap: 2 }}>
-            <Text style={textStyle("label")}>
-              {standingsOpen ? "Hide standings" : "Show standings"}
-            </Text>
-            <Text style={[textStyle("caption"), { color: c.muted }]}>
-              {ordinalPlace(place(total))} of {ranked.length} · {total.toFixed(1)}{" "}
-              {arena.unit}
-              {leader
-                ? ` · Leader ${leader.you ? "You" : leader.name.split(" ")[0]} (${leader.values[2].toFixed(1)} ${arena.unit})`
-                : ""}
-            </Text>
-          </View>
-          <Text style={[textStyle("label"), { color: c.ink }]}>
-            {standingsOpen ? "▴" : "▾"}
-          </Text>
-        </Pressable>
-
+      <View style={[f.section, { display: standingsOpen ? "flex" : "none", paddingTop: 64 }]}>
         {standingsOpen ? (
           <View style={{ gap: 10, paddingTop: 6 }}>
             {/* 1st Place Leader Stage */}

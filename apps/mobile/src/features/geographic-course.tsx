@@ -1,6 +1,6 @@
 import { Component, lazy, Suspense, useEffect, useRef, useState, type ReactNode } from "react";
 import { ActivityIndicator, Pressable, ScrollView, Text, TextInput, View } from "react-native";
-import { MAX_COURSE_BYTES, raceCourseFromGpx, requestMapboxCourse, type RaceCourse, type ArenaSceneLane } from "@fitness-battle/shared";
+import { MAX_COURSE_BYTES, raceCourseFromGpx, requestMapboxCourse, type CourseDistanceTarget, type RaceCourse, type ArenaSceneLane } from "@fitness-battle/shared";
 import { mobileEnv } from "../lib/env";
 import { textStyle } from "../ui/section";
 
@@ -11,8 +11,9 @@ class MapBoundary extends Component<{ children: ReactNode }, { failed: boolean }
   render() { return this.state.failed ? <Text style={textStyle("body")}>This course view needs a new native app build with Mapbox installed.</Text> : this.props.children; }
 }
 /** Presentation-only scene. The field/replay host owns mode, course and selection. */
-export function GeographicCourse({ lanes, unit, selectedId, focusRequest, onSelect, course, onCourseChange, controlsBottom = 8, overlaysHidden = false }: {
+export function GeographicCourse({ lanes, unit, selectedId, focusRequest, onSelect, course, onCourseChange, controlsBottom = 8, overlaysHidden = false, distanceTarget, onResumeFollow }: {
   lanes: ArenaSceneLane[]; unit: string; selectedId: string; focusRequest: number; onSelect(id: string): void;
+  distanceTarget?: CourseDistanceTarget | null; onResumeFollow?: () => void;
   course: RaceCourse | null; onCourseChange(course: RaceCourse | null): void; controlsBottom?: number; overlaysHidden?: boolean;
 }) {
   const [start, setStart] = useState(""), [finish, setFinish] = useState(""), [cycling, setCycling] = useState(false);
@@ -29,7 +30,7 @@ export function GeographicCourse({ lanes, unit, selectedId, focusRequest, onSele
   if (unit !== "mi" && unit !== "km") return null;
   const button = (label: string, action: () => void, disabled = false) => <Pressable accessibilityRole="button" accessibilityState={{ disabled }} disabled={disabled} onPress={action} style={{ minHeight: 44, padding: 12, borderRadius: 12, backgroundColor: "#f7c948", opacity: disabled ? .5 : 1, justifyContent: "center" }}><Text style={{ ...textStyle("label"), color: "#142b3b" }}>{label}</Text></Pressable>;
   return <View style={{ flex: 1, minHeight: 300 }}>
-        {!mobileEnv.mapboxAccessToken ? <Text style={{ ...textStyle("body"), padding: 16 }}>Mapbox access is not configured for this build.</Text> : course ? <MapBoundary><Suspense fallback={<ActivityIndicator />}><CourseMap key={course.name + course.length} course={course} lanes={lanes} unit={unit} selectedId={selectedId} focusRequest={focusRequest} onSelect={onSelect} controlsBottom={controlsBottom} overlaysHidden={overlaysHidden} extraControls={button("Change course", () => onCourseChange(null))} /></Suspense></MapBoundary> : <ScrollView onTouchStart={event => event.stopPropagation()} contentContainerStyle={{ padding: 16, paddingTop: controlsBottom > 8 ? 130 : 16, gap: 12 }} keyboardShouldPersistTaps="handled">
+        {!mobileEnv.mapboxAccessToken ? <Text style={{ ...textStyle("body"), padding: 16 }}>Mapbox access is not configured for this build.</Text> : course ? <MapBoundary><Suspense fallback={<ActivityIndicator />}><CourseMap key={course.name + course.length} course={course} lanes={lanes} unit={unit} selectedId={selectedId} focusRequest={focusRequest} onSelect={onSelect} distanceTarget={distanceTarget} onResumeFollow={onResumeFollow} controlsBottom={controlsBottom} overlaysHidden={overlaysHidden} extraControls={button("Change course", () => onCourseChange(null))} /></Suspense></MapBoundary> : <ScrollView onTouchStart={event => event.stopPropagation()} contentContainerStyle={{ padding: 16, paddingTop: controlsBottom > 8 ? 130 : 16, gap: 12 }} keyboardShouldPersistTaps="handled">
           <Text style={textStyle("body")}>Import a GPX track, or choose a start and destination anywhere in the world. This changes your scenery without recording an activity or changing scores.</Text>
           {button("Import GPX course", () => { void run(async signal => {
             const DocumentPicker = await import("expo-document-picker");

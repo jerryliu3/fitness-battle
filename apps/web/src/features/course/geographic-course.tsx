@@ -2,12 +2,13 @@
 import dynamic from "next/dynamic";
 import { AppHeading } from "@/ui/section";
 import { useEffect, useRef, useState } from "react";
-import { MAX_COURSE_BYTES, raceCourseFromGpx, requestMapboxCourse, type RaceCourse, type ArenaSceneLane } from "@fitness-battle/shared";
+import { MAX_COURSE_BYTES, raceCourseFromGpx, requestMapboxCourse, type CourseDistanceTarget, type RaceCourse, type ArenaSceneLane } from "@fitness-battle/shared";
 import { webEnv } from "@/lib/env";
 const CourseMap = dynamic(() => import("./course-map"), { ssr: false, loading: () => <p className="fb-copy">Loading map…</p> });
 /** Shares the field/replay host rather than opening a separate visualization dialog. */
-export function GeographicCourse({ lanes, unit, selectedId, focusRequest, onSelect, course, onCourseChange, controlsBottom = 8 }: {
+export function GeographicCourse({ lanes, unit, selectedId, focusRequest, onSelect, course, onCourseChange, controlsBottom = 8, distanceTarget, onResumeFollow }: {
   lanes: ArenaSceneLane[]; unit: string; selectedId: string; focusRequest: number; onSelect(id: string): void;
+  distanceTarget?: CourseDistanceTarget | null; onResumeFollow?: () => void;
   course: RaceCourse | null; onCourseChange(course: RaceCourse | null): void; controlsBottom?: number;
 }) {
   const [start, setStart] = useState(""), [finish, setFinish] = useState(""), [profile, setProfile] = useState<"walking" | "cycling">("walking");
@@ -22,7 +23,7 @@ export function GeographicCourse({ lanes, unit, selectedId, focusRequest, onSele
   };
   if (unit !== "mi" && unit !== "km") return null;
   return <div className="geographic-field-scene" style={{ display: "flex", flexDirection: "column", height: "100%", minHeight: 360, position: "relative" }}>
-        {!webEnv.mapboxAccessToken ? <p className="fb-copy">Mapbox access is not configured.</p> : course ? <CourseMap key={course.name + course.length} course={course} lanes={lanes} unit={unit} selectedId={selectedId} focusRequest={focusRequest} onSelect={onSelect} controlsBottom={controlsBottom} extraControls={<button type="button" className="fb-btn-line" title={`${course.name} · ${(course.length / (unit === "mi" ? 1609.344 : 1000)).toFixed(2)} ${unit} · Out-and-back`} style={{ whiteSpace: "nowrap", flexShrink: 0 }} onClick={() => onCourseChange(null)}>Change course</button>} /> : <div className="geographic-course-chooser" style={{ display: "grid", gap: 16, overflow: "auto", maxWidth: 640, padding: controlsBottom > 8 ? "120px 16px 180px" : 16, margin: "0 auto", width: "100%" }}>
+        {!webEnv.mapboxAccessToken ? <p className="fb-copy">Mapbox access is not configured.</p> : course ? <CourseMap key={course.name + course.length} course={course} lanes={lanes} unit={unit} selectedId={selectedId} focusRequest={focusRequest} onSelect={onSelect} distanceTarget={distanceTarget} onResumeFollow={onResumeFollow} controlsBottom={controlsBottom} extraControls={<button type="button" className="fb-btn-line" title={`${course.name} · ${(course.length / (unit === "mi" ? 1609.344 : 1000)).toFixed(2)} ${unit} · Out-and-back`} style={{ whiteSpace: "nowrap", flexShrink: 0 }} onClick={() => onCourseChange(null)}>Change course</button>} /> : <div className="geographic-course-chooser" style={{ display: "grid", gap: 16, overflow: "auto", maxWidth: 640, padding: controlsBottom > 8 ? "120px 16px 180px" : 16, margin: "0 auto", width: "100%" }}>
           <AppHeading level={2} role="heading">Choose a race course</AppHeading><p className="fb-copy">Import GPX scenery or request a route. This does not record an activity or change scores.</p>
           <label className="fb-copy">Import GPX course<input type="file" accept=".gpx,application/gpx+xml" disabled={busy} onChange={event => {
             const file = event.target.files?.[0]; event.target.value = ""; if (!file) return;

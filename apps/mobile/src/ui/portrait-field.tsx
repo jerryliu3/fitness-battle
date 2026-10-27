@@ -52,6 +52,8 @@ export function PortraitField({
   overlaysHidden = false,
   onExpand,
   onToggleDimension,
+  controlsTop = 12,
+  fullscreenControlsBottom = 180,
   laneAnchor,
   focusRequest = 0,
   onViewChange,
@@ -65,6 +67,8 @@ export function PortraitField({
   overlaysHidden?: boolean;
   onExpand?: () => void;
   onToggleDimension?: () => void;
+  controlsTop?: number;
+  fullscreenControlsBottom?: number;
   laneAnchor?: MutableRefObject<number>;
   lanes: ArenaSceneLane[];
   view: ArenaViewWindow;
@@ -166,8 +170,8 @@ export function PortraitField({
     if (focus >= 0) moveTo(focus - scene.baseFocus);
   }, [selectedId, focusRequest, scene.baseFocus, scene.ordered, animateSelection]);
   return (
-    <View style={{ gap: 10 }}>
-      <FieldOverlayView hidden={overlaysHidden} style={s.status} pointerEvents="none">
+    <View style={{ gap: fullscreen ? 0 : 10, position: "relative", ...(fullscreen ? { height } : {}) }}>
+      <FieldOverlayView hidden={overlaysHidden || fullscreen} style={[s.status, fullscreen ? { display: "none" } : null, !fullscreen && controlsTop > 12 ? { minHeight: 48, paddingLeft: 136, flexWrap: "wrap", justifyContent: "flex-end", gap: 4 } : null]} pointerEvents="none">
         <Text style={[s.white, { color: "#142b3b" }]}>
           {scene.place} / {scene.fieldSize} PLACE
         </Text>
@@ -440,20 +444,20 @@ export function PortraitField({
           ) : null}
         </View>
       ) : null}
-      <FieldOverlayView hidden={overlaysHidden} pointerEvents="box-none" style={{ position: "absolute", top: 12, left: 12, right: 60, gap: 6 }}>
+      <FieldOverlayView hidden={overlaysHidden} pointerEvents="box-none" style={{ position: "absolute", top: controlsTop, left: 12, right: 60, gap: 6 }}>
         {!fullscreen && <Pressable style={[s.controlRow, { alignSelf: "flex-start", minHeight: 44, paddingHorizontal: 16 }]} accessibilityRole="button" accessibilityLabel={exploring ? "Finish exploring field" : "Explore field in two directions"} accessibilityState={{ selected: exploring }} onPress={() => setExploring(!exploring)}><Text style={s.white}>{exploring ? "Done" : "Explore"}</Text></Pressable>}
         <View pointerEvents="none"><Text style={[s.white, textStyle("caption")]}>{exploring || fullscreen ? "Drag to move · Pinch to zoom" : "Swipe across lanes · Explore to move forward"}</Text></View>
       </FieldOverlayView>
     </View>
-      <View style={{ gap: 6 }}>
+      <FieldOverlayView hidden={overlaysHidden} style={[{ gap: 6 }, fullscreen ? { position: "absolute", bottom: fullscreenControlsBottom + 56, left: 12, right: 12 } : null]}>
         {(["↑", "↓"] as const).map(direction => {
           const peers = scene.outside.filter(m => m.direction === direction && !m.ghost);
           if (!peers.length) return null;
           const nearest = peers.reduce((a,b) => Math.abs(a.value-view.center) < Math.abs(b.value-view.center) ? a : b);
           return <Pressable key={direction} style={[s.controlRow, { minHeight: 44, paddingHorizontal: 12 }]} accessibilityRole="button" onPress={() => { onSelect(nearest.id); }}><Text style={[s.white, textStyle("caption")]}>{direction} {peers.length} {direction === "↑" ? "ahead" : "behind"} · {nearest.name.split(" ")[0]} {`${nearest.edgeGap.toFixed(1)} ${unit} from view`}</Text></Pressable>;
         })}
-      </View>
-      <View style={s.controls}>
+      </FieldOverlayView>
+      <FieldOverlayView hidden={overlaysHidden} style={[s.controls, fullscreen ? { position: "absolute", bottom: fullscreenControlsBottom, left: 0, right: 0 } : null]}>
         <View style={s.controlRow}>
           <Pressable style={s.button} accessibilityRole="button" accessibilityLabel="Previous lane" disabled={scene.focus <= 0} onPress={() => shift(-1)}><Text style={s.white}>←</Text></Pressable>
           <Pressable style={s.button} accessibilityRole="button" accessibilityLabel="Move backward" disabled={scene.min <= 0} onPress={() => panTo(view.center - view.span / 3)}><Text style={s.white}>↓</Text></Pressable>
@@ -461,12 +465,12 @@ export function PortraitField({
           <Pressable style={s.button} accessibilityRole="button" accessibilityLabel="Move forward" onPress={() => panTo(view.center + view.span / 3)}><Text style={s.white}>↑</Text></Pressable>
           <Pressable style={s.button} accessibilityRole="button" accessibilityLabel="Next lane" disabled={scene.focus >= scene.ordered.length - 1} onPress={() => shift(1)}><Text style={s.white}>→</Text></Pressable>
         </View>
-        <View style={s.controlRow}>
+        {!fullscreen ? <View style={s.controlRow}>
           <Pressable style={s.button} accessibilityRole="button" accessibilityLabel="Zoom out" disabled={view.span >= (unit === "pts" ? 100 : 40)} onPress={() => zoomTo(Math.min(unit === "pts" ? 100 : 40, view.span * 1.5))}><Text style={s.white}>−</Text></Pressable>
           <Text style={[s.white, textStyle("caption")]}>{Math.max(0, scene.min).toFixed(unit === "pts" ? 0 : 2)}–{scene.max.toFixed(unit === "pts" ? 0 : 2)} {unit}</Text>
           <Pressable style={s.button} accessibilityRole="button" accessibilityLabel="Zoom in" disabled={view.span <= (unit === "pts" ? 2 : 0.5)} onPress={() => zoomTo(Math.max(unit === "pts" ? 2 : 0.5, view.span / 1.5))}><Text style={s.white}>＋</Text></Pressable>
-        </View>
-      </View>
+        </View> : null}
+      </FieldOverlayView>
     </View>
   );
 }

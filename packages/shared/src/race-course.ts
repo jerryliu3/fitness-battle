@@ -118,6 +118,8 @@ export function raceCourseTrail(course: RaceCourse, progress: number, lateralMet
 export function raceEffortMetres(value: number, unit: string): number | null {
   return unit === "km" ? Math.max(0, value) * 1000 : unit === "mi" ? Math.max(0, value) * 1609.344 : null;
 }
+/** Explicit overview command, in the host's display units. A request can repeat the same target after panning. */
+export interface CourseDistanceTarget { value: number; request: number }
 export type CourseDimension = "2d" | "3d";
 export interface CourseCameraPose { center: LngLat; zoom: number; pitch: number; bearing: number }
 export interface CourseCameraDriver {
@@ -148,6 +150,13 @@ export function createCourseCamera(driver: CourseCameraDriver, reducedMotion = f
       const ahead = raceCoursePosition(course, position.metres + Math.min(30, remaining));
       const heading = remaining > .01 ? bearing(position.coordinate, ahead.coordinate) : position.heading;
       move({ ...current, center: raceCourseRacerPosition(course, metres, lateralMetres).coordinate, pitch: dimension === "3d" ? 60 : 0, bearing: dimension === "3d" ? heading : 0 }, automatic);
+    },
+    seek(course: RaceCourse, metres: number) {
+      following = false;
+      const current = driver.read();
+      driver.stop();
+      // Scrubbing is direct manipulation: no queued flights, zoom reset or heading changes.
+      driver.move({ ...current, center: raceCoursePosition(course, metres).coordinate }, 0);
     },
     dimension(value: CourseDimension) { dimension = value; move({ ...driver.read(), pitch: value === "3d" ? 60 : 0, bearing: value === "2d" ? 0 : driver.read().bearing }); },
     zoom(delta: number) { following = false; const current = driver.read(); move({ ...current, zoom: Math.max(0, Math.min(20, current.zoom + delta)) }); },

@@ -101,6 +101,7 @@ vi.mock("./portrait-field", () => ({ PortraitField: "PortraitField" }));
 vi.mock("./award-shelf", () => ({ AwardShelf: () => null }));
 vi.mock("react-native-svg", () => ({ default: "Svg", G: "SvgG" }));
 vi.mock("./polished-racer", () => ({ PolishedRacer: "PolishedRacer" }));
+vi.mock("./field-view-switcher", () => ({ FieldViewSwitcher: "FieldViewSwitcher" }));
 vi.mock("./zoom-control", () => ({ ZoomControl: "ZoomControl" }));
 vi.mock("./use-reduced-motion", () => ({
   useReducedMotion: () => mock.reducedMotion,
@@ -179,14 +180,7 @@ describe("native competition interactions", () => {
     });
     await layoutCarousel();
     const lane = () => renderer.root.findByType("LaneTrack" as never);
-    const standingsToggle = () =>
-      renderer.root
-        .findAllByType("Pressable" as never)
-        .find(
-          (node) =>
-            node.props.accessibilityLabel === "Show standings" ||
-            node.props.accessibilityLabel === "Hide standings",
-        )!;
+    const switcher = () => renderer.root.findByType("FieldViewSwitcher" as never);
     expect(mock.mounts).toBe(1);
     const rival = lane().props.lanes.find(
       (item: { you: boolean; ghost: boolean }) => !item.you && !item.ghost,
@@ -195,11 +189,11 @@ describe("native competition interactions", () => {
     expect(lane().props.view.center).toBe(rival.values[2]);
     expect(JSON.stringify(renderer.toJSON())).not.toContain("athlete details");
     expect(JSON.stringify(renderer.toJSON())).not.toContain(" · Place ");
-    expect(standingsToggle().props.accessibilityLabel).toBe("Show standings");
-    await act(async () => standingsToggle().props.onPress());
-    expect(standingsToggle().props.accessibilityLabel).toBe("Hide standings");
-    await act(async () => standingsToggle().props.onPress());
-    expect(standingsToggle().props.accessibilityLabel).toBe("Show standings");
+    expect(switcher().props.standings).toBe(false);
+    await act(async () => switcher().props.onStandings());
+    expect(switcher().props.standings).toBe(true);
+    await act(async () => switcher().props.onChange("2d"));
+    expect(switcher().props.standings).toBe(false);
     expect(mock.mounts).toBe(1);
     const register = renderer.root.findAllByType("Pressable" as never).find((node) => node.props.accessibilityLabel === "Register for an event")!;
     await act(async () => register.props.onPress());
@@ -252,12 +246,12 @@ it("mounts only one registered sport and replaces it when switching",async()=>{
  const choice=renderer.root.findAllByType("Pressable" as never).find(n=>n.props.accessibilityRole==="tab"&&n.props.accessibilityLabel==="Cycling")!;
  await act(async()=>choice.props.onPress());
  expect(renderer.root.findAllByType("LaneTrack" as never)).toHaveLength(1);
- expect(renderer.root.findAllByType("Pressable" as never).some(n=>n.props.accessibilityLabel==="Show standings")).toBe(true);
+ expect(renderer.root.findAllByType("FieldViewSwitcher" as never).some(n=>typeof n.props.onStandings==="function")).toBe(true);
  expect(mock.dispatch).not.toHaveBeenCalledWith(expect.objectContaining({type:"set-primary"}));
  mock.state={...mock.state!,ratings:mock.state!.ratings.map(r=>r.sport==="cycling"?{...r,optedIn:false}:r)};
  await act(async()=>renderer.update(createElement(ArenaScreen)));
  expect(renderer.root.findAllByType("LaneTrack" as never)).toHaveLength(1);
- expect(renderer.root.findAllByType("Pressable" as never).some(n=>n.props.accessibilityLabel==="Show standings")).toBe(true);
+ expect(renderer.root.findAllByType("FieldViewSwitcher" as never).some(n=>typeof n.props.onStandings==="function")).toBe(true);
 });
 
 it("expands one field, retains its viewport and selection, and closes on system Back", async () => {
@@ -282,11 +276,11 @@ it("expands one field, retains its viewport and selection, and closes on system 
   expect(lane().props.view).toEqual(before);
   expect(lane().props.selectedId).toBe(rival.id);
   expect(lane().props.anchor).toBe(anchor);
-  const dimensionToggle = () => renderer.root.findAllByType("Pressable" as never).find(node => node.props.accessibilityLabel === "Switch to 3D field" || node.props.accessibilityLabel === "Switch to 2D map")!;
-  await act(async () => dimensionToggle().props.onPress());
+  const switcher = () => renderer.root.findByType("FieldViewSwitcher" as never);
+  await act(async () => switcher().props.onChange("3d"));
   expect(renderer.root.findByType("PortraitField" as never).props.fullscreen).toBe(true);
   expect(renderer.root.findByType("PortraitField" as never).props.view).toEqual(before);
-  await act(async () => dimensionToggle().props.onPress());
+  await act(async () => switcher().props.onChange("2d"));
   const modal = renderer.root.findByType("Modal" as never);
   expect(modal.props.presentationStyle).toBe("fullScreen");
   await act(async () => modal.props.onRequestClose());

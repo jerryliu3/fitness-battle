@@ -1,7 +1,7 @@
 import { createElement } from "react";
 import { act, create, type ReactTestRenderer } from "react-test-renderer";
 import { afterEach, expect, it, vi } from "vitest";
-import { createRaceCourse } from "@fitness-battle/shared";
+import { createRaceCourse, raceCoursePosition, raceEffortMetres } from "@fitness-battle/shared";
 const calls = vi.hoisted(() => ({ setCamera: vi.fn() }));
 vi.mock("react-native", () => ({ View: "View", Text: "Text", Pressable: "Pressable", ScrollView: "ScrollView", StyleSheet: { create: (value: unknown) => value } }));
 vi.mock("./athlete-pennant", () => ({ AthletePennant: "AthletePennant" }));
@@ -53,4 +53,28 @@ it("delegates native camera frames, pauses following on gestures, and flies from
   const labels = renderer.root.findAllByType("AthletePennant" as never);
   expect(labels.map(label => label.props.detail)).toEqual(["2nd · 0.6 km", "1st · +0.5 km"]);
 
+});
+
+it.each(["km", "mi"])("seeks %s overview targets without changing map pose or athlete selection", async unit => {
+  vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
+  const course = createRaceCourse("Corner", [[0, 0], [.01, 0], [.01, .01]]);
+  const value = course.length * 1.25 / (unit === "mi" ? 1609.344 : 1000);
+  const props = { course, lanes: [{ id: "you", name: "You", initials: "Y", you: true, value: 2 }], unit, selectedId: "you", focusRequest: 0, onSelect: vi.fn(), onResumeFollow: vi.fn(), distanceTarget: { value, request: 1 } };
+  await act(async () => { renderer = create(createElement(CourseMap, props), { createNodeMock: element => element.type === "Camera" ? calls : null }); });
+  await act(async () => renderer.root.findByType("Observer" as never).props.onCameraChanged({ nativeEvent: { properties: { center: [.005, 0], zoom: 15, pitch: 30, heading: 20, isUserInteraction: true } } }));
+  await act(async () => renderer.root.findByType("Map" as never).props.onDidFinishLoadingMap());
+  const target = raceCoursePosition(course, raceEffortMetres(value, unit)!).coordinate;
+  expect(calls.setCamera.mock.lastCall![0]).toMatchObject({ centerCoordinate: target, zoomLevel: 15, pitch: 30, heading: 20, animationDuration: 0 });
+  calls.setCamera.mockClear();
+  const repeated = { ...props, distanceTarget: { value, request: 2 } };
+  await act(async () => renderer.update(createElement(CourseMap, repeated)));
+  expect(calls.setCamera.mock.lastCall![0].centerCoordinate).toEqual(target);
+  calls.setCamera.mockClear();
+  await act(async () => renderer.update(createElement(CourseMap, { ...repeated, lanes: [{ ...props.lanes[0], value: 3 }] })));
+  expect(calls.setCamera).not.toHaveBeenCalled();
+  await act(async () => renderer.root.findAllByType("Pressable" as never).find(node => node.props.accessibilityLabel === "Recenter")!.props.onPress());
+  expect(props.onResumeFollow).toHaveBeenCalledOnce();
+  expect(calls.setCamera.mock.lastCall![0].centerCoordinate).toEqual(raceCoursePosition(course, raceEffortMetres(3, unit)!).coordinate);
+  expect(props.onSelect).not.toHaveBeenCalled();
+  expect(renderer.root.findAllByType("Map" as never)).toHaveLength(1);
 });

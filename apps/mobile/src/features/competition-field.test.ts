@@ -15,6 +15,7 @@ vi.mock("react-native-safe-area-context", () => ({ useSafeAreaInsets: () => ({ t
 vi.mock("react-native-svg", () => ({ default: "Svg", G: "SvgG" }));
 vi.mock("./geographic-course", () => ({ GeographicCourse: "GeographicCourse" }));
 vi.mock("./competition-replay", () => ({ CompetitionReplayButton: "ReplayButton" }));
+vi.mock("../ui/choice-picker", () => ({ ChoicePicker: "ChoicePicker" }));
 vi.mock("../ui/user-avatar", () => ({ UserAvatar: "UserAvatar" }));
 vi.mock("../ui/section", () => ({ textStyle: () => ({}) }));
 vi.mock("../ui/rank-badge", () => ({ RankBadge: "RankBadge" }));
@@ -69,26 +70,44 @@ it("collapses each panel independently and isolates zoom/replay touches from sce
   expect(button("Expand athlete panel").props.accessibilityState.expanded).toBe(false);
   await act(async () => button("Expand live intervals").props.onPress());
   expect(button("Collapse live intervals").props.accessibilityState.expanded).toBe(true);
-  const zoom = button("Zoom in").parent!;
+  expect(button("Zoom in")).toBeUndefined();
+  await act(async () => renderer.root.findByType("ChoicePicker" as never).props.onChange("zoom-in"));
+  expect(mocks.fly).toHaveBeenCalled();
+  const replay = renderer.root.findByType("ReplayButton" as never).parent!;
   const stopPropagation = vi.fn();
-  zoom.props.onTouchStart({ stopPropagation });
+  replay.props.onTouchStart({ stopPropagation });
   expect(stopPropagation).toHaveBeenCalledTimes(1);
 });
 
 it("keeps 4D inside the fullscreen host with the same panels, selection and replay", async () => {
-  const switchTo = async (mode: string) => act(async () => button(`Switch to ${mode} ${mode === "4D" ? "course" : "field"}`).props.onPress());
+  const switchTo = async (mode: string) => act(async () => renderer.root.findByType("ChoicePicker" as never).props.onChange(mode.toLowerCase()));
   await switchTo("4D");
   const map = () => renderer.root.findByType("GeographicCourse" as never);
   const course = createRaceCourse("City", [[0, 0], [.02, 0]]);
   await act(async () => map().props.onCourseChange(course));
+  const overview = () => renderer.root.findByType("FieldOverview" as never);
+  expect(overview().props.positionOnly).toBe(true);
+  const selected = map().props.selectedId;
+  const fieldCenter = field().props.view.center;
+  await act(async () => overview().props.onNavigate(.75));
+  expect(map().props.distanceTarget).toMatchObject({ value: .75, request: 1 });
+  expect(overview().props.view.center).toBe(.75);
+  expect(map().props.selectedId).toBe(selected);
+  expect(field().props.view.center).toBe(fieldCenter);
+  await act(async () => map().props.onResumeFollow());
+  expect(map().props.distanceTarget).toBeNull();
   expect(renderer.root.findAllByType("Modal" as never)).toHaveLength(1);
   expect(button("Collapse live intervals")).toBeDefined();
   await act(async () => button("Collapse athlete panel").props.onPress());
   expect(button("Expand athlete panel")).toBeDefined();
+  expect(overview()).toBeDefined();
+  await act(async () => overview().props.onNavigate(.5));
   const peer = map().props.lanes.find((lane: { you: boolean }) => !lane.you);
   if (peer) {
     await act(async () => map().props.onSelect(peer.id));
     expect(map().props.selectedId).toBe(peer.id);
+    expect(map().props.distanceTarget).toBeNull();
+    expect(overview().props.view.center).toBe(peer.value);
   }
   expect(mocks.fly).not.toHaveBeenCalled();
   const replay = renderer.root.findAllByType("ReplayButton" as never).find(node => node.props.dimension === "4d")!;
@@ -97,8 +116,25 @@ it("keeps 4D inside the fullscreen host with the same panels, selection and repl
   expect(map().props.overlaysHidden).toBe(true);
   await act(async () => scene().props.onTouchEnd());
   await switchTo("2D");
+  expect(renderer.root.findAllByType("FieldOverview" as never)).toHaveLength(1);
   expect(renderer.root.findAllByType("GeographicCourse" as never)).toHaveLength(0);
   await switchTo("4D");
+  expect(overview().props.positionOnly).toBe(true);
   expect(map().props.course).toBe(course);
   expect(button("Expand athlete panel")).toBeDefined();
+});
+
+it("keeps a navigable overview beneath both collapsed and expanded athlete panels", async () => {
+  const overview = () => renderer.root.findByType("FieldOverview" as never);
+  const bottom = overview().parent!.props.style[0].bottom;
+  await act(async () => overview().props.onNavigate(5));
+  expect(field().props.view.center).toBe(5);
+  await act(async () => button("Collapse athlete panel").props.onPress());
+  expect(overview().parent!.props.style[0].bottom).toBe(bottom);
+  await act(async () => renderer.root.findByType("ChoicePicker" as never).props.onChange("3d"));
+  expect(overview()).toBeDefined();
+  await act(async () => overview().props.onNavigate(3));
+  expect(renderer.root.findByType("PortraitField" as never).props.view.center).toBe(3);
+  await act(async () => button("Expand athlete panel").props.onPress());
+  expect(overview().parent!.props.style[0].bottom).toBe(bottom);
 });
