@@ -34,6 +34,9 @@ vi.mock("react-native", async () => {
     StyleSheet: { create: (styles: unknown) => styles },
     View,
     Modal: "Modal",
+    Animated: { View: "View", Value: class { constructor(public value: number) {} interpolate(config: unknown) { return config; } }, timing: () => ({ start() {}, stop() {} }), createAnimatedComponent: () => "AnimatedGroup" },
+    Easing: { out: (fn: unknown) => fn, cubic: (x: number) => x },
+    AppState: { addEventListener: () => ({ remove() {} }) },
     useWindowDimensions: () => ({ width: 390, height: 844 }),
     Pressable: "Pressable",
     ScrollView: "ScrollView",
@@ -68,9 +71,24 @@ vi.mock("../lib/score-track-lens", () => ({
   useScoreTrackLens: () => ["open", vi.fn()],
 }));
 vi.mock("../features/crew", () => ({ useCrewApi: () => ({ live: false }) }));
-vi.mock("../features/competition-summary", () => ({
-  CompetitionSummary: ({ children }: { children?: unknown }) => children ?? null,
-}));
+vi.mock("../features/competition-summary", async () => {
+  const { createElement } = await import("react");
+  return {
+    CompetitionSummary: ({ children, onRegister }: { children?: unknown; onRegister?: () => void }) =>
+      createElement(
+        "View",
+        null,
+        onRegister
+          ? createElement("Pressable", {
+              accessibilityRole: "button",
+              accessibilityLabel: "Register for an event",
+              onPress: onRegister,
+            })
+          : null,
+        children as never,
+      ),
+  };
+});
 vi.mock("../features/sleep-panel", () => ({ SleepPanel: () => null }));
 vi.mock("../features/round-takeover", () => ({ RoundTakeover: () => null }));
 vi.mock("../features/competition-replay", () => ({
@@ -80,20 +98,35 @@ vi.mock("./icon-button", () => ({ IconButton: "IconButton" }));
 vi.mock("./arena-3d", () => ({ Arena3D: () => null }));
 vi.mock("./portrait-field", () => ({ PortraitField: "PortraitField" }));
 vi.mock("./award-shelf", () => ({ AwardShelf: () => null }));
-vi.mock("react-native-svg", () => ({ default: "Svg" }));
+vi.mock("react-native-svg", () => ({ default: "Svg", G: "SvgG" }));
 vi.mock("./polished-racer", () => ({ PolishedRacer: "PolishedRacer" }));
 vi.mock("./zoom-control", () => ({ ZoomControl: "ZoomControl" }));
 vi.mock("./use-reduced-motion", () => ({
   useReducedMotion: () => mock.reducedMotion,
 }));
-vi.mock("./focus", () => ({
-  FocusButton: "FocusButton",
-  FocusSegments: "Segments",
-  FocusTextButton: "TextButton",
-  FocusDisclosure: "Disclosure",
-  FocusSheet: "Sheet",
-  f: {},
-}));
+vi.mock("./focus", async () => {
+  const { createElement } = await import("react");
+  return {
+    FocusButton: "FocusButton",
+    FocusSegments: ({ options, onChange }: { options: readonly { value: string; label: string }[]; onChange: (v: string) => void }) =>
+      createElement(
+        "View",
+        null,
+        options.map((opt) =>
+          createElement("Pressable", {
+            key: opt.value,
+            accessibilityRole: "tab",
+            accessibilityLabel: opt.label,
+            onPress: () => onChange(opt.value),
+          }),
+        ),
+      ),
+    FocusTextButton: "TextButton",
+    FocusDisclosure: "Disclosure",
+    FocusSheet: "Sheet",
+    f: {},
+  };
+});
 vi.mock("./lane-track", async () => {
   const { createElement, useEffect } = await import("react");
   return {

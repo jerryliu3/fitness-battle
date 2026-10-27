@@ -461,7 +461,7 @@ a {
 
 .fb-switch.on .fb-switch-knob {
   transform: translateX(20px);
-  background: var(--lime);
+  background: white;
 }
 
 .fb-sr-only {

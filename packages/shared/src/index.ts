@@ -61,3 +61,5 @@ export { normalizeRouteReplay, routeReplayAt, type RouteReplaySample } from "./r
 export * from "./race-course";
 export * from "./mapbox-course";
 export * from "./course-scene";
+
+export { createFieldOverlayHold } from "./field-overlay-hold";

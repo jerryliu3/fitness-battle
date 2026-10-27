@@ -20,7 +20,8 @@ import { useAuth } from "../../src/lib/auth";
 import { useCompeteStore } from "../../src/lib/compete-store";
 
 import { playCue } from "../../src/lib/haptics";
-import { FocusButton, FocusSheet, f } from "../../src/ui/focus";
+import { FocusButton, FocusSegments, FocusSheet, f } from "../../src/ui/focus";
+import { SHELL_COLORS } from "../../src/theme";
 
 export default function ArenaScreen() {
   const {
@@ -79,7 +80,9 @@ export default function ArenaScreen() {
     setJoinError("");
     try {
       let pin: CrewBoardPin | null = null;
-      if (crewId) {
+      if (crewId && state.crewBoard && state.crewBoard.crewId === crewId) {
+        pin = state.crewBoard;
+      } else if (crewId) {
         const result = await crewApi.request("/field", { crewId });
         pin = result.pin ?? null;
         if (!pin || pin.sport !== nextSport)
@@ -108,11 +111,19 @@ export default function ArenaScreen() {
     }
   }
 
+  const eventOptions = [
+    ...active.map(r => ({
+      value: r.sport,
+      label: SPORTS.find(s => s.id === r.sport)?.name ?? r.sport,
+    })),
+    ...(sleepOptedIn ? [{ value: "sleep" as const, label: "Sleep & Recovery" }] : []),
+  ];
+
   return (
     <SafeAreaView style={f.safe} edges={[]}>
       <ScrollView contentContainerStyle={f.content}>
 <SectionStack divided={false}>
-        <CompetitionSummary state={state} selectedSport={selectedSport??undefined} />
+        <CompetitionSummary state={state} selectedSport={selectedSport??undefined} onRegister={openRegistration} />
         {saveError ? (
           <View style={f.feedback}>
             <AppText role="body" secondary >{saveError}</AppText>
@@ -125,9 +136,38 @@ export default function ArenaScreen() {
           </AppText>
         ) : null}
         <RoundTakeover state={state} ready={canWrite} dispatch={dispatch} />
-        {hasRegistration?<EventCarousel key={accountKey} events={[...active.map(r=>({id:r.sport,label:SPORTS.find(s=>s.id===r.sport)!.name,badge:competitionTrackLabel(r.sport)})),...(sleepOptedIn?[{id:"sleep",label:"Sleep & Recovery"}]:[])]} value={selectedSport!} onChange={id=>{setSelection({account:accountKey,sport:id as SportId|"sleep"});void playCue("selection");}} onRegister={openRegistration}>
-        {selectedSport&&selectedSport!=="sleep"?<CompetitionField key={`${accountKey}:${selectedSport}:${state.units}:${track}`} sport={selectedSport} track={track} />:selectedSport==="sleep"?<SleepPanel state={state} dispatch={dispatch}/>:<View style={f.card}><AppText role="heading">Your next chapter starts here.</AppText><AppText role="body" secondary >Register for an event to open your field.</AppText></View>}
-        </EventCarousel>:<View style={f.card}><AppText role="heading">Your next chapter starts here.</AppText><AppText role="body" secondary >Register for an event to open your field.</AppText><FocusButton label="Explore events" onPress={openRegistration}/></View>}
+        {hasRegistration ? (
+          <View style={{ gap: 14 }}>
+            {eventOptions.length > 1 ? (
+              <FocusSegments
+                variant="tabs"
+                label="Competition events"
+                value={selectedSport!}
+                options={eventOptions}
+                onChange={id => {
+                  setSelection({ account: accountKey, sport: id as SportId | "sleep" });
+                  void playCue("selection");
+                }}
+              />
+            ) : null}
+            {selectedSport && selectedSport !== "sleep" ? (
+              <CompetitionField key={`${accountKey}:${selectedSport}:${state.units}:${track}`} sport={selectedSport} track={track} />
+            ) : selectedSport === "sleep" ? (
+              <SleepPanel state={state} dispatch={dispatch} />
+            ) : (
+              <View style={f.card}>
+                <AppText role="heading">Your next chapter starts here.</AppText>
+                <AppText role="body" secondary>Register for an event to open your field.</AppText>
+              </View>
+            )}
+          </View>
+        ) : (
+          <View style={f.card}>
+            <AppText role="heading">Your next chapter starts here.</AppText>
+            <AppText role="body" secondary>Register for an event to open your field.</AppText>
+            <FocusButton label="Explore events" onPress={openRegistration} />
+          </View>
+        )}
         {state.periodResults.length ? <FocusButton label="Latest week results ↗" secondary onPress={() => router.push("/arena?results=latest")} /> : null}
         <FeatureCard title="Beyond this week" description="All-time pace and race rankings." onPress={() => router.push("/benchmarks")}/>
       </SectionStack>
@@ -148,20 +188,38 @@ export default function ArenaScreen() {
             value={withCrew}
             disabled={joinBusy}
             onValueChange={setWithCrew}
+            trackColor={{ false: SHELL_COLORS.line, true: SHELL_COLORS.ink }}
+            thumbColor="#ffffff"
+            ios_backgroundColor={SHELL_COLORS.line}
           />
         </View>
-        {withCrew && !crewApi.live ? (
-          <AppText role="body" secondary >
-            A live account and a matching crew are required.
+        {withCrew && !crewApi.live && !state.crewBoard ? (
+          <AppText role="body" secondary>
+            {!user
+              ? "Sign in to compete with your crew."
+              : "Join or create a crew in the Crew tab first to compete together."}
           </AppText>
         ) : null}
         {SPORTS.map((s) => {
           const isRegistered = state.ratings.find(
             (r) => r.sport === s.id,
           )?.optedIn;
-          const eligible = (crewApi.data?.crews ?? []).flatMap((r) =>
-            r.crews?.sport === s.id ? [r.crews] : [],
-          );
+          const eligible = [
+            ...(crewApi.data?.crews ?? []).flatMap((r) =>
+              r.crews?.sport === s.id ? [r.crews] : [],
+            ),
+            ...(state.crewBoard && state.crewBoard.sport === s.id && state.crewBoard.crewId !== "solo" && !state.crewBoard.crewId.startsWith("field:")
+              ? [{
+                  id: state.crewBoard.crewId,
+                  name: state.crewBoard.crewName,
+                  sport: state.crewBoard.sport,
+                  invite_code: "",
+                  format: "volume",
+                  target_sessions: 4,
+                  journey_km: 60,
+                }]
+              : []),
+          ];
           return (
             <View key={s.id} style={{ gap: 8 }}>
               <Pressable

@@ -305,6 +305,7 @@ export function PortraitField({
                     </text>
                   </>
                 )}
+                <g className="athlete-pennant">
                 {m.you ? (
                   <>
                     <rect
@@ -340,6 +341,7 @@ export function PortraitField({
                     {m.gap.toFixed(unit === "pts" ? 0 : 2)} {unit}
                   </text>
                 ) : null}
+                </g>
               </g>
             );
           })}
@@ -354,7 +356,7 @@ export function PortraitField({
           const peers = scene.outside.filter(m => m.direction === direction && !m.ghost);
           if (!peers.length) return null;
           const nearest = peers.reduce((a,b) => Math.abs(a.value-view.center) < Math.abs(b.value-view.center) ? a : b);
-          return <button type="button" key={direction} onClick={() => { onSelect(nearest.id); }}>{direction} {peers.length} {direction === "↑" ? "ahead" : "behind"} · {nearest.name.split(" ")[0]} {nearest.you ? "your position" : `${Math.abs(nearest.gap).toFixed(unit === "pts" ? 0 : 2)} ${unit} ${nearest.gap >= 0 ? "ahead of you" : "behind you"}`}</button>;
+          return <button type="button" key={direction} onClick={() => { onSelect(nearest.id); }}>{direction} {peers.length} {direction === "↑" ? "ahead" : "behind"} · {nearest.name.split(" ")[0]} {`${nearest.edgeGap.toFixed(1)} ${unit} from view`}</button>;
         })}
       </div>
       <div className="club-board-controls club-distance-controls">

@@ -1,25 +1,11 @@
-import { useBootLoading } from "../ui/boot-readiness";
-import { useCallback, useState } from "react";
-import { useFocusEffect } from "expo-router";
 import { recentActivityStart, type CrewActivityPage } from "@fitness-battle/shared";
-import { useAuth } from "../lib/auth";
-import { requestApi } from "../lib/api";
-import { mobileEnv } from "../lib/env";
+import { useCachedApi } from "../lib/use-cached-api";
+
+export function crewActivitiesPath(now = new Date()) {
+  return `/api/crews/activities?latestPerMember=true&limit=100&since=${encodeURIComponent(recentActivityStart(now))}`;
+}
 
 export function useCrewActivities() {
-  const { user, offlineMode, accessToken } = useAuth();
-  const [result, setResult] = useState<{ account: string; activities: CrewActivityPage["activities"]; error: string }>({ account: "", activities: [], error: "" });
-  // Boot gate: hold the launch cover until the first crew snapshot stamps this account id.
-  useBootLoading(Boolean(user && !offlineMode && Boolean(accessToken) && result.account !== user.id));
-  useFocusEffect(useCallback(() => {
-    if (!user || offlineMode || !accessToken) return;
-    let current = true;
-    const account = user.id;
-    void requestApi<CrewActivityPage>(mobileEnv.apiUrl, accessToken,
-      `/api/crews/activities?latestPerMember=true&limit=100&since=${encodeURIComponent(recentActivityStart(new Date()))}`)
-      .then(page => { if (current) setResult({ account, activities: page.activities, error: "" }); })
-      .catch(() => { if (current) setResult({ account, activities: [], error: "Crew activity could not load. Try Home again." }); });
-    return () => { current = false; };
-  }, [user?.id, offlineMode, accessToken]));
-  return result.account === user?.id ? result : { activities: [], error: "" };
+  const { data, error } = useCachedApi<CrewActivityPage>(crewActivitiesPath());
+  return { activities: data?.activities ?? [], error: error ? "Crew activity could not load. Try Home again." : "" };
 }

@@ -1,4 +1,11 @@
+// Exercise the Suspense state even when the module loads slowly in CI.
+const lazyReview = vi.hoisted(() => {
+  let release!: () => void;
+  const ready = new Promise<void>(resolve => { release = resolve; });
+  return { ready, release: () => release() };
+});
 vi.mock("@/features/club/sync-review", async () => {
+  await lazyReview.ready;
   const { createElement } = await import("react");
   return { SyncReview: (props: object) => createElement("SyncReview", props) };
 });
@@ -16,7 +23,9 @@ const values = new Map<string,string>();
 function Probe() { api = useCompete(); return null; }
 async function flush() { for (let i=0;i<30;i++) await Promise.resolve(); }
 beforeEach(() => {
- vi.useFakeTimers(); values.clear(); auth.user.mode = "supabase"; auth.user.dataOrigin = "recorded";
+ vi.useFakeTimers();
+ vi.setSystemTime(new Date("2026-10-22T16:00:00Z"));
+ values.clear(); auth.user.mode = "supabase"; auth.user.dataOrigin = "recorded";
  vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
  vi.stubGlobal("localStorage", { getItem: (key: string) => values.get(key) ?? null, setItem: (key: string,value: string) => values.set(key,value), removeItem: (key: string) => values.delete(key) });
  vi.stubGlobal("window", { addEventListener: vi.fn(), removeEventListener: vi.fn() });
@@ -64,6 +73,9 @@ it("runs web debug sync through the real receipt and combo coordinator without u
   await act(async () => { renderer = create(createElement(CompeteProvider, null, createElement(Probe))); await flush(); });
   const original = api.state;
   await act(async () => { api.triggerDebugEvent?.("sync-combo"); await flush(); });
+  expect(renderer.root.findByProps({ role: "status" })).toBeTruthy();
+  lazyReview.release();
+  await act(async () => { await vi.dynamicImportSettled(); });
   await act(async () => { await vi.advanceTimersByTimeAsync(500); await flush(); });
   let screen = renderer.root.findByType("SyncReview" as never);
   expect(screen.props.receipt.activities).toHaveLength(2);

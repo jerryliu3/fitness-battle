@@ -200,7 +200,7 @@ export function HomeActivityActions({
       <FocusSheet
         open={open}
         onClose={() => setOpen(false)}
-        title="Add activity"
+        title="Add manual activity"
         minimal
       >
         <AppText role="label" >Sport</AppText>

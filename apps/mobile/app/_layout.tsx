@@ -18,7 +18,7 @@ import { router, Stack, usePathname } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import * as WebBrowser from "expo-web-browser";
 import { HeroUINativeProvider } from "heroui-native/provider";
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { ActivityIndicator, Platform, Text, View } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import "../global.css";
@@ -32,10 +32,11 @@ import {
 import { shellTabFromPath } from "@fitness-battle/shared";
 import { SHELL_COLORS } from "../src/theme";
 import { BootGate } from "../src/ui/boot-gate";
+import { NavigationWarmup } from "../src/lib/navigation-warmup";
 
 function LiveFieldRefresh() {
   const tab = shellTabFromPath(usePathname());
-  useCompeteFieldRefresh(tab?.id === "arena" || tab?.id === "field");
+  useCompeteFieldRefresh(tab?.id === "today" || tab?.id === "arena" || tab?.id === "field");
   return null;
 }
 
@@ -101,8 +102,9 @@ export default function RootLayout() {
     };
   }, []);
 
+  let fontFallback: ReactNode = null;
   if (!fontsLoaded) {
-    return (
+    fontFallback = (
       <View
         style={{
           flex: 1,
@@ -138,19 +140,24 @@ export default function RootLayout() {
     >
       <HeroUINativeProvider>
         <AuthProvider>
-          <CompeteProvider>
-            <LiveFieldRefresh />
-            <BootGate>
-              <StatusBar style="dark" />
-              <Stack
-                screenOptions={{
-                  headerShown: false,
-                  contentStyle: { backgroundColor: SHELL_COLORS.paper },
-                  animation:
-                    Platform.OS === "ios" ? "default" : "slide_from_right",
-                }}
-              />
-            </BootGate>
+          <CompeteProvider navigationReady={fontsLoaded}>
+            {fontsLoaded ? (
+              <>
+                <LiveFieldRefresh />
+                <NavigationWarmup />
+                <BootGate>
+                  <StatusBar style="dark" />
+                  <Stack
+                    screenOptions={{
+                      headerShown: false,
+                      contentStyle: { backgroundColor: SHELL_COLORS.paper },
+                      animation:
+                        Platform.OS === "ios" ? "default" : "slide_from_right",
+                    }}
+                  />
+                </BootGate>
+              </>
+            ) : fontFallback}
           </CompeteProvider>
         </AuthProvider>
       </HeroUINativeProvider>

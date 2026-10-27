@@ -38,6 +38,7 @@ import {
   useCallback,
   useContext,
   useEffect,
+  useLayoutEffect,
   useRef,
   useState,
   type ReactNode,
@@ -54,6 +55,7 @@ import { mobileEnv } from "./env";
 import { fetchWithTimeout } from "./fetch-with-timeout";
 import { canOpenCompeteNotice } from "./navigation";
 import { supabase } from "./supabase";
+import { clearApiReads, apiReadScope, invalidateApiReads } from "./api-read-cache";
 import type { CompeteLoadStatus } from "@fitness-battle/shared/boot";
 
 const SyncReview = lazy(() =>
@@ -82,7 +84,7 @@ interface CompeteContextValue {
   fieldNotice: FieldNotice | null;
   dismissFieldNotice: () => void;
   standingsStale: boolean;
-  refresh: () => Promise<boolean>;
+  refresh: (options?: { ifStale?: boolean }) => Promise<boolean>;
   saveError: string | null;
   retrySave: () => void;
   clearAccountData: (expectedId: string) => Promise<boolean>;
@@ -131,7 +133,9 @@ async function preloadBaselineCache(
   }
 }
 
-export function CompeteProvider({ children }: { children: ReactNode }) {
+export function CompeteProvider({ children, navigationReady = true }: { children: ReactNode; navigationReady?: boolean }) {
+  const navigationReadyRef = useRef(navigationReady);
+  navigationReadyRef.current = navigationReady;
   const pathname = usePathname();
   const pathnameRef = useRef(pathname);
   pathnameRef.current = pathname;
@@ -140,10 +144,13 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
   const authRef = useRef(auth);
   authRef.current = auth;
   const owner = auth.user?.id ?? null;
+  // Clear before child passive effects start their new session's prefetches.
+  useLayoutEffect(() => { clearApiReads(); }, [owner, auth.offlineMode]);
   const keys = accountStorageKeys(owner);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [loadStatus, setLoadStatus] = useState<AccountLoadStatus>("loading");
   const loadReady = useRef(false);
+  const hydrationPending = useRef(true);
   const markLoadReady = (ready: boolean) => {
     loadReady.current = ready;
   };
@@ -170,6 +177,7 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
   const conflictRef = useRef(false);
   const [saveConflict, setSaveConflict] = useState(false);
   const refreshFlight = useRef<Promise<boolean> | null>(null);
+  const lastRefresh = useRef(0);
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [debugActive, setDebugActive] = useState(false);
   const debugActiveRef = useRef(false);
@@ -197,10 +205,12 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
     conflictRef.current = false;
     setSaveConflict(false);
     markLoadReady(false);
+    hydrationPending.current = true;
     setLoadStatus("loading");
     if (saveTimer.current) clearTimeout(saveTimer.current);
     saveTimer.current = null;
     refreshFlight.current = null;
+    lastRefresh.current = 0;
     unsavedRef.current = false;
     unitsUnsavedRef.current = false;
     dirtyRef.current += 1;
@@ -214,11 +224,14 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
     void (async () => {
       const raw = await AsyncStorage.getItem(keys.state);
       let next = rollClock(freshState());
+      let hasCache = false;
       if (raw) {
         try {
           const parsed = JSON.parse(raw);
-          if (isCompeteState(parsed))
+          if (isCompeteState(parsed)) {
             next = rollClock(migrateCompeteState(parsed));
+            hasCache = true;
+          }
         } catch {
           /* A corrupt local copy starts clean. */
         }
@@ -257,6 +270,16 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
       const live =
         !!currentAuth.user &&
         !currentAuth.offlineMode;
+      let remoteLoaded = false;
+      // Render this account's durable snapshot while validating the server revision.
+      // Writes and competition reveals remain gated by loadReady until that succeeds.
+      if (hasCache && live && alive && accountRef.current === owner) {
+        const cached = hydrateAccountIdentity(next, currentAuth.user, live);
+        loadedOwnerRef.current = owner;
+        stateRef.current = cached;
+        setState(cached);
+        setStandingsStale(true);
+      }
       if (live) {
         try {
           const account = await competeAccount();
@@ -302,8 +325,7 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
               unitsUnsavedRef.current,
             );
           if (alive) {
-            setLoadStatus("ready");
-            markLoadReady(true);
+            remoteLoaded = true;
             setStandingsStale(false);
           }
         } catch {
@@ -325,7 +347,7 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
       await preloadBaselineCache(owner ?? "guest", baselineCacheRef.current);
       if (!alive || accountRef.current !== owner) return;
       unsavedRef.current = dirty;
-      if (dirty && live && loadReady.current) {
+      if (dirty && live && remoteLoaded) {
         const message = saveFailure();
         if (message) setSaveError(message);
       }
@@ -339,9 +361,16 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
       if (!alive) return;
       loadedOwnerRef.current = owner;
       stateRef.current = next;
+      hydrationPending.current = false;
+      if (remoteLoaded) {
+        markLoadReady(true);
+        lastRefresh.current = Date.now();
+        setLoadStatus("ready");
+      }
       setState(next);
     })().catch(() => {
       if (alive) {
+        hydrationPending.current = false;
         loadedOwnerRef.current = owner;
         setLoadStatus("failed");
         setState(
@@ -390,7 +419,7 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
           ) != null;
         if (added.length > 0 && !onField) {
           setReturnGain(added.length);
-          if (canOpenCompeteNotice(pathnameRef.current))
+          if (navigationReadyRef.current && canOpenCompeteNotice(pathnameRef.current))
             router.navigate("/arena");
         }
       }
@@ -443,9 +472,11 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
     if (AppState.currentState === "active") remember(ids, false);
   }, [remember, state]);
 
-  const refresh = useCallback(async (): Promise<boolean> => {
+  const refresh = useCallback(async (options?: { ifStale?: boolean }): Promise<boolean> => {
     if (syncReviewBlocked.current) return false;
     if (debugActiveRef.current) return true;
+    if (hydrationPending.current) return false;
+    if (options?.ifStale && Date.now() - lastRefresh.current < FIELD_REFRESH_MS) return true;
     const account = await competeAccount();
     if (debugActiveRef.current) return true;
     if (!stateRef.current) return false;
@@ -456,7 +487,6 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
     const epoch = lifecycle.current;
     const task = (async () => {
       try {
-        await preloadBaselineCache(account.userId, baselineCacheRef.current);
         if (stateRef.current) {
           seedArenaBaselinesFromState(
             stateRef.current,
@@ -486,6 +516,8 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
           epoch === lifecycle.current
         ) {
           markLoadReady(true);
+          setLoadStatus("ready");
+          lastRefresh.current = Date.now();
           setStandingsStale(false);
           setSaveError(null);
           return true;
@@ -544,8 +576,10 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
           );
         }
         markLoadReady(true);
+        setLoadStatus("ready");
         if (!unsavedRef.current) setSaveError(null);
         setStandingsStale(false);
+        lastRefresh.current = Date.now();
         return true;
       } catch {
         if (account.userId !== accountRef.current) return false;
@@ -561,7 +595,7 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
   refreshRef.current = refresh;
 
   useEffect(() => {
-    if (!state) return;
+    if (!state || !loadReady.current || !navigationReady) return;
     let alive = true;
     const accountKey = accountRef.current ?? "device";
     const next = seenFieldFromState(state, accountKey);
@@ -604,7 +638,7 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
     return () => {
       alive = false;
     };
-  }, [pathname, router, state]);
+  }, [pathname, router, state, navigationReady]);
 
   const scheduleSave = useCallback((next: CompeteState, immediate = false, force = false) => {
     if (debugActiveRef.current) return;
@@ -680,6 +714,7 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
               return;
             unsavedRef.current = false;
             unitsUnsavedRef.current = false;
+            invalidateApiReads(apiReadScope(mobileEnv.apiUrl, account.token));
             setSaveError(null);
             await AsyncStorage.removeItem(scoped.dirty);
           } catch {
@@ -708,7 +743,7 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
         !loadReady.current &&
         authRef.current.user &&
         !authRef.current.offlineMode &&
-        action.type !== "set-avatar"
+        (action.type !== "set-avatar" || hydrationPending.current)
       ) {
         setSaveError(
           "Your account could not load. Refresh your account before making changes.",
@@ -839,6 +874,7 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
       ...owned,
     ]);
     if (accountRef.current !== expectedId) return false;
+    clearApiReads();
     loadedOwnerRef.current = undefined;
     stateRef.current = null;
     setState(null);
@@ -968,8 +1004,8 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
 }
 
 export function useCompeteFieldRefresh(active: boolean) {
-  const { refresh, state } = useCompeteStore();
-  const ready = state != null;
+  const { refresh, state, loadStatus } = useCompeteStore();
+  const ready = state != null && loadStatus !== "loading";
   useEffect(() => {
     if (!active || !ready) return;
     let stopped = false;
@@ -980,13 +1016,13 @@ export function useCompeteFieldRefresh(active: boolean) {
         timer = setTimeout(tick, FIELD_REFRESH_MS);
         return;
       }
-      void refresh().then((ok) => {
+      void refresh({ ifStale: true }).then((ok) => {
         if (stopped) return;
         delay = ok ? FIELD_REFRESH_MS : Math.min(delay * 2, 5 * 60_000);
         timer = setTimeout(tick, delay);
       });
     };
-    void refresh();
+    void refresh({ ifStale: true });
     timer = setTimeout(tick, FIELD_REFRESH_MS);
     return () => {
       stopped = true;

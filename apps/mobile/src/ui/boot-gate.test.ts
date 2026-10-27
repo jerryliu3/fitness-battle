@@ -42,6 +42,16 @@ afterEach(async () => {
   vi.unstubAllGlobals();
 });
 describe("native boot gate", () => {
+  it("keeps ready content covered until the full launch animation completes", async () => {
+    mock.state = {};
+    await act(async () => { renderer = create(tree()); });
+    await layout();
+    await frames();
+    expect(covered()).toBe(true);
+    await act(async () => { mock.complete?.(); });
+    await frames();
+    expect(covered()).toBe(false);
+  });
   it("mounts underneath the cover and waits for data, layout, requests and animation", async () => {
     mock.state = null;
     await act(async () => { renderer = create(tree(true)); });

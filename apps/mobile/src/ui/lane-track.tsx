@@ -1,6 +1,7 @@
 import { chartTextProps, textStyle  } from "./section";
+import { useAnchoredMenu, AnchoredMenu } from "./anchored-menu";
 import {
-  fieldCourse, fieldCourseScene, fieldLap, defaultFieldAppearance, type FieldAppearance,
+  fieldCourse, fieldCourseScene, fieldLap, defaultFieldAppearance, fieldGrounds, type FieldAppearance, type FieldGround,
   fieldZoomSpan, pinchFieldView, fieldFlightDuration, fieldFlightEase, fieldProgressTrail,
   arenaPosition,
   arenaWindow,
@@ -20,7 +21,7 @@ import {
   type ArenaViewWindow,
 } from "@fitness-battle/shared";
 import { memo, useEffect, useId, useMemo, useRef, useState, type ComponentRef, type MutableRefObject } from "react";
-import { PanResponder, Pressable, Text, View } from "react-native";
+import { PanResponder, Pressable, ScrollView, Text, View } from "react-native";
 import Svg, {
   Circle,
   Defs,
@@ -34,12 +35,14 @@ import Svg, {
 import { SHELL_COLORS as c } from "../theme";
 import { playCue } from "../lib/haptics";
 import { drawFieldNode } from "./field-course";
+import { FieldOverlayGroup } from "./field-overlay-motion";
 import { PolishedRacer } from "./polished-racer";
 export interface LaneAnchor { left: number; laneWidth: number; width: number; scroll: number; oval: boolean; count: number }
 
 function LaneTrackContent({
   lanes,
   appearance = defaultFieldAppearance,
+  onChangeAppearance,
   unit,
   showGhost,
   selectedId,
@@ -56,6 +59,7 @@ function LaneTrackContent({
   topInset = 0,
   height = 540,
   fullscreen = false,
+  overlaysHidden = false,
   onExpand,
   onToggleDimension,
   onZoom,
@@ -69,11 +73,13 @@ function LaneTrackContent({
   onGestureStart?: () => void;
   height?: number;
   fullscreen?: boolean;
+  overlaysHidden?: boolean;
   onExpand?: () => void;
   onToggleDimension?: () => void;
   onZoom?: (span: number) => void;
   anchor?: MutableRefObject<LaneAnchor | null>;
   appearance?: FieldAppearance;
+  onChangeAppearance?: (appearance: FieldAppearance) => void;
   active?: boolean;
   /** Reserve room for an overlaid field status without covering lane headers. */
   topInset?: number;
@@ -93,6 +99,17 @@ function LaneTrackContent({
   overtakePlan?: ArenaOvertakePlan | null;
 }) {
   const prefix = useId();
+  const {
+    open: styleMenuOpen,
+    close: closeStyleMenu,
+    toggle: toggleStyleMenu,
+    anchorRef: styleTriggerRef,
+    menuLayout,
+  } = useAnchoredMenu({ minWidth: 220, estimatedHeight: 280 });
+
+  useEffect(() => {
+    if (!active) closeStyleMenu();
+  }, [active, closeStyleMenu]);
   const [exploring, setExploring] = useState(false);
   const [width, setWidth] = useState(340);
   const [visibleScroll, setVisibleScroll] = useState(anchor?.current?.scroll ?? 0);
@@ -243,7 +260,8 @@ function LaneTrackContent({
                 animating && overtakeFrame
                   ? (overtakeFrame.laneValues[l.id] ?? l.values[index] ?? 0)
                   : (l.values[index] ?? 0);
-              const edge = !course.oval && arenaPosition(value, v).edge;
+              const position = arenaPosition(value, v);
+              const edge = !course.oval && position.edge;
               const effect = overtakeFrame?.rivalEffects[l.id];
               const charging =
                 l.you && animating ? (overtakeFrame?.charging ?? 0) : 0;
@@ -257,8 +275,7 @@ function LaneTrackContent({
               const pennantX=Math.max(visibleLeft-xx+8,Math.min(visibleLeft+width-xx-pennantWidth-8,l.you?-pennantWidth-12:12));
               const pennantY=athletePennantOffset(yy,course.point(overtakeFrame?.youValue??me?.values[index]??0,Math.max(0,ordered.findIndex(peer=>peer.you)),0,true).y,l.you,height);
               return (
-                <G key={l.id}>
-                <G>
+                <FieldOverlayGroup hidden={Boolean(edge && overlaysHidden)} key={l.id}>
                   <G transform={`translate(${xx} ${yy}) rotate(${point.angle}) scale(${scale})`}>
                   {l.you && charging > 0.02 ? (
                     <Path
@@ -316,8 +333,8 @@ function LaneTrackContent({
                   />
                   {edge?<SvgText {...chartTextProps()} x={0} y={4} textAnchor="middle"  fill={c.ink}>{edge==="ahead"?"↑":"↓"}</SvgText>:null}
                   </G>
-                  {edge?<G transform={`translate(${xx} ${yy})`} pointerEvents="none"><Rect x={-34} y={edge==="ahead"?27:-42} width={68} height={20} rx={8} fill="#ffffffee"/><SvgText {...chartTextProps()} x={0} y={edge==="ahead"?41:-28} textAnchor="middle"  fill={c.muted}>{`${value-(overtakeFrame?.youValue??me?.values[index]??0)>0?"+":""}${(value-(overtakeFrame?.youValue??me?.values[index]??0)).toFixed(1)} ${unit}`}</SvgText></G>:null}
-                  {!edge&&(l.you||selectedId===l.id)?<G transform={`translate(${xx} ${yy})`} pointerEvents="none">
+                  {edge?<G transform={`translate(${xx} ${yy})`} pointerEvents="none"><Rect x={-34} y={edge==="ahead"?27:-42} width={68} height={20} rx={8} fill="#ffffffee"/><SvgText {...chartTextProps()} x={0} y={edge==="ahead"?41:-28} textAnchor="middle"  fill={c.muted}>{`${position.distanceOutside.toFixed(1)} ${unit}`}</SvgText></G>:null}
+                  {!edge&&(l.you||selectedId===l.id)?<FieldOverlayGroup hidden={overlaysHidden} transform={`translate(${xx} ${yy})`} pointerEvents="none">
                     <Path d={`M0 0 L${pennantX+pennantWidth/2} ${pennantY>0?pennantY:pennantY+46}`} fill="none" stroke={c.secondary} strokeWidth={1.2}/>
                     <Rect x={pennantX} y={pennantY+2} width={pennantWidth} height={46} rx={12} fill={c.ink} opacity={.1}/>
                     <Rect x={pennantX} y={pennantY} width={pennantWidth} height={46} rx={12} fill={c.card} stroke={l.you?c.tennis:c.line}/>
@@ -325,9 +342,8 @@ function LaneTrackContent({
                     {l.avatarUrl?<><Defs><ClipPath id={`${prefix}-portrait-${i}`}><Circle cx={pennantX+24} cy={pennantY+23} r={16}/></ClipPath></Defs><SvgImage href={{uri:l.avatarUrl}} x={pennantX+8} y={pennantY+7} width={32} height={32} preserveAspectRatio="xMidYMid slice" clipPath={`url(#${prefix}-portrait-${i})`}/></>:<Path d={PERSON_ICON_PATH} transform={`translate(${pennantX+14} ${pennantY+13}) scale(.83)`} fill="none" stroke={c.muted} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round"/>}
                     <SvgText {...chartTextProps()} x={pennantX+47} y={pennantY+20}  fill={c.ink} >{l.you?"You":l.name.length>13?`${l.name.slice(0,12)}…`:l.name}</SvgText>
                     <SvgText {...chartTextProps()} x={pennantX+47} y={pennantY+35}  fill={c.muted}>{ordinalPlace(rank)} · {l.you?`${value.toFixed(1)} ${unit}`:`${value-(overtakeFrame?.youValue??me?.values[index]??0)>0?"+":""}${(value-(overtakeFrame?.youValue??me?.values[index]??0)).toFixed(1)} ${unit}`}</SvgText>
-                  </G>:null}
-                </G>
-                </G>
+                  </FieldOverlayGroup>:null}
+                </FieldOverlayGroup>
               );
             })}
             {ghost && (() => { const p = course.point(ghost.values[index] ?? 0, ordered.findIndex(l => l.you), 18 * Math.min(1.8, course.markerScale), true); return <G><Circle cx={p.x} cy={p.y} r={13 * Math.min(1.8, course.markerScale)} fill="#ffffffcc" stroke={c.muted} strokeDasharray="3 3"/></G>; })()}
@@ -340,9 +356,10 @@ function LaneTrackContent({
           const x = Math.max(visibleScroll - point.x + 8, Math.min(visibleScroll + width - point.x - 154, lane.you ? -158 : 12));
           const y = athletePennantOffset(point.y, course.point(me?.values[index] ?? 0, Math.max(0, ordered.findIndex(l => l.you)), 0, true).y, lane.you, height);
           const edge = !course.oval && arenaPosition(value, v).edge;
+          if (edge && overlaysHidden) return [];
           return [
             <Pressable key={lane.id} accessibilityRole="button" accessibilityLabel={`Focus ${lane.name}`} accessibilityState={{ selected: selectedId === lane.id }} onPress={() => onSelect(lane)} style={{ position: "absolute", left: point.x - visibleScroll - 24, top: point.y - 30, width: 48, height: 60 }} />,
-            !edge && (lane.you || lane.id === selectedId) ? <Pressable key={`${lane.id}-nameplate`} accessible={false} onPress={() => onSelect(lane)} style={{ position: "absolute", left: point.x - visibleScroll + x, top: point.y + y, width: 146, height: 46 }} /> : null,
+            !overlaysHidden && !edge && (lane.you || lane.id === selectedId) ? <Pressable key={`${lane.id}-nameplate`} accessible={false} onPress={() => onSelect(lane)} style={{ position: "absolute", left: point.x - visibleScroll + x, top: point.y + y, width: 146, height: 46 }} /> : null,
           ];
         })}
         {ghost && (() => {
@@ -380,6 +397,20 @@ function LaneTrackContent({
                 2D
               </Text>
             </Pressable>
+          ) : null}
+          {onChangeAppearance ? (
+            <View ref={styleTriggerRef} collapsable={false}>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={`Map style: ${fieldGrounds[appearance.ground]?.name ?? "Style"}`}
+                accessibilityState={{ expanded: styleMenuOpen }}
+                onPress={toggleStyleMenu}
+                style={{ minHeight: 36, paddingHorizontal: 12, flexDirection: "row", alignItems: "center", gap: 6, borderRadius: 999, backgroundColor: "rgba(20, 20, 19, 0.78)", borderWidth: 1, borderColor: "rgba(255, 255, 255, 0.2)" }}
+              >
+                <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: fieldGrounds[appearance.ground]?.lane ?? c.tennis }} />
+                <Text style={{ ...textStyle("caption"), color: "#ffffff" }}>{fieldGrounds[appearance.ground]?.name ?? "Style"} ▾</Text>
+              </Pressable>
+            </View>
           ) : null}
           <Pressable
             accessibilityRole="button"
@@ -439,6 +470,77 @@ function LaneTrackContent({
           ) : null}
         </View>
       ) : null}
+      <AnchoredMenu
+        open={styleMenuOpen}
+        onClose={closeStyleMenu}
+        menuLayout={menuLayout}
+        accessibilityLabel="Close style menu"
+        style={{ padding: 8 }}
+      >
+        <Text
+          style={[
+            textStyle("caption"),
+            { paddingHorizontal: 8, paddingVertical: 4, color: c.muted },
+          ]}
+        >
+          Field style
+        </Text>
+        <ScrollView style={{ maxHeight: 260 }}>
+          {Object.entries(fieldGrounds).map(([id, item]) => {
+            const isSelected = appearance.ground === id;
+            return (
+              <Pressable
+                key={id}
+                accessibilityRole="button"
+                accessibilityState={{ selected: isSelected }}
+                onPress={() => {
+                  void playCue("selection");
+                  onChangeAppearance?.({
+                    ...appearance,
+                    ground: id as FieldGround,
+                  });
+                   closeStyleMenu();
+                }}
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  minHeight: 38,
+                  paddingHorizontal: 8,
+                  paddingVertical: 6,
+                  borderRadius: 8,
+                  backgroundColor: isSelected ? c.soft : "transparent",
+                  gap: 10,
+                }}
+              >
+                <View
+                  style={{
+                    width: 14,
+                    height: 18,
+                    borderRadius: 4,
+                    backgroundColor: item.lane,
+                    borderWidth: 1,
+                    borderColor: "rgba(0,0,0,0.12)",
+                  }}
+                />
+                <Text
+                  style={[
+                    isSelected ? textStyle("label") : textStyle("body"),
+                    {
+                      flex: 1,
+                      color: isSelected ? c.ink : c.muted,
+                    },
+                  ]}
+                >
+                  {item.name}
+                </Text>
+                {isSelected ? (
+                  <Text style={[textStyle("label"), { color: c.tennis }]}>✓</Text>
+                ) : null}
+              </Pressable>
+            );
+          })}
+        </ScrollView>
+      </AnchoredMenu>
     </View>
   );
 }
