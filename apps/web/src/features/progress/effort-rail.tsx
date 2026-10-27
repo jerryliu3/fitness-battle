@@ -35,9 +35,9 @@ export function EffortRail({ compact = false }: { compact?: boolean }) {
   </Link>;
 }
 
-export function ImpactReceipt({state,seconds,sport}:{state:CompeteState;seconds:number;sport:CompeteState["primary"]}){
+export function ImpactReceipt({state,seconds,sport,title="What this added"}:{state:CompeteState;seconds:number;sport:CompeteState["primary"];title?:string}){
   const model=effortPointProgress(state,sport,competitionTrack(sport));
-  return <details className="session-impact"><summary>What this added <span>↗</span></summary><div>
+  return <details className="session-impact"><summary>{title} <span>↗</span></summary><div>
     <AppParagraph typographyRole="body"><b>{(seconds/3600).toLocaleString("en-US",{maximumFractionDigits:2})} hr</b> of recorded activity</AppParagraph>
     {model&&<AppParagraph typographyRole="body">{sportById(sport).name} · {competitionTrackLabel(sport)} <b>+{model.earned} from activity this week</b></AppParagraph>}
     {model&&!model.capped&&<AppText as="small" role="caption" secondary>{formatVolume(sport,sport==="strength"?0:model.remaining,sport==="strength"?model.remaining:0,state.units)} to the next Effort Score point</AppText>}

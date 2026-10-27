@@ -1,5 +1,7 @@
 # Activity context: richer chart prototypes
 
+October 27 selection: the owner approved all three for activity details, with a speed/HR comparison over time. See the [production implementation and native review](../../reviews/activity-detail/README.md). This document preserves the original exploration and evaluation.
+
 The read-only mobile route `/activity-lab` explores three alternatives to the production median comparison. Open it with `overtaek://activity-lab` in a locally running app. Run + HR, Strength, No HR and Sparse are explicitly fictional examples. No account, activity, scoring or analytics writes occur.
 
 Use **Focus chart** to hide the example controls and session metadata while reviewing a concept; **Show examples** restores them. Chart interactions remain available in either mode. Optional initial route parameters are `concept=scatter|trend|impact` and `sample=run|strength|no-hr|sparse`.

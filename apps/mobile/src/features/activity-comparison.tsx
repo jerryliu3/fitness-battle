@@ -4,10 +4,18 @@ import { activityComparisons, competeNow, type Activity, type CompeteState } fro
 import { AppText } from "../ui/section";
 import { SHELL_COLORS as c } from "../theme";
 
-export function ActivityComparison({ activity, state }: { activity: Activity; state: CompeteState }) {
+export function ActivityComparison({ activity, state, compact = false }: { activity: Activity; state: CompeteState; compact?: boolean }) {
   const comparisons = activityComparisons(activity, state.activities, state.units, competeNow(state));
   const [selected, setSelected] = useState<string>("time");
   if (!comparisons.length) return null;
+  if (compact) return <View style={s.section}>
+    <AppText role="heading" accessibilityRole="header">Compared with your usual</AppText>
+    {comparisons.map(item => <View key={item.id} style={s.quickStat}>
+      <AppText role="label">{item.label}</AppText><AppText role="value">{item.currentLabel}</AppText>
+      <AppText role="caption" secondary>{item.id === "frequency" ? "Previous 30 days" : "Previous median"} · {item.baselineLabel}</AppText>
+      <AppText role="caption" secondary>{item.context}</AppText>
+    </View>)}
+  </View>;
   const metric = comparisons.find(item => item.id === selected) ?? comparisons[0]!;
   const max = Math.max(metric.current, metric.baseline);
   return <View style={s.section}>
@@ -29,7 +37,7 @@ export function ActivityComparison({ activity, state }: { activity: Activity; st
 }
 
 const s = StyleSheet.create({
-  section: { gap: 10, paddingVertical: 4 },
+  section: { gap: 12, paddingVertical: 4 }, quickStat: { gap: 4, paddingVertical: 14, borderBottomWidth: 1, borderColor: c.line },
   choices: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 4 },
   choice: { minHeight: 44, justifyContent: "center", paddingHorizontal: 14, borderWidth: 1, borderColor: c.line, borderRadius: 12 },
   selected: { backgroundColor: c.ink, borderColor: c.ink },

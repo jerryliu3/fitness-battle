@@ -31,7 +31,7 @@ export default function ActivityContextLab() {
   const [focused, setFocused] = useState(false);
   const scroll = useRef<ScrollView>(null);
   const data = useMemo(() => example(sample), [sample]);
-  const history = useMemo(() => sessionHistory(data.current, data.history), [data]);
+  const history = useMemo(() => sessionHistory(data.current, data.history, new Date(data.current.startedAt)), [data]);
   return <SafeAreaView style={s.safe}>
     <ScreenHeader title="Activity context lab" onBack={() => router.canGoBack() ? router.back() : router.replace("/today")} />
     <ScrollView ref={scroll} contentContainerStyle={s.page}>

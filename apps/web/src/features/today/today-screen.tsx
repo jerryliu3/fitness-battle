@@ -337,7 +337,7 @@ export function TodayScreen() {
 
   return (
     <div className="focus-home-stage">
-      <Sheet body="" returnFocusTo={sessionReturnFocus} open={session.kind === "full"} title={detailTarget === "suggestion" ? "Today" : "Your session"} onClose={closeSession}>
+      <Sheet fullScreen={detailActivities.length > 0} body="" returnFocusTo={sessionReturnFocus} open={session.kind === "full"} title={detailTarget === "suggestion" ? "Today" : "Your activity"} onClose={closeSession}>
         <SessionStage state={state} activities={detailActivities} suggestion={route.suggestion} actions={<ActivityActions />} onRemove={activityId => { setRemoved(detailActivities.find(a=>a.id===activityId)??null); dispatch({type:"set-disposition",activityId,disposition:"excluded"}); if(detailActivities.length <= 1)closeSession(); }}/>
       </Sheet>
       <div className="focus-home-overlay">

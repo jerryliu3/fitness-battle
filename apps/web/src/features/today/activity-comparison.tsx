@@ -4,10 +4,14 @@ import { useState } from "react";
 import { activityComparisons, competeNow, type Activity, type CompeteState } from "@fitness-battle/shared";
 import { AppHeading } from "@/ui/section";
 
-export function ActivityComparison({ activity, state }: { activity: Activity; state: CompeteState }) {
+export function ActivityComparison({ activity, state, compact = false }: { activity: Activity; state: CompeteState; compact?: boolean }) {
   const comparisons = activityComparisons(activity, state.activities, state.units, competeNow(state));
   const [selected, setSelected] = useState<string>("time");
   if (!comparisons.length) return null;
+  if (compact) return <section className="activity-comparison" aria-label="Compared with your usual">
+    <AppHeading>Compared with your usual</AppHeading>
+    {comparisons.map(item => <div key={item.id} className="ac-quick-stat"><b>{item.label}</b><strong>{item.currentLabel}</strong><small>{item.id === "frequency" ? "Previous 30 days" : "Previous median"} · {item.baselineLabel}</small><small>{item.context}</small></div>)}
+  </section>;
   const metric = comparisons.find(item => item.id === selected) ?? comparisons[0]!;
   const max = Math.max(metric.current, metric.baseline);
   return <section className="activity-comparison" aria-label="This session in context">

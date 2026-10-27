@@ -9,13 +9,14 @@ vi.mock("react-native",()=>({
  Animated:{View:"AnimatedView",Value:class{constructor(public value:number){}setValue(value:number){this.value=value;}interpolate(){return 0;}},timing:()=>({start(){},stop(){}})},
 }));
 vi.mock("../ui/chart-scrubber",()=>({ChartScrubber:({children}:{children:unknown})=>children}));
-vi.mock("react-native-svg",()=>({default:"Svg",G:"G",Path:"Path",Text:"SvgText"}));
+vi.mock("react-native-svg",()=>({default:"Svg",G:"G",Path:"Path",Text:"SvgText",Circle:"Circle",Line:"Line",Rect:"Rect"}));
 vi.mock("expo-router",()=>({useRouter:()=>({navigate:mock.navigate})}));
 vi.mock("../lib/compete-store",()=>({useCompeteStore:()=>({state:mock.state,accountKey:mock.account,canWrite:true,saveError:null})}));
 vi.mock("../ui/focus",()=>({FocusButton:"FocusButton",FocusDisclosure:"Disclosure",FocusSegments:"FocusSegments",FocusSheet:"FocusSheet",f:{chip:{},chipActive:{},row:{}}}));
 vi.mock("../ui/mascot/animated-ember",()=>({AnimatedEmber:"Ember"}));
 vi.mock("../ui/use-reduced-motion",()=>({useReducedMotion:()=>true}));
 vi.mock("../ui/field-course",()=>({drawFieldNode:()=>null}));
+vi.mock("../ui/sport-icon",()=>({SportIcon:"SportIcon"}));
 vi.mock("../ui/activity-route",()=>({ActivityRoute:()=>null}));
 vi.mock("../lib/haptics",()=>({playCue:vi.fn()}));
 import { EffortRail } from "./effort-rail";
@@ -38,9 +39,9 @@ describe("native earned progress flows",()=>{
   mock.account="two";await act(async()=>renderer.update(createElement(EffortRail)));expect(text()).not.toContain("+2");
   await act(async()=>renderer.root.findByType("Pressable" as never).props.onPress());expect(mock.navigate).toHaveBeenCalledWith("/you?view=effort");
  });
- it("leads with hours across multiple sports and requires confirmation before removing one session",async()=>{
+ it("lets a multi-session day select a session and requires confirmation before removal",async()=>{
   const remove=vi.fn();await act(async()=>{renderer=create(createElement(SessionStage,{state:mock.state!,activities:[recorded("run",3600),recorded("strength",1800,"strength")],onRemove:remove}));});
-  expect(JSON.stringify(renderer.toJSON())).toContain('"1.5"');expect(JSON.stringify(renderer.toJSON())).toContain("2 recorded sessions");
+  expect(text()).toContain("1.5 hr total");expect(text()).toContain("2 recorded sessions");
   await act(async()=>renderer.root.findAllByType("Pressable" as never)[0]!.props.onPress());
   const removal=renderer.root.findAllByType("Pressable" as never).find(n=>n.findAllByType("Text" as never).some(t=>t.children.includes("Remove session")))!;
   await act(async()=>removal.props.onPress());expect(remove).not.toHaveBeenCalled();
@@ -50,12 +51,12 @@ describe("native earned progress flows",()=>{
   await act(async()=>{renderer=create(createElement(SessionStage,{state:mock.state!,activities:[],suggestion:{title:"Easy movement",minutes:30,detail:"Keep it comfortable."},onRemove:vi.fn()}));});
   const json=JSON.stringify(renderer.toJSON());expect(json).toContain("Suggested time");expect(json).toContain('"0.5"');expect(json).not.toContain("recorded session");
  });
- it("leads an individual session with its history comparison when enough history exists",async()=>{
+ it("shows session history and compact comparisons when enough history exists",async()=>{
   const current=recorded("today",2400);
   const prior=[1,2,3].map((day,index)=>({...recorded(`prior-${day}`,1800+index*300),startedAt:new Date(now.getTime()-day*86400000).toISOString()}));
   const state={...mock.state!,activities:[current,...prior]};
   await act(async()=>{renderer=create(createElement(SessionStage,{state,activities:[current],onRemove:vi.fn()}));});
-  expect(text()).toContain("This session in context");
+  expect(text()).toContain("You, in context");expect(text()).toContain("Compared with your usual");
   expect(renderer.root.findAllByType("Ember" as never)).toHaveLength(0);
  });
  it("switches the chart between week, month and year without manufacturing future sessions",async()=>{

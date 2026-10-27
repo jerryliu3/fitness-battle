@@ -261,6 +261,7 @@ export function Journey({
         </View>
       </View>
       <FocusSheet
+        fullScreen
         open={!!selected}
         title={
           selected

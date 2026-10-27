@@ -65,3 +65,5 @@ export * from "./course-scene";
 
 export { createFieldOverlayHold } from "./field-overlay-hold";
 export * from "./analytics-lab";
+
+export * from "./activity-context";
