@@ -239,7 +239,7 @@ One modal stays mounted through review and movement, avoiding native modal hando
 
 The default launch mark is the 35% clean staggered **over / taek** race, using
 product ink/paper/tennis colors and the existing Nunito Sans Black face. It shares
-5.4-second choreography across web and native SVG, with reduced-motion and
+3.78-second choreography across web and native SVG, with reduced-motion and
 background pause support. The Ember wordmark animation remains selectable in
 code and the web `/design/loading` review. Both use the same application-readiness
 gate; animation completion alone does not dismiss the cover. See
@@ -403,3 +403,12 @@ Mapbox positions native/DOM annotations; do not project camera frames through Re
 Paths use a 36 cm stroke on 42 cm lane spacing (6 cm gap at close zoom), with a
 3 px visibility floor at wider zooms. Hold-to-hide includes nameplates. See the
 [racer-card follow-up](reviews/geographic-course/racer-callouts.md).
+
+### Account controls and launch timing — October 27
+
+Primary sport opts into an iOS UIButton/UIMenu anchored to the visible control,
+with checked selection and VoiceOver labels. The local Expo `anchored-choice`
+module requires a new native build; older binaries, Android and web retain the
+existing accessible anchored choice list. Other pickers retain their current behavior.
+The shared launch race now lasts 3.78 seconds (30% shorter), with a shorter opening,
+zero initial velocity, sharper passes and a longer final ease. Readiness still owns dismissal.

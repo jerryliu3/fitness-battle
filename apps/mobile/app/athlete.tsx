@@ -635,7 +635,7 @@ export default function AthleteScreen() {
               </View>
               <View style={[f.row, { minHeight: 48, alignItems: "center", justifyContent: "space-between" }]}>
                 <AppText role="label">Primary sport</AppText>
-                <ChoicePicker label="Primary sport" value={state.primary} options={SPORTS.map(s => ({ value: s.id, label: s.name }))}
+                <ChoicePicker systemMenu label="Primary sport" value={state.primary} options={SPORTS.map(s => ({ value: s.id, label: s.name }))}
                   onChange={sport => dispatch({ type: "set-primary", sport })} />
               </View>
               <View style={[f.row, { minHeight: 48, alignItems: "center" }]}>
