@@ -362,4 +362,44 @@ interpolation, and gestures publish at most once per animation frame. Preserve
 capsule identity, ground choices, distance scale, ghost and offscreen indicators.
 See the [performance investigation and fidelity validation](reviews/2d-field-performance/README.md).
 
+The optional geographic course view uses Mapbox Standard scenery and the same
+competition totals, with GPX or explicit walking/cycling route requests. Keep
+course choice separate from activity import and scoring. The dedicated screen
+supports native map gestures, selectable athletes, 2D/chase views, discovered-ground
+framing and recenter/follow. Manual exploration suspends follow; selecting an
+athlete resumes it. Respect reduced motion and retain map attribution. Points
+fields keep the existing field. Athletes retrace courses back and forth at each
+endpoint while cumulative distance continues; the chase camera follows their direction and the covered trail stays
+solid. Courses remain local to the view; no shared published event-course assignment is implied. See
+[implementation and validation](reviews/geographic-course/README.md).
+
+
+Geographic scenery is the third field option, labeled **4D** beside **2D / 3D**
+on native and web, including fullscreen controls. Distance fields offer all three;
+points fields retain 2D / 3D. 4D uses the same inline/fullscreen field host,
+selection, sliding broadcast panels, quick jumps and hold-to-hide overlays. Mode
+changes retain fullscreen, collapsed panels and the chosen course. Competition
+replay also offers 4D, using timeline values for both dots and earned trails;
+rewinding never reveals later effort. Mapbox supplies geography-specific camera
+controls, while appearance/oval controls remain specific to the illustrative field.
+The route ahead stays invisible. Each athlete reveals an individual narrow,
+opaque trail (about 36 cm wide at close zoom) that ends exactly at their dot; no activity means no trail. The
+viewer stays centered on the underlying route, with peers alternating left/right
+in stable ID order at 42 cm spacing (ten lane centers span 3.78 m). Selection moves the camera without
+rearranging lanes. The spacing toggle compares spaced/together layouts. Camera
+follow uses the same displayed position as the trail. Race overview frames only
+covered ground. Return trips preserve the full earned trail with geometry
+bounded to two traversals, regardless of cumulative distance. Offsets remain
+illustrative rather than measured road widths or collision avoidance; zoomed-out
+markers can still overlap.
 Crew shared-week finish checks are printed in the top plane of the progress block, without flags. The finish remains anchored to the configured target or available prior-week baseline.
+
+
+4D reuses the 2D floating athlete nameplate and leader graphic. Keep the nameplate
+146 × 46 screen points/pixels at every zoom, with the leader endpoint attached to
+the racer's displayed lane coordinate. Show every real racer's nameplate in 4D; 2D keeps its existing visibility;
+annotations sit above Mapbox scenery, without moving racers onto building roofs.
+Mapbox positions native/DOM annotations; do not project camera frames through React.
+Paths use a 36 cm stroke on 42 cm lane spacing (6 cm gap at close zoom), with a
+3 px visibility floor at wider zooms. Hold-to-hide includes nameplates. See the
+[racer-card follow-up](reviews/geographic-course/racer-callouts.md).

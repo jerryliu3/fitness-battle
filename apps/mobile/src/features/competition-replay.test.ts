@@ -1,7 +1,7 @@
 import { createElement } from "react";
 import { act, create, type ReactTestRenderer } from "react-test-renderer";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
-import { applyDebugEvent, defaultFieldAppearance, freshState, localCompetitionReplay, type CompetitionReplaySelection } from "@fitness-battle/shared";
+import { createRaceCourse, applyDebugEvent, defaultFieldAppearance, freshState, localCompetitionReplay, type CompetitionReplaySelection } from "@fitness-battle/shared";
 const mock = vi.hoisted(() => ({ debug: true, request: vi.fn(), open: undefined as undefined | ((value: boolean) => void) }));
 vi.mock("../lib/auth", () => ({ useAuth: () => ({ user: { id: "signed-in-athlete" }, accessToken: "test-token", offlineMode: false }) }));
 vi.mock("../lib/compete-store", () => ({ useCompeteStore: () => ({ debugActive: mock.debug }) }));
@@ -16,6 +16,8 @@ vi.mock("../ui/icon-button", () => ({ IconButton: "IconButton" }));
 vi.mock("../ui/focus", () => ({ FocusButton: "FocusButton", FocusSegments: "FocusSegments", f: {} }));
 vi.mock("react-native-safe-area-context", () => ({ SafeAreaProvider: "SafeAreaProvider", SafeAreaView: "SafeAreaView" }));
 vi.mock("react-native", () => ({ Modal: "Modal", View: "View", Pressable: "Pressable", StyleSheet: { create: (value: unknown) => value }, PanResponder: { create: () => ({ panHandlers: {} }) }, AppState: { addEventListener: () => ({ remove() {} }) } }));
+vi.mock("./geographic-course", () => ({ GeographicCourse: "GeographicCourse" }));
+vi.mock("../ui/field-view-switcher", () => ({ FieldViewSwitcher: "FieldViewSwitcher" }));
 import { CompetitionReplayButton } from "./competition-replay";
 const state = applyDebugEvent(freshState(new Date("2026-10-25T18:00:00Z")), "overtake-combo", "signed-in-athlete").state;
 const selection: CompetitionReplaySelection = { sport: "running", track: "verified", periodStart: "2026-10-19T04:00:00.000Z", periodEnd: "2026-10-26T04:00:00.000Z" };
@@ -51,4 +53,29 @@ it("keeps a real authenticated field lookup failure visible instead of substitut
   expect(mock.request).toHaveBeenCalledTimes(1);
   expect(renderer.root.findAllByType("LaneTrack" as never)).toHaveLength(0);
   expect(renderer.root.findAllByType("FocusButton" as never).some(button => button.props.label === "Retry")).toBe(true);
+});
+
+it("uses replay totals in 4D, seeks backward and retains the course across modes", async () => {
+  mock.debug = false;
+  const replay = { ...localCompetitionReplay(state, selection), athletes: [{ id: "you", name: "You", you: true }], events: [{ id: "run", athleteId: "you", at: "2026-10-24T12:00:00Z", distanceM: 1000, movingSec: 300, effort: 1, simulated: false }] };
+  mock.request.mockResolvedValue(replay);
+  await open();
+  const modes = () => renderer.root.findByType("FieldViewSwitcher" as never);
+  await act(async () => modes().props.onChange("4d"));
+  const map = () => renderer.root.findByType("GeographicCourse" as never);
+  const course = createRaceCourse("City", [[0, 0], [.02, 0]]);
+  await act(async () => map().props.onCourseChange(course));
+  expect(map().props.course).toBe(course);
+  expect(map().props.lanes.every((lane: { value: number }) => lane.value === 0)).toBe(true);
+  const timeline = () => renderer.root.findByProps({ accessibilityLabel: "Competition replay timeline" });
+  const latest = timeline().props.accessibilityValue.max;
+  await act(async () => timeline().props.onAccessibilityAction({ nativeEvent: { actionName: "increment" } }));
+  expect(latest).toBeGreaterThan(0);
+  expect(map().props.lanes.some((lane: { value: number }) => lane.value > 0)).toBe(true);
+  await act(async () => timeline().props.onAccessibilityAction({ nativeEvent: { actionName: "decrement" } }));
+  expect(map().props.lanes.every((lane: { value: number }) => lane.value === 0)).toBe(true);
+  await act(async () => modes().props.onChange("3d"));
+  expect(renderer.root.findAllByType("GeographicCourse" as never)).toHaveLength(0);
+  await act(async () => modes().props.onChange("4d"));
+  expect(map().props.course).toBe(course);
 });

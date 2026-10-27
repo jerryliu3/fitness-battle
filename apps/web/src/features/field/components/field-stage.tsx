@@ -1,4 +1,6 @@
 "use client";
+import { FieldViewSwitcher } from "./field-view-switcher";
+import { GeographicCourse } from "@/features/course/geographic-course";
 import { PortraitField } from "@/features/club/portrait-field";
 import { PolishedRacer } from "@/features/brand/polished-racer";
 import { UserAvatar } from "@/ui/user-avatar";
@@ -10,6 +12,7 @@ import {
   arenaFieldHigh,
   competePeriodWindow,
   competeNow,
+  type RaceCourse,
   type CompeteState,
   effortRankBadge,
   fieldDefaultSpan,
@@ -81,14 +84,19 @@ export function FieldStage({
       }
     : null;
 
-  const [viewDimension, setViewDimension] = useState<"2d" | "3d">("2d");
+  const [viewDimension, setViewDimension] = useState<"2d" | "3d" | "4d">("2d");
+  const [course, setCourse] = useState<RaceCourse | null>(null);
+  const chooseView = (value: "2d" | "3d" | "4d") => {
+    void playCue("selection");
+    cancelCenterTween();
+    setViewDimension(value);
+  };
   const [standingsOpen, setStandingsOpen] = useState(false);
   const [lanesImmersive, setLanesImmersive] = useState(false);
   const [intervalsCollapsed, setIntervalsCollapsed] = useState(false);
   const [spotlightCollapsed, setSpotlightCollapsed] = useState(false);
   const toggleDimension = () => {
-    void playCue("selection");
-    setViewDimension((prev) => (prev === "2d" ? "3d" : "2d"));
+    chooseView(viewDimension === "2d" ? "3d" : "2d");
   };
 
   useEffect(() => {
@@ -117,7 +125,7 @@ export function FieldStage({
     if (!runner) return;
     setSelected(id);
     setFocusRequest(value => value + 1);
-    tweenCenterTo(valueAt(runner, time));
+    if (viewDimension !== "4d") tweenCenterTo(valueAt(runner, time));
   };
 
   const fieldLanes: ArenaSceneLane[] = useMemo(
@@ -302,21 +310,13 @@ export function FieldStage({
         >
           ← Back
         </button>
-        <div className="focus-broadcast-title">
+        <div className="focus-broadcast-title" style={{ minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
           {sportTitle ?? model.sport} · {displayPlace} / {runners.length}
         </div>
-        <button
-          type="button"
-          className="focus-broadcast-dim-btn"
-          aria-label={
-            viewDimension === "2d" ? "Switch to 3D field" : "Switch to 2D map"
-          }
-          onClick={toggleDimension}
-        >
-          {viewDimension === "2d" ? "2D" : "3D"}
-        </button>
+        <FieldViewSwitcher value={viewDimension} geographic={unit !== "pts"} onChange={chooseView} />
       </div>
 
+      {(viewDimension !== "4d" || course) ? <>
       <div className={`focus-broadcast-tower${intervalsCollapsed ? " is-collapsed" : ""}`} aria-label="Live intervals">
         <button type="button" className="focus-panel-toggle" aria-label={intervalsCollapsed ? "Expand live intervals" : "Collapse live intervals"} aria-expanded={!intervalsCollapsed} onClick={() => setIntervalsCollapsed(value => !value)}><span className="focus-panel-grip" aria-hidden="true" /></button>
         <div className="focus-panel-content" inert={intervalsCollapsed} aria-hidden={intervalsCollapsed}>
@@ -354,7 +354,7 @@ export function FieldStage({
       </div>
 
       <div className="focus-broadcast-rail" aria-label="Quick jump rivals">
-        {replayState && <CompetitionReplayButton state={replayState} selection={{ sport: model.sport, track: model.track, periodStart: model.periodStart, periodEnd: competePeriodWindow(replayState, competeNow(replayState), model.sport).endsAt.toISOString() }} dimension={viewDimension} label="Replay" />}
+        {replayState && <CompetitionReplayButton state={replayState} selection={{ sport: model.sport, track: model.track, periodStart: model.periodStart, periodEnd: competePeriodWindow(replayState, competeNow(replayState), model.sport).endsAt.toISOString() }} dimension={viewDimension} course={course} onCourseChange={setCourse} label="Replay" />}
         {aheadPeer ? (
           <button
             type="button"
@@ -457,6 +457,7 @@ export function FieldStage({
           </div>
         </div>
       ) : null}
+    </> : null}
     </div>
   ) : null;
 
@@ -466,6 +467,7 @@ export function FieldStage({
       hidden={!tabActive}
       aria-hidden={!tabActive}
     >
+      <FieldViewSwitcher value={viewDimension} geographic={unit !== "pts"} onChange={chooseView} />
       <div style={{ display: "flow-root" }}>
         <ExpandingField
           open={lanesImmersive && tabActive}
@@ -473,6 +475,10 @@ export function FieldStage({
           onClose={() => setLanesImmersive(false)}
           hud={broadcastHud}
         >
+          {viewDimension === "4d" && tabActive ? <div className="focus-geographic-host" style={{ position: "relative", height: lanesImmersive ? "100%" : 460 }}>
+            <GeographicCourse lanes={fieldLanes} unit={unit} selectedId={trackSelected || you.id} focusRequest={focusRequest} onSelect={toggleSelect} course={course} onCourseChange={setCourse} controlsBottom={lanesImmersive ? spotlightCollapsed ? 80 : 180 : 8} />
+            {!lanesImmersive ? <button type="button" className="focus-portal-pill is-accent" style={{ position: "absolute", top: 12, right: 12 }} aria-label="Expand 4D course to full screen" onClick={() => setLanesImmersive(true)}>Full Arena ⤢</button> : null}
+          </div> : null}
           {viewDimension === "3d" && tabActive ? (
             <PortraitField
               lanes={sceneLanes.map((l) => ({
@@ -504,7 +510,7 @@ export function FieldStage({
             />
           ) : null}
 
-          <div hidden={viewDimension === "3d"}>
+          <div hidden={viewDimension !== "2d"}>
             <div className="focus-track-frame focus-portal-frame">
               {!lanesImmersive ? (
                 <div className="focus-portal-actions">

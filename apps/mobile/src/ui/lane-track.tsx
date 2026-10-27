@@ -1,3 +1,4 @@
+import { AthletePennant } from "./athlete-pennant";
 import { chartTextProps, textStyle  } from "./section";
 import { useAnchoredMenu, AnchoredMenu } from "./anchored-menu";
 import {
@@ -8,7 +9,6 @@ import {
   fieldDefaultSpan,
   ordinalPlace,
   athletePennantOffset,
-  PERSON_ICON_PATH,
   arenaFieldHigh,
   clampCourseCenter,
   initialsFromName,
@@ -24,9 +24,6 @@ import { memo, useEffect, useId, useMemo, useRef, useState, type ComponentRef, t
 import { PanResponder, Pressable, ScrollView, Text, View } from "react-native";
 import Svg, {
   Circle,
-  Defs,
-  ClipPath,
-  Image as SvgImage,
   G,
   Path,
   Rect,
@@ -335,13 +332,7 @@ function LaneTrackContent({
                   </G>
                   {edge?<G transform={`translate(${xx} ${yy})`} pointerEvents="none"><Rect x={-34} y={edge==="ahead"?27:-42} width={68} height={20} rx={8} fill="#ffffffee"/><SvgText {...chartTextProps()} x={0} y={edge==="ahead"?41:-28} textAnchor="middle"  fill={c.muted}>{`${position.distanceOutside.toFixed(1)} ${unit}`}</SvgText></G>:null}
                   {!edge&&(l.you||selectedId===l.id)?<FieldOverlayGroup hidden={overlaysHidden} transform={`translate(${xx} ${yy})`} pointerEvents="none">
-                    <Path d={`M0 0 L${pennantX+pennantWidth/2} ${pennantY>0?pennantY:pennantY+46}`} fill="none" stroke={c.secondary} strokeWidth={1.2}/>
-                    <Rect x={pennantX} y={pennantY+2} width={pennantWidth} height={46} rx={12} fill={c.ink} opacity={.1}/>
-                    <Rect x={pennantX} y={pennantY} width={pennantWidth} height={46} rx={12} fill={c.card} stroke={l.you?c.tennis:c.line}/>
-                    <Circle cx={pennantX+24} cy={pennantY+23} r={16} fill={c.soft}/>
-                    {l.avatarUrl?<><Defs><ClipPath id={`${prefix}-portrait-${i}`}><Circle cx={pennantX+24} cy={pennantY+23} r={16}/></ClipPath></Defs><SvgImage href={{uri:l.avatarUrl}} x={pennantX+8} y={pennantY+7} width={32} height={32} preserveAspectRatio="xMidYMid slice" clipPath={`url(#${prefix}-portrait-${i})`}/></>:<Path d={PERSON_ICON_PATH} transform={`translate(${pennantX+14} ${pennantY+13}) scale(.83)`} fill="none" stroke={c.muted} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round"/>}
-                    <SvgText {...chartTextProps()} x={pennantX+47} y={pennantY+20}  fill={c.ink} >{l.you?"You":l.name.length>13?`${l.name.slice(0,12)}…`:l.name}</SvgText>
-                    <SvgText {...chartTextProps()} x={pennantX+47} y={pennantY+35}  fill={c.muted}>{ordinalPlace(rank)} · {l.you?`${value.toFixed(1)} ${unit}`:`${value-(overtakeFrame?.youValue??me?.values[index]??0)>0?"+":""}${(value-(overtakeFrame?.youValue??me?.values[index]??0)).toFixed(1)} ${unit}`}</SvgText>
+                    <AthletePennant lane={l} prefix={`${prefix}-portrait-${i}`} x={pennantX} y={pennantY} detail={`${ordinalPlace(rank)} · ${l.you ? `${value.toFixed(1)} ${unit}` : `${value-(overtakeFrame?.youValue??me?.values[index]??0)>0?"+":""}${(value-(overtakeFrame?.youValue??me?.values[index]??0)).toFixed(1)} ${unit}`}`} />
                   </FieldOverlayGroup>:null}
                 </FieldOverlayGroup>
               );

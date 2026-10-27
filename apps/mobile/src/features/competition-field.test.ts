@@ -1,7 +1,7 @@
 import { createElement } from "react";
 import { act, create, type ReactTestRenderer } from "react-test-renderer";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
-import { defaultFieldAppearance, freshState, reduceCompete } from "@fitness-battle/shared";
+import { createRaceCourse, defaultFieldAppearance, freshState, reduceCompete } from "@fitness-battle/shared";
 const mocks = vi.hoisted(() => ({ fly: vi.fn(), appState: null as null | ((status: string) => void) }));
 vi.mock("expo-router", () => ({ usePathname: () => "/arena" }));
 vi.mock("react-native", () => ({
@@ -13,6 +13,7 @@ vi.mock("react-native", () => ({
 }));
 vi.mock("react-native-safe-area-context", () => ({ useSafeAreaInsets: () => ({ top: 44, bottom: 34 }) }));
 vi.mock("react-native-svg", () => ({ default: "Svg", G: "SvgG" }));
+vi.mock("./geographic-course", () => ({ GeographicCourse: "GeographicCourse" }));
 vi.mock("./competition-replay", () => ({ CompetitionReplayButton: "ReplayButton" }));
 vi.mock("../ui/user-avatar", () => ({ UserAvatar: "UserAvatar" }));
 vi.mock("../ui/section", () => ({ textStyle: () => ({}) }));
@@ -72,4 +73,32 @@ it("collapses each panel independently and isolates zoom/replay touches from sce
   const stopPropagation = vi.fn();
   zoom.props.onTouchStart({ stopPropagation });
   expect(stopPropagation).toHaveBeenCalledTimes(1);
+});
+
+it("keeps 4D inside the fullscreen host with the same panels, selection and replay", async () => {
+  const switchTo = async (mode: string) => act(async () => button(`Switch to ${mode} ${mode === "4D" ? "course" : "field"}`).props.onPress());
+  await switchTo("4D");
+  const map = () => renderer.root.findByType("GeographicCourse" as never);
+  const course = createRaceCourse("City", [[0, 0], [.02, 0]]);
+  await act(async () => map().props.onCourseChange(course));
+  expect(renderer.root.findAllByType("Modal" as never)).toHaveLength(1);
+  expect(button("Collapse live intervals")).toBeDefined();
+  await act(async () => button("Collapse athlete panel").props.onPress());
+  expect(button("Expand athlete panel")).toBeDefined();
+  const peer = map().props.lanes.find((lane: { you: boolean }) => !lane.you);
+  if (peer) {
+    await act(async () => map().props.onSelect(peer.id));
+    expect(map().props.selectedId).toBe(peer.id);
+  }
+  expect(mocks.fly).not.toHaveBeenCalled();
+  const replay = renderer.root.findAllByType("ReplayButton" as never).find(node => node.props.dimension === "4d")!;
+  expect(replay.props.course).toBe(course);
+  await act(async () => { root().props.onTouchStartCapture(); scene().props.onTouchStart(touch()); vi.advanceTimersByTime(450); });
+  expect(map().props.overlaysHidden).toBe(true);
+  await act(async () => scene().props.onTouchEnd());
+  await switchTo("2D");
+  expect(renderer.root.findAllByType("GeographicCourse" as never)).toHaveLength(0);
+  await switchTo("4D");
+  expect(map().props.course).toBe(course);
+  expect(button("Expand athlete panel")).toBeDefined();
 });
