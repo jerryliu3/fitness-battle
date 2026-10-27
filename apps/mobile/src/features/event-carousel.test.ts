@@ -23,7 +23,7 @@ function layoutCarousel(r: ReturnType<typeof create>) {
   });
 }
 
-it("switches events from chips and opens register from the dashed chip", async () => {
+it("switches events from tabs", async () => {
   vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
   const change = vi.fn(),
     register = vi.fn();
@@ -44,12 +44,9 @@ it("switches events from chips and opens register from the dashed chip", async (
   });
   layoutCarousel(r!);
   const presses = r!.root.findAllByType("Pressable" as never);
-  const cyclingChip = presses.find((n) => n.props.accessibilityRole === "tab" && n.props.accessibilityState?.selected === false)!;
-  await act(async () => { cyclingChip.props.onPress(); });
+  const cyclingTab = presses.find((n) => n.props.accessibilityRole === "tab" && n.props.accessibilityState?.selected === false)!;
+  await act(async () => { cyclingTab.props.onPress(); });
   expect(change).toHaveBeenCalledWith("cycling");
-  const registerChip = presses.find((n) => n.props.accessibilityLabel === "Register for an event")!;
-  await act(async () => { registerChip.props.onPress(); });
-  expect(register).toHaveBeenCalledTimes(1);
   await act(async () => r!.unmount());
 });
 it("switches events when a horizontal page drag ends without momentum", async () => {

@@ -95,7 +95,40 @@ export function ArenaScreen({ tabActive = true }: { tabActive?: boolean }) {
     <div className="focus-arena">
       <header className="focus-competition-card">
         <div className="focus-competition-info">
-          <SectionHeader titleRole="display" title="Competition" subtitle={dateRangeLabel} action={<StatusBadge>{badgeLabel}</StatusBadge>}/>
+          <SectionHeader
+            titleRole="display"
+            title={
+              <span style={{ display: "inline-flex", alignItems: "center", gap: "10px", flexWrap: "wrap" }}>
+                <span>Competition</span>
+                <StatusBadge>{badgeLabel}</StatusBadge>
+              </span>
+            }
+            subtitle={dateRangeLabel}
+            action={
+              <div className="ui-competition-status" style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                <button
+                  type="button"
+                  aria-label="Register for new sports"
+                  onClick={() => {
+                    setSport(null);
+                    setRegister(true);
+                  }}
+                  style={{
+                    cursor: "pointer",
+                    padding: "6px 14px",
+                    borderRadius: "999px",
+                    border: "1px solid var(--line, #e0e5dc)",
+                    background: "var(--card, #ffffff)",
+                    color: "var(--ink, #00101b)",
+                    fontWeight: 600,
+                    fontSize: "13px",
+                  }}
+                >
+                  ＋ Register
+                </button>
+              </div>
+            }
+          />
 
         </div>
       </header>

@@ -66,33 +66,52 @@ export function EventCarousel({
   };
 
   return (
-    <View style={{ gap: 10 }}>
-      <View style={s.chipsBar}>
-        <View style={s.chips} accessibilityRole="tablist" accessibilityLabel="Registered events">
-          {events.map((event) => (
-            <Pressable
-              key={event.id}
-              accessibilityRole="tab"
-              accessibilityLabel={event.label}
-              accessibilityState={{ selected: event.id === value }}
-              onPress={() => onChange(event.id)}
-              style={[s.chip, event.id === value && s.chipActive]}
+    <View style={{ gap: 12 }}>
+      <View
+        style={{
+          flexDirection: "row",
+          alignItems: "center",
+          width: "100%",
+          borderBottomWidth: 1,
+          borderBottomColor: c.line,
+          paddingBottom: 2,
+        }}
+        accessibilityRole="tablist"
+        accessibilityLabel="Registered events"
+      >
+        {events.map((event) => (
+          <Pressable
+            key={event.id}
+            accessibilityRole="tab"
+            accessibilityLabel={event.label}
+            accessibilityState={{ selected: event.id === value }}
+            onPress={() => onChange(event.id)}
+            style={{
+              flex: 1,
+              alignItems: "center",
+              justifyContent: "center",
+              paddingVertical: 10,
+              paddingHorizontal: 4,
+              borderBottomWidth: 2.5,
+              borderBottomColor: event.id === value ? c.ink : "transparent",
+              marginBottom: -2,
+            }}
+          >
+            <AppText
+              role="heading"
+              style={
+                event.id === value
+                  ? { color: c.ink, fontWeight: "700", textAlign: "center" }
+                  : { color: c.muted, fontWeight: "500", textAlign: "center" }
+              }
             >
-              <AppText role="label" style={event.id === value ? s.chipActiveText : undefined}>
-                {event.label}
-                {event.badge ? ` · ${event.badge}` : ""}
-              </AppText>
-            </Pressable>
-          ))}
-        </View>
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel="Register for an event"
-          onPress={onRegister}
-          style={s.registerChip}
-        >
-          <AppText role="label" secondary>Register</AppText>
-        </Pressable>
+              {event.label}
+              {event.badge ? (
+                <AppText role="caption" secondary> · {event.badge}</AppText>
+              ) : null}
+            </AppText>
+          </Pressable>
+        ))}
       </View>
       <View
         onLayout={(e) => {

@@ -138,29 +138,31 @@ export default function RootLayout() {
     <GestureHandlerRootView
       style={{ flex: 1, backgroundColor: SHELL_COLORS.paper }}
     >
-      <HeroUINativeProvider>
-        <AuthProvider>
-          <CompeteProvider navigationReady={fontsLoaded}>
-            {fontsLoaded ? (
-              <>
-                <LiveFieldRefresh />
-                <NavigationWarmup />
-                <BootGate>
-                  <StatusBar style="dark" />
-                  <Stack
-                    screenOptions={{
-                      headerShown: false,
-                      contentStyle: { backgroundColor: SHELL_COLORS.paper },
-                      animation:
-                        Platform.OS === "ios" ? "default" : "slide_from_right",
-                    }}
-                  />
-                </BootGate>
-              </>
-            ) : fontFallback}
-          </CompeteProvider>
-        </AuthProvider>
-      </HeroUINativeProvider>
+      <View style={{ flex: 1, maxWidth: 880, width: "100%", alignSelf: "center" }}>
+        <HeroUINativeProvider>
+          <AuthProvider>
+            <CompeteProvider navigationReady={fontsLoaded}>
+              {fontsLoaded ? (
+                <>
+                  <LiveFieldRefresh />
+                  <NavigationWarmup />
+                  <BootGate>
+                    <StatusBar style="dark" />
+                    <Stack
+                      screenOptions={{
+                        headerShown: false,
+                        contentStyle: { backgroundColor: SHELL_COLORS.paper },
+                        animation:
+                          Platform.OS === "ios" ? "default" : "slide_from_right",
+                      }}
+                    />
+                  </BootGate>
+                </>
+              ) : fontFallback}
+            </CompeteProvider>
+          </AuthProvider>
+        </HeroUINativeProvider>
+      </View>
     </GestureHandlerRootView>
   );
 }
