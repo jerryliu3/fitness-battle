@@ -1,3 +1,4 @@
+import { FieldOverlayGroup, FieldOverlayView } from "./field-overlay-motion";
 import { chartTextProps, textStyle  } from "./section";
 import { useEffect, useId, useMemo, useRef, useState, type ComponentRef, type MutableRefObject } from "react";
 import {
@@ -166,7 +167,7 @@ export function PortraitField({
   }, [selectedId, focusRequest, scene.baseFocus, scene.ordered, animateSelection]);
   return (
     <View style={{ gap: 10 }}>
-      <View style={[s.status, { opacity: overlaysHidden ? 0 : 1 }]} pointerEvents="none">
+      <FieldOverlayView hidden={overlaysHidden} style={s.status} pointerEvents="none">
         <Text style={[s.white, { color: "#142b3b" }]}>
           {scene.place} / {scene.fieldSize} PLACE
         </Text>
@@ -175,7 +176,7 @@ export function PortraitField({
         >
           {portraitFieldGap(scene.nextGap, unit)}
         </Text>
-      </View>
+      </FieldOverlayView>
     <View
       style={[s.board, { height, borderRadius: fullscreen ? 0 : 20 }]}
       onLayout={(e) => {
@@ -331,7 +332,7 @@ export function PortraitField({
                         </SvgText>
                       </>
                     )}
-                    <G opacity={overlaysHidden ? 0 : 1}>
+                    <FieldOverlayGroup hidden={overlaysHidden}>
                     {m.you ? (
                       <>
                         <Rect
@@ -376,7 +377,7 @@ export function PortraitField({
                         {m.gap.toFixed(unit === "pts" ? 0 : 2)} {unit}
                       </SvgText>
                     ) : null}
-                    </G>
+                    </FieldOverlayGroup>
                     </G>
                   </G>
                 );
@@ -439,10 +440,10 @@ export function PortraitField({
           ) : null}
         </View>
       ) : null}
-      <View pointerEvents="box-none" style={{ position: "absolute", top: 12, left: 12, right: 60, gap: 6, opacity: overlaysHidden ? 0 : 1 }}>
+      <FieldOverlayView hidden={overlaysHidden} pointerEvents="box-none" style={{ position: "absolute", top: 12, left: 12, right: 60, gap: 6 }}>
         {!fullscreen && <Pressable style={[s.controlRow, { alignSelf: "flex-start", minHeight: 44, paddingHorizontal: 16 }]} accessibilityRole="button" accessibilityLabel={exploring ? "Finish exploring field" : "Explore field in two directions"} accessibilityState={{ selected: exploring }} onPress={() => setExploring(!exploring)}><Text style={s.white}>{exploring ? "Done" : "Explore"}</Text></Pressable>}
         <View pointerEvents="none"><Text style={[s.white, textStyle("caption")]}>{exploring || fullscreen ? "Drag to move · Pinch to zoom" : "Swipe across lanes · Explore to move forward"}</Text></View>
-      </View>
+      </FieldOverlayView>
     </View>
       <View style={{ gap: 6 }}>
         {(["↑", "↓"] as const).map(direction => {

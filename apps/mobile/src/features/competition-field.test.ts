@@ -5,12 +5,14 @@ import { defaultFieldAppearance, freshState, reduceCompete } from "@fitness-batt
 const mocks = vi.hoisted(() => ({ fly: vi.fn(), appState: null as null | ((status: string) => void) }));
 vi.mock("expo-router", () => ({ usePathname: () => "/arena" }));
 vi.mock("react-native", () => ({
-  Modal: "Modal", Pressable: "Pressable", ScrollView: "ScrollView", Text: "Text", View: "View",
+  Modal: "Modal",
+  Animated: { View: "View", Value: class { constructor(public value: number) {} interpolate(config: unknown) { return config; } }, timing: () => ({ start() {}, stop() {} }), createAnimatedComponent: () => "AnimatedGroup" },
+  Easing: { out: (fn: unknown) => fn, cubic: (x: number) => x }, Pressable: "Pressable", ScrollView: "ScrollView", Text: "Text", View: "View",
   useWindowDimensions: () => ({ width: 390, height: 844 }),
   AppState: { addEventListener: (_name: string, fn: (status: string) => void) => { mocks.appState = fn; return { remove() { mocks.appState = null; } }; } },
 }));
 vi.mock("react-native-safe-area-context", () => ({ useSafeAreaInsets: () => ({ top: 44, bottom: 34 }) }));
-vi.mock("react-native-svg", () => ({ default: "Svg" }));
+vi.mock("react-native-svg", () => ({ default: "Svg", G: "SvgG" }));
 vi.mock("./competition-replay", () => ({ CompetitionReplayButton: "ReplayButton" }));
 vi.mock("../ui/user-avatar", () => ({ UserAvatar: "UserAvatar" }));
 vi.mock("../ui/section", () => ({ textStyle: () => ({}) }));

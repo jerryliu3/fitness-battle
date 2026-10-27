@@ -2,6 +2,7 @@ import { createElement, useState } from "react";
 import { act, create, type ReactTestRenderer } from "react-test-renderer";
 import { afterEach, expect, it, vi } from "vitest";
 import type { ArenaViewWindow } from "@fitness-battle/shared";
+vi.mock("./field-overlay-motion", () => ({ FieldOverlayGroup: "FieldOverlayGroup", FieldOverlayView: "View" }));
 vi.mock("react-native", () => ({ StyleSheet: { create: (value: unknown) => value }, PanResponder: { create: (panHandlers: object) => ({ panHandlers }) }, Pressable: "Pressable", ScrollView: "ScrollView", Text: "Text", View: "View" }));
 vi.mock("react-native-svg", () => Object.fromEntries(["default", "Circle", "Defs", "ClipPath", "Image", "G", "Path", "Rect", "Text"].map(k => [k, `Svg${k}`])));
 vi.mock("../lib/haptics", () => ({ playCue() {} }));
@@ -85,5 +86,5 @@ it("labels offscreen athletes from the window edge and removes hidden arrow hit 
   expect(renderer.root.findAllByType("SvgText" as never).some(node => node.props.children === "9.0 km")).toBe(true);
   await act(async () => renderer.update(createElement(LaneTrack, { ...props, overlaysHidden: true })));
   expect(arrows()).toHaveLength(0);
-  expect(renderer.root.findAllByType("SvgText" as never).some(node => node.props.children === "9.0 km")).toBe(false);
+  expect(renderer.root.findAllByType("FieldOverlayGroup" as never).some(node => node.props.hidden)).toBe(true);
 });

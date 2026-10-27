@@ -85,15 +85,6 @@ export function crewRelayScene(model: Relay, width: number, prefix: string) {
         finish.push(path(`M${surface(x0, y0)} L${surface(x1, y0)} L${surface(x1, y1)} L${surface(x0, y1)}Z`, (row + col) % 2 ? "#ffffff" : "#142b3b"));
       }
     }
-    for (const back of [false, true]) {
-      const { x, y } = point(f, back);
-      const flagX = back ? x : x - 16;
-      finish.push(
-        { tag: "line", attrs: { x1: x, y1: y, x2: x, y2: y - 24, stroke: "#142b3b", strokeWidth: 2 } },
-        path(`M${flagX} ${y - 24}h16v10h-16Z`, "#ffffff", { stroke: "#142b3b", strokeWidth: .5 }),
-        path(`M${flagX} ${y - 24}h8v5h-8Z M${flagX + 8} ${y - 19}h8v5h-8Z`, "#142b3b"),
-      );
-    }
   }
   const people = model.segments.map((s, i) => {
     const x = left + ((i + 0.5) * length) / Math.max(1, model.segments.length),

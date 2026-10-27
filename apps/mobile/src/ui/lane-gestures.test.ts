@@ -2,6 +2,7 @@ import { createElement } from "react";
 import { act, create, type ReactTestRenderer } from "react-test-renderer";
 import { afterEach, expect, it, vi } from "vitest";
 import { buildArenaModel, freshState, reduceCompete } from "@fitness-battle/shared";
+vi.mock("./field-overlay-motion", () => ({ FieldOverlayGroup: "FieldOverlayGroup", FieldOverlayView: "View" }));
 vi.mock("react-native", () => ({ StyleSheet: { create: (value: unknown) => value },
   PanResponder: { create: (handlers: object) => ({ panHandlers: handlers }) },
   Pressable: "Pressable", ScrollView: "ScrollView", Text: "Text", View: "View",
