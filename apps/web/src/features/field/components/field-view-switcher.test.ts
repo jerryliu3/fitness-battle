@@ -20,3 +20,17 @@ it("preserves every distance view and standings in an accessible dropdown", asyn
     expect(renderer.root.findAllByType("option").map(option => option.props.value)).toEqual(["2d", "3d", "standings"]);
   } finally { if (renderer) await act(async () => renderer.unmount()); vi.unstubAllGlobals(); }
 });
+
+it("exposes camera zoom as dropdown actions without changing the selected view", async () => {
+  vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
+  const onChange = vi.fn(), onZoomIn = vi.fn(), onZoomOut = vi.fn();
+  let renderer!: ReactTestRenderer;
+  try {
+    await act(async () => { renderer = create(createElement(FieldViewSwitcher, { value: "3d", geographic: false, onChange, onZoomIn, onZoomOut })); });
+    const select = renderer.root.findByType("select");
+    await act(async () => select.props.onChange({ target: { value: "zoom-in" } }));
+    await act(async () => select.props.onChange({ target: { value: "zoom-out" } }));
+    expect(onZoomIn).toHaveBeenCalledOnce(); expect(onZoomOut).toHaveBeenCalledOnce();
+    expect(onChange).not.toHaveBeenCalled(); expect(select.props.value).toBe("3d");
+  } finally { if (renderer) await act(async () => renderer.unmount()); vi.unstubAllGlobals(); }
+});

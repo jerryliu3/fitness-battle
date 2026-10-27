@@ -249,7 +249,7 @@ export function CompetitionField({
             view={view}
             onPan={panTo}
           />
-          <FieldOverlayView
+          {!expanded ? <FieldOverlayView
             hidden={overlaysHidden}
             onTouchStart={event => event.stopPropagation()}
             pointerEvents="auto"
@@ -308,7 +308,7 @@ export function CompetitionField({
             >
               <Text style={{ ...textStyle("heading"), color: "white" }}>＋</Text>
             </Pressable>
-          </FieldOverlayView>
+          </FieldOverlayView> : null}
         </View>
         {!expanded ? (
           <View style={{ marginTop: 8, borderRadius: 12, overflow: "hidden" }}>
@@ -393,7 +393,10 @@ export function CompetitionField({
                   {arena.sportName} · {place(total)} / {ranked.length}
                 </Text>
               </View>
-              <FieldViewSwitcher value={sceneDimension} geographic={arena.unit !== "pts"} onChange={chooseView} />
+              <FieldViewSwitcher value={sceneDimension} geographic={arena.unit !== "pts"} onChange={chooseView}
+                onStandings={() => { setExpanded(false); setStandingsOpen(true); }}
+                onZoomIn={sceneDimension !== "4d" ? () => zoomTo(Math.max(arena.unit === "pts" ? 2 : 0.5, view.span / 1.5)) : undefined}
+                onZoomOut={sceneDimension !== "4d" ? () => zoomTo(Math.min(arena.unit === "pts" ? 100 : 40, view.span * 1.5)) : undefined} />
             </FieldOverlayView>
 
             {(sceneDimension !== "4d" || course) ? <>
@@ -491,7 +494,6 @@ export function CompetitionField({
                 gap: 8,
               }}
             >
-              {sceneDimension !== "2d" ? <CompetitionReplayButton state={state} selection={replaySelection} dimension={sceneDimension} course={course} onCourseChange={setCourse} label="Replay" /> : null}
               {aheadPeer ? (
                 <Pressable
                   accessibilityRole="button"
@@ -503,6 +505,8 @@ export function CompetitionField({
                   style={{
                     backgroundColor: "rgba(20, 20, 19, 0.75)",
                     borderRadius: 999,
+                    minHeight: 44,
+                    justifyContent: "center",
                     paddingVertical: 8,
                     paddingHorizontal: 12,
                     borderWidth: 1,
@@ -526,6 +530,8 @@ export function CompetitionField({
                   style={{
                     backgroundColor: c.tennis,
                     borderRadius: 999,
+                    minHeight: 44,
+                    justifyContent: "center",
                     paddingVertical: 8,
                     paddingHorizontal: 12,
                     alignItems: "center",
@@ -547,6 +553,8 @@ export function CompetitionField({
                   style={{
                     backgroundColor: "rgba(20, 20, 19, 0.75)",
                     borderRadius: 999,
+                    minHeight: 44,
+                    justifyContent: "center",
                     paddingVertical: 8,
                     paddingHorizontal: 12,
                     borderWidth: 1,
@@ -559,6 +567,9 @@ export function CompetitionField({
                   </Text>
                 </Pressable>
               ) : null}
+              <View onTouchStart={event => event.stopPropagation()} style={{ minHeight: 44, justifyContent: "center", borderRadius: 999, backgroundColor: "rgba(20,20,19,.78)", paddingHorizontal: 8 }}>
+                <CompetitionReplayButton state={state} selection={replaySelection} dimension={sceneDimension} course={course} onCourseChange={setCourse} label="Replay" />
+              </View>
             </FieldOverlayView>
 
             {/* Broadcast HUD: Bottom Focused Athlete Spotlight + Player Chips */}

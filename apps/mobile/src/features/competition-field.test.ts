@@ -70,9 +70,12 @@ it("collapses each panel independently and isolates zoom/replay touches from sce
   expect(button("Expand athlete panel").props.accessibilityState.expanded).toBe(false);
   await act(async () => button("Expand live intervals").props.onPress());
   expect(button("Collapse live intervals").props.accessibilityState.expanded).toBe(true);
-  const zoom = button("Zoom in").parent!;
+  expect(button("Zoom in")).toBeUndefined();
+  await act(async () => renderer.root.findByType("ChoicePicker" as never).props.onChange("zoom-in"));
+  expect(mocks.fly).toHaveBeenCalled();
+  const replay = renderer.root.findByType("ReplayButton" as never).parent!;
   const stopPropagation = vi.fn();
-  zoom.props.onTouchStart({ stopPropagation });
+  replay.props.onTouchStart({ stopPropagation });
   expect(stopPropagation).toHaveBeenCalledTimes(1);
 });
 

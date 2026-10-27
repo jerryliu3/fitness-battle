@@ -2328,3 +2328,5 @@
 .session-detail-footer { display: grid; gap: 12px; border-top: 1px solid var(--line); padding-top: 20px; }
 .session-detail { width: 100%; max-width: 620px; margin-inline: auto; }
 .club-fullscreen-sheet:has(.session-detail) > .club-sheet-heading { position: sticky; top: 0; z-index: 2; padding-block: 8px; background: var(--paper); }
+.focus-broadcast-replay-chip { pointer-events: auto; border-radius: 999px; background: rgba(20,20,19,.78); padding: 2px 8px; }
+.focus-broadcast-replay-chip button, .focus-broadcast-rail-btn { min-height: 44px; }

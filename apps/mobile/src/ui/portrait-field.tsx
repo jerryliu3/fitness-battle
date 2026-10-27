@@ -463,11 +463,11 @@ export function PortraitField({
           <Pressable style={s.button} accessibilityRole="button" accessibilityLabel="Move forward" onPress={() => panTo(view.center + view.span / 3)}><Text style={s.white}>↑</Text></Pressable>
           <Pressable style={s.button} accessibilityRole="button" accessibilityLabel="Next lane" disabled={scene.focus >= scene.ordered.length - 1} onPress={() => shift(1)}><Text style={s.white}>→</Text></Pressable>
         </View>
-        <View style={s.controlRow}>
+        {!fullscreen ? <View style={s.controlRow}>
           <Pressable style={s.button} accessibilityRole="button" accessibilityLabel="Zoom out" disabled={view.span >= (unit === "pts" ? 100 : 40)} onPress={() => zoomTo(Math.min(unit === "pts" ? 100 : 40, view.span * 1.5))}><Text style={s.white}>−</Text></Pressable>
           <Text style={[s.white, textStyle("caption")]}>{Math.max(0, scene.min).toFixed(unit === "pts" ? 0 : 2)}–{scene.max.toFixed(unit === "pts" ? 0 : 2)} {unit}</Text>
           <Pressable style={s.button} accessibilityRole="button" accessibilityLabel="Zoom in" disabled={view.span <= (unit === "pts" ? 2 : 0.5)} onPress={() => zoomTo(Math.max(unit === "pts" ? 2 : 0.5, view.span / 1.5))}><Text style={s.white}>＋</Text></Pressable>
-        </View>
+        </View> : null}
       </View>
     </View>
   );

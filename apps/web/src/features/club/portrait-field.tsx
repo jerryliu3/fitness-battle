@@ -369,11 +369,11 @@ export function PortraitField({
           <button type="button" aria-label="Move forward" onClick={() => panTo(view.center + view.span / 3)}>↑</button>
           <button type="button" aria-label="Next lane" disabled={scene.focus >= scene.ordered.length - 1} onClick={() => shift(1)}>→</button>
         </div>
-        <div className="club-board-zoom">
+        {!immersive ? <div className="club-board-zoom">
           <button type="button" aria-label="Zoom out" disabled={view.span >= (unit === "pts" ? 100 : 40)} onClick={() => zoomTo(Math.min(unit === "pts" ? 100 : 40, view.span * 1.5))}>−</button>
           <span aria-live="off">{Math.max(0, scene.min).toFixed(unit === "pts" ? 0 : 2)}–{scene.max.toFixed(unit === "pts" ? 0 : 2)} {unit}</span>
           <button type="button" aria-label="Zoom in" disabled={view.span <= (unit === "pts" ? 2 : 0.5)} onClick={() => zoomTo(Math.max(unit === "pts" ? 2 : 0.5, view.span / 1.5))}>＋</button>
-        </div>
+        </div> : null}
       </div>
     </div>
   );

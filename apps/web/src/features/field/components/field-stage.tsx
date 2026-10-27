@@ -313,7 +313,10 @@ export function FieldStage({
         <div className="focus-broadcast-title" style={{ minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
           {sportTitle ?? model.sport} · {displayPlace} / {runners.length}
         </div>
-        <FieldViewSwitcher value={viewDimension} geographic={unit !== "pts"} onChange={chooseView} />
+        <FieldViewSwitcher value={viewDimension} geographic={unit !== "pts"} onChange={chooseView}
+          onStandings={() => { setLanesImmersive(false); setStandingsOpen(true); }}
+          onZoomIn={viewDimension !== "4d" ? () => { cancelCenterTween(); setSpan(Math.max(unit === "pts" ? 2 : .5, view.span / 1.5)); } : undefined}
+          onZoomOut={viewDimension !== "4d" ? () => { cancelCenterTween(); setSpan(Math.min(unit === "pts" ? 100 : 40, view.span * 1.5)); } : undefined} />
       </div>
 
       {(viewDimension !== "4d" || course) ? <>
@@ -354,7 +357,7 @@ export function FieldStage({
       </div>
 
       <div className="focus-broadcast-rail" aria-label="Quick jump rivals">
-        {replayState && <CompetitionReplayButton state={replayState} selection={{ sport: model.sport, track: model.track, periodStart: model.periodStart, periodEnd: competePeriodWindow(replayState, competeNow(replayState), model.sport).endsAt.toISOString() }} dimension={viewDimension} course={course} onCourseChange={setCourse} label="Replay" />}
+
         {aheadPeer ? (
           <button
             type="button"
@@ -389,6 +392,9 @@ export function FieldStage({
             ↓ Behind
           </button>
         ) : null}
+        <div className="focus-broadcast-replay-chip">
+        {replayState && <CompetitionReplayButton state={replayState} selection={{ sport: model.sport, track: model.track, periodStart: model.periodStart, periodEnd: competePeriodWindow(replayState, competeNow(replayState), model.sport).endsAt.toISOString() }} dimension={viewDimension} course={course} onCourseChange={setCourse} label="Replay" />}
+        </div>
       </div>
 
       {focusedLane ? (
@@ -556,7 +562,7 @@ export function FieldStage({
                 }}
               />
 
-              <div className="focus-portal-zoom-pill">
+              {!lanesImmersive ? <div className="focus-portal-zoom-pill">
                 <button
                   type="button"
                   aria-label="Zoom out"
@@ -579,7 +585,7 @@ export function FieldStage({
                 >
                   ＋
                 </button>
-              </div>
+              </div> : null}
             </div>
           </div>
         </ExpandingField>
