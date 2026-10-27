@@ -2,7 +2,7 @@ import { textStyle } from "../ui/section";
 import { useEffect, useRef, useState } from "react";
 import { Animated, Pressable, StyleSheet, Text, View } from "react-native";
 import { useRouter } from "expo-router";
-import { competitionTrack, competitionTrackLabel, effortPointProgress, formatEffortScore, formatVolume, rankForElo, sportById } from "@fitness-battle/shared";
+import { ELO_UNRANKED, competitionTrack, competitionTrackLabel, effortPointProgress, formatEffortScore, formatVolume, rankForElo, sportById } from "@fitness-battle/shared";
 import { useCompeteStore } from "../lib/compete-store";
 import { useReducedMotion } from "../ui/use-reduced-motion";
 import { SHELL_COLORS as c } from "../theme";
@@ -26,7 +26,9 @@ export function EffortRail({ compact = false }: { compact?: boolean }){
     const timer=setTimeout(()=>setGain(0),1500);
     return()=>{clearTimeout(timer);progress.stop();animation.stop();};
   },[scope,model?.score,model?.fraction,canWrite,saveError,reduced,fill,burst]);
-  if(!state||!model)return null;
+  if (!state) return null;
+  if (!model && accountKey === "guest" && compact) return <Pressable style={[s.rail, { borderWidth: 0, backgroundColor: "transparent", padding: 0, minHeight: 44, justifyContent: "center" }]} accessibilityRole="button" accessibilityLabel={`Guest Effort Score ${ELO_UNRANKED}. Open Progress`} onPress={() => router.navigate("/you?view=effort")}><View style={s.row}><Text style={s.score}>{formatEffortScore(ELO_UNRANKED)}</Text><Text style={s.caption}>Effort Score</Text></View></Pressable>;
+  if (!model) return null;
   const remaining=formatVolume(model.sport,model.sport==="strength"?0:model.remaining,model.sport==="strength"?model.remaining:0,state.units);
   return <Pressable style={[s.rail, compact && { borderWidth: 0, backgroundColor: "transparent", padding: 0, minHeight: 44, justifyContent: "center" }]} accessibilityRole="button" accessibilityLabel={`${sportById(model.sport).name} ${competitionTrackLabel(model.sport)} Effort Score ${model.score}. ${remaining} to next point. Open Progress`} onPress={()=>router.navigate("/you?view=effort")}>
     <View style={s.row}>{!compact && <Text style={s.caption}>{sportById(model.sport).name} · {rankForElo(model.score).name}</Text>}{compact ? <View style={{ flexDirection: "row", alignItems: "baseline", gap: 4, flexShrink: 1 }}><Text style={[s.score, { flexShrink: 0 }]}>{formatEffortScore(model.score)}</Text><Text style={[s.caption, { flexShrink: 1 }]} numberOfLines={1}>Effort Score</Text></View> : <Text style={s.score} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>{formatEffortScore(model.score)} <Text style={s.caption}>Effort Score</Text></Text>}</View>
