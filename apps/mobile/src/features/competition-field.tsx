@@ -1,3 +1,4 @@
+import { FieldViewSwitcher } from "../ui/field-view-switcher";
 import { GeographicCourse } from "./geographic-course";
 import { CompetitionReplayButton } from "./competition-replay";
 import { UserAvatar } from "../ui/user-avatar";
@@ -49,11 +50,17 @@ export function CompetitionField({
   const [appearance] = useFieldAppearance(accountKey, sport);
   const isFocused = shellTabFromPath(pathname)?.id === "arena";
   const [sceneDimension, setSceneDimension] = useState<"2d" | "3d">("2d");
+  const [courseOpen, setCourseOpen] = useState(false);
+  const chooseView = (value: "2d" | "3d" | "4d") => {
+    void playCue("selection");
+    setCourseOpen(value === "4d");
+    if (value === "4d") { flight.cancel(); setExpanded(false); }
+    else setSceneDimension(value);
+  };
   const [standingsOpen, setStandingsOpen] = useState(false);
   const [expanded, setExpanded] = useState(false);
   const toggleDimension = () => {
-    void playCue("selection");
-    setSceneDimension((prev) => (prev === "2d" ? "3d" : "2d"));
+    chooseView(sceneDimension === "2d" ? "3d" : "2d");
   };
   const dimensions = useWindowDimensions();
   const insets = useSafeAreaInsets();
@@ -158,7 +165,7 @@ export function CompetitionField({
 
   const fieldContent = (
     <View>
-      {sceneDimension === "3d" && isFocused ? (
+      {sceneDimension === "3d" && isFocused && !courseOpen ? (
         <PortraitField
           lanes={arena.lanes.map((l) => ({
             ...l,
@@ -196,7 +203,7 @@ export function CompetitionField({
             onToggleDimension={toggleDimension}
             onZoom={directZoom}
             anchor={laneAnchor}
-            active={isFocused && sceneDimension === "2d"}
+            active={isFocused && sceneDimension === "2d" && !courseOpen}
             focusRequest={focusRequest}
             animateSelection={!reduceMotion}
             onGestureStart={flight.cancel}
@@ -272,7 +279,8 @@ export function CompetitionField({
 
   return (
     <View style={{ gap: 14 }}>
-      <GeographicCourse active={isFocused} lanes={fieldLanes} unit={arena.unit} selectedId={selectedId ?? me?.id ?? ""} />
+      <FieldViewSwitcher value={courseOpen ? "4d" : sceneDimension} geographic={arena.unit !== "pts"} onChange={chooseView} />
+      <GeographicCourse open={courseOpen} onClose={() => setCourseOpen(false)} onViewChange={chooseView} active={isFocused} lanes={fieldLanes} unit={arena.unit} selectedId={selectedId ?? me?.id ?? ""} />
       {expanded ? (
         <Modal
           visible
@@ -314,6 +322,8 @@ export function CompetitionField({
                 pointerEvents="none"
                 style={{
                   backgroundColor: "rgba(20, 20, 19, 0.74)",
+                  flexShrink: 1,
+                  minWidth: 0,
                   borderRadius: 999,
                   paddingHorizontal: 14,
                   paddingVertical: 7,
@@ -323,31 +333,13 @@ export function CompetitionField({
               >
                 <Text
                   accessibilityRole="header"
+                  numberOfLines={1}
                   style={{ ...textStyle("label"), color: "#ffffff" }}
                 >
                   {arena.sportName} · {place(total)} / {ranked.length}
                 </Text>
               </View>
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel={
-                  sceneDimension === "2d" ? "Switch to 3D field" : "Switch to 2D map"
-                }
-                onPress={toggleDimension}
-                style={{
-                  minHeight: 40,
-                  paddingHorizontal: 14,
-                  justifyContent: "center",
-                  borderRadius: 999,
-                  backgroundColor: "rgba(20, 20, 19, 0.78)",
-                  borderWidth: 1,
-                  borderColor: "rgba(200, 245, 59, 0.55)",
-                }}
-              >
-                <Text style={{ ...textStyle("label"), color: c.tennis }}>
-                  {sceneDimension === "2d" ? "2D" : "3D"}
-                </Text>
-              </Pressable>
+              <FieldViewSwitcher value={sceneDimension} geographic={arena.unit !== "pts"} onChange={chooseView} />
             </View>
 
             {/* Broadcast HUD: Left Interval Tower */}

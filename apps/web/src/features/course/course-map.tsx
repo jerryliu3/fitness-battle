@@ -10,7 +10,8 @@ export default function CourseMap({ course, lanes, unit, selectedId, focusReques
 }) {
   const container = useRef<HTMLDivElement>(null), map = useRef<mapboxgl.Map | null>(null);
   const [ready, setReady] = useState(false), [error, setError] = useState(""), [flat, setFlat] = useState(false), [following, setFollowing] = useState(true);
-  const scene = useMemo(() => raceCourseScene(course, lanes, unit, selectedId), [course, lanes, unit, selectedId]);
+  const [spaced, setSpaced] = useState(true);
+  const scene = useMemo(() => raceCourseScene(course, lanes, unit, selectedId, spaced ? 2 : 0), [course, lanes, unit, selectedId, spaced]);
   const latest = useRef({ scene, onSelect }); latest.current = { scene, onSelect };
   const reduced = useRef(false);
   const camera = useRef<ReturnType<typeof createCourseCamera> | null>(null);
@@ -57,16 +58,17 @@ export default function CourseMap({ course, lanes, unit, selectedId, focusReques
     const previous = lastFocus.current;
     const explicit = !previous || previous.course !== course || previous.id !== selectedId || previous.request !== focusRequest;
     lastFocus.current = { course, id: selectedId, request: focusRequest };
-    camera.current?.focus(course, scene.selected.metres, !explicit);
+    camera.current?.focus(course, scene.selected.metres, !explicit, scene.selected.lateralMetres);
     if (explicit) setFollowing(true);
-  }, [ready, course, selectedId, focusRequest, scene.selected?.metres]);
+  }, [ready, course, selectedId, focusRequest, scene.selected?.metres, scene.selected?.lateralMetres]);
   const control = (label: string, action: () => void) => <button type="button" className="fb-btn-line" style={{ whiteSpace: "nowrap", minHeight: 44 }} onClick={() => { action(); setFollowing(camera.current?.following ?? false); }}>{label}</button>;
   return <div style={{ flex: 1, minHeight: 200, display: "flex", flexDirection: "column" }}>
     <div ref={container} aria-label="Geographic race course. Drag to explore; pinch or scroll to zoom." style={{ flex: 1, minHeight: 160 }} />
     {error ? <p role="alert" className="fb-copy">{error}</p> : null}
     <div style={{ display: "flex", overflowX: "auto", flexShrink: 0, gap: 8, padding: 8 }}>
-      {control(following ? "Following" : "Recenter", () => { if (scene.selected) camera.current?.focus(course, scene.selected.metres); })}
+      {control(following ? "Following" : "Recenter", () => { if (scene.selected) camera.current?.focus(course, scene.selected.metres, false, scene.selected.lateralMetres); })}
       {control(flat ? "3D chase" : "2D map", () => { camera.current?.dimension(flat ? "3d" : "2d"); setFlat(!flat); })}
+      {control(spaced ? "Racers: spaced" : "Racers: together", () => setSpaced(value => !value))}
       {control("Whole route", () => { camera.current?.overview(course); setFlat(true); })}
       {control("Zoom in", () => camera.current?.zoom(1))}{control("Zoom out", () => camera.current?.zoom(-1))}
     </div>

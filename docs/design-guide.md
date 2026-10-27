@@ -360,3 +360,15 @@ fields keep the existing field. Athletes retrace courses back and forth at each
 endpoint while cumulative distance continues; the chase camera follows their direction and the covered trail stays
 solid. Courses remain local to the view; no shared published event-course assignment is implied. See
 [implementation and validation](reviews/geographic-course/README.md).
+
+
+Geographic scenery is the third field option, labeled **4D** beside **2D / 3D**
+on native and web, including fullscreen controls. Distance fields offer all three;
+points fields retain 2D / 3D. 4D opens the dedicated course screen, preserves the
+chosen course when switching views, and has the same selector for returning.
+Racers default to visual lanes spaced two metres across the route, assigned by
+stable athlete ID rather than rank. The spacing toggle compares spaced/together
+layouts. Camera follow targets the displayed marker; shared solid trails stay on
+the route centerline. These are presentation offsets, not measured road widths,
+collision avoidance, or adjustments to earned distance. Markers may still overlap
+when zoomed out.

@@ -65,6 +65,18 @@ export function raceCoursePosition(course: RaceCourse, progress: number) {
   const coordinate = routeMetres === course.length ? course.coordinates.at(-1)! : destination(point(a), routeMetres - course.metres[segment], forwardHeading, { units: "meters" }).geometry.coordinates as LngLat;
   return { coordinate, heading: returning ? bearing(b, a) : forwardHeading, metres, routeMetres, returning, segment };
 }
+/** A visual lane perpendicular to the route, independent of rank or travel direction.
+ * Sample around bends so returning athletes keep the same physical side of the road.
+ */
+export function raceCourseRacerPosition(course: RaceCourse, progress: number, lateralMetres = 0) {
+  const position = raceCoursePosition(course, progress);
+  if (!lateralMetres) return { ...position, lateralMetres: 0 };
+  const before = raceCoursePosition(course, Math.max(0, position.routeMetres - 5));
+  const after = raceCoursePosition(course, Math.min(course.length, position.routeMetres + 5));
+  const across = bearing(before.coordinate, after.coordinate) + (lateralMetres > 0 ? 90 : -90);
+  const coordinate = destination(point(position.coordinate), Math.abs(lateralMetres), across, { units: "meters" }).geometry.coordinates as LngLat;
+  return { ...position, coordinate, lateralMetres };
+}
 export function raceCourseTrail(course: RaceCourse, progress: number): LngLat[] {
   // Once an athlete has reached the far end, the whole path has been covered.
   // Keep that solid trace without duplicating geometry for every return trip.
@@ -96,7 +108,7 @@ export function createCourseCamera(driver: CourseCameraDriver, reducedMotion = f
   return {
     interrupt() { following = false; driver.stop(true); },
     setReducedMotion(value: boolean) { reducedMotion = value; driver.stop(); },
-    focus(course: RaceCourse, metres: number, automatic = false) {
+    focus(course: RaceCourse, metres: number, automatic = false, lateralMetres = 0) {
       if (automatic && !following) return;
       if (!automatic) following = true;
       const position = raceCoursePosition(course, metres), current = driver.read();
@@ -104,7 +116,7 @@ export function createCourseCamera(driver: CourseCameraDriver, reducedMotion = f
       const remaining = position.returning ? position.routeMetres : course.length - position.routeMetres;
       const ahead = raceCoursePosition(course, position.metres + Math.min(30, remaining));
       const heading = remaining > .01 ? bearing(position.coordinate, ahead.coordinate) : position.heading;
-      move({ ...current, center: position.coordinate, pitch: dimension === "3d" ? 60 : 0, bearing: dimension === "3d" ? heading : 0 }, automatic);
+      move({ ...current, center: raceCourseRacerPosition(course, metres, lateralMetres).coordinate, pitch: dimension === "3d" ? 60 : 0, bearing: dimension === "3d" ? heading : 0 }, automatic);
     },
     dimension(value: CourseDimension) { dimension = value; move({ ...driver.read(), pitch: value === "3d" ? 60 : 0, bearing: value === "2d" ? 0 : driver.read().bearing }); },
     zoom(delta: number) { following = false; const current = driver.read(); move({ ...current, zoom: Math.max(2, Math.min(20, current.zoom + delta)) }); },

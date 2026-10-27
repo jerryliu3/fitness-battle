@@ -27,6 +27,8 @@ it("delegates native camera frames, pauses following on gestures, and flies from
   await act(async () => renderer.update(createElement(CourseMap, { ...props, selectedId: "peer", focusRequest: 1 })));
   const flight = calls.setCamera.mock.lastCall![0];
   expect(flight.animationDuration).toBeGreaterThan(500);
+  const marker = renderer.root.findAllByType("ShapeSource" as never).find(node => node.props.id === "athletes")!.props.shape.features.find((f: any) => f.id === "peer");
+  expect(flight.centerCoordinate).toEqual(marker.geometry.coordinates);
   expect(flight.zoomLevel).toBe(15);
   expect(flight.centerCoordinate[0]).toBeGreaterThan(.005);
   expect(renderer.root.findAllByType("Map" as never)).toHaveLength(1);

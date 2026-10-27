@@ -31,6 +31,8 @@ it("keeps one map instance, suspends following for user input and resumes on sel
   expect(instance.easeTo).toHaveBeenCalledTimes(1);
   expect(instance.easeTo.mock.lastCall[0].duration).toBeGreaterThan(500);
   expect(instance.easeTo.mock.lastCall[0].zoom).toBe(15);
+  const markers = instance.getSource("athletes").setData.mock.lastCall[0];
+  expect(instance.easeTo.mock.lastCall[0].center).toEqual(markers.features.find((f: any) => f.id === "peer").geometry.coordinates);
   expect(mock.instances).toHaveLength(1);
   expect(instance.getSource("course").setData).not.toHaveBeenCalled();
   await act(async () => instance.emit("click", { features: [{ properties: { id: "you" } }] }));

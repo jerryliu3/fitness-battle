@@ -1,6 +1,7 @@
+import { FieldViewSwitcher } from "../ui/field-view-switcher";
 import { Component, lazy, Suspense, useEffect, useRef, useState, type ReactNode } from "react";
 import { ActivityIndicator, Modal, Pressable, ScrollView, Text, TextInput, View } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 import * as DocumentPicker from "expo-document-picker";
 import { File } from "expo-file-system";
 import { MAX_COURSE_BYTES, raceCourseFromGpx, requestMapboxCourse, type RaceCourse, type ArenaSceneLane } from "@fitness-battle/shared";
@@ -14,20 +15,22 @@ class MapBoundary extends Component<{ children: ReactNode }, { failed: boolean }
   static getDerivedStateFromError() { return { failed: true }; }
   render() { return this.state.failed ? <Text style={textStyle("body")}>This course view needs a new native app build with Mapbox installed.</Text> : this.props.children; }
 }
-export function GeographicCourse({ lanes, unit, selectedId: initialSelectedId, active = true }: {
-  lanes: ArenaSceneLane[]; unit: string; selectedId: string; active?: boolean;
+export function GeographicCourse({ lanes, unit, selectedId: initialSelectedId, active = true, open, onClose, onViewChange }: {
+  lanes: ArenaSceneLane[]; unit: string; selectedId: string; active?: boolean; open: boolean; onClose(): void; onViewChange(value: "2d" | "3d" | "4d"): void;
 }) {
   const reduced = useReducedMotion();
   const [selectedId, setSelectedId] = useState(initialSelectedId), [focusRequest, setFocusRequest] = useState(0);
   const onSelect = (id: string) => { setSelectedId(id); setFocusRequest(value => value + 1); };
-  const [open, setOpen] = useState(false), [course, setCourse] = useState<RaceCourse | null>(null);
+  const [course, setCourse] = useState<RaceCourse | null>(null);
   const [start, setStart] = useState(""), [finish, setFinish] = useState(""), [cycling, setCycling] = useState(false);
   const [busy, setBusy] = useState(false), [error, setError] = useState("");
   const work = useRef<AbortController | null>(null);
   useEffect(() => () => work.current?.abort(), []);
-  useEffect(() => { if (!active) { work.current?.abort(); setBusy(false); setOpen(false); } }, [active]);
+  useEffect(() => { if (!active) { work.current?.abort(); setBusy(false); onClose(); } }, [active]);
+  useEffect(() => { if (open) setSelectedId(initialSelectedId); }, [open, initialSelectedId]);
+  useEffect(() => { if (!open) { work.current?.abort(); setBusy(false); } }, [open]);
   if (unit !== "mi" && unit !== "km") return null;
-  const close = () => { work.current?.abort(); setBusy(false); setOpen(false); };
+  const close = () => { work.current?.abort(); setBusy(false); onClose(); };
   const run = async (load: (signal: AbortSignal) => Promise<RaceCourse | null>) => {
     work.current?.abort(); const request = new AbortController(); work.current = request;
     setBusy(true); setError("");
@@ -37,12 +40,12 @@ export function GeographicCourse({ lanes, unit, selectedId: initialSelectedId, a
   };
   const button = (label: string, action: () => void, disabled = false, key = label, selected?: boolean) => <Pressable key={key} accessibilityRole="button" accessibilityState={{ disabled, selected }} disabled={disabled} onPress={action} style={{ minHeight: 44, padding: 12, borderRadius: 12, backgroundColor: selected === false ? "#ffffff" : "#f7c948", opacity: disabled ? .5 : 1, justifyContent: "center" }}><Text style={{ ...textStyle("label"), color: "#142b3b" }}>{label}</Text></Pressable>;
   return <>
-    {button("Race on a real course", () => { setSelectedId(initialSelectedId); setOpen(true); })}
     <Modal visible={open} animationType={reduced ? "none" : "slide"} presentationStyle="fullScreen" onRequestClose={close}>
-      <SafeAreaView style={{ flex: 1, backgroundColor: "#f8f9f6" }}>
+      <SafeAreaProvider style={{ flex: 1 }}><SafeAreaView style={{ flex: 1, backgroundColor: "#f8f9f6" }}>
         <View style={{ padding: 12, gap: 8 }}>
+          <FieldViewSwitcher value="4d" geographic onChange={onViewChange} />
           <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", gap: 8 }}>{button("Back", close)}<Text numberOfLines={2} style={{ ...textStyle("heading"), flex: 1 }}>{course?.name ?? "Choose a race course"}</Text>{course ? button("Change course", () => setCourse(null)) : null}</View>
-          {course ? <Text style={textStyle("caption")}>{(course.length / (unit === "mi" ? 1609.344 : 1000)).toFixed(2)} {unit} · Your competition totals on a shared route · Progress stops at the finish</Text> : null}
+          {course ? <Text style={textStyle("caption")}>{(course.length / (unit === "mi" ? 1609.344 : 1000)).toFixed(2)} {unit} · Your competition totals on a shared route · Out-and-back course</Text> : null}
         </View>
         {!mobileEnv.mapboxAccessToken ? <Text style={{ ...textStyle("body"), padding: 16 }}>Mapbox access is not configured for this build.</Text> : course ? <MapBoundary><Suspense fallback={<ActivityIndicator />}><CourseMap key={course.name + course.length} course={course} lanes={lanes} unit={unit} selectedId={selectedId} focusRequest={focusRequest} onSelect={onSelect} /></Suspense></MapBoundary> : <ScrollView contentContainerStyle={{ padding: 16, gap: 12 }} keyboardShouldPersistTaps="handled">
           <Text style={textStyle("body")}>Import a GPX track, or choose a start and destination anywhere in the world. This changes your scenery without recording an activity or changing scores.</Text>
@@ -64,7 +67,7 @@ export function GeographicCourse({ lanes, unit, selectedId: initialSelectedId, a
         {busy ? <ActivityIndicator /> : null}
         {error ? <Text accessibilityRole="alert" style={{ ...textStyle("body"), padding: 12 }}>{error}</Text> : null}
         {course ? <ScrollView horizontal contentContainerStyle={{ gap: 8, padding: 12 }} style={{ flexGrow: 0 }} accessibilityLabel="Course athletes">{lanes.filter(lane => !lane.ghost).map(lane => button(`${lane.you ? "You" : lane.name} · ${lane.value.toFixed(2)} ${unit}`, () => onSelect(lane.id), false, lane.id, lane.id === selectedId))}</ScrollView> : null}
-      </SafeAreaView>
+      </SafeAreaView></SafeAreaProvider>
     </Modal>
   </>;
 }

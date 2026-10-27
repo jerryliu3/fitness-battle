@@ -14,6 +14,21 @@ without duplicating geometry on subsequent trips. Course selection is local
 to the current view, not a server-authoritative assignment to other participants.
 Shared published course assignment is a separate product/data change.
 
+The field selector exposes **2D / 3D / 4D**, with 4D opening the dedicated
+geographic course screen. The same selector works inside fullscreen views.
+Closing or selecting 2D/3D aborts pending course requests but preserves the chosen
+course for reopening. Points fields only expose 2D/3D.
+
+Racer spacing defaults to two metres between adjacent ID-sorted visual lanes,
+centered on the route. The **Racers: spaced / Racers: together** control permits a
+side-by-side experiment. Offsets use the route's canonical direction, with a
+five-metre tangent sample around bends, so reversing travel does not swap road
+sides. Camera focus includes the same lateral offset. Shared completed trails
+stay on the centerline, keeping the three-prefix geometry limit. This adds no
+per-frame updates, score changes, road-width queries, or collision simulation.
+Ten tied athletes span 18 metres; narrow roads and zoomed-out marker overlap
+remain limitations of this illustrative spacing.
+
 The geographic view uses one platform-agnostic camera controller. Focus resumes
 following; direct manipulation, zoom and overview suspend it. Two-dimensional
 and chase views use the same map instance. The map engines execute gestures,
@@ -58,7 +73,7 @@ Use **2D map / 3D chase** without replacing the map instance, **Whole route** to
 inspect the complete track, **Recenter** to resume following, and zoom controls
 as an alternative to pinch. Selecting an athlete again recenters it. All route
 geometry is independent of the camera; the completed selected route is a fixed
-six-point opaque line, even when the start is outside the viewport. Basemap and
+six-point-wide opaque line, even when the start is outside the viewport. Basemap and
 Mapbox attribution remain visible. Imagery/scenery are supplied by Mapbox
 Standard; no custom scene asset pipeline or second Skia renderer was added.
 
@@ -106,7 +121,7 @@ files. The owner supplied the token during implementation; it is not committed.
 The iOS Release build with native Mapbox succeeded. Actual browser and simulator
 walkthrough evidence is summarized below. For a physical-device check, exercise: GPX import; API route generation; near/far/repeated selection; interrupted
 flight; two-finger pinch followed by one-finger dragging; live updates while
-exploring; 2D/chase/overview; reduced motion; close/reopen; long/finished efforts.
+exploring; 2D/chase/overview; reduced motion; close/reopen; long efforts and repeated turnarounds.
 Measure sustained physical-device performance separately from simulator input.
 
 The course screen owns its selected athlete independently of the hidden SVG
@@ -162,3 +177,34 @@ web production build and the native Release build pass.
 ![Native city chase](images/native-city-loaded.png)
 
 ![Native whole route](images/2d-whole-route.png)
+
+
+### Third view and spacing follow-up
+
+The **4D** selector replaces the separate course-entry button on native and web.
+The native modal owns a SafeAreaProvider so its view controls remain below the
+iOS status bar. Switching out of 4D cancels pending loading, preserves the chosen
+course, and stops the hidden portrait renderer. Spacing changes only marker
+geometry and camera targets; completed trails retain the bounded shared geometry.
+
+The follow-up has 15 shared regressions, two native adapter/selector checks, and
+three web adapter/selector checks. They cover tied racers, rank reorder, bends,
+return trips, zero-spacing comparison, actual displayed camera targets, and
+points-field view availability. The web walkthrough loads a real Manhattan route,
+compares spacing, and switches 4D → 3D → 4D with the course retained.
+
+![Third field view and racer spacing control](images/4d-selector-web.png)
+
+
+The final iOS simulator run passes all three XCTest cases (155 seconds): real
+course loading, repeated pan/pinch and peer selection, and spaced/together plus
+2D/3D/4D transitions. This includes fullscreen 2D → 4D and returning to the same
+course. Screenshot review caught a modal safe-area issue; adding the modal's
+SafeAreaProvider fixes both control placement and touch targeting. The initial
+switching run failed before that correction; the final run has zero failures.
+The follow-up reused the compiled native Release app with refreshed JavaScript
+in production mode, without bytecode optimization or minification for this local
+interaction check. Native SDK compilation and physical-device performance were
+not rerun for these JavaScript-only changes.
+
+![Native third view with safe controls and selected racer](images/4d-selector-native.png)

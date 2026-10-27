@@ -1,11 +1,15 @@
-import { raceCoursePosition, raceCourseTrail, raceEffortMetres, type RaceCourse } from "./race-course";
+import { raceCourseRacerPosition, raceCourseTrail, raceEffortMetres, type RaceCourse } from "./race-course";
 import type { ArenaSceneLane } from "./arena-view";
 
 /** Geometry only changes with athlete totals or the chosen course, never camera frames. */
-export function raceCourseScene(course: RaceCourse, lanes: readonly ArenaSceneLane[], unit: string, selectedId: string) {
-  const athletes = lanes.filter(lane => !lane.ghost).map(lane => {
+export function raceCourseScene(course: RaceCourse, lanes: readonly ArenaSceneLane[], unit: string, selectedId: string, spacingMetres = 2) {
+  const roster = lanes.filter(lane => !lane.ghost);
+  // IDs keep lane placement stable when live totals reorder the standings.
+  const ids = roster.map(lane => lane.id).sort();
+  const offsets = new Map(ids.map((id, index) => [id, (index - (ids.length - 1) / 2) * spacingMetres]));
+  const athletes = roster.map(lane => {
     const metres = raceEffortMetres(lane.value, unit);
-    return metres === null ? null : { ...lane, ...raceCoursePosition(course, metres) };
+    return metres === null ? null : { ...lane, ...raceCourseRacerPosition(course, metres, offsets.get(lane.id)) };
   }).filter(athlete => athlete !== null);
   const selected = athletes.find(lane => lane.id === selectedId) ?? athletes.find(lane => lane.you) ?? athletes[0];
   // All athletes share one path. The furthest other peer represents the union

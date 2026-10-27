@@ -1,4 +1,5 @@
 "use client";
+import { FieldViewSwitcher } from "./field-view-switcher";
 import { GeographicCourse } from "@/features/course/geographic-course";
 import { PortraitField } from "@/features/club/portrait-field";
 import { PolishedRacer } from "@/features/brand/polished-racer";
@@ -83,11 +84,17 @@ export function FieldStage({
     : null;
 
   const [viewDimension, setViewDimension] = useState<"2d" | "3d">("2d");
+  const [courseOpen, setCourseOpen] = useState(false);
+  const chooseView = (value: "2d" | "3d" | "4d") => {
+    void playCue("selection");
+    setCourseOpen(value === "4d");
+    if (value === "4d") { cancelCenterTween(); setLanesImmersive(false); }
+    else setViewDimension(value);
+  };
   const [standingsOpen, setStandingsOpen] = useState(false);
   const [lanesImmersive, setLanesImmersive] = useState(false);
   const toggleDimension = () => {
-    void playCue("selection");
-    setViewDimension((prev) => (prev === "2d" ? "3d" : "2d"));
+    chooseView(viewDimension === "2d" ? "3d" : "2d");
   };
 
   useEffect(() => {
@@ -301,19 +308,10 @@ export function FieldStage({
         >
           ← Back
         </button>
-        <div className="focus-broadcast-title">
+        <div className="focus-broadcast-title" style={{ minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
           {sportTitle ?? model.sport} · {displayPlace} / {runners.length}
         </div>
-        <button
-          type="button"
-          className="focus-broadcast-dim-btn"
-          aria-label={
-            viewDimension === "2d" ? "Switch to 3D field" : "Switch to 2D map"
-          }
-          onClick={toggleDimension}
-        >
-          {viewDimension === "2d" ? "2D" : "3D"}
-        </button>
+        <FieldViewSwitcher value={viewDimension} geographic={unit !== "pts"} onChange={chooseView} />
       </div>
 
       <div className="focus-broadcast-tower" aria-label="Live intervals">
@@ -459,7 +457,8 @@ export function FieldStage({
       hidden={!tabActive}
       aria-hidden={!tabActive}
     >
-      <GeographicCourse active={tabActive} lanes={sceneLanes} unit={unit} selectedId={trackSelected || you.id} />
+      <FieldViewSwitcher value={courseOpen ? "4d" : viewDimension} geographic={unit !== "pts"} onChange={chooseView} />
+      <GeographicCourse open={courseOpen} onClose={() => setCourseOpen(false)} onViewChange={chooseView} active={tabActive} lanes={sceneLanes} unit={unit} selectedId={trackSelected || you.id} />
       <div style={{ display: "flow-root" }}>
         <ExpandingField
           open={lanesImmersive && tabActive}
@@ -467,7 +466,7 @@ export function FieldStage({
           onClose={() => setLanesImmersive(false)}
           hud={broadcastHud}
         >
-          {viewDimension === "3d" && tabActive ? (
+          {viewDimension === "3d" && tabActive && !courseOpen ? (
             <PortraitField
               lanes={sceneLanes.map((l) => ({
                 ...l,
