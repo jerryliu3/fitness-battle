@@ -103,7 +103,7 @@ export function CrewSessions({
   }
   return (
     <Section  title="Start Line" action={<FocusButton
-          label="＋ Schedule"
+          label="Schedule +"
           secondary
           disabled={busy}
           onPress={() => {

@@ -458,9 +458,9 @@ export function CrewHub({ membersOnly = false, crewId = "" }: { membersOnly?: bo
             <Pressable
               accessibilityRole="button"
               onPress={() => open("add")}
-              style={f.chip}
+              style={[f.chip, { borderStyle: "dotted" }]}
             >
-              <AppText role="label" >New crew</AppText>
+              <AppText role="label" >New crew +</AppText>
             </Pressable>
           </View>
           <ImageBackground source={alpineTrail} style={[f.card,{backgroundColor:c.fieldDeep,gap:18,minHeight:260,overflow:"hidden",justifyContent:"space-between"}]} imageStyle={{borderRadius:20}}><View pointerEvents="none" style={[StyleSheet.absoluteFill,{backgroundColor:"#081f3680"}]}/>
@@ -521,20 +521,13 @@ export function CrewHub({ membersOnly = false, crewId = "" }: { membersOnly?: bo
           </ImageBackground>
           <View style={f.section}>
             <Text style={f.kicker}>Our shared week · {crew.sport}</Text>
-            <Text style={f.massive}>
+            <Text style={f.massive} adjustsFontSizeToFit numberOfLines={1}>
               {sessionsMetric
-                ? entries.reduce(
-                    (total, entry) => total + Number(entry.session_count ?? 1),
-                    0,
-                  )
-                : formatDistanceM(totalM, state?.units)}
+                ? `${entries.reduce((total, entry) => total + Number(entry.session_count ?? 1), 0)} / ${crew.target_sessions * members.length} sessions`
+                : `${formatDistanceM(totalM, state?.units)} / ${formatDistanceM(crew.journey_km * 1000, state?.units)} ${distanceUnitLabel(state?.units)}`}
             </Text>
-            <AppText role="body" secondary >
-              {sessionsMetric
-                ? `sessions · ${crew.target_sessions} per member`
-                : `${distanceUnitLabel(state?.units)} together`}
-            </AppText>
-            <CrewRelay userId={user?.id} key={crew.id} members={members} entries={entries} sport={crew.sport as SportId} format={crew.format} previousDistanceM={previousDistanceM} targetDistanceM={crew.journey_km*1000} targetSessions={crew.target_sessions} units={state?.units} />
+            <AppText role="body" secondary>Shared target</AppText>
+            <CrewRelay compact userId={user?.id} key={crew.id} members={members} entries={entries} sport={crew.sport as SportId} format={crew.format} previousDistanceM={previousDistanceM} targetDistanceM={crew.journey_km*1000} targetSessions={crew.target_sessions} units={state?.units} />
           </View>
           {user ? (
             <>
