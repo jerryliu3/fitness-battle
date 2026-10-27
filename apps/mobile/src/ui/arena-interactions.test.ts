@@ -91,6 +91,7 @@ vi.mock("../features/competition-summary", async () => {
 });
 vi.mock("../features/sleep-panel", () => ({ SleepPanel: () => null }));
 vi.mock("../features/round-takeover", () => ({ RoundTakeover: () => null }));
+vi.mock("../features/geographic-course", () => ({ GeographicCourse: "GeographicCourse" }));
 vi.mock("../features/competition-replay", () => ({
   CompetitionReplayButton: "CompetitionReplayButton",
 }));

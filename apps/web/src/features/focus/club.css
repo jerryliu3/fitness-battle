@@ -1675,6 +1675,8 @@
   pointer-events: auto;
 }
 .focus-broadcast-back {
+  white-space: nowrap;
+  flex-shrink: 0;
   min-height: 40px;
   padding: 0 14px;
   border-radius: 999px;
@@ -2262,3 +2264,10 @@
   [data-offscreen],
   .athlete-pennant { transition: none !important; }
 }
+
+.geographic-map .mapboxgl-ctrl-bottom-left,
+.geographic-map .mapboxgl-ctrl-bottom-right { bottom: calc(var(--map-controls-bottom, 8px) + 60px); }
+.geographic-map-controls { transition: opacity 160ms ease; }
+.is-holding-field .geographic-map-controls { opacity: 0; pointer-events: none; }
+.competition-replay-scene > .geographic-field-scene { width: 100%; }
+@media (prefers-reduced-motion: reduce) { .geographic-map-controls { transition: none; } }

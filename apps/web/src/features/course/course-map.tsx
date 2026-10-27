@@ -1,12 +1,12 @@
 "use client";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
 import { createCourseCamera, raceCourseScene, RACE_LANE_SPACING_METRES, RACE_TRAIL_WIDTH_METRES, type RaceCourse, type ArenaSceneLane, type CourseCameraPose } from "@fitness-battle/shared";
 import { webEnv } from "@/lib/env";
 
-export default function CourseMap({ course, lanes, unit, selectedId, focusRequest, onSelect }: {
-  course: RaceCourse; lanes: ArenaSceneLane[]; unit: string; selectedId: string; focusRequest: number; onSelect(id: string): void;
+export default function CourseMap({ course, lanes, unit, selectedId, focusRequest, onSelect, controlsBottom = 8, extraControls }: {
+  course: RaceCourse; lanes: ArenaSceneLane[]; unit: string; selectedId: string; focusRequest: number; onSelect(id: string): void; controlsBottom?: number; extraControls?: ReactNode;
 }) {
   const container = useRef<HTMLDivElement>(null), map = useRef<mapboxgl.Map | null>(null);
   const [ready, setReady] = useState(false), [error, setError] = useState(""), [flat, setFlat] = useState(false), [following, setFollowing] = useState(true);
@@ -33,7 +33,8 @@ export default function CourseMap({ course, lanes, unit, selectedId, focusReques
     preference.addEventListener("change", preferenceChanged);
     const interrupt = (event: { originalEvent?: unknown }) => { if (event.originalEvent) { camera.current?.interrupt(); setFollowing(false); } };
     instance.on("movestart", interrupt);
-    instance.on("error", () => setError("Map data could not load. Check your connection and Mapbox access."));
+    instance.on("error", () => setError("Some map data could not load. Check your connection and Mapbox access."));
+    instance.on("idle", () => setError(""));
     instance.on("load", () => {
       const s = latest.current.scene;
       instance.addSource("completed", { type: "geojson", data: s.trails });
@@ -64,10 +65,11 @@ export default function CourseMap({ course, lanes, unit, selectedId, focusReques
     if (explicit) setFollowing(true);
   }, [ready, course, selectedId, focusRequest, scene.selected?.metres, scene.selected?.lateralMetres]);
   const control = (label: string, action: () => void) => <button type="button" className="fb-btn-line" style={{ whiteSpace: "nowrap", minHeight: 44 }} onClick={() => { action(); setFollowing(camera.current?.following ?? false); }}>{label}</button>;
-  return <div style={{ flex: 1, minHeight: 200, display: "flex", flexDirection: "column" }}>
+  return <div className="geographic-map" style={{ flex: 1, minHeight: 200, display: "flex", flexDirection: "column", position: "relative", "--map-controls-bottom": `${controlsBottom}px` } as React.CSSProperties}>
     <div ref={container} aria-label="Geographic race course. Drag to explore; pinch or scroll to zoom." style={{ flex: 1, minHeight: 160 }} />
-    {error ? <p role="alert" className="fb-copy">{error}</p> : null}
-    <div style={{ display: "flex", overflowX: "auto", flexShrink: 0, gap: 8, padding: 8 }}>
+    {error ? <p role="alert" className="fb-copy" style={{ position: "absolute", left: 8, right: 8, bottom: controlsBottom + 100, padding: 12, background: "white" }}>{error}</p> : null}
+    <div className="geographic-map-controls" style={{ position: "absolute", bottom: controlsBottom, left: 8, right: 8, display: "flex", overflowX: "auto", gap: 8, padding: 8 }}>
+      {extraControls}
       {control(following ? "Following" : "Recenter", () => { if (scene.selected) camera.current?.focus(course, scene.selected.metres, false, scene.selected.lateralMetres); })}
       {control(flat ? "3D chase" : "2D map", () => { camera.current?.dimension(flat ? "3d" : "2d"); setFlat(!flat); })}
       {control(spaced ? "Racers: spaced" : "Racers: together", () => setSpaced(value => !value))}

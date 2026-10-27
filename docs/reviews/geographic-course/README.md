@@ -14,10 +14,10 @@ with geometry bounded independently of subsequent trips. Course selection is loc
 to the current view, not a server-authoritative assignment to other participants.
 Shared published course assignment is a separate product/data change.
 
-The field selector exposes **2D / 3D / 4D**, with 4D opening the dedicated
-geographic course screen. The same selector works inside fullscreen views.
-Closing or selecting 2D/3D aborts pending course requests but preserves the chosen
-course for reopening. Points fields only expose 2D/3D.
+The field selector exposes **2D / 3D / 4D** inside one field host, inline and
+fullscreen. Changing modes preserves fullscreen, shared athlete selection, panel
+collapse state and the chosen course. Unmounting the chooser cancels pending
+requests. Points fields only expose 2D/3D.
 
 The underlying route stays invisible ahead of the field. Each athlete reveals
 only their own covered trail, so the leading athlete discovers new ground first.
@@ -59,8 +59,8 @@ safe or meaningful race course. No live GPS permission is required.
 
 ## Native/web integration
 
-Compete exposes **4D** beside **2D / 3D** for km/mi fields. It opens a dedicated
-screen with the current roster/totals and selectable athletes. Import GPX or
+Compete exposes **4D** beside **2D / 3D** for km/mi fields, using the same
+inline/fullscreen host, roster, selection and broadcast HUD. Import GPX or
 submit start/destination addresses, city names or `longitude,latitude` pairs.
 Mapbox Geocoding resolves text on explicit submission; Directions requests a
 walking or cycling route. Inspect the returned route: the first place-search
@@ -134,9 +134,8 @@ flight; two-finger pinch followed by one-finger dragging; live updates while
 exploring; 2D/chase/overview; reduced motion; close/reopen; long efforts and repeated turnarounds.
 Measure sustained physical-device performance separately from simulator input.
 
-The course screen owns its selected athlete independently of the hidden SVG
-field, so selecting peers does not run a second camera animation behind the
-modal. Both adapters render only athlete dots and individual earned trails. Unreached
+The field host owns selection for every mode. In 4D, selection only commands
+the geographic camera; it does not start a hidden SVG camera animation. Both adapters render only athlete dots and individual earned trails. Unreached
 course geometry is not supplied to any map source. Geometry is cached by course,
 immutable roster, spacing and viewer anchor; selecting a peer changes dots and
 the camera without rebuilding or retransmitting the trail collection. Offset
@@ -268,3 +267,50 @@ and workspace typechecks. The iOS course-load and close-up scenarios pass again
 screenshots. The individual-trail screenshots above now show the tighter layout;
 the visible racers stay on this road. Other narrow/off-center routes remain an
 approximation, rather than a guarantee of road containment.
+
+
+### Shared field overlays and competition replay — October 27
+
+4D now renders inside the same field container as 2D/3D on native and Next.
+Fullscreen uses the existing live intervals, ahead/you/behind jumps, selected
+athlete spotlight, athlete chips, independently sliding panels and stationary
+hold-to-hide interaction. The course chooser leaves only the top bar visible so
+panels cannot cover its form. Map gestures retain ownership; holds only observe
+input and ignore movement/multiple fingers. Native map controls fade with the
+HUD; attribution stays available. Native scale/attribution ornaments sit above
+the map toolbar and spotlight. Scene load warnings float without resizing the
+map, distinguish partial scenery failures, and clear when loading becomes idle.
+
+Competition replay offers 2D/3D/4D for distance events, including history entry
+points. Opening from 4D inherits the chosen course and initial mode. Switching
+modes preserves the timeline, selected athlete and course; choosing another
+course in replay updates the mounted live field as well. All marker/trail values
+come from the existing replay frame, including rewind to zero, event/me follow,
+play/pause, event stepping, latest/finish and 1×/2×/4× playback. No future live
+trail leaks into replay. 4D playback publishes at most ten GeoJSON updates per
+second while Mapbox interpolates the camera; explicit seeks paint immediately.
+This bounds bridge/source work but does not establish physical-device FPS.
+The automatic sync/overtake receipt remains its existing dedicated 2D animation
+(the same restriction already applies to 3D); this change covers the browsable
+competition replay.
+
+Validation on the final implementation:
+- iPhone 17 Pro Max / iOS 26.5, existing Release native binary with refreshed JS:
+  two XCTest walkthroughs passed in 69.7 seconds. Real Manhattan routing,
+  sliding both panels, selecting a rival, drag/pinch, fullscreen mode switching,
+  replay seek/back to start, mode switching inside replay, play/pause and return
+  to the inline 4D field were exercised.
+- Browser: actual Mapbox scenery, shared overlays/panel toggles, rival selection,
+  fullscreen 2D→4D switching, replay latest/start/play, 2D/3D/4D replay switches;
+  checked the shared HUD at a 390×844 phone breakpoint.
+- Component regressions exercise shared host/selection/course/replay wiring on
+  both platforms, plus replay backward seeking. Existing geometry and adapter
+  regressions retain trail/dot alignment, no future route, gesture interruption
+  and selection flights.
+- Simulator validation reused the installed Mapbox module. No new native
+  dependency or pod install is required for this follow-up. Physical-device
+  heat/battery/FPS and native document-picker GPX import remain unmeasured.
+
+![4D shared controls on a phone browser](images/shared-overlays-web.png)
+![4D using the shared fullscreen controls](images/shared-overlays-native.png)
+![4D in the competition timeline](images/replay-native.png)

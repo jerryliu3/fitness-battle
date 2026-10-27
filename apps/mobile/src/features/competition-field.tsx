@@ -21,6 +21,7 @@ import {
   selfLaneLabel,
   shellTabFromPath,
   weeklyBoard,
+  type RaceCourse,
   type ArenaSceneLane,
   type ScoreTrack,
   type SportId,
@@ -51,13 +52,12 @@ export function CompetitionField({
   const pathname = usePathname();
   const [appearance, setAppearance] = useFieldAppearance(accountKey, sport);
   const isFocused = shellTabFromPath(pathname)?.id === "arena";
-  const [sceneDimension, setSceneDimension] = useState<"2d" | "3d">("2d");
-  const [courseOpen, setCourseOpen] = useState(false);
+  const [sceneDimension, setSceneDimension] = useState<"2d" | "3d" | "4d">("2d");
+  const [course, setCourse] = useState<RaceCourse | null>(null);
   const chooseView = (value: "2d" | "3d" | "4d") => {
     void playCue("selection");
-    setCourseOpen(value === "4d");
-    if (value === "4d") { flight.cancel(); setExpanded(false); }
-    else setSceneDimension(value);
+    flight.cancel();
+    setSceneDimension(value);
   };
   const [standingsOpen, setStandingsOpen] = useState(false);
   const [expanded, setExpanded] = useState(false);
@@ -141,7 +141,7 @@ export function CompetitionField({
     portraitAnchor.current = Math.max(0, ordered.findIndex(l => l.id === id)) - Math.max(0, ordered.findIndex(l => l.you));
     setSelectedId(id);
     setFocusRequest(value => value + 1);
-    flight.fly({ ...view, center: clampCourseCenter(lane.values[2], view.span, arenaFieldHigh(fieldLanes), arena.unit, appearance.ground) });
+    if (sceneDimension !== "4d") flight.fly({ ...view, center: clampCourseCenter(lane.values[2], view.span, arenaFieldHigh(fieldLanes), arena.unit, appearance.ground) });
   };
 
   const ranked = arena.lanes
@@ -192,7 +192,11 @@ export function CompetitionField({
       onTouchEnd={() => hold.current?.end()}
       onTouchCancel={() => hold.current?.end()}
     >
-      {sceneDimension === "3d" && isFocused && !courseOpen ? (
+      {sceneDimension === "4d" && isFocused ? <View style={{ height: sceneHeight }}>
+        <GeographicCourse lanes={fieldLanes} unit={arena.unit} selectedId={selectedId ?? me?.id ?? ""} focusRequest={focusRequest} onSelect={id => { if (!hold.current?.suppressSelection()) selectAthlete(id); }} course={course} onCourseChange={setCourse} controlsBottom={expanded ? safeBottom + (spotlightCollapsed ? 76 : 160) : 8} overlaysHidden={overlaysHidden} />
+        {!expanded ? <View style={{ position: "absolute", right: 12, top: 12 }}><IconButton icon="expand" label="Expand 4D course to full screen" onPress={expandField} /></View> : null}
+      </View> : null}
+      {sceneDimension === "3d" && isFocused ? (
         <PortraitField
           lanes={arena.lanes.map((l) => ({
             ...l,
@@ -233,7 +237,7 @@ export function CompetitionField({
             onToggleDimension={toggleDimension}
             onZoom={directZoom}
             anchor={laneAnchor}
-            active={isFocused && sceneDimension === "2d" && !courseOpen}
+            active={isFocused && sceneDimension === "2d"}
             focusRequest={focusRequest}
             animateSelection={!reduceMotion}
             onGestureStart={flight.cancel}
@@ -288,6 +292,8 @@ export function CompetitionField({
               state={state}
               selection={replaySelection}
               dimension={sceneDimension}
+              course={course}
+              onCourseChange={setCourse}
               label="Replay"
             />
             <Pressable
@@ -326,8 +332,7 @@ export function CompetitionField({
 
   return (
     <View style={{ gap: 14 }}>
-      <FieldViewSwitcher value={courseOpen ? "4d" : sceneDimension} geographic={arena.unit !== "pts"} onChange={chooseView} />
-      <GeographicCourse open={courseOpen} onClose={() => setCourseOpen(false)} onViewChange={chooseView} active={isFocused} lanes={fieldLanes} unit={arena.unit} selectedId={selectedId ?? me?.id ?? ""} />
+      <FieldViewSwitcher value={sceneDimension} geographic={arena.unit !== "pts"} onChange={chooseView} />
       {expanded ? (
         <Modal
           visible
@@ -390,6 +395,7 @@ export function CompetitionField({
               <FieldViewSwitcher value={sceneDimension} geographic={arena.unit !== "pts"} onChange={chooseView} />
             </FieldOverlayView>
 
+            {(sceneDimension !== "4d" || course) ? <>
             {/* Broadcast HUD: Left Interval Tower */}
             <SlidingFieldPanel
               label="live intervals"
@@ -484,6 +490,7 @@ export function CompetitionField({
                 gap: 8,
               }}
             >
+              {sceneDimension !== "2d" ? <CompetitionReplayButton state={state} selection={replaySelection} dimension={sceneDimension} course={course} onCourseChange={setCourse} label="Replay" /> : null}
               {aheadPeer ? (
                 <Pressable
                   accessibilityRole="button"
@@ -684,6 +691,7 @@ export function CompetitionField({
                 </ScrollView>
               </SlidingFieldPanel>
             ) : null}
+          </> : null}
           </View>
         </Modal>
       ) : (

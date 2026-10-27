@@ -4,6 +4,7 @@ import { afterEach, expect, it, vi } from "vitest";
 import { createRaceCourse } from "@fitness-battle/shared";
 const calls = vi.hoisted(() => ({ setCamera: vi.fn() }));
 vi.mock("react-native", () => ({ View: "View", Text: "Text", Pressable: "Pressable", ScrollView: "ScrollView", StyleSheet: { create: (value: unknown) => value } }));
+vi.mock("./field-overlay-motion", () => ({ FieldOverlayView: "FieldOverlayView" }));
 vi.mock("./section", () => ({ textStyle: () => ({}) }));
 vi.mock("./use-reduced-motion", () => ({ useReducedMotion: () => false }));
 vi.mock("../lib/env", () => ({ mobileEnv: { mapboxAccessToken: "public-test-token" } }));

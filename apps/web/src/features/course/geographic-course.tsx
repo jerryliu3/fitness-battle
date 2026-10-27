@@ -1,39 +1,29 @@
 "use client";
-import { FieldViewSwitcher } from "../field/components/field-view-switcher";
-import * as Dialog from "@radix-ui/react-dialog";
 import dynamic from "next/dynamic";
+import { AppHeading } from "@/ui/section";
 import { useEffect, useRef, useState } from "react";
 import { MAX_COURSE_BYTES, raceCourseFromGpx, requestMapboxCourse, type RaceCourse, type ArenaSceneLane } from "@fitness-battle/shared";
 import { webEnv } from "@/lib/env";
 const CourseMap = dynamic(() => import("./course-map"), { ssr: false, loading: () => <p className="fb-copy">Loading map…</p> });
-export function GeographicCourse({ lanes, unit, selectedId: initialSelectedId, active = true, open, onClose, onViewChange }: {
-  lanes: ArenaSceneLane[]; unit: string; selectedId: string; active?: boolean; open: boolean; onClose(): void; onViewChange(value: "2d" | "3d" | "4d"): void;
+/** Shares the field/replay host rather than opening a separate visualization dialog. */
+export function GeographicCourse({ lanes, unit, selectedId, focusRequest, onSelect, course, onCourseChange, controlsBottom = 8 }: {
+  lanes: ArenaSceneLane[]; unit: string; selectedId: string; focusRequest: number; onSelect(id: string): void;
+  course: RaceCourse | null; onCourseChange(course: RaceCourse | null): void; controlsBottom?: number;
 }) {
-  const [selectedId, setSelectedId] = useState(initialSelectedId), [focusRequest, setFocusRequest] = useState(0);
-  const onSelect = (id: string) => { setSelectedId(id); setFocusRequest(value => value + 1); };
-  const [course, setCourse] = useState<RaceCourse | null>(null);
   const [start, setStart] = useState(""), [finish, setFinish] = useState(""), [profile, setProfile] = useState<"walking" | "cycling">("walking");
   const [busy, setBusy] = useState(false), [error, setError] = useState("");
   const pending = useRef<AbortController | null>(null);
   useEffect(() => () => pending.current?.abort(), []);
-  useEffect(() => { if (!active) { pending.current?.abort(); setBusy(false); onClose(); } }, [active]);
-  const changeOpen = (next: boolean) => { if (!next) { pending.current?.abort(); setBusy(false); onClose(); } };
-  useEffect(() => { if (open) setSelectedId(initialSelectedId); }, [open, initialSelectedId]);
-  useEffect(() => { if (!open) { pending.current?.abort(); setBusy(false); } }, [open]);
   const load = async (work: (signal: AbortSignal) => Promise<RaceCourse>) => {
     pending.current?.abort(); const request = new AbortController(); pending.current = request; setBusy(true); setError("");
-    try { const result = await work(request.signal); if (!request.signal.aborted) setCourse(result); }
+    try { const result = await work(request.signal); if (!request.signal.aborted) onCourseChange(result); }
     catch (cause) { if (!request.signal.aborted) setError(cause instanceof Error ? cause.message : "The course could not be loaded."); }
     finally { if (!request.signal.aborted) setBusy(false); }
   };
   if (unit !== "mi" && unit !== "km") return null;
-  return <Dialog.Root open={open} onOpenChange={changeOpen}>
-    <Dialog.Portal><Dialog.Overlay style={{ position: "fixed", inset: 0, background: "#142b3b99", zIndex: 200 }} />
-      <Dialog.Content style={{ position: "fixed", inset: 0, zIndex: 201, background: "var(--paper, #f8f9f6)", display: "flex", flexDirection: "column", padding: 12, gap: 8 }}>
-        <FieldViewSwitcher value="4d" geographic onChange={onViewChange} />
-        <div style={{ display: "flex", alignItems: "center", gap: 12 }}><Dialog.Close asChild><button className="fb-btn-line">Back</button></Dialog.Close><Dialog.Title className="fb-title" style={{ flex: 1, minWidth: 0, overflow: "hidden", whiteSpace: "nowrap", textOverflow: "ellipsis" }}>{course?.name ?? "Choose a race course"}</Dialog.Title>{course ? <button className="fb-btn-line" onClick={() => setCourse(null)}>Change course</button> : null}</div>
-        <Dialog.Description className="fb-copy">{course ? `${(course.length / (unit === "mi" ? 1609.344 : 1000)).toFixed(2)} ${unit} · Competition totals on a shared route · Out-and-back course` : "Import GPX scenery or request a route. This does not record an activity or change scores."}</Dialog.Description>
-        {!webEnv.mapboxAccessToken ? <p className="fb-copy">Mapbox access is not configured.</p> : course ? <CourseMap key={course.name + course.length} course={course} lanes={lanes} unit={unit} selectedId={selectedId} focusRequest={focusRequest} onSelect={onSelect} /> : <div style={{ display: "grid", gap: 16, overflow: "auto", maxWidth: 640 }}>
+  return <div className="geographic-field-scene" style={{ display: "flex", flexDirection: "column", height: "100%", minHeight: 360, position: "relative" }}>
+        {!webEnv.mapboxAccessToken ? <p className="fb-copy">Mapbox access is not configured.</p> : course ? <CourseMap key={course.name + course.length} course={course} lanes={lanes} unit={unit} selectedId={selectedId} focusRequest={focusRequest} onSelect={onSelect} controlsBottom={controlsBottom} extraControls={<button type="button" className="fb-btn-line" title={`${course.name} · ${(course.length / (unit === "mi" ? 1609.344 : 1000)).toFixed(2)} ${unit} · Out-and-back`} style={{ whiteSpace: "nowrap", flexShrink: 0 }} onClick={() => onCourseChange(null)}>Change course</button>} /> : <div className="geographic-course-chooser" style={{ display: "grid", gap: 16, overflow: "auto", maxWidth: 640, padding: controlsBottom > 8 ? "120px 16px 180px" : 16, margin: "0 auto", width: "100%" }}>
+          <AppHeading level={2} role="heading">Choose a race course</AppHeading><p className="fb-copy">Import GPX scenery or request a route. This does not record an activity or change scores.</p>
           <label className="fb-copy">Import GPX course<input type="file" accept=".gpx,application/gpx+xml" disabled={busy} onChange={event => {
             const file = event.target.files?.[0]; event.target.value = ""; if (!file) return;
             void load(async () => { if (file.size > MAX_COURSE_BYTES) throw new Error("Choose a GPX file under 4 MB."); return raceCourseFromGpx(await file.text(), file.name.replace(/\.gpx$/i, "")); });
@@ -47,8 +37,5 @@ export function GeographicCourse({ lanes, unit, selectedId: initialSelectedId, a
           </form>
         </div>}
         {error ? <p role="alert" className="fb-copy">{error}</p> : null}
-        {course ? <div style={{ display: "flex", gap: 8, overflowX: "auto", padding: 8, flexShrink: 0 }} aria-label="Course athletes">{lanes.filter(lane => !lane.ghost).map(lane => <button type="button" className="fb-btn-line" key={lane.id} aria-pressed={lane.id === selectedId} style={{ whiteSpace: "nowrap" }} onClick={() => onSelect(lane.id)}>{lane.you ? "You" : lane.name} · {lane.value.toFixed(2)} {unit}</button>)}</div> : null}
-      </Dialog.Content>
-    </Dialog.Portal>
-  </Dialog.Root>;
+  </div>;
 }

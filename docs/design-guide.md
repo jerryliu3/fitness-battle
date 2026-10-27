@@ -376,8 +376,12 @@ solid. Courses remain local to the view; no shared published event-course assign
 
 Geographic scenery is the third field option, labeled **4D** beside **2D / 3D**
 on native and web, including fullscreen controls. Distance fields offer all three;
-points fields retain 2D / 3D. 4D opens the dedicated course screen, preserves the
-chosen course when switching views, and has the same selector for returning.
+points fields retain 2D / 3D. 4D uses the same inline/fullscreen field host,
+selection, sliding broadcast panels, quick jumps and hold-to-hide overlays. Mode
+changes retain fullscreen, collapsed panels and the chosen course. Competition
+replay also offers 4D, using timeline values for both dots and earned trails;
+rewinding never reveals later effort. Mapbox supplies geography-specific camera
+controls, while appearance/oval controls remain specific to the illustrative field.
 The route ahead stays invisible. Each athlete reveals an individual narrow,
 opaque trail (about 12 cm wide at close zoom) that ends exactly at their dot; no activity means no trail. The
 viewer stays centered on the underlying route, with peers alternating left/right

@@ -1,14 +1,15 @@
-import { useEffect, useMemo, useRef, useState, type ComponentRef } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode, type ComponentRef } from "react";
 import { View, Text, Pressable, ScrollView } from "react-native";
 import Mapbox, { MapView, Camera, ShapeSource, LineLayer, CircleLayer, CameraGestureObserver } from "@rnmapbox/maps";
 import { createCourseCamera, raceCourseScene, RACE_LANE_SPACING_METRES, RACE_TRAIL_WIDTH_METRES, type RaceCourse, type ArenaSceneLane, type CourseCameraPose } from "@fitness-battle/shared";
 import { mobileEnv } from "../lib/env";
+import { FieldOverlayView } from "./field-overlay-motion";
 import { textStyle } from "./section";
 import { useReducedMotion } from "./use-reduced-motion";
 
 Mapbox.setAccessToken(mobileEnv.mapboxAccessToken);
-export default function CourseMap({ course, lanes, unit, selectedId, focusRequest, onSelect }: {
-  course: RaceCourse; lanes: ArenaSceneLane[]; unit: string; selectedId: string; focusRequest: number; onSelect(id: string): void;
+export default function CourseMap({ course, lanes, unit, selectedId, focusRequest, onSelect, controlsBottom = 8, extraControls, overlaysHidden = false }: {
+  course: RaceCourse; lanes: ArenaSceneLane[]; unit: string; selectedId: string; focusRequest: number; onSelect(id: string): void; controlsBottom?: number; extraControls?: ReactNode; overlaysHidden?: boolean;
 }) {
   const ref = useRef<ComponentRef<typeof Camera>>(null);
   const reduced = useReducedMotion();
@@ -38,9 +39,12 @@ export default function CourseMap({ course, lanes, unit, selectedId, focusReques
   }, [ready, controller, course, selectedId, focusRequest, scene.selected?.metres, scene.selected?.lateralMetres]);
   const control = (label: string, action: () => void) => <Pressable accessibilityRole="button" accessibilityLabel={label} onPress={() => { action(); setFollowing(controller.following); }} style={{ minHeight: 44, paddingHorizontal: 14, justifyContent: "center", borderRadius: 12, backgroundColor: "#ffffff" }}><Text style={textStyle("label")}>{label}</Text></Pressable>;
   return <View style={{ flex: 1, minHeight: 200 }}>
-    <MapView style={{ flex: 1 }} styleURL="mapbox://styles/mapbox/standard" logoEnabled attributionEnabled
+    <MapView accessibilityLabel={`${course.name}. Out-and-back geographic race course.`} style={{ flex: 1 }} styleURL="mapbox://styles/mapbox/standard" logoEnabled attributionEnabled
+      logoPosition={{ bottom: controlsBottom + 60, left: 8 }} attributionPosition={{ bottom: controlsBottom + 60, right: 8 }}
+      scaleBarPosition={{ bottom: controlsBottom + 100, left: 8 }}
       onDidFinishLoadingMap={() => { setReady(true); setError(""); }}
-      onMapLoadingError={() => setError("The map could not load. Check your connection and Mapbox access.")}
+      onMapLoadingError={event => setError(ready && event?.type !== "style" ? "Some map scenery could not load. Check your connection." : "The map could not load. Check your connection and Mapbox access.")}
+      onMapIdle={() => { if (ready) setError(""); }}
     >
       <Camera minZoomLevel={0} maxZoomLevel={20} ref={ref} defaultSettings={{ centerCoordinate: pose.current.center, zoomLevel: 16, pitch: 60 }} />
       <CameraGestureObserver onCameraChanged={({ nativeEvent }) => {
@@ -53,13 +57,14 @@ export default function CourseMap({ course, lanes, unit, selectedId, focusReques
         <CircleLayer id="athlete-dots" slot="top" style={{ circleRadius: ["case", ["get", "selected"], 5, 3], circleColor: ["case", ["get", "you"], "#f7c948", "#20b9c6"], circleStrokeColor: "#ffffff", circleStrokeWidth: 1 }} />
       </ShapeSource>
     </MapView>
-    {error ? <Text accessibilityRole="alert" style={{ ...textStyle("body"), padding: 12, backgroundColor: "#ffffff" }}>{error}</Text> : null}
-    <ScrollView horizontal style={{ flexGrow: 0, backgroundColor: "#142b3b" }} contentContainerStyle={{ flexDirection: "row", gap: 6, padding: 8 }}>
+    {error ? <Text accessibilityRole="alert" style={{ ...textStyle("body"), position: "absolute", left: 8, right: 8, bottom: controlsBottom + 136, padding: 12, borderRadius: 12, backgroundColor: "#ffffff" }}>{error}</Text> : null}
+    <FieldOverlayView hidden={overlaysHidden} onTouchStart={event => event.stopPropagation()} style={{ position: "absolute", bottom: controlsBottom, left: 8, right: 8 }}><ScrollView horizontal style={{ flexGrow: 0, borderRadius: 12, backgroundColor: "#142b3b" }} contentContainerStyle={{ flexDirection: "row", gap: 6, padding: 8 }}>
+      {extraControls}
       {control(following ? "Following" : "Recenter", focus)}
       {control(flat ? "3D chase" : "2D map", () => { controller.dimension(flat ? "3d" : "2d"); setFlat(!flat); })}
       {control(spaced ? "Racers: spaced" : "Racers: together", () => setSpaced(value => !value))}
       {control("Race overview", () => { controller.overview({ coordinates: scene.overviewCoordinates }); setFlat(true); })}
       {control("Zoom in", () => controller.zoom(1))}{control("Zoom out", () => controller.zoom(-1))}
-    </ScrollView>
+    </ScrollView></FieldOverlayView>
   </View>;
 }
