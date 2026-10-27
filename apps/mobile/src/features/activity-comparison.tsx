@@ -18,7 +18,7 @@ export function ActivityComparison({ activity, state }: { activity: Activity; st
         <AppText role="label" style={item.id === metric.id ? s.selectedText : undefined}>{item.label}</AppText>
       </Pressable>)}
     </View>
-    <View style={s.chart} accessibilityLabel={`${metric.label}. This session: ${metric.currentLabel}. ${metric.id === "frequency" ? "Previous 30 days" : "Previous median"}: ${metric.baselineLabel}. ${metric.context}`} accessible>
+    <View style={s.chart} accessibilityLabel={`${metric.label}. ${metric.id === "frequency" ? "Last 30 days" : "This session"}: ${metric.currentLabel}. ${metric.id === "frequency" ? "Previous 30 days" : "Previous median"}: ${metric.baselineLabel}. ${metric.context}`} accessible>
       {[[metric.id === "frequency" ? "Last 30 days" : "This session", metric.currentLabel, metric.current, true], [metric.id === "frequency" ? "Previous 30 days" : "Previous median", metric.baselineLabel, metric.baseline, false]].map(([label, value, amount, current]) => <View key={String(label)} style={s.barRow}>
         <View style={s.barHeading}><AppText role="caption" secondary>{label}</AppText><AppText role="label">{value}</AppText></View>
         <View style={s.track}><View style={[s.bar, current ? s.current : s.previous, { width: `${max ? Number(amount) / max * 100 : 0}%` }]}/></View>
