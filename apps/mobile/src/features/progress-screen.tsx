@@ -18,7 +18,6 @@ import {
 } from "@fitness-battle/shared";
 import { TrainingHistory } from "./training-history";
 import { AthleteMetrics } from "./athlete-metrics";
-import { AthleteTelemetryMatrix } from "./athlete-telemetry-matrix";
 import { useScoreTrackLens } from "../lib/score-track-lens";
 export function ProgressScreen() {
   const { state } = useCompeteStore();
@@ -81,7 +80,6 @@ export function ProgressScreen() {
           </Pressable>
           {awardCards(state).length > 0 ? <AwardShelf cards={awardCards(state).slice(0, 3)} /> : null}
         </View>
-        <AthleteTelemetryMatrix state={state} />
         </View>
         </MotionStep>
       </SectionStack>
