@@ -7,7 +7,11 @@ import {
   ANALYTICS_TIME_LENSES,
   MOBILE_LAYOUT_SPECS,
   buildAnalyticsLabModel,
+  buildSvgCorridorGeometry,
+  buildSvgLineGeometry,
   deriveScenarioFromCompeteState,
+  formatMinutesAsHoursMins,
+  getDomainTitle,
 } from "./analytics-lab";
 import type { CompeteState } from "./compete/sports";
 
@@ -19,6 +23,25 @@ describe("analytics-lab shared model", () => {
       expect(domain.concepts.map((c) => c.index)).toEqual([0, 1, 2]);
     }
     expect(MOBILE_LAYOUT_SPECS).toHaveLength(ANALYTICS_LAYOUT_MODES.length);
+  });
+
+  it("computes SVG line and corridor geometry", () => {
+    expect(ANALYTICS_DOMAIN_IDS).toHaveLength(6);
+    const lineGeo = buildSvgLineGeometry([10, 20, 15, 30], 100, 50);
+    expect(lineGeo.points).toHaveLength(4);
+    expect(lineGeo.polyline).toContain(",");
+    expect(lineGeo.areaPath).toContain("M");
+
+    const corridorGeo = buildSvgCorridorGeometry(
+      [
+        { value: 60, baselineLow: 50, baselineHigh: 70 },
+        { value: 65, baselineLow: 52, baselineHigh: 72 },
+      ],
+      100,
+      50,
+    );
+    expect(corridorGeo.points).toHaveLength(2);
+    expect(corridorGeo.corridorPath).toContain("M");
   });
 
   it("computes deterministic market, vitals, sleep, load, performance, and combined series across scenarios and lenses", () => {
@@ -94,5 +117,16 @@ describe("analytics-lab shared model", () => {
     expect(healthyModel.scenario).toBe("peak_build");
     expect(healthyModel.market.holdings[0]!.sport).toBe("Running (GPS)");
     expect(healthyModel.market.holdings[0]!.hours).toBe(4);
+  });
+
+  it("formats domain titles and time durations", () => {
+    expect(getDomainTitle("market")).toBe("Athlete Market");
+    expect(getDomainTitle("vitals")).toBe("Autonomic Vitals");
+    expect(getDomainTitle("sleep")).toBe("Sleep & Recovery");
+    expect(getDomainTitle("load")).toBe("Workload Ratio");
+    expect(getDomainTitle("performance")).toBe("Cardio & Pace");
+    expect(getDomainTitle("combined")).toBe("Multi-Metric Synthesis");
+    expect(getDomainTitle(null)).toBe("Athlete Telemetry");
+    expect(formatMinutesAsHoursMins(125)).toBe("2h 05m");
   });
 });
