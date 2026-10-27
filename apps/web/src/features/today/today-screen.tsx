@@ -1,6 +1,8 @@
 "use client";
 import { AppText, AppParagraph } from "@/ui/section";
 
+import { useDailySuggestion } from "./use-daily-suggestion";
+import "./daily-suggestion.css";
 import { WeekChart } from "./week-chart";
 import { DailyHealth } from "./daily-health";
 import { LatestActivity } from "@/features/club/latest-activity";
@@ -197,6 +199,7 @@ export function TodayScreen() {
   const onHome = usePathname() === "/today";
   const { user } = useAuth();
   const { state, dispatch, lastDebugEvent, loadStatus } = useCompete();
+  const suggestionPrompt = useDailySuggestion(user?.id ?? "guest", state);
   const reduced = useReducedMotion();
   const [removed, setRemoved] = useState<Activity | null>(null);
   const [syncNotice, setSyncNotice] = useState<string | null>(null);
@@ -301,6 +304,7 @@ export function TodayScreen() {
   }, [syncNotice]);
 
   function openSession(target: SessionTarget, phase: "peek" | "full") {
+    if (target === "suggestion") suggestionPrompt.dismiss();
     if(phase==="peek" && document.activeElement instanceof HTMLElement)sessionReturnFocus.current=document.activeElement;
     setRevealingStops([]);
     void playCue("light");
@@ -610,6 +614,12 @@ export function TodayScreen() {
       </JourneyTrail>
       </div>
       </details>
+      {onHome && suggestionPrompt.visible && session.kind === "closed" ? <aside className="home-daily-suggestion" aria-label="Today's suggested session">
+        <button type="button" className="home-daily-suggestion-open" onClick={() => openSession("suggestion", "full")}>
+          <span>Today’s suggested session</span><strong>{route.suggestion.title} ↗</strong>
+        </button>
+        <button type="button" className="home-daily-suggestion-dismiss" aria-label="Dismiss suggested session for today" onClick={suggestionPrompt.dismiss}>×</button>
+      </aside> : null}
     </div>
   );
 }

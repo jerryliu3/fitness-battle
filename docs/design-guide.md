@@ -416,3 +416,14 @@ Mapbox positions native/DOM annotations; do not project camera frames through Re
 Paths use a 36 cm stroke on 42 cm lane spacing (6 cm gap at close zoom), with a
 3 px visibility floor at wider zooms. Hold-to-hide includes nameplates. See the
 [racer-card follow-up](reviews/geographic-course/racer-callouts.md).
+
+### Daily suggested session — October 27
+
+Home offers a floating, dismissible Today’s suggested session prompt on web and
+native. It opens the same Today session and `buildTodayRoute` suggestion as the
+journey, without a second recommendation engine. Viewing the suggestion from
+either entry point or dismissing the prompt hides it through the current Eastern
+calendar day. Dismissal is stored per account on the device; date rollover and
+foreground wakeups renew it. Journey access remains available. The existing
+home-lab prototype informed the Today/journey reuse; no separate floating prompt
+prototype was found in this checkout. No score, training rule or sync write changes.
