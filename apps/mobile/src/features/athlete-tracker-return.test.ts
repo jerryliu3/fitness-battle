@@ -47,6 +47,7 @@ vi.mock("../lib/tracker-connect", () => ({
 vi.mock("./account-actions", () => ({ AccountActions: "AccountActions" }));
 vi.mock("./legal-links", () => ({ LegalLinks: "LegalLinks" }));
 vi.mock("./athlete-metrics", () => ({ AthleteMetrics: "AthleteMetrics" }));
+vi.mock("./profile-photo", () => ({ ProfilePhoto: "ProfilePhoto" }));
 vi.mock("./data-sync-actions", () => ({ DataSyncActions: "DataSyncActions" }));
 vi.mock("../ui/screen-header", () => ({ ScreenHeader: "ScreenHeader" }));
 vi.mock("../ui/sport-icon", () => ({ SportIcon: "SportIcon" }));
@@ -57,6 +58,7 @@ vi.mock("../ui/focus", () => ({
   FocusButton: "Button",
   FocusSegments: "Segments",
   FocusSheet: "Sheet",
+  FocusSidePanel: "SidePanel",
   FocusTextButton: "TextButton",
   f: {},
 }));

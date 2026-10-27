@@ -67,35 +67,73 @@ export function EventCarousel({
       aria-label="Your registered events"
       aria-roledescription="carousel"
     >
-      {/* Sport chips select the active field; horizontal swipe on the pages still switches events. */}
-      <div className="club-event-chips-bar">
-        <div className="club-event-chips" role="tablist" aria-label="Registered events">
-          {events.map((event) => (
+      <div
+        className="club-event-toolbar"
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          gap: "8px",
+          padding: "4px 0 12px",
+          borderBottom: "1px solid var(--line, #e0e5dc)",
+        }}
+      >
+        <div
+          role="tablist"
+          aria-label="Registered sports"
+          style={{ display: "flex", flexWrap: "wrap", gap: "16px", flex: 1 }}
+        >
+          {events.map((event, i) => (
             <button
               key={event.id}
               id={`${tabPrefix}-${event.id}`}
               type="button"
               role="tab"
-              className="club-event-chip"
-              aria-selected={event.id === value}
+              aria-selected={i === index}
               aria-controls={`${tabPrefix}-panel-${event.id}`}
+              aria-label={`Show ${event.label}`}
               onClick={() => onChange(event.id)}
+              style={{
+                cursor: "pointer",
+                padding: "8px 4px",
+                border: "none",
+                borderBottom: i === index ? "2.5px solid var(--ink, #00101b)" : "2.5px solid transparent",
+                background: "transparent",
+                color: i === index ? "var(--ink, #00101b)" : "var(--muted, #64748b)",
+                fontWeight: i === index ? 700 : 500,
+                fontSize: "16px",
+                marginBottom: "-13px",
+              }}
             >
               {event.label}
               {event.badge ? (
-                <StatusBadge>{event.badge}</StatusBadge>
+                <span style={{ opacity: 0.65, fontSize: "12px", marginLeft: 4 }}>· {event.badge}</span>
               ) : null}
             </button>
           ))}
         </div>
-        <button
-          type="button"
-          className="club-event-chip is-register"
-          aria-label="Register for an event"
-          onClick={onRegister}
-        >
-          Register
-        </button>
+        <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+          <button
+            type="button"
+            className="club-icon-button"
+            aria-label="Previous event"
+            disabled={index === 0}
+            onClick={() => onChange(events[index - 1]!.id)}
+            style={{ width: "28px", height: "28px", fontSize: "13px", display: "inline-flex", alignItems: "center", justifyContent: "center", opacity: index === 0 ? 0.3 : 1 }}
+          >
+            ←
+          </button>
+          <button
+            type="button"
+            className="club-icon-button"
+            aria-label="Next event"
+            disabled={index === events.length - 1}
+            onClick={() => onChange(events[index + 1]!.id)}
+            style={{ width: "28px", height: "28px", fontSize: "13px", display: "inline-flex", alignItems: "center", justifyContent: "center", opacity: index === events.length - 1 ? 0.3 : 1 }}
+          >
+            →
+          </button>
+        </div>
       </div>
       <div
         ref={scroller}

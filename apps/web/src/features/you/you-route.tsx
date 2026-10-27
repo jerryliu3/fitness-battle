@@ -17,7 +17,34 @@ import { AthleteOverview } from "@/features/focus/athlete-overview";
 import { SeasonHistory } from "@/features/split/components/season-history";
 import { AwardShelf } from "./award-shelf";
 import { buildSplitBoard } from "@/features/split/model";
-import { SPORT_ICON_PATHS, SETTINGS_ICON_PATHS, activityFromSample, INTEGRATION_ICONS, awardCards, BACKFILL_DAYS, competeNow, competitionTrack, evidenceLabel, primaryFreezePeriodStart, PROVIDERS, RANK_BANDS, sleepRenewal, SPORTS, type SportId, type ActivitySample, type ProviderId, type ReadinessMark, type ReadinessSample } from "@fitness-battle/shared";
+import {
+  SPORT_ICON_PATHS,
+  SETTINGS_ICON_PATHS,
+  activityFromSample,
+  INTEGRATION_ICONS,
+  awardCards,
+  BACKFILL_DAYS,
+  competeNow,
+  competitionTrack,
+  evidenceLabel,
+  primaryFreezePeriodStart,
+  PROVIDERS,
+  RANK_BANDS,
+  sleepRenewal,
+  SPORTS,
+  trainingBuckets,
+  trainingComparison,
+  personalRecordHistory,
+  formatClockTime,
+  RECORD_DISTANCES,
+  type SportId,
+  type CompeteState,
+  type ActivitySample,
+  type ProviderId,
+  type ReadinessMark,
+  type ReadinessSample,
+  type TrainingRange,
+} from "@fitness-battle/shared";
 import { AuthPrompt } from "@/components/auth-gate";
 import { Sheet } from "@/ui/sheet";
 import Link from "next/link";
@@ -36,6 +63,7 @@ const OAUTH_PROVIDERS = new Set<ProviderId>([
 const DEVICE_PROVIDERS = new Set<ProviderId>(["apple_health", "google_health"]);
 
 type AthletePanel =
+  | "profile"
   | "connections"
   | "preferences"
   | "notifications"
@@ -43,6 +71,7 @@ type AthletePanel =
   | "scoring";
 
 const PANEL_TITLES: Record<AthletePanel, string> = {
+  profile: "Edit profile & Settings",
   connections: "Data Sync",
   preferences: "Preferences",
   notifications: "Notifications",
@@ -61,6 +90,186 @@ function humanError(code?: string): string {
   return code;
 }
 
+function ProgressView({
+  state,
+  user,
+  offlineMode,
+  board,
+}: {
+  state: CompeteState;
+  user: any;
+  offlineMode: boolean;
+  board: any;
+}) {
+  const [range, setRange] = useState<TrainingRange>("week");
+  const now = competeNow(state);
+  const buckets = trainingBuckets(state.activities, "all", range, now, now).filter(
+    (b) => Date.parse(b.start) <= now.getTime()
+  );
+  const comparison = trainingComparison(state.activities, "all", range, now, now);
+  const activeHours = buckets.reduce((sum, b) => sum + b.movingSec, 0) / 3600;
+  const sessionsCount = buckets.reduce((sum, b) => sum + b.sessions, 0);
+  const activeDaysCount = new Set(
+    state.activities
+      .filter((a: { startedAt: string }) => {
+        const at = new Date(a.startedAt);
+        return buckets.length > 0 && at >= new Date(buckets[0]!.start) && at <= now;
+      })
+      .map((a: { startedAt: string }) => a.startedAt.slice(0, 10))
+  ).size;
+  const records = personalRecordHistory(state, now);
+  const pbs = records.slice(0, 3);
+  const maxMoving = Math.max(1, ...buckets.map((b) => b.movingSec));
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: "28px" }}>
+      {/* 1. EFFORT SCORE FIRST */}
+      <div>
+        <AthleteOverview
+          state={state}
+          email={user?.email}
+          offlineMode={offlineMode}
+          sections="progress"
+        />
+        <WeekRecords
+          sport={state.primary}
+          you={board.you}
+          fieldSize={board.rows.length}
+          units={state.units}
+        />
+      </div>
+
+      {/* 2. ACTIVE TRAINING RHYTHM */}
+      <section className="focus-card">
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px", flexWrap: "wrap", gap: "8px" }}>
+          <div>
+            <AppParagraph typographyRole="label" className="fb-kicker">Active time rhythm</AppParagraph>
+            <AppHeading level={2} role="heading" style={{ margin: 0 }}>
+              {activeHours.toFixed(1)}h {range} total
+            </AppHeading>
+          </div>
+          <div role="group" aria-label="Training range" style={{ display: "flex", gap: "4px" }}>
+            {(["week", "month", "year"] as const).map((r) => (
+              <button
+                key={r}
+                type="button"
+                aria-pressed={range === r}
+                onClick={() => setRange(r)}
+                style={{
+                  cursor: "pointer",
+                  padding: "6px 12px",
+                  borderRadius: "999px",
+                  border: "1px solid var(--line, #e0e5dc)",
+                  background: range === r ? "var(--tennis, #ccff00)" : "var(--card, #ffffff)",
+                  color: "var(--ink, #00101b)",
+                  fontWeight: range === r ? 600 : 500,
+                  fontSize: "13px",
+                  textTransform: "capitalize",
+                }}
+              >
+                {r}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* SVG Rhythm Bars */}
+        <div style={{ margin: "16px 0", height: "100px", width: "100%" }}>
+          <svg width="100%" height="100" viewBox="0 0 320 100" preserveAspectRatio="none">
+            {buckets.map((b, i) => {
+              const barHeight = Math.max(4, (b.movingSec / maxMoving) * 80);
+              const x = (i / Math.max(1, buckets.length - 1)) * 300 + 10;
+              return (
+                <g key={b.start}>
+                  <rect
+                    x={x - 6}
+                    y={90 - barHeight}
+                    width={12}
+                    height={barHeight}
+                    rx={4}
+                    fill={b.movingSec > 0 ? "var(--tennis, #ccff00)" : "var(--line, #e0e5dc)"}
+                  />
+                </g>
+              );
+            })}
+          </svg>
+        </div>
+
+        {/* Delta Cards */}
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px", marginTop: "12px" }}>
+          <div className="fb-card" style={{ padding: "14px", border: "1px solid var(--line)", borderRadius: "16px" }}>
+            <span style={{ fontSize: "12px", color: "var(--muted)", textTransform: "uppercase" }}>Sessions</span>
+            <div style={{ fontSize: "24px", fontWeight: 700, margin: "4px 0" }}>{sessionsCount}</div>
+            <div style={{ fontSize: "12px", color: "var(--muted)" }}>vs previous {range}</div>
+          </div>
+          <div className="fb-card" style={{ padding: "14px", border: "1px solid var(--line)", borderRadius: "16px" }}>
+            <span style={{ fontSize: "12px", color: "var(--muted)", textTransform: "uppercase" }}>Active days</span>
+            <div style={{ fontSize: "24px", fontWeight: 700, margin: "4px 0" }}>{activeDaysCount}</div>
+            <div style={{ fontSize: "12px", color: "var(--muted)" }}>vs previous {range}</div>
+          </div>
+        </div>
+      </section>
+
+      {/* 3. PERSONAL BESTS */}
+      <section className="focus-card">
+        <SectionHeader title="Personal bests" />
+        {pbs.length > 0 ? (
+          <div style={{ display: "flex", flexDirection: "column", gap: "8px", marginTop: "8px" }}>
+            {pbs.map((record) => {
+              const label = RECORD_DISTANCES[record.sport]?.find((d) => d.id === record.distanceId)?.label ?? record.distanceId;
+              return (
+                <div
+                  key={record.activityId}
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    padding: "12px",
+                    background: "var(--card)",
+                    border: "1px solid var(--line)",
+                    borderRadius: "14px",
+                  }}
+                >
+                  <div>
+                    <div style={{ fontSize: "18px", fontWeight: 700 }}>{formatClockTime(record.seconds)}</div>
+                    <div style={{ fontSize: "12px", color: "var(--muted)" }}>
+                      {label} · {new Date(record.startedAt).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                    </div>
+                  </div>
+                  <span style={{ fontSize: "14px", color: "var(--muted)" }}>→</span>
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          <AppParagraph typographyRole="body" className="fb-copy">
+            Complete your first counted run or ride to set records.
+          </AppParagraph>
+        )}
+      </section>
+
+      {/* 4. THE BIGGER PICTURE */}
+      <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
+        <TrainingHistory state={state}>
+          <Achievements state={state} />
+        </TrainingHistory>
+        <WeekRecap state={state} />
+        <Link href="/you/history" className="fb-card club-history-preview">
+          <SectionHeader title="Past weeks & awards" />
+          <AppParagraph typographyRole="body" className="fb-copy">
+            Closed competition weeks, chapter history, and your award shelf.
+          </AppParagraph>
+          {awardCards(state).length > 0 ? (
+            <div style={{ marginTop: "12px" }}>
+              <AwardShelf state={state} />
+            </div>
+          ) : null}
+        </Link>
+      </div>
+    </div>
+  );
+}
+
 function YouContent({ surface }: { surface: "progress" | "athlete" }) {
   const reduced = useReducedMotion();
   const { user, signOut, offlineMode, legacyBackup } = useAuth();
@@ -75,6 +284,8 @@ function YouContent({ surface }: { surface: "progress" | "athlete" }) {
   const [authPrompt, setAuthPrompt] = useState<{ open: boolean; reason: string } | null>(null);
   const [connectingProvider, setConnectingProvider] = useState<ProviderId | null>(null);
   const [confirmFreeze, setConfirmFreeze] = useState(false);
+  const [draftName, setDraftName] = useState(state?.name ?? "");
+  const [draftCity, setDraftCity] = useState(state?.city ?? "");
   const searchParams = useSearchParams();
   const accountKey = user?.id ?? "guest";
   const pushIdentity: SyncIdentity | null = user
@@ -83,6 +294,17 @@ function YouContent({ surface }: { surface: "progress" | "athlete" }) {
   const router = useRouter();
   const requestedPanel = searchParams.get("panel");
   const requestedEdit = searchParams.get("edit");
+
+  useEffect(() => {
+    if (state?.name) setDraftName(state.name);
+    if (state?.city !== undefined) setDraftCity(state.city);
+  }, [state?.name, state?.city]);
+
+  useEffect(() => {
+    if (requestedEdit === "profile") {
+      setPanel("profile");
+    }
+  }, [requestedEdit]);
   useEffect(() => {
     if (requestedPanel === "progress") {
       router.replace("/you");
@@ -590,7 +812,71 @@ function YouContent({ surface }: { surface: "progress" | "athlete" }) {
                     <AppHeading level={1} role="heading">{PANEL_TITLES[panel]}</AppHeading>
         </header>
         <div className="focus-settings-panel">
-          {panel === "connections" ? (
+          {panel === "profile" ? (
+            <>
+              <Section className="fb-card" title="Profile Details">
+                <label className="fb-field" style={{ marginBottom: 8 }}>
+                  Display name
+                  <input
+                    value={draftName}
+                    onChange={(e) => setDraftName(e.target.value)}
+                    placeholder="Your name"
+                    maxLength={32}
+                  />
+                </label>
+                <label className="fb-field" style={{ marginBottom: 12 }}>
+                  Location / City
+                  <input
+                    value={draftCity}
+                    onChange={(e) => setDraftCity(e.target.value)}
+                    placeholder="City, Region"
+                    maxLength={48}
+                  />
+                </label>
+                <button
+                  type="button"
+                  className="fb-btn"
+                  style={{ ...typographyStyle("label"), padding: "6px 14px" }}
+                  onClick={() => {
+                    const trimmed = draftName.trim();
+                    if (!trimmed) return;
+                    dispatch({ type: "rename", name: trimmed });
+                    dispatch({ type: "set-city", city: draftCity.trim() });
+                    setPanel(null);
+                  }}
+                >
+                  Save profile
+                </button>
+              </Section>
+              <Section className="fb-card" title="Settings">
+                {(
+                  [
+                    ["connections", "Trackers & history"],
+                    ["preferences", "Units, sports & freezes"],
+                    ["notifications", "Your updates, your choice"],
+                    ["scoring", "Levels & eligibility"],
+                    ["account", "Sign out, report an issue & delete account"],
+                  ] as const
+                ).map(([id, detail]) => (
+                  <button
+                    key={id}
+                    type="button"
+                    className="focus-settings-row"
+                    onClick={() => {
+                      void playCue("selection");
+                      setPanel(id);
+                    }}
+                  >
+                    <span className="focus-settings-copy">
+                      <b>{PANEL_TITLES[id]}</b>
+                      <AppText as="small" role="body" secondary>{detail}</AppText>
+                    </span>
+                    <span aria-hidden="true">→</span>
+                  </button>
+                ))}
+              </Section>
+            </>
+          ) : panel === "connections" ? (
             <>
               <Section className="fb-card" title="Data Sync">
 
@@ -818,24 +1104,12 @@ function YouContent({ surface }: { surface: "progress" | "athlete" }) {
     <>
     <div className="focus-athlete" ref={overviewRef} inert={Boolean(panel) || settingsPresent}>
       {surface === "progress" ? (
-        <ProgressHub overview={<><TrainingHistory state={state}><Achievements state={state}/></TrainingHistory><WeekRecap state={state}/>
-        <Link href="/you/history" className="fb-card club-history-preview">
-          <SectionHeader title="Past weeks & awards"/>
-          <AppParagraph typographyRole="body" className="fb-copy">Closed competition weeks, chapter history, and your award shelf.</AppParagraph>
-        </Link></>} effort={<>
-          <AthleteOverview
-            state={state}
-            email={user?.email}
-            offlineMode={offlineMode}
-            sections="progress"
-          />
-          <WeekRecords
-            sport={state.primary}
-            you={board.you}
-            fieldSize={board.rows.length}
-            units={state.units}
-          />
-        </>} history={null}/>
+        <ProgressView
+          state={state}
+          user={user}
+          offlineMode={offlineMode}
+          board={board}
+        />
       ) : user ? (
         <>
       <header className="club-detail-heading"><Link href="/today" className="club-icon-button" aria-label="Return to Home">‹</Link><AppHeading level={1} role="heading">Athlete</AppHeading></header>
@@ -844,6 +1118,7 @@ function YouContent({ surface }: { surface: "progress" | "athlete" }) {
         email={user.email}
         offlineMode={offlineMode}
         openProfileEdit={requestedEdit === "profile"}
+        onEditProfile={() => setPanel("profile")}
         sections="profile"
       />
       {isOwnerEmail(user.email) && (

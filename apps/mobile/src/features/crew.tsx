@@ -111,6 +111,7 @@ export function CrewHub({ membersOnly = false, crewId = "" }: { membersOnly?: bo
   const [panel, setPanel] = useState<
     "add" | "invite" | "manage" | "leave" | "members" | null
   >(null);
+  const [viewingMember, setViewingMember] = useState<Member | null>(null);
   const [name, setName] = useState("");
   const [code, setCode] = useState("");
   const [format, setFormat] = useState("volume");
@@ -463,50 +464,59 @@ export function CrewHub({ membersOnly = false, crewId = "" }: { membersOnly?: bo
             </Pressable>
           </View>
           <ImageBackground source={alpineTrail} style={[f.card,{backgroundColor:c.fieldDeep,gap:18,minHeight:260,overflow:"hidden",justifyContent:"space-between"}]} imageStyle={{borderRadius:20}}><View pointerEvents="none" style={[StyleSheet.absoluteFill,{backgroundColor:"#081f3680"}]}/>
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel="View crew members"
-              onPress={() => open("members")}
-              style={{ gap: 12, minHeight: 44, flex: 1 }}
-            >
+            <View style={{ gap: 12, minHeight: 44, flex: 1 }}>
               <Text style={[f.kicker, { color: c.tennis }]}>
                 {solo ? "Solo circle" : "Your people"} · {members.length} member
                 {members.length === 1 ? "" : "s"}
               </Text>
               <AppText accessibilityRole="header" role="display" style={{ color: c.paper }}>{crew.name}</AppText>
-            </Pressable>
-            <View style={[f.row, { flexWrap: "wrap" }]}>
-              <View style={f.chipRow}>
-                {members.slice(0, 5).map((m) => (
-                  <UserAvatar key={m.user_id} src={m.avatar_url} name={m.display_name} decorative={false} />
-                ))}
+            </View>
+            <View style={[f.row, { flexWrap: "wrap", justifyContent: "space-between", alignItems: "center", gap: 10 }]}>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="View crew members"
+                onPress={() => open("members")}
+                style={[f.row, { alignItems: "center", gap: 4 }]}
+              >
+                <View style={f.chipRow}>
+                  {members.slice(0, 5).map((m) => (
+                    <UserAvatar key={m.user_id} src={m.avatar_url} name={m.display_name} decorative={false} size={36} />
+                  ))}
+                  {members.length > 5 ? (
+                    <View style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: c.card, alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: c.line }}>
+                      <AppText role="caption">+{members.length - 5}</AppText>
+                    </View>
+                  ) : null}
+                </View>
+              </Pressable>
+              <View style={[f.row, { gap: 8 }]}>
+                {user ? (
+                  <FocusButton
+                    label="Invite"
+                    onPress={() => {
+                      open("invite");
+                      if (!solo && crew.invite_code) {
+                        const link = inviteLink(crew.invite_code);
+                        void Share.share({
+                          message: `Join my crew on overtaek: ${link}`,
+                        }).then(result => {
+                          if (result.action === Share.sharedAction) { setNote("Invite shared."); void playCue("success"); }
+                        }).catch(() => setNote("Could not share the invite. Try again."));
+                      }
+                    }}
+                  />
+                ) : null}
+                {user ? (
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel="Crew settings"
+                    onPress={() => open("manage")}
+                    style={[f.chip, { minWidth: 48 }]}
+                  >
+                    <AppIcon name="preferences" />
+                  </Pressable>
+                ) : null}
               </View>
-              {user ? (
-                <FocusButton
-                  label="Invite"
-                  onPress={() => {
-                    open("invite");
-                    if (!solo && crew.invite_code) {
-                      const link = inviteLink(crew.invite_code);
-                      void Share.share({
-                        message: `Join my crew on overtaek: ${link}`,
-                      }).then(result => {
-                        if (result.action === Share.sharedAction) { setNote("Invite shared."); void playCue("success"); }
-                      }).catch(() => setNote("Could not share the invite. Try again."));
-                    }
-                  }}
-                />
-              ) : null}
-              {user ? (
-                <Pressable
-                  accessibilityRole="button"
-                  accessibilityLabel="Crew settings"
-                  onPress={() => open("manage")}
-                  style={[f.chip, { minWidth: 48 }]}
-                >
-                  <AppIcon name="preferences" />
-                </Pressable>
-              ) : null}
             </View>
           </ImageBackground>
           <View style={f.section}>
@@ -536,20 +546,65 @@ export function CrewHub({ membersOnly = false, crewId = "" }: { membersOnly?: bo
                     (a, b) => memberTotal(b.user_id) - memberTotal(a.user_id),
                   )
                   .map((m, i) => (
-                    <View key={m.user_id} style={f.row}>
+                    <Pressable
+                      key={m.user_id}
+                      accessibilityRole="button"
+                      accessibilityLabel={`View ${m.display_name}'s profile`}
+                      onPress={() => {
+                        if (m.user_id === user?.id) {
+                          router.navigate("/athlete");
+                        } else {
+                          setViewingMember(m);
+                        }
+                      }}
+                      style={[f.row, { paddingVertical: 8, alignItems: "center" }]}
+                    >
                       <AppText role="body" secondary >{i + 1}</AppText>
+                      <UserAvatar src={m.avatar_url} name={m.display_name} size={32} />
                       <AppText role="row" style={f.grow}>{m.display_name}</AppText>
                       <RankBadge score={m.effort_score} />
                       <AppText role="value" >
                         {sessionsMetric ? `${memberTotal(m.user_id)} sessions` : distance(memberTotal(m.user_id))}
                       </AppText>
-                    </View>
+                    </Pressable>
                   ))}
               </Section>
             </>
           ) : null}
         </SectionStack>
       )}
+      {viewingMember ? (
+        <FocusSheet
+          open={Boolean(viewingMember)}
+          title={viewingMember.display_name}
+          onClose={() => setViewingMember(null)}
+        >
+          <View style={{ gap: 16 }}>
+            <View style={[f.row, { gap: 16, alignItems: "center" }]}>
+              <UserAvatar src={viewingMember.avatar_url} name={viewingMember.display_name} size={64} />
+              <View style={{ flex: 1, gap: 4 }}>
+                <AppText role="heading">{viewingMember.display_name}</AppText>
+                <RankBadge score={viewingMember.effort_score} />
+                <AppText role="caption" secondary>
+                  {(viewingMember.user_id === user?.id ? resting : viewingMember.rest_week === weekKey) ? "Rest week" : "Active this week"}
+                </AppText>
+              </View>
+            </View>
+            <View style={f.card}>
+              <AppText role="caption" secondary>This week's contribution</AppText>
+              <AppText role="display">
+                {sessionsMetric
+                  ? `${memberTotal(viewingMember.user_id)} sessions`
+                  : distance(memberTotal(viewingMember.user_id))}
+              </AppText>
+              <AppText role="body" secondary>
+                {crew.name} · {crew.sport}
+              </AppText>
+            </View>
+            <FocusButton label="Close" secondary onPress={() => setViewingMember(null)} />
+          </View>
+        </FocusSheet>
+      ) : null}
       {!panel && (note || api.error) ? (
         <AppText role="body" secondary  accessibilityLiveRegion="polite">
           {note || api.error}

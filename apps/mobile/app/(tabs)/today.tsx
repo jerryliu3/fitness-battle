@@ -96,5 +96,8 @@ const s = StyleSheet.create({
     paddingTop: 4,
     paddingBottom: 120,
     gap: 28,
+    maxWidth: 880,
+    width: "100%",
+    alignSelf: "center",
   },
 });
