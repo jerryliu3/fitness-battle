@@ -82,6 +82,8 @@ Give each transform one animation owner. Fade sheet scrims independently, retain
 
 ## Selected material and interaction exploration
 
+The [activity context study](design-studies/activity-context/README.md) explores native session scatterplots, five-session trajectories, and the selected session's exact contribution to recorded volume. The `/activity-lab` route uses fictional history and existing tokens. These remain alternatives under review; they do not establish a fitness score or replace the production activity sheet.
+
 The [material and motion study](material-and-motion-concepts.md) records the October 16 user review: Glass Track, dimensional weekly results, PR history, cooperative crew goals, weekly training history, a conditional daily clock, and a return moment integrated into Compete. Its [standalone review](design-studies/material-motion/review.html) uses fictional data. These are candidates for later implementation; Focus remains the production direction. Personal Home targets are a separate optional feature proposal and do not define competition completion or alter scoring.
 
 The [overtake motion study](design-studies/overtake-motion.md) records the user’s selected motion direction: Photo Finish on every pass combined with combo/+1 overtake feedback; The Chase logo arrival with Split Second’s afterimage; and Afterimage typography. Round 2 explores staggered over / taek rows and continuous glyph-to-jetstream trails. These remain presentation prototypes; production scoring, tracker behavior, and brand assets are unchanged.
