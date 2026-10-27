@@ -738,7 +738,7 @@ export default function AthleteScreen() {
                       backgroundColor: "rgba(255, 255, 255, 0.1)",
                     }}
                   >
-                    <AppText role="caption" style={{ color: "#ffffff", fontWeight: "600" }}>Edit profile</AppText>
+                    <AppText role="label" style={{ color: "#ffffff" }}>Edit profile</AppText>
                   </Pressable>
                 </View>
               </View>

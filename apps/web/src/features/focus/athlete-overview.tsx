@@ -228,10 +228,10 @@ export function AthleteOverview({
                 <AppHeading level={1} role="display" style={{ color: "#ffffff", margin: 0 }}>
                   {state.name}
                 </AppHeading>
-                <span style={{ fontSize: "12px", color: "#8fa2b5", whiteSpace: "nowrap" }}>Since Jan 2026</span>
+                <AppText role="caption" secondary style={{ color: "#8fa2b5", whiteSpace: "nowrap" }}>Since Jan 2026</AppText>
               </div>
               {state.city ? (
-                <div style={{ fontSize: "13px", color: "#c9d6e3" }}>{state.city}</div>
+                <AppText role="caption" secondary style={{ color: "#c9d6e3" }}>{state.city}</AppText>
               ) : null}
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 4 }}>
                 {(() => {
@@ -239,7 +239,7 @@ export function AthleteOverview({
                   const elo = primaryRating?.openElo || 1000;
                   const rank = rankForElo(elo);
                   return (
-                    <div style={{ fontSize: "13px", color: "var(--tennis, #ccff00)", fontWeight: 600 }}>
+                    <div style={{ color: "var(--tennis, #ccff00)", ...typographyStyle("label") }}>
                       {elo} · {rank.name}
                     </div>
                   );
@@ -255,8 +255,7 @@ export function AthleteOverview({
                     border: "1px solid rgba(255, 255, 255, 0.2)",
                     background: "rgba(255, 255, 255, 0.1)",
                     color: "#ffffff",
-                    fontWeight: 600,
-                    fontSize: "13px",
+                    ...typographyStyle("label"),
                   }}
                   onClick={() => {
                     if (onEditProfile) {
@@ -298,15 +297,13 @@ export function AthleteOverview({
                     <div key={r.activityId} style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
                       <span
                         style={{
-                          fontSize: "11px",
                           color: "#c9d6e3",
-                          textTransform: "uppercase",
-                          letterSpacing: "0.05em",
+                          ...typographyStyle("caption"),
                         }}
                       >
                         {label}
                       </span>
-                      <strong style={{ fontSize: "15px", color: "#ffffff", fontWeight: 700 }}>
+                      <strong style={{ color: "#ffffff", ...typographyStyle("heading") }}>
                         {formatClockTime(r.seconds)}
                       </strong>
                     </div>
