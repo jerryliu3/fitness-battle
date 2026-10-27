@@ -63,3 +63,4 @@ export * from "./mapbox-course";
 export * from "./course-scene";
 
 export { createFieldOverlayHold } from "./field-overlay-hold";
+export * from "./analytics-lab";
