@@ -242,7 +242,7 @@ export function CompetitionField({
           <FieldOverlayView
             hidden={overlaysHidden}
             onTouchStart={event => event.stopPropagation()}
-            pointerEvents={overlaysHidden ? "none" : "auto"}
+            pointerEvents="auto"
             style={{
               position: "absolute",
               bottom: expanded ? safeBottom + 148 : 14,
@@ -406,6 +406,9 @@ export function CompetitionField({
                 position: "absolute",
                 top: safeTop + 62,
                 left: 12,
+                maxWidth: 274, // 230 px panel plus the 44 px grip target.
+              }}
+              surfaceStyle={{
                 backgroundColor: "rgba(20, 20, 19, 0.72)",
                 borderRadius: 14,
                 paddingVertical: 8,
@@ -413,7 +416,6 @@ export function CompetitionField({
                 borderWidth: 1,
                 borderColor: "rgba(255, 255, 255, 0.14)",
                 gap: 5,
-                maxWidth: 230,
               }}
             >
               <Text style={{ ...textStyle("caption"), color: "rgba(255,255,255,0.65)" }}>
@@ -567,8 +569,10 @@ export function CompetitionField({
                 style={{
                   position: "absolute",
                   left: 12,
-                  right: 56,
+                  right: 12,
                   bottom: safeBottom + 8,
+                }}
+                surfaceStyle={{
                   backgroundColor: "rgba(20, 20, 19, 0.86)",
                   borderRadius: 20,
                   paddingVertical: 10,

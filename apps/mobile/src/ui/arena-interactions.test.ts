@@ -31,10 +31,10 @@ vi.mock("react-native", async () => {
     return createElement("View", props, children as never);
   }
   return {
-    StyleSheet: { create: (styles: unknown) => styles, flatten: (style: unknown) => style },
+    StyleSheet: { create: (styles: unknown) => styles },
     View,
     Modal: "Modal",
-    Animated: { View: "View", Value: class { constructor(public value: number) {} }, timing: () => ({ start() {}, stop() {} }), createAnimatedComponent: () => "AnimatedGroup" },
+    Animated: { View: "View", Value: class { constructor(public value: number) {} interpolate(config: unknown) { return config; } }, timing: () => ({ start() {}, stop() {} }), createAnimatedComponent: () => "AnimatedGroup" },
     Easing: { out: (fn: unknown) => fn, cubic: (x: number) => x },
     AppState: { addEventListener: () => ({ remove() {} }) },
     useWindowDimensions: () => ({ width: 390, height: 844 }),

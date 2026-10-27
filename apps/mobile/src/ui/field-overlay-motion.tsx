@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { Animated, Easing, Pressable, StyleSheet, View, type StyleProp, type ViewProps, type ViewStyle } from "react-native";
+import { Animated, Easing, Pressable, View, type ViewProps, type ViewStyle } from "react-native";
 import { G, type GProps } from "react-native-svg";
 import { useReducedMotion } from "./use-reduced-motion";
 
@@ -30,34 +30,37 @@ export function FieldOverlayGroup({ hidden, ...props }: GProps & { hidden: boole
   return <AnimatedGroup {...props} opacity={opacity} />;
 }
 
-export function SlidingFieldPanel({ label, collapsed, onToggle, overlaysHidden, style, children }: {
+export function SlidingFieldPanel({ label, collapsed, onToggle, overlaysHidden, style, surfaceStyle, children }: {
   label: string;
   collapsed: boolean;
   onToggle: () => void;
   overlaysHidden: boolean;
-  style: StyleProp<ViewStyle>;
+  style: ViewStyle;
+  surfaceStyle: ViewStyle;
   children: ReactNode;
 }) {
-  const panelStyle = StyleSheet.flatten(style);
   const reduced = useReducedMotion();
   const [width, setWidth] = useState(0);
-  const travel = useRef(new Animated.Value(collapsed ? -10000 : 0)).current;
-  const measured = useRef(false);
+  const progress = useRef(new Animated.Value(collapsed ? 1 : 0)).current;
+  const inset = typeof style.left === "number" ? style.left : 0;
+  const translateX = progress.interpolate({ inputRange: [0, 1], outputRange: [0, 44 - width - inset] });
   useEffect(() => {
-    if (!width) return;
-    const duration = reduced || !measured.current ? 0 : 320;
-    measured.current = true;
-    const animation = Animated.timing(travel, {
-      toValue: collapsed ? -width + 44 - 12 : 0,
-      duration,
+    const animation = Animated.timing(progress, {
+      toValue: collapsed ? 1 : 0,
+      duration: reduced ? 0 : 320,
       easing: Easing.out(Easing.cubic),
       useNativeDriver: true,
     });
     animation.start();
     return () => animation.stop();
-  }, [collapsed, width, reduced, travel]);
+  }, [collapsed, reduced, progress]);
   return (
-    <FieldOverlayView hidden={overlaysHidden} pointerEvents="box-none" onLayout={event => setWidth(event.nativeEvent.layout.width)} style={[style, { paddingHorizontal: 0, paddingVertical: 0, borderWidth: 0, backgroundColor: "transparent", marginRight: -44, maxWidth: typeof panelStyle?.maxWidth === "number" ? panelStyle.maxWidth + 44 : undefined, transform: [{ translateX: travel }] }]}>
+    <FieldOverlayView
+      hidden={overlaysHidden || collapsed && width === 0}
+      pointerEvents="box-none"
+      onLayout={event => setWidth(event.nativeEvent.layout.width)}
+      style={[style, { transform: [{ translateX }] }]}
+    >
       <Pressable
         accessibilityRole="button"
         accessibilityLabel={`${collapsed ? "Expand" : "Collapse"} ${label}`}
@@ -69,7 +72,7 @@ export function SlidingFieldPanel({ label, collapsed, onToggle, overlaysHidden, 
           <View style={{ width: 3, height: 22, borderRadius: 2, backgroundColor: "rgba(255,255,255,.7)" }} />
         </View>
       </Pressable>
-      <View pointerEvents={collapsed ? "none" : "auto"} accessibilityElementsHidden={collapsed} importantForAccessibility={collapsed ? "no-hide-descendants" : "auto"} style={[style, { position: "relative", top: undefined, bottom: undefined, left: undefined, right: undefined, marginRight: 44 }]}>{children}</View>
+      <View pointerEvents={collapsed ? "none" : "auto"} accessibilityElementsHidden={collapsed} importantForAccessibility={collapsed ? "no-hide-descendants" : "auto"} style={[surfaceStyle, { marginRight: 44 }]}>{children}</View>
     </FieldOverlayView>
   );
 }

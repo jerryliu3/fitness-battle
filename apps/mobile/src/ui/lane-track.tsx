@@ -276,7 +276,6 @@ function LaneTrackContent({
               const pennantY=athletePennantOffset(yy,course.point(overtakeFrame?.youValue??me?.values[index]??0,Math.max(0,ordered.findIndex(peer=>peer.you)),0,true).y,l.you,height);
               return (
                 <FieldOverlayGroup hidden={Boolean(edge && overlaysHidden)} key={l.id}>
-                <G>
                   <G transform={`translate(${xx} ${yy}) rotate(${point.angle}) scale(${scale})`}>
                   {l.you && charging > 0.02 ? (
                     <Path
@@ -344,7 +343,6 @@ function LaneTrackContent({
                     <SvgText {...chartTextProps()} x={pennantX+47} y={pennantY+20}  fill={c.ink} >{l.you?"You":l.name.length>13?`${l.name.slice(0,12)}…`:l.name}</SvgText>
                     <SvgText {...chartTextProps()} x={pennantX+47} y={pennantY+35}  fill={c.muted}>{ordinalPlace(rank)} · {l.you?`${value.toFixed(1)} ${unit}`:`${value-(overtakeFrame?.youValue??me?.values[index]??0)>0?"+":""}${(value-(overtakeFrame?.youValue??me?.values[index]??0)).toFixed(1)} ${unit}`}</SvgText>
                   </FieldOverlayGroup>:null}
-                </G>
                 </FieldOverlayGroup>
               );
             })}

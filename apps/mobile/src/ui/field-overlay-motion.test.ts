@@ -5,10 +5,10 @@ const motion = vi.hoisted(() => ({ reduced: false, runs: [] as Array<{ toValue: 
 vi.mock("./use-reduced-motion", () => ({ useReducedMotion: () => motion.reduced }));
 vi.mock("react-native-svg", () => ({ G: "Group" }));
 vi.mock("react-native", () => ({
-  View: "View", Pressable: "Pressable", StyleSheet: { flatten: (value: unknown) => value },
+  View: "View", Pressable: "Pressable",
   Easing: { out: (fn: unknown) => fn, cubic: (x: number) => x },
   Animated: {
-    View: "AnimatedView", Value: class { constructor(public value: number) {} },
+    View: "AnimatedView", Value: class { constructor(public value: number) {} interpolate(config: unknown) { return config; } },
     createAnimatedComponent: () => "AnimatedGroup",
     timing: (_value: unknown, options: { toValue: number; duration: number }) => {
       const stop = vi.fn(); motion.runs.push({ ...options, stop });
@@ -36,12 +36,13 @@ it("fades both ways, stops the previous fade on reversal and respects Reduced Mo
 });
 it("slides stable panel content past the edge, leaving the full notch hit area available", async () => {
   vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
-  const props = { label: "intervals", collapsed: false, onToggle() {}, overlaysHidden: false, style: { left: 12, maxWidth: 230 }, children: createElement("Content") };
+  const props = { label: "intervals", collapsed: false, onToggle() {}, overlaysHidden: false, style: { left: 12, maxWidth: 274 }, surfaceStyle: { paddingHorizontal: 10 }, children: createElement("Content") };
   await act(async () => { renderer = create(createElement(SlidingFieldPanel, props)); });
   await act(async () => renderer.root.findByType("AnimatedView" as never).props.onLayout({ nativeEvent: { layout: { width: 274 } } }));
   await act(async () => renderer.update(createElement(SlidingFieldPanel, { ...props, collapsed: true })));
-  expect(motion.runs.at(-1)).toMatchObject({ toValue: -242, duration: 320 });
+  expect(motion.runs.at(-1)).toMatchObject({ toValue: 1, duration: 320 });
   expect(renderer.root.findByType("Content" as never)).toBeDefined();
+  expect(renderer.root.findByType("AnimatedView" as never).props.style[0][1].transform[0].translateX.outputRange).toEqual([0, -242]);
   expect(renderer.root.findByType("Pressable" as never).props.style.width).toBe(44);
   const hiding = motion.runs.at(-1)!;
   await act(async () => renderer.update(createElement(SlidingFieldPanel, props)));

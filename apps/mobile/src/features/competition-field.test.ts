@@ -6,9 +6,8 @@ const mocks = vi.hoisted(() => ({ fly: vi.fn(), appState: null as null | ((statu
 vi.mock("expo-router", () => ({ usePathname: () => "/arena" }));
 vi.mock("react-native", () => ({
   Modal: "Modal",
-  Animated: { View: "View", Value: class { constructor(public value: number) {} }, timing: () => ({ start() {}, stop() {} }), createAnimatedComponent: () => "AnimatedGroup" },
+  Animated: { View: "View", Value: class { constructor(public value: number) {} interpolate(config: unknown) { return config; } }, timing: () => ({ start() {}, stop() {} }), createAnimatedComponent: () => "AnimatedGroup" },
   Easing: { out: (fn: unknown) => fn, cubic: (x: number) => x }, Pressable: "Pressable", ScrollView: "ScrollView", Text: "Text", View: "View",
-  StyleSheet: { flatten: (style: unknown) => style },
   useWindowDimensions: () => ({ width: 390, height: 844 }),
   AppState: { addEventListener: (_name: string, fn: (status: string) => void) => { mocks.appState = fn; return { remove() { mocks.appState = null; } }; } },
 }));
