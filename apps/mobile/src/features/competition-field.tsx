@@ -3,6 +3,7 @@ import { UserAvatar } from "../ui/user-avatar";
 import { textStyle } from "../ui/section";
 import { RankBadge } from "../ui/rank-badge";
 import { useFieldFlight } from "../ui/use-field-flight";
+import { FieldOverlayView, SlidingFieldPanel } from "../ui/field-overlay-motion";
 import { PortraitField } from "../ui/portrait-field";
 import {
   orderedArenaLanes,
@@ -23,8 +24,8 @@ import {
   type SportId,
 } from "@fitness-battle/shared";
 import { usePathname } from "expo-router";
-import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { AppState, Modal, Pressable, ScrollView, Text, View, useWindowDimensions, type StyleProp, type ViewStyle } from "react-native";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { AppState, Modal, Pressable, ScrollView, Text, View, useWindowDimensions } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { IconButton } from "../ui/icon-button";
 import Svg from "react-native-svg";
@@ -169,7 +170,6 @@ export function CompetitionField({
     periodEnd: competePeriodWindow(state, competeNow(state), sport).endsAt.toISOString(),
   };
 
-  const overlayProps = hiddenOverlayProps(overlaysHidden);
   const fieldContent = (
     <View
       onTouchStart={event => {
@@ -239,13 +239,13 @@ export function CompetitionField({
             view={view}
             onPan={panTo}
           />
-          <View
+          <FieldOverlayView
+            hidden={overlaysHidden}
             onTouchStart={event => event.stopPropagation()}
             pointerEvents={overlaysHidden ? "none" : "auto"}
             style={{
               position: "absolute",
               bottom: expanded ? safeBottom + 148 : 14,
-              opacity: overlaysHidden ? 0 : 1,
               alignSelf: "center",
               flexDirection: "row",
               alignItems: "center",
@@ -296,7 +296,7 @@ export function CompetitionField({
             >
               <Text style={{ ...textStyle("heading"), color: "white" }}>＋</Text>
             </Pressable>
-          </View>
+          </FieldOverlayView>
         </View>
         {!expanded ? (
           <View style={{ marginTop: 8, borderRadius: 12, overflow: "hidden" }}>
@@ -328,12 +328,12 @@ export function CompetitionField({
           <View onTouchStartCapture={() => hold.current?.reset()} style={[f.safe, { backgroundColor: "#0b242c", position: "relative" }]}>
             {fieldContent}
             {/* Top Bar HUD */}
-            <View
-              {...overlayProps}
+            <FieldOverlayView
+              hidden={overlaysHidden}
+              pointerEvents="box-none"
               style={[
                 f.row,
                 {
-                  opacity: overlaysHidden ? 0 : 1,
                   position: "absolute",
                   top: safeTop + 6,
                   left: 12,
@@ -394,10 +394,10 @@ export function CompetitionField({
                   {sceneDimension === "2d" ? "2D" : "3D"}
                 </Text>
               </Pressable>
-            </View>
+            </FieldOverlayView>
 
             {/* Broadcast HUD: Left Interval Tower */}
-            <CollapsibleFieldPanel
+            <SlidingFieldPanel
               label="live intervals"
               collapsed={intervalsCollapsed}
               onToggle={() => setIntervalsCollapsed(value => !value)}
@@ -475,13 +475,13 @@ export function CompetitionField({
                   </Pressable>
                 );
               })}
-            </CollapsibleFieldPanel>
+            </SlidingFieldPanel>
 
             {/* Broadcast HUD: Right Quick-Jump Rail */}
-            <View
-              {...overlayProps}
+            <FieldOverlayView
+              hidden={overlaysHidden}
+              pointerEvents="box-none"
               style={{
-                opacity: overlaysHidden ? 0 : 1,
                 position: "absolute",
                 top: safeTop + 98,
                 right: 12,
@@ -555,11 +555,11 @@ export function CompetitionField({
                   </Text>
                 </Pressable>
               ) : null}
-            </View>
+            </FieldOverlayView>
 
             {/* Broadcast HUD: Bottom Focused Athlete Spotlight + Player Chips */}
             {focusedLane ? (
-              <CollapsibleFieldPanel
+              <SlidingFieldPanel
                 label="athlete panel"
                 collapsed={spotlightCollapsed}
                 onToggle={() => setSpotlightCollapsed(value => !value)}
@@ -567,7 +567,7 @@ export function CompetitionField({
                 style={{
                   position: "absolute",
                   left: 12,
-                  right: 12,
+                  right: 56,
                   bottom: safeBottom + 8,
                   backgroundColor: "rgba(20, 20, 19, 0.86)",
                   borderRadius: 20,
@@ -684,7 +684,7 @@ export function CompetitionField({
                     );
                   })}
                 </ScrollView>
-              </CollapsibleFieldPanel>
+              </SlidingFieldPanel>
             ) : null}
           </View>
         </Modal>
@@ -888,44 +888,6 @@ export function CompetitionField({
           </View>
         ) : null}
       </View>
-    </View>
-  );
-}
-
-function PanelToggle({ label, collapsed, onPress }: { label: string; collapsed: boolean; onPress: () => void }) {
-  return (
-    <Pressable
-      accessibilityRole="button"
-      accessibilityLabel={`${collapsed ? "Expand" : "Collapse"} ${label}`}
-      accessibilityState={{ expanded: !collapsed }}
-      onPress={onPress}
-      style={{ minWidth: 44, minHeight: 44, position: "absolute", top: 0, right: 0, zIndex: 1, alignItems: "center", justifyContent: "center" }}
-    >
-      <Text style={{ ...textStyle("heading"), color: "white" }}>{collapsed ? "›" : "‹"}</Text>
-    </Pressable>
-  );
-}
-
-function hiddenOverlayProps(hidden: boolean) {
-  return {
-    pointerEvents: hidden ? "none" as const : "box-none" as const,
-    accessibilityElementsHidden: hidden,
-    importantForAccessibility: hidden ? "no-hide-descendants" as const : "auto" as const,
-  };
-}
-
-function CollapsibleFieldPanel({ label, collapsed, onToggle, overlaysHidden, style, children }: {
-  label: string;
-  collapsed: boolean;
-  onToggle: () => void;
-  overlaysHidden: boolean;
-  style: StyleProp<ViewStyle>;
-  children: ReactNode;
-}) {
-  return (
-    <View {...hiddenOverlayProps(overlaysHidden)} style={[style, { minWidth: 64, minHeight: 64, opacity: overlaysHidden ? 0 : 1 }, collapsed && { left: 0, right: undefined }]}>
-      <PanelToggle label={label} collapsed={collapsed} onPress={onToggle} />
-      <View style={{ display: collapsed ? "none" : "flex", gap: 8, paddingRight: 38 }}>{children}</View>
     </View>
   );
 }

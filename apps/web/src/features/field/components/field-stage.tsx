@@ -318,8 +318,8 @@ export function FieldStage({
       </div>
 
       <div className={`focus-broadcast-tower${intervalsCollapsed ? " is-collapsed" : ""}`} aria-label="Live intervals">
-        <button type="button" className="focus-panel-toggle" aria-label={intervalsCollapsed ? "Expand live intervals" : "Collapse live intervals"} aria-expanded={!intervalsCollapsed} onClick={() => setIntervalsCollapsed(value => !value)}>{intervalsCollapsed ? "›" : "‹"}</button>
-        <div className="focus-panel-content" hidden={intervalsCollapsed}>
+        <button type="button" className="focus-panel-toggle" aria-label={intervalsCollapsed ? "Expand live intervals" : "Collapse live intervals"} aria-expanded={!intervalsCollapsed} onClick={() => setIntervalsCollapsed(value => !value)}><span className="focus-panel-grip" aria-hidden="true" /></button>
+        <div className="focus-panel-content" inert={intervalsCollapsed} aria-hidden={intervalsCollapsed}>
           <span className="focus-broadcast-tower-kicker">LIVE INTERVALS</span>
           {ranked.slice(0, 4).map((peer, idx) => {
             const delta = peer.value - leaderValue;
@@ -396,8 +396,8 @@ export function FieldStage({
           className={`focus-broadcast-spotlight${spotlightCollapsed ? " is-collapsed" : ""}`}
           aria-label="Focused athlete spotlight"
         >
-          <button type="button" className="focus-panel-toggle" aria-label={spotlightCollapsed ? "Expand athlete panel" : "Collapse athlete panel"} aria-expanded={!spotlightCollapsed} onClick={() => setSpotlightCollapsed(value => !value)}>{spotlightCollapsed ? "›" : "‹"}</button>
-          <div className="focus-panel-content" hidden={spotlightCollapsed}>
+          <button type="button" className="focus-panel-toggle" aria-label={spotlightCollapsed ? "Expand athlete panel" : "Collapse athlete panel"} aria-expanded={!spotlightCollapsed} onClick={() => setSpotlightCollapsed(value => !value)}><span className="focus-panel-grip" aria-hidden="true" /></button>
+          <div className="focus-panel-content" inert={spotlightCollapsed} aria-hidden={spotlightCollapsed}>
             <div className="focus-broadcast-spotlight-head">
               <div className="focus-broadcast-spotlight-meta">
                 <span className="focus-broadcast-spotlight-kicker">

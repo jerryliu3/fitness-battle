@@ -31,9 +31,11 @@ vi.mock("react-native", async () => {
     return createElement("View", props, children as never);
   }
   return {
-    StyleSheet: { create: (styles: unknown) => styles },
+    StyleSheet: { create: (styles: unknown) => styles, flatten: (style: unknown) => style },
     View,
     Modal: "Modal",
+    Animated: { View: "View", Value: class { constructor(public value: number) {} }, timing: () => ({ start() {}, stop() {} }), createAnimatedComponent: () => "AnimatedGroup" },
+    Easing: { out: (fn: unknown) => fn, cubic: (x: number) => x },
     AppState: { addEventListener: () => ({ remove() {} }) },
     useWindowDimensions: () => ({ width: 390, height: 844 }),
     Pressable: "Pressable",
@@ -96,7 +98,7 @@ vi.mock("./icon-button", () => ({ IconButton: "IconButton" }));
 vi.mock("./arena-3d", () => ({ Arena3D: () => null }));
 vi.mock("./portrait-field", () => ({ PortraitField: "PortraitField" }));
 vi.mock("./award-shelf", () => ({ AwardShelf: () => null }));
-vi.mock("react-native-svg", () => ({ default: "Svg" }));
+vi.mock("react-native-svg", () => ({ default: "Svg", G: "SvgG" }));
 vi.mock("./polished-racer", () => ({ PolishedRacer: "PolishedRacer" }));
 vi.mock("./zoom-control", () => ({ ZoomControl: "ZoomControl" }));
 vi.mock("./use-reduced-motion", () => ({

@@ -35,6 +35,7 @@ import Svg, {
 import { SHELL_COLORS as c } from "../theme";
 import { playCue } from "../lib/haptics";
 import { drawFieldNode } from "./field-course";
+import { FieldOverlayGroup } from "./field-overlay-motion";
 import { PolishedRacer } from "./polished-racer";
 export interface LaneAnchor { left: number; laneWidth: number; width: number; scroll: number; oval: boolean; count: number }
 
@@ -261,7 +262,6 @@ function LaneTrackContent({
                   : (l.values[index] ?? 0);
               const position = arenaPosition(value, v);
               const edge = !course.oval && position.edge;
-              if (edge && overlaysHidden) return null;
               const effect = overtakeFrame?.rivalEffects[l.id];
               const charging =
                 l.you && animating ? (overtakeFrame?.charging ?? 0) : 0;
@@ -275,7 +275,7 @@ function LaneTrackContent({
               const pennantX=Math.max(visibleLeft-xx+8,Math.min(visibleLeft+width-xx-pennantWidth-8,l.you?-pennantWidth-12:12));
               const pennantY=athletePennantOffset(yy,course.point(overtakeFrame?.youValue??me?.values[index]??0,Math.max(0,ordered.findIndex(peer=>peer.you)),0,true).y,l.you,height);
               return (
-                <G key={l.id}>
+                <FieldOverlayGroup hidden={Boolean(edge && overlaysHidden)} key={l.id}>
                 <G>
                   <G transform={`translate(${xx} ${yy}) rotate(${point.angle}) scale(${scale})`}>
                   {l.you && charging > 0.02 ? (
@@ -335,7 +335,7 @@ function LaneTrackContent({
                   {edge?<SvgText {...chartTextProps()} x={0} y={4} textAnchor="middle"  fill={c.ink}>{edge==="ahead"?"↑":"↓"}</SvgText>:null}
                   </G>
                   {edge?<G transform={`translate(${xx} ${yy})`} pointerEvents="none"><Rect x={-34} y={edge==="ahead"?27:-42} width={68} height={20} rx={8} fill="#ffffffee"/><SvgText {...chartTextProps()} x={0} y={edge==="ahead"?41:-28} textAnchor="middle"  fill={c.muted}>{`${position.distanceOutside.toFixed(1)} ${unit}`}</SvgText></G>:null}
-                  {!overlaysHidden&&!edge&&(l.you||selectedId===l.id)?<G transform={`translate(${xx} ${yy})`} pointerEvents="none">
+                  {!edge&&(l.you||selectedId===l.id)?<FieldOverlayGroup hidden={overlaysHidden} transform={`translate(${xx} ${yy})`} pointerEvents="none">
                     <Path d={`M0 0 L${pennantX+pennantWidth/2} ${pennantY>0?pennantY:pennantY+46}`} fill="none" stroke={c.secondary} strokeWidth={1.2}/>
                     <Rect x={pennantX} y={pennantY+2} width={pennantWidth} height={46} rx={12} fill={c.ink} opacity={.1}/>
                     <Rect x={pennantX} y={pennantY} width={pennantWidth} height={46} rx={12} fill={c.card} stroke={l.you?c.tennis:c.line}/>
@@ -343,9 +343,9 @@ function LaneTrackContent({
                     {l.avatarUrl?<><Defs><ClipPath id={`${prefix}-portrait-${i}`}><Circle cx={pennantX+24} cy={pennantY+23} r={16}/></ClipPath></Defs><SvgImage href={{uri:l.avatarUrl}} x={pennantX+8} y={pennantY+7} width={32} height={32} preserveAspectRatio="xMidYMid slice" clipPath={`url(#${prefix}-portrait-${i})`}/></>:<Path d={PERSON_ICON_PATH} transform={`translate(${pennantX+14} ${pennantY+13}) scale(.83)`} fill="none" stroke={c.muted} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round"/>}
                     <SvgText {...chartTextProps()} x={pennantX+47} y={pennantY+20}  fill={c.ink} >{l.you?"You":l.name.length>13?`${l.name.slice(0,12)}…`:l.name}</SvgText>
                     <SvgText {...chartTextProps()} x={pennantX+47} y={pennantY+35}  fill={c.muted}>{ordinalPlace(rank)} · {l.you?`${value.toFixed(1)} ${unit}`:`${value-(overtakeFrame?.youValue??me?.values[index]??0)>0?"+":""}${(value-(overtakeFrame?.youValue??me?.values[index]??0)).toFixed(1)} ${unit}`}</SvgText>
-                  </G>:null}
+                  </FieldOverlayGroup>:null}
                 </G>
-                </G>
+                </FieldOverlayGroup>
               );
             })}
             {ghost && (() => { const p = course.point(ghost.values[index] ?? 0, ordered.findIndex(l => l.you), 18 * Math.min(1.8, course.markerScale), true); return <G><Circle cx={p.x} cy={p.y} r={13 * Math.min(1.8, course.markerScale)} fill="#ffffffcc" stroke={c.muted} strokeDasharray="3 3"/></G>; })()}
