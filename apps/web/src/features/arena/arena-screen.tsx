@@ -97,11 +97,15 @@ export function ArenaScreen({ tabActive = true }: { tabActive?: boolean }) {
         <div className="focus-competition-info">
           <SectionHeader
             titleRole="display"
-            title="Competition"
+            title={
+              <span style={{ display: "inline-flex", alignItems: "center", gap: "10px", flexWrap: "wrap" }}>
+                <span>Competition</span>
+                <StatusBadge>{badgeLabel}</StatusBadge>
+              </span>
+            }
             subtitle={dateRangeLabel}
             action={
               <div className="ui-competition-status" style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                <StatusBadge>{badgeLabel}</StatusBadge>
                 <button
                   type="button"
                   aria-label="Register for new sports"
@@ -111,7 +115,7 @@ export function ArenaScreen({ tabActive = true }: { tabActive?: boolean }) {
                   }}
                   style={{
                     cursor: "pointer",
-                    padding: "6px 12px",
+                    padding: "6px 14px",
                     borderRadius: "999px",
                     border: "1px solid var(--line, #e0e5dc)",
                     background: "var(--card, #ffffff)",
