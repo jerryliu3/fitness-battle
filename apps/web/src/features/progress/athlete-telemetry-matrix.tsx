@@ -21,11 +21,11 @@ const c = {
 };
 
 export function AthleteTelemetryMatrix({
-  state: _state,
+  state,
 }: {
-  state?: CompeteState;
+  state?: CompeteState | null;
 }) {
-  const model = useMemo(() => buildAnalyticsLabModel("peak_build", "30d"), []);
+  const model = useMemo(() => buildAnalyticsLabModel(state, "30d"), [state]);
 
   const bentoTiles: Array<{
     id: string;

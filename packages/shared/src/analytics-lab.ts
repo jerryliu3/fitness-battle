@@ -1,4 +1,4 @@
-import { clamp, unitInterval } from "./compete/sports";
+import { clamp, unitInterval, type CompeteState } from "./compete/sports";
 
 export const ANALYTICS_DOMAIN_IDS = [
   "market",
@@ -577,10 +577,77 @@ export function formatMinutesAsHoursMins(minutes: number): string {
   return `${h}h ${m.toString().padStart(2, "0")}m`;
 }
 
+export function deriveScenarioFromCompeteState(
+  state?: CompeteState | null,
+): AnalyticsScenarioId {
+  if (!state) return "peak_build";
+
+  // 1. Sparse data check (new athlete or uncalibrated profile)
+  const activities = state.activities ?? [];
+  if (activities.length < 4 || !state.calibrated) {
+    return "sparse_new";
+  }
+
+  // 2. Overreaching check: suppressed recovery or severe ACWR fatigue spike
+  const recentReadiness = (state.readiness ?? []).slice(-4);
+  const lowReadiness =
+    recentReadiness.length >= 2 &&
+    recentReadiness.every((r) => r.score < 62);
+
+  const recentSleep = (state.sleepNights ?? []).slice(-4);
+  const lowSleep =
+    recentSleep.length >= 2 &&
+    recentSleep.every((s) => s.score < 62);
+
+  if (lowReadiness && lowSleep) {
+    return "overreaching";
+  }
+
+  // Compute 7-day Acute vs 28-day Chronic workload
+  if (activities.length >= 7) {
+    const refTime = state.demoNow ? new Date(state.demoNow).getTime() : Date.now();
+    const ms7d = 7 * 86_400_000;
+    const ms28d = 28 * 86_400_000;
+
+    let acuteSec = 0;
+    let chronicSec = 0;
+    for (const act of activities) {
+      const actTime = new Date(act.startedAt).getTime();
+      const age = refTime - actTime;
+      if (age >= 0 && age <= ms7d) {
+        acuteSec += act.movingSec;
+      }
+      if (age >= 0 && age <= ms28d) {
+        chronicSec += act.movingSec;
+      }
+    }
+
+    const weeklyChronicSec = chronicSec / 4;
+    if (weeklyChronicSec > 0) {
+      const acwr = acuteSec / weeklyChronicSec;
+      if (acwr > 1.35 || (acwr > 1.25 && (lowReadiness || lowSleep))) {
+        return "overreaching";
+      }
+    }
+  }
+
+  return "peak_build";
+}
+
 export function buildAnalyticsLabModel(
-  scenario: AnalyticsScenarioId = "peak_build",
+  scenarioOrState: AnalyticsScenarioId | CompeteState | null = "peak_build",
   timeLens: AnalyticsTimeLens = "30d",
 ): AnalyticsLabModel {
+  const state =
+    typeof scenarioOrState === "object" && scenarioOrState !== null
+      ? scenarioOrState
+      : null;
+  const scenario: AnalyticsScenarioId = state
+    ? deriveScenarioFromCompeteState(state)
+    : typeof scenarioOrState === "string"
+      ? scenarioOrState
+      : "peak_build";
+
   const isOver = scenario === "overreaching";
   const isSparse = scenario === "sparse_new";
   const totalPoints = isSparse ? 4 : 14;
@@ -695,40 +762,66 @@ export function buildAnalyticsLabModel(
   const lastEq = rawEquity.at(-1)!;
   const goldenCrossActive = lastEq.sma4 >= lastEq.ema12;
 
+  let runSec = 0;
+  let cycSec = 0;
+  let strSec = 0;
+  let otherSec = 0;
+  if (state?.activities && state.activities.length > 0) {
+    for (const act of state.activities) {
+      if (act.sport === "running") runSec += act.movingSec;
+      else if (act.sport === "cycling") cycSec += act.movingSec;
+      else if (act.sport === "strength") strSec += act.movingSec;
+      else otherSec += act.movingSec;
+    }
+  }
+  const totalActSec = runSec + cycSec + strSec + otherSec;
+  const hasRealActivities = totalActSec > 0;
+
+  const runHours = hasRealActivities ? Number((runSec / 3600).toFixed(1)) : (isSparse ? 3.2 : 42.5);
+  const cycHours = hasRealActivities ? Number((cycSec / 3600).toFixed(1)) : (isSparse ? 1.8 : 22.0);
+  const strHours = hasRealActivities ? Number((strSec / 3600).toFixed(1)) : (isSparse ? 1.5 : 16.4);
+  const sleepHours = isSparse ? 21.0 : 98.0;
+
+  const totalAllHours = runHours + cycHours + strHours + sleepHours;
+  const runShare = Math.round((runHours / Math.max(1, totalAllHours)) * 100);
+  const cycShare = Math.round((cycHours / Math.max(1, totalAllHours)) * 100);
+  const strShare = Math.round((strHours / Math.max(1, totalAllHours)) * 100);
+  const slpShare = Math.max(5, 100 - runShare - cycShare - strShare);
+
   const holdings: AssetHolding[] = [
     {
       sport: "Running (GPS)",
       ticker: "RUN",
-      sharePct: 46,
-      hours: isSparse ? 3.2 : 42.5,
-      returnPts: Math.round(allTimeReturnPts * 0.48),
+      sharePct: runShare,
+      hours: runHours,
+      returnPts: Math.round(allTimeReturnPts * (runShare / 100)),
       yieldPerHour: 4.8,
       colorKey: "teal",
     },
     {
       sport: "Cycling (GPS)",
       ticker: "CYC",
-      sharePct: 24,
-      hours: isSparse ? 1.8 : 22.0,
-      returnPts: Math.round(allTimeReturnPts * 0.23),
+      sharePct: cycShare,
+      hours: cycHours,
+      returnPts: Math.round(allTimeReturnPts * (cycShare / 100)),
       yieldPerHour: 4.1,
       colorKey: "tennis",
     },
     {
       sport: "Strength (Open)",
       ticker: "STR",
-      sharePct: 18,
-      hours: isSparse ? 1.5 : 16.4,
-      returnPts: Math.round(allTimeReturnPts * 0.19),
+      sharePct: strShare,
+      hours: strHours,
+      returnPts: Math.round(allTimeReturnPts * (strShare / 100)),
       yieldPerHour: 4.9,
       colorKey: "ink",
     },
     {
       sport: "Sleep & Recovery",
       ticker: "SLP",
-      sharePct: 12,
-      hours: isSparse ? 21.0 : 98.0,
-      returnPts: Math.round(allTimeReturnPts * 0.1),
+      sharePct: slpShare,
+      hours: sleepHours,
+      returnPts: Math.round(allTimeReturnPts * (slpShare / 100)),
       yieldPerHour: 1.9,
       colorKey: "green",
     },

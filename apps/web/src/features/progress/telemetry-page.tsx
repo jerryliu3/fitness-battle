@@ -8,9 +8,12 @@ import {
   formatMinutesAsHoursMins,
   type AnalyticsDomainId,
   type AnalyticsLabModel,
+  type AnalyticsTimeLens,
+  type CompeteState,
   type VitalId,
   type VitalMetricModel,
 } from "@fitness-battle/shared";
+import { useCompete } from "@/components/compete-context";
 
 const c = {
   ink: "#142b3b",
@@ -46,6 +49,13 @@ export function getDomainTitle(domain?: string | null): string {
   }
 }
 
+const TIME_LENSES: Array<{ id: AnalyticsTimeLens; label: string }> = [
+  { id: "7d", label: "7D" },
+  { id: "30d", label: "30D" },
+  { id: "90d", label: "90D" },
+  { id: "all", label: "All" },
+];
+
 export function TelemetryPage() {
   return (
     <Suspense fallback={<p className="fb-copy">Loading telemetry lab…</p>}>
@@ -56,8 +66,11 @@ export function TelemetryPage() {
 
 function TelemetryPageContent() {
   const searchParams = useSearchParams();
+  const compete = useCompete();
+  const state = compete?.state;
+  const [timeLens, setTimeLens] = useState<AnalyticsTimeLens>("30d");
   const domainParam = (searchParams.get("domain") as AnalyticsDomainId) || "market";
-  const model = useMemo(() => buildAnalyticsLabModel("peak_build", "30d"), []);
+  const model = useMemo(() => buildAnalyticsLabModel(state, timeLens), [state, timeLens]);
   const title = getDomainTitle(domainParam);
 
   return (
@@ -68,6 +81,33 @@ function TelemetryPageContent() {
         </Link>
         <h1>{title}</h1>
       </header>
+
+      <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
+        {TIME_LENSES.map((l) => {
+          const isActive = timeLens === l.id;
+          return (
+            <button
+              key={l.id}
+              type="button"
+              onClick={() => setTimeLens(l.id)}
+              style={{
+                padding: "6px 14px",
+                borderRadius: 99,
+                fontSize: "0.8rem",
+                fontWeight: 700,
+                border: "1px solid",
+                borderColor: isActive ? c.fieldTeal : c.line,
+                backgroundColor: isActive ? c.fieldTeal : c.card,
+                color: isActive ? "#ffffff" : c.ink,
+                cursor: "pointer",
+                transition: "all 0.15s ease",
+              }}
+            >
+              {l.label}
+            </button>
+          );
+        })}
+      </div>
 
       <div style={{ display: "grid", gap: 16, marginTop: 12 }}>
         {domainParam === "market" && <WebMarketDetailView model={model} />}
@@ -248,7 +288,6 @@ function WebVitalsDetailView({ model }: { model: AnalyticsLabModel }) {
                 type="button"
                 onClick={() => {
                   setActiveVitalId(v.id);
-                  setSelectedDayIdx(v.series.length - 1);
                 }}
                 style={{
                   background: c.soft,

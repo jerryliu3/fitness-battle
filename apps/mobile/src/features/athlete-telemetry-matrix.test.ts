@@ -167,4 +167,43 @@ describe("AthleteTelemetryMatrix mobile features", () => {
     expect(allText()).toContain("Daily Training Strain vs Next-Day Recovery");
     expect(allText()).not.toContain("Daily Synthesis Log");
   });
+
+  it("renders time lens pills (7D, 30D, 90D, All) and persists selected date when switching vitals", async () => {
+    await act(async () => {
+      renderer = create(createElement(AthleteTelemetryDetailView, { domain: "vitals" }));
+    });
+
+    const allText = () =>
+      renderer.root
+        .findAllByType("Text" as never)
+        .map((n) => n.children.filter((c: unknown) => typeof c === "string").join(""))
+        .join(" ");
+
+    // Verify time lens pills
+    expect(allText()).toContain("7D");
+    expect(allText()).toContain("30D");
+    expect(allText()).toContain("90D");
+    expect(allText()).toContain("All");
+
+    // Switching lenses updates view
+    const lensPills = renderer.root
+      .findAllByType("Pressable" as never)
+      .filter((p) => p.props.accessibilityLabel?.startsWith("Time lens"));
+    expect(lensPills.length).toBe(4);
+
+    await act(async () => {
+      lensPills[0]!.props.onPress(); // 7D
+    });
+
+    // Verify switching active vital keeps selected date intact
+    const vitalPills = renderer.root
+      .findAllByType("Pressable" as never)
+      .filter((p) => p.props.accessibilityLabel?.includes("Resting Heart Rate"));
+    expect(vitalPills.length).toBe(1);
+
+    await act(async () => {
+      vitalPills[0]!.props.onPress();
+    });
+    expect(allText()).toContain("Resting Heart Rate");
+  });
 });

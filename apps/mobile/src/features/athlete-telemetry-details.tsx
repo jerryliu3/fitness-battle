@@ -6,6 +6,8 @@ import {
   formatMinutesAsHoursMins,
   type AnalyticsDomainId,
   type AnalyticsLabModel,
+  type AnalyticsTimeLens,
+  type CompeteState,
   type VitalId,
   type VitalMetricModel,
 } from "@fitness-battle/shared";
@@ -46,16 +48,45 @@ export function getDomainTitle(domain?: AnalyticsDomainId | string | null): stri
   }
 }
 
+const TIME_LENSES: Array<{ id: AnalyticsTimeLens; label: string }> = [
+  { id: "7d", label: "7D" },
+  { id: "30d", label: "30D" },
+  { id: "90d", label: "90D" },
+  { id: "all", label: "All" },
+];
+
 export function AthleteTelemetryDetailView({
   domain,
+  state,
 }: {
   domain?: AnalyticsDomainId | string;
+  state?: CompeteState | null;
 }) {
-  const model = useMemo(() => buildAnalyticsLabModel("peak_build", "30d"), []);
+  const [timeLens, setTimeLens] = useState<AnalyticsTimeLens>("30d");
+  const model = useMemo(() => buildAnalyticsLabModel(state, timeLens), [state, timeLens]);
   const activeDomain = (domain as AnalyticsDomainId) || "market";
 
   return (
     <ScrollView contentContainerStyle={s.content}>
+      <View style={s.lensRow}>
+        {TIME_LENSES.map((l) => {
+          const isActive = timeLens === l.id;
+          return (
+            <Pressable
+              key={l.id}
+              accessibilityRole="button"
+              accessibilityLabel={`Time lens ${l.label}`}
+              onPress={() => setTimeLens(l.id)}
+              style={[s.lensPill, isActive && s.lensPillActive]}
+            >
+              <Text style={[s.lensPillText, isActive && s.lensPillTextActive]}>
+                {l.label}
+              </Text>
+            </Pressable>
+          );
+        })}
+      </View>
+
       {activeDomain === "market" && <MarketDetailView model={model} />}
       {activeDomain === "vitals" && <VitalsDetailView model={model} />}
       {activeDomain === "sleep" && <SleepDetailView model={model} />}
@@ -190,7 +221,6 @@ function VitalsDetailView({ model }: { model: AnalyticsLabModel }) {
                 accessibilityLabel={`${v.name}, ${v.formattedCurrent}`}
                 onPress={() => {
                   setActiveVitalId(v.id);
-                  setSelectedDayIdx(v.series.length - 1);
                 }}
                 style={[
                   s.vitalPillCard,
@@ -1251,6 +1281,31 @@ const s = StyleSheet.create({
   content: {
     padding: 16,
     gap: 16,
+  },
+  lensRow: {
+    flexDirection: "row",
+    gap: 8,
+    alignItems: "center",
+  },
+  lensPill: {
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    borderRadius: 99,
+    backgroundColor: c.card,
+    borderWidth: 1,
+    borderColor: c.line,
+  },
+  lensPillActive: {
+    backgroundColor: c.fieldTeal,
+    borderColor: c.fieldTeal,
+  },
+  lensPillText: {
+    fontSize: 12,
+    fontFamily: fonts.bodyBold,
+    color: c.ink,
+  },
+  lensPillTextActive: {
+    color: "#ffffff",
   },
   statsGrid: {
     flexDirection: "row",

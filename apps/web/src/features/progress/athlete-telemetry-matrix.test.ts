@@ -10,6 +10,10 @@ vi.mock("next/navigation", () => ({
   }),
 }));
 
+vi.mock("@/components/compete-context", () => ({
+  useCompete: () => ({ state: null }),
+}));
+
 vi.mock("next/link", () => ({
   default: ({
     href,
@@ -145,5 +149,33 @@ describe("AthleteTelemetryMatrix web component", () => {
     expect(allText()).toContain("Morning Readiness Brief");
     expect(allText()).toContain("Daily Training Strain vs Next-Day Recovery");
     expect(allText()).not.toContain("Daily Synthesis Log");
+  });
+
+  it("renders time lens buttons (7D, 30D, 90D, All) and allows switching vitals while retaining selected date", async () => {
+    currentDomain = "vitals";
+    await act(async () => {
+      renderer = create(createElement(TelemetryPage));
+    });
+
+    const allText = () =>
+      renderer.root
+        .findAll((n) => typeof n.children?.[0] === "string")
+        .map((n) => n.children.filter((c: unknown) => typeof c === "string").join(""))
+        .join(" ");
+
+    expect(allText()).toContain("7D");
+    expect(allText()).toContain("30D");
+    expect(allText()).toContain("90D");
+    expect(allText()).toContain("All");
+
+    const buttons = renderer.root.findAllByType("button");
+    const lens7d = buttons.find((b) => b.children.includes("7D"));
+    expect(lens7d).toBeDefined();
+
+    await act(async () => {
+      lens7d!.props.onClick();
+    });
+
+    expect(allText()).toContain("Autonomic Baseline Corridors");
   });
 });

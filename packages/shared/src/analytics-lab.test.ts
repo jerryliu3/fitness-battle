@@ -7,7 +7,9 @@ import {
   ANALYTICS_TIME_LENSES,
   MOBILE_LAYOUT_SPECS,
   buildAnalyticsLabModel,
+  deriveScenarioFromCompeteState,
 } from "./analytics-lab";
+import type { CompeteState } from "./compete/sports";
 
 describe("analytics-lab shared model", () => {
   it("defines 6 core domains with 3 visual concepts each and 3 mobile native layout modes", () => {
@@ -45,5 +47,52 @@ describe("analytics-lab shared model", () => {
     expect(over.vitals.anomalyCount).toBeGreaterThan(peak.vitals.anomalyCount);
     expect(over.load.acwrCurrent).toBeGreaterThan(1.3);
     expect(peak.load.acwrCurrent).toBeLessThanOrEqual(1.3);
+  });
+
+  it("derives scenario and holdings adaptively from account CompeteState", () => {
+    // 1. Sparse state when uncalibrated or fewer than 4 activities
+    const sparseState = {
+      calibrated: false,
+      activities: [],
+      readiness: [],
+      sleepNights: [],
+    } as unknown as CompeteState;
+    expect(deriveScenarioFromCompeteState(sparseState)).toBe("sparse_new");
+    const sparseModel = buildAnalyticsLabModel(sparseState, "30d");
+    expect(sparseModel.scenario).toBe("sparse_new");
+
+    // 2. Overreaching state when recent readiness and sleep are suppressed
+    const overState = {
+      calibrated: true,
+      activities: Array.from({ length: 10 }, (_, i) => ({
+        id: `act-${i}`,
+        sport: "running",
+        startedAt: new Date(Date.now() - i * 86400000).toISOString(),
+        movingSec: 3600,
+      })),
+      readiness: [{ id: "r1", score: 50 }, { id: "r2", score: 45 }],
+      sleepNights: [{ id: "s1", score: 55 }, { id: "s2", score: 58 }],
+    } as unknown as CompeteState;
+    expect(deriveScenarioFromCompeteState(overState)).toBe("overreaching");
+    const overModel = buildAnalyticsLabModel(overState, "30d");
+    expect(overModel.scenario).toBe("overreaching");
+
+    // 3. Peak build with real activities informing holdings
+    const healthyState = {
+      calibrated: true,
+      activities: [
+        { id: "a1", sport: "running", startedAt: new Date().toISOString(), movingSec: 7200 },
+        { id: "a2", sport: "running", startedAt: new Date().toISOString(), movingSec: 7200 },
+        { id: "a3", sport: "cycling", startedAt: new Date().toISOString(), movingSec: 3600 },
+        { id: "a4", sport: "strength", startedAt: new Date().toISOString(), movingSec: 1800 },
+      ],
+      readiness: [{ id: "r1", score: 85 }],
+      sleepNights: [{ id: "s1", score: 88 }],
+    } as unknown as CompeteState;
+    expect(deriveScenarioFromCompeteState(healthyState)).toBe("peak_build");
+    const healthyModel = buildAnalyticsLabModel(healthyState, "30d");
+    expect(healthyModel.scenario).toBe("peak_build");
+    expect(healthyModel.market.holdings[0]!.sport).toBe("Running (GPS)");
+    expect(healthyModel.market.holdings[0]!.hours).toBe(4);
   });
 });
