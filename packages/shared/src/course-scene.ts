@@ -45,9 +45,11 @@ export function raceCourseScene(course: RaceCourse, lanes: readonly ArenaSceneLa
   }
   const { athletes, trails, overviewCoordinates } = cached.geometry;
   const selected = athletes.find(lane => lane.id === selectedId) ?? athletes.find(lane => lane.you) ?? athletes[0];
+  const calloutOrder = [...athletes].sort((a, b) => Number(Boolean(b.you)) - Number(Boolean(a.you)) || a.id.localeCompare(b.id));
+  const slots = new Map(calloutOrder.map((athlete, index) => [athlete.id, index]));
   return {
     selected, trails, overviewCoordinates,
-    callouts: athletes.filter(athlete => athlete.you || athlete.id === selected?.id),
+    callouts: athletes.map(athlete => ({ ...athlete, callout: courseCalloutLayout(slots.get(athlete.id) ?? 0) })),
     markers: { type: "FeatureCollection" as const, features: athletes.map(athlete => ({
       type: "Feature" as const, id: athlete.id,
       properties: { id: athlete.id, name: athlete.name, you: Boolean(athlete.you), selected: athlete.id === selected?.id },
@@ -62,4 +64,15 @@ export function courseAthleteDetail(lanes: readonly ArenaSceneLane[], lane: Aren
   const mine = lanes.find(peer => peer.you)?.value ?? 0;
   const value = lane.you ? lane.value : lane.value - mine;
   return `${ordinalPlace(rank)} · ${!lane.you && value > 0 ? "+" : ""}${value.toFixed(1)} ${unit}`;
+}
+
+/** Stable screen-space tiers keep tied racers' cards from stacking on one another. */
+export function courseCalloutLayout(slot: number) {
+  const tier = Math.floor(slot / 2);
+  const row = tier === 0 ? 0 : (tier % 2 ? -1 : 1) * Math.ceil(tier / 2);
+  const left = slot % 2 === 0;
+  const y = -100 + row * 54;
+  const originY = 18 + Math.max(0, -y);
+  const height = originY + Math.max(0, y + 48) + 2;
+  return { left, y, originY, height, originX: left ? 170 : 0, cardTop: originY + y };
 }

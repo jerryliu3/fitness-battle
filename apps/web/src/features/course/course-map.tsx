@@ -68,7 +68,7 @@ export default function CourseMap({ course, lanes, unit, selectedId, focusReques
   const control = (label: string, action: () => void) => <button type="button" className="fb-btn-line" style={{ whiteSpace: "nowrap", minHeight: 44 }} onClick={() => { action(); setFollowing(camera.current?.following ?? false); }}>{label}</button>;
   return <div className="geographic-map" style={{ flex: 1, minHeight: 200, display: "flex", flexDirection: "column", position: "relative", "--map-controls-bottom": `${controlsBottom}px` } as React.CSSProperties}>
     <div ref={container} aria-label="Geographic race course. Drag to explore; pinch or scroll to zoom." style={{ flex: 1, minHeight: 160, position: "relative", overflow: "hidden" }} />
-    {ready && map.current ? scene.callouts.map(lane => <CourseCallout key={lane.id} map={map.current!} lane={lane} coordinate={lane.coordinate} detail={courseAthleteDetail(lanes, lane, unit)} onSelect={onSelect} />) : null}
+    {ready && map.current ? scene.callouts.map(lane => <CourseCallout key={lane.id} map={map.current!} lane={lane} coordinate={lane.coordinate} layout={lane.callout} detail={courseAthleteDetail(lanes, lane, unit)} onSelect={onSelect} />) : null}
     {error ? <p role="alert" className="fb-copy" style={{ position: "absolute", left: 8, right: 8, bottom: controlsBottom + 100, padding: 12, background: "white" }}>{error}</p> : null}
     <div className="geographic-map-controls" style={{ position: "absolute", bottom: controlsBottom, left: 8, right: 8, display: "flex", overflowX: "auto", gap: 8, padding: 8 }}>
       {extraControls}

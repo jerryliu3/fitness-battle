@@ -397,7 +397,7 @@ Crew shared-week finish checks are printed in the top plane of the progress bloc
 
 4D reuses the 2D floating athlete nameplate and leader graphic. Keep the nameplate
 146 × 46 screen points/pixels at every zoom, with the leader endpoint attached to
-the racer's displayed lane coordinate. Show your nameplate and the selected peer's;
+the racer's displayed lane coordinate. Show every real racer's nameplate in 4D; 2D keeps its existing visibility;
 annotations sit above Mapbox scenery, without moving racers onto building roofs.
 Mapbox positions native/DOM annotations; do not project camera frames through React.
 Paths use a 36 cm stroke on 42 cm lane spacing (6 cm gap at close zoom), with a

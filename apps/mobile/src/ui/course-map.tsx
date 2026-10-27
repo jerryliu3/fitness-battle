@@ -59,12 +59,12 @@ export default function CourseMap({ course, lanes, unit, selectedId, focusReques
       <ShapeSource id="athletes" shape={scene.markers} onPress={event => { const id = event.features[0]?.properties?.id; if (typeof id === "string") onSelect(id); }}>
         <CircleLayer id="athlete-dots" slot="top" style={{ circleRadius: ["case", ["get", "selected"], 5, 3], circleColor: ["case", ["get", "you"], "#f7c948", "#20b9c6"], circleStrokeColor: "#ffffff", circleStrokeWidth: 1 }} />
       </ShapeSource>
-      {!overlaysHidden ? scene.callouts.map(lane => <MarkerView key={lane.id} coordinate={lane.coordinate} anchor={{ x: lane.you ? 1 : 0, y: 1 }} allowOverlap allowOverlapWithPuck allowZElevate={false}>
-        <View collapsable={false} pointerEvents="box-none" style={{ width: 170, height: 118 }}>
-          <Svg width={170} height={118} viewBox="0 0 170 118" pointerEvents="none"><G transform={`translate(${lane.you ? 170 : 0} 118)`}>
-            <AthletePennant lane={lane} x={lane.you ? -158 : 12} y={-100} detail={courseAthleteDetail(lanes, lane, unit)} prefix={`${prefix}-${lane.id}`} />
+      {!overlaysHidden ? scene.callouts.map(lane => <MarkerView key={lane.id} coordinate={lane.coordinate} anchor={{ x: lane.callout.left ? 1 : 0, y: lane.callout.originY / lane.callout.height }} allowOverlap allowOverlapWithPuck allowZElevate={false}>
+        <View collapsable={false} pointerEvents="box-none" style={{ width: 170, height: lane.callout.height }}>
+          <Svg width={170} height={lane.callout.height} viewBox={`0 0 170 ${lane.callout.height}`} pointerEvents="none"><G transform={`translate(${lane.callout.originX} ${lane.callout.originY})`}>
+            <AthletePennant lane={lane} x={lane.callout.left ? -158 : 12} y={lane.callout.y} detail={courseAthleteDetail(lanes, lane, unit)} prefix={`${prefix}-${lane.id}`} />
           </G></Svg>
-          <Pressable accessibilityRole="button" accessibilityLabel={`Focus ${lane.name}, ${courseAthleteDetail(lanes, lane, unit)}`} onTouchStart={event => event.stopPropagation()} onPress={() => onSelect(lane.id)} style={{ position: "absolute", left: 12, top: 18, width: 146, height: 46 }} />
+          <Pressable accessibilityRole="button" accessibilityLabel={`Focus ${lane.name}, ${courseAthleteDetail(lanes, lane, unit)}`} onTouchStart={event => event.stopPropagation()} onPress={() => onSelect(lane.id)} style={{ position: "absolute", left: 12, top: lane.callout.cardTop, width: 146, height: 46 }} />
         </View>
       </MarkerView>) : null}
     </MapView>

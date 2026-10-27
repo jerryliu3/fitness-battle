@@ -4,8 +4,9 @@ This follow-up stacks on the shared 4D overlay/replay integration in #393.
 
 The 2D athlete pennant graphic is extracted into a reusable component on each
 platform and used by both the original field and geographic maps. It retains
-the portrait/fallback icon, name, place, distance and leader line. Your card and
-the selected peer's card are shown, matching 2D. Cards stay 146 × 46 screen
+the portrait/fallback icon, name, place, distance and leader line. Every real racer gets a card in 4D, independently of selection; 2D retains its
+existing your/selected-card visibility. Stable alternating sides and vertical
+tiers spread tied or nearby racers without camera-frame work. Cards stay 146 × 46 screen
 points/pixels, while their leader endpoints follow the same geographic lane
 coordinate as the dot and trail. Selecting another racer does not rearrange lanes.
 
@@ -43,3 +44,19 @@ and [web marker alignment](https://docs.mapbox.com/mapbox-gl-js/api/markers/).
 
 ![Fixed-size native racer card above scenery](images/racer-card-native.png)
 ![Wider parallel trails and selected racer card](images/wider-trails-native.png)
+
+## Scheduled follow-up: show all 4D racer cards
+
+4D now supplies cards for the entire real roster, including zero-effort racers.
+Past-self ghosts remain excluded. Stable ID-based screen-space tiers alternate
+left/right and above/below the dot, with 54 px between rows so tied racers have
+separate 46 px cards. Selecting a racer never reassigns these slots. The native
+and web annotation anchors preserve the line endpoint as the card layout changes.
+This uses individual cards rather than a count-only cluster. Dense courses can
+still have crossing leaders or overlap when different positions project close
+together; automatic screen-space clustering is not introduced. Shared fullscreen
+hide controls still hide the cards, and offscreen racers do not get invented
+onscreen positions. Live and competition replay use the same behavior.
+
+No tests, typechecks, builds or UI walkthroughs were run for this scheduled
+follow-up, honoring the owner's request to push without further verification.

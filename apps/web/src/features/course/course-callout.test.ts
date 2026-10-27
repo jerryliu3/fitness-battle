@@ -20,7 +20,7 @@ it("retains a viewport-aligned marker through position updates and cleans it up"
   const marker = mock.instances[0];
   expect(marker.options).toMatchObject({ pitchAlignment: "viewport", rotationAlignment: "viewport", occludedOpacity: 1, anchor: "bottom-right" });
   expect(marker.options.element.style.cssText).toContain("position:absolute;left:0;top:0;");
-  expect(marker.options.element.style.cssText).toContain("width:170px;height:118px");
+  expect(marker.options.element.style.cssText).toContain("width:170px;height:120px");
   await act(async () => renderer.update(createElement(CourseCallout, { ...props, coordinate: [.01, .02], detail: "1st · 2.0 km" })));
   expect(mock.instances).toHaveLength(1);
   expect(marker.setLngLat).toHaveBeenLastCalledWith([.01, .02]);

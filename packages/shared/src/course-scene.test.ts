@@ -75,15 +75,18 @@ it("keeps each racer's trail aligned through bends, turnarounds, and the date li
   }
 });
 
-it("keeps a small gap between wider trails and only labels you and the selected racer", () => {
+it("keeps a small gap between wider trails and labels every real racer independently of selection", () => {
   expect(RACE_LANE_SPACING_METRES).toBeCloseTo(.35 * 1.2);
   expect(RACE_LANE_SPACING_METRES - RACE_TRAIL_WIDTH_METRES).toBeCloseTo(.06);
   const course = createRaceCourse("Street", [[0, 0], [.02, 0]]);
   const lanes = [{ id: "you", name: "You", initials: "Y", you: true, value: .5 }, { id: "a", name: "A", initials: "A", value: 1 }, { id: "b", name: "B", initials: "B", value: .4 }, { id: "past", name: "Past", initials: "P", ghost: true, value: 100 }];
   const scene = raceCourseScene(course, lanes, "km", "a");
-  expect(scene.callouts.map(lane => lane.id)).toEqual(["you", "a"]);
+  expect(scene.callouts.map(lane => lane.id)).toEqual(["you", "a", "b"]);
   expect(courseAthleteDetail(lanes, lanes[0], "km")).toBe("2nd · 0.5 km");
   expect(courseAthleteDetail(lanes, lanes[1], "km")).toBe("1st · +0.5 km");
   expect(courseAthleteDetail(lanes, lanes[2], "km")).toBe("3rd · -0.1 km");
-  expect(raceCourseScene(course, lanes, "km", "you").callouts.map(lane => lane.id)).toEqual(["you"]);
+  const reselected = raceCourseScene(course, lanes, "km", "you");
+  expect(reselected.callouts.map(lane => lane.id)).toEqual(["you", "a", "b"]);
+  expect(reselected.callouts.map(lane => lane.callout)).toEqual(scene.callouts.map(lane => lane.callout));
+  expect(new Set(scene.callouts.map(lane => `${lane.callout.left}:${lane.callout.y}`)).size).toBe(3);
 });
