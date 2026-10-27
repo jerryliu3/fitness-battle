@@ -14,7 +14,6 @@ import {
 
 const c = {
   ink: "#142b3b",
-  paper: "#f8f9f6",
   card: "#ffffff",
   line: "#e5eae6",
   soft: "#eef3ef",
@@ -25,9 +24,7 @@ const c = {
   statusWarning: "#c77700",
   statusWarningSoft: "#fff3db",
   statusError: "#b93826",
-  statusErrorSoft: "#fce9e6",
   muted: "#637482",
-  secondary: "#3e5263",
 };
 
 export function getDomainTitle(domain?: string | null): string {
@@ -92,7 +89,9 @@ function WebMarketDetailView({ model }: { model: AnalyticsLabModel }) {
   const m = model.market;
   const series = m.equitySeries;
   const [selectedIdx, setSelectedIdx] = useState(series.length - 1);
-  const selectedPoint = series[selectedIdx] ?? series[series.length - 1]!;
+  const safeIdx = Math.max(0, Math.min(selectedIdx, series.length - 1));
+  const selectedPoint = series[safeIdx] ?? series[0];
+  const lastPoint = series[series.length - 1] ?? series[0];
 
   return (
     <div style={{ display: "grid", gap: 16 }}>
@@ -125,14 +124,14 @@ function WebMarketDetailView({ model }: { model: AnalyticsLabModel }) {
           </div>
           <div style={boxStyle}>
             <span style={labelStyle}>4W SMA</span>
-            <span style={valStyle}>{series[series.length - 1]!.sma4} pts</span>
+            <span style={valStyle}>{lastPoint?.sma4 ?? 0} pts</span>
           </div>
         </div>
 
         <div style={{ margin: "14px 0" }}>
           <WebMarketEquityChart
             model={model}
-            selectedIdx={selectedIdx}
+            selectedIdx={safeIdx}
             onSelectIdx={setSelectedIdx}
           />
         </div>
@@ -140,15 +139,15 @@ function WebMarketDetailView({ model }: { model: AnalyticsLabModel }) {
         {/* Selected Week Inspection */}
         <div style={inspectionBoxStyle}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <span style={{ fontWeight: 700, color: c.ink }}>{selectedPoint.label}</span>
+            <span style={{ fontWeight: 700, color: c.ink }}>{selectedPoint?.label ?? "Selected Point"}</span>
             <span
               style={{
                 fontSize: "0.75rem",
                 fontWeight: 700,
-                color: selectedPoint.drawdownPct === 0 ? c.statusSuccess : c.statusError,
+                color: selectedPoint?.drawdownPct === 0 ? c.statusSuccess : c.statusError,
               }}
             >
-              {selectedPoint.drawdownPct === 0 ? "Peak NAV" : `${selectedPoint.drawdownPct}% Drawdown`}
+              {selectedPoint?.drawdownPct === 0 ? "Peak NAV" : `${selectedPoint?.drawdownPct ?? 0}% Drawdown`}
             </span>
           </div>
           <div
@@ -160,18 +159,18 @@ function WebMarketDetailView({ model }: { model: AnalyticsLabModel }) {
             }}
           >
             <span style={{ fontSize: "1.2rem", fontWeight: 800, color: c.ink }}>
-              {selectedPoint.nav.toLocaleString()} pts
+              {(selectedPoint?.nav ?? 0).toLocaleString()} pts
             </span>
             <span className="fb-small" style={{ color: c.muted }}>
-              {selectedPoint.volumeHours} hrs · +{selectedPoint.dividendPts} bonus pts
+              {selectedPoint?.volumeHours ?? 0} hrs · +{selectedPoint?.dividendPts ?? 0} bonus pts
             </span>
           </div>
           <div style={{ display: "flex", gap: 14, marginTop: 4 }}>
             <span className="fb-small" style={{ color: c.muted }}>
-              4W SMA: {selectedPoint.sma4} pts
+              4W SMA: {selectedPoint?.sma4 ?? 0} pts
             </span>
             <span className="fb-small" style={{ color: c.muted }}>
-              12W EMA: {selectedPoint.ema12} pts
+              12W EMA: {selectedPoint?.ema12 ?? 0} pts
             </span>
           </div>
         </div>
@@ -221,11 +220,11 @@ function WebVitalsDetailView({ model }: { model: AnalyticsLabModel }) {
   const selectedVital = vitals.find((v) => v.id === activeVitalId) ?? vitals[0]!;
   const [selectedDayIdx, setSelectedDayIdx] = useState(selectedVital.series.length - 1);
 
-  const safeDayIdx = Math.min(selectedDayIdx, selectedVital.series.length - 1);
-  const selectedDayPoint = selectedVital.series[safeDayIdx] ?? selectedVital.series[selectedVital.series.length - 1]!;
+  const safeDayIdx = Math.max(0, Math.min(selectedDayIdx, selectedVital.series.length - 1));
+  const selectedDayPoint = selectedVital.series[safeDayIdx] ?? selectedVital.series[0];
   const inCorridor =
-    selectedDayPoint.value >= selectedDayPoint.baselineLow &&
-    selectedDayPoint.value <= selectedDayPoint.baselineHigh;
+    (selectedDayPoint?.value ?? 0) >= (selectedDayPoint?.baselineLow ?? 0) &&
+    (selectedDayPoint?.value ?? 0) <= (selectedDayPoint?.baselineHigh ?? 0);
 
   return (
     <div style={{ display: "grid", gap: 16 }}>
@@ -382,13 +381,14 @@ function WebSleepDetailView({ model }: { model: AnalyticsLabModel }) {
   const sData = model.sleep;
   const nights = sData.nights;
   const [selectedNightIdx, setSelectedNightIdx] = useState(nights.length - 1);
-  const selectedNight = nights[selectedNightIdx] ?? nights[nights.length - 1]!;
+  const safeNightIdx = Math.max(0, Math.min(selectedNightIdx, nights.length - 1));
+  const selectedNight = nights[safeNightIdx] ?? nights[0];
 
-  const tot = Math.max(1, selectedNight.durationMin);
-  const deepP = (selectedNight.deepMin / tot) * 100;
-  const remP = (selectedNight.remMin / tot) * 100;
-  const lightP = (selectedNight.lightMin / tot) * 100;
-  const awakeP = (selectedNight.awakeMin / tot) * 100;
+  const tot = Math.max(1, selectedNight?.durationMin ?? 480);
+  const deepP = ((selectedNight?.deepMin ?? 0) / tot) * 100;
+  const remP = ((selectedNight?.remMin ?? 0) / tot) * 100;
+  const lightP = ((selectedNight?.lightMin ?? 0) / tot) * 100;
+  const awakeP = ((selectedNight?.awakeMin ?? 0) / tot) * 100;
 
   return (
     <div style={{ display: "grid", gap: 16 }}>
@@ -435,7 +435,7 @@ function WebSleepDetailView({ model }: { model: AnalyticsLabModel }) {
         <div style={{ margin: "14px 0" }}>
           <WebSleepScoreTimelineChart
             nights={nights}
-            selectedIdx={selectedNightIdx}
+            selectedIdx={safeNightIdx}
             onSelectIdx={setSelectedNightIdx}
           />
         </div>
@@ -443,9 +443,9 @@ function WebSleepDetailView({ model }: { model: AnalyticsLabModel }) {
         {/* Selected Night Detailed Stage Ribbon */}
         <div style={inspectionBoxStyle}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <span style={{ fontWeight: 700, color: c.ink }}>{selectedNight.label}</span>
+            <span style={{ fontWeight: 700, color: c.ink }}>{selectedNight?.label ?? "Selected Night"}</span>
             <span style={{ fontSize: "1.2rem", fontWeight: 800, color: c.ink }}>
-              {selectedNight.score} pts
+              {selectedNight?.score ?? 80} pts
             </span>
           </div>
 
@@ -467,18 +467,18 @@ function WebSleepDetailView({ model }: { model: AnalyticsLabModel }) {
 
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <span className="fb-small" style={{ color: c.muted }}>
-              Total {formatMinutesAsHoursMins(selectedNight.durationMin)} · Deep{" "}
-              {formatMinutesAsHoursMins(selectedNight.deepMin)} · REM{" "}
-              {formatMinutesAsHoursMins(selectedNight.remMin)}
+              Total {formatMinutesAsHoursMins(selectedNight?.durationMin ?? 480)} · Deep{" "}
+              {formatMinutesAsHoursMins(selectedNight?.deepMin ?? 90)} · REM{" "}
+              {formatMinutesAsHoursMins(selectedNight?.remMin ?? 90)}
             </span>
             <span
               className="fb-small"
               style={{
                 fontWeight: 600,
-                color: selectedNight.debtMin > 0 ? c.statusWarning : c.statusSuccess,
+                color: (selectedNight?.debtMin ?? 0) > 0 ? c.statusWarning : c.statusSuccess,
               }}
             >
-              {selectedNight.debtMin > 0 ? `+${selectedNight.debtMin}m debt` : "Surplus"}
+              {(selectedNight?.debtMin ?? 0) > 0 ? `+${selectedNight?.debtMin}m debt` : "Surplus"}
             </span>
           </div>
         </div>
@@ -495,7 +495,9 @@ function WebLoadDetailView({ model }: { model: AnalyticsLabModel }) {
   const l = model.load;
   const buckets = l.series;
   const [selectedIdx, setSelectedIdx] = useState(buckets.length - 1);
-  const selectedBucket = buckets[selectedIdx] ?? buckets[buckets.length - 1]!;
+  const safeIdx = Math.max(0, Math.min(selectedIdx, buckets.length - 1));
+  const selectedBucket = buckets[safeIdx] ?? buckets[0];
+  const lastBucket = buckets[buckets.length - 1] ?? buckets[0];
 
   return (
     <div style={{ display: "grid", gap: 16 }}>
@@ -517,11 +519,11 @@ function WebLoadDetailView({ model }: { model: AnalyticsLabModel }) {
           </div>
           <div style={boxStyle}>
             <span style={labelStyle}>Acute (7D)</span>
-            <span style={valStyle}>{buckets[buckets.length - 1]!.acuteLoad} pts</span>
+            <span style={valStyle}>{lastBucket?.acuteLoad ?? 0} pts</span>
           </div>
           <div style={boxStyle}>
             <span style={labelStyle}>Chronic (28D)</span>
-            <span style={valStyle}>{buckets[buckets.length - 1]!.chronicLoad} pts</span>
+            <span style={valStyle}>{lastBucket?.chronicLoad ?? 0} pts</span>
           </div>
           <div style={boxStyle}>
             <span style={labelStyle}>Status</span>
@@ -534,7 +536,7 @@ function WebLoadDetailView({ model }: { model: AnalyticsLabModel }) {
         <div style={{ margin: "14px 0" }}>
           <WebLoadAcwrInteractiveChart
             buckets={buckets}
-            selectedIdx={selectedIdx}
+            selectedIdx={safeIdx}
             onSelectIdx={setSelectedIdx}
           />
         </div>
@@ -542,9 +544,9 @@ function WebLoadDetailView({ model }: { model: AnalyticsLabModel }) {
         {/* Selected Bucket Inspection */}
         <div style={inspectionBoxStyle}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <span style={{ fontWeight: 700, color: c.ink }}>{selectedBucket.label}</span>
+            <span style={{ fontWeight: 700, color: c.ink }}>{selectedBucket?.label ?? "Selected Week"}</span>
             <span style={{ fontSize: "1.2rem", fontWeight: 800, color: c.ink }}>
-              {selectedBucket.acwr.toFixed(2)}x ACWR
+              {(selectedBucket?.acwr ?? 1).toFixed(2)}x ACWR
             </span>
           </div>
           <div
@@ -556,14 +558,14 @@ function WebLoadDetailView({ model }: { model: AnalyticsLabModel }) {
             }}
           >
             <span className="fb-small" style={{ color: c.muted }}>
-              Acute: {selectedBucket.acuteLoad} pts · Chronic: {selectedBucket.chronicLoad} pts
+              Acute: {selectedBucket?.acuteLoad ?? 0} pts · Chronic: {selectedBucket?.chronicLoad ?? 0} pts
             </span>
             <span className="fb-small" style={{ color: c.muted }}>
-              {selectedBucket.totalHours} hrs total
+              {selectedBucket?.totalHours ?? 0} hrs total
             </span>
           </div>
           <p className="fb-small" style={{ margin: "4px 0 0", color: c.muted }}>
-            Run {selectedBucket.runningHours}h · Bike {selectedBucket.cyclingHours}h · Strength {selectedBucket.strengthHours}h
+            Run {selectedBucket?.runningHours ?? 0}h · Bike {selectedBucket?.cyclingHours ?? 0}h · Strength {selectedBucket?.strengthHours ?? 0}h
           </p>
         </div>
       </div>
@@ -586,10 +588,19 @@ function WebPerformanceDetailView({ model }: { model: AnalyticsLabModel }) {
   const p = model.performance;
   const runs = p.series;
   const [selectedRunIdx, setSelectedRunIdx] = useState(runs.length - 1);
-  const selectedRun = runs[selectedRunIdx] ?? runs[runs.length - 1]!;
+  const safeRunIdx = Math.max(0, Math.min(selectedRunIdx, runs.length - 1));
+  const selectedRun = runs[safeRunIdx] ?? runs[0];
 
   const [selectedZone, setSelectedZone] = useState<number>(2);
-  const activeZone = p.zones.find((z) => z.zone === selectedZone) ?? p.zones[1]!;
+  const activeZone = p.zones.find((z) => z.zone === selectedZone) ?? p.zones[0] ?? {
+    zone: 2,
+    name: "Z2 · Aerobic Base",
+    bpmRange: "127–145 bpm",
+    sessionPct: 50,
+    monthPct: 50,
+    targetPct: 50,
+    minutes30d: 500,
+  };
 
   return (
     <div style={{ display: "grid", gap: 16 }}>
@@ -598,7 +609,7 @@ function WebPerformanceDetailView({ model }: { model: AnalyticsLabModel }) {
         <div style={{ margin: "14px 0" }}>
           <WebPerformanceEfInteractiveChart
             runs={runs}
-            selectedIdx={selectedRunIdx}
+            selectedIdx={safeRunIdx}
             onSelectIdx={setSelectedRunIdx}
           />
         </div>
@@ -606,20 +617,20 @@ function WebPerformanceDetailView({ model }: { model: AnalyticsLabModel }) {
         {/* Selected Run Inspection */}
         <div style={inspectionBoxStyle}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <span style={{ fontWeight: 700, color: c.ink }}>{selectedRun.label}</span>
+            <span style={{ fontWeight: 700, color: c.ink }}>{selectedRun?.label ?? "Selected Session"}</span>
             <span style={{ fontSize: "1.2rem", fontWeight: 800, color: c.ink }}>
-              {selectedRun.efficiencyFactor.toFixed(2)} EF
+              {(selectedRun?.efficiencyFactor ?? 1).toFixed(2)} EF
             </span>
           </div>
           <div style={{ display: "flex", gap: 16, marginTop: 4 }}>
             <span className="fb-small" style={{ color: c.muted }}>
-              Pace: {selectedRun.paceMinKm.toFixed(2)} min/km
+              Pace: {(selectedRun?.paceMinKm ?? 5).toFixed(2)} min/km
             </span>
             <span className="fb-small" style={{ color: c.muted }}>
-              Avg HR: {selectedRun.avgHr} bpm
+              Avg HR: {selectedRun?.avgHr ?? 140} bpm
             </span>
             <span className="fb-small" style={{ color: c.muted }}>
-              VO2 max: {selectedRun.vo2Max}
+              VO2 max: {selectedRun?.vo2Max ?? 50}
             </span>
           </div>
         </div>
@@ -723,7 +734,8 @@ function WebCombinedDetailView({ model }: { model: AnalyticsLabModel }) {
   const sData = model.sleep;
   const days = cmb.series;
   const [selectedDayIdx, setSelectedDayIdx] = useState(days.length - 1);
-  const selectedDay = days[selectedDayIdx] ?? days[days.length - 1]!;
+  const safeDayIdx = Math.max(0, Math.min(selectedDayIdx, days.length - 1));
+  const selectedDay = days[safeDayIdx] ?? days[0];
 
   return (
     <div style={{ display: "grid", gap: 16 }}>
@@ -763,7 +775,7 @@ function WebCombinedDetailView({ model }: { model: AnalyticsLabModel }) {
         <div style={{ margin: "14px 0" }}>
           <WebCombinedStrainReadinessInteractiveChart
             days={days}
-            selectedIdx={selectedDayIdx}
+            selectedIdx={safeDayIdx}
             onSelectIdx={setSelectedDayIdx}
           />
         </div>
@@ -771,21 +783,21 @@ function WebCombinedDetailView({ model }: { model: AnalyticsLabModel }) {
         {/* Selected Day Inspection */}
         <div style={inspectionBoxStyle}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <span style={{ fontWeight: 700, color: c.ink }}>{selectedDay.label}</span>
+            <span style={{ fontWeight: 700, color: c.ink }}>{selectedDay?.label ?? "Selected Day"}</span>
             <span style={{ fontSize: "1.2rem", fontWeight: 800, color: c.ink }}>
-              {selectedDay.nextDayReadiness}% Readiness
+              {selectedDay?.nextDayReadiness ?? 80}% Readiness
             </span>
           </div>
           <div style={{ display: "flex", gap: 16, marginTop: 4 }}>
             <span className="fb-small" style={{ color: c.muted }}>
-              Day Strain: {selectedDay.strainScore} / 21
+              Day Strain: {selectedDay?.strainScore ?? 10} / 21
             </span>
             <span className="fb-small" style={{ color: c.muted }}>
-              Next-Day HRV: {selectedDay.nextDayHrv} ms
+              Next-Day HRV: {selectedDay?.nextDayHrv ?? 70} ms
             </span>
           </div>
           <p className="fb-small" style={{ margin: "4px 0 0", color: c.muted }}>
-            {selectedDay.workoutNote} ({selectedDay.sleepRestorativeHr}h restorative sleep)
+            {selectedDay?.workoutNote ?? "Training Session"} ({selectedDay?.sleepRestorativeHr ?? 3}h restorative sleep)
           </p>
         </div>
       </div>
@@ -825,7 +837,8 @@ function WebMarketEquityChart({
   const smaPoints = series.map((p, i) => `${toX(i).toFixed(1)},${toY(p.sma4).toFixed(1)}`).join(" ");
   const emaPoints = series.map((p, i) => `${toX(i).toFixed(1)},${toY(p.ema12).toFixed(1)}`).join(" ");
   const areaPoints = `${L},${B} ${navPoints} ${toX(series.length - 1).toFixed(1)},${B}`;
-  const activeX = toX(selectedIdx);
+  const safeIdx = Math.max(0, Math.min(selectedIdx, series.length - 1));
+  const activeX = toX(safeIdx);
 
   return (
     <div style={{ display: "grid", gap: 10 }}>
@@ -846,16 +859,16 @@ function WebMarketEquityChart({
             key={p.id}
             cx={toX(i)}
             cy={toY(p.nav)}
-            r={i === selectedIdx ? 5.5 : 2.5}
-            fill={i === selectedIdx ? c.tennis : c.ink}
+            r={i === safeIdx ? 5.5 : 2.5}
+            fill={i === safeIdx ? c.tennis : c.ink}
             stroke={c.card}
-            strokeWidth={i === selectedIdx ? 2 : 1.5}
+            strokeWidth={i === safeIdx ? 2 : 1.5}
           />
         ))}
 
         {/* Click Strips */}
         {series.map((p, i) => {
-          const colW = (R - L) / series.length;
+          const colW = (R - L) / Math.max(1, series.length);
           return (
             <rect
               key={`click-${p.id}`}
@@ -918,7 +931,8 @@ function WebVitalInteractiveCorridorChart({
   const corridorH = Math.max(2, botCorridorY - topCorridorY);
 
   const linePoints = series.map((p, i) => `${toX(i).toFixed(1)},${toY(p.value).toFixed(1)}`).join(" ");
-  const activeX = toX(selectedIdx);
+  const safeIdx = Math.max(0, Math.min(selectedIdx, series.length - 1));
+  const activeX = toX(safeIdx);
 
   return (
     <svg width="100%" height={H} viewBox={`0 0 ${W} ${H}`}>
@@ -943,15 +957,15 @@ function WebVitalInteractiveCorridorChart({
           key={p.day}
           cx={toX(i)}
           cy={toY(p.value)}
-          r={i === selectedIdx ? 5.5 : 2.5}
-          fill={i === selectedIdx ? c.fieldTeal : c.ink}
+          r={i === safeIdx ? 5.5 : 2.5}
+          fill={i === safeIdx ? c.fieldTeal : c.ink}
           stroke={c.card}
-          strokeWidth={i === selectedIdx ? 2 : 1.5}
+          strokeWidth={i === safeIdx ? 2 : 1.5}
         />
       ))}
 
       {series.map((p, i) => {
-        const colW = (R - L) / series.length;
+        const colW = (R - L) / Math.max(1, series.length);
         return (
           <rect
             key={`click-${p.day}`}
@@ -993,7 +1007,8 @@ function WebSleepScoreTimelineChart({
   const toY = (v: number) => B - ((v - minV) / span) * (B - T);
 
   const linePoints = nights.map((n, i) => `${toX(i).toFixed(1)},${toY(n.score).toFixed(1)}`).join(" ");
-  const activeX = toX(selectedIdx);
+  const safeIdx = Math.max(0, Math.min(selectedIdx, nights.length - 1));
+  const activeX = toX(safeIdx);
 
   return (
     <svg width="100%" height={H} viewBox={`0 0 ${W} ${H}`}>
@@ -1007,15 +1022,15 @@ function WebSleepScoreTimelineChart({
           key={n.id}
           cx={toX(i)}
           cy={toY(n.score)}
-          r={i === selectedIdx ? 5.5 : 3}
-          fill={i === selectedIdx ? c.tennis : c.ink}
+          r={i === safeIdx ? 5.5 : 3}
+          fill={i === safeIdx ? c.tennis : c.ink}
           stroke={c.card}
-          strokeWidth={i === selectedIdx ? 2 : 1}
+          strokeWidth={i === safeIdx ? 2 : 1}
         />
       ))}
 
       {nights.map((n, i) => {
-        const colW = (R - L) / nights.length;
+        const colW = (R - L) / Math.max(1, nights.length);
         return (
           <rect
             key={`click-${n.id}`}
@@ -1061,7 +1076,8 @@ function WebLoadAcwrInteractiveChart({
   const sweetH = Math.max(2, sweetBot - sweetTop);
 
   const acwrPoints = buckets.map((b, i) => `${toX(i).toFixed(1)},${toY(b.acwr).toFixed(1)}`).join(" ");
-  const activeX = toX(selectedIdx);
+  const safeIdx = Math.max(0, Math.min(selectedIdx, buckets.length - 1));
+  const activeX = toX(safeIdx);
 
   return (
     <div style={{ display: "grid", gap: 8 }}>
@@ -1085,7 +1101,7 @@ function WebLoadAcwrInteractiveChart({
             key={b.id}
             cx={toX(i)}
             cy={toY(b.acwr)}
-            r={i === selectedIdx ? 6 : 3.5}
+            r={i === safeIdx ? 6 : 3.5}
             fill={b.acwr > 1.4 ? c.statusWarning : c.statusSuccess}
             stroke={c.card}
             strokeWidth={1.5}
@@ -1093,7 +1109,7 @@ function WebLoadAcwrInteractiveChart({
         ))}
 
         {buckets.map((b, i) => {
-          const colW = (R - L) / buckets.length;
+          const colW = (R - L) / Math.max(1, buckets.length);
           return (
             <rect
               key={`click-${b.id}`}
@@ -1159,11 +1175,11 @@ function WebLoadBurnUpChart({ model }: { model: AnalyticsLabModel }) {
       <div style={{ display: "flex", gap: 14 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
           <span style={{ width: 8, height: 8, borderRadius: 4, background: c.fieldTeal }} />
-          <span className="fb-small">Current Week ({buckets[buckets.length - 1]!.cumCurrentHours}h)</span>
+          <span className="fb-small">Current Week ({buckets[buckets.length - 1]?.cumCurrentHours ?? 0}h)</span>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
           <span style={{ width: 8, height: 8, borderRadius: 4, background: c.muted }} />
-          <span className="fb-small">Ghost Prior Week ({buckets[buckets.length - 1]!.cumGhostHours}h)</span>
+          <span className="fb-small">Ghost Prior Week ({buckets[buckets.length - 1]?.cumGhostHours ?? 0}h)</span>
         </div>
       </div>
     </div>
@@ -1194,7 +1210,8 @@ function WebPerformanceEfInteractiveChart({
   const toY = (v: number) => B - ((v - minV) / span) * (B - T);
 
   const linePoints = runs.map((p, i) => `${toX(i).toFixed(1)},${toY(p.efficiencyFactor).toFixed(1)}`).join(" ");
-  const activeX = toX(selectedIdx);
+  const safeIdx = Math.max(0, Math.min(selectedIdx, runs.length - 1));
+  const activeX = toX(safeIdx);
 
   return (
     <svg width="100%" height={H} viewBox={`0 0 ${W} ${H}`}>
@@ -1207,15 +1224,15 @@ function WebPerformanceEfInteractiveChart({
           key={p.id}
           cx={toX(i)}
           cy={toY(p.efficiencyFactor)}
-          r={i === selectedIdx ? 5.5 : 2.5}
+          r={i === safeIdx ? 5.5 : 2.5}
           fill={c.fieldTeal}
           stroke={c.card}
-          strokeWidth={i === selectedIdx ? 2 : 1.5}
+          strokeWidth={i === safeIdx ? 2 : 1.5}
         />
       ))}
 
       {runs.map((p, i) => {
-        const colW = (R - L) / runs.length;
+        const colW = (R - L) / Math.max(1, runs.length);
         return (
           <rect
             key={`click-${p.id}`}
@@ -1254,7 +1271,8 @@ function WebCombinedStrainReadinessInteractiveChart({
   const toYStrain = (v: number) => B - (v / 21) * (B - T);
 
   const readPoints = days.map((p, i) => `${toX(i).toFixed(1)},${toYReadiness(p.nextDayReadiness).toFixed(1)}`).join(" ");
-  const activeX = toX(selectedIdx);
+  const safeIdx = Math.max(0, Math.min(selectedIdx, days.length - 1));
+  const activeX = toX(safeIdx);
 
   return (
     <div style={{ display: "grid", gap: 8 }}>
@@ -1272,7 +1290,7 @@ function WebCombinedStrainReadinessInteractiveChart({
               y={B - barH}
               width={8}
               height={barH}
-              fill={i === selectedIdx ? c.tennis : c.soft}
+              fill={i === safeIdx ? c.tennis : c.soft}
               rx={2}
             />
           );
@@ -1284,7 +1302,7 @@ function WebCombinedStrainReadinessInteractiveChart({
             key={`dot-${p.id}`}
             cx={toX(i)}
             cy={toYReadiness(p.nextDayReadiness)}
-            r={i === selectedIdx ? 5 : 2.5}
+            r={i === safeIdx ? 5 : 2.5}
             fill={c.fieldTeal}
             stroke={c.card}
             strokeWidth={1.5}
@@ -1292,7 +1310,7 @@ function WebCombinedStrainReadinessInteractiveChart({
         ))}
 
         {days.map((p, i) => {
-          const colW = (R - L) / days.length;
+          const colW = (R - L) / Math.max(1, days.length);
           return (
             <rect
               key={`click-${p.id}`}

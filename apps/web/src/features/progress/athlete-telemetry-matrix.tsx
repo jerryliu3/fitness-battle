@@ -11,18 +11,11 @@ import {
 
 const c = {
   ink: "#142b3b",
-  paper: "#f8f9f6",
   card: "#ffffff",
   line: "#e5eae6",
-  soft: "#eef3ef",
   fieldTeal: "#176c75",
   tennis: "#f7c948",
   statusSuccess: "#24765c",
-  statusSuccessSoft: "#e2f2eb",
-  statusWarning: "#c77700",
-  statusWarningSoft: "#fff3db",
-  statusError: "#b93826",
-  statusErrorSoft: "#fce9e6",
   muted: "#637482",
   secondary: "#3e5263",
 };

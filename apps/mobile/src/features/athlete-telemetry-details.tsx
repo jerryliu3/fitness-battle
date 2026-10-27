@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
-import Svg, { Circle, Line, Path, Rect, Text as SvgText } from "react-native-svg";
+import Svg, { Circle, Line, Path, Rect } from "react-native-svg";
 import {
   buildAnalyticsLabModel,
   formatMinutesAsHoursMins,
@@ -14,7 +14,6 @@ import { fonts } from "../theme";
 
 const c = {
   ink: "#142b3b",
-  paper: "#f8f9f6",
   card: "#ffffff",
   line: "#e5eae6",
   soft: "#eef3ef",
@@ -25,9 +24,7 @@ const c = {
   statusWarning: "#c77700",
   statusWarningSoft: "#fff3db",
   statusError: "#b93826",
-  statusErrorSoft: "#fce9e6",
   muted: "#637482",
-  secondary: "#3e5263",
 };
 
 export function getDomainTitle(domain?: AnalyticsDomainId | string | null): string {
@@ -77,7 +74,9 @@ function MarketDetailView({ model }: { model: AnalyticsLabModel }) {
   const m = model.market;
   const series = m.equitySeries;
   const [selectedIdx, setSelectedIdx] = useState(series.length - 1);
-  const selectedPoint = series[selectedIdx] ?? series[series.length - 1]!;
+  const safeIdx = Math.max(0, Math.min(selectedIdx, series.length - 1));
+  const selectedPoint = series[safeIdx] ?? series[0];
+  const lastPoint = series[series.length - 1] ?? series[0];
 
   return (
     <View style={{ gap: 14 }}>
@@ -103,14 +102,14 @@ function MarketDetailView({ model }: { model: AnalyticsLabModel }) {
           </View>
           <View style={s.statBox}>
             <Text style={s.statLabel}>4W SMA</Text>
-            <Text style={s.statVal}>{series[series.length - 1]!.sma4} pts</Text>
+            <Text style={s.statVal}>{lastPoint?.sma4 ?? 0} pts</Text>
           </View>
         </View>
 
         <View style={{ marginVertical: 12 }}>
           <MarketEquityChart
             model={model}
-            selectedIdx={selectedIdx}
+            selectedIdx={safeIdx}
             onSelectIdx={setSelectedIdx}
           />
         </View>
@@ -118,20 +117,20 @@ function MarketDetailView({ model }: { model: AnalyticsLabModel }) {
         {/* Selected Data Point Readout */}
         <View style={s.inspectionBox}>
           <View style={s.betweenRow}>
-            <Text style={s.inspectionTitle}>{selectedPoint.label}</Text>
+            <Text style={s.inspectionTitle}>{selectedPoint?.label ?? "Selected Point"}</Text>
             <Text style={s.inspectionBadge}>
-              {selectedPoint.drawdownPct === 0 ? "Peak NAV" : `${selectedPoint.drawdownPct}% Drawdown`}
+              {selectedPoint?.drawdownPct === 0 ? "Peak NAV" : `${selectedPoint?.drawdownPct ?? 0}% Drawdown`}
             </Text>
           </View>
           <View style={[s.betweenRow, { marginTop: 4 }]}>
-            <Text style={s.inspectionValue}>{selectedPoint.nav.toLocaleString()} pts</Text>
+            <Text style={s.inspectionValue}>{(selectedPoint?.nav ?? 0).toLocaleString()} pts</Text>
             <Text style={f.small}>
-              {selectedPoint.volumeHours} hrs · +{selectedPoint.dividendPts} bonus pts
+              {selectedPoint?.volumeHours ?? 0} hrs · +{selectedPoint?.dividendPts ?? 0} bonus pts
             </Text>
           </View>
           <View style={[s.betweenRow, { marginTop: 4 }]}>
-            <Text style={f.small}>4W SMA: {selectedPoint.sma4} pts</Text>
-            <Text style={f.small}>12W EMA: {selectedPoint.ema12} pts</Text>
+            <Text style={f.small}>4W SMA: {selectedPoint?.sma4 ?? 0} pts</Text>
+            <Text style={f.small}>12W EMA: {selectedPoint?.ema12 ?? 0} pts</Text>
           </View>
         </View>
       </View>
@@ -169,11 +168,11 @@ function VitalsDetailView({ model }: { model: AnalyticsLabModel }) {
   const selectedVital = vitals.find((v) => v.id === activeVitalId) ?? vitals[0]!;
   const [selectedDayIdx, setSelectedDayIdx] = useState(selectedVital.series.length - 1);
 
-  const safeDayIdx = Math.min(selectedDayIdx, selectedVital.series.length - 1);
-  const selectedDayPoint = selectedVital.series[safeDayIdx] ?? selectedVital.series[selectedVital.series.length - 1]!;
+  const safeDayIdx = Math.max(0, Math.min(selectedDayIdx, selectedVital.series.length - 1));
+  const selectedDayPoint = selectedVital.series[safeDayIdx] ?? selectedVital.series[0];
   const inCorridor =
-    selectedDayPoint.value >= selectedDayPoint.baselineLow &&
-    selectedDayPoint.value <= selectedDayPoint.baselineHigh;
+    (selectedDayPoint?.value ?? 0) >= (selectedDayPoint?.baselineLow ?? 0) &&
+    (selectedDayPoint?.value ?? 0) <= (selectedDayPoint?.baselineHigh ?? 0);
 
   return (
     <View style={{ gap: 14 }}>
@@ -293,13 +292,14 @@ function SleepDetailView({ model }: { model: AnalyticsLabModel }) {
   const sData = model.sleep;
   const nights = sData.nights;
   const [selectedNightIdx, setSelectedNightIdx] = useState(nights.length - 1);
-  const selectedNight = nights[selectedNightIdx] ?? nights[nights.length - 1]!;
+  const safeNightIdx = Math.max(0, Math.min(selectedNightIdx, nights.length - 1));
+  const selectedNight = nights[safeNightIdx] ?? nights[0];
 
-  const tot = Math.max(1, selectedNight.durationMin);
-  const deepP = (selectedNight.deepMin / tot) * 100;
-  const remP = (selectedNight.remMin / tot) * 100;
-  const lightP = (selectedNight.lightMin / tot) * 100;
-  const awakeP = (selectedNight.awakeMin / tot) * 100;
+  const tot = Math.max(1, selectedNight?.durationMin ?? 480);
+  const deepP = ((selectedNight?.deepMin ?? 0) / tot) * 100;
+  const remP = ((selectedNight?.remMin ?? 0) / tot) * 100;
+  const lightP = ((selectedNight?.lightMin ?? 0) / tot) * 100;
+  const awakeP = ((selectedNight?.awakeMin ?? 0) / tot) * 100;
 
   return (
     <View style={{ gap: 14 }}>
@@ -415,7 +415,9 @@ function LoadDetailView({ model }: { model: AnalyticsLabModel }) {
   const l = model.load;
   const buckets = l.series;
   const [selectedIdx, setSelectedIdx] = useState(buckets.length - 1);
-  const selectedBucket = buckets[selectedIdx] ?? buckets[buckets.length - 1]!;
+  const safeIdx = Math.max(0, Math.min(selectedIdx, buckets.length - 1));
+  const selectedBucket = buckets[safeIdx] ?? buckets[0];
+  const lastBucket = buckets[buckets.length - 1] ?? buckets[0];
 
   return (
     <View style={{ gap: 14 }}>
@@ -430,11 +432,11 @@ function LoadDetailView({ model }: { model: AnalyticsLabModel }) {
           </View>
           <View style={s.statBox}>
             <Text style={s.statLabel}>Acute (7D)</Text>
-            <Text style={s.statVal}>{buckets[buckets.length - 1]!.acuteLoad} pts</Text>
+            <Text style={s.statVal}>{lastBucket?.acuteLoad ?? 0} pts</Text>
           </View>
           <View style={s.statBox}>
             <Text style={s.statLabel}>Chronic (28D)</Text>
-            <Text style={s.statVal}>{buckets[buckets.length - 1]!.chronicLoad} pts</Text>
+            <Text style={s.statVal}>{lastBucket?.chronicLoad ?? 0} pts</Text>
           </View>
           <View style={s.statBox}>
             <Text style={s.statLabel}>Status</Text>
@@ -447,7 +449,7 @@ function LoadDetailView({ model }: { model: AnalyticsLabModel }) {
         <View style={{ marginVertical: 12 }}>
           <LoadAcwrInteractiveChart
             buckets={buckets}
-            selectedIdx={selectedIdx}
+            selectedIdx={safeIdx}
             onSelectIdx={setSelectedIdx}
           />
         </View>
@@ -455,17 +457,17 @@ function LoadDetailView({ model }: { model: AnalyticsLabModel }) {
         {/* Selected Bucket Inspection */}
         <View style={s.inspectionBox}>
           <View style={s.betweenRow}>
-            <Text style={s.inspectionTitle}>{selectedBucket.label}</Text>
-            <Text style={s.inspectionValue}>{selectedBucket.acwr.toFixed(2)}x ACWR</Text>
+            <Text style={s.inspectionTitle}>{selectedBucket?.label ?? "Selected Week"}</Text>
+            <Text style={s.inspectionValue}>{(selectedBucket?.acwr ?? 1).toFixed(2)}x ACWR</Text>
           </View>
           <View style={[s.betweenRow, { marginTop: 4 }]}>
             <Text style={f.small}>
-              Acute: {selectedBucket.acuteLoad} pts · Chronic: {selectedBucket.chronicLoad} pts
+              Acute: {selectedBucket?.acuteLoad ?? 0} pts · Chronic: {selectedBucket?.chronicLoad ?? 0} pts
             </Text>
-            <Text style={f.small}>{selectedBucket.totalHours} hrs total</Text>
+            <Text style={f.small}>{selectedBucket?.totalHours ?? 0} hrs total</Text>
           </View>
           <Text style={[f.small, { marginTop: 4, color: c.muted }]}>
-            Run {selectedBucket.runningHours}h · Bike {selectedBucket.cyclingHours}h · Strength {selectedBucket.strengthHours}h
+            Run {selectedBucket?.runningHours ?? 0}h · Bike {selectedBucket?.cyclingHours ?? 0}h · Strength {selectedBucket?.strengthHours ?? 0}h
           </Text>
         </View>
       </View>
@@ -488,10 +490,19 @@ function PerformanceDetailView({ model }: { model: AnalyticsLabModel }) {
   const p = model.performance;
   const runs = p.series;
   const [selectedRunIdx, setSelectedRunIdx] = useState(runs.length - 1);
-  const selectedRun = runs[selectedRunIdx] ?? runs[runs.length - 1]!;
+  const safeRunIdx = Math.max(0, Math.min(selectedRunIdx, runs.length - 1));
+  const selectedRun = runs[safeRunIdx] ?? runs[0];
 
   const [selectedZone, setSelectedZone] = useState<number>(2);
-  const activeZone = p.zones.find((z) => z.zone === selectedZone) ?? p.zones[1]!;
+  const activeZone = p.zones.find((z) => z.zone === selectedZone) ?? p.zones[0] ?? {
+    zone: 2,
+    name: "Z2 · Aerobic Base",
+    bpmRange: "127–145 bpm",
+    sessionPct: 50,
+    monthPct: 50,
+    targetPct: 50,
+    minutes30d: 500,
+  };
 
   return (
     <View style={{ gap: 14 }}>
@@ -500,7 +511,7 @@ function PerformanceDetailView({ model }: { model: AnalyticsLabModel }) {
         <View style={{ marginVertical: 12 }}>
           <PerformanceEfInteractiveChart
             runs={runs}
-            selectedIdx={selectedRunIdx}
+            selectedIdx={safeRunIdx}
             onSelectIdx={setSelectedRunIdx}
           />
         </View>
@@ -508,13 +519,13 @@ function PerformanceDetailView({ model }: { model: AnalyticsLabModel }) {
         {/* Selected Run Inspection */}
         <View style={s.inspectionBox}>
           <View style={s.betweenRow}>
-            <Text style={s.inspectionTitle}>{selectedRun.label}</Text>
-            <Text style={s.inspectionValue}>{selectedRun.efficiencyFactor.toFixed(2)} EF</Text>
+            <Text style={s.inspectionTitle}>{selectedRun?.label ?? "Selected Session"}</Text>
+            <Text style={s.inspectionValue}>{(selectedRun?.efficiencyFactor ?? 1).toFixed(2)} EF</Text>
           </View>
           <View style={[s.betweenRow, { marginTop: 4 }]}>
-            <Text style={f.small}>Pace: {selectedRun.paceMinKm.toFixed(2)} min/km</Text>
-            <Text style={f.small}>Avg HR: {selectedRun.avgHr} bpm</Text>
-            <Text style={f.small}>VO2 max: {selectedRun.vo2Max}</Text>
+            <Text style={f.small}>Pace: {(selectedRun?.paceMinKm ?? 5).toFixed(2)} min/km</Text>
+            <Text style={f.small}>Avg HR: {selectedRun?.avgHr ?? 140} bpm</Text>
+            <Text style={f.small}>VO2 max: {selectedRun?.vo2Max ?? 50}</Text>
           </View>
         </View>
       </View>
@@ -574,7 +585,8 @@ function CombinedDetailView({ model }: { model: AnalyticsLabModel }) {
   const cmb = model.combined;
   const days = cmb.series;
   const [selectedDayIdx, setSelectedDayIdx] = useState(days.length - 1);
-  const selectedDay = days[selectedDayIdx] ?? days[days.length - 1]!;
+  const safeDayIdx = Math.max(0, Math.min(selectedDayIdx, days.length - 1));
+  const selectedDay = days[safeDayIdx] ?? days[0];
 
   return (
     <View style={{ gap: 14 }}>
@@ -590,7 +602,7 @@ function CombinedDetailView({ model }: { model: AnalyticsLabModel }) {
         <View style={{ marginVertical: 12 }}>
           <CombinedStrainReadinessInteractiveChart
             days={days}
-            selectedIdx={selectedDayIdx}
+            selectedIdx={safeDayIdx}
             onSelectIdx={setSelectedDayIdx}
           />
         </View>
@@ -598,15 +610,15 @@ function CombinedDetailView({ model }: { model: AnalyticsLabModel }) {
         {/* Selected Day Inspection */}
         <View style={s.inspectionBox}>
           <View style={s.betweenRow}>
-            <Text style={s.inspectionTitle}>{selectedDay.label}</Text>
-            <Text style={s.inspectionValue}>{selectedDay.nextDayReadiness}% Readiness</Text>
+            <Text style={s.inspectionTitle}>{selectedDay?.label ?? "Selected Day"}</Text>
+            <Text style={s.inspectionValue}>{selectedDay?.nextDayReadiness ?? 80}% Readiness</Text>
           </View>
           <View style={[s.betweenRow, { marginTop: 4 }]}>
-            <Text style={f.small}>Day Strain: {selectedDay.strainScore} / 21</Text>
-            <Text style={f.small}>Next-Day HRV: {selectedDay.nextDayHrv} ms</Text>
+            <Text style={f.small}>Day Strain: {selectedDay?.strainScore ?? 10} / 21</Text>
+            <Text style={f.small}>Next-Day HRV: {selectedDay?.nextDayHrv ?? 70} ms</Text>
           </View>
           <Text style={[f.small, { marginTop: 4, color: c.muted }]}>
-            {selectedDay.workoutNote} ({selectedDay.sleepRestorativeHr}h restorative sleep)
+            {selectedDay?.workoutNote ?? "Training Session"} ({selectedDay?.sleepRestorativeHr ?? 3}h restorative sleep)
           </Text>
         </View>
       </View>
@@ -647,8 +659,8 @@ function MarketEquityChart({
   const emaPoints = series.map((p, i) => `${toX(i).toFixed(1)},${toY(p.ema12).toFixed(1)}`).join(" ");
   const areaPoints = `${L},${B} ${navPoints} ${toX(series.length - 1).toFixed(1)},${B}`;
 
-  const activeX = toX(selectedIdx);
-  const activeY = toY(series[selectedIdx]!.nav);
+  const safeIdx = Math.max(0, Math.min(selectedIdx, series.length - 1));
+  const activeX = toX(safeIdx);
 
   return (
     <View style={{ gap: 10 }}>
@@ -677,16 +689,16 @@ function MarketEquityChart({
             key={p.id}
             cx={toX(i)}
             cy={toY(p.nav)}
-            r={i === selectedIdx ? 5.5 : 2.5}
-            fill={i === selectedIdx ? c.tennis : c.ink}
+            r={i === safeIdx ? 5.5 : 2.5}
+            fill={i === safeIdx ? c.tennis : c.ink}
             stroke={c.card}
-            strokeWidth={i === selectedIdx ? 2 : 1}
+            strokeWidth={i === safeIdx ? 2 : 1}
           />
         ))}
 
         {/* Transparent Touch Strips for Easy Tapping */}
         {series.map((p, i) => {
-          const colW = (R - L) / series.length;
+          const colW = (R - L) / Math.max(1, series.length);
           return (
             <Rect
               key={`touch-${p.id}`}
@@ -748,7 +760,8 @@ function VitalInteractiveCorridorChart({
   const corridorH = Math.max(2, botCorridorY - topCorridorY);
 
   const linePoints = series.map((p, i) => `${toX(i).toFixed(1)},${toY(p.value).toFixed(1)}`).join(" ");
-  const activeX = toX(selectedIdx);
+  const safeIdx = Math.max(0, Math.min(selectedIdx, series.length - 1));
+  const activeX = toX(safeIdx);
 
   return (
     <Svg width="100%" height={H} viewBox={`0 0 ${W} ${H}`}>
@@ -774,16 +787,16 @@ function VitalInteractiveCorridorChart({
           key={p.day}
           cx={toX(i)}
           cy={toY(p.value)}
-          r={i === selectedIdx ? 5.5 : 2.5}
-          fill={i === selectedIdx ? c.fieldTeal : c.ink}
+          r={i === safeIdx ? 5.5 : 2.5}
+          fill={i === safeIdx ? c.fieldTeal : c.ink}
           stroke={c.card}
-          strokeWidth={i === selectedIdx ? 2 : 1}
+          strokeWidth={i === safeIdx ? 2 : 1}
         />
       ))}
 
       {/* Transparent Touch Strips */}
       {series.map((p, i) => {
-        const colW = (R - L) / series.length;
+        const colW = (R - L) / Math.max(1, series.length);
         return (
           <Rect
             key={`touch-${p.day}`}
@@ -824,7 +837,8 @@ function SleepScoreTimelineChart({
   const toY = (v: number) => B - ((v - minV) / span) * (B - T);
 
   const linePoints = nights.map((n, i) => `${toX(i).toFixed(1)},${toY(n.score).toFixed(1)}`).join(" ");
-  const activeX = toX(selectedIdx);
+  const safeIdx = Math.max(0, Math.min(selectedIdx, nights.length - 1));
+  const activeX = toX(safeIdx);
 
   return (
     <Svg width="100%" height={H} viewBox={`0 0 ${W} ${H}`}>
@@ -838,15 +852,15 @@ function SleepScoreTimelineChart({
           key={n.id}
           cx={toX(i)}
           cy={toY(n.score)}
-          r={i === selectedIdx ? 5.5 : 3}
-          fill={i === selectedIdx ? c.tennis : c.ink}
+          r={i === safeIdx ? 5.5 : 3}
+          fill={i === safeIdx ? c.tennis : c.ink}
           stroke={c.card}
-          strokeWidth={i === selectedIdx ? 2 : 1}
+          strokeWidth={i === safeIdx ? 2 : 1}
         />
       ))}
 
       {nights.map((n, i) => {
-        const colW = (R - L) / nights.length;
+        const colW = (R - L) / Math.max(1, nights.length);
         return (
           <Rect
             key={`touch-${n.id}`}
@@ -891,7 +905,8 @@ function LoadAcwrInteractiveChart({
   const sweetH = Math.max(2, sweetBot - sweetTop);
 
   const acwrPoints = buckets.map((b, i) => `${toX(i).toFixed(1)},${toY(b.acwr).toFixed(1)}`).join(" ");
-  const activeX = toX(selectedIdx);
+  const safeIdx = Math.max(0, Math.min(selectedIdx, buckets.length - 1));
+  const activeX = toX(safeIdx);
 
   return (
     <View style={{ gap: 8 }}>
@@ -915,7 +930,7 @@ function LoadAcwrInteractiveChart({
             key={b.id}
             cx={toX(i)}
             cy={toY(b.acwr)}
-            r={i === selectedIdx ? 6 : 3.5}
+            r={i === safeIdx ? 6 : 3.5}
             fill={b.acwr > 1.4 ? c.statusWarning : c.statusSuccess}
             stroke={c.card}
             strokeWidth={1.5}
@@ -923,7 +938,7 @@ function LoadAcwrInteractiveChart({
         ))}
 
         {buckets.map((b, i) => {
-          const colW = (R - L) / buckets.length;
+          const colW = (R - L) / Math.max(1, buckets.length);
           return (
             <Rect
               key={`touch-${b.id}`}
@@ -991,11 +1006,11 @@ function LoadBurnUpChart({ model }: { model: AnalyticsLabModel }) {
       <View style={s.legendRow}>
         <View style={s.legendItem}>
           <View style={[s.legendDot, { backgroundColor: c.fieldTeal }]} />
-          <Text style={f.small}>Current Week ({buckets[buckets.length - 1]!.cumCurrentHours}h)</Text>
+          <Text style={f.small}>Current Week ({buckets[buckets.length - 1]?.cumCurrentHours ?? 0}h)</Text>
         </View>
         <View style={s.legendItem}>
           <View style={[s.legendDot, { backgroundColor: c.muted }]} />
-          <Text style={f.small}>Ghost Prior Week ({buckets[buckets.length - 1]!.cumGhostHours}h)</Text>
+          <Text style={f.small}>Ghost Prior Week ({buckets[buckets.length - 1]?.cumGhostHours ?? 0}h)</Text>
         </View>
       </View>
     </View>
@@ -1026,7 +1041,8 @@ function PerformanceEfInteractiveChart({
   const toY = (v: number) => B - ((v - minV) / span) * (B - T);
 
   const linePoints = runs.map((p, i) => `${toX(i).toFixed(1)},${toY(p.efficiencyFactor).toFixed(1)}`).join(" ");
-  const activeX = toX(selectedIdx);
+  const safeIdx = Math.max(0, Math.min(selectedIdx, runs.length - 1));
+  const activeX = toX(safeIdx);
 
   return (
     <Svg width="100%" height={H} viewBox={`0 0 ${W} ${H}`}>
@@ -1039,15 +1055,15 @@ function PerformanceEfInteractiveChart({
           key={p.id}
           cx={toX(i)}
           cy={toY(p.efficiencyFactor)}
-          r={i === selectedIdx ? 5.5 : 3}
+          r={i === safeIdx ? 5.5 : 3}
           fill={c.fieldTeal}
           stroke={c.card}
-          strokeWidth={i === selectedIdx ? 2 : 1}
+          strokeWidth={i === safeIdx ? 2 : 1}
         />
       ))}
 
       {runs.map((p, i) => {
-        const colW = (R - L) / runs.length;
+        const colW = (R - L) / Math.max(1, runs.length);
         return (
           <Rect
             key={`touch-${p.id}`}
@@ -1122,7 +1138,8 @@ function CombinedStrainReadinessInteractiveChart({
   const toYStrain = (v: number) => B - (v / 21) * (B - T);
 
   const readPoints = days.map((p, i) => `${toX(i).toFixed(1)},${toYReadiness(p.nextDayReadiness).toFixed(1)}`).join(" ");
-  const activeX = toX(selectedIdx);
+  const safeIdx = Math.max(0, Math.min(selectedIdx, days.length - 1));
+  const activeX = toX(safeIdx);
 
   return (
     <View style={{ gap: 8 }}>
@@ -1140,7 +1157,7 @@ function CombinedStrainReadinessInteractiveChart({
               y={B - barH}
               width={8}
               height={barH}
-              fill={i === selectedIdx ? c.tennis : c.soft}
+              fill={i === safeIdx ? c.tennis : c.soft}
               rx={2}
             />
           );
@@ -1152,7 +1169,7 @@ function CombinedStrainReadinessInteractiveChart({
             key={`dot-${p.id}`}
             cx={toX(i)}
             cy={toYReadiness(p.nextDayReadiness)}
-            r={i === selectedIdx ? 5 : 2.5}
+            r={i === safeIdx ? 5 : 2.5}
             fill={c.fieldTeal}
             stroke={c.card}
             strokeWidth={1.5}
@@ -1160,7 +1177,7 @@ function CombinedStrainReadinessInteractiveChart({
         ))}
 
         {days.map((p, i) => {
-          const colW = (R - L) / days.length;
+          const colW = (R - L) / Math.max(1, days.length);
           return (
             <Rect
               key={`touch-${p.id}`}
