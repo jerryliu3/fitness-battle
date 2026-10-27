@@ -705,10 +705,6 @@ export default function AthleteScreen() {
           }}
         >
           <View style={{ padding: 20, gap: 16 }}>
-            <View style={[f.row, { justifyContent: "space-between" }]}>
-              <AppText role="caption" style={{ color: "#c9d6e3" }}>Overtaek / Athlete</AppText>
-              <AppText role="caption" style={{ color: "#c9d6e3" }}>Since Jan 2026</AppText>
-            </View>
             <View style={[f.row, { gap: 16, alignItems: "center" }]}>
               <UserAvatar
                 src={state.avatarUrl}
@@ -719,9 +715,12 @@ export default function AthleteScreen() {
               />
               <View style={{ flex: 1, gap: 4 }}>
                 <AppText role="display" style={{ color: SHELL_COLORS.card }}>{state.name}</AppText>
-                {state.city ? (
-                  <AppText role="caption" style={{ color: "#c9d6e3" }}>{state.city}</AppText>
-                ) : null}
+                <View style={[f.row, { gap: 8, alignItems: "center" }]}>
+                  {state.city ? (
+                    <AppText role="caption" style={{ color: "#c9d6e3" }}>{state.city}</AppText>
+                  ) : null}
+                  <AppText role="caption" style={{ color: "#8fa2b5" }}>Since Jan 2026</AppText>
+                </View>
                 <AppText role="caption" style={{ color: SHELL_COLORS.tennis }}>
                   {primaryRating?.openElo || 1000} · {rankForElo(primaryRating?.openElo || 1000).name}
                 </AppText>

@@ -71,9 +71,7 @@ export function EventCarousel({
         className="club-event-toolbar"
         style={{
           display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          gap: "8px",
+          width: "100%",
           padding: "4px 0 12px",
           borderBottom: "1px solid var(--line, #e0e5dc)",
         }}
@@ -81,7 +79,11 @@ export function EventCarousel({
         <div
           role="tablist"
           aria-label="Registered sports"
-          style={{ display: "flex", flexWrap: "wrap", gap: "16px", flex: 1 }}
+          style={{
+            display: "grid",
+            gridTemplateColumns: `repeat(${events.length}, 1fr)`,
+            width: "100%",
+          }}
         >
           {events.map((event, i) => (
             <button
@@ -102,6 +104,7 @@ export function EventCarousel({
                 color: i === index ? "var(--ink, #00101b)" : "var(--muted, #64748b)",
                 fontWeight: i === index ? 700 : 500,
                 fontSize: "16px",
+                textAlign: "center",
                 marginBottom: "-13px",
               }}
             >
@@ -111,28 +114,6 @@ export function EventCarousel({
               ) : null}
             </button>
           ))}
-        </div>
-        <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-          <button
-            type="button"
-            className="club-icon-button"
-            aria-label="Previous event"
-            disabled={index === 0}
-            onClick={() => onChange(events[index - 1]!.id)}
-            style={{ width: "28px", height: "28px", fontSize: "13px", display: "inline-flex", alignItems: "center", justifyContent: "center", opacity: index === 0 ? 0.3 : 1 }}
-          >
-            ←
-          </button>
-          <button
-            type="button"
-            className="club-icon-button"
-            aria-label="Next event"
-            disabled={index === events.length - 1}
-            onClick={() => onChange(events[index + 1]!.id)}
-            style={{ width: "28px", height: "28px", fontSize: "13px", display: "inline-flex", alignItems: "center", justifyContent: "center", opacity: index === events.length - 1 ? 0.3 : 1 }}
-          >
-            →
-          </button>
         </div>
       </div>
       <div

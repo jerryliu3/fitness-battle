@@ -221,24 +221,18 @@ export function AthleteOverview({
             gap: "16px",
           }}
         >
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", width: "100%" }}>
-            <span style={{ fontSize: "12px", letterSpacing: "0.08em", textTransform: "uppercase", color: "#c9d6e3", fontWeight: 600 }}>
-              Overtaek / Athlete
-            </span>
-            <span style={{ fontSize: "12px", color: "#c9d6e3" }}>
-              Since Jan 2026
-            </span>
-          </div>
-
           <div style={{ display: "flex", alignItems: "center", gap: "16px", width: "100%" }}>
             <ProfilePhoto state={state} email={email} />
             <div style={{ flex: 1, minWidth: 0 }}>
               <AppHeading level={1} role="display" style={{ color: "#ffffff", margin: 0 }}>
                 {state.name}
               </AppHeading>
-              {state.city ? (
-                <div style={{ fontSize: "13px", color: "#c9d6e3", marginTop: 2 }}>{state.city}</div>
-              ) : null}
+              <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap", marginTop: 2 }}>
+                {state.city ? (
+                  <span style={{ fontSize: "13px", color: "#c9d6e3" }}>{state.city}</span>
+                ) : null}
+                <span style={{ fontSize: "12px", color: "#8fa2b5" }}>Since Jan 2026</span>
+              </div>
               {(() => {
                 const primaryRating = state.ratings.find((r) => r.sport === state.primary);
                 const elo = primaryRating?.openElo || 1000;

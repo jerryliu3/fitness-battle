@@ -71,7 +71,7 @@ export function EventCarousel({
         style={{
           flexDirection: "row",
           alignItems: "center",
-          gap: 16,
+          width: "100%",
           borderBottomWidth: 1,
           borderBottomColor: c.line,
           paddingBottom: 2,
@@ -87,6 +87,9 @@ export function EventCarousel({
             accessibilityState={{ selected: event.id === value }}
             onPress={() => onChange(event.id)}
             style={{
+              flex: 1,
+              alignItems: "center",
+              justifyContent: "center",
               paddingVertical: 10,
               paddingHorizontal: 4,
               borderBottomWidth: 2.5,
@@ -98,8 +101,8 @@ export function EventCarousel({
               role="heading"
               style={
                 event.id === value
-                  ? { color: c.ink, fontWeight: "700" }
-                  : { color: c.muted, fontWeight: "500" }
+                  ? { color: c.ink, fontWeight: "700", textAlign: "center" }
+                  : { color: c.muted, fontWeight: "500", textAlign: "center" }
               }
             >
               {event.label}
