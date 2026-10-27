@@ -339,7 +339,7 @@ function LaneTrackContent({
             })}
             {ghost && (() => { const p = course.point(ghost.values[index] ?? 0, ordered.findIndex(l => l.you), 18 * Math.min(1.8, course.markerScale), true); return <G><Circle cx={p.x} cy={p.y} r={13 * Math.min(1.8, course.markerScale)} fill="#ffffffcc" stroke={c.muted} strokeDasharray="3 3"/></G>; })()}
           </Svg>
-        <Pressable accessible={false} onPress={fullscreen ? () => {} : onExpand} style={{ position: "absolute", inset: 0 }} />
+        {!fullscreen && onExpand ? <Pressable accessibilityRole="button" accessibilityLabel="Open 2D map in full screen" onPress={onExpand} style={{ position: "absolute", inset: 0 }} /> : null}
         {ordered.flatMap((lane, i) => {
           if (!course.oval && (i < firstVisible || i > lastVisible)) return null;
           const value = animating ? overtakeFrame?.laneValues[lane.id] ?? lane.values[index] : lane.values[index];
@@ -432,35 +432,10 @@ function LaneTrackContent({
               {exploring ? "Done" : "Explore"}
             </Text>
           </Pressable>
-          {onExpand ? (
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel="Expand 2D map to full screen"
-              onPress={onExpand}
-              style={{
-                minHeight: 36,
-                paddingHorizontal: 14,
-                flexDirection: "row",
-                alignItems: "center",
-                gap: 6,
-                borderRadius: 999,
-                backgroundColor: "rgba(20, 20, 19, 0.85)",
-                borderWidth: 1,
-                borderColor: "rgba(200, 245, 59, 0.55)",
-              }}
-            >
-              <Text
-                style={{
-                  ...textStyle("caption"),
-                  color: c.tennis,
-                }}
-              >
-                Full Arena ⤢
-              </Text>
-            </Pressable>
-          ) : null}
+
         </View>
       ) : null}
+      {!fullscreen && onExpand ? <View pointerEvents="none" style={{ position: "absolute", bottom: 10, alignSelf: "center", backgroundColor: "rgba(20, 20, 19, 0.75)", borderRadius: 999, paddingHorizontal: 12, paddingVertical: 6 }}><Text style={{ ...textStyle("caption"), color: "#ffffff" }}>Tap field to open full screen</Text></View> : null}
       <AnchoredMenu
         open={styleMenuOpen}
         onClose={closeStyleMenu}

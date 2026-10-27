@@ -19,6 +19,7 @@ import {
   dayKey,
   APP_TIMEZONE,
   crewMemberWeekValue,
+  crewWeekRelay,
 } from "@fitness-battle/shared";
 import { useFocusEffect, useGlobalSearchParams, useRouter } from "expo-router";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -249,7 +250,7 @@ export function CrewHub({ membersOnly = false, crewId = "" }: { membersOnly?: bo
     ? (api.data.previousProgress??[]).filter(row=>row.crew_id===crew.id && members.some(m=>m.user_id===row.user_id)).reduce((sum,row)=>sum+Number(row.distance_m),0)
     : null;
   const sessionsMetric = crew.format === "personal_target" || crew.sport === "strength";
-  const totalM = entries.reduce((n, e) => n + Number(e.distance_m), 0);
+  const relay = crewWeekRelay({ members, entries, sport: crew.sport, format: crew.format, targetSessions: crew.target_sessions, targetDistanceM: crew.journey_km * 1000, previousDistanceM });
   const distance = (meters: number) =>
     `${formatDistanceM(meters, state?.units)} ${distanceUnitLabel(state?.units)}`;
   const memberTotal = (id: string) =>
@@ -458,9 +459,9 @@ export function CrewHub({ membersOnly = false, crewId = "" }: { membersOnly?: bo
             <Pressable
               accessibilityRole="button"
               onPress={() => open("add")}
-              style={f.chip}
+              style={[f.chip, { borderStyle: "dotted" }]}
             >
-              <AppText role="label" >New crew</AppText>
+              <AppText role="label" >New crew +</AppText>
             </Pressable>
           </View>
           <ImageBackground source={alpineTrail} style={[f.card,{backgroundColor:c.fieldDeep,gap:18,minHeight:260,overflow:"hidden",justifyContent:"space-between"}]} imageStyle={{borderRadius:20}}><View pointerEvents="none" style={[StyleSheet.absoluteFill,{backgroundColor:"#081f3680"}]}/>
@@ -521,20 +522,13 @@ export function CrewHub({ membersOnly = false, crewId = "" }: { membersOnly?: bo
           </ImageBackground>
           <View style={f.section}>
             <Text style={f.kicker}>Our shared week · {crew.sport}</Text>
-            <Text style={f.massive}>
+            <Text style={f.massive} adjustsFontSizeToFit numberOfLines={1}>
               {sessionsMetric
-                ? entries.reduce(
-                    (total, entry) => total + Number(entry.session_count ?? 1),
-                    0,
-                  )
-                : formatDistanceM(totalM, state?.units)}
+                ? `${relay.model.total}${relay.target == null ? "" : ` / ${relay.target}`} sessions`
+                : `${formatDistanceM(relay.model.total, state?.units)}${relay.target == null ? "" : ` / ${formatDistanceM(relay.target, state?.units)}`} ${distanceUnitLabel(state?.units)}`}
             </Text>
-            <AppText role="body" secondary >
-              {sessionsMetric
-                ? `sessions · ${crew.target_sessions} per member`
-                : `${distanceUnitLabel(state?.units)} together`}
-            </AppText>
-            <CrewRelay userId={user?.id} key={crew.id} members={members} entries={entries} sport={crew.sport as SportId} format={crew.format} previousDistanceM={previousDistanceM} targetDistanceM={crew.journey_km*1000} targetSessions={crew.target_sessions} units={state?.units} />
+            <AppText role="body" secondary>{relay.kind === "baseline" ? "Last week’s distance" : relay.target == null ? "No shared target set" : "Shared target"}</AppText>
+            <CrewRelay hideTargetSummary userId={user?.id} key={crew.id} members={members} entries={entries} sport={crew.sport as SportId} format={crew.format} previousDistanceM={previousDistanceM} targetDistanceM={crew.journey_km*1000} targetSessions={crew.target_sessions} units={state?.units} />
           </View>
           {user ? (
             <>

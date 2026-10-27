@@ -13,7 +13,7 @@ import { Pressable, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useCompeteStore } from "../src/lib/compete-store";
 import { mobileEnv } from "../src/lib/env";
-import { IconButton } from "../src/ui/icon-button";
+import { ScreenHeader } from "../src/ui/screen-header";
 import { FocusButton, FocusHeading, f } from "../src/ui/focus";
 export default function Benchmarks() {
   const { state } = useCompeteStore();
@@ -26,10 +26,10 @@ export default function Benchmarks() {
   const benchmark = options.find((b) => b.id === distance) ?? options[0]!;
   const rows = paceBoard(state, sport, benchmark, scope);
   return (
-    <SafeAreaView style={f.safe} edges={["bottom"]}>
+    <SafeAreaView style={f.safe} edges={["top", "bottom"]}>
+      <ScreenHeader title="Beyond this week" onBack={() => router.canGoBack() ? router.back() : router.replace("/arena")} />
       <ScrollView contentContainerStyle={f.content}>
 <SectionStack divided={false}>
-        <IconButton icon="back" label="Return to previous screen" onPress={() => router.back()} />
         <FocusHeading
           kicker="Beyond this week"
           title="Your benchmarks."
