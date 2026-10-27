@@ -1,4 +1,6 @@
 import { AppText, SectionStack } from "../../src/ui/section";
+import { useDailySuggestion } from "../../src/features/use-daily-suggestion";
+import { SHELL_COLORS as c } from "../../src/theme";
 import { WeekChart } from "../../src/features/week-chart";
 import { DailyHealth } from "../../src/features/daily-health";
 import { LatestActivity } from "../../src/features/club-latest-activity";
@@ -20,6 +22,8 @@ import { FocusDisclosure, FocusSheet, f } from "../../src/ui/focus";
 export default function Home() {
   const router = useRouter();
   const { state, dispatch, accountKey } = useCompeteStore();
+  const suggestionPrompt = useDailySuggestion(accountKey, state);
+  const openSuggestion = () => { suggestionPrompt.dismiss(); setExpanded("suggestion"); };
   const [removed,setRemoved]=useState<Activity|null>(null);
   const [latest,setLatest]=useState<Activity|null>(null);
   const [expanded, setExpanded] = useState<"suggestion" | null>(null);
@@ -54,7 +58,7 @@ export default function Home() {
           ) : null}
           <SectionStack divided={false}>
           <WeekChart state={state} onOpen={() => router.push("/week")} />
-          {Platform.OS !== "web" && <Pressable accessibilityRole="button" accessibilityLabel="Open today’s session" onPress={() => setExpanded("suggestion")} style={{ minHeight: 44, justifyContent: "center", alignSelf: "flex-start" }}><AppText role="label">Today’s session →</AppText></Pressable>}
+          {Platform.OS !== "web" && <Pressable accessibilityRole="button" accessibilityLabel="Open today’s session" onPress={openSuggestion} style={{ minHeight: 44, justifyContent: "center", alignSelf: "flex-start" }}><AppText role="label">Today’s session →</AppText></Pressable>}
           <DailyHealth state={state} />
           <RivalCard state={state} />
           <LatestActivity state={state} onOpen={setLatest} />
@@ -63,15 +67,23 @@ export default function Home() {
             <Journey
               activities={counted}
               units={units}
-              onToday={() => setExpanded("suggestion")}
+              onToday={openSuggestion}
             />
           </View>
           </FocusDisclosure>}
           </SectionStack>
         </ScrollView>
+        {suggestionPrompt.visible && !expanded && !latest ? <View style={s.suggestionPrompt}>
+          <Pressable accessibilityRole="button" accessibilityLabel={`Open today's suggested session: ${route.suggestion.title}`} onPress={openSuggestion} style={{ flex: 1, padding: 16, gap: 4 }}>
+            <AppText role="caption" secondary>Today’s suggested session</AppText>
+            <AppText role="label">{route.suggestion.title} ↗</AppText>
+          </Pressable>
+          <Pressable accessibilityRole="button" accessibilityLabel="Dismiss suggested session for today" onPress={suggestionPrompt.dismiss} style={{ minWidth: 44, minHeight: 44, alignItems: "center", justifyContent: "center" }}><AppText role="body">×</AppText></Pressable>
+        </View> : null}
       </View>
-      <FocusSheet open={Boolean(latest)} title="Your activity" onClose={()=>setLatest(null)}>{latest?<SessionStage state={state} activities={[latest]} onRemove={id=>{setRemoved(latest);dispatch({type:"set-disposition",activityId:id,disposition:"excluded"});setLatest(null);}}/>:null}</FocusSheet>
+      <FocusSheet fullScreen open={Boolean(latest)} title="Your activity" onClose={()=>setLatest(null)}>{latest?<SessionStage state={state} activities={[latest]} onRemove={id=>{setRemoved(latest);dispatch({type:"set-disposition",activityId:id,disposition:"excluded"});setLatest(null);}}/>:null}</FocusSheet>
       <FocusSheet
+        fullScreen={counted.some(a => dayKey(new Date(a.startedAt), APP_TIMEZONE) === dayKey(now, APP_TIMEZONE))}
         open={expanded === "suggestion"}
         title="Today"
         onClose={() => setExpanded(null)}
@@ -82,6 +94,12 @@ export default function Home() {
   );
 }
 const s = StyleSheet.create({
+  suggestionPrompt: {
+    position: "absolute", bottom: 96, left: 20, right: 20,
+    flexDirection: "row", alignItems: "center", backgroundColor: c.card,
+    borderWidth: 1, borderColor: c.line, borderRadius: 18,
+    shadowColor: c.ink, shadowOpacity: 0.12, shadowRadius: 12, shadowOffset: { width: 0, height: 4 }, elevation: 5,
+  },
   homeStage: {
     flex: 1,
     position: "relative",
@@ -95,7 +113,7 @@ const s = StyleSheet.create({
   homeOverlayContent: {
     paddingHorizontal: 20,
     paddingTop: 4,
-    paddingBottom: 120,
+    paddingBottom: 220,
     gap: 28,
     maxWidth: 880,
     width: "100%",

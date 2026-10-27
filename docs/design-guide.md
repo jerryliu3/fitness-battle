@@ -82,6 +82,8 @@ Give each transform one animation owner. Fade sheet scrims independently, retain
 
 ## Selected material and interaction exploration
 
+The owner selects all three [activity context concepts](design-studies/activity-context/README.md) for the actual activity details. The [implementation review](reviews/activity-detail/README.md) records the full-screen session summary, route exploration, session scatterplot, five-session trajectory and seven-day volume contribution on native and web. A fixed-baseline Speed / HR index adds the requested pace/HR comparison over time; it describes recorded measurements rather than fitness or recovery. Median comparisons remain underneath as reference stats. Missing measurements remove unavailable lenses, and multi-session days select one session at a time. `/activity-lab` and `/activity-detail-preview` remain explicitly fictional review routes; the product reads account activities.
+
 The [material and motion study](material-and-motion-concepts.md) records the October 16 user review: Glass Track, dimensional weekly results, PR history, cooperative crew goals, weekly training history, a conditional daily clock, and a return moment integrated into Compete. Its [standalone review](design-studies/material-motion/review.html) uses fictional data. These are candidates for later implementation; Focus remains the production direction. Personal Home targets are a separate optional feature proposal and do not define competition completion or alter scoring.
 
 The [overtake motion study](design-studies/overtake-motion.md) records the user’s selected motion direction: Photo Finish on every pass combined with combo/+1 overtake feedback; The Chase logo arrival with Split Second’s afterimage; and Afterimage typography. Round 2 explores staggered over / taek rows and continuous glyph-to-jetstream trails. These remain presentation prototypes; production scoring, tracker behavior, and brand assets are unchanged.
@@ -167,6 +169,7 @@ Selected directions from the [earned-and-personal exploration](https://github.co
 
 - **Score rail:** A compact persistent rail under the app header shows the primary sport's existing **Open Effort Score**, current rank and progress to the next +1 activity milestone. It is one existing score point per step, not a separate XP/level currency. Positive observed score changes animate with a brief star burst; first hydration, account/sport changes and decreases do not celebrate. Reduced motion uses a static change label. The rail links to Progress for trends, and save failures retain their disclosure. Durable previously earned points are explained when activity removal reduces the volume below its award high-water mark.
 - **Sessions:** Session stage leads with moving hours, a restrained athletic track object and canonical Ember. Suggestions remain explicitly suggested; recorded days have a single total and individually expandable session rows. Source, distance, heart rate and removal live inside each row. Removing a session requires confirmation. “What this added” is optional, gives recorded hours and that sport's current weekly activity awards, and never fabricates an award attributable to that historical session. Web uses a parent-preserving sheet; native retains its sheet/back behavior and both dismiss on leaving Home.
+- **Session comparisons:** A recorded session can be inspected against its own earlier counted same-sport history. A single session leads with the comparison when it has enough history; sparse sessions keep the moving-time stage. The activity sheet offers moving time and distance, plus pace when at least three prior distances are within 20% of the selected session. Strength shows moving time and 30-day session counts, with average heart rate when enough readings exist. Medians use at most ten earlier qualifying sessions; sample, excluded, pending and later sessions are not baselines. A multi-session day keeps each comparison inside its session. These are descriptive comparisons, not claims about workout quality or fitness.
 - **Compete:** Personal pennants are fixed-screen photo/name plates with pointers to the athlete's real coordinate, shown for you and the selected rival. Missing portraits use the shared person fallback. Top headers show place and “You,” with stable lane order and shared places for ties. Leader-only floating Ember and repeated in-capsule initials are removed from the lane view. Standings retains compact capsule identity. Public portrait URLs flow from the authorized roster; the native 3D presentation bridge filters URLs and never carries credentials.
 - **Map scale:** Unfolded distance capsules have a 300 m (metric) / 0.3 mi (imperial) longitudinal footprint at every zoom, with independent 44 px hit regions. The default local chase window is 1.2 km, with the existing whole-course overview beneath it. Portrait plates and ruler text stay readable while world geometry scales. Non-GPS effort remains points, with no physical-distance conversion. Oval rendering retains its camera projection and calibrates footprint around the focused lane's circuit; it does not claim every lane's curve has identical circumference.
 - **Progress:** Past weeks form month-grouped chapters, using actual place/field size and signed score change, and expand into the existing dimensional result card. Counts are distinct weeks rather than result rows. Training atlas follows Goalmaxxing's selectable calendar pattern, adapted to counted Open moving time. Week charts show daily hours, month charts show weeks clipped to the month, and year charts show twelve months. The Monday-first month grid uses actual dated activity, shows no invented future progress and exposes sessions for the selected day.
@@ -239,7 +242,7 @@ One modal stays mounted through review and movement, avoiding native modal hando
 
 The default launch mark is the 35% clean staggered **over / taek** race, using
 product ink/paper/tennis colors and the existing Nunito Sans Black face. It shares
-5.4-second choreography across web and native SVG, with reduced-motion and
+3.78-second choreography across web and native SVG, with reduced-motion and
 background pause support. The Ember wordmark animation remains selectable in
 code and the web `/design/loading` review. Both use the same application-readiness
 gate; animation completion alone does not dismiss the cover. See
@@ -249,6 +252,16 @@ gate; animation completion alone does not dismiss the cover. See
 Mobile performance update (October 26): retain the full launch animation even when
 content is ready, per the owner's preference. Account loading, caching and prefetching
 run underneath the cover so Home is ready when the animation finishes.
+
+### Account controls and launch timing — October 27
+
+Primary sport opts into an iOS UIButton/UIMenu anchored to the visible control,
+with checked selection and VoiceOver labels. The local Expo `anchored-choice`
+module requires a new native build; older binaries, Android and web retain the
+existing accessible anchored choice list. Other pickers retain their current behavior.
+The shared launch race now lasts 3.78 seconds (30% shorter), with a shorter opening,
+zero initial velocity, sharper passes and a longer final ease. Readiness still owns dismissal.
+
 
 ### Home rival card — October 24
 
@@ -268,6 +281,18 @@ activity rows, standings and profile entries. Fall back only for absent/failed
 images. Current-account photo edits/removal override stale roster copies. Keep
 map thumbnails functional and race capsules as race markers. Reuse authorized
 roster data for session portraits; never broaden profile reads for presentation.
+
+### Daily suggested session — October 27
+
+Home offers a floating, dismissible Today’s suggested session prompt on web and
+native. It opens the same Today session and `buildTodayRoute` suggestion as the
+journey, without a second recommendation engine. Viewing the suggestion from
+either entry point or dismissing the prompt hides it through the current Eastern
+calendar day. Dismissal is stored per account on the device; date rollover and
+foreground wakeups renew it. Journey access remains available. The existing
+home-lab prototype informed the Today/journey reuse; no separate floating prompt
+prototype was found in this checkout. No score, training rule or sync write changes.
+
 
 ## Home chart and daily health — October 25 selection
 

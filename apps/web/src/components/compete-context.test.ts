@@ -92,3 +92,96 @@ it("runs web debug sync through the real receipt and combo coordinator without u
   await act(async () => { api.resetDebugState?.(); });
   expect(api.state).toBe(original);
 });
+
+it("persists the dirty marker before a debounced save and retries saving without reloading", async () => {
+  let fail = true;
+  const fetcher = vi.fn(async (_url: string, init?: RequestInit) => init?.method === "PUT"
+    ? fail ? Response.json({ error: "unavailable" }, { status: 503 }) : Response.json({ updatedAt: "revision-2" })
+    : Response.json({ state: freshState(), updatedAt: "revision-1" }));
+  vi.stubGlobal("fetch", fetcher);
+  await act(async () => { renderer = create(createElement(CompeteProvider, null, createElement(Probe))); await flush(); });
+  await act(async () => api.dispatch({ type: "set-city", city: "Pending city" }));
+  expect(values.get("fb-compete-v1:athlete:device-only")).toBe("1");
+  await act(async () => { vi.advanceTimersByTime(500); await flush(); });
+  expect(api.saveError).toBeTruthy();
+  fail = false;
+  await act(async () => { api.retryLoad(); await flush(); });
+  expect(fetcher.mock.calls.filter(([, init]) => init?.method === "PUT")).toHaveLength(2);
+  expect(fetcher.mock.calls.filter(([, init]) => init?.method !== "PUT")).toHaveLength(1);
+  expect(values.has("fb-compete-v1:athlete:device-only")).toBe(false);
+  expect(api.saveError).toBeNull();
+});
+
+it("does not upload an unchanged preference", async () => {
+  const fetcher = vi.fn(async () => Response.json({ state: freshState(), updatedAt: "revision-1" }));
+  vi.stubGlobal("fetch", fetcher);
+  await act(async () => { renderer = create(createElement(CompeteProvider, null, createElement(Probe))); await flush(); });
+  await act(async () => api.dispatch({ type: "set-units", units: api.state!.units }));
+  await act(async () => { vi.advanceTimersByTime(500); await flush(); });
+  expect(fetcher).toHaveBeenCalledTimes(1);
+  expect(values.has("fb-compete-v1:athlete:device-only")).toBe(false);
+});
+
+it.each([null, "not-json", JSON.stringify({ state: { broken: true } })])(
+  "ignores orphan dirty metadata when the cached snapshot is %s",
+  async (cached) => {
+    if (cached !== null) values.set("fb-compete-v1:athlete", cached);
+    values.set("fb-compete-v1:athlete:device-only", "1");
+    values.set("fb-compete-v1:athlete:revision", "revision-1");
+    const remote = { ...freshState(), city: "Real server city", name: "Saved athlete" };
+    const fetcher = vi.fn(async (_url: string, init?: RequestInit) => init?.method === "PUT"
+      ? Response.json({ updatedAt: "revision-2" })
+      : Response.json({ state: remote, updatedAt: "revision-1" }));
+    vi.stubGlobal("fetch", fetcher);
+    await act(async () => { renderer = create(createElement(CompeteProvider, null, createElement(Probe))); await flush(); });
+    await act(async () => { vi.advanceTimersByTime(500); await flush(); });
+    expect(api.state?.city).toBe(remote.city);
+    expect(api.state?.name).toBe(remote.name);
+    expect(values.has("fb-compete-v1:athlete:device-only")).toBe(false);
+    expect(fetcher.mock.calls.filter(([, init]) => init?.method === "PUT")).toHaveLength(0);
+  },
+);
+
+it("keeps edits and server retry working when browser storage is unavailable", async () => {
+  let fail = true;
+  const fetcher = vi.fn(async (_url: string, init?: RequestInit) => init?.method === "PUT"
+    ? fail ? Response.json({ error: "unavailable" }, { status: 503 }) : Response.json({ updatedAt: "revision-2" })
+    : Response.json({ state: freshState(), updatedAt: "revision-1" }));
+  vi.stubGlobal("fetch", fetcher);
+  await act(async () => { renderer = create(createElement(CompeteProvider, null, createElement(Probe))); await flush(); });
+  const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+  localStorage.setItem = () => { throw new Error("quota"); };
+  localStorage.removeItem = () => { throw new Error("storage disabled"); };
+  try {
+    await act(async () => api.dispatch({ type: "set-city", city: "New city" }));
+    expect(api.state?.city).toBe("New city");
+    await act(async () => { vi.advanceTimersByTime(500); await flush(); });
+    expect(api.saveError).toBeTruthy();
+    fail = false;
+    await act(async () => { api.retryLoad(); await flush(); });
+    const writes = fetcher.mock.calls.filter(([, init]) => init?.method === "PUT");
+    expect(writes).toHaveLength(2);
+    expect(writes.every(([, init]) => JSON.parse(init!.body as string).state.city === "New city")).toBe(true);
+    expect(api.saveError).toBeNull();
+  } finally { warn.mockRestore(); }
+});
+
+it("preserves restored draft units through refresh and automatic retry", async () => {
+  values.set("fb-compete-v1:athlete", JSON.stringify({ state: { ...freshState(), units: "metric" }, savedAt: "2026-10-22T15:00:00Z" }));
+  values.set("fb-compete-v1:athlete:device-only", "1");
+  values.set("fb-compete-v1:athlete:revision", "revision-1");
+  const fetcher = vi.fn(async (_url: string, init?: RequestInit) => init?.method === "PUT"
+    ? Response.json({ updatedAt: "revision-2" })
+    : Response.json({ state: { ...freshState(), units: "us" }, updatedAt: "revision-1" }));
+  vi.stubGlobal("fetch", fetcher);
+  await act(async () => { renderer = create(createElement(CompeteProvider, null, createElement(Probe))); await flush(); });
+  expect(api.state?.units).toBe("metric");
+  await act(async () => { await api.refresh(); });
+  expect(api.state?.units).toBe("metric");
+  await act(async () => { vi.advanceTimersByTime(500); await flush(); });
+  const writes = fetcher.mock.calls.filter(([, init]) => init?.method === "PUT");
+  expect(writes).toHaveLength(1);
+  expect(JSON.parse(writes[0]![1]!.body as string).state.units).toBe("metric");
+  expect(values.has("fb-compete-v1:athlete:device-only")).toBe(false);
+  expect(api.saveError).toBeNull();
+});

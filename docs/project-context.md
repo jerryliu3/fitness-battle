@@ -25,4 +25,4 @@ The core product features:
 
 ## Planned activity detail
 
-The owner wants FIT and health-source metrics imported, retained and displayed for non-GPS activities too, including strength sessions with no route. This is a follow-up to v1 GPS maps; do not invent coordinates or treat the absence of a route as the absence of an activity. Current FIT session import retains duration and average heart rate. Rich sample-series storage and charts remain future work.
+The owner wants FIT and health-source metrics imported, retained and displayed for non-GPS activities too, including strength sessions with no route. This is a follow-up to v1 GPS maps; do not invent coordinates or treat the absence of a route as the absence of an activity. Current FIT session import retains duration and average heart rate. Activity details now include session-level scatterplots, five-session trends (including a relative Speed / HR index), and the selected session's contribution to seven-day logged volume; see [implementation review](reviews/activity-detail/README.md). These use recorded session summaries. Rich within-session sample-series storage and charts remain future work.

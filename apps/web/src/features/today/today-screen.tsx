@@ -1,6 +1,8 @@
 "use client";
 import { AppText, AppParagraph } from "@/ui/section";
 
+import { useDailySuggestion } from "./use-daily-suggestion";
+import "./daily-suggestion.css";
 import { WeekChart } from "./week-chart";
 import { DailyHealth } from "./daily-health";
 import { LatestActivity } from "@/features/club/latest-activity";
@@ -20,7 +22,7 @@ import { useAuth } from "@/components/auth-context";
 import { useCompete } from "@/components/compete-context";
 import { AnimatedEmber } from "@/components/mascot/animated-ember";
 import type { EmberAction } from "@fitness-battle/shared/mascot";
-import { APP_TIMEZONE, buildTodayRoute, competeNow, countsOnTrack, dayKey, formatVolume, primaryFreezePeriodStart, sportById, type Activity } from "@fitness-battle/shared";
+import { APP_TIMEZONE, buildTodayRoute, competeNow, countsOnTrack, dayKey, formatVolume, primaryFreezePeriodStart, shellTabFromPath, sportById, type Activity } from "@fitness-battle/shared";
 import {
   JourneyTrail,
   groupActivitiesByDay,
@@ -194,9 +196,10 @@ type SessionPhase =
   | { kind: "full"; target: SessionTarget };
 
 export function TodayScreen() {
-  const onHome = usePathname() === "/today";
+  const onHome = shellTabFromPath(usePathname())?.id === "today";
   const { user } = useAuth();
   const { state, dispatch, lastDebugEvent, loadStatus } = useCompete();
+  const suggestionPrompt = useDailySuggestion(user?.id ?? "guest", state);
   const reduced = useReducedMotion();
   const [removed, setRemoved] = useState<Activity | null>(null);
   const [syncNotice, setSyncNotice] = useState<string | null>(null);
@@ -301,6 +304,7 @@ export function TodayScreen() {
   }, [syncNotice]);
 
   function openSession(target: SessionTarget, phase: "peek" | "full") {
+    if (target === "suggestion") suggestionPrompt.dismiss();
     if(phase==="peek" && document.activeElement instanceof HTMLElement)sessionReturnFocus.current=document.activeElement;
     setRevealingStops([]);
     void playCue("light");
@@ -337,7 +341,7 @@ export function TodayScreen() {
 
   return (
     <div className="focus-home-stage">
-      <Sheet body="" returnFocusTo={sessionReturnFocus} open={session.kind === "full"} title={detailTarget === "suggestion" ? "Today" : "Your session"} onClose={closeSession}>
+      <Sheet fullScreen={detailActivities.length > 0} body="" returnFocusTo={sessionReturnFocus} open={session.kind === "full"} title={detailTarget === "suggestion" ? "Today" : "Your activity"} onClose={closeSession}>
         <SessionStage state={state} activities={detailActivities} suggestion={route.suggestion} actions={<ActivityActions />} onRemove={activityId => { setRemoved(detailActivities.find(a=>a.id===activityId)??null); dispatch({type:"set-disposition",activityId,disposition:"excluded"}); if(detailActivities.length <= 1)closeSession(); }}/>
       </Sheet>
       <div className="focus-home-overlay">
@@ -610,6 +614,12 @@ export function TodayScreen() {
       </JourneyTrail>
       </div>
       </details>
+      {onHome && suggestionPrompt.visible && session.kind === "closed" ? <aside className="home-daily-suggestion" aria-label="Today's suggested session">
+        <button type="button" className="home-daily-suggestion-open" onClick={() => openSession("suggestion", "full")}>
+          <span>Today’s suggested session</span><strong>{route.suggestion.title} ↗</strong>
+        </button>
+        <button type="button" className="home-daily-suggestion-dismiss" aria-label="Dismiss suggested session for today" onClick={suggestionPrompt.dismiss}>×</button>
+      </aside> : null}
     </div>
   );
 }

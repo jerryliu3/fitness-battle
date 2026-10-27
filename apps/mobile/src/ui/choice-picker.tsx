@@ -1,3 +1,4 @@
+import { SystemChoice } from "./system-choice";
 import { textStyle } from "./section";
 import { useAnchoredMenu, AnchoredMenu } from "./anchored-menu";
 import {
@@ -18,18 +19,34 @@ export function ChoicePicker<T extends string>({
   options,
   onChange,
   placeholder = "Choose…",
+  systemMenu = false,
 }: {
   label: string;
   value: T | "";
   options: readonly { value: T; label: string }[];
   onChange: (value: T) => void;
   placeholder?: string;
+  systemMenu?: boolean;
 }) {
   const { open, close, toggle, anchorRef, menuLayout } = useAnchoredMenu({
     minWidth: 180,
     estimatedHeight: Math.min(280, options.length * 44 + 16),
   });
   const selected = options.findIndex((option) => option.value === value);
+
+  if (systemMenu && SystemChoice) {
+    return <View style={[f.input, f.row, s.trigger, { position: "relative", flexShrink: 1 }]}>
+      <View pointerEvents="none" accessibilityElementsHidden style={[f.row, { flexShrink: 1 }]}>
+        <Text style={[textStyle("label"), { flexShrink: 1 }]}>{options[selected]?.label ?? placeholder}</Text>
+        <Text style={[textStyle("body"), { marginLeft: 4 }]}>▾</Text>
+      </View>
+      <SystemChoice label={label} value={value} options={options} style={StyleSheet.absoluteFill}
+        onSelect={event => {
+          const choice = options.find(option => option.value === event.nativeEvent.value);
+          if (choice) { void playCue("selection"); onChange(choice.value); }
+        }} />
+    </View>;
+  }
 
   return (
     <View style={{ flexShrink: 1 }}>

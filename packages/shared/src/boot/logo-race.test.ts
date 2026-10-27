@@ -1,12 +1,13 @@
 import { describe, expect, it } from "vitest";
-import { logoRaceWords, staggeredLogoFrame, DEFAULT_BOOT_SPLASH_VARIANT } from "./logo-race";
+import { logoRaceWords, staggeredLogoFrame, DEFAULT_BOOT_SPLASH_VARIANT, LOGO_RACE_DURATION_MS } from "./logo-race";
 
 describe("production logo race", () => {
   it("defaults to the word race and preserves its three lead changes", () => {
+    expect(LOGO_RACE_DURATION_MS).toBe(3780);
     expect(DEFAULT_BOOT_SPLASH_VARIANT).toBe("logo-race");
-    expect(staggeredLogoFrame(.15).tx).toBeLessThan(0);
-    expect(staggeredLogoFrame(.44).taekRight).toBeGreaterThan(staggeredLogoFrame(.44).overRight);
-    expect(staggeredLogoFrame(.68).overRight).toBeGreaterThan(staggeredLogoFrame(.68).taekRight);
+    expect(staggeredLogoFrame(.11).tx).toBeLessThan(0);
+    expect(staggeredLogoFrame(.40).taekRight).toBeGreaterThan(staggeredLogoFrame(.40).overRight);
+    expect(staggeredLogoFrame(.64).overRight).toBeGreaterThan(staggeredLogoFrame(.64).taekRight);
     const end = staggeredLogoFrame(1);
     expect(end.taekRight).toBeGreaterThan(end.overRight);
     expect(end.tx - end.ox).toBe(64);
