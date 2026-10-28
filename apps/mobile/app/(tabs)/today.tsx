@@ -6,6 +6,7 @@ import { DailyHealth } from "../../src/features/daily-health";
 import { LatestActivity } from "../../src/features/club-latest-activity";
 import type { Activity } from "@fitness-battle/shared";
 
+import { AnimatedEmber } from "../../src/ui/mascot/animated-ember";
 import { RivalCard } from "../../src/features/club-rival-card";
 
 import { APP_TIMEZONE, buildTodayRoute, competeNow, countsOnTrack, dayKey, primaryFreezePeriodStart } from "@fitness-battle/shared";
@@ -80,9 +81,7 @@ export default function Home() {
               onPress={openSuggestion}
               style={s.suggestionBody}
             >
-              <View style={s.suggestionAccent}>
-                <View style={s.suggestionDot} />
-              </View>
+              <AnimatedEmber size={36} expression="happy" action="idle" loop />
               <View style={{ flex: 1, gap: 2 }}>
                 <AppText role="label" numberOfLines={1}>Today’s recommended session</AppText>
                 <AppText role="caption" secondary>Tap to view</AppText>
@@ -140,20 +139,6 @@ const s = StyleSheet.create({
     alignItems: "center",
     gap: 12,
     minHeight: 44,
-  },
-  suggestionAccent: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: c.soft,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  suggestionDot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    backgroundColor: c.tennis,
   },
   suggestionDismiss: {
     width: 32,
