@@ -641,7 +641,7 @@ export function CompetitionField({
                       </Text>
                     </View>
                     <View style={{ alignItems: "flex-end" }}>
-                      <Text style={{ ...textStyle("heading"), fontSize: 20, fontWeight: "700", color: c.ink }}>
+                      <Text style={{ ...textStyle("heading"), color: c.ink }}>
                         {lane.values[2].toFixed(1)} {arena.unit}
                       </Text>
                     </View>

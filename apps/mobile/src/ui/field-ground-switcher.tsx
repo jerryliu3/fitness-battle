@@ -53,7 +53,6 @@ export function FieldGroundSwitcher({
           style={{
             ...textStyle("caption"),
             color: "#ffffff",
-            fontWeight: "600",
           }}
         >
           {currentGround.name} ▾

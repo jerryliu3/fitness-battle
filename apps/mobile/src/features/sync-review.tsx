@@ -129,7 +129,7 @@ function Review({ receipt, state, onComplete, resetScroll }: { resetScroll: () =
                   }}
                 >
                   <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
-                    <Text style={{ ...textStyle("caption"), color: c.tennis, fontWeight: "700", letterSpacing: 1.2 }}>
+                    <Text style={{ ...textStyle("caption"), color: c.tennis }}>
                       {sportById(a.sport).name.toUpperCase()}
                     </Text>
                     <Text style={{ ...textStyle("caption"), color: "rgba(255,255,255,0.6)" }}>
@@ -137,7 +137,7 @@ function Review({ receipt, state, onComplete, resetScroll }: { resetScroll: () =
                     </Text>
                   </View>
                   <View style={{ gap: 2 }}>
-                    <Text style={{ ...textStyle("display"), color: "#ffffff", fontSize: 28 }}>
+                    <Text style={{ ...textStyle("display"), color: "#ffffff" }}>
                       {formatVolume(a.sport, a.distanceM, a.movingSec, state.units)}
                     </Text>
                     <Text style={{ ...textStyle("body"), color: "rgba(255,255,255,0.75)" }}>
@@ -176,12 +176,12 @@ function Review({ receipt, state, onComplete, resetScroll }: { resetScroll: () =
                         justifyContent: "center",
                       }}
                     >
-                      <Text style={{ ...textStyle("body"), color: "white", fontSize: 13, fontWeight: "700" }}>
+                      <Text style={{ ...textStyle("caption"), color: "white" }}>
                         {isCounted ? "✓" : ""}
                       </Text>
                     </View>
                     <View style={{ flex: 1 }}>
-                      <Text style={{ ...textStyle("label"), color: c.ink, fontWeight: "700" }}>
+                      <Text style={{ ...textStyle("label"), color: c.ink }}>
                         {sportById(a.sport).name}
                       </Text>
                       <Text style={{ ...textStyle("caption"), color: c.muted }}>
@@ -202,31 +202,31 @@ function Review({ receipt, state, onComplete, resetScroll }: { resetScroll: () =
 
                 <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
                   <View style={{ backgroundColor: c.soft, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 }}>
-                    <Text style={{ ...textStyle("caption"), color: c.ink, fontWeight: "600" }}>
+                    <Text style={{ ...textStyle("caption"), color: c.ink }}>
                       {formatVolume(a.sport, a.distanceM, a.movingSec, state.units)}
                     </Text>
                   </View>
                   <View style={{ backgroundColor: c.soft, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 }}>
-                    <Text style={{ ...textStyle("caption"), color: c.ink, fontWeight: "600" }}>
+                    <Text style={{ ...textStyle("caption"), color: c.ink }}>
                       {clubDuration(a.movingSec)}
                     </Text>
                   </View>
                   {a.avgHr ? (
                     <View style={{ backgroundColor: c.soft, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 }}>
-                      <Text style={{ ...textStyle("caption"), color: c.ink, fontWeight: "600" }}>
+                      <Text style={{ ...textStyle("caption"), color: c.ink }}>
                         {a.avgHr} bpm
                       </Text>
                     </View>
                   ) : null}
                   {a.elevationGainM != null && a.elevationGainM > 0 ? (
                     <View style={{ backgroundColor: c.soft, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 }}>
-                      <Text style={{ ...textStyle("caption"), color: c.ink, fontWeight: "600" }}>
+                      <Text style={{ ...textStyle("caption"), color: c.ink }}>
                         +{a.elevationGainM}m elev
                       </Text>
                     </View>
                   ) : null}
                   <View style={{ backgroundColor: c.soft, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 }}>
-                    <Text style={{ ...textStyle("caption"), color: c.muted, fontWeight: "500" }}>
+                    <Text style={{ ...textStyle("caption"), color: c.muted }}>
                       {a.verified ? "GPS Tracked" : "Open"}
                     </Text>
                   </View>

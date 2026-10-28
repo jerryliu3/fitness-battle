@@ -46,7 +46,7 @@ export function FieldViewSwitcher({
           pressed && { opacity: 0.75 },
         ]}
       >
-        <Text style={{ ...textStyle("caption"), color: "#ffffff", fontWeight: "600" }}>
+        <Text style={{ ...textStyle("caption"), color: "#ffffff" }}>
           {value.toUpperCase()} ▾
         </Text>
       </Pressable>
@@ -85,14 +85,13 @@ export function FieldViewSwitcher({
               <Text
                 style={{
                   ...textStyle("caption"),
-                  fontWeight: isSelected ? "700" : "500",
                   color: isSelected ? c.ink : c.muted,
                 }}
               >
                 {opt.label}
               </Text>
               {isSelected ? (
-                <Text style={{ ...textStyle("caption"), color: c.ink, fontWeight: "700" }}>
+                <Text style={{ ...textStyle("caption"), color: c.ink }}>
                   ✓
                 </Text>
               ) : null}

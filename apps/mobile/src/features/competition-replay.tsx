@@ -68,7 +68,7 @@ export function CompetitionReplayButton({
           ]}
         >
           <AppIcon name="replay" size={14} color="#ffffff" />
-          <Text style={{ ...textStyle("caption"), color: "#ffffff", fontWeight: "600" }}>
+          <Text style={{ ...textStyle("caption"), color: "#ffffff" }}>
             {label || "View replay"}
           </Text>
         </Pressable>

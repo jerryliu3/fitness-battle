@@ -258,8 +258,6 @@ function LaneTrackContent({
                           y={4}
                           textAnchor="middle"
                           fill="#ffffff"
-                          fontSize={10}
-                          fontWeight="600"
                         >
                           {`${d} ${unit}`}
                         </SvgText>
@@ -410,8 +408,6 @@ function LaneTrackContent({
                       y={3.5}
                       textAnchor="middle"
                       fill="#ffffff"
-                      fontSize={9}
-                      fontWeight="600"
                     >
                       Last week
                     </SvgText>
