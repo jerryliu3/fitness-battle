@@ -28,6 +28,7 @@ export function CrewSessions({
 }) {
   const [sessions, setSessions] = useState<CrewSession[]>([]),
     [open, setOpen] = useState(false),
+    [cancelTarget, setCancelTarget] = useState<CrewSession | null>(null),
     [title, setTitle] = useState(""),
     [day, setDay] = useState(""),
     [time, setTime] = useState("08:00"),
@@ -76,6 +77,7 @@ export function CrewSessions({
         );
         setSessions(next);
         setOpen(false);
+        if (body.action === "cancel") setCancelTarget(null);
         setTitle("");
         id.current = crewSessionDraftId();
         return;
@@ -88,6 +90,7 @@ export function CrewSessions({
         result = await r.json();
       if (!r.ok) throw Error(crewSessionError(result.error ?? ""));
       setOpen(false);
+      if (body.action === "cancel") setCancelTarget(null);
       id.current = crewSessionDraftId();
       setTitle("");
       await reload().catch(() =>
@@ -172,7 +175,7 @@ export function CrewSessions({
                     <button
                       className="fb-btn-ghost"
                       disabled={busy}
-                      onClick={() => void write({ action: "cancel", id: s.id })}
+                      onClick={() => { setError(""); setCancelTarget(s); }}
                     >
                       Cancel session
                     </button>
@@ -201,6 +204,15 @@ export function CrewSessions({
           </button>
         </AppParagraph>
       ) : null}
+      <Sheet open={Boolean(cancelTarget)} title="Cancel this session?"
+        body={cancelTarget ? `${cancelTarget.title} will be marked cancelled for your crew.` : ""}
+        onClose={() => { if (!busy) setCancelTarget(null); }}>
+        {error && <AppParagraph typographyRole="body" role="alert">{error}</AppParagraph>}
+        <div style={{ display: "grid", gap: 12 }}>
+          <button type="button" className="fb-btn" disabled={busy || !cancelTarget} onClick={() => { if (cancelTarget) void write({ action: "cancel", id: cancelTarget.id }); }}>{busy ? "Cancelling…" : "Cancel session"}</button>
+          <button type="button" className="fb-btn-line" disabled={busy} onClick={() => setCancelTarget(null)}>Keep session</button>
+        </div>
+      </Sheet>
       <Sheet
         open={open}
         title="A shared start"

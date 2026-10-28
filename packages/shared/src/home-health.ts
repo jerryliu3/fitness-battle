@@ -1,5 +1,5 @@
 import { competeNow } from "./compete/engine";
-import { collapseNights, formatSleepDuration } from "./compete/health";
+import { collapseNights, formatSleepDuration, type SleepNight } from "./compete/health";
 import type { CompeteState } from "./compete/sports";
 import { INTEGRATIONS } from "./fitness/providers";
 import { dayKey, shiftAppDay } from "./period";
@@ -15,13 +15,17 @@ export interface HomeHealthMetric {
   history: (number | null)[];
 }
 
+/** Known preview readings must not be presented as connected tracker data. */
+export function isSampleSleepNight(state: CompeteState, night: SleepNight): boolean {
+  return night.source === "history" || night.id === `sleep-${night.source}-${night.day}` ||
+    state.links.some(link => link.provider === night.source && link.status === "stub");
+}
+
 /** Presentation only. Do not infer daily health from workout HR/cadence or sleep scores. */
 export function homeHealthMetrics(state: CompeteState, now = competeNow(state)): HomeHealthMetric[] {
   const today = dayKey(now);
   const nights = collapseNights(state.sleepNights.filter(night =>
-    night.source !== "history" &&
-    night.id !== `sleep-${night.source}-${night.day}` &&
-    !state.links.some(link => link.provider === night.source && link.status === "stub") &&
+    !isSampleSleepNight(state, night) &&
     night.day <= today && Number.isFinite(night.durationMin) && night.durationMin > 0,
   ));
   const night = nights.find(item => item.day === today);

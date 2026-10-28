@@ -30,6 +30,7 @@ export function CrewSessions({
   const { user, accessToken, offlineMode } = useAuth();
   const [sessions, setSessions] = useState<CrewSession[]>([]),
     [open, setOpen] = useState(false),
+    [cancelTarget, setCancelTarget] = useState<CrewSession | null>(null),
     [title, setTitle] = useState(""),
     [day, setDay] = useState(""),
     [time, setTime] = useState("08:00"),
@@ -78,6 +79,7 @@ export function CrewSessions({
         if (mounted.current) {
           setSessions(next);
           setOpen(false);
+          if (body.action === "cancel") setCancelTarget(null);
           setTitle("");
           id.current = crewSessionDraftId();
         }
@@ -88,6 +90,7 @@ export function CrewSessions({
       });
       if (!mounted.current) return;
       setOpen(false);
+      if (body.action === "cancel") setCancelTarget(null);
       setTitle("");
       id.current = crewSessionDraftId();
       await reload().catch(() =>
@@ -190,7 +193,7 @@ export function CrewSessions({
                     label="Cancel session"
                     secondary
                     disabled={busy}
-                    onPress={() => void write({ action: "cancel", id: s.id })}
+                    onPress={() => { setError(""); setCancelTarget(s); }}
                   />
                 ) : null}
               </>
@@ -217,6 +220,13 @@ export function CrewSessions({
           />
         </>
       ) : null}
+      <FocusSheet open={Boolean(cancelTarget)} title="Cancel this session?"
+        body={cancelTarget ? `${cancelTarget.title} will be marked cancelled for your crew.` : ""}
+        onClose={() => { if (!busy) setCancelTarget(null); }}>
+        {error ? <AppText role="body" secondary accessibilityRole="alert">{error}</AppText> : null}
+        <FocusButton label={busy ? "Cancelling…" : "Cancel session"} disabled={busy || !cancelTarget} onPress={() => { if (cancelTarget) void write({ action: "cancel", id: cancelTarget.id }); }} />
+        <FocusButton label="Keep session" secondary disabled={busy} onPress={() => setCancelTarget(null)} />
+      </FocusSheet>
       <FocusSheet
         open={open}
         title="A shared start"

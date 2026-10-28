@@ -6,6 +6,7 @@ import {
   formatClock,
   formatSleepDuration,
   healthMetricById,
+  isSampleSleepNight,
   selfLaneLabel,
   stageShares,
   type CompeteState,
@@ -69,7 +70,7 @@ export function SleepPanel({
           kind: "weekly",
         })}
       </AppParagraph>
-      <SectionHeader title="Last night"/>
+      <SectionHeader title={night ? "Latest sleep" : "No night recorded yet"}/>
 
       {!view.optedIn ? (
         <div className="sp-empty">
@@ -85,6 +86,9 @@ export function SleepPanel({
       ) : night ? (
         <>
           <div className="sl-hero">
+            <AppParagraph typographyRole="caption" className="fb-note">
+              {isSampleSleepNight(state, night) ? "Sample reading · " : ""}Wake date {night.day}. Weekly standings count nights in the current competition week.
+            </AppParagraph>
             <div>
               <p className="sl-score">
                 <strong>{night.score}</strong>
@@ -171,7 +175,7 @@ export function SleepPanel({
                   <span>
                     {row.you ? selfLaneLabel(row.name) : row.name}
                     <AppText as="small" role="caption" secondary>
-                      {row.lastNight == null ? "No night yet" : `Last night ${row.lastNight}`}
+                      {row.lastNight == null ? "No night yet" : `Latest this week ${row.lastNight}`}
                     </AppText>
                   </span>
                   <b>{row.score.toFixed(0)}</b>
