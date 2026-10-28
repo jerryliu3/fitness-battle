@@ -365,8 +365,12 @@ function LaneTrackContent({
               );
             })}
             {ghost && (() => {
+              const ghostValue = ghost.values[index] ?? 0;
+              const pos = arenaPosition(ghostValue, v);
+              if (!course.oval && pos.edge) return null;
               const youIdx = Math.max(0, ordered.findIndex((l) => l.you));
-              const p = course.point(ghost.values[index] ?? 0, youIdx, 0, true);
+              const p = course.point(ghostValue, youIdx, 0, false);
+              if (p.y < -30 || p.y > height + 30) return null;
               const scale = Math.min(1.8, course.markerScale);
               const markerScale = fieldLaneMarkerScale(true);
               return (
@@ -431,8 +435,12 @@ function LaneTrackContent({
           ];
         })}
         {ghost && (() => {
+          const ghostValue = ghost.values[index] ?? 0;
+          const pos = arenaPosition(ghostValue, v);
+          if (!course.oval && pos.edge) return null;
           const youIdx = Math.max(0, ordered.findIndex((l) => l.you));
-          const p = course.point(ghost.values[index] ?? 0, youIdx, 0, true);
+          const p = course.point(ghostValue, youIdx, 0, false);
+          if (p.y < -30 || p.y > height + 30) return null;
           return (
             <Pressable
               accessibilityRole="button"

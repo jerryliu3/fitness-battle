@@ -66,14 +66,6 @@ export function FieldGroundSwitcher({
         accessibilityLabel="Close style menu"
         style={{ padding: 8 }}
       >
-        <Text
-          style={[
-            textStyle("caption"),
-            { paddingHorizontal: 8, paddingVertical: 4, color: c.muted },
-          ]}
-        >
-          Field style
-        </Text>
         <ScrollView style={{ maxHeight: 260 }}>
           {Object.entries(fieldGrounds).map(([id, item]) => {
             const isSelected = appearance.ground === id;
