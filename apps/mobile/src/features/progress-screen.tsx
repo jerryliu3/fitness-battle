@@ -1,9 +1,9 @@
-import { SectionStack, AppText, SectionHeader } from "../ui/section";
+import { SectionStack, Section, TextAction } from "../ui/section";
 import { MotionStep } from "../ui/motion-step";
 import { Achievements } from "./club-achievements";
 import { useEffect, useState } from "react";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { Pressable, ScrollView, View } from "react-native";
+import { ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useCompeteStore } from "../lib/compete-store";
 import { FocusSegments, f } from "../ui/focus";
@@ -31,14 +31,18 @@ export function ProgressScreen() {
         <AthleteMetrics state={state} />
         </View>
         <View style={{display:section==="overview"?"flex":"none",gap:28}}><TrainingHistory state={state}><Achievements state={state}/></TrainingHistory>
-        <View style={f.section}>
-          <Pressable accessibilityRole="button" onPress={() => router.push("/progress-history")}>
-            <SectionHeader title="Past weeks & awards"/>
-            <AppText role="body" secondary >Closed competition weeks, chapter history, and your award shelf.</AppText>
-            <AppText role="label" >View all →</AppText>
-          </Pressable>
+        <Section
+          title="Past weeks & awards"
+          action={
+            <TextAction
+              label="View all"
+              accessibilityLabel="View all past weeks and awards"
+              onPress={() => router.push("/progress-history")}
+            />
+          }
+        >
           {awardCards(state).length > 0 ? <AwardShelf cards={awardCards(state).slice(0, 3)} /> : null}
-        </View>
+        </Section>
         <AthleteTelemetryMatrix state={state} />
         </View>
         </MotionStep>

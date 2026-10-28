@@ -1,5 +1,5 @@
 "use client";
-import { Section, TextAction, StatusBadge, AppText } from "@/ui/section";
+import { Section, TextAction, AppText } from "@/ui/section";
 import Link from "next/link";
 import { useId } from "react";
 import {
@@ -46,16 +46,13 @@ export function Achievements({ state }: { state: CompeteState }) {
             aria-label={achievementAccessibilityLabel(row)}
           >
             <AchievementBadge item={row} />
-            <AppText role="caption" secondary className="club-achievement-title">
-              {row.title}
-            </AppText>
             <AchievementMeter row={row} />
             <AppText role="label" className="club-achievement-progress">
               {row.current.toLocaleString()} / {row.target.toLocaleString()}
             </AppText>
-            <StatusBadge tone={row.earned ? "success" : "neutral"}>
-              {row.earned ? "✓ Earned" : "Up next"}
-            </StatusBadge>
+            <AppText role="caption" secondary className="club-achievement-title">
+              {row.title}
+            </AppText>
           </Link>
         ))}
       </div>

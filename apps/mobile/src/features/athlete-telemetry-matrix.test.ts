@@ -110,12 +110,12 @@ describe("AthleteTelemetryMatrix mobile features", () => {
         .join(" ");
 
     const text = allText();
-    expect(text).toContain("Athlete Telemetry Matrix");
+    expect(text).toContain("Advanced Analytics");
     expect(text).not.toContain("Biometrics & Telemetry");
     expect(text).not.toContain("Autonomic health, training load, and cardiovascular efficiency");
     expect(text).not.toContain("Inspect lab →");
 
-    expect(text).toContain("Athlete Equity");
+    expect(text).not.toContain("Athlete Equity");
     expect(text).toContain("Overnight HRV");
     expect(text).toContain("Sleep & Debt");
     expect(text).toContain("Workload Ratio");
@@ -123,7 +123,7 @@ describe("AthleteTelemetryMatrix mobile features", () => {
     expect(text).toContain("Readiness Brief");
 
     const tiles = renderer.root.findAllByType("Pressable" as never);
-    expect(tiles.length).toBe(6);
+    expect(tiles.length).toBe(5);
 
     await act(async () => {
       tiles[0]!.props.onPress();
@@ -131,7 +131,7 @@ describe("AthleteTelemetryMatrix mobile features", () => {
 
     expect(mockPush).toHaveBeenCalledWith({
       pathname: "/telemetry",
-      params: { domain: "market" },
+      params: { domain: "vitals" },
     });
   });
 

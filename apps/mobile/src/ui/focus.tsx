@@ -14,12 +14,22 @@ import {
   Text,
   View,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { SHELL_COLORS as c, mobileSurfaces } from "../theme";
 import { useReducedMotion } from "./use-reduced-motion";
 import { IconButton } from "./icon-button";
 import { playCue } from "../lib/haptics";
 const AnimatedSafeAreaView = Animated.createAnimatedComponent(SafeAreaView);
+
+function useSafeInsets() {
+  try {
+    return typeof useSafeAreaInsets === "function"
+      ? useSafeAreaInsets()
+      : { top: 0, bottom: 0, left: 0, right: 0 };
+  } catch {
+    return { top: 0, bottom: 0, left: 0, right: 0 };
+  }
+}
 
 export function FocusSheet({
   open,
@@ -50,7 +60,11 @@ export function FocusSheet({
   const reduce = useReducedMotion();
   const [present, setPresent] = useState(open);
   const progress = useRef(new Animated.Value(0)).current;
+  const insets = useSafeInsets();
   const { height: windowHeight } = useWindowDimensions();
+  const maxSheetHeight = fullScreen
+    ? "100%"
+    : Math.max(200, windowHeight - insets.top - 12);
   const [sheetHeight, setSheetHeight] = useState(windowHeight);
   useEffect(() => {
     if (open) void playCue("light");
@@ -105,6 +119,7 @@ export function FocusSheet({
           onLayout={(event) => setSheetHeight(event.nativeEvent.layout.height)}
           style={[
             f.sheet,
+            { maxHeight: maxSheetHeight },
             fullScreen && { flex: 1, maxHeight: "100%", borderTopLeftRadius: 0, borderTopRightRadius: 0 },
             {
               transform: [
@@ -599,7 +614,6 @@ export const f = StyleSheet.create({
   modal: { flex: 1, justifyContent: "flex-end" },
   backdrop: { ...StyleSheet.absoluteFill, backgroundColor: "#14211b80" },
   sheet: {
-    maxHeight: "92%",
     borderTopLeftRadius: SHELL_RADIUS.sheet,
     borderTopRightRadius: SHELL_RADIUS.sheet,
     backgroundColor: c.paper,

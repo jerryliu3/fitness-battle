@@ -1272,6 +1272,11 @@
   background: var(--card);
   box-shadow: 0 10px 28px #142b3b14;
 }
+.training-sport-menu-divider {
+  height: 1px;
+  background: var(--line);
+  margin: 4px 0;
+}
 .training-sport-menu-all {
   border: 0;
   background: none;

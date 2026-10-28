@@ -3,12 +3,11 @@ import { AppText, textStyle } from "../ui/section";
 import {
   APP_TIMEZONE,
   effortHistory,
-  currentEffortMilestone,
   formatEffortScore,
-  formatVolume,
   rankForElo,
   type CompeteState,
   type ScoreTrack,
+  type TrainingRange,
 } from "@fitness-battle/shared";
 import { useState } from "react";
 import { useScoreTrackLens } from "../lib/score-track-lens";
@@ -19,15 +18,16 @@ import { ChartFrame } from "../ui/chart-frame";
 import { useAuth } from "../lib/auth";
 import { SHELL_COLORS as c } from "../theme";
 import { FocusSegments, f } from "../ui/focus";
+import { ChartRangeToggle } from "./chart-range-toggle";
 
 export function EffortTrend({ state }: { state: CompeteState }) {
   const [defaultTrack] = useScoreTrackLens();
   const { user } = useAuth();
   const scope = `${user?.id}:${state.primary}`;
   const [lens, setLens] = useState<{ scope: string; track: ScoreTrack } | null>(null);
+  const [range, setRange] = useState<TrainingRange>("month");
   const track = lens?.scope === scope ? lens.track : defaultTrack;
-  const milestone = currentEffortMilestone(state, state.primary, track);
-  const model = effortHistory(state, track, user, user?.email);
+  const model = effortHistory(state, track, user, user?.email, range);
   const {
     effectiveElo,
     xStart,
@@ -55,19 +55,16 @@ export function EffortTrend({ state }: { state: CompeteState }) {
           onChange={(nextTrack) => setLens({ scope, track: nextTrack })}
         />
 
-        <Text style={f.kicker}>{rankForElo(effectiveElo).name}</Text>
+        <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", gap: 8, marginTop: 4 }}>
+          <Text style={f.kicker}>{rankForElo(effectiveElo).name}</Text>
+          <ChartRangeToggle value={range} onChange={setRange} />
+        </View>
         <View style={s.total}>
           <Text style={s.number}>
             {formatEffortScore(effectiveElo)}
             <Text style={s.unit}> effort score</Text>
           </Text>
         </View>
-
-        {milestone ? (
-          <AppText role="body" secondary>
-            +1 per {formatVolume(state.primary, state.primary === "strength" ? 0 : milestone.step, state.primary === "strength" ? milestone.step : 0, state.units)} this week · +{milestone.earned} from activity
-          </AppText>
-        ) : null}
 
         <ChartScrubber
           key={`${scope}:${track}`}
@@ -142,9 +139,6 @@ export function EffortTrend({ state }: { state: CompeteState }) {
             ))}
           </ChartSvg>
         </ChartScrubber>
-        <AppText role="caption" secondary>
-          History reflects closed-week scores and your current score.
-        </AppText>
       </View>
     </ChartFrame>
   );

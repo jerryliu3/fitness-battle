@@ -5,7 +5,7 @@ export const TRAINING_CHART_RANGE_OPTIONS: readonly {
   label: string;
   ariaLabel: string;
 }[] = [
-  { value: "week", label: "W", ariaLabel: "Week" },
-  { value: "month", label: "M", ariaLabel: "Month" },
-  { value: "year", label: "Y", ariaLabel: "Year" },
+  { value: "week", label: "Week", ariaLabel: "Week" },
+  { value: "month", label: "Month", ariaLabel: "Month" },
+  { value: "year", label: "Year", ariaLabel: "Year" },
 ];

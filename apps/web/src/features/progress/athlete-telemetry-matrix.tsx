@@ -18,6 +18,8 @@ export function AthleteTelemetryMatrix({
 }) {
   const model = useMemo(() => buildAnalyticsLabModel(state, "30d"), [state]);
 
+  const SHOW_ATHLETE_EQUITY = false;
+
   const bentoTiles: Array<{
     id: string;
     domain: AnalyticsDomainId;
@@ -27,15 +29,19 @@ export function AthleteTelemetryMatrix({
     points: number[];
     accent: string;
   }> = [
-    {
-      id: "market",
-      domain: "market",
-      kicker: "Athlete Equity",
-      value: `${model.market.currentIndex.toLocaleString()} pts`,
-      delta: `+${model.market.allTimeReturnPct}% all-time`,
-      points: model.market.equitySeries.map((p) => p.nav),
-      accent: c.tennis,
-    },
+    ...(SHOW_ATHLETE_EQUITY
+      ? [
+          {
+            id: "market",
+            domain: "market" as const,
+            kicker: "Athlete Equity",
+            value: `${model.market.currentIndex.toLocaleString()} pts`,
+            delta: `+${model.market.allTimeReturnPct}% all-time`,
+            points: model.market.equitySeries.map((p) => p.nav),
+            accent: c.tennis,
+          },
+        ]
+      : []),
     {
       id: "vitals",
       domain: "vitals",
@@ -86,7 +92,7 @@ export function AthleteTelemetryMatrix({
   return (
     <section className="athlete-telemetry-matrix fb-stack" style={{ marginTop: 18 }}>
       <div style={{ display: "grid", gap: 12 }}>
-        <AppHeading role="heading" level={2}>Athlete Telemetry Matrix</AppHeading>
+        <AppHeading role="heading" level={2}>Advanced Analytics</AppHeading>
 
         <div
           style={{
@@ -157,7 +163,7 @@ function MiniSparklineSvg({
   stroke: string;
 }) {
   if (values.length < 2) return null;
-  const { polyline } = buildSvgLineGeometry(values, 58, 22, 2);
+  const { polyline, points } = buildSvgLineGeometry(values, 58, 22, 2);
   return (
     <svg width={58} height={22} viewBox="0 0 58 22" aria-hidden="true">
       <path
@@ -168,6 +174,9 @@ function MiniSparklineSvg({
         strokeLinecap="round"
         strokeLinejoin="round"
       />
+      {points.map((p, i) => (
+        <circle key={i} cx={p.x} cy={p.y} r={1.5} fill={stroke} />
+      ))}
     </svg>
   );
 }

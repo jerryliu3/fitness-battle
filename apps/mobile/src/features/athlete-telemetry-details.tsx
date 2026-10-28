@@ -1,11 +1,8 @@
 import React, { useMemo, useState } from "react";
 import { Pressable, ScrollView, StyleSheet, View } from "react-native";
-import Svg, { Circle, Line, Path, Polyline, Rect } from "react-native-svg";
 import {
   SHELL_COLORS as c,
   buildAnalyticsLabModel,
-  buildSvgCorridorGeometry,
-  buildSvgLineGeometry,
   formatMinutesAsHoursMins,
   getDomainTitle,
   type AnalyticsDomainId,
@@ -16,6 +13,7 @@ import {
 } from "@fitness-battle/shared";
 import { AppText, ListRow, SectionHeader, StatusBadge, Surface } from "../ui/section";
 import { FocusSegments, f } from "../ui/focus";
+import { StandardLineChart } from "../ui/standard-line-chart";
 
 export { getDomainTitle };
 
@@ -27,20 +25,21 @@ const TIME_LENSES: readonly { value: AnalyticsTimeLens; label: string }[] = [
 ];
 
 export function AthleteTelemetryDetails({
-  domain = "market",
+  domain = "vitals",
   state,
 }: {
   domain?: AnalyticsDomainId | string;
   state?: CompeteState | null;
 }) {
   const activeDomain: AnalyticsDomainId =
+    domain === "market" ||
     domain === "vitals" ||
     domain === "sleep" ||
     domain === "load" ||
     domain === "performance" ||
     domain === "combined"
       ? domain
-      : "market";
+      : "vitals";
 
   const [timeLens, setTimeLens] = useState<AnalyticsTimeLens>("30d");
   const model = useMemo(
@@ -122,53 +121,6 @@ function InspectionCallout({
   );
 }
 
-function InteractiveLineChart({
-  values,
-  selectedIdx,
-  onSelectIdx,
-  stroke = c.fieldTeal,
-  height = 140,
-}: {
-  values: number[];
-  selectedIdx: number;
-  onSelectIdx: (idx: number) => void;
-  stroke?: string;
-  height?: number;
-}) {
-  const [width, setWidth] = useState(320);
-  const geo = useMemo(
-    () => buildSvgLineGeometry(values, width, height, 14),
-    [values, width, height],
-  );
-  const active = geo.points[selectedIdx] ?? geo.points[geo.points.length - 1];
-
-  return (
-    <View onLayout={(e) => setWidth(e.nativeEvent.layout.width)} style={{ height, marginVertical: 8 }}>
-      <Svg width="100%" height={height} viewBox={`0 0 ${width} ${height}`}>
-        <Path d={geo.areaPath} fill={stroke} opacity={0.12} />
-        <Polyline points={geo.polyline} fill="none" stroke={stroke} strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" />
-        {active && (
-          <>
-            <Line x1={active.x} x2={active.x} y1={0} y2={height} stroke={c.line} strokeWidth={1} strokeDasharray="3 3" />
-            <Circle cx={active.x} cy={active.y} r={5} fill={stroke} stroke={c.card} strokeWidth={2} />
-          </>
-        )}
-        {geo.points.map((p, i) => (
-          <Rect
-            key={i}
-            x={p.x - width / (values.length * 2)}
-            y={0}
-            width={width / values.length}
-            height={height}
-            fill="transparent"
-            onPress={() => onSelectIdx(i)}
-          />
-        ))}
-      </Svg>
-    </View>
-  );
-}
-
 /* ============================================================================
  * 1. ATHLETE MARKET VIEW
  * ========================================================================== */
@@ -191,11 +143,18 @@ function MarketView({ model }: { model: AnalyticsLabModel }) {
             { label: "4W SMA", value: `${series[series.length - 1]?.sma4 ?? 0} pts` },
           ]}
         />
-        <InteractiveLineChart
+        <StandardLineChart
           values={series.map((p) => p.nav)}
           selectedIdx={selectedIdx}
           onSelectIdx={setSelectedIdx}
           stroke={c.tennis}
+          xLabels={
+            series.length >= 2
+              ? [series[0]!.label, series[Math.floor(series.length / 2)]!.label, series[series.length - 1]!.label]
+              : undefined
+          }
+          formatY={(v) => `${Math.round(v)}`}
+          accessibilityLabel="Equity curve portfolio net asset value history"
         />
         <InspectionCallout
           title={pt.label}
@@ -238,13 +197,10 @@ function VitalsView({ model }: { model: AnalyticsLabModel }) {
   const [activeVitalId, setActiveVitalId] = useState<VitalId>("hrv");
   const vital = vitals.find((v) => v.id === activeVitalId) ?? vitals[0]!;
   const [selectedIdx, setSelectedIdx] = useState(vital.series.length - 1);
-  const [width, setWidth] = useState(320);
 
   const safeIdx = Math.max(0, Math.min(selectedIdx, vital.series.length - 1));
   const pt = vital.series[safeIdx] ?? vital.series[0]!;
   const inCorridor = pt.value >= pt.baselineLow && pt.value <= pt.baselineHigh;
-  const geo = useMemo(() => buildSvgCorridorGeometry(vital.series, width, 140, 14), [vital.series, width]);
-  const activePt = geo.points[safeIdx] ?? geo.points[geo.points.length - 1];
 
   return (
     <View style={{ gap: 14 }}>
@@ -283,29 +239,23 @@ function VitalsView({ model }: { model: AnalyticsLabModel }) {
           </AppText>
         </View>
 
-        <View onLayout={(e) => setWidth(e.nativeEvent.layout.width)} style={{ height: 140, marginVertical: 8 }}>
-          <Svg width="100%" height={140} viewBox={`0 0 ${width} 140`}>
-            <Path d={geo.corridorPath} fill={c.fieldTeal} opacity={0.16} />
-            <Polyline points={geo.linePath} fill="none" stroke={c.fieldTeal} strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" />
-            {activePt && (
-              <>
-                <Line x1={activePt.x} x2={activePt.x} y1={0} y2={140} stroke={c.line} strokeWidth={1} strokeDasharray="3 3" />
-                <Circle cx={activePt.x} cy={activePt.y} r={5} fill={c.fieldTeal} stroke={c.card} strokeWidth={2} />
-              </>
-            )}
-            {geo.points.map((p, i) => (
-              <Rect
-                key={i}
-                x={p.x - width / (vital.series.length * 2)}
-                y={0}
-                width={width / vital.series.length}
-                height={140}
-                fill="transparent"
-                onPress={() => setSelectedIdx(i)}
-              />
-            ))}
-          </Svg>
-        </View>
+        <StandardLineChart
+          values={vital.series.map((p) => p.value)}
+          selectedIdx={safeIdx}
+          onSelectIdx={setSelectedIdx}
+          stroke={c.fieldTeal}
+          corridor={{
+            high: vital.series.map((p) => p.baselineHigh),
+            low: vital.series.map((p) => p.baselineLow),
+          }}
+          xLabels={
+            vital.series.length >= 2
+              ? [vital.series[0]!.label, vital.series[Math.floor(vital.series.length / 2)]!.label, vital.series[vital.series.length - 1]!.label]
+              : undefined
+          }
+          formatY={(v) => `${vital.id === "temp" ? v.toFixed(1) : Math.round(v)}`}
+          accessibilityLabel={`${vital.name} autonomic baseline corridor and value history`}
+        />
 
         <InspectionCallout
           title={pt.label}
@@ -347,11 +297,18 @@ function SleepView({ model }: { model: AnalyticsLabModel }) {
             { label: "Efficiency", value: `${sData.lastNight.efficiencyPct}%` },
           ]}
         />
-        <InteractiveLineChart
+        <StandardLineChart
           values={nights.map((n) => n.score)}
           selectedIdx={selectedIdx}
           onSelectIdx={setSelectedIdx}
-          stroke={c.ink}
+          stroke={c.fieldTeal}
+          xLabels={
+            nights.length >= 2
+              ? [nights[0]!.label, nights[Math.floor(nights.length / 2)]!.label, nights[nights.length - 1]!.label]
+              : undefined
+          }
+          formatY={(v) => `${Math.round(v)}`}
+          accessibilityLabel="Nightly sleep score history"
         />
         <Surface style={s.inspectionBox}>
           <View style={s.betweenRow}>
@@ -399,11 +356,18 @@ function LoadView({ model }: { model: AnalyticsLabModel }) {
             { label: "Status", value: l.acwrStatusLabel, color: c.statusSuccess },
           ]}
         />
-        <InteractiveLineChart
-          values={l.series.map((s) => s.acwr * 100)}
+        <StandardLineChart
+          values={l.series.map((s) => Number(s.acwr.toFixed(2)))}
           selectedIdx={selectedIdx}
           onSelectIdx={setSelectedIdx}
           stroke={c.statusSuccess}
+          xLabels={
+            l.series.length >= 2
+              ? [l.series[0]!.label, l.series[Math.floor(l.series.length / 2)]!.label, l.series[l.series.length - 1]!.label]
+              : undefined
+          }
+          formatY={(v) => `${v.toFixed(1)}x`}
+          accessibilityLabel="Workload ratio acute to chronic load ratio trend"
         />
         <InspectionCallout
           title={b.label}
@@ -417,12 +381,19 @@ function LoadView({ model }: { model: AnalyticsLabModel }) {
 
       <View style={f.card}>
         <SectionHeader title="Period Volume Burn-Up" />
-        <InteractiveLineChart
+        <StandardLineChart
           values={l.series.map((s) => s.cumCurrentHours)}
           selectedIdx={selectedIdx}
           onSelectIdx={setSelectedIdx}
           stroke={c.fieldTeal}
-          height={110}
+          height={130}
+          xLabels={
+            l.series.length >= 2
+              ? [l.series[0]!.label, l.series[Math.floor(l.series.length / 2)]!.label, l.series[l.series.length - 1]!.label]
+              : undefined
+          }
+          formatY={(v) => `${Math.round(v)}h`}
+          accessibilityLabel="Cumulative period volume burn-up"
         />
       </View>
     </View>
@@ -450,11 +421,18 @@ function PerformanceView({ model }: { model: AnalyticsLabModel }) {
             { label: "Best Pace", value: `${p.series[0]?.paceMinKm.toFixed(2) ?? "4:30"} min/km` },
           ]}
         />
-        <InteractiveLineChart
-          values={p.series.map((s) => s.efficiencyFactor * 100)}
+        <StandardLineChart
+          values={p.series.map((s) => Number(s.efficiencyFactor.toFixed(2)))}
           selectedIdx={selectedIdx}
           onSelectIdx={setSelectedIdx}
           stroke={c.fieldTeal}
+          xLabels={
+            p.series.length >= 2
+              ? [p.series[0]!.label, p.series[Math.floor(p.series.length / 2)]!.label, p.series[p.series.length - 1]!.label]
+              : undefined
+          }
+          formatY={(v) => v.toFixed(2)}
+          accessibilityLabel="Aerobic efficiency factor history"
         />
         <InspectionCallout
           title={run.label}
@@ -508,11 +486,18 @@ function CombinedView({ model }: { model: AnalyticsLabModel }) {
             { label: "Bedtime Target", value: "10:30 PM" },
           ]}
         />
-        <InteractiveLineChart
+        <StandardLineChart
           values={cmb.series.map((s) => s.nextDayReadiness)}
           selectedIdx={selectedIdx}
           onSelectIdx={setSelectedIdx}
           stroke={c.statusSuccess}
+          xLabels={
+            cmb.series.length >= 2
+              ? [cmb.series[0]!.label, cmb.series[Math.floor(cmb.series.length / 2)]!.label, cmb.series[cmb.series.length - 1]!.label]
+              : undefined
+          }
+          formatY={(v) => `${Math.round(v)}%`}
+          accessibilityLabel="Morning readiness score history"
         />
         <InspectionCallout
           title={day.label}

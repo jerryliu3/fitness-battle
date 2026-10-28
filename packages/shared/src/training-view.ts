@@ -38,10 +38,13 @@ export function toggleTrainingSports(
   current: readonly SportId[],
   id: SportId,
 ): SportId[] {
+  if (isAllTrainingSports(current)) {
+    return [id];
+  }
   const next = current.includes(id)
     ? current.filter((sport) => sport !== id)
     : [...current, id];
-  return next.length
+  return next.length && next.length < SPORT_IDS.length
     ? normalizeTrainingSports(next)
     : defaultTrainingSports();
 }

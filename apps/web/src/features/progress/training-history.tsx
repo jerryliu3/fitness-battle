@@ -1,6 +1,6 @@
 "use client";
 import { ActivityRoute } from "@/components/routes/activity-route";
-import { AppParagraph, AppText, Section, SectionStack } from "@/ui/section";
+import { AppParagraph, AppText, Section, SectionStack, StatusBadge } from "@/ui/section";
 import { TrainingAtlas } from "./training-atlas";
 import { useState, type ReactNode } from "react";
 import { RecordChart } from "./record-chart";
@@ -61,43 +61,21 @@ export function TrainingHistory({ state, children }: { state: CompeteState; chil
                   setReceipt(null);
                 }}
               >
-                {d.sport === "cycling" ? "Ride · " : ""}
+                {d.sport === "cycling" ? "Ride · " : "Run · "}
                 {d.label}
               </button>
             ))}
           </div>
-          <AppParagraph typographyRole="label" className="fb-kicker">
-            {active.label} · {active.sport}
-          </AppParagraph>
-          <AppText role="hero" className="record-time">
-            {formatClockTime(latest.seconds)}
-          </AppText>
-          <RecordChart rows={rows} selected={inspected.activityId} now={now} onSelect={setReceipt} />
-          <div
-            className="record-distance-tabs"
-            role="group"
-            aria-label="Inspect record milestone"
-          >
-            {rows.map((r) => (
-              <button
-                type="button"
-                key={r.activityId}
-                className="fb-btn-ghost"
-                aria-pressed={inspected.activityId === r.activityId}
-                onClick={() => setReceipt(r.activityId)}
-              >
-                {date(r.startedAt)}
-              </button>
-            ))}
-          </div>
-          <div aria-live="polite">
-            <AppText role="value">{formatClockTime(inspected.seconds)}</AppText>{" · "}
-            <AppText role="caption" secondary>{date(inspected.startedAt)}</AppText>
-            <AppParagraph typographyRole="caption" className="fb-copy">
+          <div style={{ display: "flex", alignItems: "center", gap: 10, margin: "6px 0 10px", flexWrap: "wrap" }}>
+            <AppText role="hero" className="record-time">
+              {formatClockTime(inspected.seconds)}
+            </AppText>
+            <StatusBadge tone={inspected.verified ? "success" : "neutral"}>
               {inspected.source.replaceAll("_", " ")}
               {inspected.verified ? " · GPS recorded" : ""}
-            </AppParagraph>
+            </StatusBadge>
           </div>
+          <RecordChart rows={rows} selected={inspected.activityId} now={now} onSelect={setReceipt} />
           <ActivityRoute units={state.units} key={inspected.activityId} activity={state.activities.find(a => a.id === inspected.activityId)} milestone />
         </Section>
       ) : null}

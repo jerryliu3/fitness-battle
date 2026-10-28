@@ -69,3 +69,5 @@ export * from "./analytics-lab";
 export * from "./activity-context";
 
 export * from "./competition-place";
+
+export * from "./chart-geometry";
