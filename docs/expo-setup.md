@@ -98,6 +98,21 @@ npx eas-cli@latest submit --platform ios --latest --id YOUR_NUMERIC_APPLE_ID
 
 (`--id` is the App Store Connect app id, not the Expo project id.)
 
+## Binary requirements (2026)
+
+Production and internal builds use the EAS `sdk-58` image:
+
+| Platform | Image | What it satisfies |
+| --- | --- | --- |
+| iOS | `macos-tahoe-26.6-xcode-27.1` | Xcode 27.1, which is past the Xcode 26 / iOS 26 SDK minimum. SDK 58 already uses the UIKit scene lifecycle. |
+| Android | `ubuntu-26.04-jdk-17-ndk-r27b` | `targetSdkVersion` 36, compile SDK 37. React Native 0.88 builds native code with `ANDROID_SUPPORT_FLEXIBLE_PAGE_SIZES=ON`, and `useLegacyPackaging` is off so those libraries stay 16 KB-aligned in the AAB. |
+
+`app.json` also sets phone-only iOS (`supportsTablet: false`), `ITSAppUsesNonExemptEncryption: false`, Health and photo purpose strings, a `PrivacyInfo` required-reason manifest, and Android permission blocks for location, camera, media reads, and unused Health Connect types. The production Android profile exports an `.aab` for Play App Signing.
+
+Confirm on the next store build, from the artifact rather than this repo: the IPA contains `PrivacyInfo.xcprivacy`, and `bundletool dump config --bundle app.aab` reports `targetSdkVersion` 36.
+
+Reviewer credentials and the Health / GPS walkthrough live in [store/REVIEWER_NOTES.md](store/REVIEWER_NOTES.md). Paste that file into App Store Connect and Play Console. Do not publish it on the marketing site.
+
 ## Store IDs
 
 | Field | Value |
