@@ -3,6 +3,7 @@ import { Section, AppText } from "../ui/section";
 import { useState } from "react";
 import { Pressable, View } from "react-native";
 import { APP_TIMEZONE, activityRoute, clubDuration, formatVolume, homeRecentActivities, sportById, type Activity, type CompeteState } from "@fitness-battle/shared";
+import { useAthleteBlocks } from "../lib/athlete-blocks";
 import { useAuth } from "../lib/auth";
 import { useCrewActivities } from "./use-crew-activities";
 import { FocusSheet, f } from "../ui/focus";
@@ -11,7 +12,8 @@ import { SportActivityIcon } from "../ui/sport-activity-icon";
 export function LatestActivity({ state, onOpen }: { state: CompeteState; onOpen: (activity: Activity) => void }) {
   const { user } = useAuth();
   const crew = useCrewActivities();
-  const rows = homeRecentActivities(state, user?.id, crew.activities);
+  const { blocks } = useAthleteBlocks();
+  const rows = homeRecentActivities(state, user?.id, crew.activities).filter(row => !blocks.some(block => block.id === row.userId));
   const [selected, setSelected] = useState<{ account?: string; id: string } | null>(null);
   const detail = selected?.account === user?.id ? rows.find(row => row.id === selected?.id) : null;
   return <>

@@ -39,6 +39,7 @@ import { drawFieldNode } from "./field-course";
 import { alpineTrail } from "./club-art";
 export function PortraitField({
   lanes,
+  hiddenIds = [],
   view,
   unit,
   selectedId,
@@ -71,6 +72,7 @@ export function PortraitField({
   fullscreenControlsBottom?: number;
   laneAnchor?: MutableRefObject<number>;
   lanes: ArenaSceneLane[];
+  hiddenIds?: readonly string[];
   view: ArenaViewWindow;
   unit: string;
   selectedId?: string;
@@ -241,7 +243,7 @@ export function PortraitField({
               fill={`url(#${prefix}-horizon)`}
             />
             </G>
-            {[...scene.trails].sort((a, b) =>
+            {[...scene.trails].filter(m => !hiddenIds.includes(m.id)).sort((a, b) =>
               (a.id === selectedId ? 2 : a.you ? 1 : 0) - (b.id === selectedId ? 2 : b.you ? 1 : 0)
             ).map(m => {
               const trail = competeAthleteTrailColors(Boolean(m.you), Boolean(m.ghost));
@@ -250,7 +252,7 @@ export function PortraitField({
                 vectorEffect="non-scaling-stroke" strokeLinecap="round" fill="none" />;
             })}
             {scene.markers
-              .filter((m) => m.x > 22 && m.x < 398)
+              .filter((m) => !hiddenIds.includes(m.id) && m.x > 22 && m.x < 398)
               .sort((a, b) => a.y - b.y)
               .map((m, i) => {
                 const id = `${prefix}-portrait-${i}`;
@@ -388,7 +390,7 @@ export function PortraitField({
               })}
           </Svg>
           <Pressable accessible={false} onPress={() => {}} style={{ position: "absolute", inset: 0 }} />
-          {scene.markers.filter(m => m.x > 22 && m.x < 398).map(m => <Pressable key={m.id} accessibilityRole="button" accessibilityLabel={`Focus ${m.name}`} accessibilityState={{ selected: selectedId === m.id }} onPress={() => onSelect(m.id)} style={{ position: "absolute", left: (m.x - 30) / 420 * width, top: (m.y - 27 * m.scale - 45) / 600 * height, width: 60 / 420 * width, height: 90 / 600 * height }} />)}
+          {scene.markers.filter(m => !hiddenIds.includes(m.id) && m.x > 22 && m.x < 398).map(m => <Pressable key={m.id} accessibilityRole="button" accessibilityLabel={`Focus ${m.name}`} accessibilityState={{ selected: selectedId === m.id }} onPress={() => onSelect(m.id)} style={{ position: "absolute", left: (m.x - 30) / 420 * width, top: (m.y - 27 * m.scale - 45) / 600 * height, width: 60 / 420 * width, height: 90 / 600 * height }} />)}
       </View>
       {!fullscreen && (onToggleDimension || onExpand) ? (
         <View
@@ -451,7 +453,7 @@ export function PortraitField({
     </View>
       <FieldOverlayView hidden={overlaysHidden} style={[{ gap: 6 }, fullscreen ? { position: "absolute", bottom: fullscreenControlsBottom + 56, left: 12, right: 12 } : null]}>
         {(["↑", "↓"] as const).map(direction => {
-          const peers = scene.outside.filter(m => m.direction === direction && !m.ghost);
+          const peers = scene.outside.filter(m => m.direction === direction && !m.ghost && !hiddenIds.includes(m.id));
           if (!peers.length) return null;
           const nearest = peers.reduce((a,b) => Math.abs(a.value-view.center) < Math.abs(b.value-view.center) ? a : b);
           return <Pressable key={direction} style={[s.controlRow, { minHeight: 44, paddingHorizontal: 12 }]} accessibilityRole="button" onPress={() => { onSelect(nearest.id); }}><Text style={[s.white, textStyle("caption")]}>{direction} {peers.length} {direction === "↑" ? "ahead" : "behind"} · {nearest.name.split(" ")[0]} {`${nearest.edgeGap.toFixed(1)} ${unit} from view`}</Text></Pressable>;

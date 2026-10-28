@@ -13,6 +13,7 @@ import {
   type CompetitionReplay, type CompetitionReplaySelection, type CompeteState, type ArenaLane,
 } from "@fitness-battle/shared";
 import { useCompeteStore } from "../lib/compete-store";
+import { useAthleteBlocks } from "../lib/athlete-blocks";
 import { useAuth } from "../lib/auth";
 import { mobileEnv } from "../lib/env";
 import { requestApi } from "../lib/api";
@@ -121,6 +122,8 @@ function ReplayAction({ label, text, disabled, onPress, primary = false }: { lab
 function ReplayViewer({ state, selection, initialDimension, onClose }: { state: CompeteState; selection: CompetitionReplaySelection; initialDimension: "2d" | "3d" | "4d"; onClose: () => void }) {
   const { user, accessToken, offlineMode } = useAuth();
   const { debugActive } = useCompeteStore();
+  const { blocks } = useAthleteBlocks();
+  const hiddenIds = useMemo(() => blocks.map(block => block.id), [blocks]);
   const reduced = useReducedMotion();
   const [data, setData] = useState<CompetitionReplay | null>(null), [error, setError] = useState("");
   const [attempt, setAttempt] = useState(0);
@@ -131,6 +134,7 @@ function ReplayViewer({ state, selection, initialDimension, onClose }: { state: 
   const [followEvent, setFollowEvent] = useState(true);
   const [selected, setSelected] = useState<string | null>(null);
   const [focusRequest, setFocusRequest] = useState(0);
+  useEffect(() => { if (selected && hiddenIds.includes(selected)) setSelected(null); }, [selected, hiddenIds]);
   const [height, setHeight] = useState(250);
   const [appearance] = useFieldAppearance(user?.id ?? "guest", selection.sport);
   const localState = useRef(state);
@@ -168,7 +172,7 @@ function ReplayViewer({ state, selection, initialDimension, onClose }: { state: 
   const seek = (next: number) => { setPlaying(false); setCursor(Math.max(0, Math.min(count, next))); };
   const frame = index ? competitionReplayFrame(index, cursor) : null;
   const me = frame?.rows.find(a => a.you);
-  const focus = followEvent ? frame?.rows.find(a => a.id === frame.event?.athleteId) ?? me : me;
+  const focus = followEvent ? frame?.rows.find(a => a.id === frame.event?.athleteId && !hiddenIds.includes(a.id)) ?? me : me;
   const unit = index?.unit ?? "km", viewSpan = span ?? fieldDefaultSpan(unit);
   const lanes = useMemo(() => (frame?.rows ?? []).map(row => ({ ...row, initials: initialsFromName(row.name) })), [index, cursor]);
   const nativeLanes = useMemo<ArenaLane[]>(() => lanes.map(l => ({ ...l, ghost: false, values: [l.value, l.value, l.value] })), [lanes]);
@@ -177,9 +181,9 @@ function ReplayViewer({ state, selection, initialDimension, onClose }: { state: 
   const applyView = (next: typeof view) => { flight.cancel(); setCenter(next.center); setSpan(next.span); };
   const panTo = (center: number) => applyView({ ...view, center });
   const zoomTo = (span: number) => applyView({ ...view, span });
-  const select = (id: string) => { const lane = lanes.find(l => l.id === id); if (lane) { const ordered = orderedArenaLanes(lanes); portraitAnchor.current = Math.max(0, ordered.findIndex(l => l.id === id)) - Math.max(0, ordered.findIndex(l => l.you)); setSelected(id); setFocusRequest(value => value + 1); if (dimension !== "4d") flight.fly({ ...view, center: clampCourseCenter(lane.value, view.span, Math.max(0, ...lanes.map(l => l.value)), unit, appearance.ground) }); } };
+  const select = (id: string) => { if (hiddenIds.includes(id)) return; const lane = lanes.find(l => l.id === id); if (lane) { const ordered = orderedArenaLanes(lanes); portraitAnchor.current = Math.max(0, ordered.findIndex(l => l.id === id)) - Math.max(0, ordered.findIndex(l => l.you)); setSelected(id); setFocusRequest(value => value + 1); if (dimension !== "4d") flight.fly({ ...view, center: clampCourseCenter(lane.value, view.span, Math.max(0, ...lanes.map(l => l.value)), unit, appearance.ground) }); } };
   const closed = data && Date.parse(data.through) >= Date.parse(data.periodEnd);
-  const caption = index ? competitionReplayCaption(index, cursor) : "";
+  const caption = index ? (frame?.event && hiddenIds.includes(frame.event.athleteId) ? "An athlete recorded activity" : competitionReplayCaption(index, cursor)) : "";
   return <View style={{ flex: 1 }}>
     <View style={s.header}>
       <IconButton icon="back" label="Close competition replay" onPress={onClose} />
@@ -190,7 +194,7 @@ function ReplayViewer({ state, selection, initialDimension, onClose }: { state: 
         <View style={{ position: "absolute", top: 12, right: 12, zIndex: 10 }}>
           <FieldViewSwitcher value={dimension} geographic={unit !== "pts"} onChange={value => { flight.cancel(); setDimension(value); }} />
         </View>
-        {dimension === "4d" ? <GeographicCourse course={course} error={courseError} onRetry={retryCourse} lanes={lanes} unit={unit} selectedId={selected ?? focus?.id ?? ""} focusRequest={focusRequest} onSelect={select} /> : dimension === "2d" ? <LaneTrack onGestureStart={flight.cancel} onViewChange={applyView} focusRequest={focusRequest} focusOnMount animateSelection={!reduced} lanes={nativeLanes} appearance={appearance} unit={unit} height={height} fullscreen active selectedId={selected ?? focus?.id} index={2} showGhost={false} onSelect={lane => select(lane.id)} view={view} onPan={panTo} onZoom={zoomTo} /> : <PortraitField onGestureStart={flight.cancel} onViewChange={applyView} focusRequest={focusRequest} focusOnMount animateSelection={!reduced} laneAnchor={portraitAnchor} selectedId={selected ?? focus?.id} lanes={lanes} unit={unit} height={height} fullscreen fullscreenControlsBottom={64} onSelect={select} view={view} onPan={panTo} onZoom={zoomTo} />}
+        {dimension === "4d" ? <GeographicCourse hiddenIds={hiddenIds} course={course} error={courseError} onRetry={retryCourse} lanes={lanes} unit={unit} selectedId={selected ?? focus?.id ?? ""} focusRequest={focusRequest} onSelect={select} /> : dimension === "2d" ? <LaneTrack hiddenIds={hiddenIds} onGestureStart={flight.cancel} onViewChange={applyView} focusRequest={focusRequest} focusOnMount animateSelection={!reduced} lanes={nativeLanes} appearance={appearance} unit={unit} height={height} fullscreen active selectedId={selected ?? focus?.id} index={2} showGhost={false} onSelect={lane => select(lane.id)} view={view} onPan={panTo} onZoom={zoomTo} /> : <PortraitField hiddenIds={hiddenIds} onGestureStart={flight.cancel} onViewChange={applyView} focusRequest={focusRequest} focusOnMount animateSelection={!reduced} laneAnchor={portraitAnchor} selectedId={selected ?? focus?.id} lanes={lanes} unit={unit} height={height} fullscreen fullscreenControlsBottom={64} onSelect={select} view={view} onPan={panTo} onZoom={zoomTo} />}
         <Pressable accessibilityRole="button" onPress={() => { flight.cancel(); setCenter(null); setSelected(null); setFollowEvent(v => !v); }} style={s.follow}><AppText role="label">{followEvent ? "Follow me" : "Follow event"}</AppText></Pressable>
       </View>
       <View style={s.controls}>

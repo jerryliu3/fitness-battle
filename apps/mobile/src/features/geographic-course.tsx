@@ -12,8 +12,8 @@ class MapBoundary extends Component<{ children: ReactNode }, { failed: boolean }
 }
 
 /** Presentation-only scene. The field/replay host owns the weekly course. */
-export function GeographicCourse({ lanes, unit, selectedId, focusRequest, onSelect, course, error = "", onRetry, controlsBottom = 8, overlaysHidden = false, distanceTarget, onResumeFollow }: {
-  lanes: ArenaSceneLane[]; unit: string; selectedId: string; focusRequest: number; onSelect(id: string): void;
+export function GeographicCourse({ lanes, hiddenIds = [], unit, selectedId, focusRequest, onSelect, course, error = "", onRetry, controlsBottom = 8, overlaysHidden = false, distanceTarget, onResumeFollow }: {
+  hiddenIds?: readonly string[]; lanes: ArenaSceneLane[]; unit: string; selectedId: string; focusRequest: number; onSelect(id: string): void;
   distanceTarget?: CourseDistanceTarget | null; onResumeFollow?: () => void;
   course: RaceCourse | null; error?: string; onRetry?: () => void; controlsBottom?: number; overlaysHidden?: boolean;
 }) {
@@ -21,6 +21,6 @@ export function GeographicCourse({ lanes, unit, selectedId, focusRequest, onSele
   return <View style={{ flex: 1, minHeight: 300 }}>
     {!mobileEnv.mapboxAccessToken ? <Text style={{ ...textStyle("body"), padding: 16 }}>Mapbox access is not configured for this build.</Text> : !course ?
       <View style={{ flex: 1, justifyContent: "center", alignItems: "center", padding: 16, gap: 12 }}><Text accessibilityRole={error ? "alert" : undefined} style={textStyle("body")}>{error || "Loading this competition’s course…"}</Text>{error && onRetry ? <Pressable accessibilityRole="button" onPress={onRetry} style={{ minHeight: 44, justifyContent: "center", paddingHorizontal: 16 }}><Text style={textStyle("label")}>Retry</Text></Pressable> : null}</View> :
-      <MapBoundary><Suspense fallback={<ActivityIndicator />}><CourseMap key={course.name + course.length} course={course} lanes={lanes} unit={unit} selectedId={selectedId} focusRequest={focusRequest} onSelect={onSelect} distanceTarget={distanceTarget} onResumeFollow={onResumeFollow} controlsBottom={controlsBottom} overlaysHidden={overlaysHidden} extraControls={<View style={{ minHeight: 44, paddingHorizontal: 14, justifyContent: "center", borderRadius: 12, backgroundColor: "#ffffff" }}><Text style={textStyle("label")}>Course: {course.name}</Text></View>} /></Suspense></MapBoundary>}
+      <MapBoundary><Suspense fallback={<ActivityIndicator />}><CourseMap key={course.name + course.length} course={course} lanes={lanes} hiddenIds={hiddenIds} unit={unit} selectedId={selectedId} focusRequest={focusRequest} onSelect={onSelect} distanceTarget={distanceTarget} onResumeFollow={onResumeFollow} controlsBottom={controlsBottom} overlaysHidden={overlaysHidden} extraControls={<View style={{ minHeight: 44, paddingHorizontal: 14, justifyContent: "center", borderRadius: 12, backgroundColor: "#ffffff" }}><Text style={textStyle("label")}>Course: {course.name}</Text></View>} /></Suspense></MapBoundary>}
   </View>;
 }

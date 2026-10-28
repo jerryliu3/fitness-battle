@@ -13,10 +13,8 @@ import {
   clubLifetimeTotals,
   formatDistanceM,
   distanceUnitLabel,
-  initialsFromName,
   personalRecordHistory,
   formatClockTime,
-  rankForElo,
   RECORD_DISTANCES,
   type ProviderId,
 } from "@fitness-battle/shared";
@@ -54,8 +52,8 @@ import {
 } from "../src/lib/tracker-connect";
 import { SHELL_COLORS, SHELL_RADIUS } from "../src/theme";
 import { FocusButton, FocusSegments, FocusSheet, FocusSidePanel, f } from "../src/ui/focus";
-import { UserAvatar } from "../src/ui/user-avatar";
 import { ProfilePhoto } from "../src/features/profile-photo";
+import { AthleteProfileCard } from "../src/features/athlete-profile-card";
 
 function isDeviceProvider(
   id: ProviderId,
@@ -714,57 +712,24 @@ export default function AthleteScreen() {
           </View>
         ) : null}
 
-        {/* Concept 2: The Field Pass Card */}
-        <View
-          style={{
-            borderRadius: 24,
-            backgroundColor: SHELL_COLORS.ink,
-            borderWidth: 1,
-            borderColor: SHELL_COLORS.line,
-            overflow: "hidden",
-          }}
+        <AthleteProfileCard
+          largeName
+          name={state.name}
+          avatarUrl={state.avatarUrl}
+          city={state.city}
+          score={primaryRating?.openElo ?? 1000}
+          since={user?.createdAt && Number.isFinite(Date.parse(user.createdAt)) ? `Since ${new Date(user.createdAt).getUTCFullYear()}` : undefined}
+          action={<Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Edit profile"
+            onPress={() => setEditOpen(true)}
+            style={({ pressed }) => ({
+              paddingVertical: 5, paddingHorizontal: 12, borderRadius: 999, borderWidth: 1,
+              borderColor: "rgba(255, 255, 255, 0.2)",
+              backgroundColor: pressed ? "rgba(255, 255, 255, 0.2)" : "rgba(255, 255, 255, 0.1)",
+            })}
+          ><AppText role="label" style={{ color: "#ffffff" }}>Edit profile</AppText></Pressable>}
         >
-          <View style={{ padding: 20, gap: 16 }}>
-            <View style={[f.row, { gap: 16, alignItems: "center" }]}>
-              <UserAvatar
-                src={state.avatarUrl}
-                name={state.name}
-                size={64}
-                highlight
-                fallback={<AppText role="heading" style={{ color: SHELL_COLORS.card }}>{initialsFromName(state.name)}</AppText>}
-              />
-              <View style={{ flex: 1, gap: 4 }}>
-                <View style={[f.row, { justifyContent: "space-between", alignItems: "baseline" }]}>
-                  <AppText role="display" style={{ color: SHELL_COLORS.card }}>{state.name}</AppText>
-                  <AppText role="caption" style={{ color: "#8fa2b5" }}>Since Jan 2026</AppText>
-                </View>
-                {state.city ? (
-                  <AppText role="caption" style={{ color: "#c9d6e3" }}>{state.city}</AppText>
-                ) : null}
-                <View style={[f.row, { justifyContent: "space-between", alignItems: "center", marginTop: 4 }]}>
-                  <AppText role="caption" style={{ color: SHELL_COLORS.tennis }}>
-                    {primaryRating?.openElo || 1000} · {rankForElo(primaryRating?.openElo || 1000).name}
-                  </AppText>
-                  <Pressable
-                    accessibilityRole="button"
-                    accessibilityLabel="Edit profile"
-                    onPress={() => setEditOpen(true)}
-                    style={({ pressed }) => ({
-                      paddingVertical: 5,
-                      paddingHorizontal: 12,
-                      borderRadius: 999,
-                      borderWidth: 1,
-                      borderColor: "rgba(255, 255, 255, 0.2)",
-                      backgroundColor: pressed
-                        ? "rgba(255, 255, 255, 0.2)"
-                        : "rgba(255, 255, 255, 0.1)",
-                    })}
-                  >
-                    <AppText role="label" style={{ color: "#ffffff" }}>Edit profile</AppText>
-                  </Pressable>
-                </View>
-              </View>
-            </View>
             {topRecords.length > 0 ? (
               <View
                 style={[
@@ -792,8 +757,7 @@ export default function AthleteScreen() {
                 })}
               </View>
             ) : null}
-          </View>
-        </View>
+        </AthleteProfileCard>
 
         {/* Since the first mile stats */}
         <View style={f.section}>
@@ -938,6 +902,11 @@ export default function AthleteScreen() {
               onPress={() => {
                 setPanel("scoring");
               }}
+            />
+            <SettingsRow
+              title="Blocked athletes"
+              detail="Manage who you have blocked"
+              onPress={() => { setEditOpen(false); router.push("/blocked-athletes"); }}
             />
             <SettingsRow
               title="Account"

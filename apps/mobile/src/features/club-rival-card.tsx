@@ -1,3 +1,4 @@
+import { useAthleteBlocks } from "../lib/athlete-blocks";
 import { useBootImage } from "../ui/boot-readiness";
 import { textStyle } from "../ui/section";
 import { AppIcon } from "../ui/app-icon";
@@ -15,6 +16,7 @@ import {
   competeNow,
   competitionTrack,
   clubRivalCardSummary,
+  nextClubRival,
   sportById,
   weeklyBoard,
   type CompeteState,
@@ -23,16 +25,22 @@ import {
 import { SHELL_COLORS as c } from "../theme";
 export function RivalCard({ state }: { state: CompeteState }) {
   const router = useRouter();
+  const { blocks } = useAthleteBlocks();
   const imageSettled = useBootImage(alpineTrail);
   const sport =
     state.ratings.find((r) => r.sport === state.primary && r.optedIn)?.sport ??
     state.ratings.find((r) => r.optedIn)?.sport;
-  const { place, headline, caption } = clubRivalCardSummary(
-    sport ? weeklyBoard(state, sport, competitionTrack(sport), competeNow(state)) : [],
+  const board = sport ? weeklyBoard(state, sport, competitionTrack(sport), competeNow(state)) : [];
+  const summary = clubRivalCardSummary(
+    board,
     sport,
     state.units,
     state.enrollments.find(e => e.sport === sport)?.syntheticIds,
   );
+  const hiddenRival = blocks.some(block => block.id === nextClubRival(board).rival?.id);
+  const { place } = summary;
+  const headline = hiddenRival ? "Your field is moving." : summary.headline;
+  const caption = hiddenRival ? "Open Compete to see your week." : summary.caption;
   return (
     <Pressable
       accessibilityRole="button"

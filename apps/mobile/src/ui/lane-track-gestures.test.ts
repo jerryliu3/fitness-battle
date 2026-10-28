@@ -88,3 +88,17 @@ it("labels offscreen athletes from the window edge and removes hidden arrow hit 
   expect(arrows()).toHaveLength(0);
   expect(renderer.root.findAllByType("FieldOverlayGroup" as never).some(node => node.props.hidden)).toBe(true);
 });
+it("hides a blocked athlete while preserving the lane layout", async () => {
+  vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
+  const props = { lanes: [
+    { id: "you", name: "You", you: true, ghost: false, values: [10, 10, 10] as [number, number, number] },
+    { id: "peer", name: "Peer", you: false, ghost: false, values: [11, 11, 11] as [number, number, number] },
+  ], unit: "km", showGhost: false, index: 2, fullscreen: true, animateSelection: false, view: { center: 10, span: 5 }, onSelect() {} };
+  await act(async () => { renderer = create(createElement(LaneTrack, props)); });
+  const myMarker = () => renderer.root.findAllByType("Pressable" as never).find(node => node.props.accessibilityLabel === "Focus You")!;
+  const position = myMarker().props.style;
+  await act(async () => renderer.update(createElement(LaneTrack, { ...props, hiddenIds: ["peer"] })));
+  expect(myMarker().props.style).toEqual(position);
+  expect(renderer.root.findAllByType("Pressable" as never).some(node => node.props.accessibilityLabel === "Focus Peer")).toBe(false);
+  expect(renderer.root.findAllByType("Racer" as never)).toHaveLength(1);
+});

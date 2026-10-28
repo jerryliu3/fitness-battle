@@ -1,3 +1,5 @@
+vi.mock("../lib/athlete-blocks", () => ({ useAthleteBlocks: () => ({ blocks: [], ready: true, setBlocked: vi.fn() }) }));
+vi.mock("../features/athlete-profile-sheet", () => ({ AthleteProfileSheet: "AthleteProfileSheet" }));
 vi.mock("./app-icon", () => ({ AppIcon: "AppIcon" }));
 vi.mock("./club-art",()=>({alpineTrail:1}));
 import { createElement } from "react";

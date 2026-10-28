@@ -1,3 +1,5 @@
+vi.mock("../lib/athlete-blocks", () => ({ useAthleteBlocks: () => ({ blocks: [], ready: true, setBlocked: vi.fn() }) }));
+vi.mock("./athlete-profile-sheet", () => ({ AthleteProfileSheet: "AthleteProfileSheet" }));
 import { createElement } from "react";
 import { act, create, type ReactTestRenderer } from "react-test-renderer";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
@@ -146,4 +148,12 @@ it("keeps a navigable overview inside the athlete panel across collapse and expa
   expect(renderer.root.findByType("PortraitField" as never).props.view.center).toBe(3);
   await act(async () => button("Expand athlete panel").props.onPress());
   expect(overview()).toBeDefined();
+});
+it("opens an athlete profile from the fullscreen standings without changing the field", async () => {
+  const entry = renderer.root.findAllByType("Pressable" as never).find(node => String(node.props.accessibilityLabel).startsWith("View ") && String(node.props.accessibilityLabel).endsWith("'s profile"))!;
+  expect(entry).toBeDefined();
+  await act(async () => entry.props.onPress());
+  const sheet = renderer.root.findByType("AthleteProfileSheet" as never);
+  expect(sheet.props.athlete.name).toBeTruthy();
+  expect(field().props.lanes.length).toBeGreaterThan(0);
 });

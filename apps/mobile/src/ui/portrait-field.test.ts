@@ -156,3 +156,14 @@ it("lets navigation controls interrupt an athlete flight on both camera axes", a
     expect(zoom).toHaveBeenLastCalledWith(2 / 1.5);
   } finally { await act(async () => renderer.unmount()); }
 });
+it("keeps lane geometry while removing a blocked portrait and its controls", async () => {
+  vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
+  const props = { lanes: [{ id: "you", you: true, name: "Alex", initials: "A", value: 10 }, { id: "peer", name: "Maya", initials: "M", value: 10.2 }], view: { center: 10, span: 1.2 }, unit: "km", onZoom() {}, onPan() {}, onSelect() {} };
+  await act(async () => { renderer = create(createElement(PortraitField, props)); });
+  const mine = () => renderer.root.findAllByType("Pressable" as never).find(node => node.props.accessibilityLabel === "Focus Alex")!;
+  const position = mine().props.style;
+  await act(async () => renderer.update(createElement(PortraitField, { ...props, hiddenIds: ["peer"] })));
+  expect(mine().props.style).toEqual(position);
+  expect(renderer.root.findAllByType("Pressable" as never).some(node => node.props.accessibilityLabel === "Focus Maya")).toBe(false);
+  expect(JSON.stringify(renderer.toJSON())).not.toContain("Maya");
+});

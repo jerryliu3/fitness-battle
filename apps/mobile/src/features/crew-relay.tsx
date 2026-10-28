@@ -26,11 +26,12 @@ type Props = CrewWeekRelayInput & {
   compact?: boolean;
   /** Hide the target row when the parent already shows it. */
   hideTargetSummary?: boolean;
+  hiddenIds?: readonly string[];
   onSelectMember?: (id: string) => void;
 };
 
 export function CrewRelay(props: Props) {
-  const { members, sport, units, userId, compact, hideTargetSummary, onSelectMember } = props;
+  const { members, sport, units, userId, compact, hideTargetSummary, onSelectMember, hiddenIds = [] } = props;
   const [selected, setSelected] = useState("");
   const [width, setWidth] = useState(320);
   const prefix = useId();
@@ -113,7 +114,7 @@ export function CrewRelay(props: Props) {
               </SvgText>
             )}
           </Svg>
-          {view.scene.people.map((p) => {
+          {view.scene.people.filter(p => !hiddenIds.includes(p.id)).map((p) => {
             const m = view.model.segments.find(
               (segment) => segment.id === p.id,
             )!;
@@ -160,7 +161,7 @@ export function CrewRelay(props: Props) {
         <AppText role="caption" secondary>
           No one has logged activity this week yet.
         </AppText>
-      ) : !compact && view.member ? (
+      ) : !compact && view.member && !hiddenIds.includes(view.member.id) ? (
         <View accessibilityLiveRegion="polite">
           <AppText role="row">{view.member.name}</AppText>
           <AppText role="body" secondary>

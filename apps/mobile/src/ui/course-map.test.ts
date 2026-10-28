@@ -78,3 +78,16 @@ it.each(["km", "mi"])("seeks %s overview targets without changing map pose or at
   expect(props.onSelect).not.toHaveBeenCalled();
   expect(renderer.root.findAllByType("Map" as never)).toHaveLength(1);
 });
+it("hides a blocked racer without changing the other racer's position or place", async () => {
+  vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
+  const course = createRaceCourse("City", [[0, 0], [.02, 0]]);
+  const props = { course, lanes: [{ id: "you", name: "You", initials: "Y", you: true, value: .5 }, { id: "peer", name: "Peer", initials: "P", value: 1 }], unit: "km", selectedId: "you", focusRequest: 0, onSelect: vi.fn() };
+  await act(async () => { renderer = create(createElement(CourseMap, props)); });
+  const source = () => renderer.root.findAllByType("ShapeSource" as never).find(node => node.props.id === "athletes")!.props.shape;
+  const yourPosition = source().features.find((feature: { id: string }) => feature.id === "you").geometry.coordinates;
+  await act(async () => renderer.update(createElement(CourseMap, { ...props, hiddenIds: ["peer"] })));
+  expect(source().features.map((feature: { id: string }) => feature.id)).toEqual(["you"]);
+  expect(source().features[0].geometry.coordinates).toEqual(yourPosition);
+  expect(renderer.root.findAllByType("MarkerView" as never)).toHaveLength(1);
+  expect(renderer.root.findByType("AthletePennant" as never).props.detail).toContain("2nd");
+});

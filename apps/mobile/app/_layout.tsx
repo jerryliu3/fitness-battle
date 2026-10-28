@@ -24,7 +24,8 @@ import { GestureHandlerRootView } from "react-native-gesture-handler";
 import "../global.css";
 // Registers the foreground notification handler.
 import "../src/lib/expo-push-register";
-import { AuthProvider } from "../src/lib/auth";
+import { AthleteBlocksProvider, useAthleteBlocks } from "../src/lib/athlete-blocks";
+import { AuthProvider, useAuth } from "../src/lib/auth";
 import {
   CompeteProvider,
   useCompeteFieldRefresh,
@@ -33,6 +34,16 @@ import { shellTabFromPath } from "@fitness-battle/shared";
 import { SHELL_COLORS } from "../src/theme";
 import { BootGate } from "../src/ui/boot-gate";
 import { NavigationWarmup } from "../src/lib/navigation-warmup";
+
+function BlockPrivacyGate({ children }: { children: ReactNode }) {
+  const { ready, error, reload } = useAthleteBlocks();
+  const { signOut } = useAuth();
+  if (ready) return children;
+  return <View style={{ flex: 1, padding: 24, justifyContent: "center", gap: 16 }}>
+    <Text style={textStyle("body")}>{error || "Loading your safety settings…"}</Text>
+    {error ? <><Text accessibilityRole="button" onPress={() => void reload()} style={textStyle("label")}>Retry</Text><Text accessibilityRole="button" onPress={() => void signOut()} style={textStyle("label")}>Sign out</Text></> : null}
+  </View>;
+}
 
 function LiveFieldRefresh() {
   const tab = shellTabFromPath(usePathname());
@@ -141,8 +152,9 @@ export default function RootLayout() {
       <View style={{ flex: 1, maxWidth: 880, width: "100%", alignSelf: "center" }}>
         <HeroUINativeProvider>
           <AuthProvider>
+            <AthleteBlocksProvider>
             <CompeteProvider navigationReady={fontsLoaded}>
-              {fontsLoaded ? (
+              {fontsLoaded ? <BlockPrivacyGate>
                 <>
                   <LiveFieldRefresh />
                   <NavigationWarmup />
@@ -158,8 +170,9 @@ export default function RootLayout() {
                     />
                   </BootGate>
                 </>
-              ) : fontFallback}
+              </BlockPrivacyGate> : fontFallback}
             </CompeteProvider>
+            </AthleteBlocksProvider>
           </AuthProvider>
         </HeroUINativeProvider>
       </View>
