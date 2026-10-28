@@ -59,6 +59,31 @@ describe("compete account units preference", () => {
     expect(rpc).toHaveBeenCalledWith("save_compete_account", expect.objectContaining({ p_expected_updated_at: "old-revision", p_activities: [expect.objectContaining({ compete_key: "legacy-key", provider: "strava", external_id: "original-id" })] }));
   });
 
+  it("re-reads a concurrently imported activity and retries without changing the expected revision", async () => {
+    const state = reduceCompete(freshState(), { type: "log-manual", sport: "running", distanceM: 160, movingSec: 180, activityId: "legacy-key" });
+    let reads = 0;
+    const rpc = vi.fn()
+      .mockResolvedValueOnce({ data: null, error: { code: "23505", message: 'duplicate key value violates unique constraint "activities_user_compete_key_uidx"' } })
+      .mockResolvedValueOnce({ data: "new-revision", error: null });
+    const db = { rpc, from: (table: string) => thenableQuery(table === "categories" ? [{ id: "running-id", slug: "running" }] : table === "activities" ? (++reads === 1 ? [] : [{ compete_key: "legacy-key", provider: "strava", external_id: "original-id" }]) : []) };
+    expect(await persistCompeteAccount(db as never, "owner", state, "old-revision")).toBe("new-revision");
+    expect(rpc).toHaveBeenCalledTimes(2);
+    expect(rpc.mock.calls[0]![1]).toMatchObject({ p_expected_updated_at: "old-revision", p_activities: [{ provider: "mock", external_id: "legacy-key" }] });
+    expect(rpc.mock.calls[1]![1]).toMatchObject({ p_expected_updated_at: "old-revision", p_activities: [{ provider: "strava", external_id: "original-id" }] });
+  });
+
+  it("does not retry unrelated constraints or overwrite a newer account revision", async () => {
+    const state = reduceCompete(freshState(), { type: "log-manual", sport: "running", distanceM: 160, movingSec: 180, activityId: "legacy-key" });
+    const duplicate = { code: "23505", message: 'duplicate key value violates unique constraint "activities_user_compete_key_uidx"' };
+    const db = { rpc: vi.fn().mockResolvedValueOnce({ data: null, error: duplicate }).mockResolvedValueOnce({ data: null, error: { code: "P0001", message: "account_changed_reload" } }), from: (table: string) => thenableQuery(table === "categories" ? [{ id: "running-id", slug: "running" }] : []) };
+    await expect(persistCompeteAccount(db as never, "owner", state, "old-revision")).rejects.toThrow("account_changed_reload");
+    expect(db.rpc).toHaveBeenCalledTimes(2);
+    expect(db.rpc.mock.calls[1]![1].p_expected_updated_at).toBe("old-revision");
+    db.rpc.mockReset().mockResolvedValue({ data: null, error: { code: "23505", message: 'duplicate key value violates unique constraint "other_constraint"' } });
+    await expect(persistCompeteAccount(db as never, "owner", state, "old-revision")).rejects.toThrow("other_constraint");
+    expect(db.rpc).toHaveBeenCalledTimes(1);
+  });
+
   it("persists and reloads metric units from athlete_prefs", async () => {
     const userId = "user-units";
     let storedUnits = "us";

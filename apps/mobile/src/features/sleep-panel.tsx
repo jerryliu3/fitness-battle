@@ -3,6 +3,7 @@ import {
   buildSleepView,
   competeNow,
   formatSleepDuration,
+  isSampleSleepNight,
   type Action,
   type CompeteState,
 } from "@fitness-battle/shared";
@@ -27,9 +28,10 @@ export function SleepPanel({
   return (
     <View style={f.card}>
       <Text style={f.kicker}>Sleep & Recovery</Text>
-      <SectionHeader title={view.lastNight ? "Last night" : "No night recorded yet"}/>
+      <SectionHeader title={view.lastNight ? "Latest sleep" : "No night recorded yet"}/>
       {view.lastNight ? (
         <>
+          <AppText role="caption" secondary>{isSampleSleepNight(state, view.lastNight) ? "Sample reading · " : ""}Wake date {view.lastNight.day}. Weekly standings count nights in the current competition week.</AppText>
           <Text style={f.massive}>{view.lastNight.score}</Text>
           <AppText role="body" secondary >
             sleep score · {formatSleepDuration(view.lastNight.durationMin)}

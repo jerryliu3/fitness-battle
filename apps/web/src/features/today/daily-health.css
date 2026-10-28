@@ -9,7 +9,7 @@
 .home-health-name{font:var(--type-label);overflow-wrap:anywhere}
 .home-health-tile strong{font:var(--type-heading);font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
 .home-health-context{font:var(--type-caption);color:var(--health-secondary)}
-.home-health-detail{padding:14px;background:var(--health-tile);border-radius:12px;font:var(--type-body)}
+.home-health-detail{grid-column:1 / -1;padding:14px;background:var(--health-tile);border-radius:12px;font:var(--type-body)}
 .home-health-detail p{margin:6px 0}
 .home-health-detail>span,.home-health-note{font:var(--type-caption);color:var(--health-secondary)}
 .home-health-note{margin:0}
