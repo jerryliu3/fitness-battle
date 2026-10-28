@@ -26,7 +26,7 @@ export function WeekChart({ state, onOpen, ready = true }: { state: CompeteState
       </Svg>
     </ChartScrubber>
     <View style={s.dates}><AppText role="caption" secondary>{chart.startLabel}</AppText><AppText role="caption" secondary>{chart.endLabel}</AppText></View>
-    {onOpen && <Pressable accessibilityRole="button" accessibilityLabel="Explore your week" onPress={onOpen} style={s.open}><AppText role="label">Your week →</AppText></Pressable>}
+    {onOpen && <Pressable accessibilityRole="button" accessibilityLabel="See more this week" onPress={onOpen} style={s.open}><AppText role="label">See more →</AppText></Pressable>}
   </View></ChartFrame>;
 }
 const s = StyleSheet.create({

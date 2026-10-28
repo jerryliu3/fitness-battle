@@ -55,25 +55,27 @@ export function weekHoursDeltaTone(chart: { currHoursSameDay: number; prevHoursS
 /** Shared Portfolio geometry. The existing hour eligibility/period model stays authoritative. */
 export function portfolioWeekChart(state: CompeteState, now = competeNow(state)) {
   const comparison = weeklyHoursComparison(state, now);
-  const { currCumulativeHours, prevCumulativeHours, nowDayIndex, weekProgress, currTotalHours } = comparison;
+  const { currCumulativeHours, prevCumulativeHours, nowDayIndex, currTotalHours } = comparison;
   const width = 340, height = 164, left = 12, right = 328, top = 14, bottom = 150;
   const max = Math.max(1, ...currCumulativeHours, ...prevCumulativeHours) * 1.15;
   const y = (hours: number) => bottom - hours / max * (bottom - top);
-  const x = (index: number) => left + (index + 1) / 7 * (right - left);
-  const tip = { x: left + weekProgress * (right - left), y: y(currTotalHours) };
-  const origin = `${left},${bottom}`;
-  const previous = [origin, ...prevCumulativeHours.map((hours, index) => `${x(index).toFixed(1)},${y(hours).toFixed(1)}`)].join(" ");
-  const current = [origin, ...currCumulativeHours.slice(0, nowDayIndex).map((hours, index) => `${x(index).toFixed(1)},${y(hours).toFixed(1)}`), `${tip.x.toFixed(1)},${tip.y.toFixed(1)}`].join(" ");
+  const x = (index: number) => left + (index / 6) * (right - left);
+  const tip = { x: x(nowDayIndex), y: y(currTotalHours) };
+  const previous = prevCumulativeHours.map((hours, index) => `${x(index).toFixed(1)},${y(hours).toFixed(1)}`).join(" ");
+  const current = currCumulativeHours.map((hours, index) => `${x(index).toFixed(1)},${y(hours).toFixed(1)}`).join(" ");
   const period = competePeriodWindow(state, now);
   const date = (at: Date) => at.toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: APP_TIMEZONE });
   const inspection = currCumulativeHours.map((hours, index) => ({
-    id: dayKey(shiftAppDay(period.startsAt, index)), x: index === nowDayIndex ? tip.x : x(index), y: y(hours),
-    label: date(shiftAppDay(period.startsAt, index)), value: `${hours.toFixed(1)} hr · last week ${prevCumulativeHours[index].toFixed(1)} hr`,
+    id: dayKey(shiftAppDay(period.startsAt, index)),
+    x: x(index),
+    y: y(hours),
+    label: date(shiftAppDay(period.startsAt, index)),
+    value: `${hours.toFixed(1)} hr · last week ${prevCumulativeHours[index].toFixed(1)} hr`,
   }));
   const deltaHours = Number((roundedHour(comparison.currHoursSameDay) - roundedHour(comparison.prevHoursSameDay)).toFixed(1));
   const deltaTone = weekHoursDeltaTone(comparison);
   return { ...comparison, width, height, left, right, top, bottom, tip, current, previous, inspection,
-    area: `${current} ${tip.x.toFixed(1)},${bottom} ${origin}`,
+    area: `${current} ${tip.x.toFixed(1)},${bottom} ${left},${bottom}`,
     startLabel: date(period.startsAt), endLabel: date(new Date(period.endsAt.getTime() - 1)),
     deltaLabel: `${deltaHours >= 0 ? "+" : ""}${deltaHours.toFixed(1)}h vs last week`,
     deltaTone,

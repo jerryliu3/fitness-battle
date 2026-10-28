@@ -74,7 +74,7 @@ describe("syncHealthConnect", () => {
       }),
     );
     expect(result).toMatchObject({ ok: true, authorized: true, count: 1 });
-    expect(result.message).toMatch(/demo/i);
+    expect(result.message).toMatch(/connected/i);
     expect(fetchFn).not.toHaveBeenCalled();
   });
 

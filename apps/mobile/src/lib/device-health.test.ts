@@ -222,7 +222,7 @@ describe("syncAppleHealth", () => {
     expect(result.ok).toBe(true);
     expect(result.authorized).toBe(true);
     expect(result.count).toBe(1);
-    expect(result.message).toMatch(/demo/i);
+    expect(result.message).toMatch(/connected/i);
     expect(deps.fetchFn).not.toHaveBeenCalled();
   });
 });

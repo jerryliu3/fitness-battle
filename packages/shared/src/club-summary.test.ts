@@ -146,7 +146,7 @@ describe("Home rival card presentation", () => {
   });
   it("gives the leader a closest trailing rival and a positive lead", () => {
     const rows = [athlete("distant", 3, 1000), athlete("you", 1, 6000), athlete("Mara Chen", 2, 5000)];
-    expect(clubRivalCardSummary(rows, "running", "metric", ["Mara Chen"])).toEqual({ place: "1st", headline: "1.0 km ahead of Mara", caption: "Closest rival · simulated athlete" });
+    expect(clubRivalCardSummary(rows, "running", "metric", ["Mara Chen"])).toEqual({ place: "1st", headline: "1.0 km ahead of Mara", caption: "Closest rival in your field" });
   });
   it("describes equal totals honestly in either ranked order", () => {
     for (const place of [1, 3]) {

@@ -96,7 +96,7 @@ function Constellation({ current, history, units, onTrend }: { current: Activity
     <AppText role="heading">{metric === "pace" ? "Pace × heart rate" : "Duration × heart rate"}</AppText>
     <AppText role="body" secondary>{points.length - 1} earlier {current.sport} sessions{metric === "pace" ? " within 20% of this distance" : " with recorded heart rate"} · last 90 days</AppText>
     <Readout title={chosen.activity.id === current.id ? "This session" : dateLabel(chosen.activity.startedAt)} value={formatMetric(chosen.y, metric, units)} detail={`${chosen.x} bpm average · ${Math.round(chosen.activity.movingSec / 60)} min`} />
-    <AppText role="caption" secondary>{metric === "pace" ? "Session pace · min/mi · faster at top" : "Recorded duration · min"}</AppText>
+    <AppText role="caption" secondary>{metric === "pace" ? "Session pace · min/mi" : "Recorded duration · min"}</AppText>
     <Plot width={width} points={points.map(p => ({ id: p.activity.id, x: x(p.x), y: y(p.y) }))} selected={chosen.activity.id} onSelect={setSelected} label={`Session scatterplot. ${formatMetric(chosen.y, metric, units)} at ${chosen.x} bpm. ${chosen.activity.id === current.id ? "Current session." : dateLabel(chosen.activity.startedAt)}`}>
       <Grid width={width} yDomain={renderY} yFormat={value => metric === "pace" ? formatMetric(value, metric, units).split("/")[0]! : `${Math.round(value)}`} xTicks={ticks} xLabel="Average heart rate · bpm" />
       {showFit && fit ? <Line x1={x(fit.min)} x2={x(fit.max)} y1={y(fit.intercept + fit.slope * fit.min)} y2={y(fit.intercept + fit.slope * fit.max)} stroke={c.secondary} strokeWidth={2} strokeDasharray="5 5" /> : null}
@@ -126,7 +126,7 @@ function Trajectory({ current, history, units }: { current: Activity; history: A
     <Choices items={metricItems} value={metric} onChange={next => { setMetric(next); setSelected(current.id); }} label="Trajectory measure" />
     {chosen ? <Readout title={chosen.activity.id === current.id ? "This session" : dateLabel(chosen.activity.startedAt)} value={formatMetric(chosen.value, metric, units)} detail={!included && chosen.activity.id === current.id ? previousAverage === null || previousAverage === undefined ? "Excluded from the recent average" : `Excluded · preceding average ${formatMetric(previousAverage, metric, units)}` : chosen.average === null ? "Fewer than 5 observations at this point" : `5-session average · ${formatMetric(chosen.average, metric, units)}`} /> : null}
     <Choices items={[{ id: "without", label: "Without this session" }, { id: "with", label: "With this session" }]} value={included ? "with" : "without"} onChange={value => setIncluded(value === "with")} label="Include selected activity" />
-    <AppText role="caption" secondary>{metric === "pace" ? "Session pace · min/mi · faster at top" : metric === "time" ? "Moving time · minutes" : "Average heart rate · bpm"}</AppText>
+    <AppText role="caption" secondary>{metric === "pace" ? "Session pace · min/mi" : metric === "time" ? "Moving time · minutes" : "Average heart rate · bpm"}</AppText>
     <Plot width={width} points={rows.map(row => ({ id: row.activity.id, x: x(row.time), y: y(row.value) }))} selected={chosen?.activity.id ?? current.id} onSelect={setSelected} label={`Recent ${metric} trajectory. ${chosen ? formatMetric(chosen.value, metric, units) : "No observations"}. ${included ? "Including" : "Excluding"} selected session from average.`}>
       <Grid width={width} yDomain={renderY} yFormat={value => metric === "pace" ? formatMetric(value, metric, units).split("/")[0]! : `${Math.round(value)}`} xTicks={[rows[0], rows[Math.floor(rows.length / 2)], rows.at(-1)].filter((row): row is NonNullable<typeof row> => Boolean(row)).map(row => ({ x: x(row.time), label: dateLabel(row.activity.startedAt) }))} xLabel="Session date" />
       {averages.length > 1 ? <Path d={path(averages.map(row => ({ x: x(row.time), y: y(row.average!) })))} stroke={c.fieldTeal} fill="none" strokeWidth={3} /> : null}
@@ -162,7 +162,7 @@ function Ripple({ current, history }: { current: Activity; history: Activity[] }
     </Plot>
     <View style={s.legend}><AppText role="caption" secondary>Bars · daily minutes</AppText><AppText role="caption" secondary>Line · 7-day average</AppText></View>
     <Readout title={dateLabel(chosen.date)} value={`${Math.round(included ? chosen.minutes : chosen.without)} min recorded`} detail={`7-day average · ${(included ? chosen.average : chosen.averageWithout).toFixed(1)} min/day`} />
-    <View style={s.insight}><AppText role="label">This session adds {(current.movingSec / 60).toFixed(0)} min to logged volume</AppText><AppText role="caption" secondary>Its arithmetic effect on the 7-day average is +{(latest.average - latest.averageWithout).toFixed(1)} min/day. This is a volume measure, not training strain or recovery.</AppText></View>
+
     <AppText role="caption" secondary>Unlogged days count as zero recorded minutes. Today's total stops at this session; later activity is excluded. No fitness, injury-risk or readiness conclusion is inferred.</AppText>
   </View>;
 }

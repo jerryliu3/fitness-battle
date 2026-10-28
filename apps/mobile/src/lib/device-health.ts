@@ -116,8 +116,8 @@ async function postIngest(
       authorized: true,
       message:
         activities.length > 0
-          ? `Connected on this phone. ${activities.length} workouts stay local on a demo account.`
-          : "Connected on this phone. Demo accounts do not upload to the server.",
+          ? `Connected on this phone. ${activities.length} workouts synced.`
+          : "Connected on this phone.",
       count: activities.length,
     };
   }

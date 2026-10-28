@@ -151,7 +151,7 @@ function ReplayViewer({ state, selection, initialDimension, initialCourse, onCou
           <ReplayAction label={closed ? "Jump to finish" : "Jump to latest event"} text={closed ? "Finish" : "Latest"} disabled={!count || cursor >= count} onPress={() => seek(count)} />
           <ReplayAction label={`Playback speed ${speed} times`} text={`${speed}×`} onPress={() => setSpeed(v => v === 4 ? 1 : v * 2)} />
         </View>
-        <AppText role="caption" secondary>{!count ? "No counted activity in this competition yet." : "Drag the timeline to move event by event."}{data?.scope === "local" ? debugActive ? " Debug preview · local practice field." : " Local preview · your sessions and available simulated athletes." : " Workout order from current counted activities."}{data?.athletes.some(a => a.synthetic) ? " Simulated athletes use daily steps." : ""}</AppText>
+        <AppText role="caption" secondary>{!count ? "No counted activity in this competition yet." : "Drag the timeline to move event by event."}</AppText>
       </View>
     </>}
   </View>;

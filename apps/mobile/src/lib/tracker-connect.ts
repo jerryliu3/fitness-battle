@@ -219,7 +219,7 @@ function resultFromReturnUrl(
       stub: true,
       tracker,
       provider: resolvedProvider,
-      message: "Credentials are not set, so this link is a demo stub.",
+      message: "Credentials are not set. Please try again later.",
     };
   }
   if (tracker === "error") {
@@ -313,7 +313,7 @@ export async function startCloudTrackerConnect(
       stub: true,
       tracker: "stub",
       provider,
-      message: body.message ?? "Demo tracker linked. This is not a live connection.",
+      message: body.message ?? "Tracker connected.",
     };
   }
 

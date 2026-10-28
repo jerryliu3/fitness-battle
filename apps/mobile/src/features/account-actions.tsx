@@ -134,8 +134,7 @@ export function AccountActions() {
                 </>
               ) : (
                 <AppText role="body" secondary >
-                  Sign in with a live account to send a report. Demo reports are
-                  not sent.
+                  Sign in to send a report.
                 </AppText>
               )}
             </>
@@ -143,9 +142,7 @@ export function AccountActions() {
         ) : (
           <>
             <AppText role="body" secondary >
-              {live
-                ? "This permanently deletes your account and associated data. This cannot be undone."
-                : "This deletes this demo account and its saved training on this device."}{" "}
+              This permanently deletes your account and associated data. This cannot be undone.{" "}
               Type DELETE to confirm.
             </AppText>
             <TextInput

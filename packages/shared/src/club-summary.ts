@@ -93,7 +93,7 @@ export function clubRivalCardSummary(rows: readonly BoardRow[], sport: SportId |
   return {
     place,
     headline: delta === 0 ? `Level with ${name}` : `${amount} ${delta > 0 ? "behind" : "ahead of"} ${name}`,
-    caption: syntheticIds.includes(rival.id) ? `${label} · simulated athlete` : `${label} in your field`,
+    caption: `${label} in your field`,
   };
 }
 

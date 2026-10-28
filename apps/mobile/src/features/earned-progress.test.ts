@@ -43,9 +43,10 @@ describe("native earned progress flows",()=>{
   const remove=vi.fn();await act(async()=>{renderer=create(createElement(SessionStage,{state:mock.state!,activities:[recorded("run",3600),recorded("strength",1800,"strength")],onRemove:remove}));});
   expect(text()).toContain("1.5 hr total");expect(text()).toContain("2 recorded sessions");
   await act(async()=>renderer.root.findAllByType("Pressable" as never)[0]!.props.onPress());
-  const removal=renderer.root.findAllByType("Pressable" as never).find(n=>n.findAllByType("Text" as never).some(t=>t.children.includes("Remove session")))!;
+  const removal=renderer.root.findAllByType("Pressable" as never).find(n=>n.props.accessibilityLabel==="Delete session")!;
   await act(async()=>removal.props.onPress());expect(remove).not.toHaveBeenCalled();
-  await act(async()=>renderer.root.findAllByType("FocusButton" as never).find(n=>n.props.label==="Remove session")!.props.onPress());expect(remove).toHaveBeenCalledWith("run");
+  const confirmBtn=renderer.root.findAllByType("Pressable" as never).filter(n=>n.props.accessibilityLabel==="Delete session").at(-1)!;
+  await act(async()=>confirmBtn.props.onPress());expect(remove).toHaveBeenCalledWith("run");
  });
  it("keeps an unrecorded suggestion separate from completion",async()=>{
   await act(async()=>{renderer=create(createElement(SessionStage,{state:mock.state!,activities:[],suggestion:{title:"Easy movement",minutes:30,detail:"Keep it comfortable."},onRemove:vi.fn()}));});
@@ -56,7 +57,7 @@ describe("native earned progress flows",()=>{
   const prior=[1,2,3].map((day,index)=>({...recorded(`prior-${day}`,1800+index*300),startedAt:new Date(now.getTime()-day*86400000).toISOString()}));
   const state={...mock.state!,activities:[current,...prior]};
   await act(async()=>{renderer=create(createElement(SessionStage,{state,activities:[current],onRemove:vi.fn()}));});
-  expect(text()).toContain("You, in context");expect(text()).toContain("Compared with your usual");
+  expect(text()).toContain("Compared with your usual");expect(text()).toContain("Your recent trajectory");
   expect(renderer.root.findAllByType("Ember" as never)).toHaveLength(0);
  });
  it("switches the chart between week, month and year without manufacturing future sessions",async()=>{

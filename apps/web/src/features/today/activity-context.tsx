@@ -56,7 +56,7 @@ export function ActivityContext({ activity, state }: { activity: Activity; state
   const history = sessionHistory(activity, state.activities, competeNow(state));
   if (!history.length) return null;
   const points = constellation(activity, history, state.units), hasScatter = points.length >= 4 && points.some(p => p.activity.id === activity.id);
-  return <div className="activity-context"><header><AppHeading>You, in context</AppHeading><p>One session. A little more perspective.</p></header>
+  return <div className="activity-context">
     {hasScatter && sportById(activity.sport).gps && <Scatter current={activity} history={history} units={state.units} />}
     <Trajectory current={activity} history={history} units={state.units} />
     {hasScatter && !sportById(activity.sport).gps && <Scatter current={activity} history={history} units={state.units} />}
@@ -71,7 +71,7 @@ function Scatter({ current, history, units }: { current: Activity; history: Acti
   const x = scale(xd, L, R), y = scale(yd, metric === "pace" ? T : B, metric === "pace" ? B : T);
   return <section className="ac-section"><AppHeading level={3}>{metric === "pace" ? "Among your sessions" : "Duration × heart rate"}</AppHeading><p>{points.length - 1} earlier {current.sport} sessions{metric === "pace" ? " within 20% of this distance" : " with recorded HR"} · last 90 days</p>
     <Readout title={chosen.activity.id === current.id ? "This session" : dateLabel(chosen.activity.startedAt)} value={formatMetric(chosen.y, metric, units)} detail={`${chosen.x} bpm average · ${Math.round(chosen.activity.movingSec / 60)} min`} />
-    <small>{metric === "pace" ? `Session pace · min/${units === "metric" ? "km" : "mi"} · faster at top` : "Recorded duration · min"}</small>
+    <small>{metric === "pace" ? `Session pace · min/${units === "metric" ? "km" : "mi"}` : "Recorded duration · min"}</small>
     <Plot points={points.map(p => ({ id: p.activity.id, x: x(p.x), y: y(p.y) }))} selected={chosen.activity.id} onSelect={setSelected} label={`Session scatterplot. ${formatMetric(chosen.y, metric, units)} at ${chosen.x} bpm.`}>
       <Grid domain={metric === "pace" ? [yd[1], yd[0]] : yd} format={v => metric === "pace" ? formatMetric(v, metric, units).split("/")[0]! : `${Math.round(v)}`} ticks={[xd[0], (xd[0] + xd[1]) / 2, xd[1]].map(v => ({ x: x(v), label: `${Math.round(v)}` }))} label="Average heart rate · bpm" />
       {showFit && fit && <line x1={x(fit.min)} x2={x(fit.max)} y1={y(fit.intercept + fit.slope * fit.min)} y2={y(fit.intercept + fit.slope * fit.max)} stroke={teal} strokeWidth={2} strokeDasharray="5 5" />}
@@ -97,7 +97,7 @@ function Trajectory({ current, history, units }: { current: Activity; history: A
     <Choices items={items} value={metric} onChange={id => { setMetric(id); setSelected(current.id); }} label="Trajectory measure" />
     {chosen && <Readout title={chosen.activity.id === current.id ? "This session" : dateLabel(chosen.activity.startedAt)} value={formatMetric(chosen.value, metric, units)} detail={!included && chosen.activity.id === current.id ? previous == null ? "Excluded from the recent average" : `Excluded · preceding average ${formatMetric(previous, metric, units)}` : chosen.average === null ? "Fewer than 5 observations at this point" : `5-session average · ${formatMetric(chosen.average, metric, units)}`} />}
     <Choices items={toggleItems} value={included ? "with" : "without"} onChange={id => setIncluded(id === "with")} label="Include selected activity in trajectory" />
-    <small>{metric === "efficiency" ? "Speed / HR index · previous median = 100" : metric === "pace" ? `Session pace · min/${units === "metric" ? "km" : "mi"} · faster at top` : metric === "time" ? "Moving time · minutes" : "Average heart rate · bpm"}</small>
+    <small>{metric === "efficiency" ? "Speed / HR index · previous median = 100" : metric === "pace" ? `Session pace · min/${units === "metric" ? "km" : "mi"}` : metric === "time" ? "Moving time · minutes" : "Average heart rate · bpm"}</small>
     <Plot points={rows.map(r => ({ id: r.activity.id, x: x(r.time), y: y(r.value) }))} selected={chosen?.activity.id ?? current.id} onSelect={setSelected} label={`Recent ${metric} trajectory. ${chosen ? formatMetric(chosen.value, metric, units) : "No observations"}. ${included ? "Including" : "Excluding"} selected session from average.`}>
       <Grid domain={metric === "pace" ? [yd[1], yd[0]] : yd} format={v => metric === "pace" ? formatMetric(v, metric, units).split("/")[0]! : `${Math.round(v)}`} ticks={rows.filter((r, i) => i === 0 || i === Math.floor(rows.length / 2) || i === rows.length - 1).map(r => ({ x: x(r.time), label: dateLabel(r.activity.startedAt) }))} label="Session date" />
       {metric === "efficiency" && <line x1={L} x2={R} y1={y(100)} y2={y(100)} stroke={muted} strokeDasharray="4 5" />}
@@ -106,7 +106,6 @@ function Trajectory({ current, history, units }: { current: Activity; history: A
       {rows.map(r => <circle key={r.activity.id} cx={x(r.time)} cy={y(r.value)} r={r.activity.id === current.id ? 7 : r.activity.id === chosen?.activity.id ? 6 : 4} fill={r.activity.id === current.id ? included ? yellow : "var(--paper)" : teal} stroke={r.activity.id === current.id ? ink : "var(--paper)"} strokeWidth={r.activity.id === current.id ? 2 : 1} opacity={r.activity.id === current.id ? 1 : .65} />)}
       {included && currentPoint?.average != null && <circle cx={x(currentPoint.time)} cy={y(currentPoint.average)} r={5} fill={teal} />}
     </Plot><Legend average={averages.length > 1} />
-    {metric === "efficiency" && currentPoint && <b>{currentPoint.value >= 100 ? "+" : "−"}{Math.abs(currentPoint.value - 100).toFixed(1)}% vs your previous median · dashed line = 100</b>}
     {delta !== null ? <div className="ac-insight"><b>The recent average shifts by {delta < 0 ? "−" : "+"}{metric === "pace" ? `${Math.round(Math.abs(delta))} sec/${units === "metric" ? "km" : "mi"}` : metric === "efficiency" ? `${Math.abs(delta).toFixed(1)} points` : formatMetric(Math.abs(delta), metric, units)}</b><small>{formatMetric(previous!, metric, units)} → {formatMetric(currentPoint!.average!, metric, units)}. This session enters the 5-session window and its oldest session rolls out.</small></div> : <small>The moving average needs 5 observations; a before/after change needs 5 earlier sessions plus this one.</small>}
     <small>{metric === "efficiency" ? "Speed ÷ average heart rate, indexed to your previous 90-day median (100). Higher means more speed relative to recorded HR, not a fitness score. Route, conditions and workout intent may differ." : "Dots are sessions; the line is their 5-session average. Pace uses distances within 20% of this session."}</small>
   </section>;
@@ -124,6 +123,6 @@ function Ripple({ current, history }: { current: Activity; history: Activity[] }
       <path d={path(days.map((d, i) => ({ x: x(i), y: y(included ? d.average : d.averageWithout) })))} fill="none" stroke={teal} strokeWidth={3} /><line x1={x(days.indexOf(chosen))} x2={x(days.indexOf(chosen))} y1={T} y2={B} stroke={ink} opacity={.25} /><circle cx={x(27)} cy={y(average)} r={5} fill={yellow} stroke={ink} strokeWidth={2} />
     </Plot><div className="ac-legend"><span>Bars · daily minutes</span><span>Line · 7-day average</span></div>
     <Readout title={dateLabel(chosen.date)} value={`${Math.round(included ? chosen.minutes : chosen.without)} min recorded`} detail={`7-day average · ${(included ? chosen.average : chosen.averageWithout).toFixed(1)} min/day`} />
-    <div className="ac-insight"><b>This session adds {Math.round(current.movingSec / 60)} min to logged volume</b><small>Your 7-day average gains +{(latest.average - latest.averageWithout).toFixed(1)} min/day. Recorded volume only.</small></div><small>Unlogged days count as zero. This view ends at the selected session.</small>
+    <small>Unlogged days count as zero. This view ends at the selected session.</small>
   </section>;
 }

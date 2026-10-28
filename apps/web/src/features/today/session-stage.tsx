@@ -27,7 +27,7 @@ function ActivityDetails({ activity, state, onRemove }: { activity: Activity; st
   const metrics = clubSessionMetrics([activity], state.units).filter(metric => metric.label !== (gps ? "Distance" : "Moving time"));
   return <div className="session-detail-content">
     <header className="session-overview"><b>{sportById(activity.sport).name}</b><p>{new Date(activity.startedAt).toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric", timeZone: APP_TIMEZONE })} · {new Date(activity.startedAt).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", timeZone: APP_TIMEZONE })}</p>
-      {!countsOnTrack(activity, "open") && <small>Not counted in your totals</small>}<AppHeading role="hero">{primary}</AppHeading><small>{gps && activity.distanceM > 0 ? "Distance covered" : "Time well spent"}</small>
+      {!countsOnTrack(activity, "open") && <small>Not counted in your totals</small>}<AppHeading role="hero">{primary}</AppHeading>
       <div className="session-detail-metrics">{metrics.map(metric => <div key={metric.label}><strong>{metric.value}</strong><small>{metric.label}</small></div>)}{hr !== null && <div><strong>{Math.round(hr)} bpm</strong><small>Avg heart rate</small></div>}{Number.isFinite(activity.elevationGainM) && activity.elevationGainM! >= 0 && <div><strong>{Math.round(activity.elevationGainM! * (state.units === "us" ? 3.28084 : 1))} {state.units === "us" ? "ft" : "m"}</strong><small>Elevation gain</small></div>}</div>
     </header>
     <ActivityRoute activity={activity} units={state.units} />
