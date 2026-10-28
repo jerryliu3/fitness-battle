@@ -240,7 +240,8 @@ export function CompeteProvider({ children, navigationReady = true }: { children
         authRef.current.offlineMode && authRef.current.user?.dataOrigin === "synthetic" &&
         authRef.current.user
       ) {
-        const seed = getDemoCompeteState(authRef.current.user.email.split("@")[0]) || getDemoCompeteState(authRef.current.user.id);
+        const emailHandle = authRef.current.user.email ? authRef.current.user.email.split("@")[0] : null;
+        const seed = (emailHandle ? getDemoCompeteState(emailHandle) : null) || getDemoCompeteState(authRef.current.user.id);
         if (seed) {
           if (!raw) {
             next = seed;

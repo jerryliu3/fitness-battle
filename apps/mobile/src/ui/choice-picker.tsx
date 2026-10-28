@@ -75,7 +75,7 @@ export function ChoicePicker<T extends string>({
           bounces={false}
           keyboardShouldPersistTaps="handled"
         >
-          {options.map((option) => {
+          {options.map((option, index) => {
             const isSelected = option.value === value;
             return (
               <Pressable
@@ -83,7 +83,12 @@ export function ChoicePicker<T extends string>({
                 accessibilityRole="button"
                 accessibilityLabel={option.label}
                 accessibilityState={{ selected: isSelected }}
-                style={[s.option, isSelected && s.optionSelected]}
+                style={({ pressed }) => [
+                  s.option,
+                  isSelected && s.optionSelected,
+                  pressed && s.optionPressed,
+                  index === options.length - 1 && s.optionLast,
+                ]}
                 onPress={() => {
                   void playCue("selection");
                   onChange(option.value);
@@ -128,5 +133,11 @@ const s = StyleSheet.create({
   },
   optionSelected: {
     backgroundColor: c.soft,
+  },
+  optionPressed: {
+    backgroundColor: "rgba(0, 16, 27, 0.06)",
+  },
+  optionLast: {
+    borderBottomWidth: 0,
   },
 });

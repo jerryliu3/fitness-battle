@@ -235,7 +235,15 @@ export function FocusSidePanel({
           }}
           accessibilityViewIsModal
         >
-          <View style={{ flex: 1, paddingTop: Math.max(insets.top, 16), paddingBottom: Math.max(insets.bottom, 16) }}>
+          <View
+            style={{
+              flex: 1,
+              paddingTop: Math.max(insets.top, 16),
+              paddingBottom: Math.max(insets.bottom, 16),
+              paddingLeft: Math.max(insets.left, 0),
+              paddingRight: Math.max(insets.right, 0),
+            }}
+          >
             <View
               style={{
                 flexDirection: "row",

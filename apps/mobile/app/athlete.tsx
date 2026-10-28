@@ -108,10 +108,12 @@ export default function AthleteScreen() {
   const [confirmSignOut, setConfirmSignOut] = useState(false);
   const panel = params.panel ?? null;
   function setPanel(next: AthletePanel | null) {
-    if (next)
+    if (next) {
+      setEditOpen(false);
       router.push({ pathname: "/athlete-settings", params: { panel: next } });
-    else if (router.canGoBack()) router.back();
-    else router.replace({ pathname: "/athlete", params: { edit: "1" } });
+    } else {
+      router.replace({ pathname: "/athlete", params: { edit: "1" } });
+    }
   }
   const appliedTracker = useRef<string | null>(null);
 
@@ -181,8 +183,7 @@ export default function AthleteScreen() {
       title={panel ? titles[panel] : "Athlete"}
       onBack={() => {
         if (panel) {
-          if (router.canGoBack()) router.back();
-          else router.replace({ pathname: "/athlete", params: { edit: "1" } });
+          router.replace({ pathname: "/athlete", params: { edit: "1" } });
         } else if (router.canGoBack()) {
           router.back();
         } else {
@@ -799,20 +800,20 @@ export default function AthleteScreen() {
         <View style={f.section}>
           <SectionHeader title="Since the first mile" subtitle="Counted training · 2026" />
           <View style={[f.row, { paddingVertical: 12, justifyContent: "space-around" }]}>
-            <View style={{ alignItems: "center", gap: 4 }}>
+            <View style={{ alignItems: "center", gap: 4, flex: 1 }}>
               <AppText role="display">{formatDistanceM(season.meters, state.units)}</AppText>
               <AppText role="caption" secondary>{unit} total</AppText>
             </View>
-            <View style={{ alignItems: "center", gap: 4 }}>
+            <View style={{ alignItems: "center", gap: 4, flex: 1 }}>
               <AppText role="display">{season.sessions}</AppText>
               <AppText role="caption" secondary>Sessions</AppText>
             </View>
-            <View style={{ alignItems: "center", gap: 4 }}>
+            <View style={{ alignItems: "center", gap: 4, flex: 1 }}>
               <AppText role="display">{season.weeks}</AppText>
               <AppText role="caption" secondary>Active weeks</AppText>
             </View>
-            <View style={{ alignItems: "center", gap: 4 }}>
-              <AppText role="display">{state.lifetimeOvertakes}</AppText>
+            <View style={{ alignItems: "center", gap: 4, flex: 1 }}>
+              <AppText role="display">{state.lifetimeOvertakes ?? 0}</AppText>
               <AppText role="caption" secondary>Overtakes</AppText>
             </View>
           </View>
@@ -849,7 +850,12 @@ export default function AthleteScreen() {
         <FocusSidePanel
           open={editOpen}
           title="Edit profile & Settings"
-          onClose={() => setEditOpen(false)}
+          onClose={() => {
+            setEditOpen(false);
+            if (params.edit) {
+              router.setParams({ edit: undefined });
+            }
+          }}
         >
           <View style={{ gap: 12 }}>
             <SectionHeader title="Profile details" />
@@ -861,7 +867,7 @@ export default function AthleteScreen() {
                   value={draftName}
                   onChangeText={setName}
                   accessibilityLabel="Name"
-                  maxLength={80}
+                  maxLength={32}
                   placeholder="Name"
                 />
                 <Input
@@ -875,23 +881,26 @@ export default function AthleteScreen() {
               </View>
             </View>
             {dirty ? (
-              <Button
+              <FocusButton
+                label="Save profile"
                 onPress={() => {
                   const trimmed = draftName.trim();
                   if (!trimmed) {
                     setNote("Display name cannot be empty.");
                     return;
                   }
-                  dispatch({ type: "rename", name: trimmed });
-                  if (draftCity.trim())
-                    dispatch({ type: "set-city", city: draftCity.trim() });
+                  if (trimmed !== state.name) {
+                    dispatch({ type: "rename", name: trimmed });
+                  }
+                  const cityTrimmed = draftCity.trim();
+                  if (cityTrimmed && cityTrimmed !== state.city) {
+                    dispatch({ type: "set-city", city: cityTrimmed });
+                  }
                   setName(null);
                   setCity(null);
                   setNote("Profile saved.");
                 }}
-              >
-                <AppText role="label">Save profile</AppText>
-              </Button>
+              />
             ) : null}
             {note ? (
               <AppText role="body" secondary accessibilityLiveRegion="polite">
@@ -920,6 +929,7 @@ export default function AthleteScreen() {
               title="Notifications"
               detail="Your updates, your choice"
               onPress={() => {
+                setEditOpen(false);
                 router.push({ pathname: "/notifications", params: { returnTo: "edit" } });
               }}
             />
