@@ -1,5 +1,6 @@
 "use client";
 import { GeographicCourse } from "../course/geographic-course";
+import { useCompetitionCourse } from "../course/use-competition-course";
 import { FieldViewSwitcher } from "../field/components/field-view-switcher";
 import { useFieldFlight } from "../field/use-field-flight";
 
@@ -15,22 +16,22 @@ import {
   competitionReplayFrame, competitionReplayCaption, competitionReplayDate,
   indexCompetitionReplay, localCompetitionReplay, initialsFromName, fieldDefaultSpan,
   clampCourseCenter, sportById,
-  type RaceCourse, type CompetitionReplay, type CompetitionReplaySelection, type CompeteState,
+  type CompetitionReplay, type CompetitionReplaySelection, type CompeteState,
 } from "@fitness-battle/shared";
 
-export function CompetitionReplayButton({ state, selection, dimension = "2d", course = null, onCourseChange, label = "Replay competition" }: {
-  state: CompeteState; selection: CompetitionReplaySelection; dimension?: "2d" | "3d" | "4d"; course?: RaceCourse | null; onCourseChange?(course: RaceCourse | null): void; label?: string;
+export function CompetitionReplayButton({ state, selection, dimension = "2d", label = "Replay competition" }: {
+  state: CompeteState; selection: CompetitionReplaySelection; dimension?: "2d" | "3d" | "4d"; label?: string;
 }) {
   const [open, setOpen] = useState(false);
   return <Dialog.Root open={open} onOpenChange={setOpen}>
     <Dialog.Trigger asChild><button type="button" className="fb-btn-line competition-replay-trigger">{label}</button></Dialog.Trigger>
     {open && <Dialog.Portal><Dialog.Overlay className="competition-replay-overlay" /><Dialog.Content className="competition-replay-dialog" aria-describedby={undefined}>
-      <ReplayViewer key={`${selection.sport}:${selection.track}:${selection.periodStart}`} state={state} selection={selection} initialDimension={dimension} initialCourse={course} onCourseChange={onCourseChange} />
+      <ReplayViewer key={`${selection.sport}:${selection.track}:${selection.periodStart}`} state={state} selection={selection} initialDimension={dimension} />
     </Dialog.Content></Dialog.Portal>}
   </Dialog.Root>;
 }
 
-function ReplayViewer({ state, selection, initialDimension, initialCourse, onCourseChange }: { state: CompeteState; selection: CompetitionReplaySelection; initialDimension: "2d" | "3d" | "4d"; initialCourse: RaceCourse | null; onCourseChange?(course: RaceCourse | null): void }) {
+function ReplayViewer({ state, selection, initialDimension }: { state: CompeteState; selection: CompetitionReplaySelection; initialDimension: "2d" | "3d" | "4d" }) {
   const { user, offlineMode } = useAuth();
   const { debugActive } = useCompete();
   const reduced = useReducedMotion();
@@ -39,8 +40,7 @@ function ReplayViewer({ state, selection, initialDimension, initialCourse, onCou
   const [attempt, setAttempt] = useState(0);
   const [cursor, setCursor] = useState(0), [playing, setPlaying] = useState(false), [speed, setSpeed] = useState(1);
   const [dimension, setDimension] = useState(initialDimension);
-  const [course, setCourse] = useState(initialCourse);
-  const changeCourse = (next: RaceCourse | null) => { setCourse(next); onCourseChange?.(next); };
+  const { course, error: courseError, retry: retryCourse } = useCompetitionCourse(selection.sport, selection.periodStart, selection.periodEnd, debugActive);
   const [center, setCenter] = useState<number | null>(null), [span, setSpan] = useState<number | null>(null);
   const [followEvent, setFollowEvent] = useState(true);
   const [selected, setSelected] = useState<string | null>(null);
@@ -112,7 +112,7 @@ function ReplayViewer({ state, selection, initialDimension, initialCourse, onCou
         onZoomIn={dimension !== "4d" ? () => zoomTo(Math.max(unit === "pts" ? 2 : .5, view.span / 1.5)) : undefined}
         onZoomOut={dimension !== "4d" ? () => zoomTo(Math.min(unit === "pts" ? 100 : 40, view.span * 1.5)) : undefined} /><span>Your place <b>{me?.place ?? "—"} / {lanes.length}</b></span></div>
       <div className="competition-replay-scene">
-        {dimension === "4d" ? <GeographicCourse course={course} onCourseChange={changeCourse} lanes={lanes} unit={unit} selectedId={selected ?? focus?.id ?? ""} focusRequest={focusRequest} onSelect={select} /> : dimension === "2d" ? <ArenaLanes playback onGestureStart={flight.cancel} onViewChange={applyView} focusRequest={focusRequest} focusOnMount immersive lanes={lanes} appearance={appearance} view={view} unit={unit} selected={selected ?? focus?.id ?? ""} onSelect={select} onPan={panTo} /> : <PortraitField onGestureStart={flight.cancel} onViewChange={applyView} focusRequest={focusRequest} focusOnMount immersive selectedId={selected ?? focus?.id} lanes={lanes} view={view} unit={unit} onSelect={select} onPan={panTo} onZoom={zoomTo} />}
+        {dimension === "4d" ? <GeographicCourse course={course} error={courseError} onRetry={retryCourse} lanes={lanes} unit={unit} selectedId={selected ?? focus?.id ?? ""} focusRequest={focusRequest} onSelect={select} /> : dimension === "2d" ? <ArenaLanes playback onGestureStart={flight.cancel} onViewChange={applyView} focusRequest={focusRequest} focusOnMount immersive lanes={lanes} appearance={appearance} view={view} unit={unit} selected={selected ?? focus?.id ?? ""} onSelect={select} onPan={panTo} onZoom={zoomTo} /> : <PortraitField onGestureStart={flight.cancel} onViewChange={applyView} focusRequest={focusRequest} focusOnMount immersive selectedId={selected ?? focus?.id} lanes={lanes} view={view} unit={unit} onSelect={select} onPan={panTo} onZoom={zoomTo} />}
         <button type="button" className="competition-replay-follow fb-btn-line" style={dimension === "4d" ? { bottom: "auto", top: 12 } : undefined} onClick={() => { flight.cancel(); setCenter(null); setSelected(null); setFollowEvent(v => !v); }}>{followEvent ? "Follow me" : "Follow event"}</button>
       </div>
       <footer className="competition-replay-controls">

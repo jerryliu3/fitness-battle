@@ -55,6 +55,7 @@ export * from "./product-icons";
 export * from "./routeGeoUtils";
 export * from "./activity-route";
 export * from "./sampleRoute";
+export * from "./weekly-race-course";
 export * from "./competition-moments";
 export * from "./competition-replay";
 

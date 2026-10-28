@@ -1,6 +1,7 @@
 import { FieldViewSwitcher } from "../ui/field-view-switcher";
 import { FieldGroundSwitcher } from "../ui/field-ground-switcher";
 import { GeographicCourse } from "./geographic-course";
+import { useCompetitionCourse } from "./use-competition-course";
 import { CompetitionReplayButton } from "./competition-replay";
 import { UserAvatar } from "../ui/user-avatar";
 import { textStyle } from "../ui/section";
@@ -21,7 +22,6 @@ import {
   selfLaneLabel,
   shellTabFromPath,
   weeklyBoard,
-  type RaceCourse,
   type CourseDistanceTarget,
   type ArenaSceneLane,
   type ScoreTrack,
@@ -47,12 +47,11 @@ export function CompetitionField({
   sport: SportId;
   track: ScoreTrack;
 }) {
-  const { state, accountKey } = useCompeteStore();
+  const { state, accountKey, debugActive } = useCompeteStore();
   const pathname = usePathname();
   const [appearance, setAppearance] = useFieldAppearance(accountKey, sport);
   const isFocused = shellTabFromPath(pathname)?.id === "arena";
   const [sceneDimension, setSceneDimension] = useState<"2d" | "3d" | "4d">("2d");
-  const [course, setCourse] = useState<RaceCourse | null>(null);
   const [courseTarget, setCourseTarget] = useState<CourseDistanceTarget | null>(null);
   const chooseView = (value: "2d" | "3d" | "4d") => {
     void playCue("selection");
@@ -97,6 +96,8 @@ export function CompetitionField({
     () => (state ? buildArenaModel(state, undefined, track, sport) : null),
     [state, track, sport],
   );
+  const period = state ? competePeriodWindow(state, competeNow(state), sport) : null;
+  const { course, error: courseError, retry: retryCourse } = useCompetitionCourse(sport, period?.startsAt.toISOString() ?? "", period?.endsAt.toISOString() ?? "", debugActive);
   const defaultSpan = fieldDefaultSpan(arena?.unit ?? "km");
   const viewSpan = span ?? defaultSpan;
   useEffect(() => { if (!isFocused) setExpanded(false); }, [isFocused]);
@@ -166,8 +167,8 @@ export function CompetitionField({
   const replaySelection = {
     sport,
     track,
-    periodStart: competePeriodWindow(state, competeNow(state), sport).startsAt.toISOString(),
-    periodEnd: competePeriodWindow(state, competeNow(state), sport).endsAt.toISOString(),
+    periodStart: period!.startsAt.toISOString(),
+    periodEnd: period!.endsAt.toISOString(),
   };
 
   const fieldContent = (
@@ -185,7 +186,7 @@ export function CompetitionField({
       onTouchCancel={() => hold.current?.end()}
     >
       {sceneDimension === "4d" && isFocused ? <View style={{ height: sceneHeight }}>
-        <GeographicCourse lanes={fieldLanes} unit={arena.unit} selectedId={selectedId ?? me?.id ?? ""} focusRequest={focusRequest} onSelect={id => { if (!hold.current?.suppressSelection()) selectAthlete(id); }} course={course} onCourseChange={setCourse} distanceTarget={courseTarget} onResumeFollow={() => setCourseTarget(null)} controlsBottom={expanded ? safeBottom + (spotlightCollapsed ? 132 : 216) : 8} overlaysHidden={overlaysHidden} />
+        <GeographicCourse lanes={fieldLanes} unit={arena.unit} selectedId={selectedId ?? me?.id ?? ""} focusRequest={focusRequest} onSelect={id => { if (!hold.current?.suppressSelection()) selectAthlete(id); }} course={course} error={courseError} onRetry={retryCourse} distanceTarget={courseTarget} onResumeFollow={() => setCourseTarget(null)} controlsBottom={expanded ? safeBottom + (spotlightCollapsed ? 132 : 216) : 8} overlaysHidden={overlaysHidden} />
         {!expanded ? <View style={{ position: "absolute", right: 12, top: 12 }}><IconButton icon="expand" label="Expand 4D course to full screen" onPress={expandField} /></View> : null}
       </View> : null}
       {sceneDimension === "3d" && isFocused ? (
@@ -292,8 +293,6 @@ export function CompetitionField({
             state={state}
             selection={replaySelection}
             dimension={sceneDimension}
-            course={course}
-            onCourseChange={setCourse}
             variant="inline"
             label="Replay"
           />
@@ -440,8 +439,6 @@ export function CompetitionField({
                   state={state}
                   selection={replaySelection}
                   dimension={sceneDimension}
-                  course={course}
-                  onCourseChange={setCourse}
                   variant="inline"
                   label="Replay"
                 />

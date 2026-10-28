@@ -388,14 +388,19 @@ capsule identity, ground choices, distance scale, ghost and offscreen indicators
 See the [performance investigation and fidelity validation](reviews/2d-field-performance/README.md).
 
 The optional geographic course view uses Mapbox Standard scenery and the same
-competition totals, with GPX or explicit walking/cycling route requests. Keep
-course choice separate from activity import and scoring. The dedicated screen
+competition totals. The database route catalog assigns one route snapshot to
+every competition field sharing the same wave start. Live fields and historical
+replays read that assignment through a membership-checked API. Athletes cannot
+upload, request, or change 4D routes; admin catalog editing is a later step.
+The dedicated screen
 supports native map gestures, selectable athletes, 2D/chase views, discovered-ground
 framing and recenter/follow. Manual exploration suspends follow; selecting an
 athlete resumes it. Respect reduced motion and retain map attribution. Points
 fields keep the existing field. Athletes retrace courses back and forth at each
 endpoint while cumulative distance continues; the chase camera follows their direction and the covered trail stays
-solid. Courses remain local to the view; no shared published event-course assignment is implied. See
+solid. Only local demo and debug previews use the bundled sample routes; live
+accounts require the stored assignment. Courses do not change scoring or import
+an activity. See
 [implementation and validation](reviews/geographic-course/README.md).
 
 
@@ -403,7 +408,7 @@ Geographic scenery is the third field option, labeled **4D** beside **2D / 3D**
 on native and web, including fullscreen controls. Distance fields offer all three;
 points fields retain 2D / 3D. 4D uses the same inline/fullscreen field host,
 selection, sliding broadcast panels, quick jumps and hold-to-hide overlays. Mode
-changes retain fullscreen, collapsed panels and the chosen course. Competition
+changes retain fullscreen, collapsed panels and the assigned weekly course. Competition
 replay also offers 4D, using timeline values for both dots and earned trails;
 rewinding never reveals later effort. Mapbox supplies geography-specific camera
 controls, while appearance/oval controls remain specific to the illustrative field.

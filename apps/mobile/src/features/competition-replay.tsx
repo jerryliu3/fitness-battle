@@ -1,4 +1,5 @@
 import { GeographicCourse } from "./geographic-course";
+import { useCompetitionCourse } from "./use-competition-course";
 import { FieldViewSwitcher } from "../ui/field-view-switcher";
 import { useFieldFlight } from "../ui/use-field-flight";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -9,7 +10,7 @@ import {
   competitionReplayFrame, competitionReplayCaption, competitionReplayDate,
   indexCompetitionReplay, localCompetitionReplay, initialsFromName, fieldDefaultSpan,
   clampCourseCenter, sportById,
-  type RaceCourse, type CompetitionReplay, type CompetitionReplaySelection, type CompeteState, type ArenaLane,
+  type CompetitionReplay, type CompetitionReplaySelection, type CompeteState, type ArenaLane,
 } from "@fitness-battle/shared";
 import { useCompeteStore } from "../lib/compete-store";
 import { useAuth } from "../lib/auth";
@@ -29,16 +30,12 @@ export function CompetitionReplayButton({
   state,
   selection,
   dimension = "2d",
-  course = null,
-  onCourseChange,
   label = "Replay competition",
   variant = "button",
 }: {
   state: CompeteState;
   selection: CompetitionReplaySelection;
   dimension?: "2d" | "3d" | "4d";
-  course?: RaceCourse | null;
-  onCourseChange?(course: RaceCourse | null): void;
   label?: string;
   variant?: "button" | "inline";
 }) {
@@ -89,8 +86,6 @@ export function CompetitionReplayButton({
                 state={state}
                 selection={selection}
                 initialDimension={dimension}
-                initialCourse={course}
-                onCourseChange={onCourseChange}
                 onClose={() => setOpen(false)}
               />
             </SafeAreaView>
@@ -123,7 +118,7 @@ function ReplayTimeline({ cursor, count, caption, onSeek }: { cursor: number; co
 function ReplayAction({ label, text, disabled, onPress, primary = false }: { label: string; text: string; disabled?: boolean; onPress: () => void; primary?: boolean }) {
   return <Pressable accessibilityRole="button" accessibilityLabel={label} accessibilityState={{ disabled: Boolean(disabled) }} disabled={disabled} onPress={onPress} style={[s.action, primary && s.primary, disabled && { opacity: .4 }]}><AppText role="label">{text}</AppText></Pressable>;
 }
-function ReplayViewer({ state, selection, initialDimension, initialCourse, onCourseChange, onClose }: { state: CompeteState; selection: CompetitionReplaySelection; initialDimension: "2d" | "3d" | "4d"; initialCourse: RaceCourse | null; onCourseChange?(course: RaceCourse | null): void; onClose: () => void }) {
+function ReplayViewer({ state, selection, initialDimension, onClose }: { state: CompeteState; selection: CompetitionReplaySelection; initialDimension: "2d" | "3d" | "4d"; onClose: () => void }) {
   const { user, accessToken, offlineMode } = useAuth();
   const { debugActive } = useCompeteStore();
   const reduced = useReducedMotion();
@@ -131,8 +126,7 @@ function ReplayViewer({ state, selection, initialDimension, initialCourse, onCou
   const [attempt, setAttempt] = useState(0);
   const [cursor, setCursor] = useState(0), [playing, setPlaying] = useState(false), [speed, setSpeed] = useState(1);
   const [dimension, setDimension] = useState(initialDimension);
-  const [course, setCourse] = useState(initialCourse);
-  const changeCourse = (next: RaceCourse | null) => { setCourse(next); onCourseChange?.(next); };
+  const { course, error: courseError, retry: retryCourse } = useCompetitionCourse(selection.sport, selection.periodStart, selection.periodEnd, debugActive);
   const [center, setCenter] = useState<number | null>(null), [span, setSpan] = useState<number | null>(null);
   const [followEvent, setFollowEvent] = useState(true);
   const [selected, setSelected] = useState<string | null>(null);
@@ -196,7 +190,7 @@ function ReplayViewer({ state, selection, initialDimension, initialCourse, onCou
         <View style={{ position: "absolute", top: 12, right: 12, zIndex: 10 }}>
           <FieldViewSwitcher value={dimension} geographic={unit !== "pts"} onChange={value => { flight.cancel(); setDimension(value); }} />
         </View>
-        {dimension === "4d" ? <GeographicCourse course={course} onCourseChange={changeCourse} lanes={lanes} unit={unit} selectedId={selected ?? focus?.id ?? ""} focusRequest={focusRequest} onSelect={select} /> : dimension === "2d" ? <LaneTrack onGestureStart={flight.cancel} onViewChange={applyView} focusRequest={focusRequest} focusOnMount animateSelection={!reduced} lanes={nativeLanes} appearance={appearance} unit={unit} height={height} fullscreen active selectedId={selected ?? focus?.id} index={2} showGhost={false} onSelect={lane => select(lane.id)} view={view} onPan={panTo} onZoom={zoomTo} /> : <PortraitField onGestureStart={flight.cancel} onViewChange={applyView} focusRequest={focusRequest} focusOnMount animateSelection={!reduced} laneAnchor={portraitAnchor} selectedId={selected ?? focus?.id} lanes={lanes} unit={unit} height={height} fullscreen fullscreenControlsBottom={64} onSelect={select} view={view} onPan={panTo} onZoom={zoomTo} />}
+        {dimension === "4d" ? <GeographicCourse course={course} error={courseError} onRetry={retryCourse} lanes={lanes} unit={unit} selectedId={selected ?? focus?.id ?? ""} focusRequest={focusRequest} onSelect={select} /> : dimension === "2d" ? <LaneTrack onGestureStart={flight.cancel} onViewChange={applyView} focusRequest={focusRequest} focusOnMount animateSelection={!reduced} lanes={nativeLanes} appearance={appearance} unit={unit} height={height} fullscreen active selectedId={selected ?? focus?.id} index={2} showGhost={false} onSelect={lane => select(lane.id)} view={view} onPan={panTo} onZoom={zoomTo} /> : <PortraitField onGestureStart={flight.cancel} onViewChange={applyView} focusRequest={focusRequest} focusOnMount animateSelection={!reduced} laneAnchor={portraitAnchor} selectedId={selected ?? focus?.id} lanes={lanes} unit={unit} height={height} fullscreen fullscreenControlsBottom={64} onSelect={select} view={view} onPan={panTo} onZoom={zoomTo} />}
         <Pressable accessibilityRole="button" onPress={() => { flight.cancel(); setCenter(null); setSelected(null); setFollowEvent(v => !v); }} style={s.follow}><AppText role="label">{followEvent ? "Follow me" : "Follow event"}</AppText></Pressable>
       </View>
       <View style={s.controls}>
