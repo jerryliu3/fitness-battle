@@ -9,7 +9,7 @@ describe("shared effort history", () => {
     expect(model.dailyValues).toHaveLength(30);
     expect(model.pts).toHaveLength(30);
     expect(model.lastPoint.x).toBe(model.xEnd);
-    expect(model.endDateLabel).toContain("Today");
+    expect(model.endDateLabel).not.toContain("Today");
     expect(model.yMin).toBeGreaterThanOrEqual(0);
   });
 
@@ -20,7 +20,7 @@ describe("shared effort history", () => {
     expect(week.dailyValues).toHaveLength(7);
     expect(week.pts).toHaveLength(7);
     expect(week.lastPoint.x).toBe(week.xEnd);
-    expect(week.endDateLabel).toContain("Today");
+    expect(week.endDateLabel).not.toContain("Today");
 
     const month = effortHistory(state, "open", null, null, "month");
     expect(month.dailyValues).toHaveLength(30);
@@ -57,7 +57,7 @@ describe("shared effort history", () => {
     );
     expect(model.dailyValues).toHaveLength(30);
     expect(model.lastPoint.x).toBe(model.xEnd);
-    expect(model.endDateLabel).toContain("Today");
+    expect(model.endDateLabel).not.toContain("Today");
   });
 
   it("ignores malformed anchor dates instead of crashing either profile renderer", () => {

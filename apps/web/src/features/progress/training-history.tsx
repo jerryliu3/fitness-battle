@@ -66,7 +66,7 @@ export function TrainingHistory({ state, children }: { state: CompeteState; chil
               </button>
             ))}
           </div>
-          <div style={{ display: "flex", alignItems: "baseline", gap: 10, margin: "6px 0 10px", flexWrap: "wrap" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10, margin: "6px 0 10px", flexWrap: "wrap" }}>
             <AppText role="hero" className="record-time">
               {formatClockTime(inspected.seconds)}
             </AppText>

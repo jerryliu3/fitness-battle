@@ -4,7 +4,6 @@ import { AppParagraph, AppText, SectionHeader, typographyStyle, AppHeading } fro
 
 import { clubLifetimeTotals } from "@fitness-battle/shared";
 import { ProfilePhoto } from "@/features/you/profile-photo";
-import { currentEffortMilestone, formatVolume } from "@fitness-battle/shared";
 
 import { useScoreTrackLens } from "@/lib/score-track-lens";
 import { useAuth } from "@/components/auth-context";
@@ -96,7 +95,6 @@ export function AthleteOverview({
   const unit = distanceUnitLabel(state.units);
 
   const [effortRange, setEffortRange] = useState<TrainingRange>("month");
-  const milestone = currentEffortMilestone(state, state.primary, track);
   const showProfile = sections === "profile";
   const showProgress = sections === "progress";
 
@@ -345,23 +343,20 @@ export function AthleteOverview({
 
       {showProgress ? (
       <section className="focus-card focus-elo" id="effort-score">
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, flexWrap: "wrap", marginBottom: 12 }}>
+        <div style={{ marginBottom: 12 }}>
           <div className="focus-elo-track-toggle" role="group" aria-label="Effort chart score track">{(["open", "verified"] as const).map(value => <button key={value} type="button" aria-pressed={track === value} onClick={() => setLens({ scope, track: value })}>{value === "open" ? "Open" : "GPS Tracked"}</button>)}</div>
-          <ChartRangeToggle value={effortRange} onChange={setEffortRange} />
         </div>
-        <div className="focus-elo-top">
-
+        <div className="focus-elo-top" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, marginBottom: 8 }}>
           <span className="focus-elo-rank-pill">
             {rankForElo(effectiveElo).name}
           </span>
+          <ChartRangeToggle value={effortRange} onChange={setEffortRange} />
         </div>
 
         <div className="focus-elo-score-row">
           <AppText role="metric" className="ui-score-value">{formatEffortScore(effectiveElo)}</AppText>
           <AppText role="body" secondary>Effort score</AppText>
         </div>
-
-        {milestone ? <AppParagraph typographyRole="body" className="fb-copy">+1 per {formatVolume(state.primary, state.primary === "strength" ? 0 : milestone.step, state.primary === "strength" ? milestone.step : 0, state.units)} this week · +{milestone.earned} from activity</AppParagraph> : null}
         <ChartSvg
           viewBox="0 0 340 150"
           className="focus-trend"

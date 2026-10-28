@@ -67,7 +67,7 @@ export function TrainingHistory({ state, children }: { state: CompeteState; chil
               ))}
             </View>
           </ScrollView>
-          <View style={{ flexDirection: "row", alignItems: "baseline", gap: 10, marginVertical: 6, flexWrap: "wrap" }}>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 10, marginVertical: 6, flexWrap: "wrap" }}>
             <Text style={f.massive}>{formatClockTime(inspected.seconds)}</Text>
             <StatusBadge tone={inspected.verified ? "success" : "neutral"}>
               {inspected.source.replaceAll("_", " ")}

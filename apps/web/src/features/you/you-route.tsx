@@ -823,7 +823,6 @@ function YouContent({ surface }: { surface: "progress" | "athlete" }) {
         <Section
           className="club-history-preview-section"
           title="Past weeks & awards"
-          subtitle="Closed competition weeks, chapter history, and your award shelf."
           action={
             <TextAction
               href="/you/history"

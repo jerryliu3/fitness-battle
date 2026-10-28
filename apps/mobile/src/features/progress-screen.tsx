@@ -33,7 +33,6 @@ export function ProgressScreen() {
         <View style={{display:section==="overview"?"flex":"none",gap:28}}><TrainingHistory state={state}><Achievements state={state}/></TrainingHistory>
         <Section
           title="Past weeks & awards"
-          subtitle="Closed competition weeks, chapter history, and your award shelf."
           action={
             <TextAction
               label="View all"

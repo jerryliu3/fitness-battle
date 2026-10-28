@@ -128,7 +128,7 @@ export function effortHistory(
     day: "numeric",
     timeZone: APP_TIMEZONE,
   });
-  const endDateLabel = `Today (${todayDateLabel})`;
+  const endDateLabel = todayDateLabel;
 
   return {
     effectiveElo,

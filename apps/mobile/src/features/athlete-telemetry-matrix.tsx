@@ -165,7 +165,6 @@ const s = StyleSheet.create({
   },
   bentoTile: {
     width: "48%",
-    flexGrow: 1,
     backgroundColor: c.card,
     borderRadius: 12,
     borderWidth: 1,
