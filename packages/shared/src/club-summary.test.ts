@@ -25,7 +25,7 @@ describe("club calendar summary", () => {
       ...freshState(now),
       name: "Alex Park",
       activities: [
-        activity("prior", "2026-11-02T04:59:59Z"),
+        activity("prior", "2026-10-26T14:00:00Z"),
         activity("current", "2026-11-02T05:00:00Z"),
         activity("future", "2026-11-03T12:00:00Z"),
         activity("excluded", "2026-11-02T12:00:00Z", {
@@ -39,6 +39,7 @@ describe("club calendar summary", () => {
       movingSec: 1800,
       previousSec: 1800,
       activeDays: 1,
+      daysPassed: 1,
       firstName: "Alex",
     });
   });

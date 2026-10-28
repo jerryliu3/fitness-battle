@@ -6,7 +6,7 @@ import { AppText, textStyle } from "../ui/section";
 import { ChartScrubber } from "../ui/chart-scrubber";
 import { ChartFrame } from "../ui/chart-frame";
 import { HomeActivityActions } from "./home-activity-actions";
-import { SHELL_COLORS as c, mobileSurfaces } from "../theme";
+import { SHELL_COLORS as c } from "../theme";
 
 export function WeekChart({ state, onOpen, ready = true }: { state: CompeteState; onOpen?: () => void; ready?: boolean }) {
   const chart = portfolioWeekChart(state);
@@ -26,16 +26,16 @@ export function WeekChart({ state, onOpen, ready = true }: { state: CompeteState
       </Svg>
     </ChartScrubber>
     <View style={s.dates}><AppText role="caption" secondary>{chart.startLabel}</AppText><AppText role="caption" secondary>{chart.endLabel}</AppText></View>
-    {onOpen && <Pressable accessibilityRole="button" accessibilityLabel="See more this week" onPress={onOpen} style={s.open}><AppText role="label">See more →</AppText></Pressable>}
+    {onOpen && <Pressable accessibilityRole="button" accessibilityLabel="See more this week" onPress={onOpen} hitSlop={8} style={s.open}><AppText role="label">See more →</AppText></Pressable>}
   </View></ChartFrame>;
 }
 const s = StyleSheet.create({
-  card: { paddingTop: 12, paddingBottom: 20, gap: 12, borderBottomWidth: 1, borderBottomColor: mobileSurfaces.divider },
+  card: { paddingTop: 12, paddingBottom: 2, gap: 8 },
   header: { flexDirection: "row", flexWrap: "wrap", justifyContent: "space-between", alignItems: "center", gap: 12 },
   total: { flexDirection: "row", flexWrap: "wrap", justifyContent: "space-between", alignItems: "center", gap: 12 },
   number: { ...textStyle("hero"), color: c.ink, fontVariant: ["tabular-nums"] },
   unit: { ...textStyle("body"), color: c.muted },
   comparison: { gap: 4, alignItems: "flex-end", flexShrink: 1 },
   dates: { flexDirection: "row", justifyContent: "space-between" },
-  open: { minHeight: 44, justifyContent: "center", alignSelf: "flex-end" },
+  open: { minHeight: 32, paddingVertical: 2, justifyContent: "center", alignSelf: "flex-end" },
 });

@@ -5,7 +5,6 @@ import { WeekChart } from "../../src/features/week-chart";
 import { DailyHealth } from "../../src/features/daily-health";
 import { LatestActivity } from "../../src/features/club-latest-activity";
 import type { Activity } from "@fitness-battle/shared";
-import { AppIcon } from "../../src/ui/app-icon";
 
 import { RivalCard } from "../../src/features/club-rival-card";
 
@@ -77,7 +76,7 @@ export default function Home() {
           <View style={s.suggestionPrompt}>
             <Pressable
               accessibilityRole="button"
-              accessibilityLabel={`Open today's suggested session: ${route.suggestion.title}`}
+              accessibilityLabel="Today's recommended session. Tap to view."
               onPress={openSuggestion}
               style={s.suggestionBody}
             >
@@ -85,15 +84,9 @@ export default function Home() {
                 <View style={s.suggestionDot} />
               </View>
               <View style={{ flex: 1, gap: 2 }}>
-                <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
-                  <AppText role="caption" secondary>TODAY’S TARGET</AppText>
-                  {route.suggestion.minutes ? (
-                    <AppText role="caption" secondary>· {route.suggestion.minutes} min</AppText>
-                  ) : null}
-                </View>
-                <AppText role="label" numberOfLines={1}>{route.suggestion.title}</AppText>
+                <AppText role="label" numberOfLines={1}>Today’s recommended session</AppText>
+                <AppText role="caption" secondary>Tap to view</AppText>
               </View>
-              <AppIcon name="chevron" size={18} color={c.muted} />
             </Pressable>
             <Pressable
               accessibilityRole="button"
