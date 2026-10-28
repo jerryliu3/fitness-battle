@@ -391,8 +391,10 @@ export async function loadCompeteAccount(
     return [
       {
         sport,
-        waveStart: String(row.wave_start),
-        weekEnd: String(row.week_end),
+        // PostgREST may return +00:00 while field pins use ISO Z timestamps.
+        // Keep equivalent bounds identical so a read does not create a new revision.
+        waveStart: new Date(String(row.wave_start)).toISOString(),
+        weekEnd: new Date(String(row.week_end)).toISOString(),
         capacity: Number(row.capacity),
         peerIds: (row.peer_ids as string[]) ?? [],
         syntheticIds: (row.synthetic_ids as string[]) ?? [],
