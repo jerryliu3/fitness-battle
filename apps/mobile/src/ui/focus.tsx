@@ -173,6 +173,7 @@ export function FocusSidePanel({
   children?: ReactNode;
 }) {
   const reduce = useReducedMotion();
+  const insets = useSafeAreaInsets();
   const [present, setPresent] = useState(open);
   const progress = useRef(new Animated.Value(0)).current;
   const { width: windowWidth } = useWindowDimensions();
@@ -247,7 +248,15 @@ export function FocusSidePanel({
           }}
           accessibilityViewIsModal
         >
-          <SafeAreaView edges={["top", "bottom"]} style={{ flex: 1 }}>
+          <View
+            style={{
+              flex: 1,
+              paddingTop: Math.max(insets.top, 16),
+              paddingBottom: Math.max(insets.bottom, 16),
+              paddingLeft: Math.max(insets.left, 0),
+              paddingRight: Math.max(insets.right, 0),
+            }}
+          >
             <View
               style={{
                 flexDirection: "row",
@@ -266,11 +275,12 @@ export function FocusSidePanel({
             </View>
             <ScrollView
               keyboardShouldPersistTaps="handled"
+              showsVerticalScrollIndicator={false}
               contentContainerStyle={{ padding: 20, gap: 20, paddingBottom: 40 }}
             >
               {children}
             </ScrollView>
-          </SafeAreaView>
+          </View>
         </Animated.View>
       </KeyboardAvoidingView>
     </Modal>

@@ -18,7 +18,7 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { router } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import {
   deliverNativeNotification,
   detectionPlatform,
@@ -34,6 +34,7 @@ import { FocusButton, f } from "../src/ui/focus";
 import { colors, fonts } from "../src/theme";
 
 export default function NotificationsScreen() {
+  const params = useLocalSearchParams<{ returnTo?: string }>();
   const [prefs, setPrefs] = useState<NotificationPreferences | null>(null);
   const [busy, setBusy] = useState(false);
   const [note, setNote] = useState<string | null>(null);
@@ -175,9 +176,15 @@ export default function NotificationsScreen() {
       <SafeAreaView style={styles.safe} edges={["top", "bottom"]}>
         <View style={f.content}>
           <IconButton icon="back" label="Return to previous screen"
-            onPress={() =>
-              router.canGoBack() ? router.back() : router.replace("/settings")
-            }
+            onPress={() => {
+              if (params.returnTo === "edit") {
+                router.replace({ pathname: "/athlete", params: { edit: "1" } });
+              } else if (router.canGoBack()) {
+                router.back();
+              } else {
+                router.replace({ pathname: "/athlete", params: { edit: "1" } });
+              }
+            }}
           />
           <Text style={styles.copy}>
             {note ?? "Loading notification settings…"}
@@ -196,7 +203,18 @@ export default function NotificationsScreen() {
   return (
     <SafeAreaView style={styles.safe} edges={["top", "bottom"]}>
       <ScrollView contentContainerStyle={styles.scroll}>
-        <ScreenHeader title="Notifications" onBack={() => router.canGoBack() ? router.back() : router.replace("/athlete")} />
+        <ScreenHeader
+          title="Notifications"
+          onBack={() => {
+            if (params.returnTo === "edit") {
+              router.replace({ pathname: "/athlete", params: { edit: "1" } });
+            } else if (router.canGoBack()) {
+              router.back();
+            } else {
+              router.replace({ pathname: "/athlete", params: { edit: "1" } });
+            }
+          }}
+        />
         <Text style={styles.copy}>
           Choose which updates you receive. Enabling notifications asks for
           permission on this device.{" "}

@@ -157,10 +157,13 @@ function readLocal(userId: string | null): { savedAt: string; state: CompeteStat
     if (demoSeed) {
       const existingIds = new Set(existing.state.activities.map((a) => a.id));
       const missing = demoSeed.activities.filter((a) => !existingIds.has(a.id));
-      if (missing.length > 0) {
+      const needsCrew = !existing.state.crewBoard || existing.state.crewBoard.crewId === "solo";
+      if (missing.length > 0 || needsCrew) {
         const nextState = {
           ...existing.state,
-          activities: [...existing.state.activities, ...missing],
+          activities: missing.length > 0 ? [...existing.state.activities, ...missing] : existing.state.activities,
+          crewBoard: needsCrew ? demoSeed.crewBoard : existing.state.crewBoard,
+          enrollments: existing.state.enrollments.length > 0 ? existing.state.enrollments : demoSeed.enrollments,
         };
         writeLocal(userId, nextState, existing.savedAt);
         return {

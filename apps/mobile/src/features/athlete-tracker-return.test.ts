@@ -7,6 +7,8 @@ const mock = vi.hoisted(() => ({
   params: {} as Record<string, string | undefined>,
   dispatch: vi.fn(),
   replace: vi.fn(),
+  push: vi.fn(),
+  back: vi.fn(),
   setParams: vi.fn(),
 }));
 vi.mock("react-native", () => ({
@@ -23,7 +25,13 @@ vi.mock("react-native-safe-area-context", () => ({
 }));
 vi.mock("expo-router", () => ({
   useLocalSearchParams: () => mock.params,
-  useRouter: () => ({ replace: mock.replace, setParams: mock.setParams }),
+  useRouter: () => ({
+    replace: mock.replace,
+    push: mock.push,
+    back: mock.back,
+    setParams: mock.setParams,
+    canGoBack: () => true,
+  }),
 }));
 vi.mock("heroui-native/button", () => ({ Button: "Button" }));
 vi.mock("heroui-native/input", () => ({ Input: "Input" }));
@@ -108,4 +116,44 @@ describe("tracker callback consumption", () => {
       expect(mock.dispatch).toHaveBeenCalledTimes(1);
     },
   );
+});
+
+describe("athlete profile navigation and layout", () => {
+  it("opens edit profile side panel when edit=1 param is set", async () => {
+    vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
+    mock.params = { edit: "1" };
+    await act(async () => {
+      renderer = create(createElement(AthleteScreen));
+    });
+    const sidePanel = renderer.root.findByType("SidePanel" as never);
+    expect(sidePanel.props.open).toBe(true);
+  });
+
+  it("subpanel back button returns to /athlete with edit=1", async () => {
+    vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
+    mock.params = { panel: "connections" };
+    await act(async () => {
+      renderer = create(createElement(AthleteScreen));
+    });
+    const screenHeader = renderer.root.findByType("ScreenHeader" as never);
+    expect(screenHeader.props.title).toBe("Data Sync");
+    await act(async () => {
+      screenHeader.props.onBack();
+    });
+    expect(mock.replace).toHaveBeenCalledWith({
+      pathname: "/athlete",
+      params: { edit: "1" },
+    });
+  });
+
+  it("renders lifetime overtakes in the athlete stats section", async () => {
+    vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
+    mock.params = {};
+    await act(async () => {
+      renderer = create(createElement(AthleteScreen));
+    });
+    const rendered = JSON.stringify(renderer.toJSON());
+    expect(rendered).toContain("Overtakes");
+    expect(rendered).toContain("Since the first mile");
+  });
 });

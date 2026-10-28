@@ -240,15 +240,22 @@ export function CompeteProvider({ children, navigationReady = true }: { children
         authRef.current.offlineMode && authRef.current.user?.dataOrigin === "synthetic" &&
         authRef.current.user
       ) {
-        const seed = getDemoCompeteState(authRef.current.user.email.split("@")[0]);
+        const emailHandle = authRef.current.user.email ? authRef.current.user.email.split("@")[0] : null;
+        const seed = (emailHandle ? getDemoCompeteState(emailHandle) : null) || getDemoCompeteState(authRef.current.user.id);
         if (seed) {
           if (!raw) {
             next = seed;
           } else {
             const existingIds = new Set(next.activities.map((a) => a.id));
             const missing = seed.activities.filter((a) => !existingIds.has(a.id));
-            if (missing.length > 0) {
-              next = { ...next, activities: [...next.activities, ...missing] };
+            const needsCrew = !next.crewBoard || next.crewBoard.crewId === "solo";
+            if (missing.length > 0 || needsCrew) {
+              next = {
+                ...next,
+                activities: missing.length > 0 ? [...next.activities, ...missing] : next.activities,
+                crewBoard: needsCrew ? seed.crewBoard : next.crewBoard,
+                enrollments: next.enrollments.length > 0 ? next.enrollments : seed.enrollments,
+              };
               void AsyncStorage.setItem(keys.state, JSON.stringify(next));
             }
           }

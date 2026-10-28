@@ -15,6 +15,7 @@ const mock = vi.hoisted(() => ({
   push: vi.fn(),
   state: null as unknown,
   data: null as unknown,
+  user: null as unknown,
 }));
 vi.mock("@react-native-async-storage/async-storage", () => ({
   default: { getItem: vi.fn(async () => null), setItem: vi.fn(async () => {}) },
@@ -47,7 +48,7 @@ vi.mock("expo-router", () => ({
 }));
 vi.mock("../lib/auth", () => ({
   useAuth: () => ({
-    user: { id: "audit" },
+    user: (mock.user as { id: string; email?: string } | null) ?? { id: "audit" },
     offlineMode: !mock.live,
     accessToken: mock.live ? "test-token" : null,
   }),
@@ -88,6 +89,7 @@ let renderer: ReactTestRenderer;
 afterEach(async () => {
   if (renderer) await act(async () => renderer.unmount());
   mock.data = null;
+  mock.user = null;
   clearApiReads();
   vi.unstubAllGlobals();
 });
@@ -177,4 +179,17 @@ it("keeps crew settings open while setting and clearing the current rest week", 
   ).toBe(true);
   await act(async () => button("Clear rest week").props.onPress());
   expect(button("Mark my rest week")).toBeTruthy();
+});
+
+it("hydrates demo crew for Alice when running offline with synthetic account", async () => {
+  vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
+  mock.live = false;
+  mock.user = { id: "alice", email: "alice@fitness-battle.dev" };
+  mock.state = freshState();
+  await act(async () => {
+    renderer = create(createElement(CrewHub));
+  });
+  const content = JSON.stringify(renderer.toJSON());
+  expect(content).toContain("Weekday miles");
+  expect(content).not.toContain("Make room for your people");
 });

@@ -20,6 +20,7 @@ import {
   APP_TIMEZONE,
   crewMemberWeekValue,
   crewWeekRelay,
+  getDemoCompeteState,
 } from "@fitness-battle/shared";
 import { useFocusEffect, useGlobalSearchParams, useRouter } from "expo-router";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -148,12 +149,13 @@ export function CrewHub({ membersOnly = false, crewId = "" }: { membersOnly?: bo
       return () => clearInterval(timer);
     }, [api.reload]),
   );
+  const demoSeed = !api.live && user ? getDemoCompeteState(user.id) ?? (user.email ? getDemoCompeteState(user.email.split("@")[0]) : null) : null;
   const pin =
     state?.crewBoard &&
     state.crewBoard.crewId !== "solo" &&
     !state.crewBoard.crewId.startsWith("field:")
       ? state.crewBoard
-      : null;
+      : demoSeed?.crewBoard ?? null;
   const rawCrews = (api.data?.crews ?? []).flatMap((r) =>
     r.crews ? [r.crews] : [],
   );

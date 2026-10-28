@@ -12,15 +12,20 @@ export default function SettingsScreen() {
     <SafeAreaView style={f.safe} edges={["top"]}>
       <ScrollView contentContainerStyle={f.content}>
 <SectionStack divided={false}>
-        <ScreenHeader title="Settings" onBack={() => router.canGoBack() ? router.back() : router.replace("/athlete")} />
+        <ScreenHeader
+          title="Settings"
+          onBack={() => {
+            router.replace({ pathname: "/athlete", params: { edit: "1" } });
+          }}
+        />
         <View style={{ gap: 8 }}>
           <SettingsRow
             title="Edit profile"
             detail="Name & city"
             onPress={() =>
-              router.push({
-                pathname: "/athlete-settings",
-                params: { panel: "profile" },
+              router.replace({
+                pathname: "/athlete",
+                params: { edit: "1" },
               })
             }
           />
