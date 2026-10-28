@@ -2,7 +2,7 @@ import { beforeEach, expect, it, vi } from "vitest";
 import { freshState, reduceCompete, weeklyBoard, rollClock, prepareCompeteStateForAccount, buildArenaModel, type CrewBoardPin, type SportId } from "@fitness-battle/shared";
 const mock = vi.hoisted(() => ({ crew: vi.fn(), seat: vi.fn() }));
 vi.mock("./week-field", () => ({ loadCrewWeekFieldPin: mock.crew, seatWeekFieldPin: mock.seat }));
-import { hydrateFieldBoard } from "./compete-persist";
+import { hydrateFieldBoard, loadCompeteAccount } from "./compete-persist";
 const now = "2026-10-21T12:00:00.000Z", start = "2026-10-19T04:00:00.000Z", end = "2026-10-26T04:00:00.000Z";
 function pin(sport: SportId, crewId = "solo"): CrewBoardPin {
   return { sport, crewId, crewName: crewId === "solo" ? "Open Field" : "Cycling Crew", waveStart: start, weekEnd: end, capacity: 2,
@@ -23,6 +23,22 @@ beforeEach(() => {
   vi.clearAllMocks();
   mock.crew.mockResolvedValue(pin("cycling", "cycling-crew"));
   mock.seat.mockImplementation(async (_db, input) => pin(input.sport));
+});
+it("does not change a durable enrollment when Postgres and the field use equivalent timestamp formats", async () => {
+  const rows: Record<string, unknown> = {
+    athlete_prefs: { clock_period_start: start, updated_at: now },
+    profiles: { display_name: "Me", primary_sport: "running" },
+    wave_enrollments: [{ sport: "running", wave_start: "2026-10-19T04:00:00+00:00", week_end: "2026-10-26T04:00:00+00:00", capacity: 2, peer_ids: ["running-peer"], synthetic_ids: [], auto_enroll_next: false, crew_id: null }],
+  };
+  const db = { from: (table: string) => {
+    const result = { data: rows[table] ?? [], error: null };
+    const query = { select: () => query, eq: () => query, not: () => query, order: () => query, limit: () => query, range: () => query,
+      maybeSingle: () => Promise.resolve(result), then: (resolve: (value: typeof result) => unknown) => Promise.resolve(result).then(resolve) };
+    return query;
+  } };
+  const loaded = await loadCompeteAccount(db as never, "athlete");
+  const hydrated = await hydrateFieldBoard(db as never, "athlete", loaded!.state);
+  expect(JSON.stringify(prepareCompeteStateForAccount(hydrated))).toBe(JSON.stringify(prepareCompeteStateForAccount(loaded!.state)));
 });
 it("hydrates Crew cycling and seats separate running, retaining real scores in both fields", async () => {
   const state = await hydrateFieldBoard({} as never, "athlete", account());
