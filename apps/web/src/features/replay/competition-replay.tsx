@@ -40,7 +40,7 @@ function ReplayViewer({ state, selection, initialDimension }: { state: CompeteSt
   const [attempt, setAttempt] = useState(0);
   const [cursor, setCursor] = useState(0), [playing, setPlaying] = useState(false), [speed, setSpeed] = useState(1);
   const [dimension, setDimension] = useState(initialDimension);
-  const { course, error: courseError, retry: retryCourse } = useCompetitionCourse(selection.sport, selection.periodStart, selection.periodEnd, debugActive);
+  const { course, error: courseError, retry: retryCourse } = useCompetitionCourse(selection.sport, selection.periodStart, selection.periodEnd, debugActive, dimension === "4d");
   const [center, setCenter] = useState<number | null>(null), [span, setSpan] = useState<number | null>(null);
   const [followEvent, setFollowEvent] = useState(true);
   const [selected, setSelected] = useState<string | null>(null);

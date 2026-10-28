@@ -20,7 +20,7 @@ export function GeographicCourse({ lanes, unit, selectedId, focusRequest, onSele
   if (unit !== "mi" && unit !== "km") return null;
   return <View style={{ flex: 1, minHeight: 300 }}>
     {!mobileEnv.mapboxAccessToken ? <Text style={{ ...textStyle("body"), padding: 16 }}>Mapbox access is not configured for this build.</Text> : !course ?
-      <View style={{ padding: 16, gap: 12 }}><Text accessibilityRole="alert" style={textStyle("body")}>{error || "Loading this competition’s course…"}</Text>{error && onRetry ? <Pressable accessibilityRole="button" onPress={onRetry}><Text style={textStyle("label")}>Retry</Text></Pressable> : null}</View> :
+      <View style={{ flex: 1, justifyContent: "center", alignItems: "center", padding: 16, gap: 12 }}><Text accessibilityRole={error ? "alert" : undefined} style={textStyle("body")}>{error || "Loading this competition’s course…"}</Text>{error && onRetry ? <Pressable accessibilityRole="button" onPress={onRetry} style={{ minHeight: 44, justifyContent: "center", paddingHorizontal: 16 }}><Text style={textStyle("label")}>Retry</Text></Pressable> : null}</View> :
       <MapBoundary><Suspense fallback={<ActivityIndicator />}><CourseMap key={course.name + course.length} course={course} lanes={lanes} unit={unit} selectedId={selectedId} focusRequest={focusRequest} onSelect={onSelect} distanceTarget={distanceTarget} onResumeFollow={onResumeFollow} controlsBottom={controlsBottom} overlaysHidden={overlaysHidden} extraControls={<View style={{ minHeight: 44, paddingHorizontal: 14, justifyContent: "center", borderRadius: 12, backgroundColor: "#ffffff" }}><Text style={textStyle("label")}>Course: {course.name}</Text></View>} /></Suspense></MapBoundary>}
   </View>;
 }

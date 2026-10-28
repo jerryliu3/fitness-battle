@@ -1,12 +1,12 @@
 import { createElement, type ReactNode } from "react";
 import { act, create, type ReactTestRenderer } from "react-test-renderer";
 import { afterEach, expect, it, vi } from "vitest";
-import { defaultFieldAppearance, freshState, weeklyRaceCourse } from "@fitness-battle/shared";
+import { defaultFieldAppearance, freshState, DEMO_RACE_COURSE } from "@fitness-battle/shared";
 import type { FieldModel } from "../model";
 vi.mock("next/navigation", () => ({ usePathname: () => "/app/arena" }));
 vi.mock("@/components/auth-context", () => ({ useAuth: () => ({ user: null }) }));
 vi.mock("@/components/compete-context", () => ({ useCompete: () => ({ debugActive: true }) }));
-vi.mock("@/features/course/use-competition-course", () => ({ useCompetitionCourse: (_sport: string, start: string) => ({ course: weeklyRaceCourse(new Date(start)), error: "", retry() {} }) }));
+vi.mock("@/features/course/use-competition-course", () => ({ useCompetitionCourse: () => ({ course: DEMO_RACE_COURSE, error: "", retry() {} }) }));
 vi.mock("@/lib/haptics", () => ({ playCue() {} }));
 vi.mock("./field-course", () => ({ useFieldAppearance: () => [defaultFieldAppearance], FieldOverview: "FieldOverview" }));
 vi.mock("@/features/course/geographic-course", () => ({ GeographicCourse: "GeographicCourse" }));
@@ -29,7 +29,7 @@ it("shares fullscreen, athlete panels, selection and course replay with 4D", asy
   const choose = async (value: string) => act(async () => renderer.root.findByType("select").props.onChange({ target: { value } }));
   await choose("4d");
   const map = () => renderer.root.findByType("GeographicCourse" as never);
-  const course = weeklyRaceCourse(new Date(model.periodStart));
+  const course = DEMO_RACE_COURSE;
   expect(map().props.course).toBe(course);
   expect(map().props.onCourseChange).toBeUndefined();
   expect(renderer.root.findAllByType("FieldOverview" as never)).toHaveLength(0);
@@ -62,4 +62,11 @@ it("shares fullscreen, athlete panels, selection and course replay with 4D", asy
   expect(map().props.course).toBe(course);
   expect(map().props.selectedId).toBe("peer");
   expect(button("Expand live intervals")).toBeDefined();
+  await act(async () => overview().props.onNavigate(7));
+  await act(async () => renderer.update(createElement(FieldStage, {
+    model: { ...model, periodStart: model.periodEnd, periodEnd: "2026-11-09T05:00:00Z" },
+    replayState: freshState(new Date("2026-11-03T18:00:00Z")),
+  })));
+  expect(map().props.distanceTarget).toBeNull();
+  expect(renderer.root.findByType("ReplayButton" as never).props.selection.periodEnd).toBe("2026-11-09T05:00:00Z");
 });

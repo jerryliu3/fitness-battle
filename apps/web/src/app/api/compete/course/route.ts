@@ -11,10 +11,10 @@ export async function GET(request: Request) {
   if (!sport || !["running", "cycling", "walking"].includes(sport)
     || !start || !end || !Number.isFinite(Date.parse(start)) || !Number.isFinite(Date.parse(end))
     || Date.parse(end) <= Date.parse(start)) return NextResponse.json({ error: "invalid_competition_route" }, { status: 400 });
-  const db = await createRequestClient(request);
-  const { data, error } = await db.rpc("competition_route", { p_sport: sport, p_start: start, p_end: end });
-  if (error || !data) return NextResponse.json({ error: "Weekly course is unavailable. Please try again." }, { status: error?.code === "42501" ? 404 : 503 });
   try {
+    const db = await createRequestClient(request);
+    const { data, error } = await db.rpc("competition_route", { p_sport: sport, p_start: start, p_end: end });
+    if (error || !data) return NextResponse.json({ error: "Weekly course is unavailable. Please try again." }, { status: error?.code === "42501" ? 404 : 503 });
     const course = raceCourseFromAssignment(data, start, end);
     return NextResponse.json({ name: course.name, coordinates: course.coordinates, periodStart: start, periodEnd: end }, { headers: { "Cache-Control": "private, no-store" } });
   } catch {

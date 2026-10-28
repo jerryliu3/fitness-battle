@@ -27,4 +27,6 @@ it("does not substitute a local route for denied or invalid assignments", async 
   expect((await GET(new Request(url))).status).toBe(404);
   mock.rpc.mockResolvedValue({ data: { name: "Park", coordinates: [[0, 0], [.02, 0]], periodStart: "2026-10-19T04:00:00Z", periodEnd: end }, error: null });
   expect((await GET(new Request(url))).status).toBe(503);
+  mock.rpc.mockRejectedValue(new Error("Transport unavailable"));
+  expect((await GET(new Request(url))).status).toBe(503);
 });

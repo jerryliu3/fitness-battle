@@ -87,8 +87,9 @@ export function FieldStage({
     : null;
 
   const [viewDimension, setViewDimension] = useState<"2d" | "3d" | "4d">("2d");
-  const { course, error: courseError, retry: retryCourse } = useCompetitionCourse(model.sport, model.periodStart, model.periodEnd, debugActive);
+  const { course, error: courseError, retry: retryCourse } = useCompetitionCourse(model.sport, model.periodStart, model.periodEnd, debugActive, viewDimension === "4d" && tabActive);
   const [courseTarget, setCourseTarget] = useState<CourseDistanceTarget | null>(null);
+  useEffect(() => setCourseTarget(null), [accountKey, model.sport, model.periodStart, model.unit]);
   const chooseView = (value: "2d" | "3d" | "4d") => {
     void playCue("selection");
     cancelCenterTween();

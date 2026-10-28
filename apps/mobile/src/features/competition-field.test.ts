@@ -1,7 +1,7 @@
 import { createElement } from "react";
 import { act, create, type ReactTestRenderer } from "react-test-renderer";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
-import { defaultFieldAppearance, freshState, reduceCompete, weeklyRaceCourse } from "@fitness-battle/shared";
+import { defaultFieldAppearance, freshState, reduceCompete, DEMO_RACE_COURSE } from "@fitness-battle/shared";
 const mocks = vi.hoisted(() => ({ fly: vi.fn(), appState: null as null | ((status: string) => void) }));
 vi.mock("expo-router", () => ({ usePathname: () => "/arena" }));
 vi.mock("react-native", () => ({
@@ -15,7 +15,7 @@ vi.mock("react-native", () => ({
 vi.mock("react-native-safe-area-context", () => ({ useSafeAreaInsets: () => ({ top: 44, bottom: 34 }) }));
 vi.mock("react-native-svg", () => ({ default: "Svg", G: "SvgG" }));
 vi.mock("./geographic-course", () => ({ GeographicCourse: "GeographicCourse" }));
-vi.mock("./use-competition-course", () => ({ useCompetitionCourse: (_sport: string, start: string) => ({ course: weeklyRaceCourse(new Date(start)), error: "", retry() {} }) }));
+vi.mock("./use-competition-course", () => ({ useCompetitionCourse: () => ({ course: DEMO_RACE_COURSE, error: "", retry() {} }) }));
 vi.mock("./competition-replay", () => ({ CompetitionReplayButton: "ReplayButton" }));
 vi.mock("../ui/field-view-switcher", () => ({
   FieldViewSwitcher: ({ value, onChange }: { value: string; onChange: (v: string) => void }) =>
@@ -90,7 +90,7 @@ it("keeps 4D inside the fullscreen host with the same panels, selection and repl
   });
   await switchTo("4D");
   const map = () => renderer.root.findByType("GeographicCourse" as never);
-  const course = weeklyRaceCourse(new Date("2026-10-26T04:00:00Z"));
+  const course = DEMO_RACE_COURSE;
   expect(map().props.course).toBe(course);
   expect(map().props.onCourseChange).toBeUndefined();
   const overview = () => renderer.root.findByType("FieldOverview" as never);

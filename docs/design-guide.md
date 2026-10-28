@@ -390,7 +390,8 @@ See the [performance investigation and fidelity validation](reviews/2d-field-per
 The optional geographic course view uses Mapbox Standard scenery and the same
 competition totals. The database route catalog assigns one route snapshot to
 every competition field sharing the same wave start. Live fields and historical
-replays read that assignment through a membership-checked API. Athletes cannot
+replays read that assignment through a membership-checked API, which stores the
+choice on the first authorized 4D view. Athletes cannot
 upload, request, or change 4D routes; admin catalog editing is a later step.
 The dedicated screen
 supports native map gestures, selectable athletes, 2D/chase views, discovered-ground
@@ -398,7 +399,7 @@ framing and recenter/follow. Manual exploration suspends follow; selecting an
 athlete resumes it. Respect reduced motion and retain map attribution. Points
 fields keep the existing field. Athletes retrace courses back and forth at each
 endpoint while cumulative distance continues; the chase camera follows their direction and the covered trail stays
-solid. Only local demo and debug previews use the bundled sample routes; live
+solid. Only local demo and debug previews use a bundled sample course; live
 accounts require the stored assignment. Courses do not change scoring or import
 an activity. See
 [implementation and validation](reviews/geographic-course/README.md).

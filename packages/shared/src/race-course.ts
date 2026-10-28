@@ -9,7 +9,6 @@ export interface RaceCourse {
   length: number;
 }
 export const MAX_COURSE_POINTS = 20_000;
-export const MAX_COURSE_BYTES = 4 * 1024 * 1024;
 export function raceCoordinate(value: unknown): value is LngLat {
   return Array.isArray(value) && value.length >= 2 && typeof value[0] === "number" && typeof value[1] === "number" && Number.isFinite(value[0]) && Number.isFinite(value[1]) && Math.abs(value[0]) <= 180 && Math.abs(value[1]) <= 85;
 }
@@ -26,26 +25,6 @@ export function createRaceCourse(name: string, input: readonly LngLat[]): RaceCo
   }
   if (coordinates.length < 2 || metres.at(-1)! < 1) throw new Error("The course needs at least two distinct points and one metre of distance.");
   return { name: name.trim().slice(0, 120) || "Race course", coordinates, metres, length: metres.at(-1)! };
-}
-
-/** Routes are scenery, never activity imports. Reject disconnected segments instead of inventing connectors. */
-export function raceCourseFromGpx(xml: string, name = "GPX course"): RaceCourse {
-  if (xml.length > MAX_COURSE_BYTES || /<!DOCTYPE|<!ENTITY/i.test(xml)) throw new Error("Use a GPX file under 4 MB without document declarations.");
-  const clean = xml.replace(/<!--[\s\S]*?-->|<!\[CDATA\[[\s\S]*?\]\]>/g, "");
-  if (!/<(?:\w+:)?gpx\b/i.test(clean)) throw new Error("Choose a GPX file.");
-  const segments = [...clean.matchAll(/<(?:\w+:)?(trkseg|rte)\b[^>]*>([\s\S]*?)<\/(?:\w+:)?\1\s*>/gi)];
-  if (segments.length !== 1) throw new Error("Choose a GPX with one continuous track segment or route.");
-  const coordinates: LngLat[] = [];
-  const tag = segments[0]![1].toLowerCase() === "rte" ? "rtept" : "trkpt";
-  for (const match of segments[0]![2].matchAll(new RegExp(`<(?:\\w+:)?${tag}\\b([^>]*)>`, "gi"))) {
-    const attrs = match[1];
-    const lat = /\blat\s*=\s*["']([^"']+)["']/i.exec(attrs)?.[1];
-    const lon = /\blon\s*=\s*["']([^"']+)["']/i.exec(attrs)?.[1];
-    if (!lat?.trim() || !lon?.trim()) throw new Error("Every course point needs latitude and longitude.");
-    coordinates.push([Number(lon), Number(lat)]);
-    if (coordinates.length > MAX_COURSE_POINTS) throw new Error("Use a course with at most 20,000 points.");
-  }
-  return createRaceCourse(name, coordinates);
 }
 
 function segmentAt(course: RaceCourse, metres: number) {

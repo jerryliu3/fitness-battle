@@ -97,7 +97,8 @@ export function CompetitionField({
     [state, track, sport],
   );
   const period = state ? competePeriodWindow(state, competeNow(state), sport) : null;
-  const { course, error: courseError, retry: retryCourse } = useCompetitionCourse(sport, period?.startsAt.toISOString() ?? "", period?.endsAt.toISOString() ?? "", debugActive);
+  const { course, error: courseError, retry: retryCourse } = useCompetitionCourse(sport, period?.startsAt.toISOString() ?? "", period?.endsAt.toISOString() ?? "", debugActive, sceneDimension === "4d" && isFocused);
+  useEffect(() => setCourseTarget(null), [accountKey, sport, period?.startsAt.getTime(), arena?.unit]);
   const defaultSpan = fieldDefaultSpan(arena?.unit ?? "km");
   const viewSpan = span ?? defaultSpan;
   useEffect(() => { if (!isFocused) setExpanded(false); }, [isFocused]);
@@ -129,7 +130,7 @@ export function CompetitionField({
   const panTo = (value: number) => applyView({ ...view, center: value });
   const directZoom = (value: number) => applyView({ ...view, span: value });
   const zoomTo = (value: number) => flight.fly({ ...view, span: value });
-  if (!state || !arena) return null;
+  if (!state || !arena || !period) return null;
   const displayTotal = total;
   const selectAthlete = (id: string) => {
     const lane = arena.lanes.find((item) => item.id === id);
@@ -167,8 +168,8 @@ export function CompetitionField({
   const replaySelection = {
     sport,
     track,
-    periodStart: period!.startsAt.toISOString(),
-    periodEnd: period!.endsAt.toISOString(),
+    periodStart: period.startsAt.toISOString(),
+    periodEnd: period.endsAt.toISOString(),
   };
 
   const fieldContent = (

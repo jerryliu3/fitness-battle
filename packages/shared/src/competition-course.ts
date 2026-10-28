@@ -1,21 +1,9 @@
-import { dayKey, weeklyPeriodBounds } from "./period";
 import { createRaceCourse, type RaceCourse } from "./race-course";
 import type { LngLat } from "./routeGeoUtils";
-import { SAMPLE_ROUTES } from "./sampleRoute";
+import { DEFAULT_SAMPLE_ROUTE } from "./sampleRoute";
 
-/** Shared scenery library. Every athlete sees the same course for an Eastern week. */
-export const WEEKLY_RACE_COURSES = SAMPLE_ROUTES.map(route => ({
-  id: route.id,
-  location: route.location,
-  course: createRaceCourse(route.name, route.coordinates),
-}));
-
-export function weeklyRaceCourse(anchor: Date = new Date()) {
-  const monday = dayKey(weeklyPeriodBounds(anchor).startsAt);
-  const [year, month, day] = monday.split("-").map(Number);
-  const week = Math.floor(Date.UTC(year!, month! - 1, day!) / 86_400_000 / 7);
-  return WEEKLY_RACE_COURSES[((week % WEEKLY_RACE_COURSES.length) + WEEKLY_RACE_COURSES.length) % WEEKLY_RACE_COURSES.length]!.course;
-}
+/** Local preview only. Live competitions always read a stored assignment. */
+export const DEMO_RACE_COURSE = createRaceCourse(DEFAULT_SAMPLE_ROUTE.name, DEFAULT_SAMPLE_ROUTE.coordinates);
 
 /** Validate the database assignment before passing its geometry to a map. */
 export function raceCourseFromAssignment(value: unknown, periodStart: string, periodEnd: string): RaceCourse {
