@@ -183,7 +183,7 @@ export default function ArenaScreen() {
             <FocusButton label="Explore events" onPress={openRegistration} />
           </View>
         )}
-        {state.periodResults.length ? <FocusButton label="Latest week results ↗" secondary onPress={() => router.push("/arena?results=latest")} /> : null}
+        {state.periodResults.length ? <FocusButton label="Last week results ↗" secondary onPress={() => router.push("/arena?results=latest")} /> : null}
         <FocusButton label="View all time standings" secondary onPress={() => router.push("/benchmarks")} />
       </SectionStack>
 </ScrollView>

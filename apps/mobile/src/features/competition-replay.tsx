@@ -190,16 +190,16 @@ function ReplayViewer({ state, selection, initialDimension, initialCourse, onCou
     <View style={s.header}>
       <IconButton icon="back" label="Close competition replay" onPress={onClose} />
       <View style={{ flex: 1 }}><AppText role="heading" accessibilityRole="header">{sportById(selection.sport).name} replay</AppText><AppText role="caption" secondary>{selection.track === "verified" ? "GPS Tracked" : "Open"} · {closed ? "Completed round" : "Competition so far"}</AppText></View>
-      <Pressable accessibilityRole="button" accessibilityLabel="Reload competition replay" disabled={!data && !error} onPress={() => setAttempt(a => a + 1)} style={s.action}><AppText role="caption">Refresh</AppText></Pressable>
     </View>
     {!index ? <View style={s.message}><AppText role="body" accessibilityLiveRegion="polite">{error || "Loading the competition timeline…"}</AppText>{error && <FocusButton label="Retry" onPress={() => setAttempt(a => a + 1)} />}</View> : <>
-      <View style={{ paddingHorizontal: 12, paddingBottom: 8 }}><FieldViewSwitcher value={dimension} geographic={unit !== "pts"} onChange={value => { flight.cancel(); setDimension(value); }} /></View>
       <View style={s.scene} onLayout={event => setHeight(Math.max(100, event.nativeEvent.layout.height))}>
+        <View style={{ position: "absolute", top: 12, right: 12, zIndex: 10 }}>
+          <FieldViewSwitcher value={dimension} geographic={unit !== "pts"} onChange={value => { flight.cancel(); setDimension(value); }} />
+        </View>
         {dimension === "4d" ? <GeographicCourse course={course} onCourseChange={changeCourse} lanes={lanes} unit={unit} selectedId={selected ?? focus?.id ?? ""} focusRequest={focusRequest} onSelect={select} /> : dimension === "2d" ? <LaneTrack onGestureStart={flight.cancel} onViewChange={applyView} focusRequest={focusRequest} focusOnMount animateSelection={!reduced} lanes={nativeLanes} appearance={appearance} unit={unit} height={height} fullscreen active selectedId={selected ?? focus?.id} index={2} showGhost={false} onSelect={lane => select(lane.id)} view={view} onPan={panTo} onZoom={zoomTo} /> : <PortraitField onGestureStart={flight.cancel} onViewChange={applyView} focusRequest={focusRequest} focusOnMount animateSelection={!reduced} laneAnchor={portraitAnchor} selectedId={selected ?? focus?.id} lanes={lanes} unit={unit} height={height} fullscreen fullscreenControlsBottom={64} onSelect={select} view={view} onPan={panTo} onZoom={zoomTo} />}
-        <Pressable accessibilityRole="button" onPress={() => { flight.cancel(); setCenter(null); setSelected(null); setFollowEvent(v => !v); }} style={[s.follow, dimension === "4d" && { bottom: undefined, top: 12 }]}><AppText role="label">{followEvent ? "Follow me" : "Follow event"}</AppText></Pressable>
+        <Pressable accessibilityRole="button" onPress={() => { flight.cancel(); setCenter(null); setSelected(null); setFollowEvent(v => !v); }} style={s.follow}><AppText role="label">{followEvent ? "Follow me" : "Follow event"}</AppText></Pressable>
       </View>
       <View style={s.controls}>
-        <AppText role="caption" secondary>Your place {me?.place ?? "—"} / {lanes.length} · {Math.ceil(cursor)} / {count} events</AppText>
         <AppText role="row" numberOfLines={2}>{caption}</AppText>
         <AppText role="caption" secondary>{competitionReplayDate(index, cursor)}</AppText>
         <ReplayTimeline cursor={cursor} count={count} caption={caption} onSeek={seek} />
@@ -208,10 +208,8 @@ function ReplayViewer({ state, selection, initialDimension, initialCourse, onCou
           <ReplayAction label="Previous competition event" text="‹" disabled={!count || cursor === 0} onPress={() => seek(Math.ceil(cursor) - 1)} />
           <ReplayAction primary label={playing ? "Pause replay" : "Play replay"} text={playing ? "Pause" : "Play"} disabled={!count} onPress={() => { if (!playing && cursor >= count) setCursor(0); setPlaying(p => !p); }} />
           <ReplayAction label="Next competition event" text="›" disabled={!count || cursor >= count} onPress={() => seek(Math.floor(cursor) + 1)} />
-          <ReplayAction label={closed ? "Jump to finish" : "Jump to latest event"} text={closed ? "Finish" : "Latest"} disabled={!count || cursor >= count} onPress={() => seek(count)} />
           <ReplayAction label={`Playback speed ${speed} times`} text={`${speed}×`} onPress={() => setSpeed(v => v === 4 ? 1 : v * 2)} />
         </View>
-        <AppText role="caption" secondary>{!count ? "No counted activity in this competition yet." : "Drag the timeline to move event by event."}</AppText>
       </View>
     </>}
   </View>;
