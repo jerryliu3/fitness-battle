@@ -191,7 +191,7 @@ export function HomeActivityActions({
         title="Add manual activity"
         minimal
       >
-        <ChoicePicker label="Sport" placeholder="Choose a sport" value={sport} options={SPORTS.map(item => ({ value: item.id, label: item.name }))} onChange={value => { setSport(value); setMiles(""); }} />
+        <ChoicePicker systemMenu label="Sport" placeholder="Choose a sport" value={sport} options={SPORTS.map(item => ({ value: item.id, label: item.name }))} onChange={value => { setSport(value); setMiles(""); }} />
         {sport && <>
           <AppText role="label" >Duration</AppText>
           <NumberPicker label="Duration" unit="min" value={minutes} onChange={setMinutes} />

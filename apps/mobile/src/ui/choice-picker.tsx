@@ -36,7 +36,7 @@ export function ChoicePicker<T extends string>({
   options,
   onChange,
   placeholder = "Choose…",
-  systemMenu = false,
+  systemMenu = true,
 }: {
   label: string;
   value: T | "";

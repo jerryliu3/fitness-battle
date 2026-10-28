@@ -107,9 +107,8 @@ export default function Home() {
           </View>
         ) : null}
       </View>
-      <FocusSheet fullScreen open={Boolean(latest)} title="Your activity" onClose={()=>setLatest(null)}>{latest?<SessionStage state={state} activities={[latest]} onRemove={id=>{setRemoved(latest);dispatch({type:"set-disposition",activityId:id,disposition:"excluded"});setLatest(null);}}/>:null}</FocusSheet>
+      <FocusSheet open={Boolean(latest)} title="Your activity" onClose={()=>setLatest(null)}>{latest?<SessionStage state={state} activities={[latest]} onRemove={id=>{setRemoved(latest);dispatch({type:"set-disposition",activityId:id,disposition:"excluded"});setLatest(null);}}/>:null}</FocusSheet>
       <FocusSheet
-        fullScreen={counted.some(a => dayKey(new Date(a.startedAt), APP_TIMEZONE) === dayKey(now, APP_TIMEZONE))}
         open={expanded === "suggestion"}
         title="Today"
         onClose={() => setExpanded(null)}

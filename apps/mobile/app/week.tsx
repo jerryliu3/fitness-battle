@@ -56,7 +56,6 @@ export default function Week() {
         </SectionStack>
       </ScrollView>
       <FocusSheet
-        fullScreen={todayActivities.length > 0}
         open={todayOpen}
         title="Today"
         onClose={() => setTodayOpen(false)}
