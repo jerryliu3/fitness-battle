@@ -42,7 +42,7 @@ export function useAnchoredMenu(options?: {
             y + height + 4 + estHeight > windowHeight && y > estHeight + 20
               ? y - estHeight - 4
               : y + height + 4;
-          setMenuLayout({ x: clampedX, y: Math.max(16, posY), width: menuWidth });
+          setMenuLayout({ x: clampedX, y: Math.max(54, posY), width: menuWidth });
           setOpen(true);
         },
       );

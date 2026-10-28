@@ -600,7 +600,7 @@ export default function AthleteScreen() {
                 value={draftName}
                 onChangeText={setName}
                 accessibilityLabel="Name"
-                maxLength={80}
+                maxLength={32}
                 placeholder="Name"
               />
               <Input style={textStyle("body")}
@@ -611,23 +611,26 @@ export default function AthleteScreen() {
                 placeholder="City"
               />
               {dirty ? (
-                <Button
+                <FocusButton
+                  label="Save profile"
                   onPress={() => {
                     const trimmed = draftName.trim();
                     if (!trimmed) {
                       setNote("Display name cannot be empty.");
                       return;
                     }
-                    dispatch({ type: "rename", name: trimmed });
-                    if (draftCity.trim())
-                      dispatch({ type: "set-city", city: draftCity.trim() });
+                    if (trimmed !== state.name) {
+                      dispatch({ type: "rename", name: trimmed });
+                    }
+                    const cityTrimmed = draftCity.trim();
+                    if (cityTrimmed && cityTrimmed !== state.city) {
+                      dispatch({ type: "set-city", city: cityTrimmed });
+                    }
                     setName(null);
                     setCity(null);
                     setNote("Profile saved.");
                   }}
-                ><AppText role="label">
-                  Save profile
-                </AppText></Button>
+                />
               ) : null}
               {dirty ? (
                 <FocusButton
@@ -752,14 +755,16 @@ export default function AthleteScreen() {
                     accessibilityRole="button"
                     accessibilityLabel="Edit profile"
                     onPress={() => setEditOpen(true)}
-                    style={{
+                    style={({ pressed }) => ({
                       paddingVertical: 5,
                       paddingHorizontal: 12,
                       borderRadius: 999,
                       borderWidth: 1,
                       borderColor: "rgba(255, 255, 255, 0.2)",
-                      backgroundColor: "rgba(255, 255, 255, 0.1)",
-                    }}
+                      backgroundColor: pressed
+                        ? "rgba(255, 255, 255, 0.2)"
+                        : "rgba(255, 255, 255, 0.1)",
+                    })}
                   >
                     <AppText role="label" style={{ color: "#ffffff" }}>Edit profile</AppText>
                   </Pressable>

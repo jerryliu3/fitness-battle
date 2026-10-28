@@ -262,6 +262,7 @@ export function FocusSidePanel({
             </View>
             <ScrollView
               keyboardShouldPersistTaps="handled"
+              showsVerticalScrollIndicator={false}
               contentContainerStyle={{ padding: 20, gap: 20, paddingBottom: 40 }}
             >
               {children}
