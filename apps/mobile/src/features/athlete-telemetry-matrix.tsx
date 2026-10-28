@@ -19,6 +19,8 @@ export function AthleteTelemetryMatrix({
   const router = useRouter();
   const model = useMemo(() => buildAnalyticsLabModel(state, "30d"), [state]);
 
+  const SHOW_ATHLETE_EQUITY = false;
+
   const bentoTiles: Array<{
     id: string;
     domain: AnalyticsDomainId;
@@ -28,15 +30,19 @@ export function AthleteTelemetryMatrix({
     points: number[];
     accent: string;
   }> = [
-    {
-      id: "market",
-      domain: "market",
-      kicker: "Athlete Equity",
-      value: `${model.market.currentIndex.toLocaleString()} pts`,
-      delta: `+${model.market.allTimeReturnPct}% all-time`,
-      points: model.market.equitySeries.map((p) => p.nav),
-      accent: c.tennis,
-    },
+    ...(SHOW_ATHLETE_EQUITY
+      ? [
+          {
+            id: "market",
+            domain: "market" as const,
+            kicker: "Athlete Equity",
+            value: `${model.market.currentIndex.toLocaleString()} pts`,
+            delta: `+${model.market.allTimeReturnPct}% all-time`,
+            points: model.market.equitySeries.map((p) => p.nav),
+            accent: c.tennis,
+          },
+        ]
+      : []),
     {
       id: "vitals",
       domain: "vitals",

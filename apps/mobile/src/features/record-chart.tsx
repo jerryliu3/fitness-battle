@@ -33,9 +33,18 @@ export function RecordChart({
   if (!chart) return null;
   return (
     <View style={{ marginVertical: 16 }}>
-      <ChartScrubber label="Personal record timeline, lower time is faster" points={chart.points.map(point => ({
-        id: point.activityId, x: point.x, y: point.y, label: date(point.startedAt), value: formatClockTime(point.seconds),
-      }))} width={chart.width} height={chart.height} plotTop={16} plotBottom={chart.height - 28} onSelect={onSelect}>
+      <ChartScrubber
+        hideSummary
+        label="Personal record timeline, lower time is faster"
+        points={chart.points.map(point => ({
+          id: point.activityId, x: point.x, y: point.y, label: date(point.startedAt), value: formatClockTime(point.seconds),
+        }))}
+        width={chart.width}
+        height={chart.height}
+        plotTop={16}
+        plotBottom={chart.height - 28}
+        onSelect={onSelect}
+      >
       <ChartSvg
         preserveAspectRatio="none"
         viewBox={`0 0 ${chart.width} ${chart.height}`}

@@ -25,20 +25,21 @@ const TIME_LENSES: readonly { value: AnalyticsTimeLens; label: string }[] = [
 ];
 
 export function AthleteTelemetryDetails({
-  domain = "market",
+  domain = "vitals",
   state,
 }: {
   domain?: AnalyticsDomainId | string;
   state?: CompeteState | null;
 }) {
   const activeDomain: AnalyticsDomainId =
+    domain === "market" ||
     domain === "vitals" ||
     domain === "sleep" ||
     domain === "load" ||
     domain === "performance" ||
     domain === "combined"
       ? domain
-      : "market";
+      : "vitals";
 
   const [timeLens, setTimeLens] = useState<AnalyticsTimeLens>("30d");
   const model = useMemo(

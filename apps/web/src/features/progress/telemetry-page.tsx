@@ -41,13 +41,14 @@ function TelemetryPageContent() {
   const rawDomain = searchParams.get("domain");
 
   const activeDomain: AnalyticsDomainId =
+    rawDomain === "market" ||
     rawDomain === "vitals" ||
     rawDomain === "sleep" ||
     rawDomain === "load" ||
     rawDomain === "performance" ||
     rawDomain === "combined"
       ? rawDomain
-      : "market";
+      : "vitals";
 
   const [timeLens, setTimeLens] = useState<AnalyticsTimeLens>("30d");
   const model = useMemo(

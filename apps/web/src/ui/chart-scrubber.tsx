@@ -21,6 +21,7 @@ export function ChartScrubber({
   onSelect,
   label,
   summaryOnSelection = false,
+  hideSummary = false,
 }: {
   points: readonly ChartDatum[];
   width: number;
@@ -31,6 +32,7 @@ export function ChartScrubber({
   onSelect?: (id: string) => void;
   label: string;
   summaryOnSelection?: boolean;
+  hideSummary?: boolean;
 }) {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const surfaceRef = useRef<HTMLDivElement>(null);
@@ -119,20 +121,22 @@ export function ChartScrubber({
 
   return (
     <div className="chart-scrubber">
-      <div id={summaryId} className="chart-scrubber-summary" aria-live="polite">
-        {summaryOnSelection ? (
-          selected ? (
-            <AppText role="caption" secondary>
-              {`${selected.label} · ${selected.value}`}
-            </AppText>
-          ) : null
-        ) : (
-          <>
-            <AppText role="label">{selected?.value ?? points.at(-1)?.value ?? "No data"}</AppText>
-            <AppText role="caption" secondary>{selected?.label ?? points.at(-1)?.label ?? ""}</AppText>
-          </>
-        )}
-      </div>
+      {!hideSummary && (
+        <div id={summaryId} className="chart-scrubber-summary" aria-live="polite">
+          {summaryOnSelection ? (
+            selected ? (
+              <AppText role="caption" secondary>
+                {`${selected.label} · ${selected.value}`}
+              </AppText>
+            ) : null
+          ) : (
+            <>
+              <AppText role="label">{selected?.value ?? points.at(-1)?.value ?? "No data"}</AppText>
+              <AppText role="caption" secondary>{selected?.label ?? points.at(-1)?.label ?? ""}</AppText>
+            </>
+          )}
+        </div>
+      )}
       <div
         ref={surfaceRef}
         className="chart-scrubber-surface"

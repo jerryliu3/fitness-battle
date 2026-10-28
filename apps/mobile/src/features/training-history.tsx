@@ -1,5 +1,5 @@
 import { ActivityRoute } from "../ui/activity-route";
-import { AppText, Section, SectionStack } from "../ui/section";
+import { AppText, Section, SectionStack, StatusBadge } from "../ui/section";
 import { TrainingAtlas } from "./training-atlas";
 import { useState, type ReactNode } from "react";
 import { RecordChart } from "./record-chart";
@@ -60,44 +60,21 @@ export function TrainingHistory({ state, children }: { state: CompeteState; chil
                   }}
                 >
                   <AppText role="label">
-                    {d.sport === "cycling" ? "Ride · " : ""}
+                    {d.sport === "cycling" ? "Ride · " : "Run · "}
                     {d.label}
                   </AppText>
                 </Pressable>
               ))}
             </View>
           </ScrollView>
-          <Text style={f.kicker}>
-            {active.label} · {active.sport}
-          </Text>
-          <Text style={f.massive}>{formatClockTime(latest.seconds)}</Text>
+          <View style={{ flexDirection: "row", alignItems: "baseline", gap: 10, marginVertical: 6, flexWrap: "wrap" }}>
+            <Text style={f.massive}>{formatClockTime(inspected.seconds)}</Text>
+            <StatusBadge tone={inspected.verified ? "success" : "neutral"}>
+              {inspected.source.replaceAll("_", " ")}
+              {inspected.verified ? " · GPS recorded" : ""}
+            </StatusBadge>
+          </View>
           <RecordChart rows={rows} selected={inspected.activityId} now={now} onSelect={setReceipt} />
-          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-            <View style={f.row}>
-              {rows.map((r) => (
-                <Pressable
-                  key={r.activityId}
-                  accessibilityRole="button"
-                  accessibilityState={{
-                    selected: inspected.activityId === r.activityId,
-                  }}
-                  style={[
-                    f.chip,
-                    inspected.activityId === r.activityId && f.chipActive,
-                  ]}
-                  onPress={() => setReceipt(r.activityId)}
-                >
-                  <AppText role="label">{date(r.startedAt)}</AppText>
-                </Pressable>
-              ))}
-            </View>
-          </ScrollView>
-          <AppText role="value">{formatClockTime(inspected.seconds)}</AppText>
-          <AppText role="caption" secondary>{date(inspected.startedAt)}</AppText>
-          <AppText role="caption" secondary >
-            {inspected.source.replaceAll("_", " ")}
-            {inspected.verified ? " · GPS recorded" : ""}
-          </AppText>
           <ActivityRoute units={state.units} key={inspected.activityId} activity={state.activities.find(a => a.id === inspected.activityId)} milestone />
         </Section>
       ) : null}
