@@ -65,7 +65,6 @@ export function FocusSheet({
   const maxSheetHeight = fullScreen
     ? "100%"
     : Math.max(200, windowHeight - insets.top - 12);
-  const [sheetHeight, setSheetHeight] = useState(windowHeight);
   useEffect(() => {
     if (open) void playCue("light");
   }, [open]);
@@ -116,17 +115,16 @@ export function FocusSheet({
         </Animated.View>
         <AnimatedSafeAreaView
           edges={fullScreen ? ["top", "bottom"] : ["bottom"]}
-          onLayout={(event) => setSheetHeight(event.nativeEvent.layout.height)}
           style={[
             f.sheet,
             { maxHeight: maxSheetHeight },
-            fullScreen && { flex: 1, maxHeight: "100%", borderTopLeftRadius: 0, borderTopRightRadius: 0 },
+            fullScreen && { flex: 1, maxHeight: "100%", borderTopLeftRadius: 0, borderTopRightRadius: 0, paddingTop: 0 },
             {
               transform: [
                 {
                   translateY: progress.interpolate({
                     inputRange: [0, 1],
-                    outputRange: [sheetHeight, 0],
+                    outputRange: [windowHeight, 0],
                   }),
                 },
               ],

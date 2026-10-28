@@ -23,7 +23,7 @@ export function WeekRecap({ state }: { state: CompeteState }) {
         {[
           { value: clubDuration(week.movingSec), label: "Active time" },
           { value: String(week.sessions), label: "Sessions" },
-          { value: `${week.activeDays} / 7`, label: "Active days" },
+          { value: `${week.activeDays} / ${week.daysPassed}`, label: "Active days" },
         ].map((m) => (
           <View key={m.label} style={{ flex: 1, gap: 5 }}>
             <AppText role="metric"
@@ -38,7 +38,7 @@ export function WeekRecap({ state }: { state: CompeteState }) {
       {week.previousSec ? (
         <AppText role="caption" secondary >
           {difference >= 0 ? "+" : "−"}
-          {clubDuration(Math.abs(difference))} compared with all of last week.
+          {clubDuration(Math.abs(difference))} {week.daysPassed >= 7 ? "compared with all of last week." : "compared with this point last week."}
         </AppText>
       ) : null}
       {recap ? (

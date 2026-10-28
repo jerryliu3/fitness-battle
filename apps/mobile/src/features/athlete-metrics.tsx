@@ -47,7 +47,6 @@ export function AthleteMetrics({
               {email ? (
                 <AppText role="caption" secondary >
                   {email}
-                  {offlineMode ? " · demo" : ""}
                 </AppText>
               ) : null}
             </View>

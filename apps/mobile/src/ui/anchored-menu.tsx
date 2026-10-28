@@ -86,7 +86,7 @@ export function AnchoredMenu({
         accessibilityLabel={accessibilityLabel}
         onPress={onClose}
       >
-        <View style={StyleSheet.absoluteFill} />
+        <View style={[StyleSheet.absoluteFill, s.backdrop]} />
       </Pressable>
       <View
         style={[
@@ -109,17 +109,20 @@ export function AnchoredMenu({
 }
 
 const s = StyleSheet.create({
+  backdrop: {
+    backgroundColor: "rgba(10, 15, 20, 0.2)",
+  },
   dropdown: {
-    backgroundColor: c.card,
-    borderRadius: 14,
+    backgroundColor: "rgba(255, 255, 255, 0.94)",
+    borderRadius: 16,
     borderWidth: 1,
-    borderColor: c.line,
+    borderColor: "rgba(255, 255, 255, 0.65)",
     overflow: "hidden",
-    shadowColor: c.ink,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.12,
-    shadowRadius: 10,
-    elevation: 8,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.18,
+    shadowRadius: 24,
+    elevation: 12,
     zIndex: 9999,
   },
 });

@@ -3,7 +3,7 @@ import { act, create, type ReactTestRenderer } from "react-test-renderer";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { freshState, type Activity } from "@fitness-battle/shared";
 
-vi.mock("react-native", () => ({ Pressable: "Pressable", View: "View", StyleSheet: { create: (styles: unknown) => styles } }));
+vi.mock("react-native", () => ({ Pressable: "Pressable", ScrollView: "ScrollView", View: "View", StyleSheet: { create: (styles: unknown) => styles } }));
 vi.mock("../ui/section", () => ({ AppText: "AppText" }));
 
 import { ActivityComparison } from "./activity-comparison";
@@ -23,5 +23,5 @@ it("switches between a session's available comparisons", async () => {
   await act(async () => buttons[2]!.props.onPress());
   expect(buttons[2]!.props.accessibilityState.selected).toBe(true);
   const chart = renderer.root.findAllByType("View" as never).find(node => node.props.accessible);
-  expect(chart?.props.accessibilityLabel).toContain("Pace. This session: 8:00/km. Previous median: 7:00/km.");
+  expect(chart?.props.accessibilityLabel).toContain("Pace. This session: 8:00/km. Median: 7:00/km.");
 });

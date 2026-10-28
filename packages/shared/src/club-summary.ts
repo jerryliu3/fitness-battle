@@ -1,5 +1,5 @@
 import { countsOnTrack } from "./compete/ledger";
-import { weeklyPeriodBounds, APP_TIMEZONE } from "./period";
+import { weeklyPeriodBounds, APP_TIMEZONE, getZonedWeekday } from "./period";
 import { competitionTrack, sportById } from "./compete/sports";
 import { formatClockTime } from "./compete/pace";
 import { formatVolume, formatEffort, type BoardRow } from "./compete/engine";
@@ -11,6 +11,9 @@ import type { CompeteState, SportId, UnitSystem } from "./compete/sports";
 /** Calendar-week presentation only; does not change competition enrollment bounds. */
 export function clubWeekSummary(state: CompeteState, now = competeNow(state)) {
   const bounds = weeklyPeriodBounds(now);
+  const weekday = getZonedWeekday(now, APP_TIMEZONE);
+  const daysFromMonday = weekday === 0 ? 6 : weekday - 1;
+  const daysPassed = Math.min(7, Math.max(1, daysFromMonday + 1));
   const previous = trainingBuckets(
     state.activities,
     "all",
@@ -21,11 +24,14 @@ export function clubWeekSummary(state: CompeteState, now = competeNow(state)) {
   const days = trainingBuckets(state.activities, "all", "week", now, now);
   const total = (rows: typeof days) =>
     rows.reduce((n, row) => n + row.movingSec, 0);
+  const currentDays = days.slice(0, daysPassed);
+  const previousDays = previous.slice(0, daysPassed);
   return {
-    movingSec: total(days),
-    sessions: days.reduce((n, row) => n + row.sessions, 0),
-    activeDays: days.filter((row) => row.sessions > 0).length,
-    previousSec: total(previous),
+    movingSec: total(currentDays),
+    sessions: currentDays.reduce((n, row) => n + row.sessions, 0),
+    activeDays: currentDays.filter((row) => row.sessions > 0).length,
+    daysPassed,
+    previousSec: total(previousDays),
     firstName: state.name.trim().split(/\s+/)[0] || "athlete",
     greeting:
       Number(
@@ -93,7 +99,7 @@ export function clubRivalCardSummary(rows: readonly BoardRow[], sport: SportId |
   return {
     place,
     headline: delta === 0 ? `Level with ${name}` : `${amount} ${delta > 0 ? "behind" : "ahead of"} ${name}`,
-    caption: syntheticIds.includes(rival.id) ? `${label} · simulated athlete` : `${label} in your field`,
+    caption: `${label} in your field`,
   };
 }
 

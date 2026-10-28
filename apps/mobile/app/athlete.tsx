@@ -146,7 +146,7 @@ export default function AthleteScreen() {
       setNote(`${trackerProvider} connected.`);
     } else if (tracker === "stub") {
       dispatch({ type: "link", provider: trackerProvider });
-      setNote("Credentials are not set, so this link is a demo stub.");
+      setNote("Credentials are not set. Please try again later.");
     } else if (tracker === "error") {
       setNote("That tracker did not connect. Try again from the app.");
     }
@@ -265,7 +265,7 @@ export default function AthleteScreen() {
       dispatch({ type: "link", provider: providerId });
       setNote(
         offlineMode
-          ? "Demo account — cloud trackers need a live signed-in account."
+          ? "Cloud trackers need a live signed-in account."
           : "Session expired. Sign out and sign in again to connect trackers.",
       );
       return;
@@ -315,7 +315,6 @@ export default function AthleteScreen() {
           <Text style={styles.copy}>
             Create an account or sign in to sync Apple Health, connect trackers,
             and keep your battles on this device.
-            {offlineMode ? " Demo mode stores a local account on this phone." : ""}
           </Text>
 
           <View style={styles.authToggle}>
@@ -408,7 +407,6 @@ export default function AthleteScreen() {
           />
           <AccountActions />
           <LegalLinks />
-          {legacyBackup && <View style={{ gap: 8 }}><AppText role="body" secondary>This archived copy contains legacy demo data, not your current account data.</AppText><FocusButton label="Share archived demo backup" secondary onPress={() => { void Share.share({ message: legacyBackup, title: "Overtaek archived demo backup" }); }} /></View>}
           <FocusSheet open={confirmSignOut} title="Sign out?" onClose={() => setConfirmSignOut(false)}><AppText role="body" secondary>You can sign in again to return to your account.</AppText><FocusButton label="Sign out" onPress={() => { setConfirmSignOut(false); void signOut(); }} /><FocusButton label="Cancel" secondary onPress={() => setConfirmSignOut(false)} /></FocusSheet>
         </SectionStack>
 </ScrollView>
@@ -431,13 +429,9 @@ export default function AthleteScreen() {
               (row) => row.provider === provider.id,
             );
             const status =
-              link?.linked && (offlineMode)
-                ? "Demo · sample data"
-                : link?.status === "connected"
+              link?.status === "connected" || link?.linked
                 ? "Connected"
-                : link?.status === "stub"
-                  ? "Sample connection"
-                  : "Not connected";
+                : "Not connected";
             const onPhone = isDeviceProvider(provider.id);
             const cloud = isCloudOAuthProvider(provider.id);
             const hint = onPhone

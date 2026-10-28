@@ -8,18 +8,35 @@ import {
   Text,
   View,
 } from "react-native";
+import Svg, { Path } from "react-native-svg";
 import { SHELL_COLORS as c } from "../theme";
 import { f } from "./focus";
 import { playCue } from "../lib/haptics";
 
-/** Dropdown menu anchored to its trigger control. */
+function ChevronDown() {
+  return (
+    <Svg width={14} height={14} viewBox="0 0 24 24" fill="none" style={{ marginLeft: 6 }}>
+      <Path d="M6 9l6 6 6-6" stroke={c.muted} strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round" />
+    </Svg>
+  );
+}
+
+function CheckIcon() {
+  return (
+    <Svg width={14} height={14} viewBox="0 0 24 24" fill="none">
+      <Path d="M5 13l4 4L19 7" stroke={c.ink} strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" />
+    </Svg>
+  );
+}
+
+/** Dropdown menu anchored to its trigger control with Apple material glass styling. */
 export function ChoicePicker<T extends string>({
   label,
   value,
   options,
   onChange,
   placeholder = "Choose…",
-  systemMenu = false,
+  systemMenu = true,
 }: {
   label: string;
   value: T | "";
@@ -35,10 +52,10 @@ export function ChoicePicker<T extends string>({
   const selected = options.findIndex((option) => option.value === value);
 
   if (systemMenu && SystemChoice) {
-    return <View style={[f.input, f.row, s.trigger, { position: "relative", flexShrink: 1 }]}>
+    return <View style={[s.trigger, { position: "relative", flexShrink: 1 }]}>
       <View pointerEvents="none" accessibilityElementsHidden style={[f.row, { flexShrink: 1 }]}>
         <Text style={[textStyle("label"), { flexShrink: 1 }]}>{options[selected]?.label ?? placeholder}</Text>
-        <Text style={[textStyle("body"), { marginLeft: 4 }]}>▾</Text>
+        <ChevronDown />
       </View>
       <SystemChoice label={label} value={value} options={options} style={StyleSheet.absoluteFill}
         onSelect={event => {
@@ -56,12 +73,12 @@ export function ChoicePicker<T extends string>({
           accessibilityLabel={`${label}: ${options[selected]?.label ?? placeholder}`}
           accessibilityState={{ expanded: open }}
           onPress={toggle}
-          style={[f.input, f.row, s.trigger]}
+          style={[s.trigger, open && s.triggerOpen]}
         >
           <Text style={[textStyle("label"), { flexShrink: 1 }]}>
             {options[selected]?.label ?? placeholder}
           </Text>
-          <Text style={[textStyle("body"), { marginLeft: 4 }]}>▾</Text>
+          <ChevronDown />
         </Pressable>
       </View>
       <AnchoredMenu
@@ -99,9 +116,7 @@ export function ChoicePicker<T extends string>({
                 >
                   {option.label}
                 </Text>
-                {isSelected ? (
-                  <Text style={[textStyle("label"), { color: c.ink }]}>✓</Text>
-                ) : null}
+                {isSelected ? <CheckIcon /> : null}
               </Pressable>
             );
           })}
@@ -113,9 +128,18 @@ export function ChoicePicker<T extends string>({
 
 const s = StyleSheet.create({
   trigger: {
-    minHeight: 44,
+    minHeight: 46,
+    paddingHorizontal: 16,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: c.line,
+    backgroundColor: c.card,
+    flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
+  },
+  triggerOpen: {
+    borderColor: c.ink,
   },
   option: {
     height: 44,
@@ -124,9 +148,9 @@ const s = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: c.line,
+    borderBottomColor: "rgba(0, 0, 0, 0.06)",
   },
   optionSelected: {
-    backgroundColor: c.soft,
+    backgroundColor: "rgba(0, 0, 0, 0.04)",
   },
 });

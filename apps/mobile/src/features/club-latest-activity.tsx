@@ -21,8 +21,8 @@ export function LatestActivity({ state, onOpen }: { state: CompeteState; onOpen:
           style={[f.row, { minHeight: 76, paddingVertical: 12, borderBottomWidth: 0 }]}>
           {route ? <RouteStaticPreview coordinates={route} width={128} height={128} padding={16} strokeWidth={3} showMarkers={false} showPlayBadge={false} style={{ width: 64, height: 64, borderRadius: 12 }} /> : <SportActivityIcon sport={row.sport} />}
           <View style={[f.grow, { gap: 4 }]}><AppText role="row" >{row.ownActivity ? sportById(row.sport).name : `${row.name} · ${sportById(row.sport).name}`} · {clubDuration(row.movingSec)}</AppText>
-            <AppText role="support" secondary >{row.verified ? "GPS Tracked" : row.source === "manual" ? "Manual activity" : "Activity"}</AppText></View>
-          <AppText role="caption" secondary >{new Date(row.startedAt).toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: APP_TIMEZONE })} →</AppText>
+            <AppText role="support" secondary >{new Date(row.startedAt).toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: APP_TIMEZONE })}</AppText></View>
+          <AppText role="caption" secondary >View activity →</AppText>
         </Pressable>; })
       ) : (
         <View style={{ paddingVertical: 12 }}>

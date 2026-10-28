@@ -6,6 +6,7 @@ import { DailyHealth } from "../../src/features/daily-health";
 import { LatestActivity } from "../../src/features/club-latest-activity";
 import type { Activity } from "@fitness-battle/shared";
 
+import { AnimatedEmber } from "../../src/ui/mascot/animated-ember";
 import { RivalCard } from "../../src/features/club-rival-card";
 
 import { APP_TIMEZONE, buildTodayRoute, competeNow, countsOnTrack, dayKey, primaryFreezePeriodStart } from "@fitness-battle/shared";
@@ -58,7 +59,6 @@ export default function Home() {
           ) : null}
           <SectionStack divided={false}>
           <WeekChart state={state} onOpen={() => router.push("/week")} />
-          {Platform.OS !== "web" && <Pressable accessibilityRole="button" accessibilityLabel="Open today’s session" onPress={openSuggestion} style={{ minHeight: 44, justifyContent: "center", alignSelf: "flex-start" }}><AppText role="label">Today’s session →</AppText></Pressable>}
           <DailyHealth state={state} />
           <RivalCard state={state} />
           <LatestActivity state={state} onOpen={setLatest} />
@@ -73,17 +73,34 @@ export default function Home() {
           </FocusDisclosure>}
           </SectionStack>
         </ScrollView>
-        {suggestionPrompt.visible && !expanded && !latest ? <View style={s.suggestionPrompt}>
-          <Pressable accessibilityRole="button" accessibilityLabel={`Open today's suggested session: ${route.suggestion.title}`} onPress={openSuggestion} style={{ flex: 1, padding: 16, gap: 4 }}>
-            <AppText role="caption" secondary>Today’s suggested session</AppText>
-            <AppText role="label">{route.suggestion.title} ↗</AppText>
-          </Pressable>
-          <Pressable accessibilityRole="button" accessibilityLabel="Dismiss suggested session for today" onPress={suggestionPrompt.dismiss} style={{ minWidth: 44, minHeight: 44, alignItems: "center", justifyContent: "center" }}><AppText role="body">×</AppText></Pressable>
-        </View> : null}
+        {suggestionPrompt.visible && !expanded && !latest ? (
+          <View style={s.suggestionPrompt}>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Today's recommended session. Tap to view."
+              onPress={openSuggestion}
+              style={s.suggestionBody}
+            >
+              <AnimatedEmber size={36} expression="happy" action="idle" loop />
+              <View style={{ flex: 1, gap: 2 }}>
+                <AppText role="label" numberOfLines={1}>Today’s recommended session</AppText>
+                <AppText role="caption" secondary>Tap to view</AppText>
+              </View>
+            </Pressable>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Dismiss suggested session for today"
+              onPress={suggestionPrompt.dismiss}
+              hitSlop={8}
+              style={s.suggestionDismiss}
+            >
+              <AppText role="caption" secondary>✕</AppText>
+            </Pressable>
+          </View>
+        ) : null}
       </View>
-      <FocusSheet fullScreen open={Boolean(latest)} title="Your activity" onClose={()=>setLatest(null)}>{latest?<SessionStage state={state} activities={[latest]} onRemove={id=>{setRemoved(latest);dispatch({type:"set-disposition",activityId:id,disposition:"excluded"});setLatest(null);}}/>:null}</FocusSheet>
+      <FocusSheet open={Boolean(latest)} title="Your activity" onClose={()=>setLatest(null)}>{latest?<SessionStage state={state} activities={[latest]} onRemove={id=>{setRemoved(latest);dispatch({type:"set-disposition",activityId:id,disposition:"excluded"});setLatest(null);}}/>:null}</FocusSheet>
       <FocusSheet
-        fullScreen={counted.some(a => dayKey(new Date(a.startedAt), APP_TIMEZONE) === dayKey(now, APP_TIMEZONE))}
         open={expanded === "suggestion"}
         title="Today"
         onClose={() => setExpanded(null)}
@@ -95,10 +112,40 @@ export default function Home() {
 }
 const s = StyleSheet.create({
   suggestionPrompt: {
-    position: "absolute", bottom: 96, left: 20, right: 20,
-    flexDirection: "row", alignItems: "center", backgroundColor: c.card,
-    borderWidth: 1, borderColor: c.line, borderRadius: 18,
-    shadowColor: c.ink, shadowOpacity: 0.12, shadowRadius: 12, shadowOffset: { width: 0, height: 4 }, elevation: 5,
+    position: "absolute",
+    bottom: 92,
+    left: 16,
+    right: 16,
+    maxWidth: 500,
+    alignSelf: "center",
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: c.card,
+    borderWidth: 1,
+    borderColor: c.line,
+    borderRadius: 16,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    shadowColor: c.ink,
+    shadowOpacity: 0.14,
+    shadowRadius: 16,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 6,
+    gap: 8,
+  },
+  suggestionBody: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    minHeight: 44,
+  },
+  suggestionDismiss: {
+    width: 32,
+    height: 32,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: 16,
   },
   homeStage: {
     flex: 1,

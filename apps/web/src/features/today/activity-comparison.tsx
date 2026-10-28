@@ -21,7 +21,7 @@ export function ActivityComparison({ activity, state, compact = false }: { activ
       {comparisons.map(item => <button type="button" key={item.id} aria-pressed={item.id === metric.id} onClick={() => setSelected(item.id)}>{item.label}</button>)}
     </div>
     <div className="activity-comparison-chart" aria-live="polite">
-      {[[metric.id === "frequency" ? "Last 30 days" : "This session", metric.currentLabel, metric.current, true], [metric.id === "frequency" ? "Previous 30 days" : "Previous median", metric.baselineLabel, metric.baseline, false]].map(([label, value, amount, current]) => <div className="activity-comparison-row" key={String(label)}>
+      {[[metric.id === "frequency" ? "Last 30 days" : "This session", metric.currentLabel, metric.current, true], [metric.id === "frequency" ? "Previous 30 days" : "Median", metric.baselineLabel, metric.baseline, false]].map(([label, value, amount, current]) => <div className="activity-comparison-row" key={String(label)}>
         <div><span>{label}</span><strong>{value}</strong></div>
         <div className="activity-comparison-track" aria-hidden="true"><div className={current ? "is-current" : "is-previous"} style={{ width: `${max ? Number(amount) / max * 100 : 0}%` }}/></div>
       </div>)}

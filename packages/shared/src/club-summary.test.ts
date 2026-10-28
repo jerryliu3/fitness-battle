@@ -25,7 +25,7 @@ describe("club calendar summary", () => {
       ...freshState(now),
       name: "Alex Park",
       activities: [
-        activity("prior", "2026-11-02T04:59:59Z"),
+        activity("prior", "2026-10-26T14:00:00Z"),
         activity("current", "2026-11-02T05:00:00Z"),
         activity("future", "2026-11-03T12:00:00Z"),
         activity("excluded", "2026-11-02T12:00:00Z", {
@@ -39,6 +39,7 @@ describe("club calendar summary", () => {
       movingSec: 1800,
       previousSec: 1800,
       activeDays: 1,
+      daysPassed: 1,
       firstName: "Alex",
     });
   });
@@ -146,7 +147,7 @@ describe("Home rival card presentation", () => {
   });
   it("gives the leader a closest trailing rival and a positive lead", () => {
     const rows = [athlete("distant", 3, 1000), athlete("you", 1, 6000), athlete("Mara Chen", 2, 5000)];
-    expect(clubRivalCardSummary(rows, "running", "metric", ["Mara Chen"])).toEqual({ place: "1st", headline: "1.0 km ahead of Mara", caption: "Closest rival · simulated athlete" });
+    expect(clubRivalCardSummary(rows, "running", "metric", ["Mara Chen"])).toEqual({ place: "1st", headline: "1.0 km ahead of Mara", caption: "Closest rival in your field" });
   });
   it("describes equal totals honestly in either ranked order", () => {
     for (const place of [1, 3]) {

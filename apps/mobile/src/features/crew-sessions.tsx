@@ -115,9 +115,6 @@ export function CrewSessions({
           }}
         />}>
 
-      {offlineMode ? (
-        <AppText role="caption" secondary >Demo · saved on this device</AppText>
-      ) : null}
       {sessions.map((s) => {
         const joined = s.participants.some((p) => p.user_id === user?.id),
           closed = !!s.cancelled_at || Date.parse(s.starts_at) <= Date.now();

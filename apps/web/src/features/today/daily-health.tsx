@@ -33,6 +33,5 @@ export function DailyHealth({ state }: { state: CompeteState }) {
         </div>
       )}</Fragment>;
     })}</div>
-    <p className="home-health-note">Recorded readings only. Steps, resting HR and HRV aren’t connected yet.</p>
   </section>;
 }

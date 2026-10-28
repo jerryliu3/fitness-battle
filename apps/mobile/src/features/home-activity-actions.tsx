@@ -103,15 +103,7 @@ export function HomeActivityActions({
           } else if (result.ok) await refresh();
           if (owner.current !== id) return;
           messages.push(result.message);
-        } else if (offlineMode) {
-          if (owner.current !== id) return;
-          dispatch({
-            type: "sync",
-            provider: link.provider,
-            allowSample: true,
-          });
-          messages.push("Demo sample sync only. Samples do not count.");
-        } else {
+        } else if (!offlineMode) {
           const body = await requestApi<{
             activities?: ActivitySample[];
             readiness?: ReadinessSample[];
@@ -139,17 +131,13 @@ export function HomeActivityActions({
             activities: (body.activities ?? []).flatMap((sample) => {
               const activity = activityFromSample(
                 sample,
-                body.usedMock ? "demo" : "recorded",
+                "recorded",
               );
               return activity ? [activity] : [];
             }),
-            linkStatus: body.usedMock ? "stub" : "connected",
+            linkStatus: "connected",
           });
-          messages.push(
-            body.usedMock
-              ? "Sample data only; not a live connection."
-              : `${link.provider}: sync complete.`,
-          );
+          messages.push(`${link.provider}: sync complete.`);
         }
       }
       if (owner.current === id) setNote(messages.join(" "));
@@ -203,8 +191,7 @@ export function HomeActivityActions({
         title="Add manual activity"
         minimal
       >
-        <AppText role="label" >Sport</AppText>
-        <ChoicePicker label="Sport" placeholder="Choose a sport" value={sport} options={SPORTS.map(item => ({ value: item.id, label: item.name }))} onChange={value => { setSport(value); setMiles(""); }} />
+        <ChoicePicker systemMenu label="Sport" placeholder="Choose a sport" value={sport} options={SPORTS.map(item => ({ value: item.id, label: item.name }))} onChange={value => { setSport(value); setMiles(""); }} />
         {sport && <>
           <AppText role="label" >Duration</AppText>
           <NumberPicker label="Duration" unit="min" value={minutes} onChange={setMinutes} />
