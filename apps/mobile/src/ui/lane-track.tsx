@@ -1,6 +1,5 @@
 import { AthletePennant } from "./athlete-pennant";
 import { chartTextProps, textStyle  } from "./section";
-import { useAnchoredMenu, AnchoredMenu } from "./anchored-menu";
 import {
   fieldCourse, fieldCourseScene, fieldScaleMarks, fieldLap, defaultFieldAppearance, fieldGrounds, type FieldAppearance, type FieldGround,
   fieldZoomSpan, pinchFieldView, fieldFlightDuration, fieldFlightEase, fieldProgressTrail,
@@ -15,6 +14,8 @@ import {
   orderedArenaLanes,
   competeAthleteTrailColors,
   fieldLaneMarkerScale,
+  polishedCapsulePath,
+  polishedLaneScale,
   type ArenaLane,
   type ArenaOvertakeFrame,
   type ArenaOvertakePlan,
@@ -96,17 +97,6 @@ function LaneTrackContent({
   overtakePlan?: ArenaOvertakePlan | null;
 }) {
   const prefix = useId();
-  const {
-    open: styleMenuOpen,
-    close: closeStyleMenu,
-    toggle: toggleStyleMenu,
-    anchorRef: styleTriggerRef,
-    menuLayout,
-  } = useAnchoredMenu({ minWidth: 220, estimatedHeight: 280 });
-
-  useEffect(() => {
-    if (!active) closeStyleMenu();
-  }, [active, closeStyleMenu]);
   const [width, setWidth] = useState(340);
   const [visibleScroll, setVisibleScroll] = useState(anchor?.current?.scroll ?? 0);
   const surface = useRef<ComponentRef<typeof View>>(null);
@@ -375,7 +365,34 @@ function LaneTrackContent({
                 </FieldOverlayGroup>
               );
             })}
-            {ghost && (() => { const p = course.point(ghost.values[index] ?? 0, ordered.findIndex(l => l.you), 18 * Math.min(1.8, course.markerScale), true); return <G><Circle cx={p.x} cy={p.y} r={13 * Math.min(1.8, course.markerScale)} fill="#ffffffcc" stroke={c.muted} strokeDasharray="3 3"/></G>; })()}
+            {ghost && (() => {
+              const youIdx = Math.max(0, ordered.findIndex((l) => l.you));
+              const p = course.point(ghost.values[index] ?? 0, youIdx, 0, true);
+              const scale = 1.15 * course.markerScale * (fieldLaneMarkerScale(true) ?? 1) * polishedLaneScale(true);
+              return (
+                <G
+                  key="ghost-capsule"
+                  transform={`translate(${p.x} ${p.y}) rotate(${p.angle}) scale(${scale})`}
+                  pointerEvents="none"
+                  opacity={0.6}
+                >
+                  <Path
+                    d={polishedCapsulePath()}
+                    fill="transparent"
+                    stroke="#ffffff"
+                    strokeWidth={1.5}
+                    strokeDasharray="4 4"
+                  />
+                  <Path
+                    d={polishedCapsulePath(2)}
+                    fill="none"
+                    stroke="rgba(255, 255, 255, 0.45)"
+                    strokeWidth={1}
+                    strokeDasharray="2 2"
+                  />
+                </G>
+              );
+            })()}
           </Svg>
         {!fullscreen && onExpand ? <Pressable accessibilityRole="button" accessibilityLabel="Open 2D map in full screen" onPress={onExpand} style={{ position: "absolute", inset: 0 }} /> : null}
         {ordered.flatMap((lane, i) => {
@@ -392,129 +409,42 @@ function LaneTrackContent({
           ];
         })}
         {ghost && (() => {
-          const p = course.point(ghost.values[index] ?? 0, ordered.findIndex(l => l.you), 18 * Math.min(1.8, course.markerScale), true);
-          return <Pressable accessibilityRole="button" accessibilityLabel="Focus past you" onPress={() => onSelect(ghost)} style={{ position: "absolute", left: p.x - visibleScroll - 22, top: p.y - 22, width: 44, height: 44 }} />;
-        })()}
-      </View>
-      {!fullscreen ? (
-        <View
-          style={{
-            position: "absolute",
-            top: 10,
-            right: 10,
-            flexDirection: "row",
-            alignItems: "center",
-            gap: 8,
-          }}
-        >
-          {onToggleDimension ? (
+          const youIdx = Math.max(0, ordered.findIndex((l) => l.you));
+          const p = course.point(ghost.values[index] ?? 0, youIdx, 0, true);
+          return (
             <Pressable
               accessibilityRole="button"
-              accessibilityLabel="Switch to 3D field"
-              onPress={onToggleDimension}
+              accessibilityLabel="Focus past you"
+              onPress={() => onSelect(ghost)}
               style={{
-                minHeight: 36,
-                paddingHorizontal: 12,
-                justifyContent: "center",
-                borderRadius: 999,
-                backgroundColor: "rgba(20, 20, 19, 0.78)",
-                borderWidth: 1,
-                borderColor: "rgba(255, 255, 255, 0.2)",
+                position: "absolute",
+                left: p.x - visibleScroll - 24,
+                top: p.y - 30,
+                width: 48,
+                height: 60,
               }}
-            >
-              <Text style={{ ...textStyle("caption"), color: "#ffffff" }}>
-                2D
-              </Text>
-            </Pressable>
-          ) : null}
-          {onChangeAppearance ? (
-            <View ref={styleTriggerRef} collapsable={false}>
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel={`Map style: ${fieldGrounds[appearance.ground]?.name ?? "Style"}`}
-                accessibilityState={{ expanded: styleMenuOpen }}
-                onPress={toggleStyleMenu}
-                style={{ minHeight: 36, paddingHorizontal: 12, flexDirection: "row", alignItems: "center", gap: 6, borderRadius: 999, backgroundColor: "rgba(20, 20, 19, 0.78)", borderWidth: 1, borderColor: "rgba(255, 255, 255, 0.2)" }}
-              >
-                <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: fieldGrounds[appearance.ground]?.lane ?? c.tennis }} />
-                <Text style={{ ...textStyle("caption"), color: "#ffffff" }}>{fieldGrounds[appearance.ground]?.name ?? "Style"} ▾</Text>
-              </Pressable>
-            </View>
-          ) : null}
+            />
+          );
+        })()}
+      </View>
+      {!fullscreen && onExpand ? (
+        <View
+          pointerEvents="none"
+          style={{
+            position: "absolute",
+            bottom: 10,
+            alignSelf: "center",
+            backgroundColor: "rgba(20, 20, 19, 0.75)",
+            borderRadius: 999,
+            paddingHorizontal: 12,
+            paddingVertical: 6,
+          }}
+        >
+          <Text style={{ ...textStyle("caption"), color: "#ffffff" }}>
+            Tap to open full screen
+          </Text>
         </View>
       ) : null}
-      {!fullscreen && onExpand ? <View pointerEvents="none" style={{ position: "absolute", bottom: 10, alignSelf: "center", backgroundColor: "rgba(20, 20, 19, 0.75)", borderRadius: 999, paddingHorizontal: 12, paddingVertical: 6 }}><Text style={{ ...textStyle("caption"), color: "#ffffff" }}>Tap field to open full screen</Text></View> : null}
-      <AnchoredMenu
-        open={styleMenuOpen}
-        onClose={closeStyleMenu}
-        menuLayout={menuLayout}
-        accessibilityLabel="Close style menu"
-        style={{ padding: 8 }}
-      >
-        <Text
-          style={[
-            textStyle("caption"),
-            { paddingHorizontal: 8, paddingVertical: 4, color: c.muted },
-          ]}
-        >
-          Field style
-        </Text>
-        <ScrollView style={{ maxHeight: 260 }}>
-          {Object.entries(fieldGrounds).map(([id, item]) => {
-            const isSelected = appearance.ground === id;
-            return (
-              <Pressable
-                key={id}
-                accessibilityRole="button"
-                accessibilityState={{ selected: isSelected }}
-                onPress={() => {
-                  void playCue("selection");
-                  onChangeAppearance?.({
-                    ...appearance,
-                    ground: id as FieldGround,
-                  });
-                   closeStyleMenu();
-                }}
-                style={{
-                  flexDirection: "row",
-                  alignItems: "center",
-                  minHeight: 38,
-                  paddingHorizontal: 8,
-                  paddingVertical: 6,
-                  borderRadius: 8,
-                  backgroundColor: isSelected ? c.soft : "transparent",
-                  gap: 10,
-                }}
-              >
-                <View
-                  style={{
-                    width: 14,
-                    height: 18,
-                    borderRadius: 4,
-                    backgroundColor: item.lane,
-                    borderWidth: 1,
-                    borderColor: "rgba(0,0,0,0.12)",
-                  }}
-                />
-                <Text
-                  style={[
-                    isSelected ? textStyle("label") : textStyle("body"),
-                    {
-                      flex: 1,
-                      color: isSelected ? c.ink : c.muted,
-                    },
-                  ]}
-                >
-                  {item.name}
-                </Text>
-                {isSelected ? (
-                  <Text style={[textStyle("label"), { color: c.tennis }]}>✓</Text>
-                ) : null}
-              </Pressable>
-            );
-          })}
-        </ScrollView>
-      </AnchoredMenu>
     </View>
   );
 }

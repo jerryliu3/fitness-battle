@@ -1,4 +1,5 @@
 import { FieldViewSwitcher } from "../ui/field-view-switcher";
+import { FieldGroundSwitcher } from "../ui/field-ground-switcher";
 import { GeographicCourse } from "./geographic-course";
 import { CompetitionReplayButton } from "./competition-replay";
 import { UserAvatar } from "../ui/user-avatar";
@@ -154,11 +155,6 @@ export function CompetitionField({
   const leadersTied = leader ? ranked.filter(lane => lane.values[2] === leader.values[2]).length > 1 : false;
   const leaderValue = Math.max(leader?.values[2] ?? 0, 0.0001);
   const myRankIndex = ranked.findIndex((lane) => lane.you);
-  const aheadPeer = myRankIndex > 0 ? ranked[myRankIndex - 1] : null;
-  const behindPeer =
-    myRankIndex >= 0 && myRankIndex < ranked.length - 1
-      ? ranked[myRankIndex + 1]
-      : null;
   const focusedLane =
     ranked.find((lane) => lane.id === (selectedId ?? me?.id)) ??
     me ??
@@ -251,19 +247,6 @@ export function CompetitionField({
             view={view}
             onPan={panTo}
           />
-          {!expanded ? (
-            <View style={{ position: "absolute", bottom: 10, right: 10, zIndex: 10 }}>
-              <CompetitionReplayButton
-                state={state}
-                selection={replaySelection}
-                dimension={sceneDimension}
-                course={course}
-                onCourseChange={setCourse}
-                variant="inline"
-                label="View replay"
-              />
-            </View>
-          ) : null}
         </View>
         {!expanded ? (
           <View style={{ marginTop: 8, borderRadius: 12, overflow: "hidden" }}>
@@ -286,8 +269,38 @@ export function CompetitionField({
   return (
     <View style={{ gap: 14, position: "relative" }}>
       {!expanded ? (
-        <View style={{ position: "absolute", left: 12, top: 12, zIndex: 10 }}>
-          <FieldViewSwitcher value={sceneDimension} geographic={arena.unit !== "pts"} onChange={chooseView} />
+        <View
+          style={{
+            position: "absolute",
+            left: 12,
+            top: 12,
+            zIndex: 10,
+            flexDirection: "row",
+            alignItems: "center",
+            gap: 8,
+            flexWrap: "wrap",
+          }}
+        >
+          <FieldViewSwitcher
+            value={sceneDimension}
+            geographic={arena.unit !== "pts"}
+            onChange={chooseView}
+          />
+          {sceneDimension === "2d" ? (
+            <FieldGroundSwitcher
+              appearance={appearance}
+              onChangeAppearance={setAppearance}
+            />
+          ) : null}
+          <CompetitionReplayButton
+            state={state}
+            selection={replaySelection}
+            dimension={sceneDimension}
+            course={course}
+            onCourseChange={setCourse}
+            variant="inline"
+            label="View replay"
+          />
         </View>
       ) : null}
       {expanded ? (
@@ -328,34 +341,13 @@ export function CompetitionField({
                   onPress={() => setExpanded(false)}
                 />
               </View>
-              <View
-                pointerEvents="none"
-                style={{
-                  backgroundColor: "rgba(20, 20, 19, 0.74)",
-                  flexShrink: 1,
-                  minWidth: 0,
-                  borderRadius: 999,
-                  paddingHorizontal: 14,
-                  paddingVertical: 7,
-                  borderWidth: 1,
-                  borderColor: "rgba(255, 255, 255, 0.14)",
-                }}
-              >
-                <Text
-                  accessibilityRole="header"
-                  numberOfLines={1}
-                  style={{ ...textStyle("label"), color: "#ffffff" }}
-                >
-                  {arena.sportName} · {place(total)} / {ranked.length}
-                </Text>
-              </View>
               <FieldViewSwitcher value={sceneDimension} geographic={arena.unit !== "pts"} onChange={chooseView} />
             </FieldOverlayView>
 
             {(sceneDimension !== "4d" || course) ? <>
-            {/* Broadcast HUD: Left Interval Tower */}
+            {/* Broadcast HUD: Left Current Positions Tower */}
             <SlidingFieldPanel
-              label="live intervals"
+              label="current positions"
               collapsed={intervalsCollapsed}
               onToggle={() => setIntervalsCollapsed(value => !value)}
               overlaysHidden={overlaysHidden}
@@ -376,7 +368,7 @@ export function CompetitionField({
               }}
             >
               <Text style={{ ...textStyle("caption"), color: "rgba(255,255,255,0.65)" }}>
-                LIVE INTERVALS
+                CURRENT POSITIONS
               </Text>
               {ranked.slice(0, 4).map((peer, idx) => {
                 const delta = peer.values[2] - leaderValue;
@@ -436,92 +428,27 @@ export function CompetitionField({
               })}
             </SlidingFieldPanel>
 
-            {/* Broadcast HUD: Right Quick-Jump Rail */}
+            {/* Left Replay action positioned below Current Positions */}
             <FieldOverlayView
               hidden={overlaysHidden}
               pointerEvents="box-none"
               style={{
                 position: "absolute",
-                top: safeTop + 98,
-                right: 12,
-                gap: 8,
+                top: safeTop + 62 + (intervalsCollapsed ? 48 : 172),
+                left: 12,
+                zIndex: 10,
               }}
             >
-              {aheadPeer ? (
-                <Pressable
-                  accessibilityRole="button"
-                  accessibilityLabel={`Jump to rival ahead, ${aheadPeer.name}`}
-                  onPress={() => {
-                    void playCue("selection");
-                    selectAthlete(aheadPeer.id);
-                  }}
-                  style={{
-                    backgroundColor: "rgba(20, 20, 19, 0.75)",
-                    borderRadius: 999,
-                    minHeight: 44,
-                    justifyContent: "center",
-                    paddingVertical: 8,
-                    paddingHorizontal: 12,
-                    borderWidth: 1,
-                    borderColor: "rgba(255, 255, 255, 0.16)",
-                    alignItems: "center",
-                  }}
-                >
-                  <Text style={{ ...textStyle("caption"), color: "#ffffff" }}>
-                    ↑ Ahead
-                  </Text>
-                </Pressable>
-              ) : null}
-              {me ? (
-                <Pressable
-                  accessibilityRole="button"
-                  accessibilityLabel="Recenter on your athlete"
-                  onPress={() => {
-                    void playCue("selection");
-                    selectAthlete(me.id);
-                  }}
-                  style={{
-                    backgroundColor: c.tennis,
-                    borderRadius: 999,
-                    minHeight: 44,
-                    justifyContent: "center",
-                    paddingVertical: 8,
-                    paddingHorizontal: 12,
-                    alignItems: "center",
-                  }}
-                >
-                  <Text style={{ ...textStyle("caption"), color: c.ink }}>
-                    YOU
-                  </Text>
-                </Pressable>
-              ) : null}
-              {behindPeer ? (
-                <Pressable
-                  accessibilityRole="button"
-                  accessibilityLabel={`Jump to rival behind, ${behindPeer.name}`}
-                  onPress={() => {
-                    void playCue("selection");
-                    selectAthlete(behindPeer.id);
-                  }}
-                  style={{
-                    backgroundColor: "rgba(20, 20, 19, 0.75)",
-                    borderRadius: 999,
-                    minHeight: 44,
-                    justifyContent: "center",
-                    paddingVertical: 8,
-                    paddingHorizontal: 12,
-                    borderWidth: 1,
-                    borderColor: "rgba(255, 255, 255, 0.16)",
-                    alignItems: "center",
-                  }}
-                >
-                  <Text style={{ ...textStyle("caption"), color: "#ffffff" }}>
-                    ↓ Behind
-                  </Text>
-                </Pressable>
-              ) : null}
-              <View onTouchStart={event => event.stopPropagation()} style={{ minHeight: 44, justifyContent: "center", borderRadius: 999, backgroundColor: "rgba(20,20,19,.78)", paddingHorizontal: 8 }}>
-                <CompetitionReplayButton state={state} selection={replaySelection} dimension={sceneDimension} course={course} onCourseChange={setCourse} label="Replay" />
+              <View onTouchStart={event => event.stopPropagation()}>
+                <CompetitionReplayButton
+                  state={state}
+                  selection={replaySelection}
+                  dimension={sceneDimension}
+                  course={course}
+                  onCourseChange={setCourse}
+                  variant="inline"
+                  label="View replay"
+                />
               </View>
             </FieldOverlayView>
 

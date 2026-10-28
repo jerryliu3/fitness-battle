@@ -8,6 +8,7 @@ vi.mock("react-native", () => ({
   Modal: "Modal",
   Animated: { View: "View", Value: class { constructor(public value: number) {} interpolate(config: unknown) { return config; } }, timing: () => ({ start() {}, stop() {} }), createAnimatedComponent: () => "AnimatedGroup" },
   Easing: { out: (fn: unknown) => fn, cubic: (x: number) => x }, Pressable: "Pressable", ScrollView: "ScrollView", Text: "Text", View: "View",
+  StyleSheet: { create: (v: unknown) => v },
   useWindowDimensions: () => ({ width: 390, height: 844 }),
   AppState: { addEventListener: (_name: string, fn: (status: string) => void) => { mocks.appState = fn; return { remove() { mocks.appState = null; } }; } },
 }));
@@ -19,6 +20,7 @@ vi.mock("../ui/field-view-switcher", () => ({
   FieldViewSwitcher: ({ value, onChange }: { value: string; onChange: (v: string) => void }) =>
     createElement("FieldViewSwitcher", { value, onChange }),
 }));
+vi.mock("../ui/field-ground-switcher", () => ({ FieldGroundSwitcher: "FieldGroundSwitcher" }));
 vi.mock("../ui/user-avatar", () => ({ UserAvatar: "UserAvatar" }));
 vi.mock("../ui/section", () => ({ textStyle: () => ({}) }));
 vi.mock("../ui/rank-badge", () => ({ RankBadge: "RankBadge" }));
@@ -66,13 +68,13 @@ it("cancels a pending hold for small drags and app backgrounding", async () => {
   expect(field().props.overlaysHidden).toBe(false);
 });
 it("collapses each panel independently and isolates zoom/replay touches from scene holds", async () => {
-  await act(async () => button("Collapse live intervals").props.onPress());
-  expect(button("Expand live intervals").props.accessibilityState.expanded).toBe(false);
+  await act(async () => button("Collapse current positions").props.onPress());
+  expect(button("Expand current positions").props.accessibilityState.expanded).toBe(false);
   expect(button("Collapse athlete panel").props.accessibilityState.expanded).toBe(true);
   await act(async () => button("Collapse athlete panel").props.onPress());
   expect(button("Expand athlete panel").props.accessibilityState.expanded).toBe(false);
-  await act(async () => button("Expand live intervals").props.onPress());
-  expect(button("Collapse live intervals").props.accessibilityState.expanded).toBe(true);
+  await act(async () => button("Expand current positions").props.onPress());
+  expect(button("Collapse current positions").props.accessibilityState.expanded).toBe(true);
   expect(button("Zoom in")).toBeUndefined();
   const replay = renderer.root.findAllByType("ReplayButton" as never)[0].parent!;
   const stopPropagation = vi.fn();
@@ -101,7 +103,7 @@ it("keeps 4D inside the fullscreen host with the same panels, selection and repl
   await act(async () => map().props.onResumeFollow());
   expect(map().props.distanceTarget).toBeNull();
   expect(renderer.root.findAllByType("Modal" as never)).toHaveLength(1);
-  expect(button("Collapse live intervals")).toBeDefined();
+  expect(button("Collapse current positions")).toBeDefined();
   await act(async () => button("Collapse athlete panel").props.onPress());
   expect(button("Expand athlete panel")).toBeDefined();
   expect(overview()).toBeDefined();
