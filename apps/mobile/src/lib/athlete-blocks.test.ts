@@ -5,7 +5,14 @@ const mock = vi.hoisted(() => ({ owner: "owner", rows: [] as { blocked_id: strin
 vi.mock("react-native", () => ({ AppState: { addEventListener: () => ({ remove() {} }) } }));
 vi.mock("./auth", () => ({ useAuth: () => ({ user: { id: mock.owner }, offlineMode: false }) }));
 vi.mock("./supabase", () => ({ supabase: { from: () => ({
-  select: () => ({ eq: async () => ({ data: mock.rows, error: mock.failure ? new Error("offline") : null }) }),
+  select: () => ({ eq: () => ({ order: () => ({ limit: () => {
+    let after: string | null = null;
+    const query = {
+      gt: (_column: string, id: string) => { after = id; return query; },
+      then: (resolve: (result: unknown) => unknown) => Promise.resolve({ data: mock.rows.filter(row => !after || row.blocked_id > after).slice(0, 100), error: mock.failure ? new Error("offline") : null }).then(resolve),
+    };
+    return query;
+  } }) }) }),
   insert: mock.insert,
   delete: () => ({ eq: () => ({ eq: mock.remove }) }),
 }) } }));
@@ -41,4 +48,12 @@ it("clears the previous account before loading another", async () => {
   mock.owner = "other"; mock.rows = [];
   await act(async () => renderer.update(createElement(AthleteBlocksProvider, null, createElement(Consumer))));
   expect(observed.blocks).toEqual([]);
+});
+
+it("loads every block when the result spans multiple pages", async () => {
+  mock.rows = Array.from({ length: 205 }, (_, i) => ({ blocked_id: String(i).padStart(4, "0"), profiles: { display_name: `Athlete ${i}` } }));
+  await act(async () => observed.reload());
+  expect(observed.ready).toBe(true);
+  expect(observed.blocks).toHaveLength(205);
+  expect(observed.blocks[204]?.id).toBe("0204");
 });

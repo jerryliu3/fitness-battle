@@ -18,14 +18,26 @@ export function AthleteBlocksProvider({ children }: { children: ReactNode }) {
     const attempt = ++sequence.current;
     if (!owner || offlineMode) { setSnapshot({ owner, blocks: [], ready: true, error: "" }); return; }
     try {
-    const { data, error } = await supabase.from("athlete_blocks").select("blocked_id, profiles!athlete_blocks_blocked_id_fkey(display_name)").eq("blocker_id", owner);
-    if (current.current !== owner || sequence.current !== attempt) return;
-    if (error) { setSnapshot(previous => ({ owner, blocks: previous.owner === owner ? previous.blocks : [], ready: false, error: "Could not load blocked athletes. Check your connection and retry." })); return; }
-    const blocks = (data ?? []).map((row) => {
-      const person = row.profiles as unknown as { display_name?: string } | null;
-      return { id: String(row.blocked_id), name: person?.display_name ?? "Athlete" };
-    });
-    setSnapshot({ owner, blocks, ready: true, error: "" });
+      const blocks: Block[] = [];
+      const pageSize = 100;
+      let after: string | null = null;
+      while (true) {
+        let query = supabase.from("athlete_blocks")
+          .select("blocked_id, profiles!athlete_blocks_blocked_id_fkey(display_name)")
+          .eq("blocker_id", owner).order("blocked_id").limit(pageSize);
+        if (after) query = query.gt("blocked_id", after);
+        const { data, error } = await query;
+        if (current.current !== owner || sequence.current !== attempt) return;
+        if (error) throw error;
+        const rows = data ?? [];
+        for (const row of rows) {
+          const person = row.profiles as unknown as { display_name?: string } | null;
+          blocks.push({ id: String(row.blocked_id), name: person?.display_name ?? "Athlete" });
+        }
+        if (rows.length < pageSize) break;
+        after = String(rows[rows.length - 1]!.blocked_id);
+      }
+      setSnapshot({ owner, blocks, ready: true, error: "" });
     } catch {
       if (current.current === owner && sequence.current === attempt) setSnapshot(previous => ({ owner, blocks: previous.owner === owner ? previous.blocks : [], ready: false, error: "Could not load blocked athletes. Check your connection and retry." }));
     }
