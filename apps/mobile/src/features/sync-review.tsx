@@ -1,10 +1,11 @@
 import { textStyle } from "../ui/section";
 import { useEffect, useRef, useState } from "react";
-import { ActivityIndicator, Modal, Pressable, ScrollView, StyleSheet, Text, View, type ScrollViewInstance } from "react-native";
+import { ActivityIndicator, Modal, Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions, type ScrollViewInstance } from "react-native";
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
-import { APP_TIMEZONE, clubDuration, formatVolume, sportById, SYNC_REVIEW_SAVE_DELAY_MS, type CompeteState, type CompetitionMoment as Moment, type SyncReviewReceipt } from "@fitness-battle/shared";
+import { APP_TIMEZONE, clubDuration, formatVolume, sportById, activityRoute, SYNC_REVIEW_SAVE_DELAY_MS, type CompeteState, type CompetitionMoment as Moment, type SyncReviewReceipt } from "@fitness-battle/shared";
 import { FocusButton, f } from "../ui/focus";
 import { ActivityRoute } from "../ui/activity-route";
+import { RouteStaticPreview } from "../ui/route-static-preview";
 import { SHELL_COLORS as c } from "../theme";
 import { CompetitionMoment } from "./competition-moment";
 import { useReducedMotion } from "../ui/use-reduced-motion";
@@ -32,6 +33,10 @@ export function SyncReview({ receipt, state, moment, debug = false, remaining = 
   </Modal>;
 }
 function Review({ receipt, state, onComplete, resetScroll }: { resetScroll: () => void; receipt: SyncReviewReceipt; state: CompeteState; onComplete: (selected?: readonly string[], quiet?: boolean) => unknown }) {
+  const windowDimensions = useWindowDimensions();
+  const cardWidth = Math.max(260, Math.min(360, Math.round((windowDimensions.width || 375) * 0.82)));
+  const cardGap = 12;
+  const [activeIndex, setActiveIndex] = useState(0);
   const [excluded, setExcluded] = useState<string[]>([]), [detail, setDetail] = useState<string | null>(null), [progress, setProgress] = useState(0), [width, setWidth] = useState(280), [saving, setSaving] = useState(false);
   const complete = useRef(false), dragStart = useRef(0), dragDistance = useRef(0), dragging = useRef(false), saveTimer = useRef<ReturnType<typeof globalThis.setTimeout> | null>(null);
   const excludedRef = useRef(excluded);
@@ -75,14 +80,178 @@ function Review({ receipt, state, onComplete, resetScroll }: { resetScroll: () =
     <Text accessibilityRole="header" style={textStyle("display")}>Make it count.</Text>
     <Text style={f.massive}>{clubDuration(selected.reduce((n, a) => n + a.movingSec, 0))}</Text>
     <Text style={textStyle("body")}>{selected.length} of {activities.length} activities selected. Review your effort, then slide to see what changed.</Text>
-    {activities.length > 0 && <ActivityRoute activity={selected[0] ?? activities[0]} units={state.units}/>}
-    <View style={{ borderRadius: 20, overflow: "hidden", backgroundColor: "white", borderWidth: 1, borderColor: c.line }}>
-      {activities.map(a => <View key={a.id} style={{ flexDirection: "row", alignItems: "center", gap: 8, padding: 12, borderBottomWidth: 1, borderColor: c.line }}>
-        <Pressable accessibilityRole="checkbox" accessibilityLabel={`Count ${sportById(a.sport).name} activity ${a.id}`} accessibilityState={{ checked: !excluded.includes(a.id), disabled: saving }} disabled={saving} onPress={() => { if (saving) return; setExcluded(ids => ids.includes(a.id) ? ids.filter(id => id !== a.id) : [...ids, a.id]); setProgress(0); }} style={{ minWidth: 44, minHeight: 48, alignItems: "center", justifyContent: "center" }}>
-          <View style={{ width: 26, height: 26, borderRadius: 8, backgroundColor: excluded.includes(a.id) ? "white" : c.ink, borderWidth: 1, borderColor: c.line, alignItems: "center", justifyContent: "center" }}><Text style={{ ...textStyle("body"), color: "white" }}>{excluded.includes(a.id) ? "" : "✓"}</Text></View>
-        </Pressable>
-        <Pressable accessibilityRole="button" accessibilityLabel={`View ${sportById(a.sport).name} activity details`} disabled={saving} onPress={() => openDetail(a.id)} style={{ flex: 1, minHeight: 76, gap: 5, justifyContent: "center" }}><Text style={textStyle("label")}>{sportById(a.sport).name} ↗</Text><Text style={textStyle("caption")}>{formatVolume(a.sport, a.distanceM, a.movingSec, state.units)} · {clubDuration(a.movingSec)}</Text><Text style={textStyle("caption")}>{new Date(a.startedAt).toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: APP_TIMEZONE })} · {a.verified ? "GPS Tracked" : "Open"}</Text></Pressable>
-      </View>)}
+    <View style={{ gap: 12 }}>
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        decelerationRate="fast"
+        snapToInterval={cardWidth + cardGap}
+        contentContainerStyle={{ paddingHorizontal: 2, gap: cardGap }}
+        onScroll={(e) => {
+          const x = e.nativeEvent.contentOffset.x;
+          const idx = Math.max(0, Math.min(activities.length - 1, Math.round(x / (cardWidth + cardGap))));
+          if (idx !== activeIndex) setActiveIndex(idx);
+        }}
+        scrollEventThrottle={16}
+      >
+        {activities.map((a) => {
+          const isCounted = !excluded.includes(a.id);
+          const coords = activityRoute(a);
+          return (
+            <View
+              key={a.id}
+              style={{
+                width: cardWidth,
+                borderRadius: 20,
+                overflow: "hidden",
+                backgroundColor: "#ffffff",
+                borderWidth: 1,
+                borderColor: c.line,
+              }}
+            >
+              {coords ? (
+                <View style={{ height: 180, overflow: "hidden", backgroundColor: "#0b242c" }}>
+                  <RouteStaticPreview
+                    coordinates={coords}
+                    height={180}
+                    strokeColor="176c75"
+                    showPlayBadge={false}
+                    onPress={() => openDetail(a.id)}
+                  />
+                </View>
+              ) : (
+                <View
+                  style={{
+                    height: 180,
+                    backgroundColor: "#102e38",
+                    padding: 16,
+                    justifyContent: "space-between",
+                  }}
+                >
+                  <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+                    <Text style={{ ...textStyle("caption"), color: c.tennis, fontWeight: "700", letterSpacing: 1.2 }}>
+                      {sportById(a.sport).name.toUpperCase()}
+                    </Text>
+                    <Text style={{ ...textStyle("caption"), color: "rgba(255,255,255,0.6)" }}>
+                      {a.verified ? "GPS Tracked" : "Open activity"}
+                    </Text>
+                  </View>
+                  <View style={{ gap: 2 }}>
+                    <Text style={{ ...textStyle("display"), color: "#ffffff", fontSize: 28 }}>
+                      {formatVolume(a.sport, a.distanceM, a.movingSec, state.units)}
+                    </Text>
+                    <Text style={{ ...textStyle("body"), color: "rgba(255,255,255,0.75)" }}>
+                      {clubDuration(a.movingSec)}
+                    </Text>
+                  </View>
+                  <Text style={{ ...textStyle("caption"), color: "rgba(255,255,255,0.5)" }}>
+                    {new Date(a.startedAt).toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: APP_TIMEZONE })}
+                  </Text>
+                </View>
+              )}
+
+              <View style={{ padding: 14, gap: 10 }}>
+                <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
+                  <Pressable
+                    accessibilityRole="checkbox"
+                    accessibilityLabel={`Count ${sportById(a.sport).name} activity ${a.id}`}
+                    accessibilityState={{ checked: isCounted, disabled: saving }}
+                    disabled={saving}
+                    onPress={() => {
+                      if (saving) return;
+                      setExcluded(ids => ids.includes(a.id) ? ids.filter(id => id !== a.id) : [...ids, a.id]);
+                      setProgress(0);
+                    }}
+                    style={{ flexDirection: "row", alignItems: "center", gap: 10, flex: 1 }}
+                  >
+                    <View
+                      style={{
+                        width: 24,
+                        height: 24,
+                        borderRadius: 7,
+                        backgroundColor: isCounted ? c.ink : "white",
+                        borderWidth: 1.5,
+                        borderColor: isCounted ? c.ink : c.line,
+                        alignItems: "center",
+                        justifyContent: "center",
+                      }}
+                    >
+                      <Text style={{ ...textStyle("body"), color: "white", fontSize: 13, fontWeight: "700" }}>
+                        {isCounted ? "✓" : ""}
+                      </Text>
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <Text style={{ ...textStyle("label"), color: c.ink, fontWeight: "700" }}>
+                        {sportById(a.sport).name}
+                      </Text>
+                      <Text style={{ ...textStyle("caption"), color: c.muted }}>
+                        {new Date(a.startedAt).toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: APP_TIMEZONE })} · {new Date(a.startedAt).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", timeZone: APP_TIMEZONE })}
+                      </Text>
+                    </View>
+                  </Pressable>
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel={`View ${sportById(a.sport).name} activity details`}
+                    disabled={saving}
+                    onPress={() => openDetail(a.id)}
+                    style={{ minHeight: 36, minWidth: 44, justifyContent: "center", alignItems: "flex-end" }}
+                  >
+                    <Text style={{ ...textStyle("label"), color: c.ink }}>Details ↗</Text>
+                  </Pressable>
+                </View>
+
+                <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
+                  <View style={{ backgroundColor: c.soft, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 }}>
+                    <Text style={{ ...textStyle("caption"), color: c.ink, fontWeight: "600" }}>
+                      {formatVolume(a.sport, a.distanceM, a.movingSec, state.units)}
+                    </Text>
+                  </View>
+                  <View style={{ backgroundColor: c.soft, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 }}>
+                    <Text style={{ ...textStyle("caption"), color: c.ink, fontWeight: "600" }}>
+                      {clubDuration(a.movingSec)}
+                    </Text>
+                  </View>
+                  {a.avgHr ? (
+                    <View style={{ backgroundColor: c.soft, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 }}>
+                      <Text style={{ ...textStyle("caption"), color: c.ink, fontWeight: "600" }}>
+                        {a.avgHr} bpm
+                      </Text>
+                    </View>
+                  ) : null}
+                  {a.elevationGainM != null && a.elevationGainM > 0 ? (
+                    <View style={{ backgroundColor: c.soft, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 }}>
+                      <Text style={{ ...textStyle("caption"), color: c.ink, fontWeight: "600" }}>
+                        +{a.elevationGainM}m elev
+                      </Text>
+                    </View>
+                  ) : null}
+                  <View style={{ backgroundColor: c.soft, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 }}>
+                    <Text style={{ ...textStyle("caption"), color: c.muted, fontWeight: "500" }}>
+                      {a.verified ? "GPS Tracked" : "Open"}
+                    </Text>
+                  </View>
+                </View>
+              </View>
+            </View>
+          );
+        })}
+      </ScrollView>
+
+      {activities.length > 1 && (
+        <View style={{ flexDirection: "row", justifyContent: "center", alignItems: "center", gap: 6, paddingTop: 4 }}>
+          {activities.map((a, i) => (
+            <View
+              key={a.id}
+              style={{
+                width: i === activeIndex ? 18 : 6,
+                height: 6,
+                borderRadius: 3,
+                backgroundColor: i === activeIndex ? c.ink : c.line,
+              }}
+            />
+          ))}
+        </View>
+      )}
     </View>
     {!receipt.preview && excluded.length > 0 && <Text style={textStyle("caption")}>Deselected activities stay saved, excluded from competition.</Text>}
     <View style={{ marginTop: "auto", paddingTop: 16, gap: 12 }}>

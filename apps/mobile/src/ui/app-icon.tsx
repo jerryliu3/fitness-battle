@@ -8,6 +8,7 @@ import IconFlag from "@tabler/icons-react-native/IconFlag";
 import IconChartLine from "@tabler/icons-react-native/IconChartLine";
 import IconUsers from "@tabler/icons-react-native/IconUsers";
 import IconRefresh from "@tabler/icons-react-native/IconRefresh";
+import IconReload from "@tabler/icons-react-native/IconReload";
 import IconArrowUpRight from "@tabler/icons-react-native/IconArrowUpRight";
 import IconArrowLeft from "@tabler/icons-react-native/IconArrowLeft";
 import IconPlus from "@tabler/icons-react-native/IconPlus";
@@ -27,6 +28,7 @@ const icons = {
   sync: IconRefresh, back: IconArrowLeft, plus: IconPlus, expand: IconMaximize, edit: IconPencil,
   preferences: IconAdjustmentsHorizontal, notifications: IconBell, scoring: IconChartBar,
   external: IconArrowUpRight, chevron: IconChevronRight, flame: IconFlameFilled,
+  replay: IconReload,
 };
 export type AppIconName = keyof typeof icons;
 

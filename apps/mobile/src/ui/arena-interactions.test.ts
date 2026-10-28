@@ -189,11 +189,7 @@ describe("native competition interactions", () => {
     expect(lane().props.view.center).toBe(rival.values[2]);
     expect(JSON.stringify(renderer.toJSON())).not.toContain("athlete details");
     expect(JSON.stringify(renderer.toJSON())).not.toContain(" · Place ");
-    expect(switcher().props.standings).toBe(false);
-    await act(async () => switcher().props.onStandings());
-    expect(switcher().props.standings).toBe(true);
-    await act(async () => switcher().props.onChange("2d"));
-    expect(switcher().props.standings).toBe(false);
+    expect(switcher().props.value).toBe("2d");
     expect(mock.mounts).toBe(1);
     const register = renderer.root.findAllByType("Pressable" as never).find((node) => node.props.accessibilityLabel === "Register for an event")!;
     await act(async () => register.props.onPress());
@@ -246,12 +242,12 @@ it("mounts only one registered sport and replaces it when switching",async()=>{
  const choice=renderer.root.findAllByType("Pressable" as never).find(n=>n.props.accessibilityRole==="tab"&&n.props.accessibilityLabel==="Cycling")!;
  await act(async()=>choice.props.onPress());
  expect(renderer.root.findAllByType("LaneTrack" as never)).toHaveLength(1);
- expect(renderer.root.findAllByType("FieldViewSwitcher" as never).some(n=>typeof n.props.onStandings==="function")).toBe(true);
+ expect(renderer.root.findAllByType("FieldViewSwitcher" as never).length).toBeGreaterThan(0);
  expect(mock.dispatch).not.toHaveBeenCalledWith(expect.objectContaining({type:"set-primary"}));
  mock.state={...mock.state!,ratings:mock.state!.ratings.map(r=>r.sport==="cycling"?{...r,optedIn:false}:r)};
  await act(async()=>renderer.update(createElement(ArenaScreen)));
  expect(renderer.root.findAllByType("LaneTrack" as never)).toHaveLength(1);
- expect(renderer.root.findAllByType("FieldViewSwitcher" as never).some(n=>typeof n.props.onStandings==="function")).toBe(true);
+ expect(renderer.root.findAllByType("FieldViewSwitcher" as never).length).toBeGreaterThan(0);
 });
 
 it("expands one field, retains its viewport and selection, and closes on system Back", async () => {

@@ -2,7 +2,7 @@ import { GeographicCourse } from "./geographic-course";
 import { FieldViewSwitcher } from "../ui/field-view-switcher";
 import { useFieldFlight } from "../ui/use-field-flight";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { AppState, Modal, PanResponder, Pressable, StyleSheet, View } from "react-native";
+import { AppState, Modal, PanResponder, Pressable, StyleSheet, Text, View } from "react-native";
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 import {
   orderedArenaLanes,
@@ -15,7 +15,8 @@ import { useCompeteStore } from "../lib/compete-store";
 import { useAuth } from "../lib/auth";
 import { mobileEnv } from "../lib/env";
 import { requestApi } from "../lib/api";
-import { AppText } from "../ui/section";
+import { AppText, textStyle } from "../ui/section";
+import { AppIcon } from "../ui/app-icon";
 import { FocusButton, f } from "../ui/focus";
 import { IconButton } from "../ui/icon-button";
 import { LaneTrack } from "../ui/lane-track";
@@ -24,19 +25,80 @@ import { useFieldAppearance } from "../ui/field-course";
 import { useReducedMotion } from "../ui/use-reduced-motion";
 import { SHELL_COLORS as c } from "../theme";
 
-export function CompetitionReplayButton({ state, selection, dimension = "2d", course = null, onCourseChange, label = "Replay competition" }: {
-  state: CompeteState; selection: CompetitionReplaySelection; dimension?: "2d" | "3d" | "4d"; course?: RaceCourse | null; onCourseChange?(course: RaceCourse | null): void; label?: string;
+export function CompetitionReplayButton({
+  state,
+  selection,
+  dimension = "2d",
+  course = null,
+  onCourseChange,
+  label = "Replay competition",
+  variant = "button",
+}: {
+  state: CompeteState;
+  selection: CompetitionReplaySelection;
+  dimension?: "2d" | "3d" | "4d";
+  course?: RaceCourse | null;
+  onCourseChange?(course: RaceCourse | null): void;
+  label?: string;
+  variant?: "button" | "inline";
 }) {
   const [open, setOpen] = useState(false);
   const reduced = useReducedMotion();
-  return <>
-    <FocusButton secondary label={label} onPress={() => setOpen(true)} />
-    {open && <Modal visible animationType={reduced ? "none" : "slide"} presentationStyle="fullScreen" onRequestClose={() => setOpen(false)}>
-      <SafeAreaProvider><SafeAreaView style={f.safe} edges={["top", "bottom"]}>
-        <ReplayViewer key={`${selection.sport}:${selection.track}:${selection.periodStart}`} state={state} selection={selection} initialDimension={dimension} initialCourse={course} onCourseChange={onCourseChange} onClose={() => setOpen(false)} />
-      </SafeAreaView></SafeAreaProvider>
-    </Modal>}
-  </>;
+  return (
+    <>
+      {variant === "inline" ? (
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={label || "View replay"}
+          onPress={() => setOpen(true)}
+          style={({ pressed }) => [
+            {
+              flexDirection: "row",
+              alignItems: "center",
+              gap: 6,
+              minHeight: 34,
+              paddingHorizontal: 12,
+              paddingVertical: 6,
+              borderRadius: 999,
+              backgroundColor: "rgba(20, 20, 19, 0.78)",
+              borderWidth: 1,
+              borderColor: "rgba(255, 255, 255, 0.2)",
+            },
+            pressed && { opacity: 0.75 },
+          ]}
+        >
+          <AppIcon name="replay" size={14} color="#ffffff" />
+          <Text style={{ ...textStyle("caption"), color: "#ffffff", fontWeight: "600" }}>
+            {label || "View replay"}
+          </Text>
+        </Pressable>
+      ) : (
+        <FocusButton secondary label={label} onPress={() => setOpen(true)} />
+      )}
+      {open && (
+        <Modal
+          visible
+          animationType={reduced ? "none" : "slide"}
+          presentationStyle="fullScreen"
+          onRequestClose={() => setOpen(false)}
+        >
+          <SafeAreaProvider>
+            <SafeAreaView style={f.safe} edges={["top", "bottom"]}>
+              <ReplayViewer
+                key={`${selection.sport}:${selection.track}:${selection.periodStart}`}
+                state={state}
+                selection={selection}
+                initialDimension={dimension}
+                initialCourse={course}
+                onCourseChange={onCourseChange}
+                onClose={() => setOpen(false)}
+              />
+            </SafeAreaView>
+          </SafeAreaProvider>
+        </Modal>
+      )}
+    </>
+  );
 }
 
 function ReplayTimeline({ cursor, count, caption, onSeek }: { cursor: number; count: number; caption: string; onSeek: (cursor: number) => void }) {
@@ -131,9 +193,7 @@ function ReplayViewer({ state, selection, initialDimension, initialCourse, onCou
       <Pressable accessibilityRole="button" accessibilityLabel="Reload competition replay" disabled={!data && !error} onPress={() => setAttempt(a => a + 1)} style={s.action}><AppText role="caption">Refresh</AppText></Pressable>
     </View>
     {!index ? <View style={s.message}><AppText role="body" accessibilityLiveRegion="polite">{error || "Loading the competition timeline…"}</AppText>{error && <FocusButton label="Retry" onPress={() => setAttempt(a => a + 1)} />}</View> : <>
-      <View style={{ paddingHorizontal: 12, paddingBottom: 8 }}><FieldViewSwitcher value={dimension} geographic={unit !== "pts"} onChange={value => { flight.cancel(); setDimension(value); }}
-        onZoomIn={dimension !== "4d" ? () => zoomTo(Math.max(unit === "pts" ? 2 : .5, view.span / 1.5)) : undefined}
-        onZoomOut={dimension !== "4d" ? () => zoomTo(Math.min(unit === "pts" ? 100 : 40, view.span * 1.5)) : undefined} /></View>
+      <View style={{ paddingHorizontal: 12, paddingBottom: 8 }}><FieldViewSwitcher value={dimension} geographic={unit !== "pts"} onChange={value => { flight.cancel(); setDimension(value); }} /></View>
       <View style={s.scene} onLayout={event => setHeight(Math.max(100, event.nativeEvent.layout.height))}>
         {dimension === "4d" ? <GeographicCourse course={course} onCourseChange={changeCourse} lanes={lanes} unit={unit} selectedId={selected ?? focus?.id ?? ""} focusRequest={focusRequest} onSelect={select} /> : dimension === "2d" ? <LaneTrack onGestureStart={flight.cancel} onViewChange={applyView} focusRequest={focusRequest} focusOnMount animateSelection={!reduced} lanes={nativeLanes} appearance={appearance} unit={unit} height={height} fullscreen active selectedId={selected ?? focus?.id} index={2} showGhost={false} onSelect={lane => select(lane.id)} view={view} onPan={panTo} onZoom={zoomTo} /> : <PortraitField onGestureStart={flight.cancel} onViewChange={applyView} focusRequest={focusRequest} focusOnMount animateSelection={!reduced} laneAnchor={portraitAnchor} selectedId={selected ?? focus?.id} lanes={lanes} unit={unit} height={height} fullscreen fullscreenControlsBottom={64} onSelect={select} view={view} onPan={panTo} onZoom={zoomTo} />}
         <Pressable accessibilityRole="button" onPress={() => { flight.cancel(); setCenter(null); setSelected(null); setFollowEvent(v => !v); }} style={[s.follow, dimension === "4d" && { bottom: undefined, top: 12 }]}><AppText role="label">{followEvent ? "Follow me" : "Follow event"}</AppText></Pressable>

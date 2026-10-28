@@ -2,7 +2,7 @@ import { AthletePennant } from "./athlete-pennant";
 import { chartTextProps, textStyle  } from "./section";
 import { useAnchoredMenu, AnchoredMenu } from "./anchored-menu";
 import {
-  fieldCourse, fieldCourseScene, fieldLap, defaultFieldAppearance, fieldGrounds, type FieldAppearance, type FieldGround,
+  fieldCourse, fieldCourseScene, fieldScaleMarks, fieldLap, defaultFieldAppearance, fieldGrounds, type FieldAppearance, type FieldGround,
   fieldZoomSpan, pinchFieldView, fieldFlightDuration, fieldFlightEase, fieldProgressTrail,
   arenaPosition,
   arenaWindow,
@@ -107,7 +107,6 @@ function LaneTrackContent({
   useEffect(() => {
     if (!active) closeStyleMenu();
   }, [active, closeStyleMenu]);
-  const [exploring, setExploring] = useState(false);
   const [width, setWidth] = useState(340);
   const [visibleScroll, setVisibleScroll] = useState(anchor?.current?.scroll ?? 0);
   const surface = useRef<ComponentRef<typeof View>>(null);
@@ -132,8 +131,8 @@ function LaneTrackContent({
       ? rawV
       : { center: effectiveCenter, span: rawV.span };
   const course = useMemo(() => fieldCourse(width, height, ordered.length, v, unit, appearance), [width, height, ordered.length, v.center, v.span, unit, appearance]);
-  const latest = useRef({ v, onPan, onZoom, onViewChange, onGestureStart, exploring: exploring || fullscreen, clampCenter, course, width, height, unit, appearance, count: ordered.length });
-  latest.current = { v, onPan, onZoom, onViewChange, onGestureStart, exploring: exploring || fullscreen, clampCenter, course, width, height, unit, appearance, count: ordered.length };
+  const latest = useRef({ v, onPan, onZoom, onViewChange, onGestureStart, fullscreen, clampCenter, course, width, height, unit, appearance, count: ordered.length });
+  latest.current = { v, onPan, onZoom, onViewChange, onGestureStart, fullscreen, clampCenter, course, width, height, unit, appearance, count: ordered.length };
   const pending = useRef<{ view: ArenaViewWindow; scroll: number } | null>(null);
   const frame = useRef<number | null>(null);
   const start = useRef({ view: v, x: 0, y: 0, top: 0, left: 0, distance: 0, count: 1, scroll: 0 });
@@ -151,8 +150,8 @@ function LaneTrackContent({
   const pan = useMemo(() => PanResponder.create({
     onStartShouldSetPanResponderCapture: e => e.nativeEvent.touches.length >= 2,
     onStartShouldSetPanResponder: e => e.nativeEvent.touches.length >= 2,
-    onMoveShouldSetPanResponderCapture: (e, g) => e.nativeEvent.touches.length >= 2 || Math.hypot(g.dx, g.dy) > 4 && (latest.current.exploring || Math.abs(g.dx) > Math.abs(g.dy) * 1.3),
-    onMoveShouldSetPanResponder: (e, g) => e.nativeEvent.touches.length >= 2 || Math.hypot(g.dx, g.dy) > 4 && (latest.current.exploring || Math.abs(g.dx) > Math.abs(g.dy) * 1.3),
+    onMoveShouldSetPanResponderCapture: (e, g) => e.nativeEvent.touches.length >= 2 || Math.hypot(g.dx, g.dy) > 4 && (latest.current.fullscreen || Math.abs(g.dx) > Math.abs(g.dy) * 1.3),
+    onMoveShouldSetPanResponder: (e, g) => e.nativeEvent.touches.length >= 2 || Math.hypot(g.dx, g.dy) > 4 && (latest.current.fullscreen || Math.abs(g.dx) > Math.abs(g.dy) * 1.3),
     onPanResponderGrant: e => {
       stopLateralTravel(); latest.current.onGestureStart?.();
       const touches = e.nativeEvent.touches, a = touches[0], b = touches[1];
@@ -167,7 +166,7 @@ function LaneTrackContent({
       const distance = b ? Math.hypot(b.pageX - a.pageX, b.pageY - a.pageY) : 0;
       if (count !== d.count) { start.current = { ...d, x, y, count, distance, view: pending.current?.view ?? p.v, scroll: pending.current?.scroll ?? previous.current?.scroll ?? 0 }; return; }
       const span = count === 2 && distance > 0 && d.distance > 0 ? fieldZoomSpan(d.view.span * d.distance / distance, p.unit) : d.view.span;
-      const next = p.exploring || count === 2 ? pinchFieldView(d.view, span, (d.y - d.top - p.course.top) / p.course.length, (y - d.top - p.course.top) / p.course.length) : { ...d.view };
+      const next = p.fullscreen || count === 2 ? pinchFieldView(d.view, span, (d.y - d.top - p.course.top) / p.course.length, (y - d.top - p.course.top) / p.course.length) : { ...d.view };
       next.center = p.clampCenter(next.center, next.span);
       const fromCourse = fieldCourse(p.width, p.height, p.count, d.view, p.unit, p.appearance);
       const nextCourse = fieldCourse(p.width, p.height, p.count, next, p.unit, p.appearance);
@@ -242,6 +241,45 @@ function LaneTrackContent({
           >
             <Rect x={visibleScroll} width={width} height={height} fill="transparent" />
             <G>{groundPaint}</G>
+            {!course.oval && (
+              <G pointerEvents="none">
+                {fieldScaleMarks(bounds.min, bounds.max).map((d) => {
+                  const y = course.along(d);
+                  if (y < 8 || y > height - 8) return null;
+                  return (
+                    <G key={`mark-${d}`}>
+                      <Path
+                        d={`M ${visibleScroll} ${y} H ${visibleScroll + width}`}
+                        stroke="rgba(255, 255, 255, 0.16)"
+                        strokeWidth={1}
+                        strokeDasharray="4 4"
+                      />
+                      <G transform={`translate(${visibleScroll + 10} ${y - 8})`}>
+                        <Rect
+                          x={-3}
+                          y={-8}
+                          width={String(d).length * 7 + 26}
+                          height={16}
+                          rx={4}
+                          fill="rgba(20, 20, 19, 0.65)"
+                        />
+                        <SvgText
+                          {...chartTextProps()}
+                          x={(String(d).length * 7 + 20) / 2}
+                          y={4}
+                          textAnchor="middle"
+                          fill="#ffffff"
+                          fontSize={10}
+                          fontWeight="600"
+                        >
+                          {`${d} ${unit}`}
+                        </SvgText>
+                      </G>
+                    </G>
+                  );
+                })}
+              </G>
+            )}
             <G pointerEvents="none">
               {live.map((lane, i) => ({ lane, i })).sort((a, b) =>
                 (a.lane.id === selectedId ? 2 : a.lane.you ? 1 : 0) - (b.lane.id === selectedId ? 2 : b.lane.you ? 1 : 0)
@@ -403,36 +441,6 @@ function LaneTrackContent({
               </Pressable>
             </View>
           ) : null}
-          <Pressable
-            accessibilityRole="button"
-            accessibilityState={{ selected: exploring }}
-            accessibilityLabel={
-              exploring ? "Finish panning lanes" : "Enable vertical lane panning"
-            }
-            onPress={() => {
-              void playCue("selection");
-              setExploring((value) => !value);
-            }}
-            style={{
-              minHeight: 36,
-              paddingHorizontal: 14,
-              justifyContent: "center",
-              borderRadius: 999,
-              backgroundColor: exploring ? c.tennis : "rgba(20, 20, 19, 0.75)",
-              borderWidth: 1,
-              borderColor: exploring ? c.tennis : "rgba(255, 255, 255, 0.16)",
-            }}
-          >
-            <Text
-              style={{
-                ...textStyle("caption"),
-                color: exploring ? c.ink : "#ffffff",
-              }}
-            >
-              {exploring ? "Done" : "Explore"}
-            </Text>
-          </Pressable>
-
         </View>
       ) : null}
       {!fullscreen && onExpand ? <View pointerEvents="none" style={{ position: "absolute", bottom: 10, alignSelf: "center", backgroundColor: "rgba(20, 20, 19, 0.75)", borderRadius: 999, paddingHorizontal: 12, paddingVertical: 6 }}><Text style={{ ...textStyle("caption"), color: "#ffffff" }}>Tap field to open full screen</Text></View> : null}

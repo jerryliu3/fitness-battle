@@ -3,6 +3,7 @@ import { act, create } from "react-test-renderer";
 import { expect, it, vi } from "vitest";
 import { freshState, type SyncReviewReceipt } from "@fitness-battle/shared";
 vi.mock("../ui/activity-route", () => ({ ActivityRoute: "ActivityRoute" }));
+vi.mock("../ui/route-static-preview", () => ({ RouteStaticPreview: "RouteStaticPreview" }));
 vi.mock("./competition-moment", () => ({ CompetitionMoment: "CompetitionMoment" }));
 vi.mock("../ui/use-reduced-motion", () => ({ useReducedMotion: () => true }));
 vi.mock("react-native-safe-area-context", () => ({ SafeAreaProvider: "SafeAreaProvider", SafeAreaView: "SafeAreaView" }));
@@ -20,6 +21,7 @@ vi.mock("react-native", () => ({
   ActivityIndicator: "ActivityIndicator",
   StyleSheet: { create: (v: unknown) => v },
   PanResponder: { create: (handlers: object) => ({ panHandlers: handlers }) },
+  useWindowDimensions: () => ({ width: 390, height: 844 }),
 }));
 import { SyncReview } from "./sync-review";
 it("a native full-screen swipe confirms the selected activities once without navigating away", async () => {

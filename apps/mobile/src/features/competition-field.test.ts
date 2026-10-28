@@ -15,7 +15,10 @@ vi.mock("react-native-safe-area-context", () => ({ useSafeAreaInsets: () => ({ t
 vi.mock("react-native-svg", () => ({ default: "Svg", G: "SvgG" }));
 vi.mock("./geographic-course", () => ({ GeographicCourse: "GeographicCourse" }));
 vi.mock("./competition-replay", () => ({ CompetitionReplayButton: "ReplayButton" }));
-vi.mock("../ui/choice-picker", () => ({ ChoicePicker: "ChoicePicker" }));
+vi.mock("../ui/field-view-switcher", () => ({
+  FieldViewSwitcher: ({ value, onChange }: { value: string; onChange: (v: string) => void }) =>
+    createElement("FieldViewSwitcher", { value, onChange }),
+}));
 vi.mock("../ui/user-avatar", () => ({ UserAvatar: "UserAvatar" }));
 vi.mock("../ui/section", () => ({ textStyle: () => ({}) }));
 vi.mock("../ui/rank-badge", () => ({ RankBadge: "RankBadge" }));
@@ -71,16 +74,17 @@ it("collapses each panel independently and isolates zoom/replay touches from sce
   await act(async () => button("Expand live intervals").props.onPress());
   expect(button("Collapse live intervals").props.accessibilityState.expanded).toBe(true);
   expect(button("Zoom in")).toBeUndefined();
-  await act(async () => renderer.root.findByType("ChoicePicker" as never).props.onChange("zoom-in"));
-  expect(mocks.fly).toHaveBeenCalled();
-  const replay = renderer.root.findByType("ReplayButton" as never).parent!;
+  const replay = renderer.root.findAllByType("ReplayButton" as never)[0].parent!;
   const stopPropagation = vi.fn();
   replay.props.onTouchStart({ stopPropagation });
   expect(stopPropagation).toHaveBeenCalledTimes(1);
 });
 
 it("keeps 4D inside the fullscreen host with the same panels, selection and replay", async () => {
-  const switchTo = async (mode: string) => act(async () => renderer.root.findByType("ChoicePicker" as never).props.onChange(mode.toLowerCase()));
+  const switchTo = async (mode: string) => act(async () => {
+    const switcher = renderer.root.findAllByType("FieldViewSwitcher" as never)[0];
+    switcher.props.onChange(mode.toLowerCase());
+  });
   await switchTo("4D");
   const map = () => renderer.root.findByType("GeographicCourse" as never);
   const course = createRaceCourse("City", [[0, 0], [.02, 0]]);
@@ -124,17 +128,18 @@ it("keeps 4D inside the fullscreen host with the same panels, selection and repl
   expect(button("Expand athlete panel")).toBeDefined();
 });
 
-it("keeps a navigable overview beneath both collapsed and expanded athlete panels", async () => {
+it("keeps a navigable overview inside the athlete panel across collapse and expansion", async () => {
   const overview = () => renderer.root.findByType("FieldOverview" as never);
-  const bottom = overview().parent!.props.style[0].bottom;
+  expect(overview()).toBeDefined();
   await act(async () => overview().props.onNavigate(5));
   expect(field().props.view.center).toBe(5);
   await act(async () => button("Collapse athlete panel").props.onPress());
-  expect(overview().parent!.props.style[0].bottom).toBe(bottom);
-  await act(async () => renderer.root.findByType("ChoicePicker" as never).props.onChange("3d"));
+  expect(overview()).toBeDefined();
+  const switcher = renderer.root.findAllByType("FieldViewSwitcher" as never)[0];
+  await act(async () => switcher.props.onChange("3d"));
   expect(overview()).toBeDefined();
   await act(async () => overview().props.onNavigate(3));
   expect(renderer.root.findByType("PortraitField" as never).props.view.center).toBe(3);
   await act(async () => button("Expand athlete panel").props.onPress());
-  expect(overview().parent!.props.style[0].bottom).toBe(bottom);
+  expect(overview()).toBeDefined();
 });

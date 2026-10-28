@@ -59,10 +59,8 @@ export function CompetitionField({
   const chooseView = (value: "2d" | "3d" | "4d") => {
     void playCue("selection");
     flight.cancel();
-    setStandingsOpen(false);
     setSceneDimension(value);
   };
-  const [standingsOpen, setStandingsOpen] = useState(false);
   const [expanded, setExpanded] = useState(false);
   const [intervalsCollapsed, setIntervalsCollapsed] = useState(false);
   const [spotlightCollapsed, setSpotlightCollapsed] = useState(false);
@@ -138,7 +136,6 @@ export function CompetitionField({
     const lane = arena.lanes.find((item) => item.id === id);
     if (!lane) return;
     setCourseTarget(null);
-    setStandingsOpen(false);
     const ordered = orderedArenaLanes(arena.lanes);
     portraitAnchor.current = Math.max(0, ordered.findIndex(l => l.id === id)) - Math.max(0, ordered.findIndex(l => l.you));
     setSelectedId(id);
@@ -254,66 +251,19 @@ export function CompetitionField({
             view={view}
             onPan={panTo}
           />
-          {!expanded ? <FieldOverlayView
-            hidden={overlaysHidden}
-            onTouchStart={event => event.stopPropagation()}
-            pointerEvents="auto"
-            style={{
-              position: "absolute",
-              bottom: expanded ? safeBottom + 148 : 14,
-              alignSelf: "center",
-              flexDirection: "row",
-              alignItems: "center",
-              gap: 12,
-              borderRadius: 28,
-              backgroundColor: "#102e38ed",
-              borderWidth: 1,
-              borderColor: "rgba(255,255,255,0.16)",
-              paddingHorizontal: 8,
-              paddingVertical: 2,
-            }}
-          >
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel="Zoom out"
-              disabled={view.span >= (arena.unit === "pts" ? 100 : 40)}
-              onPress={() =>
-                zoomTo(
-                  Math.min(arena.unit === "pts" ? 100 : 40, view.span * 1.5),
-                )
-              }
-              style={{
-                minWidth: 40,
-                minHeight: 40,
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-            >
-              <Text style={{ ...textStyle("heading"), color: "white" }}>−</Text>
-            </Pressable>
-            <CompetitionReplayButton
-              state={state}
-              selection={replaySelection}
-              dimension={sceneDimension}
-              course={course}
-              onCourseChange={setCourse}
-              label="Replay"
-            />
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel="Zoom in"
-              disabled={view.span <= 0.5}
-              onPress={() => zoomTo(Math.max(0.5, view.span / 1.5))}
-              style={{
-                minWidth: 40,
-                minHeight: 40,
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-            >
-              <Text style={{ ...textStyle("heading"), color: "white" }}>＋</Text>
-            </Pressable>
-          </FieldOverlayView> : null}
+          {!expanded ? (
+            <View style={{ position: "absolute", bottom: 10, right: 10, zIndex: 10 }}>
+              <CompetitionReplayButton
+                state={state}
+                selection={replaySelection}
+                dimension={sceneDimension}
+                course={course}
+                onCourseChange={setCourse}
+                variant="inline"
+                label="View replay"
+              />
+            </View>
+          ) : null}
         </View>
         {!expanded ? (
           <View style={{ marginTop: 8, borderRadius: 12, overflow: "hidden" }}>
@@ -335,10 +285,11 @@ export function CompetitionField({
 
   return (
     <View style={{ gap: 14, position: "relative" }}>
-      {!expanded ? <View style={{ position: "absolute", left: 12, top: 12, zIndex: 10 }}>
-        <FieldViewSwitcher value={sceneDimension} geographic={arena.unit !== "pts"} onChange={chooseView}
-          standings={standingsOpen} onStandings={() => { flight.cancel(); setStandingsOpen(true); }} />
-      </View> : null}
+      {!expanded ? (
+        <View style={{ position: "absolute", left: 12, top: 12, zIndex: 10 }}>
+          <FieldViewSwitcher value={sceneDimension} geographic={arena.unit !== "pts"} onChange={chooseView} />
+        </View>
+      ) : null}
       {expanded ? (
         <Modal
           visible
@@ -398,10 +349,7 @@ export function CompetitionField({
                   {arena.sportName} · {place(total)} / {ranked.length}
                 </Text>
               </View>
-              <FieldViewSwitcher value={sceneDimension} geographic={arena.unit !== "pts"} onChange={chooseView}
-                onStandings={() => { setExpanded(false); setStandingsOpen(true); }}
-                onZoomIn={sceneDimension !== "4d" ? () => zoomTo(Math.max(arena.unit === "pts" ? 2 : 0.5, view.span / 1.5)) : undefined}
-                onZoomOut={sceneDimension !== "4d" ? () => zoomTo(Math.min(arena.unit === "pts" ? 100 : 40, view.span * 1.5)) : undefined} />
+              <FieldViewSwitcher value={sceneDimension} geographic={arena.unit !== "pts"} onChange={chooseView} />
             </FieldOverlayView>
 
             {(sceneDimension !== "4d" || course) ? <>
@@ -588,7 +536,7 @@ export function CompetitionField({
                   position: "absolute",
                   left: 12,
                   right: 12,
-                  bottom: safeBottom + 64,
+                  bottom: safeBottom + 8,
                 }}
                 surfaceStyle={{
                   backgroundColor: "rgba(20, 20, 19, 0.86)",
@@ -706,187 +654,123 @@ export function CompetitionField({
                     );
                   })}
                 </ScrollView>
+
+                <View style={{ borderRadius: 12, overflow: "hidden", marginTop: 4 }}>
+                  <FieldOverview
+                    lanes={fieldLanes}
+                    view={sceneDimension === "4d" ? { ...view, center: courseTarget?.value ?? focusedLane?.values[2] ?? total } : view}
+                    unit={arena.unit}
+                    positionOnly={sceneDimension === "4d"}
+                    onNavigate={value => {
+                      if (sceneDimension === "4d") setCourseTarget(previous => ({ value, request: (previous?.request ?? 0) + 1 }));
+                      else panTo(value);
+                    }}
+                  />
+                </View>
               </SlidingFieldPanel>
             ) : null}
-            <FieldOverlayView hidden={overlaysHidden} onTouchStart={event => event.stopPropagation()}
-              style={{ position: "absolute", left: 12, right: 12, bottom: safeBottom + 8, borderRadius: 12, overflow: "hidden" }}>
-              <FieldOverview lanes={fieldLanes} view={sceneDimension === "4d" ? { ...view, center: courseTarget?.value ?? focusedLane?.values[2] ?? total } : view}
-                unit={arena.unit} positionOnly={sceneDimension === "4d"}
-                onNavigate={value => {
-                  if (sceneDimension === "4d") setCourseTarget(previous => ({ value, request: (previous?.request ?? 0) + 1 }));
-                  else panTo(value);
-                }} />
-            </FieldOverlayView>
           </> : null}
           </View>
         </Modal>
       ) : (
-        <View style={{ display: standingsOpen ? "none" : "flex" }}>{fieldContent}</View>
+        <View>{fieldContent}</View>
       )}
 
-      <View style={[f.section, { display: standingsOpen ? "flex" : "none", paddingTop: 64 }]}>
-        {standingsOpen ? (
-          <View style={{ gap: 10, paddingTop: 6 }}>
-            {/* 1st Place Leader Stage */}
-            {leader ? (
+      <View style={[f.section, { paddingTop: 16 }]}>
+        <View style={{ gap: 10 }}>
+          {ranked.map((lane) => {
+            const rank = place(lane.values[2]);
+            const pct = Math.max(
+              6,
+              Math.min(100, Math.round((lane.values[2] / leaderValue) * 100)),
+            );
+            const elo = scores.find((row) => row.id === lane.id)?.elo;
+            return (
               <Pressable
+                key={lane.id}
                 accessibilityRole="button"
-                accessibilityLabel={`Leader stage: ${leader.name}, 1st place, ${leader.values[2].toFixed(1)} ${arena.unit}`}
-                onPress={() => selectAthlete(leader.id)}
-                style={{
-                  backgroundColor: c.ink,
-                  borderRadius: 16,
-                  padding: 14,
-                  gap: 10,
-                }}
-              >
-                <View style={[f.row, { justifyContent: "space-between" }]}>
-                  <View
-                    style={{
-                      backgroundColor: c.tennis,
-                      borderRadius: 999,
-                      paddingHorizontal: 10,
-                      paddingVertical: 3,
-                    }}
-                  >
-                    <Text style={{ ...textStyle("caption"), color: c.ink }}>
-                      {leadersTied ? "TIED FOR 1ST · FIELD LEADER" : "1ST PLACE · FIELD LEADER"}
-                    </Text>
-                  </View>
-                  <Text style={{ ...textStyle("caption"), color: "rgba(255,255,255,0.7)" }}>
-                    {scores.find((row) => row.id === leader.id)?.elo ?? "—"} ELO
-                  </Text>
-                </View>
-                <View style={f.row}>
-                  <UserAvatar
-                    src={leader.avatarUrl}
-                    name={leader.name}
-                    size={42}
-                    fallback={
-                      <Svg width={32} height={42} viewBox="-40 -50 80 100">
-                        <PolishedRacer
-                          x={0}
-                          y={0}
-                          you={leader.you}
-                          gold
-                        />
-                      </Svg>
-                    }
-                  />
-                  <View style={f.grow}>
-                    <Text style={{ ...textStyle("heading"), color: "#ffffff" }}>
-                      {leader.you ? selfLaneLabel(leader.name) : leader.name}
-                    </Text>
-                    <Text style={{ ...textStyle("caption"), color: "rgba(255,255,255,0.7)" }}>
-                      {leadersTied
-                        ? "Tied for the lead"
-                        : leader.you
-                        ? "You hold the crown this week"
-                        : `${(leader.values[2] - total).toFixed(1)} ${arena.unit} ahead of you`}
-                    </Text>
-                  </View>
-                  <Text style={{ ...textStyle("heading"), color: c.tennis }}>
-                    {leader.values[2].toFixed(1)} {arena.unit}
-                  </Text>
-                </View>
-              </Pressable>
-            ) : null}
-
-            <Text style={textStyle("caption")}>Places use exact {arena.unit === "pts" ? "effort" : "distance"} totals; displayed values are rounded.</Text>
-            {ranked.map((lane) => {
-              const rank = place(lane.values[2]);
-              const pct = Math.max(
-                6,
-                Math.min(100, Math.round((lane.values[2] / leaderValue) * 100)),
-              );
-              const elo = scores.find((row) => row.id === lane.id)?.elo;
-              return (
-                <Pressable
-                  key={lane.id}
-                  accessibilityRole="button"
-                  accessibilityLabel={`${lane.name}, place ${rank}, ${lane.values[2].toFixed(1)} ${arena.unit}`}
-                  onPress={() => selectAthlete(lane.id)}
-                  style={[
-                    f.row,
-                    {
-                      paddingVertical: 10,
-                      paddingHorizontal: lane.you ? 10 : 4,
-                      borderRadius: 12,
-                      backgroundColor: lane.you ? c.soft : "transparent",
-                    },
-                  ]}
-                >
-                  <Text style={[textStyle("label"), { width: 22 }]}>{rank}</Text>
-                  <UserAvatar
-                    src={lane.avatarUrl}
-                    name={lane.name}
-                    size={36}
-                    fallback={
-                      <Svg width={26} height={36} viewBox="-40 -50 80 100">
-                        <PolishedRacer
-                          x={0}
-                          y={0}
-                          you={lane.you}
-                          gold={rank === 1}
-                        />
-                      </Svg>
-                    }
-                  />
-                  <View style={[f.grow, { gap: 6 }]}>
-                    <View style={f.row}>
-                      <View style={f.grow}>
-                        <Text style={textStyle("label")}>
-                          {lane.you ? selfLaneLabel(lane.name) : lane.name}
-                        </Text>
-                      </View>
-                      <RankBadge score={elo} />
-                      <View style={{ alignItems: "flex-end" }}>
-                        <Text style={textStyle("label")}>
-                          {lane.values[2].toFixed(1)} {arena.unit}
-                        </Text>
-                        <Text style={[textStyle("caption"), { color: c.ink }]}>
-                          {elo ?? "—"} effort score
-                        </Text>
-                      </View>
-                    </View>
-                    {/* Visual proportion bar aligned underneath the user's name */}
-                    <View
-                      style={{
-                        height: 6,
-                        borderRadius: 999,
-                        backgroundColor: c.line,
-                        overflow: "hidden",
-                      }}
-                    >
-                      <View
-                        style={{
-                          width: `${pct}%`,
-                          height: "100%",
-                          borderRadius: 999,
-                          backgroundColor:
-                            rank === 1 ? c.ink : lane.you ? c.tennis : c.muted,
-                        }}
-                      />
-                    </View>
-                  </View>
-                </Pressable>
-              );
-            })}
-            {pastYou && (
-              <View
+                accessibilityLabel={`${lane.name}, place ${rank}, ${lane.values[2].toFixed(1)} ${arena.unit}`}
+                onPress={() => selectAthlete(lane.id)}
                 style={[
                   f.row,
-                  { minHeight: 48, borderTopWidth: 1, borderTopColor: c.line },
+                  {
+                    paddingVertical: 10,
+                    paddingHorizontal: lane.you ? 10 : 4,
+                    borderRadius: 12,
+                    backgroundColor: lane.you ? c.soft : "transparent",
+                  },
                 ]}
               >
-                <Text style={textStyle("body")}>Past you · unranked</Text>
-                <Text style={textStyle("label")}>
-                  {pastYou.values[2].toFixed(1)} {arena.unit}
-                </Text>
-              </View>
-            )}
-          </View>
-        ) : null}
+                <Text style={[textStyle("label"), { width: 22 }]}>{rank}</Text>
+                <UserAvatar
+                  src={lane.avatarUrl}
+                  name={lane.name}
+                  size={36}
+                  fallback={
+                    <Svg width={26} height={36} viewBox="-40 -50 80 100">
+                      <PolishedRacer
+                        x={0}
+                        y={0}
+                        you={lane.you}
+                        gold={rank === 1}
+                      />
+                    </Svg>
+                  }
+                />
+                <View style={[f.grow, { gap: 6 }]}>
+                  <View style={f.row}>
+                    <View style={f.grow}>
+                      <Text style={textStyle("label")}>
+                        {lane.you ? selfLaneLabel(lane.name) : lane.name}
+                      </Text>
+                    </View>
+                    <RankBadge score={elo} />
+                    <View style={{ alignItems: "flex-end" }}>
+                      <Text style={textStyle("label")}>
+                        {lane.values[2].toFixed(1)} {arena.unit}
+                      </Text>
+                      <Text style={[textStyle("caption"), { color: c.ink }]}>
+                        {elo ?? "—"} effort score
+                      </Text>
+                    </View>
+                  </View>
+                  {/* Visual proportion bar aligned underneath the user's name */}
+                  <View
+                    style={{
+                      height: 6,
+                      borderRadius: 999,
+                      backgroundColor: c.line,
+                      overflow: "hidden",
+                    }}
+                  >
+                    <View
+                      style={{
+                        width: `${pct}%`,
+                        height: "100%",
+                        borderRadius: 999,
+                        backgroundColor:
+                          rank === 1 ? c.ink : lane.you ? c.tennis : c.muted,
+                      }}
+                    />
+                  </View>
+                </View>
+              </Pressable>
+            );
+          })}
+          {pastYou && (
+            <View
+              style={[
+                f.row,
+                { minHeight: 48, borderTopWidth: 1, borderTopColor: c.line },
+              ]}
+            >
+              <Text style={textStyle("body")}>Past you · unranked</Text>
+              <Text style={textStyle("label")}>
+                {pastYou.values[2].toFixed(1)} {arena.unit}
+              </Text>
+            </View>
+          )}
+        </View>
       </View>
     </View>
   );
