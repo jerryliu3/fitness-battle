@@ -139,9 +139,6 @@ const s = StyleSheet.create({
   },
   checkmark: {
     color: "#ffffff",
-    fontSize: 11,
-    lineHeight: 14,
-    fontWeight: "700",
   },
   optionSelected: {
     backgroundColor: c.soft,
