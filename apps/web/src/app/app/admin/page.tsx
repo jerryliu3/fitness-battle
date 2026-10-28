@@ -8,6 +8,7 @@ import { useAuth } from "@/components/auth-context";
 import { WeekReveal } from "@/features/split/components/week-reveal";
 import { isOwnerEmail } from "@/lib/auth/design-access";
 import { AdminScenarioControls } from "@/features/you/admin-scenario-controls";
+import { AdminRouteControls } from "@/features/you/admin-route-controls";
 import { AdminFieldControls } from "@/features/you/admin-field-controls";
 export default function AdminLab() {
   const { state, refresh } = useCompete();
@@ -82,6 +83,7 @@ export default function AdminLab() {
     </section>}
     {user?.mode === "supabase" && isOwnerEmail(user.email) && <AdminScenarioControls target={target} owner={user.id} onTargetChange={(value) => { setTarget(value); setPreview(null); }}/>}
     {user?.mode === "supabase" && isOwnerEmail(user.email) && <AdminFieldControls target={target} owner={user.id}/>}
+    {user?.mode === "supabase" && isOwnerEmail(user.email) && <AdminRouteControls key={user.id}/>}
     {note && <AppParagraph typographyRole="body" role="status">{note}</AppParagraph>}
   </main>;
 }
