@@ -4,7 +4,6 @@ import { GeographicCourse } from "./geographic-course";
 import { CompetitionReplayButton } from "./competition-replay";
 import { UserAvatar } from "../ui/user-avatar";
 import { textStyle } from "../ui/section";
-import { RankBadge } from "../ui/rank-badge";
 import { useFieldFlight } from "../ui/use-field-flight";
 import { FieldOverlayView, SlidingFieldPanel } from "../ui/field-overlay-motion";
 import { PortraitField } from "../ui/portrait-field";
@@ -33,14 +32,12 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { AppState, Modal, Pressable, ScrollView, Text, View, useWindowDimensions } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { IconButton } from "../ui/icon-button";
-import Svg from "react-native-svg";
 import { useCompeteStore } from "../lib/compete-store";
 import { playCue } from "../lib/haptics";
 import { SHELL_COLORS as c } from "../theme";
 import { f } from "../ui/focus";
 import { LaneTrack, type LaneAnchor } from "../ui/lane-track";
 import { FieldOverview, useFieldAppearance } from "../ui/field-course";
-import { PolishedRacer } from "../ui/polished-racer";
 import { useReducedMotion } from "../ui/use-reduced-motion";
 
 export function CompetitionField({
@@ -150,7 +147,6 @@ export function CompetitionField({
   const place = (value: number) =>
     1 + ranked.filter((lane) => lane.values[2] > value).length;
   const scores = weeklyBoard(state, sport, track);
-  const pastYou = arena.lanes.find(lane => lane.ghost);
   const leader = ranked[0];
   const leadersTied = leader ? ranked.filter(lane => lane.values[2] === leader.values[2]).length > 1 : false;
   const leaderValue = Math.max(leader?.values[2] ?? 0, 0.0001);
@@ -299,7 +295,7 @@ export function CompetitionField({
             course={course}
             onCourseChange={setCourse}
             variant="inline"
-            label="View replay"
+            label="Replay"
           />
         </View>
       ) : null}
@@ -428,14 +424,14 @@ export function CompetitionField({
               })}
             </SlidingFieldPanel>
 
-            {/* Left Replay action positioned below Current Positions */}
+            {/* Right Replay action positioned underneath the 2D dropdown */}
             <FieldOverlayView
               hidden={overlaysHidden}
               pointerEvents="box-none"
               style={{
                 position: "absolute",
-                top: safeTop + 62 + (intervalsCollapsed ? 48 : 172),
-                left: 12,
+                top: safeTop + 54,
+                right: 12,
                 zIndex: 10,
               }}
             >
@@ -447,7 +443,7 @@ export function CompetitionField({
                   course={course}
                   onCourseChange={setCourse}
                   variant="inline"
-                  label="View replay"
+                  label="Replay"
                 />
               </View>
             </FieldOverlayView>
@@ -633,31 +629,20 @@ export function CompetitionField({
                   src={lane.avatarUrl}
                   name={lane.name}
                   size={36}
-                  fallback={
-                    <Svg width={26} height={36} viewBox="-40 -50 80 100">
-                      <PolishedRacer
-                        x={0}
-                        y={0}
-                        you={lane.you}
-                        gold={rank === 1}
-                      />
-                    </Svg>
-                  }
                 />
                 <View style={[f.grow, { gap: 6 }]}>
-                  <View style={f.row}>
-                    <View style={f.grow}>
-                      <Text style={textStyle("label")}>
+                  <View style={[f.row, { alignItems: "center", justifyContent: "space-between" }]}>
+                    <View style={{ flex: 1, gap: 2, marginRight: 12 }}>
+                      <Text style={textStyle("label")} numberOfLines={1}>
                         {lane.you ? selfLaneLabel(lane.name) : lane.name}
                       </Text>
-                    </View>
-                    <RankBadge score={elo} />
-                    <View style={{ alignItems: "flex-end" }}>
-                      <Text style={textStyle("label")}>
-                        {lane.values[2].toFixed(1)} {arena.unit}
-                      </Text>
-                      <Text style={[textStyle("caption"), { color: c.ink }]}>
+                      <Text style={[textStyle("caption"), { color: c.muted }]}>
                         {elo ?? "—"} effort score
+                      </Text>
+                    </View>
+                    <View style={{ alignItems: "flex-end" }}>
+                      <Text style={{ ...textStyle("heading"), fontSize: 20, fontWeight: "700", color: c.ink }}>
+                        {lane.values[2].toFixed(1)} {arena.unit}
                       </Text>
                     </View>
                   </View>
@@ -684,19 +669,6 @@ export function CompetitionField({
               </Pressable>
             );
           })}
-          {pastYou && (
-            <View
-              style={[
-                f.row,
-                { minHeight: 48, borderTopWidth: 1, borderTopColor: c.line },
-              ]}
-            >
-              <Text style={textStyle("body")}>Past you · unranked</Text>
-              <Text style={textStyle("label")}>
-                {pastYou.values[2].toFixed(1)} {arena.unit}
-              </Text>
-            </View>
-          )}
         </View>
       </View>
     </View>

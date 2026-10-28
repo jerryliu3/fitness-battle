@@ -39,7 +39,7 @@ export default function ArenaScreen() {
   const [register, setRegister] = useState(false);
   const [selection,setSelection]=useState<{account:string;sport:SportId|"sleep"}|null>(null);
   useEffect(()=>{if(requestedEvent&&SPORTS.some(s=>s.id===requestedEvent))setSelection({account:accountKey,sport:requestedEvent as SportId});},[requestedEvent,accountKey]);
-  const [sport, setSport] = useState<SportId | null>(null);
+  const [sport, setSport] = useState<SportId | "sleep" | null>(null);
   const [joinBusy, setJoinBusy] = useState(false);
   const [joinError, setJoinError] = useState("");
   const joinFlight = useRef(false);
@@ -114,7 +114,7 @@ export default function ArenaScreen() {
       value: r.sport,
       label: SPORTS.find(s => s.id === r.sport)?.name ?? r.sport,
     })),
-    ...(sleepOptedIn ? [{ value: "sleep" as const, label: "Sleep & Recovery" }] : []),
+    ...(sleepOptedIn ? [{ value: "sleep" as const, label: "Recovery" }] : []),
   ];
 
   return (
@@ -144,7 +144,7 @@ export default function ArenaScreen() {
                 badge: competitionTrackLabel(r.sport),
               })),
               ...(sleepOptedIn
-                ? [{ id: "sleep", label: "Sleep & Recovery" }]
+                ? [{ id: "sleep", label: "Recovery" }]
                 : []),
             ]}
             value={selectedSport!}
@@ -189,8 +189,8 @@ export default function ArenaScreen() {
 </ScrollView>
       <FocusSheet
         open={register}
-        title="Register for this week."
-        body="Choose an event to join for the week."
+        minimal
+        title="Choose an event to join"
         onClose={() => {
           setRegister(false);
           setSport(null);
@@ -228,30 +228,40 @@ export default function ArenaScreen() {
             </View>
           );
         })}
-        <FocusButton
-          label={
-            sleepOptedIn
-              ? "Sleep & Recovery · Already registered"
-              : "Join Sleep & Recovery"
-          }
-          secondary
-          disabled={joinBusy || sleepOptedIn}
-          onPress={() => {
-            if (!user) {
+        <View style={{ gap: 8 }}>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={`Recovery, ${sleepOptedIn ? "Already registered" : "Health Tracked"}`}
+            disabled={Boolean(sleepOptedIn) || joinBusy}
+            onPress={() => {
+              if (sleepOptedIn || joinBusy) return;
+              if (!user) {
+                setRegister(false);
+                router.navigate("/athlete");
+                return;
+              }
+              if (!state.onboardingCompleted) {
+                setRegister(false);
+                router.navigate("/onboarding");
+                return;
+              }
+              setSelection({ account: accountKey, sport: "sleep" });
+              dispatch({ type: "opt-in-health", metric: "sleep" });
               setRegister(false);
-              router.navigate("/athlete");
-              return;
-            }
-            if (!state.onboardingCompleted) {
-              setRegister(false);
-              router.navigate("/onboarding");
-              return;
-            }
-            setSelection({account:accountKey,sport:"sleep"});
-            dispatch({ type: "opt-in-health", metric: "sleep" });
-            setRegister(false);
-          }}
-        />
+            }}
+            style={({ pressed }) => [
+              f.chip,
+              sport === "sleep" && f.chipActive,
+              Boolean(sleepOptedIn) && { opacity: 0.5 },
+              pressed && !sleepOptedIn && { opacity: 0.7 },
+            ]}
+          >
+            <AppText role="label">Recovery</AppText>
+            <AppText role="caption" secondary>
+              {sleepOptedIn ? "Already registered" : "Health Tracked"}
+            </AppText>
+          </Pressable>
+        </View>
         {Boolean(joinError) && (
           <AppText role="body" secondary  accessibilityLiveRegion="polite">
             {joinError}

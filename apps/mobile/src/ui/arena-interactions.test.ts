@@ -193,7 +193,7 @@ describe("native competition interactions", () => {
     expect(mock.mounts).toBe(1);
     const register = renderer.root.findAllByType("Pressable" as never).find((node) => node.props.accessibilityLabel === "Register for an event")!;
     await act(async () => register.props.onPress());
-    const registrationOpen = () => renderer.root.findAllByType("Sheet" as never).some(node=>node.props.title==="Register for this week."&&node.props.open);
+    const registrationOpen = () => renderer.root.findAllByType("Sheet" as never).some(node=>node.props.title==="Choose an event to join"&&node.props.open);
     expect(registrationOpen()).toBe(true);
   });
 

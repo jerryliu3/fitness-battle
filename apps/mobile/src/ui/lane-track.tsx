@@ -15,7 +15,6 @@ import {
   competeAthleteTrailColors,
   fieldLaneMarkerScale,
   polishedCapsulePath,
-  polishedLaneScale,
   type ArenaLane,
   type ArenaOvertakeFrame,
   type ArenaOvertakePlan,
@@ -368,28 +367,51 @@ function LaneTrackContent({
             {ghost && (() => {
               const youIdx = Math.max(0, ordered.findIndex((l) => l.you));
               const p = course.point(ghost.values[index] ?? 0, youIdx, 0, true);
-              const scale = 1.15 * course.markerScale * (fieldLaneMarkerScale(true) ?? 1) * polishedLaneScale(true);
+              const scale = Math.min(1.8, course.markerScale);
+              const markerScale = fieldLaneMarkerScale(true);
               return (
                 <G
                   key="ghost-capsule"
                   transform={`translate(${p.x} ${p.y}) rotate(${p.angle}) scale(${scale})`}
                   pointerEvents="none"
-                  opacity={0.6}
                 >
-                  <Path
-                    d={polishedCapsulePath()}
-                    fill="transparent"
-                    stroke="#ffffff"
-                    strokeWidth={1.5}
-                    strokeDasharray="4 4"
-                  />
-                  <Path
-                    d={polishedCapsulePath(2)}
-                    fill="none"
-                    stroke="rgba(255, 255, 255, 0.45)"
-                    strokeWidth={1}
-                    strokeDasharray="2 2"
-                  />
+                  <G transform={`scale(${markerScale})`} opacity={0.6}>
+                    <Path
+                      d={polishedCapsulePath()}
+                      fill="transparent"
+                      stroke="#ffffff"
+                      strokeWidth={1.5}
+                      strokeDasharray="4 4"
+                    />
+                    <Path
+                      d={polishedCapsulePath(2)}
+                      fill="none"
+                      stroke="rgba(255, 255, 255, 0.45)"
+                      strokeWidth={1}
+                      strokeDasharray="2 2"
+                    />
+                  </G>
+                  <G transform={`translate(0 ${-36 * markerScale})`}>
+                    <Rect
+                      x={-28}
+                      y={-8}
+                      width={56}
+                      height={16}
+                      rx={4}
+                      fill="rgba(20, 20, 19, 0.75)"
+                    />
+                    <SvgText
+                      {...chartTextProps()}
+                      x={0}
+                      y={3.5}
+                      textAnchor="middle"
+                      fill="#ffffff"
+                      fontSize={9}
+                      fontWeight="600"
+                    >
+                      Last week
+                    </SvgText>
+                  </G>
                 </G>
               );
             })()}
