@@ -78,11 +78,19 @@ export function fieldCourse(viewportWidth: number, height: number, count: number
 }
 export type FieldCourse = ReturnType<typeof fieldCourse>;
 /** Integer labels, bounded scenery; no work proportional to lifetime distance. */
-/** At most five readable ruler marks; spacing grows with the visible range. */
-export function fieldScaleMarks(min:number,max:number) {
-  const raw=Math.max(1,(max-Math.max(0,min))/4),power=10**Math.floor(Math.log10(raw));
-  const step=[1,2,2.5,5,10].map(v=>v*power).find(v=>v>=raw)??10*power;
-  return fieldMarks(min,max,step,4);
+/** At most five readable ruler marks; spacing adapts automatically to visible range. */
+export function fieldScaleMarks(min: number, max: number) {
+  const span = Math.max(0.0001, max - Math.max(0, min));
+  const raw = span / 4.8;
+  const power = 10 ** Math.floor(Math.log10(raw));
+  const normalized = Number((raw / power).toFixed(6));
+  const factor = [1, 2, 2.5, 5, 10].find(v => v >= normalized - 1e-6) ?? 10;
+  const step = Number((factor * power).toFixed(6));
+  const first = Math.ceil(Number((Math.max(0, min) / step).toFixed(6))) * step;
+  const count = Math.max(0, Math.floor((max - first) / step + 1e-6) + 1);
+  return Array.from({ length: Math.min(count, 5) }, (_, i) => {
+    return Number((first + i * step).toFixed(4));
+  });
 }
 export function fieldMarks(min: number, max: number, step = 1, cap = 60) {
   const stride = Math.max(step, Math.ceil((max - min) / cap / step) * step);

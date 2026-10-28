@@ -27,7 +27,7 @@ export function SleepPanel({
   });
   return (
     <View style={f.card}>
-      <Text style={f.kicker}>Sleep & Recovery</Text>
+      <Text style={f.kicker}>Recovery</Text>
       <SectionHeader title={view.lastNight ? "Latest sleep" : "No night recorded yet"}/>
       {view.lastNight ? (
         <>

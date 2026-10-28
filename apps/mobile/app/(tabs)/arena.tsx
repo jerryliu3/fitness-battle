@@ -1,5 +1,4 @@
-import { FeatureCard, SectionHeader, SectionStack, AppText } from "../../src/ui/section";
-import { AppIcon } from "../../src/ui/app-icon";
+import { SectionStack, AppText } from "../../src/ui/section";
 import { competitionTrack, competitionTrackLabel } from "@fitness-battle/shared";
 import { EventCarousel } from "../../src/features/event-carousel";
 import {
@@ -9,7 +8,7 @@ import {
 } from "@fitness-battle/shared";
 import { useGlobalSearchParams, useRouter } from "expo-router";
 import { useEffect, useRef, useState } from "react";
-import { Pressable, ScrollView, Switch, Text, View } from "react-native";
+import { Pressable, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { CompetitionField } from "../../src/features/competition-field";
 import { CompetitionSummary } from "../../src/features/competition-summary";
@@ -20,7 +19,7 @@ import { useAuth } from "../../src/lib/auth";
 import { useCompeteStore } from "../../src/lib/compete-store";
 
 import { playCue } from "../../src/lib/haptics";
-import { FocusButton, FocusSegments, FocusSheet, f } from "../../src/ui/focus";
+import { FocusButton, FocusSheet, f } from "../../src/ui/focus";
 import { SHELL_COLORS } from "../../src/theme";
 
 export default function ArenaScreen() {
@@ -40,8 +39,7 @@ export default function ArenaScreen() {
   const [register, setRegister] = useState(false);
   const [selection,setSelection]=useState<{account:string;sport:SportId|"sleep"}|null>(null);
   useEffect(()=>{if(requestedEvent&&SPORTS.some(s=>s.id===requestedEvent))setSelection({account:accountKey,sport:requestedEvent as SportId});},[requestedEvent,accountKey]);
-  const [sport, setSport] = useState<SportId | null>(null);
-  const [withCrew, setWithCrew] = useState(false);
+  const [sport, setSport] = useState<SportId | "sleep" | null>(null);
   const [joinBusy, setJoinBusy] = useState(false);
   const [joinError, setJoinError] = useState("");
   const joinFlight = useRef(false);
@@ -116,7 +114,7 @@ export default function ArenaScreen() {
       value: r.sport,
       label: SPORTS.find(s => s.id === r.sport)?.name ?? r.sport,
     })),
-    ...(sleepOptedIn ? [{ value: "sleep" as const, label: "Sleep & Recovery" }] : []),
+    ...(sleepOptedIn ? [{ value: "sleep" as const, label: "Recovery" }] : []),
   ];
 
   return (
@@ -146,7 +144,7 @@ export default function ArenaScreen() {
                 badge: competitionTrackLabel(r.sport),
               })),
               ...(sleepOptedIn
-                ? [{ id: "sleep", label: "Sleep & Recovery" }]
+                ? [{ id: "sleep", label: "Recovery" }]
                 : []),
             ]}
             value={selectedSport!}
@@ -185,124 +183,85 @@ export default function ArenaScreen() {
             <FocusButton label="Explore events" onPress={openRegistration} />
           </View>
         )}
-        {state.periodResults.length ? <FocusButton label="Latest week results ↗" secondary onPress={() => router.push("/arena?results=latest")} /> : null}
-        <FeatureCard title="Beyond this week" description="All-time pace and race rankings." onPress={() => router.push("/benchmarks")}/>
+        {state.periodResults.length ? <FocusButton label="Last week results ↗" secondary onPress={() => router.push("/arena?results=latest")} /> : null}
+        <FocusButton label="View all time standings" secondary onPress={() => router.push("/benchmarks")} />
       </SectionStack>
 </ScrollView>
       <FocusSheet
         open={register}
-        title="Register for this week."
-        body="Choose an event to join for the week."
+        minimal
+        title="Choose an event to join"
         onClose={() => {
           setRegister(false);
           setSport(null);
         }}
       >
-        <View style={f.row}>
-          <AppText role="label" style={f.grow}>Compete with your crew</AppText>
-          <Switch
-            accessibilityLabel="Compete with your crew"
-            value={withCrew}
-            disabled={joinBusy}
-            onValueChange={setWithCrew}
-            trackColor={{ false: SHELL_COLORS.line, true: SHELL_COLORS.ink }}
-            thumbColor="#ffffff"
-            ios_backgroundColor={SHELL_COLORS.line}
-          />
-        </View>
-        {withCrew && !crewApi.live && !state.crewBoard ? (
-          <AppText role="body" secondary>
-            {!user
-              ? "Sign in to compete with your crew."
-              : "Join or create a crew in the Crew tab first to compete together."}
-          </AppText>
-        ) : null}
         {SPORTS.map((s) => {
           const isRegistered = state.ratings.find(
             (r) => r.sport === s.id,
           )?.optedIn;
-          const eligible = [
-            ...(crewApi.data?.crews ?? []).flatMap((r) =>
-              r.crews?.sport === s.id ? [r.crews] : [],
-            ),
-            ...(state.crewBoard && state.crewBoard.sport === s.id && state.crewBoard.crewId !== "solo" && !state.crewBoard.crewId.startsWith("field:")
-              ? [{
-                  id: state.crewBoard.crewId,
-                  name: state.crewBoard.crewName,
-                  sport: state.crewBoard.sport,
-                  invite_code: "",
-                  format: "volume",
-                  target_sessions: 4,
-                  journey_km: 60,
-                }]
-              : []),
-          ];
           return (
             <View key={s.id} style={{ gap: 8 }}>
               <Pressable
                 accessibilityRole="button"
+                accessibilityLabel={`${s.name}, ${isRegistered ? "Already registered" : competitionTrackLabel(s.id)}`}
                 disabled={Boolean(isRegistered) || joinBusy}
                 onPress={() => {
                   if (isRegistered || joinBusy) return;
                   setSport(s.id);
-                  if (!withCrew) void join(s.id);
+                  void join(s.id);
                 }}
-                style={[f.chip, sport === s.id && f.chipActive]}
+                style={({ pressed }) => [
+                  f.chip,
+                  sport === s.id && f.chipActive,
+                  Boolean(isRegistered) && { opacity: 0.5 },
+                  pressed && !isRegistered && { opacity: 0.7 },
+                ]}
               >
-                <AppText role="label" >{s.name} · {competitionTrackLabel(s.id)}</AppText>
-                <AppText role="caption" secondary >
+                <AppText role="label">{s.name}</AppText>
+                <AppText role="caption" secondary>
                   {isRegistered
                     ? "Already registered"
                     : competitionTrackLabel(s.id)}
                 </AppText>
               </Pressable>
-              {withCrew && sport === s.id && !isRegistered ? (
-                eligible.length ? (
-                  eligible.map((crew) => (
-                    <FocusButton
-                      key={crew.id}
-                      label={`Join ${s.name} with ${crew.name}`}
-                      disabled={joinBusy}
-                      onPress={() => void join(s.id, crew.id)}
-                    />
-                  ))
-                ) : (
-                  <AppText role="body" secondary >
-                    {crewApi.error ||
-                      "No eligible crew for this event. Add a crew on Crew, or turn off crew competition."}
-                  </AppText>
-                )
-              ) : null}
             </View>
           );
         })}
-        <FocusButton
-          label={
-            state.healthRatings.some((r) => r.metric === "sleep" && r.optedIn)
-              ? "Sleep & Recovery · registered"
-              : "Join Sleep & Recovery"
-          }
-          secondary
-          disabled={
-            joinBusy ||
-            state.healthRatings.some((r) => r.metric === "sleep" && r.optedIn)
-          }
-          onPress={() => {
-            if (!user) {
+        <View style={{ gap: 8 }}>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={`Recovery, ${sleepOptedIn ? "Already registered" : "Health Tracked"}`}
+            disabled={Boolean(sleepOptedIn) || joinBusy}
+            onPress={() => {
+              if (sleepOptedIn || joinBusy) return;
+              if (!user) {
+                setRegister(false);
+                router.navigate("/athlete");
+                return;
+              }
+              if (!state.onboardingCompleted) {
+                setRegister(false);
+                router.navigate("/onboarding");
+                return;
+              }
+              setSelection({ account: accountKey, sport: "sleep" });
+              dispatch({ type: "opt-in-health", metric: "sleep" });
               setRegister(false);
-              router.navigate("/athlete");
-              return;
-            }
-            if (!state.onboardingCompleted) {
-              setRegister(false);
-              router.navigate("/onboarding");
-              return;
-            }
-            setSelection({account:accountKey,sport:"sleep"});
-            dispatch({ type: "opt-in-health", metric: "sleep" });
-            setRegister(false);
-          }}
-        />
+            }}
+            style={({ pressed }) => [
+              f.chip,
+              sport === "sleep" && f.chipActive,
+              Boolean(sleepOptedIn) && { opacity: 0.5 },
+              pressed && !sleepOptedIn && { opacity: 0.7 },
+            ]}
+          >
+            <AppText role="label">Recovery</AppText>
+            <AppText role="caption" secondary>
+              {sleepOptedIn ? "Already registered" : "Health Tracked"}
+            </AppText>
+          </Pressable>
+        </View>
         {Boolean(joinError) && (
           <AppText role="body" secondary  accessibilityLiveRegion="polite">
             {joinError}

@@ -2,13 +2,13 @@ import { AppText } from "../ui/section";
 import { competeEventCarouselPageIndex } from "@fitness-battle/shared";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import {
-  Pressable,
   ScrollView,
   StyleSheet,
   useWindowDimensions,
   View,
   type ScrollViewInstance,
 } from "react-native";
+import { FocusSegments } from "../ui/focus";
 import { SHELL_COLORS as c } from "../theme";
 
 type ClubEvent = { id: string; label: string; badge?: string };
@@ -65,51 +65,20 @@ export function EventCarousel({
     onChange(events[next]!.id);
   };
 
+  const segmentOptions = events.map((event) => ({
+    value: event.id,
+    label: event.label,
+  }));
+
   return (
     <View style={{ gap: 12 }}>
-      <View
-        style={{
-          flexDirection: "row",
-          alignItems: "center",
-          width: "100%",
-          borderBottomWidth: 1,
-          borderBottomColor: c.line,
-          paddingBottom: 2,
-        }}
-        accessibilityRole="tablist"
-        accessibilityLabel="Registered events"
-      >
-        {events.map((event) => (
-          <Pressable
-            key={event.id}
-            accessibilityRole="tab"
-            accessibilityLabel={event.label}
-            accessibilityState={{ selected: event.id === value }}
-            onPress={() => onChange(event.id)}
-            style={{
-              flex: 1,
-              alignItems: "center",
-              justifyContent: "center",
-              paddingVertical: 10,
-              paddingHorizontal: 4,
-              borderBottomWidth: 2.5,
-              borderBottomColor: event.id === value ? c.ink : "transparent",
-              marginBottom: -2,
-            }}
-          >
-            <AppText
-              role="heading"
-              secondary={event.id !== value}
-              style={{ textAlign: "center" }}
-            >
-              {event.label}
-              {event.badge ? (
-                <AppText role="caption" secondary> · {event.badge}</AppText>
-              ) : null}
-            </AppText>
-          </Pressable>
-        ))}
-      </View>
+      <FocusSegments
+        variant="tabs"
+        label="Registered events"
+        value={value}
+        options={segmentOptions}
+        onChange={onChange}
+      />
       <View
         onLayout={(e) => {
           const next = Math.round(e.nativeEvent.layout.width);
@@ -151,44 +120,6 @@ export function EventCarousel({
 }
 
 const s = StyleSheet.create({
-  chipsBar: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    alignItems: "center",
-    gap: 8,
-  },
-  chips: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 8,
-    flex: 1,
-    minWidth: 0,
-  },
-  chip: {
-    minHeight: 40,
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 999,
-    borderWidth: 1,
-    borderColor: c.line,
-    backgroundColor: c.card,
-  },
-  chipActive: {
-    backgroundColor: c.ink,
-    borderColor: c.ink,
-  },
-  chipActiveText: {
-    color: c.tennis,
-  },
-  registerChip: {
-    minHeight: 40,
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 999,
-    borderWidth: 1,
-    borderStyle: "dashed",
-    borderColor: c.line,
-  },
   page: {
     borderTopWidth: 1,
     borderBottomWidth: 1,
