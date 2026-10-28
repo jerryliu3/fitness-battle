@@ -90,6 +90,7 @@ export default function AthleteScreen() {
     tracker?: string;
     provider?: string;
     panel?: AthletePanel;
+    edit?: string;
   }>();
   const [name, setName] = useState<string | null>(null);
   const [city, setCity] = useState<string | null>(null);
@@ -103,16 +104,20 @@ export default function AthleteScreen() {
   const [authBusy, setAuthBusy] = useState(false);
   const [authNote, setAuthNote] = useState<string | null>(null);
   const [confirmFreeze, setConfirmFreeze] = useState(false);
-  const [editOpen, setEditOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(params.edit === "1");
   const [confirmSignOut, setConfirmSignOut] = useState(false);
   const panel = params.panel ?? null;
   function setPanel(next: AthletePanel | null) {
     if (next)
       router.push({ pathname: "/athlete-settings", params: { panel: next } });
     else if (router.canGoBack()) router.back();
-    else router.replace("/athlete");
+    else router.replace({ pathname: "/athlete", params: { edit: "1" } });
   }
   const appliedTracker = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (params.edit === "1") setEditOpen(true);
+  }, [params.edit]);
 
   useEffect(() => {
     setName(null);
@@ -170,7 +175,22 @@ export default function AthleteScreen() {
   const signedIn = Boolean(user);
 
   const titles = { profile: "Edit profile", connections: "Data Sync", preferences: "Preferences", scoring: "How scoring works", account: "Account" };
-  const pageHeader = <ScreenHeader localBack={Boolean(panel)} title={panel ? titles[panel] : "Athlete"} onBack={() => panel ? setPanel(null) : router.canGoBack() ? router.back() : router.replace("/today")} />;
+  const pageHeader = (
+    <ScreenHeader
+      localBack={Boolean(panel)}
+      title={panel ? titles[panel] : "Athlete"}
+      onBack={() => {
+        if (panel) {
+          if (router.canGoBack()) router.back();
+          else router.replace({ pathname: "/athlete", params: { edit: "1" } });
+        } else if (router.canGoBack()) {
+          router.back();
+        } else {
+          router.replace("/today");
+        }
+      }}
+    />
+  );
 
   async function submitAuth() {
     setAuthBusy(true);
@@ -775,12 +795,6 @@ export default function AthleteScreen() {
           </View>
         </View>
 
-        {/* Edit Profile Button (opens side panel) */}
-        <FocusButton
-          label="Edit profile"
-          onPress={() => setEditOpen(true)}
-        />
-
         {/* Since the first mile stats */}
         <View style={f.section}>
           <SectionHeader title="Since the first mile" subtitle="Counted training · 2026" />
@@ -796,6 +810,10 @@ export default function AthleteScreen() {
             <View style={{ alignItems: "center", gap: 4 }}>
               <AppText role="display">{season.weeks}</AppText>
               <AppText role="caption" secondary>Active weeks</AppText>
+            </View>
+            <View style={{ alignItems: "center", gap: 4 }}>
+              <AppText role="display">{state.lifetimeOvertakes}</AppText>
+              <AppText role="caption" secondary>Overtakes</AppText>
             </View>
           </View>
         </View>
@@ -835,23 +853,27 @@ export default function AthleteScreen() {
         >
           <View style={{ gap: 12 }}>
             <SectionHeader title="Profile details" />
-            <ProfilePhoto state={state} />
-            <Input
-              style={textStyle("body")}
-              value={draftName}
-              onChangeText={setName}
-              accessibilityLabel="Name"
-              maxLength={80}
-              placeholder="Name"
-            />
-            <Input
-              style={textStyle("body")}
-              value={draftCity}
-              onChangeText={setCity}
-              accessibilityLabel="City"
-              maxLength={40}
-              placeholder="City"
-            />
+            <View style={[f.row, { gap: 16, alignItems: "center" }]}>
+              <ProfilePhoto state={state} />
+              <View style={{ flex: 1, gap: 8 }}>
+                <Input
+                  style={textStyle("body")}
+                  value={draftName}
+                  onChangeText={setName}
+                  accessibilityLabel="Name"
+                  maxLength={80}
+                  placeholder="Name"
+                />
+                <Input
+                  style={textStyle("body")}
+                  value={draftCity}
+                  onChangeText={setCity}
+                  accessibilityLabel="City"
+                  maxLength={40}
+                  placeholder="City"
+                />
+              </View>
+            </View>
             {dirty ? (
               <Button
                 onPress={() => {
@@ -884,7 +906,6 @@ export default function AthleteScreen() {
               title="Data Sync"
               detail="Trackers & history"
               onPress={() => {
-                setEditOpen(false);
                 setPanel("connections");
               }}
             />
@@ -892,7 +913,6 @@ export default function AthleteScreen() {
               title="Preferences"
               detail="Units, sports & freezes"
               onPress={() => {
-                setEditOpen(false);
                 setPanel("preferences");
               }}
             />
@@ -900,15 +920,13 @@ export default function AthleteScreen() {
               title="Notifications"
               detail="Your updates, your choice"
               onPress={() => {
-                setEditOpen(false);
-                router.push("/notifications");
+                router.push({ pathname: "/notifications", params: { returnTo: "edit" } });
               }}
             />
             <SettingsRow
               title="How scoring works"
               detail="Levels & eligibility"
               onPress={() => {
-                setEditOpen(false);
                 setPanel("scoring");
               }}
             />
@@ -916,7 +934,6 @@ export default function AthleteScreen() {
               title="Account"
               detail="Sign out, report an issue & delete account"
               onPress={() => {
-                setEditOpen(false);
                 setPanel("account");
               }}
             />

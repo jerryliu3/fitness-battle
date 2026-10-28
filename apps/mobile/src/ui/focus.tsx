@@ -14,7 +14,7 @@ import {
   Text,
   View,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { SHELL_COLORS as c, mobileSurfaces } from "../theme";
 import { useReducedMotion } from "./use-reduced-motion";
 import { IconButton } from "./icon-button";
@@ -160,6 +160,7 @@ export function FocusSidePanel({
   children?: ReactNode;
 }) {
   const reduce = useReducedMotion();
+  const insets = useSafeAreaInsets();
   const [present, setPresent] = useState(open);
   const progress = useRef(new Animated.Value(0)).current;
   const { width: windowWidth } = useWindowDimensions();
@@ -234,7 +235,7 @@ export function FocusSidePanel({
           }}
           accessibilityViewIsModal
         >
-          <SafeAreaView edges={["top", "bottom"]} style={{ flex: 1 }}>
+          <View style={{ flex: 1, paddingTop: Math.max(insets.top, 16), paddingBottom: Math.max(insets.bottom, 16) }}>
             <View
               style={{
                 flexDirection: "row",
@@ -257,7 +258,7 @@ export function FocusSidePanel({
             >
               {children}
             </ScrollView>
-          </SafeAreaView>
+          </View>
         </Animated.View>
       </KeyboardAvoidingView>
     </Modal>

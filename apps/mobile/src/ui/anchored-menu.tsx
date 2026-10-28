@@ -110,15 +110,15 @@ export function AnchoredMenu({
 
 const s = StyleSheet.create({
   dropdown: {
-    backgroundColor: c.card,
+    backgroundColor: "rgba(255, 255, 255, 0.88)",
     borderRadius: 14,
     borderWidth: 1,
-    borderColor: c.line,
+    borderColor: "rgba(0, 16, 27, 0.12)",
     overflow: "hidden",
     shadowColor: c.ink,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.12,
-    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.16,
+    shadowRadius: 16,
     elevation: 8,
     zIndex: 9999,
   },

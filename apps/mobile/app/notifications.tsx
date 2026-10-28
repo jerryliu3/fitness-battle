@@ -176,7 +176,7 @@ export default function NotificationsScreen() {
         <View style={f.content}>
           <IconButton icon="back" label="Return to previous screen"
             onPress={() =>
-              router.canGoBack() ? router.back() : router.replace("/settings")
+              router.canGoBack() ? router.back() : router.replace({ pathname: "/athlete", params: { edit: "1" } })
             }
           />
           <Text style={styles.copy}>
@@ -196,7 +196,7 @@ export default function NotificationsScreen() {
   return (
     <SafeAreaView style={styles.safe} edges={["top", "bottom"]}>
       <ScrollView contentContainerStyle={styles.scroll}>
-        <ScreenHeader title="Notifications" onBack={() => router.canGoBack() ? router.back() : router.replace("/athlete")} />
+        <ScreenHeader title="Notifications" onBack={() => router.canGoBack() ? router.back() : router.replace({ pathname: "/athlete", params: { edit: "1" } })} />
         <Text style={styles.copy}>
           Choose which updates you receive. Enabling notifications asks for
           permission on this device.{" "}

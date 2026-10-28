@@ -11,7 +11,7 @@ import { CrewSessions } from "./crew-sessions";
 import { CrewRelay } from "./crew-relay";
 import { Sheet } from "@/ui/sheet";
 import { playCue } from "@/lib/haptics";
-import { competitionTrack, APP_TIMEZONE, competeNow, weeklyPeriodBounds, dayKey, type SportId, countsOnTrack, distanceUnitLabel, formatDistanceM, formatNoticeUnits, crewMemberWeekValue } from "@fitness-battle/shared";
+import { competitionTrack, APP_TIMEZONE, competeNow, weeklyPeriodBounds, dayKey, type SportId, countsOnTrack, distanceUnitLabel, formatDistanceM, formatNoticeUnits, crewMemberWeekValue, getDemoCompeteState } from "@fitness-battle/shared";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 interface Crew {
@@ -182,7 +182,8 @@ export function CrewPanel() {
     }
   }
   const rawCrews = (data?.crews ?? []).flatMap((r) => (r.crews ? [r.crews] : []));
-  const crewBoard = state?.crewBoard;
+  const demoSeed = (!user || offlineMode) && user ? getDemoCompeteState(user.id) ?? getDemoCompeteState(user.email) : null;
+  const crewBoard = state?.crewBoard ?? demoSeed?.crewBoard;
   const hasDemoCrew = Boolean(
     crewBoard &&
       crewBoard.crewId &&
