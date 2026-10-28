@@ -23,10 +23,12 @@ export function CrewSessions({
   portraits = {},
   sport = "running",
   onSelectMember,
+  hiddenIds = [],
 }: {
   crewId: string;
   portraits?: Record<string, string | null | undefined>;
   sport?: string;
+  hiddenIds?: readonly string[];
   onSelectMember?: (id: string, name: string) => void;
 }) {
   const { user, accessToken, offlineMode } = useAuth();
@@ -163,7 +165,7 @@ export function CrewSessions({
                 },
               ]}
             >
-              {s.participants.slice(0, 6).map((p) => (
+              {s.participants.slice(0, 6).map((p) => hiddenIds.includes(p.user_id) ? <View key={p.user_id} style={{ width: 38, height: 38 }} /> : (
                 <Pressable key={p.user_id} accessibilityRole="button" accessibilityLabel={`View ${p.display_name}'s profile`} onPress={() => onSelectMember?.(p.user_id, p.display_name)}>
                   <UserAvatar src={portraits[p.user_id]} name={p.display_name} size={38} decorative={false} highlight={p.user_id === user?.id} />
                 </Pressable>

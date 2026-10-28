@@ -1,3 +1,4 @@
+vi.mock("../lib/athlete-blocks", () => ({ useAthleteBlocks: () => ({ blocks: [], ready: true, setBlocked: vi.fn() }) }));
 vi.mock("./athlete-profile-sheet", () => ({ AthleteProfileSheet: "AthleteProfileSheet" }));
 vi.mock("../ui/app-icon", () => ({ AppIcon: "AppIcon" }));
 vi.mock("../ui/club-art",()=>({alpineTrail:1}));

@@ -4,6 +4,7 @@ import IconBike from "@tabler/icons-react-native/IconBike";
 import IconBarbell from "@tabler/icons-react-native/IconBarbell";
 import IconUser from "@tabler/icons-react-native/IconUser";
 import IconHome from "@tabler/icons-react-native/IconHome";
+import IconBan from "@tabler/icons-react-native/IconBan";
 import IconFlag from "@tabler/icons-react-native/IconFlag";
 import IconChartLine from "@tabler/icons-react-native/IconChartLine";
 import IconUsers from "@tabler/icons-react-native/IconUsers";
@@ -28,7 +29,7 @@ const icons = {
   sync: IconRefresh, back: IconArrowLeft, plus: IconPlus, expand: IconMaximize, edit: IconPencil,
   preferences: IconAdjustmentsHorizontal, notifications: IconBell, scoring: IconChartBar,
   external: IconArrowUpRight, chevron: IconChevronRight, flame: IconFlameFilled,
-  replay: IconReload,
+  replay: IconReload, block: IconBan,
 };
 export type AppIconName = keyof typeof icons;
 

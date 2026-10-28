@@ -8,6 +8,7 @@ import {
   type UnitSystem,
   type WeeklySocial,
 } from "@fitness-battle/shared";
+import { useAthleteBlocks } from "../lib/athlete-blocks";
 import { useAuth } from "../lib/auth";
 import { requestApi } from "../lib/api";
 import { mobileEnv } from "../lib/env";
@@ -45,7 +46,9 @@ export function WeeklySocialActions({
       mounted.current = false;
     };
   }, [load, user?.id, offlineMode]);
-  const peer = data?.peers.find((p) => p.id === selected) ?? data?.peers[0];
+  const { blocks } = useAthleteBlocks();
+  const peers = data?.peers.filter(p => !blocks.some(block => block.id === p.id)) ?? [];
+  const peer = peers.find((p) => p.id === selected) ?? peers[0];
   async function toggle(kind: "congrats" | "repeat") {
     if (!peer || !data?.fieldId || flight.current) return;
     flight.current = true;
@@ -99,8 +102,8 @@ export function WeeklySocialActions({
       <Text style={f.kicker}>Athlete</Text>
       <ScrollView horizontal showsHorizontalScrollIndicator={false}>
         <View style={f.row}>
-          {data!.peers.length > 1
-            ? data!.peers.map((p) => (
+          {peers.length > 1
+            ? peers.map((p) => (
                 <Pressable
                   key={p.id}
                   accessibilityRole="button"

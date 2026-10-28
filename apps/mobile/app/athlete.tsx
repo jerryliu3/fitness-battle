@@ -904,6 +904,11 @@ export default function AthleteScreen() {
               }}
             />
             <SettingsRow
+              title="Blocked athletes"
+              detail="Manage who you have blocked"
+              onPress={() => { setEditOpen(false); router.push("/blocked-athletes"); }}
+            />
+            <SettingsRow
               title="Account"
               detail="Sign out, report an issue & delete account"
               onPress={() => {

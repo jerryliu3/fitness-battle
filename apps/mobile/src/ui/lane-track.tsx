@@ -38,6 +38,7 @@ export interface LaneAnchor { left: number; laneWidth: number; width: number; sc
 
 function LaneTrackContent({
   lanes,
+  hiddenIds = [],
   appearance = defaultFieldAppearance,
   onChangeAppearance,
   unit,
@@ -81,6 +82,7 @@ function LaneTrackContent({
   /** Reserve room for an overlaid field status without covering lane headers. */
   topInset?: number;
   lanes: ArenaLane[];
+  hiddenIds?: readonly string[];
   unit: string;
   showGhost: boolean;
   selectedId?: string;
@@ -271,12 +273,13 @@ function LaneTrackContent({
               {live.map((lane, i) => ({ lane, i })).sort((a, b) =>
                 (a.lane.id === selectedId ? 2 : a.lane.you ? 1 : 0) - (b.lane.id === selectedId ? 2 : b.lane.you ? 1 : 0)
               ).map(({ lane, i }) => {
-                if (!course.oval && (i < firstVisible || i > lastVisible)) return null;
+                if (hiddenIds.includes(lane.id) || !course.oval && (i < firstVisible || i > lastVisible)) return null;
                 const trail = fieldProgressTrail(course, lane.value, i, unit);
                 return trail ? <Path key={lane.id} d={trail} fill="none" stroke={competeAthleteTrailColors(Boolean(lane.you)).stroke} strokeWidth={6} strokeLinecap="round" strokeLinejoin="round" /> : null;
               })}
             </G>
             {ordered.map((l, i) => {
+              if (hiddenIds.includes(l.id)) return null;
               if (!course.oval && (i < firstVisible || i > lastVisible)) return null;
               const value =
                 animating && overtakeFrame
@@ -418,6 +421,7 @@ function LaneTrackContent({
           </Svg>
         {!fullscreen && onExpand ? <Pressable accessibilityRole="button" accessibilityLabel="Open 2D map in full screen" onPress={onExpand} style={{ position: "absolute", inset: 0 }} /> : null}
         {ordered.flatMap((lane, i) => {
+          if (hiddenIds.includes(lane.id)) return [];
           if (!course.oval && (i < firstVisible || i > lastVisible)) return null;
           const value = animating ? overtakeFrame?.laneValues[lane.id] ?? lane.values[index] : lane.values[index];
           const point = course.point(value, i, 0, true);

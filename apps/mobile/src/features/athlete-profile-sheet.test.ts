@@ -1,8 +1,9 @@
+vi.mock("../lib/athlete-blocks", () => ({ useAthleteBlocks: () => ({ blocks: [], ready: true, setBlocked: mocks.setBlocked }) }));
 import { createElement } from "react";
 import { act, create, type ReactTestRenderer } from "react-test-renderer";
 import { beforeEach, expect, it, vi } from "vitest";
 
-const mocks = vi.hoisted(() => ({ lookup: vi.fn(), navigate: vi.fn(), close: vi.fn(), request: vi.fn() }));
+const mocks = vi.hoisted(() => ({ lookup: vi.fn(), navigate: vi.fn(), close: vi.fn(), request: vi.fn(), setBlocked: vi.fn() }));
 vi.mock("react-native", () => ({ View: "View", TextInput: "TextInput", Pressable: "Pressable" }));
 vi.mock("expo-router", () => ({ useRouter: () => ({ navigate: mocks.navigate }) }));
 vi.mock("../lib/auth", () => ({ useAuth: () => ({ user: { id: "owner", createdAt: "2024-05-01T00:00:00Z" }, accessToken: "token", offlineMode: false }) }));
@@ -23,6 +24,7 @@ let renderer: ReactTestRenderer;
 beforeEach(() => {
   vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
   vi.clearAllMocks();
+  mocks.setBlocked.mockResolvedValue(undefined);
   mocks.request.mockResolvedValue({ sent: true });
   mocks.lookup.mockResolvedValue({ data: { city: "Toronto", created_at: "2025-03-01T00:00:00Z", lifetime_overtakes: 8, primary_sport: "running" } });
 });
@@ -55,4 +57,14 @@ it("sends a report identifying the athlete through the support email endpoint", 
   await act(async () => renderer.root.findByType("TextInput" as never).props.onChangeText("This athlete was abusive."));
   await act(async () => button("Send report").props.onPress());
   expect(mocks.request).toHaveBeenCalledWith("https://example.test", "token", "/api/issues", { body: { message: `Athlete report\nReported account: ${id}\n\nThis athlete was abusive.` } });
+});
+
+it("confirms before blocking an athlete", async () => {
+  await act(async () => { renderer = create(createElement(AthleteProfileSheet, { athlete: { id, name: "Peer" }, onClose: mocks.close })); });
+  await act(async () => renderer.root.findByProps({ accessibilityLabel: "Block athlete" }).props.onPress());
+  expect(mocks.setBlocked).not.toHaveBeenCalled();
+  expect(renderer.root.findAllByType("AppText" as never).some(node => node.children.join("") === "Block Peer?")).toBe(true);
+  await act(async () => renderer.root.findAllByType("FocusButton" as never).find(node => node.props.label === "Confirm block")!.props.onPress());
+  expect(mocks.setBlocked).toHaveBeenCalledWith(id, true);
+  expect(mocks.close).toHaveBeenCalled();
 });

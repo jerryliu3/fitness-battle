@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Pressable, TextInput, View } from "react-native";
 import { useRouter } from "expo-router";
 import { SPORTS } from "@fitness-battle/shared";
+import { useAthleteBlocks } from "../lib/athlete-blocks";
 import { useAuth } from "../lib/auth";
 import { requestApi } from "../lib/api";
 import { mobileEnv } from "../lib/env";
@@ -31,6 +32,8 @@ export function AthleteProfileSheet({ athlete, onClose }: { athlete: AthleteProf
   const { user, accessToken, offlineMode } = useAuth();
   const { state } = useCompeteStore();
   const router = useRouter();
+  const { blocks, ready: blocksReady, setBlocked } = useAthleteBlocks();
+  const [confirmBlock, setConfirmBlock] = useState(false);
   const [profile, setProfile] = useState<PublicProfile | null>(null);
   const [openOwnPage, setOpenOwnPage] = useState(false);
   const [reporting, setReporting] = useState(false);
@@ -42,7 +45,7 @@ export function AthleteProfileSheet({ athlete, onClose }: { athlete: AthleteProf
   current.current = key;
   useEffect(() => {
     let cancelled = false;
-    setProfile(null); setReporting(false); setMessage(""); setNotice(""); setBusy(false);
+    setProfile(null); setConfirmBlock(false); setReporting(false); setMessage(""); setNotice(""); setBusy(false);
     if (athlete && !athlete.you && !athlete.sample && user && !offlineMode && isAccountId(athlete.id)) {
       void supabase.from("profiles").select("city, created_at, lifetime_overtakes, primary_sport").eq("id", athlete.id).maybeSingle().then(({ data }) => {
         if (!cancelled && data) setProfile(data as PublicProfile);
@@ -63,6 +66,14 @@ export function AthleteProfileSheet({ athlete, onClose }: { athlete: AthleteProf
     } catch (error) {
       if (current.current === targetKey) setNotice(error instanceof Error ? error.message : "Could not send your report.");
     } finally { if (current.current === targetKey) setBusy(false); }
+  }
+  async function blockAthlete() {
+    if (!athlete || busy) return;
+    const targetKey = key;
+    setBusy(true); setNotice("");
+    try { await setBlocked(athlete.id, true); if (current.current === targetKey) onClose(); }
+    catch (error) { if (current.current === targetKey) setNotice(error instanceof Error ? error.message : "Could not block this athlete."); }
+    finally { if (current.current === targetKey) setBusy(false); }
   }
   const own = athlete?.you && state ? state : null;
   const city = own?.city ?? profile?.city;
@@ -95,7 +106,15 @@ export function AthleteProfileSheet({ athlete, onClose }: { athlete: AthleteProf
         <TextInput accessibilityLabel="Reason for reporting this athlete" multiline style={[f.input, { minHeight: 100, textAlignVertical: "top" }]} value={message} onChangeText={setMessage} maxLength={4900} editable={!busy} />
         <FocusButton label={busy ? "Sending…" : "Send report"} disabled={busy || message.trim().length < 10} onPress={() => void submitReport()} />
         <FocusButton label="Cancel" secondary disabled={busy} onPress={() => setReporting(false)} />
-      </View> : <Pressable accessibilityRole="button" accessibilityLabel="Report athlete" onPress={() => { setNotice(""); setReporting(true); }} style={[f.row, { alignSelf: "flex-start", gap: 8, minHeight: 44 }]}><AppIcon name="compete" size={18} /><AppText role="label">Report</AppText></Pressable> : null}
+      </View> : confirmBlock ? <View style={{ gap: 10 }}>
+        <AppText role="heading">Block {athlete.name}?</AppText>
+        <AppText role="body" secondary>They will be hidden from your view and you won't be matched in future fields. Existing standings stay the same.</AppText>
+        <FocusButton label={busy ? "Blocking…" : "Confirm block"} disabled={busy || !blocksReady} onPress={() => void blockAthlete()} />
+        <FocusButton label="Cancel" secondary disabled={busy} onPress={() => setConfirmBlock(false)} />
+      </View> : <View style={[f.row, { gap: 24 }]}>
+        <Pressable accessibilityRole="button" accessibilityLabel="Block athlete" disabled={!blocksReady || blocks.some(item => item.id === athlete.id)} onPress={() => { setNotice(""); setConfirmBlock(true); }} style={[f.row, { gap: 8, minHeight: 44 }]}><AppIcon name="block" size={18} /><AppText role="label">Block</AppText></Pressable>
+        <Pressable accessibilityRole="button" accessibilityLabel="Report athlete" onPress={() => { setNotice(""); setReporting(true); }} style={[f.row, { gap: 8, minHeight: 44 }]}><AppIcon name="compete" size={18} /><AppText role="label">Report</AppText></Pressable>
+      </View> : null}
       {notice ? <AppText role="body" secondary accessibilityLiveRegion="polite">{notice}</AppText> : null}
       {athlete.you ? <FocusButton label="Your Athlete page" secondary onPress={() => { setOpenOwnPage(true); onClose(); }} /> : null}
     </View> : null}

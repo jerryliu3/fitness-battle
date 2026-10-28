@@ -33,6 +33,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { AppState, Modal, Pressable, ScrollView, Text, View, useWindowDimensions } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { IconButton } from "../ui/icon-button";
+import { useAthleteBlocks } from "../lib/athlete-blocks";
 import { useCompeteStore } from "../lib/compete-store";
 import { playCue } from "../lib/haptics";
 import { SHELL_COLORS as c } from "../theme";
@@ -49,6 +50,8 @@ export function CompetitionField({
   track: ScoreTrack;
 }) {
   const { state, accountKey, debugActive } = useCompeteStore();
+  const { blocks } = useAthleteBlocks();
+  const hiddenIds = useMemo(() => blocks.map(block => block.id), [blocks]);
   const pathname = usePathname();
   const [appearance, setAppearance] = useFieldAppearance(accountKey, sport);
   const isFocused = shellTabFromPath(pathname)?.id === "arena";
@@ -91,6 +94,7 @@ export function CompetitionField({
   const ghost = true;
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [profileAthlete, setProfileAthlete] = useState<AthleteProfileSelection | null>(null);
+  useEffect(() => { if (selectedId && hiddenIds.includes(selectedId)) setSelectedId(null); }, [hiddenIds, selectedId]);
   const [focusRequest, setFocusRequest] = useState(0);
   const reduceMotion = useReducedMotion();
 
@@ -136,7 +140,7 @@ export function CompetitionField({
   const displayTotal = total;
   const selectAthlete = (id: string) => {
     const lane = arena.lanes.find((item) => item.id === id);
-    if (!lane) return;
+    if (!lane || hiddenIds.includes(id)) return;
     setCourseTarget(null);
     const ordered = orderedArenaLanes(arena.lanes);
     portraitAnchor.current = Math.max(0, ordered.findIndex(l => l.id === id)) - Math.max(0, ordered.findIndex(l => l.you));
@@ -165,7 +169,7 @@ export function CompetitionField({
   const leaderValue = Math.max(leader?.values[2] ?? 0, 0.0001);
   const myRankIndex = ranked.findIndex((lane) => lane.you);
   const focusedLane =
-    ranked.find((lane) => lane.id === (selectedId ?? me?.id)) ??
+    ranked.find((lane) => !hiddenIds.includes(lane.id) && lane.id === (selectedId ?? me?.id)) ??
     me ??
     ranked[0];
   const focusedRank = focusedLane ? place(focusedLane.values[2]) : 1;
@@ -198,11 +202,12 @@ export function CompetitionField({
       onTouchCancel={() => hold.current?.end()}
     >
       {sceneDimension === "4d" && isFocused ? <View style={{ height: sceneHeight }}>
-        <GeographicCourse lanes={fieldLanes} unit={arena.unit} selectedId={selectedId ?? me?.id ?? ""} focusRequest={focusRequest} onSelect={id => { if (!hold.current?.suppressSelection()) selectAthlete(id); }} course={course} error={courseError} onRetry={retryCourse} distanceTarget={courseTarget} onResumeFollow={() => setCourseTarget(null)} controlsBottom={expanded ? safeBottom + (spotlightCollapsed ? 132 : 216) : 8} overlaysHidden={overlaysHidden} />
+        <GeographicCourse hiddenIds={hiddenIds} lanes={fieldLanes} unit={arena.unit} selectedId={selectedId ?? me?.id ?? ""} focusRequest={focusRequest} onSelect={id => { if (!hold.current?.suppressSelection()) selectAthlete(id); }} course={course} error={courseError} onRetry={retryCourse} distanceTarget={courseTarget} onResumeFollow={() => setCourseTarget(null)} controlsBottom={expanded ? safeBottom + (spotlightCollapsed ? 132 : 216) : 8} overlaysHidden={overlaysHidden} />
         {!expanded ? <View style={{ position: "absolute", right: 12, top: 12 }}><IconButton icon="expand" label="Expand 4D course to full screen" onPress={expandField} /></View> : null}
       </View> : null}
       {sceneDimension === "3d" && isFocused ? (
         <PortraitField
+          hiddenIds={hiddenIds}
           lanes={arena.lanes.map((l) => ({
             ...l,
             initials: initialsFromName(l.name),
@@ -234,6 +239,7 @@ export function CompetitionField({
       >
         <View style={{ position: "relative" }}>
           <LaneTrack
+            hiddenIds={hiddenIds}
             appearance={appearance}
             onChangeAppearance={setAppearance}
             height={sceneHeight}
@@ -260,6 +266,7 @@ export function CompetitionField({
         {!expanded ? (
           <View style={{ marginTop: 8, borderRadius: 12, overflow: "hidden" }}>
             <FieldOverview
+              hiddenIds={hiddenIds}
               lanes={fieldLanes}
               view={view}
               unit={arena.unit}
@@ -378,6 +385,7 @@ export function CompetitionField({
                 CURRENT POSITIONS
               </Text>
               {ranked.slice(0, 4).map((peer, idx) => {
+                if (hiddenIds.includes(peer.id)) return <View key={peer.id} style={{ height: 24 }} />;
                 const delta = peer.values[2] - leaderValue;
                 const isSelected = (selectedId ?? me?.id) === peer.id;
                 return (
@@ -533,7 +541,7 @@ export function CompetitionField({
                   showsHorizontalScrollIndicator={false}
                   contentContainerStyle={{ gap: 6, paddingTop: 2 }}
                 >
-                  {ranked.map((peer) => {
+                  {ranked.filter(peer => !hiddenIds.includes(peer.id)).map((peer) => {
                     const activeChip = focusedLane.id === peer.id;
                     return (
                       <Pressable
@@ -590,6 +598,7 @@ export function CompetitionField({
 
                 <View style={{ borderRadius: 12, overflow: "hidden", marginTop: 4 }}>
                   <FieldOverview
+                    hiddenIds={hiddenIds}
                     lanes={fieldLanes}
                     view={sceneDimension === "4d" ? { ...view, center: courseTarget?.value ?? focusedLane?.values[2] ?? total } : view}
                     unit={arena.unit}
@@ -614,6 +623,7 @@ export function CompetitionField({
       <View style={[f.section, { paddingTop: 16 }]}>
         <View style={{ gap: 10 }}>
           {ranked.map((lane) => {
+            if (hiddenIds.includes(lane.id)) return <View key={lane.id} style={{ minHeight: 72 }} accessibilityElementsHidden importantForAccessibility="no-hide-descendants" />;
             const rank = place(lane.values[2]);
             const pct = Math.max(
               6,

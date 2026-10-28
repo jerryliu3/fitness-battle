@@ -26,6 +26,7 @@ import {
 import { useFocusEffect, useGlobalSearchParams, useRouter } from "expo-router";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ImageBackground, Pressable, Share, StyleSheet, Text, TextInput, View } from "react-native";
+import { useAthleteBlocks } from "../lib/athlete-blocks";
 import { useAuth } from "../lib/auth";
 import { useCompeteStore } from "../lib/compete-store";
 import { mobileEnv } from "../lib/env";
@@ -107,6 +108,8 @@ function inviteLink(code: string): string {
 export function CrewHub({ membersOnly = false, crewId = "" }: { membersOnly?: boolean; crewId?: string } = {}) {
   const { state, refresh, dispatch } = useCompeteStore();
   const { user } = useAuth();
+  const { blocks } = useAthleteBlocks();
+  const hiddenIds = blocks.map(item => item.id);
   const router = useRouter();
   const params = useGlobalSearchParams<{ invite?: string | string[] }>();
   const api = useCrewApi();
@@ -395,7 +398,7 @@ export function CrewHub({ membersOnly = false, crewId = "" }: { membersOnly?: bo
 <View style={{ gap: 16 }}>
             <AppText role="body" secondary >{crew.name}</AppText>
             <SectionStack>
-            {members.map(m => <Pressable key={m.user_id} style={[f.section, f.row]} accessibilityRole="button" accessibilityLabel={`View ${m.display_name}'s profile`} onPress={() => {
+            {members.map(m => hiddenIds.includes(m.user_id) ? <View key={m.user_id} style={{ minHeight: 72 }} /> : <Pressable key={m.user_id} style={[f.section, f.row]} accessibilityRole="button" accessibilityLabel={`View ${m.display_name}'s profile`} onPress={() => {
               if (membersOnly) setViewingMember(m);
               else { pendingMember.current = m; setPanel(null); }
             }}>
@@ -499,7 +502,7 @@ export function CrewHub({ membersOnly = false, crewId = "" }: { membersOnly?: bo
                 style={[f.row, { alignItems: "center", gap: 4 }]}
               >
                 <View style={f.chipRow}>
-                  {members.slice(0, 5).map((m) => (
+                  {members.slice(0, 5).map((m) => hiddenIds.includes(m.user_id) ? <View key={m.user_id} style={{ width: 36, height: 36 }} /> : (
                     <UserAvatar key={m.user_id} src={m.avatar_url} name={m.display_name} decorative={false} size={36} />
                   ))}
                   {members.length > 5 ? (
@@ -547,18 +550,18 @@ export function CrewHub({ membersOnly = false, crewId = "" }: { membersOnly?: bo
                 : `${formatDistanceM(relay.model.total, state?.units)}${relay.target == null ? "" : ` / ${formatDistanceM(relay.target, state?.units)}`} ${distanceUnitLabel(state?.units)}`}
             </Text>
             <AppText role="body" secondary>{relay.kind === "baseline" ? "Last week’s distance" : relay.target == null ? "No shared target set" : "Shared target"}</AppText>
-            <CrewRelay onSelectMember={(id) => { const member = members.find((item) => item.user_id === id); if (member) setViewingMember(member); }} hideTargetSummary userId={user?.id} key={crew.id} members={members} entries={entries} sport={crew.sport as SportId} format={crew.format} previousDistanceM={previousDistanceM} targetDistanceM={crew.journey_km*1000} targetSessions={crew.target_sessions} units={state?.units} />
+            <CrewRelay hiddenIds={hiddenIds} onSelectMember={(id) => { const member = members.find((item) => item.user_id === id); if (member) setViewingMember(member); }} hideTargetSummary userId={user?.id} key={crew.id} members={members} entries={entries} sport={crew.sport as SportId} format={crew.format} previousDistanceM={previousDistanceM} targetDistanceM={crew.journey_km*1000} targetSessions={crew.target_sessions} units={state?.units} />
           </View>
           {user ? (
             <>
-              {user && !solo ? <CrewSessions key={`${user?.id}:${crew.id}`} crewId={crew.id} onSelectMember={(id, name) => { setViewingMember(members.find((item) => item.user_id === id) ?? { user_id: id, display_name: name, crew_id: crew.id, rest_week: null, status: "former" }); }} portraits={Object.fromEntries(members.map(m => [m.user_id, m.avatar_url]))} sport={crew.sport} /> : null}
+              {user && !solo ? <CrewSessions key={`${user?.id}:${crew.id}`} crewId={crew.id} hiddenIds={hiddenIds} onSelectMember={(id, name) => { setViewingMember(members.find((item) => item.user_id === id) ?? { user_id: id, display_name: name, crew_id: crew.id, rest_week: null, status: "former" }); }} portraits={Object.fromEntries(members.map(m => [m.user_id, m.avatar_url]))} sport={crew.sport} /> : null}
               <Section title="Crew standings">
                 {members
                   .slice()
                   .sort(
                     (a, b) => memberTotal(b.user_id) - memberTotal(a.user_id),
                   )
-                  .map((m, i) => (
+                  .map((m, i) => hiddenIds.includes(m.user_id) ? <View key={m.user_id} style={{ minHeight: 52 }} /> : (
                     <Pressable
                       key={m.user_id}
                       accessibilityRole="button"
@@ -588,7 +591,7 @@ export function CrewHub({ membersOnly = false, crewId = "" }: { membersOnly?: bo
           {note || api.error}
         </AppText>
       ) : null}
-      {api.data?.notices?.map((n) => (
+      {!hiddenIds.length && api.data?.notices?.map((n) => (
         <AppText role="caption" secondary  key={n.id}>
           {formatNoticeUnits(n.body, state?.units)}
         </AppText>
