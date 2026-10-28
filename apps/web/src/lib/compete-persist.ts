@@ -197,16 +197,24 @@ export async function persistCompeteAccount(
   expectedUpdatedAt: string | null,
 ): Promise<string> {
   const clean = prepareCompeteStateForAccount(state);
-  const activities = await accountActivityRows(db, userId, clean);
-  const { data, error } = await db.rpc("save_compete_account", {
-    p_state: clean,
-    p_activities: activities,
-    p_readiness: accountReadinessRows(userId, clean.readiness),
-    p_expected_updated_at: expectedUpdatedAt,
-  });
-  if (error) throw new Error(error.message);
-  if (typeof data !== "string") throw new Error("account_not_saved");
-  return data;
+  for (let attempt = 0; attempt < 2; attempt += 1) {
+    const activities = await accountActivityRows(db, userId, clean);
+    const { data, error } = await db.rpc("save_compete_account", {
+      p_state: clean,
+      p_activities: activities,
+      p_readiness: accountReadinessRows(userId, clean.readiness),
+      p_expected_updated_at: expectedUpdatedAt,
+    });
+    if (!error) {
+      if (typeof data !== "string") throw new Error("account_not_saved");
+      return data;
+    }
+    // A concurrent sync can insert this compete key after our lookup. The
+    // failed RPC is atomic; re-read the identity and retry the same revision.
+    if (attempt === 0 && error.code === "23505" && error.message.includes("activities_user_compete_key_uidx")) continue;
+    throw new Error(error.message);
+  }
+  throw new Error("account_not_saved");
 }
 
 /** Load signed-in compete state entirely from relational tables. */
