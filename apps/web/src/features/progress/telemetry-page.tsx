@@ -6,8 +6,6 @@ import { Suspense, useMemo, useState } from "react";
 import {
   SHELL_COLORS as c,
   buildAnalyticsLabModel,
-  buildSvgCorridorGeometry,
-  buildSvgLineGeometry,
   formatMinutesAsHoursMins,
   getDomainTitle,
   type AnalyticsDomainId,
@@ -18,6 +16,7 @@ import {
 } from "@fitness-battle/shared";
 import { useCompete } from "@/components/compete-context";
 import { AppHeading, AppText, ListRow, SectionHeader, StatusBadge, typographyStyle } from "../../ui/section";
+import { StandardLineChart } from "../../ui/standard-line-chart";
 
 export { getDomainTitle };
 
@@ -42,13 +41,14 @@ function TelemetryPageContent() {
   const rawDomain = searchParams.get("domain");
 
   const activeDomain: AnalyticsDomainId =
+    rawDomain === "market" ||
     rawDomain === "vitals" ||
     rawDomain === "sleep" ||
     rawDomain === "load" ||
     rawDomain === "performance" ||
     rawDomain === "combined"
       ? rawDomain
-      : "market";
+      : "vitals";
 
   const [timeLens, setTimeLens] = useState<AnalyticsTimeLens>("30d");
   const model = useMemo(
@@ -155,61 +155,6 @@ function WebInspectionCallout({
   );
 }
 
-function WebInteractiveLineChart({
-  values,
-  selectedIdx,
-  onSelectIdx,
-  stroke = c.fieldTeal,
-  height = 140,
-}: {
-  values: number[];
-  selectedIdx: number;
-  onSelectIdx: (idx: number) => void;
-  stroke?: string;
-  height?: number;
-}) {
-  const [width, setWidth] = useState(500);
-  const geo = useMemo(
-    () => buildSvgLineGeometry(values, width, height, 14),
-    [values, width, height],
-  );
-  const active = geo.points[selectedIdx] ?? geo.points[geo.points.length - 1];
-
-  return (
-    <div
-      ref={(el) => {
-        if (el && el.clientWidth > 0 && el.clientWidth !== width) {
-          setWidth(el.clientWidth);
-        }
-      }}
-      style={{ width: "100%", height, margin: "10px 0", position: "relative" }}
-    >
-      <svg width="100%" height={height} viewBox={`0 0 ${width} ${height}`} style={{ overflow: "visible" }} aria-hidden="true">
-        <path d={geo.areaPath} fill={stroke} opacity={0.12} />
-        <polyline points={geo.polyline} fill="none" stroke={stroke} strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" />
-        {active && (
-          <>
-            <line x1={active.x} x2={active.x} y1={0} y2={height} stroke={c.line} strokeWidth={1} strokeDasharray="3 3" />
-            <circle cx={active.x} cy={active.y} r={5} fill={stroke} stroke={c.card} strokeWidth={2} />
-          </>
-        )}
-        {geo.points.map((p, i) => (
-          <rect
-            key={i}
-            x={p.x - width / (values.length * 2)}
-            y={0}
-            width={width / values.length}
-            height={height}
-            fill="transparent"
-            style={{ cursor: "pointer" }}
-            onClick={() => onSelectIdx(i)}
-          />
-        ))}
-      </svg>
-    </div>
-  );
-}
-
 /* ============================================================================
  * 1. WEB MARKET VIEW
  * ========================================================================== */
@@ -232,11 +177,18 @@ function WebMarketView({ model }: { model: AnalyticsLabModel }) {
             { label: "4W SMA", value: `${series[series.length - 1]?.sma4 ?? 0} pts` },
           ]}
         />
-        <WebInteractiveLineChart
+        <StandardLineChart
           values={series.map((p) => p.nav)}
           selectedIdx={selectedIdx}
           onSelectIdx={setSelectedIdx}
           stroke={c.tennis}
+          xLabels={
+            series.length >= 2
+              ? [series[0]!.label, series[Math.floor(series.length / 2)]!.label, series[series.length - 1]!.label]
+              : undefined
+          }
+          formatY={(v) => `${Math.round(v)}`}
+          ariaLabel="Equity curve portfolio net asset value history"
         />
         <WebInspectionCallout
           title={pt.label}
@@ -281,13 +233,10 @@ function WebVitalsView({ model }: { model: AnalyticsLabModel }) {
   const [activeVitalId, setActiveVitalId] = useState<VitalId>("hrv");
   const vital = vitals.find((v) => v.id === activeVitalId) ?? vitals[0]!;
   const [selectedIdx, setSelectedIdx] = useState(vital.series.length - 1);
-  const [width, setWidth] = useState(500);
 
   const safeIdx = Math.max(0, Math.min(selectedIdx, vital.series.length - 1));
   const pt = vital.series[safeIdx] ?? vital.series[0]!;
   const inCorridor = pt.value >= pt.baselineLow && pt.value <= pt.baselineHigh;
-  const geo = useMemo(() => buildSvgCorridorGeometry(vital.series, width, 140, 14), [vital.series, width]);
-  const activePt = geo.points[safeIdx] ?? geo.points[geo.points.length - 1];
 
   return (
     <div style={{ display: "grid", gap: 16 }}>
@@ -337,37 +286,23 @@ function WebVitalsView({ model }: { model: AnalyticsLabModel }) {
           </AppText>
         </div>
 
-        <div
-          ref={(el) => {
-            if (el && el.clientWidth > 0 && el.clientWidth !== width) {
-              setWidth(el.clientWidth);
-            }
+        <StandardLineChart
+          values={vital.series.map((p) => p.value)}
+          selectedIdx={safeIdx}
+          onSelectIdx={setSelectedIdx}
+          stroke={c.fieldTeal}
+          corridor={{
+            high: vital.series.map((p) => p.baselineHigh),
+            low: vital.series.map((p) => p.baselineLow),
           }}
-          style={{ width: "100%", height: 140, margin: "10px 0" }}
-        >
-          <svg width="100%" height={140} viewBox={`0 0 ${width} 140`} style={{ overflow: "visible" }} aria-hidden="true">
-            <path d={geo.corridorPath} fill={c.fieldTeal} opacity={0.16} />
-            <polyline points={geo.linePath} fill="none" stroke={c.fieldTeal} strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" />
-            {activePt && (
-              <>
-                <line x1={activePt.x} x2={activePt.x} y1={0} y2={140} stroke={c.line} strokeWidth={1} strokeDasharray="3 3" />
-                <circle cx={activePt.x} cy={activePt.y} r={5} fill={c.fieldTeal} stroke={c.card} strokeWidth={2} />
-              </>
-            )}
-            {geo.points.map((p, i) => (
-              <rect
-                key={i}
-                x={p.x - width / (vital.series.length * 2)}
-                y={0}
-                width={width / vital.series.length}
-                height={140}
-                fill="transparent"
-                style={{ cursor: "pointer" }}
-                onClick={() => setSelectedIdx(i)}
-              />
-            ))}
-          </svg>
-        </div>
+          xLabels={
+            vital.series.length >= 2
+              ? [vital.series[0]!.label, vital.series[Math.floor(vital.series.length / 2)]!.label, vital.series[vital.series.length - 1]!.label]
+              : undefined
+          }
+          formatY={(v) => `${vital.id === "temp" ? v.toFixed(1) : Math.round(v)}`}
+          ariaLabel={`${vital.name} autonomic baseline corridor and value history`}
+        />
 
         <WebInspectionCallout
           title={pt.label}
@@ -409,11 +344,18 @@ function WebSleepView({ model }: { model: AnalyticsLabModel }) {
             { label: "Efficiency", value: `${sData.lastNight.efficiencyPct}%` },
           ]}
         />
-        <WebInteractiveLineChart
+        <StandardLineChart
           values={nights.map((n) => n.score)}
           selectedIdx={selectedIdx}
           onSelectIdx={setSelectedIdx}
-          stroke={c.ink}
+          stroke={c.fieldTeal}
+          xLabels={
+            nights.length >= 2
+              ? [nights[0]!.label, nights[Math.floor(nights.length / 2)]!.label, nights[nights.length - 1]!.label]
+              : undefined
+          }
+          formatY={(v) => `${Math.round(v)}`}
+          ariaLabel="Nightly sleep score history"
         />
         <div style={{ background: c.soft, borderRadius: 8, padding: "12px 14px", display: "flex", flexDirection: "column", gap: 6, marginTop: 10 }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
@@ -461,11 +403,18 @@ function WebLoadView({ model }: { model: AnalyticsLabModel }) {
             { label: "Status", value: l.acwrStatusLabel, color: c.statusSuccess },
           ]}
         />
-        <WebInteractiveLineChart
-          values={l.series.map((s) => s.acwr * 100)}
+        <StandardLineChart
+          values={l.series.map((s) => Number(s.acwr.toFixed(2)))}
           selectedIdx={selectedIdx}
           onSelectIdx={setSelectedIdx}
           stroke={c.statusSuccess}
+          xLabels={
+            l.series.length >= 2
+              ? [l.series[0]!.label, l.series[Math.floor(l.series.length / 2)]!.label, l.series[l.series.length - 1]!.label]
+              : undefined
+          }
+          formatY={(v) => `${v.toFixed(1)}x`}
+          ariaLabel="Workload ratio acute to chronic load ratio trend"
         />
         <WebInspectionCallout
           title={b.label}
@@ -479,12 +428,19 @@ function WebLoadView({ model }: { model: AnalyticsLabModel }) {
 
       <div className="fb-card">
         <AppHeading level={2} role="heading">Period Volume Burn-Up</AppHeading>
-        <WebInteractiveLineChart
+        <StandardLineChart
           values={l.series.map((s) => s.cumCurrentHours)}
           selectedIdx={selectedIdx}
           onSelectIdx={setSelectedIdx}
           stroke={c.fieldTeal}
-          height={110}
+          height={130}
+          xLabels={
+            l.series.length >= 2
+              ? [l.series[0]!.label, l.series[Math.floor(l.series.length / 2)]!.label, l.series[l.series.length - 1]!.label]
+              : undefined
+          }
+          formatY={(v) => `${Math.round(v)}h`}
+          ariaLabel="Cumulative period volume burn-up"
         />
       </div>
     </div>
@@ -512,11 +468,18 @@ function WebPerformanceView({ model }: { model: AnalyticsLabModel }) {
             { label: "Best Pace", value: `${p.series[0]?.paceMinKm.toFixed(2) ?? "4:30"} min/km` },
           ]}
         />
-        <WebInteractiveLineChart
-          values={p.series.map((s) => s.efficiencyFactor * 100)}
+        <StandardLineChart
+          values={p.series.map((s) => Number(s.efficiencyFactor.toFixed(2)))}
           selectedIdx={selectedIdx}
           onSelectIdx={setSelectedIdx}
           stroke={c.fieldTeal}
+          xLabels={
+            p.series.length >= 2
+              ? [p.series[0]!.label, p.series[Math.floor(p.series.length / 2)]!.label, p.series[p.series.length - 1]!.label]
+              : undefined
+          }
+          formatY={(v) => v.toFixed(2)}
+          ariaLabel="Aerobic efficiency factor history"
         />
         <WebInspectionCallout
           title={run.label}
@@ -572,11 +535,18 @@ function WebCombinedView({ model }: { model: AnalyticsLabModel }) {
             { label: "Bedtime Target", value: "10:30 PM" },
           ]}
         />
-        <WebInteractiveLineChart
+        <StandardLineChart
           values={cmb.series.map((s) => s.nextDayReadiness)}
           selectedIdx={selectedIdx}
           onSelectIdx={setSelectedIdx}
           stroke={c.statusSuccess}
+          xLabels={
+            cmb.series.length >= 2
+              ? [cmb.series[0]!.label, cmb.series[Math.floor(cmb.series.length / 2)]!.label, cmb.series[cmb.series.length - 1]!.label]
+              : undefined
+          }
+          formatY={(v) => `${Math.round(v)}%`}
+          ariaLabel="Morning readiness score history"
         />
         <WebInspectionCallout
           title={day.label}

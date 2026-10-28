@@ -21,6 +21,16 @@ import { IconButton } from "./icon-button";
 import { playCue } from "../lib/haptics";
 const AnimatedSafeAreaView = Animated.createAnimatedComponent(SafeAreaView);
 
+function useSafeInsets() {
+  try {
+    return typeof useSafeAreaInsets === "function"
+      ? useSafeAreaInsets()
+      : { top: 0, bottom: 0, left: 0, right: 0 };
+  } catch {
+    return { top: 0, bottom: 0, left: 0, right: 0 };
+  }
+}
+
 export function FocusSheet({
   open,
   title,
@@ -50,8 +60,11 @@ export function FocusSheet({
   const reduce = useReducedMotion();
   const [present, setPresent] = useState(open);
   const progress = useRef(new Animated.Value(0)).current;
+  const insets = useSafeInsets();
   const { height: windowHeight } = useWindowDimensions();
-  const [sheetHeight, setSheetHeight] = useState(windowHeight);
+  const maxSheetHeight = fullScreen
+    ? "100%"
+    : Math.max(200, windowHeight - insets.top - 12);
   useEffect(() => {
     if (open) void playCue("light");
   }, [open]);
@@ -102,16 +115,16 @@ export function FocusSheet({
         </Animated.View>
         <AnimatedSafeAreaView
           edges={fullScreen ? ["top", "bottom"] : ["bottom"]}
-          onLayout={(event) => setSheetHeight(event.nativeEvent.layout.height)}
           style={[
             f.sheet,
-            fullScreen && { flex: 1, maxHeight: "100%", borderTopLeftRadius: 0, borderTopRightRadius: 0 },
+            { maxHeight: maxSheetHeight },
+            fullScreen && { flex: 1, maxHeight: "100%", borderTopLeftRadius: 0, borderTopRightRadius: 0, paddingTop: 0 },
             {
               transform: [
                 {
                   translateY: progress.interpolate({
                     inputRange: [0, 1],
-                    outputRange: [sheetHeight, 0],
+                    outputRange: [windowHeight, 0],
                   }),
                 },
               ],
@@ -609,7 +622,6 @@ export const f = StyleSheet.create({
   modal: { flex: 1, justifyContent: "flex-end" },
   backdrop: { ...StyleSheet.absoluteFill, backgroundColor: "#14211b80" },
   sheet: {
-    maxHeight: "92%",
     borderTopLeftRadius: SHELL_RADIUS.sheet,
     borderTopRightRadius: SHELL_RADIUS.sheet,
     backgroundColor: c.paper,

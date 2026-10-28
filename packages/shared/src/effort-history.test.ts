@@ -1,14 +1,38 @@
 import { describe, expect, it } from "vitest";
 import { freshState, withAccountEloBaseline } from "./compete";
 import { effortHistory } from "./effort-history";
+
 describe("shared effort history", () => {
-  it("renders guest baseline 500 with a full axis and a one-day leading gap", () => {
+  it("renders guest baseline 500 with current day as the last day of the period", () => {
     const model = effortHistory(freshState(), "open", null);
     expect(model.effectiveElo).toBe(500);
-    expect(model.pts).toHaveLength(2);
-    expect(model.lastPoint.x).toBeGreaterThan(model.xStart);
+    expect(model.dailyValues).toHaveLength(30);
+    expect(model.pts).toHaveLength(30);
+    expect(model.lastPoint.x).toBe(model.xEnd);
+    expect(model.endDateLabel).not.toContain("Today");
     expect(model.yMin).toBeGreaterThanOrEqual(0);
   });
+
+  it("supports week, month, and year range toggles ending at today", () => {
+    const state = freshState();
+    state.name = "Alice";
+    const week = effortHistory(state, "open", null, null, "week");
+    expect(week.dailyValues).toHaveLength(7);
+    expect(week.pts).toHaveLength(7);
+    expect(week.lastPoint.x).toBe(week.xEnd);
+    expect(week.endDateLabel).not.toContain("Today");
+
+    const month = effortHistory(state, "open", null, null, "month");
+    expect(month.dailyValues).toHaveLength(30);
+    expect(month.pts).toHaveLength(30);
+    expect(month.lastPoint.x).toBe(month.xEnd);
+
+    const year = effortHistory(state, "open", null, null, "year");
+    expect(year.dailyValues).toHaveLength(52);
+    expect(year.pts).toHaveLength(52);
+    expect(year.lastPoint.x).toBe(year.xEnd);
+  });
+
   it("supports both tracks and the signed-in baseline without inventing results", () => {
     const state = withAccountEloBaseline(freshState());
     state.name = "Alice";
@@ -21,7 +45,8 @@ describe("shared effort history", () => {
     ).toBe(1130);
     expect(state.periodResults).toHaveLength(0);
   });
-  it("uses a 30-point rolling window for established athletes", () => {
+
+  it("uses a 30-point rolling window for established athletes ending at today", () => {
     const state = freshState();
     state.name = "Alice";
     const model = effortHistory(
@@ -32,21 +57,9 @@ describe("shared effort history", () => {
     );
     expect(model.dailyValues).toHaveLength(30);
     expect(model.lastPoint.x).toBe(model.xEnd);
-    expect(model.endDateLabel).toContain("Today");
+    expect(model.endDateLabel).not.toContain("Today");
   });
-  it("advances the daily axis at Eastern midnight rather than after 24 elapsed hours", () => {
-    const state = freshState();
-    state.name = "Alice";
-    state.demoNow = "2026-10-18T04:30:00Z";
-    const model = effortHistory(
-      state,
-      "open",
-      { createdAt: "2026-10-18T03:30:00Z" },
-      "alice@example.com",
-    );
-    expect(model.dailyValues).toHaveLength(3);
-    expect(model.pts.map(point => point.date.slice(0, 10))).toEqual(["2026-10-16", "2026-10-17", "2026-10-18"]);
-  });
+
   it("ignores malformed anchor dates instead of crashing either profile renderer", () => {
     const state = freshState();
     state.name = "Alice";
@@ -59,6 +72,7 @@ describe("shared effort history", () => {
       ),
     ).not.toThrow();
   });
+
   it("applies a settled effort-score change on the closed-week boundary, not the week start", () => {
     const state = freshState();
     state.name = "Alice";
@@ -87,8 +101,14 @@ describe("shared effort history", () => {
       "open",
       { createdAt: "2026-10-05T04:00:00Z" },
       "alice@example.com",
+      "month",
     );
-    expect(model.dailyValues[1]).toBe(1000);
-    expect(model.dailyValues[8]).toBe(1030);
+    // On 2026-10-15: day 29 is today (1030).
+    // Oct 12 is day 26 (1030).
+    // Oct 11 is day 25 (1000).
+    expect(model.lastPoint.x).toBe(model.xEnd);
+    expect(model.dailyValues[29]).toBe(1030);
+    expect(model.dailyValues[26]).toBe(1030);
+    expect(model.dailyValues[25]).toBe(1000);
   });
 });

@@ -29,7 +29,7 @@ export function WeekRecap({ state }: { state: CompeteState }) {
         <div>
           <strong>
             {week.activeDays}
-            <small> / 7</small>
+            <small> / {week.daysPassed}</small>
           </strong>
           <small>Active days</small>
         </div>
@@ -37,7 +37,7 @@ export function WeekRecap({ state }: { state: CompeteState }) {
       {week.previousSec ? (
         <AppParagraph typographyRole="caption" className="fb-note">
           {difference >= 0 ? "+" : "−"}
-          {clubDuration(Math.abs(difference))} compared with all of last week.
+          {clubDuration(Math.abs(difference))} {week.daysPassed >= 7 ? "compared with all of last week." : "compared with this point last week."}
         </AppParagraph>
       ) : null}
       {recap ? (

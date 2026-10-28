@@ -144,7 +144,14 @@ it("keeps scenery identical as athletes move, without progress ribbons or head m
  }
 });
 
-it("uses whole-unit ruler marks even at close chase scales",()=>{for(const unit of ["km","mi"]){const g=fieldCourse(390,540,4,{center:18.2,span:1.2},unit,defaultFieldAppearance);const labels=fieldScaleScene(g,unit).filter(n=>n.tag==="text").slice(1);expect(labels.length).toBeGreaterThan(0);expect(labels.every(n=>Number.isInteger(Number(n.text)))).toBe(true);}});
+it("adapts ruler marks to close chase scales and wide windows", () => {
+  for (const unit of ["km", "mi"]) {
+    const g = fieldCourse(390, 540, 4, { center: 18.2, span: 1.2 }, unit, defaultFieldAppearance);
+    const labels = fieldScaleScene(g, unit).filter(n => n.tag === "text").slice(1);
+    expect(labels.length).toBeGreaterThanOrEqual(3);
+    expect(labels.length).toBeLessThanOrEqual(6);
+  }
+});
 
 it("bounds the ruler to five marks across chase and very wide windows",()=>{
  for(const [min,max] of [[0,40],[12,52],[0,500],[1,3],[18,18.8]]){

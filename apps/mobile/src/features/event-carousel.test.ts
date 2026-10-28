@@ -12,6 +12,37 @@ vi.mock("react-native", () => ({
 vi.mock("../ui/section", () => ({
   AppText: "AppText",
 }));
+vi.mock("../ui/focus", () => ({
+  FocusSegments: ({
+    label,
+    options,
+    value,
+    onChange,
+  }: {
+    label: string;
+    options: readonly { label: string; value: string }[];
+    value: string;
+    onChange: (val: string) => void;
+  }) =>
+    createElement(
+      "View",
+      { accessibilityRole: "tablist", accessibilityLabel: label },
+      options?.map((o) =>
+        createElement(
+          "Pressable",
+          {
+            key: o.value,
+            accessibilityRole: "tab",
+            accessibilityLabel: o.label,
+            accessibilityState: { selected: value === o.value },
+            onPress: () => onChange(o.value),
+          },
+          createElement("Text", null, o.label),
+        ),
+      ),
+    ),
+  f: {},
+}));
 import { EventCarousel } from "./event-carousel";
 
 function layoutCarousel(r: ReturnType<typeof create>) {

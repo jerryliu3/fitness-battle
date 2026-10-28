@@ -1,7 +1,7 @@
 import React, { useMemo } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 import { useRouter } from "expo-router";
-import Svg, { Path } from "react-native-svg";
+import Svg, { Path, Circle } from "react-native-svg";
 import {
   SHELL_COLORS as c,
   buildAnalyticsLabModel,
@@ -19,6 +19,8 @@ export function AthleteTelemetryMatrix({
   const router = useRouter();
   const model = useMemo(() => buildAnalyticsLabModel(state, "30d"), [state]);
 
+  const SHOW_ATHLETE_EQUITY = false;
+
   const bentoTiles: Array<{
     id: string;
     domain: AnalyticsDomainId;
@@ -28,15 +30,19 @@ export function AthleteTelemetryMatrix({
     points: number[];
     accent: string;
   }> = [
-    {
-      id: "market",
-      domain: "market",
-      kicker: "Athlete Equity",
-      value: `${model.market.currentIndex.toLocaleString()} pts`,
-      delta: `+${model.market.allTimeReturnPct}% all-time`,
-      points: model.market.equitySeries.map((p) => p.nav),
-      accent: c.tennis,
-    },
+    ...(SHOW_ATHLETE_EQUITY
+      ? [
+          {
+            id: "market",
+            domain: "market" as const,
+            kicker: "Athlete Equity",
+            value: `${model.market.currentIndex.toLocaleString()} pts`,
+            delta: `+${model.market.allTimeReturnPct}% all-time`,
+            points: model.market.equitySeries.map((p) => p.nav),
+            accent: c.tennis,
+          },
+        ]
+      : []),
     {
       id: "vitals",
       domain: "vitals",
@@ -87,7 +93,7 @@ export function AthleteTelemetryMatrix({
   return (
     <View style={s.container}>
       <View style={{ gap: 12 }}>
-        <AppText role="heading">Athlete Telemetry Matrix</AppText>
+        <AppText role="heading">Advanced Analytics</AppText>
 
         <View style={s.bentoGrid}>
           {bentoTiles.map((t) => (
@@ -129,7 +135,7 @@ function MiniSparkline({
   stroke: string;
 }) {
   if (values.length < 2) return null;
-  const { polyline } = buildSvgLineGeometry(values, 58, 24, 2);
+  const { polyline, points } = buildSvgLineGeometry(values, 58, 24, 2);
   return (
     <Svg width={58} height={24} viewBox="0 0 58 24">
       <Path
@@ -140,6 +146,9 @@ function MiniSparkline({
         strokeLinecap="round"
         strokeLinejoin="round"
       />
+      {points.map((p, i) => (
+        <Circle key={i} cx={p.x} cy={p.y} r={1.5} fill={stroke} />
+      ))}
     </Svg>
   );
 }
@@ -156,7 +165,6 @@ const s = StyleSheet.create({
   },
   bentoTile: {
     width: "48%",
-    flexGrow: 1,
     backgroundColor: c.card,
     borderRadius: 12,
     borderWidth: 1,

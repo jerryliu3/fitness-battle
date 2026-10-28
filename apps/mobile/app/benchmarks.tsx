@@ -101,8 +101,7 @@ export default function Benchmarks() {
           )}
         </View>
         <AppText role="caption" secondary >
-          Practice peer times are synthetic. Published race results are kept
-          separate.
+          Published race results are kept separate.
         </AppText>
         <FocusButton
           label="Published race rankings"

@@ -6,14 +6,14 @@ import { AppText, textStyle } from "../ui/section";
 import { ChartScrubber } from "../ui/chart-scrubber";
 import { ChartFrame } from "../ui/chart-frame";
 import { HomeActivityActions } from "./home-activity-actions";
-import { SHELL_COLORS as c, mobileSurfaces } from "../theme";
+import { SHELL_COLORS as c } from "../theme";
 
 export function WeekChart({ state, onOpen, ready = true }: { state: CompeteState; onOpen?: () => void; ready?: boolean }) {
   const chart = portfolioWeekChart(state);
   const deltaTone = chart.deltaTone;
   const gradient = useId().replace(/:/g, "");
   return <ChartFrame ready={ready}><View style={s.card}>
-    <View style={s.header}><AppText role="display" accessibilityRole="header">Current week</AppText><HomeActivityActions compact/></View>
+    <View style={s.header}><AppText role="display" accessibilityRole="header">This week</AppText><HomeActivityActions compact/></View>
     <View style={s.total}><Text style={s.number}>{chart.currTotalHours.toFixed(1)}<Text style={s.unit}> hrs</Text></Text><View style={s.comparison}><AppText role="caption" secondary>{chart.sessionCount} {chart.sessionCount === 1 ? "session" : "sessions"}</AppText><AppText role="caption" style={{ color: deltaTone === "up" ? c.green : c.statusError }}>{chart.deltaLabel}</AppText></View></View>
     <ChartScrubber label="This week’s cumulative training hours" points={chart.inspection} width={chart.width} height={chart.height} plotTop={chart.top} plotBottom={chart.bottom} summaryOnSelection>
       <Svg width="100%" height={164} viewBox={`0 0 ${chart.width} ${chart.height}`} preserveAspectRatio="none" accessible={false}>
@@ -26,16 +26,16 @@ export function WeekChart({ state, onOpen, ready = true }: { state: CompeteState
       </Svg>
     </ChartScrubber>
     <View style={s.dates}><AppText role="caption" secondary>{chart.startLabel}</AppText><AppText role="caption" secondary>{chart.endLabel}</AppText></View>
-    {onOpen && <Pressable accessibilityRole="button" accessibilityLabel="Explore your week" onPress={onOpen} style={s.open}><AppText role="label">Your week →</AppText></Pressable>}
+    {onOpen && <Pressable accessibilityRole="button" accessibilityLabel="See more this week" onPress={onOpen} hitSlop={8} style={s.open}><AppText role="label">See more →</AppText></Pressable>}
   </View></ChartFrame>;
 }
 const s = StyleSheet.create({
-  card: { paddingTop: 12, paddingBottom: 20, gap: 12, borderBottomWidth: 1, borderBottomColor: mobileSurfaces.divider },
+  card: { paddingTop: 12, paddingBottom: 2, gap: 8 },
   header: { flexDirection: "row", flexWrap: "wrap", justifyContent: "space-between", alignItems: "center", gap: 12 },
   total: { flexDirection: "row", flexWrap: "wrap", justifyContent: "space-between", alignItems: "center", gap: 12 },
   number: { ...textStyle("hero"), color: c.ink, fontVariant: ["tabular-nums"] },
   unit: { ...textStyle("body"), color: c.muted },
   comparison: { gap: 4, alignItems: "flex-end", flexShrink: 1 },
   dates: { flexDirection: "row", justifyContent: "space-between" },
-  open: { minHeight: 44, justifyContent: "center", alignSelf: "flex-end" },
+  open: { minHeight: 32, paddingVertical: 2, justifyContent: "center", alignSelf: "flex-end" },
 });

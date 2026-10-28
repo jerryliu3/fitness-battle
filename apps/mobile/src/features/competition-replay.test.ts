@@ -12,6 +12,7 @@ vi.mock("../ui/lane-track", () => ({ LaneTrack: "LaneTrack" }));
 vi.mock("../ui/portrait-field", () => ({ PortraitField: "PortraitField" }));
 vi.mock("../ui/field-course", () => ({ useFieldAppearance: () => [defaultFieldAppearance] }));
 vi.mock("../ui/section", () => ({ AppText: "AppText" }));
+vi.mock("../ui/app-icon", () => ({ AppIcon: "AppIcon" }));
 vi.mock("../ui/icon-button", () => ({ IconButton: "IconButton" }));
 vi.mock("../ui/focus", () => ({ FocusButton: "FocusButton", FocusSegments: "FocusSegments", f: {} }));
 vi.mock("react-native-safe-area-context", () => ({ SafeAreaProvider: "SafeAreaProvider", SafeAreaView: "SafeAreaView" }));

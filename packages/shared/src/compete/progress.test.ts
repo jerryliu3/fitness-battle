@@ -101,7 +101,7 @@ it("holds the prior best until each new record without extending to today", () =
   )[0]!;
   const single = personalRecordChart([a], now)!;
   expect(single.points).toHaveLength(1);
-  expect(single.path).not.toContain("H");
+  expect(single.path).toBe(`M ${single.left} ${single.points[0]!.y} H ${single.points[0]!.x}`);
   expect(Date.parse(single.end)).toBe(Date.parse(a.startedAt));
   expect(single.points[0]!.x).toBe((single.left+single.right)/2);
   const b = {

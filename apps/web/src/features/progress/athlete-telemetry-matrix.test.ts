@@ -55,15 +55,15 @@ describe("AthleteTelemetryMatrix web component", () => {
 
     const text = allText();
     // Verify single title
-    expect(text).toContain("Athlete Telemetry Matrix");
+    expect(text).toContain("Advanced Analytics");
 
     // Verify kickers and filler copy are removed
     expect(text).not.toContain("Biometrics & Telemetry");
     expect(text).not.toContain("Autonomic health, training load, and cardiovascular efficiency");
     expect(text).not.toContain("Inspect lab →");
 
-    // Verify all 6 Bento cards are present
-    expect(text).toContain("Athlete Equity");
+    // Verify all 5 Bento cards are present (Athlete Equity is hidden)
+    expect(text).not.toContain("Athlete Equity");
     expect(text).toContain("Overnight HRV");
     expect(text).toContain("Sleep & Debt");
     expect(text).toContain("Workload Ratio");
@@ -72,13 +72,12 @@ describe("AthleteTelemetryMatrix web component", () => {
 
     // Verify links to dedicated pages
     const links = renderer.root.findAllByType("a");
-    expect(links.length).toBe(6);
-    expect(links[0]!.props.href).toBe("/you/telemetry?domain=market");
-    expect(links[1]!.props.href).toBe("/you/telemetry?domain=vitals");
-    expect(links[2]!.props.href).toBe("/you/telemetry?domain=sleep");
-    expect(links[3]!.props.href).toBe("/you/telemetry?domain=load");
-    expect(links[4]!.props.href).toBe("/you/telemetry?domain=performance");
-    expect(links[5]!.props.href).toBe("/you/telemetry?domain=combined");
+    expect(links.length).toBe(5);
+    expect(links[0]!.props.href).toBe("/you/telemetry?domain=vitals");
+    expect(links[1]!.props.href).toBe("/you/telemetry?domain=sleep");
+    expect(links[2]!.props.href).toBe("/you/telemetry?domain=load");
+    expect(links[3]!.props.href).toBe("/you/telemetry?domain=performance");
+    expect(links[4]!.props.href).toBe("/you/telemetry?domain=combined");
   });
 
   it("renders dedicated telemetry pages with interactive chart inspection and no bloated date tables", async () => {

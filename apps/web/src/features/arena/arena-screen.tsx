@@ -163,7 +163,7 @@ export function ArenaScreen({ tabActive = true }: { tabActive?: boolean }) {
 
       {state.periodResults.length ? (
         <Link className="fb-btn-ghost" href="/arena?results=latest">
-          Latest week results ↗
+          Last week results ↗
         </Link>
       ) : null}
       <div className="club-competition-extras">

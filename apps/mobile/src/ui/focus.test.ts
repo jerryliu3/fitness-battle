@@ -41,6 +41,7 @@ vi.mock("react-native", () => ({
 }));
 vi.mock("react-native-safe-area-context", () => ({
   SafeAreaView: "SafeAreaView",
+  useSafeAreaInsets: () => ({ top: 44, bottom: 34, left: 0, right: 0 }),
 }));
 vi.mock("./icon-button", () => ({ IconButton: "IconButton" }));
 vi.mock("./use-reduced-motion", () => ({ useReducedMotion: () => false }));
