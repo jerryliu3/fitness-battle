@@ -67,12 +67,19 @@ export function AthleteProfileSheet({ athlete, onClose }: { athlete: AthleteProf
       if (current.current === targetKey) setNotice(error instanceof Error ? error.message : "Could not send your report.");
     } finally { if (current.current === targetKey) setBusy(false); }
   }
-  async function blockAthlete() {
+  const isBlocked = Boolean(athlete && blocks.some(item => item.id === athlete.id));
+  async function toggleBlock() {
     if (!athlete || busy) return;
     const targetKey = key;
+    const next = !isBlocked;
     setBusy(true); setNotice("");
-    try { await setBlocked(athlete.id, true); if (current.current === targetKey) onClose(); }
-    catch (error) { if (current.current === targetKey) setNotice(error instanceof Error ? error.message : "Could not block this athlete."); }
+    try {
+      await setBlocked(athlete.id, next);
+      if (current.current === targetKey) {
+        setConfirmBlock(false);
+        setNotice(next ? "Athlete blocked." : "Athlete unblocked.");
+      }
+    } catch (error) { if (current.current === targetKey) setNotice(error instanceof Error ? error.message : "Could not update this block."); }
     finally { if (current.current === targetKey) setBusy(false); }
   }
   const own = athlete?.you && state ? state : null;
@@ -107,12 +114,12 @@ export function AthleteProfileSheet({ athlete, onClose }: { athlete: AthleteProf
         <FocusButton label={busy ? "Sending…" : "Send report"} disabled={busy || message.trim().length < 10} onPress={() => void submitReport()} />
         <FocusButton label="Cancel" secondary disabled={busy} onPress={() => setReporting(false)} />
       </View> : confirmBlock ? <View style={{ gap: 10 }}>
-        <AppText role="heading">Block {athlete.name}?</AppText>
-        <AppText role="body" secondary>They will be hidden from your view and you won't be matched in future fields. Existing standings stay the same.</AppText>
-        <FocusButton label={busy ? "Blocking…" : "Confirm block"} disabled={busy || !blocksReady} onPress={() => void blockAthlete()} />
+        <AppText role="heading">{isBlocked ? "Unblock" : "Block"} {athlete.name}?</AppText>
+        <AppText role="body" secondary>{isBlocked ? "They will be visible again and may be matched with you in future fields." : "They will be hidden from your view and you won't be matched in future fields. Existing standings stay the same."}</AppText>
+        <FocusButton label={busy ? "Saving…" : isBlocked ? "Confirm unblock" : "Confirm block"} disabled={busy || !blocksReady} onPress={() => void toggleBlock()} />
         <FocusButton label="Cancel" secondary disabled={busy} onPress={() => setConfirmBlock(false)} />
       </View> : <View style={[f.row, { gap: 24 }]}>
-        <Pressable accessibilityRole="button" accessibilityLabel="Block athlete" disabled={!blocksReady || blocks.some(item => item.id === athlete.id)} onPress={() => { setNotice(""); setConfirmBlock(true); }} style={[f.row, { gap: 8, minHeight: 44 }]}><AppIcon name="block" size={18} /><AppText role="label">Block</AppText></Pressable>
+        <Pressable accessibilityRole="button" accessibilityLabel={isBlocked ? "Unblock athlete" : "Block athlete"} disabled={!blocksReady || busy} onPress={() => { setNotice(""); setConfirmBlock(true); }} style={[f.row, { gap: 8, minHeight: 44 }]}><AppIcon name="block" size={18} /><AppText role="label">{isBlocked ? "Unblock" : "Block"}</AppText></Pressable>
         <Pressable accessibilityRole="button" accessibilityLabel="Report athlete" onPress={() => { setNotice(""); setReporting(true); }} style={[f.row, { gap: 8, minHeight: 44 }]}><AppIcon name="compete" size={18} /><AppText role="label">Report</AppText></Pressable>
       </View> : null}
       {notice ? <AppText role="body" secondary accessibilityLiveRegion="polite">{notice}</AppText> : null}
