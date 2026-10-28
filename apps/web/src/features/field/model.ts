@@ -33,6 +33,7 @@ export interface FieldModel {
   sport: SportId;
   track: ScoreTrack;
   periodStart: string;
+  periodEnd: string;
   runners: FieldRunner[];
   ghost: FieldRunner | null;
   you: FieldRunner | null;
@@ -141,6 +142,7 @@ export function buildFieldModel(
     sport,
     track,
     periodStart: board.periodStart.toISOString(),
+    periodEnd: board.periodEnd.toISOString(),
     runners,
     ghost,
     you,

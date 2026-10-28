@@ -1,13 +1,14 @@
 import { createElement } from "react";
 import { act, create, type ReactTestRenderer } from "react-test-renderer";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
-import { createRaceCourse, applyDebugEvent, defaultFieldAppearance, freshState, localCompetitionReplay, type CompetitionReplaySelection } from "@fitness-battle/shared";
+import { applyDebugEvent, defaultFieldAppearance, freshState, localCompetitionReplay, DEMO_RACE_COURSE, type CompetitionReplaySelection } from "@fitness-battle/shared";
 const mock = vi.hoisted(() => ({ debug: true, request: vi.fn(), open: undefined as undefined | ((value: boolean) => void) }));
 vi.mock("@/components/auth-context", () => ({ useAuth: () => ({ user: { id: "signed-in-athlete" }, offlineMode: false }) }));
 vi.mock("@/components/compete-context", () => ({ useCompete: () => ({ debugActive: mock.debug }) }));
 vi.mock("motion/react", () => ({ useReducedMotion: () => true }));
 vi.mock("@/features/focus/arena-lanes", () => ({ ArenaLanes: "ArenaLanes" }));
 vi.mock("@/features/club/portrait-field", () => ({ PortraitField: "PortraitField" }));
+vi.mock("../course/use-competition-course", () => ({ useCompetitionCourse: () => ({ course: DEMO_RACE_COURSE, error: "", retry() {} }) }));
 vi.mock("@/features/field/components/field-course", () => ({ useFieldAppearance: () => [defaultFieldAppearance] }));
 vi.mock("@radix-ui/react-dialog", () => ({
   Root: ({ children, onOpenChange }: { children: React.ReactNode; onOpenChange: (value: boolean) => void }) => { mock.open = onOpenChange; return children; },
@@ -65,8 +66,8 @@ it("uses replay totals in 4D, seeks backward and retains the course across modes
   const modes = () => renderer.root.findByType("FieldViewSwitcher" as never);
   await act(async () => modes().props.onChange("4d"));
   const map = () => renderer.root.findByType("GeographicCourse" as never);
-  const course = createRaceCourse("City", [[0, 0], [.02, 0]]);
-  await act(async () => map().props.onCourseChange(course));
+  const course = DEMO_RACE_COURSE;
+  expect(map().props.onCourseChange).toBeUndefined();
   expect(map().props.course).toBe(course);
   expect(map().props.lanes.every((lane: { value: number }) => lane.value === 0)).toBe(true);
   const timeline = () => renderer.root.findByProps({ "aria-label": "Competition replay timeline" });

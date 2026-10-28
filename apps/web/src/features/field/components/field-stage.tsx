@@ -1,6 +1,7 @@
 "use client";
 import { FieldViewSwitcher } from "./field-view-switcher";
 import { GeographicCourse } from "@/features/course/geographic-course";
+import { useCompetitionCourse } from "@/features/course/use-competition-course";
 import { PortraitField } from "@/features/club/portrait-field";
 import { PolishedRacer } from "@/features/brand/polished-racer";
 import { UserAvatar } from "@/ui/user-avatar";
@@ -10,9 +11,6 @@ import { usePathname } from "next/navigation";
 import {
   fieldFlightDuration, fieldFlightEase,
   arenaFieldHigh,
-  competePeriodWindow,
-  competeNow,
-  type RaceCourse,
   type CourseDistanceTarget,
   type CompeteState,
   effortRankBadge,
@@ -27,6 +25,7 @@ import {
   type BoardRow,
 } from "@fitness-battle/shared";
 import { useAuth } from "@/components/auth-context";
+import { useCompete } from "@/components/compete-context";
 import { ExpandingField } from "./expanding-field";
 import { ArenaLanes } from "@/features/focus/arena-lanes";
 import {
@@ -51,6 +50,7 @@ export function FieldStage({
   replayState?: CompeteState;
 }) {
   const { user } = useAuth();
+  const { debugActive } = useCompete();
   const pathname = usePathname();
   const accountKey = user?.id ?? "guest";
   const [appearance] = useFieldAppearance(
@@ -87,8 +87,9 @@ export function FieldStage({
     : null;
 
   const [viewDimension, setViewDimension] = useState<"2d" | "3d" | "4d">("2d");
-  const [course, setCourse] = useState<RaceCourse | null>(null);
+  const { course, error: courseError, retry: retryCourse } = useCompetitionCourse(model.sport, model.periodStart, model.periodEnd, debugActive, viewDimension === "4d" && tabActive);
   const [courseTarget, setCourseTarget] = useState<CourseDistanceTarget | null>(null);
+  useEffect(() => setCourseTarget(null), [accountKey, model.sport, model.periodStart, model.unit]);
   const chooseView = (value: "2d" | "3d" | "4d") => {
     void playCue("selection");
     cancelCenterTween();
@@ -398,7 +399,7 @@ export function FieldStage({
           </button>
         ) : null}
         <div className="focus-broadcast-replay-chip">
-        {replayState && <CompetitionReplayButton state={replayState} selection={{ sport: model.sport, track: model.track, periodStart: model.periodStart, periodEnd: competePeriodWindow(replayState, competeNow(replayState), model.sport).endsAt.toISOString() }} dimension={viewDimension} course={course} onCourseChange={setCourse} label="Replay" />}
+        {replayState && <CompetitionReplayButton state={replayState} selection={{ sport: model.sport, track: model.track, periodStart: model.periodStart, periodEnd: model.periodEnd }} dimension={viewDimension} label="Replay" />}
         </div>
       </div>
 
@@ -499,7 +500,7 @@ export function FieldStage({
           hud={broadcastHud}
         >
           {viewDimension === "4d" && tabActive ? <div className="focus-geographic-host" style={{ position: "relative", height: lanesImmersive ? "100%" : 460 }}>
-            <GeographicCourse lanes={fieldLanes} unit={unit} selectedId={trackSelected || you.id} focusRequest={focusRequest} onSelect={toggleSelect} course={course} onCourseChange={setCourse} distanceTarget={courseTarget} onResumeFollow={() => setCourseTarget(null)} controlsBottom={lanesImmersive ? spotlightCollapsed ? 136 : 236 : 8} />
+            <GeographicCourse lanes={fieldLanes} unit={unit} selectedId={trackSelected || you.id} focusRequest={focusRequest} onSelect={toggleSelect} course={course} error={courseError} onRetry={retryCourse} distanceTarget={courseTarget} onResumeFollow={() => setCourseTarget(null)} controlsBottom={lanesImmersive ? spotlightCollapsed ? 136 : 236 : 8} />
             {!lanesImmersive ? <button type="button" className="focus-portal-pill is-accent" style={{ position: "absolute", top: 12, right: 12 }} aria-label="Expand 4D course to full screen" onClick={() => setLanesImmersive(true)}>Full Arena ⤢</button> : null}
           </div> : null}
           {viewDimension === "3d" && tabActive ? (

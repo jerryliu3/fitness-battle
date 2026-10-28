@@ -1,7 +1,7 @@
 import { createElement } from "react";
 import { act, create, type ReactTestRenderer } from "react-test-renderer";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
-import { createRaceCourse, defaultFieldAppearance, freshState, reduceCompete } from "@fitness-battle/shared";
+import { defaultFieldAppearance, freshState, reduceCompete, DEMO_RACE_COURSE } from "@fitness-battle/shared";
 const mocks = vi.hoisted(() => ({ fly: vi.fn(), appState: null as null | ((status: string) => void) }));
 vi.mock("expo-router", () => ({ usePathname: () => "/arena" }));
 vi.mock("react-native", () => ({
@@ -15,6 +15,7 @@ vi.mock("react-native", () => ({
 vi.mock("react-native-safe-area-context", () => ({ useSafeAreaInsets: () => ({ top: 44, bottom: 34 }) }));
 vi.mock("react-native-svg", () => ({ default: "Svg", G: "SvgG" }));
 vi.mock("./geographic-course", () => ({ GeographicCourse: "GeographicCourse" }));
+vi.mock("./use-competition-course", () => ({ useCompetitionCourse: () => ({ course: DEMO_RACE_COURSE, error: "", retry() {} }) }));
 vi.mock("./competition-replay", () => ({ CompetitionReplayButton: "ReplayButton" }));
 vi.mock("../ui/field-view-switcher", () => ({
   FieldViewSwitcher: ({ value, onChange }: { value: string; onChange: (v: string) => void }) =>
@@ -89,8 +90,9 @@ it("keeps 4D inside the fullscreen host with the same panels, selection and repl
   });
   await switchTo("4D");
   const map = () => renderer.root.findByType("GeographicCourse" as never);
-  const course = createRaceCourse("City", [[0, 0], [.02, 0]]);
-  await act(async () => map().props.onCourseChange(course));
+  const course = DEMO_RACE_COURSE;
+  expect(map().props.course).toBe(course);
+  expect(map().props.onCourseChange).toBeUndefined();
   const overview = () => renderer.root.findByType("FieldOverview" as never);
   expect(overview().props.positionOnly).toBe(true);
   const selected = map().props.selectedId;
@@ -117,7 +119,7 @@ it("keeps 4D inside the fullscreen host with the same panels, selection and repl
   }
   expect(mocks.fly).not.toHaveBeenCalled();
   const replay = renderer.root.findAllByType("ReplayButton" as never).find(node => node.props.dimension === "4d")!;
-  expect(replay.props.course).toBe(course);
+  expect(replay.props.course).toBeUndefined();
   await act(async () => { root().props.onTouchStartCapture(); scene().props.onTouchStart(touch()); vi.advanceTimersByTime(450); });
   expect(map().props.overlaysHidden).toBe(true);
   await act(async () => scene().props.onTouchEnd());

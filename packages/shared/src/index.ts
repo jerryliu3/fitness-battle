@@ -55,12 +55,12 @@ export * from "./product-icons";
 export * from "./routeGeoUtils";
 export * from "./activity-route";
 export * from "./sampleRoute";
+export * from "./competition-course";
 export * from "./competition-moments";
 export * from "./competition-replay";
 
 export { normalizeRouteReplay, routeReplayAt, type RouteReplaySample } from "./route-replay";
 export * from "./race-course";
-export * from "./mapbox-course";
 export * from "./course-scene";
 
 export { createFieldOverlayHold } from "./field-overlay-hold";

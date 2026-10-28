@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { createRaceCourse, raceCourseFromGpx, raceCoursePosition, raceCourseTrail, raceEffortMetres, createCourseCamera, type CourseCameraPose } from "./race-course";
+import { createRaceCourse, raceCoursePosition, raceCourseTrail, raceEffortMetres, createCourseCamera, type CourseCameraPose } from "./race-course";
 const course = createRaceCourse("City", [[0, 0], [.001, 0], [.001, .002]]);
 describe("race courses", () => {
   it("indexes distance, removes duplicates and preserves distance units", () => {
@@ -42,13 +42,7 @@ describe("race courses", () => {
       expect(move.mock.calls.at(-1)![0].bearing).toBeCloseTo(heading);
     }
   });
-  it("supports GPX routes and tracks without activity timestamps", () => {
-    for (const [container, point] of [["trkseg", "trkpt"], ["rte", "rtept"]]) {
-      expect(raceCourseFromGpx(`<gpx><${container}><${point} lon='0' lat='0'/><${point} lat="0" lon=".001"/></${container}></gpx>`).length).toBeGreaterThan(100);
-    }
-  });
-  it("rejects disconnected segments, invalid coordinates, entities and oversized input", () => {
-    for (const input of ["<gpx><trkseg></trkseg><trkseg></trkseg></gpx>", "<!DOCTYPE gpx><gpx/>", "x".repeat(4 * 1024 * 1024 + 1), '<gpx><rte><rtept lat="NaN" lon="0"/></rte></gpx>']) expect(() => raceCourseFromGpx(input)).toThrow();
+  it("rejects invalid coordinates", () => {
     expect(() => createRaceCourse("Bad", [[0, 0], [181, 0]])).toThrow();
   });
   it("takes the short route across the antimeridian", () => {
