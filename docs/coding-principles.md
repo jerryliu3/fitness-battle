@@ -57,6 +57,11 @@ read. An empty catalog makes 4D unavailable without blocking field seating; a
 later retry can assign a reactivated route. The catalog and assignment tables have no
 athlete write grants. Catalog edits must not rewrite active or historical route
 snapshots. Bundled sample routes are only for local demo and debug previews.
+The owner-only admin route API uses the existing server authorization and service
+client. Catalog saves use the service-only `admin_save_race_route` RPC with the
+observed `updated_at`, locking and audit insertion in one transaction. Route IDs
+are immutable in the editor; deactivate catalog entries instead of deleting saved
+history. GPX import is admin scenery only and never writes activities or scores.
 
 Account field hydration covers every current sport enrollment, using the existing
 seating RPC for open fields and authorized reads for Crew fields. A preferred

@@ -28,6 +28,8 @@ pnpm test
 
 GPS route previews use `NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN` on web and `EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN` on mobile. Native interactive replay loads `/route-scene` from `EXPO_PUBLIC_API_URL`; that deployment needs its web Mapbox token. Apply the existing `20261024000000_activity_routes.sql` migration before deploying route persistence. Older activities need a backfill sync to populate route polylines (`POST /api/fitness/sync` with `provider: "strava", backfill: true` through the existing authenticated flow); ordinary incremental sync may not revisit them. Rows without geometry stay map-free. No precise personal-record segment geometry is currently available.
 
+4D route catalog management lives at `/app/admin` for the existing owner account and requires the server-only `SUPABASE_SERVICE_ROLE_KEY`. Apply `20261028130651_weekly_race_routes.sql`, then `20261028140354_admin_race_route_catalog.sql` before deploying the route features. Admins can import GPX geometry, preview route shape, and edit or deactivate catalog entries. Saves check the observed revision and record an audit entry atomically; assigned competition courses retain their snapshot.
+
 #### 1. Web Application (`apps/web`)
 
 ```bash
