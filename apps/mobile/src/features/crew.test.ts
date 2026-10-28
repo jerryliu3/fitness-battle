@@ -1,3 +1,4 @@
+vi.mock("./athlete-profile-sheet", () => ({ AthleteProfileSheet: "AthleteProfileSheet" }));
 vi.mock("../ui/app-icon", () => ({ AppIcon: "AppIcon" }));
 vi.mock("../ui/club-art",()=>({alpineTrail:1}));
 import { createElement } from "react";

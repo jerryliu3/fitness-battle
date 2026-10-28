@@ -1,3 +1,4 @@
+import { AthleteProfileSheet } from "./athlete-profile-sheet";
 import { UserAvatar } from "../ui/user-avatar";
 import { AppText, Section, SectionStack } from "../ui/section";
 import { AppIcon } from "../ui/app-icon";
@@ -114,6 +115,7 @@ export function CrewHub({ membersOnly = false, crewId = "" }: { membersOnly?: bo
     "add" | "invite" | "manage" | "leave" | "members" | null
   >(null);
   const [viewingMember, setViewingMember] = useState<Member | null>(null);
+  const pendingMember = useRef<Member | null>(null);
   const [name, setName] = useState("");
   const [code, setCode] = useState("");
   const [format, setFormat] = useState("volume");
@@ -125,6 +127,8 @@ export function CrewHub({ membersOnly = false, crewId = "" }: { membersOnly?: bo
   owner.current = user?.id;
   useEffect(() => {
     setSelected(crewId);
+    setViewingMember(null);
+    pendingMember.current = null;
     setDemoRest({});
     setPanel(null);
     setNote("");
@@ -391,12 +395,15 @@ export function CrewHub({ membersOnly = false, crewId = "" }: { membersOnly?: bo
 <View style={{ gap: 16 }}>
             <AppText role="body" secondary >{crew.name}</AppText>
             <SectionStack>
-            {members.map(m => <View key={m.user_id} style={[f.section, f.row]}>
+            {members.map(m => <Pressable key={m.user_id} style={[f.section, f.row]} accessibilityRole="button" accessibilityLabel={`View ${m.display_name}'s profile`} onPress={() => {
+              if (membersOnly) setViewingMember(m);
+              else { pendingMember.current = m; setPanel(null); }
+            }}>
               <UserAvatar src={m.avatar_url} name={m.display_name} size={56} />
               <View style={f.grow}><AppText role="row">{m.display_name}</AppText><AppText role="support" secondary >{(m.user_id === user?.id ? resting : m.rest_week === weekKey) ? "Rest week" : "Active"}</AppText>
                 <AppText role="support" secondary >{sessionsMetric ? `${memberTotal(m.user_id)} sessions` : distance(memberTotal(m.user_id))} this week</AppText>
               </View>
-            </View>)}
+            </Pressable>)}
             </SectionStack>
           </View>
   );
@@ -411,7 +418,17 @@ export function CrewHub({ membersOnly = false, crewId = "" }: { membersOnly?: bo
         />
       </View>
     );
-  if (membersOnly) return membersView;
+  const memberSheet = <AthleteProfileSheet
+    athlete={viewingMember ? {
+      id: viewingMember.user_id, name: viewingMember.display_name, avatarUrl: viewingMember.avatar_url,
+      you: viewingMember.user_id === user?.id, score: viewingMember.effort_score,
+      contextLabel: "This week's crew contribution",
+      contextValue: viewingMember.status === "former" ? undefined : sessionsMetric ? `${memberTotal(viewingMember.user_id)} sessions` : distance(memberTotal(viewingMember.user_id)),
+      contextDetail: `${crew.name} · ${crew.sport} · ${viewingMember.rest_week === weekKey ? "Rest week" : "Active this week"}`,
+    } : null}
+    onClose={() => setViewingMember(null)}
+  />;
+  if (membersOnly) return <>{membersView}{memberSheet}</>;
   return (
     <>
       {api.error ? (
@@ -530,11 +547,11 @@ export function CrewHub({ membersOnly = false, crewId = "" }: { membersOnly?: bo
                 : `${formatDistanceM(relay.model.total, state?.units)}${relay.target == null ? "" : ` / ${formatDistanceM(relay.target, state?.units)}`} ${distanceUnitLabel(state?.units)}`}
             </Text>
             <AppText role="body" secondary>{relay.kind === "baseline" ? "Last week’s distance" : relay.target == null ? "No shared target set" : "Shared target"}</AppText>
-            <CrewRelay hideTargetSummary userId={user?.id} key={crew.id} members={members} entries={entries} sport={crew.sport as SportId} format={crew.format} previousDistanceM={previousDistanceM} targetDistanceM={crew.journey_km*1000} targetSessions={crew.target_sessions} units={state?.units} />
+            <CrewRelay onSelectMember={(id) => { const member = members.find((item) => item.user_id === id); if (member) setViewingMember(member); }} hideTargetSummary userId={user?.id} key={crew.id} members={members} entries={entries} sport={crew.sport as SportId} format={crew.format} previousDistanceM={previousDistanceM} targetDistanceM={crew.journey_km*1000} targetSessions={crew.target_sessions} units={state?.units} />
           </View>
           {user ? (
             <>
-              {user && !solo ? <CrewSessions key={`${user?.id}:${crew.id}`} crewId={crew.id} portraits={Object.fromEntries(members.map(m => [m.user_id, m.avatar_url]))} sport={crew.sport} /> : null}
+              {user && !solo ? <CrewSessions key={`${user?.id}:${crew.id}`} crewId={crew.id} onSelectMember={(id, name) => { setViewingMember(members.find((item) => item.user_id === id) ?? { user_id: id, display_name: name, crew_id: crew.id, rest_week: null, status: "former" }); }} portraits={Object.fromEntries(members.map(m => [m.user_id, m.avatar_url]))} sport={crew.sport} /> : null}
               <Section title="Crew standings">
                 {members
                   .slice()
@@ -547,11 +564,7 @@ export function CrewHub({ membersOnly = false, crewId = "" }: { membersOnly?: bo
                       accessibilityRole="button"
                       accessibilityLabel={`View ${m.display_name}'s profile`}
                       onPress={() => {
-                        if (m.user_id === user?.id) {
-                          router.navigate("/athlete");
-                        } else {
-                          setViewingMember(m);
-                        }
+                        setViewingMember(m);
                       }}
                       style={[f.row, { paddingVertical: 8, alignItems: "center" }]}
                     >
@@ -569,38 +582,7 @@ export function CrewHub({ membersOnly = false, crewId = "" }: { membersOnly?: bo
           ) : null}
         </SectionStack>
       )}
-      {viewingMember ? (
-        <FocusSheet
-          open={Boolean(viewingMember)}
-          title={viewingMember.display_name}
-          onClose={() => setViewingMember(null)}
-        >
-          <View style={{ gap: 16 }}>
-            <View style={[f.row, { gap: 16, alignItems: "center" }]}>
-              <UserAvatar src={viewingMember.avatar_url} name={viewingMember.display_name} size={64} />
-              <View style={{ flex: 1, gap: 4 }}>
-                <AppText role="heading">{viewingMember.display_name}</AppText>
-                <RankBadge score={viewingMember.effort_score} />
-                <AppText role="caption" secondary>
-                  {(viewingMember.user_id === user?.id ? resting : viewingMember.rest_week === weekKey) ? "Rest week" : "Active this week"}
-                </AppText>
-              </View>
-            </View>
-            <View style={f.card}>
-              <AppText role="caption" secondary>This week's contribution</AppText>
-              <AppText role="display">
-                {sessionsMetric
-                  ? `${memberTotal(viewingMember.user_id)} sessions`
-                  : distance(memberTotal(viewingMember.user_id))}
-              </AppText>
-              <AppText role="body" secondary>
-                {crew.name} · {crew.sport}
-              </AppText>
-            </View>
-            <FocusButton label="Close" secondary onPress={() => setViewingMember(null)} />
-          </View>
-        </FocusSheet>
-      ) : null}
+      {memberSheet}
       {!panel && (note || api.error) ? (
         <AppText role="body" secondary  accessibilityLiveRegion="polite">
           {note || api.error}
@@ -630,6 +612,7 @@ export function CrewHub({ membersOnly = false, crewId = "" }: { membersOnly?: bo
       ) : null}
       <FocusSheet
         open={!!panel}
+        onClosed={() => { if (pendingMember.current) { setViewingMember(pendingMember.current); pendingMember.current = null; } }}
         fullScreen={panel === "members"}
         title={
           panel === "add"

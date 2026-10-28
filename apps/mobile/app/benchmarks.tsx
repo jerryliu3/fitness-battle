@@ -1,3 +1,4 @@
+import { AthleteProfileSheet, type AthleteProfileSelection } from "../src/features/athlete-profile-sheet";
 import { SectionStack, AppText } from "../src/ui/section";
 import {
   BENCHMARKS,
@@ -21,6 +22,7 @@ export default function Benchmarks() {
   const [sport, setSport] = useState<"running" | "cycling">("running");
   const [distance, setDistance] = useState("");
   const [scope, setScope] = useState<PaceScope>("global");
+  const [athlete, setAthlete] = useState<AthleteProfileSelection | null>(null);
   if (!state) return null;
   const options = BENCHMARKS[sport];
   const benchmark = options.find((b) => b.id === distance) ?? options[0]!;
@@ -87,11 +89,11 @@ export default function Benchmarks() {
         ) : null}
         <View style={f.card}>
           {rows.slice(0, 20).map((r) => (
-            <View key={r.id} style={f.row}>
+            <Pressable key={r.id} style={f.row} accessibilityRole="button" accessibilityLabel={`View ${r.name} profile`} onPress={() => setAthlete({ id: r.id, name: r.name, you: r.you, sample: !r.you, contextLabel: `${benchmark.label} benchmark`, contextValue: formatClockTime(r.seconds), contextDetail: `Place ${r.place} · ${sport}` })}>
               <AppText role="body" secondary >{r.place}</AppText>
               <AppText role="label" style={f.grow}>{r.name}</AppText>
               <AppText role="label" >{formatClockTime(r.seconds)}</AppText>
-            </View>
+            </Pressable>
           ))}
           {!rows.some((r) => r.you) && (
             <AppText role="body" secondary >
@@ -112,6 +114,7 @@ export default function Benchmarks() {
         />
       </SectionStack>
 </ScrollView>
+      <AthleteProfileSheet athlete={athlete} onClose={() => setAthlete(null)} />
     </SafeAreaView>
   );
 }

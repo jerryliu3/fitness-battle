@@ -1,3 +1,4 @@
+import { AthleteProfileSheet, type AthleteProfileSelection } from "./athlete-profile-sheet";
 import { FieldViewSwitcher } from "../ui/field-view-switcher";
 import { FieldGroundSwitcher } from "../ui/field-ground-switcher";
 import { GeographicCourse } from "./geographic-course";
@@ -89,6 +90,7 @@ export function CompetitionField({
   const [span, setSpan] = useState<number | null>(null);
   const ghost = true;
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [profileAthlete, setProfileAthlete] = useState<AthleteProfileSelection | null>(null);
   const [focusRequest, setFocusRequest] = useState(0);
   const reduceMotion = useReducedMotion();
 
@@ -149,6 +151,15 @@ export function CompetitionField({
   const place = (value: number) =>
     1 + ranked.filter((lane) => lane.values[2] > value).length;
   const scores = weeklyBoard(state, sport, track);
+  const openProfile = (lane: (typeof ranked)[number]) => {
+    setProfileAthlete({
+      id: lane.id, name: lane.name, avatarUrl: lane.avatarUrl, you: lane.you,
+      sample: !lane.you && Boolean(state.enrollments.find((item) => item.sport === sport)?.syntheticIds.includes(lane.id)),
+      score: scores.find((row) => row.id === lane.id)?.elo,
+      contextLabel: "This week", contextValue: `${lane.values[2].toFixed(1)} ${arena.unit}`,
+      contextDetail: `Place ${place(lane.values[2])} · ${sport}`,
+    });
+  };
   const leader = ranked[0];
   const leadersTied = leader ? ranked.filter(lane => lane.values[2] === leader.values[2]).length > 1 : false;
   const leaderValue = Math.max(leader?.values[2] ?? 0, 0.0001);
@@ -373,10 +384,11 @@ export function CompetitionField({
                   <Pressable
                     key={peer.id}
                     accessibilityRole="button"
-                    accessibilityLabel={`Jump to ${peer.name}`}
+                    accessibilityLabel={`View ${peer.name}'s profile`}
                     onPress={() => {
                       void playCue("selection");
                       selectAthlete(peer.id);
+                      openProfile(peer);
                     }}
                     style={{
                       flexDirection: "row",
@@ -591,12 +603,14 @@ export function CompetitionField({
               </SlidingFieldPanel>
             ) : null}
           </> : null}
+          <AthleteProfileSheet athlete={profileAthlete} onClose={() => setProfileAthlete(null)} />
           </View>
         </Modal>
       ) : (
         <View>{fieldContent}</View>
       )}
 
+      {!expanded ? <AthleteProfileSheet athlete={profileAthlete} onClose={() => setProfileAthlete(null)} /> : null}
       <View style={[f.section, { paddingTop: 16 }]}>
         <View style={{ gap: 10 }}>
           {ranked.map((lane) => {
@@ -611,7 +625,7 @@ export function CompetitionField({
                 key={lane.id}
                 accessibilityRole="button"
                 accessibilityLabel={`${lane.name}, place ${rank}, ${lane.values[2].toFixed(1)} ${arena.unit}`}
-                onPress={() => selectAthlete(lane.id)}
+                onPress={() => openProfile(lane)}
                 style={[
                   f.row,
                   {

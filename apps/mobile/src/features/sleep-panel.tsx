@@ -1,3 +1,5 @@
+import { AthleteProfileSheet, type AthleteProfileSelection } from "./athlete-profile-sheet";
+import { useState } from "react";
 import { SectionHeader, AppText } from "../ui/section";
 import {
   buildSleepView,
@@ -7,7 +9,7 @@ import {
   type Action,
   type CompeteState,
 } from "@fitness-battle/shared";
-import { Text, View } from "react-native";
+import { Pressable, Text, View } from "react-native";
 import { f } from "../ui/focus";
 export function SleepPanel({
   state,
@@ -16,6 +18,7 @@ export function SleepPanel({
   state: CompeteState;
   dispatch: (a: Action) => void;
 }) {
+  const [athlete, setAthlete] = useState<AthleteProfileSelection | null>(null);
   const rating = state.healthRatings.find((r) => r.metric === "sleep");
   if (!rating?.optedIn) return null;
   const view = buildSleepView({
@@ -73,15 +76,16 @@ export function SleepPanel({
         </AppText>
       </View>
       {view.rows.map((r) => (
-        <View key={r.id} style={f.row}>
+        <Pressable key={r.id} style={f.row} accessibilityRole="button" accessibilityLabel={`View ${r.name} profile`} onPress={() => setAthlete({ id: r.id, name: r.name, you: r.you, sample: !r.you, contextLabel: "Recovery this week", contextValue: `${r.score.toFixed(0)} contest score`, contextDetail: `Place ${r.place}` })}>
           <AppText role="body" secondary >{r.place}</AppText>
           <AppText role="label" style={f.grow}>
             {r.name}
             {r.you ? " (you)" : ""}
           </AppText>
           <AppText role="label" >{r.score.toFixed(0)}</AppText>
-        </View>
+        </Pressable>
       ))}
+      <AthleteProfileSheet athlete={athlete} onClose={() => setAthlete(null)} />
     </View>
   );
 }
