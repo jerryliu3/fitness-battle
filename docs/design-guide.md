@@ -392,7 +392,9 @@ competition totals. The database route catalog assigns one route snapshot to
 every competition field sharing the same wave start. Live fields and historical
 replays read that assignment through a membership-checked API, which stores the
 choice on the first authorized 4D view. Athletes cannot
-upload, request, or change 4D routes; admin catalog editing is a later step.
+upload, request, or change 4D routes. The owner-only admin catalog supports
+adding, editing and deactivating routes, GPX import and a route-shape preview.
+Catalog edits apply to new assignments; saved competition snapshots stay fixed.
 The dedicated screen
 supports native map gestures, selectable athletes, 2D/chase views, discovered-ground
 framing and recenter/follow. Manual exploration suspends follow; selecting an
