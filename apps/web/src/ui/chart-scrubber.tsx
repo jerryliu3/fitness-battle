@@ -121,9 +121,11 @@ export function ChartScrubber({
     <div className="chart-scrubber">
       <div id={summaryId} className="chart-scrubber-summary" aria-live="polite">
         {summaryOnSelection ? (
-          <AppText role="caption" secondary>
-            {selected ? `${selected.label} · ${selected.value}` : "Slide across the chart to inspect"}
-          </AppText>
+          selected ? (
+            <AppText role="caption" secondary>
+              {`${selected.label} · ${selected.value}`}
+            </AppText>
+          ) : null
         ) : (
           <>
             <AppText role="label">{selected?.value ?? points.at(-1)?.value ?? "No data"}</AppText>

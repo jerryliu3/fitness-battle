@@ -24,8 +24,10 @@ import {
   competeNow,
   type CompeteState,
   type ScoreTrack,
+  type TrainingRange,
 } from "@fitness-battle/shared";
 import { useEffect, useState } from "react";
+import { ChartRangeToggle } from "@/features/progress/chart-range-toggle";
 
 function EditIcon() {
   return (
@@ -93,12 +95,13 @@ export function AthleteOverview({
   const season = clubLifetimeTotals(state);
   const unit = distanceUnitLabel(state.units);
 
+  const [effortRange, setEffortRange] = useState<TrainingRange>("month");
   const milestone = currentEffortMilestone(state, state.primary, track);
   const showProfile = sections === "profile";
   const showProgress = sections === "progress";
 
   const effort = showProgress
-    ? effortHistory(state, track, user, email)
+    ? effortHistory(state, track, user, email, effortRange)
     : null;
   const {
     effectiveElo,
@@ -342,7 +345,10 @@ export function AthleteOverview({
 
       {showProgress ? (
       <section className="focus-card focus-elo" id="effort-score">
-        <div className="focus-elo-track-toggle" role="group" aria-label="Effort chart score track">{(["open", "verified"] as const).map(value => <button key={value} type="button" aria-pressed={track === value} onClick={() => setLens({ scope, track: value })}>{value === "open" ? "Open" : "GPS Tracked"}</button>)}</div>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, flexWrap: "wrap", marginBottom: 12 }}>
+          <div className="focus-elo-track-toggle" role="group" aria-label="Effort chart score track">{(["open", "verified"] as const).map(value => <button key={value} type="button" aria-pressed={track === value} onClick={() => setLens({ scope, track: value })}>{value === "open" ? "Open" : "GPS Tracked"}</button>)}</div>
+          <ChartRangeToggle value={effortRange} onChange={setEffortRange} />
+        </div>
         <div className="focus-elo-top">
 
           <span className="focus-elo-rank-pill">

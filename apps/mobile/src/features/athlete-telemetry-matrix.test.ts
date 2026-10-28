@@ -110,7 +110,7 @@ describe("AthleteTelemetryMatrix mobile features", () => {
         .join(" ");
 
     const text = allText();
-    expect(text).toContain("Athlete Telemetry Matrix");
+    expect(text).toContain("Advanced Analytics");
     expect(text).not.toContain("Biometrics & Telemetry");
     expect(text).not.toContain("Autonomic health, training load, and cardiovascular efficiency");
     expect(text).not.toContain("Inspect lab →");

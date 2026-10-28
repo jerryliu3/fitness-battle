@@ -56,38 +56,50 @@ export function TrainingSportMenu({
       >
         <ScrollView bounces={false} style={{ maxHeight: 280 }}>
           <Pressable
-            accessibilityRole="button"
+            accessibilityRole="checkbox"
+            accessibilityState={{ checked: allSelected }}
             accessibilityLabel="All sports"
             style={[s.option, allSelected && s.optionSelected]}
             onPress={() => {
               void playCue("selection");
               onChange(defaultTrainingSports());
-              close();
             }}
           >
-            <AppText role={allSelected ? "label" : "body"}>
-              All sports
-            </AppText>
-            {allSelected ? <AppText role="label">✓</AppText> : null}
+            <View style={s.optionContent}>
+              <View style={[s.checkbox, allSelected && s.checkboxChecked]}>
+                {allSelected ? (
+                  <AppText role="caption" style={s.checkmark}>✓</AppText>
+                ) : null}
+              </View>
+              <AppText role={allSelected ? "label" : "body"}>
+                All sports
+              </AppText>
+            </View>
           </Pressable>
           {SPORTS.map((sport) => {
             const checked = !allSelected && value.includes(sport.id);
             return (
               <Pressable
                 key={sport.id}
-                accessibilityRole="button"
+                accessibilityRole="checkbox"
+                accessibilityState={{ checked }}
                 accessibilityLabel={sport.name}
-                accessibilityState={{ selected: checked }}
                 style={[s.option, checked && s.optionSelected]}
                 onPress={() => {
                   void playCue("selection");
                   onChange(toggleTrainingSports(value, sport.id));
                 }}
               >
-                <AppText role={checked ? "label" : "body"}>
-                  {sport.name}
-                </AppText>
-                {checked ? <AppText role="label">✓</AppText> : null}
+                <View style={s.optionContent}>
+                  <View style={[s.checkbox, checked && s.checkboxChecked]}>
+                    {checked ? (
+                      <AppText role="caption" style={s.checkmark}>✓</AppText>
+                    ) : null}
+                  </View>
+                  <AppText role={checked ? "label" : "body"}>
+                    {sport.name}
+                  </AppText>
+                </View>
               </Pressable>
             );
           })}
@@ -103,9 +115,33 @@ const s = StyleSheet.create({
     paddingHorizontal: 16,
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: c.line,
+  },
+  optionContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+  },
+  checkbox: {
+    width: 20,
+    height: 20,
+    borderRadius: 4,
+    borderWidth: 1.5,
+    borderColor: c.line,
+    backgroundColor: c.card,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  checkboxChecked: {
+    borderColor: c.ink,
+    backgroundColor: c.ink,
+  },
+  checkmark: {
+    color: "#ffffff",
+    fontSize: 11,
+    lineHeight: 14,
+    fontWeight: "700",
   },
   optionSelected: {
     backgroundColor: c.soft,

@@ -1,5 +1,5 @@
 "use client";
-import { AppParagraph, AppText, typographyStyle, SectionHeader, Section, AppHeading } from "@/ui/section";
+import { AppParagraph, AppText, typographyStyle, SectionHeader, Section, AppHeading, TextAction } from "@/ui/section";
 
 import { isOwnerEmail } from "@/lib/auth/design-access";
 import { ReportIssue } from "@/components/report-issue";
@@ -820,10 +820,22 @@ function YouContent({ surface }: { surface: "progress" | "athlete" }) {
     <div className="focus-athlete" ref={overviewRef} inert={Boolean(panel) || settingsPresent}>
       {surface === "progress" ? (
         <ProgressHub overview={<><TrainingHistory state={state}><Achievements state={state}/></TrainingHistory><WeekRecap state={state}/>
-        <Link href="/you/history" className="fb-card club-history-preview">
-          <SectionHeader title="Past weeks & awards"/>
-          <AppParagraph typographyRole="body" className="fb-copy">Closed competition weeks, chapter history, and your award shelf.</AppParagraph>
-        </Link>
+        <Section
+          className="club-history-preview-section"
+          title="Past weeks & awards"
+          subtitle="Closed competition weeks, chapter history, and your award shelf."
+          action={
+            <TextAction
+              href="/you/history"
+              label="View all"
+              accessibilityLabel="View all past weeks and awards"
+            />
+          }
+        >
+          {awardCards(state).length > 0 ? (
+            <AwardShelf state={state} />
+          ) : null}
+        </Section>
         <AthleteTelemetryMatrix state={state} />
         </>} effort={<>
           <AthleteOverview

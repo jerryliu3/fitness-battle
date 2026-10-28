@@ -35,6 +35,7 @@ describe("training calendar presentation",()=>{
   expect(isAllTrainingSports(["running","cycling","walking","walking"])).toBe(false);
   expect(toggleTrainingSports(["running","cycling"], "walking")).toEqual(["running","cycling","walking"]);
   expect(toggleTrainingSports(["running"], "running")).toEqual(["running","cycling","walking","strength"]);
+  expect(toggleTrainingSports(["running","cycling","walking","strength"], "running")).toEqual(["running"]);
   expect(normalizeTrainingSports(["walking","running","running"])).toEqual(["running","walking"]);
  });
  it("filters by multi-sport selection the same as a single sport or all",()=>{

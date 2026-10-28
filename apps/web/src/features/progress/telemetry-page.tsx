@@ -187,11 +187,19 @@ function WebInteractiveLineChart({
       <svg width="100%" height={height} viewBox={`0 0 ${width} ${height}`} style={{ overflow: "visible" }} aria-hidden="true">
         <path d={geo.areaPath} fill={stroke} opacity={0.12} />
         <polyline points={geo.polyline} fill="none" stroke={stroke} strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" />
+        {geo.points.map((p, i) => (
+          <circle
+            key={`dot-${i}`}
+            cx={p.x}
+            cy={p.y}
+            r={i === selectedIdx ? 5 : 2.5}
+            fill={i === selectedIdx ? stroke : c.card}
+            stroke={stroke}
+            strokeWidth={2}
+          />
+        ))}
         {active && (
-          <>
-            <line x1={active.x} x2={active.x} y1={0} y2={height} stroke={c.line} strokeWidth={1} strokeDasharray="3 3" />
-            <circle cx={active.x} cy={active.y} r={5} fill={stroke} stroke={c.card} strokeWidth={2} />
-          </>
+          <line x1={active.x} x2={active.x} y1={0} y2={height} stroke={c.line} strokeWidth={1} strokeDasharray="3 3" />
         )}
         {geo.points.map((p, i) => (
           <rect
@@ -348,11 +356,19 @@ function WebVitalsView({ model }: { model: AnalyticsLabModel }) {
           <svg width="100%" height={140} viewBox={`0 0 ${width} 140`} style={{ overflow: "visible" }} aria-hidden="true">
             <path d={geo.corridorPath} fill={c.fieldTeal} opacity={0.16} />
             <polyline points={geo.linePath} fill="none" stroke={c.fieldTeal} strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" />
+            {geo.points.map((p, i) => (
+              <circle
+                key={`dot-${i}`}
+                cx={p.x}
+                cy={p.y}
+                r={i === selectedIdx ? 5 : 2.5}
+                fill={i === selectedIdx ? c.fieldTeal : c.card}
+                stroke={c.fieldTeal}
+                strokeWidth={2}
+              />
+            ))}
             {activePt && (
-              <>
-                <line x1={activePt.x} x2={activePt.x} y1={0} y2={140} stroke={c.line} strokeWidth={1} strokeDasharray="3 3" />
-                <circle cx={activePt.x} cy={activePt.y} r={5} fill={c.fieldTeal} stroke={c.card} strokeWidth={2} />
-              </>
+              <line x1={activePt.x} x2={activePt.x} y1={0} y2={140} stroke={c.line} strokeWidth={1} strokeDasharray="3 3" />
             )}
             {geo.points.map((p, i) => (
               <rect

@@ -9,6 +9,7 @@ import {
   rankForElo,
   type CompeteState,
   type ScoreTrack,
+  type TrainingRange,
 } from "@fitness-battle/shared";
 import { useState } from "react";
 import { useScoreTrackLens } from "../lib/score-track-lens";
@@ -19,15 +20,17 @@ import { ChartFrame } from "../ui/chart-frame";
 import { useAuth } from "../lib/auth";
 import { SHELL_COLORS as c } from "../theme";
 import { FocusSegments, f } from "../ui/focus";
+import { ChartRangeToggle } from "./chart-range-toggle";
 
 export function EffortTrend({ state }: { state: CompeteState }) {
   const [defaultTrack] = useScoreTrackLens();
   const { user } = useAuth();
   const scope = `${user?.id}:${state.primary}`;
   const [lens, setLens] = useState<{ scope: string; track: ScoreTrack } | null>(null);
+  const [range, setRange] = useState<TrainingRange>("month");
   const track = lens?.scope === scope ? lens.track : defaultTrack;
   const milestone = currentEffortMilestone(state, state.primary, track);
-  const model = effortHistory(state, track, user, user?.email);
+  const model = effortHistory(state, track, user, user?.email, range);
   const {
     effectiveElo,
     xStart,
@@ -45,15 +48,18 @@ export function EffortTrend({ state }: { state: CompeteState }) {
   return (
     <ChartFrame>
       <View style={f.section}>
-        <FocusSegments
-          label="Effort chart score track"
-          value={track}
-          options={[
-            { value: "open", label: "Open" },
-            { value: "verified", label: "GPS Tracked" },
-          ]}
-          onChange={(nextTrack) => setLens({ scope, track: nextTrack })}
-        />
+        <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+          <FocusSegments
+            label="Effort chart score track"
+            value={track}
+            options={[
+              { value: "open", label: "Open" },
+              { value: "verified", label: "GPS Tracked" },
+            ]}
+            onChange={(nextTrack) => setLens({ scope, track: nextTrack })}
+          />
+          <ChartRangeToggle value={range} onChange={setRange} />
+        </View>
 
         <Text style={f.kicker}>{rankForElo(effectiveElo).name}</Text>
         <View style={s.total}>

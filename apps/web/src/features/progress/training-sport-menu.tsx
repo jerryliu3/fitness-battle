@@ -57,18 +57,17 @@ export function TrainingSportMenu({
           role="group"
           aria-label="Sports filter"
         >
-          <button
-            type="button"
-            className="training-sport-menu-all"
-            onClick={() => {
-              onChange(defaultTrainingSports());
-              setOpen(false);
-            }}
-          >
-            All sports
-          </button>
+          <label className="training-sport-menu-option">
+            <input
+              type="checkbox"
+              checked={allSelected}
+              onChange={() => onChange(defaultTrainingSports())}
+            />
+            <span>All sports</span>
+          </label>
+          <div className="training-sport-menu-divider" />
           {SPORTS.map((sport) => {
-            const checked = value.includes(sport.id);
+            const checked = !allSelected && value.includes(sport.id);
             return (
               <label key={sport.id} className="training-sport-menu-option">
                 <input

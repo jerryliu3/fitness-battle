@@ -147,11 +147,19 @@ function InteractiveLineChart({
       <Svg width="100%" height={height} viewBox={`0 0 ${width} ${height}`}>
         <Path d={geo.areaPath} fill={stroke} opacity={0.12} />
         <Polyline points={geo.polyline} fill="none" stroke={stroke} strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" />
+        {geo.points.map((p, i) => (
+          <Circle
+            key={`dot-${i}`}
+            cx={p.x}
+            cy={p.y}
+            r={i === selectedIdx ? 5 : 2.5}
+            fill={i === selectedIdx ? stroke : c.card}
+            stroke={stroke}
+            strokeWidth={2}
+          />
+        ))}
         {active && (
-          <>
-            <Line x1={active.x} x2={active.x} y1={0} y2={height} stroke={c.line} strokeWidth={1} strokeDasharray="3 3" />
-            <Circle cx={active.x} cy={active.y} r={5} fill={stroke} stroke={c.card} strokeWidth={2} />
-          </>
+          <Line x1={active.x} x2={active.x} y1={0} y2={height} stroke={c.line} strokeWidth={1} strokeDasharray="3 3" />
         )}
         {geo.points.map((p, i) => (
           <Rect
@@ -287,11 +295,19 @@ function VitalsView({ model }: { model: AnalyticsLabModel }) {
           <Svg width="100%" height={140} viewBox={`0 0 ${width} 140`}>
             <Path d={geo.corridorPath} fill={c.fieldTeal} opacity={0.16} />
             <Polyline points={geo.linePath} fill="none" stroke={c.fieldTeal} strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" />
+            {geo.points.map((p, i) => (
+              <Circle
+                key={`dot-${i}`}
+                cx={p.x}
+                cy={p.y}
+                r={i === selectedIdx ? 5 : 2.5}
+                fill={i === selectedIdx ? c.fieldTeal : c.card}
+                stroke={c.fieldTeal}
+                strokeWidth={2}
+              />
+            ))}
             {activePt && (
-              <>
-                <Line x1={activePt.x} x2={activePt.x} y1={0} y2={140} stroke={c.line} strokeWidth={1} strokeDasharray="3 3" />
-                <Circle cx={activePt.x} cy={activePt.y} r={5} fill={c.fieldTeal} stroke={c.card} strokeWidth={2} />
-              </>
+              <Line x1={activePt.x} x2={activePt.x} y1={0} y2={140} stroke={c.line} strokeWidth={1} strokeDasharray="3 3" />
             )}
             {geo.points.map((p, i) => (
               <Rect

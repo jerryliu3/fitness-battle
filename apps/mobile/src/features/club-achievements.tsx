@@ -1,4 +1,4 @@
-import { Section, TextAction, StatusBadge, AppText } from "../ui/section";
+import { Section, TextAction, AppText } from "../ui/section";
 import { useRouter } from "expo-router";
 import { Platform, Pressable, View } from "react-native";
 import Svg, { Defs, LinearGradient, Path, Stop } from "react-native-svg";
@@ -49,14 +49,13 @@ export function Achievements({ state }: { state: CompeteState }) {
             style={achievementTileStyle.tile}
           >
             <Badge item={row} />
-            <AppText role="caption" secondary style={{ textAlign: "center" }}>
-              {row.title}
-            </AppText>
             <AchievementMeter row={row} />
             <AppText role="label" style={{ textAlign: "center" }}>
               {row.current.toLocaleString()} / {row.target.toLocaleString()}
             </AppText>
-            <StatusBadge tone={row.earned ? "success" : "neutral"}>{row.earned ? "✓ Earned" : "Up next"}</StatusBadge>
+            <AppText role="caption" secondary style={{ textAlign: "center" }}>
+              {row.title}
+            </AppText>
           </Pressable>
         ))}
       </View>

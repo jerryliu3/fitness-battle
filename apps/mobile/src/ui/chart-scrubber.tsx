@@ -78,7 +78,7 @@ export function ChartScrubber({
   };
   return <View style={{ gap: 8 }}>
     <View style={{ minHeight: summaryOnSelection ? 18 : 44, gap: 2 }} accessibilityLiveRegion="polite">
-      {summaryOnSelection ? <Text style={textStyle("caption")}>{selected ? `${selected.label} · ${selected.value}` : "Slide across the chart to inspect"}</Text> : <>
+      {summaryOnSelection ? (selected ? <Text style={textStyle("caption")}>{`${selected.label} · ${selected.value}`}</Text> : null) : <>
       <Text style={[textStyle("label"), { fontVariant: ["tabular-nums"] }]}>{selected?.value ?? points.at(-1)?.value ?? "No data"}</Text>
       <Text style={textStyle("caption")}>{selected?.label ?? points.at(-1)?.label ?? ""}</Text></>}
     </View>

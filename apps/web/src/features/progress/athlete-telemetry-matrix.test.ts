@@ -55,7 +55,7 @@ describe("AthleteTelemetryMatrix web component", () => {
 
     const text = allText();
     // Verify single title
-    expect(text).toContain("Athlete Telemetry Matrix");
+    expect(text).toContain("Advanced Analytics");
 
     // Verify kickers and filler copy are removed
     expect(text).not.toContain("Biometrics & Telemetry");
