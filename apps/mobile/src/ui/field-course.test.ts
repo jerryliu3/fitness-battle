@@ -5,7 +5,7 @@ const storage = vi.hoisted(() => ({ getItem: vi.fn(), setItem: vi.fn(() => Promi
 vi.mock("@react-native-async-storage/async-storage", () => ({ default: storage }));
 vi.mock("react-native", () => ({ StyleSheet: { create: (value: unknown) => value }, View: "View", Text: "Text", Pressable: "Pressable", PanResponder: { create: (handlers: object) => ({ panHandlers: handlers }) } }));
 vi.mock("react-native-svg", () => ({ Circle: "Circle", ClipPath: "ClipPath", Defs: "Defs", Ellipse: "Ellipse", G: "G", Line: "Line", LinearGradient: "LinearGradient", Mask: "Mask", Path: "Path", Pattern: "Pattern", Rect: "Rect", Stop: "Stop", Text: "SvgText" }));
-vi.mock("./focus", () => ({ FocusSheet: "FocusSheet", f: {} }));
+vi.mock("./focus", () => ({ FocusSheet: "FocusSheet", f: {}, useFocusStyles: () => ({}) }));
 import { FieldOverview, useFieldAppearance, drawFieldNode } from "./field-course";
 import { fieldAppearanceKey } from "@fitness-battle/shared";
 let renderer: ReactTestRenderer;

@@ -12,7 +12,7 @@ vi.mock("../ui/chart-scrubber",()=>({ChartScrubber:({children}:{children:unknown
 vi.mock("react-native-svg",()=>({default:"Svg",G:"G",Path:"Path",Text:"SvgText",Circle:"Circle",Line:"Line",Rect:"Rect"}));
 vi.mock("expo-router",()=>({useRouter:()=>({navigate:mock.navigate})}));
 vi.mock("../lib/compete-store",()=>({useCompeteStore:()=>({state:mock.state,accountKey:mock.account,canWrite:true,saveError:null})}));
-vi.mock("../ui/focus",()=>({FocusButton:"FocusButton",FocusDisclosure:"Disclosure",FocusSegments:"FocusSegments",FocusSheet:"FocusSheet",f:{chip:{},chipActive:{},row:{}}}));
+vi.mock("../ui/focus",()=>({FocusButton:"FocusButton",FocusDisclosure:"Disclosure",FocusSegments:"FocusSegments",FocusSheet:"FocusSheet",f:{chip:{},chipActive:{},row:{}},useFocusStyles:()=>({chip:{},chipActive:{},row:{}})}));
 vi.mock("../ui/mascot/animated-ember",()=>({AnimatedEmber:"Ember"}));
 vi.mock("../ui/use-reduced-motion",()=>({useReducedMotion:()=>true}));
 vi.mock("../ui/field-course",()=>({drawFieldNode:()=>null}));

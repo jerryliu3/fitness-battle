@@ -1,3 +1,5 @@
+import { useThemeColors } from "../theme";
+import { useFocusStyles } from "../ui/focus";
 import { AppText } from "../ui/section";
 import {
   APP_TIMEZONE,
@@ -43,6 +45,9 @@ export function Journey({
   units: UnitSystem;
   onToday: () => void;
 }) {
+  const c = useThemeColors();
+  const f = useFocusStyles();
+
   const { state, dispatch, accountKey } = useCompeteStore();
   const [removed, setRemoved] = useState<Activity | null>(null);
   useEffect(() => {

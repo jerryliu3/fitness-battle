@@ -1,3 +1,4 @@
+import { createThemedStyles, useThemedStyles, useLegacyColors } from "../theme";
 import { useRef, useEffect } from "react";
 import { View, StyleSheet, type StyleProp, type ViewStyle } from "react-native";
 import WebView, { type WebViewMessageEvent } from "react-native-webview";
@@ -28,6 +29,9 @@ export function RouteTimelapse({
   onUnavailable,
   style,
 }: RouteTimelapseProps) {
+  const colors = useLegacyColors();
+  const styles = useThemedStyles(stylesThemes);
+
   const ref = useRef<WebView<object>>(null);
   const ready = useRef(false);
 
@@ -99,16 +103,16 @@ export function RouteTimelapse({
   );
 }
 
-const styles = StyleSheet.create({
+const stylesThemes = createThemedStyles((themeColors) => ({
   frame: {
     width: "100%",
     height: 380,
     borderRadius: 20,
     overflow: "hidden",
-    backgroundColor: colors.ink,
+    backgroundColor: themeColors.ink,
   },
   web: {
     flex: 1,
-    backgroundColor: colors.ink,
+    backgroundColor: themeColors.ink,
   },
-});
+}));

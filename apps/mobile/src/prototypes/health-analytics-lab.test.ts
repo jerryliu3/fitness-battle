@@ -37,6 +37,7 @@ vi.mock("../ui/screen-header", () => ({
   ScreenHeader: "ScreenHeader",
 }));
 vi.mock("../ui/focus", () => ({
+  useFocusStyles: () => ({ safe: {}, content: {}, card: {}, section: {}, kicker: {}, h2: {}, rowTitle: {}, copy: {}, small: {}, chip: {}, chipActive: {} }),
   f: {
     safe: {},
     content: {},

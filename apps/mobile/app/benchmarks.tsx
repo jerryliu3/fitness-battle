@@ -1,4 +1,5 @@
 import { AthleteProfileSheet, type AthleteProfileSelection } from "../src/features/athlete-profile-sheet";
+import { useFocusStyles } from "../src/ui/focus";
 import { SectionStack, AppText } from "../src/ui/section";
 import {
   BENCHMARKS,
@@ -17,6 +18,8 @@ import { mobileEnv } from "../src/lib/env";
 import { ScreenHeader } from "../src/ui/screen-header";
 import { FocusButton, FocusHeading, f } from "../src/ui/focus";
 export default function Benchmarks() {
+  const f = useFocusStyles();
+
   const { state } = useCompeteStore();
   const router = useRouter();
   const [sport, setSport] = useState<"running" | "cycling">("running");

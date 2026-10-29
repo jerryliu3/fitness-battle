@@ -11,7 +11,7 @@ vi.mock("react-native", () => ({
   ScrollView: "ScrollView",
   StyleSheet: { create: (v: unknown) => v, hairlineWidth: 1, absoluteFill: {} },
 }));
-vi.mock("./focus", () => ({ f: { row: {}, input: {} } }));
+vi.mock("./focus", () => ({ f: { row: {}, input: {} }, useFocusStyles: () => ({ row: {}, input: {} }) }));
 vi.mock("react-native-svg", () => ({ default: "Svg", Path: "Path" }));
 vi.mock("../lib/haptics", () => ({ playCue: vi.fn() }));
 import { ChoicePicker } from "./choice-picker";

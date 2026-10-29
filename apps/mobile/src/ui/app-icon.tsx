@@ -1,3 +1,4 @@
+import { useThemeColors } from "../theme";
 import IconRun from "@tabler/icons-react-native/IconRun";
 import IconWalk from "@tabler/icons-react-native/IconWalk";
 import IconBike from "@tabler/icons-react-native/IconBike";
@@ -37,6 +38,8 @@ export type AppIconName = keyof typeof icons;
 export function AppIcon({ name, size = 24, color = c.ink }: {
   name: AppIconName; size?: number; color?: string;
 }) {
+  const c = useThemeColors();
+
   const Icon = icons[name];
   return <Icon size={size} color={color} strokeWidth={1.8}
     aria-hidden={Platform.OS === "web" ? true : undefined}

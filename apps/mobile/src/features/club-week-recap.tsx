@@ -1,3 +1,5 @@
+import { createThemedStyles, useThemedStyles } from "../theme";
+import { useFocusStyles } from "../ui/focus";
 import { Section, AppText } from "../ui/section";
 import { Pressable, StyleSheet, View } from "react-native";
 import { useRouter } from "expo-router";
@@ -12,6 +14,9 @@ import {
 import { f } from "../ui/focus";
 import { SHELL_COLORS as c } from "../theme";
 export function WeekRecap({ state }: { state: CompeteState }) {
+  const s = useThemedStyles(sThemes);
+  const f = useFocusStyles();
+
   const router = useRouter(),
     week = clubWeekSummary(state),
     recap = latestClubRecap(state),
@@ -72,21 +77,21 @@ export function WeekRecap({ state }: { state: CompeteState }) {
     </Section>
   );
 }
-const s = StyleSheet.create({
+const sThemes = createThemedStyles((themeColors) => ({
   receipt: {
     flexDirection: "row",
     alignItems: "center",
     gap: 12,
     paddingTop: 16,
     borderTopWidth: 1,
-    borderTopColor: c.line,
+    borderTopColor: themeColors.line,
   },
   stamp: {
     width: 46,
     height: 54,
     borderRadius: 14,
-    backgroundColor: c.actionSoft,
+    backgroundColor: themeColors.actionSoft,
     alignItems: "center",
     justifyContent: "center",
   },
-});
+}));

@@ -1,3 +1,4 @@
+import { useThemeColors } from "../theme";
 import { Pressable, Text, View } from "react-native";
 import { AnchoredMenu, useAnchoredMenu } from "./anchored-menu";
 import { textStyle } from "./section";
@@ -13,6 +14,8 @@ export function FieldViewSwitcher({
   geographic: boolean;
   onChange(value: "2d" | "3d" | "4d"): void;
 }) {
+  const c = useThemeColors();
+
   const { open, close, toggle, anchorRef, menuLayout } = useAnchoredMenu({
     minWidth: 90,
     estimatedHeight: 130,

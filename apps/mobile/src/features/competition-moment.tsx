@@ -1,3 +1,4 @@
+import { createThemedStyles, useThemedStyles } from "../theme";
 import { useEffect, useRef, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -14,6 +15,8 @@ import { playCue } from "../lib/haptics";
 const ignore = () => {};
 
 export function CompetitionMoment({ moment, remaining, onConfirm, debug = false }: { moment: Moment; remaining: number; onConfirm: () => void; debug?: boolean }) {
+  const styles = useThemedStyles(stylesThemes);
+
   const { accountKey } = useCompeteStore();
   const { blocks } = useAthleteBlocks();
   const hiddenIds = blocks.map(block => block.id);
@@ -59,4 +62,4 @@ export function CompetitionMoment({ moment, remaining, onConfirm, debug = false 
     </View>
   </View>;
 }
-const styles = StyleSheet.create({ panel: { backgroundColor: "rgba(248,249,246,0.94)", borderRadius: 20, padding: 14, gap: 6, borderWidth: 1, borderColor: c.line } });
+const stylesThemes = createThemedStyles((themeColors) => ({ panel: { backgroundColor: "rgba(248,249,246,0.94)", borderRadius: 20, padding: 14, gap: 6, borderWidth: 1, borderColor: themeColors.line } }));

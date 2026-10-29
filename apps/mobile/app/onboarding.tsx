@@ -1,3 +1,4 @@
+import { useFocusStyles } from "../src/ui/focus";
 import { SectionHeader, SectionStack, AppText } from "../src/ui/section";
 import { IconButton } from "../src/ui/icon-button";
 import { ProfilePhoto } from "../src/features/profile-photo";
@@ -10,6 +11,8 @@ import { useAuth } from "../src/lib/auth";
 import { useCompeteStore } from "../src/lib/compete-store";
 import { FocusButton, f } from "../src/ui/focus";
 export default function Onboarding() {
+  const f = useFocusStyles();
+
   const { state, canWrite, dispatch, saveError, retrySave } = useCompeteStore();
   const { user } = useAuth();
   const router = useRouter();

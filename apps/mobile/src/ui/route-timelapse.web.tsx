@@ -1,3 +1,4 @@
+import { createThemedStyles, useThemedStyles, useLegacyColors } from "../theme";
 import { useEffect, useRef } from "react";
 import { View, StyleSheet, type StyleProp, type ViewStyle } from "react-native";
 import { encodePolyline, type RouteReplaySample, type LngLat } from "@fitness-battle/shared";
@@ -27,6 +28,9 @@ export function RouteTimelapse({
   onUnavailable,
   style,
 }: RouteTimelapseProps) {
+  const colors = useLegacyColors();
+  const styles = useThemedStyles(stylesThemes);
+
   const polylineStr =
     typeof coordinates === "string" ? coordinates : encodePolyline(coordinates);
 
@@ -59,12 +63,12 @@ export function RouteTimelapse({
   );
 }
 
-const styles = StyleSheet.create({
+const stylesThemes = createThemedStyles((themeColors) => ({
   frame: {
     width: "100%",
     height: 380,
     borderRadius: 20,
     overflow: "hidden",
-    backgroundColor: colors.ink,
+    backgroundColor: themeColors.ink,
   },
-});
+}));

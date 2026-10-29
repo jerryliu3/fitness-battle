@@ -1,3 +1,5 @@
+import { useThemeColors } from "../theme";
+import { useFocusStyles } from "../ui/focus";
 import { AppText, StatusBadge, SectionHeader } from "../ui/section";
 import {
   competeNow,
@@ -25,6 +27,9 @@ export function CompetitionSummary({
   selectedSport?: SportId | "sleep";
   onRegister?: () => void;
 }) {
+  const c = useThemeColors();
+  const f = useFocusStyles();
+
   const now = competeNow(state);
   const active = state.ratings.filter((rating) => rating.optedIn);
   const sport = selectedSport === "sleep" ? undefined : selectedSport ??

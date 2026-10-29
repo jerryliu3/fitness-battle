@@ -1,3 +1,5 @@
+import { createThemedStyles, useThemedStyles, useThemeColors } from "../theme";
+import { useFocusStyles } from "../ui/focus";
 import { UserAvatar } from "../ui/user-avatar";
 import { chartTextProps, AppText } from "../ui/section";
 import { useEffect, useId, useState } from "react";
@@ -31,6 +33,10 @@ type Props = CrewWeekRelayInput & {
 };
 
 export function CrewRelay(props: Props) {
+  const c = useThemeColors();
+  const s = useThemedStyles(sThemes);
+  const f = useFocusStyles();
+
   const { members, sport, units, userId, compact, hideTargetSummary, onSelectMember, hiddenIds = [] } = props;
   const [selected, setSelected] = useState("");
   const [width, setWidth] = useState(320);
@@ -192,7 +198,7 @@ export function CrewRelay(props: Props) {
   );
 }
 
-const s = StyleSheet.create({
+const sThemes = createThemedStyles((themeColors) => ({
   marker: {
     position: "absolute",
     width: 56,
@@ -205,9 +211,9 @@ const s = StyleSheet.create({
     height: 40,
     borderRadius: 20,
     borderWidth: 3,
-    backgroundColor: c.soft,
+    backgroundColor: themeColors.soft,
     alignItems: "center",
     justifyContent: "center",
     overflow: "hidden",
   },
-});
+}));

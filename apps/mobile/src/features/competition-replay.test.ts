@@ -15,7 +15,7 @@ vi.mock("../ui/field-course", () => ({ useFieldAppearance: () => [defaultFieldAp
 vi.mock("../ui/section", () => ({ AppText: "AppText" }));
 vi.mock("../ui/app-icon", () => ({ AppIcon: "AppIcon" }));
 vi.mock("../ui/icon-button", () => ({ IconButton: "IconButton" }));
-vi.mock("../ui/focus", () => ({ FocusButton: "FocusButton", FocusSegments: "FocusSegments", f: {} }));
+vi.mock("../ui/focus", () => ({ FocusButton: "FocusButton", FocusSegments: "FocusSegments", f: {}, useFocusStyles: () => ({}) }));
 vi.mock("react-native-safe-area-context", () => ({ SafeAreaProvider: "SafeAreaProvider", SafeAreaView: "SafeAreaView" }));
 vi.mock("react-native", () => ({ Modal: "Modal", View: "View", Pressable: "Pressable", StyleSheet: { create: (value: unknown) => value }, PanResponder: { create: () => ({ panHandlers: {} }) }, AppState: { addEventListener: () => ({ remove() {} }) } }));
 vi.mock("./geographic-course", () => ({ GeographicCourse: "GeographicCourse" }));

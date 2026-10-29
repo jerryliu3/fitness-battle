@@ -1,0 +1,184 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex,nofollow">
+  <title>Overtaek · Light and dark palette lab</title>
+  <style>
+    :root { font-family: Manrope, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; color: #142b3b; background: #eef1ef; --primary: #f7c948; }
+    * { box-sizing: border-box; }
+    body { margin: 0; }
+    button { font: inherit; cursor: pointer; }
+    button:focus-visible { outline: 3px solid #176c75; outline-offset: 3px; }
+    .wrap { max-width: 1450px; margin: auto; padding: 30px 28px 50px; }
+    .eyebrow { color: #176c75; text-transform: uppercase; font-size: 11px; letter-spacing: .14em; font-weight: 900; }
+    h1 { margin: 9px 0 8px; font-size: clamp(30px, 3vw, 45px); letter-spacing: -.05em; line-height: 1.05; }
+    .intro { max-width: 840px; margin: 0; color: #526774; font-size: 15px; line-height: 1.5; }
+    .control-panel { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 18px 32px; margin: 27px 0 22px; padding: 17px 18px; border: 1px solid #d8e0de; border-radius: 18px; background: #fff; }
+    .control-panel fieldset { min-width: 0; margin: 0; padding: 0; border: 0; }
+    .control-panel legend { margin-bottom: 9px; padding: 0; color: #5b6e77; font-size: 10px; font-weight: 900; letter-spacing: .1em; text-transform: uppercase; }
+    .control-row { display: flex; flex-wrap: wrap; gap: 6px; }
+    .choice { display: inline-flex; align-items: center; gap: 7px; min-height: 38px; padding: 7px 10px; border: 1px solid #d9e2df; border-radius: 10px; background: #f9faf8; color: #142b3b; font-size: 11px; font-weight: 800; }
+    .choice[aria-pressed="true"] { border-color: #142b3b; background: #142b3b; color: #fff; }
+    .choice i { width: 16px; height: 16px; border-radius: 5px; border: 1px solid #142b3b30; background: var(--swatch); }
+    .choice[aria-pressed="true"] i { border-color: #fff8; }
+    .shade-detail { margin: 8px 0 0; color: #657982; font-size: 11px; }
+    .same-rule { display: flex; align-items: center; gap: 8px; margin: 0 0 18px; padding: 11px 14px; border-radius: 12px; color: #314956; background: #dfeae5; font-size: 12px; line-height: 1.35; }
+    .same-rule b { white-space: nowrap; }
+    .gallery { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 18px; }
+    .gallery.paired { grid-template-columns: repeat(2, minmax(0,1fr)); }
+    .palette-card { min-width: 0; padding: 16px; border: 1px solid #d9e2df; border-radius: 20px; background: #fff; box-shadow: 0 10px 25px #142b3b0a; }
+    .card-head { min-height: 94px; }
+    .card-title { display: flex; align-items: center; gap: 8px; }
+    .number { display: inline-grid; place-items: center; width: 25px; height: 25px; border-radius: 8px; background: #142b3b; color: #fff; font-size: 11px; font-weight: 900; }
+    .card-title h2 { margin: 0; font-size: 18px; letter-spacing: -.035em; }
+    .card-head p { margin: 6px 0 0; color: #5c7079; font-size: 12px; line-height: 1.4; }
+    .swatches { display: flex; gap: 5px; align-items: center; margin-top: 9px; }
+    .swatches i { width: 16px; height: 16px; border-radius: 50%; border: 1px solid #142b3b19; }
+    .swatches span { margin-left: 5px; color: #5c7079; font-size: 10px; font-weight: 750; }
+    .phones { display: grid; grid-template-columns: 1fr; gap: 10px; }
+    .paired .phones { grid-template-columns: repeat(2, minmax(0,1fr)); }
+    .phone-wrap { min-width: 0; }
+    .mode-label { display: flex; justify-content: space-between; align-items: center; margin: 0 2px 6px; color: #5b6e77; font-size: 10px; font-weight: 900; letter-spacing: .09em; text-transform: uppercase; }
+    .mode-label span:last-child { font-size: 9px; letter-spacing: 0; text-transform: none; }
+    .phone { --canvas: #f8f9f6; --surface: #fff; --ink: #142b3b; --muted: #536570; --line: #dbe4e1; --soft: #e8f2f0; --nav: #ffffff; --nav-ink: #5b6974; --feature-ink: #fff; --feature-muted: #e3eff0; --secondary: #176c75; --feature: #176c75; position: relative; display: flex; flex-direction: column; height: 540px; overflow: hidden; border: 5px solid #202b32; border-radius: 31px; color: var(--ink); background: var(--canvas); }
+    .phone.dark { --canvas: #111f29; --surface: #1c2e38; --ink: #f7faf8; --muted: #bbccd0; --line: #324954; --soft: #263c45; --nav: #111f29; --nav-ink: #c5d6d8; --feature-muted: #d7e9ea; }
+    .status { display: flex; justify-content: space-between; flex: none; padding: 8px 15px 1px; font-size: 10px; font-weight: 900; }
+    .phone-content { flex: 1; min-height: 0; overflow: hidden; padding: 11px 12px 0; }
+    .head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+    .brand { display: flex; align-items: center; gap: 6px; font-size: 14px; font-weight: 900; letter-spacing: -.045em; }
+    .mark { color: var(--primary); font-size: 20px; line-height: .7; transform: rotate(-15deg); }
+    .avatar { display: grid; place-items: center; width: 27px; height: 27px; border: 1px solid var(--line); border-radius: 50%; background: var(--surface); font-size: 10px; }
+    .kicker { color: var(--secondary); font-size: 9px; font-weight: 900; letter-spacing: .11em; text-transform: uppercase; }
+    .phone.dark .kicker { color: var(--secondary); }
+    .title { margin: 3px 0 12px; font-size: 23px; line-height: 1; letter-spacing: -.055em; }
+    .mini-stats { display: flex; align-items: baseline; gap: 7px; margin: 8px 0 12px; }
+    .mini-stats strong { font-size: 28px; line-height: 1; letter-spacing: -.055em; }
+    .mini-stats span { color: var(--secondary); font-size: 10px; }
+    .chart { height: 93px; padding: 8px 5px 0 15px; border-bottom: 1px solid var(--line); background: linear-gradient(to bottom, transparent 50%, var(--line) 50%, transparent calc(50% + 1px)); }
+    .chart-bars { display: flex; justify-content: space-around; align-items: end; height: 68px; }
+    .chart-bars i { width: 12px; height: var(--h); border-radius: 5px 5px 0 0; background: var(--secondary); }
+    .chart-bars i.today { background: var(--primary); }
+    .chart-days { display: flex; justify-content: space-around; color: var(--muted); font-size: 8px; font-weight: 700; }
+    .section-row { display: flex; justify-content: space-between; align-items: baseline; gap: 5px; margin: 14px 0 8px; font-size: 11px; font-weight: 900; }
+    .section-row em { color: var(--secondary); font-style: normal; font-size: 9px; }
+    .hero { position: relative; overflow: hidden; padding: 13px 13px 14px; min-height: 110px; border-radius: 16px; background: var(--feature); color: var(--feature-ink); }
+    .hero:after { content: ""; position: absolute; width: 92px; height: 92px; right: -18px; bottom: -48px; border: 14px solid var(--primary); border-radius: 50%; opacity: .4; }
+    .hero small { position: relative; z-index: 1; color: var(--feature-muted); font-size: 9px; font-weight: 900; letter-spacing: .09em; text-transform: uppercase; }
+    .hero h3 { position: relative; z-index: 1; margin: 5px 0 3px; font-size: 18px; letter-spacing: -.04em; }
+    .hero p { position: relative; z-index: 1; margin: 0 0 9px; color: var(--feature-muted); font-size: 10px; }
+    .cta { position: relative; z-index: 1; display: inline-flex; align-items: center; min-height: 31px; padding: 7px 10px; border-radius: 9px; background: var(--primary); color: #142b3b; font-size: 10px; font-weight: 900; }
+    .soft-card { display: flex; align-items: center; gap: 8px; padding: 11px; border-radius: 13px; background: var(--soft); border: 1px solid var(--line); }
+    .soft-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--secondary); }
+    .soft-card b { font-size: 11px; } .soft-card small { display: block; margin-top: 2px; color: var(--secondary); font-size: 9px; }
+    .soft-card strong { margin-left: auto; color: var(--secondary); font-size: 13px; }
+    .row { display: flex; align-items: center; gap: 7px; padding: 10px 4px; border-bottom: 1px solid var(--line); font-size: 10px; }
+    .row .initial { display: grid; place-items: center; width: 24px; height: 24px; border-radius: 50%; color: var(--secondary); background: var(--soft); font-size: 8px; font-weight: 900; }
+    .row strong { margin-left: auto; font-size: 10px; }
+    .row.self { margin: 0 -4px; padding: 10px 8px; border-radius: 10px; border-bottom: 0; background: var(--soft); font-weight: 900; }
+    .row.self .initial { color: #142b3b; background: var(--primary); }
+    .panel { margin-top: 11px; padding: 12px; border: 1px solid var(--line); border-radius: 14px; background: var(--surface); }
+    .panel small { color: var(--secondary); font-size: 9px; font-weight: 900; letter-spacing: .08em; text-transform: uppercase; }
+    .panel strong { display: block; margin: 6px 0 3px; font-size: 24px; letter-spacing: -.05em; }
+    .panel p { margin: 0; color: var(--secondary); font-size: 9px; }
+    .track { height: 8px; overflow: hidden; margin-top: 11px; border-radius: 6px; background: var(--soft); }
+    .track i { display: block; width: 71%; height: 100%; border-radius: inherit; background: var(--primary); }
+    .tabs { display: flex; justify-content: space-around; flex: none; gap: 2px; padding: 6px 5px 13px; border-top: 1px solid var(--line); background: var(--nav); }
+    .tabs div { display: grid; justify-items: center; gap: 2px; width: 25%; padding: 4px 1px; color: var(--nav-ink); border-radius: 9px; font-size: 8px; font-weight: 800; }
+    .tabs div.active { background: var(--primary); color: #142b3b; }
+    .tabs b { font-size: 14px; line-height: 1; }
+    .indicator { position: absolute; bottom: 4px; left: calc(50% - 28px); width: 56px; height: 3px; border-radius: 3px; background: var(--nav-ink); opacity: .6; }
+    .footnote { margin-top: 14px; padding: 17px 18px; border: 1px solid #d8e0de; border-radius: 16px; background: #fff; color: #526774; font-size: 12px; line-height: 1.5; }
+    .footnote a { color: #176c75; font-weight: 800; }
+    @media (max-width: 1150px) { .gallery, .gallery.paired { grid-template-columns: repeat(2, minmax(0,1fr)); } }
+    @media (max-width: 750px) { .wrap { padding: 22px 14px 34px; } .gallery, .gallery.paired { grid-template-columns: 1fr; } }
+    @media (max-width: 540px) { .paired .phones { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <div class="eyebrow">Overtaek / color study / neutral refinement</div>
+    <h1>Stadium blue, Slate and Steel.</h1>
+    <p class="intro">Slate and Steel use slightly lighter, more silver-toned light-mode accents, paired with their original dark-mode shades. Stadium blue remains the reference. Every color keeps the same component roles across all three.</p>
+    <div class="control-panel">
+      
+      <fieldset><legend>Preview</legend><div class="control-row" id="mode-controls"></div></fieldset>
+      <fieldset><legend>Screen</legend><div class="control-row" id="screen-controls"></div></fieldset>
+      <fieldset><legend>Yellow primary · changes every concept</legend><div class="control-row" id="yellow-controls"></div><p class="shade-detail" id="shade-detail"></p></fieldset>
+    </div>
+    <p class="same-rule"><b>Fixed comparison:</b> The secondary hue changes; its placement stays consistent. Its dark/white text, neutral surfaces, light navigation and yellow primary areas keep the same roles.</p>
+    <section class="gallery" id="gallery" aria-label="Paired light and dark palette concepts"></section>
+    <aside class="footnote">The local Goalmaxxing <i>Atmospheres</i> study informed the range of moods (Harbor, Ion, Contour, Summit Night and Riverstone), while its “same Thursday” comparison rule informed this fixed-layout method. These are new Overtaek palettes, not copied Goalmaxxing themes. <a href="https://developer.apple.com/design/human-interface-guidelines/color" target="_blank" rel="noreferrer">Apple</a> and <a href="https://developer.android.com/design/ui/mobile/guides/styles/color" target="_blank" rel="noreferrer">Android</a> recommend separate light/dark color roles and consistent meaning; <a href="https://www.w3.org/WAI/WCAG22/Understanding/contrast-minimum" target="_blank" rel="noreferrer">WCAG</a> provides the text contrast thresholds used to vet these samples. Figures are fictional presentation data.</aside>
+  </main>
+  <script>
+    const yellows = [
+      { name: 'Current gold', hex: '#F7C948' },
+      { name: 'Sunflower', hex: '#F5BF35' },
+      { name: 'Citrine', hex: '#E9D645' },
+      { name: 'Honey', hex: '#F1B94C' },
+      { name: 'Soft sun', hex: '#F8DB60' }
+    ];
+    const palettes = [
+  {
+    "name": "Stadium blue",
+    "cue": "Reference \u00b7 Original blue with its coordinated dark-mode shades.",
+    "light": "#245EA8",
+    "dark": "#8BB9F2",
+    "featureDark": "#253D61",
+    "softLight": "#E7EEF9",
+    "softDark": "#273A50"
+  },
+  {
+    "name": "Slate",
+    "cue": "Refined \u00b7 Slightly lighter and more silver-toned in light mode; original dark shades.",
+    "light": "#637580",
+    "dark": "#B7C7D4",
+    "featureDark": "#33424E",
+    "softLight": "#E9EFF2",
+    "softDark": "#33424A"
+  },
+  {
+    "name": "Steel",
+    "cue": "Refined \u00b7 A lighter silver-blue in light mode; original dark shades.",
+    "light": "#62788A",
+    "dark": "#AABECE",
+    "featureDark": "#30414F",
+    "softLight": "#EAF0F4",
+    "softDark": "#303F49"
+  }
+];
+    function visiblePalettes() { return palettes; }
+    const screenNames = ['Home','Compete','Progress','Crew'];
+    const modeNames = ['Light','Dark','Paired'];
+    const state = { screen: 'Home', mode: 'Paired', yellow: 0 };
+    function rgb(hex) { return [1,3,5].map(i => parseInt(hex.slice(i,i+2),16)/255).map(v => v <= .04045 ? v/12.92 : ((v+.055)/1.055)**2.4); }
+    function contrast(a,b) { const l = h => { const [r,g,bl]=rgb(h); return .2126*r+.7152*g+.0722*bl; }; const [hi,lo]=[l(a),l(b)].sort((x,y)=>y-x); return ((hi+.05)/(lo+.05)).toFixed(1); }
+    function controls() {
+      document.getElementById('mode-controls').innerHTML = modeNames.map(n => `<button type="button" class="choice" data-mode="${n}" aria-pressed="${state.mode===n}">${n}</button>`).join('');
+      document.getElementById('screen-controls').innerHTML = screenNames.map(n => `<button type="button" class="choice" data-screen="${n}" aria-pressed="${state.screen===n}">${n}</button>`).join('');
+      document.getElementById('yellow-controls').innerHTML = yellows.map((y,i) => `<button type="button" class="choice" data-yellow="${i}" aria-pressed="${state.yellow===i}"><i style="--swatch:${y.hex}"></i>${y.name}</button>`).join('');
+      const y=yellows[state.yellow]; document.getElementById('shade-detail').textContent = `${y.hex} · navy button label ${contrast('#142B3B', y.hex)}:1 contrast`;
+      document.documentElement.style.setProperty('--primary', y.hex);
+    }
+    function body() {
+      if (state.screen === 'Home') return `<div class="mini-stats"><strong>3.5 hrs</strong><span>4 sessions this week</span></div><div class="chart" aria-label="Weekly training hours"><div class="chart-bars"><i style="--h:28px"></i><i style="--h:49px"></i><i style="--h:0px"></i><i style="--h:38px"></i><i style="--h:0px"></i><i class="today" style="--h:62px"></i><i style="--h:0px"></i></div><div class="chart-days"><span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span><span>S</span></div></div><div class="section-row">Your competition <em>See week →</em></div><div class="hero"><small>Running · current week</small><h3>7 / 8 place</h3><p>0.3 mi to Eli · next rival</p><span class="cta">View competition ↗</span></div><div class="section-row">Effort <em>Details →</em></div><div class="soft-card"><i class="soft-dot"></i><div><b>Open rating</b><small>Running · 0.6 mi to next mark</small></div><strong>1,001</strong></div><div class="section-row">Latest activity <em>All →</em></div><div class="row"><span class="initial">↗</span><span>Saturday run</span><strong>3.2 mi</strong></div>`;
+      if (state.screen === 'Compete') return `<div class="hero"><small>Running · current week</small><h3>7 / 8 place</h3><p>0.3 mi to Eli · next rival</p><span class="cta">Explore field ↗</span></div><div class="section-row">Standings <em>Full results →</em></div><div class="row"><span class="initial">EL</span><span>Elena</span><strong>19.2 mi</strong></div><div class="row"><span class="initial">ER</span><span>Eli</span><strong>17.8 mi</strong></div><div class="row self"><span class="initial">YOU</span><span>You</span><strong>17.5 mi</strong></div><div class="row"><span class="initial">JO</span><span>Jordan</span><strong>15.1 mi</strong></div><div class="section-row">This week <em>Replay →</em></div><div class="soft-card"><i class="soft-dot"></i><div><b>Moving up</b><small>Two places gained this week</small></div><strong>+2</strong></div><div class="panel"><small>Current round</small><strong>4 days left</strong><p>Monday to Monday · Eastern</p></div>`;
+      if (state.screen === 'Progress') return `<div class="hero"><small>Your training · this week</small><h3>3.5 hours</h3><p>Four sessions across three active days</p><span class="cta">View training ↗</span></div><div class="section-row">Training volume <em>History →</em></div><div class="chart" aria-label="Weekly training volume"><div class="chart-bars"><i style="--h:24px"></i><i style="--h:34px"></i><i style="--h:50px"></i><i style="--h:42px"></i><i style="--h:55px"></i><i class="today" style="--h:63px"></i><i style="--h:0px"></i></div><div class="chart-days"><span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span><span>S</span></div></div><div class="section-row">Effort score <em>How it works →</em></div><div class="soft-card"><i class="soft-dot"></i><div><b>Open rating</b><small>Running · your primary sport</small></div><strong>1,001</strong></div><div class="panel"><small>Lifetime distance</small><strong>126 mi</strong><p>42 sessions · 6 settled weeks</p><div class="track"><i></i></div></div>`;
+      return `<div class="hero"><small>Shared week · running</small><h3>Weekday miles</h3><p>Different paces. Same direction.</p><span class="cta">View crew ↗</span></div><div class="section-row">Together this week <em>Details →</em></div><div class="panel"><small>Shared distance</small><strong>50.0 mi</strong><p>37.3 mi target · 134% complete</p><div class="track"><i style="width:100%"></i></div></div><div class="section-row">Members <em>View all →</em></div><div class="row"><span class="initial">AL</span><span>Alice</span><strong>22.1 mi</strong></div><div class="row"><span class="initial">CA</span><span>Carla</span><strong>19.6 mi</strong></div><div class="row"><span class="initial">BO</span><span>Ben</span><strong>8.3 mi</strong></div><div class="section-row">Next step <em>Invite →</em></div><div class="soft-card"><i class="soft-dot"></i><div><b>Invite a teammate</b><small>Keep your shared week moving</small></div></div>`;
+    }
+    function phone(p,mode) {
+      const dark=mode==='Dark'; const feature=dark?p.featureDark:(p.featureLight||p.light); const vars=`--secondary:${dark?p.dark:p.light};--feature:${feature};--soft:${dark?p.softDark:p.softLight}${p.featureInk?`;--feature-ink:${p.featureInk};--feature-muted:${p.featureMuted}`:''}`;
+      const kicker={Home:'YOUR WEEK',Compete:'RUNNING · CURRENT WEEK',Progress:'YOUR TRAINING',Crew:'WEEKDAY MILES'}[state.screen];
+      return `<div class="phone-wrap"><div class="mode-label"><span>${mode} mode</span><span>${feature}</span></div><div class="phone ${dark?'dark':'light'}" style="${vars}" aria-label="${p.name} ${mode.toLowerCase()} ${state.screen.toLowerCase()} preview"><div class="status"><span>9:41</span><span>● ▰ ▰</span></div><div class="phone-content"><div class="head"><div class="brand"><span class="mark">◌</span>Overtaek</div><div class="avatar">A</div></div><div class="kicker">${kicker}</div><h3 class="title">${state.screen==='Home'?'Today':state.screen}</h3>${body()}</div><div class="tabs">${screenNames.map((n,i)=>`<div class="${n===state.screen?'active':''}"><b>${['⌂','⚑','⌁','♧'][i]}</b>${n}</div>`).join('')}</div><div class="indicator"></div></div></div>`;
+    }
+    function render() {
+      controls();
+      const gallery=document.getElementById('gallery'); gallery.classList.toggle('paired',state.mode==='Paired');
+      gallery.innerHTML=visiblePalettes().map((p,i)=>`<article class="palette-card"><div class="card-head"><div class="card-title"><span class="number">${i+1}</span><h2>${p.name}</h2></div><p>${p.cue}</p><div class="swatches"><i style="background:var(--primary)"></i><i style="background:${p.featureLight||p.light}"></i><i style="background:${p.featureDark}"></i><span>${p.fill ? `Feature surface · ${p.fill}` : `Yellow · ${p.light} · ${p.dark}`}</span></div></div><div class="phones">${(state.mode==='Paired'?['Light','Dark']:[state.mode]).map(m=>phone(p,m)).join('')}</div></article>`).join('');
+    }
+    document.querySelector('.control-panel').addEventListener('click',e=>{const b=e.target.closest('button[data-mode],button[data-screen],button[data-yellow]');if(!b)return;if(b.dataset.mode)state.mode=b.dataset.mode;if(b.dataset.screen)state.screen=b.dataset.screen;if(b.dataset.yellow!==undefined)state.yellow=Number(b.dataset.yellow);render();});
+    render();
+  </script>
+</body>
+</html>

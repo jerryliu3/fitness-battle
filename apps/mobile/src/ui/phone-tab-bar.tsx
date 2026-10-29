@@ -1,3 +1,4 @@
+import { createThemedStyles, useThemedStyles, useThemeColors } from "../theme";
 import { textStyle } from "./section";
 import { AppIcon } from "./app-icon";
 import {
@@ -40,6 +41,9 @@ export function PhoneTabBar({
   navigateToTab,
   emitter,
 }: PhoneTabBarProps) {
+  const SHELL_COLORS = useThemeColors();
+  const styles = useThemedStyles(stylesThemes);
+
   const insets = useSafeAreaInsets();
   return (
     <View
@@ -99,7 +103,7 @@ export function PhoneTabBar({
   );
 }
 
-const styles = StyleSheet.create({
+const stylesThemes = createThemedStyles((themeColors) => ({
   bar: {
     flexDirection: "row",
     gap: 6,
@@ -110,7 +114,7 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     borderWidth: 1,
     borderColor: "#ffffffcc",
-    shadowColor: SHELL_COLORS.ink,
+    shadowColor: themeColors.ink,
     shadowOpacity: 0.12,
     shadowRadius: 20,
     shadowOffset: { width: 0, height: 6 },
@@ -118,7 +122,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     backgroundColor: "#ffffffed",
     borderTopWidth: 1,
-    borderTopColor: SHELL_COLORS.line,
+    borderTopColor: themeColors.line,
   },
   tab: {
     flex: 1,
@@ -134,9 +138,9 @@ const styles = StyleSheet.create({
   },
   label: {
     ...textStyle("nav"),
-    color: SHELL_COLORS.muted
+    color: themeColors.muted
 },
   labelOn: {
-    color: SHELL_COLORS.starEmber,
+    color: themeColors.starEmber,
   },
-});
+}));

@@ -1,3 +1,5 @@
+import { createThemedStyles, useThemedStyles, useThemeColors } from "../theme";
+import { useFocusStyles } from "../ui/focus";
 import { SectionHeader, AppText } from "../ui/section";
 import { useState } from "react";
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
@@ -7,6 +9,10 @@ import { SHELL_COLORS as c } from "../theme";
 import { CompetitionReplayButton } from "./competition-replay";
 import { ResultCard } from "./result-card";
 export function WeeklyChapters({state}:{state:CompeteState}){
+  const c = useThemeColors();
+  const s = useThemedStyles(sThemes);
+  const f = useFocusStyles();
+
   const [sport,setSport]=useState<SportId|"all">(state.primary),[selected,setSelected]=useState<string|null>(null);
   const sports=[...new Set(state.periodResults.map(r=>r.sport))].sort();
   const rows=state.periodResults.filter(r=>(sport==="all"||r.sport===sport)&&r.track===competitionTrack(r.sport)).sort((a,b)=>b.periodStart.localeCompare(a.periodStart));
@@ -25,4 +31,4 @@ export function WeeklyChapters({state}:{state:CompeteState}){
     </>}
   </View>;
 }
-const s=StyleSheet.create({row:{flexDirection:"row",alignItems:"center",justifyContent:"space-between",gap:12},chapter:{flexDirection:"row",alignItems:"center",gap:12,paddingVertical:16,borderBottomWidth:1,borderBottomColor:c.line,minHeight:80},place:{width:52,height:56,borderRadius:14,borderBottomWidth:3,borderBottomColor:c.line,backgroundColor:c.soft,alignItems:"center",justifyContent:"center"}});
+const sThemes=createThemedStyles((themeColors) => ({row:{flexDirection:"row",alignItems:"center",justifyContent:"space-between",gap:12},chapter:{flexDirection:"row",alignItems:"center",gap:12,paddingVertical:16,borderBottomWidth:1,borderBottomColor:themeColors.line,minHeight:80},place:{width:52,height:56,borderRadius:14,borderBottomWidth:3,borderBottomColor:themeColors.line,backgroundColor:themeColors.soft,alignItems:"center",justifyContent:"center"}}));

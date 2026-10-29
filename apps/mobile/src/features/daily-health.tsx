@@ -1,3 +1,4 @@
+import { createThemedStyles, useThemedStyles, useHomeHealthColors } from "../theme";
 import { useState } from "react";
 import { Pressable, StyleSheet, View, useWindowDimensions } from "react-native";
 import Svg, { Line, Path } from "react-native-svg";
@@ -5,6 +6,9 @@ import { HOME_HEALTH_COLORS as colors, homeHealthMetrics, healthSignal, healthSi
 import { AppText } from "../ui/section";
 
 export function DailyHealth({ state }: { state: CompeteState }) {
+  const colors = useHomeHealthColors();
+  const s = useThemedStyles(sThemes);
+
   const metrics = homeHealthMetrics(state);
   const [expanded, setExpanded] = useState<string | null>(null);
   const { fontScale, width } = useWindowDimensions();
@@ -32,14 +36,14 @@ export function DailyHealth({ state }: { state: CompeteState }) {
     {selected && <View style={s.detail} accessibilityLiveRegion="polite"><AppText role="label" style={{ color: colors.text }}>{selected.name}</AppText><AppText style={{ color: colors.text }}>{selected.detail}</AppText>{selected.history.some(value => value != null) && <AppText role="caption" style={s.secondary}>The ring fills from zero to today’s reading. Its scale ends at the highest recorded reading in the last seven wake dates; it is not a goal.</AppText>}</View>}
   </View>;
 }
-const s = StyleSheet.create({
-  panel: { backgroundColor: colors.background, gap: 16 },
+const sThemes = createThemedStyles((themeColors) => ({
+  panel: { backgroundColor: themeColors.paper, gap: 16 },
   header: { flexDirection: "row", justifyContent: "space-between", alignItems: "baseline", flexWrap: "wrap", gap: 8 },
   grid: { flexDirection: "row", flexWrap: "wrap", gap: 10 },
-  tile: { padding: 14, minHeight: 200, alignItems: "center", borderWidth: 1, borderColor: colors.border, borderRadius: 20, backgroundColor: colors.tile, gap: 8 },
-  value: { textAlign: "center", color: colors.text, fontVariant: ["tabular-nums"] },
+  tile: { padding: 14, minHeight: 200, alignItems: "center", borderWidth: 1, borderColor: themeColors.line, borderRadius: 20, backgroundColor: themeColors.card, gap: 8 },
+  value: { textAlign: "center", color: themeColors.ink, fontVariant: ["tabular-nums"] },
   signal: { width: "100%", aspectRatio: 1 },
   reading: { ...StyleSheet.absoluteFill, alignItems: "center", justifyContent: "center", gap: 4 },
-  secondary: { color: colors.secondary },
-  detail: { backgroundColor: colors.tile, borderRadius: 12, padding: 14, gap: 6 },
-});
+  secondary: { color: themeColors.muted },
+  detail: { backgroundColor: themeColors.card, borderRadius: 12, padding: 14, gap: 6 },
+}));

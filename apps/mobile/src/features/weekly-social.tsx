@@ -1,3 +1,4 @@
+import { useFocusStyles } from "../ui/focus";
 import { AppText } from "../ui/section";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Pressable, ScrollView, Text, View } from "react-native";
@@ -20,6 +21,8 @@ export function WeeklySocialActions({
   result: PeriodResult;
   units: UnitSystem;
 }) {
+  const f = useFocusStyles();
+
   const { user, accessToken, offlineMode } = useAuth(),
     [data, setData] = useState<WeeklySocial | null>(null),
     [selected, setSelected] = useState(""),

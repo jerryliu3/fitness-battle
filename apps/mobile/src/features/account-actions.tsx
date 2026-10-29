@@ -1,3 +1,4 @@
+import { useFocusStyles } from "../ui/focus";
 import { AppText } from "../ui/section";
 import { useEffect, useRef, useState } from "react";
 import { Pressable, Text, TextInput, View } from "react-native";
@@ -8,6 +9,8 @@ import { mobileEnv } from "../lib/env";
 import { FocusButton, FocusSheet, f } from "../ui/focus";
 
 export function AccountActions() {
+  const f = useFocusStyles();
+
   const { user, offlineMode, accessToken, signOut } = useAuth();
   const { clearAccountData } = useCompeteStore();
   const [panel, setPanel] = useState<"report" | "delete" | null>(null);

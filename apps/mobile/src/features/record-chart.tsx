@@ -1,3 +1,4 @@
+import { useThemeColors } from "../theme";
 import { ChartSvg, ChartText } from "../ui/chart-text";
 
 import { chartTextProps } from "../ui/section";
@@ -29,6 +30,8 @@ export function RecordChart({
   now: Date;
   onSelect: (id: string) => void;
 }) {
+  const clubColors = useThemeColors();
+
   const chart = personalRecordChart(rows, now);
   if (!chart) return null;
   return (

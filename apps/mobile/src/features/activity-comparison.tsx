@@ -1,3 +1,4 @@
+import { createThemedStyles, useThemedStyles } from "../theme";
 import { useState } from "react";
 import { StyleSheet, View } from "react-native";
 import { activityComparisons, competeNow, type Activity, type CompeteState } from "@fitness-battle/shared";
@@ -6,6 +7,8 @@ import { Chip, ChipRow } from "../ui/chip";
 import { SHELL_COLORS as c } from "../theme";
 
 export function ActivityComparison({ activity, state }: { activity: Activity; state: CompeteState; compact?: boolean }) {
+  const s = useThemedStyles(sThemes);
+
   const comparisons = activityComparisons(activity, state.activities, state.units, competeNow(state));
   const [selected, setSelected] = useState<string>("time");
   if (!comparisons.length) return null;
@@ -36,13 +39,13 @@ export function ActivityComparison({ activity, state }: { activity: Activity; st
   </View>;
 }
 
-const s = StyleSheet.create({
+const sThemes = createThemedStyles((themeColors) => ({
   section: { gap: 14, paddingVertical: 8 },
   chart: { gap: 14, paddingVertical: 8 },
   barRow: { gap: 6 },
   barHeading: { flexDirection: "row", justifyContent: "space-between", gap: 8 },
-  track: { height: 12, backgroundColor: c.soft, borderRadius: 6, overflow: "hidden" },
+  track: { height: 12, backgroundColor: themeColors.soft, borderRadius: 6, overflow: "hidden" },
   bar: { height: 12, borderRadius: 6 },
-  current: { backgroundColor: c.tennis },
-  previous: { backgroundColor: c.fieldTeal },
-});
+  current: { backgroundColor: themeColors.tennis },
+  previous: { backgroundColor: themeColors.fieldTeal },
+}));

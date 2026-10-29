@@ -1,3 +1,4 @@
+import { useThemeColors } from "../theme";
 import { View, type ViewProps } from "react-native";
 import { SHELL_COLORS as c } from "../theme";
 
@@ -10,6 +11,8 @@ export function ChartFrame({
   children: React.ReactNode;
   style?: ViewProps["style"];
 }) {
+  const c = useThemeColors();
+
   return (
     <View
       accessibilityElementsHidden={!ready}

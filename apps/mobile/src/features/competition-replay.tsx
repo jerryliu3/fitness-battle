@@ -1,3 +1,5 @@
+import { createThemedStyles, useThemedStyles } from "../theme";
+import { useFocusStyles } from "../ui/focus";
 import { GeographicCourse } from "./geographic-course";
 import { useCompetitionCourse } from "./use-competition-course";
 import { FieldViewSwitcher } from "../ui/field-view-switcher";
@@ -40,6 +42,8 @@ export function CompetitionReplayButton({
   label?: string;
   variant?: "button" | "inline";
 }) {
+  const f = useFocusStyles();
+
   const [open, setOpen] = useState(false);
   const reduced = useReducedMotion();
   return (
@@ -98,6 +102,8 @@ export function CompetitionReplayButton({
 }
 
 function ReplayTimeline({ cursor, count, caption, onSeek }: { cursor: number; count: number; caption: string; onSeek: (cursor: number) => void }) {
+  const s = useThemedStyles(sThemes);
+
   const width = useRef(1), left = useRef(0);
   const latest = useRef({ count, onSeek }); latest.current = { count, onSeek };
   const pan = useMemo(() => PanResponder.create({
@@ -117,9 +123,13 @@ function ReplayTimeline({ cursor, count, caption, onSeek }: { cursor: number; co
   </View>;
 }
 function ReplayAction({ label, text, disabled, onPress, primary = false }: { label: string; text: string; disabled?: boolean; onPress: () => void; primary?: boolean }) {
+  const s = useThemedStyles(sThemes);
+
   return <Pressable accessibilityRole="button" accessibilityLabel={label} accessibilityState={{ disabled: Boolean(disabled) }} disabled={disabled} onPress={onPress} style={[s.action, primary && s.primary, disabled && { opacity: .4 }]}><AppText role="label">{text}</AppText></Pressable>;
 }
 function ReplayViewer({ state, selection, initialDimension, onClose }: { state: CompeteState; selection: CompetitionReplaySelection; initialDimension: "2d" | "3d" | "4d"; onClose: () => void }) {
+  const s = useThemedStyles(sThemes);
+
   const { user, accessToken, offlineMode } = useAuth();
   const { debugActive } = useCompeteStore();
   const { blocks } = useAthleteBlocks();
@@ -212,17 +222,17 @@ function ReplayViewer({ state, selection, initialDimension, onClose }: { state: 
     </>}
   </View>;
 }
-const s = StyleSheet.create({
+const sThemes = createThemedStyles((themeColors) => ({
   header: { flexDirection: "row", alignItems: "center", gap: 10, padding: 10 },
   message: { flex: 1, alignItems: "center", justifyContent: "center", gap: 16, padding: 24 },
   scene: { flex: 1, minHeight: 100, overflow: "hidden" },
-  follow: { position: "absolute", bottom: 12, right: 12, minHeight: 44, justifyContent: "center", backgroundColor: "white", borderWidth: 1, borderColor: c.line, borderRadius: 12, paddingHorizontal: 12 },
-  controls: { gap: 4, paddingHorizontal: 16, paddingTop: 10, paddingBottom: 8, borderTopWidth: 1, borderColor: c.line, backgroundColor: c.paper },
+  follow: { position: "absolute", bottom: 12, right: 12, minHeight: 44, justifyContent: "center", backgroundColor: "white", borderWidth: 1, borderColor: themeColors.line, borderRadius: 12, paddingHorizontal: 12 },
+  controls: { gap: 4, paddingHorizontal: 16, paddingTop: 10, paddingBottom: 8, borderTopWidth: 1, borderColor: themeColors.line, backgroundColor: themeColors.paper },
   timeline: { height: 44, justifyContent: "center", marginHorizontal: 10 },
-  rail: { height: 4, borderRadius: 2, backgroundColor: c.line, overflow: "hidden" },
+  rail: { height: 4, borderRadius: 2, backgroundColor: themeColors.line, overflow: "hidden" },
   fill: { height: 4, backgroundColor: "#176c75" },
   thumb: { position: "absolute", top: 12, width: 20, height: 20, marginLeft: -10, borderRadius: 10, backgroundColor: "#176c75", borderWidth: 2, borderColor: "white" },
   actions: { flexDirection: "row", flexWrap: "wrap", justifyContent: "center", gap: 3, marginBottom: 4 },
-  action: { minWidth: 44, minHeight: 44, paddingHorizontal: 8, alignItems: "center", justifyContent: "center", borderRadius: 12, backgroundColor: "white", borderWidth: 1, borderColor: c.line },
-  primary: { backgroundColor: c.tennis, minWidth: 66 },
-});
+  action: { minWidth: 44, minHeight: 44, paddingHorizontal: 8, alignItems: "center", justifyContent: "center", borderRadius: 12, backgroundColor: "white", borderWidth: 1, borderColor: themeColors.line },
+  primary: { backgroundColor: themeColors.tennis, minWidth: 66 },
+}));

@@ -1,3 +1,4 @@
+import { useThemeColors } from "../theme";
 import { Circle, Defs, ClipPath, Image as SvgImage, G, Path, Rect, Text as SvgText } from "react-native-svg";
 import { PERSON_ICON_PATH, type ArenaSceneLane } from "@fitness-battle/shared";
 import { chartTextProps } from "./section";
@@ -7,6 +8,8 @@ import { SHELL_COLORS as c } from "../theme";
 export function AthletePennant({ lane: l, x, y, detail, prefix }: {
   lane: Pick<ArenaSceneLane, "name" | "you" | "avatarUrl">; x: number; y: number; detail: string; prefix: string;
 }) {
+  const c = useThemeColors();
+
   return <G>
                     <Path d={`M0 0 L${x+146/2} ${y>0?y:y+46}`} fill="none" stroke={c.secondary} strokeWidth={1.2}/>
                     <Rect x={x} y={y+2} width={146} height={46} rx={12} fill={c.ink} opacity={.1}/>

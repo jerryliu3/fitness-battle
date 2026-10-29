@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex,nofollow">
+  <title>Overtaek · Color use study</title>
+  <style>
+    :root { font-family: Manrope, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; color: #142b3b; background: #edf0ed; }
+    * { box-sizing: border-box; }
+    body { margin: 0; }
+    button { font: inherit; cursor: pointer; }
+    button:focus-visible { outline: 3px solid #176c75; outline-offset: 3px; }
+    .wrap { max-width: 1840px; margin: auto; padding: 32px 28px 48px; }
+    .eyebrow { margin: 0 0 8px; color: #176c75; font-size: 11px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; }
+    h1 { margin: 0; font-size: clamp(28px, 3vw, 42px); letter-spacing: -.045em; line-height: 1.05; }
+    .intro { margin: 12px 0 0; max-width: 730px; color: #536772; font-size: 15px; line-height: 1.5; }
+    .bar { display: flex; align-items: end; justify-content: space-between; flex-wrap: wrap; gap: 18px; margin: 28px 0 24px; padding-bottom: 16px; border-bottom: 1px solid #d7dfdc; }
+    .bar-label { margin: 0 0 8px; font-size: 11px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; color: #60737a; }
+    .screen-switch { display: inline-flex; gap: 4px; padding: 4px; border-radius: 13px; background: #fff; border: 1px solid #dce3e0; }
+    .screen-switch button { border: 0; border-radius: 10px; padding: 9px 14px; color: #526773; background: transparent; font-size: 13px; font-weight: 700; }
+    .screen-switch button[aria-pressed="true"] { color: #fff; background: #142b3b; }
+    .hint { max-width: 390px; margin: 0; color: #60737a; font-size: 13px; line-height: 1.4; }
+    .concepts { display: grid; grid-template-columns: repeat(5, minmax(256px, 1fr)); gap: 18px; align-items: start; }
+    .concept { min-width: 0; }
+    .concept-head { min-height: 116px; padding: 0 3px; }
+    .concept-number { display: inline-grid; place-items: center; width: 25px; height: 25px; margin-right: 7px; color: white; background: #142b3b; border-radius: 8px; font-size: 12px; font-weight: 800; vertical-align: 2px; }
+    .concept h2 { display: inline; margin: 0; font-size: 18px; letter-spacing: -.03em; }
+    .concept-head p { margin: 8px 0 10px; color: #536772; font-size: 12px; line-height: 1.38; }
+    .meter { display: flex; align-items: center; gap: 4px; }
+    .meter i { display: block; width: 19px; height: 5px; background: #d6dfdb; border-radius: 4px; }
+    .meter i.on { background: #dfad3c; }
+    .meter span { margin-left: 5px; font-size: 10px; font-weight: 800; color: #697981; letter-spacing: .05em; text-transform: uppercase; }
+    .phone { --canvas: #f8f9f6; --surface: #fff; --ink: #142b3b; --muted: #637482; --line: #e3e9e7; --primary: #f7c948; --secondary: #176c75; --secondary-soft: #eef3f1; --hero: #fff; --hero-ink: #142b3b; --hero-muted: #637482; --accent-soft: #fff5d1; --nav: #fff; --nav-active: #142b3b; --nav-ink: #142b3b; --chart: #176c75; --panel: #fff; --eyebrow: #637482; position: relative; display: flex; flex-direction: column; width: 100%; height: 620px; border: 6px solid #1c2930; border-radius: 36px; overflow: hidden; background: var(--canvas); color: var(--ink); box-shadow: 0 14px 30px #2236411a; }
+    .v2 { --canvas: #faf8f1; --secondary-soft: #e9f3f0; --hero: #fff5d1; --hero-muted: #4f6265; --nav-ink: #142b3b; --panel: #f2f8f5; }
+    .v3 { --canvas: #eaf3f0; --line: #d5e6df; --secondary-soft: #d5ece6; --hero: #176c75; --hero-ink: #fff; --hero-muted: #d5ece6; --nav-active: #fff0bd; --panel: #e0efe9; --eyebrow: #176c75; }
+    .v4 { --canvas: #f7f8f4; --hero: #142b3b; --hero-ink: #fff; --hero-muted: #c3d4d8; --secondary-soft: #d9eee8; --nav: #142b3b; --nav-active: #f7c948; --nav-ink: #d6e3e4; --panel: #fff2c2; --chart: #176c75; }
+    .v5 { --canvas: #102630; --surface: #193640; --ink: #f8faf7; --muted: #b5c9cb; --line: #2b4b53; --secondary: #82cfc2; --secondary-soft: #23454d; --hero: #28535a; --hero-ink: #fff; --hero-muted: #d0e4e0; --accent-soft: #5e542c; --nav: #102630; --nav-active: #f7c948; --nav-ink: #c5d9d9; --chart: #82cfc2; --panel: #254a50; --eyebrow: #a8dcd3; }
+    .status { height: 29px; flex: none; padding: 8px 18px 0; display: flex; justify-content: space-between; font-size: 11px; font-weight: 800; }
+    .phone-inner { flex: 1; overflow: hidden; padding: 5px 14px 0; }
+    .app-head { display: flex; justify-content: space-between; align-items: center; margin: 6px 0 18px; }
+    .brand { display: flex; align-items: center; gap: 7px; font-weight: 900; font-size: 16px; letter-spacing: -.045em; }
+    .brand-mark { display: flex; align-items: center; gap: 2px; width: 19px; height: 23px; }
+    .brand-mark i { width: 5px; height: 13px; border: 2px solid #dfad3c; border-radius: 9px; transform: rotate(27deg); }
+    .brand-mark i:nth-child(2) { height: 18px; border-color: #a3acb2; }
+    .avatar { display: grid; place-items: center; width: 29px; height: 29px; border-radius: 50%; border: 1px solid var(--line); background: var(--surface); color: var(--ink); font-size: 12px; font-weight: 800; }
+    .section-top { display: flex; justify-content: space-between; align-items: end; margin-bottom: 11px; }
+    .kicker { color: var(--eyebrow); font-size: 9px; font-weight: 900; letter-spacing: .11em; text-transform: uppercase; }
+    .page-title { margin: 2px 0 0; font-size: 23px; line-height: 1.05; letter-spacing: -.055em; }
+    .mini-action { display: inline-block; padding: 7px 8px; border-radius: 9px; color: var(--ink); background: var(--secondary-soft); font-size: 10px; font-weight: 800; }
+    .metric-row { display: flex; align-items: baseline; gap: 7px; margin: 2px 0 12px; }
+    .metric-row strong { font-size: 29px; letter-spacing: -.065em; }
+    .metric-row span { font-size: 10px; color: var(--muted); }
+    .chart { height: 108px; position: relative; padding: 13px 6px 7px 23px; border-bottom: 1px solid var(--line); }
+    .chart-rule { position: absolute; left: 23px; right: 2px; height: 1px; border-top: 1px dashed var(--line); }
+    .chart-rule.r1 { top: 18px; } .chart-rule.r2 { top: 59px; }
+    .chart-label { position: absolute; left: 0; color: var(--muted); font-size: 8px; }
+    .chart-label.l1 { top: 13px; } .chart-label.l2 { top: 55px; } .chart-label.l3 { bottom: 11px; }
+    .chart-bars { position: relative; z-index: 1; display: flex; align-items: end; justify-content: space-around; height: 74px; }
+    .chart-bars i { width: 13px; height: var(--h); border-radius: 6px 6px 0 0; background: var(--chart); opacity: .83; }
+    .chart-bars i.today { background: var(--primary); opacity: 1; }
+    .chart-days { display: flex; justify-content: space-around; margin-left: 1px; color: var(--muted); font-size: 8px; font-weight: 700; }
+    .link-row { display: flex; justify-content: space-between; margin: 12px 0 15px; padding-bottom: 13px; border-bottom: 1px solid var(--line); font-size: 11px; font-weight: 800; }
+    .link-row span:last-child { color: var(--secondary); }
+    .hero { position: relative; padding: 15px; min-height: 124px; border-radius: 18px; background: var(--hero); color: var(--hero-ink); overflow: hidden; border: 1px solid var(--line); }
+    .hero:after { content: ""; position: absolute; width: 125px; height: 125px; right: -22px; bottom: -60px; border: 18px solid color-mix(in srgb, var(--primary) 55%, transparent); border-radius: 50%; opacity: .7; }
+    .hero small { position: relative; z-index: 1; color: var(--hero-muted); font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: .08em; }
+    .hero h3 { position: relative; z-index: 1; margin: 7px 0 3px; font-size: 19px; letter-spacing: -.045em; }
+    .hero p { position: relative; z-index: 1; margin: 0 0 11px; color: var(--hero-muted); font-size: 11px; }
+    .cta { position: relative; z-index: 1; display: inline-flex; align-items: center; border-radius: 10px; min-height: 34px; padding: 8px 12px; background: var(--primary); color: #142b3b; font-size: 11px; font-weight: 900; }
+    .secondary-title { display: flex; justify-content: space-between; align-items: baseline; margin: 18px 0 8px; font-size: 13px; font-weight: 900; }
+    .secondary-title span { color: var(--secondary); font-size: 10px; }
+    .activity { display: flex; align-items: center; gap: 10px; padding: 11px 10px; border-radius: 14px; background: var(--surface); border: 1px solid var(--line); }
+    .activity-icon { display: grid; place-items: center; width: 29px; height: 29px; border-radius: 10px; background: var(--secondary-soft); color: var(--secondary); font-size: 14px; font-weight: 900; }
+    .activity b { display: block; font-size: 11px; } .activity small { display: block; margin-top: 2px; color: var(--muted); font-size: 9px; }
+    .activity-value { margin-left: auto; white-space: nowrap; font-size: 11px; font-weight: 900; }
+    .tabbar { display: flex; justify-content: space-around; gap: 1px; padding: 7px 7px 15px; border-top: 1px solid var(--line); background: var(--nav); }
+    .tabbar div { display: grid; justify-items: center; gap: 2px; width: 25%; padding: 5px 2px; border-radius: 10px; color: var(--nav-ink); font-size: 8px; font-weight: 800; }
+    .tabbar div.active { color: #142b3b; background: var(--nav-active); }
+    .v1 .tabbar div.active, .v2 .tabbar div.active { color: #f7c948; }
+    .v4 .tabbar div.active, .v5 .tabbar div.active { color: #142b3b; }
+    .tabicon { font-size: 16px; line-height: 1; font-weight: 500; }
+    .home-indicator { position: absolute; bottom: 4px; left: calc(50% - 33px); width: 66px; height: 3px; border-radius: 2px; background: var(--ink); opacity: .5; }
+    .swatches { display: flex; align-items: center; margin: 14px 2px 10px; }
+    .swatches i { display: inline-block; width: 23px; height: 23px; margin-right: -4px; border-radius: 50%; border: 2px solid #edf0ed; }
+    .concept-note { margin: 0 2px; color: #536772; font-size: 12px; line-height: 1.4; }
+    .stack { display: flex; gap: 7px; margin: 12px 0 14px; }
+    .stack span { padding: 6px 9px; border: 1px solid var(--line); border-radius: 8px; color: var(--ink); background: var(--surface); font-size: 10px; font-weight: 800; }
+    .stack span.active { background: var(--ink); color: var(--surface); }
+    .v5 .stack span.active { background: #f7c948; color: #142b3b; }
+    .standings { overflow: hidden; border-radius: 16px; border: 1px solid var(--line); background: var(--surface); }
+    .leader { display: flex; justify-content: space-between; align-items: center; padding: 11px; background: var(--panel); }
+    .leader b { font-size: 13px; } .leader span { font-size: 10px; font-weight: 800; color: var(--secondary); }
+    .rank { display: flex; align-items: center; gap: 9px; padding: 12px 10px; border-top: 1px solid var(--line); font-size: 11px; }
+    .rank.self { background: var(--accent-soft); color: #142b3b; }
+    .v5 .rank.self { color: #fff; }
+    .rank-no { width: 18px; color: var(--muted); font-weight: 900; } .rank.self .rank-no { color: inherit; }
+    .rank-avatar { display: grid; place-items: center; width: 25px; height: 25px; border-radius: 50%; background: var(--secondary-soft); color: var(--secondary); font-size: 9px; font-weight: 800; }
+    .rank.self .rank-avatar { background: #f7c948; color: #142b3b; }
+    .rank strong { margin-left: auto; font-size: 11px; }
+    .card { margin-top: 12px; padding: 15px; border-radius: 16px; background: var(--surface); border: 1px solid var(--line); }
+    .card .overline { color: var(--muted); font-size: 9px; font-weight: 900; letter-spacing: .08em; text-transform: uppercase; }
+    .big-number { margin: 7px 0 0; font-size: 34px; line-height: 1; letter-spacing: -.065em; font-weight: 800; }
+    .card p { color: var(--muted); font-size: 10px; line-height: 1.4; }
+    .progress-track { height: 9px; border-radius: 8px; background: var(--secondary-soft); overflow: hidden; }
+    .progress-track i { display: block; width: 68%; height: 100%; border-radius: inherit; background: var(--secondary); }
+    .v4 .progress-track i { background: #f7c948; } .v5 .progress-track i { background: #f7c948; }
+    .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; margin-top: 12px; }
+    .stat { padding: 13px; border-radius: 14px; background: var(--panel); border: 1px solid var(--line); }
+    .stat b { display: block; font-size: 21px; letter-spacing: -.05em; } .stat small { color: var(--muted); font-size: 9px; }
+    .crew-avatars { display: flex; margin: 12px 0 0; } .crew-avatars i { display: grid; place-items: center; width: 27px; height: 27px; margin-right: -6px; border: 2px solid var(--hero); border-radius: 50%; background: #f7c948; color: #142b3b; font-style: normal; font-size: 8px; font-weight: 900; }
+    .crew-avatars i:nth-child(even) { background: #a9d2c8; }
+    .research { margin: 35px 0 0; padding: 20px 22px; background: #fff; border: 1px solid #dce3e0; border-radius: 18px; }
+    .research h2 { margin: 0 0 9px; font-size: 17px; }
+    .research p { margin: 0; color: #536772; font-size: 13px; line-height: 1.5; }
+    .research a { color: #176c75; font-weight: 750; }
+    @media (max-width: 1490px) { .concepts { display: flex; overflow-x: auto; padding: 0 0 20px; scroll-snap-type: x mandatory; } .concept { flex: 0 0 290px; scroll-snap-align: start; } }
+    @media (max-width: 650px) { .wrap { padding: 22px 15px 34px; } .concept-head { min-height: 106px; } .concept { flex-basis: 280px; } .hint { max-width: none; } }
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <p class="eyebrow">Overtaek / design study / October 2026</p>
+    <h1>How much color should the app carry?</h1>
+    <p class="intro">Five escalating directions on the same four screens. All retain yellow primary actions and navy as the brand anchor; the comparison changes the canvas, card emphasis, secondary teal, and navigation.</p>
+    <div class="bar">
+      <div>
+        <p class="bar-label">Compare the same screen across every direction</p>
+        <div class="screen-switch" role="group" aria-label="Preview screen">
+          <button type="button" data-screen="home" aria-pressed="true">Home</button>
+          <button type="button" data-screen="compete" aria-pressed="false">Compete</button>
+          <button type="button" data-screen="progress" aria-pressed="false">Progress</button>
+          <button type="button" data-screen="crew" aria-pressed="false">Crew</button>
+        </div>
+      </div>
+      <p class="hint">Presentation concepts with fictional preview figures. Choose the color system first; no product behavior or scoring changes are implied.</p>
+    </div>
+    <section class="concepts" id="concepts" aria-label="Five color directions"></section>
+    <aside class="research">
+      <h2>What the references suggest</h2>
+      <p>The supplied Strava, Nike Run Club, Google Fit, AllTrails, Peloton, WHOOP and Sweatcoin screens span a useful range: restrained white lists, colored action accents, focused tinted cards, and immersive dark or saturated home screens. Apple and Android recommend consistent color roles, prominent primary actions, and calm surfaces that keep controls legible. <a href="https://developer.apple.com/design/human-interface-guidelines/color" target="_blank" rel="noreferrer">Apple color guidance ↗</a> · <a href="https://developer.android.com/design/ui/mobile/guides/styles/color" target="_blank" rel="noreferrer">Android color guidance ↗</a> · <a href="https://www.whoop.com/us/en/thelocker/everything-whoop-launched-in-2025/" target="_blank" rel="noreferrer">WHOOP home redesign ↗</a></p>
+    </aside>
+  </main>
+  <script>
+    const options = [
+      { id: 'v1', name: 'Action signal', level: 1, description: 'Keep the warm white canvas. Put yellow on every principal CTA and selected navigation.', note: 'Lowest risk. Sharper actions, almost no new surface color.', swatches: ['#f8f9f6','#ffffff','#f7c948','#176c75','#142b3b'] },
+      { id: 'v2', name: 'Warm highlights', level: 2, description: 'Add pale yellow moments and soft teal progress panels on a slightly warmer canvas.', note: 'Friendly and familiar; useful for milestones without crowding lists.', swatches: ['#faf8f1','#fff5d1','#f7c948','#e9f3f0','#142b3b'] },
+      { id: 'v3', name: 'Cool field', level: 3, description: 'Switch the whole canvas to a pale teal mist. Use a teal feature card and white data surfaces.', note: 'A clear background change that still reads as a conventional light app.', swatches: ['#eaf3f0','#ffffff','#176c75','#f7c948','#142b3b'] },
+      { id: 'v4', name: 'Club contrast', level: 4, description: 'Keep the neutral canvas, but give hero panels and bottom navigation deep navy.', note: 'Most athletic in light mode; protect dense content with white cards.', swatches: ['#f7f8f4','#142b3b','#f7c948','#d9eee8','#ffffff'] },
+      { id: 'v5', name: 'Night arena', level: 5, description: 'Use navy across the entire shell, with lifted dark surfaces, teal data and yellow actions.', note: 'Immersive option for a full dark appearance; needs complete state coverage.', swatches: ['#102630','#193640','#28535a','#82cfc2','#f7c948'] }
+    ];
+    const titles = { home: ['Today', 'YOUR WEEK'], compete: ['Compete', 'RUNNING · CURRENT WEEK'], progress: ['Progress', 'YOUR TRAINING'], crew: ['Crew', 'WEEKDAY MILES'] };
+    const icon = { home: '⌂', compete: '⚑', progress: '⌁', crew: '♧' };
+    let currentScreen = 'home';
+    function home() { return `<div class="metric-row"><strong>3.5 hrs</strong><span>4 sessions this week</span></div><div class="chart" aria-label="Weekly training hours chart"><span class="chart-label l1">2h</span><span class="chart-label l2">1h</span><span class="chart-label l3">0</span><i class="chart-rule r1"></i><i class="chart-rule r2"></i><div class="chart-bars"><i style="--h:28px"></i><i style="--h:52px"></i><i style="--h:0px"></i><i style="--h:39px"></i><i style="--h:0px"></i><i class="today" style="--h:67px"></i><i style="--h:0px"></i></div><div class="chart-days"><span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span><span>S</span></div></div><div class="link-row"><span>Weekly training</span><span>See your week →</span></div><div class="hero"><small>Running · current field</small><h3>7 / 8 place</h3><p>0.3 mi to Eli · next rival</p><span class="cta">View competition ↗</span></div><div class="secondary-title">Latest activity <span>See all →</span></div><div class="activity"><div class="activity-icon">↗</div><div><b>Saturday run</b><small>Oct 24 · Running</small></div><div class="activity-value">3.2 mi</div></div>`; }
+    function compete() { return `<div class="stack"><span class="active">Standings</span><span>2D map</span><span>3D field</span></div><div class="hero"><small>Week 43 · running</small><h3>7 / 8 place</h3><p>0.3 mi to Eli · next rival</p><span class="cta">Explore field ↗</span></div><div class="secondary-title">Standings <span>Full results →</span></div><div class="standings"><div class="leader"><b>Open distance</b><span>Ends Monday</span></div><div class="rank"><span class="rank-no">5</span><span class="rank-avatar">EL</span><span>Elena</span><strong>19.2 mi</strong></div><div class="rank"><span class="rank-no">6</span><span class="rank-avatar">ER</span><span>Eli</span><strong>17.8 mi</strong></div><div class="rank self"><span class="rank-no">7</span><span class="rank-avatar">YOU</span><span>You</span><strong>17.5 mi</strong></div><div class="rank"><span class="rank-no">8</span><span class="rank-avatar">JO</span><span>Jordan</span><strong>15.1 mi</strong></div></div><div class="card"><div class="overline">Your movement</div><div class="big-number">+2 places</div><p>This week so far</p></div>`; }
+    function progress() { return `<div class="stack"><span class="active">Week</span><span>Month</span><span>Year</span></div><div class="hero"><small>Your training</small><h3>3.5 hours this week</h3><p>Four sessions across three active days</p><span class="cta">View training ↗</span></div><div class="secondary-title">Effort score <span>How it works →</span></div><div class="card"><div class="overline">Current open rating</div><div class="big-number">1,001</div><p>Running · 0.6 mi to the next mark</p><div class="progress-track"><i></i></div></div><div class="secondary-title">At a glance <span>All records →</span></div><div class="stat-grid"><div class="stat"><b>42</b><small>Sessions</small></div><div class="stat"><b>126</b><small>Lifetime mi</small></div><div class="stat"><b>6</b><small>Settled weeks</small></div><div class="stat"><b>11</b><small>Overtakes</small></div></div>`; }
+    function crew() { return `<div class="hero"><small>Shared week · running</small><h3>Weekday miles</h3><p>Different paces. Same direction.</p><div class="crew-avatars"><i>AL</i><i>BO</i><i>CA</i><i>EL</i></div></div><div class="secondary-title">Our shared week <span>Details →</span></div><div class="card"><div class="overline">Distance together</div><div class="big-number">50.0 <span style="font-size:16px">mi</span></div><p>37.3 mi shared target · 134% completed</p><div class="progress-track"><i style="width:100%"></i></div></div><div class="secondary-title">Members <span>View all →</span></div><div class="standings"><div class="rank"><span class="rank-avatar">AL</span><span>Alice</span><strong>22.1 mi</strong></div><div class="rank"><span class="rank-avatar">CA</span><span>Carla</span><strong>19.6 mi</strong></div><div class="rank"><span class="rank-avatar">BO</span><span>Ben</span><strong>8.3 mi</strong></div></div><div class="card"><div class="overline">Crew action</div><p>Bring another athlete into your week.</p><span class="cta">Invite a teammate ↗</span></div>`; }
+    const screens = { home, compete, progress, crew };
+    function render() {
+      document.getElementById('concepts').innerHTML = options.map(o => `<article class="concept"><div class="concept-head"><span class="concept-number">${o.level}</span><h2>${o.name}</h2><p>${o.description}</p><div class="meter" aria-label="Color coverage ${o.level} of 5">${[1,2,3,4,5].map(i => `<i class="${i <= o.level ? 'on' : ''}"></i>`).join('')}<span>Color coverage</span></div></div><div class="phone ${o.id}" aria-label="${o.name} preview of ${currentScreen}"><div class="status"><span>9:41</span><span>● ▰ ▰</span></div><div class="phone-inner"><div class="app-head"><div class="brand"><span class="brand-mark"><i></i><i></i></span>Overtaek</div><span class="avatar">A</span></div><div class="section-top"><div><div class="kicker">${titles[currentScreen][1]}</div><h3 class="page-title">${titles[currentScreen][0]}</h3></div><span class="mini-action">${currentScreen === 'home' ? 'Sync' : 'This week⌄'}</span></div>${screens[currentScreen]()}</div><div class="tabbar">${['home','compete','progress','crew'].map(t => `<div class="${t === currentScreen ? 'active' : ''}"><span class="tabicon">${icon[t]}</span>${t[0].toUpperCase()+t.slice(1)}</div>`).join('')}</div><div class="home-indicator"></div></div><div class="swatches">${o.swatches.map(c => `<i style="background:${c}" title="${c}"></i>`).join('')}</div><p class="concept-note">${o.note}</p></article>`).join('');
+      document.querySelectorAll('.screen-switch button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.screen === currentScreen)));
+    }
+    document.querySelector('.screen-switch').addEventListener('click', e => { const b = e.target.closest('button[data-screen]'); if (!b) return; currentScreen = b.dataset.screen; render(); });
+    render();
+  </script>
+</body>
+</html>

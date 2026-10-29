@@ -1,3 +1,4 @@
+import { useThemeColors } from "../../src/theme";
 import { textStyle } from "../../src/ui/section";
 import { NativeTabs } from "expo-router/unstable-native-tabs";
 import { Platform, View } from "react-native";
@@ -7,6 +8,8 @@ import { PhoneTabBar } from "../../src/ui/phone-tab-bar";
 import { SHELL_COLORS } from "../../src/theme";
 
 export default function TabLayout() {
+  const SHELL_COLORS = useThemeColors();
+
   if (Platform.OS === "ios") return <View style={{ flex: 1 }}><AppHeader />
     <NativeTabs labelStyle={textStyle("nav")} tintColor={SHELL_COLORS.ink} blurEffect="systemUltraThinMaterialLight" backgroundColor="#ffffff" disableTransparentOnScrollEdge>
       <NativeTabs.Trigger name="today"><NativeTabs.Trigger.Icon sf="house" /><NativeTabs.Trigger.Label>Home</NativeTabs.Trigger.Label></NativeTabs.Trigger>

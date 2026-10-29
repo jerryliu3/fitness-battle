@@ -1,3 +1,4 @@
+import { useFocusStyles } from "../ui/focus";
 import { SectionStack, AppText } from "../ui/section";
 import { MotionStep } from "../ui/motion-step";
 import { useAuth } from "../lib/auth";
@@ -27,6 +28,8 @@ function Round({
   rows: PeriodResult[];
   onClose: () => void;
 }) {
+  const f = useFocusStyles();
+
   const [next, setNext] = useState(false);
   const router = useRouter();
   return (

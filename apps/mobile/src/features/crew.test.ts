@@ -83,6 +83,7 @@ vi.mock("../ui/focus", () => ({
   FocusButton: "FocusButton",
   FocusSheet: "Sheet",
   f: {},
+  useFocusStyles: () => ({}),
 }));
 vi.mock("./crew-relay",()=>({CrewRelay:"CrewRelay"}));
 import { CrewHub } from "./crew";

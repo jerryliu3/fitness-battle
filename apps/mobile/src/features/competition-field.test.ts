@@ -34,7 +34,7 @@ vi.mock("../ui/icon-button", () => ({ IconButton: "IconButton" }));
 vi.mock("../ui/polished-racer", () => ({ PolishedRacer: "PolishedRacer" }));
 vi.mock("../ui/use-reduced-motion", () => ({ useReducedMotion: () => true }));
 vi.mock("../ui/field-course", () => ({ FieldOverview: "FieldOverview", useFieldAppearance: () => [defaultFieldAppearance, vi.fn()] }));
-vi.mock("../ui/focus", () => ({ f: {} }));
+vi.mock("../ui/focus", () => ({ f: {}, useFocusStyles: () => ({}) }));
 vi.mock("../lib/haptics", () => ({ playCue() {} }));
 vi.mock("../lib/compete-store", () => ({ useCompeteStore: () => ({ state: reduceCompete(freshState(new Date("2026-10-26T18:00:00Z")), { type: "opt-in", sport: "running" }), accountKey: "test" }) }));
 import { CompetitionField } from "./competition-field";

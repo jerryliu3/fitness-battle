@@ -42,6 +42,7 @@ vi.mock("../ui/focus", () => ({
       ),
     ),
   f: {},
+  useFocusStyles: () => ({}),
 }));
 import { EventCarousel } from "./event-carousel";
 

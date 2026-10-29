@@ -1,4 +1,5 @@
 import { useAthleteBlocks } from "../lib/athlete-blocks";
+import { createThemedStyles, useThemedStyles } from "../theme";
 import { useBootImage } from "../ui/boot-readiness";
 import { textStyle } from "../ui/section";
 import { AppIcon } from "../ui/app-icon";
@@ -24,6 +25,8 @@ import {
 
 import { SHELL_COLORS as c } from "../theme";
 export function RivalCard({ state }: { state: CompeteState }) {
+  const s = useThemedStyles(sThemes);
+
   const router = useRouter();
   const { blocks } = useAthleteBlocks();
   const imageSettled = useBootImage(alpineTrail);
@@ -80,30 +83,30 @@ export function RivalCard({ state }: { state: CompeteState }) {
     </Pressable>
   );
 }
-const s = StyleSheet.create({
-  card: { borderRadius: 20, overflow: "hidden", backgroundColor: c.fieldDeep },
+const sThemes = createThemedStyles((themeColors) => ({
+  card: { borderRadius: 20, overflow: "hidden", backgroundColor: themeColors.fieldDeep },
   background: { minHeight: 180, justifyContent: "space-between", padding: 20 },
   scrim: { ...StyleSheet.absoluteFill, backgroundColor: "#081f3670" },
   top: { flexDirection: "row", justifyContent: "space-between", gap: 10 },
   title: {
     ...textStyle("heading"),
-    color: c.card,
+    color: themeColors.card,
     marginTop: 5
 },
-  place: { ...textStyle("metric"), color: c.card },
+  place: { ...textStyle("metric"), color: themeColors.card },
   markers: { alignSelf: "center", height: 110 },
   bottom: { flexDirection: "row", alignItems: "center", gap: 12 },
-  headline: { ...textStyle("heading"), color: c.card },
+  headline: { ...textStyle("heading"), color: themeColors.card },
   caption: {
     ...textStyle("caption"),
     color: "#ffffffdd"
 },
   arrow: {
-    backgroundColor: c.tennis,
+    backgroundColor: themeColors.tennis,
     borderRadius: 22,
     width: 40,
     height: 40,
     alignItems: "center",
     justifyContent: "center",
   },
-});
+}));

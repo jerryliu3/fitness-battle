@@ -1,3 +1,4 @@
+import { createThemedStyles, useThemedStyles } from "../src/theme";
 import { useState } from "react";
 import { ScrollView, StyleSheet, Text, View, Pressable } from "react-native";
 import { Stack } from "expo-router";
@@ -7,6 +8,8 @@ import { colors, fonts } from "../src/theme";
 
 /** Isolated native review screen, available at /mascot. */
 export default function MascotScreen() {
+  const styles = useThemedStyles(stylesThemes);
+
   const [action, setAction] = useState<EmberAction>("idle");
   const [playing, setPlaying] = useState(true);
   return <ScrollView contentContainerStyle={styles.page}>
@@ -22,14 +25,14 @@ export default function MascotScreen() {
   </ScrollView>;
 }
 
-const styles = StyleSheet.create({
-  page: { padding: 24, gap: 18, backgroundColor: colors.paper, flexGrow: 1 },
-  kicker: { color: colors.muted, fontFamily: fonts.bodyBold, fontSize: 11, letterSpacing: 2 },
-  title: { color: colors.ink, fontFamily: fonts.bodyBold, fontSize: 32 },
-  body: { color: colors.muted, fontFamily: fonts.body, fontSize: 14, lineHeight: 21 },
-  stage: { alignItems: "center", justifyContent: "center", backgroundColor: colors.card, borderRadius: 24, minHeight: 320 },
+const stylesThemes = createThemedStyles((themeColors) => ({
+  page: { padding: 24, gap: 18, backgroundColor: themeColors.paper, flexGrow: 1 },
+  kicker: { color: themeColors.muted, fontFamily: fonts.bodyBold, fontSize: 11, letterSpacing: 2 },
+  title: { color: themeColors.ink, fontFamily: fonts.bodyBold, fontSize: 32 },
+  body: { color: themeColors.muted, fontFamily: fonts.body, fontSize: 14, lineHeight: 21 },
+  stage: { alignItems: "center", justifyContent: "center", backgroundColor: themeColors.card, borderRadius: 24, minHeight: 320 },
   actions: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
-  button: { backgroundColor: colors.card, borderRadius: 12, borderWidth: 1, borderColor: colors.line, padding: 14 },
-  selected: { backgroundColor: colors.lime, borderColor: colors.limeDeep },
-  buttonText: { color: colors.ink, fontFamily: fonts.bodyBold, textTransform: "capitalize" },
-});
+  button: { backgroundColor: themeColors.card, borderRadius: 12, borderWidth: 1, borderColor: themeColors.line, padding: 14 },
+  selected: { backgroundColor: themeColors.actionPrimary, borderColor: themeColors.actionPressed },
+  buttonText: { color: themeColors.ink, fontFamily: fonts.bodyBold, textTransform: "capitalize" },
+}));

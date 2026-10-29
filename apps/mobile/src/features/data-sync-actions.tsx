@@ -1,3 +1,4 @@
+import { useFocusStyles } from "../ui/focus";
 import { SectionHeader, AppText } from "../ui/section";
 import {
   activityFromSample,
@@ -15,6 +16,8 @@ import { useCompeteStore } from "../lib/compete-store";
 import { mobileEnv } from "../lib/env";
 import { FocusButton, f } from "../ui/focus";
 export function DataSyncActions({ provider }: { provider?: ProviderId }) {
+  const f = useFocusStyles();
+
   const { user, accessToken, offlineMode } = useAuth();
   const { state, dispatch, previewSyncReview } = useCompeteStore();
   const [busy, setBusy] = useState(false),

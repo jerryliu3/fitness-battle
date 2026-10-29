@@ -1,3 +1,4 @@
+import { useFocusStyles } from "../ui/focus";
 import { SectionStack, Section, TextAction } from "../ui/section";
 import { MotionStep } from "../ui/motion-step";
 import { Achievements } from "./club-achievements";
@@ -15,6 +16,8 @@ import { TrainingHistory } from "./training-history";
 import { AthleteMetrics } from "./athlete-metrics";
 import { AthleteTelemetryMatrix } from "./athlete-telemetry-matrix";
 export function ProgressScreen() {
+  const f = useFocusStyles();
+
   const { state } = useCompeteStore();
   const router = useRouter();
   const params=useLocalSearchParams<{view?:string}>();

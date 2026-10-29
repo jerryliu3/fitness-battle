@@ -1,3 +1,5 @@
+import { createThemedStyles, useThemedStyles, useThemeColors } from "../src/theme";
+import { useFocusStyles } from "../src/ui/focus";
 import { SectionHeader, SectionStack, textStyle, AppText } from "../src/ui/section";
 import { SportIcon } from "../src/ui/sport-icon";
 import { activityFromSample } from "@fitness-battle/shared";
@@ -70,6 +72,10 @@ type AthletePanel =
   | "account";
 
 export default function AthleteScreen() {
+  const SHELL_COLORS = useThemeColors();
+  const styles = useThemedStyles(stylesThemes);
+  const f = useFocusStyles();
+
   const { state, dispatch, saveError, retrySave } = useCompeteStore();
   const {
     user,
@@ -933,21 +939,21 @@ export default function AthleteScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: SHELL_COLORS.paper },
+const stylesThemes = createThemedStyles((themeColors) => ({
+  safe: { flex: 1, backgroundColor: themeColors.paper },
   scroll: { padding: 20, gap: 28, paddingBottom: 32 },
   kicker: {
     ...textStyle("label"),
-    color: SHELL_COLORS.muted
+    color: themeColors.muted
 },
   name: {
     ...textStyle("display"),
-    color: SHELL_COLORS.ink,
+    color: themeColors.ink,
   },
   section: {
     ...textStyle("heading"),
     marginTop: 8,
-    color: SHELL_COLORS.ink
+    color: themeColors.ink
 },
   row: {
     minHeight: 60,
@@ -957,18 +963,18 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 10,
     borderRadius: SHELL_RADIUS.control,
-    backgroundColor: SHELL_COLORS.card,
+    backgroundColor: themeColors.card,
     borderWidth: 1,
-    borderColor: SHELL_COLORS.line,
+    borderColor: themeColors.line,
     gap: 12,
   },
   rowTitle: {
     ...textStyle("label"),
-    color: SHELL_COLORS.ink
+    color: themeColors.ink
 },
   copy: {
     ...textStyle("body"),
-    color: SHELL_COLORS.muted
+    color: themeColors.muted
 },
   authToggle: { flexDirection: "row", gap: 8 },
   authTab: {
@@ -977,15 +983,15 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     borderRadius: SHELL_RADIUS.control,
     borderWidth: 1,
-    borderColor: SHELL_COLORS.line,
-    backgroundColor: SHELL_COLORS.card,
+    borderColor: themeColors.line,
+    backgroundColor: themeColors.card,
   },
   authTabOn: {
-    borderColor: SHELL_COLORS.ink,
-    backgroundColor: SHELL_COLORS.greenSoft,
+    borderColor: themeColors.ink,
+    backgroundColor: themeColors.greenSoft,
   },
   authTabText: {
     ...textStyle("label"),
-    color: SHELL_COLORS.ink
+    color: themeColors.ink
 },
-});
+}));

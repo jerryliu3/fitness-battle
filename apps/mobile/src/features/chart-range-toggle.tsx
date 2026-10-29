@@ -1,3 +1,4 @@
+import { createThemedStyles, useThemedStyles, useThemeColors } from "../theme";
 import { AppText } from "../ui/section";
 import { TRAINING_CHART_RANGE_OPTIONS, type TrainingRange } from "@fitness-battle/shared";
 import { Pressable, StyleSheet, View } from "react-native";
@@ -10,6 +11,9 @@ export function ChartRangeToggle({
   value: TrainingRange;
   onChange: (range: TrainingRange) => void;
 }) {
+  const c = useThemeColors();
+  const s = useThemedStyles(sThemes);
+
   return (
     <View
       accessibilityRole="tablist"
@@ -37,15 +41,15 @@ export function ChartRangeToggle({
   );
 }
 
-const s = StyleSheet.create({
+const sThemes = createThemedStyles((themeColors) => ({
   root: {
     flexDirection: "row",
     gap: 2,
     padding: 2,
     borderRadius: 7,
     borderWidth: 1,
-    borderColor: c.line,
-    backgroundColor: c.soft,
+    borderColor: themeColors.line,
+    backgroundColor: themeColors.soft,
   },
   btn: {
     minWidth: 32,
@@ -56,6 +60,6 @@ const s = StyleSheet.create({
     justifyContent: "center",
   },
   btnOn: {
-    backgroundColor: c.ink,
+    backgroundColor: themeColors.ink,
   },
-});
+}));

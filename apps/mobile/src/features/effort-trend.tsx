@@ -1,3 +1,5 @@
+import { createThemedStyles, useThemedStyles, useThemeColors } from "../theme";
+import { useFocusStyles } from "../ui/focus";
 import { ChartSvg, ChartText } from "../ui/chart-text";
 import { AppText, textStyle } from "../ui/section";
 import {
@@ -21,6 +23,10 @@ import { FocusSegments, f } from "../ui/focus";
 import { ChartRangeToggle } from "./chart-range-toggle";
 
 export function EffortTrend({ state }: { state: CompeteState }) {
+  const c = useThemeColors();
+  const s = useThemedStyles(sThemes);
+  const f = useFocusStyles();
+
   const [defaultTrack] = useScoreTrackLens();
   const { user } = useAuth();
   const scope = `${user?.id}:${state.primary}`;
@@ -145,6 +151,8 @@ export function EffortTrend({ state }: { state: CompeteState }) {
 }
 
 function ViewGrid({ y, value }: { y: number; value: number }) {
+  const c = useThemeColors();
+
   return (
     <>
       <Line
@@ -162,7 +170,7 @@ function ViewGrid({ y, value }: { y: number; value: number }) {
   );
 }
 
-const s = StyleSheet.create({
+const sThemes = createThemedStyles((themeColors) => ({
   total: {
     flexDirection: "row",
     flexWrap: "wrap",
@@ -172,11 +180,11 @@ const s = StyleSheet.create({
   },
   number: {
     ...textStyle("hero"),
-    color: c.ink,
+    color: themeColors.ink,
     fontVariant: ["tabular-nums"],
   },
   unit: {
     ...textStyle("body"),
-    color: c.muted,
+    color: themeColors.muted,
   },
-});
+}));

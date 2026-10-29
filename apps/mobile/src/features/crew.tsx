@@ -1,4 +1,6 @@
 import { AthleteProfileSheet } from "./athlete-profile-sheet";
+import { useThemeColors } from "../theme";
+import { useFocusStyles } from "../ui/focus";
 import { UserAvatar } from "../ui/user-avatar";
 import { AppText, Section, SectionStack } from "../ui/section";
 import { AppIcon } from "../ui/app-icon";
@@ -106,6 +108,9 @@ function inviteLink(code: string): string {
 }
 
 export function CrewHub({ membersOnly = false, crewId = "" }: { membersOnly?: boolean; crewId?: string } = {}) {
+  const c = useThemeColors();
+  const f = useFocusStyles();
+
   const { state, refresh, dispatch } = useCompeteStore();
   const { user } = useAuth();
   const { blocks } = useAthleteBlocks();

@@ -1,3 +1,4 @@
+import { createThemedStyles, useThemedStyles, useThemeColors } from "../theme";
 import { portfolioWeekChart, type CompeteState } from "@fitness-battle/shared";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import Svg, { Circle, Defs, Line, LinearGradient, Polygon, Polyline, Stop } from "react-native-svg";
@@ -9,6 +10,9 @@ import { HomeActivityActions } from "./home-activity-actions";
 import { SHELL_COLORS as c } from "../theme";
 
 export function WeekChart({ state, onOpen, ready = true }: { state: CompeteState; onOpen?: () => void; ready?: boolean }) {
+  const c = useThemeColors();
+  const s = useThemedStyles(sThemes);
+
   const chart = portfolioWeekChart(state);
   const deltaTone = chart.deltaTone;
   const gradient = useId().replace(/:/g, "");
@@ -29,13 +33,13 @@ export function WeekChart({ state, onOpen, ready = true }: { state: CompeteState
     {onOpen && <Pressable accessibilityRole="button" accessibilityLabel="See more this week" onPress={onOpen} hitSlop={8} style={s.open}><AppText role="label">See more →</AppText></Pressable>}
   </View></ChartFrame>;
 }
-const s = StyleSheet.create({
+const sThemes = createThemedStyles((themeColors) => ({
   card: { paddingTop: 12, paddingBottom: 2, gap: 8 },
   header: { flexDirection: "row", flexWrap: "wrap", justifyContent: "space-between", alignItems: "center", gap: 12 },
   total: { flexDirection: "row", flexWrap: "wrap", justifyContent: "space-between", alignItems: "center", gap: 12 },
-  number: { ...textStyle("hero"), color: c.ink, fontVariant: ["tabular-nums"] },
-  unit: { ...textStyle("body"), color: c.muted },
+  number: { ...textStyle("hero"), color: themeColors.ink, fontVariant: ["tabular-nums"] },
+  unit: { ...textStyle("body"), color: themeColors.muted },
   comparison: { gap: 4, alignItems: "flex-end", flexShrink: 1 },
   dates: { flexDirection: "row", justifyContent: "space-between" },
   open: { minHeight: 32, paddingVertical: 2, justifyContent: "center", alignSelf: "flex-end" },
-});
+}));

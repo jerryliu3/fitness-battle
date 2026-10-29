@@ -1,3 +1,5 @@
+import { createThemedStyles, useThemedStyles, useLegacyColors } from "../src/theme";
+import { useFocusStyles } from "../src/ui/focus";
 import { textStyle } from "../src/ui/section";
 import { ScreenHeader } from "../src/ui/screen-header";
 import { IconButton } from "../src/ui/icon-button";
@@ -34,6 +36,10 @@ import { FocusButton, f } from "../src/ui/focus";
 import { colors, fonts } from "../src/theme";
 
 export default function NotificationsScreen() {
+  const colors = useLegacyColors();
+  const styles = useThemedStyles(stylesThemes);
+  const f = useFocusStyles();
+
   const params = useLocalSearchParams<{ returnTo?: string }>();
   const [prefs, setPrefs] = useState<NotificationPreferences | null>(null);
   const [busy, setBusy] = useState(false);
@@ -279,31 +285,31 @@ export default function NotificationsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: colors.paper },
+const stylesThemes = createThemedStyles((themeColors) => ({
+  safe: { flex: 1, backgroundColor: themeColors.paper },
   scroll: { padding: 20, gap: 12 },
   back: {
     ...textStyle("body"),
-    color: colors.muted,
+    color: themeColors.muted,
     marginBottom: 4
 },
   kicker: {
     ...textStyle("caption"),
-    color: colors.muted
+    color: themeColors.muted
 },
   title: {
     ...textStyle("display"),
-    color: colors.ink
+    color: themeColors.ink
 },
   copy: {
     ...textStyle("body"),
-    color: colors.muted
+    color: themeColors.muted
 },
   card: {
-    backgroundColor: colors.card,
+    backgroundColor: themeColors.card,
     borderRadius: 18,
     borderWidth: 1,
-    borderColor: colors.line,
+    borderColor: themeColors.line,
     paddingHorizontal: 16,
     paddingVertical: 4,
   },
@@ -313,23 +319,23 @@ const styles = StyleSheet.create({
     gap: 12,
     paddingVertical: 14,
     borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: colors.line,
+    borderTopColor: themeColors.line,
   },
   rowFirst: { borderTopWidth: 0 },
   grow: { flex: 1, minWidth: 0, gap: 4 },
-  rowTitle: { ...textStyle("label"), color: colors.ink },
+  rowTitle: { ...textStyle("label"), color: themeColors.ink },
   rowDetail: {
     ...textStyle("body"),
-    color: colors.muted
+    color: themeColors.muted
 },
   line: {
     borderWidth: 1,
-    borderColor: colors.line,
-    backgroundColor: colors.card,
+    borderColor: themeColors.line,
+    backgroundColor: themeColors.card,
     borderRadius: 14,
     paddingVertical: 14,
     alignItems: "center",
   },
-  lineText: { ...textStyle("label"), color: colors.ink },
+  lineText: { ...textStyle("label"), color: themeColors.ink },
   disabled: { opacity: 0.45 },
-});
+}));

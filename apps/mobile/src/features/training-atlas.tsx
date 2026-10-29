@@ -1,3 +1,5 @@
+import { useThemeColors } from "../theme";
+import { useFocusStyles } from "../ui/focus";
 import { textStyle, AppText, Section  } from "../ui/section";
 import { ChartScrubber } from "../ui/chart-scrubber";
 import { useMemo, useState } from "react";
@@ -37,6 +39,9 @@ const colors = [
   c.ink,
 ];
 export function TrainingAtlas({ state }: { state: CompeteState }) {
+  const c = useThemeColors();
+  const f = useFocusStyles();
+
   const now = competeNow(state);
   const [gridWidth, setGridWidth] = useState(280);
   const [sports, setSports] = useState<SportId[]>(() => defaultTrainingSports()),

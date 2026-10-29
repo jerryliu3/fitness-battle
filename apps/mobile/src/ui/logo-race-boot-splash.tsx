@@ -1,3 +1,4 @@
+import { createThemedStyles, useThemedStyles, useThemeColors } from "../theme";
 import { useEffect, useRef, useState } from "react";
 import { AccessibilityInfo, ActivityIndicator, AppState, StyleSheet, Text, View, useWindowDimensions } from "react-native";
 import Svg, { G, Text as SvgText } from "react-native-svg";
@@ -9,6 +10,9 @@ export function LogoRaceBootSplash({ waiting = false, onAnimationComplete }: {
   waiting?: boolean;
   onAnimationComplete: () => void;
 }) {
+  const c = useThemeColors();
+  const s = useThemedStyles(sThemes);
+
   const [position, setPosition] = useState(0);
   const onComplete = useRef(onAnimationComplete);
   onComplete.current = onAnimationComplete;
@@ -74,8 +78,8 @@ export function LogoRaceBootSplash({ waiting = false, onAnimationComplete }: {
     <View style={s.wait}>{waiting && <><ActivityIndicator color={c.ink} /><Text style={s.label}>Loading…</Text></>}</View>
   </View>;
 }
-const s = StyleSheet.create({
-  root: { flex: 1, alignItems: "center", justifyContent: "center", gap: 28, paddingHorizontal: 12, paddingVertical: 24, backgroundColor: c.paper },
+const sThemes = createThemedStyles((themeColors) => ({
+  root: { flex: 1, alignItems: "center", justifyContent: "center", gap: 28, paddingHorizontal: 12, paddingVertical: 24, backgroundColor: themeColors.paper },
   wait: { minHeight: 52, alignItems: "center", gap: 12 },
-  label: { ...textStyle("caption"), color: c.muted },
-});
+  label: { ...textStyle("caption"), color: themeColors.muted },
+}));

@@ -1,5 +1,7 @@
 # Product design guide — Everyday Club
 
+The active color comparison is **Stadium blue, Slate and Steel**, with light and dark appearance from day one. Slate (`#637580`) and Steel (`#62788A`) are slightly lighter and more silver-toned in light mode; their original dark-mode shades remain. Preserve Stadium blue's exact color-role mapping, shared dark/white text, light navigation in light mode, yellow actions and progress/distance bars, and secondary chart styling with a yellow current-day highlight. Silver/Pewter and the shade-range experiments are retired from the active preview. The [color study](design-studies/color-use/README.md) records the current tokens and research history. Production integration remains pending.
+
 The [product-derived native refinement](reviews/product-refinement/README.md) narrows the October 25 tab review to nine implementation candidates built from the current app. It preserves the selected production tokens and domain rules; layouts remain under review.
 
 The selected production direction is **Everyday Club**, following the owner’s October 22 reference and implementation request. Retain yellow and Ember, Home / Compete / Progress / Crew, existing data behavior, 2D default competition, no recording action and no social feed. See [audit](design/ui-audit.md) and [component decisions](design/component-guidelines.md).

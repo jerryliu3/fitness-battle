@@ -1,3 +1,4 @@
+import { useThemeColors } from "../theme";
 import { useMemo } from "react";
 import { View } from "react-native";
 import {
@@ -42,6 +43,8 @@ export function StandardLineChart({
   accessibilityLabel,
   ariaLabel,
 }: StandardLineChartProps) {
+  const c = useThemeColors();
+
   const geo = useMemo(
     () => buildStandardChartGeometry(values, 340, height, corridor),
     [values, height, corridor],

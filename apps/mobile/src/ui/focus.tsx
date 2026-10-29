@@ -1,3 +1,4 @@
+import { createThemedStyles, useThemedStyles, useThemeColors } from "../theme";
 import { SHELL_SPACING, SHELL_SECTION, SHELL_RADIUS } from "@fitness-battle/shared";
 import { AppText, PageHeader, textStyle } from "./section";
 import { useEffect, useRef, useState, type ReactNode } from "react";
@@ -51,6 +52,8 @@ export function FocusSheet({
   minimal?: boolean;
   fullScreen?: boolean;
 }) {
+  const f = useThemedStyles(fThemes);
+
   // Keep the last open content during exit; callers often clear their selection
   // in onClose, which must not flash a different panel while the sheet slides away.
   const content = useRef({ title, body, children });
@@ -172,6 +175,9 @@ export function FocusSidePanel({
   onClose: () => void;
   children?: ReactNode;
 }) {
+  const c = useThemeColors();
+  const f = useThemedStyles(fThemes);
+
   const reduce = useReducedMotion();
   const insets = useSafeAreaInsets();
   const [present, setPresent] = useState(open);
@@ -295,6 +301,8 @@ export function FocusHeading({
   title: string;
   body?: string;
 }) {
+  const f = useThemedStyles(fThemes);
+
   return (
     <View style={f.heading}>
       <Text style={f.kicker}>{kicker}</Text>
@@ -315,6 +323,9 @@ export function FocusButton({
   secondary?: boolean;
   disabled?: boolean;
 }) {
+  const c = useThemeColors();
+  const f = useThemedStyles(fThemes);
+
   return (
     <Pressable
       accessibilityRole="button"
@@ -352,6 +363,9 @@ export function FocusSegments<T extends string>({
   accent?: boolean;
   variant?: "segments" | "tabs";
 }) {
+  const c = useThemeColors();
+  const f = useThemedStyles(fThemes);
+
   const reduce = useReducedMotion();
   const [width, setWidth] = useState(0);
   const position = useRef(new Animated.Value(0)).current;
@@ -422,6 +436,8 @@ export function FocusTextButton({
   accessibilityLabel?: string;
   onPress: () => void;
 }) {
+  const f = useThemedStyles(fThemes);
+
   return (
     <Pressable
       accessibilityRole="button"
@@ -450,6 +466,8 @@ export function FocusDisclosure({
   initialOpen?: boolean;
   compact?: boolean;
 }) {
+  const f = useThemedStyles(fThemes);
+
   const [open, setOpen] = useState(initialOpen);
   return (
     <View style={[f.disclosure, compact && f.disclosureCompact]}>
@@ -476,8 +494,8 @@ export function FocusDisclosure({
     </View>
   );
 }
-export const f = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: c.paper },
+export const fThemes = createThemedStyles((themeColors) => ({
+  safe: { flex: 1, backgroundColor: themeColors.paper },
   content: {
     padding: 20,
     paddingBottom: 120,
@@ -494,31 +512,31 @@ export const f = StyleSheet.create({
   },
   kicker: {
     ...textStyle("label"),
-    color: c.muted
+    color: themeColors.muted
 },
   title: {
     ...textStyle("display"),
-    color: c.ink,
+    color: themeColors.ink,
   },
   h2: {
     ...textStyle("heading"),
-    color: c.ink,
+    color: themeColors.ink,
   },
   sectionTitle: {
     ...textStyle("heading"),
-    color: c.ink,
+    color: themeColors.ink,
   },
   copy: {
     ...textStyle("body"),
-    color: c.muted,
+    color: themeColors.muted,
   },
   small: {
     ...textStyle("caption"),
-    color: c.muted,
+    color: themeColors.muted,
   },
   rowTitle: {
     ...textStyle("row"),
-    color: c.ink,
+    color: themeColors.ink,
   },
   row: {
     flexDirection: "row",
@@ -531,18 +549,18 @@ export const f = StyleSheet.create({
     gap: SHELL_SECTION.contentGap,
   },
   card: {
-    backgroundColor: c.card,
+    backgroundColor: themeColors.card,
     borderWidth: 1,
-    borderColor: c.line,
+    borderColor: themeColors.line,
     borderRadius: 20,
     borderBottomWidth: 1,
     padding: 20,
     gap: 13,
   },
   button: {
-    backgroundColor: c.actionPrimary,
+    backgroundColor: themeColors.actionPrimary,
     borderBottomWidth: 1,
-    borderBottomColor: c.actionPrimary,
+    borderBottomColor: themeColors.actionPrimary,
     borderRadius: SHELL_RADIUS.control,
     minHeight: 48,
     padding: 15,
@@ -553,23 +571,23 @@ export const f = StyleSheet.create({
   },
   buttonText: {
     ...textStyle("label"),
-    color: c.ink,
+    color: themeColors.ink,
   },
   secondary: {
-    backgroundColor: c.card,
+    backgroundColor: themeColors.card,
     borderWidth: 1,
-    borderColor: c.line,
+    borderColor: themeColors.line,
     borderBottomWidth: 1,
-    borderBottomColor: c.line,
+    borderBottomColor: themeColors.line,
   },
   segments: {
     flexDirection: "row",
     padding: 4,
     gap: 4,
     borderRadius: 24,
-    backgroundColor: c.soft,
+    backgroundColor: themeColors.soft,
     borderWidth: 1,
-    borderColor: c.line,
+    borderColor: themeColors.line,
   },
   segment: {
     flex: 1,
@@ -581,10 +599,10 @@ export const f = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
-  segmentSelected: { backgroundColor: c.ink },
+  segmentSelected: { backgroundColor: themeColors.ink },
   segmentText: {
     ...textStyle("label"),
-    color: c.muted,
+    color: themeColors.muted,
     textAlign: "center",
   },
   textButton: {
@@ -596,19 +614,19 @@ export const f = StyleSheet.create({
   },
   textButtonText: {
     ...textStyle("label"),
-    color: c.ink,
+    color: themeColors.ink,
   },
   disclosureCompact: {
     borderWidth: 0,
     borderRadius: 24,
-    backgroundColor: c.soft,
+    backgroundColor: themeColors.soft,
   },
   disclosureHeadCompact: { minHeight: 48, padding: 12 },
   disclosureBodyCompact: { paddingHorizontal: 12, paddingBottom: 12, gap: 10 },
   disclosure: {
     backgroundColor: "transparent",
     borderBottomWidth: 1,
-    borderBottomColor: mobileSurfaces.divider,
+    borderBottomColor: themeColors.divider,
     overflow: "hidden",
   },
   disclosureHead: {
@@ -624,7 +642,7 @@ export const f = StyleSheet.create({
   sheet: {
     borderTopLeftRadius: SHELL_RADIUS.sheet,
     borderTopRightRadius: SHELL_RADIUS.sheet,
-    backgroundColor: c.paper,
+    backgroundColor: themeColors.paper,
     paddingTop: 10,
   },
   handle: {
@@ -632,7 +650,7 @@ export const f = StyleSheet.create({
     width: 35,
     height: 4,
     borderRadius: 4,
-    backgroundColor: c.line,
+    backgroundColor: themeColors.line,
     marginBottom: 13,
   },
   sheetHead: {
@@ -646,7 +664,7 @@ export const f = StyleSheet.create({
     height: 44,
     width: 44,
     borderRadius: 18,
-    backgroundColor: c.card,
+    backgroundColor: themeColors.card,
     justifyContent: "center",
     alignItems: "center",
   },
@@ -655,34 +673,37 @@ export const f = StyleSheet.create({
     paddingHorizontal: 16,
     borderRadius: 24,
     borderWidth: 1,
-    borderColor: c.line,
-    backgroundColor: c.card,
+    borderColor: themeColors.line,
+    backgroundColor: themeColors.card,
     minHeight: 46,
   },
-  chipActive: { borderColor: c.plum, backgroundColor: c.soft },
+  chipActive: { borderColor: themeColors.plum, backgroundColor: themeColors.soft },
   chipRow: { flexDirection: "row", gap: 9, flexWrap: "wrap" },
   input: {
     ...textStyle("body"),
-    color: c.ink,
+    color: themeColors.ink,
     minHeight: 49,
     padding: 14,
     borderWidth: 1,
-    borderColor: c.line,
+    borderColor: themeColors.line,
     borderRadius: 10,
-    backgroundColor: c.card,
+    backgroundColor: themeColors.card,
   },
   avatar: {
     width: 38,
     height: 38,
     borderRadius: 20,
-    backgroundColor: c.tennis,
+    backgroundColor: themeColors.tennis,
     alignItems: "center",
     justifyContent: "center",
   },
-  divider: { height: 1, backgroundColor: c.line },
-  feedback: { padding: 14, backgroundColor: c.soft, borderRadius: 10 },
+  divider: { height: 1, backgroundColor: themeColors.line },
+  feedback: { padding: 14, backgroundColor: themeColors.soft, borderRadius: 10 },
   massive: {
     ...textStyle("hero"),
-    color: c.ink
+    color: themeColors.ink
 },
-});
+}));
+
+export const f = fThemes.light;
+export function useFocusStyles() { return useThemedStyles(fThemes); }

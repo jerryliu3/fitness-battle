@@ -1,3 +1,4 @@
+import { useThemeColors } from "../theme";
 import { UserAvatar } from "../ui/user-avatar";
 import { AppText } from "../ui/section";
 import {
@@ -27,6 +28,8 @@ import { SHELL_COLORS as c } from "../theme";
 import { FocusButton, FocusSheet, f } from "../ui/focus";
 
 export function ProfilePhoto({ state }: { state: CompeteState }) {
+  const c = useThemeColors();
+
   const { user, offlineMode } = useAuth();
   const { dispatch } = useCompeteStore();
   const [busy, setBusy] = useState(false);

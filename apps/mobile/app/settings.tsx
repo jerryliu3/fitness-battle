@@ -1,3 +1,4 @@
+import { useFocusStyles } from "../src/ui/focus";
 import { SectionStack } from "../src/ui/section";
 import { ScreenHeader } from "../src/ui/screen-header";
 
@@ -8,6 +9,8 @@ import { f } from "../src/ui/focus";
 import { SettingsRow } from "../src/ui/settings-row";
 
 export default function SettingsScreen() {
+  const f = useFocusStyles();
+
   return (
     <SafeAreaView style={f.safe} edges={["top"]}>
       <ScrollView contentContainerStyle={f.content}>

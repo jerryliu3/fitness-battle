@@ -4,7 +4,7 @@ import { afterEach, expect, it, vi } from "vitest";
 vi.mock("react-native", () => ({ StyleSheet: { create: (value: unknown) => value }, Modal: "Modal", Platform: { OS: "ios" }, Pressable: "Pressable", Text: "Text", View: "View" }));
 vi.mock("@react-native-community/datetimepicker", () => ({ default: "DateTimePicker" }));
 vi.mock("@react-native-picker/picker", async () => { const { createElement } = await import("react"); return { Picker: Object.assign((props: object) => createElement("Picker", props), { Item: "PickerItem" }) }; });
-vi.mock("./focus", () => ({ f: {} }));
+vi.mock("./focus", () => ({ f: {}, useFocusStyles: () => ({}) }));
 import { NumberPicker, DateTimeField } from "./form-picker.native";
 let renderer: ReactTestRenderer;
 afterEach(async () => { if (renderer) await act(async () => renderer.unmount()); vi.unstubAllGlobals(); });

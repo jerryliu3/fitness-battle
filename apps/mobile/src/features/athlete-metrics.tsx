@@ -1,3 +1,5 @@
+import { useThemeColors } from "../theme";
+import { useFocusStyles } from "../ui/focus";
 import { AppText, SectionHeader } from "../ui/section";
 import { clubLifetimeTotals } from "@fitness-battle/shared";
 import { SHELL_COLORS as clubColors } from "@fitness-battle/shared";
@@ -22,6 +24,9 @@ export function AthleteMetrics({
   onEdit?: () => void;
   sections?: "profile" | "progress";
 }) {
+  const clubColors = useThemeColors();
+  const f = useFocusStyles();
+
   const router = useRouter();
   const season = clubLifetimeTotals(state);
   const unit = distanceUnitLabel(state.units);

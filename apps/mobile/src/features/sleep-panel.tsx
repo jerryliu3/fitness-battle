@@ -1,5 +1,6 @@
 import { AthleteProfileSheet, type AthleteProfileSelection } from "./athlete-profile-sheet";
 import { useState } from "react";
+import { useFocusStyles } from "../ui/focus";
 import { SectionHeader, AppText } from "../ui/section";
 import {
   buildSleepView,
@@ -18,6 +19,7 @@ export function SleepPanel({
   state: CompeteState;
   dispatch: (a: Action) => void;
 }) {
+  const f = useFocusStyles();
   const [athlete, setAthlete] = useState<AthleteProfileSelection | null>(null);
   const rating = state.healthRatings.find((r) => r.metric === "sleep");
   if (!rating?.optedIn) return null;

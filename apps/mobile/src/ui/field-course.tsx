@@ -1,3 +1,5 @@
+import { useThemeColors } from "../theme";
+import { useFocusStyles } from "./focus";
 import { textStyle } from "./section";
 import { SHELL_COLORS as clubColors } from "@fitness-battle/shared";
 import { createElement, useEffect, useRef, useState, type ComponentType } from "react";
@@ -30,6 +32,9 @@ export function useFieldAppearance(account: string, sport: string) {
   return [value, update] as const;
 }
 export function FieldGroundPicker({ appearance, onChange }: { appearance: FieldAppearance; onChange: (value: FieldAppearance) => void }) {
+  const clubColors = useThemeColors();
+  const f = useFocusStyles();
+
   const [open, setOpen] = useState(false);
   return <>
     <Pressable accessibilityRole="button" accessibilityLabel="Choose field ground" style={[f.row, { minHeight: 44 }]} onPress={() => setOpen(true)}><Text style={textStyle("label")}>{fieldGrounds[appearance.ground].name}</Text><Text style={textStyle("caption")}>Customize</Text></Pressable>
@@ -43,6 +48,8 @@ export function FieldGroundPicker({ appearance, onChange }: { appearance: FieldA
   </>;
 }
 export function FieldOverview({ lanes, view, unit, onNavigate, positionOnly = false, hiddenIds = [] }: { hiddenIds?: readonly string[]; lanes: ArenaSceneLane[]; view: ArenaViewWindow; unit: string; onNavigate: (value: number) => void; positionOnly?: boolean }) {
+  const clubColors = useThemeColors();
+  const f = useFocusStyles();
   const overview = fieldOverview(lanes, view), [width, setWidth] = useState(240);
   const latest = useRef({ overview, onNavigate, width }); latest.current = { overview, onNavigate, width };
   const start = useRef(0);

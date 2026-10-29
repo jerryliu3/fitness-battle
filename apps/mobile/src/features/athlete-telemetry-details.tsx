@@ -1,3 +1,5 @@
+import { createThemedStyles, useThemedStyles, useThemeColors } from "../theme";
+import { useFocusStyles } from "../ui/focus";
 import React, { useMemo, useState } from "react";
 import { Pressable, ScrollView, StyleSheet, View } from "react-native";
 import {
@@ -31,6 +33,8 @@ export function AthleteTelemetryDetails({
   domain?: AnalyticsDomainId | string;
   state?: CompeteState | null;
 }) {
+  const s = useThemedStyles(sThemes);
+
   const activeDomain: AnalyticsDomainId =
     domain === "market" ||
     domain === "vitals" ||
@@ -77,6 +81,8 @@ function KpiGrid({
 }: {
   stats: Array<{ label: string; value: string; color?: string }>;
 }) {
+  const s = useThemedStyles(sThemes);
+
   return (
     <View style={s.kpiGrid}>
       {stats.map((st, i) => (
@@ -106,6 +112,8 @@ function InspectionCallout({
   detail?: string;
   subtitle?: string;
 }) {
+  const s = useThemedStyles(sThemes);
+
   return (
     <Surface style={s.inspectionBox}>
       <View style={s.betweenRow}>
@@ -126,6 +134,9 @@ function InspectionCallout({
  * ========================================================================== */
 
 function MarketView({ model }: { model: AnalyticsLabModel }) {
+  const c = useThemeColors();
+  const f = useFocusStyles();
+
   const m = model.market;
   const series = m.equitySeries;
   const [selectedIdx, setSelectedIdx] = useState(series.length - 1);
@@ -193,6 +204,10 @@ function MarketView({ model }: { model: AnalyticsLabModel }) {
  * ========================================================================== */
 
 function VitalsView({ model }: { model: AnalyticsLabModel }) {
+  const c = useThemeColors();
+  const s = useThemedStyles(sThemes);
+  const f = useFocusStyles();
+
   const vitals = model.vitals.metrics;
   const [activeVitalId, setActiveVitalId] = useState<VitalId>("hrv");
   const vital = vitals.find((v) => v.id === activeVitalId) ?? vitals[0]!;
@@ -274,6 +289,10 @@ function VitalsView({ model }: { model: AnalyticsLabModel }) {
  * ========================================================================== */
 
 function SleepView({ model }: { model: AnalyticsLabModel }) {
+  const c = useThemeColors();
+  const s = useThemedStyles(sThemes);
+  const f = useFocusStyles();
+
   const sData = model.sleep;
   const nights = sData.nights;
   const [selectedIdx, setSelectedIdx] = useState(nights.length - 1);
@@ -340,6 +359,10 @@ function SleepView({ model }: { model: AnalyticsLabModel }) {
  * ========================================================================== */
 
 function LoadView({ model }: { model: AnalyticsLabModel }) {
+  const c = useThemeColors();
+  const s = useThemedStyles(sThemes);
+  const f = useFocusStyles();
+
   const l = model.load;
   const [selectedIdx, setSelectedIdx] = useState(l.series.length - 1);
   const b = l.series[Math.max(0, Math.min(selectedIdx, l.series.length - 1))] ?? l.series[0]!;
@@ -405,6 +428,10 @@ function LoadView({ model }: { model: AnalyticsLabModel }) {
  * ========================================================================== */
 
 function PerformanceView({ model }: { model: AnalyticsLabModel }) {
+  const c = useThemeColors();
+  const s = useThemedStyles(sThemes);
+  const f = useFocusStyles();
+
   const p = model.performance;
   const [selectedIdx, setSelectedIdx] = useState(p.series.length - 1);
   const run = p.series[Math.max(0, Math.min(selectedIdx, p.series.length - 1))] ?? p.series[0]!;
@@ -470,6 +497,10 @@ function PerformanceView({ model }: { model: AnalyticsLabModel }) {
  * ========================================================================== */
 
 function CombinedView({ model }: { model: AnalyticsLabModel }) {
+  const c = useThemeColors();
+  const s = useThemedStyles(sThemes);
+  const f = useFocusStyles();
+
   const cmb = model.combined;
   const [selectedIdx, setSelectedIdx] = useState(cmb.series.length - 1);
   const day = cmb.series[Math.max(0, Math.min(selectedIdx, cmb.series.length - 1))] ?? cmb.series[0]!;
@@ -512,7 +543,7 @@ function CombinedView({ model }: { model: AnalyticsLabModel }) {
   );
 }
 
-const s = StyleSheet.create({
+const sThemes = createThemedStyles((themeColors) => ({
   content: {
     padding: 16,
     gap: 16,
@@ -526,13 +557,13 @@ const s = StyleSheet.create({
   kpiCell: {
     width: "48%",
     flexGrow: 1,
-    backgroundColor: c.soft,
+    backgroundColor: themeColors.soft,
     borderRadius: 8,
     padding: 10,
     gap: 4,
   },
   inspectionBox: {
-    backgroundColor: c.soft,
+    backgroundColor: themeColors.soft,
     borderRadius: 8,
     padding: 12,
     gap: 4,
@@ -547,7 +578,7 @@ const s = StyleSheet.create({
   vitalChip: {
     width: "31%",
     flexGrow: 1,
-    backgroundColor: c.soft,
+    backgroundColor: themeColors.soft,
     borderRadius: 8,
     padding: 8,
     gap: 4,
@@ -555,7 +586,7 @@ const s = StyleSheet.create({
     borderColor: "transparent",
   },
   vitalChipActive: {
-    borderColor: c.fieldTeal,
+    borderColor: themeColors.fieldTeal,
     borderWidth: 1.5,
   },
   stageRibbon: {
@@ -570,4 +601,4 @@ const s = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
   },
-});
+}));

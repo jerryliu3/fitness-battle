@@ -1,3 +1,4 @@
+import { createThemedStyles, useThemedStyles } from "../theme";
 import { textStyle, AppText  } from "./section";
 import type { AwardCardModel } from "@fitness-battle/shared";
 import { Card } from "heroui-native/card";
@@ -5,6 +6,8 @@ import { ScrollView, StyleSheet, Text, View } from "react-native";
 import { SHELL_COLORS, SHELL_RADIUS } from "../theme";
 
 export function AwardShelf({ cards }: { cards: AwardCardModel[] }) {
+  const styles = useThemedStyles(stylesThemes);
+
   if (cards.length === 0) {
     return (
       <View style={styles.empty}>
@@ -40,13 +43,13 @@ export function AwardShelf({ cards }: { cards: AwardCardModel[] }) {
   );
 }
 
-const styles = StyleSheet.create({
+const stylesThemes = createThemedStyles((themeColors) => ({
   row: { gap: 12, paddingVertical: 4 },
   card: { width: 220, borderRadius: SHELL_RADIUS.card },
   place: {
     ...textStyle("display"),
-    color: SHELL_COLORS.ink
+    color: themeColors.ink
 },
   empty: { paddingVertical: 8 },
 
-});
+}));
