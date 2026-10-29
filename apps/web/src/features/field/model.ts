@@ -74,7 +74,7 @@ export function buildFieldModel(
   if (queue && (queue.queued || queue.awaitingField)) {
     const arena = buildArenaModel(state, now, track, sport);
     const runners: FieldRunner[] = arena.lanes.map(lane => ({ ...lane, initials: lane.mystery ? "?" : initialsFromName(lane.name), km: lane.values, place: 0, effort: 0 }));
-    return { sport, track, periodStart: queue.start, runners, ghost: null, you: runners.find(r => r.you) ?? null, referenceKm: distanceTrackMaxKm([0]), checkpointLabels: arena.labels, gps: sportById(sport).gps, unit: arena.unit };
+    return { sport, track, periodStart: queue.start, periodEnd: queue.end, runners, ghost: null, you: runners.find(r => r.you) ?? null, referenceKm: distanceTrackMaxKm([0]), checkpointLabels: arena.labels, gps: sportById(sport).gps, unit: arena.unit };
   }
   const board = buildSplitBoard(state, sport, track, now, options);
   const enrollment = state.enrollments.find(item => item.sport === sport);
