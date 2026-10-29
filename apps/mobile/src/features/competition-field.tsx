@@ -196,7 +196,6 @@ export function CompetitionField({
 
   const fieldContent = (
     <View
-      style={{ height: sceneHeight, minHeight: sceneHeight }}
       onTouchStart={event => {
         if (!expanded) return;
         const { pageX, pageY, touches } = event.nativeEvent;
@@ -209,11 +208,11 @@ export function CompetitionField({
       onTouchEnd={() => hold.current?.end()}
       onTouchCancel={() => hold.current?.end()}
     >
-      {sceneDimension === "4d" && isFocused ? <View style={{ height: sceneHeight }}>
+      {sceneDimension === "4d" ? <View style={{ height: sceneHeight }}>
         <GeographicCourse hiddenIds={hiddenIds} lanes={fieldLanes} unit={arena.unit} selectedId={selectedId ?? me?.id ?? ""} focusRequest={focusRequest} onSelect={id => { if (!hold.current?.suppressSelection()) selectAthlete(id); }} course={course} error={courseError} onRetry={retryCourse} distanceTarget={courseTarget} onResumeFollow={() => setCourseTarget(null)} controlsBottom={expanded ? safeBottom + (spotlightCollapsed ? 132 : 216) : 8} overlaysHidden={overlaysHidden} />
         {!expanded ? <View style={{ position: "absolute", right: 12, top: 12 }}><IconButton icon="expand" label="Expand 3D course to full screen" onPress={expandField} /></View> : null}
       </View> : null}
-      {sceneDimension === "3d" && isFocused ? (
+      {sceneDimension === "3d" ? (
         <PortraitField
           hiddenIds={hiddenIds}
           lanes={arena.lanes.map((l) => ({
