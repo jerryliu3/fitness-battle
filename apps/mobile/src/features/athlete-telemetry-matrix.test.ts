@@ -10,6 +10,7 @@ vi.mock("expo-router", () => ({
 
 vi.mock("react-native", () => ({
   Animated: { createAnimatedComponent: (component: unknown) => component },
+  PanResponder: { create: () => ({ panHandlers: {} }) },
   Pressable: "Pressable",
   ScrollView: "ScrollView",
   Text: "Text",

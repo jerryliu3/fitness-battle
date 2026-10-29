@@ -66,14 +66,14 @@ describe("native earned progress flows",()=>{
   const state={...mock.state!,activities:[recorded("today",3600)]};
   await act(async()=>{renderer=create(createElement(TrainingAtlas,{state}));});
   const range=(label:string)=>renderer.root.findAllByType("Pressable" as never).find(n=>n.props.accessibilityLabel===label)!;
-  await act(async()=>range("Year").props.onPress());
+  await act(async()=>range("One year").props.onPress());
   const months=renderer.root.findByType(BenchmarkChart).props.buckets;
   expect(months).toHaveLength(12);
   expect(Date.parse(months[10]!.start)).toBeGreaterThan(now.getTime());
   const inspectable=renderer.root.findByType(ChartScrubber).props.points;
   expect(inspectable).toHaveLength(10);
   expect(inspectable.every((point:{id:string})=>Date.parse(point.id)<=now.getTime())).toBe(true);
-  await act(async()=>range("Week").props.onPress());
+  await act(async()=>range("One week").props.onPress());
   expect(renderer.root.findByType(BenchmarkChart).props.buckets).toHaveLength(7);
  });
  it("links member cards to the dimensional relay and hides zero-distance contributors",async()=>{
