@@ -30,7 +30,7 @@ export function OpenLineChart({ chart, label, unit, range, onRangeChange, includ
         {!!chart.previous && <Polyline points={chart.previous} fill="none" stroke={c.muted} strokeWidth={1.5} strokeDasharray="2 5" strokeLinecap="round" opacity={.65} />}
         <Polyline points={chart.line} fill="none" stroke={c.tennis} strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" />
         {live && !selected && end && <Circle cx={end.x} cy={end.y} r={3.5} fill={c.tennis} />}
-        {live && !selected && end && <LiveCircle cx={end.x} cy={end.y} r={pulse.interpolate({ inputRange: [0, .75, 1], outputRange: [3.5, 11, 11] })} fill={c.tennis} opacity={pulse.interpolate({ inputRange: [0, .75, 1], outputRange: [.25, 0, 0] })} />}
+        {live && !selected && end && <LiveCircle cx={end.x} cy={end.y} r={pulse.interpolate({ inputRange: [0, .75, 1], outputRange: [3.5, 12, 12] })} fill={c.tennis} opacity={pulse.interpolate({ inputRange: [0, .65, .9, 1], outputRange: [.5, .18, 0, 0] })} />}
         {chart.points.length === 1 && <Circle cx={chart.points[0]!.x} cy={chart.points[0]!.y} r={3} fill={c.tennis} />}
       </Svg>
       {comparisonLabel && chart.previous && <View pointerEvents="none" style={{ position: "absolute", right: 0, top: Math.max(0, Number(chart.previous.trim().split(/\s+/).at(-1)?.split(",")[1] ?? 28) - 28), maxWidth: "100%" }}><AppText role="caption" secondary>{comparisonLabel}</AppText></View>}

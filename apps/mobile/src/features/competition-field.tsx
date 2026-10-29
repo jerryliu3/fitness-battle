@@ -196,6 +196,7 @@ export function CompetitionField({
 
   const fieldContent = (
     <View
+      style={{ height: sceneHeight, minHeight: sceneHeight }}
       onTouchStart={event => {
         if (!expanded) return;
         const { pageX, pageY, touches } = event.nativeEvent;

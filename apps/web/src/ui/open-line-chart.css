@@ -18,5 +18,5 @@
 .open-line-period-label{position:absolute;right:0;max-width:100%;text-align:right;white-space:nowrap;font:var(--type-caption);color:var(--muted);pointer-events:none}
 .open-line-live{position:absolute;width:8px;height:8px;border-radius:50%;background:#F7C948;transform:translate(-50%,-50%);pointer-events:none}
 .open-line-live i{position:absolute;inset:0;border-radius:50%;background:inherit;opacity:0;animation:effort-live-halo 1.8s cubic-bezier(0,0,.2,1) infinite}
-@keyframes effort-live-halo{0%{transform:scale(1);opacity:.25}75%,100%{transform:scale(3);opacity:0}}
+@keyframes effort-live-halo{0%{transform:scale(1);opacity:.5}65%{opacity:.18}90%,100%{transform:scale(3.2);opacity:0}}
 @media(prefers-reduced-motion:reduce){.open-line-live i{animation:none;opacity:.25}}
