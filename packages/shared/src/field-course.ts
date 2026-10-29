@@ -41,14 +41,17 @@ function ovalPoint(f: number, r: number) {
   return { x: r * Math.cos(a), y: straight / 2 + r * Math.sin(a), angle: a * 180 / Math.PI };
 }
 
-export function fieldCourse(viewportWidth: number, height: number, count: number, view: ArenaViewWindow, unit: string, appearance: FieldAppearance) {
+export function fieldCourse(viewportWidth: number, height: number, count: number, view: ArenaViewWindow, unit: string, appearance: FieldAppearance, replayFocus?: readonly number[]) {
   const zoom = (appearance.ground === "oval" ? (unit === "pts" ? 20 : unit === "mi" ? 4 : 6) : fieldDefaultSpan(unit)) / arenaWindow(view.center, view.span).span;
   const oval = appearance.ground === "oval";
   const baseFieldWidth = Math.max(viewportWidth - 60, count * (viewportWidth - 60) / 5);
   // Measure the field between the outermost lane centers, excluding half-lane
   // margins. At the width floor, only depth continues zooming out.
   const minFieldWidth = viewportWidth / MAX_VIEWPORT_TO_FIELD_RATIO * (count > 1 ? count / (count - 1) : 1);
-  const horizontalZoom = oval ? zoom : Math.max(zoom, minFieldWidth / baseFieldWidth);
+  const actors = replayFocus?.filter(i => i >= 0 && i < count);
+  const gap = actors?.length ? Math.max(...actors)-Math.min(...actors) : 0;
+  const pairZoom = actors?.length ? Math.max(1,viewportWidth-160)/((gap+1)*baseFieldWidth/Math.max(1,count)) : Infinity;
+  const horizontalZoom = oval ? zoom : Math.min(Math.max(zoom, minFieldWidth / baseFieldWidth),pairZoom);
   const fieldWidth = baseFieldWidth * horizontalZoom;
   const width = oval ? viewportWidth : Math.max(viewportWidth, fieldWidth + 60);
   const left = (width - 42 - fieldWidth) / 2, top = 72, bottom = height - 64, length = bottom - top;
@@ -56,9 +59,9 @@ export function fieldCourse(viewportWidth: number, height: number, count: number
   const along = (v: number) => top + (bounds.max - v) / bounds.span * length;
   const drift = (v: number) => appearance.ground === "trail" ? Math.sin(v * .58) * 13 * horizontalZoom : 0;
   const outerRadius = 140 + Math.max(1, count) * 18;
-  const ovalScale = Math.min((width - 60) / (outerRadius * 2), (length - 24) / (270 + outerRadius * 2)) * zoom;
+  const ovalScale = Math.min((width - 60) / (outerRadius * 2), (length - 24) / (270 + outerRadius * 2)) * (actors?.length ? Math.min(1,zoom) : zoom);
   const focus = ovalPoint(view.center / fieldLoopLength(unit), 140 + Math.floor(count / 2) * 18 + 9);
-  const follow = Math.max(0, Math.min(1, zoom - 1));
+  const follow = actors?.length ? 0 : Math.max(0, Math.min(1, zoom - 1));
   const midX = width / 2 - focus.x * ovalScale * follow, midY = top + length / 2 - focus.y * ovalScale * follow;
   function point(v: number, i: number, offset = 0, clamp = false) {
     if (oval) {
@@ -72,7 +75,8 @@ export function fieldCourse(viewportWidth: number, height: number, count: number
     const steps = Math.max(1, Math.min(180, Math.ceil(Math.abs(b - a) / (oval ? fieldLoopLength(unit) / 100 : view.span / 60))));
     return Array.from({ length: steps + 1 }, (_, j) => { const p = point(a + (b - a) * j / steps, i, offset); return `${j ? "L" : "M"}${p.x.toFixed(3)} ${p.y.toFixed(3)}`; }).join(" ");
   }
-  return { width, height, left, fieldWidth, top, bottom, length, laneWidth, bounds, zoom, horizontalZoom, oval, ovalScale, outerRadius, midX, midY, along, drift, point, curve,
+  const focusScroll = !oval && actors?.length ? Math.max(0,Math.min(width-viewportWidth,left+((Math.min(...actors)+Math.max(...actors))/2+.5)*laneWidth-viewportWidth/2)) : undefined;
+  return { focusScroll, width, height, left, fieldWidth, top, bottom, length, laneWidth, bounds, zoom, horizontalZoom, oval, ovalScale, outerRadius, midX, midY, along, drift, point, curve,
     markerScale: unit === "pts" ? (oval ? Math.min(1.5, ovalScale * 1.3) : zoom)
       : (oval ? (540 + 2 * Math.PI * (140 + Math.floor(count / 2) * 18 + 9)) * ovalScale : length / bounds.span) * .3 / 58 };
 }

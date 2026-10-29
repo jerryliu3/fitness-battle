@@ -54,6 +54,7 @@ export function DebugEventMenu({
       {open ? (
         <div className="focus-shell-debug-menu" role="menu" aria-label="Trigger UI events">
           <p className="focus-shell-debug-kicker">Test UI events</p>
+          <button type="button" role="menuitem" className="focus-shell-debug-item" onClick={() => { setOpen(false); onNavigate("/onboarding?preview=1", "arena"); }}><b>Onboarding · full setup</b><small>Replay every step without saving preferences</small></button>
           {DEBUG_EVENT_OPTIONS.map((item) => (
             <button key={item.id} type="button" role="menuitem" className="focus-shell-debug-item" onClick={() => handleSelect(item.id)}>
               <b>{item.label}</b>

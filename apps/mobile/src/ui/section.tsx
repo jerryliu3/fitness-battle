@@ -7,8 +7,9 @@ export function textStyle(role: TypographyRole): TextStyle {
   const token = SHELL_TYPOGRAPHY[role];
   return { fontFamily: families[token.weight], fontSize: token.size, lineHeight: token.lineHeight, letterSpacing: token.tracking * token.size, textTransform: "none", fontStyle: "normal" };
 }
-export function chartTextProps() {
-  return { fontFamily: families[SHELL_TYPOGRAPHY.caption.weight], fontSize: SHELL_TYPOGRAPHY.caption.size, fontWeight: "500" as const };
+export function chartTextProps(role: TypographyRole = "caption") {
+  const token = SHELL_TYPOGRAPHY[role];
+  return { fontFamily: families[token.weight], fontSize: token.size, fontWeight: `${token.weight}` as "400" | "500" | "600" | "700" | "800" };
 }
 export function AppText({ role = "body", secondary = false, style, ...props }: Omit<TextProps, "role"> & { role?: TypographyRole; secondary?: boolean }) {
   return <Text {...props} style={[{ color: secondary ? c.muted : c.ink }, style, textStyle(role)]} />;

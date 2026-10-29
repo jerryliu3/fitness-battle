@@ -1,8 +1,16 @@
-import { SectionStack, AppText } from "../ui/section";
+import { useEffect, useRef } from "react";
+import { Animated } from "react-native";
+import { OnboardingFade } from "./onboarding-visuals";
+import { useReducedMotion } from "../ui/use-reduced-motion";
+import { StandardLineChart } from "../ui/standard-line-chart";
+import { useCompeteStore } from "../lib/compete-store";
+import Svg, { Circle, Path, Text as SvgText } from "react-native-svg";
+import { AnimatedEmber } from "../ui/mascot/animated-ember";
+import { SectionStack, AppText, chartTextProps } from "../ui/section";
 import { MotionStep } from "../ui/motion-step";
 import { useAuth } from "../lib/auth";
 import {
-  APP_TIMEZONE,
+  countsOnTrack, APP_TIMEZONE,
   roundReveal,
   roundEnrollment,
   sportById,
@@ -15,7 +23,7 @@ import { useState } from "react";
 import { Modal, ScrollView, Text, View } from "react-native";
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 import { WeeklySocialActions } from "./weekly-social";
-import { CompetitionReplayButton } from "./competition-replay";
+import { ReplayViewer, CompetitionReplayButton } from "./competition-replay";
 import { ResultCard } from "./result-card";
 import { FocusButton, f } from "../ui/focus";
 function Round({
@@ -27,48 +35,49 @@ function Round({
   rows: PeriodResult[];
   onClose: () => void;
 }) {
-  const [next, setNext] = useState(false);
+  const [stage, setStage] = useState(0);
+  const next = stage === 2;
   const router = useRouter();
   return (
     <Modal
       visible
       presentationStyle="fullScreen"
       animationType="slide"
-      onRequestClose={() => { /* Complete both stages before acknowledging results. */ }}
+      onRequestClose={() => { /* Complete the recap before acknowledging results. */ }}
     >
       <SafeAreaProvider>
       <SafeAreaView style={f.safe}>
         <ScrollView contentContainerStyle={f.content}>
 <SectionStack divided={false}>
-          <MotionStep identity={next ? "next" : "results"}>
+          <MotionStep identity={String(stage)}>
           <Text style={f.kicker}>
-            Round complete · {next ? "2 / 2" : "1 / 2"}
+            Round complete · {stage+1} / 3
           </Text>
           <AppText accessibilityRole="header" role="display" >
-            {next ? "Keep it going." : "Your week, settled."}
+            {["Small days. Quite a week.", "Your week, settled.", "Your week in motion.", "New round. Fresh start."][stage]}
           </AppText>
-          {!next ? (
+          {stage===0 ? <><View style={{alignItems:"center"}}><AnimatedEmber size={190}/></View><AppText>Your effort added up. Let’s see where it took you.</AppText><FocusButton label="Reveal my finish →" onPress={()=>setStage(1)}/></> : !next ? (
             <>
               {rows.map((result) => (
                 <View key={result.id}>
+                  <View style={{height:500}}><ReplayViewer state={state} selection={result} initialDimension="4d" embedded onClose={()=>{}}/></View>
                   <ResultCard result={result} units={state.units} />
-                  <CompetitionReplayButton state={state} selection={result} label="Replay this round" />
                   <WeeklySocialActions result={result} units={state.units} />
                 </View>
               ))}
-              <FocusButton label="Next round →" onPress={() => setNext(true)} />
+              <FocusButton label="See what added up →" onPress={() => setStage(2)} />
             </>
           ) : (
             <>
-              {rows.map((result) => {
+              {rows.map((result,index) => {
                 const enrollment = roundEnrollment(state, result);
                 return (
-                  <AppText role="body" secondary key={result.id} >
+                  <OnboardingFade key={result.id} delay={index*500}><View style={{gap:16}}><AppText role="heading">{sportById(result.sport).name} · Score {Math.round(result.eloBefore)} → {Math.round(result.eloAfter)}</AppText><WeekChart state={state} result={result} delay={index*500}/><AppText role="body" secondary>
                     {sportById(result.sport).name}:{" "}
                     {enrollment.startsAt
                       ? `Your current round ${enrollment.status === "upcoming" ? "starts" : "started"} ${enrollment.startsAt.toLocaleString("en-US", { timeZone: APP_TIMEZONE, timeZoneName: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}. ${enrollment.renews ? "Renews after this round." : "Stops after this round."}`
                       : "You’re not registered for another round. Update sport settings to join again."}
-                  </AppText>
+                  </AppText></View></OnboardingFade>
                 );
               })}
               <FocusButton
@@ -100,9 +109,12 @@ export function RoundTakeover({
   dispatch: (action: Action) => void;
 }) {
   const { user } = useAuth();
+  const {debugActive,resetDebugState}=useCompeteStore();
+  const [dismissed,setDismissed]=useState(false);
   const path = usePathname();
   const router = useRouter();
   const replay = useGlobalSearchParams().results === "latest";
+  useEffect(()=>{if(!replay)setDismissed(false);},[replay]);
   const reveal = roundReveal(
     replay
       ? {
@@ -114,16 +126,19 @@ export function RoundTakeover({
         }
       : state,
   );
-  if (!ready || path !== "/arena" || !replay || !reveal) return null;
+  if(dismissed || !ready || path !== "/arena" || !replay || !reveal) return null;
   return (
     <Round
       key={`${user?.id ?? "guest"}:${reveal.key}`}
       state={state}
       rows={reveal.results}
       onClose={() => {
-        dispatch({ type: "acknowledge-reveal", revealIds: reveal.ids });
+        setDismissed(true);
+        dispatch({ type: "acknowledge-reveal", revealIds: reveal.ids });if(debugActive)resetDebugState?.();
         if (replay) router.replace("/arena");
       }}
     />
   );
 }
+
+function WeekChart({state,result,delay}:{state:CompeteState;result:PeriodResult;delay:number}){const reduced=useReducedMotion();const draw=useRef(new Animated.Value(reduced?1:0)).current;useEffect(()=>{const animation=Animated.timing(draw,{toValue:1,delay:reduced?0:delay+400,duration:reduced?0:1500,useNativeDriver:false});animation.start();return ()=>animation.stop();},[draw,delay,reduced]);const activities=state.activities.filter(a=>a.sport===result.sport&&countsOnTrack(a,result.track)&&a.startedAt>=result.periodStart&&a.startedAt<result.periodEnd);return activities.length?<StandardLineChart revealProgress={draw} values={Array.from({length:7},(_,day)=>activities.filter(a=>Date.parse(a.startedAt)<Date.parse(result.periodStart)+(day+1)*86400000).reduce((sum,a)=>sum+a.movingSec/60,0))} xLabels={["Day 1","Day 4","Day 7"]}/>:<AppText>Detailed activity history is unavailable for this archived week.</AppText>;}

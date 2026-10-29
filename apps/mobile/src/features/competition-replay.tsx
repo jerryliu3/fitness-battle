@@ -119,7 +119,7 @@ function ReplayTimeline({ cursor, count, caption, onSeek }: { cursor: number; co
 function ReplayAction({ label, text, disabled, onPress, primary = false }: { label: string; text: string; disabled?: boolean; onPress: () => void; primary?: boolean }) {
   return <Pressable accessibilityRole="button" accessibilityLabel={label} accessibilityState={{ disabled: Boolean(disabled) }} disabled={disabled} onPress={onPress} style={[s.action, primary && s.primary, disabled && { opacity: .4 }]}><AppText role="label">{text}</AppText></Pressable>;
 }
-function ReplayViewer({ state, selection, initialDimension, onClose }: { state: CompeteState; selection: CompetitionReplaySelection; initialDimension: "2d" | "3d" | "4d"; onClose: () => void }) {
+export function ReplayViewer({ state, selection, initialDimension, onClose, embedded=false }: { state: CompeteState; selection: CompetitionReplaySelection; initialDimension: "2d" | "3d" | "4d"; onClose: () => void; embedded?: boolean }) {
   const { user, accessToken, offlineMode } = useAuth();
   const { debugActive } = useCompeteStore();
   const { blocks } = useAthleteBlocks();
@@ -150,6 +150,7 @@ function ReplayViewer({ state, selection, initialDimension, onClose }: { state: 
   }, [user?.id, offlineMode, debugActive, accessToken, selection.sport, selection.track, selection.periodStart, selection.periodEnd, attempt]);
   const index = useMemo(() => data ? indexCompetitionReplay(data, state.units) : null, [data, state.units]);
   const count = index?.replay.events.length ?? 0;
+  useEffect(()=>{if(embedded&&data)setCursor(data.events.length);},[data,embedded]);
   const cursorRef = useRef(cursor); cursorRef.current = cursor;
   useEffect(() => {
     if (!playing || !count) return;
@@ -186,16 +187,17 @@ function ReplayViewer({ state, selection, initialDimension, onClose }: { state: 
   const caption = index ? (frame?.event && hiddenIds.includes(frame.event.athleteId) ? "An athlete recorded activity" : competitionReplayCaption(index, cursor)) : "";
   return <View style={{ flex: 1 }}>
     <View style={s.header}>
-      <IconButton icon="back" label="Close competition replay" onPress={onClose} />
+      {!embedded&&<IconButton icon="back" label="Close competition replay" onPress={onClose} />}
       <View style={{ flex: 1 }}><AppText role="heading" accessibilityRole="header">{sportById(selection.sport).name} replay</AppText><AppText role="caption" secondary>{selection.track === "verified" ? "GPS Tracked" : "Open"} · {closed ? "Completed round" : "Competition so far"}</AppText></View>
     </View>
+
     {!index ? <View style={s.message}><AppText role="body" accessibilityLiveRegion="polite">{error || "Loading the competition timeline…"}</AppText>{error && <FocusButton label="Retry" onPress={() => setAttempt(a => a + 1)} />}</View> : <>
       <View style={s.scene} onLayout={event => setHeight(Math.max(100, event.nativeEvent.layout.height))}>
         <View style={{ position: "absolute", top: 12, right: 12, zIndex: 10 }}>
           <FieldViewSwitcher value={dimension} geographic={unit !== "pts"} onChange={value => { flight.cancel(); setDimension(value); }} />
         </View>
         {dimension === "4d" ? <GeographicCourse hiddenIds={hiddenIds} course={course} error={courseError} onRetry={retryCourse} lanes={lanes} unit={unit} selectedId={selected ?? focus?.id ?? ""} focusRequest={focusRequest} onSelect={select} /> : dimension === "2d" ? <LaneTrack hiddenIds={hiddenIds} onGestureStart={flight.cancel} onViewChange={applyView} focusRequest={focusRequest} focusOnMount animateSelection={!reduced} lanes={nativeLanes} appearance={appearance} unit={unit} height={height} fullscreen active selectedId={selected ?? focus?.id} index={2} showGhost={false} onSelect={lane => select(lane.id)} view={view} onPan={panTo} onZoom={zoomTo} /> : <PortraitField hiddenIds={hiddenIds} onGestureStart={flight.cancel} onViewChange={applyView} focusRequest={focusRequest} focusOnMount animateSelection={!reduced} laneAnchor={portraitAnchor} selectedId={selected ?? focus?.id} lanes={lanes} unit={unit} height={height} fullscreen fullscreenControlsBottom={64} onSelect={select} view={view} onPan={panTo} onZoom={zoomTo} />}
-        <Pressable accessibilityRole="button" onPress={() => { flight.cancel(); setCenter(null); setSelected(null); setFollowEvent(v => !v); }} style={s.follow}><AppText role="label">{followEvent ? "Follow me" : "Follow event"}</AppText></Pressable>
+        <View style={[s.follow,{flexDirection:"row",gap:12}]}><Pressable accessibilityRole="button" onPress={() => { flight.cancel(); setCenter(null); setSelected(null); setFollowEvent(v => !v); }}><AppText role="label">{followEvent ? "Follow me" : "Follow event"}</AppText></Pressable>{embedded&&<Pressable accessibilityRole="button" onPress={()=>{seek(0);setPlaying(true);}}><AppText role="label">Replay this round</AppText></Pressable>}</View>
       </View>
       <View style={s.controls}>
         <AppText role="row" numberOfLines={2}>{caption}</AppText>
@@ -210,6 +212,7 @@ function ReplayViewer({ state, selection, initialDimension, onClose }: { state: 
         </View>
       </View>
     </>}
+    {embedded&&frame&&<View>{frame.rows.map(row=><AppText key={row.id}>#{row.place} {row.name} · {row.value.toFixed(1)} {unit}</AppText>)}</View>}
   </View>;
 }
 const s = StyleSheet.create({

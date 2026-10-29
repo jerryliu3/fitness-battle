@@ -2,7 +2,8 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
 import { freshState, reduceCompete, rollClock } from "@fitness-battle/shared";
-const route = vi.hoisted(() => ({ path: "/arena", replay: false }));
+const route = vi.hoisted(() => ({ path: "/arena", replay: false, debug:false }));
+vi.mock("@/components/compete-context",()=>({useCompete:()=>({debugActive:route.debug,lastDebugEvent:route.debug?{id:"week-closing",nonce:1}:null,resetDebugState:()=>{}})}));
 vi.mock("@/components/auth-context", () => ({
   useAuth: () => ({ user: { id: "athlete" } }),
 }));
@@ -68,9 +69,9 @@ describe("deliberate week results", () => {
       renderToStaticMarkup(
         createElement(WeekReveal, { state, ready: true, onDismiss: vi.fn() }),
       ),
-    ).toContain("Result card");
+    ).toContain("Reveal my finish");
     route.path = "/app/arena";
-    expect(renderToStaticMarkup(createElement(WeekReveal, { state, ready: true, onDismiss: vi.fn() }))).toContain("Result card");
+    expect(renderToStaticMarkup(createElement(WeekReveal, { state, ready: true, onDismiss: vi.fn() }))).toContain("Reveal my finish");
     route.path = "/field";
     expect(
       renderToStaticMarkup(
@@ -81,3 +82,5 @@ describe("deliberate week results", () => {
     route.replay = false;
   });
 });
+
+it("opens the Debug arrival before the results URL transition",()=>{route.path="/app/arena";route.replay=false;route.debug=true;expect(renderToStaticMarkup(createElement(WeekReveal,{state:settled(),ready:true,onDismiss:vi.fn()}))).toContain("Reveal my finish");route.debug=false;});

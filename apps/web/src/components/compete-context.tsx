@@ -624,7 +624,8 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
       setState(base);
       syncReview.stage(activities, [{ type: "apply-sync", provider: "strava", activities }], () => experience.prime(result.baselines), base);
     } else {
-      experience.prime(result.baselines);
+      if(event === "week-closing") experience.clear(result.state);
+      else experience.prime(result.baselines);
       stateRef.current = result.state;
       setState(result.state);
     }
@@ -770,9 +771,9 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
             receipt={syncReview.receipt}
             moment={experience.moment}
             remaining={experience.remaining}
-            onAcknowledge={experience.acknowledge}
+            onAcknowledge={() => { experience.acknowledge(); if (debugActive && experience.remaining <= 1) resetDebugState(); }}
             state={state}
-            onComplete={syncReview.finish}
+            onComplete={(selected, quiet) => { const result=syncReview.finish(selected, quiet); if(debugActive && (quiet || lastDebugEvent?.id !== "sync-combo")) resetDebugState(); return result; }}
           />
         </Suspense>
       ) : null}

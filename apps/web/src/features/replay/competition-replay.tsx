@@ -31,7 +31,7 @@ export function CompetitionReplayButton({ state, selection, dimension = "2d", la
   </Dialog.Root>;
 }
 
-function ReplayViewer({ state, selection, initialDimension }: { state: CompeteState; selection: CompetitionReplaySelection; initialDimension: "2d" | "3d" | "4d" }) {
+export function ReplayViewer({ state, selection, initialDimension, embedded = false }: { state: CompeteState; selection: CompetitionReplaySelection; initialDimension: "2d" | "3d" | "4d"; embedded?: boolean }) {
   const { user, offlineMode } = useAuth();
   const { debugActive } = useCompete();
   const reduced = useReducedMotion();
@@ -64,6 +64,7 @@ function ReplayViewer({ state, selection, initialDimension }: { state: CompeteSt
   }, [user?.id, offlineMode, debugActive, selection.sport, selection.track, selection.periodStart, selection.periodEnd, attempt]);
   const index = useMemo(() => data ? indexCompetitionReplay(data, state.units) : null, [data, state.units]);
   const count = index?.replay.events.length ?? 0;
+  useEffect(()=>{if(embedded&&data)setCursor(data.events.length);},[data,embedded]);
   const cursorRef = useRef(cursor); cursorRef.current = cursor;
   useEffect(() => {
     if (!playing || !count) return;
@@ -102,18 +103,18 @@ function ReplayViewer({ state, selection, initialDimension }: { state: CompeteSt
   const select = (id: string) => { const lane = lanes.find(l => l.id === id); if (lane) { setSelected(id); setFocusRequest(value => value + 1); if (dimension !== "4d") flight.fly({ ...view, center: clampCourseCenter(lane.value, view.span, Math.max(0, ...lanes.map(l => l.value)), unit, appearance.ground) }); } };
   const closed = data && Date.parse(data.through) >= Date.parse(data.periodEnd);
   return <>
-    <header className="competition-replay-header">
+    {!embedded&&<header className="competition-replay-header">
       <Dialog.Close className="club-icon-button" aria-label="Close competition replay">‹</Dialog.Close>
       <div><Dialog.Title>{sportById(selection.sport).name} replay</Dialog.Title><p>{selection.track === "verified" ? "GPS Tracked" : "Open"} · {closed ? "Completed round" : "Competition so far"}</p></div>
       <button type="button" className="fb-btn-ghost" onClick={() => setAttempt(a => a + 1)} disabled={!data && !error} aria-label="Reload competition replay">Refresh</button>
-    </header>
+    </header>}
     {!index ? <div className="competition-replay-message" role="status"><p>{error || "Loading the competition timeline…"}</p>{error && <button type="button" className="fb-btn" onClick={() => setAttempt(a => a + 1)}>Retry</button>}</div> : <>
       <div className="competition-replay-viewbar"><FieldViewSwitcher value={dimension} geographic={unit !== "pts"} onChange={value => { flight.cancel(); setDimension(value); }}
         onZoomIn={dimension !== "4d" ? () => zoomTo(Math.max(unit === "pts" ? 2 : .5, view.span / 1.5)) : undefined}
         onZoomOut={dimension !== "4d" ? () => zoomTo(Math.min(unit === "pts" ? 100 : 40, view.span * 1.5)) : undefined} /><span>Your place <b>{me?.place ?? "—"} / {lanes.length}</b></span></div>
       <div className="competition-replay-scene">
         {dimension === "4d" ? <GeographicCourse course={course} error={courseError} onRetry={retryCourse} lanes={lanes} unit={unit} selectedId={selected ?? focus?.id ?? ""} focusRequest={focusRequest} onSelect={select} /> : dimension === "2d" ? <ArenaLanes playback onGestureStart={flight.cancel} onViewChange={applyView} focusRequest={focusRequest} focusOnMount immersive lanes={lanes} appearance={appearance} view={view} unit={unit} selected={selected ?? focus?.id ?? ""} onSelect={select} onPan={panTo} onZoom={zoomTo} /> : <PortraitField onGestureStart={flight.cancel} onViewChange={applyView} focusRequest={focusRequest} focusOnMount immersive selectedId={selected ?? focus?.id} lanes={lanes} view={view} unit={unit} onSelect={select} onPan={panTo} onZoom={zoomTo} />}
-        <button type="button" className="competition-replay-follow fb-btn-line" style={dimension === "4d" ? { bottom: "auto", top: 12 } : undefined} onClick={() => { flight.cancel(); setCenter(null); setSelected(null); setFollowEvent(v => !v); }}>{followEvent ? "Follow me" : "Follow event"}</button>
+        <div className="competition-replay-follow" style={{display:"flex",gap:8,...(dimension==="4d"?{bottom:"auto",top:12}:{})}}><button type="button" className="fb-btn-line" style={dimension === "4d" ? { bottom: "auto", top: 12 } : undefined} onClick={() => { flight.cancel(); setCenter(null); setSelected(null); setFollowEvent(v => !v); }}>{followEvent ? "Follow me" : "Follow event"}</button>{embedded&&<button className="fb-btn-line" onClick={()=>{seek(0);setPlaying(true);}}>Replay this round</button>}</div>
       </div>
       <footer className="competition-replay-controls">
         <div className="competition-replay-event"><strong>{competitionReplayCaption(index, cursor)}</strong><span>{competitionReplayDate(index, cursor)} · {Math.ceil(cursor)} / {count}</span></div>
@@ -129,5 +130,6 @@ function ReplayViewer({ state, selection, initialDimension }: { state: CompeteSt
         <p>{!count ? "No counted activity in this competition yet." : "Drag the timeline to move event by event."}{data?.scope === "local" ? debugActive ? " Debug preview · local practice field." : " Local preview · your sessions and available simulated athletes." : " Workout order, based on current counted activities."}{data?.athletes.some(a => a.synthetic) && " Simulated athletes use daily steps."}</p>
       </footer>
     </>}
+  {embedded&&frame&&<div aria-label="Final standings">{frame.rows.map(row=><p key={row.id} style={{padding:12,background:row.you?"#fff5d1":undefined}}><b>#{row.place} {row.name}</b> · {row.value.toFixed(1)} {unit}</p>)}</div>}
   </>;
 }

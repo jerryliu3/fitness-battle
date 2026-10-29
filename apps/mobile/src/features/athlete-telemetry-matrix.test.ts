@@ -9,6 +9,7 @@ vi.mock("expo-router", () => ({
 }));
 
 vi.mock("react-native", () => ({
+  Animated: { createAnimatedComponent: (component: unknown) => component },
   Pressable: "Pressable",
   ScrollView: "ScrollView",
   Text: "Text",
@@ -19,6 +20,8 @@ vi.mock("react-native", () => ({
 
 vi.mock("react-native-svg", () => ({
   default: "Svg",
+  Defs: "Defs",
+  ClipPath: "ClipPath",
   Circle: "Circle",
   G: "G",
   Line: "Line",

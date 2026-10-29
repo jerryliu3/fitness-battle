@@ -1,13 +1,16 @@
 "use client";
 
-import { useMemo, type ReactElement } from "react";
+import { useId, useMemo, type ReactElement } from "react";
 import {
   SHELL_COLORS as c,
   buildStandardChartGeometry,
 } from "@fitness-battle/shared";
+import { motion, useReducedMotion } from "motion/react";
 import { ChartSvg, ChartText } from "./chart-text";
 
 export interface StandardLineChartProps {
+  animateReveal?: boolean;
+  revealDelay?: number;
   values: number[];
   xLabels?: [string, string, string]; // [start, mid, end]
   formatY?: (value: number) => string;
@@ -25,6 +28,8 @@ export interface StandardLineChartProps {
 
 export function StandardLineChart({
   values,
+  animateReveal = false,
+  revealDelay = 0,
   xLabels,
   formatY = (v) => `${Math.round(v)}`,
   selectedIdx,
@@ -35,6 +40,7 @@ export function StandardLineChart({
   ariaLabel,
   accessibilityLabel,
 }: StandardLineChartProps): ReactElement | null {
+  const clipId=useId();const reduced=useReducedMotion();
   const geo = useMemo(
     () => buildStandardChartGeometry(values, 340, height, corridor),
     [values, height, corridor],
@@ -100,6 +106,7 @@ export function StandardLineChart({
           stroke={c.line}
         />
 
+        <defs><clipPath id={clipId}><motion.rect x="0" y="0" height={height} initial={{width:animateReveal&&!reduced?0:340}} animate={{width:340}} transition={{delay:animateReveal?revealDelay:0,duration:animateReveal&&!reduced?1.5:0}}/></clipPath></defs><g clipPath={`url(#${clipId})`}>
         {/* Corridor fill */}
         {geo.corridorPath && (
           <path d={geo.corridorPath} fill={stroke} opacity={0.16} />
@@ -144,6 +151,7 @@ export function StandardLineChart({
           />
         )}
 
+        </g>
         {/* X-axis date labels */}
         {xLabels && (
           <>

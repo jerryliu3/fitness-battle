@@ -476,3 +476,82 @@ following and restores the target cursor to that athlete's distance. Returning t
 a course retains an explicit target; choosing another athlete clears it. Seeking
 is presentation-only and never edits activity, athlete selection, scores or trails.
 The earlier hide-only PR remains the fallback until this follow-up is applied.
+
+## Guided setup and competition moments (October 29)
+
+Production onboarding now follows eight illustrated steps: welcome, profile,
+sports and primary sport, units, optional sleep tracking, tracker connections,
+a sample field tutorial, and review. Draft choices are scoped to the account on
+the device and survive a visit to Data Sync. Connections and history import use
+the existing Athlete destination, which offers Continue setup for unfinished
+accounts. Completing setup applies existing account actions once; the tutorial
+never creates an activity. Debug → Onboarding replays the same UI without writes
+or tracker actions.
+
+Pass replays add a deliberate arrival prompt, the existing slow crossing, and a
+landing message. The camera fits the active pair in both axes without reordering
+lanes; passive oval replay fits the course. Round recaps reveal arrival, archived
+finish, archived training time by field, and actual next registration separately.
+Do not invent streaks, daily sessions or rewards from incomplete result history.
+Debug’s existing pass and week-closing triggers exercise these production flows.
+
+### Onboarding refinements (October 29)
+
+Setup now has seven steps. Sports and primary sport share a page with a separate
+Sleep & recovery section. Tracker options render inline using the same settings
+controls and handlers; authorization returns to the account-scoped onboarding
+draft automatically. Skip for now leaves connection setup optional. Debug
+previews show disabled integration controls and never authorize or save.
+
+The tutorial explicitly introduces the Overtake metric. It embeds the production
+CompetitionMoment player with a fictional two-racer fixture, slower playback,
+and the same crossing slowdown. A 2D field / 4D course toggle retains the same
+playback clock, and Replay resets the demonstration. The 4D view uses the existing
+geographic course renderer and requires the configured Mapbox token/native
+Mapbox build; missing configuration is explained by that renderer. Tutorial
+values use explicitly labeled sample kilometres and never affect account totals.
+
+Setup has no close or skip-setup action. Previous step sits beside the forward
+action at the bottom and is absent on the first step. Sleep tracking uses the
+same selectable chip treatment as sports. The Overtake player owns its single
+Watch / Replay action; the tutorial wrapper only supplies the view toggle.
+
+The next refinement keeps Ember mounted above the changing step content at a
+constant size. Units live under the sport chips and appear for running, cycling,
+or walking; the primary selector appears only with multiple sports. Users can
+choose sleep alone. Continue validates at least one sport or sleep selection;
+sleep-only completion does not register a sport or change the primary sport.
+The draft namespace is v3 because the step order changed.
+
+Overtakes default to the 4D course with a binary 2D / 4D switch (native Switch on
+iOS). The tutorial replay omits its sport/sample header. A new example standings
+and score-chart step introduces weekly results and crew progress. The final
+summary celebrates the selected sports, units and recovery with icon cards, and
+derives its next-wave label from nextDailyWaveWindowAt and waveTimeLabel. It
+refreshes the displayed scheduling clock while setup remains open.
+
+The weekly introduction now stages an animated second-to-first standings move,
+then reveals the score chart. Crew content and example captions are omitted.
+Overtakes autoplay on entry and retain a replay action. Distance units use a
+compact control on the label row. The final summary omits its redundant greeting
+and kicker. Reduced Motion bypasses the standings and chart timing.
+
+Sports has its own heading; distance units retain their compact size below the
+label, aligned left. Navigation uses Back. The standings example counts You from
+20.1 to 24.8 km over two seconds and keeps You highlighted through the rank swap.
+Chart axes stay visible while the plot reveals. Summary cards fade in in order,
+followed by the next-wave label, respecting Reduced Motion.
+
+Onboarding is a full-screen surface without a progress bar. Finish preview exits
+to Compete explicitly; signed-in setup ends with Finish. Debug sync and overtake
+completion restore the pre-preview state; weekly recap dismissal hides locally
+before removing the results URL. Weekly results omit the medal, embed a 4D-first
+board replay with standings, and consolidate training charts, score change and
+current-round settings on the final page. Archived charts use qualifying activity
+history and explicitly report missing detail rather than inventing daily values.
+
+Desktop web onboarding retains its centered 480px layout and normal control sizes;
+native onboarding remains full-screen. Recap replay sits beside Follow me inside
+the board. Weekly chart drawing starts immediately; onboarding keeps its staged
+reveal delay. Debug Overtake exposes 2D / 4D switching on the same playback clock,
+using the practice course for geographic previews.

@@ -62,11 +62,11 @@ function humanError(code?: string): string {
   return code;
 }
 
-function YouContent({ surface }: { surface: "progress" | "athlete" }) {
+function YouContent({ surface, inlineConnections = false }: { surface: "progress" | "athlete"; inlineConnections?: boolean }) {
   const reduced = useReducedMotion();
   const { user, signOut, offlineMode, legacyBackup } = useAuth();
   const { state, dispatch, loadStatus, previewSyncReview } = useCompete();
-  const [panel, setPanel] = useState<AthletePanel | null>(null);
+  const [panel, setPanel] = useState<AthletePanel | null>(inlineConnections ? "connections" : null);
   const overviewRef = useRef<HTMLDivElement>(null);
   const settingsFocus = useRef<HTMLElement | null>(null);
   const [settingsPresent, setSettingsPresent] = useState(false);
@@ -245,6 +245,10 @@ function YouContent({ surface }: { surface: "progress" | "athlete" }) {
         "That tracker did not connect. Sign in and try the link again.",
       );
     }
+    if (user && sessionStorage.getItem(`onboarding-connect-return:${user.id}`)) {
+      sessionStorage.removeItem(`onboarding-connect-return:${user.id}`);
+      router.replace("/onboarding");
+    }
   }, [
     accountKey,
     accountReady,
@@ -350,7 +354,8 @@ function YouContent({ surface }: { surface: "progress" | "athlete" }) {
           return;
         }
         if (body.authorizeUrl) {
-          window.location.href = body.authorizeUrl;
+          if (inlineConnections && user) try { sessionStorage.setItem(`onboarding-connect-return:${user.id}`, "1"); } catch {}
+        window.location.href = body.authorizeUrl;
           return;
         }
         dispatch({ type: "link", provider: providerId });
@@ -555,44 +560,8 @@ function YouContent({ surface }: { surface: "progress" | "athlete" }) {
     );
   }
 
-  const settingsPanel = surface === "athlete" && panel ? (
-      <motion.aside
-        key={panel}
-        className="focus-settings-stack-panel"
-        aria-label={PANEL_TITLES[panel]}
-        onKeyDown={(event) => {
-          if (event.key === "Escape" && !event.defaultPrevented) { event.preventDefault(); setPanel(null); }
-        }}
-        initial={reduced ? false : { x: "100%" }}
-        animate={{ x: 0 }}
-        exit={
-          reduced
-            ? { x: "100%" }
-            : {
-                x: "100%",
-                transition: { duration: 0.26, ease: [0.4, 0, 1, 1] },
-              }
-        }
-        transition={
-          reduced
-            ? { duration: 0 }
-            : { type: "spring", stiffness: 380, damping: 34 }
-        }
-      >
-        <button
-          type="button"
-          className="club-icon-button"
-          aria-label="Return to Athlete"
-          onClick={() => setPanel(null)}
-        >
-          ‹
-        </button>
-        <header className="focus-heading">
-                    <AppHeading level={1} role="heading">{PANEL_TITLES[panel]}</AppHeading>
-        </header>
-        <div className="focus-settings-panel">
-          {panel === "connections" ? (
-            <>
+  const connectionsContent = (<>
+              {!inlineConnections && !state.onboardingCompleted && <Link href="/onboarding" className="fb-btn">Continue setup →</Link>}
               <Section className="fb-card" title="Data Sync">
 
                 <AppParagraph typographyRole="body" className="fb-copy" style={{ color: "var(--muted)", marginBottom: 16 }}>
@@ -673,7 +642,7 @@ function YouContent({ surface }: { surface: "progress" | "athlete" }) {
                   <AppParagraph typographyRole="caption" className="fb-note">{syncNote}</AppParagraph>
                 ) : null}
               </Section>
-              <section className="fb-card">
+              {!inlineConnections && <section className="fb-card">
                 {(offlineMode) && previewSyncReview ? (
                   <button className="fb-btn-line" onClick={previewSyncReview}>
                     Preview today’s sync recap
@@ -700,9 +669,47 @@ function YouContent({ surface }: { surface: "progress" | "athlete" }) {
                     </button>
                   </>
                 )}
-              </section>
-            </>
-          ) : null}
+              </section>}
+            </>);
+  if (inlineConnections) return connectionsContent;
+
+  const settingsPanel = surface === "athlete" && panel ? (
+      <motion.aside
+        key={panel}
+        className="focus-settings-stack-panel"
+        aria-label={PANEL_TITLES[panel]}
+        onKeyDown={(event) => {
+          if (event.key === "Escape" && !event.defaultPrevented) { event.preventDefault(); setPanel(null); }
+        }}
+        initial={reduced ? false : { x: "100%" }}
+        animate={{ x: 0 }}
+        exit={
+          reduced
+            ? { x: "100%" }
+            : {
+                x: "100%",
+                transition: { duration: 0.26, ease: [0.4, 0, 1, 1] },
+              }
+        }
+        transition={
+          reduced
+            ? { duration: 0 }
+            : { type: "spring", stiffness: 380, damping: 34 }
+        }
+      >
+        <button
+          type="button"
+          className="club-icon-button"
+          aria-label="Return to Athlete"
+          onClick={() => setPanel(null)}
+        >
+          ‹
+        </button>
+        <header className="focus-heading">
+                    <AppHeading level={1} role="heading">{PANEL_TITLES[panel]}</AppHeading>
+        </header>
+        <div className="focus-settings-panel">
+          {panel === "connections" ? connectionsContent : null}
           {panel === "preferences" ? <section className="fb-card club-preferences">
             <div className="club-preference-row"><strong>Units</strong><div className="focus-segments" role="group" aria-label="Unit system">
               {(["us", "metric"] as const).map(units => <button key={units} type="button" aria-pressed={state.units === units} onClick={() => dispatch({ type: "set-units", units })}>{units === "us" ? "Imperial" : "Metric"}</button>)}
@@ -959,3 +966,5 @@ export function AthletePage() {
 export default function YouPage() {
   return <ProgressPage />;
 }
+
+export function TrackerConnections() { return <YouContent surface="athlete" inlineConnections/>; }

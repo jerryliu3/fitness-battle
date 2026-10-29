@@ -930,8 +930,10 @@ export function CompeteProvider({ children, navigationReady = true }: { children
     setFieldNotice(null);
   }, []);
 
+  const lastPreviewEvent=useRef<DebugEventId|null>(null);
   const triggerDebugEvent = useCallback(
     (event: DebugEventId): DebugEventResult | null => {
+      lastPreviewEvent.current=event;
       const accountKey = accountRef.current ?? "guest";
       const current = stateRef.current ?? rollClock(freshState());
       if (!preDebugStateRef.current) preDebugStateRef.current = stateRef.current;
@@ -950,7 +952,8 @@ export function CompeteProvider({ children, navigationReady = true }: { children
         setState(base);
         syncReview.stage(activities, [{ type: "apply-sync", provider: "strava", activities }], () => experience.prime(result.baselines), base);
       } else {
-        experience.prime(result.baselines);
+        if(event === "week-closing") experience.clear(result.state);
+        else experience.prime(result.baselines);
         stateRef.current = result.state;
         setState(result.state);
       }
@@ -1025,9 +1028,9 @@ export function CompeteProvider({ children, navigationReady = true }: { children
             receipt={syncReview.receipt}
             moment={experience.moment}
             remaining={experience.remaining}
-            onAcknowledge={experience.acknowledge}
+            onAcknowledge={() => { experience.acknowledge(); if (debugActive && experience.remaining <= 1) resetDebugState(); }}
             state={state}
-            onComplete={syncReview.finish}
+            onComplete={(selected, quiet) => { const result=syncReview.finish(selected, quiet); if(debugActive && (quiet || lastPreviewEvent.current !== "sync-combo")) resetDebugState(); return result; }}
           />
         </Suspense>
       ) : null}
