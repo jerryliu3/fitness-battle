@@ -66,6 +66,18 @@ describe("store binary config", () => {
     }
   });
 
+  it("ships a flattened 1024 app icon and a 512 Play listing icon", () => {
+    const icon = readFileSync(join(root, "assets/icon.png"));
+    const play = readFileSync(join(root, "../../docs/store/play-icon-512.png"));
+    expect(icon.readUInt32BE(16)).toBe(1024);
+    expect(icon.readUInt32BE(20)).toBe(1024);
+    expect(icon[25]).toBe(2);
+    expect(play.readUInt32BE(16)).toBe(512);
+    expect(play.readUInt32BE(20)).toBe(512);
+    expect(play[25]).toBe(6);
+    expect(play.length).toBeLessThan(1024 * 1024);
+  });
+
   it("builds store binaries on the SDK 58 image and ships an Android app bundle", () => {
     for (const profile of ["development", "preview", "production"] as const) {
       expect(eas.build[profile].ios.image).toBe("sdk-58");
