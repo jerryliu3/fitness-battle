@@ -35,6 +35,7 @@ export {
   competitionTrackLabel,
 } from "./sports";
 export {
+  settleSleepWeeks,
   HEALTH_METRIC_IDS,
   HEALTH_METRICS,
   SLEEP_PROVIDER_IDS,
@@ -93,6 +94,7 @@ export { expectedScore, settleElo } from "./elo";
 export { lessonFor, type Lesson } from "./lessons";
 export {
   freshState,
+  calibrateFromAcceptedHistory,
   migrateCompeteState,
   withAccountEloBaseline,
   placeOrLast,
@@ -128,6 +130,9 @@ export {
   openEnrollmentRemoved,
   sleepRenewal,
   sportRenewal,
+  competitionQueue,
+  waveTimeLabel,
+  normalizeNewRegistrations,
   type RenewalView,
 } from "./participation";
 export {

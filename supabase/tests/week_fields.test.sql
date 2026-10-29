@@ -44,6 +44,9 @@ from (values
   ('sql-field-end','2026-10-26T04:00:00Z','running',5000,'recorded','counted'),
   ('sql-field-sample','2026-10-20T12:00:00Z','running',4000,'demo','counted')
 ) fixture(id,started_at,sport,distance_m,provenance,disposition);
+-- These are historical, on-time fixture receipts rather than new late imports.
+update private.competition_fact_versions set accepted_at='2026-10-21T00:00:00Z'
+ where owner_id='f1000000-0000-4000-8000-000000000002' and kind='activity';
 insert into public.crew_entries (
   crew_id, user_id, activity_id, started_at, sport, distance_m, moving_sec, disposition
 )
@@ -57,6 +60,14 @@ from (values
   ('codex-before', '2026-10-19T03:59:59Z', 'running', 6000, 'counted'),
   ('codex-end', '2026-10-26T04:00:00Z', 'running', 5000, 'counted')
 ) fixture(id, started_at, sport, distance_m, disposition);
+
+-- Only pre-registered members are assigned at the benchmark.
+insert into public.sport_ratings(user_id,sport,opted_in,lock_period) values
+ ('f1000000-0000-4000-8000-000000000001','running',true,'2026-10-19T04:00Z'),
+ ('f1000000-0000-4000-8000-000000000002','running',true,'2026-10-19T04:00Z');
+insert into public.wave_enrollments(user_id,sport,wave_start,week_end,crew_id,registered_at) values
+ ('f1000000-0000-4000-8000-000000000001','running','2026-10-19T04:00Z','2026-10-26T04:00Z','fc000000-0000-4000-8000-000000000001','2026-10-18T04:00Z'),
+ ('f1000000-0000-4000-8000-000000000002','running','2026-10-19T04:00Z','2026-10-26T04:00Z','fc000000-0000-4000-8000-000000000001','2026-10-18T04:00Z');
 
 set local role authenticated;
 select set_config('request.jwt.claim.sub', 'f1000000-0000-4000-8000-000000000001', true);
@@ -79,7 +90,7 @@ select is((select distance_m from public.week_field_roster(
 select throws_ok($$select public.seat_athlete_week_field(
   'cycling', '2026-10-19T04:00:00Z', '2026-10-26T04:00:00Z', 8,
   'fc000000-0000-4000-8000-000000000001', null, '{}'
-)$$, 'P0001', 'sport_mismatch', 'crew sport cannot be forged');
+)$$, 'P0001', 'not_registered', 'unregistered sport cannot be seated');
 select throws_ok($$select public.seat_athlete_week_field(
   'running', '2026-10-19T04:00:00Z', '2026-10-26T04:00:00Z', 1,
   'fc000000-0000-4000-8000-000000000001', null, '{}'
@@ -98,7 +109,7 @@ select throws_ok($$select public.week_field_roster((select id from codex_field_i
 select throws_ok($$select public.seat_athlete_week_field(
   'running', '2026-10-19T04:00:00Z', '2026-10-26T04:00:00Z', 8,
   'fc000000-0000-4000-8000-000000000001', null, '{}'
-)$$, 'P0001', 'not_a_crew_member', 'outsiders cannot seat a crew');
+)$$, 'P0001', 'not_registered', 'outsiders cannot seat a crew');
 
 reset role;
 update public.crew_members set status = 'declined'
@@ -107,17 +118,17 @@ where crew_id = 'fc000000-0000-4000-8000-000000000001'
 set local role authenticated;
 select set_config('request.jwt.claim.sub', 'f1000000-0000-4000-8000-000000000002', true);
 select is((select count(*) from public.week_fields where crew_id = 'fc000000-0000-4000-8000-000000000001'),
-  0::bigint, 'former members cannot select their old crew field');
-select throws_ok($$select public.week_field_roster((select id from codex_field_ids))$$,
-  'P0001', 'not_a_crew_member', 'former members cannot read old crew scores');
+  1::bigint, 'field participation survives a Crew departure');
+select lives_ok($$select public.week_field_roster((select id from codex_field_ids))$$,
+  'former Crew members retain their authorized frozen field');
 
 select lives_ok($$select public.seat_athlete_week_field(
   'running', '2026-10-19T04:00:00Z', '2026-10-26T04:00:00Z', 8
-)$$, 'solo seating still succeeds through the same RPC');
+)$$, 'repeat resolution keeps the same canonical field');
 select is((select distance_m from public.week_field_roster(
-  (select id from public.week_fields where crew_id is null and wave_start = '2026-10-19T04:00:00Z' and sport = 'running')
+  (select id from public.week_fields where crew_id = 'fc000000-0000-4000-8000-000000000001' and wave_start = '2026-10-19T04:00:00Z' and sport = 'running')
 ) where user_id = 'f1000000-0000-4000-8000-000000000002'),
-  5100::numeric, 'solo fields retain account-activity scoring');
+  5100::numeric, 'frozen fields retain account-activity scoring');
 
 set local role anon;
 select throws_ok($$select * from public.week_fields$$, '42501',

@@ -68,7 +68,8 @@ export default function Onboarding() {
             onPress={() => setUnits(u)}
           />
         ))}
-        <SectionHeader title="Sports to join now"/>
+        <SectionHeader title="Sports for your next wave"/>
+        <AppText role="body" secondary>Your events start at the next 6 a.m. Eastern window. Competitors are revealed at the start.</AppText>
         {SPORTS.map((s) => (
           <FocusButton
             key={s.id}

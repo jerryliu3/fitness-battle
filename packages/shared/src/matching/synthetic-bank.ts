@@ -1,6 +1,7 @@
 import { dayKey, hashString, unitInterval } from "../compete/sports";
 import type { SportId } from "../compete/sports";
 import type { SyntheticRival } from "./types";
+import { startOfZonedDay, endOfZonedDay } from "../period";
 
 /** What an Elo band should look like for a full 7-day week. */
 export interface EloMileageBand {
@@ -203,7 +204,6 @@ export function syntheticVolumeInWindow(
     return { effort: 0, distanceM: 0, movingSec: 0 };
   }
 
-  const dayMs = 86_400_000;
   const fullWeekKm =
     band.weeklyKm.min +
     unitInterval(`${rival.id}:wk-km`) *
@@ -218,7 +218,11 @@ export function syntheticVolumeInWindow(
   let cursor = new Date(waveStart.getTime());
 
   while (cursor.getTime() < through.getTime()) {
-    const dayEnd = new Date(cursor.getTime() + dayMs);
+    const dayStart = startOfZonedDay(cursor);
+    const dayEnd = endOfZonedDay(cursor);
+    // Only elapsed time inside this shared window contributes. A reveal one
+    // millisecond after 06:00 must not award a generated rival a whole day.
+    const elapsedShare = (Math.min(through.getTime(), dayEnd.getTime()) - cursor.getTime()) / (dayEnd.getTime() - dayStart.getTime());
     const day = dayKey(cursor);
     // ~5 active days / week on average, scaled by Elo band.
     const activeChance = 0.55 + (rival.elo - 1000) * 0.00025;
@@ -227,13 +231,13 @@ export function syntheticVolumeInWindow(
       const dayShare =
         (0.7 + unitInterval(`${rival.id}:share:${day}`) * 0.6) / 7;
       if (gps) {
-        const km = fullWeekKm * dayShare;
+        const km = fullWeekKm * dayShare * elapsedShare;
         const minPerKm =
           5.1 + unitInterval(`${rival.id}:pace:${day}`) * 1.5;
         distanceM += km * 1000;
         movingSec += km * minPerKm * 60;
       } else {
-        const minutes = fullWeekMin * dayShare;
+        const minutes = fullWeekMin * dayShare * elapsedShare;
         movingSec += minutes * 60;
       }
     }

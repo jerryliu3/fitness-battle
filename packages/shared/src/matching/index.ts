@@ -12,6 +12,9 @@ export {
 export {
   weekEndAfter,
   waveWindowAt,
+  nextDailyWaveWindowAt,
+  weeklyWaveWindowAt,
+  instantWaveWindowAt,
   isWithinWave,
   waveIsOpen,
   daysLeftInWave,

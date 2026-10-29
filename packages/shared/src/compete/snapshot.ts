@@ -1,5 +1,7 @@
 import { competeNow, migrateCompeteState, rollClock } from "./engine";
 import type { CompeteState } from "./sports";
+import { weekEndAfter } from "../matching/waves";
+import { pendingRevealIdsFromResults } from "./history";
 
 export interface CompeteEnvelope {
   savedAt: string;
@@ -50,6 +52,11 @@ function mergeFreshRemote(
   for (const mark of remote.readiness) {
     if (!readinessIds.has(mark.id)) readiness.push(mark);
   }
+  const now = competeNow(local);
+  const authoritativeSports = new Set(local.enrollments.filter(e =>
+    remote.requiresCanonicalFields && Date.parse(e.weekEnd) <= now.getTime() &&
+    remote.enrollments.find(r => r.sport === e.sport)?.waveStart !== e.waveStart,
+  ).map(e => e.sport));
   const enrollments = local.enrollments.map((localEnr) => {
     const remoteEnr =
       remote.enrollments.find(
@@ -57,18 +64,44 @@ function mergeFreshRemote(
           r.sport === localEnr.sport && r.waveStart === localEnr.waveStart,
       ) ??
       remote.enrollments.find((r) => r.sport === localEnr.sport);
+    if (authoritativeSports.has(localEnr.sport)) return remoteEnr
+      ? { ...remoteEnr, autoEnrollNext: localEnr.autoEnrollNext } : null;
     if (!remoteEnr) return localEnr;
     return {
       ...localEnr,
       fieldBoard: remoteEnr.fieldBoard,
+      fieldId: remoteEnr.fieldId,
+      awaitingField: remoteEnr.awaitingField,
       peerIds: remoteEnr.peerIds,
       syntheticIds: remoteEnr.syntheticIds,
       crewId: remoteEnr.crewId !== undefined ? remoteEnr.crewId : localEnr.crewId,
     };
-  });
+  }).filter((e): e is NonNullable<typeof e> => e !== null);
+  // A cancel can reach the database just after the benchmark. Restore only
+  // server-confirmed started registrations; queued cancellations remain local.
+  const protectedRows = remote.requiresCanonicalFields ? remote.enrollments.filter(e => Date.parse(e.waveStart) <= now.getTime() && Date.parse(e.weekEnd) > now.getTime()) : [];
+  for (const enrollment of protectedRows) {
+    const index = enrollments.findIndex(e => e.sport === enrollment.sport);
+    if (index < 0) {
+      enrollments.push(enrollment);
+      authoritativeSports.add(enrollment.sport);
+    } else if (enrollments[index]!.waveStart !== enrollment.waveStart) {
+      enrollments[index] = { ...enrollment, autoEnrollNext: enrollments[index]!.autoEnrollNext };
+      authoritativeSports.add(enrollment.sport);
+    }
+  }
+  const protectedHealth = remote.requiresCanonicalFields ? remote.healthRatings.filter(r => r.optedIn && Date.parse(r.lockPeriod) <= now.getTime() && weekEndAfter(new Date(r.lockPeriod)) > now) : [];
+  const authoritativeHealth = new Set(local.healthRatings.filter(r => remote.requiresCanonicalFields && r.optedIn &&
+    weekEndAfter(new Date(r.lockPeriod)) <= now && remote.healthRatings.find(row => row.metric === r.metric)?.lockPeriod !== r.lockPeriod,
+  ).map(r => r.metric));
+  for (const server of protectedHealth) {
+    const draft = local.healthRatings.find(r => r.metric === server.metric);
+    if (!draft?.optedIn || draft.lockPeriod !== server.lockPeriod) authoritativeHealth.add(server.metric);
+  }
   const merged = rollClock(
     {
       ...local,
+      requiresCanonicalFields: remote.requiresCanonicalFields ?? local.requiresCanonicalFields,
       units:
         holdLocalUnits && local.units !== remote.units
           ? local.units
@@ -77,11 +110,29 @@ function mergeFreshRemote(
       sleepNights,
       readiness,
       enrollments,
+      ratings: local.ratings.map(r => authoritativeSports.has(r.sport) ? remote.ratings.find(row => row.sport === r.sport) ?? r : r),
+      periodResults: [
+        ...local.periodResults.filter(r => !authoritativeSports.has(r.sport)),
+        ...remote.periodResults.filter(r => authoritativeSports.has(r.sport)).map(r => ({ ...r,
+          acknowledgedAt: r.acknowledgedAt ?? local.periodResults.find(row => row.id === r.id)?.acknowledgedAt ?? null,
+        })),
+      ],
+      effortMilestones: [
+        ...(local.effortMilestones ?? []).filter(r => !authoritativeSports.has(r.sport)),
+        ...(remote.effortMilestones ?? []).filter(r => authoritativeSports.has(r.sport)),
+      ],
+      healthRatings: local.healthRatings.map(r => {
+        const server = authoritativeHealth.has(r.metric) ? remote.healthRatings.find(row => row.metric === r.metric) : undefined;
+        return server ? { ...server, autoEnrollNext: r.autoEnrollNext } : r;
+      }),
+      healthResults: [...local.healthResults.filter(r => !authoritativeHealth.has(r.metric)),
+        ...remote.healthResults.filter(r => authoritativeHealth.has(r.metric))],
       crewBoard: remote.crewBoard,
     },
     competeNow(local),
   );
-  return sameDocument(local, merged) ? local : merged;
+  const revealed = { ...merged, pendingRevealIds: pendingRevealIdsFromResults(merged.periodResults) };
+  return sameDocument(local, revealed) ? local : revealed;
 }
 
 /**

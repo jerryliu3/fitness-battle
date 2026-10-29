@@ -11,14 +11,14 @@ describe("participation hold", () => {
     const joined = reduceCompete(freshState(new Date(now)), {
       type: "opt-in",
       sport: "running",
-      now,
+      now: "2026-10-14T09:00:00Z",
     });
     const stopping = reduceCompete(joined, {
       type: "schedule-leave",
       sport: "running",
       now,
     });
-    const left = reduceCompete(joined, { type: "opt-out", sport: "running", now });
+    const left = { ...joined, enrollments: [] };
     expect(openEnrollmentRemoved(joined, stopping, new Date(now))).toBe(false);
     expect(openEnrollmentRemoved(joined, left, new Date(now))).toBe(true);
     const shortened = {
@@ -36,14 +36,14 @@ describe("participation hold", () => {
     const joined = reduceCompete(freshState(new Date(now)), {
       type: "opt-in-health",
       metric: "sleep",
-      now,
+      now: "2026-10-14T09:00:00Z",
     });
     const stopping = reduceCompete(joined, {
       type: "schedule-leave",
       metric: "sleep",
       now,
     });
-    const left = reduceCompete(joined, { type: "opt-out-health", metric: "sleep", now });
+    const left = { ...joined, healthRatings: joined.healthRatings.map(r => ({ ...r, optedIn: false })) };
     expect(stopping.healthRatings.find((item) => item.metric === "sleep")?.optedIn).toBe(
       true,
     );

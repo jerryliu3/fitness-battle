@@ -659,12 +659,16 @@ export default function AthleteScreen() {
                 <Switch style={{ alignSelf: "center", marginVertical: 0 }} trackColor={{ false: SHELL_COLORS.line, true: SHELL_COLORS.ink }} thumbColor="#ffffff" ios_backgroundColor={SHELL_COLORS.line} accessibilityLabel="Freeze this week" value={frozen} disabled={!frozen && state.freezesLeft <= 0}
                   onValueChange={enabled => enabled ? setConfirmFreeze(true) : dispatch({ type: "unfreeze" })} />
               </View>
-              <SectionHeader title="Active Sports"/>
+              <SectionHeader title="Active Sports"/><AppText role="caption" secondary>Turning off a queued sport cancels registration. Started waves finish Sunday; turning off stops renewal.</AppText>
               {SPORTS.map(sport => <View key={sport.id} style={[f.row, { minHeight: 64, alignItems: "center", borderBottomWidth: 1, borderBottomColor: SHELL_COLORS.line }]}>
                 <View style={[f.row, f.grow, { justifyContent: "flex-start", gap: 10 }]}><SportIcon sport={sport.id} /><AppText role="label" >{sport.name}</AppText></View>
                 <Switch style={{ alignSelf: "center", marginVertical: 0 }} trackColor={{ false: SHELL_COLORS.line, true: SHELL_COLORS.ink }} thumbColor="#ffffff" ios_backgroundColor={SHELL_COLORS.line} accessibilityLabel={`Toggle ${sport.name} active status`}
-                  value={Boolean(state.ratings.find(r => r.sport === sport.id)?.optedIn)}
-                  onValueChange={enabled => dispatch(enabled ? { type: "opt-in", sport: sport.id, crewBoard: null } : { type: "opt-out", sport: sport.id })} />
+                  value={Boolean(state.ratings.find(r => r.sport === sport.id)?.optedIn) && state.enrollments.find(e => e.sport === sport.id)?.autoEnrollNext !== false}
+                  onValueChange={enabled => {
+                    const enrollment = state.enrollments.find(e => e.sport === sport.id);
+                    const queued = enrollment && Date.parse(enrollment.waveStart) > competeNow(state).getTime();
+                    dispatch(enabled ? enrollment ? { type: "resume-renewal", sport: sport.id } : { type: "opt-in", sport: sport.id, crewBoard: null } : { type: queued ? "opt-out" : "schedule-leave", sport: sport.id });
+                  }} />
               </View>)}
               {saveError ? <AppText role="body" secondary >{saveError}</AppText> : null}
               <FocusSheet

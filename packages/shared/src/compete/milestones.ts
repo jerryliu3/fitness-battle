@@ -76,7 +76,7 @@ export function applyEffortMilestones(
           track === "open" ? rating.lockOpen : rating.lockVerified,
         );
       const totals = periodEffort(
-        state.activities,
+        enrollment.scoringActivities ?? state.activities,
         rating.sport,
         new Date(start),
         new Date(Math.min(Date.parse(enrollment.weekEnd), now.getTime() + 1)),

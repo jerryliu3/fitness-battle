@@ -2,11 +2,11 @@ import { NextResponse } from "next/server";
 import { resolveRequestUserId } from "@/lib/auth/request-user";
 import {
   DEFAULT_GROUP_CAPACITY,
-  planCrewWeekField,
-  waveWindowAt,
+  nextDailyWaveWindowAt,
+
 } from "@fitness-battle/shared";
 import { asSportId } from "@/lib/crew-field";
-import { loadCrewWeekFieldPin, seatWeekFieldPin } from "@/lib/week-field";
+import { loadCrewWeekFieldPin } from "@/lib/week-field";
 import { createRequestClient } from "@/lib/supabase/request";
 
 type Supabase = Awaited<ReturnType<typeof createRequestClient>>;
@@ -52,7 +52,6 @@ export async function GET(request: Request) {
     const pin = await loadCrewWeekFieldPin(
       supabase,
       crew.id,
-      waveWindowAt().waveStart.toISOString(),
     );
     return NextResponse.json({ fields: pin ? [{ pin }] : [] });
   } catch {
@@ -80,38 +79,12 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "unsupported_sport" }, { status: 400 });
   }
 
-  // Identity/Elo is used only to plan deterministic fillers. Scores come from
-  // week_field_roster after the database has accepted the seating.
-  const { data: roster, error } = await supabase.rpc("crew_field_roster", {
-    p_crew_id: crew.id,
-  });
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 400 });
-  }
-  if (!roster?.length) {
-    return NextResponse.json({ error: "empty_roster" }, { status: 400 });
-  }
-  const plan = planCrewWeekField({
-    crewId: crew.id,
-    sport,
-    capacity: DEFAULT_GROUP_CAPACITY,
-    members: roster.map((row: { user_id: string; display_name: string; open_elo: number }) => ({
-      id: row.user_id,
-      name: row.display_name || "Athlete",
-      elo: Number(row.open_elo) || 1000,
-    })),
-  });
-
-  try {
-    const pin = await seatWeekFieldPin(supabase, {
-      ...plan,
-      crewName: crew.name,
-    });
-    return NextResponse.json({ pin });
-  } catch (error) {
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : "field_not_seated" },
-      { status: 400 },
-    );
-  }
+  // Queue context only. The account save owns registration; no names or field
+  // seats are exposed until the benchmark and canonical batch assignment.
+  const window = nextDailyWaveWindowAt();
+  return NextResponse.json({ pin: {
+    crewId: crew.id, crewName: crew.name, sport,
+    waveStart: window.waveStart.toISOString(), weekEnd: window.weekEnd.toISOString(),
+    capacity: DEFAULT_GROUP_CAPACITY, memberIds: [userId], members: [], syntheticIds: [],
+  } });
 }

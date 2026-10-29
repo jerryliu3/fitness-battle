@@ -13,18 +13,18 @@ import { hydrateFieldBoard } from "./compete-persist";
 
 describe("Competition Lifecycle & Unified Multiplayer Standings", () => {
   it("seats solo athletes into open fields, shares real peers and tops up synthetics to capacity 8", async () => {
-    const waveStart = "2026-10-19T04:00:00.000Z";
+    const waveStart = "2026-10-19T10:00:00.000Z";
     const weekEnd = "2026-10-26T04:00:00.000Z";
 
     // Athlete A state with solo running enrollment
     let stateA = freshState(new Date(waveStart));
-    stateA = reduceCompete(stateA, { type: "opt-in", sport: "running", now: waveStart });
+    stateA = reduceCompete(stateA, { type: "opt-in", sport: "running", now: "2026-10-19T09:00:00Z" });
 
     // Mock DB RPC responses for Athlete A
     const mockDbA = {
       from: vi.fn().mockReturnValue({select:()=>({in:async()=>({data:[],error:null})})}),
       rpc: vi.fn().mockImplementation((name: string) => {
-        if (name === "seat_athlete_week_field") {
+        if (name === "resolve_week_field") {
           return Promise.resolve({
             data: {
               id: "field-1",
@@ -32,8 +32,8 @@ describe("Competition Lifecycle & Unified Multiplayer Standings", () => {
               wave_start: waveStart,
               week_end: weekEnd,
               capacity: 8,
-              member_ids: ["athlete-a"],
-              synthetic_ids: ["syn-1", "syn-2", "syn-3", "syn-4", "syn-5", "syn-6", "syn-7"],
+              member_ids: ["athlete-a", "athlete-b"],
+              synthetic_ids: ["syn-1", "syn-2", "syn-3", "syn-4", "syn-5", "syn-6"],
               name: "Open Field",
             },
             error: null,
@@ -49,6 +49,7 @@ describe("Competition Lifecycle & Unified Multiplayer Standings", () => {
                 distance_m: 5000,
                 moving_sec: 1500,
               },
+              { user_id: "athlete-b", display_name: "Athlete B", open_elo: 1050, distance_m: 7500, moving_sec: 2200 },
             ],
             error: null,
           });
@@ -60,19 +61,19 @@ describe("Competition Lifecycle & Unified Multiplayer Standings", () => {
     const hydratedA = await hydrateFieldBoard(mockDbA as any, "athlete-a", stateA);
     expect(hydratedA.crewBoard).not.toBeNull();
     expect(hydratedA.crewBoard?.crewId).toBe("solo");
-    expect(hydratedA.crewBoard?.memberIds).toEqual(["athlete-a"]);
-    expect(hydratedA.crewBoard?.members).toHaveLength(1);
-    expect(hydratedA.crewBoard?.syntheticIds).toHaveLength(7);
+    expect(hydratedA.crewBoard?.memberIds).toEqual(["athlete-a", "athlete-b"]);
+    expect(hydratedA.crewBoard?.members).toHaveLength(2);
+    expect(hydratedA.crewBoard?.syntheticIds).toHaveLength(6);
     expect(hydratedA.crewBoard?.members.length! + hydratedA.crewBoard?.syntheticIds.length!).toBe(8);
 
-    // Athlete B joins the same field (multiplayer)
+    // Both pre-registered athletes resolve the same frozen field after the start.
     let stateB = freshState(new Date(waveStart));
-    stateB = reduceCompete(stateB, { type: "opt-in", sport: "running", now: waveStart });
+    stateB = reduceCompete(stateB, { type: "opt-in", sport: "running", now: "2026-10-19T09:00:00Z" });
 
     const mockDbB = {
       from: vi.fn().mockReturnValue({select:()=>({in:async()=>({data:[],error:null})})}),
       rpc: vi.fn().mockImplementation((name: string) => {
-        if (name === "seat_athlete_week_field") {
+        if (name === "resolve_week_field") {
           return Promise.resolve({
             data: {
               id: "field-1",
@@ -191,12 +192,12 @@ describe("Competition Lifecycle & Unified Multiplayer Standings", () => {
   it("handles stop-after-this-week: stays active this week and stops renewal at week rollover", () => {
     const waveStart = "2026-10-12T04:00:00.000Z";
     let state = freshState(new Date(waveStart));
-    state = reduceCompete(state, { type: "opt-in", sport: "running", now: waveStart });
+    state = reduceCompete(state, { type: "opt-in", sport: "running", now: "2026-10-12T09:00:00Z" });
 
     expect(state.enrollments[0]?.autoEnrollNext).toBe(true);
 
     // Athlete chooses "Stop after this week" in settings or recap
-    state = reduceCompete(state, { type: "schedule-leave", sport: "running", now: waveStart });
+    state = reduceCompete(state, { type: "schedule-leave", sport: "running", now: "2026-10-12T09:00:00Z" });
     expect(state.enrollments[0]?.autoEnrollNext).toBe(false);
     // Athlete is STILL opted-in and competing for the current week
     expect(state.ratings.find((r) => r.sport === "running")?.optedIn).toBe(true);

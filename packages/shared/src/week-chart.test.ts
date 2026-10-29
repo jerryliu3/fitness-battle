@@ -1,7 +1,17 @@
 import { expect, it } from "vitest";
-import { freshState } from "./compete/engine";
+import { freshState, reduceCompete } from "./compete/engine";
 import { weeklyHoursComparison, weekHoursDeltaTone } from "./week-chart";
 const now = new Date("2026-10-23T16:00:00Z");
+it("keeps the calendar training week and pre-registration workouts while a daily wave is queued", async () => {
+  const { portfolioWeekChart } = await import("./week-chart");
+  const registered = reduceCompete(freshState(now), { type: "opt-in", sport: "running", now: now.toISOString() });
+  registered.activities = [{ id: "before-registration", sport: "running", startedAt: "2026-10-20T15:00:00Z", movingSec: 3600,
+    distanceM: 5000, avgHr: null, verified: true, provenance: "recorded", disposition: "counted", source: "strava" }];
+  const chart = portfolioWeekChart(registered, now);
+  expect(chart.currTotalHours).toBe(1);
+  expect(chart.startLabel).toBe("Oct 19");
+  expect(chart.endLabel).toBe("Oct 25");
+});
 it("shares current/previous hours while excluding samples and future activity", () => {
   const state = freshState(now);
   state.activities = [

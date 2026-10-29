@@ -17,7 +17,11 @@
 
 3. **Period & Settlement Model**:
    - Default periods run weekly from Monday 00:00:00 America/New_York to next Monday 00:00:00 America/New_York (half-open: `[start, end)`).
+   - Sport registration (including onboarding) queues the next 06:00 America/New_York benchmark, today if it has not passed, otherwise tomorrow. All waves close at the following Monday 00:00 (displayed Sunday 11:59 PM ET); renewals start Monday 06:00. Calendar training/streak weeks retain Monday midnight bounds.
+   - Registrations remain cancellable before their benchmark. No competitor identities, rankings or competition awards are shown while queued. At/after start, the database assigns all eligible registrations together, prefers nearby entry ratings (maximum solo spread 400), fills to eight with stable generated competitors, and freezes that field. Only registered Crew members in the same wave share its Crew field. A Crew departure cannot remove members or erase an already-started field.
+   - `wave_enrollments.registered_at` and `field_id` are database-owned metadata; `week_fields` owns bounds and the frozen roster. Clients cannot directly mutate registrations. Resolve authorized real fields before settlement; a missing/failed roster must not be scored using fallback estimates. See [daily waves](daily-waves.md).
    - Settlement occurs on week close, archiving place and Elo rating updates.
+   - Competition input facts have database acceptance timestamps and immutable revisions. Only versions accepted before the exclusive deadline affect a closed wave; late imports/edits remain training history. The authenticated server derives score documents; direct client rating/result/receipt writes are revoked. Require the server service-role configuration for account commits and never expose it to clients. See [local verification](reviews/daily-waves/local-verification.md).
    - Standings and places are 1-indexed (`place >= 1`). GPS events rank exact weekly distance; points events rank exact effort. Equal totals share a place and skip the occupied subsequent places (1, 2, 2, 4); display rounding does not create ties. Tied score settlement uses the average of their occupied positions. Sleep contest scores follow the same tie rule. Archived results are not rewritten.
 
 4. **Security & Data Integrity**:

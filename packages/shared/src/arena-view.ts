@@ -4,6 +4,7 @@ export interface ArenaViewWindow {
   span: number;
 }
 export interface ArenaSceneLane {
+  mystery?: boolean;
   avatarUrl?: string | null;
   id: string;
   name: string;

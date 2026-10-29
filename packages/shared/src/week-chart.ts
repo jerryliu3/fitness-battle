@@ -1,12 +1,11 @@
 import { competeNow } from "./compete/engine";
-import { competePeriodWindow } from "./phone-views";
 import { countsOnTrack } from "./compete/ledger";
 import type { CompeteState } from "./compete/sports";
 import { APP_TIMEZONE, dayKey, getZonedWeekday, shiftAppDay, weeklyPeriodBounds } from "./period";
 
 /** Shared hour totals for Home and its detail view, independent of either SVG adapter. */
 export function weeklyHoursComparison(state: CompeteState, now = competeNow(state)) {
-  const period = competePeriodWindow(state, now);
+  const period = weeklyPeriodBounds(now);
   const weekStart = period.startsAt.getTime(), weekEnd = period.endsAt.getTime();
   const previousStart = weeklyPeriodBounds(new Date(weekStart - 1)).startsAt;
   const rows = state.activities.filter(a => countsOnTrack(a, "open") && Date.parse(a.startedAt) <= now.getTime());
@@ -63,7 +62,7 @@ export function portfolioWeekChart(state: CompeteState, now = competeNow(state))
   const tip = { x: x(nowDayIndex), y: y(currTotalHours) };
   const previous = prevCumulativeHours.map((hours, index) => `${x(index).toFixed(1)},${y(hours).toFixed(1)}`).join(" ");
   const current = currCumulativeHours.map((hours, index) => `${x(index).toFixed(1)},${y(hours).toFixed(1)}`).join(" ");
-  const period = competePeriodWindow(state, now);
+  const period = weeklyPeriodBounds(now);
   const date = (at: Date) => at.toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: APP_TIMEZONE });
   const inspection = currCumulativeHours.map((hours, index) => ({
     id: dayKey(shiftAppDay(period.startsAt, index)),

@@ -1,3 +1,4 @@
+import { competitionQueue } from "./compete/participation";
 import { latestCountedActivityAt } from "./activity-age";
 /**
  * View models for the phone tabs. Plain data — no React, DOM, or native imports.
@@ -79,6 +80,7 @@ export interface TodayRoute {
 }
 
 export interface ArenaLane {
+  mystery?: boolean;
   avatarUrl?: string | null;
   lastUpdated?: string;
   id: string;
@@ -297,6 +299,13 @@ export function buildArenaModel(
   const optedIn = Boolean(
     state.ratings.find((row) => row.sport === sport)?.optedIn,
   );
+  const queue = competitionQueue(state, sport, now);
+  if (queue && (queue.queued || queue.awaitingField)) return {
+    sportId: sport, sportName: spec.name, unit: spec.gps ? (state.units === "metric" ? "km" : "mi") : "pts",
+    labels: ["Start", "Start", "Start"], optedIn,
+    lanes: [{ id: "you", name: state.name, avatarUrl: state.avatarUrl, you: true, ghost: false, values: [0, 0, 0] },
+      ...Array.from({ length: queue.mysteryCount }, (_, i): ArenaLane => ({ id: `mystery-${i}`, name: "Mystery competitor", mystery: true, you: false, ghost: false, values: [0, 0, 0] }))],
+  };
   const youSeries = activityCheckpoints(
     state.activities,
     sport,

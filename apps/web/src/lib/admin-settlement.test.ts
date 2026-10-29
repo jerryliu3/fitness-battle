@@ -21,9 +21,17 @@ function fixture(failActivities = false) {
   for (const method of ["select", "eq", "contains", "in", "gte", "lt"]) query[method] = (...args: unknown[]) => { filters.push([table, method, ...args]); return query; };
   return query;
  } };
- return { state, db, filters };
+ return { state, db, filters, tables };
 }
 describe("admin field reads", () => {
+ it("retains weighted strength effort in an authorized admin settlement", async () => {
+  const { state, db, tables } = fixture();
+  state.enrollments = state.enrollments.map(e => ({ ...e, sport: "strength" }));
+  tables.week_fields = tables.week_fields.map(row => ({ ...(row as object), sport: "strength" }));
+  tables.activities = tables.activities.map(row => ({ ...(row as object), sport: "strength", avg_hr: 180 }));
+  const [pin] = await readAdminSettlementFields(db as never, "athlete", state);
+  expect(pin!.members.find(member => member.id === "peer")!.effort).toBeCloseTo(13.44);
+ });
  it("reads existing target membership without seating or invoking athlete RPCs and excludes samples", async () => {
   const { state, db, filters } = fixture();
   const [pin] = await readAdminSettlementFields(db as never, "athlete", state);

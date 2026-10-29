@@ -708,6 +708,10 @@ export function CompeteProvider({ children, navigationReady = true }: { children
                 setSaveConflict(true);
               }
               const message = saveFailure(body?.error);
+              if (body?.error === "week_still_open") {
+                setSaveError("The wave has started, so your registration was kept. Please retry any other changes.");
+                void refresh();
+              }
               if (message) setSaveError(message);
               return;
             }
@@ -724,6 +728,10 @@ export function CompeteProvider({ children, navigationReady = true }: { children
               return;
             unsavedRef.current = false;
             unitsUnsavedRef.current = false;
+            if (isCompeteState(body.state)) {
+              stateRef.current = body.state;
+              setState(body.state);
+            }
             invalidateApiReads(apiReadScope(mobileEnv.apiUrl, account.token));
             setSaveError(null);
             await AsyncStorage.removeItem(scoped.dirty);
@@ -782,11 +790,12 @@ export function CompeteProvider({ children, navigationReady = true }: { children
         readBaselineItem,
         writeBaselineItem,
       );
-      const next = reduceCompete(prev, {
+      const before = id && !authRef.current.offlineMode ? { ...prev, requiresCanonicalFields: true } : prev;
+      const next = reduceCompete(before, {
         ...action,
         accountId: action.accountId ?? id ?? undefined,
       });
-      if (JSON.stringify(next) === JSON.stringify(prev)) return;
+      if (JSON.stringify(next) === JSON.stringify(before)) return;
       dirtyRef.current += 1;
       unsavedRef.current = true;
       if (action.type === "set-units") unitsUnsavedRef.current = true;

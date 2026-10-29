@@ -40,7 +40,7 @@ export function raceCourseScene(course: RaceCourse, lanes: readonly ArenaSceneLa
   const anchor = lanes.find(lane => lane.you && !lane.ghost)?.id ?? "";
   let cached = geometryCache.get(course);
   if (!cached || cached.lanes !== lanes || cached.unit !== unit || cached.spacing !== spacingMetres || cached.anchor !== anchor) {
-    cached = { lanes, unit, spacing: spacingMetres, anchor, geometry: buildCourseGeometry(course, lanes, unit, spacingMetres, anchor) };
+    cached = { lanes, unit, spacing: spacingMetres, anchor, geometry: buildCourseGeometry(course, lanes, unit, lanes.some(lane => lane.mystery) ? Math.max(spacingMetres, 8) : spacingMetres, anchor) };
     geometryCache.set(course, cached);
   }
   const { athletes, trails, overviewCoordinates } = cached.geometry;
@@ -52,7 +52,7 @@ export function raceCourseScene(course: RaceCourse, lanes: readonly ArenaSceneLa
     callouts: athletes.map(athlete => ({ ...athlete, callout: courseCalloutLayout(slots.get(athlete.id) ?? 0) })),
     markers: { type: "FeatureCollection" as const, features: athletes.map(athlete => ({
       type: "Feature" as const, id: athlete.id,
-      properties: { id: athlete.id, name: athlete.name, you: Boolean(athlete.you), selected: athlete.id === selected?.id },
+      properties: { id: athlete.id, name: athlete.name, mystery: Boolean(athlete.mystery), you: Boolean(athlete.you), selected: athlete.id === selected?.id },
       geometry: { type: "Point" as const, coordinates: athlete.coordinate },
     })) },
   };
@@ -60,6 +60,7 @@ export function raceCourseScene(course: RaceCourse, lanes: readonly ArenaSceneLa
 
 /** Matches the 2D nameplate: absolute distance for you, relative distance for peers. */
 export function courseAthleteDetail(lanes: readonly ArenaSceneLane[], lane: ArenaSceneLane, unit: string) {
+  if (lanes.some(peer => peer.mystery)) return lane.mystery ? "Revealed at the start" : "Starts at zero";
   const rank = 1 + lanes.filter(peer => !peer.ghost && peer.value > lane.value).length;
   const mine = lanes.find(peer => peer.you)?.value ?? 0;
   const value = lane.you ? lane.value : lane.value - mine;

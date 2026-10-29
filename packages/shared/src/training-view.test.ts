@@ -63,7 +63,7 @@ describe("training calendar presentation",()=>{
 });
 describe("next Effort Score point",()=>{
  const now=new Date("2026-10-21T12:00:00Z");
- const joined=()=>reduceCompete(freshState(now),{type:"opt-in",sport:"running",now:now.toISOString()});
+ const joined=()=>reduceCompete(freshState(now),{type:"opt-in",sport:"running",now:"2026-10-21T09:00:00Z"});
  it("uses the round receipt price and keeps Open independent from GPS",()=>{
   let state=joined();state=reduceCompete(state,{type:"log-manual",sport:"running",movingSec:3600,distanceM:7.3*1609.344,activityId:"today",now:now.toISOString()});
   const model=effortPointProgress(state,"running","open",now)!;

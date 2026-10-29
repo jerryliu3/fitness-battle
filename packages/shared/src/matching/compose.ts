@@ -7,6 +7,7 @@ import type {
   PoolPlayer,
   SyntheticRival,
   WaveEnrollment,
+  WaveWindow,
 } from "./types";
 import { DEFAULT_GROUP_CAPACITY } from "./types";
 import { waveWindowAt } from "./waves";
@@ -19,6 +20,8 @@ export interface AssignGroupInput {
   viewerElo: number;
   sport: SportId;
   now?: Date;
+  /** Explicit benchmark; instant and scheduled groups share the same model. */
+  window?: WaveWindow;
   /**
    * Other real players already enrolled in overlapping waves.
    * Viewer is never selected from this pool.
@@ -57,7 +60,7 @@ export class DensityMatcher {
     const now = input.now ?? new Date();
     const capacity = input.capacity ?? this.capacity;
     const eloBand = input.eloBand ?? this.eloBand;
-    const window = waveWindowAt(now);
+    const window = input.window ?? waveWindowAt(now);
     const need = Math.max(0, capacity - 1);
     const seed =
       input.seed ??

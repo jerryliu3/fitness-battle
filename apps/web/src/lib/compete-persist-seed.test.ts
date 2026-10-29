@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { createClient } from "@supabase/supabase-js";
+import { periodEffort } from "@fitness-battle/shared";
 import { loadCompeteAccount, hydrateFieldBoard } from "./compete-persist";
 
 const url = "http://127.0.0.1:54621";
@@ -38,7 +39,9 @@ describe.skipIf(!process.env.SEED_DB_TESTS)("Seed accounts in Supabase (needs lo
     expect(hydratedState.crewBoard!.sport).toBe("running");
     const aliceMember = hydratedState.crewBoard!.members.find(m => m.id === aliceId);
     expect(aliceMember).toBeDefined();
-    expect(aliceMember!.distanceM).toBeGreaterThanOrEqual(30000);
+    const acceptedCurrentVolume = periodEffort(state.activities, "running", new Date(hydratedState.crewBoard!.waveStart),
+      new Date(Math.min(Date.now() + 1, Date.parse(hydratedState.crewBoard!.weekEnd))), "open").distanceM;
+    expect(aliceMember!.distanceM).toBe(acceptedCurrentVolume);
 
     const { weeklyBoard } = await import("@fitness-battle/shared");
     const { buildFieldModel } = await import("../features/field/model");

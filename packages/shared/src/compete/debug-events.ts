@@ -1,6 +1,7 @@
 import { arenaBaselineStorageKey, serializeArenaBaseline } from "../arena-view";
 import { DEFAULT_SAMPLE_ROUTE, SAMPLE_ROUTES } from "../sampleRoute";
 import { APP_TIMEZONE } from "../period";
+import { waveWindowAt } from "../matching/waves";
 import { buildArenaModel, competePeriodWindow } from "../phone-views";
 import { competeNow, freshState, reduceCompete } from "./engine";
 import { countsOnTrack } from "./ledger";
@@ -84,6 +85,12 @@ export function applyDebugEvent(
     units: inputState.units, onboardingCompleted: true, primary: sport, demoNow: now.toISOString() };
   if (!base.ratings.find((r) => r.sport === sport)?.optedIn || !base.enrollments.some((e) => e.sport === sport)) {
     base = reduceCompete(base, { type: "opt-in", sport, accountId: accountKey, now: now.toISOString() });
+    // UI previews explicitly use an already-open fixture window. They never
+    // queue a real registration or write this simulated field to the account.
+    const window = waveWindowAt(now);
+    base = { ...base, clock: { ...base.clock, periodStart: window.waveStart.toISOString() },
+      enrollments: base.enrollments.map(e => ({ ...e, waveStart: window.waveStart.toISOString(), weekEnd: window.weekEnd.toISOString() })),
+      ratings: base.ratings.map(r => r.sport === sport ? { ...r, lockPeriod: window.waveStart.toISOString() } : r) };
   }
 
   const period = competePeriodWindow(base, now, sport);

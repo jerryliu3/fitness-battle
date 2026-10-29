@@ -1,13 +1,39 @@
 import type { WaveWindow } from "./types";
 import {
   APP_TIMEZONE,
-  dayKey,
   endOfZonedDay,
   startOfZonedDay,
   weeklyPeriodBounds,
 } from "../period";
 
 const DAY_MS = 86_400_000;
+
+/** Convert a calendar day's 06:00 wall clock without assuming a 24-hour DST day. */
+function sixAmOn(day: Date, timeZone: string): Date {
+  // Noon has the same UTC offset as 06:00 in New York, including transition days.
+  const midnight = startOfZonedDay(day, timeZone);
+  const noonProbe = new Date(midnight.getTime() + 12 * 3_600_000);
+  const hour = Number(new Intl.DateTimeFormat("en-US", { timeZone, hour: "numeric", hourCycle: "h23" }).format(noonProbe));
+  return new Date(noonProbe.getTime() + (6 - hour) * 3_600_000);
+}
+
+/** Registration joins today's 06:00 ET if it has not passed, otherwise tomorrow's. */
+export function nextDailyWaveWindowAt(now: Date = new Date(), timeZone = APP_TIMEZONE): WaveWindow {
+  let waveStart = sixAmOn(now, timeZone);
+  if (waveStart < now) waveStart = sixAmOn(endOfZonedDay(now, timeZone), timeZone);
+  return { waveStart, weekEnd: weekEndAfter(waveStart, timeZone) };
+}
+
+/** Renewal is always Monday 06:00 ET, even when the athlete returns later that week. */
+export function weeklyWaveWindowAt(now: Date = new Date(), timeZone = APP_TIMEZONE): WaveWindow {
+  const week = weeklyPeriodBounds(now, timeZone);
+  return { waveStart: sixAmOn(week.startsAt, timeZone), weekEnd: week.endsAt };
+}
+
+/** Optional immediate grouping uses the same enrollment shape and a derived start. */
+export function instantWaveWindowAt(now: Date = new Date(), timeZone = APP_TIMEZONE): WaveWindow {
+  return { waveStart: new Date(now), weekEnd: weekEndAfter(now, timeZone) };
+}
 
 /**
  * Exclusive end of the America/New_York Monday week that contains `from`.
@@ -21,8 +47,8 @@ export function weekEndAfter(
 }
 
 /**
- * The open competition week: Monday 00:00 through the next Monday in America/New_York.
- * Joining mid-week uses that same window. Late activities in the week count.
+ * Calendar training week, retained for charts, legacy windows and fixtures.
+ * New registrations use nextDailyWaveWindowAt instead.
  */
 export function waveWindowAt(
   now: Date = new Date(),

@@ -3,7 +3,7 @@ vi.mock("../features/sync-review", async () => {
   return { SyncReview: (props: object) => createElement("SyncReview", props) };
 });
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { freshState } from "@fitness-battle/shared";
+import { freshState, reduceCompete } from "@fitness-battle/shared";
 import { createElement } from "react";
 import { act, create, type ReactTestRenderer } from "react-test-renderer";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -220,10 +220,9 @@ describe("mobile account lifecycle", () => {
   ])("keeps %s open when a field update arrives", async (path) => {
     login("Alice");
     mock.pathname = path;
+    const active = reduceCompete(accountState("Alice"), { type: "opt-in", sport: "running", now: "2026-10-19T09:00:00Z" });
+    fetcher.mockResolvedValueOnce(Response.json({ state: active }));
     await mount();
-    await act(async () => {
-      api.dispatch({ type: "opt-in", sport: "running" });
-    });
     await act(async () => {
       api.dispatch({
         type: "log-manual",
@@ -327,7 +326,8 @@ describe("mobile account lifecycle", () => {
       api.dispatch({ type: "set-city", city: "Boston" });
     });
     await save();
-    expect(api.saveError).toBeNull();
+    expect(api.saveError).toContain("wave has started");
+    expect(api.state?.city).toBe("Boston");
     expect(mock.values.get(accountStorageKeys("Alice").dirty)).toBe("1");
     fetcher.mockResolvedValue(
       Response.json({ ok: true, updatedAt: "2026-10-20T13:00:00Z" }),

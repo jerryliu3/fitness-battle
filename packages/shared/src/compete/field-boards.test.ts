@@ -1,23 +1,44 @@
 import { expect, it } from "vitest";
 import { settleElo } from "./elo";
-import { fieldBoardForEnrollment, freshState, reduceCompete, rollClock, weeklyBoard } from "./engine";
+import { fieldBoardForEnrollment, freshState, reduceCompete, rollClock, settleCompetition, weeklyBoard } from "./engine";
 import { prepareCompeteStateForAccount } from "./sanitize";
 import { applyRemoteSnapshot } from "./snapshot";
 import type { CrewBoardPin } from "./sports";
+import { activityEffort } from "./effort";
 const now = "2026-10-21T12:00:00.000Z";
 function fixture() {
-  const state = reduceCompete(freshState(new Date(now)), { type: "opt-in", sport: "running", now });
+  const state = reduceCompete(freshState(new Date(now)), { type: "opt-in", sport: "running", now: "2026-10-21T09:00:00Z" });
   const enrollment = state.enrollments[0]!;
   const pin: CrewBoardPin = { crewId: "solo", crewName: "Open Field", sport: "running", waveStart: enrollment.waveStart, weekEnd: enrollment.weekEnd,
     capacity: 2, syntheticIds: [], memberIds: ["athlete", "peer"], members: [{ id: "peer", name: "Real Peer", elo: 1200, distanceM: 6000, movingSec: 1800, verifiedDistanceM: 4000, verifiedMovingSec: 1500 }] };
   state.enrollments = [{ ...enrollment, peerIds: ["peer"], syntheticIds: [], capacity: 2, fieldBoard: pin }];
   return { state, pin };
 }
+it("uses the same weighted strength score for an athlete and their opponents", () => {
+  const joined = reduceCompete(freshState(new Date(now)), { type: "opt-in", sport: "strength", now: "2026-10-21T09:00Z" });
+  const active = reduceCompete(joined, { type: "log-manual", sport: "strength", movingSec: 3600, activityId: "strength-session", now: "2026-10-21T11:00Z" });
+  active.activities = active.activities.map(activity => ({ ...activity, avgHr: 180, provenance: "recorded" }));
+  const effort = activityEffort(active.activities[0]!);
+  const enrollment = active.enrollments[0]!;
+  const pin: CrewBoardPin = { crewId: "solo", crewName: "Open Field", sport: "strength", waveStart: enrollment.waveStart, weekEnd: enrollment.weekEnd,
+    capacity: 2, syntheticIds: [], memberIds: ["athlete", "peer"], members: [{ id: "peer", name: "Peer", elo: 1000, distanceM: 0, movingSec: 3600, effort }] };
+  active.enrollments = [{ ...enrollment, capacity: 2, peerIds: ["peer"], syntheticIds: [], fieldBoard: pin }];
+  const board = weeklyBoard(active, "strength", "open", new Date(now));
+  expect(board.map(row => row.effort)).toEqual([effort, effort]);
+  expect(board.map(row => row.place)).toEqual([1, 1]);
+});
 it("uses the sport snapshot when the legacy board belongs to another sport", () => {
   const { state, pin } = fixture();
   state.crewBoard = { ...pin, sport: "cycling" };
   expect(fieldBoardForEnrollment(state, state.enrollments[0]!)).toEqual(pin);
   expect(weeklyBoard(state, "running", "verified", new Date(now)).find(row => row.id === "peer")?.distanceM).toBe(4000);
+});
+it("settles a configured account when its caller supplies an authoritative closing field", () => {
+  const { state, pin } = fixture();
+  state.requiresCanonicalFields = true;
+  state.enrollments[0]!.awaitingField = true;
+  const settled = settleCompetition(state, new Date(pin.weekEnd), [pin]);
+  expect(settled.periodResults).toHaveLength(2);
 });
 it("rejects snapshots from another wave, end date, sport or Crew", () => {
   for (const change of [{ waveStart: "2026-10-12T04:00:00.000Z" }, { weekEnd: "2026-10-27T04:00:00.000Z" }, { sport: "cycling" as const }, { crewId: "private-crew", crewName: "Private" }]) {

@@ -22,8 +22,8 @@ export function sanitizeCompeteStateForAccount(
 
 /** Drop live field snapshots; hydrate them from week_fields at load. */
 export function stripDurableCrewBoard(state: CompeteState): CompeteState {
-  if (state.crewBoard == null && !state.enrollments.some(item => item.fieldBoard)) return state;
-  return { ...state, crewBoard: null, enrollments: state.enrollments.map(({ fieldBoard: _fieldBoard, ...item }) => item) };
+  if (state.crewBoard == null && !state.enrollments.some(item => item.fieldBoard || item.scoringActivities || item.awaitingField !== undefined)) return state;
+  return { ...state, crewBoard: null, enrollments: state.enrollments.map(({ fieldBoard: _fieldBoard, scoringActivities: _scoringActivities, awaitingField: _awaitingField, ...item }) => item) };
 }
 
 /**
@@ -33,7 +33,8 @@ export function stripDurableCrewBoard(state: CompeteState): CompeteState {
 export function prepareCompeteStateForAccount(
   state: CompeteState,
 ): CompeteState {
-  const cleaned = stripDurableCrewBoard(sanitizeCompeteStateForAccount(state));
+  const { requiresCanonicalFields: _requiresCanonicalFields, ...durable } = state;
+  const cleaned = stripDurableCrewBoard(sanitizeCompeteStateForAccount(durable));
   if (cleaned.pendingRevealIds.length === 0) return cleaned;
   return { ...cleaned, pendingRevealIds: [] };
 }

@@ -1,5 +1,7 @@
 import {
   competeNow,
+  buildArenaModel,
+  competitionQueue,
   fieldBoardForEnrollment,
   latestCountedActivityAt,
   sportById,
@@ -16,6 +18,7 @@ import {
 import { buildSplitBoard } from "@/features/split/model";
 
 export interface FieldRunner {
+  mystery?: boolean;
   avatarUrl?: string | null;
   lastUpdated?: string;
   id: string;
@@ -67,6 +70,12 @@ export function buildFieldModel(
   now: Date = competeNow(state),
   options?: { ghostSelector?: GhostPeriodSelector },
 ): FieldModel {
+  const queue = competitionQueue(state, sport, now);
+  if (queue && (queue.queued || queue.awaitingField)) {
+    const arena = buildArenaModel(state, now, track, sport);
+    const runners: FieldRunner[] = arena.lanes.map(lane => ({ ...lane, initials: lane.mystery ? "?" : initialsFromName(lane.name), km: lane.values, place: 0, effort: 0 }));
+    return { sport, track, periodStart: queue.start, periodEnd: queue.end, runners, ghost: null, you: runners.find(r => r.you) ?? null, referenceKm: distanceTrackMaxKm([0]), checkpointLabels: arena.labels, gps: sportById(sport).gps, unit: arena.unit };
+  }
   const board = buildSplitBoard(state, sport, track, now, options);
   const enrollment = state.enrollments.find(item => item.sport === sport);
   const fieldBoard = enrollment ? fieldBoardForEnrollment(state, enrollment) : null;

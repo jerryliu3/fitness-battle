@@ -31,6 +31,8 @@ export interface LocalBoardInput {
    * scored with a clipped synthetic estimate (demo / sparse pool).
    */
   peerActivities?: ReadonlyMap<string, Activity[]>;
+  /** Canonical totals take precedence over compatibility activity stubs. */
+  peerVolumes?: ReadonlyMap<string, { effort: number; distanceM: number; movingSec: number }>;
   track: ScoreTrack;
   asOf?: Date;
 }
@@ -152,7 +154,7 @@ export function buildLocalBoard(input: LocalBoardInput): LocalBoardRow[] {
   for (const peerId of input.enrollment.peerIds) {
     const peer = peerById.get(peerId);
     if (!peer) continue;
-    const volume = peerVolume(
+    const volume = input.peerVolumes?.get(peerId) ?? peerVolume(
       peer,
       input.enrollment,
       input.track,

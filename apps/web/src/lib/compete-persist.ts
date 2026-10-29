@@ -28,7 +28,7 @@ import {
   type SportId,
   type WaveEnrollment,
 } from "@fitness-battle/shared";
-import { loadCrewWeekFieldPin, seatWeekFieldPin } from "./week-field";
+import { seatWeekFieldPin } from "./week-field";
 
 type Db = SupabaseClient;
 
@@ -195,15 +195,17 @@ export async function persistCompeteAccount(
   userId: string,
   state: CompeteState,
   expectedUpdatedAt: string | null,
+  authority?: { db: Db; receipts: number; computedAt: Date },
 ): Promise<string> {
   const clean = prepareCompeteStateForAccount(state);
   for (let attempt = 0; attempt < 2; attempt += 1) {
     const activities = await accountActivityRows(db, userId, clean);
-    const { data, error } = await db.rpc("save_compete_account", {
+    const { data, error } = await (authority?.db ?? db).rpc(authority ? "save_compete_account_server" : "save_compete_account", {
       p_state: clean,
       p_activities: activities,
       p_readiness: accountReadinessRows(userId, clean.readiness),
       p_expected_updated_at: expectedUpdatedAt,
+      ...(authority ? { p_user_id: userId, p_expected_receipts: authority.receipts, p_computed_at: authority.computedAt.toISOString() } : {}),
     });
     if (!error) {
       if (typeof data !== "string") throw new Error("account_not_saved");
@@ -400,6 +402,8 @@ export async function loadCompeteAccount(
         syntheticIds: (row.synthetic_ids as string[]) ?? [],
         autoEnrollNext: Boolean(row.auto_enroll_next),
         crewId: row.crew_id ? String(row.crew_id) : null,
+        fieldId: row.field_id ? String(row.field_id) : null,
+        awaitingField: true,
       },
     ];
   });
@@ -529,6 +533,7 @@ export async function loadCompeteAccount(
 
   state = withDerivedPendingReveals({
     ...state,
+    requiresCanonicalFields: true,
     periodResults,
     recordAttempts: attempts,
     effortMilestones: (milestoneResult.data ?? []).map((r) => ({ sport: r.sport, track: r.track, periodStart: new Date(r.period_start).toISOString(), periodEnd: new Date(r.period_end).toISOString(), step: Number(r.step), earned: Number(r.earned) })),
@@ -556,21 +561,25 @@ export async function hydrateFieldBoard(
   db: Db,
   userId: string,
   state: CompeteState,
+  now: Date = new Date(),
 ): Promise<CompeteState> {
   const preferred = state.enrollments.find(isCrewEnrollment) ??
     state.enrollments.find(item => item.sport === state.primary) ?? state.enrollments[0];
   if (!preferred) return state.crewBoard ? { ...state, crewBoard: null } : state;
 
   const pins = await Promise.all(state.enrollments.map(async enrollment => {
-    const pin = isCrewEnrollment(enrollment)
-      ? await loadCrewWeekFieldPin(db, enrollment.crewId!, enrollment.waveStart)
-      : await seatWeekFieldPin(db, {
+    if (Date.parse(enrollment.waveStart) > now.getTime()) return null;
+    const pin = await seatWeekFieldPin(db, {
           sport: enrollment.sport,
           waveStart: enrollment.waveStart,
           weekEnd: enrollment.weekEnd,
           capacity: enrollment.capacity,
+          crewId: enrollment.crewId,
           syntheticIds: enrollment.syntheticIds,
         });
+    if (pin.sport !== enrollment.sport || Date.parse(pin.waveStart) !== Date.parse(enrollment.waveStart) || Date.parse(pin.weekEnd) !== Date.parse(enrollment.weekEnd) || !pin.memberIds.includes(userId)) {
+      throw new Error("field_assignment_mismatch");
+    }
     return pin ? { ...pin, waveStart: new Date(pin.waveStart).toISOString(), weekEnd: new Date(pin.weekEnd).toISOString() } : null;
   }));
 
@@ -583,15 +592,104 @@ export async function hydrateFieldBoard(
       return pin ? {
         ...base,
         fieldBoard: pin,
-        crewId: isCrewEnrollment(enrollment) ? pin.crewId : null,
+        crewId: pin.crewId === "solo" ? null : pin.crewId,
         capacity: pin.capacity,
         peerIds: pin.memberIds.filter(id => id !== userId),
         syntheticIds: pin.syntheticIds,
         waveStart: pin.waveStart,
         weekEnd: pin.weekEnd,
-      } : base;
+        fieldId: pin.fieldId,
+        awaitingField: false,
+      } : { ...base, awaitingField: true, peerIds: [], syntheticIds: [] };
     }),
   };
+}
+
+/** Resolve each closing field before scoring; never settle an invented sparse-pool roster. */
+export async function settleAccountFields(db: Db, userId: string, state: CompeteState, now = new Date(), acceptedFacts = false): Promise<CompeteState> {
+  const { settleSportRound, rollClock, weeklyWaveWindowAt, settleSleepWeeks, weekEndAfter } = await import("@fitness-battle/shared");
+  let next = state;
+  if (acceptedFacts) {
+    for (let guard = 0; guard < 12; guard++) {
+      const sleep = next.healthRatings.find(r => r.metric === "sleep" && r.optedIn);
+      if (!sleep) break;
+      const end = weekEndAfter(new Date(sleep.lockPeriod));
+      if (end > now) break;
+      const { data, error } = await db.rpc("competition_own_facts", { p_sport: "sleep", p_start: sleep.lockPeriod, p_end: end.toISOString() });
+      if (error || !Array.isArray(data)) throw new Error("accepted_facts_unavailable");
+      const nights = next.sleepNights;
+      const settled = settleSleepWeeks({ ...next, sleepNights: data.map(row => ({ ...row, id: row.night_id, durationMin: Number(row.duration_min), deepMin: row.deep_min, remMin: row.rem_min, lightMin: row.light_min, awakeMin: row.awake_min })) }, end, now.toISOString());
+      next = { ...settled, sleepNights: nights };
+    }
+  }
+  if (acceptedFacts) {
+    const sleep = next.healthRatings.find(r => r.metric === "sleep" && r.optedIn);
+    if (sleep && weekEndAfter(new Date(sleep.lockPeriod)) <= now) {
+      const window = weeklyWaveWindowAt(now);
+      next = { ...next, healthRatings: next.healthRatings.map(r => r.metric === "sleep" ? { ...r, lockPeriod: window.waveStart.toISOString(), lockElo: r.elo, optedIn: r.autoEnrollNext } : r) };
+    }
+  }
+  for (let guard = 0; guard < 12; guard++) {
+    next = await hydrateFieldBoard(db, userId, next, now);
+    if (acceptedFacts) {
+      const enrollments = await Promise.all(next.enrollments.map(async enrollment => {
+        if (Date.parse(enrollment.weekEnd) > now.getTime()) return enrollment;
+        const { data, error } = await db.rpc("competition_own_facts", { p_sport: enrollment.sport, p_start: enrollment.waveStart, p_end: enrollment.weekEnd });
+        if (error || !Array.isArray(data)) throw new Error("accepted_facts_unavailable");
+        return { ...enrollment, scoringActivities: data.map(row => ({
+          id: row.compete_key, sport: row.sport, startedAt: row.started_at, distanceM: Number(row.distance_m ?? 0), movingSec: Number(row.moving_sec ?? 0),
+          avgHr: row.avg_hr == null ? null : Number(row.avg_hr), verified: row.verified, provenance: row.provenance, disposition: row.disposition,
+          source: row.source_label ?? row.provider,
+        })) };
+      }));
+      next = { ...next, enrollments };
+    }
+    const due = next.enrollments.find(row => Date.parse(row.weekEnd) <= now.getTime());
+    if (!due) return rollClock(next, now);
+    next = settleSportRound(next, due.sport, now);
+  }
+  // Retain the engine's bounded catch-up policy after a long absence. Skipped
+  // weeks receive no invented result; renewing sports resolve this week's field.
+  const window = weeklyWaveWindowAt(now);
+  const overdue = new Set(next.enrollments.filter(e => Date.parse(e.weekEnd) <= now.getTime()).map(e => e.sport));
+  const stopped = new Set(next.enrollments.filter(e => Date.parse(e.weekEnd) <= now.getTime() && !e.autoEnrollNext).map(e => e.sport));
+  next = { ...next, crewBoard: null,
+    enrollments: next.enrollments.filter(e => !stopped.has(e.sport)).map(e => Date.parse(e.weekEnd) <= now.getTime()
+      ? { ...e, waveStart: window.waveStart.toISOString(), weekEnd: window.weekEnd.toISOString(), peerIds: [], syntheticIds: [], fieldId: null, fieldBoard: undefined, awaitingField: true } : e),
+    ratings: next.ratings.map(r => stopped.has(r.sport) ? { ...r, optedIn: false } : overdue.has(r.sport) ? { ...r, lockOpen: r.openElo, lockVerified: r.verifiedElo, lockPeriod: window.waveStart.toISOString() } : r),
+  };
+  return rollClock(await hydrateFieldBoard(db, userId, next, now), now);
+}
+
+/** A device may cross Sunday close using an old peer snapshot. Recompute those
+ * closing rounds against the stored registration and fresh database field. */
+export async function reconcileAccountSettlement(db: Db, userId: string, incoming: CompeteState, stored: CompeteState | null, now = new Date()): Promise<CompeteState> {
+  const due = stored?.enrollments.filter(e => Date.parse(e.weekEnd) <= now.getTime()) ?? [];
+  if (!stored || !due.length) return incoming;
+  const sports = new Set(due.map(e => e.sport));
+  const closing = {
+    ...incoming,
+    requiresCanonicalFields: true,
+    enrollments: [...incoming.enrollments.filter(e => !sports.has(e.sport)), ...due.map(e => ({ ...e, awaitingField: true }))],
+    ratings: incoming.ratings.map(r => sports.has(r.sport) ? stored.ratings.find(old => old.sport === r.sport)! : r),
+    effortMilestones: [...(incoming.effortMilestones ?? []).filter(r => !sports.has(r.sport)), ...(stored.effortMilestones ?? []).filter(r => sports.has(r.sport))],
+    periodResults: incoming.periodResults.filter(r => !due.some(e => e.sport === r.sport && e.waveStart === r.periodStart)),
+  };
+  let settled = await settleAccountFields(db, userId, closing, now);
+  for (const old of due) {
+    const requested = incoming.enrollments.find(e => e.sport === old.sport);
+    const current = settled.enrollments.find(e => e.sport === old.sport);
+    if (!requested && current) {
+      if (Date.parse(current.waveStart) <= now.getTime()) throw new Error("week_still_open");
+      settled = { ...settled, enrollments: settled.enrollments.filter(e => e.sport !== old.sport), ratings: settled.ratings.map(r => r.sport === old.sport ? { ...r, optedIn: false } : r) };
+    } else if (requested && current) {
+      settled = { ...settled, enrollments: settled.enrollments.map(e => e.sport === old.sport ? { ...e, autoEnrollNext: requested.autoEnrollNext } : e) };
+    } else if (requested && !current && requested.waveStart !== old.waveStart) {
+      // A previously stopped sport can be registered again after its old close.
+      settled = { ...settled, enrollments: [...settled.enrollments, requested], ratings: settled.ratings.map(r => r.sport === old.sport ? { ...r, optedIn: true, lockOpen: r.openElo, lockVerified: r.verifiedElo, lockPeriod: requested.waveStart } : r) };
+    }
+  }
+  return withDerivedPendingReveals(settled);
 }
 
 function isCrewEnrollment(enrollment: WaveEnrollment): boolean {

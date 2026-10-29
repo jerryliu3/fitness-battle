@@ -176,7 +176,7 @@ describe("native competition interactions", () => {
     mock.mounts = 0;
     mock.state = reduceCompete(freshState(), {
       type: "opt-in",
-      sport: "running",
+      sport: "running", now: "2026-10-19T09:00:00Z",
     });
     await act(async () => {
       renderer = create(createElement(ArenaScreen));
@@ -207,7 +207,7 @@ describe("native competition interactions", () => {
     mock.reducedMotion = false;
     mock.state = reduceCompete(freshState(), {
       type: "opt-in",
-      sport: "running",
+      sport: "running", now: "2026-10-19T09:00:00Z",
     });
     await act(async () => {
       renderer = create(createElement(ArenaScreen));
@@ -238,7 +238,7 @@ describe("native competition interactions", () => {
 it("mounts only one registered sport and replaces it when switching",async()=>{
  vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT",true);
  mock.dispatch.mockClear();
- mock.state=reduceCompete(reduceCompete(freshState(),{type:"opt-in",sport:"running"}),{type:"opt-in",sport:"cycling"});
+ mock.state=reduceCompete(reduceCompete(freshState(),{type:"opt-in",sport:"running",now:"2026-10-19T09:00:00Z"}),{type:"opt-in",sport:"cycling",now:"2026-10-19T09:00:00Z"});
  await act(async()=>{renderer=create(createElement(ArenaScreen));});
  await layoutCarousel();
  expect(renderer.root.findAllByType("LaneTrack" as never)).toHaveLength(1);
@@ -255,7 +255,7 @@ it("mounts only one registered sport and replaces it when switching",async()=>{
 
 it("expands one field, retains its viewport and selection, and closes on system Back", async () => {
   vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
-  mock.state = reduceCompete(freshState(), { type: "opt-in", sport: "running" });
+  mock.state = reduceCompete(freshState(), { type: "opt-in", sport: "running", now: "2026-10-19T09:00:00Z" });
   await act(async () => { renderer = create(createElement(ArenaScreen)); });
   await layoutCarousel();
   const lane = () => renderer.root.findByType("LaneTrack" as never);
@@ -295,7 +295,7 @@ it("flies to an athlete from the current frame and lets a field drag interrupt i
   vi.stubGlobal("requestAnimationFrame", (fn: () => void) => { frames.set(++serial, fn); return serial; });
   vi.stubGlobal("cancelAnimationFrame", (id: number) => frames.delete(id));
   mock.reducedMotion = false;
-  mock.state = reduceCompete(freshState(), { type: "opt-in", sport: "running" });
+  mock.state = reduceCompete(freshState(), { type: "opt-in", sport: "running", now: "2026-10-19T09:00:00Z" });
   await act(async () => { renderer = create(createElement(ArenaScreen)); });
   await layoutCarousel();
   const lane = () => renderer.root.findByType("LaneTrack" as never);
@@ -314,4 +314,20 @@ it("flies to an athlete from the current frame and lets a field drag interrupt i
   const request = lane().props.focusRequest;
   await act(async () => lane().props.onSelect(rival));
   expect(lane().props.focusRequest).toBe(request + 1);
+});
+
+it("shows unnamed competitors while queued and cancels only the selected registration", async () => {
+  vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
+  mock.dispatch.mockClear();
+  mock.state = reduceCompete(freshState(), { type: "opt-in", sport: "running" });
+  await act(async () => { renderer = create(createElement(ArenaScreen)); });
+  await layoutCarousel();
+  const text = JSON.stringify(renderer.toJSON());
+  expect(text).toContain("Finding your competitors");
+  expect(text).toContain("7 mystery competitors");
+  expect(renderer.root.findAllByType("LaneTrack" as never)).toHaveLength(1);
+  expect(text).toContain("mystery-");
+  const cancel = renderer.root.findAllByType("FocusButton" as never).find(node => node.props.label === "Cancel registration")!;
+  await act(async () => cancel.props.onPress());
+  expect(mock.dispatch).toHaveBeenCalledWith({ type: "opt-out", sport: "running" });
 });
