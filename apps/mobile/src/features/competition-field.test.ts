@@ -107,7 +107,7 @@ it("keeps 4D inside the fullscreen host with the same panels, selection and repl
   expect(overview().props.view.center).toBe(.75);
   expect(map().props.selectedId).toBe(selected);
   expect(field().props.view.center).toBe(fieldCenter);
-  await act(async () => map().props.onResumeFollow());
+  await act(async () => map().props.onSelect(map().props.selectedId));
   expect(map().props.distanceTarget).toBeNull();
   expect(renderer.root.findAllByType("Modal" as never)).toHaveLength(1);
   expect(button("Collapse current positions")).toBeDefined();
@@ -159,4 +159,20 @@ it("opens an athlete profile from the fullscreen standings without changing the 
   const sheet = renderer.root.findByType("AthleteProfileSheet" as never);
   expect(sheet.props.athlete.name).toBeTruthy();
   expect(field().props.lanes.length).toBeGreaterThan(0);
+});
+
+it("expands the whole 3D preview and only exposes course options in full screen", async () => {
+  const map = () => renderer.root.findByType("GeographicCourse" as never);
+  const choose = async (value: string) => act(async () => renderer.root.findAllByType("FieldViewSwitcher" as never)[0].props.onChange(value));
+  await choose("4d");
+  const close = renderer.root.findAllByType("IconButton" as never).find(node => node.props.label === "Close full screen field")!;
+  await act(async () => close.props.onPress());
+  expect(map().props.optionsTop).toBeUndefined();
+  expect(map().parent!.props.pointerEvents).toBe("none");
+  expect(renderer.root.findAllByType("IconButton" as never).some(node => node.props.icon === "expand")).toBe(false);
+  expect(renderer.root.findAllByType("Text" as never).some(node => node.props.children === "Tap to open full screen")).toBe(true);
+  await act(async () => button("Open 3D course in full screen").props.onPress());
+  expect(map().parent!.props.pointerEvents).toBe("auto");
+  expect(map().props.optionsTop).toBe(154);
+  expect(button("Open 3D course in full screen")).toBeUndefined();
 });
