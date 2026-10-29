@@ -13,6 +13,8 @@ import {
   StyleSheet,
   Text,
   View,
+  type StyleProp,
+  type ViewStyle,
 } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { SHELL_COLORS as c, mobileSurfaces } from "../theme";
@@ -443,16 +445,18 @@ export function FocusDisclosure({
   children,
   initialOpen = false,
   compact = false,
+  style,
 }: {
   title: string;
   detail?: string;
   children: ReactNode;
   initialOpen?: boolean;
   compact?: boolean;
+  style?: StyleProp<ViewStyle>;
 }) {
   const [open, setOpen] = useState(initialOpen);
   return (
-    <View style={[f.disclosure, compact && f.disclosureCompact]}>
+    <View style={[f.disclosure, compact && f.disclosureCompact, style]}>
       <Pressable
         accessibilityRole="button"
         accessibilityState={{ expanded: open }}

@@ -15,7 +15,7 @@ import { TrainingHistory } from "./training-history";
 import { AthleteMetrics } from "./athlete-metrics";
 import { AthleteTelemetryMatrix } from "./athlete-telemetry-matrix";
 export function ProgressScreen() {
-  const { state } = useCompeteStore();
+  const { state, accountKey } = useCompeteStore();
   const router = useRouter();
   const params=useLocalSearchParams<{view?:string}>();
   const [section,setSection]=useState<"overview"|"effort">("overview");
@@ -43,7 +43,7 @@ export function ProgressScreen() {
         >
           {awardCards(state).length > 0 ? <AwardShelf cards={awardCards(state).slice(0, 3)} /> : null}
         </Section>
-        <AthleteTelemetryMatrix state={state} />
+        <AthleteTelemetryMatrix state={state} signedOut={accountKey === "device"} />
         </View>
         </MotionStep>
       </SectionStack>
