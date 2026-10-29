@@ -1,6 +1,6 @@
 "use client";
 
-import { chartClientXToModel, nearestChartDatum, type ChartDatum } from "@fitness-battle/shared";
+import { SHELL_COLORS as c, chartClientXToModel, nearestChartDatum, type ChartDatum } from "@fitness-battle/shared";
 import { useCallback, useId, useRef, useState, type ReactNode, type PointerEvent as ReactPointerEvent } from "react";
 import { AppText } from "./section";
 import { playCue } from "@/lib/haptics";
@@ -187,7 +187,7 @@ export function ChartScrubber({
         {selected && (
           <svg className="chart-scrubber-marker" viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="none" aria-hidden="true">
             <line x1={selected.x} x2={selected.x} y1={plotTop} y2={plotBottom} stroke="var(--muted)" strokeWidth={1} />
-            <circle cx={selected.x} cy={selected.y} r={4} fill="var(--ink)" stroke="var(--card)" strokeWidth={2} />
+            <circle cx={selected.x} cy={selected.y} r={4} fill={c.tennis} />
           </svg>
         )}
       </div>

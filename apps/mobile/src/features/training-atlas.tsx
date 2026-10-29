@@ -72,15 +72,7 @@ export function TrainingAtlas({ state }: { state: CompeteState }) {
             setSports(normalizeTrainingSports(next));
           }}
         />
-        <ChartRangeToggle
-          value={range}
-          onChange={(next) => {
-            setRange(next);
-            setAnchor((current) =>
-              clampTrainingAnchor(current, earliest, now, next),
-            );
-          }}
-        />
+
       </View>
       <View style={s.row}>
         <Pressable
@@ -119,6 +111,15 @@ export function TrainingAtlas({ state }: { state: CompeteState }) {
         </Pressable>
       </View>
       <BenchmarkChart key={`${range}:${anchor.toISOString()}:${sports.join(",")}`} buckets={buckets} now={now} dateLabel={range === "week" ? formatWeeklyCompetitionRange(anchor) : anchor.toLocaleDateString("en-US", { timeZone: APP_TIMEZONE, ...(range === "year" ? { year: "numeric" } : { month: "long", year: "numeric" }) })} />
+        <ChartRangeToggle
+          value={range}
+          onChange={(next) => {
+            setRange(next);
+            setAnchor((current) =>
+              clampTrainingAnchor(current, earliest, now, next),
+            );
+          }}
+        />
       <FocusDisclosure title="Daily activity">
         <Text style={f.kicker}>
           {anchor.toLocaleDateString("en-US", {

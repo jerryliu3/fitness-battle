@@ -124,7 +124,7 @@ export function ChartScrubber({
       <View pointerEvents="none">{children}</View>
       {selected && <Svg pointerEvents="none" width="100%" height="100%" viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="none" style={{ position: "absolute", top: 0, left: 0 }}>
         <Line x1={selected.x} x2={selected.x} y1={plotTop} y2={plotBottom} stroke={c.muted} strokeWidth={1} />
-        <Circle cx={selected.x} cy={selected.y} r={4} fill={c.ink} stroke={c.card} strokeWidth={2} />
+        <Circle cx={selected.x} cy={selected.y} r={4} fill={c.tennis} />
       </Svg>}
     </View>
   </View>;

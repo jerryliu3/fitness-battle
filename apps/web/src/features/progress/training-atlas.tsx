@@ -72,13 +72,7 @@ export function TrainingAtlas({ state }: { state: CompeteState }) {
             setSports(normalizeTrainingSports(next));
           }}
         />
-        <ChartRangeToggle
-          value={range}
-          onChange={(next) => {
-            setRange(next);
-            setAnchor((current) => clampTrainingAnchor(current, earliest, now, next));
-          }}
-        />
+
       </div>
       <div className="atlas-heading">
         <button
@@ -100,6 +94,13 @@ export function TrainingAtlas({ state }: { state: CompeteState }) {
         </button>
       </div>
       <BenchmarkChart key={`${range}:${anchor.toISOString()}:${sports.join(",")}`} buckets={buckets} now={now} dateLabel={dateLabel} />
+        <ChartRangeToggle
+          value={range}
+          onChange={(next) => {
+            setRange(next);
+            setAnchor((current) => clampTrainingAnchor(current, earliest, now, next));
+          }}
+        />
       <details className="club-calendar">
         <summary>
           Daily activity <span>＋</span>

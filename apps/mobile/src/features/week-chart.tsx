@@ -10,9 +10,9 @@ export function WeekChart({ state, onOpen, ready = true }: { state: CompeteState
   const [range, setRange] = useState<"week" | "fourWeeks">("week");
   const chart = homeTrainingLine(state, range);
   return <ChartFrame ready={ready}><View style={s.card}>
-    <View style={s.header}><AppText role="display" accessibilityRole="header">{range === "week" ? "This week" : "Last four weeks"}</AppText><HomeActivityActions compact /></View>
-    <OpenLineChart chart={chart} label="Cumulative training hours" unit="hrs" range={range} onRangeChange={next => { if (next !== "year") setRange(next); }} includeYear={false} comparisonLabel={range === "week" ? "Last week" : "Prior 4 weeks"} />
-    {onOpen && <Pressable accessibilityRole="button" accessibilityLabel="See more this week" onPress={onOpen} style={s.open}><AppText role="label">See more →</AppText></Pressable>}
+    <View style={s.header}><AppText role="display" accessibilityRole="header">Your effort</AppText><HomeActivityActions compact /></View>
+    <OpenLineChart chart={chart} label="Cumulative training hours" unit="hrs" range={range} onRangeChange={next => { if (next !== "year") setRange(next); }} includeYear={false} live footerAction={onOpen ? <Pressable accessibilityRole="button" onPress={onOpen} style={s.open}><AppText role="label">View week →</AppText></Pressable> : undefined} comparisonLabel={range === "week" ? "Last week" : "Prior 4 weeks"} />
+
   </View></ChartFrame>;
 }
 const s = StyleSheet.create({

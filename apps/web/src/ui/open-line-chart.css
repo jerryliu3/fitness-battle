@@ -8,6 +8,8 @@
 .open-line-footer{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
 .open-line-ranges{display:flex;gap:4px}
 .open-line-ranges>button{border:0;background:transparent;min-width:44px;min-height:44px;border-radius:8px;padding:8px 12px;font:var(--type-label);color:var(--muted);cursor:pointer}
-.open-line-ranges>button[aria-pressed=true]{background:var(--ink);color:var(--card)}
+.open-line-ranges>button[aria-pressed=true]{background:transparent;color:var(--ink);font-weight:700}
 .open-line-comparison{display:flex;align-items:center;gap:6px;color:var(--muted);font:var(--type-caption)}
 .open-line-comparison i{width:18px;border-top:2px dotted var(--muted)}
+
+.chart-live-dot{transform-box:fill-box;transform-origin:center;animation:chart-live-pulse 1.8s ease-in-out infinite}@keyframes chart-live-pulse{50%{opacity:.35;transform:scale(1.6)}}@media(prefers-reduced-motion:reduce){.chart-live-dot{animation:none}}

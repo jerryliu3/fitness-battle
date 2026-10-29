@@ -17,8 +17,8 @@ export function BenchmarkChart({ buckets, now, dateLabel }: { buckets: TrainingB
     <ChartSvg width="100%" height={chart.height} viewBox={`0 0 ${chart.width} ${chart.height}`} preserveAspectRatio="none" accessible={false}>
       {chart.ticks.map(tick => <G key={tick.y}><Line x1={chart.left} x2={chart.right} y1={tick.y} y2={tick.y} stroke={c.line} /><ChartText x={chart.right} y={tick.y - 6} textAnchor="end" fill={c.muted}>{tick.label}</ChartText></G>)}
       {chart.bars.map((bar, i) => <G key={bar.start}>
-        {selected === bar.start && <Rect x={bar.x - chart.barWidth / .62 / 2} y={chart.top} width={chart.barWidth / .62} height={chart.bottom - chart.top} fill={c.fieldTeal} opacity={.06} />}
-        <Rect x={bar.x - chart.barWidth / 2} y={bar.y} width={chart.barWidth} height={chart.bottom - bar.y} fill={c.fieldTeal} opacity={bar.future ? .12 : selected && selected !== bar.start ? .25 : bar.partial ? .65 : 1} />
+        {selected === bar.start && <Rect x={bar.x - chart.barWidth / .62 / 2} y={chart.top} width={chart.barWidth / .62} height={chart.bottom - chart.top} fill={c.tennis} opacity={.06} />}
+        <Rect x={bar.x - chart.barWidth / 2} y={bar.y} width={chart.barWidth} height={chart.bottom - bar.y} fill={c.tennis} opacity={bar.future ? .12 : selected && selected !== bar.start ? .25 : bar.partial ? .65 : 1} />
         {!bar.future && !bar.movingSec && <Circle cx={bar.x} cy={chart.bottom - 2} r={1.5} fill={c.muted} />}
         {(i % tickStep === 0 || i === buckets.length - 1) && <ChartText x={bar.x} y={chart.height - 8} textAnchor="middle" fill={c.muted}>{bar.label}</ChartText>}
       </G>)}
