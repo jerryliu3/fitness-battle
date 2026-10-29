@@ -329,13 +329,13 @@ export default function AthleteScreen() {
           contentContainerStyle={styles.scroll}
           keyboardShouldPersistTaps="handled"
         >
-          <AthleteMetrics state={state} sections="profile" />
+          <AthleteMetrics state={state} sections="profile" signedOut={!signedIn} />
           <Text style={styles.kicker}>Account</Text>
 
           <Text style={styles.name}>Sign in to Overtaek</Text>
           <Text style={styles.copy}>
             Create an account or sign in to sync Apple Health, connect trackers,
-            and keep your battles on this device.
+            and join events.
           </Text>
 
           <View style={styles.authToggle}>
