@@ -10,7 +10,6 @@ vi.mock("@/lib/supabase/middleware", () => ({
   }),
   updateSessionAndGetUser: vi.fn(async (req: NextRequest) => {
     const { NextResponse } = await import("next/server");
-    // Mock user can be controlled via header for test purposes
     const mockEmail = req.headers.get("x-test-user-email");
     const user = mockEmail
       ? {
@@ -82,7 +81,6 @@ describe("middleware", () => {
         },
       });
       const res = await middleware(req);
-      // Status 200 (NextResponse.next)
       expect(res.status).toBe(200);
       expect(res.headers.get("location")).toBeNull();
     });
@@ -132,7 +130,6 @@ describe("middleware", () => {
         id: "demo-fake",
         email: "3jerryliu@gmail.com",
       });
-      // In production, demo cookie is ignored; user is treated as unauthenticated
       const req = new NextRequest("https://fitness-battle-one.vercel.app/design", {
         headers: {
           cookie: `${DEMO_USER_COOKIE}=${cookieValue}`,
@@ -166,184 +163,72 @@ describe("middleware", () => {
   });
 
   describe("/admin and /app/admin route restriction", () => {
-    it("redirects unauthenticated visitor to /login with next param for /admin", async () => {
-      const req = new NextRequest("http://localhost:3000/admin");
-      const res = await middleware(req);
-      expect(res.status).toBe(307);
-      const location = new URL(res.headers.get("location")!);
-      expect(location.pathname).toBe("/login");
-      expect(location.searchParams.get("next")).toBe("/admin");
+    it("redirects unauthenticated visitors to /login", async () => {
+      for (const [path, expectedNext] of [
+        ["/admin", "/admin"],
+        ["/app/admin", "/app/admin"],
+        ["//admin", "//admin"],
+        ["/%61dmin", "/%61dmin"],
+        ["//app//admin/", "//app//admin/"],
+      ]) {
+        const res = await middleware(new NextRequest(`http://localhost:3000${path}`));
+        expect(res.status).toBe(307);
+        const loc = new URL(res.headers.get("location")!);
+        expect(loc.pathname).toBe("/login");
+        expect(loc.searchParams.get("next")).toBe(expectedNext);
+      }
     });
 
-    it("redirects unauthenticated visitor to /login with next param for /app/admin", async () => {
-      const req = new NextRequest("http://localhost:3000/app/admin");
-      const res = await middleware(req);
-      expect(res.status).toBe(307);
-      const location = new URL(res.headers.get("location")!);
-      expect(location.pathname).toBe("/login");
-      expect(location.searchParams.get("next")).toBe("/app/admin");
+    it("redirects signed-in non-admin user to /app/today?denied=admin", async () => {
+      for (const path of ["/app/admin", "/admin"]) {
+        const req = new NextRequest(`https://fitness-battle-one.vercel.app${path}`, {
+          headers: { "x-test-user-email": "bob@example.com" },
+        });
+        const res = await middleware(req);
+        expect(res.status).toBe(307);
+        const loc = new URL(res.headers.get("location")!);
+        expect(loc.pathname).toBe("/app/today");
+        expect(loc.searchParams.get("denied")).toBe("admin");
+      }
     });
 
-    it("redirects unauthenticated visitor to /login for obfuscated admin paths", async () => {
-      const req1 = new NextRequest("http://localhost:3000//admin");
-      const res1 = await middleware(req1);
-      expect(res1.status).toBe(307);
-      expect(new URL(res1.headers.get("location")!).pathname).toBe("/login");
+    it("handles authorized admins in production", async () => {
+      for (const email of ["3jerryliu@gmail.com", "alice@example.com"]) {
+        const direct = await middleware(new NextRequest("https://fitness-battle-one.vercel.app/app/admin", {
+          headers: { "x-test-user-email": email },
+        }));
+        expect(direct.status).toBe(200);
 
-      const req2 = new NextRequest("http://localhost:3000/%61dmin");
-      const res2 = await middleware(req2);
-      expect(res2.status).toBe(307);
-      expect(new URL(res2.headers.get("location")!).pathname).toBe("/login");
+        const redirect = await middleware(new NextRequest("https://fitness-battle-one.vercel.app/admin", {
+          headers: { "x-test-user-email": email },
+        }));
+        expect(redirect.status).toBe(307);
+        expect(new URL(redirect.headers.get("location")!).pathname).toBe("/app/admin");
+      }
 
-      const req3 = new NextRequest("http://localhost:3000//app//admin/");
-      const res3 = await middleware(req3);
-      expect(res3.status).toBe(307);
-      expect(new URL(res3.headers.get("location")!).pathname).toBe("/login");
-    });
-
-    it("redirects signed-in non-admin user away to /app/today?denied=admin for /app/admin", async () => {
-      const req = new NextRequest("https://fitness-battle-one.vercel.app/app/admin", {
-        headers: {
-          "x-test-user-email": "bob@example.com",
-        },
-      });
-      const res = await middleware(req);
-      expect(res.status).toBe(307);
-      const location = new URL(res.headers.get("location")!);
-      expect(location.pathname).toBe("/app/today");
-      expect(location.searchParams.get("denied")).toBe("admin");
-    });
-
-    it("redirects signed-in non-admin user away to /app/today?denied=admin for /admin", async () => {
-      const req = new NextRequest("https://fitness-battle-one.vercel.app/admin", {
-        headers: {
-          "x-test-user-email": "stranger@gmail.com",
-        },
-      });
-      const res = await middleware(req);
-      expect(res.status).toBe(307);
-      const location = new URL(res.headers.get("location")!);
-      expect(location.pathname).toBe("/app/today");
-      expect(location.searchParams.get("denied")).toBe("admin");
-    });
-
-    it("allows 3jerryliu@gmail.com on /app/admin in production", async () => {
-      const req = new NextRequest("https://fitness-battle-one.vercel.app/app/admin", {
-        headers: {
-          "x-test-user-email": "3jerryliu@gmail.com",
-        },
-      });
-      const res = await middleware(req);
-      expect(res.status).toBe(200);
-      expect(res.headers.get("location")).toBeNull();
-    });
-
-    it("redirects 3jerryliu@gmail.com from /admin to /app/admin in production", async () => {
-      const req = new NextRequest("https://fitness-battle-one.vercel.app/admin", {
-        headers: {
-          "x-test-user-email": "3jerryliu@gmail.com",
-        },
-      });
-      const res = await middleware(req);
-      expect(res.status).toBe(307);
-      expect(new URL(res.headers.get("location")!).pathname).toBe("/app/admin");
-    });
-
-    it("allows alice@example.com on /app/admin in production", async () => {
-      const req = new NextRequest("https://fitness-battle-one.vercel.app/app/admin", {
-        headers: {
-          "x-test-user-email": "alice@example.com",
-        },
-      });
-      const res = await middleware(req);
-      expect(res.status).toBe(200);
-      expect(res.headers.get("location")).toBeNull();
-    });
-
-    it("redirects alice@example.com from /admin to /app/admin in production", async () => {
-      const req = new NextRequest("https://fitness-battle-one.vercel.app/admin", {
-        headers: {
-          "x-test-user-email": "alice@example.com",
-        },
-      });
-      const res = await middleware(req);
-      expect(res.status).toBe(307);
-      expect(new URL(res.headers.get("location")!).pathname).toBe("/app/admin");
-    });
-
-    it("redirects alice@example.com from /admin/scenarios to /app/admin/scenarios in production", async () => {
-      const req = new NextRequest("https://fitness-battle-one.vercel.app/admin/scenarios?target=123", {
-        headers: {
-          "x-test-user-email": "alice@example.com",
-        },
-      });
-      const res = await middleware(req);
-      expect(res.status).toBe(307);
-      const url = new URL(res.headers.get("location")!);
+      const subpath = await middleware(new NextRequest("https://fitness-battle-one.vercel.app/admin/scenarios?target=123", {
+        headers: { "x-test-user-email": "alice@example.com" },
+      }));
+      expect(subpath.status).toBe(307);
+      const url = new URL(subpath.headers.get("location")!);
       expect(url.pathname).toBe("/app/admin/scenarios");
       expect(url.searchParams.get("target")).toBe("123");
     });
 
-    it("redirects alice@example.com from //admin to /app/admin in production", async () => {
-      const req = new NextRequest("https://fitness-battle-one.vercel.app//admin", {
-        headers: {
-          "x-test-user-email": "alice@example.com",
-        },
-      });
-      const res = await middleware(req);
-      expect(res.status).toBe(307);
-      expect(new URL(res.headers.get("location")!).pathname).toBe("/app/admin");
-    });
+    it("handles demo cookies according to environment", async () => {
+      const aliceCookie = serializeDemoUserCookie({ id: "demo-alice", email: "alice@example.com", displayName: "Alice" });
+      const bobCookie = serializeDemoUserCookie({ id: "demo-bob", email: "bob@example.com", displayName: "Bob" });
 
-    it("allows alice@example.com on local via demo cookie", async () => {
-      const cookieValue = serializeDemoUserCookie({
-        id: "demo-alice",
-        email: "alice@example.com",
-        displayName: "Alice",
-      });
-      const req = new NextRequest("http://localhost:3000/app/admin", {
-        headers: {
-          cookie: `${DEMO_USER_COOKIE}=${cookieValue}`,
-        },
-      });
-      const res = await middleware(req);
-      expect(res.status).toBe(200);
-      expect(res.headers.get("location")).toBeNull();
-    });
+      const localAdmin = await middleware(new NextRequest("http://localhost:3000/app/admin", { headers: { cookie: `${DEMO_USER_COOKIE}=${aliceCookie}` } }));
+      expect(localAdmin.status).toBe(200);
 
-    it("rejects non-admin demo cookie (bob@example.com) on local", async () => {
-      const cookieValue = serializeDemoUserCookie({
-        id: "demo-bob",
-        email: "bob@example.com",
-        displayName: "Bob",
-      });
-      const req = new NextRequest("http://localhost:3000/app/admin", {
-        headers: {
-          cookie: `${DEMO_USER_COOKIE}=${cookieValue}`,
-        },
-      });
-      const res = await middleware(req);
-      expect(res.status).toBe(307);
-      const location = new URL(res.headers.get("location")!);
-      expect(location.pathname).toBe("/app/today");
-      expect(location.searchParams.get("denied")).toBe("admin");
-    });
+      const localNonAdmin = await middleware(new NextRequest("http://localhost:3000/app/admin", { headers: { cookie: `${DEMO_USER_COOKIE}=${bobCookie}` } }));
+      expect(localNonAdmin.status).toBe(307);
+      expect(new URL(localNonAdmin.headers.get("location")!).pathname).toBe("/app/today");
 
-    it("rejects demo cookie for admin email in production and redirects to login", async () => {
-      const cookieValue = serializeDemoUserCookie({
-        id: "fake-admin",
-        email: "alice@example.com",
-      });
-      const req = new NextRequest("https://fitness-battle-one.vercel.app/app/admin", {
-        headers: {
-          cookie: `${DEMO_USER_COOKIE}=${cookieValue}`,
-        },
-      });
-      const res = await middleware(req);
-      expect(res.status).toBe(307);
-      const location = new URL(res.headers.get("location")!);
-      expect(location.pathname).toBe("/login");
+      const prodDemo = await middleware(new NextRequest("https://fitness-battle-one.vercel.app/app/admin", { headers: { cookie: `${DEMO_USER_COOKIE}=${aliceCookie}` } }));
+      expect(prodDemo.status).toBe(307);
+      expect(new URL(prodDemo.headers.get("location")!).pathname).toBe("/login");
     });
   });
 });
-
