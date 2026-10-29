@@ -16,8 +16,8 @@ const target = "00000000-0000-4000-8000-000000000001";
 const actionId = "00000000-0000-4000-8000-000000000002";
 const commit = vi.fn();
 const getUser = vi.fn();
-function request(body: object = {}, origin = "https://overtaek.com") {
- return new Request("https://overtaek.com/api/admin/compete", { method: "POST", headers: { origin, "Content-Type": "application/json" }, body: JSON.stringify({ target, actionId, action: "settle-due", reason: "Test manual settlement", confirmation: `SETTLE ${target}`, updatedAt: "version-1", ...body }) });
+function request(body: object = {}, origin = "https://overtaek.xyz") {
+ return new Request("https://overtaek.xyz/api/admin/compete", { method: "POST", headers: { origin, "Content-Type": "application/json" }, body: JSON.stringify({ target, actionId, action: "settle-due", reason: "Test manual settlement", confirmation: `SETTLE ${target}`, updatedAt: "version-1", ...body }) });
 }
 beforeEach(() => {
  vi.clearAllMocks();
@@ -72,7 +72,7 @@ describe("admin settlement", () => {
   expect(commit).not.toHaveBeenCalled();
  });
  it("protects account previews too", async () => {
-  const response = await GET(new Request(`https://overtaek.com/api/admin/compete?target=${target}`));
+  const response = await GET(new Request(`https://overtaek.xyz/api/admin/compete?target=${target}`));
   expect(response.status).toBe(200);
   expect(response.headers.get("cache-control")).toBe("no-store");
   expect((await response.json()).name).toBeTruthy();

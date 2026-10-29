@@ -12,6 +12,37 @@ export async function resolveSessionUserId(): Promise<string | null> {
   return data.user?.id ?? null;
 }
 
+export type RequestUser = {
+  id: string;
+  email?: string | null;
+};
+
+/** Session cookie, Bearer token, or demo body id with full user record if available. */
+export async function resolveRequestUser(
+  request: Request,
+  bodyUserId?: string | null,
+): Promise<RequestUser | null> {
+  const header = request.headers.get("authorization") ?? "";
+  const match = /^Bearer\s+(\S+)/i.exec(header);
+  const { configured, supabaseUrl, supabaseAnonKey } = getSupabaseConfig();
+  if (match && configured) {
+    const supabase = createSupabaseClient(supabaseUrl, supabaseAnonKey, {
+      auth: { persistSession: false, autoRefreshToken: false },
+    });
+    const { data, error } = await supabase.auth.getUser(match[1]);
+    if (error || !data.user) return null;
+    return { id: data.user.id, email: data.user.email ?? null };
+  }
+  if (configured) {
+    const supabase = await createClient();
+    const { data, error } = await supabase.auth.getUser();
+    if (error || !data.user) return null;
+    return { id: data.user.id, email: data.user.email ?? null };
+  }
+  const id = bodyUserId?.trim();
+  return id ? { id, email: null } : null;
+}
+
 /**
  * Configured apps use the session, or a Bearer access token from mobile.
  * Unconfigured offline previews accept only a local body id for stub routes.
@@ -28,16 +59,6 @@ export async function resolveRequestUserId(
   request: Request,
   bodyUserId?: string | null,
 ): Promise<string | null> {
-  const header = request.headers.get("authorization") ?? "";
-  const match = /^Bearer\s+(\S+)/i.exec(header);
-  const { configured, supabaseUrl, supabaseAnonKey } = getSupabaseConfig();
-  if (match && configured) {
-    const supabase = createSupabaseClient(supabaseUrl, supabaseAnonKey, {
-      auth: { persistSession: false, autoRefreshToken: false },
-    });
-    const { data, error } = await supabase.auth.getUser(match[1]);
-    if (error || !data.user) return null;
-    return data.user.id;
-  }
-  return resolveUserId(bodyUserId);
+  const user = await resolveRequestUser(request, bodyUserId);
+  return user?.id ?? null;
 }

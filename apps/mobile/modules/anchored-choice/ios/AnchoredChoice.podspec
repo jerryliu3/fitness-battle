@@ -5,7 +5,7 @@ Pod::Spec.new do |s|
   s.description = s.summary
   s.license = { :type => 'MIT' }
   s.author = 'Overtaek'
-  s.homepage = 'https://overtaek.com'
+  s.homepage = 'https://overtaek.xyz'
   s.platforms = { :ios => '16.0' }
   s.source = { :git => '' }
   s.static_framework = true
