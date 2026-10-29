@@ -74,8 +74,8 @@ export function ChartScrubber({
       if (direction.current === "horizontal") inspectRef.current(event.nativeEvent.locationX);
     },
     onPanResponderTerminationRequest: () => direction.current !== "horizontal",
-    onPanResponderRelease: () => { lastId.current = null; direction.current = null; },
-    onPanResponderTerminate: () => { lastId.current = null; direction.current = null; },
+    onPanResponderRelease: () => { clearSelection(); },
+    onPanResponderTerminate: () => { clearSelection(); },
   }), []);
   const move = (step: number) => {
     const index = points.findIndex(point => point.id === (selectedPointId ?? selectedId));
@@ -98,20 +98,15 @@ export function ChartScrubber({
           y: event.nativeEvent.pageY,
           locationX: event.nativeEvent.locationX,
         };
+        inspectRef.current(event.nativeEvent.locationX);
       }}
-      onTouchEnd={event => {
-        if (touchStart.current) {
-          const dx = Math.abs(event.nativeEvent.pageX - touchStart.current.x);
-          const dy = Math.abs(event.nativeEvent.pageY - touchStart.current.y);
-          if (dx < 10 && dy < 10) {
-            lastId.current = null;
-            inspectRef.current(touchStart.current.locationX);
-          }
-          touchStart.current = null;
-        }
+      onTouchEnd={() => {
+        touchStart.current = null;
+        clearSelection();
       }}
       onTouchCancel={() => {
         touchStart.current = null;
+        clearSelection();
       }}
       onLayout={event => { measuredWidth.current = Math.max(1, event.nativeEvent.layout.width); }}
       accessible
