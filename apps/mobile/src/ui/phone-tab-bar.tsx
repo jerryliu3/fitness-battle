@@ -1,3 +1,4 @@
+import { AppText } from "./section";
 import { AppIcon } from "./app-icon";
 import {
   SHELL_TABS,
@@ -88,6 +89,7 @@ export function PhoneTabBar({
             style={[styles.tab, selected ? styles.tabOn : null]}
           >
             <AppIcon name={tabIcons[tab.id]} size={22} color={selected ? SHELL_COLORS.starEmber : SHELL_COLORS.muted} />
+            <AppText role="caption" style={{ color: selected ? SHELL_COLORS.paper : SHELL_COLORS.muted }}>{tab.label}</AppText>
           </Pressable>
         );
       })}

@@ -121,7 +121,6 @@ export function EventCarousel({
 
 const s = StyleSheet.create({
   page: {
-    borderTopWidth: 1,
     borderBottomWidth: 1,
     borderColor: c.line,
   },

@@ -76,3 +76,37 @@ it("selects points directly on tap anywhere on the chart", async () => {
   });
   expect(select).toHaveBeenCalledWith("tue");
 });
+
+it("follows an externally selected analytics point when it changes", async () => {
+  vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
+  const chart = (id: string) => createElement(ChartScrubber, {
+    points, width: 100, height: 100, plotTop: 0, plotBottom: 100,
+    label: "Trend", selectedPointId: id, children: null,
+  });
+  await act(async () => { renderer = create(chart("mon")); });
+  const reading = () => renderer.root.findByProps({ accessibilityRole: "adjustable" }).props.accessibilityValue.text;
+  expect(reading()).toBe("Monday, 1 hr");
+  await act(async () => renderer.update(chart("tue")));
+  expect(reading()).toBe("Tuesday, 3 hr");
+});
+
+it("clears selection when touch releases, falling back to summary and live state", async () => {
+  vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
+  const selectionChange = vi.fn();
+  await act(async () => {
+    renderer = create(createElement(ChartScrubber, {
+      points, width: 100, height: 120, plotTop: 10, plotBottom: 100, label: "Hours", children: null, onSelectionChange: selectionChange,
+    }));
+  });
+  const surface = () => renderer.root.findAllByType("View" as never).find(node => node.props.accessibilityRole === "adjustable")!;
+  await act(async () => surface().props.onLayout({ nativeEvent: { layout: { width: 300 } } }));
+  await act(async () => {
+    surface().props.onTouchStart({ nativeEvent: { pageX: 240, pageY: 100, locationX: 240 } });
+  });
+  expect(selectionChange).toHaveBeenCalledWith(expect.objectContaining({ id: "tue" }));
+  await act(async () => {
+    surface().props.onTouchEnd();
+  });
+  expect(selectionChange).toHaveBeenLastCalledWith(undefined);
+  expect(renderer.root.findAllByType("Line" as never)).toHaveLength(0);
+});

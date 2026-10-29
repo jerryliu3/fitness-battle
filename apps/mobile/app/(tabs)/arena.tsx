@@ -1,5 +1,5 @@
 import { SectionStack, AppText } from "../../src/ui/section";
-import { competitionQueue, competeNow, sportRenewal, sleepRenewal, waveTimeLabel, nextDailyWaveWindowAt, competitionTrack, competitionTrackLabel } from "@fitness-battle/shared";
+import { competitionQueue, competeNow, waveTimeLabel, nextDailyWaveWindowAt, competitionTrack, competitionTrackLabel } from "@fitness-battle/shared";
 import { EventCarousel } from "../../src/features/event-carousel";
 import {
   SPORTS,
@@ -69,7 +69,6 @@ export default function ArenaScreen() {
     ? requested : active.find(r=>r.sport===state.primary)?.sport??active[0]?.sport??(sleepOptedIn?"sleep":null);
   const now = competeNow(state);
   const queue = selectedSport ? competitionQueue(state, selectedSport, now) : null;
-  const renewal = selectedSport && selectedSport !== "sleep" ? sportRenewal(state, selectedSport) : selectedSport === "sleep" ? sleepRenewal(state) : null;
   const track = competitionTrack(selectedSport && selectedSport !== "sleep" ? selectedSport : state.primary);
   function openRegistration() {
     setSport(null);
@@ -190,9 +189,7 @@ export default function ArenaScreen() {
                 </AppText>
               </View>
             )}
-            {selectedSport && selectedSport !== "sleep" && !queue?.queued && !queue?.awaitingField && Boolean(state.enrollments.find(e => e.sport === selectedSport)?.syntheticIds.length) ? <AppText role="caption" secondary>This field includes {state.enrollments.find(e => e.sport === selectedSport)!.syntheticIds.length} generated competitors.</AppText> : null}
             {selectedSport && !queue?.queued && !queue?.awaitingField ? <AppText role="caption" secondary>Sync workouts before the end time. Late uploads won't change final results.</AppText> : null}
-            {selectedSport && renewal && !queue?.queued && !queue?.awaitingField ? <FocusButton secondary label={renewal.renews ? "Stop after this week" : "Keep playing next week"} onPress={() => dispatch({ type: renewal.renews ? "schedule-leave" : "resume-renewal", ...(selectedSport === "sleep" ? { metric: "sleep" as const } : { sport: selectedSport }) })} /> : null}
           </EventCarousel>
         ) : (
           <View style={f.card}>

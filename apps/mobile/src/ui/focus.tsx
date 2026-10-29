@@ -67,7 +67,7 @@ export function FocusSheet({
   const { height: windowHeight } = useWindowDimensions();
   const maxSheetHeight = fullScreen
     ? "100%"
-    : Math.max(200, windowHeight - insets.top - 12);
+    : Math.max(200, windowHeight - Math.max(insets.top, 24) - 24);
   useEffect(() => {
     if (open) void playCue("light");
   }, [open]);

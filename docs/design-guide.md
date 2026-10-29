@@ -27,6 +27,23 @@ The [Brand & Ember study](brand-study/brand-and-ember-studio.md) is available at
 
 ## Shared visual language
 
+### Selected chart system — October 29
+
+Home's hours chart and Progress's Effort Score use **Open line**: an unfilled
+teal trace without a grid or ordinary axes, one date/range and large value above,
+and compact 1W / 4W controls below (Effort Score also offers 1Y). Hover previews;
+tap pins and horizontal dragging inspects. The reading contains no session list,
+repeated date or explanatory paragraph. A dotted previous-week line remains on
+Home; 4W compares the prior four weeks. Four weeks is exactly 28 Eastern dates,
+not a relabeled calendar month. Score history and eligibility rules stay intact.
+
+Training volume uses **Benchmark bars** on web and native: square-ended columns,
+a dotted average reference, a stable selected date/value reading, and quiet
+gridlines. Keep its existing calendar Week / Month / Year ranges, sport filters
+and period navigation. Include recorded zero buckets in the average and exclude
+future buckets from both inspection and the average. Training mix is deferred.
+See the [source review](reviews/chart-system/reference-study.md).
+
 The palette is defined in `packages/shared/src/shell.ts`, consumed by native `src/theme.ts` and mirrored in web `features/focus/club.css` and HeroUI variables. Legacy plum/tennis keys remain compatibility aliases.
 
 | Semantic role | Value | Usage |

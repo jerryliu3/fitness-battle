@@ -10,6 +10,7 @@ vi.mock("expo-router", () => ({
 
 vi.mock("react-native", () => ({
   Animated: { createAnimatedComponent: (component: unknown) => component },
+  PanResponder: { create: () => ({ panHandlers: {} }) },
   Pressable: "Pressable",
   ScrollView: "ScrollView",
   Text: "Text",
@@ -79,6 +80,7 @@ vi.mock("../ui/focus", () => ({
 }));
 
 vi.mock("../theme", () => ({
+  SHELL_COLORS: { ink: "#142b3b", muted: "#637482", tennis: "#f7c948" },
   fonts: {
     bodyBold: "System",
     body: "System",

@@ -1,6 +1,6 @@
 "use client";
 
-import { chartClientXToModel, nearestChartDatum, type ChartDatum } from "@fitness-battle/shared";
+import { SHELL_COLORS as c, chartClientXToModel, nearestChartDatum, type ChartDatum } from "@fitness-battle/shared";
 import { useCallback, useId, useRef, useState, type ReactNode, type PointerEvent as ReactPointerEvent } from "react";
 import { AppText } from "./section";
 import { playCue } from "@/lib/haptics";
@@ -22,6 +22,9 @@ export function ChartScrubber({
   label,
   summaryOnSelection = false,
   hideSummary = false,
+  renderSummary,
+  onSelectionChange,
+  selectedPointId,
 }: {
   points: readonly ChartDatum[];
   width: number;
@@ -33,19 +36,23 @@ export function ChartScrubber({
   label: string;
   summaryOnSelection?: boolean;
   hideSummary?: boolean;
+  renderSummary?: (point: ChartDatum | undefined) => ReactNode;
+  selectedPointId?: string;
+  onSelectionChange?: (point: ChartDatum | undefined) => void;
 }) {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const surfaceRef = useRef<HTMLDivElement>(null);
   const lastId = useRef<string | null>(null);
   const scrubbing = useRef(false);
+  const pinned = useRef(false);
   const direction = useRef<"horizontal" | "vertical" | null>(null);
   const origin = useRef({ x: 0, y: 0 });
   const summaryId = useId();
-  const selected = points.find((point) => point.id === selectedId);
-  const latest = useRef({ points, width, onSelect });
-  latest.current = { points, width, onSelect };
+  const selected = points.find((point) => point.id === (selectedPointId ?? selectedId));
+  const latest = useRef({ points, width, onSelect, onSelectionChange });
+  latest.current = { points, width, onSelect, onSelectionChange };
 
-  const inspect = useCallback((clientX: number) => {
+  const inspect = useCallback((clientX: number, cue = true) => {
     const surface = surfaceRef.current;
     if (!surface) return;
     const rect = surface.getBoundingClientRect();
@@ -56,8 +63,16 @@ export function ChartScrubber({
     lastId.current = point.id;
     setSelectedId(point.id);
     current.onSelect?.(point.id);
-    void playCue("selection");
+    current.onSelectionChange?.(point);
+    if (cue) void playCue("selection");
   }, []);
+
+  function clearSelection() {
+    pinned.current = false;
+    lastId.current = null;
+    setSelectedId(null);
+    latest.current.onSelectionChange?.(undefined);
+  }
 
   function onPointerDown(event: ReactPointerEvent<HTMLDivElement>) {
     direction.current = null;
@@ -66,7 +81,10 @@ export function ChartScrubber({
   }
 
   function onPointerMove(event: ReactPointerEvent<HTMLDivElement>) {
-    if (!scrubbing.current) return;
+    if (!scrubbing.current) {
+      if (event.pointerType === "mouse" && !pinned.current) inspect(event.clientX, false);
+      return;
+    }
     if (!direction.current) {
       const dx = event.clientX - origin.current.x;
       const dy = event.clientY - origin.current.y;
@@ -74,9 +92,7 @@ export function ChartScrubber({
       direction.current = Math.abs(dx) >= Math.abs(dy) ? "horizontal" : "vertical";
       if (direction.current === "vertical") {
         scrubbing.current = false;
-        direction.current = null;
-        lastId.current = null;
-        setSelectedId(null);
+        clearSelection();
         return;
       }
       event.currentTarget.setPointerCapture(event.pointerId);
@@ -85,6 +101,10 @@ export function ChartScrubber({
   }
 
   function onPointerUp(event: ReactPointerEvent<HTMLDivElement>) {
+    if (scrubbing.current && direction.current !== "vertical") {
+      pinned.current = true;
+      inspect(event.clientX);
+    }
     scrubbing.current = false;
     direction.current = null;
     lastId.current = null;
@@ -95,7 +115,7 @@ export function ChartScrubber({
 
   function moveSelection(step: number) {
     const current = latest.current;
-    const index = current.points.findIndex((point) => point.id === selectedId);
+    const index = current.points.findIndex((point) => point.id === (selectedPointId ?? selectedId));
     const next = current.points[
       Math.max(0, Math.min(current.points.length - 1, (index < 0 ? current.points.length - 1 : index) + step))
     ];
@@ -106,6 +126,7 @@ export function ChartScrubber({
       ? rect.left + (next.x / current.width) * rect.width
       : next.x;
     lastId.current = null;
+    pinned.current = true;
     inspect(clientX);
   }
 
@@ -116,6 +137,12 @@ export function ChartScrubber({
     } else if (event.key === "ArrowRight") {
       event.preventDefault();
       moveSelection(1);
+    } else if (event.key === "Home" || event.key === "End") {
+      event.preventDefault();
+      moveSelection(event.key === "Home" ? -points.length : points.length);
+    } else if (event.key === "Escape") {
+      event.preventDefault();
+      clearSelection();
     }
   }
 
@@ -123,7 +150,7 @@ export function ChartScrubber({
     <div className="chart-scrubber">
       {!hideSummary && (
         <div id={summaryId} className="chart-scrubber-summary" aria-live="polite">
-          {summaryOnSelection ? (
+          {renderSummary ? renderSummary(selected) : summaryOnSelection ? (
             selected ? (
               <AppText role="caption" secondary>
                 {`${selected.label} · ${selected.value}`}
@@ -140,25 +167,29 @@ export function ChartScrubber({
       <div
         ref={surfaceRef}
         className="chart-scrubber-surface"
-        role="application"
+        role="slider"
         tabIndex={0}
         aria-label={label}
-        aria-describedby={summaryId}
+        aria-describedby={hideSummary ? undefined : summaryId}
+        aria-valuemin={0}
+        aria-valuemax={Math.max(0, points.length - 1)}
+        aria-valuenow={selected ? Math.max(0, points.findIndex(point => point.id === selected.id)) : Math.max(0, points.length - 1)}
+        aria-valuetext={selected ? `${selected.label}, ${selected.value}` : points.at(-1) ? `${points.at(-1)!.label}, ${points.at(-1)!.value}` : "No data"}
         onKeyDown={onKeyDown}
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}
         onPointerUp={onPointerUp}
-        onPointerCancel={onPointerUp}
+        onPointerCancel={() => { scrubbing.current = false; direction.current = null; clearSelection(); }}
         onPointerLeave={(event) => {
-          if (!event.currentTarget.hasPointerCapture(event.pointerId)) onPointerUp(event);
+          if (!event.currentTarget.hasPointerCapture(event.pointerId) && !pinned.current) clearSelection();
         }}
-        onLostPointerCapture={onPointerUp}
+        onLostPointerCapture={() => { scrubbing.current = false; direction.current = null; }}
       >
         <div className="chart-scrubber-plot" aria-hidden="true">{children}</div>
         {selected && (
           <svg className="chart-scrubber-marker" viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="none" aria-hidden="true">
-            <line x1={selected.x} x2={selected.x} y1={plotTop} y2={plotBottom} stroke="var(--ink)" strokeWidth={1} strokeDasharray="3 3" />
-            <circle cx={selected.x} cy={selected.y} r={4} fill="var(--ink)" stroke="var(--card)" strokeWidth={2} />
+            <line x1={selected.x} x2={selected.x} y1={plotTop} y2={plotBottom} stroke="var(--muted)" strokeWidth={1} />
+            <circle cx={selected.x} cy={selected.y} r={4} fill={c.tennis} />
           </svg>
         )}
       </div>

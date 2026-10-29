@@ -49,7 +49,7 @@ export function AthleteTelemetryMatrix({
       value: model.vitals.metrics[0]!.formattedCurrent,
       delta: `${model.vitals.metrics[0]!.statusLabel} corridor`,
       points: model.vitals.metrics[0]!.series.map((p) => p.value),
-      accent: c.fieldTeal,
+      accent: c.tennis,
     },
     {
       id: "sleep",
@@ -58,7 +58,7 @@ export function AthleteTelemetryMatrix({
       value: `${model.sleep.lastNight.score} score`,
       delta: `${model.sleep.lastNight.restorativePct}% restorative · ${model.sleep.lastNight.debtMin}m debt`,
       points: model.sleep.nights.map((n) => n.score),
-      accent: c.ink,
+      accent: c.tennis,
     },
     {
       id: "load",
@@ -67,7 +67,7 @@ export function AthleteTelemetryMatrix({
       value: `${model.load.acwrCurrent.toFixed(2)}x`,
       delta: model.load.acwrStatusLabel,
       points: model.load.series.map((b) => b.acwr * 100),
-      accent: c.statusSuccess,
+      accent: c.tennis,
     },
     {
       id: "performance",
@@ -76,7 +76,7 @@ export function AthleteTelemetryMatrix({
       value: model.performance.efCurrent.toFixed(2),
       delta: `${model.performance.efDeltaPct >= 0 ? "+" : ""}${model.performance.efDeltaPct}% pace/HR`,
       points: model.performance.series.map((p) => p.efficiencyFactor * 100),
-      accent: c.fieldTeal,
+      accent: c.tennis,
     },
     {
       id: "combined",
@@ -85,7 +85,7 @@ export function AthleteTelemetryMatrix({
       value: `${model.vitals.readinessComposite}%`,
       delta: `Strain ceiling ${model.combined.optimalStrainCeiling}`,
       points: model.combined.series.map((s) => s.nextDayReadiness),
-      accent: c.statusSuccess,
+      accent: c.tennis,
     },
   ];
 
