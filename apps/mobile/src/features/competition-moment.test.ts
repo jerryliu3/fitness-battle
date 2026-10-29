@@ -12,6 +12,7 @@ vi.mock("../ui/focus", () => ({ FocusButton: "FocusButton" }));
 vi.mock("../lib/haptics", () => ({ playCue: vi.fn() }));
 vi.mock("../ui/field-course", () => ({ useFieldAppearance: () => [defaultFieldAppearance] }));
 vi.mock("../ui/lane-track", () => ({ LaneTrack: "LaneTrack" }));
+vi.mock("./geographic-course",()=>({GeographicCourse:"GeographicCourse"}));
 import { CompetitionMoment } from "./competition-moment";
 it("reduced motion shows the final result in either direction and confirms at most once", async () => {
   vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
@@ -53,6 +54,8 @@ it("skipping playback shows final totals and waits for explicit confirmation", a
     const button = renderer.root.findByType("FocusButton" as never);
     const field = () => renderer.root.findByType("LaneTrack" as never);
     expect(field().props.lanes.find((lane: { you?: boolean }) => lane.you).values[2]).toBe(moment.plan.youBefore);
+    expect(button.props.label).toBe("See my move →");
+    await act(async () => button.props.onPress());
     expect(button.props.label).toBe("Skip animation");
     await act(async () => button.props.onPress());
     expect(field().props.lanes.find((lane: { you?: boolean }) => lane.you).values[2]).toBe(moment.plan.youAfter);

@@ -41,7 +41,7 @@ export function TrainingHistory({ state, children }: { state: CompeteState; chil
     latest = rows.at(-1),
     inspected = rows.find((r) => r.activityId === receipt) ?? latest;
   return (
-    <SectionStack>
+    <SectionStack divided={false}>
       <TrainingAtlas state={state} />
       {children}
       {active && latest && inspected ? (

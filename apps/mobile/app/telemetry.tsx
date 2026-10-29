@@ -11,8 +11,10 @@ import type { AnalyticsDomainId } from "@fitness-battle/shared";
 
 export default function TelemetryScreen() {
   const router = useRouter();
-  const { domain } = useLocalSearchParams<{ domain?: AnalyticsDomainId }>();
-  const { state } = useCompeteStore();
+  const { domain, signedOut: signedOutParam } =
+    useLocalSearchParams<{ domain?: AnalyticsDomainId; signedOut?: string }>();
+  const { state, accountKey } = useCompeteStore();
+  const signedOut = signedOutParam === "1" || accountKey === "device";
 
   return (
     <SafeAreaView style={f.safe} edges={["top"]}>
@@ -20,7 +22,11 @@ export default function TelemetryScreen() {
         title={getDomainTitle(domain)}
         onBack={() => router.back()}
       />
-      <AthleteTelemetryDetailView domain={domain} state={state} />
+      <AthleteTelemetryDetailView
+        domain={domain}
+        state={state}
+        signedOut={signedOut}
+      />
     </SafeAreaView>
   );
 }

@@ -61,6 +61,7 @@ export function AppHeader() {
       {debugOpen ? (
         <View style={s.debugMenu} accessibilityLabel="Trigger UI events">
           <Text style={s.debugKicker}>TEST UI EVENTS</Text>
+          <Pressable accessibilityRole="button" accessibilityLabel="Preview onboarding" onPress={() => { setDebugOpen(false); router.push("/onboarding?preview=1"); }} style={s.debugItem}><Text style={s.debugItemTitle}>Onboarding · full setup</Text><Text style={s.debugItemDetail}>Replay every step without saving preferences</Text></Pressable>
           {DEBUG_EVENT_OPTIONS.map((item) => (
             <Pressable key={item.id} accessibilityRole="button" accessibilityLabel={item.label} onPress={() => handleSelectDebug(item.id)} style={s.debugItem}>
               <Text style={s.debugItemTitle}>{item.label}</Text>

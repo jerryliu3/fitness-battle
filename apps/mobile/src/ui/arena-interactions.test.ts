@@ -157,6 +157,11 @@ async function layoutCarousel() {
  const host=renderer.root.findAllByType("View" as never).find(node=>typeof node.props.onLayout==="function");
  if(host)await act(async()=>host.props.onLayout({nativeEvent:{layout:{width:346}}}));
 }
+async function showDistanceLanes() {
+  const switcher = renderer.root.findByType("FieldViewSwitcher" as never);
+  expect(switcher.props.value).toBe("4d");
+  await act(async () => switcher.props.onChange("2d"));
+}
 
 beforeEach(() => {
   vi.useFakeTimers({ toFake: ["Date"] });
@@ -182,6 +187,7 @@ describe("native competition interactions", () => {
       renderer = create(createElement(ArenaScreen));
     });
     await layoutCarousel();
+    await showDistanceLanes();
     const lane = () => renderer.root.findByType("LaneTrack" as never);
     const switcher = () => renderer.root.findByType("FieldViewSwitcher" as never);
     expect(mock.mounts).toBe(1);
@@ -258,6 +264,7 @@ it("expands one field, retains its viewport and selection, and closes on system 
   mock.state = reduceCompete(freshState(), { type: "opt-in", sport: "running", now: "2026-10-19T09:00:00Z" });
   await act(async () => { renderer = create(createElement(ArenaScreen)); });
   await layoutCarousel();
+  await showDistanceLanes();
   const lane = () => renderer.root.findByType("LaneTrack" as never);
   const rival = lane().props.lanes.find((item: { you: boolean; ghost: boolean }) => !item.you && !item.ghost);
   await act(async () => { lane().props.onSelect(rival); lane().props.onZoom(2.4); });
@@ -298,6 +305,7 @@ it("flies to an athlete from the current frame and lets a field drag interrupt i
   mock.state = reduceCompete(freshState(), { type: "opt-in", sport: "running", now: "2026-10-19T09:00:00Z" });
   await act(async () => { renderer = create(createElement(ArenaScreen)); });
   await layoutCarousel();
+  await showDistanceLanes();
   const lane = () => renderer.root.findByType("LaneTrack" as never);
   const from = lane().props.view.center;
   const rival = lane().props.lanes.filter((l: { you: boolean; ghost: boolean }) => !l.you && !l.ghost).sort((a: { values: number[] }, b: { values: number[] }) => b.values[2]! - a.values[2]!)[0];

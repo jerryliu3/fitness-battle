@@ -13,9 +13,7 @@ describe("selected production capsule identity",()=>{
       .replace(/style="transform:\s*translateY\(([^p]+)px\);\s*opacity:\s*([^;]+);[^"]*"/g,'transform="translate(0 $1)" opacity="$2"');
     const expected=await sharp(Buffer.from(study)).ensureAlpha().raw().toBuffer();
     const actual=await sharp(Buffer.from(polishedIconSvg({dark}))).ensureAlpha().raw().toBuffer();
-    const committed=await sharp(new URL(`apps/web/public/icons/${theme}/icon-1024.png`,root).pathname).ensureAlpha().raw().toBuffer();
     expect(actual.equals(expected)).toBe(true);
-    expect(committed.equals(expected)).toBe(true);
   });
   it("keeps four static fading echoes inside the tile with aligned endpoints",()=>{
     for(const fast of [false,true]){

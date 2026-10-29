@@ -12,12 +12,16 @@ import { ProfilePhoto } from "./profile-photo";
 export function AthleteMetrics({
   state,
   email,
+  city,
+  signedOut = false,
   offlineMode,
   onEdit,
   sections = "progress",
 }: {
   state: CompeteState;
   email?: string | null;
+  city?: string | null;
+  signedOut?: boolean;
   offlineMode?: boolean;
   onEdit?: () => void;
   sections?: "profile" | "progress";
@@ -25,6 +29,7 @@ export function AthleteMetrics({
   const router = useRouter();
   const season = clubLifetimeTotals(state);
   const unit = distanceUnitLabel(state.units);
+  const displayCity = signedOut ? (city ?? null) : (city ?? state.city);
   return (
     <>
       {sections === "profile" ? (
@@ -42,7 +47,7 @@ export function AthleteMetrics({
           >
             <ProfilePhoto state={state} />
             <View style={{ flex: 1, gap: 4 }}>
-              <Text style={f.kicker}>{state.city || "Your own pace"}</Text>
+              {displayCity ? <Text style={f.kicker}>{displayCity}</Text> : null}
               <AppText accessibilityRole="header" role="display" >{state.name}</AppText>
               {email ? (
                 <AppText role="caption" secondary >

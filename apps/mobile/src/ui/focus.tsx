@@ -3,6 +3,7 @@ import { AppText, PageHeader, textStyle } from "./section";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import {
   Animated,
+  BackHandler,
   Easing,
   useWindowDimensions,
   KeyboardAvoidingView,
@@ -13,6 +14,8 @@ import {
   StyleSheet,
   Text,
   View,
+  type StyleProp,
+  type ViewStyle,
 } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { SHELL_COLORS as c, mobileSurfaces } from "../theme";
@@ -203,12 +206,27 @@ export function FocusSidePanel({
     return () => animation.stop();
   }, [open, present, progress, reduce]);
 
+  useEffect(() => {
+    if (!open) return;
+    const sub = BackHandler.addEventListener("hardwareBackPress", () => {
+      onClose();
+      return true;
+    });
+    return () => sub.remove();
+  }, [open, onClose]);
+
+  if (!present) return null;
+
   return (
-    <Modal
-      visible={present}
-      transparent
-      animationType="none"
-      onRequestClose={onClose}
+    <View
+      style={[
+        StyleSheet.absoluteFill,
+        {
+          zIndex: 100,
+          elevation: 100,
+        },
+      ]}
+      pointerEvents={open ? "auto" : "none"}
     >
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : undefined}
@@ -283,7 +301,7 @@ export function FocusSidePanel({
           </View>
         </Animated.View>
       </KeyboardAvoidingView>
-    </Modal>
+    </View>
   );
 }
 export function FocusHeading({
@@ -443,16 +461,18 @@ export function FocusDisclosure({
   children,
   initialOpen = false,
   compact = false,
+  style,
 }: {
   title: string;
   detail?: string;
   children: ReactNode;
   initialOpen?: boolean;
   compact?: boolean;
+  style?: StyleProp<ViewStyle>;
 }) {
   const [open, setOpen] = useState(initialOpen);
   return (
-    <View style={[f.disclosure, compact && f.disclosureCompact]}>
+    <View style={[f.disclosure, compact && f.disclosureCompact, style]}>
       <Pressable
         accessibilityRole="button"
         accessibilityState={{ expanded: open }}

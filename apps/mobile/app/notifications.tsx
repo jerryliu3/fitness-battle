@@ -177,9 +177,7 @@ export default function NotificationsScreen() {
         <View style={f.content}>
           <IconButton icon="back" label="Return to previous screen"
             onPress={() => {
-              if (params.returnTo === "edit") {
-                router.replace({ pathname: "/athlete", params: { edit: "1" } });
-              } else if (router.canGoBack()) {
+              if (router.canGoBack()) {
                 router.back();
               } else {
                 router.replace({ pathname: "/athlete", params: { edit: "1" } });
@@ -206,9 +204,7 @@ export default function NotificationsScreen() {
         <ScreenHeader
           title="Notifications"
           onBack={() => {
-            if (params.returnTo === "edit") {
-              router.replace({ pathname: "/athlete", params: { edit: "1" } });
-            } else if (router.canGoBack()) {
+            if (router.canGoBack()) {
               router.back();
             } else {
               router.replace({ pathname: "/athlete", params: { edit: "1" } });

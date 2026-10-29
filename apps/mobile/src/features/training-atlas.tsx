@@ -220,7 +220,7 @@ export function TrainingAtlas({ state }: { state: CompeteState }) {
           ))}
         </View>
       </ChartScrubber>
-      <FocusDisclosure title="Daily activity">
+      <FocusDisclosure title="Daily activity" style={{ borderBottomWidth: 0 }}>
         <Text style={f.kicker}>
           {anchor.toLocaleDateString("en-US", {
             month: "long",

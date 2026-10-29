@@ -42,6 +42,10 @@ describe("admin settlement", () => {
   webEnv.useDemoData = true;
   expect((await POST(request())).status).toBe(200);
  });
+ it("authorizes alice@example.com with confirmed email", async () => {
+  getUser.mockResolvedValue({ data: { user: { id: target, email: "alice@example.com", email_confirmed_at: "2026-01-01" } }, error: null });
+  expect((await POST(request())).status).toBe(200);
+ });
  it("requires same origin, target confirmation, reason and a UUID action id", async () => {
   expect((await POST(request({}, "https://other.example"))).status).toBe(403);
   for (const invalid of [{ confirmation: "yes" }, { reason: "short" }, { actionId: "bad" }, { action: "wipe" }, { target: [target] }]) expect((await POST(request(invalid))).status).toBe(400);

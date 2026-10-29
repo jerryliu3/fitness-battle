@@ -125,7 +125,7 @@ describe("crew empty states", () => {
   );
 });
 
-it("keeps crew settings open while setting and clearing the current rest week", async () => {
+it("opens crew settings with leave crew button and minimal sheet", async () => {
   vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
   mock.live = true;
   mock.state = freshState();
@@ -169,18 +169,15 @@ it("keeps crew settings open while setting and clearing the current rest week", 
     renderer.root
       .findAllByType("FocusButton" as never)
       .find((node) => node.props.label === label)!;
-  await act(async () => button("Mark my rest week").props.onPress());
-  expect(button("Clear rest week")).toBeTruthy();
+  expect(button("Leave crew")).toBeTruthy();
   expect(
     renderer.root
       .findAllByType("Sheet" as never)
       .some(
         (node) =>
-          node.props.open && node.props.title === "Your crew, your rhythm.",
+          node.props.open && node.props.title === "Your crew, your rhythm." && node.props.minimal,
       ),
   ).toBe(true);
-  await act(async () => button("Clear rest week").props.onPress());
-  expect(button("Mark my rest week")).toBeTruthy();
 });
 
 it("hydrates demo crew for Alice when running offline with synthetic account", async () => {

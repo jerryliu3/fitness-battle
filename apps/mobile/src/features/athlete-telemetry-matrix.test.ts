@@ -9,6 +9,7 @@ vi.mock("expo-router", () => ({
 }));
 
 vi.mock("react-native", () => ({
+  Animated: { createAnimatedComponent: (component: unknown) => component },
   Pressable: "Pressable",
   ScrollView: "ScrollView",
   Text: "Text",
@@ -19,6 +20,8 @@ vi.mock("react-native", () => ({
 
 vi.mock("react-native-svg", () => ({
   default: "Svg",
+  Defs: "Defs",
+  ClipPath: "ClipPath",
   Circle: "Circle",
   G: "G",
   Line: "Line",
@@ -234,5 +237,33 @@ describe("AthleteTelemetryMatrix mobile features", () => {
       vitalPills[0]!.props.onPress();
     });
     expect(allText()).toContain("Resting Heart Rate");
+  });
+
+  it("shows empty placeholder data when signedOut is true", async () => {
+    await act(async () => {
+      renderer = create(createElement(AthleteTelemetryMatrix, { signedOut: true }));
+    });
+
+    const allText = () =>
+      renderer.root
+        .findAllByType("Text" as never)
+        .map((n) => n.children.filter((c: unknown) => typeof c === "string").join(""))
+        .join(" ");
+
+    const text = allText();
+    expect(text).toContain("Advanced Analytics");
+    expect(text).toContain("Overnight HRV");
+    expect(text).toContain("—");
+    expect(text).toContain("No data");
+
+    // Also verify detail view has zero mock data when signedOut is true
+    await act(async () => {
+      renderer = create(createElement(AthleteTelemetryDetailView, { domain: "vitals", signedOut: true }));
+    });
+    const detailText = allText();
+    expect(detailText).toContain("Autonomic Vitals");
+    expect(detailText).toContain("No data available");
+    expect(detailText).not.toContain("Heart Rate Variability");
+    expect(detailText).not.toContain("74 ms");
   });
 });

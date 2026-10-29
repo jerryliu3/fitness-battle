@@ -123,7 +123,6 @@ export function CrewHub({ membersOnly = false, crewId = "" }: { membersOnly?: bo
   const [code, setCode] = useState("");
   const [format, setFormat] = useState("volume");
   const [note, setNote] = useState("");
-  const [demoRest, setDemoRest] = useState<Record<string, string | null>>({});
   const [busy, setBusy] = useState(false);
   const flight = useRef(false);
   const owner = useRef(user?.id);
@@ -132,7 +131,6 @@ export function CrewHub({ membersOnly = false, crewId = "" }: { membersOnly?: bo
     setSelected(crewId);
     setViewingMember(null);
     pendingMember.current = null;
-    setDemoRest({});
     setPanel(null);
     setNote("");
     setName("");
@@ -253,8 +251,6 @@ export function CrewHub({ membersOnly = false, crewId = "" }: { membersOnly?: bo
         : (api.data?.progress ?? api.data?.entries ?? [])
       ).filter((e) => e.crew_id === crew.id && e.disposition === "counted");
   const weekKey = dayKey(week.startsAt, APP_TIMEZONE);
-  const restKey = `${user?.id}:${crew.id}`;
-  const resting = api.live ? members.find(m => m.user_id === user?.id)?.rest_week === weekKey : demoRest[restKey] === weekKey;
   const previousDistanceM = api.data?.previousProgressAvailable?.[crew.id]
     ? (api.data.previousProgress??[]).filter(row=>row.crew_id===crew.id && members.some(m=>m.user_id===row.user_id)).reduce((sum,row)=>sum+Number(row.distance_m),0)
     : null;
@@ -282,11 +278,6 @@ export function CrewHub({ membersOnly = false, crewId = "" }: { membersOnly?: bo
     setNote("");
     const id = user?.id;
     try {
-      if (!api.live && path === "/rest") {
-        setDemoRest(old => ({...old, [restKey]: resting ? null : weekKey}));
-        setNote(resting ? "Rest week cleared." : "Rest week set. You can clear it here.");
-        return;
-      }
       if (!api.live) {
         if (path === "") {
           const newName = (body as { name?: string }).name || "My Crew";
@@ -376,7 +367,7 @@ export function CrewHub({ membersOnly = false, crewId = "" }: { membersOnly?: bo
               : "Your sessions are already shared for this week.",
         );
       } else {
-        if (path !== "/rest") setPanel(null);
+        setPanel(null);
         setName("");
         setCode("");
         setNote(
@@ -403,7 +394,7 @@ export function CrewHub({ membersOnly = false, crewId = "" }: { membersOnly?: bo
               else { pendingMember.current = m; setPanel(null); }
             }}>
               <UserAvatar src={m.avatar_url} name={m.display_name} size={56} />
-              <View style={f.grow}><AppText role="row">{m.display_name}</AppText><AppText role="support" secondary >{(m.user_id === user?.id ? resting : m.rest_week === weekKey) ? "Rest week" : "Active"}</AppText>
+              <View style={f.grow}><AppText role="row">{m.display_name}</AppText><AppText role="support" secondary >Active</AppText>
                 <AppText role="support" secondary >{sessionsMetric ? `${memberTotal(m.user_id)} sessions` : distance(memberTotal(m.user_id))} this week</AppText>
               </View>
             </Pressable>)}
@@ -427,7 +418,7 @@ export function CrewHub({ membersOnly = false, crewId = "" }: { membersOnly?: bo
       you: viewingMember.user_id === user?.id, score: viewingMember.effort_score,
       contextLabel: "This week's crew contribution",
       contextValue: viewingMember.status === "former" ? undefined : sessionsMetric ? `${memberTotal(viewingMember.user_id)} sessions` : distance(memberTotal(viewingMember.user_id)),
-      contextDetail: `${crew.name} · ${crew.sport} · ${viewingMember.rest_week === weekKey ? "Rest week" : "Active this week"}`,
+      contextDetail: `${crew.name} · ${crew.sport} · Active this week`,
     } : null}
     onClose={() => setViewingMember(null)}
   />;
@@ -615,6 +606,7 @@ export function CrewHub({ membersOnly = false, crewId = "" }: { membersOnly?: bo
       ) : null}
       <FocusSheet
         open={!!panel}
+        minimal
         onClosed={() => { if (pendingMember.current) { setViewingMember(pendingMember.current); pendingMember.current = null; } }}
         fullScreen={panel === "members"}
         title={
@@ -755,18 +747,6 @@ export function CrewHub({ membersOnly = false, crewId = "" }: { membersOnly?: bo
           <>
             <AppText role="body" secondary >
               {crew.sport} · {crew.format.replaceAll("_", " ")}
-            </AppText>
-            <FocusButton
-              label={resting ? "Clear rest week" : "Mark my rest week"}
-              secondary
-              disabled={busy}
-              onPress={() =>
-                void write("/rest", { crewId: crew.id, rest: !resting })
-              }
-            />
-            <AppText role="caption" secondary >
-              A crew rest marker does not freeze effort score. Week freezes live
-              in Athlete → Preferences.
             </AppText>
             <FocusButton
               label="Leave crew"

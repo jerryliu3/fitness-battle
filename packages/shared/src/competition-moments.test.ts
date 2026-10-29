@@ -60,7 +60,8 @@ it("replays every captured lane, follows real totals and preserves stable lane i
     for (const progress of [0, .3, .5, .8, 1]) {
       const scene = competitionMomentScene(moment, progress);
       expect(scene.lanes.map(l => l.id)).toEqual(moment.lanes.map(l => l.id));
-      expect(scene.view.center).toBe(scene.youValue);
+      expect(scene.replayFocusIds).toContain(moment.plan.youId);
+      for (const id of scene.replayFocusIds) expect(Math.abs(scene.values[id]-scene.view.center)).toBeLessThan(scene.view.span/2);
       expect(scene.view.span).toBeGreaterThan(0);
       for (const lane of scene.lanes) expect(lane.value).toBe(scene.values[lane.id] ?? moment.lanes.find(l => l.id === lane.id)!.value);
       expect(scene.standings.some(l => l.you)).toBe(true);

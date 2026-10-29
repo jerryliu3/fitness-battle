@@ -24,7 +24,7 @@ it("reduced motion shows the final result in either direction and confirms at mo
     expect(field.props.lanes).toHaveLength(moment.lanes.length);
     expect(field.props.lanes.find((lane: { you?: boolean }) => lane.you).value).toBe(moment.plan.youAfter);
     expect(field.props.appearance).toEqual(defaultFieldAppearance);
-    expect(renderer.root.findByProps({ role: "status" }).findByType("small").props.children.join("")).toContain(`Your place #${moment.plan.rankAfter}`);
+    expect(renderer.root.findByProps({ role: "status" }).findAllByType("small").at(-1)!.props.children.join("")).toContain(`Your place #${moment.plan.rankAfter}`);
     await act(async () => { button.props.onClick(); button.props.onClick(); });
     expect(done).toHaveBeenCalledTimes(1);
     await act(async () => renderer.unmount());
@@ -45,6 +45,8 @@ it("skipping playback shows final totals and waits for explicit confirmation", a
     const button = renderer.root.findByType("button");
     const field = () => renderer.root.findByType("ArenaLanes" as never);
     expect(field().props.lanes.find((lane: { you?: boolean }) => lane.you).value).toBe(moment.plan.youBefore);
+    expect(button.props.children).toBe("See my move →");
+    await act(async () => button.props.onClick());
     expect(button.props.children).toBe("Skip animation");
     await act(async () => button.props.onClick());
     expect(field().props.lanes.find((lane: { you?: boolean }) => lane.you).value).toBe(moment.plan.youAfter);

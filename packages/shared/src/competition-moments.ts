@@ -107,8 +107,10 @@ export function competitionMomentScene(moment: CompetitionMoment, progress: numb
   }));
   const ownIndex = standings.findIndex(lane => lane.you);
   const start = Math.max(0, Math.min(ownIndex - 1, standings.length - 3));
-  return { ...frame, lanes, standings: standings.slice(start, start + 3), view: {
-    center: frame.youValue,
-    span: fieldDefaultSpan(moment.unit) * (1 - frame.focus * .18),
+  const rival = frame.nearestId ? frame.values[frame.nearestId] : frame.youValue;
+  const replayFocusIds = [moment.plan.youId, ...(frame.nearestId ? [frame.nearestId] : [])];
+  return { ...frame, lanes, replayFocusIds, standings: standings.slice(start, start + 3), view: {
+    center: (frame.youValue+rival)/2,
+    span: Math.max(fieldDefaultSpan(moment.unit) * (1 - frame.focus * .18),Math.abs(frame.youValue-rival)*3),
   } };
 }

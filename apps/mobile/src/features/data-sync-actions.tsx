@@ -14,7 +14,7 @@ import { useAuth } from "../lib/auth";
 import { useCompeteStore } from "../lib/compete-store";
 import { mobileEnv } from "../lib/env";
 import { FocusButton, f } from "../ui/focus";
-export function DataSyncActions({ provider }: { provider?: ProviderId }) {
+export function DataSyncActions({ provider, includeCalibration = true }: { provider?: ProviderId; includeCalibration?: boolean }) {
   const { user, accessToken, offlineMode } = useAuth();
   const { state, dispatch, previewSyncReview } = useCompeteStore();
   const [busy, setBusy] = useState(false),
@@ -138,7 +138,7 @@ export function DataSyncActions({ provider }: { provider?: ProviderId }) {
       {!provider ? (
         <>
           <FocusButton
-            label="Import Garmin file (.fit, .gpx, .tcx, .zip)"
+            label="Import file (.fit, .gpx, .tcx, .zip)"
             disabled={busy}
             secondary
             onPress={() =>
@@ -227,7 +227,7 @@ export function DataSyncActions({ provider }: { provider?: ProviderId }) {
             ))}
           <SectionHeader title="Sleep & recovery"/>
           <AppText role="body" secondary >Sleep data appears when supplied by a connected tracker.</AppText>
-          <SectionHeader title="Import fitness history"/>
+          {includeCalibration && <><SectionHeader title="Import fitness history"/>
           <AppText role="body" secondary >
             {state.calibrated
               ? "History is locked in. This one-time calibration cannot run again."
@@ -241,7 +241,7 @@ export function DataSyncActions({ provider }: { provider?: ProviderId }) {
             }
             disabled={busy || state.calibrated}
             onPress={() => dispatch({ type: "import-history" })}
-          />
+          /></>}
         </>
       ) : null}
       {note ? (

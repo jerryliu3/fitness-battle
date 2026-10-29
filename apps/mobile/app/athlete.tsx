@@ -1,3 +1,4 @@
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { SectionHeader, SectionStack, textStyle, AppText } from "../src/ui/section";
 import { SportIcon } from "../src/ui/sport-icon";
 import { activityFromSample } from "@fitness-battle/shared";
@@ -69,7 +70,7 @@ type AthletePanel =
   | "scoring"
   | "account";
 
-export default function AthleteScreen() {
+function AthleteContent({ inlineConnections = false }: { inlineConnections?: boolean }) {
   const { state, dispatch, saveError, retrySave } = useCompeteStore();
   const {
     user,
@@ -104,11 +105,13 @@ export default function AthleteScreen() {
   const [confirmFreeze, setConfirmFreeze] = useState(false);
   const [editOpen, setEditOpen] = useState(params.edit === "1");
   const [confirmSignOut, setConfirmSignOut] = useState(false);
-  const panel = params.panel ?? null;
+  const panel = inlineConnections ? "connections" : params.panel ?? null;
   function setPanel(next: AthletePanel | null) {
     if (next) {
-      setEditOpen(false);
+      if (panel === next) return;
       router.push({ pathname: "/athlete-settings", params: { panel: next } });
+    } else if (router.canGoBack()) {
+      router.back();
     } else {
       router.replace({ pathname: "/athlete", params: { edit: "1" } });
     }
@@ -156,6 +159,11 @@ export default function AthleteScreen() {
       setNote("That tracker did not connect. Try again from the app.");
     }
     router.setParams({ tracker: undefined, provider: undefined });
+    if (user) void AsyncStorage.getItem(`onboarding-connect-return:${user.id}`).then(marker => {
+      if (!marker) return;
+      void AsyncStorage.removeItem(`onboarding-connect-return:${user.id}`);
+      router.replace("/onboarding");
+    }).catch(() => {});
   }, [dispatch, params.panel, params.provider, params.tracker, router, state]);
 
   if (!state || authLoading) {
@@ -180,10 +188,10 @@ export default function AthleteScreen() {
       localBack={Boolean(panel)}
       title={panel ? titles[panel] : "Athlete"}
       onBack={() => {
-        if (panel) {
-          router.replace({ pathname: "/athlete", params: { edit: "1" } });
-        } else if (router.canGoBack()) {
+        if (router.canGoBack()) {
           router.back();
+        } else if (panel) {
+          router.replace({ pathname: "/athlete", params: { edit: "1" } });
         } else {
           router.replace("/today");
         }
@@ -293,7 +301,14 @@ export default function AthleteScreen() {
     setBusyProvider(providerId);
     setNote(null);
     try {
+      if (inlineConnections) await AsyncStorage.setItem(`onboarding-connect-return:${user.id}`, "1");
       const result = await startCloudTrackerConnect(providerId);
+      if (inlineConnections && (result.tracker || result.stub)) {
+        await AsyncStorage.removeItem(`onboarding-connect-return:${user.id}`);
+        router.replace("/onboarding");
+      } else if (inlineConnections && result.cancelled) {
+        await AsyncStorage.removeItem(`onboarding-connect-return:${user.id}`);
+      }
       if (currentUser.current !== user.id) return;
       const linked = result.provider ?? providerId;
       if (result.tracker === "connected") {
@@ -310,6 +325,7 @@ export default function AthleteScreen() {
       }
       setNote(result.message);
     } catch (error) {
+      if (inlineConnections) void AsyncStorage.removeItem(`onboarding-connect-return:${user.id}`);
       setNote(
         error instanceof Error ? error.message : "Could not start connect.",
       );
@@ -327,13 +343,13 @@ export default function AthleteScreen() {
           contentContainerStyle={styles.scroll}
           keyboardShouldPersistTaps="handled"
         >
-          <AthleteMetrics state={state} sections="profile" />
+          <AthleteMetrics state={state} sections="profile" signedOut={!signedIn} />
           <Text style={styles.kicker}>Account</Text>
 
           <Text style={styles.name}>Sign in to Overtaek</Text>
           <Text style={styles.copy}>
             Create an account or sign in to sync Apple Health, connect trackers,
-            and keep your battles on this device.
+            and join events.
           </Text>
 
           <View style={styles.authToggle}>
@@ -434,23 +450,16 @@ export default function AthleteScreen() {
   }
 
   if (panel === "connections") {
-    return (
-      <SafeAreaView style={styles.safe} edges={["top"]}>
-        {pageHeader}
-        <ScrollView
-          automaticallyAdjustKeyboardInsets
-          contentContainerStyle={f.content}
-          keyboardShouldPersistTaps="handled"
-        >
-<SectionStack divided={false}>
+    const content = (<SectionStack divided={false}>
+          {!inlineConnections && !state.onboardingCompleted && <FocusButton label="Continue setup →" onPress={() => router.push("/onboarding")}/>}
           {providersForDevice().map((provider) => {
             const link = state.links.find(
               (row) => row.provider === provider.id,
             );
             const status =
-              link?.status === "connected" || link?.linked
+              link?.status === "connected"
                 ? "Connected"
-                : "Not connected";
+                : link?.status === "stub" ? "Demo stub · not live" : "Not connected";
             const onPhone = isDeviceProvider(provider.id);
             const cloud = isCloudOAuthProvider(provider.id);
             const hint = onPhone
@@ -534,8 +543,18 @@ export default function AthleteScreen() {
           ) : note ? (
             <Text style={styles.copy}>{note}</Text>
           ) : null}
-          <DataSyncActions />
-        </SectionStack>
+          <DataSyncActions includeCalibration={!inlineConnections}/>
+        </SectionStack>);
+    if (inlineConnections) return content;
+    return (
+      <SafeAreaView style={styles.safe} edges={["top"]}>
+        {pageHeader}
+        <ScrollView
+          automaticallyAdjustKeyboardInsets
+          contentContainerStyle={f.content}
+          keyboardShouldPersistTaps="handled"
+        >
+{content}
 </ScrollView>
       </SafeAreaView>
     );
@@ -701,7 +720,8 @@ export default function AthleteScreen() {
   const primaryRating = state.ratings.find(r => r.sport === state.primary);
 
   return (
-    <SafeAreaView style={styles.safe} edges={["top"]}>
+    <View style={styles.safe}>
+      <SafeAreaView style={{ flex: 1 }} edges={["top"]}>
         {pageHeader}
       <ScrollView
         automaticallyAdjustKeyboardInsets
@@ -813,115 +833,6 @@ export default function AthleteScreen() {
           </View>
         </View>
 
-        {/* Side Panel for Edit Profile & Settings (not a bottom sheet) */}
-        <FocusSidePanel
-          open={editOpen}
-          title="Edit profile & Settings"
-          onClose={() => {
-            setEditOpen(false);
-            if (params.edit) {
-              router.setParams({ edit: undefined });
-            }
-          }}
-        >
-          <View style={{ gap: 12 }}>
-            <SectionHeader title="Profile details" />
-            <View style={[f.row, { gap: 16, alignItems: "center" }]}>
-              <ProfilePhoto state={state} />
-              <View style={{ flex: 1, gap: 8 }}>
-                <Input
-                  style={textStyle("body")}
-                  value={draftName}
-                  onChangeText={setName}
-                  accessibilityLabel="Name"
-                  maxLength={32}
-                  placeholder="Name"
-                />
-                <Input
-                  style={textStyle("body")}
-                  value={draftCity}
-                  onChangeText={setCity}
-                  accessibilityLabel="City"
-                  maxLength={40}
-                  placeholder="City"
-                />
-              </View>
-            </View>
-            {dirty ? (
-              <FocusButton
-                label="Save profile"
-                onPress={() => {
-                  const trimmed = draftName.trim();
-                  if (!trimmed) {
-                    setNote("Display name cannot be empty.");
-                    return;
-                  }
-                  if (trimmed !== state.name) {
-                    dispatch({ type: "rename", name: trimmed });
-                  }
-                  const cityTrimmed = draftCity.trim();
-                  if (cityTrimmed && cityTrimmed !== state.city) {
-                    dispatch({ type: "set-city", city: cityTrimmed });
-                  }
-                  setName(null);
-                  setCity(null);
-                  setNote("Profile saved.");
-                }}
-              />
-            ) : null}
-            {note ? (
-              <AppText role="body" secondary accessibilityLiveRegion="polite">
-                {note}
-              </AppText>
-            ) : null}
-          </View>
-
-          <View style={{ gap: 8, marginTop: 16 }}>
-            <SectionHeader title="Settings" />
-            <SettingsRow
-              title="Data Sync"
-              detail="Trackers & history"
-              onPress={() => {
-                setPanel("connections");
-              }}
-            />
-            <SettingsRow
-              title="Preferences"
-              detail="Units, sports & freezes"
-              onPress={() => {
-                setPanel("preferences");
-              }}
-            />
-            <SettingsRow
-              title="Notifications"
-              detail="Your updates, your choice"
-              onPress={() => {
-                setEditOpen(false);
-                router.push({ pathname: "/notifications", params: { returnTo: "edit" } });
-              }}
-            />
-            <SettingsRow
-              title="How scoring works"
-              detail="Levels & eligibility"
-              onPress={() => {
-                setPanel("scoring");
-              }}
-            />
-            <SettingsRow
-              title="Blocked athletes"
-              detail="Manage who you have blocked"
-              onPress={() => { setEditOpen(false); router.push("/blocked-athletes"); }}
-            />
-            <SettingsRow
-              title="Account"
-              detail="Sign out, report an issue & delete account"
-              onPress={() => {
-                setPanel("account");
-              }}
-            />
-          </View>
-        </FocusSidePanel>
-
         {!state.onboardingCompleted ? (
           <View style={f.card}>
             <SectionHeader title="Finish setup"/>
@@ -932,8 +843,119 @@ export default function AthleteScreen() {
           </View>
         ) : null}
       </SectionStack>
-</ScrollView>
+    </ScrollView>
     </SafeAreaView>
+
+    {/* Side Panel for Edit Profile & Settings (not a bottom sheet) */}
+    <FocusSidePanel
+      open={editOpen}
+      title="Edit profile & Settings"
+      onClose={() => {
+        setEditOpen(false);
+        if (params.edit) {
+          router.setParams({ edit: undefined });
+        }
+      }}
+    >
+      <View style={{ gap: 12 }}>
+        <SectionHeader title="Profile details" />
+        <View style={[f.row, { gap: 16, alignItems: "center" }]}>
+          <ProfilePhoto state={state} />
+          <View style={{ flex: 1, gap: 8 }}>
+            <Input
+              style={textStyle("body")}
+              value={draftName}
+              onChangeText={setName}
+              accessibilityLabel="Name"
+              maxLength={32}
+              placeholder="Name"
+            />
+            <Input
+              style={textStyle("body")}
+              value={draftCity}
+              onChangeText={setCity}
+              accessibilityLabel="City"
+              maxLength={40}
+              placeholder="City"
+            />
+          </View>
+        </View>
+        {dirty ? (
+          <FocusButton
+            label="Save profile"
+            onPress={() => {
+              const trimmed = draftName.trim();
+              if (!trimmed) {
+                setNote("Display name cannot be empty.");
+                return;
+              }
+              if (trimmed !== state.name) {
+                dispatch({ type: "rename", name: trimmed });
+              }
+              const cityTrimmed = draftCity.trim();
+              if (cityTrimmed && cityTrimmed !== state.city) {
+                dispatch({ type: "set-city", city: cityTrimmed });
+              }
+              setName(null);
+              setCity(null);
+              setNote("Profile saved.");
+            }}
+          />
+        ) : null}
+        {note ? (
+          <AppText role="body" secondary accessibilityLiveRegion="polite">
+            {note}
+          </AppText>
+        ) : null}
+      </View>
+
+      <View style={{ gap: 8, marginTop: 16 }}>
+        <SectionHeader title="Settings" />
+        <SettingsRow
+          title="Data Sync"
+          detail="Trackers & history"
+          onPress={() => {
+            setPanel("connections");
+          }}
+        />
+        <SettingsRow
+          title="Preferences"
+          detail="Units, sports & freezes"
+          onPress={() => {
+            setPanel("preferences");
+          }}
+        />
+        <SettingsRow
+          title="Notifications"
+          detail="Your updates, your choice"
+          onPress={() => {
+            router.push({ pathname: "/notifications", params: { returnTo: "edit" } });
+          }}
+        />
+        <SettingsRow
+          title="How scoring works"
+          detail="Levels & eligibility"
+          onPress={() => {
+            setPanel("scoring");
+          }}
+        />
+        <SettingsRow
+          title="Blocked athletes"
+          detail="Manage who you have blocked"
+          onPress={() => {
+            router.push("/blocked-athletes");
+          }}
+        />
+        <SettingsRow
+          title="Account"
+          detail="Sign out, report an issue & delete account"
+          onPress={() => {
+            setPanel("account");
+          }}
+        />
+      </View>
+    </FocusSidePanel>
+    </View>
   );
 }
 
@@ -993,3 +1015,6 @@ const styles = StyleSheet.create({
     color: SHELL_COLORS.ink
 },
 });
+
+export function TrackerConnections() { return <AthleteContent inlineConnections/>; }
+export default function AthleteScreen() { return <AthleteContent/>; }
