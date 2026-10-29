@@ -30,9 +30,9 @@ export function CourseCallout({ map, lane, coordinate, detail, onSelect, layout 
   return createPortal(<>
     <svg width={170} height={placement.height} viewBox={`0 0 170 ${placement.height}`} aria-hidden="true" style={{ display: "block", pointerEvents: "none" }}>
       <g transform={`translate(${placement.originX} ${placement.originY})`}>
-        <AthletePennant lane={lane} x={placement.left ? -158 : 12} y={placement.y} detail={detail} prefix={prefix} />
+        {lane.mystery ? <g><circle r={18} fill="white" stroke="#616c63" strokeWidth={2} strokeDasharray="3 3"/><text y={5} textAnchor="middle" fill="#282f2c">?</text></g> : <AthletePennant lane={lane} x={placement.left ? -158 : 12} y={placement.y} detail={detail} prefix={prefix} />}
       </g>
     </svg>
-    <button type="button" className="course-callout-target" aria-label={`Focus ${lane.name}, ${detail}`} onClick={event => { event.stopPropagation(); onSelect(lane.id); }} style={{ position: "absolute", left: 12, top: placement.cardTop, width: 146, height: 46, padding: 0, border: 0, background: "transparent", cursor: "pointer", pointerEvents: "auto" }} />
+    {!lane.mystery && <button type="button" className="course-callout-target" aria-label={`Focus ${lane.name}, ${detail}`} onClick={event => { event.stopPropagation(); onSelect(lane.id); }} style={{ position: "absolute", left: 12, top: placement.cardTop, width: 146, height: 46, padding: 0, border: 0, background: "transparent", cursor: "pointer", pointerEvents: "auto" }} />}
   </>, element);
 }

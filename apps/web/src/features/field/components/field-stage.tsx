@@ -42,7 +42,9 @@ export function FieldStage({
   sportTitle,
   tabActive = true,
   replayState,
+  queueOverlay,
 }: {
+  queueOverlay?: import("react").ReactNode;
   model: FieldModel;
   boardRows?: BoardRow[];
   sportTitle?: string;
@@ -67,6 +69,7 @@ export function FieldStage({
         initials: r.initials,
         series: [0, ...r.km],
         you: r.you,
+        mystery: r.mystery,
       })),
     [model.runners],
   );
@@ -125,7 +128,7 @@ export function FieldStage({
     const runner =
       runners.find((item) => item.id === id) ??
       (ghost?.id === id ? ghost : null);
-    if (!runner) return;
+    if (!runner || runner.mystery) return;
     setCourseTarget(null);
     setStandingsOpen(false);
     setSelected(id);
@@ -144,6 +147,7 @@ export function FieldStage({
         lastUpdated: model.runners.find((runner) => runner.id === r.id)
           ?.lastUpdated,
         you: r.you,
+        mystery: r.mystery,
       })),
     [runners, time, model.runners],
   );
@@ -317,15 +321,15 @@ export function FieldStage({
           ← Back
         </button>
         <div className="focus-broadcast-title" style={{ minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-          {sportTitle ?? model.sport} · {displayPlace} / {runners.length}
+          {sportTitle ?? model.sport}{queueOverlay ? " · Upcoming wave" : ` · ${displayPlace} / ${runners.length}`}
         </div>
         <FieldViewSwitcher value={viewDimension} geographic={unit !== "pts"} onChange={chooseView}
-          onStandings={() => { setLanesImmersive(false); setStandingsOpen(true); }}
+          onStandings={queueOverlay ? undefined : () => { setLanesImmersive(false); setStandingsOpen(true); }}
           onZoomIn={viewDimension !== "4d" ? () => { cancelCenterTween(); setSpan(Math.max(unit === "pts" ? 2 : .5, view.span / 1.5)); } : undefined}
           onZoomOut={viewDimension !== "4d" ? () => { cancelCenterTween(); setSpan(Math.min(unit === "pts" ? 100 : 40, view.span * 1.5)); } : undefined} />
       </div>
 
-      {(viewDimension !== "4d" || course) ? <>
+      {!queueOverlay && (viewDimension !== "4d" || course) ? <>
       <div className={`focus-broadcast-tower${intervalsCollapsed ? " is-collapsed" : ""}`} aria-label="Live intervals">
         <button type="button" className="focus-panel-toggle" aria-label={intervalsCollapsed ? "Expand live intervals" : "Collapse live intervals"} aria-expanded={!intervalsCollapsed} onClick={() => setIntervalsCollapsed(value => !value)}><span className="focus-panel-grip" aria-hidden="true" /></button>
         <div className="focus-panel-content" inert={intervalsCollapsed} aria-hidden={intervalsCollapsed}>
@@ -490,7 +494,7 @@ export function FieldStage({
     >
       {!lanesImmersive ? <div style={{ position: "absolute", left: 12, top: 12, zIndex: 10 }}>
         <FieldViewSwitcher value={viewDimension} geographic={unit !== "pts"} onChange={chooseView}
-          standings={standingsOpen} onStandings={() => { cancelCenterTween(); setStandingsOpen(true); }} />
+          standings={standingsOpen} onStandings={queueOverlay ? undefined : () => { cancelCenterTween(); setStandingsOpen(true); }} />
       </div> : null}
       <div style={{ display: standingsOpen ? "none" : "flow-root" }}>
         <ExpandingField
@@ -602,6 +606,7 @@ export function FieldStage({
               </div> : null}
             </div>
           </div>
+          {queueOverlay}
         </ExpandingField>
       </div>
 

@@ -18,6 +18,8 @@ function fixture() {
 describe("admin field wave orchestration", () => {
   it("closes everyone at the same instant, starts a disjoint wave and preserves other sports", () => {
     const { field, accounts, boards } = fixture();
+    accounts[0]!.state.requiresCanonicalFields = true;
+    accounts[0]!.state.enrollments[0]!.awaitingField = true;
     const plan = planAdminFieldWave(field, accounts, boards, now, true);
     expect(plan.nextField.wave_start).toBe(now.toISOString());
     expect(plan.nextField.week_end).toBe(end);
@@ -36,7 +38,7 @@ describe("admin field wave orchestration", () => {
     accounts[1]!.state.enrollments = accounts[1]!.state.enrollments.map((row) => row.sport === "running" ? { ...row, autoEnrollNext: false } : row);
     const plan = planAdminFieldWave(field, accounts, boards, now, false);
     expect(plan.nextField.member_ids).toEqual(["a"]);
-    expect(plan.nextField.wave_start).toBe(end);
+    expect(plan.nextField.wave_start).toBe("2026-11-02T11:00:00.000Z");
     expect(plan.nextField.week_end).toBe("2026-11-09T05:00:00.000Z");
     expect(plan.snapshots[1]!.after.enrollments.some((row) => row.sport === "running")).toBe(false);
   });

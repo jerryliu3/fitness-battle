@@ -240,6 +240,8 @@ export interface PeriodResult {
 export type UnitSystem = "us" | "metric";
 
 export interface CompeteState {
+  /** Transient configured-account guard; unresolved rosters cannot be locally settled. */
+  requiresCanonicalFields?: boolean;
   /** Durable qualifying session receipts, including sessions beyond the activity load window. */
   recordAttempts?: import("./progress").RecordAttempt[];
   /** Rank-priced weekly activity awards; persisted independently of capped result history. */
@@ -301,6 +303,7 @@ export interface CompeteState {
 
 /** Shared individual field for one private crew this week. */
 export interface CrewBoardPin {
+  fieldId?: string;
   crewId: string;
   crewName: string;
   sport: SportId;
@@ -320,8 +323,11 @@ export interface CrewBoardMember {
   /** Counted Open volume; Verified volume is kept separately. */
   distanceM?: number;
   movingSec?: number;
+  /** Authorized aggregate of per-activity weighted effort, without sensor data. */
+  effort?: number;
   verifiedDistanceM?: number;
   verifiedMovingSec?: number;
+  verifiedEffort?: number;
   verifiedElo?: number;
 }
 

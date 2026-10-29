@@ -1,4 +1,4 @@
-import { pickSynthetics, settleSportRound, weeklyPeriodBounds, type CompeteState, type CrewBoardPin } from "@fitness-battle/shared";
+import { pickSynthetics, settleSportRound, weeklyPeriodBounds, weeklyWaveWindowAt, type CompeteState, type CrewBoardPin } from "@fitness-battle/shared";
 import type { WeekFieldRow } from "./week-field";
 
 export interface AdminWaveAccount { userId: string; updatedAt: string; state: CompeteState }
@@ -8,7 +8,7 @@ export function planAdminFieldWave(field: WeekFieldRow, accounts: AdminWaveAccou
   if (Date.parse(field.wave_start) >= now.getTime() || Date.parse(field.week_end) <= now.getTime()) throw new Error("field_not_active");
   const nowIso = now.toISOString();
   const monday = weeklyPeriodBounds(now).endsAt;
-  const startsAt = startNow ? now : monday;
+  const startsAt = startNow ? now : weeklyWaveWindowAt(monday).waveStart;
   const endsAt = weeklyPeriodBounds(startsAt).endsAt;
   const matches = (row: CompeteState["enrollments"][number]) => row.sport === field.sport && Date.parse(row.waveStart) === Date.parse(field.wave_start) && Date.parse(row.weekEnd) === Date.parse(field.week_end);
   const renewing = accounts.filter((account) => account.state.enrollments.some((row) => matches(row) && row.autoEnrollNext));
@@ -20,7 +20,7 @@ export function planAdminFieldWave(field: WeekFieldRow, accounts: AdminWaveAccou
     const board = boards[index];
     if (!board || board.sport !== field.sport || Date.parse(board.waveStart) !== Date.parse(field.wave_start)) throw new Error("field_roster_unavailable");
     const closing = { ...account.state, demoNow: null, crewBoard: { ...board, weekEnd: nowIso },
-      enrollments: account.state.enrollments.map((row) => matches(row) ? { ...row, weekEnd: nowIso } : row) };
+      enrollments: account.state.enrollments.map((row) => matches(row) ? { ...row, weekEnd: nowIso, fieldBoard: { ...board, weekEnd: nowIso }, awaitingField: false } : row) };
     let after = settleSportRound(closing, field.sport, now);
     if (enrollment.autoEnrollNext) {
       after = { ...after, enrollments: after.enrollments.map((row) => row.sport === field.sport ? {

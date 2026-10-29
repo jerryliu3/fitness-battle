@@ -1,6 +1,7 @@
 import { orderedArenaLanes } from "@fitness-battle/shared";
 
 export interface SceneRunner {
+  mystery?: boolean;
   avatarUrl?: string | null;
   id: string;
   name: string;

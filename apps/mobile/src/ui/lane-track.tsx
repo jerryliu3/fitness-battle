@@ -323,7 +323,7 @@ function LaneTrackContent({
                       opacity={1 - effect.ripple}
                     />
                   ) : null}
-                  {edge ? (
+                  {l.mystery ? <G><Circle cx={0} cy={0} r={18} fill="white" stroke={c.muted} strokeWidth={2} strokeDasharray="3 3"/><SvgText {...chartTextProps()} x={0} y={4} textAnchor="middle" fill={c.ink}>?</SvgText></G> : edge ? (
                     <Circle
                       cx={0}
                       cy={0}
@@ -360,7 +360,7 @@ function LaneTrackContent({
                   </G>
                   {edge?<G transform={`translate(${xx} ${yy})`} pointerEvents="none"><Rect x={-34} y={edge==="ahead"?27:-42} width={68} height={20} rx={8} fill="#ffffffee"/><SvgText {...chartTextProps()} x={0} y={edge==="ahead"?41:-28} textAnchor="middle"  fill={c.muted}>{`${position.distanceOutside.toFixed(1)} ${unit}`}</SvgText></G>:null}
                   {!edge&&(l.you||selectedId===l.id)?<FieldOverlayGroup hidden={overlaysHidden} transform={`translate(${xx} ${yy})`} pointerEvents="none">
-                    <AthletePennant lane={l} prefix={`${prefix}-portrait-${i}`} x={pennantX} y={pennantY} detail={`${ordinalPlace(rank)} · ${l.you ? `${value.toFixed(1)} ${unit}` : `${value-(overtakeFrame?.youValue??me?.values[index]??0)>0?"+":""}${(value-(overtakeFrame?.youValue??me?.values[index]??0)).toFixed(1)} ${unit}`}`} />
+                    <AthletePennant lane={l} prefix={`${prefix}-portrait-${i}`} x={pennantX} y={pennantY} detail={`${ordered.some(peer => peer.mystery) ? "Starts at zero" : ordinalPlace(rank)} · ${l.you ? `${value.toFixed(1)} ${unit}` : `${value-(overtakeFrame?.youValue??me?.values[index]??0)>0?"+":""}${(value-(overtakeFrame?.youValue??me?.values[index]??0)).toFixed(1)} ${unit}`}`} />
                   </FieldOverlayGroup>:null}
                 </FieldOverlayGroup>
               );

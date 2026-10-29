@@ -1,5 +1,5 @@
 import { SectionStack, AppText } from "../../src/ui/section";
-import { competitionTrack, competitionTrackLabel } from "@fitness-battle/shared";
+import { competitionQueue, competeNow, sportRenewal, sleepRenewal, waveTimeLabel, nextDailyWaveWindowAt, competitionTrack, competitionTrackLabel } from "@fitness-battle/shared";
 import { EventCarousel } from "../../src/features/event-carousel";
 import {
   SPORTS,
@@ -11,6 +11,7 @@ import { useEffect, useRef, useState } from "react";
 import { Pressable, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { CompetitionField } from "../../src/features/competition-field";
+import { QueuedField } from "../../src/features/queued-field";
 import { CompetitionSummary } from "../../src/features/competition-summary";
 import { useCrewApi } from "../../src/features/crew";
 import { RoundTakeover } from "../../src/features/round-takeover";
@@ -30,6 +31,7 @@ export default function ArenaScreen() {
     standingsStale,
     saveError,
     retrySave,
+    refresh,
     canWrite,
   } = useCompeteStore();
   const { user } = useAuth();
@@ -45,6 +47,18 @@ export default function ArenaScreen() {
   const joinFlight = useRef(false);
   const currentUser = useRef(user?.id);
   currentUser.current = user?.id;
+  const [, updateClock] = useState(0);
+  useEffect(() => {
+    const timer = setInterval(() => updateClock(value => value + 1), 30_000);
+    return () => clearInterval(timer);
+  }, []);
+  useEffect(() => {
+    if (!state || state.demoNow) return;
+    const starts = [...state.enrollments.map(e => Date.parse(e.waveStart)), ...state.healthRatings.filter(r => r.optedIn).map(r => Date.parse(r.lockPeriod))].filter(at => at > Date.now());
+    if (!starts.length) return;
+    const timer = setTimeout(() => { updateClock(value => value + 1); void refresh(); }, Math.min(...starts) - Date.now() + 50);
+    return () => clearTimeout(timer);
+  }, [state, refresh]);
   if (!state) return null;
   const active = state.ratings.filter((rating) => rating.optedIn);
   const hasRegistration =
@@ -53,6 +67,9 @@ export default function ArenaScreen() {
   const requested=selection?.account===accountKey?selection.sport:null;
   const selectedSport=requested&&(requested==="sleep"?sleepOptedIn:active.some(r=>r.sport===requested))
     ? requested : active.find(r=>r.sport===state.primary)?.sport??active[0]?.sport??(sleepOptedIn?"sleep":null);
+  const now = competeNow(state);
+  const queue = selectedSport ? competitionQueue(state, selectedSport, now) : null;
+  const renewal = selectedSport && selectedSport !== "sleep" ? sportRenewal(state, selectedSport) : selectedSport === "sleep" ? sleepRenewal(state) : null;
   const track = competitionTrack(selectedSport && selectedSport !== "sleep" ? selectedSport : state.primary);
   function openRegistration() {
     setSport(null);
@@ -157,7 +174,7 @@ export default function ArenaScreen() {
             }}
             onRegister={openRegistration}
           >
-            {selectedSport && selectedSport !== "sleep" ? (
+            {selectedSport === "sleep" && queue && (queue.queued || queue.awaitingField) ? <QueuedField state={state} event={selectedSport} now={now} onCancel={() => dispatch(selectedSport === "sleep" ? { type: "opt-out-health", metric: "sleep" } : { type: "opt-out", sport: selectedSport })} /> : selectedSport && selectedSport !== "sleep" ? (
               <CompetitionField
                 key={`${accountKey}:${selectedSport}:${state.units}:${track}`}
                 sport={selectedSport}
@@ -173,6 +190,9 @@ export default function ArenaScreen() {
                 </AppText>
               </View>
             )}
+            {selectedSport && selectedSport !== "sleep" && !queue?.queued && !queue?.awaitingField && Boolean(state.enrollments.find(e => e.sport === selectedSport)?.syntheticIds.length) ? <AppText role="caption" secondary>This field includes {state.enrollments.find(e => e.sport === selectedSport)!.syntheticIds.length} generated competitors.</AppText> : null}
+            {selectedSport && !queue?.queued && !queue?.awaitingField ? <AppText role="caption" secondary>Sync workouts before the end time. Late uploads won't change final results.</AppText> : null}
+            {selectedSport && renewal && !queue?.queued && !queue?.awaitingField ? <FocusButton secondary label={renewal.renews ? "Stop after this week" : "Keep playing next week"} onPress={() => dispatch({ type: renewal.renews ? "schedule-leave" : "resume-renewal", ...(selectedSport === "sleep" ? { metric: "sleep" as const } : { sport: selectedSport }) })} /> : null}
           </EventCarousel>
         ) : (
           <View style={f.card}>
@@ -196,6 +216,7 @@ export default function ArenaScreen() {
           setSport(null);
         }}
       >
+        <AppText role="body" secondary>Next wave starts {waveTimeLabel(nextDailyWaveWindowAt(now).waveStart)}. Everyone starts at zero.</AppText>
         {SPORTS.map((s) => {
           const isRegistered = state.ratings.find(
             (r) => r.sport === s.id,

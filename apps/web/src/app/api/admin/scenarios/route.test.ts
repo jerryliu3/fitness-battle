@@ -32,7 +32,7 @@ describe("admin scenario API", () => {
  });
  it("targets the opponent when arranging being overtaken, while checking the observed athlete revision", async () => {
   const now = new Date();
-  const state = reduceCompete(freshState(now), { type: "opt-in", sport: "running", now: now.toISOString() });
+  const state = reduceCompete(freshState(now), { type: "opt-in", sport: "running", now: new Date(now.getTime() - 86400000).toISOString() });
   const opponent = "00000000-0000-4000-8000-000000000003";
   const field = { id: actionId, sport: "running", member_ids: [target, opponent], updated_at: "field-v1" };
   const chain = { select: vi.fn().mockReturnThis(), eq: vi.fn().mockReturnThis(), contains: vi.fn().mockReturnThis(), lte: vi.fn().mockReturnThis(), gt: vi.fn().mockResolvedValue({ data: [field], error: null }) };

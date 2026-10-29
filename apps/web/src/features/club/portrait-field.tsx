@@ -262,7 +262,7 @@ export function PortraitField({
                   d="M-9 12 L0 27 L9 12"
                   fill={m.you ? "#f7c948" : "#f8f9f6"}
                 />
-                <rect
+                {!m.mystery && <rect
                   x={-23}
                   y={-43}
                   width={46}
@@ -271,8 +271,8 @@ export function PortraitField({
                   fill="#f8f9f6"
                   stroke={m.you ? "#f7c948" : "#b3c9c5"}
                   strokeWidth={m.you ? 3 : 1.5}
-                />
-                <defs>
+                />}
+<g>{m.mystery ? <g><circle cy={-14} r={22} fill="white" stroke="#616c63" strokeWidth={2} strokeDasharray="3 3"/><text y={-8} textAnchor="middle" fill="#142b3b">?</text></g> : <>                <defs>
                   <clipPath id={id}>
                     <rect x={-19} y={-39} width={38} height={50} rx={9} />
                   </clipPath>
@@ -307,6 +307,7 @@ export function PortraitField({
                     </text>
                   </>
                 )}
+</>}</g>
                 <g className="athlete-pennant">
                 {m.you ? (
                   <>
@@ -336,7 +337,7 @@ export function PortraitField({
                 >
                   {m.ghost ? "Past you" : m.you ? "You" : m.name.split(" ")[0]}
                 </text>
-                {!m.you ? (
+                {!m.you && !m.mystery ? (
                   <text style={typographyStyle("caption")} y={61} textAnchor="middle" fill="#e5eee5" >
                     {m.outside ? `${m.direction} ` : ""}
                     {m.gap > 0 ? "+" : ""}

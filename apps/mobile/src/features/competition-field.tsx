@@ -1,4 +1,5 @@
 import { AthleteProfileSheet, type AthleteProfileSelection } from "./athlete-profile-sheet";
+import { QueuedField } from "./queued-field";
 import { FieldViewSwitcher } from "../ui/field-view-switcher";
 import { FieldGroundSwitcher } from "../ui/field-ground-switcher";
 import { GeographicCourse } from "./geographic-course";
@@ -11,6 +12,7 @@ import { FieldOverlayView, SlidingFieldPanel } from "../ui/field-overlay-motion"
 import { PortraitField } from "../ui/portrait-field";
 import {
   orderedArenaLanes,
+  competitionQueue,
   createFieldOverlayHold,
   arenaFieldHigh,
   clampCourseCenter,
@@ -49,9 +51,13 @@ export function CompetitionField({
   sport: SportId;
   track: ScoreTrack;
 }) {
-  const { state, accountKey, debugActive } = useCompeteStore();
+  const { state, accountKey, debugActive, dispatch } = useCompeteStore();
   const { blocks } = useAthleteBlocks();
   const hiddenIds = useMemo(() => blocks.map(block => block.id), [blocks]);
+  const now = state ? competeNow(state) : new Date();
+  const queue = state ? competitionQueue(state, sport, now) : null;
+  const queued = Boolean(queue && (queue.queued || queue.awaitingField));
+  const queueOverlay = queued && state ? <QueuedField overlay state={state} event={sport} now={now} onCancel={() => dispatch({ type: "opt-out", sport })} /> : null;
   const pathname = usePathname();
   const [appearance, setAppearance] = useFieldAppearance(accountKey, sport);
   const isFocused = shellTabFromPath(pathname)?.id === "arena";
@@ -119,7 +125,8 @@ export function CompetitionField({
           id: l.id,
           name: l.name,
           avatarUrl: l.avatarUrl,
-          initials: initialsFromName(l.name),
+          initials: l.mystery ? "?" : initialsFromName(l.name),
+          mystery: l.mystery,
           value: l.values[2],
           you: l.you,
           ghost: false,
@@ -140,7 +147,7 @@ export function CompetitionField({
   const displayTotal = total;
   const selectAthlete = (id: string) => {
     const lane = arena.lanes.find((item) => item.id === id);
-    if (!lane || hiddenIds.includes(id)) return;
+    if (!lane || lane.mystery || hiddenIds.includes(id)) return;
     setCourseTarget(null);
     const ordered = orderedArenaLanes(arena.lanes);
     portraitAnchor.current = Math.max(0, ordered.findIndex(l => l.id === id)) - Math.max(0, ordered.findIndex(l => l.you));
@@ -210,7 +217,8 @@ export function CompetitionField({
           hiddenIds={hiddenIds}
           lanes={arena.lanes.map((l) => ({
             ...l,
-            initials: initialsFromName(l.name),
+            initials: l.mystery ? "?" : initialsFromName(l.name),
+          mystery: l.mystery,
             value: l.values[2],
           }))}
           view={view}
@@ -308,13 +316,13 @@ export function CompetitionField({
               onChangeAppearance={setAppearance}
             />
           ) : null}
-          <CompetitionReplayButton
+          {!queued && <CompetitionReplayButton
             state={state}
             selection={replaySelection}
             dimension={sceneDimension}
             variant="inline"
             label="Replay"
-          />
+          />}
         </View>
       ) : null}
       {expanded ? (
@@ -326,6 +334,7 @@ export function CompetitionField({
         >
           <View onTouchStartCapture={() => hold.current?.reset()} style={[f.safe, { backgroundColor: "#0b242c", position: "relative" }]}>
             {fieldContent}
+            {queueOverlay}
             {/* Top Bar HUD */}
             <FieldOverlayView
               hidden={overlaysHidden}
@@ -358,7 +367,7 @@ export function CompetitionField({
               <FieldViewSwitcher value={sceneDimension} geographic={arena.unit !== "pts"} onChange={chooseView} />
             </FieldOverlayView>
 
-            {(sceneDimension !== "4d" || course) ? <>
+            {!queued && (sceneDimension !== "4d" || course) ? <>
             {/* Broadcast HUD: Left Current Positions Tower */}
             <SlidingFieldPanel
               label="current positions"
@@ -456,13 +465,13 @@ export function CompetitionField({
               }}
             >
               <View onTouchStart={event => event.stopPropagation()}>
-                <CompetitionReplayButton
+                {!queued && <CompetitionReplayButton
                   state={state}
                   selection={replaySelection}
                   dimension={sceneDimension}
                   variant="inline"
                   label="Replay"
-                />
+                />}
               </View>
             </FieldOverlayView>
 
@@ -616,11 +625,11 @@ export function CompetitionField({
           </View>
         </Modal>
       ) : (
-        <View>{fieldContent}</View>
+        <View>{fieldContent}{queueOverlay}</View>
       )}
 
       {!expanded ? <AthleteProfileSheet athlete={profileAthlete} onClose={() => setProfileAthlete(null)} /> : null}
-      <View style={[f.section, { paddingTop: 16 }]}>
+      {!queued && <View style={[f.section, { paddingTop: 16 }]}>
         <View style={{ gap: 10 }}>
           {ranked.map((lane) => {
             if (hiddenIds.includes(lane.id)) return <View key={lane.id} style={{ minHeight: 72 }} accessibilityElementsHidden importantForAccessibility="no-hide-descendants" />;
@@ -692,7 +701,7 @@ export function CompetitionField({
             );
           })}
         </View>
-      </View>
+      </View>}
     </View>
   );
 }

@@ -6,7 +6,7 @@ export function asSportId(value: string): SportId | null {
   return SPORT_IDS.has(value) ? (value as SportId) : null;
 }
 
-/** Seat (or refresh) a crew week field and return the pin. */
+/** Read authorized Crew registration context; the account save queues the athlete. */
 export async function seatCrewFieldPin(input: {
   crewId: string;
   sport?: SportId;

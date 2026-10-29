@@ -1,4 +1,4 @@
-import type { CrewBoardPin, SportId } from "../compete/sports";
+import type { Activity, CrewBoardPin, SportId } from "../compete/sports";
 
 /** Configurable group size for density matching. */
 export const DEFAULT_GROUP_CAPACITY = 8;
@@ -26,7 +26,7 @@ export interface SyntheticRival {
 }
 
 export interface WaveWindow {
-  /** Inclusive Monday 00:00 for the week that contains the join. */
+  /** Inclusive shared benchmark (daily 06:00 ET for ordinary registration). */
   waveStart: Date;
   /** Exclusive Monday midnight when this competition week ends. */
   weekEnd: Date;
@@ -52,6 +52,12 @@ export interface WaveEnrollment {
   crewId?: string | null;
   /** Authorized live roster/totals for this enrollment; stripped before account writes. */
   fieldBoard?: CrewBoardPin;
+  /** Database-owned canonical assignment; null while queued. */
+  fieldId?: string | null;
+  /** Transient: configured accounts wait for the authorized canonical roster. */
+  awaitingField?: boolean;
+  /** Server-only accepted facts at a closing deadline; never a training edit. */
+  scoringActivities?: Activity[];
 }
 
 export interface GroupAssignment {

@@ -85,9 +85,11 @@ export function photoFinishFrame(moment: CompetitionMoment, progress: number) {
     if (sum + weights[i] >= target) { travel = (i + (target - sum) / weights[i]) / weights.length; break; }
     sum += weights[i];
   }
-  const youValue = plan.youBefore + (plan.youAfter - plan.youBefore) * travel;
+  if (p >= .9) travel = 1;
+  if (p <= .1) travel = 0;
+  const youValue = travel === 1 ? plan.youAfter : travel === 0 ? plan.youBefore : plan.youBefore + (plan.youAfter - plan.youBefore) * travel;
   const values: Record<string, number> = { [plan.youId]: youValue };
-  for (const r of Object.values(plan.rivals)) values[r.id] = passedBy ? r.startValue + (r.endValue - r.startValue) * travel : r.endValue;
+  for (const r of Object.values(plan.rivals)) values[r.id] = passedBy && travel < 1 ? r.startValue + (r.endValue - r.startValue) * travel : r.endValue;
   const passed = peers.filter(r => passedBy ? values[r.id] > youValue : youValue > r.endValue);
   const nearest = peers.slice().sort((a, b) => Math.abs(values[a.id] - youValue) - Math.abs(values[b.id] - youValue))[0];
   const nearestCrossing = nearest ? crossing(nearest) : 0;

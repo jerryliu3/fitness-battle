@@ -99,7 +99,7 @@ describe("arena lanes", () => {
     let state = reduceCompete(freshState(now), {
       type: "opt-in",
       sport: "running",
-      now: now.toISOString(),
+      now: "2026-10-12T09:00:00Z",
     });
     state = {
       ...state,
@@ -153,7 +153,7 @@ describe("arena lanes", () => {
       ...reduceCompete(freshState(now), {
         type: "opt-in",
         sport: "running",
-        now: now.toISOString(),
+        now: "2026-10-12T09:00:00Z",
       }),
       units: "metric" as const,
       activities: [
@@ -321,4 +321,23 @@ describe("arena selection", () => {
     expect(resolveArenaSelectedId("ghost", lanes, false)).toBe("me");
     expect(resolveArenaSelectedId("missing", lanes, true)).toBe("me");
   });
+});
+
+it("renders queued fields as zero-distance anonymous slots through the benchmark until a canonical field arrives", () => {
+  const registeredAt = new Date("2026-10-28T14:00:00Z");
+  const state = reduceCompete(freshState(registeredAt), { type: "opt-in", sport: "running", now: registeredAt.toISOString() });
+  const enrollment = state.enrollments.find(e => e.sport === "running")!;
+  enrollment.peerIds = ["private-peer-id"];
+  enrollment.syntheticIds = ["private-generated-id"];
+  enrollment.awaitingField = true;
+  state.activities.push(run({ id: "training", startedAt: registeredAt.toISOString(), distanceM: 5000 }));
+  for (const clock of [registeredAt, new Date(enrollment.waveStart), new Date(Date.parse(enrollment.waveStart) + 60_000)]) {
+    const model = buildArenaModel(state, clock, "open", "running");
+    expect(model.lanes).toHaveLength(enrollment.capacity);
+    expect(model.lanes.filter(l => l.mystery)).toHaveLength(enrollment.capacity - 1);
+    expect(model.lanes.filter(l => l.you)).toHaveLength(1);
+    expect(model.lanes.every(l => !l.ghost && l.values.every(value => value === 0))).toBe(true);
+    expect(JSON.stringify(model)).not.toContain("private-");
+    expect(model.lanes.filter(l => !l.you).every(l => !l.avatarUrl && l.name === "Mystery competitor")).toBe(true);
+  }
 });

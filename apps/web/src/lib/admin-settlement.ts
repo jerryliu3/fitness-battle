@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import {
   countsOnTrack,
+  activityEffort,
   dispositionOf,
   type Activity,
   type CompeteState,
@@ -38,21 +39,23 @@ export async function readAdminSettlementFields(db: SupabaseClient, target: stri
     const [profiles, ratings, activities] = await Promise.all([
       db.from("profiles").select("id, display_name").in("id", ids),
       db.from("sport_ratings").select("user_id, open_elo, verified_elo").eq("sport", enrollment.sport).in("user_id", ids),
-      db.from("activities").select("user_id, sport, started_at, distance_m, moving_sec, provenance, disposition, source_label, compete_key, verified")
+      db.from("activities").select("user_id, sport, started_at, distance_m, moving_sec, avg_hr, provenance, disposition, source_label, compete_key, verified")
         .in("user_id", ids).eq("sport", enrollment.sport).gte("started_at", enrollment.waveStart).lt("started_at", enrollment.weekEnd),
     ]);
     if (profiles.error || ratings.error || activities.error) throw new Error("field_roster_unavailable");
-    const totals = new Map<string, { distanceM: number; movingSec: number; verifiedDistanceM: number; verifiedMovingSec: number }>();
+    const totals = new Map<string, { distanceM: number; movingSec: number; verifiedDistanceM: number; verifiedMovingSec: number; effort: number; verifiedEffort: number }>();
     const nowMs = Date.now();
     for (const row of activities.data ?? []) {
       const activity: Activity = { id: row.compete_key ?? "", sport: row.sport, startedAt: row.started_at,
-        distanceM: Number(row.distance_m ?? 0), movingSec: Number(row.moving_sec ?? 0), avgHr: null,
+        distanceM: Number(row.distance_m ?? 0), movingSec: Number(row.moving_sec ?? 0), avgHr: row.avg_hr == null ? null : Number(row.avg_hr),
         provenance: row.provenance, disposition: row.disposition, source: row.source_label ?? "manual", verified: row.verified };
       if (!rosterEligible(activity, nowMs) || !countsOnTrack(activity, "open")) continue;
-      const sum = totals.get(row.user_id) ?? { distanceM: 0, movingSec: 0, verifiedDistanceM: 0, verifiedMovingSec: 0 };
+      const sum = totals.get(row.user_id) ?? { distanceM: 0, movingSec: 0, verifiedDistanceM: 0, verifiedMovingSec: 0, effort: 0, verifiedEffort: 0 };
       totals.set(row.user_id, { distanceM: sum.distanceM + activity.distanceM, movingSec: sum.movingSec + activity.movingSec,
         verifiedDistanceM: sum.verifiedDistanceM + (countsOnTrack(activity, "verified") ? activity.distanceM : 0),
-        verifiedMovingSec: sum.verifiedMovingSec + (countsOnTrack(activity, "verified") ? activity.movingSec : 0) });
+        verifiedMovingSec: sum.verifiedMovingSec + (countsOnTrack(activity, "verified") ? activity.movingSec : 0),
+        effort: sum.effort + activityEffort(activity),
+        verifiedEffort: sum.verifiedEffort + (countsOnTrack(activity, "verified") ? activityEffort(activity) : 0) });
     }
     boards.push({ crewId: enrollment.crewId ?? field.crew_id ?? "solo", crewName: field.name, sport: enrollment.sport,
       waveStart: enrollment.waveStart, weekEnd: enrollment.weekEnd, capacity: field.capacity,
@@ -60,7 +63,7 @@ export async function readAdminSettlementFields(db: SupabaseClient, target: stri
         id, name: profiles.data?.find((row) => row.id === id)?.display_name ?? "Athlete",
         elo: Number(ratings.data?.find((row) => row.user_id === id)?.open_elo ?? 1000),
         verifiedElo: Number(ratings.data?.find((row) => row.user_id === id)?.verified_elo ?? 1000),
-        ...(totals.get(id) ?? { distanceM: 0, movingSec: 0, verifiedDistanceM: 0, verifiedMovingSec: 0 }),
+        ...(totals.get(id) ?? { distanceM: 0, movingSec: 0, verifiedDistanceM: 0, verifiedMovingSec: 0, effort: 0, verifiedEffort: 0 }),
       })) });
   }
   return boards;

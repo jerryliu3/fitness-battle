@@ -9,6 +9,8 @@ import {
   planFromCrewBoardPin,
   poolFromCrewPlan,
   waveWindowAt,
+  nextDailyWaveWindowAt,
+  weeklyWaveWindowAt,
   type PoolPlayer,
   type WaveEnrollment,
 } from "../matching";
@@ -426,6 +428,7 @@ function enrollSport(
   now: Date,
   viewerId = "you",
   forceRenew = false,
+  window = nextDailyWaveWindowAt(now),
 ): CompeteState {
   const mine = rating(state, sport);
   // First join from an unranked guest/account starts at the account baseline.
@@ -433,7 +436,7 @@ function enrollSport(
   const verifiedElo =
     mine.verifiedElo <= ELO_UNRANKED ? ELO_BASE : mine.verifiedElo;
   const pin = state.crewBoard;
-  const waveStart = waveWindowAt(now).waveStart.toISOString();
+  const waveStart = window.waveStart.toISOString();
   const autoEnrollNext = forceRenew
     ? true
     : (enrollmentFor(state, sport)?.autoEnrollNext ?? true);
@@ -447,11 +450,14 @@ function enrollSport(
           viewerElo: openElo,
           sport,
           now,
+          window,
           realPool: realPlayerPool,
+          crewId: pin?.sport === sport ? pin.crewId : null,
           seed: `${viewerId}:${sport}:${waveStart}`,
           autoEnrollNext,
         }).enrollment),
     autoEnrollNext,
+    awaitingField: state.requiresCanonicalFields ? true : undefined,
   };
 
   return {
@@ -551,12 +557,19 @@ function groupFor(
       id: "you",
       name: state.name,
       elo: track === "verified" ? mine.verifiedElo : mine.openElo,
-      activities: state.activities,
+      activities: enrollment.scoringActivities ?? state.activities,
       readiness: state.readiness,
       primarySport: state.primary,
     },
     peers,
     peerActivities: pin ? crewPeerActivities(pin, enrollment.peerIds, track) : undefined,
+    peerVolumes: pin ? new Map(pin.members.flatMap(member => {
+      const effort = track === "verified" ? member.verifiedEffort : member.effort;
+      return effort === undefined ? [] : [[member.id, { effort,
+        distanceM: track === "verified" ? member.verifiedDistanceM ?? 0 : member.distanceM ?? 0,
+        movingSec: track === "verified" ? member.verifiedMovingSec ?? 0 : member.movingSec ?? 0,
+      }] as const];
+    })) : undefined,
     track,
     asOf,
   });
@@ -723,7 +736,7 @@ function settleEnrollment(
   };
 
   if (enrollment.autoEnrollNext) {
-    // Next week opens at Monday 00:00 (weekEnd).
+    // Week close is midnight; the renewing field opens Monday at 06:00 ET.
     next = enrollSport(next, sport, end);
   } else {
     next = withRating(next, sport, { optedIn: false });
@@ -734,7 +747,7 @@ function settleEnrollment(
 /** Settle one due sport round using the ordinary scoring and renewal rules. */
 export function settleSportRound(state: CompeteState, sport: SportId, asOf: Date): CompeteState {
   const enrollment = enrollmentFor(state, sport);
-  if (!enrollment || Date.parse(enrollment.weekEnd) > asOf.getTime()) return state;
+  if (!enrollment || enrollment.awaitingField || Date.parse(enrollment.weekEnd) > asOf.getTime()) return state;
   return settleEnrollment(state, enrollment);
 }
 
@@ -753,7 +766,7 @@ export function settleCompetition(
   now: Date,
   fields: readonly CrewBoardPin[] = [],
 ): CompeteState {
-  const liveWave = waveWindowAt(now);
+  const liveWave = weeklyWaveWindowAt(now);
   const liveStart = liveWave.waveStart.toISOString();
   // Preserve the closing roster until all matching enrollments have settled.
   let next = applyEffortMilestones(ensureEnrollments(state, now), now);
@@ -761,13 +774,15 @@ export function settleCompetition(
 
   while (guard < 12) {
     const due = next.enrollments
-      .filter((item) => item.weekEnd <= now.toISOString())
+      .filter((item) => item.weekEnd <= now.toISOString() && (!item.awaitingField || fields.some(pin => fieldPinMatchesEnrollment(pin, item) && pin.weekEnd === item.weekEnd)))
       .sort((a, b) => a.weekEnd.localeCompare(b.weekEnd));
     if (due.length === 0) break;
     const enrollment = due[0]!;
     const board = fields.find((pin) => pin.sport === enrollment.sport &&
       pin.waveStart === enrollment.waveStart && pin.weekEnd === enrollment.weekEnd);
-    next = settleSportRound(board ? { ...next, crewBoard: board } : next, enrollment.sport, now);
+    next = settleSportRound(board ? { ...next, crewBoard: board,
+      enrollments: next.enrollments.map(item => item === enrollment ? { ...item, fieldBoard: board, awaitingField: false } : item),
+    } : next, enrollment.sport, now);
     guard += 1;
   }
 
@@ -777,7 +792,7 @@ export function settleCompetition(
 
   // Long gap: drop stale enrollments and re-seat on the live wave.
   // A scheduled stop stays stopped instead of being seated again.
-  if (next.enrollments.some((item) => item.weekEnd <= now.toISOString())) {
+  if (!next.enrollments.some(item => item.awaitingField) && next.enrollments.some((item) => item.weekEnd <= now.toISOString())) {
     const stopping = new Set(
       next.enrollments.filter((item) => !item.autoEnrollNext).map((item) => item.sport),
     );
@@ -795,7 +810,7 @@ export function settleCompetition(
     };
     const opted = next.ratings.filter((item) => item.optedIn).map((item) => item.sport);
     for (const sport of opted) {
-      next = enrollSport(next, sport, now);
+      next = enrollSport(next, sport, now, "you", false, liveWave);
     }
   }
 
@@ -899,7 +914,7 @@ function historyFor(level: "light" | "steady" | "heavy", now: Date): Activity[] 
   return activities;
 }
 
-function calibrate(state: CompeteState, now: Date): CompeteState {
+export function calibrateFromAcceptedHistory(state: CompeteState, now: Date): CompeteState {
   let next = state;
   for (const sport of SPORT_IDS) {
     if (!rating(state, sport).optedIn) continue;
@@ -1060,6 +1075,8 @@ function reduceCompeteAction(
     }
     case "opt-in": {
       if (!action.sport) return rolled;
+      const existing = enrollmentFor(rolled, action.sport);
+      if (existing && Date.parse(existing.waveStart) <= now.getTime()) return rolled;
       // Together: crewBoard pin. Alone: crewBoard null. Omit to leave pin as-is.
       let next: CompeteState = rolled;
       if (action.crewBoard !== undefined) {
@@ -1119,6 +1136,7 @@ function reduceCompeteAction(
     case "opt-out": {
       if (!action.sport) return rolled;
       const enrollment = enrollmentFor(rolled, action.sport);
+      if (enrollment && Date.parse(enrollment.waveStart) <= now.getTime()) return rolled;
       const periodStart = enrollment?.waveStart ?? rolled.clock.periodStart;
       const clearCrew =
         rolled.crewBoard?.sport === action.sport ? null : rolled.crewBoard;
@@ -1137,6 +1155,8 @@ function reduceCompeteAction(
     case "set-crew-board": {
       if (!action.crewBoard || !isCrewBoardPin(action.crewBoard)) return rolled;
       const pin = action.crewBoard;
+      const existing = enrollmentFor(rolled, pin.sport);
+      if (existing && Date.parse(existing.waveStart) <= now.getTime()) return rolled;
       const viewerId = action.accountId ?? "you";
       let next: CompeteState = { ...rolled, crewBoard: pin };
       const ratingRow = rating(next, pin.sport);
@@ -1147,6 +1167,8 @@ function reduceCompeteAction(
     }
     case "clear-crew-board": {
       const pin = rolled.crewBoard;
+      const existing = pin ? enrollmentFor(rolled, pin.sport) : undefined;
+      if (existing && Date.parse(existing.waveStart) <= now.getTime()) return rolled;
       let next: CompeteState = { ...rolled, crewBoard: null };
       if (pin) {
         const ratingRow = rating(next, pin.sport);
@@ -1165,7 +1187,8 @@ function reduceCompeteAction(
     }
     case "opt-in-health": {
       const metric = action.metric ?? "sleep";
-      const waveStart = waveWindowAt(now).waveStart.toISOString();
+      if (rolled.healthRatings.some(item => item.metric === metric && item.optedIn)) return rolled;
+      const waveStart = nextDailyWaveWindowAt(now).waveStart.toISOString();
       return {
         ...rolled,
         focus: { family: "health", id: metric },
@@ -1184,6 +1207,8 @@ function reduceCompeteAction(
     }
     case "opt-out-health": {
       const metric = action.metric ?? "sleep";
+      const existing = rolled.healthRatings.find(item => item.metric === metric && item.optedIn);
+      if (existing && Date.parse(existing.lockPeriod) <= now.getTime()) return rolled;
       return {
         ...rolled,
         focus:
@@ -1291,7 +1316,7 @@ function reduceCompeteAction(
       const level = action.level ?? "steady";
       const kept = rolled.activities.filter((activity) => activity.source !== "history");
       const activities = [...kept, ...historyFor(level, now)];
-      const calibrated = calibrate({ ...rolled, activities }, now);
+      const calibrated = calibrateFromAcceptedHistory({ ...rolled, activities }, now);
       return {
         ...calibrated,
         activities: calibrated.activities.map((activity) =>
@@ -1416,6 +1441,7 @@ export function weeklyBoard(
   const live = rollClock(state, now);
   const enrollment = enrollmentFor(live, sport);
   if (!enrollment) return [];
+  if (Date.parse(enrollment.waveStart) > now.getTime() || enrollment.awaitingField) return [];
   const rows = groupFor(live, sport, track, enrollment, now);
   const values = rows.map(row => sportById(sport).gps ? row.distanceM : row.effort);
   return rows.map(row => ({
@@ -1432,7 +1458,7 @@ export function projectedElo(
 ): number {
   const live = rollClock(state, now);
   const enrollment = enrollmentFor(live, sport);
-  if (!enrollment) {
+  if (!enrollment || Date.parse(enrollment.waveStart) > now.getTime() || enrollment.awaitingField) {
     const next = rating(live, sport);
     return track === "verified" ? next.verifiedElo : next.openElo;
   }

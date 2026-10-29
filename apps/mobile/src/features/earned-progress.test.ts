@@ -27,7 +27,7 @@ let renderer:ReactTestRenderer;
 const text=()=>renderer.root.findAllByType("Text" as never).map(n=>n.children.filter(c=>typeof c==="string").join("")).join(" ");
 const now=new Date("2026-10-21T12:00:00Z");
 const recorded=(id:string,movingSec:number,sport:Activity["sport"]="running"):Activity=>({id,movingSec,sport,startedAt:now.toISOString(),distanceM:5000,avgHr:null,verified:true,source:"strava",provenance:"recorded",disposition:"counted"});
-beforeEach(()=>{vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT",true);vi.useFakeTimers();vi.setSystemTime(now);mock.account="one";mock.state=reduceCompete(freshState(now),{type:"opt-in",sport:"running",now:now.toISOString()});});
+beforeEach(()=>{vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT",true);vi.useFakeTimers();vi.setSystemTime(now);mock.account="one";mock.state=reduceCompete(freshState(now),{type:"opt-in",sport:"running",now:"2026-10-21T09:00:00Z"});});
 afterEach(async()=>{if(renderer)await act(async()=>renderer.unmount());vi.useRealTimers();vi.unstubAllGlobals();vi.clearAllMocks();});
 describe("native earned progress flows",()=>{
  it("shows score changes once after hydration, keeps reduced motion still and resets across accounts",async()=>{

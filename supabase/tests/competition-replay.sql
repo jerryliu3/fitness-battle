@@ -44,17 +44,15 @@ begin
     raise exception 'Anonymous accepted';
   exception when insufficient_privilege then null; end;
   if has_function_privilege('anon','public.competition_replay(text,timestamptz,timestamptz,text)','EXECUTE') then raise exception 'Anonymous execute granted'; end if;
-  -- Field seating alone is insufficient after leaving a private crew.
+  -- Competition membership remains valid after leaving its original Crew.
   insert into public.crews(id,name,invite_code,sport,created_by) values(crew,'Replay crew',substr(crew::text,1,8),'running',athlete);
   insert into public.crew_members(crew_id,user_id,display_name) values(crew,athlete,'Replay viewer'),(crew,peer,'Replay peer');
   update public.week_fields set crew_id=crew where id=field;
   perform set_config('request.jwt.claim.sub',athlete::text,true);
   perform public.competition_replay('running',starts,ends,'open');
   delete from public.crew_members where crew_id=crew and user_id=athlete;
-  begin
-    perform public.competition_replay('running',starts,ends,'open');
-    raise exception 'Former crew member accepted';
-  exception when insufficient_privilege then null; end;
+  result := public.competition_replay('running',starts,ends,'open');
+  if jsonb_array_length(result->'athletes')<>2 then raise exception 'Frozen replay roster changed after Crew departure'; end if;
 end;
 $$;
 rollback;

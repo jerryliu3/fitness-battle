@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { freshState } from "./engine";
+import { freshState, reduceCompete, rollClock } from "./engine";
 import { applyRemoteSnapshot, chooseCompeteState } from "./snapshot";
 
 describe("chooseCompeteState", () => {
@@ -26,6 +26,31 @@ describe("chooseCompeteState", () => {
 });
 
 describe("applyRemoteSnapshot", () => {
+  it("merges a Recovery rollover without losing its result or unsaved renewal preference", () => {
+    const joined = reduceCompete(freshState(new Date("2026-10-28T09:00Z")), { type: "opt-in-health", metric: "sleep", now: "2026-10-28T09:00Z" });
+    const local = { ...joined, name: "Unsaved name", demoNow: "2026-11-02T12:00:00Z", requiresCanonicalFields: true,
+      healthRatings: joined.healthRatings.map(r => ({ ...r, autoEnrollNext: false })) };
+    const remote = { ...rollClock(joined, new Date(local.demoNow)), requiresCanonicalFields: true };
+    const merged = applyRemoteSnapshot(local, remote, true);
+    expect(merged.healthRatings[0]).toEqual({ ...remote.healthRatings[0], autoEnrollNext: false });
+    expect(merged.healthResults).toEqual(remote.healthResults);
+    expect(merged.name).toBe("Unsaved name");
+  });
+
+  it("adopts a server rollover and settled ratings while keeping unsaved profile and renewal edits", () => {
+    const joined = reduceCompete(freshState(new Date("2026-10-28T09:00Z")), { type: "opt-in", sport: "running", now: "2026-10-28T09:00Z" });
+    const local = { ...joined, name: "Unsaved name", demoNow: "2026-11-02T12:00:00Z", requiresCanonicalFields: true,
+      enrollments: joined.enrollments.map(e => ({ ...e, awaitingField: true, autoEnrollNext: false })) };
+    const remote = { ...rollClock(joined, new Date(local.demoNow)), requiresCanonicalFields: true };
+    const merged = applyRemoteSnapshot(local, remote, true);
+    expect(merged.name).toBe("Unsaved name");
+    expect(merged.enrollments[0]!.waveStart).toBe(remote.enrollments[0]!.waveStart);
+    expect(merged.enrollments[0]!.autoEnrollNext).toBe(false);
+    expect(merged.ratings).toEqual(remote.ratings);
+    expect(merged.periodResults).toEqual(remote.periodResults);
+    expect(merged.pendingRevealIds).toEqual(remote.pendingRevealIds);
+  });
+
   it("folds remote field peers and crew board into dirty local copy while preserving local autoEnrollNext", () => {
     const nowIso = "2026-10-14T12:00:00.000Z";
     const waveStart = "2026-10-12T04:00:00.000Z";

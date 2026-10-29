@@ -3,7 +3,7 @@ import type { SportId } from "../compete/sports";
 import { pickSynthetics } from "./synthetic-bank";
 import type { PoolPlayer, WaveEnrollment } from "./types";
 import { DEFAULT_GROUP_CAPACITY } from "./types";
-import { waveWindowAt } from "./waves";
+import { nextDailyWaveWindowAt } from "./waves";
 
 /** Stable seed so every crew mate draws the same synthetic fillers. */
 export function crewFieldSeed(
@@ -47,7 +47,7 @@ export function planCrewWeekField(input: {
   now?: Date;
 }): CrewWeekFieldPlan {
   const capacity = input.capacity ?? DEFAULT_GROUP_CAPACITY;
-  const window = waveWindowAt(input.now ?? new Date());
+  const window = nextDailyWaveWindowAt(input.now ?? new Date());
   const waveStart = window.waveStart.toISOString();
   const weekEnd = window.weekEnd.toISOString();
   const seed = crewFieldSeed(input.crewId, input.sport, waveStart);

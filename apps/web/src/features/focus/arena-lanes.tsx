@@ -303,7 +303,7 @@ export function ArenaLanes({
                 />
               )}
               {/* Local echoes own their animation; replay only moves the parent marker. */}
-              {standings || !edge ? (
+              {l.mystery ? <g data-mystery-marker="true"><circle cx={xx} cy={yy} r={18} fill="white" stroke="#616c63" strokeWidth={2} strokeDasharray="3 3"/><text x={xx} y={yy+5} textAnchor="middle" fill="#282f2c" style={typographyStyle("label")}>?</text></g> : standings || !edge ? (
                 <PolishedRacer
                   sizeScale={standings ? undefined : fieldLaneMarkerScale(Boolean(l.you))}
                   x={xx}
@@ -321,7 +321,7 @@ export function ArenaLanes({
               </g>
               {!standings&&edge&&<g pointerEvents="none"><rect x={-34} y={edge==="ahead"?27:-42} width={68} height={20} rx={8} fill="#ffffffee"/><text style={typographyStyle("caption")} x={0} y={edge==="ahead"?41:-28} textAnchor="middle"  fill="#616c63">{position.distanceOutside.toFixed(1)} {unit}</text></g>}
               {!standings && !edge && (l.you || selected===l.id) && <g className="athlete-pennant" pointerEvents="none">
-                <AthletePennant lane={l} prefix={`${prefix}-portrait-${i}`} x={pennantX} y={pennantY} detail={`${ordinalPlace(rank)} · ${l.you ? `${l.value.toFixed(1)} ${unit}` : relativeDistance(l.value)}`} />
+                <AthletePennant lane={l} prefix={`${prefix}-portrait-${i}`} x={pennantX} y={pennantY} detail={`${liveLanes.some(peer => peer.mystery) ? "Starts at zero" : ordinalPlace(rank)} · ${l.you ? `${l.value.toFixed(1)} ${unit}` : relativeDistance(l.value)}`} />
               </g>}
               <g aria-hidden={!standings} display={standings ? "inline" : "none"}>
               <motion.g initial={false} animate={{ opacity: standings ? 1 : 0 }}>

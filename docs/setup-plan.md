@@ -143,3 +143,5 @@ Apply `20261025023647_activity_replay_samples.sql` before deploying recorded rep
 metrics. Reimport GPS files for sample retention; older routes remain playable.
 Native/Expo web need the updated `/route-scene` deployment. No production migration
 was run during implementation. See [scope and verification](reviews/session-map-replay.md).
+
+Daily competition waves require all three daily-wave/score-authority migrations through `20261029001132_competition_score_authority.sql` with the matching web/API/native code. The API now requires server-only `SUPABASE_SERVICE_ROLE_KEY` for ordinary score commits. New registrations, including onboarding, queue the next 06:00 Eastern start; renewal starts Monday 06:00 and close remains Monday midnight. Late uploads remain in training but cannot affect a closed competition. See [daily-waves.md](daily-waves.md) and [Docker verification](reviews/daily-waves/local-verification.md) for the schema, rollout and repeatable local tests. No production migration or deployment was performed.

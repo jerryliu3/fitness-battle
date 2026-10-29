@@ -1,6 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import {
-  pickSynthetics,
   type CrewBoardPin,
   type SportId,
 } from "@fitness-battle/shared";
@@ -27,6 +26,8 @@ interface FieldRosterRow {
   verified_elo?: number | string;
   verified_distance_m?: number | string;
   verified_moving_sec?: number | string;
+  effort?: number | string;
+  verified_effort?: number | string;
 }
 
 /** All field readers use the same authorized roster and counted-volume RPC. */
@@ -52,24 +53,13 @@ export async function readWeekFieldPin(
       verifiedElo: Number(row.verified_elo ?? 1000),
       verifiedDistanceM: Number(row.verified_distance_m) || 0,
       verifiedMovingSec: Number(row.verified_moving_sec) || 0,
+      effort: row.effort == null ? undefined : Number(row.effort),
+      verifiedEffort: row.verified_effort == null ? undefined : Number(row.verified_effort),
     }))
     .sort((a, b) => a.id.localeCompare(b.id));
 
-  const needed = Math.max(0, field.capacity - field.member_ids.length);
-  let syntheticIds = field.synthetic_ids;
-  if (syntheticIds.length !== needed) {
-    const elos = members.map((member) => member.elo).sort((a, b) => a - b);
-    const median = elos[Math.floor((elos.length - 1) / 2)] ?? 1000;
-    syntheticIds = pickSynthetics(
-      field.sport,
-      median,
-      needed,
-      field.member_ids,
-      `${field.crew_id ?? `solo:${field.id}`}:${field.sport}:${field.wave_start}`,
-    ).map((rival) => rival.id);
-  }
-
   return {
+    fieldId: field.id,
     crewId: field.crew_id ?? "solo",
     crewName: field.name,
     sport: field.sport,
@@ -78,21 +68,21 @@ export async function readWeekFieldPin(
     capacity: field.capacity,
     memberIds: field.member_ids,
     members,
-    syntheticIds,
+    syntheticIds: field.synthetic_ids,
   };
 }
 
 export async function loadCrewWeekFieldPin(
   db: SupabaseClient,
   crewId: string,
-  waveStart: string,
+  waveStart?: string,
 ): Promise<CrewBoardPin | null> {
-  const { data, error } = await db
+  let query = db
     .from("week_fields")
     .select("*")
-    .eq("crew_id", crewId)
-    .eq("wave_start", waveStart)
-    .maybeSingle();
+    .eq("crew_id", crewId);
+  query = waveStart ? query.eq("wave_start", waveStart) : query.lte("wave_start", new Date().toISOString()).gt("week_end", new Date().toISOString()).order("wave_start", { ascending: false }).limit(1);
+  const { data, error } = await query.maybeSingle();
   if (error) throw new Error(error.message);
   return data ? readWeekFieldPin(db, data as WeekFieldRow) : null;
 }
@@ -109,14 +99,10 @@ export async function seatWeekFieldPin(
     syntheticIds: string[];
   },
 ): Promise<CrewBoardPin> {
-  const { data, error } = await db.rpc("seat_athlete_week_field", {
+  const { data, error } = await db.rpc("resolve_week_field", {
     p_sport: input.sport,
     p_wave_start: input.waveStart,
     p_week_end: input.weekEnd,
-    p_capacity: input.capacity,
-    p_crew_id: input.crewId ?? null,
-    p_crew_name: input.crewName ?? null,
-    p_synthetic_ids: input.syntheticIds,
   });
   if (error) throw new Error(error.message);
   if (!data) throw new Error("field_not_seated");

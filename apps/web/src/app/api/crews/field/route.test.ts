@@ -7,7 +7,7 @@ vi.mock("@/lib/auth/request-user", () => ({ resolveRequestUserId: stubs.user }))
 vi.mock("@/lib/supabase/request", () => ({ createRequestClient: stubs.client }));
 import { GET, POST } from "./route";
 
-const start = "2026-10-19T04:00:00.000Z";
+const start = "2026-10-19T10:00:00.000Z";
 const end = "2026-10-26T04:00:00.000Z";
 const field = {
   id: "field-crew",
@@ -26,7 +26,7 @@ function database() {
     data: unknown;
     error: { message: string } | null;
   }> => {
-    if (name === "seat_athlete_week_field") return { data: field, error: null };
+    if (name === "resolve_week_field") return { data: field, error: null };
     if (name === "crew_field_roster") {
       return {
         data: field.member_ids.map((id) => ({ user_id: id, display_name: id, open_elo: 1000 })),
@@ -53,6 +53,7 @@ function database() {
     const query = {
       select: vi.fn(() => query),
       eq: vi.fn(() => query),
+      lte: vi.fn(() => query), gt: vi.fn(() => query), order: vi.fn(() => query), limit: vi.fn(() => query),
       maybeSingle: vi.fn(async () => ({ data: result, error: null })),
     };
     return query;
@@ -76,7 +77,7 @@ describe("canonical crew field", () => {
     expect(response.status).toBe(200);
     const { fields } = await response.json();
     const joined = reduceCompete(freshState(new Date(start)), {
-      type: "opt-in", sport: "running", now: start,
+      type: "opt-in", sport: "running", now: "2026-10-19T09:00:00Z",
     });
     joined.enrollments[0]!.crewId = "crew-1";
     const hydrated = await hydrateFieldBoard(db as never, "athlete-a", joined);
@@ -86,40 +87,33 @@ describe("canonical crew field", () => {
     expect(hydrated.enrollments[0]?.peerIds).toEqual(["athlete-b"]);
     expect(hydrated.enrollments[0]?.syntheticIds).toEqual(field.synthetic_ids);
     expect(db.rpc.mock.calls.map(([name]) => name)).toEqual([
-      "week_field_roster", "week_field_roster",
+      "week_field_roster", "resolve_week_field", "week_field_roster",
     ]);
     expect(stubs.client).toHaveBeenCalledWith(request);
   });
 
-  it("writes only the canonical seating RPC and returns its stored roster", async () => {
+  it("returns only queue context and does not seat or disclose other Crew members", async () => {
     const db = database();
-    stubs.client.mockResolvedValue(db);
-    const response = await POST(new Request("http://localhost/api/crews/field", {
-      method: "POST",
-      body: JSON.stringify({ crewId: "crew-1" }),
-    }));
-    expect(response.status).toBe(200);
-    const { pin } = await response.json();
-    expect(pin.memberIds).toEqual(field.member_ids);
-    expect(pin.waveStart).toBe(field.wave_start);
-    expect(db.rpc.mock.calls.map(([name]) => name)).toEqual([
-      "crew_field_roster", "seat_athlete_week_field", "week_field_roster",
-    ]);
-  });
-
-  it("does not report success if canonical seating fails", async () => {
-    const db = database();
-    db.rpc.mockImplementationOnce(async () => ({
-      data: [{ user_id: "athlete-a", display_name: "A", open_elo: 1000 }], error: null,
-    }));
-    db.rpc.mockImplementationOnce(async () => ({ data: null, error: { message: "not_a_crew_member" } }));
     stubs.client.mockResolvedValue(db);
     const response = await POST(new Request("http://localhost/api/crews/field", {
       method: "POST", body: JSON.stringify({ crewId: "crew-1" }),
     }));
-    expect(response.status).toBe(400);
-    expect(await response.json()).toEqual({ error: "not_a_crew_member" });
-    expect(db.rpc).toHaveBeenCalledTimes(2);
+    expect(response.status).toBe(200);
+    const { pin } = await response.json();
+    expect(pin.memberIds).toEqual(["athlete-a"]);
+    expect(pin.members).toEqual([]);
+    expect(pin.syntheticIds).toEqual([]);
+    expect(Date.parse(pin.waveStart)).toBeGreaterThan(Date.now());
+    expect(pin.crewId).toBe("crew-1");
+    expect(db.rpc).not.toHaveBeenCalled();
+  });
+
+  it("requires active Crew membership to offer a queued registration", async () => {
+    stubs.client.mockResolvedValue({ from: () => ({ select: () => ({ eq: () => ({ eq: () => ({ eq: () => ({ maybeSingle: async () => ({ data: null, error: null }) }) }) }) }) }) });
+    const response = await POST(new Request("http://localhost/api/crews/field", {
+      method: "POST", body: JSON.stringify({ crewId: "crew-1" }),
+    }));
+    expect(response.status).toBe(404);
   });
 
   it("surfaces roster failures instead of inventing a zero-score field", async () => {

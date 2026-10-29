@@ -16,6 +16,7 @@ vi.mock("react-native", () => ({
 }));
 vi.mock("react-native-safe-area-context", () => ({ useSafeAreaInsets: () => ({ top: 44, bottom: 34 }) }));
 vi.mock("react-native-svg", () => ({ default: "Svg", G: "SvgG" }));
+vi.mock("./queued-field", () => ({ QueuedField: "QueuedField" }));
 vi.mock("./geographic-course", () => ({ GeographicCourse: "GeographicCourse" }));
 vi.mock("./use-competition-course", () => ({ useCompetitionCourse: () => ({ course: DEMO_RACE_COURSE, error: "", retry() {} }) }));
 vi.mock("./competition-replay", () => ({ CompetitionReplayButton: "ReplayButton" }));
@@ -36,7 +37,7 @@ vi.mock("../ui/use-reduced-motion", () => ({ useReducedMotion: () => true }));
 vi.mock("../ui/field-course", () => ({ FieldOverview: "FieldOverview", useFieldAppearance: () => [defaultFieldAppearance, vi.fn()] }));
 vi.mock("../ui/focus", () => ({ f: {} }));
 vi.mock("../lib/haptics", () => ({ playCue() {} }));
-vi.mock("../lib/compete-store", () => ({ useCompeteStore: () => ({ state: reduceCompete(freshState(new Date("2026-10-26T18:00:00Z")), { type: "opt-in", sport: "running" }), accountKey: "test" }) }));
+vi.mock("../lib/compete-store", () => ({ useCompeteStore: () => ({ state: reduceCompete(freshState(new Date("2026-10-26T18:00:00Z")), { type: "opt-in", sport: "running", now: "2026-10-26T09:00:00Z" }), accountKey: "test" }) }));
 import { CompetitionField } from "./competition-field";
 let renderer: ReactTestRenderer;
 const field = () => renderer.root.findByType("LaneTrack" as never);

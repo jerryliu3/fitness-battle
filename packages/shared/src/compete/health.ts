@@ -1,5 +1,5 @@
 import { averageTiePosition, competitionPlace } from "../competition-place";
-import { weekEndAfter } from "../matching/waves";
+import { nextDailyWaveWindowAt, weeklyWaveWindowAt, weekEndAfter } from "../matching/waves";
 import { APP_TIMEZONE, endOfZonedDay, startOfZonedDay } from "../period";
 import { settleElo } from "./elo";
 import {
@@ -414,7 +414,7 @@ export function buildSleepView(input: {
   const priorEnd = periodStart;
   const priorStart = new Date(priorEnd.getTime() - 7 * DAY_MS);
   const prior = sleepContest(input.nights, priorStart, priorEnd, priorEnd);
-  const rows = input.rating.optedIn
+  const rows = input.rating.optedIn && input.now >= periodStart
     ? sleepBoard({
         name: input.name,
         nights: input.nights,
@@ -533,7 +533,7 @@ export function settleSleepWeeks<T extends {
               ...item,
               elo: eloAfter,
               lockElo: eloAfter,
-              lockPeriod: end.toISOString(),
+              lockPeriod: nextDailyWaveWindowAt(end).waveStart.toISOString(),
               optedIn: item.autoEnrollNext || stillDue,
             },
       ),
@@ -546,7 +546,7 @@ export function settleSleepWeeks<T extends {
   if (rating?.optedIn) {
     const end = weekEndAfter(new Date(rating.lockPeriod));
     if (end.getTime() <= now.getTime()) {
-      const live = startOfZonedDay(now);
+      const live = weeklyWaveWindowAt(now).waveStart;
       next = {
         ...next,
         healthRatings: next.healthRatings.map((item) =>

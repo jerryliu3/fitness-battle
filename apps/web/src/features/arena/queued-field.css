@@ -1,0 +1,12 @@
+.wave-queue { display: grid; gap: 16px; padding: 24px; }
+.wave-queue h2, .wave-queue p { margin: 0; }
+.wave-mysteries { display: flex; flex-wrap: wrap; gap: 8px; }
+.wave-mysteries span { display: grid; place-items: center; width: 44px; height: 44px; border-radius: 50%; background: var(--soft); color: var(--ink); font: var(--type-label); }
+.wave-times { display: grid; gap: 12px; margin: 0; }
+.wave-times div { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px 20px; }
+.wave-times dt { font: var(--type-body); color: var(--muted); }
+.wave-times dd { margin: 0; font: var(--type-label); }
+.wave-queue.is-overlay { position: absolute; z-index: 20; bottom: 16px; right: 12px; width: min(360px, calc(100% - 24px)); padding: 18px; gap: 10px; box-shadow: 0 8px 32px #142b3b24; max-height: calc(100% - 80px); overflow: auto; }
+.wave-queue.is-overlay h2 { font-size: 22px; padding-right: 24px; }
+.wave-queue-close { position: absolute; right: 4px; top: 4px; }
+.wave-queue-chip { position: absolute; z-index: 20; bottom: 16px; right: 12px; max-width: calc(100% - 24px); background: var(--paper, white); }

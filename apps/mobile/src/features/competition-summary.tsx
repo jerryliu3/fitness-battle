@@ -1,6 +1,7 @@
 import { AppText, StatusBadge, SectionHeader } from "../ui/section";
 import {
   competeNow,
+  competitionQueue,
   APP_TIMEZONE,
   competePeriodWindow,
   primaryFreezePeriodStart,
@@ -33,6 +34,12 @@ export function CompetitionSummary({
   const period = sport
     ? competePeriodWindow(state, now, sport)
     : weeklyPeriodBounds(now);
+  if (selectedSport === "sleep") {
+    const sleep = state.healthRatings.find(r => r.metric === "sleep" && r.optedIn);
+    if (sleep) period.startsAt = new Date(sleep.lockPeriod);
+  }
+  const queue = sport || selectedSport === "sleep" ? competitionQueue(state, selectedSport === "sleep" ? "sleep" : sport!, now) : null;
+  if (selectedSport === "sleep" && queue) period.endsAt = new Date(queue.end);
   const dateOptions = {
     month: "short",
     day: "numeric",
@@ -54,7 +61,7 @@ export function CompetitionSummary({
           title={
             <View style={{ flexDirection: "row", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
               <AppText role="display" accessibilityRole="header">Compete</AppText>
-              <StatusBadge>{days ? `${days} day${days === 1 ? "" : "s"}` : hours ? `${hours}h` : `${left}m`} left</StatusBadge>
+              <StatusBadge>{queue?.queued ? "Queued" : `${days ? `${days} day${days === 1 ? "" : "s"}` : hours ? `${hours}h` : `${left}m`} left`}</StatusBadge>
             </View>
           }
           subtitle={weekLabel}

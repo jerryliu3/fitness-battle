@@ -293,7 +293,7 @@ export function PortraitField({
                       d="M-9 12 L0 27 L9 12"
                       fill={m.you ? "#f7c948" : "#f8f9f6"}
                     />
-                    <Rect
+                    {!m.mystery && <Rect
                       x={-23}
                       y={-43}
                       width={46}
@@ -302,8 +302,8 @@ export function PortraitField({
                       fill="#f8f9f6"
                       stroke={m.you ? "#f7c948" : "#b3c9c5"}
                       strokeWidth={m.you ? 3 : 1.5}
-                    />
-                    <Defs>
+                    />}
+<G>{m.mystery ? <G><Circle cy={-14} r={22} fill="white" stroke="#616c63" strokeWidth={2} strokeDasharray="3 3"/><SvgText y={-8} textAnchor="middle" fill="#142b3b">?</SvgText></G> : <>                    <Defs>
                       <ClipPath id={id}>
                         <Rect x={-19} y={-39} width={38} height={50} rx={9} />
                       </ClipPath>
@@ -338,6 +338,7 @@ export function PortraitField({
                         </SvgText>
                       </>
                     )}
+</>}</G>
                     <FieldOverlayGroup hidden={overlaysHidden}>
                     {m.you ? (
                       <>
@@ -371,7 +372,7 @@ export function PortraitField({
                           ? "You"
                           : m.name.split(" ")[0]}
                     </SvgText>
-                    {!m.you ? (
+                    {!m.you && !m.mystery ? (
                       <SvgText {...chartTextProps()}
                         y={61}
                         textAnchor="middle"

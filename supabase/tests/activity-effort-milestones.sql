@@ -22,6 +22,8 @@ begin
   select updated_at into version from public.athlete_prefs where user_id=u;
   state:='{"name":"Receipt test","city":"Toronto","primary":"running","freezesLeft":3,"calibrated":false,"onboardingCompleted":true,"units":"metric","clock":{"periodStart":"2026-10-19T04:00:00Z"},"focus":{"family":"sport","id":"running"},"ratings":[],"periodResults":[],"enrollments":[],"healthRatings":[],"healthResults":[],"frozenPeriods":[],"sleepNights":[],"duels":[]}'::jsonb;
   state:=state||jsonb_build_object('enrollments',jsonb_build_array(jsonb_build_object('sport','running','waveStart',s,'weekEnd',e,'capacity',2,'peerIds','[]'::jsonb,'syntheticIds','[]'::jsonb,'autoEnrollNext',true)));
+  -- Existing registration fixture, accepted before its benchmark.
+  insert into public.wave_enrollments(user_id,sport,wave_start,week_end,capacity,registered_at) values(u,'running',s,e,2,s-interval '1 hour');
   begin
     perform public.save_compete_account(state,'[]','[]',version);
     raise exception 'missing high-water receipt accepted';
@@ -29,6 +31,7 @@ begin
   if (select updated_at from public.athlete_prefs where user_id=u) is distinct from version then raise exception 'rejected receipt reset advanced revision';end if;
   insert into public.sport_ratings(user_id,sport,open_elo,verified_elo,lock_period) values(u,'running',1200,1100,s);
   update public.sport_ratings set open_elo=900,verified_elo=800 where user_id=u;
-  if (select open_elo<>1200 or verified_elo<>1100 from public.sport_ratings where user_id=u) then raise exception 'sport score decreased';end if;
+  if (select open_elo<>900 or verified_elo<>800 from public.sport_ratings where user_id=u) then raise exception 'server-derived rating loss was blocked';end if;
+  if has_table_privilege('authenticated','public.sport_ratings','UPDATE') then raise exception 'client can change rating';end if;
   if has_table_privilege('authenticated','public.effort_milestones','INSERT') then raise exception 'direct writes allowed'; end if;
 end; $$;

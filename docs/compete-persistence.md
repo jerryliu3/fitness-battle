@@ -1,6 +1,6 @@
 # Compete persistence (signed-in)
 
-Signed-in play is **per-viewer**. Guests may use device-local storage.
+Signed-in accounts keep their own enrollment and result receipts. All athletes assigned to a field share its benchmark, frozen roster and counted-activity window. Guests may use device-local storage.
 
 ## Model (relational only — no compete jsonb)
 
@@ -13,8 +13,8 @@ Account compete state is **tables only**. `/api/compete` never reads or writes a
 | `sport_ratings` | Elo + locks |
 | `period_results` / `period_freezes` | Settled weeks + freezes |
 | `activities` | Compete sessions (`compete_key`, disposition, …) — **upsert only** |
-| `wave_enrollments` | Per-viewer seating + optional `crew_id` |
-| `week_fields` | Canonical shared seating for both solo and private crew fields |
+| `wave_enrollments` | Registration bounds, renewal choice, optional `crew_id`, server-owned `registered_at` and canonical `field_id` |
+| `week_fields` | Canonical shared bounds and frozen real/generated roster for solo and private Crew fields (`roster_locked_at`) |
 | `sleep_nights` / `health_ratings` / `health_period_results` | Sleep contest |
 | `compete_duels` | Legacy 1v1 rows (product removed; sanitize clears; table kept) |
 | `readiness_marks` | Daily readiness — **upsert only** (shared with fitness sync) |
@@ -27,8 +27,8 @@ Account compete state is **tables only**. `/api/compete` never reads or writes a
 
 ## API
 
-- **GET:** `loadCompeteAccount` → `rollClock` → hydrate crew board; persist if settlement changed the document.
-- **PUT:** `persistCompeteAccount` only (tables). Dropping an open sport or sleep enrollment is `409 week_still_open`. `autoEnrollNext: false` is the stop-after-this-week path. Failure otherwise → 500.
+- **GET:** load registrations → resolve authorized fields before each due settlement → hydrate current fields; persist if settlement changed the durable document. Queued fields make no roster requests. A field failure returns 503 rather than settling estimated opponents.
+- **PUT:** `persistCompeteAccount` only (tables). Queued registrations can be removed; dropping a started sport or sleep enrollment is `409 week_still_open`. New unsaved registrations are rebased to the next 06:00 server benchmark if the cutoff passed during the save. `autoEnrollNext: false` is the stop-after-this-week path. Failure otherwise → 500.
 - **Refresh:** signed-in web and Expo refetch on foreground and about every 60s while Arena or Field is visible. An idle client adopts the server copy so crew scores are not hidden by `athlete_prefs.updated_at`.
 
 ## Write rules
@@ -40,7 +40,9 @@ Account compete state is **tables only**. `/api/compete` never reads or writes a
 | ratings, period_results | upsert | Append-friendly settlement |
 | links | read-only in compete | OAuth/sync writes `fitness_connections` |
 
-`seat_athlete_week_field` is the only field write RPC. `/api/crews/field` and account hydration both use the same field/roster reader. The database roster owns score filtering and exact `[wave_start, week_end)` bounds: solo totals come from counted `activities`; private crew totals retain the existing explicit sharing boundary and come from counted `crew_entries`. `share_crew_week` still copies eligible account activities into the crew feed. `crew_field_roster` supplies identity/Elo only for deterministic seating fillers.
+The authenticated account API interprets the client document as user intentions and derives score fields from stored state and accepted facts. Its service-only `save_compete_account_server` commit checks the account revision, accepted-input revision and deadline crossing, then delegates to the existing versioned transaction. `save_compete_account` is no longer callable by ordinary clients. Direct enrollment, score and input-table writes are revoked. Registration validation still locks each affected wave, checks schedule/cancellation against the database clock and preserves database-owned assignment metadata. `resolve_week_field` authorizes the caller, returns no queued roster, and finalizes eligible registrations once at/after the benchmark, including offline Monday renewals. Repeated reads reuse that assignment.
+
+The database roster owns score filtering and exact `[wave_start, week_end)` bounds. Both solo and Crew totals use immutable accepted revisions in `private.competition_fact_versions`: only versions accepted before close count, so later imports, edits and exclusions cannot alter a finished round. Raw `activities` remain editable training history. Server-only closing `scoringActivities` snapshots also supply the athlete's own settlement and milestone calculations, and are stripped before durable writes. Opponent entry ratings and generated IDs are stored on the field. `/api/crews/field` POST returns only authorized queued Crew context; the account save registers that athlete. It never registers other members automatically.
 
 The consolidation migration copies existing `crew_week_fields` into `week_fields`, retaining the newer plan on conflict, before dropping the old table and its write RPC. Historical migration files remain unchanged. Deploy this migration with the matching server change; the old server reads a table that is retired by the migration. `crewBoard` remains the client presentation name for both field kinds, not a second database store.
 

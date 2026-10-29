@@ -130,13 +130,13 @@ function OnboardingFlow() {
         </AppHeading>
         <AppParagraph typographyRole="body" className="fb-copy">
           {step === "prefs" &&
-            "Name, city, units, and sports to join immediately. You can change these later on Athlete."}
+            "Name, city, units, and sports for your next 6 a.m. Eastern wave. You can change these later on Athlete."}
           {step === "connect" &&
             "Strava is the cloud default. Garmin, WHOOP, and Oura connect the same way on You once their keys are set. A Garmin file import works without API approval. Without keys this step stays an honest stub."}
           {step === "backfill" &&
             "Import your recent activity history to calibrate your starting rating and leave the baseline."}
           {step === "done" &&
-            "Join a board when you want. Browsing Today and Pace stays open without competing."}
+            "Your events are registered for the next 6 a.m. Eastern wave. Competitors are revealed at the start."}
         </AppParagraph>
       </header>
 

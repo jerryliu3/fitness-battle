@@ -8,7 +8,7 @@ const joined = () =>
   reduceCompete(freshState(now), {
     type: "opt-in",
     sport: "running",
-    now: now.toISOString(),
+    now: "2026-10-21T09:00:00Z",
   });
 const log = (s: ReturnType<typeof joined>) =>
   reduceCompete(s, {

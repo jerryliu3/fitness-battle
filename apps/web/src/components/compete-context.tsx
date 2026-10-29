@@ -288,13 +288,20 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
             if (body?.error === "account_changed_reload" || body?.error === "account_version_required") {
               conflictRef.current = true; setSaveConflict(true);
               setSaveError("Your account changed elsewhere. Reload the account before saving again.");
-            } else if (body?.error !== "week_still_open") setSaveError("This device updated. The account copy did not save.");
+            } else if (body?.error === "week_still_open") {
+              setSaveError("The wave has started, so your registration was kept. Please retry any other changes.");
+              void refresh();
+            } else setSaveError("This device updated. The account copy did not save.");
             return;
           }
           if (typeof body?.updatedAt !== "string") throw new Error("missing_revision");
           revisionRef.current = body.updatedAt;
           writeStorageItem(`${storageKey(accountId)}:revision`, body.updatedAt);
           if (dirtyRef.current === generation) {
+            if (isCompeteState(body.state)) {
+              stateRef.current = body.state;
+              setState(body.state);
+            }
             removeStorageItem(deviceOnlyKey(accountId));
             unsavedRef.current = false; unitsUnsavedRef.current = false;
           }
@@ -681,8 +688,9 @@ export function CompeteProvider({ children }: { children: ReactNode }) {
           readStorageItem,
           writeStorageItem,
         );
-        const next = reduceCompete(stateRef.current, withAccount);
-        if (JSON.stringify(next) === JSON.stringify(stateRef.current)) return;
+        const before = userIdRef.current && !offlineRef.current ? { ...stateRef.current, requiresCanonicalFields: true } : stateRef.current;
+        const next = reduceCompete(before, withAccount);
+        if (JSON.stringify(next) === JSON.stringify(before)) return;
         dirtyRef.current += 1;
         unsavedRef.current = true;
         if (withAccount.type === "set-units") unitsUnsavedRef.current = true;

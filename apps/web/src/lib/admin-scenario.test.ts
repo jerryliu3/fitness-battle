@@ -4,7 +4,7 @@ import { activityPayload, overtakeActivity, registrationPlan } from "./admin-sce
 const now = new Date("2026-11-01T16:00:00Z");
 function registered(sport: "running" | "strength" = "running") {
   const state = freshState(now);
-  const plan = registrationPlan(state, sport, "athlete", now);
+  const plan = registrationPlan(state, sport, "athlete", new Date("2026-10-26T09:00:00Z"));
   return { ...state, enrollments: [plan.enrollment!], ratings: state.ratings.map((row) => row.sport === sport ? plan.rating! : row) };
 }
 const manual: Activity = { id: "manual", sport: "running", startedAt: "2026-10-31T16:00:00Z", distanceM: 5000, movingSec: 1800, avgHr: null, source: "manual", verified: false, provenance: "manual" };
