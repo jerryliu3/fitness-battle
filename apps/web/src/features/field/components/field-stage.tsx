@@ -89,7 +89,7 @@ export function FieldStage({
       }
     : null;
 
-  const [viewDimension, setViewDimension] = useState<"2d" | "3d" | "4d">("2d");
+  const [viewDimension, setViewDimension] = useState<"2d" | "3d" | "4d">(unit === "pts" ? "2d" : "4d");
   const { course, error: courseError, retry: retryCourse } = useCompetitionCourse(model.sport, model.periodStart, model.periodEnd, debugActive, viewDimension === "4d" && tabActive);
   const [courseTarget, setCourseTarget] = useState<CourseDistanceTarget | null>(null);
   useEffect(() => setCourseTarget(null), [accountKey, model.sport, model.periodStart, model.unit]);
@@ -505,7 +505,7 @@ export function FieldStage({
         >
           {viewDimension === "4d" && tabActive ? <div className="focus-geographic-host" style={{ position: "relative", height: lanesImmersive ? "100%" : 460 }}>
             <GeographicCourse lanes={fieldLanes} unit={unit} selectedId={trackSelected || you.id} focusRequest={focusRequest} onSelect={toggleSelect} course={course} error={courseError} onRetry={retryCourse} distanceTarget={courseTarget} onResumeFollow={() => setCourseTarget(null)} controlsBottom={lanesImmersive ? spotlightCollapsed ? 136 : 236 : 8} />
-            {!lanesImmersive ? <button type="button" className="focus-portal-pill is-accent" style={{ position: "absolute", top: 12, right: 12 }} aria-label="Expand 4D course to full screen" onClick={() => setLanesImmersive(true)}>Full Arena ⤢</button> : null}
+            {!lanesImmersive ? <button type="button" className="focus-portal-pill is-accent" style={{ position: "absolute", top: 12, right: 12 }} aria-label="Expand 3D course to full screen" onClick={() => setLanesImmersive(true)}>Full Arena ⤢</button> : null}
           </div> : null}
           {viewDimension === "3d" && tabActive ? (
             <PortraitField

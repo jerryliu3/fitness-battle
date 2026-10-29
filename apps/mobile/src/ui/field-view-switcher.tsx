@@ -20,15 +20,14 @@ export function FieldViewSwitcher({
 
   const options: Array<{ value: "2d" | "3d" | "4d"; label: string }> = [
     { value: "2d", label: "2D" },
-    { value: "3d", label: "3D" },
-    ...(geographic ? [{ value: "4d" as const, label: "4D" }] : []),
+    ...(geographic ? [{ value: "4d" as const, label: "3D" }] : []),
   ];
 
   return (
     <View ref={anchorRef} collapsable={false}>
       <Pressable
         accessibilityRole="button"
-        accessibilityLabel={`Dimension: ${value.toUpperCase()}`}
+        accessibilityLabel={`Dimension: ${(value === "4d" ? "3D" : value.toUpperCase())}`}
         accessibilityState={{ expanded: open }}
         onPress={toggle}
         style={({ pressed }) => [
@@ -47,7 +46,7 @@ export function FieldViewSwitcher({
         ]}
       >
         <Text style={{ ...textStyle("caption"), color: "#ffffff" }}>
-          {value.toUpperCase()} ▾
+          {(value === "4d" ? "3D" : value.toUpperCase())} ▾
         </Text>
       </Pressable>
       <AnchoredMenu

@@ -2,7 +2,7 @@
 
 The [product-derived native refinement](reviews/product-refinement/README.md) narrows the October 25 tab review to nine implementation candidates built from the current app. It preserves the selected production tokens and domain rules; layouts remain under review.
 
-The selected production direction is **Everyday Club**, following the owner’s October 22 reference and implementation request. Retain yellow and Ember, Home / Compete / Progress / Crew, existing data behavior, 2D default competition, no recording action and no social feed. See [audit](design/ui-audit.md) and [component decisions](design/component-guidelines.md).
+The selected production direction is **Everyday Club**, following the owner’s October 22 reference and implementation request. Retain yellow and Ember, Home / Compete / Progress / Crew, existing data behavior, geographic 3D default competition, no recording action and no social feed. See [audit](design/ui-audit.md) and [component decisions](design/component-guidelines.md).
 
 The October 23 [mobile consumer audit](reviews/mobile-consumer-ui-audit-2026-10-23.md) refines native composition and interaction: open sections for continuous full-row content, consistent sport icons, inspectable charts, moving segment highlights and fullscreen field exploration. It preserves Everyday Club's palette and identity. Native fullscreen uses a root Modal with parent-owned viewport/selection and restored horizontal anchors; moving the scene host into the Modal remounts it, rather than providing a shared-element expansion.
 
@@ -44,7 +44,7 @@ Manrope, bold readable page titles, 20px cards, 12px controls, 24px sheets, 44px
 
 Home leads with a personal greeting, weekly chart and real next-rival preview, then latest activity, effort progress and a weekly recap. The activity journey expands on demand. Progress leads with week/month/year training, then basic session/effort achievements and records; effort score and season history have separate views. Achievements are read-only milestones derived from currently available counted activity and the primary sport's Open rating, without reward entitlements or new scoring writes.
 
-Compete presents one registration at a time in a horizontal carousel with previous/next buttons, page indicators and an explicit event chooser. 2D is the default. Standings and optional alpine 3D use the same totals and viewport; native 3D remains the credential-free web renderer. Scenery is illustrative. Crew retains shared progress, standings, members, invitations and existing sessions; no feed or recording flow is added.
+Compete presents one registration at a time in a horizontal carousel with previous/next buttons, page indicators and an explicit event chooser. Geographic 3D is the default for distance fields; points fields use 2D. Standings and optional alpine 3D use the same totals and viewport; native 3D remains the credential-free web renderer. Scenery is illustrative. Crew retains shared progress, standings, members, invitations and existing sessions; no feed or recording flow is added.
 
 ## Information architecture
 
@@ -181,7 +181,7 @@ Compete mounts only the selected registered sport, with a horizontal sport selec
 
 ## Portrait perspective follow-up — October 22
 
-Compete's optional **3D field** now uses a separate locked-camera SVG perspective renderer on web and native: alpine backdrop, converging teal lanes, profile portraits with initials fallback, yellow You marker, top place/next-rival status and overlaid zoom/peer controls. The camera angle stays locked; horizontal lane swipes and lane arrows reach every peer. Real relative gaps and out-of-range arrows remain explicit. The earlier Three.js pursuit and native bridge remain available in code for later combination. The 2D map stays default and triples its underlying unfolded lane spacing, preserving capsule size and longitudinal distance scale. Its status/zoom controls also overlay the board.
+Compete's optional **3D field** now uses a separate locked-camera SVG perspective renderer on web and native: alpine backdrop, converging teal lanes, profile portraits with initials fallback, yellow You marker, top place/next-rival status and overlaid zoom/peer controls. The camera angle stays locked; horizontal lane swipes and lane arrows reach every peer. Real relative gaps and out-of-range arrows remain explicit. The earlier Three.js pursuit and native bridge remain available in code for later combination. The 2D map triples its underlying unfolded lane spacing, preserving capsule size and longitudinal distance scale. Its status/zoom controls also overlay the board.
 
 Distance crews use their existing configured journey distance as the shared target; crews without a goal may use the actual positive last-week baseline. Crew's shared-week ribbon reserves runway beyond both actual contribution and the real target/baseline. A checkered stripe remains at the true finish, with unfilled track before it when below goal and member contributions crossing it when above. Missing history never invents a target. Progress uses slender teal bars and an actual prior-timeframe delta; partial periods explicitly compare against all of the prior period, and zero baselines never produce a fabricated percentage.
 
@@ -407,9 +407,9 @@ an activity. See
 [implementation and validation](reviews/geographic-course/README.md).
 
 
-Geographic scenery is the third field option, labeled **4D** beside **2D / 3D**
-on native and web, including fullscreen controls. Distance fields offer all three;
-points fields retain 2D / 3D. 4D uses the same inline/fullscreen field host,
+Geographic scenery is the default distance field option, labeled **3D** beside **2D** (internal renderer ID `4d`). The former perspective 3D option is hidden
+on native and web, including fullscreen controls. Distance fields offer 2D and geographic 3D;
+points fields retain 2D only. 4D uses the same inline/fullscreen field host,
 selection, sliding broadcast panels, quick jumps and hold-to-hide overlays. Mode
 changes retain fullscreen, collapsed panels and the assigned weekly course. Competition
 replay also offers 4D, using timeline values for both dots and earned trails;
