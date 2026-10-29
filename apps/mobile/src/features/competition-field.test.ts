@@ -182,3 +182,9 @@ it("expands the whole 3D preview and only exposes course options in full screen"
   expect(map().props.optionsTop).toBe(110);
   expect(button("Open 3D course in full screen")).toBeUndefined();
 });
+
+
+it("omits Elo from the fullscreen athlete spotlight", () => {
+  const labels = renderer.root.findAllByType("Text" as never).map(node => JSON.stringify(node.props.children));
+  expect(labels.some(label => /ELO/i.test(label))).toBe(false);
+});

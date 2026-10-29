@@ -467,8 +467,9 @@ in standings focus that athlete in the retained field. The redundant view row an
 The native 3D course preview opens by tapping the map, using the same
 “Tap to open full screen” hint as 2D. The preview has no course toolbar or
 fullscreen icon. Fullscreen places a compact **Options** dropdown below the dimension selector,
-matching the existing HUD chips and anchored menus. It contains Replay, 2D map /
-3D chase, racer spacing and Race overview. Replay remains a chip in the preview. Course names, Following / Recenter and zoom
+matching the existing HUD chips and anchored menus. It contains View replay, a Perspective view switch (off means flat), a Space racers
+switch and See overview. Switches keep the menu open; actions close it. The
+fullscreen athlete spotlight shows place and identity without an Elo label. Replay remains a chip in the preview. Course names, Following / Recenter and zoom
 buttons are removed. The map engine owns pinch zoom; selecting an athlete resumes
 following. Browser map gesture behavior is unchanged.
 

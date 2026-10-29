@@ -181,9 +181,7 @@ export function CompetitionField({
     me ??
     ranked[0];
   const focusedRank = focusedLane ? place(focusedLane.values[2]) : 1;
-  const focusedElo = focusedLane
-    ? scores.find((row) => row.id === focusedLane.id)?.elo
-    : undefined;
+
   const focusedDeltaToYou = focusedLane ? focusedLane.values[2] - total : 0;
   const focusedDeltaToLeader =
     focusedLane && leader ? focusedLane.values[2] - leader.values[2] : 0;
@@ -523,7 +521,6 @@ export function CompetitionField({
                     >
                       {ordinalPlace(focusedRank).toUpperCase()} PLACE
                       {focusedLane.you ? " · YOU" : ""}
-                      {focusedElo ? ` · ${focusedElo} ELO` : ""}
                     </Text>
                     <Text
                       numberOfLines={1}

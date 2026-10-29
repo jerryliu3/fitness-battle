@@ -1,5 +1,5 @@
 import { useRef } from "react";
-import { Platform, Pressable, Text, View } from "react-native";
+import { Platform, Pressable, Switch, Text, View } from "react-native";
 import { AnchoredMenu, useAnchoredMenu } from "./anchored-menu";
 import { textStyle } from "./section";
 import { playCue } from "../lib/haptics";
@@ -14,8 +14,8 @@ export function CourseOptions({ flat, spaced, onToggleDimension, onToggleSpacing
   onOverview(): void;
 }) {
   const { open, close, toggle, anchorRef, menuLayout } = useAnchoredMenu({
-    minWidth: 176,
-    estimatedHeight: onReplay ? 176 : 132,
+    minWidth: 220,
+    estimatedHeight: onReplay ? 192 : 148,
   });
   const pendingReplay = useRef<(() => void) | null>(null);
   const finishReplay = () => {
@@ -24,13 +24,13 @@ export function CourseOptions({ flat, spaced, onToggleDimension, onToggleSpacing
     replay?.();
   };
   const options = [
-    ...(onReplay ? [{ label: "Replay", action: () => {
+    ...(onReplay ? [{ label: "View replay", action: () => {
       if (Platform.OS === "ios") pendingReplay.current = onReplay;
       else onReplay();
     } }] : []),
-    { label: flat ? "3D chase" : "2D map", action: onToggleDimension },
-    { label: spaced ? "Racers: spaced" : "Racers: together", action: onToggleSpacing },
-    { label: "Race overview", action: onOverview },
+    { label: "Perspective view", value: !flat, action: onToggleDimension },
+    { label: "Space racers", value: spaced, action: onToggleSpacing },
+    { label: "See overview", action: onOverview },
   ];
 
   return <View ref={anchorRef} collapsable={false}>
@@ -52,7 +52,10 @@ export function CourseOptions({ flat, spaced, onToggleDimension, onToggleSpacing
       <Text style={{ ...textStyle("caption"), color: "#ffffff" }}>Options ▾</Text>
     </Pressable>
     <AnchoredMenu open={open} onClose={close} onDismiss={onReplay ? finishReplay : undefined} menuLayout={menuLayout} accessibilityLabel="Close course options">
-      {options.map(option => <Pressable
+      {options.map(option => "value" in option ? <View key={option.label} style={{ minHeight: 52, paddingHorizontal: 12, flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 16 }}>
+        <Text style={{ ...textStyle("caption"), color: c.ink }}>{option.label}</Text>
+        <Switch accessibilityLabel={option.label} value={option.value} onValueChange={() => { void playCue("selection"); option.action(); }} trackColor={{ false: c.line, true: c.tennis }} />
+      </View> : <Pressable
         key={option.label}
         accessibilityRole="button"
         accessibilityLabel={option.label}

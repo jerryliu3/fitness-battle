@@ -3,7 +3,11 @@
 Captured October 29, 2026 on iPhone 18 Pro / iOS 27.0 in Device Hub, using the
 installed native Mapbox development build and this branch's local Metro bundle.
 
-![Preview, full screen, and Options](review.png)
+The screenshots below record the earlier button-based menu. The latest revision
+uses Perspective view and Space racers switches, View replay / See overview
+actions, and removes the fullscreen Elo label.
+
+![Earlier preview, full screen, and Options](review.png)
 
 - [Inline preview](preview.png): tap-to-expand hint; no fullscreen icon or toolbar.
 - [Full screen](fullscreen.png): Options beneath the dimension selector; no bottom toolbar.
