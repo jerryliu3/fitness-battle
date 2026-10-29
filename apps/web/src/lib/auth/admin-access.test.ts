@@ -27,9 +27,9 @@ describe("admin-access", () => {
     });
 
     it("supports additional emails configured via ADMIN_EMAILS environment variable", () => {
-      process.env.ADMIN_EMAILS = "partner@domain.com, lead@overtaek.com ";
+      process.env.ADMIN_EMAILS = "partner@domain.com, lead@overtaek.xyz ";
       expect(isAdminEmail("partner@domain.com")).toBe(true);
-      expect(isAdminEmail("lead@overtaek.com")).toBe(true);
+      expect(isAdminEmail("lead@overtaek.xyz")).toBe(true);
       expect(isAdminEmail("other@domain.com")).toBe(false);
     });
   });
