@@ -2,7 +2,7 @@
 
 ## Access and deployment
 
-Apply `20261021014247_admin_compete_scenarios.sql` after the migrations in PR #228, then deploy web. Sign in with the owner account (`3jerryliu@gmail.com`) and visit `/admin` (also linked as **Round lab** from Athlete). Production actions require confirmed Supabase authentication and a server-only service-role key. Demo-mode cookies do not grant privileged access.
+Apply `20261021014247_admin_compete_scenarios.sql` after the migrations in PR #228, then deploy web. Sign in with an admin account (`3jerryliu@gmail.com` or `alice@example.com`) and visit `/admin` (also linked as **Round lab** from Athlete). Production actions require confirmed Supabase authentication and a server-only service-role key. Demo-mode cookies do not grant privileged access.
 
 Enter the UUID of an existing Supabase athlete. Database-backed test/demo accounts work exactly like real athletes; the local sandbox at the top is separate and never changes the selected athlete. The scenario lab does not create accounts. Use a separate browser profile or Expo device signed into the test athlete to observe changes while keeping the owner session open in the admin browser.
 
