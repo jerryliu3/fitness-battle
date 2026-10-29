@@ -59,6 +59,7 @@ export function useAnchoredMenu(options?: {
 export function AnchoredMenu({
   open,
   onClose,
+  onDismiss,
   menuLayout,
   accessibilityLabel = "Close menu",
   style,
@@ -66,18 +67,21 @@ export function AnchoredMenu({
 }: {
   open: boolean;
   onClose: () => void;
+  onDismiss?: () => void;
   menuLayout: AnchoredMenuLayout | null;
   accessibilityLabel?: string;
   style?: StyleProp<ViewStyle>;
   children?: ReactNode;
 }) {
-  if (!open) return null;
+  // Keep iOS Modal mounted through dismissal when a caller needs its completion.
+  if (!open && !onDismiss) return null;
   return (
     <Modal
       visible={open}
       transparent
       animationType="none"
       onRequestClose={onClose}
+      onDismiss={onDismiss}
     >
       <Pressable
         style={StyleSheet.absoluteFill}

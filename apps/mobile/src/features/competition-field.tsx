@@ -4,7 +4,7 @@ import { FieldViewSwitcher } from "../ui/field-view-switcher";
 import { FieldGroundSwitcher } from "../ui/field-ground-switcher";
 import { GeographicCourse } from "./geographic-course";
 import { useCompetitionCourse } from "./use-competition-course";
-import { CompetitionReplayButton } from "./competition-replay";
+import { CompetitionReplayButton, CompetitionReplayModal } from "./competition-replay";
 import { UserAvatar } from "../ui/user-avatar";
 import { textStyle } from "../ui/section";
 import { useFieldFlight } from "../ui/use-field-flight";
@@ -68,6 +68,7 @@ export function CompetitionField({
     flight.cancel();
     setSceneDimension(value);
   };
+  const [courseReplayOpen, setCourseReplayOpen] = useState(false);
   const [expanded, setExpanded] = useState(false);
   const [intervalsCollapsed, setIntervalsCollapsed] = useState(false);
   const [spotlightCollapsed, setSpotlightCollapsed] = useState(false);
@@ -113,7 +114,7 @@ export function CompetitionField({
   useEffect(() => setCourseTarget(null), [accountKey, sport, period?.startsAt.getTime(), arena?.unit]);
   const defaultSpan = fieldDefaultSpan(arena?.unit ?? "km");
   const viewSpan = span ?? defaultSpan;
-  useEffect(() => { if (!isFocused) setExpanded(false); }, [isFocused]);
+  useEffect(() => { if (!isFocused) { setExpanded(false); setCourseReplayOpen(false); } }, [isFocused]);
   const me = arena?.lanes.find((l) => l.you);
   const total = me?.values[2] ?? 0;
 
@@ -210,7 +211,7 @@ export function CompetitionField({
     >
       {sceneDimension === "4d" ? <View style={{ height: sceneHeight }}>
         <View pointerEvents={expanded ? "auto" : "none"} style={{ flex: 1 }}>
-          <GeographicCourse hiddenIds={hiddenIds} lanes={fieldLanes} unit={arena.unit} selectedId={selectedId ?? me?.id ?? ""} focusRequest={focusRequest} onSelect={id => { if (!hold.current?.suppressSelection()) selectAthlete(id); }} course={course} error={courseError} onRetry={retryCourse} distanceTarget={courseTarget} optionsTop={expanded && !queued ? safeTop + 98 : undefined} controlsBottom={expanded ? safeBottom + (spotlightCollapsed ? 132 : 216) : 8} overlaysHidden={overlaysHidden} />
+          <GeographicCourse hiddenIds={hiddenIds} lanes={fieldLanes} unit={arena.unit} selectedId={selectedId ?? me?.id ?? ""} focusRequest={focusRequest} onSelect={id => { if (!hold.current?.suppressSelection()) selectAthlete(id); }} course={course} error={courseError} onRetry={retryCourse} distanceTarget={courseTarget} onReplay={() => setCourseReplayOpen(true)} optionsTop={expanded && !queued ? safeTop + 54 : undefined} controlsBottom={expanded ? safeBottom + (spotlightCollapsed ? 132 : 216) : 8} overlaysHidden={overlaysHidden} />
         </View>
         {!expanded ? <Pressable accessibilityRole="button" accessibilityLabel="Open 3D course in full screen" onPress={expandField} style={{ position: "absolute", inset: 0, alignItems: "center", justifyContent: "flex-end", paddingBottom: 10 }}>
           <View pointerEvents="none" style={{ backgroundColor: "rgba(20, 20, 19, 0.75)", borderRadius: 999, paddingHorizontal: 12, paddingVertical: 6 }}>
@@ -341,6 +342,7 @@ export function CompetitionField({
           <View onTouchStartCapture={() => hold.current?.reset()} style={[f.safe, { backgroundColor: "#0b242c", position: "relative" }]}>
             {fieldContent}
             {queueOverlay}
+            <CompetitionReplayModal open={courseReplayOpen} state={state} selection={replaySelection} dimension={sceneDimension} onClose={() => setCourseReplayOpen(false)} />
             {/* Top Bar HUD */}
             <FieldOverlayView
               hidden={overlaysHidden}
@@ -459,8 +461,8 @@ export function CompetitionField({
               })}
             </SlidingFieldPanel>
 
-            {/* Right Replay action positioned underneath the 2D dropdown */}
-            <FieldOverlayView
+            {/* Geographic replay lives in Options; other field views retain the Replay chip. */}
+            {sceneDimension !== "4d" ? <FieldOverlayView
               hidden={overlaysHidden}
               pointerEvents="box-none"
               style={{
@@ -479,7 +481,7 @@ export function CompetitionField({
                   label="Replay"
                 />}
               </View>
-            </FieldOverlayView>
+            </FieldOverlayView> : null}
 
             {/* Broadcast HUD: Bottom Focused Athlete Spotlight + Player Chips */}
             {focusedLane ? (

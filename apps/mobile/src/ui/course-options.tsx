@@ -1,10 +1,12 @@
-import { Pressable, Text, View } from "react-native";
+import { useRef } from "react";
+import { Platform, Pressable, Text, View } from "react-native";
 import { AnchoredMenu, useAnchoredMenu } from "./anchored-menu";
 import { textStyle } from "./section";
 import { playCue } from "../lib/haptics";
 import { SHELL_COLORS as c } from "../theme";
 
-export function CourseOptions({ flat, spaced, onToggleDimension, onToggleSpacing, onOverview }: {
+export function CourseOptions({ flat, spaced, onToggleDimension, onToggleSpacing, onOverview, onReplay }: {
+  onReplay?: () => void;
   flat: boolean;
   spaced: boolean;
   onToggleDimension(): void;
@@ -13,9 +15,19 @@ export function CourseOptions({ flat, spaced, onToggleDimension, onToggleSpacing
 }) {
   const { open, close, toggle, anchorRef, menuLayout } = useAnchoredMenu({
     minWidth: 176,
-    estimatedHeight: 132,
+    estimatedHeight: onReplay ? 176 : 132,
   });
+  const pendingReplay = useRef<(() => void) | null>(null);
+  const finishReplay = () => {
+    const replay = pendingReplay.current;
+    pendingReplay.current = null;
+    replay?.();
+  };
   const options = [
+    ...(onReplay ? [{ label: "Replay", action: () => {
+      if (Platform.OS === "ios") pendingReplay.current = onReplay;
+      else onReplay();
+    } }] : []),
     { label: flat ? "3D chase" : "2D map", action: onToggleDimension },
     { label: spaced ? "Racers: spaced" : "Racers: together", action: onToggleSpacing },
     { label: "Race overview", action: onOverview },
@@ -39,12 +51,12 @@ export function CourseOptions({ flat, spaced, onToggleDimension, onToggleSpacing
     >
       <Text style={{ ...textStyle("caption"), color: "#ffffff" }}>Options ▾</Text>
     </Pressable>
-    <AnchoredMenu open={open} onClose={close} menuLayout={menuLayout} accessibilityLabel="Close course options">
+    <AnchoredMenu open={open} onClose={close} onDismiss={onReplay ? finishReplay : undefined} menuLayout={menuLayout} accessibilityLabel="Close course options">
       {options.map(option => <Pressable
         key={option.label}
         accessibilityRole="button"
         accessibilityLabel={option.label}
-        onPress={() => { void playCue("selection"); option.action(); close(); }}
+        onPress={() => { void playCue("selection"); close(); option.action(); }}
         style={({ pressed }) => [{ minHeight: 44, paddingHorizontal: 12, justifyContent: "center" }, pressed && { opacity: 0.7 }]}
       >
         <Text style={{ ...textStyle("caption"), color: c.ink }}>{option.label}</Text>

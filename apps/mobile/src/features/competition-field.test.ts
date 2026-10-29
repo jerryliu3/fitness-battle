@@ -19,7 +19,7 @@ vi.mock("react-native-svg", () => ({ default: "Svg", G: "SvgG" }));
 vi.mock("./queued-field", () => ({ QueuedField: "QueuedField" }));
 vi.mock("./geographic-course", () => ({ GeographicCourse: "GeographicCourse" }));
 vi.mock("./use-competition-course", () => ({ useCompetitionCourse: () => ({ course: DEMO_RACE_COURSE, error: "", retry() {} }) }));
-vi.mock("./competition-replay", () => ({ CompetitionReplayButton: "ReplayButton" }));
+vi.mock("./competition-replay", () => ({ CompetitionReplayButton: "ReplayButton", CompetitionReplayModal: "ReplayModal" }));
 vi.mock("../ui/field-view-switcher", () => ({
   FieldViewSwitcher: ({ value, onChange }: { value: string; onChange: (v: string) => void }) =>
     createElement("FieldViewSwitcher", { value, onChange }),
@@ -123,8 +123,14 @@ it("keeps 4D inside the fullscreen host with the same panels, selection and repl
     expect(overview().props.view.center).toBe(peer.value);
   }
   expect(mocks.fly).not.toHaveBeenCalled();
-  const replay = renderer.root.findAllByType("ReplayButton" as never).find(node => node.props.dimension === "4d")!;
-  expect(replay.props.course).toBeUndefined();
+  expect(renderer.root.findAllByType("ReplayButton" as never)).toHaveLength(0);
+  await act(async () => map().props.onReplay());
+  const replay = renderer.root.findByType("ReplayModal" as never);
+  expect(replay.props.open).toBe(true);
+  expect(replay.props.dimension).toBe("4d");
+  expect(replay.props.selection.sport).toBe("running");
+  await act(async () => replay.props.onClose());
+  expect(renderer.root.findByType("ReplayModal" as never).props.open).toBe(false);
   await act(async () => { root().props.onTouchStartCapture(); scene().props.onTouchStart(touch()); vi.advanceTimersByTime(450); });
   expect(map().props.overlaysHidden).toBe(true);
   await act(async () => scene().props.onTouchEnd());
@@ -173,6 +179,6 @@ it("expands the whole 3D preview and only exposes course options in full screen"
   expect(renderer.root.findAllByType("Text" as never).some(node => node.props.children === "Tap to open full screen")).toBe(true);
   await act(async () => button("Open 3D course in full screen").props.onPress());
   expect(map().parent!.props.pointerEvents).toBe("auto");
-  expect(map().props.optionsTop).toBe(154);
+  expect(map().props.optionsTop).toBe(110);
   expect(button("Open 3D course in full screen")).toBeUndefined();
 });

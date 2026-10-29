@@ -11,9 +11,9 @@ import { textStyle } from "./section";
 import { useReducedMotion } from "./use-reduced-motion";
 
 Mapbox.setAccessToken(mobileEnv.mapboxAccessToken);
-export default function CourseMap({ course, lanes, hiddenIds = [], unit, selectedId, focusRequest, onSelect, controlsBottom = 8, optionsTop, overlaysHidden = false, distanceTarget }: {
+export default function CourseMap({ course, lanes, hiddenIds = [], unit, selectedId, focusRequest, onSelect, controlsBottom = 8, optionsTop, onReplay, overlaysHidden = false, distanceTarget }: {
   distanceTarget?: CourseDistanceTarget | null;
-  hiddenIds?: readonly string[]; course: RaceCourse; lanes: ArenaSceneLane[]; unit: string; selectedId: string; focusRequest: number; onSelect(id: string): void; controlsBottom?: number; optionsTop?: number; overlaysHidden?: boolean;
+  hiddenIds?: readonly string[]; course: RaceCourse; lanes: ArenaSceneLane[]; unit: string; selectedId: string; focusRequest: number; onSelect(id: string): void; controlsBottom?: number; optionsTop?: number; onReplay?: () => void; overlaysHidden?: boolean;
 }) {
   const prefix = useId();
   const ref = useRef<ComponentRef<typeof Camera>>(null);
@@ -78,6 +78,7 @@ export default function CourseMap({ course, lanes, hiddenIds = [], unit, selecte
     {error ? <Text accessibilityRole="alert" style={{ ...textStyle("body"), position: "absolute", left: 8, right: 8, bottom: controlsBottom + 136, padding: 12, borderRadius: 12, backgroundColor: "#ffffff" }}>{error}</Text> : null}
     {optionsTop !== undefined ? <FieldOverlayView hidden={overlaysHidden} onTouchStart={event => event.stopPropagation()} style={{ position: "absolute", top: optionsTop, right: 12 }}>
       <CourseOptions
+        onReplay={onReplay}
         flat={flat}
         spaced={spaced}
         onToggleDimension={() => { controller.dimension(flat ? "3d" : "2d"); setFlat(!flat); if (controller.following) focus(); }}
