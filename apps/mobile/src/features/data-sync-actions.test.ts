@@ -72,7 +72,7 @@ describe("tracker action ownership", () => {
       await act(async () => {
         renderer = create(createElement(DataSyncActions));
       });
-      await act(async () => button("Import Garmin").props.onPress());
+      await act(async () => button("Import file").props.onPress());
       await act(async () => {
         if (change === "unmount") renderer.unmount();
         else {
@@ -98,7 +98,7 @@ describe("tracker action ownership", () => {
     await act(async () => {
       renderer = create(createElement(DataSyncActions));
     });
-    await act(async () => button("Import Garmin").props.onPress());
+    await act(async () => button("Import file").props.onPress());
     expect(fetch).toHaveBeenCalledWith(file.assets[0].uri);
     mock.user = { id: "bob", mode: "live" };
     await act(async () => renderer.update(createElement(DataSyncActions)));
@@ -120,7 +120,7 @@ describe("tracker action ownership", () => {
     await act(async () => {
       renderer = create(createElement(DataSyncActions));
     });
-    await act(async () => button("Import Garmin").props.onPress());
+    await act(async () => button("Import file").props.onPress());
     expect(fetch).toHaveBeenLastCalledWith(
       "https://test.local/api/fitness/import",
       expect.objectContaining({
@@ -145,7 +145,7 @@ describe("tracker action ownership", () => {
     await act(async () => {
       renderer = create(createElement(DataSyncActions));
     });
-    await act(async () => button("Import Garmin").props.onPress());
+    await act(async () => button("Import file").props.onPress());
     expect(JSON.stringify(renderer.toJSON())).toContain(
       "Choose a .fit, .gpx, .tcx, or .zip file.",
     );

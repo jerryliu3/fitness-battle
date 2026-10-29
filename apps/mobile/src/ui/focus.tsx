@@ -205,12 +205,18 @@ export function FocusSidePanel({
     return () => animation.stop();
   }, [open, present, progress, reduce]);
 
+  if (!present) return null;
+
   return (
-    <Modal
-      visible={present}
-      transparent
-      animationType="none"
-      onRequestClose={onClose}
+    <View
+      style={[
+        StyleSheet.absoluteFill,
+        {
+          zIndex: 100,
+          elevation: 100,
+        },
+      ]}
+      pointerEvents={open ? "auto" : "none"}
     >
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : undefined}
@@ -285,7 +291,7 @@ export function FocusSidePanel({
           </View>
         </Animated.View>
       </KeyboardAvoidingView>
-    </Modal>
+    </View>
   );
 }
 export function FocusHeading({

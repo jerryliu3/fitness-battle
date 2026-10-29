@@ -138,7 +138,7 @@ export function DataSyncActions({ provider }: { provider?: ProviderId }) {
       {!provider ? (
         <>
           <FocusButton
-            label="Import Garmin file (.fit, .gpx, .tcx, .zip)"
+            label="Import file (.fit, .gpx, .tcx, .zip)"
             disabled={busy}
             secondary
             onPress={() =>

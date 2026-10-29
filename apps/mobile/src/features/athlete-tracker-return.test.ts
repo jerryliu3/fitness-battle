@@ -10,6 +10,7 @@ const mock = vi.hoisted(() => ({
   push: vi.fn(),
   back: vi.fn(),
   setParams: vi.fn(),
+  canGoBackValue: true,
 }));
 vi.mock("react-native", () => ({
   useWindowDimensions: () => ({ width: 390, height: 844, fontScale: 1 }),
@@ -30,7 +31,7 @@ vi.mock("expo-router", () => ({
     push: mock.push,
     back: mock.back,
     setParams: mock.setParams,
-    canGoBack: () => true,
+    canGoBack: () => mock.canGoBackValue,
   }),
 }));
 vi.mock("heroui-native/button", () => ({ Button: "Button" }));
@@ -129,9 +130,25 @@ describe("athlete profile navigation and layout", () => {
     expect(sidePanel.props.open).toBe(true);
   });
 
-  it("subpanel back button returns to /athlete with edit=1", async () => {
+  it("subpanel back button calls router.back() when canGoBack is true", async () => {
     vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
     mock.params = { panel: "connections" };
+    mock.canGoBackValue = true;
+    await act(async () => {
+      renderer = create(createElement(AthleteScreen));
+    });
+    const screenHeader = renderer.root.findByType("ScreenHeader" as never);
+    expect(screenHeader.props.title).toBe("Data Sync");
+    await act(async () => {
+      screenHeader.props.onBack();
+    });
+    expect(mock.back).toHaveBeenCalled();
+  });
+
+  it("subpanel back button returns to /athlete with edit=1 when cannot go back", async () => {
+    vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
+    mock.params = { panel: "connections" };
+    mock.canGoBackValue = false;
     await act(async () => {
       renderer = create(createElement(AthleteScreen));
     });
