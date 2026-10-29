@@ -1,7 +1,7 @@
 "use client";
 import { AppParagraph, AppText, typographyStyle, SectionHeader, Section, AppHeading, TextAction } from "@/ui/section";
 
-import { isOwnerEmail } from "@/lib/auth/design-access";
+import { isAdminEmail } from "@/lib/auth/admin-access";
 import { ReportIssue } from "@/components/report-issue";
 import { useAuth } from "@/components/auth-context";
 import { useCompete } from "@/components/compete-context";
@@ -860,7 +860,7 @@ function YouContent({ surface }: { surface: "progress" | "athlete" }) {
         openProfileEdit={requestedEdit === "profile"}
         sections="profile"
       />
-      {isOwnerEmail(user.email) && (
+      {isAdminEmail(user.email) && (
               <Link href="/admin" className="fb-btn-line">Round lab</Link>
             )}
       <nav className="focus-settings-list" aria-label="Athlete settings">

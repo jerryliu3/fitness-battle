@@ -2,17 +2,21 @@
 import { AppParagraph, SectionHeader, AppHeading } from "@/ui/section";
 
 import { useEffect, useRef, useState } from "react";
-import { competeNow, freshState, reduceCompete, rollClock, type CompeteState } from "@fitness-battle/shared";
+import { useRouter } from "next/navigation";
+import { competeNow, freshState, reduceCompete, rollClock, webProductPath, type CompeteState } from "@fitness-battle/shared";
 import { useCompete } from "@/components/compete-context";
 import { useAuth } from "@/components/auth-context";
 import { WeekReveal } from "@/features/split/components/week-reveal";
-import { isOwnerEmail } from "@/lib/auth/design-access";
+import { isAdminEmail } from "@/lib/auth/admin-access";
+import { buildLoginHref } from "@/lib/auth/login-redirect";
 import { AdminScenarioControls } from "@/features/you/admin-scenario-controls";
 import { AdminRouteControls } from "@/features/you/admin-route-controls";
 import { AdminFieldControls } from "@/features/you/admin-field-controls";
+
 export default function AdminLab() {
+  const router = useRouter();
   const { state, refresh } = useCompete();
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
   const [sandbox, setSandbox] = useState<CompeteState | null>(null);
   const [previewResults, setPreviewResults] = useState(false);
   const [target, setTarget] = useState("");
@@ -22,6 +26,17 @@ export default function AdminLab() {
   const [action, setAction] = useState("settle-due");
   const [busy, setBusy] = useState(false), [note, setNote] = useState("");
   const owner = useRef(user?.id); owner.current = user?.id;
+
+  useEffect(() => {
+    if (!loading) {
+      if (!user) {
+        router.replace(buildLoginHref("/app/admin"));
+      } else if (!isAdminEmail(user.email)) {
+        router.replace(webProductPath("/today?denied=admin"));
+      }
+    }
+  }, [loading, user, router]);
+
   useEffect(() => { setBusy(false); setSandbox(null); setPreview(null); setTarget(""); setConfirmation(""); setNote(""); }, [user?.id]);
   const local = sandbox ?? state ?? freshState();
   function change(action: Parameters<typeof reduceCompete>[1]) { setSandbox(reduceCompete(local, action)); }
@@ -38,6 +53,11 @@ export default function AdminLab() {
     } catch (error) { if (owner.current === accountId) setNote(error instanceof Error ? error.message : "Could not load account."); }
     finally { if (owner.current === accountId) setBusy(false); }
   }
+
+  if (loading || !user || !isAdminEmail(user.email)) {
+    return null;
+  }
+
   return <main className="fb-card" style={{ padding: 24, maxWidth: 800, margin: "auto" }}>
     <AppHeading level={1} role="display">Round lab</AppHeading>
     <AppParagraph typographyRole="body" className="fb-copy">Local simulation is isolated from your account. Production settlement below writes real results.</AppParagraph>
@@ -55,7 +75,7 @@ export default function AdminLab() {
       {previewResults && <WeekReveal state={local} ready preview onDismiss={(revealIds) => { setSandbox(reduceCompete(local, { type: "acknowledge-reveal", revealIds })); setPreviewResults(false); }}/>}
       <details><summary>Sandbox rounds</summary><pre style={{ overflow: "auto" }}>{JSON.stringify({ enrollments: local.enrollments, results: local.periodResults }, null, 2)}</pre></details>
     </section>
-    {user?.mode === "supabase" && isOwnerEmail(user.email) && <section>
+    {user.mode === "supabase" && <section>
       <SectionHeader title="Production settlement"/>
       <AppParagraph typographyRole="body">Load an athlete first. Closing an open round early records real results and advances their enrollment to the next round. Other athletes are not modified.</AppParagraph>
       <label>Athlete account ID<input className="fb-input" disabled={busy} value={target} placeholder={user.id} onChange={(event) => { setTarget(event.target.value); setPreview(null); }}/></label>
@@ -81,9 +101,9 @@ export default function AdminLab() {
         }}>Run production settlement</button>
       </>}
     </section>}
-    {user?.mode === "supabase" && isOwnerEmail(user.email) && <AdminScenarioControls target={target} owner={user.id} onTargetChange={(value) => { setTarget(value); setPreview(null); }}/>}
-    {user?.mode === "supabase" && isOwnerEmail(user.email) && <AdminFieldControls target={target} owner={user.id}/>}
-    {user?.mode === "supabase" && isOwnerEmail(user.email) && <AdminRouteControls key={user.id}/>}
+    {user.mode === "supabase" && <AdminScenarioControls target={target} owner={user.id} onTargetChange={(value) => { setTarget(value); setPreview(null); }}/>}
+    {user.mode === "supabase" && <AdminFieldControls target={target} owner={user.id}/>}
+    {user.mode === "supabase" && <AdminRouteControls key={user.id}/>}
     {note && <AppParagraph typographyRole="body" role="status">{note}</AppParagraph>}
   </main>;
 }
