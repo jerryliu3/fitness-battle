@@ -175,19 +175,6 @@ export function CrewRelay(props: Props) {
       {!compact && view.rosterFootnote ? (
         <AppText role="caption" secondary>{view.rosterFootnote}</AppText>
       ) : null}
-      {!compact && view.target ? (
-        <AppText role="caption" secondary>
-          {view.model.remaining
-            ? `${volume(view.model.remaining)} ${view.kind === "baseline" ? "to match last week" : "to the target"}`
-            : view.model.total > view.target
-              ? `${volume(view.model.total - view.target)} beyond ${view.kind === "baseline" ? "last week" : "the target"}`
-              : "Target reached together."}
-        </AppText>
-      ) : !compact ? (
-        <AppText role="caption" secondary>
-          Recorded contributions are shown without inventing a finish.
-        </AppText>
-      ) : null}
     </View>
   );
 }
