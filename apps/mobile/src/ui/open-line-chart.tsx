@@ -13,8 +13,14 @@ export function OpenLineChart({ chart, label, unit, range, onRangeChange, includ
   onRangeChange: (range: OpenLineRange) => void; includeYear?: boolean; comparisonLabel?: string; live?: boolean; footerAction?: ReactNode;
 }) {
   const [selected, setSelected] = useState(false);
-  const pulse = useRef(new Animated.Value(1)).current;
-  useEffect(() => { if (!live || selected) return; const animation = Animated.loop(Animated.sequence([Animated.timing(pulse, { toValue: .25, duration: 900, useNativeDriver: true }), Animated.timing(pulse, { toValue: 1, duration: 900, useNativeDriver: true })])); animation.start(); return () => animation.stop(); }, [live, selected, pulse]);
+  const pulse = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    if (!live || selected) return;
+    pulse.setValue(0);
+    const animation = Animated.loop(Animated.timing(pulse, { toValue: 1, duration: 1800, useNativeDriver: false }));
+    animation.start();
+    return () => animation.stop();
+  }, [live, selected, pulse]);
   const end = chart.points.at(-1);
   return <View style={{ gap: 12 }}>
     <ChartScrubber key={range} points={chart.points} width={chart.width} height={chart.height} plotTop={chart.top} plotBottom={chart.bottom} label={label} onSelectionChange={point => setSelected(!!point)}
@@ -24,10 +30,10 @@ export function OpenLineChart({ chart, label, unit, range, onRangeChange, includ
         {!!chart.previous && <Polyline points={chart.previous} fill="none" stroke={c.muted} strokeWidth={1.5} strokeDasharray="2 5" strokeLinecap="round" opacity={.65} />}
         <Polyline points={chart.line} fill="none" stroke={c.tennis} strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" />
         {live && !selected && end && <Circle cx={end.x} cy={end.y} r={3.5} fill={c.tennis} />}
-        {live && !selected && end && <LiveCircle cx={end.x} cy={end.y} r={8} fill={c.tennis} opacity={pulse} />}
+        {live && !selected && end && <LiveCircle cx={end.x} cy={end.y} r={pulse.interpolate({ inputRange: [0, .75, 1], outputRange: [3.5, 11, 11] })} fill={c.tennis} opacity={pulse.interpolate({ inputRange: [0, .75, 1], outputRange: [.25, 0, 0] })} />}
         {chart.points.length === 1 && <Circle cx={chart.points[0]!.x} cy={chart.points[0]!.y} r={3} fill={c.tennis} />}
       </Svg>
-      {comparisonLabel && chart.previous && <View pointerEvents="none" style={{ position: "absolute", right: 0, top: Math.max(0, Number(chart.previous.trim().split(/\s+/).at(-1)?.split(",")[1] ?? 28) - 28), maxWidth: "100%" }}><AppText role="caption" secondary>··· {comparisonLabel}</AppText></View>}
+      {comparisonLabel && chart.previous && <View pointerEvents="none" style={{ position: "absolute", right: 0, top: Math.max(0, Number(chart.previous.trim().split(/\s+/).at(-1)?.split(",")[1] ?? 28) - 28), maxWidth: "100%" }}><AppText role="caption" secondary>{comparisonLabel}</AppText></View>}
       </View>
     </ChartScrubber>
     <View style={s.footer}><OpenLineRangeToggle value={range} onChange={onRangeChange} includeYear={includeYear} />{footerAction}</View>

@@ -21,7 +21,7 @@ export function OpenLineChart({ chart, label, unit, range, onRangeChange, includ
 
         {chart.points.length === 1 && <circle cx={chart.points[0]!.x} cy={chart.points[0]!.y} r="3" fill={c.tennis} />}
       </svg>
-      {comparisonLabel && chart.previous && <span className="open-line-period-label" style={{ top: `${Math.max(0, Number(chart.previous.trim().split(/\s+/).at(-1)?.split(",")[1] ?? 28) - 28) / chart.height * 100}%` }}>··· {comparisonLabel}</span>}
+      {comparisonLabel && chart.previous && <span className="open-line-period-label" style={{ top: `${Math.max(0, Number(chart.previous.trim().split(/\s+/).at(-1)?.split(",")[1] ?? 28) - 28) / chart.height * 100}%` }}>{comparisonLabel}</span>}
       {live && !selected && end && <span className="open-line-live" style={{ background: c.tennis, left: `${end.x / chart.width * 100}%`, top: `${end.y / chart.height * 100}%` }}><i /></span>}
     </ChartScrubber>
     <div className="open-line-footer"><OpenLineRangeToggle value={range} onChange={onRangeChange} includeYear={includeYear} />{footerAction}</div>
