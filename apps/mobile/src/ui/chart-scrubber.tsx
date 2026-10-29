@@ -12,7 +12,7 @@ const DIRECTION_LOCK_PX = 4;
 
 /** One touch surface, shared by line and bar charts. Vertical drags yield to the page. */
 export function ChartScrubber({
-  points, width, height, plotTop, plotBottom, children, onSelect, label, summaryOnSelection = false, hideSummary = false, renderSummary, onSelectionChange,
+  points, width, height, plotTop, plotBottom, children, onSelect, label, summaryOnSelection = false, hideSummary = false, renderSummary, onSelectionChange, selectedPointId,
 }: {
   points: readonly ChartDatum[];
   width: number;
@@ -25,6 +25,7 @@ export function ChartScrubber({
   summaryOnSelection?: boolean;
   hideSummary?: boolean;
   renderSummary?: (point: ChartDatum | undefined) => ReactNode;
+  selectedPointId?: string;
   onSelectionChange?: (point: ChartDatum | undefined) => void;
 }) {
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -32,7 +33,7 @@ export function ChartScrubber({
   const lastId = useRef<string | null>(null);
   const touchStart = useRef<{ x: number; y: number; locationX: number } | null>(null);
   const direction = useRef<"horizontal" | "vertical" | null>(null);
-  const selected = points.find(point => point.id === selectedId);
+  const selected = points.find(point => point.id === (selectedPointId ?? selectedId));
   const latest = useRef({ points, width, onSelect, onSelectionChange });
   latest.current = { points, width, onSelect, onSelectionChange };
   const inspect = (locationX: number) => {
@@ -77,7 +78,7 @@ export function ChartScrubber({
     onPanResponderTerminate: () => { lastId.current = null; direction.current = null; },
   }), []);
   const move = (step: number) => {
-    const index = points.findIndex(point => point.id === selectedId);
+    const index = points.findIndex(point => point.id === (selectedPointId ?? selectedId));
     const point = points[Math.max(0, Math.min(points.length - 1, (index < 0 ? points.length - 1 : index) + step))];
     if (point) inspect(point.x / width * measuredWidth.current);
   };

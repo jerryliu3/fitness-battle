@@ -80,6 +80,7 @@ vi.mock("../ui/focus", () => ({
 }));
 
 vi.mock("../theme", () => ({
+  SHELL_COLORS: { ink: "#142b3b", muted: "#637482", tennis: "#f7c948" },
   fonts: {
     bodyBold: "System",
     body: "System",

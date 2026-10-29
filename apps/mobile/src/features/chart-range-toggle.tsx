@@ -15,24 +15,4 @@ export function ChartRangeToggle({ value, onChange }: { value: TrainingRange; on
 const s = StyleSheet.create({
   openRoot: { flexDirection: "row", gap: 4 },
   openButton: { minWidth: 44, minHeight: 44, paddingHorizontal: 12, borderRadius: 8, alignItems: "center", justifyContent: "center" },
-  root: {
-    flexDirection: "row",
-    gap: 2,
-    padding: 2,
-    borderRadius: 7,
-    borderWidth: 1,
-    borderColor: c.line,
-    backgroundColor: c.soft,
-  },
-  btn: {
-    minWidth: 32,
-    minHeight: 32,
-    paddingHorizontal: 8,
-    borderRadius: 5,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  btnOn: {
-    backgroundColor: c.ink,
-  },
 });

@@ -76,3 +76,16 @@ it("selects points directly on tap anywhere on the chart", async () => {
   });
   expect(select).toHaveBeenCalledWith("tue");
 });
+
+it("follows an externally selected analytics point when it changes", async () => {
+  vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
+  const chart = (id: string) => createElement(ChartScrubber, {
+    points, width: 100, height: 100, plotTop: 0, plotBottom: 100,
+    label: "Trend", selectedPointId: id, children: null,
+  });
+  await act(async () => { renderer = create(chart("mon")); });
+  const reading = () => renderer.root.findByProps({ accessibilityRole: "adjustable" }).props.accessibilityValue.text;
+  expect(reading()).toBe("Monday, 1 hr");
+  await act(async () => renderer.update(chart("tue")));
+  expect(reading()).toBe("Tuesday, 3 hr");
+});

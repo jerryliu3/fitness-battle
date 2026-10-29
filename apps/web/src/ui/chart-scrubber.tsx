@@ -24,6 +24,7 @@ export function ChartScrubber({
   hideSummary = false,
   renderSummary,
   onSelectionChange,
+  selectedPointId,
 }: {
   points: readonly ChartDatum[];
   width: number;
@@ -36,6 +37,7 @@ export function ChartScrubber({
   summaryOnSelection?: boolean;
   hideSummary?: boolean;
   renderSummary?: (point: ChartDatum | undefined) => ReactNode;
+  selectedPointId?: string;
   onSelectionChange?: (point: ChartDatum | undefined) => void;
 }) {
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -46,7 +48,7 @@ export function ChartScrubber({
   const direction = useRef<"horizontal" | "vertical" | null>(null);
   const origin = useRef({ x: 0, y: 0 });
   const summaryId = useId();
-  const selected = points.find((point) => point.id === selectedId);
+  const selected = points.find((point) => point.id === (selectedPointId ?? selectedId));
   const latest = useRef({ points, width, onSelect, onSelectionChange });
   latest.current = { points, width, onSelect, onSelectionChange };
 
@@ -113,7 +115,7 @@ export function ChartScrubber({
 
   function moveSelection(step: number) {
     const current = latest.current;
-    const index = current.points.findIndex((point) => point.id === selectedId);
+    const index = current.points.findIndex((point) => point.id === (selectedPointId ?? selectedId));
     const next = current.points[
       Math.max(0, Math.min(current.points.length - 1, (index < 0 ? current.points.length - 1 : index) + step))
     ];

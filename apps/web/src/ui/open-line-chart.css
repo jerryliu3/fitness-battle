@@ -9,14 +9,11 @@
 .open-line-ranges{display:flex;gap:4px}
 .open-line-ranges>button{border:0;background:transparent;min-width:44px;min-height:44px;border-radius:8px;padding:8px 12px;font:var(--type-label);color:var(--muted);cursor:pointer}
 .open-line-ranges>button[aria-pressed=true]{background:transparent;color:var(--ink)}
-.open-line-comparison{display:flex;align-items:center;gap:6px;color:var(--muted);font:var(--type-caption)}
-.open-line-comparison i{width:18px;border-top:2px dotted var(--muted)}
 
-.chart-live-dot{transform-box:fill-box;transform-origin:center;animation:chart-live-pulse 1.8s ease-in-out infinite}@keyframes chart-live-pulse{50%{opacity:.35;transform:scale(1.6)}}@media(prefers-reduced-motion:reduce){.chart-live-dot{animation:none}}
 
 .open-line-chart .chart-scrubber-plot{position:relative}
 .open-line-period-label{position:absolute;right:0;max-width:100%;text-align:right;white-space:nowrap;font:var(--type-caption);color:var(--muted);pointer-events:none}
-.open-line-live{position:absolute;width:8px;height:8px;border-radius:50%;background:#F7C948;transform:translate(-50%,-50%);pointer-events:none}
+.open-line-live{position:absolute;width:8px;height:8px;border-radius:50%;transform:translate(-50%,-50%);pointer-events:none}
 .open-line-live i{position:absolute;inset:0;border-radius:50%;background:inherit;opacity:0;animation:effort-live-halo 1.8s cubic-bezier(0,0,.2,1) infinite}
 @keyframes effort-live-halo{0%{transform:scale(1);opacity:.5}65%{opacity:.18}90%,100%{transform:scale(3.2);opacity:0}}
 @media(prefers-reduced-motion:reduce){.open-line-live i{animation:none;opacity:.25}}
