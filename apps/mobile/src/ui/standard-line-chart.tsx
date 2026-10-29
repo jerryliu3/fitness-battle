@@ -1,7 +1,7 @@
 import { useMemo } from "react";
-import { View } from "react-native";
+import { Animated, View } from "react-native";
 import {
-  Circle,
+  Defs, ClipPath, Circle,
   G,
   Line,
   Path,
@@ -14,7 +14,9 @@ import {
 } from "@fitness-battle/shared";
 import { ChartSvg, ChartText } from "./chart-text";
 
+const AnimatedRect=Animated.createAnimatedComponent(Rect);
 export interface StandardLineChartProps {
+  revealProgress?: Animated.Value;
   values: number[];
   xLabels?: [string, string, string]; // [start, mid, end]
   formatY?: (value: number) => string;
@@ -32,6 +34,7 @@ export interface StandardLineChartProps {
 
 export function StandardLineChart({
   values,
+  revealProgress,
   xLabels,
   formatY = (v) => `${Math.round(v)}`,
   selectedIdx,
@@ -100,6 +103,7 @@ export function StandardLineChart({
           stroke={c.line}
         />
 
+        <Defs><ClipPath id="onboarding-draw"><AnimatedRect x={0} y={0} height={height} width={revealProgress?revealProgress.interpolate({inputRange:[0,1],outputRange:[0,340]}):340}/></ClipPath></Defs><G clipPath={revealProgress?"url(#onboarding-draw)":undefined}>
         {/* Corridor fill */}
         {geo.corridorPath && (
           <Path d={geo.corridorPath} fill={stroke} opacity={0.16} />
@@ -144,6 +148,7 @@ export function StandardLineChart({
           />
         )}
 
+        </G>
         {/* X-axis date labels */}
         {xLabels && (
           <>

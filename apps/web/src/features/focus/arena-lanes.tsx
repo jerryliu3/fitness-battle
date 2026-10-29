@@ -38,6 +38,7 @@ export function ArenaLanes({
   selected,
   focusOnMount = false,
   followSelected = false,
+  replayFocusIds,
   playback = false,
   onSelect,
   onPan,
@@ -61,6 +62,7 @@ export function ArenaLanes({
   focusOnMount?: boolean;
   /** Keep a passive replay camera centered on its selected athlete. */
   followSelected?: boolean;
+  replayFocusIds?: readonly string[];
   /** Replay already interpolates positions on its own animation clock. */
   playback?: boolean;
   onSelect: (id: string) => void;
@@ -100,7 +102,9 @@ export function ArenaLanes({
   const previousCamera = useRef({ center: effectiveView.center, span: effectiveView.span, ground: appearance.ground });
   const cameraChanged = previousCamera.current.center !== effectiveView.center || previousCamera.current.span !== effectiveView.span || previousCamera.current.ground !== appearance.ground;
   useLayoutEffect(() => { previousCamera.current = { center: effectiveView.center, span: effectiveView.span, ground: appearance.ground }; });
-  const course = useMemo(() => fieldCourse(size.width, size.height, ordered.length, effectiveView, unit, appearance), [size.width, size.height, ordered.length, effectiveView.center, effectiveView.span, unit, appearance]);
+  const replayFocusKey = replayFocusIds?.join(":");
+  const replayFocus = replayFocusIds?.map(id=>ordered.findIndex(l=>l.id===id));
+  const course = useMemo(() => fieldCourse(size.width, size.height, ordered.length, effectiveView, unit, appearance, replayFocus), [size.width, size.height, ordered.length, effectiveView.center, effectiveView.span, unit, appearance, replayFocusKey]);
   const firstVisible = Math.max(0, Math.floor((visibleScroll - course.left) / course.laneWidth) - 2);
   const lastVisible = Math.min(ordered.length - 1, Math.ceil((visibleScroll + size.width - course.left) / course.laneWidth) + 2);
   const groundPaint = useMemo(() => fieldCourseScene(course, appearance, ordered, unit, prefix, standings ? undefined : { first: firstVisible, last: lastVisible }).map(drawFieldNode), [course, appearance, unit, prefix, firstVisible, lastVisible, standings]);
@@ -141,16 +145,16 @@ export function ArenaLanes({
     const laneIndex = followSelected ? Math.max(0, ordered.findIndex(lane => lane.id === selected)) : previous && !previous.oval && !course.oval && previous.count === ordered.length
       ? ((laneScroll.current ?? el.scrollLeft) + previous.width / 2 - previous.left) / previous.laneWidth - 0.5
       : Math.max(0, ordered.findIndex((lane) => lane.you));
-    el.scrollLeft = course.oval ? 0 : scrollAfterZoom.current ?? Math.max(0, Math.min(width - size.width, course.left + (laneIndex + .5) * laneWidth - size.width / 2));
+    el.scrollLeft = course.oval ? 0 : course.focusScroll ?? scrollAfterZoom.current ?? Math.max(0, Math.min(width - size.width, course.left + (laneIndex + .5) * laneWidth - size.width / 2));
     scrollAfterZoom.current = null;
     setVisibleScroll(el.scrollLeft);
     laneScroll.current = el.scrollLeft;
     previousGeometry.current = { width: size.width, laneWidth, count: ordered.length, left: course.left, oval: course.oval };
-  }, [width, laneWidth, size.width, standings, course.oval, course.left, followSelected, selected]);
+  }, [width, laneWidth, size.width, standings, course.oval, course.left, course.focusScroll, followSelected, selected]);
   const prevSelectedRef = useRef(focusOnMount ? "" : `${selected}:${focusRequest}`);
   useLayoutEffect(() => {
     const key = `${selected}:${focusRequest}`;
-    if (prevSelectedRef.current === key) return;
+    if (replayFocusIds || prevSelectedRef.current === key) return;
     prevSelectedRef.current = key;
     const el = host.current;
     if (!el || el.clientWidth === 0 || standings || course.oval || !selected) return;

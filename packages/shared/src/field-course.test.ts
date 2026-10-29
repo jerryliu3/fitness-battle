@@ -187,3 +187,13 @@ it("clips a solid route independently of the head and start visibility", () => {
     expect(fieldProgressTrail(course, 100, 3, "km")).not.toMatch(/NaN|Infinity/);
   }
 });
+
+it("fits separated replay actors while preserving ordinary field zoom", () => {
+  for (const width of [320,390,768]) for (const count of [8,30]) {
+    const course = fieldCourse(width,420,count,{center:18,span:1.2},"km",defaultFieldAppearance,[0,count-1]);
+    for (const index of [0,count-1]) {
+      const x=course.point(18,index).x-(course.focusScroll??0);
+      expect(x).toBeGreaterThan(40);expect(x).toBeLessThan(width-40);
+    }
+  }
+});

@@ -2184,7 +2184,7 @@
 .club-fullscreen-sheet:has(.moment-replay) > .club-sheet-heading,
 .club-fullscreen-sheet:has(.moment-replay) > .club-sheet-heading + p { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); }
 .moment-replay { position: absolute; inset: 0; color: var(--club-ink, #142b3b); }
-.moment-replay-field { position: absolute; inset: 0; pointer-events: none; }
+.moment-replay-field { position: absolute; inset: 180px 0; pointer-events: none; }
 .moment-replay-field .focus-lane-surface, .moment-replay-field .focus-lane-scroll { height: 100%; }
 .moment-replay-field .focus-lane-scroll { scrollbar-width: none; }
 .moment-replay-top { position: absolute; inset: max(12px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) auto max(16px, env(safe-area-inset-left)); display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; pointer-events: none; }
@@ -2359,3 +2359,5 @@
 }
 .focus-broadcast-overview .focus-field-overview { background: var(--card); }
 .focus-broadcast-replay-chip .competition-replay-trigger { border-radius: 999px; padding-inline: 14px; }
+
+.week-board-preview .competition-replay-scene{height:340px;min-height:340px;position:relative;flex:none}.week-board-preview{border-radius:20px;overflow:hidden;margin-bottom:20px}

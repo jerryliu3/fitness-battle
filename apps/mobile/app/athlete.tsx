@@ -1,3 +1,4 @@
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { SectionHeader, SectionStack, textStyle, AppText } from "../src/ui/section";
 import { SportIcon } from "../src/ui/sport-icon";
 import { activityFromSample } from "@fitness-battle/shared";
@@ -69,7 +70,7 @@ type AthletePanel =
   | "scoring"
   | "account";
 
-export default function AthleteScreen() {
+function AthleteContent({ inlineConnections = false }: { inlineConnections?: boolean }) {
   const { state, dispatch, saveError, retrySave } = useCompeteStore();
   const {
     user,
@@ -104,7 +105,7 @@ export default function AthleteScreen() {
   const [confirmFreeze, setConfirmFreeze] = useState(false);
   const [editOpen, setEditOpen] = useState(params.edit === "1");
   const [confirmSignOut, setConfirmSignOut] = useState(false);
-  const panel = params.panel ?? null;
+  const panel = inlineConnections ? "connections" : params.panel ?? null;
   function setPanel(next: AthletePanel | null) {
     if (next) {
       if (panel === next) return;
@@ -158,6 +159,11 @@ export default function AthleteScreen() {
       setNote("That tracker did not connect. Try again from the app.");
     }
     router.setParams({ tracker: undefined, provider: undefined });
+    if (user) void AsyncStorage.getItem(`onboarding-connect-return:${user.id}`).then(marker => {
+      if (!marker) return;
+      void AsyncStorage.removeItem(`onboarding-connect-return:${user.id}`);
+      router.replace("/onboarding");
+    }).catch(() => {});
   }, [dispatch, params.panel, params.provider, params.tracker, router, state]);
 
   if (!state || authLoading) {
@@ -295,7 +301,14 @@ export default function AthleteScreen() {
     setBusyProvider(providerId);
     setNote(null);
     try {
+      if (inlineConnections) await AsyncStorage.setItem(`onboarding-connect-return:${user.id}`, "1");
       const result = await startCloudTrackerConnect(providerId);
+      if (inlineConnections && (result.tracker || result.stub)) {
+        await AsyncStorage.removeItem(`onboarding-connect-return:${user.id}`);
+        router.replace("/onboarding");
+      } else if (inlineConnections && result.cancelled) {
+        await AsyncStorage.removeItem(`onboarding-connect-return:${user.id}`);
+      }
       if (currentUser.current !== user.id) return;
       const linked = result.provider ?? providerId;
       if (result.tracker === "connected") {
@@ -312,6 +325,7 @@ export default function AthleteScreen() {
       }
       setNote(result.message);
     } catch (error) {
+      if (inlineConnections) void AsyncStorage.removeItem(`onboarding-connect-return:${user.id}`);
       setNote(
         error instanceof Error ? error.message : "Could not start connect.",
       );
@@ -436,23 +450,16 @@ export default function AthleteScreen() {
   }
 
   if (panel === "connections") {
-    return (
-      <SafeAreaView style={styles.safe} edges={["top"]}>
-        {pageHeader}
-        <ScrollView
-          automaticallyAdjustKeyboardInsets
-          contentContainerStyle={f.content}
-          keyboardShouldPersistTaps="handled"
-        >
-<SectionStack divided={false}>
+    const content = (<SectionStack divided={false}>
+          {!inlineConnections && !state.onboardingCompleted && <FocusButton label="Continue setup →" onPress={() => router.push("/onboarding")}/>}
           {providersForDevice().map((provider) => {
             const link = state.links.find(
               (row) => row.provider === provider.id,
             );
             const status =
-              link?.status === "connected" || link?.linked
+              link?.status === "connected"
                 ? "Connected"
-                : "Not connected";
+                : link?.status === "stub" ? "Demo stub · not live" : "Not connected";
             const onPhone = isDeviceProvider(provider.id);
             const cloud = isCloudOAuthProvider(provider.id);
             const hint = onPhone
@@ -536,8 +543,18 @@ export default function AthleteScreen() {
           ) : note ? (
             <Text style={styles.copy}>{note}</Text>
           ) : null}
-          <DataSyncActions />
-        </SectionStack>
+          <DataSyncActions includeCalibration={!inlineConnections}/>
+        </SectionStack>);
+    if (inlineConnections) return content;
+    return (
+      <SafeAreaView style={styles.safe} edges={["top"]}>
+        {pageHeader}
+        <ScrollView
+          automaticallyAdjustKeyboardInsets
+          contentContainerStyle={f.content}
+          keyboardShouldPersistTaps="handled"
+        >
+{content}
 </ScrollView>
       </SafeAreaView>
     );
@@ -998,3 +1015,6 @@ const styles = StyleSheet.create({
     color: SHELL_COLORS.ink
 },
 });
+
+export function TrackerConnections() { return <AthleteContent inlineConnections/>; }
+export default function AthleteScreen() { return <AthleteContent/>; }

@@ -1,306 +1,58 @@
 "use client";
-import { AppParagraph, AppText, AppHeading } from "@/ui/section";
-
-import { ProfilePhoto } from "@/features/you/profile-photo";
+import { Suspense, useEffect, useRef, useState } from "react";
+import { TrackerConnections } from "@/features/you/you-route";
+import { OnboardingOvertake } from "@/features/club/onboarding-overtake";
+import { useRouter, useSearchParams } from "next/navigation";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
+import { nextDailyWaveWindowAt, waveTimeLabel, PROVIDERS, SPORTS, type SportId, type UnitSystem } from "@fitness-battle/shared";
+import { AppHeading, AppParagraph, typographyStyle } from "@/ui/section";
+import { Ember } from "@/components/mascot/ember";
 import { AuthGate } from "@/components/auth-gate";
 import { useAuth } from "@/components/auth-context";
 import { useCompete } from "@/components/compete-context";
-import {
-  BACKFILL_DAYS,
-  PROVIDERS,
-  SPORTS,
-  HEALTH_METRICS,
-  type SportId,
-  type UnitSystem,
-} from "@fitness-battle/shared";
+import { ProfilePhoto } from "@/features/you/profile-photo";
+import { OnboardingOutlook, OnboardingSummary, OnboardingUnits } from "@/features/club/onboarding-visuals";
 import { resolveSafePostLoginPath } from "@/lib/auth/login-redirect";
-import { useRouter, useSearchParams } from "next/navigation";
-import { Suspense, useState } from "react";
-
-type Step = "prefs" | "connect" | "backfill" | "done";
-
-function OnboardingFlow() {
-  const reduced = useReducedMotion();
-  const { user } = useAuth();
-  const { state, dispatch } = useCompete();
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const [step, setStep] = useState<Step>("prefs");
-  const [name, setName] = useState(user?.displayName ?? "");
-  const [city, setCity] = useState("Toronto");
-  const [sports, setSports] = useState<SportId[]>(["running"]);
-  const sport = sports[0]!;
-  const [units, setUnits] = useState<UnitSystem>("us");
-  const [trackSleep, setTrackSleep] = useState(false);
-  const [connectMessage, setConnectMessage] = useState<string | null>(null);
-  const [busy, setBusy] = useState(false);
-
-  if (!state) return <AppParagraph typographyRole="body" className="fb-copy">Loading…</AppParagraph>;
-
-  const stravaLink = state.links.find((l) => l.provider === "strava");
-  const isStravaLinked = Boolean(stravaLink?.linked);
-
-  if (state.onboardingCompleted) {
-    return (
-      <section className="fb-card">
-        <AppParagraph typographyRole="label" className="fb-kicker">You are set</AppParagraph>
-        <AppHeading level={1} role="display" className="fb-title">Onboarding already finished</AppHeading>
-        <AppParagraph typographyRole="body" className="fb-copy">
-          {state.calibrated
-            ? `Preferences and the one-time ${BACKFILL_DAYS}-day calibration cannot be run again.`
-            : "Onboarding is complete. You can update preferences and run your one-time calibration anytime from Athlete."}
-        </AppParagraph>
-        <button type="button" className="fb-btn" onClick={() => router.replace("/today")}>
-          Back to Today
-        </button>
-      </section>
-    );
+const titles = ["Good things start with you.","What should we call you?","What moves you?","Bring your training along.","This is an Overtake.","Make every week count.","Your starting line is here."];
+function Setup({preview}:{preview:boolean}) {
+  const {state,dispatch} = useCompete(); const {user} = useAuth(); const router=useRouter(), params=useSearchParams(), reduced=useReducedMotion();
+  const finished = useRef(false), setupTop=useRef<HTMLElement>(null);
+  const [selectionError,setSelectionError]=useState(false),[now,setNow]=useState(Date.now());
+  useEffect(()=>{const timer=setInterval(()=>setNow(Date.now()),30_000);return ()=>clearInterval(timer);},[]);
+  const key=`onboarding-draft:v3:${user?.id??"guest"}`;
+  const [loadedKey,setLoadedKey]=useState("");
+  const [ready,setReady]=useState(false),[step,setStep]=useState(0),[name,setName]=useState(""),[city,setCity]=useState("");
+  useEffect(()=>{setupTop.current?.scrollIntoView({block:"start"});},[step]);
+  const [sports,setSports]=useState<SportId[]>(["running"]),[units,setUnits]=useState<UnitSystem>("us"),[sleep,setSleep]=useState(false);
+  useEffect(()=>{if(!state)return; let d;try{d=!preview?JSON.parse(sessionStorage.getItem(key)??"null"):null;}catch{}
+    setStep(Math.max(0,Math.min(6,Number(d?.step)||0)));setName(d?.name??state.name);setCity(d?.city??state.city);
+    setUnits(d?.units==="metric"||d?.units==="us"?d.units:state.units);
+    setSports(Array.isArray(d?.sports)?d.sports.filter((id:SportId)=>SPORTS.some(s=>s.id===id)):[state.primary]);setSleep(Boolean(d?.sleep));setLoadedKey(key);setReady(true);
+  },[key,preview,Boolean(state)]);
+  useEffect(()=>{if(ready&&loadedKey===key&&!preview)try{sessionStorage.setItem(key,JSON.stringify({step,name,city,sports,units,sleep}));}catch{}},[ready,loadedKey,preview,key,step,name,city,sports,units,sleep]);
+  if(!state||!ready)return <AppParagraph>Loading setup…</AppParagraph>;
+  function advance(){if(step===2&&!sports.length&&!sleep){setSelectionError(true);return;}setSelectionError(false);setStep(step+1);}
+  function finish(){if(preview){router.replace("/app/arena");return;}if(!user||finished.current)return;finished.current=true;
+    dispatch({type:"rename",name:name.trim()||user.displayName});dispatch({type:"set-city",city:city.trim()});dispatch({type:"set-units",units});
+    for(const sport of sports)dispatch({type:"opt-in",sport,accountId:user.id});if(sports[0])dispatch({type:"set-primary",sport:sports[0]});if(sleep)dispatch({type:"opt-in-health",metric:"sleep"});dispatch({type:"complete-onboarding"});
+    try{sessionStorage.removeItem(key);}catch{} router.replace(resolveSafePostLoginPath(params.get("next")));
   }
+  return <section ref={setupTop} className="fb-stack" style={{maxWidth:480,margin:"0 auto",padding:"20px 0",scrollMarginTop:80}}>
+    <div style={{background:"var(--action-soft, #fff5d1)",borderRadius:24,display:"grid",placeItems:"center",padding:12}}><Ember style={{width:140,height:140}}/></div>
+    <AnimatePresence mode="wait"><motion.div key={step} className="fb-stack" initial={reduced?false:{opacity:0,x:20}} animate={{opacity:1,x:0}} exit={{opacity:0}} transition={{duration:reduced?0:.22}}>
+      <AppParagraph typographyRole="caption">{preview?"DEBUG PREVIEW · NO CHANGES SAVED":`YOUR FIRST FIELD · ${step+1} / 7`}</AppParagraph>
+      <AppHeading level={1} role="display">{titles[step]}</AppHeading>
+      {step===0&&<AppParagraph>Meet Ember, your tiny teammate. Let’s set up your sports, preferences, and trackers one little step at a time.</AppParagraph>}
+      {step===1&&<>{!preview&&<ProfilePhoto state={state} email={user?.email}/>}<label className="fb-field">Display name<input value={name} onChange={e=>setName(e.target.value)} maxLength={80}/></label><label className="fb-field">City · optional<input value={city} onChange={e=>setCity(e.target.value)} maxLength={80}/></label></>}
+      {step===2&&<><AppParagraph>You can change this later under your profile.</AppParagraph><AppHeading>Sports</AppHeading><div className="fb-chips">{SPORTS.map(s=><button type="button" className={`fb-chip${sports.includes(s.id)?" on":""}`} key={s.id} aria-pressed={sports.includes(s.id)} onClick={()=>setSports(current=>current.includes(s.id)?current.filter(id=>id!==s.id):[...current,s.id])}>{s.name}</button>)}</div>{sports.length>1&&<label className="fb-field">Primary sport<select value={sports[0]} onChange={e=>{const id=e.target.value as SportId;setSports([id,...sports.filter(s=>s!==id)]);}}>{sports.map(id=><option key={id} value={id}>{SPORTS.find(s=>s.id===id)?.name}</option>)}</select></label>}{sports.some(s=>s!=="strength")&&<OnboardingUnits value={units} onChange={setUnits}/>}<AppHeading>Sleep & recovery</AppHeading><div className="fb-chips"><button type="button" className={`fb-chip${sleep?" on":""}`} aria-pressed={sleep} onClick={()=>setSleep(!sleep)}>Sleep tracking</button></div>{selectionError&&!sports.length&&!sleep&&<AppParagraph role="alert">Choose at least one sport or sleep tracking to continue.</AppParagraph>}</>}
 
-  async function savePrefs() {
-    if (name.trim()) dispatch({ type: "rename", name });
-    if (city.trim()) dispatch({ type: "set-city", city });
-    dispatch({ type: "set-units", units });
-    if (!sports.length) return;
-    for (const selected of sports) dispatch({ type: "opt-in", sport: selected, accountId: user?.id });
-    dispatch({ type: "set-primary", sport });
-    if (trackSleep) dispatch({ type: "opt-in-health", metric: "sleep" });
-    if (trackSleep) dispatch({ type: "set-focus", focus: { family: "sport", id: sport } });
-    setStep("connect");
-  }
-
-  async function connectTracker() {
-    setBusy(true);
-    setConnectMessage(null);
-    try {
-      const response = await fetch("/api/fitness/connect", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId: user?.id, provider: "strava" }),
-      });
-      const body = (await response.json()) as {
-        status?: string;
-        message?: string;
-        authorizeUrl?: string;
-      };
-      if (!response.ok) {
-        setConnectMessage("Could not start Strava. You can skip for now.");
-        return;
-      }
-      if (body.authorizeUrl) {
-        window.location.href = body.authorizeUrl;
-        return;
-      }
-      dispatch({ type: "link", provider: "strava" });
-      setConnectMessage(
-        body.message ??
-          "Live Strava needs server API keys. Demo stub linked for testing.",
-      );
-    } catch {
-      setConnectMessage("Could not reach the connect route. You can skip for now.");
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  function runBackfill() {
-    dispatch({ type: "import-history", level: "steady" });
-    setStep("done");
-  }
-
-  function finish() {
-    dispatch({ type: "complete-onboarding" });
-    router.replace(resolveSafePostLoginPath(searchParams.get("next")));
-  }
-
-  return (
-    <AnimatePresence mode="wait" initial={false}><motion.div key={step} initial={reduced ? false : { x: 28, opacity: 0 }} animate={{ x: 0, opacity: 1 }} exit={{ x: reduced ? 0 : -28, opacity: 0 }} transition={{ duration: reduced ? 0 : 0.2 }}>
-      <header>
-        <AppParagraph typographyRole="label" className="fb-kicker">
-          Setup · step{" "}
-          {step === "prefs" ? "1" : step === "connect" ? "2" : step === "backfill" ? "3" : "4"}{" "}
-          of 4
-        </AppParagraph>
-        <AppHeading level={1} role="display" className="fb-title">
-          {step === "prefs" && "Your training profile"}
-          {step === "connect" && "Link a tracker"}
-          {step === "backfill" && "Import fitness history"}
-          {step === "done" && "You are ready"}
-        </AppHeading>
-        <AppParagraph typographyRole="body" className="fb-copy">
-          {step === "prefs" &&
-            "Name, city, units, and sports for your next 6 a.m. Eastern wave. You can change these later on Athlete."}
-          {step === "connect" &&
-            "Strava is the cloud default. Garmin, WHOOP, and Oura connect the same way on You once their keys are set. A Garmin file import works without API approval. Without keys this step stays an honest stub."}
-          {step === "backfill" &&
-            "Import your recent activity history to calibrate your starting rating and leave the baseline."}
-          {step === "done" &&
-            "Your events are registered for the next 6 a.m. Eastern wave. Competitors are revealed at the start."}
-        </AppParagraph>
-      </header>
-
-      {step === "prefs" ? (
-        <section className="fb-card fb-stack">
-          <ProfilePhoto state={state} email={user?.email} />
-          <label className="fb-field">
-            Display name
-            <input value={name} onChange={(e) => setName(e.target.value)} maxLength={32} />
-          </label>
-          <label className="fb-field">
-            City
-            <input value={city} onChange={(e) => setCity(e.target.value)} maxLength={40} />
-          </label>
-          <AppParagraph typographyRole="caption" className="fb-note">Units of measurement (required)</AppParagraph>
-          <div className="fb-chips" role="group" aria-label="Units">
-            <button
-              type="button"
-              className={units === "us" ? "fb-chip on" : "fb-chip"}
-              aria-pressed={units === "us"}
-              onClick={() => setUnits("us")}
-            >
-              Miles (US)
-            </button>
-            <button
-              type="button"
-              className={units === "metric" ? "fb-chip on" : "fb-chip"}
-              aria-pressed={units === "metric"}
-              onClick={() => setUnits("metric")}
-            >
-              Kilometres
-            </button>
-          </div>
-          <div className="fb-chips">
-            {SPORTS.map((item) => (
-              <button
-                key={item.id}
-                type="button"
-                className={sports.includes(item.id) ? "fb-chip on" : "fb-chip"}
-                aria-pressed={sports.includes(item.id)}
-                onClick={() => setSports((current) => current.includes(item.id) ? current.length > 1 ? current.filter((id) => id !== item.id) : current : [...current, item.id])}
-              >
-                {item.name}
-              </button>
-            ))}
-          </div>
-          <AppParagraph typographyRole="caption" className="fb-note">Health metrics use last night, not distance.</AppParagraph>
-          <div className="fb-chips" aria-label="Health metrics">
-            {HEALTH_METRICS.map((item) => (
-              <button
-                key={item.id}
-                type="button"
-                className={trackSleep ? "fb-chip on" : "fb-chip"}
-                aria-pressed={trackSleep}
-                onClick={() => setTrackSleep((on) => !on)}
-              >
-                {item.name}
-                {trackSleep ? "" : " · add"}
-              </button>
-            ))}
-          </div>
-          <button type="button" className="fb-btn" onClick={savePrefs}>
-            Continue
-          </button>
-        </section>
-      ) : null}
-
-      {step === "connect" ? (
-        <section className="fb-card fb-stack">
-          {PROVIDERS.filter((p) => p.id === "strava").map((provider) => (
-            <div key={provider.id} className="fb-row">
-              <span className="fb-grow">
-                {provider.name}
-                <AppText as="small" role="body" secondary>
-                  {provider.blurb}
-                  {isStravaLinked
-                    ? ` · ${stravaLink?.status === "connected" ? "Connected" : "Demo stub (not live)"}`
-                    : " · Not connected"}
-                </AppText>
-              </span>
-            </div>
-          ))}
-          {connectMessage ? (
-            <AppParagraph typographyRole="caption" className="fb-note">{connectMessage}</AppParagraph>
-          ) : isStravaLinked ? (
-            <AppParagraph typographyRole="caption" className="fb-note">
-              Demo stub linked. Live Strava OAuth is not configured in this environment.
-            </AppParagraph>
-          ) : (
-            <AppParagraph typographyRole="caption" className="fb-note">
-              Without server API keys, linking connects an honest demo stub for testing.
-            </AppParagraph>
-          )}
-          {isStravaLinked ? (
-            <button type="button" className="fb-btn" onClick={() => setStep("backfill")}>
-              Continue to calibration
-            </button>
-          ) : (
-            <button type="button" className="fb-btn" disabled={busy} onClick={connectTracker}>
-              {busy ? "Connecting…" : "Link Strava"}
-            </button>
-          )}
-          <button type="button" className="fb-btn-line" onClick={() => setStep("backfill")}>
-            Skip for now
-          </button>
-        </section>
-      ) : null}
-
-      {step === "backfill" ? (
-        <section className="fb-card fb-stack">
-          {state.calibrated ? (
-            <AppParagraph typographyRole="body" className="fb-copy">Calibration already finished on this device.</AppParagraph>
-          ) : (
-            <>
-              <AppParagraph typographyRole="body" className="fb-copy">
-                Import your recent activity history to calibrate your starting rating
-                and leave the baseline.
-              </AppParagraph>
-              <button type="button" className="fb-btn" onClick={runBackfill}>
-                Import fitness history
-              </button>
-            </>
-          )}
-          <button
-            type="button"
-            className="fb-btn-line"
-            onClick={() => setStep("done")}
-          >
-            {state.calibrated ? "Continue" : "Skip calibration"}
-          </button>
-        </section>
-      ) : null}
-
-      {step === "done" ? (
-        <section className="fb-card fb-stack">
-          <AppParagraph typographyRole="body" className="fb-copy">
-            {state.calibrated
-              ? `History imported. Levels start from your ${BACKFILL_DAYS}-day sample.`
-              : `You can compete from the default baseline. You can still run the one-time ${BACKFILL_DAYS}-day calibration later from You, but only once.`}
-          </AppParagraph>
-          <button type="button" className="fb-btn" onClick={finish}>
-            Start competing
-          </button>
-          {!state.calibrated ? (
-            <button
-              type="button"
-              className="fb-btn-ghost"
-              onClick={() => setStep("backfill")}
-            >
-              Back to calibration
-            </button>
-          ) : null}
-        </section>
-      ) : null}
+      {step===3&&<><AppParagraph>Connect your trackers here, or skip and connect later under your profile. Provider authorization opens a secure sign-in window.</AppParagraph>{preview?PROVIDERS.map(p=><button key={p.id} className="fb-btn-line" disabled>{p.name} · Connect (preview)</button>):<TrackerConnections/>}</>}
+      {step===4&&<><AppParagraph>The moment your effort takes you ahead of another athlete. Don’t get overtaken!</AppParagraph><OnboardingOvertake/></>}
+      {step===5&&<OnboardingOutlook/>}
+      {step===6&&<><OnboardingSummary sports={sports} units={units} sleep={sleep}/><motion.div initial={{opacity:reduced?1:0}} animate={{opacity:1}} transition={{delay:reduced?0:(sports.length+Number(sleep))*.3+.4}}><AppParagraph typographyRole="label">Your next wave starts at {waveTimeLabel(nextDailyWaveWindowAt(new Date(now)).waveStart)}.</AppParagraph></motion.div></>}
+      <div style={{display:"flex",gap:12,alignItems:"stretch"}}>{step>0&&<button type="button" className="fb-btn-line" style={{flex:1}} onClick={()=>setStep(step-1)}>Back</button>}<button className="fb-btn" style={{flex:1}} type="button" onClick={()=>step<6?advance():finish()}>{step===6?preview?"Finish preview":"Finish":step===3?"Skip for now":"Continue"}</button></div>
     </motion.div></AnimatePresence>
-  );
+  </section>;
 }
-
-export default function OnboardingPage() {
-  return (
-    <AuthGate reason="Create an account to finish setup, link a tracker, and run the one-time calibration.">
-      <Suspense fallback={<AppParagraph typographyRole="body" className="fb-copy">Loading setup…</AppParagraph>}>
-        <OnboardingFlow />
-      </Suspense>
-    </AuthGate>
-  );
-}
+function Entry(){const preview=useSearchParams().get("preview")==="1";return preview?<Setup preview/>:<AuthGate reason="Sign in to save your preferences and join your first field."><Setup preview={false}/></AuthGate>;}
+export default function OnboardingPage(){return <Suspense fallback={<AppParagraph>Loading setup…</AppParagraph>}><Entry/></Suspense>;}

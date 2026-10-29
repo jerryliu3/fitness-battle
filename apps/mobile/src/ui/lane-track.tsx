@@ -46,6 +46,7 @@ function LaneTrackContent({
   selectedId,
   focusOnMount = false,
   followSelected = false,
+  replayFocusIds,
   animateSelection = true,
   index,
   onSelect,
@@ -89,6 +90,7 @@ function LaneTrackContent({
   focusOnMount?: boolean;
   /** Lock the horizontal camera to the athlete during passive playback. */
   followSelected?: boolean;
+  replayFocusIds?: readonly string[];
   animateSelection?: boolean;
   index: number;
   onSelect: (lane: ArenaLane) => void;
@@ -121,7 +123,9 @@ function LaneTrackContent({
     effectiveCenter === rawV.center
       ? rawV
       : { center: effectiveCenter, span: rawV.span };
-  const course = useMemo(() => fieldCourse(width, height, ordered.length, v, unit, appearance), [width, height, ordered.length, v.center, v.span, unit, appearance]);
+  const replayFocusKey = replayFocusIds?.join(":");
+  const replayFocus = replayFocusIds?.map(id=>ordered.findIndex(l=>l.id===id));
+  const course = useMemo(() => fieldCourse(width, height, ordered.length, v, unit, appearance, replayFocus), [width, height, ordered.length, v.center, v.span, unit, appearance, replayFocusKey]);
   const latest = useRef({ v, onPan, onZoom, onViewChange, onGestureStart, fullscreen, clampCenter, course, width, height, unit, appearance, count: ordered.length });
   latest.current = { v, onPan, onZoom, onViewChange, onGestureStart, fullscreen, clampCenter, course, width, height, unit, appearance, count: ordered.length };
   const pending = useRef<{ view: ArenaViewWindow; scroll: number } | null>(null);
@@ -183,14 +187,14 @@ function LaneTrackContent({
   useEffect(() => {
     const old = previous.current;
     const laneIndex = followSelected ? Math.max(0, ordered.findIndex(l => l.id === selectedId)) : old && !old.oval && !course.oval && old.count === ordered.length ? (old.scroll + old.width / 2 - old.left) / old.laneWidth - .5 : Math.max(0, ordered.findIndex(l => l.you));
-    const x = course.oval ? 0 : scrollAfterZoom.current ?? Math.max(0, Math.min(w - width, course.left + (laneIndex + .5) * lw - width / 2));
+    const x = course.oval ? 0 : course.focusScroll ?? scrollAfterZoom.current ?? Math.max(0, Math.min(w - width, course.left + (laneIndex + .5) * lw - width / 2));
     scrollAfterZoom.current = null;
     setVisibleScroll(x);
     previous.current = { left: course.left, laneWidth: lw, width, scroll: x, oval: course.oval, count: ordered.length };
-  }, [w, lw, width, course.left, course.oval, followSelected, followSelected ? selectedId : undefined]);
+  }, [w, lw, width, course.left, course.oval, course.focusScroll, followSelected, followSelected ? selectedId : undefined]);
   useEffect(() => {
     const key = `${selectedId}:${focusRequest}`;
-    if (!selectedId || key === prevSelectedRef.current || course.oval) {
+    if (replayFocusIds || !selectedId || key === prevSelectedRef.current || course.oval) {
       prevSelectedRef.current = key;
       return;
     }
