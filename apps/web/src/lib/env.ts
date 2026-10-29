@@ -20,7 +20,7 @@ export const webEnv = {
 export const serverEnv = {
   resendApiKey: process.env.RESEND_API_KEY ?? "",
   issueReportFrom: process.env.ISSUE_REPORT_FROM ?? "",
-  issueReportTo: process.env.ISSUE_REPORT_TO ?? "support@overtaek.com",
+  issueReportTo: process.env.ISSUE_REPORT_TO ?? "support@overtaek.xyz",
   supabaseServiceRoleKey: process.env.SUPABASE_SERVICE_ROLE_KEY ?? "",
   stravaClientId: process.env.STRAVA_CLIENT_ID,
   stravaClientSecret: process.env.STRAVA_CLIENT_SECRET,
