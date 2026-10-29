@@ -1,3 +1,4 @@
+import { createThemedStyles, useThemedStyles, useLegacyColors } from "../theme";
 import { textStyle } from "./section";
 import { useBootImage } from "./boot-readiness";
 import { useMemo, useState } from "react";
@@ -60,6 +61,9 @@ export function RouteStaticPreview({
   mapboxToken,
   style,
 }: MobileRouteStaticPreviewProps) {
+  const colors = useLegacyColors();
+  const styles = useThemedStyles(stylesThemes);
+
   const [loading, setLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
 
@@ -181,6 +185,9 @@ function FallbackMobileSvgRoute({
   strokeWidth: number;
   showMarkers: boolean;
 }) {
+  const colors = useLegacyColors();
+  const styles = useThemedStyles(stylesThemes);
+
   if (coords.length < 2) {
     return (
       <View style={styles.emptyContainer}>
@@ -261,14 +268,14 @@ function FallbackMobileSvgRoute({
   );
 }
 
-const styles = StyleSheet.create({
+const stylesThemes = createThemedStyles((themeColors) => ({
   container: {
     width: "100%",
     borderRadius: 20,
     overflow: "hidden",
-    backgroundColor: colors.ink,
+    backgroundColor: themeColors.ink,
     borderWidth: 1,
-    borderColor: colors.line,
+    borderColor: themeColors.line,
     position: "relative",
   },
   image: {
@@ -281,7 +288,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: colors.card,
+    backgroundColor: themeColors.card,
     justifyContent: "center",
     alignItems: "center",
   },
@@ -291,7 +298,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: colors.ink,
+    backgroundColor: themeColors.ink,
     justifyContent: "center",
     alignItems: "center",
   },
@@ -308,11 +315,11 @@ const styles = StyleSheet.create({
     bottom: 0,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: colors.paper,
+    backgroundColor: themeColors.paper,
   },
   emptyText: {
     ...textStyle("caption"),
-    color: colors.muted
+    color: themeColors.muted
 },
   badge: {
     position: "absolute",
@@ -333,10 +340,10 @@ const styles = StyleSheet.create({
   },
   badgePlayIcon: {
     ...textStyle("label"),
-    color: colors.lime
+    color: themeColors.actionPrimary
 },
   badgeText: {
     ...textStyle("label"),
     color: "#ffffff"
 },
-});
+}));

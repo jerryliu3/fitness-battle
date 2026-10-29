@@ -8,7 +8,7 @@ vi.mock("../ui/use-reduced-motion", () => ({ useReducedMotion: () => preferences
 vi.mock("react-native", () => ({ View: "View", Text: "Text", StyleSheet: { absoluteFill: {}, create: (value: unknown) => value } }));
 vi.mock("react-native-safe-area-context", () => ({ useSafeAreaInsets: () => ({ top: 20, bottom: 20 }) }));
 vi.mock("../lib/compete-store", () => ({ useCompeteStore: () => ({ accountKey: "a" }) }));
-vi.mock("../ui/focus", () => ({ FocusButton: "FocusButton" }));
+vi.mock("../ui/focus", () => ({ FocusButton: "FocusButton", f: {}, useFocusStyles: () => ({}) }));
 vi.mock("../lib/haptics", () => ({ playCue: vi.fn() }));
 vi.mock("../ui/field-course", () => ({ useFieldAppearance: () => [defaultFieldAppearance] }));
 vi.mock("../ui/lane-track", () => ({ LaneTrack: "LaneTrack" }));

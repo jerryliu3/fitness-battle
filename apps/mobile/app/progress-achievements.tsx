@@ -1,3 +1,4 @@
+import { useFocusStyles } from "../src/ui/focus";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { AchievementsCatalog } from "../src/features/achievements-catalog";
@@ -6,6 +7,8 @@ import { ScreenHeader } from "../src/ui/screen-header";
 import { f } from "../src/ui/focus";
 
 export default function ProgressAchievementsScreen() {
+  const f = useFocusStyles();
+
   const { state } = useCompeteStore();
   const router = useRouter();
   const { milestone } = useLocalSearchParams<{ milestone?: string }>();

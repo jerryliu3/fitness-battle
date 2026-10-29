@@ -1,3 +1,5 @@
+import { createThemedStyles, useThemedStyles } from "../../src/theme";
+import { useFocusStyles } from "../../src/ui/focus";
 import { AppText, SectionStack } from "../../src/ui/section";
 import { useDailySuggestion } from "../../src/features/use-daily-suggestion";
 import { SHELL_COLORS as c } from "../../src/theme";
@@ -21,6 +23,9 @@ import { Journey } from "../../src/features/journey";
 import { useCompeteStore } from "../../src/lib/compete-store";
 import { FocusDisclosure, FocusSheet, f } from "../../src/ui/focus";
 export default function Home() {
+  const s = useThemedStyles(sThemes);
+  const f = useFocusStyles();
+
   const router = useRouter();
   const { state, dispatch, accountKey } = useCompeteStore();
   const suggestionPrompt = useDailySuggestion(accountKey, state);
@@ -110,7 +115,7 @@ export default function Home() {
     </SafeAreaView>
   );
 }
-const s = StyleSheet.create({
+const sThemes = createThemedStyles((themeColors) => ({
   suggestionPrompt: {
     position: "absolute",
     bottom: 92,
@@ -120,13 +125,13 @@ const s = StyleSheet.create({
     alignSelf: "center",
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: c.card,
+    backgroundColor: themeColors.card,
     borderWidth: 1,
-    borderColor: c.line,
+    borderColor: themeColors.line,
     borderRadius: 16,
     paddingHorizontal: 12,
     paddingVertical: 10,
-    shadowColor: c.ink,
+    shadowColor: themeColors.ink,
     shadowOpacity: 0.14,
     shadowRadius: 16,
     shadowOffset: { width: 0, height: 4 },
@@ -166,4 +171,4 @@ const s = StyleSheet.create({
     width: "100%",
     alignSelf: "center",
   },
-});
+}));

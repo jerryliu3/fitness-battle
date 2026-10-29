@@ -30,6 +30,7 @@ vi.mock("react-native-svg", () => ({
 }));
 
 vi.mock("../ui/focus", () => ({
+  useFocusStyles: () => ({ safe: {}, content: {}, card: {}, section: {}, sectionTitle: {}, kicker: {}, h2: {}, rowTitle: {}, copy: {}, small: {} }),
   f: {
     safe: {},
     content: {},
@@ -75,12 +76,16 @@ vi.mock("../ui/focus", () => ({
   },
 }));
 
-vi.mock("../theme", () => ({
-  fonts: {
-    bodyBold: "System",
-    body: "System",
-  },
-}));
+vi.mock("../theme", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("../theme")>();
+  return {
+    ...actual,
+    fonts: {
+      bodyBold: "System",
+      body: "System",
+    },
+  };
+});
 
 import { AthleteTelemetryMatrix } from "./athlete-telemetry-matrix";
 import { AthleteTelemetryDetailView } from "./athlete-telemetry-details";

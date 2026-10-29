@@ -1,3 +1,4 @@
+import { useThemeColors } from "../theme";
 import { AthletePennant } from "./athlete-pennant";
 import { chartTextProps, textStyle  } from "./section";
 import {
@@ -97,6 +98,8 @@ function LaneTrackContent({
   overtakeFrame?: ArenaOvertakeFrame | null;
   overtakePlan?: ArenaOvertakePlan | null;
 }) {
+  const c = useThemeColors();
+
   const prefix = useId();
   const [width, setWidth] = useState(340);
   const [visibleScroll, setVisibleScroll] = useState(anchor?.current?.scroll ?? 0);

@@ -1,3 +1,4 @@
+import { useThemeColors } from "../src/theme";
 import { textStyle } from "../src/ui/section";
 import {
   DMSans_400Regular,
@@ -66,6 +67,8 @@ function pathFromNotificationResponse(
 }
 
 export default function RootLayout() {
+  const SHELL_COLORS = useThemeColors();
+
   const [dmLoaded, dmError] = useDmSans({
     DMSans_400Regular,
     DMSans_500Medium,

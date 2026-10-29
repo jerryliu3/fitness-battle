@@ -7,7 +7,7 @@ vi.mock("react-native", () => ({
   Text: "Text", View: "View", StyleSheet: { create: (value: unknown) => value },
 }));
 vi.mock("react-native-svg", () => ({ default: "Svg", Circle: "Circle", Line: "Line" }));
-vi.mock("./focus", () => ({ f: {} }));
+vi.mock("./focus", () => ({ f: {}, useFocusStyles: () => ({}) }));
 vi.mock("../lib/haptics", () => ({ playCue: vi.fn() }));
 import { playCue } from "../lib/haptics";
 import { nearestChartDatum } from "@fitness-battle/shared";

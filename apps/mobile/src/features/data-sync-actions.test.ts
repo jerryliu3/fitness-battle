@@ -33,7 +33,7 @@ vi.mock("../lib/compete-store", () => ({
   }),
 }));
 vi.mock("../lib/env", () => ({ mobileEnv: { apiUrl: "https://test.local" } }));
-vi.mock("../ui/focus", () => ({ FocusButton: "Button", f: {} }));
+vi.mock("../ui/focus", () => ({ FocusButton: "Button", f: {}, useFocusStyles: () => ({}) }));
 import { DataSyncActions } from "./data-sync-actions";
 
 let renderer: ReactTestRenderer;

@@ -1,3 +1,4 @@
+import { createThemedStyles, useThemedStyles, useThemeColors } from "../../theme";
 import { useMemo, useRef, useState, type ReactNode } from "react";
 import { Pressable, ScrollView, StyleSheet, View, type ScrollViewInstance } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -24,6 +25,8 @@ function scale(domain: [number, number], low: number, high: number) {
 }
 
 export default function ActivityContextLab() {
+  const s = useThemedStyles(sThemes);
+
   const router = useRouter();
   const params = useLocalSearchParams<{ concept?: Concept; sample?: Example }>();
   const [concept, setConcept] = useState<Concept>(concepts.some(item => item.id === params.concept) ? params.concept! : "scatter");
@@ -50,6 +53,8 @@ export default function ActivityContextLab() {
 }
 
 function Choices<T extends string>({ items, value, onChange, label }: { items: readonly { id: T; label: string }[]; value: T; onChange: (value: T) => void; label: string }) {
+  const s = useThemedStyles(sThemes);
+
   return <View style={s.choices} accessibilityLabel={label}>{items.map(item => <Pressable accessibilityRole="button" accessibilityState={{ selected: item.id === value }} accessibilityLabel={item.label} key={item.id} onPress={() => onChange(item.id)} style={[s.choice, item.id === value && s.selected]}><AppText role="label" style={item.id === value ? s.selectedText : undefined}>{item.label}</AppText></Pressable>)}</View>;
 }
 
@@ -70,17 +75,28 @@ function Plot({ width, points, selected, onSelect, label, children }: { width: n
 }
 
 function Grid({ width, yDomain, yFormat, xTicks, xLabel }: { width: number; yDomain: [number, number]; yFormat: (value: number) => string; xTicks: { x: number; label: string }[]; xLabel: string }) {
+  const c = useThemeColors();
+
   const y = scale(yDomain, BOTTOM, TOP);
   return <>{Array.from({ length: 4 }, (_, i) => yDomain[0] + (yDomain[1] - yDomain[0]) * i / 3).map(value => <ViewlessGrid key={value} value={value} py={y(value)} width={width} label={yFormat(value)} />)}
     {xTicks.map((tick, index) => <SvgText key={`${tick.x}-${index}`} x={tick.x} y={BOTTOM + 21} fill={c.muted} {...chartTextProps()} textAnchor={index === 0 ? "start" : index === xTicks.length - 1 ? "end" : "middle"}>{tick.label}</SvgText>)}
     <SvgText x={(LEFT + width - 16) / 2} y={H - 3} textAnchor="middle" fill={c.muted} {...chartTextProps()}>{xLabel}</SvgText>
   </>;
 }
-function ViewlessGrid({ py, width, label }: { value: number; py: number; width: number; label: string }) { return <><Line x1={LEFT} x2={width - 16} y1={py} y2={py} stroke={c.line} strokeWidth={1} /><SvgText x={LEFT - 8} y={py + 4} textAnchor="end" fill={c.muted} {...chartTextProps()}>{label}</SvgText></>; }
-function Legend({ line = false, current = true }: { line?: boolean; current?: boolean }) { return <View style={s.legend}><View style={s.legendItem}><View style={line ? s.lineKey : s.dotKey} /><AppText role="caption" secondary>{line ? "5-session average" : "Earlier sessions"}</AppText></View>{current && <View style={s.legendItem}><View style={s.currentKey} /><AppText role="caption" secondary>This session</AppText></View>}</View>; }
-function Readout({ title, value, detail }: { title: string; value: string; detail?: string }) { return <View style={s.readout} accessibilityLiveRegion="polite"><AppText role="label">{title}</AppText><AppText role="metric">{value}</AppText>{detail ? <AppText role="caption" secondary>{detail}</AppText> : null}</View>; }
+function ViewlessGrid({ py, width, label }: { value: number; py: number; width: number; label: string }) {
+  const c = useThemeColors();
+ return <><Line x1={LEFT} x2={width - 16} y1={py} y2={py} stroke={c.line} strokeWidth={1} /><SvgText x={LEFT - 8} y={py + 4} textAnchor="end" fill={c.muted} {...chartTextProps()}>{label}</SvgText></>; }
+function Legend({ line = false, current = true }: { line?: boolean; current?: boolean }) {
+  const s = useThemedStyles(sThemes);
+ return <View style={s.legend}><View style={s.legendItem}><View style={line ? s.lineKey : s.dotKey} /><AppText role="caption" secondary>{line ? "5-session average" : "Earlier sessions"}</AppText></View>{current && <View style={s.legendItem}><View style={s.currentKey} /><AppText role="caption" secondary>This session</AppText></View>}</View>; }
+function Readout({ title, value, detail }: { title: string; value: string; detail?: string }) {
+  const s = useThemedStyles(sThemes);
+ return <View style={s.readout} accessibilityLiveRegion="polite"><AppText role="label">{title}</AppText><AppText role="metric">{value}</AppText>{detail ? <AppText role="caption" secondary>{detail}</AppText> : null}</View>; }
 
 function Constellation({ current, history, units, onTrend }: { current: Activity; history: Activity[]; units: UnitSystem; onTrend: () => void }) {
+  const c = useThemeColors();
+  const s = useThemedStyles(sThemes);
+
   const [width, setWidth] = useState(330), [selected, setSelected] = useState(current.id), [showFit, setShowFit] = useState(true);
   const points = constellation(current, history, units), currentPoint = points.find(p => p.activity.id === current.id);
   const metric = current.sport === "strength" ? "time" : "pace";
@@ -111,6 +127,9 @@ function Constellation({ current, history, units, onTrend }: { current: Activity
 }
 
 function Trajectory({ current, history, units }: { current: Activity; history: Activity[]; units: UnitSystem }) {
+  const c = useThemeColors();
+  const s = useThemedStyles(sThemes);
+
   const [metric, setMetric] = useState<Metric>(current.sport === "strength" ? "time" : "pace"), [included, setIncluded] = useState(true), [selected, setSelected] = useState(current.id), [width, setWidth] = useState(330);
   const rows = trajectory(current, history, metric, units), chosen = rows.find(row => row.activity.id === selected) ?? rows.at(-1);
   const currentPoint = rows.find(row => row.activity.id === current.id), previousAverage = rows.filter(row => row.activity.id !== current.id).at(-1)?.average;
@@ -141,6 +160,9 @@ function Trajectory({ current, history, units }: { current: Activity; history: A
 }
 
 function Ripple({ current, history }: { current: Activity; history: Activity[] }) {
+  const c = useThemeColors();
+  const s = useThemedStyles(sThemes);
+
   const [included, setIncluded] = useState(true), [selected, setSelected] = useState<string | null>(null), [width, setWidth] = useState(330);
   const days = volumeHistory(current, history), latest = days.at(-1)!, chosen = days.find(day => day.key === selected) ?? latest;
   const max = Math.max(...days.map(day => day.minutes), 10) * 1.15, yd: [number, number] = [0, max];
@@ -167,17 +189,17 @@ function Ripple({ current, history }: { current: Activity; history: Activity[] }
   </View>;
 }
 
-const s = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: c.paper }, page: { paddingHorizontal: 22, paddingBottom: 50, gap: 20, width: "100%", maxWidth: 620, alignSelf: "center" },
+const sThemes = createThemedStyles((themeColors) => ({
+  safe: { flex: 1, backgroundColor: themeColors.paper }, page: { paddingHorizontal: 22, paddingBottom: 50, gap: 20, width: "100%", maxWidth: 620, alignSelf: "center" },
   choices: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
   previewControls: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 12, paddingTop: 8 },
-  choice: { minHeight: 44, justifyContent: "center", paddingHorizontal: 13, paddingVertical: 8, borderRadius: 12, borderWidth: 1, borderColor: c.line },
-  selected: { backgroundColor: c.ink, borderColor: c.ink }, selectedText: { color: c.card },
-  activity: { borderTopWidth: 1, borderBottomWidth: 1, borderColor: c.line, paddingVertical: 14, gap: 4 },
+  choice: { minHeight: 44, justifyContent: "center", paddingHorizontal: 13, paddingVertical: 8, borderRadius: 12, borderWidth: 1, borderColor: themeColors.line },
+  selected: { backgroundColor: themeColors.ink, borderColor: themeColors.ink }, selectedText: { color: themeColors.card },
+  activity: { borderTopWidth: 1, borderBottomWidth: 1, borderColor: themeColors.line, paddingVertical: 14, gap: 4 },
   concept: { gap: 16 }, readout: { gap: 4, minHeight: 86 }, hero: { flexDirection: "row", alignItems: "baseline", gap: 10, flexWrap: "wrap" },
   legend: { flexDirection: "row", flexWrap: "wrap", gap: 16 }, legendItem: { flexDirection: "row", gap: 7, alignItems: "center" },
-  dotKey: { width: 9, height: 9, borderRadius: 5, backgroundColor: c.fieldTeal }, lineKey: { width: 19, height: 3, borderRadius: 2, backgroundColor: c.fieldTeal }, currentKey: { width: 10, height: 10, borderRadius: 5, backgroundColor: c.tennis, borderColor: c.ink, borderWidth: 1 },
-  insight: { gap: 8, paddingVertical: 16, borderTopWidth: 1, borderColor: c.line },
-  evaluation: { gap: 10, paddingTop: 20, borderTopWidth: 1, borderColor: c.line },
-  action: { minHeight: 48, borderRadius: 12, paddingHorizontal: 16, paddingVertical: 12, backgroundColor: c.tennis, alignItems: "center" },
-});
+  dotKey: { width: 9, height: 9, borderRadius: 5, backgroundColor: themeColors.fieldTeal }, lineKey: { width: 19, height: 3, borderRadius: 2, backgroundColor: themeColors.fieldTeal }, currentKey: { width: 10, height: 10, borderRadius: 5, backgroundColor: themeColors.tennis, borderColor: themeColors.ink, borderWidth: 1 },
+  insight: { gap: 8, paddingVertical: 16, borderTopWidth: 1, borderColor: themeColors.line },
+  evaluation: { gap: 10, paddingTop: 20, borderTopWidth: 1, borderColor: themeColors.line },
+  action: { minHeight: 48, borderRadius: 12, paddingHorizontal: 16, paddingVertical: 12, backgroundColor: themeColors.tennis, alignItems: "center" },
+}));

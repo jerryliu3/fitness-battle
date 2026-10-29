@@ -1,3 +1,4 @@
+import { useFocusStyles } from "../src/ui/focus";
 import { SectionStack } from "../src/ui/section";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { ScrollView } from "react-native";
@@ -6,6 +7,8 @@ import { CrewHub } from "../src/features/crew";
 import { ScreenHeader } from "../src/ui/screen-header";
 import { f } from "../src/ui/focus";
 export default function CrewMembersScreen() {
+  const f = useFocusStyles();
+
   const router = useRouter();
   const { crewId } = useLocalSearchParams<{ crewId?: string }>();
   return <SafeAreaView style={f.safe}>

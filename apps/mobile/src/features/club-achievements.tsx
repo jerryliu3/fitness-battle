@@ -1,3 +1,4 @@
+import { useThemeColors } from "../theme";
 import { Section, TextAction, AppText } from "../ui/section";
 import { useRouter } from "expo-router";
 import { Platform, Pressable, View } from "react-native";
@@ -9,11 +10,13 @@ import {
   type ClubAchievement,
   type CompeteState,
 } from "@fitness-battle/shared";
-import { achievementTileStyle } from "./achievements-catalog";
+import { useAchievementTileStyle } from "./achievements-catalog";
 import { AchievementMeter } from "./achievement-meter";
 import { SHELL_COLORS as c } from "../theme";
 
 function Badge({ item }: { item: ClubAchievement }) {
+  const c = useThemeColors();
+
   const id = `feat-${item.id}`;
   return (
     <Svg width={64} height={70} viewBox="0 0 84 92" accessible={Platform.OS === "web" ? undefined : false}>
@@ -34,6 +37,7 @@ function Badge({ item }: { item: ClubAchievement }) {
 }
 
 export function Achievements({ state }: { state: CompeteState }) {
+  const tileStyle = useAchievementTileStyle();
   const rows = clubAchievements(state);
   const featured = featuredClubAchievements(rows);
   const router = useRouter();
@@ -46,7 +50,7 @@ export function Achievements({ state }: { state: CompeteState }) {
             accessibilityRole="button"
             accessibilityLabel={achievementAccessibilityLabel(row)}
             onPress={() => router.push(`/progress-achievements?milestone=${row.id}`)}
-            style={achievementTileStyle.tile}
+            style={tileStyle.tile}
           >
             <Badge item={row} />
             <AchievementMeter row={row} />

@@ -130,6 +130,7 @@ vi.mock("./focus", async () => {
     FocusDisclosure: "Disclosure",
     FocusSheet: "Sheet",
     f: {},
+    useFocusStyles: () => ({}),
   };
 });
 vi.mock("./lane-track", async () => {

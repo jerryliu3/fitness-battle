@@ -11,6 +11,7 @@ vi.mock("../ui/focus", () => ({
   FocusSheet: "Sheet",
   FocusButton: "Button",
   f: {},
+  useFocusStyles: () => ({}),
 }));
 vi.mock("react-native", () => ({
   Modal: "Modal",

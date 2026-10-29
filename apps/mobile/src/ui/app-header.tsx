@@ -1,3 +1,4 @@
+import { createThemedStyles, useThemedStyles, useThemeColors } from "../theme";
 import { UserAvatar } from "./user-avatar";
 import { textStyle } from "./section";
 import { useBootImage } from "./boot-readiness";
@@ -14,6 +15,9 @@ import { isAthleteSettingsPath } from "../lib/navigation";
 import { SHELL_COLORS as c } from "../theme";
 
 export function AppHeader() {
+  const c = useThemeColors();
+  const s = useThemedStyles(sThemes);
+
   const { state, debugActive, triggerDebugEvent, resetDebugState } = useCompeteStore();
   const imageSettled = useBootImage(state?.avatarUrl);
   const [debugOpen, setDebugOpen] = useState(false);
@@ -78,8 +82,8 @@ export function AppHeader() {
   );
 }
 
-const s = StyleSheet.create({
-  safe: { backgroundColor: c.paper, zIndex: 30 },
+const sThemes = createThemedStyles((themeColors) => ({
+  safe: { backgroundColor: themeColors.paper, zIndex: 30 },
   header: {
     paddingHorizontal: 20,
     paddingVertical: 10,
@@ -91,28 +95,28 @@ const s = StyleSheet.create({
   identity: { flex: 1, minWidth: 0, flexDirection: "row", alignItems: "center", gap: 10 },
   effort: { flex: 1, minWidth: 0, maxWidth: 190 },
   streak: { flexDirection: "row", alignItems: "center", gap: 3, flexShrink: 0 },
-  debugBtn: { flexShrink: 0, minHeight: 44, justifyContent: "center", paddingHorizontal: 10, paddingVertical: 5, borderRadius: 999, borderWidth: 1, borderColor: c.line, backgroundColor: c.card },
-  debugBtnActive: { borderColor: c.tennis, backgroundColor: "#fff5d1" },
-  debugBtnText: { ...textStyle("caption"), color: c.ink },
-  debugMenu: { marginHorizontal: 22, marginBottom: 10, padding: 10, borderRadius: 16, borderWidth: 1, borderColor: c.line, backgroundColor: c.card, gap: 6 },
-  debugKicker: { ...textStyle("label"), color: c.muted, marginHorizontal: 4, marginBottom: 2 },
-  debugItem: { paddingHorizontal: 10, paddingVertical: 8, borderRadius: 10, backgroundColor: c.paper, gap: 2 },
-  debugItemTitle: { ...textStyle("heading"), color: c.ink },
-  debugItemDetail: { ...textStyle("caption"), color: c.muted },
-  debugReset: { paddingVertical: 8, alignItems: "center", borderRadius: 10, borderWidth: 1, borderColor: c.line },
-  debugResetText: { ...textStyle("caption"), color: c.muted },
+  debugBtn: { flexShrink: 0, minHeight: 44, justifyContent: "center", paddingHorizontal: 10, paddingVertical: 5, borderRadius: 999, borderWidth: 1, borderColor: themeColors.line, backgroundColor: themeColors.card },
+  debugBtnActive: { borderColor: themeColors.tennis, backgroundColor: "#fff5d1" },
+  debugBtnText: { ...textStyle("caption"), color: themeColors.ink },
+  debugMenu: { marginHorizontal: 22, marginBottom: 10, padding: 10, borderRadius: 16, borderWidth: 1, borderColor: themeColors.line, backgroundColor: themeColors.card, gap: 6 },
+  debugKicker: { ...textStyle("label"), color: themeColors.muted, marginHorizontal: 4, marginBottom: 2 },
+  debugItem: { paddingHorizontal: 10, paddingVertical: 8, borderRadius: 10, backgroundColor: themeColors.paper, gap: 2 },
+  debugItemTitle: { ...textStyle("heading"), color: themeColors.ink },
+  debugItemDetail: { ...textStyle("caption"), color: themeColors.muted },
+  debugReset: { paddingVertical: 8, alignItems: "center", borderRadius: 10, borderWidth: 1, borderColor: themeColors.line },
+  debugResetText: { ...textStyle("caption"), color: themeColors.muted },
   profile: {
     width: 44,
     height: 44,
     flexShrink: 0,
     borderRadius: 22,
-    backgroundColor: c.card,
+    backgroundColor: themeColors.card,
     alignItems: "center",
     justifyContent: "center",
     overflow: "hidden",
     borderWidth: 2,
-    borderColor: c.line,
+    borderColor: themeColors.line,
   },
-  selected: { borderColor: c.tennis },
+  selected: { borderColor: themeColors.tennis },
   photo: { width: "100%", height: "100%" },
-});
+}));

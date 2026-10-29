@@ -1,3 +1,4 @@
+import { createThemedStyles, useThemedStyles } from "../theme";
 import { AppText } from "../ui/section";
 import { competeEventCarouselPageIndex } from "@fitness-battle/shared";
 import { useEffect, useRef, useState, type ReactNode } from "react";
@@ -26,6 +27,8 @@ export function EventCarousel({
   onRegister: () => void;
   children: ReactNode;
 }) {
+  const s = useThemedStyles(sThemes);
+
   const scroller = useRef<ScrollViewInstance>(null);
   const fromScroll = useRef(false);
   const indexRef = useRef(0);
@@ -119,13 +122,13 @@ export function EventCarousel({
   );
 }
 
-const s = StyleSheet.create({
+const sThemes = createThemedStyles((themeColors) => ({
   page: {
     borderTopWidth: 1,
     borderBottomWidth: 1,
-    borderColor: c.line,
+    borderColor: themeColors.line,
   },
   pageBody: {
     paddingVertical: 14,
   },
-});
+}));

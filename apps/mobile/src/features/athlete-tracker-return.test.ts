@@ -69,6 +69,7 @@ vi.mock("../ui/focus", () => ({
   FocusSidePanel: "SidePanel",
   FocusTextButton: "TextButton",
   f: {},
+  useFocusStyles: () => ({}),
 }));
 import AthleteScreen from "../../app/athlete";
 let renderer: ReactTestRenderer;

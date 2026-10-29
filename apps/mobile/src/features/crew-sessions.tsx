@@ -1,3 +1,4 @@
+import { useFocusStyles } from "../ui/focus";
 import { UserAvatar } from "../ui/user-avatar";
 import { textStyle, Section, AppText  } from "../ui/section";
 import { DateTimeField } from "../ui/form-picker";
@@ -31,6 +32,8 @@ export function CrewSessions({
   hiddenIds?: readonly string[];
   onSelectMember?: (id: string, name: string) => void;
 }) {
+  const f = useFocusStyles();
+
   const { user, accessToken, offlineMode } = useAuth();
   const [sessions, setSessions] = useState<CrewSession[]>([]),
     [open, setOpen] = useState(false),

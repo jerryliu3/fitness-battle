@@ -1,3 +1,4 @@
+import { getAppColors, homeHealthColors } from "./appearance";
 import { stripWebProductPrefix } from "./product-routes";
 
 /**
@@ -52,37 +53,8 @@ export function shellTabFromPath(
   );
 }
 
-/**
- * Everyday Club palette: warm canvas, navy typography, solar yellow and alpine teal.
- * Legacy plum/tennis keys remain for component compatibility.
- */
-export const SHELL_COLORS = {
-  plum: "#142b3b",
-  plumDeep: "#0c1d29",
-  tennis: "#f7c948",
-  paper: "#f8f9f6",
-  card: "#ffffff",
-  starEmber: "#f7c948",
-  ink: "#142b3b",
-  muted: "#637482",
-  line: "#e3e9e7",
-  green: "#24765c",
-  greenSoft: "#eef3f1",
-  soft: "#eef3f1",
-  secondary: "#668e91",
-  gold: "#f7c948",
-  actionPrimary: "#f7c948",
-  actionPressed: "#dfb237",
-  actionSoft: "#fff5d1",
-  textPrimary: "#142b3b",
-  surfaceCanvas: "#f8f9f6",
-  surfaceCard: "#ffffff",
-  fieldDeep: "#103e46",
-  fieldTeal: "#176c75",
-  statusSuccess: "#24765c",
-  statusSuccessSoft: "#e9f5ee",
-  statusError: "#b93c3c",
-} as const;
+/** Default colors for non-UI consumers. Platform UI adapters resolve appearance. */
+export const SHELL_COLORS = getAppColors("light");
 
 export const SHELL_RADIUS = {
   control: 12,
@@ -92,15 +64,7 @@ export const SHELL_RADIUS = {
 } as const;
 
 /** Light Home palette shared by the Portfolio chart and daily readings. */
-export const HOME_HEALTH_COLORS = {
-  background: SHELL_COLORS.paper,
-  tile: SHELL_COLORS.card,
-  border: SHELL_COLORS.line,
-  text: SHELL_COLORS.ink,
-  secondary: SHELL_COLORS.muted,
-  accent: SHELL_COLORS.fieldTeal,
-  comparison: SHELL_COLORS.secondary,
-} as const;
+export const HOME_HEALTH_COLORS = homeHealthColors(SHELL_COLORS);
 
 export const SHELL_TYPE = {
   display: "Manrope",

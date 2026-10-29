@@ -1,3 +1,5 @@
+import { createThemedStyles, useThemedStyles } from "../src/theme";
+import { useFocusStyles } from "../src/ui/focus";
 import { SectionStack, AppText } from "../src/ui/section";
 import { ScreenHeader } from "../src/ui/screen-header";
 import { useRouter } from "expo-router";
@@ -14,6 +16,9 @@ import { FocusSheet, f } from "../src/ui/focus";
 import { SHELL_COLORS as c } from "../src/theme";
 
 export default function Week() {
+  const s = useThemedStyles(sThemes);
+  const f = useFocusStyles();
+
   const { state, dispatch } = useCompeteStore();
   const router = useRouter();
   const [todayOpen, setTodayOpen] = useState(false);
@@ -74,14 +79,14 @@ export default function Week() {
   );
 }
 
-const s = StyleSheet.create({
+const sThemes = createThemedStyles((themeColors) => ({
   todayCta: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     paddingVertical: 14,
     borderBottomWidth: 1,
-    borderBottomColor: c.line,
+    borderBottomColor: themeColors.line,
     minHeight: 52,
   },
-});
+}));

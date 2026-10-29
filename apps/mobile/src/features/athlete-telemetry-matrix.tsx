@@ -1,3 +1,4 @@
+import { createThemedStyles, useThemedStyles, useThemeColors } from "../theme";
 import React, { useMemo } from "react";
 import { Pressable, StyleSheet, View } from "react-native";
 import { useRouter } from "expo-router";
@@ -16,6 +17,9 @@ export function AthleteTelemetryMatrix({
 }: {
   state?: CompeteState | null;
 }) {
+  const c = useThemeColors();
+  const s = useThemedStyles(sThemes);
+
   const router = useRouter();
   const model = useMemo(() => buildAnalyticsLabModel(state, "30d"), [state]);
 
@@ -153,7 +157,7 @@ function MiniSparkline({
   );
 }
 
-const s = StyleSheet.create({
+const sThemes = createThemedStyles((themeColors) => ({
   container: {
     gap: 14,
     marginVertical: 4,
@@ -165,10 +169,10 @@ const s = StyleSheet.create({
   },
   bentoTile: {
     width: "48%",
-    backgroundColor: c.card,
+    backgroundColor: themeColors.card,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: c.line,
+    borderColor: themeColors.line,
     padding: 12,
     gap: 6,
   },
@@ -177,4 +181,4 @@ const s = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
   },
-});
+}));

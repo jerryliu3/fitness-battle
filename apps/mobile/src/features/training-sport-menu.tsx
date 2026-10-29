@@ -1,3 +1,5 @@
+import { createThemedStyles, useThemedStyles } from "../theme";
+import { useFocusStyles } from "../ui/focus";
 import { AppText } from "../ui/section";
 import { SHELL_COLORS as c } from "../theme";
 import {
@@ -25,6 +27,9 @@ export function TrainingSportMenu({
   value: readonly SportId[];
   onChange: (sports: SportId[]) => void;
 }) {
+  const s = useThemedStyles(sThemes);
+  const f = useFocusStyles();
+
   const { open, close, toggle, anchorRef, menuLayout } = useAnchoredMenu({
     minWidth: 190,
     estimatedHeight: Math.min(280, (SPORTS.length + 1) * 44 + 16),
@@ -109,14 +114,14 @@ export function TrainingSportMenu({
   );
 }
 
-const s = StyleSheet.create({
+const sThemes = createThemedStyles((themeColors) => ({
   option: {
     height: 44,
     paddingHorizontal: 16,
     flexDirection: "row",
     alignItems: "center",
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: c.line,
+    borderBottomColor: themeColors.line,
   },
   optionContent: {
     flexDirection: "row",
@@ -128,19 +133,19 @@ const s = StyleSheet.create({
     height: 20,
     borderRadius: 4,
     borderWidth: 1.5,
-    borderColor: c.line,
-    backgroundColor: c.card,
+    borderColor: themeColors.line,
+    backgroundColor: themeColors.card,
     alignItems: "center",
     justifyContent: "center",
   },
   checkboxChecked: {
-    borderColor: c.ink,
-    backgroundColor: c.ink,
+    borderColor: themeColors.ink,
+    backgroundColor: themeColors.ink,
   },
   checkmark: {
     color: "#ffffff",
   },
   optionSelected: {
-    backgroundColor: c.soft,
+    backgroundColor: themeColors.soft,
   },
-});
+}));

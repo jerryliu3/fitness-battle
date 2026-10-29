@@ -1,4 +1,6 @@
 import { AthleteProfileSheet, type AthleteProfileSelection } from "./athlete-profile-sheet";
+import { useThemeColors } from "../theme";
+import { useFocusStyles } from "../ui/focus";
 import { FieldViewSwitcher } from "../ui/field-view-switcher";
 import { FieldGroundSwitcher } from "../ui/field-ground-switcher";
 import { GeographicCourse } from "./geographic-course";
@@ -49,6 +51,9 @@ export function CompetitionField({
   sport: SportId;
   track: ScoreTrack;
 }) {
+  const c = useThemeColors();
+  const f = useFocusStyles();
+
   const { state, accountKey, debugActive } = useCompeteStore();
   const { blocks } = useAthleteBlocks();
   const hiddenIds = useMemo(() => blocks.map(block => block.id), [blocks]);

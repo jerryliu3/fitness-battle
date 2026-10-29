@@ -13,7 +13,7 @@ vi.mock("../lib/compete-store", () => ({ useCompeteStore: () => ({ state: { city
 vi.mock("../lib/supabase", () => ({ supabase: { from: () => ({
   select: () => ({ eq: () => ({ maybeSingle: mocks.lookup }) }),
 }) } }));
-vi.mock("../ui/focus", () => ({ FocusSheet: "FocusSheet", FocusButton: "FocusButton", f: { row: {}, section: {} } }));
+vi.mock("../ui/focus", () => ({ FocusSheet: "FocusSheet", FocusButton: "FocusButton", f: { row: {}, section: {} }, useFocusStyles: () => ({ row: {}, section: {} }) }));
 vi.mock("../ui/section", () => ({ AppText: "AppText", SectionHeader: "SectionHeader" }));
 vi.mock("../ui/app-icon", () => ({ AppIcon: "AppIcon" }));
 vi.mock("./athlete-profile-card", () => ({ AthleteProfileCard: "AthleteProfileCard" }));

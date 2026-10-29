@@ -1,3 +1,4 @@
+import { createThemedStyles, useThemedStyles, useThemeColors } from "../theme";
 import { useMemo, useRef, useState, type ReactNode } from "react";
 import { StyleSheet, View } from "react-native";
 import Svg, { Circle, G, Line, Path, Rect, Text as SvgText } from "react-native-svg";
@@ -23,6 +24,8 @@ function scale(domain: [number, number], low: number, high: number) {
 }
 
 export function ActivityContext({ activity, state }: { activity: Activity; state: CompeteState }) {
+  const s = useThemedStyles(sThemes);
+
   const now = competeNow(state).getTime();
   const history = useMemo(() => sessionHistory(activity, state.activities, new Date(now)), [activity, state.activities, now]);
 
@@ -68,6 +71,8 @@ function Plot({ width, points, selected, onSelect, label, children }: { width: n
 }
 
 function Grid({ width, yDomain, yFormat, xTicks, xLabel, yLabel }: { width: number; yDomain: [number, number]; yFormat: (value: number) => string; xTicks: { x: number; label: string }[]; xLabel: string; yLabel?: string }) {
+  const c = useThemeColors();
+
   const y = scale(yDomain, BOTTOM, TOP);
   const midY = (TOP + BOTTOM) / 2;
   return <>
@@ -77,11 +82,20 @@ function Grid({ width, yDomain, yFormat, xTicks, xLabel, yLabel }: { width: numb
     <SvgText x={(LEFT + width - 16) / 2} y={H - 3} textAnchor="middle" fill={c.muted} {...chartTextProps()}>{xLabel}</SvgText>
   </>;
 }
-function ViewlessGrid({ py, width, label }: { value: number; py: number; width: number; label: string }) { return <><Line x1={LEFT} x2={width - 16} y1={py} y2={py} stroke={c.line} strokeWidth={1} /><SvgText x={LEFT - 8} y={py + 4} textAnchor="end" fill={c.muted} {...chartTextProps()}>{label}</SvgText></>; }
-function Legend({ line = false, current = true }: { line?: boolean; current?: boolean }) { return <View style={s.legend}><View style={s.legendItem}><View style={line ? s.lineKey : s.dotKey} /><AppText role="caption" secondary>{line ? "5-session average" : "Earlier sessions"}</AppText></View>{current && <View style={s.legendItem}><View style={s.currentKey} /><AppText role="caption" secondary>This session</AppText></View>}</View>; }
-function Readout({ title, value, detail }: { title: string; value: string; detail?: string }) { return <View style={s.readout} accessibilityLiveRegion="polite"><AppText role="label">{title}</AppText><AppText role="metric">{value}</AppText>{detail ? <AppText role="caption" secondary>{detail}</AppText> : null}</View>; }
+function ViewlessGrid({ py, width, label }: { value: number; py: number; width: number; label: string }) {
+  const c = useThemeColors();
+ return <><Line x1={LEFT} x2={width - 16} y1={py} y2={py} stroke={c.line} strokeWidth={1} /><SvgText x={LEFT - 8} y={py + 4} textAnchor="end" fill={c.muted} {...chartTextProps()}>{label}</SvgText></>; }
+function Legend({ line = false, current = true }: { line?: boolean; current?: boolean }) {
+  const s = useThemedStyles(sThemes);
+ return <View style={s.legend}><View style={s.legendItem}><View style={line ? s.lineKey : s.dotKey} /><AppText role="caption" secondary>{line ? "5-session average" : "Earlier sessions"}</AppText></View>{current && <View style={s.legendItem}><View style={s.currentKey} /><AppText role="caption" secondary>This session</AppText></View>}</View>; }
+function Readout({ title, value, detail }: { title: string; value: string; detail?: string }) {
+  const s = useThemedStyles(sThemes);
+ return <View style={s.readout} accessibilityLiveRegion="polite"><AppText role="label">{title}</AppText><AppText role="metric">{value}</AppText>{detail ? <AppText role="caption" secondary>{detail}</AppText> : null}</View>; }
 
 function Constellation({ current, history, units }: { current: Activity; history: Activity[]; units: UnitSystem }) {
+  const c = useThemeColors();
+  const s = useThemedStyles(sThemes);
+
   const [width, setWidth] = useState(330), [selected, setSelected] = useState(current.id), [showFit, setShowFit] = useState(true);
   const points = constellation(current, history, units), currentPoint = points.find(p => p.activity.id === current.id);
   const metric = sportById(current.sport).gps ? "pace" : "time";
@@ -110,6 +124,9 @@ function Constellation({ current, history, units }: { current: Activity; history
 }
 
 function Trajectory({ current, history, units }: { current: Activity; history: Activity[]; units: UnitSystem }) {
+  const c = useThemeColors();
+  const s = useThemedStyles(sThemes);
+
   const hasEfficiency = efficiencyBaseline(current, history, units) !== null && metricValue(current, "efficiency", units) !== null;
   const defaultMetric = hasEfficiency ? "efficiency" : metricValue(current, "pace", units) !== null ? "pace" : "time";
   const [requestedMetric, setMetric] = useState<Metric>(defaultMetric), [selected, setSelected] = useState(current.id), [width, setWidth] = useState(330);
@@ -141,6 +158,9 @@ function Trajectory({ current, history, units }: { current: Activity; history: A
 }
 
 function Ripple({ current, history }: { current: Activity; history: Activity[] }) {
+  const c = useThemeColors();
+  const s = useThemedStyles(sThemes);
+
   const [selected, setSelected] = useState<string | null>(null), [width, setWidth] = useState(330);
   const days = volumeHistory(current, history), latest = days.at(-1)!, chosen = days.find(day => day.key === selected) ?? latest;
   const max = Math.max(...days.map(day => day.minutes), 10) * 1.15, yd: [number, number] = [0, max];
@@ -162,10 +182,10 @@ function Ripple({ current, history }: { current: Activity; history: Activity[] }
   </View>;
 }
 
-const s = StyleSheet.create({
-  sections: { gap: 24 }, surface: { gap: 12, paddingVertical: 24, borderTopWidth: 1, borderColor: c.line },
+const sThemes = createThemedStyles((themeColors) => ({
+  sections: { gap: 24 }, surface: { gap: 12, paddingVertical: 24, borderTopWidth: 1, borderColor: themeColors.line },
   concept: { gap: 12 }, readout: { gap: 3 }, hero: { flexDirection: "row", alignItems: "baseline", gap: 10, flexWrap: "wrap" },
   legend: { flexDirection: "row", flexWrap: "wrap", gap: 16 }, legendItem: { flexDirection: "row", gap: 7, alignItems: "center" },
-  dotKey: { width: 9, height: 9, borderRadius: 5, backgroundColor: c.fieldTeal }, lineKey: { width: 19, height: 3, borderRadius: 2, backgroundColor: c.fieldTeal }, currentKey: { width: 10, height: 10, borderRadius: 5, backgroundColor: c.tennis, borderColor: c.ink, borderWidth: 1 },
-  insight: { gap: 8, paddingVertical: 16, borderTopWidth: 1, borderColor: c.line },
-});
+  dotKey: { width: 9, height: 9, borderRadius: 5, backgroundColor: themeColors.fieldTeal }, lineKey: { width: 19, height: 3, borderRadius: 2, backgroundColor: themeColors.fieldTeal }, currentKey: { width: 10, height: 10, borderRadius: 5, backgroundColor: themeColors.tennis, borderColor: themeColors.ink, borderWidth: 1 },
+  insight: { gap: 8, paddingVertical: 16, borderTopWidth: 1, borderColor: themeColors.line },
+}));

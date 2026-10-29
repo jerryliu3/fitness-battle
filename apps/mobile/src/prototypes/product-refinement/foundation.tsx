@@ -1,3 +1,4 @@
+import { createThemedStyles, useThemedStyles, useThemeColors } from "../../theme";
 import { createContext, useContext, useState, type ReactNode } from "react";
 import {
   Modal,
@@ -77,6 +78,8 @@ export function IconTap({
   label: string;
   onPress: () => void;
 }) {
+  const c = useThemeColors();
+
   return (
     <Tap
       label={label}
@@ -101,6 +104,8 @@ export function Action({
   onPress: () => void;
   secondary?: boolean;
 }) {
+  const c = useThemeColors();
+
   return (
     <Tap
       label={label}
@@ -125,6 +130,8 @@ export function Pill({
   children: ReactNode;
   dark?: boolean;
 }) {
+  const c = useThemeColors();
+
   return (
     <View
       style={{
@@ -157,6 +164,8 @@ export function Metric({
   label: string;
   light?: boolean;
 }) {
+  const c = useThemeColors();
+
   return (
     <View style={{ flex: 1, gap: 2, minWidth: 0 }}>
       <T role="heading" style={{ color: light ? c.card : c.ink }}>
@@ -189,6 +198,8 @@ export function Flow({
   children: ReactNode;
   render: (page: Page) => ReactNode;
 }) {
+  const c = useThemeColors();
+
   const [pages, setPages] = useState<Page[]>([]);
   const nav: Navigation = {
     push: (page) => setPages((p) => [...p, page]),
@@ -285,6 +296,8 @@ export function Study({
   concepts: readonly string[];
   children: (index: number) => ReactNode;
 }) {
+  const c = useThemeColors();
+
   const router = useRouter();
   const params = useLocalSearchParams<{
     concept?: string;
@@ -423,6 +436,8 @@ function ProductFrame({
   children: ReactNode;
   followup?: boolean;
 }) {
+  const c = useThemeColors();
+
   const router = useRouter();
   const routes = ["today", "arena", "you", "field"];
   return (
@@ -511,6 +526,8 @@ export function Plot({
   onSelect?: (index: number) => void;
   compact?: boolean;
 }) {
+  const c = useThemeColors();
+
   const max = Math.max(1, ...values, ...(previous ?? [])) * 1.12;
   const points = values.map((v, i) => ({
     id: String(i),
@@ -640,6 +657,8 @@ export function Spark({
   color?: string;
   height?: number;
 }) {
+  const c = useThemeColors();
+
   const max = Math.max(...values, 1);
   return (
     <Svg
@@ -663,9 +682,9 @@ export function Spark({
     </Svg>
   );
 }
-export const layout = StyleSheet.create({
+export const layoutThemes = createThemedStyles((themeColors) => ({
   inline: row,
   stack,
   section: { gap: 16 },
-  soft: { padding: 16, backgroundColor: c.soft, borderRadius: 18, gap: 12 },
-});
+  soft: { padding: 16, backgroundColor: themeColors.soft, borderRadius: 18, gap: 12 },
+}));

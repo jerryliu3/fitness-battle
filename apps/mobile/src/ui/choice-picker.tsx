@@ -1,3 +1,5 @@
+import { createThemedStyles, useThemedStyles, useThemeColors } from "../theme";
+import { useFocusStyles } from "./focus";
 import { SystemChoice } from "./system-choice";
 import { textStyle } from "./section";
 import { useAnchoredMenu, AnchoredMenu } from "./anchored-menu";
@@ -14,6 +16,8 @@ import { f } from "./focus";
 import { playCue } from "../lib/haptics";
 
 function ChevronDown() {
+  const c = useThemeColors();
+
   return (
     <Svg width={14} height={14} viewBox="0 0 24 24" fill="none" style={{ marginLeft: 6 }}>
       <Path d="M6 9l6 6 6-6" stroke={c.muted} strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round" />
@@ -22,6 +26,8 @@ function ChevronDown() {
 }
 
 function CheckIcon() {
+  const c = useThemeColors();
+
   return (
     <Svg width={14} height={14} viewBox="0 0 24 24" fill="none">
       <Path d="M5 13l4 4L19 7" stroke={c.ink} strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" />
@@ -45,6 +51,10 @@ export function ChoicePicker<T extends string>({
   placeholder?: string;
   systemMenu?: boolean;
 }) {
+  const c = useThemeColors();
+  const s = useThemedStyles(sThemes);
+  const f = useFocusStyles();
+
   const { open, close, toggle, anchorRef, menuLayout } = useAnchoredMenu({
     minWidth: 180,
     estimatedHeight: Math.min(280, options.length * 44 + 16),
@@ -131,20 +141,20 @@ export function ChoicePicker<T extends string>({
   );
 }
 
-const s = StyleSheet.create({
+const sThemes = createThemedStyles((themeColors) => ({
   trigger: {
     minHeight: 46,
     paddingHorizontal: 16,
     borderRadius: 14,
     borderWidth: 1,
-    borderColor: c.line,
-    backgroundColor: c.card,
+    borderColor: themeColors.line,
+    backgroundColor: themeColors.card,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
   },
   triggerOpen: {
-    borderColor: c.ink,
+    borderColor: themeColors.ink,
   },
   option: {
     height: 44,
@@ -164,4 +174,4 @@ const s = StyleSheet.create({
   optionLast: {
     borderBottomWidth: 0,
   },
-});
+}));

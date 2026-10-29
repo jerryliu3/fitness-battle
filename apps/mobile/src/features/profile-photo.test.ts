@@ -18,7 +18,7 @@ vi.mock("react-native-svg", () => ({ default: "Svg", Path: "Path" }));
 vi.mock("../lib/auth", () => ({ useAuth: () => ({ user: mock.user, offlineMode: true }) }));
 vi.mock("../lib/compete-store", () => ({ useCompeteStore: () => ({ dispatch: mock.dispatch }) }));
 vi.mock("../lib/supabase", () => ({ supabase: {} }));
-vi.mock("../ui/focus", () => ({ FocusSheet: "Sheet", FocusButton: "Button", f: {} }));
+vi.mock("../ui/focus", () => ({ FocusSheet: "Sheet", FocusButton: "Button", f: {}, useFocusStyles: () => ({}) }));
 import { ProfilePhoto } from "./profile-photo";
 let renderer: ReactTestRenderer;
 const tree = () => createElement(ProfilePhoto, { state: freshState() });

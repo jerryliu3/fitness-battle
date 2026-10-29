@@ -1,3 +1,4 @@
+import { useFocusStyles } from "../src/ui/focus";
 import { SectionStack } from "../src/ui/section";
 import { useRouter } from "expo-router";
 import { ScrollView } from "react-native";
@@ -10,6 +11,8 @@ import { ScreenHeader } from "../src/ui/screen-header";
 import { f } from "../src/ui/focus";
 
 export default function ProgressHistoryScreen() {
+  const f = useFocusStyles();
+
   const { state } = useCompeteStore();
   const router = useRouter();
   if (!state) return null;

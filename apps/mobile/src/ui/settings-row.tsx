@@ -1,3 +1,4 @@
+import { useFocusStyles } from "./focus";
 import { textStyle } from "./section";
 import { AppIcon, type AppIconName } from "./app-icon";
 import { Pressable, Text, View } from "react-native";
@@ -17,6 +18,8 @@ export function SettingsRow({
   detail: string;
   onPress: () => void;
 }) {
+  const f = useFocusStyles();
+
   return (
     <Pressable
       accessibilityRole="button"

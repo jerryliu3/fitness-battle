@@ -71,3 +71,5 @@ export * from "./activity-context";
 export * from "./competition-place";
 
 export * from "./chart-geometry";
+
+export * from "./appearance";

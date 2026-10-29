@@ -1,3 +1,4 @@
+import { useThemeColors } from "../theme";
 import { View } from "react-native";
 import {
   achievementProgressPercent,
@@ -12,6 +13,8 @@ export function AchievementMeter({
   row: ClubAchievement;
   decorative?: boolean;
 }) {
+  const c = useThemeColors();
+
   return (
     <View
       importantForAccessibility={

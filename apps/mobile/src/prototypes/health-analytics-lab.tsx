@@ -1,3 +1,5 @@
+import { createThemedStyles, useThemedStyles, useThemeColors } from "../theme";
+import { useFocusStyles } from "../ui/focus";
 import {
   ANALYTICS_DOMAIN_SPECS,
   ANALYTICS_LAYOUT_MODES,
@@ -71,6 +73,10 @@ export default function HealthAnalyticsLab({
 }: {
   embedded?: boolean;
 }) {
+  const c = useThemeColors();
+  const s = useThemedStyles(sThemes);
+  const f = useFocusStyles();
+
   const router = useRouter();
   const [domain, setDomain] = useState<AnalyticsDomainId>("market");
   const [concept, setConcept] = useState<ConceptSelection>("all");
@@ -619,6 +625,8 @@ function TelemetryRibbonBar({
   model: AnalyticsLabModel;
   onSelectDomain: (d: AnalyticsDomainId) => void;
 }) {
+  const s = useThemedStyles(sThemes);
+
   const m = model.market;
   const hrv = model.vitals.metrics.find((v) => v.id === "hrv")!;
   const rhr = model.vitals.metrics.find((v) => v.id === "rhr")!;
@@ -697,6 +705,10 @@ function BentoOverviewGrid({
   selectedVitalId: VitalId;
   onSelectVital: (v: VitalId) => void;
 }) {
+  const c = useThemeColors();
+  const s = useThemedStyles(sThemes);
+  const f = useFocusStyles();
+
   const tiles: {
     id: string;
     domain: AnalyticsDomainId;
@@ -891,6 +903,10 @@ function MarketConceptRenderer({
   model: AnalyticsLabModel;
   timeLens: AnalyticsTimeLens;
 }) {
+  const c = useThemeColors();
+  const s = useThemedStyles(sThemes);
+  const f = useFocusStyles();
+
   const m = model.market;
   const series = m.equitySeries;
   const candles = m.candles;
@@ -1335,6 +1351,10 @@ function VitalsConceptRenderer({
   selectedVital: VitalMetricModel;
   onSelectVital: (id: VitalId) => void;
 }) {
+  const c = useThemeColors();
+  const s = useThemedStyles(sThemes);
+  const f = useFocusStyles();
+
   const v = model.vitals;
 
   if (conceptIndex === 0) {
@@ -1580,6 +1600,9 @@ function VitalsConceptRenderer({
 }
 
 function VitalCorridorSvg({ vital }: { vital: VitalMetricModel }) {
+  const c = useThemeColors();
+  const f = useFocusStyles();
+
   const pts = vital.series;
   const allVals = pts.flatMap((p) => [
     p.value,
@@ -1720,6 +1743,10 @@ function SleepConceptRenderer({
   selectedNightId?: string | null;
   onSelectNight?: (id: string) => void;
 }) {
+  const c = useThemeColors();
+  const s = useThemedStyles(sThemes);
+  const f = useFocusStyles();
+
   const sl = model.sleep;
   const activeNight = sl.nights.find((n) => n.id === selectedNightId) ?? sl.lastNight;
 
@@ -2035,6 +2062,10 @@ function LoadConceptRenderer({
   model: AnalyticsLabModel;
   timeLens: AnalyticsTimeLens;
 }) {
+  const c = useThemeColors();
+  const s = useThemedStyles(sThemes);
+  const f = useFocusStyles();
+
   const ld = model.load;
   const pts = ld.series;
   const latest = pts.at(-1)!;
@@ -2310,6 +2341,10 @@ function PerformanceConceptRenderer({
   model: AnalyticsLabModel;
   timeLens: AnalyticsTimeLens;
 }) {
+  const c = useThemeColors();
+  const s = useThemedStyles(sThemes);
+  const f = useFocusStyles();
+
   const pf = model.performance;
   const pts = pf.series;
 
@@ -2468,6 +2503,10 @@ function CombinedConceptRenderer({
   model: AnalyticsLabModel;
   timeLens: AnalyticsTimeLens;
 }) {
+  const c = useThemeColors();
+  const s = useThemedStyles(sThemes);
+  const f = useFocusStyles();
+
   const cmb = model.combined;
   const pts = cmb.series;
 
@@ -2622,6 +2661,8 @@ function CombinedConceptRenderer({
 }
 
 function LegendDot({ color, label }: { color: string; label: string }) {
+  const f = useFocusStyles();
+
   return (
     <View style={{ flexDirection: "row", alignItems: "center", gap: 5 }}>
       <View
@@ -2637,10 +2678,10 @@ function LegendDot({ color, label }: { color: string; label: string }) {
   );
 }
 
-const s = StyleSheet.create({
+const sThemes = createThemedStyles((themeColors) => ({
   controlDeck: {
     gap: 10,
-    borderColor: c.line,
+    borderColor: themeColors.line,
   },
   betweenRow: {
     flexDirection: "row",
@@ -2657,12 +2698,12 @@ const s = StyleSheet.create({
   },
   divider: {
     height: 1,
-    backgroundColor: mobileSurfaces.divider,
+    backgroundColor: themeColors.divider,
     marginVertical: 2,
   },
   segmentWrap: {
     flexDirection: "row",
-    backgroundColor: c.soft,
+    backgroundColor: themeColors.soft,
     borderRadius: 12,
     padding: 3,
     gap: 3,
@@ -2676,48 +2717,48 @@ const s = StyleSheet.create({
     paddingHorizontal: 6,
   },
   segmentBtnActive: {
-    backgroundColor: c.ink,
+    backgroundColor: themeColors.ink,
   },
   segmentLabel: {
     fontSize: 12,
     fontFamily: fonts.bodyMedium,
-    color: c.ink,
+    color: themeColors.ink,
   },
   segmentLabelActive: {
     fontFamily: fonts.bodyBold,
-    color: c.card,
+    color: themeColors.card,
   },
   badgeText: {
     fontSize: 12,
     fontFamily: fonts.bodyBold,
-    color: c.fieldTeal,
+    color: themeColors.fieldTeal,
   },
   miniPill: {
     paddingHorizontal: 9,
     paddingVertical: 4,
     borderRadius: 999,
     borderWidth: 1,
-    borderColor: c.line,
-    backgroundColor: c.card,
+    borderColor: themeColors.line,
+    backgroundColor: themeColors.card,
   },
   miniPillText: {
     fontSize: 11,
     fontFamily: fonts.bodyMedium,
-    color: c.ink,
+    color: themeColors.ink,
   },
   sourceBadge: {
     paddingHorizontal: 8,
     paddingVertical: 3,
     borderRadius: 6,
-    backgroundColor: c.soft,
+    backgroundColor: themeColors.soft,
   },
   sourceBadgeText: {
     fontSize: 11,
     fontFamily: fonts.bodyMedium,
-    color: c.muted,
+    color: themeColors.muted,
   },
   ruleCallout: {
-    backgroundColor: c.actionSoft,
+    backgroundColor: themeColors.actionSoft,
     borderRadius: 12,
     padding: 10,
     gap: 2,
@@ -2725,29 +2766,29 @@ const s = StyleSheet.create({
   ruleCalloutTitle: {
     fontSize: 11,
     fontFamily: fonts.bodyBold,
-    color: c.ink,
+    color: themeColors.ink,
     textTransform: "uppercase",
   },
   modeTag: {
     paddingHorizontal: 8,
     paddingVertical: 3,
     borderRadius: 999,
-    backgroundColor: c.soft,
+    backgroundColor: themeColors.soft,
   },
   modeTagText: {
     fontSize: 11,
     fontFamily: fonts.bodyBold,
-    color: c.fieldTeal,
+    color: themeColors.fieldTeal,
   },
   heroNumber: {
     fontSize: 32,
     lineHeight: 36,
     fontFamily: fonts.bodyBold,
-    color: c.ink,
+    color: themeColors.ink,
     fontVariant: ["tabular-nums"],
   },
   returnPillPositive: {
-    backgroundColor: c.statusSuccessSoft,
+    backgroundColor: themeColors.statusSuccessSoft,
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 999,
@@ -2755,10 +2796,10 @@ const s = StyleSheet.create({
   returnPillText: {
     fontSize: 12,
     fontFamily: fonts.bodyBold,
-    color: c.statusSuccess,
+    color: themeColors.statusSuccess,
   },
   pointBox: {
-    backgroundColor: c.soft,
+    backgroundColor: themeColors.soft,
     borderRadius: 14,
     padding: 12,
     gap: 10,
@@ -2771,7 +2812,7 @@ const s = StyleSheet.create({
   kpiCell: {
     flexBasis: "47%",
     flexGrow: 1,
-    backgroundColor: c.card,
+    backgroundColor: themeColors.card,
     borderRadius: 10,
     padding: 10,
     gap: 2,
@@ -2788,7 +2829,7 @@ const s = StyleSheet.create({
     borderRadius: 9,
     overflow: "hidden",
     flexDirection: "row",
-    backgroundColor: c.soft,
+    backgroundColor: themeColors.soft,
   },
   holdingRow: {
     flexDirection: "row",
@@ -2796,7 +2837,7 @@ const s = StyleSheet.create({
     justifyContent: "space-between",
     paddingVertical: 8,
     borderBottomWidth: 1,
-    borderBottomColor: c.line,
+    borderBottomColor: themeColors.line,
   },
   statusPill: {
     paddingHorizontal: 10,
@@ -2819,7 +2860,7 @@ const s = StyleSheet.create({
   corridorBarOuter: {
     height: 16,
     borderRadius: 8,
-    backgroundColor: c.line,
+    backgroundColor: themeColors.line,
     justifyContent: "center",
     position: "relative",
   },
@@ -2830,7 +2871,7 @@ const s = StyleSheet.create({
     top: 0,
     bottom: 0,
     borderRadius: 8,
-    backgroundColor: c.fieldTeal,
+    backgroundColor: themeColors.fieldTeal,
     opacity: 0.25,
   },
   corridorPointer: {
@@ -2840,12 +2881,12 @@ const s = StyleSheet.create({
     borderRadius: 7,
     marginLeft: -7,
     borderWidth: 2,
-    borderColor: c.card,
+    borderColor: themeColors.card,
   },
   zTrack: {
     height: 12,
     borderRadius: 6,
-    backgroundColor: c.soft,
+    backgroundColor: themeColors.soft,
     position: "relative",
     overflow: "hidden",
   },
@@ -2855,7 +2896,7 @@ const s = StyleSheet.create({
     width: "45%",
     top: 0,
     bottom: 0,
-    backgroundColor: c.fieldTeal,
+    backgroundColor: themeColors.fieldTeal,
     opacity: 0.14,
   },
   zCenterLine: {
@@ -2864,24 +2905,24 @@ const s = StyleSheet.create({
     width: 1.5,
     top: 0,
     bottom: 0,
-    backgroundColor: c.ink,
+    backgroundColor: themeColors.ink,
   },
   zoneBarOuter: {
     height: 10,
     borderRadius: 5,
-    backgroundColor: c.soft,
+    backgroundColor: themeColors.soft,
     overflow: "hidden",
   },
   metaFooter: {
     borderTopWidth: 1,
-    borderTopColor: c.line,
+    borderTopColor: themeColors.line,
     paddingTop: 8,
     gap: 2,
   },
   metaFooterLabel: {
     fontSize: 11,
     fontFamily: fonts.bodyBold,
-    color: c.fieldTeal,
+    color: themeColors.fieldTeal,
   },
   bentoGrid: {
     flexDirection: "row",
@@ -2891,38 +2932,38 @@ const s = StyleSheet.create({
   bentoTile: {
     flexBasis: "47%",
     flexGrow: 1,
-    backgroundColor: c.card,
+    backgroundColor: themeColors.card,
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: c.line,
+    borderColor: themeColors.line,
     padding: 12,
     gap: 6,
   },
   vitalCard: {
     flexBasis: "47%",
     flexGrow: 1,
-    backgroundColor: c.soft,
+    backgroundColor: themeColors.soft,
     borderRadius: 14,
     borderWidth: 1,
-    borderColor: c.line,
+    borderColor: themeColors.line,
     padding: 10,
     gap: 5,
   },
   bentoKicker: {
     fontSize: 10,
     fontFamily: fonts.bodyBold,
-    color: c.muted,
+    color: themeColors.muted,
     textTransform: "uppercase",
     letterSpacing: 0.4,
   },
   bentoValue: {
     fontSize: 20,
     fontFamily: fonts.bodyBold,
-    color: c.ink,
+    color: themeColors.ink,
     fontVariant: ["tabular-nums"],
   },
   ribbonBar: {
-    backgroundColor: c.ink,
+    backgroundColor: themeColors.ink,
     borderRadius: 14,
     paddingVertical: 10,
     paddingHorizontal: 12,
@@ -2935,12 +2976,12 @@ const s = StyleSheet.create({
   tickerSymbol: {
     fontSize: 11,
     fontFamily: fonts.bodyBold,
-    color: c.tennis,
+    color: themeColors.tennis,
   },
   tickerValue: {
     fontSize: 14,
     fontFamily: fonts.bodyBold,
-    color: c.card,
+    color: themeColors.card,
     fontVariant: ["tabular-nums"],
   },
   tickerDelta: {
@@ -2961,12 +3002,12 @@ const s = StyleSheet.create({
     paddingVertical: 10,
     paddingHorizontal: 14,
     borderRadius: 12,
-    backgroundColor: c.ink,
+    backgroundColor: themeColors.ink,
     alignSelf: "flex-start",
   },
   backSubpageText: {
     fontSize: 13,
     fontFamily: fonts.bodyBold,
-    color: c.card,
+    color: themeColors.card,
   },
-});
+}));

@@ -1,3 +1,4 @@
+import { useFocusStyles } from "../ui/focus";
 import { textStyle, SectionHeader, AppText  } from "../ui/section";
 import { useRef, useState } from "react";
 import { Animated, Pressable, Text, View } from "react-native";
@@ -19,6 +20,8 @@ export function ResultCard({
   result: PeriodResult;
   units: UnitSystem;
 }) {
+  const f = useFocusStyles();
+
   const [receipt, setReceipt] = useState(false),
     pressed = useRef(new Animated.Value(0)).current,
     reduced = useReducedMotion();

@@ -1,3 +1,4 @@
+import { createThemedStyles, useThemedStyles } from "../theme";
 import { type ReactNode } from "react";
 import { Pressable, ScrollView, StyleSheet, type StyleProp, type TextStyle, type ViewStyle } from "react-native";
 import { AppText } from "./section";
@@ -9,6 +10,8 @@ import { playCue } from "../lib/haptics";
  * Keeps selectors on 1 line and lets them overflow/scroll smoothly off-screen.
  */
 export function ChipRow({ children, style }: { children: ReactNode; style?: StyleProp<ViewStyle> }) {
+  const s = useThemedStyles(sThemes);
+
   return (
     <ScrollView
       horizontal
@@ -41,6 +44,8 @@ export function Chip({
   style,
   labelStyle,
 }: ChipProps) {
+  const s = useThemedStyles(sThemes);
+
   return (
     <Pressable
       accessibilityRole="button"
@@ -63,7 +68,7 @@ export function Chip({
   );
 }
 
-const s = StyleSheet.create({
+const sThemes = createThemedStyles((themeColors) => ({
   row: {
     flexDirection: "row",
     alignItems: "center",
@@ -76,22 +81,22 @@ const s = StyleSheet.create({
     paddingHorizontal: 12,
     borderRadius: 9999,
     borderWidth: 1,
-    borderColor: c.line,
-    backgroundColor: c.card,
+    borderColor: themeColors.line,
+    backgroundColor: themeColors.card,
     justifyContent: "center",
     alignItems: "center",
   },
   chipSelected: {
-    backgroundColor: c.ink,
-    borderColor: c.ink,
+    backgroundColor: themeColors.ink,
+    borderColor: themeColors.ink,
   },
   label: {
     fontVariant: ["tabular-nums"],
   },
   labelUnselected: {
-    color: c.ink,
+    color: themeColors.ink,
   },
   labelSelected: {
-    color: c.card,
+    color: themeColors.card,
   },
-});
+}));

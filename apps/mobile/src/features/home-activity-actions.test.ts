@@ -16,7 +16,7 @@ vi.mock("../lib/device-health", () => ({ syncAppleHealth: mock.device, syncHealt
 vi.mock("../ui/icon-button", () => ({ IconButton: "IconButton" }));
 vi.mock("../ui/form-picker", () => ({ NumberPicker: "NumberPicker", DateTimeField: "DateTimeField" }));
 vi.mock("../ui/choice-picker", () => ({ ChoicePicker: "ChoicePicker" }));
-vi.mock("../ui/focus", () => ({ f: {}, FocusButton: (props: any) => createElement("Button", props), FocusSheet: (props: any) => props.open ? createElement("Sheet", props) : null }));
+vi.mock("../ui/focus", () => ({ f: {}, useFocusStyles: () => ({}), FocusButton: (props: any) => createElement("Button", props), FocusSheet: (props: any) => props.open ? createElement("Sheet", props) : null }));
 import { HomeActivityActions } from "./home-activity-actions";
 let renderer: ReactTestRenderer;
 const button = (label: string) => renderer.root.findAllByType("Button" as any).find((node) => node.props.label === label)!;

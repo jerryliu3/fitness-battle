@@ -1,3 +1,4 @@
+import { createThemedStyles, useThemedStyles } from "../theme";
 import { textStyle } from "./section";
 import { SHELL_COLORS as clubColors } from "@fitness-battle/shared";
 import { useRef, useEffect } from "react";
@@ -21,6 +22,8 @@ export function Arena3D({
   onPan,
   onUnavailable,
 }: Arena3DProps) {
+  const styles = useThemedStyles(stylesThemes);
+
   const ref = useRef<WebView<object>>(null);
   const ready = useRef(false);
   const fail = useRef(onUnavailable);
@@ -103,13 +106,13 @@ export function Arena3D({
   );
 }
 
-const styles = StyleSheet.create({
+const stylesThemes = createThemedStyles((themeColors) => ({
   frame: {
     height: 520,
     borderRadius: 20,
     overflow: "hidden",
-    backgroundColor: clubColors.soft,
+    backgroundColor: themeColors.soft,
   },
-  web: { flex: 1, backgroundColor: clubColors.soft },
-  caption: { ...textStyle("caption"), color: clubColors.muted, padding: 9, textAlign: "center" },
-});
+  web: { flex: 1, backgroundColor: themeColors.soft },
+  caption: { ...textStyle("caption"), color: themeColors.muted, padding: 9, textAlign: "center" },
+}));

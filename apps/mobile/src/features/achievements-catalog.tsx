@@ -1,3 +1,5 @@
+import { createThemedStyles, useThemedStyles, useThemeColors } from "../theme";
+import { useFocusStyles } from "../ui/focus";
 import { SectionStack, StatusBadge, AppText } from "../ui/section";
 import { useState } from "react";
 import { Platform, Pressable, ScrollView, StyleSheet, View } from "react-native";
@@ -14,6 +16,8 @@ import { f } from "../ui/focus";
 import { SHELL_COLORS as c } from "../theme";
 
 function Badge({ item }: { item: ClubAchievement }) {
+  const c = useThemeColors();
+
   const id = `badge-${item.id}`;
   return (
     <Svg width={64} height={70} viewBox="0 0 84 92" accessible={Platform.OS === "web" ? undefined : false}>
@@ -40,6 +44,8 @@ export function AchievementsCatalog({
   state: CompeteState;
   initialId?: string;
 }) {
+  const f = useFocusStyles();
+
   const rows = clubAchievements(state);
   const [selected, setSelected] = useState(
     initialId && rows.some((row) => row.id === initialId)
@@ -97,7 +103,7 @@ export function AchievementsCatalog({
   );
 }
 
-export const achievementTileStyle = StyleSheet.create({
+export const achievementTileStyleThemes = createThemedStyles((themeColors) => ({
   tile: {
     flex: 1,
     minWidth: 0,
@@ -105,9 +111,14 @@ export const achievementTileStyle = StyleSheet.create({
     paddingVertical: 14,
     borderRadius: 20,
     borderWidth: 1,
-    borderColor: c.line,
-    backgroundColor: c.card,
+    borderColor: themeColors.line,
+    backgroundColor: themeColors.card,
     alignItems: "center",
     gap: 6,
   },
-});
+}));
+
+export const achievementTileStyle = achievementTileStyleThemes.light;
+export function useAchievementTileStyle() {
+  return useThemedStyles(achievementTileStyleThemes);
+}

@@ -1,3 +1,4 @@
+import { useThemeColors } from "../theme";
 import { useCompetitionExperience } from "./use-competition-experience";
 import { useSyncReviewGate } from "./use-sync-review";
 import {
@@ -134,6 +135,8 @@ async function preloadBaselineCache(
 }
 
 export function CompeteProvider({ children, navigationReady = true }: { children: ReactNode; navigationReady?: boolean }) {
+  const SHELL_COLORS = useThemeColors();
+
   const navigationReadyRef = useRef(navigationReady);
   navigationReadyRef.current = navigationReady;
   const pathname = usePathname();

@@ -1,3 +1,4 @@
+import { createThemedStyles, useThemedStyles, useThemeColors } from "../theme";
 import { useState, type ReactNode } from "react";
 import { Modal, Pressable, StyleSheet, View } from "react-native";
 import {
@@ -18,6 +19,8 @@ export function SessionStage({ state, activities, suggestion, onRemove, actions 
   state: CompeteState; activities: Activity[]; suggestion?: { title: string; minutes?: number | null; detail: string };
   onRemove: (id: string) => void; actions?: ReactNode;
 }) {
+  const s = useThemedStyles(sThemes);
+
   const model = sessionStageModel(activities);
   const [selected, setSelected] = useState<string | null>(null);
   const current = model.rows.find(row => row.id === selected) ?? model.rows[0];
@@ -45,6 +48,9 @@ export function SessionStage({ state, activities, suggestion, onRemove, actions 
 }
 
 function ActivityDetails({ activity, state, onRemove }: { activity: Activity; state: CompeteState; onRemove: (id: string) => void }) {
+  const c = useThemeColors();
+  const s = useThemedStyles(sThemes);
+
   const [confirming, setConfirming] = useState(false);
   const gps = sportById(activity.sport).gps;
   const primary = gps && activity.distanceM > 0 ? formatVolume(activity.sport, activity.distanceM, activity.movingSec, state.units) : formatClockTime(activity.movingSec);
@@ -89,12 +95,12 @@ function ActivityDetails({ activity, state, onRemove }: { activity: Activity; st
   </View>;
 }
 
-const s = StyleSheet.create({
+const sThemes = createThemedStyles((themeColors) => ({
   stack: { gap: 24 }, details: { gap: 28 }, overview: { gap: 8 }, sport: { flexDirection: "row", alignItems: "center", gap: 8 },
   group: { gap: 12 }, tabs: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
-  tab: { minHeight: 44, justifyContent: "center", paddingHorizontal: 12, paddingVertical: 8, borderWidth: 1, borderColor: c.line, borderRadius: 12 }, active: { backgroundColor: c.ink, borderColor: c.ink },
+  tab: { minHeight: 44, justifyContent: "center", paddingHorizontal: 12, paddingVertical: 8, borderWidth: 1, borderColor: themeColors.line, borderRadius: 12 }, active: { backgroundColor: themeColors.ink, borderColor: themeColors.ink },
   suggestion: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", gap: 16, paddingVertical: 12 },
-  footer: { gap: 12, borderTopWidth: 1, borderColor: c.line, paddingTop: 16 },
+  footer: { gap: 12, borderTopWidth: 1, borderColor: themeColors.line, paddingTop: 16 },
   disclosure: { minHeight: 44, justifyContent: "center", alignSelf: "flex-start", paddingVertical: 8 },
   modalBackdrop: { flex: 1, backgroundColor: "rgba(10, 15, 20, 0.45)", justifyContent: "center", alignItems: "center", padding: 24 },
   glassCard: {
@@ -104,6 +110,6 @@ const s = StyleSheet.create({
   },
   dialogContent: { gap: 12, alignItems: "center" },
   dialogActions: { flexDirection: "row", gap: 10, marginTop: 6, width: "100%" },
-  cancelBtn: { flex: 1, height: 38, justifyContent: "center", alignItems: "center", borderRadius: 12, backgroundColor: c.soft, borderWidth: 1, borderColor: c.line },
-  deleteBtn: { flex: 1, height: 38, justifyContent: "center", alignItems: "center", borderRadius: 12, backgroundColor: c.statusError },
-});
+  cancelBtn: { flex: 1, height: 38, justifyContent: "center", alignItems: "center", borderRadius: 12, backgroundColor: themeColors.soft, borderWidth: 1, borderColor: themeColors.line },
+  deleteBtn: { flex: 1, height: 38, justifyContent: "center", alignItems: "center", borderRadius: 12, backgroundColor: themeColors.statusError },
+}));

@@ -1,3 +1,5 @@
+import { useThemeColors } from "../theme";
+import { useFocusStyles } from "../ui/focus";
 import { textStyle } from "../ui/section";
 import { useEffect, useRef, useState } from "react";
 import { ActivityIndicator, Modal, Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions, type ScrollViewInstance } from "react-native";
@@ -14,6 +16,8 @@ export function SyncReview({ receipt, state, moment, debug = false, remaining = 
   receipt: SyncReviewReceipt | null; state: CompeteState; debug?: boolean; moment?: Moment | null; remaining?: number;
   onComplete: (selected?: readonly string[], quiet?: boolean) => unknown; onAcknowledge?: () => void;
 }) {
+  const f = useFocusStyles();
+
   const reduced = useReducedMotion();
   const close = () => { if (receipt) onComplete(undefined, true); };
   const scroll = useRef<ScrollViewInstance | null>(null);
@@ -33,6 +37,9 @@ export function SyncReview({ receipt, state, moment, debug = false, remaining = 
   </Modal>;
 }
 function Review({ receipt, state, onComplete, resetScroll }: { resetScroll: () => void; receipt: SyncReviewReceipt; state: CompeteState; onComplete: (selected?: readonly string[], quiet?: boolean) => unknown }) {
+  const c = useThemeColors();
+  const f = useFocusStyles();
+
   const windowDimensions = useWindowDimensions();
   const cardWidth = Math.max(260, Math.min(360, Math.round((windowDimensions.width || 375) * 0.82)));
   const cardGap = 12;

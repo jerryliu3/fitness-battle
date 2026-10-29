@@ -1,3 +1,4 @@
+import { useFocusStyles } from "../../src/ui/focus";
 import { SectionStack, AppText } from "../../src/ui/section";
 import { competitionTrack, competitionTrackLabel } from "@fitness-battle/shared";
 import { EventCarousel } from "../../src/features/event-carousel";
@@ -23,6 +24,8 @@ import { FocusButton, FocusSheet, f } from "../../src/ui/focus";
 import { SHELL_COLORS } from "../../src/theme";
 
 export default function ArenaScreen() {
+  const f = useFocusStyles();
+
   const {
     state,
     accountKey,
