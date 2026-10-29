@@ -235,4 +235,32 @@ describe("AthleteTelemetryMatrix mobile features", () => {
     });
     expect(allText()).toContain("Resting Heart Rate");
   });
+
+  it("shows empty placeholder data when signedOut is true", async () => {
+    await act(async () => {
+      renderer = create(createElement(AthleteTelemetryMatrix, { signedOut: true }));
+    });
+
+    const allText = () =>
+      renderer.root
+        .findAllByType("Text" as never)
+        .map((n) => n.children.filter((c: unknown) => typeof c === "string").join(""))
+        .join(" ");
+
+    const text = allText();
+    expect(text).toContain("Advanced Analytics");
+    expect(text).toContain("Overnight HRV");
+    expect(text).toContain("—");
+    expect(text).toContain("No data");
+
+    // Also verify detail view has zero mock data when signedOut is true
+    await act(async () => {
+      renderer = create(createElement(AthleteTelemetryDetailView, { domain: "vitals", signedOut: true }));
+    });
+    const detailText = allText();
+    expect(detailText).toContain("Autonomic Vitals");
+    expect(detailText).toContain("No data available");
+    expect(detailText).not.toContain("Heart Rate Variability");
+    expect(detailText).not.toContain("74 ms");
+  });
 });

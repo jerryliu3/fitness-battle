@@ -1,10 +1,9 @@
-import { textStyle } from "./section";
 import { AppIcon } from "./app-icon";
 import {
   SHELL_TABS,
   type ShellTabId,
 } from "@fitness-battle/shared";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { Pressable, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { SHELL_COLORS } from "../theme";
 import { playCue } from "../lib/haptics";
@@ -89,9 +88,6 @@ export function PhoneTabBar({
             style={[styles.tab, selected ? styles.tabOn : null]}
           >
             <AppIcon name={tabIcons[tab.id]} size={22} color={selected ? SHELL_COLORS.starEmber : SHELL_COLORS.muted} />
-            <Text style={[styles.label, selected ? styles.labelOn : null]}>
-              {tab.label}
-            </Text>
           </Pressable>
         );
       })}
@@ -131,12 +127,5 @@ const styles = StyleSheet.create({
   },
   tabOn: {
     backgroundColor: "#142b3bf2",
-  },
-  label: {
-    ...textStyle("nav"),
-    color: SHELL_COLORS.muted
-},
-  labelOn: {
-    color: SHELL_COLORS.starEmber,
   },
 });

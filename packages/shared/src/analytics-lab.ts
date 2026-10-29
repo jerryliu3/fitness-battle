@@ -756,20 +756,20 @@ export function buildAnalyticsLabModel(
   ].slice(-totalPoints);
 
   const weekLabels = [
-    "W1 Aug",
-    "W2 Aug",
-    "W3 Aug",
-    "W4 Aug",
-    "W1 Sep",
-    "W2 Sep",
-    "W3 Sep",
-    "W4 Sep",
-    "W1 Oct",
-    "W2 Oct",
-    "W3 Oct",
-    "W4 Oct",
-    "Last Wk",
-    "This Wk",
+    "Jul 27",
+    "Aug 3",
+    "Aug 10",
+    "Aug 17",
+    "Aug 24",
+    "Aug 31",
+    "Sep 7",
+    "Sep 14",
+    "Sep 21",
+    "Sep 28",
+    "Oct 5",
+    "Oct 12",
+    "Oct 19",
+    "Oct 26",
   ].slice(-totalPoints);
 
   // 1. Build Market Series & Candlesticks

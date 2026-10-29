@@ -27,9 +27,11 @@ const TIME_LENSES: readonly { value: AnalyticsTimeLens; label: string }[] = [
 export function AthleteTelemetryDetails({
   domain = "vitals",
   state,
+  signedOut = false,
 }: {
   domain?: AnalyticsDomainId | string;
   state?: CompeteState | null;
+  signedOut?: boolean;
 }) {
   const activeDomain: AnalyticsDomainId =
     domain === "market" ||
@@ -46,6 +48,19 @@ export function AthleteTelemetryDetails({
     () => buildAnalyticsLabModel(state, timeLens),
     [state, timeLens],
   );
+
+  if (signedOut) {
+    return (
+      <ScrollView contentContainerStyle={s.content}>
+        <View style={f.card}>
+          <SectionHeader title={getDomainTitle(activeDomain)} />
+          <AppText role="body" secondary style={{ marginTop: 8 }}>
+            No data available. Sign in and connect a tracker or health source to view your {getDomainTitle(activeDomain).toLowerCase()} analytics.
+          </AppText>
+        </View>
+      </ScrollView>
+    );
+  }
 
   return (
     <ScrollView contentContainerStyle={s.content}>
@@ -81,8 +96,8 @@ function KpiGrid({
     <View style={s.kpiGrid}>
       {stats.map((st, i) => (
         <Surface key={i} style={s.kpiCell}>
-          <AppText role="label" secondary>{st.label}</AppText>
-          <AppText role="value" style={st.color ? { color: st.color } : undefined}>
+          <AppText role="label" secondary numberOfLines={1}>{st.label}</AppText>
+          <AppText role="value" numberOfLines={1} adjustsFontSizeToFit style={st.color ? { color: st.color } : undefined}>
             {st.value}
           </AppText>
         </Surface>
@@ -113,8 +128,8 @@ function InspectionCallout({
         {badge && <StatusBadge tone={badgeTone}>{badge}</StatusBadge>}
       </View>
       <View style={[s.betweenRow, { marginTop: 4 }]}>
-        <AppText role="value">{value}</AppText>
-        {detail && <AppText role="caption" secondary>{detail}</AppText>}
+        <AppText role="value" style={{ flexShrink: 0 }}>{value}</AppText>
+        {detail && <AppText role="caption" secondary style={{ flexShrink: 1, textAlign: "right" }}>{detail}</AppText>}
       </View>
       {subtitle && <AppText role="caption" secondary style={{ marginTop: 2 }}>{subtitle}</AppText>}
     </Surface>
@@ -569,5 +584,7 @@ const s = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
+    flexWrap: "wrap",
+    gap: 6,
   },
 });

@@ -70,7 +70,7 @@ export function crewRelayScene(model: Relay, width: number, prefix: string) {
   const finish: FieldNode[] = [];
   if (model.finish !== null) {
     const f = model.finish;
-    // Print the checks in the top plane, using the same projection as the block.
+    // Print the checks in the top plane and wrap down the front face of the block.
     const strip = 10 / length;
     const a = Math.max(0, f - strip / 2);
     const b = Math.min(1, f + strip / 2);
@@ -83,6 +83,17 @@ export function crewRelayScene(model: Relay, width: number, prefix: string) {
         const x0 = a + (b - a) * col / 2, x1 = a + (b - a) * (col + 1) / 2;
         const y0 = row / 8, y1 = (row + 1) / 8;
         finish.push(path(`M${surface(x0, y0)} L${surface(x1, y0)} L${surface(x1, y1)} L${surface(x0, y1)}Z`, (row + col) % 2 ? "#ffffff" : "#142b3b"));
+      }
+    }
+    const faceSurface = (fraction: number, depth: number) => {
+      const topPt = point(fraction, false, false), bottomPt = point(fraction, false, true);
+      return `${topPt.x + (bottomPt.x - topPt.x) * depth} ${topPt.y + (bottomPt.y - topPt.y) * depth}`;
+    };
+    for (let row = 0; row < 4; row++) {
+      for (let col = 0; col < 2; col++) {
+        const x0 = a + (b - a) * col / 2, x1 = a + (b - a) * (col + 1) / 2;
+        const y0 = row / 4, y1 = (row + 1) / 4;
+        finish.push(path(`M${faceSurface(x0, y0)} L${faceSurface(x1, y0)} L${faceSurface(x1, y1)} L${faceSurface(x0, y1)}Z`, (row + col) % 2 ? "#ffffff" : "#142b3b"));
       }
     }
   }

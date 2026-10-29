@@ -13,8 +13,10 @@ import { AppText } from "../ui/section";
 
 export function AthleteTelemetryMatrix({
   state,
+  signedOut = false,
 }: {
   state?: CompeteState | null;
+  signedOut?: boolean;
 }) {
   const router = useRouter();
   const model = useMemo(() => buildAnalyticsLabModel(state, "30d"), [state]);
@@ -36,9 +38,9 @@ export function AthleteTelemetryMatrix({
             id: "market",
             domain: "market" as const,
             kicker: "Athlete Equity",
-            value: `${model.market.currentIndex.toLocaleString()} pts`,
-            delta: `+${model.market.allTimeReturnPct}% all-time`,
-            points: model.market.equitySeries.map((p) => p.nav),
+            value: signedOut ? "—" : `${model.market.currentIndex.toLocaleString()} pts`,
+            delta: signedOut ? "No data" : `+${model.market.allTimeReturnPct}% all-time`,
+            points: signedOut ? [] : model.market.equitySeries.map((p) => p.nav),
             accent: c.tennis,
           },
         ]
@@ -47,45 +49,45 @@ export function AthleteTelemetryMatrix({
       id: "vitals",
       domain: "vitals",
       kicker: "Overnight HRV",
-      value: model.vitals.metrics[0]!.formattedCurrent,
-      delta: `${model.vitals.metrics[0]!.statusLabel} corridor`,
-      points: model.vitals.metrics[0]!.series.map((p) => p.value),
+      value: signedOut ? "—" : model.vitals.metrics[0]!.formattedCurrent,
+      delta: signedOut ? "No data" : `${model.vitals.metrics[0]!.statusLabel} corridor`,
+      points: signedOut ? [] : model.vitals.metrics[0]!.series.map((p) => p.value),
       accent: c.fieldTeal,
     },
     {
       id: "sleep",
       domain: "sleep",
       kicker: "Sleep & Debt",
-      value: `${model.sleep.lastNight.score} score`,
-      delta: `${model.sleep.lastNight.restorativePct}% restorative · ${model.sleep.lastNight.debtMin}m debt`,
-      points: model.sleep.nights.map((n) => n.score),
+      value: signedOut ? "—" : `${model.sleep.lastNight.score} score`,
+      delta: signedOut ? "No data" : `${model.sleep.lastNight.restorativePct}% restorative · ${model.sleep.lastNight.debtMin}m debt`,
+      points: signedOut ? [] : model.sleep.nights.map((n) => n.score),
       accent: c.ink,
     },
     {
       id: "load",
       domain: "load",
       kicker: "Workload Ratio",
-      value: `${model.load.acwrCurrent.toFixed(2)}x`,
-      delta: model.load.acwrStatusLabel,
-      points: model.load.series.map((b) => b.acwr * 100),
+      value: signedOut ? "—" : `${model.load.acwrCurrent.toFixed(2)}x`,
+      delta: signedOut ? "No data" : model.load.acwrStatusLabel,
+      points: signedOut ? [] : model.load.series.map((b) => b.acwr * 100),
       accent: c.statusSuccess,
     },
     {
       id: "performance",
       domain: "performance",
       kicker: "Aerobic Efficiency",
-      value: model.performance.efCurrent.toFixed(2),
-      delta: `${model.performance.efDeltaPct >= 0 ? "+" : ""}${model.performance.efDeltaPct}% pace/HR`,
-      points: model.performance.series.map((p) => p.efficiencyFactor * 100),
+      value: signedOut ? "—" : model.performance.efCurrent.toFixed(2),
+      delta: signedOut ? "No data" : `${model.performance.efDeltaPct >= 0 ? "+" : ""}${model.performance.efDeltaPct}% pace/HR`,
+      points: signedOut ? [] : model.performance.series.map((p) => p.efficiencyFactor * 100),
       accent: c.fieldTeal,
     },
     {
       id: "combined",
       domain: "combined",
       kicker: "Readiness Brief",
-      value: `${model.vitals.readinessComposite}%`,
-      delta: `Strain ceiling ${model.combined.optimalStrainCeiling}`,
-      points: model.combined.series.map((s) => s.nextDayReadiness),
+      value: signedOut ? "—" : `${model.vitals.readinessComposite}%`,
+      delta: signedOut ? "No data" : `Strain ceiling ${model.combined.optimalStrainCeiling}`,
+      points: signedOut ? [] : model.combined.series.map((s) => s.nextDayReadiness),
       accent: c.statusSuccess,
     },
   ];
@@ -104,7 +106,10 @@ export function AthleteTelemetryMatrix({
               onPress={() => {
                 router.push({
                   pathname: "/telemetry",
-                  params: { domain: t.domain },
+                  params: {
+                    domain: t.domain,
+                    signedOut: signedOut ? "1" : undefined,
+                  },
                 });
               }}
               style={s.bentoTile}

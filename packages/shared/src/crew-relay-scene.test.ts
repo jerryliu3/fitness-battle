@@ -23,14 +23,15 @@ it("leaves visible unfilled runway before and beyond the true finish",()=>{
  }
 });
 
-it("keeps every finish check in the block's top plane without flags", () => {
+it("keeps every finish check on the block (top plane and wrapping front face) without flags", () => {
   const model = crewRelay([{ id: "a", name: "A", value: 80, sessions: 3 }], 100);
   for (const width of [248, 640]) {
     const scene = crewRelayScene(model, width, "plane");
     const length = width - 52;
     const checks = scene.finish.filter(node => node.tag === "path" && String(node.attrs.d).includes(" L"));
-    expect(checks).toHaveLength(16);
-    for (const check of checks) {
+    expect(checks).toHaveLength(24);
+    const topChecks = checks.slice(0, 16);
+    for (const check of topChecks) {
       const coords = String(check.attrs.d).match(/-?\d+(?:\.\d+)?/g)!.map(Number);
       for (let i = 0; i < coords.length; i += 2) {
         const x = coords[i]!, y = coords[i + 1]!;
@@ -40,6 +41,18 @@ it("keeps every finish check in the block's top plane without flags", () => {
         expect(depth).toBeGreaterThanOrEqual(-1e-6);
         expect(depth).toBeLessThanOrEqual(1 + 1e-6);
         expect(Math.abs(fraction - model.finish!) * length).toBeLessThanOrEqual(5.0001);
+      }
+    }
+    const faceChecks = checks.slice(16);
+    expect(faceChecks).toHaveLength(8);
+    for (const check of faceChecks) {
+      const coords = String(check.attrs.d).match(/-?\d+(?:\.\d+)?/g)!.map(Number);
+      for (let i = 0; i < coords.length; i += 2) {
+        const x = coords[i]!, y = coords[i + 1]!;
+        const fraction = (x - 16) / length;
+        expect(Math.abs(fraction - model.finish!) * length).toBeLessThanOrEqual(5.0001);
+        expect(y).toBeGreaterThanOrEqual(174 - 30 * fraction - 1e-6);
+        expect(y).toBeLessThanOrEqual(202 - 30 * fraction + 1e-6);
       }
     }
     expect(scene.finish.filter(node => node.tag === "line")).toHaveLength(0);

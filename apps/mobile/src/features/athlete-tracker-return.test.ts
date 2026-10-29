@@ -10,6 +10,8 @@ const mock = vi.hoisted(() => ({
   push: vi.fn(),
   back: vi.fn(),
   setParams: vi.fn(),
+  canGoBackValue: true,
+  user: { id: "alice" } as { id: string } | null,
 }));
 vi.mock("react-native", () => ({
   useWindowDimensions: () => ({ width: 390, height: 844, fontScale: 1 }),
@@ -30,13 +32,13 @@ vi.mock("expo-router", () => ({
     push: mock.push,
     back: mock.back,
     setParams: mock.setParams,
-    canGoBack: () => true,
+    canGoBack: () => mock.canGoBackValue,
   }),
 }));
 vi.mock("heroui-native/button", () => ({ Button: "Button" }));
 vi.mock("heroui-native/input", () => ({ Input: "Input" }));
 vi.mock("../lib/auth", () => ({
-  useAuth: () => ({ user: { id: "alice" }, offlineMode: true }),
+  useAuth: () => ({ user: mock.user, offlineMode: true }),
 }));
 vi.mock("../lib/compete-store", () => ({
   useCompeteStore: () => ({ state: freshState(), dispatch: mock.dispatch }),
@@ -74,6 +76,7 @@ import AthleteScreen from "../../app/athlete";
 let renderer: ReactTestRenderer;
 afterEach(async () => {
   if (renderer) await act(async () => renderer.unmount());
+  mock.user = { id: "alice" };
   vi.clearAllMocks();
   vi.unstubAllGlobals();
 });
@@ -129,9 +132,25 @@ describe("athlete profile navigation and layout", () => {
     expect(sidePanel.props.open).toBe(true);
   });
 
-  it("subpanel back button returns to /athlete with edit=1", async () => {
+  it("subpanel back button calls router.back() when canGoBack is true", async () => {
     vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
     mock.params = { panel: "connections" };
+    mock.canGoBackValue = true;
+    await act(async () => {
+      renderer = create(createElement(AthleteScreen));
+    });
+    const screenHeader = renderer.root.findByType("ScreenHeader" as never);
+    expect(screenHeader.props.title).toBe("Data Sync");
+    await act(async () => {
+      screenHeader.props.onBack();
+    });
+    expect(mock.back).toHaveBeenCalled();
+  });
+
+  it("subpanel back button returns to /athlete with edit=1 when cannot go back", async () => {
+    vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
+    mock.params = { panel: "connections" };
+    mock.canGoBackValue = false;
     await act(async () => {
       renderer = create(createElement(AthleteScreen));
     });
@@ -155,5 +174,21 @@ describe("athlete profile navigation and layout", () => {
     const rendered = JSON.stringify(renderer.toJSON());
     expect(rendered).toContain("Overtakes");
     expect(rendered).toContain("Since the first mile");
+  });
+
+  it("renders signed out athlete page with updated copy and signedOut flag for metrics", async () => {
+    vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
+    mock.params = {};
+    mock.user = null;
+    await act(async () => {
+      renderer = create(createElement(AthleteScreen));
+    });
+    const rendered = JSON.stringify(renderer.toJSON());
+    expect(rendered).toContain("Sign in to Overtaek");
+    expect(rendered).toContain("and join events.");
+    expect(rendered).not.toContain("keep your battles on this device");
+
+    const metrics = renderer.root.findByType("AthleteMetrics" as never);
+    expect(metrics.props.signedOut).toBe(true);
   });
 });
