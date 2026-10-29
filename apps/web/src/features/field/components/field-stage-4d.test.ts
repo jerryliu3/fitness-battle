@@ -27,13 +27,13 @@ it("shares fullscreen, athlete panels, selection and course replay with 4D", asy
   await act(async () => { renderer = create(createElement(FieldStage, { model, replayState: freshState(new Date("2026-10-26T18:00:00Z")) })); });
   const button = (label: string) => renderer.root.findAllByType("button").find(node => node.props["aria-label"] === label)!;
   const choose = async (value: string) => act(async () => renderer.root.findByType("select").props.onChange({ target: { value } }));
-  await choose("4d");
+  expect(renderer.root.findByType("select").props.value).toBe("4d");
   const map = () => renderer.root.findByType("GeographicCourse" as never);
   const course = DEMO_RACE_COURSE;
   expect(map().props.course).toBe(course);
   expect(map().props.onCourseChange).toBeUndefined();
   expect(renderer.root.findAllByType("FieldOverview" as never)).toHaveLength(0);
-  await act(async () => button("Expand 4D course to full screen").props.onClick());
+  await act(async () => button("Expand 3D course to full screen").props.onClick());
   expect(renderer.root.findByType("FieldHost" as never).props.open).toBe(true);
   const overview = () => renderer.root.findByType("FieldOverview" as never);
   expect(overview().props.positionOnly).toBe(true);

@@ -48,6 +48,8 @@ const touch = (x = 10) => ({ nativeEvent: { pageX: x, pageY: 20, touches: [{}] }
 beforeEach(async () => {
   vi.useFakeTimers(); vi.setSystemTime(new Date("2026-10-26T18:00:00Z")); vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true); mocks.fly.mockClear();
   await act(async () => { renderer = create(createElement(CompetitionField, { sport: "running", track: "verified" })); });
+  expect(renderer.root.findAllByType("FieldViewSwitcher" as never)[0].props.value).toBe("4d");
+  await act(async () => renderer.root.findAllByType("FieldViewSwitcher" as never)[0].props.onChange("2d"));
   await act(async () => field().props.onExpand());
 });
 afterEach(async () => { await act(async () => renderer.unmount()); vi.useRealTimers(); vi.unstubAllGlobals(); });
