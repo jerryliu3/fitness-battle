@@ -13,6 +13,6 @@ export function WeekChart({ state, detail = false, ready = true }: { state: Comp
   const chart = homeTrainingLine(state, range);
   return <ChartFrame ready={ready}><section className="home-portfolio" aria-label="Training hours">
     <div className="home-portfolio-header"><AppHeading level={1} role="display">Your effort</AppHeading><ActivityActions compact /></div>
-    <OpenLineChart chart={chart} label="Cumulative training hours" unit="hrs" range={range} onRangeChange={next => { if (next !== "year") setRange(next); }} includeYear={false} comparisonLabel={range === "week" ? "Last week" : "Prior 4 weeks"} live footerAction={!detail ? <TextAction href="/week" label="View week →" accessibilityLabel="View your full week" /> : undefined} />
+    <OpenLineChart key={range} chart={chart} label="Cumulative training hours" unit="hrs" range={range} onRangeChange={next => { if (next !== "year") setRange(next); }} includeYear={false} comparisonLabel={range === "week" ? "Last week" : "Prior 4 weeks"} live footerAction={!detail ? <TextAction href="/week" label="View week →" accessibilityLabel="View your full week" /> : undefined} />
   </section></ChartFrame>;
 }

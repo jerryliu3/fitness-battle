@@ -19,13 +19,16 @@ export function OpenLineChart({ chart, label, unit, range, onRangeChange, includ
   return <View style={{ gap: 12 }}>
     <ChartScrubber key={range} points={chart.points} width={chart.width} height={chart.height} plotTop={chart.top} plotBottom={chart.bottom} label={label} onSelectionChange={point => setSelected(!!point)}
       renderSummary={point => <View style={s.reading}><AppText role="caption" secondary>{point?.label ?? chart.date}</AppText><Text style={s.value}>{point?.value ?? chart.value}<Text style={s.unit}> {unit}</Text></Text></View>}>
-      <Svg width="100%" height={chart.height} viewBox={`0 0 ${chart.width} ${chart.height}`} preserveAspectRatio="none" accessible={false}>
-        {comparisonLabel && chart.previous && <SvgText x={chart.width - 4} y={Math.max(14, Number(chart.previous.trim().split(/\s+/).at(-1)?.split(",")[1] ?? 28) - 12)} textAnchor="end" fill={c.muted} fontSize={11}>··· {comparisonLabel}</SvgText>}
+      <View style={{ position: "relative" }}><Svg width="100%" height={chart.height} viewBox={`0 0 ${chart.width} ${chart.height}`} preserveAspectRatio="none" accessible={false}>
+
         {!!chart.previous && <Polyline points={chart.previous} fill="none" stroke={c.muted} strokeWidth={1.5} strokeDasharray="2 5" strokeLinecap="round" opacity={.65} />}
         <Polyline points={chart.line} fill="none" stroke={c.tennis} strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" />
-        {live && !selected && end && <LiveCircle cx={end.x} cy={end.y} r={3} fill={c.tennis} opacity={pulse} />}
+        {live && !selected && end && <Circle cx={end.x} cy={end.y} r={3.5} fill={c.tennis} />}
+        {live && !selected && end && <LiveCircle cx={end.x} cy={end.y} r={8} fill={c.tennis} opacity={pulse} />}
         {chart.points.length === 1 && <Circle cx={chart.points[0]!.x} cy={chart.points[0]!.y} r={3} fill={c.tennis} />}
       </Svg>
+      {comparisonLabel && chart.previous && <View pointerEvents="none" style={{ position: "absolute", right: 0, top: Math.max(0, Number(chart.previous.trim().split(/\s+/).at(-1)?.split(",")[1] ?? 28) - 28), maxWidth: "100%" }}><AppText role="caption" secondary>··· {comparisonLabel}</AppText></View>}
+      </View>
     </ChartScrubber>
     <View style={s.footer}><OpenLineRangeToggle value={range} onChange={onRangeChange} includeYear={includeYear} />{footerAction}</View>
   </View>;
