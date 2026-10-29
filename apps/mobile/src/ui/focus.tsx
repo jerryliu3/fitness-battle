@@ -3,6 +3,7 @@ import { AppText, PageHeader, textStyle } from "./section";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import {
   Animated,
+  BackHandler,
   Easing,
   useWindowDimensions,
   KeyboardAvoidingView,
@@ -204,6 +205,15 @@ export function FocusSidePanel({
     });
     return () => animation.stop();
   }, [open, present, progress, reduce]);
+
+  useEffect(() => {
+    if (!open) return;
+    const sub = BackHandler.addEventListener("hardwareBackPress", () => {
+      onClose();
+      return true;
+    });
+    return () => sub.remove();
+  }, [open, onClose]);
 
   if (!present) return null;
 

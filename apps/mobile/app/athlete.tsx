@@ -107,6 +107,7 @@ export default function AthleteScreen() {
   const panel = params.panel ?? null;
   function setPanel(next: AthletePanel | null) {
     if (next) {
+      if (panel === next) return;
       router.push({ pathname: "/athlete-settings", params: { panel: next } });
     } else if (router.canGoBack()) {
       router.back();
@@ -702,7 +703,8 @@ export default function AthleteScreen() {
   const primaryRating = state.ratings.find(r => r.sport === state.primary);
 
   return (
-    <SafeAreaView style={styles.safe} edges={["top"]}>
+    <View style={styles.safe}>
+      <SafeAreaView style={{ flex: 1 }} edges={["top"]}>
         {pageHeader}
       <ScrollView
         automaticallyAdjustKeyboardInsets
@@ -825,6 +827,7 @@ export default function AthleteScreen() {
         ) : null}
       </SectionStack>
     </ScrollView>
+    </SafeAreaView>
 
     {/* Side Panel for Edit Profile & Settings (not a bottom sheet) */}
     <FocusSidePanel
@@ -935,7 +938,7 @@ export default function AthleteScreen() {
         />
       </View>
     </FocusSidePanel>
-  </SafeAreaView>
+    </View>
   );
 }
 
