@@ -20,7 +20,7 @@ import { SleepPanel } from "@/features/health/sleep-panel";
 import { QueuedField } from "./queued-field";
 import "./queued-field.css";
 import { Sheet } from "@/ui/sheet";
-import { APP_TIMEZONE, competitionQueue, sportRenewal, waveTimeLabel, nextDailyWaveWindowAt, competitionTrack, competitionTrackLabel, competeNow, competePeriodWindow, primaryFreezePeriodStart, sleepRenewal, SPORTS, weeklyCompetitionLastDay, weeklyPeriodBounds, type SportId } from "@fitness-battle/shared";
+import { APP_TIMEZONE, competitionQueue, waveTimeLabel, nextDailyWaveWindowAt, competitionTrack, competitionTrackLabel, competeNow, competePeriodWindow, primaryFreezePeriodStart, sleepRenewal, SPORTS, weeklyCompetitionLastDay, weeklyPeriodBounds, type SportId } from "@fitness-battle/shared";
 
 function formatCompetitionDateRange(startsAt: Date, endsAt: Date): string {
   const lastDay = weeklyCompetitionLastDay(endsAt);
@@ -76,7 +76,6 @@ export function ArenaScreen({ tabActive = true }: { tabActive?: boolean }) {
   if (selectedSport === "sleep" && sleepRating?.optedIn) period.startsAt = new Date(sleepRating.lockPeriod);
   const queue = selectedSport ? competitionQueue(state, selectedSport, now) : null;
   if (selectedSport === "sleep" && queue) period.endsAt = new Date(queue.end);
-  const renewal = selectedSport && selectedSport !== "sleep" ? sportRenewal(state, selectedSport) : null;
   const msLeft = Math.max(0, period.endsAt.getTime() - now.getTime());
   const daysLeft = Math.floor(msLeft / (24 * 3600 * 1000));
   const hoursLeft = Math.floor((msLeft % (24 * 3600 * 1000)) / (3600 * 1000));
@@ -178,9 +177,7 @@ export function ArenaScreen({ tabActive = true }: { tabActive?: boolean }) {
           leaveLabel={sleep.renews?"Stop after this week":"Keep playing next week"}/>
       ) : <section className="focus-card focus-empty"><AppHeading level={2} role="heading">Your next chapter starts here.</AppHeading><AppParagraph typographyRole="body" className="fb-copy">Register for an event to open your field.</AppParagraph></section>}
 
-      {selectedSport && selectedSport !== "sleep" && !queue?.queued && !queue?.awaitingField && Boolean(state.enrollments.find(e => e.sport === selectedSport)?.syntheticIds.length) ? <AppParagraph typographyRole="caption" className="fb-note">This field includes {state.enrollments.find(e => e.sport === selectedSport)!.syntheticIds.length} generated competitors.</AppParagraph> : null}
       {selectedSport && !queue?.queued && !queue?.awaitingField ? <AppParagraph typographyRole="caption" className="fb-note">Sync workouts before the end time. Late uploads won't change final results.</AppParagraph> : null}
-      {selectedSport && renewal && !queue?.queued && !queue?.awaitingField ? <button type="button" className="fb-btn-line" onClick={() => dispatch({ type: renewal.renews ? "schedule-leave" : "resume-renewal", sport: selectedSport as SportId })}>{renewal.renews ? "Stop after this week" : "Keep playing next week"}</button> : null}
       </EventCarousel> : <section className="focus-card focus-empty"><AppHeading level={2} role="heading">Your next chapter starts here.</AppHeading><AppParagraph typographyRole="body" className="fb-copy">Register for an event to open your field.</AppParagraph><button type="button" className="fb-btn" onClick={()=>setRegister(true)}>Explore events</button></section>}
 
       {state.periodResults.length ? (

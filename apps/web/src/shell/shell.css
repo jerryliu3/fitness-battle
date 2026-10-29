@@ -231,7 +231,7 @@
   left: 50%;
   bottom: 0;
   width: min(720px, 100%);
-  max-height: calc(100dvh - env(safe-area-inset-top, 0px) - 12px);
+  max-height: calc(100dvh - max(env(safe-area-inset-top, 0px), 24px) - 24px);
   overflow-y: auto;
   will-change: transform;
   background: var(--card, #fffdf7);
