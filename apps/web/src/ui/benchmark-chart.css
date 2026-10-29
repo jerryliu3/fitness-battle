@@ -1,0 +1,6 @@
+.benchmark-chart{min-width:0;color:var(--ink)}
+.benchmark-chart .chart-scrubber-plot>svg{display:block;width:100%;height:200px}
+.benchmark-reading{display:grid;gap:4px;min-height:92px}
+.benchmark-reading>span{font:var(--type-caption);color:var(--muted)}
+.benchmark-reading>strong{font:var(--type-hero);letter-spacing:var(--type-hero-tracking);font-variant-numeric:tabular-nums}
+.benchmark-reading small{font:var(--type-body);letter-spacing:normal;color:var(--muted)}

@@ -1,7 +1,13 @@
 import { AppText } from "../ui/section";
-import { TRAINING_CHART_RANGE_OPTIONS, type TrainingRange } from "@fitness-battle/shared";
+import { OPEN_LINE_RANGES, TRAINING_CHART_RANGE_OPTIONS, type OpenLineRange, type TrainingRange } from "@fitness-battle/shared";
 import { Pressable, StyleSheet, View } from "react-native";
 import { SHELL_COLORS as c } from "../theme";
+
+export function OpenLineRangeToggle({ value, onChange, includeYear = true }: { value: OpenLineRange; onChange: (range: OpenLineRange) => void; includeYear?: boolean }) {
+  return <View accessibilityRole="tablist" accessibilityLabel="Chart range" style={s.openRoot}>
+    {OPEN_LINE_RANGES.filter(option => includeYear || option.value !== "year").map(option => <Pressable key={option.value} accessibilityRole="tab" accessibilityState={{ selected: value === option.value }} accessibilityLabel={option.ariaLabel} onPress={() => onChange(option.value)} style={[s.openButton, value === option.value && s.btnOn]}><AppText role="label" style={{ color: value === option.value ? c.card : c.muted }}>{option.label}</AppText></Pressable>)}
+  </View>;
+}
 
 export function ChartRangeToggle({
   value,
@@ -38,6 +44,8 @@ export function ChartRangeToggle({
 }
 
 const s = StyleSheet.create({
+  openRoot: { flexDirection: "row", gap: 4 },
+  openButton: { minWidth: 44, minHeight: 44, paddingHorizontal: 12, borderRadius: 8, alignItems: "center", justifyContent: "center" },
   root: {
     flexDirection: "row",
     gap: 2,

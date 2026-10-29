@@ -1,5 +1,11 @@
 "use client";
-import { TRAINING_CHART_RANGE_OPTIONS, type TrainingRange } from "@fitness-battle/shared";
+import { OPEN_LINE_RANGES, TRAINING_CHART_RANGE_OPTIONS, type OpenLineRange, type TrainingRange } from "@fitness-battle/shared";
+
+export function OpenLineRangeToggle({ value, onChange, includeYear = true }: { value: OpenLineRange; onChange: (range: OpenLineRange) => void; includeYear?: boolean }) {
+  return <div className="open-line-ranges" role="group" aria-label="Chart range">
+    {OPEN_LINE_RANGES.filter(option => includeYear || option.value !== "year").map(option => <button key={option.value} type="button" aria-label={option.ariaLabel} aria-pressed={value === option.value} onClick={() => onChange(option.value)}>{option.label}</button>)}
+  </div>;
+}
 
 export function ChartRangeToggle({
   value,

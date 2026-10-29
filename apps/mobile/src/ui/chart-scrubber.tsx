@@ -12,7 +12,7 @@ const DIRECTION_LOCK_PX = 4;
 
 /** One touch surface, shared by line and bar charts. Vertical drags yield to the page. */
 export function ChartScrubber({
-  points, width, height, plotTop, plotBottom, children, onSelect, label, summaryOnSelection = false, hideSummary = false,
+  points, width, height, plotTop, plotBottom, children, onSelect, label, summaryOnSelection = false, hideSummary = false, renderSummary, onSelectionChange,
 }: {
   points: readonly ChartDatum[];
   width: number;
@@ -24,6 +24,8 @@ export function ChartScrubber({
   label: string;
   summaryOnSelection?: boolean;
   hideSummary?: boolean;
+  renderSummary?: (point: ChartDatum | undefined) => ReactNode;
+  onSelectionChange?: (point: ChartDatum | undefined) => void;
 }) {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const measuredWidth = useRef(1);
@@ -31,8 +33,8 @@ export function ChartScrubber({
   const touchStart = useRef<{ x: number; y: number; locationX: number } | null>(null);
   const direction = useRef<"horizontal" | "vertical" | null>(null);
   const selected = points.find(point => point.id === selectedId);
-  const latest = useRef({ points, width, onSelect });
-  latest.current = { points, width, onSelect };
+  const latest = useRef({ points, width, onSelect, onSelectionChange });
+  latest.current = { points, width, onSelect, onSelectionChange };
   const inspect = (locationX: number) => {
     const current = latest.current;
     const modelX = chartClientXToModel(locationX, { left: 0, width: measuredWidth.current }, current.width);
@@ -41,6 +43,7 @@ export function ChartScrubber({
     lastId.current = point.id;
     setSelectedId(point.id);
     current.onSelect?.(point.id);
+    current.onSelectionChange?.(point);
     void playCue("selection");
   };
   const inspectRef = useRef(inspect);
@@ -49,6 +52,7 @@ export function ChartScrubber({
     lastId.current = null;
     direction.current = null;
     setSelectedId(null);
+    latest.current.onSelectionChange?.(undefined);
   };
   const responder = useMemo(() => PanResponder.create({
     onStartShouldSetPanResponder: () => false,
@@ -80,7 +84,7 @@ export function ChartScrubber({
   return <View style={{ gap: 8 }}>
     {!hideSummary && (
       <View style={{ minHeight: summaryOnSelection ? 18 : 44, gap: 2 }} accessibilityLiveRegion="polite">
-        {summaryOnSelection ? (selected ? <Text style={textStyle("caption")}>{`${selected.label} · ${selected.value}`}</Text> : null) : <>
+        {renderSummary ? renderSummary(selected) : summaryOnSelection ? (selected ? <Text style={textStyle("caption")}>{`${selected.label} · ${selected.value}`}</Text> : null) : <>
         <Text style={[textStyle("label"), { fontVariant: ["tabular-nums"] }]}>{selected?.value ?? points.at(-1)?.value ?? "No data"}</Text>
         <Text style={textStyle("caption")}>{selected?.label ?? points.at(-1)?.label ?? ""}</Text></>}
       </View>
@@ -119,7 +123,7 @@ export function ChartScrubber({
     >
       <View pointerEvents="none">{children}</View>
       {selected && <Svg pointerEvents="none" width="100%" height="100%" viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="none" style={{ position: "absolute", top: 0, left: 0 }}>
-        <Line x1={selected.x} x2={selected.x} y1={plotTop} y2={plotBottom} stroke={c.ink} strokeWidth={1} strokeDasharray="3 3" />
+        <Line x1={selected.x} x2={selected.x} y1={plotTop} y2={plotBottom} stroke={c.muted} strokeWidth={1} />
         <Circle cx={selected.x} cy={selected.y} r={4} fill={c.ink} stroke={c.card} strokeWidth={2} />
       </Svg>}
     </View>

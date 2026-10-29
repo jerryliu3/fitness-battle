@@ -1,13 +1,4 @@
 .home-portfolio{padding:12px 0 20px;border-bottom:1px solid var(--line);display:grid;gap:12px;color:var(--ink)}
 .home-portfolio-header{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
 .home-portfolio-header h2{margin:0}
-.home-portfolio-total{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
-.home-portfolio-total>strong{font:var(--type-hero);letter-spacing:var(--type-hero-tracking);font-variant-numeric:tabular-nums}
-.home-portfolio-total>strong>span{font:var(--type-body);letter-spacing:0;color:var(--muted)}
-.home-portfolio-total>div{display:grid;gap:4px;text-align:right;font:var(--type-caption);color:var(--muted)}
-.home-portfolio .chart-scrubber svg{display:block;width:100%;height:auto;max-height:210px;overflow:visible}
 .home-portfolio-footer{display:flex;justify-content:flex-end}
-.home-portfolio-dates{display:flex;justify-content:space-between;color:var(--muted);font:var(--type-caption)}
-.home-portfolio-delta{font:var(--type-caption)}
-.home-portfolio-delta.is-up{color:var(--green,#24765c)}
-.home-portfolio-delta.is-down{color:var(--red,#b42318)}

@@ -1,20 +1,15 @@
 "use client";
-import { ChartSvg, ChartText } from "@/ui/chart-text";
+import { EffortTrend } from "@/features/progress/effort-trend";
 import { AppParagraph, AppText, SectionHeader, typographyStyle, AppHeading } from "@/ui/section";
 
 import { clubLifetimeTotals } from "@fitness-battle/shared";
 import { ProfilePhoto } from "@/features/you/profile-photo";
 
-import { useScoreTrackLens } from "@/lib/score-track-lens";
-import { useAuth } from "@/components/auth-context";
 import { useCompete } from "@/components/compete-context";
 
 import {
   distanceUnitLabel,
-  effortHistory,
-  ELO_UNRANKED,
   formatDistanceM,
-  formatEffortScore,
   rankForElo,
   sportById,
   personalRecordHistory,
@@ -22,11 +17,8 @@ import {
   formatClockTime,
   competeNow,
   type CompeteState,
-  type ScoreTrack,
-  type TrainingRange,
 } from "@fitness-battle/shared";
 import { useEffect, useState } from "react";
-import { ChartRangeToggle } from "@/features/progress/chart-range-toggle";
 
 function EditIcon() {
   return (
@@ -63,16 +55,10 @@ export function AthleteOverview({
   sections?: "profile" | "progress";
   onEditProfile?: () => void;
 }) {
-  const { user } = useAuth();
   const { dispatch } = useCompete();
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState(state.name);
   const [city, setCity] = useState(state.city);
-  const [defaultTrack] = useScoreTrackLens();
-  const scope = `${user?.id}:${state.primary}`;
-  const [lens, setLens] = useState<{ scope: string; track: ScoreTrack } | null>(null);
-  const track = lens?.scope === scope ? lens.track : defaultTrack;
-
   const [profileError, setProfileError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -82,64 +68,11 @@ export function AthleteOverview({
     setEditing(true);
   }, [openProfileEdit, state.name, state.city]);
 
-  const rating = state.ratings.find((r) => r.sport === state.primary);
-  const openElo =
-    rating?.openElo && rating.openElo > 0 ? rating.openElo : ELO_UNRANKED;
-  const verifiedElo =
-    rating?.verifiedElo && rating.verifiedElo > 0
-      ? rating.verifiedElo
-      : ELO_UNRANKED;
-  const currentElo = track === "open" ? openElo : verifiedElo;
-
   const season = clubLifetimeTotals(state);
   const unit = distanceUnitLabel(state.units);
 
-  const [effortRange, setEffortRange] = useState<TrainingRange>("month");
   const showProfile = sections === "profile";
   const showProgress = sections === "progress";
-
-  const effort = showProgress
-    ? effortHistory(state, track, user, email, effortRange)
-    : null;
-  const {
-    effectiveElo,
-    dailyValues,
-    pts,
-    lastPoint,
-    linePoints,
-    areaPoints,
-    yMin,
-    yMid,
-    yMax,
-    xStart,
-    xMid,
-    xEnd,
-    yTop,
-    yBottom,
-    yMidPos,
-    startDateLabel,
-    midDateLabel,
-    endDateLabel,
-  } = effort ?? {
-    effectiveElo: 0,
-    dailyValues: [],
-    pts: [],
-    lastPoint: { x: 0, y: 0 },
-    linePoints: "",
-    areaPoints: "",
-    yMin: 0,
-    yMid: 0,
-    yMax: 0,
-    xStart: 0,
-    xMid: 0,
-    xEnd: 0,
-    yTop: 0,
-    yBottom: 0,
-    yMidPos: 0,
-    startDateLabel: "",
-    midDateLabel: "",
-    endDateLabel: "",
-  };
 
   return (
     <>
@@ -341,189 +274,7 @@ export function AthleteOverview({
       </section>
       ) : null}
 
-      {showProgress ? (
-      <section className="focus-card focus-elo" id="effort-score">
-        <div style={{ marginBottom: 12 }}>
-          <div className="focus-elo-track-toggle" role="group" aria-label="Effort chart score track">{(["open", "verified"] as const).map(value => <button key={value} type="button" aria-pressed={track === value} onClick={() => setLens({ scope, track: value })}>{value === "open" ? "Open" : "GPS Tracked"}</button>)}</div>
-        </div>
-        <div className="focus-elo-top" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, marginBottom: 8 }}>
-          <span className="focus-elo-rank-pill">
-            {rankForElo(effectiveElo).name}
-          </span>
-          <ChartRangeToggle value={effortRange} onChange={setEffortRange} />
-        </div>
-
-        <div className="focus-elo-score-row">
-          <AppText role="metric" className="ui-score-value">{formatEffortScore(effectiveElo)}</AppText>
-          <AppText role="body" secondary>Effort score</AppText>
-        </div>
-        <ChartSvg
-          viewBox="0 0 340 150"
-          className="focus-trend"
-          role="img"
-          aria-label={`30-day ${track === "open" ? "Open" : "GPS Tracked"} effort score history ending at ${effectiveElo}`}
-        >
-          <defs>
-            <linearGradient id="focus-trend-grad" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#f1c75b" stopOpacity="0.45" />
-              <stop offset="100%" stopColor="#f1c75b" stopOpacity="0.0" />
-            </linearGradient>
-          </defs>
-
-          {/* Horizontal gridlines & Y-axis numbers */}
-          <ChartText
-            x="36"
-            y={yTop}
-            textAnchor="end"
-            dominantBaseline="middle"
-            fill="#616c63"
-
-          >
-            {yMax}
-          </ChartText>
-          <line
-            x1={xStart}
-            y1={yTop}
-            x2={xEnd}
-            y2={yTop}
-            stroke="#e0e5dc"
-            strokeDasharray="3 3"
-          />
-
-          <ChartText
-            x="36"
-            y={yMidPos}
-            textAnchor="end"
-            dominantBaseline="middle"
-            fill="#616c63"
-
-          >
-            {yMid}
-          </ChartText>
-          <line
-            x1={xStart}
-            y1={yMidPos}
-            x2={xEnd}
-            y2={yMidPos}
-            stroke="#e0e5dc"
-            strokeDasharray="3 3"
-          />
-
-          <ChartText
-            x="36"
-            y={yBottom}
-            textAnchor="end"
-            dominantBaseline="middle"
-            fill="#616c63"
-
-          >
-            {yMin}
-          </ChartText>
-          <line
-            x1={xStart}
-            y1={yBottom}
-            x2={xEnd}
-            y2={yBottom}
-            stroke="#c8d2c2"
-            strokeWidth="1"
-          />
-
-          {/* Y-axis vertical line */}
-          <line
-            x1={xStart}
-            y1={yTop}
-            x2={xStart}
-            y2={yBottom}
-            stroke="#c8d2c2"
-            strokeWidth="1"
-          />
-
-          {/* Area under curve & trend polyline */}
-          {areaPoints ? (
-            <polygon points={areaPoints} fill="url(#focus-trend-grad)" />
-          ) : null}
-          {linePoints ? (
-            <polyline
-              points={linePoints}
-              stroke="#f1c75b"
-              strokeWidth="2.5"
-              strokeLinejoin="round"
-              strokeLinecap="round"
-              fill="none"
-            />
-          ) : null}
-
-          {/* Live pulsing dot at current day — drawn before the solid point so
-              the pulse stays behind the marker when they overlap. */}
-          <circle
-            cx={lastPoint.x}
-            cy={lastPoint.y}
-            r="7"
-            fill="none"
-            stroke="#f1c75b"
-            strokeWidth="2"
-            className="focus-trend-pulse"
-          />
-          <circle cx={lastPoint.x} cy={lastPoint.y} r="3.5" fill="#f1c75b" />
-
-          {/* X-axis tick marks */}
-          <line
-            x1={xStart}
-            y1={yBottom}
-            x2={xStart}
-            y2={yBottom + 5}
-            stroke="#8a9785"
-            strokeWidth="1"
-          />
-          <line
-            x1={xMid}
-            y1={yBottom}
-            x2={xMid}
-            y2={yBottom + 5}
-            stroke="#8a9785"
-            strokeWidth="1"
-          />
-          <line
-            x1={xEnd}
-            y1={yBottom}
-            x2={xEnd}
-            y2={yBottom + 5}
-            stroke="#8a9785"
-            strokeWidth="1"
-          />
-
-          {/* X-axis date labels integrated directly into the graph */}
-          <ChartText
-            x={xStart}
-            y="136"
-            textAnchor="start"
-            fill="#616c63"
-
-          >
-            {startDateLabel}
-          </ChartText>
-          <ChartText
-            minChartWidth={260}
-            x={xMid}
-            y="136"
-            textAnchor="middle"
-            fill="#616c63"
-
-          >
-            {midDateLabel}
-          </ChartText>
-          <ChartText
-            x={xEnd}
-            y="136"
-            textAnchor="end"
-            fill="#616c63"
-
-          >
-            {endDateLabel}
-          </ChartText>
-        </ChartSvg>
-      </section>
-      ) : null}
+      {showProgress ? <EffortTrend state={state} email={email} /> : null}
     </>
   );
 }

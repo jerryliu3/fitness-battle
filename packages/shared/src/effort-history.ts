@@ -8,7 +8,7 @@ export function effortHistory(
   track: "open" | "verified",
   user?: { createdAt?: string } | null,
   email?: string | null,
-  range: TrainingRange = "month",
+  range: TrainingRange | "fourWeeks" = "month",
 ) {
   const rating = state.ratings.find((r) => r.sport === state.primary);
   const currentElo =
@@ -32,7 +32,7 @@ export function effortHistory(
     history.length > 0 ? history[0].eloBefore : effectiveElo;
 
   const msPerDay = 24 * 3600 * 1000;
-  const pointsCount = range === "year" ? 52 : range === "week" ? 7 : 30;
+  const pointsCount = range === "year" ? 52 : range === "week" ? 7 : range === "fourWeeks" ? 28 : 30;
   const stepMs = range === "year" ? 7 * msPerDay : msPerDay;
 
   const windowStart = new Date(
