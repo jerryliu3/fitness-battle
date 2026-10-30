@@ -23,9 +23,15 @@ export function oauthCodeCallback(providerId: "whoop" | "oura") {
     const state = url.searchParams.get("state");
     const { configured } = getSupabaseConfig();
     const liveAuth = configured;
-    if (!creds(providerId) || !code || !liveAuth) {
+    if (url.searchParams.has("error") || (creds(providerId) && liveAuth && !code)) {
+      const reason = url.searchParams.get("error");
+      console.warn("Provider authorization rejected", { provider: providerId, reason: reason && /^[a-z_]{1,60}$/.test(reason) ? reason : "missing_code" });
+      return trackerRedirect(url.origin, providerId, "error");
+    }
+    if (!creds(providerId) || !liveAuth) {
       return trackerRedirect(url.origin, providerId, "stub");
     }
+    if (!code) return trackerRedirect(url.origin, providerId, "error");
     const sessionUserId = await resolveSessionUserId();
     const userId = resolveOAuthCallbackUserId({
       state,

@@ -133,6 +133,7 @@ export function createOAuth2Provider(
       {
         grant_type: "refresh_token",
         refresh_token: existing.refreshToken,
+        ...(spec.id === "whoop" ? { scope: "offline" } : {}),
       },
       http,
     );
