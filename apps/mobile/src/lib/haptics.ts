@@ -1,3 +1,5 @@
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useSyncExternalStore } from "react";
 import { AppState } from "react-native";
 import * as Haptics from "expo-haptics";
 import {
@@ -17,6 +19,23 @@ const notifications: Record<string, Haptics.NotificationFeedbackType> = {
   error: Haptics.NotificationFeedbackType.Error,
 };
 
+let enabled = false;
+let preferenceLoaded = false;
+const listeners = new Set<() => void>();
+const preferenceKey = "overtaek:haptics:v1";
+void AsyncStorage.getItem(preferenceKey).then(value => {
+  if (preferenceLoaded) return;
+  enabled = value !== "off"; preferenceLoaded = true;
+  listeners.forEach(listener => listener());
+}).catch(() => { preferenceLoaded = true; });
+export function useHapticsEnabled() {
+  return useSyncExternalStore(listener => { listeners.add(listener); return () => { listeners.delete(listener); }; }, () => enabled, () => false);
+}
+export function setHapticsEnabled(value: boolean) {
+  preferenceLoaded = true; enabled = value;
+  cancelHaptics(); listeners.forEach(listener => listener());
+  void AsyncStorage.setItem(preferenceKey, value ? "on" : "off").catch(() => {});
+}
 let lastAt = 0;
 let lastKind: HapticCue = "none";
 let generation = 0;
@@ -44,7 +63,7 @@ export async function playCue(
   kind: HapticCue,
   options?: { controlAlreadyPlayed?: boolean },
 ): Promise<void> {
-  if (AppState.currentState !== "active") return;
+  if (!enabled || AppState.currentState !== "active") return;
   if (options?.controlAlreadyPlayed || kind === "none") return;
   const now = Date.now();
   if (now - lastAt < HAPTIC_MIN_INTERVAL_MS && (kind === "selection" || kind === lastKind)) return;

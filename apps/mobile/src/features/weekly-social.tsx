@@ -1,3 +1,4 @@
+import { playCue, playPattern } from "../lib/haptics";
 import { AppText } from "../ui/section";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Pressable, ScrollView, Text, View } from "react-native";
@@ -64,6 +65,7 @@ export function WeeklySocialActions({
           enabled: !peer[kind],
         },
       });
+      playPattern("confirm");
       await load().catch(() => {
         if (mounted.current)
           setError("Saved. Refresh to see the latest choices.");

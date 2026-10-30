@@ -1,3 +1,4 @@
+import { playCue } from "../lib/haptics";
 import { UserAvatar } from "../ui/user-avatar";
 import { AppText } from "../ui/section";
 import {
@@ -106,6 +107,7 @@ export function ProfilePhoto({ state }: { state: CompeteState }) {
       if (mounted.current && ownerRef.current === id)
         dispatch({ type: "set-avatar", avatarUrl: url, accountId: id });
     } catch (e) {
+      void playCue("error");
       if (mounted.current && ownerRef.current === id)
         setError(
           e instanceof Error ? e.message : "Could not update your photo.",

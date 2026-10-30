@@ -1,3 +1,4 @@
+import { playCue, playPattern } from "../lib/haptics";
 import { textStyle } from "./section";
 import { AppIcon, type AppIconName } from "./app-icon";
 import { Pressable, Text, View } from "react-native";
@@ -20,7 +21,7 @@ export function SettingsRow({
   return (
     <Pressable
       accessibilityRole="button"
-      onPress={onPress}
+      onPress={() => { void playCue("selection"); onPress(); }}
       style={({ pressed }) => [
         f.section,
         f.row,

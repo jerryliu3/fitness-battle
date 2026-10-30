@@ -1,3 +1,4 @@
+import { playCue } from "../lib/haptics";
 import { AppText } from "../ui/section";
 import { useEffect, useRef, useState } from "react";
 import { Pressable, Text, TextInput, View } from "react-native";
@@ -64,6 +65,7 @@ export function AccountActions() {
         if (await clearAccountData(id)) await signOut();
       }
     } catch (e) {
+      void playCue("error");
       if (mounted.current && ownerRef.current === id)
         setError(e instanceof Error ? e.message : "Please try again.");
     } finally {
