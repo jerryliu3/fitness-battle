@@ -12,7 +12,7 @@ vi.mock("../ui/focus", () => ({
   FocusButton: "Button",
   f: {},
 }));
-vi.mock("react-native", () => ({
+vi.mock("react-native", () => ({ AppState: { currentState: "active", addEventListener: vi.fn(() => ({ remove: vi.fn() })) },
   Modal: "Modal",
   View: "View",
   ScrollView: "ScrollView",
