@@ -1,4 +1,4 @@
-import { createHmac, timingSafeEqual } from "node:crypto";
+import { createHash, createHmac, randomBytes, timingSafeEqual } from "node:crypto";
 
 const STATE_TTL_MS = 15 * 60 * 1000;
 
@@ -11,12 +11,15 @@ type OAuthStatePayload = {
   e: number;
   /** Absent on very old tickets → treat as session-bound. */
   c?: OAuthStateChannel;
+  n?: string;
 };
 
 function providerSecret(provider: string): string | undefined {
   switch (provider) {
     case "strava":
       return process.env.STRAVA_CLIENT_SECRET;
+    case "garmin":
+      return process.env.GARMIN_CONSUMER_SECRET;
     case "whoop":
       return process.env.WHOOP_CLIENT_SECRET;
     case "oura":
@@ -69,6 +72,7 @@ export function signOAuthState(
     p: provider,
     e: now + STATE_TTL_MS,
     c: channel,
+    n: b64url(randomBytes(32)),
   };
   const body = b64url(JSON.stringify(payload));
   return `${body}.${signBody(provider, body)}`;
@@ -140,9 +144,19 @@ export function withSignedOAuthState(
   try {
     const url = new URL(authorizeUrl);
     if (!url.searchParams.has("state")) return authorizeUrl;
-    url.searchParams.set("state", signOAuthState(userId, provider, channel));
+    const state = signOAuthState(userId, provider, channel);
+    url.searchParams.set("state", state);
+    if (provider === "garmin") {
+      url.searchParams.set("code_challenge", b64url(createHash("sha256").update(garminPkceVerifier(state)).digest()));
+      url.searchParams.set("code_challenge_method", "S256");
+    }
     return url.toString();
   } catch {
     return authorizeUrl;
   }
+}
+
+/** Derive a confidential PKCE verifier from the authenticated, random state. */
+export function garminPkceVerifier(state: string): string {
+  return b64url(createHmac("sha256", signingSecret("garmin")).update(`garmin-pkce:${state}`).digest());
 }

@@ -1,5 +1,7 @@
+import { createHash } from "node:crypto";
 import { afterEach, describe, expect, it } from "vitest";
 import {
+  garminPkceVerifier,
   resolveOAuthCallbackUserId,
   signOAuthState,
   verifyOAuthState,
@@ -50,6 +52,15 @@ describe("oauth-state", () => {
     const url = new URL(next!);
     expect(url.searchParams.get("state")).not.toBe("user-1");
     expect(verifyOAuthState(url.searchParams.get("state")!, "whoop")?.u).toBe("user-1");
+  });
+
+  it("binds Garmin PKCE to a fresh signed state", () => {
+    const url = new URL(withSignedOAuthState("https://connect.garmin.com/oauth2Confirm?state=placeholder", "user-1", "garmin", "bearer")!);
+    const state = url.searchParams.get("state")!;
+    expect(verifyOAuthState(state, "garmin")?.u).toBe("user-1");
+    expect(url.searchParams.get("code_challenge_method")).toBe("S256");
+    expect(url.searchParams.get("code_challenge")).toBe(createHash("sha256").update(garminPkceVerifier(state)).digest("base64url"));
+    expect(signOAuthState("user-1", "garmin", "bearer")).not.toBe(state);
   });
 
   it("leaves Garmin-style URLs without state alone", () => {

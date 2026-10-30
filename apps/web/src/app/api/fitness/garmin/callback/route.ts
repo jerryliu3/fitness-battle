@@ -1,35 +1,21 @@
 import { serverEnv } from "@/lib/env";
 import { trackerRedirect } from "@/lib/oauth-callback";
+import { resolveSessionUserId } from "@/lib/auth/request-user";
 import { getServerFitnessProvider } from "@/lib/fitness";
-import { userIdForAccessToken } from "@/lib/fitness-store";
+import { garminPkceVerifier, resolveOAuthCallbackUserId } from "@/lib/oauth-state";
 import { getSupabaseConfig } from "@/lib/supabase/config";
 
-/** Garmin OAuth 1.0a callback. The request token identifies the user. */
 export async function GET(request: Request) {
   const url = new URL(request.url);
-  const oauthToken = url.searchParams.get("oauth_token");
-  const verifier = url.searchParams.get("oauth_verifier");
-  const denied = url.searchParams.get("oauth_problem") || url.searchParams.get("error");
-  const hasCreds = Boolean(
-    serverEnv.garminConsumerKey &&
-      serverEnv.garminConsumerSecret &&
-      serverEnv.garminRedirectUri,
-  );
-  const { configured } = getSupabaseConfig();
-  const liveAuth = configured;
-
-  if (!hasCreds || !liveAuth || denied) {
-    return trackerRedirect(url.origin, "garmin", denied ? "error" : "stub");
-  }
-  if (!oauthToken || !verifier) {
+  const code = url.searchParams.get("code");
+  const state = url.searchParams.get("state");
+  if (!serverEnv.garminConsumerKey || !serverEnv.garminConsumerSecret || !getSupabaseConfig().configured || !code || !state) {
     return trackerRedirect(url.origin, "garmin", "error");
   }
-
-  const userId = await userIdForAccessToken("garmin", oauthToken);
+  const userId = resolveOAuthCallbackUserId({ state, provider: "garmin", sessionUserId: await resolveSessionUserId() });
   if (!userId) return trackerRedirect(url.origin, "garmin", "error");
-
   try {
-    await getServerFitnessProvider("garmin").completeOAuth(userId, verifier);
+    await getServerFitnessProvider("garmin").completeOAuth(userId, code, garminPkceVerifier(state));
     return trackerRedirect(url.origin, "garmin", "connected");
   } catch {
     return trackerRedirect(url.origin, "garmin", "error");

@@ -48,6 +48,9 @@ export function getServerFitnessProvider(provider: "oura"): ReturnType<typeof cr
 export function getServerFitnessProvider(provider: OAuthProviderId): ServerFitnessProvider;
 export function getServerFitnessProvider(provider: OAuthProviderId = "strava"): ServerFitnessProvider {
   const store = createProviderStore(provider);
+  if (getSupabaseConfig().configured && !store) {
+    throw new Error("fitness_token_store_not_configured");
+  }
   const options = store ? { store } : {};
   if (provider === "garmin") {
     const env = liveEnv<GarminEnv>({

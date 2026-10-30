@@ -8,7 +8,7 @@ Cloud OAuth token exchange runs on the web server. The mobile app starts the sam
 | --- | --- | --- | --- | --- |
 | Strava | Activity | Stub-ready, live path coded | `status=stub`, mock activities | OAuth → token exchange → refresh → activity pull |
 | Mock | Activity | Always on | Demo workouts | Same |
-| Garmin | Activity | Stub-ready, plus file import | Stub sync. FIT/GPX/TCX/zip import is real | OAuth 1.0a pull and Health API ping |
+| Garmin | Activity | Stub-ready, plus file import | Stub sync. FIT/GPX/TCX/zip import is real | OAuth 2.0 PKCE; Starter push ingestion still requires implementation and verification |
 | Apple Health | Activity | Device ingest (iOS only) | Web cannot read HealthKit | iOS build posts workouts to `/api/fitness/ingest` (HealthKit via call-time `NativeModules` bind; Expo Go unsupported) |
 | Health Connect | Activity | Device ingest (Android only) | Web cannot read Health Connect | Expo Android build posts to `/api/fitness/ingest` |
 | WHOOP | Readiness + workouts | Stub-ready, live path coded | Stub sync | OAuth → recovery score and workouts |
@@ -65,7 +65,7 @@ Use your deployed web origin (production example: `https://fitness-battle-one.ve
 
 Set `WHOOP_REDIRECT_URI` to the same Redirect URI value (including `http://localhost:3000/...` for local). After WHOOP sends the user back with an auth code, the callback exchanges the token and redirects into Athlete (`/you?tracker=...&provider=whoop`).
 
-Garmin also needs `POST /api/fitness/garmin/ping` registered as the Health API notification URL after approval. The consumer key is not self-serve.
+Garmin Starter delivers activity summaries by push. The existing ping handler is not a Starter push receiver and must not be enabled for production until authenticated, durable push ingestion is implemented and tested.
 
 Apple Health and Health Connect have no server keys. The phone app needs a development or TestFlight build (`EXPO_PUBLIC_API_URL` pointing at this web app) and a signed-in Supabase session. Expo Go cannot read HealthKit or Health Connect. On iOS, sync resolves `NativeModules.AppleHealthKit` at call time so New Architecture lazy loading does not leave `initHealthKit` undefined. The Athlete tracker list shows Apple Health only on iOS and Health Connect only on Android; tapping the row syncs from the device (there is no nested connections screen). Health Connect reads exercise sessions and distance (`READ_EXERCISE`, `READ_DISTANCE`). Heart rate, sleep, and health writes are blocked in the manifest.
 
@@ -94,8 +94,8 @@ Mobile can start Strava / Garmin / WHOOP / Oura connect itself: `POST /api/fitne
 | `GET /api/fitness/strava/callback` | Signed `state` + session match | Strava token exchange |
 | `GET /api/fitness/whoop/callback` | Signed `state` + session match | WHOOP token exchange |
 | `GET /api/fitness/oura/callback` | Signed `state` + session match | Oura token exchange |
-| `GET /api/fitness/garmin/callback` | Request token must belong to a user | Garmin access token |
-| `POST /api/fitness/garmin/ping` | Garmin server. Callback host must be `apis.garmin.com` | Pull summaries after a ping |
+| `GET /api/fitness/garmin/callback` | Signed state and PKCE | Garmin OAuth 2 token exchange |
+| `POST /api/fitness/garmin/ping` | Legacy ping/pull | Not compatible with Garmin Starter push |
 | `POST /api/fitness/sync` | Required. Body `provider` | Pull a window |
 | `POST /api/fitness/disconnect` | Required. Body `provider` | Clear connection and tokens |
 | `GET /api/fitness/status` | Required | Every connection + catalog |
