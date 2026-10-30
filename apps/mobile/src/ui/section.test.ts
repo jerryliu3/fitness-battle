@@ -1,3 +1,4 @@
+vi.mock("../lib/haptics", () => ({ playCue: vi.fn(), playPattern: vi.fn(() => vi.fn()) }));
 import { createElement } from "react";
 import { act, create } from "react-test-renderer";
 import { expect, it, vi } from "vitest";
