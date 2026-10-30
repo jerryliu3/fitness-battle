@@ -602,6 +602,7 @@ export function CompeteProvider({ children, navigationReady = true }: { children
   }, [readBaselineItem, writeBaselineItem]);
   refreshRef.current = refresh;
 
+  const connectedPullProviders = (state?.links ?? []).filter(link => link.status === "connected" && ["strava", "whoop", "oura"].includes(link.provider)).map(link => link.provider).sort().join(",");
   useEffect(() => {
     if (!owner || auth.offlineMode) return;
     let stopped = false, running = false;
@@ -628,7 +629,7 @@ export function CompeteProvider({ children, navigationReady = true }: { children
     const timer = setInterval(() => { void sync(); }, 60 * 60_000);
     const subscription = AppState.addEventListener("change", status => { if (status === "active") void sync(); });
     return () => { stopped = true; clearInterval(timer); subscription.remove(); };
-  }, [owner, auth.offlineMode, refresh]);
+  }, [owner, auth.offlineMode, refresh, connectedPullProviders]);
 
 
   useEffect(() => {

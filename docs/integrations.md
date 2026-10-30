@@ -129,3 +129,5 @@ The receiver authenticates the URL, writes the payload to a private service-role
 ## Client-triggered cloud refresh
 
 Web and native clients request cloud refresh on startup, on return to the foreground, and hourly while active. Only connected Strava, WHOOP and Oura accounts are pulled. The server enforces one automatic attempt per hour and at most three manual attempts per rolling hour per athlete/provider, with a five-minute concurrency lease. Clients refresh the canonical account after pulling. There is no scheduled server job that scans athletes for provider pulls. Mobile operating systems may suspend the app, so the hourly client interval is not a guarantee while backgrounded. Garmin remains push-only on Starter, and device health access requires the native device permissions.
+
+Onboarding uses the same live tracker authorization controls as Athlete. Draft setup is preserved through the provider redirect. A newly connected Strava, WHOOP or Oura link triggers the client refresh immediately, including when the native auth session returns without remounting the app. Garmin Starter only supplies new pushed activities, not historical onboarding calibration.
