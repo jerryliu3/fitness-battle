@@ -31,7 +31,7 @@ export async function requestApi<T = Record<string, unknown>>(
   const body = await response.json().catch(() => null);
   if (!response.ok || (body?.persisted === false && !options.allowUnpersisted))
     throw new Error(
-      body?.error ?? "Could not reach Overtaek. Please try again.",
+      body?.message ?? body?.error ?? "Could not reach Overtaek. Please try again.",
     );
   if (!body)
     throw new Error("Received an incomplete response. Please try again.");

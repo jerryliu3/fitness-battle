@@ -51,9 +51,9 @@ async function paged<T>(
     const body = (await readJson(response)) as WhoopPage<T>;
     collected.push(...(body.records ?? []));
     next = body.next_token;
-    if (!next) break;
+    if (!next) return collected;
   }
-  return collected;
+  throw new Error("whoop_pagination_limit");
 }
 
 export function mapWhoopWorkout(raw: WhoopWorkout): ActivitySample | null {
@@ -61,7 +61,7 @@ export function mapWhoopWorkout(raw: WhoopWorkout): ActivitySample | null {
   if (!sport || !raw.id || !raw.start) return null;
   const start = new Date(raw.start);
   const end = raw.end ? new Date(raw.end) : start;
-  if (Number.isNaN(start.getTime())) return null;
+  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return null;
   const movingSec = Math.max(0, Math.round((end.getTime() - start.getTime()) / 1000));
   const distance = raw.score?.distance_meter ?? 0;
   const gps = sport !== "strength";
@@ -136,6 +136,12 @@ export function createWhoopProvider(
       missingCredentialsMessage:
         "WHOOP credentials missing — using stub readiness. Set WHOOP_CLIENT_ID, WHOOP_CLIENT_SECRET, and WHOOP_REDIRECT_URI.",
       pull: pullWhoop,
+      async revoke(accessToken, http) {
+        const response = await http.fetch(`${WHOOP_API}/user/access`, {
+          method: "DELETE", headers: { Authorization: `Bearer ${accessToken}` },
+        });
+        if (!response.ok && response.status !== 404) throw new Error(`whoop_revoke_failed:${response.status}`);
+      },
     },
     env,
     options,

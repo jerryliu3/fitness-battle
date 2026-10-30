@@ -28,6 +28,7 @@ export interface OAuth2Spec {
   tokenUrl: string;
   scopes: string;
   missingCredentialsMessage: string;
+  revoke?(accessToken: string, http: FitnessHttp): Promise<void>;
   pull(
     accessToken: string,
     since: string,
@@ -203,6 +204,11 @@ export function createOAuth2Provider(
       };
     },
     async disconnect(userId) {
+      const existing = await store.getTokens(userId);
+      if (existing && hasCredentials(env) && spec.revoke) {
+        const tokens = await ensureAccess(userId);
+        await spec.revoke(tokens.accessToken, http);
+      }
       await store.deleteTokens(userId);
       await store.deleteConnection(userId);
     },

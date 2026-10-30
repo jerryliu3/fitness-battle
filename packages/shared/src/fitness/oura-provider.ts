@@ -52,9 +52,9 @@ async function ouraGet<T>(
     const body = (await readJson(response)) as OuraList<T>;
     collected.push(...(body.data ?? []));
     next = body.next_token;
-    if (!next) break;
+    if (!next) return collected;
   }
-  return collected;
+  throw new Error("oura_pagination_limit");
 }
 
 export function mapOuraWorkout(raw: OuraWorkout): ActivitySample | null {
@@ -62,7 +62,7 @@ export function mapOuraWorkout(raw: OuraWorkout): ActivitySample | null {
   if (!sport || !raw.id || !raw.start_datetime) return null;
   const start = new Date(raw.start_datetime);
   const end = raw.end_datetime ? new Date(raw.end_datetime) : start;
-  if (Number.isNaN(start.getTime())) return null;
+  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return null;
   const movingSec = Math.max(0, Math.round((end.getTime() - start.getTime()) / 1000));
   const distance = raw.distance ?? 0;
   const gps = sport !== "strength";
@@ -124,7 +124,7 @@ export function createOuraProvider(
       displayName: "Oura",
       authorizeUrl: "https://cloud.ouraring.com/oauth/authorize",
       tokenUrl: "https://api.ouraring.com/oauth/token",
-      scopes: "daily workout heartrate personal",
+      scopes: "daily workout",
       missingCredentialsMessage:
         "Oura credentials missing — using stub readiness. Set OURA_CLIENT_ID, OURA_CLIENT_SECRET, and OURA_REDIRECT_URI.",
       pull: pullOura,

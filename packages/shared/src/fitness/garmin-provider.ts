@@ -2,27 +2,14 @@ import type { ActivitySample, CategorySlug, FitnessConnection } from "../types";
 import type { FitnessHttp } from "./http";
 import { readJson } from "./http";
 import { mockFitnessProvider } from "./mock-provider";
-import {
-  oauth1AuthorizationHeader,
-  parseOAuth1Body,
-  type OAuth1Credentials,
-} from "./oauth1";
+import { encodeForm } from "./http";
 import { mapSportToCategory, type StravaStore, type StravaTokenSet } from "./strava-provider";
-import { syncWindow } from "./sync-window";
 import type { FitnessAuthResult, FitnessProvider } from "./types";
 
-/**
- * Garmin Health API uses OAuth 1.0a. Consumer key and secret arrive only after
- * Garmin approves the app. URLs match the current Health API guide and can be
- * overridden when Garmin issues different hosts.
- *
- * https://developer.garmin.com/gc-developer-program/health-api/
- */
 export interface GarminEnv {
   consumerKey?: string;
   consumerSecret?: string;
   redirectUri?: string;
-  requestTokenUrl?: string;
   authorizeUrl?: string;
   accessTokenUrl?: string;
   userIdUrl?: string;
@@ -30,9 +17,8 @@ export interface GarminEnv {
 }
 
 export const GARMIN_DEFAULTS = {
-  requestTokenUrl: "https://connectapi.garmin.com/oauth-service/oauth/request_token",
-  authorizeUrl: "https://connect.garmin.com/oauthConfirm",
-  accessTokenUrl: "https://connectapi.garmin.com/oauth-service/oauth/access_token",
+  authorizeUrl: "https://connect.garmin.com/oauth2Confirm",
+  accessTokenUrl: "https://diauth.garmin.com/di-oauth2-service/oauth/token",
   userIdUrl: "https://apis.garmin.com/wellness-api/rest/user/id",
   activitiesUrl: "https://apis.garmin.com/wellness-api/rest/activities",
 };
@@ -54,20 +40,10 @@ function configured(env: GarminEnv): boolean {
 
 function endpoints(env: GarminEnv) {
   return {
-    requestTokenUrl: env.requestTokenUrl || GARMIN_DEFAULTS.requestTokenUrl,
     authorizeUrl: env.authorizeUrl || GARMIN_DEFAULTS.authorizeUrl,
     accessTokenUrl: env.accessTokenUrl || GARMIN_DEFAULTS.accessTokenUrl,
     userIdUrl: env.userIdUrl || GARMIN_DEFAULTS.userIdUrl,
     activitiesUrl: env.activitiesUrl || GARMIN_DEFAULTS.activitiesUrl,
-  };
-}
-
-function credentials(env: GarminEnv, token?: StravaTokenSet | null): OAuth1Credentials {
-  return {
-    consumerKey: env.consumerKey!,
-    consumerSecret: env.consumerSecret!,
-    token: token?.accessToken,
-    tokenSecret: token?.refreshToken,
   };
 }
 
@@ -94,27 +70,10 @@ export function mapGarminActivity(raw: GarminSummary): ActivitySample | null {
 export function isGarminCallbackUrl(value: string): boolean {
   try {
     const url = new URL(value);
-    return url.protocol === "https:" && url.hostname === "apis.garmin.com";
+    return url.protocol === "https:" && url.hostname === "apis.garmin.com" && !url.port && !url.username && !url.password;
   } catch {
     return false;
   }
-}
-
-async function signedFetch(
-  env: GarminEnv,
-  method: string,
-  url: string,
-  token: StravaTokenSet | null,
-  http: FitnessHttp,
-  extra: Record<string, string> = {},
-): Promise<Response> {
-  const authorization = await oauth1AuthorizationHeader(
-    method,
-    url,
-    credentials(env, token),
-    extra,
-  );
-  return http.fetch(url, { method, headers: { Authorization: authorization } });
 }
 
 function memoryStore(): StravaStore {
@@ -150,12 +109,37 @@ export function createGarminProvider(
   env: GarminEnv = {},
   options: { store?: StravaStore; http?: FitnessHttp } = {},
 ): FitnessProvider & {
-  completeOAuth(userId: string, verifier: string): Promise<FitnessAuthResult>;
+  completeOAuth(userId: string, code: string, verifier: string): Promise<FitnessAuthResult>;
   pullCallback(userId: string, callbackUrl: string): Promise<ActivitySample[]>;
 } {
   const store = options.store ?? memoryStore();
   const http = options.http ?? { fetch };
   const urls = endpoints(env);
+
+  async function tokenRequest(fields: Record<string, string>): Promise<StravaTokenSet> {
+    const response = await http.fetch(urls.accessTokenUrl, {
+      method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: encodeForm({ client_id: env.consumerKey!, client_secret: env.consumerSecret!, ...fields }),
+    });
+    if (!response.ok) throw new Error(`garmin_token_failed:${response.status}`);
+    const body = await readJson(response) as { access_token?: string; refresh_token?: string; expires_in?: number };
+    if (!body?.access_token || !body.refresh_token || !body.expires_in) throw new Error("garmin_token_missing");
+    return { accessToken: body.access_token, refreshToken: body.refresh_token, expiresAt: Math.floor(Date.now() / 1000) + body.expires_in };
+  }
+  async function access(userId: string): Promise<StravaTokenSet> {
+    const existing = await store.getTokens(userId);
+    if (!existing) throw new Error("garmin_not_connected");
+    // Legacy OAuth 1 tokens were stored with a ten-year synthetic expiry.
+    if (existing.expiresAt > Math.floor(Date.now() / 1000) + 365 * 86400) throw new Error("garmin_reconnect_required");
+    if (existing.expiresAt * 1000 > Date.now() + 600_000) return existing;
+    const next = await tokenRequest({ grant_type: "refresh_token", refresh_token: existing.refreshToken });
+    next.athleteId = existing.athleteId;
+    await store.setTokens(userId, next);
+    return next;
+  }
+  async function bearer(url: string, token: StravaTokenSet, method = "GET") {
+    return http.fetch(url, { method, redirect: "error", headers: { Authorization: `Bearer ${token.accessToken}` } });
+  }
 
   return {
     id: "garmin",
@@ -176,26 +160,11 @@ export function createGarminProvider(
             "Garmin API credentials missing. Set GARMIN_CONSUMER_KEY, GARMIN_CONSUMER_SECRET, and GARMIN_REDIRECT_URI after Garmin approves the app. FIT, GPX, and TCX import works without those keys.",
         };
       }
-      const response = await signedFetch(
-        env,
-        "POST",
-        urls.requestTokenUrl,
-        null,
-        http,
-        { oauth_callback: env.redirectUri! },
-      );
-      if (!response.ok) throw new Error(`garmin_request_token_failed:${response.status}`);
-      const body = parseOAuth1Body(await response.text());
-      if (!body.oauth_token || !body.oauth_token_secret) {
-        throw new Error("garmin_request_token_missing");
-      }
-      await store.setTokens(userId, {
-        accessToken: body.oauth_token,
-        refreshToken: body.oauth_token_secret,
-        expiresAt: Math.floor(Date.now() / 1000) + 15 * 60,
-      });
       const authorize = new URL(urls.authorizeUrl);
-      authorize.searchParams.set("oauth_token", body.oauth_token);
+      authorize.searchParams.set("client_id", env.consumerKey!);
+      authorize.searchParams.set("redirect_uri", env.redirectUri!);
+      authorize.searchParams.set("response_type", "code");
+      authorize.searchParams.set("state", userId);
       return {
         provider: "garmin",
         status: "disconnected",
@@ -203,47 +172,24 @@ export function createGarminProvider(
         message: "Open authorizeUrl to approve Garmin.",
       };
     },
-    async completeOAuth(userId, verifier) {
-      if (!configured(env)) return this.connect(userId);
-      const requestToken = await store.getTokens(userId);
-      if (!requestToken) throw new Error("garmin_request_token_missing");
-      const response = await signedFetch(
-        env,
-        "POST",
-        urls.accessTokenUrl,
-        requestToken,
-        http,
-        { oauth_verifier: verifier },
-      );
-      if (!response.ok) throw new Error(`garmin_access_token_failed:${response.status}`);
-      const body = parseOAuth1Body(await response.text());
-      if (!body.oauth_token || !body.oauth_token_secret) {
-        throw new Error("garmin_access_token_missing");
-      }
-      const access: StravaTokenSet = {
-        accessToken: body.oauth_token,
-        refreshToken: body.oauth_token_secret,
-        expiresAt: Math.floor(Date.now() / 1000) + 60 * 60 * 24 * 365 * 10,
-      };
-      const idResponse = await signedFetch(env, "GET", urls.userIdUrl, access, http);
-      if (idResponse.ok) {
-        const idBody = (await readJson(idResponse)) as { userId?: string };
-        if (idBody.userId) access.athleteId = idBody.userId;
-      }
-      await store.setTokens(userId, access);
-      await store.setConnection({
-        userId,
-        provider: "garmin",
-        connectedAt: new Date().toISOString(),
-        status: "connected",
-      });
-      return {
-        provider: "garmin",
-        status: "connected",
-        message: "Garmin connected.",
-      };
+    async completeOAuth(userId, code, verifier) {
+      if (!configured(env)) throw new Error("garmin_not_configured");
+      const tokens = await tokenRequest({ grant_type: "authorization_code", code, code_verifier: verifier, redirect_uri: env.redirectUri! });
+      const idResponse = await bearer(urls.userIdUrl, tokens);
+      if (!idResponse.ok) throw new Error(`garmin_user_id_failed:${idResponse.status}`);
+      const idBody = await readJson(idResponse) as { userId?: string };
+      if (!idBody?.userId) throw new Error("garmin_user_id_missing");
+      tokens.athleteId = idBody.userId;
+      await store.setTokens(userId, tokens);
+      await store.setConnection({ userId, provider: "garmin", connectedAt: new Date().toISOString(), status: "connected" });
+      return { provider: "garmin", status: "connected", message: "Garmin connected." };
     },
     async disconnect(userId) {
+      const existing = await store.getTokens(userId);
+      if (existing && configured(env)) {
+        const response = await bearer("https://apis.garmin.com/wellness-api/rest/user/registration", await access(userId), "DELETE");
+        if (!response.ok && response.status !== 404) throw new Error(`garmin_disconnect_failed:${response.status}`);
+      }
       await store.deleteTokens(userId);
       await store.deleteConnection(userId);
     },
@@ -259,9 +205,8 @@ export function createGarminProvider(
     },
     async pullCallback(userId, callbackUrl) {
       if (!isGarminCallbackUrl(callbackUrl)) throw new Error("garmin_callback_rejected");
-      const tokens = await store.getTokens(userId);
-      if (!tokens) throw new Error("garmin_not_connected");
-      const response = await signedFetch(env, "GET", callbackUrl, tokens, http);
+      const tokens = await access(userId);
+      const response = await bearer(callbackUrl, tokens);
       if (!response.ok) throw new Error(`garmin_callback_pull_failed:${response.status}`);
       const rows = (await readJson(response)) as GarminSummary[];
       return (Array.isArray(rows) ? rows : [])
@@ -291,35 +236,13 @@ export function createGarminProvider(
           usedMock: false,
         };
       }
-      const since = options?.since ?? syncWindow({ forceBackfill: true }).since;
-      const start = Math.floor(new Date(since).getTime() / 1000);
-      const end = Math.floor(Date.now() / 1000);
-      const url = new URL(urls.activitiesUrl);
-      url.searchParams.set("uploadStartTimeInSeconds", String(start));
-      url.searchParams.set("uploadEndTimeInSeconds", String(end));
-      const tokens = await store.getTokens(userId);
-      if (!tokens) throw new Error("garmin_not_connected");
-      const response = await signedFetch(env, "GET", url.toString(), tokens, http);
-      if (!response.ok) throw new Error(`garmin_activities_failed:${response.status}`);
-      const rows = (await readJson(response)) as GarminSummary[];
-      let activities = (Array.isArray(rows) ? rows : [])
-        .map((item) => mapGarminActivity(item))
-        .filter((item): item is ActivitySample => item != null);
-      if (options?.categorySlug) {
-        activities = activities.filter((item) => item.categorySlug === options.categorySlug);
-      }
-      const syncedAt = new Date().toISOString();
-      await store.setConnection({
-        ...connection,
-        lastSyncAt: syncedAt,
-        lastActivityAt: activities.map((item) => item.startedAt).sort().at(-1) ?? null,
-      });
+      // Starter accounts receive new activities via push; ad-hoc pull and
+      // historical backfill are available only with Enterprise access.
       return {
         provider: "garmin" as const,
-        activities,
-        syncedAt,
+        activities: [],
+        syncedAt: new Date().toISOString(),
         usedMock: false,
-        since,
       };
     },
   };
